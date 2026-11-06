@@ -38,7 +38,7 @@ class ArchiveRecovery(unittest.TestCase):
 
 
 class ExternalRuntimeInputs(unittest.TestCase):
-    relative = 'code/modules/unit_tests/data/dq_constraint_parity.json'
+    relative = 'code/tests/unit_tests/data/dq_constraint_parity.json'
     def test_missing_source_refuses(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaises(ValueError): restore_external_runtime_inputs(Path(directory))

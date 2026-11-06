@@ -9,7 +9,7 @@
 //   "set_zone_color" { marking, zone, color }
 //   "toggle_zone"   { marking, zone, on }
 //   "toggle_all"    { marking, on }
-//   "set_color_value" { marking, color, zone? }  (a palette pick: no picker, the colour is given)
+//   "set_color_value" { marking, color, zone? }  (no picker: the colour is given, a hex or a palette slot name)
 
 /datum/preference_editor/body_markings
 	key = "body_markings"
@@ -25,8 +25,24 @@
 	for(var/M in markings)
 		payload[M] = markings[M]
 	var/datum/species/S = GLOB.all_species[preferences.read_preference(/datum/preference/choiced/species)]
+	// Which zones link to a slot: the window highlights the slot, the payload above carries the resolved colours.
+	var/list/links = list()
+	var/list/stored = preferences.read_preference_raw(/datum/preference/body_markings)
+	for(var/M in stored)
+		var/list/zones = stored[M]
+		if(!islist(zones))
+			continue
+		var/list/marking_links = list()
+		for(var/zone in zones)
+			var/list/entry = zones[zone]
+			var/link = islist(entry) ? entry["color"] : entry
+			if(dq_color_slot_type(link))
+				marking_links[zone] = link
+		if(length(marking_links))
+			links[M] = marking_links
 	return list(
 		"markings" = payload,
+		"links" = links,
 		"species" = S?.name,
 		"incompatible" = dq_incompatible_markings(preferences),
 	)
@@ -47,12 +63,15 @@
 	return cached.Copy()
 
 /datum/preference_editor/body_markings/proc/ui_act_set_color_value(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	var/M = params["marking"]
 	var/color = params["color"]
-	if(!islist(markings) || !(M in markings) || !istext(color) || !findtext(color, GLOB.is_color))
+	if(!islist(markings) || !(M in markings) || !istext(color))
 		return PREF_UPDATE_REJECTED
-	color = sanitize_hexcolor(color)
+	if(!dq_color_slot_type(color))
+		if(!findtext(color, GLOB.is_color))
+			return PREF_UPDATE_REJECTED
+		color = sanitize_hexcolor(color)
 	var/zone = params["zone"]
 	if(zone)
 		if(!islist(markings[M]) || !islist(markings[M][zone]))
@@ -82,18 +101,18 @@
 	return list("available_styles" = styles)
 
 /datum/preference_editor/body_markings/proc/ui_act_add(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
 	var/M = params["marking"]
 	if(!M || (M in markings) || !(M in GLOB.body_marking_styles_list))
 		return PREF_UPDATE_REJECTED
-	markings[M] = preferences.mass_edit_marking_list(M)
+	markings[M] = preferences.mass_edit_marking_list(M, color = "primary") // a new marking starts on the palette
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/body_markings/proc/ui_act_remove(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
 	markings -= params["marking"]
@@ -101,7 +120,7 @@
 	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/body_markings/proc/ui_act_move_up(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
 	var/start = markings.Find(params["marking"])
@@ -115,7 +134,7 @@
 	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/body_markings/proc/ui_act_move_down(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
 	var/start = markings.Find(params["marking"])
@@ -160,7 +179,7 @@
 	return PREF_UPDATE_UNCHANGED
 
 /datum/preference_editor/body_markings/proc/ui_act_toggle_zone(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
 	var/M = params["marking"]
@@ -172,7 +191,7 @@
 	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/body_markings/proc/ui_act_toggle_all(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
 	var/M = params["marking"]
@@ -220,7 +239,7 @@ CAPABILITIES(/datum/prompt/color/prefs)
 		return
 	var/datum/prompt/color/prefs/marking/ask = A.answer
 	var/datum/preferences/preferences = ask.preferences
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	var/M = ask.marking
 	markings[M] = preferences.mass_edit_marking_list(M, FALSE, TRUE, markings[M], color = sanitize_hexcolor(ask.value))
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
@@ -231,7 +250,7 @@ CAPABILITIES(/datum/prompt/color/prefs)
 		return
 	var/datum/prompt/color/prefs/marking/ask = A.answer
 	var/datum/preferences/preferences = ask.preferences
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	markings[ask.marking][ask.zone]["color"] = sanitize_hexcolor(ask.value)
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	SStgui.update_uis(preferences)

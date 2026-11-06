@@ -1,0 +1,242 @@
+// Handles map-related tasks, mostly here to ensure it does so after the MC initializes.
+SYSTEM_DEF(mapping)
+	name = "Mapping"
+	init_stage = INITSTAGE_MAIN
+	//dependencies = list(
+	//	/datum/system/job,
+		///datum/controller/subsystem/processing/station,
+	//	///datum/controller/subsystem/processing/reagents
+	//)
+	needs = list(
+		/datum/system/garbage, // was transitive through chemistry
+		/datum/system/early_assets, // early assets declared mapping as a dependent when it was a subsystem
+		/datum/system/static_entries, // the map reader asks the map-time resolver table before it places anything
+		// Chemistry and vis_overlays were dependencies; both are world services now that need no boot.
+	)
+
+	var/list/map_templates = list()
+	var/obj/effect/landmark/engine_loader/engine_loader
+	var/list/shelter_templates = list()
+	/// Async map loads waiting behind the running one, oldest first (code/modules/maps/map_load.dm): owned here, so a queued load lives until it starts.
+	var/list/map_load_queue
+
+	// TODO: Implement Later
+	var/datum/map/current_map
+
+CAPABILITIES(/datum/system/mapping)
+	ref_one(nameof(current_map))
+	ref_many(nameof(map_load_queue), /datum/map_load) // the template owns each load; this is the order they wait in
+	ref_one(nameof(engine_loader), /obj/effect/landmark/engine_loader)
+
+
+/datum/system/mapping/initialize()
+	if(initialized)
+		return
+	world.max_z_changed() // This is to set up the player z-level list, maxz hasn't actually changed (probably)
+	load_map_templates()
+	load_engine()
+
+	preloadShelterTemplates() // EDIT: Re-enable Shelter Capsules
+	// Mining generation probably should be here too
+	// TODO - Other stuff related to maps and areas could be moved here too.  Look at /tg
+	// Lateload Code related to Expedition areas.
+	if(using_map) // Re-enable this.
+		rel_set(src, nameof(current_map), using_map)
+		loadLateMaps()
+
+	if(CONFIG_GET(flag/generate_map)) // Re-order this.
+		// Map-gen is still very specific to the map, however putting it here should ensure it loads in the correct order.
+		using_map.perform_map_generation()
+
+/datum/system/mapping/proc/load_map_templates()
+	for(var/datum/map_template/template as anything in subtypesof(/datum/map_template))
+		if(!(initial(template.mappath))) // If it's missing the actual path its probably a base type or being used for inheritence.
+			continue
+		template = new template()
+		map_templates[template.name] = template
+	return TRUE
+
+/datum/system/mapping/proc/load_engine()
+	if(!engine_loader)
+		// The compiled-in map's landmark initialized before this system existed and could not register (register_loader()).
+		for(var/obj/effect/landmark/engine_loader/mapped in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
+			if(!QDELETED(mapped))
+				set_engine_loader(mapped)
+	if(!engine_loader)
+		log_world("Mapping: no engine loader on this map; no engine template placed.")
+		return
+	var/turf/origin = get_turf(engine_loader)
+	if(!istype(origin))
+		log_mapping("[log_info_line(engine_loader)] is not on a turf; cannot place an engine template.")
+		return
+
+	var/datum/map_template/engine/chosen
+	var/list/configured_engines = CONFIG_GET(str_list/engine_map)
+	if(LAZYLEN(configured_engines))
+		var/chosen_name = pick(configured_engines)
+		chosen = map_templates[chosen_name]
+		if(!istype(chosen))
+			log_mapping("Configured engine map '[chosen_name]' is not a valid engine template.")
+	if(!istype(chosen))
+		var/list/available = list()
+		for(var/template_name in map_templates)
+			var/datum/map_template/engine/candidate = map_templates[template_name]
+			if(istype(candidate))
+				available += candidate
+		if(!available.len)
+			log_mapping("No engine templates are available for [log_info_line(engine_loader)].")
+			return
+		chosen = pick(available)
+
+	log_world("Mapping: loading engine map [chosen.name] at [log_info_line(engine_loader)]")
+	admin_notice(span_danger("Loading engine map: [chosen.name]"), R_DEBUG)
+	engine_loader.annihilate_bounds()
+	chosen.load(origin)
+
+/datum/system/mapping/proc/loadLateMaps()
+	var/list/deffo_load = using_map.lateload_z_levels
+	var/list/maybe_load = using_map.lateload_gateway
+	var/list/also_load = using_map.lateload_overmap
+	var/list/redgate_load = using_map.lateload_redgate
+
+	for(var/list/maplist in deffo_load)
+		if(!islist(maplist))
+			log_mapping("Lateload Z level [maplist] is not a list! Must be in a list!")
+			continue
+		for(var/mapname in maplist)
+			var/datum/map_template/MT = map_templates[mapname]
+			if(!istype(MT))
+				log_mapping("Lateload Z level \"[mapname]\" is not a valid map!")
+				continue
+			admin_notice("Lateload: [MT]", R_DEBUG)
+			MT.load_new_z(centered = FALSE)
+			CHECK_TICK
+
+	if(LAZYLEN(maybe_load))
+		var/picklist = pick(maybe_load)
+
+		if(!picklist) //No lateload maps at all
+			return
+
+		if(!islist(picklist)) //So you can have a 'chain' of z-levels that make up one away mission
+			log_mapping("Randompick Z level [picklist] is not a list! Must be in a list!")
+			return
+
+		for(var/map in picklist)
+			if(islist(map))
+				// TRIPLE NEST. In this situation we pick one at random from the choices in the list.
+				//This allows a sort of a1,a2,a3,b1,b2,b3,c1,c2,c3 setup where it picks one 'a', one 'b', one 'c'
+				map = pick(map)
+			var/datum/map_template/MT = map_templates[map]
+			if(!istype(MT))
+				log_mapping("Randompick Z level \"[map]\" is not a valid map!")
+			else
+				admin_notice("Gateway: [MT]", R_DEBUG)
+				MT.load_new_z(centered = FALSE)
+
+	if(LAZYLEN(also_load)) //Just copied from gateway picking, this is so we can have a kind of OM map version of the same concept.
+		var/picklist = pick(also_load)
+
+		if(!picklist) //No lateload maps at all
+			return
+
+		if(!islist(picklist)) //So you can have a 'chain' of z-levels that make up one away mission
+			log_mapping("Randompick Z level [picklist] is not a list! Must be in a list!")
+			return
+
+		for(var/map in picklist)
+			if(islist(map))
+				// TRIPLE NEST. In this situation we pick one at random from the choices in the list.
+				//This allows a sort of a1,a2,a3,b1,b2,b3,c1,c2,c3 setup where it picks one 'a', one 'b', one 'c'
+				map = pick(map)
+			var/datum/map_template/MT = map_templates[map]
+			if(!istype(MT))
+				log_mapping("Randompick Z level \"[map]\" is not a valid map!")
+			else
+				admin_notice("OM Adventure: [MT]", R_DEBUG)
+				MT.load_new_z(centered = FALSE)
+
+	if(LAZYLEN(redgate_load))
+		var/picklist = pick(redgate_load)
+
+		if(!picklist) //No lateload maps at all
+			return
+
+		if(!islist(picklist)) //So you can have a 'chain' of z-levels that make up one away mission
+			log_mapping("Randompick Z level [picklist] is not a list! Must be in a list!")
+			return
+
+		for(var/map in picklist)
+			if(islist(map))
+				// TRIPLE NEST. In this situation we pick one at random from the choices in the list.
+				//This allows a sort of a1,a2,a3,b1,b2,b3,c1,c2,c3 setup where it picks one 'a', one 'b', one 'c'
+				map = pick(map)
+			var/datum/map_template/MT = map_templates[map]
+			if(!istype(MT))
+				log_mapping("Randompick Z level \"[map]\" is not a valid map!")
+			else
+				admin_notice("Redgate: [MT]", R_DEBUG)
+				MT.load_new_z(centered = FALSE)
+
+	// Convert ai_shell_allowed_levels to actual Zs
+	for(var/i in 1 to length(using_map.ai_shell_allowed_levels))
+		var/current = using_map.ai_shell_allowed_levels[i]
+		if(isnum(current))
+			continue
+		using_map.ai_shell_allowed_levels[i] = GLOB.map_templates_loaded[current]
+
+	// Convert overmap_z to actual Z
+	if(using_map.use_overmap && !isnum(using_map.overmap_z))
+		using_map.overmap_z = GLOB.map_templates_loaded[using_map.overmap_z]
+
+	// Convert belter_belt_z to actual Z
+	for(var/i in 1 to length(using_map.belter_belt_z))
+		var/current = using_map.belter_belt_z[i]
+		if(isnum(current))
+			continue
+		using_map.belter_belt_z[i] = GLOB.map_templates_loaded[current]
+
+	// Convert belter_transit_z to actual Z
+	for(var/i in 1 to length(using_map.belter_transit_z))
+		var/current = using_map.belter_transit_z[i]
+		if(isnum(current))
+			continue
+		using_map.belter_transit_z[i] = GLOB.map_templates_loaded[current]
+
+	// Convert belter_docked_z to actual Z (Unnecessary atm)
+
+	// Convert mining_station_z to actual Z (Unnecessary atm)
+
+	// Convert mining_outpost_z to actual Z (Unnecessary atm)
+
+/datum/system/mapping/proc/preloadShelterTemplates()
+	for(var/datum/map_template/shelter/shelter_type as anything in subtypesof(/datum/map_template/shelter))
+		if(!(initial(shelter_type.mappath)))
+			continue
+		var/datum/map_template/shelter/S = new shelter_type()
+
+		shelter_templates[S.shelter_id] = S
+// Re-enable this
+
+/datum/system/mapping/stat_entry(msg)
+	if (!GLOB.Debug2)
+		return // Only show up in stat panel if debugging is enabled.
+	. = ..()
+
+// ---- The async map-load queue (code/modules/maps/map_load.dm): the one place that touches `map_load_queue` ----
+
+/// Queues a load behind the running one.
+/proc/map_load_queue_add(datum/map_load/M)
+	return rel_add(SSmapping, nameof(SSmapping.map_load_queue), M)
+
+/// How many loads wait.
+/proc/map_load_queue_length()
+	return length(SSmapping.map_load_queue)
+
+/// Takes the oldest waiting load out of the queue (not disposed: it is about to run) and returns it, or null.
+/proc/map_load_queue_next()
+	if(!length(SSmapping.map_load_queue))
+		return null
+	var/datum/map_load/next = SSmapping.map_load_queue[1]
+	rel_take(SSmapping, nameof(SSmapping.map_load_queue), next)
+	return next

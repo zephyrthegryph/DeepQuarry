@@ -1,4 +1,4 @@
-// Native (Rust-owned) watches (doc/rewrite/object_model_core.md, Verdigris).
+// Native (Rust-owned) watches (doc/rewrite/archive/object_model_core.md, Verdigris).
 //
 // A watch is declared by its owner: what to watch (a threshold, band or set
 // on a heat body or cell, a gas mixture's dependency mask, ...) and the proc
@@ -17,7 +17,7 @@
 // unregister() against their Rust binds.
 
 /datum/native_watch
-	/// OM handle of the datum whose proc runs (weak: the owner holds its watches, not the reverse).
+	/// handle of the datum whose proc runs (weak: the owner holds its watches, not the reverse).
 	var/owner_ref
 	/// Proc path called on `owner` as (watch, ...).
 	var/callback

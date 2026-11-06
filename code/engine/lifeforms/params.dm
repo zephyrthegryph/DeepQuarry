@@ -77,6 +77,8 @@
 	/// The type make() was asked for: a plain datum's New() takes only a record of its own type.
 	var/made_type
 
+SCHEMA(/datum/make_args, made_type, schema_path(/datum))
+
 /// The placeholder OWNER names (a type path, so it travels in a list): replaced by the creator wherever a make() or starts_args value holds it.
 /datum/lifeform_owner
 
@@ -107,6 +109,12 @@
 
 /// The body of the generated make(): checks the names against the type's declaration, builds the record and creates the instance with it.
 /proc/make_build(type, at, datum/by, list/parts, list/given)
+	if(istext(type))
+		// A VARIANT() reference: the parent type, with the row key as the `variant` param.
+		given = given ? given.Copy() : list()
+		var/slash = findlasttext(type, "/")
+		given["variant"] = copytext(type, slash + 1)
+		type = text2path(copytext(type, 1, slash))
 	if(!ispath(type, /datum))
 		CRASH("make([type]): not a type")
 	var/datum/make_args/M = new
@@ -141,7 +149,7 @@ GLOBAL_REAL_VAR(list/param_given)
 	if(istype(M))
 		make_apply(A, M)
 		return TRUE
-	var/datum/type_table/T = type_table_cache()[A.type] || table_of(A)
+	var/datum/type_table/T = type_table_store?[A.type] || table_of(A)
 	if(!(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
 		return FALSE
 	var/datum/lifeform_plan/P = lifeform_plan_of(A)
@@ -260,7 +268,7 @@ GLOBAL_REAL_VAR(param_writing) = 0
 		try
 			call(holder, E.args["apply"])(holder.vars[var_name])
 		catch(var/exception/e)
-			stack_trace("param([var_name], apply = [E.args["apply"]]) on [holder.type]: [e] ([e.file]:[e.line])")
+			dq_report_caught(e, "param([var_name], apply = [E.args["apply"]]) on [holder.type]")
 		if(QDELETED(holder))
 			return
 	if(P.param_drops)
@@ -288,7 +296,7 @@ GLOBAL_REAL_VAR(list/param_early_done)
 		try
 			call(A, E.args["apply"])(A.vars[var_name])
 		catch(var/exception/e)
-			stack_trace("param([var_name], apply = [E.args["apply"]], early = TRUE) on [A.type]: [e] ([e.file]:[e.line])")
+			dq_report_caught(e, "param([var_name], apply = [E.args["apply"]], early = TRUE) on [A.type]")
 		if(QDELETED(A))
 			return TRUE
 	if(P.param_drops)

@@ -28,7 +28,6 @@ CAPABILITIES(/obj/item/gun/energy/netgun)
 	name = "Hybrid 'Hunter' net gun"
 	desc = "A Hephaestus-designed hybrid of a taser and the energy net gun, usually dubbed 'Hunter' stunner and energy net launcher, \
 			for when you want criminals to stop acting like they're on a 20th century British comedy sketch show."
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/hephaestus)
 	icon_state = "hunter"
 	item_state = "gun" // Placeholder
 	mode_name = "stun"
@@ -43,6 +42,9 @@ CAPABILITIES(/obj/item/gun/energy/netgun)
 		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/blue, fire_sound=SFX_WEAPONS_TASER, charge_cost=320, fire_delay=10),
 		list(mode_name="capture", projectile_type=/obj/item/projectile/beam/energy_net, fire_sound = SFX_WEAPONS_ELUGER, charge_cost=1200, fire_delay=50)
 	)
+
+CAPABILITIES(/obj/item/gun/energy/hunter)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/hephaestus)))
 
 /// The look: the cell, its charge pips and the fire mode lamp are overlays on the one state.
 /obj/item/gun/energy/hunter/draw_charge_state(datum/look/look)

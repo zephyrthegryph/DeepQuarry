@@ -3,7 +3,7 @@
 //!
 //! ```toml
 //! [lint.scheduler]
-//! exempt_prefixes = ["code/modules/tgs/"]   # rel path starts with
+//! exempt_prefixes = ["code/world/tgs/"]   # rel path starts with
 //! exempt_contains = ["/unit_tests/"]        # rel path contains
 //! exempt_files    = ["code/__defines/tgs.dm"]
 //!
@@ -212,7 +212,7 @@ mod tests {
 [allow]
 known = ["x"]
 [lint.sys]
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
+exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/"]
 [lint.scheduler]
 exempt_contains = ["/unit_tests/"]
 [lint.scheduler.lists]
@@ -220,7 +220,7 @@ core = ["a", "b"]
 "#,
         )
         .unwrap();
-        assert!(s.for_lint("sys/emag", "sys").exempt("code/modules/unit_tests/a.dm"));
+        assert!(s.for_lint("sys/emag", "sys").exempt("code/tests/unit_tests/a.dm"));
         let sc = s.for_lint("scheduler", "");
         assert!(sc.exempt("code/x/unit_tests/a.dm"));
         assert!(!sc.exempt("code/x/a.dm"));
@@ -260,4 +260,19 @@ core = ["a", "b"]
         let s = Scopes::parse("[lint.scheduler]\nreason_codes = [\"BLOCKING_IO\", \"MC\"]\n").unwrap();
         assert_eq!(s.for_lint("scheduler", "").reason_codes, vec!["BLOCKING_IO", "MC"]);
     }
+}
+
+/// The macro library: `code/__defines/` (generated Verdigris bindings and the files not yet moved) and the five module folders of
+/// `code/defines/` (doc section 22). `code/defines/` itself also holds old type-definition files, which are not macros.
+pub const DEFINES_ROOTS: [&str; 6] = [
+    "code/__defines/",
+    "code/defines/engine/",
+    "code/defines/library/",
+    "code/defines/host/",
+    "code/defines/base/",
+    "code/defines/content/",
+];
+
+pub fn is_defines(rel: &str) -> bool {
+    DEFINES_ROOTS.iter().any(|p| rel.starts_with(p))
 }

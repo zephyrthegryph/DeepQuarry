@@ -27,7 +27,6 @@
 	H.looks.set_facial_color(rgb(120, 130, 5))
 	H.looks.set_eyes_color(rgb(0, 255, 128))
 	H.looks.set_skin_color(rgb(90, 160, 70))
-	H.looks.set_skin_tone(tone)
 	H.looks.set_lip_style("red")
 
 /datum/unit_test/dq_profile_human_look_copies
@@ -98,7 +97,7 @@
 	qdel(H)
 	TEST_ASSERT(QDELETED(looks), "the record goes with its holder")
 
-#define DQ_PROFILE_SAVES "code/modules/unit_tests/data/profile_saves/"
+#define DQ_PROFILE_SAVES "code/tests/unit_tests/data/profile_saves/"
 
 /// A real character save (a headless test account's preferences.json) applied to a human lands in its profile records, and
 /// written back from the records it saves the same values: the save format did not change (colours were already "#rrggbb"
@@ -106,7 +105,9 @@
 /datum/unit_test/dq_profile_pref_save_roundtrip
 
 /datum/unit_test/dq_profile_pref_save_roundtrip/Run()
-	var/path = "data/dq_profile_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
+	var/static/saves_written = 0
+	saves_written++ // each test reseeds rand: the time and a roll alone can name the same file twice
+	var/path = "data/dq_profile_saves/[world.realtime]_[saves_written]/preferences.json"
 	TEST_ASSERT(fcopy(DQ_PROFILE_SAVES + "headless_preferences.json", path), "the fixture save is copied to a scratch path")
 	var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
 	P.load_and_save = TRUE
@@ -119,10 +120,9 @@
 	// savefile key -> list(record var, field)
 	var/list/map = list(
 		"hair_color" = list("looks", "hair_color"), "grad_color" = list("looks", "grad_color"), "facial_color" = list("looks", "facial_color"),
-		"eyes_color" = list("looks", "eyes_color"), "skin_color" = list("looks", "skin_color"), "synth_color_rgb" = list("looks", "synth_color_rgb"),
-		"skin_tone" = list("looks", "skin_tone"), "hair_style_name" = list("looks", "hair_style"), "facial_style_name" = list("looks", "facial_style"),
-		"grad_style_name" = list("looks", "grad_style"), "digitigrade" = list("looks", "digitigrade"), "synth_color" = list("looks", "synth_color"),
-		"synth_markings" = list("looks", "synth_markings"),
+		"eyes_color" = list("looks", "eyes_color"), "skin_color" = list("looks", "skin_color"), 
+		"hair_style_name" = list("looks", "hair_style"), "facial_style_name" = list("looks", "facial_style"),
+		"grad_style_name" = list("looks", "grad_style"), "digitigrade" = list("looks", "digitigrade"), 
 		"age" = list("bio", "age"), "home_system" = list("bio", "home_system"), "birthplace" = list("bio", "birthplace"),
 		"citizenship" = list("bio", "citizenship"), "religion" = list("bio", "religion"), "med_record" = list("bio", "med_record"),
 		"sec_record" = list("bio", "sec_record"), "gen_record" = list("bio", "gen_record"), "custom_say" = list("bio", "custom_say"),
@@ -156,7 +156,7 @@
 	var/datum/json_savefile/again = new(path)
 	var/list/reloaded = again.get_entry("character1")
 	var/list/moved = list()
-	for(var/key in list("hair_color", "facial_color", "eyes_color", "skin_color", "skin_tone", "hair_style_name", "facial_style_name"))
+	for(var/key in list("hair_color", "facial_color", "eyes_color", "skin_color", "hair_style_name", "facial_style_name"))
 		if("[saved[key]]" != "[reloaded[key]]")
 			moved += "[key]: [saved[key]] -> [reloaded[key]]"
 	TEST_ASSERT(!length(moved), "a save written from the records holds the values it was loaded from: [jointext(moved, "; ")]")
@@ -230,11 +230,13 @@
 
 /// Writes the fixture save with character1's keys overridden, to a scratch path; returns the path.
 /proc/dq_test_write_character_save(list/overrides)
-	var/list/save = json_decode(file2text("code/modules/unit_tests/data/profile_saves/headless_preferences.json"))
+	var/list/save = json_decode(file2text("code/tests/unit_tests/data/profile_saves/headless_preferences.json"))
 	var/list/character = save["character1"]
 	for(var/key in overrides)
 		character[key] = overrides[key]
-	var/path = "data/dq_profile_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
+	var/static/saves_written = 0
+	saves_written++ // each test reseeds rand: the time and a roll alone can name the same file twice
+	var/path = "data/dq_profile_saves/[world.realtime]_[saves_written]/preferences.json"
 	text2file(json_encode(save), path)
 	return path
 

@@ -3,13 +3,17 @@
 /////////////////////////
 
 // Traitgenes Setup genetics using traits as a foundation for each gene. Basically making genetics automagic instead of something that needs to be maintained...
+/// Every SE block a trait gene may take: 1 to DNA_SE_LENGTH. (The old `while(++I < DNA_SE_LENGTH)` left the last block unused.)
+/proc/dna_assignable_blocks()
+	. = list()
+	for(var/I in 1 to DNA_SE_LENGTH)
+		. += I
+
 /proc/setupgenetics(list/trait_list)
 	if(!trait_list)
 		return
-	var/list/blocks_remaining = list()
-	var/I = 0
-	while(++I < DNA_SE_LENGTH)
-		blocks_remaining.Add(I)
+	var/list/blocks_remaining = dna_assignable_blocks()
+	for(var/I in blocks_remaining)
 		GLOB.assigned_blocks[I] = "" // setup a clean list
 	for(var/TI in trait_list)
 		var/datum/trait/T = trait_list[TI]

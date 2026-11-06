@@ -2,8 +2,10 @@
 /obj/item/ammo_casing/microbattery/medical
 	name = "\'NERD\' nanite cell - UNKNOWN"
 	desc = "A miniature nanite fabricator for a medigun."
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)
 	icon_state = "nerd_batt" // CH edit - Changes ML3M to NERD
+
+CAPABILITIES(/obj/item/ammo_casing/microbattery/medical)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)))
 
 /obj/item/projectile/beam/medical_cell
 	name = "\improper healing beam"

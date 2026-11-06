@@ -29,21 +29,21 @@
 	if(A.scope == SCOPE_TYPE)
 		return FALSE // the holder's own type declares it: it is in the compiled table already
 	if(length(C?.whens))
-		declare_report("[A.def.key] on [A.holder?.type]: a contributes() inside when() cannot be granted: the condition is an input of the stat, and a grant brings none")
+		declare_report("[A.def.key] on [A.holder()?.type]: a contributes() inside when() cannot be granted: the condition is an input of the stat, and a grant brings none")
 		return FALSE
 	var/spec = E.args["value"]
 	if(istext(spec) && length(spec) && A.scope == SCOPE_SLOT && isdatum(A.source))
 		var/datum/declarer = A.source
 		if(!(spec in declarer.vars))
-			declare_report("[A.def.key] on [A.holder?.type]: a while_slotted contributes() reads nameof(v) of the side that declares it; [declarer.type] has no var [spec]")
+			declare_report("[A.def.key] on [A.holder()?.type]: a while_slotted contributes() reads nameof(v) of the side that declares it; [declarer.type] has no var [spec]")
 			return FALSE
 		spec = declarer.vars[spec]
 	if(islist(spec) || (isnum(spec) && (stat_def_of(spec) || spec >= CAPKEY_ID_BASE)) || (istext(spec) && length(spec)))
-		declare_report("[A.def.key] on [A.holder?.type]: a granted capability's contributes() takes a constant value; a var, stat, key or proc read belongs in the holder's own CAPABILITIES list")
+		declare_report("[A.def.key] on [A.holder()?.type]: a granted capability's contributes() takes a constant value; a var, stat, key or proc read belongs in the holder's own CAPABILITIES list")
 		return FALSE
-	return !!hold(A.holder, E.args["stat"], spec, A, null, E.args["priority"], HOLD_CLOCK_WORLD, E.args["reason"]) // no duration: the activation is its lifetime, so the world clock (the only one a clock-rate stat takes)
+	return !!hold(A.holder(), E.args["stat"], spec, A, null, E.args["priority"], HOLD_CLOCK_WORLD, E.args["reason"]) // no duration: the activation is its lifetime, so the world clock (the only one a clock-rate stat takes)
 
 /datum/entry_engine/stat_contributes/remove(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(holder && !QDELETED(holder))
 		release(holder, E.args["stat"], A)

@@ -17,7 +17,6 @@ type LanguageRow = {
 };
 
 type Data = {
-  prefix: string;
   has_default: BooleanLike;
   default_name: string | null;
   languages: LanguageRow[];
@@ -25,7 +24,7 @@ type Data = {
 
 export const LanguagesPanel = () => {
   const { data, act } = useBackend<Data>();
-  const { prefix, has_default, default_name, languages } = data;
+  const { has_default, default_name, languages } = data;
   return (
     <Window width={560} height={620} title="Known Languages">
       <Window.Content scrollable>
@@ -55,9 +54,7 @@ export const LanguagesPanel = () => {
                     {l.name}
                   </Box>{' '}
                   <Box inline color="label">
-                    ({prefix}
-                    {l.key}
-                    {l.custom_key ? ` ${prefix}${l.custom_key}` : ''})
+                    ({l.custom_key || l.key})
                   </Box>{' '}
                   <Button
                     compact

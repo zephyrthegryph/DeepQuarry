@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Shocks that should not stun (changeling bioelectrogenesis, technomancer lightning and energy siphon, eclipse beams) no longer knock humans down."
+  - bugfix: "Lightning spells, the shock aura, eclipse beams, electric anomaly fields and barbed wire hit the torso (or the trod-on limb) instead of passing a limb object as the hit zone, and insulation is applied once."
+  - bugfix: "The gear painter and colour-matrix picker compute a matrix-transformed colour correctly when checking how dark a paint job is."

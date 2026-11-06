@@ -38,6 +38,7 @@
 		if(!R)
 			log_runtime("A torso was robotize() but has no model that can be found: [model]. May affect FBPs.")
 		rel_set(owner, nameof(owner.synthetic), R)
+		owner.take_built_in_parts(R)
 	return FALSE
 
 

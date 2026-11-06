@@ -17,8 +17,7 @@
 	T.update_dirt()
 
 	if(prob(2))
-		var/type = junk()
-		new type(T)
+		variant_new(junk(), T)
 	if(prob(2))
 		new /obj/effect/decal/cleanable/blood/oil(T)
 	if(prob(25))	// Keep in mind that only "corners" get any sort of web
@@ -29,13 +28,13 @@
 		return /obj/effect/decal/cleanable/generic
 	if(!LAZYLEN(GLOB.random_junk))
 		GLOB.random_junk = subtypesof(/obj/item/trash)
+		GLOB.random_junk += variant_refs(/obj/item/trash, except = list("syndi_cakes"))
 		GLOB.random_junk += typesof(/obj/item/trash/cigbutt)
 		GLOB.random_junk += /obj/effect/decal/cleanable/spiderling_remains
 		GLOB.random_junk += /obj/effect/decal/remains/mouse
 		GLOB.random_junk += /obj/effect/decal/remains/robot
 		GLOB.random_junk -= /obj/item/trash/plate
 		GLOB.random_junk -= /obj/item/trash/snack_bowl
-		GLOB.random_junk -= /obj/item/trash/syndi_cakes
 		GLOB.random_junk -= /obj/item/trash/tray
 	return pick(GLOB.random_junk)
 

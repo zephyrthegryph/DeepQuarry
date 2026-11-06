@@ -1,0 +1,4 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "Marking picker: markings are split into categories, with search across all of them."

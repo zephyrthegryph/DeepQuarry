@@ -58,14 +58,14 @@ Baseline fingerprints versus master `eac3bc655d`: base_vars 981→912; instance_
 - `/datum/unit_test/interim_airlock_wire_electrify_actor`
 - `/datum/unit_test/round2_robot_fabricator_consumption`
 - `/datum/unit_test/round2_robot_fabricator_consumption/stale`
-- `/datum/unit_test/dq_om_wake_status_display`
+- `/datum/unit_test/dq_wake_status_display`
 - `/datum/unit_test/interim_large_parcel_unwrap`
 - `/datum/unit_test/dq_eg2/interim_domination_native_cancel`
 - `/datum/unit_test/dq_e2/input_kinds`
 - `/datum/unit_test/dq_pp/gravgen_spin_up`
 - `/datum/unit_test/dq_pp/gravgen_spin_down`
 - `/datum/unit_test/dq_pp/gravgen_breaker`
-- `/datum/unit_test/om/interim_gear_pack_actor_refusal`
+- `/datum/unit_test/engine/interim_gear_pack_actor_refusal`
 - `/datum/unit_test/read_once_machinery_admission/floor_light_custody`
 - `/datum/unit_test/dq_hc_struct/shuttle_authorize_menu_parity`
 - `/datum/unit_test/dq_hc_struct/cycler_missing_item_menu_parity`
@@ -180,7 +180,7 @@ These are separate UI, admin, construction or consent request paths, not the sev
 - Line 455, `/obj/machinery/media/jukebox/ghost/proc/manual_track_remove(mob/user)`: retained separate request path; existing UI/admin/construction entry or action requires its own chained-asks migration rather than changing the already-converted listed seven.
   `open_request(src, /datum/prompt/text, PROC_REF(manual_track_removal_entered), answerer = user, title = "Remove Track", question = "Input track title or URL to remove (must be exact)", rights = R_FUN|R_ADMIN, timeout = 0)`
 
-## code/game/machinery/machinery.dm (2)
+## code/content/machinery/machinery.dm (2)
 - Line 688, `/obj/machinery/proc/ask_frequency(mob/user, current)`: retained separate request path; existing UI/admin/construction entry or action requires its own chained-asks migration rather than changing the already-converted listed seven.
   `open_request(src, /datum/prompt/number, PROC_REF(frequency_entered), answerer = user, title = "[src] frequency", question = "[src] has a frequency of [current]. What would you like it to be?", default = current, max_value = RADIO_HIGH_FREQ, min_value = RADIO_LOW_FREQ, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)`
 - Line 700, `/obj/machinery/proc/ask_text_var(mob/user, var_name, message, title, max_length = MAX_NAME_LEN)`: retained separate request path; existing UI/admin/construction entry or action requires its own chained-asks migration rather than changing the already-converted listed seven.

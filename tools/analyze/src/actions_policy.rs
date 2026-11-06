@@ -36,7 +36,7 @@ struct Action {
     line: u32,
 }
 
-fn split_notice_opt(arg: &str) -> Option<String> {
+pub(crate) fn split_notice_opt(arg: &str) -> Option<String> {
     let rest = arg
         .trim()
         .strip_prefix("notice")?

@@ -41,7 +41,7 @@ pub fn blocks(f:&SourceFile,mut visit:impl FnMut(&str,usize)){blocks_using(f,vis
 pub fn blocks_using<C:crate::key_policy_control::Control>(f:&SourceFile,mut visit:impl FnMut(&str,usize),c:&mut C)->Result<(),C::Error>{c.checkpoint()?;
  if !f.rel.ends_with(".dm")||f.rel.starts_with("code/engine/_generated/"){return Ok(())}
  let head=crate::pat_match!(r"^CAPABILITIES\((/[\w/]+)\)");
- for(number,line)in f.raw().numbered(){c.checkpoint()?;if let Some(m)=head.captures(line){visit(m.s(1),number)}}
+ for(number,line)in f.code().numbered(){c.checkpoint()?;if let Some(m)=head.captures(line){visit(m.s(1),number)}}
 c.checkpoint()?;Ok(())}
 pub fn assemble<'a>(rows:impl IntoIterator<Item=(&'a str,&'a str,usize)>,out:&mut impl Reporter){
  let mut first:std::collections::HashMap<String,(String,usize)>=std::collections::HashMap::new();

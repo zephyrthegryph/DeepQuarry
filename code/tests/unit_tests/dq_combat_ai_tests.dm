@@ -8,14 +8,14 @@
 //   - faction vs. personal disposition resolution
 //   - item-granted behavior declaration
 //
-// This file is #included from code/modules/unit_tests/_unit_tests.dm so the
+// This file is #included from code/tests/unit_tests/_unit_tests.dm so the
 // TEST_ASSERT* macros are in scope. The combat_ai defines header is re-included
 // here (DM dedupes identical includes) because the test block compiles before
 // the combat_ai framework includes later in the DME.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-#include "../../modules/combat_ai/_defines.dm"
+#include "../../defines/domains/ai.dm"
 
 // Test-only mob with a fixed modern-AI behavior set, so these tests don't
 // depend on any shipped creature's tuning.
@@ -57,6 +57,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 /datum/unit_test/dq_combat_ai_spatial_sleep_wakes
 
 /datum/unit_test/dq_combat_ai_spatial_sleep_wakes/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob)
 	M.forceMove(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/datum/ai_brain/B = M.ai_brain

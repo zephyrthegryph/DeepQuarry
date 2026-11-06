@@ -13,7 +13,7 @@ export BYOND_MAJOR=516
 export BYOND_MINOR=1682
 
 # Macro Count
-export MACRO_COUNT=7
+export MACRO_COUNT=6
 
 #rust_g git tag
 export RUST_G_VERSION=6.1.0

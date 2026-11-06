@@ -13,14 +13,14 @@ class DeclarationCensusTest(unittest.TestCase):
                 '#include "code\\body.dm"\n#include "code\\modules\\unit_tests\\fixture.dm"\n',
                 encoding="utf-8",
             )
-            (root / "code/modules/unit_tests").mkdir(parents=True)
+            (root / "code/tests/unit_tests").mkdir(parents=True)
             (root / "code/body.dm").write_text(
                 "/datum/proc/om_declare(datum/object_model/archetype/A)\n"
                 "/datum/body/om_declare(datum/object_model/archetype/A)\n"
                 "\tA.add(/datum/object_model/behaviour/x)\n",
                 encoding="utf-8",
             )
-            (root / "code/modules/unit_tests/fixture.dm").write_text(
+            (root / "code/tests/unit_tests/fixture.dm").write_text(
                 "/datum/test/om_declare(datum/object_model/archetype/A)\n",
                 encoding="utf-8",
             )

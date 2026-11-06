@@ -28,7 +28,7 @@ pub trait Source{
  fn for_each_named(&self,name:&str,visit:&mut dyn FnMut(ProcedureKey<'_>,Procedure<'_>)->Result<bool,Self::Error>)->Result<(),Self::Error>;
  fn known<'a>(&'a self,owner:&'a str)->Result<Self::Known<'a>,Self::Error>;
 }
-pub(crate) const GENERATED_SKIP_DIRS:&[&str]=&["code/modules/unit_tests/","code/tests/unit_tests/","code/modules/benchmarks/"];
+pub(crate) const GENERATED_SKIP_DIRS:&[&str]=&["code/tests/unit_tests/","code/tests/benchmarks/"];
 pub(crate) const GENERATED_REL:&str="code/_generated/reads.dm";
 pub(crate) const EXEMPT_VARS:&[&str]=&["cap_state","cap_data"];
 fn helper_name(name:&str)->bool{crate::pat_match!(r"(?:life_hud|life_vision|life_canmove|update_canmove|hud_available|process_glasses|process_nifsoft_vision|pain_knockout_fraction|set_fullscreen|life_placed)").is_match(name)}

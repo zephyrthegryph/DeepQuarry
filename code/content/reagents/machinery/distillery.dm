@@ -354,18 +354,18 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/distillery_heat(watts, datum/gas_mixture/gas)
 	if(!watts && !gas)
 		if(!isnull(heat_body))
-			vg_heat_body_power(heat_body, 0)
-			vg_heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
-			vg_heat_body_keep(heat_body, FALSE)
+			heat_body_power(heat_body, 0)
+			heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
+			heat_body_keep(heat_body, FALSE)
 		return
 	if(!create_heat_body(TRUE))
 		return
-	vg_heat_body_keep(heat_body, TRUE)
-	vg_heat_body_power(heat_body, watts)
+	heat_body_keep(heat_body, TRUE)
+	heat_body_power(heat_body, watts)
 	if(gas)
-		vg_heat_body_couple(heat_body, 1, HEAT_TARGET_MIXTURE, gas, DISTILLERY_GAS_CONDUCTANCE)
+		heat_body_couple(heat_body, 1, HEAT_TARGET_MIXTURE, gas, DISTILLERY_GAS_CONDUCTANCE)
 	else
-		vg_heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
+		heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
 
 /// The distillery's body carries the reagents it holds.
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/thermal_properties()

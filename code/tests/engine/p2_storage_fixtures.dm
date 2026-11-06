@@ -1,5 +1,5 @@
 // Fixtures of the storage conversion's engine pieces (passes() in a click, the ledger read inside a condition). Compiled under UNIT_TESTS only;
-// code/modules/unit_tests/dq_p2_storage_engine_tests.dm drives them.
+// code/tests/unit_tests/dq_p2_storage_engine_tests.dm drives them.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

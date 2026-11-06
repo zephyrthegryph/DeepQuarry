@@ -155,7 +155,7 @@ fn excluded_paths_are_counted_and_never_rewritten() {
         std::fs::write(p, text).unwrap();
     };
     write("code/a_stubs.dm", &stubs);
-    write("code/modules/unit_tests/t.dm", "/datum/proc/t()\n\town_set(src, \"cell\", null)\n");
+    write("code/tests/unit_tests/t.dm", "/datum/proc/t()\n\town_set(src, \"cell\", null)\n");
     write("code/engine/e.dm", "/datum/proc/e()\n\town_set(src, \"cell\", null)\n");
     write("code/modules/real/r.dm", "/datum/real_holder\n\tvar/datum/cell\n\n/datum/real_holder/proc/r()\n\town_set(src, \"cell\", null)\n");
     let res = codemod::run(d.path(), cm.as_ref(), &RunOpts { apply: true, paths: vec![] }).unwrap();

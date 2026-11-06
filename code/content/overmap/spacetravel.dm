@@ -1,0 +1,174 @@
+//Space stragglers go here
+/obj/effect/overmap/visitable/sector/temporary
+	name = "Deep Space"
+	invisibility = INVISIBILITY_ABSTRACT
+	known = FALSE
+	in_space = TRUE
+
+CAPABILITIES(/obj/effect/overmap/visitable/sector/temporary)
+	keeps_if(PROC_REF(on_overmap), warn = "Attempt to create deepspace which is not on overmap")
+	// Tell the sector initializer where we are and where we want to be. The empty z-level it uses is claimed in find_z_levels() (below).
+	preset(nameof(start_x), PROC_REF(start_at_x))
+	preset(nameof(start_y), PROC_REF(start_at_y))
+	setup(PROC_REF(check_zlevel), mapload = TRUE)
+
+/// Deep space is only ever made on the overmap.
+/obj/effect/overmap/visitable/sector/temporary/proc/on_overmap()
+	return istype(loc, /turf/open/fixed/map)
+
+/obj/effect/overmap/visitable/sector/temporary/proc/start_at_x(target)
+	return loc?.x
+
+/obj/effect/overmap/visitable/sector/temporary/proc/start_at_y(target)
+	return loc?.y
+
+/// No empty z-level to claim: the sector is discarded (setup hook).
+/obj/effect/overmap/visitable/sector/temporary/proc/check_zlevel(mapload)
+	if(!map_z[1])
+		log_and_message_admins("Could not create empty sector at [x], [y]. No available z levels to allocate.", null)
+		return INITIALIZE_HINT_QDEL
+	testing("Temporary sector at [x],[y],[z] was created, corresponding zlevel is [english_list(map_z)].")
+	return INITIALIZE_HINT_NORMAL
+
+// its z-levels return to the empty pool.
+/obj/effect/overmap/visitable/sector/temporary/lifecycle_dematerialize()
+	for(var/zlevel in map_z)
+		using_map.cache_empty_zlevel(zlevel)
+	testing("Temporary sector at [x],[y] was destroyed, returning empty zlevel [map_z[1]] to map datum.")
+	return ..()
+
+/// Claims the sector's empty z-levels, before the parent's reader (register_sector()) uses map_z. Two claims, as Initialize() then find_z_levels()
+/// made them: the first level, which Initialize() took before the chain, then the one this proc takes (check_zlevel() reads the first).
+/obj/effect/overmap/visitable/sector/temporary/find_z_levels()
+	map_z += using_map.get_empty_zlevel()
+	LAZYADD(map_z, using_map.get_empty_zlevel())
+
+/obj/effect/overmap/visitable/sector/temporary/proc/is_empty(mob/observer)
+	if(!LAZYLEN(map_z))
+		log_and_message_admins("CANARY: [src] tried to check is_empty, but map_z is `[map_z || "null"]`", null)
+		return TRUE
+	testing("Checking if sector at [map_z[1]] has no players.")
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if(M != observer && (M.z in map_z))
+			testing("There are people on it.")
+			return FALSE
+	return TRUE
+
+/obj/effect/overmap/visitable/sector/temporary/cleanup()
+	if(is_empty())
+		spent(src)
+
+/proc/get_deepspace(x,y)
+	var/turf/open/fixed/map/overmap_turf = locate(x,y,using_map.overmap_z)
+	if(!istype(overmap_turf))
+		CRASH("Attempt to get deepspace at ([x],[y]) which is not on overmap: [overmap_turf]")
+	var/obj/effect/overmap/visitable/sector/temporary/res = locate_on(overmap_turf, /obj/effect/overmap/visitable/sector/temporary)
+	if(istype(res))
+		return res
+	res = new /obj/effect/overmap/visitable/sector/temporary(overmap_turf)
+	if(QDELETED(res))
+		res = null
+	return res
+
+/atom/movable/proc/lost_in_space()
+	for(var/atom/movable/AM in contents)
+		if(!AM.lost_in_space())
+			return FALSE
+	if(has_buckled_mobs())
+		for(var/mob/M in src?.buckled_mob_list())
+			if(!M.lost_in_space())
+				return FALSE
+
+	return TRUE
+
+/obj/item/uav/lost_in_space()
+	if(state == 1)
+		return FALSE
+	return ..()
+
+/obj/machinery/power/supermatter/lost_in_space()
+	return FALSE
+
+/obj/singularity/lost_in_space()
+	return FALSE
+
+/obj/vehicle/lost_in_space()
+	if(load && !load.lost_in_space())
+		return FALSE
+	return ..()
+
+/mob/lost_in_space()
+	return isnull(client)
+
+/mob/living/carbon/human/lost_in_space()
+	return FALSE
+
+/proc/overmap_spacetravel(turf/space/T, atom/movable/A)
+	if (!T || !A)
+		return
+
+	var/obj/effect/overmap/visitable/M = get_overmap_sector(T.z)
+	if (!M)
+		return
+
+	// Is the landmark still on the map.
+	if(!isturf(M.loc))
+		return
+
+	// Don't let AI eyes yeet themselves off the map
+	if(isEye(A))
+		return
+
+	if(A.lost_in_space())
+		if(!QDELETED(A))
+			spent(A)
+		return
+
+	var/nx = 1
+	var/ny = 1
+	var/nz = 1
+
+	if(T.x <= TRANSITIONEDGE)
+		nx = world.maxx - TRANSITIONEDGE - 2
+		ny = rand(TRANSITIONEDGE + 2, world.maxy - TRANSITIONEDGE - 2)
+
+	else if (A.x >= (world.maxx - TRANSITIONEDGE - 1))
+		nx = TRANSITIONEDGE + 2
+		ny = rand(TRANSITIONEDGE + 2, world.maxy - TRANSITIONEDGE - 2)
+
+	else if (T.y <= TRANSITIONEDGE)
+		ny = world.maxy - TRANSITIONEDGE -2
+		nx = rand(TRANSITIONEDGE + 2, world.maxx - TRANSITIONEDGE - 2)
+
+	else if (A.y >= (world.maxy - TRANSITIONEDGE - 1))
+		ny = TRANSITIONEDGE + 2
+		nx = rand(TRANSITIONEDGE + 2, world.maxx - TRANSITIONEDGE - 2)
+
+	testing("[A] spacemoving from [M] ([M.x], [M.y]).")
+
+	var/turf/map = locate(M.x,M.y,using_map.overmap_z)
+	var/obj/effect/overmap/visitable/TM
+	for(var/obj/effect/overmap/visitable/O in turf_contents_of_type(map, /obj/effect/overmap/visitable))
+		if(O != M && O.in_space && prob(50))
+			TM = O
+			break
+	if(!istype(TM))
+		TM = get_deepspace(M.x,M.y)
+	if(!istype(TM))
+		return
+	nz = pick(TM.get_space_zlevels())
+
+	testing("spacetravel chose [nz],[ny],[nz] in sector [TM] @ ([TM.x],[TM.y],[TM.z])")
+
+	var/turf/dest = locate(nx,ny,nz)
+	if(istype(dest))
+		A.forceMove(dest)
+		if(ismob(A))
+			var/mob/D = A
+			var/atom/movable/D_pulling = D?.pulling_target()
+			if(D_pulling)
+				D_pulling.forceMove(dest)
+	else
+		to_chat(world, "CANARY: Could not move [A] to [nx], [ny], [nz]: [dest ? "[dest]" : "null"]")
+
+	M.cleanup()

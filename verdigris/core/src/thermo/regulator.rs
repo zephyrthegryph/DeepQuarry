@@ -274,9 +274,13 @@ mod tests {
             prop_assert!(s.balance().abs() <= 1e-6 * f64::from(s.work.abs().max(s.moved.abs()).max(1.0)),
                 "{s:?}");
             // Never overshoots the target.
-            let after = t + s.moved / c;
-            if t < target { prop_assert!(after <= target + target * 1e-5); }
-            if t > target { prop_assert!(after >= target - target * 1e-5); }
+            // `moved` is the f32 rounding of a joule count worked out in f64, so the temperature it lands on is off by up to
+            // half an f32 ulp of that count over `c`: a share of the distance travelled (t - target), not of the target.
+            // Judging it in f32 as well (`t + moved / c`) added the ulp of `t` on top.
+            let after = f64::from(t) + f64::from(s.moved) / f64::from(c);
+            let slack = f64::from(target) * 1e-5 + f64::from(t - target).abs() * 2e-7;
+            if t < target { prop_assert!(after <= f64::from(target) + slack, "{after} {s:?}"); }
+            if t > target { prop_assert!(after >= f64::from(target) - slack, "{after} {s:?}"); }
         }
     }
 }

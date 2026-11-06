@@ -1,0 +1,522 @@
+//
+// Media Player Jukebox
+// Rewritten by Leshana from existing Polaris code, merging in D2K5 and N3X15 work
+//
+
+/obj/machinery/media/jukebox
+	name = "space jukebox"
+	desc = "Filled with songs both past and present!"
+	icon = 'icons/obj/jukebox.dmi'
+	icon_state = "jukebox-nopower"
+	var/state_base = "jukebox"
+	anchored = TRUE
+	density = TRUE
+	use_power = USE_POWER_IDLE
+	circuit = VARIANT(/obj/item/circuitboard/jukebox)
+	volume = 0.5
+
+	// Vars for hacking
+	var/hacked = 0 // Whether to show the hidden songs or not
+	var/freq = 0 // Currently no effect, will return in phase II of mediamanager.
+	var/loop_mode = JUKEMODE_PLAY_ONCE			// Behavior when finished playing a song
+	// Paired remotes: REL_PAIR_LIST with each remote's paired_juke (declared in modules/media/juke_remote.dm, w7).
+	var/list/obj/item/juke_remote/remotes
+	var/datum/track/current_track
+
+CAPABILITIES(/obj/machinery/media/jukebox)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	configure(machine_usage(interface_sound = SFX_MACHINES_BUTTONBEEP))
+	setup(PROC_REF(validate_track_library))
+	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
+	default_parts()
+	contributes(STAT_HAS_POWER, nameof(anchored)) // a jukebox that is not bolted down has no power, whatever its area gives
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))
+	climb()
+	interface("Jukebox", title = "RetroBox - Space Style")
+	op("change_track", ui_act("change_track", arg("change_track")), then(PROC_REF(ui_act_change_track)))
+	op("loopmode", ui_act("loopmode", arg("loopmode", num())), then(PROC_REF(ui_act_loopmode)))
+	op("volume", ui_act("volume", arg("val", num())), then(PROC_REF(ui_act_volume)))
+	op("stop", ui_act("stop"), then(PROC_REF(ui_act_stop)))
+	op("play", ui_act("play"), then(PROC_REF(ui_act_play)))
+	op("add_new_track", ui_act("add_new_track", arg("artist", schema_text(4096)), arg("duration", num()), arg("genre", schema_text(4096)), arg("lobby", num()), arg("secret", num()), arg("title", schema_text(4096)), arg("url", schema_text(4096))), then(PROC_REF(ui_act_add_new_track)))
+	op("remove_new_track", ui_act("remove_new_track", arg("ref")), then(PROC_REF(ui_act_remove_new_track)))
+	emag(then(PROC_REF(on_emag)))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(name = "Jukebox", count = 11, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	// its own wires: what each does is heard below (a pulse on a dud may shock), so they are declared bare
+	on_wire(WIRE_MAIN_POWER1)
+	on_wire(WIRE_JUKEBOX_HACK)
+	on_wire(WIRE_SPEEDUP)
+	on_wire(WIRE_SPEEDDOWN)
+	on_wire(WIRE_REVERSE)
+	on_wire(WIRE_START)
+	on_wire(WIRE_STOP)
+	on_wire(WIRE_PREV)
+	on_wire(WIRE_NEXT)
+	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_cut_heard)))
+	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_pulse_heard)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
+	op("interact", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_interact)))
+	ref_one(nameof(current_track), /datum/track)
+
+/obj/machinery/media/jukebox/proc/validate_track_library()
+	if(!LAZYLEN(getTracksList()))
+		atom_break()
+
+/obj/machinery/media/jukebox/proc/getTracksList()
+	return hacked ? media_tracks_all_tracks() : media_tracks_jukebox_tracks()
+
+/obj/machinery/media/jukebox/proc/work_step(datum/act/timer/A)
+	if(!operable())
+		disconnect_media_source()
+		set_playing(0)
+		return PROCESS_KILL
+	// If the current track isn't finished playing, let it keep going
+	if(current_track() && ELAPSED(src, media_start_time, CLOCK_WORLD) < current_track().duration)
+		return
+	// Oh... nothing in queue? Well then pick next according to our rules
+	var/list/tracks = getTracksList()
+	switch(loop_mode)
+		if(JUKEMODE_NEXT)
+			var/curTrackIndex = max(1, tracks.Find(current_track()))
+			var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
+			rel_set(src, nameof(current_track), tracks[newTrackIndex])
+		if(JUKEMODE_RANDOM)
+			var/previous_track = current_track()
+			do
+				rel_set(src, nameof(current_track), pick(tracks))
+			while(current_track() == previous_track && tracks.len > 1)
+		if(JUKEMODE_REPEAT_SONG)
+			rel_set(src, nameof(current_track), current_track())
+		if(JUKEMODE_PLAY_ONCE)
+			rel_clear(src, nameof(current_track))
+			set_playing(0)
+	start_stop_song()
+
+// Tells the media manager to start or stop playing based on current settings.
+/obj/machinery/media/jukebox/proc/start_stop_song()
+	if(current_track() && playing)
+		media_url = current_track().url
+		STAMP(src, media_start_time, CLOCK_WORLD)
+		audible_message(span_notice("\The [src] begins to play [current_track().display()]."), runemessage = "[current_track().display()]")
+	else
+		media_url = ""
+		set_media_start_time(0)
+	update_music()
+	for(var/obj/item/juke_remote/remote as anything in remotes)
+		remote.update_music()
+
+/obj/machinery/media/jukebox/proc/set_hacked(newhacked)
+	if(hacked == newhacked)
+		return
+	hacked = newhacked
+	tracked_changed(src, nameof(hacked))
+
+/obj/machinery/media/jukebox/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	wires_open(src, user)
+	return OP_OK
+
+/obj/machinery/media/jukebox/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	wires_open(src, user)
+	return OP_OK
+
+/obj/machinery/media/jukebox/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	if(playing)
+		StopPlaying()
+	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "un" : ""]secure %T%.")), \
+		MSG_OTHERS(span_warning("%U% has [anchored ? "un" : ""]secured %T%.")))
+	set_anchored(!anchored)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	power_change()
+	if(!anchored)
+		set_playing(FALSE)
+		disconnect_media_source()
+	else
+		update_media_source()
+	return OP_OK
+
+/obj/machinery/media/jukebox/power_change()
+	. = ..()
+	if(!operable() && playing)
+		StopPlaying()
+
+/obj/machinery/media/jukebox/proc/appearance_live()
+	return (operable() && anchored) ? 1 : 0
+
+/obj/machinery/media/jukebox/proc/appearance_suffix()
+	if(appearance_live())
+		return ""
+	return broken_now() ? "-broken" : "-nopower"
+
+/obj/machinery/media/jukebox/proc/appearance_panel()
+	return (appearance_live() && panel_open) ? 1 : 0
+
+/obj/machinery/media/jukebox/draw(datum/look/look)
+	..()
+	jukebox_look(look)
+
+/// The base sprite follows power and breakage; a running jukebox lights up, an open panel shows. (An emagged jukebox never plays: pressing play sets off its
+/// airhorn and explosion, and the emag stops what was playing, so the old emagged-and-running overlay could not show.)
+/obj/machinery/media/jukebox/proc/jukebox_look(datum/look/look)
+	look.state("[state_base][appearance_suffix()]")
+	if(appearance_live() && playing)
+		look.overlay("[state_base]-running")
+	if(appearance_panel())
+		look.overlay("panel_open")
+
+/obj/machinery/media/jukebox/interact(mob/user)
+	if(!operable())
+		to_chat(user, "\The [src] doesn't appear to function.")
+		return
+	tgui_interact(user)
+
+/obj/machinery/media/jukebox/tgui_status(mob/user)
+	if(!operable())
+		to_chat(user, span_warning("[src] doesn't appear to function."))
+		return STATUS_CLOSE
+	if(!anchored)
+		to_chat(user, span_warning("You must secure [src] first."))
+		return STATUS_CLOSE
+	. = ..()
+
+/obj/machinery/media/jukebox/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	var/list/data = list()
+
+	data["current_track_ref"] = null
+	data["current_track"] = null
+	data["current_genre"] = null
+	if(current_track())
+		data["current_track_ref"] = ref_token(current_track())  // Convenient shortcut
+		data["current_track"] = current_track().toTguiList()
+		data["current_genre"] = current_track().genre
+	data["percent"] = playing ? min(100, round(world.time - media_start_time) / current_track().duration) : 0;
+
+	var/list/tgui_tracks = list()
+	for(var/datum/track/T in getTracksList())
+		tgui_tracks.Add(list(T.toTguiList()))
+	data["tracks"] = tgui_tracks
+	data["admin"] = is_admin(user)
+
+	data["playing"] = playing
+	data["loop_mode"] = loop_mode
+	data["volume"] = volume
+	return data
+
+/obj/machinery/media/jukebox/proc/ui_act_change_track(datum/act/op/A, change_track)
+	var/datum/track/T = ui_ref(change_track, getTracksList(), /datum/track)
+	if(istype(T))
+		rel_set(src, nameof(src.current_track), T)
+		StartPlaying()
+	return TRUE
+
+/obj/machinery/media/jukebox/proc/ui_act_loopmode(datum/act/op/A, loopmode)
+	var/newval = loopmode
+	set_loop_mode(sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode))
+	return TRUE
+
+/obj/machinery/media/jukebox/proc/ui_act_volume(datum/act/op/A, val)
+	var/newval = val
+	set_volume(clamp(newval, 0, 1))
+	update_music() // To broadcast volume change without restarting song
+	return TRUE
+
+/obj/machinery/media/jukebox/proc/ui_act_stop(datum/act/op/A)
+	StopPlaying()
+	return OP_OK
+
+/obj/machinery/media/jukebox/proc/ui_act_play(datum/act/op/A)
+	var/mob/user = A.actor
+	if(emagged())
+		play_sfx(src, SFX_ITEMS_AIRHORN)
+		for(var/mob/living/carbon/M in ohearers(6, src))
+			if(M.get_ear_protection() >= 2)
+				continue
+			M.status_set(STAT_SLEEPING, 0)
+			M.status_adjust(STAT_STUTTERING, 20)
+			M.status_adjust(STAT_DEAFENED, 30)
+			M.deaf_loop.start() // Ear Ringing/Deafness
+			M.status_at_least(STAT_WEAKENED, 3)
+			if(prob(30))
+				M.status_at_least(STAT_STUNNED, 10)
+				M.status_at_least(STAT_PARALYZED, 4)
+			else
+				M.status_adjust(STAT_JITTERY, 500)
+		if(!after_pending(src, "jukebox_emag_explosion"))
+			after(src, 1.5 SECONDS, PROC_REF(explode), key = "jukebox_emag_explosion")
+	else if(current_track() == null)
+		to_chat(user, "No track selected.")
+	else
+		StartPlaying()
+	return TRUE
+
+/obj/machinery/media/jukebox/proc/ui_act_add_new_track(datum/act/op/A, artist, duration, genre, lobby, secret, title, url)
+	var/mob/user = A.actor
+	SSmedia_tracks.add_track(user, url, title, duration * 10, artist, genre, secret, lobby)
+
+/obj/machinery/media/jukebox/proc/ui_act_remove_new_track(datum/act/op/A, raw_ref)
+	var/mob/user = A.actor
+	var/datum/track/track_to_remove = ui_ref(raw_ref, getTracksList(), /datum/track)
+	if(track_to_remove == current_track() && playing)
+		StopPlaying()
+	SSmedia_tracks.remove_track(user, track_to_remove)
+
+/obj/machinery/media/jukebox/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
+	return proximity_flag
+
+/obj/machinery/media/jukebox/proc/explode()
+	walk_to(src,0)
+	src.visible_message(span_danger("\The [src] blows apart!"), 1)
+
+	explosion(src.loc, 0, 0, 1, rand(1,2), 1)
+
+	fx_sparks(src, 3)
+
+	replace_with(src, /obj/effect/decal/cleanable/blood/oil)
+
+/obj/machinery/media/jukebox/proc/on_emag(datum/act/op/A)
+	set_emagged(1)
+	StopPlaying()
+	visible_message(span_danger("\The [src] makes a fizzling sound."))
+	return OP_OK
+
+/obj/machinery/media/jukebox/proc/StopPlaying()
+	set_playing(0)
+	set_use_power(USE_POWER_IDLE)
+	start_stop_song()
+
+/obj/machinery/media/jukebox/proc/StartPlaying()
+	if(!current_track())
+		return
+	set_playing(1)
+	set_use_power(USE_POWER_ACTIVE)
+	start_stop_song()
+
+// Advance to the next track - Don't start playing it unless we were already playing
+/obj/machinery/media/jukebox/proc/NextTrack()
+	var/list/tracks = getTracksList()
+	if(!tracks.len) return
+	var/curTrackIndex = max(1, tracks.Find(current_track()))
+	var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
+	rel_set(src, nameof(current_track), tracks[newTrackIndex])
+	if(playing)
+		start_stop_song()
+
+// Advance to the next track - Don't start playing it unless we were already playing
+/obj/machinery/media/jukebox/proc/PrevTrack()
+	var/list/tracks = getTracksList()
+	if(!tracks.len) return
+	var/curTrackIndex = max(1, tracks.Find(current_track()))
+	var/newTrackIndex = curTrackIndex == 1 ? tracks.len : curTrackIndex - 1
+	rel_set(src, nameof(current_track), tracks[newTrackIndex])
+	if(playing)
+		start_stop_song()
+
+//Pre-hacked Jukebox, has the full sond list unlocked
+/obj/machinery/media/jukebox/hacked
+	name = "DRM free space jukebox"
+	desc = "Filled with songs both past and present! Unlocked for your convenience!"
+	hacked = 1
+
+// Ghostly jukebox for adminbuse
+/obj/machinery/media/jukebox/ghost
+	name = "ghost jukebox"
+	desc = "A jukebox from the nether-realms! Spooky."
+
+	plane = PLANE_GHOSTS
+	invisibility = INVISIBILITY_OBSERVER
+	alpha = 127
+
+	icon_state = "jukebox2-virtual"
+
+	density = FALSE
+	hacked = TRUE
+
+	use_power = USE_POWER_OFF
+	circuit = null
+
+	var/list/custom_tracks
+
+CAPABILITIES(/obj/machinery/media/jukebox/ghost)
+	without("silicon_hand") // silicons can't use it by a plain click
+	op("vv_add_track", topic_in(VV_TOPIC, "add_track"), needs(req_rights(R_FUN|R_ADMIN)), asks(/datum/prompt/text, fields = list("title" = "Track URL", "question" = "REQUIRED: Provide URL for track", "timeout" = 0), step = "url"), asks(/datum/prompt/text, fields = list("title" = "Track Title", "question" = "REQUIRED: Provide title for track", "timeout" = 0), step = "title", when = PROC_REF(track_url_entered)), asks(/datum/prompt/number, fields = list("title" = "Track Duration", "question" = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", "timeout" = 0), step = "duration", when = PROC_REF(track_title_entered)), asks(/datum/prompt/text, fields = list("title" = "Track Artist", "question" = "Optional: Provide artist for track", "timeout" = 0), step = "artist", when = PROC_REF(track_duration_entered)), then(PROC_REF(vv_topic_add_track)), on_interrupt(PROC_REF(vv_track_interrupted)))
+	op("vv_remove_track", topic_in(VV_TOPIC, "remove_track"), needs(req_rights(R_FUN|R_ADMIN)), asks(/datum/prompt/text, fields = list("title" = "Remove Track", "question" = "Input track title or URL to remove (must be exact)", "timeout" = 0)), then(PROC_REF(vv_topic_remove_track)))
+	op("ghost_use", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(ghost_jukebox_observer_use)))
+	owns_many(nameof(custom_tracks))
+	// its legacy interactions replaced the jukebox's (no ..()): a ghost jukebox takes no touch or item
+	without("fingerprint")
+	without("interact")
+
+// Just junk to make it sneaky - I wish a lot more stuff was on /obj/machinery/media instead of /jukebox so I could use that.
+/obj/machinery/media/jukebox/ghost/is_incorporeal()
+	return TRUE
+/obj/machinery/media/jukebox/ghost/audible_message(message, deaf_message, hearing_distance, radio_message, runemessage)
+	return
+/obj/machinery/media/jukebox/ghost/visible_message(message, blind_message, list/exclude_mobs, range, runemessage)
+	return
+/// Untouchable: no interactions at all (the old attackby/attack_hand returned); only ghosts use it.
+
+/obj/machinery/media/jukebox/ghost/set_use_power(new_use_power)
+	return
+/obj/machinery/media/jukebox/ghost/power_change()
+	return
+/obj/machinery/media/jukebox/ghost/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	return
+/obj/machinery/media/jukebox/ghost/explode()
+	return
+/// The ghost jukebox shows its mapped sprite, none of the jukebox's states or layers.
+/obj/machinery/media/jukebox/ghost/jukebox_look(datum/look/look)
+	look.state(null)
+
+/// While it plays it pulses (the animation is an effect of the look, run after it is applied).
+/obj/machinery/media/jukebox/ghost/draw(datum/look/look)
+	..()
+	look.effect(PROC_REF(ghost_pulse), playing)
+
+/obj/machinery/media/jukebox/ghost/proc/ghost_pulse(now_playing)
+	if(now_playing)
+		animate(src, alpha = 200, time = 5, loop = -1)
+	else
+		animate(src, alpha = initial(alpha), time = 10)
+// End junk
+
+/// Old attack_ghost: staff get the controls, other ghosts hear what's playing.
+/obj/machinery/media/jukebox/ghost/proc/ghost_jukebox_observer_use(datum/act/op/A)
+	var/mob/observer/dead/M = A.actor
+	if(!istype(M))
+		return TRUE
+
+	if(admin_require(M.client, R_FUN|R_ADMIN, "ghost_jukebox_observer_use", 0))
+		interact(M)
+	else if(current_track())
+		to_chat(M, "\The [src] is playing [current_track().display()].")
+	else
+		to_chat(M, "\The [src] is not playing any music.")
+	return TRUE
+
+/obj/machinery/media/jukebox/ghost/getTracksList()
+	return (custom_tracks + ..())
+
+/obj/machinery/media/jukebox/ghost/proc/remove_custom_track(mob/user, track)
+	var/client/C = user?.client
+	if(!track)
+		return
+
+	for(var/datum/track/T in custom_tracks)
+		if(T.title == track || T.url == track)
+			rel_remove(src, nameof(custom_tracks), T)
+			return
+
+	to_chat(C, span_warning("Couldn't find a track matching the specified parameters."))
+
+/obj/machinery/media/jukebox/ghost/vv_get_dropdown()
+	. = ..()
+	VV_DROPDOWN_OPTION("", "---")
+	VV_DROPDOWN_OPTION("add_track", "Add New Track")
+	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
+
+/obj/machinery/media/jukebox/ghost/proc/vv_topic_add_track(datum/act/op/A)
+	if(track_duration_entered(A))
+		rel_add(src, nameof(custom_tracks), new /datum/track(A.step_value("url"), A.step_value("title"), A.step_value("duration"), A.step_value("artist") || "", "! Admin Loaded !"))
+	A.actor.client?.debug_variables(src)
+	return OP_OK
+
+/obj/machinery/media/jukebox/ghost/proc/vv_topic_remove_track(datum/act/op/A)
+	remove_custom_track(A.actor, A.answer?.value)
+	A.actor.client?.debug_variables(src)
+	return OP_OK
+
+/obj/machinery/media/jukebox/ghost/proc/vv_track_interrupted(datum/act/op/A)
+	if(A.reason != /datum/msg/op/answer_no || !track_duration_entered(A))
+		return OP_OK
+	var/datum/entry/part/req/rights/needed = req_rights(R_FUN|R_ADMIN)
+	if(!needed.holds(A))
+		return OP_OK
+	return vv_topic_add_track(A)
+
+/obj/machinery/media/jukebox/ghost/proc/track_url_entered(datum/act/op/A)
+	return !!A.step_value("url")
+
+/obj/machinery/media/jukebox/ghost/proc/track_title_entered(datum/act/op/A)
+	return track_url_entered(A) && !!A.step_value("title")
+
+/obj/machinery/media/jukebox/ghost/proc/track_duration_entered(datum/act/op/A)
+	return track_title_entered(A) && !!A.step_value("duration")
+
+/obj/machinery/media/jukebox/casinojukebox
+	name = "space casino jukebox"
+	desc = "A jukebox to play the tracks on the golden goose, jazzy~"
+	icon = 'icons/obj/casino_ch.dmi'
+	icon_state = "casinojukebox-nopower"
+	state_base = "casinojukebox"
+
+	use_power = USE_POWER_OFF
+
+/obj/machinery/media/jukebox/casinojukebox/getTracksList()
+	return media_tracks_casino_tracks()
+
+/// Whether its work starts at initialization (started_work(starts =)).
+/obj/machinery/media/jukebox/step_start_condition()
+	return playing
+
+/// current track (a relation view: it reads null once the target is deleted).
+/obj/machinery/media/jukebox/proc/current_track() as /datum/track
+	return current_track
+
+// ---- the wires ----
+
+/// The lights hint at the state each wire drives.
+/obj/machinery/media/jukebox/proc/wire_lights()
+	return list(
+		"The power light is [(broken_now() || power_lost()) ? "off." : "on."]",
+		"The parental guidance light is [hacked ? "off." : "on."]",
+		"The data light is [wire_is_cut(src, WIRE_REVERSE) ? "hauntingly dark." : "glowing softly."]")
+
+/// A wire cut or mended: the power wire shocks, the hack wire hacks, the playback wires set the speed and direction.
+/obj/machinery/media/jukebox/proc/wire_cut_heard(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	switch(N.wire)
+		if(WIRE_MAIN_POWER1)
+			shock(N.user, 90)
+		if(WIRE_JUKEBOX_HACK)
+			set_hacked(!N.mended)
+		if(WIRE_SPEEDUP, WIRE_SPEEDDOWN, WIRE_REVERSE)
+			var/newfreq = wire_is_cut(src, WIRE_REVERSE) ? -1 : 1
+			if(wire_is_cut(src, WIRE_SPEEDUP))
+				newfreq *= 2
+			if(wire_is_cut(src, WIRE_SPEEDDOWN))
+				newfreq *= 0.5
+			freq = newfreq
+
+/// A wire pulsed: each gives a hint of what it does; the playback wires work the player; the duds may shock.
+/obj/machinery/media/jukebox/proc/wire_pulse_heard(datum/act/A)
+	var/datum/notice/wire_pulsed/N = A
+	switch(N.wire)
+		if(WIRE_MAIN_POWER1)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The power light flickers."))
+			shock(N.user, 90)
+		if(WIRE_JUKEBOX_HACK)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The parental guidance light flickers."))
+		if(WIRE_REVERSE)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The data light blinks ominously."))
+		if(WIRE_SPEEDUP)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The speakers squeaks."))
+		if(WIRE_SPEEDDOWN)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The speakers rumble."))
+		if(WIRE_START)
+			StartPlaying()
+		if(WIRE_STOP)
+			StopPlaying()
+		if(WIRE_PREV)
+			PrevTrack()
+		if(WIRE_NEXT)
+			NextTrack()
+		else
+			shock(N.user, 10) // the nothing wires give a chance to shock just for fun

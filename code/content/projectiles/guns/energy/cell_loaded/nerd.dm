@@ -8,12 +8,12 @@
 	desc = "The Nanite Emergency Response Device 'medigun', or NERD for short, is a powerful cell-based ranged healing device based on the HI-102b NSCW. \
 	It uses an internal nanite fabricator, powered and controlled by discrete cells, to deliver a variety of effects at range. Up to six combinations of \
 	healing beams can be configured at once, depending on cartridge used. Ammo not included."
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)
 
 	icon_state = "nerd"
 	allowed_magazines = list(/obj/item/ammo_magazine/cell_mag/medical)
 
 CAPABILITIES(/obj/item/gun/projectile/cell_loaded/medical)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)))
 	configure(atom_rules(description_fluff = "The Vey-Med NERD 'Medigun' allows one to customize their loadout in the field, or before deploying, to allow emergency response personnel to deliver a variety of ranged healing options.", description_antag = ""))
 
 /obj/item/gun/projectile/cell_loaded/medical/cmo
@@ -32,9 +32,11 @@ CAPABILITIES(/obj/item/gun/projectile/cell_loaded/medical)
 /obj/item/ammo_magazine/cell_mag/medical //medical
 	name = "nanite magazine"
 	desc = "A nanite fabrication magazine for the \'NERD\'"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)
 	ammo_type = /obj/item/ammo_casing/microbattery/medical
 	icon_state = "nerd_mag"
+
+CAPABILITIES(/obj/item/ammo_magazine/cell_mag/medical)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)))
 
 /obj/item/ammo_magazine/cell_mag/medical/advanced
 	name = "advanced nanite magazine"

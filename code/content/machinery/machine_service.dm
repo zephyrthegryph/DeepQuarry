@@ -35,18 +35,10 @@ SYSTEM_DEF(machines)
 	var/last_pump_commit_operations = 0
 	var/last_pump_commit_turfs = 0
 
-	/// Gas dependency observations (the frame's CHANGED records of gas watches, native_system().take_gas_changes()) retained while a step yields.
-	var/list/pending_dirty_gas_mixtures
-	var/pending_dirty_gas_index = 1
-	var/gas_dirty_last = 0
+	/// Machines a gas watch has woken since boot (note_gas_woken()).
 	var/gas_woken_last = 0
-	var/gas_dead_last = 0
-	var/gas_wake_scan_last_ms = 0
-	var/gas_wake_subscribers_last = 0
-	var/current_gas_wake_scan_ms = 0
-	var/current_gas_wake_subscribers = 0
 
-/// Boot: one power step, then a complete gas wake and pump commit (SSair.Initialize calls this
+/// Boot: one power step, then a pump commit (SSair.Initialize calls this
 /// where SSmachines used to initialize, before the atmos machinery setup).
 /// SSair boots it by hand (kernel_boot_system()) at the top of its own initialize(): the machine step needs the map and
 /// the pipenets, so it is not a node of the boot DAG.
@@ -55,14 +47,11 @@ SYSTEM_DEF(machines)
 
 /datum/system/machines/initialize()
 	process_power()
-	while(!wake_dirty_gas_subscribers(FALSE))
-		continue
 	flush_pump_transfers()
-	log_world("Machine service initialized: [length(power_grids.ids())] power regions, [gas_dirty_last] gas observations.")
+	log_world("Machine service initialized: [length(power_grids.ids())] power regions.")
 
-/// Gas watches, then the pump transfers the pipeline devices queued since the last commit, then
-/// the power step. The gas wake may yield; the power step only starts once it has completed, and its
-/// APC/SMES poll may yield too (a resumed step carries on with the poll).
+/// The pump transfers the pipeline devices queued since the last commit, then the power step. The
+/// APC/SMES poll may yield (a resumed step carries on with the poll).
 /datum/system/machines/reactions()
 	. = ..()
 	. += every(MACHINE_SERVICE_INTERVAL, PROC_REF(machine_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
@@ -78,14 +67,8 @@ SYSTEM_DEF(machines)
 		var/started = TICK_USAGE
 		if(!resumed)
 			current_cost_machinery = 0
-			current_gas_wake_scan_ms = 0
-			current_gas_wake_subscribers = 0
-		var/complete = wake_dirty_gas_subscribers(TRUE)
-		if(complete)
-			flush_pump_transfers()
+		flush_pump_transfers()
 		current_cost_machinery += TICK_USAGE_TO_MS(started)
-		if(!complete)
-			return FALSE
 		last_cost_machinery = current_cost_machinery
 		cost_machinery = KERNEL_AVERAGE(cost_machinery, last_cost_machinery)
 		current_cost_powernets = 0
@@ -114,7 +97,7 @@ SYSTEM_DEF(machines)
 /// machine's region. Queues the SMES for poll_power_storage().
 /datum/system/machines/proc/process_power_begin()
 	power_flush_areas()
-	vg_power_commit()
+	power_net_commit()
 	var/list/sync_ids = list()
 	for(var/id in power_grids.ids())
 		sync_ids |= list(id)
@@ -124,7 +107,7 @@ SYSTEM_DEF(machines)
 		if(id <= 0)
 			continue // detached test grids have no native ledger and keep their real tracked fields
 		if(!power_grids.lookup(id))
-			var/list/info = vg_power_region_read(id)
+			var/list/info = power_net_region_read(id)
 			if(!islist(info) || length(info) < 3)
 				continue // a watched stale native identity remains absent until a real region exists
 			var/datum/power_grid/adopted = power_grid(id) // system write boundary publishes this numeric identity
@@ -168,7 +151,7 @@ SYSTEM_DEF(machines)
 	. = "[..()]C:{MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
 	. += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]} "
 	. += "PN:[length(power_grids.ids())]|"
-	. += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
+	. += "GW:[gas_woken_last]"
 
 /datum/system/machines/proc/flush_pump_transfers()
 	if(!length(pending_pump_transfers))
@@ -198,7 +181,7 @@ SYSTEM_DEF(machines)
 		operations[operation_offset + 3] = transfer[3]
 		operations[operation_offset + 4] = transfer[10]
 		operations[operation_offset + 5] = transfer[4]
-	var/list/actual_moles = vg_batch_transfer_hook(operations)
+	var/list/actual_moles = atmos_batch_transfer(operations)
 	var/list/touched_turfs = list()
 	for(var/i = 1 to length(pending_pump_transfers))
 		var/list/transfer = pending_pump_transfers[i]
@@ -238,39 +221,3 @@ SYSTEM_DEF(machines)
 	last_pump_commit_suspended_ms = max(last_pump_commit_wall_ms - last_pump_commit_ms, 0)
 	pending_pump_transfers.Cut()
 
-/// Hands this batch of gas dependency observations (from the frame's outbox) to their native watches
-/// (/datum/native_watch/gas, code/datums/om/native.dm). The OM watch layer owns one
-/// native watch per watched mixture (code/datums/om/watch.dm), which fans the record
-/// directly to each surviving native gas subscription.
-/datum/system/machines/proc/wake_dirty_gas_subscribers(budgeted = FALSE)
-	var/scan_started = TICK_USAGE
-	if(!pending_dirty_gas_mixtures)
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-		// Tests drive Rust by hand, not through OM ticks: what the next frame would have delivered is delivered now.
-		native_system().drain()
-#endif
-		pending_dirty_gas_mixtures = native_system().take_gas_changes() || list()
-		pending_dirty_gas_index = 1
-		gas_dirty_last = length(pending_dirty_gas_mixtures) / GAS_DEPENDENCY_OBSERVATION_STRIDE
-		gas_woken_last = 0
-		gas_dead_last = 0
-	var/list/observations = pending_dirty_gas_mixtures
-	while(pending_dirty_gas_index <= length(observations))
-		var/record = pending_dirty_gas_index
-		pending_dirty_gas_index += GAS_DEPENDENCY_OBSERVATION_STRIDE
-		var/datum/native_watch/gas/W = kernel_native_native_watch_of(observations[record])
-		if(!W)
-			gas_dead_last++
-			continue
-		current_gas_wake_subscribers++
-		// The owner reads the record from its mixture id on (index + 1).
-		W.fire(list(observations[record + 1], observations[record + 2], observations, record + 1))
-		if(budgeted && TICK_CHECK)
-			current_gas_wake_scan_ms += TICK_DELTA_TO_MS(TICK_USAGE - scan_started)
-			return FALSE
-	pending_dirty_gas_mixtures = null
-	pending_dirty_gas_index = 1
-	current_gas_wake_scan_ms += TICK_DELTA_TO_MS(TICK_USAGE - scan_started)
-	gas_wake_scan_last_ms = current_gas_wake_scan_ms
-	gas_wake_subscribers_last = current_gas_wake_subscribers
-	return TRUE

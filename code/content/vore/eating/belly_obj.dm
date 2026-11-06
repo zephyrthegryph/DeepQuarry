@@ -1,0 +1,1283 @@
+#define MAX_ENTRY_MESSAAGES 20
+#define ENTRY_MESSAGE_INTERVAL 1 SECOND
+
+//
+//  Belly system 2.0, now using objects instead of datums because EH at datums.
+//	How many times have I rewritten bellies and vore now? -Aro
+//
+
+//
+// Parent type of all the various "belly" varieties.
+//
+
+/obj/belly
+	// Nothing inside a belly is EMPed through it. A type default, not set in
+	// Initialize(), so it matches initial() and stays out of the belly prefs.
+	name = "belly"							// Name of this location
+	desc = "It's a belly! You're in it!"	// Flavor text description of inside sight/sound/smells/feels.
+	var/display_name = ""					// Optional display name
+	var/message_mode = FALSE				// If all options for messages are shown
+	var/vore_sound = "Gulp"					// Sound when ingesting someone
+	var/vore_verb = "ingest"				// Verb for eating with this in messages
+	var/release_verb = "expels"				// Verb for releasing something from a stomach
+	var/human_prey_swallow_time = 100		// Time in deciseconds to swallow /mob/living/carbon/human
+	var/nonhuman_prey_swallow_time = 30		// Time in deciseconds to swallow anything else
+	var/nutrition_percent = 100				// Nutritional percentage per tick in digestion mode
+	var/digest_max = 36						// maximum total damage across all types
+	var/digest_brute = 0.5					// Brute damage per tick in digestion mode
+	var/digest_burn = 0.5					// Burn damage per tick in digestion mode
+	var/digest_oxy = 0						// Oxy damage per tick in digestion mode
+	var/digest_tox = 0						// Toxins damage per tick in digestion mode
+	var/digest_clone = 0					// Clone damage per tick in digestion mode
+	var/immutable = FALSE					// Prevents this belly from being deleted
+	var/escapable = B_ESCAPABLE_NONE		// Belly can be resisted out of at any time
+	var/escapetime = 10 SECONDS				// Deciseconds, how long to escape this belly
+	var/selectchance = 0					// % Chance of stomach switching to selective mode if prey struggles
+	var/digestchance = 0					// % Chance of stomach beginning to digest if prey struggles
+	var/absorbchance = 0					// % Chance of stomach beginning to absorb if prey struggles
+	var/escapechance = 0 					// % Chance of prey beginning to escape if prey struggles.
+	var/escapechance_absorbed = 0			// % Chance of absorbed prey finishing an escape. Requires a successful escape roll against the above as well.
+	var/escape_stun = 0						// AI controlled mobs with a number here will be weakened by the provided var when someone escapes, to prevent endless nom loops
+	var/transferchance = 0 					// % Chance of prey being trasnsfered, goes from 0-100%
+	var/transferchance_secondary = 0 		// % Chance of prey being transfered to transferchance_secondary, also goes 0-100%
+	var/save_digest_mode = TRUE				// Whether this belly's digest mode persists across rounds
+	var/can_taste = FALSE					// If this belly prints the flavor of prey when it eats someone.
+	var/bulge_size = 0.25					// The minimum size the prey has to be in order to show up on examine.
+	var/display_absorbed_examine = FALSE	// Do we display absorption examine messages for this belly at all?
+	var/absorbed_desc						// Desc shown to absorbed prey. Defaults to regular if left empty.
+	var/shrink_grow_size = 1				// This horribly named variable determines the minimum/maximum size it will shrink/grow prey to.
+	var/transferlocation					// Location that the prey is released if they struggle and get dropped off.
+	var/transferlocation_secondary			// Secondary location that prey is released to.
+	var/transferlocation_absorb				// Location that prey is moved to if they get absorbed.
+	var/release_sound = "Splatter"			// Sound for letting someone out. Replaced from True/false
+	var/mode_flags = 0						// Stripping, numbing, etc.
+	var/fancy_vore = FALSE					// Using the new sounds?
+	var/is_wet = TRUE						// Is this belly's insides made of slimy parts?
+	var/wet_loop = TRUE						// Does the belly have a fleshy loop playing?
+	var/tmp/obj/item/storage/vore_egg/ownegg	// Is this belly creating an egg?
+	var/egg_type = "Egg"					// Default egg type and path.
+	var/tmp/egg_path = /obj/item/storage/vore_egg
+	var/egg_name = null						// Custom egg name
+	var/egg_size = 0						// Custom egg size
+	var/list/list/emote_lists			// Shared empty list until customized (own_emote_lists()). Idle emotes that happen on their own, depending on the bellymode. Contains lists of strings indexed by bellymode
+	var/emote_time = 60						// How long between stomach emotes at prey (in seconds)
+	var/emote_active = TRUE					// Are we even giving emotes out at all or not?
+	var/tmp/next_emote = 0						// When we're supposed to print our next emote, as a world.time
+	var/selective_preference = DM_DIGEST	// Which type of selective bellymode do we default to?
+	var/eating_privacy_local = "default"	//Overrides eating_privacy_global if not "default". Determines if attempt/success messages are subtle/loud
+	var/is_feedable = TRUE					// If this belly shows up in belly selections for others.
+	var/silicon_belly_overlay_preference = "Sleeper" //Selects between placing belly overlay in sleeper or normal vore mode. Exclusive
+	var/belly_mob_mult = 1					//Multiplier for how filling mob types are in borg bellies
+	var/belly_item_mult = 1 				//Multiplier for how filling items are in borg borg bellies. Items are also weighted on item size
+	var/belly_overall_mult = 1				//Multiplier applied ontop of any other specific multipliers
+	var/private_struggle = FALSE			// If struggles are made public or not
+	var/prevent_saving = FALSE				// Can this belly be saved? For special bellies that mobs and adminbus might have.
+	var/absorbedrename_enabled = FALSE		// If absorbed prey are renamed.
+	var/absorbedrename_name = "%pred's %belly"	// What absorbed prey are renamed to.
+
+	var/vore_sprite_flags = DM_FLAG_VORESPRITE_BELLY
+	var/tmp/static/list/vore_sprite_flag_list= list(
+		"Normal Belly Sprite" = DM_FLAG_VORESPRITE_BELLY,
+		//"Tail adjustment" = DM_FLAG_VORESPRITE_TAIL,
+		//"Marking addition" = DM_FLAG_VORESPRITE_MARKING
+		"Undergarment addition" = DM_FLAG_VORESPRITE_ARTICLE,
+		)
+	var/affects_vore_sprites = FALSE
+	var/count_absorbed_prey_for_sprite = TRUE
+	var/absorbed_multiplier = 1
+	var/count_liquid_for_sprite = FALSE
+	var/liquid_multiplier = 1
+	var/count_items_for_sprite = FALSE
+	var/item_multiplier = 1
+	var/health_impacts_size = TRUE
+	var/resist_triggers_animation = TRUE
+	var/size_factor_for_sprite = 1
+	var/belly_sprite_to_affect = "stomach"
+	var/tmp/datum/sprite_accessory/tail/tail_to_change_to_static
+	var/tmp/tail_colouration = FALSE
+	var/tmp/tail_extra_overlay = FALSE
+	var/tmp/tail_extra_overlay2 = FALSE
+	var/undergarment_chosen = "Underwear, bottom"
+	var/undergarment_if_none
+	var/undergarment_color = COLOR_GRAY
+
+	// Generally just used by AI
+	var/autotransferchance = 0 				// % Chance of prey being autotransferred to transfer location
+	var/autotransferwait = 10 				// Time between trying to transfer.
+	var/autotransferlocation				// Place to send them
+	var/list/autotransferextralocation	// List of extra places this could go (shared until written)
+	var/autotransfer_whitelist = 0			// Flags for what can be transferred to the primary location
+	var/autotransfer_blacklist = 2			// Flags for what can not be transferred to the primary location, defaults to Absorbed
+	var/autotransfer_whitelist_items = 0	// Flags for what can be transferred to the primary location
+	var/autotransfer_blacklist_items = 0	// Flags for what can not be transferred to the primary location
+	var/autotransferchance_secondary = 0 	// % Chance of prey being autotransferred to secondary transfer location
+	var/autotransferlocation_secondary		// Second place to send them
+	var/list/autotransferextralocation_secondary	// List of extra places the secondary transfer could go (shared until written)
+	var/autotransfer_secondary_whitelist = 0// Flags for what can be transferred to the secondary location
+	var/autotransfer_secondary_blacklist = 2// Flags for what can not be transferred to the secondary location, defaults to Absorbed
+	var/autotransfer_secondary_whitelist_items = 0// Flags for what can be transferred to the secondary location
+	var/autotransfer_secondary_blacklist_items = 0// Flags for what can not be transferred to the secondary location
+	var/autotransfer_enabled = FALSE		// Player toggle
+	var/autotransfer_min_amount = 0			// Minimum amount of things to pass at once.
+	var/autotransfer_max_amount = 0			// Maximum amount of things to pass at once.
+	//Auto-transfer flags for whitelist
+	var/tmp/static/list/autotransfer_flags_list = list("Creatures" = AT_FLAG_CREATURES, "Absorbed" = AT_FLAG_ABSORBED, "Carbon" = AT_FLAG_CARBON, "Silicon" = AT_FLAG_SILICON, "Mobs" = AT_FLAG_MOBS, "Animals" = AT_FLAG_ANIMALS, "Mice" = AT_FLAG_MICE, "Dead" = AT_FLAG_DEAD, "Digestable Creatures" = AT_FLAG_CANDIGEST, "Absorbable Creatures" = AT_FLAG_CANABSORB, "Full Health" = AT_FLAG_HEALTHY)
+	var/tmp/static/list/autotransfer_flags_list_items = list("Items" = AT_FLAG_ITEMS, "Trash" = AT_FLAG_TRASH, "Eggs" = AT_FLAG_EGGS, "Remains" = AT_FLAG_REMAINS, "Indigestible Items" = AT_FLAG_INDIGESTIBLE, "Recyclable Items" = AT_FLAG_RECYCLABLE, "Ores" = AT_FLAG_ORES, "Clothes and Bags" = AT_FLAG_CLOTHES, "Food" = AT_FLAG_FOOD)
+
+	//I don't think we've ever altered these lists. making them static until someone actually overrides them somewhere.
+	//Actual full digest modes
+	var/tmp/static/list/digest_modes = list(DM_HOLD,DM_DIGEST,DM_ABSORB,DM_DRAIN,DM_SELECT,DM_UNABSORB,DM_HEAL,DM_SHRINK,DM_GROW,DM_SIZE_STEAL,DM_EGG)
+	//Digest mode addon flags
+	var/tmp/static/list/mode_flag_list = list("Numbing" = DM_FLAG_NUMBING, "Stripping" = DM_FLAG_STRIPPING, "Leave Remains" = DM_FLAG_LEAVEREMAINS, "Muffles" = DM_FLAG_THICKBELLY, "Affect Worn Items" = DM_FLAG_AFFECTWORN, "Jams Sensors" = DM_FLAG_JAMSENSORS, "Complete Absorb" = DM_FLAG_FORCEPSAY, "Spare Prosthetics" = DM_FLAG_SPARELIMB, "Slow Body Digestion" = DM_FLAG_SLOWBODY, "Muffle Items" = DM_FLAG_MUFFLEITEMS, "TURBO MODE" = DM_FLAG_TURBOMODE, "Absorbed Prey Can Devour" = DM_FLAG_ABSORBEDVORE, "Makes Prey Wet" = DM_FLAG_WETTENS)
+	//Item related modes
+	var/tmp/static/list/item_digest_modes = list(IM_HOLD,IM_DIGEST_FOOD,IM_DIGEST,IM_DIGEST_PARALLEL)
+	//drain modes
+	var/tmp/static/list/drainmodes = list(DR_NORMAL,DR_SLEEP,DR_FAKE,DR_WEIGHT)
+
+	//List of slots that stripping handles strips
+	var/tmp/static/list/slots = list(SLOT_ID_BACK,SLOT_ID_HANDCUFFED,SLOT_ID_POCKET_L,SLOT_ID_POCKET_R,SLOT_ID_MASK,SLOT_ID_HAND_L,SLOT_ID_HAND_R,SLOT_ID_ID,SLOT_ID_EYES,SLOT_ID_GLOVES,SLOT_ID_HEAD,SLOT_ID_SHOES,SLOT_ID_BELT,SLOT_ID_SUIT,SLOT_ID_UNIFORM,SLOT_ID_SUIT_STORAGE,SLOT_ID_EAR_L,SLOT_ID_EAR_R)
+
+	var/tmp/mob/living/owner					// The mob whose belly this is.
+	var/digest_mode = DM_HOLD				// Current mode the belly is set to from digest_modes (+transform_modes if human)
+	var/tmp/list/items_preserved		// Lazy. Stuff that wont digest so we shouldn't process it again.
+	var/tmp/recent_sound = FALSE				// Prevent audio spam
+	var/tmp/drainmode = DR_NORMAL				// Simply drains the prey then does nothing.
+	var/tmp/digested_prey_count = 0				// Amount of prey that have been digested
+
+	var/item_digest_mode = IM_DIGEST_FOOD	// Current item-related mode from item_digest_modes
+	var/contaminates = TRUE // Whether the belly will contaminate stuff //
+	var/contamination_flavor = "Generic"	// Determines descriptions of contaminated items
+	var/contamination_color = "green"		// Color of contamination overlay
+
+	// Lets you do a fullscreen overlay. Set to an icon_state string.
+	var/belly_fullscreen = ""
+	var/disable_hud = FALSE
+	var/colorization_enabled = TRUE
+	var/belly_fullscreen_color = "#823232"
+	var/belly_fullscreen_color2 = "#FFFFFF"
+	var/belly_fullscreen_color3 = "#823232"
+	var/belly_fullscreen_color4 = "#FFFFFF"
+	var/belly_fullscreen_alpha = 255
+
+	// Liquid belly vars
+	var/reagent_gen_cost_limit = 10			//Our lower percentage limit of nutrition / charge until which we produce liquids
+	var/reagentbellymode = FALSE			// Belly has abilities to make liquids from digested/absorbed/drained prey and/or nutrition
+	var/reagent_mode_flags = 0
+
+	var/tmp/static/list/reagent_mode_flag_list= list(
+		"Produce Liquids" = DM_FLAG_REAGENTSNUTRI,
+		"Digestion Liquids" = DM_FLAG_REAGENTSDIGEST,
+		"Absorption Liquids" = DM_FLAG_REAGENTSABSORB,
+		"Draining Liquids" = DM_FLAG_REAGENTSDRAIN
+		)
+
+	var/show_liquids = FALSE //Moved from vorepanel_ch to be a belly var
+	var/show_fullness_messages = FALSE //Moved from vorepanel_ch to be a belly var
+	var/liquid_overlay = TRUE						//Belly-specific liquid overlay toggle
+	var/max_liquid_level = 100						//Custom max level for liquid overlay
+	var/mush_overlay = FALSE						//Toggle for nutrition mush overlay
+	var/reagent_touches = TRUE						//If reagents touch and interact with things in belly
+	var/mush_color = "#664330"						//Nutrition mush overlay color
+	var/mush_alpha = 255							//Mush overlay transparency.
+	var/max_mush = 500								//How much nutrition for full mush overlay
+	var/min_mush = 0								//Manual setting for lowest mush level
+	var/item_mush_val = 0							//How much solid belly contents raise mush level per item
+	var/metabolism_overlay = FALSE					//Extra mush layer for ingested reagents currently in metabolism.
+	var/metabolism_mush_ratio = 15					//Metabolism reagent volume per unit compared to nutrition units.
+	var/max_ingested = 500							//How much metabolism content for full overlay.
+	var/custom_ingested_color = null				//Custom color for ingested reagent layer.
+	var/custom_ingested_alpha = 255					//Custom alpha for ingested reagent layer if not using normal mush layer.
+
+	var/nutri_reagent_gen = FALSE					//if belly produces reagent over time using nutrition, needs to be optimized to use subsystem - Jack
+	var/is_beneficial = FALSE							//Sets a reagent as a beneficial one / healing reagents
+	var/list/generated_reagents //Shared default: water. Any number of reagents, the associated value is how many units are generated per process()
+	var/reagent_name = REAGENT_ID_WATER 						//What is shown when reagents are removed, doesn't need to be an actual reagent
+	var/reagentid = REAGENT_ID_WATER							//Selected reagent's id, for use in puddle system currently
+	var/reagentcolor = "#0064C877"					//Selected reagent's color, for use in puddle system currently
+	var/custom_reagentcolor							//Custom reagent color. Blank for normal reagent color
+	var/custom_reagentalpha							//Custom reagent alpha. Blank for capacity based alpha
+	var/gen_cost = 1 								//amount of nutrient taken from the host everytime nutrition is used to make reagents
+	var/gen_amount = 1							//Does not actually influence amount produced, but is used as a way to tell the system how much total reagent it has to take into account when filling a belly
+
+	var/tmp/gen_interval = 0							//Interval in seconds for generating fluids, once it reaches the value of gen_time one cycle of reagents generation will occur
+	var/gen_time = 5								//Time it takes in seconds to produce one cycle of reagents, technically add 1 second to it for the tick where the fluid is produced
+	var/gen_time_display = "1 hour"					//The displayed time it takes from a belly to go from 0 to 100
+	var/custom_max_volume = 100						//Variable for people to limit amount of liquid they can receive/produce in a belly
+	var/tmp/digest_nutri_gain = 0						//variable to store temporary nutrition gain from digestion and allow a seperate proc to ease up on the wall of code
+	var/reagent_transfer_verb = "injects"			//verb for transfer of reagent from a vore belly
+
+	var/vorefootsteps_sounds = FALSE				//If this belly can make sounds when someone walks around
+	var/liquid_fullness1_messages = FALSE
+	var/liquid_fullness2_messages = FALSE
+	var/liquid_fullness3_messages = FALSE
+	var/liquid_fullness4_messages = FALSE
+	var/liquid_fullness5_messages = FALSE
+	var/displayed_message_flags = ALL
+	var/vorespawn_blacklist = FALSE
+	var/list/vorespawn_whitelist // Shared empty list until written
+	var/vorespawn_absorbed = 0
+
+	var/list/fullness1_messages
+	var/list/fullness2_messages
+	var/list/fullness3_messages
+	var/list/fullness4_messages
+	var/list/fullness5_messages
+
+	var/tmp/reagent_chosen = REAGENT_WATER				// variable for switch to figure out what to set variables when a certain reagent is selected
+	var/tmp/static/list/reagent_choices = list(		// List of reagents people can chose, maybe one day expand so it covers criterias like dogborgs who can make meds, booze, etc - Jack
+	REAGENT_WATER,
+	REAGENT_MILK,
+	REAGENT_CREAM,
+	REAGENT_HONEY,
+	REAGENT_CHERRYJELLY,
+	REAGENT_STOMACID,
+	REAGENT_DIETSTOMACID,
+	REAGENT_CLEANER,
+	REAGENT_LUBE,
+	REAGENT_BIOMASS,
+	REAGENT_CONCENTRATEDRADIUM,
+	REAGENT_TRICORDRAZINE,
+	REAGENT_ETHANOL
+	)
+
+	// Special var section
+	var/tmp/special_entrance_sound				// Mob specific custom entry sound set by mob's init_vore when applicable
+	var/slow_digestion = FALSE				// Gradual corpse digestion
+	var/slow_brutal = FALSE					// Gradual corpse digestion: Stumpy's Special
+	var/sound_volume = 100					// Volume knob.
+	var/speedy_mob_processing = FALSE		// Turbo mode: the belly cycles three times as often (BELLY_TURBO_TICK), same rates.
+	var/tmp/cycle_sloshed = FALSE				// Has vorgan entrance made a wet slosh this cycle? Soundspam prevention for multiple items entered.
+	var/tmp/egg_cycles = 0						// Process egg mode after 10 cycles.
+	var/recycling = FALSE					// Recycling mode.
+	var/entrance_logs = TRUE				// Belly-specific entry message toggle.
+	var/noise_freq = 42500					// Tasty sound prefs.
+	var/item_digest_logs = FALSE			// Chat messages for digested items.
+	var/storing_nutrition = FALSE			// Storing gained nutrition as paste instead of absorbing it.
+	var/belchchance = 0						// % Chance of pred belching on prey struggle
+
+	var/tmp/list/belly_surrounding		// Lazy. A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
+	var/bellytemperature = T20C				// Temperature applied to humans in the belly.
+	var/temperature_damage = FALSE			// Does temperature damage prey?
+	var/tmp/last_transfer_log = 0				// Prevent server message spam!
+	var/tmp/next_transfer_log = 0				// Prevent server message spam!
+	var/tmp/entrance_log_count = 0				// Entrance count before spawm
+	flags = NOREACT							// We dont want bellies to start bubling nonstop due to people mixing when transfering and making different reagents
+
+// A belly's saved state is its saved vars (code/datums/state/schema.dm): mark
+// runtime vars tmp, and a new saved var is picked up by prefs saving on its own.
+// The liquid in the belly is not part of its preferences, and the digest mode
+// only persists when save_digest_mode is set.
+/obj/belly/state_exclude()
+	. = ..() + list("reagents")
+	if(!save_digest_mode)
+		. += "digest_mode"
+	// Lists still shared with the type's defaults (belly_shared_lists.dm) are not saved:
+	// a load gives the belly the same shared copy.
+	var/list/customized = belly_unshared_list_names()
+	for(var/var_name in GLOBAL_TABLE_GET(belly_default_lists))
+		if(!(var_name in customized))
+			. += var_name
+
+CAPABILITIES(/obj/belly)
+	setup(PROC_REF(belly_share_lists), early = TRUE) // the shared list vars are swapped in before the chain reads them
+	configure(atom_rules(emp_protection = EMP_PROTECT_ALL))
+	setup(PROC_REF(bind_to_owner))
+	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
+	// The mob's selected belly: a sparse link, not a var on /mob (vore_selected_of()).
+	links(LINK_END(/mob, LK_VORE_SELECTED), LINK_END(/obj/belly, LK_VORE_SELECTED_BY), sparse = TRUE, b_many = TRUE)
+	// The belly the mob is previewing the vore FX of: a sparse link, not a var on /mob (vore_previewing_of()).
+	links(LINK_END(/mob, LK_VORE_PREVIEW), LINK_END(/obj/belly, LK_VORE_PREVIEWED_BY), sparse = TRUE, b_many = TRUE)
+	// a belly is an organ of its owner, never a thing on the floor to hit
+	without("melee_hit")
+	reagents(300) // So we can have some liquids in bellies
+	// The prey works its way out, started by start_escape() from relay_resist() / relay_absorbed_resist(). A prey that is out cold goes on with the
+	// default escape (STAY only); the rolled and the absorbed escapes also end if the prey is not conscious, as the old timed actions did.
+	op("belly_escape", ai(), wait(PROC_REF(escape_time), keeps = STAY), on_interrupt(PROC_REF(escape_interrupted)), then(PROC_REF(default_escape_done)))
+	op("belly_escape_rolled", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(chance_escape_done)))
+	op("belly_escape_absorbed", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(absorbed_escape_done)))
+	ref_many(nameof(items_preserved))
+	ref_one(nameof(ownegg))
+	ref_one(nameof(owner))
+
+/// A belly made inside a mob binds to it (setup()); made anywhere else it is probably just in a prefs list.
+// The static option tables, read through a typed receiver: a static read through a local does not evaluate the local, and an untyped receiver
+// lets DreamMaker bind a same-named static of another type.
+/obj/belly/proc/digest_modes_table()
+	return digest_modes
+
+/obj/belly/proc/mode_flag_list_table()
+	return mode_flag_list
+
+/obj/belly/proc/item_digest_modes_table()
+	return item_digest_modes
+
+/obj/belly/proc/drainmodes_table()
+	return drainmodes
+
+/obj/belly/proc/autotransfer_flags_list_table()
+	return autotransfer_flags_list
+
+/obj/belly/proc/autotransfer_flags_list_items_table()
+	return autotransfer_flags_list_items
+
+/obj/belly/proc/vore_sprite_flag_list_table()
+	return vore_sprite_flag_list
+
+/obj/belly/proc/reagent_choices_table()
+	return reagent_choices
+
+/obj/belly/proc/reagent_mode_flag_list_table()
+	return reagent_mode_flag_list
+
+/obj/belly/proc/bind_to_owner()
+	if(ismob(loc))
+		rel_set(src, nameof(owner), loc)
+		rel_add(owner, nameof(owner.vore_organs), src)
+		belly_reschedule()
+
+// The mob owns its bellies (vore_organs); `owner` is the belly's one-sided view back.
+
+// ghosts inside are let out.
+/obj/belly/ending_consequences(cause, datum/by)
+	for(var/mob/observer/G in contents_of(src))
+		G.forceMove(get_turf(src))
+	..()
+
+/obj/belly/Moved(atom/old_loc)
+	. = ..()
+
+	for(var/mob/living/L in contents_of(src))
+		if(L.ckey)
+			log_admin("[key_name(owner)]'s belly `[src]` moved from [old_loc] ([old_loc?.x],[old_loc?.y],[old_loc?.z]) to [loc] ([loc?.x],[loc?.y],[loc?.z]) while containing [key_name(L)].")
+			break
+
+// Called whenever an atom enters this belly
+/obj/belly/Entered(atom/movable/thing, atom/OldLoc)
+	. = ..()
+	if(QDELETED(thing)) // Parts a deleted body drops on its way out
+		return
+	if(!owner)
+		thing.forceMove(get_turf(src))
+		return
+	thing.enter_belly(src) // Atom movable proc, does nothing by default. Overridden in children for special behavior.
+	if(!cycle_token)
+		belly_reschedule()
+	if(owner && istype(owner.loc,/turf/simulated) && !cycle_sloshed && reagents.total_volume > 0)
+		var/S = pick(GLOB.slosh)
+		if(S)
+			playsound(owner.loc, S, sound_volume * (reagents.total_volume / 100), FALSE, frequency = noise_freq, preference = /datum/preference/toggle/digestion_noises)
+			cycle_sloshed = TRUE
+	if(dq_get_belly_cycles(thing)) // Reset only a count that exists: no component per eaten thing.
+		dq_set_belly_cycles(thing, 0) //reset cycle count
+	if(istype(thing, /mob/observer))
+		if(desc)
+			//Allow ghosts see where they are if they're still getting squished along inside.
+			to_chat(thing, span_vnotice(span_bold("[belly_format_string(desc, thing)]")))
+
+	if(OldLoc in contents)
+		return //Someone dropping something (or being stripdigested)
+	if(istype(OldLoc, /mob/observer) || istype(OldLoc, /obj/item/mmi)) // Prevent reforming causing a lot of log spam/sounds
+		return //Someone getting reformed most likely (And if not, uh... shouldn't happen anyways?)
+
+	//Generic entered message
+	if(!STATE_GET(owner, living_misc, mute_entry) && entrance_logs)
+		if(!istype(thing, /mob/observer))	//Don't have ghosts announce they're reentering the belly on death
+			if(ELAPSED(src, last_transfer_log, CLOCK_WORLD) > ENTRY_MESSAGE_INTERVAL)
+				STAMP(src, last_transfer_log, CLOCK_WORLD)
+				entrance_log_count = 0
+			if(COOLDOWN_FINISHED(src, next_transfer_log))
+				to_chat(owner,span_vnotice("[thing] slides into your [lowertext(name)]."))
+				entrance_log_count++
+				if(entrance_log_count >= MAX_ENTRY_MESSAAGES)
+					COOLDOWN_START(src, next_transfer_log, ENTRY_MESSAGE_INTERVAL)
+					STAMP(src, last_transfer_log, CLOCK_WORLD)
+
+	//Sound w/ antispam flag setting
+	if(vore_sound && !recent_sound && !istype(thing, /mob/observer))
+		var/soundfile
+		if(!fancy_vore)
+			soundfile = GLOB.classic_vore_sounds[vore_sound]
+		else
+			soundfile = GLOB.fancy_vore_sounds[vore_sound]
+		if(special_entrance_sound) // Custom sound set by mob's init_vore or ingame varedits.
+			soundfile = special_entrance_sound
+		if(soundfile)
+			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
+			recent_sound = TRUE
+
+	if(reagents.total_volume >= 5 && !isliving(thing) && (item_digest_mode == IM_DIGEST || item_digest_mode == IM_DIGEST_PARALLEL))
+		reagents.trans_to(thing, reagents.total_volume * 0.1, 1 / max(LAZYLEN(contents), 1), FALSE)
+	//Messages if it's a mob
+	// Include indirect viewers in seeing vorefx
+	var/list/startfx = list()
+	if(isliving(thing))
+		var/mob/living/L = thing
+		startfx.Add(L)
+		startfx.Add(get_belly_surrounding(L.contents))
+		PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
+	if(istype(thing,/obj/item))
+		var/obj/item/I = thing
+		startfx.Add(get_belly_surrounding(I.contents))
+
+	for(var/mob/living/living_mob in startfx) // End of indirect vorefx changes
+		living_mob.updateVRPanel()
+		var/raw_desc //Let's use this to avoid needing to write the reformat code twice
+		if(absorbed_desc && living_mob.absorbed)
+			raw_desc = absorbed_desc
+		else if(desc)
+			raw_desc = desc
+
+		//Was there a description text? If so, it's time to format it!
+		if(raw_desc)
+			//Replace placeholder vars
+			to_chat(living_mob, span_vnotice(span_bold("[belly_format_string(raw_desc, living_mob)]")))
+
+		if(living_mob == thing)
+			show_mode_refusal(living_mob)
+		var/taste
+		if(can_taste && living_mob.loc == src && (taste = living_mob.get_taste_message(FALSE))) // Prevent indirect tasting
+			to_chat(owner, span_vnotice("[living_mob] tastes of [taste]."))
+		vore_fx(living_mob)
+		if(vore_previewing_of(owner) == src)
+			vore_fx(owner)
+		//Stop AI processing in bellies
+		if(living_mob.ai_brain)
+			living_mob.ai_brain.go_sleep()
+		if(reagents.total_volume >= 5)
+			if(digest_mode == DM_DIGEST && living_mob.vore_prefs.digestable)
+				reagents.splash_mob(living_mob, reagents.total_volume * 0.1, FALSE)
+			to_chat(living_mob, span_vwarning(span_bold("You splash into a pool of [reagent_name]!")))
+	if(!isliving(thing) && count_items_for_sprite) // If this is enabled also update fullness for non-living things
+		PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
+
+// Called whenever an atom leaves this belly
+/obj/belly/Exited(atom/movable/thing, atom/OldLoc)
+	. = ..()
+	if(QDELETED(owner))
+		return
+	thing.exit_belly(src) // atom movable proc, does nothing by default. Overridden in children for special behavior.
+	if(!contents_count(src))
+		belly_reschedule()
+	if(isbelly(thing.loc))
+		var/obj/belly/NB = thing.loc
+		if(count_items_for_sprite && !NB.count_items_for_sprite)
+			PUBLISH(owner, belly_change)
+		return
+
+	// Remove vorefx from all those indirectly viewing as well
+	var/list/endfx = list()
+	if(isliving(thing))
+		var/mob/living/L = thing
+		endfx.Add(L)
+		endfx.Add(get_belly_surrounding(L.contents))
+		PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
+	if(istype(thing,/obj/item))
+		var/obj/item/I = thing
+		endfx.Add(get_belly_surrounding(I.contents))
+	if(!isbelly(thing.loc))
+		for(var/mob/living/L in endfx)
+			if(L.surrounding_belly()) continue
+			L.clear_fullscreen("belly")
+			L.belly_overlay_window()?.hide() // hide TGUI belly overlay
+			if(L.hud_used)
+				if(!L.hud_used.hud_shown)
+					L.toggle_hud_vis()
+			if((L.stat != DEAD) && L.ai_brain)
+				L.ai_brain.go_wake()
+			L.stop_sound_channel(CHANNEL_PREYLOOP) // This was on release_specific_contents proc, why is it not here on belly exit?
+	// End of indirect vorefx changes
+	if(isitem(thing) && !isbelly(thing.loc)) // Digest stage effects. Don't bother adding overlays to stuff that won't make it back out.
+		if(count_items_for_sprite) // If this is enabled also update fullness for non-living things
+			PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
+
+// Release all contents of this belly into the owning mob's location.
+// If that location is another mob, contents are transferred into whichever of its bellies the owning mob is in.
+// Returns the number of mobs so released.
+/obj/belly/proc/release_all_contents(include_absorbed = FALSE, silent = FALSE)
+	//Don't bother if we don't have contents
+	if(!contents_count(src))
+		return FALSE
+
+	//Find where we should drop things into (certainly not the owner)
+	var/count = 0
+
+	//Iterate over contents and move them all
+	for(var/atom/movable/AM as anything in contents)
+		if(isliving(AM))
+			var/mob/living/L = AM
+			if(L.stat)
+				L.status_set(STAT_SLEEPING, min(L.status_units(STAT_SLEEPING),20))
+			if(L.absorbed && !include_absorbed)
+				continue
+		count += release_specific_contents(AM, silent = TRUE)
+
+	//Clean up our own business
+	rel_clear(src, nameof(items_preserved))
+
+	//Determines privacy
+	var/privacy_range = world.view
+	switch(eating_privacy_local) //Third case of if("loud") not defined, as it'd just leave privacy_range and volume untouched
+		if("default")
+			if(owner.vore_prefs.eating_privacy_global)
+				privacy_range = 1
+		if("subtle")
+			privacy_range = 1
+
+	//Print notifications/sound if necessary
+	if(!silent && count)
+		owner.visible_message(span_vnotice(span_green(span_bold("[owner] [release_verb] everything from their [lowertext(name)]!"))), range = privacy_range)
+		var/soundfile
+		if(!fancy_vore)
+			soundfile = GLOB.classic_release_sounds[release_sound]
+		else
+			soundfile = GLOB.fancy_release_sounds[release_sound]
+		if(soundfile)
+			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
+
+	return count
+
+// Release a specific atom from the contents of this belly into the owning mob's location.
+// If that location is another mob, the atom is transferred into whichever of its bellies the owning mob is in.
+// Returns the number of atoms so released.
+/obj/belly/proc/release_specific_contents(atom/movable/M, silent = FALSE)
+	if (!(M in contents))
+		return 0 // They weren't in this belly anyway
+
+	// Ventcrawlings will explode their vent to avoid exploits
+	if(istype(owner.loc,/obj/machinery/atmospherics))
+		var/obj/machinery/atmospherics/our_pipe = owner.loc
+		our_pipe.blowout(owner)
+
+	if(istype(M, /mob/living/simple_mob/vore/morph/dominated_prey))
+		var/mob/living/simple_mob/vore/morph/dominated_prey/p = M
+		p.undo_prey_takeover(FALSE)
+		return 0
+	for(var/mob/living/L in contents_of(M))
+		STATE_SET(L, mob_misc, muffled, FALSE)
+		L.set_forced_psay(FALSE)
+
+	for(var/obj/item/holder/H in contents_of(M))
+		STATE_SET(H.held_mob, mob_misc, muffled, FALSE)
+		H.held_mob.set_forced_psay(FALSE)
+
+	if(isliving(M))
+		var/mob/living/slip = M
+		STATE_SET(slip, cooldowns, slip_protect, world.time + (2.5 SECONDS)) // This is to prevent slipping back into your pred if they stand on soap or something.
+	//Place them into our drop_location
+	belly_release_to(M, drop_location())
+	rel_remove(src, nameof(items_preserved), M)
+
+	//Special treatment for absorbed prey
+	if(isliving(M))
+		var/mob/living/ML = M
+		var/mob/living/OW = owner
+		if(ML.client)
+			ML.stop_sound_channel(CHANNEL_PREYLOOP) //Stop the internal loop, it'll restart if the isbelly check on next tick anyway
+		if(STATE_GET(ML, mob_misc, muffled))
+			STATE_SET(ML, mob_misc, muffled, FALSE)
+		if(mob_rules_of(ML).forced_psay)
+			ML.set_forced_psay(FALSE)
+		if(ML.absorbed)
+			ML.set_absorbed(FALSE)
+			handle_absorb_langs(ML, owner)
+			if(ishuman(M) && ishuman(OW))
+				var/mob/living/carbon/human/Prey = M
+				var/mob/living/carbon/human/Pred = OW
+				var/absorbed_count = 2 //Prey that we were, plus the pred gets a portion
+				for(var/mob/living/P in contents)
+					if(P.absorbed)
+						absorbed_count++
+				Pred.bloodstr.trans_to(Prey, Pred.reagents.total_volume / absorbed_count)
+
+	//Makes it so that if prey are heavily asleep, they will wake up shortly after release
+	if(isliving(M))
+		var/mob/living/ML = M
+		if(ML.stat)
+			ML.status_set(STAT_SLEEPING, min(ML.status_units(STAT_SLEEPING),20))
+
+	//Determines privacy
+	var/privacy_range = world.view
+	switch(eating_privacy_local) //Third case of if("loud") not defined, as it'd just leave privacy_range and volume untouched
+		if("default")
+			if(owner.vore_prefs.eating_privacy_global)
+				privacy_range = 1
+		if("subtle")
+			privacy_range = 1
+
+	//Print notifications/sound if necessary
+	if(isobserver(M))
+		silent = TRUE
+	if(!silent)
+		if(isitem(M))
+			owner.visible_message(span_vnotice(span_green(span_bold(belly_format_string(trash_eater_out, M, item=M)))),range = privacy_range) //double dip. prey = item, item = prey. sanity check in case they use %prey in the message.
+		else
+			owner.visible_message(span_vnotice(span_green(span_bold("[owner] [release_verb] [M] from their [lowertext(name)]!"))),range = privacy_range)
+		var/soundfile
+		if(!fancy_vore)
+			soundfile = GLOB.classic_release_sounds[release_sound]
+		else
+			soundfile = GLOB.fancy_release_sounds[release_sound]
+		if(soundfile)
+			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
+
+	if(!owner.ckey && escape_stun)
+		owner.status_at_least(STAT_WEAKENED, escape_stun)
+
+	return 1
+
+// Actually perform the mechanics of devouring the tasty prey.
+// The purpose of this method is to avoid duplicate code, and ensure that all necessary
+// steps are taken.
+/obj/belly/proc/nom_atom(atom/movable/prey, mob/user)
+	if(ismob(prey))
+		var/mob/mob_prey = prey
+		if(owner.stat == DEAD)
+			return
+		if(mob_prey?.buckled_to())
+			var/atom/movable/_tmp_buck_46 = mob_prey?.buckled_to()
+			_tmp_buck_46.unbuckle_mob()
+		if(mob_prey.ckey)
+			GLOB.prey_eaten_roundstat++
+			if(owner.mind)
+				owner.mind.vore_prey_eaten++
+
+	if(!belly_insert(prey, user))
+		return
+	owner.updateVRPanel()
+
+	for(var/mob/living/M in contents)
+		M.updateVRPanel()
+
+// new procs for handling digestion damage as a total rather than per-type
+// Returns the current total digestion damage per tick of a belly.
+/obj/belly/proc/get_total_digestion_damage()
+	return (digest_brute + digest_burn + digest_oxy + digest_tox + digest_clone)
+
+// Returns the remaining 'budget' of digestion damage between the current and the maximum.
+/obj/belly/proc/get_unused_digestion_damage()
+	return max(digest_max - get_total_digestion_damage(), 0)
+
+/obj/belly/proc/set_zero_digestion_damage()
+	set_digest_brute(0)
+	set_digest_burn(0)
+	set_digest_oxy(0)
+	set_digest_tox(0)
+	set_digest_clone(0)
+	return
+
+// Handle the death of a mob via digestion.
+// Called from the process_Life() methods of bellies that digest prey.
+// Default implementation calls M.death() and removes from internal contents.
+// Indigestable items are removed, and M is deleted.
+/obj/belly/proc/digestion_death(mob/living/M)
+	digested_prey_count++
+	add_attack_logs(owner, M, "Digested in [lowertext(name)]")
+	owner.changeling_obtain_dna(M)
+
+	// Reverts TF on death. This fixes a bug with posibrains or similar, and also makes reforming easier.
+	if(M.tf_mob_holder && M.tf_mob_holder.loc == M)
+		M.return_player_to_tf_holder("digested in [src]")
+		release(M.tf_mob_holder, STAT_SUSPENDED, M.tf_mob_holder)
+		M.tf_mob_holder.forceMove(M.loc)
+		M.tf_mob_holder.forceMove(M.loc)
+		own_clear(M.tf_mob_holder, nameof(/mob::vore_organs), OWN_DELETE)
+		M.tf_mob_holder.mob_belly_transfer(M)
+
+	if(M.tf_mob_holder)
+		rel_set(M, nameof(M.tf_mob_holder), null)
+
+	// If digested prey is also a pred... anyone inside their bellies gets moved up.
+	if(is_vore_predator(M))
+		M.release_vore_contents(include_absorbed = TRUE, silent = TRUE)
+
+	var/obj/item/mmi/hasMMI // Adjust how MMI's are handled
+
+	//Drop all items into the belly.
+	if(CONFIG_GET(flag/items_survive_digestion))
+		for(var/obj/item/W in contents_of(M))
+			if(istype(W, /obj/item/organ/internal/mmi_holder/posibrain))
+				var/obj/item/organ/internal/mmi_holder/MMI = W
+				var/obj/item/mmi/brainbox = MMI.removed()
+				if(brainbox)
+					rel_add(src, nameof(items_preserved), brainbox)
+					hasMMI = brainbox // Adjust how MMI's are handled
+			for(var/slot in slots)
+				var/obj/item/I = M.get_equipped_item(slot)
+				if(I)
+					M.unEquip(I,force = TRUE)
+					if(contaminates)
+						I.gurgle_contaminate(contents, contamination_flavor, contamination_color) //We do an initial contamination pass to get stuff like IDs wet.
+					if(item_digest_mode == IM_HOLD)
+						rel_add(src, nameof(items_preserved), I)
+					else if(item_digest_mode == IM_DIGEST_FOOD && !(istype(I,/obj/item/reagent_containers/food) || istype(I,/obj/item/organ) || istype(I,/obj/item/reagent_containers/pill))) // Allow pills to digest in bellies
+						rel_add(src, nameof(items_preserved), I)
+
+	//Reagent transfer
+	if(ishuman(owner))
+		var/mob/living/carbon/human/Pred = owner
+		if(ishuman(M))
+			var/mob/living/carbon/human/Prey = M
+			Prey.bloodstr.del_reagent(REAGENT_ID_NUMBENZYME)
+			Prey.bloodstr.trans_to_holder(Pred.ingested, Prey.bloodstr.total_volume, 0.5, TRUE) // Copy=TRUE because we're deleted anyway
+			Prey.ingested.trans_to_holder(Pred.ingested, Prey.ingested.total_volume, 0.5, TRUE) // Therefore don't bother spending cpu
+			//Don't need this stuff in our bloodstream.
+			Prey.touching.del_reagent(REAGENT_ID_STOMACID)
+			Prey.touching.del_reagent(REAGENT_ID_DIETSTOMACID)
+			Prey.touching.del_reagent(REAGENT_ID_PACID)
+			Prey.touching.del_reagent(REAGENT_ID_SACID)
+			Prey.touching.del_reagent(REAGENT_ID_CLEANER)
+			Prey.touching.del_reagent(REAGENT_ID_CONCENTRATEDRADIUM)
+			Prey.touching.del_reagent(REAGENT_ID_TRICORDRAZINE)
+			Prey.touching.trans_to_holder(Pred.ingested, Prey.touching.total_volume, 0.5, TRUE) // On updating the prey's reagents
+		else if(M.reagents)
+			//Don't need this stuff in our bloodstream.
+			M.reagents.del_reagent(REAGENT_ID_STOMACID)
+			M.reagents.del_reagent(REAGENT_ID_DIETSTOMACID)
+			M.reagents.del_reagent(REAGENT_ID_PACID)
+			M.reagents.del_reagent(REAGENT_ID_SACID)
+			M.reagents.del_reagent(REAGENT_ID_CLEANER)
+			M.reagents.del_reagent(REAGENT_ID_CONCENTRATEDRADIUM)
+			M.reagents.del_reagent(REAGENT_ID_TRICORDRAZINE)
+			M.reagents.del_reagent(REAGENT_ID_ETHANOL)
+			M.reagents.trans_to_holder(Pred.ingested, M.reagents.total_volume, 0.5, TRUE)
+
+	PUBLISH(owner, belly_change)
+
+	//Incase they have the loop going, let's double check to stop it.
+	M.stop_sound_channel(CHANNEL_PREYLOOP)
+	//Don't let glows stick
+	M.set_glow_toggle(FALSE)
+	set_glow(M, GLOW(0, null, null))
+	// Delete the digested mob
+	// Changed qdel to a forceMove to allow reforming, and... handled robots special.
+	if(isrobot(M))
+		var/mob/living/silicon/robot/R = M
+		if(R.mmi && R.mind && get_mind_host(R.mmi))
+			if((R.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && owner.soulgem && owner.soulgem.flag_check(SOULGEM_ACTIVE | NIF_SC_CATCHING_OTHERS, TRUE))
+				owner.soulgem.catch_mob(R, R.name)
+			else
+				R.mmi.forceMove(src)
+				rel_add(src, nameof(items_preserved), R.mmi)
+				hasMMI = R.mmi
+				var/datum/mind_host/mmi_host = get_mind_host(hasMMI)
+				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
+				view.remove_language(LANGUAGE_ROBOT_TALK)
+				rel_take(R, nameof(R.mmi))
+		else if(!R.shell) // Shells don't have brainmobs in their MMIs.
+			to_chat(R, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
+		if(R.shell) // Let the standard procedure for shells handle this.
+			dissolved(R, M)
+			return
+
+	if(istype(hasMMI))
+		rel_set(hasMMI, nameof(hasMMI.body_backup), M)
+		hold(M, STAT_SUSPENDED, TRUE, M)
+		slot_remove(M, hasMMI)
+	else
+		var/mob/observer/G = M.ghostize(FALSE) // Make sure they're out, so we can copy attack logs and such.
+		if(G)
+			belly_insert(G)
+			rel_set(G, nameof(G.body_backup), M)
+			hold(M, STAT_SUSPENDED, TRUE, M)
+			slot_remove(M, G)
+		else
+			dissolved(M, src)
+	PUBLISH(owner, belly_change)
+
+// Handle a mob being absorbed
+/obj/belly/proc/absorb_living(mob/living/M)
+	M.set_absorbed(TRUE)
+	if(M.ckey)
+		handle_absorb_langs(M, owner)
+		GLOB.prey_absorbed_roundstat++
+
+	to_chat(M, span_vnotice("[belly_format_string(absorb_messages_prey, M, use_absorbed_count = TRUE)]"))
+	to_chat(owner, span_vnotice("[belly_format_string(absorb_messages_owner, M, use_absorbed_count = TRUE)]"))
+	if(M.vore_prefs.noisy) //Mute drained absorbee hunger if enabled.
+		M.vore_prefs.noisy = FALSE
+
+	if(ishuman(M) && ishuman(owner))
+		var/mob/living/carbon/human/Prey = M
+		var/mob/living/carbon/human/Pred = owner
+		//Reagent sharing for absorbed with pred - Copy so both pred and prey have these reagents.
+		Prey.bloodstr.trans_to_holder(Pred.ingested, Prey.bloodstr.total_volume, copy = TRUE)
+		Prey.ingested.trans_to_holder(Pred.ingested, Prey.ingested.total_volume, copy = TRUE)
+		Prey.touching.del_reagent(REAGENT_ID_STOMACID)
+		Prey.touching.del_reagent(REAGENT_ID_DIETSTOMACID)
+		Prey.touching.del_reagent(REAGENT_ID_PACID)
+		Prey.touching.del_reagent(REAGENT_ID_SACID)
+		Prey.touching.del_reagent(REAGENT_ID_CLEANER)
+		Prey.touching.del_reagent(REAGENT_ID_CONCENTRATEDRADIUM)
+		Prey.touching.del_reagent(REAGENT_ID_TRICORDRAZINE)
+		Prey.touching.trans_to_holder(Pred.ingested, Prey.touching.total_volume, copy = TRUE)
+		// TODO - Find a way to make the absorbed prey share the effects with the pred.
+		// Currently this is infeasible because reagent containers are designed to have a single my_atom, and we get
+		// problems when A absorbs B, and then C absorbs A,  resulting in B holding onto an invalid reagent container.
+		Pred.changeling_obtain_dna(Prey)
+
+	//This is probably already the case, but for sub-prey, it won't be.
+	if(M.loc != src)
+		belly_insert(M)
+
+	//Seek out absorbed prey of the prey, absorb them too.
+	//This in particular will recurse oddly because if there is absorbed prey of prey of prey...
+	//it will just move them up one belly. This should never happen though since... when they were
+	//absobred, they should have been absorbed as well!
+	for(var/obj/belly/B as anything in M.vore_organs)
+		for(var/mob/living/Mm in B)
+			if(Mm.absorbed)
+				absorb_living(Mm)
+
+	if(absorbed_desc)
+		//Replace placeholder vars
+		to_chat(M, span_vnotice(span_bold("[belly_format_string(absorbed_desc, M)]")))
+
+	//Update owner
+	owner.updateVRPanel()
+	PUBLISH(owner, belly_change)
+	// Finally, if they're to be sent to a special pudge belly, send them there
+	if(transferlocation_absorb)
+		var/obj/belly/dest_belly
+		for(var/obj/belly/B as anything in owner.vore_organs)
+			if(B.name == transferlocation_absorb)
+				dest_belly = B
+				break
+		if(!dest_belly)
+			to_chat(owner, span_vwarning("Something went wrong with your belly transfer settings. Your <b>[lowertext(name)]</b> has had its transfer location cleared as a precaution."))
+			transferlocation_absorb = null
+			return
+
+		transfer_contents(M, dest_belly)
+
+// Handle a mob being unabsorbed
+/obj/belly/proc/unabsorb_living(mob/living/M)
+	M.set_absorbed(FALSE)
+	handle_absorb_langs(M, owner)
+	to_chat(M, span_vnotice(belly_format_string(unabsorb_messages_prey, M, use_absorbed_count = TRUE)))
+	to_chat(owner, span_vnotice(belly_format_string(unabsorb_messages_owner, M, use_absorbed_count = TRUE)))
+
+	if(desc)
+		to_chat(M, span_vnotice(span_bold("[belly_format_string(desc, M)]")))
+
+	//Update owner
+	owner.updateVRPanel()
+	PUBLISH(owner, belly_change)
+
+/////////////////////////////////////////////////////////////////////////
+/obj/belly/proc/handle_absorb_langs()
+	owner.absorb_langs()
+
+////////////////////////////////////////////////////////////////////////
+
+//Digest a single item
+//Receives a return value from digest_act that's how much nutrition
+//the item should be worth
+/obj/belly/proc/digest_item(obj/item/item, touchable_amount, delta_factor = 1)
+	// digest_rate_mult passed positionally (with splashing=0, its default): digest_act has
+	// 26 lenient overrides that don't declare the keyword, so a keyword call trips DreamChecker.
+	var/digested = item.digest_act(src, touchable_amount, 0, delta_factor)
+	if(digested == FALSE)
+		rel_add(src, nameof(items_preserved), item)
+	else
+		owner_adjust_nutrition((nutrition_percent / 100) * 5 * digested)
+		digested = TRUE
+	return digested
+
+//Determine where items should fall out of us into.
+//Typically just to the owner's location.
+/obj/belly/drop_location()
+	//Should be the case 99.99% of the time
+	if(isAI(owner))
+		var/mob/living/silicon/ai/AI = owner
+		var/obj/effect/overlay/aiholo/hologram = AI.holo ? LAZYACCESS(AI.holo.masters, AI) : null
+		if(hologram)
+			return hologram.drop_location()
+
+	if(owner)
+		return owner.drop_location()
+	//Sketchy fallback for safety, put them somewhere safe.
+	else
+		log_runtime("[src] ([REF(src)]) doesn't have an owner, and dropped someone at a latespawn point!")
+		var/fallback = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))
+		return get_turf(fallback)
+
+//Yes, it's ""safe"" to drop items here
+/obj/belly/AllowDrop()
+	return TRUE
+
+/obj/belly/onDropInto(atom/movable/AM)
+	return null
+
+/obj/belly/proc/get_mobs_and_objs_in_belly()
+	var/list/see = list()
+	var/list/belly_mobs = list()
+	see["mobs"] = belly_mobs
+	var/list/belly_objs = list()
+	see["objs"] = belly_objs
+	for(var/mob/living/L in contents_of(loc))
+		belly_mobs |= L
+	for(var/obj/O in contents_of(loc))
+		belly_objs |= O
+
+	return see
+
+//Transfers contents from one belly to another
+/obj/belly/proc/transfer_contents(atom/movable/content, obj/belly/target, silent = FALSE)
+	if(!(content?.loc == src) || !istype(target))
+		return
+	if(dq_get_belly_cycles(content)) // Reset only a count that exists: no component per eaten thing.
+		dq_set_belly_cycles(content, 0)
+	var/old_entrance_logs = target.entrance_logs
+	if(silent)
+		target.set_entrance_logs(FALSE)
+	slot_transfer(content, target, BELLY_SLOT_INTERIOR)
+	target.set_entrance_logs(old_entrance_logs)
+	if(isitem(content))
+		var/obj/item/I = content
+		if(istype(I,/obj/item/card/id))
+			I.gurgle_contaminate(target.contents, target.contamination_flavor, target.contamination_color)
+		if(I.gurgled && target.contaminates)
+			I.wash(CLEAN_WASH)
+			I.gurgle_contaminate(target.contents, target.contamination_flavor, target.contamination_color)
+	rel_remove(src, nameof(items_preserved), content)
+	if(!silent)
+		handle_visual_update()
+
+/obj/belly/proc/handle_visual_update()
+	owner.updateVRPanel()
+	for(var/mob/living/M in contents)
+		M.updateVRPanel()
+	PUBLISH(owner, belly_change)
+
+//Autotransfer belly lookup
+/obj/belly/proc/compile_autotransfer_bellies()
+	var/list/primary_bellies = list()
+	var/list/secondary_bellies = list()
+
+	var/list/primary_locations = autotransferextralocation.Copy()
+	primary_locations += autotransferlocation
+	var/list/secondary_locations = autotransferextralocation_secondary.Copy()
+	secondary_locations += autotransferlocation_secondary
+	for(var/obj/belly/B in owner.vore_organs)
+		if(B.name in primary_locations)
+			primary_bellies += B
+		if(B.name in secondary_locations)
+			secondary_bellies += B
+
+	if(!length(primary_bellies) && !length(secondary_bellies))
+		return null
+
+	return list("primary" = primary_bellies, "secondary" = secondary_bellies)
+
+//Autotransfer callback
+/obj/belly/proc/check_autotransfer(atom/movable/prey, list/transfer_locations)
+	if(!(prey in contents) || !STATE_PEEK(prey, movable_misc, autotransferable))
+		return FALSE
+	var/obj/belly/dest_belly
+	if(length(transfer_locations["secondary"]))
+		if(autotransferlocation_secondary && prob(autotransferchance_secondary))
+			if(ismob(prey) && autotransfer_filter(prey, autotransfer_secondary_whitelist, autotransfer_secondary_blacklist))
+				dest_belly = pick(transfer_locations["secondary"])
+			if(isitem(prey) && autotransfer_filter(prey, autotransfer_secondary_whitelist_items, autotransfer_secondary_blacklist_items))
+				dest_belly = pick(transfer_locations["secondary"])
+	if(length(transfer_locations["primary"]))
+		if(autotransferlocation && prob(autotransferchance))
+			if(ismob(prey) && autotransfer_filter(prey, autotransfer_whitelist, autotransfer_blacklist))
+				dest_belly = pick(transfer_locations["primary"])
+			if(isitem(prey) && autotransfer_filter(prey, autotransfer_whitelist_items, autotransfer_blacklist_items))
+				dest_belly = pick(transfer_locations["primary"])
+	if(!dest_belly) // Didn't transfer, so wait before retrying
+		if(dq_get_belly_cycles(prey)) // Reset only a count that exists: no component per eaten thing.
+			dq_set_belly_cycles(prey, 0)
+		return FALSE
+	if(ismob(prey))
+		var/autotransfer_owner_message
+		var/autotransfer_prey_message
+		var/dest_belly_name = dest_belly.name
+		if(dest_belly.name == autotransferlocation)
+			autotransfer_owner_message = span_vwarning(belly_format_string(primary_autotransfer_messages_owner, prey, dest = dest_belly_name))
+			autotransfer_prey_message = span_vwarning(belly_format_string(primary_autotransfer_messages_prey, prey, dest = dest_belly_name))
+		else
+			autotransfer_owner_message =  span_vwarning(belly_format_string(secondary_autotransfer_messages_owner, prey, dest = dest_belly_name))
+			autotransfer_prey_message = span_vwarning(belly_format_string(secondary_autotransfer_messages_prey, prey, dest = dest_belly_name))
+
+		to_chat(prey, autotransfer_prey_message)
+		if(entrance_logs)
+			to_chat(owner, autotransfer_owner_message)
+
+	transfer_contents(prey, dest_belly, TRUE)
+	return TRUE
+
+//Autotransfer filter
+/obj/belly/proc/autotransfer_filter(atom/movable/prey, whitelist, blacklist)
+	if(ismob(prey))
+		if(blacklist & autotransfer_flags_list["Absorbed"])
+			if(isliving(prey))
+				var/mob/living/L = prey
+				if(L.absorbed) return FALSE
+		if(blacklist != 2) // Default is 2 for Absorbed, if it's not 2, check everything else
+			if(blacklist & autotransfer_flags_list["Creatures"])
+				if(isliving(prey)) return FALSE
+			if(blacklist & autotransfer_flags_list["Carbon"])
+				if(iscarbon(prey)) return FALSE
+			if(blacklist & autotransfer_flags_list["Silicon"])
+				if(issilicon(prey)) return FALSE
+			if(blacklist & autotransfer_flags_list["Mobs"])
+				if(istype(prey, /mob/living/simple_mob)) return FALSE
+			if(blacklist & autotransfer_flags_list["Animals"])
+				if(istype(prey, /mob/living/simple_mob/animal)) return FALSE
+			if(blacklist & autotransfer_flags_list["Mice"])
+				if(ismouse(prey)) return FALSE
+			if(blacklist & autotransfer_flags_list["Dead"])
+				if(isliving(prey))
+					var/mob/living/L = prey
+					if(L.stat == DEAD) return FALSE
+			if(blacklist & autotransfer_flags_list["Digestable Creatures"])
+				if(isliving(prey))
+					var/mob/living/L = prey
+					if(L.vore_prefs.digestable) return FALSE
+			if(blacklist & autotransfer_flags_list["Absorbable Creatures"])
+				if(isliving(prey))
+					var/mob/living/L = prey
+					if(L.vore_prefs.absorbable) return FALSE
+			if(blacklist & autotransfer_flags_list["Full Health"])
+				if(isliving(prey))
+					var/mob/living/L = prey
+					if(!L.is_injured()) return FALSE
+		if(whitelist == 0) return TRUE
+		if(whitelist & autotransfer_flags_list["Creatures"])
+			if(isliving(prey)) return TRUE
+		if(whitelist & autotransfer_flags_list["Absorbed"])
+			if(isliving(prey))
+				var/mob/living/L = prey
+				if(L.absorbed) return TRUE
+		if(whitelist & autotransfer_flags_list["Carbon"])
+			if(iscarbon(prey)) return TRUE
+		if(whitelist & autotransfer_flags_list["Silicon"])
+			if(issilicon(prey)) return TRUE
+		if(whitelist & autotransfer_flags_list["Mobs"])
+			if(istype(prey, /mob/living/simple_mob)) return TRUE
+		if(whitelist & autotransfer_flags_list["Animals"])
+			if(istype(prey, /mob/living/simple_mob/animal)) return TRUE
+		if(whitelist & autotransfer_flags_list["Mice"])
+			if(ismouse(prey)) return TRUE
+		if(whitelist & autotransfer_flags_list["Dead"])
+			if(isliving(prey))
+				var/mob/living/L = prey
+				if(L.stat == DEAD) return TRUE
+		if(whitelist & autotransfer_flags_list["Digestable Creatures"])
+			if(isliving(prey))
+				var/mob/living/L = prey
+				if(L.vore_prefs.digestable) return TRUE
+		if(whitelist & autotransfer_flags_list["Absorbable Creatures"])
+			if(isliving(prey))
+				var/mob/living/L = prey
+				if(L.vore_prefs.absorbable) return TRUE
+		if(whitelist & autotransfer_flags_list["Full Health"])
+			if(isliving(prey))
+				var/mob/living/L = prey
+				if(!L.is_injured()) return TRUE
+	else
+		if(blacklist & autotransfer_flags_list_items["Items"])
+			if(isitem(prey)) return FALSE
+		if(blacklist & autotransfer_flags_list_items["Trash"])
+			if(istype(prey, /obj/item/trash)) return FALSE
+		if(blacklist & autotransfer_flags_list_items["Eggs"])
+			if(istype(prey, /obj/item/storage/vore_egg)) return FALSE
+		if(blacklist & autotransfer_flags_list_items["Remains"])
+			if(istype(prey, /obj/item/digestion_remains)) return FALSE
+		if(blacklist & autotransfer_flags_list_items["Indigestible Items"])
+			if(prey in items_preserved) return FALSE
+		if(blacklist & autotransfer_flags_list_items["Recyclable Items"])
+			if(isitem(prey))
+				var/obj/item/I = prey
+				if(length(I.material_totals())) return FALSE
+		if(blacklist & autotransfer_flags_list_items["Ores"])
+			if(istype(prey, /obj/item/ore)) return FALSE
+		if(blacklist & autotransfer_flags_list_items["Clothes and Bags"])
+			if(istype(prey, /obj/item/clothing) || istype(prey, /obj/item/storage)) return FALSE
+		if(blacklist & autotransfer_flags_list_items["Food"])
+			if(istype(prey, /obj/item/reagent_containers/food)) return FALSE
+		if(whitelist == 0) return TRUE
+		if(whitelist & autotransfer_flags_list_items["Items"])
+			if(isitem(prey)) return TRUE
+		if(whitelist & autotransfer_flags_list_items["Trash"])
+			if(istype(prey, /obj/item/trash)) return TRUE
+		if(whitelist & autotransfer_flags_list_items["Eggs"])
+			if(istype(prey, /obj/item/storage/vore_egg)) return TRUE
+		if(whitelist & autotransfer_flags_list_items["Remains"])
+			if(istype(prey, /obj/item/digestion_remains)) return TRUE
+		if(whitelist & autotransfer_flags_list_items["Indigestible Items"])
+			if(prey in items_preserved) return TRUE
+		if(whitelist & autotransfer_flags_list_items["Recyclable Items"])
+			if(isitem(prey))
+				var/obj/item/I = prey
+				if(length(I.material_totals())) return TRUE
+		if(whitelist & autotransfer_flags_list_items["Ores"])
+			if(istype(prey, /obj/item/ore)) return TRUE
+		if(whitelist & autotransfer_flags_list_items["Clothes and Bags"])
+			if(istype(prey, /obj/item/clothing) || istype(prey, /obj/item/storage)) return TRUE
+		if(whitelist & autotransfer_flags_list_items["Food"])
+			if(istype(prey, /obj/item/reagent_containers/food)) return TRUE
+	return FALSE
+
+/obj/belly/container_resist(mob/M)
+	return relay_resist(M)
+
+/obj/belly/proc/GetFullnessFromBelly()
+	if(!affects_vore_sprites)
+		return 0
+	var/belly_fullness = 0
+	for(var/mob/living/M in contents_of(src))
+		if(count_absorbed_prey_for_sprite || !M.absorbed)
+			var/fullness_to_add = M.size_multiplier
+			fullness_to_add *= M.mob_size / 20
+			if(M.absorbed)
+				fullness_to_add *= absorbed_multiplier
+			if(health_impacts_size)
+				fullness_to_add *= M.vitality()
+			if(fullness_to_add > 0)
+				belly_fullness += fullness_to_add
+	if(count_liquid_for_sprite)
+		belly_fullness += (reagents.total_volume / 100) * liquid_multiplier
+	if(count_items_for_sprite)
+		for(var/obj/item/I in contents_of(src))
+			var/fullness_to_add = 0
+			if(I.w_class == ITEMSIZE_TINY)
+				fullness_to_add = ITEMSIZE_COST_TINY
+			else if(I.w_class == ITEMSIZE_SMALL)
+				fullness_to_add = ITEMSIZE_COST_SMALL
+			else if(I.w_class == ITEMSIZE_NORMAL)
+				fullness_to_add = ITEMSIZE_COST_NORMAL
+			else if(I.w_class == ITEMSIZE_LARGE)
+				fullness_to_add = ITEMSIZE_COST_LARGE
+			else if(I.w_class == ITEMSIZE_HUGE)
+				fullness_to_add = ITEMSIZE_COST_HUGE
+			else
+				fullness_to_add = I.w_class
+			fullness_to_add /= 32
+			belly_fullness += fullness_to_add * item_multiplier
+	belly_fullness *= size_factor_for_sprite
+	return belly_fullness
+
+/obj/item/debris_pack/digested
+	name = "digested material"
+	desc = "Some thoroughly digested mass of ... something. Might be useful for recycling."
+	icon = 'icons/obj/recycling.dmi'
+	icon_state = "matdust"
+	color = "#664330"
+	w_class = ITEMSIZE_SMALL
+
+/obj/belly/proc/recycle(obj/item/O)
+	if(!recycling || (!length(O.material_totals()) && !istype(O, /obj/item/ore)))
+		return FALSE
+	if(istype(O, /obj/item/ore))
+		var/obj/item/ore/ore = O
+		for(var/obj/item/ore_chunk/C in contents)
+			C.set_stored_ore_at(ore.material, C.stored_ore[ore.material] + 1)
+			return TRUE
+		var/obj/item/ore_chunk/newchunk = new /obj/item/ore_chunk(src)
+		newchunk.set_stored_ore_at(ore.material, newchunk.stored_ore[ore.material] + 1)
+		return TRUE
+	else
+		var/list/modified_mats = list()
+		var/trash = 1
+		if(istype(O,/obj/item/trash))
+			trash = 5
+		if(istype(O,/obj/item/stack))
+			var/obj/item/stack/S = O
+			trash = S.amount
+		var/list/item_matter = O.material_totals()
+		for(var/mat in item_matter)
+			modified_mats[mat] = item_matter[mat] * trash
+		for(var/obj/item/debris_pack/digested/D in contents)
+			D.add_materials(modified_mats)
+			if(O.w_class > D.w_class)
+				D.set_w_class(O.w_class)
+			if(O.possessed_voice && O.possessed_voice.len)
+				for(var/mob/living/voice/V in O.possessed_voice)
+					D.inhabit_item(V, null, V.tf_mob_holder)
+					replaced_by(V)
+				rel_take_all(O, nameof(O.possessed_voice))
+			return TRUE
+		var/obj/item/debris_pack/digested/D = new /obj/item/debris_pack/digested(src, modified_mats)
+		if(O.possessed_voice && O.possessed_voice.len)
+			for(var/mob/living/voice/V in O.possessed_voice)
+				D.inhabit_item(V, null, V.tf_mob_holder)
+				replaced_by(V)
+			rel_take_all(O, nameof(O.possessed_voice))
+	return TRUE
+
+/obj/belly/proc/owner_adjust_nutrition(amount = 0)
+	if(storing_nutrition && amount > 0)
+		for(var/obj/item/reagent_containers/food/rawnutrition/R in contents)
+			R.stored_nutrition += amount
+			return
+		var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(src)
+		NR.stored_nutrition += amount
+		return
+	else
+		owner.adjust_nutrition(amount)
+
+/obj/item/reagent_containers/food/rawnutrition
+	name = "raw nutrition"
+	desc = "A nutritious pile of converted mass ready for consumption."
+	icon = 'icons/obj/recycling.dmi'
+	icon_state = "matdust"
+	color = "#664330"
+	w_class = ITEMSIZE_SMALL
+	var/stored_nutrition = 0
+
+// Updates the belly_surrounding list variable. Called in bellymodes_vr.dm
+/obj/belly/proc/update_belly_surrounding()
+	if(!contents_count(src) && !LAZYLEN(owner.soulgem?.brainmobs))
+		// An empty belly surrounds nobody and holds no list.
+		belly_surrounding = null
+		return
+	belly_surrounding = get_belly_surrounding(contents)
+	if(owner.soulgem?.linked_belly() == src)
+		belly_surrounding += owner.soulgem.brainmobs
+
+// Recursive proc that returns all living mobs directly and indirectly inside a belly
+// This can also be called more generically to get all living mobs not in bellies within any contents list
+/obj/belly/proc/get_belly_surrounding(list/C)
+	var/list/surrounding = list()
+	for(var/thing in C)
+		if(istype(thing,/mob/living))
+			var/mob/living/L = thing
+			surrounding.Add(L)
+			surrounding.Add(get_belly_surrounding(L.contents))
+		if(istype(thing,/obj/item))
+			var/obj/item/I = thing
+			surrounding.Add(get_belly_surrounding(I.contents))
+	return surrounding
+
+/obj/belly/proc/get_belly_name(original)
+	if(original)
+		return display_name ? display_name : name
+	return display_name ? lowertext(display_name) : lowertext(name)
+
+/obj/belly/proc/toggle_displayed_message_flags(flags_to_set)
+	set_displayed_message_flags(displayed_message_flags ^ flags_to_set)
+
+#undef MAX_ENTRY_MESSAAGES
+#undef ENTRY_MESSAGE_INTERVAL
+
+/// A shared definition/flyweight (never cleared).
+/obj/belly/proc/tail_to_change_to() as /datum/sprite_accessory/tail
+	return tail_to_change_to_static
+
+/// Is this belly creating an egg? (a relation view: null once it is deleted).
+/obj/belly/proc/ownegg() as /obj/item/storage/vore_egg
+	return ownegg
+
+/// after() target: a temporary digest mode wears off.
+/obj/belly/proc/reset_digest_mode(mode)
+	set_digest_mode(mode)
+
+/obj/belly/muffles_death_of(mob/occupant)
+	return TRUE
+
+/// A digesting belly numbs prey who opted out of digestion pain.
+/obj/belly/numbs_pain_of(mob/living/occupant)
+	return !occupant.vore_prefs.digest_pain && (digest_mode == DM_DIGEST || digest_mode == DM_SELECT)

@@ -6,6 +6,34 @@ use super::{Sem, ast::{stmt_blocks, stmt_exprs, walk_expr}};
 
 pub use crate::engine_layering_policy::Finding;
 
+/// code/host/ is the neutral layer the engine calls: held to the engine's own boundary, so it names nothing external.
+fn host(file: &str) -> bool { file.starts_with("code/host/") }
+fn engine(file: &str) -> bool { file.starts_with("code/engine/") || host(file) }
+fn generated(file: &str) -> bool { file.starts_with("code/engine/_generated/") }
+/// The layer a scanned file sits in: what it may not name (`external`) and what authorizes a shared type or virtual proc (`lawful`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Layer {
+    /// code/engine/ and code/host/: names nothing in library, content or the old trees.
+    Engine,
+    /// code/library/: names nothing in content or the old trees. The engine, library itself and code/domains/world_model/ (the base
+    /// type declarations) all authorize a shared type.
+    Library,
+}
+impl Layer {
+    fn external(self, file: &str) -> bool {
+        let roots: &[&str] = match self {
+            Layer::Engine => &["code/library/", "code/content/", "code/game/", "code/modules/", "code/datums/"],
+            Layer::Library => &["code/content/", "code/game/", "code/modules/", "code/datums/"],
+        };
+        roots.iter().any(|root| file.starts_with(root))
+    }
+    fn lawful(self, file: &str) -> bool {
+        match self {
+            Layer::Engine => engine(file),
+            Layer::Library => engine(file) || file.starts_with("code/library/") || file.starts_with("code/domains/world_model/"),
+        }
+    }
+}
 // Derive exact intrinsic types from DreamMaker's builtin table: reopening a
 // builtin changes its source location, but does not make its type downstream-only.
 fn builtin_type(path: &str) -> bool {
@@ -21,29 +49,61 @@ fn type_path(v: &VarType) -> Option<String> {
     (!v.type_path.is_empty()).then(|| format!("/{}", v.type_path.join("/")))
 }
 
-struct SemFacts<'a>(&'a Sem);
-impl<'a,C:crate::key_policy_control::Control> crate::engine_layering_policy::Facts<C> for SemFacts<'a>{
- type Call=dreammaker::objtree::ProcRef<'a>;
- fn type_exists(&self,path:&str,c:&mut C)->Result<bool,C::Error>{c.checkpoint()?;Ok(self.0.ty(path).is_some())}
- fn def_at(&self,file:&str,line:u32,c:&mut C)->Result<Option<(String,String)>,C::Error>{c.checkpoint()?;Ok(self.0.def_at(file,line))}
- fn builtin_type(&self,path:&str,c:&mut C)->Result<bool,C::Error>{c.checkpoint()?;Ok(builtin_type(path))}
- fn type_headers(&self,path:&str)->Option<&[String]>{self.0.layering_type_defs.get(path).map(Vec::as_slice)}
- fn owner_definitions(&self,path:&str)->Option<&[String]>{self.0.layering_owner_defs.get(path).map(Vec::as_slice)}
- fn method(&self,owner:&str,name:&str,c:&mut C)->Result<Option<Self::Call>,C::Error>{c.checkpoint()?;Ok(self.0.proc_ref(owner,name))}
- fn global(&self,name:&str,c:&mut C)->Result<Option<Self::Call>,C::Error>{c.checkpoint()?;Ok(self.0.global_proc(name))}
- fn builtin_call(&self,call:&Self::Call,c:&mut C)->Result<bool,C::Error>{c.checkpoint()?;Ok(call.is_builtin())}
- fn callable_file(&self,call:&Self::Call,c:&mut C)->Result<String,C::Error>{c.checkpoint()?;let body=self.0.proc_body(*call);crate::key_policy_control::own(c,&body.file)}
- fn visit_method_declaration_files(&self,owner:&str,name:&str,c:&mut C,emit:&mut dyn FnMut(&str,&mut C)->Result<bool,C::Error>)->Result<(),C::Error>{let mut ancestor=Some(crate::key_policy_control::own(c,owner)?);while let Some(t)=ancestor{c.checkpoint()?;if let Some(local)=self.0.ty(&t).and_then(|ty|ty.get().procs.get(name)){for value in local.value.iter(){c.checkpoint()?;if !emit(self.0.rel(value.location),c)?{return Ok(())}}}ancestor=self.0.parent_of(&t);}Ok(())}
-}
-
-struct Walker<'a> { sem: &'a Sem, file: String, owner: String, line: u32, locals: BTreeMap<String, String>, found: BTreeSet<Finding> }
+struct Walker<'a> { sem: &'a Sem, file: String, owner: String, line: u32, locals: BTreeMap<String, String>, found: BTreeSet<Finding>, layer: Layer }
 impl Walker<'_> {
-    fn ty(&mut self, path: &str) { crate::engine_layering_policy::ty(&SemFacts(self.sem),&mut self.found,&self.file,self.line,path,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{}) }
-
-    fn method(&mut self, owner: &str, name: &str) { crate::engine_layering_policy::method(&SemFacts(self.sem),&mut self.found,&self.file,self.line,owner,name,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{}) }
-
-    fn global(&mut self, name: &str) { crate::engine_layering_policy::global(&SemFacts(self.sem),&mut self.found,&self.file,self.line,name,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{}) }
-
+    fn put(&mut self, rule: &'static str, message: String) {
+        self.found.insert(Finding { rule, file: self.file.clone(), line: self.line, message });
+    }
+    fn provenance(&mut self, symbol: &str, file: &str) {
+        if self.layer.external(file) {
+            self.put("external_dependency", format!("{} is defined in {}", symbol, file));
+        }
+    }
+    fn ty(&mut self, path: &str) {
+        // list/element/type is a collection annotation, not a declared /list subtype.
+        let path = path.strip_prefix("/list/").map(|p| format!("/{}", p)).unwrap_or_else(|| path.to_string());
+        if builtin_type(&path) { return; }
+        let definitions = self.sem.layering_type_defs.get(&path);
+        let genuine_headers: Vec<_> = definitions.into_iter().flatten().filter(|file| !generated(file)).collect();
+        // A generated reopening cannot authorize a downstream type. Where no
+        // genuine bare header exists, actual member definitions establish the
+        // implicit type; typed references never enter this fallback index.
+        let files: Vec<_> = if genuine_headers.is_empty() {
+            self.sem.layering_owner_defs.get(&path).into_iter().flatten().filter(|file| !generated(file)).collect()
+        } else { genuine_headers };
+        // A neutral reopening (for example in code/library/helpers) is not engine
+        // ownership and cannot authorize an application-defined type. Only a
+        // genuine, non-generated engine declaration establishes that boundary.
+        if !files.iter().any(|file| self.layer.lawful(file)) {
+            for file in files { self.provenance(&path, file); }
+        }
+    }
+    // A virtual interface declared in the engine is lawful even if a descendant overrides it downstream.
+    fn method(&mut self, owner: &str, name: &str) {
+        if owner == "/" || owner.is_empty() { self.global(name); return; }
+        let Some(p) = self.sem.proc_ref(owner, name) else { return; };
+        if p.is_builtin() { return; }
+        let mut ancestor = Some(owner.to_string());
+        while let Some(t) = ancestor {
+            if let Some(local) = self.sem.ty(&t).and_then(|ty| ty.get().procs.get(name)) {
+                if local.value.iter().any(|v| {
+                    let f = self.sem.rel(v.location);
+                    self.layer.lawful(f) && !generated(f)
+                }) { return; }
+            }
+            ancestor = self.sem.parent_of(&t);
+        }
+        let body = self.sem.proc_body(p);
+        self.provenance(&format!("{}::{}", owner, name), &body.file);
+    }
+    fn global(&mut self, name: &str) {
+        if let Some(p) = self.sem.global_proc(name) {
+            if !p.is_builtin() {
+                let body = self.sem.proc_body(p);
+                self.provenance(&format!("/proc/{}", name), &body.file);
+            }
+        }
+    }
     fn expr(&mut self, e: &Expression) {
         walk_expr(e, &mut |e| self.expr_one(e));
     }
@@ -132,6 +192,10 @@ impl Walker<'_> {
 }
 
 pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
+    scan_in(sem, included, Layer::Engine)
+}
+
+pub fn scan_in(sem: &Sem, included: &BTreeSet<String>, layer: Layer) -> Vec<Finding> {
     let mut all = BTreeSet::new();
     for ty in std::iter::once(sem.objtree.root()).chain(sem.objtree.iter_types()) {
         let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
@@ -139,7 +203,7 @@ pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
             for v in &proc.value {
                 let file = sem.rel(v.location).to_string();
                 if !included.contains(&file) { continue; }
-                let mut w = Walker { sem, file, owner: owner.clone(), line: v.location.line, locals: BTreeMap::new(), found: BTreeSet::new() };
+                let mut w = Walker { sem, file, owner: owner.clone(), line: v.location.line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
                 w.ty(&owner);
                 for p in &v.parameters {
                     if let Some(t) = type_path(&p.var_type) { w.ty(&t); w.locals.insert(p.name.clone(), t); }
@@ -158,7 +222,7 @@ pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
             if let Some(d) = &var.declaration {
                 let file = sem.rel(d.location).to_string();
                 if !included.contains(&file) { continue; }
-                let mut w = Walker { sem, file, owner: owner.clone(), line: d.location.line, locals: BTreeMap::new(), found: BTreeSet::new() };
+                let mut w = Walker { sem, file, owner: owner.clone(), line: d.location.line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
                 if let Some(t) = type_path(&d.var_type) { w.ty(&t); }
                 all.extend(w.found);
             }
@@ -168,9 +232,69 @@ pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
 }
 
 /// Source-only markers and explicit type/proc paths lost during macro expansion are resolved against the same model.
-pub fn source_paths(sem:&Sem,file:&str,line:u32,text:&str)->Vec<Finding>{let mut found=BTreeSet::new();crate::engine_layering_policy::source_paths(&SemFacts(sem),&mut found,file,line,text,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{});found.into_iter().collect()}
-pub fn marker_calls(sem:&Sem,file:&str,line:u32,text:&str)->Vec<Finding>{let mut found=BTreeSet::new();crate::engine_layering_policy::marker_calls(&SemFacts(sem),&mut found,file,line,text,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{});found.into_iter().collect()}
-pub fn source_proc_refs(sem:&Sem,file:&str,line:u32,text:&str,marker_owner:Option<&str>)->Vec<Finding>{let mut found=BTreeSet::new();crate::engine_layering_policy::source_proc_refs(&SemFacts(sem),&mut found,file,line,text,marker_owner,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{});found.into_iter().collect()}
+pub fn source_paths(sem: &Sem, file: &str, line: u32, text: &str) -> Vec<Finding> {
+    source_paths_in(sem, file, line, text, Layer::Engine)
+}
+pub fn source_paths_in(sem: &Sem, file: &str, line: u32, text: &str, layer: Layer) -> Vec<Finding> {
+    if !text.contains('/') { return Vec::new(); }
+    let mut w = Walker { sem, file: file.to_string(), owner: "/".to_string(), line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
+    static RE_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
+    let re = RE_PATTERN.get_or_init(|| regex::Regex::new(r"(?:^|[^\w])(/(?:[A-Za-z_]\w*/)*[A-Za-z_]\w*)").unwrap());
+    for cap in re.captures_iter(text) {
+        let mut path = cap[1].to_string();
+        if let Some((owner, name)) = path.rsplit_once("/proc/") {
+            if owner.is_empty() { w.global(name); } else { w.ty(owner); w.method(owner, name); }
+            continue;
+        }
+        while sem.ty(&path).is_none() {
+            let Some(pos) = path.rfind('/') else { break; };
+            if pos == 0 { break; }
+            path.truncate(pos);
+        }
+        w.ty(&path);
+    }
+    w.found.into_iter().collect()
+}
+
+
+/// Generator entries are erased before parsing. Resolve their direct helper names without guessing name prefixes.
+pub fn marker_calls(sem: &Sem, file: &str, line: u32, text: &str) -> Vec<Finding> {
+    marker_calls_in(sem, file, line, text, Layer::Engine)
+}
+pub fn marker_calls_in(sem: &Sem, file: &str, line: u32, text: &str, layer: Layer) -> Vec<Finding> {
+    if !text.contains('(') { return Vec::new(); }
+    let mut w = Walker { sem, file: file.to_string(), owner: "/".to_string(), line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
+    static RE_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
+    let re = RE_PATTERN.get_or_init(|| regex::Regex::new(r"\b([A-Za-z_]\w*)\s*\(").unwrap());
+    for cap in re.captures_iter(text) {
+        let token = cap.get(1).unwrap();
+        if text[..token.start()].chars().next_back().is_some_and(|c| c == '.' || c == '/') { continue; }
+        let name = &cap[1];
+        if let Some((owner, _)) = sem.def_at(file, line) {
+            if sem.proc_ref(&owner, name).is_some() { w.method(&owner, name); continue; }
+        }
+        w.global(name);
+    }
+    w.found.into_iter().collect()
+}
+
+
+/// Statically named callback references are dependencies even though nameof() erases them to strings.
+pub fn source_proc_refs(sem: &Sem, file: &str, line: u32, text: &str, marker_owner: Option<&str>) -> Vec<Finding> {
+    source_proc_refs_in(sem, file, line, text, marker_owner, Layer::Engine)
+}
+pub fn source_proc_refs_in(sem: &Sem, file: &str, line: u32, text: &str, marker_owner: Option<&str>, layer: Layer) -> Vec<Finding> {
+    if !text.contains("PROC_REF") { return Vec::new(); }
+    let owner = marker_owner.map(str::to_string).or_else(|| sem.def_at(file, line).map(|(owner, _)| owner)).unwrap_or_else(|| "/".to_string());
+    let mut w = Walker { sem, file: file.to_string(), owner: owner.clone(), line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
+    static TYPED_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
+    let typed = TYPED_PATTERN.get_or_init(|| regex::Regex::new(r"\bTYPE_PROC_REF\s*\(\s*(/[A-Za-z_][\w/]*)\s*,\s*([A-Za-z_]\w*)\s*\)").unwrap());
+    for cap in typed.captures_iter(text) { w.ty(&cap[1]); w.method(&cap[1], &cap[2]); }
+    static OWN_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
+    let own = OWN_PATTERN.get_or_init(|| regex::Regex::new(r"\bPROC_REF\s*\(\s*([A-Za-z_]\w*)\s*\)").unwrap());
+    for cap in own.captures_iter(text) { w.method(&owner, &cap[1]); }
+    w.found.into_iter().collect()
+}
 
 #[cfg(test)]
 mod tests {
@@ -298,6 +422,18 @@ mod tests {
     }
 
     #[test]
+    fn host_layer_is_held_to_the_engine_boundary() {
+        let (_root, sem) = fixture_sources(&[
+            ("code/host/probe.dm", "/proc/host_entry(obj/item/held)\n\treturn held\n/proc/host_other()\n\treturn engine_helper()\n"),
+            ("code/engine/caller.dm", "/proc/engine_helper()\n\treturn host_entry(null)\n"),
+            ("code/library/not_a_prefix.dm", "/obj/item\n\tname = \"item\"\n"),
+        ]);
+        let scanned = scan(&sem, &["code/host/probe.dm".to_string(), "code/engine/caller.dm".to_string()].into_iter().collect());
+        assert!(scanned.iter().any(|f| f.file == "code/host/probe.dm" && f.message.starts_with("/obj/item is defined in code/library/")));
+        assert!(!scanned.iter().any(|f| f.message.contains("/proc/host_entry")), "the engine may call host");
+    }
+
+    #[test]
     fn neutral_helper_reopening_does_not_authorize_downstream_item() {
         let (_root, sem) = fixture_sources(&[
             ("code/engine/probe.dm", "/obj/item/proc/engine_hook()\n\treturn null\n/proc/engine_entry(obj/item/held)\n\treturn held.engine_hook()\n"),
@@ -346,6 +482,22 @@ mod tests {
             "/datum/message/foreign/text = \"downstream message\"\n",
         );
         assert!(findings(&sem).iter().any(|f| f.message.contains("/datum/message/foreign")));
+    }
+
+    #[test]
+    fn library_layer_names_engine_library_and_world_model_but_not_content() {
+        let (_root, sem) = fixture_sources(&[
+            ("code/library/probe.dm", "/proc/library_entry(obj/item/held, datum/shared/s, datum/foreign/f)\n\treturn held\n"),
+            ("code/domains/world_model/item.dm", "/obj/item\n\tname = \"item\"\n"),
+            ("code/library/shared.dm", "/datum/shared\n"),
+            ("code/content/foreign.dm", "/datum/foreign\n"),
+        ]);
+        let included = ["code/library/probe.dm".to_string()].into_iter().collect();
+        let found = scan_in(&sem, &included, Layer::Library);
+        assert!(found.iter().any(|f| f.message.starts_with("/datum/foreign is defined in code/content/")), "{:?}", found);
+        assert!(!found.iter().any(|f| f.message.contains("/obj/item") || f.message.contains("/datum/shared")), "{:?}", found);
+        let engine = scan_in(&sem, &included, Layer::Engine);
+        assert!(engine.iter().any(|f| f.message.contains("/datum/shared")), "the engine layer may not name the library: {:?}", engine);
     }
 
 }

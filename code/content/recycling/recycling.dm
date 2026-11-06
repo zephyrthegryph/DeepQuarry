@@ -1,0 +1,297 @@
+/obj/machinery/recycling
+	density = TRUE
+	anchored = TRUE
+
+	var/working = FALSE
+	var/negative_dir = null // ition
+	var/hand_fed = TRUE
+
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/recycling)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	configure(uses_power(idle = 5, active = 500))
+	started_work(step = PROC_REF(work_step))
+	op("feed", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Feed"), needs(req_is(nameof(working), FALSE, because = MSG(recycling/working))), then(PROC_REF(interaction_feed)))
+	default_parts()
+
+/obj/machinery/recycling/proc/work_step(datum/act/timer/A)
+	return PROCESS_KILL // these are all stateful
+
+/obj/machinery/recycling/draw(datum/look/look)
+	..()
+	look.overlay(panel_overlay(), panel_open)
+
+/// The layer an open service panel shows.
+/obj/machinery/recycling/proc/panel_overlay()
+	return "-panel"
+
+/obj/machinery/recycling/crusher/panel_overlay()
+	return "crusher-panel"
+
+/obj/machinery/recycling/sorter/panel_overlay()
+	return "sorter-panel"
+
+/obj/machinery/recycling/stamper/panel_overlay()
+	return "stamper-panel"
+
+/**
+ * Generic procs common to all
+ */
+MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
+MSG_DEF_SELF(recycling/not_ready, "it isn't ready to take anything")
+MSG_DEF_SELF(recycling/wrong_input, "it doesn't take that")
+
+/**
+ * Old attackby: several silent guards (actor must be living and adjacent, not busy), then
+ * part replacement, then hand-feeding. Kept as one interaction with the whole old body since
+ * it never called ..() (unconditionally intercepts every item) and the guards mix silent
+ * returns with messaged refusals.
+ */
+/obj/machinery/recycling/proc/interaction_feed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(!isliving(user) || !Adjacent(user))
+		return OP_OK
+
+	if(default_part_replacement(user, O))
+		return OP_OK
+	if(!hand_fed)
+		return OP_OK
+	var/mob/living/M = user
+	if(isnull(recycle_refusal(O)))
+		M.drop_from_inventory(O)
+		take_item(O)
+		act_message(M, src, MSG_SELF(span_info("You insert [O] into %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " inserts [O] into %T%.")))
+	else
+		to_chat(user, span_warning("\The [src] can't accept [O] for recycling."))
+	return OP_OK
+
+// Conveyors etc
+/// The bump notice: `A` walked into it (was Bumped()).
+/obj/machinery/recycling/proc/bumped_by(datum/act/bump_act)
+	var/datum/notice/bumped/N = bump_act
+	var/atom/A = N.bumper
+	if(!isitem(A))
+		return
+	var/refused = recycle_refusal(A)
+	if(isnull(refused))
+		take_item(A)
+	else if(refused == /datum/msg/recycling/wrong_input)
+		divert_item(A)
+
+/// Why O can't go in now, or null (admission.md D6: a pure reason; the machine's state, then what kind of thing it takes).
+/obj/machinery/recycling/proc/recycle_refusal(obj/item/O)
+	if(!operable() || panel_open)
+		return /datum/msg/recycling/not_ready
+	if(working)
+		return /datum/msg/recycling/working
+	return null
+
+/// A conveyed item this machine does not take: left where it is unless the machine passes it on.
+/obj/machinery/recycling/proc/divert_item(obj/item/O)
+	return
+
+/obj/machinery/recycling/proc/take_item(obj/item/O)
+	O.forceMove(src)
+
+/**
+ * This machine takes items and turns them into heaps of junk.
+ */
+/obj/machinery/recycling/crusher
+	name = "recycling crusher"
+	desc = "This machine is designed to break things into their constituient parts via the application of directed kinetic force. A.K.A. it crushes things into bits."
+	icon = 'icons/obj/recycling.dmi'
+	icon_state = "crusher"
+	circuit = VARIANT(/obj/item/circuitboard/recycler_crusher)
+
+	working = FALSE
+	var/effic_factor = 0.5
+
+/obj/machinery/recycling/crusher/RefreshParts()
+	. = ..()
+	var/total_rating = get_part_rating(/obj/item/stock_parts/matter_bin) + get_part_rating(/obj/item/stock_parts/manipulator)
+
+	total_rating *= 0.1
+
+	effic_factor = CLAMP01(initial(effic_factor)+total_rating)
+
+/obj/machinery/recycling/crusher/recycle_refusal(obj/item/O)
+	if(!length(O.material_totals()))
+		return /datum/msg/recycling/wrong_input
+	return ..()
+
+/// ition: the crusher puts a conveyed thing it can't take out its negative side.
+/obj/machinery/recycling/crusher/divert_item(obj/item/O)
+	if(negative_dir && !ishuman(O.loc))
+		O.forceMove(get_step(src, negative_dir))
+	// ition End
+
+/obj/machinery/recycling/crusher/take_item(obj/item/O)
+	. = ..()
+	set_working(TRUE)
+	set_icon_state("crusher-process")
+	set_use_power(USE_POWER_ACTIVE)
+	after(src, 5 SECONDS, PROC_REF(crush_done), with = list(O))
+
+/obj/machinery/recycling/crusher/proc/crush_done(obj/item/O)
+	var/trash = 1 // Trash multiplier
+	var/list/modified_mats = list()
+	if(istype(O,/obj/item/trash)) // Trash multiplier
+		trash = 5 // Trash good
+	if(istype(O,/obj/item/stack))
+		var/obj/item/stack/S = O
+		trash = S.amount
+	var/list/item_matter = O.material_totals()
+	for(var/mat in item_matter)
+		modified_mats[mat] = item_matter[mat] * effic_factor * trash // Trash multiplier
+	var/turf/T = get_step(src, dir)
+	for(var/obj/item/debris_pack/D in turf_contents_of_type(T, /obj/item/debris_pack))
+		if(istype(D))
+			D.add_materials(modified_mats)
+			set_use_power(USE_POWER_IDLE)
+			set_icon_state("crusher")
+			destroyed(O, src, BRUTE)
+			set_working(FALSE)
+			return
+	new /obj/item/debris_pack(get_step(src, dir), modified_mats)
+	set_use_power(USE_POWER_IDLE)
+	set_icon_state("crusher")
+	destroyed(O, src, BRUTE)
+	set_working(FALSE)
+
+/**
+ * This machine takes heaps of junk and holds onto them until it has enough of one material to make a sheet.
+ */
+/obj/machinery/recycling/sorter
+	name = "debris sorter"
+	desc = "A machine for retaining debris and sorting it until enough of a similar material have accumulated to warrant conversion into sheets or ingots."
+	icon = 'icons/obj/recycling.dmi'
+	icon_state = "sorter"
+	circuit = VARIANT(/obj/item/circuitboard/recycler_sorter)
+
+	var/list/materials = list() // ALLOW(instance_list): d: sorter filter table set at init
+	working = FALSE
+
+/// TRUE while it hands out dust piles (after a sort): dispense_if_possible() every 2 seconds.
+/obj/machinery/recycling/sorter/var/dispensing = FALSE
+CAPABILITIES(/obj/machinery/recycling/sorter)
+	every(2 SECONDS, then(PROC_REF(dispense_if_possible)), when = nameof(dispensing))
+
+/obj/machinery/recycling/sorter/recycle_refusal(obj/item/O)
+	if(!istype(O, /obj/item/debris_pack))
+		return /datum/msg/recycling/wrong_input
+	return ..()
+
+/obj/machinery/recycling/sorter/take_item(obj/item/O)
+	. = ..()
+	set_working(TRUE)
+	set_icon_state("sorter-process")
+	set_use_power(USE_POWER_ACTIVE)
+	after(src, 2 SECONDS, PROC_REF(sort_done), with = list(O))
+
+/obj/machinery/recycling/sorter/proc/sort_done(obj/item/O)
+	sort_item(O)
+	set_dispensing(TRUE)
+
+/obj/machinery/recycling/sorter/proc/sort_item(obj/item/O)
+	var/list/item_matter = O.material_totals()
+	for(var/mat in item_matter)
+		if(mat in materials)
+			materials[mat] += item_matter[mat]
+		else
+			materials[mat] = item_matter[mat]
+	consumed(O, src)
+
+/// Dispenses one dust pile every 2 seconds (while dispensing) while any material has a
+/// sheet's worth, then idles.
+/obj/machinery/recycling/sorter/proc/dispense_if_possible(datum/act/timer/A)
+	for(var/mat in materials)
+		if(materials[mat] >= (SHEET_MATERIAL_AMOUNT))
+			materials[mat] -= (SHEET_MATERIAL_AMOUNT)
+			new /obj/item/material_dust(get_step(src, dir), mat)
+			return
+	set_dispensing(FALSE)
+	set_use_power(USE_POWER_IDLE)
+	set_icon_state("sorter")
+	set_working(FALSE)
+
+/**
+ * This machine makes sheets after being provided with material dust from a sorter.
+ */
+/obj/machinery/recycling/stamper
+	name = "sheet stamper"
+	desc = "A machine to press homogenous material particulate into more solid portable units of production. A.K.A. it compacts dust into sheets."
+	icon = 'icons/obj/recycling.dmi'
+	icon_state = "stamper"
+	circuit = VARIANT(/obj/item/circuitboard/recycler_stamper)
+
+/obj/machinery/recycling/stamper/recycle_refusal(obj/item/O)
+	if(!istype(O, /obj/item/material_dust))
+		return /datum/msg/recycling/wrong_input
+	return ..()
+
+/obj/machinery/recycling/stamper/take_item(obj/item/O)
+	. = ..()
+	set_working(TRUE)
+	set_icon_state("stamper-process")
+	set_use_power(USE_POWER_ACTIVE)
+	after(src, 6.4 SECONDS, PROC_REF(stamp_done), with = list(O))
+
+/obj/machinery/recycling/stamper/proc/stamp_done(obj/item/O)
+	dust_to_sheet(O)
+	set_icon_state("stamper")
+	set_use_power(USE_POWER_IDLE)
+	set_working(FALSE)
+
+/obj/machinery/recycling/stamper/proc/dust_to_sheet(obj/item/material_dust/D)
+	if(!istype(D))
+		return
+	var/datum/material/M = get_material_by_name(D.material_name)
+	if(!M)
+		D.forceMove(get_step(src, dir))
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
+		WARNING("Dust in [src] had material_name [D.material_name], which can't be made into stacks")
+		return
+
+	var/stacktype = M.stack_type
+	var/turf/T = get_step(src, dir)
+	var/obj/item/stack/S = locate_on(T, stacktype)
+	if(S && S.get_amount() < S.max_amount)
+		S.add(1)
+	else
+		new stacktype(T, 1)
+
+/obj/item/debris_pack
+	name = "debris"
+	desc = "Some ground-up parts of ... something. Might be useful for recycling."
+	icon = 'icons/obj/recycling.dmi'
+	icon_state = "debris"
+	w_class = ITEMSIZE_NORMAL
+
+CAPABILITIES(/obj/item/debris_pack)
+	param(nameof(matter_at_make), pos = 1, apply = PROC_REF(hold_matter), keep = FALSE)
+
+/// The matter a debris pack holds (its constructor param, dropped once set).
+/obj/item/debris_pack/var/tmp/list/matter_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/debris_pack/proc/hold_matter(list/matter_init)
+	set_material_mix(matter_init?.Copy())
+
+/obj/item/material_dust
+	name = "dust"
+	desc = "A homogenous powder of some material or another. Might be useful for recycling."
+	icon = 'icons/obj/recycling.dmi'
+	icon_state = "matdust"
+	w_class = ITEMSIZE_SMALL
+	var/material_name
+
+CAPABILITIES(/obj/item/material_dust)
+	param(nameof(material_name), pos = 1, apply = PROC_REF(dust_of))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The dust is named and coloured for its material.
+/obj/item/material_dust/proc/dust_of(mat)
+	name = "[material_name] [initial(name)]"
+	var/datum/material/M = get_material_by_name(material_name)
+	set_color(M?.icon_colour)

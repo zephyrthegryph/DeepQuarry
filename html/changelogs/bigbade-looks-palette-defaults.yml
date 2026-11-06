@@ -1,0 +1,6 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "Colours link to the palette: new characters start linked, existing ones link wherever a colour already equals a slot, with no change in look."
+  - rscdel: "Skin tone is gone; the two species that used it now use skin colour."
+  - bugfix: "Hair and beard thumbnails in character setup asked for sprite states that do not exist."

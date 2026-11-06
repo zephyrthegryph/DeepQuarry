@@ -1,0 +1,90 @@
+// Blob simple_mobs generally get made from the blob random event.
+// They're considered slimes for the purposes of attack bonuses from certain weapons.
+
+// Do not spawn, this is a base type.
+/mob/living/simple_mob/blob
+	icon = 'icons/mob/blob.dmi'
+	pass_flags = PASSBLOB | PASSTABLE
+
+	organ_names = /datum/decl/mob_organ_names/blob
+
+	heat_damage_per_tick = 0
+	cold_damage_per_tick = 0
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+
+	taser_kill = FALSE
+
+	var/mob/observer/blob/overmind = null
+	var/obj/structure/blob/factory/factory = null
+	var/datum/blob_type/blob_type = null	// Used for the blob core items, as they have no overmind mob.
+
+
+
+/mob/living/simple_mob/blob/speech_bubble_appearance()
+	return "slime"
+
+/// The blob's complementary colour: its overmind's type, else the type it carries.
+/mob/living/simple_mob/blob/proc/blob_colour()
+	if(overmind)
+		return overmind.blob_type.complementary_color
+	return blob_type?.complementary_color
+
+/mob/living/simple_mob/blob/draw(datum/look/look)
+	..()
+	look.set_color(blob_colour())
+
+CAPABILITIES(/mob/living/simple_mob/blob)
+	configure(mob_rules(faction = FACTION_BLOB))
+	configure(mob_nature(can_pain_emote = FALSE))
+	ref_one(nameof(blob_type), /datum/blob_type)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_SLIME))
+	links(/mob/living/simple_mob/blob::overmind, /mob/observer/blob::blob_mobs, b_many = TRUE)
+	links(/mob/living/simple_mob/blob::factory, /obj/structure/blob/factory::spores, b_many = TRUE)
+
+/mob/living/simple_mob/blob/blob_act(obj/structure/blob/B)
+	if(!overmind && B.overmind)
+		rel_set(src, nameof(overmind), B.overmind)
+		set_faction(B.overmind.blob_type.faction)
+
+	if(mob_rules_of(src).faction != B.faction && B.overmind)
+		injure(INJURY_BLUNT, rand(B.overmind.blob_type.damage_lower, B.overmind.blob_type.damage_upper), source = B)
+
+	else if(stat != DEAD && is_injured())
+		var/regen = get_endurance() * 0.0125
+		mend(TREAT_TISSUE_REPAIR, regen)
+		mend(TREAT_BURN_CARE, regen)
+
+/mob/living/simple_mob/blob/CanPass(atom/movable/mover, turf/target)
+	if(istype(mover, /obj/structure/blob)) // Don't block blobs from expanding onto a tile occupied by a blob mob.
+		return TRUE
+	return ..()
+
+/mob/living/simple_mob/blob/Process_Spacemove()
+	for(var/obj/structure/blob/B in range(1, src))
+		return TRUE
+	return ..()
+
+/mob/living/simple_mob/blob/IIsAlly(mob/living/L)
+	var/ally = ..(L)
+	if(!ally)
+		var/list/items = L.get_all_held_items()
+		for(var/obj/item/I in items)
+			if(istype(I, /obj/item/blobcore_chunk))
+				var/obj/item/blobcore_chunk/BC = I
+				if(!overmind || (BC.blob_type && overmind.blob_type.type == BC.blob_type.type) || (BC.blob_type && BC.blob_type.faction == mob_rules_of(src).faction))
+					ally = TRUE
+				break
+
+	return ally
+
+/datum/decl/mob_organ_names/blob
+TYPE_TABLE(/datum/decl/mob_organ_names/blob, mob_organ_hit_zones, list("mass"))

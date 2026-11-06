@@ -1,4 +1,4 @@
-//! Hard engine boundary to library/content/game/modules/datums: semantic provenance, not name prefixes.
+//! Hard engine boundary to library/content/game/modules/datums, with code/host/ held to the same boundary: semantic provenance, not name prefixes.
 //! Dynamic target values and untyped receiver chains have no static provenance and are not prohibited by this lint.
 use std::collections::BTreeSet;
 use crate::lint::{Cx,Lint,Meta,Registry,Sink};
@@ -8,20 +8,20 @@ struct EngineLayering;
 impl Lint for EngineLayering {
     fn meta(&self) -> &Meta { metadata() }
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        let files: Vec<_> = cx.files().into_iter().filter(|f| f.rel.starts_with("code/engine/")).collect();
+        let files: Vec<_> = cx.files().into_iter().filter(|f| f.rel.starts_with("code/engine/") || f.rel.starts_with("code/host/")).collect();
         if files.is_empty() { return; }
         let Some(sem) = cx.sem() else {
             out.site_in_msg("semantic_model", &files[0].rel, 1, "no semantic model: engine boundary not verified"); return;
         };
         let included: BTreeSet<_> = files.iter().map(|f| f.rel.clone()).collect();
         let mut found: BTreeSet<_> = crate::sem::layering::scan(&sem, &included).into_iter().collect();
-        let marker_type = regex::Regex::new(r"^(?:(?:CAPABILITIES|STAT)\s*\(\s*(/[A-Za-z_][\w/]*)|CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*))").unwrap();
+        let marker_type = regex::Regex::new(r"^(?:(?:CAPABILITIES_PART|CAPABILITIES|STAT)\s*\(\s*(/[A-Za-z_][\w/]*)|CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*))").unwrap();
         for f in files {
             let mut entries = false;
             let mut marker_owner: Option<String> = None;
             for (line, text) in f.clean().numbered() {
                 if !text.starts_with('\t') && !text.starts_with(' ') && !text.trim().is_empty() {
-                    entries = text.starts_with("CAPABILITIES(") || text.starts_with("STAT(") || text.starts_with("CAPABILITY_TYPE(");
+                    entries = text.starts_with("CAPABILITIES(") || text.starts_with("CAPABILITIES_PART(") || text.starts_with("STAT(") || text.starts_with("CAPABILITY_TYPE(");
                     marker_owner = marker_type.captures(text).and_then(|cap| cap.get(1).or_else(|| cap.get(2)).map(|m| m.as_str().to_string()));
                 }
                 found.extend(crate::sem::layering::source_paths(&sem, &f.rel, line as u32, text));

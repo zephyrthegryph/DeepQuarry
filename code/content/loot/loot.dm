@@ -1,0 +1,569 @@
+// One declared loot system (doc/rewrite/systems.md §8). Declarations: code/library/loot/loot_entries.dm.
+//
+// A type's loot(...) entry makes the shared /datum/loot_decl that loot_decl_for(path) answers. loot_spawn() rolls and creates, with a seeded /datum/loot_rng so map loot is reproducible per round seed. /obj/random is resolved at
+// map time through resolve_loot() (its map_resolver entry) and never becomes a live atom. loot_search_roll() is the tiered roll of a search of a pile (code/library/loot/loot_search.dm).
+
+/// The round's loot seed: every map-time roll is seeded from it and the roll's position and type.
+GLOBAL_VAR_INIT(loot_seed, rand(0, LOOT_HASH_MOD - 1))
+/// Runtime rolls mix this serial in, so two runtime rolls on one tile differ.
+GLOBAL_VAR_INIT(loot_roll_serial, 0)
+
+// ---- declarations ----
+
+/datum/loot_decl
+	/// FALSE until build() ran.
+	var/built = FALSE
+	/// The main weighted table, or null.
+	var/datum/loot_entry/sub/main_table
+	var/count = 1
+	/// Percent chance that anything spawns.
+	var/chance = 100
+	/// Entries that always spawn.
+	var/list/all
+	var/hook
+	/// The table roll is fixed per round (LOOT_PER_ROUND): rolling path -> its pick, once made.
+	var/per_round = FALSE
+	var/list/round_picks
+
+	// Search tiers (loot_search()).
+	var/datum/loot_entry/sub/unlucky
+	var/datum/loot_entry/sub/uncommon
+	var/datum/loot_entry/sub/rare
+	var/uncommon_chance = 0
+	var/rare_chance = 0
+	var/gamma_chance = 0
+	var/loot_left = 0
+	var/delete_on_depletion = FALSE
+	var/repeat_search = FALSE
+
+CAPABILITIES(/datum/loot_decl)
+	owns_one(nameof(main_table), /datum/loot_entry/sub)
+	owns_one(nameof(rare), /datum/loot_entry/sub)
+	owns_one(nameof(uncommon), /datum/loot_entry/sub)
+	owns_one(nameof(unlucky), /datum/loot_entry/sub)
+
+
+/// Builds the declaration from its loot() entry (loot_entries.dm): the rows the entry names.
+/datum/loot_decl/proc/build_entry(datum/entry/E)
+	built = TRUE
+	var/list/rows = E.args
+	var/any = FALSE
+	for(var/name in rows)
+		if(!isnull(rows[name]))
+			any = TRUE
+			break
+	if(!any)
+		return FALSE
+	if(rows["table"])
+		rel_set(src, nameof(main_table), new /datum/loot_entry/sub(1, rows["table"]))
+	if(!isnull(rows["count"]))
+		set_count(rows["count"])
+	if(!isnull(rows["chance"]))
+		chance = rows["chance"]
+	all = rows["all"]
+	hook = rows["hook"]
+	per_round = !!rows["per_round"]
+	if(rows["unlucky"])
+		rel_set(src, nameof(unlucky), new /datum/loot_entry/sub(1, rows["unlucky"]))
+	var/list/tier = rows["uncommon"]
+	if(tier)
+		uncommon_chance = tier[1] || 0
+		rel_set(src, nameof(uncommon), new /datum/loot_entry/sub(1, tier[2]))
+	tier = rows["rare"]
+	if(tier)
+		rare_chance = tier[1] || 0
+		rel_set(src, nameof(rare), new /datum/loot_entry/sub(1, tier[2]))
+	gamma_chance = rows["gamma_chance"] || 0
+	var/list/depletion = rows["depletion"]
+	if(depletion)
+		loot_left = depletion[1] || 0
+		delete_on_depletion = !!depletion[2]
+	repeat_search = !!rows["repeat_search"]
+	return TRUE
+
+/// type => its /datum/loot_decl, for every type under one that declares loot(...): built at world setup (loot_entries.dm), never after.
+GLOBAL_LIST_EMPTY(loot_decls)
+
+/// type => TRUE for a spawner type whose roll can come round to its own table again (found at world setup, loot_entries.dm). A roll of such a type
+/// would repeat at the spawn, without end; loot_spawn() spawns nothing for it.
+GLOBAL_LIST_EMPTY(loot_refused)
+
+/// Every path this declaration can create (its tables, tiers and `all` rows, nested entries included).
+/datum/loot_decl/proc/spawned_paths()
+	. = list()
+	for(var/datum/loot_entry/sub/table in list(main_table, unlucky, uncommon, rare))
+		loot_entry_paths(table, .)
+	loot_entry_paths(all, .)
+
+/// Adds to `into` the paths `entry` (a path, an entry datum or a list of them) can create.
+/proc/loot_entry_paths(entry, list/into)
+	if(isnull(entry))
+		return
+	if(ispath(entry))
+		into |= entry
+		return
+	if(istext(entry))
+		into |= saved_type_path(entry)
+		return
+	if(islist(entry))
+		for(var/row in entry)
+			loot_entry_paths(row, into)
+		return
+	if(istype(entry, /datum/loot_entry/sub))
+		var/datum/loot_entry/sub/table = entry
+		loot_entry_paths(table.entries, into)
+	else if(istype(entry, /datum/loot_entry/group))
+		var/datum/loot_entry/group/bundle = entry
+		loot_entry_paths(bundle.entries, into)
+	else if(istype(entry, /datum/loot_entry/stack))
+		var/datum/loot_entry/stack/pile = entry
+		into |= pile.path
+
+/// The loot declaration for `path`: a type with a loot() entry or under one that has it. Null when there is none.
+/proc/loot_decl_for(path)
+	RETURN_TYPE(/datum/loot_decl)
+	if(isnull(path))
+		return null
+	static_entries_ensure("loot_decl_for([path])")
+	return GLOB.loot_decls[path]
+
+// ---- table entries ----
+
+/// One non-path table entry. Weighted by `weight` in the table that holds it.
+/datum/loot_entry
+	var/weight = 1
+
+/datum/loot_entry/New(weight)
+	src.weight = weight
+
+/// Creates this entry's atoms (see loot_emit()).
+/datum/loot_entry/proc/emit(atom/loc, datum/loot_rng/rng, list/direct, list/nested)
+	return
+
+/// Every entry spawns.
+/datum/loot_entry/group
+	var/list/entries
+
+/datum/loot_entry/group/New(weight, list/entries)
+	..()
+	src.entries = entries
+
+/datum/loot_entry/group/emit(atom/loc, datum/loot_rng/rng, list/direct, list/nested)
+	for(var/entry in entries)
+		loot_emit(entry, loc, rng, direct, nested)
+
+/// A weighted pick among entries (paths weighted by their assoc value, default 1, or entry datums).
+/datum/loot_entry/sub
+	var/list/entries
+	var/list/weights
+	var/total = 0
+
+/datum/loot_entry/sub/New(weight, list/source)
+	..()
+	entries = list()
+	weights = list()
+	for(var/entry in source)
+		var/entry_weight
+		if(istype(entry, /datum/loot_entry))
+			var/datum/loot_entry/E = entry
+			entry_weight = E.weight
+		else
+			entry_weight = source[entry]
+			if(!isnum(entry_weight))
+				entry_weight = 1
+		if(entry_weight <= 0)
+			continue
+		entries += entry
+		weights += entry_weight
+		total += entry_weight
+
+/// One entry, rolled with rng.
+/datum/loot_entry/sub/proc/pick_entry(datum/loot_rng/rng)
+	if(!total)
+		return null
+	var/roll = rng.next() * total
+	for(var/i in 1 to length(entries))
+		roll -= weights[i]
+		if(roll < 0)
+			return entries[i]
+	return entries[length(entries)]
+
+/datum/loot_entry/sub/emit(atom/loc, datum/loot_rng/rng, list/direct, list/nested)
+	loot_emit(pick_entry(rng), loc, rng, direct, nested)
+
+/// A computed list of paths, each weighing the entry's weight.
+/datum/loot_entry/sub/types
+
+/datum/loot_entry/sub/types/New(weight, list/source)
+	..(weight, source)
+	src.weight = weight * length(entries)
+
+/// A stack with an amount.
+/datum/loot_entry/stack
+	var/path
+	var/amount
+
+/datum/loot_entry/stack/New(weight, path, amount)
+	..()
+	src.path = path
+	src.amount = amount
+
+/datum/loot_entry/stack/emit(atom/loc, datum/loot_rng/rng, list/direct, list/nested)
+	direct += new path(loc, amount)
+
+// ---- seeded rng ----
+
+/// Wichmann-Hill: three small LCGs whose products stay exact in BYOND's floats.
+/datum/loot_rng
+	var/s1 = 1
+	var/s2 = 1
+	var/s3 = 1
+
+/datum/loot_rng/New(seed)
+	seed = abs(round(seed))
+	s1 = (seed % 30268) + 1
+	s2 = (round(seed / 7) % 30306) + 1
+	s3 = (round(seed / 13) % 30322) + 1
+	next()
+	next()
+
+/// A float in [0, 1).
+/datum/loot_rng/proc/next()
+	s1 = (171 * s1) % 30269
+	s2 = (172 * s2) % 30307
+	s3 = (170 * s3) % 30323
+	var/sum = s1 / 30269 + s2 / 30307 + s3 / 30323
+	return sum - round(sum)
+
+/// TRUE with `percent` percent probability.
+/datum/loot_rng/proc/chance(percent)
+	return next() * 100 < percent
+
+/// A stable hash of a type path (djb2-style, kept under LOOT_HASH_MOD so it stays exact).
+/proc/loot_type_hash(path)
+	return CACHED(loot_type_hashes, path)
+
+DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC_NEVER)
+
+/// Computes loot_type_hash()'s value for `path` (its cache builder). A pure table (/loot/...) keeps the text its declaration type had before the tables
+/// became types of their own (/datum/loot_decl/loot/...), so the rolls a round's seed gives are the same as they were.
+/proc/build_loot_type_hash(path)
+	var/text = "[path]"
+	if(ispath(path, /loot))
+		text = "/datum/loot_decl[text]"
+	var/h = 5381 % LOOT_HASH_MOD
+	for(var/i in 1 to length(text))
+		h = (h * 31 + text2ascii(text, i)) % LOOT_HASH_MOD
+	return h
+
+/// The rng for a roll of `path` at `loc`: seeded from the round seed, the position and the type,
+/// plus a serial when the roll happens after map load.
+/proc/loot_rng_at(atom/loc, path)
+	var/turf/T = get_turf(loc)
+	var/h = GLOB.loot_seed % LOOT_HASH_MOD
+	h = (h * 31 + (T ? T.x : 0)) % LOOT_HASH_MOD
+	h = (h * 31 + (T ? T.y : 0)) % LOOT_HASH_MOD
+	h = (h * 31 + (T ? T.z : 0)) % LOOT_HASH_MOD
+	h = (h * 31 + loot_type_hash(path)) % LOOT_HASH_MOD
+	if(atoms_atom_initialized() == INITIALIZATION_INNEW_REGULAR)
+		GLOB.loot_roll_serial = (GLOB.loot_roll_serial + 1) % LOOT_HASH_MOD
+		h = (h * 31 + GLOB.loot_roll_serial) % LOOT_HASH_MOD
+	return new /datum/loot_rng(h)
+
+// ---- rolling and spawning ----
+
+/// Rolls `path`'s declared loot at `loc` and creates it. `varedits` are the map edits of the
+/// spawner (read by hooks). Returns every atom created (nested tables included), or null; the
+/// ones this declaration created itself (not nested tables) are also added to `direct_out`.
+/// A path with no declaration is simply created.
+/proc/loot_spawn(path, atom/loc, list/varedits, datum/loot_rng/rng, list/direct_out)
+	if(GLOB.loot_refused[path])
+		return null // its roll can make itself again: refused (and warned of) when the declarations were built
+	var/datum/loot_decl/decl = loot_decl_for(path)
+	if(!rng)
+		rng = loot_rng_at(loc, path)
+	var/list/direct = list()
+	var/list/nested = list()
+	if(!decl)
+		loot_emit(path, loc, rng, direct, nested)
+	else
+		if(decl.chance < 100 && !rng.chance(decl.chance))
+			return null
+		if(decl.main_table)
+			for(var/i in 1 to decl.count)
+				var/entry
+				if(decl.per_round)
+					entry = LAZYACCESS(decl.round_picks, path)
+					if(!entry)
+						entry = decl.main_table.pick_entry(new /datum/loot_rng(GLOB.loot_seed + loot_type_hash(path)))
+						LAZYSET(decl.round_picks, path, entry)
+				else
+					entry = decl.main_table.pick_entry(rng)
+				loot_emit(entry, loc, rng, direct, nested)
+		for(var/entry in decl.all)
+			loot_emit(entry, loc, rng, direct, nested)
+		if(decl.hook)
+			for(var/atom/A as anything in direct)
+				if(!QDELETED(A))
+					call(decl.hook)(A, path, varedits, rng)
+	if(direct_out)
+		direct_out += direct
+	if(!length(direct) && !length(nested))
+		return null
+	return direct + nested
+
+/// Creates one table entry at `loc`: what it creates itself goes to `direct`; entries with a loot
+/// declaration or a map resolver of their own roll through it, and what they create goes to `nested`.
+/proc/loot_emit(entry, atom/loc, datum/loot_rng/rng, list/direct, list/nested)
+	if(isnull(entry))
+		return
+	if(istype(entry, /datum/loot_entry))
+		var/datum/loot_entry/E = entry
+		E.emit(loc, rng, direct, nested)
+		return
+	if(istext(entry))
+		// A VARIANT() reference: the parent type made with its row key.
+		direct += variant_new(entry, loc)
+		return
+	if(!ispath(entry))
+		CRASH("loot_emit: bad loot entry [entry]")
+	if(ispath(entry, /loot))
+		nested += loot_spawn(entry, loc, null, rng)
+		return
+	if(ispath(entry, /turf))
+		var/turf/T = get_turf(loc)
+		if(T)
+			direct += T.ChangeTurf(entry, 1, 1, FALSE)
+		return
+	var/resolver = map_resolver_proc(entry)
+	if(resolver == GLOBAL_PROC_REF(resolve_loot))
+		nested += resolve_loot(loc, entry, null, rng)
+		return
+	if(resolver)
+		call(resolver)(loc, entry, null)
+		return
+	direct += new entry(loc)
+
+// ---- /obj/random ----
+
+CAPABILITIES(/obj/random)
+	map_resolver(GLOBAL_PROC_REF(resolve_loot), vars = list("drop_get_turf"))
+
+/// The map resolver of /obj/random: rolls its declaration where the spawner stands and applies the
+/// spawner's mapped offset and direction to what it made. Returns what it created (TRUE-ish for
+/// the map loader even when the roll made nothing: the spawner is resolved either way).
+/proc/resolve_loot(atom/loc, path, list/varedits, datum/loot_rng/rng)
+	var/atom/where = loc
+	if(ispath(path, /obj/random))
+		var/obj/random/P = path
+		if(where && MAP_VAR(P, varedits, drop_get_turf))
+			where = get_turf(where)
+	var/list/direct = list()
+	var/list/made = loot_spawn(path, where, varedits, rng, direct)
+	if(length(varedits) && length(direct))
+		var/has_px = ("pixel_x" in varedits)
+		var/has_py = ("pixel_y" in varedits)
+		var/has_dir = ("dir" in varedits)
+		for(var/atom/A as anything in direct)
+			if(QDELETED(A) || isturf(A))
+				continue
+			if(has_px)
+				A.set_pixel_x(varedits["pixel_x"])
+			if(has_py)
+				A.set_pixel_y(varedits["pixel_y"])
+			if(has_dir)
+				A.set_dir(varedits["dir"])
+	return made || list()
+
+// ---- searchable loot ----
+
+/// The tiered roll of a search of `source` (a pile with a loot_search() entry) by `L`, when the search is allowed (loot_rolls(), after the requirements
+/// of loot_search.dm): the chance the table gives, then the searcher is marked, the tier is drawn (unlucky, uncommon, rare, the gamma pool, else the main
+/// table), and what it made is put on the pile's turf. The table and the percent chance a raccoon jumps out are the pile's loot_search() entry.
+/proc/loot_search_roll(obj/structure/source, mob/living/L)
+	var/table = loot_search_table(source.type)
+	var/wake_chance = loot_search_wake_chance(source.type)
+	var/datum/loot_decl/decl = loot_decl_for(table)
+	if(!decl)
+		return
+	if(decl.chance < 100 && !prob(decl.chance))
+		to_chat(L, span_warning("Nothing in \the [source] really catches your eye..."))
+		return
+
+	var/found_key = L?.ckey || LOOT_SEARCH_NO_KEY
+	if(L?.ckey)
+		hold(source, STAT_LOOT_SEARCHED, 1, source, key = L.ckey)
+
+	var/datum/loot_rng/rng = loot_rng_at(source, table)
+	var/datum/loot_entry/sub/tier = decl.main_table
+	var/span = "notice"
+	var/obj/item/gamma
+	if(has_trait(L, TRAIT_UNLUCKY) && decl.unlucky)
+		tier = decl.unlucky
+		span = "cult"
+		if(prob(1))
+			to_chat(L, span_danger("You cut your hand on something in the trash!"))
+			L.injure(INJURY_CUT, 2, pick(BP_L_HAND, BP_R_HAND), source)
+			var/datum/affliction/contagion/engineered/random/random_disease = new /datum/affliction/contagion/engineered/random()
+			random_disease.set_spread_flags(random_disease.spread_flags | DISEASE_SPREAD_NON_CONTAGIOUS)
+			L.force_contagion(random_disease)
+	else if(decl.uncommon && prob(decl.uncommon_chance))
+		tier = decl.uncommon
+		span = "alium"
+	else if(decl.rare && prob(decl.rare_chance))
+		tier = decl.rare
+		span = "cult"
+	else if(decl.gamma_chance && prob(decl.gamma_chance) && length(GLOB.unique_gamma_loot))
+		gamma = loot_produce_gamma(source, decl, rng)
+		span = "cult"
+
+	var/atom/movable/loot = gamma
+	if(!loot && tier)
+		var/list/made = list()
+		loot_emit(tier.pick_entry(rng), source, rng, made, made)
+		for(var/atom/movable/AM as anything in made)
+			if(!loot)
+				loot = AM
+			AM.forceMove(get_turf(source))
+	if(!loot)
+		return
+	var/final_message = "You found \a [loot]!"
+	switch(span)
+		if("notice")
+			final_message = span_notice(final_message)
+		if("cult")
+			final_message = span_cult(final_message)
+		if("alium")
+			final_message = span_alium(final_message)
+	to_chat(L, span_info(final_message))
+	if(rand(1, 100) <= wake_chance)
+		new /mob/living/simple_mob/animal/passive/raccoon(get_turf(source))
+		source.visible_message("A raccoon jumps out of the trash!.")
+
+	if(!decl.loot_left)
+		return
+	hold(source, STAT_LOOT_FOUND, (loot_search_keys(source, STAT_LOOT_FOUND)[found_key] || 0) + 1, source, key = found_key)
+	if(loot_search_found(source) < decl.loot_left)
+		return
+	to_chat(L, span_warning("You seem to have gotten the last of the spoils in \the [source]."))
+	if(decl.delete_on_depletion)
+		source.expire(0)
+
+/// A unique item from GLOB.unique_gamma_loot (reclaiming one whose holder is gone when the pool
+/// is empty), or a rare-tier item when none is left.
+/proc/loot_produce_gamma(obj/structure/source, datum/loot_decl/decl, datum/loot_rng/rng)
+	var/path = pick_n_take(GLOB.unique_gamma_loot)
+	if(!path)
+		for(var/P in GLOB.allocated_gamma_loot)
+			var/obj/item/I = allocated_gamma_item(P)
+			if(QDELETED(I) || istype(I.loc, /obj/machinery/computer/cryopod))
+				restore_gamma_loot(P)
+				path = P
+				break
+	if(path)
+		var/obj/item/I = new path(source)
+		GLOB.allocated_gamma_loot |= path
+		SSpois.allocate_gamma_item(I)
+		return I
+	if(decl.rare)
+		var/list/made = list()
+		loot_emit(decl.rare.pick_entry(rng), source, rng, made, made)
+		return length(made) ? made[1] : null
+	return null
+
+/// Restores a removed gamma loot item back to the pool.
+/proc/restore_gamma_loot(w_type)
+	GLOB.allocated_gamma_loot -= w_type
+	var/obj/item/I = allocated_gamma_item(w_type)
+	if(I)
+		SSpois.release_gamma_item(I)
+	GLOB.unique_gamma_loot += w_type
+
+/// The live item spawned for gamma loot path `w_type`, or null (it was deleted, or never spawned).
+/proc/allocated_gamma_item(w_type)
+	for(var/obj/item/I as anything in SSpois.gamma_items())
+		if(I.type == w_type)
+			return I
+	return null
+
+/// Finds the types in `decls` whose roll comes round to itself (loot_self_spawners()), warns once for each by name and makes loot_spawn() spawn nothing for them.
+/proc/loot_refuse_self_spawners(list/decls)
+	var/list/refused = loot_self_spawners(decls)
+	for(var/type in refused)
+		WARNING("loot table of [type] rolls [refused[type]], whose roll leads back to this table: the roll would repeat without end, so [type] spawns nothing")
+	GLOB.loot_refused = list()
+	for(var/type in refused)
+		GLOB.loot_refused[type] = TRUE
+
+/// type => the first path in its table whose roll leads back to the type's own table, for each type in `decls` (type => /datum/loot_decl) whose roll can
+/// come round to itself: a spawner that rolls itself again at the spawn repeats without end. A path is followed through its own declaration in `decls`
+/// (a type that inherits a table shares it; a spawner may roll another spawner's different table without a fault).
+/proc/loot_self_spawners(list/decls)
+	. = list()
+	var/list/paths_of = list()
+	var/list/on_cycle = list()
+	for(var/type in decls)
+		var/datum/loot_decl/decl = decls[type]
+		if(decl in on_cycle)
+			continue
+		// every table reachable from this one's rows; this table is on a cycle when it is among them
+		var/list/seen = list()
+		var/list/queue = list()
+		queue += loot_decl_paths(decl, paths_of)
+		var/head = 1
+		while(head <= length(queue))
+			var/path = queue[head++]
+			var/datum/loot_decl/next = decls[path]
+			if(!next)
+				continue
+			if(next == decl)
+				on_cycle[decl] = path
+				break
+			if(next in seen)
+				continue
+			seen += next
+			queue += loot_decl_paths(next, paths_of)
+	for(var/type in decls)
+		var/datum/loot_decl/decl = decls[type]
+		if(decl in on_cycle)
+			.[type] = on_cycle[decl]
+
+/// The paths `decl` can create, kept in `cache` (decl => paths).
+/proc/loot_decl_paths(datum/loot_decl/decl, list/cache)
+	var/list/paths = cache[decl]
+	if(isnull(paths))
+		paths = decl.spawned_paths()
+		cache[decl] = paths
+	return paths
+
+// ---- the loot entry's engine (builds the declarations at world setup) ----
+
+/datum/entry_engine/loot
+	kind = ENTRY_LOOT
+	static_kind = TRUE
+	singleton = TRUE
+
+/// A subtype's loot rows over the inherited ones. What spawns (table, all, per_round) is replaced as one unit, as the old per-type vars inherited.
+/datum/entry_engine/loot/merge(datum/entry/old, datum/entry/changes)
+	return entry_make(ENTRY_LOOT, null, entry_merge_args(old, changes, list(list("table", "all", "per_round"))))
+
+/// Builds the loot declarations: one /datum/loot_decl per declaring type's table, shared by that type and its subtypes (as the one declaration of
+/// a type was shared by the types under it), keyed by every type under a declaring one. Nothing is built after setup.
+/datum/entry_engine/loot/static_built(list/by_type)
+	var/list/decl_of_table = list()
+	var/list/decls = list()
+	for(var/type in by_type)
+		var/datum/type_table/T = by_type[type]
+		if(!(T in decl_of_table))
+			var/datum/centry/C = static_find(T, ENTRY_LOOT)
+			var/datum/loot_decl/decl = null
+			if(C)
+				decl = new
+				if(!decl.build_entry(C.item))
+					decl = null
+			decl_of_table[T] = decl
+		var/datum/loot_decl/known = decl_of_table[T]
+		if(known)
+			decls[type] = known
+	GLOB.loot_decls = decls
+	loot_refuse_self_spawners(decls)

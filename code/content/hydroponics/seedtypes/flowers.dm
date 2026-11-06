@@ -41,7 +41,6 @@
 	name = PLANT_SUNFLOWERS
 	seed_name = PLANT_SUNFLOWERS
 	display_name = PLANT_SUNFLOWERS
-	mutants = list(PLANT_SOLARFLOWER) // Adding mutation strain for solarflowers.
 	kitchen_tag = PLANT_SUNFLOWERS
 
 /datum/seed/flower/sunflower/default_traits()

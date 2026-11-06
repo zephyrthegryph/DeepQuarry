@@ -15,7 +15,7 @@ annotation_boilerplate	code/modules/hyg/annotations.dm	45
 annotation_boilerplate	code/modules/hyg/annotations.dm	47
 annotation_boilerplate	code/modules/hyg/annotations.dm	50
 annotation_boilerplate	code/modules/hyg/annotations.dm	54
-annotation_boilerplate	code/modules/tgs/vendored.dm	7
+annotation_boilerplate	code/world/tgs/vendored.dm	7
 cached_var	code/modules/hyg/caches.dm	2
 cached_var	code/modules/hyg/caches.dm	3
 cached_var	code/modules/hyg/caches.dm	4
@@ -74,4 +74,4 @@ deadline_poll	code/modules/hyg/deadlines.dm	76
 deadline_poll	code/modules/hyg/deadlines.dm	83
 deadline_poll	code/modules/hyg/deadlines.dm	92
 deadline_poll	code/modules/hyg/deadlines.dm	105
-deadline_poll	code/modules/tgs/vendored.dm	12
+deadline_poll	code/world/tgs/vendored.dm	12

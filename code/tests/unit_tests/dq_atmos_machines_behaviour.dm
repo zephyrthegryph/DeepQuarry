@@ -96,7 +96,7 @@
 
 /// A cyborg pulse-pressurizes its jetpack `J` from canister `C`.
 /proc/am_jetpack_refill(mob/living/silicon/robot/R, obj/machinery/portable_atmospherics/canister/C, obj/item/tank/jetpack/J)
-	cooldown_set_end(R, next_click, 0)
+	STATE_SET(R, cooldowns, next_click, 0)
 	test_click(R, C, J)
 
 /// The number of entries in the canister's release log.
@@ -130,7 +130,7 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	var/datum/op_result/result = test_click(actor, target, held, gesture)
 	. = result
 	if(held && gesture == GESTURE_CLICK && !QDELETED(target) && (isnull(result) || istype(target, /obj/machinery/portable_atmospherics) && (result.outcome & ACT_REFUSED) && result.reason == /datum/msg/op/not_available))
@@ -238,7 +238,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, where || tile(2, 1))
 	H.enable_godmode()
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, tile(0, 4))
-	sparse_ref_set(H, teleop, controller)
+	STATE_REF_SET(H, mob_misc, teleop, controller)
 	if(access)
 		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 		H.equip_to_slot(id_card(access, H.loc), SLOT_ID_ID)
@@ -292,6 +292,17 @@
 // The air alarm: its window and its lock
 // =====================================================================================================================
 
+/// A fresh alarm holds its own thresholds the moment it exists, so a reading taken at once (the area's election, a gas watch) has bands to read, and two
+/// alarms never share one table.
+/datum/unit_test/dq_atmos_m/alarm_has_thresholds_from_creation
+/datum/unit_test/dq_atmos_m/alarm_has_thresholds_from_creation/run_gate()
+	var/obj/machinery/alarm/A = alarm(main = FALSE)
+	var/obj/machinery/alarm/B = alarm(dx = 3, dy = 3, main = FALSE)
+	TEST_ASSERT(islist(A.TLV), "a fresh alarm has no thresholds")
+	TEST_ASSERT(A.TLV != B.TLV, "two alarms share one threshold table")
+	TEST_ASSERT_EQUAL(A.tlv_level("pressure", ONE_ATMOSPHERE), 0, "normal pressure is not outside its band")
+	TEST_ASSERT_EQUAL(A.tlv_level("pressure", 0), 2, "vacuum is outside its band")
+
 /// The mode button changes the mode of every alarm in the area and commands the area's devices: panic siphons with the scrubbers and stops the
 /// vents, scrubbing puts the scrubbers back to filtering CO2 and the vents to their default pressure.
 /datum/unit_test/dq_atmos_m/alarm_mode_drives_the_area
@@ -317,8 +328,8 @@
 	TEST_ASSERT(S.scrubbing, "and filter again")
 	TEST_ASSERT(GAS_CO2 in S.scrubbing_gas, "CO2 among what they filter")
 	TEST_ASSERT(V.use_power, "the vents run again")
-	TEST_ASSERT_EQUAL(V.external_pressure_bound, V.external_pressure_bound_default, "at their default pressure")
-	TEST_ASSERT_EQUAL(V.pressure_checks, V.pressure_checks_default, "with their default checks")
+	TEST_ASSERT_EQUAL(V.get_external_pressure_bound(), V.external_pressure_bound_default, "at their default pressure")
+	TEST_ASSERT_EQUAL(V.get_pressure_checks(), V.pressure_checks_default, "with their default checks")
 	am_press(H, A, "mode", list("mode" = AM_MODE_OFF))
 	TEST_ASSERT(!S.use_power && !V.use_power, "off: every device stops")
 	am_press(H, A, "mode", list("mode" = AM_MODE_FILL))
@@ -611,36 +622,36 @@
 	am_radio(V, list("power_toggle" = 1))
 	TEST_ASSERT(!V.use_power, "power toggled off")
 	am_radio(V, list("checks" = "3"))
-	TEST_ASSERT_EQUAL(V.pressure_checks, 3, "checks set")
+	TEST_ASSERT_EQUAL(V.get_pressure_checks(), 3, "checks set")
 	am_radio(V, list("checks" = "default"))
-	TEST_ASSERT_EQUAL(V.pressure_checks, V.pressure_checks_default, "checks back to default")
+	TEST_ASSERT_EQUAL(V.get_pressure_checks(), V.pressure_checks_default, "checks back to default")
 	am_radio(V, list("checks_toggle" = 1))
-	TEST_ASSERT_EQUAL(V.pressure_checks, 0, "checks toggled off")
+	TEST_ASSERT_EQUAL(V.get_pressure_checks(), 0, "checks toggled off")
 	am_radio(V, list("checks_toggle" = 1))
-	TEST_ASSERT_EQUAL(V.pressure_checks, 3, "and to both")
+	TEST_ASSERT_EQUAL(V.get_pressure_checks(), 3, "and to both")
 	am_radio(V, list("direction" = "0"))
 	TEST_ASSERT_EQUAL(V.pump_direction, 0, "siphoning")
 	am_radio(V, list("set_external_pressure" = "50"))
-	TEST_ASSERT_EQUAL(V.external_pressure_bound, 50, "external bound set")
+	TEST_ASSERT_EQUAL(V.get_external_pressure_bound(), 50, "external bound set")
 	am_radio(V, list("adjust_external_pressure" = "10"))
-	TEST_ASSERT_EQUAL(V.external_pressure_bound, 60, "external bound adjusted")
+	TEST_ASSERT_EQUAL(V.get_external_pressure_bound(), 60, "external bound adjusted")
 	am_radio(V, list("set_external_pressure" = "999999"))
-	TEST_ASSERT_EQUAL(V.external_pressure_bound, ONE_ATMOSPHERE * 50, "clamped to fifty atmospheres")
+	TEST_ASSERT_EQUAL(V.get_external_pressure_bound(), ONE_ATMOSPHERE * 50, "clamped to fifty atmospheres")
 	am_radio(V, list("set_external_pressure" = "default"))
-	TEST_ASSERT_EQUAL(V.external_pressure_bound, V.external_pressure_bound_default, "external bound to default")
+	TEST_ASSERT_EQUAL(V.get_external_pressure_bound(), V.external_pressure_bound_default, "external bound to default")
 	am_radio(V, list("set_internal_pressure" = "300"))
-	TEST_ASSERT_EQUAL(V.internal_pressure_bound, 300, "internal bound set")
+	TEST_ASSERT_EQUAL(V.get_internal_pressure_bound(), 300, "internal bound set")
 	am_radio(V, list("adjust_internal_pressure" = "-50"))
-	TEST_ASSERT_EQUAL(V.internal_pressure_bound, 250, "internal bound adjusted")
+	TEST_ASSERT_EQUAL(V.get_internal_pressure_bound(), 250, "internal bound adjusted")
 	am_radio(V, list("reset_internal_pressure" = 1))
-	TEST_ASSERT_EQUAL(V.internal_pressure_bound, 0, "internal bound reset")
+	TEST_ASSERT_EQUAL(V.get_internal_pressure_bound(), 0, "internal bound reset")
 	am_radio(V, list("set_external_pressure" = "40"))
 	am_radio(V, list("reset_external_pressure" = 1))
-	TEST_ASSERT_EQUAL(V.external_pressure_bound, ONE_ATMOSPHERE, "external bound reset")
+	TEST_ASSERT_EQUAL(V.get_external_pressure_bound(), ONE_ATMOSPHERE, "external bound reset")
 	am_radio(V, list("purge" = 1))
-	TEST_ASSERT(!(V.pressure_checks & 1) && V.pump_direction == 0, "purge: no external check, siphoning")
+	TEST_ASSERT(!(V.get_pressure_checks() & 1) && V.pump_direction == 0, "purge: no external check, siphoning")
 	am_radio(V, list("stabalize" = 1))
-	TEST_ASSERT((V.pressure_checks & 1) && V.pump_direction == 1, "stabilize: the external check, releasing")
+	TEST_ASSERT((V.get_pressure_checks() & 1) && V.pump_direction == 1, "stabilize: the external check, releasing")
 	am_radio(V, list("init" = "Renamed Vent"))
 	TEST_ASSERT_EQUAL(V.name, "Renamed Vent", "init names it")
 	V.set_broken_condition(TRUE)

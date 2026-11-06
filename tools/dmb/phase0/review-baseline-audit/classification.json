@@ -62,9 +62,9 @@
       },
       "normalized_messages": {
         "byond": [
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds"
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds"
         ],
         "native": [
           "",
@@ -104,9 +104,9 @@
       },
       "normalized_messages": {
         "byond": [
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers"
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers"
         ],
         "native": [
           "",
@@ -232,9 +232,9 @@
       },
       "normalized_messages": {
         "byond": [
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds"
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds"
         ],
         "native": [
           "",
@@ -274,9 +274,9 @@
       },
       "normalized_messages": {
         "byond": [
-          "FAILURE #<number>: Expected <number> to be equal to <number>. entries moved into the outer closet as data (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:<number>",
-          "FAILURE #<number>: Expected <number> to be equal to <number>. entries moved into the outer closet as data (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:<number>",
-          "FAILURE #<number>: Expected <number> to be equal to <number>. entries moved into the outer closet as data (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:<number>"
+          "FAILURE #<number>: Expected <number> to be equal to <number>. entries moved into the outer closet as data (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_latent_tests.dm:<number>",
+          "FAILURE #<number>: Expected <number> to be equal to <number>. entries moved into the outer closet as data (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_latent_tests.dm:<number>",
+          "FAILURE #<number>: Expected <number> to be equal to <number>. entries moved into the outer closet as data (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_latent_tests.dm:<number>"
         ],
         "native": [
           "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /obj/structure/closet/dq_latent_test still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them",
@@ -316,9 +316,9 @@
       },
       "normalized_messages": {
         "byond": [
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
-          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers"
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/tests/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers"
         ],
         "native": [
           "",
@@ -363,9 +363,9 @@
           "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds"
         ],
         "native": [
-          "FAILURE #<number>: Assertion failed: an empty isolated APC kept its area powered (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:<number>",
-          "FAILURE #<number>: Assertion failed: an empty isolated APC kept its area powered (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:<number>",
-          "FAILURE #<number>: Assertion failed: an empty isolated APC kept its area powered (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:<number>"
+          "FAILURE #<number>: Assertion failed: an empty isolated APC kept its area powered (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_power_tests.dm:<number>",
+          "FAILURE #<number>: Assertion failed: an empty isolated APC kept its area powered (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_power_tests.dm:<number>",
+          "FAILURE #<number>: Assertion failed: an empty isolated APC kept its area powered (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_power_tests.dm:<number>"
         ]
       },
       "runtime_counts": {

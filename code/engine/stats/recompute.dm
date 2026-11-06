@@ -16,7 +16,7 @@
 #define SETTLE_MAX_QUEUE 256
 
 GLOBAL_VAR_INIT(stat_settle_depth, 0)
-GLOBAL_LIST_EMPTY(stat_marked) // list(entity, stat def, contribution or null) rows waiting for a marked drain
+GLOBAL_LIST_EMPTY(stat_marked) // list(entity's slot, stat def, contribution or null) rows waiting for a marked drain
 GLOBAL_LIST_EMPTY(stat_hop_index) // remote var name -> list(list(reader type, /datum/stat_hop))
 GLOBAL_LIST_EMPTY(stat_sys_index) // "system.var" -> assoc: entity -> TRUE (readers through a SYSTEM_ACCESSOR)
 GLOBAL_LIST_EMPTY(stat_sys_vars) // var name -> TRUE: the var half of every "system.var" key of stat_sys_index, so a write to any other var skips the key walk
@@ -48,7 +48,11 @@ PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot en
 /proc/stat_value(datum/E, stat_id)
 	READS_FROM(E)
 	var/datum/stat_def/def = stat_def_of(stat_id)
-	if(!def || !isdatum(E))
+	if(!def)
+		// A condition reading a stat that does not exist would just read false for ever.
+		declare_report("stat_value([E?.type], [stat_id]): no such stat")
+		return null
+	if(!isdatum(E))
 		return null
 	var/datum/stat_type_info/I = stat_type_of(E)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
@@ -85,7 +89,7 @@ PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot en
 	// A draw that reads the key through a READS_AS accessor redraws (code/engine/_generated/deps.dm, generated_draw_keys).
 	if(isatom(E) && draw_reads_key(E, key))
 		// As state_changed() does: the look that watches E hears it on E's first mark of the frame, and marking E first would swallow that.
-		var/first_mark = E.rel_watchers && !E.refresh_queued
+		var/first_mark = E.rel_watchers && REFRESH_IDLE(E)
 		refresh_mark(E, DEP_DRAW)
 		if(first_mark)
 			rel_notify_watchers(E)
@@ -377,7 +381,7 @@ PROC_SUMMARY(/proc/stat_recompute) // vars[] / call() dispatcher: the walk canno
 	// A status started or ended: its holder's hooks and presentation follow at once (code/library/mob/statuses.dm).
 	if(def.units && ((isnum(old) && old > 0) != (isnum(new_value) && new_value > 0)))
 		E.stat_status_changed(def.id, isnum(new_value) && new_value > 0)
-	// Relevance moved: the sequences sweeping E and the OM cadences that read it follow (code/datums/om/contribution.dm).
+	// Relevance moved: the sequences sweeping E and the cadences that read it follow (code/engine/contribution.dm).
 	else if(def.id == STAT_RELEVANCE)
 		relevance_changed(E, new_value || RELEVANCE_NONE)
 	else if(def.id == STAT_SUSPENDED)
@@ -662,12 +666,33 @@ GLOBAL_LIST_EMPTY(stat_hop_applicable)
 		GLOB.stat_hop_applicable[index_key] = by_type
 	return by_type
 
+/// The fast hops of relation `rel_var` that a reader of `reader_type` is reached through: the hops registered for the type or any supertype of it. The entries
+/// are indexed by their reader type once per list (under "entry_index"), and a reader type walks its own ancestry (parent_type) instead of testing every
+/// entry with ispath(): a channel flip of an area met each of its ~27 reader types for the first time at 0.36 ms apiece, three keys over, and the first
+/// flip after boot took 70 ms for it.
 /proc/stat_hops_of_type(list/by_type, reader_type, list/entries, rel_var)
+	var/list/index = by_type["entry_index"]
+	if(!index)
+		index = list()
+		for(var/list/entry as anything in entries)
+			var/datum/stat_hop/hop = entry[2]
+			if(hop.fast && hop.rel_var == rel_var)
+				var/list/at = index[entry[1]]
+				if(!at)
+					at = list()
+					index[entry[1]] = at
+				at += hop
+		by_type["entry_index"] = index
 	var/list/hops = list()
-	for(var/list/entry as anything in entries)
-		var/datum/stat_hop/hop = entry[2]
-		if(hop.fast && hop.rel_var == rel_var && ispath(reader_type, entry[1]))
-			hops += hop
+	var/ancestor = reader_type
+	while(ancestor)
+		var/list/at = index[ancestor]
+		if(at)
+			hops += at
+		if(ancestor == /datum)
+			break
+		var/datum/ancestor_instance = ancestor
+		ancestor = initial(ancestor_instance.parent_type)
 	by_type[reader_type] = hops
 	return hops
 
@@ -725,7 +750,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	BOOT_PHASE_BEGIN(bp_pre)
 	var/datum/stat_record/rec = E.rx?.stats
 	var/ct_key = ct.serial_text
-	var/datum/old_target = rec?.ct_targets?[ct_key]
+	var/datum/old_target = slot_datum(rec?.ct_targets?[ct_key])
 	var/datum/target = (ct.rel in E.vars) ? E.vars[ct.rel] : null
 	BOOT_PHASE_END(bp_pre, "stat_ct_update: prelude [ct.rel]", E)
 	if(old_target && old_target != target)
@@ -761,7 +786,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	rec ||= stat_record_of(E)
 	if(!rec.ct_targets)
 		rec.ct_targets = list()
-	rec.ct_targets[ct_key] = target
+	rec.ct_targets[ct_key] = SLOT(target)
 	BOOT_PHASE_BEGIN(bp_set)
 	stat_row_set(target, def, E, value, ct.priority, ct.row_key)
 	BOOT_PHASE_END(bp_set, "stat_ct_update: row_set [def.name]", E)
@@ -782,7 +807,7 @@ PROC_SUMMARY(/proc/stat_ct_hold_table) // vars[] / call() dispatcher: the walk c
 			return
 	if(!rec.ct_targets)
 		rec.ct_targets = list()
-	rec.ct_targets[ct_key] = target
+	rec.ct_targets[ct_key] = SLOT(target)
 	var/list/before = stat_table_snapshot(target, E, ct.part, table)
 	if(length(table))
 		hold_table(target, E, table, scale, stacks, ct.part, ct.priority, TRUE)
@@ -872,7 +897,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		stat_rows_add(rec, row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
-			LAZYOR(src_rec.held_on, target)
+			LAZYOR(src_rec.held_on, SLOT(target))
 	BOOT_PHASE_BEGIN(bp_settle)
 	stat_settle_def(target, def)
 	BOOT_PHASE_END(bp_settle, "stat_row_set: settle [def.name]", target)
@@ -917,7 +942,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 	if(rec.marked[def.skey])
 		return
 	rec.marked[def.skey] = TRUE
-	GLOB.stat_marked += list(list(E, def, null))
+	GLOB.stat_marked += list(list(SLOT(E), def, null))
 
 /// Flags a contributes_to entry for the next marked drain.
 /proc/stat_mark_ct(datum/E, datum/stat_contrib/ct)
@@ -928,7 +953,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 	if(rec.marked[mark_key])
 		return
 	rec.marked[mark_key] = TRUE
-	GLOB.stat_marked += list(list(E, null, ct))
+	GLOB.stat_marked += list(list(SLOT(E), null, ct))
 
 /// How many marked evaluations wait.
 /proc/stat_marked_count()
@@ -959,7 +984,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		GLOB.stat_marked = list()
 		for(var/i in 1 to length(batch))
 			var/list/row = batch[i]
-			var/datum/E = row[1]
+			var/datum/E = slot_datum(row[1])
 			var/datum/stat_def/def = row[2]
 			var/datum/stat_contrib/ct = row[3]
 			if(QDELETED(E))
@@ -992,7 +1017,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 /proc/stat_sort_marked(list/batch)
 	var/list/keyed = list()
 	for(var/list/row as anything in batch)
-		var/datum/E = row[1]
+		var/datum/E = slot_datum(row[1])
 		var/datum/stat_def/def = row[2]
 		var/rank = 0
 		if(def && !QDELETED(E))
@@ -1057,7 +1082,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 PROC_SUMMARY(/proc/stat_hop_attach) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_hop_attach(datum/E, rel_var)
 	var/datum/stat_record/rec = stat_record_of(E)
-	var/datum/old = rec.hop_targets?[rel_var]
+	var/datum/old = slot_datum(rec.hop_targets?[rel_var])
 	var/datum/target = hop_step(E, rel_var)
 	if(!isdatum(target) || QDELETED(target))
 		target = null
@@ -1073,7 +1098,7 @@ PROC_SUMMARY(/proc/stat_hop_attach) // vars[] / call() dispatcher: the walk cann
 		return
 	if(!rec.hop_targets)
 		rec.hop_targets = list()
-	rec.hop_targets[rel_var] = target
+	rec.hop_targets[rel_var] = SLOT(target)
 	var/datum/stat_record/trec = stat_record_of(target)
 	if(!trec.hop_in)
 		trec.hop_in = list()
@@ -1098,14 +1123,14 @@ PROC_SUMMARY(/proc/stat_hop_attach) // vars[] / call() dispatcher: the walk cann
 /// cleared by the ownership teardown, which re-attaches them to nothing).
 /proc/stat_hop_teardown(datum/D, datum/stat_record/rec)
 	for(var/rel_var in rec.hop_targets)
-		var/datum/target = rec.hop_targets[rel_var]
+		var/datum/target = slot_datum(rec.hop_targets[rel_var])
 		if(target && !QDELETED(target))
 			stat_hop_leave(D, target, rel_var)
 	rec.hop_targets = null
 	for(var/rel_var in rec.hop_in)
 		for(var/datum/reader as anything in rec.hop_in[rel_var])
 			var/datum/stat_record/rrec = reader.rx?.stats
-			if(rrec?.hop_targets && rrec.hop_targets[rel_var] == D)
+			if(rrec?.hop_targets && rrec.hop_targets[rel_var] == SLOT_KNOWN(D))
 				rrec.hop_targets -= rel_var
 				if(!length(rrec.hop_targets))
 					rrec.hop_targets = null

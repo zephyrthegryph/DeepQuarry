@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Shuttle corner walls no longer show a pink X: turned look overlays keep the direction they were given."

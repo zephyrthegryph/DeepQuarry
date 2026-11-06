@@ -706,30 +706,8 @@ CAPABILITIES(/transformation/chem/instant/explosion_potassium)
 CAPABILITIES(/transformation/chem/instant/flash_powder)
 	configure(transformation(name = "Flash powder", id = "flash_powder",
 		takes = list(reagent(REAGENT_ID_ALUMINIUM, 1), reagent(REAGENT_ID_POTASSIUM, 1), reagent(REAGENT_ID_SULFUR, 1)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/flash_powder, on_reaction)))
-
-/transformation/chem/instant/flash_powder/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	fx_sparks(location, 2)
-	for(var/mob/living/carbon/M in viewers(world.view, location))
-		switch(get_dist(M, location))
-			if(0 to 3)
-				if(ishuman(M))
-					var/mob/living/carbon/human/target = M
-					if(istype(target.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses))
-						continue
-
-				M.flash_eyes()
-				M.status_at_least(STAT_WEAKENED, 15)
-
-			if(4 to 5)
-				if(ishuman(M))
-					var/mob/living/carbon/human/target = M
-					if(istype(target.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses))
-						continue
-
-				M.flash_eyes()
-				M.status_at_least(STAT_STUNNED, 5)
+		effects = sets_off(kind = XFORM_FX_WAVE, range = world.view, line_of_sight = TRUE, mob_type = /mob/living/carbon, sparks = 2, flash = TRUE,
+			statuses = list(list(3, STAT_WEAKENED, 15), list(5, STAT_STUNNED, 5)))))
 
 /transformation/chem/instant/emp_pulse
 
@@ -1381,30 +1359,10 @@ CAPABILITIES(/transformation/chem/instant/phenethylamine)
 CAPABILITIES(/transformation/chem/instant/xenolazarus)
 	configure(transformation(name = "Discount Lazarus", id = "discountlazarus",
 		takes = list(reagent(REAGENT_ID_MONSTERTAMER, 5), reagent(REAGENT_ID_CLONEXADONE, 5)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/xenolazarus, on_reaction)))
+		notice = /datum/notice/transformed/xenolazarus))
 
-/transformation/chem/instant/xenolazarus/proc/on_reaction(datum/reagents/holder, created_volume) //literally all this does is mash the regenerate button
-	if(ishuman(holder.my_atom))
-		var/mob/living/carbon/human/H = holder.my_atom
-		var/datum/xenochimera/comp = H.get_xenochimera_state()
-		if(!comp)
-			return
-		else
-			if(H.stat == DEAD)
-				if(H.hasnutriment()) // make sure it actually has the conditions to revive
-					if(comp.revive_ready >= 1) // if it's not reviving, start doing so
-						comp.revive_ready = REVIVING_READY
-						COOLDOWN_RESET(comp, revive_cooldown) // overrides the normal cooldown
-						act_message(H, null, others = span_info("%U% shudders briefly, then relaxes, faint movements stirring within."))
-						comp.chimera_regenerate()
-					else if(comp.revive_ready == REVIVING_DONE)// already reviving, check if they're ready to hatch
-						comp.chimera_hatch()
-						act_message(H, null, others = span_danger(span_huge("%U% violently convulses and then bursts open, revealing a new, intact copy in the pool of viscera."))) // Hope you were wearing waterproofs, doc...
-						H.injure(INJURY_NEURAL, 10, source = holder.my_atom) // they're reviving from dead, so take 10 brain damage
-					else //they're already reviving but haven't hatched. Give a little message to tell them to wait.
-						act_message(H, null, others = span_info("%U% stirs faintly, but doesn't appear to be ready to wake up yet."))
-				else
-					act_message(H, null, others = span_info("%U% twitches for a moment, but remains still.")) // no nutriment
+/// Discount Lazarus settled in a body: a xenochimera's state answers it (xenochimera/lazarus_reacted()).
+/datum/notice/transformed/xenolazarus
 
 
 // === merged from instant_vr.dm during hard-fork de-suffix (verified no override-order change) ===

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Crawling (and any slow step) now glides smoothly along the whole step instead of jumping forward when the previous step's glide reset fired"

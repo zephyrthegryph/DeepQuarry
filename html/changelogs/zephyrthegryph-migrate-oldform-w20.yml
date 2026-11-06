@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Create Area, Pull Punches, Flip Resting Direction, headset and glasses toggles, Toggle Underwear, hand games and the soulcatcher AR abilities are menu ops"

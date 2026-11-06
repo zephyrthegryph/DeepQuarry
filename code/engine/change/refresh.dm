@@ -10,9 +10,10 @@
 // everything, a tracked write on a type that declares its dependencies (derived.dm) marks only the
 // outputs that read the var. The drain runs each marked output at most once per entity per frame.
 //
-// A background sweep re-checks entities with derived procs on a per-tick budget: production corrects
-// a missed mark within seconds, test builds fail the run and name the type and, when it can, the
-// likely undeclared read (REFRESH DRIFT). In a test build the audit is always on: the strict staleness
+// A background sweep re-checks entities with derived procs on a per-tick budget, in debug and test builds only (DQ_LOOK_AUDIT): a debug build
+// corrects a missed mark within seconds and logs it, test builds fail the run and name the type and, when it can, the
+// likely undeclared read (REFRESH DRIFT). A production build runs no audit and repairs nothing, so a missed mark or first draw stays visible
+// as a stale look instead of being masked. In a test build the audit is always on: the strict staleness
 // checker (staleness.dm) runs it on every entity it checks (everything that appeared during a test, every
 // served draw and a rotating slice of the rest), so a test that makes a thing whose hidden verbs, granted
 // verbs, periodic gate or derive() values follow state nothing published fails at its end.
@@ -57,6 +58,12 @@
 		return
 	after(D, D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), key = "periodic_interval", with = list(D))
 
+/// The atom whose Initialize() is running: state_changed() treats its writes as a not-yet-initialized atom's.
+GLOBAL_DATUM(atom_initializing, /atom)
+/// The atoms partway through their own Initialize() while a child's init (atom_initializing) runs inside it, outermost first. An outer atom's flags say it is
+/// initialized from the head of its Initialize(), so without this list a write the child's init makes to it would enrol observers and queue refreshes early.
+GLOBAL_LIST_EMPTY(atoms_init_outer)
+
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.
 /// `var_name` is the tracked var that state_changed (TRACKED setters, timed_set and the ownership accessors
@@ -78,7 +85,7 @@
 	// (server_bench_20261027.md, boot).
 	if(isatom(E))
 		var/atom/pending = E
-		if(!(pending.flags & ATOM_INITIALIZED))
+		if(!(pending.flags & ATOM_INITIALIZED) || pending == GLOB.atom_initializing || (length(GLOB.atoms_init_outer) && (pending in GLOB.atoms_init_outer)))
 			if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
 				stat_inputs_changed(E, var_name)
 			if(var_name && draw_hop_reads_var(var_name))
@@ -89,8 +96,8 @@
 	// The stat layer: a var some stat reads recomputes it before this write's next line (code/engine/stats/recompute.dm).
 	if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
 		stat_inputs_changed(E, var_name)
-	// OM observers only: entity_raise_change()'s own refresh hook would mark every output, undoing the mask below.
-	if(E.om_listen & channel)
+	// observers only: entity_raise_change()'s own refresh hook would mark every output, undoing the mask below.
+	if(E.change_listen & channel)
 		entity_dispatch_change(E, channel)
 	// The look applying itself (set_light, vis_contents) is presentation, not a state change.
 	if(E == GLOB.refresh_applying)
@@ -128,7 +135,9 @@
 	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
 	// E's first mark this frame, and after E is marked itself (the mark is what makes the second mark a "not first"),
 	// so two entities watching each other (two railings that draw each other) stop after one round.
-	var/first_mark = E.rel_watchers && !E.refresh_queued
+	// An atom already parked that this mark would park again (interest.dm) has been through its first mark: its watchers heard then, and two atoms
+	// that watch each other would otherwise pass the notice back and forth for ever, neither ever becoming non-idle.
+	var/first_mark = E.rel_watchers && REFRESH_IDLE(E) && !((E.refresh_queued & DEP_PARKED) && GLOB.interest_defer_marks && interest_defers(E))
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
@@ -171,21 +180,73 @@
 	return GLOB.type_derives_cache[E.type] != 0
 
 /// A refresh of a datum that is not an atom has no look and no verbs: it re-derives its derived() values (TYPE_DERIVES_DEPS) and runs the side
-/// effects (push_to_rust(), on_state_changed()) a type overrides (TYPE_DERIVES_SIDE, found by the first refresh's probe), and its windows and
-/// periodic gate, which refresh_wanted() checks per instance. A type with none of them (a kernel histogram counting every tick, a system's
-/// bookkeeping) costs no queue entry and no refresh for its tracked writes. Unknown types (TYPE_DERIVES_PENDING) refresh once and are probed.
+/// effects (push_to_rust(), on_state_changed()) a type overrides (TYPE_DERIVES_SIDE), and its windows and periodic gate, which refresh_wanted()
+/// checks per instance. A type with none of them (a kernel histogram counting every tick, a system's bookkeeping, an rx_state, a vending product row)
+/// has no live output: it costs no queue entry and no refresh for its tracked writes (doc/rewrite/proposals/demand_driven_refresh.md 2.1).
 /proc/datum_refresh_wanted(datum/D)
-	return !!(datum_derive_flags(D) & (TYPE_DERIVES_PENDING | TYPE_DERIVES_DEPS | TYPE_DERIVES_SIDE))
+	return !!(datum_derive_flags(D) & (TYPE_DERIVES_DEPS | TYPE_DERIVES_SIDE))
 
-/// The TYPE_DERIVES_* known for a datum's (not an atom's) type, in the same per-type memo as the atoms' (type_derive_flags()).
+/// The TYPE_DERIVES_* of a datum's (not an atom's) type, in the same per-type memo as the atoms' (type_derive_flags()). Decided at first sight from
+/// declarations (a derived() table, an override of push_to_rust()/on_state_changed() found by `analyze gen plans`), never by running a refresh:
+/// instances written before any drain has run (a map load, 45 k datums at boot) used to wait in the queue for a probe to give the verdict.
 /proc/datum_derive_flags(datum/D)
 	var/known = GLOB.type_derives_cache[D.type]
 	if(!isnull(known))
 		return known
-	. = TYPE_DERIVES_PENDING
+	. = 0
 	if(derived_table_of(D))
 		. |= TYPE_DERIVES_DEPS
+	var/side = type_overrides_side_effects(D.type)
+	if(isnull(side))
+		return . | TYPE_DERIVES_SIDE // the generated tables are not built yet (very early boot): refresh it, and decide again later
+	if(side)
+		. |= TYPE_DERIVES_SIDE
 	GLOB.type_derives_cache[D.type] = .
+
+/// Whether `path` or an ancestor defines push_to_rust() or on_state_changed() (the generated list of such types). Null while the generated table is not built.
+/proc/type_overrides_side_effects(path)
+	var/static/list/owners
+	if(isnull(owners))
+		if(!islist(GLOB.generated_side_overrides))
+			return null
+		var/list/built = list()
+		for(var/text in GLOB.generated_side_overrides)
+			var/owner = text2path(text)
+			if(owner)
+				built += owner
+		owners = built
+	for(var/owner in owners)
+		if(ispath(path, owner))
+			return TRUE
+	return FALSE
+
+/// The outputs of D that would do anything now (DEP_* bits): what its type derives and what the instance has open. A queued mask is judged as
+/// `pending & refresh_live_outputs(D)`; refresh_wanted() is `live != 0` (doc/rewrite/proposals/demand_driven_refresh.md 2.1).
+/proc/refresh_live_outputs(datum/D)
+	. = 0
+	if(D.periodic_cadence || D.periodic_interval)
+		. |= DEP_RUN
+	if(LAZYLEN(D.open_tguis))
+		. |= DEP_UI
+	if(isatom(D))
+		var/atom/A = D
+		if(ismob(A))
+			return . | DEP_ALL // a mob's species and traits grant verbs no type flag knows
+		if(GLOB.type_look_lazy[A.type] && !A.periodic_cadence && !A.periodic_interval && !LAZYLEN(A.open_tguis))
+			return . | DEP_DRAW // a lazy verdict is a declaration-level finding: the type derives nothing but its look (look_lazy_block())
+		var/flags = type_derive_flags(A)
+		if(flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING))
+			. |= DEP_DRAW
+		if(flags & (TYPE_DERIVES_DEPS | TYPE_DERIVES_PENDING))
+			. |= DEP_VALUES
+		if(flags & (TYPE_DERIVES_SIDE | TYPE_DERIVES_PENDING))
+			. |= DEP_PUSH | DEP_LEGACY
+		return
+	var/flags = datum_derive_flags(D)
+	if(flags & TYPE_DERIVES_DEPS)
+		. |= DEP_VALUES
+	if(flags & TYPE_DERIVES_SIDE)
+		. |= DEP_PUSH | DEP_LEGACY
 
 /// E itself has nothing to refresh, but an owner whose capability draws it still redraws (refresh_mark()'s owner rule).
 /proc/refresh_mark_owner(datum/E, mask, channel)
@@ -197,7 +258,7 @@
 	refresh_mark(owner, mask == DEP_ALL ? DEP_ALL : DEP_DRAW, channel)
 
 /// A dispatched call on E finished (a timer, a periodic step): its derived procs re-run, as state_changed(E) does, but
-/// no OM channel is raised. Nothing a dispatch can change is unannounced: what it writes through setters raises
+/// no channel is raised. Nothing a dispatch can change is unannounced: what it writes through setters raises
 /// its own channels. A blanket CHANGE_EXPLICIT here woke every pipeline that wakes on it (each life frame of a mob
 /// and each machine frame) once per timer, for nothing it reads.
 ///
@@ -210,7 +271,7 @@
 	if(!E || QDELING(E) || E == GLOB.refresh_applying)
 		return
 	refresh_trace_note(E, CHANGE_EXPLICIT)
-	if(E.rel_watchers && !E.refresh_queued)
+	if(E.rel_watchers && REFRESH_IDLE(E))
 		rel_notify_watchers(E)
 	var/mask = DEP_ALL
 	if(spare_draw && isatom(E) && !ismob(E))
@@ -228,11 +289,32 @@
 		refresh_mark_probe_note()
 	var/datum/D = E
 	for(var/depth in 1 to 8)
-		if(mask & DEP_LEGACY)
-			D.refresh_bits |= channel
-		if(!D.refresh_queued)
-			GLOB.refresh_queue += D
-		D.refresh_queued = (D.refresh_queued & ~DEP_CREATED) | mask // a real mark: no longer the type's default state
+		// A parked atom (DEP_PARKED) is out of the queue and owes its whole first refresh: the real mark queues it and the owed draw rides with it.
+		var/owed = D.refresh_queued & DEP_PARKED
+		var/idle = !(D.refresh_queued & ~DEP_PARKED)
+		if(idle && GLOB.interest_defer_marks && ((mask & DEP_DRAW) || owed) && interest_defers(D))
+			// Unobserved presentation (interest.dm): no client, camera or screen holds the chunk it stands in. It owes the draw and costs nothing until
+			// a chunk it stands in is entered or it moves into one that is held.
+			if(owed)
+				GLOB.refresh_deferred_absorbed++ // another mark on a draw already owed: the redraw it would have been never happens
+			else
+				GLOB.refresh_deferred++
+			D.refresh_queued = DEP_PARKED
+			D.refresh_bits = 0
+		else
+			if(mask & DEP_LEGACY)
+				D.refresh_bits |= channel
+			if(idle)
+				refresh_queue_push(D)
+			// A selective Rust push (a rust_push read changed, native_resync() after a bind) also waits in the push queue, which phase S drains
+			// before the native step: the presentation lane's drain runs after it, so the frame would step on the old settings.
+			// Only a type that defines push_to_rust() or on_state_changed() (the generated list) has a push to run early: for any other type the entry would be
+			// a queue slot for nothing, and every new item that sets a trait in its setup() would take one.
+			if((mask & DEP_PUSH) && mask != DEP_ALL && refresh_pushes(D))
+				GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
+			D.refresh_queued = (D.refresh_queued & ~(DEP_CREATED | DEP_PARKED)) | mask | (owed ? DEP_ALL : 0) // a real mark: no longer the type's default state
+			if(owed)
+				GLOB.refresh_parked_woken++
 		// A selective mark reaches an owner only through the look (an owner never reads a child's should_run).
 		if(mask != DEP_ALL && !(mask & DEP_DRAW))
 			break
@@ -246,6 +328,94 @@
 			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// A queued datum -> its absolute place in the queue (refresh_queue_base + its index when it was appended). The entry of a deleted datum is found in one step
+/// and nulled (refresh_forget()), and the drain takes a key out when it consumes the entry. The base grows by what the drain cuts off the front, so the
+/// places of the entries left do not move; the queue itself stays one flat list.
+GLOBAL_ALIST_EMPTY(refresh_queue_at)
+GLOBAL_VAR_INIT(refresh_queue_base, 0)
+
+/// Appends D to the refresh queue and records where.
+/proc/refresh_queue_push(datum/D)
+	var/list/Q = GLOB.refresh_queue
+	Q += D
+	GLOB.refresh_queue_at[D] = GLOB.refresh_queue_base + length(Q)
+
+/// Takes D's entry out of the queue (nulled; the drain skips a null) and forgets where it was. Returns TRUE when it had one.
+/proc/refresh_queue_drop(datum/D)
+	var/id = GLOB.refresh_queue_at[D]
+	if(isnull(id))
+		return FALSE
+	GLOB.refresh_queue_at -= D
+	var/list/Q = GLOB.refresh_queue
+	var/pos = id - GLOB.refresh_queue_base
+	GLOB.refresh_forget_scans++
+	var/steps = 1
+	if(pos < 1 || pos > length(Q) || Q[pos] != D)
+		// The queue was changed from outside (a test replaced it, an entry was removed): the place is stale, so look for the entry.
+		pos = Q.Find(D)
+		steps += length(Q)
+	if(pos)
+		Q[pos] = null
+	GLOB.refresh_forget_scan_steps += steps
+	GLOB.refresh_forget_scan_max = max(GLOB.refresh_forget_scan_max, steps)
+	return TRUE
+
+/// Replaces the queue contents with `kept` (the boot settle and park drop entries), recording every place again.
+/proc/refresh_queue_replace(list/kept)
+	var/list/Q = GLOB.refresh_queue
+	Q.Cut()
+	GLOB.refresh_queue_at = alist()
+	GLOB.refresh_queue_base = 0
+	for(var/datum/D as anything in kept)
+		refresh_queue_push(D)
+/// Parked first draws a real mark put back in the queue (look_stamp.dm), for the boot log.
+GLOBAL_VAR_INIT(refresh_parked_woken, 0)
+/// The entities marked for a Rust push (DEP_PUSH) since the last phase S: refresh_drain_pushes() runs them before the native step.
+GLOBAL_LIST_EMPTY(refresh_push_queue)
+
+/// The queue entries dropped for a deleted or drawn datum (refresh_queue_drop()): how many, the steps they took in all, and the most one took. One step each
+/// unless the queue was changed from outside; a mass delete (an explosion, a z-level unload) that turned it into a scan would show here (an unbounded scan of the
+/// boot backlog took 995,428 steps for 25 deletes, the longest 200,171).
+GLOBAL_VAR_INIT(refresh_forget_scans, 0)
+GLOBAL_VAR_INIT(refresh_forget_scan_steps, 0)
+GLOBAL_VAR_INIT(refresh_forget_scan_max, 0)
+
+/// Whether D's type has a push to run (it defines push_to_rust() or on_state_changed()); true while the generated table is not built yet.
+/proc/refresh_pushes(datum/D)
+	var/side = type_overrides_side_effects(D.type)
+	return isnull(side) || side
+
+/// engine_forget(): a dying datum leaves the refresh queues, which hold it by reference: the push queue is keyed by it, and the main queue's entry is found by
+/// the place recorded when it was appended and nulled (the drain skips a null). Idempotent.
+/proc/refresh_forget(datum/D)
+	if(isnull(GLOB.refresh_queue_at) || isnull(GLOB.refresh_push_queue)) // a datum deleted while the globals are still being made (a screen object, the uplink's abstract items) meets no queue yet
+		return
+	GLOB.refresh_push_queue -= D
+	refresh_queue_drop(D)
+	D.refresh_queued = 0
+	D.refresh_bits = 0
+/// Pushes refresh_drain_pushes() has run (tests, the tick meter's census).
+GLOBAL_VAR_INIT(refresh_pushes_drained, 0)
+
+/// Phase S (kernel.dm): every pending Rust push now, so this tick's native step reads the settings DM wrote since the last frame. The push leaves
+/// the entity's other pending outputs (look, UI) queued for the presentation lane; a push already run by a refresh is skipped (its bit is clear).
+/proc/refresh_drain_pushes()
+	var/list/Q = GLOB.refresh_push_queue
+	if(!length(Q))
+		return
+	GLOB.refresh_push_queue = list()
+	for(var/datum/D as anything in Q)
+		if(isnull(D) || !(D.refresh_queued & DEP_PUSH))
+			continue
+		D.refresh_queued &= ~DEP_PUSH
+		if(QDELETED(D))
+			continue
+		GLOB.refresh_pushes_drained++
+		try
+			refresh_one(D, 0, DEP_PUSH)
+		catch(var/exception/e)
+			dq_report_caught(e, "push of [D.type]")
+
 /// Timer fires whose owner's look was not re-run (refresh_dispatched(spare_draw)).
 GLOBAL_VAR_INIT(refresh_dispatched_draws_spared, 0)
 /// state_changed() calls on atoms still waiting for their init during a map load, answered without publishing (the boot bench reads it).
@@ -390,6 +560,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 /proc/refresh_drain(datum/time_scheduler/sched)
 	rx_drain() // change reactions (on_change / on_cross / observe) run before the outputs
 	var/list/Q = GLOB.refresh_queue
+	var/datum/km_attr/attr = (sched?.meter || km_meter()).attr
 	// review 2 M4: each entity refreshes at most once per drain; one re-queued by its own refresh (or
 	// by a chain that comes back to it) waits for the next frame instead of spinning here. The pass stamp (refresh_pass) replaces a per-drain
 	// list of the entities already run: a nested drain takes its own pass number, as it had its own list.
@@ -401,10 +572,14 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		var/datum/D = Q[i]
 		if(isnull(D))
 			continue // a hard-deleted queued entity leaves a null entry
+		if(GLOB.refresh_queue_at[D] == GLOB.refresh_queue_base + i)
+			GLOB.refresh_queue_at -= D // this entry is consumed (an older duplicate of it leaves the newer one's place alone)
 		if(D.refresh_pass == pass)
 			LAZYADD(deferred, D)
 			continue
 		var/pending = D.refresh_queued
+		if(pending == DEP_PARKED)
+			continue // a stale entry of an atom parked since (refresh_park_backlog()): it keeps owing its first draw
 		D.refresh_queued = 0
 		if(QDELETED(D))
 			D.refresh_bits = 0
@@ -428,6 +603,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
 		GLOB.refresh_bench_drained++
+		var/attr_start = TICK_USAGE
 		try
 			refresh_one(D, bits, pending)
 			if(fresh)
@@ -436,15 +612,19 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			if(sched)
 				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
 			else
-				stack_trace("refresh of [D.type]: [e] ([e.file]:[e.line])")
+				dq_report_caught(e, "refresh of [D.type]")
+		attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, D.type, km_attr_reason(pending | fresh), TICK_USAGE_TO_MS(attr_start))
 		if(sched?.out_of_budget() && i < length(Q))
 			Q.Cut(1, i + 1)
-			if(deferred)
-				Q += deferred
+			GLOB.refresh_queue_base += i
+			for(var/datum/later as anything in deferred)
+				refresh_queue_push(later)
 			return FALSE
 	Q.Cut()
+	GLOB.refresh_queue_base = 0 // every place was given back as its entry was consumed
+	for(var/datum/later as anything in deferred)
+		refresh_queue_push(later)
 	if(deferred)
-		Q += deferred
 		return FALSE
 	return TRUE
 
@@ -459,7 +639,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			for(var/datum/D as anything in GLOB.refresh_queue)
 				D.refresh_queued = 0
 				D.refresh_bits = 0
-			GLOB.refresh_queue.Cut()
+			refresh_queue_replace(null)
 			break
 	world.presentation_flush()
 
@@ -524,9 +704,6 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			GLOB.derive_probing = FALSE
 			probe_found = GLOB.derive_probe_found
 		refresh_sweep_track(A)
-	else if(!isatom(D))
-		// A datum's first refresh probes whether its type overrides the side effects (datum_refresh_wanted()).
-		probing = datum_derive_flags(D) & TYPE_DERIVES_PENDING
 	if(mask & DEP_UI)
 		refresh_ui(D)
 	// The side effects. While the type is probed, the base procs report whether the engine reached them directly: a type
@@ -636,6 +813,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		if(L.watched || L.watched_looks || capability_data(A)?[/datum/cap_engine_state])
 			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks, L.watched_worn)
 		if(key != A.rx?.look_key)
+			refresh_look_count(A, isnull(A.rx?.look_key) ? "first" : "changed")
 			var/atom/outer = GLOB.refresh_applying
 			GLOB.refresh_applying = A
 			L.apply_to(A)
@@ -647,6 +825,8 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			// The atoms whose draw composes this one's look hear that it changed (look.watch_look()).
 			if(engine?.look_watchers)
 				look_published(A, engine)
+		else
+			refresh_look_count(A, "same")
 	return key
 
 /// Brings A's derived verb hides in line with hidden_verbs(). The verb store stays the only writer of a
@@ -695,8 +875,56 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 /// atom); a ref that no longer names a swept atom is dropped when the sweep reaches it.
 GLOBAL_LIST_EMPTY(refresh_sweep_list)
 GLOBAL_VAR_INIT(refresh_sweep_index, 1)
-/// Production's current audit cycle: the swept atoms near a client, collected when the last cycle ended (null between cycles).
-GLOBAL_LIST_EMPTY(refresh_sweep_near)
+/// The audit runs one step per this much world time: a step is up to ten dry draws, and one per presentation drain (every tick) was a third of an idle server's kernel time.
+#define REFRESH_SWEEP_INTERVAL (0.5 SECONDS)
+GLOBAL_VAR_INIT(refresh_sweep_next, 0)
+/// Audit steps that ran, and the ones the interval skipped (a periodic log line and the idle-tolerance test read them).
+GLOBAL_VAR_INIT(refresh_sweep_ran, 0)
+GLOBAL_VAR_INIT(refresh_sweep_skipped, 0)
+/// Applied looks by what they did: "first" (the atom's first draw), "changed" (a new key), "same" (drawn again to the same key: wasted work). Keyed "kind" and "kind [type]".
+GLOBAL_LIST_EMPTY(refresh_look_stats)
+GLOBAL_VAR_INIT(refresh_look_log_next, 0)
+
+/// Logs the applied-look counters every five minutes (REFRESH LOOKS). Every build does: it is the record of first draws, changed looks and wasted redraws.
+/proc/refresh_look_log_step()
+	if(COOLDOWN_FINISHED(GLOB, refresh_look_log_next))
+		COOLDOWN_START(GLOB, refresh_look_log_next, 5 MINUTES)
+		log_world("REFRESH LOOKS: [refresh_look_stats_text()]")
+
+#ifdef DQ_LOOK_AUDIT
+/// TRUE when the audit may take a step now (and starts the wait for the next one).
+/proc/refresh_sweep_due()
+	if(!COOLDOWN_FINISHED(GLOB, refresh_sweep_next))
+		GLOB.refresh_sweep_skipped++
+		return FALSE
+	COOLDOWN_START(GLOB, refresh_sweep_next, REFRESH_SWEEP_INTERVAL)
+	GLOB.refresh_sweep_ran++
+	refresh_look_log_step()
+	return TRUE
+#endif
+
+/// Counts one applied look: by kind, and by kind and type.
+/proc/refresh_look_count(atom/A, kind)
+	var/list/stats = GLOB.refresh_look_stats
+	stats[kind] = (stats[kind] || 0) + 1
+	var/typed = "[kind] [A.type]"
+	stats[typed] = (stats[typed] || 0) + 1
+
+/// The look counters as text: the totals and the `top` busiest kind-and-type rows.
+/proc/refresh_look_stats_text(top = 8)
+	var/list/stats = GLOB.refresh_look_stats
+	var/list/rows = list()
+	for(var/key in stats)
+		if(findtext(key, " "))
+			rows += key
+	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]; [interest_stats_text()]"
+	for(var/i in 1 to min(top, length(rows)))
+		text += "; [rows[i]] x[stats[rows[i]]]"
+	return text
+
+/proc/cmp_refresh_look_rows(a, b)
+	return GLOB.refresh_look_stats[b] - GLOB.refresh_look_stats[a]
 /// Drift reports this round (the drift test reads them).
 GLOBAL_LIST_EMPTY(refresh_drift)
 
@@ -716,13 +944,13 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	staleness_track(A)
 
 /// Re-checks up to `budget` swept atoms: a derived result that differs from what is applied means a
-/// change was never marked. Production applies it; test builds report REFRESH DRIFT and fail.
+/// change was never marked. A debug build repairs it and logs REFRESH DRIFT; test builds report it and fail. Production has no audit.
 /proc/refresh_sweep_step(budget = 50)
+#if defined(DQ_LOOK_AUDIT) && !defined(BENCHMARK)
 	// H3 / review 2 M3: test builds sweep everything strictly (drift fails the run). Production checks
 	// only atoms a player can see or has open, at a small budget; skipping a far atom costs a scan,
-	// not a check, so a full cycle over the near atoms takes seconds. A benchmark build (which also
-	// defines UNIT_TESTS) measures the production audit, not the test sweep.
-#if defined(UNIT_TESTS) && !defined(BENCHMARK)
+	// not a check, so a full cycle over the near atoms takes seconds (a debug build outside the tests).
+#if defined(UNIT_TESTS)
 	var/scan_budget = budget
 	var/list/L = GLOB.refresh_sweep_list
 	var/checked = 0
@@ -742,47 +970,18 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		checked++
 		refresh_check_drift(A)
 #else
-	budget = min(budget, 10)
-	var/list/client_turfs = refresh_client_turfs()
-	if(!length(client_turfs))
-		GLOB.refresh_sweep_near = null // nobody to audit for: hold no atom
+	if(!refresh_sweep_due())
 		return
-	var/list/near = GLOB.refresh_sweep_near
-	if(!near || GLOB.refresh_sweep_index > length(near))
-		near = refresh_sweep_collect(client_turfs)
-		GLOB.refresh_sweep_near = near
-		GLOB.refresh_sweep_index = 1
-	var/checked = 0
-	var/scanned = 0
-	while(checked < budget && scanned < 400 && GLOB.refresh_sweep_index <= length(near))
-		var/atom/A = near[GLOB.refresh_sweep_index++]
-		scanned++
-		// Queued here: its refresh is pending, not missed.
-		if(QDELETED(A) || !A.rx?.refresh_swept || A.refresh_queued)
-			continue
-		checked++
-		refresh_check_drift(A)
-	if(GLOB.refresh_sweep_index > length(near))
-		GLOB.refresh_sweep_near = null // the cycle is over: the next step collects again, and no atom is held between cycles
+	// A debug build samples: a few random turfs of the chunks observers see (interest.dm), never the whole view, and nothing is held between steps.
+	for(var/turf/T as anything in interest_sample_turfs(min(budget, 10)))
+		interest_audit_turf(T)
+#endif
+#else
+	// Production (and a benchmark build) audits nothing and repairs nothing; only the look counters are logged.
+	refresh_look_log_step()
 #endif
 
-/// The swept atoms within a screen of any client (one audit cycle's worth), found by walking the range of the clients' tiles.
-/proc/refresh_sweep_collect(list/client_turfs)
-	var/list/seen = list()
-	for(var/turf/where as anything in client_turfs)
-		for(var/atom/A as anything in range(world.view + 2, where))
-			if(A.rx?.refresh_swept)
-				seen[A] = TRUE
-	return seen // indexed by number it answers its keys, in discovery order
-
-/// The turfs of every client's mob, once per sweep step.
-/proc/refresh_client_turfs()
-	. = list()
-	for(var/client/C as anything in GLOB.clients)
-		var/turf/where = get_turf(C?.mob)
-		if(where)
-			. += where
-
+#ifdef DQ_LOOK_AUDIT
 /// Whether A's applied outputs still match what its derived procs give now. `check_draw` FALSE leaves the look to the caller (the strict staleness
 /// checker draws it dry and compares it itself, with the culprit var named).
 /proc/refresh_check_drift(atom/A, check_draw = TRUE)
@@ -837,12 +1036,18 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		return FALSE
 	var/msg = "REFRESH DRIFT: [A.type] [jointext(drift, ", ")] changed with no state_changed() mark[derived_drift_hint(A)]"
 	GLOB.refresh_drift += msg
+	// A debug build logs the report too (a look the audit had to repair is a mark somebody forgot): the first few per type, with the running total.
+	var/static/list/drift_logged = list()
+	drift_logged["[A.type]"]++
+	if(drift_logged["[A.type]"] <= 3)
+		log_world("[msg] (#[drift_logged["[A.type]"]] of this type)")
 #if defined(UNIT_TESTS)
 	if(!GLOB.refresh_drift_expected && !GLOB.staleness_expected)
 		stack_trace(msg)
 #endif
 	refresh_one(A, 0)
 	return TRUE
+#endif
 
 GLOBAL_VAR_INIT(refresh_drift_expected, FALSE)
 
@@ -876,23 +1081,23 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 			try
 				call(holder, effect[1])(arglist(call_args))
 			catch(var/exception/e)
-				stack_trace("look effect [effect[1]] of [holder.type]: [e] ([e.file]:[e.line])")
+				dq_report_caught(e, "look effect [effect[1]] of [holder.type]")
 
-/// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: own keys, null for none). The record is kept
+/// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: slots, null for none). The record is kept
 /// in the atom's engine state, which only an atom that has watched something (or kept a cooldown or a flash) owns.
-/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types, list/look_keys, list/worn_keys)
+/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types, alist/look_keys, list/worn_keys)
 	var/datum/cap_engine_state/engine = (keys || look_keys) ? cap_engine_state_make(A) : cap_engine_state_of(A)
 	if(!engine)
 		return
 	var/list/was = engine.look_watching
 	for(var/key in was)
 		if(!(key in keys))
-			var/datum/gone = own_locate(key)
+			var/datum/gone = slot_datum(key)
 			if(gone)
 				rel_unobserve(gone, A)
 	for(var/key in keys)
 		if(!(key in was))
-			var/datum/seen = own_locate(key)
+			var/datum/seen = slot_datum(key)
 			if(seen)
 				rel_observe(seen, A)
 	engine.look_watching = keys
@@ -901,12 +1106,12 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	var/list/worn_was = engine.look_watching_worn
 	for(var/key in worn_was)
 		if(!(key in worn_keys))
-			var/datum/worn_gone = own_locate(key)
+			var/datum/worn_gone = slot_datum(key)
 			if(worn_gone?.rx?.worn_watched)
 				worn_gone.rx.worn_watched--
 	for(var/key in worn_keys)
 		if(!(key in worn_was))
-			var/datum/worn_seen = own_locate(key)
+			var/datum/worn_seen = slot_datum(key)
 			if(worn_seen)
 				rx_of(worn_seen).worn_watched++
 	engine.look_watching_worn = worn_keys
@@ -914,12 +1119,12 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	var/list/was_looks = engine.look_watching_looks
 	for(var/key in was_looks)
 		if(!(key in look_keys))
-			var/atom/gone_look = own_locate(key)
+			var/atom/gone_look = slot_datum(key)
 			if(isatom(gone_look))
 				look_unsubscribe(gone_look, A)
 	for(var/key in look_keys)
 		if(!(key in was_looks))
-			var/atom/seen_look = own_locate(key)
+			var/atom/seen_look = slot_datum(key)
 			if(isatom(seen_look))
 				look_subscribe(seen_look, A)
 	engine.look_watching_looks = look_keys
@@ -930,7 +1135,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	if(!length(shown))
 		return
 	for(var/key in shown)
-		var/datum/worn_gone = own_locate(key)
+		var/datum/worn_gone = slot_datum(key)
 		if(worn_gone?.rx?.worn_watched)
 			worn_gone.rx.worn_watched--
 	cap_engine_state_of(A).look_watching_worn = null
@@ -938,8 +1143,9 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 /// `watcher`'s draw composes `target`'s look: look_published(target) marks it. One call, one count; look_unsubscribe() takes it back.
 /proc/look_subscribe(atom/target, atom/watcher)
 	var/datum/cap_engine_state/theirs = cap_engine_state_make(target)
-	var/key = OWN_KEY(watcher)
-	LAZYINITLIST(theirs.look_watchers)
+	var/key = SLOT(watcher)
+	if(!theirs.look_watchers)
+		theirs.look_watchers = alist()
 	theirs.look_watchers[key] = (theirs.look_watchers[key] || 0) + 1
 
 /// TRUE while `composer`'s draw composes `target`'s look (look.watch_look(target)). A draw that shows the atom wearing or holding it asks this, so two
@@ -947,13 +1153,13 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 /proc/look_composes(atom/composer, atom/target)
 	READS_FROM()
 	var/list/watching = cap_engine_state_of(composer)?.look_watching_looks
-	return !!(watching && (OWN_KEY(target) in watching))
+	return !!(watching && (SLOT(target) in watching))
 
 /proc/look_unsubscribe(atom/target, atom/watcher)
 	var/datum/cap_engine_state/theirs = cap_engine_state_of(target)
 	if(!theirs?.look_watchers)
 		return
-	var/key = OWN_KEY(watcher)
+	var/key = SLOT(watcher)
 	var/count = theirs.look_watchers[key]
 	if(count > 1)
 		theirs.look_watchers[key] = count - 1
@@ -972,7 +1178,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	engine.look_serial++
 	var/list/gone
 	for(var/key in engine.look_watchers)
-		var/atom/watcher = own_locate(key)
+		var/atom/watcher = slot_datum(key)
 		if(!isatom(watcher) || QDELING(watcher))
 			LAZYADD(gone, key)
 			continue
@@ -986,7 +1192,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 /// A mover entered or left an atom some draw watches through look.neighbours() (a turf): the watchers that look for a type the mover is redraw.
 /proc/look_neighbour_moved(atom/T, atom/movable/mover)
 	for(var/key in T.rel_watchers)
-		var/atom/watcher = own_locate(key)
+		var/atom/watcher = slot_datum(key)
 		if(!isatom(watcher) || QDELING(watcher))
 			continue
 		var/list/types = cap_engine_state_of(watcher)?.look_neighbour_types

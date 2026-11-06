@@ -1,0 +1,751 @@
+/mob/living/bot
+	name = "Bot"
+	endurance = 20
+	icon = 'icons/obj/aibots.dmi'
+	layer = MOB_LAYER
+	universal_speak = 1
+	density = FALSE
+
+
+	var/obj/item/card/id/botcard = null
+	var/list/botcard_access = list() // ALLOW(instance_list): d: per-mob botcard_access, filled at runtime; mobs are few
+	var/on = 1
+	var/open = 0
+	var/locked = 1
+	var/emagged = 0
+	var/light_strength = 3
+	var/obj/item/paicard/paicard = null
+	var/obj/access_scanner = null
+	var/list/req_access = list() // ALLOW(instance_list): d: per-mob req_access, filled at runtime; mobs are few
+	var/list/req_one_access = list() // ALLOW(instance_list): d: per-mob req_one_access, filled at runtime; mobs are few
+
+	var/atom/target = null
+	/// How often each target was given up on, keyed by ref_token(target) handle: AI memory, not a reference.
+	var/list/ignore_past
+	/// Targets the bot is currently ignoring (REL_LIST, cleared by the framework when they die).
+	var/list/ignore_list
+	var/list/patrol_path = list() // ALLOW(instance_list): d: per-mob patrol_path, sized at creation and filled in place; mobs are few
+	var/list/target_path = list() // ALLOW(instance_list): d: per-mob target_path, sized at creation and filled in place; mobs are few
+	var/turf/obstacle = null
+	/// TRUE while a /datum/io/path request of this bot is open (ask_path()): the bot waits for the answer instead of stepping a stale path.
+	var/path_pending = FALSE
+
+	var/wait_if_pulled = 0 // Only applies to moving to the target
+	var/will_patrol = 0 // If set to 1, will patrol, duh
+	var/patrol_speed = 1 // How many times per tick we move when patrolling
+	var/target_speed = 2 // Ditto for chasing the target
+	var/panic_on_alert = FALSE	// Will the bot go faster when the alert level is raised?
+	var/min_target_dist = 1 // How close we try to get to the target
+	var/max_target_dist = 50 // How far we are willing to go
+
+	var/frustration = 0
+	var/max_frustration = 0
+
+
+/// Whoever presses a button of the bot's window leaves their prints on it.
+/mob/living/bot/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+
+/// Its ID card opens what its type says (owns_one(starts =)).
+/mob/living/bot/proc/start_botcard(current, mapload)
+	var/obj/item/card/id/card = new /obj/item/card/id(src)
+	card.set_access(botcard_access.Copy())
+	return card
+
+/// What it checks for access before taking orders (owns_one(starts =)).
+/mob/living/bot/proc/start_access_scanner(current, mapload)
+	var/obj/scanner = new /obj(src)
+	scanner.set_req_access(req_access.Copy())
+	scanner.set_req_one_access(req_one_access.Copy())
+	return scanner
+
+/// A map that has bots stay put keeps every bot from patrolling (rolls(): the map's setting, read as it is made).
+/mob/living/bot/proc/map_patrol(datum/roller/R)
+	return using_map.bot_patrolling ? will_patrol : FALSE
+
+/// A bot made switched on starts working: its light and its target state (setup()).
+/mob/living/bot/proc/start_switched_on()
+	if(on)
+		turn_on()
+
+/// Bots shrug off stuns and run their AI (the old bot Life() tail after ..()).
+/mob/living/bot/proc/life_bot_core(datum/seq_frame/life/F)
+	if(src.stat == DEAD)
+		return
+	src.status_set(STAT_WEAKENED, 0)
+	src.status_set(STAT_STUNNED, 0)
+	src.status_set(STAT_PARALYZED, 0)
+
+	if(src.on && !src.client && !bot_busy() && !src.paicard)
+		after(src, 0, TYPE_PROC_REF(/mob/living/bot, handleAI)) // deferred off the Life stage (was spawn)
+
+/mob/living/bot/life_type_post_due()
+	return TRUE
+/*
+/mob/living/bot/examine(mob/user)
+	. = ..()
+	if(is_injured())
+		if(vitality() > 1/3)
+			. += "[src]'s parts look loose."
+		else
+			. += "[src]'s parts look very loose!"
+	else
+		. += "[src] is in pristine condition."
+	. += span_notice("Its maintenance panel is [open ? "open" : "closed"].")
+	. += span_info("You can use a <b>screwdriver</b> to [open ? "close" : "open"] it.")
+	. += span_notice("Its control panel is [locked ? "locked" : "unlocked"].")
+	if(paicard)
+		. += span_notice("It has a pAI device installed.")
+		if(open)
+			. += span_info("You can use a <b>crowbar</b> to remove it.")
+*/
+/// Bots don't leave a corpse: they blow apart instead of dying.
+/mob/living/bot/replace_death(gibbed)
+	explode()
+	return TRUE
+
+
+/// Old attackby: ID lock toggle, prox-sensor repair, pAI card; anything else reaches the attack.
+/mob/living/bot/proc/bot_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(O.GetID())
+		if(access_scanner.allowed(user) && !open)
+			set_locked(!locked)
+			to_chat(user, span_notice("Controls are now [locked ? "locked." : "unlocked."]"))
+			attack_hand(user)
+			if(emagged)
+				to_chat(user, span_warning("ERROR! SYSTEMS COMPROMISED!"))
+		else
+			if(open)
+				to_chat(user, span_warning("Please close the access panel before locking it."))
+			else
+				to_chat(user, span_warning("Access denied."))
+		return OP_OK
+	else if(istype(O, /obj/item/assembly/prox_sensor) && emagged)
+		if(open)
+			to_chat(user, span_notice("You repair the bot's systems."))
+			emagged = 0
+			consume(O, user)
+		else
+			to_chat(user, span_notice("Unable to repair with the maintenance panel closed."))
+		return OP_OK
+	else if(istype(O, /obj/item/paicard))
+		if(open)
+			insertpai(user, O)
+			to_chat(user, span_notice("You slot the card into \the [initial(src.name)]."))
+		else
+			to_chat(user, span_notice("You must open the panel first!"))
+		return OP_OK
+	return OP_DECLINE
+
+/mob/living/bot/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	if(locked)
+		to_chat(user, span_notice("You need to unlock the controls first."))
+		return OP_OK
+	set_open(!open)
+	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
+
+/mob/living/bot/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	if(!is_injured() || !open)
+		return OP_OK
+	mend(TREAT_PLATING_REPAIR, 10)
+	mend(TREAT_WIRING_REPAIR, 10)
+	act_message(user, src, MSG_SELF(span_notice("You repair %T%.")), MSG_OTHERS(span_notice("%U% repairs %T%.")))
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
+
+MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI."))
+
+/// What the bot's settings window shows: the settings while it is unlocked, or to a viewer whose inputs come over a link (a silicon's:
+/// A.authority & AUTH_REMOTE_ACCESS). The settings ops say the same with when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))).
+/mob/living/bot/proc/settings_unlocked(datum/act/eval/A)
+	return !locked || (A && (A.authority & AUTH_REMOTE_ACCESS))
+
+/mob/living/bot/proc/pai_removable(datum/act/op/A)
+	return open && !!paicard
+
+/mob/living/bot/proc/pai_blocked(datum/act/op/A)
+	return !open || !paicard
+
+/// A requirement that never holds: the blocked click is refused without a word.
+/mob/living/bot/proc/never_allowed(datum/act/op/A)
+	return /datum/msg/req_failed
+
+/mob/living/bot/proc/remove_pai(datum/act/op/A)
+	ejectpai(A.actor)
+
+/mob/living/bot/say_quote(message, datum/language/speaking = null)
+	return "beeps"
+
+/mob/living/bot/speech_bubble_appearance()
+	return "machine"
+
+/mob/living/bot/Bump(atom/A)
+	if(on && botcard && istype(A, /obj/machinery/door))
+		var/obj/machinery/door/D = A
+		if(!istype(D, /obj/machinery/door/firedoor) && !istype(D, /obj/machinery/door/blast) && !istype(D, /obj/machinery/door/airlock/lift) && D.check_access(botcard))
+			D.open()
+	else
+		..()
+
+/mob/living/bot/proc/on_emag(datum/act/op/A)
+	return OP_DECLINE
+
+/// Calls `step_proc` `count` times, `delay` apart (the bot's movement within one AI tick).
+/mob/living/bot/proc/bot_steps(count, delay, step_proc)
+	if(count <= 0)
+		return
+	after(src, delay, PROC_REF(bot_step), with = list(count, delay, step_proc))
+
+/// callback: one step of the AI tick's movement, then the next. A step never sleeps: a path is asked of the path system (ask_path()).
+/mob/living/bot/proc/bot_step(count, delay, step_proc)
+	call(src, step_proc)()
+	bot_steps(count - 1, delay, step_proc)
+
+/// Asks the path system for a path from the bot to `goal`; the answer arrives in `answered` (a PROC_REF on the bot taking the request act).
+/// One request at a time: FALSE when the places cannot be searched (another level, no turf), TRUE when the request is open or already was.
+/mob/living/bot/proc/ask_path(turf/goal, min_dist, max_path, answered)
+	if(path_pending)
+		return TRUE
+	var/turf/start = get_turf(src)
+	if(!istype(start) || !istype(goal) || start.z != goal.z)
+		return FALSE
+	path_pending = TRUE
+	open_request(src, /datum/io/path, answered, start = start, goal = goal, mover = src, algorithm = PATH_ALGORITHM_JPS, target_distance = min_dist, max_path_length = max_path, access = botcard.access?.Copy())
+	return TRUE
+
+/// The path of a request answered (or refused): its turfs, or null when the search found nothing.
+/mob/living/bot/proc/path_answer(datum/act/request/A)
+	path_pending = FALSE
+	var/datum/io/path/R = A.request
+	return A.answer ? R.path : null
+
+/mob/living/bot/proc/handleAI()
+	if(length(ignore_list))
+		for(var/atom/A as anything in ignore_list.Copy())
+			if(!A.loc || prob(1))
+				var/past_key = ref_token(A)
+				if(isnull(past_key)) // a deleted target has no memory to keep
+					rel_remove(src, nameof(ignore_list), A)
+				else if(past_key in ignore_past)
+					if(prob(10/ignore_past[past_key]) || !A.loc)
+						ignore_past[past_key]++
+						rel_remove(src, nameof(ignore_list), A)
+				else
+					LAZYSET(ignore_past, past_key, 1)
+					rel_remove(src, nameof(ignore_list), A)
+	handleRegular()
+
+	var/panic_speed_mod = 0
+
+	if(panic_on_alert)
+		panic_speed_mod = handlePanic()
+
+	if(target && confirmTarget(target))
+		if(Adjacent(target))
+			handleAdjacentTarget()
+		else
+			handleRangedTarget()
+		if(!wait_if_pulled || !src?.pulled_by_mob())
+			bot_steps(target_speed + panic_speed_mod, 20 / (target_speed + panic_speed_mod + 1), PROC_REF(stepToTarget))
+		if(max_frustration && frustration > max_frustration * target_speed)
+			handleFrustrated(1)
+	else
+		resetTarget()
+		lookForTargets()
+		if(will_patrol && !src?.pulled_by_mob() && !target)
+			if(patrol_path && patrol_path.len)
+				bot_steps(patrol_speed + panic_speed_mod, 20 / (patrol_speed + 1), PROC_REF(handlePatrol))
+				if(max_frustration && frustration > max_frustration * patrol_speed)
+					handleFrustrated(0)
+			else
+				startPatrol()
+		else
+			if((locate_within(loc, /obj/machinery/door)) && !src?.pulled_by_mob()) //Don't hang around blocking doors, but don't run off if someone tries to pull us through one.
+				var/turf/my_turf = get_turf(src)
+				var/list/can_go = my_turf.CardinalTurfsWithAccess(botcard)
+				if(LAZYLEN(can_go))
+					if(step_towards(src, pick(can_go)))
+						return
+			for(var/mob in contents_of(loc))
+				if(isbot(mob) && mob != src) // Same as above, but we also don't want to have bots ontop of bots. Cleanbots shouldn't stack >:(
+					var/turf/my_turf = get_turf(src)
+					var/list/can_go = my_turf.CardinalTurfsWithAccess(botcard)
+					if(LAZYLEN(can_go))
+						if(step_towards(src, pick(can_go)))
+							return
+			handleIdle()
+
+/mob/living/bot/proc/handleRegular()
+	return
+
+/mob/living/bot/proc/handleAdjacentTarget()
+	return
+
+/mob/living/bot/proc/handleRangedTarget()
+	return
+
+/mob/living/bot/proc/handlePanic()	// Speed modification based on alert level.
+	. = 0
+	switch(get_security_level())
+		if("green")
+			. = 0
+
+		if("yellow")
+			. = 0
+
+		if("violet")
+			. = 0
+
+		if("orange")
+			. = 0
+
+		if("blue")
+			. = 1
+
+		if("red")
+			. = 2
+
+		if("delta")
+			. = 2
+
+	return .
+
+/mob/living/bot/proc/stepToTarget()
+	if(!target || !target.loc)
+		return
+	if(get_dist(src, target) > min_target_dist)
+		if(!target_path.len || get_turf(target) != target_path[target_path.len])
+			calcTargetPath()
+		if(path_pending)
+			return // the route is on its way: stepping the old one would count as frustration
+		if(makeStep(target_path))
+			frustration = 0
+		else if(max_frustration)
+			frustration++
+	return
+
+/mob/living/bot/proc/handleFrustrated(has_target)
+	rel_clear(src, nameof(obstacle))
+	if (has_target)
+		if (length(target_path))
+			rel_set(src, nameof(obstacle), target_path[1])
+	else if (length(patrol_path))
+		rel_set(src, nameof(obstacle), patrol_path[1])
+	target_path = list()
+	patrol_path = list()
+
+/mob/living/bot/proc/lookForTargets()
+	return
+
+/mob/living/bot/proc/confirmTarget(atom/A)
+	if(A.invisibility >= INVISIBILITY_LEVEL_ONE)
+		return 0
+	if(A in ignore_list)
+		return 0
+	if(!A.loc)
+		return 0
+	return 1
+
+/mob/living/bot/proc/handlePatrol()
+	if(makeStep(patrol_path))
+		frustration = 0
+	else if(max_frustration)
+		frustration++
+	return
+
+/mob/living/bot/proc/startPatrol()
+	if(path_pending)
+		return
+	var/turf/T = getPatrolTurf()
+	if(T && !ask_path(T, 1, 128, PROC_REF(patrol_path_answered)))
+		patrol_path = list()
+		rel_clear(src, nameof(obstacle))
+	return
+
+/// The patrol route asked for by startPatrol().
+/mob/living/bot/proc/patrol_path_answered(datum/act/request/A)
+	var/list/found = path_answer(A)
+	if(QDELETED(src))
+		return
+	patrol_path = found || list()
+	rel_clear(src, nameof(obstacle))
+
+/mob/living/bot/proc/getPatrolTurf()
+	var/minDist = INFINITY
+	var/obj/machinery/navbeacon/targ = locate_within(get_turf(src), /obj/machinery/navbeacon)
+
+	if(!targ)
+		for(var/obj/machinery/navbeacon/N in REGISTRY_MEMBERS(REGISTRY_NAVBEACONS))
+			if(!LAZYACCESS(N.codes, "patrol"))
+				continue
+			if(get_dist(src, N) < minDist)
+				minDist = get_dist(src, N)
+				targ = N
+
+	if(targ && LAZYACCESS(targ.codes, "next_patrol"))
+		for(var/obj/machinery/navbeacon/N in REGISTRY_MEMBERS(REGISTRY_NAVBEACONS))
+			if(N.location == LAZYACCESS(targ.codes, "next_patrol"))
+				targ = N
+				break
+
+	if(targ)
+		return get_turf(targ)
+	return null
+
+/mob/living/bot/proc/handleIdle()
+	return
+
+/mob/living/bot/proc/calcTargetPath()
+	if(!ask_path(get_turf(target), 0, 128, PROC_REF(target_path_answered)))
+		target_path_found(null)
+
+/// The route to the target asked for by calcTargetPath(). An answer for a target the bot has since dropped or that has moved on is discarded.
+/mob/living/bot/proc/target_path_answered(datum/act/request/A)
+	var/datum/io/path/R = A.request
+	var/list/found = path_answer(A)
+	if(QDELETED(src) || !target || get_turf(target) != R.goal)
+		return
+	target_path_found(found)
+
+/// The target's route is known (null: there is none): follow it, or give the target up.
+/mob/living/bot/proc/target_path_found(list/found)
+	target_path = found
+	if(!target_path)
+		if(target && target.loc)
+			rel_add(src, nameof(ignore_list), target)
+		resetTarget()
+		rel_clear(src, nameof(obstacle))
+	else if(target)
+		LAZYREMOVE(ignore_past, ref_token(target))
+	return
+
+/mob/living/bot/proc/makeStep(list/path)
+	if(!path.len)
+		return 0
+	var/turf/T = path[1]
+	if(get_turf(src) == T)
+		path -= T
+		return makeStep(path)
+
+	return step_towards(src, T)
+
+/mob/living/bot/proc/resetTarget()
+	rel_clear(src, nameof(target))
+	target_path = list()
+
+/mob/living/bot/proc/turn_on()
+	if(stat)
+		return 0
+	set_on(1)
+	resetTarget()
+	patrol_path = list()
+	rel_clear(src, nameof(ignore_list))
+	update_canmove()
+	return 1
+
+/// The bot's light follows its switch; a subtype refines the sprite and the light after ..().
+/mob/living/bot/draw(datum/look/look)
+	..()
+	if(on)
+		look.glow(light_strength, 1)
+	else
+		look.glow(GLOW_OFF)
+
+/// What the bot is doing for a time: the inputs of the work and hold ops, and the two flags that make it busy.
+/mob/living/bot/var/tmp/working = FALSE
+/mob/living/bot/var/tmp/holding = FALSE
+/mob/living/bot/var/tmp/work_delay = 0
+/mob/living/bot/var/tmp/work_done
+/mob/living/bot/var/tmp/work_arg
+/mob/living/bot/var/tmp/work_failed
+/mob/living/bot/var/tmp/hold_done
+
+/// TRUE while the bot works on something or holds still: it takes no new job.
+/mob/living/bot/proc/bot_busy()
+	return holding || working
+
+/// The bot works on `A` for `delay` (the "work" op): it is busy until the work ends, then `on_done`(act) runs (the target is act.target, `arg` is
+/// work_arg), `on_fail` runs if the work breaks off and the icon refreshes (also when the work breaks off). Returns the op result, which is null for a bot already busy.
+/mob/living/bot/proc/bot_work(delay, atom/A, on_done, arg = null, on_fail = null)
+	if(bot_busy())
+		return null
+	set_working(TRUE)
+	work_delay = delay
+	work_done = on_done
+	work_arg = arg
+	work_failed = on_fail
+	. = perform_op(src, A, "work", null, ORIGIN_AI, AUTH_AI)
+	if(!.)
+		set_working(FALSE)
+		return
+	after(src, delay + 1 TICK, PROC_REF(work_lapsed)) // the work may end without a handler (its target deleted): the flag is settled then
+
+/// The work's time is up: a flag whose op is gone (its target was deleted, no handler ran) is cleared.
+/mob/living/bot/proc/work_lapsed(datum/act/A)
+	if(working && !length(op_pendings_of(src)))
+		set_working(FALSE)
+
+/mob/living/bot/proc/work_time(datum/act/op/A)
+	return work_delay
+
+/mob/living/bot/proc/work_finished(datum/act/op/A)
+	set_working(FALSE)
+	if(!QDELETED(A.target))
+		call(src, work_done)(A)
+
+/mob/living/bot/proc/work_broken(datum/act/op/A)
+	set_working(FALSE)
+	if(work_failed)
+		call(src, work_failed)(A)
+
+/// The bot holds still for `delay` (a pause between two actions): it is busy meanwhile, then `on_end`, a proc of the bot, runs. Returns FALSE for a bot
+/// that is busy already.
+/mob/living/bot/proc/bot_hold(delay, on_end = null)
+	if(bot_busy())
+		return FALSE
+	set_holding(TRUE)
+	hold_done = on_end
+	work_delay = delay
+	if(!perform_op(src, src, "hold", null, ORIGIN_AI, AUTH_AI))
+		set_holding(FALSE)
+		return FALSE
+	return TRUE
+
+/mob/living/bot/proc/hold_finished(datum/act/op/A)
+	set_holding(FALSE)
+	if(hold_done)
+		call(src, hold_done)()
+
+/mob/living/bot/proc/hold_broken(datum/act/op/A)
+	set_holding(FALSE)
+	if(hold_done)
+		call(src, hold_done)()
+
+/// Stops what the bot is doing (it was turned off or short-circuited).
+/mob/living/bot/proc/bot_stop_work()
+	for(var/datum/pending_op/P as anything in op_pendings_of(src))
+		P.cancel(/datum/msg/op/stopped)
+
+/mob/living/bot/proc/turn_off()
+	set_on(0)
+	bot_stop_work() // If ever stuck... reboot!
+	update_canmove()
+
+/mob/living/bot/proc/explode()
+	if(paicard)
+		ejectpai()
+	release_vore_contents()
+	destroyed(src, null, "explosion")
+
+/mob/living/bot/is_sentient()
+	if(paicard)
+		return TRUE
+	return FALSE
+
+/******************************************************************/
+// Navigation procs
+// Used for A-star pathfinding
+
+// Returns the surrounding GLOB.cardinal turfs with open links
+// Including through doors openable with the ID
+/turf/proc/CardinalTurfsWithAccess(obj/item/card/id/ID)
+	var/L[] = new()
+
+
+	for(var/d in GLOB.cardinal)
+		var/turf/T = get_step(src, d)
+		if(istype(T) && !T.density)
+			if(!LinkBlockedWithAccess(src, T, ID))
+				L.Add(T)
+	return L
+
+// Diagonal-friendly version of CardinalTurfWithAccess
+/turf/proc/AdjacentTurfsWithAccess(obj/item/card/id/ID)
+	var/list/L = new()
+
+	for(var/dir_to_check in GLOB.alldirs) // Cardinals first.
+		var/turf/T = get_step(src, dir_to_check)
+		if(!T || T.density || !T.Adjacent(src))
+			continue
+		if(!LinkBlockedWithAccess(src, T, ID))
+			L.Add(T)
+
+	return L
+
+// Similar to above but not restricted to just GLOB.cardinal directions.
+/turf/proc/TurfsWithAccess(obj/item/card/id/ID)
+	var/L[] = new()
+
+	for(var/d in GLOB.alldirs)
+		var/turf/T = get_step(src, d)
+		if(istype(T) && !T.density)
+			if(!LinkBlockedWithAccess(src, T, ID))
+				L.Add(T)
+	return L
+
+// Returns true if a link between A and B is blocked
+// Movement through doors allowed if ID has access
+/proc/LinkBlockedWithAccess(turf/A, turf/B, obj/item/card/id/ID)
+
+	if(A == null || B == null) return 1
+	var/adir = get_dir(A,B)
+	var/rdir = get_dir(B,A)
+	if((adir & (NORTH|SOUTH)) && (adir & (EAST|WEST)))	//	diagonal
+		var/iStep = get_step(A,adir&(NORTH|SOUTH))
+		if(!LinkBlockedWithAccess(A,iStep, ID) && !LinkBlockedWithAccess(iStep,B,ID))
+			return 0
+
+		var/pStep = get_step(A,adir&(EAST|WEST))
+		if(!LinkBlockedWithAccess(A,pStep,ID) && !LinkBlockedWithAccess(pStep,B,ID))
+			return 0
+		return 1
+
+	if(DirBlockedWithAccess(A,adir, ID))
+		return 1
+
+	if(DirBlockedWithAccess(B,rdir, ID))
+		return 1
+
+	for(var/obj/O in turf_contents_of_type(B, /obj))
+		if(O.density && !istype(O, /obj/machinery/door) && !(O.flags & ON_BORDER))
+			return 1
+
+	return 0
+
+// Returns true if direction is blocked from loc
+// Checks doors against access with given ID
+/proc/DirBlockedWithAccess(turf/loc,dir,obj/item/card/id/ID)
+	for(var/obj/structure/window/D in turf_contents_of_type(loc, /obj/structure/window))
+		if(!D.density)			continue
+		if(D.dir == SOUTHWEST)	return 1
+		if(D.dir == dir)		return 1
+
+	for(var/obj/machinery/door/D in turf_contents_of_type(loc, /obj/machinery/door))
+		if(!D.density)			continue
+
+		if(istype(D, /obj/machinery/door/airlock))
+			var/obj/machinery/door/airlock/A = D
+			if(!A.can_open())	return 1
+
+		if(istype(D, /obj/machinery/door/window))
+			if( dir & D.dir )	return !D.check_access(ID)
+
+		else return !D.check_access(ID)	// it's a real, air blocking door
+	return 0
+
+/mob/living/bot/update_canmove()
+	..()
+	set_canmove(on)
+	return canmove
+
+/mob/living/bot/proc/insertpai(mob/user, obj/item/paicard/card)
+	var/mob/living/silicon/pai/AI = card.pai
+	if(paicard)
+		to_chat(user, span_notice("This bot is already under PAI Control!"))
+		return
+	if(!istype(card)) // TODO: Add sleevecard support.
+		return
+	if(client)
+		to_chat(user, span_notice("Higher levels of processing are already present!"))
+		return
+	if(!card.pai)
+		to_chat(user, span_notice("This card does not currently have a personality!"))
+		return
+	if(!move_into(src, nameof(src.paicard), card, user))
+		return
+	transfer_mind(AI.mind, src, "pAI installed into [src]")
+	name = AI.name
+	to_chat(src, span_notice("You feel a tingle in your circuits as your systems interface with \the [initial(src.name)]."))
+	if(AI.idcard.GetAccess())
+		botcard.access	|= AI.idcard.GetAccess()
+
+/mob/living/bot/proc/ejectpai(mob/user)
+	if(paicard)
+		var/mob/living/silicon/pai/AI = paicard.pai
+		transfer_mind(mind, AI, "pAI ejected from [src]")
+		paicard.forceMove(src.loc)
+		rel_take(src, nameof(paicard))
+		name = initial(name)
+		botcard.access = botcard_access.Copy()
+		to_chat(AI, span_notice("You feel a tad claustrophobic as your mind closes back into your card, ejecting from \the [initial(src.name)]."))
+
+		if(user)
+			to_chat(user, span_notice("You eject the card from \the [initial(src.name)]."))
+
+/mob/living/bot/proc/bot_nom_ready(datum/act/op/A)
+	return stat == CONSCIOUS ? null : MSG(req_silent)
+
+/mob/living/bot/proc/bot_nom_choices(datum/act/op/A)
+	var/list/eatable = list()
+	for(var/mob/living/candidate in oview(1, src))
+		eatable[candidate.name] = candidate
+	return eatable
+
+/mob/living/bot/proc/bot_nom_op(datum/act/op/A)
+	var/mob/living/T = bot_nom_choices(A)[A.step_value("target")]
+	if(T)
+		feed_grabbed_to_self(src, T)
+
+/mob/living/bot/proc/ejectself()
+	return ejectpai()
+
+/mob/living/bot/proc/ejectself_op(datum/act/op/A)
+	ejectself()
+
+/mob/living/bot/Login()
+	set_no_vore(FALSE)// ROBOT VORE
+	grant(src, granted_verb(/mob/proc/insidePanel), src)
+
+	return ..()
+
+/mob/living/bot/Logout()
+	release_vore_contents()
+	revoke(src, granted_verb(/mob/proc/insidePanel), src)
+	set_no_vore(TRUE)
+	vore_prefs.set_devourable(FALSE)
+	vore_prefs.feeding = FALSE
+	vore_prefs.can_be_drop_pred = FALSE
+
+	return ..()
+
+// === merged from bot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+
+CAPABILITIES(/mob/living/bot)
+	op("bot_nom", menu(desc = "Allows you to eat someone. Yum."), label("Bot Nom"), needs(req_self(), req(PROC_REF(bot_nom_ready))), asks(/datum/prompt/choice, fields = list("title" = "Bot Nom", "question" = "Eat whom?", "choices" = computed(PROC_REF(bot_nom_choices)), "timeout" = 0), step = "target"), then(PROC_REF(bot_nom_op)))
+	op("ejectself", menu(desc = "Eject your card, return to smole."), label("Eject pAI"), needs(req_self()), then(PROC_REF(ejectself_op)))
+	configure(mob_nature(can_pain_emote = FALSE, no_vore = TRUE))
+	ref_one(nameof(target), /atom)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "devourable" = FALSE, "feeding" = FALSE, "can_be_drop_pred" = FALSE))
+	configure(mob_movement(makes_dirt = FALSE))
+	silicon_hand()
+	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
+	ref_many(nameof(ignore_list))
+	owns_one(nameof(botcard), starts = PROC_REF(start_botcard))
+	owns_one(nameof(access_scanner), starts = PROC_REF(start_access_scanner))
+	rolls(nameof(will_patrol), PROC_REF(map_patrol))
+	knows(LANGUAGE_GALCOM, default = TRUE)
+	setup(PROC_REF(start_switched_on))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+
+	op("work", ai(), reach(REACH_ANY), wait(PROC_REF(work_time)), then(PROC_REF(work_finished)), on_interrupt(PROC_REF(work_broken)))
+	op("hold", ai(), wait(PROC_REF(work_time), keeps = 0), then(PROC_REF(hold_finished)), on_interrupt(PROC_REF(hold_broken)))
+	// the legacy crowbar_act refused a closed bot or one with no pAI and ended the click: the crowbar does not fall through to a hit
+	op("eject_pai_blocked", tool(TOOL_CROWBAR), when(PROC_REF(pai_blocked)), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never_allowed), silent = TRUE)))
+	op("eject_pai", tool(TOOL_CROWBAR), label("Remove the pAI"), when(PROC_REF(pai_removable)), begins(MSG(bot/removing_pai)), wait(1 SECOND), then(PROC_REF(remove_pai)))
+	op("bot_item", item(/obj/item), then(PROC_REF(bot_interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	owns_one(nameof(paicard), on_destroy = ON_DESTROY_CONTAINED)
+	ref_one(nameof(obstacle))
+
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

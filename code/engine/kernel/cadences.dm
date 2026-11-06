@@ -11,7 +11,7 @@
 // cigarette, arming a grenade, a mob stepping on a trap) starts it; the work itself says when it
 // is done.
 //
-// A cadence used to be an object-model pipeline with one stage. It is a plain definition now: the work item
+// A cadence used to be an engine pipeline with one stage. It is a plain definition now: the work item
 // (/datum/work_item/cadence, the stage adapter's successor) carries the old stage body in perform(), and
 // membership replaces the ring, parking and the idle bits. The rule stays exact: a member is stepped iff its
 // entity is started on that cadence (E.periodic_pipe).
@@ -78,8 +78,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/cadence)
 	var/runlevels = RUNLEVELS_DEFAULT
 	/// CLOCK_WORLD, or CLOCK_BIO (stasis slows or stops the member's steps).
 	var/clock = CLOCK_WORLD
-	/// Continuous lanes only: why this work has to tick at (near) frame rate.
-	var/continuous_why
 
 /datum/cadence/slow
 	name = "periodic (2 s)"
@@ -190,8 +188,3 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/cadence)
 	for(var/P in cadence_types())
 		var/datum/cadence/def = cadence_def(P)
 		.["[def.name]"] = list("members" = members_total(P))
-
-/// A timer target that restarts periodic work on the slow lane (after(src, delay, PROC_REF(periodic_resume))).
-/datum/proc/periodic_resume()
-	cadence_start(src, PERIODIC_SLOW)
-

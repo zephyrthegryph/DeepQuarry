@@ -1,38 +1,74 @@
-// DQAdd — the character setup's one colour model.
+// The character setup's one colour model.
 //
-//  - ColorSwatch: every colour in the window is a swatch. Clicking it opens a small popover that
-//    offers the character's saved palette first, then "Custom…" (BYOND's colour picker) and
-//    "Save to palette". The same swatch is used for single colour prefs and for body-part sets.
-//  - ColorStrip: a body part's colours (primary/secondary/tertiary) plus its opacity on one line,
-//    with copy/paste of the whole set between parts and "match skin"/"match hair" links.
-//  - PaletteEditor: the per-character palette itself (the color_palette preference).
+//  - The palette is five named slots (Primary ... Extra 2), each its own colour preference.
+//  - ColorChoice: a colour field. Five slot dots plus a Custom swatch, the selected one highlighted. A dot links
+//    the field (it saves the slot's name and follows the slot); Custom gives the field its own colour.
+//  - ColorSwatch: a swatch opening a popover of the palette's colours and Custom, a colour picker in place.
+//  - ColorStrip: a body part's colour fields and opacity.
+//  - PaletteSlots: the slots themselves, each with its paint shortcut: while a slot is the brush, clicking a
+//    field assigns it.
 //
-// The palette and the copy buffer reach every swatch through ColorToolsContext, which
-// DQCharacterSetup fills from the cached values.
+// The palette reaches every field through ColorToolsContext, which DQCharacterSetup fills from the cached values.
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { type HsvaColor, hexToHsva, hsvaToHex } from 'tgui-core/color';
 import { Box, Button, Floating, Input } from 'tgui-core/components';
+import { Hue, SaturationValue } from '../../ColorPickerModal';
 import { SliderBox } from './controls';
-import { prefAnchor, highlightStyle, useSearchHighlight } from './search';
+import { highlightStyle, prefAnchor, useSearchHighlight } from './search';
 
-export const PALETTE_KEY = 'color_palette';
-export const PALETTE_MAX = 8;
+export type SlotName =
+  | 'primary'
+  | 'secondary'
+  | 'tertiary'
+  | 'extra1'
+  | 'extra2';
+
+export const PALETTE_SLOTS: Array<{
+  slot: SlotName;
+  prefKey: string;
+  label: string;
+}> = [
+  { slot: 'primary', prefKey: 'palette_primary', label: 'Primary (skin)' },
+  { slot: 'secondary', prefKey: 'palette_secondary', label: 'Secondary' },
+  { slot: 'tertiary', prefKey: 'palette_tertiary', label: 'Tertiary (eyes)' },
+  { slot: 'extra1', prefKey: 'palette_extra1', label: 'Extra 1' },
+  { slot: 'extra2', prefKey: 'palette_extra2', label: 'Extra 2' },
+];
+
+export const isSlotName = (value: unknown): value is SlotName =>
+  PALETTE_SLOTS.some((s) => s.slot === value);
 
 export type ColorTools = {
-  palette: string[];
-  /// The colours of the last "copy" (a part's set), shared by every strip.
-  clipboard: string[] | null;
-  setClipboard: (colors: string[] | null) => void;
-  /// Named colours a strip can match ("Skin" -> the skin colour).
-  references: Record<string, string>;
+  /// Each slot's current colour.
+  slots: Record<SlotName, string>;
+  /// Pref key -> the slot it links to ("" or absent: its own colour).
+  links: Record<string, string>;
+  /// Every colour the character already wears, distinct, in the order they appear.
+  inUse: string[];
+  /// The slot being painted with, if any.
+  brush: SlotName | null;
+  setBrush: (slot: SlotName | null) => void;
+};
+
+/// The slots' colours from the preference values.
+export const slotColors = (
+  values: Record<string, unknown>,
+): Record<SlotName, string> => {
+  const out = {} as Record<SlotName, string>;
+  for (const { slot, prefKey } of PALETTE_SLOTS) {
+    out[slot] = normalizeHex(values[prefKey]) ?? '#000000';
+  }
+  return out;
 };
 
 export const ColorToolsContext = createContext<ColorTools>({
-  palette: [],
-  clipboard: null,
-  setClipboard: () => {},
-  references: {},
+  slots: {} as Record<SlotName, string>,
+  links: {},
+  inUse: [],
+  brush: null,
+  setBrush: () => {},
 });
 
 export const useColorTools = () => useContext(ColorToolsContext);
@@ -49,13 +85,81 @@ export const normalizeHex = (value: unknown): string | null => {
   return null;
 };
 
-export const paletteFromValue = (value: unknown): string[] =>
-  Array.isArray(value)
-    ? (value.map(normalizeHex).filter(Boolean) as string[]).slice(
-        0,
-        PALETTE_MAX,
-      )
-    : [];
+/// The colours the character already uses: every "#rrggbb" among the preference values (a colour pref, or a
+/// list of them), distinct, at most `limit`.
+export const colorsInUse = (
+  values: Record<string, unknown>,
+  limit = 16,
+): string[] => {
+  const seen = new Set<string>();
+  for (const value of Object.values(values)) {
+    for (const item of Array.isArray(value) ? value : [value]) {
+      const hex =
+        typeof item === 'string' && HEX.test(item) ? normalizeHex(item) : null;
+      if (hex) seen.add(hex);
+      if (seen.size >= limit) return [...seen];
+    }
+  }
+  return [...seen];
+};
+
+export type ColorCategory = 'skin' | 'hair' | 'eyes' | 'other';
+
+/// Which curated set suits a colour, from the pref key or the label that names it.
+export const colorCategory = (name: string | undefined): ColorCategory => {
+  const n = (name ?? '').toLowerCase();
+  if (/hair|facial|beard|gradient|grad_/.test(n)) return 'hair';
+  if (/eye/.test(n)) return 'eyes';
+  if (/skin|body|fur|scale/.test(n)) return 'skin';
+  return 'other';
+};
+
+/// A short curated set per category, offered as quick swatches beside the Custom picker.
+export const SUGGESTED_COLORS: Record<ColorCategory, string[]> = {
+  skin: [
+    '#f5d7c3',
+    '#e8b796',
+    '#c8a283',
+    '#a97c5b',
+    '#7c5438',
+    '#523221',
+    '#d9e4ec',
+    '#9fc7a0',
+  ],
+  hair: [
+    '#0f0f10',
+    '#3b2a1c',
+    '#5a3b1e',
+    '#8b5a2b',
+    '#c28a45',
+    '#e6c88a',
+    '#b3342d',
+    '#c8c8cc',
+  ],
+  eyes: [
+    '#3b2a1c',
+    '#6b4a2b',
+    '#2e6f9e',
+    '#3f8f5a',
+    '#7a8f3f',
+    '#8a8a92',
+    '#a2306b',
+    '#d4a017',
+  ],
+  other: [
+    '#ffffff',
+    '#c8c8cc',
+    '#6b6b73',
+    '#1c1c20',
+    '#b3342d',
+    '#d98a2b',
+    '#3f8f5a',
+    '#2e6f9e',
+  ],
+};
+
+export const suggestedColors = (name: string | undefined): string[] =>
+  SUGGESTED_COLORS[colorCategory(name)];
 
 const swatchStyle = (color: string, size = 1.25) => ({
   display: 'inline-block',
@@ -69,32 +173,96 @@ const swatchStyle = (color: string, size = 1.25) => ({
   flex: '0 0 auto',
 });
 
-/// One colour: a swatch that opens the picker popover. `onPick` writes a colour directly
-/// (palette entry or paste); `onCustom` opens BYOND's own colour picker.
+/// The custom colour, picked in place: saturation and value, hue, and the hex. Apply writes it.
+export const InlineColorPicker = ({
+  initial,
+  onApply,
+}: {
+  initial: string;
+  onApply: (hex: string) => void;
+}) => {
+  const [hsva, setHsva] = useState<HsvaColor>(() => hexToHsva(initial));
+  const [hexText, setHexText] = useState(initial);
+  const hex = hsvaToHex(hsva).slice(0, 7).toLowerCase();
+  const change = (params: Partial<HsvaColor>) => {
+    setHsva((current) => {
+      const next = { ...current, ...params };
+      setHexText(hsvaToHex(next).slice(0, 7).toLowerCase());
+      return next;
+    });
+  };
+  return (
+    <Box className="dq-inline-color-picker" mt={0.3}>
+      <div className="react-colorful" style={{ width: '100%', height: '9em' }}>
+        <SaturationValue hsva={hsva} onChange={change} />
+        <Hue
+          hue={hsva.h}
+          onChange={change}
+          className="react-colorful__last-control"
+        />
+      </div>
+      <Box
+        mt={0.4}
+        style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}
+      >
+        <span style={swatchStyle(hex)} />
+        <Input
+          fluid
+          value={hexText}
+          onChange={(value) => {
+            setHexText(value);
+            const parsed = normalizeHex(value);
+            if (parsed) setHsva(hexToHsva(parsed));
+          }}
+        />
+        <Button icon="check" onClick={() => onApply(hex)}>
+          Apply
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
+/// One colour: a swatch that opens its popover. The popover offers the palette's colours and Custom, a picker in
+/// place. `onLink`, for a field that can follow a slot, links it to the slot picked (the slot it follows, `linked`,
+/// is highlighted); without it a slot's colour is copied through `onPick`, which also takes the custom colour.
 export const ColorSwatch = ({
   color,
   label,
   onPick,
-  onCustom,
+  onLink,
+  linked,
   showHex,
   extra,
 }: {
   color: string;
   label?: string;
+  /// Unused: the curated sets are gone.
+  category?: string;
   onPick: (hex: string) => void;
-  onCustom: () => void;
+  onLink?: (slot: SlotName) => void;
+  linked?: SlotName | null;
+  /// Unused: Custom picks in place now instead of opening BYOND's picker.
+  onCustom?: () => void;
   showHex?: boolean;
   /// Extra rows for the popover (e.g. a pref's "unset" action).
   extra?: ReactNode;
 }) => {
-  const { act } = useBackend();
-  const { palette } = useColorTools();
+  const { slots } = useColorTools();
   const hex = normalizeHex(color) ?? '#000000';
-  const inPalette = palette.includes(hex);
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState(false);
+  const setOpenState = (value: boolean) => {
+    setOpen(value);
+    if (!value) setCustom(false);
+  };
+  const pickedSlot = linked ?? null;
+  const customSelected = onLink ? !pickedSlot : true;
   return (
     <Floating
       placement="bottom-start"
-      closeAfterInteract
+      handleOpen={open}
+      onOpenChange={setOpenState}
       contentStyles={{
         zIndex: 60,
         background: 'var(--color-base, #252525)',
@@ -105,7 +273,11 @@ export const ColorSwatch = ({
         width: '13em',
       }}
       content={
-        <Box>
+        <Box
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setOpenState(false);
+          }}
+        >
           {label && (
             <Box bold mb={0.3}>
               {label}
@@ -117,50 +289,53 @@ export const ColorSwatch = ({
           <Box
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.25em',
+              gap: '0.3em',
               marginBottom: '0.4em',
             }}
           >
-            {palette.length === 0 && (
-              <Box color="label" italic fontSize="0.85em">
-                Empty: save colours here to reuse them on every part.
-              </Box>
-            )}
-            {palette.map((p) => (
-              <span
-                key={p}
-                title={p}
-                onClick={() => onPick(p)}
-                style={{
-                  ...swatchStyle(p, 1.5),
-                  cursor: 'pointer',
-                  outline: p === hex ? '0.12em solid #fff' : undefined,
-                }}
-              />
-            ))}
+            {PALETTE_SLOTS.map(({ slot, label: slotLabel }) => {
+              const slotHex = slots[slot] ?? '#000000';
+              const selected = onLink
+                ? pickedSlot === slot
+                : normalizeHex(slotHex) === hex;
+              return (
+                <span
+                  key={slot}
+                  className="dq-slot-dot"
+                  title={onLink ? `Link to ${slotLabel}` : slotLabel}
+                  onClick={() => {
+                    if (onLink) onLink(slot);
+                    else onPick(slotHex);
+                    setOpenState(false);
+                  }}
+                  style={{
+                    ...swatchStyle(slotHex, 1.25),
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    outline: selected ? '0.15em solid #fff' : undefined,
+                    outlineOffset: '0.08em',
+                  }}
+                />
+              );
+            })}
           </Box>
-          <Button fluid icon="eye-dropper" onClick={onCustom}>
-            Custom…
-          </Button>
           <Button
             fluid
-            icon="bookmark"
-            disabled={inPalette || palette.length >= PALETTE_MAX}
-            tooltip={
-              palette.length >= PALETTE_MAX
-                ? `The palette holds ${PALETTE_MAX} colours; remove one first.`
-                : undefined
-            }
-            onClick={() =>
-              act('dq_update_preference', {
-                key: PALETTE_KEY,
-                value: [...palette, hex],
-              })
-            }
+            icon="eye-dropper"
+            selected={custom || (customSelected && !!onLink)}
+            onClick={() => setCustom((v) => !v)}
           >
-            {inPalette ? 'In palette' : 'Save to palette'}
+            Custom
           </Button>
+          {custom && (
+            <InlineColorPicker
+              initial={hex}
+              onApply={(picked) => {
+                onPick(picked);
+                setOpenState(false);
+              }}
+            />
+          )}
           {extra}
         </Box>
       }
@@ -181,9 +356,7 @@ export const ColorSwatch = ({
         <span style={swatchStyle(hex)} />
         {showHex && <span style={{ fontFamily: 'monospace' }}>{hex}</span>}
         {label && !showHex && (
-          <span style={{ fontSize: '0.85em', color: 'var(--color-label)' }}>
-            {label}
-          </span>
+          <span style={{ color: 'rgba(255,255,255,0.9)' }}>{label}</span>
         )}
       </span>
     </Floating>
@@ -214,32 +387,132 @@ export const PrefColorSwatch = ({
       onPick={(hex) =>
         act('dq_update_preference', { key: prefKey, value: hex })
       }
-      onCustom={() => act('dq_pick_color', { key: prefKey })}
     />
   );
 };
 
 export type StripColor = { key: string; label: string };
 
-/// A body part's colours and opacity on one line, with copy/paste and match links.
+/// A colour field: the five slot dots plus Custom. `link` is the slot it follows, if any. `onLink` links it,
+/// `onPick` gives it a colour of its own (Custom picks it in place). While a slot is the brush, a click
+/// anywhere on the field assigns that slot.
+export const ColorChoice = ({
+  color,
+  link,
+  label,
+  onLink,
+  onPick,
+  compact,
+}: {
+  color: string;
+  link?: string;
+  label?: string;
+  /// Unused: the curated sets are gone.
+  category?: string;
+  onLink: (slot: SlotName) => void;
+  onPick: (hex: string) => void;
+  /// Unused: Custom picks in place now instead of opening BYOND's picker.
+  onCustom?: () => void;
+  /// One swatch; the slots move into its popover (a table cell).
+  compact?: boolean;
+}) => {
+  const { slots, brush } = useColorTools();
+  const linked = isSlotName(link) ? link : null;
+  const hex = normalizeHex(color) ?? '#000000';
+  if (compact) {
+    return (
+      <span
+        className="dq-color-choice"
+        data-link={linked ?? 'custom'}
+        title={linked ? `Linked to ${linked}` : hex}
+        onClickCapture={(e) => {
+          if (!brush) return;
+          e.stopPropagation();
+          e.preventDefault();
+          onLink(brush);
+        }}
+        style={{
+          display: 'inline-flex',
+          borderRadius: '0.25em',
+          cursor: brush ? 'copy' : undefined,
+        }}
+      >
+        <ColorSwatch
+          color={hex}
+          onPick={onPick}
+          onLink={onLink}
+          linked={linked}
+        />
+      </span>
+    );
+  }
+  return (
+    <span
+      className="dq-color-choice"
+      data-link={linked ?? 'custom'}
+      onClickCapture={(e) => {
+        if (!brush) return;
+        e.stopPropagation();
+        e.preventDefault();
+        onLink(brush);
+      }}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '0.3em',
+        padding: '0.15em 0.3em',
+        borderRadius: '0.25em',
+        background: 'rgba(255,255,255,0.05)',
+        cursor: brush ? 'copy' : undefined,
+      }}
+    >
+      {label && <span style={{ minWidth: '4.5em' }}>{label}</span>}
+      {PALETTE_SLOTS.map(({ slot, label: slotLabel }) => (
+        <span
+          key={slot}
+          className="dq-slot-dot"
+          title={`Link to ${slotLabel}`}
+          onClick={() => onLink(slot)}
+          style={{
+            ...swatchStyle(slots[slot] ?? '#000000', 1.25),
+            borderRadius: '50%',
+            cursor: 'pointer',
+            outline: linked === slot ? '0.15em solid #fff' : undefined,
+            outlineOffset: '0.08em',
+          }}
+        />
+      ))}
+      <span
+        style={{
+          borderRadius: '0.25em',
+          outline: linked ? undefined : '0.15em solid #fff',
+          outlineOffset: '0.08em',
+          display: 'inline-flex',
+        }}
+      >
+        <ColorSwatch color={hex} label="Custom" onPick={onPick} />
+      </span>
+    </span>
+  );
+};
+
+/// A body part's colour fields and opacity.
 export const ColorStrip = ({
   colors,
   alphas,
   values,
-  matches,
+  compact,
 }: {
   colors: StripColor[];
-  /// Opacity prefs (0-255) shown after the swatches.
+  /// Swatches only, and opacity sliders that shrink: for table cells.
+  compact?: boolean;
+  /// Opacity prefs (0-255) shown after the fields.
   alphas?: StripColor[];
   values: Record<string, unknown>;
-  /// Reference names from ColorTools.references this strip offers to match ("Skin", "Hair").
-  matches?: string[];
 }) => {
   const { act } = useBackend();
-  const { clipboard, setClipboard, references } = useColorTools();
-  const current = colors.map((c) => normalizeHex(values[c.key]) ?? '#000000');
-  const write = (key: string, hex: string) =>
-    act('dq_update_preference', { key, value: hex });
+  const { links } = useColorTools();
   return (
     <Box
       style={{
@@ -249,62 +522,22 @@ export const ColorStrip = ({
         gap: '0.35em 0.6em',
       }}
     >
-      <Box style={{ display: 'flex', gap: '0.3em', flexWrap: 'wrap' }}>
-        {colors.map((c, i) => (
-          <SwatchAnchor key={c.key} prefKey={c.key}>
-            <ColorSwatch
-              color={current[i]}
-              label={c.label}
-              onPick={(hex) => write(c.key, hex)}
-              onCustom={() => act('dq_pick_color', { key: c.key })}
-            />
-          </SwatchAnchor>
-        ))}
-      </Box>
-      <Box style={{ display: 'flex', gap: '0.15em' }}>
-        <Button
-          icon="copy"
-          color="transparent"
-          tooltip="Copy these colours"
-          onClick={() => setClipboard(current)}
-        >
-          Copy set
-        </Button>
-        <Button
-          icon="paste"
-          color="transparent"
-          disabled={!clipboard}
-          tooltip={
-            clipboard
-              ? `Paste ${clipboard.join(' ')}`
-              : 'Copy a colour set first'
-          }
-          onClick={() => {
-            if (!clipboard) return;
-            colors.forEach((c, i) => {
-              const hex = clipboard[Math.min(i, clipboard.length - 1)];
-              if (hex && hex !== current[i]) write(c.key, hex);
-            });
-          }}
-        >
-          Paste set
-        </Button>
-        {(matches ?? [])
-          .filter((name) => references[name])
-          .map((name) => (
-            <Button
-              key={name}
-              color="transparent"
-              tooltip={`Set the ${colors[0]?.label.toLowerCase() ?? 'first'} colour to the ${name.toLowerCase()} colour (${references[name]})`}
-              onClick={() =>
-                colors[0] && write(colors[0].key, references[name])
-              }
-            >
-              <span style={swatchStyle(references[name], 0.8)} /> Match{' '}
-              {name.toLowerCase()}
-            </Button>
-          ))}
-      </Box>
+      {colors.map((c) => (
+        <SwatchAnchor key={c.key} prefKey={c.key}>
+          <ColorChoice
+            color={String(values[c.key] ?? '#000000')}
+            link={links[c.key]}
+            label={c.label}
+            compact={compact}
+            onLink={(slot) =>
+              act('dq_update_preference', { key: c.key, value: slot })
+            }
+            onPick={(hex) =>
+              act('dq_update_preference', { key: c.key, value: hex })
+            }
+          />
+        </SwatchAnchor>
+      ))}
       {(alphas ?? []).map((a) => (
         <SwatchAnchor key={a.key} prefKey={a.key} grow>
           <Box
@@ -312,14 +545,14 @@ export const ColorStrip = ({
               display: 'flex',
               alignItems: 'center',
               gap: '0.4em',
-              minWidth: '12em',
-              flex: '1 1 12em',
+              minWidth: compact ? '9em' : '14em',
+              flex: compact ? '1 1 9em' : '1 1 14em',
             }}
           >
             <Box color="label" fontSize="0.85em" style={{ flex: '0 0 auto' }}>
               {a.label}
             </Box>
-            <Box style={{ flex: 1, minWidth: 0 }}>
+            <Box style={{ flex: 1, minWidth: '6em', fontSize: '1.15em' }}>
               <SliderBox
                 serverValue={Number(values[a.key] ?? 255)}
                 min={0}
@@ -363,89 +596,35 @@ const SwatchAnchor = ({
   );
 };
 
-/// The color_palette preference: the character's saved colours. Add by hex, remove by clicking ×.
-export const PaletteEditor = ({ value }: { value: unknown }) => {
-  const { act } = useBackend();
-  const palette = paletteFromValue(value);
-  const [draft, setDraft] = useState('');
-  const draftHex = normalizeHex(draft);
-  const write = (next: string[]) =>
-    act('dq_update_preference', { key: PALETTE_KEY, value: next });
-  const add = () => {
-    if (!draftHex || palette.includes(draftHex)) return;
-    write([...palette, draftHex]);
-    setDraft('');
-  };
+/// The palette: each slot's colour and name. Clicking the name makes it the brush.
+export const PaletteSlots = ({
+  values,
+}: {
+  values: Record<string, unknown>;
+}) => {
+  const { brush, setBrush } = useColorTools();
   return (
-    <Box>
-      <Box
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.35em',
-          alignItems: 'center',
-        }}
-      >
-        {palette.map((hex, i) => (
-          <Box
-            key={hex}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.2em',
-              padding: '0.1em 0.2em',
-              borderRadius: '0.25em',
-              background: 'rgba(255,255,255,0.06)',
-            }}
-          >
-            <span style={swatchStyle(hex, 1.4)} title={hex} />
+    <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.2em' }}>
+      {PALETTE_SLOTS.map(({ slot, prefKey, label }) => (
+        <SwatchAnchor key={slot} prefKey={prefKey}>
+          <Box style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}>
+            <PrefColorSwatch prefKey={prefKey} value={values[prefKey]} />
             <Button
-              icon="arrow-left"
+              fluid
               color="transparent"
-              disabled={i === 0}
-              tooltip="Move left"
-              onClick={() => {
-                const next = [...palette];
-                [next[i - 1], next[i]] = [next[i], next[i - 1]];
-                write(next);
-              }}
-            />
-            <Button
-              icon="xmark"
-              color="transparent"
-              tooltip={`Remove ${hex}`}
-              onClick={() => write(palette.filter((p) => p !== hex))}
-            />
-          </Box>
-        ))}
-        {palette.length < PALETTE_MAX && (
-          <Box
-            style={{
-              display: 'inline-flex',
-              gap: '0.25em',
-              alignItems: 'center',
-            }}
-          >
-            <Box style={{ width: '6.5em' }}>
-              <Input
-                fluid
-                placeholder="#rrggbb"
-                value={draft}
-                onChange={setDraft}
-                onEnter={add}
-              />
-            </Box>
-            {draftHex && <span style={swatchStyle(draftHex)} />}
-            <Button icon="plus" disabled={!draftHex} onClick={add}>
-              Add
+              selected={brush === slot}
+              tooltip={
+                brush === slot
+                  ? 'Stop painting'
+                  : `Paint: click colour fields to link them to ${label}`
+              }
+              onClick={() => setBrush(brush === slot ? null : slot)}
+            >
+              {label}
             </Button>
           </Box>
-        )}
-      </Box>
-      <Box color="label" fontSize="0.85em" mt={0.3}>
-        {palette.length}/{PALETTE_MAX} colours. Every colour picker offers these
-        first; “Save to palette” in any picker adds its colour.
-      </Box>
+        </SwatchAnchor>
+      ))}
     </Box>
   );
 };

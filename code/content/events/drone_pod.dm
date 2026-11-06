@@ -1,6 +1,5 @@
 /datum/event/drone_pod_drop
 	var/tmp/turf/land_target
-	var/attempt_amount = 10
 
 /datum/event/drone_pod_drop/setup()
 	startWhen = rand(8,15)

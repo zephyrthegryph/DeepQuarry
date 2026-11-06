@@ -476,7 +476,7 @@ def main():
 
     sites = []
     for rel in files:
-        if rel.startswith(("code/modules/unit_tests/", "code/tests/", "code/modules/benchmarks/", "code/engine/")):
+        if rel.startswith(("code/tests/unit_tests/", "code/tests/", "code/modules/benchmarks/", "code/engine/")):
             continue
         f = get(rel)
         if "Initialize" not in "\n".join(f.lines):

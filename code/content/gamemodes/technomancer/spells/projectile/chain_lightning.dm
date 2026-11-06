@@ -37,8 +37,7 @@
 	//First we shock the guy we just hit.
 	if(ishuman(target_mob))
 		var/mob/living/carbon/human/H = target_mob
-		var/obj/item/organ/external/affected = H.get_organ(check_zone(BP_TORSO))
-		H.electrocute_act(power, src, H.get_siemens_coefficient_organ(affected), affected, 0)
+		H.electrocute_act(power, src, 1.0, BP_TORSO, 0)
 	else
 		target_mob.electrocute_act(power, src, 0.75, BP_TORSO)
 	rel_add(src, nameof(hit_mobs), target_mob)

@@ -1,8 +1,7 @@
 //! Port of `tools/ci/system_boundary_lint.py` (doc/rewrite/kernel.md sec 2.5).
 //!
 //! A subsystem, a world service or a /datum/system is a module; its folder is the boundary.
-//! Counts are ratcheted per `(rule, file, owner)` in `tools/ci/system_boundary_baseline.txt`
-//! (`name count` lines) and only shrink.
+//! Every site fails (a hard ban, no baseline).
 //!
 //!   B1  no `SSx.<var>` / `GLOB.<x>_service.<var>` / `system(/datum/system/X).<var>` outside the owner
 //!   B2  `system(/datum/system/X).proc()` outside X's folder must name a proc in X's api.dm
@@ -20,13 +19,12 @@
 
 
 
-use crate::baseline::Mode;
 use crate::dm::pylines::recorded_into;
 use crate::incr;
-use crate::lint::{Cx, Lint, Meta, Registry, Run, Sink};
+use crate::lint::{Cx, Lint, Meta, Registry, Sink};
 use crate::parity::{ParseKind, Parity};
 
-use crate::system_boundary_report::{BASELINE,META};
+use crate::system_boundary_report::META;
 
 struct SystemBoundary;
 
@@ -50,19 +48,15 @@ impl Lint for SystemBoundary {
         self.check(cx, out);
     }
 
-    fn finish(&self,cx:&Cx,run:&Run,text:&mut String)->bool{crate::system_boundary_report::finish_after_delivery(&cx.tree.root,run,text)}
-
-    fn update_baseline(&self,cx:&Cx,run:&Run,mode:Mode)->std::io::Result<String>{crate::system_boundary_report::update_after_delivery(&cx.tree.root,run,mode)}
-
     fn parity(&self) -> Option<Parity> {
         Some(Parity {
             old: &["tools/ci/system_boundary_lint.py"],
             old_raw: &[&["tools/ci/system_boundary_lint.py", "--report"]],
             blank: &[],
             parse: ParseKind::RulePrefixed,
-            update: Some(&["tools/ci/system_boundary_lint.py", "--update"]),
-            seed: Some(&["tools/ci/system_boundary_lint.py", "--generate"]),
-            files: &[BASELINE],
+            update: None,
+            seed: None,
+            files: &[],
             selftest: None,
         })
     }

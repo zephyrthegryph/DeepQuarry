@@ -2,7 +2,6 @@
 use std::collections::{BTreeSet,HashMap,HashSet};
 use serde::{Deserialize,Serialize};
 use crate::{lint::{AllowUse,Meta,Policy,RuleMeta,ScanKind},tree::{Select,SourceFile},pat::Pat,util::{py_rstrip,py_strip},key_policy_control::{self as kc,Control},pat,pat_match};
-pub const BASELINE: &str = "tools/ci/instance_list_baseline.txt";
 pub const LINT: &str = "instance_list";
 const SHARED_MODS: &[&str] = &["static", "global", "const"];
 
@@ -14,18 +13,10 @@ pub static META: Meta = Meta {
     // os.walk: dot-files and dot-directories included.
     select: Select { roots: &[("code", "dm")], hidden: true },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Per-instance list declarations not yet reasoned about (tools/ci/instance_list_lint.py).",
-            "rule<TAB>file<TAB>normalized line. Shrink-only: convert (AGENTS.md 3a) or give a real",
-            "`// ALLOW(instance_list): <reason>`, then `python tools/ci/instance_list_lint.py --update`.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta {
         name: "instance_list",
-        hint: "allocates a list per instance: use a static var or getter (constant table), a lazy list (usually empty) or a shared copy-on-write list (AGENTS.md 3a); if it really is per-instance and always filled, mark it `// ALLOW(instance_list): <reason>`",
+        hint: "allocates a list per instance: use a static var or getter (constant table), a lazy list (usually empty) or a starting list (`per_type(nameof(v), PROC_REF(build), copy_on_write = TRUE)`, AGENTS.md 3a); if it really is per-instance and always filled, mark it `// ALLOW(instance_list): <reason>`",
     }],
     allow: crate::allow_registry_fields::instance_list::ALLOW_0,
     lists: crate::allow_registry_fields::instance_list::SCOPE_META_0.lists,
@@ -181,7 +172,7 @@ pub struct Judged {
     pub uses: Vec<AllowUse>,
 }
 
-pub fn globals_of_using<C:Control>(f:&SourceFile,c:&mut C)->Result<Vec<String>,C::Error>{let mut globals=Vec::new();if f.rel.starts_with("code/"){let text=f.raw().text.as_str();let global=pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\x08");let system=pat!(r"(?m)^SYSTEM_DEF\((\w+)\)");kc::reserve(c,||global.capture_group_count().checked_add(system.capture_group_count())?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(256))?;if text.contains("GLOBAL_DATUM_INIT"){for m in global.captures_iter(text){c.checkpoint()?;row(c,&mut globals)?;globals.push(kc::own(c,m.s(1))?);}}if text.contains("SYSTEM_DEF("){for m in system.captures_iter(text){c.checkpoint()?;row(c,&mut globals)?;globals.push(kc::format(c,format_args!("/datum/system/{}",m.s(1)))?);}}}kc::reserve(c,||globals.len().checked_mul(std::mem::size_of::<String>())?.checked_add(128))?;globals.sort();globals.dedup();c.checkpoint()?;Ok(globals)}
+pub fn globals_of_using<C:Control>(f:&SourceFile,c:&mut C)->Result<Vec<String>,C::Error>{let mut globals=Vec::new();if f.rel.starts_with("code/"){let text=f.raw().text.as_str();let global=pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b");let system=pat!(r"(?m)^SYSTEM_DEF\((\w+)\)");kc::reserve(c,||global.capture_group_count().checked_add(system.capture_group_count())?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(256))?;if text.contains("GLOBAL_DATUM_INIT"){for m in global.captures_iter(text){c.checkpoint()?;row(c,&mut globals)?;globals.push(kc::own(c,m.s(1))?);}}if text.contains("SYSTEM_DEF("){for m in system.captures_iter(text){c.checkpoint()?;row(c,&mut globals)?;globals.push(kc::format(c,format_args!("/datum/system/{}",m.s(1)))?);}}}kc::reserve(c,||globals.len().checked_mul(std::mem::size_of::<String>())?.checked_add(128))?;globals.sort();globals.dedup();c.checkpoint()?;Ok(globals)}
 pub fn facts_of(f:&SourceFile)->Facts{Facts{decls:scan_decls(f).into_iter().map(|(t,v,n)|(t,v,n as u32)).collect(),globals:globals_of_using(f,&mut kc::Compatibility).unwrap_or_else(|never|match never{})}}
 /// Input order is the SAME actual NTFS walk-key order supplied by both adapters.
 /// Ordered results/ALLOW uses remain unsealed, no whole-source grant is made.

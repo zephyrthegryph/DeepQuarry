@@ -1,7 +1,7 @@
 // Phase 4 of the destroy transaction: relations and ownership (doc/rewrite/ownership.md).
 //
 // Every object-typed var is exactly one of own / shared / proto / relation, declared next to its
-// type (code/__defines/ownership.dm). The ownership framework (code/datums/ownership/) does the
+// type (code/defines/engine/ownership.dm). The ownership framework (code/datums/ownership/) does the
 // work; this file is the transaction's entry point and the lifecycle report channel.
 
 /// Runs in the destroy transaction just before phase 4 (links) nulls, deletes and
@@ -11,10 +11,11 @@
 /datum/proc/lifecycle_prerelease()
 	return
 
-/// Phase 4 (doc/rewrite/lifecycle.md sec 2): rich relation edges, watches and forwards (the OM
+/// Phase 4 (doc/rewrite/lifecycle.md sec 2): the slot memberships (their on_unlink hooks), the watches (the OM
 /// core), the sparse declared links, then owned values by policy, then REF views on both ends.
 /proc/dq_lifecycle_clear_links(datum/D)
-	if(D.om_rec)
+	entity_slot_teardown(D)
+	if(D.sched_rec)
 		entity_teardown_links(D)
 	if(D.rx?.link_ends)
 		link_teardown(D) // sparse declared links (code/engine/declare/link_state.dm): both ends told, the other end's policy applied

@@ -1,0 +1,21 @@
+/datum/persistent/filth/trash
+	name = "trash"
+	saves_dirt = FALSE
+	has_admin_data = FALSE
+
+/datum/persistent/filth/trash/CheckTurfContents(turf/T, list/tokens)
+	var/too_much_trash = 0
+	for(var/obj/item/trash/trash in turf_contents_of_type(T, /obj/item/trash))
+		if(istype(trash, /obj/item/trash/spitwad) || istype(trash, /obj/item/trash/spitgum))
+			return FALSE
+		too_much_trash++
+		if(too_much_trash >= 5)
+			return FALSE
+	return TRUE
+
+/datum/persistent/filth/trash/GetEntryAge(atom/entry)
+	var/obj/item/trash/trash = entry
+	return trash.age
+
+/datum/persistent/filth/trash/GetEntryPath(atom/entry)
+	return saved_type_text(entry)

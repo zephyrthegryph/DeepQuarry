@@ -16,14 +16,7 @@ pub static META: Meta = Meta {
     legacy: "tools/ci/api_lints.py",
     select: CODE_DM,
     scan: ScanKind::Both,
-    policy: Policy::Sites {
-        baseline: "tools/ci/api_lints_baseline.txt",
-        header: &[
-            "api lint legacy sites (tools/ci/api_lints.py). rule<TAB>file<TAB>normalized line.",
-            "A site not listed here fails. Shrink-only: after a sweep, `python tools/ci/api_lints.py --update`.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: rules![
         "do_after_state",
         "use_tool_state",

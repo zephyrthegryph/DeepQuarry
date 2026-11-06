@@ -2,7 +2,7 @@
 	name = "sensors console"
 	icon_keyboard = "teleport_key"
 	icon_screen = "teleport"
-	circuit = /obj/item/circuitboard/sensors
+	circuit = VARIANT(/obj/item/circuitboard/sensors)
 	extra_view = 4
 	var/tmp/obj/machinery/shipsensors/sensors
 

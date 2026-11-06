@@ -1,0 +1,759 @@
+// Character setup UI middleware. Walks the /datum/preference registry, groups by
+// category + group, and assembles the JSON payload the new TGUI window consumes.
+//
+// Replaced the old bay_adapter middleware and /datum/category_item/player_setup_item
+// framework entirely. All slot/persistence actions (load, save, reload, resetslot,
+// copy, game_prefs, refresh_character_preview, cycle_background) are now handled
+// directly in tgui_act on /datum/preferences.
+
+/datum/preference_middleware/character_setup
+	key = "character_setup"
+
+// explicit category order so the top-tab buttons don't dance every refresh.
+// Categories not listed here fall to the end in alphabetical order. Names must match the
+// `category` field tag_pref writes onto singletons (see _pref_metadata.dm). The tabs a
+// player opens on every new character come first (Identity, Looks, Loadout, Jobs).
+GLOBAL_LIST_INIT(dq_category_order, list(
+	"identity",
+	"appearance",
+	"loadout",
+	"occupation",
+	"traits",
+	"mind_body",
+	"factions",
+	"antag",
+	"game",
+	"misc",
+))
+
+/// Tabs only admins see. Their prefs and editors stay, saved and applied as before; players just do not get the tab.
+GLOBAL_LIST_INIT(dq_admin_only_categories, list("antag"))
+
+/// Whether these prefs' player sees the admin-only tabs (any admin rank).
+/proc/dq_sees_admin_categories(datum/preferences/prefs)
+	var/client/C = prefs?.client()
+	return C && check_rights_for(C, R_ADMIN)
+
+// Rarely-changed categories: the window folds them under one "More" tab (in this order,
+// after every other tab). They stay ordinary categories on the wire; only the tab strip groups them.
+GLOBAL_LIST_INIT(dq_more_categories, list(
+	"antag",
+	"game",
+	"misc",
+))
+
+// play-mode filter lists.
+//
+// /datum/preference/text/human/play_mode is one of "human" (default), "robot",
+// or "pai" — set by the SpeciesPicker editor when the player selects the
+// synthetic "Robot" / "pAI" entries. The middleware filters out groups/keys
+// that don't apply to the selected mode:
+//   - robot: drop organic-body customization (hair, eyes, skin, tail, wings,
+//            blood, markings, organs), drop mind/body/vore/loadout/traits.
+//   - pai:   drop everything physical — pAI is a holopad, no body customization
+//            at all. Pref names + a slim flavor block is all that matters.
+//   - human: drop the chassis group (cyborg-only).
+
+GLOBAL_LIST_INIT(dq_robot_mode_hidden_categories, list(
+	"mind_body",
+	"loadout",
+	"traits",
+	"occupation",  // Cyborg job is auto-set when picking Robot species; no need to surface the job priority editor.
+))
+
+GLOBAL_LIST_INIT(dq_robot_mode_hidden_groups, list(
+	"size",     // was the size_voice tab, hidden for cyborgs; now Identity sections
+	"voice",
+	"hair",
+	"ears",
+	"tail",
+	"wings",
+	"blood",
+	"markings",
+	"organs",
+	"body",     // All body-group prefs (skin_color, eyes_color, digitigrade, synth_color/markings) are organic-only.
+	"preview",  // Animations toggle / preview_loadout / preview_job don't apply to chassis-sprite previews.
+	"nif",      // Cyborgs don't have NIFs (those are neural interfaces for organic brains).
+	"pai",      // Cyborgs aren't pAIs.
+	"demographics",  // Age / bday is meaningless for cyborgs.
+	"background",    // Birthplace, citizenship, religion etc. don't apply to a cyborg in chargen.
+	"records",       // Medical/security records are for organic chars.
+	"directory",     // Vore directory ad / sexuality tags — out-of-character for a chassis pick.
+	"roleplay",      // Egg type / hot-cold messages / borg petting — RP flavor that doesn't apply to a fresh cyborg.
+	// flavor group stays visible — FlavorTextEditor switches to robot flavor inputs in robot mode.
+))
+
+GLOBAL_LIST_INIT(dq_robot_mode_hidden_pref_keys, list(
+	"skin_color"     = TRUE,
+	"eyes_color"     = TRUE,
+	"digitigrade"    = TRUE,
+))
+
+// pAI: holopad with no body. Strip everything physical and most stat configuration.
+GLOBAL_LIST_INIT(dq_pai_mode_hidden_categories, list(
+	"appearance",
+	"mind_body",
+	"loadout",
+	"traits",
+	"antag",
+	"occupation",
+))
+
+GLOBAL_LIST_INIT(dq_pai_mode_hidden_groups, list(
+	"size",     // was the size_voice tab, hidden for pAIs; now Identity sections
+	"voice",
+	"chassis",
+	"hair",
+	"ears",
+	"tail",
+	"wings",
+	"blood",
+	"markings",
+	"organs",
+	"body",
+	"demographics",
+	"background",
+	"speech_verbs",
+	"spawn",
+	"records",       // Medical/security records — pAIs aren't on the station roster.
+	"persistence",   // Body resleeve / mind scan — pAIs don't have bodies.
+	"nif",           // pAIs don't have neural interfaces.
+	"directory",     // Vore directory — pAIs aren't on it.
+	"roleplay",      // RP flavor tied to physical bodies.
+))
+
+GLOBAL_LIST_INIT(dq_pai_mode_hidden_pref_keys, list(
+	"skin_color"     = TRUE,
+	"eyes_color"     = TRUE,
+	"digitigrade"    = TRUE,
+))
+
+GLOBAL_LIST_INIT(dq_human_mode_hidden_groups, list(
+	"chassis",  // Cyborg chassis editor — humans don't have one.
+	"pai",      // pAI card config — humans aren't pAIs.
+))
+
+// Nothing pref-level is hidden in human mode at the moment — the chassis
+// group filter (above) already takes care of the cyborg-only editor.
+GLOBAL_LIST_INIT(dq_human_mode_hidden_pref_keys, list(
+))
+
+// Category names are invariant for each play mode. Keep this structural index
+// globally instead of making every preferences datum discover it by invoking
+// contextual widget/choice providers across the complete preference registry.
+/proc/dq_character_category_index(play_mode)
+	var/static/list/index_by_mode = list()
+	if(islist(index_by_mode[play_mode]))
+		var/list/cached_index = index_by_mode[play_mode]
+		return cached_index.Copy()
+
+	var/playing_as_robot = (play_mode == "robot")
+	var/playing_as_pai = (play_mode == "pai")
+	var/list/categories = list()
+	for(var/pref_type in GLOB.preference_entries)
+		var/datum/preference/pref = GLOB.preference_entries[pref_type]
+		if(pref.savefile_identifier != PREFERENCE_CHARACTER || pref.widget == PREF_WIDGET_HIDDEN)
+			continue
+		var/cat = pref.category || "misc"
+		if(cat == PREFERENCE_CATEGORY_MANUALLY_RENDERED || cat == PREFERENCE_CATEGORY_NON_CONTEXTUAL)
+			continue
+		var/grp = pref.group || ""
+		if(playing_as_pai)
+			if((cat in GLOB.dq_pai_mode_hidden_categories) || (grp in GLOB.dq_pai_mode_hidden_groups) || GLOB.dq_pai_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+		else if(playing_as_robot)
+			if((cat in GLOB.dq_robot_mode_hidden_categories) || (grp in GLOB.dq_robot_mode_hidden_groups) || GLOB.dq_robot_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+		else if((grp in GLOB.dq_human_mode_hidden_groups) || GLOB.dq_human_mode_hidden_pref_keys[pref.savefile_key])
+			continue
+		categories[cat] = TRUE
+
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(editor.hidden)
+			continue
+		if(editor.key != "species_picker")
+			if(playing_as_pai)
+				if((editor.category in GLOB.dq_pai_mode_hidden_categories) || (editor.group && (editor.group in GLOB.dq_pai_mode_hidden_groups)))
+					continue
+			else if(playing_as_robot)
+				if((editor.category in GLOB.dq_robot_mode_hidden_categories) || (editor.group && (editor.group in GLOB.dq_robot_mode_hidden_groups)))
+					continue
+			else if(editor.group && (editor.group in GLOB.dq_human_mode_hidden_groups))
+				continue
+		categories[editor.category] = TRUE
+
+	var/list/result = list()
+	for(var/ordered_category in GLOB.dq_category_order)
+		if(categories[ordered_category])
+			result += ordered_category
+			categories -= ordered_category
+	var/list/remainder = list()
+	for(var/category in categories)
+		remainder += category
+	sortTim(remainder, GLOBAL_PROC_REF(cmp_text_asc))
+	result += remainder
+	index_by_mode[play_mode] = result
+	return result.Copy()
+
+// Reverse-index of editor.static_invalidator_keys: maps a pref
+// savefile_key → list(/datum/preference_editor) that should be rebuilt when
+// that key changes. Built once at world init from the editors' declarations
+// (see /datum/preference_editor.static_invalidator_keys). update_preference
+// uses this to do PER-EDITOR cache invalidation instead of nuking the entire
+// cache when a structural pref flips — species changes used to invalidate
+// every catalog (markings + hair + trait + mind_body + loadout, ~2s rebuild
+// total) when only loadout actually depended on species.
+GLOBAL_LIST_INIT(dq_editor_static_invalidators_by_key, dq_build_editor_static_invalidator_index())
+
+/proc/dq_build_editor_static_invalidator_index()
+	. = list()
+	// Globals initialise in compile order and this file comes first: the index was built from a null list, so it stayed empty and a change never invalidated an editor.
+	if(!GLOB.preference_editors)
+		GLOB.preference_editors = init_preference_editors()
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(!islist(editor.static_invalidator_keys))
+			continue
+		for(var/k in editor.static_invalidator_keys)
+			LAZYADD(.[k], editor)
+
+/// Groups shown as one section: gating still reads the real group (robots and pAIs lose demographics, not the name), the page shows the merged one.
+GLOBAL_LIST_INIT(dq_group_display_merge, list("gender" = "name", "demographics" = "name"))
+
+// Explicit per-category group order. Groups within a category render in
+// this order in the React grid; groups not listed fall to the end alphabetically.
+// Without this, group order followed first-encounter of GLOB.preference_entries
+// which is type-registration order (not file order), so "Name" wasn't reliably
+// first in Identity even though the metadata file lists it first.
+GLOBAL_LIST_INIT(dq_group_order, list(
+	"identity"    = list("name", "blood", "species", "spawn", "language", "background", "speech_verbs", "voice", "size", "flavor", "directory", "records", "ooc_notes"),
+	"appearance"  = list("palette", "chassis", "body", "hair", "ears", "tail", "wings", "markings", "organs", "preview"),
+	"antag"       = list("antag", "be_special"),
+	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai"),
+))
+
+/datum/preference_middleware/character_setup/proc/dq_build_category_structure(category_filter, include_details = TRUE)
+	// Build the category page list. Each category has zero or more groups; each group has
+	// widget items (auto-rendered) and editor items (delegated to a registered editor).
+	var/list/categories_data = list()
+	var/list/categories_by_name = list() // name -> categories_data entry, for ordering
+
+	// play-mode gating. "robot" collapses organic-only categories /
+	// groups / keys; "pai" collapses everything physical; "human" collapses
+	// synth-only entries. The species_picker editor (which drives play_mode)
+	// is always allowed through so the player has an escape hatch back to
+	// human mode.
+	var/play_mode = preferences().read_preference(/datum/preference/text/human/play_mode) || "human"
+	var/playing_as_robot = (play_mode == "robot")
+	var/playing_as_pai = (play_mode == "pai")
+	var/antag_visible = dq_sees_admin_categories(preferences())
+
+	for(var/pref_type in GLOB.preference_entries)
+		var/datum/preference/pref = GLOB.preference_entries[pref_type]
+		if(pref.savefile_identifier != PREFERENCE_CHARACTER)
+			continue
+		var/widget_hint = pref.get_widget(preferences())
+		if(widget_hint == PREF_WIDGET_HIDDEN)
+			continue
+		var/cat = pref.get_category(preferences())
+		if(!cat)
+			cat = "misc"
+		// categories the user shouldn't see as a tab. Manually rendered
+		// prefs are handled by a specific editor (markings, traits, mind/body…)
+		// and either get tag_pref'd to a real category OR should just not surface.
+		// Non-contextual prefs (max_traits, starting_trait_points, etc.) are
+		// managed-state — never user-editable. Skipping them at the iteration
+		// level avoids "Manually Rendered Features" and "Non Contextual" tabs
+		// eating column space in the strip.
+		if(cat == PREFERENCE_CATEGORY_MANUALLY_RENDERED || cat == PREFERENCE_CATEGORY_NON_CONTEXTUAL)
+			continue
+		var/grp = pref.get_group(preferences()) || ""
+		if((cat in GLOB.dq_admin_only_categories) && !antag_visible)
+			continue
+
+		// play-mode gating. play_mode is itself a hidden pref so
+		// no escape hatch needed here; the species_picker editor below is
+		// always allowed through.
+		if(playing_as_pai)
+			if(cat in GLOB.dq_pai_mode_hidden_categories)
+				continue
+			if(grp in GLOB.dq_pai_mode_hidden_groups)
+				continue
+			if(GLOB.dq_pai_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+		else if(playing_as_robot)
+			if(cat in GLOB.dq_robot_mode_hidden_categories)
+				continue
+			if(grp in GLOB.dq_robot_mode_hidden_groups)
+				continue
+			if(GLOB.dq_robot_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+		else
+			if(grp in GLOB.dq_human_mode_hidden_groups)
+				continue
+			if(GLOB.dq_human_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+		if(category_filter && cat != category_filter)
+			continue
+
+		var/list/category_entry = categories_by_name[cat]
+		if(!category_entry)
+			category_entry = list("category" = cat, "groups" = list())
+			categories_by_name[cat] = category_entry
+			categories_data += list(category_entry)
+
+		grp = GLOB.dq_group_display_merge[grp] || grp
+		var/list/groups = category_entry["groups"]
+		var/list/group_entry
+		for(var/list/g as anything in groups)
+			if(g["group"] == grp)
+				group_entry = g
+				break
+		if(!group_entry)
+			group_entry = list("group" = grp, "items" = list())
+			groups += list(group_entry)
+
+		var/list/widget_payload = list(
+			"type" = "widget",
+			"key" = pref.savefile_key,
+			"label" = pref.display_label,
+			"widget" = widget_hint,
+			"props" = include_details ? pref.get_widget_props(preferences()) : list(),
+		)
+		if(include_details)
+			var/list/choices = pref.get_pref_choices(preferences())
+			if(choices)
+				widget_payload["choices"] = choices
+			var/list/thumbnails = pref.get_pref_thumbnails(preferences())
+			if(thumbnails)
+				widget_payload["thumbnails"] = thumbnails
+
+		group_entry["items"] += list(widget_payload)
+
+	// Mix editors into their categories/groups.
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(editor.hidden)
+			continue
+		if((editor.category in GLOB.dq_admin_only_categories) && !antag_visible)
+			continue
+		// same play-mode gating as for prefs. SpeciesPicker is the
+		// always-visible escape hatch (player needs a way to switch modes).
+		if(editor.key != "species_picker")
+			if(playing_as_pai)
+				if(editor.category in GLOB.dq_pai_mode_hidden_categories)
+					continue
+				if(editor.group && (editor.group in GLOB.dq_pai_mode_hidden_groups))
+					continue
+			else if(playing_as_robot)
+				if(editor.category in GLOB.dq_robot_mode_hidden_categories)
+					continue
+				if(editor.group && (editor.group in GLOB.dq_robot_mode_hidden_groups))
+					continue
+			else
+				if(editor.group && (editor.group in GLOB.dq_human_mode_hidden_groups))
+					continue
+		if(category_filter && editor.category != category_filter)
+			continue
+		var/list/category_entry = categories_by_name[editor.category]
+		if(!category_entry)
+			category_entry = list("category" = editor.category, "groups" = list())
+			categories_by_name[editor.category] = category_entry
+			categories_data += list(category_entry)
+
+		var/editor_group = GLOB.dq_group_display_merge[editor.group] || editor.group || ""
+		var/list/groups = category_entry["groups"]
+		var/list/group_entry
+		for(var/list/g as anything in groups)
+			if(g["group"] == editor_group)
+				group_entry = g
+				break
+		if(!group_entry)
+			group_entry = list("group" = editor_group, "items" = list())
+			groups += list(group_entry)
+
+		group_entry["items"] += list(list(
+			"type" = "editor",
+			"key" = editor.key,
+			"sort_order" = editor.sort_order,
+			"display_name" = editor.display_name,
+		))
+
+	// drop categories whose only contents are empty groups (every pref/editor is
+	// HIDDEN or the category had only hidden composite items). Prevents the top tabs from
+	// rendering "Occupation" / "Persistence" buttons that open to a blank page.
+	var/list/non_empty = list()
+	for(var/list/cat as anything in categories_data)
+		var/has_items = FALSE
+		for(var/list/grp as anything in cat["groups"])
+			if(length(grp["items"]))
+				has_items = TRUE
+				break
+		if(has_items)
+			non_empty += list(cat)
+	categories_data = non_empty
+
+	// sort categories by explicit order then alphabetical so the top tabs are
+	// stable across refreshes (previously order was first-encounter while iterating
+	// preference_entries, which let new entries shove existing tabs around).
+	sortTim(categories_data, GLOBAL_PROC_REF(dq_cmp_category_entries))
+
+	// sort groups WITHIN each category by GLOB.dq_group_order. Without
+	// this, "Identity" would render whichever group was hit first by the
+	// preference_entries iteration, which made "name" fall below "gender" or
+	// "species" depending on registration order. sortTim's comparator can't
+	// capture state, so we pre-stamp each group with a sort_priority based on
+	// its position in dq_group_order and sort by that.
+	for(var/list/cat as anything in categories_data)
+		var/list/category_order = GLOB.dq_group_order[cat["category"]]
+		if(islist(category_order) && length(cat["groups"]) > 1)
+			for(var/list/group as anything in cat["groups"])
+				var/idx = category_order.Find(group["group"])
+				group["sort_priority"] = idx ? idx : 999
+			sortTim(cat["groups"], GLOBAL_PROC_REF(dq_cmp_group_by_sort_priority))
+
+	return categories_data
+
+/datum/preference_middleware/character_setup/proc/dq_ensure_category_cache(category_key)
+	if(!islist(preferences().dq_category_static_cache))
+		preferences().dq_category_static_cache = list()
+	if(!islist(preferences().dq_category_index))
+		var/play_mode = preferences().read_preference(/datum/preference/text/human/play_mode) || "human"
+		preferences().dq_category_index = dq_character_category_index(play_mode)
+		if(!dq_sees_admin_categories(preferences())) // the shared index holds every tab; players lose the admin-only ones
+			preferences().dq_category_index -= GLOB.dq_admin_only_categories
+	if(!category_key || (category_key in preferences().dq_category_static_cache))
+		return
+	var/list/categories_data = dq_build_category_structure(category_key, TRUE)
+	for(var/list/category as anything in categories_data)
+		for(var/list/group as anything in category["groups"])
+			for(var/list/item as anything in group["items"])
+				if(item["type"] == "widget")
+					item -= "value"
+				else if(item["type"] == "editor")
+					item -= "data"
+		var/built_category_key = category["category"]
+		preferences().dq_category_static_cache[built_category_key] = category
+
+/// The version of an editor's catalog. A shared catalog's version is its cache key (equal keys = equal payloads, so
+/// a slot load or an unrelated edit resends nothing); a per-player one counts its rebuilds.
+/datum/preference_middleware/character_setup/proc/dq_editor_version(editor_key)
+	var/datum/preference_editor/editor = GLOB.preference_editors_by_key[editor_key]
+	var/shared_key = editor?.static_cache_key(preferences())
+	if(!isnull(shared_key))
+		return "s:[shared_key]"
+	var/datum/preferences/prefs_datum = preferences()
+	LAZYINITLIST(prefs_datum.dq_editor_static_versions)
+	if(!prefs_datum.dq_editor_static_versions[editor_key])
+		prefs_datum.dq_editor_static_versions[editor_key] = 1
+	return prefs_datum.dq_editor_static_versions[editor_key]
+
+/// The catalog payload for an editor: the shared one, or this player's (built on demand).
+/datum/preference_middleware/character_setup/proc/dq_editor_static_payload(datum/preference_editor/editor)
+	var/list/shared = dq_editor_static_shared_payload(editor, preferences())
+	if(!isnull(shared))
+		return shared
+	var/datum/preferences/prefs_datum = preferences()
+	if(!islist(prefs_datum.dq_editor_static_cache) || !(editor.key in prefs_datum.dq_editor_static_cache))
+		prefs_datum.dq_rebuild_editor_static_entry(editor)
+	return prefs_datum.dq_editor_static_cache?[editor.key] || list()
+
+/// Widget values of one cached category, added to `into`.
+/datum/preference_middleware/character_setup/proc/dq_category_values(category_key, list/into)
+	var/list/category = preferences().dq_category_static_cache?[category_key]
+	for(var/list/group as anything in category?["groups"])
+		for(var/list/item as anything in group["items"])
+			if(item["type"] != "widget")
+				continue
+			var/datum/preference/pref = GLOB.preference_entries_by_key[item["key"]]
+			if(pref)
+				into[pref.savefile_key] = preferences().read_preference(pref.type)
+
+/datum/preferences/proc/dq_invalidate_category_cache()
+	dq_category_static_cache = null
+	dq_category_index = null
+	dq_category_structure_version++
+
+/datum/preferences/proc/dq_invalidate_all_catalogs()
+	dq_editor_static_cache = null
+	LAZYINITLIST(dq_editor_static_versions)
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(editor.hidden)
+			continue
+		dq_editor_static_versions[editor.key] = (dq_editor_static_versions[editor.key] || 1) + 1
+	dq_invalidate_category_cache()
+
+/datum/preference_middleware/character_setup/get_ui_data(mob/user, datum/tgui/ui)
+	var/list/data = ..()
+
+	if(preferences().current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
+		return data
+
+	var/catalog_started = TICK_USAGE_REAL
+	var/datum/preferences/prefs_datum = preferences()
+	dq_ensure_category_cache()
+	if(!(prefs_datum.dq_active_category in prefs_datum.dq_category_static_cache))
+		if(!(prefs_datum.dq_active_category in prefs_datum.dq_category_index))
+			prefs_datum.dq_active_category = prefs_datum.dq_category_index?[1]
+		dq_ensure_category_cache(prefs_datum.dq_active_category)
+
+	data["dq_cache_key"] = "[REF(prefs_datum)]-[prefs_datum.default_slot]"
+	data["dq_active_category"] = prefs_datum.dq_active_category
+	data["dq_category_index"] = prefs_datum.dq_category_index
+	data["dq_more_categories"] = GLOB.dq_more_categories
+	data["dq_structure_version"] = prefs_datum.dq_category_structure_version
+
+	var/window_id = ui?.window()?.id || "unpooled"
+	// Catalogs ship once the window has asked for them (a tab switch or the prefetch); the very first
+	// payload of an open stays small so the window appears at once.
+	var/force_catalogs = !!prefs_datum.dq_force_catalogs_by_window?[window_id]
+	if(force_catalogs)
+		prefs_datum.dq_force_catalogs_by_window -= window_id
+	// The prefetch: every tab's structure, values, editor data and catalogs, once, so later switches render
+	// from the client's cache while the server's answer is still on its way.
+	var/prefetch = !!prefs_datum.dq_prefetch_by_window?[window_id]
+	if(prefetch)
+		prefs_datum.dq_prefetch_by_window -= window_id
+		force_catalogs = TRUE
+	var/list/categories_to_send = list(prefs_datum.dq_active_category)
+	if(prefetch)
+		for(var/category_key in prefs_datum.dq_category_index)
+			dq_ensure_category_cache(category_key)
+			categories_to_send |= category_key
+
+	LAZYINITLIST(prefs_datum.dq_window_category_versions)
+	if(!islist(prefs_datum.dq_window_category_versions[window_id]))
+		prefs_datum.dq_window_category_versions[window_id] = list()
+	var/list/window_category_versions = prefs_datum.dq_window_category_versions[window_id]
+	var/list/category_patch = list()
+	for(var/category_key in categories_to_send)
+		if(window_category_versions[category_key] == prefs_datum.dq_category_structure_version)
+			continue
+		category_patch[category_key] = prefs_datum.dq_category_static_cache[category_key]
+		window_category_versions[category_key] = prefs_datum.dq_category_structure_version
+	if(length(category_patch))
+		data["dq_category_patch"] = category_patch
+
+	// Values are small and allow a cached category to display current state
+	// immediately. Editor state and catalogs are restricted to the active
+	// category (every category once, on the prefetch) so unopened tabs cost nothing.
+	var/list/widget_values = list()
+	for(var/category_key in categories_to_send)
+		dq_category_values(category_key, widget_values)
+	data["dq_values"] = widget_values
+	// Every linkable field sent gets an entry ("" = its own colour): the window merges this over what it has.
+	var/list/color_links = list()
+	for(var/value_key in widget_values)
+		var/datum/preference/color/color_pref = GLOB.preference_entries_by_key[value_key]
+		if(istype(color_pref) && color_pref.linkable)
+			color_links[value_key] = color_pref.linked_slot(prefs_datum.read_preference_raw(color_pref.type)) || ""
+	data["dq_color_links"] = color_links
+
+	var/list/editor_data = list()
+	var/list/editor_versions = list()
+	var/list/editor_static_patch = list()
+	LAZYINITLIST(prefs_datum.dq_window_editor_versions)
+	if(!islist(prefs_datum.dq_window_editor_versions[window_id]))
+		prefs_datum.dq_window_editor_versions[window_id] = list()
+	var/list/window_editor_versions = prefs_datum.dq_window_editor_versions[window_id]
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(editor.hidden || !(editor.category in categories_to_send))
+			continue
+		editor_data[editor.key] = editor.build_ui_data(prefs_datum)
+		var/editor_version = dq_editor_version(editor.key)
+		editor_versions[editor.key] = editor_version
+		if(window_editor_versions[editor.key] == editor_version || !force_catalogs)
+			continue
+		editor_static_patch[editor.key] = dq_editor_static_payload(editor)
+		window_editor_versions[editor.key] = editor_version
+	data["dq_editor_data"] = editor_data
+	data["dq_editor_versions"] = editor_versions
+	if(length(editor_static_patch))
+		data["dq_editor_static_patch"] = editor_static_patch
+	data["dq_catalog_build_ms"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - catalog_started)
+
+	return data
+
+/proc/dq_cmp_category_entries(list/a, list/b)
+	var/aidx = GLOB.dq_category_order.Find(a["category"])
+	var/bidx = GLOB.dq_category_order.Find(b["category"])
+	if(aidx && bidx)
+		return aidx - bidx
+	if(aidx)
+		return -1
+	if(bidx)
+		return 1
+	return cmptext(a["category"], b["category"])
+
+/proc/dq_cmp_group_by_sort_priority(list/a, list/b)
+	return a["sort_priority"] - b["sort_priority"]
+
+// Rebuild a single editor catalog on demand when the active browser slot has
+// not received its current version.
+/datum/preferences/proc/dq_rebuild_editor_static_entry(datum/preference_editor/editor)
+	if(!editor)
+		return
+	if(!islist(dq_editor_static_cache))
+		dq_editor_static_cache = list()
+	var/list/static_payload = editor.build_ui_static_data(src)
+	if(static_payload && static_payload.len)
+		dq_editor_static_cache[editor.key] = static_payload
+	else
+		dq_editor_static_cache -= editor.key
+/datum/preference_middleware/character_setup/get_ui_static_data(mob/user)
+	var/list/data = ..()
+	data["dq_text_markers"] = GLOB.speech_toppings // the chat's emphasis markers: the text boxes format as the say preview does
+	return data
+
+CAPABILITIES(/datum/preference_middleware/character_setup)
+	op("dq_select_category", ui_act("dq_select_category", arg("category", schema_text(4096)), arg("force_catalogs", bool())), then(PROC_REF(ui_act_dq_select_category)))
+	op("dq_prefetch_categories", ui_act("dq_prefetch_categories"), then(PROC_REF(ui_act_dq_prefetch_categories)))
+	op("dq_update_preference", ui_act("dq_update_preference", arg("key", schema_text(4096)), arg("value")), then(PROC_REF(ui_act_dq_update_preference)))
+	op("dq_pick_color", ui_act("dq_pick_color", arg("key", schema_text(4096))), asks(/datum/prompt/color/prefs/entry, fields = list("title" = "Color", "question" = "Pick a color", "default" = computed(PROC_REF(pick_color_default)), "preferences" = computed(PROC_REF(prefs_of_setup)), "pref_key" = computed(PROC_REF(pick_color_key))), step = "color", when = PROC_REF(pick_color_writable)), then(PROC_REF(ui_act_dq_pick_color)))
+	op("dq_inspect_flavor", ui_act("dq_inspect_flavor"), then(PROC_REF(ui_act_dq_inspect_flavor)))
+	op("dq_inspect_ooc_notes", ui_act("dq_inspect_ooc_notes"), then(PROC_REF(ui_act_dq_inspect_ooc_notes)))
+	op("dq_editor_action", ui_act("dq_editor_action", arg("action", schema_text(128)), arg("editor", schema_text(128)), arg("params")), then(PROC_REF(ui_act_dq_editor_action)))
+/datum/preference_middleware/character_setup/proc/ui_act_dq_select_category(datum/act/op/A, category, force_catalogs)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	dq_ensure_category_cache()
+	var/category_key = category
+	if(!(category_key in preferences().dq_category_index))
+		return FALSE
+	var/was_loadout = preferences().dq_active_category == "loadout"
+	preferences().dq_active_category = category_key
+	if(was_loadout != (category_key == "loadout")) // the loadout tab always dresses the preview
+		preferences().update_preview_icon_lazy()
+	dq_note_category_selected(category_key, ui?.window()?.id || "unpooled", force_catalogs)
+	return TRUE
+
+/// A window switched to a category. Its answer carries the category's catalogs the window lacks, so a switch is one
+/// round-trip (it used to answer without them and React asked again). force_catalogs: the client has lost what it was
+/// sent, so forget the versions it holds.
+/datum/preference_middleware/character_setup/proc/dq_note_category_selected(category_key, window_id, force_catalogs)
+	var/datum/preferences/prefs_datum = preferences()
+	LAZYINITLIST(prefs_datum.dq_force_catalogs_by_window)
+	prefs_datum.dq_force_catalogs_by_window[window_id] = TRUE
+	if(!force_catalogs)
+		return
+	if(islist(prefs_datum.dq_window_category_versions?[window_id]))
+		prefs_datum.dq_window_category_versions[window_id] -= category_key
+	if(islist(prefs_datum.dq_window_editor_versions?[window_id]))
+		for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+			if(!editor.hidden && editor.category == category_key)
+				prefs_datum.dq_window_editor_versions[window_id] -= editor.key
+
+/// Sent once by a window after its first page renders: the next update carries every tab (see get_ui_data).
+/datum/preference_middleware/character_setup/proc/ui_act_dq_prefetch_categories(datum/act/op/A)
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(A.actor, src)
+	var/datum/preferences/prefs_datum = preferences()
+	LAZYINITLIST(prefs_datum.dq_prefetch_by_window)
+	prefs_datum.dq_prefetch_by_window[ui?.window()?.id || "unpooled"] = TRUE
+	return TRUE
+
+// Single-pref update from the auto-renderer.
+
+/datum/preference_middleware/character_setup/proc/ui_act_dq_update_preference(datum/act/op/A, key_arg, value_arg)
+	var/mob/user = A.actor
+	var/key = key_arg
+	var/value = value_arg
+	var/datum/preference/pref = GLOB.preference_entries_by_key[key]
+	if(!pref)
+		return FALSE
+	// Hidden / managed / editor-owned prefs are not reachable from the raw wire —
+	// see /datum/preference/proc/is_client_writable.
+	if(!pref.is_client_writable(preferences()))
+		log_world("dq_update_preference: [user?.ckey] attempted to write non-client-writable pref [key]")
+		return FALSE
+	preferences().update_preference(pref, value)
+	return TRUE
+
+// Color picker for /datum/preference/color subtypes' widgets. The React side has no
+// reliable native color input, so it asks BYOND to open tgui_color_picker; the
+// chosen value is written through the same update_preference path so constraints
+// and apply-hooks fire identically to a typed write.
+
+/datum/preference_middleware/character_setup/proc/ui_act_dq_pick_color(datum/act/op/A, key)
+	var/datum/preference/pref = GLOB.preference_entries_by_key[key]
+	if(!pref || !pref.is_client_writable(preferences()))
+		return FALSE
+	var/picked = A.step_value("color")
+	if(isnull(picked))
+		return FALSE
+	return preferences().update_preference(pref, picked)
+
+/// The picker opens for a known preference (the handler refuses one the client may not write).
+/datum/preference_middleware/character_setup/proc/pick_color_writable(datum/act/op/A)
+	return !isnull(GLOB.preference_entries_by_key[A.args["key"]])
+
+/datum/preference_middleware/character_setup/proc/pick_color_key(datum/act/op/A)
+	return A.args["key"]
+
+/datum/preference_middleware/character_setup/proc/prefs_of_setup(datum/act/op/A)
+	return preferences()
+
+/datum/preference_middleware/character_setup/proc/pick_color_default(datum/act/op/A)
+	var/datum/preference/pref = GLOB.preference_entries_by_key[A.args["key"]]
+	return (pref && preferences().read_preference(pref.type)) || "#000000"
+
+// Atomic multi-pref operation handled by a registered editor.
+
+/datum/preference_middleware/character_setup/proc/ui_act_dq_editor_action(datum/act/op/A, action_arg, editor_arg, params_arg)
+	var/mob/user = A.actor
+	if(!isnull(params_arg) && !islist(params_arg))
+		return FALSE
+	var/editor_key = editor_arg
+	var/datum/preference_editor/editor = GLOB.preference_editors_by_key[editor_key]
+	if(!editor)
+		return FALSE
+	var/result = editor.handle_action(preferences(), action_arg, params_arg, user)
+	// Switching human/robot/pAI mode changes which category groups exist.
+	// Drop the structure cache and bump its version; each pooled browser
+	// receives the new active-category patch on its next update.
+	if(result == PREF_UPDATE_ACCEPTED && editor_key == "species_picker")
+		preferences().dq_invalidate_category_cache()
+	return (result == PREF_UPDATE_ACCEPTED)
+
+/// A colour for one /datum/preference/color entry. Re-checked: the entry is still accessible.
+/datum/prompt/color/prefs/entry
+	var/pref_key
+
+/datum/prompt/color/prefs/entry/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/preference/pref = GLOB.preference_entries_by_key[pref_key]
+	if(!pref || !pref.is_accessible(preferences))
+		return "not accessible"
+
+/// The preview mannequin as this character is now: the settings applied and dressed as the preview shows it.
+/datum/preferences/proc/dq_inspection_mannequin()
+	var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin(client_ckey)
+	mannequin.delete_inventory(TRUE)
+	dress_preview_mob(mannequin, dq_active_category == "loadout")
+	// OOC notes and their style reach a human only when its client logs in (update_icons.dm); the mannequin has none, so apply them here
+	// through the prefs' own apply_to_living.
+	for(var/datum/preference/preference as anything in get_preferences_in_priority_order())
+		if(preference.savefile_identifier == PREFERENCE_CHARACTER && (istype(preference, /datum/preference/text/living) || istype(preference, /datum/preference/toggle/living)))
+			preference.apply_to_living(mannequin, read_preference(preference.type))
+	return mannequin
+
+/// What examining this character prints below its gear: flavor text, custom link and the OOC notes links, from the examine's own proc.
+/datum/preferences/proc/dq_examine_profile_text()
+	var/mob/living/carbon/human/mannequin = dq_inspection_mannequin()
+	return examine_block(span_infoplain("[jointext(mannequin.examine_profile_lines(), "<br>")]"))
+
+/// The flavor text in the player's chat, as an examining player sees it.
+/datum/preference_middleware/character_setup/proc/ui_act_dq_inspect_flavor(datum/act/op/A)
+	to_chat(A.actor, preferences().dq_examine_profile_text())
+	return FALSE
+
+/// The OOC notes window other players open from examine, for this character.
+/datum/preference_middleware/character_setup/proc/ui_act_dq_inspect_ooc_notes(datum/act/op/A)
+	preferences().dq_open_ooc_inspection(A.actor)
+	return FALSE
+
+/// The OOC notes window others open from examine, on this character's preview mannequin, held open for `user` wherever they are (a lobby player
+/// is never near the mannequin, and the default state closed it at once). Returns the panel.
+/datum/preferences/proc/dq_open_ooc_inspection(mob/user)
+	var/mob/living/carbon/human/mannequin = dq_inspection_mannequin()
+	mannequin.ooc_notes_window(user, GLOB.tgui_always_state, TRUE)
+	return resolve_token(LAZYACCESS(GLOB.dq_ooc_notes_panels, ref_token(mannequin)))

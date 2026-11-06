@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The asset cache's per-client file update and the viewport auto-fit are scheduled again (their after() calls had no owner)"
+  - code_imp: "after() reports a runtime when its owner is not a datum, instead of returning silently"

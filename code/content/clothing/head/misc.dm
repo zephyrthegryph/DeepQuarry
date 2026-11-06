@@ -787,7 +787,7 @@ CAPABILITIES(/obj/item/clothing/head/shiny_hood)
 /obj/item/clothing/head/shiny_hood/poly
 	name = "polychromic shiny hood"
 	icon_state = "hood_col_o"
-	polychromic = TRUE
+	recolourable = TRUE
 
 /obj/item/clothing/head/shiny_hood/closed
 	name = "shiny hood"
@@ -800,7 +800,7 @@ CAPABILITIES(/obj/item/clothing/head/shiny_hood/closed)
 /obj/item/clothing/head/shiny_hood/closed/poly
 	name = "polychromic closed shiny hood"
 	icon_state = "hood_col"
-	polychromic = TRUE
+	recolourable = TRUE
 
 /obj/item/clothing/head/pelt
 	name = "Bear pelt"

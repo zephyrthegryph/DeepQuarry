@@ -11,10 +11,10 @@ pub(crate) fn file<C:Control>(code:&crate::tree::View,c:&mut C)->Result<Schema,C
  let mut out=Schema::default();reaction::visit_variable_names(code,c,|c,row|{let owner=kc::format(c,format_args!("/{}",row.owner_without_leading_slash))?;insert(&mut out.vars,&owner,row.name,c)?;let mut segs=row.qualified.split('/').filter(|s|!s.is_empty()&&!["tmp","static","global","const","final"].contains(s));let first=segs.next();if segs.next().is_some()&&first.is_some_and(|s|["datum","obj","mob","atom","turf","area","client","image","list"].contains(&s)){insert(&mut out.typed,&owner,row.name,c)?}Ok(true)})?;
  let mut caps_owner:Option<String>=None;
  for(_,line)in code.numbered(){c.checkpoint()?;if line.starts_with('#'){continue}
-  if let Some(m)=first!(c,line,r"^CAPABILITIES\(\s*(/[\w/]+)"){caps_owner=Some(kc::own(c,m.s(1))?)}else if !line.starts_with('\t')&&!line.starts_with(' ')&&!line.is_empty(){caps_owner=None}else if let Some(owner)=&caps_owner{if let Some(m)=first!(c,line,r"^\s+(?:ref|rel|owns?)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)"){insert(&mut out.relations,owner,m.s(1),c)?}}
+  if let Some(m)=first!(c,line,r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)"){caps_owner=Some(kc::own(c,m.s(1))?)}else if !line.starts_with('\t')&&!line.starts_with(' ')&&!line.is_empty(){caps_owner=None}else if let Some(owner)=&caps_owner{if let Some(m)=first!(c,line,r"^\s+(?:ref|rel|owns?)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)"){insert(&mut out.relations,owner,m.s(1),c)?}}
   if let Some(m)=first!(c,line,r"^\s+links?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)"){insert(&mut out.relations,m.s(1),m.s(2),c)?;insert(&mut out.relations,m.s(3),m.s(4),c)?}
   if let Some(m)=first!(c,line,r"^STAT\(\s*(/[\w/]+)\s*,\s*(\w+)"){insert(&mut out.tracked,m.s(1),m.s(2),c)?}
-  if let Some(m)=first!(c,line,r"(?:TRACKED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)"){insert(&mut out.tracked,m.s(1),m.s(2),c)?}
+  if let Some(m)=first!(c,line,r"(?:TRACKED|TRACKED_DATA|TRACKED_STATE|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)"){insert(&mut out.tracked,m.s(1),m.s(2),c)?}
   if let Some(m)=first!(c,line,r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)"){insert(&mut out.relations,m.s(1),m.s(2),c)?}
   let om=first!(c,line,r"(?:OM_FIELD|OM_FLAG_FIELD_BITS|OM_FLAG_FIELD|OM_FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)");
   if let Some(m)=om{insert(&mut out.tracked,m.s(1),m.s(2),c)?}else if let Some(m)=first!(c,line,r"OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)"){insert(&mut out.tracked,m.s(1),m.s(2),c)?}

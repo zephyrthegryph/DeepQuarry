@@ -116,7 +116,7 @@ Pins and numbers: `dq_body_heat_behaviour.dm`, `intended_changes.md` ("Body heat
 
 ### Implementation (H3)
 
-Code: `code/modules/heat/heat_objects.dm`, rules in `code/datums/rules/declarations.dm`, defines in `code/__defines/heat.dm`, tests in `code/modules/unit_tests/dq_h3_heat_tests.dm`.
+Code: `code/modules/heat/heat_objects.dm`, rules in `code/datums/rules/declarations.dm`, defines in `code/__defines/heat.dm`, tests in `code/tests/unit_tests/dq_h3_heat_tests.dm`.
 - **Thermal properties.** `/obj/item/thermal_properties()` reads `PROP_HEAT_CAPACITY` (materials: kg × specific heat), falling back to the size class; reagent containers, the bunsen burner and the distillery add `reagents.heat_capacity()` (Σ volume × `specific_heat`). A holder's body capacity follows its contents (`heat_capacity_changed()`).
 - **Thresholds** come from `PROPERTY()`: melting and ignition points from the material templates for every `/obj` (a FLAMMABLE object with no flammable material ignites at `FIRE_MINIMUM_TEMPERATURE_TO_EXIST`), with per-type limits for windows (`maximal_heat`), exosuits (`max_temperature`), weeds, webs, shields and gargoyles.
 - **Rules:** `ignition`, `melting` (items become a molten mass), `overheating` (structures/machines: a thermal damage stream while above the limit), `cooking` (`hold_for` above `FOOD_COOKING_TEMPERATURE`), `cook_off` (ammunition), and `heat_behaviour/*`, one per converted `fire_act()` override.

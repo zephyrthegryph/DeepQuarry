@@ -36,7 +36,7 @@
 				return "brain decayed"
 	if(HUSK in mutations)
 		return "husked"
-	if(!sparse_get_or(src, can_defib, 1))
+	if(!STATE_GET(src, human_misc, can_defib))
 		return "brain stem"
 	var/bad_vital_organ = check_vital_organs()
 	if(bad_vital_organ)
@@ -86,7 +86,7 @@
 		brain.reset_defib_window()
 	remove_mutation(HUSK)
 	set_status_flags(status_flags & ~DISFIGURED)
-	sparse_set(src, can_defib, TRUE)
+	STATE_SET(src, human_misc, can_defib, TRUE)
 
 /// Vore reform: the stored body comes back fully restored, never refused. Rebuild what would
 /// refuse (REVIVE_RESTORE), revive through the one path, then heal to rejuvenate level.
@@ -99,7 +99,7 @@
 
 /// The only way a dead mob becomes alive. Returns TRUE on success, or the refusal reason (a
 /// string) from can_return_from_death(). `reason` is logged; `source` is what did it (defib,
-/// spell, admin, reagent). `flags` are REVIVE_* (code/__defines/vital_state.dm).
+/// spell, admin, reagent). `flags` are REVIVE_* (code/defines/content/vital_state.dm).
 /mob/living/proc/return_from_death(reason, datum/source, flags = NONE)
 	// 1. Rebuild and heal first when asked.
 	if((flags & REVIVE_RESTORE) && stat == DEAD && !QDELETED(src))
@@ -118,13 +118,13 @@
 	registry_join(REGISTRY_LIVING_MOBS, src)
 	if(!(flags & REVIVE_KEEP_TIMEOFDEATH))
 		COOLDOWN_RESET(src, timeofdeath)
-		sparse_set(src, tod, null)
-	sparse_set_or(src, failed_last_breath, 0, 0)
+		STATE_SET(src, living_misc, tod, null)
+	STATE_SET(src, breath_hazard, failed_last_breath, 0)
 
 	// 4. The one stat transition back.
-	sparse_set(src, revival_in_progress, TRUE)
+	STATE_SET(src, living_misc, revival_in_progress, TRUE)
 	set_stat((flags & REVIVE_UNCONSCIOUS) ? UNCONSCIOUS : CONSCIOUS)
-	sparse_set(src, revival_in_progress, FALSE)
+	STATE_SET(src, living_misc, revival_in_progress, FALSE)
 	body?.on_status_changed()
 
 	// 5. Undo what death() did to the senses and screen.
@@ -143,7 +143,7 @@
 	on_revived(reason, source)
 	// The HUD and sight redraw by themselves: set_stat() published nameof(stat), flag_hud_update() MOB_KEY_HUD_FLAGS.
 	// set_stat() publishes the stat key, which wakes every Life step (LIFE_WAKE_KEYS).
-	PUBLISH_LEGACY(src, /datum/notice/living_revived, source, reason)
+	PUBLISH(src, living_revived, source_ = source, revive_reason = reason)
 	log_game("REVIVE: [key_name(src)] by [source ? "[source] ([source.type])" : "nothing"] ([reason]) at [AREACOORD(src)].")
 	return TRUE
 

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "analyze gen: the shared store and memo keys include the auto_tracked lists of lint_scopes.toml; gen runs after the verdigris bindings; a run whose inputs changed mid-run stores nothing and fails"

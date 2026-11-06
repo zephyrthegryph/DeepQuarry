@@ -81,8 +81,8 @@ field_write	code/modules/a/fields.dm	195
 field_write	code/modules/a/fields.dm	198
 field_write	code/modules/a/fields.dm	207
 field_write	code/modules/a/fields.dm	208
-field_write	code/modules/unit_tests/t.dm	2
-field_write	code/modules/unit_tests/t.dm	3
+field_write	code/tests/unit_tests/t.dm	2
+field_write	code/tests/unit_tests/t.dm	3
 prompt_spec	code/modules/a/rules.dm	94
 prompt_spec	code/modules/a/rules.dm	95
 prompt_spec	code/modules/a/rules.dm	96

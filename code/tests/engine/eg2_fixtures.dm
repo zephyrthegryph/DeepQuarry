@@ -1,5 +1,5 @@
 // Fixtures of the engine gaps the phase-2 conversions hit (prompt kinds, timed stall hooks, held verbs, mob drags, natural-weapon clicks). Compiled under
-// UNIT_TESTS only; code/modules/unit_tests/dq_eg2_gap_tests.dm drives them.
+// UNIT_TESTS only; code/tests/unit_tests/dq_eg2_gap_tests.dm drives them.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

@@ -23,6 +23,77 @@ mk code/modules/widgets/init.dm '/obj/item/widget/Initialize(mapload)
 	. = ..()'
 mk code/modules/widgets/verby.dm '/obj/item/widget/verb/poke()
 	set name = "Poke"'
+mk code/modules/widgets/newatom.dm '/obj/item/widget/New()
+	return ..()'
+mk code/modules/widgets/newatom_block.dm '/obj/item/widget
+	New()
+		return ..()'
+mk code/modules/widgets/newdatum.dm '/datum/widget_state/New(a)
+	return ..()'
+mk code/modules/widgets/newdatum_block.dm '/datum/widget_state
+	New(a)
+		return ..()'
+mk code/modules/widgets/clientverb.dm '/client/verb/poke()
+	set name = "Poke"'
+mk code/modules/widgets/clientverb_block.dm '/client
+	verb/poke()
+		set name = "Poke"'
+mk code/modules/unit_tests/waits.dm '/proc/w()
+	sleep(1)'
+mk code/modules/admin/verbs/poke.dm '/mob/verb/poke()
+	set name = "Poke"'
+mk code/modules/widgets/allow_init.dm '/proc/c()
+	return 1 // ALLOW(init/INSTANCE_STATE): a reason long enough to count'
+mk code/modules/widgets/allow_mixed.dm '/proc/d()
+	return 1 // ALLOW(instance_list, base_vars): a reason long enough to count'
+mk code/controllers/globals.dm '/datum/controller/global_vars/Destroy(force)
+	return QDEL_HINT_IWILLGC'
+mk code/controllers/other.dm '/datum/controller/other/Destroy(force)
+	return ..()'
+mk code/modules/mob/say_old.dm '/mob/verb/say_verb_old(message as text)
+	set name = "Say"'
+mk code/modules/mob/say_new.dm '/mob/verb/say_verb_new(message as text)
+	set name = "Say"'
+mk code/modules/widgets/async_kept.dm '/proc/e()
+	INVOKE_ASYNC(GLOBAL_PROC_REF(f)) // ALLOW(scheduler): the callee blocks on a window and has no other way to run'
+mk code/modules/widgets/async_kept_above.dm '/proc/g()
+	// ALLOW(scheduler): the callee blocks on a window and has no other way to run
+	INVOKE_ASYNC(GLOBAL_PROC_REF(f))'
+mk code/modules/widgets/async_bare.dm '/proc/h()
+	INVOKE_ASYNC(GLOBAL_PROC_REF(f))'
+mk 'code/modules/client/client procs.dm' '/client/Topic(href, href_list, hsrc)
+	return ..()'
+mk code/modules/widgets/granted_verb.dm '/mob/living/verb/hand_out()
+	set name = "Hand Out"
+CAPABILITIES(/mob/living/widget)
+	verb_entry(/mob/living/verb/hand_out)'
+mk code/modules/widgets/ungranted_verb.dm '/mob/living/verb/keep_out()
+	set name = "Keep Out"'
+mk code/modules/widgets/ability_verb.dm '/datum/gm/verb/zap()
+	set name = "Zap"
+/datum/research/zap
+	ability = /datum/gm/verb/zap'
+mk code/modules/widgets/adminverb.dm '/datum/admin_verb/poke/proc/stage(client/user)
+	return'
+mk code/modules/widgets/rawprompt.dm '/proc/ask()
+	return input("Name?")'
+mk code/modules/widgets/pickerverb.dm '/datum/gm/verb/zap_target(mob/M as mob in view())
+	set name = "Zap"
+CAPABILITIES(/datum/gm)
+	verb_entry(/datum/gm/verb/zap_target)'
+mk code/modules/mob/mob.dm '/mob/verb/resist()
+	set name = "Resist"
+/mob/verb/eastface()
+	set hidden = 1
+/mob/verb/toggle_thing()
+	set category = VERB_CAT_IC_SETTINGS'
+mk code/modules/multiz/movement.dm '/mob/living/verb/up()
+	set name = "Move Upwards"
+/mob/living/verb/fly_away()
+	set name = "Fly Away"
+	set category = VERB_CAT_IC_GAME'
+mk code/modules/widgets/ghostverb.dm '/mob/dead/verb/spook()
+	set category = VERB_CAT_GHOST_GAME'
 mk code/modules/widgets/allowed.dm '/proc/b()
 	return 1 // ALLOW(scheduler): a reason long enough to count'
 mk code/modules/widgets/baselined.dm '/obj/item/widget/baselined'
@@ -45,11 +116,14 @@ mk code/modules/widgets/gizmos_api.dm '/datum/system/gizmos/proc/poke()
 mk code/modules/widgets/sprockets_api.dm '/datum/system/sprockets/proc/poke()
 	return'
 mk tools/ci/thing_baseline.txt 'rule	code/modules/widgets/baselined.dm	some text'
-mk tools/dm-health/baseline.json '["large-proc:code/modules/widgets/spawny.dm:182 lines"]'
+mk code/modules/widgets/dmh_only.dm '/obj/item/widget/dmh_only'
+mk tools/dm-health/baseline.json '["large-proc:code/modules/widgets/spawny.dm:182 lines", "maybe-null-deref:code/modules/widgets/dmh_only.dm:x may still be null"]'
 mk tools/analyze/src/lints/x.rs 'Files::Under(&["code/modules/widgets/tooled/rig"])'
 mk tools/ci/lint_scopes.toml 'x = ["code/modules/widgets/clean.dm"]'
 
-out="$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp")"
+tmpn="$tmp"
+if command -v cygpath >/dev/null 2>&1; then tmpn="$(cygpath -m "$tmp")"; fi
+out="$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn")"
 state() { printf '%s\n' "$out" | awk -F'\t' -v f="$1" '$2 == f { print $1 }'; }
 why() { printf '%s\n' "$out" | awk -F'\t' -v f="$1" '$2 == f { print $4 }'; }
 target() { printf '%s\n' "$out" | awk -F'\t' -v f="$1" '$2 == f { print $3 }'; }
@@ -62,12 +136,40 @@ expect code/modules/widgets/clean.dm clean ""
 expect code/modules/widgets/comment_only.dm clean ""
 expect code/modules/widgets/destroy.dm dirty "oldform:Destroy()"
 expect code/modules/widgets/spawny.dm dirty "oldform:spawn"
-expect code/modules/widgets/spawny.dm dirty "baseline:code/modules/widgets/spawny.dm"
+expect code/modules/widgets/spawny.dm dirty "dmhealth:code/modules/widgets/spawny.dm"
 expect code/modules/widgets/init.dm dirty "oldform:Initialize"
 expect code/modules/widgets/verby.dm dirty "oldform:verb"
-expect code/modules/widgets/allowed.dm dirty "allow"
+expect code/modules/widgets/newatom.dm dirty "oldform:New() override"
+expect code/modules/widgets/newatom_block.dm dirty "oldform:New() override"
+expect code/modules/widgets/newdatum.dm clean ""
+expect code/modules/widgets/newdatum_block.dm clean ""
+expect code/modules/widgets/clientverb.dm clean ""
+expect code/modules/widgets/clientverb_block.dm clean ""
+expect code/modules/unit_tests/waits.dm clean ""
+expect code/modules/admin/verbs/poke.dm clean ""
+expect code/controllers/globals.dm clean ""
+expect code/controllers/other.dm dirty "oldform:Destroy()"
+expect code/modules/mob/say_old.dm clean ""
+expect code/modules/mob/say_new.dm dirty "oldform:verb"
+expect code/modules/widgets/async_kept.dm clean ""
+expect code/modules/widgets/async_kept_above.dm clean ""
+expect code/modules/widgets/async_bare.dm dirty "oldform:INVOKE_ASYNC"
+expect 'code/modules/client/client procs.dm' clean ""
+expect code/modules/widgets/granted_verb.dm clean ""
+expect code/modules/widgets/ungranted_verb.dm dirty "oldform:verb"
+expect code/modules/widgets/ability_verb.dm clean ""
+expect code/modules/widgets/adminverb.dm clean ""
+expect code/modules/widgets/rawprompt.dm dirty "oldform:raw_prompt"
+expect code/modules/widgets/pickerverb.dm dirty "oldform:raw_prompt"
+expect code/modules/mob/mob.dm clean ""
+expect code/modules/multiz/movement.dm dirty "oldform:verb"
+expect code/modules/widgets/ghostverb.dm clean ""
+expect code/modules/widgets/allowed.dm clean ""
+expect code/modules/widgets/allow_init.dm dirty "allow"
+expect code/modules/widgets/allow_mixed.dm dirty "allow"
 expect code/modules/widgets/baselined.dm dirty "baseline:code/modules/widgets/baselined.dm"
-expect code/modules/widgets/tooled/rig/suit.dm dirty "toolref:code/modules/widgets/tooled/rig"
+expect code/modules/widgets/tooled/rig/suit.dm clean "toolref:code/modules/widgets/tooled/rig"
+expect code/modules/widgets/dmh_only.dm clean "dmhealth:code/modules/widgets/dmh_only.dm"
 expect code/modules/widgets/uses_content.dm clean ""
 expect code/modules/widgets/clean.dm clean "relinc:code/modules/widgets/inc/user.dm:1"
 expect code/modules/widgets/inc/user.dm clean "relinc:code/modules/widgets/inc/user.dm:1"
@@ -78,8 +180,8 @@ expect code/modules/power/cable.dm clean "layering:/obj/item/known"
 if [ -z "$(state code/__defines/widgets.dm)" ] || [ "$(state code/__defines/widgets.dm)" = dirty ]; then ok "defines are never clean"; else bad "defines file reported clean"; fi
 [ "$(target code/modules/widgets/clean.dm)" = code/content/widgets/clean.dm ] && ok "content target" || bad "content target: $(target code/modules/widgets/clean.dm)"
 [ "$(target code/modules/power/cable.dm)" = code/domains/power/cable.dm ] && ok "domain target" || bad "domain target: $(target code/modules/power/cable.dm)"
-if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 7 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
-bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
+if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --clean | wc -l)" -eq 26 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
+bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
 
 [ $fail -eq 0 ] && echo "move_candidates: all passed"
 exit $fail

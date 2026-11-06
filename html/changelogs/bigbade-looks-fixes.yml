@@ -1,0 +1,4 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "Limbs & organs: option buttons per row instead of dropdowns; the row's bar takes the colour of its option."

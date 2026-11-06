@@ -7,7 +7,7 @@
 //! uses (8192-turf batches of gas then heat registration), on a grid the size
 //! of Southern Cross, and then the first frames, and bounds the peak.
 
-use vg_gas::cell::{GasCell, flags as gas_flags};
+use vg_gas::cell::GasCell;
 use vg_gas::gas::constants::CELL_VOLUME;
 
 use crate::allocator;
@@ -51,9 +51,7 @@ fn air() -> GasCell {
 }
 
 fn vacuum() -> GasCell {
-    let mut v = GasCell::new([0.0; vg_gas::cell::N], 2.7);
-    v.flags |= gas_flags::IMMUTABLE;
-    v
+    GasCell::new([0.0; vg_gas::cell::N], 2.7)
 }
 
 struct Stage {
@@ -73,7 +71,7 @@ fn stage(stages: &mut Vec<Stage>, name: &'static str) {
 
 #[test]
 fn southern_cross_boot_rust_heap_peak_is_bounded() {
-    boot(false);
+    let _ = boot(false, false);
 }
 
 /// The live boot: a few turfs register one by one before `setup_allturfs()`
@@ -86,13 +84,36 @@ fn southern_cross_boot_rust_heap_peak_is_bounded() {
 /// and no uniform-chunk sharing (`doc/rewrite/init_and_turfs.md` §0.2b).
 #[test]
 fn early_single_registrations_keep_the_bulk_path() {
-    boot(true);
+    let _ = boot(true, false);
+}
+
+/// The sealed deck: the same grid with a wall ring round the station, so the air holds. The chunk
+/// kinds this leaves behind are the deterministic measure of the stores (no wall clock, no machine
+/// load): vacuum chunks are never allocated, identical geometry is one value per kind, and a settled
+/// room is one value.
+#[test]
+fn a_sealed_station_costs_one_value_per_settled_room_chunk() {
+    let table = boot(false, true);
+    let find = |name: &str| table.iter().find(|(n, _)| *n == name).map(|(_, m)| *m).unwrap();
+    let (gas, geom) = (find("gas").view_chunks, find("gas_geometry").view_chunks);
+    // Vacuum chunks (1088 of the 1280 on the map, and every padding chunk of the layout) are never allocated; 192 chunks
+    // hold the three decks, of which the 144 interior ones are exactly uniform and sleep as one value. The 48 on the wall ring
+    // mix air with unregistered wall cells and stay dense.
+    assert_eq!(gas.dense_but_uniform, 0, "a uniform chunk is stored as a value, not as cells");
+    assert_eq!(gas.default_chunks, gas.chunks - 192);
+    assert_eq!((gas.uniform_chunks, gas.dense_chunks), (144, 48), "{gas:?}");
+    assert_eq!(gas.allocations, 49, "one shared room value plus the ring chunks: {gas:?}");
+    assert!(find("gas").view < 2_300_000, "the sealed station's gas is about 2 MB, was 6.7 MB dense");
+    assert!(geom.allocations < 130 && geom.default_chunks > 64_000, "identical geometry is one value per kind: {geom:?}");
 }
 
 /// The allocator's counters are process-wide: one boot at a time.
 static BOOT: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-fn boot(early_writes: bool) {
+/// The per-store memory table of a boot: `(port, bytes, chunks by kind)`.
+type StoreTable = Vec<(&'static str, vg_core::owner::PortMemory)>;
+
+fn boot(early_writes: bool, sealed: bool) -> StoreTable {
     let _one_at_a_time = BOOT
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -130,10 +151,22 @@ fn boot(early_writes: bool) {
             .unwrap();
         }
     }
+    // A sealed station has a wall ring: walls are not gas nodes (never registered), so the deck's air cannot
+    // reach the space outside and settles at once, as a station that holds pressure does.
+    let c = MAX_X / 2;
+    let wall = move |x: u32, y: u32, z: u32| {
+        let footprint = x.abs_diff(c) < STATION_HALF && y.abs_diff(c) < STATION_HALF;
+        sealed
+            && footprint
+            && ((z < 3 && (x.abs_diff(c) == STATION_HALF - 1 || y.abs_diff(c) == STATION_HALF - 1))
+                || z == 3)
+    };
     let cells: Vec<(u32, bool)> = (0..MAX_Z)
         .flat_map(|z| {
             (0..MAX_Y).flat_map(move |y| {
-                (0..MAX_X).map(move |x| (z * MAX_X * MAX_Y + y * MAX_X + x, is_station(x, y, z)))
+                (0..MAX_X)
+                    .filter(move |&x| !wall(x, y, z))
+                    .map(move |x| (z * MAX_X * MAX_Y + y * MAX_X + x, is_station(x, y, z)))
             })
         })
         .collect();
@@ -203,6 +236,22 @@ fn boot(early_writes: bool) {
             s.peak_mb - mb(base)
         );
     }
+    let table: StoreTable = with_world(|w| Ok(w.sim().memory())).unwrap();
+    for (name, m) in &table {
+        let c = m.view_chunks;
+        if c.allocations + c.default_chunks > 0 && m.total() > 16_384 {
+            eprintln!(
+                "store memory: {name:<14} {:>8.2} MB  chunks {:>5}: default {:>5} uniform {:>5} dense {:>5} (dense but uniform {:>4}) allocations {:>5}",
+                mb(m.total() as u64),
+                c.chunks,
+                c.default_chunks,
+                c.uniform_chunks,
+                c.dense_chunks,
+                c.dense_but_uniform,
+                c.allocations
+            );
+        }
+    }
     let peak = stages.last().map_or(0.0, |s| s.peak_mb) - mb(base);
     assert!(
         peak <= PEAK_CEILING_MB,
@@ -210,4 +259,5 @@ fn boot(early_writes: bool) {
          {PEAK_CEILING_MB} MB ceiling: a registration or frame path holds a whole-grid copy again \
          (doc/rewrite/init_and_turfs.md §0.2)"
     );
+    table
 }

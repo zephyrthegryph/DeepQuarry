@@ -20,7 +20,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, where || tile(2, 1))
 	H.enable_godmode()
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, tile(0, 4))
-	sparse_ref_set(H, teleop, controller)
+	STATE_REF_SET(H, mob_misc, teleop, controller)
 	return H
 
 /// `actor` clicks `target` holding `held` (an empty hand when null).
@@ -31,7 +31,7 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	return test_click(actor, target, held)
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -143,7 +143,7 @@
 
 /datum/unit_test/dq_leftovers/tray_cycles_while_growing/run_gate()
 	var/obj/machinery/portable_atmospherics/hydroponics/tray = allocate(/obj/machinery/portable_atmospherics/hydroponics, tile(2, 2))
-	var/obj/item/seeds/chiliseed/packet = allocate(/obj/item/seeds/chiliseed, tile(2, 2))
+	var/obj/item/seeds/packet = allocate(/obj/item/seeds, tile(2, 2), PLANT_CHILI)
 	tray.plant_seeds(packet)
 	TEST_ASSERT_NOTNULL(tray.seed, "the seed is planted")
 	TEST_ASSERT(test_work_allowed(tray), "a planted tray has work")
@@ -157,7 +157,7 @@
 
 /datum/unit_test/dq_leftovers/frozen_tray_does_not_cycle/run_gate()
 	var/obj/machinery/portable_atmospherics/hydroponics/tray = allocate(/obj/machinery/portable_atmospherics/hydroponics, tile(2, 2))
-	var/obj/item/seeds/chiliseed/packet = allocate(/obj/item/seeds/chiliseed, tile(2, 2))
+	var/obj/item/seeds/packet = allocate(/obj/item/seeds, tile(2, 2), PLANT_CHILI)
 	tray.plant_seeds(packet)
 	tray.set_frozen(1)
 	TEST_ASSERT(test_machine_idle(tray), "no growth while frozen")

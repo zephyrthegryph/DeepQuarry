@@ -1,6 +1,6 @@
 // The fixtures of the phase-1 close (doc/rewrite/final_api.html, section 19 "The E0 proofs"; the E2 gaps the close made good): a capability with an
 // every(), conditions that break the purity guard, a wait on a tracked read, and a type whose own procs are named like part constructors.
-// Test-only types, compiled under UNIT_TESTS only (code/modules/unit_tests/dq_p1_close_tests.dm drives them).
+// Test-only types, compiled under UNIT_TESTS only (code/tests/unit_tests/dq_p1_close_tests.dm drives them).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

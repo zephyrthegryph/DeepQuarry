@@ -577,7 +577,7 @@ slots already behave.
 
 **D12. Families that differ only by material** (stack recipes are built per material at run time, `material.dm:275`). Options: (a) one
 declaration per concrete recipe; (b) a template entry expanded over a registry at compile; (c) leave per-material lists as data and declare
-only the non-material recipes. **Recommend (b), reusing the variants registry (`code/datums/variants/README.md`), decided in W5**, not now;
+only the non-material recipes. **Recommend (b), reusing the variants registry (`code/content/variants/README.md`), decided in W5**, not now;
 until then stack recipes keep their constructor.
 
 **D13. Reverse index and generated documentation.** Options: (a) keep the product-keyed lists hand-fed; (b) the compile builds them and

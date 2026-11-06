@@ -4,7 +4,7 @@
 //! Counts every site of the things the OM scheduler replaces across `code/` (unit tests, benchmarks
 //! and the vendored TGS DMAPI are the `[lint.scheduler]` exemptions of `lint_scopes.toml`; `#define`
 //! lines are macro plumbing and don't count). Each rule is ratcheted by
-//! `tools/ci/scheduler_lints_baseline.txt` (fingerprints; it only shrinks). A justified keep carries
+//! nothing (a hard ban, no baseline). A justified keep carries
 //! `// ALLOW(scheduler): <reason>` on the site's line or the comment line above it.
 //!
 //! | rule | pattern | instead |
@@ -46,14 +46,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/scheduler_lints.py",
     select: CODE_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/scheduler_lints_baseline.txt",
-        header: &[
-            "scheduler lint legacy sites (tools/ci/scheduler_lints.py). rule<TAB>file<TAB>normalized line.",
-            "A site not listed here fails. Shrink-only: after a sweep, `python tools/ci/scheduler_lints.py --update`.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: rules![
         "spawn",
         "addtimer",
@@ -129,7 +122,7 @@ impl Lint for Scheduler {
             parse: ParseKind::Report,
             update: Some(&["tools/ci/scheduler_lints.py", "--update"]),
             seed: Some(&["tools/ci/scheduler_lints.py", "--seed"]),
-            files: &["tools/ci/scheduler_lints_baseline.txt"],
+            files: &[],
             selftest: None,
         })
     }

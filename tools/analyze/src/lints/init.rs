@@ -14,14 +14,16 @@
 //! * `world_reads`: a line in an `Initialize()` body that reaches outside the instance (`range(`, `orange(`, `view(`,
 //!   `GetAbove`, `GetBelow`, `GLOB.`, `START_PROCESSING`): move it to `on_holder_init(A)`, `after_init()` or `membership()`;
 //! * `turf_on_materialize`: a `/turf/.../on_materialize(` override (banned);
-//! * `table_init_overrides`: an `Initialize()` override on a type that inherits `init_from_table = TRUE` (banned).
+//! * `table_init_overrides`: an `Initialize()` override on a type whose nearest declared ancestor is on the table-init path (banned).
+//!   The declarations are rows `path = TRUE|FALSE` of the `GLOBAL_LIST_INIT(init_from_table_*, list(` tables (code/domains/world_model/atom/atom_type_table.dm and the
+//!   generated code/domains/world_model/atom/init_from_table_types.dm); the flag is per-type data, not a var.
 //!
 //! The `// INIT: <reason>` form of the old ratchet is gone: a kept override names its code in the one annotation form.
 //!
 //! Quirks kept from the Python port: files are read with `read().splitlines()` over an `os.walk` of `code/` then `maps/`
 //! (dot-files included); the unit-test/benchmark exemption (`[lint.init]` in `tools/ci/lint_scopes.toml`) applies to the
 //! per-file rules only: `table_init_overrides` reads every file and asks the ALLOW question about every header it meets;
-//! the `init_from_table` flags are one global dict (last file in walk order wins; nearest flagged ancestor).
+//! the declared rows are one global dict (last file in walk order wins; nearest declared ancestor).
 
 use std::collections::HashMap;
 
@@ -37,8 +39,6 @@ use crate::pat_match;
 use crate::tree::{Select, SourceFile};
 use crate::util::{before_slashes, py_lstrip};
 
-const BASELINE: &str = "tools/ci/init_baseline.txt";
-
 static META: Meta = Meta {
     name: crate::allow_registry_fields::init::SCOPE_META_0.name,
     group: crate::allow_registry_fields::init::SCOPE_META_0.group,
@@ -47,14 +47,7 @@ static META: Meta = Meta {
     // os.walk of code/ and maps/: dot-files and dot-directories included.
     select: Select { roots: &[("code", "dm"), ("maps", "dm")], hidden: true },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Initialize() ratchet sites (the init lint, tools/analyze/src/lints/init.rs; doc/rewrite/final_api.html sections 6 and 17).",
-            "rule<TAB>file<TAB>text; an init_lines row is an identity (@owner::Initialize::target). Shrink-only: fix sites, then `analyze baseline --update --lint init`.",
-        ],
-        banned: &["late_initialize", "turf_on_materialize", "table_init_overrides", "init_lines"],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta {
             name: "initialize",
@@ -67,7 +60,7 @@ static META: Meta = Meta {
         },
         RuleMeta { name: "world_reads", hint: "don't reach outside the instance in Initialize(); do it in on_holder_init(A), after_init() or through membership()" },
         RuleMeta { name: "turf_on_materialize", hint: "turf on_materialize() overrides are skipped by SSatoms; use the type table" },
-        RuleMeta { name: "table_init_overrides", hint: "set init_from_table = FALSE on a type that overrides Initialize()" },
+        RuleMeta { name: "table_init_overrides", hint: "declare the type `= FALSE` in init_from_table_declared() (code/domains/world_model/atom/atom_type_table.dm) when it overrides Initialize()" },
     ],
     allow: crate::allow_registry_fields::init::ALLOW_0,
     lists: crate::allow_registry_fields::init::SCOPE_META_0.lists,
@@ -159,7 +152,7 @@ impl Init {
 
 impl Init {
     /// `table_init_violations(files)` over every file, exempt ones included. Per-file facts (the
-    /// `init_from_table` flags and the headers the ALLOW question did not keep) are cached by content;
+    /// declared table-init rows and the headers the ALLOW question did not keep) are cached by content;
     /// the cross-file part (last flag in walk order wins, nearest flagged ancestor) is a cheap merge.
     fn table_init(&self, cx: &Cx, out: &mut Sink, captured:bool) {
         let all = cx.all_files();

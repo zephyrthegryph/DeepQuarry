@@ -1,0 +1,439 @@
+/mob/living/simple_mob/shadekin //Spawning the prototype spawns a random one, see initialize()
+	name = "shadekin"
+	desc = "Some sort of fluffer. Big ears, long tail."
+	icon = 'icons/mob/vore_shadekin.dmi'
+	icon_state = "map_example"
+	icon_living = "map_example"
+	ui_icons = 'icons/mob/shadekin_hud.dmi'
+
+	endurance = 200
+
+	movement_cooldown = -1.5
+	see_in_dark = 10 //SHADEkin
+	has_hands = TRUE //Pawbs
+	seedarkness = FALSE //SHAAAADEkin
+	attack_sound = SFX_WEAPONS_BLADESLICE
+	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_SHADEKIN)
+
+	melee_damage_lower = 10
+	melee_damage_upper = 20
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+	maxbodytemp = 900
+
+
+	response_help = "pets"
+	response_disarm = "bops"
+	response_harm = "hits"
+
+	attacktext = list("mauled","slashed","clawed")
+	friendly = list("boops", "pawbs", "mars softly at", "sniffs on")
+
+	vore_active = FALSE
+	vore_pounce_chance = 10
+	vore_icons = SA_ICON_LIVING
+	swallowTime = 2 SECONDS
+	vore_escape_chance = 25
+
+	//None, they stay as their defaults.
+	vore_digest_chance = 0
+	vore_absorb_chance = 0
+	vore_bump_chance = 0 //They follow people, this would be DENGEROUS
+
+	var/eye_state = RED_EYES //Eye color/energy gain/loss mode
+	var/eye_icon_state = null //Default, changed in init
+	var/eye_desc //Eye color description added to examine
+
+	var/mob/living/carbon/human/henlo_human //Human we're stalking currently
+
+	//Behavior
+	var/stalker = TRUE //Do we creep up on humans
+	var/shy_approach = FALSE //Do we creep up slowly on humans to boop them
+
+	//Icon handling
+
+	//Darknesssss
+	var/shadekin_type = /datum/shadekin //Type of the shadekin datum (held in /mob/living/var/shadekin) that holds all the shadekin vars.
+	var/dark_gains = 0 //Last tick's change in energy
+	var/ability_flags = 0 //Flags for active abilities
+
+	var/check_for_observer = FALSE
+	var/check_timer = 0
+
+CAPABILITIES(/mob/living/simple_mob/shadekin)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/shadekin)))
+	configure(mob_rules(faction = FACTION_SHADEKIN))
+	configure(living_rules(say_list_type = /datum/say_list/shadekin))
+	setup(PROC_REF(replace_prototype), mapload = TRUE)
+	ref_one(nameof(henlo_human), /mob/living/carbon/human)
+	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID, death_message = "phases to somewhere far away!"))
+	configure(mob_movement(bump = HUMAN))
+	verb_entry(/mob/proc/adjust_hive_range)
+	owns_one(nameof(shadekin), /datum/shadekin, starts = PROC_REF(start_shadekin))
+	rolls(nameof(icon_state), PROC_REF(roll_coat))
+	look_from(nameof(icon_state), living = "*")
+	rolls(nameof(eye_icon_state), PROC_REF(eye_icon_for))
+	rolls(nameof(desc), PROC_REF(desc_with_eyes))
+
+/// The prototype spawns a weighted random kind of shadekin in its place (setup hook: x(mapload) answers a discard).
+/mob/living/simple_mob/shadekin/proc/replace_prototype(mapload)
+	//You spawned the prototype, and want a totally random one.
+	if(type != /mob/living/simple_mob/shadekin)
+		return INITIALIZE_HINT_NORMAL
+
+	//I'm told by VerySoft these are the liklihood values
+	var/list/sk_types = list(
+		/mob/living/simple_mob/shadekin/red = 20,	//Actively seek people out to nom, so fairly common to see (relatively speaking),
+		/mob/living/simple_mob/shadekin/blue = 15,	//Explorers that like to interact with people, so still fairly common,
+		/mob/living/simple_mob/shadekin/purple = 15,	//Also explorers that may or may not homf people,
+		/mob/living/simple_mob/shadekin/green = 5,
+		/mob/living/simple_mob/shadekin/yellow = 1	//Very rare, usually never leaves their home
+	)
+	var/new_type = pickweight(sk_types)
+
+	new new_type(loc)
+	return INITIALIZE_HINT_QDEL
+
+/// Its shadekin state, its energy tuned to its eyes (owns_one(starts =)).
+/mob/living/simple_mob/shadekin/proc/start_shadekin(current, mapload)
+	var/datum/shadekin/SK = new shadekin_type(src)
+	if(SK != shadekin) // an incompatible mob: the state refused it
+		spent(SK)
+		return null
+	set_eye_energy()
+	return SK
+
+/// The prototype's sprite is a map marker: a shadekin still wearing it takes one of the coats (rolls()).
+/mob/living/simple_mob/shadekin/proc/roll_coat(datum/roller/R)
+	return icon_state == "map_example" ? R.choose(list("white", "dark", "brown")) : icon_state
+
+/// Its eye overlay follows its eyes (rolls(), after the eye state is in place).
+/mob/living/simple_mob/shadekin/proc/eye_icon_for(datum/roller/R)
+	switch(eye_state)
+		if(BLUE_EYES)
+			return "e_blue"
+		if(RED_EYES)
+			return "e_red"
+		if(PURPLE_EYES)
+			return "e_purple"
+		if(YELLOW_EYES)
+			return "e_yellow"
+		if(GREEN_EYES)
+			return "e_green"
+		if(ORANGE_EYES)
+			return "e_orange"
+	return "e_red"
+
+/// Its description mentions its eyes (rolls()).
+/mob/living/simple_mob/shadekin/proc/desc_with_eyes(datum/roller/R)
+	return eye_desc ? "[desc] This one has [eye_desc]!" : desc
+
+/mob/living/simple_mob/shadekin/load_default_bellies()
+	var/obj/belly/B = new /obj/belly(src)
+	set_vore_selected(src, B)
+	B.immutable = 1
+	B.set_affects_vore_sprites(TRUE)
+	B.name = vore_stomach_name ? vore_stomach_name : "stomach"
+	B.desc = vore_stomach_flavor ? vore_stomach_flavor : "Your surroundings are warm, soft, and slimy. Makes sense, considering you're inside \the [name]."
+	B.set_digest_mode(vore_default_mode)
+	B.set_escapable(vore_escape_chance > 0 ? B_ESCAPABLE_DEFAULT : B_ESCAPABLE_NONE)
+	B.set_escapechance(vore_escape_chance)
+	B.set_digestchance(vore_digest_chance)
+	B.set_absorbchance(vore_absorb_chance)
+	B.human_prey_swallow_time = swallowTime
+	B.nonhuman_prey_swallow_time = swallowTime
+	B.set_vore_verb("swallow")
+	// TODO - Customizable per mob
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_HOLD, list(
+		"The walls gently squeeze against you. The wet sounds of shifting flesh against your form fill the air.",
+		"The hot, humid air rushes around you for a moment as the creature urps. The walls clench in around you for a moment, before relaxing again.",
+		"Your body is soaked in the fluids that cling to the churning walls. They squeeze across your form gently, conforming to your shape.",
+		"You can feel the world around you shift and sway as the creature moves! The flesh is stretchy, doughy. You can sink into it a little ways before it bounces back, curling you into a small shape."
+		))
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"The walls slop thick slime across your body! It tingles briefly before the sting and ache sets in!",
+		"The sound of your body slipping and sliding against the powerfully churning stomach fills the air!",
+		"The grip of that stomach is harsh. Eagerly mushing and rubbing that slime into your body in attempts to break you down!",
+		"The intense churning and grinding jostles your around within the thick slime as you're slowly broken down!"
+		))
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_ABSORB, list(
+		"The walls cling to you awfully close... It's almost like you're sinking into them.",
+		"You can feel the walls press in tightly against you, clinging to you possessively!",
+		"It almost feels like you're sinking into the soft, doughy flesh!",
+		"You can feel the walls press in around you. Almost molten, so squishy!!"
+		))
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DRAIN, list(
+		"The walls churn down on you heavily!! It's hard to move!",
+		"You can feel yourself getting weaker with every moment! The doughy walls sap your strength!",
+		"You're practically smothered in the oppressive heat of the creature's stomach!",
+		"It's hot, wet and tight!"
+		))
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_HEAL, list(
+		"The walls pulse against you almost rhythmically. It feels nice, almost like a massage.",
+		"You're gently squeezed in pleasant warmth, softly churned.",
+		"The doughy feel of the heavy flesh clinging to you makes you feel a little stronger with every passing moment.",
+		"The flesh caresses across your body gently as you're held."
+		))
+	B.set_digest_messages_prey(list(
+		"Your body is steadily softened more and more over time! Eventually you pass out. The creature's stomach rumbles powerfully as you are reduced to paste, processed for energy!",
+		"The creature's slimy gut lets out a heavy groan as you're slowly melted away. Gushing deeper through the creature.",
+		"The stinging and aching gives way to numbness as you're slowly smothered out. Your body is steadily reduced to nutrients and energy for the creature to continue on its way.",
+		"The chaos of being digested fades as you're snuffed out by a harsh clench! You're steadily broken down into a thick paste, processed and absorbed by the predator!"
+		))
+
+/mob/living/simple_mob/shadekin/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/shadekin/life_type_post(datum/seq_frame/life/F)
+	..()
+	if(src.shadekin.in_phase)
+		src.set_density(FALSE)
+
+	//Convert spare nutrition into energy at a certain ratio
+	if(. && nutrition_of(src) > starting_nutrition() && src.shadekin.dark_energy < 100)
+		src.set_nutrition(max(0, nutrition_of(src)-5))
+		src.shadekin.dark_energy = min(100,src.shadekin.dark_energy+1)
+	if(!src.client && src.check_for_observer && src.check_timer++ > 5)
+		src.check_timer = 0
+		var/non_kin_count = 0
+		for(var/mob/living/M in view(6,src))
+			if(!issimplekin(M))
+				non_kin_count ++
+		// Technically can be combined with ||, they call the same function, but readability is poor
+		if(!non_kin_count && (src.shadekin.in_phase))
+			perform_op(src, src, ABILITY_ID_SHADEKIN_PHASE_SHIFT, null, ORIGIN_VERB) // shifting back in, nobody present
+		else if (non_kin_count && !(src.shadekin.in_phase))
+			perform_op(src, src, ABILITY_ID_SHADEKIN_PHASE_SHIFT, null, ORIGIN_VERB) // shifting out, scaredy
+
+	//They reach nutritional equilibrium (important for blue-eyes healbelly)
+	if(F.alive())
+		src.shadekin.handle_comp()
+
+/// The tail (its own sheet, shifted left to line up) in the body's state, and the eyes.
+/mob/living/simple_mob/shadekin/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/mob/vore_shadekin64.dmi', look.state_so_far(src), pixel_x = -16))
+	look.overlay(eye_icon_state)
+
+/mob/living/simple_mob/shadekin
+
+/// They phase back to the dark when killed: a retreat, not a death, unless there is nowhere to go.
+/mob/living/simple_mob/shadekin/replace_death(gibbed)
+	if(shadekin.respite_activating)
+		return TRUE
+	var/area/current_area = get_area(src)
+	if(shadekin.in_dark_respite || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
+		return FALSE
+	if(!LAZYLEN(GLOB.latejoin_thedark))
+		log_and_message_admins("[src] died outside of the dark but there were no valid floors to warp to", null)
+		return FALSE
+
+	flick("tp_out",src)
+	act_message(src, null, others = "<b>%U%</b> [kind_of(src).death_message]")
+	shadekin.respite_activating = TRUE
+
+	drop_l_hand()
+	drop_r_hand()
+
+	shadekin.dark_energy = 0
+	shadekin.in_dark_respite = TRUE
+	set_invisibility(INVISIBILITY_LEVEL_TWO)
+
+	mend(TREAT_BURN_CARE, injury_load(INJURY_CATEGORY_THERMAL) / 2)
+	mend(TREAT_TISSUE_REPAIR, injury_load(INJURY_CATEGORY_PHYSICAL) / 2)
+	mend(TREAT_ANTITOXIN, injury_load(INJURY_CATEGORY_TOXIC) / 2)
+	status_at_least(STAT_STUNNED, 10)
+	movement_cooldown = 5
+	set_nutrition(0)
+
+	if(istype(src.loc, /obj/belly))
+		//Yay digestion... presumably...
+		var/obj/belly/belly = src.loc
+		add_attack_logs(belly.owner, src, "Digested in [lowertext(belly.name)]")
+		to_chat(belly.owner, span_notice("\The [src.name] suddenly vanishes within your [belly.name]"))
+		forceMove(pick(GLOB.latejoin_thedark))
+		flick("tp_in",src)
+		shadekin.respite_activating = FALSE
+		shadekin.in_dark_respite = TRUE
+		PUBLISH(belly.owner, belly_change)
+		clear_fullscreen("belly")
+		belly_overlay_window()?.hide() // hide TGUI belly overlay
+		if(hud_used)
+			if(!hud_used.hud_shown)
+				toggle_hud_vis()
+		stop_sound_channel(CHANNEL_PREYLOOP)
+
+		after(src, 10 MINUTES, PROC_REF(can_leave_dark))
+	else
+		after(src, 1 SECOND, PROC_REF(enter_the_dark))
+		after(src, 15 MINUTES, PROC_REF(can_leave_dark))
+	return TRUE
+
+/// No retreat left: the kin fades out for good.
+/mob/living/simple_mob/shadekin/on_death(gibbed)
+	. = ..()
+	set_icon_state("")
+	flick("tp_out",src)
+	expire(1 SECOND) //Back from whence you came!
+
+/mob/living/simple_mob/shadekin/enter_the_dark()
+	shadekin.respite_activating = FALSE
+	shadekin.in_dark_respite = TRUE
+
+	forceMove(pick(GLOB.latejoin_thedark))
+	flick("tp_in",src)
+	set_invisibility(initial(invisibility))
+	shadekin.respite_activating = FALSE
+
+/mob/living/simple_mob/shadekin/can_leave_dark()
+	shadekin.in_dark_respite = FALSE
+	movement_cooldown = initial(movement_cooldown)
+	to_chat(src, span_notice("You feel like you can leave the Dark again"))
+
+/* // AI Temporary Removal
+//Blue-eyes want to nom people to heal them
+/mob/living/simple_mob/shadekin/Found(atom/A)
+	if(specific_targets && isliving(A)) //Healing!
+		var/mob/living/L = A
+		var/health_percent = L.vitality() * 100
+		if(health_percent <= 50 && will_eat(A))
+			return A
+	. = ..()
+*/
+
+/mob/living/simple_mob/shadekin/proc/set_eye_energy()
+	switch(eye_state)
+		//Blue has constant, steady (slow) regen and ignores darkness.
+		if(BLUE_EYES)
+			shadekin.set_light_and_darkness(0.75,0.75)
+			shadekin.nutrition_conversion_scaling = 0.5
+		if(RED_EYES)
+			shadekin.set_light_and_darkness(-0.5,0.5)
+			shadekin.nutrition_conversion_scaling = 2
+		if(PURPLE_EYES)
+			shadekin.set_light_and_darkness(-0.5,1)
+			shadekin.nutrition_conversion_scaling = 1
+		if(YELLOW_EYES)
+			shadekin.set_light_and_darkness(-2,3)
+			shadekin.nutrition_conversion_scaling = 0.5
+		if(GREEN_EYES)
+			shadekin.set_light_and_darkness(0.125,2)
+			shadekin.nutrition_conversion_scaling = 0.5
+		if(ORANGE_EYES)
+			shadekin.set_light_and_darkness(-0.25,0.75)
+			shadekin.nutrition_conversion_scaling = 1.5
+
+/mob/living/simple_mob/shadekin/is_incorporeal()
+	if(shadekin.in_phase)
+		return TRUE
+	return FALSE
+
+/* // AI Removal
+//Friendly ones wander towards people, maybe shy-ly if they are set to shy
+/mob/living/simple_mob/shadekin/handle_wander_movement()
+	if(isturf(src.loc) && !resting && !buckled && canmove)
+		lifes_since_move++
+		if(lifes_since_move >= turns_per_move)
+			if(!(stop_when_pulled && pulledby))
+				var/moving_to
+
+				if(stalker)
+					//Sniff sniff.
+					var/list/humans = human_mobs(world.view)
+
+					//Can we see the last person we were following?
+					if(henlo_human && !(henlo_human in humans))
+						henlo_human = null
+
+					//Can we find a new person to follow?
+					if(!henlo_human)
+						while(!henlo_human && humans.len)
+							henlo_human = pick(humans)
+							if(!isturf(henlo_human.loc))
+								humans -= henlo_human
+								henlo_human = null
+
+					//Boopable hunam?
+					if(henlo_human)
+						moving_to = get_dir(src,henlo_human)
+
+						if((get_dist(src,henlo_human) <= 1))
+							dir = moving_to
+							if(prob(speak_chance))
+								act_message(src, null, null, MSG_OTHERS(span_notice("%U% [pick(friendly)] \the [henlo_human].")))
+								shy_approach = FALSE //ACCLIMATED
+							lifes_since_move = 0
+							return //No need to move
+
+						if(shy_approach)
+							var/them_to_us = turn(moving_to,180)
+							if(abs(dir2angle(henlo_human.dir) - dir2angle(them_to_us)) <= 90)
+								dir = them_to_us
+								return //AAA!
+
+						dir = moving_to
+
+				//Random walk
+				if(!moving_to)
+					moving_to = pick(GLOB.cardinal)
+					dir = moving_to
+
+				var/turf/T = get_step(src,moving_to)
+				if(avoid_turf(T))
+					return
+				Move(T)
+				lifes_since_move = 0
+*/
+
+/mob/living/simple_mob/shadekin/speech_bubble_appearance()
+	return "ghost"
+
+/mob/living/simple_mob/shadekin/apply_melee_effects(atom/A)
+	. = ..(A)
+	if(isliving(A)) //We punched something!
+		var/mob/living/L = A
+		if(L.stat != DEAD)
+			var/gains = 0
+			switch(eye_state)
+				if(RED_EYES)
+					gains = 8
+				if(BLUE_EYES)
+					gains = 1
+				if(PURPLE_EYES)
+					gains = 4
+				if(YELLOW_EYES)
+					gains = 3
+				if(GREEN_EYES)
+					gains = 1
+				if(ORANGE_EYES)
+					gains = 5
+
+			shadekin.dark_energy += gains
+
+// When someone clicks us with an empty hand
+/mob/living/simple_mob/shadekin/unarmed_touch(mob/living/carbon/human/M, stance = I_HELP)
+	. = ..()
+	if(stance == I_HELP)
+		shy_approach = FALSE //ACCLIMATED
+
+/datum/say_list/shadekin
+	speak = list("Marrr.", "Marrr?", "Marrr!")
+	emote_hear = list("chrrrrrs", "wurbles", "wrrrrbles")
+	emote_see = list("tailtwitches", "earflicks")
+	say_maybe_target = list("...mar?")
+	say_got_target = list("MAR!!!")
+	//reactions = list("Mar?" = "Marrr!", "Mar!" = "Marrr???", "Mar." = "Marrr.")
+

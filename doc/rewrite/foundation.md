@@ -1,7 +1,7 @@
 # The foundation design
 
 The foundation is the small set of concepts every gameplay feature is written in. It replaces
-the object-model (OM) API (`om_*`, `DECLARE_*`, pipelines) and the interaction tables with fewer
+the engine (OM) API (`om_*`, `DECLARE_*`, pipelines) and the interaction tables with fewer
 ideas that compose. This page is the overview and the vocabulary; each concept has a chapter.
 
 **Status.** The foundation APIs were built on branches `rewrite/f-reactions`,

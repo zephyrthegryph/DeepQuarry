@@ -1,4 +1,4 @@
-// State and change (code/__defines/reactions.dm).
+// State and change (code/defines/library/reactions.dm).
 //
 // publish_change(E, key) announces that E's `key` changed. It is demand-gated: TRACKED setters (through
 // state_changed()), timed_set and the ownership accessors call it only when READERS(E, key) says someone reads
@@ -32,6 +32,7 @@
 	var/refresh_swept = FALSE
 	var/look_set_bits = 0
 	var/list/look_filters
+	/// The slots of the shared visuals this draw put in vis_contents (slot_datums() reads them back).
 	var/list/look_vis
 	/// kind -> what -> source -> count (rx_ledger_*).
 	var/list/ledger
@@ -47,8 +48,6 @@
 	var/list/bands
 	/// urgent on_cross reaction sig -> list(band, previous_band) waiting for its work item's run (work.dm).
 	var/list/cross_pending
-	/// after(key = ...): key -> list(timer id, token, clock) of the pending keyed timer.
-	var/list/timer_ids
 	/// on_change(at_most =): reaction sig -> when it was last delivered (the scheduler's clock).
 	var/list/at_most_last
 	/// on_change(at_most =): reaction sig -> the keys held until its window ends.
@@ -67,7 +66,7 @@
 	return D.rx
 
 /// The relation key a ledger kind publishes on its holder (and "<key>_of" on the partner it names).
-GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener", "rel_member", "rel_timer", "rel_contained"))
+GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener", "rel_member", null, "rel_contained"))
 
 // ---------------------------------------------------------------- READERS
 
@@ -96,7 +95,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	return FALSE
 
 /// The tracked var `var_name` of E state_changed (TRACKED setters, a hand-written SETTER): its key is published when
-/// someone reads it (READERS) and the outputs that read it re-derive (state_changed(), refresh.dm). No OM channel is raised.
+/// someone reads it (READERS) and the outputs that read it re-derive (state_changed(), refresh.dm). No channel is raised.
 /proc/tracked_changed(datum/E, var_name)
 	READS_FROM()
 	state_changed(E, 0, var_name)
@@ -219,33 +218,11 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	rx_ledger_publish(holder, kind, what)
 	return TRUE
 
-/// Drops every hold `source` has under `kind` on `holder`. Returns the number of whats that vanished.
-/proc/rx_ledger_clear_source(datum/holder, kind, source)
-	if(isnum(source))
-		source = "[source]"
-	var/list/whats = holder.rx?.ledger?["[kind]"]
-	. = 0
-	for(var/what in whats?.Copy())
-		var/list/sources = whats[what]
-		if(!sources?[source])
-			continue
-		if(rx_ledger_remove(holder, kind, what, source, sources[source]))
-			.++
-
 /// TRUE while any source holds `what` under `kind` on `holder`.
 /proc/rx_ledger_has(datum/holder, kind, what)
 	if(isnum(what))
 		what = "[what]"
 	return !!holder.rx?.ledger?["[kind]"]?[what]
-
-/// How many counts across every source hold `what`.
-/proc/rx_ledger_count(datum/holder, kind, what)
-	if(isnum(what))
-		what = "[what]"
-	. = 0
-	var/list/sources = holder.rx?.ledger?["[kind]"]?[what]
-	for(var/source in sources)
-		. += sources[source]
 
 /// The sources holding `what` (a fresh list).
 /proc/rx_ledger_sources(datum/holder, kind, what)
@@ -253,14 +230,6 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		what = "[what]"
 	var/list/sources = holder.rx?.ledger?["[kind]"]?[what]
 	return sources ? sources.Copy() : list()
-
-/// Every `what` present under `kind` (a fresh list of keys).
-/proc/rx_ledger_whats(datum/holder, kind)
-	var/list/whats = holder.rx?.ledger?["[kind]"]
-	var/list/out = list()
-	for(var/what in whats)
-		out += what
-	return out
 
 /// A relation write publishes the holder's key, and the partner's when `what` is a datum.
 /proc/rx_ledger_publish(datum/holder, kind, what)
@@ -395,10 +364,13 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		rx_listener_remove(L)
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
 		rx_listener_remove(L)
-	GLOB.rx_pending -= D
+	GLOB.rx_pending -= ref_token(D)
 	if(S.lookup_scope)
 		rel_clear(S, nameof(S.lookup_scope))
 	if(S.containment_ledger)
 		rel_clear(S, nameof(S.containment_ledger))
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	D.rx = null
+	// The state is dead and nothing names it any more: the slot it took (its relations) goes with it, or the slot table would keep it alive.
+	if(S.handle_slot)
+		slot_release(S)

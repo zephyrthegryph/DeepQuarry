@@ -1,0 +1,52 @@
+// Bumped() overrides moved onto the bump action's notice (on_notice(/datum/notice/bumped, ...)): the bumped thing still answers a walk-in.
+
+/// A mine that records being set off instead of blowing up the test room.
+/obj/effect/mine/dq_bump_probe
+	var/set_off = FALSE
+
+/obj/effect/mine/dq_bump_probe/explode(obj)
+	set_off = TRUE
+
+/// Walking into a mine sets it off through the bump notice; walking over it (Crossed) still does too.
+/datum/unit_test/dq_bumped_notice_mine/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/walker = allocate(/mob/living/carbon/human, T)
+	var/obj/effect/mine/dq_bump_probe/mine = allocate(/obj/effect/mine/dq_bump_probe, T)
+	walker.bump_into(mine)
+	TEST_ASSERT(mine.set_off, "a person walking into the mine sets it off")
+	var/obj/effect/mine/dq_bump_probe/other = allocate(/obj/effect/mine/dq_bump_probe, T)
+	other.Crossed(walker)
+	TEST_ASSERT(other.set_off, "a person walking over the mine sets it off")
+
+/// A simple mob that records the bump nom it was offered instead of eating anyone.
+/mob/living/simple_mob/dq_bump_probe
+	var/mob/offered
+
+/mob/living/simple_mob/dq_bump_probe/tryBumpNom(mob/tmob)
+	offered = tmob
+	return FALSE
+
+/// Walking into a simple mob offers it the bump nom through the bump notice (was its Bumped() override).
+/datum/unit_test/dq_bumped_notice_simple_mob/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/walker = allocate(/mob/living/carbon/human, T)
+	var/mob/living/simple_mob/dq_bump_probe/mob = allocate(/mob/living/simple_mob/dq_bump_probe, T)
+	walker.bump_into(mob)
+	TEST_ASSERT_EQUAL(mob.offered, walker, "the bumped simple mob is offered the walker")
+
+/// An artifact master that records who walked into its holder instead of running effects.
+/datum/artifact_master/dq_bump_probe
+	var/atom/movable/bumped_by_whom
+
+/datum/artifact_master/dq_bump_probe/bumped_by(atom/movable/M)
+	bumped_by_whom = M
+
+/// Walking into an artifact reaches its master through the bump notice (was the atom/Bumped() echo, now deleted).
+/datum/unit_test/dq_bumped_notice_artifact/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/walker = allocate(/mob/living/carbon/human, T)
+	var/obj/item/tool/wrench/held = allocate(/obj/item/tool/wrench, T)
+	var/datum/artifact_master/dq_bump_probe/master = allocate(/datum/artifact_master/dq_bump_probe, held)
+	TEST_ASSERT_EQUAL(held.artifact_master, master, "the probe master is the wrench's artifact master")
+	walker.bump_into(held)
+	TEST_ASSERT_EQUAL(master.bumped_by_whom, walker, "the walker reached the artifact master's bumped_by")

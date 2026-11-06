@@ -1,6 +1,6 @@
 /**
  * Storage and comparison for the medical and combat balance harness
- * (code/modules/balance). The world writes data/balance/results.json; the
+ * (code/tests/balance). The world writes data/balance/results.json; the
  * `balance` target stores each run in data/balance/runs/ and `balance-compare`
  * diffs two of them. Balance numbers have no "better" direction, so every
  * change beyond the threshold is reported, and a value that appears or

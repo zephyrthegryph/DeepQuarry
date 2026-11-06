@@ -1,4 +1,4 @@
-// base_vars wave 3: the vars that left the base types (sparse slots and the buckle_rules, movable_motion, atom_rules, living_rules, mob_rules,
+// base_vars wave 3: the vars that left the base types (lazy state fields and the buckle_rules, movable_motion, atom_rules, living_rules, mob_rules,
 // butchery_rules, footstep_rules, machine_rules and item_rules traits) must still be seen and edited by name: View Variables, mass edit
 // and SDQL reach each of them as they reached the var, and each reads as the default the var had until it is set.
 
@@ -86,8 +86,7 @@
 	for(var/list/row as anything in dq_wave3_slot_rows())
 		var/datum/holder = allocate(row[1] == /mob ? /mob/living/carbon/human : row[1], T)
 		TEST_ASSERT(!(row[2] in holder.vars), "[row[2]] is no longer a var of [holder.type]")
-		TEST_ASSERT((sparse_slot_label(row[2]) in sparse_slots_of(holder)), "[row[2]] is listed as a slot of [holder.type]")
-		TEST_ASSERT(isnull(holder.sparse_slots), "listing [row[2]] allocates nothing")
+		TEST_ASSERT((vv_slot_label(row[2]) in vv_slots_of(holder)), "[row[2]] is listed as a slot of [holder.type]")
 	for(var/list/row as anything in dq_wave3_trait_rows())
 		var/datum/holder = allocate(row[1], T)
 		TEST_ASSERT(!(row[2] in holder.vars), "[row[2]] is no longer a var of [holder.type]")
@@ -103,13 +102,13 @@
 	for(var/list/row as anything in dq_wave3_slot_rows())
 		var/datum/holder = allocate(row[1] == /mob ? /mob/living/carbon/human : row[1], T)
 		var/name = row[2]
-		var/label = sparse_slot_label(name)
-		TEST_ASSERT_EQUAL(_sparse_get(holder, name, row[4]), row[4], "[name] reads as the default its var had")
+		var/label = vv_slot_label(name)
+		TEST_ASSERT_EQUAL(vv_var_value(holder, vv_slot_label(name)), row[4], "[name] reads as the default its var had")
 		TEST_ASSERT(holder.vv_edit_var(label, row[3]), "the VV edit of [name] is accepted")
 		TEST_ASSERT_EQUAL(vv_var_value(holder, label), row[3], "[name] reads back what View Variables wrote")
 		TEST_ASSERT(vars_write(holder, name, row[3]), "the bare name of [name] is written by vars_write (SDQL, mass edit, traits)")
 		TEST_ASSERT(holder.vv_edit_var(label, vv_var_default(holder, label)), "Restore to Default of [name] is accepted")
-		TEST_ASSERT_EQUAL(_sparse_get(holder, name, row[4]), row[4], "[name] is back at its default")
+		TEST_ASSERT_EQUAL(vv_var_value(holder, vv_slot_label(name)), row[4], "[name] is back at its default")
 
 /// Every trait var is written by its old name and by `@kind.field`, read back as the editors read it, and Restore to Default gives the type's value.
 /datum/unit_test/dq_base_vars_wave3_trait_edit
@@ -140,13 +139,13 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
 	// voice_freq, not lying_prev: update_canmove() rewrites lying_prev from the mob's lying on every tick the world runs during Run(), which cleared the slot (the flake).
-	sparse_set(H, voice_freq, 7)
+	STATE_SET(H, mob_misc, voice_freq, 7)
 	vars_write(H, "meat_amount", 6)
 	var/datum/SDQL2_query/defaults = allocate(/datum/SDQL2_query, list())
 	var/datum/SDQL_parser/read_parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("SELECT /mob/living/carbon/human/dq_sparse_probe", actor))
 	var/list/read_tree = read_parser.parse(actor)
 	var/datum/SDQL2_query/reader = allocate(/datum/SDQL2_query, read_tree, FALSE, TRUE, defaults.options, FALSE, actor)
-	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("voice_freq")), 7, "SDQL reads a wave 3 slot by its old var name")
+	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("mob_misc", ".", list("voice_freq"))), 7, "SDQL reads a wave 3 field through its lazy state")
 	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("meat_amount")), 6, "SDQL reads a wave 3 trait var by its old var name")
 	var/datum/SDQL_parser/parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("UPDATE /mob/living/carbon/human/dq_sparse_probe FROM usr.loc.contents SET max_nutrition = 55", actor))
 	var/list/tree = parser.parse(actor)
@@ -158,7 +157,7 @@
 	// a runtime inside the query fails this test with its message instead of reading as a query that never finishes.
 	query.Run()
 	TEST_ASSERT(query.finished, "the update query finishes")
-	TEST_ASSERT_EQUAL(sparse_get(H, voice_freq), 7, "the slot is as it was")
+	TEST_ASSERT_EQUAL(STATE_GET(H, mob_misc, voice_freq), 7, "the slot is as it was")
 	TEST_ASSERT_EQUAL(living_rules_of(H).max_nutrition, 55, "and the trait var")
 
 
@@ -178,9 +177,9 @@
 	TEST_ASSERT_EQUAL(living_rules_of(H).vore_shred_time, 10 SECONDS, "a human shreds in 10 seconds")
 	TEST_ASSERT_EQUAL(living_rules_of_type(/mob/living/simple_mob).vore_shred_time, 45 SECONDS, "anything else in 45")
 	TEST_ASSERT_EQUAL(butchery_of_type(/mob/living/simple_mob/animal).butchery_loot[/obj/item/stack/animalhide], 3, "an animal gives three hides")
-	TEST_ASSERT_EQUAL(sparse_get_or(H, wants_to_see_motion_echos, TRUE), TRUE, "a mob sees motion echos until it says otherwise")
+	TEST_ASSERT_EQUAL(STATE_GET(H, motion_track, wants_to_see_motion_echos), TRUE, "a mob sees motion echos until it says otherwise")
 	H.toggle_motion_echo_vis()
-	TEST_ASSERT_EQUAL(sparse_get_or(H, wants_to_see_motion_echos, TRUE), FALSE, "the verb turns them off")
+	TEST_ASSERT_EQUAL(STATE_GET(H, motion_track, wants_to_see_motion_echos), FALSE, "the verb turns them off")
 
 /// Butchering one mob must not change what another of its type gives: the loot table and the meat count are the type's, each butchering counts down its own.
 /datum/unit_test/dq_base_vars_wave3_butchery_isolated

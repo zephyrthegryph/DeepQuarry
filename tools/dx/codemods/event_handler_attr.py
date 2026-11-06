@@ -39,7 +39,7 @@ def convert(f):
 def main():
     files = sys.argv[1:] or [f for f in subprocess.run(['git', 'grep', '-z', '-l', '-w', 'EVENT_HANDLER', '--', '*.dm'],
                                                         capture_output=True, text=True).stdout.split('\0') if f]
-    n = sum(convert(f) for f in files if f != 'code/__defines/om.dm')
+    n = sum(convert(f) for f in files if f != 'code/defines/engine/om.dm')
     print(f'{n} markers')
 
 

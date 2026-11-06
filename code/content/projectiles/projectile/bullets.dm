@@ -1,0 +1,887 @@
+/obj/item/projectile/bullet
+	name = "bullet"
+	icon = 'icons/obj/projectiles_yw.dmi' // uses our bullet sprites
+	icon_state = "bullet"
+	fire_sound = SFX_WEAPONS_GUNSHOT4
+	nodamage = 0
+	hitsound_wall = SFX_RICOCHET
+	impact_effect_type = /obj/effect/temp_visual/impact_effect
+	var/mob_passthrough_check = 0
+	hud_state = "pistol_lightap"
+	hud_state_empty = "pistol_empty"  // Just in case we somehow have no hud_state_empty defined
+
+	muzzle_type = /obj/effect/projectile/muzzle/bullet
+
+/obj/item/projectile/bullet/on_hit(atom/target, blocked = 0)
+	..(target, blocked)
+		//var/mob/living/L = target
+		// shake_camera(L, 3, 2) "Muh realism". The screenshake is obnoxious for gameplay. TODO: Replace with blood splatter indicator.
+
+/obj/item/projectile/bullet/attack_mob(mob/living/target_mob, distance, miss_modifier)
+	if(penetrating > 0 && damage > 20 && prob(damage))
+		mob_passthrough_check = 1
+	else
+		mob_passthrough_check = 0
+	return ..()
+
+/obj/item/projectile/bullet/can_embed()
+	//prevent embedding if the projectile is passing through the mob
+	if(mob_passthrough_check)
+		return 0
+	return ..()
+
+/obj/item/projectile/bullet/check_penetrate(atom/A)
+	if(!A || !A.density) return 1 //if whatever it was got destroyed when we hit it, then I guess we can just keep going
+
+	if(istype(A, /obj/mecha))
+		return 1 //mecha have their own penetration handling
+
+	if(ismob(A))
+		if(!mob_passthrough_check)
+			return 0
+		if(iscarbon(A))
+			damage *= 0.7 //squishy mobs absorb KE
+		return 1
+
+	var/chance = damage
+	if(istype(A, /turf/simulated/wall))
+		var/turf/simulated/wall/W = A
+		chance = round(damage/W.material.integrity*180)
+	else if(istype(A, /obj/machinery/door))
+		var/obj/machinery/door/D = A
+		chance = round(damage/D.max_integrity*180)
+		if(D.glass) chance *= 2
+	else if(istype(A, /obj/structure/girder))
+		chance = 100
+	else if(istype(A, /obj/machinery/door/airlock/voidcraft)) // lets the code see shuttlecraft structures and not treat them as air.
+		chance = 0
+	else if(istype(A, /turf/simulated/shuttle/wall))
+		chance = 0 // . Yeah, shuttlecraft can handle small arms fire just fine.
+
+	if(prob(chance))
+		if(A.opacity)
+			//display a message so that people on the other side aren't so confused
+			A.visible_message(span_warning("\The [src] pierces through \the [A]!"))
+		return 1
+
+	return 0
+
+/* short-casing projectiles, like the kind used in pistols or SMGs */
+
+/obj/item/projectile/bullet/pistol // 9mm pistols and most SMGs. Sacrifice power for capacity.
+	fire_sound = SFX_WEAPONS_GUNSHOT2
+	damage = 20
+	hud_state = "pistol"
+	hud_state_empty = "pistol_empty"
+
+/obj/item/projectile/bullet/pistol/ap
+	damage = 15
+	hud_state = "pistol_light_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/pistol/ap)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/pistol/hp
+	damage = 25
+	hud_state = "pistol_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/pistol/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/pistol/medium // .45 (and maybe .40 if it ever gets added) caliber security pistols. Balance between capacity and power.
+	fire_sound = SFX_WEAPONS_GUNSHOT3 // Snappier sound.
+	damage = 25
+	hud_state = "pistol"
+
+/obj/item/projectile/bullet/pistol/medium/ap
+	damage = 20
+	hud_state = "pistol_light_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/pistol/medium/ap)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/pistol/medium/ap/suppressor // adminspawn only
+	name = "suppressor bullet" // this guy is Important and also Hates You
+	fire_sound = SFX_WEAPONS_DOOMPISTOL // converted from .wavs extracted from doom 2
+	damage = 10 // high rof kinda fucked up lets be real
+	agony = 10 // brute easily heals, agony not so much
+	accuracy = -20 // he do miss actually
+	speed = 0.4 // if the pathfinder gets a funny burst rifle, they deserve a rival
+	// that's 2x projectile speed btw
+	hud_state = "monkey"
+
+CAPABILITIES(/obj/item/projectile/bullet/pistol/medium/ap/suppressor)
+	configure(item_combat(armor_penetration = 30))
+
+/obj/item/projectile/bullet/pistol/medium/ap/suppressor/turbo // spicy boys
+	speed = 0.2 // this is 4x projectile speed
+	hud_state = "monkey"
+
+/obj/item/projectile/bullet/pistol/medium/hp
+	damage = 30
+	hud_state = "pistol_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/pistol/medium/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/pistol/strong // .357 and .44 caliber stuff. High power pistols like the Mateba or Desert Eagle. Sacrifice capacity for power.
+	fire_sound = SFX_WEAPONS_GUNSHOT4
+	damage = 60
+	hud_state = "pistol_heavy"
+
+/obj/item/projectile/bullet/pistol/rubber/strong // "Rubber" bullets for high power pistols.
+	fire_sound = SFX_WEAPONS_GUNSHOT3 // Rubber shots have less powder, but these still have more punch than normal rubber shot.
+	damage = 10
+	agony = 60
+	hud_state = "pistol_special"
+
+CAPABILITIES(/obj/item/projectile/bullet/pistol/rubber/strong)
+	configure(item_combat(embed_chance = 0))
+	configure(item_combat(sharp = FALSE))
+
+/obj/item/projectile/bullet/pistol/rubber // "Rubber" bullets for all other pistols.
+	name = "rubber bullet"
+	damage = 5
+	agony = 40
+	hud_state = "pistol_special"
+	fire_sound =SFX_WEAPONS_GUNSHOT_PATHETIC // Rubber shots have less powder in the casing.
+
+CAPABILITIES(/obj/item/projectile/bullet/pistol/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(sharp = FALSE))
+
+/* shotgun projectiles */
+
+/obj/item/projectile/bullet/shotgun
+	name = "slug"
+	icon_state = "bullet_chonk"
+	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
+	damage = 50
+	hud_state = "shotgun_slug"
+	hud_state_empty = "shotgun_empty"
+
+CAPABILITIES(/obj/item/projectile/bullet/shotgun)
+	configure(item_combat(armor_penetration = -15))
+
+/obj/item/projectile/bullet/shotgun/beanbag		//because beanbags are not bullets
+	name = "beanbag"
+	damage = 20
+	agony = 60
+	hud_state = "shotgun_beanbag"
+
+CAPABILITIES(/obj/item/projectile/bullet/shotgun/beanbag)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(sharp = FALSE))
+
+//Should do about 80 damage at 1 tile distance (adjacent), and 50 damage at 3 tiles distance.
+//Overall less damage than slugs in exchange for more damage at very close range and more embedding
+/obj/item/projectile/bullet/pellet/shotgun
+	name = "shrapnel"
+	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
+	damage = 13
+	pellets = 6
+	range_step = 1
+	spread_step = 10
+	hud_state = "shotgun_buckshot"
+
+/obj/item/projectile/bullet/pellet/shotgun/flak
+	damage = 2 //The main weapon using these fires four at a time, usually with different destinations. Usually.
+	range_step = 2
+	spread_step = 30
+	hud_state = "shotgun_flechette"
+
+CAPABILITIES(/obj/item/projectile/bullet/pellet/shotgun/flak)
+	configure(item_combat(armor_penetration = 10))
+
+//EMP shotgun 'slug', it's basically a beanbag that pops a tiny emp when it hits. //Not currently used
+/obj/item/projectile/bullet/shotgun/ion
+	name = "ion slug"
+	fire_sound = SFX_WEAPONS_LASER // Really? We got nothing better than this?
+	damage = 15
+	hud_state = "shotgun_ion"
+
+	combustion = FALSE
+
+CAPABILITIES(/obj/item/projectile/bullet/shotgun/ion)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(sharp = FALSE))
+
+/obj/item/projectile/bullet/shotgun/ion/on_hit(atom/target, blocked = 0)
+	..()
+	empulse(target, 0, 0, 0, 0)	//Only affects what it hits
+	return 1
+
+
+/* "Rifle" rounds */
+
+/obj/item/projectile/bullet/rifle
+	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE
+	// penetrating = 1 This is the only thing I see that could cause stun and unsure what can be pierced with a penetrating of 1.
+	hud_state = "rifle"
+	hud_state_empty = "rifle_empty"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle)
+	configure(item_combat(armor_penetration = 0))
+
+/obj/item/projectile/bullet/rifle/a762
+	fire_sound = SFX_WEAPONS_GUNSHOT_HEAVY
+	damage = 35
+	hud_state = "rifle_heavy"
+
+/obj/item/projectile/bullet/rifle/a762/sniper // Hitscan specifically for sniper ammo; to be implimented at a later date, probably for the SVD. -Ace
+	fire_sound = SFX_WEAPONS_GUNSHOT_SNIPER
+	hitscan = 1 //so the ammo isn't useless as a sniper weapon
+	hud_state = "hivelo"
+
+/obj/item/projectile/bullet/rifle/a762/ap
+	damage = 30
+	hud_state = "rifle_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a762/ap)
+	configure(item_combat(armor_penetration = 25))
+
+/obj/item/projectile/bullet/rifle/a762/hp
+	damage = 40
+	penetrating = 0
+	hud_state = "hivelo_iff"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a762/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/rifle/a762/hunter // Optimized for killing simple animals and not people, because Balance(tm)
+	damage = 20
+	mob_bonus_damage = 50
+	hud_state = "rifle_heavy"
+
+/obj/item/projectile/bullet/rifle/a545
+	damage = 25
+	hud_state = "rifle"
+
+/obj/item/projectile/bullet/rifle/a545/ap
+	damage = 20
+	hud_state = "rifle_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a545/ap)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/rifle/a545/hp
+	damage = 35
+	penetrating = 0
+	hud_state = "hivelo_iff"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a545/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/rifle/a545/hunter
+	damage = 15
+	mob_bonus_damage = 35
+	hud_state = "rifle_heavy"
+
+/obj/item/projectile/bullet/rifle/a145 // 14.5×114mm is bigger than a .50 BMG round.
+	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON // This is literally an anti-tank rifle caliber. It better sound like a fucking cannon.
+	damage = 80
+	stun = 3
+	weaken = 3
+	penetrating = 5
+	hitscan = 1 //so the PTR isn't useless as a sniper weapon
+	hud_state = "sniper"
+
+	icon_state = "bullet_alt"
+	tracer_type = /obj/effect/projectile/tracer/cannon
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a145)
+	configure(item_combat(armor_penetration = 80))
+
+/obj/item/projectile/bullet/rifle/a145/highvel
+	damage = 50
+	stun = 1
+	weaken = 0
+	penetrating = 15
+	hud_state = "sniper_flak"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a145/highvel)
+	configure(item_combat(armor_penetration = 90))
+
+/obj/item/projectile/bullet/rifle/a44rifle
+	damage = 50
+	hud_state = "revolver"
+
+/* Miscellaneous */
+
+/obj/item/projectile/bullet/suffocationbullet//How does this even work?
+	name = "co bullet"
+	damage = 5
+	hud_state = "pistol_tranq"
+
+CAPABILITIES(/obj/item/projectile/bullet/suffocationbullet)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
+
+/// Carbon monoxide: binds the blood's haemoglobin, so it carries little oxygen
+/// even at a normal saturation.
+/obj/item/projectile/bullet/suffocationbullet/on_hit(atom/target, blocked = 0)
+	. = ..()
+	var/mob/living/L = target
+	if(istype(L) && blocked < 100)
+		L.body?.add_restriction(src, STAT_O2_CARRIAGE, 0.3, 30 SECONDS)
+
+/obj/item/projectile/bullet/cyanideround
+	name = "poison bullet"
+	damage = 40
+	hud_state = "pistol_tranq"
+
+CAPABILITIES(/obj/item/projectile/bullet/cyanideround)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
+
+/obj/item/projectile/bullet/burstbullet
+	name = "exploding bullet"
+	fire_sound = SFX_EFFECTS_EXPLOSION1
+	damage = 20
+	hud_state = "pistol_fire"
+
+CAPABILITIES(/obj/item/projectile/bullet/burstbullet)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_CUT))
+	configure(item_combat(edge = TRUE))
+
+/obj/item/projectile/bullet/burstbullet/on_hit(atom/target, blocked = 0)
+	if(isturf(target))
+		explosion(target, -1, 0, 2)
+	..()
+
+/* Incendiary */
+
+/obj/item/projectile/bullet/incendiary
+	name = "incendiary bullet"
+	icon_state = "bullet_alt"
+	damage = 15
+	incendiary = 0.5
+	flammability = 2
+	hud_state = "pistol_fire"
+
+CAPABILITIES(/obj/item/projectile/bullet/incendiary)
+	configure(item_combat(injury_kind = INJURY_BURN))
+
+/obj/item/projectile/bullet/incendiary/flamethrower
+	name = "ball of fire"
+	desc = "Don't stand in the fire."
+	icon_state = "fireball"
+	damage = 10
+	incendiary = 2
+	flammability = 4
+	agony = 30
+	range = 4
+	vacuum_traversal = 0
+	hud_state = "flame"
+
+CAPABILITIES(/obj/item/projectile/bullet/incendiary/flamethrower)
+	configure(item_combat(embed_chance = 0))
+
+/obj/item/projectile/bullet/incendiary/flamethrower/after_move()
+	..()
+
+
+	var/turf/T = get_turf(src)
+	if(istype(T))
+		for(var/obj/effect/plant/Victim in turf_contents_of_type(T, /obj/effect/plant))
+			if(prob(max(20, 100 - (Victim.seed().get_trait(TRAIT_ENDURANCE)))))	// Chance to immediately kill a vine or rampant growth, minimum of 20%.
+				Victim.die_off()
+
+/obj/item/projectile/bullet/incendiary/flamethrower/large
+	damage = 5
+	incendiary = 3
+	flammability = 2
+	range = 6
+	hud_state = "flame"
+
+/obj/item/projectile/bullet/incendiary/flamethrower/tiny
+	damage = 2
+	incendiary = 10
+	flammability = 2
+	range = 6
+	agony = 0
+	hud_state = "flame"
+
+/* Practice rounds and blanks */
+
+/obj/item/projectile/bullet/practice
+	damage = 5
+	hud_state = "smg_light"
+
+/obj/item/projectile/bullet/pistol/cap // Just the primer, such as a cap gun.
+	name = "cap"
+	fire_sound = SFX_EFFECTS_SNAP
+	damage = 0
+	nodamage = 1
+	hud_state = "monkey"
+
+	combustion = FALSE
+
+CAPABILITIES(/obj/item/projectile/bullet/pistol/cap)
+	configure(item_combat(injury_kind = INJURY_PAIN, embed_chance = 0))
+	configure(item_combat(sharp = FALSE))
+
+/obj/item/projectile/bullet/pistol/cap/projectile_step()
+	moveToNullspace()
+	consume(src)
+
+/obj/item/projectile/bullet/blank
+	name = "blank"
+	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE // Blanks still make loud noises.
+	damage = 0
+	nodamage = 1
+	hud_state = "smg_light"
+
+CAPABILITIES(/obj/item/projectile/bullet/blank)
+	configure(item_combat(injury_kind = INJURY_PAIN, embed_chance = 0))
+	configure(item_combat(sharp = FALSE))
+
+/* BB Rounds */
+/obj/item/projectile/bullet/bb // Generic single BB
+	name = "BB"
+	damage = 0
+	agony = 0
+	silenced = TRUE
+	hud_state = "pistol_light"
+
+CAPABILITIES(/obj/item/projectile/bullet/bb)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(sharp = FALSE))
+
+/obj/item/projectile/bullet/pellet/shotgun/bb // Shotgun
+	name = "BB"
+	damage = 0
+	agony = 0
+	pellets = 6
+	range_step = 1
+	spread_step = 10
+	silenced = TRUE
+	hud_state = "pistol_light"
+
+CAPABILITIES(/obj/item/projectile/bullet/pellet/shotgun/bb)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(sharp = FALSE))
+
+/* toy projectiles */
+/obj/item/projectile/bullet/cap
+	name = "cap"
+	desc = "SNAP!"
+	damage = 0 // It's a damn toy.
+	nodamage = TRUE
+	impact_effect_type = null
+	fire_sound = SFX_EFFECTS_SNAP
+	combustion = FALSE
+	hud_state = "pistol_light"
+
+CAPABILITIES(/obj/item/projectile/bullet/cap)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_PAIN))
+	configure(item_combat(sharp = FALSE))
+
+/obj/item/projectile/bullet/cap/projectile_step()
+	moveToNullspace()
+	consume(src)
+
+/obj/item/projectile/bullet/foam_dart
+	name = "foam dart"
+	desc = "I hope you're wearing eye protection."
+	damage = 0 // It's a damn toy.
+	nodamage = TRUE
+	impact_effect_type = null
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
+	combustion = FALSE
+	icon = 'icons/obj/gun_toy.dmi'
+	icon_state = "foamdart_proj"
+	range = 15
+	hud_state = "grenade_dummy"
+
+CAPABILITIES(/obj/item/projectile/bullet/foam_dart)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_PAIN))
+	configure(item_combat(sharp = FALSE))
+
+/obj/item/projectile/bullet/foam_dart/on_impact(atom/A)
+	. = ..()
+	var/turf/T = get_turf(loc)
+	if(istype(T))
+		new /obj/item/ammo_casing/afoam_dart(get_turf(loc))
+
+///Doesn't give a damn about what faction you're on, hits you anyway.
+/obj/item/projectile/bullet/foam_dart/on_hit(atom/target, blocked = 0)
+	handle_lasertag_attack(target, firer, tag_damage = 1, vest_override = TRUE)
+
+/obj/item/projectile/bullet/foam_dart/on_range(atom/A)
+	. = ..()
+	var/turf/T = get_turf(loc)
+	if(istype(T))
+		new /obj/item/ammo_casing/afoam_dart(get_turf(loc))
+
+/obj/item/projectile/bullet/foam_dart_riot
+	name = "riot foam dart"
+	desc = "Whose smart idea was it to use toys as crowd control? Ages 18 and up."
+	damage = 0 // It's a damn toy.
+	agony = 20 // The riot part of the riot dart // nerf this >:3 old 50
+	nodamage = TRUE
+	impact_effect_type = null
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
+	combustion = FALSE
+	icon = 'icons/obj/gun_toy.dmi'
+	icon_state = "foamdart_riot_proj"
+	range = 15
+	hud_state = "grenade_he"
+
+CAPABILITIES(/obj/item/projectile/bullet/foam_dart_riot)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_PAIN))
+	configure(item_combat(sharp = FALSE))
+
+/obj/item/projectile/bullet/foam_dart_riot/on_impact(atom/A)
+	. = ..()
+	var/turf/T = get_turf(loc)
+	if(istype(T))
+		new /obj/item/ammo_casing/afoam_dart/riot(get_turf(loc))
+
+/obj/item/projectile/bullet/foam_dart_riot/on_range(atom/A)
+	. = ..()
+	var/turf/T = get_turf(loc)
+	if(istype(T))
+		new /obj/item/ammo_casing/afoam_dart/riot(get_turf(loc))
+
+/obj/item/projectile/bullet/foam_dart_riot/on_hit(atom/target, blocked = 0)
+	handle_lasertag_attack(target, firer, 5, vest_override = TRUE) //Insult to injury.
+
+
+// === merged from bullets_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+//Pistol projectiles
+/obj/item/projectile/bullet/pistol	//9x19mm
+	fire_sound = SFX_WEAPONS_BALLISTICS_A9MM
+
+/obj/item/projectile/bullet/pistol/ap
+
+/obj/item/projectile/bullet/pistol/hp
+
+/obj/item/projectile/bullet/pistol/medium 	//.45
+	fire_sound = SFX_WEAPONS_BALLISTICS_A45
+
+/obj/item/projectile/bullet/pistol/medium/hp
+
+/obj/item/projectile/bullet/a57
+	fire_sound = SFX_WEAPONS_BALLISTICS_SMG_HEAVY
+	damage = 10
+	hud_state = "smg_light"
+
+CAPABILITIES(/obj/item/projectile/bullet/a57)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/a57/ap
+	damage = 15
+	hud_state = "smg_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/a57/ap)
+	configure(item_combat(armor_penetration = 25))
+
+/obj/item/projectile/bullet/a57/hp
+	damage = 15
+	hud_state = "smg"
+
+CAPABILITIES(/obj/item/projectile/bullet/a57/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/a357
+	fire_sound = SFX_WEAPONS_GUNSHOT4
+	damage = 20
+	hud_state = "revolver"
+
+/obj/item/projectile/bullet/a357/ap
+	hud_state = "revolver_heavy"
+
+CAPABILITIES(/obj/item/projectile/bullet/a357/ap)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/a357/hp
+	hud_state = "revolver_slim"
+
+CAPABILITIES(/obj/item/projectile/bullet/a357/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/a38
+	fire_sound = SFX_WEAPONS_GUNSHOT2
+	hud_state = "revolver_small"
+
+/obj/item/projectile/bullet/a38/ap
+	hud_state = "pistol_lightap"
+
+CAPABILITIES(/obj/item/projectile/bullet/a38/ap)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/a38/hp
+	hud_state = "pistol_hollow"
+
+CAPABILITIES(/obj/item/projectile/bullet/a38/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/a762x25
+	fire_sound = SFX_WEAPONS_GUNSHOT2
+	hud_state = "pistol_light"
+
+/obj/item/projectile/bullet/a9x18
+	fire_sound = SFX_WEAPONS_GUNSHOT2
+	hud_state = "pistol"
+
+/obj/item/projectile/bullet/a9x18/rubber
+	damage = 10
+	agony = 40
+
+CAPABILITIES(/obj/item/projectile/bullet/a9x18/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(armor_penetration = -10, sharp = FALSE))
+
+/obj/item/projectile/bullet/a10mm
+	fire_sound = SFX_WEAPONS_GUNSHOT2
+	hud_state = "pistol"
+	damage = 20
+
+/obj/item/projectile/bullet/a10mm/ap
+	hud_state = "pistol_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/a10mm/ap)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/a10mm/hp
+	hud_state = "pistol_hollow"
+
+CAPABILITIES(/obj/item/projectile/bullet/a10mm/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/a10mm/rubber
+	damage = 10
+	agony = 50
+
+CAPABILITIES(/obj/item/projectile/bullet/a10mm/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(armor_penetration = -10, sharp = FALSE))
+
+/obj/item/projectile/bullet/a380
+	fire_sound = SFX_WEAPONS_GUNSHOT2
+	hud_state = "pistol_light"
+
+/obj/item/projectile/bullet/a380/ap
+	hud_state = "pistol_lightap"
+
+CAPABILITIES(/obj/item/projectile/bullet/a380/ap)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/a380/hp
+	hud_state = "pistol_hollow"
+
+CAPABILITIES(/obj/item/projectile/bullet/a380/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/a22lr
+	fire_sound = SFX_WEAPONS_GUNSHOT_PATHETIC
+	hud_state = "pistol_light"
+
+/obj/item/projectile/bullet/a22lr/ap
+	hud_state = "pistol_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/a22lr/ap)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/a22lr/hp
+	hud_state = "pistol_hollow"
+
+CAPABILITIES(/obj/item/projectile/bullet/a22lr/hp)
+	configure(item_combat(armor_penetration = -5))
+
+//Shotgun projectiles
+
+/obj/item/projectile/bullet/shotgun	//Slug
+	fire_sound = SFX_WEAPONS_BALLISTICS_A12G
+
+/obj/item/projectile/bullet/shotgun/buckshot	//#00 Buckshot
+	damage = 13
+	name = "buckshot pellet"
+
+CAPABILITIES(/obj/item/projectile/bullet/shotgun/buckshot)
+	configure(item_combat(armor_penetration = 0))
+
+/obj/item/projectile/bullet/shotgun/buckshot/shell
+	use_submunitions = TRUE
+	submunition_spread_max = 67.5
+	submunitions = list(/obj/item/projectile/bullet/shotgun/buckshot = 8)
+	hud_state = "shotgun_buckshot"
+
+//Rifle projectiles
+/obj/item/projectile/bullet/rifle
+
+/obj/item/projectile/bullet/rifle/a762 //7.62x51 NATO
+	fire_sound = SFX_WEAPONS_BALLISTICS_A762
+
+/obj/item/projectile/bullet/rifle/a762/ap
+
+/obj/item/projectile/bullet/rifle/a762/hp
+
+/obj/item/projectile/bullet/rifle/a762/rubber
+	damage = 25 //this still hurts like a motherfucker
+	agony = 100
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a762/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(armor_penetration = -10, sharp = FALSE))
+
+/obj/item/projectile/bullet/rifle/a762x39 //7.62x39 Soviet
+	fire_sound = SFX_WEAPONS_BALLISTICS_A762
+	hud_state = "rifle"
+
+/obj/item/projectile/bullet/rifle/a762x39/ap
+	hud_state = "rifle_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a762x39/ap)
+	configure(item_combat(armor_penetration = 25))
+
+/obj/item/projectile/bullet/rifle/a762x39/hp
+	hud_state = "hivelo_iff"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a762x39/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/rifle/a762x39/rubber
+	damage = 15 //this still hurts like a motherfucker
+	agony = 70
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a762x39/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(armor_penetration = -10, sharp = FALSE))
+
+/obj/item/projectile/bullet/rifle/a545
+	fire_sound = SFX_WEAPONS_BALLISTICS_A545
+
+/obj/item/projectile/bullet/rifle/a545/ap
+
+/obj/item/projectile/bullet/rifle/a545/rubber
+	damage = 15
+	agony = 60
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a545/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(armor_penetration = -10, sharp = FALSE))
+
+/obj/item/projectile/bullet/rifle/a545/hp
+
+/obj/item/projectile/bullet/rifle/a556 //5.56x45mm NATO
+	damage = 30
+	hud_state = "rifle"
+
+/obj/item/projectile/bullet/rifle/a556/ap
+	damage = 20
+	hud_state = "rifle_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a556/ap)
+	configure(item_combat(armor_penetration = 25))
+
+/obj/item/projectile/bullet/rifle/a556/hp
+	damage = 40
+	hud_state = "hivelo_iff"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a556/hp)
+	configure(item_combat(armor_penetration = -10))
+
+/obj/item/projectile/bullet/rifle/a556/rubber
+	damage = 15
+	agony = 60
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a556/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(armor_penetration = -10, sharp = FALSE))
+
+/obj/item/projectile/bullet/rifle/a145 // 14.5×114mm
+	fire_sound = SFX_WEAPONS_BALLISTICS_A145
+
+/obj/item/projectile/bullet/rifle/a44rifle
+	fire_sound = SFX_WEAPONS_BALLISTICS_A44RIFLE
+
+//beware of cadyn cope above ^^ - Ocelot
+
+/obj/item/projectile/bullet/rifle/a9x39 //We also have actual 9x39mm
+	damage = 30 //9mm pistol with 7.62 cartridge? idk russiain chambers.
+	fire_sound = SFX_WEAPONS_BALLISTICS_A545
+	hud_state = "smartgun"
+
+/obj/item/projectile/bullet/rifle/a9x39/ap
+	hud_state = "minigun"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a9x39/ap)
+	configure(item_combat(armor_penetration = 25))
+
+/obj/item/projectile/bullet/rifle/a9x39/rubber
+	damage = 20
+	agony = 70
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a9x39/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(armor_penetration = -10, sharp = FALSE))
+
+/obj/item/projectile/bullet/rifle/a10x24 //10x24mm Caseless
+	damage = 30
+	hud_state = "rifle"
+
+/obj/item/projectile/bullet/rifle/a10x24/rubber
+	damage = 20
+	agony = 80
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a10x24/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(armor_penetration = -10, sharp = FALSE))
+
+/obj/item/projectile/bullet/rifle/a762x54
+	fire_sound = SFX_WEAPONS_BALLISTICS_A762X54
+	hitscan = 1
+	hud_state = "sniper_crude"
+
+/obj/item/projectile/bullet/rifle/a762x54/ap
+	hud_state = "sniper_supersonic"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a762x54/ap)
+	configure(item_combat(armor_penetration = 35))
+
+/obj/item/projectile/bullet/rifle/a338
+	fire_sound = SFX_WEAPONS_BALLISTICS_A762X54
+	damage = 45
+	hitscan = 1
+	penetrating = 2
+	hud_state = "sniper_crude"
+
+/obj/item/projectile/bullet/rifle/a338/ap
+	hud_state = "sniper_supersonic"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a338/ap)
+	configure(item_combat(armor_penetration = 50))
+
+/obj/item/projectile/bullet/rifle/a50bmg
+	fire_sound = SFX_WEAPONS_BALLISTICS_A145
+	damage = 65
+	hitscan = 1
+	penetrating = 2
+	hud_state = "sniper_supersonic"
+
+/obj/item/projectile/bullet/rifle/a50bmg/ap
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a50bmg/ap)
+	configure(item_combat(armor_penetration = 50))
+
+/obj/item/projectile/bullet/rifle/a127x108 //Bigass fuckoff LMG round, bigger than 50 BMG
+	fire_sound = SFX_WEAPONS_SERDY_STRELA
+	damage = 60
+	penetrating = 2
+	hud_state = "sniper_fire"
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a127x108)
+	configure(item_combat(armor_penetration = 30))
+
+/obj/item/projectile/bullet/rifle/a45lc
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a45lc)
+	configure(item_combat(armor_penetration = 15))
+
+/obj/item/projectile/bullet/rifle/a45lc/rubber
+	damage = 20
+	agony = 70
+
+CAPABILITIES(/obj/item/projectile/bullet/rifle/a45lc/rubber)
+	configure(item_combat(embed_chance = 0, injury_kind = INJURY_BLUNT))
+	configure(item_combat(armor_penetration = -10, sharp = FALSE))

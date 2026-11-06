@@ -2,12 +2,52 @@ import { describe, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { cargoIncrementalEnv, cargoTargetDir, clearIncremental, compilerPanicSignature, incrementalDirs } from './cargo_ice';
+import { cargoIncrementalEnv, cargoTargetDir, cargoWithIceRetry, clearIncremental, compilerPanicSignature, incrementalDirs } from './cargo_ice';
 
 describe('cargo ICE handling', () => {
   test('gate builds are non-incremental unless a dev build opts in', () => {
     expect(cargoIncrementalEnv({})).toEqual({ CARGO_INCREMENTAL: '0' });
     expect(cargoIncrementalEnv({ DQ_CARGO_INCREMENTAL: '1' })).toEqual({});
+  });
+
+  test('lane builds leave incremental to the profile unless CI or the opt-out says otherwise', () => {
+    expect(cargoIncrementalEnv({}, 'lane')).toEqual({});
+    expect(cargoIncrementalEnv({ CI: 'true' }, 'lane')).toEqual({ CARGO_INCREMENTAL: '0' });
+    expect(cargoIncrementalEnv({ DQ_CARGO_INCREMENTAL: '0' }, 'lane')).toEqual({ CARGO_INCREMENTAL: '0' });
+    expect(cargoIncrementalEnv({ DQ_CARGO_INCREMENTAL: '1', CI: 'true' }, 'lane')).toEqual({});
+  });
+
+  test('a rustc panic clears the incremental directories and retries once without the rustc wrapper', async () => {
+    const target = fs.mkdtempSync(path.join(os.tmpdir(), 'cargo-ice-retry-'));
+    try {
+      fs.mkdirSync(path.join(target, 'i686-pc-windows-msvc/lane/incremental/a'), { recursive: true });
+      const runs: { env: NodeJS.ProcessEnv }[] = [];
+      const warnings: string[] = [];
+      await cargoWithIceRetry(['build', '--profile', 'lane'], { env: { CARGO_TARGET_DIR: target } }, {
+        warn: (m) => warnings.push(m),
+        exec: async (_args, env) => {
+          runs.push({ env });
+          return runs.length === 1 ? { code: 101, combined: 'error: the compiler unexpectedly panicked. this is a bug.' } : { code: 0 };
+        },
+      });
+      expect(runs).toHaveLength(2);
+      expect(runs[1].env.RUSTC_WRAPPER).toBe('');
+      expect(incrementalDirs(target)).toHaveLength(0);
+      expect(warnings[0]).toContain('removed 1 incremental dir');
+    } finally {
+      fs.rmSync(target, { recursive: true, force: true });
+    }
+  });
+
+  test('a source error is not retried, and a second panic fails', async () => {
+    let calls = 0;
+    const deps = { warn: () => {}, exec: async () => { calls++; return { code: 101, combined: 'error[E0308]: mismatched types' }; } };
+    await expect(cargoWithIceRetry(['build'], { env: { CARGO_TARGET_DIR: fs.mkdtempSync(path.join(os.tmpdir(), 'cargo-ice-1-')) } }, deps)).rejects.toThrow('failed (exit 101)');
+    expect(calls).toBe(1);
+    calls = 0;
+    const panics = { warn: () => {}, exec: async () => { calls++; return { code: 101, combined: 'internal compiler error' }; } };
+    await expect(cargoWithIceRetry(['build'], { env: { CARGO_TARGET_DIR: fs.mkdtempSync(path.join(os.tmpdir(), 'cargo-ice-2-')) } }, panics)).rejects.toThrow('failed');
+    expect(calls).toBe(2);
   });
 
   test('recognises a compiler panic but not a source error', () => {

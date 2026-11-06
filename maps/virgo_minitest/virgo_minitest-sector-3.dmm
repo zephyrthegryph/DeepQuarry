@@ -23,7 +23,7 @@
 /turf/simulated/floor/beach/sand,
 /area/awaymission/wwmines)
 "ah" = (
-/turf/unsimulated/wall,
+/turf/open/fixed/wall,
 /area/awaymission/wwmines)
 "ai" = (
 /turf/simulated/wall/wood,

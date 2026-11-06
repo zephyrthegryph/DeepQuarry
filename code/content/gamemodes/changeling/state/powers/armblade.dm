@@ -61,8 +61,6 @@
 	icon_state = "arm_blade"
 	w_class = ITEMSIZE_NO_CONTAINER
 	var/mob/living/creator	//This is just like ninja swords, needed to make sure dumb shit that removes the sword doesn't make it stay around.
-	var/weapType = "weapon"
-	var/weapLocation = "arm"
 
 	defend_chance = 40	// The base chance for the weapon to parry.
 	projectile_parry_chance = 15	// The base chance for a projectile to be deflected.

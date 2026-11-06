@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The remaining 25 ATMOSPHERICS files moved into code/domains/atmos"

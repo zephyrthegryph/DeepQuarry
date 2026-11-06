@@ -1,0 +1,96 @@
+/datum/proc/CanProcCall(procname)
+	return TRUE
+
+/datum/proc/can_vv_get(var_name)
+	SHOULD_CALL_PARENT(TRUE)
+	if(var_name == NAMEOF(src, vars))
+		return FALSE
+	return TRUE
+
+/// Called when a var is edited with the new value to change to
+/datum/proc/vv_edit_var(var_name, var_value)
+	if(var_name == NAMEOF(src, vars))
+		return FALSE
+	datum_flags |= DF_VAR_EDITED
+	// A trait field (VV lists `@kind.field`; SDQL may name the old var): the holder's own copy of its trait block, through set_trait().
+	if(!(var_name in vars))
+		var/slot = vv_slot_named(src, var_name)
+		if(slot)
+			return vv_slot_write(src, slot, var_value)
+		var/list/trait_field = type_trait_field_named(src, var_name)
+		if(!trait_field)
+			return FALSE
+		set_trait(src, trait_field[1], trait_field[2], var_value)
+		return TRUE
+	// A var with a registered setter is edited through it, so everything that reacts to the change
+	// reacts to an admin's edit too (dx_conventions.md §1).
+	// Only a registered setter (TRACKED or SETTER): a proc merely named set_<x> may be a verb or take
+	// other arguments.
+	if(hascall(src, "__setter_[var_name]") || (istype(src, /datum/record) && hascall(src, "set_[var_name]")))
+		call(src, "set_[var_name]")(var_value)
+		return TRUE
+	// A built-in the engine publishes from its own choke point is edited through it: a move is a move (Moved() tells whatever reads loc), a turn is
+	// set_dir(). A raw write would change the var and tell nobody.
+	if(ismovable(src))
+		var/atom/movable/mover = src
+		if(var_name == NAMEOF(mover, loc))
+			if(isnull(var_value))
+				return !!mover.moveToNullspace()
+			if(!isatom(var_value))
+				return FALSE
+			return !!mover.forceMove(var_value)
+	if(isatom(src))
+		var/atom/turner = src
+		if(var_name == NAMEOF(turner, dir))
+			turner.set_dir(var_value)
+			return TRUE
+	// Any other var, and a stat's name, go through vars_write(): a stat as an admin override hold (released by releasing its source), a schema var
+	// clamped or refused, a plain var written and published to whatever reads it, its outputs re-derived (code/engine/stats/vars_write.dm).
+	if(!vars_write(src, var_name, var_value, SRC_VV))
+		return FALSE
+	refresh_dispatched(src) // an admin's edit of a var nothing declares publishes to nobody: the outputs re-derive anyway
+	return TRUE
+
+/datum/proc/vv_get_var(var_name, mob/viewer)
+	switch(var_name)
+		if (NAMEOF(src, vars))
+			return debug_variable(var_name, list(), 0, src, viewer = viewer)
+	if(!(var_name in vars))
+		var/slot = vv_slot_named(src, var_name)
+		if(slot)
+			return debug_variable(var_name, vv_slot_value(src, slot), 0, src, viewer = viewer)
+		var/list/trait_field = type_trait_field_named(src, var_name)
+		if(trait_field)
+			return debug_variable(var_name, type_trait_of(src, trait_field[1]).vars[trait_field[2]], 0, src, viewer = viewer)
+	return debug_variable(var_name, vars[var_name], 0, src, viewer = viewer)
+
+/**
+ * Gets all the dropdown options in the vv menu.
+ * When overriding, make sure to call . = ..() first and append to the result, that way parent items are always at the top and child items are further down.
+ * Add separators by doing VV_DROPDOWN_OPTION("", "---")
+ */
+/datum/proc/vv_get_dropdown()
+	SHOULD_CALL_PARENT(TRUE)
+
+	. = list()
+	VV_DROPDOWN_OPTION("", "---")
+	VV_DROPDOWN_OPTION(VV_HK_CALLPROC, "Call Proc")
+	VV_DROPDOWN_OPTION(VV_HK_MARK, "Mark Object")
+	VV_DROPDOWN_OPTION(VV_HK_TAG, "Tag Datum")
+	VV_DROPDOWN_OPTION(VV_HK_DELETE, "Delete")
+	VV_DROPDOWN_OPTION(VV_HK_EXPOSE, "Show VV To Player")
+	VV_DROPDOWN_OPTION(VV_HK_ADDCOMPONENT, "Attach Behaviour")
+	VV_DROPDOWN_OPTION(VV_HK_REMOVECOMPONENT, "Detach Behaviour")
+	VV_DROPDOWN_OPTION(VV_HK_MASS_REMOVECOMPONENT, "Mass Detach Behaviour")
+
+// The dropdown's "high level" actions (admin heal, set species, ...) are topic_in(VV_TOPIC, key) ops on
+// the type (code/defines/host/vv.dm); the low level ones are the admin holder's ops in
+// admin/view_variables/topic_basic.dm, in case the type's own code runtimes.
+
+/datum/proc/vv_get_header()
+	. = list()
+	if(("name" in vars) && !isatom(src))
+		. += span_bold("[vars["name"]]") + "<br>"
+
+/datum/proc/on_reagent_change(changetype)
+	return

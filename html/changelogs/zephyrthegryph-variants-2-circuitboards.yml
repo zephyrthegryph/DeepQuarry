@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "176 circuit board types become rows of one table; machines, frames and designs name a board by reference, and a machine's board stays data until it is needed"
+  - bugfix: "Broken circuit boards are still eaten as edible trash"

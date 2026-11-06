@@ -4,7 +4,7 @@
 	name = "obstruction removal ballista control"
 	icon = 'icons/obj/computer.dmi'
 	icon_state = "computer"
-	circuit = /obj/item/circuitboard/disperser
+	circuit = VARIANT(/obj/item/circuitboard/disperser)
 
 	icon_keyboard = "rd_key"
 	icon_screen = "teleport"

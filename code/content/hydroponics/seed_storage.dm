@@ -112,12 +112,12 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /// The contraband seed batch a hacked storage shows: one of six weighted batches, each with some form of ambrosia.
 /obj/machinery/seed_storage/proc/roll_contraband_seeds(datum/roller/R)
 	var/static/list/batches = list(
-		"produce" = list(/obj/item/seeds/ambrosiavulgarisseed = 3, /obj/item/seeds/greengrapeseed = 3, /obj/item/seeds/icepepperseed = 2, /obj/item/seeds/kudzuseed = 1),
-		"mushrooms" = list(/obj/item/seeds/ambrosiavulgarisseed = 1, /obj/item/seeds/glowberryseed = 2, /obj/item/seeds/libertymycelium = 1, /obj/item/seeds/reishimycelium = 2, /obj/item/seeds/sporemycelium = 1),
-		"survivalist" = list(/obj/item/seeds/ambrosiadeusseed = 2, /obj/item/seeds/redtowermycelium = 2, /obj/item/seeds/vale = 2, /obj/item/seeds/siflettuce = 2),
-		"cold" = list(/obj/item/seeds/ambrosiavulgarisseed = 2, /obj/item/seeds/thaadra = 2, /obj/item/seeds/icepepperseed = 2, /obj/item/seeds/siflettuce = 1),
-		"poison" = list(/obj/item/seeds/ambrosiavulgarisseed = 3, /obj/item/seeds/surik = 1, /obj/item/seeds/telriis = 1, /obj/item/seeds/nettleseed = 2, /obj/item/seeds/poisonberryseed = 1),
-		"extra_poison" = list(/obj/item/seeds/ambrosiainfernusseed = 1, /obj/item/seeds/amauri = 1, /obj/item/seeds/surik = 1, /obj/item/seeds/deathberryseed = 1)) // the deathberry: very ow
+		"produce" = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 3, VARIANT(/obj/item/seeds/greengrapeseed) = 3, VARIANT(/obj/item/seeds/icepepperseed) = 2, VARIANT(/obj/item/seeds/kudzuseed) = 1),
+		"mushrooms" = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 1, VARIANT(/obj/item/seeds/glowberryseed) = 2, VARIANT(/obj/item/seeds/libertymycelium) = 1, VARIANT(/obj/item/seeds/reishimycelium) = 2, VARIANT(/obj/item/seeds/sporemycelium) = 1),
+		"survivalist" = list(VARIANT(/obj/item/seeds/ambrosiadeusseed) = 2, VARIANT(/obj/item/seeds/redtowermycelium) = 2, VARIANT(/obj/item/seeds/vale) = 2, VARIANT(/obj/item/seeds/siflettuce) = 2),
+		"cold" = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 2, VARIANT(/obj/item/seeds/thaadra) = 2, VARIANT(/obj/item/seeds/icepepperseed) = 2, VARIANT(/obj/item/seeds/siflettuce) = 1),
+		"poison" = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 3, VARIANT(/obj/item/seeds/surik) = 1, VARIANT(/obj/item/seeds/telriis) = 1, VARIANT(/obj/item/seeds/nettleseed) = 2, VARIANT(/obj/item/seeds/poisonberryseed) = 1),
+		"extra_poison" = list(VARIANT(/obj/item/seeds/ambrosiainfernusseed) = 1, VARIANT(/obj/item/seeds/amauri) = 1, VARIANT(/obj/item/seeds/surik) = 1, VARIANT(/obj/item/seeds/deathberryseed) = 1)) // the deathberry: very ow
 	var/static/list/weights = list("produce" = 30, "mushrooms" = 30, "survivalist" = 15, "cold" = 20, "poison" = 10, "extra_poison" = 5)
 	var/list/batch = batches[R.weighted(weights)]
 	return batch.Copy()
@@ -131,114 +131,8 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	scanner = list("stats", "produce", "soil", "temperature", "light", "pressure")
 	starting_seeds = list(/obj/item/seeds/random = 50)
 
-/obj/machinery/seed_storage/garden
-	name = "Garden seed storage"
-	scanner = list("stats")
-	starting_seeds = list(
-		/obj/item/seeds/appleseed = 3,
-		/obj/item/seeds/bananaseed = 3,
-		/obj/item/seeds/berryseed = 3,
-		/obj/item/seeds/cabbageseed = 3,
-		/obj/item/seeds/carrotseed = 3,
-		/obj/item/seeds/celery = 3,
-		/obj/item/seeds/chantermycelium = 3,
-		/obj/item/seeds/cherryseed = 3,
-		/obj/item/seeds/chiliseed = 3,
-		/obj/item/seeds/cocoapodseed = 3,
-		/obj/item/seeds/cornseed = 3,
-		/obj/item/seeds/durian = 3,
-		/obj/item/seeds/eggplantseed = 3,
-		/obj/item/seeds/grapeseed = 3,
-		/obj/item/seeds/grassseed = 3,
-		/obj/item/seeds/replicapod = 3,
-		/obj/item/seeds/lavenderseed = 3,
-		/obj/item/seeds/lemonseed = 3,
-		/obj/item/seeds/lettuce = 3,
-		/obj/item/seeds/limeseed = 3,
-		/obj/item/seeds/mtearseed = 2,
-		/obj/item/seeds/orangeseed = 3,
-		/obj/item/seeds/onionseed = 3,
-		/obj/item/seeds/peanutseed = 3,
-		/obj/item/seeds/plumpmycelium = 3,
-		/obj/item/seeds/poppyseed = 3,
-		/obj/item/seeds/potatoseed = 3,
-		/obj/item/seeds/pumpkinseed = 3,
-		/obj/item/seeds/rhubarb = 3,
-		/obj/item/seeds/riceseed = 3,
-		/obj/item/seeds/rose = 3,
-		/obj/item/seeds/soyaseed = 3,
-		/obj/item/seeds/pineapple = 3,
-		/obj/item/seeds/sugarcaneseed = 3,
-		/obj/item/seeds/sunflowerseed = 3,
-		/obj/item/seeds/shandseed = 2,
-		/obj/item/seeds/tobaccoseed = 3,
-		/obj/item/seeds/tomatoseed = 3,
-		/obj/item/seeds/towermycelium = 3,
-		/obj/item/seeds/vanilla = 3,
-		/obj/item/seeds/wabback = 2,
-		/obj/item/seeds/watermelonseed = 3,
-		/obj/item/seeds/wheatseed = 3,
-		/obj/item/seeds/whitebeetseed = 3,
-		/obj/item/seeds/wurmwoad = 3
-		)
 
 /obj/machinery/seed_storage/xenobotany
-	name = "Xenobotany seed storage"
-	scanner = list("stats", "produce", "soil", "temperature", "light", "pressure")
-	smart = 1
-	starting_seeds = list(
-		/obj/item/seeds/ambrosiavulgarisseed = 3,
-		/obj/item/seeds/appleseed = 3,
-		/obj/item/seeds/amanitamycelium = 2,
-		/obj/item/seeds/bananaseed = 3,
-		/obj/item/seeds/berryseed = 3,
-		/obj/item/seeds/cabbageseed = 3,
-		/obj/item/seeds/carrotseed = 3,
-		/obj/item/seeds/celery = 3,
-		/obj/item/seeds/chantermycelium = 3,
-		/obj/item/seeds/cherryseed = 3,
-		/obj/item/seeds/chiliseed = 3,
-		/obj/item/seeds/cocoapodseed = 3,
-		/obj/item/seeds/cornseed = 3,
-		/obj/item/seeds/durian = 3,
-		/obj/item/seeds/replicapod = 3,
-		/obj/item/seeds/eggplantseed = 3,
-		/obj/item/seeds/glowshroom = 2,
-		/obj/item/seeds/grapeseed = 3,
-		/obj/item/seeds/grassseed = 3,
-		/obj/item/seeds/lavenderseed = 3,
-		/obj/item/seeds/lemonseed = 3,
-		/obj/item/seeds/lettuce = 3,
-		/obj/item/seeds/libertymycelium = 2,
-		/obj/item/seeds/limeseed = 3,
-		/obj/item/seeds/mtearseed = 2,
-		/obj/item/seeds/nettleseed = 2,
-		/obj/item/seeds/orangeseed = 3,
-		/obj/item/seeds/peanutseed = 3,
-		/obj/item/seeds/plastiseed = 3,
-		/obj/item/seeds/plumpmycelium = 3,
-		/obj/item/seeds/poppyseed = 3,
-		/obj/item/seeds/potatoseed = 3,
-		/obj/item/seeds/pumpkinseed = 3,
-		/obj/item/seeds/reishimycelium = 2,
-		/obj/item/seeds/rhubarb = 3,
-		/obj/item/seeds/riceseed = 3,
-		/obj/item/seeds/rose = 3,
-		/obj/item/seeds/soyaseed = 3,
-		/obj/item/seeds/pineapple = 3,
-		/obj/item/seeds/sugarcaneseed = 3,
-		/obj/item/seeds/sunflowerseed = 3,
-		/obj/item/seeds/shandseed = 2,
-		/obj/item/seeds/tobaccoseed = 3,
-		/obj/item/seeds/tomatoseed = 3,
-		/obj/item/seeds/towermycelium = 3,
-		/obj/item/seeds/vanilla = 3,
-		/obj/item/seeds/wabback = 2,
-		/obj/item/seeds/watermelonseed = 3,
-		/obj/item/seeds/wheatseed = 3,
-		/obj/item/seeds/whitebeetseed = 3,
-		/obj/item/seeds/wurmwoad = 3
-		)
 
 
 
@@ -290,14 +184,14 @@ CAPABILITIES(/obj/machinery/seed_storage)
 			if(isnull(amount)) amount = 1
 
 			for(var/i = 1 to amount)
-				var/O = new typepath
+				var/O = variant_new(typepath, null)
 				add(O)
 		for(var/typepath in contraband_seeds)
 			var/amount = LAZYACCESS(contraband_seeds, typepath)
 			if(isnull(amount)) amount = 1
 
 			for (var/i = 1 to amount)
-				var/O = new typepath
+				var/O = variant_new(typepath, null)
 				add(O, 1)
 		seeds_initialized = 1
 
@@ -534,121 +428,9 @@ CAPABILITIES(/obj/machinery/seed_storage)
 
 // seeds: teaseed
 /obj/machinery/seed_storage/garden
-	starting_seeds = list(
-		/obj/item/seeds/appleseed = 3,
-		/obj/item/seeds/bananaseed = 3,
-		/obj/item/seeds/berryseed = 3,
-		/obj/item/seeds/cabbageseed = 3,
-		/obj/item/seeds/carrotseed = 3,
-		/obj/item/seeds/celery = 3,
-		/obj/item/seeds/chantermycelium = 3,
-		/obj/item/seeds/cherryseed = 3,
-		/obj/item/seeds/chiliseed = 3,
-		/obj/item/seeds/cocoapodseed = 3,
-		/obj/item/seeds/cornseed = 3,
-		/obj/item/seeds/durian = 3,
-		/obj/item/seeds/eggplantseed = 3,
-		/obj/item/seeds/grapeseed = 3,
-		/obj/item/seeds/grassseed = 3,
-		/obj/item/seeds/replicapod = 3,
-		/obj/item/seeds/lavenderseed = 3,
-		/obj/item/seeds/lemonseed = 3,
-		/obj/item/seeds/lettuce = 3,
-		/obj/item/seeds/limeseed = 3,
-		/obj/item/seeds/mtearseed = 2,
-		/obj/item/seeds/mustardseed = 3,
-		/obj/item/seeds/orangeseed = 3,
-		/obj/item/seeds/onionseed = 3,
-		/obj/item/seeds/peanutseed = 3,
-		/obj/item/seeds/peppercornseed = 2,
-		/obj/item/seeds/plumpmycelium = 3,
-		/obj/item/seeds/poppyseed = 3,
-		/obj/item/seeds/potatoseed = 3,
-		/obj/item/seeds/pumpkinseed = 3,
-		/obj/item/seeds/rhubarb = 3,
-		/obj/item/seeds/riceseed = 3,
-		/obj/item/seeds/rose = 3,
-		/obj/item/seeds/soyaseed = 3,
-		/obj/item/seeds/pineapple = 3,
-		/obj/item/seeds/sugarcaneseed = 3,
-		/obj/item/seeds/sunflowerseed = 3,
-		/obj/item/seeds/shandseed = 2,
-		/obj/item/seeds/teaseed = 3,
-		/obj/item/seeds/tobaccoseed = 3,
-		/obj/item/seeds/tomatoseed = 3,
-		/obj/item/seeds/towermycelium = 3,
-		/obj/item/seeds/vanilla = 3,
-		/obj/item/seeds/wabback = 2,
-		/obj/item/seeds/watermelonseed = 3,
-		/obj/item/seeds/wheatseed = 3,
-		/obj/item/seeds/whitebeetseed = 3,
-		/obj/item/seeds/wurmwoad = 3,
-		/obj/item/seeds/shrinkshroom = 3,
-		/obj/item/seeds/megashroom = 3)
 
 // adds pitcherseed
 /obj/machinery/seed_storage/xenobotany
-	name = "Xenobotany seed storage"
-	scanner = list("stats", "produce", "soil", "temperature", "light")
-	starting_seeds = list(
-		/obj/item/seeds/ambrosiavulgarisseed = 3,
-		/obj/item/seeds/appleseed = 3,
-		/obj/item/seeds/amanitamycelium = 2,
-		/obj/item/seeds/bananaseed = 3,
-		/obj/item/seeds/berryseed = 3,
-		/obj/item/seeds/cabbageseed = 3,
-		/obj/item/seeds/carrotseed = 3,
-		/obj/item/seeds/celery = 3,
-		/obj/item/seeds/chantermycelium = 3,
-		/obj/item/seeds/cherryseed = 3,
-		/obj/item/seeds/chiliseed = 3,
-		/obj/item/seeds/cocoapodseed = 3,
-		/obj/item/seeds/cornseed = 3,
-		/obj/item/seeds/durian = 3,
-		/obj/item/seeds/replicapod = 3,
-		/obj/item/seeds/eggplantseed = 3,
-		/obj/item/seeds/glowshroom = 2,
-		/obj/item/seeds/grapeseed = 3,
-		/obj/item/seeds/grassseed = 3,
-		/obj/item/seeds/lavenderseed = 3,
-		/obj/item/seeds/lemonseed = 3,
-		/obj/item/seeds/lettuce = 3,
-		/obj/item/seeds/libertymycelium = 2,
-		/obj/item/seeds/limeseed = 3,
-		/obj/item/seeds/mtearseed = 2,
-		/obj/item/seeds/mustardseed = 3,
-		/obj/item/seeds/nettleseed = 2,
-		/obj/item/seeds/orangeseed = 3,
-		/obj/item/seeds/peanutseed = 3,
-		/obj/item/seeds/peppercornseed = 2,
-		/obj/item/seeds/plastiseed = 3,
-		/obj/item/seeds/plumpmycelium = 3,
-		/obj/item/seeds/poppyseed = 3,
-		/obj/item/seeds/potatoseed = 3,
-		/obj/item/seeds/pumpkinseed = 3,
-		/obj/item/seeds/reishimycelium = 2,
-		/obj/item/seeds/rhubarb = 3,
-		/obj/item/seeds/riceseed = 3,
-		/obj/item/seeds/rose = 3,
-		/obj/item/seeds/soyaseed = 3,
-		/obj/item/seeds/pineapple = 3,
-		/obj/item/seeds/sugarcaneseed = 3,
-		/obj/item/seeds/sunflowerseed = 3,
-		/obj/item/seeds/shandseed = 2,
-		/obj/item/seeds/teaseed = 3,
-		/obj/item/seeds/tobaccoseed = 3,
-		/obj/item/seeds/tomatoseed = 3,
-		/obj/item/seeds/towermycelium = 3,
-		/obj/item/seeds/vanilla = 3,
-		/obj/item/seeds/wabback = 2,
-		/obj/item/seeds/watermelonseed = 3,
-		/obj/item/seeds/wheatseed = 3,
-		/obj/item/seeds/whitebeetseed = 3,
-		/obj/item/seeds/wurmwoad = 3,
-		/obj/item/seeds/shrinkshroom = 3,
-		/obj/item/seeds/megashroom = 3,
-		/obj/item/seeds/lustflower = 2,
-		/obj/item/seeds/pitcherseed = 3)
 
 /// The pile's seed (PROTO): a registered line, or its own snapshot.
 /datum/seed_pile/proc/seed_type() as /datum/seed

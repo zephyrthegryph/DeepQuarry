@@ -127,23 +127,23 @@
 	name = "Seeds crate"
 	desc = "A wide selection of seed packets. Requires Hydroponics access."
 	contains = list(
-			/obj/item/seeds/chiliseed,
-			/obj/item/seeds/berryseed,
-			/obj/item/seeds/cornseed,
-			/obj/item/seeds/eggplantseed,
-			/obj/item/seeds/tomatoseed,
-			/obj/item/seeds/appleseed,
-			/obj/item/seeds/soyaseed,
-			/obj/item/seeds/wheatseed,
-			/obj/item/seeds/carrotseed,
-			/obj/item/seeds/harebell,
-			/obj/item/seeds/lemonseed,
-			/obj/item/seeds/orangeseed,
-			/obj/item/seeds/grassseed,
-			/obj/item/seeds/sunflowerseed,
-			/obj/item/seeds/chantermycelium,
-			/obj/item/seeds/potatoseed,
-			/obj/item/seeds/sugarcaneseed
+			VARIANT(/obj/item/seeds/chiliseed),
+			VARIANT(/obj/item/seeds/berryseed),
+			VARIANT(/obj/item/seeds/cornseed),
+			VARIANT(/obj/item/seeds/eggplantseed),
+			VARIANT(/obj/item/seeds/tomatoseed),
+			VARIANT(/obj/item/seeds/appleseed),
+			VARIANT(/obj/item/seeds/soyaseed),
+			VARIANT(/obj/item/seeds/wheatseed),
+			VARIANT(/obj/item/seeds/carrotseed),
+			VARIANT(/obj/item/seeds/harebell),
+			VARIANT(/obj/item/seeds/lemonseed),
+			VARIANT(/obj/item/seeds/orangeseed),
+			VARIANT(/obj/item/seeds/grassseed),
+			VARIANT(/obj/item/seeds/sunflowerseed),
+			VARIANT(/obj/item/seeds/chantermycelium),
+			VARIANT(/obj/item/seeds/potatoseed),
+			VARIANT(/obj/item/seeds/sugarcaneseed)
 			)
 	cost = 10
 	containertype = /obj/structure/closet/crate/carp
@@ -281,3 +281,22 @@
 	cost = 10
 	containertype = /obj/structure/largecrate/tits
 	containername = "A pair of great tits"
+
+/datum/supply_pack/hydro/teppi
+	name = "Teppi crate"
+	cost = 60 //considering a corgi crate is 50, and you get two fennecs
+	containertype = /obj/structure/largecrate/animal/teppi
+	containername = "Teppi crate"
+
+/datum/supply_pack/hydro/sheep
+	name = "Sheep crate"
+	cost = 25
+	containertype = /obj/structure/largecrate/animal/sheep
+	containername = "Goat crate"
+	access = ACCESS_HYDROPONICS
+
+/datum/supply_pack/hydro/woofdog
+	name = "Dog crate"
+	cost = 50
+	containertype = /obj/structure/largecrate/animal/woofdog
+	containername = "Dog carrier"

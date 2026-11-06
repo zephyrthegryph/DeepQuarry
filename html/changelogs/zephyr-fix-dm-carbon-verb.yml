@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The VV verb list no longer names the removed /mob/living/carbon/verb path, which stopped the DreamMaker compile"

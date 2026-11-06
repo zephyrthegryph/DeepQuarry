@@ -25,7 +25,7 @@ use crate::util::{is_py_space, py_rstrip, py_strip};
 
 pub use crate::allow_registry_fields::sys_appearance::RULES;
 
-const RUNTIME: &[&str] = &["code/datums/sys/appearance.dm", "code/__defines/sys_appearance.dm"];
+const RUNTIME: &[&str] = &["code/library/sys/appearance.dm", "code/__defines/sys_appearance.dm"];
 const LIFECYCLE: &[&str] = &["Initialize", "New", "LateInitialize", "Destroy", "on_materialize", "on_dematerialize"];
 const HARMLESS_CALLS: &[&str] = &[
     "to_chat", "visible_message", "audible_message", "balloon_alert", "balloon_alert_to_viewers",
@@ -73,7 +73,7 @@ fn shape(macro_name: &str) -> (usize, usize, bool, bool) {
         "OM_FIELD_TYPED" => (2, 4, true, false),
         "OM_FLAG_FIELD" | "OM_FLAG_FIELD_BITS" => (1, 3, true, true),
         "OM_FIELD_SETTER" => (1, 2, true, false),
-        _ => (1, 2, false, false), // OM_DERIVE_FIELD
+        _ => (1, 2, false, false), // DERIVE_FIELD
     }
 }
 
@@ -90,14 +90,14 @@ pub type RegFact = (String, String, String, bool);
 /// The setter registrations of one file, in line order (one entry per generated setter name).
 pub fn registrations_of(f: &SourceFile) -> Vec<RegFact> {
     let mut out = Vec::new();
-    if f.rel == "code/__defines/om.dm" {
+    if f.rel == "code/defines/engine/om.dm" {
         return out;
     }
     for line in f.raw().lines() {
-        if !line.contains("OM_") {
+        if !line.contains("OM_") && !line.contains("DERIVE_FIELD") {
             continue;
         }
-        let Some(m) = pat!(r"\A(?:\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|OM_DERIVE_FIELD)\((.*)$)").captures(line) else {
+        let Some(m) = pat!(r"\A(?:\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|DERIVE_FIELD)\((.*)$)").captures(line) else {
             continue;
         };
         let (fi, ci, has_setter, flag) = shape(m.s(1));

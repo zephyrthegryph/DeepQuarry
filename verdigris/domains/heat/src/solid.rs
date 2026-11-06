@@ -228,6 +228,17 @@ impl FieldKind for SolidHeat {
         }
     }
 
+    // An edge needing fewer sub-steps than the field's stiffest edge runs on a coarser cadence (the radiating plates and thin bodies
+    // are stiff; the conduction between ordinary floors is not).
+    const MULTIRATE: bool = true;
+    // Idle stride: up to 8 steps per advance while every awake chunk changes by under 1e-3 of its energy per advance.
+    const MAX_STRIDE: u32 = 8;
+    const STRIDE_TOLERANCE: f32 = 1.0e-3;
+
+    fn relative_change(before: &SolidCell, after: &SolidCell) -> f32 {
+        (before.energy - after.energy).abs() / before.energy.abs().max(after.energy.abs()).max(1.0)
+    }
+
     fn quiet(before: &SolidCell, after: &SolidCell) -> bool {
         (before.energy - after.energy).abs() <= 1e-6 * before.energy.abs().max(after.energy.abs())
     }

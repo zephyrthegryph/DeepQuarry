@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "light_flags is a sparse slot instead of a var on every atom"
+  - admin: "light_flags can no longer be edited through View Variables"

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The _unit_tests.dm union merge rule follows the file's move again, and a check fails when a .gitattributes path or merge driver goes stale"

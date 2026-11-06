@@ -1,0 +1,70 @@
+/mob/living/simple_mob/vore/hippo
+	drag_buckle = FALSE
+	name = "hippo"
+	desc = "Mostly know for the spectacular hit of the live action movie Hungry Hungry Hippos."
+	tt_desc = "Hippopotamus amphibius"
+
+	icon_state = "hippo"
+	icon_living = "hippo"
+	icon_dead = "hippo-dead"
+	icon_gib = "hippo-dead" // No gib sprite yet
+	icon = 'icons/mob/vore64x64.dmi'
+
+	endurance = 200
+	movement_cooldown = 1.5
+	see_in_dark = 3
+
+
+	response_help = "pets"
+	response_disarm = "gently pushes aside"
+	response_harm = "hits"
+	attacktext = list("bit")
+
+	melee_damage_upper = 12
+	melee_damage_lower = 7
+	attack_injury_kind = INJURY_PIERCE
+
+	default_pixel_x = -16
+	pixel_x = -16
+	pixel_y = 0
+
+
+	can_buckle = TRUE
+	mount_offset_y = 20
+
+
+
+// Activate Noms!
+/mob/living/simple_mob/vore/hippo //I don't know why it's in a seperate line but everyone does it so i do it
+	vore_active = 1
+	vore_bump_chance = 15
+	vore_bump_emote = "lazily wraps its mouth around"
+	vore_standing_too = 1
+	vore_ignores_undigestable = 0
+	vore_default_mode = DM_HOLD
+	vore_digest_chance = 10
+	vore_escape_chance = 20
+	vore_pounce_chance = 35 //it's hippo sized it doesn't care it just eats you
+	vore_stomach_name = "rumen" //First stomach of a ruminant. It's where the pre digestion bacteria stuff happens. Very warm.
+	vore_stomach_flavor	= "You are squeezed into the sweltering insides of the herbivore rumen."
+	vore_icons = SA_ICON_LIVING
+
+CAPABILITIES(/mob/living/simple_mob/vore/hippo)
+	configure(atom_rules(armor_spec = "melee=15;bullet=15;laser=15"))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/hippo))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 15))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+
+/mob/living/simple_mob/vore/hippo/Login()
+	. = ..()
+	if(!riding_datum)
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+	movement_cooldown = 0
+
+/datum/say_list/hippo
+	speak = list("UUUUUUH")
+	emote_hear = list("grunts","groans", "roars", "snorts")
+	emote_see = list("shakes its head")

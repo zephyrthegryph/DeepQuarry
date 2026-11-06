@@ -1,4 +1,4 @@
-shadow	code/modules/unit_tests/t.dm	1
+shadow	code/tests/unit_tests/t.dm	1
 shadow	code/x/a.dm	5
 shadow	code/x/a.dm	11
 shadow	code/x/a.dm	13

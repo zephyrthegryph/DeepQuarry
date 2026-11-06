@@ -7,10 +7,10 @@ use crate::{pat,pat_match,pat::Pat,tree::SourceFile,util::{is_py_space,py_strip}
 use crate::allow_registry_fields::sys_ui::RULES;
 /// Where windows are legitimately built by hand: the tgui core and the declared-UI runtime.
 const OPEN_EXEMPT: &[&str] =
-    &["code/modules/tgui/", "code/modules/tgui_input/", "code/controllers/subsystems/tgui.dm", "code/datums/sys/ui.dm"];
+    &["code/library/ui/tgui/", "code/library/ui/tgui_input/alert.dm", "code/library/ui/tgui_input/color.dm", "code/library/ui/tgui_input/list.dm", "code/library/ui/tgui_input/matrix.dm", "code/library/ui/tgui_input/number.dm", "code/library/ui/tgui_input/say_modal/typing.dm", "code/library/ui/tgui_input/text.dm", "code/controllers/subsystems/tgui.dm", "code/library/sys/ui.dm"];
 
 /// The vendored TGS DMAPI: its `params` are world.Topic query strings, never a tgui message.
-const NOT_TGUI: &[&str] = &["code/modules/tgs/"];
+const NOT_TGUI: &[&str] = &["code/world/tgs/"];
 
 fn starts_any(rel: &str, prefixes: &[&str]) -> bool {
     prefixes.iter().any(|p| rel.starts_with(p))

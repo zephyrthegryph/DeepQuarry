@@ -7,7 +7,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("robotics control console")
 	id = "robocontrol"
 	// req_tech = list(TECH_DATA = 4)
-	build_path = /obj/item/circuitboard/robotics
+	build_path = VARIANT(/obj/item/circuitboard/robotics)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_RESEARCH
 	)
@@ -17,7 +17,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("exosuit control console")
 	id = "mechacontrol"
 	// req_tech = list(TECH_DATA = 3)
-	build_path = /obj/item/circuitboard/mecha_control
+	build_path = VARIANT(/obj/item/circuitboard/mecha_control)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_RESEARCH
 	)
@@ -27,7 +27,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("R&D control console")
 	id = "rdconsole"
 	// req_tech = list(TECH_DATA = 4)
-	build_path = /obj/item/circuitboard/rdconsole
+	build_path = VARIANT(/obj/item/circuitboard/rdconsole)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_RESEARCH
 	)
@@ -37,7 +37,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("AI integrity restorer")
 	id = "aifixer"
 	// req_tech = list(TECH_DATA = 3, TECH_BIO = 2)
-	build_path = /obj/item/circuitboard/aifixer
+	build_path = VARIANT(/obj/item/circuitboard/aifixer)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_RESEARCH
 	)
@@ -47,7 +47,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("AI upload console")
 	id = "aiupload"
 	// req_tech = list(TECH_DATA = 4)
-	build_path = /obj/item/circuitboard/aiupload
+	build_path = VARIANT(/obj/item/circuitboard/aiupload)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_RESEARCH
 	)
@@ -57,7 +57,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("cyborg upload console")
 	id = "borgupload"
 	// req_tech = list(TECH_DATA = 4)
-	build_path = /obj/item/circuitboard/borgupload
+	build_path = VARIANT(/obj/item/circuitboard/borgupload)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_RESEARCH
 	)
@@ -67,7 +67,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("circuit imprinter")
 	id = "circuit_imprinter"
 	// req_tech = list(TECH_DATA = 2, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/circuit_imprinter
+	build_path = VARIANT(/obj/item/circuitboard/circuit_imprinter)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -77,7 +77,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("autolathe")
 	id = "autolathe"
 	// req_tech = list(TECH_DATA = 2, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/autolathe
+	build_path = VARIANT(/obj/item/circuitboard/autolathe)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -97,7 +97,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("exosuit fabricator")
 	id = "mechfab"
 	// req_tech = list(TECH_DATA = 3, TECH_ENGINEERING = 3)
-	build_path = /obj/item/circuitboard/mechfab
+	build_path = VARIANT(/obj/item/circuitboard/mechfab)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -107,7 +107,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("prosthetics fabricator")
 	id = "prosfab"
 	// req_tech = list(TECH_DATA = 3, TECH_ENGINEERING = 3)
-	build_path = /obj/item/circuitboard/prosthetics
+	build_path = VARIANT(/obj/item/circuitboard/prosthetics)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -117,7 +117,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("mech recharger")
 	id = "mech_recharger"
 	// req_tech = list(TECH_DATA = 2, TECH_POWER = 2, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/mech_recharger
+	build_path = VARIANT(/obj/item/circuitboard/mech_recharger)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -127,7 +127,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("cyborg recharge station")
 	id = "recharge_station"
 	// req_tech = list(TECH_DATA = 3, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/recharge_station
+	build_path = VARIANT(/obj/item/circuitboard/recharge_station)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -137,7 +137,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("SynthFab 3000")
 	id = "transhuman_synthprinter"
 	// req_tech = list(TECH_DATA = 3, TECH_ENGINEERING = 3)
-	build_path = /obj/item/circuitboard/transhuman_synthprinter
+	build_path = VARIANT(/obj/item/circuitboard/transhuman_synthprinter)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -148,7 +148,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("Telepad Control Console")
 	id = "telesci_console"
 	// req_tech = list(TECH_DATA = 3, TECH_BLUESPACE = 3, TECH_PHORON = 4)
-	build_path = /obj/item/circuitboard/telesci_console
+	build_path = VARIANT(/obj/item/circuitboard/telesci_console)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_TELEPORT
 	)
@@ -158,7 +158,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("Telepad")
 	id = "telesci_pad"
 	// req_tech = list(TECH_DATA = 4, TECH_ENGINEERING = 4, TECH_PHORON = 4, TECH_BLUESPACE = 5)
-	build_path = /obj/item/circuitboard/telesci_pad
+	build_path = VARIANT(/obj/item/circuitboard/telesci_pad)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_TELEPORT
 	)
@@ -168,7 +168,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("Quantum Pad")
 	id = "quantum_pad"
 	// req_tech = list(TECH_DATA = 4, TECH_ENGINEERING = 4, TECH_PHORON = 4, TECH_BLUESPACE = 5)
-	build_path = /obj/item/circuitboard/quantumpad
+	build_path = VARIANT(/obj/item/circuitboard/quantumpad)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_TELEPORT
 	)
@@ -177,7 +177,7 @@
 /datum/design_techweb/board/bomb_tester
 	SET_CIRCUIT_DESIGN_NAMEDESC("Explosive Effect Simulator")
 	id = "bomb_tester"
-	build_path = /obj/item/circuitboard/bomb_tester
+	build_path = VARIANT(/obj/item/circuitboard/bomb_tester)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -205,7 +205,7 @@
 /datum/design_techweb/board/botany_extractor
 	SET_CIRCUIT_DESIGN_NAMEDESC("lysis-isolation centrifuge")
 	id = "botany_extractor"
-	build_path = /obj/item/circuitboard/botany_extractor
+	build_path = VARIANT(/obj/item/circuitboard/botany_extractor)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_BOTANY
 	)
@@ -214,7 +214,7 @@
 /datum/design_techweb/board/botany_editor
 	SET_CIRCUIT_DESIGN_NAMEDESC("bioballistic delivery system")
 	id = "botany_editor"
-	build_path = /obj/item/circuitboard/botany_editor
+	build_path = VARIANT(/obj/item/circuitboard/botany_editor)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_BOTANY
 	)
@@ -223,7 +223,7 @@
 /datum/design_techweb/board/botany_seedextractor
 	SET_CIRCUIT_DESIGN_NAMEDESC("seed extractor")
 	id = "seed_extractor"
-	build_path = /obj/item/circuitboard/botany_seedextractor
+	build_path = VARIANT(/obj/item/circuitboard/botany_seedextractor)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_BOTANY
 	)
@@ -232,7 +232,7 @@
 /datum/design_techweb/board/destructive_analyzer
 	SET_CIRCUIT_DESIGN_NAMEDESC("destructive analyzer")
 	id = "destructive_analyzer"
-	build_path = /obj/item/circuitboard/destructive_analyzer
+	build_path = VARIANT(/obj/item/circuitboard/destructive_analyzer)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -241,7 +241,7 @@
 /datum/design_techweb/board/anomaly_harvester
 	SET_CIRCUIT_DESIGN_NAMEDESC("Anomaly Harvester")
 	id = "anomaly_harvester"
-	build_path = /obj/item/circuitboard/anomaly_harvester
+	build_path = VARIANT(/obj/item/circuitboard/anomaly_harvester)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -251,7 +251,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("R&D server")
 	desc = "Manages access to research databases and consoles."
 	id = "rdservercontrol"
-	build_path = /obj/item/circuitboard/rdservercontrol
+	build_path = VARIANT(/obj/item/circuitboard/rdservercontrol)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_RESEARCH
 	)
@@ -260,7 +260,7 @@
 /datum/design_techweb/board/doppler_array
 	SET_CIRCUIT_DESIGN_NAMEDESC("doppler array")
 	id = "doppler_array"
-	build_path = /obj/item/circuitboard/doppler_array
+	build_path = VARIANT(/obj/item/circuitboard/doppler_array)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -269,7 +269,7 @@
 /datum/design_techweb/board/protean_reconstitutor
 	SET_CIRCUIT_DESIGN_NAMEDESC("protean reconstitutor")
 	id = "protean_reconstitutor"
-	build_path = /obj/item/circuitboard/protean_reconstitutor
+	build_path = VARIANT(/obj/item/circuitboard/protean_reconstitutor)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -278,7 +278,7 @@
 /datum/design_techweb/board/artifact_harvester
 	SET_CIRCUIT_DESIGN_NAMEDESC("exotic particle harvester")
 	id = "artifact_harvester"
-	build_path = /obj/item/circuitboard/artifact_harvester
+	build_path = VARIANT(/obj/item/circuitboard/artifact_harvester)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)
@@ -287,7 +287,7 @@
 /datum/design_techweb/board/artifact_scanpad
 	SET_CIRCUIT_DESIGN_NAMEDESC("anomaly scanner pad")
 	id = "artifact_scanpad"
-	build_path = /obj/item/circuitboard/artifact_scanpad
+	build_path = VARIANT(/obj/item/circuitboard/artifact_scanpad)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)

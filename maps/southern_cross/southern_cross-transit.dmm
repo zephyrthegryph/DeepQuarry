@@ -68,10 +68,10 @@
 /turf/space/transit/east,
 /area/shuttle/escape_pod5/transit)
 "ao" = (
-/turf/unsimulated/wall,
+/turf/open/fixed/wall,
 /area/space)
 "ap" = (
-/turf/unsimulated/wall/planetary/sif/alt,
+/turf/open/fixed/wall/planetary/sif/alt,
 /area/space)
 "aq" = (
 /obj/effect/step_trigger/teleporter/landmark{

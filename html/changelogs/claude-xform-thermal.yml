@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "The orange slime extract heat wave now warms people instead of freezing them."
+  - code_imp: "The heat wave, cold snap, bluespace chaos, emerald slip and oil explosion extracts use stock transformation effects."

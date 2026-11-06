@@ -1,6 +1,6 @@
 // Behaviour tests for the computer consoles (code/game/machinery/computer) and the tgui modules they host: they pin what a player, a cyborg or an
 // admin observes through window buttons (each UI action's effect, the access refusals, the data a viewer is sent) so the same files pass before
-// and after the consoles move from the legacy declaration forms (DECLARE_UI / UI_ACT / om_ask) to interface() / op(ui_act()) / asks().
+// and after the consoles move from the legacy declaration forms (DECLARE_UI / UI_ACT / ask) to interface() / op(ui_act()) / asks().
 //   - Input goes through hc_ui(): the engine's op if the console has one for the action, else today's tgui_act().
 //   - A question a console asks is answered through p2cl_answer() (the engine's request first, else the collected legacy prompt).
 //   - State is read through plain vars and the window data; nothing depends on message text or an op key.

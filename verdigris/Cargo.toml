@@ -67,3 +67,21 @@ incremental = true
 [profile.dev]
 debug = "full"
 opt-level = 0
+
+# The profile lanes use for the DLL that test worlds load (tools/build/build.ts VerdigrisLaneTarget; AGENTS.md section 4): no LTO,
+# line-table debug info, many codegen units and incremental, so an edit rebuilds in tens of seconds, not minutes. The workspace
+# crates are optimised enough for gas simulations in tests; dependencies get full optimisation (built once per target dir).
+# Production, CI, the server and benchmarks keep `release` (thin LTO).
+[profile.lane]
+inherits = "release"
+opt-level = 2
+lto = false
+debug = "line-tables-only"
+split-debuginfo = "off"
+incremental = true
+codegen-units = 256
+
+[profile.lane.package."*"]
+opt-level = 3
+codegen-units = 16
+incremental = false

@@ -200,9 +200,9 @@ def collect(spec: Spec, root: str) -> list[str]:
     for f in spec.optional:
         if os.path.isfile(os.path.join(root, f)):
             found.add(f)
-    # A file another included file #includes (an aggregator: code/modules/tgs/includes.dm, maps/~turfpacks/turfpacks.dm) is the
+    # A file another included file #includes (an aggregator: code/world/tgs/includes.dm, maps/~turfpacks/turfpacks.dm) is the
     # aggregator's, not the manifest's: drop everything reachable from the scanned files' own includes. A `file` entry's includes are
-    # not followed: the test aggregators include game files under UNIT_TESTS only (code/content/medical/_defines.dm), which the game
+    # not followed: the test aggregators include game files under UNIT_TESTS only (code/defines/content/medical.dm), which the game
     # build still needs directly; their own trees are `skip` rules.
     owned: set[str] = set()
     queue = [f for f in found if f.endswith(".dm") and f not in spec.files and f not in spec.optional]
@@ -510,6 +510,29 @@ def record_moves(root: str, map_path: str) -> None:
     if fresh:
         with open(path, "a", encoding="utf-8", newline="\n") as fh:
             fh.write("\n".join(fresh) + "\n")
+    rewrite_attribute_paths(root, [ln.split("\t", 1) for ln in text.splitlines() if "\t" in ln])
+
+
+def rewrite_attribute_paths(root: str, pairs: list[list[str]]) -> list[str]:
+    """A moved file's own `.gitattributes` line (a plain path, e.g. a `merge=union` include list) follows it; returns the paths rewritten.
+    Without this a move leaves the rule matching nothing and git silently falls back to the default merge (tools/ci/check_gitattributes.sh)."""
+    path = os.path.join(root, ".gitattributes")
+    if not os.path.isfile(path):
+        return []
+    moved = {old.strip(): new.strip() for old, new in pairs}
+    out, done = [], []
+    with open(path, encoding="utf-8", newline="") as fh:
+        lines = fh.read().split("\n")
+    for ln in lines:
+        head, sep, rest = ln.partition(" ")
+        if sep and not ln.startswith("#") and head in moved:
+            done.append(head)
+            ln = moved[head] + sep + rest
+        out.append(ln)
+    if done:
+        with open(path, "w", encoding="utf-8", newline="") as fh:
+            fh.write("\n".join(out))
+    return done
 
 
 def main(argv: list[str]) -> int:
@@ -686,6 +709,11 @@ ifdef DOC code/doc.dm
         put("code/z/two.dm")
         os.remove(os.path.join(tmp, "code/b/two.dm"))
         check(listing(generate(tmp, pspec, repin=True))[-1] == "code/z/two.dm", "repin sorts a moved file by its new path")
+        with open(os.path.join(tmp, ".gitattributes"), "w", encoding="utf-8", newline="") as fh:
+            fh.write("* text=auto\ncode/a/one.dm merge=union\ncode/a/other.dm merge=union\n")
+        check(rewrite_attribute_paths(tmp, [["code/a/one.dm", "code/z/two.dm"]]) == ["code/a/one.dm"], "a move rewrites the moved file's .gitattributes line")
+        with open(os.path.join(tmp, ".gitattributes"), encoding="utf-8", newline="") as fh:
+            check(fh.read() == "* text=auto\ncode/z/two.dm merge=union\ncode/a/other.dm merge=union\n", "only the moved path changes in .gitattributes")
         check(listing(generate(tmp, pspec))[-1] == "code/z/two.dm", "a move with no log entry is a new file at its path-order place")
         os.makedirs(os.path.join(tmp, "tools/build"), exist_ok=True)
         with open(os.path.join(tmp, MOVES), "w") as fh:

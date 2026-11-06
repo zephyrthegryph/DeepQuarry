@@ -59,11 +59,11 @@ CAPABILITIES(/obj/item/tool/wrench/hybrid)
 /obj/item/tool/wrench/alien
 	name = "alien wrench"
 	desc = "A polarized wrench. It causes anything placed between the jaws to turn."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wrench)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "wrench"
 
 CAPABILITIES(/obj/item/tool/wrench/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wrench)))
 	configure(item_tooling(speed = 0.1))
 	configure(item_sounds(use = SFX_EFFECTS_EMPULSE))
 

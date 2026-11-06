@@ -79,8 +79,22 @@
 	// that aren't on the global markings list (legacy data) plus any whose `allowed_species`
 	// or marker presence depends on species — handled by the marking_species_filter constraint
 	// triggered by body_markings updates.
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	if(!islist(markings))
 		return
 	markings &= GLOB.body_marking_styles_list
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+
+
+/// The spawn points on offer follow the species and play mode: the saved choice falls back quietly when it no longer holds, and the setup list is rebuilt.
+/datum/preference_constraint/species_refits_spawnpoint
+	triggers = list("species", "play_mode")
+	affects = list("spawnpoint")
+
+/datum/preference_constraint/species_refits_spawnpoint/apply(datum/preferences/preferences, changed_key, old_value, new_value)
+	var/datum/preference/spawnpoint = GLOB.preference_entries[/datum/preference/choiced/living/spawnpoint]
+	var/current = preferences.read_preference(/datum/preference/choiced/living/spawnpoint)
+	var/fitted = spawnpoint.sanitize(current, preferences)
+	if(fitted != current)
+		preferences.update_preference_by_type(/datum/preference/choiced/living/spawnpoint, fitted)
+	preferences.dq_invalidate_category_cache()

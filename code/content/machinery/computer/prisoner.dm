@@ -6,7 +6,7 @@
 	icon_keyboard = "security_key"
 	icon_screen = "explosive"
 	req_access = list(ACCESS_ARMORY)
-	circuit = /obj/item/circuitboard/prisoner
+	circuit = VARIANT(/obj/item/circuitboard/prisoner)
 	var/id = 0.0
 	var/temp = null
 	var/status = 0

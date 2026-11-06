@@ -521,7 +521,7 @@ export async function runtimes(q: URLSearchParams) {
   };
 }
 
-/** The game's name for time before the MC's iteration (PERF_OUTSIDE_MC in code/__defines/metrics.dm). */
+/** The game's name for time before the MC's iteration (PERF_OUTSIDE_MC in code/defines/engine/metrics.dm). */
 const OUTSIDE_MC = 'Outside MC';
 /** Before the cause was recorded, the breakdown named everything outside the MC's subsystems this. */
 const LEGACY_EXTERNAL = 'BYOND / pre-MC / external';
@@ -530,7 +530,7 @@ type Part = { name: string; usage: number };
 type TopSystem = { key: string; ms: number };
 
 /** What an overrun tick mostly went to. Newer records carry it (`cause`); for older ones it is worked
- * out from the breakdown: when the unattributed part dominates, the costliest object-model system if it
+ * out from the breakdown: when the unattributed part dominates, the costliest engine system if it
  * accounts for at least a quarter of the tick (it was not in the breakdown then), else "Outside MC". */
 function overrunCause(
   p: {
@@ -592,7 +592,7 @@ export async function overruns(q: URLSearchParams) {
       post_mc: p.post_mc ?? null,
       breakdown: ((p.breakdown ?? []) as Part[]).map((b) =>
         b.name === LEGACY_EXTERNAL
-          ? { ...b, name: `${OUTSIDE_MC} or object model (unsplit)` }
+          ? { ...b, name: `${OUTSIDE_MC} or engine (unsplit)` }
           : b,
       ),
       top_systems: (p.top_systems ?? []) as TopSystem[],

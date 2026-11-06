@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Chunk interest replaces the half-second scan around every client: a change to something nobody can see waits until a client's view, a camera screen or a portal reaches its chunk"

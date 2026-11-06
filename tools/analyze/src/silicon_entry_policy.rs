@@ -14,14 +14,7 @@ pub static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Both,
-    policy: Policy::Sites {
-        baseline: "tools/ci/silicon_entry_baseline.txt",
-        header: &[
-            "silicon_entry: the legacy ways silicons reach machines. rule<TAB>file<TAB>normalized line. `shortcut` is banned outright.",
-            "Shrink-only: `analyze baseline --update --lint silicon_entry` drops fixed sites and never adds one.",
-        ],
-        banned: &["shortcut", "handler_actor_check", "legacy_entry", "siliconaccess"],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta { name: "shortcut", hint: H_SHORTCUT },
         RuleMeta { name: "handler_actor_check", hint: H_HANDLER },

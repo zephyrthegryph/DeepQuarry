@@ -1434,7 +1434,6 @@ CAPABILITIES(/obj/item/gun/projectile/revolvingrifle)
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "winchester"
 	icon_expected_width = 64
-	pump_animation = "winchester-pump"
 	var/is64x32 = TRUE
 	var/is_picked_up = FALSE
 
@@ -1485,7 +1484,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump)
 
 /obj/item/gun/projectile/shotgun/doublebarrel
 	desc = "A classic, external hammer double barrel shotgun. This one has Sif-blue furniture. Chambered in 12 gauge."
-	sawn_off = FALSE
 	var/shotgun_variant = "N"
 	manual_chamber = FALSE
 	icon = 'icons/obj/64x32guns_ch.dmi'

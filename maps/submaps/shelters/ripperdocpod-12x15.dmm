@@ -434,7 +434,6 @@
 "X" = (
 /obj/machinery/optable{
 	name = "Rusty Operating Table";
-	surgery_odds = 99;
 	desc = "This table doesnt look as reliable as the others."
 	},
 /obj/effect/decal/cleanable/blood/old,

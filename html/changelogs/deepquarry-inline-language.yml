@@ -1,0 +1,5 @@
+author: "DeepQuarry"
+delete-after: true
+changes:
+  - rscadd: "Inline languages: switch language mid-sentence with a key after a space (,s Hello ,k friend). Each language gets its own speech marks; listeners only see the languages they know."
+  - bugfix: "Normal commas and numbers like 3,5 no longer trigger a language switch or get eaten, and an unknown key no longer loses text."

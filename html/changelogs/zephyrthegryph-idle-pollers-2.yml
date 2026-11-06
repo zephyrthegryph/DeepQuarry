@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Power monitors, power sensors, igniters, air alarm thermostats and external airlock freeze checks wait for a change instead of polling, so an idle server costs less"

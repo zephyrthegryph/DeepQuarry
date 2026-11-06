@@ -405,7 +405,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 	W.set_def(def)
 	W.bringers = bringers
 	W.set_colors(wires_layout_for(def.name, wires_with_duds(real, count), randomize))
-	act.data = W // ALLOW(ownership): the capability's typed data, owned by the activation and dropped with it
+	rel_set(act, nameof(act.data), W)
 	if(def.starts_cut)
 		for(var/wire in call(holder, def.starts_cut)())
 			if(!W.is_cut(wire))

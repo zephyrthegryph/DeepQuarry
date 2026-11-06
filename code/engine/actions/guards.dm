@@ -1,11 +1,11 @@
 // Guards: "may this proceed?" for something that is not an operation (doc/rewrite/reactions.md section 3a).
 //
-// One mechanism: before_op() takes an op key, a capability type, or a GUARD_* key (code/__defines/reactions.dm). An
+// One mechanism: before_op() takes an op key, a capability type, or a GUARD_* key (code/defines/library/reactions.dm). An
 // operation runs its before_op reactions through the op requirement pipeline (op_before()); a
 // non-operation call site that may be refused (a move, a fall, a thrown hit, a crossing) asks guard() instead, which
 // runs the same before_op reactions of that guard key, static (the holder's composed reactions table, capabilities
 // included) then observers (observe(source, before_op(GUARD_X), listener, handler)), and returns the first refusal.
-// It replaces the om `before/*` veto events (om_emit() == EVENT_VETO).
+// It replaces the om `before/*` veto events (the old veto emit).
 //
 // No entity asks a guard any more: a refusable world event is an action (ACT_ATTEMPT(src, stumbled_into, M) with an
 // extend(/datum/act/stumbled_into, instead(...)) in the holder's CAPABILITIES block), and reactions() is a system's.

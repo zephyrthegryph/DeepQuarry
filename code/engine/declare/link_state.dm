@@ -45,15 +45,15 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 
 /// The datum linked at holder's end `key` (a single end), or null. A many end answers its list: use link_list().
 /proc/link_get(datum/holder, key)
-	return holder?.rx?.link_ends?[key]
+	var/value = holder?.rx?.link_ends?[key]
+	return islist(value) ? null : slot_datum(value)
 
 /// A fresh list of every datum linked at holder's end `key`; empty when none.
 /proc/link_list(datum/holder, key)
 	var/value = holder?.rx?.link_ends?[key]
 	if(islist(value))
-		var/list/members = value
-		return members.Copy()
-	return isnull(value) ? list() : list(value)
+		return slot_datums(value)
+	return isnull(value) ? list() : slot_datums(list(value))
 
 /// How many datums are linked at holder's end `key`, without copying them (link_list() copies): 0 or 1 for a single end.
 /proc/link_count(datum/holder, key)
@@ -63,9 +63,12 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 /// Is `other` linked at holder's end `key`?
 /proc/link_has(datum/holder, key, datum/other)
 	var/value = holder?.rx?.link_ends?[key]
+	if(isnull(other))
+		return FALSE
+	var/other_slot = SLOT_KNOWN(other)
 	if(islist(value))
-		return other in value
-	return !isnull(other) && value == other
+		return other_slot && (other_slot in value)
+	return other_slot && value == other_slot
 
 /// Data the link at holder's end `key` carries (read by the end's on_unlink hook, which runs before it is cleared).
 /proc/link_data_set(datum/holder, key, name, value)
@@ -84,13 +87,13 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 /proc/link_store(datum/holder, key, datum/other, many)
 	var/datum/rx_state/state = rx_of(holder)
 	if(!many)
-		LAZYSET(state.link_ends, key, other)
+		LAZYSET(state.link_ends, key, SLOT(other))
 		return
 	var/list/members = state.link_ends?[key]
 	if(!islist(members))
 		members = list()
 		LAZYSET(state.link_ends, key, members)
-	members += other
+	members += SLOT(other)
 
 /// Clears one end of `other`; TRUE when it was there.
 /proc/link_unstore(datum/holder, key, datum/other, many)
@@ -98,15 +101,16 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 	if(!state?.link_ends)
 		return FALSE
 	if(!many)
-		if(state.link_ends[key] != other)
+		if(state.link_ends[key] != SLOT_KNOWN(other))
 			return FALSE
 		state.link_ends -= key
 		UNSETEMPTY(state.link_ends)
 		return TRUE
 	var/list/members = state.link_ends[key]
-	if(!islist(members) || !(other in members))
+	var/other_slot = SLOT_KNOWN(other)
+	if(!islist(members) || !other_slot || !(other_slot in members))
 		return FALSE
-	members -= other
+	members -= other_slot
 	if(!length(members))
 		state.link_ends -= key
 		UNSETEMPTY(state.link_ends)
@@ -254,7 +258,7 @@ PROC_SUMMARY(/proc/link_unmake) // vars[] / call() dispatcher: the walk cannot e
 	var/list/link_data
 	/// The holds_while links this datum is an end of, as list(entry, A end, B end) rows (both ends keep the same row).
 	var/list/link_watches
-	/// Sparse link ends (links(sparse = TRUE)): end key -> the one linked datum, or a list of them (code/engine/declare/link_state.dm).
+	/// Sparse link ends (links(sparse = TRUE)): end key -> the slot of the one linked datum, or a list of slots (the table keeps no reference) (code/engine/declare/link_state.dm).
 	var/list/link_ends
 
 /proc/link_watch_start(datum/entry/E, datum/a, datum/b)

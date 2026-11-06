@@ -3,7 +3,6 @@ use crate::{
     lint::{Meta, Policy, RuleMeta, ScanKind},
     tree::CODE_DM,
 };
-const BASELINE: &str = "tools/ci/stored_refs_baseline.txt";
 
 const H_VAR: &str = "declare the var: owns_one/ref_one/links()/slot() in the type's CAPABILITIES block (or its relations() table), which clears it when \
 the other end is deleted; or keep a weak ref (ref_token(x), read back with resolve_token()). doc/rewrite/proposals/reference_storage.md";
@@ -17,15 +16,7 @@ pub(crate) static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Stored references outside a declared relation or a weak ref (doc/rewrite/proposals/reference_storage.md). rule<TAB>file<TAB>text.",
-            "`analyze check --lint stored_refs` fails on a site not listed here. Shrink-only: after a sweep run",
-            "`analyze baseline --update --lint stored_refs`; it drops fixed sites and never adds one.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "var", hint: H_VAR }, RuleMeta { name: "list", hint: H_LIST }],
     allow: crate::allow_registry_fields::stored_refs::ALLOW_SHARED_0,
     lists: crate::allow_registry_fields::stored_refs::SCOPE_META_0.lists,
@@ -120,5 +111,5 @@ fn put_pair(
 /// SAME old raw keep/init-only/schema policy; private source loan stays with host.
 #[cfg(feature="native-policy")]
 pub(crate) fn read_extra_file_using<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(f:&crate::tree::SourceFile,schemas:&mut crate::value_schema_policy::SchemaHints,registry:&mut Vec<String>,init_only:&mut Vec<(String,String)>,retained:&mut C,temporary:&mut T)->Result<(),C::Error>where C::Error:From<String>{
- use crate::key_policy_control as kc;kc::reserve(temporary,||f.raw().text.len().checked_mul(64)?.checked_add(8192))?;schemas.read_with_control(f,temporary)?;let keep=crate::pat!(r"(?m)^LIFECYCLE_KEEP_(?:UNLESS_FORCED|ALWAYS)\((/[\w/]+)\)");let head=crate::pat!(r"^CAPABILITIES\((/[\w/]+)\)");let param=crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");let successor=crate::pat!(r"\bsuccessor\s*=\s*nameof\((\w+)\)");let code=f.code();for cap in keep.captures_iter(&code.text){retained.checkpoint()?;kc::row(retained,registry)?;registry.push(kc::own(retained,cap.s(1))?);}let mut owner=None;for line in code.lines(){retained.checkpoint()?;if let Some(cap)=head.captures(line){owner=Some(kc::own(temporary,cap.s(1))?);continue}if !(line.starts_with('\t')||line.starts_with(' '))&&!line.trim().is_empty(){owner=None}if let Some(ty)=owner.as_deref(){if let Some(cap)=param.captures(line){kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));}for cap in successor.captures_iter(line){retained.checkpoint()?;kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));}}}retained.checkpoint()
+ use crate::key_policy_control as kc;kc::reserve(temporary,||f.raw().text.len().checked_mul(64)?.checked_add(8192))?;schemas.read_with_control(f,temporary)?;let keep=crate::pat!(r"(?m)^LIFECYCLE_KEEP_(?:UNLESS_FORCED|ALWAYS)\((/[\w/]+)\)");let head=crate::pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]");let param=crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");let successor=crate::pat!(r"\bsuccessor\s*=\s*nameof\((\w+)\)");let code=f.code();for cap in keep.captures_iter(&code.text){retained.checkpoint()?;kc::row(retained,registry)?;registry.push(kc::own(retained,cap.s(1))?);}let mut owner=None;for line in code.lines(){retained.checkpoint()?;if let Some(cap)=head.captures(line){owner=Some(kc::own(temporary,cap.s(1))?);continue}if !(line.starts_with('\t')||line.starts_with(' '))&&!line.trim().is_empty(){owner=None}if let Some(ty)=owner.as_deref(){if let Some(cap)=param.captures(line){kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));}for cap in successor.captures_iter(line){retained.checkpoint()?;kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));}}}retained.checkpoint()
 }

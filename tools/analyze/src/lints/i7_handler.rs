@@ -3,7 +3,7 @@
 //! No legacy input-handler overrides anywhere: `attackby`, `attack_hand`, `attack_self` and `click_alt`
 //! are thin dispatchers into the resolver defined once in code/_onclick/, and a
 //! type declares what it does with an input as interactions. Fails on any other definition of them.
-//! The dispatchers themselves (`allowed`) and `code/modules/unit_tests/` are in `lint_scopes.toml`.
+//! The dispatchers themselves (`allowed`) and `code/tests/unit_tests/` are in `lint_scopes.toml`.
 //!
 //! Quirk kept from the Python: the pattern runs over the whole raw text with `re.M` (not per line),
 //! on any line start; the type path may contain spaces. The comment and string content are not
@@ -13,7 +13,7 @@ use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::tree::{Select, SourceFile};
 
-const HINT: &str = "declare interactions instead (DECLARE_INTERACTIONS / EXTEND_INTERACTIONS, code/__defines/interactions.dm)";
+const HINT: &str = "declare interactions instead (DECLARE_INTERACTIONS / EXTEND_INTERACTIONS, code/defines/engine/interactions.dm)";
 
 static META: Meta = Meta {
     name: crate::allow_registry_fields::i7_handler::SCOPE_META_0.name,

@@ -6,8 +6,8 @@ how the big case-based procedures should be broken up, and the redesign of cybor
 drones, the AI, proteans and prometheans.
 
 > **Scheduling superseded (2026-09-25).** Life no longer runs from SSmobs or a `Life()` proc:
-> it runs on the object-model core, and wake bits became change channels. Sections 4.3,
-> 4.8 and 4.9 describe the old scheduler; [rewrite/life_on_om.md](rewrite/archive/life_on_om.md)
+> it runs on the engine core, and wake bits became change channels. Sections 4.3,
+> 4.8 and 4.9 describe the old scheduler; [rewrite/life_on_om.md](rewrite/archive/life_sequence_origin.md)
 > is authoritative for when systems run, sleep and wake. The content model (systems,
 > families, variants, gates, segments) described here still holds.
 
@@ -68,7 +68,7 @@ pattern is the source of most of their bugs.
 | Area | Model today | Event-driven? |
 |---|---|---|
 | Machinery | Hibernates (`PROCESS_KILL` or `hibernate_*`); `subscribe_gas_dependency` with change masks; versioned reactive keys; timers; `audit_reactive_sleepers` checks for missed wakes | yes |
-| AI brains (OM behaviours, `combat_ai/brain/scheduling.dm`) | calm brains sleep | yes |
+| AI brains (behaviours, `combat_ai/brain/scheduling.dm`) | calm brains sleep | yes |
 | TG status effects | exist and process only while active | yes |
 | Mob `Life()` | life systems sleep by rule and wake on events; a mob with nothing awake hibernates out of `SSmobs` (§4.9). Humans, robots, the AI and pAIs still run most systems every 2 s until those systems get rules | partly |
 | Body core | dirty flags, the emergent dirty domains and HUD dirty bits are incremental. But the humanoid `life_tick` always recomputes (`humanoid.dm:246`), the metrics domain compares values every tick, and every metabolised reagent triggers a full side-effect reconcile | partly |
@@ -421,7 +421,7 @@ bit is left, `life_hibernate()` parks the mob.
   `partial`. The next `Life()` gets nominal seconds, not the length of the nap.
 - `/mob/living/proc/life_hibernate(reason)` parks the mob.
 - `SSmobs.hibernating_mobs` and `life_hibernating` are written only there;
-  `tools/ci/check_grep.sh` rejects other writes. Any other waker, such as a world watch (`om_world_on_change()`)
+  `tools/ci/check_grep.sh` rejects other writes. Any other waker, such as a world watch (`world_on_change()`)
   path, calls `life_wake()`.
 
 **Producers** (wake groups in `code/__defines/life_systems.dm`):
@@ -737,7 +737,7 @@ files.
 ## 7. Other mob types
 
 - **Simple mobs.** Environment tolerance becomes event-driven through gas dependencies.
-  Regeneration is continuous only while injured. AI already sleeps through its OM behaviours (relevance parking and chunk hibernation). The
+  Regeneration is continuous only while injured. AI already sleeps through its behaviours (relevance parking and chunk hibernation). The
   split `death()` is merged.
 - **pAI.** Uses the body plan; the cable check becomes an event.
 - **Brains, aliens and constructs.** They get system sets like everything else. Their

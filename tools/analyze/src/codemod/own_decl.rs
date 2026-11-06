@@ -135,7 +135,7 @@ pub fn rewrite(cx: &Ctx, new: &str, many: bool) -> Outcome {
         return Outcome::Residue("unknown_var", format!("{} has no declared var {}", owner, var));
     };
     // The vendored TGS API and the defines are not ours to add declarations to.
-    if sig.file.starts_with("code/__defines/") || sig.file.starts_with("code/modules/tgs/") {
+    if crate::scopes::is_defines(&sig.file) || sig.file.starts_with("code/world/tgs/") {
         return Outcome::Residue("untyped_var", format!("{} is declared in {}, which takes no declarations", var, sig.file));
     }
     let (is_list, vtype) = split_type(&sig.declared);
@@ -186,7 +186,7 @@ pub fn declaration_edits(root: &Path, _tree: &Tree, sem: &Sem, prep: &(dyn Any +
     }
     let mut out: BTreeMap<String, Vec<Edit>> = BTreeMap::new();
     for (holder, ns) in by_holder {
-        let existing = prep.decls.markers.iter().find(|m| m.name == "CAPABILITIES" && m.args.first().map(|a| a == holder).unwrap_or(false));
+        let existing = prep.decls.markers.iter().find(|m| m.name == "CAPABILITIES" && m.part.is_none() && m.args.first().map(|a| a == holder).unwrap_or(false));
         let (rel, offset, newline, prefix): (String, usize, &str, String) = if let Some(m) = existing {
             let Ok(text) = std::fs::read_to_string(root.join(&m.rel)) else { continue };
             let nl = nl_of(&text);

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A source holding more than 256 stat holds on one entity released only the first 256 when it went; the queue meant to release the rest had no drain. All are released at once."

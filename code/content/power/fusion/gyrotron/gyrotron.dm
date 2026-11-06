@@ -9,7 +9,7 @@
 	req_access = list(ACCESS_ENGINE)
 	use_power = USE_POWER_IDLE
 
-	circuit = /obj/item/circuitboard/gyrotron
+	circuit = VARIANT(/obj/item/circuitboard/gyrotron)
 
 	var/id_tag
 	var/rate = 3

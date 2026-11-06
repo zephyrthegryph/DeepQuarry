@@ -57,7 +57,7 @@
 /datum/unit_test/dq_material_service_sleeps_when_heat_does_not_move_it/Run()
 	var/turf/simulated/floor/T = gas_level_test_room()
 	var/obj/item/cell/high/C = new(T)
-	var/datum/material_service/service = material_service_of(C)
+	var/datum/material_service/service = material_service_of(C) || C.enable_material_service() // a cell at its air's temperature starts without one
 	TEST_ASSERT_NOTNULL(service, "a cell has a material service")
 	var/datum/gas_mixture/ambient = T.return_air()
 	service.last_environment_temperature = service.temperature()

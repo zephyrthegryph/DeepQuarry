@@ -1,7 +1,7 @@
 /datum/design_techweb/board/atm
 	SET_CIRCUIT_DESIGN_NAMEDESC("atm")
 	id = "bankmachine"
-	build_path = /obj/item/circuitboard/atm
+	build_path = VARIANT(/obj/item/circuitboard/atm)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_SERVICE
 	)
@@ -10,7 +10,7 @@
 /datum/design_techweb/board/fax
 	SET_CIRCUIT_DESIGN_NAMEDESC("fax machine")
 	id = "fax"
-	build_path = /obj/item/circuitboard/fax
+	build_path = VARIANT(/obj/item/circuitboard/fax)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_SERVICE
 	)
@@ -19,7 +19,7 @@
 /datum/design_techweb/board/photocopier
 	SET_CIRCUIT_DESIGN_NAMEDESC("photocopier")
 	id = "photocopier"
-	build_path = /obj/item/circuitboard/photocopier
+	build_path = VARIANT(/obj/item/circuitboard/photocopier)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_SERVICE
 	)
@@ -28,7 +28,7 @@
 /datum/design_techweb/board/papershredder
 	SET_CIRCUIT_DESIGN_NAMEDESC("papershredder")
 	id = "papershredder"
-	build_path = /obj/item/circuitboard/papershredder
+	build_path = VARIANT(/obj/item/circuitboard/papershredder)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_SERVICE
 	)
@@ -37,7 +37,7 @@
 /datum/design_techweb/board/guest_pass
 	SET_CIRCUIT_DESIGN_NAMEDESC("guestpass console")
 	id = "guestpass"
-	build_path = /obj/item/circuitboard/guestpass
+	build_path = VARIANT(/obj/item/circuitboard/guestpass)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_SERVICE
 	)

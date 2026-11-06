@@ -1,0 +1,798 @@
+
+/obj/structure/flora
+	name = "flora"
+	desc = "A perfectly generic plant."
+
+	anchored = TRUE // Usually, plants don't move. Usually.
+	plane = DECAL_PLANE
+	layer = DECAL_LAYER
+
+	var/randomize_size = FALSE
+	var/max_x_scale = 1.25
+	var/max_y_scale = 1.25
+	var/min_x_scale = 0.9
+	var/min_y_scale = 0.9
+
+	var/removal_tool = /obj/item/shovel
+	var/harvest_tool = null // The type of item used to harvest the plant.
+	var/harvest_count = 0
+	var/destroy_on_harvest = FALSE
+
+	var/randomize_harvest_count = TRUE
+	var/max_harvests = 0
+	var/min_harvests = -1
+	var/list/harvest_loot = null	// Should be an associative list for things to spawn, and their weights. An example would be a branch from a tree.
+
+TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): one of the type's numbered looks, when it has several.
+/obj/structure/flora/proc/roll_icon_state(datum/roller/R)
+	var/variants = TYPE_TABLE_GET(src, initial_icon_variant_count)
+	if(variants)
+		return "[initial(icon_state)][R.number(1, variants)]"
+	return icon_state
+
+/// Rolled before init (rolls()): a randomly sized plant is a little wider or narrower, and mirrored half the time.
+/obj/structure/flora/proc/roll_scale_x(datum/roller/R)
+	if(!randomize_size)
+		return icon_scale_x
+	var/scale = R.number(min_x_scale * 100, max_x_scale * 100) / 100
+	return R.chance(50) ? -scale : scale
+
+/// Rolled before init (rolls()): a randomly sized plant's height.
+/obj/structure/flora/proc/roll_scale_y(datum/roller/R)
+	return randomize_size ? R.number(min_y_scale * 100, max_y_scale * 100) / 100 : icon_scale_y
+
+/// Its own setup (setup()): it takes the scale it rolled.
+/obj/structure/flora/proc/apply_rolled_scale()
+	update_transform()
+
+/// Rolled before init (rolls()): how many harvests it gives. A negative min_harvests weighs it toward none.
+/obj/structure/flora/proc/roll_harvests(datum/roller/R)
+	return max(0, R.number(min_harvests, max_harvests))
+
+
+/obj/structure/flora/examine(mob/user)
+	. = ..()
+	if(harvest_count < max_harvests)
+		. += get_harvestable_desc()
+		if(harvest_tool)
+			var/obj/item/tool = harvest_tool
+			. += span_notice("\The [src] can be harvested with \a [initial(tool.name)].")
+
+	if(removal_tool)
+		var/obj/item/tool = removal_tool
+		. += span_notice("\The [src] can be removed with \a [initial(tool.name)].")
+
+CAPABILITIES(/obj/structure/flora)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("uproot", item(/obj/item/shovel), label("Uproot"), when(PROC_REF(removable)), priority(OP_PRIORITY_PART), begins(MSG(flora/uprooting)), wait(3 SECONDS), then(PROC_REF(uprooted)))
+	rolls(nameof(icon_scale_x), PROC_REF(roll_scale_x))
+	rolls(nameof(icon_scale_y), PROC_REF(roll_scale_y))
+	rolls(nameof(max_harvests), PROC_REF(roll_harvests), when = nameof(randomize_harvest_count))
+	setup(PROC_REF(apply_rolled_scale))
+
+MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
+
+/// A shovel uproots it when its type can be removed that way (a fixed property of the type; the shovel is no harvest tool).
+/obj/structure/flora/proc/removable(datum/act/op/A)
+	return !!read_once(removal_tool)
+
+/obj/structure/flora/proc/get_harvestable_desc()
+	return span_notice("\The [src] seems to have something hanging from it.")
+
+/// Old attackby: harvest with the harvest tool.
+/obj/structure/flora/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
+
+	if(can_harvest(W))
+		var/harvest_spawn = pickweight(harvest_loot)
+		var/atom/movable/AM = spawn_harvest(harvest_spawn, user)
+		if(AM)
+			to_chat(user, span_notice("You harvest \the [AM] from \the [src]."))
+		else
+			to_chat(user, span_notice("You fail to harvest anything from \the [src]."))
+		return OP_OK
+
+	return OP_OK
+
+/obj/structure/flora/proc/uprooted(datum/act/op/A)
+	act_message(A.actor, src, others = span_notice("%U% uproots and discards %T%!"))
+	consume(src, A.actor)
+
+/obj/structure/flora/proc/can_harvest(obj/item/I)
+	. = FALSE
+	if(harvest_tool && istype(I, harvest_tool) && harvest_loot && harvest_loot.len && harvest_count < max_harvests)
+		. = TRUE
+	return .
+
+/obj/structure/flora/proc/spawn_harvest(path = null, mob/user = null)
+	if(!ispath(path))
+		return 0
+
+	var/atom/movable/AM = new path()
+	if(user)
+		user.put_in_hands(AM)
+	else
+		AM.forceMove(drop_location())
+
+	set_harvest_count(harvest_count + 1)
+	return AM
+
+//bushes
+/obj/structure/flora/bush
+	name = "bush"
+	icon = 'icons/obj/flora/snowflora.dmi'
+	icon_state = "snowbush1"
+
+	destroy_on_harvest = TRUE
+	harvest_tool = /obj/item/material/knife
+	randomize_harvest_count = FALSE
+	harvest_loot = list(/obj/item/stack/material/fiber = 1)
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/bush/roll_icon_state(datum/roller/R)
+	return "snowbush[R.number(1, 6)]"
+
+/obj/structure/flora/pottedplant
+	name = "potted plant"
+	desc = "Really ties the room together."
+	icon = 'icons/obj/plants.dmi'
+	icon_state = "plant-26"
+
+	anchored = FALSE
+
+//newbushes
+
+/obj/structure/flora/ausbushes
+	name = "bush"
+	icon = 'icons/obj/flora/ausflora.dmi'
+	icon_state = "firstbush_1"
+
+	destroy_on_harvest = TRUE
+	harvest_tool = /obj/item/material/knife
+	randomize_harvest_count = TRUE
+	harvest_loot = list(/obj/item/stack/material/fiber = 1)
+	min_harvests = 1
+	max_harvests = 3
+
+/obj/structure/flora/ausbushes/spawn_harvest(path = null, mob/user = null)
+	. = ..()
+	if(. && prob(15))
+		var/static/list/possibleseeds = list(
+								VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 1,
+								VARIANT(/obj/item/seeds/carrotseed) = 5,
+								VARIANT(/obj/item/seeds/chiliseed) = 5,
+								VARIANT(/obj/item/seeds/cornseed) = 10,
+								VARIANT(/obj/item/seeds/grapeseed) = 5,
+								VARIANT(/obj/item/seeds/grassseed) = 1,
+								VARIANT(/obj/item/seeds/lavenderseed) = 5,
+								VARIANT(/obj/item/seeds/onionseed) = 5,
+								/obj/item/seeds/random = 1,
+								VARIANT(/obj/item/seeds/reishimycelium) = 5,
+								VARIANT(/obj/item/seeds/sugarcaneseed) = 5,
+								VARIANT(/obj/item/seeds/tomatoseed) = 5,
+								VARIANT(/obj/item/seeds/towermycelium) = 5,
+								VARIANT(/obj/item/seeds/watermelonseed) = 10,
+								VARIANT(/obj/item/seeds/wheatseed) = 25,
+								VARIANT(/obj/item/seeds/whitebeetseed) = 5)
+		var/choice = pickweight(possibleseeds)
+		new choice(get_turf(user))
+
+TYPE_TABLE_DECLARE(/obj/structure/flora/ausbushes, ausbush_icon_choice, null)
+
+CAPABILITIES(/obj/structure/flora/ausbushes)
+	param(nameof(bush_icon), pos = 1)
+
+/// The look it is planted with (its constructor param).
+/obj/structure/flora/ausbushes/var/bush_icon
+
+/// Rolled before init: one of the type's looks, else the one it was planted with (its param), else a first bush.
+/obj/structure/flora/ausbushes/roll_icon_state(datum/roller/R)
+	var/list/icon_choice = TYPE_TABLE_GET(src, ausbush_icon_choice)
+	if(icon_choice)
+		set_bush_icon("[icon_choice[1]]_[R.number(1, icon_choice[2])]")
+	return bush_icon || "firstbush_[R.number(1, 4)]"
+
+/obj/structure/flora/ausbushes/reedbush
+	icon_state = "reedbush_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/reedbush, ausbush_icon_choice, list("reedbush", 4, FALSE))
+
+/obj/structure/flora/ausbushes/leafybush
+	icon_state = "leafybush_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/leafybush, ausbush_icon_choice, list("leafybush", 3, FALSE))
+
+/obj/structure/flora/ausbushes/palebush
+	icon_state = "palebush_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/palebush, ausbush_icon_choice, list("palebush", 4, FALSE))
+
+/obj/structure/flora/ausbushes/stalkybush
+	icon_state = "stalkybush_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/stalkybush, ausbush_icon_choice, list("stalkybush", 3, FALSE))
+
+/obj/structure/flora/ausbushes/grassybush
+	icon_state = "grassybush_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/grassybush, ausbush_icon_choice, list("grassybush", 4, FALSE))
+
+/obj/structure/flora/ausbushes/fernybush
+	icon_state = "fernybush_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/fernybush, ausbush_icon_choice, list("fernybush", 3, FALSE))
+
+/obj/structure/flora/ausbushes/sunnybush
+	icon_state = "sunnybush_1"
+
+/obj/structure/flora/ausbushes/sunnybush/roll_icon_state(datum/roller/R)
+	return "sunnybush_[R.number(1, 3)]"
+
+/obj/structure/flora/ausbushes/genericbush
+	icon_state = "genericbush_1"
+
+/obj/structure/flora/ausbushes/genericbush/roll_icon_state(datum/roller/R)
+	return "genericbush_[R.number(1, 4)]"
+
+/obj/structure/flora/ausbushes/pointybush
+	icon_state = "pointybush_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/pointybush, ausbush_icon_choice, list("pointybush", 4, FALSE))
+
+/obj/structure/flora/ausbushes/lavendergrass
+	icon_state = "lavendergrass_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/lavendergrass, ausbush_icon_choice, list("lavendergrass", 4, FALSE))
+
+/obj/structure/flora/ausbushes/ywflowers
+	icon_state = "ywflowers_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/ywflowers, ausbush_icon_choice, list("ywflowers", 3, FALSE))
+
+/obj/structure/flora/ausbushes/brflowers
+	icon_state = "brflowers_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/brflowers, ausbush_icon_choice, list("brflowers", 3, FALSE))
+
+/obj/structure/flora/ausbushes/ppflowers
+	icon_state = "ppflowers_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/ppflowers, ausbush_icon_choice, list("ppflowers", 3, FALSE))
+
+/obj/structure/flora/ausbushes/sparsegrass
+	icon_state = "sparsegrass_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/sparsegrass, ausbush_icon_choice, list("sparsegrass", 3, FALSE))
+
+/obj/structure/flora/ausbushes/fullgrass
+	icon_state = "fullgrass_1"
+
+TYPE_TABLE(/obj/structure/flora/ausbushes/fullgrass, ausbush_icon_choice, list("fullgrass", 3, FALSE))
+
+/obj/structure/flora/skeleton
+	name = "hanging skeleton model"
+	icon = 'icons/obj/plants.dmi' //what an interesting plant
+	icon_state = "hangskele"
+	desc = "It's an anatomical model of a human skeletal system made of plaster."
+
+	plane = OBJ_PLANE
+
+//potted plants credit: Flashkirby
+/obj/structure/flora/pottedplant
+	name = "potted plant"
+	desc = "Really brings the room together."
+	icon = 'icons/obj/plants.dmi'
+	icon_state = "plant-01"
+
+	plane = OBJ_PLANE
+	var/obj/item/stored_item
+
+// the pot's own Use and Insert replace flora's harvest and uproot (the original overrides never called ..())
+CAPABILITIES(/obj/structure/flora/pottedplant)
+	owns_one(nameof(stored_item), /obj/item)
+	without("item")
+	without("uproot")
+	op("hide", item(/obj/item), label("Hide item"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
+		needs(req(PROC_REF(pot_empty)), size_is(0, ITEMSIZE_TINY)), wait(1 SECOND), on_interrupt(PROC_REF(hide_interrupted)), then(PROC_REF(item_hidden)))
+	op("search", hand(), label("Search"), needs(req(PROC_REF(pot_full))), wait(1 SECOND), then(PROC_REF(item_found)))
+
+/obj/structure/flora/pottedplant/examine(mob/user)
+	. = ..()
+	if(in_range(user, src) && stored_item)
+		. += span_filter_notice(span_italics("You can see something in there..."))
+
+/// Requirement: nothing is hidden in the pot yet.
+/obj/structure/flora/pottedplant/proc/pot_empty(datum/act/op/A)
+	return (!stored_item) ? null : MSG(pottedplant/full)
+
+MSG_DEF_SELF(pottedplant/full, "It won't fit in, there already appears to be something in here.")
+
+/// Hiding a tiny item in the pot (never a cyborg's module) takes a moment.
+/obj/structure/flora/pottedplant/proc/item_hidden(datum/act/op/A)
+	var/obj/item/I = A.held
+	var/mob/user = A.actor
+	if(!move_into(src, nameof(src.stored_item), I, user))
+		return
+	act_message(user, src, others = "[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] %U% places [I] into %T%.")
+
+/obj/structure/flora/pottedplant/proc/hide_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_notice("You refrain from putting things into the plant pot."))
+
+MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing of interest in %T%...")))
+
+/// Requirement: something is hidden in the pot.
+/obj/structure/flora/pottedplant/proc/pot_full(datum/act/op/A)
+	return (!!stored_item) ? null : MSG(pottedplant/nothing)
+
+/// Finding whatever is hidden in the pot.
+/obj/structure/flora/pottedplant/proc/item_found(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
+	stored_item.forceMove(get_turf(src))
+	rel_take(src, nameof(stored_item))
+
+/obj/structure/flora/pottedplant/large
+	name = "large potted plant"
+	desc = "This is a large plant. Three branches support pairs of waxy leaves."
+	icon_state = "plant-26"
+
+/obj/structure/flora/pottedplant/fern
+	name = "potted fern"
+	desc = "This is an ordinary looking fern. It looks like it could do with some water."
+	icon_state = "plant-02"
+
+/obj/structure/flora/pottedplant/overgrown
+	name = "overgrown potted plants"
+	desc = "This is an assortment of colourful plants. Some parts are overgrown."
+	icon_state = "plant-03"
+
+/obj/structure/flora/pottedplant/bamboo
+	name = "potted bamboo"
+	desc = "These are bamboo shoots. The tops looks like they've been cut short."
+	icon_state = "plant-04"
+
+/obj/structure/flora/pottedplant/largebush
+	name = "large potted bush"
+	desc = "This is a large bush. The leaves stick upwards in an odd fashion."
+	icon_state = "plant-05"
+
+/obj/structure/flora/pottedplant/thinbush
+	name = "thin potted bush"
+	desc = "This is a thin bush. It appears to be flowering."
+	icon_state = "plant-06"
+
+/obj/structure/flora/pottedplant/mysterious
+	name = "mysterious potted bulbs"
+	desc = "This is a mysterious looking plant. Touching the bulbs cause them to shrink."
+	icon_state = "plant-07"
+
+CAPABILITIES(/obj/structure/flora/pottedplant/mysterious)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/eyebulbs)))
+
+/obj/structure/flora/pottedplant/smalltree
+	name = "small potted tree"
+	desc = "This is a small tree. It is rather pleasant."
+	icon_state = "plant-08"
+
+/obj/structure/flora/pottedplant/unusual
+	name = "unusual potted plant"
+	desc = "This is an unusual plant. It's bulbous ends emit a soft blue light."
+	icon_state = "plant-09"
+
+CAPABILITIES(/obj/structure/flora/pottedplant/unusual)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/sif_tree)))
+	configure(light_glow(range = 2, power = 0.6, color = "#33CCFF"))
+
+/obj/structure/flora/pottedplant/orientaltree
+	name = "potted oriental tree"
+	desc = "This is a rather oriental style tree. Its flowers are bright pink."
+	icon_state = "plant-10"
+
+/obj/structure/flora/pottedplant/smallcactus
+	name = "small potted cactus"
+	desc = "This is a small cactus. Its needles are sharp."
+	icon_state = "plant-11"
+
+/obj/structure/flora/pottedplant/tall
+	name = "tall potted plant"
+	desc = "This is a tall plant. Tiny pores line its surface."
+	icon_state = "plant-12"
+
+/obj/structure/flora/pottedplant/sticky
+	name = "sticky potted plant"
+	desc = "This is an odd plant. Its sticky leaves trap insects."
+	icon_state = "plant-13"
+
+/obj/structure/flora/pottedplant/smelly
+	name = "smelly potted plant"
+	desc = "This is some kind of tropical plant. It reeks of rotten eggs."
+	icon_state = "plant-14"
+
+/obj/structure/flora/pottedplant/small
+	name = "small potted plant"
+	desc = "This is a pot of assorted small flora. Some look familiar."
+	icon_state = "plant-15"
+
+/obj/structure/flora/pottedplant/aquatic
+	name = "aquatic potted plant"
+	desc = "This is apparently an aquatic plant. It's probably fake."
+	icon_state = "plant-16"
+
+/obj/structure/flora/pottedplant/shoot
+	name = "small potted shoot"
+	desc = "This is a small shoot. It still needs time to grow."
+	icon_state = "plant-17"
+
+/obj/structure/flora/pottedplant/flower
+	name = "potted flower"
+	desc = "This is a slim plant. Sweet smelling flowers are supported by spindly stems."
+	icon_state = "plant-18"
+
+/obj/structure/flora/pottedplant/crystal
+	name = "crystalline potted plant"
+	desc = "These are rather cubic plants. Odd crystal formations grow on the end."
+	icon_state = "plant-19"
+
+/obj/structure/flora/pottedplant/subterranean
+	name = "subterranean potted plant"
+	desc = "This is a subterranean plant. It's bulbous ends glow faintly."
+	icon_state = "plant-20"
+
+CAPABILITIES(/obj/structure/flora/pottedplant/subterranean)
+	configure(light_glow(range = 2, power = 0.6, color = "#FF6633"))
+
+/obj/structure/flora/pottedplant/minitree
+	name = "potted tree"
+	desc = "This is a miniature tree. Apparently it was grown to 1/5 scale."
+	icon_state = "plant-21"
+
+/obj/structure/flora/pottedplant/stoutbush
+	name = "stout potted bush"
+	desc = "This is a stout bush. Its leaves point up and outwards."
+	icon_state = "plant-22"
+
+/obj/structure/flora/pottedplant/drooping
+	name = "drooping potted plant"
+	desc = "This is a small plant. The drooping leaves make it look like its wilted."
+	icon_state = "plant-23"
+
+/obj/structure/flora/pottedplant/tropical
+	name = "tropical potted plant"
+	desc = "This is some kind of tropical plant. It hasn't begun to flower yet."
+	icon_state = "plant-24"
+
+/obj/structure/flora/pottedplant/dead
+	name = "dead potted plant"
+	desc = "This is the dried up remains of a dead plant. Someone should replace it."
+	icon_state = "plant-25"
+
+/obj/structure/flora/pottedplant/decorative
+	name = "decorative potted plant"
+	desc = "This is a decorative shrub. It's been trimmed into the shape of an apple."
+	icon_state = "applebush"
+
+/obj/structure/flora/pottedplant/xmas
+	name = "small christmas tree"
+	desc = "This is a tiny well lit decorative christmas tree."
+	icon_state = "plant-xmas"
+
+/obj/structure/flora/mushroom
+	name = "mushroom"
+	desc = "Hey, this one seems like a fun guy."
+	icon_state = "mush1"
+	icon = 'icons/obj/flora/mushrooms.dmi'
+	harvest_loot = list(/obj/item/reagent_containers/food/snacks/mushroomslice = 1)
+	harvest_tool = /obj/item/material/knife
+	max_harvests = 2
+	min_harvests = 0
+
+/obj/structure/flora/mushroom/roll_icon_state(datum/roller/R)
+	return "mush[R.number(1, 4)]"
+
+CAPABILITIES(/obj/structure/flora/mushroom)
+	rolls(nameof(pixel_x), range_of(-4, 4))
+
+/// Rolled before init (rolls()): a mushroom is mirrored half the time.
+/obj/structure/flora/mushroom/roll_scale_x(datum/roller/R)
+	return R.chance(50) ? -1 : icon_scale_x
+
+/obj/random/pottedplant
+	name = "random potted plant"
+	desc = "This is a random potted plant."
+
+CAPABILITIES(/obj/random/pottedplant)
+	loot(
+		table = list(
+			/obj/structure/flora/pottedplant = 10,
+			/obj/structure/flora/pottedplant/large = 10,
+			/obj/structure/flora/pottedplant/fern = 10,
+			/obj/structure/flora/pottedplant/overgrown = 10,
+			/obj/structure/flora/pottedplant/bamboo = 10,
+			/obj/structure/flora/pottedplant/largebush = 10,
+			/obj/structure/flora/pottedplant/thinbush = 10,
+			/obj/structure/flora/pottedplant/mysterious = 10,
+			/obj/structure/flora/pottedplant/smalltree = 10,
+			/obj/structure/flora/pottedplant/unusual = 10,
+			/obj/structure/flora/pottedplant/orientaltree = 10,
+			/obj/structure/flora/pottedplant/smallcactus = 10,
+			/obj/structure/flora/pottedplant/tall = 10,
+			/obj/structure/flora/pottedplant/sticky = 10,
+			/obj/structure/flora/pottedplant/smelly = 10,
+			/obj/structure/flora/pottedplant/small = 10,
+			/obj/structure/flora/pottedplant/aquatic = 10,
+			/obj/structure/flora/pottedplant/shoot = 10,
+			/obj/structure/flora/pottedplant/flower = 10,
+			/obj/structure/flora/pottedplant/crystal = 10,
+			/obj/structure/flora/pottedplant/subterranean = 10,
+			/obj/structure/flora/pottedplant/minitree = 10,
+			/obj/structure/flora/pottedplant/stoutbush = 10,
+			/obj/structure/flora/pottedplant/drooping = 10,
+			/obj/structure/flora/pottedplant/tropical = 10,
+			/obj/structure/flora/pottedplant/dead = 10,
+			/obj/structure/flora/pottedplant/decorative = 10,
+			/obj/structure/flora/pottedplant/xmas = 1))
+
+/obj/structure/flora/sif
+	icon = 'icons/obj/flora/sifflora.dmi'
+
+/datum/category_item/catalogue/flora/subterranean_bulbs
+	name = "Sivian Flora - Cavebulbs"
+	desc = "A plant which is native to Sif, it continues the trend of being a bioluminescent specimen. These plants \
+	are generally suited for conditions experienced in caverns, which are generally dark and cold. It is not \
+	known why this plant evolved to be bioluminescent, however this property has, unintentionally, allowed for \
+	it to spread much farther than before, with the assistance of humans.\
+	<br><br>\
+	In Sif's early history, Sivian settlers found this plant while they were establishing mines. Their ability \
+	to emit low, but consistant amounts of light made them desirable to the settlers. They would often cultivate \
+	this plant inside man-made tunnels and mines to act as a backup source of light that would not need \
+	electricity. This technique has saved many lost miners, and this practice continues to this day."
+	value = CATALOGUER_REWARD_EASY
+
+/obj/structure/flora/sif/subterranean
+	name = "subterranean bulbs"
+	desc = "This is a subterranean plant. It's bulbous ends glow faintly."
+	icon_state = "glowplant"
+	harvest_loot = list(/obj/item/reagent_containers/food/snacks/grown/sif/cavebulbs = 1)
+	harvest_tool = /obj/item/material/knife
+	max_harvests = 2
+	min_harvests = 0
+
+CAPABILITIES(/obj/structure/flora/sif/subterranean)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/subterranean_bulbs)))
+	configure(light_glow(range = 2, power = 0.6, color = "#FF6633"))
+
+TYPE_TABLE(/obj/structure/flora/sif/subterranean, initial_icon_variant_count, 2)
+
+/datum/category_item/catalogue/flora/eyebulbs
+	name = "Sivian Flora - Eyebulbs"
+	desc = "A plant native to Sif. On the end of its stems are bulbs which visually resemble \
+	eyes, which shrink when touched. One theory is that the bulbs are a result of mimicry, appearing as eyeballs to protect from predators.<br><br>\
+	These plants have no known use."
+	value = CATALOGUER_REWARD_EASY
+
+/obj/structure/flora/sif/eyes
+	name = "eyebulbs"
+	desc = "This is a mysterious-looking plant. They kind of look like eyeballs. Creepy."
+	icon_state = "eyeplant"
+	harvest_tool = /obj/item/material/knife
+	max_harvests = 2
+	min_harvests = 0
+	harvest_loot = list(/obj/item/reagent_containers/food/snacks/grown/sif/eyebulbs = 1)
+
+CAPABILITIES(/obj/structure/flora/sif/eyes)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/eyebulbs)))
+
+TYPE_TABLE(/obj/structure/flora/sif/eyes, initial_icon_variant_count, 3)
+
+/datum/category_item/catalogue/flora/mosstendrils
+	name = "Sivian Flora - Moss Stalks"
+	desc = "A plant native to Sif. The plant is most closely related to the common, dense moss found covering Sif's terrain. \
+	It has evolved a method of camouflage utilizing white hairs on its dorsal sides to make it appear as a small mound of snow from \
+	above. It has no known use, though it is a common furnishing in contemporary homes."
+	value = CATALOGUER_REWARD_TRIVIAL
+
+/obj/structure/flora/sif/tendrils
+	name = "wabback tendrils"
+	desc = "A 'plant' made up of hardened moss. It has tiny hairs that bunch together to look like snow."
+	icon_state = "grass"
+	randomize_size = TRUE
+
+	harvest_tool = /obj/item/material/knife
+	max_harvests = 3
+	min_harvests = 0
+	harvest_loot = list(
+		/obj/item/reagent_containers/food/snacks/grown/sif/wabback = 15,
+		/obj/item/reagent_containers/food/snacks/grown/sif/blackwabback = 1,
+		/obj/item/reagent_containers/food/snacks/grown/sif/wildwabback = 30
+	)
+
+CAPABILITIES(/obj/structure/flora/sif/tendrils)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/mosstendrils)))
+
+TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
+
+/obj/structure/flora/sif/tendrils/get_harvestable_desc()
+	return span_notice("\The [src] seems to be growing over something.")
+
+/datum/category_item/catalogue/flora/frostbelle
+	name = "Sivian Flora - Frostbelle"
+	desc = "A rare plant native to Sif, with very peculiar growing requirements. Rarely seen outside of their original habitat,\
+	or the homes of the wealthy, the plant's unique vein structure is actually used to carry the plant's reproductive material \
+	to forming buds, the petals of which secrete the luminescent sap containing the pollen at the time of blooming. Certain \
+	horticulturists have found ways of halting this process prior to the secretion of the sap, leaving the flower's petals \
+	bright, at the cost of making that bud sterile."
+	value = CATALOGUER_REWARD_HARD
+
+/obj/structure/flora/sif/frostbelle
+	name = "frostbelle shrub"
+	desc = "A stocky plant with fins bearing luminescent veins along its branches."
+	icon_state = "frostbelle"
+	randomize_size = TRUE
+
+	harvest_tool = /obj/item/material/knife
+	max_harvests = 2
+	min_harvests = 0
+	harvest_loot = list(
+		/obj/item/reagent_containers/food/snacks/frostbelle = 1
+	)
+
+	var/variantnum = null
+
+CAPABILITIES(/obj/structure/flora/sif/frostbelle)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/frostbelle)))
+	rolls(nameof(variantnum), PROC_REF(roll_variantnum))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/sif/frostbelle/proc/roll_variantnum(datum/roller/R)
+	. = islist(variantnum) ? list() + variantnum : variantnum
+	. = R.number(1, 3)
+
+/obj/structure/flora/sif/frostbelle/proc/appearance_variant()
+	if(max_harvests > 0 && harvest_count < max_harvests)
+		return variantnum
+	return ""
+
+/// The look (the draw sweep: from its template).
+/obj/structure/flora/sif/frostbelle/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_variant()]")
+
+/obj/structure/flora/sif/frostbelle/get_harvestable_desc()
+	return span_notice("\The [src] seems to be budding.")
+
+//Start of underwater plants
+
+/obj/structure/flora/underwater
+	name = "underwater plant"
+	desc = "A plant that thrives deep under water."
+	icon = 'icons/obj/flora/underwaterflora.dmi'
+	icon_state = "plant-1"
+
+/obj/structure/flora/underwater/plant1
+	icon_state = "plant-1"
+
+/obj/structure/flora/underwater/plant2
+	icon_state = "plant-2"
+
+/obj/structure/flora/underwater/plant3
+	icon_state = "plant-3"
+
+/obj/structure/flora/underwater/plant4
+	icon_state = "plant-4"
+
+/obj/structure/flora/underwater/plant5
+	icon_state = "plant-5"
+
+/obj/structure/flora/underwater/seaweed1
+	icon_state = "seaweed-1"
+
+/obj/structure/flora/underwater/seaweed2
+	icon_state = "seaweed-2"
+
+/obj/structure/flora/underwater/seaweed3
+	icon_state = "seaweed-3"
+
+/obj/structure/flora/underwater/grass1
+	icon_state = "grass-1"
+
+/obj/structure/flora/underwater/grass2
+	icon_state = "grass-2"
+
+/obj/structure/flora/underwater/grass3
+	icon_state = "grass-3"
+
+/obj/structure/flora/underwater/grass4
+	icon_state = "grass-4"
+
+
+//Pumpkins
+/obj/structure/flora/pumpkin
+	name = "pumpkin"
+	icon = 'icons/obj/flora/pumpkins.dmi'
+	desc = "A healthy, fat pumpkin. It looks as if it was freshly plucked from its vines and shows no signs of decay."
+	icon_state = "decor-pumpkin"
+
+
+/obj/structure/flora/pumpkin/carved
+	name = "jack o'lantern"
+	desc = "A fat, freshly picked pumpkin. This one has a face carved into it! This one has develishly evil-looking eyes and a grinning mouth more than big enough for a very small person to hide in."
+	icon_state = "decor-jackolantern"
+
+/obj/structure/flora/pumpkin/carved/scream
+	desc = "A fat, freshly picked pumpkin. This one has a face carved into it! This one has rounded eyes looking in completely opposite directions and a wide mouth, forever frozen in a silent scream. It looks ridiculous, actually."
+	icon_state = "decor-jackolantern-scream"
+
+/obj/structure/flora/pumpkin/carved/girly
+	desc = "A fat, freshly picked pumpkin. This one has a face carved into it! This one has neatly rounded eyes topped with what appear to be cartoony eyelashes, completed with what seems to have been the carver's attempt at friendly, toothy smile. The mouth is easily the scariest part of its face."
+	icon_state = "decor-jackolantern-girly"
+
+/obj/structure/flora/pumpkin/carved/owo
+	desc = "A fat, freshly picked pumpkin. This one has a face carved into it! This one has large, round eyes and a squiggly, cat-like smiling mouth. Its pleasantly surprised expression seems to suggest that the pumpkin has noticed something about you."
+	icon_state = "decor-jackolantern-owo"
+
+// Various decorá
+/obj/structure/flora/log1
+	name = "waterlogged trunk"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "A part of a felled tree. Moss is growing across it."
+	icon_state = "log1"
+
+/obj/structure/flora/log2
+	name = "driftwood"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "Driftwood carelessly lost in the water."
+	icon_state = "log2"
+
+/obj/structure/flora/lily1
+	name = "red flowered lilypads"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "A bunch of lilypads. A beautiful red flower grows in the middle of them."
+	icon_state = "lilypad1"
+
+/obj/structure/flora/lily2
+	name = "yellow flowered lilypads"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "A few lilypads. A sunny yellow flower stems from the water and from between the lilypads."
+	icon_state = "lilypad2"
+
+/obj/structure/flora/lily3
+	name = "lilypads"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "A group of flowerless lilypads."
+	icon_state = "lilypad3"
+
+/obj/structure/flora/smallbould
+	name = "small boulder"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "A small boulder, with its top smothered with moss."
+	icon_state = "smallerboulder"
+
+/obj/structure/flora/bboulder1
+	name = "large boulder"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "Small stones sit beside this large boulder. Moss grows on the top of each of them."
+	icon_state = "bigboulder1"
+	density = TRUE
+
+/obj/structure/flora/bboulder2
+	name = "jagged large boulder"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "This boulder has had plates broken off it. Moss grows in the cracks and across the top."
+	icon_state = "bigboulder2"
+	density = TRUE
+
+/obj/structure/flora/rocks1
+	name = "rocks"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "A bunch of mossy rocks."
+	icon_state = "rocks1"
+
+/obj/structure/flora/rocks2
+	name = "rocks"
+	icon = 'icons/obj/flora/amayastuff.dmi'
+	desc = "A bunch of mossy rocks."
+	icon_state = "rocks2"

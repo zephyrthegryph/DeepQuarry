@@ -1,7 +1,7 @@
 //! `player_link`: a raw write of a mob's `key` or `ckey` (doc/rewrite/proposals/relations.md D13).
 //!
 //! The native player link (`mob.key` / `mob.ckey`, which moves the client) is written in one place, `bind_player(mob, key)`
-//! (code/modules/mob/bind_player.dm), which also keeps the persistent client relation in step. Any other assignment to `.key` / `.ckey` on a
+//! (code/content/mob/bind_player.dm), which also keeps the persistent client relation in step. Any other assignment to `.key` / `.ckey` on a
 //! value the model types as a mob, or to `key` / `ckey` inside a mob's own proc, is reported. A hard ban; the choke
 //! point's file is exempt by path.
 

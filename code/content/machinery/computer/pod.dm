@@ -4,7 +4,7 @@
 	name = "pod launch control console"
 	desc = "A control console for launching pods. Some people prefer firing Mechas."
 	icon_screen = "mass_driver"
-	circuit = /obj/item/circuitboard/pod
+	circuit = VARIANT(/obj/item/circuitboard/pod)
 	var/id = 1.0
 	var/obj/machinery/mass_driver/connected
 	var/time = 30.0

@@ -1,0 +1,958 @@
+// Robot toolbelts, such as screwdrivers and the like. All contained in one neat little package.
+// The code for actually 'how these use the item inside of them instead of the item itself' can be found in code\modules\mob\living\silicon\robot\inventory.dm (yes, click code, gross, I know.)
+/*
+ * Engineering Tools
+ */
+
+/obj/item/robotic_multibelt
+	name = "Robotic multitool"
+	desc = "An integrated toolbelt that holds various tools."
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_engiborg"
+	w_class = ITEMSIZE_HUGE
+
+	var/obj/item/selected_item = null
+
+	var/list/cyborg_integrated_tools
+
+	/// The carried tools' names (text), in menu order; tools are looked up with integrated_tool_named().
+	var/list/integrated_tools_by_name
+
+	var/list/integrated_tool_images
+
+/// The built-in welder's flame shows on the belt that carries it.
+/obj/item/robotic_multibelt/draw(datum/look/look)
+	..()
+	for(var/key in cyborg_integrated_tools)
+		var/obj/item/weldingtool/electric/mounted/cyborg/welder = integrated_tool_at(key)
+		if(!istype(welder))
+			continue
+		look.watch(welder)
+		look.overlay("indwelder_cyborg-on", welder.welding)
+
+MSG_DEF_SELF(multibelt/cyborg_integrated_tools, "Your multibelt is empty.")
+
+CAPABILITIES(/obj/item/robotic_multibelt)
+	per_type(nameof(cyborg_integrated_tools), PROC_REF(build_cyborg_integrated_tools), copy_on_write = TRUE)
+	setup(PROC_REF(generate_tools))
+	ref_one(nameof(selected_item))
+	owns_many(nameof(cyborg_integrated_tools))
+	op("multibelt_self", in_hand(), label("Use"), needs(req_is(nameof(cyborg_integrated_tools), TRUE, because = MSG(multibelt/cyborg_integrated_tools))), asks(/datum/prompt/choice, fields = list("radial" = TRUE, "choices" = computed(PROC_REF(tool_options)), "anchor" = computed(PROC_REF(tool_anchor)), "radius" = 40, "require_near" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "tool"), then(PROC_REF(tool_chosen)))
+
+/// The selected tool: one of cyborg_integrated_tools, which owns it.
+/obj/item/robotic_multibelt/item_ctrl_click(mob/user)
+	if(selected_item)
+		selected_item.attack_self(user)
+	return
+
+/obj/item/robotic_multibelt/examine(mob/user)
+	. = ..()
+	if(selected_item)
+		. += span_notice("\The [src] is currently set to \the [selected_item].")
+		. += selected_item.examine(user)
+
+/obj/item/robotic_multibelt/proc/get_module()
+	var/obj/item/robot_module/module
+	if(isrobot(loc)) //We're in a robot (in hands)
+		var/mob/living/silicon/robot/our_robot = loc
+		module = our_robot.module
+	else if(istype(loc, /obj/item/robot_module)) //We're inside the module itself (in inventory)
+		module = loc
+	else //Admin spawned us outside of a module.
+		CRASH("Robotic Multibelt is not in a robot or module. This should not happen.")
+	return module
+
+//'Alterate Tools' means we do special tool handling in Init
+/obj/item/robotic_multibelt/proc/generate_tools()
+	integrated_tools_by_name = list()
+
+	integrated_tool_images = list()
+
+	for(var/path in cyborg_integrated_tools)
+		if(ispath(path)) //Some things like the materials printer makes its own tools and it won't be a path.
+			if(!cyborg_integrated_tools[path])
+				rel_add(src, nameof(cyborg_integrated_tools), new path(src), path)
+		var/obj/item/I = integrated_tool_at(path)
+		I.set_canremove(FALSE)
+
+	for(var/tool in cyborg_integrated_tools)
+		var/obj/item/real_tool = integrated_tool_at(tool)
+		integrated_tools_by_name |= real_tool.name
+		var/image/tool_image = image(icon = real_tool.icon, icon_state = real_tool.icon_state)
+		tool_image.color = real_tool.color
+		integrated_tool_images[real_tool.name] = tool_image
+
+/// The tool under `key` in cyborg_integrated_tools: the value put under a type path, or the
+/// member itself (a made-in-place tool such as a material stack is its own key).
+/obj/item/robotic_multibelt/proc/integrated_tool_at(key)
+	var/obj/item/tool = cyborg_integrated_tools[key]
+	if(!tool && isitem(key))
+		tool = key
+	return tool
+
+/// The carried tool called `tool_name`, or null.
+/obj/item/robotic_multibelt/proc/integrated_tool_named(tool_name)
+	for(var/key in cyborg_integrated_tools)
+		var/obj/item/tool = integrated_tool_at(key)
+		if(tool?.name == tool_name)
+			return tool
+	return null
+
+// The selection and the by-name index point into cyborg_integrated_tools.
+
+/// The radial ring's choices: each integrated tool by name, with its picture. A single tool is picked at once (autopick_single_option).
+/obj/item/robotic_multibelt/proc/tool_options(datum/act/A)
+	var/list/options = list()
+	for(var/Iname in integrated_tools_by_name)
+		options[Iname] = integrated_tool_images[Iname]
+	return options
+
+/obj/item/robotic_multibelt/proc/tool_anchor(datum/act/A)
+	return src
+
+/// Old attack_self, answered: the chosen tool is assumed.
+/obj/item/robotic_multibelt/proc/tool_chosen(datum/act/op/A)
+	assume_selected_item(integrated_tool_named(A.step_value("tool")))
+	return OP_OK
+
+/obj/item/robotic_multibelt/proc/assume_selected_item(obj/item/chosen_item)
+	if(!chosen_item)
+		return
+	set_icon(chosen_item.icon)
+	set_icon_state(chosen_item.icon_state)
+	set_color(chosen_item.color)
+	rel_set(src, nameof(selected_item), chosen_item)
+
+/obj/item/robotic_multibelt/dropped(mob/user, equipping, slot)
+	..()
+	//We go back to our initial values.
+	original_state()
+
+/obj/item/robotic_multibelt/proc/original_state(mob/user)
+	rel_clear(src, nameof(selected_item))
+	set_icon(initial(icon))
+	set_icon_state(initial(icon_state))
+
+/obj/item/tool/screwdriver/cyborg
+	name = "powered screwdriver"
+	desc = "An electrical screwdriver, designed to be both precise and quick."
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_engiborg_screwdriver"
+	random_color = FALSE
+
+CAPABILITIES(/obj/item/tool/screwdriver/cyborg)
+	configure(item_tooling(speed = 0.5))
+	configure(item_sounds(use = SFX_ITEMS_DRILL_USE_2))
+
+/obj/item/tool/crowbar/cyborg
+	name = "hydraulic crowbar"
+	desc = "A hydraulic prying tool, compact but powerful. Designed to replace crowbars in industrial synthetics."
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_engiborg_crowbar"
+
+CAPABILITIES(/obj/item/tool/crowbar/cyborg)
+	configure(item_tooling(speed = 0.5))
+	configure(item_combat(force = 10))
+	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))
+
+/obj/item/tool/crowbar/cyborg/jaws
+	name = "puppy jaws"
+	desc = "The jaws of a small dog. Still strong enough to pry things."
+	icon = 'icons/mob/dogborg_vr.dmi'
+	icon_state = "smalljaws_textless"
+
+CAPABILITIES(/obj/item/tool/crowbar/cyborg/jaws)
+	configure(item_combat(attack_verbs = list("nibbled", "bit", "gnawed", "chomped", "nommed"), force = 15))
+	configure(item_sounds(hit = SFX_WEAPONS_BITE))
+
+/obj/item/weldingtool/electric/mounted/cyborg
+	name = "integrated electric welding tool"
+	desc = "An advanced welder designed to be used in robotic systems."
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "indwelder_cyborg"
+	welding = FALSE
+	no_passive_burn = TRUE
+
+CAPABILITIES(/obj/item/weldingtool/electric/mounted/cyborg)
+	configure(item_tooling(speed = 0.5))
+	configure(item_sounds(use = SFX_ITEMS_WELDER2))
+
+/obj/item/tool/wirecutters/cyborg
+	name = "wirecutters"
+	desc = "This cuts wires. With science."
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_engiborg_cutters"
+	random_color = FALSE
+
+CAPABILITIES(/obj/item/tool/wirecutters/cyborg)
+	configure(item_tooling(speed = 0.5))
+	configure(item_sounds(use = SFX_ITEMS_JAWS_CUT))
+
+/obj/item/tool/wrench/cyborg
+	name = "automatic wrench"
+	desc = "An advanced robotic wrench. Can be found in industrial synthetic shells."
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_engiborg_wrench"
+
+CAPABILITIES(/obj/item/tool/wrench/cyborg)
+	configure(item_tooling(speed = 0.5))
+	configure(item_sounds(use = SFX_ITEMS_DRILL_USE_2))
+
+/obj/item/multitool/cyborg
+	name = "multitool"
+	desc = "Optimised and stripped-down version of a regular multitool."
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_engiborg_multitool"
+
+CAPABILITIES(/obj/item/multitool/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/multitool/cyborg/draw(datum/look/look)
+	..()
+	look.state("toolkit_engiborg_multitool")
+
+/obj/item/multitool/ai_detector/cyborg/get_mechanics_info(list/additional_information)
+	return ..(list("This changes colors (and makes sounds that only you can hear if in your active modules) during various events.<br>\
+	BLUE: You are outside of camera range.<br>\
+	GREEN: You are inside of camera range.<br>\
+	RED: You are currently being watched by the AI.<br>\
+	FLASHING RED AND ORANGE: You are currently being TRACKED by the AI.<br>\
+	FLASHING ORANGE AND BLUE: The AI has attempted to track you but has failed to do so due to being outside camera range.") + additional_information)
+
+/obj/item/multitool/ai_detector/cyborg
+	name = "AI detector multitool"
+	desc = "Allows you to see if you are being watched by the AI or within network range. Also works as a normal multitool."
+
+CAPABILITIES(/obj/item/multitool/ai_detector/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/stack/cable_coil/cyborg
+	name = "cable coil synthesizer"
+	desc = "A device that makes cable."
+	gender = NEUTER
+	uses_charge = 1
+	charge_costs = list(1)
+
+/// A synthesiser keeps its cable construction for the cable it lays, but is not
+/// made of recyclable material itself (it would dupe materials in a recycler).
+/obj/item/stack/cable_coil/cyborg/material_totals()
+	return list()
+
+CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
+	without("ui_open")
+	op("cyborg_coil_self", in_hand(), label("Change colour"), asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Cable Colour", "question" = "Pick new colour.", "choices" = computed(PROC_REF(cable_colour_options)), "timeout" = 0), step = "colour"), then(PROC_REF(cyborg_coil_self)))
+
+/// Old attack_self: ask the colour, then apply it.
+/obj/item/stack/cable_coil/cyborg/proc/cyborg_coil_self(datum/act/op/A)
+	apply_cable_colour(A.step_value("colour"), A.actor)
+	return OP_OK
+
+/obj/item/stack/cable_coil/cyborg/proc/cable_colour_options(datum/act/A)
+	return GLOB.possible_cable_coil_colours
+
+/obj/item/stack/cable_coil/cyborg/proc/set_colour(mob/user)
+	set name = "Change Colour"
+	set category = VERB_CAT_OBJECT
+
+	open_request(src, /datum/prompt/choice, PROC_REF(cable_colour_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Cable Colour", question = "Pick new colour.", choices = GLOB.possible_cable_coil_colours, timeout = 0)
+
+/obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_cable_colour(A.answer.value, A.request.answerer)
+
+/obj/item/stack/cable_coil/cyborg/proc/apply_cable_colour(colour, mob/user)
+	set_cable_color(colour, user)
+	if(isrobotmultibelt(loc))
+		var/obj/item/robotic_multibelt/our_belt = loc
+		var/image/cable_image = our_belt.integrated_tool_images[name]
+		cable_image.color = color
+		if(our_belt.icon == icon)
+			our_belt.set_color(color)
+
+/*
+ * Surgical Tools
+ */
+
+/obj/item/robotic_multibelt/medical
+	name = "Robotic surgical multitool"
+	desc = "An integrated surgical toolbelt."
+	icon_state = "toolkit_engiborg"
+
+	cyborg_integrated_tools = list(
+		/obj/item/surgical/retractor/cyborg = null,
+		/obj/item/surgical/hemostat/cyborg = null,
+		/obj/item/surgical/cautery/cyborg = null,
+		/obj/item/surgical/surgicaldrill/cyborg = null,
+		/obj/item/surgical/scalpel/cyborg = null,
+		/obj/item/surgical/circular_saw/cyborg = null,
+		/obj/item/surgical/bonegel/cyborg = null,
+		/obj/item/surgical/FixOVein/cyborg = null,
+		/obj/item/surgical/bonesetter/cyborg = null,
+		/obj/item/surgical/bioregen/cyborg = null,
+		/obj/item/autopsy_scanner = null
+		)
+
+/obj/item/surgical/retractor/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_medborg_retractor"
+
+CAPABILITIES(/obj/item/surgical/retractor/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/surgical/hemostat/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_medborg_hemostat"
+
+CAPABILITIES(/obj/item/surgical/hemostat/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/surgical/cautery/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_medborg_cautery"
+
+CAPABILITIES(/obj/item/surgical/cautery/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/surgical/surgicaldrill/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_medborg_drill"
+
+CAPABILITIES(/obj/item/surgical/surgicaldrill/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/surgical/scalpel/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_medborg_scalpel"
+
+CAPABILITIES(/obj/item/surgical/scalpel/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/surgical/circular_saw/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_medborg_saw"
+
+CAPABILITIES(/obj/item/surgical/circular_saw/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/surgical/bonegel/cyborg
+
+CAPABILITIES(/obj/item/surgical/bonegel/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/surgical/FixOVein/cyborg
+
+CAPABILITIES(/obj/item/surgical/FixOVein/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/surgical/bonesetter/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "toolkit_medborg_bonesetter"
+
+CAPABILITIES(/obj/item/surgical/bonesetter/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/surgical/bioregen/cyborg
+	icon_state = "cyborg_bioregen"
+
+CAPABILITIES(/obj/item/surgical/bioregen/cyborg)
+	configure(item_tooling(speed = 0.5))
+
+//Service multibelt!
+/obj/item/robotic_multibelt/service
+	name = "Service multitool"
+	desc = "An integrated service toolbelt."
+	icon_state = "toolkit_medborg"
+
+	cyborg_integrated_tools = list(
+		/obj/item/material/minihoe/cyborg  = null,
+		/obj/item/material/knife/machete/hatchet/cyborg  = null,
+		/obj/item/analyzer/plant_analyzer/cyborg  = null,
+		/obj/item/material/knife/cyborg  = null,
+		/obj/item/robot_harvester = null,
+		/obj/item/material/kitchen/rollingpin/cyborg  = null,
+		/obj/item/tool/wirecutters/cyborg = null,
+		/obj/item/multitool/cyborg = null,
+		/obj/item/reagent_containers/spray = null
+		)
+
+//Botanical multibelt!
+/obj/item/robotic_multibelt/botanical
+	name = "Botanical multitool"
+	desc = "An integrated botanical toolbelt."
+	icon_state = "toolkit_engiborg"
+
+	cyborg_integrated_tools = list(
+		/obj/item/material/minihoe/cyborg  = null,
+		/obj/item/material/knife/machete/hatchet/cyborg  = null,
+		/obj/item/analyzer/plant_analyzer/cyborg = null,
+		/obj/item/robot_harvester = null,
+		/obj/item/tool/wirecutters/cyborg = null,
+		/obj/item/multitool/cyborg = null,
+		/obj/item/reagent_containers/spray = null
+		)
+
+/obj/item/material/minihoe/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "sili_cultivator"
+	applies_material_colour = FALSE
+
+/obj/item/material/knife/machete/hatchet/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "sili_hatchet"
+	applies_material_colour = FALSE
+
+/obj/item/analyzer/plant_analyzer/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "sili_secateur"
+
+/obj/item/material/knife/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "sili_knife"
+	applies_material_colour = FALSE
+
+/obj/item/material/kitchen/rollingpin/cyborg
+	icon = 'icons/obj/tools_robot.dmi'
+	icon_state = "sili_rolling_pin"
+	applies_material_colour = FALSE
+
+/obj/item/robotic_multibelt/syndicate
+	name = "Syndicate Robotic multitool"
+	desc = "An integrated toolbelt that holds various tools. This one comes with a multitool-hacktool."
+	cyborg_integrated_tools = list(
+		/obj/item/tool/screwdriver/cyborg = null,
+		/obj/item/tool/wrench/cyborg = null,
+		/obj/item/tool/crowbar/cyborg = null,
+		/obj/item/tool/wirecutters/cyborg = null,
+		/obj/item/multitool/hacktool = null,
+		/obj/item/weldingtool/electric/mounted/cyborg = null,
+		)
+
+//Admin proc to add new materials to their fabricator
+/mob/living/silicon/robot/proc/add_new_material(mat_to_add) //Allows us to add a new material to the borg's synth and then make their multibelt refresh.
+	if(!module)
+		return
+
+	if(!mat_to_add)
+		return
+
+	var/datum/matter_synth/synth_path = ispath(mat_to_add) ? mat_to_add : GLOB.material_synth_list[mat_to_add]
+
+	if(synth_install_refusal(synth_path))
+		return
+
+	var/amount
+	switch(mat_to_add)
+		if(/datum/matter_synth/metal)
+			amount = 40000
+		if(/datum/matter_synth/plasteel)
+			amount = 20000
+		if(/datum/matter_synth/glass)
+			amount = 40000
+		if(/datum/matter_synth/wood)
+			amount = 40000
+		if(/datum/matter_synth/plastic)
+			amount = 40000
+		if(/datum/matter_synth/wire)
+			amount = 50
+		if(/datum/matter_synth/cloth)
+			amount = 40000
+
+	if(!amount)
+		return
+
+	rel_add(module, nameof(module.synths), new synth_path(amount))
+	update_material_multibelts()
+
+/mob/living/silicon/robot/proc/update_material_multibelts()
+	for(var/obj/item/robotic_multibelt/materials/mat_belt in contents_of(module)) //If it's stowed in our inventory
+		mat_belt.generate_tools()
+	for(var/obj/item/robotic_multibelt/materials/mat_belt in contents) //If it's in our handstory
+		mat_belt.generate_tools()
+
+MSG_DEF_SELF(robot/not_a_synth, "That is not a matter synthesizer.")
+MSG_DEF_SELF(robot/synth_installed, "That synthesizer is already installed.")
+
+/// req_synth_takes(): the robot (the holder) can take this matter synth type (the candidate): it is one, and its module has none of that kind yet.
+/proc/req_synth_takes()
+	return part_make(/datum/entry/part/req/synth_takes)
+
+/datum/entry/part/req/synth_takes
+	part_name = "req_synth_takes"
+	default_reason = /datum/msg/robot/not_a_synth
+
+/datum/entry/part/req/synth_takes/holds(datum/act/op/A)
+	return isnull(refusal(A))
+
+/datum/entry/part/req/synth_takes/refusal(datum/act/op/A)
+	var/mob/living/silicon/robot/R = A.holder
+	var/synth_type = A.target
+	if(!istype(R) || !ispath(synth_type, /datum/matter_synth))
+		return default_reason
+	for(var/datum/matter_synth/synth in R.module?.synths)
+		if(istype(synth, synth_type))
+			return /datum/msg/robot/synth_installed
+	return null
+
+/// Why this robot won't take a matter synth of `type_to_check`, or null (one rule for the admin panel and add_new_material(), admission.md D2g).
+/mob/living/silicon/robot/proc/synth_install_refusal(datum/matter_synth/type_to_check)
+	return requirement_reason(req_synth_takes(), src, type_to_check)
+
+/mob/living/silicon/robot/proc/remove_material(mat_to_remove)
+	if(!module)
+		return
+
+	if(!mat_to_remove)
+		return
+
+	var/datum/matter_synth/synth_path = ispath(mat_to_remove) ? mat_to_remove : GLOB.material_synth_list[mat_to_remove]
+
+	for(var/datum/matter_synth/synth in module.synths)
+		if(istype(synth, synth_path))
+			own_remove(module, nameof(module.synths), synth)
+	update_material_multibelts()
+
+//The Material Dispenser Multibelt
+//This thing is uh...Bulky. And took a lot of effort to get to work.
+
+/obj/item/robotic_multibelt/materials
+	name = "Robotic Material Dispenser"
+	desc = "An integrated material dispenser! Click once to select your material. Use Ctrl + Click to open the menu for the selected material."
+	icon_state = "toolkit_material"
+
+	cyborg_integrated_tools = list()
+
+/obj/item/robotic_multibelt/materials/generate_tools()
+	var/obj/item/robot_module/module = get_module()
+	if(!module || !module.synths || !LAZYLEN(module.synths)) //We have a synths list and it has contents within it!
+		return
+
+	var/datum/matter_synth/has_steel //Steel synth. For generating Rglass
+	var/datum/matter_synth/has_glass //Glass synth. For generating Rglass
+	for(var/datum/matter_synth/our_synth in module.synths)
+		if(our_synth.name == METAL_SYNTH)
+			has_steel = our_synth
+			continue
+		if(our_synth.name == GLASS_SYNTH)
+			has_glass = our_synth
+			continue
+
+	var/list/possible_synths = list()
+	for(var/datum/matter_synth/our_synth in module.synths)
+		switch(our_synth.name)
+			if(METAL_SYNTH)
+				if(has_glass)
+					possible_synths[/obj/item/stack/material/cyborg/glass/reinforced] = list(our_synth, has_glass)
+				possible_synths += list(/obj/item/stack/material/cyborg/steel = list(our_synth))
+				possible_synths += list(/obj/item/stack/tile/floor/cyborg = list(our_synth))
+				possible_synths += list(/obj/item/stack/rods/cyborg = list(our_synth))
+				possible_synths += list(/obj/item/stack/tile/roofing/cyborg = list(our_synth))
+			if(PLASTEEL_SYNTH)
+				possible_synths += list(/obj/item/stack/material/cyborg/plasteel = list(our_synth))
+			if(GLASS_SYNTH)
+				if(has_steel)
+					possible_synths[/obj/item/stack/material/cyborg/glass/reinforced] = list(our_synth, has_steel)
+				possible_synths += list(/obj/item/stack/material/cyborg/glass = list(our_synth))
+			if(WOOD_SYNTH)
+				possible_synths += list(/obj/item/stack/tile/wood/cyborg = list(our_synth))
+				possible_synths += list(/obj/item/stack/material/cyborg/wood = list(our_synth))
+			if(PLASTIC_SYNTH)
+				possible_synths += list(/obj/item/stack/material/cyborg/plastic = list(our_synth))
+			if(WIRE_SYNTH)
+				possible_synths += list(/obj/item/stack/cable_coil/cyborg = list(our_synth))
+			if(CLOTH_SYNTH)
+				possible_synths += list(/obj/item/stack/sandbags/cyborg = list(our_synth))
+
+	for(var/obj/item/stack/our_item in cyborg_integrated_tools)
+		if(is_type_in_list(our_item, possible_synths))
+			possible_synths -= our_item.type
+		else
+			integrated_tools_by_name -= our_item.name
+			integrated_tool_images -= our_item.name
+			rel_remove(src, nameof(cyborg_integrated_tools), our_item)
+
+	for(var/stack_to_add in possible_synths)
+		var/obj/item/stack/current_stack = new stack_to_add(src)
+		for(var/datum/matter_synth/linked_synth as anything in possible_synths[stack_to_add])
+			current_stack.add_synth(linked_synth)
+		rel_add(src, nameof(cyborg_integrated_tools), current_stack)
+
+	. = ..()
+
+
+///Allows the material fabricator to pick up materials if they hit an appropriate stack.
+/obj/item/robotic_multibelt/materials/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
+	if(istype(target, /obj/item/stack)) //We are targeting a stack.
+		if(!selected_item)
+			to_chat(user, span_warning("You need to select a material first!"))
+			return
+		var/obj/item/stack/target_stack = target
+		if(istype(selected_item, /obj/item/stack))
+			target_stack.attackby(selected_item, user)
+
+/*
+ * Grippers
+ */
+
+//Simple borg hand.
+//Limited use.
+//If you want to add more items to the gripper, add them to the global define list for that gripper.
+/obj/item/gripper
+	name = "magnetic gripper"
+	desc = "A simple grasping tool specialized in construction and engineering work."
+	icon = 'icons/obj/device.dmi'
+	icon_state = "gripper"
+
+	flags = NOBLUDGEON
+
+	//Has a list of items that it can hold.
+
+	/// The item it is wrapping (ref_one: the item being deleted lets go of it). Use get_wrapped_item when possible.
+	var/tmp/obj/item/held_item
+
+	var/total_pockets = 5 //How many total inventory slots we want to have in the gripper
+
+	// ALLOW(instance_list): d: gripper pockets are created in Initialize and always present
+	var/list/pockets = list() //List of the pockets we have. This is used to store the items inside of the gripper.
+
+	var/obj/item/current_pocket = null //What pocket (or item!) we currently have selected
+
+
+	var/list/photo_images
+
+	/// If we're currently using the gripper on something.
+	var/gripper_in_use = FALSE
+
+	var/mob/living/silicon/robot/our_robot
+
+
+	///Var for attack_self chain
+	var/special_handling = FALSE
+
+/// A gripper is a provider (doc/rewrite/final_api.html 16.8): selected, it handles things for its cyborg within arm's reach, and what it carries is the
+/// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
+/// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
+CAPABILITIES(/obj/item/gripper)
+	setup(PROC_REF(setup_pockets), mapload = TRUE) // its pockets and its robot; a gripper in neither a module nor a robot is discarded
+	holder_takes(req_type(list(BASIC_GRIPPER), because = MSG(slot/doesnt_take)))
+	ref_one(nameof(shown_item), /obj/item)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	ref_one(nameof(current_pocket))
+	ref_one(nameof(our_robot))
+	ref_one(nameof(held_item), /obj/item)
+	provides(AFF_MANIPULATE | AFF_HOLD_SMALL, reach = 1)
+	owns_many(nameof(pockets))
+	op("item_help", item(/obj/item), stance(I_HELP), then(PROC_REF(interaction_item_help)))
+	op("item_disarm", item(/obj/item), stance(I_DISARM), then(PROC_REF(interaction_item_disarm)))
+	op("item_grab", item(/obj/item), stance(I_GRAB), then(PROC_REF(interaction_item_grab)))
+	op("item_hurt", item(/obj/item), stance(I_HURT), then(PROC_REF(interaction_item_hurt)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
+	op("gripper_drop", menu(), label("Drop Item"), needs(carried()), then(PROC_REF(gripper_verb_drop)))
+	// Self-use: the ring of pockets (optional: closing it uses the wrapped item). While it is open it holds the gripper, which blocks every other use (is_in_use()).
+	op("pocket_menu", in_hand(), label("Select pocket"), claims(CLAIM_TARGET), needs(req(PROC_REF(pocket_menu_holds), because = PROC_REF(pocket_menu_refusal))), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(pocket_choices)), "radial" = TRUE, "anchor" = computed(PROC_REF(pocket_anchor)), "radius" = 40, "require_near" = TRUE, "autopick_single_option" = FALSE, "timeout" = 0), step = "pocket"), on_interrupt(PROC_REF(pocket_menu_closed)), then(PROC_REF(pocket_chosen)))
+
+/// The help-stance item use of the gripper: the shared handler with its stance.
+/obj/item/gripper/proc/interaction_item_help(datum/act/op/A)
+	return interaction_item(A, I_HELP)
+
+/// The disarm-stance item use of the gripper: the shared handler with its stance.
+/obj/item/gripper/proc/interaction_item_disarm(datum/act/op/A)
+	return interaction_item(A, I_DISARM)
+
+/// The grab-stance item use of the gripper: the shared handler with its stance.
+/obj/item/gripper/proc/interaction_item_grab(datum/act/op/A)
+	return interaction_item(A, I_GRAB)
+
+/// The hurt-stance item use of the gripper: the shared handler with its stance.
+/obj/item/gripper/proc/interaction_item_hurt(datum/act/op/A)
+	return interaction_item(A, I_HURT)
+
+/// The selected pocket (one of `pockets`) or item.
+
+/obj/item/storage/internal/gripper
+	max_storage_space = ITEMSIZE_COST_HUGE
+
+
+CAPABILITIES(/obj/item/storage/internal/gripper)
+	configure(storage(max_size = ITEMSIZE_HUGE))
+
+/// The gripper's pockets and the robot it belongs to (setup(), mapload = TRUE): INITIALIZE_HINT_QDEL when it is in neither a module nor a robot.
+/obj/item/gripper/proc/setup_pockets(mapload)
+	if(total_pockets)
+		for(var/i = 1, i <= total_pockets, i++)
+			var/obj/new_pocket = new /obj/item/storage/internal/gripper(src)
+			new_pocket.name = "Pocket [i]"
+			rel_add(src, nameof(pockets), new_pocket)
+	rel_set(src, nameof(current_pocket), peek(pockets))
+	if(isrobot(loc.loc)) //We're in the module.
+		rel_set(src, nameof(our_robot), loc.loc)
+	else if(isrobot(loc)) //We spawned in the robot's module slots...Weird, but whatever.
+		rel_set(src, nameof(our_robot), loc)
+	else //We were in neither. Let's qdel ourselves.
+		return INITIALIZE_HINT_QDEL
+	observe(our_robot, /datum/notice/do_after_began, src, then(PROC_REF(begin_using)))
+	observe(our_robot, /datum/notice/do_after_ended, src, then(PROC_REF(end_using)))
+	return INITIALIZE_HINT_NORMAL
+
+// The selected pocket is one of `pockets`, and the robot owns the gripper.
+
+/obj/item/gripper/examine(mob/user)
+	. = ..()
+	var/obj/item/wrapped = get_wrapped_item()
+	if(wrapped)
+		. += span_notice("\The [src] is holding \the [wrapped].")
+		. += wrapped.examine(user)
+
+/obj/item/gripper/item_ctrl_click(mob/user)
+	var/obj/item/wrapped = get_wrapped_item()
+	if(wrapped && !is_in_use(user, FALSE))
+		wrapped.attack_self(user)
+
+/// Old click_alt.
+/obj/item/gripper/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!is_in_use(user, FALSE))
+		drop_item(user)
+	return OP_OK
+
+/// Old Drop Item verb: Release an item from your magnetic gripper.
+/obj/item/gripper/proc/gripper_verb_drop(datum/act/op/A)
+	drop_item(src.loc)
+
+//Different types of grippers!
+
+/obj/item/gripper/engineering
+	name = "Engineering Gripper"
+	desc = "An integrated Engineering Gripper."
+	icon_state = "gripper-omni"
+
+/obj/item/gripper/drone
+	name = "Drone Gripper"
+	desc = "An integrated Drone Gripper."
+	icon_state = "gripper-old"
+
+/obj/item/gripper/omni
+	name = "omni gripper"
+	desc = "A strange grasping tool that can hold anything a human can, but still maintains the limitations of application its more limited cousins have."
+	icon_state = "gripper-omni"
+
+// VEEEEERY limited version for mining borgs. Basically only for swapping cells and upgrading the drills.
+/obj/item/gripper/miner
+	name = "drill maintenance gripper"
+	desc = "A simple grasping tool for the maintenance of heavy drilling machines."
+	icon_state = "gripper-mining"
+
+/obj/item/gripper/security
+	name = "security gripper"
+	desc = "A simple grasping tool for corporate security work."
+	icon_state = "gripper-sec"
+
+/obj/item/gripper/paperwork
+	name = "paperwork gripper"
+	desc = "A simple grasping tool for clerical work."
+
+/obj/item/gripper/medical
+	name = "medical gripper"
+	desc = "A simple grasping tool for medical work."
+	icon_state = "gripper-flesh"
+
+/obj/item/gripper/research //A general usage gripper, used for toxins/robotics/xenobio/etc
+	name = "scientific gripper"
+	icon_state = "gripper-sci"
+	desc = "A simple grasping tool suited to assist in a wide array of research applications."
+
+/obj/item/gripper/circuit
+	name = "circuit assembly gripper"
+	icon_state = "gripper-circ"
+	desc = "A complex grasping tool used for working with circuitry."
+
+/obj/item/gripper/service //Used to handle food, drinks, seeds, and cards.
+	name = "service gripper"
+	icon_state = "gripper-sheet"
+	desc = "A simple grasping tool used to perform tasks in the service sector, such as handling food, drinks, and seeds. It can also hold cards and fake casino chips for hosting card games."
+
+/obj/item/gripper/gravekeeper	//Used for handling grave things, flowers, etc.
+	name = "grave gripper"
+	icon_state = "gripper-old"
+	desc = "A specialized grasping tool used in the preparation and maintenance of graves."
+
+/obj/item/gripper/scene
+	name = "misc gripper"
+	desc = "A simple grasping tool that can hold a variety of 'general' objects..."
+
+/obj/item/gripper/no_use/organ
+	name = "organ gripper"
+	icon_state = "gripper-flesh"
+	desc = "A specialized grasping tool used to preserve and manipulate organic material."
+
+/obj/item/gripper/no_use/organ/Entered(atom/movable/AM)
+	if(istype(AM, /obj/item/organ))
+		var/obj/item/organ/O = AM
+		O.preserved = 1
+		for(var/obj/item/organ/organ in O)
+			organ.preserved = 1
+	..()
+
+/obj/item/gripper/no_use/organ/Exited(atom/movable/AM)
+	if(istype(AM, /obj/item/organ))
+		var/obj/item/organ/O = AM
+		O.preserved = 0
+		for(var/obj/item/organ/organ in O)
+			organ.preserved = 0
+	..()
+
+/obj/item/gripper/no_use/organ/robotics
+	name = "robotics organ gripper"
+	icon_state = "gripper-flesh"
+	desc = "A specialized grasping tool used in robotics work."
+
+/obj/item/gripper/no_use/mech
+	name = "exosuit gripper"
+	icon_state = "gripper-mech"
+	desc = "A large, heavy-duty grasping tool used in construction of mechs."
+
+	special_handling = TRUE
+
+/obj/item/gripper/no_use //Used when you want to hold and put items in other things, but not able to 'use' the item
+
+
+/obj/item/gripper/no_use/loader //This is used to disallow building with metal.
+	name = "sheet loader"
+	desc = "A specialized loading device, designed to pick up and insert sheets of materials inside machines."
+	icon_state = "gripper-sheet"
+
+/obj/item/gripper/syndicate
+	name = "syndicate gripper"
+	desc = "A simple grasping tool for off-the-books syndicate work."
+	icon_state = "gripper-sec"
+
+/*
+ * Misc tools
+ */
+/obj/item/reagent_containers/glass/bucket/cyborg
+	var/mob/living/silicon/robot/R
+	var/atom/last_robot_loc
+
+CAPABILITIES(/obj/item/reagent_containers/glass/bucket/cyborg)
+	setup(PROC_REF(bind_robot))
+	ref_one(nameof(last_robot_loc), /atom)
+	ref_one(nameof(R), /atom) // Initialize() binds loc.loc: the robot when a module builds it, any place when something else does
+
+/// Binds the robot (or place) holding the module and watches for being moved out of it (setup()).
+/obj/item/reagent_containers/glass/bucket/cyborg/proc/bind_robot()
+	rel_set(src, nameof(R), loc.loc)
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
+
+/obj/item/reagent_containers/glass/bucket/cyborg/proc/check_loc(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/movable_attempted_move/event = A
+	var/atom/old_loc = event.old_loc
+	if(old_loc == R || old_loc == R.module)
+		rel_set(src, nameof(last_robot_loc), old_loc)
+	if(!istype(loc, /obj/machinery) && loc != R && loc != R.module)
+		if(last_robot_loc)
+			forceMove(last_robot_loc)
+			rel_clear(src, nameof(last_robot_loc))
+		else
+			forceMove(R)
+		if(loc == R)
+			hud_layerise()
+
+// What each gripper can pick up: its hold constraint (P3), checked through
+// dq_constraint_refusal() like any other holder.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CAPABILITIES(/obj/item/gripper/engineering)
+	holder_takes(req_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/drone)
+	holder_takes(req_type(list(BASIC_GRIPPER, SHEET_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/omni)
+	holder_takes(req_type(list(OMNI_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/miner)
+	holder_takes(req_type(list(MINER_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/security)
+	holder_takes(req_type(list(SECURITY_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/paperwork)
+	holder_takes(req_type(list(PAPERWORK_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/medical)
+	holder_takes(req_type(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/research)
+	holder_takes(req_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/circuit)
+	holder_takes(req_type(list(CIRCUIT_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/service)
+	holder_takes(req_type(list(SERVICE_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/gravekeeper)
+	holder_takes(req_type(list(GRAVEYARD_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/scene)
+	holder_takes(req_type(list(SCENE_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/no_use/organ)
+	holder_takes(req_type(list(ORGAN_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/no_use/organ/robotics)
+	holder_takes(req_type(list(ROBOTICS_ORGAN_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/no_use/mech)
+	holder_takes(req_type(list(EXOSUIT_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/no_use/loader)
+	holder_takes(req_type(list(SHEET_GRIPPER), because = MSG(slot/doesnt_take)))
+
+
+CAPABILITIES(/obj/item/gripper/syndicate)
+	holder_takes(req_type(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER), because = MSG(slot/doesnt_take)))
+
+/obj/item/robotic_multibelt/proc/build_cyborg_integrated_tools()
+	return list(
+			/obj/item/tool/screwdriver/cyborg = null,
+			/obj/item/tool/wrench/cyborg = null,
+			/obj/item/tool/crowbar/cyborg = null,
+			/obj/item/tool/wirecutters/cyborg = null,
+			/obj/item/multitool/cyborg = null,
+			/obj/item/weldingtool/electric/mounted/cyborg = null,
+			)

@@ -34,11 +34,11 @@ impl Lint for Cooldown {
         Some(Parity {
             old: &["tools/ci/cooldown_lint.py"],
             old_raw: &[],
-            blank: &["tools/ci/cooldown_baseline.txt"],
+            blank: &[],
             parse: ParseKind::Tagged,
             update: Some(&["tools/ci/cooldown_lint.py", "--update"]),
             seed: Some(&["tools/ci/cooldown_lint.py", "--seed"]),
-            files: &["tools/ci/cooldown_baseline.txt"],
+            files: &[],
             selftest: None,
         })
     }

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "atom_integrity and last_move moved off the base atom types into sparse slots; the base_vars ratchet is empty"

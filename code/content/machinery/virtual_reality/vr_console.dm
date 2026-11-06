@@ -9,8 +9,8 @@
 
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/vr_sleeper
-	// No view fields (OM relations step 3): `occupant` is still an ordinary
+	circuit = VARIANT(/obj/item/circuitboard/vr_sleeper)
+	// No view fields (relations step 3): `occupant` is still an ordinary
 	// var every reader here uses, but this slot's own on_link()/on_unlink()
 	// (below) are its only writer now.
 	var/mob/living/carbon/human/avatar
@@ -47,7 +47,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
 
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/// Sealed occupant slot (C8, containment.md §10, relations step 3).
 /datum/relation_definition/slot/occupant/vr_pod
 	holder = /obj/machinery/vr_sleeper
 	slot_id = OCCUPANT_SLOT_VR_POD
@@ -355,7 +355,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 		avatar().sync_organ_dna()
 		avatar().initialize_vessel()
 
-	PUBLISH_LEGACY(avatar(), /datum/notice/human_dna_finalized)
+	PUBLISH(avatar(), human_dna_finalized)
 
 	if(tf)
 		var/mob/living/new_form = avatar().transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.

@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	icon = 'icons/obj/terminals_vr.dmi'
 	icon_state = "req_comp_0"
 	layer = ABOVE_WINDOW_LAYER
-	circuit = /obj/item/circuitboard/request
+	circuit = VARIANT(/obj/item/circuitboard/request)
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	var/department = "Unknown" //The list of all departments on the station (Determined from this variable on each unit) Set this to the same thing if you want several consoles in one department

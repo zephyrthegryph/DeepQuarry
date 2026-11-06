@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Character setup and other pickers no longer offer \"you should not see this\" placeholder styles."

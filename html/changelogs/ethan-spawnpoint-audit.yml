@@ -1,0 +1,6 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Spawn points now only show the ones your character can take, and a saved choice that stops holding quietly moves to one that does."
+  - bugfix: "The Dark is a real place on Southern Cross: Shadekin can join there and warp there on death, with a portal back to first deck maintenance."
+  - bugfix: "Removed the Gateway spawn from Southern Cross, where it had no landing spot."

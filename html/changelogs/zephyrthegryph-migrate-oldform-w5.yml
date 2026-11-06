@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Simple mob abilities (berserk, kururak, leech, worm, stardog, demon, squirrel, durand) are menu ops instead of verbs"

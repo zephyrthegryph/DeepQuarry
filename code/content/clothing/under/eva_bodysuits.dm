@@ -21,11 +21,11 @@
 /obj/item/clothing/under/undersuit/sec
 	name = "security undersuit"
 	desc = "A reinforced undersuit, intended for wearing under a voidsuit or other EVA equipment. This one is specifically made for those in Security, and has slight protective capabilities against simple melee attacks."
-	armor_spec = "melee=10"
 	icon_state = "bodysuit_sec"
 	item_state = "bodysuit_sec"
 
 CAPABILITIES(/obj/item/clothing/under/undersuit/sec)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/undersuit/sec/hos
@@ -37,7 +37,6 @@ CAPABILITIES(/obj/item/clothing/under/undersuit/sec)
 /obj/item/clothing/under/undersuit/hazard
 	name = "hazard undersuit"
 	desc = "An undersuit, intended for wearing under a voidsuit or other EVA equipment. This one is specifically made for Engineering crew, and comes with slight radiation absorption capabilities. Not a lot, but it's there."
-	armor_spec = "rad=10"
 	icon_state = "bodysuit_haz"
 	item_state = "bodysuit_haz"
 
@@ -101,3 +100,6 @@ CAPABILITIES(/obj/item/clothing/under/undersuit/alt/no_sleeves)
 	name = "alternate undersuit, feminine no sleeves"
 	desc = "A skin-tight synthetic bodysuit designed for comfort and mobility underneath hardsuits and voidsuits. This one cuts off at the shoulder, allowing total freedom to the wearer's arms."
 	item_state = "altbodysuitfem_nosleeves"
+
+CAPABILITIES(/obj/item/clothing/under/undersuit/hazard)
+	configure(atom_rules(armor_spec = "rad=10"))

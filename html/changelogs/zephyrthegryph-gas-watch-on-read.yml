@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Gas readers wake on Rust gas watches only: the dirty-observation channel is gone, reads for gauges and windows are batched into one call, and a level a draw reads is a band watch armed on first read"

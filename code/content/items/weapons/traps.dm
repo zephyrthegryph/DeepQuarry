@@ -311,9 +311,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 				if(ishuman(user))
 					var/mob/living/carbon/human/H = user
 
-					var/obj/item/organ/external/affected = H.get_organ(check_zone(target_zone))
-
-					H.electrocute_act(PN_damage, src, H.get_siemens_coefficient_organ(affected))
+					H.electrocute_act(PN_damage, src, 1.0, check_zone(target_zone))
 
 				else
 					if(isliving(user))

@@ -630,9 +630,8 @@ fn settled_regions_sleep_untouched_and_wake_on_commands_and_neighbours() {
     assert_eq!(w.field.active_chunks().count(), 0, "settles again");
     assert!(ever.iter().filter(|&&e| e).count() > 1, "activity spread");
     assert!(!ever[far]);
-    assert_eq!(
-        w.cells.chunk(far).unwrap().as_ptr(),
-        quiet.chunk(far).unwrap().as_ptr(),
+    assert!(
+        w.cells.chunk(far).unwrap().same_alloc(&quiet.chunk(far).unwrap()),
         "a sleeping chunk is never copied"
     );
     assert!((w.totals()[0] - total).abs() < 1e-6 * total);
@@ -827,4 +826,46 @@ fn stepping_allocates_only_chunks_with_writable_nodes() {
         "only the chunk with non-reservoir cells is ever written"
     );
     assert_eq!(w.geom.allocated_chunks(), 2);
+}
+
+#[test]
+fn a_settled_uniform_room_sleeps_as_one_value_and_wakes_back_to_dense() {
+    // Two 16x16 rooms side by side (two chunks), each uniform; the left is warm. They conduct until
+    // the whole strip is level; a sleeping chunk at exactly one value is stored once.
+    let dims = GridDims::new(32, 16, 1).unwrap();
+    let mut w = World::<HeatToy>::new(dims, FieldConfig::default());
+    for y in 0..16 {
+        for x in 0..32 {
+            let cell = dims.index(x, y, 0).unwrap();
+            w.geom.set(cell, Geom::cell(1.0));
+            w.cells.set(cell, HeatCell::at(1.0, if x < 16 { 400.0 } else { 300.0 }));
+        }
+    }
+    let total = w.conserved()[0];
+    let pool = pool(2);
+    // Both rooms are uniform and no edge is unsettled except the seam; the far-from-seam interior is dense until it sleeps.
+    for _ in 0..4000 {
+        w.step(&pool);
+        if w.field.active_chunks().next().is_none() {
+            break;
+        }
+    }
+    assert_eq!(w.field.active_chunks().count(), 0, "the strip settled");
+    assert!((w.conserved()[0] - total).abs() < 1e-5 * total, "conserved through compaction");
+    let m = w.cells.memory();
+    assert_eq!(m.chunks, 2);
+    assert_eq!(m.uniform_chunks + m.dense_chunks, 2);
+    // Geometry: identical cells in each chunk, stored as one value once compacted by the owner of the store.
+    w.geom.compact();
+    assert_eq!(w.geom.uniform_chunks(), 2);
+    assert_eq!(w.geom.memory().allocations, 1, "two chunks of identical geometry share one value");
+    // A write into a (possibly uniform) sleeping chunk wakes and densifies it, and values stay right.
+    let probe = dims.index(3, 3, 0).unwrap();
+    let before = w.cell(probe);
+    let hot = HeatCell::at(1.0, 500.0);
+    w.cells.set(probe, hot);
+    assert!(w.cell(probe) != before);
+    w.step(&pool);
+    assert!(w.field.active_chunks().count() > 0, "the written chunk woke");
+    assert!((w.conserved()[0] - (total + f64::from(hot.energy - before.energy))).abs() < 1e-4 * total);
 }

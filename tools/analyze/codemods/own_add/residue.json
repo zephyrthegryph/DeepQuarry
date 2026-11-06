@@ -5,7 +5,7 @@
   "reasons": {"dynamic_var": 5, "extra_args": 39, "not_in_ast": 1},
   "sites": [
     {"file": "code/datums/behaviours/omen.dm", "reason": "extra_args", "text": "own_add(evil_washer, nameof(evil_washer.washing), our_guy, into = TRUE)"},
-    {"file": "code/datums/lifecycle/declarations.dm", "reason": "dynamic_var", "text": "own_add(D, var_name, child)"},
+    {"file": "code/library/lifecycle/declarations.dm", "reason": "dynamic_var", "text": "own_add(D, var_name, child)"},
     {"file": "code/datums/state/codecs.dm", "reason": "dynamic_var", "text": "own_add(owner, var_name, decode_one(item, ctx))"},
     {"file": "code/game/machinery/camera/camera_assembly.dm", "reason": "extra_args", "text": "if(!own_add(src, nameof(upgrades), W, user = user))"},
     {"file": "code/game/machinery/cloning.dm", "reason": "extra_args", "text": "if(!own_add(src, nameof(containers), W, user = user))"},

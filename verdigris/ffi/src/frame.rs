@@ -24,7 +24,7 @@
 //!
 //! | kind | a | b | payload |
 //! |---|---|---|---|
-//! | [`REC_CHANGED`] | the entity (a watch handle for a gas watch, an entity for a plain change) | the key: a channel mask | gas: `mixture, mask, revision, pressure, ...` (the observation, from the mixture id on); a change wake: `lane, source` |
+//! | [`REC_CHANGED`] | the entity (an entity for a plain change, a watch's subscriber for a change wake) | the key: a channel mask | a change wake: `lane, source` |
 //! | [`REC_NOTICE`] | the entity the event is about (0: none) | the event header (`domain << 16 \| kind << 8 \| variant`, or a `NATIVE_NOTICE_*`) | the event's fields |
 //! | [`REC_CROSSED`] | the watch's subscriber | the band: a wake's class bits, or a set entry's payload | wake: `lane, reason, source, source_kind`; set crossing: `entered, generation` |
 //!
@@ -40,7 +40,7 @@ use eyre::{Result, bail};
 use vg_core::timer::Tick;
 
 use crate::world::{list, num, whole};
-use crate::{entity, gas, heat, sched, world};
+use crate::{entity, gas, heat, sched, sense, world};
 
 /// Record kind: something changed (`entity`, `key`).
 /// @dm-define NATIVE_REC_CHANGED
@@ -51,6 +51,9 @@ pub const REC_NOTICE: u32 = 2;
 /// Record kind: a watch crossed a band (`watch`, `band`, detail).
 /// @dm-define NATIVE_REC_CROSSED
 pub const REC_CROSSED: u32 = 3;
+/// Record kind: a sensed value moved to another band (`key`, `band`, `previous band`): `crate::sense`.
+/// @dm-define NATIVE_REC_SENSED
+pub const REC_SENSED: u32 = 4;
 
 /// The notice a pipe device's step raises: `moles, power_w, target_reached`.
 /// Above every `domain << 16` event header.
@@ -207,13 +210,6 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
         );
     }
 
-    // Gas dependency observations -> changes.
-    let observations = gas::take_observations();
-    timer.lap("observations");
-    for o in observations.chunks_exact(gas::mix::GAS_OBSERVATION_STRIDE) {
-        record(&mut out, REC_CHANGED, o[0], o[2], &o[1..]);
-    }
-
     // Wakes: a plain channel change is CHANGED, everything else CROSSED.
     for w in wakes {
         #[allow(clippy::cast_precision_loss)]
@@ -245,6 +241,9 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
             &[f32::from(u8::from(entered)), generation as f32],
         );
     }
+    for s in sense::take_sensed() {
+        record(&mut out, REC_SENSED, s.key as f32, s.band as f32, &[s.was as f32]);
+    }
     timer.lap("outbox");
     timer.finish();
     Ok(out)
@@ -258,6 +257,117 @@ struct PhaseTimer {
     total_us: u64,
     /// The thread's CPU time when the frame began, microseconds (see [`thread_cpu_us`]).
     cpu_start_us: u64,
+    /// What the machine was doing when the frame began (see [`os_reading`]).
+    os_start: OsReading,
+}
+
+/// What the machine and this process had done up to now: the evidence that tells a frame that waited for the CPU from one that waited for memory or
+/// the disk, or that nothing ran at all. Read at most every OS_READING_PERIOD at a frame start and at the end of a slow one; zeros off Windows.
+#[derive(Clone, Copy, Default, PartialEq, Debug)]
+struct OsReading {
+    /// CPU time of every thread of this process, microseconds.
+    process_cpu_us: u64,
+    /// CPU time all the machine's cores spent not idle, microseconds (summed over cores).
+    machine_busy_us: u64,
+    /// CPU time all the machine's cores had in total, microseconds (cores times wall time).
+    machine_total_us: u64,
+    /// Page faults this process took (soft and hard).
+    page_faults: u64,
+    /// Read, write and other I/O operations this process issued.
+    io_ops: u64,
+}
+
+impl OsReading {
+    /// The change from `start` to `self`.
+    fn since(self, start: Self) -> Self {
+        Self {
+            process_cpu_us: self.process_cpu_us.saturating_sub(start.process_cpu_us),
+            machine_busy_us: self.machine_busy_us.saturating_sub(start.machine_busy_us),
+            machine_total_us: self.machine_total_us.saturating_sub(start.machine_total_us),
+            page_faults: self.page_faults.saturating_sub(start.page_faults),
+            io_ops: self.io_ops.saturating_sub(start.io_ops),
+        }
+    }
+}
+
+/// The process's scheduling priority class (Windows `GetPriorityClass` value, 0 elsewhere): 0x40 idle, 0x4000 below normal, 0x20 normal,
+/// 0x8000 above normal, 0x80 high. Read when a slow frame is filed, so a stall is read against the priority the server had at the time.
+#[cfg(windows)]
+fn priority_class() -> u64 {
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GetCurrentProcess() -> isize;
+        fn GetPriorityClass(process: isize) -> u32;
+    }
+    // SAFETY: both calls take and return plain values for the calling process's pseudo-handle.
+    u64::from(unsafe { GetPriorityClass(GetCurrentProcess()) })
+}
+
+#[cfg(not(windows))]
+fn priority_class() -> u64 {
+    0
+}
+
+/// [`OsReading`] now (Windows `GetProcessTimes`, `GetSystemTimes`, `K32GetProcessMemoryInfo`, `GetProcessIoCounters`; zeros elsewhere or when a call fails).
+#[cfg(windows)]
+fn os_reading() -> OsReading {
+    #[repr(C)]
+    struct MemoryCounters {
+        cb: u32,
+        page_fault_count: u32,
+        sizes: [usize; 8],
+    }
+    #[repr(C)]
+    #[derive(Default)]
+    struct IoCounters {
+        read_ops: u64,
+        write_ops: u64,
+        other_ops: u64,
+        read_bytes: u64,
+        write_bytes: u64,
+        other_bytes: u64,
+    }
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GetCurrentProcess() -> isize;
+        fn GetProcessTimes(process: isize, created: *mut u64, exited: *mut u64, kernel: *mut u64, user: *mut u64) -> i32;
+        fn GetSystemTimes(idle: *mut u64, kernel: *mut u64, user: *mut u64) -> i32;
+        fn K32GetProcessMemoryInfo(process: isize, counters: *mut MemoryCounters, cb: u32) -> i32;
+        fn GetProcessIoCounters(process: isize, counters: *mut IoCounters) -> i32;
+    }
+    let mut reading = OsReading::default();
+    // SAFETY: each call writes only the out-parameters passed (FILETIME pairs as u64, the two C structs above sized as the API expects) and reads the
+    // calling process's pseudo-handle.
+    unsafe {
+        let process = GetCurrentProcess();
+        let (mut created, mut exited, mut kernel, mut user) = (0u64, 0u64, 0u64, 0u64);
+        if GetProcessTimes(process, &mut created, &mut exited, &mut kernel, &mut user) != 0 {
+            reading.process_cpu_us = (kernel + user) / 10;
+        }
+        let (mut idle, mut machine_kernel, mut machine_user) = (0u64, 0u64, 0u64);
+        if GetSystemTimes(&mut idle, &mut machine_kernel, &mut machine_user) != 0 {
+            // The kernel time includes the idle time.
+            reading.machine_total_us = (machine_kernel + machine_user) / 10;
+            reading.machine_busy_us = (machine_kernel + machine_user).saturating_sub(idle) / 10;
+        }
+        let mut memory = MemoryCounters { cb: 0, page_fault_count: 0, sizes: [0; 8] };
+        #[allow(clippy::cast_possible_truncation)]
+        let cb = std::mem::size_of::<MemoryCounters>() as u32;
+        memory.cb = cb;
+        if K32GetProcessMemoryInfo(process, &mut memory, cb) != 0 {
+            reading.page_faults = u64::from(memory.page_fault_count);
+        }
+        let mut io = IoCounters::default();
+        if GetProcessIoCounters(process, &mut io) != 0 {
+            reading.io_ops = io.read_ops + io.write_ops + io.other_ops;
+        }
+    }
+    reading
+}
+
+#[cfg(not(windows))]
+fn os_reading() -> OsReading {
+    OsReading::default()
 }
 
 /// CPU time this thread has used, microseconds (Windows `GetThreadTimes`; 0 elsewhere). A slow frame whose wall time far exceeds the CPU time it used
@@ -285,7 +395,29 @@ fn thread_cpu_us() -> u64 {
 
 /// A frame at least this long (microseconds) adds its own per-phase times to the `frame.slow_us.<phase>` counters, so the
 /// slow frame is named by its phase and not hidden in the cumulative `frame.us.*` totals of the quick ones.
-const SLOW_FRAME_US: u64 = 100_000;
+const SLOW_FRAME_US: u64 = 20_000;
+
+/// How old the reading a slow frame's OS evidence is measured from may be. `os_reading()` on every frame was itself the idle stall: 40 times a second on the
+/// main thread, it held 7.3 s of the 7.7 s of slow frames in a run with the machine saturated, nearly all off the CPU, so the machine shares in a slow frame's
+/// report now cover up to this long around it.
+const OS_READING_PERIOD: std::time::Duration = std::time::Duration::from_secs(10);
+
+thread_local! {
+    /// The last [`OsReading`] taken and when.
+    static OS_LAST: std::cell::Cell<Option<(std::time::Instant, OsReading)>> = const { std::cell::Cell::new(None) };
+}
+
+/// The latest [`OsReading`], taken again only when it is older than [`OS_READING_PERIOD`].
+fn os_reading_recent(now: std::time::Instant) -> OsReading {
+    if let Some((at, reading)) = OS_LAST.get() {
+        if now.duration_since(at) < OS_READING_PERIOD {
+            return reading;
+        }
+    }
+    let reading = os_reading();
+    OS_LAST.set(Some((now, reading)));
+    reading
+}
 
 thread_local! {
     /// Every lap of the frame in progress (the nested `pace_*` ones too): `(phase, microseconds)`.
@@ -295,6 +427,12 @@ thread_local! {
 /// Adds one lap to the cumulative counter and to the trace of the frame in progress.
 pub(crate) fn trace_lap(phase: &str, us: u64) {
     crate::metrics::registry().counter(&format!("frame.us.{phase}")).add(us);
+    // The worst single lap of each phase (`frame.max_us.*`): a spike every few seconds hides in the cumulative counters.
+    let worst = crate::metrics::registry().gauge(&format!("frame.max_us.{phase}"));
+    #[allow(clippy::cast_precision_loss)]
+    if us as f64 > worst.get() {
+        worst.set(us as f64);
+    }
     TRACE.with_borrow_mut(|t| t.push((phase.to_owned(), us)));
 }
 
@@ -302,7 +440,11 @@ impl PhaseTimer {
     fn start() -> Self {
         crate::metrics::registry().counter("frame.count").inc();
         TRACE.with_borrow_mut(Vec::clear);
-        Self { at: std::time::Instant::now(), total_us: 0, cpu_start_us: thread_cpu_us() }
+        let at = std::time::Instant::now();
+        let mut timer = Self { at, total_us: 0, cpu_start_us: thread_cpu_us(), os_start: os_reading_recent(at) };
+        // These readings are syscalls and can block: their time is a phase of its own, not charged to whatever runs first.
+        timer.lap("open");
+        timer
     }
 
     fn lap(&mut self, phase: &str) {
@@ -317,12 +459,20 @@ impl PhaseTimer {
     /// Ends the frame: a slow one files its trace under `frame.slow_us.*` in the process registry.
     fn finish(&self) {
         let cpu_us = thread_cpu_us().saturating_sub(self.cpu_start_us);
-        self.file_slow(crate::metrics::registry(), cpu_us);
+        // The machine is read only for a frame that turned out slow (the start reading is the cheap half).
+        let os = if self.total_us < SLOW_FRAME_US {
+            OsReading::default()
+        } else {
+            let reading = os_reading();
+            OS_LAST.set(Some((std::time::Instant::now(), reading)));
+            reading.since(self.os_start)
+        };
+        self.file_slow(crate::metrics::registry(), cpu_us, os);
     }
 
     /// Files this frame into `registry` when it was slow: its per-phase times, and its wall time split into `cpu_us` on the CPU and the rest off it. The
     /// clock readings come in as arguments, so a test fixes them instead of timing real work.
-    fn file_slow(&self, registry: &MetricsRegistry, cpu_us: u64) {
+    fn file_slow(&self, registry: &MetricsRegistry, cpu_us: u64, os: OsReading) {
         if self.total_us < SLOW_FRAME_US {
             return;
         }
@@ -331,6 +481,15 @@ impl PhaseTimer {
         // On the CPU against off it: a frame that waited (descheduled, blocked) shows its wall time here and little CPU time.
         registry.counter("frame.slow_us.on_cpu").add(cpu_us.min(self.total_us));
         registry.counter("frame.slow_us.off_cpu").add(self.total_us.saturating_sub(cpu_us));
+        // Why it was off the CPU: the machine's busy share (`os_machine_busy` of `os_machine_capacity`) says whether the cores were all taken, the process's own
+        // CPU (`os_process_cpu`, every thread) whether anything of the server ran, and the counts whether it was paging or waiting on I/O.
+        registry.counter("frame.slow_us.os_process_cpu").add(os.process_cpu_us);
+        registry.counter("frame.slow_us.os_machine_busy").add(os.machine_busy_us);
+        registry.counter("frame.slow_us.os_machine_capacity").add(os.machine_total_us);
+        registry.counter("frame.slow_n.page_faults").add(os.page_faults);
+        registry.counter("frame.slow_n.io_ops").add(os.io_ops);
+        #[allow(clippy::cast_precision_loss)]
+        registry.gauge("frame.priority_class").set(priority_class() as f64);
         TRACE.with_borrow(|t| {
             for (phase, us) in t {
                 registry.counter(&format!("frame.slow_us.{phase}")).add(*us);
@@ -377,7 +536,7 @@ mod tests {
         let registry = MetricsRegistry::new();
         let mut timer = PhaseTimer::start();
         timer.total_us = SLOW_FRAME_US + 5_000;
-        timer.file_slow(&registry, 1_500);
+        timer.file_slow(&registry, 1_500, OsReading::default());
         assert_eq!(registry.counter("frame.slow_us.total").get(), SLOW_FRAME_US + 5_000, "the slow frame was filed");
         assert_eq!(registry.counter("frame.slow_us.on_cpu").get(), 1_500, "the CPU it used");
         assert_eq!(registry.counter("frame.slow_us.off_cpu").get(), SLOW_FRAME_US + 3_500, "the rest it spent off the CPU");
@@ -390,9 +549,47 @@ mod tests {
         let registry = MetricsRegistry::new();
         let mut timer = PhaseTimer::start();
         timer.total_us = SLOW_FRAME_US;
-        timer.file_slow(&registry, SLOW_FRAME_US * 3);
+        timer.file_slow(&registry, SLOW_FRAME_US * 3, OsReading::default());
         assert_eq!(registry.counter("frame.slow_us.on_cpu").get(), SLOW_FRAME_US);
         assert_eq!(registry.counter("frame.slow_us.off_cpu").get(), 0);
+    }
+
+    /// A slow frame also files what the machine did meanwhile, so a stall is read as CPU contention, paging or I/O: the deltas of the two readings.
+    #[test]
+    fn a_slow_frame_files_what_the_machine_did_meanwhile() {
+        let registry = MetricsRegistry::new();
+        let mut timer = PhaseTimer::start();
+        timer.total_us = SLOW_FRAME_US;
+        let start = OsReading { process_cpu_us: 100, machine_busy_us: 1_000, machine_total_us: 2_000, page_faults: 10, io_ops: 5 };
+        let end = OsReading { process_cpu_us: 400, machine_busy_us: 31_000, machine_total_us: 62_000, page_faults: 110, io_ops: 25 };
+        timer.file_slow(&registry, 0, end.since(start));
+        assert_eq!(registry.counter("frame.slow_us.os_process_cpu").get(), 300, "the process's CPU over the frame");
+        assert_eq!(registry.counter("frame.slow_us.os_machine_busy").get(), 30_000, "the machine's busy time");
+        assert_eq!(registry.counter("frame.slow_us.os_machine_capacity").get(), 60_000, "the machine's total time");
+        assert_eq!(registry.counter("frame.slow_n.page_faults").get(), 100, "page faults taken");
+        assert_eq!(registry.counter("frame.slow_n.io_ops").get(), 20, "I/O operations issued");
+    }
+
+    /// The Windows readings are live, which also proves the structs handed to the API are the size it expects: a process that has run, touched memory and
+    /// has a priority class reads non-zero.
+    #[cfg(windows)]
+    #[test]
+    fn the_os_reading_is_live() {
+        let ballast: Vec<u8> = (0..4_000_000).map(|i| (i % 251) as u8).collect();
+        assert!(ballast.iter().map(|b| u64::from(*b)).sum::<u64>() > 0);
+        let reading = os_reading();
+        assert!(reading.process_cpu_us > 0, "this process has used CPU: {reading:?}");
+        assert!(reading.machine_total_us > 0, "the machine has had CPU time: {reading:?}");
+        assert!(reading.page_faults > 0, "this process has faulted pages in: {reading:?}");
+        assert!(reading.machine_busy_us <= reading.machine_total_us, "busy time is part of the total: {reading:?}");
+        assert!(priority_class() != 0, "the process has a priority class");
+    }
+
+    /// A reading that went backwards (a counter reset) is a zero change, not a huge one.
+    #[test]
+    fn a_reading_that_went_backwards_is_no_change() {
+        let earlier = OsReading { page_faults: 50, ..OsReading::default() };
+        assert_eq!(OsReading::default().since(earlier), OsReading::default());
     }
 
     /// A frame under the slow line files nothing, however the clock read.
@@ -401,7 +598,7 @@ mod tests {
         let registry = MetricsRegistry::new();
         let mut timer = PhaseTimer::start();
         timer.total_us = SLOW_FRAME_US - 1;
-        timer.file_slow(&registry, 0);
+        timer.file_slow(&registry, 0, OsReading::default());
         assert_eq!(registry.counter("frame.slow_us.total").get(), 0);
         assert_eq!(registry.counter("frame.slow_count").get(), 0);
     }
@@ -503,6 +700,7 @@ mod tests {
                     limit: vg_core::channel::Quantity::new(320.0, vg_core::channel::Unit::Kelvin),
                     hysteresis: None,
                     edge: Edge::Enter,
+                    start: None,
                 },
             )
         })

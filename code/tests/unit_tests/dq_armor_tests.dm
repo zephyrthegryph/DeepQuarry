@@ -37,10 +37,10 @@
 	var/obj/item/clothing/suit/armor/vest/first = allocate(/obj/item/clothing/suit/armor/vest)
 	var/obj/item/clothing/suit/armor/vest/second = allocate(/obj/item/clothing/suit/armor/vest)
 	TEST_ASSERT_EQUAL(first.get_armor(), second.get_armor(), "two vests share one armour datum")
-	TEST_ASSERT_EQUAL(first.get_armor(), dq_armor_from_spec(initial(first.armor_spec)), "a vest's armour is its type's")
+	TEST_ASSERT_EQUAL(first.get_armor(), dq_armor_from_spec(atom_rules_of_type(first.type).armor_spec), "a vest's armour is its type's")
 	first.set_armor_value(MELEE, 5)
 	TEST_ASSERT_EQUAL(first.get_armor().value(MELEE), 5, "set_armor_value() changes the instance")
-	TEST_ASSERT_EQUAL(second.get_armor(), dq_armor_from_spec(initial(second.armor_spec)), "and not its twin")
+	TEST_ASSERT_EQUAL(second.get_armor(), dq_armor_from_spec(atom_rules_of_type(second.type).armor_spec), "and not its twin")
 	first.set_armor(second.get_armor())
 	TEST_ASSERT_NULL(atom_armor_override(first), "setting the type's own armour drops the override")
 	first.set_armor_value(MELEE, 5)
@@ -54,8 +54,7 @@
 	var/list/known = GLOB.armor_keys
 	var/checked = 0
 	for(var/path in typesof(/obj, /mob/living))
-		var/atom/prototype = path
-		var/spec = initial(prototype.armor_spec)
+		var/spec = atom_rules_of_type(path).armor_spec
 		if(!spec)
 			continue
 		checked++

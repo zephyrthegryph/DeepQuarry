@@ -1,0 +1,104 @@
+// Property registry (doc/rewrite/rules.md §1). Code: code/datums/properties/.
+
+// Property kinds.
+#define PROP_KIND_MEASURE 1
+#define PROP_KIND_TAG 2
+
+// Aggregators: how several values of one property combine into one. They
+// are the stat rules of the same names (code/engine/stats/rules.dm); the OR
+// aggregator is MASK_OR. dq_property_aggregators checks that the fold of a
+// factor table agrees with the property combine.
+#define PROP_AGG_NONE 0
+#define PROP_AGG_PRODUCT 1
+#define PROP_AGG_SUM 2
+#define PROP_AGG_MAX 3
+#define PROP_AGG_MIN 4
+#define PROP_AGG_OR 5
+
+// Provider sources. TYPE, MATERIAL and DOMAIN are base providers: exactly one
+// answers for a given type. COMPONENT and EQUIPMENT are contributors: they fold
+// into the base value through the property's aggregator.
+#define PROP_SOURCE_TYPE "type"
+#define PROP_SOURCE_MATERIAL "material"
+#define PROP_SOURCE_DOMAIN "domain"
+#define PROP_SOURCE_BEHAVIOUR "behaviour"
+#define PROP_SOURCE_EQUIPMENT "equipment"
+
+// SI units. The first six mirror the newtypes in verdigris/core/src/units.rs
+// (Kelvin, Joules, Pascals, Moles, Watts, HeatCapacity) and use their symbols.
+#define PROP_UNIT_KELVIN "K"
+#define PROP_UNIT_JOULES "J"
+#define PROP_UNIT_PASCALS "Pa"
+#define PROP_UNIT_MOLES "mol"
+#define PROP_UNIT_WATTS "W"
+#define PROP_UNIT_HEAT_CAPACITY "J/K"
+// Not yet on the Rust side.
+#define PROP_UNIT_KILOGRAMS "kg"
+#define PROP_UNIT_CUBIC_METRES "m3"
+/// Dimensionless ordinal: ITEMSIZE_* classes.
+#define PROP_UNIT_SIZE_CLASS "size"
+/// Dimensionless ratio or count.
+#define PROP_UNIT_RATIO "1"
+
+// Property ids.
+#define PROP_SIZE_CLASS "size_class"
+#define PROP_MASS "mass"
+#define PROP_MELTING_POINT "melting_point"
+#define PROP_IGNITION_POINT "ignition_point"
+#define PROP_MAX_HEAT_PROTECTION "max_heat_protection"
+#define PROP_HEAT_CAPACITY "heat_capacity"
+#define PROP_TEMPERATURE "temperature"
+#define PROP_INTEGRITY_RATIO "integrity_ratio"
+#define PROP_INTEGRITY_FAILURE "integrity_failure"
+/// Fraction of heat a holder's shell (or a worn layer) keeps from what it covers, 0..1.
+#define PROP_INSULATION "insulation"
+/// Weakest hardness of the object's materials (resists blunt impacts).
+#define PROP_HARDNESS "hardness"
+/// Weakest yield strength of the object's materials (resists cuts and punctures).
+#define PROP_YIELD_STRENGTH "yield_strength"
+/// Weakest fracture toughness of the object's materials (resists punctures).
+#define PROP_FRACTURE_TOUGHNESS "fracture_toughness"
+// Tag ids.
+#define TAG_SHARP "sharp"
+#define TAG_FLAMMABLE "flammable"
+#define TAG_CONDUCTIVE "conductive"
+#define TAG_PAPERWORK "paperwork"
+/// J7 (doc/rewrite/lifecycle.md, containment.md §3.2): dynamic -- unlike the
+/// tags above (read once, from a type var or material), this reads a live
+/// instance check (/datum/proc/is_lifecycle_clocked()) every time it's
+/// asked, because it can flip while an object sits in its slot with nothing
+/// else about it changing. A holder's aggregates are folded when read
+/// (ledger.recompute()), so a flip is seen by the next read.
+#define TAG_CLOCKED "clocked"
+// Wearable tags: what the item's slot_flags allow (constraints, rules.md �3).
+// The equip slot constraints (code/datums/properties/equip_slots.dm) read these.
+#define TAG_WEAR_SUIT "wear_suit"
+#define TAG_WEAR_UNIFORM "wear_uniform"
+#define TAG_WEAR_GLOVES "wear_gloves"
+#define TAG_WEAR_EYES "wear_eyes"
+#define TAG_WEAR_EARS "wear_ears"
+#define TAG_WEAR_TWO_EARS "wear_two_ears"
+#define TAG_WEAR_MASK "wear_mask"
+#define TAG_WEAR_HEAD "wear_head"
+#define TAG_WEAR_FEET "wear_feet"
+#define TAG_WEAR_ID "wear_id"
+#define TAG_WEAR_BELT "wear_belt"
+#define TAG_WEAR_BACK "wear_back"
+#define TAG_WEAR_TIE "wear_tie"
+#define TAG_POCKETABLE "pocketable"
+#define TAG_NO_POCKET "no_pocket"
+#define TAG_HOLSTERABLE "holsterable"
+/// Worn over whatever already fills its slot (gloves over rings, magboots over shoes).
+#define TAG_WEAR_OVER "wear_over"
+
+/// Mass of one unit of an item's `matter` list. Matter amounts are treated as
+/// grams of that material (a sheet is SHEET_MATERIAL_AMOUNT = 2000, so 2 kg).
+#define MATTER_UNIT_KG 0.001
+
+/// Bits per tag word. BYOND bit operations are exact to 24 bits.
+#define PROP_TAG_WORD_BITS 24
+
+/// Value of property `id` for an instance: base provider, saved state, then contributors.
+#define PROPERTY(thing, id) dq_property(thing, id)
+/// Whether an instance has tag `tag`.
+#define HAS_TAG(thing, tag) dq_has_tag(thing, tag)

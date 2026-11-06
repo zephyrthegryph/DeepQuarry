@@ -11,7 +11,7 @@
 	var/mob/lasteditor
 	var/list/viewingcode
 	var/obj/machinery/telecomms/server/SelectedServer
-	circuit = /obj/item/circuitboard/comm_traffic
+	circuit = VARIANT(/obj/item/circuitboard/comm_traffic)
 	req_access = list(ACCESS_TCOMSAT)
 
 	temp = ""

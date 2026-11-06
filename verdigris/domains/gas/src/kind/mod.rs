@@ -3,4 +3,5 @@
 //! grid kinds. The pump is the reference component (§14).
 
 pub mod device;
+pub mod devices;
 pub mod pump;

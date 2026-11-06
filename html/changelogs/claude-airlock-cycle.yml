@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Cycling airlocks no longer hang half-pumped: a chamber that drifts back out of range after the pump stops is pumped again, and the outer door opens."

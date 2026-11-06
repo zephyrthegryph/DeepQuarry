@@ -73,7 +73,7 @@
 	H.drop_item()
 	H.put_in_active_hand(C)
 	H.set_use_stance(I_HURT)
-	cooldown_set_end(H, next_click, 0)
+	STATE_SET(H, cooldowns, next_click, 0)
 	input_submit(new /datum/input_event/click(H, C, null, null, "left=1"))
 	H.set_use_stance(I_HELP)
 	TEST_ASSERT(!rc_drink_open(C), "it is not opened")

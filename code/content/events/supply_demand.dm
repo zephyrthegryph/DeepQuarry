@@ -1,0 +1,371 @@
+
+//
+// The Supply Demand Event - CentCom asks for us to put some stuff on the shuttle
+//
+/datum/event/supply_demand
+	var/my_department = "Supply Division"
+	var/list/required_items
+	var/end_time
+	announceWhen = 1
+	startWhen = 2
+	endWhen = 1800 // Aproximately 1 hour in master controller ticks, refined by end_time
+
+CAPABILITIES(/datum/event/supply_demand)
+	owns_many(nameof(required_items))
+
+REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
+
+/datum/event/supply_demand/setup()
+	my_department = "[using_map.company_name] Supply Division" // Can't have company name in initial value (not const)
+	COOLDOWN_START(src, end_time, 1 HOUR + (severity * 30 MINUTES))
+	registry_join(REGISTRY_DEMAND_EVENTS, src)
+	// Decide what items are requried!
+	// We base this on what departmets are most active, excluding departments we don't have
+	var/list/notHaveDeptList = GLOB.metric.departments.Copy()
+	notHaveDeptList.Remove(list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN))
+	var/deptActivity = GLOB.metric.assess_all_departments(severity * 2, notHaveDeptList)
+	for(var/dept in deptActivity)
+		switch(dept)
+			if(DEPARTMENT_ENGINEERING)
+				choose_atmos_items(severity + 1)
+			if(DEPARTMENT_MEDICAL)
+				choose_chemistry_items(roll(severity, 2))
+			if(DEPARTMENT_RESEARCH) // Would be nice to differentiate between research diciplines
+				choose_robotics_items(roll(1, severity))
+			if(DEPARTMENT_CARGO)
+				choose_alloy_items(rand(1, severity))
+			if(DEPARTMENT_CIVILIAN) // Would be nice to separate out chef/gardener/bartender
+				choose_food_items(roll(severity, 2))
+				choose_bar_items(roll(severity, 2))
+	if(length(required_items) == 0)
+		choose_bar_items(rand(5, 10)) // Really? Well add drinks. If a crew can't even get the bar open they suck.
+	var/total_quantity = 0
+	for(var/datum/supply_demand_order/order in required_items)
+		total_quantity += order.qty_orig
+	emit_contract_event(CONTRACT_EVENT_SUPPLY_SHORTAGE_DECLARED, list(
+		"shortage_id" = ref_token(src),
+		"quantity_target" = max(4, total_quantity),
+		"variety_target" = max(2, min(length(required_items), 6)),
+		"detail" = "A live supply-shortage request opened for [total_quantity] units across [length(required_items)] categories.",
+	), "supply-shortage-declared:[ref_token(src)]")
+
+/datum/event/supply_demand/announce()
+	var/message = "[using_map.company_short] is comparing accounts and the bean counters found our division "
+	if(severity <= EVENT_LEVEL_MUNDANE)
+		message += "is a few items short. "
+	else if(severity == EVENT_LEVEL_MODERATE)
+		message += "is well... missing some inventory. "
+	else
+		message += "has a warehouse full of empty crates! "
+	message += "We have to fill that gap quick before anyone starts asking questions. "
+	message += "You'd better have this stuff here by [worldtime2stationtime(end_time)]<br>"
+	message += "The requested items are as follows"
+	message += "<hr>"
+	for (var/datum/supply_demand_order/req in required_items)
+		message += req.describe() + "<br>"
+	message += "<hr>"
+	message += "Deliver these items to [command_name()] via the supply shuttle.  Please put the ones you can into crates!<br>"
+
+	for(var/dpt in GLOB.req_console_supplies)
+		send_console_message(message, dpt);
+
+	// Also announce over main comms so people know to look
+	GLOB.command_announcement.Announce("An order for the [using_map.facility_type] to deliver supplies to [command_name()] has been delivered to all supply Request Consoles", my_department, ANNOUNCER_MSG_SUPPLYORDER)
+	observe(WORLD_NOTICE_BUS, /datum/notice/world_supply_shuttle_depart, src, then(PROC_REF(handle_supply_demand_sell_shuttle)))
+
+/datum/event/supply_demand/tick()
+	if(length(required_items) == 0)
+		endWhen = activeFor  // End early becuase we're done already!
+
+/datum/event/supply_demand/end()
+	registry_leave(REGISTRY_DEMAND_EVENTS, src)
+	unobserve(WORLD_NOTICE_BUS, /datum/notice/world_supply_shuttle_depart, src)
+	// Check if the crew succeeded or failed!
+	if(length(required_items) == 0)
+		// Success!
+		SSsupply.adjust_budget(SSsupply.export_revenue(100 * severity), "Supply demand windfall")
+		var/msg = "Great work! With those items you delivered our inventory levels all match up. "
+		msg += "[capitalize(pick(GLOB.first_names_female))] from accounting will have nothing to complain about. "
+		msg += "I think you'll find a little something in your supply account."
+		GLOB.command_announcement.Announce(msg, my_department)
+	else
+		// Fail!
+		var/datum/supply_demand_order/random = DEFAULTPICK(required_items, null)
+		GLOB.command_announcement.Announce("What happened? Accounting is here right now and they're already asking where that [random.name] is. Damn, I gotta go", my_department)
+		var/message = "The delivery deadline was reached with the following needs outstanding:<hr>"
+		for(var/datum/supply_demand_order/req in required_items)
+			message += req.describe() + "<br>"
+		post_comm_message("'[my_department] Mission Summary'", message)
+
+/**
+ * Event handler for when the shuttle emits /datum/notice/world_supply_shuttle_depart
+ */
+/datum/event/supply_demand/proc/handle_supply_demand_sell_shuttle(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/world_supply_shuttle_depart/event = A
+	var/list/area/supply_shuttle_areas = event.supply_shuttle_areas
+	for(var/datum/event/supply_demand/E in REGISTRY_MEMBERS(REGISTRY_DEMAND_EVENTS))
+		// I don't think multiple supply shuttles have ever been used, but retaining support regardless...
+		for(var/area/sub_area in supply_shuttle_areas)
+			E.handle_sold_shuttle(sub_area)
+/**
+ * Event Handler for responding to the supply shuttle arriving at centcom.
+ */
+/datum/event/supply_demand/proc/handle_sold_shuttle(area/area_shuttle)
+	var/match_found = 0;
+
+	for(var/atom/movable/MA in area_contents_of_type(area_shuttle, /atom/movable))
+		// Special case to allow us to count mechs!
+		if(MA.anchored && !istype(MA, /obj/mecha))	continue // Ignore anchored stuff
+
+		// If its a crate, search inside of it for matching items.
+		if(istype(MA, /obj/structure/closet/crate))
+			for(var/atom/item_in_crate in MA)
+				match_found |= match_item(item_in_crate)
+		else
+			// Otherwise check it against our list
+			match_found |= match_item(MA)
+
+	if(match_found && length(required_items) >= 1)
+		// Okay we delivered SOME.  Lets give an update, but only if not finished.
+		var/message = "Shipment Received.  As a reminder, the following items are still requried:"
+		message += "<hr>"
+		for (var/datum/supply_demand_order/req in required_items)
+			message += req.describe() + "<br>"
+		message += "<hr>"
+		message += "Deliver these items to [command_name()] via the supply shuttle.  Please put the ones you can into crates!<br>"
+		send_console_message(message, "Cargo Bay")
+
+/**
+ * Helper method to check an item against the list of required_items.
+ */
+/datum/event/supply_demand/proc/match_item(atom/I)
+	for(var/datum/supply_demand_order/meta in required_items)
+		var/quantity_before = meta.qty_need
+		if(meta.match_item(I))
+			var/delivered_quantity = max(1, quantity_before - meta.qty_need)
+			emit_contract_event(CONTRACT_EVENT_SUPPLY_SHORTAGE_DELIVERY, list(
+				"department" = DEPARTMENT_CARGO,
+				"shortage_id" = ref_token(src),
+				"item_type" = meta.type,
+				"item_name" = meta.name,
+				"metrics" = list("quantity" = delivered_quantity),
+				"detail" = "Delivered [delivered_quantity] [meta.name] toward the live shortage response.",
+			), "supply-shortage-delivery:[ref_token(src)]:[REF(meta)]:[quantity_before]:[meta.qty_need]")
+			if(meta.qty_need <= 0)
+				own_take_member(src, nameof(required_items), meta)
+			return 1
+	return 0 // Nothing found if we get here
+
+/**
+ * Utility method to send message to request consoles.
+ * @param message - Message to send
+ * @param to_department - Name of department to deliver to, or null to send to all departments.
+ * @return 1 if successful, 0 if couldn't send.
+ */
+/datum/event/supply_demand/proc/send_console_message(message, to_department)
+	for(var/obj/machinery/message_server/MS in world)
+		if(!MS.active) continue
+		MS.send_rc_message(to_department ? to_department : "All Departments", my_department, message, "", "", 2)
+
+//
+//  Supply Demand Datum - Keeps track of what centcomm has demanded
+//
+
+/datum/supply_demand_order
+	var/name		// Name of the item
+	var/qty_orig // How much was requested
+	var/qty_need // How much we still need
+
+/datum/supply_demand_order/New(qty)
+	if(qty) qty_orig = qty
+	qty_need = qty_orig
+
+/datum/supply_demand_order/proc/describe()
+	return "[name] - (Qty: [qty_need])"
+
+/datum/supply_demand_order/proc/match_item(atom/I)
+	return 0
+
+//
+// Request is for a physical thing
+//
+/datum/supply_demand_order/thing
+	var/type_path	// Type path of the item required
+
+/datum/supply_demand_order/thing/New(qty, type_path) // type_path: the item's type path
+	..()
+	var/atom/proto = type_path
+	src.type_path = type_path
+	src.name = initial(proto.name)
+	if(!name)
+		log_game("supply_demand event: Order for thing [type_path] has no name.")
+
+/datum/supply_demand_order/thing/match_item(atom/I)
+	if(istype(I, type_path))
+		// Hey, we found it!  How we handle it depends on some details tho.
+		if(istype(I, /obj/item/stack))
+			var/obj/item/stack/S = I
+			var amount_to_take = min(S.get_amount(), qty_need)
+			S.use(amount_to_take)
+			qty_need -= amount_to_take
+		else
+			qty_need -= 1
+			consumed(I)
+		return 1
+
+//
+// Request is for an amount of some reagent
+//
+/datum/supply_demand_order/reagent
+	var/reagent_id
+
+/datum/supply_demand_order/reagent/New(qty, datum/reagent/R)
+	..()
+	name = R.name
+	reagent_id = R.id
+
+/datum/supply_demand_order/reagent/describe()
+	return "[qty_need] units of [name] in its own container(s)"
+
+// Any reagent container will do now. Whole number units only.
+/datum/supply_demand_order/reagent/match_item(atom/I)
+	if(!I.reagents)
+		return
+	if(!istype(I, /obj/item/reagent_containers))
+		return
+	var/amount_to_take = min(I.reagents.get_reagent_amount(reagent_id), qty_need)
+	if(amount_to_take >= 1)
+		I.reagents.remove_reagent(reagent_id, amount_to_take, safety = 1)
+		qty_need = CEILING((qty_need - amount_to_take), 1)
+		return 1
+	else
+		log_game("supply_demand event: not taking reagent '[reagent_id]': [amount_to_take]")
+	return
+
+//
+// Request is for a gas mixture.
+//	In this case the target is moles!
+//
+/datum/supply_demand_order/gas
+	name = "gas mixture"
+	var/datum/gas_mixture/mixture
+
+CAPABILITIES(/datum/supply_demand_order/gas)
+	owns_one(nameof(mixture), /datum/gas_mixture)
+
+/datum/supply_demand_order/gas/describe()
+	var/pressure = mixture.return_pressure()
+	var/total_moles = mixture.total_moles()
+	var desc = "Canister filled to [round(pressure,0.1)] kPa with gas mixture:\n"
+	for(var/gas in mixture.gas_ids()) // mixture.gas (XGM) → mixture.gas_ids()
+		desc += "<br>- [GLOB.gas_data.name[gas]]: [round((LINDA_GAS_AMT(mixture, gas) / total_moles) * 100)]%\n"
+	return desc
+
+/datum/supply_demand_order/gas/match_item(obj/machinery/portable_atmospherics/canister)
+	if(!istype(canister))
+		return
+	var/datum/gas_mixture/canmix = canister.air_contents
+	if(!canmix || canmix.total_moles() <= 0)
+		return
+	if(canmix.return_pressure() < mixture.return_pressure())
+		log_game("supply_demand event: canister fails to match [canmix.return_pressure()] kPa < [mixture.return_pressure()] kPa")
+		return
+	// Make sure ratios are equal
+	for(var/gas in mixture.gas_ids()) // mixture.gas (XGM) → mixture.gas_ids()
+		var/targetPercent = round((LINDA_GAS_AMT(mixture, gas) / mixture.total_moles()) * 100)
+		var/canPercent = round((LINDA_GAS_AMT(canmix, gas) / canmix.total_moles()) * 100)
+		if(abs(targetPercent-canPercent) > 1)
+			log_game("supply_demand event: canister fails to match because '[gas]': [canPercent] != [targetPercent]")
+			return // Fail!
+	// Huh, it actually matches!
+	qty_need -= 1
+	return 1
+
+//
+// Item choosing procs - Decide what supplies will be demanded!
+//
+
+/datum/event/supply_demand/proc/choose_food_items(differentTypes)
+	var/list/types = xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING).Copy()
+	for(var/i in 1 to differentTypes)
+		var/datum/xform/R = pick(types)
+		types -= R // Don't pick the same thing twice
+		var/chosen_path = R.result
+		var/chosen_qty = rand(1, 5)
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
+	return
+
+/datum/event/supply_demand/proc/choose_chemistry_items(differentTypes)
+	// Checking if they show up in health analyzer is good huristic for it being a drug
+	var/list/medicineReagents = list()
+	for(var/datum/xform/CR as anything in xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT))
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[CR.result]
+		if(R && R.scannable)
+			medicineReagents += R
+	for(var/i in 1 to differentTypes)
+		var/datum/reagent/R = pick(medicineReagents)
+		medicineReagents -= R // Don't pick the same thing twice
+		var/chosen_qty = rand(1, 20) * 5
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
+	return
+
+/datum/event/supply_demand/proc/choose_bar_items(differentTypes)
+	var/list/drinkReagents = list()
+	for(var/datum/xform/CR as anything in xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT))
+		if(!ispath(CR.rule_type, /transformation/chem/instant/drinks))
+			continue
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[CR.result]
+		if(istype(R, /datum/reagent/drink) || istype(R, /datum/reagent/ethanol))
+			drinkReagents += R
+	for(var/i in 1 to differentTypes)
+		var/datum/reagent/R = pick(drinkReagents)
+		drinkReagents -= R // Don't pick the same thing twice
+		var/chosen_qty = rand(1, 20) * 5
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
+	return
+
+/datum/event/supply_demand/proc/choose_robotics_items(differentTypes)
+	// Do not make mechs dynamic, its too silly
+	var/list/types = list(
+		/obj/mecha/combat/durand,
+		/obj/mecha/combat/gygax,
+		/obj/mecha/medical/odysseus,
+		/obj/mecha/working/ripley)
+	for(var/i in 1 to differentTypes)
+		var/T = pick(types)
+		types -= T // Don't pick the same thing twice
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(rand(1, 2), T))
+	return
+
+/datum/event/supply_demand/proc/choose_atmos_items(differentTypes)
+	var/datum/gas_mixture/mixture = new
+	heat_set(mixture, T20C)
+	var/unpickedTypes = GLOB.gas_data.gases.Copy()
+	unpickedTypes -= GAS_VOLATILE_FUEL // Don't do that one
+	for(var/i in 1 to differentTypes)
+		var/gasId = pick(unpickedTypes)
+		unpickedTypes -= gasId
+		// XGM mix.gas[id] = X → LINDA set_moles. gasId is a string XGM id.
+		var/datum/gas/_gtype = mixture.get_xgm_id_for_gas(gasId)
+		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.return_volume()) / (R_IDEAL_GAS_EQUATION * mixture.return_temperature()))
+	// mixture.update_values() removed; no-op under LINDA.
+	var/datum/supply_demand_order/gas/O = new(qty = 1)
+	rel_set(O, nameof(O.mixture), mixture)
+	rel_add(src, nameof(required_items), O)
+	return
+
+/datum/event/supply_demand/proc/choose_alloy_items(differentTypes)
+	var/list/types = xform_rules_in(MEDIUM_ORE_STOCK, REGIME_SMELTING).Copy()
+	for(var/i in 1 to differentTypes)
+		var/datum/xform/A = pick(types)
+		types -= A // Don't pick the same thing twice
+		var/list/product = A.makes[1]
+		var/ores = 0
+		for(var/list/take as anything in A.takes)
+			ores += take[3]
+		var/chosen_path = product[2]
+		var/chosen_qty = FLOOR(rand(5, 100) * product[3] / ores, 1)
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
+	return
+

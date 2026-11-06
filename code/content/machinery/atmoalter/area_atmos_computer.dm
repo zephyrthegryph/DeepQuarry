@@ -4,7 +4,7 @@
 	desc = "A computer used to control the stationary scrubbers and pumps in the area."
 	icon_keyboard = "atmos_key"
 	icon_screen = "area_atmos"
-	circuit = /obj/item/circuitboard/area_atmos
+	circuit = VARIANT(/obj/item/circuitboard/area_atmos)
 
 	/// Scrubbers found by the last scan (a relation view: dead ones leave by themselves).
 	var/list/obj/machinery/portable_atmospherics/powered/scrubber/huge/connectedscrubbers

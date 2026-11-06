@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Fifty-seven legacy notices (mob login, death, stat, equipment and movement notices, the containment slot notices, qdeleting, the native notice, world notices and others) are now declared with ACTION() and sent with PUBLISH(); the robot belly fullness read-back notice is an accessor on the robot belly"

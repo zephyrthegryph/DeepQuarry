@@ -23,7 +23,7 @@
 	return islist(value)
 
 /datum/preference/custom_heat/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set(target, custom_heat, value)
+	STATE_SET(target, custom_temp, custom_heat, value)
 /datum/preference/custom_heat/apply_to_living(mob/living/target, value)
 	return
 /datum/preference/custom_heat/apply_to_silicon(mob/living/silicon/target, value)
@@ -55,7 +55,7 @@
 	return islist(value)
 
 /datum/preference/custom_cold/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set(target, custom_cold, value)
+	STATE_SET(target, custom_temp, custom_cold, value)
 /datum/preference/custom_cold/apply_to_living(mob/living/target, value)
 	return
 /datum/preference/custom_cold/apply_to_silicon(mob/living/silicon/target, value)

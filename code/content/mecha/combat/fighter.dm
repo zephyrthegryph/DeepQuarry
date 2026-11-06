@@ -1,0 +1,513 @@
+
+#define NOGRAV_FIGHTER_DAMAGE 20
+
+/obj/mecha/combat/fighter
+	name = "Delete me, nerd!!"
+	desc = "The base type of fightercraft. Don't spawn this one!"
+
+	var/datum/effect/effect/system/ion_trail_follow/ion_trail
+	var/landing_gear_raised = FALSE //If our landing gear for safely crossing ground turfs is on.
+	var/ground_capable = FALSE //If we can fly over normal turfs and not just space
+
+	icon = 'icons/mecha/fighters64x64.dmi' //See ATTRIBUTIONS.md for details on license
+
+	icon_state = ""
+	initial_icon = ""
+
+	dir_in = null //Don't reset direction when empty
+
+	step_in = 2 //Fast
+	step_energy_drain = 0 //These should use fuel instead of energy
+
+	max_integrity = 400
+
+	infra_luminosity = 6
+
+	opacity = FALSE
+
+	wreckage = /obj/effect/decal/mecha_wreckage/gunpod
+
+	stomp_sound = 'sound/mecha/fighter/engine_mid_fighter_move.ogg'
+	stomp_sound_2 = 'sound/mecha/fighter/engine_mid_fighter_move.ogg' // Fix for additional move sound on Chomp mecha.
+	swivel_sound = SFX_MECHA_FIGHTER_ENGINE_MID_BOOST_01
+
+	bound_height = 64
+	bound_width = 64
+
+	max_hull_equip = 2
+	max_weapon_equip = 2
+	max_utility_equip = 1
+	max_universal_equip = 1
+	max_special_equip = 1
+
+	zoom_possible = 1
+
+TYPE_TABLE(/obj/mecha/combat/fighter, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull/fighter, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/fighter, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
+
+
+CAPABILITIES(/obj/mecha/combat/fighter)
+	setup(PROC_REF(prepare_ion_trail))
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+	op("toggle_landing_gear", ui_act("toggle_landing_gear"), then(PROC_REF(ui_act_toggle_landing_gear)))
+
+
+/obj/mecha/combat/fighter/proc/prepare_ion_trail()
+	ion_trail.set_up(src)
+	ion_trail.stop()
+
+
+/obj/mecha/combat/fighter/moved_inside(mob/living/carbon/human/H)
+	. = ..()
+	consider_gravity()
+
+/obj/mecha/combat/fighter/go_out()
+	. = ..()
+	consider_gravity()
+
+//We don't get lost quite as easy.
+/obj/mecha/combat/fighter/touch_map_edge()
+	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
+	//No overmap enabled or no driver to choose
+	if(!using_map.use_overmap || !occupant || !can_ztravel())
+		return ..()
+
+	var/obj/effect/overmap/visitable/our_ship = get_overmap_sector(z)
+
+	//We're not on the overmap
+	if(!our_ship)
+		return ..()
+
+	//Stored for safety checking after user input
+	var/this_x = x
+	var/this_y = y
+	var/this_z = z
+
+	var/what_edge
+
+	var/new_x
+	var/new_y
+
+	if(x <= TRANSITIONEDGE)
+		what_edge = WEST
+		new_x = world.maxx - TRANSITIONEDGE - 2
+		new_y = rand(TRANSITIONEDGE + 2, world.maxy - TRANSITIONEDGE - 2)
+
+	else if (x >= (world.maxx - TRANSITIONEDGE + 1))
+		what_edge = EAST
+		new_x = TRANSITIONEDGE + 1
+		new_y = rand(TRANSITIONEDGE + 2, world.maxy - TRANSITIONEDGE - 2)
+
+	else if (y <= TRANSITIONEDGE)
+		what_edge = SOUTH
+		new_y = world.maxy - TRANSITIONEDGE -2
+		new_x = rand(TRANSITIONEDGE + 2, world.maxx - TRANSITIONEDGE - 2)
+
+	else if (y >= (world.maxy - TRANSITIONEDGE + 1))
+		what_edge = NORTH
+		new_y = TRANSITIONEDGE + 1
+		new_x = rand(TRANSITIONEDGE + 2, world.maxx - TRANSITIONEDGE - 2)
+
+	var/list/choices = list()
+	for(var/obj/effect/overmap/visitable/V in range(1, our_ship))
+		choices[V.name] = V
+
+	open_request(src, /datum/prompt/choice/fighter_destination, PROC_REF(fighter_destination_answered), answerer = occupant, subject = src, choices = choices, edge = what_edge, start_x = this_x, start_y = this_y, start_z = this_z, new_x = new_x, new_y = new_y)
+
+/// Where a fighter leaving the map edge goes. Re-checked on the answer: the pilot is still in it,
+/// it hasn't moved, and the destination is still next to its sector. A cancel backs it off the edge.
+/datum/prompt/choice/fighter_destination
+	title = "Destination"
+	question = "Choose an overmap destination:"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/edge
+	var/start_x
+	var/start_y
+	var/start_z
+	var/new_x
+	var/new_y
+
+/datum/prompt/choice/fighter_destination/recheck_extra()
+	var/obj/mecha/combat/fighter/F = subject
+	if(QDELETED(F) || QDELETED(answerer))
+		return "gone"
+	if(isnull(value))
+		return null
+	if(answerer.loc != F)
+		return "not inside it"
+	var/obj/effect/overmap/visitable/V = choices[value]
+	if(F.slot_item(MECHA_SLOT_PILOT) != answerer || F.x != start_x || F.y != start_y || F.z != start_z || get_dist(V, get_overmap_sector(F.z)) > 1)
+		return "moved"
+	return null
+
+/obj/mecha/combat/fighter/proc/fighter_destination_answered(datum/act/request/A)
+	if(QDELETED(A.request.answerer))
+		return
+	var/datum/prompt/choice/fighter_destination/ask = A.request
+	if(A.answer)
+		overmap_destination_chosen(ask)
+	else if(ask.last_error == "moved")
+		to_chat(ask.answerer, span_warning("You or they appear to have moved!"))
+	else if(isnull(ask.value) && ask.outcome == REQ_CANCELLED && ask.last_error != "nothing to ask")
+		back_off_edge(ask.edge)
+
+/obj/mecha/combat/fighter/proc/back_off_edge(what_edge)
+	var/backwards = turn(what_edge, 180)
+	forceMove(get_step(src,backwards)) //Move them back a step, then.
+	set_dir(backwards)
+
+/obj/mecha/combat/fighter/proc/overmap_destination_chosen(datum/prompt/choice/fighter_destination/ask)
+	var/mob/living/carbon/occupant = slot_item(MECHA_SLOT_PILOT)
+	var/new_x = ask.new_x
+	var/new_y = ask.new_y
+	var/new_z
+	if(!ask.value)
+		back_off_edge(ask.edge)
+		return
+	else
+		var/obj/effect/overmap/visitable/V = ask.choices[ask.value]
+		var/list/levels = V.get_space_zlevels()
+		if(!levels.len)
+			to_chat(occupant, span_warning("You don't appear to be able to get there from here!"))
+			return
+		new_z = pick(levels)
+	var/turf/destination = locate(new_x, new_y, new_z)
+	if(!destination || destination.density)
+		to_chat(occupant, span_warning("You don't appear to be able to get there from here! Is it blocked?"))
+		return
+	else
+		forceMove(destination)
+
+//Modified phazon code
+
+/obj/mecha/combat/fighter/proc/ui_act_toggle_landing_gear(datum/act/op/A)
+	if(!is_pilot(A.actor))
+		return
+	set_landing_gear_raised(!landing_gear_raised)
+	src.occupant_message(span_notice("Landing gear [landing_gear_raised? "raised" : "lowered"]."))
+	return
+
+/obj/mecha/combat/fighter/ui_commands()
+	return ..() + list(list("key" = "toggle_landing_gear", "label" = "[landing_gear_raised ? "Lower" : "Raise"] landing gear"))
+
+/obj/mecha/combat/fighter/can_ztravel()
+	return (landing_gear_raised && has_charge(step_energy_drain))
+
+// No falling if we've got our boosters on
+/obj/mecha/combat/fighter/can_fall()
+	if(landing_gear_raised && has_charge(step_energy_drain))
+		return FALSE
+	else
+		return TRUE
+
+/obj/mecha/combat/fighter/proc/consider_gravity(moved = FALSE)
+	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
+	var/gravity = get_gravity()
+	if (gravity && !landing_gear_raised)
+		play_sfx(src, SFX_EFFECTS_ROLL, 0.5)
+	else if(gravity && ground_capable && occupant)
+		start_hover()
+	else if((!gravity && ground_capable) || !occupant)
+		stop_hover()
+	else if(moved && gravity && !ground_capable)
+		occupant_message("Collision alert! Vehicle not rated for use in gravity!")
+		take_damage(NOGRAV_FIGHTER_DAMAGE, BRUTE)
+		play_sfx(src, SFX_EFFECTS_GRILLEHIT)
+
+/obj/mecha/combat/fighter/get_step_delay()
+	. = ..()
+	if(get_gravity() && !landing_gear_raised)
+		. += 4
+
+/obj/mecha/combat/fighter/handle_equipment_movement()
+	. = ..()
+	consider_gravity(TRUE)
+
+/obj/mecha/combat/fighter/proc/start_hover()
+	if(ion_trail && !ion_trail.on) //We'll just use this to store if we're floating or not
+		ion_trail.start()
+		var/amplitude = 2 //maximum displacement from original position
+		var/period = 36 //time taken for the mob to go up >> down >> original position, in deciseconds. Should be multiple of 4
+
+		var/top = amplitude
+		var/bottom = -amplitude
+		var/half_period = period / 2
+		var/quarter_period = period / 4
+
+		animate(src, pixel_y = top, time = quarter_period, easing = SINE_EASING | EASE_OUT, loop = -1)		//up
+		animate(pixel_y = bottom, time = half_period, easing = SINE_EASING, loop = -1)						//down
+		animate(pixel_y = 0, time = quarter_period, easing = SINE_EASING | EASE_IN, loop = -1)			//back
+
+/obj/mecha/combat/fighter/proc/stop_hover()
+	if(ion_trail?.on) // ion_trail is an owned child, already gone when Destroy() runs go_out()
+		ion_trail.stop()
+		animate(src, pixel_y = 0, time = 5, easing = SINE_EASING | EASE_IN) //halt animation
+
+/obj/mecha/combat/fighter/check_for_support()
+	if (has_charge(step_energy_drain) && landing_gear_raised)
+		return 1
+
+	var/list/things = orange(1, src)
+
+	if(locate_in_list(things, /obj/structure/grille) || locate_in_list(things, /obj/structure/lattice) || locate_in_list(things, /turf/simulated) || locate_in_list(things, /turf/open/fixed))
+		return 1
+	else
+		return 0
+
+
+/obj/mecha/combat/fighter/play_entered_noise(mob/who)
+	if(mech_body_plan().has_affliction(src))
+		who << sound('sound/mecha/fighter/fighter_entered_bad.ogg',volume=60)
+	else
+		who << sound('sound/mecha/fighter/fighter_entered.ogg',volume=60)
+
+
+//causes damage when running into objects
+/obj/mecha/combat/fighter/Bump(atom/obstacle)
+	. = ..()
+	if(istype(obstacle, /obj) || istype(obstacle, /turf))
+		occupant_message(span_bolddanger(span_large("COLLISION ALERT!")))
+		take_damage(20, BRUTE)
+		play_sfx(src, SFX_MECHA_FIGHTER_FIGHTER_COLLISION)
+
+////////////// Gunpod //////////////
+
+/obj/mecha/combat/fighter/gunpod
+	name = "Gunpod"
+	desc = "Small mounted weapons platform capable of space and surface combat. More like a flying tank than a dedicated fightercraft."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "gunpod"
+	initial_icon = "gunpod"
+
+	wreckage = /obj/effect/decal/mecha_wreckage/gunpod
+
+	step_in = 3 //Slightly slower than others
+
+	ground_capable = TRUE
+
+	// Paint colors! Null if not set.
+	var/stripe1_color
+	var/stripe2_color
+
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser, /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive))
+
+//Blinky
+TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/recon, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/teleporter, /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay))
+
+/// The stripes, in the colours a multitool gave them.
+/obj/mecha/combat/fighter/gunpod/draw(datum/look/look)
+	..()
+	if(stripe1_color)
+		look.overlay(look_appearance(icon, "gunpod_stripes1", color = stripe1_color))
+	if(stripe2_color)
+		look.overlay(look_appearance(icon, "gunpod_stripes2", color = stripe2_color))
+
+
+CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/gunpod)))
+	op("gunpod_paint", item(/obj/item), label("Paint stripes"), when(PROC_REF(paintable_by_multitool)),
+		asks(/datum/prompt/choice, fields = list("title" = "Paint Zone", "question" = "Please select a target zone.", "choices" = list("Fore Stripe", "Aft Stripe", "CANCEL"), "subject" = computed(PROC_REF(paint_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "zone"),
+		asks(/datum/prompt/color/mech_paint, fields = list("subject" = computed(PROC_REF(paint_subject))), step = "color", when = PROC_REF(paint_zone_chosen)),
+		then(PROC_REF(interaction_gunpod_paint)))
+
+/// A multitool repaints the stripes while the maintenance state is open.
+/obj/mecha/combat/fighter/gunpod/proc/paintable_by_multitool(datum/act/op/A)
+	return istype(A.held, /obj/item/multitool) && state == 1
+
+/// The question is about the multitool in the hand.
+/obj/mecha/combat/fighter/gunpod/proc/paint_subject(datum/act/op/A)
+	return A.held
+
+/// A zone other than CANCEL was picked, so a colour is asked.
+/obj/mecha/combat/fighter/gunpod/proc/paint_zone_chosen(datum/act/op/A)
+	var/zone = A.step_value("zone")
+	return !isnull(zone) && zone != "CANCEL"
+
+/datum/prompt/color/mech_paint
+	title = "Paint Color"
+	question = "Please select a paint color."
+	timeout = 0
+	ask_flags = ASK_HELD | ASK_CAPABLE
+
+/// Old attackby: the colour answered for the zone answered.
+/obj/mecha/combat/fighter/gunpod/proc/interaction_gunpod_paint(datum/act/op/A)
+	if(state != 1)
+		return TRUE
+	var/color_value = A.step_value("color")
+	if(color_value)
+		switch(A.step_value("zone"))
+			if("Fore Stripe")
+				set_stripe1_color(color_value)
+			if("Aft Stripe")
+				set_stripe2_color(color_value)
+	return TRUE
+
+/obj/effect/decal/mecha_wreckage/gunpod
+	name = "Gunpod wreckage"
+	desc = "Remains of some unfortunate gunpod. Completely unrepairable."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "gunpod-broken"
+	bound_width = 64
+	bound_height = 64
+
+/datum/category_item/catalogue/technology/gunpod
+	name = "Voidcraft - Gunpod"
+	desc = "This is a small space-capable fightercraft that has an arrowhead design. Can hold up to one pilot, \
+	and sometimes one or two passengers, with the right modifications made. \
+	Typically used as small fighter craft, the gunpod can't carry much of a payload, though it's still capable of holding it's own."
+	value = CATALOGUER_REWARD_MEDIUM
+
+
+////////////// Baron //////////////
+
+/obj/mecha/combat/fighter/baron
+	name = "Baron"
+	desc = "A conventional space superiority fighter, one-seater. Not capable of ground operations."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "baron"
+	initial_icon = "baron"
+
+	wreckage = /obj/effect/decal/mecha_wreckage/baron
+
+	ground_capable = FALSE
+
+CAPABILITIES(/obj/mecha/combat/fighter/baron)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/baron)))
+
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/baron/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser, /obj/item/mecha_parts/mecha_equipment/omni_shield))
+
+/obj/effect/decal/mecha_wreckage/baron
+	name = "Baron wreckage"
+	desc = "Remains of some unfortunate fighter. Completely unrepairable."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "baron-broken"
+	bound_width = 64
+	bound_height = 64
+
+/datum/category_item/catalogue/technology/baron
+	name = "Voidcraft - Baron"
+	desc = "This is a small space fightercraft that has an arrowhead design. Can hold up to one pilot. \
+	Unlike some fighters, this one is not designed for atmospheric operation, and is only capable of performing \
+	maneuvers in the vacuum of space. Attempting to operate it in an atmosphere is not recommended."
+	value = CATALOGUER_REWARD_MEDIUM
+
+
+////////////// Scoralis //////////////
+
+/obj/mecha/combat/fighter/scoralis
+	name = "scoralis"
+	desc = "An imported space fighter with an integral cloaking device. Beware the power consumption, though. Incapable of ground operations."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "scoralis"
+	initial_icon = "scoralis"
+
+	wreckage = /obj/effect/decal/mecha_wreckage/scoralis
+
+	ground_capable = FALSE
+
+CAPABILITIES(/obj/mecha/combat/fighter/scoralis)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/scoralis)))
+
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/scoralis/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg, /obj/item/mecha_parts/mecha_equipment/cloak))
+
+/obj/effect/decal/mecha_wreckage/scoralis
+	name = "scoralis wreckage"
+	desc = "Remains of some unfortunate fighter. Completely unrepairable."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "scoralis-broken"
+	bound_width = 64
+	bound_height = 64
+
+/datum/category_item/catalogue/technology/scoralis
+	name = "Voidcraft - Scoralis"
+	desc = "An import model fightercraft, this one contains an integral cloaking device that renders the fighter invisible \
+	to the naked eye. Still detectable on thermal sensors, the craft can maneuver in close to ill-equipped foes and strike unseen. \
+	Not rated for atmospheric travel, this craft excels at hit and run tactics, as it will likely need to recharge batteries between each 'hit'."
+	value = CATALOGUER_REWARD_MEDIUM
+
+////////////// Allure //////////////
+
+/obj/mecha/combat/fighter/allure
+	name = "allure"
+	desc = "A fighter of Zorren design, it's blocky appearance is made up for by it's stout armor and finely decorated hull paint."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "allure"
+	initial_icon = "allure"
+
+	wreckage = /obj/effect/decal/mecha_wreckage/allure
+
+	ground_capable = FALSE
+
+	max_integrity = 500
+
+CAPABILITIES(/obj/mecha/combat/fighter/allure)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/allure)))
+
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/allure/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/cloak))
+
+/obj/effect/decal/mecha_wreckage/allure
+	name = "allure wreckage"
+	desc = "Remains of some unfortunate fighter. Completely unrepairable."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "allure-broken"
+	bound_width = 64
+	bound_height = 64
+
+/datum/category_item/catalogue/technology/allure
+	name = "Voidcraft - Allure"
+	desc = "A space superiority fighter of zorren design, many would comment that the blocky shape hinders aesthetic appeal. However, Zorren are \
+	often found painting their hulls in intricate designs of purple and gold, and this craft is no exception to the rule. Some individual seems to have \
+	decorated it finely. Import craft like this one often ship with no weapons, though the Zorren saw fit to integrate a cloaking device."
+	value = CATALOGUER_REWARD_MEDIUM
+
+////////////// Pinnace //////////////
+
+/obj/mecha/combat/fighter/pinnace
+	name = "pinnace"
+	desc = "A mass-produced, lightweight fighter craft, capable of atmospheric and interstellar operation. While cheap and simple to operate, it suffers from sub-par survivability."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "pinnace"
+	initial_icon = "pinnace"
+
+	wreckage = /obj/effect/decal/mecha_wreckage/pinnace
+
+	ground_capable = TRUE
+
+	max_integrity = 200
+
+CAPABILITIES(/obj/mecha/combat/fighter/pinnace)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/pinnace)))
+
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/pinnace/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser))
+
+/obj/effect/decal/mecha_wreckage/pinnace
+	name = "pinnace wreckage"
+	desc = "Remains of some unfortunate fighter. Completely unrepairable."
+	icon = 'icons/mecha/fighters64x64.dmi'
+	icon_state = "pinnace-broken"
+	bound_width = 64
+	bound_height = 64
+
+/datum/category_item/catalogue/technology/pinnace
+	name = "Voidcraft - Pinnace"
+	desc = "A small, unassuming forward-swept-wing fighter craft, first produced some seventy years ago by Hesphaestus Industries for \
+	the Commonwealth. Since then, the design has seen widespread adoption by many different corporate, federal and independent \
+	groups alike; this can easily be attributed due to its ease of manufacturing, reliability and simplicity to both maintain and \
+	operate. Outdated in comparison to more modern aerospace craft, it still sees heavy usage in the frontier regions where \
+	cutting-edge technology is less of a concern."
+	value = CATALOGUER_REWARD_MEDIUM
+
+#undef NOGRAV_FIGHTER_DAMAGE
+
+

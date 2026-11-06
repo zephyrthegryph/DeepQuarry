@@ -181,6 +181,9 @@ MSG_DEF(ghost_trap/deactivated, span_notice("You have deactivated %T%!"), span_d
 	set_deployed(FALSE)
 	set_anchored(FALSE)
 
+/// Called when a ghost or phaser is captured by a ghosttrap: (mob/passing_entity)
+ACTION(world_ghost_captured, atom/movable/passing_entity, FIXED, notice = /datum/notice/world_ghost_captured)
+
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
 	if(!ismob(passing_entity)) //wtf did you do
 		return
@@ -200,12 +203,15 @@ MSG_DEF(ghost_trap/deactivated, span_notice("You have deactivated %T%!"), span_d
 	if(isobserver(passing_entity))
 		to_chat(passing_entity, span_info("((You are incapable of moving or 'jumping' to turf by clicking, but can still escape via teleport or orbit!))"))
 
-	PUBLISH_LEGACY(src, /datum/notice/world_ghost_captured, passing_entity)
+	PUBLISH(src, world_ghost_captured, passing_entity = passing_entity)
+
+/// Called when a shadow wright passes by a ghosttrap: (obj/effect/shadow_wight)
+ACTION(world_wight_captured, atom/movable/shadow_wight, FIXED, notice = /datum/notice/world_wight_captured)
 
 /obj/item/ghost_trap/Crossed(atom/movable/AM)
 
 	if(istype(AM, /obj/effect/shadow_wight))
-		PUBLISH_LEGACY(src, /datum/notice/world_wight_captured, AM)
+		PUBLISH(src, world_wight_captured, shadow_wight = AM)
 		visible_message(span_danger("A flurry of beams shoot into the air from \the [src] and into [AM], capturing and disintegrating it!"))
 		return
 

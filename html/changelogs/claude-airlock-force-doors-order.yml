@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "An entity first used under one clock now moves its timers and ring slots to the scheduler that is current when a test driver begins or ends, so doors animate under test_time() after a real-clock test"

@@ -54,15 +54,6 @@ export type AirlockConsoleSimpleData = {
   internalTemplateName: string;
 } & PanelOpenData;
 
-export type AirlockConsolePhoronData = {
-  chamber_pressure: number;
-  chamber_phoron: number;
-  exterior_status: status;
-  interior_status: status;
-  processing: BooleanLike;
-  internalTemplateName: string;
-};
-
 export type DoorAccessConsoleData = {
   exterior_status: status;
   interior_status: status;

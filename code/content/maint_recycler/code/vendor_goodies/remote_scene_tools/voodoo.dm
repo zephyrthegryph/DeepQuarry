@@ -6,7 +6,7 @@
 /obj/item/remote_scene_tool/voodoo_doll
 	name = "voodoo doll"
 	desc = "A dubiously cursed-esq Voodoo doll that mimics whoever is wearing its matching necklace via built in hardlight projection."
-	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
+	icon = 'code/content/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	icon_state = "voodoo_doll_inactive"
 	icon_root = "voodoo_doll"
 
@@ -15,7 +15,6 @@
 	//this is just a copy of the remote scene tool, but with a different icon
 	//and a different name
 
-	var/underlayRotation = 45
 	//TODO: make this generic so it's easier for other stuff to use. ideally there's a magical thing that just has all the various greebles set up so u can pick and choose which ones are rendered traditionally
 	var/static/list/tail_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = -2,DATA_SCALE = 1.6, DATA_ROTATION = 45)
 	var/static/list/taur_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = 2, DATA_SCALE = 1.1, DATA_ROTATION = 45)
@@ -105,9 +104,8 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 /obj/item/remote_scene_tool/voodoo_doll/proc/generate_layer_image(image/input, matrix/newtransform, outline_width = 0, outline_color = rgb(50,50,50), mask_inverse = FALSE)
 	if(input == null)
 		return null
-	input = image(input) // the wearer's layers are shared images: the doll turns and outlines its own copy
+	input = image(input, dir = SOUTH) // the wearer's layers are shared images: the doll turns and outlines its own copy (a dir set after the copy is lost on an overlay)
 
-	input.dir = SOUTH
 	input.transform = newtransform
 	input.layer = FLOAT_LAYER
 	if(outline_width > 0)

@@ -476,6 +476,7 @@ pub mod doc_snippets_policy;
 
 pub mod ownership_policy;
 pub mod op_order_policy;
+#[cfg(feature="native-policy")]
 pub mod captured_op_order;
 #[cfg(feature="native-policy")]pub mod captured_ownership_pages;
 #[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod ownership_workspace_policy_tests;

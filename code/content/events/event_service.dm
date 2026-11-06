@@ -10,7 +10,8 @@ SYSTEM_DEF(events)
 
 	/// Every /datum/event subtype path (type paths, not entities).
 	var/list/allEvents
-	var/alist/event_containers
+	/// Severity (EVENT_LEVEL_*) -> that level's container: an owned keyed many.
+	var/alist/event_containers = alist()
 
 	var/datum/event_meta/new_event = new
 
@@ -18,6 +19,7 @@ CAPABILITIES(/datum/system/events)
 	owns_one(nameof(new_event), /datum/event_meta)
 	owns_one(nameof(tgui_event_manager_panel), /datum/event_manager_panel)
 	owns_many(nameof(finished_events), /datum/event)
+	owns_many(nameof(event_containers), /datum/event_container)
 	ref_one(nameof(selected_event_container), /datum/event_container)
 
 /datum/system/events/initialize()
@@ -25,11 +27,9 @@ CAPABILITIES(/datum/system/events)
 		return
 	initialized = TRUE
 	allEvents = subtypesof(/datum/event)
-	event_containers = list(
-			/*EVENT_LEVEL_MUNDANE 	= */ new/datum/event_container/mundane,
-			/*EVENT_LEVEL_MODERATE	= */ new/datum/event_container/moderate,
-			/*EVENT_LEVEL_MAJOR 	= */ new/datum/event_container/major
-		)
+	rel_add(src, nameof(event_containers), new /datum/event_container/mundane, EVENT_LEVEL_MUNDANE)
+	rel_add(src, nameof(event_containers), new /datum/event_container/moderate, EVENT_LEVEL_MODERATE)
+	rel_add(src, nameof(event_containers), new /datum/event_container/major, EVENT_LEVEL_MAJOR)
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = event_containers[i]
 		EC.set_clock_running(TRUE)

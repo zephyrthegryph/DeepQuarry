@@ -1,0 +1,220 @@
+/mob/living/simple_mob/humanoid/cultist/magus/rift
+	drag_buckle = FALSE
+	name = "Rift Magus"
+	endurance = 450 //Boss Mobs should be tanky. //Old 225
+
+	melee_damage_lower = 30 //Old 15
+	melee_damage_upper = 45 //Old 22
+	attack_armor_pen = 50
+	heat_resist = 1
+	cold_resist = 1
+	movement_cooldown = -1.5
+	projectiletype = /obj/item/projectile/energy/plasma/vepr/inversion
+	melee_attack_delay = 4 SECOND
+	ranged_attack_delay = 1.5 SECONDS
+	special_attack_min_range = 1
+	special_attack_max_range = 7
+	special_attack_cooldown = 7 SECONDS
+	icon_state = "void-magnus"
+	icon_living = "void-magnus"
+	vore_active = 1
+	vore_bump_chance = 20
+	size_multiplier = 1.10
+	damage_fatigue_mult = 0.5 // We don't want to give them a flat, huge boost to attack speed, but at the same time, make them fight harder the closer they are to dying.
+	injury_enrages = TRUE
+
+	loot_list = list(/obj/item/clothing/head/culthood/void = 100,
+			/obj/item/clothing/suit/cultrobes/void = 100,
+			/obj/item/clothing/shoes/boots/cult/void = 100,
+			/obj/item/clothing/gloves/tactical/void = 100,
+			/obj/item/melee/voidblade = 25,
+			/obj/item/soulstone = 25,
+			/obj/item/capture_crystal/demon = 25,
+			/obj/item/capture_crystal/wendigo = 25
+			)
+
+/mob/living/simple_mob/humanoid/cultist/magus/rift/apply_melee_effects(atom/A)
+	if(isliving(A))
+		var/mob/living/L = A
+		var/leech = rand(1,100)
+		if(nutrition_of(L))
+			L.adjust_nutrition(-leech)
+			adjust_nutrition(leech)
+		if(prob(25))
+			L.injure(INJURY_PAIN, leech, source = src)
+
+/mob/living/simple_mob/humanoid/cultist/magus/rift/do_special_attack(atom/A, stance)
+	. = TRUE // So we don't fire a bolt as well.
+	switch(stance)
+		if(I_DISARM) // Side gun
+			electric_defense(A)
+		if(I_HURT) // Rockets
+			launch_rockets(A)
+		if(I_GRAB) // Micro-singulo
+			launch_microsingularity(A)
+
+/mob/living/simple_mob/humanoid/cultist/magus/rift/proc/launch_microsingularity(atom/target)
+	new /mob/living/simple_mob/vore/demonAI (src.loc)
+
+/mob/living/simple_mob/humanoid/cultist/magus/rift/proc/electric_defense(atom/target)
+	var/obj/item/projectile/P = new /obj/item/projectile/energy/fireball(get_turf(src))
+	P.launch_projectile(target, BP_TORSO, src)
+
+/mob/living/simple_mob/humanoid/cultist/magus/rift/proc/launch_rockets(atom/target)
+	if(!target)
+		to_chat(src, span_warning("There's nothing to teleport to."))
+		return FALSE
+
+	var/list/nearby_things = range(1, target)
+	var/list/valid_turfs = list()
+
+	// All this work to just go to a non-dense tile.
+	for(var/turf/potential_turf in nearby_things)
+		var/valid_turf = TRUE
+		if(potential_turf.density)
+			continue
+		for(var/atom/movable/AM in potential_turf)
+			if(AM.density)
+				valid_turf = FALSE
+		if(valid_turf)
+			valid_turfs.Add(potential_turf)
+
+	if(!(valid_turfs.len))
+		to_chat(src, span_warning("There wasn't an unoccupied spot to teleport to."))
+		return FALSE
+
+	var/turf/target_turf = pick(valid_turfs)
+	var/turf/T = get_turf(src)
+
+	var/datum/effect/effect/system/smoke_spread/s1 = new /datum/effect/effect/system/smoke_spread
+	s1.set_up(5, 1, T)
+	var/datum/effect/effect/system/smoke_spread/s2 = new /datum/effect/effect/system/smoke_spread
+	s2.set_up(5, 1, target_turf)
+
+
+	T.visible_message(span_notice("\The [src] vanishes!"))
+	s1.start()
+
+	forceMove(target_turf)
+	play_sfx(target_turf, SFX_EFFECTS_PHASEIN, 0.5)
+	to_chat(src, span_notice("You teleport to \the [target_turf]."))
+
+	target_turf.visible_message(span_warning("\The [src] appears!"))
+	s2.start()
+
+/obj/item/grenade/spawnergrenade/riftwallers
+	name = "manhack delivery grenade"
+	spawner_type = /mob/living/simple_mob/vore/demonAI
+	deliveryamt = 1
+	icon = 'icons/obj/device.dmi'
+	icon_state = "implant_melted"
+	color = "#f50202"
+
+/obj/item/projectile/energy/plasma/vepr/inversion
+	name = "inversion bolt"
+	damage = 20
+	eyeblur = 0
+
+CAPABILITIES(/obj/item/projectile/energy/plasma/vepr/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
+	configure(item_combat(armor_penetration = 50))
+
+/mob/living/simple_mob/humanoid/cultist/magus/rift
+	vore_active = 1
+	vore_max_size = RESIZE_HUGE
+	vore_min_size = RESIZE_SMALL
+	vore_pounce_chance = 0 // Beat them into crit before eating.
+	vore_icons = SA_ICON_LIVING
+
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
+	configure(atom_rules(armor_spec = "melee=70;bullet=60;laser=60;energy=90;bomb=30;bio=100;rad=100"))
+	configure(mob_rules(faction = "demon"))
+	configure(living_rules(vore_capacity = 6))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
+
+/mob/living/simple_mob/humanoid/cultist/magus/rift/Login()
+	. = ..()
+	if(!riding_datum)
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+	movement_cooldown = 1
+
+/mob/living/simple_mob/humanoid/cultist/magus/rift/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = "The fearsome preadtor gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach.."
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with tour predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",
+		"Your surrondings glow with a neon red, dashes and spirals of pitch black flowing through the red gummy flesh as if it were a strange sky.",
+		"Your satsified predator sways their bloated gullet happily, their warm rumbling vibrarting the stomach, and by extension you.",))
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!",
+		"The caustic red acid splashes, and washes over your frame, your sense of smell being overwhelmed by acid and sulfur as you're turned to nutrion.",
+		"Every swift swap of the predator's hips sends you slamming against the glowing red sides, your vision blurring further as you contunie to weaken." ,))
+
+
+//Boss loot things. Not sure if this is approriate but will be bapped if not.
+
+/obj/item/clothing/head/culthood/void
+	name = "void magnus hood"
+	color = "#1C1C1C"
+
+CAPABILITIES(/obj/item/clothing/head/culthood/void)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"))
+	configure(item_protection(cold_parts = HEAD, heat_parts = HEAD))
+
+/obj/item/clothing/suit/cultrobes/void
+	name = "void magnus robes"
+	color = "#1C1C1C"
+
+CAPABILITIES(/obj/item/clothing/suit/cultrobes/void)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"))
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
+
+/obj/item/clothing/shoes/boots/cult/void
+	name = "void magnus boots"
+	color = "#1C1C1C"
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/cult/void)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"))
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
+
+/obj/item/clothing/gloves/tactical/void
+	desc = "These warm red gloves glow warmly, while making the world round them seem darker."
+	name = "cult gloves"
+	color = "#1C1C1C"
+	icon_state = "work"
+	item_state = "wgloves"
+	punch_force = 8
+
+CAPABILITIES(/obj/item/clothing/gloves/tactical/void)
+	configure(atom_rules(armor_spec = "melee=30;bullet=25;laser=25;energy=40;bomb=30;bio=10;rad=10"))
+	configure(item_combat(force = 10))
+
+/obj/item/melee/voidblade
+	name = "cult blade"
+	desc = "An arcane weapon wielded by the followers of Nar-Sie."
+	icon_state = "cultblade"
+	w_class = ITEMSIZE_LARGE
+	defend_chance = 25
+	projectile_parry_chance = 25
+
+CAPABILITIES(/obj/item/melee/voidblade)
+	configure(item_combat(injury_kind = INJURY_CUT))
+	configure(item_thrown(force = 20))
+	configure(item_combat(force = 40, armor_penetration = 25, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+
+/obj/item/capture_crystal/demon
+	spawn_mob_type = /mob/living/simple_mob/vore/demonAI
+
+/obj/item/capture_crystal/wendigo
+	spawn_mob_type = /mob/living/simple_mob/vore/demonAI/wendigo

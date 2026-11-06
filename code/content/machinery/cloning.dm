@@ -38,7 +38,7 @@
 	density = TRUE
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
-	circuit = /obj/item/circuitboard/clonepod
+	circuit = VARIANT(/obj/item/circuitboard/clonepod)
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "pod_0"
 	req_access = list(ACCESS_GENETICS) // For premature unlocking.
@@ -69,10 +69,10 @@
 	go_out()
 	..()
 
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
+/// Sealed occupant slot (C8, containment.md §10, relations step 3): the
 /// pod grows and displays the clone through this, same as before the ledger
 /// tracked the move. Not a target_ref_field slot -- like the DNA scanner and
-/// resleever, this machine already tracked its occupant through an OM handle
+/// resleever, this machine already tracked its occupant through an handle
 /// (set_occupant()/get_occupant()) rather than a bare var, so on_link() below
 /// is what keeps it current instead.
 /datum/relation_definition/slot/occupant/clonepod
@@ -80,11 +80,11 @@
 	slot_id = OCCUPANT_SLOT_CLONEPOD
 	name = "cloning pod"
 
-/datum/relation_definition/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target)
 	..()
 	target.set_occupant(source)
 
-/datum/relation_definition/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target)
 	..()
 	if(target.get_occupant() == source)
 		target.set_occupant(null)
@@ -181,7 +181,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	if(!H)
 		attempting = 0
 		return
-	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
+	PUBLISH(H, human_dna_finalized)
 
 	//Get the clone body ready: a fresh clone is saturated with genetic damage and
 	// the pod grows it out. Seeded directly (not injure()) so the fresh body
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	// internal_producebody()), so it landed in the pod's default slot
 	// (machine_internals) rather than its occupant slot -- move it to the
 	// right one now. set_occupant() itself now happens through the slot's
-	// own on_link() (OM relations step 3).
+	// own on_link() (relations step 3).
 	move_into(src, OCCUPANT_SLOT_CLONEPOD, H)
 	attempting = 0
 
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 		return PROCESS_KILL
 
 	if((occupant) && (occupant.loc == src))
-		if((occupant.stat == DEAD) || (sparse_get_or(occupant, suiciding, 0)) || !occupant.key)  //Autoeject corpses and suiciding dudes.
+		if((occupant.stat == DEAD) || (STATE_GET(occupant, mob_misc, suiciding)) || !occupant.key)  //Autoeject corpses and suiciding dudes.
 			set_locked(0)
 			go_out()
 			connected_message("Clone Rejected: Deceased.")

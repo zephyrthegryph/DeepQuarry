@@ -1,0 +1,43 @@
+/datum/technomancer/spell/shock_aura
+	name = "Electric Aura"
+	desc = "Repeatively electrocutes enemies within four meters of you, as well as nearby electronics."
+	enhancement_desc = "Aura does twice as much damage."
+	spell_power_desc = "Radius and damage scaled up."
+	cost = 100
+	obj_path = /obj/item/spell/aura/shock
+	ability_icon_state = "tech_shockaura"
+	category = OFFENSIVE_SPELLS
+
+/obj/item/spell/aura/shock
+	name = "electric aura"
+	desc = "Now you are a walking electrical storm."
+	icon_state = "generic"
+	cast_methods = null
+	aspect = ASPECT_SHOCK
+	glow_color = "#0000FF" //TODO
+
+/obj/item/spell/aura/shock/aura_step(datum/act/timer/A)
+	if(!pay_energy(500))
+		spent(src)
+		return
+	var/list/nearby_mobs = range(calculate_spell_power(4),owner_ref())
+	var/power = calculate_spell_power(7)
+	if(check_for_scepter())
+		power = calculate_spell_power(15)
+	for(var/obj/machinery/light/light in range(calculate_spell_power(7), owner_ref()))
+		light.flicker()
+	for(var/mob/living/L in nearby_mobs)
+		if(is_ally(L))
+			continue
+
+		if(HAS_SYNTHETIC_BIOLOGY(L))
+			to_chat(L, span_danger("ERROR: Electrical fault detected!"))
+			L.status_adjust(STAT_STUTTERING, 3)
+
+		if(ishuman(L))
+			var/mob/living/carbon/human/H = L
+			H.electrocute_act(power, src, 1.0, BP_TORSO)
+		else
+			L.electrocute_act(power, src, 0.75, BP_TORSO)
+
+	adjust_instability(3)

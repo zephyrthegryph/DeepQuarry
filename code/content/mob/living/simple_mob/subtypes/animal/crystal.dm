@@ -1,0 +1,43 @@
+/mob/living/simple_mob/animal/crystalbeast
+
+CAPABILITIES(/mob/living/simple_mob/animal/crystalbeast)
+	configure(mob_rules(faction = "livingcrystal"))
+
+//simple gimmick boss
+/mob/living/simple_mob/animal/crystalbeast/snail
+	name = "Crystal Goliath Snail"
+	desc = "A massive hulking beast made of strange crystal. Normal attacks seem like they will be ineffective. Explosions or piercing might do the trick"
+	endurance = 150
+
+	icon = 'icons/mob/eclipse.dmi'
+	icon_state = "crystal"
+	icon_dead = "crystal_dead"
+
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+	heat_damage_per_tick = 0
+
+	melee_damage_lower = 5
+	melee_damage_upper = 65
+	size_multiplier = 4
+
+	melee_attack_delay = 8
+
+	movement_cooldown = 13
+	/* //Commented out pending crystal rigsuit fix. Currently there are no sprites.
+	loot_list = list(/obj/item/rig/ch/crystal = 100,
+			)
+	*/
+
+//Note to self, make the angel here when energy is gained
+
+CAPABILITIES(/mob/living/simple_mob/animal/crystalbeast/snail)
+	configure(atom_rules(armor_spec = "melee=80;bullet=80;laser=80;energy=80;bio=100;rad=100"))

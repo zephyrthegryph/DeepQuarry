@@ -86,7 +86,9 @@
 	var/list/bad = list()
 	var/checked = 0
 	var/list/room = block(run_loc_floor_bottom_left, run_loc_floor_top_right)
-	set_global(nameof(GLOB.narsie_cometh), GLOB.narsie_cometh) // a spawned Nar-Sie announces itself world-wide: teardown puts the flag back
+	// A spawned Nar-Sie starts Hell unless one already came (narsie.dm): it emags every APC, breaks the fire alarms and puts the lights out for every later test, which
+	// made four tests fail only after this sweep (dq_apc_look_follows_the_lamp, dq_gameplay/power_cut_stops_doors). She still spawns and casts; teardown puts the flag back.
+	set_global(nameof(GLOB.narsie_cometh), TRUE)
 	for(var/type in typesof(/obj))
 		if(is_abstract(type))
 			continue

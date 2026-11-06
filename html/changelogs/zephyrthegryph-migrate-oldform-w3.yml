@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Hyena and sakimm hat giving and removing are menu ops instead of verbs"

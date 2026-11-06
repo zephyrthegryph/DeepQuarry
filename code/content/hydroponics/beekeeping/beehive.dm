@@ -216,7 +216,7 @@ MSG_DEF_SELF(beehive/bees_angry, span_notice("The bees won't let you take the ho
 	desc = "A machine used to turn honeycombs on the frame into honey and wax."
 	icon = 'icons/obj/beekeeping.dmi'
 	icon_state = "centrifuge"
-	circuit = /obj/item/circuitboard/honey_extractor
+	circuit = VARIANT(/obj/item/circuitboard/honey_extractor)
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE

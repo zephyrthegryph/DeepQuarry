@@ -1,0 +1,341 @@
+/obj/item/research_sample
+	name = "research sample"
+	desc = "A curious sample of unknown material. It may be possible to stabilize it to yield useful resources, or it could be shipped back to Central for research purposes.<br/>" + span_warning("It looks dangerous to handle without heavy gloves or other protective equipment.")
+	icon = 'icons/obj/samples.dmi'
+	icon_state = "sample"
+	w_class = ITEMSIZE_TINY
+	var/supply_value = 5
+	var/fixed_name = FALSE
+
+	persist_storable = FALSE //don't shove hazardous shinies into the item bank!! also their properties are (usually) randomized on creation, so saving them is pointless-- you won't get out what you put in
+
+	//handling requirements; you need gloves with a low permeability threshold, RIG gauntlets, or luck- otherwise you get hand burns
+	var/handle_risk		= 20		//20% chance to hurty if you handle it wrong
+	var/min_damage		= 3			//min: 3 burn per hand
+	var/max_damage		= 5			//max: 5 burn per hand
+	var/hazard_type		= "BURN"	//defaults to burn, but randomized and can be preset if desired; currently supports brute, burn, tox, oxy, emp, and pain
+
+	//resource returns when crunched; a small amount of OK stuff by default
+	var/min_ore			= 3
+	var/max_ore			= 5
+
+TYPE_TABLE_DECLARE(/obj/item/research_sample, research_sample_resources, list(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold))
+
+/// Rolled before init (rolls()): an unnamed sample's look, its name to match and its hazard.
+/obj/item/research_sample/proc/roll_sample(datum/roller/R)
+	var/name_prefix = R.choose(list("strange","anomalous","exotic","atypical","unusual","incongruous","weird","aberrant","eccentric"))
+	var/name_suffix		//blank because it's randomized per sample appearance
+	var/sample_icon = R.number(1, 11)
+	hazard_type = R.choose(list("BRUTE","BURN","TOX","OXY","EMP","PAIN"))
+	//per-state tweaks, like glows/light emission or narrower valid tech defs, if desired
+	switch(sample_icon)
+		if(1)	//prism
+			name_suffix = R.choose(list("alloy","object","sample","element","chunk"))
+		if(2)	//ring
+			name_suffix = R.choose(list("ring","band","torus","circuit","halo","hoop"))
+		if(3)	//red stone
+			name_suffix = R.choose(list("gem","crystal","jewel","stone","bauble","rock"))
+		if(4)	//circuit scrap
+			name_suffix = R.choose(list("circuit","board","scrap","junk","object","device"))
+		if(5)	//crystal star
+			name_suffix = R.choose(list("gem","crystal","jewel","stone","bauble","rock","star"))
+		if(6)	//spore
+			name_suffix = R.choose(list("glob","spore","blob","corpuscle","macroorganism","vacuole"))
+		if(7)	//device
+			name_suffix = R.choose(list("device","gadget","widget","object","apparatus","contraption","gizmo","object","doohickey"))
+		if(8)	//purple shard
+			name_suffix = R.choose(list("shard","fragment","sliver","remnant"))
+		if(9, 10)	//purple rock, green rock
+			name_suffix = R.choose(list("rock","stone","slab","rubble","mineral","mass","boulder","slag"))
+		else	//none
+			name_suffix = R.choose(list("object","sample","thing","fragment","specimen","element","alloy","chunk","remnant","scrap","sliver"))
+	name = "[name_prefix] [name_suffix]"
+	return "generic_sample[sample_icon]"
+
+/obj/item/research_sample/proc/register_sellable()
+	make_sellable(/datum/sellable/research_sample)
+
+CAPABILITIES(/obj/item/research_sample)
+	setup(PROC_REF(register_sellable))
+	rolls(nameof(icon_state), PROC_REF(roll_sample), when = not(nameof(fixed_name)))
+	op("pick_up", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(sample_pick_up)))
+	op("pick_up_robot", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(sample_pick_up_robot)))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_self)))
+	op("self_robot", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot)), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	// a short delay, so you can abort/cancel if you misclick
+	op("crush", ai(), wait(3 SECONDS), then(PROC_REF(crush_done)))
+
+/// A cyborg picks a sample up unharmed.
+/obj/item/research_sample/proc/sample_pick_up_robot(datum/act/op/A)
+	pick_up_by_hand(A.actor)
+	return OP_OK
+
+/// Picking a sample up may burn an unprotected holder.
+/obj/item/research_sample/proc/sample_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
+	var/mob/living/M = user
+	if(!istype(M))
+		return
+
+	var/burn_user = TRUE
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = user
+		var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
+		var/obj/item/clothing/suit/S = H.get_equipped_item(SLOT_ID_SUIT)
+		var/gloves_permeability	= 1
+		var/suit_permeability = 1
+		if(istype(G))
+			gloves_permeability = protection_of(G).permeability
+		if(istype(S) && worn_of(S).covers & HANDS)	//if it's a suit *and* it covers our hands
+			suit_permeability = protection_of(S).permeability
+		if((min(gloves_permeability,suit_permeability) < 0.25) || !prob(handle_risk))
+			burn_user = FALSE
+
+		if(burn_user)
+			switch(hazard_type)
+				if("BRUTE")
+					act_message(src, H, others = span_danger("%U% creaks as it ravages %T%'s hands!"))
+					H.injure(INJURY_CUT, rand(min_damage,max_damage), BP_R_HAND, src)
+					H.injure(INJURY_CUT, rand(min_damage,max_damage), BP_L_HAND, src)
+				if("BURN")
+					act_message(src, H, others = span_danger("%U% flashes as it scorches %T%'s hands!"))
+					H.injure(INJURY_BURN, rand(min_damage,max_damage), BP_R_HAND, src)
+					H.injure(INJURY_BURN, rand(min_damage,max_damage), BP_L_HAND, src)
+				if("TOX")
+					H.visible_message(span_danger("\The [src] seethes and hisses like burning acid!"))
+					to_chat(user,span_danger("A wave of nausea washes over you!"))
+					H.injure(INJURY_TOXIN, rand(min_damage,max_damage)+rand(min_damage,max_damage), null, src)
+				if("OXY")
+					H.visible_message(span_danger("\The [src] seems to draw something into itself!"))
+					to_chat(user,span_danger("You feel dizzy and short of breath!"))
+					H.add_oxygen_debt(rand(min_damage,max_damage)+rand(min_damage,max_damage), src)
+				if("EMP")
+					H.visible_message(span_danger("\The [src] ripples and distorts, emitting some kind of pulse!"))
+					empulse(H,0,1,1,1)
+				if("PAIN")
+					H.visible_message(span_danger("\The [src] flashes with coruscating energy!"))
+					to_chat(user,span_danger("Blinding pain assails your senses!"))
+					H.injure(INJURY_PAIN, rand(min_damage,max_damage)*5, null, src)
+				else
+					H.visible_message(span_notice("\The [src] flickers with kaleidoscopic light. You should report this to someone immediately."))
+			H.drop_from_inventory(src, get_turf(H))
+			return
+
+	if(burn_user)
+		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
+
+/obj/item/research_sample/proc/crush_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	act_message(H, src, others = span_notice("%U% crushes %T%, stabilizing its anomalous properties and rendering it into a pile of assorted minerals."))
+	var/i = rand(min_ore,max_ore)
+	while(i>0)
+		var/ore = pick(TYPE_TABLE_GET(src, research_sample_resources))
+		new ore(H.loc)
+		i--
+	H.drop_from_inventory(src,get_turf(H))
+	consume(src, H)
+
+/// Old attack_self.
+/obj/item/research_sample/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/M = user
+	if(!istype(M))
+		return OP_OK
+
+	var/burn_user = TRUE
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = user
+		var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
+		var/obj/item/clothing/suit/S = H.get_equipped_item(SLOT_ID_SUIT)
+		var/gloves_permeability	= 1
+		var/suit_permeability = 1
+		if(istype(G))
+			gloves_permeability = protection_of(G).permeability
+		if(istype(S) && worn_of(S).covers & HANDS)	//if it's a suit *and* it covers our hands
+			suit_permeability = protection_of(S).permeability
+		if((min(gloves_permeability,suit_permeability) < 0.25) || !prob(handle_risk))
+			burn_user = FALSE
+
+		if(burn_user)
+			switch(hazard_type)
+				if("BRUTE")
+					act_message(src, H, others = span_danger("%U% creaks as it ravages %T%'s hands!"))
+					H.injure(INJURY_CUT, rand(min_damage,max_damage), BP_R_HAND, src)
+					H.injure(INJURY_CUT, rand(min_damage,max_damage), BP_L_HAND, src)
+				if("BURN")
+					act_message(src, H, others = span_danger("%U% flashes as it scorches %T%'s hands!"))
+					H.injure(INJURY_BURN, rand(min_damage,max_damage), BP_R_HAND, src)
+					H.injure(INJURY_BURN, rand(min_damage,max_damage), BP_L_HAND, src)
+				if("TOX")
+					H.visible_message(span_danger("\The [src] seethes and hisses like burning acid!"))
+					to_chat(user,span_danger("A wave of nausea washes over you!"))
+					H.injure(INJURY_TOXIN, rand(min_damage,max_damage)+rand(min_damage,max_damage), null, src)
+				if("OXY")
+					H.visible_message(span_danger("\The [src] seems to draw something into itself!"))
+					to_chat(user,span_danger("You feel dizzy and short of breath!"))
+					H.add_oxygen_debt(rand(min_damage,max_damage)+rand(min_damage,max_damage), src)
+				if("EMP")
+					H.visible_message(span_danger("\The [src] ripples and distorts, emitting some kind of pulse!"))
+					empulse(H,0,1,1,1)
+				if("PAIN")
+					H.visible_message(span_danger("\The [src] flashes with coruscating energy!"))
+					to_chat(user,span_danger("Blinding pain assails your senses!"))
+					H.injure(INJURY_PAIN, rand(min_damage,max_damage)*5, null, src)
+				else
+					H.visible_message(span_notice("\The [src] flickers with kaleidoscopic light. You should report this to someone immediately."))
+			H.drop_from_inventory(src, get_turf(H))
+			return OP_OK
+
+		else	//short delay, so you can abort/cancel if you misclick
+			perform_op(H, src, "crush", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+			return OP_OK
+
+	if(burn_user)
+		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
+	return OP_OK
+
+/// Old attackby.
+/obj/item/research_sample/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
+
+	if(istype(P, /obj/item/storage/sample_container))
+		var/obj/item/storage/sample_container/SC = P
+		if(contents_count(SC) >= SC.max_storage_space)
+			to_chat(user, span_notice("\The [SC] is full!"))
+			return OP_PASS
+		else
+			src.forceMove(SC)
+			to_chat(user, span_notice("You store \the [src] in \the [SC]."))
+	return OP_PASS
+
+/obj/item/research_sample/common
+	supply_value = 15
+
+CAPABILITIES(/obj/item/research_sample/common)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/research_sample/common)))
+
+/obj/item/research_sample/uncommon
+	supply_value = 35
+
+	handle_risk		= 50
+	min_damage		= 4
+	max_damage		= 6
+
+	//modest amount of decent stuff
+	min_ore			= 4
+	max_ore			= 6
+
+CAPABILITIES(/obj/item/research_sample/uncommon)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/research_sample/uncommon)))
+
+TYPE_TABLE(/obj/item/research_sample/uncommon, research_sample_resources, list(/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold,/obj/item/ore/osmium,/obj/item/ore/diamond))
+
+/obj/item/research_sample/rare
+	supply_value = 75
+
+	handle_risk		= 80
+	min_damage		= 5
+	max_damage		= 10
+
+	//a decent amount of rare stuff only
+	min_ore			= 8
+	max_ore			= 10
+
+CAPABILITIES(/obj/item/research_sample/rare)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/research_sample/rare)))
+
+TYPE_TABLE(/obj/item/research_sample/rare, research_sample_resources, list(/obj/item/ore/osmium,/obj/item/ore/uranium,/obj/item/ore/hydrogen,/obj/item/ore/diamond,/obj/item/ore/verdantium))
+
+/obj/item/research_sample/bluespace
+	name = "bluespace anomaly"
+	desc = "A small, solidified fragment of bluespace? It shimmers in and out of phase with reality, flickering ominously."
+	icon_state = "sample_bluespace"
+	fixed_name = TRUE
+	var/lightcolor = "#0066CC"
+	supply_value = 100
+
+	handle_risk		= 80
+	min_damage		= 5
+	max_damage		= 10
+
+	//a single bluespace crystal
+	min_ore			= 1
+	max_ore			= 1
+
+TYPE_TABLE(/obj/item/research_sample/bluespace, research_sample_resources, list(/obj/item/bluespace_crystal))
+
+CAPABILITIES(/obj/item/research_sample/bluespace)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/research_sample/bluespace)))
+	after_init(0, then(PROC_REF(start_glowing)))
+
+/// The sample glows from the start.
+/obj/item/research_sample/bluespace/proc/start_glowing(datum/act/timer/A)
+	set_glow(src, GLOW(1, 3, lightcolor))
+
+//catalogue data
+/datum/category_item/catalogue/information/research_sample/core_data
+	name = "Collection - Anomalous Matter"
+	desc = "Samples of various kinds of matter exposed to strange energy fields, exotic stellar radiation, or other unusual conditions, these objects are of great interest to most scientific institutions as they present novel research opportunities in a wide variety of fields, whether it's studying the material compositions themselves, the effects that exposure has had on them, or their other properties such as conductivity, flammability, and so on. There's no telling what kind of breakthroughs could be made.\
+	<br><br>\
+	Perhaps the best known example of this type of object would be the now-ubiquitous Phoron. Whilst many of these samples are the equivalent of evolutionary \'dead ends\' in most respects, many can still yield intriguing results and unique possibilities - not to mention wealth and fame for those who discover a promising specimen.\
+	<br><br>\
+	Their exact composition often varies wildly, which means handling them without protective equipment can be a risky endeavour."
+	value = CATALOGUER_REWARD_MEDIUM
+	unlocked_by_all = list(
+		/datum/category_item/catalogue/information/research_sample/common,
+		/datum/category_item/catalogue/information/research_sample/uncommon,
+		/datum/category_item/catalogue/information/research_sample/rare,
+		/datum/category_item/catalogue/information/research_sample/bluespace
+		)
+
+/datum/category_item/catalogue/information/research_sample/common
+	name = "Anomalous Sample - Common"
+	desc = "A chunk of mildly anomalous matter. It seems mostly safe to handle, but care should be taken nonetheless."
+	value = CATALOGUER_REWARD_EASY
+
+/datum/category_item/catalogue/information/research_sample/uncommon
+	name = "Anomalous Sample - Uncommon"
+	desc = "A chunk of moderately anomalous matter. Could be quite dangerous to handle unprotected."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/datum/category_item/catalogue/information/research_sample/rare
+	name = "Anomalous Sample - Rare"
+	desc = "A chunk of exceptionally anomalous matter. It's likely very dangerous to handle without protective equipment."
+	value = CATALOGUER_REWARD_HARD
+
+/datum/category_item/catalogue/information/research_sample/bluespace
+	name = "Anomalous Sample - Bluespace"
+	desc = "A semi-crystalline particle of anomalous origin. Cataloguer sensors indicate it has extremely strong quasidimensional entanglements. Handling it without protective equipment is likely very unwise."
+	value = CATALOGUER_REWARD_HARD
+
+/obj/random/research_sample_type1
+	name = "Random Research Sample"
+	desc = "Spawns a random research sample of any quality."
+	icon = 'icons/obj/samples.dmi'
+	icon_state = "sample_spawner1"
+
+CAPABILITIES(/obj/random/research_sample_type1)
+	loot(table = list(/obj/item/research_sample/common = 50, /obj/item/research_sample/uncommon = 35, /obj/item/research_sample/rare = 15))
+
+/obj/random/research_sample_type2
+	name = "Random Common/Uncommon Research Sample"
+	desc = "Spawns a random research sample of common or uncommon quality."
+	icon = 'icons/obj/samples.dmi'
+	icon_state = "sample_spawner2"
+
+CAPABILITIES(/obj/random/research_sample_type2)
+	loot(table = list(/obj/item/research_sample/common = 70, /obj/item/research_sample/uncommon = 30))
+
+/obj/random/research_sample_type3
+	name = "Random Uncommon/Rare Research Sample"
+	desc = "Spawns a random research sample of uncommon or rare quality."
+	icon = 'icons/obj/samples.dmi'
+	icon_state = "sample_spawner3"
+
+CAPABILITIES(/obj/random/research_sample_type3)
+	loot(table = list(/obj/item/research_sample/uncommon = 70, /obj/item/research_sample/rare = 30))
+SCHEMA(/obj/item/research_sample, hazard_type, schema_text())

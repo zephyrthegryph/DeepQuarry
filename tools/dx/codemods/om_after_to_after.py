@@ -98,7 +98,7 @@ def main():
                                        capture_output=True, text=True).stdout.split('\0') if f]
     changed = 0
     for f in files:
-        if f.startswith('code/datums/om/') or f.startswith('code/__defines/'):
+        if f.startswith('code/datums/om/') or f.startswith(('code/__defines/', 'code/defines/engine/', 'code/defines/library/', 'code/defines/host/', 'code/defines/base/', 'code/defines/content/')):
             continue
         text = open(f, encoding='utf-8', newline='').read()
         lines = text.split('\n')

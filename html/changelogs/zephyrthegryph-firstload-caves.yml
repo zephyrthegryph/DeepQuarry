@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Random maps (drop pods, admin-generated maps) plan their final turfs as data and place them as one load, then run their spawns"
+  - bugfix: "A random map is generated and applied once instead of up to five times"
+  - rscdel: "Removed the unused expedition cave carver"

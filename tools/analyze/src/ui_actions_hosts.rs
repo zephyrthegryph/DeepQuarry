@@ -8,7 +8,7 @@ use crate::ui_actions_js::RawCall;
 use crate::key_policy_control::{self as kc,Control,Compatibility};
 pub(crate) const INTERFACES:&str="tgui/packages/tgui/interfaces";
 pub(crate) const CAP_ROOT:&str="/datum/capability";
-pub(crate) const CAPS_DIR:&str="code/datums/capabilities/";
+pub(crate) const CAPS_DIR:&str="code/library/capabilities/";
 pub(crate) const BUILTIN_HOSTS:[&str;2]=["/datum","/atom"];
 /// One act() of a source file, with the dispatcher's normalisation of its names precomputed.
 pub(crate) struct Call {

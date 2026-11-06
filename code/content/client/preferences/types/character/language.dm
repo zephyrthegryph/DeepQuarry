@@ -1,5 +1,5 @@
 // DQ-migrated: language scalar prefs.
-// alternate_languages/language_prefixes/language_custom_keys remain
+// alternate_languages/language_custom_keys remain
 // as monolithic lists for now (composite data — separate refactor).
 
 /datum/preference/numeric/human/extra_languages
@@ -57,26 +57,11 @@
 			out += C.name
 	return out
 
+/// A saved language this character does not know (the old "common" default, a removed alternate, a species change) falls back to the species' own.
+/datum/preference/text/human/preferred_language/sanitize(value, datum/preferences/preferences)
+	if(value in preferences.known_language_names())
+		return value
+	return preferences.species_language_name()
+
 /datum/preference/text/human/preferred_language/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
-
-/datum/preference/color/human/runechat_color
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "runechat_color"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/color/human/runechat_color/create_default_value()
-	return COLOR_BLACK // the "unset" sentinel: chat_message.dm colours runechat from the speaker's name instead
-
-/// Black is not a colour here but "automatic"; the widget says so instead of drawing black on the dark theme.
-/datum/preference/color/human/runechat_color/get_widget_props(datum/preferences/preferences)
-	. = ..()
-	if(!islist(.))
-		. = list()
-	.["unset_value"] = COLOR_BLACK
-	.["unset_label"] = "Automatic (from name)"
-
-/datum/preference/color/human/runechat_color/apply_to_human(mob/living/carbon/human/target, value)
 	return

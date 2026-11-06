@@ -29,7 +29,7 @@
 	kind = ENTRY_EVERY
 
 /datum/entry_engine/every/validate(datum/activation/A, datum/entry/E)
-	if(E.args["members"] && A && !istype(A.holder, /datum/system))
+	if(E.args["members"] && A && !istype(A.holder(), /datum/system))
 		return "every(members =): only a system may sweep members"
 	if(!length(E.children))
 		return "every() has no parts: give it then(CAP_PROC(x))"
@@ -44,7 +44,7 @@
 	return TRUE
 
 /datum/entry_engine/every/remove(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(holder && !QDELETED(holder))
 		cancel_after(holder, activation_every_key(A, E))
 	if(activation_every_parkable(A, E))
@@ -100,7 +100,7 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 
 /// Arms the next run, an interval from now on the holder's clock.
 /proc/activation_every_arm(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(!holder || QDELETED(holder) || A.dead)
 		return
 	after(holder, every_interval(holder, E, A), GLOBAL_PROC_REF(activation_every_fire), key = activation_every_key(A, E), with = list(A, E), keeps_dead = TRUE)
@@ -109,9 +109,11 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 /proc/activation_every_fire(datum/activation/A, datum/entry/E, dispatched = FALSE)
 	if(!A || !E || A.dead)
 		return
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(!holder || QDELETED(holder))
 		return
+	GLOB.km_attr_a = holder.type // attribution: the declared every(), not the dispatcher
+	GLOB.km_attr_entry = E
 	if(!dispatched && every_dispatch_needed(E))
 		every_dispatch_queue(E, GLOBAL_PROC_REF(activation_every_fire), list(A, E, TRUE))
 		GLOB.timer_fire_quiet = TRUE // only queued: the run redraws through what it writes
@@ -156,12 +158,12 @@ GLOBAL_COUNTER(every_activation_parks)
 /// key, a tracked var of the holder, or a tree of those). The answer is per holder type and entry.
 /proc/activation_every_parkable(datum/activation/A, datum/entry/E)
 	var/cond = E.args["when"]
-	if(isnull(cond) || !A.holder)
+	if(isnull(cond) || !A.holder())
 		return FALSE
 	var/static/list/known = list()
-	var/id = "[A.holder.type]|[E.sig]"
+	var/id = "[A.holder().type]|[E.sig]"
 	if(isnull(known[id]))
-		known[id] = activation_every_cond_published(A.holder, cond) ? TRUE : FALSE
+		known[id] = activation_every_cond_published(A.holder(), cond) ? TRUE : FALSE
 	return known[id]
 
 /// type_every_cond_tracked() (which takes capability keys too: key_set() publishes every change of one, capability_key_changed()).
@@ -190,7 +192,7 @@ GLOBAL_COUNTER(every_activation_parks)
 	var/datum/activation/act = A.activation
 	if(!act || act.dead || !length(act.every_parked))
 		return
-	var/datum/holder = act.holder
+	var/datum/holder = act.holder()
 	if(!holder || QDELETED(holder))
 		return
 	for(var/list/pair as anything in act.applied)
@@ -224,12 +226,26 @@ GLOBAL_COUNTER(every_activation_parks)
 	var/index = 0
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_EVERY))
 		if(!isnull(C.owner))
-			continue // a capability's: its activation arms it
+			// A capability's: its activation arms it. A type-declared activation is lazy (a state key write makes it), so one with no state key has nothing that
+			// would ever make it: it attaches here, or its every() silently never runs (the runs_on_cell drain did not).
+			var/datum/capability/def = every_keyless_capability(T, C)
+			if(def && !activation_find(holder, def.key, holder))
+				activation_attach(holder, def, holder, null, SCOPE_TYPE, null, null)
+			continue
 		index++
 		if(type_every_parkable(holder, C) && !type_every_gate(holder, C))
 			type_every_park(holder, index)
 			continue
 		type_every_schedule(holder, C, index, TRUE)
+
+/// The capability that owns the every() `C`, when it declares no state key (nothing but arming would ever make its type-level activation); else null.
+/proc/every_keyless_capability(datum/type_table/T, datum/centry/C)
+	var/datum/capability/def = T.caps?[C.owner]
+	if(!def)
+		return null
+	if(!GLOB.cap_keys_built)
+		cap_keys_build()
+	return length(GLOB.cap_key_defs["[def.cap_id]"]) ? null : def
 
 /// The first delay of a type-level every() of `interval`, spread: map load arms a type's instances on one tick and an exact interval would make them all
 /// run on one tick for the rest of the round (the burst ticks of an idle station). Intervals under TYPE_EVERY_PHASE_MIN are left alone. The phase
@@ -358,6 +374,8 @@ GLOBAL_COUNTER(every_activation_parks)
 	if(!holder || QDELETED(holder) || !C)
 		return
 	var/datum/entry/E = C.item
+	GLOB.km_attr_a = holder.type // attribution: the declared every(), not the dispatcher
+	GLOB.km_attr_entry = E
 	if(!dispatched && every_dispatch_needed(E))
 		every_dispatch_queue(E, GLOBAL_PROC_REF(type_every_fire), list(holder, C, index, TRUE))
 		GLOB.timer_fire_quiet = TRUE // only queued: the run redraws through what it writes
@@ -569,6 +587,22 @@ GLOBAL_LIST_EMPTY(every_hop_watches)
 	GLOB.every_hop_watches -= "[REF(holder)]"
 	W.unsubscribe()
 	spent(W)
+
+/// `holder` left what its every() entries worked on, and something arms them again if it ever returns (lifecycle_decls_init()): its type-level every() entries stop, parked
+/// or scheduled, and it leaves the watch index. A datum that is kept (a contagion taken out of a body, not deleted) would otherwise stay watched, and alive, for good.
+/proc/type_every_stop(datum/holder)
+	var/datum/rx_state/S = holder.rx
+	if(!S)
+		return
+	var/index = 0
+	for(var/datum/centry/C as anything in compiled_entries(table_of(holder), ENTRY_EVERY))
+		if(isnull(C.owner))
+			index++
+			cancel_after(holder, "every:type:[index]")
+	S.every_parked = null
+	if(S.every_hop_on)
+		every_hop_forget(holder)
+		S.every_hop_on = FALSE
 
 CAPABILITIES(/datum/every_hop_watch)
 	ref_one(nameof(holder))

@@ -203,17 +203,17 @@
 		/obj/item/slime_extract/oil = 3,
 		/obj/item/slime_extract/sapphire = 3,
 		/obj/item/slime_extract/emerald = 3,
-		/obj/item/seeds/shrinkshroom = 12,
-		/obj/item/seeds/megashroom = 12,
-		/obj/item/seeds/pitcherseed = 6,
-		/obj/item/seeds/deathberryseed = 6,
-		/obj/item/seeds/ambrosiainfernusseed = 6,
-		/obj/item/seeds/thaadra = 6,
-		/obj/item/seeds/icepepperseed = 6,
-		/obj/item/seeds/jurlmah = 6,
-		/obj/item/seeds/amauri = 6,
-		/obj/item/seeds/gelthi = 6,
-		/obj/item/seeds/vale = 6
+		VARIANT(/obj/item/seeds/shrinkshroom) = 12,
+		VARIANT(/obj/item/seeds/megashroom) = 12,
+		VARIANT(/obj/item/seeds/pitcherseed) = 6,
+		VARIANT(/obj/item/seeds/deathberryseed) = 6,
+		VARIANT(/obj/item/seeds/ambrosiainfernusseed) = 6,
+		VARIANT(/obj/item/seeds/thaadra) = 6,
+		VARIANT(/obj/item/seeds/icepepperseed) = 6,
+		VARIANT(/obj/item/seeds/jurlmah) = 6,
+		VARIANT(/obj/item/seeds/amauri) = 6,
+		VARIANT(/obj/item/seeds/gelthi) = 6,
+		VARIANT(/obj/item/seeds/vale) = 6
 		) // For each, use the following pattern:
 
 	premium 	= list() // No specified amount = only one in stock
@@ -224,17 +224,17 @@
 		/obj/item/slime_extract/oil = 3250,
 		/obj/item/slime_extract/sapphire = 3250,
 		/obj/item/slime_extract/emerald = 3250,
-		/obj/item/seeds/shrinkshroom = 50,
-		/obj/item/seeds/megashroom = 50,
-		/obj/item/seeds/pitcherseed = 125,
-		/obj/item/seeds/deathberryseed = 125,
-		/obj/item/seeds/ambrosiainfernusseed = 125,
-		/obj/item/seeds/thaadra = 125,
-		/obj/item/seeds/icepepperseed = 125,
-		/obj/item/seeds/jurlmah = 125,
-		/obj/item/seeds/amauri = 125,
-		/obj/item/seeds/gelthi = 125,
-		/obj/item/seeds/vale = 125)
+		VARIANT(/obj/item/seeds/shrinkshroom) = 50,
+		VARIANT(/obj/item/seeds/megashroom) = 50,
+		VARIANT(/obj/item/seeds/pitcherseed) = 125,
+		VARIANT(/obj/item/seeds/deathberryseed) = 125,
+		VARIANT(/obj/item/seeds/ambrosiainfernusseed) = 125,
+		VARIANT(/obj/item/seeds/thaadra) = 125,
+		VARIANT(/obj/item/seeds/icepepperseed) = 125,
+		VARIANT(/obj/item/seeds/jurlmah) = 125,
+		VARIANT(/obj/item/seeds/amauri) = 125,
+		VARIANT(/obj/item/seeds/gelthi) = 125,
+		VARIANT(/obj/item/seeds/vale) = 125)
 
 /obj/machinery/vending/starhunter_miner
 	name = "Starhunter Trade Vendor: Miner"
@@ -251,7 +251,7 @@
 		/obj/item/stack/material/bronze = 50,
 		) // For each, use the following pattern:
 
-	premium 	= list(/obj/item/circuitboard/defenseonelisk) // No specified amount = only one in stock
+	premium 	= list(VARIANT(/obj/item/circuitboard/defenseonelisk)) // No specified amount = only one in stock
 
 	prices     = list(/obj/item/kinetic_crusher/glaive = 1200,
 		/obj/item/kinetic_crusher = 1200,
@@ -261,7 +261,7 @@
 		/obj/item/stack/material/tritium = 12,
 		/obj/item/stack/material/deuterium = 12,
 		/obj/item/stack/material/bronze = 12,
-		/obj/item/circuitboard/defenseonelisk = 5000
+		VARIANT(/obj/item/circuitboard/defenseonelisk) = 5000
 		)
 
 //Some stuff to let sec do things

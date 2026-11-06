@@ -1,0 +1,44 @@
+/datum/species/akula
+	name = SPECIES_AKULA
+	name_plural = "Akula"
+	icobase = 'icons/mob/human_races/r_akula.dmi'
+	deform = 'icons/mob/human_races/r_def_akula.dmi'
+	tail = "tail"
+	icobase_tail = 1
+	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
+	num_alternate_languages = 3
+	secondary_langs = list(LANGUAGE_SPACER)
+	name_language = LANGUAGE_SPACER
+	species_language = LANGUAGE_SPACER
+	color_mult = 1
+	assisted_langs = list(LANGUAGE_EAL, LANGUAGE_ROOTLOCAL, LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX, LANGUAGE_PROMETHEAN)
+	inherent_verbs = list(/mob/living/carbon/human/proc/tie_hair, /mob/living/carbon/human/proc/water_stealth, /mob/living/carbon/human/proc/underwater_devour)
+	min_age = 18
+	max_age = 110
+
+	blurb = "The Akula are a species of amphibious humanoids like the Skrell, but have an appearance very similar to that of a shark. \
+	They were first discovered as a primitive race of underwater dwelling tribal creatures by the Skrell. At first they were not believed \
+	to be noteworthy, but the Akula proved to be such swift and clever learners that the Skrell reclassified them as sentients. Allegedly, \
+	the Akula were also the first sentient life that the Skrell had ever encountered beside themselves, and thus the two species became swift \
+	allies over the next few hundred years. With the help of Skrellean technology, the Akula had their genome modified to be capable of \
+	surviving in open air for long periods of time. However, Akula even today still require a high humidity environment to avoid drying out \
+	after a few days, which would make life on an arid world like Virgo-Prime nearly impossible if it were not for Skrellean technology to aid them."
+
+	wikilink="https://wiki.vore-station.net/Backstory#Akula"
+
+	catalogue_data = list(/datum/category_item/catalogue/fauna/akula)
+
+	primitive_form = SPECIES_MONKEY_AKULA
+
+	genders = list(MALE, FEMALE, PLURAL, NEUTER)
+
+	spawn_flags = SPECIES_CAN_JOIN
+	appearance_flags = HAS_HAIR_COLOR | HAS_LIPS | HAS_UNDERWEAR | HAS_SKIN_COLOR | HAS_EYE_COLOR
+
+	water_breather = TRUE
+	water_movement = -4 //Negates shallow. Halves deep.
+	swim_mult = 0.5
+
+	flesh_color = "#AFA59E"
+	base_color = "#777777"
+	blood_color = "#1D2CBF"

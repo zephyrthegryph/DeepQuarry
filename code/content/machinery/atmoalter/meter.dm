@@ -125,9 +125,6 @@ CAPABILITIES(/obj/machinery/meter)
 	)
 	radio_connection.post_signal(src, signal)
 
-/obj/machinery/meter/proc/current_pressure_icon_state()
-	return pressure_icon_state(target_ref()?.return_air())
-
 /obj/machinery/meter/proc/pressure_icon_state(datum/gas_mixture/environment)
 	if(!environment)
 		return "meterX"

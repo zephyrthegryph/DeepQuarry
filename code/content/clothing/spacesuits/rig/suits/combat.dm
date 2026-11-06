@@ -1,0 +1,103 @@
+/obj/item/clothing/head/helmet/space/rig/combat
+	light_overlay = "helmet_light_dual_green"
+
+/obj/item/rig/combat
+	name = "combat hardsuit control module"
+	desc = "A sleek and dangerous hardsuit for active combat."
+	icon_state = "security_rig"
+	suit_type = "combat hardsuit"
+	offline_slowdown = 1.5
+	offline_vision_restriction = 1
+
+	helm_type = /obj/item/clothing/head/helmet/space/rig/combat
+
+
+
+/obj/item/rig/combat/equipped
+
+	initial_modules = list(
+		/obj/item/rig_module/mounted,
+		/obj/item/rig_module/vision/thermal,
+		/obj/item/rig_module/grenade_launcher,
+		/obj/item/rig_module/ai_container,
+		/obj/item/rig_module/power_sink,
+		/obj/item/rig_module/electrowarfare_suite,
+		/obj/item/rig_module/chem_dispenser/combat
+		)
+
+/obj/item/rig/combat/empty
+	initial_modules = list(
+		/obj/item/rig_module/ai_container,
+		/obj/item/rig_module/electrowarfare_suite,
+		)
+
+/obj/item/rig/military
+	name = "military hardsuit control module"
+	desc = "An austere hardsuit used by paramilitary groups and real soldiers alike."
+	icon_state = "military_rig"
+	suit_type = "military hardsuit"
+	offline_slowdown = 1.5
+	offline_vision_restriction = 1
+
+	chest_type = /obj/item/clothing/suit/space/rig/military
+	helm_type = /obj/item/clothing/head/helmet/space/rig/military
+	boot_type = /obj/item/clothing/shoes/magboots/rig/military
+	glove_type = /obj/item/clothing/gloves/gauntlets/rig/military
+
+
+
+/obj/item/clothing/head/helmet/space/rig/military
+	light_overlay = "helmet_light_dual_green"
+
+
+
+/obj/item/clothing/suit/space/rig/military
+
+
+
+/obj/item/clothing/shoes/magboots/rig/military
+
+
+
+/obj/item/clothing/gloves/gauntlets/rig/military
+
+
+
+/obj/item/rig/military/equipped
+	initial_modules = list(
+		/obj/item/rig_module/mounted/egun,
+		/obj/item/rig_module/vision/multi,
+		/obj/item/rig_module/grenade_launcher,
+		/obj/item/rig_module/ai_container,
+		/obj/item/rig_module/power_sink,
+		/obj/item/rig_module/electrowarfare_suite,
+		/obj/item/rig_module/chem_dispenser/combat,
+		)
+
+/obj/item/rig/military/empty
+	initial_modules = list(
+		/obj/item/rig_module/ai_container,
+		/obj/item/rig_module/electrowarfare_suite,
+		)
+
+CAPABILITIES(/obj/item/rig/combat)
+	configure(atom_rules(armor_spec = "melee=80;bullet=70;laser=60;energy=15;bomb=80;bio=100;rad=60"))
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))
+
+CAPABILITIES(/obj/item/rig/military)
+	configure(atom_rules(armor_spec = "melee=80;bullet=75;laser=65;energy=15;bomb=80;bio=100;rad=40"))
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/military)
+	fits_as(FIT_HUMAN_PROMETHEAN)
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/military)
+	fits_as(FIT_HUMAN_PROMETHEAN)
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/military)
+	fits_as(FIT_HUMAN_PROMETHEAN)
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/military)
+	fits_as(FIT_HUMAN_PROMETHEAN)

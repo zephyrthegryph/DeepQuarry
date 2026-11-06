@@ -1,0 +1,67 @@
+SYSTEM_DEF(persistence)
+	name = "Persistence"
+	init_stage = INITSTAGE_MAIN
+	needs = list(
+		/datum/system/mapping,
+		/datum/system/atoms,
+		/datum/system/holomaps
+	)
+
+	/// Track type -> the slots of the tracked atoms (slot_datums() reads them back).
+	var/list/tracking_values = list()
+	var/list/persistence_datums = list()
+
+	/// Places our subsystem can spawn paintings (helps with art spawning differently across maps)
+	var/list/all_paintings = list()
+	var/list/unpicked_paintings = list()
+
+/datum/system/persistence/initialize()
+	for(var/datum/persistent/P as anything in subtypesof(/datum/persistent))
+		if(initial(P.name))
+			P = new P
+			persistence_datums[P.type] = P
+			P.load_saved()
+
+/datum/system/persistence/on_shutdown()
+	for(var/thing in persistence_datums)
+		var/datum/persistent/P = persistence_datums[thing]
+		P.Shutdown()
+
+/datum/system/persistence/proc/track_value(atom/value, track_type)
+
+	if(CONFIG_GET(flag/persistence_disabled)) //if the config is set to persistence disabled, nothing will save or load.
+		return
+
+	var/turf/T = get_turf(value)
+	if(!T)
+		return
+
+	var/area/A = get_area(T)
+	if(!A || (A.flag_check(AREA_FLAG_IS_NOT_PERSISTENT)))
+		return
+
+	if(!(T.z in using_map.persist_levels))
+		return
+
+	if(!tracking_values[track_type])
+		tracking_values[track_type] = list()
+	tracking_values[track_type] += SLOT(value)
+
+/datum/system/persistence/proc/forget_value(atom/value, track_type)
+	if(tracking_values[track_type])
+		tracking_values[track_type] -= SLOT_KNOWN(value)
+
+
+/datum/system/persistence/proc/show_info(mob/user)
+	if(!check_rights_for(user.client, R_HOLDER))
+		return
+
+	var/list/dat = list("<table width = '100%'>")
+	var/can_modify = check_rights_for(user.client, (R_ADMIN|R_DEBUG))
+	for(var/thing in persistence_datums)
+		var/datum/persistent/P = persistence_datums[thing]
+		if(P.has_admin_data)
+			dat += P.GetAdminSummary(user, can_modify)
+	dat += "</table>"
+	// structured TGUI AdminReport with topic forwarding.
+	dq_admin_report_html(user, "Persistence Data", jointext(dat, null), src)

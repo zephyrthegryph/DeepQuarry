@@ -1,0 +1,597 @@
+/*
+Contains most of the procs that are called when a mob is attacked by something
+
+bullet_act
+ex_act
+meteor_act
+emp_act
+
+*/
+
+/mob/living/carbon/human/bullet_act(obj/item/projectile/P, def_zone)
+
+	def_zone = check_zone(def_zone)
+	if(!has_organ(def_zone))
+		return PROJECTILE_FORCE_MISS //if they don't have the organ in question then the projectile just passes by.
+
+	var/obj/item/organ/external/organ = get_organ(def_zone)
+
+	//Shields
+	var/shield_check = check_shields(P.damage, P, null, def_zone, "the [P.name]")
+	if(shield_check) // If the block roll succeeded, this is true.
+		if(shield_check < 0) // The shield did something weird and the bullet needs to keep doing things (e.g. it was reflected).
+			return shield_check // Likely equal to PROJECTILE_FORCE_MISS or PROJECTILE_CONTINUE.
+		else // Otherwise we blocked normally and stopped all the damage.
+			return 0
+
+	if(projectile_hit_begin(P)) // a hit hook took the round over: no autopsy, embed or effects
+		return 0
+
+	if(!P.nodamage)
+		organ.add_autopsy_data("[P.name]", P.damage)
+
+	// Tell clothing we're wearing that it got hit by a bullet/laser/etc
+	var/list/clothing = get_clothing_list_organ(organ)
+	for(var/obj/item/clothing/C in clothing)
+		C.clothing_impact(P, P.damage)
+
+	//Shrapnel
+	if(P.can_embed())
+		var/armor = injury_armor(combat_of(P).injury_kind, organ)
+		if(!prob(armor/2))		//Even if the armor doesn't stop the bullet from hurting you, it might stop it from embedding.
+			var/hit_embed_chance = combat_of(P).embed_chance + (P.damage - armor)	//More damage equals more chance to embed
+
+			// Injury resistance makes bullets less likely to embed.
+			hit_embed_chance *= incoming_injury_factor(injury_category(combat_of(P).injury_kind))
+
+			if(prob(max(hit_embed_chance, 0)))
+				var/obj/item/material/shard/shrapnel/SP = new()
+				SP.name = (P.name != "shrapnel")? "[P.name] shrapnel" : "shrapnel"
+				SP.desc = "[SP.desc] It looks like it was fired from [P.shot_from]."
+				SP.forceMove(organ)
+				organ.embed(SP)
+
+	return (..(P , def_zone))
+
+/mob/living/carbon/human/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
+	var/obj/item/organ/external/affected = get_organ(check_zone(def_zone))
+	var/siemens_coeff = get_siemens_coefficient_organ(affected)
+	if(fire_stacks_of(src) < 0) // Water makes you more conductive.
+		siemens_coeff *= 1.5
+	stun_amount *= siemens_coeff
+	agony_amount *= siemens_coeff
+
+	switch (def_zone)
+		if(BP_HEAD)
+			agony_amount *= 1.50
+		if(BP_L_HAND, BP_R_HAND)
+			var/c_hand
+			if (def_zone == BP_L_HAND)
+				c_hand = get_equipped_item(SLOT_ID_HAND_L)
+			else
+				c_hand = get_equipped_item(SLOT_ID_HAND_R)
+
+			if(c_hand && (stun_amount || agony_amount > 10))
+				msg_admin_attack("[key_name(src)] was disarmed by a stun effect")
+
+				drop_from_inventory(c_hand)
+				if(!isbelly(loc))
+					if (affected.is_robotic())
+						automatic_custom_emote(VISIBLE_MESSAGE, "drops what they were holding, their [affected.name] malfunctioning!", check_stat = TRUE)
+					else
+						var/emote_scream = pick("screams in pain and ", "lets out a sharp cry and ", "cries out and ")
+						automatic_custom_emote(VISIBLE_MESSAGE, "[affected.organ_can_feel_pain() ? "" : emote_scream] drops what they were holding in their [affected.name]!", check_stat = TRUE)
+
+	..(stun_amount, agony_amount, def_zone, used_weapon, electric)
+
+/// Worn armour on the struck part, from the body's worn protection cache.
+/// No part given: every part's covering, weighted by its size.
+/mob/living/carbon/human/injury_armor_set(zone = null)
+	if(zone)
+		var/obj/item/organ/external/affecting = zone_to_external(zone)
+		if(affecting)
+			return body.worn_armor_set(affecting.body_part)
+	var/list/sum = list()
+	var/total = 0
+	for(var/organ_name in organs_by_name)
+		if(organ_name in GLOB.organ_rel_size)
+			var/obj/item/organ/external/organ = organs_by_name[organ_name]
+			if(organ)
+				var/weight = GLOB.organ_rel_size[organ_name]
+				var/list/values = body.worn_armor_set(organ.body_part).raw_values()
+				for(var/key in values)
+					sum[key] += values[key] * weight
+				total += weight
+	if(!total || !length(sum))
+		return dq_armor_none()
+	for(var/key in sum)
+		sum[key] /= total
+	return dq_armor(sum)
+
+/// The external limb a zone refers to: a BP_* zone, a limb, or an internal
+/// organ (its parent limb).
+/mob/living/carbon/human/proc/zone_to_external(zone)
+	if(istype(zone, /obj/item/organ/external))
+		return zone
+	if(istype(zone, /obj/item/organ/internal))
+		var/obj/item/organ/internal/I = zone
+		return get_organ(I.parent_organ)
+	if(istext(zone))
+		return get_organ(zone)
+	return null
+
+//this proc returns the Siemens coefficient of electrical resistivity for a particular external organ.
+/mob/living/carbon/human/proc/get_siemens_coefficient_organ(obj/item/organ/external/def_zone)
+	if (!def_zone)
+		return 1.0
+	// What covers the part: the body's worn protection cache (code/modules/body/worn_protection.dm).
+	return max(species.siemens_coefficient, 0) * body.worn_siemens(def_zone.body_part) * src.siemens
+
+// Similar to above but is for the mob's overall protection, being the average of all slots.
+/mob/living/carbon/human/proc/get_siemens_coefficient_average()
+	var/siemens_value = 0
+	var/total = 0
+	for(var/organ_name in organs_by_name)
+		if(organ_name in GLOB.organ_rel_size)
+			var/obj/item/organ/external/organ = organs_by_name[organ_name]
+			if(organ)
+				var/weight = GLOB.organ_rel_size[organ_name]
+				siemens_value += get_siemens_coefficient_organ(organ) * weight
+				total += weight
+
+	if(fire_stacks_of(src) < 0) // Water makes you more conductive.
+		siemens_value *= 1.5
+
+	return (siemens_value / max(total, 1))
+
+// Returns a number between 0 to 1, with 1 being total protection.
+/mob/living/carbon/human/get_shock_protection()
+	return min(1 - get_siemens_coefficient_average(), 1) // Don't go above 1, but negatives are fine.
+
+// Returns a list of clothing that is currently covering def_zone.
+/mob/living/carbon/human/proc/get_clothing_list_organ(obj/item/organ/external/def_zone, type)
+	var/list/results = list()
+	var/list/clothing_items = list(get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_MASK), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_UNIFORM), get_equipped_item(SLOT_ID_GLOVES), get_equipped_item(SLOT_ID_SHOES))
+	for(var/obj/item/clothing/C in clothing_items)
+		if(istype(C) && (worn_of(C).covers & def_zone.body_part))
+			results.Add(C)
+	return results
+
+/// Worn armour points on one external limb for a worn-armour list key
+/// ("melee", "bullet", ...; see injury_armor_key()), from the body's worn
+/// protection cache (code/modules/body/worn_protection.dm).
+/mob/living/carbon/human/proc/worn_armor_organ(obj/item/organ/external/def_zone, key)
+	if(!key || !def_zone)
+		return 0
+	return body.worn_armor(def_zone.body_part, key)
+
+// Checked in borer code
+/mob/living/carbon/human/proc/check_head_coverage()
+	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
+	var/list/body_parts = H.get_covering_clothing(EYES)
+	if(LAZYLEN(body_parts))
+		return 1
+	return 0
+
+//Used to check if they can be fed food/drinks/pills
+/mob/living/carbon/human/proc/check_mouth_coverage()
+	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
+	var/list/protective_gear = H.get_covering_clothing(FACE)
+	for(var/obj/item/gear in protective_gear)
+		if(istype(gear) && (worn_of(gear).covers & FACE) && !(worn_of(gear).flags & FLEXIBLEMATERIAL))
+			return gear
+	return null
+
+/mob/living/carbon/human/proc/check_mouth_coverage_survival()
+	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
+	var/list/protective_gear = H.get_covering_clothing(FACE)
+	for(var/obj/item/gear in protective_gear)
+		if(istype(gear) && (worn_of(gear).covers & FACE) && !(worn_of(gear).flags & FLEXIBLEMATERIAL) && !(worn_of(gear).flags & ALLOW_SURVIVALFOOD))
+			return gear
+	return null
+
+/mob/living/carbon/human/resolve_item_attack(obj/item/I, mob/living/user, target_zone, stance = I_HURT)
+	if(check_neckgrab_attack(I, user, target_zone, stance))
+		return null
+
+	if(user == src) // Attacking yourself can't miss
+		return target_zone
+
+	var/hit_zone = get_zone_with_miss_chance(target_zone, src, user.get_accuracy_penalty(), attacker = user)
+
+	if(!hit_zone)
+		user.do_attack_animation(src)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
+		act_message(user, src, others = span_danger("%U% misses %T% with %I%!"), item = I)
+		return null
+
+	if(check_shields(combat_of(I).force, I, user, target_zone, "the [I.name]"))
+		return
+
+	var/obj/item/organ/external/affecting = get_organ(hit_zone)
+	if (!affecting || affecting.is_stump())
+		to_chat(user, span_danger("They are missing that limb!"))
+		return null
+
+	return hit_zone
+
+/mob/living/carbon/human/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone, stance = I_HURT)
+	var/obj/item/organ/external/affecting = get_organ(hit_zone)
+	if(!affecting)
+		return //should be prevented by attacked_with_item() but for sanity.
+
+	visible_message(span_danger("[src] has been [LAZYLEN(combat_of(I).attack_verbs) ? pick(combat_of(I).attack_verbs) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
+
+	var/blocked = armor_against(combat_of(I).injury_kind, hit_zone, combat_of(I).armor_penetration)
+
+	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
+
+	return blocked
+
+/mob/living/carbon/human/standard_weapon_hit_effects(obj/item/I, mob/living/user, effective_force, blocked, hit_zone, stance = I_HURT)
+	var/obj/item/organ/external/affecting = get_organ(hit_zone)
+	if(!affecting)
+		return 0
+
+	// Allow clothing to respond to being hit.
+	// This is done up here so that clothing damage occurs even if fully blocked.
+	var/list/clothing = get_clothing_list_organ(affecting)
+	for(var/obj/item/clothing/C in clothing)
+		C.clothing_impact(I, effective_force)
+
+	// Handle striking to cripple.
+	if(stance == I_DISARM)
+		effective_force *= 0.5 //reduced effective force...
+		if(!..(I, user, effective_force, blocked, hit_zone, stance))
+			return 0
+
+		//set the dislocate mult less than the effective force mult so that
+		//dislocating limbs on disarm is a bit easier than breaking limbs on harm
+		attack_joint(affecting, I, effective_force, 0.75, blocked) //...but can dislocate joints
+	else if(!..())
+		return 0
+
+	if(effective_force > 10 || effective_force >= 5 && prob(33))
+		forcesay(GLOB.hit_appends)	//forcesay checks stat already
+
+	if(prob(25 + (effective_force * 2)))
+		if(!(I.obj_damage_type() == BRUTE || combat_of(I).injury_kind == INJURY_PAIN))
+			return
+
+		if(!(I.flags & NOBLOODY))
+			I.add_blood(src)
+
+		var/bloody = 0
+		if(prob(33))
+			bloody = 1
+			var/turf/location = loc
+			if(istype(location, /turf/simulated))
+				location.add_blood(src)
+			if(ishuman(user))
+				var/mob/living/carbon/human/H = user
+				if(get_dist(H, src) <= 1) //people with TK won't get smeared with blood
+					H.bloody_body(src)
+					H.bloody_hands(src)
+
+		if(!stat && !(handling_of(I).no_random_knockdown))
+			switch(hit_zone)
+				if(BP_HEAD)//Harder to score a stun but if you do it lasts a bit longer
+					if(prob(effective_force))
+						apply_effect(20, PARALYZE, blocked)
+						act_message(src, null, others = span_danger("%U% has been knocked unconscious!"))
+					if(bloody)//Apply blood
+						if(get_equipped_item(SLOT_ID_MASK))
+							get_equipped_item(SLOT_ID_MASK).add_blood(src)
+						if(get_equipped_item(SLOT_ID_HEAD))
+							get_equipped_item(SLOT_ID_HEAD).add_blood(src)
+						if(get_equipped_item(SLOT_ID_EYES) && prob(33))
+							get_equipped_item(SLOT_ID_EYES).add_blood(src)
+				if(BP_TORSO)//Easier to score a stun but lasts less time
+					if(prob(effective_force + 10))
+						apply_effect(6, WEAKEN, blocked)
+						act_message(src, null, others = span_danger("%U% has been knocked down!"))
+					if(bloody)
+						bloody_body(src)
+
+	return 1
+
+/mob/living/carbon/human/proc/attack_joint(obj/item/organ/external/organ, obj/item/W, effective_force, dislocate_mult, blocked)
+	if(!organ || (organ.dislocated == 1) || (organ.dislocated == -1) || blocked >= 100) // Bugfix
+		return 0
+
+	if(W.obj_damage_type() != BRUTE)
+		return 0
+
+	//want the dislocation chance to be such that the limb is expected to dislocate after dealing a fraction of the damage needed to break the limb
+	var/dislocate_chance = effective_force/(dislocate_mult * organ.min_broken_damage * CONFIG_GET(number/organ_health_multiplier))*100
+	if(prob(dislocate_chance * (100 - blocked)/100))
+		act_message(src, null, others = span_danger("%U%'s [organ.joint] [pick("gives way","caves in","crumbles","collapses")]!"))
+		organ.dislocate(1)
+		return 1
+	return 0
+
+/// A sequencer on a robotic limb sabotages it (the emag capability in CAPABILITIES(/mob/living/carbon/human), code/library/mob/hands.dm).
+/mob/living/carbon/human/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/organ/external/affecting = get_organ(hud_of(user)?.zone_sel?.selecting)
+	if(!affecting || !(affecting.is_robotic()))
+		to_chat(user, span_warning("That limb isn't robotic."))
+		return OP_DECLINE
+	if(affecting.sabotaged)
+		to_chat(user, span_warning("[src]'s [affecting.name] is already sabotaged!"))
+		return OP_DECLINE
+	to_chat(user, span_notice("You sneakily slide [A.held] into the dataport on [src]'s [affecting.name] and short out the safeties."))
+	affecting.sabotaged = 1
+	return OP_OK
+
+//this proc handles being hit by a thrown atom
+/mob/living/carbon/human/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
+	if(src.is_incorporeal())
+		return
+
+	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
+	var/mob/living/thrower = throwingdatum?.get_thrower()
+	var/datum/act/thrown_hit/thrown_hit = ACT_ATTEMPT(src, thrown_hit, source, thrower, speed)
+	if(ACT_REFUSED_BY(thrown_hit))
+		return
+	act_done(thrown_hit)
+
+	if(isitem(source))
+		var/obj/item/thrown_object = source
+		if(STATE_GET(src, mob_misc, in_throw_mode) && speed <= THROWFORCE_SPEED_DIVISOR)	//empty active hand and we're in throw mode
+			if(canmove && !restrained() && !src.is_incorporeal())
+				if(isturf(thrown_object.loc) && can_catch(thrown_object))
+					if(!omen_blocks_catch(source, speed))
+						put_in_active_hand(thrown_object)
+						act_message(src, null, others = span_warning("%U% catches [thrown_object]!"))
+						throw_mode_off()
+						return
+
+		var/throw_damage = thrown_of(thrown_object).force*(speed/THROWFORCE_SPEED_DIVISOR)
+
+		if(species && species.throwforce_absorb_threshold >= throw_damage)
+			act_message(src, null, others = span_infoplain(span_bold("%I%") + " simply bounces off of %U%'s body!"), item = thrown_object)
+			return
+
+		var/zone
+		if (isliving(thrower))
+			var/mob/living/L = thrower
+			zone = check_zone(hud_of(L)?.zone_sel?.selecting)
+		else
+			zone = ran_zone(BP_TORSO,75)	//Hits a random part of the body, geared towards the chest
+
+		//check if we hit
+		var/miss_chance = 15
+		if (movable_throw_source(thrown_object))
+			var/distance = get_dist(movable_throw_source(thrown_object), loc)
+			miss_chance = max(15*(distance-2), 0)
+		zone = get_zone_with_miss_chance(zone, src, miss_chance, ranged_attack=1, attacker = thrower)
+
+		if(zone && thrower != src)
+			var/shield_check = check_shields(throw_damage, thrown_object, thrower, zone, "[thrown_object]")
+			if(shield_check == PROJECTILE_FORCE_MISS)
+				zone = null
+			else if(shield_check)
+				return
+
+		if(!zone)
+			act_message(src, null, others = span_infoplain(span_bold("%I%") + " misses %U% narrowly!"), item = thrown_object)
+			return
+
+		var/obj/item/organ/external/affecting = get_organ(zone)
+		var/hit_area = affecting.name
+
+		act_message(src, null, others = span_filter_warning("[span_red("%U% has been hit in the [hit_area] by [thrown_object].")]"))
+
+		if(ismob(thrower))
+			add_attack_logs(thrower,src,"Hit with thrown [thrown_object.name]")
+
+		var/armor = armor_against(combat_of(thrown_object).injury_kind, affecting, combat_of(thrown_object).armor_penetration)
+		if(armor < 100)
+			receive_thrown(thrown_object, throwingdatum, zone = zone)
+
+		//thrown weapon embedded object code.
+		if(thrown_object.obj_damage_type() == BRUTE)
+			if (!is_robot_module(thrown_object))
+				var/sharp = is_sharp(thrown_object)
+				var/damage = throw_damage
+				if(armor)
+					damage /= armor+1
+
+				//blunt objects should really not be embedding in things unless a huge amount of force is involved
+				var/embed_chance = sharp? damage/thrown_object.w_class : damage/(thrown_object.w_class*3)
+				var/embed_threshold = sharp? 5*thrown_object.w_class : 15*thrown_object.w_class
+
+				//Sharp objects will always embed if they do enough damage.
+				//Thrown sharp objects have some momentum already and have a small chance to embed even if the damage is below the threshold
+				if((sharp && prob(damage/(10*thrown_object.w_class)*100)) || (damage > embed_threshold && prob(embed_chance)))
+					affecting.embed(thrown_object)
+
+		// Begin BS12 momentum-transfer code.
+		var/mass = thrown_object.w_class/THROWNOBJ_KNOCKBACK_DIVISOR
+		var/momentum = speed*mass
+
+		if(movable_throw_source(thrown_object) && momentum >= THROWNOBJ_KNOCKBACK_SPEED && !src?.buckled_to())
+			var/dir = get_dir(movable_throw_source(thrown_object), src)
+
+			act_message(src, null, MSG_SELF(span_filter_warning("[span_red("You stagger under the impact!")]")), \
+				MSG_OTHERS(span_filter_warning("[span_red("%U% staggers under the impact!")]")))
+			src.throw_at(get_edge_target_turf(src,dir),1,momentum)
+
+			if(!thrown_object || !src) return
+
+			if(thrown_object.loc == src && combat_of(thrown_object).sharp) //Projectile is embedded and suitable for pinning.
+				var/turf/T = near_wall(dir,2)
+
+				if(T)
+					forceMove(T)
+					act_message(src, null, MSG_SELF(span_warning("You are pinned to the wall by [thrown_object]!")), 						MSG_OTHERS(span_warning("%U% is pinned to the wall by [thrown_object]!")))
+					set_anchored(TRUE)
+					rel_add(src, nameof(pinned), thrown_object)
+
+// This does a prob check to catch the thing flying at you, with a minimum of 1%
+/mob/living/carbon/human/proc/can_catch(obj/item/O)
+	if(!isitem(O))
+		return FALSE
+	if(!get_active_hand())	// If active hand is empty
+		var/obj/item/organ/external/temp = organs_by_name[BP_R_HAND]
+		if (hand)
+			temp = organs_by_name[BP_L_HAND]
+		if(temp && !temp.is_usable())
+			return FALSE	// The hand isn't working in the first place
+
+	if(!thrown_of(O).catchable)
+		return FALSE
+
+	// Alright, our hand works? Time to try the catching.
+	var/catch_chance = 90	// Default 90% catch rate
+
+	if(combat_of(O).sharp)
+		catch_chance -= 50	// Catching knives is hard
+
+	catch_chance -= get_accuracy_penalty()	// Same issues with shooting a gun, or swinging a weapon
+
+	catch_chance = between(1, catch_chance, 100)
+
+	if(prob(catch_chance))
+		return TRUE
+	return FALSE
+
+/mob/living/carbon/human/embed(obj/O, def_zone=null)
+	if(!def_zone) ..()
+
+	var/obj/item/organ/external/affecting = get_organ(def_zone)
+	if(affecting)
+		affecting.embed(O)
+
+
+/mob/living/carbon/human/proc/bloody_hands(mob/living/source, amount = 2)
+	if (istype(get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves))
+		var/obj/item/clothing/gloves/gl = get_equipped_item(SLOT_ID_GLOVES)
+		gl.add_blood(source)
+		gl.transfer_blood = amount
+	else
+		add_blood(source)
+		STATE_SET(src, mob_misc, bloody_hands, amount)
+
+/mob/living/carbon/human/proc/bloody_body(mob/living/source)
+	if(get_equipped_item(SLOT_ID_SUIT))
+		get_equipped_item(SLOT_ID_SUIT).add_blood(source)
+	if(get_equipped_item(SLOT_ID_UNIFORM))
+		get_equipped_item(SLOT_ID_UNIFORM).add_blood(source)
+
+/// Human post-injury reactions: rig soak / suit breaches, damage overlays,
+/// agony screams and burn husking of corpses.
+/mob/living/carbon/human/on_injured(kind, amount, zone, atom/source, flags)
+	var/category = injury_category(kind)
+	if(category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL)
+		handle_suit_punctures(kind, amount, zone)
+		if(injury_is_located(kind))
+			STATE_SET(src, mob_misc, damageoverlaytemp, 20)
+		// A corpse burned past 3.5x its species health is husked.
+		if(stat == DEAD && category == INJURY_CATEGORY_THERMAL && injury_load(INJURY_CATEGORY_THERMAL) > species.total_health * 3.5)
+			ChangeToHusk()
+	if(kind == INJURY_PAIN && !(flags & INJURE_SILENT))
+		if((amount > 25 && prob(20)) || (amount > 50 && prob(60)))
+			var/obj/item/organ/external/organ = get_organ(zone || BP_TORSO)
+			if(organ && organ.organ_can_feel_pain() && !isbelly(loc) && !istype(loc, /obj/item/dogborg/sleeper))
+				emote("scream")
+	return ..()
+
+/// Physical and thermal hits may soak into a rig or breach a spacesuit.
+/mob/living/carbon/human/proc/handle_suit_punctures(kind, damage, def_zone)
+	var/category = injury_category(kind)
+	// Only physical and thermal injuries matter to suits.
+	if(category != INJURY_CATEGORY_PHYSICAL && category != INJURY_CATEGORY_THERMAL)
+		return
+	var/breach_type = injury_kind_obj_damage_type(kind) || (category == INJURY_CATEGORY_PHYSICAL ? BRUTE : BURN)
+
+	// The rig might soak this hit, if we're wearing one.
+	if(istype(get_rig(),/obj/item/rig))
+		var/obj/item/rig/rig = get_rig()
+		rig.take_hit(damage)
+
+	// We may also be taking a suit breach.
+	if(!get_equipped_item(SLOT_ID_SUIT)) return
+	if(!istype(get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/space)) return
+	var/obj/item/clothing/suit/space/SS = get_equipped_item(SLOT_ID_SUIT)
+	var/penetrated_dam = max(0,(damage - SS.breach_threshold))
+	if(penetrated_dam) SS.create_breaches(breach_type, penetrated_dam)
+
+/// Share of the body's surface reagents reach through what is worn: each part's
+/// surface share times the permeability of every worn item covering it.
+/mob/living/carbon/human/reagent_permeability()
+	. = 0
+	var/list/worn = get_equipped_items()
+	var/alist/weights = dq_part_thermal_weights()
+	for(var/part in weights)
+		var/through = weights[part]
+		for(var/obj/item/clothing/C in worn)
+			if(worn_of(C).covers & part)
+				through *= protection_of(C).permeability
+		. += through
+
+// This is for preventing harm by being covered in water, which only prometheans need to deal with.
+/mob/living/carbon/human/get_water_protection()
+	var/protection = species.water_resistance
+	if(protection == 1) // No point doing permeability checks if it won't matter.
+		return protection
+	// Wearing clothing with a low permeability_coefficient can protect from water.
+
+	var/converted_protection = 1 - protection
+	var/perm = reagent_permeability()
+	converted_protection *= perm
+	return CLAMP(1-converted_protection, 0, 1)
+
+/mob/living/carbon/human/water_act(amount)
+	adjust_wet_stacks(amount * 5)
+	for(var/atom/movable/AM in contents)
+		AM.water_act(amount)
+
+	species.handle_water_damage(src, amount)
+
+/mob/living/carbon/human/shank_attack(obj/item/W, obj/item/grab/G, mob/user, hit_zone)
+
+	if(!..())
+		return 0
+
+	STATE_SET(user, cooldowns, next_move, world.time + (20))
+	perform_op(user, src, "shank_twist", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+	return TRUE
+
+/mob/living/carbon/human/proc/shank_twist_text(datum/act/op/A)
+	var/obj/item/W = A.held
+	return msg_text(null, span_danger("%U% begins to twist [W] around inside %T%'s [get_organ(BP_TORSO)]!"))
+
+/mob/living/carbon/human/proc/shank_attack_human_done(datum/act/op/A)
+	var/obj/item/W = A.held
+	var/mob/user = A.actor
+	var/obj/item/grab/G = grab_held_by(user)
+	if(!G || !W) //check that we still have a grab
+		return 0
+	var/organ_chance = combat_of(W).edge ? 75 : 50
+	var/damage = shank_armor_helper(W, G, user)
+	var/obj/item/organ/external/chest = get_organ(BP_TORSO)
+
+	act_message(user, src, others = span_danger("%U% twists %I% around inside %T%'s [chest]!"), item = W)
+
+	if(chest && prob(organ_chance))
+		var/obj/item/organ/internal/selected_organ = pick(chest.held_organs())
+		injure(INJURY_CUT, damage * 0.5, selected_organ, W, affliction = /datum/affliction/lesion/laceration)
+		G.note_action()
+		flick(G.hud.icon_state, G.hud)
+
+	return 1
+
+/mob/living/carbon/human/is_mouth_covered(head_only, mask_only)
+	if(!check_has_mouth())
+		return TRUE
+
+	if((isobj(get_equipped_item(SLOT_ID_HEAD)) && worn_of(get_equipped_item(SLOT_ID_HEAD)).covers & FACE) || isobj(get_equipped_item(SLOT_ID_MASK)) && worn_of(get_equipped_item(SLOT_ID_MASK)).covers & FACE|| (isobj(get_equipped_item(SLOT_ID_SUIT)) && worn_of(get_equipped_item(SLOT_ID_SUIT)).covers & FACE))
+		return TRUE
+
+	return FALSE
+
+///Get all the clothing on a specific body part
+/mob/living/carbon/human/proc/get_clothing_on_part(obj/item/organ/external/def_zone)
+	return covering_items(def_zone.body_part)

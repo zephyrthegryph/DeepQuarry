@@ -6,7 +6,7 @@
 	return add_language(language)
 
 /mob/living/lifeform_default_language(language)
-	default_language = GLOB.all_languages[language]
+	rel_set(src, nameof(default_language), GLOB.all_languages[language])
 
 /datum/registry_mirror_join(id)
 	var/datum/registry/legacy = build_registries()[id]

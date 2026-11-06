@@ -1,0 +1,171 @@
+/obj/item/clothing/suit/space/void/responseteam
+	name = "Mark VII Emergency Response Suit"
+	desc = "Utilizing cutting edge tech from Hephaestus, the Mark VII is the latest and greatest in semi-powered personal protection systems; like the civilian AutoLok suit, the Mark VII can automatically adapt to fit most species without issue via RFID tags. This significantly reduces the time required for response teams to suit up, as it eliminates the need for dedicated cycler units. It also has an integrated, unremovable helmet. Standard air tanks, suit coolers, and magboots may be installed and removed as needed."
+	icon_state = "ertsuit"
+	item_state = "ertsuit"
+	w_class = ITEMSIZE_NORMAL //the mark vii packs itself down when not in use, thanks future-materials
+	breach_threshold = 16 //Extra Thicc
+	resilience = 0.05 //Military Armor
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
+	configure(atom_rules(armor_spec = "melee=65;bullet=55;laser=55;energy=15;bomb=50;bio=100;rad=100;cold=60"))
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_TAJARAN = 'icons/inventory/suit/item.dmi', SPECIES_SKRELL = 'icons/inventory/suit/item.dmi', SPECIES_UNATHI = 'icons/inventory/suit/item.dmi', SPECIES_XENOHYBRID = 'icons/inventory/suit/item.dmi', SPECIES_AKULA = 'icons/inventory/suit/item.dmi', SPECIES_SERGAL = 'icons/inventory/suit/item.dmi', SPECIES_VULPKANIN = 'icons/inventory/suit/item.dmi', SPECIES_ZORREN_HIGH = 'icons/inventory/suit/item.dmi', SPECIES_FENNEC = 'icons/inventory/suit/item.dmi', SPECIES_SHADEKIN = 'icons/inventory/suit/item.dmi', SPECIES_VASILISSAN = 'icons/inventory/suit/item.dmi', SPECIES_NEVREAN = 'icons/inventory/suit/item.dmi', SPECIES_RAPALA = 'icons/inventory/suit/item.dmi', SPECIES_ALRAUNE = 'icons/inventory/suit/item.dmi', SPECIES_ZADDAT = 'icons/inventory/suit/item.dmi', SPECIES_LLEILL = 'icons/inventory/suit/item.dmi' )))
+	fits_as(FIT_NO_DIONA_VOX_TESHARI_ALTEVIAN)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
+	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
+
+
+
+
+
+/obj/item/clothing/suit/space/void/responseteam/command
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/command // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
+	name = "Mark VII-C Emergency Response Team Commander Suit"
+
+/obj/item/clothing/suit/space/void/responseteam/medical
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/medical // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
+	name = "Mark VII-M Emergency Medical Response Suit"
+	icon_state = "ertsuit_m"
+	item_state = "ertsuit_m"
+
+/obj/item/clothing/suit/space/void/responseteam/engineer
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/engineer // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
+	name = "Mark VII-E Emergency Engineering Response Suit"
+	icon_state = "ertsuit_e"
+	item_state = "ertsuit_e"
+
+/obj/item/clothing/suit/space/void/responseteam/security
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/security // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
+	name = "Mark VII-S Emergency Security Response Suit"
+	icon_state = "ertsuit_s"
+	item_state = "ertsuit_s"
+
+/obj/item/clothing/suit/space/void/responseteam/janitor
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/janitor // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
+	name = "Mark VII-J Emergency Cleanup Response Suit"
+	icon_state = "ertsuit_j"
+	item_state = "ertsuit_j"
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam/janitor)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100;cold=60"))
+	configure(item_worn(worn_factors = TRAIT_NONE))
+	configure(item_worn(flags = NOSLIP))
+
+
+// Overrides the voidsuit screwdriver so people can't remove the helmet: it offers boots, tank and cooling unit.
+/obj/item/clothing/suit/space/void/responseteam/has_removable_component(datum/act/op/A)
+	return (!!(boots || tank || cooler)) ? null : MSG(void/nothing_installed)
+
+/obj/item/clothing/suit/space/void/responseteam/removable_components(datum/act/A)
+	var/list/choices = list()
+	for(var/obj/item/I in list(boots, tank, cooler))
+		choices += I
+	return choices
+
+
+/obj/item/clothing/head/helmet/space/void/responseteam
+	name = "Mark VII Emergency Response Helmet"
+	desc = "As a vital part of the Mark VII suit, the integral helmet cannot be removed - so don't try."
+	icon_state = "erthelmet"
+	item_state = "erthelmet"
+	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_AUGMENTED)
+	var/away_planes = null
+	plane_slots = list(SLOT_ID_HEAD)
+	var/hud_active = 1
+	var/activation_sound = SFX_ITEMS_NIF_CLICK
+
+
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100;cold=60"))
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_TAJARAN = 'icons/inventory/head/item.dmi', SPECIES_SKRELL = 'icons/inventory/head/item.dmi', SPECIES_UNATHI = 'icons/inventory/head/item.dmi', SPECIES_XENOHYBRID = 'icons/inventory/head/item.dmi', SPECIES_AKULA = 'icons/inventory/head/item.dmi', SPECIES_SERGAL = 'icons/inventory/head/item.dmi', SPECIES_VULPKANIN = 'icons/inventory/head/item.dmi', SPECIES_ZORREN_HIGH = 'icons/inventory/head/item.dmi', SPECIES_FENNEC = 'icons/inventory/head/item.dmi', SPECIES_SHADEKIN = 'icons/inventory/head/item.dmi', SPECIES_VASILISSAN = 'icons/inventory/head/item.dmi', SPECIES_NEVREAN = 'icons/inventory/head/item.dmi', SPECIES_RAPALA = 'icons/inventory/head/item.dmi', SPECIES_ALRAUNE = 'icons/inventory/head/item.dmi', SPECIES_ZADDAT = 'icons/inventory/head/item.dmi', SPECIES_LLEILL = 'icons/inventory/suit/item.dmi' )))
+	fits_as(FIT_NO_DIONA_VOX_TESHARI_ALTEVIAN)
+	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
+	op("responseteam_toggle_verb", menu(), label("Toggle Mark 7 Suit HUD"), needs(carried()), then(PROC_REF(responseteam_toggle_verb)))
+
+/// Old verb "Toggle Mark 7 Suit HUD".
+/obj/item/clothing/head/helmet/space/void/responseteam/proc/responseteam_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user.canmove && !user.stat && !user.restrained())
+		if(src.hud_active)
+			away_planes = enables_planes
+			enables_planes = null
+			to_chat(user, "You disable the inbuilt heads-up display.")
+			hud_active = 0
+		else
+			enables_planes = away_planes
+			away_planes = null
+			to_chat(user, "You enable the inbuilt heads-up display.")
+			hud_active = 1
+		user << sound(get_sfx(activation_sound))
+		user.recalculate_vis()
+
+/obj/item/clothing/head/helmet/space/void/responseteam/command
+	name = "Mark VII-C Emergency Response Team Commander Helmet"
+	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_STATUS_R,VIS_CH_BACKUP,VIS_CH_WANTED,VIS_AUGMENTED)
+
+/obj/item/clothing/head/helmet/space/void/responseteam/medical
+	name = "Mark VII-M Emergency Medical Response Helmet"
+	icon_state = "erthelmet_m"
+	item_state = "erthelmet_m"
+	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_STATUS_R,VIS_CH_BACKUP,VIS_AUGMENTED)
+
+/obj/item/clothing/head/helmet/space/void/responseteam/engineer
+	name = "Mark VII-E Emergency Engineering Response Helmet"
+	icon_state = "erthelmet_e"
+	item_state = "erthelmet_e"
+
+/obj/item/clothing/head/helmet/space/void/responseteam/security
+	name = "Mark VII-S Emergency Security Response Helmet"
+	icon_state = "erthelmet_s"
+	item_state = "erthelmet_s"
+	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_WANTED,VIS_AUGMENTED)
+
+/obj/item/clothing/head/helmet/space/void/responseteam/janitor
+	name = "Mark VII-J Emergency Cleanup Response Helmet"
+	icon_state = "erthelmet_j"
+	item_state = "erthelmet_j"
+
+/obj/item/clothing/suit/space/void/responseteam
+	sprite_sheets = list(
+		SPECIES_HUMAN			= 'icons/inventory/suit/mob.dmi',
+		SPECIES_TAJARAN 			= 'icons/inventory/suit/mob_tajaran.dmi',
+		SPECIES_LLEILL 			= 'icons/inventory/suit/mob_tajaran.dmi',
+		SPECIES_SKRELL 			= 'icons/inventory/suit/mob_skrell.dmi',
+		SPECIES_UNATHI 			= 'icons/inventory/suit/mob_unathi.dmi',
+		SPECIES_XENOHYBRID 		= 'icons/inventory/suit/mob_unathi.dmi',
+		SPECIES_AKULA			= 'icons/inventory/suit/mob_akula.dmi',
+		SPECIES_SERGAL			= 'icons/inventory/suit/mob_sergal.dmi',
+		SPECIES_VULPKANIN		= 'icons/inventory/suit/mob_vulpkanin.dmi',
+		SPECIES_ZORREN_HIGH		= 'icons/inventory/suit/mob_vulpkanin.dmi',
+		SPECIES_FENNEC			= 'icons/inventory/suit/mob_vulpkanin.dmi',
+		SPECIES_SHADEKIN		= 'icons/inventory/suit/mob_vulpkanin.dmi',
+		SPECIES_VASILISSAN		= 'icons/inventory/suit/mob.dmi',
+		SPECIES_NEVREAN			= 'icons/inventory/suit/mob.dmi',
+		SPECIES_RAPALA			= 'icons/inventory/suit/mob.dmi',
+		SPECIES_ALRAUNE			= 'icons/inventory/suit/mob.dmi',
+		SPECIES_ZADDAT			= 'icons/inventory/suit/mob.dmi'
+		)
+
+/obj/item/clothing/head/helmet/space/void/responseteam
+	sprite_sheets = list(
+		SPECIES_HUMAN			= 'icons/inventory/head/mob.dmi',
+		SPECIES_TAJARAN 			= 'icons/inventory/head/mob_tajaran.dmi',
+		SPECIES_LLEILL 			= 'icons/inventory/suit/mob_tajaran.dmi',
+		SPECIES_SKRELL 			= 'icons/inventory/head/mob_skrell.dmi',
+		SPECIES_UNATHI 			= 'icons/inventory/head/mob_unathi.dmi',
+		SPECIES_XENOHYBRID 		= 'icons/inventory/head/mob_unathi.dmi',
+		SPECIES_AKULA			= 'icons/inventory/head/mob_unathi.dmi',
+		SPECIES_SERGAL			= 'icons/inventory/head/mob_unathi.dmi',
+		SPECIES_VULPKANIN		= 'icons/inventory/head/mob_vulpkanin.dmi',
+		SPECIES_ZORREN_HIGH		= 'icons/inventory/head/mob_vulpkanin.dmi',
+		SPECIES_FENNEC			= 'icons/inventory/head/mob_vulpkanin.dmi',
+		SPECIES_SHADEKIN		= 'icons/inventory/head/mob_vulpkanin.dmi',
+		SPECIES_VASILISSAN		= 'icons/inventory/head/mob.dmi',
+		SPECIES_NEVREAN			= 'icons/inventory/head/mob.dmi',
+		SPECIES_RAPALA			= 'icons/inventory/head/mob.dmi',
+		SPECIES_ALRAUNE			= 'icons/inventory/head/mob.dmi',
+		SPECIES_ZADDAT			= 'icons/inventory/head/mob.dmi'
+		)

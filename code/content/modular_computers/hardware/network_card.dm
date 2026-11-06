@@ -19,8 +19,6 @@ SERIAL_DEF(ntnet_card, 1, FALSE)
 	var/long_range = 0
 	/// Hard-wired, therefore always on, ignores NTNet wireless checks.
 	var/ethernet = 0
-	/// If set, uses the value to funnel connections through another network card.
-	var/proxy_id
 
 /obj/item/computer_hardware/network_card/diagnostics(mob/user)
 	..()

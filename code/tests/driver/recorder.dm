@@ -6,7 +6,7 @@
 //
 // What it records: op outcomes, notices (with their outcome), log lines, slot transfers, resource reserve / commit /
 // release, activation attach / detach, drain spills, and the tracked-var deltas of the entities named in test_record(). Every
-// engine verb that does one of these reports it through a TEST_REC_* macro (code/__defines/engine/test_hooks.dm), which
+// engine verb that does one of these reports it through a TEST_REC_* macro (code/defines/engine/declare/test_hooks.dm), which
 // compiles out of production. The phase-2 behaviour snapshot harness is built on the same recorder.
 //
 // Who owns what. E0 fixed the API (test_record / test_recorded), the row shape and the report calls; the store is E6's:

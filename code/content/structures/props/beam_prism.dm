@@ -40,10 +40,6 @@ CAPABILITIES(/obj/structure/prop/prism)
 		then(PROC_REF(rotate_chosen)))
 	without("message")   // the rotation shows the message itself
 
-/obj/structure/prop/prism/proc/reset_rotation()
-	var/degrees_to_rotate = -1 * degrees_from_north
-	animate(src, transform = turn(src.transform, degrees_to_rotate), time = 2)
-
 // The original attack_hand called ..() (prop's message display) unconditionally, then always
 // continued into its own rotate prompt below, so prism_rotate() shows the message itself
 // instead of also offering prop_hand (which would tie with it and open the Menu).

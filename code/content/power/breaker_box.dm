@@ -14,7 +14,7 @@
 	var/icon_state_off = "bbox_off"
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/breakerbox
+	circuit = VARIANT(/obj/item/circuitboard/breakerbox)
 	on = 0
 	var/directions = list(1,2,4,8,5,6,9,10)
 	var/RCon_tag = "NO_TAG"
@@ -77,9 +77,6 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 		to_chat(user, span_green("Update Completed. New setting:[on ? "on": "off"]"))
 	set_update_locked(1)
 	after(src, 60 SECONDS, PROC_REF(unlock_updates))
-
-/obj/machinery/power/breakerbox/proc/breakerbox_not_locked(mob/actor, atom/target, obj/item/held)
-	return !update_locked
 
 /obj/machinery/power/breakerbox/proc/hand_toggle_started(datum/act/op/A)
 	for(var/mob/O in viewers(A.actor))

@@ -3,18 +3,11 @@
 //   on/off            -> Switch
 //   2-4 short choices -> Segmented
 //   long choice lists -> SearchableDropdown
-//   numbers           -> SliderBox (slider plus a typed box)
+//   numbers           -> SliderBox (one slider showing its value)
 // Every size is in em so the controls follow the theme font and the display scale.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Box,
-  Button,
-  Floating,
-  Input,
-  NumberInput,
-  Slider,
-} from 'tgui-core/components';
+import { Box, Button, Floating, Input, Slider } from 'tgui-core/components';
 
 /// An on/off switch: a pill with a knob, and the state written beside it.
 export const Switch = ({
@@ -85,15 +78,35 @@ export const Switch = ({
   </span>
 );
 
+/// An option of a Segmented: its value, its label and, when the choice means something other than
+/// plain "selected", the theme colour name it shows in (Button's `color`).
+export type SegmentedOption = [value: string, label: string, color?: string];
+
+/// The left bar of a list row: the colour of the option the row is set to. An option with no colour of its
+/// own uses the selected green, and `null` (a row at its default) draws no bar.
+export const optionBar = (option: { color?: string } | null | undefined) =>
+  `0.2em solid ${
+    !option
+      ? 'transparent'
+      : option.color
+        ? `var(--color-${option.color})`
+        : 'var(--color-good, #5baa27)'
+  }`;
+
 /// A row of joined buttons, one of which is selected.
 export const Segmented = ({
   options,
   value,
   onSelect,
+  disabled,
+  disabledValues,
 }: {
-  options: Array<[string, string]>;
+  options: SegmentedOption[];
   value: string;
   onSelect: (value: string) => void;
+  disabled?: boolean;
+  /// Options that cannot be picked while the rest can.
+  disabledValues?: string[];
 }) => (
   <Box
     style={{
@@ -103,11 +116,13 @@ export const Segmented = ({
       maxWidth: '100%',
     }}
   >
-    {options.map(([val, label]) => (
+    {options.map(([val, label, color]) => (
       <Button
         key={val}
         m={0}
-        selected={val === value}
+        disabled={disabled || disabledValues?.includes(val)}
+        selected={val === value && !color}
+        color={val === value ? color : undefined}
         onClick={() => val !== value && onSelect(val)}
       >
         {label}
@@ -122,11 +137,14 @@ export const SearchableDropdown = ({
   value,
   onSelect,
   placeholder,
+  tooltips,
 }: {
   options: Array<[string, string]>;
   value: string;
   onSelect: (value: string) => void;
   placeholder?: string;
+  /// What an option does, by value: shown when hovering its row.
+  tooltips?: Record<string, string>;
 }) => {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
@@ -186,6 +204,7 @@ export const SearchableDropdown = ({
                 fluid
                 color="transparent"
                 selected={val === value}
+                tooltip={tooltips?.[val]}
                 onClick={() => onSelect(val)}
               >
                 {label}
@@ -281,36 +300,15 @@ export const SliderBox = ({
     }, 150);
   };
   return (
-    <Box style={{ display: 'flex', alignItems: 'center', gap: '0.4em' }}>
-      <Box style={{ flex: 1, minWidth: '4em' }}>
-        <Slider
-          minValue={min}
-          maxValue={max}
-          step={step}
-          value={local}
-          format={() => ''}
-          animated={false}
-          tickWhileDragging
-          onChange={(_, v) => change(v)}
-        />
-      </Box>
-      <Box
-        style={{
-          flex: '0 0 auto',
-          width: '5.5em',
-        }}
-      >
-        <NumberInput
-          fluid
-          value={local}
-          minValue={min}
-          maxValue={max}
-          step={step}
-          format={format}
-          animated={false}
-          onChange={(v) => change(v)}
-        />
-      </Box>
-    </Box>
+    <Slider
+      minValue={min}
+      maxValue={max}
+      step={step}
+      value={local}
+      format={format}
+      animated={false}
+      tickWhileDragging
+      onChange={(_, v) => change(v)}
+    />
   );
 };

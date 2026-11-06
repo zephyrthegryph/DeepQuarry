@@ -85,13 +85,6 @@ pub fn register_module(reg: &mut Registry, module: SysModule) {
 /// Unique original static descriptor builder; no scan callback is invoked.
 pub(crate) fn module_metadata(module:&SysModule,scan:ScanKind)->Meta {
     let name: &'static str = leak(crate::allow_registry_fields::legacy_scope_sys_name(module.name).into_boxed_str());
-    let baseline: &'static str = leak(format!("tools/ci/sys_baseline/{}.txt", module.name).into_boxed_str());
-    let header: &'static [&'static str] = leak(
-        vec![leak(
-            format!("sys_lint baseline for tools/ci/sys_rules/{}.py (doc/rewrite/systems.md); shrink-only, target 0", module.name).into_boxed_str(),
-        )]
-        .into_boxed_slice(),
-    );
     let mut allow: Vec<&'static str> = module
         .rules
         .iter()
@@ -108,7 +101,7 @@ pub(crate) fn module_metadata(module:&SysModule,scan:ScanKind)->Meta {
         legacy: "tools/ci/sys_lint.py",
         select: policy_selection(),
         scan,
-        policy: Policy::Sites { baseline, header, banned: &[] },
+        policy: Policy::Hard,
         rules: module.rules,
         allow: leak(allow.into_boxed_slice()),
         lists: crate::allow_registry_fields::SYS_SCOPE_LISTS,
@@ -230,20 +223,16 @@ impl Lint for SysLint {
         // The argument vectors must be 'static; leak the few small ones per module.
         let only: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--only", m].into_boxed_slice());
         let report: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--report", "--only", m].into_boxed_slice());
-        let update: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--update", "--only", m].into_boxed_slice());
-        let seed: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--seed", m].into_boxed_slice());
         let selftest: &'static [&'static str] = leak(vec!["tools/ci/sys_lint.py", "--selftest", "--only", m].into_boxed_slice());
-        let files: &'static [&'static str] =
-            leak(vec![leak(format!("tools/ci/sys_baseline/{}.txt", m).into_boxed_str()) as &'static str].into_boxed_slice());
         let raw: &'static [&'static [&'static str]] = leak(vec![report].into_boxed_slice());
         Some(Parity {
             old: only,
             old_raw: raw,
             blank: &[],
             parse: ParseKind::Report,
-            update: Some(update),
-            seed: Some(seed),
-            files,
+            update: None,
+            seed: None,
+            files: &[],
             selftest: if self.module.py_selftest { Some(selftest) } else { None },
         })
     }

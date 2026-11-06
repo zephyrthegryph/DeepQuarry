@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A large blast's damage reports are published to the contracts system in chunks over the following ticks, not in the one tick that ends the explosion (it held a tick for seconds)"
+  - code_imp: "Destroying an object finds the lookup reads that watch it by name instead of walking every read in the index"
+  - admin: "EXPLOSION_COMMIT logs what closing an explosion epoch's batches cost (pipenets, power, contracts); the station_explosion and shuttle_landing bench scenarios measure a bomb and an arrivals-shuttle docking on the full map"

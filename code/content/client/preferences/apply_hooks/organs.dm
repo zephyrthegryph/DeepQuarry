@@ -19,6 +19,7 @@
 	var/list/pref_organ_data = preferences.read_preference(/datum/preference/organ_data)
 	var/list/pref_rlimb_data = preferences.read_preference(/datum/preference/rlimb_data)
 	if(!pref_organ_data)
+		preferences.apply_limb_colors(target)
 		return
 
 	// Process external organs in an order that respects parent-organ relationships.
@@ -36,6 +37,9 @@
 		var/obj/item/organ/external/O = target.organs_by_name[name]
 		if(!O)
 			continue
+		// Lost with its amputated parent: the limb's own saved setting does not apply.
+		if(status != "amputated" && dq_limb_lost_through(pref_organ_data, name))
+			continue
 		if(status == "amputated")
 			O.remove_rejuv()
 		else if(status == "cyborg")
@@ -43,6 +47,13 @@
 				O.robotize(pref_rlimb_data[name])
 			else
 				O.robotize()
+
+	preferences.apply_limb_colors(target)
+	// Robotizing the torso offers the model's built-in parts; the character's own choice, None included, stands.
+	var/list/ear_styles = preferences.get_available_styles(GLOB.ear_styles_list)
+	var/list/tail_styles = preferences.get_available_styles(GLOB.tail_styles_list)
+	rel_set(target, nameof(target.ear_style), ear_styles[preferences.read_preference(/datum/preference/text/human/ear_style)])
+	rel_set(target, nameof(target.tail_style), tail_styles[preferences.read_preference(/datum/preference/text/human/tail_style)])
 
 	// Internal organ FBP states.
 	for(var/name in list(O_HEART, O_EYES, O_VOICE, O_LUNGS, O_LIVER, O_KIDNEYS, O_SPLEEN, O_STOMACH, O_INTESTINE, O_BRAIN))

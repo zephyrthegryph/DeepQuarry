@@ -181,7 +181,7 @@
 	act_done(before)
 	var/datum/activation/A = listener.watch(source)
 	TEST_ASSERT_NOTNULL(A, "observe is an activation of a hook capability on the source")
-	TEST_ASSERT(A.source == listener && A.holder == source, "sourced by the listener, held by the observed entity")
+	TEST_ASSERT(A.source == listener && A.holder() == source, "sourced by the listener, held by the observed entity")
 	var/datum/act/e4_quiet/F = ACT_ATTEMPT(source, e4_quiet)
 	TEST_ASSERT(F != ACT_PASS && !ACT_REFUSED_BY(F), "an observer makes the action a real one")
 	act_done(F)
@@ -232,14 +232,14 @@
 	notice_publish(S, mine)
 	TEST_ASSERT_EQUAL(S.ops_heard, 1, "its own key is")
 
-/datum/unit_test/om/dq_e4_twins_deliver_both_ways
+/datum/unit_test/engine/dq_e4_twins_deliver_both_ways
 
-/datum/unit_test/om/dq_e4_twins_deliver_both_ways/run_om(list/made)
-	var/datum/om_test_entity/e4_twin/listener = entity(made, /datum/om_test_entity/e4_twin)
+/datum/unit_test/engine/dq_e4_twins_deliver_both_ways/run_engine(list/made)
+	var/datum/engine_test_entity/e4_twin/listener = entity(made, /datum/engine_test_entity/e4_twin)
 	var/obj/e4_fixture/plain/bumped_thing = new
 	made += bumped_thing
 	// Emitting the event reaches the on_notice listener through the twin notice.
-	PUBLISH_LEGACY(listener, /datum/notice/atom_bumped, bumped_thing)
+	PUBLISH(listener, atom_bumped, bumped = bumped_thing)
 	TEST_ASSERT_EQUAL(listener.notices_heard, 1, "Emitting the event published its twin notice to the on_notice listener")
 	TEST_ASSERT_EQUAL(listener.last_bumped, bumped_thing, "with the payload")
 	// It does not bounce: the notice the event published is not emitted back as an event.

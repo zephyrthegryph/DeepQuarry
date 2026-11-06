@@ -1,0 +1,677 @@
+// Hooded suits
+
+/obj/item/clothing/suit/storage/hooded
+	has_hood_sprite = TRUE //These all have suit sprites that HAVE hood sprites.
+
+/obj/item/clothing/suit/storage/hooded/costume
+	name = DEVELOPER_WARNING_NAME
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/costume)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_hood)))
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
+	configure(item_protection(cold_parts = CHEST|ARMS))
+
+/obj/item/clothing/suit/storage/hooded/costume/siffet
+	name = "siffet costume"
+	desc = "A costume made from 'synthetic' siffet fur, it smells like a weasel nest."
+	icon_state = "siffet"
+	item_state_slots = list(slot_r_hand_str = "siffet", slot_l_hand_str = "siffet")
+	hoodtype = /obj/item/clothing/head/hood/siffet_hood
+
+/obj/item/clothing/suit/storage/hooded/costume/carp
+	name = "carp costume"
+	desc = "A costume made from 'synthetic' carp scales, it smells."
+	icon_state = "carp_casual"
+	item_state_slots = list(slot_r_hand_str = "carp_casual", slot_l_hand_str = "carp_casual") //Does not exist -S2-
+	hoodtype = /obj/item/clothing/head/hood/carp_hood
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/costume/carp)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
+
+/obj/item/clothing/suit/storage/hooded/costume/ian	//It's Ian, rub his bell- oh god what happened to his inside parts?
+	name = "corgi costume"
+	desc = "A costume that looks like someone made a human-like corgi, it won't guarantee belly rubs."
+	icon_state = "ian"
+	item_state_slots = list(slot_r_hand_str = "ian", slot_l_hand_str = "ian") //Does not exist -S2-
+	hoodtype = /obj/item/clothing/head/hood/ian_hood
+
+// winter coats go here
+
+/obj/item/clothing/suit/storage/hooded/wintercoat
+	name = "winter coat"
+	desc = "A heavy jacket made from 'synthetic' animal furs."
+	icon_state = "coatwinter"
+	item_state_slots = list(slot_r_hand_str = "coatwinter", slot_l_hand_str = "coatwinter")
+	hoodtype = /obj/item/clothing/head/hood/winter
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat)
+	configure(atom_rules(armor_spec = "cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))
+	configure(item_worn(covers = CHEST|ARMS|LEGS, hides = HIDEHOLSTER))
+	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/captain
+	name = "site manager's winter coat"
+	desc = "A heavy jacket made from the most expensive animal furs on the market and sewn with the finest of jewels. Truly a coat befitting a Manager."
+	icon_state = "coatcaptain"
+	item_state_slots = list(slot_r_hand_str = "coatcaptain", slot_l_hand_str = "coatcaptain")
+	hoodtype = /obj/item/clothing/head/hood/winter/captain
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/hop
+	name = "head of personnel's winter coat"
+	desc = "A cozy winter coat, covered in thick fur. The breast features a proud yellow chevron, reminding everyone that you're the second banana."
+	icon_state = "coathop"
+	hoodtype = /obj/item/clothing/head/hood/winter/hop
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/security
+	name = "security winter coat"
+	desc = "A heavy jacket made from greyshirt hide. There seems to be a sewed in holster, as well as a thin weave of protection against most damage."
+	icon_state = "coatsecurity"
+	item_state_slots = list(slot_r_hand_str = "coatsecurity", slot_l_hand_str = "coatsecurity")
+	hoodtype = /obj/item/clothing/head/hood/winter/security
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/security/hos
+	name = "head of security's winter coat"
+	desc = "A heavy jacket made from greyshirt hide. There seems to be a sewed in holster, as well as a thin weave of protection against most damage."
+	icon_state = "coathos"
+	hoodtype = /obj/item/clothing/head/hood/winter/security/hos
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/medical
+	name = "medical winter coat"
+	desc = "A heavy jacket made from 'synthetic' animal furs. There's a thick weave of sterile material, good for virus outbreaks!"
+	icon_state = "coatmedical"
+	item_state_slots = list(slot_r_hand_str = "coatmedical", slot_l_hand_str = "coatmedical")
+	hoodtype = /obj/item/clothing/head/hood/winter/medical
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/medical/alt
+	name = "medical winter coat, alt"
+	desc = "A heavy jacket made from 'synthetic' animal furs. There's a thick weave of sterile material, good for virus outbreaks!"
+	icon_state = "coatmedicalalt"
+	hoodtype = /obj/item/clothing/head/hood/winter/medical/alt
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/medical/viro
+	name = "virologist winter coat"
+	desc = "A white winter coat with green markings. Warm, but wont fight off the common cold or any other disease. Might make people stand far away from you in the hallway. The zipper tab looks like an oversized bacteriophage."
+	icon_state = "coatviro"
+	hoodtype = /obj/item/clothing/head/hood/winter/medical/viro
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/medical/para
+	name = "paramedic winter coat"
+	desc = "A heavy jacket made from 'synthetic' animal furs.It has an aura of underappreciation."
+	icon_state = "coatpara"
+	hoodtype = /obj/item/clothing/head/hood/winter/medical/para
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/medical/chemist
+	name = "chemist winter coat"
+	desc = "A lab-grade winter coat made with acid resistant polymers. For the enterprising chemist who was exiled to a frozen wasteland on the go."
+	icon_state = "coatchemist"
+	hoodtype = /obj/item/clothing/head/hood/winter/medical/chemist
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/medical/cmo
+	name = "chief medical officer's winter coat"
+	desc = "A lab-grade winter coat made with acid resistant polymers. For the enterprising chemist who was exiled to a frozen wasteland on the go."
+	icon_state = "coatcmo"
+	hoodtype = /obj/item/clothing/head/hood/winter/medical/cmo
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/medical/sar
+	name = "search and rescue winter coat"
+	desc = "A heavy winter jacket. A white star of life is emblazoned on the back, with the words search and rescue written underneath."
+	icon_state = "coatsar"
+	hoodtype = /obj/item/clothing/head/hood/winter/medical/sar // sar winter hood
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/science
+	name = "science winter coat"
+	desc = "A heavy jacket made from 'synthetic' animal furs. It has a small tag that says 'Bomb Proof! (Not fully bomb proof)'."
+	icon_state = "coatscience"
+	item_state_slots = list(slot_r_hand_str = "coatscience", slot_l_hand_str = "coatscience")
+	hoodtype = /obj/item/clothing/head/hood/winter/science
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/science/robotics
+	name = "robotics winter coat"
+	desc = "A black winter coat with a badass flaming robotic skull for the zipper tab. This one has bright red designs and a few useless buttons."
+	icon_state = "coatrobotics"
+	hoodtype = /obj/item/clothing/head/hood/winter/science/robotics
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/science/rd
+	name = "research director's winter coat"
+	desc = "A thick arctic winter coat with an outdated atomic model instead of a plastic zipper tab. Most in the know are heavily aware that Bohr's model of the atom was outdated by the time of the 1930s when the Heisenbergian and Schrodinger models were generally accepted for true. Nevertheless, we still see its use in anachronism, roleplaying, and, in this case, as a zipper tab. At least it should keep you warm on your ivory pillar."
+	icon_state = "coatrd"
+	hoodtype = /obj/item/clothing/head/hood/winter/science/rd
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/engineering
+	name = "engineering winter coat"
+	desc = "A heavy jacket made from 'synthetic' animal furs. There seems to be a thin weave of lead on the inside."
+	icon_state = "coatengineer"
+	item_state_slots = list(slot_r_hand_str = "coatengineer", slot_l_hand_str = "coatengineer")
+	hoodtype = /obj/item/clothing/head/hood/winter/engineering
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/engineering/atmos
+	name = "atmospherics winter coat"
+	desc = "A heavy jacket made from 'synthetic' animal furs. It seems to have burn marks on the inside from a phoron fire."
+	icon_state = "coatatmos"
+	item_state_slots = list(slot_r_hand_str = "coatatmos", slot_l_hand_str = "coatatmos")
+	hoodtype = /obj/item/clothing/head/hood/winter/engineering/atmos
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/engineering/ce
+	name = "chief engineer's winter coat"
+	desc = "A heavy jacket made from 'synthetic' animal furs. It seems to have burn marks on the inside from a phoron fire."
+	icon_state = "coatce"
+	hoodtype = /obj/item/clothing/head/hood/winter/engineering/ce
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/hydro
+	name = "hydroponics winter coat"
+	desc = "A heavy jacket made from synthetic animal furs. There's a small tag that says 'Vegan Friendly'."
+	icon_state = "coathydro"
+	item_state_slots = list(slot_r_hand_str = "coathydro", slot_l_hand_str = "coathydro")
+	hoodtype = /obj/item/clothing/head/hood/winter/hydro
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/cargo
+	name = "cargo winter coat"
+	desc = "A heavy jacket made from 'synthetic' animal furs. It seems to be rather rugged, from the back-breaking work of pushing crates."
+	icon_state = "coatcargo"
+	item_state_slots = list(slot_r_hand_str = "coatcargo", slot_l_hand_str = "coatcargo")
+	hoodtype = /obj/item/clothing/head/hood/winter/cargo
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/cargo/qm
+	name = "quartermaster's winter coat"
+	desc = "A dark brown winter coat that has a golden crate pin for its zipper pully."
+	icon_state = "coatqm"
+	hoodtype = /obj/item/clothing/head/hood/winter/cargo/qm
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/miner
+	name = "mining winter coat"
+	desc = "A heavy jacket made from real animal furs. The miner who made this must have been through the Underdark."
+	icon_state = "coatminer"
+	item_state_slots = list(slot_r_hand_str = "coatminer", slot_l_hand_str = "coatminer")
+	hoodtype = /obj/item/clothing/head/hood/winter/cargo/miner
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/bar
+	name = "bartender winter coat"
+	desc = "A heavy jacket made from 'synthetic' animal furs. It smells of booze."
+	icon_state = "coatbar"
+	hoodtype = /obj/item/clothing/head/hood/winter/bar
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/janitor
+	name = "janitor winter coat"
+	desc = "A purple-and-beige winter coat that smells of space cleaner."
+	icon_state = "coatjanitor"
+	hoodtype = /obj/item/clothing/head/hood/winter/janitor
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/aformal
+	name = "assistant formal winter coat"
+	desc = "A black button up winter coat."
+	icon_state = "coataformal"
+	hoodtype = /obj/item/clothing/head/hood/winter/aformal
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/ratvar
+	name = "brassy winter coat"
+	desc = "A softly-glowing, brass-colored button up winter coat. Instead of a zipper tab, it has a brass cog with a tiny red gemstone inset."
+	icon_state = "coatratvar"
+	hoodtype = /obj/item/clothing/head/hood/winter/ratvar
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/ratvar)
+	configure(light_glow(range = 3, power = 1, color = "#B18B25"))
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/narsie
+	name = "runed winter coat"
+	desc = "A somber button-up in tones of grey entropy and a wicked crimson zipper. When pulled all the way up, the zipper looks like a bloody gash. The zipper pull looks like a single drop of blood."
+	icon_state = "coatnarsie"
+	hoodtype = /obj/item/clothing/head/hood/winter/narsie
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/cosmic
+	name = "cosmic winter coat"
+	desc = "A starry winter coat that even glows softly."
+	icon_state = "coatcosmic"
+	hoodtype = /obj/item/clothing/head/hood/winter/cosmic
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/cosmic)
+	configure(light_glow(power = 1.8, range = 1.2))
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/christmasred
+	name = "red christmas winter coat"
+	desc = "A festive red Christmas coat! Smells like Candy Cane!"
+	icon_state = "coatchristmasr"
+	hoodtype = /obj/item/clothing/head/hood/winter/christmasred
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/christmasgreen
+	name = "green christmas winter coat"
+	desc = "A festive green Christmas coat! Smells like Candy Cane!"
+	icon_state = "coatchristmasg"
+	hoodtype = /obj/item/clothing/head/hood/winter/christmasgreen
+
+// winter coats end here
+
+/obj/item/clothing/suit/storage/hooded/explorer
+	name = "explorer suit"
+	desc = "An armoured suit for exploring harsh environments."
+	icon_state = "explorer"
+	item_state = "explorer"
+	flags = THICKMATERIAL
+	hoodtype = /obj/item/clothing/head/hood/explorer
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/explorer)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_MINING, POCKET_EXPLO))
+	configure(item_worn(covers = CHEST|LEGS|ARMS))
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|ARMS, siemens = 0.9))
+
+
+/obj/item/clothing/suit/storage/hooded/techpriest
+	name = "techpriest robes"
+	desc = "For those who REALLY love their toasters."
+	icon_state = "techpriest"
+	hoodtype = /obj/item/clothing/head/hood/techpriest
+
+/obj/item/clothing/suit/storage/hooded/raincoat
+	name = "raincoat"
+	desc = "A thin, opaque coat meant to protect you from all sorts of rain. Preferred by outdoorsmen and janitors alike across the rift. Of course, the only type of fluids you'd like to protect yourself from around this place don't rain down from the sky. Usually. Comes with a hood!"
+	icon_state = "raincoat"
+	hoodtype = /obj/item/clothing/head/hood/raincoat
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/raincoat)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))
+	configure(item_worn(covers = CHEST|ARMS|LEGS, hides = HIDEHOLSTER))
+
+
+//hooded cloaks
+
+
+/obj/item/clothing/suit/storage/hooded/cloak
+	name = "hooded maroon cloak"
+	desc = "A simple maroon colored cloak."
+	icon_state = "maroon_cloak"
+	hoodtype = /obj/item/clothing/head/hood/cloak
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/cloak)
+	configure(item_worn(covers = CHEST|ARMS))
+
+/obj/item/clothing/suit/storage/hooded/cloak/winter
+	name = "hooded winter cloak"
+	desc = "A simple wool cloak used during winter."
+	icon_state = "winter_cloak"
+	hoodtype = /obj/item/clothing/head/hood/cloak/winter
+
+/obj/item/clothing/suit/storage/hooded/cloak/asymmetric
+	name = "hooded asymmetric cloak"
+	desc = "A blue hooded cloak with an asymmetric design."
+	icon_state = "asymmetric_cloak"
+	hoodtype = /obj/item/clothing/head/hood/cloak/asymmetric
+
+/obj/item/clothing/suit/storage/hooded/cloak/fancy
+	name = "hooded fancy cloak"
+	desc = "A fancy black hooded cloak."
+	icon_state = "hb_cloak"
+	hoodtype = /obj/item/clothing/head/hood/cloak/fancy
+
+
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/security/santa
+	name = "Santa's coat"
+	icon = 'icons/inventory/uniform/item_ch.dmi'
+	icon_override = 'icons/mob/suit.dmi'
+	icon_state = "santacoat"
+	item_state_slots = list(slot_r_hand_str = "coatsecurity", slot_l_hand_str = "coatsecurity")
+	hoodtype = /obj/item/clothing/head/hood/winter/security/santa
+
+/obj/item/clothing/head/hood/winter/security/santa
+	name = "Santa's hood"
+
+
+// Field Medic Suit - Someone who can sprite should probably reskin this
+/obj/item/clothing/suit/storage/hooded/explorer/medic
+	starting_accessories = list(/obj/item/clothing/accessory/armband/med/cross)
+
+/obj/item/clothing/suit/storage/hooded/techpriest
+	name = "tech priest robe"
+	desc = "Praise be to the Omnissiah."
+	icon_state = "techpriest"
+	hoodtype = /obj/item/clothing/head/hood/techpriest
+	item_state_slots = list(slot_r_hand_str = "engspace_suit", slot_l_hand_str = "engspace_suit")
+
+// Regular armor versions here, costumes below
+/obj/item/clothing/suit/storage/hooded/knight
+	name = "crusader's armor"
+	desc = "ye olde knight, risen again."
+	icon_state = "galahad"
+	icon = 'icons/obj/clothing/knights_vr.dmi'
+	icon_override = 'icons/obj/clothing/knights_vr.dmi'
+	hoodtype = /obj/item/clothing/head/hood/galahad
+	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight)
+	configure(atom_rules(armor_spec = "melee=80;bullet=50;laser=10"))
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_knight_headgear)))
+	configure(item_protection(siemens = 2))
+
+/obj/item/clothing/suit/storage/hooded/knight/galahad
+	name = "crusader's armor"
+	desc = "ye olde knight, risen again."
+	icon_state = "galahad"
+	hoodtype = /obj/item/clothing/head/hood/galahad
+
+/obj/item/clothing/suit/storage/hooded/knight/lancelot
+	name = "crusader's armor"
+	desc = "ye olde knight, risen again."
+	icon_state = "lancelot"
+	hoodtype = /obj/item/clothing/head/hood/lancelot
+
+/obj/item/clothing/suit/storage/hooded/knight/robin
+	name = "crusader's armor"
+	desc = "ye olde knight, risen again. This one seems slightly faster than the rest, but weaker."
+	icon_state = "robin"
+	hoodtype = /obj/item/clothing/head/hood/robin
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/robin)
+	configure(atom_rules(armor_spec = "melee=70;bullet=40;laser=10"))
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -1)))
+	configure(item_protection(siemens = 3))
+
+// Weaker variants for the redgate
+
+/obj/item/clothing/suit/storage/hooded/knight/chain
+	name = "chain armor"
+	icon_state = "chain"
+	hoodtype = /obj/item/clothing/head/hood/chain
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/chain)
+	configure(atom_rules(armor_spec = "melee=60;bullet=10;laser=10"))
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_knight_headgear)))
+
+/obj/item/clothing/suit/storage/hooded/knight/chain/lezzy
+	icon_state = "lezzy"
+	hoodtype = /obj/item/clothing/head/hood/chain
+
+/obj/item/clothing/suit/storage/hooded/knight/chain/black_white
+	icon_state = "black_white"
+	hoodtype = /obj/item/clothing/head/hood/chain
+
+// Costume Knight Gear Here
+/obj/item/clothing/suit/storage/hooded/knight_costume
+	name = "crusader's costume armor"
+	desc = "ye olde knight, risen again."
+	icon_state = "galahad"
+	icon = 'icons/obj/clothing/knights_vr.dmi'
+	icon_override = 'icons/obj/clothing/knights_vr.dmi'
+	hoodtype = /obj/item/clothing/head/hood/galahad_costume
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight_costume)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_knight_headgear)))
+
+/obj/item/clothing/suit/storage/hooded/knight_costume/galahad
+	icon_state = "galahad"
+	hoodtype = /obj/item/clothing/head/hood/galahad_costume
+
+/obj/item/clothing/suit/storage/hooded/knight_costume/lancelot
+	icon_state = "lancelot"
+	hoodtype = /obj/item/clothing/head/hood/lancelot_costume
+
+/obj/item/clothing/suit/storage/hooded/knight_costume/robin
+	name = "crusader's armor"
+	desc = "ye olde knight, risen again. This one seems slightly faster than the rest, but weaker."
+	icon_state = "robin"
+	hoodtype = /obj/item/clothing/head/hood/robin_costume
+
+// Talon Winter Coat
+/obj/item/clothing/suit/storage/hooded/wintercoat/talon
+	name = "Talon winter coat"
+	desc = "A cozy winter coat, covered in thick fur and baring the colors of ITV Talon."
+	icon_state = "taloncoat"
+	hoodtype = /obj/item/clothing/head/hood/winter/talon
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/talon/refreshed
+	name = "Refreshed Talon winter coat"
+	desc = "A refreshed cozy winter coat, covered in thick fur and baring the colors of ITV Talon."
+	icon = 'icons/inventory/suit/item.dmi'
+	icon_state = "taloncoatr"
+	hoodtype = /obj/item/clothing/head/hood/winter/talon/refreshed
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/talon/refreshed)
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
+
+// Food costumes
+/obj/item/clothing/suit/storage/hooded/foodcostume	//Separate type of costume that does not cover arms and legs. Similar to a cheap mascot costume. <Guy>
+	name = DEVELOPER_WARNING_NAME
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/foodcostume)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_hood)))
+	configure(item_worn(covers = CHEST, hides = HIDETIE|HIDEHOLSTER))
+	configure(item_protection(cold_parts = CHEST))
+
+/obj/item/clothing/suit/storage/hooded/foodcostume/hotdog	//Belly filler uniform :^).
+	name = "hotdog costume"
+	desc = "A giant hotdog costume, comes with authentic artificial hotdog scent."
+	icon_state = "hotdog"
+	item_state_slots = list(slot_r_hand_str = "hotdog", slot_l_hand_str = "hotdog")
+	hoodtype = /obj/item/clothing/head/hood_vr/hotdog_hood
+
+/obj/item/clothing/suit/storage/hooded/foodcostume/turnip	//Honey wake up, new vorny jail uniform just dropped.
+	name = "turnip costume"
+	desc = "A giant turnip costume, extra padding helps the wearer stand in the same spot for hours."
+	icon_state = "turnip"
+	item_state_slots = list(slot_r_hand_str = "turnip", slot_l_hand_str = "turnip")
+	hoodtype = /obj/item/clothing/head/hood_vr/turnip_hood
+
+//Functional hoodie
+
+/obj/item/clothing/suit/storage/hooded/hoodie
+	name = "hoodie"
+	desc = "A warm jacket, now featuring a hood!"
+	icon_state = "hoodie_plain"
+	item_state_slots = list(slot_r_hand_str = "grey_hoodie", slot_l_hand_str = "grey_hoodie")
+	hoodtype = /obj/item/clothing/head/hood/hoodie
+
+// CC Winter Coat
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/centcom
+	name = "centcom winter coat"
+	desc = "A cozy winter coat, covered in green fur and the colors of CentCom. Armored for extra protection."
+	icon_state = "coatcentcom"
+	hoodtype = /obj/item/clothing/head/hood/winter/centcom
+
+/obj/item/clothing/suit/storage/hooded/wintercoat
+	sprite_sheets = list(	SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
+							SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi')
+
+//Hoodies worth their weight in gold (as in you can unbutton them and toggle the hood independently)
+/obj/item/clothing/suit/storage/hooded/toggle/colorable
+	name = "hoodie"
+	desc = "A rather plain hoodie. If you can't find it in your closet, chances are your significant other is borrowing it."
+	icon_state = "choodie"
+	hoodtype = /obj/item/clothing/head/hood/toggleable/colorable
+	open = FALSE
+
+/obj/item/clothing/suit/storage/hooded/toggle/colorable/sleeveless
+	name = "sleeveless hoodie"
+	desc = "Either your arms were too hot or the sleeves vaporized when you gave someone a 'gunshow' with your muscles. Either way, the sleeves are missing."
+	icon_state = "choodie_sleeveless"
+
+/obj/item/clothing/suit/storage/hooded/toggle/colorable/cropped
+	name = "cropped hoodie"
+	desc = "It's not that this is a size too small, you just like showing off your tum. I guess."
+	icon_state = "choodie_crop"
+
+/obj/item/clothing/suit/storage/hooded/toggle/colorable/shortsleeve
+	name = "shortsleeve hoodie"
+	desc = "For the times you can't decide between having sleeves and not having them."
+	icon_state = "choodie_shortsleeve"
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit
+	name = "snowsuit"
+	desc = "A suit made to keep you nice and toasty on cold winter days. Or at least alive."
+	icon = 'icons/obj/clothing/suits_yw.dmi'
+	icon_state = "snowsuit"
+	icon_override = 'icons/obj/clothing/suits_yw.dmi'
+	hoodtype =	/obj/item/clothing/head/hood/winter/snowsuit
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command
+	name = "command snowsuit"
+	icon_state = "snowsuit_command"
+	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/command
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security
+	name = "security snowsuit"
+	icon_state = "snowsuit_security"
+	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/security
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical
+	name = "medical snowsuit"
+	icon_state = "snowsuit_medical"
+	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/medical
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/engineering
+	name = "engineering snowsuit"
+	icon_state = "snowsuit_engineering"
+	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/engineering
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/cargo
+	name = "cargo snowsuit"
+	icon_state = "snowsuit_cargo"
+	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/cargo
+
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/science
+	name = "science snowsuit"
+	icon_state = "snowsuit_science"
+	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/science
+
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/captain)
+	configure(atom_rules(armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/hop)
+	configure(atom_rules(armor_spec = "melee=5;bomb=5;bio=5;cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/security)
+	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/security/hos)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/medical)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/medical/sar)
+	configure(atom_rules(armor_spec = "melee=15;bio=50;rad=5;cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/science)
+	configure(atom_rules(armor_spec = "bomb=10;cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/engineering)
+	configure(atom_rules(armor_spec = "rad=20;cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/hydro)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_HYDROPONICS))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/miner)
+	configure(atom_rules(armor_spec = "melee=10;cold=40"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_MINING))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit)
+	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command)
+	configure(atom_rules(armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"))
+	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray/pepper,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton, /obj/item/handcuffs,/obj/item/clothing/head/helmet))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security)
+	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"))
+	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray/pepper,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton,	/obj/item/handcuffs,/obj/item/clothing/head/helmet))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/analyzer,/obj/item/stack/medical,	/obj/item/dnainjector,/obj/item/reagent_containers/dropper,/obj/item/reagent_containers/syringe,/obj/item/reagent_containers/hypospray,	/obj/item/healthanalyzer,/obj/item/reagent_containers/glass/bottle,/obj/item/reagent_containers/glass/beaker,	/obj/item/reagent_containers/pill,/obj/item/storage/pill_bottle))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/engineering)
+	configure(atom_rules(armor_spec = "rad=20;cold=40"))
+	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/analyzer, /obj/item/flashlight,	/obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner, /obj/item/tool/crowbar, /obj/item/tool/screwdriver,	/obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency/oxygen, /obj/item/clothing/mask/gas, /obj/item/taperoll/engineering))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/cargo)
+	configure(atom_rules(armor_spec = "melee=10;cold=40"))
+	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches,	/obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/tank, /obj/item/radio, /obj/item/pickaxe, /obj/item/ore_bag))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/science)
+	configure(atom_rules(armor_spec = "bomb=10;cold=40"))
+	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/analyzer,/obj/item/stack/medical,	/obj/item/dnainjector,/obj/item/reagent_containers/dropper,/obj/item/reagent_containers/syringe,/obj/item/reagent_containers/hypospray,	/obj/item/healthanalyzer,/obj/item/reagent_containers/glass/bottle,/obj/item/reagent_containers/glass/beaker,	/obj/item/reagent_containers/pill,/obj/item/storage/pill_bottle))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/medical/alt)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/medical/viro)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/medical/para)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/medical/chemist)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/medical/cmo)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/science/robotics)
+	configure(atom_rules(armor_spec = "bomb=10;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/science/rd)
+	configure(atom_rules(armor_spec = "bomb=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/engineering/atmos)
+	configure(atom_rules(armor_spec = "rad=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/engineering/ce)
+	configure(atom_rules(armor_spec = "rad=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/cargo/qm)
+	configure(atom_rules(armor_spec = "melee=10;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/techpriest)
+	configure(atom_rules(armor_spec = "melee=20;bullet=10;laser=10;energy=10;bomb=25;bio=50;rad=25"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/talon)
+	configure(atom_rules(armor_spec = "cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/centcom)
+	configure(atom_rules(armor_spec = "melee=40;bullet=45;laser=45;energy=35;bomb=40;bio=25;rad=25;fire=35;acid=50;cold=40"))

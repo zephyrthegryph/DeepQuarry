@@ -78,13 +78,23 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 /// A stand-in for a creature in a bag, made to ask whether the bag would take one of that size (a holder cannot be made without its mob).
 /obj/item/size_probe
 	name = "creature"
+	w_class = ITEMSIZE_SMALL
+
+/obj/item/size_probe/tiny
+	w_class = ITEMSIZE_TINY
 
 /// Why the storage would not take a held creature of the climber's kind (a stand-in of its size is asked), or null.
 /datum/capability/lib/storage/proc/creature_refusal(atom/holder, mob/living/user)
-	var/obj/item/size_probe/probe = new
-	probe.set_w_class(ismouse(user) ? ITEMSIZE_TINY : ITEMSIZE_SMALL)
+	var/probe_type = ismouse(user) ? /obj/item/size_probe/tiny : /obj/item/size_probe
+	// This runs inside a requirement, which may write nothing; the stand-in's own init and delete write only to itself, which nothing has seen.
+	var/pure_depth = GLOB.op_pure_depth
+	GLOB.op_pure_depth = 0
+	var/obj/item/size_probe/probe = new probe_type
+	GLOB.op_pure_depth = pure_depth
 	var/refused = entry_refusal(holder, probe, user)
+	GLOB.op_pure_depth = 0
 	qdel(probe) // ALLOW(lifecycle): a probe made to measure the fit is dropped at once, it never held anything
+	GLOB.op_pure_depth = pure_depth
 	return refused
 
 /// needs: the storage would take a held creature of the climber's kind.

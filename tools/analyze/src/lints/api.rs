@@ -42,7 +42,7 @@ impl Lint for Api{fn meta(&self)->&Meta{&api_policy::META}
             parse: ParseKind::Report,
             update: Some(&["tools/ci/api_lints.py", "--update"]),
             seed: Some(&["tools/ci/api_lints.py", "--seed"]),
-            files: &["tools/ci/api_lints_baseline.txt"],
+            files: &[],
             selftest: None,
         })
     }

@@ -309,7 +309,29 @@ fn run_task(task: &Task, res: &Resources, prev: &PrevViews, info: FrameInfo) {
         prev,
         info,
     };
+    let started = std::time::Instant::now();
     (task.run)(&ctx);
+    note_task_time(&task.name, started.elapsed());
+}
+
+/// Cumulative wall time and run count of each task, by name (read by the host's metrics: what a frame spends its time on).
+static TASK_TIMES: std::sync::Mutex<Vec<(String, u64, u64)>> = std::sync::Mutex::new(Vec::new());
+
+fn note_task_time(name: &str, took: std::time::Duration) {
+    let micros = u64::try_from(took.as_micros()).unwrap_or(u64::MAX);
+    let mut times = TASK_TIMES.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    if let Some(row) = times.iter_mut().find(|r| r.0 == name) {
+        row.1 += micros;
+        row.2 += 1;
+    } else {
+        times.push((name.to_string(), micros, 1));
+    }
+}
+
+/// `(task name, cumulative microseconds, runs)` for every task that has run.
+#[must_use]
+pub fn task_times() -> Vec<(String, u64, u64)> {
+    TASK_TIMES.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
 }
 
 /// What a running task can reach: its declared resources, the previous

@@ -12,7 +12,7 @@
 	H.set_m_intent(I_RUN)
 	km_synthetic_click(H, button)
 	TEST_ASSERT_EQUAL(H.m_intent, I_WALK, "Human's native HUD click retains shared movement selection")
-	TEST_ASSERT_EQUAL(sparse_get(H, m_int), "14,14", "Shared movement selection retains its actual HUD position")
+	TEST_ASSERT_EQUAL(STATE_GET(H, mob_misc, m_int), "14,14", "Shared movement selection retains its actual HUD position")
 	if(!R.module)
 		rel_set(R, nameof(R.module), new /obj/item/robot_module/robot/standard(R))
 	var/obj/item/tool/crowbar/module_tool = allocate(/obj/item/tool/crowbar, R.module)
@@ -196,6 +196,6 @@
 		was_open = O.open
 		test_op_handler(O, TYPE_PROC_REF(/obj/machinery/appliance/cooker/oven/c2_route_probe, oven_interaction_no_touch), actor)
 		TEST_ASSERT_EQUAL(O.open, was_open, "The no-touch effect leaves the physical door unchanged")
-		TEST_ASSERT(cooldown_left(actor, next_click) > 0, "The no-touch effect retains the original click cooldown")
+		TEST_ASSERT(COOLDOWN_TIMELEFT(cooldowns_view(actor), next_click) > 0, "The no-touch effect retains the original click cooldown")
 	TEST_ASSERT_EQUAL(O.touch_effects, 1, "No-touch effects never invoke the physical door operation")
 	TEST_ASSERT_EQUAL(O.no_touch_effects, 2, "AI and nonliving direct effects each run exactly once")

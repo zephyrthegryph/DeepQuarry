@@ -342,7 +342,7 @@
 		if(!I.loc)
 			TEST_FAIL("[label]: [I] was lost to nullspace")
 			return FALSE
-		var/listed = L.entries[I] ? 1 : 0
+		var/listed = L.entries[slot_known(I)] ? 1 : 0
 		if(listed != (I.loc == H ? 1 : 0))
 			TEST_FAIL("[label]: [I] in [I.loc] is listed [listed] times by the mob's ledger")
 			return FALSE

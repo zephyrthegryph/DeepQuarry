@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - admin: "The Spawn verb and the spawn search list the old paths of collapsed item and sign families (for example /obj/item/trash/popcorn) and spawn them with their variant"

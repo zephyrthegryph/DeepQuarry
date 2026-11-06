@@ -108,31 +108,11 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	/// is for PREFERENCE_CHARACTER.
 	var/can_randomize = TRUE
 
-	/// If randomizable (PREFERENCE_CHARACTER and can_randomize), whether
-	/// or not to enable randomization by default.
-	/// This doesn't mean it'll always be random, but rather if a player
-	/// DOES have random body on, will this already be randomized?
-	var/randomize_by_default = TRUE
 
-	/// If the selected species has this in its /datum/species/mutant_bodyparts,
-	/// will show the feature as selectable.
-	var/relevant_mutant_bodypart = null
 
-	/// If the selected species has this in its /datum/species/body_markings,
-	/// will show the feature as selectable.
-	var/relevant_body_markings = null
 
-	/// If the selected species has this in its /datum/species/inherent_traits,
-	/// will show the feature as selectable.
-	var/relevant_inherent_trait = null
 
-	/// If the selected species has this in its /datum/species/var/external_organs,
-	/// will show the feature as selectable.
-	var/relevant_external_organ = null
 
-	/// If the selected species has this head_flag by default,
-	/// will show the feature as selectable.
-	var/relevant_head_flag = null
 
 /// Called on the saved input when retrieving.
 /// Also called by the value sent from the user through UI. Do not trust it.
@@ -208,6 +188,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 
 	return TRUE
 
+/// What a stored value reads as outside the character setup.
+/datum/preference/proc/resolve_read(value, datum/preferences/preferences)
+	return value
+
 /// Apply this preference onto the given client.
 /// Called when the savefile_identifier == PREFERENCE_PLAYER.
 /datum/preference/proc/apply_to_client(client/client, value)
@@ -275,9 +259,15 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		else
 			CRASH("Unknown savefile identifier [savefile_identifier]")
 
-/// Read a /datum/preference type and return its value.
+/// Read a /datum/preference type and return its value, palette links resolved to plain hex.
 /// This will write to the savefile if a value was not found with the new value.
 /datum/preferences/proc/read_preference(preference_type)
+	var/value = read_preference_raw(preference_type)
+	var/datum/preference/preference_entry = GLOB.preference_entries[preference_type]
+	return preference_entry.resolve_read(value, src)
+
+/// The stored value: what to read when the value is edited and written back, so palette links survive the write.
+/datum/preferences/proc/read_preference_raw(preference_type)
 	var/datum/preference/preference_entry = GLOB.preference_entries[preference_type]
 	if(isnull(preference_entry))
 		var/extra_info = ""
@@ -455,6 +445,12 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		else
 			stack_trace("preference constraint cascade exceeded depth [PREF_CONSTRAINT_MAX_DEPTH] starting from [preference.savefile_key]; likely a constraint cycle")
 
+		// The body thumbnails (None ears and wings, Normal and Digitigrade legs) are drawn in the body's gender and skin: rebuild them.
+		var/static/list/body_thumb_keys = list("gender" = TRUE, "skin_color" = TRUE, "palette_primary" = TRUE, "custom_base" = TRUE)
+		if(body_thumb_keys[preference.savefile_key])
+			dq_invalidate_category_cache()
+			dq_schedule_static_push()
+
 		if(preference.savefile_identifier == PREFERENCE_PLAYER)
 			preference.apply_to_client_updated(client(), read_preference(preference.type))
 		else if(constraint_cascade_depth == 0 && dq_preference_affects_preview(preference))
@@ -467,7 +463,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			// full 4-direction cost (~1 s).
 			update_preview_icon_lazy()
 	catch(var/exception/e)
-		stack_trace("update_preference runtimed: [e.name] at [e.file]:[e.line] (key=[preference.savefile_key])")
+		dq_report_caught(e, "update_preference runtimed (key=[preference.savefile_key])")
 		// Undo only this frame's increment (nested frames each unwind their own), then
 		// clamp as a last-resort guard. The batch counter is decremented by
 		// end_update_batch below regardless.
@@ -475,7 +471,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			constraint_cascade_depth -= 1
 			cascade_bumped = FALSE
 		if(constraint_cascade_depth < 0)
-			stack_trace("constraint_cascade_depth went negative ([constraint_cascade_depth]) after runtime in [preference.savefile_key]; clamping")
+			dq_report_caught(EXCEPTION("constraint_cascade_depth went negative ([constraint_cascade_depth]) after runtime in [preference.savefile_key]; clamping"), "update_preference")
 			constraint_cascade_depth = 0
 
 	end_update_batch()
@@ -523,6 +519,8 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 // itself rather than scattered across is_valid overrides on every list-shaped pref.
 /datum/preference/proc/validate(datum/preferences/preferences, value)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(is_placeholder_choice(value)) // an abstract base type's placeholder is never a saved value
+		return FALSE
 	return is_valid(value)
 
 /// Returns data to be sent to users in the menu
@@ -557,13 +555,6 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	// 	return FALSE
 
 	return TRUE
-
-/// Returns whether or not, given the PREFERENCE_TAB_*, this preference should
-/// appear.
-/datum/preference/proc/should_show_on_page(preference_tab)
-	var/is_on_character_page = preference_tab == PREFERENCE_TAB_CHARACTER_PREFERENCES
-	var/is_character_preference = savefile_identifier == PREFERENCE_CHARACTER
-	return is_on_character_page == is_character_preference
 
 /// A preference that is a choice of one option among a fixed set.
 /// Used for preferences such as clothing.
@@ -712,18 +703,30 @@ TYPE_TABLE_DECLARE(/datum/preference/choiced, pref_choices, null)
 /// Will give the value as 6 hex digits, without a hash.
 /datum/preference/color
 	abstract_type = /datum/preference/color
+	/// Whether this field may store a palette slot's name instead of a hex (types/character/color_palette.dm).
+	var/linkable = FALSE
+
+/// The slot `value` names, when this field can link to one.
+/datum/preference/color/proc/linked_slot(value)
+	if(!linkable || !istext(value))
+		return null
+	var/slot = lowertext(value)
+	return dq_color_slot_type(slot) ? slot : null
+
+/datum/preference/color/resolve_read(value, datum/preferences/preferences)
+	return linkable ? preferences.resolve_color_link(value) : value
 
 /datum/preference/color/pref_deserialize(input, datum/preferences/preferences)
-	return sanitize_hexcolor(input)
+	return linked_slot(input) || sanitize_hexcolor(input)
 
 /datum/preference/color/create_default_value()
 	return random_color()
 
 /datum/preference/color/pref_serialize(input)
-	return sanitize_hexcolor(input)
+	return linked_slot(input) || sanitize_hexcolor(input)
 
 /datum/preference/color/is_valid(value)
-	return findtext(value, GLOB.is_color)
+	return linked_slot(value) || findtext(value, GLOB.is_color)
 
 /datum/preference/color/human
 	abstract_type = /datum/preference/color/human

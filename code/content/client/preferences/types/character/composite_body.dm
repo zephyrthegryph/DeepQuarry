@@ -29,6 +29,30 @@
 /datum/preference/body_markings/is_valid(value)
 	return islist(value)
 
+/// Linked zones read as hex. `value` is a shallow copy of the cache, so what changes here is copied first.
+/datum/preference/body_markings/resolve_read(list/value, datum/preferences/preferences)
+	if(!islist(value))
+		return value
+	for(var/marking in value)
+		var/list/zones = value[marking]
+		if(!islist(zones))
+			continue
+		var/list/resolved
+		for(var/zone in zones)
+			var/list/entry = zones[zone]
+			if(zone == "color")
+				if(dq_color_slot_type(entry))
+					resolved = resolved || zones.Copy()
+					resolved[zone] = preferences.resolve_color_link(entry)
+			else if(islist(entry) && dq_color_slot_type(entry["color"]))
+				resolved = resolved || zones.Copy()
+				var/list/entry_copy = entry.Copy()
+				entry_copy["color"] = preferences.resolve_color_link(entry["color"])
+				resolved[zone] = entry_copy
+		if(resolved)
+			value[marking] = resolved
+	return value
+
 /datum/preference/body_markings/apply_to_human(mob/living/carbon/human/target, value)
 	return
 /datum/preference/body_markings/apply_to_living(mob/living/target, value)
@@ -51,7 +75,7 @@
 /datum/preference/flavor_texts/pref_deserialize(input, datum/preferences/preferences)
 	if(!islist(input))
 		return list()
-	return input
+	return dq_migrate_flavor_zones(input)
 
 /datum/preference/flavor_texts/pref_serialize(input)
 	if(!islist(input))
@@ -67,7 +91,7 @@
 	// Re-strip on apply. The editor strips on write but a savefile loaded from a state
 	// predating that strip (or hand-edited JSON) can carry tags through to the mob —
 	// where it lands in examine, character_directory, etc. Cheap insurance.
-	for(var/zone in list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet"))
+	for(var/zone in GLOB.dq_flavor_zones)
 		var/t = value[zone]
 		LAZYSET(target.bio.flavor_texts, zone, istext(t) ? strip_html_simple(t) : null)
 /datum/preference/flavor_texts/apply_to_living(mob/living/target, value)

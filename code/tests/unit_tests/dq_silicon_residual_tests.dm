@@ -1,7 +1,7 @@
 /// Local HUD questions belong to the AI and clicked screen, not its wireless provider.
-/datum/unit_test/om/silicon_hud_local_cancellation
+/datum/unit_test/engine/silicon_hud_local_cancellation
 
-/datum/unit_test/om/silicon_hud_local_cancellation/run_om(list/made)
+/datum/unit_test/engine/silicon_hud_local_cancellation/run_engine(list/made)
 	test_prompts_reset()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/silicon/ai/actor = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
@@ -17,7 +17,8 @@
 	var/datum/pending_op/pending = op_pending_for(actor, "hud_camera_list")
 	TEST_ASSERT_NOTNULL(pending, "camera list still opens through the actual local HUD with wireless disabled")
 	TEST_ASSERT_EQUAL(pending.actor, actor, "the native question keeps the explicit HUD actor")
-	TEST_ASSERT_EQUAL(pending.holder, actor, "the native question belongs to that AI")
+	TEST_ASSERT_NOTNULL(pending.request, "the camera list is asked as a native question")
+	TEST_ASSERT_EQUAL(pending.request.owner_holder(), actor, "the native question belongs to that AI")
 	TEST_ASSERT_EQUAL(pending.held, button, "the exact clicked screen bounds the continuation lifetime")
 	TEST_ASSERT_NULL(op_pending_for(other, "hud_camera_list"), "another actual AI does not inherit this question")
 	for(var/list/row as anything in op_menu(other, actor, null))

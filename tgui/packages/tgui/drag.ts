@@ -133,6 +133,16 @@ export function getWindowSize(): Point {
   return [window.innerWidth * pixelRatio, window.innerHeight * pixelRatio];
 }
 
+/** Grow the window by `deltaCss` CSS pixels of height, keeping its width. */
+export function growWindowHeight(deltaCss: number): void {
+  const [width, height] = getWindowSize();
+  const next = Math.round(height + deltaCss * pixelRatio);
+  logger.log(
+    `fit: growing window ${height} -> ${next} (native px, ratio ${pixelRatio})`,
+  );
+  setWindowSizeBatched([width, next]);
+}
+
 // Set window position
 export function setWindowPosition(vec: Point): void {
   const byondPos = vecAdd(vec, screenOffset);

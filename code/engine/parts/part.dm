@@ -193,9 +193,10 @@
 /proc/remote()
 	return part_make(/datum/entry/part/bind/remote)
 
-/// menu(button =, bind =): chosen by key: an ability's button and keybind, or a target's menu entry.
-/proc/menu(button = null, bind = null)
-	return part_make(/datum/entry/part/bind/menu, list("button" = button, "bind" = bind))
+/// menu(button =, bind =, desc =): chosen by key: an ability's button and keybind, or a target's menu entry. `desc` is the hover text the Menu shows beside
+/// the label (what a verb's `set desc` was); op_menu() carries it as the row's "desc".
+/proc/menu(button = null, bind = null, desc = null)
+	return part_make(/datum/entry/part/bind/menu, list("button" = button, "bind" = bind, "desc" = desc))
 
 /// ai(): an AI controller or a script calls the op by key.
 /proc/ai()
@@ -646,8 +647,44 @@
 	edit = null,
 	levels = null,
 	symptoms = null,
-	sfx_volume = null)
+	sfx_volume = null,
+	mob_type = null,
+	statuses = null,
+	flash = null,
+	mends = null,
+	mend_amount = null,
+	poison = null,
+	tell_each = null,
+	sparks = null,
+	joules = null,
+	slime_damage = null,
+	distance = null,
+	freeze = null)
 	var/list/arguments = list("kind" = kind)
+	if(!isnull(mob_type))
+		arguments["mob_type"] = mob_type
+	if(!isnull(statuses))
+		arguments["statuses"] = statuses
+	if(!isnull(flash))
+		arguments["flash"] = flash
+	if(!isnull(mends))
+		arguments["mends"] = mends
+	if(!isnull(mend_amount))
+		arguments["mend_amount"] = mend_amount
+	if(!isnull(poison))
+		arguments["poison"] = poison
+	if(!isnull(tell_each))
+		arguments["tell_each"] = tell_each
+	if(!isnull(sparks))
+		arguments["sparks"] = sparks
+	if(!isnull(joules))
+		arguments["joules"] = joules
+	if(!isnull(slime_damage))
+		arguments["slime_damage"] = slime_damage
+	if(!isnull(distance))
+		arguments["distance"] = distance
+	if(!isnull(freeze))
+		arguments["freeze"] = freeze
 	if(!isnull(clears))
 		arguments["clears"] = clears
 	if(!isnull(tell))
@@ -863,7 +900,8 @@
 
 /// on_interrupt(PROC_REF(x)): x(datum/act/op/A) runs when the op's wait or question is broken before the effects (a keep broke, a requirement refused, the
 /// answerer said no or ran out of time), with the reason in A.reason and the actor, holder and held item still named. It does not run when the op is
-/// refused before it waits, when it completes, or when its holder or target is gone. A cleanup, never a second try: nothing was spent.
+/// refused before it waits, when it completes, or when its holder or actor is gone. When the target is deleted mid-wait it runs once, with A.target null
+/// (the borrower hears /datum/notice/borrow_ended). A cleanup, never a second try: nothing was spent.
 /proc/on_interrupt(handler)
 	return part_make(/datum/entry/part/on_interrupt, list("handler" = handler))
 
@@ -989,4 +1027,4 @@
 
 /// ui_shape(operating, channels = list_of(row(...))): the declared shape of the window's data. `analyze gen ui_types` reads the declaration from source and
 /// writes the TypeScript type of the window (each field's schema range as the doc comment of its field); at runtime the entry carries no data. It is a
-/// macro (code/__defines/engine/declare.dm) so that a field can be written `name = schema`, which no proc taking `...` accepts as a named argument.
+/// macro (code/defines/engine/declare/declare.dm) so that a field can be written `name = schema`, which no proc taking `...` accepts as a named argument.

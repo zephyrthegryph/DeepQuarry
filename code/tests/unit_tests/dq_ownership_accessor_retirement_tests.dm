@@ -9,9 +9,9 @@ CAPABILITIES(/obj/ownership_retirement_state_probe)
 	owns_one(nameof(deleted_child))
 	owns_one(nameof(spilled_child), on_destroy = ON_DESTROY_SPILL)
 	owns_many(nameof(deleted_children))
-	owns_many(nameof(watches), /datum/native_watch/gas)
+	owns_many(nameof(watches), /datum/native_watch/world)
 
-/obj/ownership_retirement_state_probe/proc/watch_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+/obj/ownership_retirement_state_probe/proc/watch_heard(datum/native_watch/world/W, reason, source, source_kind)
 	return
 
 /datum/unit_test/ownership_retirement_codec_policy_pin
@@ -75,7 +75,7 @@ CAPABILITIES(/obj/ownership_retirement_state_probe)
 	var/datum/gas_mixture/air = allocate(/datum/gas_mixture, 70)
 	gas_watch_many(H, nameof(H.watches), list(air, air), GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/obj/ownership_retirement_state_probe, watch_heard))
 	TEST_ASSERT_EQUAL(length(H.watches), 1, "Repeated mixture IDs create exactly one real native watch")
-	var/datum/native_watch/gas/W = H.watches[1]
+	var/datum/native_watch/world/W = H.watches[1]
 	gas_watch_many_clear(H, nameof(H.watches))
 	TEST_ASSERT(QDELETED(W), "Clearing the dynamic watch var deletes the native watch")
 	TEST_ASSERT_EQUAL(length(H.watches), 0, "Clearing removes every watch from the owner")

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Blob overmind, pAI, borer-adjacent, vox, stardog, clown and ghost ability verbs are menu ops with their guards as requirements"
+  - bugfix: "Removed the Armalis Shriek verb, which did nothing"

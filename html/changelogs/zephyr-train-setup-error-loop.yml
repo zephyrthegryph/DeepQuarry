@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The landing train bounces a lane after two cycles whose gate setup failed instead of retrying it alone for over an hour, and no longer bounces lanes for a conflict in the unit-test include list"

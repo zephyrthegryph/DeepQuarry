@@ -178,10 +178,14 @@
 		return FALSE
 	return !isatom(holder) || op_var_slot(holder, slot_id)
 
+/// What a holder adds to the log line of a refused transfer (its numbers, so a "no room" shows how much room there was).
+/datum/proc/move_refusal_detail(datum/item)
+	return ""
+
 /// A transfer that did not happen (the caller already cancelled its insert action, whose own reason ours replaces): the world log has the line and
 /// `actor` is told why (null: already told). Returns the /datum/act_refusal move_into_attempt() answers.
 /proc/move_into_failed(datum/holder, slot_id, datum/item, mob/actor, reason, outcome = ACT_REFUSED)
-	var/refusal = "MOVE_INTO: [item] into [holder] ([slot_id || "default"]) refused: [reason]"
+	var/refusal = "MOVE_INTO: [item] into [holder] ([slot_id || "default"]) refused: [reason][holder?.move_refusal_detail(item)]"
 	boot_noise_note(refusal)
 	log_world(refusal)
 	transfer_feedback_provider().send(actor, holder, item, reason)

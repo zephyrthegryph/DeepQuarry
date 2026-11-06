@@ -1,0 +1,116 @@
+/mob/living/simple_mob/homunculus
+	name = "homunculus"
+	desc = "A strange misshapen humanoid creature made purely from glamour!"
+
+	icon_dead = "homunculus"
+	icon_living = "homunculus"
+	icon_state = "homunculus"
+	icon = 'icons/mob/vore.dmi'
+
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	draws_life_state = FALSE
+	max_n2 = 0
+	minbodytemp = 0
+
+	var/obj/item/glamour_face/owner // relation: the face that made us (its homunculus view clears when we go)
+
+/// Vanishes instead of dying.
+/mob/living/simple_mob/homunculus/replace_death(gibbed)
+	consume(src)
+	return TRUE
+
+
+/mob/living/simple_mob/homunculus/evil
+	var/seen_melee
+	var/seen_gun
+	var/transformed
+	endurance = 100
+
+
+	melee_damage_lower = 5
+	melee_damage_upper = 7
+
+CAPABILITIES(/mob/living/simple_mob/homunculus/evil)
+	configure(mob_rules(faction = FACTION_GLAMOUR))
+
+
+/mob/living/simple_mob/homunculus/evil/life_type_pre(datum/seq_frame/life/F)
+	src.handle_homunculus()
+	return ..()
+
+/mob/living/simple_mob/homunculus/evil/proc/handle_homunculus()
+	if(!transformed)
+		for(var/mob/living/carbon/human/H in range(8, src))
+			if(H.stat == DEAD)
+				continue
+			name = H.name
+			desc = H.desc
+			set_icon(H.icon)
+			set_icon_state(H.icon_state)
+			copy_overlays(H, TRUE)
+			resize(H.size_multiplier, ignore_prefs = TRUE)
+			var/obj/item/A = H.get_active_hand()
+			var/obj/item/I = H.get_inactive_hand()
+			if(istype(A,/obj/item/material) || istype(A,/obj/item/melee) || istype(I,/obj/item/material) || istype(I,/obj/item/melee))
+				seen_melee = 1
+				set_melee_damage_lower(20)
+				set_melee_damage_upper(30)
+			if(istype(A,/obj/item/gun/projectile) || istype(I,/obj/item/gun/projectile))
+				seen_gun = 1
+				projectiletype = /obj/item/projectile/bullet/pistol/medium
+				projectilesound = SFX_WEAPONS_GUNSHOT_LIGHT
+				if(istype(A,/obj/item/gun/projectile/shotgun) || istype(I,/obj/item/gun/projectile/shotgun))
+					projectiletype = /obj/item/projectile/bullet/pellet/shotgun
+					projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
+					reload_time = 1.5 SECONDS
+					ranged_attack_delay = 1.5 SECONDS
+					projectile_dispersion = 8
+					projectile_accuracy = -40
+				if(istype(A,/obj/item/gun/projectile/automatic) || istype(I,/obj/item/gun/projectile/automatic))
+					set_base_attack_cooldown(5)
+					projectile_dispersion = 7
+					projectile_accuracy = -20
+				if(istype(A,/obj/item/gun/projectile/heavysniper) || istype(I,/obj/item/gun/projectile/heavysniper))
+					projectiletype = /obj/item/projectile/bullet/rifle/a145/highvel // Do not get seen with a big ass sniper!
+					projectilesound = SFX_WEAPONS_GUNSHOT_CANNON
+					ranged_attack_delay = 2.5 SECONDS
+					reload_time = 5 SECONDS
+					projectile_accuracy = 75
+			if(istype(A,/obj/item/gun/energy) || istype(I,/obj/item/gun/energy))
+				seen_gun = 1
+				projectiletype = /obj/item/projectile/beam/midlaser
+				projectilesound = SFX_WEAPONS_LASER
+				projectile_dispersion = 5
+				projectile_accuracy = -20
+				if(istype(A,/obj/item/gun/energy/ionrifle) || istype(I,/obj/item/gun/energy/ionrifle))
+					projectiletype = /obj/item/projectile/ion
+				if(istype(A,/obj/item/gun/energy/lasercannon) || istype(I,/obj/item/gun/energy/lasercannon))
+					projectiletype = /obj/item/projectile/beam/heavylaser
+					ranged_attack_delay = 2.5 SECONDS
+					reload_time = 5 SECONDS
+					projectilesound = SFX_WEAPONS_LASERCANNONFIRE
+				if(istype(A,/obj/item/gun/energy/sniperrifle) || istype(I,/obj/item/gun/energy/sniperrifle))
+					projectiletype = /obj/item/projectile/beam/sniper // Do not get seen with a big ass sniper!
+					projectilesound = SFX_WEAPONS_GAUSS_SHOOT
+					ranged_attack_delay = 2.5 SECONDS
+					reload_time = 5 SECONDS
+					projectile_accuracy = 75
+			if(istype(A,/obj/item/gun/magnetic) || istype(I,/obj/item/gun/magnetic))
+				seen_gun = 1
+				projectiletype = /obj/item/projectile/bullet/magnetic/bore
+				projectilesound = SFX_WEAPONS_RAILGUN
+				ranged_attack_delay = 1.5 SECONDS
+				projectile_dispersion = 5
+				projectile_accuracy = 20
+			var/obj/item/clothing/suit/S = H.get_equipped_item(SLOT_ID_SUIT)
+			if(istype(S,/obj/item/clothing/suit/armor) || istype(S,/obj/item/clothing/suit/space/rig/))
+				set_armor(dq_armor(list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 100, rad = 100)))
+			transformed = 1
+			return TRUE

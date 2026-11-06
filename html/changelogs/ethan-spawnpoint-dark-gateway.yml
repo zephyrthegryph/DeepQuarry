@@ -1,0 +1,5 @@
+author: "ethan"
+delete-after: true
+changes:
+  - maptweak: "The Gateway spawn lands beside the station gateway again."
+  - rscdel: "Removed the temporary Dark room and its portals."

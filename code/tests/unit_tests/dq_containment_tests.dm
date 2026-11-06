@@ -86,6 +86,8 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 			var/turf/east = get_step(T, EAST)
 			if(T.density || !istype(east, /turf/simulated/floor) || east.density)
 				continue
+			if(!T.air || T.return_air().return_pressure() < ONE_ATMOSPHERE * 0.8)
+				continue // a body set down here breathes: an airless floor starves its organs
 			if(pass == 1 && unit_test_regulated_room(T))
 				continue
 			if((locate_within(T, /obj/item)) || (locate_within(T, /obj/structure)) || (locate_within(T, /mob)))
@@ -356,7 +358,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 			return FALSE
 		var/listed = 0
 		for(var/atom/H as anything in holders)
-			if(H.containment_ledger()?.entries[T])
+			if(H.containment_ledger()?.entries[slot_known(T)])
 				listed++
 		var/expect = (T.loc in holders) ? 1 : 0
 		if(listed != expect)

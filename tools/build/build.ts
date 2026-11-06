@@ -26,7 +26,7 @@ import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
 import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, slotRoleSize, withSlot } from './lib/machine_slots';
 import { measuredDurations, neverRan, packShards, parseRunLog, readDurations, recordDurations, type SalvagedRun, suiteStalenessParams } from './lib/suite_runner';
-import { dmeValidationKey, isGeneratedDm, seedFromMainCheckout } from './lib/seed';
+import { dmeValidationKey, seedFromMainCheckout } from './lib/seed';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BALANCE_RESULTS_FILE,
@@ -93,7 +93,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { cargoIncrementalEnv, cargoTargetDir, clearIncremental, compilerPanicSignature } from './lib/cargo_ice';
+import { cargoWithIceRetry as runCargoWithIceRetry } from './lib/cargo_ice';
 import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
@@ -111,25 +111,21 @@ if (process.env.DQ_PRIORITY !== 'normal') {
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
 /** `cargo <args>` under the machine-wide cargo slot (lib/machine_slots.ts, tools/dq_machine_slots.sh): by default one cargo build at a
- * time on the machine, the merge worktree first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
+ * time on the machine, compiler lanes first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
 const cargoExec = (args: string[], options?: any) =>
   withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => cargoWithIceRetry(args, options), (m) => Juke.logger.info(m));
 
-/** One cargo run, non-incremental unless DQ_CARGO_INCREMENTAL=1 (lib/cargo_ice.ts). If rustc panics ("the compiler unexpectedly
- * panicked", the corrupt incremental cache ICE) the panic is logged, the target's incremental directories are deleted and the build runs once
- * more without RUSTC_WRAPPER. Any other failure throws as Juke.exec would. */
-async function cargoWithIceRetry(args: string[], options?: any): Promise<void> {
-  const env = { ...process.env, ...cargoIncrementalEnv(), ...(options?.env ?? {}) };
-  const run = (e: NodeJS.ProcessEnv) => Juke.exec('cargo', args, { ...options, env: e, throw: false });
-  let result = await run(env);
-  if (result.code !== 0 && compilerPanicSignature(result.combined ?? '')) {
-    const target = cargoTargetDir(args, env, path.resolve(options?.cwd ?? '.'));
-    const removed = clearIncremental(target);
-    Juke.logger.warn(`cargo ${args[0]}: rustc panicked; removed ${removed.length} incremental dir(s) under ${target} and retrying once`);
-    result = await run({ ...env, RUSTC_WRAPPER: '', CARGO_BUILD_RUSTC_WRAPPER: '' });
-  }
-  if (result.code !== 0) throw new Error(`cargo ${args[0]} failed (exit ${result.code})`);
-}
+/** One cargo run under the lane incremental policy (lib/cargo_ice.ts): the profile decides, a rustc panic deletes the target's incremental
+ * directories and retries once. */
+const cargoWithIceRetry = (args: string[], options?: any): Promise<void> =>
+  runCargoWithIceRetry(args, options, {
+    kind: 'lane',
+    exec: async (a, env, cwd) => {
+      const r = await Juke.exec('cargo', a, { ...options, env, cwd, throw: false });
+      return { code: r.code, combined: r.combined ?? '' };
+    },
+    warn: (m) => Juke.logger.warn(m),
+  });
 
 export const DME_NAME = 'deepquarry';
 
@@ -300,7 +296,7 @@ export const ValidateDmeTarget = new Juke.Target({
     // A .dm file is "compiled" if it is reachable from the .dme through the
     // transitive #include graph â€” NOT just if it appears literally in the .dme.
     // Many files are pulled in by intermediate aggregators (e.g.
-    // code/modules/tgs/includes.dm includes its core/v5 subfiles; code/__odlint.dm
+    // code/world/tgs/includes.dm includes its core/v5 subfiles; code/__odlint.dm
     // includes __pragmas.dm). A naive "is it in the .dme" check false-positives
     // on every such transitively-included file, so we walk the graph.
     //
@@ -374,7 +370,7 @@ export const ValidateDmeTarget = new Juke.Target({
     // Unit-test files are compiled only under a separate test .dme, never from
     // deepquarry.dme â€” exclude them from the "is it wired into the build" check.
     const EXCLUDED_PREFIXES = [
-      'code/modules/unit_tests/',
+      'code/tests/unit_tests/',
       'code/tests/unit_tests/',
     ];
 
@@ -451,13 +447,15 @@ export const VerdigrisBindingsTarget = new Juke.Target({
   },
 });
 
-// The bindings check reads every Rust source and every DM file (15+ s on Windows). It is skipped when nothing it
-// reads has changed since it last passed here: the Rust sources and the generated files by content, the DM tree by
-// its file list (the DM side only checks that the types a component names exist; editing inside a file that removes
-// such a type is caught by CI, which always runs the full check, and by the next Rust or file-list change).
+// The bindings check reads every Rust source and every DM file (20-120 s on a loaded machine). It is skipped when nothing it
+// reads has changed since it last passed here: the Rust sources and the generated files by content. The DM side only checks that the
+// types a component names exist and picks `proc/` or an override: a DM change that alters that is caught by the compile (a second
+// `proc/` is an error) and by CI, which always runs the full check. The DM file list used to be in the key too, but an added file can do
+// nothing an edit inside a file cannot, and edits were never in it: it only made every master that added a .dm file regenerate the
+// same output (7 of the last 14 train batches on 31 October, 19-122 s each, before the gates).
 // data/verdigris-bindings-check.json holds the key; DQ_FULL_CHECKS=1 forces the full check.
 const verdigrisBindingsCheckKey = (): string => {
-  const hash = createHash('sha256').update('vg-bindings-check-v1|');
+  const hash = createHash('sha256').update('vg-bindings-check-v2|');
   const rs: string[] = [];
   const walk = (dir: string, keep: (name: string) => boolean, out: string[]) => {
     if (!fs.existsSync(dir)) return;
@@ -474,10 +472,6 @@ const verdigrisBindingsCheckKey = (): string => {
     hash.update(file);
     hash.update(fs.readFileSync(file));
   }
-  const dm: string[] = [];
-  walk('code', (n) => n.endsWith('.dm'), dm);
-  // `gen` restores its build output into code/ after a fresh tree's first key was computed: leave it out.
-  hash.update(dm.filter((f) => !isGeneratedDm(f)).sort().join('\n'));
   return hash.digest('hex');
 };
 const VERDIGRIS_BINDINGS_CHECK_RECORD = 'data/verdigris-bindings-check.json';
@@ -596,7 +590,30 @@ const verdigrisAbi = (): string | undefined => {
   }
 };
 let verdigrisPendingStore: { cache: string; key: string; commit: string } | null = null;
-const verdigrisCacheHit = (): boolean => {
+// The cargo profile the library in the checkout root was built with. `release` (thin LTO, full debug info) is production, CI, the
+// server and benchmarks; `lane` (verdigris/Cargo.toml [profile.lane]: no LTO, line-table debug info, incremental, optimised enough
+// for gas simulations in tests) is what test targets load in a lane. A sidecar records the profile so a lane DLL is never taken
+// for a production one, and the shared cache keys the profile too.
+type VerdigrisProfile = 'release' | 'lane';
+const VERDIGRIS_PROFILE_STAMP = `${VERDIGRIS_LIB}.profile`;
+/** Test targets: `lane` unless CI, enforced provenance or DQ_VERDIGRIS_PROFILE=release asks for production. */
+const verdigrisTestProfile = (): VerdigrisProfile => {
+  const want = process.env.DQ_VERDIGRIS_PROFILE;
+  if (VERDIGRIS_PROVENANCE_ENFORCED) return 'release';
+  if (want === 'release' || want === 'lane') return want;
+  return process.env.CI ? 'release' : 'lane';
+};
+const verdigrisBuiltProfile = (): string | null => {
+  try {
+    return fs.readFileSync(VERDIGRIS_PROFILE_STAMP, 'utf-8').trim();
+  } catch {
+    return null;
+  }
+};
+// A library with no stamp predates profiles and is a release build.
+const verdigrisProfileMismatch = (profile: VerdigrisProfile): boolean =>
+  fs.existsSync(VERDIGRIS_LIB) && (verdigrisBuiltProfile() ?? 'release') !== profile;
+const verdigrisCacheHit = (profile: VerdigrisProfile): boolean => {
   verdigrisPendingStore = null;
   const cache = verdigrisCacheDir();
   if (!cache) return false;
@@ -605,29 +622,31 @@ const verdigrisCacheHit = (): boolean => {
     VERDIGRIS_RUST_TARGET,
     process.env.RUSTFLAGS || '',
     VERDIGRIS_PROVENANCE_ENFORCED ? 'provenance' : '',
+    profile,
   );
   if ('bypass' in k) {
     Juke.logger.info(`verdigris cache: bypassed (${k.bypass})`);
     return false;
   }
   const sidecars = VERDIGRIS_PROVENANCE_ENFORCED ? [VERDIGRIS_PROVENANCE] : [];
-  if (restoreVerdigris(cache, k.key, VERDIGRIS_LIB, sidecars)) {
+  if (restoreVerdigris(cache, k.key, VERDIGRIS_LIB, sidecars, profile)) {
     const abi = verdigrisAbi();
     const abiOk = !abi || fs.readFileSync(VERDIGRIS_LIB).includes(Buffer.from(abi, 'latin1'));
     if (abiOk && !verdigrisProvenanceMismatch()) {
-      Juke.logger.info(`verdigris cache: hit ${k.key} (${cache})`);
+      fs.writeFileSync(VERDIGRIS_PROFILE_STAMP, `${profile}\n`);
+      Juke.logger.info(`verdigris cache: hit ${k.key} ${profile} (${cache})`);
       return true;
     }
     Juke.logger.warn(`verdigris cache: entry ${k.key} fails the ABI/provenance check; dropping it and rebuilding`);
     dropVerdigris(cache, k.key);
     fs.rmSync(VERDIGRIS_LIB, { force: true });
   } else {
-    Juke.logger.info(`verdigris cache: miss ${k.key}; building and storing`);
+    Juke.logger.info(`verdigris cache: miss ${k.key} (${profile}); building and storing`);
   }
   verdigrisPendingStore = { cache, key: k.key, commit: k.commit };
   return false;
 };
-const storeVerdigrisBuild = (built: string): void => {
+const storeVerdigrisBuild = (built: string, profile: VerdigrisProfile): void => {
   const pending = verdigrisPendingStore;
   if (!pending) return;
   verdigrisPendingStore = null;
@@ -638,16 +657,18 @@ const storeVerdigrisBuild = (built: string): void => {
       target: VERDIGRIS_RUST_TARGET,
       rustflags: process.env.RUSTFLAGS || '',
       abi: verdigrisAbi() || null,
-    });
-    Juke.logger.info(`verdigris cache: stored ${pending.key}`);
+    }, profile);
+    Juke.logger.info(`verdigris cache: stored ${pending.key} (${profile})`);
   } catch (error) {
     Juke.logger.warn(`verdigris cache: store failed: ${error instanceof Error ? error.message : error}`);
   }
 };
 
-export const VerdigrisTarget = new Juke.Target({
+/** The verdigris library target for a profile chosen when the target runs. */
+const makeVerdigrisTarget = (chooseProfile: () => VerdigrisProfile) => new Juke.Target({
   dependsOn: [VerdigrisBindingsCheckTarget],
   onlyWhen: () => {
+    const profile = chooseProfile();
     const mismatch = verdigrisProvenanceMismatch();
     // DM-only work (agents in worktrees, CI lint jobs) can reuse a prebuilt
     // library instead of compiling the whole Rust workspace.
@@ -668,7 +689,7 @@ export const VerdigrisTarget = new Juke.Target({
       }
       return false;
     }
-    if (verdigrisCacheHit()) return false;
+    if (verdigrisCacheHit(profile)) return false;
     const probe = spawnSync('cargo', ['--version'], {
       stdio: 'ignore',
       shell: true,
@@ -722,16 +743,18 @@ export const VerdigrisTarget = new Juke.Target({
   // timestamp check would pass.
   outputs: () =>
     !VERDIGRIS_PROVENANCE_ENFORCED
-      ? [VERDIGRIS_LIB]
+      ? (verdigrisProfileMismatch(chooseProfile()) ? [] : [VERDIGRIS_LIB])
       : verdigrisProvenanceMismatch()
         ? []
         : [VERDIGRIS_LIB, VERDIGRIS_PROVENANCE],
   executes: async () => {
-    const built = `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`;
+    const profile = chooseProfile();
+    const built = `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/${profile}/${VERDIGRIS_LIB}`;
     if (!VERDIGRIS_PROVENANCE_ENFORCED) {
-      await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], { cwd: 'verdigris' });
+      await cargoExec(['build', ...(profile === 'release' ? ['--release'] : ['--profile', profile]), '--target', VERDIGRIS_RUST_TARGET], { cwd: 'verdigris' });
       fs.copyFileSync(built, VERDIGRIS_LIB);
-      storeVerdigrisBuild(built);
+      fs.writeFileSync(VERDIGRIS_PROFILE_STAMP, `${profile}\n`);
+      storeVerdigrisBuild(built, profile);
       return;
     }
     const rustflags = process.env.RUSTFLAGS || '';
@@ -758,9 +781,15 @@ export const VerdigrisTarget = new Juke.Target({
       await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
       installVerdigrisLibrary(process.cwd(), built, VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, rustflags);
     }
-    storeVerdigrisBuild(built);
+    fs.writeFileSync(VERDIGRIS_PROFILE_STAMP, 'release\n');
+    storeVerdigrisBuild(built, 'release');
   },
 });
+
+/** Production, CI, the server and benchmarks: always the `release` profile. */
+export const VerdigrisTarget = makeVerdigrisTarget(() => 'release');
+/** Test targets: the `lane` profile by default (verdigrisTestProfile). */
+export const VerdigrisLaneTarget = makeVerdigrisTarget(verdigrisTestProfile);
 
 // the analyze lint engine (tools/analyze, doc: tools/analyze/README.md). One Rust
 // binary replaces tools/ci's Python lints and check_grep.sh. Like verdigris it is built when its
@@ -902,8 +931,10 @@ export const DmeTarget = new Juke.Target({
   },
 });
 
+// `analyze gen` reads the gitignored `_bindings.dm` (the reads generator follows calls into the vg_* binds: without it
+// `rust_push(nameof(vg_entity))` is missing from three generated reads), so it runs after the bindings are current, never beside them.
 export const GenTarget = new Juke.Target({
-  dependsOn: [AnalyzeBuildTarget, DmeTarget],
+  dependsOn: [AnalyzeBuildTarget, DmeTarget, VerdigrisBindingsCheckTarget],
   executes: async () => {
     if (process.env.DQ_SKIP_GEN === '1') {
       Juke.logger.warn('gen: DQ_SKIP_GEN=1, not regenerating code/engine/_generated');
@@ -1421,7 +1452,10 @@ async function runTestWorld(
   Juke.rm('data/bench/scenarios.json');
   fs.mkdirSync('data/bench', { recursive: true });
   const sampler = sample ? new ProcessSampler('data/bench/process.json') : null;
-  const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams }).toString();
+  // launch_tod: the spawn stamp (deciseconds since midnight UTC, as world.timeofday counts), so a sampled bench world can split its
+  // launch into the .dmb load, the global variables and the compiled map (server_phases startup_spawn_to_globals_s and after).
+  const launchTod = sample ? { launch_tod: String(Math.round((Date.now() % 86_400_000) / 100)) } : {};
+  const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams, ...launchTod }).toString();
   const started = Date.now();
   let killedByWatchdog = false;
   let runtimeError: string | null = null;
@@ -1923,7 +1957,7 @@ function reportFocus(focus: string[] | null = null): void {
     return;
   }
   const focusedTests = fs
-    .readFileSync('code/modules/unit_tests/dq_focus.dm', 'utf-8')
+    .readFileSync('code/tests/unit_tests/dq_focus.dm', 'utf-8')
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.startsWith('TEST_FOCUS('));
@@ -2270,7 +2304,7 @@ function testWorldParams(get: any): Record<string, string> {
   const params: Record<string, string> = { 'test-tier': resolveTier(get) };
   if (get(ProfileTestsParameter)) params['test-profile'] = '1';
   // `tools/dq_focused_test.sh --bless`: snapshot tests write their current rows over the recorded files
-  // (code/modules/unit_tests/dq_snapshot_files.dm) instead of failing.
+  // (code/tests/unit_tests/dq_snapshot_files.dm) instead of failing.
   if (process.env.DQ_SNAPSHOT_BLESS === '1') {
     params['snapshot-bless'] = '1';
     Juke.logger.warn('DQ_SNAPSHOT_BLESS=1: snapshot tests rewrite their recorded files; review the diff before committing.');
@@ -2341,7 +2375,7 @@ function resolveTestSelection(get: any): string[] | null {
 
 const SHARD_DIR = 'data/test-shards';
 
-/** Every `/datum/unit_test/...` type declared under code/modules/unit_tests,
+/** Every `/datum/unit_test/...` type declared under code/tests/unit_tests,
  * by scanning source (a bare `/datum/unit_test/foo` line, not a proc/var
  * line under it) rather than booting a world -- used to seed shard
  * assignment for tests with no historical duration yet (new tests, or a
@@ -2810,7 +2844,7 @@ export const DmTestTarget = new Juke.Target({
     nativeDefaultCompiler() && DmbcTarget,
     IconRepackTarget, // tests boot the world, which uses the .rsc
     ValidateDmeTarget, // catch missing includes before compiling
-    VerdigrisTarget, // tests boot the world, which loads the FFI lib
+    VerdigrisLaneTarget, // tests boot the world, which loads the FFI lib
     MapBoundsTarget, // tests boot the world, which reads template bounds
   ],
   executes: async ({ get }) => {
@@ -2921,7 +2955,7 @@ export const DmTestTarget = new Juke.Target({
  */
 export const TestRepeatTarget = new Juke.Target({
   parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, RunsParameter],
-  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisLaneTarget, MapBoundsTarget],
   executes: async ({ get }) => {
     const runs = Math.max(get(RunsParameter) ?? 3, 1);
     reportFocus();
@@ -3070,6 +3104,8 @@ export const BenchTarget = new Juke.Target({
     const warmup = Math.max(get(WarmupParameter) ?? (runs > 1 ? 1 : 0), 0);
     const worldParams: Record<string, string> = { bench: scenarios.length ? scenarios.join(',') : 'default' };
     if (get(ProfileParameter)) worldParams.bench_profile = '1';
+    // The config folder the world reads: config/example is what the server runs (ServerTarget's default).
+    if (process.env.DQ_BENCH_CONFIG_DIR) worldParams['config-directory'] = process.env.DQ_BENCH_CONFIG_DIR;
     for (const arg of get(ArgParameter)) {
       const [key, ...rest] = arg.split('=');
       worldParams[`bench_${key}`] = rest.join('=');
@@ -3254,7 +3290,7 @@ export const BenchReportTarget = new Juke.Target({
 });
 
 /**
- * Runs the medical and combat balance harness (code/modules/balance) in a
+ * Runs the medical and combat balance harness (code/tests/balance) in a
  * -DBENCHMARK world, stores the results in data/balance/runs/ and lists what
  * changed since the previous run. `--arg scenarios=ttk,bleedout` runs a subset.
  * doc/balance_baseline.md explains the numbers.
@@ -3546,6 +3582,8 @@ const TGUI_ENTRY_BUNDLES = [
   'tgui/public/tgui-panel.bundle.css',
   'tgui/public/tgui-say.bundle.js',
   'tgui/public/tgui-say.bundle.css',
+  'tgui/public/tgui-statpanel.bundle.js',
+  'tgui/public/tgui-statpanel.bundle.css',
 ];
 const TGUI_CHUNK_MANIFEST = 'tgui/public/tgui-chunk-manifest.json';
 const TGUI_WINDOW_MANIFEST = 'tgui/public/tgui-window-manifest.json';
@@ -3612,6 +3650,8 @@ export const TguiTarget = new Juke.Target({
     'tgui/public/tgui-panel.bundle.js',
     'tgui/public/tgui-say.bundle.css',
     'tgui/public/tgui-say.bundle.js',
+    'tgui/public/tgui-statpanel.bundle.css',
+    'tgui/public/tgui-statpanel.bundle.js',
     // Code-split interface chunks are emitted alongside the entry bundles; the
     // manifest maps interface name -> chunk file (consumed by SStgui). Tracking the
     // manifest as an output makes Juke rebuild if it's missing (e.g. a public/ wipe)
@@ -3720,7 +3760,7 @@ export const DreamCheckerTarget = new Juke.Target({
   executes: async () => {
     await waitForDreamCheckerMemory();
     await runDreamChecker();
-    Juke.logger.info('dream-checker: passed'); // the merge gates read this line (tools/dq_merge_gates.sh, job dreamchecker)
+    Juke.logger.info('dream-checker: passed');
   },
 });
 
@@ -3771,6 +3811,7 @@ export const ServerTarget = new Juke.Target({
     const options = {
       dmbFile: `${DME_NAME}.dmb`,
       namedDmVersion: get(DmVersionParameter),
+      playerFacing: true,
     };
     const webroot = spawn(
       process.platform === 'win32' ? 'python' : 'python3',

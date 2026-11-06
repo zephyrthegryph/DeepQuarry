@@ -91,7 +91,7 @@ impl PolicyInputRequest {
             ));
         }
         if !self.workspace_generators.is_empty() && self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions require an actual workspace intent"));}
-        if self.workspace_generators.len()>13{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions exceed the registered set"));}
+        if self.workspace_generators.len()>crate::GeneratorName::REGISTERED_COUNT{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions exceed the registered set"));}
         if self.analysis_context.is_some() && !self.workspace_generators.is_empty() && (self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290)||!self.workspace_auxiliary.is_empty()) {return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original generation requires its actual full Analyze purpose without mixed auxiliary roles"));}
         let mut workspace_generators=self.workspace_generators;workspace_generators.sort_unstable();
         if workspace_generators.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate generator question"));}
@@ -309,7 +309,7 @@ pub(crate) fn workspace_revision(
 mod generator_names{
  use super::*;
  pub fn serialize<S:serde::Serializer>(names:&[crate::GeneratorName],serializer:S)->Result<S::Ok,S::Error>{use serde::ser::SerializeSeq;let mut seq=serializer.serialize_seq(Some(names.len()))?;for name in names{seq.serialize_element(name.name())?;}seq.end()}
- pub fn deserialize<'de,D:serde::Deserializer<'de>>(decoder:D)->Result<Vec<crate::GeneratorName>,D::Error>{struct Names;impl<'de>serde::de::Visitor<'de>for Names{type Value=Vec<crate::GeneratorName>;fn expecting(&self,out:&mut std::fmt::Formatter)->std::fmt::Result{out.write_str("at most thirteen canonical generator questions")}fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut sequence:A)->Result<Self::Value,A::Error>{if sequence.size_hint().is_some_and(|n|n>13){return Err(serde::de::Error::custom("generator question list exceeds registered set"))}let mut names=Vec::new();names.try_reserve_exact(13).map_err(serde::de::Error::custom)?;while let Some(name)=sequence.next_element::<crate::GeneratorName>()?{if names.len()==13{return Err(serde::de::Error::custom("generator question list exceeds registered set"))}names.push(name);}Ok(names)}}decoder.deserialize_seq(Names)}
+ pub fn deserialize<'de,D:serde::Deserializer<'de>>(decoder:D)->Result<Vec<crate::GeneratorName>,D::Error>{struct Names;impl<'de>serde::de::Visitor<'de>for Names{type Value=Vec<crate::GeneratorName>;fn expecting(&self,out:&mut std::fmt::Formatter)->std::fmt::Result{out.write_str("at most twelve canonical generator questions")}fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut sequence:A)->Result<Self::Value,A::Error>{if sequence.size_hint().is_some_and(|n|n>crate::GeneratorName::REGISTERED_COUNT){return Err(serde::de::Error::custom("generator question list exceeds registered set"))}let mut names=Vec::new();names.try_reserve_exact(crate::GeneratorName::REGISTERED_COUNT).map_err(serde::de::Error::custom)?;while let Some(name)=sequence.next_element::<crate::GeneratorName>()?{if names.len()==crate::GeneratorName::REGISTERED_COUNT{return Err(serde::de::Error::custom("generator question list exceeds registered set"))}names.push(name);}Ok(names)}}decoder.deserialize_seq(Names)}
 }
 
 mod auxiliary_questions{

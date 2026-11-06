@@ -124,6 +124,7 @@
 // Function used by TGUI's to obtain data for header. All relevant entries begin with "PC_"
 /obj/item/modular_computer/proc/get_header_data()
 	var/list/data = list()
+	data["PC_device_theme"] = device_theme // every NtosWindow and program window themes itself from this
 
 	if(battery_module)
 		switch(battery_module.battery.percent())

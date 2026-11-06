@@ -4,7 +4,7 @@
 //   CAPABILITIES(/mob/living/simple_mob/vore/wolf)
 //       verb_entry(/mob/living/proc/set_size, login = TRUE)           on a mob once a player has had it (the old DECLARE_LOGIN_VERB)
 //       verb_entry(/mob/living/proc/ventcrawl)                         on every instance from init (DECLARE_VERB)
-//       verb_entry(/obj/item/clothing/proc/change_color, when = nameof(polychromic))   while the condition holds (DECLARE_VERB_IF)
+//       verb_entry(/obj/item/clothing/proc/recolour_channels, when = nameof(recolourable))   while the condition holds (DECLARE_VERB_IF)
 //       verb_entry(/mob/verb/toggle_gun_mode, hidden = TRUE)           never on an instance: hides what the type inherits (DECLARE_VERB_HIDE)
 //
 //   grant(M, granted_verb(/mob/living/proc/ventcrawl), source)         a runtime verb: on M while `source` holds it
@@ -144,7 +144,7 @@ GLOBAL_LIST_EMPTY(verb_entry_sets) // type -> /datum/verb_entry_set, or FALSE fo
 /// Where a granted verb lands: on = ON_SOURCE puts it on the activation's source (an item's own verb) while the holder has the activation, else on the
 /// holder. The verb store reads the live activations (verb_activations_want()), so an activation ending takes the verb away with it.
 /proc/verb_entry_target(datum/activation/A, datum/entry/E)
-	return (E.args["on"] == ON_SOURCE) ? A.source : A.holder
+	return (E.args["on"] == ON_SOURCE) ? A.source : A.holder()
 
 /datum/entry_engine/verb_entry_grant/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	var/datum/target = verb_entry_target(A, E)

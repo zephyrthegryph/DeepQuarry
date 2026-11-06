@@ -18,7 +18,7 @@
 
 CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	rolls(nameof(welder_salvage), PROC_REF(roll_welder_salvage))
-	extend(/datum/act/hit/projectile, instead())
+	extend(/datum/act/hit/projectile, instead(then(GLOBAL_PROC_REF(act_absorbed))))
 	op("cut", tool(TOOL_WELDER), label("Cut salvage from the wreck"), needs(req(PROC_REF(has_salvage_left), because = MSG(mecha_wreckage/nothing_to_cut_with)), req(PROC_REF(has_welder_salvage), because = MSG(mecha_wreckage/nothing_to_cut))), wait(0), then(PROC_REF(cut_salvage)))
 	op("snip", tool(TOOL_WIRECUTTER), label("Cut wiring from the wreck"), needs(req(PROC_REF(has_salvage_left), because = MSG(mecha_wreckage/nothing_to_cut_with))), wait(0), then(PROC_REF(snip_salvage)))
 	op("pry", tool(TOOL_CROWBAR), label("Pry something out of the wreck"), needs(req(PROC_REF(has_pry_salvage), because = MSG(mecha_wreckage/nothing_to_pry))), wait(0), then(PROC_REF(pry_salvage)))

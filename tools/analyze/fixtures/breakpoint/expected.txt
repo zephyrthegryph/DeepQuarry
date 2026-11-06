@@ -11,7 +11,7 @@ flag_only_override	code/modules/a/a.dm	35
 flag_only_override	code/modules/a/a.dm	40
 flag_only_override	code/modules/a/a.dm	42
 flag_only_override	code/modules/sp ace/x.dm	1
-flag_only_override	code/modules/unit_tests/x.dm	1
+flag_only_override	code/tests/unit_tests/x.dm	1
 set_broken	code/modules/a/.dot.dm	1
 set_broken	code/modules/a/a.dm	1
 set_broken	code/modules/a/a.dm	3

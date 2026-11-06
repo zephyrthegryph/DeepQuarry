@@ -14,7 +14,7 @@ pub(crate) trait Facts{
  fn never_written(&self,owner:&str,name:&str)->Result<bool,Self::Error>;
  fn allowed(&self,relative:&str,line:usize)->Result<bool,Self::Error>;
 }
-fn skipped(relative:&str)->bool{["code/modules/unit_tests/","code/tests/unit_tests/"].iter().any(|p|relative.starts_with(p))}
+fn skipped(relative:&str)->bool{relative.starts_with("code/tests/unit_tests/")}
 fn emit<C:Control>(control:&mut C,relative:&str,line:usize,rule:&'static str,owner:&str,proc:&str,var:Option<&str>,kind:Option<&str>,out:&mut dyn FnMut(Finding)->Result<(),C::Error>)->Result<(),C::Error>{
  control.checkpoint()?;out(Finding{rel:kc::own(control,relative)?,line,rule,owner:kc::own(control,owner)?,proc:kc::own(control,proc)?,var:var.map(|v|kc::own(control,v)).transpose()?,kind:kind.map(|v|kc::own(control,v)).transpose()?})
 }

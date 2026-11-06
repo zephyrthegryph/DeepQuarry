@@ -4,7 +4,7 @@
 	desc = "Used to access the station's automated alert system."
 	icon_keyboard = "tech_key"
 	icon_screen = "alert:0"
-	circuit = /obj/item/circuitboard/stationalert_engineering
+	circuit = VARIANT(/obj/item/circuitboard/stationalert_engineering)
 	var/datum/tgui_module/alarm_monitor/alarm_monitor
 	var/monitor_type = /datum/tgui_module/alarm_monitor/engineering
 	/// TRUE while a major alarm it watches is up: its screen shows the alert (screen_state()).
@@ -20,11 +20,11 @@ CAPABILITIES(/obj/machinery/computer/station_alert)
 
 /obj/machinery/computer/station_alert/security
 	monitor_type = /datum/tgui_module/alarm_monitor/security
-	circuit = /obj/item/circuitboard/stationalert_security
+	circuit = VARIANT(/obj/item/circuitboard/stationalert_security)
 
 /obj/machinery/computer/station_alert/all
 	monitor_type = /datum/tgui_module/alarm_monitor/all
-	circuit = /obj/item/circuitboard/stationalert_all
+	circuit = VARIANT(/obj/item/circuitboard/stationalert_all)
 
 /obj/machinery/computer/station_alert/proc/subscribe_alarm_monitor()
 	alarm_monitor.register_alarm(src, "update_console_icon")

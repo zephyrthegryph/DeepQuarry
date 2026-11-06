@@ -10,7 +10,7 @@
 	/// The icon_state family the oven draws: "<prefix>open", "<prefix>closed_off", "<prefix>closed_on", "<prefix>closed_cooking".
 	var/state_prefix = "oven"
 	var/datum/looping_sound/oven/oven_loop
-	circuit = /obj/item/circuitboard/oven
+	circuit = VARIANT(/obj/item/circuitboard/oven)
 	heating_power = 6 KILOWATTS
 	//Based on a double deck electric convection oven
 

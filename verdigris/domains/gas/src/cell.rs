@@ -75,6 +75,10 @@ pub const SPECIFIC_HEATS: [f32; N] = [
 /// difference relaxes at `G (pa/na + pb/nb)` per second (about `2G` for two
 /// standard cells, `G` against vacuum).
 pub const BULK_CONDUCTANCE: f32 = 4.0;
+/// The implicit bulk flow's conductance rises with the gap: `BULK_CONDUCTANCE (1 + |dp| / GAP_PRESSURE)`, at most `GAP_FACTOR_MAX`
+/// times it. A pumped loop's kilopascal flows as before; a breach-sized gap drains faster. Stable at any value (the solve is implicit).
+pub const GAP_PRESSURE: f32 = 20.0;
+pub const GAP_FACTOR_MAX: f32 = 4.0;
 /// Diffusion conductance, L/s: two standard cells relax their
 /// concentration difference at `DIFFUSION_RATE` per second.
 pub const DIFFUSION_RATE: f32 = 1.15;
@@ -92,17 +96,9 @@ pub const REVISION_MOLES: f32 = 0.05;
 /// Planet cells relax this fraction of the way back to their baseline each
 /// frame.
 const PLANET_RELAX: f32 = 0.25;
-/// Pressure differences below this (kPa) do not add bulk flow to the
-/// stiffness (they still flow).
-const STIFF_PRESSURE: f32 = 1.0;
-/// The most faces a cell exchanges through (four planar, up and down): the share of a pair's levelling flow one edge may take in a sub-step
-/// whose length ignored the bulk flow.
-const STABLE_FACES: f32 = 6.0;
 
 /// Cell flags.
 pub mod flags {
-	/// Space and immutable air: commands never change it.
-	pub const IMMUTABLE: u8 = 1;
 	/// DM changed the cell since the last frame (its visuals must be
 	/// refreshed even if the frame's start and end look alike).
 	pub const TOUCHED: u8 = 4;
@@ -157,7 +153,9 @@ impl Default for GasCell {
 			temperature: TCMB,
 			pressure: 0.0,
 			total: 0.0,
-			bands: vg_core::watch::revision::BandRevision::new(),
+			// Baseline at vacuum's own values, so a registered vacuum cell is equal to the default (its chunk is
+			// never allocated) instead of being bumped once away from it.
+			bands: vg_core::watch::revision::BandRevision::starting_at([0.0, TCMB, 0.0]),
 			flags: 0,
 			planet: 0,
 			vis: 0,
@@ -194,9 +192,6 @@ impl vg_core::thermo::Thermal for GasCell {
 
 	/// Never cools below TCMB; marks the cell touched like a DM write.
 	fn add_heat(&mut self, joules: f32, volume: f32) {
-		if self.is_immutable() {
-			return;
-		}
 		self.energy = (self.energy + joules).max(self.heat_capacity() * TCMB);
 		self.refresh_in(volume);
 	}
@@ -251,9 +246,12 @@ impl GasCell {
 		self.total_moles() * R_IDEAL_GAS_EQUATION * self.temperature_now() / volume
 	}
 
+	/// Whether commands never change this cell: space and immutable air are reservoirs (the geometry's flag, so a
+	/// vacuum cell is the default value and its chunk is never allocated) with no planet atmosphere to relax back to.
+	/// A planet cell is a reservoir DM may disturb.
 	#[must_use]
-	pub fn is_immutable(&self) -> bool {
-		self.flags & flags::IMMUTABLE != 0
+	pub fn immutable_in(&self, geom: &vg_core::field::Geom) -> bool {
+		geom.reservoir && self.planet == 0
 	}
 
 	/// Recomputes the cached values for `volume`, bumping the revision if
@@ -335,9 +333,8 @@ impl Domain for TurfGas {
 	fn apply(value: &mut GasCell, cmd: &GasCmd) -> Applied {
 		match cmd {
 			GasCmd::Delta(d) => {
-				if value.is_immutable() {
-					return Applied::default();
-				}
+				// Space and immutable air are refused where the command is submitted (`immutable_in`): the cell
+				// does not know its geometry.
 				let shortfall = value.add_amounts(d);
 				let (t, n) = (value.temperature_now(), value.total_moles());
 				value.band_check(None, t, n);
@@ -391,27 +388,8 @@ impl FieldKind for TurfGas {
 	fn flux(a: Side<'_, GasCell>, b: Side<'_, GasCell>, dt: f32) -> Amounts<Q> {
 		let (xa, xb) = (a.cell.amounts(), b.cell.amounts());
 		let (op_a, op_b) = (operand(&a, &xa), operand(&b, &xb));
-		let (pa, pb) = (
-			a.cell.pressure_in(a.capacity),
-			b.cell.pressure_in(b.capacity),
-		);
-		let mut bulk = kernel::pressure_flow(op_a, pa, op_b, pb, N, BULK_CONDUCTANCE, dt);
-		if (pa - pb).abs() <= STIFF_PRESSURE {
-			// Below the threshold the bulk flow is not in the stiffness, so the sub-step is sized for diffusion alone and an
-			// unlimited bulk flow overshoots: the room rang, growing until a difference crossed the threshold. Each edge moves
-			// at most 1/FACES of the moles that would level the pair, so a cell's edges together never overshoot (monotone).
-			let k = dp_dn(&a, pa) + dp_dn(&b, pb);
-			if k > 0.0 {
-				let level = (pa - pb).abs() / k / STABLE_FACES;
-				let moved: f32 = bulk.0[..N].iter().sum::<f32>().abs();
-				if moved > level {
-					let scale = level / moved;
-					bulk = Amounts(bulk.0.map(|v| v * scale));
-				}
-			}
-		}
-		let diffusion = kernel::diffusion(op_a, op_b, DIFFUSION_CONDUCTANCE, dt);
-		bulk + diffusion
+		// The bulk flow is solved implicitly once per advance (`IMPLICIT_BULK`, `FieldState::implicit_bulk`); only diffusion is explicit.
+		kernel::diffusion(op_a, op_b, DIFFUSION_CONDUCTANCE, dt)
 	}
 
 	fn apply_flux(cell: &mut GasCell, flux: Amounts<Q>) {
@@ -436,17 +414,36 @@ impl FieldKind for TurfGas {
 	}
 
 	fn stiffness(a: Side<'_, GasCell>, b: Side<'_, GasCell>) -> f32 {
-		let diff_rate =
-			kernel::exchange_stiffness(DIFFUSION_CONDUCTANCE, a.inv_capacity, b.inv_capacity);
-		let (pa, pb) = (
-			a.cell.pressure_in(a.capacity),
-			b.cell.pressure_in(b.capacity),
-		);
-		if (pa - pb).abs() > STIFF_PRESSURE {
-			diff_rate + kernel::pressure_stiffness(BULK_CONDUCTANCE, dp_dn(&a, pa), dp_dn(&b, pb))
-		} else {
-			diff_rate
+		// Diffusion only: the bulk flow is the implicit solve's (stable at any gap and step).
+		kernel::exchange_stiffness(DIFFUSION_CONDUCTANCE, a.inv_capacity, b.inv_capacity)
+	}
+
+	const IMPLICIT_BULK: bool = true;
+
+	fn bulk_potential(side: Side<'_, GasCell>) -> (f32, f32) {
+		let p = side.cell.pressure_in(side.capacity);
+		(p, dp_dn(&side, p))
+	}
+
+	fn bulk_conductance(gap: f32) -> f32 {
+		(BULK_CONDUCTANCE * (1.0 + gap.abs() / GAP_PRESSURE)).min(BULK_CONDUCTANCE * GAP_FACTOR_MAX)
+	}
+
+	fn bulk_held(cell: &GasCell) -> f32 {
+		cell.amounts()[..N].iter().sum()
+	}
+
+	fn bulk_move(a: Side<'_, GasCell>, b: Side<'_, GasCell>, amount: f32) -> Amounts<Q> {
+		let (up, sign) = if amount > 0.0 { (a, 1.0) } else { (b, -1.0) };
+		let amounts = up.cell.amounts();
+		let carried: f32 = amounts[..N].iter().sum();
+		if carried <= 0.0 {
+			return Amounts::default();
 		}
+		// No per-edge share cap: the implicit solve already balances every cell (its end pressures are a stable solution), and a cap
+		// per advance would throttle a breach to one share of a cell per step.
+		let fraction = (amount.abs() / carried).min(1.0);
+		Amounts(amounts.map(|v| sign * v * fraction))
 	}
 
 	fn local(cell: &mut GasCell, _capacity: f32, _dt: f32) -> bool {
@@ -478,6 +475,17 @@ impl FieldKind for TurfGas {
 		}
 		cell.refresh_in(capacity.max(1.0));
 		!settled
+	}
+
+	// Idle stride: up to 4 steps per advance while every awake chunk changes by under 5e-4 of its moles and energy per advance.
+	const MAX_STRIDE: u32 = 4;
+	const STRIDE_TOLERANCE: f32 = 5.0e-4;
+
+	fn relative_change(before: &GasCell, after: &GasCell) -> f32 {
+		let size: f32 = before.moles.iter().sum::<f32>().max(1.0e-3);
+		let moved: f32 = before.moles.iter().zip(&after.moles).map(|(&x, &y)| (x - y).abs()).sum();
+		let energy = (before.energy - after.energy).abs() / before.energy.abs().max(after.energy.abs()).max(1.0);
+		(moved / size).max(energy)
 	}
 
 	fn quiet(before: &GasCell, after: &GasCell) -> bool {
@@ -528,6 +536,8 @@ vg_core::channels! { pub mod gas_ch for TurfGas {
 	// A combined band: oxygen and CO2 partial pressures summed. A skin breather (alraune) lives on either, so its
 	// breath fails only when the two together fall under its minimum.
 	O2_CO2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_OXYGEN) + c.partial_pressure(crate::gas::ids::GAS_CARBON_DIOXIDE),
+	// Nitrous oxide and volatile fuel partial pressures summed: an air alarm's "other" trace-gas limit (code/content/machinery/air_alarm.dm).
+	TRACE_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_NITROUS_OXIDE) + c.partial_pressure(crate::gas::ids::GAS_VOLATILE_FUEL),
 }}
 const _: () = assert!(N == 22, "gas_ch::COMPOSITION's width is the gas count");
 
@@ -634,10 +644,17 @@ mod tests {
 		let applied = TurfGas::apply(&mut c, &GasCmd::Delta(d));
 		assert_eq!(c.moles[GAS_OXYGEN], 0.0);
 		assert!((applied.shortfall - 8.2).abs() < 1e-3);
-		let mut space = GasCell::default();
-		space.flags |= flags::IMMUTABLE;
-		d[GAS_OXYGEN] = 5.0;
-		TurfGas::apply(&mut space, &GasCmd::Delta(d));
-		assert_eq!(space.total_moles(), 0.0);
+	}
+
+	#[test]
+	fn vacuum_is_the_default_cell_and_immutability_is_the_geometrys() {
+		use vg_core::field::Geom;
+		let space = GasCell::new([0.0; N], TCMB);
+		assert_eq!(space, GasCell::default(), "a registered vacuum cell is the default value");
+		assert!(space.immutable_in(&Geom::reservoir(2500.0)));
+		assert!(!space.immutable_in(&Geom::cell(2500.0)));
+		let mut planet = space;
+		planet.planet = 3;
+		assert!(!planet.immutable_in(&Geom::reservoir(2500.0)), "planet cells are reservoirs DM may disturb");
 	}
 }

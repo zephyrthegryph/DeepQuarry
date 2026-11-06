@@ -57,8 +57,11 @@
 	observe(SSmobs, /datum/notice/observer_globalmoved, B, then(TYPE_PROC_REF(/obj/item/blobcore_chunk, call_chunk_unique)))
 	return
 
+/// A living mob moved anywhere (published on SSmobs): the blob core chunks of this type re-check on every step.
+ACTION(observer_globalmoved, FIXED, notice = /datum/notice/observer_globalmoved)
+
 //I'm putting this here so everybody knows that it's this shitty code that is why that event exists.
 //I'm just reimplementing the way it worked before but with events. I don't have the patience to refactor this.
 /mob/living/Moved()
 	. = ..()
-	PUBLISH_LEGACY(SSmobs, /datum/notice/observer_globalmoved)
+	PUBLISH(SSmobs, observer_globalmoved)

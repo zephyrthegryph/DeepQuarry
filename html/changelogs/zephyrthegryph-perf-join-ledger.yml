@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A holder's contents aggregates (contents_property, contents_has_tag) are folded when read instead of on every move into or out of a holder: a joining body no longer pays for a property snapshot per organ and item"
+  - code_imp: "getFlatIcon reads a file icon's direction count from cached DMI metadata instead of building three icons per layer; base_provider memoises by path and property without building a text key"

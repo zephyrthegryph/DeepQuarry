@@ -1,0 +1,543 @@
+#define RECYCLER_ALLOWED 1
+#define RECYCLER_FORBIDDEN 2
+#define RECYCLER_EVIL 3 //no scugs, cats, etc
+
+/obj/machinery/maint_recycler //fresh outta 2288 baby
+	name = "\improper Decrepit Machine"
+
+	//icon etc are self contained because it's dumb that they not to begin with.
+	//it's not a MODULE if everything required for it to work is thrown everywhere. grr.
+	icon = 'code/content/maint_recycler/icons/maint_recycler.dmi'
+	icon_state = "default"
+
+	desc = "A long since abandoned recycling kiosk. Now featuring a state of the art, monochrome holographic tube display!"
+
+	anchored = TRUE
+	density = TRUE
+	resistance_flags = INDESTRUCTIBLE
+
+	use_power = USE_POWER_IDLE
+
+
+	var/door_open = FALSE
+	var/door_moving = FALSE
+	var/door_locked = FALSE
+
+	var/obj/effect/overlay/recycler/hatch
+	var/obj/effect/overlay/recycler/monitor_screen
+
+	var/item_offset_x = -7
+	var/item_offset_y = 0
+	var/item_overlay_scale = 0.4
+
+	var/obj/item/inserted_item
+
+	var/list/hostile_towards //we remember mean people. do NOT recycle scugs. list of user keys
+	var/list/granted_points //assoc list. key to points given
+
+	var/is_on = FALSE
+	var/light_range_on = 2
+	var/light_power_on = 1
+
+	//the tldr:
+	//if we can get infinite of it easily, it's worth 1.
+	//if we can get a fair amount but it wouldn't be worth the effort, it's worth 10
+	// if it's an overt scene tool and kinda rare, we can't recycle it. Ae, compliance disk.
+	// if it's technically a scene tool but mostly for shitposting (borg-os, bait toys, etc) we can recycle 'em for 10.
+	// we can get them back cheaply via the vendor anyway
+
+	var/point_cap = 150; //with the "baseline" for a scene item being about 50, this is 3 scene items per round. fair enough for me I think
+	var/default_value = 5 //if something doesn't have a value, it's put to this. considering we use the whitelist to figure this out, it SHOULD never happen, but you never know.
+
+	var/static/list/item_whitelist = list(
+		/obj/item/holder/mouse = 1, //easy to get, and mostly just for comedic effect/justified mouse murder anyway
+		/mob/living = 1, //default for all mobs tbh
+		/obj/item/holder/micro = 1,
+		/obj/item/holder/bird = 1, //fuck u poly
+		/obj/item/trash = 5,
+		/obj/item/trash/material = 10, //different price scheme
+		/obj/item/clothing/head/cone = 10,
+		/obj/item/toy/plushie = 5, //begone foul beasts
+		/obj/item/toy/plushie/ipc = 20, //heating coils are worth more
+		/obj/item/toy/tennis = 5,
+		/obj/item/toy/figure = 5,
+		/obj/item/toy/monster_bait = 10,
+		/obj/item/flashlight/glowstick = 7,
+		/obj/item/flashlight/flare = 7,
+		/obj/item/soap = 7,
+		/obj/item/aliencoin = 20,
+		/obj/item/card/emag_broken = 15,
+		/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sight = 15,
+		/obj/item/reagent_containers/food/drinks/cans/nukie_mega_heart = 15,
+		/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sleep = 15,
+		/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shock = 15,
+		/obj/item/reagent_containers/food/drinks/cans/nukie_mega_fast = 15,
+		/obj/item/reagent_containers/food/drinks/cans/nukie_mega_high = 15,
+		/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shrink = 15,
+		/obj/item/reagent_containers/food/drinks/cans/nukie_mega_grow = 15, //nukies is epic but rare enough to warrant being recyclable.
+		/obj/item/material/fishing_net/butterfly_net = 10
+	)
+
+	var/static/list/item_blacklist_general = list(
+		/obj/item/card/id,
+
+	) //anything that's passively blacklisted - even if they're part of the above, they'll be denied. this is in case you want to say, allow mice getting recycled, but not brown mice because that's racist
+
+	var/static/list/item_blacklist_hostile = list(
+		/obj/item/holder/catslug, //no scugs
+		/obj/item/holder/cat, //no murdering jones or runtime
+		/obj/item/organ/internal/brain, //posibrain murder
+		/obj/item/card/id/centcom, //ERT id. won't ever come up but in 0.000% chance it does, it'd be funny.
+		/obj/item/card/id/gold/captain, //probably will come up.
+		/obj/item/disk/nuclear, //won't come up at all, but just in case.
+		/obj/item/holder/possum/poppy, //poppy my beloved
+		/obj/item/perfect_tele
+	) //an active list of things that'll make the machine mad at you. Will refuse service, make an annoucement over sec comms (akin to the tipped medibot over med comms), and blast with a stun or two. no recycling scugs. Think of this as a super high priority no-touchy list.
+
+	var/static/list/success_sounds = list(
+		'code/content/maint_recycler/sfx/voice/thankyou/reduce-reuse-recycle.ogg',
+		'code/content/maint_recycler/sfx/voice/thankyou/thankyouforkeepingclean.ogg',
+		'code/content/maint_recycler/sfx/voice/thankyou/the-ecosystem-thanks-you.ogg'
+	)
+
+	var/static/angry_sounds = SFX_RECYCLER_DENIED_MIX
+
+	///voice audio files filted via audacity:
+	/// * Rectifier distort @ 39
+	/// filter curve EQ w/ telephone preset
+
+CAPABILITIES(/obj/machinery/maint_recycler)
+	configure(atom_rules(description_fluff = "While the original owners stopped their partnership with NT after a data theft scandal, the machine itself has been adopted by endless hoardes of vintage hardware enthusiasts to \"Keep Maint Clean™️\" and facilitate what has to be the galaxy's most neurodivergent black market "))
+	configure(movable_motion(unacidable = TRUE))
+	configure(machine_usage(interface_sound = SFX_RECYCLER_TYPING))
+	setup(PROC_REF(init_hatch))
+	after_init(0, then(PROC_REF(show_vis_parts))) // the parts Initialize() built are shown once it returns (relations proposal D11)
+	configure(light_glow(color = "#0f8f0f"))
+	configure(uses_power(idle = 300, active = 300))
+	after_init(0, then(PROC_REF(move_after_init)))
+	owns_one(nameof(inserted_item), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(hatch), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
+	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
+	interface("RecyclerInterface")
+	without("ui_open")
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("recycle", ui_act("recycle"), then(PROC_REF(ui_act_recycle)))
+	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_is(nameof(door_open), TRUE, because = MSG(maint_recycler/door_open)), req_is(nameof(inserted_item), FALSE, because = /datum/msg/req_failed)), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(consent_question)), "title" = "Welcome to the Hydralulic Press Prompt", "choices" = list("OSHA is for chumps", "what the fuck? get me outta here!"), "buttons" = TRUE, "timeout" = 0), step = "consent", when = PROC_REF(holder_needs_consent), answerer = PROC_REF(holder_victim)), then(PROC_REF(interaction_attackby)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+
+/obj/machinery/maint_recycler/dismantle()
+	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
+
+/obj/machinery/maint_recycler/proc/init_hatch()
+	//init hatch
+	hatch.icon = 'code/content/maint_recycler/icons/maint_recycler.dmi'
+	hatch.icon_state = "door closed"
+	hatch.layer = src.layer+0.1
+
+	monitor_screen.plane = PLANE_LIGHTING_ABOVE
+	monitor_screen.layer = src.layer + 0.1
+	monitor_screen.icon = src.icon
+	monitor_screen.icon_state = "screen_off"
+
+
+	//the monitor and door are objects of their own because they animate. The item inside and the underlay are drawn by draw().
+
+/// A mapped one moves to a marker, once the markers exist.
+/obj/machinery/maint_recycler/proc/move_after_init(datum/act/timer/A)
+	if(!A.mapload)
+		return
+	move_to_marker()
+
+/obj/machinery/maint_recycler/proc/move_to_marker()
+	if(GLOB.recycler_locations.len > 0)
+		var/turf/spot = pick(GLOB.recycler_locations)
+		forceMove(spot)
+		set_dir(SOUTH)
+		log_admin("[src] has been placed at [loc], [x],[y],[z]")
+		testing("[src] has been placed at [loc], [x],[y],[z]")
+	else
+		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
+
+/obj/machinery/maint_recycler/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	if(door_open)
+		return OP_DECLINE
+	if(operable())
+		to_chat(user, span_warning("\The [src]'s door won't budge!"))
+		return OP_OK
+	to_chat(user, span_warning("You lever \the [src]'s door open!"))
+	open_door(user)
+	eject_item(user)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.04, vary = FALSE)
+	return OP_OK
+
+MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
+
+/obj/machinery/maint_recycler/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	switch(get_item_whitelist(O))
+		if(RECYCLER_FORBIDDEN) //the usual stuff.
+			deny_act(O,user)
+			return OP_OK
+
+		if(RECYCLER_EVIL)
+			evil_act(O,user)
+			return OP_OK
+
+	if(istype(O,/obj/item/holder))
+		var/obj/item/holder/h = O
+		var/mob/m = h.held_mob
+		var/consent = recycler_consent(m, A)
+		if(!isnull(A.step_value("consent")))
+			to_chat(user, span_notice("You hold \the [O] over \the [src]'s processing compartment..."))
+		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
+		if(consent)
+			if(user in range(1,src))
+				m.set_dir(SOUTH) //the disposal bins do that and it simply doesn't work.
+				move_into(src, nameof(src.inserted_item), m, user)
+			else
+				return OP_OK //too far away, dumbass.
+		else
+			deny_act(O,user)
+	else
+		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
+		move_into(src, nameof(src.inserted_item), O, user)
+
+	return OP_DECLINE
+
+/obj/machinery/maint_recycler/proc/consent_question(datum/act/op/A)
+	return "Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste."
+
+/// A held mob with a player in it is asked (the op's "consent" step); a logged-out player refuses, a mindless mob never minds.
+/obj/machinery/maint_recycler/proc/recycler_consent(mob/probable_victim, datum/act/op/A)
+	if(probable_victim.key)
+		if(probable_victim.client)
+			return A.step_value("consent") == "OSHA is for chumps"
+		return FALSE //no logged out users
+	return TRUE //mindless mobs that've never felt the gentle touch of a client are fine
+
+/// The held item is a mob holder the recycler accepts, with a logged-in player inside: that player is asked.
+/obj/machinery/maint_recycler/proc/holder_needs_consent(datum/act/op/A)
+	var/obj/item/holder/h = A.held
+	if(!istype(h) || get_item_whitelist(h) != RECYCLER_ALLOWED)
+		return FALSE
+	var/mob/m = h.held_mob
+	return m && m.key && m.client
+
+/// The player inside the held holder is the one asked: sanity check to make sure they are alright with getting squished to death.
+/obj/machinery/maint_recycler/proc/holder_victim(datum/act/op/A)
+	var/obj/item/holder/h = A.held
+	return h.held_mob
+
+/obj/machinery/maint_recycler/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
+	. = ..()
+	if(!isitem(source) || istype(source, /obj/item/projectile)) //no mob throwing.
+		return
+
+	if(prob(75))
+		if(get_item_whitelist(source) == RECYCLER_ALLOWED)
+			if(inserted_item == null)
+				visible_message("\The [source] lands in \the [src].",runemessage = "swish")
+				move_into(src, nameof(src.inserted_item), source)
+				play_sfx(src, SFX_RECYCLER_A_WONDERFUL_THROW)
+				set_screen_state("screen_happy",10)
+				return
+		else
+			deny_act(source, null)
+
+	visible_message("\The [source] bounces off of the rim of \the [src]'s processing compartment!")
+
+/obj/machinery/maint_recycler/proc/deny_act(obj/item/O,mob/user)
+	set_screen_state("screen_deny",10)
+	to_chat(user, span_warning("\The [src] rejects \the [O]!"))
+	if(prob(99))
+		play_sfx(src, SFX_RECYCLER_GENERALDENY)
+		return
+	else
+		play_sfx(src, SFX_RECYCLER_DENIED)
+
+//add people to the evil list, and be mean to them
+/obj/machinery/maint_recycler/proc/evil_act(obj/item/O,mob/user)
+	var/isRepeat = is_user_hostile(user)
+	if(!isRepeat && user.key)
+		LAZYOR(hostile_towards, user.key)
+
+	if(istype(O,/obj/item/holder) || istype(O,/mob/)) //just in case.
+		var/obj/item/holder/h = O
+		if(!isRepeat) GLOB.global_announcer.autosay("HARM ALERT: Crewmember [user] recorded displaying murderous tendencies towards innocent creatures in [get_area(src)]. Please schedule psych evaluation and ensure the wellbeing of recorded victim: [h.held_mob]", "[src]", "Security")
+		audible_message("[src] states, \"AMORAL INTENT DETECTED.\" ", "\The [src]'s screen briefly flashes to an angry red graphic!" , runemessage = ">:(")
+	else
+		if(!isRepeat) GLOB.global_announcer.autosay("PROPERTY DESTRUCTION ALERT: Crewmember [user] has been recorded attempting to destroy high priority station equipment in [get_area(src)]. Please ensure the integrity of \the [O].", "[src]", "Security")
+		audible_message("[src] states, \"CRIMINAL INTENT DETECTED.\" ", "\The [src]'s screen briefly flashes to an angry red graphic!" , runemessage = ">:(")
+
+	playsound(src,angry_sounds,80)
+	set_screen_state("screen_mad",30)
+
+	after(src, 0.3 SECONDS, PROC_REF(shoot_at), with = list(user))
+
+	credit_user(user,-10) //get fucked
+
+/obj/machinery/maint_recycler/proc/close_door(mob/user)
+	if(!door_open || door_locked) return
+	door_moving = TRUE
+	flick("door closing",hatch)
+	play_sfx(src, SFX_RECYCLER_HATCHCLOSE)
+	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(FALSE))
+
+/obj/machinery/maint_recycler/proc/open_door(mob/user)
+	if(door_open || door_locked) return
+	door_moving = TRUE
+	flick("door opening",hatch)
+	play_sfx(src, SFX_RECYCLER_HATCHOPEN)
+	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(TRUE))
+
+/obj/machinery/maint_recycler/proc/door_finished_moving(open)
+	door_moving = FALSE
+	set_door_open(open)
+	if(open)
+		hatch.icon_state = "door open"
+	else
+		hatch.icon_state = "door closed"
+
+/obj/machinery/maint_recycler/proc/shoot_at(mob/victim, burst = 3)
+	if(victim == null) return
+	for(var/i = 1 to burst)
+		after(src, (0.3 * i SECONDS), PROC_REF(shoot), with = list(victim))
+
+/obj/machinery/maint_recycler/proc/shoot(mob/victim)
+	if(!victim)
+		return
+	var/projectile = /obj/item/projectile/beam/stun
+	var/obj/item/projectile/P = new projectile(loc)
+	play_sfx(src, SFX_WEAPONS_TASER)
+	P.old_style_target(victim)
+	P.fire()
+
+/obj/machinery/maint_recycler/container_resist(mob/living)
+	eject_item(living) //100% chance. don't sweat it.
+
+/obj/machinery/maint_recycler/proc/eject_item(mob/user)
+	if(inserted_item)
+		if(!door_open)
+			open_door(user)
+			after(src, 1 SECOND, PROC_REF(eject_item_act), with = list(user))
+		else
+			eject_item_act(user)
+
+/obj/machinery/maint_recycler/proc/eject_item_act(mob/user)
+	var/atom/movable/ejected = rel_take(src, nameof(inserted_item))
+	if(!ejected)
+		return
+	ejected.forceMove(get_turf(src))
+	visible_message(span_warning("[src] ejects \the [ejected] from its recycling chamber!"))
+	ejected.throw_at(get_step(src,SOUTH),5,1,src)
+
+/obj/machinery/maint_recycler/proc/start_recycling(mob/user)
+	if(inserted_item)
+		if(door_open)
+			close_door(user)
+			after(src, 1 SECOND, PROC_REF(recycle_act), with = list(user))
+		else
+			recycle_act(user)
+
+/obj/machinery/maint_recycler/proc/recycle_act(mob/user)
+	if(!inserted_item)
+		to_chat(user, span_warning("\The [src] doesn't have anything to recycle!"))
+		return //sanity check
+	door_locked = TRUE
+	play_sfx(src, SFX_RECYCLER_RECYCLE_ACT)
+	set_screen_state("screen_recycle",20)
+	after(src, 2 SECONDS, PROC_REF(post_recycle), with = list(user))
+
+/obj/machinery/maint_recycler/proc/post_recycle(mob/user)
+	var/value = try_get_obj_value(inserted_item)
+	credit_user(user,value)
+	var/recycled = rel_take(src, nameof(inserted_item))
+	if(istype(recycled,/mob))
+		var/mob/m = recycled
+		m.gib() //do we want logs here, or in the mob consent?
+	else
+		consumed(recycled, src)
+	set_screen_state("screen_cashout",10)
+	door_locked = FALSE
+	open_door(user)
+
+/// The underlay the item sits on, and the item inside shrunk and offset between the underlay and the machine (the mouse shows the creature's end).
+/obj/machinery/maint_recycler/draw(datum/look/look)
+	..()
+	look.underlay(look_overlay_image(icon, "underlay", layer = initial(layer) - 0.2)) //we need the underlay as a kind of inbetween, we sandwich the item between it and us
+	//so even the big boy chunky items don't clip.
+	//at least for 32x32 stuff!
+	if(!inserted_item)
+		return
+	look.watch(inserted_item)
+	var/matrix/scaled = matrix()
+	scaled.Scale(item_overlay_scale, item_overlay_scale)
+	if(istype(inserted_item, /mob/living/simple_mob/animal/passive/mouse))
+		look.overlay(look_overlay_image(icon, "hepme", layer = initial(layer) - 0.1, plane = initial(plane), pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE)) //the creature deserves its horrible end
+	else
+		look.overlay(look_overlay_image(layer = initial(layer) - 0.1, plane = initial(plane), pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, of = inserted_item, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE))
+
+/obj/machinery/maint_recycler/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	tgui_interact(user)
+	if(!is_on)
+		set_on_state(TRUE)
+	return OP_OK
+
+/*
+TGUI PROCS
+*/
+
+/// /obj/machinery/maint_recycler's window data.
+/obj/machinery/maint_recycler/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	var/list/data = list()
+	data["heldItemName"] = inserted_item?.name
+	data["heldItemValue"] = try_get_obj_value(inserted_item)
+	data["userName"] = user.name
+	data["userBalance"] = user_balance(user)
+
+	var/icon/display
+	if(inserted_item)
+		display = getFlatIcon(inserted_item) //dogshit! fix this! grr!
+	else
+		display = icon(src.icon,"NoItem")
+
+	data["itemIcon"] = "'data:image/png;base64,[icon2base64(display)]'"
+	return data
+
+/obj/machinery/maint_recycler/ui_assets(mob/user)
+	return list(
+		get_asset_datum(/datum/asset/simple/maint_recycler)
+	)
+
+/obj/machinery/maint_recycler/proc/ui_act_eject(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	eject_item(user)
+	. = TRUE
+
+/obj/machinery/maint_recycler/proc/ui_act_recycle(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(canRecycle(user, try_get_obj_value(inserted_item)))
+		start_recycling(user)
+	else
+		deny_act(inserted_item,user)
+		to_chat(user,span_warning("You have reached your daily RecyclePoints(tm) Allowance!"))
+	. = TRUE
+
+/obj/machinery/maint_recycler/proc/ui_act_close(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	close_door(user)
+	. = TRUE
+
+/obj/machinery/maint_recycler/proc/ui_act_open(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	open_door(user)
+	. = TRUE
+
+/obj/machinery/maint_recycler/tgui_close(mob/user)
+	. = ..()
+	if(LAZYLEN(open_tguis) > 0) return
+	set_on_state(FALSE)
+
+/*
+UTILITY PROCS
+*/
+
+/obj/machinery/maint_recycler/proc/credit_user(mob/user, amount)
+	if(!user || !user.client || !user.client.prefs) return
+	var/currentValue = 	user.client?.prefs?.read_preference(/datum/preference/numeric/recycler_points)
+	user.client?.prefs?.write_preference_by_type(/datum/preference/numeric/recycler_points, min(currentValue + amount,999))
+	if(LAZYACCESS(granted_points, user.key))
+		LAZYADDASSOC(granted_points, user.key, amount)
+	else
+		LAZYSET(granted_points, user.key, amount)
+
+/obj/machinery/maint_recycler/proc/user_balance(mob/user)
+	return user.client?.prefs?.read_preference(/datum/preference/numeric/recycler_points)
+
+/obj/machinery/maint_recycler/proc/canRecycle(mob/user, potentialValue)
+	if(!user.key) return FALSE
+	if(LAZYACCESS(granted_points, user.key)+potentialValue > point_cap) return FALSE
+	return TRUE
+
+/obj/machinery/maint_recycler/proc/is_user_hostile(mob/user) //negative points modifier for getting more.
+	return (user.key in hostile_towards)
+
+/obj/machinery/maint_recycler/proc/try_get_obj_value(obj/candidate)
+	if(candidate == null) return null //default
+	var/init_price = 0
+	init_price = item_whitelist[candidate.type]
+	if(init_price > 0) return init_price //exact type matching.
+
+	for(var/type in item_whitelist)
+		if(istype(candidate,type))
+			var/potentialPrice = item_whitelist[type]
+			if(potentialPrice > init_price)
+				init_price = potentialPrice
+
+	if(init_price == 0)
+		init_price = default_value
+
+	return init_price
+
+/obj/machinery/maint_recycler/proc/get_item_whitelist(obj/whitelistCandidate)
+
+	. = RECYCLER_FORBIDDEN //default state
+
+	for(var/t in item_blacklist_hostile)
+		if(istype(whitelistCandidate,t))
+			return RECYCLER_EVIL
+
+	for(var/t in item_whitelist)
+		if(istype(whitelistCandidate,t))
+			return RECYCLER_ALLOWED
+
+	return .
+
+/obj/machinery/maint_recycler/power_change()
+	. = ..()
+	if(power_lost())
+		set_on_state(FALSE)
+
+/obj/machinery/maint_recycler/proc/set_screen_state(state, duration = 10)
+	if(!is_on) return
+	monitor_screen.icon_state = state
+	after(src, duration, PROC_REF(reset_screen_state))
+
+/obj/machinery/maint_recycler/proc/reset_screen_state()
+	if(!is_on)
+		monitor_screen.icon_state = "screen_off"
+	else
+		monitor_screen.icon_state = "screen_default"
+
+/obj/machinery/maint_recycler/proc/set_on_state(state)
+	if(is_on == state) return
+	is_on = state
+	if(is_on)
+		play_sfx(src, SFX_RECYCLER_INITIALBOOT)
+		set_glow(src, GLOW(light_range_on, light_power_on, null))
+		monitor_screen.icon_state = "screen_default"
+	else
+		play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
+		set_glow(src, GLOW(0, null, null))
+		monitor_screen.icon_state = "screen_off"
+
+#undef RECYCLER_ALLOWED
+#undef RECYCLER_FORBIDDEN
+#undef RECYCLER_EVIL
+
+/// Shows the parts Initialize() built through this holder (the engine's vis_contents verb).
+/obj/machinery/maint_recycler/proc/show_vis_parts(datum/act/timer/A)
+	vis_add(src, hatch)
+	vis_add(src, monitor_screen)

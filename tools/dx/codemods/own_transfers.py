@@ -22,7 +22,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from own_transfers_survey import calls, split_args  # noqa: E402
 
 NAMED = re.compile(r"^\s*(\w+)\s*=(?!=)\s*(.*?)\s*$", re.S)
-SKIP = ("code/datums/ownership/",)
+SKIP = ("code/library/ownership/",)
 OLD = {"own_set": 3, "own_add": 3, "own_put": 4}
 TRANSFER_ARGS = {"user", "into", "slot", "force", "log"}
 # Where a bare boolean use of the result is fine.
@@ -127,7 +127,7 @@ def main(argv):
         raw = p.read_bytes().decode("utf-8", errors="replace")
         text = raw.replace("\r\n", "\n")
         norm = str(p).replace("\\", "/")
-        if norm.startswith(SKIP) or "/code/datums/ownership/" in "/" + norm or norm.startswith("code/engine/declare/"):
+        if norm.startswith(SKIP) or "/code/library/ownership/" in "/" + norm or norm.startswith("code/engine/declare/"):
             continue
         new = finish(text) if fin else convert(text, norm, report, mark)
         if new != text:

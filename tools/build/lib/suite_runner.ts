@@ -34,7 +34,7 @@ export function suiteStalenessParams(env: Record<string, string | undefined>, ex
 // ---------------------------------------------------------------------------
 // Salvage. The world writes its results JSON only when the whole suite is done, so a shard the watchdog kills would lose everything. Its
 // runtime.log has a "::group::(i/N) path" line when a test starts and "PASS path 1.2s" or "::error::FAIL path 1.2s" when it ends
-// (code/modules/unit_tests/unit_test.dm RunUnitTest), and "SKIPPED ..." right after the group line of a skipped test.
+// (code/tests/unit_tests/unit_test.dm RunUnitTest), and "SKIPPED ..." right after the group line of a skipped test.
 
 export type SalvagedEntry = { status: number; message: string; name: string; duration_ds: number; runtimes: number; salvaged: true };
 

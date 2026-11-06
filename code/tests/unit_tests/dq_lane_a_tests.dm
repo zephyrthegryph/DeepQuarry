@@ -101,6 +101,7 @@ CAPABILITIES(/obj/lanea_fixture)
 /datum/unit_test/dq_lane_a/kernel_backstop_resets_a_leaked_depth
 
 /datum/unit_test/dq_lane_a/kernel_backstop_resets_a_leaked_depth/run_lane_a()
+	set_global(nameof(GLOB.act_backstops), GLOB.act_backstops)
 	TEST_ASSERT(!act_backstop_reset(), "nothing leaked: nothing reset")
 	GLOB.act_depth = 5
 	GLOB.act_chain += "leaked"
@@ -172,9 +173,9 @@ CAPABILITIES(/obj/lanea_fixture)
 	F.set_armed(TRUE)
 	var/list/marked = list()
 	marked[bad] = TRUE
-	for(var/datum/hook/H as anything in GLOB.hook_change_pending[F])
+	for(var/datum/hook/H as anything in GLOB.hook_change_pending[ref_token(F)])
 		marked[H] = TRUE
-	GLOB.hook_change_pending[F] = marked
+	GLOB.hook_change_pending[ref_token(F)] = marked
 	hooks_drain_changes()
 	TEST_ASSERT_EQUAL(length(GLOB.dq_caught_capture), 1, "the throwing condition was reported")
 	TEST_ASSERT_EQUAL(F.fired, 1, "the hook behind the throwing one still ran")

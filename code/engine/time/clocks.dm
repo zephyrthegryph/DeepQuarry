@@ -4,7 +4,7 @@
 
 /// The time `E`'s scheduler runs on (world.time live, injected in tests).
 /proc/scheduler_time_of(datum/E)
-	var/datum/scheduler_record/rec = E?.om_rec
+	var/datum/scheduler_record/rec = E?.sched_rec
 	return rec ? rec.sched.now() : time_scheduler().now()
 
 // ---------------------------------------------------------------- clocks
@@ -70,13 +70,13 @@
 	var/datum/clock_definition/C = definition_registry().clock_by_id[clock_id]
 	if(!C)
 		CRASH("om: unknown clock [clock_id]")
-	var/datum/scheduler_record/rec = E?.om_rec
+	var/datum/scheduler_record/rec = E?.sched_rec
 	return rec ? clock_local(rec, C.idx) : time_scheduler().now()
 
 /// STAT_CLOCK_RATE_BIO of `E` moved: biological time so far is folded in at the old rate, then the bio clock, its deadlines,
 /// timers and cadences take the new one.
 /proc/bio_clock_rate_changed(datum/E)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec)
 		return
 	var/static/bio_idx
@@ -89,19 +89,19 @@
 
 // ---------------------------------------------------------------- relevance and suspension
 
-/// STAT_RELEVANCE of `E` moved to `level`: the OM record's behaviours pick their cadence by it (rec.relevance) and the Rust side mirrors
+/// STAT_RELEVANCE of `E` moved to `level`: the scheduler record's behaviours pick their cadence by it (rec.relevance) and the Rust side mirrors
 /// it; SEQ_KEY_RELEVANCE puts E in or out of the sequences sweeping it (seq_publish()).
 /proc/relevance_changed(datum/E, level)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(rec)
 		rec.relevance = level
 		entity_sync_all(rec)
 	entity_native_relevance(E, level)
 	engine_key_changed(E, SEQ_KEY_RELEVANCE)
 
-/// STAT_SUSPENDED of `E` flipped: the OM record's cadences and own-clock timers stop or resume with it.
+/// STAT_SUSPENDED of `E` flipped: the scheduler record's cadences and own-clock timers stop or resume with it.
 /proc/suspended_changed(datum/E)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec)
 		return
 	entity_sync_all(rec)

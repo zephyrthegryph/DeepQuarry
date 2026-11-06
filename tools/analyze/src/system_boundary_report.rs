@@ -20,7 +20,7 @@ pub(crate) static META: Meta = Meta {
     legacy: "tools/ci/system_boundary_lint.py",
     select: CODE_MAPS_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Custom,
+    policy: Policy::Hard,
     rules: &[
         RuleMeta { name: "B1", hint: HINT },
         RuleMeta { name: "B2", hint: HINT },

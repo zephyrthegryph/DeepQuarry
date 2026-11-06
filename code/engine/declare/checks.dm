@@ -1,4 +1,4 @@
-// Object-model core: checks (doc/rewrite/object_model_core.md section H).
+// engine core: checks (doc/rewrite/archive/object_model_core.md section H).
 //
 // A check spec is any of:
 //   /datum/requirement_definition/powered                   a check type, no parameter
@@ -84,16 +84,6 @@
 		var/arg = L[L[1]]
 		return "[L[1]]=[islist(arg) ? json_encode(arg) : "[arg]"]"
 	return null
-
-/// Why `spec` fails for actor/target, or null if it passes.
-/proc/definition_why_not(spec, datum/actor, datum/target)
-	var/datum/requirement_definition/C = definition_check_get(spec)
-	if(!C)
-		return "malformed check"
-	return C.why_not(actor, target)
-
-/proc/definition_can(spec, datum/actor, datum/target)
-	return isnull(definition_why_not(spec, actor, target))
 
 /datum/requirement_definition/combinator
 	var/op

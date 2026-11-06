@@ -1,6 +1,6 @@
 //! `analyze gen system_accessors` -> `code/engine/_generated/system_accessors.dm`.
 //!
-//! `SYSTEM_ACCESSOR(system, name, nameof(var))` (declared in `code/contracts/accessors/`) is the
+//! `SYSTEM_ACCESSOR(system, name, nameof(var))` (declared in `code/library/actions/accessors/`) is the
 //! only way content reads a system's private state. This emits the accessor proc:
 //! `name()` returns `var` of the system's singleton, so a call is a plain typed read, and the
 //! reads engine follows a call of it to that var (`ReadKind::System`), which is how a stat that

@@ -61,7 +61,7 @@
 
 /// The lifeform plan of `holder`'s type (the declared inputs and the tooltip), or null for a type that declares nothing the engine runs.
 /proc/input_plan_of(atom/holder)
-	var/datum/type_table/T = type_table_cache()[holder.type] || table_of(holder)
+	var/datum/type_table/T = type_table_store?[holder.type] || table_of(holder)
 	if(!(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
 		return null
 	return lifeform_plan_of(holder)

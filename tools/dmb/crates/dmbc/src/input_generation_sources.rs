@@ -160,7 +160,7 @@ impl crate::query_db::QueryDb{
  pub(crate) fn stage_generation_bootstrap<P:SnapshotProvider>(
   &self,frame:OwnedGenerationFrame,recording:RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,intent:&crate::policy_request::AdmittedPolicyRequest,names:&[crate::GeneratorName],spool:std::fs::File,
  )->io::Result<crate::runner_host::query_snapshot::ClosedGeneration>{
-  if names.is_empty()||names.len()>13{return Err(io::Error::new(io::ErrorKind::InvalidInput,"restricted generation phase needs bounded requested roles"))}
+  if names.is_empty()||names.len()>crate::GeneratorName::REGISTERED_COUNT{return Err(io::Error::new(io::ErrorKind::InvalidInput,"restricted generation phase needs bounded requested roles"))}
   let mut journal=crate::generation_journal::StagedJournal::new(spool)?;let mut included=[true;13];let mut selected=[None;13];let mut ordinal=0usize;let mut root=None;let mut validation_peak=0usize;
   {
    let borrowed=frame.borrowed();borrowed.require_recording(&recording)?;discovery.validate_recording(&recording)?;

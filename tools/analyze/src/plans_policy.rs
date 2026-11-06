@@ -160,6 +160,13 @@ pub(crate) fn generate_prepared(an:crate::reactive_dependency_view::Analysis<'_>
         }
         let rows: Vec<(String, String)> = legacy.iter().map(|t| (quote(t), "TRUE".to_string())).collect();
         emit_table(out, "generated_capability_legacy_outputs", &rows);
+        if let Some(side_overrides) = &metadata.side_overrides {
+            out.blank();
+            out.doc("\"<type>\" -> TRUE: a type that defines push_to_rust() or on_state_changed() with a body (subtypes inherit). A datum of such a type has side");
+            out.doc("effects a refresh must run; a datum of any other type, with no derived() table, has no live output (datum_derive_flags(), refresh.dm).");
+            let rows: Vec<_> = side_overrides.iter().map(|owner| (quote(owner), "TRUE".to_owned())).collect();
+            emit_table(out, "generated_side_overrides", &rows);
+        }
         // The stat layer's input names (step 3 of the change graph, the stats fold): over-inclusive by design. Every nameof() and every
         // `reads = list(...)` item of a declaration block can feed a contribution (entry-building procs such as heat_pump() take them as
         // arguments, which no static rule can follow), so all of them are inputs; the runtime adds the holder reads of the generated handler
@@ -193,7 +200,16 @@ pub(crate) type ReaderKeys = BTreeMap<(String, String), u8>;
 pub(crate) trait Defines{fn contains(&self,name:&str)->bool;}
 impl Defines for HashSet<String>{fn contains(&self,name:&str)->bool{HashSet::contains(self,name)}}
 impl Defines for BTreeSet<String>{fn contains(&self,name:&str)->bool{BTreeSet::contains(self,name)}}
-#[derive(Default)]pub(crate) struct PreparedMetadata{pub(crate) stat_inputs:BTreeSet<String>,pub(crate) reader_keys:ReaderKeys,pub(crate) tracked_names:BTreeSet<String>,pub(crate) legacy_outputs:BTreeSet<String>}
+#[derive(Default)]
+pub(crate) struct PreparedMetadata {
+    pub(crate) stat_inputs: BTreeSet<String>,
+    pub(crate) reader_keys: ReaderKeys,
+    pub(crate) tracked_names: BTreeSet<String>,
+    pub(crate) legacy_outputs: BTreeSet<String>,
+    // The frozen historical input lacks this callable projection. Native generation
+    // supplies Some even when there are no overrides, to emit the empty table.
+    side_overrides: Option<BTreeSet<String>>,
+}
 fn quoted<C:kc::Control>(c:&mut C,text:&str)->Result<String,C::Error>{kc::reserve(c,||text.len().checked_mul(8)?.checked_add(128))?;Ok(quote(text))}
 fn set_name<C:kc::Control>(c:&mut C,set:&mut BTreeSet<String>,name:String)->Result<(),C::Error>{if !set.contains(&name){kc::reserve(c,||1024usize.checked_add(std::mem::size_of::<String>()))?;set.insert(name);}Ok(())}
 fn add_key<C:kc::Control>(c:&mut C,keys:&mut ReaderKeys,owner:&str,name:String,bits:u8)->Result<(),C::Error>{c.checkpoint()?;let owner=kc::own(c,owner)?;kc::reserve(c,||1024usize.checked_add(std::mem::size_of::<((String,String),u8)>()))?;*keys.entry((owner,name)).or_default()|=bits;Ok(())}
@@ -292,6 +308,21 @@ fn emit_prepared_reader_keys(metadata:&PreparedMetadata,out:&mut Output){
 }
 
 impl PreparedMetadata{
+    pub(crate) fn for_native_generation() -> Self {
+        Self { side_overrides: Some(BTreeSet::new()), ..Self::default() }
+    }
+
+    pub(crate) fn side_override<C: kc::Control>(&mut self, owner: &str, c: &mut C) -> Result<(), C::Error> {
+        c.checkpoint()?;
+        if let Some(owners) = &mut self.side_overrides {
+            if owner != "/" && owner != "/datum" && !owners.contains(owner) {
+                let name = kc::own(c, owner)?;
+                set_name(c, owners, name)?;
+            }
+        }
+        Ok(())
+    }
+
  pub(crate) fn legacy_output<C:kc::Control>(&mut self,owner:&str,c:&mut C)->Result<(),C::Error>{if owner.starts_with("/datum/capability/"){let name=kc::own(c,owner)?;set_name(c,&mut self.legacy_outputs,name)?;}Ok(())}
  pub(crate) fn tracked<C:kc::Control>(&mut self,name:&str,c:&mut C)->Result<(),C::Error>{if key_ident(name){let name=kc::own(c,name)?;set_name(c,&mut self.tracked_names,name)?;}Ok(())}
  pub(crate) fn marker<C:kc::Control>(&mut self,m:&MarkerRow<'_>,defines:&impl Defines,c:&mut C)->Result<(),C::Error>{c.checkpoint()?;
@@ -317,7 +348,7 @@ pub(crate) fn generate_prepared_admitted(an:crate::reactive_dependency_view::Ana
  for rows in [an.draw_reads(),an.draw_hops(),an.draw_links()]{for(owner,names)in rows{checkpoint()?;add(owner)?;for name in names{add(name)?;}}}
  for(id,(names,_))in an.verb_reads(){checkpoint()?;add(id)?;for name in names{add(name)?;}}
  for id in an.draws(){add(id)?;}for name in an.stat_reads(){add(name)?;}for(owner,name)in an.reads(){add(owner)?;add(name)?;}
- for name in metadata.stat_inputs.iter().chain(&metadata.tracked_names).chain(&metadata.legacy_outputs){checkpoint()?;add(name)?;}
+ for name in metadata.stat_inputs.iter().chain(&metadata.tracked_names).chain(&metadata.legacy_outputs).chain(metadata.side_overrides.iter().flatten()){checkpoint()?;add(name)?;}
  for((owner,name),_)in &metadata.reader_keys{checkpoint()?;add(owner)?;add(name)?;}
  let bytes=width.checked_mul(32).and_then(|n|units.checked_mul(1024).and_then(|u|n.checked_add(u))).ok_or_else(overflow)?;budget.charge(bytes).map_err(|e|std::io::Error::new(std::io::ErrorKind::OutOfMemory,e))?;let mut out=Output::captured(budget.clone());generate_prepared(an,metadata,&mut out);checkpoint()?;budget.require().map_err(|e|std::io::Error::new(std::io::ErrorKind::OutOfMemory,e))?;Ok(out)
 }
@@ -329,4 +360,60 @@ pub(crate) fn generate_prepared_admitted(an:crate::reactive_dependency_view::Ana
  #[cfg(feature="native-policy")]
  #[test]fn admitted_plans_emitter_matches_entire_original_rows_chunks_and_quota_io_recovery(){let mut analysis=crate::reactive_dependency_fold::Fold::default().analysis;for i in 0..601{let owner=format!("/obj/owner_{i}");let value=format!("value_{i}");analysis.draw_reads.entry(owner.clone()).or_default().insert(value.clone());analysis.draw_hops.entry(owner.clone()).or_default().insert(format!("loc.{value}"));analysis.draw_links.entry(owner.clone()).or_default().insert("cell".to_owned());analysis.verb_reads.insert(format!("{owner}::hidden_verbs"),(BTreeSet::from([value.clone()]),i%2==0));analysis.reads.insert((owner,value));}analysis.draws.insert("/obj/unknown::draw".into());analysis.consumers.insert("/obj/unknown::draw".into(),vec![crate::reactive_facts::Untracked{what:"?unknown".into(),owner:String::new(),rel:"code/probe.dm".into(),line:3}]);
  let args=vec!["/obj/probe".to_owned(),"on_change(nameof(charge), PROC_REF(refresh))".to_owned()];let markers=[MarkerRow{name:"CAPABILITIES",args:&args,body:"on_change(nameof(charge), PROC_REF(refresh))"}];let old_markers=[plans_original_policy::MarkerRow{name:"CAPABILITIES",args:&args,body:markers[0].body}];let defines=HashSet::new();let tracked=HashMap::from([("/obj/probe".to_owned(),HashSet::from(["charge".to_owned()]))]);let file=crate::tree::SourceFile::from_text("code/probe.dm","#define HELPER_READS nameof(leaf)\n/proc/helper()\n\treturn adjacency(nameof(other))\n");let files=[&file];let input=MetadataInput{markers:&markers,defines:&defines,tracked:&tracked,output_defining_owners:&["/datum/capability/powered"],reader_procs:&[],files:&files};let old_input=plans_original_policy::PlansInput{analysis:&analysis,markers:&old_markers,defines:&defines,tracked:&tracked,output_defining_owners:&["/datum/capability/powered"],reader_procs:&[],files:&files};let mut expected=Output::default();plans_original_policy::generate(&old_input,&mut expected);let metadata=collect_metadata(&input,&mut Probe{left:4*1024*1024,fail:false}).unwrap();let view=crate::reactive_dependency_view::Analysis::Owned(&analysis);let budget=crate::captured_generator_budget::Budget::new(64*1024*1024).unwrap();assert_eq!(generate_prepared_admitted(view,&metadata,&budget,&||Ok(())).unwrap(),expected);let tiny=crate::captured_generator_budget::Budget::new(1024).unwrap();assert_eq!(generate_prepared_admitted(view,&metadata,&tiny,&||Ok(())).unwrap_err().kind(),io::ErrorKind::OutOfMemory);let healthy=crate::captured_generator_budget::Budget::new(64*1024*1024).unwrap();assert_eq!(generate_prepared_admitted(view,&metadata,&healthy,&||Err(io::Error::from_raw_os_error(1450))).unwrap_err().raw_os_error(),Some(1450));assert_eq!(generate_prepared_admitted(view,&metadata,&healthy,&||Ok(())).unwrap(),expected);}
+    #[cfg(feature = "native-policy")]
+    #[test]
+    fn native_plans_side_overrides_emit_master_table_in_order() {
+        let analysis = crate::reactive_dependency_fold::Fold::default().analysis;
+        let view = crate::reactive_dependency_view::Analysis::Owned(&analysis);
+        let budget = crate::captured_generator_budget::Budget::new(4 * 1024 * 1024).unwrap();
+        let mut metadata = PreparedMetadata::for_native_generation();
+        let mut control = Probe { left: 8192, fail: false };
+        for owner in ["/obj/z", "/", "/datum", "/datum/a", "/obj/z"] {
+            metadata.side_override(owner, &mut control).unwrap();
+        }
+        let out = generate_prepared_admitted(view, &metadata, &budget, &|| Ok(())).unwrap();
+        let expected = concat!(
+            "/proc/generated_side_overrides_chunk_0()\n",
+            "\t. = list()\n",
+            "\t.[\"/datum/a\"] = TRUE\n",
+            "\t.[\"/obj/z\"] = TRUE\n",
+            "/proc/generated_side_overrides_build()\n",
+            "\t. = list()\n",
+            "\tvar/list/c0 = generated_side_overrides_chunk_0()\n",
+            "\tfor(var/k in c0)\n",
+            "\t\t.[k] = c0[k]\n",
+            "GLOBAL_LIST_INIT(generated_side_overrides, generated_side_overrides_build())\n",
+        );
+        let side = out.body.find("/proc/generated_side_overrides_chunk_0()").unwrap();
+        let legacy = out.body.find("GLOBAL_LIST_INIT(generated_capability_legacy_outputs,").unwrap();
+        let stat = out.body.find("/proc/generated_stat_input_reads_build()").unwrap();
+        assert!(legacy < side && side < stat);
+        assert!(out.body[side..].starts_with(expected));
+
+        let empty = PreparedMetadata::for_native_generation();
+        let out = generate_prepared_admitted(view, &empty, &budget, &|| Ok(())).unwrap();
+        assert!(out.body.contains(concat!(
+            "/proc/generated_side_overrides_build()\n",
+            "\t. = list()\n",
+            "GLOBAL_LIST_INIT(generated_side_overrides, generated_side_overrides_build())\n",
+        )));
+        assert!(!out.body.contains("generated_side_overrides_chunk_"));
+    }
+
+    #[test]
+    fn native_plans_side_override_collection_keeps_admission_and_cancellation() {
+        let mut metadata = PreparedMetadata::for_native_generation();
+        let mut limited = Probe { left: 0, fail: false };
+        metadata.side_override("/datum", &mut limited).unwrap();
+        assert_eq!(metadata.side_override("/obj/a", &mut limited).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
+        assert!(metadata.side_overrides.as_ref().unwrap().is_empty());
+        let mut control = Probe { left: 4096, fail: false };
+        metadata.side_override("/obj/a", &mut control).unwrap();
+        let left = control.left;
+        metadata.side_override("/obj/a", &mut control).unwrap();
+        assert_eq!(control.left, left, "duplicate callable owners reuse their retained row");
+        control.fail = true;
+        assert_eq!(metadata.side_override("/obj/b", &mut control).unwrap_err().raw_os_error(), Some(1450));
+        assert_eq!(metadata.side_overrides.unwrap(), BTreeSet::from(["/obj/a".to_owned()]));
+    }
 }

@@ -30,7 +30,7 @@ def expected_paths():
     outputs = {
         name: f"code/engine/_generated/{name}.dm" for name in (
             "actions", "auto_tracked", "declare", "deps", "plans", "reads",
-            "sparse_slots", "stats", "system_accessors", "tracked_lists",
+            "stats", "system_accessors", "tracked_lists",
         )
     }
     outputs["declare_ids"] = "code/engine/_generated/ids.dm"
@@ -71,7 +71,7 @@ def compare_receipts(original_log, current, old):
         assert receipt["schema"] == "original-generation-fixedpoint-v1" and receipt["settled"] is True
         assert type(receipt["passes"]) is int and 1 <= receipt["passes"] <= 5
         assert receipt["stage_zero"] == 8 and receipt["stage_one"] == 5
-        assert len(receipt["generators"]) == 13 and set(receipt["generators"]) == old.NAMES
+        assert len(receipt["generators"]) == len(old.NAMES) and set(receipt["generators"]) == old.NAMES
     original = old.rows(contents, "OLD_ORIGINAL_GENERATION_FULL=")
     for key, value in current.items():
         assert original[key] == value, f"complete native artifacts or ordered diagnostics differ for {key}"

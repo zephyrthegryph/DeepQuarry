@@ -32,7 +32,7 @@ cat >code/tests/unit_tests/fixture.dm <<'DM'
 	return
 /datum/unit_test/dq_h4/deep/er/still/run_h4()
 	return
-/datum/unit_test/om/legacy/run_om(list/made)
+/datum/unit_test/engine/legacy/run_engine(list/made)
 	return
 /datum/unit_test/old_style/Run()
 	return
@@ -40,7 +40,7 @@ DM
 git add -A
 types="$(test_types)"
 for want in plain_top dq_eg2/interim_nif_size_actor dq_eg2/interim_nif_size_actor/answer dq_eg2/interim_nif_size_actor/stale \
-	dq_h4/deep/er/still om/legacy old_style; do
+	dq_h4/deep/er/still engine/legacy old_style; do
 	grep -qxF -- "$want" <<<"$types" && ok "$want is a known test" || fail "$want is missing from test_types"
 done
 grep -q '/proc' <<<"$types" && fail "a helper proc leaked in as a type: $(grep proc <<<"$types")" || ok "helper procs are not types"

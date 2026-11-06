@@ -69,7 +69,7 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(3);/obj/item/analyzer,
 					prob(3);/obj/item/t_scanner,
 					prob(2);/obj/item/grenade/chem_grenade/metalfoam,
-					prob(1);/obj/item/toy/figure/engineer)
+					prob(1);VARIANT(/obj/item/toy/figure/engineer))
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	return new path(T)
 
@@ -127,7 +127,7 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(3);/obj/item/melee/baton/slime,
 					prob(3);/obj/item/gun/energy/taser/xeno,
 					prob(3);/obj/item/storage/box/monkeycubes,
-					prob(1);/obj/item/toy/figure/borg)
+					prob(1);VARIANT(/obj/item/toy/figure/borg))
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	return new path(T)
 
@@ -167,11 +167,11 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(2);/obj/item/grenade/chem_grenade/cleaner,
 					prob(1);/obj/item/storage/box/monkeycubes,
 					prob(3);/obj/item/reagent_containers/spray/plantbgone,
-					prob(2);/obj/item/seeds/sunflowerseed,
-					prob(2);/obj/item/seeds/cornseed,
-					prob(2);/obj/item/seeds/berryseed,
-					prob(2);/obj/item/seeds/wheatseed,
-					prob(2);/obj/item/seeds/orangeseed,
-					prob(1);/obj/item/toy/figure/bartender)
+					prob(2);VARIANT(/obj/item/seeds/sunflowerseed),
+					prob(2);VARIANT(/obj/item/seeds/cornseed),
+					prob(2);VARIANT(/obj/item/seeds/berryseed),
+					prob(2);VARIANT(/obj/item/seeds/wheatseed),
+					prob(2);VARIANT(/obj/item/seeds/orangeseed),
+					prob(1);VARIANT(/obj/item/toy/figure/bartender))
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	return new path(T)

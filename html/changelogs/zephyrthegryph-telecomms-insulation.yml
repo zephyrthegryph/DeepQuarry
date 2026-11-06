@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - maptweak: "The telecomms cryogenic chamber floors are thermally insulated, so the Telecomms Control Room no longer slowly freezes beside them"
+  - bugfix: "The exotic seeds crate on Southern Cross names its seeds as variant rows"

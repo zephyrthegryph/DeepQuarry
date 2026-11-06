@@ -30,31 +30,6 @@ CAPABILITIES(/datum/system/server_maint)
 CAPABILITIES(/datum/tgs_flow)
 	ref_one(nameof(sender), /datum/tgs_chat_user)
 
-/// Holds `sender` of a waiting flow under `key`.
-/datum/system/server_maint/proc/tgs_flow_hold(key, datum/tgs_chat_user/sender)
-	var/datum/tgs_flow/flow = new
-	rel_set(flow, nameof(flow.sender), sender)
-	STAMP(flow, started_at, CLOCK_WORLD)
-	rel_add(src, nameof(tgs_flows), flow, key = key)
-
-/// The sender of the flow waiting under `key`, or null.
-/datum/system/server_maint/proc/tgs_flow_sender(key) as /datum/tgs_chat_user
-	var/datum/tgs_flow/flow = LAZYACCESS(tgs_flows, key)
-	return flow?.sender
-
-/// Drops the flow waiting under `key`.
-/datum/system/server_maint/proc/tgs_flow_release(key)
-	var/datum/tgs_flow/flow = LAZYACCESS(tgs_flows, key)
-	if(flow)
-		rel_remove(src, nameof(tgs_flows), flow)
-
-/// Drops the flows that have waited longer than 10 minutes.
-/datum/system/server_maint/proc/tgs_flows_drop_stale()
-	for(var/stale in assoc_to_keys(tgs_flows))
-		var/datum/tgs_flow/flow = tgs_flows[stale]
-		if(ELAPSED(flow, started_at, CLOCK_WORLD) > 10 MINUTES)
-			rel_remove(src, nameof(tgs_flows), flow)
-
 /datum/system/server_maint/reactions()
 	. = ..()
 	. += every(SERVER_MAINT_INTERVAL, PROC_REF(maintain), when = PROC_REF(work_ready), lane = LANE_SIMULATION)

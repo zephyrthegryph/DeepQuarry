@@ -38,9 +38,9 @@ CAPABILITIES(/obj/d3_subject)
 	var/obj/d3_watcher/kept = allocate(/obj/d3_watcher)
 	observe(S, /datum/notice/lanea_boomed, gone, then(TYPE_PROC_REF(/obj/d3_watcher, heard_it)))
 	observe(S, /datum/notice/lanea_boomed, kept, then(TYPE_PROC_REF(/obj/d3_watcher, heard_it)))
-	GLOB.act_depth = ACT_MAX_DEPTH
+	set_global(nameof(GLOB.act_depth), ACT_MAX_DEPTH)
 	notice_publish(S, notice_take(/datum/notice/lanea_boomed))
-	GLOB.act_depth = 0
+	set_global(nameof(GLOB.act_depth), 0)
 	TEST_ASSERT_EQUAL(length(GLOB.notice_late_queue), 1, "the notice waits for the drain")
 	var/list/row = GLOB.notice_late_queue[1]
 	TEST_ASSERT(istext(row[1]), "the row names its holder by handle, not by reference")
@@ -74,9 +74,9 @@ CAPABILITIES(/obj/d3_subject)
 	var/obj/d3_watcher/W2 = allocate(/obj/d3_watcher)
 	observe(S, /datum/notice/lanea_boomed, W, then(TYPE_PROC_REF(/obj/d3_watcher, heard_it)))
 	observe(S, /datum/notice/lanea_boomed, W2, then(TYPE_PROC_REF(/obj/d3_watcher, heard_it)))
-	GLOB.act_depth = ACT_MAX_DEPTH
+	set_global(nameof(GLOB.act_depth), ACT_MAX_DEPTH)
 	notice_publish(S, notice_take(/datum/notice/lanea_boomed))
-	GLOB.act_depth = 0
+	set_global(nameof(GLOB.act_depth), 0)
 	TEST_ASSERT_EQUAL(length(GLOB.notice_late_queue), 1, "the notice waits for the drain")
 	qdel(S)
 	TEST_ASSERT(QDELETED(S), "the holder is deleted")
@@ -93,9 +93,9 @@ CAPABILITIES(/obj/d3_subject)
 
 /datum/unit_test/dq_lane_a/late_notice_queue_holds_no_reference_to_its_holder/run_lane_a()
 	var/obj/d3_subject/S = allocate(/obj/d3_subject)
-	GLOB.act_depth = ACT_MAX_DEPTH
+	set_global(nameof(GLOB.act_depth), ACT_MAX_DEPTH)
 	notice_publish(S, notice_take(/datum/notice/lanea_boomed))
-	GLOB.act_depth = 0
+	set_global(nameof(GLOB.act_depth), 0)
 	var/list/row = GLOB.notice_late_queue[1]
 	for(var/item in row)
 		TEST_ASSERT(item != S, "no element of a queued row is the holder")
@@ -113,15 +113,15 @@ CAPABILITIES(/obj/d3_subject)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/obj/d3_watcher/W = allocate(/obj/d3_watcher)
 	observe(H, /datum/notice/lanea_boomed, W, then(TYPE_PROC_REF(/obj/d3_watcher, heard_it)))
-	GLOB.act_depth = ACT_MAX_DEPTH
+	set_global(nameof(GLOB.act_depth), ACT_MAX_DEPTH)
 	notice_publish(H, notice_take(/datum/notice/lanea_boomed))
-	GLOB.act_depth = 0
+	set_global(nameof(GLOB.act_depth), 0)
 	TEST_ASSERT_EQUAL(W.heard, 0, "queued, not yet delivered")
 	test_drain()
 	TEST_ASSERT_EQUAL(W.heard, 1, "a live mob's late notice reaches its observer at the drain")
-	GLOB.act_depth = ACT_MAX_DEPTH
+	set_global(nameof(GLOB.act_depth), ACT_MAX_DEPTH)
 	notice_publish(H, notice_take(/datum/notice/lanea_boomed))
-	GLOB.act_depth = 0
+	set_global(nameof(GLOB.act_depth), 0)
 	qdel(H)
 	TEST_ASSERT_EQUAL(W.heard, 2, "a mob deleted while its notice waits still reaches its observer")
 	TEST_ASSERT(W.target_was_deleting, "with the mob in its deleting state")

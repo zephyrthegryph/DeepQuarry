@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Added runs_on_cell(), a shared capability that owns a cell-powered machine's drain and keeps one tracked state that moves only when the cell crosses the threshold; the emergency floodlight uses it"

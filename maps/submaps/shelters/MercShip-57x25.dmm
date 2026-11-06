@@ -1229,8 +1229,7 @@
 "pu" = (
 /obj/machinery/sleeper{
 	dir = 4;
-	emagged = 1;
-	initial_bin_rating = 4
+	emagged = 1
 	},
 /turf/simulated/shuttle/floor/white,
 /area/survivalpod/superpose/MercShip)

@@ -112,9 +112,9 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/flags = NONE
 	/// Reasons the call failed; null when it succeeded.
 	var/list/errors
-	/// Serialize: the datum's OM handle -> child ID for every atom in the subtree.
+	/// Serialize: the datum's handle -> child ID for every atom in the subtree.
 	var/list/ids
-	/// Materialize: child ID -> the atom's OM handle.
+	/// Materialize: child ID -> the atom's handle.
 	var/list/by_id
 	/// Materialize: list(target, blob) pairs whose vars are applied once the tree exists.
 	var/list/pending
@@ -197,7 +197,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			var/list/child_blob = serialize_datum(child, flags)
 			if(!child_blob)
 				return null
-			var/list/record = L?.entries[child]
+			var/list/record = L?.entries[slot_known(child)]
 			if(record && record[LEDGER_E_SLOT] != L.default_id)
 				child_blob[STATE_KEY_SLOT] = record[LEDGER_E_SLOT]
 			children += list(child_blob)
@@ -282,13 +282,12 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	probe_ctx.ids = list()
 	var/datum/state_schema/schema = state_schema_for(probe)
 	for(var/name in schema.saved_vars)
-		// These lists can vary per instance at Initialize(): atom_colours by a
-		// flavour colour promoted by /atom/Initialize() (C5), and whatever a type
+		// These lists can vary per instance at Initialize(): whatever a type
 		// declares in state_nondeterministic_list_vars() (random scrap
 		// composition, generated sprite-state tables). A baseline sampled from
 		// one instance would swallow every other instance that matched it, and a
 		// restored copy would then re-roll. Skipping falls back to "matches if empty".
-		if(name == OP_KEY_CAP_STATE || name == "atom_colours" || (name in schema.nondeterministic_list_vars))
+		if(name == OP_KEY_CAP_STATE || (name in schema.nondeterministic_list_vars))
 			continue
 		var/value = probe.vars[name]
 		if(!islist(value))
@@ -487,7 +486,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_registry_adapter)
 		var/slot = child_blob[STATE_KEY_SLOT]
 		if(slot && child && child.loc == A)
 			var/datum/ledger/L = dq_ledger(A)
-			if(L?.def_by_id(slot) && L.entries[child])
+			if(L?.def_by_id(slot) && L.entries[slot_known(child)])
 				L.reslot(child, slot)
 			else
 				refuse("[A.type] has no slot [slot]")

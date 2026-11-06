@@ -23,7 +23,7 @@ impl Artifact{
 #[cfg(test)]mod tests{
  use super::*;
  #[test]fn generated_output_wire_preserves_all_single_and_multifile_bytes_and_diagnostic_order(){
-  for name in [GeneratorName::SparseSlots,GeneratorName::SystemAccessors,GeneratorName::Stats,GeneratorName::Actions,GeneratorName::DeclareIds,GeneratorName::Declare,GeneratorName::TrackedLists,GeneratorName::Deps,GeneratorName::AutoTracked,GeneratorName::Reads,GeneratorName::Plans,GeneratorName::UiTypes,GeneratorName::DerivedReads]{
+  for name in [GeneratorName::SystemAccessors,GeneratorName::Stats,GeneratorName::Actions,GeneratorName::DeclareIds,GeneratorName::Declare,GeneratorName::TrackedLists,GeneratorName::Deps,GeneratorName::AutoTracked,GeneratorName::Reads,GeneratorName::Plans,GeneratorName::UiTypes,GeneratorName::DerivedReads]{
    let multiple=matches!(name,GeneratorName::UiTypes|GeneratorName::DerivedReads);
    let artifact=Artifact{name,text:if multiple{String::new()}else{"generated α\n\0\"".into()},files:if multiple{vec![("first/path".into(),"first α\n".into()),("second/path".into(),"second\0".into())]}else{Vec::new()},diags:vec![dq_analyze::sparse_slots_policy::Diagnostic{rel:"z.dm".into(),line:7,msg:"first refusal".into()},dq_analyze::sparse_slots_policy::Diagnostic{rel:"a.dm".into(),line:2,msg:"second refusal".into()}]};
    let actual=serde_json::to_value(artifact.output_wire()).unwrap();

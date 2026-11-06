@@ -444,7 +444,6 @@
 	glow_intensity = 0.5;
 	glow_range = 7.5;
 	glow_toggle = 1;
-	move_speed = 10000;
 	movement_cooldown = -10000
 	},
 /turf/simulated/floor/tiled/white,

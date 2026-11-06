@@ -16,7 +16,7 @@
 //HELMET: May have a lighting overlay
 /obj/item/clothing/head/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer = 0,icon/clip_mask = null, mob/living/carbon/human/wearer = null)
 	var/image/standing = ..()
-	if(light_on && slot_name == slot_head_str && standing)
+	if(lamp_lit && slot_name == slot_head_str && standing)
 		// The species' own sheet when the helmet has one for it (it holds the lamp state), else the shared worn lamp.
 		var/lamp_icon = LAZYACCESS(sprite_sheets, body_type) || 'icons/mob/light_overlays.dmi'
 		standing = look_composed_image(standing, list(look_cached_image("[light_overlay]-worn-[lamp_icon]", lamp_icon, light_overlay)))

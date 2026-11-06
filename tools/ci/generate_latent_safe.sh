@@ -4,13 +4,13 @@
 # which writes every candidate /obj/item type the sandbox verified storable
 # but that isn't already declared `latent_safe = TRUE` by hand. Review the
 # result as a diff before folding entries into
-# code/datums/state/latent_safe_types.dm -- this only tells you what *could*
+# code/library/state/latent_safe_types.dm -- this only tells you what *could*
 # be marked latent_safe, not that it should be (a type can still be a
 # semantic opt-out via latent_unsafe_reason()).
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-FOCUS_FILE="code/modules/unit_tests/dq_focus.dm"
+FOCUS_FILE="code/tests/unit_tests/dq_focus.dm"
 backup="$(mktemp)"
 cp "$FOCUS_FILE" "$backup"
 restore() { cp "$backup" "$FOCUS_FILE"; rm -f "$backup"; }

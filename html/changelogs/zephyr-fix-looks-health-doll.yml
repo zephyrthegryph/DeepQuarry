@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The Looks tab body picker now uses the same doll as the in-game zone selector, with the same clickable parts, instead of a hand-drawn figure."
+  - refactor: "The zone selector doll's hit areas are one shared table used by both the HUD and the Looks tab."

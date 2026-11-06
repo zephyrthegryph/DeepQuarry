@@ -1,4 +1,4 @@
-// reactions(): what a /datum/system reacts to (code/__defines/reactions.dm). Only a system declares one (the reactions_table_proc lint bans it on every
+// reactions(): what a /datum/system reacts to (code/defines/library/reactions.dm). Only a system declares one (the reactions_table_proc lint bans it on every
 // other type: an entity's every(), on_change() and extend() entries are its CAPABILITIES block's).
 //
 //	/datum/system/pump/reactions()
@@ -165,6 +165,9 @@ PROC_SUMMARY(/proc/rx_call_reaction) // vars[] / call() dispatcher: the walk can
 	// A capability's every(interval, then(...)): periodic work an activation owns (code/engine/actions/every.dm).
 	if(istype(handler, /datum/entry) || islist(handler))
 		return every_entry(interval, handler, when = when, members = members, phase = phase, lane = lane)
+	if(isnull(handler) || isnum(handler) || !isnum(interval) && !istext(interval))
+		declare_report("every(): arguments are every(interval, handler, ...), got interval [isnull(interval) ? "null" : "[interval]"], handler [isnull(handler) ? "null" : "[handler]"]")
+		return null
 	var/datum/reaction/R = rx_make(RXN_EVERY, null, null, handler)
 	// The declaring type is the one whose reactions() calls this: a subtype that re-declares a handler replaces the
 	// inherited declaration (rx_table_build) and owns its own work item.

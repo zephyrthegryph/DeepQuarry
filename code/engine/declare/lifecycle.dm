@@ -1,5 +1,5 @@
 // Declarative lifecycle: the per-type declaration table and the code that runs it
-// (doc/rewrite/declarative_lifecycle.md, macros in code/__defines/lifecycle_decl.dm).
+// (doc/rewrite/declarative_lifecycle.md, macros in code/defines/engine/lifecycle_decl.dm).
 //
 // A type's DECLARE_* lines each override declare_lifecycle() and add one entry on top of the
 // parent's. lifecycle_decls_of() builds the table once per type (the first instance asks) in the

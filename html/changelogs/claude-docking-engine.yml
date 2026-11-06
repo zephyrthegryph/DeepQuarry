@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Multi-airlock docking ports (the arrivals and escape docks) cycle and open their doors again instead of sitting at Docking forever."
+  - bugfix: "The engine room gets its engine again: the engine template is placed at round start."

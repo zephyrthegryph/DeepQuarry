@@ -172,10 +172,10 @@ CAPABILITIES(/obj/item/stolenpackage)
 					/obj/item/sleevemate,
 					/obj/item/disk/nifsoft/compliance,
 					/obj/item/implanter/compliance,
-					/obj/item/seeds/ambrosiadeusseed,
-					/obj/item/seeds/ambrosiavulgarisseed,
-					/obj/item/seeds/libertymycelium,
-					/obj/fiftyspawner/platinum,
+					VARIANT(/obj/item/seeds/ambrosiadeusseed),
+					VARIANT(/obj/item/seeds/ambrosiavulgarisseed),
+					VARIANT(/obj/item/seeds/libertymycelium),
+					VARIANT(/obj/fiftyspawner/platinum),
 					/obj/item/toy/nanotrasenballoon,
 					/obj/item/toy/syndicateballoon,
 					/obj/item/aiModule/syndicate,
@@ -258,8 +258,8 @@ CAPABILITIES(/obj/item/contraband)
 		/obj/item/card/emag_broken,
 		/obj/item/sleevemate,
 		/obj/item/disk/nifsoft/compliance,
-		/obj/item/seeds/ambrosiadeusseed,
-		/obj/item/seeds/ambrosiavulgarisseed,
+		VARIANT(/obj/item/seeds/ambrosiadeusseed),
+		VARIANT(/obj/item/seeds/ambrosiavulgarisseed),
 		/obj/item/bodysnatcher)
 
 	user.put_in_hands(new contraband(user.loc))

@@ -1,0 +1,200 @@
+//vr section
+/obj/item/clothing/head/vrwizard
+	name = "wizard hat"
+	desc = "A pointy pixelated-looking hat, 0s and 1s dancing off the fabric"
+	icon_state = "redwizard"
+
+CAPABILITIES(/obj/item/clothing/head/vrwizard)
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=60;energy=60;bomb=70;bio=50;rad=50"))
+	configure(item_protection(siemens = 0.1, cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
+
+/obj/item/clothing/suit/vrwizard
+	name = "wizard robes"
+	desc = "A silky robe with 0s and 1s flying off the seams."
+	icon_state = "redwizard"
+
+CAPABILITIES(/obj/item/clothing/suit/vrwizard)
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=60;energy=60;bomb=70;bio=50;rad=50"))
+	suit_storage(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs))
+	configure(item_protection(siemens = 0.1, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
+
+
+
+/obj/item/clothing/head/darkvrwizard
+	name = "wizard hat"
+	desc = "The hat holding the most attack and defense"
+	icon_state = "redwizard"
+	color = "#660066"
+
+CAPABILITIES(/obj/item/clothing/head/darkvrwizard)
+	configure(atom_rules(armor_spec = "melee=70;bullet=70;laser=40;energy=40;bomb=90;bio=70;rad=70"))
+	configure(item_protection(siemens = 0.1, cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
+
+/obj/item/clothing/suit/darkvrwizard
+	name = "wizard robes"
+	desc = "Robes holding the most attack and defense."
+	icon_state = "psyamp"
+
+CAPABILITIES(/obj/item/clothing/suit/darkvrwizard)
+	configure(atom_rules(armor_spec = "melee=70;bullet=70;laser=40;energy=40;bomb=90;bio=70;rad=70"))
+	suit_storage(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword))
+	configure(item_protection(siemens = 0.1, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
+
+//Candy section
+
+
+/obj/item/clothing/head/psy_crown/candycrown/get_mechanics_info(list/additional_information)
+	return ..(list("It will occasionally give a momentary buff to offensive capabilities.") + additional_information)
+
+/obj/item/clothing/head/psy_crown/candycrown
+	name = "candy crown"
+	desc = "A crown smelling oddly sweet"
+	icon_state = "wrathcrown"
+	cooldown_duration = 1 MINUTES // How long the cooldown should be.
+	brainloss_cost = 0
+
+/obj/item/clothing/head/psy_crown/candycrown/activate_ability(mob/living/wearer)
+	..()
+	wearer.apply_body_effect(/datum/body_effect/aura/candy_orange, 30 SECONDS)
+
+/obj/item/clothing/gloves/stamina/get_mechanics_info(list/additional_information)
+	return ..(list("It has a strange property of restoring hunger.") + additional_information)
+
+/obj/item/clothing/gloves/stamina
+	name = "gloves of stamina"
+	desc = "A strange pair of gloves."
+	icon_state = "regen"
+	item_state = "graygloves"
+
+/// Worn in the gloves slot (equipped()/dropped()). With the wearer view (a field, so its automatic
+/// clear when the wearer is destroyed counts too) it declares the feeding work.
+/obj/item/clothing/gloves/stamina/var/worn_on_hands = FALSE
+
+CAPABILITIES(/obj/item/clothing/gloves/stamina)
+	configure(atom_rules(armor_spec = "melee=70;bullet=60;laser=50;energy=50"))
+	configure(item_protection(siemens = 0))
+	every(2 SECONDS, then(PROC_REF(stamina_step)), when = nameof(worn_on_hands))
+
+/obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
+	..()
+	var/mob/living/carbon/human/H = wearer
+	set_worn_on_hands(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
+	if(worn_on_hands)
+		if(H.can_feel_pain())
+			to_chat(H, span_danger("You feel strange as hunger vanishes!"))
+			H.custom_pain("Your hands feel strange!",1)
+
+/obj/item/clothing/gloves/stamina/dropped(mob/user, equipping, slot)
+	set_worn_on_hands(FALSE)
+	var/mob/living/carbon/human/H = wearer
+	if(H)
+		if(H.can_feel_pain())
+			to_chat(H, span_danger("You feel hungry!"))
+			H.custom_pain("Your hands feel strange",1)
+	..()
+
+/// Works every 2 s while worn on the hands (the every() in its capabilities); taken off, it sleeps.
+/obj/item/clothing/gloves/stamina/proc/stamina_step(datum/act/timer/A)
+	var/mob/living/carbon/human/H = wearer
+	if(!istype(H) || HAS_SYNTHETIC_BIOLOGY(H) || H.stat == DEAD)
+		return // Robots and dead people don't have a metabolism.
+	H.set_nutrition(max(nutrition_of(H) + 8, 0))
+
+/obj/item/clothing/suit/armor/buffvest
+	name = "candy armor"
+	desc = "A really strange armor made of a similar substance as the creatures near it."
+	icon_state = "armor"
+	blood_overlay_type = "armor"
+	var/tension_threshold = 125
+	var/cooldown = null // world.time of when this was last triggered.
+	var/cooldown_duration = 3 MINUTES // How long the cooldown should be.
+	var/flavor_equip = null // Message displayed to someone who puts this on their head. Drones don't get a message.
+	var/flavor_unequip = null // Ditto, but for taking it off.
+	var/flavor_drop = null // Ditto, but for dropping it.
+	var/flavor_activate = null // Ditto, for but activating.
+	var/brainloss_cost = 0
+
+/// TRUE while worn in the suit slot by a sentient mob.
+/obj/item/clothing/suit/armor/buffvest/var/worn_by_sentient = FALSE
+CAPABILITIES(/obj/item/clothing/suit/armor/buffvest)
+	configure(atom_rules(armor_spec = "melee=70;bullet=60;laser=50;energy=50"))
+	every(2 SECONDS, then(PROC_REF(buffvest_step)), when = nameof(worn_by_sentient))
+
+/obj/item/clothing/suit/armor/buffvest/proc/activate_ability(mob/living/wearer)
+	COOLDOWN_START(src, cooldown, cooldown_duration)
+	to_chat(wearer, flavor_activate)
+	to_chat(wearer, span_danger("The inside of your head hurts..."))
+	wearer.injure(INJURY_NEURAL, brainloss_cost, null, src)
+	wearer.apply_body_effect(/datum/body_effect/aura/candy_blue, 30 SECONDS)
+
+/obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
+	..()
+	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src && H.is_sentient())
+		set_worn_by_sentient(TRUE)
+		if(flavor_equip)
+			to_chat(H, span_info(flavor_equip))
+
+/obj/item/clothing/suit/armor/buffvest/dropped(mob/living/carbon/human/H, equipping, slot)
+	..()
+	set_worn_by_sentient(FALSE)
+	if(H.is_sentient())
+		if(loc == H) // Still inhand.
+			if(flavor_unequip)
+				to_chat(H, span_info(flavor_unequip))
+		else
+			if(flavor_drop)
+				to_chat(H, span_info(flavor_drop))
+
+/obj/item/clothing/suit/armor/buffvest/proc/buffvest_step(datum/act/timer/A)
+	if(isliving(loc))
+		var/mob/living/L = loc
+		if(COOLDOWN_FINISHED(src, cooldown) && L.is_sentient() && L.get_tension() >= tension_threshold)
+			activate_ability(L)
+
+//vistor section
+/obj/item/clothing/suit/armor/alien/vistor/get_mechanics_info(list/additional_information)
+	return ..(list("Reduces all damage types by 25% with a 12% chance to block.") + additional_information)
+
+/obj/item/clothing/suit/armor/alien/vistor
+	name = "rocky suit"
+	desc = "A strange set of armor made of rocky plates"
+	icon_state = "alien_tank"
+	block_chance = 12
+
+CAPABILITIES(/obj/item/clothing/suit/armor/alien/vistor)
+	configure(atom_rules(armor_spec = "melee=25;bullet=25;laser=25;energy=25;bomb=25;bio=25;rad=25"))
+	configure(item_worn(worn_factors = TRAIT_NONE))
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
+
+/obj/item/clothing/suit/armor/tesla/vistor
+	name = "zapping suit"
+	desc = "A strange set of armor crackling with lighting"
+
+CAPABILITIES(/obj/item/clothing/suit/armor/tesla/vistor)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=60"))
+	configure(item_worn(worn_factors = TRAIT_NONE))
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
+
+/obj/item/clothing/suit/armor/reactive/vistor
+	name = "vibrating suit"
+	desc = "A strange set of armor that crackles with energy"
+	icon_state = "reactiveoff"
+
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive/vistor)
+	configure(atom_rules(armor_spec = "melee=35;bullet=35;laser=35;energy=35"))
+	configure(item_worn(worn_factors = TRAIT_NONE))
+
+/obj/item/clothing/suit/armor/protectionbubble
+	name = "protective bubble"
+	desc = "A strange set of armor that seems to coat your entire body in a thing protective bubble"
+	icon_state = "armor"
+	blood_overlay_type = "armor"
+
+CAPABILITIES(/obj/item/clothing/suit/armor/protectionbubble)
+	configure(atom_rules(armor_spec = "melee=25;bullet=25;laser=25;energy=25;bomb=50;bio=100;rad=75"))
+	configure(item_protection(cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS | HEAD, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
+
+//scrap section which is on hold till I get foes
+
+CAPABILITIES(/obj/item/clothing/head/psy_crown/candycrown)
+	configure(atom_rules(armor_spec = "melee=70;bullet=60;laser=50;energy=50"))

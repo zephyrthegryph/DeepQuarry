@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Malf AI target pickers, give, look up, pAI screen message, Armalis quills, stardog transition, Renault's befriending and Check Attacks use requests or menu ops instead of native verb arguments"
+  - bugfix: "The sleeper's slow release can be started by the pilot (Sleeper Eject in the exosuit menu) and by the occupant resisting; the old verb could never run"

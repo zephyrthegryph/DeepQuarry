@@ -2,8 +2,8 @@
 use std::collections::{HashMap,HashSet};
 use crate::{dm::dx::{lineage,Proc},tree::SourceFile,key_policy_control::Control,pat};
 #[cfg(feature="legacy-sem")]use crate::{dm::dx::DxIndex,tree::Tree};
-pub(crate) const PRESET_FILES:&str="code/datums/capabilities/library/preset";
-pub(crate) const CAPS_DIR:&str="code/datums/capabilities/";
+pub(crate) const PRESET_FILES:&str="code/library/capabilities/preset";
+pub(crate) const CAPS_DIR:&str="code/library/capabilities/";
 pub struct ProcFact{pub relative:String,pub owner:String,pub name:String,pub line:usize,body:Option<String>}
 pub struct Context{reserved:HashSet<String>,engine:HashSet<String>,cap_types:HashSet<String>}
 fn set_add<C:Control>(set:&mut HashSet<String>,value:&str,c:&mut C)->Result<(),C::Error>{c.checkpoint()?;if set.contains(value){return Ok(())}if C::CHECKED&&set.len()==set.capacity(){let target=set.capacity().checked_mul(2).map(|n|n.max(4)).ok_or_else(||c.overflow())?;let bound=target.checked_mul(4).ok_or_else(||c.overflow())?;crate::key_policy_control::reserve(c,||bound.checked_mul(std::mem::size_of::<String>())?.checked_add(4096))?;set.try_reserve(target-set.len()).map_err(|_|c.allocation_failed())?;if set.capacity()>bound{return Err(c.allocation_failed())}}set.insert(crate::raw_tree_report::own(c,value)?);Ok(())}

@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The login gate timeout and the tgui window prewarm timers are scheduled again (their after() calls had no owner)"
+  - bugfix: "Move() overrides accept the direct argument, so a pipe fitting no longer runtimes when it falls through open space"
+  - code_imp: "check_grep rejects a misordered after() and a Move() override without a direct argument"

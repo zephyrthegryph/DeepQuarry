@@ -55,11 +55,16 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_table)
 	var/static/list/cache = list() // ALLOW(cache,sys_static_getter): a mutable static, not a GLOB list, because the declaration tables are built while the globals are still being made
 	return cache
 
-/// instance type -> /datum/type_table (see type_blocks_cache()).
+/// instance type -> /datum/type_table (see type_blocks_cache()). A real global, not a GLOB list, for the same reason: tables are built while the
+/// globals are still being made. Hot readers index it directly (`type_table_store?[T.type]`: null before the first table is built, a list
+/// index instead of a proc call; table_of() runs ~2.6 M times in a Southern Cross boot); everything else asks type_table_cache().
+GLOBAL_REAL_VAR(list/type_table_store)
+
 /proc/type_table_cache()
 	RETURN_TYPE(/list)
-	var/static/list/cache = list() // ALLOW(cache,sys_static_getter): a mutable static, not a GLOB list, because the declaration tables are built while the globals are still being made
-	return cache
+	if(!type_table_store)
+		type_table_store = list()
+	return type_table_store
 
 GLOBAL_VAR(declare_report_capture)
 
@@ -84,7 +89,7 @@ GLOBAL_VAR(declare_report_capture)
 /// The compiled table of D's type, built once per type from its parent's.
 /proc/table_of(datum/D)
 	RETURN_TYPE(/datum/type_table)
-	var/datum/type_table/T = type_table_cache()[D.type]
+	var/datum/type_table/T = type_table_store?[D.type]
 	if(T)
 		return T
 	return table_build(D)
@@ -117,15 +122,19 @@ GLOBAL_VAR(declare_report_capture)
 	return T
 
 /proc/table_build(datum/D)
+	BOOT_PHASE_BEGIN(bp_chain)
 	var/list/chain = list(new /datum/entry/skip_built)
 	D.declared_entries(chain)
 	var/list/blocks = table_split_blocks(chain)
+	BOOT_PHASE_END(bp_chain, "table_build: declared_entries chain", D)
 	var/datum/type_table/T = null
 	for(var/list/block in blocks)
 		var/datum/entry/block/B = block[1]
 		var/datum/type_table/built = type_blocks_cache()[B.block_type]
 		if(!built)
+			BOOT_PHASE_BEGIN(bp_compile)
 			built = table_compile(B.block_type, T, block[2], entry_origin_text(B.file, B.line), B.file)
+			BOOT_PHASE_END(bp_compile, "table_build: table_compile (block)", D)
 			type_blocks_cache()[B.block_type] = built
 		T = built
 	if(!T)
@@ -167,14 +176,18 @@ GLOBAL_VAR(declare_report_capture)
 	T.caps = parent ? parent.caps.Copy() : list()
 	T.errors = parent?.errors ? parent.errors.Copy() : null
 	var/origin_now = origin
+	BOOT_PHASE_BEGIN(bp_apply)
 	for(var/item in entry_flatten(entries))
 		if(istype(item, /datum/entry/line))
 			var/datum/entry/line/L = item
-			if(file)
-				origin_now = entry_origin_text(file, L.line, L.section_name)
+			if(file || L.file)
+				origin_now = entry_origin_text(L.file || file, L.line, L.section_name)
 			continue
 		table_apply(T, item, origin_now, null, null)
+	BOOT_PHASE_END(bp_apply, "table_compile: apply entries", null)
+	BOOT_PHASE_BEGIN(bp_validate)
 	table_validate(T, parent)
+	BOOT_PHASE_END(bp_validate, "table_compile: table_validate", null)
 	T.rel_grant_vars = null
 	T.has_slotted = FALSE
 	T.has_cond_scoped = FALSE
@@ -190,8 +203,12 @@ GLOBAL_VAR(declare_report_capture)
 		table_slot_gates(T) // a gated or reading while_slotted entry is re-applied when what it reads changes (scopes.dm)
 	if(T.has_cond_scoped)
 		table_cond_gates(T) // a condition-scoped entry is re-applied when its conditions or the vars it reads change (cond_scope.dm)
+	BOOT_PHASE_BEGIN(bp_flags)
 	T.hook_flags = table_hook_flags(T)
+	BOOT_PHASE_END(bp_flags, "table_compile: hook flags", null)
+	BOOT_PHASE_BEGIN(bp_accept)
 	acceptance_compile_table(T)
+	BOOT_PHASE_END(bp_accept, "table_compile: acceptance", null)
 	return T
 
 /// ENGINE_HOOK_* bits of a compiled table: what the lifecycle must call on an instance of the type.
@@ -499,7 +516,9 @@ GLOBAL_VAR(declare_report_capture)
 		var/datum/capability/def = C.item
 		if(istype(def))
 			def.validate_in(T, C.origin)
+	BOOT_PHASE_BEGIN(bp_op)
 	op_validate_table(T, parent)
+	BOOT_PHASE_END(bp_op, "table_validate: op_validate_table", null)
 	modes_validate_table(T)
 
 /// Table-level checks a capability definition makes of its own params (a construction graph's start and via).

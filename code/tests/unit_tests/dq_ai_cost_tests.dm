@@ -66,7 +66,7 @@
 		model.visible_friendlies = list()
 		model.visible_neutrals = list()
 	GLOB.ai_pack_stage_ms = list()
-	GLOB.ai_pack_profile = TRUE
+	set_global(nameof(GLOB.ai_pack_profile), TRUE)
 	var/transition_ms = 0
 	started = TICK_USAGE
 	for(var/datum/ai_pack/P as anything in packs)
@@ -86,7 +86,7 @@
 			new_los += P.los_checks - los_before
 			new_passes++
 	var/new_ms = TICK_USAGE_TO_MS(started)
-	GLOB.ai_pack_profile = FALSE
+	set_global(nameof(GLOB.ai_pack_profile), FALSE)
 	var/stages = ""
 	for(var/stage in GLOB.ai_pack_stage_ms)
 		stages += " [stage]=[round(GLOB.ai_pack_stage_ms[stage], 0.01)]"

@@ -1,0 +1,184 @@
+/mob/living/carbon/human/gib()
+	set_transforming(1) //Tells the gib system to NOT SEND MESSAGES FOR EVERYTHING when we gib.
+	// Organs and limbs the gib deletes go as one batched destroy (batch.dm).
+	dq_destroy_collect_begin()
+
+	//Drop the NIF, they're expensive, why not recover them?
+	release_vore_contents(silent = TRUE)
+	if(nif)
+		var/obj/item/nif/deadnif = nif //Unimplant removes the reference on the mob
+		if(!deadnif.gib_nodrop)
+			deadnif.unimplant(src)
+			deadnif.forceMove(drop_location())
+			deadnif.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)), rand(1,3), round(30/deadnif.w_class))
+			deadnif.wear(10) //Presumably it's gone through some shit if they got gibbed?
+
+	if(vr_holder())
+		exit_vr()
+		// Delete the link, because this mob won't be around much longer
+		link_break(src, LK_VR_HOLDER)
+
+	var/mob/living/carbon/human/vr_avatar = vr_link()
+	if(vr_avatar)
+		vr_avatar.exit_vr()
+		link_break(src, LK_VR_LINK)
+
+	// The organs, limbs and gibs are this body turned into parts: they start at its temperature (deleting it drops its heat, heat.dm).
+	var/body_k = body_temperature()
+	for(var/obj/item/organ/I in internal_organ_list()) // a fresh list: removed() empties the slot
+		I.removed()
+		I.inherit_heat(body_k)
+		if(!QDELETED(I) && isturf(I.loc)) // Some organs qdel themselves or other things when removed
+			I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
+
+	for(var/obj/item/organ/external/E in src.organs.Copy())
+		E.droplimb(0,DROPLIMB_EDGE,1)
+		E.inherit_heat(body_k)
+
+	for(var/obj/item/I in contents_of(src))
+		drop_from_inventory(I)
+		I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)), rand(1,3), round(30/I.w_class))
+
+	..(species.gibbed_anim) // uses the default mob.dmi file for these, so we only need to specify the first argument
+	gibs(loc, dna, null, species.get_flesh_colour(src), species.get_blood_colour(src), body_k)
+	dq_destroy_collect_end()
+
+/mob/living/carbon/human/dust()
+	if(species)
+		..(species.dusted_anim, species.remains_type)
+	else
+		..()
+
+/mob/living/carbon/human/ash()
+	if(species)
+		..(species.dusted_anim)
+	else
+		..()
+
+/// Species with their own ending (diona nymph split, shadekin retreat) take over here.
+/mob/living/carbon/human/replace_death(gibbed)
+	return species.handle_death(src)
+
+/mob/living/carbon/human/get_death_message(gibbed)
+	return species.get_death_message(src)
+
+/mob/living/carbon/human/death_sound_volume()
+	return species.death_volume
+
+/mob/living/carbon/human/on_death(gibbed)
+	. = ..()
+	// The defib window starts running down on the body clock now (audit D10).
+	var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
+	if(istype(brain))
+		brain.sync_defib_window()
+	flag_hud_update(HEALTH_HUD)
+	flag_hud_update(STATUS_HUD)
+	flag_hud_update(LIFE_HUD)
+
+	animate_tail_stop()
+	stop_flying()
+
+	//Handle snowflake ling stuff.
+	var/datum/changeling/comp = is_changeling(src)
+	if(comp)
+		// If the ling is capable of revival, don't allow them to see deadchat.
+		if(comp.chem_charges >= CHANGELING_STASIS_COST)
+			if(comp.max_geneticpoints >= 0) // Absorbed lings don't count, as they can't revive.
+				STATE_SET(src, mob_misc, forbid_seeing_deadchat, TRUE)
+
+	//Handle brain slugs.
+	var/obj/item/organ/external/Hd = get_organ(BP_HEAD)
+	var/mob/living/simple_mob/animal/borer/B
+
+	if(Hd)
+		for(var/I in Hd.implants)
+			if(istype(I,/mob/living/simple_mob/animal/borer))
+				B = I
+	if(B)
+		if(!B.key && key && B.controlling)
+			move_player(src, B, "host [src] died under borer control")
+			B.set_controlling(0)
+		if(B.host_brain.mind)
+			move_player_mind(B.host_brain.mind, src, "returned to own dead body from borer [B]")
+			B.host_brain.name = "host brain"
+			B.host_brain.set_real_name("host brain")
+
+		revoke(src, granted_verb(/mob/living/carbon/proc/release_control), B)
+
+	// Handle vorny
+	if(isbelly(loc))
+		//Were they digesting and we have a mind you can update?
+		//Technically allows metagaming by allowing buddies to turn on digestion for like 2 seconds
+		//  to finish off critically wounded friends to avoid resleeving sickness, but like
+		//  *kill those people* ok?
+		var/obj/belly/in_belly = loc
+		if(in_belly.digest_mode == DM_DIGEST || in_belly.digest_mode == DM_SELECT)
+			mind?.vore_death = TRUE
+	soulcatcher_on_mob_death()
+	if(istype(loc, /obj/item/clothing/shoes))
+		mind?.vore_death = TRUE
+
+	// Let them know we died!
+	to_chat(src, span_notice("You're dead! If you don't intend to continue playing this round as this character, please use the <b>Quit This Round</b> verb in the OOC tab to free your job slot. Otherwise, you can use the <b>Notify Transcore</b> verb to let medical know you need resleeving, or <b>Find Auto Resleever</b> verb to be taken to an auto resleever, which you can click on to be resleeved automatically after a time."))
+
+	if(mind)
+		var/area/A = get_area(src)
+		if(!(A?.flag_check(AREA_BLOCK_SUIT_SENSORS)) && isbelly(loc))
+			if(!isbelly(loc) || !vore_prefs.vore_death_privacy)
+				for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_MOBS))
+					if(O.client?.prefs?.read_preference(/datum/preference/toggle/show_dsay))
+						to_chat(O, span_deadsay(span_bold("[src]") + " has died in " + span_bold(strip_improper("[A]")) + ". [ghost_follow_link(src, O)] "))
+
+	SSmobs.report_death(src)
+
+	var/obj/item/rig/worn_rig = wearing_rig()
+	if(worn_rig)
+		worn_rig.notify_ai(span_danger("Warning: user death event. Mobility control passed to integrated intelligence system."))
+
+	// If the body is in VR, move the mind back to the real world
+	if(vr_holder())
+		STATE_SET(src, vr_state, died_in_vr, TRUE) //so avatar.dm can delete bodies
+		src.exit_vr()
+		link_break(src, LK_VR_HOLDER)
+		for(var/obj/item/W in contents_of(src))
+			src.drop_from_inventory(W)
+
+
+	// If our mind is in VR, bring it back to the real world so it can die with its body
+	var/mob/living/carbon/human/vr_avatar = vr_link()
+	if(vr_avatar)
+		vr_avatar.exit_vr()
+		link_break(src, LK_VR_LINK)
+		to_chat(src, span_danger("Everything abruptly stops."))
+
+/mob/living/carbon/human/proc/ChangeToHusk()
+	if(has_mutation(HUSK))	return
+
+	if(looks.facial_style)
+		looks.set_facial_style("Shaved")//we only change the icon_state of the hair datum, so it doesn't mess up their UI/UE
+	if(looks.hair_style)
+		looks.set_hair_style("Bald")
+
+	add_mutation(HUSK)
+	set_status_flags(status_flags | DISFIGURED) //makes them unknown without fucking up other stuff like admintools
+	remove_blood(560)
+	return
+
+/mob/living/carbon/human/proc/Drain()
+	ChangeToHusk()
+	add_mutation(HUSK)
+	return
+
+/mob/living/carbon/human/proc/ChangeToSkeleton()
+	if(src.has_mutation(SKELETON))	return
+
+	if(looks.facial_style)
+		looks.set_facial_style("Shaved")
+	if(looks.hair_style)
+		looks.set_hair_style("Bald")
+
+	add_mutation(SKELETON)
+	set_status_flags(status_flags | DISFIGURED)
+	return
+
+

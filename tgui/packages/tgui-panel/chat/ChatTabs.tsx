@@ -15,7 +15,7 @@ type UnreadCountWidgetProps = {
 
 function UnreadCountWidget(props: UnreadCountWidgetProps) {
   const { value } = props;
-  return <Box className="UnreadCount">{Math.min(value, 99)}</Box>;
+  return <Box className="UnreadCount">{value > 99 ? '99+' : value}</Box>;
 }
 
 export function ChatTabs(props) {
@@ -47,8 +47,9 @@ export function ChatTabs(props) {
       </Stack.Item>
       <Stack.Item ml={1}>
         <Button
-          color="transparent"
           icon="plus"
+          tooltip="Add a chat tab"
+          tooltipPosition="bottom"
           onClick={() => {
             addChatPage();
             setSettingsVisible(true);

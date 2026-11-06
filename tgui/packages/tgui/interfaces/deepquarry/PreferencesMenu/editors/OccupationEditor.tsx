@@ -354,7 +354,7 @@ const JobRow = ({
           {blockReason}
         </Box>
       )}
-      {!blockReason && job.whitelist_only && (
+      {!blockReason && !!job.whitelist_only && (
         <Box
           inline
           ml={0.5}

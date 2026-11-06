@@ -2,9 +2,8 @@
 use std::{io,sync::Arc};
 use crate::{lint::{Meta,Policy,RuleMeta,ScanKind},tree::Select};
 #[cfg(feature="native-policy")]use crate::{captured_generator_budget::Budget,captured_reactive_reads::Failure,key_policy_control::{self as kc,Control},ui_actions_normalizer::{Normaliser,DispatcherControl,normaliser_from_using}};
-pub const DISPATCHER:&str="code/datums/capabilities/ui_actions.dm";
+pub const DISPATCHER:&str="code/library/capabilities/ui_actions.dm";
 pub const INTERFACES:&str="tgui/packages/tgui/interfaces";
-pub(crate) const BASELINE:&str="tools/ci/ui_actions_baseline.txt";
 pub(crate) const R_UNSENT:&str="ui_unsent_param";
 pub(crate) const R_UNVALIDATED:&str="ui_unvalidated_param";
 pub(crate) const R_PROBLEM:&str="problem";
@@ -24,11 +23,7 @@ pub(crate) static META: Meta = Meta {
         hidden: false,
     },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &["ui_actions_lint C1/C2 baseline (design review C1, C2); shrink-only, target 0"],
-        banned: &[R_PROBLEM],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta {
             name: R_UNSENT,
@@ -40,7 +35,7 @@ pub(crate) static META: Meta = Meta {
         },
         RuleMeta {
             name: R_PROBLEM,
-            hint: "make the act() match an act_ proc of the interface's host (dispatcher rules: code/datums/capabilities/ui_actions.dm)",
+            hint: "make the act() match an act_ proc of the interface's host (dispatcher rules: code/library/capabilities/ui_actions.dm)",
         },
     ],
     allow: crate::allow_registry_fields::ui_actions::ALLOW_0,

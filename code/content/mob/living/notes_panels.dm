@@ -1,0 +1,137 @@
+// Private Notes / OOC Notes — structured TGUI panels via dedicated panel datums.
+// Owner edits gated to user==host; OOC view is open to anyone.
+
+/// Open panels: host key -> the panel's ref_token (a deleted panel stops resolving).
+GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
+
+// ---- OOC Notes ------------------------------------------------------------
+
+/datum/ooc_notes_panel
+	var/mob/living/host
+
+/datum/ooc_notes_panel/New(mob/living/host_mob)
+	rel_set(src, nameof(host), host_mob)
+
+/// Phase 2: leaves the per-host panel index.
+/datum/ooc_notes_panel/lifecycle_dematerialize()
+	. = ..()
+	if(host)
+		GLOB.dq_ooc_notes_panels -= ref_token(host)
+
+CAPABILITIES(/datum/ooc_notes_panel)
+	ref_one(nameof(host), /mob/living)
+	interface("OocNotes", state = nameof(GLOB.tgui_default_state))
+	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
+	op("save", ui_act("save"), then(PROC_REF(ui_act_save)))
+	op("toggle_style", ui_act("toggle_style"), then(PROC_REF(ui_act_toggle_style)))
+	op("edit_notes", ui_act("edit_notes"), then(PROC_REF(ui_act_edit_notes)))
+	op("edit_favs", ui_act("edit_favs"), then(PROC_REF(ui_act_edit_favs)))
+	op("edit_likes", ui_act("edit_likes"), then(PROC_REF(ui_act_edit_likes)))
+	op("edit_maybes", ui_act("edit_maybes"), then(PROC_REF(ui_act_edit_maybes)))
+	op("edit_dislikes", ui_act("edit_dislikes"), then(PROC_REF(ui_act_edit_dislikes)))
+
+/datum/ooc_notes_panel/ui_prepare(mob/user, datum/tgui/ui)
+	if(!host)
+		return FALSE
+	return TRUE
+
+/datum/ooc_notes_panel/ui_title(mob/user)
+	return "OOC Notes: [host.name]"
+
+/// /datum/ooc_notes_panel's window data.
+/datum/ooc_notes_panel/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	var/list/data = list()
+	if(!host)
+		return data
+	data["owner"] = host.name
+	data["is_owner"] = (user == host)
+	data["ooc_notes"] = html_decode(host.identity().ooc_notes || "")
+	data["ooc_likes"] = html_decode(dq_sorted_note_lines(host.identity().ooc_notes_likes) || "")
+	data["ooc_dislikes"] = html_decode(dq_sorted_note_lines(host.identity().ooc_notes_dislikes) || "")
+	data["ooc_favs"] = html_decode(dq_sorted_note_lines(host.identity().ooc_notes_favs) || "")
+	data["ooc_maybes"] = html_decode(dq_sorted_note_lines(host.identity().ooc_notes_maybes) || "")
+	data["ooc_style"] = !!host.identity().ooc_notes_style
+	data["markers"] = GLOB.speech_toppings // the chat's emphasis markers, applied as the say preview applies them
+	return data
+
+/datum/ooc_notes_panel/proc/ui_gate(datum/act/op/A)
+	if(!host)
+		return FALSE
+	return TRUE
+
+/datum/ooc_notes_panel/proc/ui_act_print(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	host.print_ooc_notes_chat(user)
+	return TRUE
+
+/datum/ooc_notes_panel/proc/ui_act_save(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
+		host.save_ooc_panel(host)
+	return TRUE
+
+/datum/ooc_notes_panel/proc/ui_act_toggle_style(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
+		host.set_metainfo_ooc_style(host)
+	return TRUE
+
+/datum/ooc_notes_panel/proc/ui_act_edit_notes(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
+		host.set_metainfo_panel(host)
+	return TRUE
+
+/datum/ooc_notes_panel/proc/ui_act_edit_favs(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
+		host.set_metainfo_favs(host)
+	return TRUE
+
+/datum/ooc_notes_panel/proc/ui_act_edit_likes(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
+		host.set_metainfo_likes(host)
+	return TRUE
+
+/datum/ooc_notes_panel/proc/ui_act_edit_maybes(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
+		host.set_metainfo_maybes(host)
+	return TRUE
+
+/datum/ooc_notes_panel/proc/ui_act_edit_dislikes(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
+		host.set_metainfo_dislikes(host)
+	return TRUE
+
+/// custom_state: the state the window is held in (the character setup's inspection opens it from the lobby, where the default state, which
+/// wants the viewer near the mob, always closes it). always: open even without notes, so the owner sees the empty window others would.
+/mob/living/proc/ooc_notes_window(mob/user, datum/tgui_state/custom_state = null, always = FALSE)
+	if(!identity().ooc_notes && !always)
+		return
+	var/key = ref_token(src)
+	var/datum/ooc_notes_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_ooc_notes_panels, key))
+	if(!panel)
+		panel = new(src)
+		GLOB.dq_ooc_notes_panels[key] = ref_token(panel)
+	panel.tgui_interact(user, custom_state = custom_state)
+

@@ -2,7 +2,7 @@
 //! (doc/rewrite/api_mapping.tsv, row om_after and step A1).
 //!
 //! `after(owner, delay, handler, key = null, clock = CLOCK_OWN, list/with = null)` is on master
-//! (code/datums/capabilities/timed.dm) and both old procs are one-line wrappers over the same `rx_after()`
+//! (code/library/capabilities/timed.dm) and both old procs are one-line wrappers over the same `rx_after()`
 //! with the same defaults, so the conversion changes the spelling and nothing else:
 //!
 //! ```text

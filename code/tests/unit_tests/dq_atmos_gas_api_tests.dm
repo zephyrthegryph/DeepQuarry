@@ -1,5 +1,5 @@
-// The gas domain's machine API (code/domains/atmos/gas.dm): release, one-read samples, the room heater, body-gas heat exchange and the named
-// observation fields.
+// The gas domain's machine API (code/domains/atmos/gas.dm): release, one-read samples, the room heater, body-gas heat exchange and
+// batched reads.
 
 /proc/gas_api_test_mix(volume, o2_moles, temperature = T20C)
 	var/datum/gas_mixture/M = new
@@ -46,6 +46,28 @@
 	TEST_ASSERT_EQUAL(gas_sample(null).pressure, 0, "no mixture reads empty")
 	qdel(M)
 
+/// read_gas_levels() is one call that returns what the single getters return, mixture by mixture, with the gases in the order asked and a null as zeroes.
+/datum/unit_test/dq_gas_api/levels_read_in_one_call
+/datum/unit_test/dq_gas_api/levels_read_in_one_call/Run()
+	var/datum/gas_mixture/A = gas_api_test_mix(100, 10)
+	A.adjust_gas(/datum/gas/nitrogen, 30)
+	var/datum/gas_mixture/B = gas_api_test_mix(250, 4)
+	var/list/gases = list(GAS_N2, GAS_O2)
+	var/stride = GAS_LEVELS_HEADER + length(gases)
+	var/list/rows = read_gas_levels(list(A, null, B), gases)
+	TEST_ASSERT_EQUAL(length(rows), 3 * stride, "one row per mixture, nulls included")
+	TEST_ASSERT(abs(GAS_LEVELS_AT(rows, 1, stride, GAS_LEVEL_PRESSURE) - A.return_pressure()) < 0.01, "pressure of the first")
+	TEST_ASSERT(abs(GAS_LEVELS_AT(rows, 1, stride, GAS_LEVEL_TEMPERATURE) - A.return_temperature()) < 0.01, "temperature of the first")
+	TEST_ASSERT(abs(GAS_LEVELS_AT(rows, 1, stride, GAS_LEVEL_MOLES) - A.total_moles()) < 0.001, "total moles of the first")
+	TEST_ASSERT(abs(GAS_LEVELS_AT(rows, 1, stride, GAS_LEVEL_GAS(1)) - 30) < 0.001, "the first gas asked is nitrogen")
+	TEST_ASSERT(abs(GAS_LEVELS_AT(rows, 1, stride, GAS_LEVEL_GAS(2)) - 10) < 0.001, "the second is oxygen")
+	TEST_ASSERT_EQUAL(GAS_LEVELS_AT(rows, 2, stride, GAS_LEVEL_PRESSURE), 0, "a null mixture reads zero")
+	TEST_ASSERT(abs(GAS_LEVELS_AT(rows, 3, stride, GAS_LEVEL_MOLES) - B.total_moles()) < 0.001, "the third mixture")
+	var/list/pressures = gas_pressures(list(B, A))
+	TEST_ASSERT(abs(pressures[1] - B.return_pressure()) < 0.01 && abs(pressures[2] - A.return_pressure()) < 0.01, "gas_pressures() keeps the order asked")
+	qdel(A)
+	qdel(B)
+
 /// A body and a gas meet in one conserved operation (heat_equalize(), the heat domain), and the gas's own Rust revision moves with no mark from
 /// the caller or the heat procs (a gas watch reads that change tracking, dq_gas_watch_hears_heat_writes).
 /datum/unit_test/dq_gas_api/body_heat_exchange
@@ -65,12 +87,3 @@
 	TEST_ASSERT(N.air.revision() != before, "the gas's revision moves")
 	qdel(body)
 	qdel(N)
-
-/datum/unit_test/dq_gas_api/observation_fields
-/datum/unit_test/dq_gas_api/observation_fields/Run()
-	var/list/record = list(7, 42, 3, 9, 101.3, 293.15, 2500, 21, 0.5, 0, 0, 0, 0, 0, 0, 103)
-	TEST_ASSERT_EQUAL(GAS_OBSERVED(record, 2, GAS_OBS_MIXTURE), 42, "the mixture id")
-	TEST_ASSERT_EQUAL(GAS_OBSERVED(record, 2, GAS_OBS_PRESSURE), 101.3, "pressure")
-	TEST_ASSERT_EQUAL(GAS_OBSERVED(record, 2, GAS_OBS_TEMPERATURE), 293.15, "temperature")
-	TEST_ASSERT_EQUAL(GAS_OBSERVED(record, 2, GAS_OBS_OXYGEN), 21, "oxygen")
-	TEST_ASSERT_EQUAL(GAS_OBSERVED(record, 2, GAS_OBS_TOTAL_MOLES), 103, "total moles")

@@ -24,7 +24,6 @@
 
 	key_type = /obj/item/key/janicart
 
-	catalogue_data = list(/datum/category_item/catalogue/technology/janicart)
 
 /obj/item/key/janicart
 	name = "key"
@@ -38,6 +37,7 @@
 //-------------------------------------------
 
 CAPABILITIES(/obj/vehicle/train/engine/janicart)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/janicart)))
 	setup(PROC_REF(stop_initial_janicart))
 	rolls(nameof(callme), PROC_REF(roll_callme)) // one cart in five gets a nickname
 	reagents(600)

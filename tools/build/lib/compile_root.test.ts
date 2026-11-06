@@ -1,8 +1,8 @@
-import { afterEach, expect, test } from 'bun:test';
+import { afterEach, beforeEach, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { copyBackOutputs, copyFileRetrying, releaseCompileRoot, removeLink, rootKey, rootKeyFor, sharedRootEnabled, syncCompileRoot, variantKey, withSharedCompileRoot } from './compile_root';
+import { copyBackOutputs, copyFileRetrying, releaseCompileRoot, removeLink, rootKey, sharedRootEnabled, syncCompileRoot, variantKey, withSharedCompileRoot } from './compile_root';
 
 const made: string[] = [];
 function temp(name: string): string {
@@ -18,7 +18,16 @@ function worktree(name: string, files: Record<string, string>): string {
   }
   return dir;
 }
+// The machine-slot layer reads process.env, not the env a caller passes, so a test that wants no slot wait must switch slots off
+// for the process; otherwise it queues behind another lane's real dmb_root_<stem> slot and times out.
+let savedSlots: string | undefined;
+beforeEach(() => {
+  savedSlots = process.env.DQ_SLOTS;
+  process.env.DQ_SLOTS = '0';
+});
 afterEach(() => {
+  if (savedSlots === undefined) delete process.env.DQ_SLOTS;
+  else process.env.DQ_SLOTS = savedSlots;
   // Test cleanup only: the roots hold no link by then (each test releases them), and these are temp directories.
   for (const dir of made.splice(0)) {
     try { for (const entry of fs.readdirSync(dir)) { const p = path.join(dir, entry); if (fs.lstatSync(p).isSymbolicLink()) removeLink(p); } } catch { /* ignore */ }
@@ -33,21 +42,6 @@ test('variant keys are the manifest stem and the feature is on by default', () =
   expect(rootKey('E:/x/deepquarry.dme')).toBe('deepquarry');
   expect(rootKey('E:/x/deepquarry.test.dme')).toBe('deepquarry');
   expect(rootKey('E:/x/deepquarry.bench.dme')).toBe('deepquarry');
-  // The merge worktree has its own root (its gates patch from the previous batch); every other worktree shares one.
-  expect(rootKeyFor('E:/projects/dq-wt/merge-base/deepquarry.test.dme', 'E:/projects/dq-wt/merge-base', {})).toBe('deepquarry-merge');
-  // The batch train's worktree (tools/dq_train.sh) shares the merge root: both only ever hold master plus a batch.
-  expect(rootKeyFor('E:/projects/dq-wt/train-base/deepquarry.test.dme', 'E:/projects/dq-wt/train-base', {})).toBe('deepquarry-merge');
-  expect(rootKeyFor('E:/projects/dq-wt/pool-2/deepquarry.dme', 'E:/projects/dq-wt/pool-2', {})).toBe('deepquarry');
-  // The train's precheck workers and its parallel-bisect worktree each have a root of their own.
-  expect(rootKeyFor('E:/projects/dq-wt/train-pre1/deepquarry.test.dme', 'E:/projects/dq-wt/train-pre1', {})).toBe('deepquarry-pre1');
-  expect(rootKeyFor('E:/projects/dq-wt/train-pre2/deepquarry.test.dme', 'E:/projects/dq-wt/train-pre2/', {})).toBe('deepquarry-pre2');
-  expect(rootKeyFor('E:/projects/dq-wt/train-bisect/deepquarry.test.dme', 'E:/projects/dq-wt/train-bisect', {})).toBe('deepquarry-bisect');
-  expect(rootKeyFor('E:/projects/dq-wt/train-prefix/deepquarry.dme', 'E:/projects/dq-wt/train-prefix', {})).toBe('deepquarry');
-  // The train's gate may borrow the warm root of a precheck worker (DQ_TRAIN_ROOT_KEY); nobody else does, and only known train roots.
-  expect(rootKeyFor('E:/projects/dq-wt/train-base/deepquarry.test.dme', 'E:/projects/dq-wt/train-base', { DQ_TRAIN_ROOT_KEY: 'pre2' })).toBe('deepquarry-pre2');
-  expect(rootKeyFor('E:/projects/dq-wt/train-base/deepquarry.test.dme', 'E:/projects/dq-wt/train-base', { DQ_TRAIN_ROOT_KEY: '../x' })).toBe('deepquarry-merge');
-  expect(rootKeyFor('E:/projects/dq-wt/train-bisect/deepquarry.test.dme', 'E:/projects/dq-wt/train-bisect', { DQ_TRAIN_ROOT_KEY: 'pre1' })).toBe('deepquarry-bisect');
-  expect(rootKeyFor('E:/projects/dq-wt/merge-base/deepquarry.test.dme', 'E:/projects/dq-wt/merge-base', { DQ_TRAIN_ROOT_KEY: 'pre1' })).toBe('deepquarry-merge');
   expect(sharedRootEnabled({})).toBe(true);
   expect(sharedRootEnabled({ DQ_SHARED_ROOT: '0' })).toBe(false);
 });

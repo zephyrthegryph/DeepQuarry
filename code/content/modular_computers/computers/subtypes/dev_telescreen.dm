@@ -16,7 +16,6 @@
 	steel_sheet_cost = 10
 	light_strength = 4
 	max_integrity = 300
-	integrity_failure = 0.5 // Stops working below 150 integrity.
 	w_class = ITEMSIZE_HUGE
 
 /// The crowbar asks where to mount a loose telescreen; a mounted one comes off at once.
@@ -54,6 +53,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/modular_computer/telescreen)
+	configure(atom_rules(integrity_failure = 0.5))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0),
 		asks(/datum/prompt/choice, fields = list("question" = "Where do you want to place \the [src]?", "title" = "Offset selection", "choices" = list("North", "South", "West", "East", "This tile", "Cancel")), step = "offset", when = PROC_REF(telescreen_loose)),
 		then(PROC_REF(crowbar_used)))

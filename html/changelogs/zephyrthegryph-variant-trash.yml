@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The 70 trash item types are rows of one variant table; loot tables, food, designs, supply packs, mail and saves take a variant reference where they took a trash path"

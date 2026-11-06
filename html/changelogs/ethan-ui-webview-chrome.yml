@@ -1,0 +1,6 @@
+author: "Ethan"
+delete-after: true
+changes:
+  - rscadd: "The stat panel is rebuilt in the game UI style, with a verb search box."
+  - qol: "Chat tabs, audio and ping match the rest of the UI; vchatdark chat text is readable."
+  - rscadd: "Native menu bar and link strip move into a Menu page in the stat panel, with a fullscreen toggle."

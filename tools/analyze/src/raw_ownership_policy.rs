@@ -37,11 +37,6 @@ re_m!(
 );
 
 re_m!(
-    OM_FIELD_DECL,
-    r"^OM_FIELD(?:(?:_TYPED|_VIEW)\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,|\(\s*(/[\w/]+)\s*,())\s*(\w+)\s*,"
-);
-
-re_m!(
     ABS_MEMBER,
     r"^(/[\w/]+?)/(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b"
 );
@@ -195,19 +190,6 @@ pub fn try_visit_file_events_funded<C:crate::key_policy_control::Control>(rel:&s
             if let Some(m) = ABS_MEMBER.captures(line) {
                 crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_add(m.s(2).len())?.checked_add(m.s(3).len())?.checked_mul(32)?.checked_add(1024))?;
                 emit(member_ev(m.s(1), m.s(2), m.s(3)))?;
-                current = None;
-                continue;
-            }
-            if let Some(m) = OM_FIELD_DECL.captures(line) {
-                // OM_FIELD(T, F, ...) / OM_FIELD_TYPED|_VIEW(T, VT, F, ...) declare T/var/F
-                crate::key_policy_control::temporary(c,0,||m.whole().len().checked_mul(32)?.checked_add(1024))?;
-                let vt = if m.matched(2) && !m.s(2).is_empty() {
-                    format!("{}/", m.s(2).trim_matches('/'))
-                } else {
-                    String::new()
-                };
-                let owner = if !m.s(1).is_empty() { m.s(1) } else { m.s(3) };
-                emit(member_ev(owner, &vt, m.s(5)))?;
                 current = None;
                 continue;
             }

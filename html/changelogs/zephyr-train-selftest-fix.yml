@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "check_ratchets no longer prints the engine's 'All ratchet lints passed' above a failing tool self-test, and the disk-budget self-test follows the new snapshot file list"

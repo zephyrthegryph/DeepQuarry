@@ -1,8 +1,8 @@
 # Unified operations, observations, and work
 
-**Status:** Design proposal, 2026-09-29. The DM examples describe an API to evaluate; they are not implemented code. This document consolidates the proposed changes to the DX, object-model, Life, and kernel designs. It does not supersede the existing implementation documents until the contracts here are accepted and built.
+**Status:** Design proposal, 2026-09-29. The DM examples describe an API to evaluate; they are not implemented code. This document consolidates the proposed changes to the DX, engine, Life, and kernel designs. It does not supersede the existing implementation documents until the contracts here are accepted and built.
 
-Related repository documents: [rewrite overview](README.md), [object model](object_model.md), [interactions](interactions.md), [containment](containment.md), [damage](damage.md), [body architecture](../body_architecture.md), and [mob Life architecture](../mob_life_architecture.md).
+Related repository documents: [rewrite overview](README.md), [engine](object_model.md), [interactions](interactions.md), [containment](containment.md), [damage](damage.md), [body architecture](../body_architecture.md), and [mob Life architecture](../mob_life_architecture.md).
 
 ## 1. Decisions and boundaries
 

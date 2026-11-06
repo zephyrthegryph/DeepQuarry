@@ -40,7 +40,7 @@ pub const OUT_DIR: &str = "code/engine/_generated";
 
 /// The directories whose files .dme compiles only in a test build (`#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)`
 /// in code/tests/_tests.dm and code/tests/unit_tests/_unit_tests.dm).
-pub use crate::generator_test_scope::{test_only, TEST_GUARD, TEST_ONLY_DIRS};
+pub use crate::generator_test_scope::{test_only, NOT_TEST_ONLY, TEST_GUARD, TEST_ONLY_DIRS};
 
 /// The type a top-level definition line names: `/datum/x` of `/datum/x`, `/datum/x/var/y = 1`, `/datum/x/proc/f()` or `/datum/x/f()`.
 use crate::generator_test_scope::defined_type;
@@ -626,17 +626,17 @@ mod tests {
     #[test]
     fn unit_test_files_are_test_only() {
         assert!(test_only("code/tests/engine/fixtures.dm"));
-        assert!(test_only("code/modules/unit_tests/clothing_tests.dm"));
-        assert!(!test_only("code/game/objects/items.dm"));
+        assert!(test_only("code/tests/unit_tests/clothing_tests.dm"));
+        assert!(!test_only("code/content/items/items.dm"));
+        // the benchmark scenarios sit under code/tests/ but generate as ordinary code
+        assert!(!test_only("code/tests/benchmarks/dx_refresh.dm"));
+        assert!(test_only("code/tests/unit_tests/x.dm"));
     }
 
     #[test]
     fn a_test_only_type_outside_the_guard_is_a_leak() {
         let tree = Tree::from_files(vec![
-            crate::tree::SourceFile::from_text(
-                "code/modules/unit_tests/a.dm",
-                "/datum/probe\n\tvar/x\n/datum/probe/proc/f()\n/obj/shared\n",
-            ),
+            crate::tree::SourceFile::from_text("code/tests/unit_tests/a.dm", "/datum/probe\n\tvar/x\n/datum/probe/proc/f()\n/obj/shared\n"),
             crate::tree::SourceFile::from_text("code/game/b.dm", "/obj/shared\n"),
         ]);
         let types = test_only_types(&tree);

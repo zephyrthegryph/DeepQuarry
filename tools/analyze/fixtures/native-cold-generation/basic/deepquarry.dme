@@ -9,7 +9,6 @@
 #include "code/tests/only.dm"
 /proc/tracked_changed(datum/owner, key)
     return null
-#include "code/engine/_generated/sparse_slots.dm"
 #include "code/engine/_generated/system_accessors.dm"
 #include "code/engine/_generated/stats.dm"
 #include "code/engine/_generated/actions.dm"

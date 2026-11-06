@@ -239,12 +239,47 @@ const STATUS_NOTCONNECTED: u8 = 0;
 const STATUS_NOENERGY: u8 = 1;
 const STATUS_GOOD: u8 = 2;
 
+/// The external status an APC shows DM: no supply (or no network); too little (the region overdrew last step, or what is left of it this
+/// step, `avail - load` before this APC draws, cannot carry this APC's own demand, so its cell covers the area); or good. Without the second
+/// test a region whose supply fell below the sum of its APCs read "good" everywhere while the APCs past the supply ran their cells flat: an
+/// APC that cannot draw falls back on its cell and adds no load, so the region never browns out.
+#[must_use]
+pub fn apc_external_status(active: bool, avail: f64, load: f64, brown: bool, demand: f64) -> u8 {
+    if avail <= 0.0 {
+        STATUS_NOTCONNECTED
+    } else if brown || (active && avail - load < demand) {
+        STATUS_NOENERGY
+    } else {
+        STATUS_GOOD
+    }
+}
+
+/// `CELL_BAY_LOW_PERCENT` (code/defines/engine/capabilities.dm): at or below it the APC's cover lock lets the cell out.
+const CELL_LOW_PERCENT: f64 = 15.0;
+
+/// The charge band DM acts on: 0 empty, 1 low (at or below [`CELL_LOW_PERCENT`]), 2 between, 3 full. These are the only charge
+/// thresholds anything in DM decides on (the cover lock, the channel setter's "has charge", the UI's full/empty); a reader that
+/// shows the number pulls the exact charge from Rust (`/obj/machinery/power/apc/proc/charge_now()`). Reporting each whole percent
+/// instead sent every APC's report in one frame every ten seconds, since every cell charges at the same rate.
+#[must_use]
+pub fn apc_charge_band(charge: f64, capacity: f64) -> u32 {
+    if capacity <= 0.0 || charge <= 0.0 {
+        0
+    } else if charge >= capacity {
+        3
+    } else if charge * 100.0 <= capacity * CELL_LOW_PERCENT {
+        1
+    } else {
+        2
+    }
+}
+
 /// The band key of what an APC shows DM: the three channel settings, the
-/// charging lamp, the alarm, the external status and the whole charge
-/// percent, packed below 2^24 with bit 23 set (0 is "never reported").
+/// charging lamp, the alarm, the external status and the charge band
+/// ([`apc_charge_band`]), packed below 2^24 with bit 23 set (0 is "never reported").
 #[must_use]
 pub fn apc_report_key(apc: &Apc, status: u8) -> u32 {
-    let percent = if apc.capacity > 0.0 { ((apc.charge / apc.capacity) * 100.0).floor().clamp(0.0, 100.0) as u32 } else { 0 };
+    let band = apc_charge_band(apc.charge, apc.capacity);
     let mut key = 1 << 23;
     for (i, &v) in apc.channels.iter().enumerate() {
         key |= u32::from(v & 3) << (2 * i);
@@ -252,7 +287,7 @@ pub fn apc_report_key(apc: &Apc, status: u8) -> u32 {
     key |= u32::from(apc.charging & 3) << 6;
     key |= u32::from(apc.alarm) << 8;
     key |= u32::from(status & 3) << 9;
-    key |= percent << 11;
+    key |= band << 11;
     key
 }
 
@@ -265,11 +300,9 @@ vg_core::law! {
         let demand: [f64; 3] = std::array::from_fn(|i| apc.static_load[i] + apc.oneoff[i]);
         // No network: nothing available, and the load has nowhere to land.
         let mut spare_load = 0.0;
-        // The external status DM shows: no supply (or no network), supply
-        // the region overdraws (last step's brownout), or good.
         let status = match region {
-            Some(r) if r.payload.avail > 0.0 => if r.payload.brown { STATUS_NOENERGY } else { STATUS_GOOD },
-            _ => STATUS_NOTCONNECTED,
+            Some(r) => apc_external_status(apc.active, r.payload.avail, r.payload.load, r.payload.brown, demand.iter().sum()),
+            None => STATUS_NOTCONNECTED,
         };
         let (avail, load) = match region {
             Some(r) => (r.payload.avail, &mut r.payload.load),
@@ -401,15 +434,30 @@ mod tests {
         let key = apc_report_key(&apc, STATUS_GOOD);
         assert_ne!(key, 0, "a key is never the unreported 0");
         apc.charge = 504.0;
-        assert_eq!(apc_report_key(&apc, STATUS_GOOD), key, "a charge inside the same percent is not a crossing");
-        apc.charge = 511.0;
-        assert_ne!(apc_report_key(&apc, STATUS_GOOD), key, "a whole percent crossed is");
+        assert_eq!(apc_report_key(&apc, STATUS_GOOD), key, "a charge inside the same band is not a crossing");
+        apc.charge = 911.0;
+        assert_eq!(apc_report_key(&apc, STATUS_GOOD), key, "nor is a whole percent, or many");
+        apc.charge = 150.0;
+        assert_ne!(apc_report_key(&apc, STATUS_GOOD), key, "the low threshold crossed is");
+        apc.charge = 1000.0;
+        assert_ne!(apc_report_key(&apc, STATUS_GOOD), key, "full is");
+        apc.charge = 0.0;
+        assert_ne!(apc_report_key(&apc, STATUS_GOOD), key, "empty is");
         apc.charge = 500.0;
         apc.channels[2] = setting::OFF;
         assert_ne!(apc_report_key(&apc, STATUS_GOOD), key, "a channel flip is");
         apc.channels[2] = apc_with(1000.0, 500.0).channels[2];
         assert_ne!(apc_report_key(&apc, STATUS_NOENERGY), key, "a status change is");
         assert!(apc_report_key(&apc, STATUS_GOOD) < (1 << 24), "exact as a BYOND f32");
+    }
+
+    #[test]
+    fn the_external_status_shows_a_supply_too_small_for_this_apc() {
+        assert_eq!(apc_external_status(true, 0.0, 0.0, false, 100.0), STATUS_NOTCONNECTED, "no supply");
+        assert_eq!(apc_external_status(true, 1000.0, 0.0, false, 400.0), STATUS_GOOD, "enough left for this APC");
+        assert_eq!(apc_external_status(true, 1000.0, 800.0, false, 400.0), STATUS_NOENERGY, "the APCs before it took the supply: its cell carries it");
+        assert_eq!(apc_external_status(true, 1000.0, 0.0, true, 400.0), STATUS_NOENERGY, "the region overdrew last step");
+        assert_eq!(apc_external_status(false, 1000.0, 1000.0, false, 400.0), STATUS_GOOD, "a switched-off APC draws nothing");
     }
 
     #[test]

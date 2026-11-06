@@ -1,0 +1,3 @@
+# Link the i686 MSVC DLL with rust-lld (much faster than link.exe on a thin-LTO-free relink). See AGENTS.md section 4.
+[target.i686-pc-windows-msvc]
+linker = "rust-lld"

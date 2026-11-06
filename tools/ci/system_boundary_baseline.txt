@@ -1,2 +1,0 @@
-# System boundary ratchet (tools/ci/system_boundary_lint.py). `<rule>:<file>:<owner> <count>`; only shrinks.
-# Regenerate the file with --generate only when the rules change; otherwise --update lowers ceilings.

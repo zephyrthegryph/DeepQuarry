@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Looks: under a taur body the Tail row stays, greyed, showing the tail you had; removing the taur brings that tail back."

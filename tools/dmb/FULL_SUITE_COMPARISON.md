@@ -28,7 +28,7 @@ The other 1,089 types all have fresh final JSON entries in each run. There are n
 
 ## Rust-only failure
 
-`/datum/unit_test/dq_damage_flavour_bands`: expected damage band 2 at 0.45 integrity, received 3 (`code/modules/unit_tests/dq_breakpoint_tests.dm:143`). BYOND passes. This is an assertion divergence requiring investigation; the full-suite result alone does not determine whether it is compiler semantics or accumulated game state.
+`/datum/unit_test/dq_damage_flavour_bands`: expected damage band 2 at 0.45 integrity, received 3 (`code/tests/unit_tests/dq_breakpoint_tests.dm:143`). BYOND passes. This is an assertion divergence requiring investigation; the full-suite result alone does not determine whether it is compiler semantics or accumulated game state.
 
 A separate focused rerun of this test using the same two DMBs passes with both compilers: BYOND run `a6272e8b992d4d1bad22df675b916492`, Rust run `046a1f3f31cc40798ab0bee0733fbec4`. The focused test records 46 runtime errors with BYOND output and 10 with Rust output, so neither focused pass is runtime-clean. The full-suite divergence remains real but is not independently reproduced in isolation; accumulated state, test order, and timing need investigation. These focused runs do not replace or alter the full-suite totals above.
 
@@ -38,10 +38,10 @@ All thirteen BYOND-only failure messages contain game runtime errors. Their asse
 
 - `/datum/unit_test/dq_constraint_declarations_compile`: Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds.
 - `/datum/unit_test/dq_covert_market_agent_integration`: Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them.
-- `/datum/unit_test/dq_destroy_transaction_phase_timing_recorded`: Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,399: list index out of bounds.
+- `/datum/unit_test/dq_destroy_transaction_phase_timing_recorded`: Runtime in code/tests/unit_tests/dq_destroy_transaction_tests.dm,399: list index out of bounds.
 - `/datum/unit_test/dq_expanded_department_outcomes`: Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds.
 - `/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob`: Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds.
-- `/datum/unit_test/dq_lifecycle_sandbox`: Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,91: Cannot read null._active_timers.
+- `/datum/unit_test/dq_lifecycle_sandbox`: Runtime in code/tests/unit_tests/dq_lifecycle_tests.dm,91: Cannot read null._active_timers.
 - `/datum/unit_test/dq_power_idle_apc_and_smes_sleep`: Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds.
 - `/datum/unit_test/dq_radiation_insulated_movable_blocks`: Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds.
 - `/datum/unit_test/dq_real_canister_release_spreads_via_master_loop`: Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds.

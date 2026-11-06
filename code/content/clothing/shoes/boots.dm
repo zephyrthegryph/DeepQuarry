@@ -51,9 +51,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/cowboy)
 	name = "jackboots"
 	desc = "Standard-issue Security combat boots for combat scenarios or combat situations. All combat, all the time."
 	icon_state = "jackboots"
-	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"))
 	configure(item_protection(siemens = 0.7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
@@ -114,9 +114,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh)
 	name = "workboots"
 	desc = "A pair of steel-toed work boots designed for use in industrial settings. Safety first."
 	icon_state = "workboots"
-	armor_spec = "melee=40;energy=15;bomb=20;rad=20"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/workboots)
+	configure(atom_rules(armor_spec = "melee=40;energy=15;bomb=20;rad=20"))
 	configure(item_protection(siemens = 0.7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
@@ -143,7 +143,6 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/winter)
 	name = "security winter boots"
 	desc = "A pair of winter boots. These ones are lined with grey fur, and coloured an angry red."
 	icon_state = "winterboots_sec"
-	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 /obj/item/clothing/shoes/boots/winter/science
 	name = "science winter boots"
@@ -189,7 +188,6 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/winter)
 	name = "explorer winter boots" //CHOMP keep explo
 	desc = "Steel-toed winter boots for mining or exploration in hazardous environments. Very good at keeping toes warm and uncrushed."
 	icon_state = "explorer"
-	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 /obj/item/clothing/shoes/boots/winter/christmasred
 	name = "red christmas boots"
@@ -215,36 +213,36 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/winter/climbing)
 	name = "tactical boots"
 	desc = "Tan boots with extra padding and armor."
 	icon_state = "jungle"
-	armor_spec = "melee=40;bullet=30;laser=40;energy=25;bomb=50"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/tactical)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=40;energy=25;bomb=50"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/shoes/boots/duty
 	name = "duty boots"
 	desc = "A pair of steel-toed synthleather boots with a mirror shine."
 	icon_state = "duty"
-	armor_spec = "melee=40;energy=15;bomb=20;rad=20"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/duty)
+	configure(atom_rules(armor_spec = "melee=40;energy=15;bomb=20;rad=20"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/shoes/boots/jungle
 	name = "jungle boots"
 	desc = "A pair of durable brown boots. Waterproofed for use planetside."
 	icon_state = "jungle"
-	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20;bio=10"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/jungle)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20;bio=10"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/shoes/boots/swat
 	name = "\improper SWAT shoes"
 	desc = "When you want to turn up the heat."
 	icon_state = "swat"
-	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/swat)
+	configure(atom_rules(armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"))
 	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(siemens = 0.6))
 
@@ -252,9 +250,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/swat)
 	name = "combat boots"
 	desc = "When you REALLY want to turn up the heat"
 	icon_state = "swat"
-	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/combat)
+	configure(atom_rules(armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"))
 	configure(item_worn(flags = NOSLIP))
 	configure(item_combat(force = 5))
 	configure(item_protection(siemens = 0.6, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
@@ -265,9 +263,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/combat)
 	name = "combat boots"
 	desc = "Standard issue combat boots for combat scenarios or combat situations. All combat, all the time.  It can hold a Strategical knife."
 	icon_state = "jackboots"
-	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/marine)
+	configure(atom_rules(armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"))
 	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/shoes/boots/singer
@@ -295,3 +293,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless)
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/workboots/toeless)
 	fits_anyone()
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/winter/security)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"))
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/winter/explorer)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"))

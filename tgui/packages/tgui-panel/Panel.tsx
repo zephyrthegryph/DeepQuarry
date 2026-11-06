@@ -36,7 +36,7 @@ export function Panel(props) {
       <Stack fill vertical>
         <Stack.Item>
           <Section fitted>
-            <Stack mr={1} align="center">
+            <Stack mx={0.5} my={0.25} align="center">
               <Stack.Item grow>
                 <ChatTabs />
               </Stack.Item>
@@ -45,7 +45,6 @@ export function Panel(props) {
               </Stack.Item>
               <Stack.Item>
                 <Button
-                  color="grey"
                   selected={audioVisible}
                   icon="music"
                   tooltip="Music player"

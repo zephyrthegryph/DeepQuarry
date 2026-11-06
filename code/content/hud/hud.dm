@@ -1,0 +1,663 @@
+#define MAX_AMMO_HUD_POSSIBLE 4 // Cap the amount of HUDs at 4.
+/*
+	The global hud:
+	Uses the same visual objects for all players.
+*/
+GLOBAL_DATUM_INIT(global_hud, /datum/global_hud, new)
+
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/global_hud)
+/datum/global_hud
+	var/atom/movable/screen/druggy
+	var/atom/movable/screen/blurry
+	var/atom/movable/screen/whitense
+	var/atom/movable/screen/heavy_whitense
+	var/list/vimpaired
+	var/list/darkMask
+	var/atom/movable/screen/centermarker
+	var/atom/movable/screen/darksight
+	var/atom/movable/screen/nvg
+	var/atom/movable/screen/thermal
+	var/atom/movable/screen/meson
+	var/atom/movable/screen/science
+	var/atom/movable/screen/material
+	var/atom/movable/screen/holomap
+
+CAPABILITIES(/datum/global_hud)
+	owns_one(nameof(blurry), /atom/movable/screen)
+	owns_one(nameof(centermarker), /atom/movable/screen)
+	owns_one(nameof(darksight), /atom/movable/screen)
+	owns_one(nameof(druggy), /atom/movable/screen)
+	owns_one(nameof(heavy_whitense), /atom/movable/screen)
+	owns_one(nameof(holomap), /atom/movable/screen)
+	owns_one(nameof(material), /atom/movable/screen)
+	owns_one(nameof(meson), /atom/movable/screen)
+	owns_one(nameof(nvg), /atom/movable/screen)
+	owns_one(nameof(science), /atom/movable/screen)
+	owns_one(nameof(thermal), /atom/movable/screen)
+	owns_one(nameof(whitense), /atom/movable/screen)
+
+/datum/global_hud/proc/setup_overlay(icon_state)
+	var/atom/movable/screen/screen = new /atom/movable/screen()
+	screen.set_alpha(30) // Adjut this if you want goggle overlays to be thinner or thicker. //
+	screen.screen_loc = "SOUTHWEST to NORTHEAST" // Will tile up to the whole screen, scaling beyond 15x15 if needed.
+	screen.set_icon('icons/obj/hud_tiled_vr.dmi')
+	screen.set_icon_state(icon_state)
+	screen.set_layer(SCREEN_LAYER)
+	screen.set_plane(PLANE_FULLSCREEN)
+	screen.mouse_opacity = 0
+
+	return screen
+
+/atom/movable/screen/global_screen
+	screen_loc = ui_entire_screen
+	plane = PLANE_FULLSCREEN
+	mouse_opacity = 0
+
+/datum/global_hud/New()
+	//420erryday psychedellic colours screen overlay for when you are high
+	rel_set(src, nameof(druggy), new /atom/movable/screen/global_screen())
+	druggy.icon_state = "druggy"
+
+	//that white blurry effect you get when you eyes are damaged
+	rel_set(src, nameof(blurry), new /atom/movable/screen/global_screen())
+	blurry.icon_state = "blurry"
+
+	//static overlay effect for cameras and the like
+	rel_set(src, nameof(whitense), new /atom/movable/screen/global_screen())
+	whitense.icon = 'icons/effects/static.dmi'
+	whitense.icon_state = "1 light"
+
+	//static overlay effect for cameras and the like
+	rel_set(src, nameof(heavy_whitense), new /atom/movable/screen/global_screen())
+	heavy_whitense.icon = 'icons/effects/static.dmi'
+	heavy_whitense.icon_state = "1 heavy"
+
+	//darksight 'hanger' for attached icons
+	rel_set(src, nameof(darksight), new /atom/movable/screen())
+	darksight.icon = null
+	darksight.screen_loc = "1,1"
+	darksight.plane = PLANE_LIGHTING
+
+	//Marks the center of the screen, for things like ventcrawl
+	rel_set(src, nameof(centermarker), new /atom/movable/screen())
+	centermarker.icon = 'icons/mob/screen1.dmi'
+	centermarker.icon_state = "centermarker"
+	centermarker.screen_loc = "CENTER,CENTER"
+
+	//Marks the center of the screen, for things like ventcrawl
+	rel_set(src, nameof(centermarker), new /atom/movable/screen())
+	centermarker.icon = 'icons/mob/screen1.dmi'
+	centermarker.icon_state = "centermarker"
+	centermarker.screen_loc = "CENTER,CENTER"
+
+	rel_set(src, nameof(nvg), setup_overlay("nvg_hud"))
+	rel_set(src, nameof(thermal), setup_overlay("thermal_hud"))
+	rel_set(src, nameof(meson), setup_overlay("meson_hud"))
+	rel_set(src, nameof(science), setup_overlay("science_hud"))
+	rel_set(src, nameof(material), setup_overlay("material_hud"))
+
+	rel_set(src, nameof(holomap), new /atom/movable/screen())
+	holomap.name = "holomap"
+	holomap.icon = null
+	holomap.screen_loc = ui_holomap
+	holomap.mouse_opacity = 0
+
+	var/atom/movable/screen/O
+	var/i
+	//that nasty looking dither you  get when you're short-sighted
+	vimpaired = newlist(/atom/movable/screen,/atom/movable/screen,/atom/movable/screen,/atom/movable/screen)
+	O = vimpaired[1]
+	O.screen_loc = "1,1 to 5,15"
+	O.set_plane(PLANE_FULLSCREEN)
+	O = vimpaired[2]
+	O.screen_loc = "5,1 to 10,5"
+	O.set_plane(PLANE_FULLSCREEN)
+	O = vimpaired[3]
+	O.screen_loc = "6,11 to 10,15"
+	O.set_plane(PLANE_FULLSCREEN)
+	O = vimpaired[4]
+	O.screen_loc = "11,1 to 15,15"
+	O.set_plane(PLANE_FULLSCREEN)
+
+	//welding mask overlay black/dither
+	darkMask = newlist(/atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen)
+	O = darkMask[1]
+	O.screen_loc = "WEST+2,SOUTH+2 to WEST+4,NORTH-2"
+	O = darkMask[2]
+	O.screen_loc = "WEST+4,SOUTH+2 to EAST-5,SOUTH+4"
+	O = darkMask[3]
+	O.screen_loc = "WEST+5,NORTH-4 to EAST-5,NORTH-2"
+	O = darkMask[4]
+	O.screen_loc = "EAST-4,SOUTH+2 to EAST-2,NORTH-2"
+	O = darkMask[5]
+	O.screen_loc = "WEST,SOUTH to EAST,SOUTH+1"
+	O = darkMask[6]
+	O.screen_loc = "WEST,SOUTH+2 to WEST+1,NORTH"
+	O = darkMask[7]
+	O.screen_loc = "EAST-1,SOUTH+2 to EAST,NORTH"
+	O = darkMask[8]
+	O.screen_loc = "WEST+2,NORTH-1 to EAST-2,NORTH"
+
+	for(i = 1, i <= 4, i++)
+		O = vimpaired[i]
+		O.set_icon_state("dither50")
+		O.set_plane(PLANE_FULLSCREEN)
+		O.mouse_opacity = 0
+
+		O = darkMask[i]
+		O.set_icon_state("dither50")
+		O.set_plane(PLANE_FULLSCREEN)
+		O.mouse_opacity = 0
+
+	for(i = 5, i <= 8, i++)
+		O = darkMask[i]
+		O.set_icon_state("black")
+		O.set_plane(PLANE_FULLSCREEN)
+		O.mouse_opacity = 2
+
+/*
+	The hud datum
+	Used to show and hide huds for all the different mob types,
+	including inventories and item quick actions.
+*/
+
+/datum/hud
+	var/mob/mymob
+
+	var/hud_shown = 1			//Used for the HUD toggle (F12)
+	var/inventory_shown = 1		//the inventory
+	var/hotkey_ui_hidden = 0	//This is to hide the buttons that can be used via hotkeys. (hotkeybuttons list of buttons)
+
+	var/atom/movable/screen/wizard/instability/wiz_instability_display
+	var/atom/movable/screen/wizard/energy/wiz_energy_display
+	// The mob's own screen elements (moved off /mob, base_vars lane B): built by the mob's create_mob_hud(), gone with the hud.
+	var/atom/movable/screen/hands
+	var/atom/movable/screen/pullin
+	var/atom/movable/screen/internals
+	var/atom/movable/screen/healths
+	var/atom/movable/screen/throw_icon
+	var/atom/movable/screen/pain
+	var/atom/movable/screen/gun/item/item_use_icon
+	var/atom/movable/screen/gun/radio/radio_use_icon
+	var/atom/movable/screen/gun/move/gun_move_icon
+	var/atom/movable/screen/gun/mode/gun_setting_icon
+	var/atom/movable/screen/ling/chems/ling_chem_display
+	var/atom/movable/screen/borer/chems/borer_chem_display
+	var/atom/movable/screen/autowhisper_display
+	var/atom/movable/screen/zone_sel/zone_sel
+	var/atom/movable/screen/shadekin/shadekin_display
+	var/atom/movable/screen/lleill/lleill_display
+	var/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display
+	/// The client's plane masters and what the mob sees through them; rebuilt by recalculate_vis() on login.
+	var/datum/plane_holder/plane_holder
+	/// Vision planes that should be graphically visible (their VIS_ indexes).
+	var/list/vis_enabled
+	/// Atom planes that are logically visible/interactable (actual plane numbers).
+	var/list/planes_visible
+	/// The darksight overlay (a client image) that eases the mob's eyes into the dark; made by /mob/living/Login().
+	var/image/dsoverlay
+	var/atom/movable/screen/r_hand_hud_object
+	var/atom/movable/screen/l_hand_hud_object
+	/// The combat mode toggle (code/modules/mob/combat_mode.dm).
+	var/atom/movable/screen/combat_mode/combat_mode_button
+	var/atom/movable/screen/move_intent
+	var/atom/movable/screen/control_vtec
+
+	var/list/adding
+	/// Misc hud elements that are hidden when the hud is minimized
+	var/list/other
+	/// Same, but always shown even when the hud is minimized
+	var/list/other_important
+	var/list/miniobjs
+	var/list/atom/movable/screen/hotkeybuttons
+
+	var/atom/movable/screen/button_palette/toggle_palette
+	var/atom/movable/screen/palette_scroll/down/palette_down
+	var/atom/movable/screen/palette_scroll/up/palette_up
+
+	var/datum/action_group/palette/palette_actions
+	var/datum/action_group/listed/listed_actions
+	var/list/floating_actions
+
+	var/list/slot_info
+
+	var/icon/ui_style
+	var/ui_color
+	var/ui_alpha
+
+	// TGMC Ammo HUD Port
+	/// Our ammo huds (owned), in screen order; each names its gun (our_gun). See ammo_hud_for().
+	var/list/atom/movable/screen/ammo/ammo_hud_list
+
+	var/list/minihuds
+
+CAPABILITIES(/datum/hud)
+	ref_one(nameof(r_hand_hud_object))
+	ref_one(nameof(l_hand_hud_object))
+	ref_one(nameof(combat_mode_button))
+	ref_one(nameof(move_intent))
+	ref_one(nameof(mymob), /mob)
+	hud_element(nameof(hands), /atom/movable/screen)
+	hud_element(nameof(pullin), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
+	hud_element(nameof(internals), /atom/movable/screen)
+	hud_element(nameof(healths), /atom/movable/screen)
+	hud_element(nameof(throw_icon), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
+	hud_element(nameof(pain), /atom/movable/screen)
+	hud_element(nameof(item_use_icon), /atom/movable/screen/gun/item)
+	hud_element(nameof(radio_use_icon), /atom/movable/screen/gun/radio)
+	hud_element(nameof(gun_move_icon), /atom/movable/screen/gun/move)
+	hud_element(nameof(gun_setting_icon), /atom/movable/screen/gun/mode)
+	hud_element(nameof(ling_chem_display), /atom/movable/screen/ling/chems)
+	hud_element(nameof(borer_chem_display), /atom/movable/screen/borer/chems)
+	hud_element(nameof(wiz_energy_display), /atom/movable/screen/wizard/energy)
+	hud_element(nameof(wiz_instability_display), /atom/movable/screen/wizard/instability)
+	hud_element(nameof(autowhisper_display), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
+	hud_element(nameof(zone_sel), /atom/movable/screen/zone_sel)
+	hud_element(nameof(shadekin_display), /atom/movable/screen/shadekin)
+	hud_element(nameof(lleill_display), /atom/movable/screen/lleill)
+	hud_element(nameof(xenochimera_danger_display), /atom/movable/screen/xenochimera/danger_level)
+	hud_element(nameof(plane_holder), /datum/plane_holder)
+	owns_one(nameof(control_vtec), /atom/movable/screen)
+	owns_one(nameof(listed_actions), /datum/action_group/listed)
+	owns_one(nameof(palette_actions), /datum/action_group/palette)
+	owns_one(nameof(palette_down), /atom/movable/screen/palette_scroll/down)
+	owns_one(nameof(palette_up), /atom/movable/screen/palette_scroll/up)
+	owns_one(nameof(toggle_palette), /atom/movable/screen/button_palette)
+	owns_many(nameof(adding))
+	owns_many(nameof(ammo_hud_list), /atom/movable/screen/ammo)
+	owns_many(nameof(extra_screens))
+	owns_many(nameof(hotkeybuttons), /atom/movable/screen)
+	owns_many(nameof(other))
+	owns_many(nameof(other_important))
+	ref_many(nameof(floating_actions))
+	ref_many(nameof(hud_elements))
+	ref_many(nameof(minihuds))
+
+/datum/hud/New(mob/owner)
+	rel_set(src, nameof(mymob), owner)
+	// The mob owns its hud (hud_used); a replaced hud is deleted.
+	if(owner)
+		rel_set(owner, nameof(/mob::hud_used), src)
+	instantiate()
+	..()
+
+// The hud's own elements, deleted with it (their screens are released in phase 5). The ammo huds
+// are owned in a list; each names its gun through a relation view (our_gun).
+// The mob owns us as its hud_used; mymob is a plain relation back.
+
+/datum/hud/proc/hidden_inventory_update()
+	if(!mymob()) return
+	if(ishuman(mymob()))
+		var/mob/living/carbon/human/H = mymob()
+		for(var/gear_slot in H.species.hud.gear)
+			var/list/hud_data = H.species.hud.gear[gear_slot]
+			if(inventory_shown && hud_shown)
+				switch(hud_data["slot"])
+					if(SLOT_ID_HEAD)
+						if(H.get_equipped_item(SLOT_ID_HEAD))      H.get_equipped_item(SLOT_ID_HEAD).screen_loc =      hud_data["loc"]
+					if(SLOT_ID_SHOES)
+						if(H.get_equipped_item(SLOT_ID_SHOES))     H.get_equipped_item(SLOT_ID_SHOES).screen_loc =     hud_data["loc"]
+					if(SLOT_ID_EAR_L)
+						if(H.get_equipped_item(SLOT_ID_EAR_L))     H.get_equipped_item(SLOT_ID_EAR_L).screen_loc =     hud_data["loc"]
+					if(SLOT_ID_EAR_R)
+						if(H.get_equipped_item(SLOT_ID_EAR_R))     H.get_equipped_item(SLOT_ID_EAR_R).screen_loc =     hud_data["loc"]
+					if(SLOT_ID_GLOVES)
+						if(H.get_equipped_item(SLOT_ID_GLOVES))    H.get_equipped_item(SLOT_ID_GLOVES).screen_loc =    hud_data["loc"]
+					if(SLOT_ID_EYES)
+						if(H.get_equipped_item(SLOT_ID_EYES))   H.get_equipped_item(SLOT_ID_EYES).screen_loc =   hud_data["loc"]
+					if(SLOT_ID_UNIFORM)
+						if(H.get_equipped_item(SLOT_ID_UNIFORM)) H.get_equipped_item(SLOT_ID_UNIFORM).screen_loc = hud_data["loc"]
+					if(SLOT_ID_SUIT)
+						if(H.get_equipped_item(SLOT_ID_SUIT)) H.get_equipped_item(SLOT_ID_SUIT).screen_loc = hud_data["loc"]
+					if(SLOT_ID_MASK)
+						if(H.get_equipped_item(SLOT_ID_MASK)) H.get_equipped_item(SLOT_ID_MASK).screen_loc = hud_data["loc"]
+			else
+				switch(hud_data["slot"])
+					if(SLOT_ID_HEAD)
+						if(H.get_equipped_item(SLOT_ID_HEAD))      H.get_equipped_item(SLOT_ID_HEAD).screen_loc =      null
+					if(SLOT_ID_SHOES)
+						if(H.get_equipped_item(SLOT_ID_SHOES))     H.get_equipped_item(SLOT_ID_SHOES).screen_loc =     null
+					if(SLOT_ID_EAR_L)
+						if(H.get_equipped_item(SLOT_ID_EAR_L))     H.get_equipped_item(SLOT_ID_EAR_L).screen_loc =     null
+					if(SLOT_ID_EAR_R)
+						if(H.get_equipped_item(SLOT_ID_EAR_R))     H.get_equipped_item(SLOT_ID_EAR_R).screen_loc =     null
+					if(SLOT_ID_GLOVES)
+						if(H.get_equipped_item(SLOT_ID_GLOVES))    H.get_equipped_item(SLOT_ID_GLOVES).screen_loc =    null
+					if(SLOT_ID_EYES)
+						if(H.get_equipped_item(SLOT_ID_EYES))   H.get_equipped_item(SLOT_ID_EYES).screen_loc =   null
+					if(SLOT_ID_UNIFORM)
+						if(H.get_equipped_item(SLOT_ID_UNIFORM)) H.get_equipped_item(SLOT_ID_UNIFORM).screen_loc = null
+					if(SLOT_ID_SUIT)
+						if(H.get_equipped_item(SLOT_ID_SUIT)) H.get_equipped_item(SLOT_ID_SUIT).screen_loc = null
+					if(SLOT_ID_MASK)
+						if(H.get_equipped_item(SLOT_ID_MASK)) H.get_equipped_item(SLOT_ID_MASK).screen_loc = null
+
+/datum/hud/proc/persistant_inventory_update()
+	if(!mymob())
+		return
+
+	if(ishuman(mymob()))
+		var/mob/living/carbon/human/H = mymob()
+		for(var/gear_slot in H.species.hud.gear)
+			var/list/hud_data = H.species.hud.gear[gear_slot]
+			if(hud_shown)
+				switch(hud_data["slot"])
+					if(SLOT_ID_SUIT_STORAGE)
+						if(H.get_equipped_item(SLOT_ID_SUIT_STORAGE)) H.get_equipped_item(SLOT_ID_SUIT_STORAGE).screen_loc = hud_data["loc"]
+					if(SLOT_ID_ID)
+						if(H.get_equipped_item(SLOT_ID_ID)) H.get_equipped_item(SLOT_ID_ID).screen_loc = hud_data["loc"]
+					if(SLOT_ID_BELT)
+						if(H.get_equipped_item(SLOT_ID_BELT))    H.get_equipped_item(SLOT_ID_BELT).screen_loc =    hud_data["loc"]
+					if(SLOT_ID_BACK)
+						if(H.get_equipped_item(SLOT_ID_BACK))    H.get_equipped_item(SLOT_ID_BACK).screen_loc =    hud_data["loc"]
+					if(SLOT_ID_POCKET_L)
+						if(H.get_equipped_item(SLOT_ID_POCKET_L)) H.get_equipped_item(SLOT_ID_POCKET_L).screen_loc = hud_data["loc"]
+					if(SLOT_ID_POCKET_R)
+						if(H.get_equipped_item(SLOT_ID_POCKET_R)) H.get_equipped_item(SLOT_ID_POCKET_R).screen_loc = hud_data["loc"]
+			else
+				switch(hud_data["slot"])
+					if(SLOT_ID_SUIT_STORAGE)
+						if(H.get_equipped_item(SLOT_ID_SUIT_STORAGE)) H.get_equipped_item(SLOT_ID_SUIT_STORAGE).screen_loc = null
+					if(SLOT_ID_ID)
+						if(H.get_equipped_item(SLOT_ID_ID)) H.get_equipped_item(SLOT_ID_ID).screen_loc = null
+					if(SLOT_ID_BELT)
+						if(H.get_equipped_item(SLOT_ID_BELT))    H.get_equipped_item(SLOT_ID_BELT).screen_loc =    null
+					if(SLOT_ID_BACK)
+						if(H.get_equipped_item(SLOT_ID_BACK))    H.get_equipped_item(SLOT_ID_BACK).screen_loc =    null
+					if(SLOT_ID_POCKET_L)
+						if(H.get_equipped_item(SLOT_ID_POCKET_L)) H.get_equipped_item(SLOT_ID_POCKET_L).screen_loc = null
+					if(SLOT_ID_POCKET_R)
+						if(H.get_equipped_item(SLOT_ID_POCKET_R)) H.get_equipped_item(SLOT_ID_POCKET_R).screen_loc = null
+
+/datum/hud/proc/instantiate()
+	if(!ismob(mymob()))
+		return 0
+
+	rel_set(src, nameof(toggle_palette), new /atom/movable/screen/button_palette())
+	rel_set(src, nameof(palette_down), new /atom/movable/screen/palette_scroll/down())
+	rel_set(src, nameof(palette_up), new /atom/movable/screen/palette_scroll/up())
+	mymob().create_mob_hud(src)
+
+	// Past this point, mymob.hud_used is set
+
+	toggle_palette.set_hud(src)
+	palette_down.set_hud(src)
+	palette_up.set_hud(src)
+
+	persistant_inventory_update()
+	mymob().reload_fullscreen() // Reload any fullscreen overlays this mob has.
+	mymob().update_action_buttons(TRUE)
+	reorganize_alerts()
+
+/mob/proc/create_mob_hud(datum/hud/HUD, apply_to_client = TRUE)
+	if(!client)
+		return 0
+
+	HUD.set_ui_style(ui_style2icon(read_preference(/datum/preference/choiced/ui_style)))
+	HUD.set_ui_color(read_preference(/datum/preference/color/ui_style_color))
+	HUD.set_ui_alpha(read_preference(/datum/preference/numeric/ui_style_alpha))
+	set_hud_used(HUD)
+
+/// The client HUD of a mob, or null: a mob has one only while a client is logged in (built by Login(), dropped by Logout()).
+/// Read its elements with hud_of(M)?.x.
+/proc/hud_of(mob/M) as /datum/hud
+	READS_FROM(M)
+	return ismob(M) ? M.hud_used : null
+
+/mob/proc/set_hud_used(datum/hud/new_hud)
+	rel_set(src, nameof(hud_used), new_hud)
+	new_hud.build_action_groups()
+
+/mob/proc/update_ui_style(UI_style_new, UI_style_alpha_new, UI_style_color_new)
+	if(!hud_used)
+		return
+
+	if(!UI_style_alpha_new)
+		UI_style_alpha_new = hud_used.ui_alpha
+	hud_used.ui_alpha = UI_style_alpha_new
+	if(!UI_style_color_new)
+		UI_style_color_new = hud_used.ui_color
+	hud_used.ui_color = UI_style_color_new
+
+	var/list/icons = hud_used.adding + hud_used.other + hud_used.hotkeybuttons + hud_used.other_important
+	icons.Add(hud_used?.zone_sel)
+	icons.Add(hud_used?.gun_setting_icon)
+	icons.Add(hud_used?.item_use_icon)
+	icons.Add(hud_used?.gun_move_icon)
+	icons.Add(hud_used?.radio_use_icon)
+
+	var/icon/ic
+
+	if(UI_style_new)
+		if(isrobot(src))
+			ic = GLOB.all_ui_styles_robot[UI_style_new]
+		else
+			ic = GLOB.all_ui_styles[UI_style_new]
+		hud_used.ui_style = ic
+	else
+		ic = hud_used.ui_style
+
+	for(var/atom/movable/screen/I in icons)
+		if(!(I.name in list("check known languages", "autowhisper", "autowhisper mode", "move downwards", "move upwards", "set pose")))
+			I.set_icon(ic)
+		I.set_color(UI_style_color_new)
+		I.set_alpha(UI_style_alpha_new)
+
+/datum/hud/proc/apply_minihud(datum/mini_hud/MH)
+	if(MH in minihuds)
+		return
+	rel_add(src, nameof(minihuds), MH)
+	if(mymob().client)
+		client_screen_remove(mymob().client, miniobjs)
+	miniobjs += MH.get_screen_objs()
+	if(mymob().client)
+		client_screen_add(mymob().client, miniobjs)
+
+/datum/hud/proc/remove_minihud(datum/mini_hud/MH)
+	if(!(MH in minihuds))
+		return
+	rel_remove(src, nameof(minihuds), MH)
+	if(mymob().client)
+		client_screen_remove(mymob().client, miniobjs)
+	miniobjs -= MH.get_screen_objs()
+	if(mymob().client)
+		client_screen_add(mymob().client, miniobjs)
+
+//Triggered when F12 is pressed (Unless someone changed something in the DMF)
+/mob/verb/button_pressed_F12(full = 0 as null)
+	set name = "F12"
+	set hidden = 1
+
+	if(!hud_used)
+		to_chat(src, span_warning("This mob type does not use a HUD."))
+		return FALSE
+	if(!client)
+		return FALSE
+	if(client.view != world.view)
+		return FALSE
+
+	toggle_hud_vis(full)
+
+/mob/proc/toggle_hud_vis(full)
+	if(!client)
+		return FALSE
+
+	if(hud_used.hud_shown)
+		hud_used.hud_shown = 0
+		if(hud_used.adding)
+			client_screen_remove(client, hud_used.adding)
+		if(hud_used.other)
+			client_screen_remove(client, hud_used.other)
+		if(hud_used.hotkeybuttons)
+			client_screen_remove(client, hud_used.hotkeybuttons)
+		if(hud_used.other_important)
+			client_screen_remove(client, hud_used.other_important)
+	else
+		hud_used.hud_shown = 1
+		if(hud_used.adding)
+			client_screen_add(client, hud_used.adding)
+		if(hud_used.other && hud_used.inventory_shown)
+			client_screen_add(client, hud_used.other)
+		if(hud_used.other_important)
+			client_screen_add(client, hud_used.other_important)
+		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
+			client_screen_add(client, hud_used.hotkeybuttons)
+		if(hud_used?.healths)
+			client_screen_include(client, hud_used?.healths)
+		if(hud_used?.internals)
+			client_screen_include(client, hud_used?.internals)
+		if(hud_used?.gun_setting_icon)
+			client_screen_include(client, hud_used?.gun_setting_icon)
+
+		if(hud_used?.combat_mode_button)
+			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
+		client_screen_add(client, hud_used?.zone_sel)				//This one is a special snowflake
+		client_screen_add(client, hud_used.toggle_palette)
+
+	hud_used.hidden_inventory_update()
+	hud_used.persistant_inventory_update()
+	update_action_buttons(TRUE)
+	hud_used.reorganize_alerts()
+	return TRUE
+
+/mob/living/carbon/human/toggle_hud_vis(full)
+	if(!(. = ..()))
+		return FALSE
+
+	// Prevents humans from hiding a few hud elements
+	if(!hud_used.hud_shown) // transitioning to hidden
+		//Due to some poor coding some things need special treatment:
+		//These ones are a part of 'adding', 'other' or 'hotkeybuttons' but we want them to stay
+		if(!full)
+			client_screen_add(client, hud_used.l_hand_hud_object)	//we want the hands to be visible
+			client_screen_add(client, hud_used.r_hand_hud_object)	//we want the hands to be visible
+			if(hud_used.combat_mode_button)
+				client_screen_add(client, hud_used.combat_mode_button)		//we want the combat mode button visible
+				hud_used.combat_mode_button.screen_loc = ui_acti_alt	//move this to the alternative position, where zone_select usually is.
+		else
+			client_screen_remove(client, hud_used?.healths)
+			client_screen_remove(client, hud_used?.internals)
+			client_screen_remove(client, hud_used?.gun_setting_icon)
+
+		//These ones are not a part of 'adding', 'other' or 'hotkeybuttons' but we want them gone.
+		client_screen_remove(client, hud_used?.zone_sel)	//zone_sel is a mob variable for some reason.
+
+//Similar to button_pressed_F12() but keeps zone_sel, gun_setting_icon, and healths.
+/mob/proc/toggle_zoom_hud()
+	if(!hud_used)
+		return
+	if(!ishuman(src))
+		return
+	if(!client)
+		return
+	if(client.view != world.view)
+		return
+
+	if(hud_used.hud_shown)
+		hud_used.hud_shown = 0
+		if(hud_used.adding)
+			client_screen_remove(client, hud_used.adding)
+		if(hud_used.other)
+			client_screen_remove(client, hud_used.other)
+		if(hud_used.hotkeybuttons)
+			client_screen_remove(client, hud_used.hotkeybuttons)
+		client_screen_remove(client, hud_used?.internals)
+		if(hud_used.combat_mode_button)
+			client_screen_add(client, hud_used.combat_mode_button)		//we want the combat mode button visible
+	else
+		hud_used.hud_shown = 1
+		if(hud_used.adding)
+			client_screen_add(client, hud_used.adding)
+		if(hud_used.other && hud_used.inventory_shown)
+			client_screen_add(client, hud_used.other)
+		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
+			client_screen_add(client, hud_used.hotkeybuttons)
+		if(hud_used?.internals)
+			client_screen_include(client, hud_used?.internals)
+		if(hud_used.combat_mode_button)
+			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
+
+	hud_used.hidden_inventory_update()
+	hud_used.persistant_inventory_update()
+	update_action_buttons(TRUE)
+
+/mob/proc/add_click_catcher()
+	client_screen_add(client, GLOB.click_catcher)
+
+/mob/new_player/add_click_catcher()
+	return
+
+/mob/living/create_mob_hud(datum/hud/HUD, apply_to_client = TRUE)
+	..()
+
+	var/list/hud_elements = list()
+	rel_set(hud_used, nameof(/datum/hud::shadekin_display), new /atom/movable/screen/shadekin())
+	hud_used?.shadekin_display?.screen_loc = ui_shadekin_display
+	hud_used?.shadekin_display?.icon_state = "shadekin"
+	hud_elements |= hud_used?.shadekin_display
+
+	rel_set(hud_used, nameof(/datum/hud::xenochimera_danger_display), new /atom/movable/screen/xenochimera/danger_level())
+	hud_used?.xenochimera_danger_display?.screen_loc = ui_xenochimera_danger_display
+	hud_used?.xenochimera_danger_display?.icon_state = "danger00"
+	hud_elements |= hud_used?.xenochimera_danger_display
+
+	rel_set(hud_used, nameof(/datum/hud::lleill_display), new /atom/movable/screen/lleill())
+	hud_used?.lleill_display?.screen_loc = ui_lleill_display
+	hud_used?.lleill_display?.icon_state = "lleill"
+	hud_elements |= hud_used?.lleill_display
+
+	if(client)
+		client_screen_clear(client)
+
+		client_screen_add(client, hud_elements)
+		client_screen_add(client, GLOB.click_catcher)
+
+/* TGMC Ammo HUD Port
+ * These procs call to screen_objects.dm's respective procs.
+ * All these do is manage the amount of huds on screen and set the HUD.
+*/
+///Add an ammo hud to the user informing of the ammo count of G
+/datum/hud/proc/add_ammo_hud(mob/living/user, obj/item/gun/G)
+	if(length(ammo_hud_list) >= MAX_AMMO_HUD_POSSIBLE)
+		return
+	var/atom/movable/screen/ammo/ammo_hud = new
+	rel_add(src, nameof(ammo_hud_list), ammo_hud)
+	ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[length(ammo_hud_list)]
+	rel_set(ammo_hud, nameof(ammo_hud.our_gun), G)
+	ammo_hud.add_hud(user, G)
+	ammo_hud.update_hud(user, G)
+
+///Remove the ammo hud related to the gun G from the user
+/datum/hud/proc/remove_ammo_hud(mob/living/user, obj/item/gun/G)
+	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_for(G)
+	if(isnull(ammo_hud))
+		return
+	rel_clear(ammo_hud, nameof(ammo_hud.our_gun))
+	ammo_hud.remove_hud(user, G)
+	rel_remove(src, nameof(ammo_hud_list), ammo_hud)
+	var/i = 1
+	for(var/atom/movable/screen/ammo/other as anything in ammo_hud_list)
+		ammo_hud = other
+		ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[i]
+		i++
+
+///Update the ammo hud related to the gun G
+/datum/hud/proc/update_ammo_hud(mob/living/user, obj/item/gun/G)
+	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_for(G)
+	ammo_hud?.update_hud(user, G)
+
+/// Our ammo hud for gun G, or null.
+/datum/hud/proc/ammo_hud_for(obj/item/gun/G)
+	if(!G)
+		return null
+	for(var/atom/movable/screen/ammo/ammo_hud as anything in ammo_hud_list)
+		if(ammo_hud.our_gun == G)
+			return ammo_hud
+	return null
+
+#undef MAX_AMMO_HUD_POSSIBLE
+
+/// The mob this hud belongs to (a relation view; the mob owns us as hud_used).
+/datum/hud/proc/mymob() as /mob
+	return mymob
+

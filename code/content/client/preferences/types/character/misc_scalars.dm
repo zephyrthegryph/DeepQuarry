@@ -53,4 +53,4 @@
 	return null
 
 /datum/preference/text/human/custom_link/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set(target, custom_link, text_or_null(value))
+	STATE_SET(target, living_misc, custom_link, text_or_null(value))

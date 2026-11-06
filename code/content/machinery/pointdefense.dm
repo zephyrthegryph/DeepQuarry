@@ -14,7 +14,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	use_power = USE_POWER_ACTIVE
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/pointdefense_control
+	circuit = VARIANT(/obj/item/circuitboard/pointdefense_control)
 	/// Meteors being engaged by associated batteries (a relation view: meteors leave when they die).
 	var/list/obj/effect/meteor/targets
 	var/id_tag = null
@@ -116,7 +116,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	desc = "A Kuiper pattern anti-meteor battery. Capable of destroying most threats in a single salvo."
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/pointdefense
+	circuit = VARIANT(/obj/item/circuitboard/pointdefense)
 	appearance_flags = PIXEL_SCALE
 	active = TRUE
 	var/charge_cooldown = 1 SECOND  //time between it can fire at different targets

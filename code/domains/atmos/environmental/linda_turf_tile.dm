@@ -1,0 +1,356 @@
+/turf
+	// thermal_conductivity and heat_capacity are already declared on
+	// CHOMP's /turf (code/game/turfs/turf.dm:30-31) with values 0.05 and 1.
+	// LINDA wanted heat_capacity = INFINITY (opt-in heating); CHOMP defaults
+	// matter (most turfs are heat-able). Don't redeclare — runtime will use
+	// CHOMP's value (1) for all turfs, which means turfs CAN be heated by gas.
+	// This is closer to /tg/'s opt-OUT behavior anyway.
+
+	/**
+	 * used for mapping and for breathing while in walls (because that's a thing that needs to be accounted for...)
+	 * string parsed by /datum/gas/proc/copy_from_turf
+	 * approximation of MOLES_O2STANDARD and MOLES_N2STANDARD pending byond allowing constant expressions to be embedded in constant strings
+	 * If someone will place 0 of some gas there, SHIT WILL BREAK. Do not do that.
+	**/
+	var/initial_gas_mix = OPENTURF_DEFAULT_ATMOS
+
+/turf/open
+	//used for spacewind
+	///Pressure difference between two turfs
+	var/pressure_difference = 0
+	///Where the difference come from (from higher pressure to lower pressure)
+	var/pressure_direction = 0
+	///Our gas mix
+	var/datum/gas_mixture/air
+
+	///If there is an active hotspot on us store a reference to it here
+	var/obj/effect/hotspot/active_hotspot
+	/// air will slowly revert to initial_gas_mix
+	var/planetary_atmos = FALSE
+	/// The gas mixture is a constant source or sink and cannot be changed by diffusion.
+	var/immutable_atmos = FALSE
+
+	///gas IDs of current active gas overlays
+	var/list/atmos_overlay_types
+	///the cooldown on playing a fire starting sound each time a tile is ignited
+	COOLDOWN_DECLARE(fire_puff_cooldown)
+	#ifdef TRACK_MAX_SHARE
+	var/max_share = 0
+	#endif
+
+CAPABILITIES(/turf/open)
+	owns_one(nameof(active_hotspot), /obj/effect/hotspot)
+	owns_one(nameof(air), /datum/gas_mixture)
+	// Both hooks run for the Initialize() chain and the init_from_table path alike: the mixture first, then the Rust arena registration.
+	setup(PROC_REF(setup_open_air))
+	setup(PROC_REF(register_open_air))
+
+/// Makes the air of a turf whose own Initialize() has not run yet, for whatever initializes on it first (/datum/system/atoms/InitAtom()). Base turfs have none.
+/turf/proc/settle_air()
+	return
+
+/turf/open/settle_air()
+	if(!air && !blocks_air && !(flags & ATOM_INITIALIZED))
+		GLOB.early_air_made++
+		setup_open_air()
+
+/// Gives the turf its gas mixture (a setup() hook).
+/turf/open/proc/setup_open_air()
+	if(air) // made on demand by return_air() before this turf's Initialize(): the one mixture stays
+		return
+	if(!blocks_air)
+		if(immutable_atmos)
+			// Space and transit hold nothing but vacuum, so they all share one
+			// cached immutable mixture instead of a mixture (and Rust arena slot)
+			// each. The arena drops writes to it; Destroy() must never qdel it.
+			// Type-table fact: one lookup by the gas string, not a "[string]-[type]" key built per turf.
+			// The cache holds it for the round; no turf owns it (lifecycle_unbind() only lets go).
+			var/static/list/immutable_air = list()
+			var/datum/gas_mixture/shared_air = immutable_air[initial_gas_mix]
+			if(!shared_air)
+				shared_air = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space)
+				immutable_air[initial_gas_mix] = shared_air
+			air = shared_air // ALLOW(ownership): the round-long immutable vacuum shared by every space/transit turf, held by the static cache; never owned or deleted by a turf
+		else
+			rel_set(src, nameof(air), create_gas_mixture())
+		if(planetary_atmos)
+			if(!SSair.planetary[initial_gas_mix])
+				var/datum/gas_mixture/immutable/planetary/mix = new
+				mix.parse_string_immutable(initial_gas_mix)
+				SSair.planetary[initial_gas_mix] = mix
+
+/// After the turf is initialized: join the Rust air arena when SSair is already running.
+/turf/open/proc/register_open_air()
+	PRIVATE_PROC(TRUE)
+	// Register this turf's air ref in the Rust arena. During roundstart mapload
+	// SSair isn't initialised yet — SSair.setup_allturfs registers every
+	// turf then. For turfs created AFTER SSair init (ChangeTurf, runtime spawns)
+	// we register here, with the air-block mask of whatever is already on the
+	// turf, so Rust builds its adjacency.
+	if(SSair.initialized)
+		update_air_ref(0, air_block_mask())
+
+/// Phase 1 (unbind): its fire goes out first (it cools the air it sits in),
+/// then the turf leaves the Rust air arena (Rust drops its
+/// adjacency and wakes the turfs that shared air with it; a ChangeTurf
+/// successor registers itself in Initialize), and its own air handle goes.
+/// Shared immutable air (vacuum, planetary mixes) is only let go.
+/turf/open/lifecycle_unbind()
+	. = ..()
+	rel_clear(src, nameof(active_hotspot))
+	SSair?.remove_from_active(src)
+	if(immutable_atmos)
+		rel_take(src, nameof(air))
+	else
+		rel_clear(src, nameof(air))
+
+/////////////////GAS MIXTURE PROCS///////////////////
+
+///Copies all gas info from the turf into a new gas_mixture, along with our temperature
+///Returns the created gas_mixture
+/turf/proc/create_gas_mixture()
+	// Air template as type-table data (doc/rewrite/init_and_turfs.md sec 3.1): a turf whose gas
+	// string and temperature are its type's copies one mixture built once per type, instead of
+	// building a "[string]-[type]" cache key and re-checking the temperature per turf.
+	if(initial_gas_mix == initial(initial_gas_mix) && initial_temperature == initial(initial_temperature))
+		var/static/list/air_templates = list()
+		var/datum/gas_mixture/template = air_templates[type]
+		if(!template)
+			template = build_gas_mixture()
+			air_templates[type] = template
+		return template.copy()
+	return build_gas_mixture()
+
+/// A fresh mixture from the turf's gas string and temperature.
+/turf/proc/build_gas_mixture()
+	PRIVATE_PROC(TRUE)
+	var/datum/gas_mixture/mix = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/turf)
+
+	//acounts for changes in temperature: the seed, once
+	var/turf/parent = parent_type
+	if(initial_temperature != initial(initial_temperature) || initial_temperature != initial(parent.initial_temperature))
+		heat_set(mix, initial_temperature) // arena-backed write (no DM mirror under the opaque-handle model)
+
+	return mix
+
+/turf/open/assume_air(datum/gas_mixture/giver) //use this for machines to adjust air
+	if(!giver || !air)
+		return FALSE
+	air.merge(giver)
+	update_visuals()
+	// air_update_turf now (re)pushes arena adjacency both directions even with
+	// update=FALSE, so a turf that just received gas has live neighbour edges and
+	// auxmos will spread the gas out (critical on runtime-built turfs whose edges
+	// were never pushed). No need for the expensive update=TRUE geometry rescan.
+	air_update_turf(FALSE, FALSE)
+	return TRUE
+
+/turf/open/remove_air(amount)
+	var/datum/gas_mixture/ours = return_air()
+	var/datum/gas_mixture/removed = ours.remove(amount)
+	update_visuals()
+	air_update_turf(FALSE, FALSE)
+	return removed
+
+/turf/open/proc/copy_air(datum/gas_mixture/copy)
+	if(copy)
+		air.copy_from(copy)
+
+/turf/return_air()
+	RETURN_TYPE(/datum/gas_mixture)
+	var/static/datum/gas_mixture/immutable/space/vacuum
+	if(!vacuum)
+		vacuum = new
+	return vacuum
+
+/turf/open/return_air()
+	RETURN_TYPE(/datum/gas_mixture)
+	// After the /turf/simulated → /turf/open reparent, walls / dense / vacuum tiles
+	// are /turf/open subtypes with air = null. Stock /tg/ never hits this (walls are
+	// a separate /turf/closed type with no return_air), so its ~260 return_air()
+	// callers assume a non-null mixture and deref it directly — every one of them is
+	// a latent null-crash on an airless tile (the external dock airlock sensors hit
+	// it every tick). Fall back to the base turf's non-null empty (vacuum) mixture
+	// for airless tiles instead of returning null: consumers read 0-pressure vacuum,
+	// which is the correct answer for a wall/space tile, rather than runtiming. The
+	// atmos hot path (share/process_cell) uses .air directly and is unaffected.
+	// A read before SSair registers the turfs reads the turf's own mixture (a main-owned arena slot that holds its real gas); registration moves that same
+	// datum into its field cell, so the reading is the same either side of it. The count is logged when the turfs register (early_air_report()).
+	if(!SSair.initialized)
+		GLOB.early_air_reads++
+	if(!air && !blocks_air && !(flags & ATOM_INITIALIZED))
+		// Asked before this turf's own Initialize() ran, by something that did not initialize on it (/datum/system/atoms/InitAtom() settles the air under
+		// what initializes): a vacuum answer a caller may keep. Loud, so the boot gate names the reader; the air is not made here, a read stays a read.
+		WARNING("return_air() of a turf whose air does not exist yet ([type] at [x],[y],[z]): the reader gets vacuum")
+	return air || ..()
+
+/turf/open/return_analyzable_air()
+	return return_air()
+
+// /turf/proc/archive + /turf/open/archive removed — turf FDM archiving is Rust-side
+// now (auxmos snapshots inside process_turfs). temperature_archived is still
+// declared on /turf for legacy readers but is no longer maintained by an archive
+// pass; nothing in the (deleted) DM turf engine reads it anymore.
+
+/////////////////////////GAS OVERLAYS//////////////////////////////
+
+/**
+ * Recompute this turf's gas overlays from its (arena-backed) air contents and
+ * apply the diff to vis_contents. Called directly by ~56 DM atmos callers
+ * (pumps, scrubbers, canisters, vents) after they mutate a turf's air. The Rust
+ * turf-processing path does NOT call this — it calls set_visuals() with a
+ * precomputed overlay list (see below).
+ */
+/turf/open/proc/update_visuals()
+	set_visuals()
+
+/**
+ * Recompute this turf's gas overlays from its (arena-backed) air and diff the
+ * result into vis_contents. This is the single source of truth for gas visuals.
+ *
+ * It's called two ways: (a) directly by ~56 DM atmos callers (pumps, canisters,
+ * vents) via update_visuals() after they mutate air; (b) by the auxmos turf-
+ * processing loop (verdigris turfs.rs::update_visuals -> turf.set_visuals(list))
+ * for every turf whose gas changed during the FDM share — this is how a turf that
+ * RECEIVED gas from a neighbour (not the injector) gets its overlay updated.
+ *
+ * Rust publication passes a precomputed overlay list so the main thread does not
+ * re-enumerate every changed mixture. Direct DM callers omit the argument and
+ * recompute from the authoritative arena mixture. Empty air clears.
+ */
+/turf/open/proc/set_visuals(list/rust_overlay_types)
+	// (Formerly refreshed a DM temperature mirror here. Under the /tg/ opaque-handle
+	// model there is no mirror — the arena is authoritative and read via
+	// return_temperature() — so this per-turf sync is gone. Do NOT re-add a
+	// set_temperature() here: writing the arena its own value re-marks the turf active
+	// and causes endless re-processing/re-visualising.)
+	var/list/new_overlay_types = rust_overlay_types
+	if(isnull(rust_overlay_types) && air)
+		// get_gases() returns an assoc id -> moles (id = gas-type path). Per-gas meta
+		// lives in the global meta table keyed by the same path.
+		var/list/gases = air.get_gases()
+		var/offset = GET_TURF_PLANE_OFFSET(src) + 1
+		for(var/id in gases)
+			if(GLOB.nonoverlaying_gases[id])
+				continue
+			var/list/gas_meta = GLOB.meta_gas_info[id]
+			if(!gas_meta)
+				continue
+			var/moles = gases[id]
+			if(moles <= gas_meta[META_GAS_MOLES_VISIBLE])
+				continue
+			var/list/gas_overlay = gas_meta[META_GAS_OVERLAY][offset]
+			LAZYADD(new_overlay_types, gas_overlay[min(TOTAL_VISIBLE_STATES, CEILING(moles / MOLES_GAS_VISIBLE_STEP, 1))])
+
+	var/list/atmos_overlay_types = src.atmos_overlay_types // Cache for free performance
+
+	if (atmos_overlay_types)
+		for(var/overlay in atmos_overlay_types-new_overlay_types) //doesn't remove overlays that would only be added
+			vis_remove(src, overlay)
+
+	if (length(new_overlay_types))
+		if (atmos_overlay_types)
+			vis_add(src, new_overlay_types - atmos_overlay_types) //don't add overlays that already exist
+		else
+			vis_add(src, new_overlay_types)
+
+	UNSETEMPTY(new_overlay_types)
+	src.atmos_overlay_types = new_overlay_types
+	// The mobs standing here are not told: each breather's air watch (air_watch.dm) hears the crossings of the levels it
+	// acts on, visible gas or not.
+
+/proc/typecache_of_gases_with_no_overlays()
+	. = list()
+	for (var/gastype in subtypesof(/datum/gas))
+		var/datum/gas/gasvar = gastype
+		if (!initial(gasvar.gas_overlay))
+			.[gastype] = TRUE
+
+/////////////////////////////SIMULATION///////////////////////////////////
+// The DM turf-sharing engine (process_cell, LAST_SHARE_CHECK/PLANET_SHARE_CHECK
+// macros, archive-based compare/share, the planetary-mix share pass) is DELETED.
+// Turf FDM gas sharing and pressure equalization run in the Rust arena now,
+// driven by SSair.fire() via the detached process_turfs_auxtools transaction.
+// The Rust side dispatches back into DM through
+// three callbacks that live in this file: consider_pressure_difference (below),
+// air.react(turf) (gas_mixture.dm react bind -> the DM /transformation/gas rules), and
+// turf.set_visuals(overlay_list) (above).
+
+//////////////////////////SPACEWIND/////////////////////////////
+// consider_pressure_difference is a Rust->DM callback: the arena's FDM/katmos loop
+// calls it (turf.consider_pressure_difference(enemy, diff)) for turfs with a
+// pressure delta big enough to blow things around. It appends src to
+// SSair.high_pressure_delta, which the SSAIR_HIGHPRESSURE fire() step drains into
+// high_pressure_movements().
+
+/turf/open/proc/consider_pressure_difference(turf/target_turf, difference)
+	SSair.high_pressure_delta |= src
+	if(difference > pressure_difference)
+		pressure_direction = get_dir(src, target_turf)
+		pressure_difference = difference
+
+// consider_firelocks / handle_decompression_floor_rip are Rust->DM callbacks the baked
+// auxmos katmos (equalize/decompression) loop invokes by name via call_id. They exist in
+// /tg/ and the auxmos katmos.rs still calls them:
+//   turf.consider_firelocks(other)              (katmos equalize + explosively_depressurize)
+//   turf.handle_decompression_floor_rip(sum)    (explosively_depressurize)
+// Neither had a DM definition here, so the very first equalize/decompression event would
+// hit a NonExistentString / missing-proc and panic the FFI call. These are defined on the
+// base /turf (not just /turf/open) so the string resolves for any turf the arena hands us.
+//
+// Pressure boundaries close adjacent firelocks. Floor ripping remains disabled because
+// this fork does not model decompression damage to floor tiles.
+
+/// Rust katmos hook: called on a turf when an adjacent turf has a large enough pressure
+/// delta that should close firelocks between them.
+/turf/proc/consider_firelocks(turf/other)
+	if(!other || get_dist(src, other) != 1)
+		return
+	for(var/turf/boundary in list(src, other))
+		for(var/obj/machinery/door/firedoor/firelock in boundary)
+			if(!firelock.density && !firelock.blocked)
+				firelock.close()
+
+/// Rust katmos hook: called during explosive depressurization; /tg rips up floor tiles
+/// under strong decompression. No-op stub (see note above). `sum` is the summed transfer.
+/turf/proc/handle_decompression_floor_rip(sum)
+	return
+
+/turf/open/proc/high_pressure_movements()
+	var/atom/movable/moving_atom
+	// ALLOW(spatial): per-active-turf atmos tick, raw loop avoids a list copy
+	for(var/thing in src)
+		moving_atom = thing
+		if (STATE_PEEK(moving_atom, movement_log, last_high_pressure_movement_air_cycle) < SSair.times_fired)
+			if (!moving_atom.anchored && !moving_atom?.pulled_by_mob())
+				moving_atom.experience_pressure_difference(pressure_difference, pressure_direction)
+			else
+
+/atom/movable
+	///How much delta pressure is needed for us to move
+	var/pressure_resistance = 10
+
+/atom/movable/proc/experience_pressure_difference(pressure_difference, direction, pressure_resistance_prob_delta = 0)
+	var/const/PROBABILITY_OFFSET = 25
+	var/const/PROBABILITY_BASE_PRECENT = 75
+	var/max_force = sqrt(pressure_difference) * (MOVE_FORCE_DEFAULT / 5)
+	var/move_prob = 100
+	var/resistance = STATE_PEEK(src, movable_misc, move_resist)
+	if (pressure_resistance > 0)
+		move_prob = (pressure_difference / pressure_resistance * PROBABILITY_BASE_PRECENT) - PROBABILITY_OFFSET
+	move_prob += pressure_resistance_prob_delta
+	if (move_prob > PROBABILITY_OFFSET && prob(move_prob) && (resistance != INFINITY) && (!anchored && (max_force >= (resistance * MOVE_FORCE_PUSH_RATIO))) || (anchored && (max_force >= (resistance * MOVE_FORCE_FORCEPUSH_RATIO))))
+		step(src, direction)
+		STATE_SET(src, movement_log, last_high_pressure_movement_air_cycle, SSair.times_fired)
+
+///////////////////////////EXCITED GROUPS/////////////////////////////
+// The /datum/excited_group type and its self_breakdown/dismantle/merge_groups/
+// garbage_collect/display machinery are DELETED. The transactional Rust turf
+// solver owns convergence; nothing references a /datum/excited_group anymore.
+
+////////////////////////SUPERCONDUCTIVITY/////////////////////////////
+// Turf heat is the heat domain (verdigris/domains/heat, code/modules/heat/heat.dm):
+// each turf pushes its thermal values with update_heat_cell(); read and write the
+// solid with get_temperature() / add_heat() / set_temperature(), never a raw var.
+// Space turfs are radiative reservoirs, so no turf asks whether it faces space.
+

@@ -1,4 +1,4 @@
-// Heat network fixtures (code/modules/unit_tests/dq_heat_net_tests.dm): a plate whose gas is linked to the room while it is on, a pod that links
+// Heat network fixtures (code/tests/unit_tests/dq_heat_net_tests.dm): a plate whose gas is linked to the room while it is on, a pod that links
 // its occupant to its gas while they are inside, and a pump and an engine between two gases. Compiled under UNIT_TESTS only.
 
 /obj/machinery/heat_fixture

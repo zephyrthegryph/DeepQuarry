@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - refactor: "Opening a tgui window no longer waits on the client: its window probes are answered in callbacks and queued messages go out once the page is ready"
+  - code_imp: "Added a file prompt kind for uploads (the eventkit sprite uploads and the circuit printer import use it)"

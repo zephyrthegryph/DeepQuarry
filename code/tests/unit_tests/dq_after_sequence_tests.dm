@@ -1,4 +1,4 @@
-// The timed sequences built on after() (code/datums/om/after_helpers.dm): each step lands on its own deadline, in order.
+// The timed sequences built on after() (code/engine/after_helpers.dm): each step lands on its own deadline, in order.
 
 /datum/unit_test/dq_after_sequences
 	abstract_type = /datum/unit_test/dq_after_sequences

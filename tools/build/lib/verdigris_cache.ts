@@ -15,6 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 const CACHE_VERSION = 1;
+/** The default profile; a lane DLL (the `lane` cargo profile) is stored and keyed under its own name, so it is never restored as a production one. */
 const PROFILE = 'release';
 const KEEP_NEWEST = 10;
 const KEEP_DAYS = 14;
@@ -45,7 +46,7 @@ function git(root: string, args: string[]): string | null {
 export type CacheKey = { key: string; commit: string } | { bypass: string };
 
 /** The cache key for this checkout, or why the cache cannot be used. */
-export function verdigrisCacheKey(root: string, target: string, rustflags: string, extra = ''): CacheKey {
+export function verdigrisCacheKey(root: string, target: string, rustflags: string, extra = '', profile = PROFILE): CacheKey {
   const dirty = git(root, ['status', '--porcelain', '--untracked-files=all', '--', ...VERDIGRIS_CACHE_INPUTS]);
   if (dirty === null) return { bypass: 'not a git checkout' };
   if (dirty) return { bypass: `uncommitted changes in verdigris inputs (${dirty.split('\n')[0].trim()}...)` };
@@ -54,19 +55,19 @@ export function verdigrisCacheKey(root: string, target: string, rustflags: strin
   const commit = git(root, ['rev-parse', 'HEAD']);
   if (!ids || !commit) return { bypass: 'cannot resolve verdigris inputs at HEAD' };
   const key = createHash('sha256')
-    .update([`v${CACHE_VERSION}`, process.platform, target, PROFILE, rustflags, extra, ids].join('\0'))
+    .update([`v${CACHE_VERSION}`, process.platform, target, profile, rustflags, extra, ids].join('\0'))
     .digest('hex')
     .slice(0, 32);
   return { key, commit };
 }
 
-function entryDir(cache: string, key: string): string {
-  return path.join(cache, key, PROFILE);
+function entryDir(cache: string, key: string, profile = PROFILE): string {
+  return path.join(cache, key, profile);
 }
 
 /** Copy a cached library into the checkout. Returns true on a hit. */
-export function restoreVerdigris(cache: string, key: string, lib: string, sidecars: string[]): boolean {
-  const dir = entryDir(cache, key);
+export function restoreVerdigris(cache: string, key: string, lib: string, sidecars: string[], profile = PROFILE): boolean {
+  const dir = entryDir(cache, key, profile);
   const cached = path.join(dir, path.basename(lib));
   if (!fs.existsSync(path.join(dir, 'manifest.json')) || !fs.existsSync(cached)) return false;
   const same =
@@ -104,17 +105,18 @@ export function storeVerdigris(
   commit: string,
   files: string[],
   manifest: Record<string, unknown>,
+  profile = PROFILE,
 ): void {
   const final = path.join(cache, key);
-  if (fs.existsSync(path.join(entryDir(cache, key), 'manifest.json'))) return;
+  if (fs.existsSync(path.join(entryDir(cache, key, profile), 'manifest.json'))) return;
   fs.mkdirSync(cache, { recursive: true });
   const tmp = path.join(cache, `.tmp-${key}-${process.pid}-${Date.now()}`);
-  const tmpEntry = path.join(tmp, PROFILE);
+  const tmpEntry = path.join(tmp, profile);
   fs.mkdirSync(tmpEntry, { recursive: true });
   for (const file of files) if (fs.existsSync(file)) fs.copyFileSync(file, path.join(tmpEntry, path.basename(file)));
   fs.writeFileSync(
     path.join(tmpEntry, 'manifest.json'),
-    `${JSON.stringify({ version: CACHE_VERSION, key, commit, profile: PROFILE, builtAt: new Date().toISOString(), ...manifest }, null, 2)}\n`,
+    `${JSON.stringify({ version: CACHE_VERSION, key, commit, profile, builtAt: new Date().toISOString(), ...manifest }, null, 2)}\n`,
   );
   try {
     fs.rmSync(final, { recursive: true, force: true });

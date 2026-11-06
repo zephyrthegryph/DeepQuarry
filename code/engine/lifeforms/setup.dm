@@ -61,7 +61,7 @@
 		try
 			call(A, handler)()
 		catch(var/exception/e)
-			stack_trace("setup([handler], early = TRUE) on [A.type]: [e] ([e.file]:[e.line])")
+			dq_report_caught(e, "setup([handler], early = TRUE) on [A.type]")
 		if(QDELETED(A))
 			break
 	return TRUE
@@ -78,6 +78,18 @@ GLOBAL_REAL_VAR(list/setup_pending)
 /// InitAtom(), when Initialize() returned: the hooks, in order. Returns INITIALIZE_HINT_QDEL when a mapload = TRUE hook asked for the instance's
 /// deletion (the rest do not run; InitAtom() applies it as it would an Initialize() return), else INITIALIZE_HINT_NORMAL.
 /proc/setup_run(datum/holder, with_params = FALSE, mapload = FALSE)
+	if(!isatom(holder))
+		return setup_run_hooks(holder, with_params, mapload)
+	// The atom's hooks write the state its look reads: no draw of it from a viewer's hold (interest.dm) until they are done.
+	init_open_begin(holder)
+	try
+		. = setup_run_hooks(holder, with_params, mapload)
+	catch(var/exception/e)
+		init_open_end(holder)
+		throw e
+	init_open_end(holder)
+
+/proc/setup_run_hooks(datum/holder, with_params = FALSE, mapload = FALSE)
 	if(QDELETED(holder))
 		setup_pending -= holder
 		return INITIALIZE_HINT_NORMAL

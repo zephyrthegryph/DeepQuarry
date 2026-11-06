@@ -1,0 +1,133 @@
+import { describe, expect, it } from 'bun:test';
+import {
+  StatStore,
+  searchVerbs,
+  verbCommand,
+  verbsOfTab,
+  visibleTabs,
+} from './store';
+
+function setup() {
+  const sent: [string, any][] = [];
+  const store = new StatStore({
+    sendMessage: (type, payload) => sent.push([type, payload]),
+  });
+  return { sent, store };
+}
+
+const verblist = [
+  ['IC', 'Say', 'speak'],
+  ['IC', 'Emote'],
+  ['OOC', 'Who'],
+  ['Admin.Game', 'Ban'],
+  ['Admin', 'Aghost'],
+];
+
+describe('stat panel store', () => {
+  it('derives pinned-then-sorted tabs from verbs', () => {
+    const { store } = setup();
+    store.receive('init_verbs', { verblist });
+    store.receive('add_tickets_tabs', 'token');
+    expect(visibleTabs(store.state)).toEqual([
+      'Status',
+      'Tickets',
+      'Admin',
+      'IC',
+      'OOC',
+    ]);
+  });
+
+  it('groups subcategories and sorts by name', () => {
+    const { store } = setup();
+    store.receive('init_verbs', { verblist });
+    expect(verbsOfTab(store.state, 'Admin').map((g) => g.group)).toEqual([
+      null,
+      'Game',
+    ]);
+    expect(verbsOfTab(store.state, 'IC')[0].verbs.map((v) => v[1])).toEqual([
+      'Emote',
+      'Say',
+    ]);
+  });
+
+  it('a tab that empties goes away and the view returns to Status', () => {
+    const { sent, store } = setup();
+    store.receive('init_verbs', { verblist });
+    store.setTab('OOC');
+    store.receive('remove_verb_list', [['OOC', 'Who']]);
+    expect(store.state.currentTab).toBe('Status');
+    expect(sent.at(-1)).toEqual(['Set-Tab', { tab: 'Status' }]);
+  });
+
+  it('does not duplicate verbs by name', () => {
+    const { store } = setup();
+    store.receive('init_verbs', { verblist });
+    store.receive('add_verb_list', [['IC', 'Say']]);
+    expect(store.state.verbs.filter((v) => v[1] === 'Say').length).toBe(1);
+  });
+
+  it('init_verbs sends only the permanent tabs back, not a topic per tab', () => {
+    const { sent, store } = setup();
+    store.receive('add_admin_tabs', 'token');
+    sent.length = 0;
+    store.receive('init_verbs', { verblist });
+    expect(sent.map((m) => m[1].tab)).toEqual(['Status', 'MC', 'Tickets']);
+  });
+
+  it('removing admin tabs clears them and tells the server', () => {
+    const { sent, store } = setup();
+    store.receive('add_admin_tabs', 'token');
+    store.setTab('MC');
+    store.receive('remove_admin_tabs', undefined);
+    expect(store.state.hrefToken).toBeNull();
+    expect(store.state.currentTab).toBe('Status');
+    expect(visibleTabs(store.state)).toEqual(['Status']);
+    expect(sent).toContainEqual(['Remove-Tabs', { tab: 'MC' }]);
+  });
+
+  it('builds the status lines, skipping nulls', () => {
+    const { store } = setup();
+    store.receive('update_stat', {
+      ping_str: 'Ping',
+      global_data: ['Map', null],
+      other_str: ['Mine'],
+    });
+    expect(store.state.statusParts).toEqual(['Ping', 'Map', 'Mine']);
+  });
+
+  it('a listed turf replaces the last one and takes the view', () => {
+    const { store } = setup();
+    store.receive('create_listedturf', 'Floor');
+    store.receive('create_listedturf', 'Wall');
+    expect(visibleTabs(store.state)).toEqual(['Status', 'Wall']);
+    expect(store.state.currentTab).toBe('Wall');
+  });
+
+  it('examine with UPD switches to the tab', () => {
+    const { store } = setup();
+    store.receive('update_examine', { EX: ['a'], UPD: 1 });
+    expect(store.state.currentTab).toBe('Examine');
+  });
+
+  it('misc tabs come and go', () => {
+    const { store } = setup();
+    store.receive('create_misc', 'Vore');
+    store.receive('update_misc', { TN: 'Vore', TC: [['x']] });
+    expect(store.state.misc.Vore).toEqual([['x']]);
+    store.receive('remove_misc', 'Vore');
+    expect(store.state.misc.Vore).toBeUndefined();
+    expect(visibleTabs(store.state)).toEqual(['Status']);
+  });
+
+  it('searches verbs across tabs and builds the command', () => {
+    const { store } = setup();
+    store.receive('init_verbs', { verblist });
+    expect(searchVerbs(store.state, 'a').map((v) => v[1])).toEqual([
+      'Aghost',
+      'Ban',
+      'Say',
+    ]);
+    expect(searchVerbs(store.state, ' ')).toEqual([]);
+    expect(verbCommand('Fix Stat Panel')).toBe('Fix-Stat-Panel');
+  });
+});

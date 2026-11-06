@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "92 job and TG&C uniform types become rows of one table; a row can switch a default off, and a list a row holds is each instance's own copy"
+  - bugfix: "The deathsquad officer's dress uniform, the clown's loot crate and the metroid bounty-hunter figure drop are made correctly from their variant"
+  - bugfix: "Recolouring a converted uniform or accessory finds its colour channels again"

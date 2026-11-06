@@ -16,7 +16,7 @@ pub const MODULES: [(&str, &str); 51] = [
     ("lifecycle_counts", "lifecycle_counts"),
     ("mouse_override", "mouse_override"),
     ("native_ref_write", "native_ref_write"),
-    ("om_internal", "om_internal"),
+    ("engine_internal", "engine_internal"),
     ("organ_slots", "organ_slots"),
     ("qdel_src", "qdel_src"),
     ("reactions_table_proc", "reactions_table_proc"),

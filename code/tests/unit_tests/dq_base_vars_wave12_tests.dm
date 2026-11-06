@@ -20,7 +20,6 @@
 	H.AdjustLosebreath(100)
 	TEST_ASSERT_EQUAL(H.losebreath(), 25, "the adjuster clamps it to 25")
 	H.set_losebreath(0)
-	TEST_ASSERT_NULL(H.sparse_slots, "no slot is left behind")
 
 /// The weak slots: where a thrown thing came from and an instance's own armour, read back while the datum lives.
 /datum/unit_test/dq_base_vars_wave12_weak_slots
@@ -31,9 +30,9 @@
 	TEST_ASSERT(!("throw_source" in thing.vars), "throw_source is not a var")
 	TEST_ASSERT(!("armor_override" in thing.vars), "armor_override is not a var")
 	TEST_ASSERT_NULL(movable_throw_source(thing), "nothing was thrown from anywhere")
-	sparse_ref_set(thing, throw_source, T)
+	STATE_REF_SET(thing, movable_misc, throw_source, T)
 	TEST_ASSERT_EQUAL(movable_throw_source(thing), T, "the throw source reads back")
-	sparse_ref_set(thing, throw_source, null)
+	STATE_REF_SET(thing, movable_misc, throw_source, null)
 	TEST_ASSERT_NULL(movable_throw_source(thing), "and clears")
 	var/datum/armor/plate = dq_armor(list(MELEE = 33))
 	thing.set_armor(plate)

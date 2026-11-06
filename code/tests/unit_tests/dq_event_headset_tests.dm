@@ -25,7 +25,7 @@
 
 	// The intended effect (extra movement delay while worn) should still land,
 	// just via the wearer's own worn_factors instead of the shared species var.
-	TEST_ASSERT_EQUAL(headset.worn_factors[STAT_SLOWDOWN], 0.5, "the headset should contribute its slowdown via worn_factors")
+	TEST_ASSERT_EQUAL(worn_of(headset).worn_factors[STAT_SLOWDOWN], 0.5, "the headset should contribute its slowdown via worn_factors")
 	TEST_ASSERT_EQUAL(wearer.slowdown, 0.5, "the wearer's own STAT_SLOWDOWN factor should reflect the headset")
 	TEST_ASSERT_EQUAL(bystander.slowdown, 0, "the bystander should be unaffected by the wearer's headset")
 

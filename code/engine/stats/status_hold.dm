@@ -22,12 +22,12 @@
 
 /datum/entry_engine/status_hold/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	if(A.scope == SCOPE_TYPE)
-		declare_report("[A.def.key] on [A.holder?.type]: holds_status() is for a granted or slotted activation; a type holds a status with its own code")
+		declare_report("[A.def.key] on [A.holder()?.type]: holds_status() is for a granted or slotted activation; a type holds a status with its own code")
 		return FALSE
-	return hold(A.holder, E.args["status"], 1, status_hold_source(A))
+	return hold(A.holder(), E.args["status"], 1, status_hold_source(A))
 
 /datum/entry_engine/status_hold/remove(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(holder && !QDELETED(holder))
 		release(holder, E.args["status"], status_hold_source(A))
 

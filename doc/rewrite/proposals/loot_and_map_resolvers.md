@@ -252,5 +252,5 @@ Resolver specifics for A:
   `/datum/map_resolver_info`; `SSatoms.InitAtom()` looks the instance's type up in it.
 - **Waves** were closed under inheritance (a legacy declaration does not inherit from an entry), by `tools/codemods/declare_loot.py` and `map_resolver.py`; both
   forms were read until the last site went, then deleted and banned (21 names) in one commit.
-- **Tests** (`code/modules/unit_tests/dq_loot_behaviour.dm`): a roll yields an item its table names, a search yields once per searcher, a map resolver is inherited. The golden roll, search, resolver-table and map-reader pins (`snapshots/loot/`) were deleted: they only failed when re-blessed.
+- **Tests** (`code/tests/unit_tests/dq_loot_behaviour.dm`): a roll yields an item its table names, a search yields once per searcher, a map resolver is inherited. The golden roll, search, resolver-table and map-reader pins (`snapshots/loot/`) were deleted: they only failed when re-blessed.
 - **Option B** (search as an op, `code/library/loot/loot_search.dm`): see `doc/rewrite/intended_changes.md`, "Loot piles: the search op".

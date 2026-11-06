@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use crate::raw_ownership_policy::{decl_ev, member_parts};
 pub use crate::raw_ownership_policy::{
     file_events, visit_file_events, IdxEv, ABS_MEMBER, DECLARE_CALL, DECLARE_HEAD, FLYWEIGHT_TYPES,
-    GLOBAL_DECL, MEMBER, MODIFIERS, OM_FIELD_DECL, REGISTRY, TYPE_LINE,
+    GLOBAL_DECL, MEMBER, MODIFIERS, REGISTRY, TYPE_LINE,
 };
 
 use crate::incr;
@@ -41,7 +41,7 @@ macro_rules! re_m {
 }
 
 pub const CORE_DIRS: &[&str] = &[
-    "code/datums/ownership/",
+    "code/library/ownership/",
     "code/datums/om/",
     "code/engine/time/",
     "code/engine/refs/edges.dm",
@@ -50,13 +50,13 @@ pub const CORE_DIRS: &[&str] = &[
     "code/engine/kernel/cadences.dm",
     "code/engine/kernel/sequence.dm",
     "code/engine/kernel/sequence_table.dm",
-    "code/datums/lifecycle/",
+    "code/library/lifecycle/",
     "code/engine/state/",
-    "code/__defines/",
-    "code/controllers/",
+    "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
+    "code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/",
     "code/engine/refs/containment/",
-    "code/datums/containment/stock.dm",
-    "code/datums/shared_cache/",
+    "code/library/containers/containment/stock.dm",
+    "code/library/shared_cache/",
 ];
 pub const CALLBACK_OK: &[&str] = &[
     "code/datums/om/",
@@ -67,11 +67,11 @@ pub const CALLBACK_OK: &[&str] = &[
     "code/engine/kernel/cadences.dm",
     "code/engine/kernel/sequence.dm",
     "code/engine/kernel/sequence_table.dm",
-    "code/controllers/",
-    "code/__defines/",
-    "code/datums/ownership/",
-    "code/datums/callback.dm",
-    "code/_helpers/",
+    "code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/",
+    "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
+    "code/library/ownership/",
+    "code/library/datum/callback.dm",
+    "code/host/helpers/", "code/library/helpers/", "code/content/helpers/",
 ];
 pub const HANDLE_OK: &[&str] = &[
     "code/datums/om/",
@@ -82,13 +82,13 @@ pub const HANDLE_OK: &[&str] = &[
     "code/engine/kernel/cadences.dm",
     "code/engine/kernel/sequence.dm",
     "code/engine/kernel/sequence_table.dm",
-    "code/datums/ownership/",
+    "code/library/ownership/",
     "code/engine/state/",
-    "code/datums/lifecycle/",
-    "code/__defines/",
+    "code/library/lifecycle/",
+    "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
     "code/engine/refs/containment/",
-    "code/datums/containment/stock.dm",
-    "code/modules/unit_tests/",
+    "code/library/containers/containment/stock.dm",
+    "code/tests/unit_tests/",
     "code/tests/unit_tests/",
 ];
 
@@ -711,10 +711,10 @@ mod tests {
     }
 
     #[test]
-    fn index_reads_members_decls_and_fields() {
+    fn index_reads_members_and_decls() {
         let f = SourceFile::from_text(
             "code/a.dm",
-            "/obj/thing\n\tvar/datum/foo/bar\n\tvar/tmp/list/obj/items\n/obj/thing/ownership()\n\t. += owns(nameof(bar))\n\n/obj/thing/var/obj/baz\nOM_FIELD(/obj/thing, on, 1)\n",
+            "/obj/thing\n\tvar/datum/foo/bar\n\tvar/tmp/list/obj/items\n/obj/thing/ownership()\n\t. += owns(nameof(bar))\n\n/obj/thing/var/obj/baz\n",
         );
         let idx = Index::build(&[&f]);
         assert_eq!(idx.member("/obj/thing", "bar").unwrap().vtype, "/datum/foo");
@@ -722,7 +722,6 @@ mod tests {
         assert!(items.is_list && items.vtype == "/obj");
         assert_eq!(idx.decl("/obj/thing", "bar").unwrap().1.macro_name, "OWN");
         assert!(idx.member("/obj/thing", "baz").is_some());
-        assert!(idx.member("/obj/thing", "on").is_some());
     }
 
     #[test]

@@ -1,0 +1,128 @@
+/mob/living/simple_mob/vore/raptor
+	name = "raptor"
+	desc = "A massive raptor with piercing yellow eyes. Long sharp claws and huge pointy teeth, I wouldn't want to upset this thing."
+	tt_desc = "Velociraptor voroliensis"
+	icon = 'icons/mob/vore_raptor.dmi'
+	icon_dead = "raptorpurple_dead"
+	icon_living = "raptorpurple"
+	icon_state = "raptorpurple"
+	icon_rest = "raptorpurple"
+	vis_height = 92
+	friendly = list("nudges", "sniffs on", "rumbles softly at", "slobberlicks")
+	default_pixel_x = -48
+	pixel_x = -48
+	pixel_y = 0
+	response_help = "pets"
+	response_disarm = "shoves"
+	response_harm = "smacks"
+	movement_cooldown = -1
+	harm_intent_damage = 10
+	melee_damage_lower = 10
+	melee_damage_upper = 15
+	endurance = 500
+	attacktext = list("chomped")
+	see_in_dark = 8
+	minbodytemp = 0
+	mount_offset_y = 32
+	mount_offset_x = -16
+	can_buckle = TRUE
+	var/initial_icon = "raptorpurple"
+	var/wg_state = 0
+
+	var/random_skin = 1
+	var/list/skins
+
+
+/mob/living/simple_mob/vore/raptor
+
+	vore_bump_chance = 25
+	vore_digest_chance = 5
+	vore_escape_chance = 5
+	vore_pounce_chance = 50
+	vore_active = 1
+	vore_icons = SA_ICON_LIVING | SA_ICON_REST
+	swallowTime = 50
+	vore_ignores_undigestable = TRUE
+	vore_default_mode = DM_DIGEST
+	vore_pounce_maxhealth = 125
+	vore_bump_emote = "tries to snap up"
+
+CAPABILITIES(/mob/living/simple_mob/vore/raptor)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
+	configure(mob_rules(faction = FACTION_RAPTOR))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	rolls(nameof(initial_icon), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(initial_icon), living = "*", rest = "*", dead = "*_dead", only_if = nameof(random_skin))
+
+/mob/living/simple_mob/vore/raptor/Login()
+	. = ..()
+	if(!riding_datum)
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+	movement_cooldown = -1
+
+/mob/living/simple_mob/vore/raptor/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = "The raptor pounces atop you, pinning you under sharp taloned feet, a heavy weight on your chest. Unable to do much more than look up at the reptilian face, looking back down at you with a curious bird-like expression, you're helpless in the moment. With little more warning, the jaws lunge open and dive down towards your head. Engulfing you in the wet maw, tongue pushing against your face, a cage of jagged teeth hold you in place. Pulling you upwards roughly, the creature begins to chomp it's way down your body, and you're steadily transferred down the rippling, tight tunnel of its gullet. The beast throws its head backwards, sending you spiralling down toward's its stomach, where you land with a wet splash. The walls of the gut immediately clamp down on you, wrinkled flesh grinding the gastric slurry of acids and enzymes into your trapped form. A cacophony of bodily functions, groans, gurgles and heart beats overwhelm your hearing. This creature's body has clearly decided you're little more than meat to it now."
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_fancy_vore(1)
+	B.set_selective_preference(DM_DIGEST)
+	B.set_vore_verb("devour")
+	B.set_digest_brute(3)
+	B.set_digest_burn(2)
+	B.set_digest_oxy(0)
+	B.set_digestchance(50)
+	B.set_absorbchance(0)
+	B.set_escapechance(5)
+	B.escape_stun = 5
+	B.set_contamination_color("grey")
+	B.set_contamination_flavor("Wet")
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"The raptor growls in annoyance before clenching those wrinkled walls tight against your form, grinding away at you!",
+		"As the beast wanders about, you're forced to slip and slide around amidst a pool of thick digestive goop, sinking briefly into the thick, heavy walls!",
+		"You can barely hear the drake let out a pleased rumble as its stomach eagerly gurgles around its newfound meal!",
+		"As the thinning air begins to make you feel dizzy, menacing bworps and grumbles fill that dark, constantly shifting organ!",
+		"The constant, rhythmic kneading and massaging starts to take its toll along with the muggy heat, making you feel weaker and weaker!",
+		"The raptor happily wanders around while digesting its meal, almost like it is trying to show off the hanging gut you've given it. Not like it made much of a difference on his already borderline obese form anyway~"))
+
+/mob/living/simple_mob/vore/raptor/adjust_nutrition()
+	..()
+	consider_wg()
+
+/// A heavy raptor wears its fat sprite: the living state follows the weight state, then the tracked weight state redraws it.
+/mob/living/simple_mob/vore/raptor/proc/consider_wg()
+	var/new_state = (nutrition_of(src) >= 900) ? 1 : 0
+	if(new_state == wg_state)
+		return
+	set_icon_living(new_state ? "[initial_icon]_fat" : "[initial_icon]")
+	set_wg_state(new_state)
+
+
+/mob/living/simple_mob/vore/raptor/yellow
+	name = "raptor"
+	desc = "A massive yellow raptor with piercing blue eyes and a feathered tail. Long sharp claws and huge pointy teeth, I wouldn't want to upset this thing."
+	icon_dead = "raptoryellow_dead"
+	icon_living = "raptoryellow"
+	icon_state = "raptoryellow"
+	icon_rest = "raptoryellow_rest"
+	random_skin = 0
+	initial_icon = "raptoryellow"
+
+/mob/living/simple_mob/vore/raptor/proc/build_skins()
+	return list(
+			"raptorpurple",
+			"raptorgreen",
+			"raptorred",
+			"raptorblue",
+			"raptorblack",
+			"raptorwhite"
+		)

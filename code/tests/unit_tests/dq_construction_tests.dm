@@ -406,7 +406,7 @@
 	TEST_ASSERT(test_op_committed(anchoring), "two seconds completes the actual anchoring edge")
 	TEST_ASSERT_EQUAL(graph_current(frame), STAGE_MACHINE_FRAME_PLACED, "wrenched down")
 
-	var/obj/item/circuitboard/board = allocate(/obj/item/circuitboard/crew, T)
+	var/obj/item/circuitboard/board = own(variant_new(VARIANT(/obj/item/circuitboard/crew), T))
 	TEST_ASSERT(board, "found a computer board")
 	TEST_ASSERT(interim_native_frame_step(frame, H, "construction.build:machine_frame_board_in.insert_board", board), "the actual compatible board insertion commits")
 	TEST_ASSERT_EQUAL(frame.state, FRAME_UNFASTENED, "board placed")

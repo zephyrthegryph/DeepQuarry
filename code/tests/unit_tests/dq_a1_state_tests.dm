@@ -99,6 +99,16 @@
 	TEST_ASSERT(is_flyweight(C), "an interned capability is a flyweight")
 	TEST_ASSERT(!is_flyweight(allocate(/datum/a1_fx)), "an ordinary datum is not")
 
+/// A squeak hears its shoes step: the step counter moves on the notice, with no runtime declaring the observer.
+/datum/unit_test/dq_a1_squeak_counts_steps
+
+/datum/unit_test/dq_a1_squeak_counts_steps/Run()
+	var/obj/item/clothing/shoes/S = allocate(/obj/item/clothing/shoes)
+	var/datum/squeak/Q = allocate(/datum/squeak, S, null, null, 0, 100)
+	TEST_ASSERT_EQUAL(Q.steps, 0, "no steps yet")
+	PUBLISH(S, shoes_step, wearer = null, m_intent = I_WALK)
+	TEST_ASSERT_EQUAL(Q.steps, 1, "a step reaches the squeak")
+
 /// Dry galoshes hear a shoes_step notice (no om behaviour); squeaky shoes observe the same notice.
 /datum/unit_test/dq_a1_dry_galoshes/Run()
 	var/obj/item/clothing/shoes/dry_galoshes/G = allocate(/obj/item/clothing/shoes/dry_galoshes)
@@ -106,5 +116,5 @@
 	var/turf/simulated/T = get_turf(G)
 	if(istype(T))
 		T.wet_floor(1)
-		PUBLISH_LEGACY(G, /datum/notice/shoes_step, null, I_WALK)
+		PUBLISH(G, shoes_step, wearer = null, m_intent = I_WALK)
 		TEST_ASSERT(!T.wet, "a step dries the floor")

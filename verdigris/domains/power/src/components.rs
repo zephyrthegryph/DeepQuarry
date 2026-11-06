@@ -114,7 +114,7 @@ pub struct Apc {
     #[vg(state, default = false)]
     pub alarm: bool,
     /// What the APC last told DM (`laws::apc_report_key`: its channels,
-    /// charging, alarm, external status and charge percent, packed), or 0
+    /// charging, alarm, external status and charge band, packed), or 0
     /// before its first report. `ApcTick` emits [`ApcEvent::Report`] only
     /// when the key moves: a settled APC sends nothing.
     #[vg(state, default = 0)]
@@ -139,7 +139,7 @@ pub struct Apc {
 
 /// What an APC tells DM (`ApcTick`): its shown state crossed a band -- a
 /// channel, the charging lamp, the alarm or the external power status
-/// changed, or the cell charge crossed a whole percent. DM applies it to the
+/// changed, or the cell charge crossed a band (`laws::apc_charge_band`). DM applies it to the
 /// APC and its area (`on_apc_report()`); nothing polls the APC.
 #[vg::events(Apc)]
 pub enum ApcEvent {

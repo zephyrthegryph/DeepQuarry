@@ -1,0 +1,254 @@
+/datum/category_item/catalogue/fauna/alchemistbee
+	name = "VR Creations"
+	desc = "A creature made of hardlight. \
+	There appears to be remnants of code within the strange construct, \
+	of dialog, and player interaction. But all that code seems inactive"
+	value = CATALOGUER_REWARD_HARD
+
+/mob/living/simple_mob/vr/alchemistbee
+	drag_buckle = FALSE
+	name = "large hardlight creature"
+	desc = "A digital creature"
+	icon = 'icons/mob/alchemistbee.dmi'
+	icon_state = "beeliving"
+	icon_living = "beeliving"
+	icon_dead = "beedead"
+
+
+	endurance = 250
+	movement_cooldown = 0
+	unsuitable_atoms_damage = 0
+	projectiletype = /obj/item/projectile/energy/homing_bolt/wizard/boss
+	melee_attack_delay = 1 SECOND
+
+	melee_damage_lower = 20
+	melee_damage_upper = 20
+
+	special_attack_min_range = 1
+	special_attack_max_range = 14
+	special_attack_cooldown = 10
+
+	loot_list = list(/obj/item/clothing/head/vrwizard = 60,
+			/obj/item/clothing/suit/vrwizard = 60,
+			/obj/item/gun/magic/firestaff/vrwizard/fire = 60,
+			/obj/item/gun/magic/firestaff/vrwizard/frost = 60,
+			/obj/item/gun/magic/firestaff/vrwizard/poison = 60,
+			/obj/item/gun/magic/firestaff/vrwizard/lighting = 60,
+			/obj/item/gun/magic/firestaff/vrwizard/nuclear = 100,
+			/obj/item/clothing/head/darkvrwizard = 100,
+			/obj/item/clothing/suit/darkvrwizard = 100
+			)
+
+/mob/living/simple_mob/vr/alchemistbee
+	vore_active = 1
+	vore_max_size = RESIZE_HUGE
+	vore_min_size = RESIZE_SMALL
+	vore_pounce_chance = 0 // Beat them into crit before eating.
+	vore_icons = null
+
+//bluenom
+CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/alchemistbee)))
+	configure(mob_rules(faction = "terror"))
+	configure(living_rules(vore_capacity = 6, use_modern_ai = TRUE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
+
+/mob/living/simple_mob/vr/alchemistbee/Login()
+	. = ..()
+	if(!riding_datum)
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+	movement_cooldown = 1
+
+/mob/living/simple_mob/vr/alchemistbee/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
+
+/obj/item/projectile/energy/homing_bolt/wizard/boss
+	damage = 10
+	modifier_type_to_apply = /datum/body_effect/wizweakness
+	modifier_duration = 30 SECONDS
+	icon_state = "arcane_barrage"
+
+/datum/body_effect/wizweakness
+	name = "wizweakness"
+	desc = "Can you even see this in game?"
+	mob_overlay_state = "cult_aura"
+
+	on_created_text = span_warning("You feel incrediably vulnerable.")
+	on_expired_text = span_notice("You feel better.")
+	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
+	// Adjusts all incoming damage.
+	// Physical injuries.
+	// Thermal injuries.
+	// Toxic injuries.
+	// Asphyxiation.
+	factors = alist(STAT_INCOMING_ALL = 2, STAT_INCOMING_PHYSICAL = 2, STAT_INCOMING_THERMAL = 2, STAT_INCOMING_TOXIC = 2, STAT_DEMAND = 2)
+
+//Trying to learn from the AADG's ai and make my own
+
+/mob/living/simple_mob/vr/alchemistbee/do_special_attack(atom/A, stance)
+	. = TRUE
+	switch(stance)
+		if(I_DISARM)
+			chemblast(A)
+		if(I_HURT)
+			homingcluster(A)
+		if(I_GRAB)
+			dangerbolt(A)
+
+/mob/living/simple_mob/vr/alchemistbee/proc/chemblast(atom/target)
+	Beam(target, icon_state = "sat_beam", time = 1.5 SECONDS, maxdistance = INFINITY)
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares a pouch of vials!")))
+	after(src, 0.5 SECONDS, PROC_REF(chemblast_throw), with = list(target))
+
+/mob/living/simple_mob/vr/alchemistbee/proc/chemblast_throw(atom/target)
+
+	if(prob(25))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% throws a blue vial!")))
+		var/obj/item/projectile/B = new /obj/item/projectile/arc/vial/frostvial(get_turf(src))
+		B.launch_projectile(target, BP_TORSO, src)
+
+	if(prob(25))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% throws a green vial!")))
+		var/obj/item/projectile/B = new /obj/item/projectile/arc/vial/poisonvial(get_turf(src))
+		B.launch_projectile(target, BP_TORSO, src)
+
+	if(prob(25))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% throws a red vial!")))
+		var/obj/item/projectile/B = new /obj/item/projectile/arc/vial/firevial(get_turf(src))
+		B.launch_projectile(target, BP_TORSO, src)
+	else
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% throws a strange vial")))
+		var/obj/item/projectile/A = new /obj/item/projectile/arc/vial/lightingvial(get_turf(src))
+		A.launch_projectile(target, BP_TORSO, src)
+
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% puts them pouch away.")))
+
+
+/mob/living/simple_mob/vr/alchemistbee/proc/homingcluster(atom/target)
+	var/obj/item/projectile/A = new /obj/item/projectile/bullet/homingcluster(get_turf(src))
+	A.launch_projectile(target, BP_TORSO, src)
+
+/mob/living/simple_mob/vr/alchemistbee/proc/dangerbolt(atom/target)
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares a powerful spell!")))
+	Beam(target, icon_state = "sat_beam", time = 2.0 SECONDS, maxdistance = INFINITY)
+	after(src, 1.5 SECONDS, PROC_REF(dangerbolt_fire), with = list(target))
+
+/mob/living/simple_mob/vr/alchemistbee/proc/dangerbolt_fire(atom/target)
+	var/obj/item/projectile/A = new /obj/item/projectile/energy/nuclearblast(get_turf(src))
+	A.launch_projectile(target, BP_TORSO, src)
+
+/obj/item/projectile/bullet/homingcluster
+	use_submunitions = 1
+	only_submunitions = 1
+	range = 0
+	submunition_spread_max = 1200
+	submunition_spread_min = 200
+	submunitions = list(/obj/item/projectile/energy/homing_bolt/wizard/fire = 1, /obj/item/projectile/energy/homing_bolt/wizard/frost = 1, /obj/item/projectile/energy/homing_bolt/wizard/poison = 1, /obj/item/projectile/energy/homing_bolt/wizard/lighting = 1)
+
+CAPABILITIES(/obj/item/projectile/bullet/homingcluster)
+	configure(item_combat(embed_chance = 0))
+
+//I desire arcing projectiles with smoke. Wish this was a general proc for projectiles
+/obj/item/projectile/arc/vial
+	name = "vial"
+	icon = 'icons/obj/vialprojectile.dmi'
+	icon_state = "blue_vial"
+	var/splatter = FALSE			// Will this make a cloud of reagents?
+	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
+TYPE_TABLE_DECLARE(/obj/item/projectile/arc/vial, vial_chems, list(REAGENT_ID_MOLD))
+
+// A splattering vial carries its chemicals in equal shares (reagents(), filled as it is made); a plain one carries nothing.
+CAPABILITIES(/obj/item/projectile/arc/vial)
+	reagents(nameof(splatter_volume), contents_from = PROC_REF(splatter_contents))
+
+/obj/item/projectile/arc/vial/proc/splatter_contents()
+	. = list()
+	if(!splatter)
+		return
+	var/list/chems = TYPE_TABLE_GET(src, vial_chems)
+	var/reagent_vol = (round((splatter_volume / chems.len) * 100) / 100) //Cut it at the hundreds place, please.
+	for(var/reagent in chems)
+		.[reagent] = reagent_vol
+
+/obj/item/projectile/arc/vial/on_impact(atom/A)
+	if(splatter)
+		var/turf/location = get_turf(src)
+		var/datum/effect/effect/system/smoke_spread/chem/blob/S = new /datum/effect/effect/system/smoke_spread/chem/blob
+		S.attach(location)
+		S.set_up(reagents, rand(1, splatter_volume), 0, location)
+		play_sfx(location, SFX_EFFECTS_SLIME_SQUISH, 0.6, extrarange = -3)
+		S.start()
+	..()
+
+/obj/item/projectile/arc/vial/frostvial
+	icon_state = "blue_vial"
+	damage = 10
+	splatter_volume = 60
+	modifier_type_to_apply = /datum/body_effect/wizpoison/frost
+	modifier_duration = 15 SECONDS
+	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/frostvial)
+	configure(item_combat(armor_penetration = 0))
+TYPE_TABLE(/obj/item/projectile/arc/vial/frostvial, vial_chems, list(REAGENT_ID_FROSTOIL))
+
+/obj/item/projectile/arc/vial/poisonvial
+	icon_state = "green_vial"
+	damage = 10
+	splatter_volume = 60
+	modifier_type_to_apply = /datum/body_effect/wizpoison
+	modifier_duration = 15 SECONDS
+	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/poisonvial)
+	configure(item_combat(armor_penetration = 0))
+TYPE_TABLE(/obj/item/projectile/arc/vial/poisonvial, vial_chems, list(REAGENT_ID_TOXIN))
+
+/obj/item/projectile/arc/vial/firevial
+	icon_state = "red_vial"
+	damage = 10
+	splatter_volume = 60
+	modifier_type_to_apply = /datum/body_effect/wizfire
+	modifier_duration = 15 SECONDS
+	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/firevial)
+	configure(item_combat(armor_penetration = 0))
+TYPE_TABLE(/obj/item/projectile/arc/vial/firevial, vial_chems, list(REAGENT_ID_SACID))
+
+/obj/item/projectile/arc/vial/lightingvial
+	icon_state = "orange_vial"
+	damage = 10
+	splatter_volume = 60
+	modifier_type_to_apply = /datum/body_effect/wizfire/lighting
+	modifier_duration = 15 SECONDS
+	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/lightingvial)
+	configure(item_combat(armor_penetration = 0))
+TYPE_TABLE(/obj/item/projectile/arc/vial/lightingvial, vial_chems, list(REAGENT_ID_SHREDDINGNANITES))
+
+/obj/item/projectile/energy/nuclearblast
+	name = "nuclear blast"
+	icon_state = "plasma"
+	damage = 25
+	agony = 50
+	speed = 24.0
+	modifier_type_to_apply = /datum/body_effect/grievous_wounds
+	modifier_duration = 120 SECONDS
+	flash_strength = 15
+
+CAPABILITIES(/obj/item/projectile/energy/nuclearblast)
+	configure(item_combat(armor_penetration = 50))

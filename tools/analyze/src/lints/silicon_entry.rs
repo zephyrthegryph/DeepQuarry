@@ -21,8 +21,7 @@
 //! * `legacy_entry`: `INTERACT_SILICON(` and `silicon_use =`, the legacy interaction entries for a silicon's plain click; each becomes an op
 //!   with a `remote()` binding.
 //!
-//! `siliconaccess`, `handler_actor_istype` and `helper_actor_check` are ratchets over `tools/ci/silicon_entry_baseline.txt` (`analyze baseline --update --lint silicon_entry` drops fixed
-//! sites). Exempt paths are in `lint_scopes.toml` ([lint.silicon_entry]).
+//! `siliconaccess`, `handler_actor_istype` and `helper_actor_check` are hard bans (no baseline). Exempt paths are in `lint_scopes.toml` ([lint.silicon_entry]).
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::tree::{SourceFile, CODE_DM};

@@ -1,0 +1,68 @@
+/// The name of the borer's host var (the reverse-index key borer_of() reads).
+#define BORER_HOST_VAR "borer_host_mob"
+
+/mob/living/simple_mob/animal/borer
+	var/datum/ghost_query/ghost_check // Used to unregister our signal
+	/// The human this borer has infested (a reference, cleared when the host is deleted). Read with borer_host().
+	var/mob/living/carbon/human/borer_host_mob
+
+CAPABILITIES(/mob/living/simple_mob/animal/borer)
+	op("bond_brain", menu(), label("Assume Control"), needs(req_self(), req(PROC_REF(bond_brain_ready))), then(PROC_REF(bond_brain_op)))
+	op("release_host", menu(desc = "Slither out of your host."), label("Release Host"), needs(req_self(), req(PROC_REF(release_host_ready))), then(PROC_REF(release_host_op)))
+	op("knockout_victim", menu(desc = "Use your psychic influence to put a target into a temporary catatonic state."), label("Knockout Victim"), needs(req_self(), req(PROC_REF(knockout_victim_ready))), then(PROC_REF(knockout_victim_op)))
+	op("infest_host", menu(desc = "Infest a suitable humanoid host."), label("Infest"), needs(req_self(), req(PROC_REF(infest_host_ready))), then(PROC_REF(infest_host_op)))
+	op("secrete_chemicals", menu(desc = "Drain some chemicals into your host's bloodstream."), label("Secrete Chemicals"), needs(req_self(), req(PROC_REF(secrete_chemicals_ready))), then(PROC_REF(secrete_chemicals_op)))
+	configure(mob_rules(universal_understand = TRUE, vent_crawl_time = 30))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(can_be_antagged = TRUE))
+	ref_one(nameof(borer_host_mob), /mob/living/carbon/human, on_unlink = PROC_REF(host_lost))
+	immune_to_incapacitation()
+	op("infest", ai(), reach(REACH_RANGE(1)), starts(PROC_REF(infest_started)), wait(PROC_REF(infest_wait)), then(PROC_REF(infest_done)), on_interrupt(PROC_REF(infest_dislodged)))
+	after_init(0, then(PROC_REF(find_player)))
+	owns_one(nameof(ghost_check), /datum/ghost_query)
+	owns_one(nameof(host_brain), /mob/living/captive_brain)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	knows("Cortical Link")
+	rolls(nameof(true_name), PROC_REF(roll_true_name))
+	setup(TYPE_PROC_REF(/mob, motiontracker_subscribe)) // senses motion from birth
+
+/// The human this borer has infested, or null.
+/mob/living/simple_mob/animal/borer/proc/borer_host() as /mob/living/carbon/human
+	return borer_host_mob
+
+/// The borer infesting this human, or null.
+/mob/living/carbon/human/proc/borer_of() as /mob/living/simple_mob/animal/borer
+	var/list/borers = rel_sources_via(src, BORER_HOST_VAR)
+	return length(borers) ? borers[1] : null
+
+/// The borer infests `new_host`: linked, and listed in the head organ's implants so every teardown path agrees (detatch(), leave_host(), the organ
+/// being removed, either end deleted).
+/mob/living/simple_mob/animal/borer/proc/take_host(mob/living/carbon/human/new_host)
+	rel_set(src, nameof(borer_host_mob), new_host)
+	if(borer_host_mob != new_host)
+		return FALSE
+	var/obj/item/organ/external/head = new_host.get_organ(BP_HEAD)
+	if(head)
+		rel_add(head, nameof(head.implants), src)
+	return TRUE
+
+/// The host link went (the borer left, or the host was deleted): the borer leaves the head's implants.
+/mob/living/simple_mob/animal/borer/proc/host_lost(mob/living/carbon/human/old_host)
+	var/obj/item/organ/external/head = old_host.get_organ(BP_HEAD)
+	if(head)
+		rel_remove(head, nameof(head.implants), src)
+
+/mob/living/simple_mob/animal/borer/proc/request_player()
+	rel_set(src, nameof(ghost_check), new /datum/ghost_query/borer())
+	global.observe(ghost_check, /datum/notice/ghost_query_complete, src, then(PROC_REF(get_winner)))
+	ghost_check.query() // This will sleep the proc for awhile.
+
+/mob/living/simple_mob/animal/borer/proc/get_winner(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(ghost_check && ghost_check.candidates.len) //ghost_check should NEVER get deleted but...whatever, sanity.
+		var/mob/observer/dead/D = ghost_check.candidates[1]
+		transfer_personality(D)
+	unobserve(ghost_check, /datum/notice/ghost_query_complete, src)
+	rel_clear(src, nameof(ghost_check)) //get rid of the query
+

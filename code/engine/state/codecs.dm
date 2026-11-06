@@ -58,11 +58,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_codec)
 	var/kind = entry?[OWNE_KIND]
 	if(!kind)
 		var/datum/V = value
-		if(isdatum(V) && V.own_holder_ref == own_key(D))
+		if(isdatum(V) && V.own_holder_ref == SLOT(D))
 			kind = OWNK_OWN
 		else if(islist(value))
 			for(var/datum/member in value)
-				if(member.own_holder_ref == own_key(D))
+				if(member.own_holder_ref == SLOT(D))
 					kind = OWNK_OWN
 				break
 	switch(kind)

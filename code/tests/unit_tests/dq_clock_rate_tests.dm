@@ -4,36 +4,36 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/datum/om_test_entity/clock_probe
+/datum/engine_test_entity/clock_probe
 	var/rate
 
-/datum/om_test_entity/clock_probe/timer_clock()
+/datum/engine_test_entity/clock_probe/timer_clock()
 	return CLOCK_BIO
 
-/datum/om_test_entity/clock_probe/biological_clock_rate()
+/datum/engine_test_entity/clock_probe/biological_clock_rate()
 	return rate
 
 /// Sets the probe's clock rate the way the stat layer does: the rate first, then the clock hears of it.
-/datum/unit_test/om/proc/clock_probe_rate(datum/om_test_entity/clock_probe/E, new_rate)
+/datum/unit_test/engine/proc/clock_probe_rate(datum/engine_test_entity/clock_probe/E, new_rate)
 	E.rate = new_rate
 	bio_clock_rate_changed(E)
 
 /// The probe's record and its clock already exist (a running entity), at the unscaled rate.
-/datum/unit_test/om/proc/clock_probe_running(datum/om_test_entity/clock_probe/E)
+/datum/unit_test/engine/proc/clock_probe_running(datum/engine_test_entity/clock_probe/E)
 	scheduler_record_of(E)
 	clock_now(E, CLOCK_BIO)
 
-/datum/unit_test/om/clock_rate_scales_timers
+/datum/unit_test/engine/clock_rate_scales_timers
 
-/datum/unit_test/om/clock_rate_scales_timers/run_om(list/made)
-	var/datum/om_test_entity/clock_probe/fast = entity(made, /datum/om_test_entity/clock_probe)
-	var/datum/om_test_entity/clock_probe/slow = entity(made, /datum/om_test_entity/clock_probe)
-	var/datum/om_test_entity/clock_probe/stopped = entity(made, /datum/om_test_entity/clock_probe)
-	for(var/datum/om_test_entity/clock_probe/E in list(fast, slow, stopped))
+/datum/unit_test/engine/clock_rate_scales_timers/run_engine(list/made)
+	var/datum/engine_test_entity/clock_probe/fast = entity(made, /datum/engine_test_entity/clock_probe)
+	var/datum/engine_test_entity/clock_probe/slow = entity(made, /datum/engine_test_entity/clock_probe)
+	var/datum/engine_test_entity/clock_probe/stopped = entity(made, /datum/engine_test_entity/clock_probe)
+	for(var/datum/engine_test_entity/clock_probe/E in list(fast, slow, stopped))
 		clock_probe_running(E)
-	after(fast, 4 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("hit"))
-	after(slow, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("hit"))
-	after(stopped, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("hit"))
+	after(fast, 4 SECONDS, /datum/engine_test_entity/proc/timer_hit, with = list("hit"))
+	after(slow, 2 SECONDS, /datum/engine_test_entity/proc/timer_hit, with = list("hit"))
+	after(stopped, 2 SECONDS, /datum/engine_test_entity/proc/timer_hit, with = list("hit"))
 	clock_probe_rate(fast, 2)
 	clock_probe_rate(slow, 0.5)
 	clock_probe_rate(stopped, 0)
@@ -50,10 +50,10 @@
 	scheduler_advance(2.1)
 	TEST_ASSERT("hit" in stopped.log, "a restarted clock finishes its timer")
 
-/datum/unit_test/om/clock_rate_keeps_time_passed
+/datum/unit_test/engine/clock_rate_keeps_time_passed
 
-/datum/unit_test/om/clock_rate_keeps_time_passed/run_om(list/made)
-	var/datum/om_test_entity/clock_probe/E = entity(made, /datum/om_test_entity/clock_probe)
+/datum/unit_test/engine/clock_rate_keeps_time_passed/run_engine(list/made)
+	var/datum/engine_test_entity/clock_probe/E = entity(made, /datum/engine_test_entity/clock_probe)
 	clock_probe_running(E)
 	var/start = clock_now(E, CLOCK_BIO)
 	scheduler_advance(1)
@@ -70,10 +70,10 @@
 	scheduler_advance(2)
 	TEST_ASSERT(abs(clock_now(E, CLOCK_BIO) - after_fast - 10) < 0.01, "rate 0.5: a second of clock time for two of world time")
 
-/datum/unit_test/om/own_clock_starts_at_one
+/datum/unit_test/engine/own_clock_starts_at_one
 
-/datum/unit_test/om/own_clock_starts_at_one/run_om(list/made)
-	var/datum/om_test_entity/clock_probe/E = entity(made, /datum/om_test_entity/clock_probe)
+/datum/unit_test/engine/own_clock_starts_at_one/run_engine(list/made)
+	var/datum/engine_test_entity/clock_probe/E = entity(made, /datum/engine_test_entity/clock_probe)
 	var/datum/scheduler_record/rec = scheduler_record_of(E)
 	TEST_ASSERT_EQUAL(timer_local(rec), OWN_CLOCK_START, "a fresh own clock reads its start, which is not 0 (0 means never set)")
 	TEST_ASSERT(timer_local(rec) > 0, "a fresh own clock reads above zero")

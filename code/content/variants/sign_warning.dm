@@ -1,0 +1,33 @@
+// Variants of /obj/structure/sign/warning: one row per type that only set data (doc/rewrite/variant_census.md). The old path, parent + "/" + key, still resolves
+// for maps and saves (variant_alias_of()). Started by tools/ci/variant_collapse.py.
+
+GLOBAL_LIST_INIT(dq_variants_sign_warning, list(
+	"acid" = list("name" = "\improper ACIDIC SURFACE", "icon_state" = "acid"),
+	"airlock" = list("name" = "\improper EXTERNAL AIRLOCK", "icon_state" = "doors"),
+	"biohazard" = list("name" = "\improper BIOHAZARD", "icon_state" = "bio"),
+	"bomb_range" = list("name" = "\improper BOMB RANGE", "icon_state" = "blast"),
+	"caution" = list("name" = "\improper CAUTION"),
+	"cold" = list("name" = "\improper EXTREME COLD ENVIRONMENT", "icon_state" = "cold"),
+	"compressed_gas" = list("name" = "\improper COMPRESSED GAS", "icon_state" = "hikpa"),
+	"deathsposal" = list("name" = "\improper DISPOSAL LEADS TO SPACE", "icon_state" = "deathsposal"),
+	"docking_area" = list("name" = "\improper KEEP CLEAR: DOCKING AREA"),
+	"emergence" = list("name" = "\improper EMERGENT INTELLIGENCE DETAILS", "icon_state" = "rogueai"),
+	"engineering_access" = list("name" = "\improper ENGINEERING ACCESS", "icon_state" = "engine"),
+	"evac" = list("name" = "\improper KEEP CLEAR: EVAC DOCKING AREA", "icon_state" = "evac"),
+	"falling" = list("name" = "\improper FALL HAZARD", "icon_state" = "falling"),
+	"fire" = list("name" = "\improper DANGER: FIRE", "icon_state" = "fire"),
+	"high_voltage" = list("name" = "\improper HIGH VOLTAGE", "icon_state" = "shock"),
+	"hot_exhaust" = list("name" = "\improper HOT EXHAUST", "icon_state" = "fire"),
+	"internals_required" = list("name" = "\improper INTERNALS REQUIRED"),
+	"lava" = list("name" = "\improper MOLTEN SURFACE", "icon_state" = "lava"),
+	"mail_delivery" = list("name" = "\improper MAIL DELIVERY", "icon_state" = "mail"),
+	"moving_parts" = list("name" = "\improper MOVING PARTS", "icon_state" = "movingparts"),
+	"nosmoking_1" = list("name" = "\improper NO SMOKING", "icon_state" = "nosmoking"),
+	"nosmoking_2" = list("name" = "\improper NO SMOKING", "icon_state" = "nosmoking2"),
+	"pods" = list("name" = "\improper ESCAPE PODS", "icon_state" = "pods"),
+	"radioactive" = list("name" = "\improper RADIOACTIVE AREA", "icon_state" = "radiation"),
+	"server_room" = list("name" = "\improper SERVER ROOM", "icon_state" = "server"),
+	"siphon_valve" = list("name" = "\improper SIPHON VALVE"),
+	"vacuum" = list("name" = "\improper HARD VACUUM AHEAD", "icon_state" = "space"),
+	"vent_port" = list("name" = "\improper EJECTION/VENTING PORT"),
+))

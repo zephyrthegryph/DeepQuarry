@@ -78,26 +78,26 @@
 
 // --- Decorative appearances (mostly the CentCom level) ----------------------
 
-/turf/unsimulated/floor/snow_decor
+/turf/open/fixed/floor/snow_decor
 	name = "snow"
 	icon = 'icons/turf/snow_new.dmi'
 	icon_state = "snow"
 
-/turf/unsimulated/floor/wood_appearance
+/turf/open/fixed/floor/wood_appearance
 	icon = 'icons/turf/flooring/wood.dmi'
 
-/turf/unsimulated/wall/blast_door_appearance
+/turf/open/fixed/wall/blast_door_appearance
 	name = "Shuttle Bay Blast Door"
 	desc = "That looks like it doesn't open easily."
 	icon = 'icons/obj/doors/rapid_pdoor.dmi'
 	icon_state = "pdoor1"
 
-/turf/unsimulated/wall/maint_door_appearance
+/turf/open/fixed/wall/maint_door_appearance
 	name = "Sealed Door"
 	icon = 'icons/obj/doors/Doormaint.dmi'
 	icon_state = "door_closed"
 
-/turf/unsimulated/wall/uranium_door_appearance
+/turf/open/fixed/wall/uranium_door_appearance
 	name = "Sealed Door"
 	icon = 'icons/obj/doors/Dooruranium.dmi'
 	icon_state = "door_closed"

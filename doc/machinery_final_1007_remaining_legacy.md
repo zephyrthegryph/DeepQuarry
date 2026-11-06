@@ -42,9 +42,9 @@ Shared appearance/cache registry; separate shared-cache API conversion, preserve
 - `code/game/machinery/pipe/construction.dm:272` — `DECLARE_SHARED_CACHE(pipe_init_dirs, GLOBAL_PROC_REF(build_pipe_init_dirs), SC_NEVER)`
 - `code/modules/power/lighting.dm:10` — `DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_instance), SC_NEVER)`
 
-## `OM_WORLD` — 1
+## `WORLD_NOTICE_BUS` — 1
 Doppler explosion notice observes world owner; shared world-context alias, not gas hub.
-- `code/game/machinery/doppler_array.dm:26` — `observe(OM_WORLD, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))`
+- `code/game/machinery/doppler_array.dm:26` — `observe(WORLD_NOTICE_BUS, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))`
 
 ## `REQ_INTERACTION_REACH` — 6
 Legacy requirement clauses on six abstract machinery interaction bases and two construction ladder entries; separate compatibility-base/construction retirement.
@@ -84,7 +84,7 @@ Transport pod timer disposal callback compatibility helper.
 - `code/game/machinery/transportpod.dm:69` — `after(src, 0.2 SECONDS, TYPE_PROC_REF(/datum, om_qdel_self))`
 
 ## `om_range` — 2
-NOT legacy OM: named argument meaning overmap range in using_map.get_map_levels, two legitimate sites.
+NOT legacy scheduler: named argument meaning overmap range in using_map.get_map_levels, two legitimate sites.
 - `code/game/machinery/cryopod.dm:512` — `announce.autosay("[to_despawn.real_name][departing_job ? ", [departing_job], " : " "][on_store_message]", "[on_store_name]", announce_channel, using_map.get_map_levels(z, TRUE, om_range = DEFAULT_OVERMAP_RANGE))`
 - `code/game/machinery/telecomms/telecomunications.dm:695` — `return src_z in using_map.get_map_levels(dst_z, TRUE, om_range = DEFAULT_OVERMAP_RANGE)`
 
@@ -112,8 +112,8 @@ Ownership helper compatibility path; separate ownership/containment conversion, 
 
 ## `own_move` — 7
 Ownership helper compatibility path; separate ownership/containment conversion, preserves release/delete/move policy.
-- `code/game/machinery/machinery.dm:552` — `own_move(B, src, nameof(component_parts))`
-- `code/game/machinery/machinery.dm:603` — `own_move(M, A, nameof(A.circuit)) // the board moves from the machine to the frame (CONTAINED there)`
+- `code/content/machinery/machinery.dm:552` — `own_move(B, src, nameof(component_parts))`
+- `code/content/machinery/machinery.dm:603` — `own_move(M, A, nameof(A.circuit)) // the board moves from the machine to the frame (CONTAINED there)`
 - `code/game/machinery/protean_reconstitutor.dm:292` — `own_move(salvaged_brain, BR, nameof(BR.stored_mmi)) //...and implant the salvaged mmi in its place (from our protean_brain)`
 - `code/game/machinery/computer/cloning.dm:90` — `own_move(BR, pod, nameof(pod.growing_record))`
 - `code/game/machinery/computer/cloning.dm:386` — `own_move(C, pod, nameof(/obj/machinery/clonepod::growing_record))`
@@ -130,8 +130,8 @@ Ownership helper compatibility path; separate ownership/containment conversion, 
 ## `own_take_member` — 7
 Ownership helper compatibility path; separate ownership/containment conversion, preserves release/delete/move policy.
 - `code/game/machinery/cloning.dm:485` — `own_take_member(src, nameof(containers), G)`
-- `code/game/machinery/machinery.dm:518` — `own_take_member(src, nameof(component_parts), C)`
-- `code/game/machinery/machinery.dm:550` — `own_take_member(src, nameof(component_parts), A)`
+- `code/content/machinery/machinery.dm:518` — `own_take_member(src, nameof(component_parts), C)`
+- `code/content/machinery/machinery.dm:550` — `own_take_member(src, nameof(component_parts), A)`
 - `code/game/machinery/telecrystal_storage.dm:19` — `own_take_member(src, nameof(item_records), I)`
 - `code/game/machinery/washing_machine.dm:89` — `own_take_member(src, nameof(washing), HH)`
 - `code/modules/power/batteryrack.dm:170` — `own_take_member(src, nameof(/obj/machinery/power/smes/batteryrack::internal_cells), C)`

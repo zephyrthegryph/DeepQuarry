@@ -1,0 +1,118 @@
+//Spacesuit
+//Note: Everything in modules/clothing/spacesuits should have the entire suit grouped together.
+//      Meaning the the suit is defined directly after the corrisponding helmet. Just like below!
+
+/obj/item/clothing/head/helmet/space
+	name = "Space helmet"
+	icon_state = "space"
+	desc = "A special helmet designed for work in a hazardous, low-pressure environment."
+	flags = PHORONGUARD
+	flash_protection = FLASH_PROTECTION_MAJOR
+	valid_accessory_slots = null
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+	var/obj/machinery/camera/camera // owned: helmet camera made on first toggle, kept in the helmet's contents
+	var/list/camera_networks
+
+	light_overlay = "helmet_light"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	configure(atom_rules(armor_spec = "bio=100;rad=50;cold=60"))
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_helmet_light)))
+	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0, preserve = 1))
+	fits_as(FIT_NO_DIONA)
+	configure(light_glow(range = 4))
+	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
+	configure(item_protection(permeability = 0, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
+	owns_one(nameof(camera), /obj/machinery/camera)
+	verb_entry(/obj/item/clothing/head/helmet/space/proc/toggle_camera, when = nameof(camera_networks))
+	setup(PROC_REF(refit_teshari_sprites))
+
+
+/obj/item/clothing/head/helmet/space/proc/refit_teshari_sprites()
+	if(type == /obj/item/clothing/head/helmet/space) // use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
+		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/head/mob_teshari.dmi')
+
+/obj/item/clothing/head/helmet/space/proc/toggle_camera()
+	set name = "Toggle Helmet Camera"
+	set desc = "Turn your helmet's camera on or off."
+	set category = VERB_CAT_HARDSUIT
+	set src in usr
+	if(usr.stat || usr.restrained() || usr.incapacitated())
+		return
+
+	if(!camera)
+		rel_set(src, nameof(camera), new /obj/machinery/camera(src))
+		camera.replace_networks(camera_networks)
+		camera.set_status(FALSE) //So the camera will activate in the following check.
+
+	if(camera.status == TRUE)
+		camera.set_status(FALSE)
+		to_chat(usr, span_blue("Camera deactivated."))
+	else
+		camera.set_status(TRUE)
+		camera.c_tag = usr.name
+		to_chat(usr, span_blue("User scanned as [camera.c_tag]. Camera activated."))
+
+/obj/item/clothing/head/helmet/space/examine(mob/user)
+	. = ..()
+	if(camera_networks && Adjacent(user))
+		. += "This helmet has a built-in camera. It's [camera ? "" : "in"]active."
+
+/obj/item/clothing/suit/space
+	name = "Space suit"
+	desc = "A suit that protects against low pressure environments."
+	icon = 'icons/inventory/suit/item.dmi'
+	icon_state = "space"
+	w_class = ITEMSIZE_HUGE // So you can't fit this in your bag and be prepared at all times.
+	flags = PHORONGUARD
+	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
+	var/supports_limbs = FALSE //If TRUE, automatically splints breaks. Checked when removing the suit.
+	var/list/supporting_limbs //The limbs it is splinting now (a relation list: a deleted limb leaves it).
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+// start - use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
+
+
+
+/obj/item/clothing/suit/space/proc/refit_teshari_sprites()
+	if(type == /obj/item/clothing/suit/space)
+		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/suit/mob_teshari.dmi')
+// end.
+
+/obj/item/clothing/suit/space/equipped(mob/M)
+	check_limb_support(M)
+	..()
+
+/obj/item/clothing/suit/space/dropped(mob/user, equipping, slot)
+	check_limb_support(user)
+	..()
+
+// Some space suits are equipped with reactive membranes that support
+// broken limbs - at the time of writing, only the ninja suit, but
+// I can see it being useful for other suits as we expand them. ~ Z
+// The actual splinting occurs in /obj/item/organ/external/proc/fracture()
+/obj/item/clothing/suit/space/proc/check_limb_support(mob/living/carbon/human/user)
+
+	// If this isn't set, then we don't need to care.
+	if(!istype(user) || !supports_limbs)
+		return
+
+	if(user.get_equipped_item(SLOT_ID_SUIT) == src)
+		for(var/obj/item/organ/external/E in user.damaged_limbs())
+			if(E.is_broken() && E.apply_splint(src))
+				to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
+				rel_add(src, nameof(supporting_limbs), E)
+	else
+		// Otherwise, remove the splints.
+		for(var/obj/item/organ/external/E in supporting_limbs)
+			if(E.splinted == src && E.remove_splint(src))
+				to_chat(user, "\The [src] stops supporting your [E.name].")
+		rel_clear(src, nameof(supporting_limbs))
+
+/obj/item/clothing/suit/space/proc/handle_fracture(mob/living/carbon/human/user, obj/item/organ/external/E)
+	if(!istype(user) || !supports_limbs)
+		return
+	if(E.is_broken() && E.apply_splint(src))
+		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
+		rel_add(src, nameof(supporting_limbs), E)

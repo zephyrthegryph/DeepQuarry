@@ -1,0 +1,404 @@
+// The research system (was SSresearch): the techweb node/design tables and every techweb, plus the per-second point
+// income and research queue. The API is in research_api.dm.
+SYSTEM_DEF(research)
+	name = "Research"
+	periodic_runlevels = RUNLEVELS_DEFAULT
+	// The old subsystem depended on SSmapping; boot right after it, as before.
+	needs = list(/datum/system/mapping)
+	/// Income period; must match the lane's `every`.
+	var/income_interval = 1 SECOND
+	//TECHWEB STATIC
+	var/list/techweb_nodes = list() //associative id = node datum
+	var/list/techweb_designs = list() //associative id = node datum
+	var/list/list/datum/design_techweb/item_to_design = list() //typepath = list of design datums
+
+	///The round's registered techwebs (science, admin, the autounlock webs), generating points or not.
+	///Autolathes, Mechfabs, and others all have shared techwebs, for example. Only register_techweb()
+	///adds to it: a disk's or a console's scratch web is owned by its holder and never registered.
+	var/list/datum/techweb/techwebs = list()
+
+	//These two are what you get if a node/design is deleted and somehow still stored in a console.
+	//Unregistered instances the service owns (PROTO below: a private copy held by the service).
+	var/datum/techweb_node/error_node/error_node
+	var/datum/design_techweb/error_design/error_design
+
+	//ERROR LOGGING
+	///associative id = number of times
+	var/list/invalid_design_ids = list()
+	///associative id = number of times
+	var/list/invalid_node_ids = list()
+	///associative id = error message
+	var/list/invalid_node_boost = list()
+
+	///associative id = TRUE
+	var/list/techweb_nodes_starting = list()
+	///category name = list(node.id = TRUE)
+	var/list/techweb_categories = list()
+	///List of all items that can unlock a node. (node.id = list(items))
+	var/list/techweb_unlock_items = list()
+	///Node ids that should be hidden by default.
+	var/list/techweb_nodes_hidden = list()
+	///Node ids that are exclusive to the BEPIS.
+	var/list/techweb_nodes_experimental = list()
+	///path = list(point type = value)
+	var/list/techweb_point_items = list(
+		/obj/item/research_sample/common = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/research_sample/uncommon = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_2_POINTS*0.5),
+		/obj/item/research_sample/rare = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_3_POINTS*0.5),
+		/obj/item/research_sample/bluespace = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_4_POINTS*0.5),
+		/obj/item/assembly/signaler/anomaly/bioscrambler = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS),
+		/obj/item/assembly/signaler/anomaly/bluespace = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS),
+		/obj/item/assembly/signaler/anomaly/dimensional = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS),
+		/obj/item/assembly/signaler/anomaly/flux = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS),
+		/obj/item/assembly/signaler/anomaly/grav = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS),
+		/obj/item/assembly/signaler/anomaly/hallucination = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS),
+		/obj/item/assembly/signaler/anomaly/pyro = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS),
+		/obj/item/assembly/signaler/anomaly/weather = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS),
+		/obj/item/assembly/signaler/anomaly/dust = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS),
+		/obj/item/slime_extract/grey = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.1),
+		/obj/item/slime_extract/purple = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.1),
+		/obj/item/slime_extract/orange = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.1),
+		/obj/item/slime_extract/blue = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.1),
+		/obj/item/slime_extract/metal = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.1),
+		/obj/item/slime_extract/yellow = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.25),
+		/obj/item/slime_extract/dark_purple = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.25),
+		/obj/item/slime_extract/dark_blue = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.25),
+		/obj/item/slime_extract/silver = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.25),
+		/obj/item/slime_extract/bluespace = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/slime_extract/ruby = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/slime_extract/amber = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/slime_extract/cerulean = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/slime_extract/red = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.75),
+		/obj/item/slime_extract/green = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.75),
+		/obj/item/slime_extract/pink = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.75),
+		/obj/item/slime_extract/gold = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.75),
+		/obj/item/slime_extract/light_pink = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS),
+		/obj/item/slime_extract/oil = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS),
+		/obj/item/slime_extract/sapphire = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS),
+		/obj/item/slime_extract/emerald = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS),
+		/obj/item/slime_extract/rainbow = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS),
+		/obj/item/slime_extract/sepia = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/slime_extract/redspace = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/slime_extract/dark = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/slime_extract/plague = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/slime_extract/oceanic = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
+		/obj/item/slime_extract/nuclear = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.75),
+		/obj/item/slime_extract/dream = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.75),
+		/obj/item/slime_extract/nightmare = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.75),
+		/obj/item/slime_extract/sound = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS),
+	)
+	///Allows repeated deconstruction of these items for points. These items MUST be in techweb_point_items as well.
+	var/list/techweb_repeatable_items = list(
+		/obj/item/research_sample/common,
+		/obj/item/research_sample/uncommon,
+		/obj/item/research_sample/rare,
+		/obj/item/research_sample/bluespace,
+		/obj/item/slime_extract/grey,
+		/obj/item/slime_extract/purple,
+		/obj/item/slime_extract/orange,
+		/obj/item/slime_extract/blue,
+		/obj/item/slime_extract/metal,
+		/obj/item/slime_extract/yellow,
+		/obj/item/slime_extract/dark_purple,
+		/obj/item/slime_extract/dark_blue,
+		/obj/item/slime_extract/silver,
+		/obj/item/slime_extract/bluespace,
+		/obj/item/slime_extract/ruby,
+		/obj/item/slime_extract/amber,
+		/obj/item/slime_extract/cerulean,
+		/obj/item/slime_extract/red,
+		/obj/item/slime_extract/green,
+		/obj/item/slime_extract/pink,
+		/obj/item/slime_extract/gold,
+		/obj/item/slime_extract/oil,
+		/obj/item/slime_extract/sapphire,
+		/obj/item/slime_extract/emerald,
+		/obj/item/slime_extract/rainbow,
+	)
+	var/list/errored_datums = list()
+	///Associated list of all point types that techwebs will have and their respective 'abbreviated' name.
+	var/list/point_types = list(TECHWEB_POINT_TYPE_GENERIC = "Gen. Res.")
+	//----------------------------------------------
+	var/list/single_server_income = list(
+		TECHWEB_POINT_TYPE_GENERIC = TECHWEB_SINGLE_SERVER_INCOME,
+	)
+	//^^^^^^^^ ALL OF THESE ARE PER SECOND! ^^^^^^^^
+
+	//Aiming for 1.5 hours to max R&D
+	//[88nodes * 5000points/node] / [1.5hr * 90min/hr * 60s/min]
+	//Around 450000 points max???
+
+	/// The global list of raw anomaly types that have been refined, for hard limits.
+	/// The hard limits of cores created for each anomaly type. For faster code lookup without switch statements.
+
+	/// Lookup list for ordnance briefers.
+	var/list/ordnance_experiments = list()
+
+/datum/system/research/reactions()
+	. = ..()
+	. += every(1 SECOND, PROC_REF(income_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/research/initialize()
+	initialized = TRUE
+	initialize_all_techweb_designs()
+	initialize_all_techweb_nodes()
+	register_techweb(new /datum/techweb/science)
+	register_techweb(new /datum/techweb/admin)
+	// new /datum/techweb/oldstation
+	autosort_categories()
+	proto_set(src, nameof(error_design), new /datum/design_techweb/error_design)
+	proto_set(src, nameof(error_node), new /datum/techweb_node/error_node)
+	log_world("System [name] initialized: [length(techweb_nodes)] nodes, [length(techweb_designs)] designs, [length(techwebs)] techwebs.")
+
+/datum/system/research/proc/income_step(dt)
+	for(var/datum/techweb/techweb_list as anything in techwebs)
+		if(!techweb_list.should_generate_points)
+			continue
+		var/list/bitcoins = list()
+		for(var/obj/machinery/rnd/server/miner as anything in techweb_list.techweb_servers)
+			if(miner.working)
+				bitcoins = single_server_income.Copy()
+				break //Just need one to work.
+
+		if(techweb_list.last_income)
+			var/income_time_difference = ELAPSED(techweb_list, last_income, CLOCK_WORLD)
+			techweb_list.set_last_bitcoins(bitcoins)  // Doesn't take tick drift into account
+			for(var/i in bitcoins)
+				bitcoins[i] *= (income_time_difference / 10) * techweb_list.income_modifier
+			techweb_list.add_point_list(bitcoins)
+
+		STAMP(techweb_list, last_income, CLOCK_WORLD)
+
+		if(length(techweb_list.research_queue_nodes))
+			techweb_list.research_node_id(LAZYACCESS(techweb_list.research_queue_nodes, 1)) // Attempt to research the first node in queue if possible
+
+			for(var/node_id in techweb_list.research_queue_nodes)
+				var/datum/techweb_node/node = SSresearch.techweb_node_by_id(node_id)
+				if(node.is_free(techweb_list)) // Automatically research all free nodes in queue if any
+					techweb_list.research_node(node)
+	return STEP_DONE
+
+/datum/system/research/proc/autosort_categories()
+	for(var/i in techweb_nodes)
+		var/datum/techweb_node/I = techweb_nodes[i]
+		if(techweb_categories[I.category])
+			techweb_categories[I.category][I.id] = TRUE
+		else
+			techweb_categories[I.category] = list(I.id = TRUE)
+
+/datum/system/research/proc/on_design_deletion(datum/design_techweb/D)
+	for(var/i in techweb_nodes)
+		var/datum/techweb_node/TN = techweb_nodes[i]
+		TN.on_design_deletion(D)
+	for(var/i in techwebs)
+		var/datum/techweb/T = i
+		T.recalculate_nodes(TRUE)
+
+/datum/system/research/proc/on_node_deletion(datum/techweb_node/TN)
+	for(var/i in techweb_nodes)
+		var/datum/techweb_node/TN2 = techweb_nodes[i]
+		TN2.on_node_deletion(TN)
+	for(var/i in techwebs)
+		var/datum/techweb/T = i
+		T.recalculate_nodes(TRUE)
+
+/datum/system/research/proc/initialize_all_techweb_nodes(clearall = FALSE)
+	if(islist(techweb_nodes) && clearall)
+		QDEL_LIST(techweb_nodes)
+	if(islist(techweb_nodes_starting) && clearall)
+		techweb_nodes_starting.Cut()
+	var/list/returned = list()
+	// First pass: validate IDs before allocating instances.
+	// A null or duplicate node ID is a hard programming error — crash immediately
+	// so it cannot silently corrupt the techweb graph at runtime.
+	var/list/seen_node_ids = list()
+	for(var/path in subtypesof(/datum/techweb_node))
+		var/datum/techweb_node/TN_check = path
+		var/raw_id = initial(TN_check.id)
+		if(isnull(raw_id))
+			continue // Nodes without IDs (abstract bases) are silently skipped.
+		if(seen_node_ids[raw_id])
+			CRASH("Duplicate techweb node ID '[raw_id]': first defined on [seen_node_ids[raw_id]], redefined on [path]")
+		seen_node_ids[raw_id] = "[path]"
+	// Second pass: instantiate with guaranteed-unique IDs.
+	for(var/path in subtypesof(/datum/techweb_node))
+		var/datum/techweb_node/TN = path
+		if(isnull(initial(TN.id)))
+			continue
+		TN = new path
+		returned[initial(TN.id)] = TN
+		if(TN.starting_node)
+			techweb_nodes_starting[TN.id] = TRUE
+	techweb_nodes = returned
+	// Initialize all freshly-created nodes (converts list vars to associative form).
+	for(var/id in techweb_nodes)
+		var/datum/techweb_node/TN = techweb_nodes[id]
+		TN.index_ids()
+	if(!verify_techweb_nodes()) //Verify all nodes have ids and such.
+		CRASH("Invalid techweb nodes detected after initial registration")
+	calculate_techweb_nodes()
+	calculate_techweb_item_unlocking_requirements()
+	if(!verify_techweb_nodes()) //Verify nodes and designs have been crosslinked properly.
+		CRASH("Invalid techweb nodes detected after cross-linking")
+
+/datum/system/research/proc/initialize_all_techweb_designs(clearall = FALSE)
+	if(islist(techweb_designs) && clearall)
+		item_to_design = list()
+		QDEL_LIST(techweb_designs)
+	var/list/returned = list()
+	// First pass: validate every ID before allocating any instances.
+	// Duplicate or null IDs are hard programming errors that must surface immediately
+	// at startup, not silently degrade at runtime with a warning.
+	var/list/seen_ids = list()
+	for(var/path in subtypesof(/datum/design_techweb))
+		var/datum/design_techweb/DN_check = path
+		var/raw_id = initial(DN_check.id)
+		if(isnull(raw_id))
+			CRASH("Techweb design has null ID. Type: [path] — Build path: [initial(DN_check.build_path)]")
+		if(raw_id == DESIGN_ID_IGNORE)
+			continue
+		if(seen_ids[raw_id])
+			CRASH("Duplicate techweb design ID '[raw_id]': first defined on [seen_ids[raw_id]], redefined on [path]")
+		seen_ids[raw_id] = "[path]"
+	// Second pass: instantiate now that every ID is verified unique.
+	for(var/path in subtypesof(/datum/design_techweb))
+		var/datum/design_techweb/DN = path
+		var/raw_id = initial(DN.id)
+		if(isnull(raw_id) || raw_id == DESIGN_ID_IGNORE)
+			continue
+		DN = new path
+		var/build_path = saved_type_path(DN.build_path)
+		if(!isnull(build_path))
+			if(!(build_path in item_to_design))
+				item_to_design[build_path] = list()
+			item_to_design[build_path] += DN
+		DN.InitializeMaterials() //Initialize the materials in the design
+		returned[initial(DN.id)] = DN
+	techweb_designs = returned
+	verify_techweb_designs()
+
+/datum/system/research/proc/verify_techweb_nodes()
+	. = TRUE
+	for(var/n in techweb_nodes)
+		var/datum/techweb_node/N = techweb_nodes[n]
+		if(!istype(N))
+			WARNING("Invalid research node with ID [n] detected and removed.")
+			techweb_nodes -= n
+			research_node_id_error(n)
+			. = FALSE
+		for(var/p in N.prereq_ids)
+			var/datum/techweb_node/P = techweb_nodes[p]
+			if(!istype(P))
+				WARNING("Invalid research prerequisite node with ID [p] detected in node [N.display_name]\[[N.id]\] removed.")
+				LAZYREMOVE(N.prereq_ids, p)
+				research_node_id_error(p)
+				. = FALSE
+		for(var/d in N.design_ids)
+			var/datum/design_techweb/D = techweb_designs[d]
+			if(!istype(D))
+				WARNING("Invalid research design with ID [d] detected in node [N.display_name]\[[N.id]\] removed.")
+				LAZYREMOVE(N.design_ids, d)
+				design_id_error(d)
+				. = FALSE
+		for(var/u in N.unlock_ids)
+			var/datum/techweb_node/U = techweb_nodes[u]
+			if(!istype(U))
+				WARNING("Invalid research unlock node with ID [u] detected in node [N.display_name]\[[N.id]\] removed.")
+				N.unlock_ids -= u
+				research_node_id_error(u)
+				. = FALSE
+		for(var/p in N.required_items_to_unlock)
+			if(!ispath(p))
+				N.required_items_to_unlock -= p
+				WARNING("[p] is not a valid path.")
+				node_boost_error(N.id, "[p] is not a valid path.")
+				. = FALSE
+			var/list/points = N.required_items_to_unlock[p]
+			if(!isnull(points))
+				N.required_items_to_unlock -= p
+				node_boost_error(N.id, "No valid list.")
+				WARNING("No valid list.")
+				. = FALSE
+		CHECK_TICK
+
+/datum/system/research/proc/verify_techweb_designs()
+	for(var/d in techweb_designs)
+		var/datum/design_techweb/D = techweb_designs[d]
+		if(!istype(D))
+			stack_trace("WARNING: Invalid research design with ID [d] detected and removed.")
+			techweb_designs -= d
+		CHECK_TICK
+
+/datum/system/research/proc/research_node_id_error(id)
+	if(invalid_node_ids[id])
+		invalid_node_ids[id]++
+	else
+		invalid_node_ids[id] = 1
+
+/datum/system/research/proc/design_id_error(id)
+	if(invalid_design_ids[id])
+		invalid_design_ids[id]++
+	else
+		invalid_design_ids[id] = 1
+
+/datum/system/research/proc/calculate_techweb_nodes()
+	// Clear all unlocked_by lists before recomputing — unlocked_by is a precomputed
+	// read-only cache derived from node.design_ids; it must not be mutated after this proc.
+	for(var/design_id in techweb_designs)
+		var/datum/design_techweb/D = techweb_designs[design_id]
+		D.unlocked_by = null
+	for(var/node_id in techweb_nodes)
+		var/datum/techweb_node/node = techweb_nodes[node_id]
+		node.unlock_ids = null
+		for(var/i in node.design_ids)
+			var/datum/design_techweb/D = techweb_designs[i]
+			if(!D)
+				continue // verify_techweb_nodes() will have already flagged this.
+			LAZYSET(node.design_ids, i, TRUE)
+			// unlocked_by is the precomputed reverse-index: design → list of node IDs that unlock it.
+			// After this proc returns, unlocked_by is considered immutable for the lifetime of the round.
+			LAZYADD(D.unlocked_by, node.id)
+		if(node.hidden)
+			techweb_nodes_hidden[node.id] = TRUE
+		if(node.experimental)
+			techweb_nodes_experimental[node.id] = TRUE
+		CHECK_TICK
+	generate_techweb_unlock_linking()
+
+/datum/system/research/proc/generate_techweb_unlock_linking()
+	for(var/node_id in techweb_nodes) //Clear all unlock links to avoid duplication.
+		var/datum/techweb_node/node = techweb_nodes[node_id]
+		node.unlock_ids = null
+	for(var/node_id in techweb_nodes)
+		var/datum/techweb_node/node = techweb_nodes[node_id]
+		for(var/prereq_id in node.prereq_ids)
+			var/datum/techweb_node/prereq_node = techweb_node_by_id(prereq_id)
+			LAZYSET(prereq_node.unlock_ids, node.id, node)
+
+/datum/system/research/proc/calculate_techweb_item_unlocking_requirements()
+	for(var/node_id in techweb_nodes)
+		var/datum/techweb_node/node = techweb_nodes[node_id]
+		for(var/path in node.required_items_to_unlock)
+			if(!ispath(path))
+				continue
+			if(length(techweb_unlock_items[path]))
+				techweb_unlock_items[path][node.id] = node.required_items_to_unlock[path]
+			else
+				techweb_unlock_items[path] = list(node.id = node.required_items_to_unlock[path])
+		CHECK_TICK
+
+/**
+ * Goes through all techwebs and goes through their servers to find ones on a valid z-level
+ * Returns the full list of all techweb servers.
+ */
+/**
+ * Goes through an individual techweb's servers and finds one on a valid z-level
+ * Returns a list of existing ones, or an empty list otherwise.
+ * Args:
+ * - checking_web - The techweb we're checking the servers of.
+ */
+// Shared techwebs, scipaper partners and the two error placeholders live for the round.
+
+CAPABILITIES(/datum/system/research)
+	owns_one(nameof(error_design), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
+	owns_one(nameof(error_node), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)

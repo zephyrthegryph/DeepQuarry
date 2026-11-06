@@ -177,11 +177,11 @@
 	if(F)
 		acc = oracle_accumulate(acc, F.factors)
 	for(var/obj/item/I as anything in H.body_slot_items(BODY_SLOT_WORN))
-		if(I.worn_factors)
+		if(worn_of(I).worn_factors)
 			var/alist/table = alist()
-			for(var/stat in I.worn_factors)
+			for(var/stat in worn_of(I).worn_factors)
 				if(stat != STAT_ITEM_ENCUMBRANCE)
-					table[stat] = I.worn_factors[stat]
+					table[stat] = worn_of(I).worn_factors[stat]
 			acc = oracle_accumulate(acc, table)
 	var/encumbrance = oracle_item_encumbrance(H)
 	if(encumbrance)

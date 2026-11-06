@@ -89,7 +89,7 @@
 	TEST_ASSERT_EQUAL(length(closet.latent_materialize(pens, 1)), 0, "a spent entry yields nothing")
 	for(var/obj/item/pen/P as anything in made)
 		TEST_ASSERT_EQUAL(P.loc, closet, "materialized into the holder")
-		TEST_ASSERT_EQUAL(closet.containment_ledger().entries[P][LEDGER_E_SLOT], CONTAINER_SLOT_INTERIOR, "into the entry's slot")
+		TEST_ASSERT_EQUAL(closet.containment_ledger().entries[slot_known(P)][LEDGER_E_SLOT], CONTAINER_SLOT_INTERIOR, "into the entry's slot")
 	var/list/problems = closet.containment_ledger().verify()
 	TEST_ASSERT(!length(problems), "ledger mismatch: [jointext(problems, "; ")]")
 	// The closet spills its contents (latent entries included) when it is deleted.
@@ -101,6 +101,8 @@
 /datum/unit_test/dq_latent_collapse
 
 /datum/unit_test/dq_latent_collapse/Run()
+	// The refusals this test provokes (a referenced pen, a box without latent contents) record why in a global; it is put back with the rest.
+	set_global(nameof(GLOB.latent_last_refusal), GLOB.latent_last_refusal)
 	var/obj/structure/closet/closet = allocate(/obj/structure/closet, test_floor())
 	var/obj/item/pen/pen = new(closet)
 	pen.name = "labelled pen"

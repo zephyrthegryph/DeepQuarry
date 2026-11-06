@@ -1,5 +1,5 @@
 // Shared keyed caches: the miss path, invalidation, interning, LRU bounds, stats and the
-// test-build mutation guard (doc/rewrite/caching.md; macros in code/__defines/shared_cache.dm).
+// test-build mutation guard (doc/rewrite/caching.md; macros in code/defines/engine/shared_cache.dm).
 //
 // Global-init order is unspecified, so nothing here has an initializer that could run after
 // a cache registered itself: the registry and the policy maps are created lazily.
@@ -95,7 +95,9 @@ PROC_SUMMARY(/datum/shared_cache/proc/miss) // vars[] / call() dispatcher: the w
 			return aged
 	if(!active)
 		activate()
+	BOOT_PHASE_BEGIN(bp_build)
 	var/value = (length(args) > 1) ? call(builder)(arglist(args.Copy(2))) : call(builder)(key)
+	BOOT_PHASE_END(bp_build, "shared_cache build: [name]", null)
 	builds++
 	if(!value)
 		LAZYSET(falsy, key, list(value))
@@ -253,7 +255,7 @@ PROC_SUMMARY(/datum/shared_cache/proc/miss) // vars[] / call() dispatcher: the w
 /datum/proc/shared_cache_stable_identity()
 	return FALSE
 
-// ---- OM hooks (called from om_wants/om_emit/om_dispatch_change) ----
+// ---- hooks (called from wants/emit/dispatch_change) ----
 
 /// The world notice `notice_type` is about to be published: every cache whose SC_ON_NOTICE names it (or a parent) clears.
 /proc/shared_cache_notice(notice_type)
@@ -262,7 +264,7 @@ PROC_SUMMARY(/datum/shared_cache/proc/miss) // vars[] / call() dispatcher: the w
 	for(var/datum/shared_cache/C as anything in shared_cache_notice_types[notice_type])
 		C.invalidate()
 
-/// Rows for the OM profiler panel.
+/// Rows for the scheduler profiler panel.
 /proc/shared_cache_stats()
 	. = list()
 	for(var/datum/shared_cache/C as anything in shared_cache_registry)

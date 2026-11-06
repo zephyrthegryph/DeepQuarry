@@ -104,9 +104,9 @@
 
 /// Whether `A`'s type refuses an unforced qdel() (LIFECYCLE_KEEP_*): asked with the refusal's own report switched off.
 /datum/unit_test/proc/dq_fresh_look_keeps(datum/A)
-	GLOB.lifecycle_keep_expected = TRUE // the question itself reports an unforced delete otherwise
+	set_global(nameof(GLOB.lifecycle_keep_expected), TRUE) // the question itself reports an unforced delete otherwise
 	. = !!A.lifecycle_keep(FALSE)
-	GLOB.lifecycle_keep_expected = FALSE
+	set_global(nameof(GLOB.lifecycle_keep_expected), FALSE)
 
 /// Deletes `A`; a type that refuses an unforced qdel() is deleted forced (the sweep made it, so it owns the end of it).
 /datum/unit_test/proc/dq_fresh_look_delete(datum/A)

@@ -1,14 +1,13 @@
 /obj/machinery/computer/pandemic
 	name = "PanD.E.M.I.C 2200"
 	desc = "Used to work with viruses."
-	circuit = /obj/item/circuitboard/pandemic
+	circuit = VARIANT(/obj/item/circuitboard/pandemic)
 	density = TRUE
 	anchored = TRUE
 	icon = 'icons/obj/pandemic.dmi'
 	icon_state = "pandemic0"
 	use_power = TRUE
 
-	var/temp_html = ""
 	var/printing = FALSE
 	var/wait = FALSE
 	var/obj/item/reagent_containers/beaker = null

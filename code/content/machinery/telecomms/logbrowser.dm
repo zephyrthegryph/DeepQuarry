@@ -7,7 +7,7 @@
 
 	var/list/servers	// the servers located by the computer
 	var/obj/machinery/telecomms/server/SelectedServer
-	circuit = /obj/item/circuitboard/comm_server
+	circuit = VARIANT(/obj/item/circuitboard/comm_server)
 
 	var/universal_translate = 0 // set to 1 if it can translate nonhuman speech
 

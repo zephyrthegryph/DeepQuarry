@@ -1,0 +1,126 @@
+/obj/item/computer_hardware/
+	name = "Hardware"
+	desc = "Unknown Hardware."
+	icon = 'icons/obj/modular_components.dmi'
+	var/tmp/obj/item/modular_computer/holder2
+
+	/// If the hardware uses extra power, change this.
+	var/power_usage = 0
+	/// If the hardware is turned off set this to FALSE.
+	var/enabled = TRUE
+	/// Prevent disabling for important component, like the HDD.
+	var/critical = 1
+	/// Limits which devices can contain this component. 1: All, 2: Laptops/Consoles, 3: Consoles only
+	var/hardware_size = 1
+	// Hardware uses integrity. Below integrity_failure it does not work at all;
+	// at zero it is wrecked, but it stays a (broken) part.
+	max_integrity = 100
+	/// "Malfunction" threshold. When missing integrity exceeds this value the hardware piece will semi-randomly fail and do !!FUN!! things
+	var/damage_malfunction = 20
+	/// Chance of malfunction when the component is damaged
+	var/malfunction_probability = 10
+	var/usage_flags = PROGRAM_ALL
+
+CAPABILITIES(/obj/item/computer_hardware)
+	configure(atom_rules(integrity_failure = 0.5))
+	setup(PROC_REF(link_holder))
+	derives(nameof(w_class), PROC_REF(initial_hardware_size))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	ref_one(nameof(holder2))
+
+/// Old attackby.
+/obj/item/computer_hardware/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
+	// Multitool. Runs diagnostics
+	if(W.has_tool_quality(TOOL_MULTITOOL))
+		to_chat(user, "***** DIAGNOSTICS REPORT *****")
+		diagnostics(user)
+		to_chat(user, "******************************")
+		return OP_OK
+	// Nanopaste. Repair all damage if present for a single unit.
+	var/obj/item/stack/S = W
+	if(istype(S, /obj/item/stack/nanopaste))
+		if(!get_integrity_damage())
+			to_chat(user, "\The [src] doesn't seem to require repairs.")
+			return OP_OK
+		if(S.use(1))
+			to_chat(user, "You apply a bit of \the [W] to \the [src]. It immediately repairs all damage.")
+			repair_damage(max_integrity)
+		return OP_OK
+	// Cable coil. Works as repair method, but will probably require multiple applications and more cable.
+	if(istype(S, /obj/item/stack/cable_coil))
+		if(!get_integrity_damage())
+			to_chat(user, "\The [src] doesn't seem to require repairs.")
+			return OP_OK
+		if(S.use(1))
+			to_chat(user, "You patch up \the [src] with a bit of \the [W].")
+			repair_damage(10)
+		return OP_OK
+	return OP_DECLINE
+
+/// Returns the name of the var on /obj/item/modular_computer that holds this
+/// hardware slot, or null if this type has no dedicated named slot.
+/// Each concrete hardware subtype overrides this so that
+/// try_install_component / uninstall_component can work generically via
+/// vars[] without requiring an explicit branch per hardware kind.
+/// Adding a new hardware type only requires: defining the var on
+/// /obj/item/modular_computer and overriding this proc — no edits to core.
+/obj/item/computer_hardware/proc/get_slot_var()
+	return null
+
+/// Returns TRUE if hot-removing this component while the computer is running
+/// should trigger an immediate shutdown (e.g. processor, primary hard drive).
+/// Override to TRUE on hardware whose absence makes the computer inoperable.
+/obj/item/computer_hardware/proc/is_critical_slot()
+	return FALSE
+
+/// Returns a list of lines containing diagnostic information for display.
+/obj/item/computer_hardware/proc/diagnostics(mob/user)
+	var/missing = get_integrity_damage()
+	to_chat(user, "Hardware Integrity Test... (Corruption: [missing]/[max_integrity]) [hardware_failed() ? "FAIL" : missing > damage_malfunction ? "WARN" : "PASS"]")
+
+/obj/item/computer_hardware/proc/link_holder()
+	if(istype(loc, /obj/item/modular_computer))
+		rel_set(src, nameof(/obj/item/computer_hardware/::holder2), loc)
+
+/// Handles damage checks
+/obj/item/computer_hardware/proc/check_functionality()
+	// Turned off
+	if(!enabled)
+		return FALSE
+	// Too damaged to work at all.
+	if(hardware_failed())
+		return FALSE
+	// Still working. Well, sometimes...
+	if(get_integrity_damage() > damage_malfunction)
+		if(prob(malfunction_probability))
+			return FALSE
+	// Good to go.
+	return TRUE
+
+/obj/item/computer_hardware/examine(mob/user)
+	. = ..()
+	var/missing = get_integrity_damage()
+	if(hardware_failed())
+		. += span_danger("It seems to be severely damaged!")
+	else if(missing > damage_malfunction)
+		. += span_notice("It seems to be damaged!")
+	else if(missing)
+		. += "It seems to be slightly damaged."
+
+/// Below integrity_failure the part does not work at all.
+/obj/item/computer_hardware/proc/hardware_failed()
+	return get_integrity() < max_integrity * atom_rules_of(src).integrity_failure
+
+/// A wrecked part stays a (useless) part. Fire and acid still destroy it.
+/obj/item/computer_hardware/atom_destruction(damage_flag)
+	if(damage_flag == FIRE || damage_flag == ACID)
+		return ..()
+
+/// The holder2 this refers to (a relation view: null once that is deleted).
+/obj/item/computer_hardware/proc/holder2() as /obj/item/modular_computer
+	return holder2
+
+/obj/item/computer_hardware/proc/initial_hardware_size()
+	return hardware_size

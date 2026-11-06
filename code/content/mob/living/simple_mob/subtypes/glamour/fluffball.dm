@@ -1,0 +1,147 @@
+/mob/living/simple_mob/vore/fluffball
+	name = "fluffball"
+	desc = "A small, rotund humanoid creature. It is difficult to make out physical features of it as it covers most of its face behind big floppy, fluffy ears with only beady yellow eyes looking out. Most of its body is covered by a thick, soft tail that it wraps around itself and holds onto with small stumpy arms."
+	tt_desc = "glamoris fluffalia"
+	icon = 'icons/mob/vore.dmi'
+	icon_dead = "fluffball-dead"
+	icon_living = "fluffball"
+	icon_state = "fluffball"
+	friendly = list("nudges", "sniffs on", "rumbles softly at", "nuzzles")
+	response_help = "bumps"
+	response_disarm = "shoves"
+	response_harm = "attacks"
+	movement_cooldown = 0
+	harm_intent_damage = 2
+	melee_damage_lower = 1
+	melee_damage_upper = 4
+	endurance = 50
+	attacktext = list("tail whips")
+	see_in_dark = 8
+	minbodytemp = 0
+
+
+	vore_bump_chance = 25
+	vore_digest_chance = 50
+	vore_escape_chance = 5
+	vore_pounce_chance = 1000
+	vore_active = 1
+	vore_icons = 1
+	vore_icons = SA_ICON_LIVING
+	swallowTime = 50
+	vore_ignores_undigestable = FALSE
+	vore_default_mode = DM_SELECT
+	vore_pounce_maxhealth = 1000
+	vore_bump_emote = "pounces on"
+	vore_pounce_falloff = 0 //Always eat someone at full health
+	vore_standing_too = 1
+
+/mob/living/simple_mob/vore/fluffball/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "tail"
+	B.desc = "The small critter seems to suddenly panic, lunging at you with its massive fluffy tail, using it like a weapon. Despite the appearance of the tail, it seems to be much larger on the inside, suddenly engulfing you completely in a world of endless softness. Inside, you are bound up nice and tight in an oddly comfortable prison of hair, it ripples over your body tickling every bit of exposed body on offer."
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_belly_fullscreen("VBO_fleshs")
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_digest_oxy(0)
+	B.set_digestchance(10)
+	B.set_absorbchance(60)
+	B.set_escapechance(10)
+	B.set_selective_preference(DM_ABSORB)
+	B.escape_stun = 5
+	B.transferlocation_absorb = "fluff"
+
+	var/obj/belly/fluff = new /obj/belly(src)
+	fluff.immutable = TRUE
+	fluff.name = "fluff"
+	fluff.desc = "You find yourself sinking deeper and deeper into the fluff around you, steadily it wraps around your entire body, binding you up. It seems to grow tighter and tigher forever, although never to the point of discomfort. Before long, the tightness goes beyond a physical sensation, it starts to feel like it buries into you, becoming part of you. It is becoming hard to discern yourself from the fluff, you feel floaty, wavy and soft yourself. Eventually, you can't feel yourself at all, there's nothing but fur. Every movement you make feels pointless, simply causing the slightest rustling of fluff as though the hair was moving on its own."
+	fluff.set_digest_mode(DM_HOLD) // like, shes got you already, doesn't need to get you more
+	fluff.set_mode_flags(DM_FLAG_FORCEPSAY)
+	fluff.set_escapable(B_ESCAPABLE_DEFAULT) // good luck
+	fluff.set_escapechance(40) // high chance of STARTING a successful escape attempt
+	fluff.set_escapechance_absorbed(5) // m i n e
+	fluff.set_vore_verb("soak")
+	fluff.set_count_absorbed_prey_for_sprite(FALSE)
+	fluff.set_absorbed_struggle_messages_inside(list(
+		"You try and push free from %pred's %belly, but can't seem to will yourself to move.",
+		"Your fruitless mental struggles only cause %pred to giggle lightly.",
+		"You can't make any progress freeing yourself from %pred's %belly."))
+	fluff.set_escape_attempt_absorbed_messages_owner(list(
+		"%prey is attempting to free themselves from your %belly!"))
+
+	fluff.set_escape_attempt_absorbed_messages_prey(list(
+		"You try to force yourself out of %pred's %belly.",
+		"You strain and push, attempting to reach out of %pred's %belly.",
+		"You work up the will to try and force yourself free of %pred's clutches."))
+
+	fluff.set_escape_absorbed_messages_owner(list(
+		"%prey forces themselves free of your %belly!"))
+
+	fluff.set_escape_absorbed_messages_prey(list(
+		"You finally manage to wrest yourself free from %pred's %belly, re-asserting your more usual form.",
+		"You heave and push, eventually spilling out from %pred's %belly, eliciting a happy chirp from your former captor."))
+
+	fluff.set_escape_absorbed_messages_outside(list(
+		"%prey suddenly forces themselves free of %pred's %belly!"))
+
+	fluff.set_escape_fail_absorbed_messages_owner(list(
+		"%prey's attempt to escape form your %belly has failed!"))
+
+	fluff.set_escape_fail_absorbed_messages_prey(list(
+		"Before you manage to reach freedom, you feel yourself getting dragged back into %pred's %belly!",
+		"%pred laughs lightly, simply pressing your wrigging form back into her %belly before you get anywhere.",
+		"Try as you might, you barely make an impression before %pred simply clenches with the most minimal effort, binding you back into her %belly.",
+		"Unfortunately, %pred seems to have absolutely no intention of letting you go, and your futile effort goes nowhere.",
+		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly."))
+
+
+/datum/say_list/fluffball
+	emote_hear = list("makes a shy squeal","whimpers","lets out a little squeak")
+	emote_see = list("hides its face","cuddles up to its own tail","stands there awkwardly","avoids eye contact")
+
+/datum/category_item/catalogue/fauna/fluffball
+	name = "Extra-Realspace Fauna - Fluffball"
+	desc = "Classification: Glamoris Fluffalia\
+	<br><br>\
+	A stout creature with an apparently quite round figure, known to habit the location known as the Glamour. It is generally difficult to identify any physical features on the creature \
+	due to its anxiety around other creatures, it hides itself beneath its heavily furred ears and tail. Most creatures that approach it will find the fluffball fleeing quickly, \
+	though it is known to act more calm around those carrying food, which it is quick to steal from people's hands if offered. However, they have been observed to use their tails as weapons when panicked and unable to flee."
+	value = CATALOGUER_REWARD_HARD
+
+/mob/living/simple_mob/vore/fluffball/PounceTarget(mob/living/M, successrate = 100)
+	COOLDOWN_START(src, vore_pounce_cooldown, 20 SECONDS) // don't attempt another pounce for a while
+	if(prob(successrate)) // pounce success!
+		M.status_at_least(STAT_WEAKENED, 5)
+		act_message(src, M, null, MSG_OTHERS("<span class='danger'>%U% pounces on %T%!</span>!"))
+	else // pounce misses!
+		act_message(src, M, null, MSG_OTHERS("<span class='danger'>%U% attempts to pounce %T% but misses!</span>!"))
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
+
+	if(will_eat(M) && (!M.canmove || vore_standing_too)) //if they're edible then eat them too
+		return EatTarget(M)
+	else
+		return //just leave them
+
+CAPABILITIES(/mob/living/simple_mob/vore/fluffball)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/fluffball)))
+	configure(mob_rules(faction = FACTION_GLAMOUR))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/fluffball))
+	op("fluffball_item", item(/obj/item), then(PROC_REF(fluffball_interaction_item)))
+
+/// Old attackby: the normal attack, then it steals food into its fluff.
+/mob/living/simple_mob/vore/fluffball/proc/fluffball_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_OK
+	hit_with_item(W, user)
+	if(istype(W,/obj/item/reagent_containers/food))
+		consume(W, user)
+		act_message(src, null, null, MSG_OTHERS("<span class='notice'>%U% quickly steals %I% into its fluff, it seems to have become a little less shy!</span>!"), item = W)
+		//friend_list lived on the deleted ai_holder; modern brain
+		// stores friendliness as personal entries via add_personal but the
+		// DQ_DISPOSITION_* defines live in code/modules/combat_ai/_defines.dm
+		// which is included after this file. Use the numeric value 2 (FRIENDLY).
+		ai_brain?.add_personal(user, 2, 0, "fluffball gift")
+
+//AI

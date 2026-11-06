@@ -39,7 +39,7 @@ impl Codemod for OwnSet {
         ]
     }
     fn excluded(&self, rel: &str) -> bool {
-        crate::codemod::default_excluded(rel) || rel.starts_with("code/datums/ownership/")
+        crate::codemod::default_excluded(rel) || rel.starts_with("code/library/ownership/")
     }
     fn rewrite(&self, cx: &Ctx) -> Outcome {
         own_decl::rewrite(cx, "rel_set", false)

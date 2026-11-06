@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Looks: the Normal and Digitigrade legs and the None ears and wings show the body as thumbnails; ear and wing styles are drawn on the body."
+  - qol: "Looks: a style picker stays open while you compare styles, closes on Close, Escape or a click outside, and highlights the current style, None included."
+  - qol: "Looks: every Change button lines up in one column; the hair gradient has its own row."
+  - qol: "Colour popovers offer the palette and Custom, a colour picker in place; the In use list and the dotted box around linked swatches are gone."

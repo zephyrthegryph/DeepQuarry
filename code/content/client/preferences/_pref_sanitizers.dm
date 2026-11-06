@@ -43,26 +43,24 @@
 			value -= language
 	return value
 
-/datum/preference/language_prefixes/sanitize(list/value, datum/preferences/preferences)
-	if(!islist(value) || !value.len)
-		var/list/defaults = CONFIG_GET(str_list/language_prefixes)
-		return defaults.Copy()
-	var/static/list/forbidden_prefixes = list(";", ":", ".", "!", "*", "^", "-")
-	for(var/prefix in value.Copy()) // iterate copy; mutating `value` mid-loop skips entries
-		if(prefix in forbidden_prefixes)
-			value -= prefix
-	return value
-
 /datum/preference/language_custom_keys/sanitize(list/value, datum/preferences/preferences)
 	if(!islist(value))
 		return list()
 	var/datum/species/S = GLOB.all_species[preferences.read_preference(/datum/preference/choiced/species)]
 	var/list/alt = preferences.read_preference(/datum/preference/alternate_languages) || list()
+	var/list/seen = list()
+	for(var/saved in value.Copy()) // old one-character keys become whole prefixes
+		var/prefix = language_migrate_prefix(saved)
+		if(prefix != saved)
+			var/saved_language = value[saved]
+			value.Remove(saved)
+			value[prefix] = saved_language
 	for(var/key in value.Copy()) // iterate copy; .Remove() mid-loop skips entries
 		var/lang = value[key]
-		if(!lang)
+		if(!lang || language_prefix_problem(key) || (lang in seen)) // one prefix per language: the first stays
 			value.Remove(key)
 			continue
+		seen += lang
 		if(!S)
 			continue
 		if((lang == S.language) || (lang == S.default_language && S.default_language != S.language) || (lang in alt))
@@ -102,8 +100,12 @@
 
 // ----- Size / Voice / Sound clamps + defaults -----
 
+/// Out of range is clamped to the nearest real weight, not reset (old saves allowed 0-10000).
 /datum/preference/numeric/human/weight_vr/sanitize(value, datum/preferences/preferences)
-	return sanitize_integer(value, WEIGHT_MIN, WEIGHT_MAX, 137)
+	return isnum(value) ? clamp(round(value), WEIGHT_MIN, WEIGHT_MAX) : 137
+
+/datum/preference/numeric/human/weight_vr/pref_deserialize(input, datum/preferences/preferences)
+	return isnum(input) ? clamp(round(input), WEIGHT_MIN, WEIGHT_MAX) : 137
 
 /datum/preference/numeric/human/weight_gain/sanitize(value, datum/preferences/preferences)
 	return sanitize_integer(value, 0, 100, 100)
@@ -230,4 +232,8 @@
 				active_gear_list -= gear_name
 				continue
 			total_cost += G.cost
+			// Old clothing colours (colour tweak, tint, palette, matrix) become channel colours.
+			clothing_channel_migrate_meta(G, active_gear_list[gear_name])
+			// A tweak that changed its metadata form (a picker that was a type list, now variants).
+			gear_tweaks_migrate_meta(G, active_gear_list[gear_name])
 	return value

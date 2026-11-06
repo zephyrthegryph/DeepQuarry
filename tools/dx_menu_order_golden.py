@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate code/modules/unit_tests/dx_menu_order_golden.dm from a capture run.
+"""Regenerate code/tests/unit_tests/dx_menu_order_golden.dm from a capture run.
 
 Capture: run the two tests with the tables empty:
 
@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-GOLDEN = Path(__file__).resolve().parent.parent / "code/modules/unit_tests/dx_menu_order_golden.dm"
+GOLDEN = Path(__file__).resolve().parent.parent / "code/tests/unit_tests/dx_menu_order_golden.dm"
 HEADER = """// The orders dx_menu_order and dx_menu_order_static check, last captured when binding specificity (resolve.dm, op_binding_specificity)
 // replaced the storage.put_in default anchor. Do not edit by hand: regenerate with tools/dx_menu_order_golden.py.
 """

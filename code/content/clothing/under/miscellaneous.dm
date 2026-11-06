@@ -52,13 +52,6 @@
 /obj/item/clothing/under/customs/khaki
 	icon_state = "cu_suit_kh"
 
-/obj/item/clothing/under/rank/mailman
-	name = "mailman's jumpsuit"
-	desc = span_italics("'Special delivery!'")
-	icon_state = "mailman"
-	item_state_slots = list(slot_r_hand_str = "blue", slot_l_hand_str = "blue")
-	rolled_sleeves = 0
-
 /obj/item/clothing/under/sexyclown
 	name = "sexy-clown suit"
 	desc = "It makes you look HONKable!"
@@ -99,34 +92,7 @@ CAPABILITIES(/obj/item/clothing/under/sexyclown)
 	name = "rainbow clown suit"
 	icon_state = "rainbowclown"
 
-/obj/item/clothing/under/rank/vice
-	name = "vice officer's jumpsuit"
-	desc = "It's the standard issue pretty-boy outfit, as seen on Holo-Vision."
-	icon_state = "vice"
-	item_state_slots = list(slot_r_hand_str = "grey", slot_l_hand_str = "grey")
-
 //This set of uniforms looks fairly fancy and is generally used for high-ranking NT personnel from what I've seen, so lets give them appropriate ranks.
-/obj/item/clothing/under/rank/centcom
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Captain.\""
-	name = "\improper Officer's Dress Uniform"
-	icon_state = "officer"
-	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
-	displays_id = 0
-
-/obj/item/clothing/under/rank/centcom_officer
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Admiral.\""
-	name = "\improper Officer's Dress Uniform"
-	icon_state = "officer"
-	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
-	displays_id = 0
-
-/obj/item/clothing/under/rank/centcom_captain
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Admiral-Executive.\""
-	name = "\improper Officer's Dress Uniform"
-	icon_state = "centcom"
-	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
-	displays_id = 0
-
 /obj/item/clothing/under/ert
 	name = "ERT tactical uniform"
 	desc = "A short-sleeved black uniform, paired with grey digital-camo cargo pants. It looks very tactical."
@@ -149,9 +115,9 @@ CAPABILITIES(/obj/item/clothing/under/space)
 	icon_state = "syndicate"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
 	desc = "it's a cybernetically enhanced jumpsuit used for administrative duties."
-	armor_spec = "melee=100;bullet=100;laser=100;energy=100;bomb=100;bio=100;rad=100"
 
 CAPABILITIES(/obj/item/clothing/under/acj)
+	configure(atom_rules(armor_spec = "melee=100;bullet=100;laser=100;energy=100;bomb=100;bio=100;rad=100"))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
@@ -1121,6 +1087,9 @@ CAPABILITIES(/obj/item/clothing/under/fashionminiskirt)
 
 /obj/item/clothing/under/swimsuit/
 
+CAPABILITIES(/obj/item/clothing/under/swimsuit)
+	configure(item_worn(covers = CHEST))
+
 /obj/item/clothing/under/swimsuit/black
 	name = "black swimsuit"
 	desc = "An oldfashioned black swimsuit."
@@ -1246,7 +1215,6 @@ CAPABILITIES(/obj/item/clothing/under/medigown)
 
 /obj/item/clothing/under/explorer/armored
 	desc = "A green uniform for operating in hazardous environments. This one looks like it's been modified."
-	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=10;rad=30"
 
 /obj/item/clothing/under/cohesion
 	name = "black cohesion suit"
@@ -1449,16 +1417,20 @@ CAPABILITIES(/obj/item/clothing/under/moderncoat)
 	desc = "A uniform belonging to Major Bill's Transportation, a shipping megacorporation."
 	icon_state = "mbill"
 	worn_state = "mbill"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)
+
+CAPABILITIES(/obj/item/clothing/under/mbill)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)))
 
 /obj/item/clothing/under/mbill_flight
 	name = "\improper Major Bill's flightsuit"
 	desc = "A flightsuit belonging to Major Bill's Transportation, a shipping megacorporation."
 	icon_state = "mbill_flight"
 	worn_state = "mbill_flight"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)
 	starting_accessories = list(/obj/item/clothing/accessory/storage/webbing/pilot1)
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/mbill_flight)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)))
 
 /obj/item/clothing/under/corp/aether
 	name = "\improper Aether jumpsuit"
@@ -1583,7 +1555,6 @@ CAPABILITIES(/obj/item/clothing/under/moderncoat)
 	desc = "A sturdy civilian law enforcement uniform belonging to the Hedberg-Hammarstrom private security corporation."
 	icon_state = "hedberg"
 	worn_state = "hedberg"
-	armor_spec = "melee=10" //Equivalent to security officer's jumpsuit
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/corp/hedbergtech
@@ -1591,7 +1562,6 @@ CAPABILITIES(/obj/item/clothing/under/moderncoat)
 	desc = "A technician's uniform belonging to the Hedberg-Hammarstrom private security corporation. It is lightly shielded against radiation."
 	icon_state = "hedberg_tech"
 	worn_state = "hedberg_tech"
-	armor_spec = "rad=10" // Equivalent to engineer's jumpsuit.
 	rolled_sleeves = 0
 
 //christmas stuff
@@ -2051,7 +2021,6 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 
 //Same as Nanotrasen Security Uniforms
 /obj/item/clothing/under/ert
-	armor_spec = "melee=5;bullet=10;laser=10;energy=5;bomb=5"
 
 /obj/item/clothing/under/qipao
 	name = "black qipao"
@@ -2631,3 +2600,15 @@ CAPABILITIES(/obj/item/clothing/under/gestalt/sleeveless)
 
 CAPABILITIES(/obj/item/clothing/under/color/ranger)
 	setup(PROC_REF(apply_ranger_uniform_name))
+
+CAPABILITIES(/obj/item/clothing/under/explorer/armored)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=10;rad=30"))
+
+CAPABILITIES(/obj/item/clothing/under/corp/hedberg)
+	configure(atom_rules(armor_spec = "melee=10"))
+
+CAPABILITIES(/obj/item/clothing/under/corp/hedbergtech)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/ert)
+	configure(atom_rules(armor_spec = "melee=5;bullet=10;laser=10;energy=5;bomb=5"))

@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "CAPABILITIES_PART(T, feature) lets a feature add entries to a type from its own file; the base-type composition roots moved to their home files"

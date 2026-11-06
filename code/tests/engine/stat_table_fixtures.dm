@@ -1,4 +1,4 @@
-// The stat layer's table holds, bounds and fast paths (code/modules/unit_tests/dq_stat_layer_tests.dm).
+// The stat layer's table holds, bounds and fast paths (code/tests/unit_tests/dq_stat_layer_tests.dm).
 //
 // /obj/stat_table_fixture declares one stat of each numeric rule a body factor uses, with a var of its own (the stat is a real var). The
 // /contributing subtype gives each a type-level contribution, so the no-row fast path has something to fold.
@@ -24,7 +24,7 @@ CAPABILITIES(/obj/stat_table_fixture/contributing)
 	contributes(STAT_TB_MIN, 2)
 	contributes(STAT_TB_MASK, 6)
 
-/// A source whose factors() entries put tables on the fixture its `target` names (code/modules/unit_tests/dq_stat_layer_tests.dm, dq_stat_factors_entry).
+/// A source whose factors() entries put tables on the fixture its `target` names (code/tests/unit_tests/dq_stat_layer_tests.dm, dq_stat_factors_entry).
 /datum/factor_source_fixture
 	/// The fixture that receives the tables: a relation view.
 	var/obj/stat_table_fixture/target

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The gas and heat field steps find each chunk's live edges once per step instead of on every sub-step, halving their idle cost"

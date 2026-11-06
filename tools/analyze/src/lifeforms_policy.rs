@@ -71,7 +71,15 @@ impl Declared {
                         "per_type" => {
                             let var = args.first().and_then(|x| nameof_inner_using(x, gate));
                             let build = args.get(1).and_then(|x| x.trim().strip_prefix("PROC_REF(").and_then(|s| s.strip_suffix(')')).map(|s| s.trim().to_string()));
+                            // Tracked starting lists use generated mutators and are judged by the tracked lint.
+                            let cow = args.iter().any(|arg| {
+                                let arg = arg.replace(' ', "");
+                                arg.starts_with("copy_on_write=") && arg != "copy_on_write=FALSE"
+                            });
                             if let (Some(var), Some(build)) = (var, build) {
+                                if cow {
+                                    continue;
+                                }
                                 self.per_type.entry(ty.clone()).or_default().push((var, build));
                             }
                         }

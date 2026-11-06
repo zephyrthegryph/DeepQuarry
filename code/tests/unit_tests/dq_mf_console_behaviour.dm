@@ -5,7 +5,7 @@
 
 /// A plain console with a board, and the hand's use counted.
 /obj/machinery/computer/mfc_probe
-	circuit = /obj/item/circuitboard/stationalert_all
+	circuit = VARIANT(/obj/item/circuitboard/stationalert_all)
 	var/mfc_hand_uses = 0
 
 /obj/machinery/computer/mfc_probe/attack_hand(mob/user)
@@ -34,7 +34,7 @@
 	TEST_ASSERT(QDELETED(C), "the console is taken apart")
 	var/obj/structure/frame/F = locate_on(hc_spot(), /obj/structure/frame)
 	TEST_ASSERT_NOTNULL(F, "into a frame")
-	TEST_ASSERT(istype(F?.circuit, /obj/item/circuitboard/stationalert_all), "holding its board")
+	TEST_ASSERT(variant_is(F?.circuit, VARIANT(/obj/item/circuitboard/stationalert_all)), "holding its board")
 	TEST_ASSERT_NULL(locate_on(hc_spot(), /obj/item/material/shard), "a whole monitor drops no glass")
 	LAZYADD(hc_made, F)
 

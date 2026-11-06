@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The 166 chemical dispenser cartridge types that only named a reagent or a size are rows of one table"

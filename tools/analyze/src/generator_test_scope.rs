@@ -1,12 +1,15 @@
 //! Existing generator test-only scope, shared without a legacy model dependency.
-pub const TEST_ONLY_DIRS: &[&str] = &["code/tests/", "code/modules/unit_tests/"];
+pub const TEST_ONLY_DIRS: &[&str] = &["code/tests/", "code/tests/unit_tests/"];
+
+/// Benchmarks remain ordinary generation input.
+pub const NOT_TEST_ONLY: &[&str] = &["code/tests/benchmarks/"];
 
 /// The guard a generator wraps test-only declarations in.
 pub const TEST_GUARD: &str = "#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)";
 
 /// Whether a source file is compiled only in a test build, so whatever a generator writes for it must sit inside [`TEST_GUARD`].
 pub fn test_only(rel: &str) -> bool {
-    TEST_ONLY_DIRS.iter().any(|d| rel.starts_with(d))
+    TEST_ONLY_DIRS.iter().any(|d| rel.starts_with(d)) && !NOT_TEST_ONLY.iter().any(|d| rel.starts_with(d))
 }
 
 /// The actual legacy generator CLI loads this lint's roots. Tree::load walks

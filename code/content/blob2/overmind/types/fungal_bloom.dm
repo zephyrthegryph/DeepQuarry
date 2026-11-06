@@ -33,5 +33,4 @@
 	var/mob/living/simple_mob/blob/spore/S = new spore_type(get_turf(B))
 	S.set_faction(mob_rules_of(user).faction)
 	rel_set(S, nameof(S.blob_type), src)
-	S.update_icons()
 	S.ai_brain.forget_everything()

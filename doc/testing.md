@@ -4,6 +4,9 @@ Everything CI checks can be run locally. On Windows use the `bin/*.cmd` entry
 points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 `tools/build/build.sh`. Both take the same targets and `-D` defines.
 
+
+**What to run before landing is your judgement.** Nothing gates master (`bash tools/dq_land.sh`, `doc/rewrite/agent_workflow.md` section 29): run the focused tests that fit the change, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. A UI or docs fix may need neither a compile nor a world. Mentions below of gates, stamps and lane-ready describe tools no longer on the landing path.
+
 ## Quick reference
 
 | Goal | Command | Typical time |
@@ -24,7 +27,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 
 ## Unit tests
 
-Unit tests are `/datum/unit_test` subtypes under `code/modules/unit_tests/`,
+Unit tests are `/datum/unit_test` subtypes under `code/tests/unit_tests/`,
 registered in `_unit_tests.dm`. `dm-test` compiles the game with `UNIT_TESTS`,
 `CITESTING` and `CIBUILDING`, boots it in DreamDaemon, runs every test, and
 shuts down. It also repacks icons and builds Verdigris first if they are stale.
@@ -38,6 +41,27 @@ so a new worktree needs no `verdigris/target`. A miss builds and stores the DLL
 kept). Uncommitted edits to those inputs skip the cache. `DQ_VERDIGRIS_CACHE=off`
 disables it. The runner still checks `VERDIGRIS_ABI` before booting.
 
+Test targets (`dm-test`, `test-repeat`, so every `dq_focused_test.sh` run) load a DLL built with the `lane` cargo profile
+(`verdigris/Cargo.toml` `[profile.lane]`: inherits release, no LTO, line-table debug info, 256 codegen units, incremental,
+opt-level 2 for the workspace crates and 3 for dependencies) and linked with `rust-lld` (`verdigris/.cargo/config.toml`).
+`release` with thin LTO is still what CI (`CI` set), `build.sh` (all-up build), the server and benchmarks build.
+`DQ_VERDIGRIS_PROFILE=release` makes a test run use the production profile. The shared cache key and the
+`verdigris.dll.profile` stamp next to the DLL carry the profile, so a lane DLL is never reused as a production one.
+Incremental policy: lane and dev cargo runs are incremental where their profile says so (`lib/cargo_ice.ts`);
+`DQ_CARGO_INCREMENTAL=0` forces `CARGO_INCREMENTAL=0` for any run; CI and the one-shot gate builds
+(`analyze_test_cache`, the `*_equiv.sh` scripts) are non-incremental. Never export `CARGO_INCREMENTAL=1` yourself: sccache
+(the machine's rustc wrapper) refuses to run when it is set. If rustc panics on a corrupt incremental directory, the tooling
+deletes the target's incremental directories and retries once (tested in `lib/cargo_ice.test.ts`).
+Measured on this machine with other lanes building (noisy), one-line edit then `cargo build` of the DLL for i686:
+
+| Edit in | `release` (non-incremental, thin LTO, link.exe) | `lane` (incremental, lld) |
+|---|---|---|
+| no edit | 1 s | 1 s |
+| vg-gas | 119 s | 22 s |
+| vg-core | 233 s | 28 s |
+| vg-ffi | 345 s | 11 s |
+| cold | 161 s | 133 s |
+
 - **Map.** Under `CITESTING` the world boots `maps/virgo_minitest/`, one small
   station level that loads in seconds. Add `-DCITESTING_FULL_MAP` to boot
   Southern Cross instead; use that for map-specific tests.
@@ -46,7 +70,7 @@ disables it. The runner still checks `VERDIGRIS_ABI` before booting.
   only if every test passed and there were no runtimes; the world then writes
   `data/logs/ci/clean_run.lk`. Runtimes alone fail the run
   (`data/logs/ci/runtime.log`).
-- **Writing tests.** See `code/modules/unit_tests/README.md` for the API
+- **Writing tests.** See `code/tests/unit_tests/README.md` for the API
   (`allocate()`, `TEST_ASSERT*`, `TEST_FAIL`). Use real game objects where you
   can, and avoid `prob()`, since RNG is seeded during tests.
 
@@ -90,7 +114,7 @@ your change runs at boot. `doc/rewrite/boot_gate.md`.
 **Bounded staleness sweep (focused runs).** The staleness checker's end-of-test sweep (`staleness_test_end`) checks every
 entity the boot created (about 15,700) after the first test, 8-15 s. A focused run passes the world param `staleness=bounded`:
 each test end checks what the test created (entities that were queued for a first draw when the first test began count as boot backlog, not the test's), 300 entities of the boot backlog in order, and 100 from the rotating cursor, and
-flushes the refresh queue only when it holds 500 or fewer entries (the checks skip a queued atom). `tools/dq_merge_gates.sh` and `tools/dq_lane_ready.sh` stay `full`: the param is absent there, and the two scripts
+flushes the refresh queue only when it holds 500 or fewer entries (the checks skip a queued atom).
 export `DQ_STALENESS=full`, which `dq_focused_test.sh` honours (`DQ_STALENESS=full bash tools/dq_focused_test.sh ...` forces
 it by hand). `tests.log` says which ran: `STALENESS: test-end mode ...` at suite start and, per test, `STALENESS: end of <test>
 mode=... entities_checked=... backlog_remaining=...`.
@@ -116,15 +140,15 @@ them can hide a failure in the full suite, which still does all of them:
 
 | Skipped in focused runs | Full suite | Why it is safe |
 |---|---|---|
-| Round-start settle before the first test: 1 s instead of 10 s (0 s for `--boot`) (`HandleTestRun`, `code/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
-| Round-end report delay: 0 s instead of 5 s (`declare_completion`, `code/_helpers/roundend.dm`) | 5 s | The delay lets players read the report; a test world has none. |
+| Round-start settle before the first test: 0 s instead of 10 s (`HandleTestRun`, `code/world/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
+| Round-end report delay: 0 s instead of 5 s (`declare_completion`, `code/content/gamemodes/game_mode.dm`) | 5 s | The delay lets players read the report; a test world has none. |
 | Generating every asset and spritesheet at boot, about 2.3 s (`SSassets.Initialize`) | all generated | `get_asset_datum()` builds an asset on first use, and the `spritesheets` and `test_asset_smart_cache` tests call it, so focusing those still generates and checks every sheet. |
 
 `unit_test_is_focused_run()` is the switch; add a row here if you add another.
 
 ### Boot work a focused run defers (`boot_needs`)
 
-A test sets `boot_needs = list(BOOT_NEED_...)` (`code/__defines/_boot_needs.dm`) to name the boot work it reads. The default,
+A test sets `boot_needs = list(BOOT_NEED_...)` (`code/defines/engine/_boot_needs.dm`) to name the boot work it reads. The default,
 null, means "needs all of it". A focused world skips a piece of work only when **every** selected test declared a list that
 leaves it out (`unit_test_boot_skips()`), and logs `BOOT DEFERRED: ...` to `runtime.log` and `tests.log` for each skip. The
 full suite, the merge gates and production never skip any of it. A test that starts needing one of these adds it to its list.
@@ -196,7 +220,7 @@ contains a focus line, or if a `TEST_FOCUS` anywhere else is not inside an
 
 ### Tiers
 
-Every test has a `tier` (`code/modules/unit_tests/_unit_tests.dm`):
+Every test has a `tier` (`code/tests/unit_tests/_unit_tests.dm`):
 
 | Tier | Runs in | What it holds |
 |---|---|---|
@@ -223,11 +247,9 @@ machine slot, queue time is reported apart (`FOCUSED RUN TIME: queued N min`), a
 (5400) is stopped. Do not wrap the tool in `timeout`; the built-in cap replaces it. A native compile the resident compiler cannot admit
 (exit 75, "admission deadline expired") queues again, holding its compile-root slot, up to `DQ_NATIVE_ADMISSION_MAX_MIN` (30)
 instead of failing (`tools/ci/test_admission_retry.sh`).
-A focused run, and a lane-ready proof (`dq_merge_gates.sh --no-dm`), compile only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile + DreamChecker is not part of them. It runs at integration (`dq_push_master.sh` when no `dm.ok` stamp exists; the batch train) and in CI. A lane proof records `dm=0`, so a reused proof never produces a `dm.ok`.
-The merge gates are not ad-hoc runs: `tools/dq_gate_retry.sh` gives each focused run `DQ_GATE_FOCUSED_MAX_MIN` (5 minutes plus 1 per test, ceiling 10;
-`gate_cap_minutes`), which replaces the agent cap and its 10 clamp. It is for the gates only; an agent's own run uses `DQ_FOCUSED_MAX_MIN`.
-The exhaustive refusal is unchanged under it. The shared compile root (`tools/build/lib/compile_root.ts`) never copies or deletes `*.lk` lock files
-(held by a running DreamDaemon/DreamMaker) and retries a busy (EBUSY) copy for a few seconds before failing with a message. `tools/ci/test_focused_caps.sh` tests all three against a fake world.
+A focused run compiles only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile + DreamChecker is not part of them. It runs at integration (`dq_push_master.sh` when no `dm.ok` stamp exists; the batch train) and in CI. A lane proof records `dm=0`, so a reused proof never produces a `dm.ok`.
+Nothing gates master any more (`bash tools/dq_land.sh` merges and pushes); a run's cap is `DQ_FOCUSED_MAX_MIN`, and the exhaustive refusal is unchanged. The shared compile root (`tools/build/lib/compile_root.ts`) never copies or deletes `*.lk` lock files
+(held by a running DreamDaemon/DreamMaker) and retries a busy (EBUSY) copy for a few seconds before failing with a message. `tools/ci/test_focused_caps.sh` tests the caps against a fake world.
 
 The exhaustive tier holds the tests that check every subtype of a root, or
 every cell of a large matrix:
@@ -258,7 +280,7 @@ holders and stays whole in the normal tier.
 
 Phase 1 of the rewrite (`doc/rewrite/final_api.html` section 19) starts with ten executable proofs of the
 semantic contracts that would be expensive to get wrong after content conversion begins. They live in
-`code/modules/unit_tests/dq_e0_proofs_tests.dm` as `/datum/unit_test/dq_e0_proof/p01_...` to `p10_...`, are written with the test driver
+`code/tests/unit_tests/dq_e0_proofs_tests.dm` as `/datum/unit_test/dq_e0_proof/p01_...` to `p10_...`, are written with the test driver
 (`code/tests/driver/`) and the test-only fixtures (`code/tests/engine/`), and are all green only when engines E1-E6 have landed.
 Until then each one fails, on purpose, with `E1-E6 not implemented: <what>` naming every engine piece it reached.
 
@@ -284,7 +306,7 @@ proof never asserts on a null. When an engine replaces its stubs the gate goes q
 
 A test that makes time pass or sends an input starts with `test_driver_begin()` (code/tests/driver/driver.dm) and ends with
 `test_driver_end()`. Begin gives the kernel an injected clock (`kernel().test_now`, in deciseconds, from 0) and makes a fresh test
-OM scheduler current, so every entity the test creates afterwards reads that clock. `test_time(t)` then steps it one slot (one
+scheduler current, so every entity the test creates afterwards reads that clock. `test_time(t)` then steps it one slot (one
 decisecond) at a time, running the phases K, S, N, D, P, R, G of each slot in order through the same phase procs the live tick
 calls, with a drain at the start of S, D, P and R; `test_phase(P)` runs one phase at the current time and moves nothing;
 `test_drain()` is one marked drain. Native frames and the host services (tgui transport, dbcore, assets) are not stepped.
@@ -305,7 +327,7 @@ room unless the override says otherwise (a test world boots through ticks far pa
 
 ### Gameplay scenarios
 
-`code/modules/unit_tests/gameplay/` holds end-to-end tests of the core player loops (`/datum/unit_test/dq_gameplay/...`): joining at
+`code/tests/unit_tests/gameplay/` holds end-to-end tests of the core player loops (`/datum/unit_test/dq_gameplay/...`): joining at
 arrivals, walking through a door, putting a coat on and off, the tail's layer against the uniform, breathing phoron with and without
 internals, losing the room's oxygen, an airlock controller's window, picking up and dropping, a wall's right-click menu, and cutting and
 restoring an area's power. They drive the game as a player does and assert what the player would see, never a snapshot:
@@ -318,7 +340,7 @@ restoring an area's power. They drive the game as a player does and assert what 
   native gas frame and a power step, which the injected clock does not step);
 - the player is `spawn_player()` (or `spawn_arrival()`, the late-join path): a body someone controls, with a HUD.
 
-`tools/dq_lane_ready.sh` adds every line of `tools/ci/gameplay_tests.txt` to each lane's tests, so they run on every landing; the whole
+`tools/ci/gameplay_tests.txt` lists them; the whole
 set takes about 20 s of world time. A scenario failing because of a bug in another lane's scope sets `expected_failure = "<why>"`: it
 still runs, its failure is logged as an `EXPECTED FAILURE` notice, and a pass fails it so the marker comes off with the fix.
 
@@ -452,8 +474,8 @@ in `build.ts`) requires a trustworthy list of the source paths that determine
 a sweep's outcome, and every sweep here iterates `subtypesof()`/`typesof()`
 of some root, so its true input set is "every file that declares a subtype
 of that root, anywhere in the tree" -- not a tidy folder. A first attempt at
-scoping `all_clothing_shall_be_valid` to `code/modules/clothing/` and
-`dq_property_type_values_valid` to `code/datums/properties/` was exactly
+scoping `all_clothing_shall_be_valid` to `code/content/clothing/` and
+`dq_property_type_values_valid` to `code/content/properties/` was exactly
 this mistake (clothing subtypes, and the vars property providers read, are
 declared all over the tree -- cult items, changeling powers, holiday
 events, ...), which would have produced false skips: a change outside those
@@ -584,7 +606,7 @@ Fresh worktrees should not pay cold build costs:
   matters little. Run `DQ_ANALYZE_PROFILE=release tools/build/build.sh analyze-build` to get the release
   binary locally.
 - **Bun.** `tools/bootstrap/javascript_.ps1` downloads Bun into `DQ_BUN_CACHE` (default
-  `E:\dq-cache\bun` when `E:` exists; `off` or an unwritable dir falls back to `tools/bootstrap/.cache`),
+  `E:\dq-cache\bun` when `E:` exists; `off` or an unwritable dir falls back to the `.cache` directory under `tools/bootstrap`),
   keyed by version. It downloads into a temp dir and renames it into place, so concurrent bootstraps are safe.
 - **Heartbeat.** `Juke.exec` prints `still running: <command> (<m>s)` to stderr every 60 s while a child
   process runs (cargo, the DM compile, DreamDaemon, icon repack), so a long step is not mistaken for a hang.
@@ -599,7 +621,7 @@ with both compilers and runs `dmb-equiv --all` over each pair (rules and evidenc
 `tools/dmb/crates/dmb-equiv/EQUIVALENCE.md`, status in `doc/rewrite/native_compiler_issues.md`; both worlds: zero differences on 2026-10-23; the `untyped_member` lint keeps DreamMaker's by-name binding of a static out of the tree).
 **File moves.** `bash tools/ci/move_equiv.sh BEFORE AFTER` proves a series of pure `git mv` commits changed no behaviour. It builds `dmb-equiv`, takes the moves from `git diff --name-status -M100% BEFORE AFTER` (every R100 line becomes an `OLD=NEW` path-map line; any other changed file is listed, and only `deepquarry.dme` and `tools/ci/lint_scopes.toml` should be), extracts BEFORE and AFTER with `git archive | tar -x` into scratch directories under `data/move_equiv/src` (the worktree's HEAD never changes; checkout, switch, reset and restore are banned), compiles the production world and the unit-test world (`-DCIBUILDING -DCITESTING`) at each with DreamMaker, and compares each pair with `dmb-equiv --all --path-map-file`. It exits 0 only when both are EQUIVALENT and the compiles report the same number of warnings and errors. `--path-map OLD=NEW` (repeatable) or `--path-map-file FILE` rewrites, in the first world only, a string constant equal to an old path or starting with one (followed by the end, a separator or a non-name character; `/` and `\` forms both match), which is how the file path given to `entry_block(...)` in generated `declared_entries` procs changes when a file moves. Nothing else is rewritten, so a changed constant, opcode or table is still reported (`tools/dmb/crates/dmb-equiv/EQUIVALENCE.md` "Path map"). Table order is never ignored. `DQ_MOVE_EQUIV_OVERLAY="tools/analyze/src"` copies those paths from HEAD over both extracts, for checking a move against a generator fix the older revisions lack. Output goes to `data/move_equiv/` (`DQ_MOVE_EQUIV_DIR`; `DQ_MOVE_EQUIV_FLAVORS` selects one flavour).
 
-**Move candidates.** `bash tools/ci/move_candidates.sh [--summary] [--clean|--dirty] [PATH...]` says which old-tree `.dm` files can move as a pure `git mv`, before you try. Each file is `clean` or `dirty` with the reasons: a `tools/ci` data file (baseline, snapshot, golden) or `tools/dm-health/baseline.json` names it (`baseline`), tool source names it (`toolref`; a bare domain directory such as `code/modules/clothing/` is a mention, not a reference), an `ALLOW(...)` annotation (`allow`), an old form (`Destroy()`, `spawn`, `sleep`, `do_after`, `INVOKE_ASYNC`, `Initialize`, `LateInitialize`, `Topic`, a `New()` override, `/verb/`, `flow_ask`/`prompt_flow`, `CHANGE_`; comments ignored) or `code/__defines/`. It prints the proposed section 22 target (`code/modules/x/f.dm` to `code/content/x/f.dm`; power, heat, atmos, body, damage, ai and life to `code/domains/`) and a `layering` note when a library or domain target names a type declared under `code/content/`. `lint_scopes.toml` is not a reason: the move's third commit follows its paths. Self-test: `bash tools/ci/test_move_candidates.sh`. Then `move_equiv.sh` proves the move.
+**Move candidates.** `bash tools/ci/move_candidates.sh [--summary] [--clean|--dirty] [PATH...]` says which old-tree `.dm` files can move as a pure `git mv`, before you try. Each file is `clean` or `dirty` with the reasons: a `tools/ci` data file (baseline, snapshot, golden) or `tools/dm-health/baseline.json` names it (`baseline`), tool source names it (`toolref`; a bare domain directory such as `code/content/clothing/` is a mention, not a reference), an `ALLOW(...)` annotation (`allow`), an old form (`Destroy()`, `spawn`, `sleep`, `do_after`, `INVOKE_ASYNC`, `Initialize`, `LateInitialize`, `Topic`, a `New()` override, `/verb/`, `flow_ask`/`prompt_flow`, `CHANGE_`; comments ignored) or `code/__defines/`. It prints the proposed section 22 target (an old-tree `x/f.dm` to `code/content/<domain>/`; power, heat, atmos, body, damage, ai and life to `code/domains/`) and a `layering` note when a library or domain target names a type declared under `code/content/`. `lint_scopes.toml` is not a reason: the move's third commit follows its paths. Self-test: `bash tools/ci/test_move_candidates.sh`. Then `move_equiv.sh` proves the move.
 `DQ_EQUIV_FLAVORS=production` or `test` runs one. With neither cargo nor a built `dmbc` an unset `DQ_COMPILER` fails (no silent DreamMaker fallback; set `DQ_COMPILER=dreammaker` explicitly). The daemon retains parsed source and per-procedure
 results, so an unchanged rebuild takes about 1.3 s and a proc-body edit about 20 s; a cold
 first build is about two minutes.
@@ -647,7 +669,7 @@ ones. Never use it for a commit check: CI builds without it.
 
 ## Benchmarks
 
-Benchmarks are scenarios in `code/modules/benchmarks/`, compiled only with
+Benchmarks are scenarios in `code/tests/benchmarks/`, compiled only with
 `-DBENCHMARK`. The `bench` target builds that world, boots it once per iteration,
 runs the scenarios, and samples DreamDaemon's memory and CPU from outside the
 process. `bin/bench.cmd` is the Windows shortcut.
@@ -749,7 +771,8 @@ Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 | `generation` | Expedition station generation and release; `cycles` > 1 is a leak soak. | `cycles`, `seed` |
 | `sm_soak` | Repeated supermatter-scale blasts plus five minutes of recovery. Use the full map. | `blasts` (4), `profile_types` |
 | `kernel_overhead` | What the kernel measurement itself costs: a charge, a tick usage read pair, a histogram add, and a closed tick with every registered system charged. | `calls` (200000) |
-| `rustg_dispatch` | Per-call cost of rust-g `hash_string`, `json_is_valid` and `log_write` through a cached `load_ext()` handle against by-name `call_ext`. On 2026-09-23 (loaded machine, three boots) the handle showed no consistent gain, so `code/__defines/rust_g.dm` still calls by name. | `calls` (20000), `rounds` (5) |
+| `move_integrity` | Per-call cost of a mover's `Move()`/`forceMove()`, the sparse `last_move` set and get, `get_integrity()`, `update_integrity()` and a damage/repair pair, against plain var access in the same loop (best of `rounds`). | `steps` (50000), `rounds` (5) |
+| `rustg_dispatch` | Per-call cost of rust-g `hash_string`, `json_is_valid` and `log_write` through a cached `load_ext()` handle against by-name `call_ext`. On 2026-09-23 (loaded machine, three boots) the handle showed no consistent gain, so `code/defines/host/rust_g.dm` still calls by name. | `calls` (20000), `rounds` (5) |
 
 **What gets recorded.** Each invocation is one file in `data/bench/runs/`
 holding the commit, map, defines, every iteration's raw results (metrics,
@@ -773,14 +796,14 @@ conditions between the two runs, or they show as `not comparable (load)`
 instead of a change.
 
 **Kernel metrics (every scenario).** Whatever a scenario measures, `bench` also
-reports these over its whole run (`code/modules/benchmarks/kernel_metrics.dm`),
+reports these over its whole run (`code/tests/benchmarks/kernel_metrics.dm`),
 so the same numbers exist everywhere and a change can be judged by the system it
 moved:
 
 | Metric | Meaning |
 |---|---|
 | `tick_p50`, `tick_p95`, `tick_p99`, `overruns`, `overrun_ratio` | Whole-tick usage (%) and the ticks over 100%. |
-| `system.<id>.ms_per_s`, `.p99_ms`, `.late_max`, `.breaches` | Per system (OM behaviour families such as `life` and `machines`, and `mc_<subsystem>`): ms of work per second, p99 of ms per tick over the ticks it ran, worst slot lateness in deciseconds, and slots that started past their max interval. Ids are `code/controllers/measure/systems.dm` keys. |
+| `system.<id>.ms_per_s`, `.p99_ms`, `.late_max`, `.breaches` | Per system (behaviour families such as `life` and `machines`, and `mc_<subsystem>`): ms of work per second, p99 of ms per tick over the ticks it ran, worst slot lateness in deciseconds, and slots that started past their max interval. Ids are `code/world/kernel/measure/systems.dm` keys. |
 | `input_p99`, `input_p99_ticks`, `input_p50`, `click_wait_p99_ms`, `verb_queue_p99_ms`, `input_queue_hwm`, `input_run_depth_p95` | How long clicks and queued verbs waited before being handled (ms and ticks), how deep the verb queue got, and how far into the tick input ran. |
 
 `bench-compare` gates on these regardless of the generic threshold: `input_p99`
@@ -788,7 +811,7 @@ and every `.breaches` may not rise (beyond the runs' own noise, and beyond the
 metric's resolution for input), and a system's `.p99_ms` rising over 20% is named.
 A gated row reads `regression (gate: ...)`. The same records are in the stat
 panel's Kernel view, the "Tick Report" admin verb (the flight recorder of the last
-minute) and `om_diagnostics()["kernel"]`; each `bench` also keeps the per-tick
+minute) and `km_diagnostics()["kernel"]`; each `bench` also keeps the per-tick
 series of every scenario under `data/bench/profiles/<run>/`.
 
 **Report.** `data/bench/report.html` is regenerated after every `bench`. It
@@ -835,8 +858,7 @@ paths, wall times and miss causes.
 
 SpacemanDMM's DreamChecker has no incremental or changed-files mode: every run parses and checks the whole tree (2+ minutes on
 every core, in parallel with the compile). It used to run inside every `build.sh dm`, so a local `dm`, `server` or test build paid
-for it each time. Now `dm` runs it only where its verdict is required: `DQ_DREAMCHECKER=1` (set by `tools/dq_merge_gates.sh` and
-`tools/dq_push_master.sh`, so the merge gates and the push still require "Found 0 diagnostics"), a `CI` environment, or when you
+for it each time. Now `dm` runs it only where its verdict is required: `DQ_DREAMCHECKER=1`, a `CI` environment, or when you
 ask for it (`DQ_DREAMCHECKER=1 build.sh dm`). `build.sh lint` always runs it (explicit lint). Whatever runs it does so at
 below-normal priority (`DQ_PRIORITY=normal` opts out). Local builds log one line saying it was skipped. The analyze engine's
 ratchets (`check_ratchets.sh`, incremental per file) still run wherever they ran before.

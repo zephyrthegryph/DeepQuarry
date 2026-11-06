@@ -3,7 +3,7 @@
 // A subject's reagents settle to a fixed point: gather the rules that are candidates for what the holder holds (the bucket of each reagent it contains,
 // in the holder's own order, each rule once), test them cheap to expensive, step each one that holds, and repeat until a pass fires nothing. Then every rule
 // that fired is announced once (its message and sound, a /datum/notice/transformed). The loop, the order and the arithmetic are chemistry's, ported from
-// /datum/reagents/proc/handle_reactions() and /datum/decl/chemical_reaction/proc/react_step(); the pins of code/modules/unit_tests/dq_xform_pins.dm hold the
+// /datum/reagents/proc/handle_reactions() and /datum/decl/chemical_reaction/proc/react_step(); the pins of code/tests/unit_tests/dq_xform_pins.dm hold the
 // outcome identical.
 //
 // Debug and audit: GLOB.xform_trace logs every step (rule, subject, extent, product) to the world log; a settle that hits XFORM_MAX_PASSES is logged
@@ -15,18 +15,11 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 /// What a notice of a rule that went carries (code/library/transformations/transformation_settle.dm): the rule, the subject, how far it went in this
 /// settle (reaction units, summed over the steps), what it took (reagent id => units) and what it made (units of its product).
 /datum/notice/transformed
-	var/rule
-	var/subject
+	var/datum/xform/rule
+	var/datum/subject
 	var/extent
 	var/took
 	var/made
-
-/datum/notice/transformed/fill(rule, subject, extent, took, made)
-	src.rule = rule
-	src.subject = subject
-	src.extent = extent
-	src.took = took
-	src.made = made
 
 /// The regime a reagent holder runs: the rules of that regime are its candidates. A holder with another regime overrides this.
 /datum/reagents/proc/xform_regime()
@@ -114,10 +107,26 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		xform_book_energy(X, holder)
 	if(X.spawn_rows)
 		xform_run_spawns(X, holder, amt_produced)
+	if(X.spends)
+		xform_spend(X, holder.my_atom)
 	if(X.effect_rows)
 		xform_run_effects(X, holder, amt_produced, owner)
 	if(X.then_proc)
 		call(owner, X.then_proc)(holder, amt_produced)
+
+/// Spends one of the subject's uses (all of them with spends_all): the subject's spend_<var>(left) writes it and answers running out. A subject without
+/// that proc spends nothing (logged).
+/proc/xform_spend(datum/xform/X, atom/subject)
+	if(!subject || QDELETED(subject) || !(X.spends in subject.vars))
+		return
+	var/left = X.spends_all ? 0 : max(subject.vars[X.spends] - 1, 0)
+	var/spender = "spend_[X.spends]"
+	if(!hascall(subject, spender))
+		log_world("XFORM: [X.rule_type] spends [X.spends], but [subject.type] has no [spender]()")
+		return
+	call(subject, spender)(left)
+	if(GLOB.xform_trace)
+		log_world("XFORM: [X.rule_type] spent [X.spends] of [subject] ([subject.type]): [left] left")
 
 /// Books a rule's energy where it goes: into the air around the subject (heat_add() on its air) or the subject's own heat body.
 /proc/xform_book_energy(datum/xform/X, datum/reagents/holder)
@@ -176,14 +185,32 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 			if(M.client)
 				M.show_message(span_notice("[icon2html(container,M.client)] [X.says]"), 1)
 		playsound(T, X.plays, 80, 1)
-	if(!notice_wanted(holder, X.notice_type))
+	// The holder hears every rule; the subject hears its own too (a blob chunk revived, a brain regrown), so it answers on its own type instead of
+	// through a bespoke `then` tail.
+	var/to_holder = notice_wanted(holder, X.notice_type)
+	var/to_subject = container && !QDELETED(container) && notice_wanted(container, X.notice_type)
+	if(!to_holder && !to_subject)
 		return
 	var/extent = went ? went[1] : 0
 	var/made = went ? went[2] : 0
 	var/list/took = list()
 	for(var/reactant in X.reagent_takes)
 		took[reactant] = X.reagent_takes[reactant] * extent
-	notice_publish(holder, take_notice(X.notice_type, X, holder, extent, took, made))
+	if(to_holder)
+		notice_publish(holder, xform_notice(X, holder, extent, took, made))
+	if(to_subject)
+		notice_publish(container, xform_notice(X, holder, extent, took, made))
+
+/// A pooled notice of the rule's type (a /datum/notice/transformed or a subtype) carrying what the settle did.
+/proc/xform_notice(datum/xform/X, datum/holder, extent, list/took, made)
+	RETURN_TYPE(/datum/notice/transformed)
+	var/datum/notice/transformed/N = notice_take(X.notice_type)
+	N.rule = X // ALLOW(ownership): a pooled notice holds its entities for one trigger and is reset on release
+	N.subject = holder // ALLOW(ownership): a pooled notice holds its entities for one trigger and is reset on release
+	N.extent = extent
+	N.took = took
+	N.made = made
+	return N
 
 // ---- outputs through the containment ledger (D10) ----
 

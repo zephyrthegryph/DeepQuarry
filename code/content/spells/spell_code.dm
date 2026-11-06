@@ -1,0 +1,414 @@
+/datum/spell
+	var/name = "Spell"
+	var/desc = "A spell"
+	parent_type = /datum
+	var/panel = "Spells"//What panel the proc holder needs to go on.
+
+	var/school = "evocation" //not relevant at now, but may be important later if there are changes to how spells work. the ones I used for now will probably be changed... maybe spell presets? lacking flexibility but with some other benefit?
+
+	var/charge_type = Sp_RECHARGE //can be recharge or charges, see charge_max and charge_counter descriptions; can also be based on the holder's vars now, use "holder_var" for that
+
+	var/charge_max = 100 //recharge time in deciseconds if charge_type = Sp_RECHARGE or starting charges if charge_type = Sp_CHARGES
+	var/charge_counter = 0 //can only cast spells if it equals recharge, ++ each decisecond if charge_type = Sp_RECHARGE or -- each cast if charge_type = Sp_CHARGES
+	var/still_recharging_msg = span_notice("The spell is still recharging.")
+
+	var/silenced = 0 //not a binary - the length of time we can't cast this for
+
+	var/holder_var_type = "trauma" //only used if charge_type equals to "holder_var"
+	var/holder_var_amount = 20 //same. The amount adjusted with the mob's var when the spell is used
+
+	var/spell_flags = NEEDSCLOTHES
+	var/invocation = "HURP DURP"	//what is uttered when the wizard casts the spell
+	var/invocation_type = SpI_NONE	//can be none, whisper, shout, and emote
+	var/range = 7					//the range of the spell; outer radius for aoe spells
+	var/message = ""				//whatever it says to the guy affected by it
+	var/selection_type = "view"		//can be "range" or "view"
+	var/tmp/atom/movable/holder	//where the spell is. Normally the user, can be an item
+	var/duration = 0 //how long the spell lasts
+
+	var/list/spell_levels
+	var/static/list/level_max = list(Sp_TOTAL = 4, Sp_SPEED = 4, Sp_POWER = 0) //maximum possible levels in each category. Total does cover both.
+	var/cooldown_reduc = 0		//If set, defines how much charge_max drops by every speed upgrade
+	var/delay_reduc = 0
+	var/cooldown_min = 0 //minimum possible cooldown for a charging spell
+
+	var/overlay = 0
+	var/overlay_icon = 'icons/obj/wizard.dmi'
+	var/overlay_icon_state = "spell"
+	var/overlay_lifespan = 0
+
+	var/sparks_spread = 0
+	var/sparks_amt = 0 //cropped at 10
+	var/smoke_spread = 0 //1 - harmless, 2 - harmful
+	var/smoke_amt = 0 //cropped at 10
+
+	var/critfailchance = 0
+
+	var/cast_delay = 1
+	var/cast_sound = ""
+
+	var/hud_state = "" //name of the icon used in generating the spell hud object
+	var/override_base = ""
+
+	var/atom/movable/screen/connected_button
+
+CAPABILITIES(/datum/spell)
+	per_type(nameof(spell_levels), PROC_REF(build_spell_levels), copy_on_write = TRUE)
+	owns_one(nameof(connected_button), /atom/movable/screen)
+	every(1 SECOND, then(PROC_REF(recharge_tick)), when = nameof(recharging))
+	// The cast delay: no bar, the held item may change, and a spell that works unconscious or as a ghost does not need the caster up.
+	op("cast_delay", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY | ALIVE), silent_wait(), then(PROC_REF(cast_delayed)))
+	op("cast_delay_statallowed", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY), silent_wait(), then(PROC_REF(cast_delayed)))
+	ref_one(nameof(holder))
+
+///////////////////////
+///SETUP AND PROCESS///
+///////////////////////
+
+/// TRUE while recharging: recharge_tick() adds a second's worth every second (its every() in CAPABILITIES(/datum/spell)).
+/datum/spell/var/recharging = FALSE
+
+/datum/spell/New()
+	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+
+	//still_recharging_msg = span_notice("[name] is still recharging.")
+	charge_counter = charge_max
+
+/// Starts recharging: a second's worth (10 charge) every second until full.
+/datum/spell/proc/start_recharge()
+	if(charge_counter < charge_max)
+		set_recharging(TRUE)
+
+/datum/spell/proc/recharge_tick(datum/act/timer/tick)
+	charge_counter = min(charge_counter + 10, charge_max)
+	if(charge_counter >= charge_max)
+		set_recharging(FALSE)
+
+/////////////////
+/////CASTING/////
+/////////////////
+
+/datum/spell/proc/choose_targets(mob/user) //depends on subtype - see targeted.dm, aoe_turf.dm, dumbfire.dm, or code in general folder
+	return
+
+/datum/spell/proc/perform(mob/user, skipcharge = 0) //if recharge is started is important for the trigger spells
+	if(!holder())
+		rel_set(src, nameof(holder), user) //just in case
+	if(!cast_check(skipcharge, user))
+		return
+	if(cast_delay)
+		perform_op(user, src, (spell_flags & (STATALLOWED|GHOSTCAST)) ? "cast_delay_statallowed" : "cast_delay", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("skipcharge" = skipcharge))
+		return
+	perform_cast(user, skipcharge)
+
+/datum/spell/proc/cast_time(datum/act/op/A)
+	return cast_delay
+
+/// The cast delay passed.
+/datum/spell/proc/cast_delayed(datum/act/op/A)
+	perform_cast(A.actor, A.arg("skipcharge"))
+
+/// The cast itself, after any cast delay. A spell that asks its caster for targets (target_questions()) casts when the questions are answered.
+/datum/spell/proc/perform_cast(mob/user, skipcharge)
+	var/list/steps = target_questions(user)
+	if(length(steps))
+		var/started = ask_sequence_begin(src, /datum/ask_sequence/spell_cast, user, null, steps, PROC_REF(targets_answered), PROC_REF(targets_stopped), null, list("skipcharge" = skipcharge))
+		if(istext(started))
+			log_game("spell: [name] did not ask [key_name(user)] for targets ([started])")
+		return
+	cast_at_targets(user, skipcharge, choose_targets(user))
+
+/// The questions the caster answers before the cast: a list of question_step() specs or step procs (code/datums/prompts/sequence.dm), or null to ask nothing.
+/datum/spell/proc/target_questions(mob/user)
+	return null
+
+/// The targets once target_questions() were answered (`asked` holds the answers).
+/datum/spell/proc/targets_from_answers(mob/user, datum/ask_sequence/spell_cast/asked)
+	return choose_targets(user)
+
+/// All the questions are answered: cast.
+/datum/spell/proc/targets_answered(datum/ask_sequence/spell_cast/asked)
+	var/mob/user = asked.actor()
+	if(!user)
+		return
+	cast_at_targets(user, asked.skipcharge, targets_from_answers(user, asked))
+
+/// The questions ended early. A spell that takes as many targets as the caster picks (casts_picked_on_stop()) casts with the ones picked; any other ending drops the cast.
+/datum/spell/proc/targets_stopped(datum/ask_sequence/spell_cast/asked, reason)
+	log_game("spell: [name] target questions ended ([reason])")
+	if(reason != "stopped" || !casts_picked_on_stop())
+		return
+	var/mob/user = asked.actor()
+	if(!user)
+		return
+	cast_at_targets(user, asked.skipcharge, targets_from_answers(user, asked))
+
+/// TRUE when closing a target question ends the picking and casts with the targets picked so far.
+/datum/spell/proc/casts_picked_on_stop()
+	return FALSE
+
+/// Casts at `targets` (nothing happens without any).
+/datum/spell/proc/cast_at_targets(mob/user, skipcharge, list/targets)
+	log_game("spell: [name] cast by [key_name(user)] at [length(targets)] target(s)")
+	if(targets && targets.len)
+		invocation(user, targets)
+		take_charge(user, skipcharge)
+
+		before_cast(targets, user) //applies any overlays and effects
+		add_attack_logs(user, targets, "casted the spell [name]")
+		if(prob(critfailchance))
+			critfail(targets, user)
+		else
+			cast(targets, user)
+		after_cast(targets) //generates the sparks, smoke, target messages etc.
+
+/// The answers to a spell's target questions, and the cast's charge flag.
+/datum/ask_sequence/spell_cast
+	var/skipcharge = 0
+
+
+/datum/spell/proc/cast(list/targets, mob/user) //the actual meat of the spell
+	return
+
+/datum/spell/proc/critfail(list/targets, mob/user) //the wizman has fucked up somehow
+	return
+
+/// Positive `amount` injures with `kind`; negative mends by each of `heal_tags`.
+/datum/spell/proc/spell_injure(mob/living/target, kind, amount, list/heal_tags)
+	if(amount > 0)
+		target.injure(kind, amount, source = holder())
+	else if(amount < 0)
+		for(var/tag in heal_tags)
+			target.mend(tag, -amount)
+
+/// Positive `amount` adds oxygen debt; negative oxygenates.
+/datum/spell/proc/spell_oxygen_debt(mob/living/target, amount)
+	if(amount > 0)
+		target.add_oxygen_debt(amount, holder())
+	else if(amount < 0)
+		target.mend(TREAT_OXYGENATION, -amount)
+
+/datum/spell/proc/adjust_var(mob/living/target, type, amount) //handles the adjustment of the var when the spell is used. has some hardcoded types
+	switch(type)
+		if("trauma")
+			spell_injure(target, INJURY_BLUNT, amount, list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR))
+		if("burn")
+			spell_injure(target, INJURY_BURN, amount, list(TREAT_BURN_CARE, TREAT_WIRING_REPAIR))
+		if("toxin")
+			spell_injure(target, INJURY_TOXIN, amount, list(TREAT_ANTITOXIN))
+		if("asphyxia")
+			spell_oxygen_debt(target, amount)
+		if("stunned")
+			target.status_adjust(STAT_STUNNED, amount)
+		if("weakened")
+			target.status_adjust(STAT_WEAKENED, amount)
+		if("paralysis")
+			target.status_adjust(STAT_PARALYZED, amount)
+		else
+			target.vars[type] += amount //I bear no responsibility for the runtimes that'll happen if you try to adjust non-numeric or even non-existant vars
+	return
+
+///////////////////////////
+/////CASTING WRAPPERS//////
+///////////////////////////
+
+/datum/spell/proc/before_cast(list/targets, mob/user)
+	var/valid_targets[0]
+	for(var/atom/target in targets)
+		// Check range again (fixes long-range EI NATH)
+		if(!(target in view_or_range(range,user,selection_type)))
+			continue
+
+		valid_targets += target
+
+		if(overlay)
+			var/location
+			if(isliving(target))
+				location = target.loc
+			else if(istype(target,/turf))
+				location = target
+			var/obj/effect/overlay/spell = new /obj/effect/overlay(location)
+			spell.set_icon(overlay_icon)
+			spell.set_icon_state(overlay_icon_state)
+			spell.set_anchored(TRUE)
+			spell.set_density(FALSE)
+			spell.expire(overlay_lifespan)
+	return valid_targets
+
+/datum/spell/proc/after_cast(list/targets)
+	for(var/atom/target in targets)
+		var/location = get_turf(target)
+		if(isliving(target) && message)
+			to_chat(target, "[message]")
+		if(sparks_spread)
+			fx_sparks(location, sparks_amt, FALSE)
+		if(smoke_spread)
+			if(smoke_spread == 1)
+				var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()
+				smoke.set_up(smoke_amt, 0, location) //no idea what the 0 is
+				smoke.start()
+			else if(smoke_spread == 2)
+				var/datum/effect/effect/system/smoke_spread/bad/smoke = new /datum/effect/effect/system/smoke_spread/bad()
+				smoke.set_up(smoke_amt, 0, location) //no idea what the 0 is
+				smoke.start()
+
+/////////////////////
+////CASTING TOOLS////
+/////////////////////
+/*Checkers, cost takers, message makers, etc*/
+
+/datum/spell/proc/cast_check(skipcharge = 0,mob/user) //checks if the spell can be cast based on its settings; skipcharge is used when an additional cast_check is called inside the spell
+
+	if(!(src in user.spell_list) && holder() == user)
+		log_world("## ERROR [user] utilized the spell '[src]' without having it.")
+		to_chat(user, span_warning("You shouldn't have this spell! Something's wrong."))
+		return 0
+
+	if(silenced > 0)
+		return
+
+	var/turf/user_turf = get_turf(user)
+	if(!user_turf)
+		to_chat(user, span_warning("You cannot cast spells in null space!"))
+		return 0
+
+	if(spell_flags & Z2NOCAST && (user_turf.z in using_map.admin_levels)) //Certain spells are not allowed on the CentCom zlevel
+		return 0
+
+	if(spell_flags & CONSTRUCT_CHECK)
+		for(var/turf/T in range(holder(), 1))
+			if(findNullRod(T))
+				return 0
+
+	if(isanimal(user) && holder() == user)
+		var/mob/living/simple_mob/SM = user
+		if(SM.purge)
+			to_chat(SM, span_warning("The nullrod's power interferes with your own!"))
+			return 0
+
+	if(!src.check_charge(skipcharge, user)) //sees if we can cast based on charges alone
+		return 0
+
+	if(!(spell_flags & GHOSTCAST) && holder() == user)
+		if(user.stat && !(spell_flags & STATALLOWED))
+			to_chat(user, "Not when you're incapacitated.")
+			return 0
+
+		if(ishuman(user) && !(invocation_type in list(SpI_EMOTE, SpI_NONE)))
+			if(user.is_muzzled())
+				to_chat(user, "Mmmf mrrfff!")
+				return 0
+
+	var/datum/spell/noclothes/spell = locate_in_list(user.spell_list, /datum/spell/noclothes)
+	if((spell_flags & NEEDSCLOTHES) && !(spell && istype(spell)) && holder() == user)//clothes check
+		if(!user.wearing_wiz_garb())
+			return 0
+
+	return 1
+
+/datum/spell/proc/check_charge(skipcharge, mob/user)
+	if(!skipcharge)
+		switch(charge_type)
+			if(Sp_RECHARGE)
+				if(charge_counter < charge_max)
+					to_chat(user,still_recharging_msg)
+					return 0
+			if(Sp_CHARGES)
+				if(!charge_counter)
+					to_chat(user, span_notice("[name] has no charges left."))
+					return 0
+	return 1
+
+/datum/spell/proc/take_charge(mob/user = user, skipcharge)
+	if(!skipcharge)
+		switch(charge_type)
+			if(Sp_RECHARGE)
+				charge_counter = 0 //doesn't start recharging until the targets selecting ends
+				start_recharge()
+				return 1
+			if(Sp_CHARGES)
+				charge_counter-- //returns the charge if the targets selecting fails
+				return 1
+			if(Sp_HOLDVAR)
+				adjust_var(user, holder_var_type, holder_var_amount)
+				return 1
+		return 0
+	return 1
+
+/datum/spell/proc/invocation(mob/user, list/targets) //datum/spelling the spell out and setting it on recharge/reducing charges amount
+
+	switch(invocation_type)
+		if(SpI_SHOUT)
+			if(prob(50))//Auto-mute? Fuck that noise
+				user.say(invocation)
+			else
+				user.say(replacetext(invocation," ","`"))
+		if(SpI_WHISPER)
+			if(prob(50))
+				user.whisper(invocation)
+			else
+				user.whisper(replacetext(invocation," ","`"))
+		if(SpI_EMOTE)
+			user.custom_emote(VISIBLE_MESSAGE, invocation)
+
+/////////////////////
+///UPGRADING PROCS///
+/////////////////////
+
+/datum/spell/proc/can_improve(upgrade_type)
+	if(level_max[Sp_TOTAL] <= ( spell_levels[Sp_SPEED] + spell_levels[Sp_POWER] )) //too many levels, can't do it
+		return 0
+
+	if(upgrade_type && (upgrade_type in spell_levels) && (upgrade_type in level_max))
+		if(spell_levels[upgrade_type] >= level_max[upgrade_type])
+			return 0
+
+	return 1
+
+/datum/spell/proc/quicken_spell()
+	if(!can_improve(Sp_SPEED))
+		return 0
+
+	set_spell_levels_at(Sp_SPEED, spell_levels[Sp_SPEED] + 1)
+
+	if(delay_reduc && cast_delay)
+		cast_delay = max(0, cast_delay - delay_reduc)
+	else if(cast_delay)
+		cast_delay = round( max(0, initial(cast_delay) * ((level_max[Sp_SPEED] - spell_levels[Sp_SPEED]) / level_max[Sp_SPEED] ) ) )
+
+	if(charge_type == Sp_RECHARGE)
+		if(cooldown_reduc)
+			charge_max = max(cooldown_min, charge_max - cooldown_reduc)
+		else
+			charge_max = round( max(cooldown_min, initial(charge_max) * ((level_max[Sp_SPEED] - spell_levels[Sp_SPEED]) / level_max[Sp_SPEED] ) ) ) //the fraction of the way you are to max speed levels is the fraction you lose
+	if(charge_max < charge_counter)
+		charge_counter = charge_max
+
+	var/temp = ""
+	name = initial(name)
+	switch(level_max[Sp_SPEED] - spell_levels[Sp_SPEED])
+		if(3)
+			temp = "You have improved [name] into Efficient [name]."
+			name = "Efficient [name]"
+		if(2)
+			temp = "You have improved [name] into Quickened [name]."
+			name = "Quickened [name]"
+		if(1)
+			temp = "You have improved [name] into Free [name]."
+			name = "Free [name]"
+		if(0)
+			temp = "You have improved [name] into Instant [name]."
+			name = "Instant [name]"
+
+	return temp
+
+
+
+
+/// where the spell is. Normally the user, can be an item (a relation view: null once it is deleted).
+/datum/spell/proc/holder() as /atom/movable
+	return holder
+
+/datum/spell/proc/build_spell_levels()
+	return list(Sp_SPEED = 0, Sp_POWER = 0)

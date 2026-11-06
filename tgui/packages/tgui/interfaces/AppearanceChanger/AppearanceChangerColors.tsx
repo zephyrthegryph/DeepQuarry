@@ -16,7 +16,6 @@ export const AppearanceChangerColors = (props) => {
 
   const {
     change_eye_color,
-    change_skin_tone,
     change_skin_color,
     change_hair_color,
     change_facial_hair_color,
@@ -49,13 +48,6 @@ export const AppearanceChangerColors = (props) => {
           <Stack.Item>
             <ColorBox color={eye_color} mr={1} />
             <Button onClick={() => act('eye_color')}>Change Eye Color</Button>
-          </Stack.Item>
-        ) : (
-          ''
-        )}
-        {change_skin_tone ? (
-          <Stack.Item>
-            <Button onClick={() => act('skin_tone')}>Change Skin Tone</Button>
           </Stack.Item>
         ) : (
           ''

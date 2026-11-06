@@ -2,7 +2,7 @@
 //
 // A loot table or a map-time resolver belongs to a type that is never made (an /obj/random is resolved before it is instanced, a /loot/...
 // table is a datum nobody holds). Its entry is declared in the type's CAPABILITIES block like any other, but a kind marked
-// STATIC_ENTRY(kind) (code/__defines/engine/markers.dm) does not go into the instance chain, where a table is built from the first
+// STATIC_ENTRY(kind) (code/defines/engine/declare/markers.dm) does not go into the instance chain, where a table is built from the first
 // instance: `analyze gen declare` leaves it out of declared_entries() and writes it into declared_static_blocks() instead. The kernel's
 // static_entries system compiles those blocks once at world setup, before the first map load, parents first, into one lean table per
 // declaring type, and hands the result to the engine of each kind (an /datum/entry_engine with static_kind = TRUE) to build its caches.
@@ -135,7 +135,7 @@ SYSTEM_DEF(static_entries)
 	for(var/item in entry_flatten(entries))
 		if(istype(item, /datum/entry/line))
 			var/datum/entry/line/L = item
-			origin = entry_origin_text(file, L.line, L.section_name)
+			origin = entry_origin_text(L.file || file, L.line, L.section_name)
 			continue
 		static_apply(T, item, origin)
 	return T

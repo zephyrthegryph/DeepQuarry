@@ -1,0 +1,160 @@
+// The GOLEM is a spell-flinging synthetic.
+
+/mob/living/simple_mob/mechanical/technomancer_golem
+	name = "unknown synthetic"
+	desc = "A rather unusual looking synthetic."
+	icon = 'icons/mob/mob.dmi'
+	icon_state = "golem"
+	endurance = 300
+
+
+	response_help   = "pets"
+	response_disarm = "pushes away"
+	response_harm   = "punches"
+	harm_intent_damage = 3
+	friendly = "hugs"
+
+	organ_names = /datum/decl/mob_organ_names/golem
+
+	melee_damage_lower = 30 // It has a built in esword.
+	melee_damage_upper = 30
+	attack_armor_pen = 20
+	attack_sound = SFX_WEAPONS_BLADE1
+	attacktext = list("slashed")
+	melee_attack_delay = 0.5 SECONDS // Even has custom attack animations.
+	ranged_attack_delay = 0.5 SECONDS
+	special_attack_delay = 1 SECOND
+
+	special_attack_min_range = 0
+	special_attack_max_range = 7
+
+	var/obj/item/technomancer_core/golem/core = null
+	var/obj/item/spell/active_spell = null // Shield and ranged spells
+	var/mob/living/master = null
+	var/casting = FALSE // Used to ensure the correct animation is played. Testing if a spell exists won't always work as some spells delete themselves upon use.
+
+	var/static/list/known_spells = list(
+		"beam"				= /obj/item/spell/projectile/beam,
+		"chain lightning"	= /obj/item/spell/projectile/chain_lightning,
+		"force missile"		= /obj/item/spell/projectile/force_missile,
+		"ionic bolt"		= /obj/item/spell/projectile/ionic_bolt,
+		"lightning"			= /obj/item/spell/projectile/lightning,
+		"blink"				= /obj/item/spell/blink,
+		"dispel"			= /obj/item/spell/dispel,
+		"oxygenate"			= /obj/item/spell/oxygenate,
+		"mend life"			= /obj/item/spell/modifier/mend_life,
+		"mend synthetic"	= /obj/item/spell/modifier/mend_synthetic,
+		"mend organs"		= /obj/item/spell/mend_organs,
+		"purify"			= /obj/item/spell/modifier/purify,
+		"resurrect"			= /obj/item/spell/resurrect,
+		"passwall"			= /obj/item/spell/passwall,
+		"repel missiles"	= /obj/item/spell/modifier/repel_missiles,
+		"corona"			= /obj/item/spell/modifier/corona,
+		"haste"				= /obj/item/spell/modifier/haste
+		)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
+	op("test_giving_spells", menu(), label("Test giving spells"), asks(/datum/prompt/choice, fields = list("question" = "What spell?", "title" = "Give spell", "choices" = computed(PROC_REF(test_giving_spells_choices)), "timeout" = 0), step = "spell"), then(PROC_REF(test_giving_spells_op)))
+	configure(mob_rules(faction = FACTION_GOLEM))
+	configure(living_rules(delete_on_death = TRUE))
+	ref_one(nameof(master), /mob/living)
+	owns_one(nameof(core), starts = /obj/item/technomancer_core/golem)
+	owns_one(nameof(active_spell), on_destroy = ON_DESTROY_CONTAINED)
+
+
+/mob/living/simple_mob/mechanical/technomancer_golem
+
+/mob/living/simple_mob/mechanical/technomancer_golem/on_death(gibbed)
+	..()
+	act_message(src, null, null, MSG_OTHERS("%U% disintegrates!"))
+	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
+	fx_sparks(src, 3)
+
+/mob/living/simple_mob/mechanical/technomancer_golem/place_spell_in_hand(path)
+	if(!path || !ispath(path))
+		return FALSE
+	rel_clear(src, nameof(active_spell), OWN_DELETE)
+
+	rel_set(src, nameof(active_spell), new path(src))
+
+/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_giving_spells_choices(datum/act/op/A)
+	return known_spells
+
+/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_giving_spells_op(datum/act/op/A)
+	place_spell_in_hand(known_spells[A.step_value("spell")])
+
+/mob/living/simple_mob/mechanical/technomancer_golem/get_technomancer_core()
+	return core
+
+/mob/living/simple_mob/mechanical/technomancer_golem/can_special_attack(atom/A)
+	if(active_spell) // Don't bother checking everything else if no spell is ready.
+		return ..()
+	return FALSE
+
+/mob/living/simple_mob/mechanical/technomancer_golem/should_special_attack(atom/A)
+	return instability < 50 // Don't kill ourselves by casting everything.
+
+/mob/living/simple_mob/mechanical/technomancer_golem/do_special_attack(atom/A, stance)
+	var/proximity = Adjacent(A)
+	if(active_spell)
+		if(proximity && active_spell.cast_methods & CAST_MELEE) // Use melee method if available and close enough.
+			return active_spell.on_melee_cast(A, src)
+		else if(active_spell.cast_methods & CAST_RANGED) // Otherwise use ranged if possible. Will also work for point-blank range.
+			return active_spell.on_ranged_cast(A, src)
+	return ..()
+
+/mob/living/simple_mob/mechanical/technomancer_golem/melee_pre_animation(atom/A)
+	if(active_spell && active_spell.cast_methods & (CAST_MELEE|CAST_RANGED)) // If they're trying to melee-cast a spell, use the special animation instead.
+		special_pre_animation(A)
+		return
+
+	flick("golem_pre_melee", src) // To force the animation to restart.
+	set_icon_living("golem_pre_melee") // The animation will hold after this point until melee_post_animation() gets called.
+	set_icon_state("golem_pre_melee")
+	setClickCooldown(2)
+
+/mob/living/simple_mob/mechanical/technomancer_golem/melee_post_animation(atom/A)
+	if(casting) // Some spells delete themselves when used, so we use a different variable set earlier instead.
+		special_post_animation(A)
+		return
+
+	flick("golem_post_melee", src)
+	set_icon_living("golem")
+	set_icon_state("golem")
+	setClickCooldown(6)
+
+/mob/living/simple_mob/mechanical/technomancer_golem/ranged_pre_animation(atom/A)
+	flick("golem_pre_ranged", src)
+	set_icon_living("golem_pre_ranged")
+	set_icon_state("golem_pre_ranged")
+	setClickCooldown(5)
+
+/mob/living/simple_mob/mechanical/technomancer_golem/ranged_post_animation(atom/A)
+	flick("golem_post_ranged", src)
+	set_icon_living("golem")
+	set_icon_state("golem")
+	setClickCooldown(5)
+
+/mob/living/simple_mob/mechanical/technomancer_golem/special_pre_animation(atom/A)
+	casting = TRUE
+	ranged_pre_animation(A) // Both have the same animation.
+
+/mob/living/simple_mob/mechanical/technomancer_golem/special_post_animation(atom/A)
+	casting = FALSE
+	ranged_post_animation(A)
+
+/datum/decl/mob_organ_names/golem
+TYPE_TABLE(/datum/decl/mob_organ_names/golem, mob_organ_hit_zones, list("helmet", "cuirass", "left tasset", "right tasset", "left gauntlet", "right gauntlet", "weapon"))
+
+// === merged from golem_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+// Cataloguer data below - strange we can catalogue space golem wizards
+/datum/category_item/catalogue/technology/drone/technomancer_golem
+	name = "Drone - Technomancer Golem"
+	desc = "Some sort of advanced, unnatural looking synthetic, built for combat.\
+	It has a black-and-blue chassis, and wields some sort of... stun baton in it's hand.\
+	The drone has pristine armor, black and shiny, with the blue synth-parts glowing visibly from inside.\
+	<br><br>\
+	The drone's frame is heavy and armored, unbendable by hand, is barren of any markings or ID,\
+	no traces of paint visible and any 'writing' visible is uncomprehendable, short term scan unable to translate."
+	value = CATALOGUER_REWARD_MEDIUM
+

@@ -365,7 +365,7 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
     for &i in &to_parse {
         let p = &s.paths[i];
         let rel = crate::util::rel_slash(&abs_in(root, p), root);
-        if norm_in(root, p) == dme_norm || !rel.ends_with(".dm") || rel.starts_with("code/__defines/") {
+        if norm_in(root, p) == dme_norm || !rel.ends_with(".dm") || crate::scopes::is_defines(&rel) {
             return Err(format!("{} changed", rel));
         }
         let Some(text) = text_of(tree, root, p) else { return Err(format!("{} unreadable", rel)) };

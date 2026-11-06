@@ -9,7 +9,7 @@
 //! type the handler is called with, and so which fields it may read (section 8, "Contexts").
 
 use crate::{raw_marker_policy::{matching_paren,argument_slices},declare_policy::Marker,key_policy_control as kc};
-pub const OPAQUE_DIRS: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
+pub const OPAQUE_DIRS: &[&str] = &["code/library/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/library/capabilities/", "code/library/reactions/", "code/library/ownership/", "code/engine/", "code/__defines/verdigris/"];
 const RUNTIME_OBSERVE:&str="RUNTIME_OBSERVE";
 
 /// The five context types of section 8.

@@ -1,7 +1,0 @@
-# The cross-branch smoke set: what tools/dq_merge_gates.sh runs in the batch train's combined world besides each lane's own tests and
-# the gameplay scenarios (tools/ci/gameplay_tests.txt). One /datum/unit_test name per line; blank lines and # comments are ignored.
-#
-# 2026-10-24: cut to the boot gate alone. A gate's world time was ~240 s, of which the 29 smoke tests were ~45 s and world boot most of
-# the rest; the lanes' own focused tests plus the gameplay scenarios cover combinations. Add a test here only after it catches a bad
-# combination that the lanes' own tests missed.
-/datum/unit_test/dq_boot_gate

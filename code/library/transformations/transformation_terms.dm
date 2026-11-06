@@ -55,9 +55,3 @@
 		if(row[1] == currency)
 			LAZYSET(result, row[2], row[3])
 	return result
-
-/// The currency of the first row, or null: the medium of a rule is inferred from it.
-/proc/xform_first_currency(list/rows)
-	for(var/list/row as anything in rows)
-		return row[1]
-	return null

@@ -13,7 +13,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("air alarm")
 	id = "airalarm_electronics"
 	build_type = AUTOLATHE | IMPRINTER // Simple circuit
-	build_path = /obj/item/circuitboard/airalarm
+	build_path = VARIANT(/obj/item/circuitboard/airalarm)
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
@@ -24,7 +24,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("fire alarm")
 	id = "firealarm_electronics"
 	build_type = AUTOLATHE | IMPRINTER // Simple circuit
-	build_path = /obj/item/circuitboard/firealarm
+	build_path = VARIANT(/obj/item/circuitboard/firealarm)
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
@@ -46,7 +46,7 @@
 /datum/design_techweb/board/holopad
 	SET_CIRCUIT_DESIGN_NAMEDESC("AI holopad")
 	id = "holopad"
-	build_path = /obj/item/circuitboard/holopad
+	build_path = VARIANT(/obj/item/circuitboard/holopad)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -56,7 +56,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("intercom")
 	id = "intercom"
 	build_type = AUTOLATHE | IMPRINTER // Simple circuit
-	build_path = /obj/item/circuitboard/intercom
+	build_path = VARIANT(/obj/item/circuitboard/intercom)
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING

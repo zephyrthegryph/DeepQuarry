@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Added a census of data-only leaf types (the candidates for variant collapse) and the tool that regenerates it"

@@ -40,12 +40,12 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	TEST_ASSERT(!("computer_id" in H.vars), "computer_id is not a var of the mob")
 	TEST_ASSERT(!("antibodies" in H.vars), "antibodies is not a var of the mob")
-	TEST_ASSERT_NULL(sparse_get(H, computer_id), "a mob that never had a client has no id")
-	sparse_set(H, computer_id, "123456")
-	TEST_ASSERT_EQUAL(sparse_get(H, computer_id), "123456", "the id reads back")
-	sparse_set(H, computer_id, null)
-	TEST_ASSERT_NULL(sparse_get(H, computer_id), "and clears")
-	TEST_ASSERT_NULL(H.sparse_slots, "no slot is left behind")
+	TEST_ASSERT_NULL(STATE_GET(H, connection, computer_id), "a mob that never had a client has no id")
+	STATE_SET(H, connection, computer_id, "123456")
+	TEST_ASSERT_EQUAL(STATE_GET(H, connection, computer_id), "123456", "the id reads back")
+	STATE_SET(H, connection, computer_id, null)
+	TEST_ASSERT_NULL(STATE_GET(H, connection, computer_id), "and clears")
+	TEST_ASSERT_NULL(H.connection, "the state goes with its last field")
 
 /// The organ data's species cache is built on first use.
 /datum/unit_test/dq_base_vars_wave13_organ_data_cache

@@ -1,0 +1,62 @@
+/mob/living/simple_mob/vore/catgirl
+	name = "catgirl"
+	desc = "Her hobbies are catnaps, knocking things over, and headpats."
+	tt_desc = "Homo felinus"
+
+	icon_state = "catgirl"
+	icon = 'icons/mob/vore.dmi'
+
+	harm_intent_damage = 5
+	melee_damage_lower = 2
+	melee_damage_upper = 5
+
+	response_help = "pets"
+	response_disarm = "gently baps"
+	response_harm = "hits"
+
+	attacktext = list("swatted","bapped")
+
+
+	var/random_skin = 1
+	var/list/skins
+
+
+
+CAPABILITIES(/mob/living/simple_mob/vore/catgirl)
+	per_type(nameof(skins), PROC_REF(build_skins), copy_on_write = TRUE)
+	configure(mob_rules(faction = FACTION_CATGIRL))
+	configure(living_rules(say_list_type = /datum/say_list/catgirl))
+	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))
+
+// Activate Noms!
+/mob/living/simple_mob/vore/catgirl
+	vore_active = 1
+	vore_bump_chance = 5
+	vore_pounce_chance = 50
+	vore_standing_too = 1
+	vore_ignores_undigestable = 0 // Catgirls just want to eat yoouuu
+	vore_default_mode = DM_HOLD // Chance that catgirls just wanna bellycuddle yoouuuu!
+	vore_digest_chance = 25 // But squirming might make them gurgle...
+	vore_icons = SA_ICON_LIVING | SA_ICON_REST
+
+/datum/say_list/catgirl
+	speak = list("Meow!","Esp!","Purr!","HSSSSS","Mew?","Nya~")
+	emote_hear = list("meows","mews","purrs")
+	emote_see = list("shakes her head","shivers","stretches","grooms herself")
+
+/mob/living/simple_mob/vore/catgirl/proc/build_skins()
+	return list(
+			"catgirl",
+			"catgirlnude",
+			"catgirlbikini",
+			"catgirlrednude",
+			"catgirlredbikini",
+			"catgirlblacknude",
+			"catgirlblackbikini",
+			"catgirlbrownnude",
+			"catgirlbrownbikini",
+			"catgirlred",
+			"catgirlblack",
+			"catgirlbrown"
+		)

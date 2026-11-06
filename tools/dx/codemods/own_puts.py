@@ -21,8 +21,8 @@ from own_transfers_survey import calls, split_args  # noqa: E402
 
 MARKS = []
 MARK_RE = re.compile(r"\s*/\*MP:(\d+)\*/")
-SKIP = ("code/datums/ownership/",)
-DIRECT = ("code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/")
+SKIP = ("code/library/ownership/",)
+DIRECT = ("code/tests/unit_tests/", "code/modules/benchmarks/", "code/tests/")
 
 
 def mark(text, path):

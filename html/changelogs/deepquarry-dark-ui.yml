@@ -1,0 +1,5 @@
+author: "DeepQuarry"
+delete-after: true
+changes:
+  - qol: "The game client, stat panel and chat now default to a dark theme matching TGUI. A chat theme you chose yourself is kept, except old stored light themes, which move to dark once; pick Light again to keep it."
+  - bugfix: "Low-contrast chat message colours are readable on dark."

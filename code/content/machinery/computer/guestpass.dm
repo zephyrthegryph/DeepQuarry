@@ -108,7 +108,7 @@ CAPABILITIES(/obj/item/card/id/guest)
 	icon_keyboard = null
 	icon_screen = "pass"
 	density = FALSE
-	circuit = /obj/item/circuitboard/guestpass
+	circuit = VARIANT(/obj/item/circuitboard/guestpass)
 	flags = WALL_ITEM
 
 	var/obj/item/card/id/giver

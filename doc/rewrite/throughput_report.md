@@ -1,5 +1,7 @@
 # Throughput: why merges and test cycles were slow, and what changed
 
+> History: the merge train and gates described here were removed on 2 November 2026; landing is `tools/dq_land.sh` (`agent_workflow.md` section 29).
+
 Branch `rewrite/throughput`, 2026-10-09. The tooling is described in `doc/rewrite/agent_workflow.md` sections 9-12. This file holds the
 measurements and the reasoning. Every number comes from a machine other agents were loading (16 logical cores at 99%, 4-6 cargo and 5
 DreamDaemon processes at any time), so read the spread, not the digit; a quiet machine is faster across the board.

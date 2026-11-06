@@ -12,7 +12,7 @@
 /obj/item/clothing/under/shiny/catsuit/poly
 	name = "polychromic shiny suit"
 	icon_state = "suit_col"
-	polychromic = TRUE
+	recolourable = TRUE
 
 /obj/item/clothing/under/shiny/leotard
 	name = "shiny leotard"
@@ -20,4 +20,4 @@
 
 /obj/item/clothing/under/shiny/leotard/poly
 	name = "polychromic shiny leotard"
-	polychromic = TRUE
+	recolourable = TRUE

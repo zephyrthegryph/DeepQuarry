@@ -69,12 +69,6 @@
 	var/datum/op_plan/oplan
 	var/datum/activation/activation
 
-/// Every op plan of an entity: its type's, and the ones of capabilities granted to it. A fresh list.
-/proc/op_plans_of(datum/D)
-	. = list()
-	for(var/datum/op_src/S as anything in op_sources_of(D))
-		. += S.oplan
-
 /// The ops an entity has with the activation that brought each. A granted capability whose activation does not run (stacking: another beat
 /// it) brings none.
 /proc/op_sources_of(datum/D)
@@ -701,6 +695,13 @@
 /// The Menu line of candidate C: its label, except that an unlabelled catch-all (item(/obj/item) with no label(): the "use what you hold on it"
 /// fallback a click falls through to) reads as using the held thing, not as its key ("Turf item", "Wall item"), so the fallbacks a type
 /// stacks up merge into one line (op_menu_read()).
+/// The hover text of the op's menu() binding (menu(desc =)), or null.
+/proc/op_menu_desc(datum/op_plan/P)
+	for(var/datum/entry/part/bind/B as anything in P.bindings)
+		if(B.bind_kind == BIND_MENU && istext(B.args?["desc"]))
+			return B.args["desc"]
+	return null
+
 /proc/op_menu_label(datum/op_resolution/R, datum/op_cand/C)
 	if(!C.oplan.label && R.held && C.binding && (C.binding.bind_kind in list(BIND_ITEM, BIND_STACK)) && op_cand_catch_all(C))
 		return "Use [R.held.name]"
@@ -815,7 +816,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			reason = reason_text(why)
 			if(!length(reason))
 				continue // refused silently (req(..., silent = TRUE): a guard op that swallows a click): nothing a player could choose
-		var/list/row = list("key" = C.oplan.key, "label" = label, "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = label)
+		var/list/row = list("key" = C.oplan.key, "label" = label, "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = label, "desc" = op_menu_desc(C.oplan))
 		if(same)
 			// Two ops under one label (a wall's Touch over the turf's inherited Touch): the player sees one line, the first that would
 			// run (the higher placed), unless only a later one is open now.

@@ -5,11 +5,12 @@
 
 STATIC_ENTRY(item_worn)
 
-/proc/item_worn(slots = null, hides = null, covers = null, flags = null, worn_icon = null)
+/proc/item_worn(slots = null, hides = null, covers = null, flags = null, worn_icon = null, worn_factors = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_ITEM_WORN, null, list("slots" = slots, "hides" = hides, "covers" = covers, "flags" = flags, "worn_icon" = worn_icon))
+	return entry_make(ENTRY_ITEM_WORN, null, list("slots" = slots, "hides" = hides, "covers" = covers, "flags" = flags, "worn_icon" = worn_icon, "worn_factors" = worn_factors))
 
 /datum/type_trait/item_worn
+	var/worn_factors = null
 	var/slots = 0	// SLOT_* flags: where it can be worn
 	var/hides = 0	// HIDE* flags: what it hides when worn
 	var/covers = 0	// body-part flags it covers
@@ -17,6 +18,7 @@ STATIC_ENTRY(item_worn)
 	var/worn_icon	// the default on-mob icon
 
 /datum/type_trait/item_worn/copy_values(datum/type_trait/item_worn/into)
+	into.worn_factors = worn_factors
 	into.slots = slots
 	into.hides = hides
 	into.covers = covers
@@ -28,7 +30,7 @@ STATIC_ENTRY(item_worn)
 	trait_type = /datum/type_trait/item_worn
 	publish_key = ITEM_WORN_KEY
 	base_type = /obj/item
-	var_names = list("slot_flags" = "slots", "flags_inv" = "hides", "body_parts_covered" = "covers", "item_flags" = "flags", "default_worn_icon" = "worn_icon")
+	var_names = list("worn_factors" = "worn_factors", "slot_flags" = "slots", "flags_inv" = "hides", "body_parts_covered" = "covers", "item_flags" = "flags", "default_worn_icon" = "worn_icon")
 
 /// The holder's item_worn values (its own once one was set at run time). Read only.
 READS_AS(/proc/worn_of, ITEM_WORN_KEY)
@@ -55,3 +57,6 @@ READS_AS(/proc/worn_of, ITEM_WORN_KEY)
 
 /obj/item/proc/set_default_worn_icon(value)
 	return set_trait(src, ENTRY_ITEM_WORN, "worn_icon", value)
+
+/obj/item/proc/set_worn_factors(value)
+	return set_trait(src, ENTRY_ITEM_WORN, "worn_factors", value)

@@ -1,0 +1,489 @@
+
+/*
+ * Here there be the base component for artifacts.
+ */
+
+//The reagents used to be a very small list of only certain reagent IDs previously.
+//Now, we use modifiable lists that allows /types/ of reagents to be used. Nifty, right?
+//Now if you dump reagent/toxin/really_bad_deadly_stuff it'll activate it just like reagent/toxin will.
+#define HYDROGEN_PATH /datum/reagent/hydrogen
+#define WATER_PATH /datum/reagent/water
+#define ACID_PATH /datum/reagent/acid
+#define DIETHYLAMINE_PATH /datum/reagent/diethylamine
+#define PHORON_PATH /datum/reagent/toxin/phoron
+#define HYDROPHORON_PATH /datum/reagent/toxin/hydrophoron
+#define THERMITE_PATH /datum/reagent/thermite
+#define TOXIN_PATH /datum/reagent/toxin
+
+/atom/proc/is_anomalous()
+	return artifact_master
+
+/atom/proc/become_anomalous()
+	if(!is_anomalous())
+		new /datum/artifact_master(src)
+
+/// Creates the artifact master of `master_type` for `A` unless it already has one; returns A's master.
+/proc/make_artifact_master(atom/A, master_type = /datum/artifact_master)
+	if(!A.artifact_master)
+		new master_type(A)
+	return A.artifact_master
+
+/// The artifact state of an anomalous atom (was the artifact_master component). Owned by it.
+/atom/var/datum/artifact_master/artifact_master
+
+/// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
+
+/datum/artifact_master
+	var/list/my_effects
+
+	var/effect_generation_chance = 100
+
+	var/list/make_effects
+
+	var/artifact_id
+
+	var/static/list/water_reagents = list(HYDROGEN_PATH, WATER_PATH)
+	var/static/list/acid_reagents = list(ACID_PATH, DIETHYLAMINE_PATH)
+	var/static/list/volatile_reagents = list(PHORON_PATH, HYDROPHORON_PATH, THERMITE_PATH)
+	var/static/list/toxic_reagents = list(TOXIN_PATH)
+
+/// The anomalous atom this state belongs to (a relation view); the master runs its effects (every 2 s) while it has one: the gate is the relation var, so the every() polls.
+/datum/artifact_master/var/tmp/atom/holder
+CAPABILITIES(/datum/artifact_master)
+	ref_one(nameof(holder))
+	owns_many(nameof(my_effects))
+	every(2 SECONDS, then(PROC_REF(master_step)), when = nameof(holder))
+
+/datum/artifact_master/New(atom/new_holder)
+	. = ..()
+	if(!istype(new_holder) || new_holder.artifact_master)
+		spent(src)
+		return
+	rel_set(src, nameof(holder), new_holder)
+	rel_set(new_holder, nameof(/atom::artifact_master), src) // the anomalous atom owns its artifact state
+
+	rel_take_all(src, nameof(my_effects))
+
+	do_setup()
+	return
+
+// This handles the randomization for large artifacts. This allows them to spawn in and do the 50/50 to see if they'll be activated or not.
+/datum/artifact_master/proc/do_large_randomization()
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		if(my_effect.can_start_activated && prob(50))
+			my_effect.ToggleActivate(TRUE, TRUE)
+
+/*
+ * Component System Registry.
+ * Here be dragons.
+ */
+/*
+ * Hi, it's me 3 years in the future
+ * Why would you do this to us
+ */
+
+/datum/artifact_master/proc/DoRegistry()
+	var/atom/H = holder()
+	observe(H, /datum/notice/attacked_by, src, then(PROC_REF(on_attackby)))
+	observe(H, /datum/act/explode, src, instead(then(PROC_REF(on_exact))))
+	observe(H, /datum/act/shoot, src, instead(then(PROC_REF(on_bullet))))
+	observe(H, /datum/notice/hand_attacked, src, then(PROC_REF(on_attack_hand)))
+	observe(H, /datum/notice/movable_bump, src, then(PROC_REF(on_bump)))
+	observe(H, /datum/notice/bumped, src, then(PROC_REF(on_bumped)))
+	observe(H, /datum/notice/moved, src, then(PROC_REF(on_moved)))
+	observe(H, /datum/notice/reagent_expose_obj, src, then(PROC_REF(on_reagent)))
+
+/datum/artifact_master/proc/do_unregister()
+	var/atom/H = holder()
+	if(H)
+		unobserve(H, null, src)
+
+/datum/artifact_master/proc/get_active_effects()
+	var/list/active_effects = list()
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		if(my_effect.activated)
+			active_effects |= my_effect
+
+	return active_effects
+
+/datum/artifact_master/proc/get_all_effects()
+	var/list/effects = list()
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		effects |= my_effect
+
+	return effects
+
+/// The effect type is chosen: it is added, unless the holder cannot take it.
+/datum/artifact_master/proc/effect_type_chosen(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	var/effect_type = A.answer.value
+	var/datum/artifact_effect/my_effect = new effect_type(src)
+	rel_add(src, nameof(my_effects), my_effect)
+	if(!istype(holder(), my_effect.req_type))
+		to_chat(A.request.answerer, span_filter_notice("This effect can not be applied to this atom type."))
+		rel_remove(src, nameof(my_effects), my_effect)
+
+/// The effect to remove is chosen.
+/datum/artifact_master/proc/effect_to_remove_chosen(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	rel_remove(src, nameof(my_effects), A.answer.value)
+
+// its effects (owned by my_effects) go with it; leaving the holder's artifact_master is automatic.
+/datum/artifact_master/on_destroy(force)
+	do_unregister()
+	..()
+
+/datum/artifact_master/proc/do_setup()
+	if(LAZYLEN(make_effects))
+		for(var/path in make_effects)
+			var/datum/artifact_effect/new_effect = new path(src)
+			rel_add(src, nameof(my_effects), new_effect)
+			if(!istype(holder(), new_effect.req_type))
+				rel_remove(src, nameof(my_effects), new_effect)
+
+	else
+		generate_effects()
+
+	DoRegistry()
+
+/datum/artifact_master/proc/generate_effects()
+	// Use a proc-local static registry rather than calling subtypesof() on every iteration.
+	// The registry is built once on first use: all subtypes of /datum/artifact_effect
+	// that are NOT in GLOB.blacklisted_artifact_effects. This eliminates the O(n*subtypes)
+	// per-artifact cost of the old pick(subtypesof(...) - blacklist) call.
+	//
+	// The registry is a flat list of type paths. Adding new /datum/artifact_effect subtypes
+	// will include them automatically. Blacklisting a type in GLOB.blacklisted_artifact_effects
+	// requires a server restart to take effect (since the static is built once).
+	var/static/list/effect_registry = null
+	if(isnull(effect_registry))
+		effect_registry = list()
+		var/list/blacklist = GLOB.blacklisted_artifact_effects
+		for(var/path in subtypesof(/datum/artifact_effect))
+			if(!(path in blacklist))
+				effect_registry += path
+		if(!length(effect_registry))
+			// Every effect type is blacklisted — this is a configuration error.
+			CRASH("artifact_master.generate_effects: effect_registry is empty after filtering blacklisted_artifact_effects")
+
+	// The loop uses a decreasing-probability algorithm:
+	//   - Passes where effect_generation_chance >= 100 are unconditional (adds 1 guaranteed
+	//     effect, then subtracts 30 so the chance eventually falls below 100).
+	//   - Subsequent passes halve the chance and add probabilistically.
+	// Minimum output: 1 effect (the first pass is always unconditional).
+	// Hard ceiling: ARTIFACT_MAX_EFFECTS prevents degenerate artifacts with 10+ simultaneous
+	// effects that would saturate SSobj tick budgets when all fire at once in process().
+	while(effect_generation_chance > 0 && length(my_effects) < ARTIFACT_MAX_EFFECTS)
+		var/chosen_path = pick(effect_registry)
+		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
+			var/datum/artifact_effect/AE = new chosen_path(src)
+			rel_add(src, nameof(my_effects), AE)
+			if(istype(holder(), AE.req_type))
+				effect_generation_chance -= 30
+			else
+				rel_set(AE, nameof(AE.master), src)
+				rel_remove(src, nameof(my_effects), AE)
+			continue
+
+		// Probabilistic pass: halve the chance, then roll.
+		effect_generation_chance /= 2
+
+		if(prob(effect_generation_chance))
+			rel_add(src, nameof(my_effects), new chosen_path(src))
+
+		effect_generation_chance = round(effect_generation_chance)
+
+/datum/artifact_master/proc/get_holder()	// Returns the holder.
+	return holder()
+
+/datum/artifact_master/proc/get_primary()
+	if(LAZYLEN(my_effects))
+		return my_effects[1]
+	return FALSE
+
+/*
+ * Trigger code.
+ */
+
+/datum/artifact_master/proc/on_exact(datum/act/explode/blast)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/severity = blast.severity
+	var/triggered = FALSE
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		switch(severity)
+			if(1.0)
+				if(my_effect.trigger == TRIGGER_FORCE || my_effect.trigger == TRIGGER_HEAT ||  my_effect.trigger == TRIGGER_ENERGY)
+					my_effect.ToggleActivate()
+					triggered = TRUE
+			if(2.0)
+				if(my_effect.trigger == TRIGGER_FORCE || my_effect.trigger == TRIGGER_HEAT)
+					my_effect.ToggleActivate()
+					triggered = TRUE
+			if(3.0)
+				if (my_effect.trigger == TRIGGER_FORCE)
+					my_effect.ToggleActivate()
+					triggered = TRUE
+
+	if(triggered)
+		return TRUE
+
+	return HOOK_DECLINE
+
+/datum/artifact_master/proc/on_bullet(datum/act/shoot/round)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/obj/item/projectile/P = round.projectile
+	var/triggered = FALSE
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		if(istype(P,/obj/item/projectile/bullet))
+			if(my_effect.trigger == TRIGGER_FORCE)
+				my_effect.ToggleActivate()
+				triggered = TRUE
+
+		else if(istype(P,/obj/item/projectile/beam) ||\
+			istype(P,/obj/item/projectile/ion) ||\
+			istype(P,/obj/item/projectile/energy))
+			if(my_effect.trigger == TRIGGER_ENERGY)
+				my_effect.ToggleActivate()
+				triggered = TRUE
+
+	if(triggered)
+		return TRUE
+
+	return HOOK_DECLINE
+
+/datum/artifact_master/proc/on_bump(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/movable_bump/event = N
+	var/atom/bumped = event.bumped_into
+	var/warn = FALSE
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		if(isitem(bumped))
+			var/obj/item/bumped_item = bumped
+			if(thrown_of(bumped_item).force >= 10)
+				if(my_effect.trigger == TRIGGER_FORCE)
+					my_effect.ToggleActivate()
+
+		else if(ishuman(bumped) && GetAnomalySusceptibility(bumped) >= 0.5)
+			if (my_effect.trigger == TRIGGER_TOUCH)
+				my_effect.ToggleActivate()
+				warn = 1
+				if(my_effect.activated && my_effect.effect == EFFECT_TOUCH)
+					my_effect.DoEffectTouch(bumped)
+					continue //We activated it, go ahead and move on to the next. If we don't continue, we hit them with the effect again.
+			if(my_effect.effect == EFFECT_TOUCH && my_effect.activated) //We are activated and have a touch effect!
+				my_effect.DoEffectTouch(bumped)
+
+	if(warn && isliving(bumped))
+		to_chat(bumped, span_filter_notice(span_bold("You accidentally touch \the [holder()] as it hits you.")))
+
+/datum/artifact_master/proc/on_bumped(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/bumped/event = A
+	bumped_by(event.bumper)
+
+/// Something bumped (or is pulling) the holder.
+/datum/artifact_master/proc/bumped_by(atom/movable/M)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/warn = FALSE
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		if(isitem(M))
+			var/obj/item/bumped_item = M
+			if(thrown_of(bumped_item).force >= 10)
+				if(my_effect.trigger == TRIGGER_FORCE)
+					my_effect.ToggleActivate()
+
+		else if(ishuman(M) && !istype(bumper_gloves(M),/obj/item/clothing/gloves))
+			if(my_effect.trigger == TRIGGER_TOUCH)
+				my_effect.ToggleActivate(M)
+				warn = 1
+				if(my_effect.activated && my_effect.effect == EFFECT_TOUCH)
+					my_effect.DoEffectTouch(M)
+					continue //We activated it, go ahead and move on to the next. If we don't continue, we hit them with the effect again.
+			if(my_effect.effect == EFFECT_TOUCH && my_effect.activated) //We are activated and have a touch effect!
+				my_effect.DoEffectTouch(M)
+
+	if(warn && isliving(M))
+		to_chat(M, span_filter_notice(span_bold("You accidentally touch \the [holder()].")))
+
+/datum/artifact_master/proc/on_attack_hand(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/hand_attacked/event = N
+	var/mob/living/user = event.user
+	if(!istype(user))
+		return
+
+	if (get_dist(user, holder()) > 1)
+		to_chat(user, span_filter_notice("[span_red("You can't reach [holder()] from here.")]"))
+		return
+
+	var/triggered = FALSE
+
+	if(ishuman(user) && !istype(user.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves))
+		for(var/datum/artifact_effect/my_effect in my_effects)
+			if(my_effect.trigger == TRIGGER_TOUCH)
+				triggered = TRUE
+				my_effect.ToggleActivate()
+				if(my_effect.activated && my_effect.effect == EFFECT_TOUCH)
+					my_effect.DoEffectTouch(user)
+					continue //We activated it, go ahead and move on to the next. If we don't continue, we hit them with the effect again.
+			if(my_effect.effect == EFFECT_TOUCH && my_effect.activated) //We are activated and have a touch effect!
+				my_effect.DoEffectTouch(user)
+
+	if(triggered)
+		to_chat(user, span_filter_notice(span_bold("You touch [holder()].")))
+
+	else
+		to_chat(user, span_filter_notice(span_bold("You touch [holder()],") + " [pick("but nothing of note happens","but nothing happens","but nothing interesting happens","but you notice nothing different","but nothing seems to have happened")]."))
+
+/datum/artifact_master/proc/on_attackby(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/attacked_by/event = N
+	var/obj/item/W = event.item
+
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		//If we were splashed by a reagent, let's check to see if we have a trigger for that.
+		if (istype(W, /obj/item/reagent_containers))
+			if(my_effect.trigger == TRIGGER_WATER)
+				for(var/datum/reagent/R in W.reagents.reagent_list) //What chems are in the beaker?
+					var/T = R.type
+					if(is_path_in_list(T, water_reagents)) //Check the reagent and activate!
+						my_effect.ToggleActivate()
+
+			else if(my_effect.trigger == TRIGGER_ACID)
+				for(var/datum/reagent/R in W.reagents.reagent_list)
+					var/T = R.type
+					if(is_path_in_list(T, acid_reagents))
+						my_effect.ToggleActivate()
+
+			else if(my_effect.trigger == TRIGGER_VOLATILE)
+				for(var/datum/reagent/R in W.reagents.reagent_list)
+					var/T = R.type
+					if(is_path_in_list(T, volatile_reagents))
+						my_effect.ToggleActivate()
+
+			else if(my_effect.trigger == TRIGGER_TOXIN)
+				for(var/datum/reagent/R in W.reagents.reagent_list)
+					var/T = R.type
+					if(is_path_in_list(T, toxic_reagents))
+						my_effect.ToggleActivate()
+		//If we weren't splashed, let's see if we were hit by a energy item and if we're energy activation.
+		else if(istype(W,/obj/item/melee/baton) && W:status ||\
+				istype(W,/obj/item/melee/energy) ||\
+				istype(W,/obj/item/melee/cultblade) ||\
+				istype(W,/obj/item/card/emag) ||\
+				W.has_tool_quality(TOOL_MULTITOOL))
+
+			if (my_effect.trigger == TRIGGER_ENERGY)
+				my_effect.ToggleActivate()
+
+		//If we weren't hit by energy, let's see if we were hit by a lighter or welding tool and if we are heat.
+		else if (istype(W,/obj/item/flame) && W:lit ||\
+				dq_held_welder_lit(null, null, W))
+			if(my_effect.trigger == TRIGGER_HEAT)
+				my_effect.ToggleActivate()
+
+		//Otherwise, let's see if we were hit with something with enough force to activate us.
+		else
+			if (my_effect.trigger == TRIGGER_FORCE && combat_of(W).force >= 10)
+				my_effect.ToggleActivate()
+
+/datum/artifact_master/proc/on_reagent(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/reagent_expose_obj/event = A
+	//A strange bug here is that, when a reagent is splashed on an artifact, it calls this proc twice.
+	//Why? I have no clue. I only accidentally stumbled upon it during debugging!
+	//I left one of the debug logs commented out so others can confirm this.
+	var/datum/reagent/touching = event.reagent
+	var/T = touching.type //What type of reagent is being splashed on it?
+
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		if(is_path_in_list(T, water_reagents))
+			if(my_effect.trigger == TRIGGER_WATER)
+				my_effect.ToggleActivate()
+		else if(is_path_in_list(T, acid_reagents))
+			if(my_effect.trigger == TRIGGER_ACID)
+				my_effect.ToggleActivate()
+		else if(is_path_in_list(T, volatile_reagents))
+			if(my_effect.trigger == TRIGGER_VOLATILE)
+				my_effect.ToggleActivate()
+		else if(is_path_in_list(T, toxic_reagents))
+			if(my_effect.trigger == TRIGGER_TOXIN)
+				my_effect.ToggleActivate()
+
+/datum/artifact_master/proc/on_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		if(my_effect)
+			my_effect.UpdateMove()
+
+/datum/artifact_master/proc/master_step(datum/act/timer/A)
+	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
+		if(!QDELETED(src))
+			ended_with(src)
+		return
+
+	var/turf/L = holder().loc
+	if(!istype(L) && !isliving(L)) 	// We're inside a non-mob container or on null turf, either way stop processing effects
+		return
+
+	if(istype(holder(), /atom/movable))
+		var/atom/movable/HA = holder()
+		if(HA?.pulled_by_mob())
+			bumped_by(HA?.pulled_by_mob())
+
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		if(my_effect)
+			my_effect.UpdateMove()
+
+	//if any of our effects rely on environmental factors, work that out
+	var/trigger_cold = 0
+	var/trigger_hot = 0
+
+	var/turf/T = get_turf(holder())
+	var/datum/gas_mixture/env = T.return_air()
+	if(env)
+		var/env_temp = env.return_temperature()
+		if(env_temp < ARTIFACT_COLD_TRIGGER)
+			trigger_cold = 1
+		else if(env_temp > ARTIFACT_HEAT_TRIGGER)
+			trigger_hot = 1
+
+	for(var/datum/artifact_effect/my_effect in my_effects)
+		my_effect.artifact_id = artifact_id
+
+		my_effect.periodic_step()
+
+		//COLD ACTIVATION
+		if(my_effect.trigger == TRIGGER_COLD && (trigger_cold ^ my_effect.activated))
+			my_effect.ToggleActivate()
+
+		//HEAT ACTIVATION
+		if(my_effect.trigger == TRIGGER_HEAT && (trigger_hot ^ my_effect.activated))
+			my_effect.ToggleActivate()
+
+#undef HYDROGEN_PATH
+#undef WATER_PATH
+#undef ACID_PATH
+#undef DIETHYLAMINE_PATH
+#undef PHORON_PATH
+#undef HYDROPHORON_PATH
+#undef THERMITE_PATH
+#undef TOXIN_PATH
+
+/// What a mob bumping into an artifact wears on its hands.
+/datum/artifact_master/proc/bumper_gloves(mob/M)
+	return M.get_equipped_item(SLOT_ID_GLOVES)
+
+/// Accessor for the holder var.
+/datum/artifact_master/proc/holder() as /atom
+	return holder
+
+/// The containment ledger outlives the forensic cleanup and goes right after it (the order of the other owned fields is not part of this).
+/atom/ownership_field_disposed(var_name)
+	if(var_name == nameof(forensic_data))
+		clear_containment_ledger()
+
+CAPABILITIES_PART(/atom, xenoarch)
+	owns_one(nameof(artifact_master), /datum/artifact_master)

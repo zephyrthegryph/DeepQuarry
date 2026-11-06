@@ -21,8 +21,7 @@
 //  - A receiver deleted while a notice waits for it (an observer, or a holder that was gone without a transaction): it gets nothing, and the row is
 //    dropped at the drain (a handle that no longer names a datum), the same rule as a timer whose owner is gone.
 //
-// Legacy bridge. A notice delivered here also reaches the legacy on_notice() reactions (code/datums/reactions) of its holder, and a notice a
-// legacy publish() delivers reaches the hooks here, so both sides run on one occurrence.
+// Legacy bridge. A notice delivered here also reaches the legacy on_notice() reactions (code/datums/reactions) of its holder.
 
 /datum/notice
 	parent_type = /datum/act/notice
@@ -142,7 +141,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		N.source = holder
 		rx_deliver_notice_to(holder, N)
 
-/// The hooks of this module that hear N (also called for a notice the legacy publish() delivers).
+/// The hooks of this module that hear N.
 /proc/notice_deliver_hooks(datum/holder, datum/notice/N, outcome)
 	if(notice_entity_gone(holder) || !islist(GLOB?.notice_plans))
 		return

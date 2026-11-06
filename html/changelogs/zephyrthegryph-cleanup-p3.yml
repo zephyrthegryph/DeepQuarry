@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Vending machine stock moved from code into strings/vending/catalog.json"
+  - refactor: "Portable pumps and scrubbers redraw from their cell's charge instead of a hand-called refresh"
+  - code_imp: "Split the vore export and escape, limb loss and exosuit window procs; added a report-only proc length census (tools/ci/proc_length_census.py)"

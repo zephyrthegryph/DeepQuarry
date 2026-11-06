@@ -64,7 +64,23 @@ pub fn collect(pages:&dyn RawPolicyPages,policy:Policy,config:&Config,root:&Arc<
  Policy::Interactions=>{let mut rows=Vec::new();let mut error=None;let scanned=crate::raw_tree_interactions_policy::declarations_using(f,|ty,line|{if error.is_none(){let actual=(||{let kept=out.kept(f,None,line,"interactions",false)?;fund::row(b,poll,&mut rows)?;rows.push((fund::own(b,poll,ty)?,line,kept));Ok::<_,Failure>(())})();if let Err(actual)=actual{error=Some(actual)}}},&mut index_control);if let Some(error)=error{return Err(error)}scanned?;Facts::Interactions(rows)},
  Policy::Latent=>{let mut retained=Operation{budget:b,poll};let mut temporary=Operation{budget:local,poll};Facts::Latent(crate::raw_tree_latent_policy::facts_of_using(f,&mut retained,&mut temporary)?)},
  Policy::Pollers=>{let mut retained=Operation{budget:b,poll};Facts::Steps(crate::raw_tree_pollers_policy::steps_using(f,&mut retained)?)},
- Policy::ReadBack=>{let mut rows=Vec::new();let mut error=None;let scanned=crate::raw_tree_read_back_policy::schema_using(f,&read,|ty|{if error.is_none(){let actual=(||{fund::row(b,poll,&mut rows)?;rows.push(fund::own(b,poll,ty)?);Ok::<_,Failure>(())})();if let Err(actual)=actual{error=Some(actual)}}},&mut index_control);if let Some(error)=error{return Err(error)}scanned?;Facts::ReadBack(rows)},
+ Policy::ReadBack=>{let mut rows=Vec::new();let mut error=None;let scanned=crate::raw_tree_read_back_policy::schema_using(f,&read,|ty|{if error.is_none(){let actual=(||{fund::row(b,poll,&mut rows)?;rows.push(fund::own(b,poll,ty)?);Ok::<_,Failure>(())})();if let Err(actual)=actual{error=Some(actual)}}},&mut index_control);if let Some(error)=error{return Err(error)}scanned?;
+    if crate::tree::CODE_DM.matches_path(relative) {
+        let mut markers = Vec::new();
+        let mut count = 0;
+        crate::captured_marker_rows::collect_file_funded(
+            relative, views.marker()?, local, local, &["ACTION"], false, false, false,
+            &mut markers, &mut count, &mut || fund::checked(local, poll),
+        )?;
+        for marker in markers {
+            fund::checked(local, poll)?;
+            if let Some(notice) = crate::raw_tree_read_back_policy::action_notice(&marker.args) {
+                fund::row(b, poll, &mut rows)?;
+                rows.push(fund::own(b, poll, &notice)?);
+            }
+        }
+    }
+    Facts::ReadBack(rows)},
  Policy::Pool=>Facts::Pool(pool_operation(b,poll,|checkpoint|crate::pool_policy::facts_of(f,Some(b),checkpoint))?),
  Policy::CapBits=>{let mut retained=Operation{budget:b,poll};let mut temporary=Operation{budget:local,poll};Facts::Bits(crate::raw_tree_cap_bits_policy::facts_of_using(f,list(config,policy,"writers"),list(config,policy,"write_exempt_prefixes"),&mut retained,&mut temporary)?)},Policy::Sfx=>{let mut retained=Operation{budget:b,poll};let mut temporary=Operation{budget:local,poll};Facts::Sfx(crate::sfx_policy::facts_of_using(f,&mut retained,&mut temporary)?)},Policy::ManualLog=>{let mut retained=Operation{budget:b,poll};let mut temporary=Operation{budget:local,poll};Facts::Manual(crate::manual_log_policy::facts_of_using(f,&mut retained,&mut temporary)?)},Policy::OpOrder|Policy::UiActions|Policy::Ownership|Policy::DocSnippets|Policy::Ui|Policy::Expiry|Policy::ConstructorShadow|Policy::LookEffects|Policy::Requirements|Policy::StringNames=>return Err("cross Sys fold bypassed its concrete collector".into()),Policy::Cooldown=>return Err("cooldown has no global index phase".into())};
  out.finish()?;fund::row(b,poll,&mut facts)?;facts.push(FileFacts{rel:fund::own(b,poll,relative)?,facts:value});fund::checked(local,poll)?;Ok(true)

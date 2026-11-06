@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - code_imp: "Removed the last CHOMPEdit, VOREStation Edit and DQEdit markers, dead tgui bot panels and unused leftovers under code/modules; the maint recycler's icons, sounds and tgui art now sit beside its code"

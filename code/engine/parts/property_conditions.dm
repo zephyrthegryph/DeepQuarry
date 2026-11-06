@@ -242,10 +242,3 @@ CAPABILITIES(/datum/simulation_condition)
 CAPABILITIES(/datum/simulation_condition_compiler)
 	owns_one(nameof(scratch), /datum/simulation_condition)
 	ref_one(nameof(registry_static), /datum/property_registry)
-
-/datum/simulation_condition/proc/dependency_properties()
-	. = list()
-	for(var/datum/simulation_condition/N as anything in leaves())
-		. |= N.property
-		if(N.kind == SIM_CONDITION_COMPARE)
-			. |= N.other_property

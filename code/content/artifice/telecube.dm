@@ -1,0 +1,258 @@
+/*
+ * Home of the telecube.
+ */
+
+/datum/category_item/catalogue/anomalous/precursor_a/telecube
+	name = "Quantomatically Entangled Digicube"
+
+	desc = "An enigmatic cube that appears superficially similar to a Positronic Cube. \
+	However, the similarities hopefully end there, as this device emits no sound during \
+	operation or observation. Its alloy composition is unknown, though it is incredibly \
+	dense, as it resists any and all forms of radiation.<br>\
+	Upon physical contact, however, the device will translocate the offending entity to a \
+	matching twin cube, generating no detectable radiation. This process occurs at speeds \
+	unmatched even by modern predictions of Bluespace technology, and with no visible power \
+	source."
+
+	value = CATALOGUER_REWARD_HARD
+
+// Standard one needs to be smacked onto another one to link together.
+/obj/item/telecube
+	name = "locus"
+	desc = "A strange metallic cube that pulses silently."
+	icon = 'icons/obj/props/telecube.dmi'
+	icon_state = "cube"
+	w_class = ITEMSIZE_NO_CONTAINER // Made impossible to store to help resolve a certain repeated issue that has been happening with these.
+
+
+	// slowdown = 2.5 // Removes slowdown in exchange for being impossible to store in backpacks.
+
+
+	var/tmp/obj/item/telecube/mate
+
+	var/start_paired = FALSE
+	var/mirror_colors = FALSE
+
+	var/randomize_colors = FALSE
+
+	var/glow_color = "#FFFFFF"
+	/// On the floor (not held or stored): its glow then shows through the dark.
+	var/on_floor = FALSE
+
+	var/cooldown_time = 30 SECONDS
+	var/ready = TRUE
+
+// How far the cube will search for things to teleport. 0 = only contacting objects / mobs.
+	var/teleport_range = 0 // For all that is holy, do not change this unless you know what you're doing.
+
+	var/omniteleport = FALSE // Will this teleport anchored things too?
+
+/// One declared post-chain setup preserves the correlated world-RNG rolls and peer constructor order.
+/obj/item/telecube/proc/create_initial_pair()
+	set_on_floor(isturf(loc))
+	if(randomize_colors)
+		set_glow_color(rgb(rand(0, 255), rand(0, 255), rand(0, 255)))
+		set_base_color(rgb(rand(30, 255), rand(30, 255), rand(30, 255)))
+	if(!start_paired)
+		return null
+	var/obj/item/telecube/peer = new /obj/item/telecube(loc)
+	rel_set(src, nameof(mate), peer)
+	peer.set_glow_color(mirror_colors ? color : glow_color)
+	peer.set_base_color(mirror_colors ? glow_color : color)
+	peer.pair_cube(src)
+
+
+/obj/item/telecube/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[icon_state]-[ready ? "ready" : "charging"]", plane = on_floor ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = glow_color, appearance_flags = KEEP_APART))
+
+/obj/item/telecube/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	set_on_floor(isturf(loc))
+
+// its mate collapses into an explosion.
+/obj/item/telecube/ending_consequences(cause, datum/by)
+	if(mate())
+		var/turf/T = get_turf(mate())
+		mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
+		rel_clear(mate(), nameof(mate))
+		explosion(T,1,3,7)
+
+	..()
+
+/obj/item/telecube/proc/pair_cube(obj/item/telecube/M)
+	if(mate())
+		return 0
+	else
+		rel_set(src, nameof(mate), M)
+		return 1
+
+/obj/item/telecube/proc/teleport_to_mate(atom/movable/A, areaporting = FALSE)
+	. = FALSE
+
+	if(!istype(A))
+		return .
+
+	if(A == src || A == mate())
+		A.visible_message(span_alien("\The [A] distorts and fades, before popping back into existence."))
+		fade_and_move(A, null)
+		return .
+
+	var/mob/living/L = src.loc
+
+	if(istype(L))
+		L << 'sound/effects/singlebeat.ogg'
+		L.drop_from_inventory(src)
+		forceMove(get_turf(src))
+
+	if(!ready)
+		return .
+
+	if((A.anchored && !omniteleport) || !mate())
+		A.visible_message(span_alien("\The [A] distorts for a moment, before reforming in the same position."))
+		fade_and_move(A, null)
+		return .
+
+	var/turf/TLocate = get_turf(mate())
+
+	var/turf/T1 = get_turf(locate(TLocate.x + (A.x - x), TLocate.y + (A.y - y), TLocate.z))
+
+	if(T1)
+		A.visible_message(span_alien("\The [A] fades out of existence."))
+		fade_and_move(A, T1, TRUE)
+		. = TRUE
+	else
+		return .
+
+	if(teleport_range && !areaporting)
+		for(var/atom/movable/M in orange(teleport_range, A))
+			teleport_to_mate(M, TRUE)
+
+/obj/item/telecube/proc/swap_with_mate()
+	. = FALSE
+
+	if(!mate() || !teleport_range)
+		return .
+
+	var/list/objects_near_me = range(teleport_range, get_turf(src))
+	var/list/objects_near_mate = range(teleport_range, get_turf(mate()))
+
+	for(var/atom/movable/M in objects_near_me)
+		teleport_to_mate(M, TRUE)
+
+	for(var/atom/movable/M1 in objects_near_mate)
+		mate().teleport_to_mate(M1, TRUE)
+
+	. = TRUE
+	return .
+
+/obj/item/telecube/proc/cooldown(mate_too = FALSE)
+	if(!ready)
+		return
+
+	set_ready(FALSE)
+	after(src, cooldown_time, PROC_REF(ready))
+	if(mate_too && mate())
+		mate().cooldown(mate_too = FALSE) //No infinite recursion pls
+
+/obj/item/telecube/proc/ready()
+	set_ready(TRUE)
+
+/// Fades `AM` out, moves it to `T` (if any) once faded, then fades it back in (half a second each).
+/obj/item/telecube/proc/fade_and_move(atom/movable/AM, turf/T, announce = FALSE)
+	animate_out(AM)
+	after(src, 0.5 SECONDS, PROC_REF(fade_back_in), with = list(AM, T, announce))
+
+/obj/item/telecube/proc/fade_back_in(atom/movable/AM, turf/T, announce)
+	if(QDELETED(AM))
+		return
+	AM.filters -= filter(type="blur", size = 2)
+	if(T)
+		AM.forceMove(T)
+	animate_in(AM)
+	if(announce)
+		AM.visible_message(span_alien("\The [AM] fades into existence."))
+
+/obj/item/telecube/proc/clear_blur(atom/movable/AM)
+	if(AM)
+		AM.filters -= filter(type="blur", size = 0)
+
+/obj/item/telecube/proc/animate_out(atom/movable/AM)
+	//See atom cloak/uncloak animations for comments
+	var/atom/movable/target = AM
+	var/our_filter_index = target.filters.len+1
+	AM.filters += filter(type="blur", size = 0)
+
+	animate(target, alpha = 0, time = 5) //Out
+	animate(target.filters[our_filter_index], size = 2, time = 5, flags = ANIMATION_PARALLEL)
+
+/obj/item/telecube/proc/animate_in(atom/movable/AM)
+	//See atom cloak/uncloak animations for comments
+	var/atom/movable/target = AM
+	var/our_filter_index = target.filters.len+1
+	AM.filters += filter(type="blur", size = 2)
+
+	animate(target, alpha = 255, time = 5) //In
+	animate(target.filters[our_filter_index], size = 0, time = 5, flags = ANIMATION_PARALLEL)
+	after(src, 0.5 SECONDS, PROC_REF(clear_blur), with = list(target))
+
+/obj/item/telecube/item_ctrl_click(mob/user)
+	if(Adjacent(user) && teleport_to_mate(user))
+		cooldown(mate_too = FALSE)
+
+/// Old click_alt.
+/obj/item/telecube/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
+	if(Adjacent(user) && swap_with_mate())
+		cooldown(mate_too = TRUE)
+	return TRUE
+
+/obj/item/telecube/Bump(atom/movable/AM)
+	if(teleport_to_mate(AM))
+		cooldown(mate_too = FALSE)
+	. = ..()
+
+CAPABILITIES(/obj/item/telecube)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/telecube)))
+	configure(movable_motion(throw_range = 2))
+	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
+	ref_one(nameof(mate), /obj/item/telecube)
+	setup(PROC_REF(create_initial_pair))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
+
+/// Something walked into it (the bump action's notice).
+/obj/item/telecube/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/M = N.bumper
+	if(teleport_to_mate(M))
+		cooldown(mate_too = FALSE)
+
+// Subtypes
+
+/obj/item/telecube/mated
+	start_paired = TRUE
+
+/obj/item/telecube/randomized
+	randomize_colors = TRUE
+
+/obj/item/telecube/randomized/mated
+	start_paired = TRUE
+
+/obj/item/telecube/precursor
+	glow_color = "#FF1D8E"
+	color = "#2F1B26"
+
+/obj/item/telecube/precursor/mated
+	start_paired = TRUE
+
+/obj/item/telecube/precursor/mated/zone
+	teleport_range = 2
+
+/obj/item/telecube/precursor/mated/mirrorcolor
+	mirror_colors = TRUE
+
+
+/// the mate this refers to (a relation view: null once it is deleted).
+/obj/item/telecube/proc/mate() as /obj/item/telecube
+	return mate

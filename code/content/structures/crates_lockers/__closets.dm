@@ -1,0 +1,698 @@
+/// Per closet, how its capacity was sized at init (boot diagnostics for "no room" refusals): "type @x,y,z" -> text.
+GLOBAL_LIST_EMPTY(closet_fit_log)
+
+/// What a random-item spawner inside a closet is reserved as: the most any item it turns into can take (the largest item class, ITEMSIZE_HUGE). The
+/// closet sizes itself for what it holds when it initializes, and a spawner there becomes its item afterwards: counted as one unit, a locker
+/// that starts with a riot shield or a boxed set of gloves was a few units short and refused its own contents (the full-map boot gate).
+#define CLOSET_SPAWNER_COST CEILING(ITEMSIZE_HUGE / 2, 1)
+
+// Someone should really merge secure closets and crates into this, which Bay has done already.
+/obj/structure/closet
+	name = "closet"
+	/// Made closed in play (not by the map), it takes in the loose items on its turf (closet_after_init()).
+	var/collects_in_play = TRUE
+	desc = "It's a basic storage unit."
+	icon = 'icons/obj/closets/bases/closet.dmi'
+	icon_state = "base"
+	density = TRUE
+	w_class = ITEMSIZE_HUGE
+	layer = UNDER_JUNK_LAYER
+	flags = REMOTEVIEW_ON_ENTER
+
+	/// The door is open. Written through set_opened(); a map says a closet starts open with `opened = 1`.
+	var/opened = 0
+	/// Whether the closet takes a tool to seal it shut (a welder; a coffin is screwed, a grave has no lid to seal): see `sealable`.
+	var/sealable = TRUE
+	var/wall_mounted = 0 //never solid (You can always pass over it)
+	max_integrity = 100
+	/// Sheet metal and an air gap (containment paths, C2).
+
+	var/breakout_time = 2 //2 minutes by default
+	var/breakout_sound = SFX_EFFECTS_GRILLEHIT	//Sound that plays while breaking out
+
+	var/storage_capacity = 2 * MOB_MEDIUM //This is so that someone can't pack hundreds of items in a locker/crate
+							  //then open it in a populated area to crash clients.
+	var/storage_cost = 40	//How much space this closet takes up if it's stuffed in another closet
+
+	var/open_sound = SFX_EFFECTS_CLOSET_OPEN
+	var/close_sound = SFX_EFFECTS_CLOSET_CLOSE
+
+	var/store_misc = 1		//Chameleon item check
+	var/store_items = 1		//Will the closet store items?
+	var/store_mobs = 1		//Will the closet store mobs?
+	var/max_closets = 0		//Number of other closets allowed on tile before it won't close.
+
+	var/list/starts_with // List of type = count (or just type for 1)
+
+	var/datum/decl/closet_appearance/closet_appearance = /datum/decl/closet_appearance // The /datum/decl that defines what decals we end up with, that makes our look unique
+
+	/// Currently animating the door transform
+	var/is_animating_door = FALSE
+	/// Our visual object for the closet door, if we're animating
+	var/obj/effect/overlay/closet_door/door_obj
+	var/vore_sound = SFX_EFFECTS_METALSCRAPE2
+
+
+MSG_DEF_SELF(closet/wont_budge, "It won't budge!")
+MSG_DEF_SELF(closet/bolts_unreachable, "You can't reach the anchoring bolts when the door is closed!")
+MSG_DEF_SELF(closet/cant_put_down, "You can't put that down there.")
+MSG_DEF_SELF(closet/too_small, "The locker is too small to stuff anyone into!")
+MSG_DEF_SELF(closet/no_targets, "No eligible targets found.")
+MSG_DEF_SELF(closet/cant_break_out, "You can't push the door open from in here.")
+MSG_DEF(closet/cut_apart, "You cut %T% apart with %I%.", "%U% cuts %T% apart with %I%.")
+MSG_DEF(closet/emptied_basket, "You empty %I% into %T%.", "%U% empties %I% into %T%.")
+MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the door open.", "%T% begins to shake violently!")
+
+// A closet is a door over an interior (the ledger slot below). The door is `opened`, the weld (a coffin's screws) is the library's weld_shut(), the bolts
+// the library's anchor(), the lock a secure closet's lock(). What the door does (open(), close(), the sounds and the animation, what it takes in when it
+// shuts and spills when it opens) stays the closet's own procs: the ops below only start it. A hand toggles the door; set down on an open one, a held thing
+// lands on its tile; an open one is cut apart with a welder; somebody shut in a sealed one breaks out after breakout_time minutes (a player-facing wait,
+// started by the Resist verb through container_resist()).
+CAPABILITIES(/obj/structure/closet)
+	configure(obj_rules(insulation = 0.5))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
+	click_order(TOOL_WELDER, "cut_apart", "weld_shut.toggle")
+	silicon_hand(adjacent = TRUE)
+	ref_many(nameof(bluespace_exit_points))
+	blast_contents(shield = 1) // a closet shields its contents a step
+	after_init(0, then(PROC_REF(closet_after_init)))
+	space(SPACE_INTERIOR, door = nameof(opened))
+	owns_one(nameof(door_obj), /obj/effect/overlay/closet_door)
+	anchor()
+	extend("anchor.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), because = MSG(closet/bolts_unreachable))))
+	weld_shut(offered = PROC_REF(can_seal))
+	extend("weld_shut.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), FALSE, because = MSG(closet/wont_budge))))
+	op("door", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(req(PROC_REF(bare_hand_or_menu))),
+		needs(req(PROC_REF(door_ready))), then(PROC_REF(door_toggled)))
+	op("cut_apart", tool(TOOL_WELDER), label("Cut apart"), at(SPACE_INTERIOR), wait(0), costs(RES_FUEL, 0),
+		needs(req(PROC_REF(welder_lit))), then(PROC_REF(cut_apart)), says(MSG(closet/cut_apart)))
+	op("empty_basket", item(/obj/item/storage/laundry_basket), label("Empty into"), at(SPACE_INTERIOR), priority(OP_PRIORITY_PART),
+		then(PROC_REF(basket_emptied)), says(MSG(closet/emptied_basket)))
+	op("stuff_grab", item(/obj/item/grab), label("Stuff inside"), at(SPACE_INTERIOR), priority(OP_PRIORITY_PART),
+		needs(req(PROC_REF(grab_fits))), then(PROC_REF(stuff_grabbed)))
+	op("set_down", item(/obj/item), label("Put down"), at(SPACE_INTERIOR), priority(OP_PRIORITY_DEFAULT),
+		needs(req(PROC_REF(can_set_down))), then(PROC_REF(set_down)))
+	op("stuff", item(/atom/movable), gesture(GESTURE_DRAG), label("Stuff inside"), at(SPACE_INTERIOR), then(PROC_REF(stuff_dragged)))
+	op("break_out", ai(), label("Break out"), wait(PROC_REF(breakout_wait), keeps = TARGET_PRESENT | ALIVE),
+		needs(req_capable(), req(PROC_REF(can_break_out))),
+		begins(MSG(closet/break_begin)), then(PROC_REF(broke_out)), logs(LOG_GAME))
+	op("devour", menu(), label("Devour Occupants"), when(PROC_REF(actor_shut_in)),
+		needs(req(PROC_REF(has_prey))),
+		asks(/datum/prompt/choice/prey),
+		then(PROC_REF(devoured)))
+	trait(TRAIT_ALT_CLICK_BLOCKER)
+
+
+/// Declares what it starts with and takes in the loose items on its turf, once the map around it exists.
+/obj/structure/closet/proc/closet_after_init(datum/act/timer/A)
+	// starts_with is the generator: only types that can't be latent are made
+	// now; the rest stay declared until something needs them (C5).
+	dq_latent_declare(src)
+
+	// A closed closet takes in the loose items on its turf; a body bag unfolded in play (collects_in_play FALSE) leaves the floor alone.
+	if(!opened && (collects_in_play || A?.mapload))
+		if(isliving(loc)) return
+		var/list/loose = list()
+		for(var/obj/item/I in turf_contents_of_type(loc, /obj/item))
+			if(I.density || I.anchored) continue
+			loose += I
+		// adjust locker size to hold everything with 5 units of free store room.
+		// A closet whose ledger is already built (something asked about its contents before this ran) holds its starts as ledger entries, not as
+		// things in contents, so what it holds is the ledger's own count; summed without the ledger otherwise, so an untouched closet never builds one.
+		var/content_size = 0
+		var/list/generator
+		if(containment_ledger())
+			content_size = slot_used(CONTAINER_SLOT_INTERIOR)
+		else
+			for(var/atom/movable/AM as anything in contents) // ALLOW(latent): the generator's latent entries are summed below
+				content_size += storage_cost_of(AM)
+			generator = latent_is_declared() ? starts_with : null
+			for(var/path in generator)
+				if(dq_latent_eligible(path))
+					content_size += storage_cost_of_type(path) * dq_latent_spawn_count(generator[path])
+		for(var/obj/item/I as anything in loose)
+			content_size += storage_cost_of(I)
+		var/raised = content_size > storage_capacity-5
+		if(length(GLOB.closet_fit_log) < 400 && (raised || length(loose)))
+			// The sizing estimate, kept for the refusal line and the locker test: what it counted and what it chose.
+			GLOB.closet_fit_log["[type] @[x],[y],[z]"] = "counted [content_size] units (real [length(contents)] things, loose [length(loose)], latent starts [length(generator)] lines), capacity [storage_capacity][raised ? " raised to [content_size + 5]" : " kept"]"
+		if(raised)
+			set_storage_capacity(content_size + 5)
+		for(var/obj/item/I as anything in loose)
+			move_into(src, null, I)
+
+// ---- Containment (C1): one interior slot. The base Destroy() spills it.
+// C2: the interior is internal (it shares the room's air, so not sealed);
+// heat reaches it through the closet's insulation, and only rounds and stabs
+// that get through the sheet metal, and seeping acid, reach its contents. ----
+
+/datum/relation_definition/slot/closet_interior
+	holder = /obj/structure/closet
+	slot_id = CONTAINER_SLOT_INTERIOR
+	name = "interior"
+	capacity_model = SLOT_CAPACITY_UNITS
+	drop_policy = SLOT_DROP_SPILL
+	exposure = SLOT_EXPOSURE_INTERNAL
+	damage_transmission = list(0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0, 0)
+
+/datum/relation_definition/slot/closet_interior/capacity_for(obj/structure/closet/holder)
+	return holder.storage_capacity
+
+/datum/relation_definition/slot/closet_interior/cost(obj/structure/closet/holder, atom/movable/thing)
+	return holder.storage_cost_of(thing)
+
+/datum/relation_definition/slot/closet_interior/accepts_requirements()
+	return req_loose()
+
+/obj/structure/closet/latent_generator()
+	return starts_with
+
+/obj/structure/closet/latent_generator_clear()
+	set_starts_with(null)
+
+/datum/relation_definition/slot/closet_interior/entry_cost(obj/structure/closet/holder, path)
+	return holder.storage_cost_of_type(path)
+
+/// What a thing of `path` would take up, from type data (latent entries).
+/obj/structure/closet/proc/storage_cost_of_type(path)
+	if(ispath(path, /obj/item))
+		var/obj/item/typed = path
+		return CEILING(initial(typed.w_class) / 2, 1)
+	if(ispath(path, /obj/structure/closet))
+		var/obj/structure/closet/typed_closet = path
+		return initial(typed_closet.storage_cost)
+	if(ispath(path, /obj/random))
+		return CLOSET_SPAWNER_COST
+	return 1
+
+/obj/structure/closet/move_refusal_detail(datum/item)
+	var/atom/movable/thing = item
+	return " (holds [LAZYLEN(contents)] thing(s), [slot_used(CONTAINER_SLOT_INTERIOR)] of [storage_capacity] units; it takes [istype(thing) ? storage_cost_of(thing) : "?"]; sizing: [GLOB.closet_fit_log["[type] @[x],[y],[z]"] || "never sized"])"
+
+/// What `thing` takes up inside this closet, in storage_capacity units.
+/obj/structure/closet/proc/storage_cost_of(atom/movable/thing)
+	if(isitem(thing))
+		var/obj/item/I = thing
+		return CEILING(I.w_class / 2, 1)
+	if(isliving(thing))
+		var/mob/living/L = thing
+		return L.mob_size
+	if(istype(thing, /obj/structure/closet))
+		var/obj/structure/closet/C = thing
+		return C.storage_cost
+	if(istype(thing, /obj/random))
+		return CLOSET_SPAWNER_COST
+	return 1
+
+/// Slot acceptance (P2 proc clause): whether this can be put away loose.
+/atom/movable/proc/slot_loose(mob/actor, atom/target, obj/item/held)
+	return !anchored
+
+/mob/living/slot_loose(mob/actor, atom/target, obj/item/held)
+	return !anchored && !src?.buckled_to() && !LAZYLEN(pinned)
+
+//Cham Projector Exception: the dummy is anchored but hides in closets.
+/obj/effect/dummy/chameleon/slot_loose(mob/actor, atom/target, obj/item/held)
+	return TRUE
+
+
+/obj/structure/closet/examine(mob/user)
+	. = ..()
+	if(Adjacent(user) || isobserver(user))
+		var/content_size = slot_used(CONTAINER_SLOT_INTERIOR)
+		if(!content_size)
+			. += "It is empty."
+		else if(storage_capacity > content_size*4)
+			. += "It is barely filled."
+		else if(storage_capacity > content_size*2)
+			. += "It is less than half full."
+		else if(storage_capacity > content_size)
+			. += "There is still some free space."
+		else
+			. += "It is full."
+
+	if(!opened && isobserver(user))
+		var/list/latent = latent_names()
+		. += "It contains: [counting_english_list(user.client, contents)][length(latent) ? "; [english_list(latent)]" : ""]"
+
+/obj/structure/closet/CanPass(atom/movable/mover, turf/target)
+	if(wall_mounted)
+		return TRUE
+	return ..()
+
+/obj/structure/closet/proc/can_open()
+	if(weld_shut_welded(src, null))
+		return 0
+	return 1
+
+/obj/structure/closet/proc/can_close()
+	var/closet_count = 0
+	for(var/obj/structure/closet/closet in get_turf(src))
+		if(closet != src)
+			if(!closet.anchored)
+				closet_count ++
+	if(closet_count > max_closets)
+		return 0
+	return 1
+
+/obj/structure/closet/proc/dump_contents()
+	slot_empty(CONTAINER_SLOT_INTERIOR, loc)
+
+/// The door state must change the composed density, not overwrite the stat's served value.
+/obj/structure/closet/set_density(new_density)
+	new_density = !!new_density
+	var/old_density = density
+	// Record the door state even when a stronger hold currently masks its result.
+	hold(src, STAT_DENSITY, new_density, SRC_DOOR_STATE, priority = PRIORITY_FORCE)
+	return density != old_density
+
+/obj/structure/closet/proc/open(mob/user)
+	if(opened)
+		return 0
+
+	if(!can_open())
+		return 0
+
+	dump_contents()
+
+	set_opened(TRUE)
+	playsound(src, open_sound, 50, 1, -3)
+	if(initial(density))
+		set_density(FALSE)
+	animate_door()
+	return 1
+
+/obj/structure/closet/proc/close()
+	if(!opened)
+		return 0
+	if(!can_close())
+		return 0
+
+	// The ledger enforces storage_capacity: whatever doesn't fit stays out.
+	if(store_misc)
+		store_misc()
+	if(store_items)
+		store_items()
+	if(store_mobs)
+		store_mobs()
+	if(max_closets)
+		store_closets()
+
+	set_opened(FALSE)
+
+	playsound(src, close_sound, 50, 1, -3)
+	if(initial(density))
+		set_density(TRUE)
+	animate_door(TRUE)
+	PUBLISH(src, closet_closed)
+	return 1
+
+// Each store_* proc moves what it finds on the turf into the interior slot and
+// returns how many went in. The slot refuses anchored or BUCKLED(src) things and
+// anything that would overflow storage_capacity.
+
+//Cham Projector Exception
+/obj/structure/closet/proc/store_misc()
+	. = 0
+	for(var/obj/effect/dummy/chameleon/AD in turf_contents_of_type(loc, /obj/effect/dummy/chameleon))
+		if(move_into(src, null, AD))
+			.++
+
+/obj/structure/closet/proc/store_items()
+	. = 0
+	for(var/obj/item/I in turf_contents_of_type(loc, /obj/item))
+		if(move_into(src, null, I))
+			.++
+
+/obj/structure/closet/proc/store_mobs()
+	. = 0
+	for(var/mob/living/M in turf_contents_of_type(loc, /mob/living))
+		if(move_into(src, null, M))
+			.++
+
+/obj/structure/closet/proc/store_closets()
+	. = 0
+	for(var/obj/structure/closet/C in turf_contents_of_type(loc, /obj/structure/closet))
+		if(C == src)	//Don't store ourself
+			continue
+		if(C.max_closets)	//Prevents recursive storage
+			continue
+		if(move_into(src, null, C))
+			.++
+
+/obj/structure/closet/proc/toggle(mob/user as mob)
+	if(is_animating_door)
+		return
+	if(!(opened ? close() : open(user)))
+		to_chat(user, span_notice("It won't budge!"))
+		return
+
+// ---- the ops: what they read and what they do ----
+
+/// The door can move now: it is not mid-swing, and the closet lets it (an open one can be shut, a shut one opened).
+/obj/structure/closet/proc/door_ready(datum/act/A)
+	return (!is_animating_door && (opened ? can_close() : can_open())) ? null : /datum/msg/closet/wont_budge
+
+
+/// An empty hand works the door (a held thing has its own ops), and so does the menu's pick whatever is held.
+/obj/structure/closet/proc/bare_hand_or_menu(datum/act/op/A)
+	return (isnull(A.held) || A.origin != ORIGIN_CLICK) ? null : /datum/msg/req_failed
+
+/// A hand or the menu's pick works the door.
+/obj/structure/closet/proc/door_toggled(datum/act/op/A)
+	add_fingerprint(A.actor)
+	toggle(A.actor)
+	return OP_OK
+
+/// A shut closet that has something to seal it with can be sealed.
+/obj/structure/closet/proc/can_seal(datum/act/A)
+	return sealable && !opened
+
+/// The welder is lit.
+/obj/structure/closet/proc/welder_lit(datum/act/op/A)
+	var/obj/item/weldingtool/welder = A.held?.get_welder()
+	return (!welder || welder.isOn()) ? null : /datum/msg/weld/needs_lit
+
+
+/// An open closet is cut apart into a sheet of steel (what it held is already on its tile).
+/obj/structure/closet/proc/cut_apart(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50)
+	replace_with(src, /obj/item/stack/material/steel)
+	return OP_OK
+
+/// A laundry basket with something in it is emptied onto the tile of an open closet; an empty one is put down like anything else.
+/obj/structure/closet/proc/basket_emptied(datum/act/op/A)
+	var/obj/item/storage/laundry_basket/LB = A.held
+	if(!length(LB.slot_contents()))
+		return isnull(can_set_down(A)) ? set_down(A) : OP_OK
+	var/turf/T = get_turf(src)
+	for(var/obj/item/I in LB.slot_contents())
+		LB.remove_from_storage(I, T)
+	return OP_OK
+
+/// The held item is in the actor's own hands (not a module mounted on a cyborg), and the actor is no cyborg: only those let go of things at a closet.
+/obj/structure/closet/proc/can_set_down(datum/act/op/A)
+	return (A.actor.lets_go_of_held() && A.held.loc == A.actor) ? null : /datum/msg/closet/cant_put_down
+
+
+/// A held thing is let go of onto the tile of an open closet.
+/obj/structure/closet/proc/set_down(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	user.drop_item()
+	if(W)
+		W.do_drop_animation(user)
+		W.forceMove(loc)
+	return OP_OK
+
+/// Whether `user` can stuff `O` into the open closet by dragging it here: the user acts, both are within reach, `O` is no HUD element and not fastened down,
+/// and a closet is never stuffed into a closet.
+/obj/structure/closet/proc/stuffable(mob/user, atom/movable/O)
+	if(!istype(user) || !istype(O) || istype(O, /atom/movable/screen) || istype(O, /obj/structure/closet))
+		return FALSE
+	if(O.loc == user || O.anchored || user.contents.Find(src) || !isturf(user.loc))
+		return FALSE
+	if(user.restrained() || user.stat || user.has_status(STAT_WEAKENED) || user.has_status(STAT_STUNNED) || user.has_status(STAT_PARALYZED))
+		return FALSE
+	return Adjacent(user) && Adjacent(O) && user.Adjacent(O)
+
+/// Puts `O` on the tile of the open closet (a mob walks in; a thing is pulled onto it).
+/obj/structure/closet/proc/stuff_in(mob/user, atom/movable/O)
+	step_towards(O, loc)
+	if(user != O)
+		user.show_viewers(span_danger("[user] stuffs [O] into [src]!"))
+	add_fingerprint(user)
+
+/// A thing dragged onto the open closet.
+/obj/structure/closet/proc/stuff_dragged(datum/act/op/A)
+	if(stuffable(A.actor, A.held))
+		stuff_in(A.actor, A.held)
+	return OP_OK
+
+/// Whether a grab can stuff the one it holds in: closets take anyone (a locker too small, a crate, say otherwise).
+/obj/structure/closet/proc/grab_fits(datum/act/op/A)
+	return null
+
+/// What the lock of a secure locker or crate just did, in the library's words.
+/obj/structure/closet/proc/lock_toggled_message(datum/act/A)
+	return lock_locked(A.holder) ? /datum/msg/lock/locked : /datum/msg/lock/unlocked
+
+/// A held grab stuffs the one it holds in, as if they were dragged onto the closet.
+/obj/structure/closet/proc/stuff_grabbed(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	var/atom/movable/victim = G?.grab_target()
+	if(victim && stuffable(A.actor, victim))
+		stuff_in(A.actor, victim)
+	return OP_OK
+
+/obj/structure/closet/relaymove(mob/user as mob)
+	if(user.stat || !isturf(loc))
+		return
+
+	if(!open(user))
+		to_chat(user, span_notice("It won't budge!"))
+
+// tk grab then use on self
+/obj/structure/closet/attack_self_tk(mob/user as mob)
+	add_fingerprint(user)
+	if(!toggle(user))
+		to_chat(user, span_notice("It won't budge!"))
+
+/// The decl that defines what decals the closet shows (looked up from its mapped path), or null for a closet with its own icon.
+/obj/structure/closet/proc/closet_looks()
+	RETURN_TYPE(/datum/decl/closet_appearance)
+	if(ispath(closet_appearance))
+		return GLOB.closet_appearances[closet_appearance]
+	return null
+
+/obj/structure/closet/draw(datum/look/look)
+	..()
+	closet_look(look)
+
+/// The closet's own sprite: its decal icon, then the door open, or shut (and sealed: welded, or screwed down for a coffin) with the lock it shows. A type that
+/// shows something else overrides it and does not call the parent.
+/obj/structure/closet/proc/closet_look(datum/look/look)
+	var/datum/decl/closet_appearance/decor = closet_looks()
+	if(decor)
+		look.set_icon(decor.icon)
+	if(opened)
+		look.state("open")
+		return
+	look.state("closed_[closet_lock_look()][is_welded(src) ? "_welded" : ""]")
+
+/// The lock as the shut sprite shows it.
+/obj/structure/closet/proc/closet_lock_look()
+	return "unlocked"
+
+/obj/structure/closet/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
+	var/attack_message = A.attack_verb || "destroys"
+	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
+		return OP_OK
+	user.do_attack_animation(src)
+	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
+	dump_contents()
+	expire(0.1 SECONDS)
+	return OP_OK
+
+/obj/structure/closet/proc/req_breakout()
+	if(opened)
+		return 0 //Door's open... wait, why are you in it's contents then?
+	if(!weld_shut_welded(src, null))
+		return 0 //closed but not sealed...
+	return 1
+
+/// The Resist verb of somebody shut in: the break-out op, once. A second push while one is under way is left alone.
+/obj/structure/closet/container_resist(mob/living/escapee)
+	if(op_pending_of(escapee) || !req_breakout())
+		return
+
+	escapee.setClickCooldown(100)
+	perform_op(escapee, src, "break_out", origin = ORIGIN_SYSTEM)
+
+/// How long the shove takes: breakout_time minutes.
+/obj/structure/closet/proc/breakout_wait(datum/act/A)
+	return breakout_time MINUTES
+
+/// The actor is shut inside, and the closet holds them (still shut, and sealed or locked).
+/obj/structure/closet/proc/can_break_out(datum/act/op/A)
+	return (A.actor?.loc == src && !!req_breakout()) ? null : /datum/msg/closet/cant_break_out
+
+
+/// The shove goes through: the closet is broken open.
+/obj/structure/closet/proc/broke_out(datum/act/op/A)
+	var/mob/living/escapee = A.actor
+	to_chat(escapee, span_warning("You successfully break out!"))
+	visible_message(span_danger("\The [escapee] successfully broke out of \the [src]!"))
+	add_fingerprint(escapee)
+	playsound(src, breakout_sound, 100, 1)
+	break_open()
+	animate_shake()
+	return OP_OK
+
+/obj/structure/closet/proc/break_open()
+	set_welded(src, FALSE)
+	//Do this to prevent contents from being opened into nullspace (read: bluespace)
+	if(istype(loc, /obj/structure/bigDelivery))
+		var/obj/structure/bigDelivery/BD = loc
+		BD.unwrap()
+	open()
+
+/obj/structure/closet/onDropInto(atom/movable/AM)
+	return
+
+/obj/structure/closet/AllowDrop()
+	return TRUE
+
+/obj/structure/closet/return_air_for_internal_lifeform(mob/living/L)
+	if(loc)
+		if(istype(loc, /obj/structure/closet))
+			return (loc.return_air_for_internal_lifeform(L))
+	return return_air()
+
+// Reaching 0 integrity spills the closet's contents before it's destroyed.
+/obj/structure/closet/atom_destruction(damage_flag)
+	dump_contents()
+	return ..()
+
+/obj/structure/closet/proc/animate_door(closing = FALSE)
+	var/datum/decl/closet_appearance/decor = closet_looks()
+	if(!decor?.door_anim_time)
+		return
+	if(!door_obj)
+		rel_set(src, nameof(door_obj), new /obj/effect/overlay/closet_door)
+	vis_include(src, door_obj)
+	door_obj.icon = decor.icon
+	door_obj.icon_state = "door_front"
+	set_is_animating_door(TRUE)
+	var/num_steps = decor.door_anim_time / world.tick_lag
+	for(var/I in 0 to num_steps)
+		var/angle = decor.door_anim_angle * (closing ? 1 - (I/num_steps) : (I/num_steps))
+		var/matrix/M = get_door_transform(angle)
+		var/door_state = angle >= 90 ? "door_back" : "door_front"
+		var/door_layer = angle >= 90 ? FLOAT_LAYER : ABOVE_MOB_LAYER
+
+		if(I == 0)
+			door_obj.transform = M
+			door_obj.icon_state = door_state
+			door_obj.layer = door_layer
+		else if(I == 1)
+			animate(door_obj, transform = M, icon_state = door_state, layer = door_layer, time = world.tick_lag, flags = ANIMATION_END_NOW)
+		else
+			animate(transform = M, icon_state = door_state, layer = door_layer, time = world.tick_lag)
+	after(src, decor.door_anim_time, PROC_REF(end_door_animation), key = "door_animation", with = list(closing))
+
+/obj/structure/closet/proc/end_door_animation(closing = FALSE)
+	set_is_animating_door(FALSE)
+	if(closing)
+		// There's not really harm in leaving it on, but, one less atom to send to clients to render when lockers are closed
+		vis_remove(src, door_obj)
+
+/obj/structure/closet/proc/get_door_transform(angle)
+	var/matrix/M = matrix()
+	var/datum/decl/closet_appearance/decor = closet_looks()
+	if(!decor)
+		return M
+	M.Translate(-decor.door_hinge, 0)
+	M.Multiply(matrix(cos(angle), 0, 0, -sin(angle) * decor.door_anim_squish, 1, 0))
+	M.Translate(decor.door_hinge, 0)
+	return M
+
+/obj/structure/closet/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
+	return proximity_flag
+
+//the menu entry to eat people in the same closet as yourself
+
+/// The actor is a living thing shut in this closet.
+/obj/structure/closet/proc/actor_shut_in(datum/act/op/A)
+	return isliving(A.actor) && A.actor.loc == src
+
+/// Each devourable one shut in with `user`, other than `user`, by the name the choice shows (two with one name are told apart with a number). Names to mobs.
+/obj/structure/closet/proc/prey_by_name(mob/living/user)
+	var/list/by_name = list()
+	for(var/mob/living/L in contents_of(src, /mob/living)) // mobs are never latent
+		if(L == user || !read_once(L.vore_prefs.devourable)) //no eating yourself. 1984.
+			continue
+		var/label = "[L]"
+		var/n = 2
+		while(label in by_name)
+			label = "[L] ([n++])"
+		by_name[label] = L
+	return by_name
+
+/obj/structure/closet/proc/has_prey(datum/act/op/A)
+	return (length(prey_by_name(A.actor)) > 0) ? null : MSG(closet/no_targets)
+
+/// The choice a hidden devour offers: the ones shut in with the asker that can be eaten.
+/datum/prompt/choice/prey
+	question = "Please select a target."
+	title = "Victim"
+
+/datum/prompt/choice/prey/prepare(datum/act/A)
+	var/datum/act/op/O = A
+	var/obj/structure/closet/C = O?.holder
+	choices = list()
+	if(istype(C))
+		for(var/label in C.prey_by_name(O.actor))
+			choices += label
+
+/// The chosen one is eaten, if both are still in.
+/obj/structure/closet/proc/devoured(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/datum/prompt/R = A.answer
+	var/mob/living/target = R ? prey_by_name(user)[R.value] : null
+	if(!isliving(target)) //Safety.
+		return OP_REFUSED
+	if(get_dist(src, target) >= 1 || get_dist(src, user) >= 1) //in case they leave the locker
+		return OP_REFUSED
+	playsound(src, vore_sound, 25)
+	user.begin_instant_nom(user, target, user, vore_selected_of(user))
+	return OP_OK
+
+CAPABILITIES(/obj/structure/closet/bluespace)
+	after_init(0, then(PROC_REF(init_join_network)))
+
+/obj/structure/closet/bluespace/proc/init_join_network(datum/act/timer/A)
+	join_bluespace_network()
+
+
+/// The icon is derived from closet_appearance by the look (C5 parity).
+/obj/structure/closet/state_exclude()
+	return ..() + list("icon")
+
+
+/obj/structure/closet/proc/set_storage_cost(value)
+	if(storage_cost == value)
+		return FALSE
+	storage_cost = value
+	tracked_changed(src, nameof(storage_cost))
+	return TRUE
+SETTER(/obj/structure/closet, storage_cost)
+
+/datum/relation_definition/slot/closet_interior/admission_read_keys(obj/structure/closet/holder, atom/movable/thing, mob/actor)
+	. = ..()
+	. += list(list(holder, nameof(holder.storage_capacity)), list(thing, nameof(thing.anchored)))
+	if(istype(thing, /obj/item))
+		var/obj/item/I = thing
+		. += list(list(I, nameof(I.w_class)))
+	else if(istype(thing, /mob/living))
+		var/mob/living/L = thing
+		. += list(list(L, nameof(L.mob_size)), list(L, nameof(L.pinned)), list(L, LK_BUCKLED_TO))
+	else if(istype(thing, /obj/structure/closet))
+		var/obj/structure/closet/C = thing
+		. += list(list(C, nameof(C.storage_cost)))
+
+// Finite live-budget queries follow current resident costs as well as candidate admission.
+/datum/relation_definition/slot/closet_interior/cost_read_keys(atom/holder, atom/movable/thing)
+	. = list()
+	if(isitem(thing))
+		var/obj/item/I = thing
+		. += list(list(I, nameof(I.w_class)))
+	else if(isliving(thing))
+		var/mob/living/L = thing
+		. += list(list(L, nameof(L.mob_size)))
+	else if(istype(thing, /obj/structure/closet))
+		var/obj/structure/closet/C = thing
+		. += list(list(C, nameof(C.storage_cost)))
+

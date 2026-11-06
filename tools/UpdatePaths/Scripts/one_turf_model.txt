@@ -1,0 +1,3 @@
+# One turf model: /turf/unsimulated is gone; its turfs are the map's fixed fabric, /turf/open/fixed.
+/turf/unsimulated/@SUBTYPES : /turf/open/fixed/@SUBTYPES{@OLD}
+/turf/unsimulated : /turf/open/fixed{@OLD}

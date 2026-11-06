@@ -13,6 +13,15 @@ freely. When you remove a file, delete it; the build regenerates `deepquarry.dme
 
 **The codebase is mid-migration to the final design.** Read §3 before writing code; the short version is: write what exists on master today.
 
+**The API reference is the catalogue of what to use.** `doc/rewrite/api_reference.md` names, for every need (declaring types, state, relations, timers, input, UI,
+look, stats, actions, systems, I/O, loot, atmos, construction, tests, helpers), the one form or system to use, its file, an example and what it replaces or bans.
+- Before you write a new helper, system, cache, lazy path, timer, relation, storage form, queue, watch or reference token, **search the reference and reuse what is
+  there**. Several overlapping mechanisms already exist (its section 18 lists them and which one wins); do not add another member of any family.
+- A genuinely new world-level mechanism is a `SYSTEM_DEF(x)`, and the reference is updated in the same commit (see its "Before you add a system" checklist).
+- **Adding, renaming, moving or banning a form means updating the reference in the same commit.** `tools/ci/check_docs_truth.py` (run by `check_ratchets.sh`) fails
+  when a cited `path:line` no longer holds the form, when a Banned name is no longer banned, or when a Landing form has landed.
+- Forms in its Landing section (section 19) are designed or in flight and are **not usable** until they move into the body of the reference.
+
 ---
 
 ## 1. Repository layout
@@ -41,14 +50,13 @@ Add, move or delete a file and build (every target that compiles or lints DM reg
 `python3 tools/build/gen_dme.py`; commit the result. `bash tools/ci/check_ratchets.sh` fails on a stale manifest and on a macro used
 before its `#define` in the generated order. A new order dependency (a macro in an ordinary file, a second definition of a type's var
 or proc in another file) needs a `before` rule; `bash tools/ci/dme_order_equiv.sh` compiles a reference order against the generated
-one and compares the worlds with dmb-equiv. Test files are listed in `code/modules/unit_tests/_unit_tests.dm` (still by hand).
+one and compares the worlds with dmb-equiv. Test files are listed in `code/tests/unit_tests/_unit_tests.dm` (still by hand).
 
 ---
 
 ## 3. Writing code: the migration
 
-The approved design is `doc/rewrite/final_api.html` ("the doc"). It replaces the object model
-(OM), the `sys` layer, interactions and every legacy declaration form. Section numbers below
+The approved design is `doc/rewrite/final_api.html` ("the doc"). It replaces the old per-entity scheduler layer, the `sys` layer, interactions and every legacy declaration form. Section numbers below
 are the doc's. Section 17 maps **every** old form to its replacement.
 
 **The rule: write what exists on master today.** Most of the doc's forms are on master now (doc §19
@@ -73,8 +81,8 @@ definition before using it.
 
 | Need | Target form | Doc | On master | Write today |
 |---|---|---|---|---|
-| Declare a type | One inheriting block: `CAPABILITIES(T)` and indented entries | §1 | yes (the table procs are hard-banned) | `CAPABILITIES(T)` |
-| Reusable behaviour | A capability (`cover()`, `powered()`) or a plain proc returning entries; one type groups its own entries with `section(name, "doc")` in its block (no `BUNDLE`) | §11 | yes | `CAPABILITIES`, `section()`; shared capabilities in `code/library/` and `code/datums/capabilities/` |
+| Declare a type | One inheriting root block per type, in the type's home file: `CAPABILITIES(T)` and indented entries; a feature adds entries to a type it does not own with `CAPABILITIES_PART(T, feature)` in its own file | §1 | yes (the table procs are hard-banned; parts: `doc/rewrite/proposals/capability_contributions.md`) | `CAPABILITIES(T)` in the home file; `CAPABILITIES_PART(T, feature)` for a feature's entries on another file's type (feature is an identifier, unique across all types (name it for its type: `human_hands`); merged root first, then parts sorted by feature; a part needs the root; never a second root) |
+| Reusable behaviour | A capability (`cover()`, `powered()`) or a plain proc returning entries; one type groups its own entries with `section(name, "doc")` in its block (no `BUNDLE`) | §11 | yes | `CAPABILITIES`, `section()`; shared capabilities in `code/library/` and `code/library/capabilities/` |
 | Player/AI/admin choice | `op(key, name, parts...)`: input, select, `needs()`, `wait()`, `then()` | §9 | yes (interactions, the task engine, `DECLARE_INTERACTIONS`, `om_ask` are gone and banned) | `op(...)`; a window button is `op(key, ui_act(key, arg(...)), needs(...), asks(...), then(...))` |
 | Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 | `needs()` yes (the `REQ_*` predicate macros are gone and banned) | `needs(...)` with a native `req_*` part; a refusal that depends on what an `asks()` step was answered with is `req_answer(PROC_REF(x), step = "name")` (`x(A)` reads `A.step_value("name")`, holds while unanswered, asked again at commit) |
 | Mouse and click input | One path: only `code/engine/kernel/entry.dm` overrides BYOND's `Click`/`DblClick`/`MouseDrop`/`MouseDrag`/`MouseDown`/`MouseUp`/`MouseEntered`/`MouseExited`/`MouseWheel` (it reads `usr` once, builds a typed `/datum/input_event`, calls `input_submit()`); the resolver finds the type's declared entry when the event resolves, on the spot or from the inbox | §2 | yes (the `mouse_override` lint hard-bans any other definition, generated code included) | `click_on(PROC_REF(x))`, `double_click_on()`, `drag_onto(PROC_REF(x), onto =)`, `drag_over()`, `hover()`, `tooltip()` in `CAPABILITIES`, handler `x(datum/act/input/A)` (`A.actor`, `A.over`, `A.entered`, `A.params`); `INPUT_FALLTHROUGH` sends the input on to its default handling; a subtype re-declaring the form replaces its parent's entry, so override the parent's handler proc and call `..()` to extend it |
@@ -82,14 +90,14 @@ definition before using it.
 | React after | `on_notice(/datum/notice/x, ...)`, `PUBLISH()` | §10 | yes (notices come from `ACTION()`; master's `NOTICE()` is an unrelated log macro) | `on_notice()`, `PUBLISH()` |
 | React to a state key | `on_change(nameof(v), ...)` | §7, §10 | yes | `on_change()` |
 | State | `TRACKED(T, var)` (two arguments); writes through setters; reads generated by the build | §4, §7 | yes (`OM_FIELD` and `changed()` channels are banned) | `TRACKED`, tracked setters; reads in `code/_generated/reads.dm` |
-| Numbers/flags composed from sources | `STAT(...)`, `contributes(...)`, `hold(E, stat, value, source, lasts =)`, `hold_table()`, `release()`, `grant()`/`revoke()` | §5 | yes (`code/engine/stats/`, `grant()` in `code/engine/declare/activation.dm`); the `stat(...)` entry form in `CAPABILITIES` is **new** | `STAT` with a var of its own, `hold()`/`hold_table()`/`release()`/`grant()`; a source type's table is `factors(...)` in its CAPABILITIES block, held on the entity its relation names at a tracked scale (converted families are listed under `factors_converted` in `tools/ci/lint_scopes.toml`, where a raw `factors =` var is banned; a `factors = alist(...)` data var on a flyweight or prototype read by the type's one entry stays, stat_layer.md §8); a body factor is a `STAT` on `/mob/living` (`code/contracts/ids/body_stats.dm`) read as a var (`L.slowdown`); `BF_*` and `factor(` are banned |
-| Delays and repeats | `after(owner, delay, then(...))`, `every(...)`, `after_init(delay, parts...)`, `STAMP`/`ELAPSED`, `COOLDOWN_*`, `wait()` on an op | §3 | `after()`, `every()`, `after_init()`, `COOLDOWN_*`, `wait()`/`then()`, `STAMP`/`ELAPSED` yes (`STAMP(D, var, clock)` records now in a var, `ELAPSED(D, var, clock)` reads it; `EXPIRY_STAMP`, `STAMP_ELAPSED`, `STAMP_AT`, `STAMP_POINT`, `STAMPED`, `STAMP_CLEAR`, `ELAPSED_SINCE` and `BEFORE` are gone and banned) | `after()`, `every()`, `after_init()`, `COOLDOWN_*`, `STAMP`/`ELAPSED` for a var; a time per row (a failure cache, a flow field, a respawn wait) is a small `/datum` record the holder owns with `owns_many()`/`owns_one()`, its var stamped with `STAMP` and read with `ELAPSED` (an end time is a `COOLDOWN_DECLARE` var: `COOLDOWN_START`/`COOLDOWN_EXTEND`/`COOLDOWN_RESET`, read with `COOLDOWN_RUNNING`/`COOLDOWN_LAPSED` (the strict pair) or `COOLDOWN_FINISHED`/`COOLDOWN_TIMELEFT`, and the `_OWN` family for a deadline on the datum's own clock; the `EXPIRY_DECLARE`/`SET`/`EXTEND`/`CLEAR`/`ACTIVE`/`EXPIRED`/`LEFT`/`ON_LAPSE` forms are gone and banned, and a start-time var is a plain var; `TIME_NOW(clock, owner)` is the one clock read the `STAMP`/`ELAPSED`/`COOLDOWN_*` macros are built on, and a payload or list slot that records "now" calls it directly; a data key (an ability id) is `COOLDOWN_KEYED_DECLARE`/`_START`/`_FINISHED`; `EXPIRY_AT`/`EXPIRY_NOW` are gone). A base type (`/atom`, `/mob`) holds no var: it declares `stamps(a)` in its block and writes the lazy table it shares with `cooldown_*`, as `COOLDOWN_*` is to `cooldown_*`: `stamp_now(D, a, clock)`, `stamp_elapsed(D, a, clock)`, `stamp_set`, `stamp_point`, `stamp_has`, `stamp_clear` (`code/__defines/engine/sparse_slots.dm`) |
+| Numbers/flags composed from sources | `STAT(...)`, `contributes(...)`, `hold(E, stat, value, source, lasts =)`, `hold_table()`, `release()`, `grant()`/`revoke()` | §5 | yes (`code/engine/stats/`, `grant()` in `code/engine/declare/activation.dm`) (`STAT(...)` is the final declaration; there is no `stat(...)` entry form) | `STAT` with a var of its own, `hold()`/`hold_table()`/`release()`/`grant()`; a source type's table is `factors(...)` in its CAPABILITIES block, held on the entity its relation names at a tracked scale (converted families are listed under `factors_converted` in `tools/ci/lint_scopes.toml`, where a raw `factors =` var is banned; a `factors = alist(...)` data var on a flyweight or prototype read by the type's one entry stays, stat_layer.md §8); a body factor is a `STAT` on `/mob/living` (`code/content/contracts/ids/body_stats.dm`) read as a var (`L.slowdown`); `BF_*` and `factor(` are banned |
+| Delays and repeats | `after(owner, delay, then(...))`, `every(...)`, `after_init(delay, parts...)`, `STAMP`/`ELAPSED`, `COOLDOWN_*`, `wait()` on an op | §3 | `after()`, `every()`, `after_init()`, `COOLDOWN_*`, `wait()`/`then()`, `STAMP`/`ELAPSED` yes (`STAMP(D, var, clock)` records now in a var, `ELAPSED(D, var, clock)` reads it; `EXPIRY_STAMP`, `STAMP_ELAPSED`, `STAMP_AT`, `STAMP_POINT`, `STAMPED`, `STAMP_CLEAR`, `ELAPSED_SINCE` and `BEFORE` are gone and banned) | `after()`, `every()`, `after_init()`, `COOLDOWN_*`, `STAMP`/`ELAPSED` for a var; a time per row (a failure cache, a flow field, a respawn wait) is a small `/datum` record the holder owns with `owns_many()`/`owns_one()`, its var stamped with `STAMP` and read with `ELAPSED` (an end time is a `COOLDOWN_DECLARE` var: `COOLDOWN_START`/`COOLDOWN_EXTEND`/`COOLDOWN_RESET`, read with `COOLDOWN_RUNNING`/`COOLDOWN_LAPSED` (the strict pair) or `COOLDOWN_FINISHED`/`COOLDOWN_TIMELEFT`, and the `_OWN` family for a deadline on the datum's own clock; the `EXPIRY_DECLARE`/`SET`/`EXTEND`/`CLEAR`/`ACTIVE`/`EXPIRED`/`LEFT`/`ON_LAPSE` forms are gone and banned, and a start-time var is a plain var; `TIME_NOW(clock, owner)` is the one clock read the `STAMP`/`ELAPSED`/`COOLDOWN_*` macros are built on, and a payload or list slot that records "now" calls it directly; a data key (an ability id) is `COOLDOWN_KEYED_DECLARE`/`_START`/`_FINISHED`; `EXPIRY_AT`/`EXPIRY_NOW` are gone). A base type (`/atom`, `/mob`) holds no var: its cooldowns and stamps are fields of the `cooldowns` lazy state (`code/library/atom/states/cooldowns_state.dm`): `STATE_SET(D, cooldowns, f, world.time + delay)` starts one, `STATE_PEEK(D, cooldowns, f) < world.time` is ready, a stamp is `STATE_SET(D, cooldowns, f, TIME_NOW(clock, D))` read as `TIME_NOW(clock, D) - STATE_PEEK(D, cooldowns, f)`; the `cooldown_*` / `stamp_*` table macros are gone and banned |
 | Instance values from place or params, phase 0, discard | `preset(nameof(v), PROC_REF(x), from =, when =)` (a value computed from the instance's own place or params at the root, before any code after `..()`; the generator reads, never writes; a claim on a resource stays a `setup()` effect); `param(..., apply = PROC_REF(x), early = TRUE)` (the setter runs in phase 0, after the early children and before the chain: only for a setter the chain reads, e.g. the human's species); `keeps_if(cond, warn =, instead = PROC_REF(x))` (`instead` runs once when the instance is discarded); an object that needs a body to copy takes it as a param (`make(/mob/observer/dead, at = T, from_body = M)`, no positional constructor argument) | init_phase0 N1-N3, D5 | yes (`code/engine/lifeforms/preset.dm`, `params.dm`, `keeps_if.dm`; `init_roots` in `tools/ci/lint_scopes.toml` is the closed list of the types that are the `Initialize()` chain: `/atom`, `/atom/movable`, `/obj`, `/turf`, `/datum/controller/global_vars`, adding one is a design change; there is no `preinit()`) | `preset()`, `param(early = TRUE)`, `keeps_if(instead =)`; a boot-time datum (persistent, asset transport, techweb node, instrument) has no `Initialize()`: its loader's system runs the boot step |
 | Links and ownership | Relations declared in `CAPABILITIES`; lifecycle declared | §6 | yes (`OWN`/`REL`, `own_set` and the `relations()`/`ownership()` procs are banned) | `ref_one()`/`ref_many()`/`links()`/`owns_one()`/`owns_many()` in the block |
 | World-level state/work | `SYSTEM_DEF(x)` plus `/datum/system/x` with `needs`, `lane`, `every()`; other folders call only its `api.dm` | §2 | yes (`world_service` is gone) | `SYSTEM_DEF(x)` |
 | Construction ladders | `construction(start(...), step(...), dismantle(...))` | §12 | yes (`code/engine/declare/graph.dm`) | `construction(...)` |
 | Database and HTTP reads | A `/datum/io/sql` request, or a read that carries on in its callback | §2 | yes (`prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` are gone and banned) | `sql_ask(owner, sql, params, PROC_REF(next), context...)` + `sql_answer_rows()`, `http_ask()`, `sql_write()` for a write nobody reads, `db_query_now()` only where BYOND itself waits |
-| Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 | look parts, `interface()`/`ui_data`, `ui_act`, `asks()`, granted verbs yes (`APPEARANCE_*` look forms, `update_icon(`, `DECLARE_UI`, `DECLARE_VERB` are banned); `flow_ask` is gone and banned) | `draw(datum/look/look)`, `interface("Window")` + `ui_data(datum/act/eval/A)`, `asks()` (a cancel that must still proceed: `optional = TRUE, default = v`); a tool that is not an op asks with an `ask_sequence` (`question_step()`, `ask_child()`) |
+| Appearance, UI, verbs, prompts | look parts, `interface()`/`ui_data(A)` outputs, granted verbs, `asks()` | §13 | look parts, `interface()`/`ui_data`, `ui_act`, `asks()`, granted verbs yes (`APPEARANCE_*` look forms, `update_icon(`, `DECLARE_UI`, `DECLARE_VERB` are banned); `flow_ask` is gone and banned) | `draw(datum/look/look)`, `interface("Window")` + `ui_data(datum/act/eval/A)`, `asks()` (a cancel that must still proceed: `optional = TRUE, default = v`); a tool that is not an op asks with an `ask_sequence` (`question_step()`, `ask_child()`) |
 
 Rules that hold under both old and new forms:
 
@@ -106,14 +114,21 @@ Rules that hold under both old and new forms:
   `after_init(delay, then(PROC_REF(x)))` in `CAPABILITIES`. `LateInitialize()` and `INITIALIZE_HINT_LATELOAD` are gone.
 - Tracking is automatic: don't declare `TRACKED(...)` (hard-banned outside the generated file). Write a var that reactive code reads through its generated `set_v(...)`; the `tracked` lint (hard error) rejects a raw write and `analyze fix --apply` rewrites it. A setter with side effects is a hand-written `set_v()` plus `SETTER(T, v)`. Construction (`Initialize()`/`New()` writing the instance's own var) is not a change and stays raw.
 - Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists
-  (`LAZYADD`/`LAZYLEN`), not `var/list/foo = list()` (`code/__defines/_lists.dm`).
+  (`LAZYADD`/`LAZYLEN`), not `var/list/foo = list()` (`code/defines/host/_lists.dm`).
+  A list that starts with entries and that an instance may later edit or replace is a **starting list**: declare the var bare
+  (`var/list/words`) and `per_type(nameof(words), PROC_REF(build_words), copy_on_write = TRUE)` in the type's `CAPABILITIES` block, with
+  `build_words()` returning the entries. Every instance holds the type's one table until its first write, which copies it, so the instance
+  allocates nothing at creation. The var is a tracked list: write it only through its `set_words()`, `add_words()`, `set_words_at()`, ...
+  (`analyze fix --apply` rewrites the raw forms; `x[k]++` and `x[k] += n` are `set_x_at(k, x[k] + n)` by hand). Never alias it, never edit a
+  nested list in place (the copy is one level deep). Not for a list of datums an instance must own (each instance needs its own datums). A
+  singleton (`GLOBAL_DATUM_INIT`, `SYSTEM_DEF`) needs no annotation: the `instance_list` lint recognises it. `final_api.html` §6, form 5.
   A `TRACKED` list var is mutated through its generated `add_<v>()`, `include_<v>()`, `remove_<v>()`, `set_<v>_at()`, `clear_<v>()`,
   `insert_<v>()`, `swap_<v>()`, `cut_<v>()` (`tracked_lists.dm`); `analyze fix` rewrites `LAZYADD`, `.Add()`, `v[i] = x` and the rest.
 - A var that carries whatever its producer returns (a hook's reply, a config value) is declared `SCHEMA(T, var, schema_any())` on its own line; the `untyped` lint is hard-banned (typed, call, schema), so an untyped var assigned an atom, datum or call result is a relation (`ref_one`/`owns_one`) or a `SCHEMA`.
 - Sounds are sets: `play_sfx(atom, SFX_ID)`; sparks are `fx_sparks(atom, amount)`.
 - SQL is parameterized only; ask players with typed prompts, not raw `input()`/`alert()`.
 - Cache appearances, not raw `/icon`. Don't add an `/atom` proc for something only one capability uses.
-- Run DreamChecker before pushing.
+- DreamChecker is off for now, per the user (the compiler's own diagnostics gate; do not run or edit it). When it returns: run it before pushing.
 
 ### 3b. Legacy forms (what is left)
 
@@ -128,7 +143,7 @@ table procs, `world_service`, `PERIODIC_*`, `update_icon(`, the `APPEARANCE_*` l
 What is still open, and still correct to write where a file already uses it:
 
 - The `BF_*` body factors themselves are done: they are stats on `/mob/living`. A `factors = alist(...)` var on a flyweight or prototype (a body effect, affliction, reagent, trait, perk or form type) is final data read by its type's one reader, not open work (`doc/rewrite/proposals/stat_layer.md` §8, end); `factors_converted` is only for types that move the table into the entry itself.
-- `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/modules/admin/view_variables/pickers.dm`).
+- `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/content/admin/view_variables/pickers.dm`).
 - The `base_vars` ratchet (its baseline shrinks as files convert). The init, raw-overlay, untyped and escape_hatches ratchets are at 0 and hard-banned.
 - File moves into the new tree (§3c).
 
@@ -143,7 +158,7 @@ a stat id, a `PROC_REF`) as well as requirements and build the same tree.
 
 Corrections to older notes: there is no `om_changed()`, `changed()` channels or `om_raise_change()`
 any more; state is tracked setters and generated reads. `SSbehaviours` no longer fires; its work
-was folded into the kernel (`code/controllers/kernel/kernel.dm`).
+was folded into the kernel (`code/world/kernel/kernel.dm`).
 
 ### 3c. Source layout and the migration rule
 
@@ -151,18 +166,20 @@ Target tree (doc §22):
 
 | Path | Holds |
 |---|---|
+| `code/host/` | The neutral layer below the engine: helpers the engine calls, the act context, adjacency. Held to the engine boundary (`engine_layering`); what needs content is a virtual proc here, implemented in `code/content/`. |
 | `code/engine/{kernel,time,state,stats,refs,change,actions,parts,hooks,present,io,_generated}` | The framework, one folder per doc section. `_generated` is build output, never hand-edited. |
-| `code/library/` | Shared capabilities and bundles (machine, access, containers, reagents, items, structures, construction, providers, mobs). |
-| `code/domains/{body,damage,atmos,power,life,ai,verdigris}` | Large systems with their own model. |
+| `code/library/` | Shared capabilities and bundles (machine, access, containers, reagents, items, structures, construction, providers, mobs), and the UI framework in `code/library/ui/` (tgui, tgui panel, chat, asset cache). |
+| `code/domains/{world_model,body,damage,atmos,heat,power,life,ai,verdigris}` | Large systems with their own model. `world_model` holds the base type declarations and their vars (`/atom/movable`, `/obj`, `/obj/item`, `/obj/structure`, `/turf`, `/area`, `/mob` down to `/mob/living/simple_mob`, `/datum/reagent`, `/datum/reagents`, the HUD screen). `damage` is the damage packet and impact model, `life` the life steps. A file whose path dm-health pins stays in `code/content/` until that tool follows (`code/content/body/affliction.dm`). |
 | `code/content/<domain>/` | Ordinary content: one type, one file (its capabilities, procs, messages, tests beside it). |
-| `code/world/` | Systems, map glue, round flow. |
-| `code/defines/` | Defines, split per module; replaces `__defines/`. |
+| `code/world/` | The scheduling kernel (`code/world/kernel/`; `code/engine/kernel/` holds only input, requests and jobs), systems, map glue, round flow. A feature's own `/datum/system` stays in that feature's folder: the `system_boundary` lint takes the system's folder as its boundary, so moving one into `code/world/systems/` breaks every in-folder use. |
+| `code/defines/` | Defines, split per module (`content/`, `domains/`, `library/`, `engine/`, `host/`); replaces `__defines/`. A file that holds only macros lives here. |
+| `code/tests/` | Unit tests (`unit_tests/`, one aggregator), benchmarks, fixtures and the balance harness (`balance/`). Tests do not sit beside their type. |
 
-Layering: engine may not reference library or content; library may not reference content;
+Layering: host and engine may not reference library or content; library may not reference content;
 nothing in the new tree may use an old form.
 
 **A file moves into the new tree only when it is fully migrated** (zero old forms). The old
-directories (`code/game`, `code/modules`, `code/datums`, ...) are the remaining-work list.
+directories (`code/game` (deleted), `code/modules` (deleted), `code/datums` (deleted), ...) were the remaining-work list; they are gone now, and the files still outside the new tree are what is left.
 Each wave: convert the files, prove them (per-file ratchet, tests, construction round-trip,
 bench), move them in a pure `git mv` commit with no edits, merge. Old APIs are deleted in the
 commit their last caller goes. Plan, phases and gates: doc §19.
@@ -217,14 +234,14 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 `BUN_RUNTIME_TRANSPILER_CACHE_PATH=0` (Bun's shared cache once built a sibling worktree);
 `build.ts` refuses to run if its root differs from the invoking worktree's toplevel.
 
-- **Native compiler (default).** `build.sh dm`, `dm-test`, `dq_focused_test.sh`, the merge gates and `dq_lane_ready.sh` compile with
+- **Native compiler (default).** `build.sh dm`, `dm-test` and `dq_focused_test.sh` compile with
   the in-tree Rust compiler `tools/dmb` through a resident daemon; the targets build `dmbc` first (cargo machine slot, skipped when
   current). `DQ_COMPILER=dreammaker` (alias `byond`) is the other compiler. A native compiler failure fails the build: the automatic
   DreamMaker fallback on a native internal error is opt-in (`DQ_COMPILER_FALLBACK=1`), so no gate passes on DreamMaker's output by accident. And `DQ_COMPILER=shadow` compares the two. **CI compiles with the native compiler too**
   (`tools/ci/compile_and_run.sh`, the benchmark workflow; `DQ_COMPILER=dreammaker` still selects DreamMaker), and a DreamMaker cross-check job
   (`dreammaker_cross_check` in `run_compile_checks.yml`, part of the completion gate) runs `bash tools/ci/dm_equiv.sh`: it compiles the production
   dme and the unit-test dme both ways and runs `dmb-equiv` (every difference listed). 2026-10-22 the production dme reports zero differences, including the order the global initializers run in; the unit-test dme reports one open
-  cause (an untyped receiver naming a member declared on several types, `doc/rewrite/native_compiler_issues.md`). Without cargo or a `dmbc` binary an unset `DQ_COMPILER` fails the build instead of falling back to DreamMaker (set `DQ_COMPILER=dreammaker` on purpose). The local land/merge/push gates no longer run a DreamMaker compile; the CI cross-check above is the DreamMaker check. See
+  cause (an untyped receiver naming a member declared on several types, `doc/rewrite/native_compiler_issues.md`). Without cargo or a `dmbc` binary an unset `DQ_COMPILER` fails the build instead of falling back to DreamMaker (set `DQ_COMPILER=dreammaker` on purpose). Landing runs no compile; the CI cross-check above is the DreamMaker check. See
   `doc/testing.md` "Native compiler (incremental)" and `doc/rewrite/native_compiler_issues.md`.
 - **One shared dmbc daemon per compiler version.** Every native compile uses the one shared compiler binary
   (`tools/build/lib/dmbc_cache.ts`), so every worktree talks to the same daemon (`tools/build/lib/dmbc_daemons.ts`), which keeps one
@@ -251,6 +268,15 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   (`code/__defines/verdigris/_bindings.dm`, regenerate with
   `tools/build/build.sh verdigris-bindings`). If `cargo` is absent the build warns and skips
   it, and atmospherics and cave-gen then fail at runtime.
+- **Cargo profiles and incremental (lanes).** `build.sh` cargo runs are incremental where the profile says so (`lib/cargo_ice.ts`):
+  a lane or dev build has its own target per worktree and runs under the machine cargo slot, so a corrupt incremental directory is rare,
+  and when rustc still panics the tooling deletes the target's incremental directories and retries once. Test targets (`dm-test`,
+  `test-repeat`, hence `dq_focused_test.sh`) load a DLL built with `[profile.lane]` of `verdigris/Cargo.toml` (no LTO, line-table debug
+  info, 256 codegen units, incremental, opt-level 2 for the workspace and 3 for dependencies); `release` + thin LTO stays for CI (`CI` set),
+  the server, benchmarks and `build.sh` (all-up build). `DQ_VERDIGRIS_PROFILE=release` makes a test run use the production profile,
+  `DQ_CARGO_INCREMENTAL=0` turns incremental off for any cargo run (sets `CARGO_INCREMENTAL=0`), and `=1` lets the profile decide even in CI or a gate. Never set `CARGO_INCREMENTAL=1` yourself: sccache, the machine's rustc wrapper, refuses to run when it is set. The shared DLL cache and the
+  `verdigris.dll.profile` stamp both carry the profile, so a lane DLL is never taken for a production one. One-shot gate builds
+  (`analyze_test_cache`, the `*_equiv.sh` scripts) stay `CARGO_INCREMENTAL=0`. The i686 link uses `rust-lld` where `verdigris/.cargo/config.toml` enables it.
 - **Worktrees: shared DLL cache.** VerdigrisTarget keeps a content-addressed cache of built
   libraries outside the worktrees (`DQ_VERDIGRIS_CACHE`, default `E:/dq-cache/verdigris`, else
   `~/.cache/dq/verdigris`; `off` disables it). The key is the git ids at `HEAD` of `verdigris/`
@@ -262,30 +288,29 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   sources fails that check and loses every shard. If you do build Rust in a worktree, its
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
 - **Lanes get worktrees from the pool, nowhere else.** `bash tools/dq_lane_pool.sh lease <branch>` hands out one of
-  `DQ_LANE_POOL_SIZE` (3) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
+  `DQ_LANE_POOL_SIZE` (7 general slots here: `export DQ_LANE_POOL_SIZE=7`; plus the reserved compiler slots and the light slot, which a docs-only or tooling-only lane takes with `lease <branch> --class light` and lands with `dq_land.sh --light`) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
   dirty slot and never discards anything); a lane beyond the pool size is refused ("POOL FULL"). To wait for a slot, run
   `... lease <branch> --wait` once in the background (a first-come-first-served queue); never write a retry or `until` loop. `... release <branch>` retires the dmbc
   daemon, deletes the build outputs and detaches the slot at `origin/master`, keeping `icons/gen`, `node_modules` links, the analyzer
   binary and `data/analyze-cache` warm; a merged lane's slot is also reclaimed by the next lease. Do not `git worktree add` a lane
-  worktree by hand and do not delete pool worktrees. The merge worktree (`merge-base`) is separate and permanent.
+  worktree by hand and do not delete pool worktrees.
   Worktrees and caches live on E: only: worktrees under `E:/projects/dq-wt/`, build caches under `E:/dq-cache/`; never on `D:` or `C:`.
-  Details and the gate flow: `doc/rewrite/agent_workflow.md` sections 19-23.
+  Details: `doc/rewrite/agent_workflow.md` section 19.
 - **Disk hygiene.** Nothing a build, compile or probe writes may live in `.git`: compiler caches go to `E:/dq-cache/` (the native
-  compiler's `DM_COMPILER_CACHE_ROOT`; never `<git-common-dir>/dm-compiled-cache`), and `tools/dq_push_stamp.sh` runs its
-  `git merge-tree --write-tree` probes in a throwaway object dir so they leave no loose trees. Lane worktrees come from the pool:
-  `bash tools/dq_worktree.sh lease <branch>` / `release <branch>` (the entry point of `tools/dq_lane_pool.sh`, at most 3 lanes at once);
-  `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
-  `bash tools/dq_worktree.sh gc` after a successful push (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
-  first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
+  compiler's `DM_COMPILER_CACHE_ROOT`; never `<git-common-dir>/dm-compiled-cache`). Lane worktrees come from the pool:
+  `bash tools/dq_worktree.sh lease <branch>` / `release <branch>` (the entry point of `tools/dq_lane_pool.sh`, at most `DQ_LANE_POOL_SIZE` general lanes at once);
+  `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `bash tools/dq_worktree.sh gc`
+  (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
+  first, `DQ_WT_KEEP="a b"` protects names) runs by hand. Remove your own worktree when your lane is merged.
 - **Disk use is bounded by construction.** `tools/ci/disk_budget.toml` lists EVERY directory under `E:/dq-cache` and every per-worktree growth dir
   (`data/test-runs`, `merge-gates`, `merge-batch`, `bench`, test-world logs in the checkout root, worktree-local cargo targets, ...) with a size cap,
   an age cap and an eviction policy, plus a whole-cache total (`DQ_CACHE_BUDGET_GB`, default 60). `bash tools/dq_disk_budget.sh enforce` applies it
   (least recently modified first; never a unit modified in the last 30 min, a leased slot's own cargo target, the `dmb-bin/current` version or a file
-  a running process holds open; stat listings, never `du`; `--dry-run`, `status`). It runs at every lease, release, train cycle start and dmbc daemon
+  a running process holds open; stat listings, never `du`; `--dry-run`, `status`). It runs at every lease, release and dmbc daemon
   start (throttled to once per 10 min). A directory under `E:/dq-cache` that the manifest does not name is unknown: it is reported, and removed once idle only when clearly a cache
-  (`*.log`, `dmb-*`, ...); `train`, `lane-pool`, `slots`, `dmb-bin`, `flakes.tsv` are never removed. A file git tracks is never deleted in a worktree. Add the
+  (`*.log`, `dmb-*`, ...); `lane-pool`, `slots`, `dmb-bin`, `flakes.tsv` are never removed. A file git tracks is never deleted in a worktree. Add the
   `[cache.<name>]` table first. Below `DQ_DISK_FLOOR_GB` (default 50) free on E:, caps are halved, and if it is still under the floor `lease` (exit 6)
-  and the train's heavy cycles refuse to start with a REFUSED message instead of filling the disk. Never delete under `E:/dq-cache` by hand.
+  refuses to start with a REFUSED message instead of filling the disk. Never delete under `E:/dq-cache` by hand.
   `tools/ci/test_disk_budget.sh` (part of `check_ratchets.sh`) proves eviction, protection, unknown-dir removal and the floor.
 - **Stuck lanes and waiting.** `bash tools/dq_lane_pool.sh stuck` lists leases with no live process and no activity for 30 min (exit 1 if any; `status` flags them, with
   idle time and machine-slot waits). A dirty or unpushed one is only reported, never wiped; a clean pushed one is reclaimed. `... cancel <branch>` withdraws a queued
@@ -301,11 +326,13 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `DMB_PAIR_MAX_AGE_DAYS` (7), `PairStore::evict_to_budget`; the dmbc cache spares only its newest segment by age, so the budget holds); the
   manifest above lists every one, `tools/dq_cache_prune.sh` is now a wrapper for `dq_disk_budget.sh enforce`, and abandoned test-run directories idle for a day are
   its `test-scratch` table. Don't measure with `du`; count entries.
+- **Dead code.** `python tools/ci/dead_code_scan.py` lists procs nothing names; it is report only, and a listing is a lead. Hooks, `/mob` procs and native callbacks are reached without being named, and its exclusions say so: add a new dynamic path there, with its selftest. A compile and focused tests do not prove a deletion safe.
+- **The test-server folder is the user's.** `E:/projects/dq-wt/test-server` holds the permanent local server and the user's saved character (`data/player_saves`); agents never run, build in, edit, clean or remove it. It is started and updated only by `bash tools/dq_test_server.sh` (`doc/rewrite/agent_workflow.md` section 29).
 - **Git safety.** Never delete `.git/index.lock` or any other lock file; another process holds
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.
 - **Production build:** `tools/build/build.sh dm` compiles without `UNIT_TESTS` (CI's Compile Checks job
-  runs it). Test-only code (`code/tests/`, `code/modules/unit_tests/`) must stay behind
+  runs it). Test-only code (`code/tests/`, `code/tests/unit_tests/`) must stay behind
   `#if defined(UNIT_TESTS)`; generators do this via `sem::gen::test_only`, and `analyze gen`
   fails on a generated line naming a test-only type outside the guard.
 - **Generated files are build output, not committed.** `code/engine/_generated/`, `code/_generated/reads.dm`
@@ -314,9 +341,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   declarations, never the output. Merge master with `bash tools/dq_merge_master.sh`; it settles a branch
   that still tracks them. `deepquarry.dme` merges by its include sets (the `dq-dme` driver) and is regenerated after every merge;
   `_unit_tests.dm` merges by union (`.gitattributes`).
-  `doc/rewrite/agent_workflow.md`. There are no look pins (deleted 2026-10-17; playtesting finds visual issues): don't add a snapshot
+  There are no look pins (deleted 2026-10-17; playtesting finds visual issues): don't add a snapshot
   of how types look; test a draw's behaviour instead (`dq_fresh_look_default`, `dq_human_draw_deterministic`, the staleness checker).
-- Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
+- DreamChecker is off for now, per the user; when it returns, heed every warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 - **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer binary is cached by source hash
   but built in each worktree's own target (never share a cargo target between worktrees), Bun lives in a shared
@@ -326,15 +353,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   test worlds and 1 cargo build at once on the machine (the machine is also the user's desktop), everything we start
   runs below normal priority (test worlds idle, `DQ_PRIORITY=normal` for neither), and the dmbc daemon keeps at most 8 GB of sessions and
   12 GB of RAM free (`DQ_SLOTS_DM_COMPILE`, `DQ_SLOTS_TEST_WORLD`,
-  `DQ_SLOTS_CARGO`); a waiter prints who holds them, the merge worktree goes first, a crashed
+  `DQ_SLOTS_CARGO`); a waiter prints who holds them, a crashed
   holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
-- **A lane lands only through the batch train** (`tools/dq_train.sh`, `doc/rewrite/agent_workflow.md` section 29): after its focused
-  tests and `bash tools/ci/check_ratchets.sh --changed-only`, it runs `bash tools/dq_merge_master.sh`, then
-  `bash tools/dq_train.sh enqueue --tests "<its tests>"` (`--light` for a change with no DM), and releases its slot. One integrator
-  merges the ready lanes, runs one gate (test build only; CI keeps the production compile cross-check), pushes, and bisects to bounce
-  only a culprit. `dq_land.sh` and `dq_lane_ready.sh` are retired (they refuse): per-lane proofs re-ran on every master move and took
-  lanes hours. At most 3 general lanes run at once (`DQ_LANE_POOL_SIZE`): one DM compile slot serves about three lanes plus the train,
-  and the train's dmbc session is kept resident (`DQ_DMBC_KEEP_ROOTS`) so its gate compiles stay incremental.
+- **Land with `bash tools/dq_land.sh`** from the lane's worktree, everything committed: it merges origin/master and pushes, in seconds. Nothing gates master. Run the tests you judge reasonable, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. After a landing `tools/dq_post_push_check.sh` boots the newest master in the background (report only); while master fails, `E:/dq-cache/health/MASTER_BROKEN.txt` names the first bad range and `dq_land.sh` prints it. Details: `doc/rewrite/agent_workflow.md` section 29.
 
 ### 4a. Testing (full reference: `doc/testing.md`)
 
@@ -344,12 +365,12 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   runtime or a `WARNING()` before its first test (the boot gate, `doc/rewrite/boot_gate.md`; `--boot` checks
   boot alone).
 - **Agents never run `tools/build/build.sh dm-test`:** it compiles AND runs the full sharded suite.
-  Use `tools/dq_focused_test.sh` for every run. The full suite runs only at integration or when the
+  Use `tools/dq_focused_test.sh` for every run. The full suite runs only in CI or when the
   user asks: `tools/build/build.sh dm-test` (normal tier, sharded; `--shards=1` for one world). CI and nightly add the exhaustive tier
   (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps with a small normal-tier
   `.../representative`; `dq_focused_test.sh` refuses an exhaustive test (or one with exhaustive subtypes) unless `--allow-exhaustive`,
   and names the `/representative` to run instead.
-- **A focused or lane run compiles only the test build** (`deepquarry.test.dme`: the game plus `UNIT_TESTS` code, a superset), never `deepquarry.dme` as well; `dq_lane_ready.sh` runs the gates with `--no-dm`. The production compile + DreamChecker (`build.sh dm`, unchanged for explicit use) runs at integration (`dq_push_master.sh`, the batch train) and in CI.
+- **A focused or lane run compiles only the test build** (`deepquarry.test.dme`: the game plus `UNIT_TESTS` code, a superset), never `deepquarry.dme` as well. The production compile (`build.sh dm`, unchanged for explicit use) runs in CI.
 - **Every focused run is capped.** Hard wall-clock limit `DQ_FOCUSED_MAX_MIN` (default 10, clamped to 10 without `--allow-exhaustive`; testing never runs past 10 minutes, and every agent shell has a hard 30-minute limit);
   at the cap, or when the run's shell dies or is killed, `tools/dq_run_guard.js` kills the run's own DreamDaemon worlds and frees
   their test-world slots. The cap counts run time, not time queued for a slot (reported as "queued N min"): never wrap the tool in
@@ -361,10 +382,10 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   reports the earlier result; a failure points at the log): read the log and the code first. `--rerun-failed` runs only what
   failed, `--force` runs the list anyway, and any edit lets a run through (`doc/rewrite/agent_workflow.md` section 12).
 - Performance and memory: measure with `bin/bench.cmd` / `build.sh bench` then `bench-compare`;
-  add scenarios under `code/modules/benchmarks/`, not one-off profiling. `--profile-tests`
+  add scenarios under `code/tests/benchmarks/`, not one-off profiling. `--profile-tests`
   gives per-test proc profiles.
 - `om_test_begin`/`om_test_end` are gone; use `kernel_test_begin()`/`kernel_test_end()`
-  (`code/tests/driver/kernel_clock.dm`, doc §15). Never commit a `TEST_FOCUS(...)` line in `code/modules/unit_tests/dq_focus.dm`.
+  (`code/tests/driver/kernel_clock.dm`, doc §15). Never commit a `TEST_FOCUS(...)` line in `code/tests/unit_tests/dq_focus.dm`.
 
 ## 5. TGUI
 
@@ -392,18 +413,19 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 ## 7. PR checklist
 
 - [ ] `deepquarry.dme` regenerated and committed (the build does it; `check_ratchets.sh` checks it); new `.dm` test files in `_unit_tests.dm`.
-- [ ] Only forms that exist on master (§3a "On master"); no use of a legacy form whose ban lint is on (§3b).
+- [ ] Only forms that exist on master (§3a "On master"); no use of a legacy form whose ban lint is on (§3b). A new helper, system, cache, timer, relation or storage form was checked against `doc/rewrite/api_reference.md` first; a form added, renamed, moved or banned updated it in the same commit (`python3 tools/ci/check_docs_truth.py`).
 - [ ] Absolute paths; no `:` subtype access; no `Destroy()`; time defines used.
-- [ ] DreamChecker passes; `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
+- [ ] (DreamChecker is off for now, per the user; when it returns, it must pass.) `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
 - [ ] Touched tests pass; `dq_focus.dm` is empty.
 - [ ] TGUI, if changed: `tools/build/build.sh lint tgui-test` clean.
 - [ ] One changelog stub; squash-able history; commit subject at most 72 characters.
 
 ## 8. Where to look
 
+- `doc/rewrite/api_reference.md`: the catalogue of what to use (one form per need, file:line, examples, bans, duplicate-systems index, landing forms).
 - `doc/rewrite/final_api.html`: the design (forms §1-§16, old to new §17, kept forms §18, migration §19, decisions §21, layout §22).
-- `doc/rewrite/README.md`: index of the rest of the rewrite docs; `doc/rewrite/archive/`: old OM docs (history only).
-- `doc/testing.md`, `doc/body_architecture.md`, `code/ATMOSPHERICS/README.md`, `verdigris/README.md`.
+- `doc/rewrite/README.md`: index of the rest of the rewrite docs; `doc/rewrite/archive/`: docs of the retired layers (history only).
+- `doc/testing.md`, `doc/body_architecture.md`, `code/domains/atmos/README.md`, `verdigris/README.md`.
 - Linter rules: `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm`. Icons: `tools/dq_icons/`. Changelog format: `html/changelogs/example.yml`.
 
 ---
@@ -411,7 +433,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 ## 9. Current state (deployment-independent)
 
 - **Scheduling: one kernel, no Master Controller, no subsystems.** The `Kernel` global
-  (`code/controllers/kernel/`) is the one loop. Each tick runs phases K S N U D P R G (host work and the
+  (`code/world/kernel/`) is the one loop. Each tick runs phases K S N U D P R G (host work and the
   input inbox, simulation sync, native frame, urgent, deadlines, lanes, presentation, garbage). What it hosts
   is `/datum/system`s declared with `SYSTEM_DEF(x)` (the `SSx` global): `needs`, `phase`, `roles`, and
   `every()` items in `reactions()`. A system's periodic handler is `x(dt)`, gated by
@@ -432,22 +454,22 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   BYOND's own callbacks (`atom/Click`, `DblClick`, `MouseWheel`, `MouseDrop`, `MouseEntered`, `MouseDown`, the client's mouse procs,
   `/datum/Topic`, `world.Reboot`) are in `code/engine/kernel/entry.dm`: each reads `usr` there once, builds the event with the actor, and
   handlers read the actor from the event (the hooks in `input_hooks.dm` take it as `src`).
-- **Atmospherics: LINDA on a Rust backend.** `code/ATMOSPHERICS/` is the only engine (ZAS/XGM
+- **Atmospherics: LINDA on a Rust backend.** `code/domains/atmos/` is the only engine (ZAS/XGM
   are gone); gas math, diffusion, decompression and heat conduction run in the auxmos arena in
   Verdigris, driven from SSair's atmos step (phase N). `/datum/gas_mixture` is an opaque handle: read with
-  `return_temperature()`/`return_volume()`, write with `set_temperature()`/`set_volume()`, and
+  `return_temperature()`/`return_volume()`, write with `set_volume()` (a temperature is `heat_set(mix, K)` or `heat_add()`), and
   cache reads in hot loops (each call crosses the FFI). Atoms use `get_temperature()` /
-  `add_heat()` (`code/modules/heat/heat.dm`). Requires BYOND 516.1682+. Gas reactions stay in
+  `add_heat()` (`code/domains/heat/heat.dm`). Requires BYOND 516.1682+. Gas reactions stay in
   DM. `xgm_compat.dm` and `tg_infra_compat.dm` are stable compatibility API, not temporary shims.
-- **Expeditions and Flight Operations.** `GLOB.expedition_service` generates sites on demand
+- **Expeditions and Flight Operations.** `SSexpedition` (`SYSTEM_DEF(expedition)`, `code/content/expedition/`) generates sites on demand
   (`load_new_z()`, cave automata or generated stations, POIs, loot, missions) and recycles
-  z-levels; `GLOB.flight_service` owns vessels, destinations and flight plans. The old quarry
+  z-levels; `SSflight` (`SYSTEM_DEF(flight)`, `code/content/flight_operations/`) owns vessels, destinations and flight plans. The old quarry
   mode is gone. Risks: `doc/generated_site_lifecycle_audit.md`.
-- **Material science.** `code/modules/material_science/`: crucibles, alloys, composites,
+- **Material science.** `code/content/materials/engineering/` (defines in `code/defines/content/material_science.dm`): crucibles, alloys, composites,
   baths, coatings and exotic feedstocks; engineered materials change assembly behaviour.
   See `doc/material_engineering_implementation.md`. Lathe designs can set
   `material_selectable` for a material picker.
-- **Damage.** Damageable `/obj` use the TG integrity model (`code/game/atom/atom_defense.dm`,
+- **Damage.** Damageable `/obj` use the TG integrity model (`code/domains/damage/atom_defense.dm`,
   `damage_packet.dm`): set `max_integrity`, route hits through `receive_damage()`/`take_damage()`.
   The old `health`/`maxhealth` model is gone. Final shape: doc §14.
 - **Health.** Every `/mob/living` has a `/datum/body`; there are no health pools. Harm is
@@ -460,7 +482,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   the live map does not use sectors. The dynamic overmap POI system and the ATC subsystem are
   deleted; restore from git only if asked.
 - **Variants.** Subtypes that differ only in data are collapsed into one type plus a registry
-  (`code/datums/variants/README.md`).
+  (`code/content/variants/README.md`).
 - **Loot and map resolvers.** A spawn table is a `loot(table = list(...), ...)` entry in the spawner's
   CAPABILITIES block (a pure table is an abstract `/loot/...` type with its own block; a subtype writes
   `configure(loot(...))`), rolled by `loot_spawn()`; a searchable pile names its table with
@@ -470,9 +492,9 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   (`code/engine/declare/static_entries.dm`), looked up with `loot_decl_for()` / `map_resolver_proc()`.
   `DECLARE_LOOT`, the `LOOT_*` rows, `MAP_RESOLVER` and `MAP_RESOLVER_VARS` are hard-banned. Don't add
   hand-rolled spawn code. Tests: `dq_loot_roll_yields_table_item`, `dq_loot_search_yields_once_per_searcher`,
-  `dq_map_resolver_inherited` (`code/modules/unit_tests/dq_loot_behaviour.dm`).
-- **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
-  every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
+  `dq_map_resolver_inherited` (`code/tests/unit_tests/dq_loot_behaviour.dm`).
+- **Server metrics and the admin viewer.** `SSserver_metrics` (`SYSTEM_DEF(server_metrics)`, `code/content/metrics/`) samples
+  every `/datum/metrics_source` every 10 s and flushes through `sql_write()` into the `metric_*` tables
   (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through
   `METRICS_EVENT()`; overruns are attributed to the tick meter's systems and to time outside the MC,
   and tick spikes capture a short profile. To measure something new, add a `/datum/metrics_source`;

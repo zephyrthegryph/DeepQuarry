@@ -72,6 +72,10 @@ export type ProcessSample = {
   private_mb: number;
   working_set_mb: number;
   cpu_seconds: number;
+  /** Highest private_mb so far, and the whole machine's CPU load over the last interval and since sampling began: what a world reads to label its numbers. */
+  peak_private_mb?: number;
+  machine_cpu_pct?: number;
+  mean_machine_cpu_pct?: number;
 };
 
 export type ProcessSummary = {
@@ -96,10 +100,28 @@ while ($p -and -not $p.HasExited) {
 }
 `;
 
+function machineCpuTimes(): { idle: number; total: number } {
+  let idle = 0;
+  let total = 0;
+  for (const cpu of os.cpus()) {
+    idle += cpu.times.idle;
+    total += cpu.times.user + cpu.times.nice + cpu.times.sys + cpu.times.irq + cpu.times.idle;
+  }
+  return { idle, total };
+}
+
+function busyPercent(from: { idle: number; total: number }, to: { idle: number; total: number }): number {
+  const total = to.total - from.total;
+  return total > 0 ? Math.round((1 - (to.idle - from.idle) / total) * 1000) / 10 : 0;
+}
+
 export class ProcessSampler {
   samples: ProcessSample[] = [];
   private started = Date.now();
   private stopFn: (() => void) | null = null;
+  private peakPrivate = 0;
+  private cpuAtStart = machineCpuTimes();
+  private cpuAtLast = this.cpuAtStart;
 
   constructor(
     private liveFile: string,
@@ -108,6 +130,8 @@ export class ProcessSampler {
 
   start(pid: number): void {
     this.started = Date.now();
+    this.cpuAtStart = machineCpuTimes();
+    this.cpuAtLast = this.cpuAtStart;
     if (process.platform === 'win32') {
       const child = spawn(
         'powershell',
@@ -150,12 +174,18 @@ export class ProcessSampler {
   }
 
   private record(privateMb: number, workingSetMb: number, cpuSeconds: number): void {
+    this.peakPrivate = Math.max(this.peakPrivate, privateMb);
+    const cpuNow = machineCpuTimes();
     const sample: ProcessSample = {
+      peak_private_mb: Math.round(this.peakPrivate * 10) / 10,
+      machine_cpu_pct: busyPercent(this.cpuAtLast, cpuNow),
+      mean_machine_cpu_pct: busyPercent(this.cpuAtStart, cpuNow),
       t: (Date.now() - this.started) / 1000,
       private_mb: Math.round(privateMb * 10) / 10,
       working_set_mb: Math.round(workingSetMb * 10) / 10,
       cpu_seconds: Math.round(cpuSeconds * 100) / 100,
     };
+    this.cpuAtLast = cpuNow;
     this.samples.push(sample);
     try {
       writeJson(this.liveFile, sample);
@@ -374,6 +404,11 @@ export const GATES: Gate[] = [
   { pattern: /^input_p99_ticks$/, label: 'input_p99 must not rise', rule: 'no_rise', absTolerance: 0.001 },
   // A behaviour whose slot started later than its max interval, per system and in total.
   { pattern: /(^|\.)breaches$/, label: 'breaches must not rise', rule: 'no_rise' },
+  // Idle stutter: the slowest 1 percent of idle ticks (percent of a tick) and the idle ticks over budget. p99 may
+  // not rise by more than a quarter and 8 points of a tick (the machine's own jitter sits below that); an overrun
+  // is a tick the clients felt, so the count may not rise beyond one.
+  { pattern: /^idle_tick_p99$/, label: 'idle_tick_p99 rose over 25%', rule: 'flag_pct', pct: 25, absTolerance: 8 },
+  { pattern: /^idle_overruns$/, label: 'idle_overruns must not rise', rule: 'no_rise', absTolerance: 1 },
   // A system's p99 ms per tick rising by more than a fifth is named.
   { pattern: /^system\..+\.p99_ms$/, label: 'system p99_ms rose over 20%', rule: 'flag_pct', pct: 20, absTolerance: 0.05 },
 ];
@@ -787,6 +822,18 @@ export function resolveRun(dir: string, ref: string): string {
 // ---------------------------------------------------------------------------
 // Baseline lookup: the master ancestor to compare a branch bench against.
 
+/**
+ * The ref a branch is measured against: `origin/master` when it exists, else `master`. A pool worktree's local `master`
+ * is whatever it was when the slot was made and is never advanced, so its merge-base with HEAD is an old commit that has
+ * no stored run (or a run from before the code under test existed); the lane branches off and merges `origin/master`.
+ */
+export function masterRef(): string {
+  for (const ref of ['origin/master', 'master']) {
+    if (git('rev-parse', '--verify', '--quiet', `${ref}^{commit}`)) return ref;
+  }
+  return 'master';
+}
+
 export type BaselineLookup = { file: string; run: BenchRun; commit: string; isMergeBase: boolean };
 
 /**
@@ -798,7 +845,7 @@ export type BaselineLookup = { file: string; run: BenchRun; commit: string; isMe
  * was found within the walked history.
  */
 export function findBaselineRun(map: string, opts: { label?: string | null; historyDepth?: number } = {}): BaselineLookup | null {
-  const mergeBase = git('merge-base', 'HEAD', 'master');
+  const mergeBase = git('merge-base', 'HEAD', masterRef());
   if (!mergeBase) return null;
   const depth = opts.historyDepth ?? 1000;
   const ancestors = git('log', '--format=%H', `-${depth}`, mergeBase)

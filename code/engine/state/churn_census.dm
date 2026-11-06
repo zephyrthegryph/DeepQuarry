@@ -2,7 +2,7 @@
 // many procs for a profile to name the source. Framework points count into GLOB.churn_census (each count is
 // one assoc increment), and the churn metrics source reports the busiest keys of each kind every sample:
 //  - draw: entities refreshed by the refresh drain (their look, verbs and windows), by type
-//  - timer: OM timers fired, by owner type and proc
+//  - timer: timers fired, by owner type and proc
 //  - signal: radio signals posted, by frequency and sender type
 //  - light: light sources updated by the lighting queue, by source atom type
 //  - power_edit: cable network topology edits (power_topology_edited()), by what made them

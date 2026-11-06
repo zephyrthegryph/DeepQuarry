@@ -1,0 +1,63 @@
+/mob/living/simple_mob/animal/giant_spider/electric
+
+/mob/living/simple_mob/animal/giant_spider/webslinger
+
+// Slightly placeholder, mostly to replace ion hivebots on V4
+/mob/living/simple_mob/animal/giant_spider/ion
+	desc = "Furry and green, it makes you shudder to look at it. This one has brilliant green eyes and a hint of static discharge."
+	tt_desc = "X Brachypelma phorus ionus"
+	icon_state = "webslinger"
+	icon_living = "webslinger"
+	icon_dead = "webslinger_dead"
+
+	endurance = 90
+
+	projectilesound = SFX_WEAPONS_TASER2
+	projectiletype = /obj/item/projectile/ion/pistol
+
+	melee_damage_lower = 8
+	melee_damage_upper = 15
+
+	poison_chance = 15
+	poison_per_bite = 2
+	poison_type = REAGENT_ID_PSILOCYBIN
+
+
+//Lost to AI refactor, returning champion of arachnophobe horror, Spider Queen
+/mob/living/simple_mob/animal/giant_spider/nurse/queen
+	name = "giant spider queen"
+	desc = "Absolutely gigantic, this creature is horror itself."
+	tt_desc = "X Brachypelma phorus tyrannus"
+	icon = 'icons/mob/64x64.dmi'
+	vis_height = 64
+	icon_state = "spider_queen"
+	icon_living = "spider_queen"
+	icon_dead = "spider_queen_dead"
+
+	endurance = 320
+
+	melee_damage_lower = 20
+	melee_damage_upper = 30
+	attack_armor_pen = 25
+
+	pixel_x = -16
+	pixel_y = 0
+	default_pixel_x = -16
+
+	egg_type = /obj/effect/spider/eggcluster/royal
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse/queen)
+	configure(butchery_rules(meat_amount = 15))
+
+/mob/living/simple_mob/animal/giant_spider/webslinger/event
+
+/mob/living/simple_mob/animal/giant_spider/nurse/queen/event
+
+/mob/living/simple_mob/animal/giant_spider/nurse
+	var/can_lay_eggs = TRUE
+
+/mob/living/simple_mob/animal/giant_spider/nurse/eggless
+	can_lay_eggs = FALSE
+
+/mob/living/simple_mob/animal/giant_spider/nurse/queen/eggless
+	can_lay_eggs = FALSE

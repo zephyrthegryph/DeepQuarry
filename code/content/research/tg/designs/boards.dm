@@ -10,7 +10,7 @@
 /datum/design_techweb/board/paradoxrift
 	SET_CIRCUIT_DESIGN_NAMEDESC("paradox rift generator")
 	id = "paradoxrift"
-	build_path = /obj/item/circuitboard/paradoxrift
+	build_path = VARIANT(/obj/item/circuitboard/paradoxrift)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH
 	)

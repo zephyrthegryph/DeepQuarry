@@ -1,0 +1,4 @@
+author: "Ethan"
+delete-after: true
+changes:
+  - bugfix: "The chat fills its whole pane again instead of stopping partway across."

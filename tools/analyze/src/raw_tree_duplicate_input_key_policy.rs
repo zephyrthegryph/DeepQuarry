@@ -20,7 +20,7 @@ pub static META: Meta = Meta {
 };
 
 pub struct Patterns{block:Pat,entry:Pat}
-impl Patterns{pub fn new()->Self{Self{block:Pat::new(r"^CAPABILITIES\(\s*(/[\w/]+)\s*\)"),entry:Pat::new(r"^(click_on|double_click_on|drag_onto|drag_over|hover|tooltip)\(")}}}
+impl Patterns{pub fn new()->Self{Self{block:Pat::new(r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]"),entry:Pat::new(r"^(click_on|double_click_on|drag_onto|drag_over|hover|tooltip)\(")}}}
 pub fn declared(f:&SourceFile,p:&Patterns,mut visit:impl FnMut(&str,&str,usize)){declared_using(f,p,visit,&mut crate::key_policy_control::Compatibility).expect("original duplicate_input_key source index")}
 pub fn declared_using<C:crate::key_policy_control::Control>(f:&SourceFile,p:&Patterns,mut visit:impl FnMut(&str,&str,usize),c:&mut C)->Result<(),C::Error>{c.checkpoint()?;let block=&p.block;let entry=&p.entry;
         let mut current: Option<&str> = None;

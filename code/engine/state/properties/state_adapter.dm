@@ -21,10 +21,6 @@
 /proc/dq_property_type_state_list(path, var_name)
 	return state_type_list_default(path, var_name)
 
-/// Variant key of instance `D`, or null.
-/proc/dq_property_instance_variant(datum/D)
-	return dq_property_state_value(D, "variant")
-
 /// The variant overrides that apply to instance `D`, or null.
 /proc/dq_property_instance_variant_vars(datum/D)
 	return D.state_variant_baseline()

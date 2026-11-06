@@ -21,8 +21,8 @@ use crate::pat_match;
 use crate::tree::{SourceFile, CODE_MAPS_DM};
 use crate::util::{py_strip, starts_with_any};
 
-const DESTROY_HINT: &str = "Destroy() overrides are banned outside the core chain; use DECLARE_REF declarations, a phase hook, on_destroy(), destroy_hint or lifecycle_keep() (code/datums/lifecycle/transaction.dm)";
-const QDEL_HINT: &str = "use consume()/replace_with()/expire()/slot_clear()/ledger_empty()/delete_on_death (code/datums/lifecycle/verbs.dm)";
+const DESTROY_HINT: &str = "Destroy() overrides are banned outside the core chain; use DECLARE_REF declarations, a phase hook, on_destroy(), destroy_hint or lifecycle_keep() (code/library/lifecycle/transaction.dm)";
+const QDEL_HINT: &str = "use consume()/replace_with()/expire()/slot_clear()/ledger_empty()/delete_on_death (code/library/lifecycle/verbs.dm)";
 
 static META: Meta = Meta {
     name: crate::allow_registry_fields::lifecycle_counts::SCOPE_META_0.name,
@@ -31,16 +31,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/lifecycle_counts_lint.py",
     select: CODE_MAPS_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/lifecycle_counts_baseline.txt",
-        header: &[
-            "qdel( sites (roadmap L4, doc/rewrite/lifecycle.md sec 1, sec 8). rule<TAB>file<TAB>normalized line.",
-            "tools/ci/lifecycle_counts_lint.py fails on a site not listed here (Destroy() overrides are",
-            "banned outright). A site with `// ALLOW(lifecycle): <reason>` doesn't count.",
-            "Shrink-only: after a sweep, `python tools/ci/lifecycle_counts_lint.py --update`.",
-        ],
-        banned: &["destroy"],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "destroy", hint: DESTROY_HINT }, RuleMeta { name: "qdel", hint: QDEL_HINT }],
     allow: crate::allow_registry_fields::lifecycle_counts::ALLOW_0,
     lists: crate::allow_registry_fields::lifecycle_counts::SCOPE_META_0.lists,
@@ -100,12 +91,12 @@ impl Lint for LifecycleCounts {
         Some(Parity {
             old: &["tools/ci/lifecycle_counts_lint.py"],
             old_raw: &[],
-            blank: &["tools/ci/lifecycle_counts_baseline.txt"],
+            blank: &[],
             // The destroy lines carry no `[label/rule]` tag, and some paths hold spaces: compare on file and line.
             parse: ParseKind::FileLineAny,
             update: Some(&["tools/ci/lifecycle_counts_lint.py", "--update"]),
             seed: Some(&["tools/ci/lifecycle_counts_lint.py", "--seed"]),
-            files: &["tools/ci/lifecycle_counts_baseline.txt"],
+            files: &[],
             selftest: None,
         })
     }
@@ -127,7 +118,7 @@ mod tests {
     fn scan(rel: &str, text: &str) -> Sink {
         let mut scope = LintScope::default();
         scope.lists.insert("exempt_prefixes".to_string(), vec!["code/__defines/".to_string()]);
-        scope.lists.insert("exempt_files".to_string(), vec!["code/datums/lifecycle/verbs.dm".to_string()]);
+        scope.lists.insert("exempt_files".to_string(), vec!["code/library/lifecycle/verbs.dm".to_string()]);
         let tree = Tree::from_files(vec![]);
         let cx = Cx { tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text(rel, text);
@@ -150,7 +141,7 @@ mod tests {
 
     #[test]
     fn exempt_paths_still_check_destroy_overrides() {
-        for rel in ["code/__defines/x.dm", "code/datums/lifecycle/verbs.dm"] {
+        for rel in ["code/__defines/x.dm", "code/library/lifecycle/verbs.dm"] {
             let out = scan(rel, "/obj/foo/Destroy()\n\tqdel(M)\n\tqdel(src)\n");
             let rules: Vec<&str> = out.sites.iter().map(|s| s.rule.as_str()).collect();
             assert_eq!(rules, vec!["destroy"], "{}", rel);

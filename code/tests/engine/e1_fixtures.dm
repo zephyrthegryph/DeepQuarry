@@ -1,6 +1,6 @@
 // The gate fixture of E1 (doc/rewrite/final_api.html, section 19 "The seven workers": "A fixture type declares one of every entry kind;
 // explain_type matches a golden dump; ..."). Test-only capabilities and types, compiled under UNIT_TESTS only, so no phase-1 gate needs the
-// library. The declarations are real (the macros of code/__defines/engine/declare.dm); what an engine that has not landed owns (an op, a
+// library. The declarations are real (the macros of code/defines/engine/declare/declare.dm); what an engine that has not landed owns (an op, a
 // stat contribution, a hook) is written with entry_of(kind, key), the generic entry the table keeps for the engine that owns the kind.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -13,7 +13,7 @@ CAPABILITY_TYPE(e1_widget, CAP_E1_WIDGET, /datum/capability/e1_widget, key = lab
 	return list(entry_of("op", "poke"), entry_of("contributes", "glow", stat = STAT_LIGHT_RANGE, value = 2))
 
 /datum/capability/e1_widget/on_activate(datum/activation/A)
-	GLOB.e1_log += "activate:[label]:[A.holder.type]"
+	GLOB.e1_log += "activate:[label]:[A.holder().type]"
 
 /datum/capability/e1_widget/on_deactivate(datum/activation/A)
 	GLOB.e1_log += "deactivate:[label]"

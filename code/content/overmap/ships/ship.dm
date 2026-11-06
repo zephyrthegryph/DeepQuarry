@@ -1,0 +1,370 @@
+#define SHIP_MOVE_RESOLUTION 0.00001
+#define MOVING(speed) abs(speed) >= min_speed
+#define SANITIZE_SPEED(speed) SIGN(speed) * CLAMP(abs(speed), 0, max_speed)
+#define ADJUST_SPEED_BY(speed_var, v_diff) \
+	v_diff = SANITIZE_SPEED(v_diff);\
+	if(!MOVING(speed_var + v_diff)) \
+		{speed_var = 0};\
+	else \
+		{speed_var = SANITIZE_SPEED((speed_var + v_diff)/(1 + speed_var*v_diff/(max_speed ** 2)))}
+// Uses Lorentzian dynamics to avoid going too fast.
+
+/obj/effect/overmap/visitable/ship
+	name = "spacecraft"
+	desc = "This marker represents a spaceship. Scan it for more information."
+	scanner_desc = "Unknown spacefaring vessel."
+	dir = NORTH
+	icon_state = "ship_nosprite"
+	appearance_flags = TILE_BOUND|KEEP_TOGETHER|LONG_GLIDE
+	layer = OBJ_LAYER + 0.1 // make movables a little higher than regular sectors
+
+	unknown_name = "unknown ship"
+	unknown_state = "ship"
+	known = TRUE // Ships start known by default because most of them should be transmitting ID codes at all times
+
+	var/vessel_mass = 10000             //tonnes, arbitrary number, affects acceleration provided by engines
+	var/vessel_size = SHIP_SIZE_LARGE	//arbitrary number, affects how likely are we to evade meteors
+	var/max_speed = 1/(1 SECOND)        //"speed of light" for the ship, in turfs/decisecond.
+	var/min_speed = 1/(2 MINUTES)       // Below this, we round speed to 0 to avoid math errors.
+
+	var/position_x = 0					// Pixel coordinates in the world
+	var/position_y = 0					// Pixel coordinates in the world.
+	// ALLOW(instance_list): d: replaced per instance at runtime (13 assignments)
+	var/list/speed = list(0,0)          //speed in x,y direction; replaced (never edited in place) through set_speed()
+	COOLDOWN_DECLARE(burn_cooldown)                   //worldtime when ship last acceleated
+	var/burn_delay = 1 SECOND           //how often ship can do burns
+	var/fore_dir = NORTH                //what dir ship flies towards for purpose of moving stars effect procs
+
+	var/list/engines
+	var/engines_state = 0 //global on/off toggle for all engines
+	var/thrust_limit = 1  //global thrust limit for all engines, 0..1
+	var/halted = 0        //admin halt or other stop.
+	// add
+	COOLDOWN_DECLARE(sound_cooldown_until) // The last time a ship sound was played // add
+	var/sound_cooldown = 10 SECONDS // add
+
+	/// Vis contents overlay holding the ship's vector when in motion
+	var/tmp/obj/effect/overlay/vis/vector
+	/// Stable registry key used by the unified flight-operations system.
+	var/flight_vessel_id
+	render_map = TRUE
+
+DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
+REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
+
+/// Rounds its speed limits to the move resolution.
+/obj/effect/overmap/visitable/ship/proc/round_speed_limits()
+	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
+	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
+
+/obj/effect/overmap/visitable/ship/proc/prepare_ship_vector_and_flight()
+	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
+	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
+	SSflight?.register_vessel(src)
+
+// leaves the ship list and its flight vessel.
+/obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
+	if(SSflight && flight_vessel_id)
+		SSflight.unregister_vessel(src, flight_vessel_id)
+	return ..()
+
+/obj/effect/overmap/visitable/ship/on_destroy(force)
+	remove_vis_overlay(vector_overlay())
+	..()
+
+/obj/effect/overmap/visitable/ship/relaymove(mob/user, direction, accel_limit)
+	return
+
+/obj/effect/overmap/visitable/ship/proc/is_still()
+	return !MOVING(speed[1]) && !MOVING(speed[2])
+
+/// Mirror of "not still": adjust_speed() (the only writer of speed) publishes the start/stop transition through this field.
+/obj/effect/overmap/visitable/ship/var/tmp/under_way = FALSE
+
+/// Under way (not still).
+CAPABILITIES(/obj/effect/overmap/visitable/ship)
+	setup(PROC_REF(round_speed_limits))
+	setup(PROC_REF(prepare_ship_vector_and_flight))
+	configure(light_glow(power = 4))
+	every(1 SECOND, then(PROC_REF(ship_step)), when = nameof(under_way))
+	op("offer_ingestion", at_target(/mob/living), gesture(GESTURE_DRAG), label("Eat the ship"), needs(req(PROC_REF(ingestion_possible), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("question" = "You COULD eat this spaceship...", "title" = "Eat spaceship?", "choices" = list("Eat it!", "No, thanks."), "buttons" = TRUE, "timeout" = 0), step = "k285", answerer = PROC_REF(ingestion_eater)),
+		asks(/datum/prompt/choice, fields = list("question" = "Which belly?", "title" = "Select A Belly", "choices" = computed(PROC_REF(ingestion_bellies)), "timeout" = 0), step = "k287", answerer = PROC_REF(ingestion_eater), when = PROC_REF(ingestion_accepted)),
+		then(PROC_REF(offer_ingestion)))
+	op("eat_ship", ai(), reach(REACH_ADJACENT), takes("belly"), wait(5 SECONDS), then(PROC_REF(eaten_by)))
+	ref_many(nameof(engines))
+	ref_one(nameof(vector))
+
+/obj/effect/overmap/visitable/ship/proc/is_moving()
+	return under_way
+
+/obj/effect/overmap/visitable/ship/get_scan_data(mob/user)
+	. = ..()
+
+	if(!is_still())
+		. += {"\n\[i\]Heading\[/i\]: [get_heading_degrees()]\n\[i\]Velocity\[/i\]: [get_speed() * 1000]"}
+	else
+		. += {"\n\[i\]Vessel was stationary at time of scan.\[/i\]\n"}
+
+	var/life = 0
+
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
+		if(L.z in map_z) //Things inside things we'll consider shielded, otherwise we'd want to use get_z(L)
+			life++
+
+	. += {"\[i\]Life Signs\[/i\]: [life ? life : "None"]"}
+
+//Projected acceleration based on information from engines
+/obj/effect/overmap/visitable/ship/proc/get_acceleration()
+	return round(get_total_thrust()/get_vessel_mass(), SHIP_MOVE_RESOLUTION)
+
+//Does actual burn and returns the resulting acceleration
+/obj/effect/overmap/visitable/ship/proc/get_burn_acceleration()
+	return round(thrust_burn() / get_vessel_mass(), SHIP_MOVE_RESOLUTION)
+
+/obj/effect/overmap/visitable/ship/proc/get_vessel_mass()
+	. = vessel_mass
+	for(var/obj/effect/overmap/visitable/ship/ship in contents_of(src))
+		. += ship.get_vessel_mass()
+
+/obj/effect/overmap/visitable/ship/proc/get_speed()
+	return round(sqrt(speed[1] ** 2 + speed[2] ** 2), SHIP_MOVE_RESOLUTION)
+
+// Get heading in BYOND dir bits
+/obj/effect/overmap/visitable/ship/proc/get_heading()
+	var/res = 0
+	if(MOVING(speed[1]))
+		if(speed[1] > 0)
+			res |= EAST
+		else
+			res |= WEST
+	if(MOVING(speed[2]))
+		if(speed[2] > 0)
+			res |= NORTH
+		else
+			res |= SOUTH
+	return res
+
+// Get heading in degrees (like a compass heading)
+/obj/effect/overmap/visitable/ship/proc/get_heading_degrees()
+	return (ATAN2(speed[2], speed[1]) + 360) % 360 // Yes ATAN2(y, x) is correct to get clockwise degrees
+
+/obj/effect/overmap/visitable/ship/proc/adjust_speed(n_x, n_y)
+	var/old_still = is_still()
+	var/new_x = speed[1]
+	var/new_y = speed[2]
+	ADJUST_SPEED_BY(new_x, n_x)
+	ADJUST_SPEED_BY(new_y, n_y)
+	set_speed(list(new_x, new_y)) // a new list each time: the tracked write redraws the heading
+	var/still = is_still()
+	// If nothing changed
+	if(still == old_still)
+		return
+	set_under_way(!still) // is_moving() changed: its declaration starts or stops the work
+	// If it is now still, stopped moving
+	if(still)
+		for(var/zz in map_z)
+			SSstarmover.toggle_move_stars(zz)
+		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
+			return
+		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)
+		for(var/mob/potential_mob as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+			if(potential_mob.z in map_z)
+				SEND_SOUND(potential_mob, 'sound/ambience/shutdown.ogg')
+
+	// If it started moving
+	else
+		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(1 SECOND), 1) //Down to whatever decimal
+		for(var/zz in map_z)
+			SSstarmover.toggle_move_stars(zz, fore_dir)
+		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
+			return
+		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)
+		for(var/mob/potential_mob as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+			if(potential_mob.z in map_z)
+				SEND_SOUND(potential_mob, 'sound/ambience/startup.ogg')
+
+/obj/effect/overmap/visitable/ship/proc/get_brake_path()
+	if(!get_acceleration())
+		return INFINITY
+	if(is_still())
+		return 0
+	if(!burn_delay)
+		return 0
+	if(!get_speed())
+		return 0
+	var/num_burns = get_speed()/get_acceleration() + 2 //some padding in case acceleration drops form fuel usage
+	var/burns_per_grid = 1/ (burn_delay * get_speed())
+	return round(num_burns/burns_per_grid)
+
+/obj/effect/overmap/visitable/ship/proc/decelerate()
+	adjust_speed(-speed[1], -speed[2])
+
+/obj/effect/overmap/visitable/ship/proc/accelerate(direction, accel_limit)
+	return
+
+/obj/effect/overmap/visitable/ship/proc/ship_step(datum/act/timer/A)
+	adjust_speed(-speed[1], -speed[2])
+
+// If we get moved, update our internal tracking to account for it
+/obj/effect/overmap/visitable/ship/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	// If moving out of another sector start off centered in the turf.
+	if(!isturf(old_loc))
+		position_x = (WORLD_ICON_SIZE/2) + 1
+		position_y = (WORLD_ICON_SIZE/2) + 1
+		set_pixel_x(0)
+		set_pixel_y(0)
+	position_x = ((loc.x - 1) * WORLD_ICON_SIZE) + MODULUS(position_x, WORLD_ICON_SIZE)
+	position_y = ((loc.y - 1) * WORLD_ICON_SIZE) + MODULUS(position_y, WORLD_ICON_SIZE)
+	update_screen()
+
+/// Faces its heading in quarter turns (north while still); the vector overlay follows through its effect.
+/obj/effect/overmap/visitable/ship/draw(datum/look/look)
+	..()
+	if(!is_still())
+		var/heading = get_heading_degrees()
+		look.set_dir(angle2dir(round(heading, 90)))
+		look.effect(PROC_REF(look_effect_vector), heading)
+	else
+		look.set_dir(NORTH)
+		look.effect(PROC_REF(look_effect_vector), null)
+
+/// The vector overlay points along the heading while under way, and rests (pointing south) when still.
+/obj/effect/overmap/visitable/ship/proc/look_effect_vector(heading)
+	if(isnull(heading))
+		vector_overlay().dir = SOUTH
+		return
+	vector_overlay().dir = NORTH
+	vector_overlay().transform = matrix().Turn(heading)
+
+/// The look is the one writer of the heading: set_dir() keeps every other caller facing north.
+/obj/effect/overmap/visitable/ship/look_set_dir(new_dir)
+	set_dir(new_dir)
+
+/obj/effect/overmap/visitable/ship/set_dir(new_dir)
+	return ..(NORTH) // NO! We always face north.
+
+/obj/effect/overmap/visitable/ship/proc/thrust_burn()
+	for(var/datum/ship_engine/E in engines)
+		. += E.burn()
+
+/obj/effect/overmap/visitable/ship/proc/get_total_thrust()
+	for(var/datum/ship_engine/E in engines)
+		. += E.get_thrust()
+
+/obj/effect/overmap/visitable/ship/proc/can_burn()
+	if(halted)
+		return 0
+	if (!COOLDOWN_FINISHED(src, burn_cooldown))
+		return 0
+	for(var/datum/ship_engine/E in engines)
+		. |= E.can_burn()
+
+//deciseconds to next step
+/obj/effect/overmap/visitable/ship/proc/ETA()
+	. = INFINITY
+	if(MOVING(speed[1]))
+		var/offset = MODULUS(position_x, WORLD_ICON_SIZE)
+		var/dist_to_go = (speed[1] > 0) ? (WORLD_ICON_SIZE - offset) : offset
+		. = min(., (dist_to_go / abs(speed[1])) * (1/WORLD_ICON_SIZE))
+	if(MOVING(speed[2]))
+		var/offset = MODULUS(position_y, WORLD_ICON_SIZE)
+		var/dist_to_go = (speed[2] > 0) ? (WORLD_ICON_SIZE - offset) : offset
+		. = min(., (dist_to_go / abs(speed[2])) * (1/WORLD_ICON_SIZE))
+	. = max(., 0)
+
+/obj/effect/overmap/visitable/ship/proc/halt()
+	adjust_speed(-speed[1], -speed[2])
+	halted = 1
+
+/obj/effect/overmap/visitable/ship/populate_sector_objects()
+	..()
+	for(var/obj/machinery/computer/ship/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+		S.attempt_hook_up(src)
+	for(var/datum/ship_engine/E in REGISTRY_MEMBERS(REGISTRY_SHIP_ENGINES))
+		if(check_ownership(E.holder()))
+			rel_add(src, nameof(engines), E)
+
+/obj/effect/overmap/visitable/ship/proc/get_landed_info()
+	return "This ship cannot land."
+
+/obj/effect/overmap/visitable/ship/get_distress_info()
+	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
+	var/datum/flight_destination/orbit = SSflight?.destination_by_id(vessel?.orbit_parent_id)
+	return "\[ORBIT:[orbit?.name || "unregistered"]\]"
+
+#undef SHIP_MOVE_RESOLUTION
+#undef MOVING
+#undef SANITIZE_SPEED
+#undef ADJUST_SPEED_BY
+
+/// A ship is only offered to a living thing next to both it and the one dragging (a ship-eating mob must be one that eats ships).
+/obj/effect/overmap/visitable/ship/proc/ingestion_possible(datum/act/op/A)
+	var/mob/living/over = A.target
+	if(!isliving(over) || !Adjacent(over) || !Adjacent(A.actor))
+		return MSG(req_silent)
+	if(istype(over, /mob/living/simple_mob/vore/overmap))
+		var/mob/living/simple_mob/vore/overmap/sdog = over
+		if(!sdog.shipvore)
+			return MSG(req_silent)
+	return null
+
+/// The one the ship is offered to answers the questions.
+/obj/effect/overmap/visitable/ship/proc/ingestion_eater(datum/act/op/A)
+	return A.target
+
+/obj/effect/overmap/visitable/ship/proc/ingestion_bellies(datum/act/op/A)
+	var/mob/living/L = A.target
+	return L.vore_organs
+
+/obj/effect/overmap/visitable/ship/proc/ingestion_accepted(datum/act/op/A)
+	return A.step_value("k285") == "Eat it!"
+
+/// Both questions are answered: the eater starts putting the ship into the chosen belly.
+/obj/effect/overmap/visitable/ship/proc/offer_ingestion(datum/act/op/A)
+	var/mob/living/L = A.target
+	var/obj/belly/bellychoice = A.step_value("k287")
+	if(A.step_value("k285") == "Eat it!" && bellychoice)
+		act_message(L, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice]!")), \
+			MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!")))
+		perform_op(L, src, "eat_ship", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("belly" = bellychoice))
+	return OP_OK
+
+/obj/effect/overmap/visitable/ship/proc/eaten_by(datum/act/op/A)
+	var/mob/living/L = A.actor
+	var/obj/belly/bellychoice = A.arg("belly")
+	forceMove(bellychoice)
+	SSskybox.ready().rebuild_skyboxes(map_z)
+	act_message(L, null, MSG_SELF("You eat the the spaceship! Yum, metal."), MSG_OTHERS(span_warning("%U% eats a spaceship! This is totally normal.")))
+
+/obj/effect/overmap/visitable/ship/proc/get_people_in_ship()
+	. = list()
+	for(var/mapz in map_z)
+		var/list/thatz = slot_datums(GLOB.players_by_zlevel[mapz])
+		. += thatz
+
+/obj/effect/overmap/visitable/ship/hear_talk(mob/talker, list/message_pieces, verb)
+	. = ..()
+
+	var/list/listeners = get_people_in_ship()
+	for(var/mob/M as anything in listeners)
+		M.hear_say(message_pieces, verb, FALSE, talker)
+
+/obj/effect/overmap/visitable/ship/show_message(msg, type, alt, alt_type)
+	. = ..()
+
+	var/list/listeners = get_people_in_ship()
+	for(var/mob/M as anything in listeners)
+		M.show_message(msg, type, alt, alt_type)
+
+/obj/effect/overmap/visitable/ship/see_emote(source, message, m_type)
+	. = ..()
+
+	var/list/listeners = get_people_in_ship()
+	for(var/mob/M as anything in listeners)
+		M.show_message(message, m_type)
+
+/// Accessor for the vector var.
+/obj/effect/overmap/visitable/ship/proc/vector_overlay() as /obj/effect/overlay/vis
+	return vector

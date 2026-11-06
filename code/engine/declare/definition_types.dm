@@ -1,4 +1,4 @@
-// Object-model core: DEF types (doc/rewrite/object_model_core.md).
+// engine core: DEF types (doc/rewrite/archive/object_model_core.md).
 //
 // Every DEF is a singleton built once by the registry (registry.dm). Its
 // declaration vars are read-only after boot; the registry writes the
@@ -42,7 +42,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	/// Behaviour types this one runs after (topological, compiled at boot).
 	var/list/order_after
 	/// Interval per relevance level: list(NONE, NEAR, VISIBLE, WATCHED), each
-	/// deciseconds, OM_PARK, or null for `every`. Null list: `every` always.
+	/// deciseconds, RELEVANCE_PARK, or null for `every`. Null list: `every` always.
 	var/list/relevance
 	/// Channels on the entity that wake this behaviour (on_wake).
 	var/wake_on = 0
@@ -50,10 +50,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	/// The registry ORs their channels into wake_on at boot; list only the other channels there.
 	var/list/reads
 	var/reads_of
-	/// relation type (or list of relation types, a path) -> channel mask on the
-	/// related entity. CHANGE_RELATION_ADDED/REMOVED here mean edges of that
-	/// relation being added to or removed from this entity.
-	var/list/wake_on_related
 	/// Native (Rust-owned) watch bits; see native.dm.
 	var/wake_on_native = 0
 	/// Check spec: on_wake runs only when it passes.
@@ -81,9 +77,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	var/datum/requirement_definition/compiled_wake_if
 	var/list/compiled_requires
 	var/requires_mask = 0
-	/// list of list(list(relation ids path), mask)
-	var/list/compiled_related
-	var/related_added_mask = 0
 	/// Resolved intervals per relevance level (4 numbers, 0 = no cadence).
 	var/list/compiled_intervals
 	var/compiled_max_interval = 0
@@ -110,7 +103,7 @@ SCHEMA(/datum/scheduled_behaviour, system_key, schema_text())
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-/// A deadline set with a sub-key (deadline_deadline(E, delay, B, sub)), sub >= OM_DL_STAGE.
+/// A deadline set with a sub-key (deadline_deadline(E, delay, B, sub)), sub >= DEADLINE_SUB_STAGE.
 /datum/scheduled_behaviour/proc/on_keyed_deadline(datum/E, sub)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
@@ -164,11 +157,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/relation_definition)
 	var/source_single = FALSE
 	/// A target has at most one edge of this relation.
 	var/target_single = FALSE
-	/// OM_REL_REPLACE or OM_REL_REFUSE when a single end is already taken.
-	var/conflict = OM_REL_REPLACE
-	/// OM_END_UNLINK or OM_END_DELETE_OTHER when that end is deleted.
-	var/on_source_delete = OM_END_UNLINK
-	var/on_target_delete = OM_END_UNLINK
+	/// REL_REPLACE or REL_REFUSE when a single end is already taken.
+	var/conflict = REL_REPLACE
+	/// REL_END_UNLINK or REL_END_DELETE_OTHER when that end is deleted.
+	var/on_source_delete = REL_END_UNLINK
+	var/on_target_delete = REL_END_UNLINK
 	/// Check spec (actor = source, target = target); the edge counts as active only while it passes.
 	var/active_if
 	/// Check spec (actor = source, target = target): the edge holds only while it passes and is
@@ -188,8 +181,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/relation_definition)
 	/// A proc name on the source recomputing a view from linked() after every structural change
 	/// (omni filter/mixer port roles).
 	var/derived_view
-	/// entity_clone(): an edge leaving the cloned subtree is re-linked to the clone.
-	var/clone_follows = FALSE
 	/// Bundles whose relation fields (contributes, grants_*) are merged in.
 	var/list/include
 
@@ -198,11 +189,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/relation_definition)
 	var/datum/requirement_definition/compiled_holds_while
 
 /// Hooks get both ends, never null: an end being deleted is QDELETED but not null.
-/datum/relation_definition/proc/on_link(datum/source, datum/target, datum/relation_edge/edge)
+/datum/relation_definition/proc/on_link(datum/source, datum/target)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-/datum/relation_definition/proc/on_unlink(datum/source, datum/target, datum/relation_edge/edge)
+/datum/relation_definition/proc/on_unlink(datum/source, datum/target)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
@@ -212,21 +203,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/relation_definition)
 /datum/relation_definition/proc/on_member_leave(datum/source, datum/target, datum/member)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
-
-/// One edge, held by both ends' recs.
-/datum/relation_edge
-	parent_type = /datum/core_definition
-	var/datum/relation_definition/rel
-	var/datum/source
-	var/datum/target
-	/// Aggregate contributions cached on the edge: stride 2 (derived idx, value).
-	var/list/cache
-	/// Contributions currently applied (active_if passed).
-	var/active = FALSE
-	/// Relation-specific payload the linker attaches (e.g. an orbit's saved transform).
-	var/list/data
-	/// Why the edge is being unlinked (RELATION_*), readable in on_unlink().
-	var/unlink_reason
 
 // ===================================================================== checks
 
@@ -260,29 +236,16 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/derived_definition)
 	var/inputs = 0
 	/// Other derived names used as inputs (ordered before this one).
 	var/list/derived_inputs
-	/// relation type (or path list) -> mask on related entities.
-	var/list/related_inputs
 	/// Output channel raised when the value changes (0: lazy only, no channel).
 	var/channel = 0
 	/// Deciseconds: recompute on read if older (engine-owned inputs).
 	var/max_age = 0
-	/// AGG_* over `over`.
-	var/aggregate = AGG_NONE
-	/// Relation type (members are the sources of edges whose target is the entity), or OVER_SLOT(id).
-	var/over
-	/// FROM_VAR/FROM_DERIVED reader for a member's contribution.
-	var/reader
-	/// Channels on members that change their contribution.
-	var/member_inputs = 0
 	/// Check spec for DERIVE() rows.
 	var/expr
 
 	var/idx = 0
 	var/order = 0
-	var/over_rel_id = 0
 	var/datum/requirement_definition/compiled_expr
-	/// list of list(list(relation ids path), mask)
-	var/list/compiled_related
 
 /// Plain derived values compute from the entity.
 /datum/derived_definition/proc/compute(datum/E)
@@ -290,21 +253,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/derived_definition)
 	if(compiled_expr)
 		return isnull(compiled_expr.why_not(E, null))
 	return null
-
-/// Aggregate member contribution.
-/datum/derived_definition/proc/contribution(datum/member)
-	SHOULD_NOT_SLEEP(TRUE)
-	return definition_read(member, reader)
-
-/// AGG_CUSTOM hooks: return the new aggregate value.
-/datum/derived_definition/proc/on_member_added(datum/E, datum/member, old_value, contribution)
-	return old_value
-
-/datum/derived_definition/proc/on_member_removed(datum/E, datum/member, old_value, contribution)
-	return old_value
-
-/datum/derived_definition/proc/on_member_changed(datum/E, datum/member, old_value, old_contribution, new_contribution)
-	return old_value
 
 // ===================================================================== clocks
 

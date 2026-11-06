@@ -585,3 +585,33 @@
 		RND_CATEGORY_MODSUIT_MODULES + RND_SUBCATEGORY_MODSUIT_MODULES_ENGINEERING
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_ENGINEERING
+
+/datum/design_techweb/mechfab/modsuit/phase
+	name = "hardsuit phase rifle"
+	desc = "A compact phase rifle for a hardsuit."
+	id = "rig_gun_phase"
+	materials = list(MAT_STEEL = 2000, MAT_GLASS = 1250)
+	build_path = /obj/item/rig_module/mounted/phase
+	category = list(
+		RND_CATEGORY_MODSUIT_MODULES
+	)
+
+/datum/design_techweb/mechfab/modsuit/defib
+	name = "hardsuit defib unit"
+	desc = "A rig mounted defib and jumper kit combo."
+	id = "rig_defib"
+	materials = list(MAT_STEEL = 6000, MAT_GLASS = 2000)
+	build_path = /obj/item/rig_module/device/defib
+	category = list(
+		RND_CATEGORY_MODSUIT_MODULES
+	)
+
+/datum/design_techweb/mechfab/modsuit/precursor
+	name = "Xenotech Rig"
+	desc = "A rig made of alien tech and materials."
+	id = "rigmodule_precursor"
+	materials = list(MAT_PLASTEEL = 12000, MAT_GOLD = 5000, MAT_GRAPHITE = 8000, MAT_OSMIUM = 3000, MAT_PLASTIC = 6000, MAT_VERDANTIUM = 7500, MAT_MORPHIUM = 20000)
+	build_path = /obj/item/rig/ch/precursor
+	category = list(
+		RND_CATEGORY_MODSUITS
+	)

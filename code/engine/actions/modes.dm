@@ -209,14 +209,14 @@ PROC_SUMMARY(/proc/mode_enter) // vars[] / call() dispatcher: the walk cannot en
 	return null
 
 /datum/entry_engine/after_in_state/apply(datum/activation/A, datum/entry/E, datum/centry/C)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(!holder || QDELETED(holder) || A.dead)
 		return FALSE
 	after(holder, every_interval(holder, E, A), GLOBAL_PROC_REF(state_after_fire), key = state_after_key(A, E), with = list(A, E), keeps_dead = TRUE)
 	return TRUE
 
 /datum/entry_engine/after_in_state/remove(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(holder && !QDELETED(holder))
 		cancel_after(holder, state_after_key(A, E))
 		forms_trace("mode", "state-owned timer of [A.def.type] on [holder.type] cancelled with the state")
@@ -228,7 +228,7 @@ PROC_SUMMARY(/proc/mode_enter) // vars[] / call() dispatcher: the walk cannot en
 /proc/state_after_fire(datum/activation/A, datum/entry/E)
 	if(!A || !E || A.dead)
 		return
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(!holder || QDELETED(holder))
 		return
 	var/datum/act/timer/T = every_context(holder, A, A.source, isnum(E.args["interval"]) ? E.args["interval"] : 0)

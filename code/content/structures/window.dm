@@ -299,7 +299,7 @@ CAPABILITIES(/obj/structure/window)
 	update_nearby_tiles()
 	..()
 
-/obj/structure/window/Move()
+/obj/structure/window/Move(atom/newloc, direct = 0, movetime)
 	var/ini_dir = dir
 	update_nearby_tiles(need_rebuild=1)
 	. = ..()
@@ -542,7 +542,7 @@ CAPABILITIES(/obj/structure/window/reinforced/polarized)
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "light0"
 	desc = "A remote control switch for polarized windows."
-	circuit = /obj/item/circuitboard/electrochromic
+	circuit = VARIANT(/obj/item/circuitboard/electrochromic)
 	flags = WALL_ITEM
 	var/range = 7
 

@@ -1,0 +1,424 @@
+/mob/living/simple_mob/vore/spacecritter
+	icon = 'icons/mob/spaceinvader.dmi'
+	endurance = 30
+	movement_cooldown = 3
+	aquatic_movement = 0
+
+	minbodytemp = 0
+	maxbodytemp = 10000			// Maximum of above
+	heat_damage_per_tick = 3
+	cold_damage_per_tick = 2
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+
+	unsuitable_atoms_damage = 0
+	heat_damage_per_tick = 0
+
+	melee_damage_lower = 12
+	melee_damage_upper = 12
+	melee_miss_chance = 0
+	melee_attack_delay = 1.5
+
+	heat_resist = 1.0
+	cold_resist = 1.0
+	shock_resist = 0.0
+	water_resist = 1.0
+	taser_kill = 0
+	var/evolve = "/mob/living/simple_mob/vore/solarray/galaxyray"
+	var/feed = "/obj/item/ore/phoron"
+	var/evolvekey = "/obj/item/stack/material/tritium"
+	var/copy = "/mob/living/simple_mob/vore/solarray"
+
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
+	configure(mob_movement(hovering = TRUE))
+	op("spacecritter_interaction_item", item(/obj/item), then(PROC_REF(spacecritter_interaction_item)))
+
+/// Old attackby: the evolve key evolves, the feed item duplicates; anything else is a normal hit.
+/mob/living/simple_mob/vore/spacecritter/proc/spacecritter_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(istype(O, evolvekey))
+		consume(O, user)
+		evolve()
+		return TRUE
+	if(istype(O, feed))
+		consume(O, user)
+		duplicate()
+		return TRUE
+	return OP_DECLINE
+
+/mob/living/simple_mob/vore/spacecritter/proc/evolve()
+	var/mob/living/L
+	L = new evolve(get_turf(src))
+	if(mind)
+		src.mind.transfer_to(L)
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
+	replaced_by(src, L)
+
+/mob/living/simple_mob/vore/spacecritter/proc/duplicate()
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% splits into two!")))
+	new copy (src.loc)
+
+
+/mob/living/simple_mob/vore/spacecritter/solarray //solar moth lite, dies to water
+	name = "solar ray"
+	desc = "A sting ray of fire, drifting around"
+	icon = 'icons/mob/spaceinvader.dmi'
+	icon_state = "solarray"
+	icon_living = "solarray"
+	icon_dead = "solarray-dead"
+	attacktext = list("incinerate")
+	attack_injury_kind = INJURY_BURN
+	attack_armor_pen = 30
+	water_resist = 0
+
+	var/original_temp = null //Value to remember temp
+	var/set_temperature = T0C + 5000	//Sets the target point of 10k degrees celsius
+	var/heating_power = 50000
+
+	evolve = "/mob/living/simple_mob/vore/solarray/galaxyray"
+	feed = "/obj/item/ore/phoron"
+	evolvekey = "/obj/item/stack/material/tritium"
+	copy = "/mob/living/simple_mob/vore/spacecritter/solarray"
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray)
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/raymeat, meat_amount = 8, butchery_loot = list( /obj/item/stack/material/wisp = 3 )))
+
+
+/mob/living/simple_mob/vore/spacecritter/solarray/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/vore/spacecritter/solarray/life_type_post(datum/seq_frame/life/F)
+	..()
+	if(src.icon_state != src.icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
+		var/turf/moth_loc = get_turf(src)
+		if(isturf(moth_loc) && moth_loc.return_air()) // XGM turf.air → LINDA return_air()
+			var/datum/gas_mixture/env = moth_loc.return_air() //Gets all the information on the local air.
+			var/transfer_moles = 0.25 * env.total_moles() //The bigger the room, the harder it is to heat the room.
+			var/datum/gas_mixture/removed = env.remove(transfer_moles)
+			if(removed)
+				var/heat_transfer = removed.get_thermal_energy_change(src.set_temperature)
+				var/environment_temperature = env.return_temperature()
+				if(heat_transfer > 0 && environment_temperature < T0C + 200)	//This should start heating the room at a moderate pace up to 200 degrees celsius.
+					heat_transfer = min(heat_transfer , src.heating_power) //limit by the power rating of the heater
+					heat_add(removed, heat_transfer, HEAT_SOURCE_OTHER)
+
+				else if(heat_transfer > 0 && environment_temperature < src.set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
+					src.heating_power = src.original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
+					heat_transfer = min(heat_transfer , src.heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
+					heat_add(removed, heat_transfer, HEAT_SOURCE_OTHER)
+
+				else
+					return
+
+				env.merge(removed)
+
+
+
+	//Since I'm changing hyper mode to be variable we need to store old power
+	src.original_temp = src.heating_power
+
+/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray
+	name = "galaxy ray"
+	icon_state = "galaxyray"
+	icon_living = "galaxyray"
+	endurance = 75
+	set_temperature = T0C + 15000
+	heating_power = 150000
+	size_multiplier = 1.5
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
+	configure(mob_movement(hovering = TRUE))
+
+/mob/living/simple_mob/vore/spacecritter/livingice //dark blue slime but more chilly. Dies to lasers or slighly toasty rooms
+	name = "living icicle"
+	desc = "A strange creature, a crab like creature seemingly made of ice"
+	icon = 'icons/mob/spaceinvader.dmi'
+	icon_state = "livingice"
+	icon_living = "livingice"
+	icon_dead = "livingice-dead"
+	minbodytemp = 0			// Minimum "okay" temperature in kelvin
+	maxbodytemp = 300			// Maximum of above
+	heat_resist = 0.2
+	cold_resist = 1.0
+
+	evolve = "/mob/living/simple_mob/vore/spacecritter/livingice/iceberg"
+	feed = "/obj/item/stack/material/snow"
+	evolvekey = "/obj/item/reagent_containers/food/snacks/coldchili"
+	copy = "/mob/living/simple_mob/vore/spacecritter/livingice"
+
+	var/chilltemp = -20
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/livingice)
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/stack/material/snow, meat_amount = 18, butchery_loot = list( /obj/item/stack/material/frostscale = 3 )))
+
+/mob/living/simple_mob/vore/spacecritter/livingice/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.cold_aura()
+	..()
+
+/mob/living/simple_mob/vore/spacecritter/livingice/proc/cold_aura()
+	var/turf/T = get_turf(src)
+	var/datum/gas_mixture/env = T.return_air()
+	if(env)
+		heat_add(env, chilltemp * 1000, HEAT_SOURCE_OTHER)
+
+/mob/living/simple_mob/vore/spacecritter/livingice/iceberg
+	name = "living iceberg"
+	desc = "A giant strange creature, a crab like creature seemingly made of ice"
+	size_multiplier = 3.0
+	endurance = 75
+	chilltemp = -50
+
+/mob/living/simple_mob/vore/spacecritter/radcrab //bullets, melee, and cold all crack the poor thing's shell
+	name = "crystaline crab"
+	desc = "A largeish hermit crab glowing green, irradting the nearby area"
+	icon = 'icons/mob/spaceinvader.dmi'
+	icon_state = "hermitcrab"
+	icon_living = "hermitcrab"
+	icon_dead = "hermitcrab-dead"
+	aquatic_movement = 1			// If set, the mob will move through fluids with no hinderance.
+
+	minbodytemp = 260			// Minimum "okay" temperature in kelvin
+	maxbodytemp = 10000			// Maximum of above
+	melee_damage_lower = 2		// Lower bound of randomized melee damage
+	melee_damage_upper = 2		// Upper bound of randomized melee damage
+	attacktext = list("pinches") // "You are [attacktext] by the mob!"
+	attack_armor_pen = 100			// How much armor pen this attack has.
+	var/rads = 50
+	evolve = "/mob/living/simple_mob/vore/spacecritter/radcrab/supermattercrab"
+	feed = "/obj/item/ore/uranium"
+	evolvekey = "/obj/item/stack/material/uranium"
+	copy = "/mob/living/simple_mob/vore/spacecritter/radcrab"
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/radcrab)
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat, meat_amount = 8, butchery_loot = list( /obj/item/stack/material/crystalscale = 3 )))
+
+/mob/living/simple_mob/vore/spacecritter/radcrab/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.irradiate()
+	..()
+
+/mob/living/simple_mob/vore/spacecritter/radcrab/proc/irradiate()
+	radiation_pulse(
+		src,
+		max_range = 3,
+		threshold = RAD_MEDIUM_INSULATION,
+		chance = 100,
+		strength = rads
+	)
+
+/mob/living/simple_mob/vore/spacecritter/radcrab/supermattercrab
+	size_multiplier = 1.5
+	endurance = 75
+	rads = 150
+	name = "energized crystaline crab"
+	icon_state = "superhermitcrab"
+	icon_living = "superhermitcrab"
+	icon_dead = "hermitcrab-dead"
+
+/mob/living/simple_mob/vore/spacecritter/dreameel
+	name = "dream eel"
+	desc = "A eel floating through it's own thick cloud"
+	icon = 'icons/mob/spaceinvader.dmi'
+	icon_state = "dreameel"
+	icon_living = "dreameel"
+	icon_dead = "dreameel-dead"
+	movement_cooldown = -1			// Lower is faster.
+	attacktext = list("bitten") // "You are [attacktext] by the mob!"
+	var/artifact_master_type = /datum/artifact_master/dreameel
+	evolve = "/mob/living/simple_mob/vore/spacecritter/dreameel/nightmare"
+	feed = "/obj/item/reagent_containers/food/snacks/carpmeat"
+	evolvekey = "/obj/item/stack/material/phoron"
+	copy = "/mob/living/simple_mob/vore/spacecritter/dreameel"
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/dreameel)
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/eelmeat, meat_amount = 2, butchery_loot = list( /obj/item/stack/material/dreamscale = 3 )))
+
+/datum/artifact_master/dreameel
+	make_effects = list(
+		/datum/artifact_effect/gas/sleeping
+	)
+
+/mob/living/simple_mob/vore/spacecritter/dreameel/nightmare
+	name = "dream eel"
+	desc = "A eel floating through it's own thick cloud"
+	icon = 'icons/mob/spaceinvader.dmi'
+	icon_state = "dreameel"
+	icon_living = "dreameel"
+	movement_cooldown = -5
+	color = "#9933FF"
+
+	artifact_master_type = /datum/artifact_master/nightmare
+
+/datum/artifact_master/nightmare
+	make_effects = list(
+		/datum/artifact_effect/gas/phoron
+	)
+
+/mob/living/simple_mob/vore/spacecritter/gravityshell
+	name = "Gravity Shell"
+	desc = "A metallic turtle"
+	icon = 'icons/mob/spaceinvader.dmi'
+	icon_state = "gravityshell"
+	icon_living = "gravityshell"
+	icon_dead = "gravityshell-dead"
+	movement_cooldown = 5			// Lower is faster.
+	var/artifact_master_type = /datum/artifact_master/gravity
+
+	evolve = "/mob/living/simple_mob/vore/spacecritter/gravityshell/cleanse"
+	feed = "/obj/item/stack/material/concrete"
+	evolvekey = "/obj/item/stack/material/tritium"
+	copy = "/mob/living/simple_mob/vore/spacecritter/gravityshell"
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
+	configure(atom_rules(armor_spec = "melee=14;bullet=14;laser=14;energy=14;bio=100;rad=100"))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/gravityshell, meat_amount = 8, butchery_loot = list( /obj/item/stack/material/shellchitin = 3 )))
+
+/datum/artifact_master/gravity
+	make_effects = list(
+		/datum/artifact_effect/extreme/gravity_wave
+	)
+
+/mob/living/simple_mob/vore/spacecritter/gravityshell/cleanse
+	size_multiplier = 0.5
+	endurance = 75
+	artifact_master_type = /datum/artifact_master/gasoxy
+	icon_state = "cleanseshell"
+	icon_living = "cleanseshell"
+	icon_dead = "cleanseshell-dead"
+
+/datum/artifact_master/gasoxy
+	make_effects = list(
+		/datum/artifact_effect/gas/oxy
+	)
+
+
+/mob/living/simple_mob/vore/spacecritter/solarray
+	vore_bump_chance = 80
+	vore_bump_emote = "devours"
+	vore_active = 1
+	vore_pounce_chance = 0
+	vore_default_mode = DM_DIGEST
+
+/mob/living/simple_mob/vore/spacecritter/livingice
+	vore_bump_chance = 0
+	vore_bump_emote = "devours"
+	vore_active = 1
+	vore_pounce_chance = 0
+	vore_default_mode = DM_DIGEST
+
+/mob/living/simple_mob/vore/spacecritter/radcrab
+	vore_bump_chance = 40
+	vore_bump_emote = "devours"
+	vore_active = 1
+	vore_pounce_chance = 0
+	vore_default_mode = DM_DIGEST
+
+/mob/living/simple_mob/vore/spacecritter/dreameel
+	vore_bump_chance = 40
+	vore_bump_emote = "devours"
+	vore_active = 1
+	vore_pounce_chance = 0
+	vore_default_mode = DM_DIGEST
+
+/mob/living/simple_mob/vore/spacecritter/gravityshell
+	vore_bump_chance = 40
+	vore_bump_emote = "devours"
+	vore_active = 1
+	vore_pounce_chance = 0
+	vore_default_mode = DM_DIGEST
+
+
+/mob/living/simple_mob/vore/spacecritter/solarray
+
+	tame_items = list(
+	/obj/item/stack/tile/grass = 50
+	)
+
+
+	harvest_tool = /obj/item/weldingtool
+	harvest_cooldown = 10 MINUTES
+	harvest_delay = 30 SECONDS
+	harvest_per_hit = 1
+	harvest_verb = "harvested"
+	harvest_results = list(
+		/obj/item/stack/material/wisp = 1
+		)
+
+/mob/living/simple_mob/vore/spacecritter/livingice
+
+	tame_items = list(
+	/obj/item/stack/material/snow = 10
+	)
+
+
+	harvest_tool = /obj/item/tool/wirecutters
+	harvest_cooldown = 10 MINUTES
+	harvest_delay = 30 SECONDS
+	harvest_per_hit = 1
+	harvest_verb = "harvested"
+	harvest_results = list(
+		/obj/item/stack/material/frostscale = 1
+		)
+
+/mob/living/simple_mob/vore/spacecritter/radcrab
+
+	tame_items = list(
+	/obj/item/ore/uranium = 50
+	)
+
+
+	harvest_tool = /obj/item/tool/crowbar
+	harvest_cooldown = 10 MINUTES
+	harvest_delay = 30 SECONDS
+	harvest_per_hit = 1
+	harvest_verb = "harvested"
+	harvest_results = list(
+		/obj/item/stack/material/crystalscale = 1
+		)
+
+/mob/living/simple_mob/vore/spacecritter/dreameel
+
+	tame_items = list(
+		/obj/item/reagent_containers/food/snacks/meat/gravityshell = 40
+	)
+
+
+	harvest_tool = /obj/item/tool/wirecutters
+	harvest_cooldown = 10 MINUTES
+	harvest_delay = 30 SECONDS
+	harvest_per_hit = 1
+	harvest_verb = "harvested"
+	harvest_results = list(
+		/obj/item/stack/material/dreamscale = 1
+		)
+
+/mob/living/simple_mob/vore/spacecritter/gravityshell
+
+	tame_items = list(
+	/obj/item/reagent_containers/food/snacks/crabmeat = 50
+	)
+
+
+	harvest_tool = /obj/item/tool/crowbar
+	harvest_cooldown = 10 MINUTES
+	harvest_delay = 30 SECONDS
+	harvest_per_hit = 1
+	harvest_verb = "harvested"
+	harvest_results = list(
+		/obj/item/stack/material/shellchitin = 1
+		)

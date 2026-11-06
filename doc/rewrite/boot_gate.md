@@ -13,7 +13,7 @@ agent who happens to read the log.
 | A warning | `WARNING()` / `warning()` ("## WARNING: ..."), and a refused `move_into()` ("MOVE_INTO: ... refused: ...") |
 
 Both counters (`GLOB.total_runtimes`, `GLOB.boot_noise_count` in `code/_helpers/logging/_logging.dm`) are read by
-`unit_test_boot_gate()` (`code/modules/unit_tests/unit_test.dm`) right after "Unit-test suite starting".
+`unit_test_boot_gate()` (`code/tests/unit_tests/unit_test.dm`) right after "Unit-test suite starting".
 Informational lines (`log_world()`, "System X initialized", a shuttle without a landmark on the test map)
 are not counted; a problem worth fixing is logged with `WARNING()`.
 
@@ -45,5 +45,5 @@ the change under test runs at boot.
 - `load_jobwhitelist()` warned on every `#` comment line of `config/jobwhitelist.txt` (11 warnings).
 - `default_use_hicell()` created the high-capacity cell inside the machine and then moved it in again
   ("MOVE_INTO ... refused: it is already there", every recharge station and fluid pump).
-- The suite itself started as a scheduler callback that slept ("OM: SLEPT /proc/RunUnitTests"); it now
+- The suite itself started as a scheduler callback that slept ("scheduler: SLEPT /proc/RunUnitTests"); it now
   starts through `start_unit_tests()`, which returns at once.

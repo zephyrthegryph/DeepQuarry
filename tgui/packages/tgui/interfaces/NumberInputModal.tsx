@@ -57,7 +57,7 @@ export function NumberInputModal(props) {
   }
 
   return (
-    <Window title={title} width={270} height={windowHeight}>
+    <Window fitContent title={title} width={270} height={windowHeight}>
       {timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>

@@ -1,0 +1,64 @@
+// Exonet message log viewer (ghost) — structured TGUI.
+
+/mob/observer/dead
+	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
+
+CAPABILITIES(/mob/observer/dead)
+	op("ghost_whisper", menu(), label("Spectral Whisper"), needs(req_self(), req(PROC_REF(ghost_whisper_ready))), asks(/datum/prompt/choice, fields = list("title" = "Whisper to?", "question" = "Select who to whisper to:", "choices" = computed(PROC_REF(ghost_whisper_targets)), "timeout" = 0), step = "target"), asks(/datum/prompt/text, fields = list("title" = "Spectral Whisper", "question" = "Message:", "default" = "", "max_len" = MAX_MESSAGE_LEN, "timeout" = 0), step = "message"), then(PROC_REF(ghost_whisper_op)))
+	op("show_text_messages", menu(desc = "Allows you to see exonet text messages you've sent and received."), label("Show Text Messages"), needs(req_self()), then(PROC_REF(show_text_messages_op)))
+	param(nameof(from_body), schema_ref(/mob), keep = FALSE, apply = PROC_REF(copy_from_body), early = TRUE) // phase 0: /atom/Initialize() reads the copied colour
+	setup(PROC_REF(place_ghost), with_params = TRUE)
+	setup(PROC_REF(make_exonet_address))
+	setup(PROC_REF(join_ghostnet))
+	// a ghost acts only as an observer: its clicks and menu picks reach the observer() ops of what it looks at, nothing else (no hands, no interface)
+	provides(AFF_OBSERVE)
+	owns_one(nameof(dq_exonet_log_panel_cache), /datum/exonet_log_panel)
+	ref_one(nameof(visualnet), /datum/visualnet/ghost)
+	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
+	op("observer_tome_manifest", item(/obj/item/book/tome), label("Manifest"), then(PROC_REF(observer_tome_manifest)))
+	drag_onto(PROC_REF(drop_input))
+	param(nameof(admin_ghosted), pos = 1)
+	op("track", topic("track", arg("track", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_track)))
+	op("reenter", topic("reenter"), then(PROC_REF(topic_reenter)))
+	ref_many(nameof(visibleChunks))
+
+/datum/exonet_log_panel
+	var/tmp/mob/observer/dead/host
+
+/datum/exonet_log_panel/New(mob/observer/dead/host_mob)
+	rel_set(src, nameof(host), host_mob)
+
+/// Phase 2: its host's panel cache lets go.
+/datum/exonet_log_panel/lifecycle_dematerialize()
+	. = ..()
+	if(host()?.dq_exonet_log_panel_cache == src)
+		host().dq_exonet_log_panel_cache = null
+
+CAPABILITIES(/datum/exonet_log_panel)
+	ref_one(nameof(host), /mob/observer/dead)
+	interface("ExonetLog", title = "Exonet Message Log", state = nameof(GLOB.tgui_always_state))
+	ui_shape(lines = any)
+
+/datum/exonet_log_panel/ui_prepare(mob/user, datum/tgui/ui)
+	if(!host() || user != host())
+		return FALSE
+	return TRUE
+
+/// /datum/exonet_log_panel's window data.
+/datum/exonet_log_panel/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["lines"] = host() ? (host().exonet_messages ? host().exonet_messages.Copy() : list()) : list()
+	return data
+
+// Show Text Messages verb now opens a structured TGUI panel.
+/mob/observer/dead/proc/show_text_messages()
+	if(!dq_exonet_log_panel_cache)
+		rel_set(src, nameof(dq_exonet_log_panel_cache), new /datum/exonet_log_panel(src))
+	dq_exonet_log_panel_cache.tgui_interact(src)
+
+/mob/observer/dead/proc/show_text_messages_op(datum/act/op/A)
+	show_text_messages()
+
+/// The host this refers to (a relation view: null once that is deleted).
+/datum/exonet_log_panel/proc/host() as /mob/observer/dead
+	return host

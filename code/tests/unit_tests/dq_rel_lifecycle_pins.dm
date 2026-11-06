@@ -1,6 +1,6 @@
 // Pins what happens to linked things when either end of a relation is deleted, replaced or handed over, read through the typed
 // accessors only (bs_tx_target(), throw_subject(), action_owner(), leash_pet(), ...), so the same assertions hold on the legacy
-// om_link relations and on the declared relations that replace them (doc/rewrite/final_api.html section 6).
+// link relations and on the declared relations that replace them (doc/rewrite/final_api.html section 6).
 
 /// A bluespace radio transmits to one receiver; a receiver serves many radios. Deleting the receiver frees the radio, deleting the radio
 /// frees the receiver's list, and linking a second receiver replaces the first.

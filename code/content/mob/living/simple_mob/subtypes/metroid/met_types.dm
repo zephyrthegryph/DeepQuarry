@@ -1,0 +1,599 @@
+GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
+
+/*
+//All the REAL types of metroids!
+*/
+//Remember to add vent crawling at some point.
+
+/mob/living/simple_mob/metroid/jellybrig //Security's pet
+	name = "Jellybrig"
+	desc = "This one scree's happily at you."
+	endurance = 400
+	melee_damage_lower = 0
+	melee_damage_upper = 0
+	movement_cooldown = 6
+	harm_intent_damage = 2
+	vore_active = 1
+	vore_bump_chance = 25
+	vore_icons = SA_ICON_LIVING
+	vore_pounce_chance = 90 //Don't punch or grab this guy. He will grab you instead!
+	swallowTime = 1 SECONDS //Hungry little bastards.
+	vore_default_mode = DM_HOLD
+	vore_digest_chance = 1		//Chance to switch to digest mode if resisted
+	vore_absorb_chance = 0
+	vore_escape_chance = 2		//Chance to escape if resisted.
+
+CAPABILITIES(/mob/living/simple_mob/metroid/jellybrig)
+	configure(atom_rules(armor_spec = "melee=50;bullet=-90;energy=-50;bomb=-100;bio=100;rad=100"))
+	configure(mob_rules(faction = "notmetroid"))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid))
+
+
+/mob/living/simple_mob/metroid/mine
+	name = "Mochtroid"
+	desc = "Some sort of person eaty thing! But weak compared to regular Metroids!"
+	tt_desc = "Headamus Suckumus Weakamus"
+	icon = 'icons/mob/metroid/small.dmi'
+	icon_dead = "metroid_dead"
+	icon_living = "mochtroid"
+	icon_state = "mochtroid"
+	movement_cooldown = 2
+	next = null
+
+	vore_active = 1
+	vore_pounce_chance = 25
+	vore_icons = SA_ICON_LIVING
+
+/mob/living/simple_mob/metroid/mine/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.set_digest_burn(0.5)
+	B.set_digest_brute(0)
+
+
+/mob/living/simple_mob/metroid/mine/on_death(gibbed)
+	..()
+	if(prob(20))
+		act_message(src, null, null, MSG_OTHERS(span_notice("%U% dropped some toy!")))
+		variant_new(VARIANT(/obj/item/toy/figure/bounty_hunter), loc)
+
+
+
+
+/mob/living/simple_mob/metroid/juvenile
+	var/is_juvenile = FALSE
+
+
+/mob/living/simple_mob/metroid/juvenile/baby
+	name = "baby metroid"
+	desc = "The baby the baby the baby the baby the baby the baby the baby the baby."
+	tt_desc = "Minimus Headamus Suckumus"
+	icon = 'icons/mob/metroid/small.dmi'
+	icon_dead = "baby_dead"
+	icon_living = "baby"
+	icon_state = "baby"
+	endurance = 200
+	melee_damage_lower = 1
+	melee_damage_upper = 5
+	melee_miss_chance = 0
+	gender = NEUTER
+
+	//Metroids aren't affected by most atmospheres except cold.
+	minbodytemp = T0C-40
+	cold_damage_per_tick = 100
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+
+
+
+	response_help = "pets"
+
+	evo_point = 800
+	evo_limit = 1000
+	next = "/mob/living/simple_mob/metroid/juvenile/super"
+	vore_active = 0
+
+	is_juvenile = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
+	configure(atom_rules(armor_spec = "bullet=-60;laser=60;energy=10;bomb=-100;bio=100;rad=100"))
+	configure(mob_rules(faction = "metroids"))
+	configure(living_rules(say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
+
+/mob/living/simple_mob/metroid/juvenile/baby
+	arrival_sound = SFX_METROID_METROIDSEE
+
+
+
+//------------------------------------------------------------------------------------------------------------
+
+
+
+
+/mob/living/simple_mob/metroid/juvenile/super
+	name = "super metroid"
+	desc = "Some kind of head sucky thing!"
+	tt_desc = "Maximus Headamus Suckumus"
+	icon = 'icons/mob/metroid/small.dmi'
+	icon_dead = "metroid_dead"
+	icon_living = "metroid"
+	icon_state = "metroid"
+	endurance = 250
+	melee_damage_lower = 2
+	melee_damage_upper = 9
+	melee_miss_chance = 0
+	gender = NEUTER
+
+	//Metroids aren't affected by most atmospheres except cold.
+	minbodytemp = T0C-40
+	cold_damage_per_tick = 100
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+
+	response_help = "pets"
+
+	speak_emote = list(
+		"Skree...",
+		"Ereeeer..."
+		)
+
+	evo_point = 1200
+	evo_limit = 1600
+	next = "/mob/living/simple_mob/metroid/juvenile/alpha"
+
+	vore_active = 1
+	vore_bump_chance = 0
+	vore_icons = SA_ICON_LIVING
+	vore_pounce_chance = 25 //Metroids only eat incapacitated targets
+	vore_default_mode = DM_DIGEST
+	swallowTime = 1 SECONDS //Hungry little bastards.
+	vore_escape_chance = 50
+
+	is_juvenile = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/super)
+	configure(atom_rules(armor_spec = "bullet=-50;laser=70;energy=10;bomb=-100;bio=100;rad=100"))
+	configure(mob_rules(faction = "metroids"))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
+
+/mob/living/simple_mob/metroid/juvenile/super
+	arrival_sound = SFX_METROID_METROIDSEE
+
+/mob/living/simple_mob/metroid/juvenile/super/on_death(gibbed)
+	..()
+
+/mob/living/simple_mob/metroid/juvenile/alpha
+	name = "alpha metroid"
+	desc = "Some kind of head rammy thing!"
+	tt_desc = "Minimus Headamus Rammamus"
+	icon = 'icons/mob/metroid/small.dmi'
+	icon_dead = "alpha_dead"
+	icon_living = "alpha"
+	icon_state = "alpha"
+	endurance = 300
+	melee_damage_lower = 10
+	melee_damage_upper = 15
+	melee_miss_chance = 5
+	attacktext = list("rammed")
+	gender = NEUTER
+
+	//Alphas lose their vulnerability to cold.
+	minbodytemp = 0
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	unsuitable_atoms_damage = 0
+
+	evo_point = 1000
+	evo_limit = 1500
+	next = "/mob/living/simple_mob/metroid/juvenile/gamma"
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
+	configure(atom_rules(armor_spec = "melee=40;bullet=15;laser=50;energy=60;bomb=10;bio=100;rad=100"))
+	configure(mob_rules(faction = "metroids"))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
+
+/mob/living/simple_mob/metroid/juvenile/alpha
+	arrival_sound = SFX_METROID_METROIDSEE
+
+/mob/living/simple_mob/metroid/juvenile/alpha/on_death(gibbed)
+	..()
+
+/mob/living/simple_mob/metroid/juvenile/alpha //active noms
+	vore_active = 1
+	vore_bump_chance = 0
+	vore_icons = SA_ICON_LIVING
+	vore_pounce_chance = 15 //Alphas will try knocking targets over since they lost their stun ability from the initial phases.
+	vore_default_mode = DM_DIGEST
+	swallowTime = 3 SECONDS
+	vore_escape_chance = 40
+
+
+
+
+
+
+//------------------------------------------------------------------------------------------------------------
+
+
+
+/mob/living/simple_mob/metroid/juvenile/gamma
+	name = "gamma metroid"
+	desc = "Some kind of head rammy thing! This one shoots electricity!"
+	tt_desc = "Maximus Headamus Rammamus"
+	icon = 'icons/mob/metroid/small.dmi'
+	icon_dead = "gamma_dead"
+	icon_living = "gamma"
+	icon_state = "gamma"
+	movement_cooldown = 2
+	endurance = 400
+	melee_damage_lower = 10
+	melee_damage_upper = 20
+	melee_miss_chance = 5
+	attacktext = list("rammed")
+	gender = NEUTER
+	ranged_cooldown_time = 5 SECOND
+	projectilesound = SFX_WEAPONS_TASER2
+	projectiletype = /obj/item/projectile/energy/mob/electric_spider
+
+	//Not affected by atmos.
+	minbodytemp = 0
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	unsuitable_atoms_damage = 0
+
+	evo_point = 1000
+	evo_limit = 1500
+	next = "/mob/living/simple_mob/metroid/juvenile/zeta"
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
+	configure(atom_rules(armor_spec = "melee=55;bullet=15;laser=50;energy=90;bomb=10;bio=100;rad=100"))
+	configure(mob_rules(faction = "metroids"))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
+
+/mob/living/simple_mob/metroid/juvenile/gamma
+	arrival_sound = SFX_METROID_METROIDGAMMA
+
+/mob/living/simple_mob/metroid/juvenile/gamma/on_death(gibbed)
+	..()
+
+/mob/living/simple_mob/metroid/juvenile/gamma //active noms
+	vore_active = 1
+	vore_bump_chance = 0
+	vore_icons = SA_ICON_LIVING
+	vore_pounce_chance = 15
+	vore_default_mode = DM_DIGEST
+	swallowTime = 3 SECONDS
+	vore_escape_chance = 30
+
+
+/datum/say_list/metroid
+	speak = list("Skree.", "Eree.", "Errer?")
+	emote_see = list("floats about","looks around", "rubs its talons")
+	emote_hear = list("chitters")
+
+	say_understood = list("Eree.")
+	say_cannot = list("Errerr.")
+	say_maybe_target = list("Eree?")
+	say_got_target = list("Ereet!")
+	say_threaten = list("Skree!")
+	say_stand_down = list("Eee.")
+	say_escalate = list("SKREE!")
+
+	threaten_sound = 'sound/metroid/metroidsee.ogg'
+	stand_down_sound = 'sound/metroid/metroiddetach.ogg'
+
+
+//------------------------------------------------------------------------------------------------------------
+
+
+
+/mob/living/simple_mob/metroid/juvenile/zeta
+	name = "zeta metroid"
+	desc = "Some kind of feet stompy thing!"
+	tt_desc = "Minimus Feetamus Walkamus"
+	icon = 'icons/mob/metroid/large.dmi'
+	icon_dead = "zeta_dead"
+	icon_living = "zeta"
+	icon_state = "zeta"
+	movement_cooldown = 2
+	endurance = 500
+	melee_damage_lower = 15
+	melee_damage_upper = 25
+	melee_miss_chance = 5
+	ranged_cooldown_time = 5 SECOND
+	attack_armor_pen = 10
+	attacktext = list("slashed")
+	gender = NEUTER
+
+	projectiletype	= /obj/item/projectile/energy/metroidacid	//The projectiles I shoot
+	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
+
+
+	//Unaffected by atmos.
+	minbodytemp = 0
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	unsuitable_atoms_damage = 0
+
+	pixel_x = -16
+	pixel_y = -16
+	default_pixel_x = -16
+	default_pixel_y = -16
+	evo_point = 1200
+	evo_limit = 1500
+	next = "/mob/living/simple_mob/metroid/juvenile/omega"
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
+	configure(atom_rules(armor_spec = "melee=70;laser=50;energy=60;bomb=10;bio=100;rad=100"))
+	configure(mob_rules(faction = "metroids"))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid/zeta, max_nutrition = 2200))
+	configure(mob_movement(makes_dirt = TRUE))
+
+/mob/living/simple_mob/metroid/juvenile/zeta
+	arrival_sound = SFX_METROID_METROIDZETA
+
+/mob/living/simple_mob/metroid/juvenile/zeta/on_death(gibbed)
+	..()
+
+/mob/living/simple_mob/metroid/juvenile/zeta //active noms
+	vore_active = 1
+	vore_bump_chance = 0
+	vore_icons = SA_ICON_LIVING
+	vore_pounce_chance = 20
+	vore_default_mode = DM_DIGEST
+	swallowTime = 3 SECONDS
+	vore_escape_chance = 20
+
+/datum/say_list/metroid/zeta
+	speak = list("Rurrr.", "Rrerr.", "Rawr?")
+	emote_see = list("stomps about","looks around", "rubs its talons")
+	emote_hear = list("chitters")
+
+	say_understood = list("Rur.")
+	say_cannot = list("Errurr.")
+	say_maybe_target = list("Erurr?")
+	say_got_target = list("Eruur!")
+	say_threaten = list("Rrurr!")
+	say_stand_down = list("Eeer.")
+	say_escalate = list("RAWR!")
+
+	threaten_sound = 'sound/metroid/metroidzeta.ogg'
+	stand_down_sound = 'sound/metroid/metroiddetach.ogg'
+
+
+//------------------------------------------------------------------------------------------------------------
+
+
+
+/mob/living/simple_mob/metroid/juvenile/omega
+	name = "omega metroid"
+	desc = "Those are some big claws!"
+	tt_desc = "Maximus Feetamus Walkamus"
+	icon = 'icons/mob/metroid/large.dmi'
+	icon_dead = "omega_dead"
+	icon_living = "omega"
+	icon_state = "omega"
+	movement_cooldown = 2.5
+	endurance = 600
+	melee_damage_lower = 25
+	melee_damage_upper = 40
+	melee_miss_chance = 5
+	ranged_cooldown_time = 2.5 SECOND
+	attack_armor_pen = 20
+	attacktext = list("slashed")
+	gender = NEUTER
+	projectiletype	= /obj/item/projectile/energy/mob/smalllaser
+	projectilesound = SFX_WEAPONS_FLAMER // The sound I make when I do it
+
+	//Unaffected by atmos.
+	minbodytemp = 0
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	unsuitable_atoms_damage = 0
+
+	default_pixel_x = -16
+	pixel_x = -16
+	pixel_y = 0
+	evo_point = 1300
+	evo_limit = 2000
+	next = "/mob/living/simple_mob/metroid/juvenile/queen"
+
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
+	configure(atom_rules(armor_spec = "melee=75;bullet=20;laser=55;energy=60;bomb=10;bio=100;rad=100"))
+	configure(mob_rules(faction = "metroids"))
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/metroid/omega, max_nutrition = 2200))
+	configure(mob_nature(death_sound = SFX_METROID_METROIDOMEGADEATH))
+	configure(mob_movement(makes_dirt = TRUE))
+
+/mob/living/simple_mob/metroid/juvenile/omega
+	arrival_sound = SFX_METROID_METROIDOMEGA
+
+/mob/living/simple_mob/metroid/juvenile/omega/on_death(gibbed)
+	..()
+
+/mob/living/simple_mob/metroid/juvenile/omega //active noms
+	vore_active = 1
+	vore_bump_chance = 0
+	vore_icons = SA_ICON_LIVING
+	vore_pounce_chance = 40
+	vore_default_mode = DM_DIGEST
+	swallowTime = 3 SECONDS
+	vore_escape_chance = 10
+
+/datum/say_list/metroid/omega
+	speak = list("Rurrr.", "Rrerr.", "Rawr?")
+	emote_see = list("stomps about","looks around", "rubs its talons")
+	emote_hear = list("chitters")
+
+	say_understood = list("Rur.")
+	say_cannot = list("Errurr.")
+	say_maybe_target = list("Erurr?")
+	say_got_target = list("Roar!")
+	say_threaten = list("Rrurr!")
+	say_stand_down = list("Eeer.")
+	say_escalate = list("ROAR!")
+
+	threaten_sound = 'sound/metroid/metroidomega.ogg'
+	stand_down_sound = 'sound/metroid/metroiddetach.ogg'
+
+
+//------------------------------------------------------------------------------------------------------------
+
+
+
+/mob/living/simple_mob/metroid/juvenile/queen
+	name = "queen metroid"
+	desc = "The mother of all Metroids - allowed to have grown too far!"
+	tt_desc = "Maximus Queenamus Deathamus"
+	icon = 'icons/mob/metroid/queen.dmi'
+	icon_dead = "queen_dead"
+	icon_living = "queen"
+	icon_state = "queen"
+	movement_cooldown = 3
+	endurance = 1000
+	melee_damage_lower = 30
+	melee_damage_upper = 60
+	melee_miss_chance = 5
+	attack_armor_pen = 20
+	attacktext = list("gnashed")
+	gender = NEUTER
+	ranged_cooldown_time = 1.5 SECOND
+	projectiletype	= /obj/item/projectile/energy/metroidacid	// The projectiles I shoot
+	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
+
+	//Unaffected by atmos.
+	minbodytemp = 0
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	unsuitable_atoms_damage = 0
+
+	pixel_x = -16
+	pixel_y = -16
+	default_pixel_x = -16
+	default_pixel_y = -16
+	evo_point = 1200
+	evo_limit = INFINITY
+	next = null
+	is_queen = TRUE
+
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
+	configure(atom_rules(armor_spec = "melee=75;bullet=40;laser=60;energy=90;bomb=10;bio=100;rad=100"))
+	configure(mob_rules(faction = "metroids"))
+	configure(living_rules(vore_capacity = 4, say_list_type = /datum/say_list/metroid/queen, max_nutrition = 2200))
+	configure(mob_nature(death_sound = SFX_METROID_METROIDQUEENDEATH))
+	configure(mob_movement(makes_dirt = TRUE))
+	after_init(0, then(PROC_REF(queen_metroid_ready)))
+
+/mob/living/simple_mob/metroid/juvenile/queen
+	/// Holds a place in GLOB.queen_amount.
+	var/queen_counted = FALSE
+
+/mob/living/simple_mob/metroid/juvenile/queen/proc/queen_metroid_ready(datum/act/timer/A)
+	play_sfx(src, SFX_METROID_METROIDQUEEN)
+	queen_counted = TRUE
+	GLOB.queen_amount++
+
+/mob/living/simple_mob/metroid/juvenile/queen/proc/queen_uncount()
+	if(queen_counted)
+		queen_counted = FALSE
+		GLOB.queen_amount--
+
+/mob/living/simple_mob/metroid/juvenile/queen/on_death(gibbed)
+	queen_uncount()
+	..()
+
+/mob/living/simple_mob/metroid/juvenile/queen/on_destroy(force)
+	queen_uncount() // a queen deleted alive (admin, despawn) must not hold the one-queen slot for the rest of the round
+	return ..()
+
+
+/mob/living/simple_mob/metroid/juvenile/queen //active noms
+	vore_active = 1
+	vore_bump_chance = 0
+	vore_icons = SA_ICON_LIVING
+	vore_pounce_chance = 60 //It's the queen, and it's hungry.
+	vore_default_mode = DM_DIGEST
+	swallowTime = 3 SECONDS
+	vore_escape_chance = 0 //You're not climbing out of that neck
+
+/datum/say_list/metroid/queen
+	speak = list("Rurrr.", "Rrerr.", "Rawr?")
+	emote_see = list("stomps about","looks around", "rubs its talons")
+	emote_hear = list("chitters")
+
+	say_understood = list("Rur.")
+	say_cannot = list("Errurr.")
+	say_maybe_target = list("Erurr?")
+	say_got_target = list("Roar!")
+	say_threaten = list("Rrurr!")
+	say_stand_down = list("Eeer.")
+	say_escalate = list("ROAR!")
+
+	threaten_sound = 'sound/metroid/metroidqueen.ogg'
+	stand_down_sound = 'sound/metroid/metroiddetach.ogg'
+
+
+/mob/living/simple_mob/metroid/juvenile/baby/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/super/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/alpha/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/gamma/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/zeta/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/omega/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/queen/starting_nutrition()
+	return 0

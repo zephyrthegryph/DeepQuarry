@@ -25,7 +25,7 @@
 	var/starts
 
 /// Interned: an identical declaration made anywhere in the tree (an ancestor's declaration that every
-/// subtype's per-type list repeats, such as /atom's light_sources and heat_watches) is ONE datum and one
+/// subtype's per-type list repeats, such as /atom's light_sources and heat_subs) is ONE datum and one
 /// entry list, not one per type. Entries are read-only after they are returned, so sharing them is safe.
 /proc/_own_entry(var_name, list/entry, keep_after_destroy, pool_reset, forward, starts)
 	var/static/list/interned = list()
@@ -169,7 +169,7 @@
 	E.keyed_key = key_var
 	return E
 
-/proc/_rel_decl(var_name, is_list, type, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward)
+/proc/_rel_decl(var_name, is_list, type, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward, unindexed = FALSE)
 	var/shape = RELS_PLAIN
 	if(back)
 		shape = (is_list && back == var_name) ? RELS_SYMMETRIC : RELS_PAIR
@@ -179,6 +179,9 @@
 			CRASH("rel_one/rel_many([var_name]): keyed_target needs keyed = nameof(our key var)")
 		extra = list(keyed_target, keyed)
 	var/list/entry = list(OWNK_REL, shape, back, extra, !!is_list, length(watch) ? watch.Copy() : null, other_deleted || CLEAR, on_unlink, type)
+	if(unindexed)
+		entry.len = OWNE_UNINDEXED
+		entry[OWNE_UNINDEXED] = TRUE
 	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward)
 
 /// The declarations collected from one type's capabilities and its CAPABILITIES relation entries.
@@ -287,12 +290,17 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	T.owner_type = D.type
 	var/datum/own_decls/decl = new
 	// Capabilities contribute first (a slot owns its var); the type's own lists come after.
+	BOOT_PHASE_BEGIN(bp_caps)
 	if(isatom(D))
 		for(var/datum/capability/C as anything in caps_of(D))
 			for(var/datum/own_entry/E as anything in C.owned())
 				decl.add(E)
+	BOOT_PHASE_END(bp_caps, "own_table build: caps_of and owned()", D)
 	// The engine's declarations: the relation entries of the type's CAPABILITIES lists (code/engine/declare/relations.dm).
-	for(var/datum/own_entry/E as anything in table_own_entries(table_of(D)))
+	BOOT_PHASE_BEGIN(bp_tbl)
+	var/datum/type_table/own_source = table_of(D)
+	BOOT_PHASE_END(bp_tbl, "own_table build: table_of", D)
+	for(var/datum/own_entry/E as anything in table_own_entries(own_source))
 		decl.add(E)
 	for(var/line in decl.conflicts)
 		OWN_REPORT("[D.type]: one kind per var: [line]")
@@ -318,7 +326,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				LAZYADD(T.proto_vars, var_name)
 			if(OWNK_SHARED)
 				LAZYADD(T.shared_vars, var_name)
+	BOOT_PHASE_BEGIN(bp_links)
 	link_entries_for(decl, D, T)
+	BOOT_PHASE_END(bp_links, "own_table build: link_entries_for", D)
 	T.engine_hooks = table_hook_flags_cached(table_of(D))
 	T.keep_vars = decl.keep
 	T.pool_reset_vars = decl.pool_reset
@@ -356,7 +366,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		OWN_REPORT("[D.type] is a keyed target through var '[T.keyed_key]', which it doesn't have")
 	T.empty = !(T.own_vars || T.ref_vars || T.proto_vars)
 	T.materialize_work = !!(T.keyed_vars || T.keyed_key)
+	BOOT_PHASE_BEGIN(bp_validate)
 	own_validate_table(D, T)
+	BOOT_PHASE_END(bp_validate, "own_table build: own_validate_table", D)
 	return T
 
 /// The kind x value matrix, per built table (boot and first use): the checks that need an
@@ -394,7 +406,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /// A framework write changed holder.var_name. When the var is also a declared (tracked)
 /// field, its channel is raised exactly as the field's setter would, so stages, watches and
 /// while-declarations gated on it see the change (a relation view cleared because its target died,
-/// an owned child disposed of, a proto swapped). Before the OM registry exists nothing listens.
+/// an owned child disposed of, a proto swapped). Before the registry exists nothing listens.
 /// This is the one path a relation write marks what reads it: a list view written in place (a member added or removed) and a single ref come here alike, so a reader
 /// is marked once per write and a var nothing reads marks nothing (a bookkeeping list stays free to be written from anywhere).
 /proc/own_field_changed(datum/holder, var_name)
@@ -441,7 +453,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		BOOT_PHASE_BEGIN(bp_hop)
 		draw_hop_published(holder, var_name)
 		BOOT_PHASE_END(bp_hop, "ofc draw_hop_published: [var_name]", holder)
-	var/datum/definition_registry/R = GLOB?.om_reg
+	var/datum/definition_registry/R = GLOB?.definition_store
 	if(!R || !holder)
 		BOOT_PHASE_END(bp_all, "ofc full path total: [var_name]", holder)
 		return
@@ -465,7 +477,7 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 	var/static/list/memo = list() // ALLOW(sys_static_getter): relation writes run while the globals are being made; the memo is a per-type fact table
 	return memo
 
-/// TRUE when something that never changes for holder's type reads var_name: a stat input, a draw one hop away, an OM field channel, a reaction
+/// TRUE when something that never changes for holder's type reads var_name: a stat input, a draw one hop away, an field channel, a reaction
 /// of the type, a lifecycle form or a type-level on_change. Memoized per (type, var) once every table it folds is built; before that it is
 /// asked fresh every time (an unbuilt table answers "nothing yet" without caching).
 /proc/own_field_static_work(datum/holder, var_name)
@@ -476,7 +488,7 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 		if(!isnull(known))
 			return known
 	. = own_field_static_readers(holder, var_name)
-	if(!GLOB?.draw_hop_vars_built || !islist(GLOB.rx_tables) || !islist(GLOB.change_index_by_type) || !GLOB.om_reg || table_of(holder) == table_empty())
+	if(!GLOB?.draw_hop_vars_built || !islist(GLOB.rx_tables) || !islist(GLOB.change_index_by_type) || !GLOB.definition_store || table_of(holder) == table_empty())
 		return
 	if(!by_var)
 		by_var = list()
@@ -489,7 +501,7 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 		return TRUE
 	if(draw_hop_reads_var(var_name))
 		return TRUE
-	var/datum/definition_registry/R = GLOB?.om_reg
+	var/datum/definition_registry/R = GLOB?.definition_store
 	if(R && (R.fields_by_type[holder.type] || R.fields_of(holder.type))[var_name])
 		return TRUE
 	var/bits = plan_reader_bits(var_name, holder.type)
@@ -584,6 +596,10 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 	if(isnull(value) || !entry)
 		return TRUE
 	var/type = entry[OWNE_TYPE]
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
+	if(!type)
+		rel_var_type_note(holder, var_name, value)
+#endif
 	if(!type || istype(value, type))
 		return TRUE
 	var/datum/D = value

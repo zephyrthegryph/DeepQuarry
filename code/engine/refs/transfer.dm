@@ -30,7 +30,7 @@
 		if(isnull(slot) || into == FALSE)
 			return FALSE
 		var/datum/ledger/L = dq_ledger_peek(holder)
-		var/list/placed = L?.entries[thing]
+		var/list/placed = L?.entries[slot_known(thing)]
 		return placed && placed[LEDGER_E_SLOT] != slot
 	// CONTAINED means the holder's own contents: the value always moves in, through own_transfer() /
 	// own_move() too.
@@ -95,7 +95,7 @@
 		return FALSE
 	if(slot)
 		var/datum/ledger/L = dq_ledger(dest)
-		var/list/placed = L?.entries[thing]
+		var/list/placed = L?.entries[slot_known(thing)]
 		if(placed && placed[LEDGER_E_SLOT] != slot)
 			dq_ledger_commit(thing, dest, slot)
 	return TRUE

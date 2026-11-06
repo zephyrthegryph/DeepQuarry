@@ -44,5 +44,3 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /datum/capability
 	/// The datum type cap_data() creates per instance, or null for bit-only state.
 	var/data_type
-	/// This capability's interaction entries, built once (shared by every holder of the type).
-	var/tmp/list/built_entries

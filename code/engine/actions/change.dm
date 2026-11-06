@@ -22,7 +22,7 @@
 
 
 GLOBAL_LIST_EMPTY(change_index_by_type) // instance type -> (key -> list of /datum/hook), or FALSE for a type with no on_change
-GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the order first marked
+GLOBAL_LIST_EMPTY(hook_change_pending) // holder's handle (ref_token) -> list(hook -> TRUE), in the order first marked
 GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number of hooks reading it): the keys whose writes on any entity may matter
 
 /datum/rx_state
@@ -32,11 +32,18 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 /// on_change(cond, ENTER | EXIT | ANY, parts...). The legacy form takes a list of reads and a handler.
 /proc/on_change(cond, edge, ENTRY_SLOTS, at_most = 0, when = null)
 	if(!isnum(edge))
+		if(isnull(edge))
+			declare_report("on_change([cond]): no edge and no handler: it would never do anything")
+			return null
 		return reaction_on_change(cond, edge, at_most, when)
 	if(change_is_published(cond) && edge != ANY)
 		declare_report("on_change(cond_published(...)): a published key has no value to compare, so its edge is ANY")
 		return null
-	return entry_make(ENTRY_ON_CHANGE, null, list("cond" = cond, "edge" = edge), entry_flatten(ENTRY_SLOT_LIST))
+	var/list/parts = entry_flatten(ENTRY_SLOT_LIST)
+	if(!length(parts))
+		declare_report("on_change([cond]): no parts: it would never do anything; give it then(PROC_REF(x))")
+		return null
+	return entry_make(ENTRY_ON_CHANGE, null, list("cond" = cond, "edge" = edge), parts)
 
 /// TRUE for a cond_published() condition: the hook runs when one of its keys is published, with no value to compare.
 /proc/change_is_published(cond)
@@ -255,10 +262,11 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 					hook_change_pend(reader, H)
 
 /proc/hook_change_pend(datum/E, datum/hook/H)
-	var/list/per = GLOB.hook_change_pending[E]
+	var/handle = ref_token(E)
+	var/list/per = GLOB.hook_change_pending[handle]
 	if(!per)
 		per = list()
-		GLOB.hook_change_pending[E] = per
+		GLOB.hook_change_pending[handle] = per
 	per[H] = TRUE
 
 /// Takes the baseline of E's type-level on_change hooks (called when the holder initializes), silently.
@@ -270,7 +278,7 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 		for(var/datum/hook/H as anything in index[key])
 			LAZYSET(rx_of(E).change_last, "[H.serial]", change_value(E, H))
 	// What the init's own writes marked is moot: the baseline is the value now, so nothing is owed a first run.
-	GLOB.hook_change_pending -= E
+	GLOB.hook_change_pending -= ref_token(E)
 
 /// The drain: each marked (holder, hook) is evaluated once; an edge or a changed value runs the hook's parts.
 /proc/hooks_drain_changes()
@@ -281,10 +289,11 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 		passes++
 		var/list/batch = GLOB.hook_change_pending
 		GLOB.hook_change_pending = list()
-		for(var/datum/E as anything in batch)
+		for(var/handle in batch)
+			var/datum/E = resolve_token(handle)
 			if(QDELETED(E))
 				continue
-			for(var/datum/hook/H as anything in batch[E])
+			for(var/datum/hook/H as anything in batch[handle])
 				if(H.activation && (H.activation.dead || !H.activation.runs))
 					continue
 				if(!change_hook_applies(E, H))
@@ -354,18 +363,18 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 
 /datum/entry_engine/hook_change/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	var/datum/hook/H = hook_change_make(A, E, C)
-	var/datum/rx_state/rx = rx_of(A.holder)
-	H.reads = change_read_keys(A.holder, E.args["cond"])
+	var/datum/rx_state/rx = rx_of(A.holder())
+	H.reads = change_read_keys(A.holder(), E.args["cond"])
 	LAZYADD(rx.hooks, H) // ALLOW(ownership): an engine record the one teardown path drops
 	rx.set_hooks_generation(rx.hooks_generation + 1)
 	for(var/key in H.reads)
-		rx_watch_adjust(A.holder, key, 1)
+		rx_watch_adjust(A.holder(), key, 1)
 	change_hop_register(E.args["cond"])
-	LAZYSET(rx.change_last, "[H.serial]", change_value(A.holder, H))
+	LAZYSET(rx.change_last, "[H.serial]", change_value(A.holder(), H))
 	return TRUE
 
 /datum/entry_engine/hook_change/remove(datum/activation/A, datum/entry/E)
-	var/datum/holder = A.holder
+	var/datum/holder = A.holder()
 	if(!holder?.rx?.hooks)
 		return
 	for(var/datum/hook/H as anything in holder.rx.hooks.Copy())

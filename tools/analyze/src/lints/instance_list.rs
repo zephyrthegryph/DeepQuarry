@@ -1,7 +1,7 @@
 //! InstanceList delegates lexical facts/final ordering to one shared policy.
 use std::collections::{BTreeSet,HashMap,HashSet};
 use crate::{dm::{ownership_index as oi,singletons::is_singleton,walk::walk_order},incr,lint::{Cx,Lint,Meta,Registry,Sink},parity::Parity,tree::SourceFile};
-use crate::instance_list_policy::{BASELINE,LINT,META,Facts,Judged,facts_of};
+use crate::instance_list_policy::{LINT,META,Facts,Judged,facts_of};
 #[cfg(test)]use crate::instance_list_policy::{scan_decls,strip_comment};
 struct InstanceList;
 
@@ -13,8 +13,7 @@ impl Lint for InstanceList {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let all = cx.all_files();
         let facts: Vec<Facts> = oi::sharded_facts("instance-list-facts", &all, facts_of);
-        // `singleton_types`: the exact types a `GLOBAL_DATUM_INIT(...)` creates anywhere under `code/`
-        // (never `/datum`); only the two root prefixes ever exempt one in practice (see its docs).
+        // `singleton_types`: the exact types a `GLOBAL_DATUM_INIT(...)` or `SYSTEM_DEF` creates anywhere under `code/` (never `/datum`).
         let mut globals: BTreeSet<String> = BTreeSet::new();
         for x in &facts {
             globals.extend(x.globals.iter().cloned());
@@ -45,7 +44,7 @@ impl Lint for InstanceList {
     }
 
     fn parity(&self) -> Option<Parity> {
-        let mut p = Parity::ratchet(&["tools/ci/instance_list_lint.py"], &[BASELINE]);
+        let mut p = Parity::ratchet(&["tools/ci/instance_list_lint.py"], &[]);
         p.update = Some(&["tools/ci/instance_list_lint.py", "--update"]);
         p.seed = Some(&["tools/ci/instance_list_lint.py", "--seed"]);
         Some(p)

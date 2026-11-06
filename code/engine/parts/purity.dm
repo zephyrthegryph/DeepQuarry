@@ -19,7 +19,7 @@ GLOBAL_LIST_EMPTY(op_pure_violations)
 /// A test sets this while it provokes a violation on purpose: the report is counted but is not a runtime.
 GLOBAL_VAR_INIT(op_pure_expected, FALSE)
 
-// OP_PURE_ACTIVE and OP_PURE_GUARD are in code/__defines/engine/parts.dm (every file that writes uses them).
+// OP_PURE_ACTIVE and OP_PURE_GUARD are in code/defines/engine/declare/parts.dm (every file that writes uses them).
 
 /// Brings the state a condition or requirement is about to read up to date: caches that refresh themselves on first read (a body's cached vitals) write
 /// when they do, which a pure evaluation may not. The engine calls this before op_pure_begin() for the op's holder, actor and target; a type whose

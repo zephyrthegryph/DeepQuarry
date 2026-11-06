@@ -1,0 +1,339 @@
+// GENERIC PRINTER - DO NOT USE THIS OBJECT.
+// Flesh and robot printers are defined below this object.
+
+/obj/machinery/organ_printer
+	name = "organ printer"
+	desc = "It's a machine that prints organs."
+	icon = 'icons/obj/surgery.dmi'
+	icon_state = "bioprinter"
+
+	anchored = TRUE
+	density = TRUE
+	use_power = USE_POWER_IDLE
+
+	var/obj/item/reagent_containers/container = null		// This is the beaker that holds all of the biomass
+
+	var/print_delay = 100
+	var/base_print_delay = 100	// For Adminbus reasons
+	var/printing
+	var/list/loaded_dna //Blood sample for DNA hashing.
+	var/malfunctioning = FALSE	// May cause rejection, or the printing of some alien limb instead!
+
+	var/complex_organs = FALSE	// Can it print more 'complex' organs?
+
+	var/anomalous_organs = FALSE	// Can it print anomalous organs?
+
+	var/engineered_organs = FALSE // Can it print advanced engineered organs that any species can use (Abductor gameplay)
+
+	// These should be subtypes of /obj/item/organ
+	// Costs roughly 20u Phoron (1 sheet) per internal organ, limbs are 60u for limb and extremity
+	var/static/list/products = list(
+		"Heart"   = list(/obj/item/organ/internal/heart,  20),
+		"Lungs"   = list(/obj/item/organ/internal/lungs,  20),
+		"Kidneys" = list(/obj/item/organ/internal/kidneys,20),
+		"Eyes"    = list(/obj/item/organ/internal/eyes,   20),
+		"Liver"   = list(/obj/item/organ/internal/liver,  20),
+		"Spleen"  = list(/obj/item/organ/internal/spleen, 20),
+		"Stomach"  = list(/obj/item/organ/internal/stomach, 20),
+		"Intestine" = list(/obj/item/organ/internal/intestine, 20),
+		"Arm, Left"   = list(/obj/item/organ/external/arm,  40),
+		"Arm, Right"   = list(/obj/item/organ/external/arm/right,  40),
+		"Leg, Left"   = list(/obj/item/organ/external/leg,  40),
+		"Leg, Right"   = list(/obj/item/organ/external/leg/right,  40),
+		"Foot, Left"   = list(/obj/item/organ/external/foot,  20),
+		"Foot, Right"   = list(/obj/item/organ/external/foot/right,  20),
+		"Hand, Left"   = list(/obj/item/organ/external/hand,  20),
+		"Hand, Right"   = list(/obj/item/organ/external/hand/right,  20),
+		"Organ Lattice" = list(/obj/item/organ/internal/malignant/engineered/lattice,  30) // Bioprinting engineered lattice organs
+		)
+
+	var/static/list/complex_products = list(
+		"Brain" = list(/obj/item/organ/internal/brain, 60),
+		"Larynx" = list(/obj/item/organ/internal/voicebox, 20),
+		"Head" = list(/obj/item/organ/external/head, 40)
+		)
+
+	var/static/list/anomalous_products = list(
+		"Lymphatic Complex" = list(/obj/item/organ/internal/immunehub, 120),
+		"Respiration Nexus" = list(/obj/item/organ/internal/lungs/replicant/mending, 80),
+		"Adrenal Valve Cluster" = list(/obj/item/organ/internal/heart/replicant/rage, 80)
+		)
+
+	// begin - engineered organs
+	var/static/list/engineered_products = list(
+		"Phoroketic Gland"  = list(/obj/item/organ/internal/malignant/engineered/chemorgan/phoron, 90),
+		"Trioketic Gland"  	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/tricord, 90),
+		"Tramoketic Gland"  = list(/obj/item/organ/internal/malignant/engineered/chemorgan/tramadol, 90),
+		"Dylovetic Gland"  	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/dylovene, 90),
+		"Citometic Gland"  	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/citalopram, 90),
+		"Bicordic Gland" 	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/bicaridine, 90),
+		"Dermalic Gland" 	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/dermaline, 90),
+		"Kelovetic Gland" 	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/kelotane, 90),
+		"Dexalic Gland" 	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/dexalin, 90),
+		"Hypalic Gland" 	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/hyperzine, 90),
+		"Spaceacilic Gland" = list(/obj/item/organ/internal/malignant/engineered/chemorgan/spaceacillin, 90),
+		"Inaprovic Gland" 	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/inaprovaline, 90),
+		"Euphorian" 		= list(/obj/item/organ/internal/malignant/engineered/chemorgan/bliss, 90)
+		)
+	// end
+
+
+
+/// Old attackby.
+/obj/machinery/organ_printer/proc/organ_printer_interaction_item(datum/act/op/A)
+	return default_part_replacement(A.actor, A.held_provider()) ? OP_OK : OP_DECLINE
+
+/// The look (the draw sweep: from its layers).
+/obj/machinery/organ_printer/draw(datum/look/look)
+	..()
+	if(panel_open == 1)
+		look.overlay("bioprinter_panel_open")
+	if(printing == 1)
+		look.overlay("bioprinter_working")
+
+
+CAPABILITIES(/obj/machinery/organ_printer)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	configure(machine_usage(wrench_time = 20))
+	configure(uses_power(idle = 40, active = 300))
+	op("printer_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(organ_printer_interaction_item)))
+	op("printer_menu", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_open_menu))), asks(/datum/prompt/choice, fields = list("title" = "Bioprinter Menu", "question" = "What do you want to do?", "choices" = list("Print Limbs", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "menu", when = PROC_REF(printer_has_reservoir)), asks(/datum/prompt/choice, fields = list("title" = "Print Choice", "question" = "What would you like to print?", "choices" = computed(PROC_REF(printer_product_choices)), "timeout" = 0), step = "product", when = PROC_REF(printer_choosing_product)), then(PROC_REF(print_choice_made)))
+	op("printer_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable()), then(PROC_REF(organ_printer_eject_beaker)))
+	climb()
+	default_parts()
+	owns_one(nameof(container), on_destroy = ON_DESTROY_CONTAINED)
+
+/obj/machinery/organ_printer/examine(mob/user)
+	. = ..()
+	var/biomass = get_biomass_volume()
+	if(biomass)
+		. += span_notice("It is loaded with [biomass] units of biomass.")
+	else
+		. += span_notice("It is not loaded with any biomass.")
+
+/obj/machinery/organ_printer/RefreshParts()
+	// Print Delay updating
+	print_delay = base_print_delay
+	var/manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
+	print_delay -= (manip_rating - get_part_count(/obj/item/stock_parts/manipulator))*10
+	print_delay = max(0,print_delay)
+
+	manip_rating = round(manip_rating / 2)
+
+	if(manip_rating >= 5)
+		malfunctioning = TRUE
+	else
+		malfunctioning = initial(malfunctioning)
+
+	if(manip_rating >= 3)
+		set_complex_organs(TRUE)
+		if(manip_rating >= 4)
+			set_anomalous_organs(TRUE)
+			if(manip_rating >= 5)
+				malfunctioning = TRUE
+	else
+		set_complex_organs(initial(complex_organs))
+		set_anomalous_organs(initial(anomalous_organs))
+		malfunctioning = initial(malfunctioning)
+
+	. = ..()
+
+/// Requirement: null, or why the printer's menu can't be opened.
+/obj/machinery/organ_printer/proc/can_open_menu(datum/act/op/A)
+	if(!operable())
+		return null // the effect ignores it silently
+	if(panel_open)
+		return "close the panel first"
+	if(printing)
+		return "it's busy"
+	return null
+
+/obj/machinery/organ_printer/proc/printer_product_choices(datum/act/op/A)
+	var/list/possible_list = list()
+
+	possible_list |= products
+
+	if(complex_organs)
+		possible_list |= complex_products
+
+	if(anomalous_organs)
+		possible_list |= anomalous_products
+
+	// begin - engineered organs
+	if(engineered_organs)
+		possible_list |= engineered_products
+	// end
+
+	return possible_list
+
+/obj/machinery/organ_printer/proc/print_choice_made(datum/act/op/A)
+	if(!printer_has_reservoir(A))
+		if(operable())
+			to_chat(A.actor, span_warning("\The [src] can't operate without a reagent reservoir!"))
+		return OP_OK
+	if(!printer_choosing_product(A) || !A.step_value("product") || printing || !operable())
+		return OP_OK
+	var/list/possible_list = printer_product_choices(A)
+	var/choice = A.step_value("product")
+	if(!possible_list[choice])
+		return OP_OK
+
+	if(!can_print(choice, possible_list[choice][2]))
+		return
+
+	container.reagents.remove_reagent(REAGENT_ID_BIOMASS, possible_list[choice][2])
+
+	set_use_power(USE_POWER_ACTIVE)
+	set_printing(1)
+
+	visible_message(span_infoplain(span_bold("\The [src]") + " begins churning."))
+
+	after(src, print_delay, PROC_REF(printing_done), with = list(possible_list[choice][1]))
+
+/// The print delay is over: the organ comes out unless the printer lost power.
+/obj/machinery/organ_printer/proc/printing_done(organ_path)
+	set_use_power(USE_POWER_IDLE)
+	set_printing(0)
+
+	if(!operable())
+		return
+
+	print_organ(organ_path)
+
+/// Old verb "Eject Beaker".
+/obj/machinery/organ_printer/proc/organ_printer_eject_beaker(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user.stat != 0)
+		return
+	add_fingerprint(user)
+	remove_beaker()
+	return
+
+// Does exactly what it says it does
+// Returns 1 if it succeeds, 0 if it fails. Added in case someone wants to add messages to the user.
+/obj/machinery/organ_printer/proc/remove_beaker()
+	if(container)
+		container.forceMove(get_turf(src))
+		rel_take(src, nameof(container))
+		return 1
+	return 0
+
+// Checks for reagents, then reports how much biomass it has in it
+/obj/machinery/organ_printer/proc/get_biomass_volume()
+	var/biomass_count = 0
+	if(container && container.reagents)
+		for(var/datum/reagent/R in container.reagents.reagent_list)
+			if(R.id == REAGENT_ID_BIOMASS)
+				biomass_count += R.volume
+
+	return biomass_count
+
+/obj/machinery/organ_printer/proc/can_print(choice, masscount = 0)
+	var/biomass = get_biomass_volume()
+	if(biomass < masscount)
+		visible_message(span_infoplain(span_bold("\The [src]") + " displays a warning: 'Not enough biomass. [biomass] stored and [masscount] needed.'"))
+		return 0
+
+	if(!loaded_dna || !loaded_dna["donor"])
+		visible_message(span_info("\The [src] displays a warning: 'No DNA saved. Insert a blood sample.'"))
+		return 0
+
+	return 1
+
+/obj/machinery/organ_printer/proc/print_organ(choice)
+	var/new_organ = choice
+	var/obj/item/organ/O = new new_organ(get_turf(src))
+	O.set_status(O.status | ORGAN_CUT_AWAY)
+	var/mob/living/carbon/human/C = loaded_dna["donor"]
+	O.set_dna(C.dna)
+	O.data.setup_from_species(C.species)
+
+	var/malfunctioned = FALSE
+
+	if(malfunctioning && prob(30)) // Alien Tech is a hell of a drug.
+		malfunctioned = TRUE
+		var/possible_species = list(SPECIES_HUMAN, SPECIES_VOX, SPECIES_SKRELL, SPECIES_ZADDAT, SPECIES_UNATHI, SPECIES_GOLEM, SPECIES_SHADOW)
+		var/new_species = pick(possible_species)
+		if(!GLOB.all_species[new_species])
+			new_species = SPECIES_HUMAN
+		O.data.setup_from_species(GLOB.all_species[new_species])
+
+	if(istype(O, /obj/item/organ/external) && !malfunctioned)
+		var/obj/item/organ/external/E = O
+		E.sync_colour_to_human(C)
+
+	O.set_pixel_x(rand(-6.0, 6))
+	O.set_pixel_y(rand(-6.0, 6))
+
+	if(O.data)
+		// This is a very hacky way of doing of what organ/New() does if it has an owner
+		O.set_w_class(max(O.w_class + mob_size_difference(O.data.get_species_mob_size(), MOB_MEDIUM), 1))
+
+	return O
+// END GENERIC PRINTER
+
+// CIRCUITS
+// FLESH ORGAN PRINTER
+/obj/machinery/organ_printer/flesh
+	name = "bioprinter"
+	desc = "It's a machine that prints replacement organs."
+	icon_state = "bioprinter"
+	circuit = VARIANT(/obj/item/circuitboard/bioprinter)
+
+CAPABILITIES(/obj/machinery/organ_printer/flesh/full)
+	owns_one(nameof(container), starts = /obj/item/reagent_containers/glass/bottle/biomass, on_destroy = ON_DESTROY_CONTAINED)
+
+/obj/machinery/organ_printer/flesh/dismantle()
+	var/turf/T = get_turf(src)
+	if(T)
+		if(container)
+			container.forceMove(T)
+			rel_take(src, nameof(container))
+	return ..()
+
+/obj/machinery/organ_printer/flesh/print_organ(choice)
+	var/obj/item/organ/O = ..()
+
+	play_sfx(src, SFX_MACHINES_DING)
+	visible_message(span_info("\The [src] dings, then spits out \a [O]."))
+	return O
+
+MSG_DEF_SELF(flesh_printer/container_loaded, "the printer already has a container loaded")
+
+/obj/machinery/organ_printer/proc/load_container_done(datum/act/op/A)
+	var/obj/item/reagent_containers/glass/G = A.held
+	if(!move_into(src, nameof(container), G, A.actor))
+		return OP_FAILED
+	act_message(A.actor, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = G)
+	return OP_OK
+
+/obj/machinery/organ_printer/proc/container_available(datum/act/op/A)
+	return (!read_once(container)) ? null : MSG(flesh_printer/container_loaded)
+
+CAPABILITIES(/obj/machinery/organ_printer/flesh)
+	op("load_container", item(/obj/item/reagent_containers/glass), needs(req(PROC_REF(container_available))), wait(1 SECOND), then(PROC_REF(load_container_done)))
+	op("flesh_printer_interaction_item", item(/obj/item), then(PROC_REF(flesh_printer_interaction_item)))
+
+/// Old attackby; anything else falls through to the base printer's.
+/obj/machinery/organ_printer/flesh/proc/flesh_printer_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	// DNA sample from syringe.
+	if(istype(W,/obj/item/reagent_containers/syringe))	//TODO: Make this actually empty the syringe
+		var/obj/item/reagent_containers/syringe/S = W
+		var/datum/reagent/blood/injected = locate_in_list(S.reagents.reagent_list, /datum/reagent/blood) //Grab some blood
+		if(injected && injected.data)
+			loaded_dna = injected.data.Copy()
+			S.reagents.remove_reagent(REAGENT_ID_BLOOD, injected.volume)
+			to_chat(user, span_info("You scan the blood sample into the bioprinter."))
+		return TRUE
+
+	return OP_DECLINE
+// END FLESH ORGAN PRINTER
+
+
+/obj/machinery/organ_printer/proc/printer_has_reservoir(datum/act/op/A)
+	return operable() && !!container
+
+/obj/machinery/organ_printer/proc/printer_choosing_product(datum/act/op/A)
+	return A.step_value("menu") == "Print Limbs" && printer_has_reservoir(A)

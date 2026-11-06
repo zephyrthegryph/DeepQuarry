@@ -1,0 +1,1176 @@
+SYSTEM_DEF(job)
+	name = "Job"
+	init_stage = INITSTAGE_MAIN
+	needs = list(
+		/datum/system/mapping,
+	)
+
+		//List of all jobs
+	var/list/datum/job/occupations = list()
+		//List of all jobs
+	var/list/datum/job/occupation_with_excludes = list()
+		//Players who need jobs
+	var/list/mob/new_player/unassigned = list()
+	var/list/datum/job/occupations_by_name = list()	//Dict of all jobs, keys are titles
+	var/list/type_occupations = list()	//Dict of all jobs, keys are types
+
+	var/list/department_datums = list()
+	var/list/job_icon_cache = list()
+	var/debug_messages = FALSE
+
+	var/savepath = "data/job_camp_list.json"
+	/// When the last automated staff request went out over the fax relays (0: none this round).
+	var/last_role_request_at = 0
+	var/list/shift_keys = list()
+	var/list/restricted_keys = list()
+
+
+CAPABILITIES(/datum/system/job)
+	ref_many(nameof(unassigned), /mob/new_player)
+
+/// The automated staff request went out over the fax relays just now.
+/datum/system/job/proc/note_role_request()
+	STAMP(src, last_role_request_at, CLOCK_WORLD)
+
+/// TRUE while the fax relays are still recalibrating after the last automated staff request.
+/datum/system/job/proc/role_request_cooling_down()
+	return last_role_request_at && ELAPSED(src, last_role_request_at, CLOCK_WORLD) < 5 MINUTES
+
+/datum/system/job/proc/get_all_job_icons() //For all existing HUD icons
+	return occupation_with_excludes + GLOB.alt_titles_with_icons + list("Prisoner")
+
+/datum/system/job/initialize()
+	setup_departments()
+	setup_occupations()
+	// begin
+	if(CONFIG_GET(number/job_camp_time_limit))
+		load_camp_lists()
+	// end
+
+/datum/system/job/proc/setup_occupations(faction = FACTION_STATION)
+	occupations.Cut()
+	var/list/all_jobs = subtypesof(/datum/job)
+	if(!length(all_jobs))
+		to_chat(world, span_warning("Error setting up jobs, no job datums found"))
+		return FALSE
+
+	for(var/job_path in all_jobs)
+		var/datum/job/job = new job_path()
+		if(job.faction != faction)
+			continue
+		occupations += job
+		if(!(is_type_in_list(job, GLOB.exclude_jobs)))
+			occupation_with_excludes += job
+		set_occupations_by_name_at(job.title, job)
+		set_type_occupations_at(job_path, job)
+		if(LAZYLEN(job.departments))
+			add_to_departments(job)
+
+	sortTim(occupations, GLOBAL_PROC_REF(cmp_job_datums))
+	for(var/department, value in department_datums)
+		var/datum/department/dept = value
+		if(length(dept.jobs)) sortTim(dept.jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
+		if(length(dept.primary_jobs)) sortTim(dept.primary_jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
+
+	return TRUE
+
+/datum/system/job/proc/add_to_departments(datum/job/J)
+	// Adds to the regular job lists in the departments, which allow multiple departments for a job.
+	for(var/D in J.departments)
+		var/datum/department/dept = LAZYACCESS(department_datums, D)
+		if(!istype(dept))
+			job_debug_message("Job '[J.title]' is defined as being inside department '[D]', but it does not exist.")
+			continue
+		LAZYSET(dept.jobs, J.title, J)
+
+	// Now for the 'primary' department for a job, which is defined as being the first department in the list for a job.
+	// This results in no duplicates, which can be useful in some situations.
+	if(LAZYLEN(J.departments))
+		var/primary_department = J.departments[1]
+		var/datum/department/dept = LAZYACCESS(department_datums, primary_department)
+		if(!istype(dept))
+			job_debug_message("Job '[J.title]' has their primary department be '[primary_department]', but it does not exist.")
+		else
+			LAZYSET(dept.primary_jobs, J.title, J)
+
+/datum/system/job/proc/setup_departments()
+	for(var/t in subtypesof(/datum/department))
+		var/datum/department/D = new t()
+		department_datums[D.name] = D
+
+	sortTim(department_datums, GLOBAL_PROC_REF(cmp_department_datums), TRUE)
+
+/datum/system/job/proc/get_all_department_datums()
+	var/list/dept_datums = list()
+	for(var/D in department_datums)
+		dept_datums += department_datums[D]
+	return dept_datums
+
+/datum/system/job/proc/get_job(rank)
+	if(!rank)
+		return null
+	return occupations_by_name[rank]
+
+/datum/system/job/proc/get_player_alt_title(mob/new_player/player, rank)
+	return text_or_null(player.client.prefs.GetPlayerAltTitle(get_job(rank)))
+
+/datum/system/job/proc/get_job_type(jobtype)
+	return type_occupations[jobtype]
+
+// Determines if a job title is inside of a specific department.
+// Useful to replace the old `if(job_title in GLOB.command_positions)` code.
+/datum/system/job/proc/is_job_in_department(rank, target_department_name)
+	var/datum/department/D = LAZYACCESS(department_datums, target_department_name)
+	if(istype(D))
+		return LAZYFIND(D.jobs, rank) ? TRUE : FALSE
+	return FALSE
+
+// Returns a list of all job names in a specific department.
+/datum/system/job/proc/get_job_titles_in_department(target_department_name)
+	var/datum/department/D = LAZYACCESS(department_datums, target_department_name)
+	if(istype(D))
+		var/list/job_titles = list()
+		for(var/J in D.jobs)
+			job_titles += J
+		return job_titles
+
+	job_debug_message("Was asked to get job titles for a non-existant department '[target_department_name]'.")
+	return list()
+
+// Returns a reference to the primary department datum that a job is in.
+// Can receive job datum refs, typepaths, or job title strings.
+/datum/system/job/proc/get_primary_department_of_job(datum/job/J)
+	if(!istype(J, /datum/job))
+		if(ispath(J))
+			J = get_job_type(J)
+		else if(istext(J))
+			J = get_job(J)
+
+	if(!istype(J))
+		job_debug_message("Was asked to get department for job '[J]', but input could not be resolved into a job datum.")
+		return
+
+	if(!LAZYLEN(J.departments))
+		return
+
+	var/primary_department = J.departments[1]
+	var/datum/department/dept = LAZYACCESS(department_datums, primary_department)
+	if(!istype(dept))
+		job_debug_message("Job '[J.title]' has their primary department be '[primary_department]', but it does not exist.")
+		return
+
+	return department_datums[primary_department]
+
+/datum/system/job/proc/get_ping_role(role)
+	var/datum/job/J = get_job(role)
+	if(J.requestable)
+		return get_primary_department_of_job(J)
+
+// Someday it might be good to port code/game/jobs/job_controller.dm to here and clean it up.
+
+/datum/system/job/proc/job_debug_message(message)
+	if(debug_messages)
+		log_world("JOB DEBUG: [message]")
+
+/datum/system/job/proc/assign_role(mob/new_player/player, rank, latejoin = FALSE)
+	job_debug_message("Running AR, Player: [player], Rank: [rank], LJ: [latejoin]")
+	if(player && player.mind && rank)
+		var/datum/job/job = get_job(rank)
+		if(!job)
+			return FALSE
+		if((job.minimum_character_age || job.min_age_by_species) && (player.read_preference(/datum/preference/numeric/human/age) < job.get_min_age(player.client.prefs.read_preference(/datum/preference/choiced/species), player.client.prefs.read_preference(/datum/preference/organ_data)?[O_BRAIN])))
+			return FALSE
+		if(jobban_isbanned(player, rank))
+			return FALSE
+		if(!job.player_old_enough(player.client))
+			return FALSE
+		if(!job.player_has_enough_playtime(player.client))
+			return FALSE
+		if(job_whitelist_refusal(player, rank))
+			return FALSE
+
+		var/position_limit = job.total_positions
+		if(!latejoin)
+			position_limit = job.spawn_positions
+		if((job.current_positions < position_limit) || position_limit == -1)
+			job_debug_message("Player: [player] is now Rank: [rank], JCP:[job.current_positions], JPL:[position_limit]")
+			player.mind.assigned_role = rank
+			player.mind.role_alt_title = get_player_alt_title(player, rank)
+			rel_remove(src, nameof(unassigned), player)
+			job.current_positions++
+			if(job.camp_protection && round_duration_in_ds < SStransfer.get_hard_end() - 30 MINUTES)
+				job.register_shift_key(player.client.ckey)
+			return TRUE
+	job_debug_message("AR has failed, Player: [player], Rank: [rank]")
+	return FALSE
+
+/datum/system/job/proc/free_role(rank)	//making additional slot on the fly
+	var/datum/job/job = get_job(rank)
+	if(job && job.total_positions != -1)
+		job.total_positions++
+		return TRUE
+	return FALSE
+
+/datum/system/job/proc/update_limit(rank, comperator)
+	var/datum/job/job = get_job(rank)
+	if(job && job.total_positions != -1)
+		job.update_limit(comperator)
+		return TRUE
+	return FALSE
+
+/datum/system/job/proc/find_occupation_candidate(datum/job/job, level, flag)
+	job_debug_message("Running FOC, Job: [job], Level: [level], Flag: [flag]")
+	var/list/candidates = list()
+	for(var/mob/new_player/player in unassigned)
+		if(jobban_isbanned(player, job.title))
+			job_debug_message("FOC isbanned failed, Player: [player]")
+			continue
+		if(!job.player_old_enough(player.client))
+			job_debug_message("FOC player not old enough, Player: [player]")
+			continue
+		if(job.minimum_character_age && (player.read_preference(/datum/preference/numeric/human/age) < job.get_min_age(player.client.prefs.read_preference(/datum/preference/choiced/species), player.client.prefs.read_preference(/datum/preference/organ_data)?[O_BRAIN])))
+			job_debug_message("FOC character not old enough, Player: [player]")
+			continue
+		// Code Start
+		if(!job.player_has_enough_playtime(player.client))
+			job_debug_message("FOC character not enough playtime, Player: [player]")
+			continue
+		if(job_whitelist_refusal(player, job.title))
+			job_debug_message("FOC job_whitelist_refusal refused, Player: [player]")
+			continue
+		// Code End
+		if(flag && !(player.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & flag))
+			job_debug_message("FOC flag failed, Player: [player], Flag: [flag], ")
+			continue
+		// was: GetJobDepartment(job, level) & job.flag — bucket bitfields gone.
+		if(player.client.prefs.job_at_level(job.title, level))
+			job_debug_message("FOC pass, Player: [player], Level:[level]")
+			candidates += player
+	return candidates
+
+/datum/system/job/proc/give_random_job(mob/new_player/player)
+	job_debug_message("GRJ Giving random job, Player: [player]")
+	for(var/datum/job/job in shuffle(occupations))
+		if(!job)
+			continue
+
+		if((job.minimum_character_age || job.min_age_by_species) && (player.read_preference(/datum/preference/numeric/human/age) < job.get_min_age(player.client.prefs.read_preference(/datum/preference/choiced/species), player.client.prefs.read_preference(/datum/preference/organ_data)?[O_BRAIN])))
+			continue
+
+		if(istype(job, get_job(JOB_ALT_VISITOR))) // We don't want to give him assistant, that's boring! // Visitor not Assistant
+			continue
+
+		if(SSjob.is_job_in_department(job.title, DEPARTMENT_COMMAND)) //If you want a command position, select it!
+			continue
+
+		if(jobban_isbanned(player, job.title))
+			job_debug_message("GRJ isbanned failed, Player: [player], Job: [job.title]")
+			continue
+
+		if(!job.player_old_enough(player.client))
+			job_debug_message("GRJ player not old enough, Player: [player]")
+			continue
+
+		if(!job.player_has_enough_playtime(player.client))
+			job_debug_message("GRJ player not enough playtime, Player: [player]")
+			continue
+		if(job_whitelist_refusal(player, job.title))
+			job_debug_message("GRJ player not whitelisted for this job, Player: [player], Job: [job.title]")
+			continue
+
+		if((job.current_positions < job.spawn_positions) || job.spawn_positions == -1)
+			job_debug_message("GRJ Random job given, Player: [player], Job: [job]")
+			assign_role(player, job.title)
+			rel_remove(src, nameof(unassigned), player)
+			break
+
+/datum/system/job/proc/reset_occupations()
+	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if((player) && (player.mind))
+			player.mind.assigned_role = null
+			player.mind.special_role = null
+	setup_occupations()
+	rel_clear(src, nameof(unassigned))
+	return
+
+///This proc is called before the level loop of DivideOccupations() and will try to select a head, ignoring ALL non-head preferences for every level until it locates a head or runs out of levels to check
+/datum/system/job/proc/fill_head_position()
+	for(var/level = 1 to 3)
+		for(var/command_position in SSjob.get_job_titles_in_department(DEPARTMENT_COMMAND))
+			var/datum/job/job = get_job(command_position)
+			if(!job)
+				continue
+			var/list/candidates = find_occupation_candidate(job, level)
+			if(!length(candidates))
+				continue
+
+			// Build a weighted list, weight by age.
+			var/list/weightedCandidates = list()
+			for(var/mob/mob_candidate in candidates)
+				// Log-out during round-start? What a bad boy, no head position for you!
+				if(!mob_candidate.client)
+					continue
+				var/age = mob_candidate.read_preference(/datum/preference/numeric/human/age)
+
+				if(age < job.get_min_age(mob_candidate.client.prefs.read_preference(/datum/preference/choiced/species), mob_candidate.client.prefs.read_preference(/datum/preference/organ_data)?[O_BRAIN])) // Nope.
+					continue
+
+				var/idealage = job.get_ideal_age(mob_candidate.client.prefs.read_preference(/datum/preference/choiced/species), mob_candidate.client.prefs.read_preference(/datum/preference/organ_data)?[O_BRAIN])
+				var/agediff = abs(idealage - age) // Compute the absolute difference in age from target
+				switch(agediff) /// If the math sucks, it's because I almost failed algebra in high school.
+					if(20 to INFINITY)
+						weightedCandidates[mob_candidate] = 3 // Too far off
+					if(10 to 20)
+						weightedCandidates[mob_candidate] = 6 // Nearer the mark, but not quite
+					if(0 to 10)
+						weightedCandidates[mob_candidate] = 10 // On the mark
+					else
+						// If there's ABSOLUTELY NOBODY ELSE
+						if(length(candidates) == 1)
+							weightedCandidates[mob_candidate] = 1
+
+
+			var/mob/new_player/candidate = pickweight(weightedCandidates)
+			if(assign_role(candidate, command_position))
+				return TRUE
+	return FALSE
+
+///This proc is called at the start of the level loop of DivideOccupations() and will cause head jobs to be checked before any other jobs of the same level
+/datum/system/job/proc/check_head_position(level)
+	for(var/command_position in SSjob.get_job_titles_in_department(DEPARTMENT_COMMAND))
+		var/datum/job/job = get_job(command_position)
+		if(!job)
+			continue
+		var/list/candidates = find_occupation_candidate(job, level)
+		if(!length(candidates))
+			continue
+		var/mob/new_player/candidate = pick(candidates)
+		assign_role(candidate, command_position)
+
+/** Proc DivideOccupations
+ *  fills var "assigned_role" for all ready players.
+ *  This proc must not have any side effect besides of modifying "assigned_role".
+ **/
+/datum/system/job/proc/divide_occupations()
+	//Setup new player list and get the jobs list
+	job_debug_message("Running DO")
+	setup_occupations()
+
+	//Holder for Triumvirate is stored in the ticker, this just processes it
+	if(SSticker && GLOB.triai)
+		for(var/datum/job/A in occupations)
+			if(A.title == JOB_AI)
+				A.spawn_positions = 3
+				break
+
+	//Get the players who are ready
+	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if(player.ready && player.mind && !player.mind.assigned_role)
+			rel_add(src, nameof(unassigned), player)
+
+	job_debug_message("DO, Len: [length(unassigned)]")
+	if(!length(unassigned))
+		return FALSE
+
+	//Shuffle players and jobs
+	shuffle_inplace(unassigned)
+
+	handle_feedback_gathering()
+
+	//People who wants to be assistants, sure, go on.
+	job_debug_message("DO, Running Assistant Check 1")
+	var/datum/job/assist = new DEFAULT_JOB_TYPE ()
+	var/list/assistant_candidates = find_occupation_candidate(assist, 3)
+	job_debug_message("AC1, Candidates: [length(assistant_candidates)]")
+	for(var/mob/new_player/player in assistant_candidates)
+		job_debug_message("AC1 pass, Player: [player]")
+		assign_role(player, JOB_ALT_VISITOR) // Visitor not Assistant
+		assistant_candidates -= player
+	job_debug_message("DO, AC1 end")
+
+	//Select one head
+	job_debug_message("DO, Running Head Check")
+	fill_head_position()
+	job_debug_message("DO, Head Check end")
+
+	//Other jobs are now checked
+	job_debug_message("DO, Running Standard Check")
+
+
+	// New job giving system by Donkie
+	// This will cause lots of more loops, but since it's only done once it shouldn't really matter much at all.
+	// Hopefully this will add more randomness and fairness to job giving.
+
+	// Loop through all levels from high to low
+	var/list/shuffledoccupations = shuffle(occupations)
+	for(var/level = 1 to 3)
+		//Check the head jobs first each level
+		check_head_position(level)
+
+		// Loop through all unassigned players
+		for(var/mob/new_player/player in unassigned)
+
+			// Loop through all jobs
+			for(var/datum/job/job in shuffledoccupations) // SHUFFLE ME BABY
+				if(!job || LAZYFIND(ticker_mode().disabled_jobs, job.title) )
+					continue
+
+				if(jobban_isbanned(player, job.title))
+					job_debug_message("DO isbanned failed, Player: [player], Job:[job.title]")
+					continue
+
+				if(!job.player_old_enough(player.client))
+					job_debug_message("DO player not old enough, Player: [player], Job:[job.title]")
+					continue
+
+				if(!job.player_has_enough_playtime(player.client))
+					job_debug_message("DO player not enough playtime, Player: [player]")
+					continue
+
+				// If the player wants that job on this level, then try give it to him.
+				// was: GetJobDepartment(job, level) & job.flag.
+				if(player.client.prefs.job_at_level(job.title, level))
+
+					// If the job isn't filled
+					if((job.current_positions < job.spawn_positions) || job.spawn_positions == -1)
+						job_debug_message("DO pass, Player: [player], Level:[level], Job:[job.title]")
+						assign_role(player, job.title)
+						rel_remove(src, nameof(unassigned), player)
+						break
+
+	// Hand out random jobs to the people who didn't get any in the last check
+	// Also makes sure that they got their preference correct
+	for(var/mob/new_player/player in unassigned)
+		if(player.client.prefs.read_preference(/datum/preference/numeric/human/alternate_option) == GET_RANDOM_JOB)
+			give_random_job(player)
+
+	job_debug_message("DO, Standard Check end")
+
+	job_debug_message("DO, Running AC2")
+
+	// For those who wanted to be assistant if their preferences were filled, here you go.
+	for(var/mob/new_player/player in unassigned)
+		if(player.client.prefs.read_preference(/datum/preference/numeric/human/alternate_option) == BE_ASSISTANT)
+			job_debug_message("AC2 Assistant located, Player: [player]")
+			assign_role(player, JOB_ALT_VISITOR) // Visitor not Assistant
+
+	//For ones returning to lobby
+	for(var/mob/new_player/player in unassigned)
+		if(player.client.prefs.read_preference(/datum/preference/numeric/human/alternate_option) == RETURN_TO_LOBBY)
+			player.set_ready(PLAYER_NOT_READY)
+			rel_remove(src, nameof(unassigned), player)
+	return TRUE
+
+/datum/system/job/proc/equip_rank(mob/living/carbon/human/human_mob, rank, joined_late = 0, announce = TRUE)
+	if(!human_mob)
+		return null
+
+	var/datum/job/job = get_job(rank)
+	var/list/spawn_in_storage = list()
+
+	if(!joined_late)
+		var/obj/spawn_point = null
+		var/list/possible_spawns = list()
+		for(var/obj/effect/landmark/start/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
+			if(sloc.name != rank)	continue
+			if(locate_within(sloc.loc, /mob/living))	continue
+			possible_spawns.Add(sloc)
+		if(length(possible_spawns))
+			spawn_point = pick(possible_spawns)
+		if(!spawn_point)
+			spawn_point = locate("start*[rank]") // use old stype
+		if(istype(spawn_point, /obj/effect/landmark/start) && istype(spawn_point.loc, /turf))
+			human_mob.forceMove(spawn_point.loc)
+		else
+			var/list/spawn_props = late_spawn(human_mob.client, rank)
+			var/turf/spawn_turf = spawn_props["turf"]
+			if(!spawn_turf)
+				to_chat(human_mob, span_critical("You were unable to be spawned at your chosen late-join spawnpoint. Please verify your job/spawn point combination makes sense, and try another one."))
+				return
+			else
+				human_mob.forceMove(spawn_turf)
+
+		// Moving wheelchair if they have one
+		var/obj/human_mob_buckled = human_mob?.buckled_to()
+		if(human_mob_buckled && istype(human_mob_buckled, /obj/structure/bed/chair/wheelchair))
+			human_mob_buckled.forceMove(human_mob.loc)
+			human_mob_buckled.set_dir(human_mob.dir)
+
+	if(job)
+
+		//Equip custom gear loadout.
+		var/list/custom_equip_slots = list()
+		var/list/custom_equip_leftovers = list()
+		if(human_mob?.client?.prefs && !(job.mob_type & JOB_SILICON))
+			var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // per-job loadout (was: gear_list[gear_slot])
+			for(var/thing in active_gear_list)
+				var/datum/gear/gaar_thing = GLOB.gear_datums[thing]
+				if(!gaar_thing) //Not a real gear datum (maybe removed, as this is loaded from their savefile)
+					continue
+
+				var/permitted
+				// Check if it is restricted to certain roles
+				if(gaar_thing.allowed_roles)
+					for(var/job_name in gaar_thing.allowed_roles)
+						if(job.title == job_name)
+							permitted = TRUE
+				else
+					permitted = TRUE
+
+				// Check if they're whitelisted for this gear (in alien whitelist? seriously?)
+				if(gaar_thing.whitelisted && alien_whitelist_refusal(human_mob.client, GLOB.all_species[gaar_thing.whitelisted]))
+					permitted = FALSE
+
+				// If they aren't, tell them
+				if(!permitted)
+					to_chat(human_mob, span_warning("Your current species, job or whitelist status does not permit you to spawn with [thing]!"))
+					continue
+
+				// Implants get special treatment
+				if(gaar_thing.slot == "implant")
+					var/obj/item/implant/gear_implant = gaar_thing.spawn_item(human_mob, active_gear_list[gaar_thing.display_name])
+					gear_implant.set_invisibility(INVISIBILITY_MAXIMUM)
+					gear_implant.implant_loadout(human_mob)
+					continue
+
+				// items with no body slot (the new "Other / Junk" bucket in the
+				// loadout editor) used to be silently dropped here. Route them into the
+				// deferred backpack-spawn pile so they end up where the player expects.
+				if(!gaar_thing.slot)
+					spawn_in_storage += thing
+					continue
+
+				// Try desperately (and sorta poorly) to equip the item. Now with increased desperation!
+				if(gaar_thing.slot && !(gaar_thing.slot in custom_equip_slots))
+					var/metadata = active_gear_list[gaar_thing.display_name]
+					//if(G.slot == SLOT_ID_MASK || G.slot == SLOT_ID_SUIT || G.slot == SLOT_ID_HEAD)
+					//	custom_equip_leftovers += thing
+					//else
+					// no_jacket pref deleted; this gate is dead code now.
+// if(gaar_thing.slot == SLOT_ID_SHOES && human_mob.client?.prefs?.shoe_hater) //RS ADD // Disable
+// continue // Disable
+					if(human_mob.equip_to_slot_or_del(gaar_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs), gaar_thing.slot))
+						to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
+						if(gaar_thing.slot != SLOT_ID_TIE)
+							custom_equip_slots.Add(gaar_thing.slot)
+					else
+						custom_equip_leftovers.Add(thing)
+				else
+					spawn_in_storage += thing
+
+		// Set up their account
+		job.setup_account(human_mob)
+
+		// Equip job items.
+		job.equip(human_mob, human_mob.mind ? human_mob.mind.role_alt_title : "")
+
+		// Stick their fingerprints on literally everything
+		job.apply_fingerprints(human_mob)
+
+		// Only non-silicons get post-job-equip equipment and dormant diseases
+		if(!(job.mob_type & JOB_SILICON))
+			human_mob.equip_post_job()
+			human_mob.give_random_dormant_disease(guaranteed_symptoms = job.symptoms)
+
+		// If some custom items could not be equipped before, try again now.
+		for(var/thing in custom_equip_leftovers)
+			var/datum/gear/gear_thing = GLOB.gear_datums[thing]
+			// no_jacket pref deleted; this gate is dead code now.
+// if(gear_thing.slot == SLOT_ID_SHOES && human_mob.client?.prefs?.shoe_hater) // Disable
+// continue // Disable
+			if(gear_thing.slot in custom_equip_slots)
+				spawn_in_storage += thing
+			else
+				var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // per-job loadout (was: gear_list[gear_slot])
+				var/metadata = active_gear_list[gear_thing.display_name]
+				if(human_mob.equip_to_slot_or_del(gear_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs), gear_thing.slot))
+					to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
+					custom_equip_slots.Add(gear_thing.slot)
+				else
+					spawn_in_storage += thing
+
+		/* 
+		//Give new players a welcome guide!
+		if(isnum(human_mob.client?.player_age) && human_mob.client.player_age < 10)
+			human_mob.equip_to_slot_or_del(new /obj/item/book/manual/virgo_pamphlet(human_mob), SLOT_ID_HAND_R)
+		*/
+	else
+		to_chat(human_mob, span_filter_notice("Your job is [rank] and the game just can't handle it! Please report this bug to an administrator."))
+
+	human_mob.set_job(rank)
+	log_game("JOINED [key_name(human_mob)] as \"[rank]\"")
+	log_game("SPECIES [key_name(human_mob)] is a: \"[human_mob.species.name]\"")
+
+	// If they're head, give them the account info for their department
+	if(human_mob.mind && job.department_accounts)
+		var/remembered_info = ""
+		for(var/job_department in job.department_accounts)
+			var/datum/money_account/department_account = GLOB.department_accounts[job_department]
+			if(department_account)
+				remembered_info += span_bold("Department account number ([job_department]):") + " #[department_account.account_number]<br>"
+				remembered_info += span_bold("Department account pin ([job_department]):") + " [department_account.remote_access_pin]<br>"
+				remembered_info += span_bold("Department account funds ([job_department]):") + " $[department_account.money]<br>"
+
+		human_mob.mind.store_memory(remembered_info)
+
+	var/alt_title = null
+	if(human_mob.mind)
+		human_mob.mind.assigned_role = rank
+		alt_title = human_mob.mind.role_alt_title
+
+		// If we're a silicon, we may be done at this point
+		if(job.mob_type & JOB_SILICON_ROBOT)
+			return human_mob.Robotize()
+		if(job.mob_type & JOB_SILICON_AI)
+			return human_mob
+
+		// TWEET PEEP
+		if(rank == JOB_SITE_MANAGER && announce)
+			var/sound/announce_sound = (round_game_state() <= GAME_STATE_SETTING_UP) ? null : sound('sound/misc/boatswain.ogg', volume=20)
+			GLOB.captain_announcement.Announce("All hands, [alt_title ? alt_title : JOB_SITE_MANAGER] [human_mob.real_name] on deck!", new_sound = announce_sound, zlevel = human_mob.z)
+
+		//Deferred item spawning.
+		if(spawn_in_storage && length(spawn_in_storage))
+			var/obj/item/storage/storage_bag
+			for(var/obj/item/storage/worn_bag in contents_of(human_mob))
+				storage_bag = worn_bag
+				break
+
+			var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // per-job loadout (was: gear_list[gear_slot])
+			if(!isnull(storage_bag))
+				for(var/thing in spawn_in_storage)
+					to_chat(human_mob, span_notice("Placing \the [thing] in your [storage_bag.name]!"))
+					var/datum/gear/gear_thing = GLOB.gear_datums[thing]
+					var/metadata = active_gear_list[gear_thing.display_name]
+					gear_thing.spawn_item(storage_bag, metadata, human_mob.client?.prefs)
+			else
+				to_chat(human_mob, span_danger("Failed to locate a storage object on your mob, either you spawned with no arms and no backpack or this is a bug."))
+
+	if(istype(human_mob)) //give humans wheelchairs, if they need them.
+		var/obj/item/organ/external/l_foot = human_mob.get_organ(BP_L_FOOT)
+		var/obj/item/organ/external/r_foot = human_mob.get_organ(BP_R_FOOT)
+		var/obj/item/storage/storage_bag = locate_within(human_mob, /obj/item/storage)
+		var/obj/item/wheelchair/used_wheelchair
+		if(storage_bag)
+			storage_bag.latent_materialize_all() // a walk needs real things (C5)
+			used_wheelchair = locate_within(storage_bag, /obj/item/wheelchair)
+		if(!l_foot || !r_foot || used_wheelchair)
+			var/wheelchair_type = used_wheelchair?.unfolded_type || /obj/structure/bed/chair/wheelchair
+			var/obj/structure/bed/chair/wheelchair/active_wheelchair = new wheelchair_type(human_mob.loc)
+			active_wheelchair.buckle_mob(human_mob)
+			human_mob.update_canmove()
+			active_wheelchair.set_dir(human_mob.dir)
+			active_wheelchair.add_fingerprint(human_mob)
+			if(used_wheelchair)
+				active_wheelchair.set_color(used_wheelchair.color)
+				spent(used_wheelchair)
+
+	to_chat(human_mob, span_filter_notice(span_bold("You are [job.total_positions == 1 ? "the" : "a"] [alt_title ? alt_title : rank].")))
+
+	if(job.supervisors)
+		to_chat(human_mob, span_filter_notice(span_bold("As the [alt_title ? alt_title : rank] you answer directly to [job.supervisors]. Special circumstances may change this.")))
+	if(job.has_headset)
+		human_mob.equip_to_slot_or_del(new /obj/item/radio/headset(human_mob), SLOT_ID_EAR_L)
+		to_chat(human_mob, span_filter_notice(span_bold("To speak on your department's radio channel use :h. For the use of other channels, examine your headset.")))
+
+	if(job.req_admin_notify)
+		to_chat(human_mob, span_filter_notice(span_bold("You are playing a job that is important for Game Progression. If you have to disconnect, please notify the admins via adminhelp.")))
+
+	// EMAIL GENERATION
+	// Email addresses will be created under this domain name. Mostly for the looks.
+	var/domain = "freemail.nt"
+	if(using_map && LAZYLEN(using_map.usable_email_tlds))
+		domain = using_map.usable_email_tlds[1]
+	var/sanitized_name = sanitize(replacetext(replacetext(lowertext(human_mob.real_name), " ", "."), "'", ""))
+	var/complete_login = "[sanitized_name]@[domain]"
+
+	// It is VERY unlikely that we'll have two players, in the same round, with the same name and branch, but still, this is here.
+	// If such conflict is encountered, a random number will be appended to the email address. If this fails too, no email account will be created.
+	if(GLOB.ntnet_global.does_email_exist(complete_login))
+		complete_login = "[sanitized_name][random_id(/datum/computer_file/data/email_account/, 100, 999)]@[domain]"
+
+	// If even fallback login generation failed, just don't give them an email. The chance of this happening is astronomically low.
+	if(GLOB.ntnet_global.does_email_exist(complete_login))
+		to_chat(human_mob, span_filter_notice("You were not assigned an email address."))
+		human_mob.mind.store_memory("You were not assigned an email address.")
+	else
+		var/datum/computer_file/data/email_account/user_mail_acc = new/datum/computer_file/data/email_account()
+		user_mail_acc.password = GenerateKey()
+		user_mail_acc.login = 	complete_login
+		to_chat(human_mob, span_filter_notice("Your email account address is " + span_bold("[user_mail_acc.login]") + " and the password is " + span_bold("[user_mail_acc.password]") + ". This information has also been placed into your notes."))
+		human_mob.mind.store_memory("Your email account address is [user_mail_acc.login] and the password is [user_mail_acc.password].")
+	// END EMAIL GENERATION
+
+	//Gives glasses to the vision impaired
+	if(human_mob.disabilities() & NEARSIGHTED)
+		var/equipped = human_mob.equip_to_slot_or_del(new /obj/item/clothing/glasses/regular(human_mob), SLOT_ID_EYES)
+		if(equipped != 1)
+			var/obj/item/clothing/glasses/worn_glasses = human_mob.get_equipped_item(SLOT_ID_EYES)
+			worn_glasses.prescription = TRUE
+
+	human_mob.flag_hud_update(ID_HUD)
+	human_mob.flag_hud_update(IMPLOYAL_HUD)
+	human_mob.flag_hud_update(SPECIALROLE_HUD)
+	return human_mob
+
+/datum/system/job/proc/handle_feedback_gathering()
+	for(var/datum/job/job in occupations)
+		var/tmp_str = "|[job.title]|"
+
+		var/level1 = 0 //high
+		var/level2 = 0 //medium
+		var/level3 = 0 //low
+		var/level4 = 0 //never
+		var/level5 = 0 //banned
+		var/level6 = 0 //account too young
+		for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+			if(!(player.ready && player.mind && !player.mind.assigned_role))
+				continue //This player is not ready
+			if(jobban_isbanned(player, job.title))
+				level5++
+				continue
+			if(!job.player_old_enough(player.client))
+				level6++
+				continue
+			if(!job.player_has_enough_playtime(player.client))
+				level6++
+				continue
+			// was: GetJobDepartment(...) & job.flag for each level.
+			var/_priority = player.client.prefs.get_job_priority(job.title)
+			switch(_priority)
+				if("high")
+					level1++
+				if("med")
+					level2++
+				if("low")
+					level3++
+				else
+					level4++ //not selected
+
+		tmp_str += "HIGH=[level1]|MEDIUM=[level2]|LOW=[level3]|NEVER=[level4]|BANNED=[level5]|YOUNG=[level6]|-"
+		feedback_add_details("job_preferences",tmp_str)
+
+/// The living players a late joiner may spawn into as prey (willing, awake, on the vorespawn levels).
+/datum/system/job/proc/vorespawn_preds()
+	RETURN_TYPE(/list)
+	var/list/preds = list()
+	for(var/client/current_client in GLOB.clients)
+		if(!isliving(current_client.mob))
+			continue
+		var/mob/living/current_mob = current_client.mob
+		if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.vore_prefs.no_latejoin_vore_warning))
+			continue
+		if(!current_mob.vore_prefs.latejoin_vore)
+			continue
+		if(!(current_mob.z in using_map.vorespawn_levels))
+			continue
+		preds += current_mob
+	return preds
+
+/// The living players a late joiner may spawn onto as a pred (willing, awake, on the vorespawn levels).
+/datum/system/job/proc/vorespawn_preys()
+	RETURN_TYPE(/list)
+	var/list/preys = list()
+	for(var/client/current_client in GLOB.clients)
+		if(!isliving(current_client.mob))
+			continue
+		var/mob/living/current_mob = current_client.mob
+		if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.vore_prefs.no_latejoin_prey_warning))
+			continue
+		if(!current_mob.vore_prefs.latejoin_prey)
+			continue
+		if(!(current_mob.z in using_map.vorespawn_levels))
+			continue
+		preys += current_mob
+	return preys
+
+/// The names the join questions show for `mobs` (the answer is found again by its place in the list).
+/datum/system/job/proc/vorespawn_names(list/mobs)
+	RETURN_TYPE(/list)
+	var/list/names = list()
+	for(var/mob/living/current_mob as anything in mobs)
+		names += current_mob.real_name
+	return names
+
+/// The bellies of `pred` that the player `joiner_ckey` may spawn into.
+/datum/system/job/proc/vorespawn_bellies(mob/living/pred, joiner_ckey)
+	var/list/available_bellies = list()
+	for(var/obj/belly/current_belly in pred.vore_organs)
+		if(current_belly.vorespawn_blacklist)
+			continue
+		if(LAZYLEN(current_belly.vorespawn_whitelist) && !(joiner_ckey in current_belly.vorespawn_whitelist))
+			continue
+		available_bellies += current_belly
+	return available_bellies
+
+/// The names of the bellies in the joiner's own vore prefs (the pred spawn's belly question).
+/datum/system/job/proc/vorespawn_own_belly_names(client/spawn_client)
+	var/list/available_bellies = list()
+	var/datum/vore_preferences/spawn_preferences = spawn_client.prefs_vr
+	for(var/preference in spawn_preferences.belly_prefs)
+		available_bellies += preference["name"]
+	return available_bellies
+
+/// The item spawnpoints a joiner may spawn as: list("items" = the items, "names" = how each is shown, "carriers" = who holds each, or null).
+/datum/system/job/proc/itemspawn_options(client/spawn_client)
+	var/list/items = list()
+	var/list/item_names = list()
+	var/list/carriers = list()
+	for(var/obj/item/item_spawnpoint in REGISTRY_MEMBERS(REGISTRY_ITEM_TF_SPAWNPOINTS))
+		if(LAZYLEN(STATE_PEEK(item_spawnpoint, item_misc, ckeys_allowed_itemspawn)))
+			if(!(spawn_client.ckey in STATE_PEEK(item_spawnpoint, item_misc, ckeys_allowed_itemspawn)))
+				continue
+		var/atom/item_loc = item_spawnpoint.loc
+		var/mob/living/carrier
+		while(!isturf(item_loc))
+			if(isliving(item_loc))
+				carrier = item_loc
+				break
+			else
+				item_loc = item_loc.loc
+		if(istype(carrier))
+			if(!(carrier.z in using_map.vorespawn_levels))
+				continue
+			if(carrier.stat == UNCONSCIOUS || carrier.stat == DEAD || carrier.client.is_afk(10 MINUTES))
+				continue
+			carriers += carrier
+		else
+			if(!(item_loc.z in using_map.vorespawn_levels))
+				continue
+			carriers += null
+
+		if(istype(item_spawnpoint, /obj/item/capture_crystal))
+			if(carrier)
+				items += item_spawnpoint
+				var/obj/item/capture_crystal/cryst = item_spawnpoint
+				if(cryst.spawn_mob_type)
+					item_names += "\a [cryst.spawn_mob_name] inside of [carrier]'s [item_spawnpoint.name] ([item_spawnpoint.loc.name])"
+				else
+					item_names += "Inside of [carrier]'s [item_spawnpoint.name] ([item_spawnpoint.loc.name])"
+		else if(item_spawnpoint.name == initial(item_spawnpoint.name))
+			items += item_spawnpoint
+			if(carrier)
+				item_names += "[carrier]'s [item_spawnpoint.name] ([item_spawnpoint.loc.name])"
+			else
+				item_names += "[item_spawnpoint.name] ([item_spawnpoint.loc.name])"
+		else
+			items += item_spawnpoint
+			if(carrier)
+				item_names += "[carrier]'s [item_spawnpoint.name] (\a [initial(item_spawnpoint.name)] at [item_spawnpoint.loc.name])"
+			else
+				item_names += "[item_spawnpoint.name] (\a [initial(item_spawnpoint.name)] at [item_spawnpoint.loc.name])"
+	return list("items" = items, "names" = item_names, "carriers" = carriers)
+
+/// The confirmation a pred, prey or carrier gives a late joiner. Its answer (or `cancel_answer` when it is closed or times out) runs the
+/// joiner's do_late_spawn() again with the joiner's own answers kept in `answers`.
+/datum/prompt/choice/late_spawn_consent
+	title = "Confirm"
+	buttons = TRUE
+	/// The job being joined.
+	var/rank
+	/// The joiner's answers to the join op's questions (step name -> answer), as late_spawn() reads them.
+	var/list/answers
+	/// What a close or a timeout answers instead (null: the request is dropped).
+	var/cancel_answer
+
+/// Asks `answerer` (the pred, prey or carrier) to let `joiner` in; the joiner's do_late_spawn() runs again with the answer.
+/datum/system/job/proc/late_spawn_ask_consent(mob/new_player/joiner, mob/living/answerer, rank, list/answers, question, cancel_answer = null, timeout = 0)
+	open_request(joiner, /datum/prompt/choice/late_spawn_consent, TYPE_PROC_REF(/mob/new_player, late_spawn_consented), answerer = answerer, question = question, choices = list("No", "Yes"), rank = rank, answers = answers, cancel_answer = cancel_answer, timeout = timeout)
+
+/// Where a late joiner spawns. The vore and item spawnpoints ask the joiner first (the join op's questions, code/modules/tgui/modules/late_choices.dm,
+/// handed in as `answers`: step name -> answer) and then the pred, prey or carrier: that request is owned by the joiner, and its answer comes back
+/// as `consent` when the joiner's do_late_spawn() runs again. Until the last answer this returns null. Without a joiner those spawnpoints fall back
+/// to the usual ones.
+/datum/system/job/proc/late_spawn(client/spawn_client, rank, mob/new_player/joiner, list/answers = null, consent = null)
+
+	var/datum/spawnpoint/spawnpos
+	var/obj/belly/vore_spawn_gut
+	var/absorb_choice = FALSE // Ability to start absorbed with vorespawn
+	var/mob/living/prey_to_nomph
+	var/obj/item/item_to_be // Item TF spawning
+	var/mob/living/item_carrier // Capture crystal spawning
+	var/vorgans = FALSE // capture crystal simplemob spawning
+
+	// Remove fail_deadly addition on offmap_spawn
+
+	//Spawn them at their preferred one
+	var/preferred_spawn = spawn_client?.prefs.read_preference(/datum/preference/choiced/living/spawnpoint)
+	if(!joiner && (preferred_spawn in list("Vorespawn - Prey", "Vorespawn - Pred", "Item TF spawn")))
+		preferred_spawn = null
+	if(preferred_spawn)
+		if(preferred_spawn == "Vorespawn - Prey")
+			var/list/preds = vorespawn_preds()
+			if(length(preds))
+				var/pred_name = LAZYACCESS(answers, "pred")
+				if(!pred_name)
+					return
+				var/list/pred_names = vorespawn_names(preds)
+				var/index = pred_names.Find(pred_name)
+				if(!index)
+					return
+				var/mob/living/pred = preds[index]
+				var/list/available_bellies = vorespawn_bellies(pred, spawn_client.ckey)
+				var/backup = LAZYACCESS(answers, "backup_vore")
+				if(isnull(backup))
+					return
+				backup = (backup == "Yes")
+				var/belly_name = LAZYACCESS(answers, "belly")
+				for(var/obj/belly/candidate in available_bellies)
+					if(candidate.name == belly_name)
+						vore_spawn_gut = candidate
+						break
+				if(!vore_spawn_gut)
+					return
+				if(vore_spawn_gut.vorespawn_absorbed & VS_FLAG_ABSORB_YES)
+					absorb_choice = TRUE
+					if(vore_spawn_gut.vorespawn_absorbed & VS_FLAG_ABSORB_PREY)
+						var/start_absorbed = LAZYACCESS(answers, "absorbed")
+						if(isnull(start_absorbed))
+							return
+						if(start_absorbed != "Yes")
+							absorb_choice = FALSE
+					else
+						var/go_on = LAZYACCESS(answers, "go_on")
+						if(go_on != "Yes")
+							return
+
+				var/spawner_name = spawn_client.prefs.read_preference(/datum/preference/name/real_name)
+				// The pred is asked; with the no-warning pref, not answering in time lets them in.
+				var/confirm = consent
+				if(isnull(confirm))
+					to_chat(spawn_client, span_boldwarning("[pred] has received your spawn request. Please wait."))
+					log_admin("[key_name(spawn_client)] has requested to vore spawn into [key_name(pred)]")
+					message_admins("[key_name(spawn_client)] has requested to vore spawn into [key_name(pred)]")
+					late_spawn_ask_consent(joiner, pred, rank, answers, absorb_choice ? "[spawner_name] is attempting to spawn absorbed as your [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to spawn into your [vore_spawn_gut]. Let them?", pred.vore_prefs.no_latejoin_vore_warning ? "Yes" : null, (pred.vore_prefs.no_latejoin_vore_warning && pred.vore_prefs.no_latejoin_vore_warning_time > 0) ? pred.vore_prefs.no_latejoin_vore_warning_time SECONDS : 0)
+					return
+				if(confirm != "Yes")
+					late_spawn_declined(spawn_client, pred, "Notify Prey")
+					return
+				if(!vore_spawn_gut || QDELETED(vore_spawn_gut))
+					to_chat(spawn_client, span_warning("Somehow, the belly you were trying to enter no longer exists."))
+					return
+				if(pred.stat == UNCONSCIOUS || pred.stat == DEAD)
+					to_chat(spawn_client, span_warning("[pred] is not conscious."))
+					to_chat(pred, span_warning("You must be conscious to accept."))
+					return
+				if(!(pred.z in using_map.vorespawn_levels))
+					to_chat(spawn_client, span_warning("[pred] is no longer in station grounds."))
+					to_chat(pred, span_warning("You must be within station grounds to accept."))
+					return
+				if(backup)
+					after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))
+				log_admin("[key_name(spawn_client)] has vore spawned into [key_name(pred)]")
+				message_admins("[key_name(spawn_client)] has vore spawned into [key_name(pred)]")
+				to_chat(spawn_client, span_notice("You have been spawned via vore. You are free to roleplay how you got there as you please, such as teleportation or having had already been there."))
+				if(vore_spawn_gut.entrance_logs)
+					to_chat(pred, span_notice("Your prey has spawned via vore. You are free to roleplay this how you please, such as teleportation or having had already been there."))
+			else
+				to_chat(spawn_client, span_warning("No predators were available to accept you."))
+				return
+			spawnpos = GLOB.spawntypes[spawn_client.prefs.read_preference(/datum/preference/choiced/living/spawnpoint)]
+		else if(preferred_spawn == "Vorespawn - Pred") //Same as above, but in reverse!
+			var/list/preys = vorespawn_preys()
+			if(length(preys))
+				var/prey_name = LAZYACCESS(answers, "prey")
+				if(!prey_name)
+					return
+				var/list/prey_names = vorespawn_names(preys)
+				var/index = prey_names.Find(prey_name)
+				if(!index)
+					return
+				var/mob/living/prey = preys[index]
+				vore_spawn_gut = LAZYACCESS(answers, "belly_pred")
+				if(!vore_spawn_gut)
+					return
+				var/absorb_them = LAZYACCESS(answers, "absorb")
+				if(isnull(absorb_them))
+					return
+				if(absorb_them == "Yes")
+					absorb_choice = TRUE
+
+				var/spawner_name = spawn_client.prefs.read_preference(/datum/preference/name/real_name)
+				// The prey is asked; with the no-warning pref, not answering in time lets it happen.
+				var/confirm = consent
+				if(isnull(confirm))
+					to_chat(spawn_client, span_boldwarning("[prey] has received your spawn request. Please wait."))
+					log_admin("[key_name(spawn_client)] has requested to pred spawn onto [key_name(prey)]")
+					message_admins("[key_name(spawn_client)] has requested to pred spawn onto [key_name(prey)]")
+					late_spawn_ask_consent(joiner, prey, rank, answers, absorb_choice ? "[spawner_name] is attempting to televore and instantly absorb you with their [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to televore you into their [vore_spawn_gut]. Let them?", prey.vore_prefs.no_latejoin_prey_warning ? "Yes" : null, (prey.vore_prefs.no_latejoin_prey_warning && prey.vore_prefs.no_latejoin_prey_warning_time > 0) ? prey.vore_prefs.no_latejoin_prey_warning_time SECONDS : 0)
+					return
+				if(confirm != "Yes")
+					late_spawn_declined(spawn_client, prey, "Notify Pred")
+					return
+				if(prey.stat == UNCONSCIOUS || prey.stat == DEAD)
+					to_chat(spawn_client, span_warning("[prey] is not conscious."))
+					to_chat(prey, span_warning("You must be conscious to accept."))
+					return
+				if(!(prey.z in using_map.vorespawn_levels))
+					to_chat(spawn_client, span_warning("[prey] is no longer in station grounds."))
+					to_chat(prey, span_warning("You must be within station grounds to accept."))
+					return
+				log_admin("[key_name(spawn_client)] has pred spawned onto [key_name(prey)]")
+				message_admins("[key_name(spawn_client)] has pred spawned onto [key_name(prey)]")
+				prey_to_nomph = prey
+			else
+				to_chat(spawn_client, span_warning("No prey were available to accept you."))
+				return
+		// Item TF spawnpoints!
+		else if(preferred_spawn == "Item TF spawn")
+			var/list/options = itemspawn_options(spawn_client)
+			var/list/items = options["items"]
+			var/list/item_names = options["names"]
+			var/list/carriers = options["carriers"]
+			if(LAZYLEN(items))
+				var/backup = LAZYACCESS(answers, "backup_item")
+				if(isnull(backup))
+					return
+				backup = (backup == "Yes")
+				var/item_name = LAZYACCESS(answers, "item")
+				if(!item_name)
+					return
+				var/index = item_names.Find(item_name)
+				if(!index)
+					return
+				var/obj/item/item = items[index]
+
+				var/mob/living/carrier = carriers[index]
+				if(istype(carrier))
+					var/confirm = consent
+					if(isnull(confirm))
+						to_chat(spawn_client, span_boldwarning("[carrier] has received your spawn request. Please wait."))
+						log_and_message_admins("[key_name(spawn_client)] has requested to item spawn into [key_name(carrier)]'s possession", joiner)
+						late_spawn_ask_consent(joiner, carrier, rank, answers, "[spawn_client.prefs.read_preference(/datum/preference/name/real_name)] is attempting to join as the [item_name] in your possession.")
+						return
+					if(confirm != "Yes")
+						late_spawn_declined(spawn_client, carrier, "Notify Spawner")
+						return
+					if(carrier.stat == UNCONSCIOUS || carrier.stat == DEAD)
+						to_chat(spawn_client, span_warning("[carrier] is not conscious."))
+						to_chat(carrier, span_warning("You must be conscious to accept."))
+						return
+					if(!(carrier.z in using_map.vorespawn_levels))
+						to_chat(spawn_client, span_warning("[carrier] is no longer in station grounds."))
+						to_chat(carrier, span_warning("You must be within station grounds to accept."))
+						return
+					log_and_message_admins("[key_name(spawn_client)] has item spawned onto [key_name(carrier)]", joiner)
+					item_to_be = item
+					item_carrier = carrier
+					if(backup)
+						after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))
+				else
+					var/confirm = LAZYACCESS(answers, "unheld")
+					if(confirm != "Yes")
+						return
+					log_and_message_admins("[key_name(spawn_client)] has item spawned into \a [item.name] that was not held by anyone", joiner)
+					item_to_be = item
+					if(backup)
+						after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))
+				if(istype(item, /obj/item/capture_crystal))
+					var/obj/item/capture_crystal/cryst = item
+					if(cryst.spawn_mob_type)
+						var/confirm = LAZYACCESS(answers, "vorgans")
+						if(isnull(confirm))
+							return
+						if(confirm == "Yes")
+							vorgans = TRUE
+			else
+				to_chat(spawn_client, span_warning("No items were available to accept you."))
+				return
+
+	// Everyone but a vore or item join goes where the one check says they may; a choice that no longer holds moves quietly to one that does.
+	if(spawn_client?.prefs && !vore_spawn_gut && !prey_to_nomph && !item_to_be)
+		spawnpos = spawnpoint_for_join(spawn_client.prefs, rank, preferred_spawn)
+
+	//We will return a list key'd by "turf" and "msg"
+	. = list("turf","msg", "voreny", "prey", "itemtf", "vorgans", "carrier") // Item TF spawnpoints, spawn as mob
+	if(vore_spawn_gut)
+		.["voreny"] = vore_spawn_gut
+		.["absorb"] = absorb_choice
+	if(prey_to_nomph)
+		.["prey"] = prey_to_nomph	//We pass this on later to reverse the vorespawn in new_player.dm
+	// Item TF spawnpoints
+	if(item_to_be)
+		.["carrier"] = item_carrier
+		.["vorgans"] = vorgans
+		.["itemtf"] = item_to_be
+	var/turf/landing = spawnpos?.get_spawn_position()
+	if(landing)
+		.["turf"] = landing
+		.["msg"] = spawnpos.msg
+		.["channel"] = spawnpos.announce_channel
+		return
+	// An offmap job has no business on the arrivals shuttle: with nowhere it may go, it does not join.
+	var/datum/job/job_rank = SSjob.get_job(rank)
+	if(spawn_client && job_rank?.offmap_spawn && !vore_spawn_gut && !prey_to_nomph && !item_to_be)
+		to_chat(spawn_client, span_warning("[rank] has no spawn point on this map."))
+		return
+	var/list/arrivals = REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
+	if(length(arrivals))
+		.["turf"] = get_turf(pick(arrivals))
+		.["msg"] = "has arrived on the station"
+
+/// A refused vore or item spawn: the one who refused may leave the joiner a message.
+/datum/system/job/proc/late_spawn_declined(client/spawn_client, mob/refuser, title)
+	to_chat(spawn_client, span_warning("[refuser] has declined your spawn request."))
+	open_request(src, /datum/prompt/text/late_spawn_decline, PROC_REF(late_spawn_decline_message), answerer = refuser, title = title, joiner_ckey = spawn_client.ckey)
+
+/// The one who refused a late spawn may leave the joiner a message.
+/datum/prompt/text/late_spawn_decline
+	question = "Do you want to leave them a message?"
+	timeout = 0
+	/// The joiner, by ckey (a client is gone when it disconnects).
+	var/joiner_ckey
+
+/datum/system/job/proc/late_spawn_decline_message(datum/act/request/A)
+	var/datum/prompt/text/late_spawn_decline/asked = A.answer
+	if(!asked)
+		return
+	var/mob/refuser = asked.answerer
+	var/client/spawn_client = GLOB.directory[asked.joiner_ckey]
+	var/message = asked.value
+	if(!spawn_client)
+		return
+	if(message)
+		to_chat(spawn_client, span_notice("[refuser] message : [message]"))
+
+/datum/system/job/proc/m_backup_client(client/target_client)	//Same as m_backup, but takes a client entry. Used for vore late joining.
+	if(!target_client || !ishuman(target_client.mob))
+		return
+	var/mob/living/carbon/human/target_human = target_client.mob
+	SStranscore.m_backup(target_human.mind, target_human.nif, TRUE)
+
+/datum/system/job/proc/get_all_jobs()
+	var/list/all_jobs = list()
+	for(var/datum/job/current_job as anything in occupation_with_excludes)
+		all_jobs += current_job.title
+	return all_jobs
+
+// start
+/datum/system/job/proc/load_camp_lists()
+	if(fexists(savepath))
+		var/saved = file2text(savepath)
+		fdel(savepath)
+		// The file is written at shutdown; a crash mid-write leaves it empty or cut short, and json_decode
+		// throws on that at boot. A bad file only loses last round's camp list.
+		if(length(saved))
+			try
+				var/list/decoded = json_decode(saved)
+				if(islist(decoded))
+					restricted_keys = decoded
+			catch(var/exception/error)
+				dq_report_caught(error, "Job: discarded an unreadable [savepath]")
+
+/datum/system/job/on_shutdown()
+	. = ..()
+	if(fexists(savepath))
+		fdel(savepath)
+	var/json_to_file = json_encode(shift_keys)
+	if(!json_to_file)
+		log_world("Saving: [savepath] failed jsonencode")
+		return
+
+	//Write it out
+	rustg_file_write(json_to_file, savepath)
+	if(!fexists(savepath))
+		log_world("Saving: failed to save [savepath]")
+// end

@@ -58,9 +58,8 @@ let mut out=RawFacts::default();
         let text = f.raw().text.as_str();
         out.homes = crate::base_var_hot_policy::homes_in_using(f.code().text.as_str(),macros,relations,control)?;
         if text.contains("GLOBAL_DATUM_INIT") {
-            // The trailing `\x08` is the Python's literal backspace (see dm/singletons.rs).
             let mut set: BTreeSet<String> = BTreeSet::new();
-            for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\x08").captures_iter(text) {
+            for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b").captures_iter(text) {
                 control.checkpoint()?;if !set.contains(m.s(1)){kc::reserve(control,||Some(2048))?;set.insert(kc::own(control,m.s(1))?);}
             }
             kc::reserve(control,||set.len().checked_mul(4*std::mem::size_of::<String>())?.checked_add(128))?;out.singles = set.into_iter().collect();

@@ -1,4 +1,4 @@
-// Object-model core: deadlines (doc/rewrite/object_model_core.md section A.5). Hold times are
+// engine core: deadlines (doc/rewrite/archive/object_model_core.md section A.5). Hold times are
 // deadlines too (a rule's hold_for is a keyed after() of its binding); the Rust world keeps the watches (world_watches.dm).
 //
 // A deadline is three numbers in a wheel bucket and three in the entity's
@@ -7,15 +7,15 @@
 // wheel entry goes stale by generation and is skipped when it comes round).
 
 /// Calls B.on_deadline(E) after `delay` deciseconds (in B's clock, if it has one). `sub`
-/// keys further deadlines of the same behaviour on the same entity: OM_DL_THROTTLE is the
-/// scheduler's deferred wake, OM_DL_STAGE + n a pipeline stage's rewake (on_keyed_deadline()).
+/// keys further deadlines of the same behaviour on the same entity: DEADLINE_SUB_THROTTLE is the
+/// scheduler's deferred wake, DEADLINE_SUB_STAGE + n a pipeline stage's rewake (on_keyed_deadline()).
 /proc/deadline_deadline(datum/E, delay, B, sub = 0)
 	var/datum/scheduled_behaviour/def = definition_registry().behaviour(B)
 	var/datum/scheduler_record/rec = scheduler_record_of(E)
 	if(!rec)
 		return FALSE
 	var/datum/time_scheduler/sched = rec.sched
-	var/key = def.id + sub * OM_DL_SUB
+	var/key = def.id + sub * DEADLINE_SUB
 	var/gen = ++sched.gen
 	var/t = sched.now()
 	var/local_target = null
@@ -40,10 +40,10 @@
 	return TRUE
 
 /proc/deadline_cancel_after(datum/E, B, sub = 0)
-	var/datum/scheduler_record/rec = E?.om_rec
+	var/datum/scheduler_record/rec = E?.sched_rec
 	if(!rec?.deadlines)
 		return FALSE
-	var/key = definition_registry().behaviour(B).id + sub * OM_DL_SUB
+	var/key = definition_registry().behaviour(B).id + sub * DEADLINE_SUB
 	var/list/D = rec.deadlines
 	for(var/i in 1 to length(D) step 3)
 		if(D[i] == key)
@@ -55,14 +55,14 @@
 
 /// Cancels every deadline of `B` on `E`, whatever its sub-key.
 /proc/deadline_cancel_all_after(datum/E, B)
-	var/datum/scheduler_record/rec = E?.om_rec
+	var/datum/scheduler_record/rec = E?.sched_rec
 	if(!rec?.deadlines)
 		return
 	var/bid = definition_registry().behaviour(B).id
 	var/list/D = rec.deadlines
 	var/i = 1
 	while(i <= length(D))
-		if(D[i] % OM_DL_SUB == bid)
+		if(D[i] % DEADLINE_SUB == bid)
 			D.Cut(i, i + 3)
 			continue
 		i += 3
@@ -70,10 +70,10 @@
 		rec.deadlines = null
 
 /proc/deadline_deadline_pending(datum/E, B, sub = 0)
-	var/datum/scheduler_record/rec = E?.om_rec
+	var/datum/scheduler_record/rec = E?.sched_rec
 	if(!rec?.deadlines)
 		return FALSE
-	var/key = definition_registry().behaviour(B).id + sub * OM_DL_SUB
+	var/key = definition_registry().behaviour(B).id + sub * DEADLINE_SUB
 	for(var/i in 1 to length(rec.deadlines) step 3)
 		if(rec.deadlines[i] == key)
 			return TRUE
@@ -92,7 +92,7 @@
 		var/local_target = D[i + 2]
 		if(isnull(local_target))
 			continue
-		var/datum/scheduled_behaviour/B = reg.behaviours[D[i] % OM_DL_SUB]
+		var/datum/scheduled_behaviour/B = reg.behaviours[D[i] % DEADLINE_SUB]
 		if(B.clock_idx != cidx)
 			continue
 		var/gen = ++sched.gen

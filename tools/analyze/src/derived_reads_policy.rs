@@ -5,7 +5,7 @@ pub(crate) type ReactionSlots=BTreeMap<String,BTreeMap<&'static str,Vec<String>>
 pub(crate) fn boot_text(flags:&BTreeMap<String,BTreeSet<&'static str>>,members:&[String])->Vec<String>{
     let mut out: Vec<String> = Vec::new();
     let mut push = |s: &str| out.push(s.to_string());
-    push("/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).");
+    push("/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/library/reactions/work.dm).");
     push("/proc/rx_boot_types()");
     push("\tRETURN_TYPE(/list)");
     push("\t// Built on first call: a static or global initializer may not have run yet when the first atoms initialize.");
@@ -132,9 +132,10 @@ pub(crate) fn generate_admitted(per_owner:&OwnerSlots,reaction_slots:&ReactionSl
   let mut reactions=ReactionSlots::new();reactions.entry("/mob/example".into()).or_default().insert("handle_hud",vec!["nameof(health)".into(),"HUD_KEY".into()]);
   (owners,reactions,BTreeMap::from([("/mob/example".into(),BTreeSet::from(["RXB_TIMER","RXB_CROSS"]))]),vec!["/datum/capability/cover".into()],BTreeSet::from(["/datum/test_only".into()]))
  }
- #[test]fn derived_reads_whole_original_template_matches_slots_boot_flags_members_and_test_guards(){let(a,b,c,d,e)=fixture();let old=original::generate(&a,&b,&c,&d,&e);let current=generate(&a,&b,&c,&d,&e);assert_eq!(current,old);assert!(current.contains("rx_boot_types"));assert!(current.contains("RXB_CROSS | RXB_TIMER"));assert!(current.contains("reaction_reads(PROC_REF(handle_hud), HUD_KEY, nameof(health))"));assert!(current.contains(crate::generator_test_scope::TEST_GUARD));assert!(current.contains("derive(nameof(ready), nameof(charge))"));}
+ #[test]fn derived_reads_whole_original_template_matches_slots_boot_flags_members_and_test_guards(){let(a,b,c,d,e)=fixture();let old=original::generate(&a,&b,&c,&d,&e);let current=generate(&a,&b,&c,&d,&e);// Master moved this source file. Only the generated comment should differ.
+    assert_eq!(current, old.replace("code/datums/reactions/work.dm", "code/library/reactions/work.dm"));assert!(current.contains("rx_boot_types"));assert!(current.contains("RXB_CROSS | RXB_TIMER"));assert!(current.contains("reaction_reads(PROC_REF(handle_hud), HUD_KEY, nameof(health))"));assert!(current.contains(crate::generator_test_scope::TEST_GUARD));assert!(current.contains("derive(nameof(ready), nameof(charge))"));}
  #[cfg(feature="native-policy")]
- #[test]fn derived_reads_admitted_render_preserves_bytes_and_actual_io_quota_retry(){let(a,b,c,d,e)=fixture();let fixed=std::mem::size_of::<crate::captured_generator_budget::Budget>()+2*std::mem::size_of::<usize>();let tiny=crate::captured_generator_budget::Budget::new(fixed).unwrap();assert_eq!(generate_admitted(&a,&b,&c,&d,&e,&tiny,&||Ok(())).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);assert!(tiny.denied());let healthy=crate::captured_generator_budget::Budget::new(32*1024*1024).unwrap();assert_eq!(generate_admitted(&a,&b,&c,&d,&e,&healthy,&||Ok(())).unwrap(),original::generate(&a,&b,&c,&d,&e));assert_eq!(generate_admitted(&a,&b,&c,&d,&e,&healthy,&||Err(std::io::Error::from_raw_os_error(1450))).unwrap_err().raw_os_error(),Some(1450));}
+ #[test]fn derived_reads_admitted_render_preserves_bytes_and_actual_io_quota_retry(){let(a,b,c,d,e)=fixture();let fixed=std::mem::size_of::<crate::captured_generator_budget::Budget>()+2*std::mem::size_of::<usize>();let tiny=crate::captured_generator_budget::Budget::new(fixed).unwrap();assert_eq!(generate_admitted(&a,&b,&c,&d,&e,&tiny,&||Ok(())).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);assert!(tiny.denied());let healthy=crate::captured_generator_budget::Budget::new(32*1024*1024).unwrap();assert_eq!(generate_admitted(&a,&b,&c,&d,&e,&healthy,&||Ok(())).unwrap(),original::generate(&a,&b,&c,&d,&e).replace("code/datums/reactions/work.dm","code/library/reactions/work.dm"));assert_eq!(generate_admitted(&a,&b,&c,&d,&e,&healthy,&||Err(std::io::Error::from_raw_os_error(1450))).unwrap_err().raw_os_error(),Some(1450));}
 
  #[test]fn independent_reference_is_exact_frozen_derived_template_projection(){
  let frozen=include_str!("derived_read_emitter_frozen_original.rs");let reference=include_str!("derived_reads_policy_reference.rs");

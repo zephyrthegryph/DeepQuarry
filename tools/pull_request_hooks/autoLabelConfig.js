@@ -20,7 +20,7 @@ export const file_labels = {
     filepaths: ['tools/'],
   },
   'Config Update': {
-    filepaths: ['config/', 'code/controllers/configuration/entries/'],
+    filepaths: ['config/', 'code/world/configuration/entries/'],
     add_only: true,
   },
   Sprites: {

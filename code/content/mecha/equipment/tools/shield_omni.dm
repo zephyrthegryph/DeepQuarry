@@ -78,6 +78,8 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/mecha)
 	ref_one(nameof(my_mech), on_other_deleted = OTHER_DELETE_ME)
 
 /obj/item/shield_projector/rectangle/mecha/proc/bind_to_mech()
+	if(!istype(loc, /obj/mecha)) // spawned loose (an admin, a sweep): my_mech is an /obj/mecha, and with none there is nothing to follow
+		return
 	rel_set(src, nameof(my_mech), loc)
 	observe(my_mech(), /datum/notice/movable_attempted_move, src, then(TYPE_PROC_REF(/obj/item/shield_projector, update_shield_positions)))
 	dq_add_recursive_move(my_mech())

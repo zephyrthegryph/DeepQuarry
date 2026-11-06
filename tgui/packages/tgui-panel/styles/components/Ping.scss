@@ -8,23 +8,26 @@
 .Ping {
   position: relative;
   padding: var(--space-xs) var(--space-sm);
-  border: var(--border-thickness-tiny) solid
-    hsl(from var(--color-border-primary) h 10 50 / 0.33);
-  border-radius: var(--border-radius-medium);
+  // A read-only sibling of the Buttons beside it: same height, no outline.
+  line-height: 1.667em;
+  padding-block: 0;
+  background-color: hsl(from var(--color-base) h s calc(l + 8));
+  border-radius: var(--border-radius-small);
   min-width: 4em;
   max-width: 5em;
   text-align: right;
-  user-select: 'none';
+  user-select: none;
 }
 
 .Ping__indicator {
   content: '';
   position: absolute;
-  top: var(--space-m);
+  top: 50%;
+  transform: translateY(-50%);
   left: var(--space-m);
   width: 0.5em;
   height: 0.5em;
   background-color: hsl(0, 0%, 53.3%);
   border-radius: var(--border-radius-medium);
-  user-select: 'none';
+  user-select: none;
 }

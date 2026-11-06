@@ -1,0 +1,40 @@
+////////////////////////////
+//	Purity Construct - Deacon
+////////////////////////////
+
+/mob/living/simple_mob/construct/deacon
+	name = "Deacon"
+	real_name = "Deacon"
+	construct_type = "Deacon"
+	desc = "A small construct of the purity worshippers mechanical followers, hardy but mostly harmless."
+	icon_state = "deacon"
+	icon_living = "deacon"
+	ui_icons = 'icons/mob/screen1_purity.dmi'
+	endurance = 150
+	melee_damage_lower = 8 //not meant for combat but can hold its own in a pinch
+	melee_damage_upper = 12
+	attack_armor_pen = 60 //used to carve stone and other metals, cuts through armor just as well
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("violently stabbed")
+	friendly = list("caresses")
+	organ_names = /datum/decl/mob_organ_names/harvester
+	movement_cooldown = -1
+
+
+	//	environment_smash = 1	// Whatever this gets renamed to, Harvesters need to break things
+
+	attack_sound = SFX_WEAPONS_PIERCE
+
+
+	construct_spells = list(
+			/datum/spell/aoe_turf/knock/harvester,
+			/datum/spell/targeted/construct_advanced/force_beam,
+			/datum/spell/targeted/construct_advanced/soothing_sphere,
+		)
+
+CAPABILITIES(/mob/living/simple_mob/construct/deacon)
+	configure(atom_rules(armor_spec = "melee=20;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"))
+	configure(mob_rules(faction = "purity"))
+
+/datum/decl/mob_organ_names/harvester
+TYPE_TABLE(/datum/decl/mob_organ_names/harvester, mob_organ_hit_zones, list("cephalothorax", "eye", "carapace", "energy crystal", "mandible"))

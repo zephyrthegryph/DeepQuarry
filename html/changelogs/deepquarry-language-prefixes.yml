@@ -1,0 +1,5 @@
+author: "DeepQuarry"
+delete-after: true
+changes:
+  - rscadd: "Character setup lists the languages your character can have: known ones in green with their prefix, and a button to set one as default."
+  - rscdel: "The three shared language prefixes are gone. Each language has one prefix, the whole string you type (,q by default) and can edit; # and - no longer select a language."

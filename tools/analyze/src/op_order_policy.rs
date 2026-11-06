@@ -14,13 +14,7 @@ pub static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Both,
-    policy: Policy::Ceilings {
-        baseline: "tools/ci/op_order_baseline.txt",
-        header: &[
-            "op_order ceilings: `relative_priority` counts hand-written priority(above/below(...)), `unordered_clash` the ops a type composes that",
-            "answer one input at one tier with no order. Shrink-only: `analyze baseline --update --lint op_order` lowers them.",
-        ],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "unordered_clash", hint: H_CLASH }, RuleMeta { name: "relative_priority", hint: H_REL }],
     allow: crate::allow_registry_fields::op_order::ALLOW_0,
     lists: crate::allow_registry_fields::op_order::SCOPE_META_0.lists,

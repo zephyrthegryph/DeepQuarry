@@ -10,8 +10,8 @@ contradiction	code/modules/own/accessors.dm	75
 contradiction	code/modules/own/relw.dm	44
 contradiction	code/modules/own/relw.dm	45
 contradiction	code/modules/own/relw.dm	48
-handle	code/_helpers/helpers.dm	5
-handle	code/_helpers/helpers.dm	8
+handle	code/library/helpers/helpers.dm	5
+handle	code/library/helpers/helpers.dm	8
 handle	code/controllers/subsystem.dm	5
 handle	code/modules/own/misc.dm	13
 handle	code/modules/own/misc.dm	14
@@ -31,8 +31,8 @@ matrix	code/modules/own/accessors.dm	68
 matrix	code/modules/own/types.dm	38
 matrix	code/modules/own/types.dm	39
 matrix	code/modules/own/types.dm	41
-raw_write	code/_helpers/helpers.dm	3
-raw_write	code/datums/callback.dm	4
+raw_write	code/library/helpers/helpers.dm	3
+raw_write	code/library/datum/callback.dm	4
 raw_write	code/modules/own/ctrl.dm	8
 raw_write	code/modules/own/drift.dm	5
 raw_write	code/modules/own/drift.dm	9
@@ -157,7 +157,7 @@ string_name	code/modules/own/string_bs.dm	7
 string_name	code/modules/own/string_bs.dm	14
 string_name	code/modules/own/string_bs.dm	15
 unknown_var	code/datums/om/core.dm	9
-unknown_var	code/modules/benchmarks/own_bench.dm	9
+unknown_var	code/tests/benchmarks/own_bench.dm	9
 unknown_var	code/modules/own/accessors.dm	17
 unknown_var	code/modules/own/accessors.dm	18
 unknown_var	code/modules/own/accessors.dm	19
@@ -171,6 +171,6 @@ unknown_var	code/modules/own/drift.dm	8
 unknown_var	code/modules/own/globals.dm	11
 unknown_var	code/modules/own/unicode.dm	9
 unknown_var	code/modules/own/unicode.dm	10
-unknown_var	code/modules/tgs/tgs_api.dm	8
-unknown_var	code/modules/unit_tests/own_tests.dm	9
-unknown_var	code/modules/unit_tests/own_tests.dm	10
+unknown_var	code/world/tgs/tgs_api.dm	8
+unknown_var	code/tests/unit_tests/own_tests.dm	9
+unknown_var	code/tests/unit_tests/own_tests.dm	10

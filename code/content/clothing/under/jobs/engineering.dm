@@ -3,7 +3,6 @@
 	desc = "It's a high visibility jumpsuit given to those engineers insane enough to achieve the rank of \"Chief engineer\". It has minor radiation shielding."
 	name = "chief engineer's jumpsuit"
 	icon_state = "chief"
-	armor_spec = "rad=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/atmospheric_technician
@@ -16,7 +15,6 @@
 	desc = "It's an orange high visibility jumpsuit worn by engineers. It has minor radiation shielding."
 	name = "engineer's jumpsuit"
 	icon_state = "engine"
-	armor_spec = "rad=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/engineer/turtleneck
@@ -31,3 +29,9 @@
 	name = "roboticist's jumpsuit"
 	icon_state = "robotics"
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/rank/chief_engineer)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/engineer)
+	configure(atom_rules(armor_spec = "rad=10"))

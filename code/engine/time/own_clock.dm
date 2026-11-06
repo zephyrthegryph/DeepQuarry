@@ -1,4 +1,4 @@
-/// D's OM timer clock in deciseconds (the clock after() timers on D run on). Falls back to
+/// D's timer clock in deciseconds (the clock after() timers on D run on). Falls back to
 /// world.time for a null or deleted datum so a read on a dead holder never runtimes.
 /proc/own_clock_now(datum/D)
 	READS_FROM() // a clock, asked when a choice is made, never cached

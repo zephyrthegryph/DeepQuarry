@@ -37,6 +37,6 @@ check "rows added on each side are kept in place, drops stay dropped" $'#h\nr\tb
 check "ceilings: smaller value, removed key stays removed" $'# ceilings\ninit_allow 80\nusr_content 70' "$(cat tools/ci/c_baseline.txt)"
 if grep -q '<<<<<<<' tools/ci/u_baseline.txt; then echo "ok: unsupported format falls back to a conflict"; else echo "FAIL: unsupported format did not conflict"; fails=$((fails + 1)); fi
 git merge --abort >/dev/null 2>&1
-want="dq-baseline"; got="$(git -C "$ROOT" check-attr merge tools/ci/sys_baseline/dx_review.txt tools/ci/lint_x_baseline.txt | awk "{print \$NF}" | sort -u)"
-check "sys_baseline rows and ratchet baselines both use the driver" "$want" "$got"
+want="dq-baseline"; got="$(git -C "$ROOT" check-attr merge tools/ci/library_layering_baseline.txt tools/ci/lint_x_baseline.txt | awk "{print \$NF}" | sort -u)"
+check "ratchet baselines use the driver" "$want" "$got"
 [ "$fails" -eq 0 ] && echo "all passed" || { echo "$fails failed"; exit 1; }

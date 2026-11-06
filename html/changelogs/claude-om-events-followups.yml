@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "A runtime in one examine line no longer loses the lines after it, or stops later world events from being delivered."

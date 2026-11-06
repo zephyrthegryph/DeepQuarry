@@ -18,7 +18,7 @@
 # light branch in one batched merge (tools/dq_land_batch.sh). Compiler holders also get first claim on the machine slots.
 #
 # Why: a fresh worktree is a 24k-file checkout (minutes), cold caches (analyzer, icons, node_modules, compile cache) and about 1.5 GB
-# of build output that nobody deletes. The pool is DQ_LANE_POOL_SIZE worktrees (default 3: one DM compile slot serves about three lanes plus the train) under E:/projects/dq-wt/pool-N, created
+# of build output that nobody deletes. The pool is DQ_LANE_POOL_SIZE worktrees (default 3: one DM compile slot serves about three lanes) under E:/projects/dq-wt/pool-N, created
 # once and reused for the life of the machine. At most DQ_LANE_POOL_SIZE general lanes run at once: one more lease is refused.
 #
 # lease <branch>
@@ -62,6 +62,10 @@ COMPILER_SLOTS="${DQ_LANE_POOL_COMPILER:-2}"
 POOL_DIR="${DQ_LANE_POOL_DIR:-E:/projects/dq-wt}"
 STATE_DIR="${DQ_LANE_POOL_STATE:-E:/dq-cache/lane-pool}"
 _o="$PWD"; cd "$_dq_dir/.." && here="$PWD"; cd "$_o"   # builtins only: no $(...) fork
+# Git Bash's $PWD is an MSYS path (/e/projects/...) that Git for Windows cannot open: rewrite it to E:/projects/... (still no fork).
+if [[ "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]] && [[ "$here" =~ ^/([A-Za-z])(/.*)?$ ]]; then
+	here="${BASH_REMATCH[1]^^}:${BASH_REMATCH[2]:-/}"
+fi
 REPO="${DQ_LANE_POOL_REPO:-$here}"
 case "$POOL_SIZE" in ''|*[!0-9]*) echo "dq_lane_pool: DQ_LANE_POOL_SIZE must be a positive integer" >&2; exit 2 ;; esac
 [ "$POOL_SIZE" -ge 1 ] || { echo "dq_lane_pool: DQ_LANE_POOL_SIZE must be a positive integer" >&2; exit 2; }
@@ -667,7 +671,7 @@ lease_once() {
 			lease_load "$i"
 			echo "  pool-$i: $L_branch since $L_since ($L_owner)" >&2
 		done
-		echo "  Finish one lane (dq_lane_ready.sh, merge, then 'bash tools/dq_lane_pool.sh release <branch>') and ask again, or wait." >&2
+		echo "  Finish one lane (bash tools/dq_land.sh, then 'bash tools/dq_lane_pool.sh release <branch>') and ask again, or wait." >&2
 		lock_drop
 		return 3
 	fi
@@ -715,13 +719,6 @@ lease_once() {
 	lock_drop
 	say "leased pool-$i ($class) to $branch (${tip:0:10} = $base); release with: bash tools/dq_lane_pool.sh release $branch"
 	echo "$wt"
-}
-
-train_watchdog() { # restart the train's integrator when lanes are queued and none is running (a fast no-op otherwise); detached, never blocks
-	[ "${DQ_TRAIN_NO_START:-0}" = 1 ] && return 0
-	[ -f "$REPO/tools/dq_train.sh" ] || return 0
-	( nohup bash "$REPO/tools/dq_train.sh" ensure >/dev/null 2>&1 & ) >/dev/null 2>&1
-	return 0
 }
 
 cmd_release() {
@@ -858,8 +855,8 @@ cmd_path() {
 cmd="${1:-}"
 [ $# -gt 0 ] && shift
 case "$cmd" in
-	lease) cmd_lease "$@"; rc=$?; train_watchdog; exit "$rc" ;;
-	release) cmd_release "$@"; rc=$?; train_watchdog; exit "$rc" ;;
+	lease) cmd_lease "$@"; rc=$?; exit "$rc" ;;
+	release) cmd_release "$@"; rc=$?; exit "$rc" ;;
 	status) cmd_status ;;
 	path) cmd_path "$@" ;;
 	cancel) cmd_cancel "$@" ;;

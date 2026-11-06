@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Rig vision visors each keep their own modes; escape pods find their berth at boot; an air alarm has its thresholds before it joins its area"

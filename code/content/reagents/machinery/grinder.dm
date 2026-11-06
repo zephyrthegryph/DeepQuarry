@@ -6,7 +6,7 @@
 	density = FALSE
 	anchored = FALSE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/grinder
+	circuit = VARIANT(/obj/item/circuitboard/grinder)
 	var/obj/item/reagent_containers/beaker = null
 	var/limit = 10
 	var/list/holdingitems

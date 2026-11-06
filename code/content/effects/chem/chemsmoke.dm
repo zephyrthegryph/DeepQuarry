@@ -1,0 +1,254 @@
+/////////////////////////////////////////////
+// Chem smoke
+/////////////////////////////////////////////
+/obj/effect/effect/smoke/chem
+	icon = 'icons/effects/chemsmoke.dmi'
+	opacity = TRUE
+	time_to_live = 300
+	pass_flags = PASSTABLE | PASSGRILLE | PASSGLASS //PASSGLASS is fine here, it's just so the visual effect can "flow" around glass
+
+CAPABILITIES(/obj/effect/effect/smoke/chem)
+	after_init(0, then(PROC_REF(init_wake_hydroponics)))
+	reagents(500)
+
+/obj/effect/effect/smoke/chem/proc/init_wake_hydroponics(datum/act/timer/A)
+	wake_nearby_hydroponics()
+
+
+/obj/effect/effect/smoke/chem/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	wake_nearby_hydroponics()
+
+/obj/effect/effect/smoke/chem/on_reagent_change()
+	wake_nearby_hydroponics()
+
+/obj/effect/effect/smoke/chem/proc/wake_nearby_hydroponics()
+	for(var/obj/machinery/portable_atmospherics/hydroponics/tray in view(1, src))
+		work_start(tray)
+
+/obj/effect/effect/smoke/chem/transparent
+	opacity = FALSE
+
+/datum/effect/effect/system/smoke_spread/chem
+	smoke_type = /obj/effect/effect/smoke/chem
+	var/obj/chemholder
+	var/range
+	/// Relation list view: turfs the cloud reaches.
+	var/list/targetTurfs
+	/// Relation list view: walls bordering the cloud (wall-affecting reagents touch them).
+	var/list/wallList
+	var/density
+	var/show_log = 1
+
+CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
+	owns_one(nameof(chemholder), /obj)
+	ref_many(nameof(targetTurfs))
+	ref_many(nameof(wallList))
+
+/datum/effect/effect/system/smoke_spread/chem/spores
+	show_log = 0
+	var/datum/seed/seed_static
+
+/datum/effect/effect/system/smoke_spread/chem/spores/New(_seed)
+	seed_static = _seed
+	if(!istype(seed(), /datum/seed))
+		CRASH("Invalid seed datum passed! [seed()] ([seed()?.type])")
+	..()
+
+/datum/effect/effect/system/smoke_spread/chem/blob
+	show_log = 0
+	smoke_type = /obj/effect/effect/smoke/chem/transparent
+
+/datum/effect/effect/system/smoke_spread/chem/New()
+	..()
+	rel_set(src, nameof(chemholder), new/obj())
+	chemholder.create_reagents(500)
+
+
+//Sets up the chem smoke effect
+// Calculates the max range smoke can travel, then gets all turfs in that view range.
+// Culls the selected turfs to a (roughly) circle shape, then calls smokeFlow() to make
+// sure the smoke can actually path to the turfs. This culls any turfs it can't reach.
+/datum/effect/effect/system/smoke_spread/chem/set_up(datum/reagents/carry = null, n = 10, c = 0, loca, direct)
+	range = n * 0.3
+	cardinals = c
+	carry.trans_to_obj(chemholder, carry.total_volume, copy = 1)
+
+	if(istype(loca, /turf/))
+		rel_set(src, nameof(location), loca)
+	else
+		rel_set(src, nameof(location), get_turf(loca))
+	if(!get_location())
+		return
+
+	rel_clear(src, nameof(targetTurfs))
+
+	//build affected area list
+	for(var/turf/T in view(range, get_location()))
+		//cull turfs to circle
+		if(sqrt((T.x - get_location().x)**2 + (T.y - get_location().y)**2) <= range)
+			rel_add(src, nameof(targetTurfs), T)
+
+	rel_clear(src, nameof(wallList))
+
+	smokeFlow() //pathing check
+
+	//set the density of the cloud - for diluting reagents
+	density = max(1, length(targetTurfs) / 4) //clamp the cloud density minimum to 1 so it cant multiply the reagents
+
+	//Admin messaging
+	var/contained = carry.get_reagents()
+	var/area/A = get_area(get_location())
+
+	var/where = "[A.name] | [get_location().x], [get_location().y]"
+	var/whereLink = "<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[get_location().x];Y=[get_location().y];Z=[get_location().z]'>[where]</a>"
+
+	if(show_log)
+		var/print_name = carry.my_atom.forensic_data?.get_lastprint()
+		if(print_name)
+			var/mob/M = get_mob_by_key(print_name)
+			var/more = ""
+			if(M)
+				more = "(<A href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[url_encode(ref_token(M))]'>?</a>)"
+			message_admins("A chemical smoke reaction has taken place in ([whereLink]) [contained]. Last associated key is [print_name][more].", 0, 1)
+			log_game("A chemical smoke reaction has taken place in ([where]) [contained]. Last associated key is [print_name].")
+		else
+			message_admins("A chemical smoke reaction has taken place in ([whereLink]). No associated key.", 0, 1)
+			log_game("A chemical smoke reaction has taken place in ([where]) [contained]. No associated key.")
+
+//Runs the chem smoke effect
+// Spawns damage over time loop for each reagent held in the cloud.
+// Applies reagents to walls that affect walls (only thermite and plant-b-gone at the moment).
+// Also calculates target locations to spawn the visual smoke effect on, so the whole area
+// is covered fairly evenly.
+/datum/effect/effect/system/smoke_spread/chem/start()
+	// A one-shot: it is thrown away after the call, nothing else holds it, and the owned reagent holder ends with it.
+	expire(0)
+	if(!get_location())
+		return
+
+	if(chemholder.reagents.reagent_list.len) //reagent application - only run if there are extra reagents in the smoke
+		for(var/turf/T in wallList)
+			chemholder.reagents.touch_turf(T)
+		for(var/turf/T in targetTurfs)
+			chemholder.reagents.touch_turf(T)
+			for(var/atom/A in contents_of(T))
+				if(istype(A, /obj/effect/effect/smoke/chem) || istype(A, /mob))
+					continue
+				else if(isobj(A) && !atom_rules_of(A).simulated)
+					chemholder.reagents.touch_obj(A)
+
+	var/color = chemholder.reagents.get_color() //build smoke icon
+	var/icon/I
+	if(color)
+		I = icon('icons/effects/chemsmoke.dmi')
+		I += color
+	else
+		I = icon('icons/effects/96x96.dmi', "smoke")
+
+	var/const/arcLength = 2.3559 //distance between each smoke cloud
+
+	for(var/i = 0, i < range, i++) //calculate positions for smoke coverage - then spawn smoke
+		var/radius = i * 1.5
+		if(!radius)
+			spawnSmoke(get_location(), I, 1)
+			continue
+
+		var/offset = 0
+		var/points = round((radius * 2 * M_PI) / arcLength)
+		var/angle = round(TODEGREES(arcLength / radius), 1)
+
+		if(!ISINTEGER(radius))
+			offset = 45		//degrees
+
+		for(var/j = 0, j < points, j++)
+			var/a = (angle * j) + offset
+			var/x = round(radius * cos(a) + get_location().x, 1)
+			var/y = round(radius * sin(a) + get_location().y, 1)
+			var/turf/T = locate(x,y,get_location().z)
+			if(!T)
+				continue
+			if(T in targetTurfs)
+				spawnSmoke(T, I, range)
+
+//------------------------------------------
+// Randomizes and spawns the smoke effect.
+// Also handles deleting the smoke once the effect is finished.
+//------------------------------------------
+/datum/effect/effect/system/smoke_spread/chem/proc/spawnSmoke(turf/T, icon/I, dist = 1, obj/effect/effect/smoke/chem/passed_smoke)
+
+	var/obj/effect/effect/smoke/chem/smoke
+	if(passed_smoke)
+		smoke = passed_smoke
+	else
+		smoke = new smoke_type(get_location())
+
+	if(chemholder.reagents.reagent_list.len)
+		chemholder.reagents.trans_to_obj(smoke, chemholder.reagents.total_volume / dist, copy = 1) //copy reagents to the smoke so mob/breathe() can handle inhaling the reagents
+	smoke.set_icon(I)
+	smoke.set_plane(ABOVE_PLANE)
+	smoke.set_dir(pick(GLOB.cardinal))
+	smoke.set_pixel_x(-32 + rand(-8, 8))
+	smoke.set_pixel_y(-32 + rand(-8, 8))
+	walk_to(smoke, T)
+	if(initial(smoke.opacity))
+		smoke.set_opacity(1)		//switching opacity on after the smoke has spawned, and then
+	var/lifespan = 150 + rand(0, 20)
+	// the smoke fades on its own timer: the system that made it is done once start() returns and is not kept for its clouds
+	after(smoke, lifespan, TYPE_PROC_REF(/obj/effect/effect/smoke/chem, fade_out))
+
+/datum/effect/effect/system/smoke_spread/chem/spores/spawnSmoke(turf/T, icon/I, dist = 1)
+	var/obj/effect/effect/smoke/chem/spores = new /obj/effect/effect/smoke/chem(get_location())
+	spores.name = "cloud of [seed().seed_name] [seed().seed_noun]"
+	..(T, I, dist, spores)
+
+/obj/effect/effect/smoke/chem/proc/fade_out(frames = 16) // Fades out the smoke smoothly using it's alpha variable.
+	set_opacity(0)		// lighting and view range updates
+	if(alpha == 0) //Handle already transparent case
+		spent(src)
+		return
+	if(frames == 0)
+		frames = 1 //We will just assume that by 0 frames, the coder meant "during one frame".
+	animate(src, alpha = 0, time = frames)
+	expire(frames)
+
+/datum/effect/effect/system/smoke_spread/chem/proc/smokeFlow() // Smoke pathfinder. Uses a flood fill method based on zones to quickly check what turfs the smoke (airflow) can actually reach.
+
+	var/list/pending = new()
+	var/list/complete = new()
+
+	pending += get_location()
+
+	while(pending.len)
+		for(var/turf/current in pending)
+			for(var/D in GLOB.cardinal)
+				var/turf/target = get_step(current, D)
+				if(istype(target, /turf/simulated/wall))
+					rel_add(src, nameof(wallList), target)
+					continue
+
+				if(target in pending)
+					continue
+				if(target in complete)
+					continue
+				if(!(target in targetTurfs))
+					continue
+				if(current.c_airblock(target)) //this is needed to stop chemsmoke from passing through thin window walls
+					continue
+				if(target.c_airblock(current))
+					continue
+				pending += target
+
+			pending -= current
+			complete += current
+
+	rel_clear(src, nameof(targetTurfs))
+	for(var/turf/T as anything in complete)
+		rel_add(src, nameof(targetTurfs), T)
+
+	return
+
+/// The seed (a registered /datum/seed: shared, never cleared).
+/datum/effect/effect/system/smoke_spread/chem/spores/proc/seed() as /datum/seed
+	return seed_static
+

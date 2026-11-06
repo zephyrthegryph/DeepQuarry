@@ -11,33 +11,3 @@
 /obj/item/circuitboard/smes/construct(obj/machinery/power/smes/buildable/S)
 	if(..(S))
 		S.set_output_attempt(0) //built SMES default to off
-
-/obj/item/circuitboard/batteryrack
-	name = T_BOARD("battery rack PSU")
-	build_path = /obj/machinery/power/smes/batteryrack
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(/obj/item/stock_parts/capacitor/ = 3, /obj/item/stock_parts/matter_bin/ = 1)
-
-/obj/item/circuitboard/grid_checker
-	name = T_BOARD("power grid checker")
-	build_path = /obj/machinery/power/grid_checker
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(/obj/item/stock_parts/capacitor = 3, /obj/item/stack/cable_coil = 10)
-
-/obj/item/circuitboard/breakerbox
-	name = T_BOARD("breaker box")
-	build_path = /obj/machinery/power/breakerbox
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-		/obj/item/stock_parts/spring = 1,
-		/obj/item/stock_parts/manipulator = 1,
-		/obj/item/stack/cable_coil = 10)
-
-/obj/item/circuitboard/hydromagnetic_trap
-	name = T_BOARD("hydromagnetic trap")
-	build_path = /obj/machinery/power // hydromagnetic_trap deleted with atmos fusion gear
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-		/obj/item/stock_parts/spring = 1,
-		/obj/item/stock_parts/motor = 2,
-		/obj/item/stack/cable_coil = 10)

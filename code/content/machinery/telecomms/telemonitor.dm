@@ -116,7 +116,7 @@ MSG_DEF_SELF(tcomms_console/buffer_full, "The buffer is full: release it before 
 	var/screen = 0				// the screen number:
 	var/list/machinelist	// the machines located by the computer
 	var/obj/machinery/telecomms/SelectedMachine
-	circuit = /obj/item/circuitboard/comm_monitor
+	circuit = VARIANT(/obj/item/circuitboard/comm_monitor)
 
 CAPABILITIES(/obj/machinery/computer/telecomms/monitor)
 	interface("TelecommsMachineBrowser")

@@ -228,7 +228,7 @@ fn bounded_output_denial_and_cancellation_publish_no_clean_result_then_recover()
     .unwrap();
     assert!(Budget::new(0).is_err());
     let b = Budget::new(64).unwrap();
-    assert!(BorrowedSparseSlots::capture(&raw, c.capture.policy(), b.clone()).is_err());
+    assert!(dq_analyze::captured_sparse_slots::BorrowedSparseSlots::capture(&raw, c.capture.policy(), b.clone()).is_err());
     assert!(b.denied());
     let token = crate::daemon::control::Cancellation::default();
     let binding = crate::daemon::control::bind_with_deadline(

@@ -1,0 +1,335 @@
+/*
+=== Item Click Call Sequences ===
+These are the default click code call sequences used when clicking on stuff with an item.
+
+Atoms:
+
+/mob/ClickOn() calls the item's resolve_attackby() proc.
+item/resolve_attackby() calls the target atom's attackby() proc.
+
+Mobs:
+
+A mob's "Attack" default interaction (hit_with_item()) checks for surgery, then calls the item's attack() proc.
+item/attack() generates attack logs, sets click cooldown and calls the mob's attacked_with_item() proc. If you override this, consider whether you need to set a click cooldown, play attack animations, and generate logs yourself.
+/mob/attacked_with_item() should then do mob-type specific stuff (like determining hit/miss, handling shields, etc) and then possibly call the item's apply_hit_effect() proc to actually apply the effects of being hit.
+
+Item Hit Effects:
+
+item/apply_hit_effect() can be overriden to do whatever you want. However "standard" physical damage based weapons should make use of the target mob's hit_with_weapon() proc to
+avoid code duplication. This includes items that may sometimes act as a standard weapon in addition to having other effects (e.g. stunbatons on harm intent).
+*/
+
+/**
+ * ## IF YOU ARE MAKING SOMETHING USE ATTACK SELF, ENSURE IT CALLS THE PARENT AND CHECKS FOR A TRUE RETURN VALUE, CANCELLING THE REST OF THE CHAIN IF SO.
+ * Called when the item is in the active hand and clicked
+ * alternately, there is an 'activate held object' verb or you can hit pagedown or Z in hotkey mode.
+ * returns TRUE if the attack was handled by a signal handler and no further processing should occur.
+ * returns FALSE if a signal handler did NOT handle it, resulting in the normal chain.
+*/
+/obj/item/proc/attack_self(mob/user, modifiers)
+	SHOULD_CALL_PARENT(TRUE)
+	if(!user)
+		CRASH("attack_self was called without a user!")
+	var/datum/act/attack_self/use = ACT_ATTEMPT(src, attack_self, user)
+	if(ACT_REFUSED_BY(use))
+		return TRUE
+	act_done(use)
+	// The item's in_hand() ops: the Z key and an item's action button reach them here (a click on the held item resolves them in the inbox first).
+	if(op_resolve_click(user, src, src, GESTURE_SELF, ORIGIN_CLICK))
+		return TRUE
+	return
+
+/**
+ * Called at the start of resolve_attackby(), before the actual attack.
+ *
+ * Arguments:
+ * * atom/A - The atom about to be hit
+ * * mob/living/user - The mob doing the htting
+ * * params - click params such as alt/shift etc
+ *
+ * See: [/obj/item/proc/melee_attack_chain]
+ */
+
+/obj/item/proc/pre_attack(atom/A, mob/user, params) //do stuff before attackby!
+	var/datum/act/pre_attack/swing = ACT_ATTEMPT(src, pre_attack, A, user, params)
+	if(ACT_REFUSED_BY(swing))
+		return TRUE
+	act_done(swing)
+	return FALSE //return TRUE to avoid calling attackby after this proc does stuff
+
+//I would prefer to rename this to attack(), but that would involve touching hundreds of files.
+/obj/item/proc/resolve_attackby(atom/A, mob/user, attack_modifier = 1, click_parameters)
+	add_fingerprint(user)
+	var/list/modifiers = islist(click_parameters) ? click_parameters : params2list(click_parameters)
+	var/secondary = GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, secondary_table), INPUT_ACTION_ALTERNATE_SECONDARY)
+	if(!secondary)
+		. = pre_attack(A, user, click_parameters)
+		if(.)	// We're returning the value of pre_attack, important if it has a special return.
+			return
+	// The click's parameters and the swing's modifier (a cleave, an off-hand swing) are what the ops this swing reaches read
+	// (dq_interaction_click_params(), GLOB.interaction_entry_attack_modifier).
+	var/saved_params = dq_interaction_set_click_params(user, click_parameters)
+	var/modifier_key = ref_token(user)
+	var/saved_modifier = modifier_key ? GLOB.interaction_entry_attack_modifier[modifier_key] : null
+	if(modifier_key)
+		GLOB.interaction_entry_attack_modifier[modifier_key] = attack_modifier
+	var/interaction_result
+	try
+		if(secondary)
+			interaction_result = A.item_interaction_secondary(user, src, modifiers)
+		else
+			interaction_result = A.item_interaction(user, src, modifiers)
+		if(!ITEM_INTERACT_CONSUMED(interaction_result))
+			// SKIP_TO_ATTACK deliberately bypasses the modern interaction hooks but still
+			// enters attackby(), which is the canonical attack/fallback path during migration.
+			interaction_result = A.attackby(src, user, attack_modifier, click_parameters)
+	catch(var/exception/error)
+		dq_interaction_set_click_params(user, saved_params)
+		dq_interaction_restore_attack_modifier(user, saved_modifier)
+		throw error
+	dq_interaction_set_click_params(user, saved_params)
+	dq_interaction_restore_attack_modifier(user, saved_modifier)
+	return interaction_result
+
+/**
+ * Modern item interaction entry point: every quality offered by a multi-purpose
+ * tool, in order, then the interactions that answer Use without a tool
+ * (doc/rewrite/interactions.md §7). Each quality runs the ops that name it. Returning no flags falls
+ * through to the legacy attackby path in resolve_attackby().
+ */
+/atom/proc/item_interaction(mob/user, obj/item/tool, list/modifiers)
+	. = tool_interaction(user, tool, modifiers, FALSE)
+	if(.)
+		return
+	// Ops that need no tool quality but answer Use with an item in hand.
+	switch(try_interaction(user, src, tool, INPUT_ACTION_USE, null, TRUE))
+		if(INTERACTION_TRY_RAN)
+			return ITEM_INTERACT_SUCCESS
+		if(INTERACTION_TRY_BLOCKED)
+			return ITEM_INTERACT_BLOCKING
+	return NONE
+
+/// Right-click counterpart to item_interaction().
+/atom/proc/item_interaction_secondary(mob/user, obj/item/tool, list/modifiers)
+	return tool_interaction(user, tool, modifiers, TRUE)
+
+/// An item used on this atom by code (not a click): the ops first, as a click's swing does, then the gate every item use passes.
+/// TRUE when the input was used up.
+/atom/proc/item_used_on(obj/item/W, mob/user)
+	if(ITEM_INTERACT_CONSUMED(item_interaction(user, W, null)))
+		return TRUE
+	return attackby(W, user)
+
+/// Was COMSIG_TOOL_ATOM_ACTED_PRIMARY(quality) / _SECONDARY(quality), sent on the tool
+/// after it acted on `target`.
+ACTION(tool_atom_acted, tool_quality, secondary, atom/target_, mob/user, modifiers, FIXED, notice = /datum/notice/tool_atom_acted)
+
+/// Dispatches all qualities on a tool in their declared order.
+/atom/proc/tool_interaction(mob/user, obj/item/tool, list/modifiers, secondary = FALSE)
+	if(!LAZYLEN(tool.tool_qualities))
+		return NONE
+	for(var/tool_quality in tool.tool_qualities)
+		var/result = tool_act(user, tool, tool_quality, secondary)
+		if(result & ITEM_INTERACT_SUCCESS)
+			if(!secondary)
+				PUBLISH(tool, item_tool_acted, target_ = src, user = user, tool_quality = tool_quality, modifiers = modifiers)
+			PUBLISH(tool, tool_atom_acted, tool_quality = tool_quality, secondary = secondary, target_ = src, user = user, modifiers = modifiers)
+		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
+			return result
+	return NONE
+
+/// Emits the tool-act event, then invokes the corresponding focused hook.
+/atom/proc/tool_act(mob/user, obj/item/tool, tool_quality, secondary = FALSE)
+	// A hook on the atom (a dormant core repaired on its body) takes the tool use over and answers the ITEM_INTERACT_* result.
+	var/datum/act/tool_act/use = ACT_ATTEMPT(src, tool_act, tool_quality, secondary, user, tool)
+	if(ACT_REFUSED_BY(use))
+		return ACT_TAKEN_OVER(use) ? ACT_REPLY(use) : ITEM_INTERACT_BLOCKING
+	act_cancel(use)
+	var/result = NONE
+	// Dormant material assemblies intentionally own no signal handlers. A
+	// deliberate diagnostic interaction is itself their admission event.
+	if(secondary && tool_quality == TOOL_MULTITOOL && isobj(src))
+		var/obj/object = src
+		result = object.material_diagnostics_tool_act(user, tool)
+		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
+			return result
+	if(secondary)
+		// Secondary (right-click) tool use has no focused hooks: it runs the declared
+		// interactions for this quality whose default action is Alternate
+		// (doc/rewrite/interactions.md §9).
+		return interaction_tool_act(user, tool, tool_quality, TRUE)
+	// Every quality goes to the ops that name it (op("use_x", tool(TOOL_X), ...)); there are no per-quality hook procs.
+	return interaction_tool_act(user, tool, tool_quality)
+
+/**
+ * Used with an item: the ops answered it first (item_interaction()); what is left is the gate every item use passes. Returns TRUE when the input
+ * was used up, so the item's afterattack doesn't follow.
+ */
+/atom/proc/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
+	if(attackby_stopped(src, W, user, click_parameters))
+		return TRUE
+	return FALSE
+
+/// The gate every item use on `target` passes: a hook on the target (observe(target, /datum/act/attackby, ...), a capability's extend()) may stop it.
+/// TRUE when something did. The use is announced (/datum/notice/attacked_by) when nothing stopped it.
+/proc/attackby_stopped(atom/target, obj/item/W, mob/user, click_parameters)
+	var/datum/act/attackby/use = ACT_ATTEMPT(target, attackby, W, user, click_parameters)
+	if(ACT_REFUSED_BY(use))
+		return TRUE
+	act_done(use)
+	return FALSE
+
+/// The attack_modifier of the item entry each actor is inside (a charged or off-hand swing), keyed by the actor's ref_token.
+GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
+
+/proc/dq_interaction_restore_attack_modifier(mob/actor, saved)
+	var/actor_key = entity_handle_of(actor) // still names an actor that died inside the swing
+	if(!actor_key)
+		return
+	if(isnull(saved))
+		GLOB.interaction_entry_attack_modifier -= actor_key
+	else
+		GLOB.interaction_entry_attack_modifier[actor_key] = saved
+
+/**
+ * Every living mob's defaults, after everything else it offers (declared in CAPABILITIES(/mob/living), combat_ai/integration/mob_living.dm). Each is
+ * declared per stance, so the one that runs carries the intent: an empty hand helps, disarms, grabs or punches it (unarmed_touch()), and an item is
+ * used on it, or disarms, grabs or hits with it (hit_with_item()).
+ */
+/mob/living/proc/touch_help(datum/act/op/A)
+	return living_touch(A, I_HELP)
+
+/mob/living/proc/touch_disarm(datum/act/op/A)
+	return living_touch(A, I_DISARM)
+
+/mob/living/proc/touch_grab(datum/act/op/A)
+	return living_touch(A, I_GRAB)
+
+/mob/living/proc/touch_hurt(datum/act/op/A)
+	return living_touch(A, I_HURT)
+
+/mob/living/proc/hit_help(datum/act/op/A)
+	return living_hit(A, I_HELP)
+
+/mob/living/proc/hit_disarm(datum/act/op/A)
+	return living_hit(A, I_DISARM)
+
+/mob/living/proc/hit_grab(datum/act/op/A)
+	return living_hit(A, I_GRAB)
+
+/mob/living/proc/hit_hurt(datum/act/op/A)
+	return living_hit(A, I_HURT)
+
+/mob/living/proc/living_touch(datum/act/op/A, stance)
+	unarmed_touch(A.actor, stance)
+	return OP_OK
+
+/// Signal listeners first (a nanoform's held body), then the hit. A hit that didn't use the input lets afterattack follow.
+/mob/living/proc/living_hit(datum/act/op/A, stance)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(attackby_stopped(src, I, user, dq_interaction_click_params(user)))
+		return OP_PASS
+	var/modifier = GLOB.interaction_entry_attack_modifier[ref_token(user)]
+	var/hit = hit_with_item(I, user, isnull(modifier) ? 1 : modifier, stance)
+	// An item that does no harm (attack() answers ITEM_INTERACT_FAILURE: force 0, no bludgeon, a stance that does not hit) did nothing to this mob: its own
+	// afterattack follows, as it did before attack() answered with the ITEM_INTERACT_* flags (a spray, a syringe, a dropper, a splash all live there).
+	if(hit == ITEM_INTERACT_FAILURE)
+		return OP_PASS
+	return hit ? OP_OK : OP_PASS
+
+/// An empty-hand touch on this mob in `stance` (I_HELP, I_DISARM, I_GRAB or I_HURT); mob types extend it (their unarmed combat). The base reacts for the AI and thorns.
+/mob/living/proc/unarmed_touch(mob/living/user, stance = I_HELP)
+	return
+
+/// Hit with an item in `stance`: a patient-use, vore, then the attack (a phased swing when hostile).
+/mob/living/proc/hit_with_item(obj/item/I, mob/user, attack_modifier = 1, stance = I_HURT)
+	if(!ismob(user))
+		return FALSE
+
+	// Surgery is the patient's ops (surgery_ops.dm); scanners and stethoscopes take a use on a patient here.
+	if(can_operate(src, user, stance) && I.use_on_patient(src, user, stance))
+		return TRUE
+
+	if(vore_attackby(I, user, stance)) // The vore, of course.
+		return
+
+	// Phased melee: a harm-intent attack with a real weapon winds up, telegraphs its swing
+	// tiles, then resolves (see code/modules/mob/living/melee_swing.dm). Diverts the instant
+	// attack. Non-harm intents, unarmed, and item-use on objects never reach this branch.
+	if(isliving(user) && stance == I_HURT && combat_of(I).force && !(I.flags & NOBLUDGEON))
+		var/mob/living/attacker = user
+		if(STATE_GET(attacker, melee_swing, is_swinging))
+			return FALSE // already mid-swing — ignore the queued attack click
+		attacker.begin_melee_swing(src, I)
+		return ITEM_INTERACT_SUCCESS // suppress afterattack; the swing resolves through I.attack() itself
+
+	return I.attack(src, user, hud_of(user)?.zone_sel?.selecting || BP_TORSO, attack_modifier, stance)
+
+// Used to get how fast a mob should attack, and influences click delay.
+// This is just for inheritence.
+/mob/proc/get_attack_speed()
+	return DEFAULT_ATTACK_COOLDOWN
+
+// Same as above but actually does useful things.
+// W is the item being used in the attack, if any. modifier is if the attack should be longer or shorter than usual, for whatever reason.
+/mob/living/get_attack_speed(obj/item/W)
+	var/speed = kind_of(src).attack_cooldown
+	if(W && istype(W))
+		speed = combat_of(W).attack_speed
+	return speed * src.attack_speed
+
+// Proximity_flag is 1 if this afterattack was called on something adjacent, in your square, or on your person.
+// Click parameters is the params string from byond Click() code, see that documentation.
+// `stance` is the input's stance (the adapter reads it once: input_stance()); I_HURT when a machine or AI fires it.
+/obj/item/proc/afterattack(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
+	return
+
+//I would prefer to rename this attack_as_weapon(), but that would involve touching hundreds of files.
+/// Used as a weapon on M in `stance`, the stance of the interaction that swung it (a mob's per-stance item defaults).
+/obj/item/proc/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(!combat_of(src).force || (flags & NOBLUDGEON))
+		return ITEM_INTERACT_FAILURE
+	if(M == user && stance != I_HURT)
+		return ITEM_INTERACT_FAILURE
+	if(M.is_incorporeal()) // No attacking phased entities :)
+		return ITEM_INTERACT_FAILURE
+	PUBLISH(src, item_attack, target_ = M, user = user, target_zone = target_zone)
+
+	/////////////////////////
+	M.note_attacker(user)
+
+	if(!handling_of(src).no_attack_log)
+		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(stance)]) (KIND: [injury_kind_name(combat_of(src).injury_kind)])")
+	/////////////////////////
+
+	// A phased melee swing (melee_swing.dm) resolves its hits THROUGH this proc so
+	// every weapon override / log / check above runs exactly once per victim — but
+	// it has already set its own recovery cooldown and played the lunge, so skip the
+	// instant-attack versions of both here.
+	if(!STATE_GET(user, melee_swing, melee_swing_resolving))
+		user.setClickCooldown(user.get_attack_speed(src))
+		user.do_attack_animation(M)
+
+	var/hit_zone = M.resolve_item_attack(src, user, target_zone, stance)
+	if(hit_zone)
+		apply_hit_effect(M, user, hit_zone, attack_modifier, stance)
+
+	return ITEM_INTERACT_SUCCESS
+
+//Called when a weapon is used to make a successful melee attack on a mob. Returns the blocked result
+// `stance` is the stance of the attack() that landed it (I_HURT unless the swing said otherwise).
+/obj/item/proc/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
+	user.break_cloak()
+	material_response_impact(get_turf(target), target)
+	if(sounds_of(src).hit)
+		playsound(src, sounds_of(src).hit, 50, 1, -1)
+
+	var/power = combat_of(src).force * user.melee_damage
+
+	if(user.has_mutation(HULK))
+		power *= 2
+
+	power *= attack_modifier
+
+	return target.hit_with_weapon(src, user, power, hit_zone, stance)

@@ -14788,7 +14788,7 @@
 /obj/structure/bed/chair/oldsofa/right{
 	dir = 8
 	},
-/turf/unsimulated/floor/carpet/gaycarpet,
+/turf/open/fixed/floor/carpet/gaycarpet,
 /area/space)
 "coG" = (
 /obj/structure/disposalpipe/segment{
@@ -30901,7 +30901,7 @@
 /area/quartermaster/foyer)
 "eRC" = (
 /obj/turbolift_map_holder/southern_cross/center,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/elevator)
 "eRF" = (
 /obj/structure/loot_pile/maint/technical,
@@ -33545,7 +33545,7 @@
 /turf/simulated/floor/tiled/monotile,
 /area/hallway/primary/firstdeck/auxdockfore)
 "fnK" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/elevator)
 "fnO" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply{
@@ -40920,7 +40920,7 @@
 /area/hallway/primary/firstdeck/starboard)
 "gud" = (
 /obj/random/trash,
-/turf/unsimulated/floor/carpet/gaycarpet,
+/turf/open/fixed/floor/carpet/gaycarpet,
 /area/space)
 "guf" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
@@ -41061,7 +41061,7 @@
 /area/teleporter/firstdeck)
 "guY" = (
 /obj/turbolift_map_holder/southern_cross/starboard,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/starboard)
 "guZ" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
@@ -42602,7 +42602,7 @@
 /turf/simulated/floor/tiled/techmaint,
 /area/crew_quarters/thirddeck/vrroom)
 "gIp" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/quartermaster/storage)
 "gIC" = (
 /obj/structure/table/reinforced,
@@ -43707,7 +43707,7 @@
 /area/engineering/atmos)
 "gSp" = (
 /obj/random/toy,
-/turf/unsimulated/floor/carpet/retro/turfpack/station,
+/turf/open/fixed/floor/carpet/retro/turfpack/station,
 /area/maintenance/abtheatre)
 "gSz" = (
 /obj/machinery/vending/coffee,
@@ -53560,7 +53560,7 @@
 	},
 /obj/random/action_figure,
 /obj/effect/decal/cleanable/cobweb2,
-/turf/unsimulated/floor/carpet/retro/turfpack/station,
+/turf/open/fixed/floor/carpet/retro/turfpack/station,
 /area/maintenance/abtheatre)
 "iyz" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
@@ -59149,7 +59149,7 @@
 /obj/machinery/light/small{
 	dir = 8
 	},
-/turf/unsimulated/floor/carpet/gaycarpet,
+/turf/open/fixed/floor/carpet/gaycarpet,
 /area/space)
 "juO" = (
 /turf/simulated/wall/r_wall,
@@ -68857,7 +68857,7 @@
 /obj/machinery/light/small{
 	dir = 4
 	},
-/turf/unsimulated/floor/carpet/retro/turfpack/station,
+/turf/open/fixed/floor/carpet/retro/turfpack/station,
 /area/maintenance/abtheatre)
 "kVL" = (
 /obj/structure/reagent_dispensers/watertank,
@@ -70656,7 +70656,7 @@
 /turf/simulated/floor/tiled,
 /area/teleporter)
 "lmf" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/thirddeck/central)
 "lmg" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply{
@@ -73098,7 +73098,7 @@
 /turf/simulated/shuttle/floor,
 /area/shuttle/escape_pod4/station)
 "lDz" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/starboard)
 "lDA" = (
 /turf/simulated/wall/r_wall,
@@ -78781,7 +78781,7 @@
 /area/crew_quarters/heads/sc/hop)
 "mAf" = (
 /obj/structure/bed/chair/oldsofa/right,
-/turf/unsimulated/floor/carpet/gaycarpet,
+/turf/open/fixed/floor/carpet/gaycarpet,
 /area/space)
 "mAi" = (
 /obj/effect/floor_decal/steeldecal/steel_decals7{
@@ -82885,7 +82885,7 @@
 /area/rnd/research_restroom_sc)
 "njj" = (
 /obj/structure/curtain/bed,
-/turf/unsimulated/floor/carpet/retro/turfpack/station,
+/turf/open/fixed/floor/carpet/retro/turfpack/station,
 /area/maintenance/abtheatre)
 "njn" = (
 /obj/machinery/atmospherics/pipe/manifold/visible/cyan,
@@ -88147,7 +88147,7 @@
 /turf/simulated/floor/tiled,
 /area/teleporter/firstdeck)
 "ocI" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/seconddeck/starboard)
 "ocM" = (
 /obj/machinery/atmospherics/pipe/manifold/hidden/supply,
@@ -89760,7 +89760,7 @@
 /turf/simulated/floor/plating,
 /area/storage/emergency_storage/firstdeck/fp_emergency)
 "oqG" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/quartermaster/office)
 "oqI" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply{
@@ -100869,7 +100869,7 @@
 /turf/simulated/floor/tiled,
 /area/hallway/primary/firstdeck/aft)
 "qgj" = (
-/turf/unsimulated/floor/carpet/gaycarpet,
+/turf/open/fixed/floor/carpet/gaycarpet,
 /area/space)
 "qgk" = (
 /obj/structure/cable{
@@ -100935,7 +100935,7 @@
 /area/hallway/secondary/entry/D2)
 "qgI" = (
 /obj/turbolift_map_holder/southern_cross/cargo,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/quartermaster/storage)
 "qgJ" = (
 /obj/effect/floor_decal/industrial/warning{
@@ -113070,7 +113070,7 @@
 /area/crew_quarters/sleep/vistor_room_9)
 "sde" = (
 /obj/structure/ladder/up,
-/turf/unsimulated/floor/carpet/retro/turfpack/station,
+/turf/open/fixed/floor/carpet/retro/turfpack/station,
 /area/maintenance/abtheatre)
 "sdg" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
@@ -115553,7 +115553,7 @@
 /area/rnd/research)
 "sxu" = (
 /obj/item/stamp/clown,
-/turf/unsimulated/floor/carpet/retro/turfpack/station,
+/turf/open/fixed/floor/carpet/retro/turfpack/station,
 /area/maintenance/abtheatre)
 "sxC" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
@@ -120018,7 +120018,7 @@
 /area/rnd/xenobiology)
 "tkz" = (
 /obj/effect/decal/cleanable/fruit_smudge,
-/turf/unsimulated/floor/carpet/gaycarpet,
+/turf/open/fixed/floor/carpet/gaycarpet,
 /area/space)
 "tkC" = (
 /obj/machinery/computer/security{
@@ -121295,7 +121295,7 @@
 /turf/simulated/floor/plating,
 /area/maintenance/engineering)
 "tvR" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/seconddeck/port)
 "tvS" = (
 /obj/structure/cable/green{
@@ -127791,7 +127791,7 @@
 /area/rnd/research_foyer)
 "uzi" = (
 /obj/effect/decal/cleanable/confetti,
-/turf/unsimulated/floor/carpet/retro/turfpack/station,
+/turf/open/fixed/floor/carpet/retro/turfpack/station,
 /area/maintenance/abtheatre)
 "uzl" = (
 /obj/effect/floor_decal/industrial/warning/corner,
@@ -132265,7 +132265,7 @@
 /turf/simulated/floor/plating,
 /area/construction/firstdeck/construction3)
 "viv" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/firstdeck/port)
 "viC" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
@@ -132739,7 +132739,7 @@
 /turf/simulated/floor/tiled/monotile,
 /area/hangar/two)
 "vmm" = (
-/turf/unsimulated/floor/carpet/retro/turfpack/station,
+/turf/open/fixed/floor/carpet/retro/turfpack/station,
 /area/maintenance/abtheatre)
 "vmo" = (
 /obj/structure/disposalpipe/segment{
@@ -139081,7 +139081,7 @@
 /turf/simulated/floor/tiled,
 /area/hallway/primary/seconddeck/aft)
 "wmg" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/hallway/primary/seconddeck/apcenter)
 "wmn" = (
 /obj/machinery/alarm{
@@ -140105,7 +140105,7 @@
 /obj/structure/bed/chair/oldsofa/left{
 	dir = 8
 	},
-/turf/unsimulated/floor/carpet/gaycarpet,
+/turf/open/fixed/floor/carpet/gaycarpet,
 /area/space)
 "wvd" = (
 /obj/structure/catwalk,
@@ -143508,7 +143508,7 @@
 /area/crew_quarters/thirddeck/vrroom)
 "wZP" = (
 /obj/turbolift_map_holder/southern_cross/port,
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/engineering/lowlobby)
 "wZS" = (
 /obj/effect/floor_decal/industrial/warning/corner{
@@ -144936,7 +144936,7 @@
 /turf/simulated/floor/plating/turfpack/station,
 /area/space)
 "xkx" = (
-/turf/unsimulated/mask,
+/turf/open/fixed/mask,
 /area/engineering/lowlobby)
 "xky" = (
 /obj/effect/floor_decal/techfloor{
@@ -147351,7 +147351,7 @@
 /area/rnd/test_area)
 "xEK" = (
 /obj/structure/barricade/cutout/clown,
-/turf/unsimulated/floor/carpet/retro/turfpack/station,
+/turf/open/fixed/floor/carpet/retro/turfpack/station,
 /area/maintenance/abtheatre)
 "xEW" = (
 /obj/machinery/atmospherics/pipe/simple/visible/red,

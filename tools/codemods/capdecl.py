@@ -7,7 +7,7 @@ import os
 import re
 
 ROOT = os.environ.get("DQ_CODEMOD_ROOT") or os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-SKIP_DIRS = ("code/__defines/", "code/_generated/", "code/engine/_generated/")
+SKIP_DIRS = ("code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/_generated/", "code/engine/_generated/")
 
 
 def rel(path):

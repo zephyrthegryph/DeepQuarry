@@ -74,9 +74,9 @@ while IFS=$'\t' read -r status old new; do
   case "$status" in
     R100)
       echo "$old=$new" >> "$maps"
-      # A test file still under code/modules/unit_tests is included from code/tests/unit_tests/_unit_tests.dm by a relative path, so the
+      # A test file still under code/tests/unit_tests is included from code/tests/unit_tests/_unit_tests.dm by a relative path, so the
       # world carries its path as code/tests/unit_tests/../../modules/unit_tests/x.dm (what __FILE__ and TEST_ASSERT print).
-      case "$old" in code/modules/unit_tests/*) echo "code/tests/unit_tests/../../modules/unit_tests/${old#code/modules/unit_tests/}=$new" >> "$maps" ;; esac ;;
+      case "$old" in code/tests/unit_tests/*) echo "code/tests/unit_tests/../../modules/unit_tests/${old#code/tests/unit_tests/}=$new" >> "$maps" ;; esac ;;
     "") ;;
     *) printf '%s\t%s\t%s\n' "$status" "$old" "$new" >> "$others" ;;
   esac

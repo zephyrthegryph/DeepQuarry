@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Heat field: an edge that needs fewer sub-steps than the stiffest edge runs on a coarser cadence (multi-rate), and a sub-step no longer visits chunks it writes nothing to; idle heat field cost drops by about two thirds. Both fields can also take several steps as one advance while everything awake is slow (stride, bounded by a stated tolerance, with gauges and a log line on change)"
+  - bugfix: "dq_native_heat_watch_crosses_through_the_frame puts the floors back after the world steps (state leak)"

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "73 research, xenoarcheaology and hydroponics files moved into the code/content tree with their system owners"

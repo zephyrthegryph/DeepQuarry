@@ -510,9 +510,6 @@
 /turf/simulated/shuttle/floor/alienplating,
 /area/survivalpod/superpose/LargeAlienShip)
 "kq" = (
-/obj/machinery/gateway/brass{
-	dir = 1
-	},
 /obj/machinery/light/poi{
 	dir = 1
 	},
@@ -559,7 +556,6 @@
 /turf/simulated/floor/tiled/techmaint,
 /area/survivalpod/superpose/LargeAlienShip)
 "lb" = (
-/obj/machinery/gateway/brass,
 /turf/simulated/floor/flock,
 /area/survivalpod/superpose/LargeAlienShip)
 "lp" = (
@@ -836,8 +832,7 @@
 "pu" = (
 /obj/machinery/sleeper{
 	dir = 4;
-	emagged = 1;
-	initial_bin_rating = 4
+	emagged = 1
 	},
 /turf/simulated/shuttle/floor/white,
 /area/survivalpod/superpose/LargeAlienShip)
@@ -919,15 +914,9 @@
 /turf/simulated/floor/tiled/techfloor,
 /area/survivalpod/superpose/LargeAlienShip)
 "tf" = (
-/obj/machinery/gateway/brass{
-	dir = 6
-	},
 /turf/simulated/floor/flock,
 /area/survivalpod/superpose/LargeAlienShip)
 "tx" = (
-/obj/machinery/gateway/brass{
-	dir = 4
-	},
 /turf/simulated/floor/flock,
 /area/survivalpod/superpose/LargeAlienShip)
 "tF" = (
@@ -1207,9 +1196,6 @@
 /turf/simulated/floor/tiled/techmaint,
 /area/survivalpod/superpose/LargeAlienShip)
 "yM" = (
-/obj/machinery/gateway/brass{
-	dir = 10
-	},
 /turf/simulated/floor/flock,
 /area/survivalpod/superpose/LargeAlienShip)
 "yP" = (
@@ -1602,9 +1588,6 @@
 /turf/simulated/shuttle/floor/voidcraft,
 /area/survivalpod/superpose/LargeAlienShip)
 "GC" = (
-/obj/machinery/gateway/brass{
-	dir = 8
-	},
 /turf/simulated/floor/flock,
 /area/survivalpod/superpose/LargeAlienShip)
 "GH" = (
@@ -1657,9 +1640,6 @@
 /turf/simulated/shuttle/floor/voidcraft,
 /area/survivalpod/superpose/LargeAlienShip)
 "Iy" = (
-/obj/machinery/gateway/brass{
-	dir = 5
-	},
 /turf/simulated/floor/flock,
 /area/survivalpod/superpose/LargeAlienShip)
 "IO" = (
@@ -1703,9 +1683,6 @@
 	},
 /area/survivalpod/superpose/LargeAlienShip)
 "JU" = (
-/obj/machinery/gateway/brass{
-	dir = 9
-	},
 /turf/simulated/floor/flock,
 /area/survivalpod/superpose/LargeAlienShip)
 "JW" = (

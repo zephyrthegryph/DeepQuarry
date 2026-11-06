@@ -1,0 +1,1239 @@
+
+REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
+
+/obj/effect/rune/cultify()
+	return
+
+/*
+ * Use as a general guideline for this and related files:
+ *  * span_warning("...") - when something non-trivial or an error happens, so something similar to "Sparks come out of the machine!"
+ *  * span_danger("...")  - when something that is fit for 'warning' happens but there is some damage or pain as well.
+ *  * span_cult("...")    - when there is a private message to the cultists. This guideline is very arbitrary but there has to be some consistency!
+ */
+
+
+/////////////////////////////////////////FIRST RUNE
+/obj/effect/rune/proc/teleport(key, mob/living/user)
+	var/allrunesloc[]
+	allrunesloc = new/list()
+	var/index = 0
+	for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
+		if(R == src)
+			continue
+		if(R.word1 == GLOB.cultwords["travel"] && R.word2 == GLOB.cultwords["self"] && R.word3 == key && isPlayerLevel(R.z))
+			index++
+			allrunesloc.len = index
+			allrunesloc[index] = R.loc
+	if(index >= 5)
+		to_chat(user, span_danger("You feel pain, as rune disappears in reality shift caused by too much wear of space-time fabric."))
+		if (isliving(user))
+			user.injure(INJURY_BLUNT, 5)
+		consume(src, user)
+	if(allrunesloc && index != 0)
+		if(istype(src,/obj/effect/rune))
+			user.say("Sas[pick("'","`")]so c'arta forbici!")//Only you can stop auto-muting
+		else
+			user.whisper("Sas[pick("'","`")]so c'arta forbici!")
+		act_message(user, null, MSG_SELF(span_danger("You feel as your body gets dragged through the dimension of Nar-Sie!")), \
+			MSG_OTHERS(span_danger("%U% disappears in a flash of red light!")), \
+			MSG_BLIND(span_danger("You hear a sickening crunch and sloshing of viscera.")))
+		user.forceMove(allrunesloc[rand(1,index)])
+		return
+	if(istype(src,/obj/effect/rune))
+		return	fizzle(user) //Use friggin manuals, Dorf, your list was of zero length.
+	else
+		call(/obj/effect/rune/proc/fizzle)(user)
+		return
+
+
+/obj/effect/rune/proc/itemport(key, mob/living/user)
+	var/culcount = 0
+	var/runecount = 0
+	var/obj/effect/rune/IP = null
+	for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
+		if(R == src)
+			continue
+		if(R.word1 == GLOB.cultwords["travel"] && R.word2 == GLOB.cultwords["other"] && R.word3 == key)
+			IP = R
+			runecount++
+	if(runecount >= 2)
+		to_chat(user, span_danger("You feel pain, as rune disappears in reality shift caused by too much wear of space-time fabric."))
+		if (isliving(user))
+			user.injure(INJURY_BLUNT, 5)
+		consume(src, user)
+	for(var/mob/living/carbon/C in orange(1,src))
+		if(iscultist(C) && !C.stat)
+			culcount++
+	if(culcount>=3)
+		user.say("Sas[pick("'","`")]so c'arta forbici tarem!")
+		act_message(user, null, MSG_SELF(span_warning("You feel air moving from the rune - like as it was swapped with somewhere else.")), \
+			MSG_OTHERS(span_warning("You feel air moving from the rune - like as it was swapped with somewhere else.")), \
+			MSG_BLIND(span_warning("You smell ozone.")))
+		for(var/obj/O in src.loc)
+			if(!O.anchored)
+				O.forceMove(IP.loc)
+		for(var/mob/M in src.loc)
+			M.forceMove(IP.loc)
+		return
+
+	return fizzle(user)
+
+
+/////////////////////////////////////////SECOND RUNE
+
+/obj/effect/rune/proc/tomesummon(mob/living/user)
+	if(istype(src,/obj/effect/rune))
+		user.say("N[pick("'","`")]ath reth sh'yro eth d'raggathnor!")
+	else
+		user.whisper("N[pick("'","`")]ath reth sh'yro eth d'raggathnor!")
+	act_message(user, null, MSG_SELF(span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a book.")), \
+		MSG_OTHERS(span_warning("Rune disappears with a flash of red light, and in its place now a book lies.")), \
+		MSG_BLIND(span_warning("You hear a pop and smell ozone.")))
+	if(istype(src,/obj/effect/rune))
+		new /obj/item/book/tome(src.loc)
+	else
+		new /obj/item/book/tome(user.loc)
+	consume(src, user)
+	return
+
+
+
+/////////////////////////////////////////THIRD RUNE
+
+/obj/effect/rune/proc/convert(mob/living/user)
+	var/mob/attacker = user
+	var/mob/living/carbon/target = null
+	for(var/mob/living/carbon/M in src.loc)
+		if(!iscultist(M) && M.stat < DEAD && !(M in converting))
+			target = M
+			break
+
+	if(!target) //didn't find any new targets
+		if(!length(converting))
+			fizzle(user)
+		else
+			to_chat(user, span_danger("You sense that the power of the dark one is already working away at them."))
+		return
+
+	user.say("Mah[pick("'","`")]weyh pleggh at e'ntrath!")
+
+	rel_add(src, nameof(converting), target)
+	var/list/waiting_for_input = list(target = 0) //need to box this up in order to be able to reset it again from inside spawn, apparently
+	convert_tick(attacker, target, waiting_for_input, 0)
+	return 1
+
+/// One pass of a conversion (every 10 seconds while the target stays on the rune).
+/obj/effect/rune/proc/convert_tick(mob/attacker, mob/living/carbon/target, list/waiting_for_input, initial_message)
+	if(target.loc != src.loc || target.stat == DEAD)
+		rel_remove(src, nameof(converting), target)
+		if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
+			target.status_set(STAT_HALLUCINATING, min(target.status_units(STAT_HALLUCINATING), 500))
+		return 0
+
+	var/corruption_burn = rand(5, 20)
+	target.injure(INJURY_BURN, corruption_burn, source = src) // You dirty resister cannot handle the damage to your mind. Easily. - even cultists who accept right away should experience some effects
+	target.injure(INJURY_TOXIN, corruption_burn / 2, source = src, affliction = /datum/affliction/profane_corruption, flags = INJURE_SILENT)
+	// Resist messages go!
+	if(initial_message) //don't do this stuff right away, only if they resist or hesitate.
+		add_attack_logs(attacker,target,"Convert rune")
+		switch(target.injury_load(INJURY_CATEGORY_THERMAL))
+			if(0 to 25)
+				to_chat(target, span_cult("Your blood boils as you force yourself to resist the corruption invading every corner of your mind."))
+			if(25 to 45)
+				to_chat(target, span_cult("Your blood boils and your body burns as the corruption further forces itself into your body and mind."))
+			if(45 to 75)
+				to_chat(target, span_cult("You begin to hallucinate images of a dark and incomprehensible being and your entire body feels like its engulfed in flame as your mental defenses crumble."))
+				target.apply_effect(rand(1,10), STUTTER)
+			if(75 to 100)
+				to_chat(target, span_cult("Your mind turns to ash as the burning flames engulf your very soul and images of an unspeakable horror begin to bombard the last remnants of mental resistance."))
+				//broken mind - 5000 may seem like a lot I wanted the effect to really stand out for maxiumum losing-your-mind-spooky
+				//hallucination is reduced when the step off as well, provided they haven't hit the last stage...
+
+				//5000 is waaaay too much, in practice.
+				target.status_set(STAT_HALLUCINATING, min(target.status_units(STAT_HALLUCINATING) + 100, 500))
+				target.apply_effect(10, STUTTER)
+				target.injure(INJURY_NEURAL, 1)
+			if(100 to INFINITY)
+				to_chat(target, span_cult("Your entire broken soul and being is engulfed in corruption and flames as your mind shatters away into nothing."))
+				//5000 is waaaay too much, in practice.
+				target.status_set(STAT_HALLUCINATING, min(target.status_units(STAT_HALLUCINATING) + 100, 500))
+				target.apply_effect(15, STUTTER)
+				target.injure(INJURY_NEURAL, 1)
+
+	initial_message = 1
+	if (!target.can_feel_pain())
+		act_message(target, null, others = span_warning("The markings below %U% glow a bloody red."))
+	else
+		act_message(target, null, MSG_SELF(span_danger("AAAAAAHHHH!")), \
+			MSG_OTHERS(span_warning("%U% writhes in pain as the markings below %THEM% glow a bloody red.")), \
+			MSG_BLIND(span_warning("You hear an anguished scream.")))
+
+	if(!waiting_for_input[target]) //so we don't spam them with dialogs if they hesitate
+		waiting_for_input[target] = 1
+
+		if(!antag_cult().can_become_antag(target.mind) || jobban_isbanned(target, JOB_CULTIST))//putting jobban check here because is_convertable uses mind as argument
+			//waiting_for_input ensures this is only shown once, so they basically auto-resist from here on out. They still need to find a way to get off the freaking rune if they don't want to burn to death, though.
+			to_chat(target, span_cult("Your blood pulses. Your head throbs. The world goes red. All at once you are aware of a horrible, horrible truth. The veil of reality has been ripped away and in the festering wound left behind something sinister takes root."))
+			to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
+
+		else
+			open_request(src, /datum/prompt/choice/cult_convert, PROC_REF(convert_answered), answerer = target, waiting_list = waiting_for_input)
+
+	if(target in converting)
+		after(src, 10 SECONDS, PROC_REF(convert_tick), with = list(attacker, target, waiting_for_input, 1)) //proc once every 10 seconds
+
+/// The convert rune's offer. Closing it is resisting; `waiting_list` is the rune's asked-already list.
+/datum/prompt/choice/cult_convert
+	title = "Submit to Nar'Sie"
+	question = "Do you want to join the cult?"
+	choices = list("Resist", "Submit")
+	buttons = TRUE
+	timeout = 0
+	var/list/waiting_list
+
+/obj/effect/rune/proc/convert_answered(datum/act/request/A)
+	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.value)))
+		return
+	if(QDELETED(A.request.answerer))
+		return
+	return apply_convert_answered(A)
+
+/obj/effect/rune/proc/apply_convert_answered(datum/act/request/A)
+	var/datum/prompt/choice/cult_convert/ask = A.request
+	var/mob/living/carbon/target = ask.answerer
+	var/list/waiting_for_input = ask.waiting_list
+	waiting_for_input[target] = 0
+	if(A.answer && A.answer.value == "Submit") //choosing 'Resist' does nothing of course.
+		antag_cult().add_antagonist(target.mind)
+		rel_remove(src, nameof(converting), target)
+		target.status_set(STAT_HALLUCINATING, 0) //sudden clarity
+
+/////////////////////////////////////////FOURTH RUNE
+
+/obj/effect/rune/proc/tearreality(mob/living/user)
+	if(!antag_cult().allow_narsie)
+		return fizzle(user)
+
+	var/list/cultists = new()
+	for(var/mob/M in range(1,src))
+		if(iscultist(M) && !M.stat)
+			M.say("Tok-lyr rqa'nap g[pick("'","`")]lt-ulotf!")
+			if(istype(M, /mob/living/carbon/human/dummy)) //No manifest cheese.
+				continue
+			cultists.Add(M)
+	if(cultists.len >= 9)
+		if(!GLOB.narsie_cometh)//so we don't initiate Hell more than one time.
+			to_chat(world, span_world(span_narsie(span_red("THE VEIL HAS BEEN SHATTERED!"))))
+			world << sound('sound/effects/weather/old_wind/wind_5_1.ogg') // No idea why this wind is here now
+
+			SetUniversalState(/datum/universal_state/hell)
+			GLOB.narsie_cometh = 1
+
+			after(null, 10 SECONDS, GLOBAL_PROC_REF(narsie_call_evac)) // the global owner: a round event, and the rune goes
+
+		log_and_message_admins_many(cultists, "summoned the end of days.")
+		return
+	else
+		return fizzle(user)
+
+/////////////////////////////////////////FIFTH RUNE
+
+/obj/effect/rune/proc/emp(U,range_red,mob/living/user) //range_red - var which determines by which number to reduce the default emp range, U is the source loc, needed because of talisman emps which are held in hand at the moment of using and that apparently messes things up -- Urist
+	log_and_message_admins("activated an EMP rune.", user)
+	if(istype(src,/obj/effect/rune))
+		user.say("Ta'gh fara[pick("'","`")]qha fel d'amar det!")
+	else
+		user.whisper("Ta'gh fara[pick("'","`")]qha fel d'amar det!")
+	play_sfx(U, SFX_ITEMS_WELDER2, 0.5)
+	var/turf/T = get_turf(U)
+	if(T)
+		T.hotspot_expose(700,125)
+	var/rune = src // detaching the proc - in theory
+	empulse(U, (range_red - 3), (range_red - 2), (range_red - 1), range_red)
+	spent(rune, user)
+	return
+
+/////////////////////////////////////////SIXTH RUNE
+
+/obj/effect/rune/proc/drain(mob/living/user)
+	var/drain = 0
+	for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
+		if(R.word1==GLOB.cultwords["travel"] && R.word2==GLOB.cultwords["blood"] && R.word3==GLOB.cultwords["self"])
+			for(var/mob/living/carbon/D in R.loc)
+				if(D.stat!=2)
+					add_attack_logs(user,D,"Blood drain rune")
+					var/bdrain = rand(1,25)
+					to_chat(D, span_warning("You feel weakened."))
+					D.injure(INJURY_BLUNT, bdrain)
+					drain += bdrain
+	if(!drain)
+		return fizzle(user)
+	user.say ("Yu[pick("'","`")]gular faras desdae. Havas mithum javara. Umathar uf'kal thenar!")
+	act_message(user, null, MSG_SELF(span_danger("The blood starts flowing from the rune and into your frail mortal body. You feel... empowered.")), \
+		MSG_OTHERS(span_danger("Blood flows from the rune into %U%!")), \
+		MSG_BLIND(span_warning("You hear a liquid flowing.")))
+	if(STATE_GET(user, mob_misc, bhunger))
+		STATE_SET(user, mob_misc, bhunger, max(STATE_GET(user, mob_misc, bhunger)-2*drain,0))
+	if(drain>=50)
+		act_message(user, null, MSG_SELF(span_danger("...but it wasn't nearly enough. You crave, crave for more. The hunger consumes you from within.")), \
+			MSG_OTHERS(span_danger("%U%'s eyes give off eerie red glow!")), \
+			MSG_BLIND(span_warning("You hear a heartbeat.")))
+		STATE_SET(user, mob_misc, bhunger, STATE_GET(user, mob_misc, bhunger) + (drain))
+		after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), with = list(user))
+		return
+	user.mend(TREAT_TISSUE_REPAIR, drain%5)
+	drain-=drain%5
+	after(user, 0.2 SECONDS, GLOBAL_PROC_REF(cult_drain_mend), with = list(user, drain))
+	return
+
+/// Blood hunger bites every 5 seconds until it is gone.
+/proc/cult_blood_hunger(mob/living/user)
+	if(STATE_GET(user, mob_misc, bhunger) <= 0)
+		return
+	user.injure(INJURY_BLUNT, 3)
+	STATE_SET(user, mob_misc, bhunger, STATE_GET(user, mob_misc, bhunger) - 1)
+	after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), with = list(user))
+
+/// Drained blood mends 5 at a time, 0.2 seconds apart.
+/proc/cult_drain_mend(mob/living/user, drain)
+	if(drain <= 0)
+		return
+	user.mend(TREAT_TISSUE_REPAIR, 5)
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		for(var/obj/item/organ/internal/I in H.internal_organ_list())
+			if(I.damage > 0)
+				H.mend(TREAT_RESTORATION, 5, I)		//Heals 5 damage per organ per use
+			if(I.damage <= 5 && I.organ_tag == O_EYES)
+				H.set_sdisabilities(H.sdisabilities & (~BLIND))
+		for(var/obj/item/organ/E in H.damaged_limbs())
+			var/obj/item/organ/external/affected = E
+			if(affected.is_fractured())
+				affected.mend_fracture()
+			for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
+				affected.remove_wound(W)
+	after(user, 0.2 SECONDS, GLOBAL_PROC_REF(cult_drain_mend), with = list(user, drain - 5))
+
+
+
+
+
+
+/////////////////////////////////////////SEVENTH RUNE
+
+/obj/effect/rune/proc/seer(mob/living/user)
+	if(user.loc==src.loc)
+		if(STATE_GET(user, mob_misc, seer)==1)
+			user.say("Rash'tla sektath mal[pick("'","`")]zua. Zasan therium viortia.")
+			to_chat(user, span_danger("The world beyond fades from your vision."))
+			user.see_invisible = SEE_INVISIBLE_LIVING
+			STATE_SET(user, mob_misc, seer, 0)
+			PUBLISH_CHANGE(user, MOB_KEY_VIEW)
+		else if(user.see_invisible!=SEE_INVISIBLE_LIVING)
+			to_chat(user, span_warning("The world beyond flashes your eyes but disappears quickly, as if something is disrupting your vision."))
+			user.see_invisible = SEE_INVISIBLE_CULT
+			STATE_SET(user, mob_misc, seer, 0)
+			PUBLISH_CHANGE(user, MOB_KEY_VIEW)
+		else
+			user.say("Rash'tla sektath mal[pick("'","`")]zua. Zasan therium vivira. Itonis al'ra matum!")
+			to_chat(user, span_warning("The world beyond opens to your eyes."))
+			user.see_invisible = SEE_INVISIBLE_CULT
+			STATE_SET(user, mob_misc, seer, 1)
+			PUBLISH_CHANGE(user, MOB_KEY_VIEW)
+		return
+	return fizzle(user)
+
+/////////////////////////////////////////EIGHTH RUNE
+
+/obj/effect/rune/proc/raise(mob/living/user)
+	var/mob/living/carbon/human/corpse_to_raise
+	var/mob/living/carbon/human/body_to_sacrifice
+
+	var/is_sacrifice_target = 0
+	for(var/mob/living/carbon/human/M in src.loc)
+		if(M.stat == DEAD)
+			if(antag_cult() && M.mind == antag_cult().sacrifice_target())
+				is_sacrifice_target = 1
+			else
+				corpse_to_raise = M
+				break
+
+	if(!corpse_to_raise)
+		if(is_sacrifice_target)
+			to_chat(user, span_warning("The Geometer of blood wants this mortal for himself."))
+		return fizzle(user)
+
+
+	is_sacrifice_target = 0
+	find_sacrifice:
+		for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
+			if(R.word1==GLOB.cultwords["blood"] && R.word2==GLOB.cultwords["join"] && R.word3==GLOB.cultwords["hell"])
+				for(var/mob/living/carbon/human/N in R.loc)
+					if(antag_cult() && N.mind && N.mind == antag_cult().sacrifice_target())
+						is_sacrifice_target = 1
+					else
+						if(N.stat!= DEAD)
+							body_to_sacrifice = N
+							break find_sacrifice
+
+	if(!body_to_sacrifice)
+		if (is_sacrifice_target)
+			to_chat(user, span_warning("The Geometer of Blood wants that corpse for himself."))
+		else
+			to_chat(user, span_warning("The sacrifical corpse is not dead. You must free it from this world of illusions before it may be used."))
+		return fizzle(user)
+
+	if(!antag_cult().can_become_antag(corpse_to_raise.mind) || jobban_isbanned(corpse_to_raise, JOB_CULTIST))
+		to_chat(user, span_warning("The Geometer of Blood refuses to touch this one."))
+		return fizzle(user)
+	else if(!corpse_to_raise.client && corpse_to_raise.mind) //Don't force the dead person to come back if they don't want to.
+		for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+			if(ghost.mind == corpse_to_raise.mind)
+				to_chat(ghost, span_interface(span_large(span_bold("The cultist [user.real_name] is trying to \
+				revive you. Return to your body if you want to be resurrected into the service of Nar'Sie!") + "\
+				(Verbs -> Ghost -> Re-enter corpse)")))
+				break
+
+	after(src, 10 SECONDS, PROC_REF(raise_finish), with = list(user, corpse_to_raise, body_to_sacrifice))
+
+/obj/effect/rune/proc/raise_finish(mob/living/user, mob/living/carbon/human/corpse_to_raise, mob/living/carbon/human/body_to_sacrifice)
+	if(QDELETED(user) || QDELETED(corpse_to_raise) || QDELETED(body_to_sacrifice))
+		return
+	if(corpse_to_raise.client)
+
+		antag_cult().add_antagonist(corpse_to_raise.mind)
+		corpse_to_raise.revive()
+
+		user.say("Pasnar val'keriam usinar. Savrae ines amutan. Yam'toth remium il'tarat!")
+		act_message(corpse_to_raise, null, MSG_SELF(span_warning("Life... I'm alive again...")), \
+			MSG_OTHERS(span_warning("%U%'s eyes glow with a faint red as %THEY% stand%S% up, slowly starting to breathe again.")), \
+			MSG_BLIND(span_warning("You hear a faint, slightly familiar whisper.")))
+		act_message(body_to_sacrifice, null, MSG_SELF(span_danger("You feel as your blood boils, tearing you apart.")), \
+			MSG_OTHERS(span_danger("%U% is torn apart, a black smoke swiftly dissipating from %THEIR% remains!")), \
+			MSG_BLIND(span_danger("You hear a thousand voices, all crying in pain.")))
+		body_to_sacrifice.gib()
+
+		to_chat(corpse_to_raise, span_cult("Your blood pulses. Your head throbs. The world goes red. All at once you are aware of a horrible, horrible truth. The veil of reality has been ripped away and in the festering wound left behind something sinister takes root."))
+		to_chat(corpse_to_raise, span_cult("Assist your new compatriots in their dark dealings. Their goal is yours, and yours is theirs. You serve the Dark One above all else. Bring It back."))
+
+	return
+
+
+
+
+
+/////////////////////////////////////////NINETH RUNE
+
+/obj/effect/rune/proc/obscure(rad, mob/living/user)
+	var/S=0
+	for(var/obj/effect/rune/R in orange(rad,src))
+		if(R!=src)
+			R.set_invisibility(INVISIBILITY_OBSERVER)
+		S=1
+	if(S)
+		if(istype(src,/obj/effect/rune))
+			user.say("Kla[pick("'","`")]atu barada nikt'o!")
+			for (var/mob/V in viewers(src))
+				V.show_message(span_warning("The rune turns into gray dust, veiling the surrounding runes."), 3)
+			consume(src, user)
+		else
+			user.whisper("Kla[pick("'","`")]atu barada nikt'o!")
+			to_chat(user, span_warning("Your talisman turns into gray dust, veiling the surrounding runes."))
+			for (var/mob/V in orange(1,src))
+				if(V!=user)
+					V.show_message(span_warning("Dust emanates from [user]'s hands for a moment."), 3)
+
+		return
+	if(istype(src,/obj/effect/rune))
+		return	fizzle(user)
+	else
+		call(/obj/effect/rune/proc/fizzle)(user)
+		return
+
+/////////////////////////////////////////TENTH RUNE
+
+/obj/effect/rune/proc/ajourney(mob/living/user) //some bits copypastaed from admin tools - Urist
+	if(user.loc==src.loc)
+		var/mob/living/carbon/human/L = user
+		user.say("Fwe[pick("'","`")]sh mah erl nyag r'ya!")
+		act_message(user, null, MSG_SELF(span_warning("The shadow that is your spirit separates itself from your body. You are now in the realm beyond. While this is a great sight, being here strains your mind and body. Hurry...")), \
+			MSG_OTHERS(span_warning("%U%'s eyes glow blue as [L.p_they()] freeze[L.p_s()] in place, absolutely motionless.")), \
+			MSG_BLIND(span_warning("You hear only complete silence for a moment.")))
+		announce_ghost_joinleave(user.ghostize(1), 1, "You feel that they had to use some [pick("dark", "black", "blood", "forgotten", "forbidden")] magic to [pick("invade","disturb","disrupt","infest","taint","spoil","blight")] this place!")
+		STATE_SET(L, mob_misc, ajourn, 1)
+		cult_ajourney_tick(L)
+		return
+	return fizzle(user)
+
+/// The body left behind on an astral journey hurts every 10 seconds until its owner returns.
+/proc/cult_ajourney_tick(mob/living/carbon/human/L)
+	if(L.key)
+		STATE_SET(L, mob_misc, ajourn, 0)
+		return
+	L.injure(INJURY_BLUNT, 3)
+	after(L, 10 SECONDS, GLOBAL_PROC_REF(cult_ajourney_tick), with = list(L))
+
+
+
+
+/////////////////////////////////////////ELEVENTH RUNE
+
+/obj/effect/rune/proc/manifest(mob/living/user)
+	var/obj/effect/rune/this_rune = src
+	src = null
+	if(user.loc!=this_rune.loc)
+		return this_rune.fizzle(user)
+	var/mob/observer/dead/ghost
+	for(var/mob/observer/dead/O in this_rune.loc)
+		if(!O.client)	continue
+		if(!O.MayRespawn()) continue
+		if(O.mind && O.mind.current && O.mind.current.stat != DEAD)	continue
+		if(!(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_CULTIST)) continue // be_special migrated to /datum/preference
+		ghost = O
+		break
+	if(!ghost)
+		return this_rune.fizzle(user)
+	if(jobban_isbanned(ghost, JOB_CULTIST))
+		return this_rune.fizzle(user)
+
+	user.say("Gal'h'rfikk harfrandid mud[pick("'","`")]gib!")
+	var/mob/living/carbon/human/dummy/D = new(this_rune.loc)
+	act_message(user, null, MSG_SELF(span_warning("A shape forms in the center of the rune. A shape of... a man.")), \
+		MSG_OTHERS(span_warning("A shape forms in the center of the rune. A shape of... a man.")), \
+		MSG_BLIND(span_warning("You hear liquid flowing.")))
+	D.set_real_name("Unknown")
+	var/chose_name = 0
+	for(var/obj/item/paper/P in this_rune.loc)
+		if(P.info)
+			D.set_real_name(copytext(P.info, findtext(P.info,">")+1, findtext(P.info,"<",2) ))
+			chose_name = 1
+			break
+	D.set_universal_speak(1)
+	D.disable_godmode()
+	D.looks.set_eyes_color(rgb(200, 200, 200))
+	D.clear_all_underwear()
+	D.underwear_edited()
+	bind_player(D, ghost.key)
+	antag_cult().add_antagonist(D.mind)
+
+	if(!chose_name)
+		D.set_real_name(pick("Anguished", "Blasphemous", "Corrupt", "Cruel", "Depraved", "Despicable", "Disturbed", "Exacerbated", "Foul", "Hateful", "Inexorable", "Implacable", "Impure", "Malevolent", "Malignant", "Malicious", "Pained", "Profane", "Profligate", "Relentless", "Resentful", "Restless", "Spiteful", "Tormented", "Unclean", "Unforgiving", "Vengeful", "Vindictive", "Wicked", "Wronged"))
+		D.set_real_name(D.real_name + " " + pick("Apparition", "Aptrgangr", "Dis", "Draugr", "Dybbuk", "Eidolon", "Fetch", "Fylgja", "Ghast", "Ghost", "Gjenganger", "Haint", "Phantom", "Phantasm", "Poltergeist", "Revenant", "Shade", "Shadow", "Soul", "Spectre", "Spirit", "Spook", "Visitant", "Wraith"))
+
+	log_and_message_admins("used a manifest rune.", user)
+	rel_set(this_rune, nameof(this_rune.manifest_dummy), D)
+	rel_set(this_rune, nameof(this_rune.manifest_user), user)
+	this_rune.set_manifesting(TRUE)
+	this_rune.manifest_tick()
+	return
+
+/// The summoner of a manifested homunculus (a relation view). A field: they bleed for it while
+/// set; a summoner who is destroyed is cleared by the framework, which ends the repeat.
+/obj/effect/rune/var/mob/living/manifest_user
+/// The manifested homunculus (a relation view).
+/obj/effect/rune/var/mob/living/carbon/human/dummy/manifest_dummy
+/// A homunculus is manifested: manifest_tick() runs every 3 seconds while it is (the gate of the rune's every()).
+/obj/effect/rune/var/manifesting = FALSE
+
+/// The summoner bleeds for the homunculus every 3 seconds while they hold the rune; it dies when they stop.
+/obj/effect/rune/proc/manifest_tick(datum/act/timer/A)
+	var/mob/living/user = manifest_user
+	var/mob/living/carbon/human/dummy/D = manifest_dummy
+	if(!user) // the summoner was destroyed: the framework cleared the link, and the old repeat simply stopped
+		set_manifesting(FALSE)
+		return
+	if(user && user.stat==CONSCIOUS && user.client && user.loc==loc)
+		user.injure(INJURY_BLUNT, 1)
+		return
+	set_manifesting(FALSE)
+	rel_clear(src, nameof(manifest_dummy))
+	rel_clear(src, nameof(manifest_user))
+	if(D)
+		act_message(D, null, MSG_SELF(span_danger("You feel pain, as bonds formed between your soul and this homunculus break.")), \
+			MSG_OTHERS(span_danger("%U% slowly dissipates into dust and bones.")), \
+			MSG_BLIND(span_warning("You hear faint rustle.")))
+		D.dust()
+
+
+
+
+
+/////////////////////////////////////////TWELFTH RUNE
+
+/obj/effect/rune/proc/talisman(mob/living/user)//only hide, emp, teleport, deafen, blind and tome runes can be imbued atm
+	var/obj/item/paper/newtalisman
+	var/unsuitable_newtalisman = 0
+	for(var/obj/item/paper/P in src.loc)
+		if(!P.info)
+			newtalisman = P
+			break
+		else
+			unsuitable_newtalisman = 1
+	if (!newtalisman)
+		if (unsuitable_newtalisman)
+			to_chat(user, span_warning("The blank is tainted. It is unsuitable."))
+		return fizzle(user)
+
+	var/obj/effect/rune/imbued_from
+	var/obj/item/paper/talisman/T
+	for(var/obj/effect/rune/R in orange(1,src))
+		if(R==src)
+			continue
+		if(R.word1==GLOB.cultwords["travel"] && R.word2==GLOB.cultwords["self"])  //teleport
+			T = new(src.loc)
+			T.imbue = "[R.word3]"
+			T.set_info("[R.word3]")
+			imbued_from = R
+			break
+		if(R.word1==GLOB.cultwords["see"] && R.word2==GLOB.cultwords["blood"] && R.word3==GLOB.cultwords["hell"]) //tome
+			T = new(src.loc)
+			T.imbue = "newtome"
+			imbued_from = R
+			break
+		if(R.word1==GLOB.cultwords["destroy"] && R.word2==GLOB.cultwords["see"] && R.word3==GLOB.cultwords["technology"]) //emp
+			T = new(src.loc)
+			T.imbue = "emp"
+			imbued_from = R
+			break
+		if(R.word1==GLOB.cultwords["blood"] && R.word2==GLOB.cultwords["see"] && R.word3==GLOB.cultwords["destroy"]) //conceal
+			T = new(src.loc)
+			T.imbue = "conceal"
+			imbued_from = R
+			break
+		if(R.word1==GLOB.cultwords["hell"] && R.word2==GLOB.cultwords["destroy"] && R.word3==GLOB.cultwords["other"]) //armor
+			T = new(src.loc)
+			T.imbue = "armor"
+			imbued_from = R
+			break
+		if(R.word1==GLOB.cultwords["blood"] && R.word2==GLOB.cultwords["see"] && R.word3==GLOB.cultwords["hide"]) //reveal
+			T = new(src.loc)
+			T.imbue = "revealrunes"
+			imbued_from = R
+			break
+		if(R.word1==GLOB.cultwords["hide"] && R.word2==GLOB.cultwords["other"] && R.word3==GLOB.cultwords["see"]) //deafen
+			T = new(src.loc)
+			T.imbue = "deafen"
+			imbued_from = R
+			break
+		if(R.word1==GLOB.cultwords["destroy"] && R.word2==GLOB.cultwords["see"] && R.word3==GLOB.cultwords["other"]) //blind
+			T = new(src.loc)
+			T.imbue = "blind"
+			imbued_from = R
+			break
+		if(R.word1==GLOB.cultwords["self"] && R.word2==GLOB.cultwords["other"] && R.word3==GLOB.cultwords["technology"]) //communicat
+			T = new(src.loc)
+			T.imbue = "communicate"
+			imbued_from = R
+			break
+		if(R.word1==GLOB.cultwords["join"] && R.word2==GLOB.cultwords["hide"] && R.word3==GLOB.cultwords["technology"]) //communicat
+			T = new(src.loc)
+			T.imbue = "runestun"
+			imbued_from = R
+			break
+	if (imbued_from)
+		for (var/mob/V in viewers(src))
+			V.show_message(span_warning("The runes turn into dust, which then forms into an arcane image on the paper."), 3)
+		user.say("H'drak v[pick("'","`")]loso, mir'kanas verbot!")
+		spent(imbued_from, user)
+		spent(newtalisman, user)
+	else
+		return fizzle(user)
+
+/////////////////////////////////////////THIRTEENTH RUNE
+
+/obj/effect/rune/proc/mend(mob/living/user)
+	src = null
+	user.say("Uhrast ka'hfa heldsagen ver[pick("'","`")]lot!")
+	user.injure(INJURY_BLUNT, 200)
+	if(user.stat != DEAD) // the rune takes the whole life, whatever the body model makes of 200 trauma
+		user.death()
+	GLOB.runedec+=10
+	act_message(user, null, MSG_SELF(span_danger("In the last moment of your humble life, you feel an immense pain as fabric of reality mends... with your blood.")), \
+		MSG_OTHERS(span_danger("%U% keels over dead, %THEIR% blood glowing blue as it escapes %THEIR% body and dissipates into thin air.")), \
+		MSG_BLIND(span_warning("You hear faint rustle.")))
+	after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), with = list(user), keeps_dead = TRUE)
+	return
+
+/// The mend rune's strain on reality lasts while its caster stays dead (checked every minute).
+/proc/cult_mend_rune_wait(mob/living/user)
+	if(user?.stat == DEAD)
+		after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), with = list(user), keeps_dead = TRUE)
+		return
+	GLOB.runedec-=10
+
+
+/////////////////////////////////////////FOURTEETH RUNE
+
+// returns 0 if the rune is not used. returns 1 if the rune is used.
+/obj/effect/rune/proc/communicate(mob/living/user)
+	. = 1 // Default output is 1. If the rune is deleted it will return 1
+	open_request(src, /datum/prompt/text, PROC_REF(communicate_entered), answerer = user, title = "Voice of Blood", question = "Please choose a message to tell to the other acolytes.", default = "", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+	return 1
+
+/obj/effect/rune/proc/communicate_entered(datum/act/request/A)
+	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.value)))
+		return
+	if(QDELETED(A.request.answerer))
+		return
+	return apply_communicate_entered(A)
+
+/obj/effect/rune/proc/apply_communicate_entered(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	var/input = A.answer ? A.answer.value : ""
+	if(!input)
+		if (istype(src))
+			fizzle(user)
+			return 0
+		else
+			return 0
+
+	if(istype(src,/obj/effect/rune))
+		user.say("O bidai nabora se[pick("'","`")]sma!")
+	else
+		user.whisper("O bidai nabora se[pick("'","`")]sma!")
+
+	log_and_message_admins("used a communicate rune to say '[input]'", A.request.answerer)
+	for(var/datum/mind/H in antag_cult().current_antagonists)
+		if (H.current)
+			to_chat(H.current, span_cult("[input]"))
+	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		to_chat(O, span_cult("[input]"))
+	consume(src, user)
+	return 1
+
+/////////////////////////////////////////FIFTEENTH RUNE
+
+/obj/effect/rune/proc/sacrifice(mob/living/user)
+	var/list/mob/living/carbon/human/cultsinrange = list()
+	var/list/mob/living/carbon/human/victims = list()
+	for(var/mob/living/carbon/human/V in src.loc)//Checks for non-cultist humans to sacrifice
+		if(ishuman(V))
+			if(!(iscultist(V)))
+				victims += V//Checks for cult status and mob type
+	for(var/obj/item/I in src.loc)//Checks for MMIs/brains/Intellicards
+		if(istype(I,/obj/item/organ/internal/brain))
+			var/obj/item/organ/internal/brain/B = I
+			if(B.hosted_view())
+				victims += B.hosted_view()
+		else if(istype(I,/obj/item/mmi))
+			var/obj/item/mmi/B = I
+			if(B.get_occupant())
+				victims += B.get_occupant()
+		else if(istype(I,/obj/item/aicard))
+			for(var/mob/living/silicon/ai/A in I)
+				victims += A
+	for(var/mob/living/carbon/C in orange(1,src))
+		if(iscultist(C) && !C.stat)
+			cultsinrange += C
+			C.say("Barhah hra zar[pick("'","`")]garis!")
+
+	for(var/mob/H in victims)
+
+		var/worth = 0
+		if(ishuman(H))
+			var/mob/living/carbon/human/lamb = H
+			if(lamb.species.rarity_value > 3)
+				worth = 1
+
+		if (ticker_mode().name == "cult")
+			if(H.mind == antag_cult().sacrifice_target())
+				if(cultsinrange.len >= 3)
+					registry_join(REGISTRY_SACRIFICED, H.mind)
+					if(isrobot(H))
+						H.dust()//To prevent the MMI from remaining
+					else
+						H.gib()
+					to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice, your objective is now complete."))
+				else
+					to_chat(user,span_warning("Your target's earthly bonds are too strong. You need more cultists to succeed in this ritual."))
+			else
+				if(cultsinrange.len >= 3)
+					if(H.stat !=2)
+						if(prob(80) || worth)
+							to_chat(user,span_cult("The Geometer of Blood accepts this [worth ? "exotic " : ""]sacrifice."))
+							antag_cult().grant_runeword(user)
+						else
+							to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+							to_chat(user,span_warning("However, this soul was not enough to gain His favor."))
+						if(isrobot(H))
+							H.dust()//To prevent the MMI from remaining
+						else
+							H.gib()
+					else
+						if(prob(40) || worth)
+							to_chat(user,span_cult("The Geometer of Blood accepts this [worth ? "exotic " : ""]sacrifice."))
+							antag_cult().grant_runeword(user)
+						else
+							to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+							to_chat(user,span_warning("However, a mere dead body is not enough to satisfy Him."))
+						if(isrobot(H))
+							H.dust()//To prevent the MMI from remaining
+						else
+							H.gib()
+				else
+					if(H.stat !=2)
+						to_chat(user,span_warning("The victim is still alive, you will need more cultists chanting for the sacrifice to succeed."))
+					else
+						if(prob(40))
+
+							to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+							antag_cult().grant_runeword(user)
+						else
+							to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+							to_chat(user,span_warning("However, a mere dead body is not enough to satisfy Him."))
+						if(isrobot(H))
+							H.dust()//To prevent the MMI from remaining
+						else
+							H.gib()
+		else
+			if(cultsinrange.len >= 3)
+				if(H.stat !=2)
+					if(prob(80))
+						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+						antag_cult().grant_runeword(user)
+					else
+						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+						to_chat(user,span_warning("However, this soul was not enough to gain His favor."))
+					if(isrobot(H))
+						H.dust()//To prevent the MMI from remaining
+					else
+						H.gib()
+				else
+					if(prob(40))
+						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+						antag_cult().grant_runeword(user)
+					else
+						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+						to_chat(user,span_warning("However, a mere dead body is not enough to satisfy Him."))
+					if(isrobot(H))
+						H.dust()//To prevent the MMI from remaining
+					else
+						H.gib()
+			else
+				if(H.stat !=2)
+					to_chat(user,span_warning("The victim is still alive, you will need more cultists chanting for the sacrifice to succeed."))
+				else
+					if(prob(40))
+						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+						antag_cult().grant_runeword(user)
+					else
+						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
+						to_chat(user,span_warning("However, a mere dead body is not enough to satisfy Him."))
+					if(isrobot(H))
+						H.dust()//To prevent the MMI from remaining
+					else
+						H.gib()
+
+/////////////////////////////////////////SIXTEENTH RUNE
+
+/obj/effect/rune/proc/revealrunes(obj/W as obj, mob/living/user)
+	var/go=0
+	var/rad
+	var/S=0
+	if(istype(W,/obj/effect/rune))
+		rad = 6
+		go = 1
+	if (istype(W,/obj/item/paper/talisman))
+		rad = 4
+		go = 1
+	if (istype(W,/obj/item/nullrod))
+		rad = 1
+		go = 1
+	if(go)
+		for(var/obj/effect/rune/R in orange(rad,src))
+			if(R!=src)
+				R.visibility=15
+			S=1
+	if(S)
+		if(istype(W,/obj/item/nullrod))
+			to_chat(user,span_warning("Arcane markings suddenly glow from underneath a thin layer of dust!"))
+			return
+		if(istype(W,/obj/effect/rune))
+			user.say("Nikt[pick("'","`")]o barada kla'atu!")
+			for (var/mob/V in viewers(src))
+				V.show_message(span_warning("The rune turns into red dust, reveaing the surrounding runes."), 3)
+			consume(src, user)
+			return
+		if(istype(W,/obj/item/paper/talisman))
+			user.whisper("Nikt[pick("'","`")]o barada kla'atu!")
+			to_chat(user,span_warning("Your talisman turns into red dust, revealing the surrounding runes."))
+			for (var/mob/V in orange(1,user.loc))
+				if(V!=user)
+					V.show_message(span_warning("Red dust emanates from [user]'s hands for a moment."), 3)
+			return
+		return
+	if(istype(W,/obj/effect/rune))
+		return	fizzle(user)
+	if(istype(W,/obj/item/paper/talisman))
+		call(/obj/effect/rune/proc/fizzle)(user)
+		return
+
+/////////////////////////////////////////SEVENTEENTH RUNE
+
+/obj/effect/rune/proc/wall(mob/living/user)
+	user.say("Khari[pick("'","`")]d! Eske'te tannin!")
+	set_density(!src.density)
+	user.injure(INJURY_BLUNT, 2)
+	if(src.density)
+		to_chat(user,span_danger("Your blood flows into the rune, and you feel that the very space over the rune thickens."))
+	else
+		to_chat(user,span_danger("Your blood flows into the rune, and you feel as the rune releases its grasp on space."))
+	return
+
+/////////////////////////////////////////EIGHTTEENTH RUNE
+
+/obj/effect/rune/proc/freedom(mob/living/user)
+	var/list/mob/living/carbon/cultists = new
+	for(var/datum/mind/H in antag_cult().current_antagonists)
+		if (istype(H.current,/mob/living/carbon))
+			cultists+=H.current
+	var/list/mob/living/carbon/users = new
+	for(var/mob/living/carbon/C in orange(1,src))
+		if(iscultist(C) && !C.stat)
+			users+=C
+	var/dam = round(15 / users.len)
+	if(users.len>=3)
+		open_request(src, /datum/prompt/choice/cult_ritual, PROC_REF(freedom_target_chosen), answerer = user, question = "Choose the one who you want to free", choices = (cultists - users), users = users, dam = dam)
+		return
+
+/// A group rune's pick of a cultist (freedom, summon). Re-checked: next to the rune and able. A
+/// cancel fizzles the rune.
+/datum/prompt/choice/cult_ritual
+	title = "Followers of Geometer"
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
+	timeout = 0
+	/// The cultists around the rune when it was invoked.
+	var/list/users
+	var/dam
+
+/datum/prompt/choice/cult_ritual/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(value))
+		var/mob/living/carbon/selected = value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
+	return null
+
+/obj/effect/rune/proc/freedom_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
+			return fizzle(A.request.answerer)
+		return
+	return apply_freedom_target_chosen(A)
+
+/obj/effect/rune/proc/apply_freedom_target_chosen(datum/act/request/A)
+	var/datum/prompt/choice/cult_ritual/ask = A.request
+	var/mob/living/user = ask.answerer
+	var/mob/living/carbon/cultist = A.answer.value
+	var/list/users = ask.users
+	var/dam = ask.dam
+	if(!cultist)
+		return fizzle(user)
+	if (cultist == user) //just to be sure.
+		return
+	if(!(cultist?.buckled_to() || \
+		cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || \
+		istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle) || \
+		(istype(cultist.loc, /obj/structure/closet) && is_welded(cultist.loc)) || \
+		(istype(cultist.loc, /obj/structure/closet/secure_closet) && lock_locked(cultist.loc)) || \
+		(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked) \
+	))
+		to_chat(user, span_warning("The [cultist] is already free."))
+		return
+	if(cultist?.buckled_to())
+		var/atom/movable/_tmp_buck_3 = cultist?.buckled_to()
+		_tmp_buck_3.unbuckle_mob(cultist, TRUE)
+	if (cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
+		cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
+	if (cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
+		cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
+	if (istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle))
+		cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_MASK))
+	if(istype(cultist.loc, /obj/structure/closet) && is_welded(cultist.loc))
+		set_welded(cultist.loc, FALSE)
+	if(istype(cultist.loc, /obj/structure/closet/secure_closet) && lock_locked(cultist.loc))
+		var/obj/structure/closet/secure_closet/freed = cultist.loc
+		freed.force_lock(FALSE)
+	if(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked)
+		cultist.loc:locked = 0
+	for(var/mob/living/carbon/C in users)
+		user.injure(INJURY_BLUNT, dam)
+		C.say("Khari[pick("'","`")]d! Gual'te nikka!")
+	consume(src, user)
+
+/////////////////////////////////////////NINETEENTH RUNE
+
+/obj/effect/rune/proc/cultsummon(mob/living/user)
+	var/list/mob/living/carbon/cultists = new
+	for(var/datum/mind/H in antag_cult().current_antagonists)
+		if (istype(H.current,/mob/living/carbon))
+			cultists+=H.current
+	var/list/mob/living/carbon/users = new
+	for(var/mob/living/carbon/C in orange(1,src))
+		if(iscultist(C) && !C.stat)
+			users += C
+	if(users.len>=3)
+		open_request(src, /datum/prompt/choice/cult_ritual, PROC_REF(summon_target_chosen), answerer = user, question = "Choose the one who you want to summon", choices = (cultists - user), users = users)
+		return
+	return fizzle(user)
+
+/obj/effect/rune/proc/summon_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
+			return fizzle(A.request.answerer)
+		return
+	return apply_summon_target_chosen(A)
+
+/obj/effect/rune/proc/apply_summon_target_chosen(datum/act/request/A)
+	var/datum/prompt/choice/cult_ritual/ask = A.request
+	var/mob/living/user = ask.answerer
+	var/mob/living/carbon/cultist = A.answer.value
+	var/list/users = ask.users
+	if(!cultist)
+		return fizzle(user)
+	if (cultist == user) //just to be sure.
+		return
+	if(cultist?.buckled_to() || cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || (!isturf(cultist.loc) && !istype(cultist.loc, /obj/structure/closet)))
+		to_chat(user, span_warning("You cannot summon \the [cultist], for [cultist.p_their()] shackles of blood are strong."))
+		return fizzle(user)
+	cultist.forceMove(src.loc)
+	cultist.set_lying(1)
+
+	var/dam = round(25 / (users.len/2))	//More people around the rune less damage everyone takes. Minimum is 3 cultists
+
+	for(var/mob/living/carbon/human/C in users)
+		if(iscultist(C) && !C.stat)
+			C.say("N'ath reth sh'yro eth d[pick("'","`")]rekkathnor!")
+			C.injure(INJURY_BLUNT, dam)
+			if(users.len <= 4)				// You did the minimum, this is going to hurt more and we're going to stun you.
+				C.apply_effect(rand(3,6), STUN)
+				C.apply_effect(1, WEAKEN)
+	act_message(user, null, MSG_SELF(span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a body.")), \
+		MSG_OTHERS(span_warning("Rune disappears with a flash of red light, and in its place now a body lies.")), \
+		MSG_BLIND(span_warning("You hear a pop and smell ozone.")))
+	consume(src, user)
+
+/////////////////////////////////////////TWENTIETH RUNES
+
+/obj/effect/rune/proc/deafen(mob/living/user)
+	if(istype(src,/obj/effect/rune))
+		var/list/affected = new()
+		for(var/mob/living/carbon/C in range(7,src))
+			if (iscultist(C))
+				continue
+			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
+			if(N)
+				continue
+			C.status_adjust(STAT_DEAFENED, 50)
+			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
+			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
+			affected += C
+			if(prob(1))
+				C.set_sdisabilities(C.sdisabilities | (DEAF))
+		if(affected.len)
+			user.say("Sti[pick("'","`")] kaliedir!")
+			to_chat(user,span_warning("The world becomes quiet as the deafening rune dissipates into fine dust."))
+			add_attack_logs(user,affected,"Deafen rune")
+			consume(src, user)
+		else
+			return fizzle(user)
+	else
+		var/list/affected = new()
+		for(var/mob/living/carbon/C in range(7,user))
+			if (iscultist(C))
+				continue
+			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
+			if(N)
+				continue
+			C.status_adjust(STAT_DEAFENED, 30)
+			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
+			//talismans is weaker.
+			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
+			affected += C
+		if(affected.len)
+			user.whisper("Sti[pick("'","`")] kaliedir!")
+			to_chat(user,span_warning("Your talisman turns into gray dust, deafening everyone around."))
+			add_attack_logs(user, affected, "Deafen rune")
+			for (var/mob/V in orange(1,src))
+				if(!(iscultist(V)))
+					V.show_message(span_warning("Dust flows from [user]'s hands for a moment, and the world suddenly becomes quiet.."), 3)
+	return
+
+/obj/effect/rune/proc/blind(mob/living/user)
+	if(istype(src,/obj/effect/rune))
+		var/list/affected = new()
+		for(var/mob/living/carbon/C in viewers(src))
+			if (iscultist(C))
+				continue
+			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
+			if(N)
+				continue
+			C.status_adjust(STAT_BLURRY, 50)
+			C.status_at_least(STAT_BLINDED, 20)
+			if(prob(5))
+				C.add_disabilities(NEARSIGHTED)
+				if(prob(10))
+					C.set_sdisabilities(C.sdisabilities | (BLIND))
+			C.show_message(span_warning("Suddenly you see a red flash that blinds you."), 3)
+			affected += C
+		if(affected.len)
+			user.say("Sti[pick("'","`")] kaliesin!")
+			to_chat(user,span_warning("The rune flashes, blinding those who not follow the Nar-Sie, and dissipates into fine dust."))
+			add_attack_logs(user, affected, "Blindness rune")
+			consume(src, user)
+		else
+			return fizzle(user)
+	else
+		var/list/affected = new()
+		for(var/mob/living/carbon/C in view(2,user))
+			if (iscultist(C))
+				continue
+			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
+			if(N)
+				continue
+			C.status_adjust(STAT_BLURRY, 30)
+			C.status_at_least(STAT_BLINDED, 10)
+			//talismans is weaker.
+			affected += C
+			C.show_message(span_warning("You feel a sharp pain in your eyes, and the world disappears into darkness.."), 3)
+		if(affected.len)
+			user.whisper("Sti[pick("'","`")] kaliesin!")
+			to_chat(user,span_warning("Your talisman turns into gray dust, blinding those who not follow the Nar-Sie."))
+			add_attack_logs(user, affected, "Blindness rune")
+	return
+
+
+/obj/effect/rune/proc/bloodboil(mob/living/user) //cultists need at least one DANGEROUS rune. Even if they're all stealthy.
+/*
+	var/list/mob/living/carbon/cultists = new
+	for(var/datum/mind/H in ticker_mode().cult)
+		if (istype(H.current,/mob/living/carbon))
+			cultists+=H.current
+*/
+	var/list/cultists = list() //also, wording for it is old wording for obscure rune, which is now hide-see-blood.
+	var/list/victims = list()
+	for(var/mob/living/carbon/C in orange(1,src))
+		if(iscultist(C) && !C.stat)
+			cultists+=C
+	if(cultists.len>=3)
+		for(var/mob/living/carbon/M in viewers(user))
+			if(iscultist(M))
+				continue
+			var/obj/item/nullrod/N = locate_within(M, /obj/item/nullrod)
+			if(N)
+				continue
+			M.injure(INJURY_BLUNT, 51)
+			M.injure(INJURY_BURN, 51)
+			to_chat(M, span_danger("Your blood boils!"))
+			victims += M
+			if(prob(5))
+				after(M, 0.5 SECONDS, TYPE_PROC_REF(/mob, gib))
+		for(var/obj/effect/rune/R in view(src))
+			if(prob(10))
+				explosion(R.loc, -1, 0, 1, 5)
+		for(var/mob/living/carbon/human/C in orange(1,src))
+			if(iscultist(C) && !C.stat)
+				C.say("Dedo ol[pick("'","`")]btoh!")
+				C.injure(INJURY_BLUNT, 15)
+		add_attack_logs(user, victims, "Blood boil rune")
+		consume(src, user)
+	else
+		return fizzle(user)
+	return
+
+// WIP rune, I'll wait for Rastaf0 to add limited blood.
+
+/obj/effect/rune/proc/burningblood()
+	var/culcount = 0
+	for(var/mob/living/carbon/C in orange(1,src))
+		if(iscultist(C) && !C.stat)
+			culcount++
+	if(culcount >= 5)
+		for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
+			if(R.forensic_data?.get_blooddna() == src.forensic_data?.get_blooddna())
+				for(var/mob/living/M in orange(2,R))
+					M.injure(INJURY_BURN, 15)
+					if (R.invisibility>M.see_invisible)
+						to_chat(M, span_danger("Aargh it burns!"))
+					else
+						to_chat(M, span_danger("Rune suddenly ignites, burning you!"))
+					var/turf/T = get_turf(R)
+					T.hotspot_expose(700,125)
+		for(var/obj/effect/decal/cleanable/blood/B in world)
+			if(B.forensic_data?.get_blooddna() == src.forensic_data?.get_blooddna())
+				for(var/mob/living/M in orange(1,B))
+					M.injure(INJURY_BURN, 5)
+					to_chat(M, span_danger("Blood suddenly ignites, burning you!"))
+					var/turf/T = get_turf(B)
+					T.hotspot_expose(700,125)
+					destroyed(B, null, BURN)
+		consume(src)
+
+//////////             Rune 24 (counting burningblood, which kinda doesnt work yet.)
+
+/obj/effect/rune/proc/runestun(mob/living/T as mob, mob/living/user)
+	if(istype(src,/obj/effect/rune))   ///When invoked as rune, flash and stun everyone around.
+		user.say("Fuu ma[pick("'","`")]jin!")
+		for(var/mob/living/L in viewers(src))
+			if(iscarbon(L))
+				var/mob/living/carbon/C = L
+				C.flash_eyes()
+				if(!C.has_status(STAT_STUTTERING) && (!(C.has_mutation(HULK))))
+					C.status_set(STAT_STUTTERING, 1)
+				C.status_at_least(STAT_WEAKENED, 1)
+				C.status_at_least(STAT_STUNNED, 1)
+				C.show_message(span_danger("The rune explodes in a bright flash."), 3)
+				add_attack_logs(user,C,"Stun rune")
+
+			else if(issilicon(L))
+				var/mob/living/silicon/S = L
+				S.status_at_least(STAT_WEAKENED, 5)
+				S.show_message(span_danger("BZZZT... The rune has exploded in a bright flash."), 3)
+				add_attack_logs(user,S,"Stun rune")
+		consume(src, user)
+	else                        ///When invoked as talisman, stun and mute the target mob.
+		user.say("Dream sign ''Evil sealing talisman'[pick("'","`")]!")
+		var/obj/item/nullrod/N = locate_within(T, /obj/item/nullrod)
+		if(N)
+			for(var/mob/O in viewers(T, null))
+				O.show_message(span_boldwarning("[user] invokes a talisman at [T], but they are unaffected!"), 1)
+		else
+			for(var/mob/O in viewers(T, null))
+				O.show_message(span_boldwarning("[user] invokes a talisman at [T]"), 1)
+
+			if(issilicon(T))
+				T.status_at_least(STAT_WEAKENED, 15)
+				add_attack_logs(user,T,"Stun rune")
+			else if(iscarbon(T))
+				var/mob/living/carbon/C = T
+				C.flash_eyes()
+				if (!(C.has_mutation(HULK)))
+					C.status_adjust(STAT_MUTED, 15)
+				C.status_at_least(STAT_WEAKENED, 25)
+				C.status_at_least(STAT_STUNNED, 25)
+				add_attack_logs(user,C,"Stun rune")
+		return
+
+/////////////////////////////////////////TWENTY-FIFTH RUNE
+
+/obj/effect/rune/proc/armor(mob/living/user)
+	if(!ishuman(user))
+		return
+	var/mob/living/carbon/human/H = user
+	if(istype(src,/obj/effect/rune))
+		user.say("N'ath reth sh'yro eth d[pick("'","`")]raggathnor!")
+	else
+		user.whisper("N'ath reth sh'yro eth d[pick("'","`")]raggathnor!")
+	act_message(user, null, MSG_SELF(span_warning("You are blinded by the flash of red light! After you're able to see again, you see that you are now wearing a set of armor.")), \
+		MSG_OTHERS(span_warning("The rune disappears with a flash of red light, and a set of armor appears on %U%...")))
+
+	H.equip_to_slot_or_del(new /obj/item/clothing/head/culthood/alt(H), SLOT_ID_HEAD)
+	H.equip_to_slot_or_del(new /obj/item/clothing/suit/cultrobes/alt(H), SLOT_ID_SUIT)
+	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/cult(H), SLOT_ID_SHOES)
+	H.equip_to_slot_or_del(new /obj/item/storage/backpack/cultpack(H), SLOT_ID_BACK)
+	H.put_in_hands(new /obj/item/melee/cultblade(H))	//put in hands or on floor
+
+	consume(src, user)
+	return

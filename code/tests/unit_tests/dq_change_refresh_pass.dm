@@ -77,3 +77,33 @@
 	TEST_ASSERT(A.refresh_queued, "an initialized atom's write queues its refresh")
 	refresh_flush()
 	qdel(A)
+
+/// An atom partway through its own Initialize() while a child's init runs inside it is still "in init": a write the child makes to it publishes nothing.
+/obj/dq_nest_outer
+	var/obj/dq_nest_kid/kid
+
+CAPABILITIES(/obj/dq_nest_outer)
+	owns_one(nameof(kid), starts = /obj/dq_nest_kid)
+
+/obj/dq_nest_kid
+	var/saw_outer_open = FALSE
+	var/skipped_by_write = 0
+
+/obj/dq_nest_kid/Initialize(mapload)
+	. = ..()
+	if(!isatom(loc))
+		return
+	saw_outer_open = (loc in GLOB.atoms_init_outer)
+	var/before = GLOB.state_changed_preinit_skipped
+	state_changed(loc)
+	skipped_by_write = GLOB.state_changed_preinit_skipped - before
+
+/datum/unit_test/dq_change_outer_atom_is_in_init_while_child_inits
+
+/datum/unit_test/dq_change_outer_atom_is_in_init_while_child_inits/Run()
+	refresh_flush()
+	var/obj/dq_nest_outer/outer = allocate(/obj/dq_nest_outer, run_loc_floor_bottom_left)
+	TEST_ASSERT_NOTNULL(outer.kid, "the outer atom made its child")
+	TEST_ASSERT(outer.kid.saw_outer_open, "the outer atom was not listed as partway through its init while its child's init ran")
+	TEST_ASSERT_EQUAL(outer.kid.skipped_by_write, 1, "a write to the outer atom during the child's init was not treated as a pre-init write")
+	TEST_ASSERT_EQUAL(length(GLOB.atoms_init_outer), 0, "the list of open outer atoms was not emptied")

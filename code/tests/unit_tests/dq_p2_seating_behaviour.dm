@@ -20,7 +20,7 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	var/datum/input_event/click/E = new(actor, target, null, "mapwindow.map", "left=1")
 	input_submit(E)
 	return E.result
@@ -30,7 +30,7 @@
 	if(actor.get_active_hand() != I)
 		actor.drop_item()
 		actor.put_in_active_hand(I)
-	cooldown_set_end(actor, next_click, 0)
+	STATE_SET(actor, cooldowns, next_click, 0)
 	return test_click(actor, I, I, GESTURE_SELF)
 
 /// The material the seat or stool is padded with, or null.

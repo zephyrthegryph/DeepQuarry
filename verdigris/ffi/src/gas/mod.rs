@@ -9,7 +9,6 @@
 //! (`rust_architecture.md` §8.5 step 6); this module is the first slice.
 
 mod binds;
-pub(crate) use binds::take_observations;
 pub(crate) mod mix;
 mod parser;
 
@@ -343,6 +342,7 @@ pub(crate) fn register(b: &mut WorldBuilder) -> FieldKey<TurfGas> {
 pub(crate) fn install(key: FieldKey<TurfGas>) {
     TURF.with(|t| t.set(Some(key)));
     mix::reset_watches();
+    crate::sense::reset();
 }
 
 pub(crate) fn turf_key() -> Result<FieldKey<TurfGas>> {
@@ -361,6 +361,20 @@ fn geom_of(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Geom {
 pub(crate) fn turf_read(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Option<(GasCell, Geom)> {
     let g = w.sim().port_ref(key.geometry).read(cell)?;
     Some((w.read_cell(key, cell)?, g))
+}
+
+/// Submits a command to a turf's gas cell. Space and immutable air (a reservoir with no planet atmosphere) are never
+/// changed: a `Delta` for one is dropped here, where the geometry is known, and the cell stays the default vacuum value.
+/// Returns whether the command was submitted.
+pub(crate) fn submit_turf(w: &mut World, key: FieldKey<TurfGas>, cell: u32, cmd: GasCmd) -> bool {
+    if let GasCmd::Delta(_) = cmd {
+        if let Some((value, geom)) = turf_read(w, key, cell) {
+            if value.immutable_in(&geom) {
+                return false;
+            }
+        }
+    }
+    w.submit_cell(key, cell, cmd).is_ok()
 }
 
 /// Whether `cell` is inside the grid.
@@ -452,7 +466,7 @@ pub(crate) fn turf_device_probe(w: &World, cell: u32) -> Option<(PipeGas, f64)> 
     } else {
         CELL_VOLUME
     };
-    let mix = mix::mixture_of_cell(&c, volume);
+    let mix = mix::mixture_of_cell(&c, volume, c.immutable_in(&g));
     Some((
         PipeGas::from_amounts(&mix::amounts_of(&mix), mix.get_temperature()),
         f64::from(volume),
@@ -495,7 +509,7 @@ pub(crate) fn turf_device_apply(w: &mut World, cell: u32, before: &PipeGas, afte
         *o = x - y;
     }
     if d.iter().any(|v| *v != 0.0) {
-        let _ = w.submit_cell(key, cell, GasCmd::Delta(d));
+        submit_turf(w, key, cell, GasCmd::Delta(d));
     }
 }
 
@@ -613,7 +627,6 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
     mix::bump_turf_generation(cell);
     let mut value = mix::cell_of_mixture(&mix);
     if mix.is_immutable() || is_set(src.read_number_id(byond_string!("immutable_atmos"))) {
-        value.flags |= vg_gas::cell::flags::IMMUTABLE;
         // Shared vacuum: the datum stays main-owned.
         return with_world(|w| {
             register_cell(w, key, cell, value, mix.volume, true, mask);
@@ -628,7 +641,7 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         Ok(())
     })?;
     if let MixRef::Main(slot) = r {
-        mix::free(slot);
+        mix::free_into_turf(slot);
     }
     MixRef::Turf(cell).store(&mut air)?;
     Ok(())
@@ -799,7 +812,7 @@ fn topology_matches(src: ByondValue) -> Result<ByondValue> {
         let Some((value, geom)) = turf_read(w, turf_key()?, cell) else {
             return Ok(false);
         };
-        Ok((r == Some(MixRef::Turf(cell)) || value.is_immutable()) && geom.is_node())
+        Ok((r == Some(MixRef::Turf(cell)) || value.immutable_in(&geom)) && geom.is_node())
     })?;
     Ok(matches.into())
 }
@@ -916,6 +929,19 @@ impl DomainRegistry for GasDomain {
 
     fn unwatch(&mut self, port: u8, id: WatchId) {
         mix::unwatch(port, id);
+    }
+
+    fn add_entry(
+        &mut self,
+        port: u8,
+        id: WatchId,
+        entry: vg_core::watch::SetEntry,
+    ) -> std::result::Result<(), String> {
+        mix::add_entry(port, id, entry).map_err(|e| e.to_string())
+    }
+
+    fn remove_entry(&mut self, port: u8, id: WatchId, payload: u32) {
+        mix::remove_entry(port, id, payload);
     }
 
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {

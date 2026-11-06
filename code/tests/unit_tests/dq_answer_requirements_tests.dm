@@ -72,7 +72,7 @@ CAPABILITIES(/obj/ar_machine)
 		if(user.get_active_hand())
 			user.drop_item()
 		user.put_in_active_hand(held)
-	cooldown_set_end(user, next_click, 0)
+	STATE_SET(user, cooldowns, next_click, 0)
 	return test_click(user, target, held)
 
 /datum/unit_test/dq_ar/answer_requirement_refuses_with_a_reason
@@ -153,7 +153,7 @@ CAPABILITIES(/obj/ar_machine)
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/lib_fixture/sheets/S = allocate(/obj/item/lib_fixture/sheets, T) // the stackable() capability (a real stack splits through its own hand op)
 	S.amount = 10
-	cooldown_set_end(user, next_click, 0)
+	STATE_SET(user, cooldowns, next_click, 0)
 	test_menu(user, S, "stackable.split")
 	var/datum/op_result/whole = test_answer(user, 10)
 	TEST_ASSERT_EQUAL(whole?.outcome, ACT_REFUSED, "a split of the whole stack is refused")
@@ -227,6 +227,7 @@ CAPABILITIES(/obj/ar_machine)
 	var/datum/op_result/done = test_answer(carrier, TRUE)
 	TEST_ASSERT_EQUAL(done?.outcome, ACT_COMMITTED, "the op goes on after the carrier walked off with the actor")
 	TEST_ASSERT_EQUAL(C.asked_value, TRUE, "and read the answer")
+	M.forceMove(T) // out of the card before the teardown: a box does not let go of a mob it holds in its slots
 
 /datum/unit_test/dq_ar/mine_delay_wire_repulse_keeps_the_earliest_countdown
 

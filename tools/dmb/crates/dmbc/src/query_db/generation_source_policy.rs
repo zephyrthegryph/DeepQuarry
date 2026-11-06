@@ -9,16 +9,16 @@ use dq_analyze::{captured_generator_budget::Budget,captured_reactive_reads::Fail
 fn oom(budget:&Budget,message:impl Into<String>)->Failure{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message.into()))}
 struct Check<'a>{budget:&'a Budget}
 impl Control for Check<'_>{type Error=Failure;const CHECKED:bool=true;fn checkpoint(&mut self)->Result<(),Failure>{self.budget.require().map_err(|message|oom(self.budget,message))?;crate::daemon::control::checkpoint()?;self.budget.require().map_err(|message|oom(self.budget,message))}fn reserve(&mut self,bytes:usize)->Result<(),Failure>{self.budget.charge(bytes).map_err(|message|oom(self.budget,message))}fn overflow(&mut self)->Failure{oom(self.budget,"generation policy allocation overflow")}fn allocation_failed(&mut self)->Failure{oom(self.budget,"generation policy allocation refused")}}
-fn source_only(name:GeneratorName)->bool{matches!(name,GeneratorName::SparseSlots|GeneratorName::DeclareIds|GeneratorName::Declare|GeneratorName::UiTypes|GeneratorName::Stats|GeneratorName::Actions|GeneratorName::SystemAccessors)}
+fn source_only(name:GeneratorName)->bool{matches!(name,GeneratorName::DeclareIds|GeneratorName::Declare|GeneratorName::UiTypes|GeneratorName::Stats|GeneratorName::Actions|GeneratorName::SystemAccessors)}
 fn named(name:GeneratorName,mut output:dq_analyze::sparse_slots_policy::Output,budget:&Arc<Budget>)->Result<Artifact,Failure>{
- let filename=match name{GeneratorName::SparseSlots=>"sparse_slots.dm",GeneratorName::DeclareIds=>"ids.dm",GeneratorName::Declare=>"declare.dm",GeneratorName::Stats=>"stats.dm",GeneratorName::Actions=>"actions.dm",GeneratorName::AutoTracked=>"auto_tracked.dm",GeneratorName::Deps=>"deps.dm",GeneratorName::Reads=>"reads.dm",GeneratorName::Plans=>"plans.dm",_=>return Err("generation named source-only role differs".into())};
+ let filename=match name{GeneratorName::DeclareIds=>"ids.dm",GeneratorName::Declare=>"declare.dm",GeneratorName::Stats=>"stats.dm",GeneratorName::Actions=>"actions.dm",GeneratorName::AutoTracked=>"auto_tracked.dm",GeneratorName::Deps=>"deps.dm",GeneratorName::Reads=>"reads.dm",GeneratorName::Plans=>"plans.dm",_=>return Err("generation named source-only role differs".into())};
  let text=output.captured_named_file_text(name.name(),filename,budget).map_err(|message|oom(budget,message))?;
  budget.charge(std::mem::size_of::<Artifact>()).map_err(|message|oom(budget,message))?;
  Ok(Artifact{name,text,files:Vec::new(),diags:std::mem::take(&mut output.diags)})
 }
 fn source_artifact<P:SnapshotProvider>(name:GeneratorName,reader:&GenerationSourceReader<'_,P>,budget:&Arc<Budget>,order:&std::collections::HashMap<String,usize>)->Result<Artifact,Failure>{
  let _order=order;let name=&name;Ok(match name{
-     GeneratorName::SparseSlots|GeneratorName::DeclareIds=>{let role=if *name==GeneratorName::SparseSlots{dq_analyze::captured_declaration_pages::Generator::SparseSlots}else{dq_analyze::captured_declaration_pages::Generator::DeclareIds};named(*name,dq_analyze::captured_declaration_pages::generate_from_pages(role,reader,_order,budget,&||crate::daemon::control::checkpoint())?,budget)?},
+     GeneratorName::DeclareIds=>{let role=dq_analyze::captured_declaration_pages::Generator::DeclareIds;named(*name,dq_analyze::captured_declaration_pages::generate_from_pages(role,reader,_order,budget,&||crate::daemon::control::checkpoint())?,budget)?},
      GeneratorName::Declare=>named(*name,dq_analyze::captured_declare_pages::generate_from_pages(reader,_order,budget,&||crate::daemon::control::checkpoint())?,budget)?,
      GeneratorName::Stats=>named(*name,dq_analyze::captured_stats_pages::generate_from_pages(reader,_order,budget,&||crate::daemon::control::checkpoint())?,budget)?,
      GeneratorName::Actions=>named(*name,dq_analyze::captured_actions_pages::generate_from_pages(reader,_order,budget,&||crate::daemon::control::checkpoint())?,budget)?,
@@ -54,7 +54,7 @@ impl QueryDb{
   &self,frame:GenerationSourceFrame<'_>,inputs:&RecordingInputs<P>,discovery:&Arc<DiscoveryReceipt>,intent:&crate::policy_request::AdmittedPolicyRequest,names:&[GeneratorName],limit:Option<usize>,
   operation:impl for<'phase>FnOnce(&GenerationSourceReader<'phase,P>,&Arc<Budget>,&std::collections::HashMap<String,usize>,&std::collections::BTreeSet<String>)->Result<(),Failure>,
  )->io::Result<()>{
-  if names.is_empty()||names.len()>13||names.iter().any(|name|!(if frame.questions().is_some(){true}else{source_only(*name)})||!intent.workspace_generators().contains(name)){return Err(io::Error::new(io::ErrorKind::Unsupported,"generation requires requested supported phase output roles"))}
+  if names.is_empty()||names.len()>crate::GeneratorName::REGISTERED_COUNT||names.iter().any(|name|!(if frame.questions().is_some(){true}else{source_only(*name)})||!intent.workspace_generators().contains(name)){return Err(io::Error::new(io::ErrorKind::Unsupported,"generation requires requested supported phase output roles"))}
   for(index,name)in names.iter().enumerate(){if names[..index].contains(name){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation output role repeats"))}}
   let request=intent.workspace().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation needs actual admitted workspace intent"))?;
   if request.root!=discovery.contract().root||request.recursive_roots!=discovery.contract().recursive_roots{return Err(io::Error::new(io::ErrorKind::InvalidData,"generation discovery differs from admitted workspace request"))}
@@ -113,7 +113,7 @@ impl QueryDb{
    if !questions.body_host_is(self){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation question host belongs to another actual QueryDb"))}
    // Only actual skipped stage-zero DM includes block semantic questions.
    // Missing registry outputs never encountered by this plan are irrelevant.
-   if names.iter().any(|name|!source_only(*name))&&questions.encountered_omissions().any(|path|[GeneratorName::SparseSlots,GeneratorName::SystemAccessors,GeneratorName::Stats,GeneratorName::Actions,GeneratorName::DeclareIds,GeneratorName::Declare].iter().any(|name|discovery.contract().root.join(name.path())==path)){
+   if names.iter().any(|name|!source_only(*name))&&questions.encountered_omissions().any(|path|[GeneratorName::SystemAccessors,GeneratorName::Stats,GeneratorName::Actions,GeneratorName::DeclareIds,GeneratorName::Declare].iter().any(|name|discovery.contract().root.join(name.path())==path)){
     return Err(io::Error::new(io::ErrorKind::Unsupported,"generation questions require reissue after encountered stage-zero outputs are installed"))
    }
    self.with_generation_phase(GenerationSourceFrame::Questions(frame),inputs,discovery,intent,names,limit,|reader,budget,order,tests|{
@@ -166,7 +166,7 @@ impl QueryDb{
   fn source_alias(&self,path:&Path,proof:&SourceAliasChallenge)->io::Result<Option<SourceAliasProof>>{SnapshotProvider::source_alias(&FileSystemInputs,path,proof)}
  }
  struct Fixture{root:PathBuf,project:PathBuf,backend:Physical,inputs:RecordingInputs<Physical>,frame:GenerationBootstrap,discovery:Arc<DiscoveryReceipt>,intent:crate::policy_request::AdmittedPolicyRequest,queries:Arc<QueryDb>}
- const ROLES:[GeneratorName;7]=[GeneratorName::SparseSlots,GeneratorName::SystemAccessors,GeneratorName::Stats,GeneratorName::Actions,GeneratorName::DeclareIds,GeneratorName::Declare,GeneratorName::UiTypes];
+ const ROLES:[GeneratorName;6]=[GeneratorName::SystemAccessors,GeneratorName::Stats,GeneratorName::Actions,GeneratorName::DeclareIds,GeneratorName::Declare,GeneratorName::UiTypes];
  fn prepare(inputs:&RecordingInputs<Physical>,project:&Path,queries:&Arc<QueryDb>)->GenerationBootstrap{
   let host=queries.clone()as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let executor=dm_exec::BuildExecutor::new(1).unwrap();
   match inputs.prepare_generation_bootstrap(project,&BTreeMap::new(),dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:None},&executor,&host,&mut |_|Ok(())).unwrap(){GenerationBootstrapPreparation::MissingOutputs(frame)=>frame,GenerationBootstrapPreparation::NotNeeded=>panic!("real registered files are absent")}
@@ -187,7 +187,7 @@ impl QueryDb{
   let compiled=f.root.join("code/compiled.dm");let compiled_reads=f.backend.count(&compiled);let raw_reads=f.backend.count(&f.backend.raw);let mut observed=Vec::new();
   f.queries.with_generation_source_generators(&f.frame,&f.inputs,&f.discovery,&f.intent,&ROLES,|artifact,_,tests|{
    observed.push(artifact.name);assert!(tests.contains("/datum/generation_test_only"));
-   let expected=match artifact.name{GeneratorName::SparseSlots=>Some("list(/datum/probe, \"stash\", \"/datum\")"),GeneratorName::DeclareIds=>Some("#define CAP_PROBE 300"),GeneratorName::Declare=>Some("/datum/probe/declared_entries"),GeneratorName::Stats=>Some("__stat_charge"),GeneratorName::Actions=>Some("/datum/act/hit"),GeneratorName::SystemAccessors=>Some("return SSclock?.value"),GeneratorName::UiTypes=>None,_=>unreachable!()};
+   let expected=match artifact.name{GeneratorName::DeclareIds=>Some("#define CAP_PROBE 300"),GeneratorName::Declare=>Some("/datum/probe/declared_entries"),GeneratorName::Stats=>Some("__stat_charge"),GeneratorName::Actions=>Some("/datum/act/hit"),GeneratorName::SystemAccessors=>Some("return SSclock?.value"),GeneratorName::UiTypes=>None,_=>unreachable!()};
    if let Some(expected)=expected{assert!(artifact.text.contains(expected),"{} actual output lacks {expected}",artifact.name.name());assert!(artifact.files.is_empty())}else{assert!(artifact.text.is_empty());assert!(artifact.files.is_empty())}assert!(artifact.diags.is_empty());Ok(())
   }).unwrap();assert_eq!(observed,ROLES);assert_eq!(f.backend.count(&compiled),compiled_reads,"compiled original lease must be borrowed, never reread");assert_eq!(f.backend.count(&f.backend.raw),raw_reads+1,"one bounded original read despite multiple policy traversals");assert_eq!(f.queries.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,0);assert!(!f.root.join("code/engine/_generated/declare.dm").exists(),"staging consumer never installs files");
  }
@@ -286,7 +286,7 @@ impl QueryDb{
 
  #[test]fn actual_generation_question_purposes_share_one_reader_and_match_warm_whole_outputs(){
   use sha2::Digest;let(root,backend,inputs,frame,discovery,intent,queries)=auto_question_after_source_seven(false,false);
-  let names=[GeneratorName::Deps,GeneratorName::SparseSlots,GeneratorName::Reads,GeneratorName::DerivedReads,GeneratorName::TrackedLists,GeneratorName::Plans,GeneratorName::AutoTracked];
+  let names=[GeneratorName::Deps,GeneratorName::Reads,GeneratorName::DerivedReads,GeneratorName::TrackedLists,GeneratorName::Plans,GeneratorName::AutoTracked];
   let compiled=backend.count(&root.join("code/probe.dm"));let uncompiled=backend.count(&root.join("code/extra.dm"));let mut first=Vec::new();
   queries.with_generation_question_generators(&frame,&inputs,&discovery,&intent,&names,|artifact,budget,_|{
    assert_eq!(artifact.name,names[first.len()]);let bound=artifact.charge().checked_mul(8).and_then(|n|n.checked_add(8192)).unwrap();budget.charge(bound).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
@@ -325,7 +325,7 @@ impl QueryDb{
   for fixed in [None,Some("#include \"code/unrelated.dm\"\n")]{
    let Fixture{root,project,backend,inputs,frame,discovery,intent,queries}=fixture();drop(frame);drop(discovery);drop(inputs);let alternate=root.join("main.dme");std::fs::rename(project,&alternate).unwrap();if let Some(text)=fixed{std::fs::write(root.join("deepquarry.dme"),text).unwrap();}
    let inputs=RecordingInputs::new(backend.clone(),0);let frame=prepare(&inputs,&alternate,&queries);let discovery=Arc::new(workspace_discovery::discover(&inputs,DiscoveryContract{root:root.clone(),recursive_roots:vec![root.join("code")]}).unwrap());let spool=crate::generation_staging::temporary_output(&crate::test_scratch::dir("generation-fixed-presentation")).unwrap();
-   let closed=queries.stage_generation_bootstrap(crate::input_snapshot::OwnedGenerationFrame::Declarations(frame),inputs,discovery,&intent,&[GeneratorName::SparseSlots],spool).unwrap();assert_eq!(closed.included()[0],fixed.is_none(),"fixed deepquarry observation controls presentation, never main.dme");closed.inputs.require_current(&backend).unwrap();std::fs::write(root.join("deepquarry.dme"),"// changed or appeared fixed presentation\n").unwrap();assert!(closed.inputs.require_current(&backend).is_err(),"actual fixed read/negative remains in moved complete closure");
+   let closed=queries.stage_generation_bootstrap(crate::input_snapshot::OwnedGenerationFrame::Declarations(frame),inputs,discovery,&intent,&[GeneratorName::DeclareIds],spool).unwrap();assert_eq!(closed.included()[0],fixed.is_none(),"fixed deepquarry observation controls presentation, never main.dme");closed.inputs.require_current(&backend).unwrap();std::fs::write(root.join("deepquarry.dme"),"// changed or appeared fixed presentation\n").unwrap();assert!(closed.inputs.require_current(&backend).is_err(),"actual fixed read/negative remains in moved complete closure");
   }
  }
 

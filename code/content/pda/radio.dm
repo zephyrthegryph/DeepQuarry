@@ -15,7 +15,6 @@
 	var/control_freq = BOT_FREQ
 
 	on = 0 //Are we currently active??
-	var/menu_message = ""
 
 /obj/item/radio/integrated/proc/bind_containing_pda()
 	if(istype(loc?.loc, /obj/item/pda))

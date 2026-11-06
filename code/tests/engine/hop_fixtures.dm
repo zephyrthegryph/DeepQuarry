@@ -1,4 +1,4 @@
-// Hop kinds (doc/rewrite/final_api.html section 7, "Hop kinds"; code/modules/unit_tests/dq_hop_tests.dm).
+// Hop kinds (doc/rewrite/final_api.html section 7, "Hop kinds"; code/tests/unit_tests/dq_hop_tests.dm).
 //
 // The container hop: a lamp's stat and its on_change hook read what the crate it lies in holds ("loc.hop_lit"). The move choke point publishes
 // loc, and the crate's own var reaches what is inside it.

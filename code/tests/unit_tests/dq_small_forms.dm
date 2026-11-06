@@ -1,5 +1,5 @@
 // The last small forms (lane small-forms): look parts for a transform and a maptext, the hop read of another atom's look (look.watch_look()),
-// the slot release a gibber's remains use, and the engine world watches that replaced the om_world_* procs.
+// the slot release a gibber's remains use, and the engine world watches that replaced the world_* procs.
 
 // ---- look_part_key(): transform and maptext ----
 
@@ -109,7 +109,7 @@
 	state_changed(C)
 	refresh_flush()
 	var/datum/cap_engine_state/theirs = cap_engine_state_of(S)
-	TEST_ASSERT(theirs?.look_watchers?[OWN_KEY(C)], "the subject knows who composes its look")
+	TEST_ASSERT(theirs?.look_watchers?[SLOT(C)], "the subject knows who composes its look")
 	TEST_ASSERT(!length(S.rel_watchers), "and the composer is not a watcher of its every change")
 	var/key = C.rx?.look_key
 	var/drawn = C.draws
@@ -155,7 +155,7 @@
 	refresh_flush()
 	TEST_ASSERT_EQUAL(doll.partner_wearer, H, "the doll knows who wears its necklace")
 	TEST_ASSERT_EQUAL(doll.name, "Voodoo doll of [H.name]", "and is named after them")
-	TEST_ASSERT(cap_engine_state_of(H)?.look_watchers?[OWN_KEY(doll)], "a doll on a human composes the human's look")
+	TEST_ASSERT(cap_engine_state_of(H)?.look_watchers?[SLOT(doll)], "a doll on a human composes the human's look")
 	var/drawn = doll.draws
 	H.set_nutrition(nutrition_of(H) + 10)
 	refresh_flush()
@@ -182,7 +182,7 @@
 	TEST_ASSERT_NULL(G.slot_item(OCCUPANT_SLOT_GIBBER), "nobody is the occupant any more")
 	TEST_ASSERT_EQUAL(H.loc, G, "and it did not move")
 	var/datum/ledger/L = dq_ledger_peek(G)
-	TEST_ASSERT_EQUAL(L.entries[H][LEDGER_E_SLOT], CONTAINER_SLOT_INTERNALS, "it is filed under the internals slot")
+	TEST_ASSERT_EQUAL(L.entries[slot_known(H)][LEDGER_E_SLOT], CONTAINER_SLOT_INTERNALS, "it is filed under the internals slot")
 	TEST_ASSERT(!G.slot_release(H), "releasing it again is a no-op")
 	G.slot_remove(H, T)
 

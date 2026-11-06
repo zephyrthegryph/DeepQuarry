@@ -26,7 +26,7 @@ global_list_write	code/modules/life/types.dm	83
 global_list_write	code/modules/life/types.dm	86
 global_list_write	code/modules/life/types.dm	89
 global_list_write	code/modules/life/types.dm	92
-global_list_write	code/modules/unit_tests/t.dm	2
+global_list_write	code/tests/unit_tests/t.dm	2
 global_signal_registration	code/modules/life/types.dm	43
 global_signal_registration	code/modules/life/types.dm	44
 processing_start	code/modules/life/clean.dm	9

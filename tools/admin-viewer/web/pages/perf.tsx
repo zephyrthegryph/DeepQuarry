@@ -341,7 +341,7 @@ export function OverviewPage({ params }: PageProps) {
         </Card>
         <Card
           title="Scheduler lanes"
-          sub="Object-model work per lane, in ms per second of real time."
+          sub="engine work per lane, in ms per second of real time."
         >
           {lanes.data ? (
             <LineChart
@@ -404,7 +404,7 @@ export function OverviewPage({ params }: PageProps) {
 const CATEGORIES = [
   { id: 'mc', label: 'MC subsystems', metrics: ['cost_ms', 'tick_usage'] },
   { id: 'service', label: 'World services', metrics: ['ms_per_s'] },
-  { id: 'lane', label: 'OM lanes', metrics: ['ms_per_s', 'backlog'] },
+  { id: 'lane', label: 'lanes', metrics: ['ms_per_s', 'backlog'] },
   { id: 'behaviour', label: 'Behaviours', metrics: ['ms_per_s'] },
   { id: 'churn', label: 'Churn', metrics: ['per_s'] },
   { id: 'io', label: 'Metrics & I/O', metrics: ['ms', 'events'] },

@@ -36,17 +36,6 @@ DECLARE_SHARED_CACHE(change_plans, GLOBAL_PROC_REF(plan_build), SC_NEVER)
 	var/list/plan = plan_of(E.type)
 	return plan ? (plan[key] || 0) : 0
 
-/// Whether the generator could not resolve the reads of E's type's draw (D5). Counted: plan_fallback.
-/proc/plan_is_fallback(datum/E)
-	var/path = E.type
-	while(path)
-		if(GLOB.generated_plan_fallbacks?["[path]"])
-			GLOB.plan_fallbacks++
-			return TRUE
-		var/datum/typed = path
-		path = initial(typed.parent_type)
-	return FALSE
-
 /// The int id of key `name`: a build-time key's CGK_ value, or a runtime-only key interned above CGK_BUILD_MAX on first use.
 /proc/change_key_id(name)
 	var/index = GLOB.generated_key_names.Find(name)

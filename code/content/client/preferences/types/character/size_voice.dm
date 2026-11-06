@@ -23,17 +23,17 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "weight_vr"
 	display_label = "Body Weight"
-	widget = PREF_WIDGET_NUMBER  // slider over 0–10000 was nonsense precision; use a number input.
+	widget = PREF_WIDGET_NUMBER
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
-	minimum = 0
-	maximum = 10000
+	minimum = WEIGHT_MIN // pounds; saved values outside are clamped on load (numeric pref_deserialize, and the sanitize below)
+	maximum = WEIGHT_MAX
 
 /datum/preference/numeric/human/weight_vr/create_default_value()
 	return 137
 
 /datum/preference/numeric/human/weight_vr/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set_or(target, weight, value, DEFAULT_MOB_WEIGHT)
+	STATE_SET(target, bodyweight, weight, value)
 
 
 /datum/preference/numeric/human/weight_gain
@@ -50,7 +50,7 @@
 	return 100
 
 /datum/preference/numeric/human/weight_gain/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set_or(target, weight_gain, value, 1)
+	STATE_SET(target, bodyweight, weight_gain, value)
 
 
 /datum/preference/numeric/human/weight_loss
@@ -67,7 +67,7 @@
 	return 50
 
 /datum/preference/numeric/human/weight_loss/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set_or(target, weight_loss, value, 0.5)
+	STATE_SET(target, bodyweight, weight_loss, value)
 
 
 /datum/preference/toggle/human/fuzzy
@@ -107,7 +107,7 @@
 	return 42500
 
 /datum/preference/numeric/human/voice_freq/apply_to_human(mob/living/carbon/human/target, value)
-	sparse_set_or(target, voice_freq, value, 42500)
+	STATE_SET(target, mob_misc, voice_freq, value)
 
 
 /datum/preference/text/human/voice_sound
@@ -125,9 +125,9 @@
 
 /datum/preference/text/human/voice_sound/apply_to_human(mob/living/carbon/human/target, value)
 	if(!value)
-		sparse_set(target, voice_sounds_list, DEFAULT_TALK_SOUNDS)
+		STATE_SET(target, mob_misc, voice_sounds_list, DEFAULT_TALK_SOUNDS)
 	else
-		sparse_set(target, voice_sounds_list, get_talk_sound(value))
+		STATE_SET(target, mob_misc, voice_sounds_list, get_talk_sound(value))
 
 
 /datum/preference/text/human/custom_speech_bubble

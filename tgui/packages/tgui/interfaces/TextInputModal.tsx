@@ -55,7 +55,7 @@ export const TextInputModal = (props) => {
   // Dynamically changes the window height based on the message.
   const windowHeight =
     135 +
-    (message.length > 30 ? Math.ceil(message.length / 4) : 0) +
+    (message.length > 30 ? Math.ceil(message.length / 2.7) : 0) +
     (visualMultiline ? 75 : 0) +
     (message.length && large_buttons ? 5 : 0);
 
@@ -73,7 +73,7 @@ export const TextInputModal = (props) => {
   const char_length = [...input].length;
 
   return (
-    <Window title={title} width={325} height={windowHeight}>
+    <Window fitContent title={title} width={325} height={windowHeight}>
       {timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>

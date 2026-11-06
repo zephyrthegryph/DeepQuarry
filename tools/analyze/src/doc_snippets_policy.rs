@@ -3,18 +3,16 @@
 //!
 //! A complete block (```dm) is real DM, a ```dm fragment is a sketch, ```dm before is skipped. For
 //! complete and fragment blocks, `doc_unknown_name` flags a call that names nothing in `code/` (or
-//! the block). The baseline also carries `doc_legacy_block` rows (complete blocks that predate the
-//! lint), so the policy is custom: it checks the unknown-name ratchet and rewrites both row kinds.
+//! the block). A hard ban: every complete block is compiled and every unknown name fails.
 //!
 //! Not ported: `--write` (generates `tools/ci/generated/doc_snippets.dm`) and `--report`; they stay
 //! in the Python script. Only the direct children of `doc/rewrite/` are read (`glob("*.md")`, not
 //! recursive), which the lint applies itself because a `Select` root is recursive.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::Write as _;
-use std::path::PathBuf;
 
-use crate::baseline::{self, Mode};
+use crate::baseline;
 use crate::dm::dx::{lineage, DxIndex};
 use crate::lint::{Meta,Policy,Run,RuleMeta,ScanKind};
 #[cfg(feature="legacy-sem")]use crate::lint::{Cx,Lint,Registry,Sink};
@@ -28,14 +26,8 @@ use crate::{pat, pat_match};
 
 const LINT: &str = "doc_snippets";
 const DOCS: &str = "doc/rewrite";
-const BASELINE: &str = "tools/ci/doc_snippets_baseline.txt";
-const LEGACY_RULE: &str = "doc_legacy_block";
 const RULE: &str = "doc_unknown_name";
 const HINT: &str = "the doc calls something that doesn't exist: use the real name, or build it first (docs drift, design review H5)";
-const HEADER: &[&str] = &[
-    "doc_snippets baseline (tools/ci/doc_snippets.py): doc_unknown_name is a ratchet (target 0);",
-    "doc_legacy_block lists the complete blocks that predate the lint and aren't compiled (first line).",
-];
 
 pub static META: Meta = Meta {
     name: crate::allow_registry_fields::doc_snippets::SCOPE_META_0.name,
@@ -44,7 +36,7 @@ pub static META: Meta = Meta {
     legacy: "tools/ci/doc_snippets.py",
     select: Select { roots: &[("doc/rewrite", "md"), ("code", "dm")], hidden: false },
     scan: ScanKind::Tree,
-    policy: Policy::Custom,
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: RULE, hint: HINT }],
     allow: crate::allow_registry_fields::doc_snippets::ALLOW_0,
     lists: crate::allow_registry_fields::doc_snippets::SCOPE_META_0.lists,
@@ -310,15 +302,6 @@ fn analyse(blocks: &[Block], names: &Names, mut allowed: impl FnMut(&str, usize)
     sites
 }
 
-fn legacy_keys(path: &std::path::Path) -> HashSet<(String, String)> {
-    baseline::read_sites(path).get(LEGACY_RULE).map(|c| c.keys().cloned().collect()).unwrap_or_default()
-}
-
-#[cfg(feature="legacy-sem")]
-fn baseline_path(tree: &Tree) -> PathBuf {
-    tree.root.join(BASELINE)
-}
-
 // ---- the lint ---------------------------------------------------------------------------------
 
 #[cfg(feature="legacy-sem")]
@@ -344,8 +327,11 @@ impl Lint for DocSnippets {
         }
     }
 
-    fn finish_raw(&self,cx:&Cx,run:&Run,text:&mut String,raw:bool)->bool{let blocks=doc_blocks(&cx.files());let summary=summary(&blocks);finish_summary(cx.meta,&cx.tree.root,cx.tree,&summary,run,text,raw)}
-    fn update_baseline(&self,cx:&Cx,run:&Run,mode:Mode)->std::io::Result<String>{let blocks=doc_blocks(&cx.files());let summary=summary(&blocks);update_summary(cx.meta,&cx.tree.root,cx.tree,&summary,run,mode)}
+    fn post_judge(&self, cx: &Cx, run: &Run, text: &mut String) -> bool {
+        let blocks = doc_blocks(&cx.files());
+        let summary = summary(&blocks);
+        finish_summary(cx.meta, &cx.tree.root, cx.tree, &summary, run, text, false)
+    }
 
     fn selftest(&self) -> Result<String, String> {
         selftest()
@@ -355,11 +341,11 @@ impl Lint for DocSnippets {
         Some(Parity {
             old: &["tools/ci/doc_snippets.py"],
             old_raw: &[],
-            blank: &["tools/ci/doc_snippets_baseline.txt"],
+            blank: &[],
             parse: ParseKind::Tagged,
-            update: Some(&["tools/ci/doc_snippets.py", "--update"]),
-            seed: Some(&["tools/ci/doc_snippets.py", "--seed"]),
-            files: &["tools/ci/doc_snippets_baseline.txt"],
+            update: None,
+            seed: None,
+            files: &[],
             selftest: Some(&["tools/ci/doc_snippets.py", "--selftest"]),
         })
     }
@@ -434,54 +420,19 @@ fn selftest() -> Result<String, String> {
     Ok("doc_snippets selftest ok".to_string())
 }
 
-pub fn finish_summary<S:baseline::SiteText+?Sized>(meta:&Meta,root:&std::path::Path,source:&S,summary:&[SummaryBlock],run:&Run,text:&mut String,raw:bool)->bool {
-        let blocks=summary;
-        let path = if raw { PathBuf::new() } else { root.join(BASELINE) };
-        let legacy = legacy_keys(&path);
-        let complete: Vec<&SummaryBlock> = blocks.iter().filter(|b| b.kind.as_str() == "complete").collect();
-        let compiled = complete.iter().filter(|b| !legacy.contains(&(b.rel.clone(), b.first.clone()))).count();
-        let mut kinds: BTreeMap<&str, usize> = BTreeMap::new();
-        for b in blocks.iter() {
-            *kinds.entry(b.kind.as_str()).or_insert(0) += 1;
-        }
-        let kinds_text = kinds.iter().map(|(k, v)| format!("{} {}", k, v)).collect::<Vec<_>>().join(", ");
-        let _ = writeln!(
-            text,
-            "doc_snippets: {} block(s): {}; {} complete block(s) compiled under -DDOC_SNIPPETS, {} legacy",
-            blocks.len(),
-            kinds_text,
-            compiled,
-            complete.len() - compiled
-        );
-        let by_rule = run.by_rule(meta);
-        let hints = |_r: &str| HINT.to_string();
-        baseline::check_sites(META.label, source, &by_rule, &hints, &path, &[], text)
+pub fn finish_summary<S: baseline::SiteText + ?Sized>(
+    _meta: &Meta, _root: &std::path::Path, _source: &S, blocks: &[SummaryBlock],
+    _run: &Run, text: &mut String, _raw: bool,
+) -> bool {
+    let mut kinds: BTreeMap<&str, usize> = BTreeMap::new();
+    for block in blocks {
+        *kinds.entry(block.kind.as_str()).or_insert(0) += 1;
     }
-
-pub fn update_summary<S:baseline::SiteText+?Sized>(meta:&Meta,root:&std::path::Path,source:&S,summary:&[SummaryBlock],run:&Run,mode:Mode)->std::io::Result<String> {
-        let blocks=summary;
-        let complete: Vec<&SummaryBlock> = blocks.iter().filter(|b| b.kind.as_str() == "complete").collect();
-        let path = root.join(BASELINE);
-        let legacy = legacy_keys(&path);
-        let keep: Vec<&&SummaryBlock> = if mode != Mode::Seed {
-            complete.iter().filter(|b| legacy.contains(&(b.rel.clone(), b.first.clone()))).collect()
-        } else {
-            complete.iter().collect()
-        };
-        let by_rule = run.by_rule(meta);
-        let n = baseline::write_sites(&path, HEADER, source, &by_rule, &[RULE], mode)?;
-        let text = std::fs::read_to_string(&path)?;
-        let text = text.trim_end_matches('\n');
-        let rows: BTreeSet<String> = keep.iter().map(|b| format!("{}\t{}\t{}", LEGACY_RULE, b.rel, b.first.clone())).collect();
-        let mut out = text.to_string();
-        if !rows.is_empty() {
-            out.push('\n');
-            out.push_str(&rows.iter().cloned().collect::<Vec<_>>().join("\n"));
-        }
-        out.push('\n');
-        std::fs::write(&path, out)?;
-        Ok(format!("doc_snippets: baseline {} ({} unknown-name rows, {} legacy blocks)", BASELINE, n, rows.len()))
-    }
+    let complete = kinds.get("complete").copied().unwrap_or(0);
+    let kinds_text = kinds.iter().map(|(k, v)| format!("{} {}", k, v)).collect::<Vec<_>>().join(", ");
+    let _ = writeln!(text, "doc_snippets: {} block(s): {}; {} complete block(s) compiled under -DDOC_SNIPPETS", blocks.len(), kinds_text, complete);
+    false
+}
 
 #[derive(Clone,Debug,serde::Serialize,serde::Deserialize,PartialEq,Eq)]#[serde(deny_unknown_fields)]pub struct SummaryBlock{pub kind:String,pub rel:String,pub first:String}
 fn summary(blocks:&[Block])->Vec<SummaryBlock>{blocks.iter().map(|b|SummaryBlock{kind:b.kind().into(),rel:b.rel.clone(),first:b.first_line()}).collect()}

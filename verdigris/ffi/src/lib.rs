@@ -25,6 +25,7 @@ mod power;
 pub mod propagate;
 pub mod registry;
 mod sched;
+pub mod sense;
 pub mod world;
 
 #[cfg(test)]

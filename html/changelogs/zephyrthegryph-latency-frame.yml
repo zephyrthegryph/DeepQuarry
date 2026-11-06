@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The latency sweep tests an item's idle time before it scans the item's subtree for outside references; a placed machine or computer frame is solid through a hold on its density stat instead of a raw write that a recompute undid"

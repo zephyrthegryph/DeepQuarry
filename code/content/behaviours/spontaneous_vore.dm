@@ -92,8 +92,8 @@
 		var/obj/belly/destination_belly = source.get_current_spont_belly(O)
 		if(!destination_belly)
 			return
-		if(source.stat != DEAD && sparse_get_or(source, trash_catching, FALSE))
-			if(living_rules_of(source).adminbus_trash || is_type_in_list(O, GLOB.edible_trash) && sparse_get_or(O, trash_eatable, TRUE) && !is_type_in_list(O, GLOB.item_vore_blacklist))
+		if(source.stat != DEAD && STATE_GET(source, living_misc, trash_catching))
+			if(living_rules_of(source).adminbus_trash || edible_trash_item(O) && STATE_PEEK(O, item_misc, trash_eatable) && !is_type_in_list(O, GLOB.item_vore_blacklist))
 				act_message(source, null, others = span_vwarning("[O] is thrown directly into %U%'s [lowertext(destination_belly.name)]!"))
 				destination_belly.nom_atom(O)
 				return TRUE

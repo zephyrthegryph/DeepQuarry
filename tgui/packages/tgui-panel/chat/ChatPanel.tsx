@@ -53,6 +53,10 @@ export function ChatPanel(props: Props) {
   useEffect(() => {
     chatRenderer.assignStyle({
       width: '100%',
+      'max-width': '100%',
+      // pre-wrap alone keeps an unbroken run of characters (a URL, a pasted
+      // string) on one line, which widens the pane past the window.
+      'overflow-wrap': 'anywhere',
       'white-space': 'pre-wrap',
       'font-size': props.fontSize,
       'line-height': props.lineHeight,

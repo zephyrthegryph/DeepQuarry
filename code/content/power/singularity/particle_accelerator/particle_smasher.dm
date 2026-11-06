@@ -1,0 +1,632 @@
+/*
+ * Contains the particle smasher and its recipes.
+ */
+
+#define PS_RESULT_STACK		"stack"
+#define PS_RESULT_ITEM		"item"
+
+/obj/machinery/particle_smasher
+	name = "Particle Focus"
+	desc = "A strange device used to create exotic matter."
+	icon = 'icons/obj/machines/particle_smasher.dmi'
+	icon_state = "smasher"
+	anchored = FALSE
+	density = TRUE
+	use_power = USE_POWER_OFF
+
+	var/successful_craft = FALSE	// Are we waiting to be emptied?
+	var/max_energy = 600
+	var/obj/item/target	// The material or persistent workpiece being bombarded.
+	var/tmp/obj/item/reagent_containers/reagent_container	// Holds the beaker. The process will consume ALL reagents inside it.
+	var/list/storage		// Holds references to items allowed to be used in the fabrication phase.
+	var/max_storage = 3	// How many items can be jammed into it?
+	var/list/recipes	// The list containing the Particle Smasher's recipes.
+
+/obj/machinery/particle_smasher/var/energy = 0
+/obj/machinery/particle_smasher/examine(mob/user)
+	. = ..()
+	if(Adjacent(user))
+		. += span_notice("A particle beam can alter alloy stock placed inside it, or drive one of its exotic-matter reactions.")
+		. += span_notice("\The [src] contains:")
+		FOR_REAL_CONTENTS(var/obj/item/I, src)
+			. += span_notice("\the [I]")
+
+/obj/machinery/particle_smasher/atmosanalyze(mob/user)
+	return list(span_notice("\The [src] reads an energy level of [energy]."))
+
+MSG_DEF_SELF(particle_smasher/has_target, "It already contains a target.")
+MSG_DEF_SELF(particle_smasher/synthesizer, "You cannot fill it with a synthesizer.")
+MSG_DEF_SELF(particle_smasher/has_container, "It already has a container attached.")
+
+// An analyzer does nothing here (the old attackby swallowed it); a sheet fills the target, a beaker attaches, an ID swipes to no effect, and
+// anything else that can come out of the hand goes into its fabrication storage while there is room. A wrench secures it to the floor.
+CAPABILITIES(/obj/machinery/particle_smasher)
+	setup(PROC_REF(prepare_recipes))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(energy), wakes_on = list(nameof(energy)))
+	owns_many(nameof(recipes))
+	op("analyzer_block", item(/obj/item/analyzer), label("Use"), then(PROC_REF(nothing_happens)))
+	op("fill_target", item(/obj/item/stack/material), label("Fill target"),
+		needs(req_is(nameof(target), FALSE, because = MSG(particle_smasher/has_target)), req(PROC_REF(not_synthesized))),
+		then(PROC_REF(interaction_fill_target)))
+	op("attach_beaker", item(/obj/item/reagent_containers/glass/beaker), label("Attach container"),
+		needs(req_is(nameof(reagent_container), FALSE, because = MSG(particle_smasher/has_container))), then(PROC_REF(interaction_attach_beaker)))
+	op("swipe_id", item(/obj/item/card/id), label("Swipe"), then(PROC_REF(interaction_swipe_id)))
+	op("store", item(/obj/item), label("Store"), when(PROC_REF(can_store_item)), then(PROC_REF(interaction_store)))
+	op("eject_contents", menu(), label("Eject Particle Focus Contents"), when(req_actor_kind(/mob/living)), needs(req(PROC_REF(actor_can_act), because = MSG(particle_smasher/cannot_act))), then(PROC_REF(interaction_eject_contents)))
+	op("secure", tool(TOOL_WRENCH), label("Secure"), wait(0), then(PROC_REF(secured)))
+	owns_one(nameof(target), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(reagent_container), on_destroy = ON_DESTROY_CONTAINED)
+	// Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
+	owns_many(nameof(storage), on_destroy = ON_DESTROY_SPILL)
+
+MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
+
+/obj/machinery/particle_smasher/proc/nothing_happens(datum/act/op/A)
+	return
+
+/// Synthesiser stock can't fill the target.
+/obj/machinery/particle_smasher/proc/not_synthesized(datum/act/op/A)
+	var/obj/item/stack/material/held = A.held
+	return (!(istype(held) && held.uses_charge)) ? null : MSG(particle_smasher/synthesizer)
+
+/obj/machinery/particle_smasher/proc/interaction_fill_target(datum/act/op/A)
+	var/obj/item/stack/material/M = A.held
+	var/obj/item/stack/material/piece = M.split(1)
+	move_into(src, nameof(src.target), piece, A.actor)
+
+/obj/machinery/particle_smasher/proc/interaction_attach_beaker(datum/act/op/A)
+	if(!move_into(src, nameof(src.reagent_container), A.held, A.actor))
+		return
+	to_chat(A.actor, span_notice("You add \the [reagent_container()] to \the [src]."))
+
+/obj/machinery/particle_smasher/proc/interaction_swipe_id(datum/act/op/A)
+	to_chat(A.actor, span_notice("Swiping \the [A.held] on \the [src] doesn't seem to do anything..."))
+
+/// The item can leave the hand (a cyborg's gripper lets go of what it holds; a module item stays) and there is room.
+/obj/machinery/particle_smasher/proc/can_store_item(datum/act/op/A)
+	var/obj/item/held = A.held
+	return (istype(held.loc, /obj/item/gripper) || held.canremove) && length(storage) < max_storage
+
+/obj/machinery/particle_smasher/proc/interaction_store(datum/act/op/A)
+	move_into(src, nameof(src.storage), A.held, A.actor)
+
+/// Retains the old living-only restraint/full-buckle gate.
+/obj/machinery/particle_smasher/proc/actor_can_act(datum/act/op/A)
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "You can't do that right now."
+	return null
+
+/obj/machinery/particle_smasher/proc/secured(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	set_anchored(!anchored)
+	playsound(src, sounds_of(W).use, 75, 1)
+	act_message(user, null, MSG_SELF("You [anchored ? "secure" : "unsecure"] the [src.name] to the floor."), \
+		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor."), \
+		MSG_BLIND("You hear a ratchet."))
+
+
+/// What the focus shows: open and filled with its target's colour once secured (glowing when a craft is waiting), its beaker, and a light
+/// in the target's colour that grows with the stored energy.
+/obj/machinery/particle_smasher/draw(datum/look/look)
+	..()
+	var/base = initial(icon_state)
+	look.watch(target)
+	if(anchored)
+		look.state("[base]-o")
+		if(target)
+			look.overlay(look_overlay_image(icon, "[base]-material", color = target_material_color()))
+			if(successful_craft)
+				look.overlay(look_overlay_image(icon, "[base]-material-glow", plane = PLANE_LIGHTING_ABOVE, color = target_material_color()))
+		look.overlay("[base]-reagent", !!reagent_container())
+	else
+		look.state(base)
+	if(target && energy)
+		look.glow(GLOW(energy_light_range(), 2, target_material_color()))
+
+/// The light's range for the stored energy: 1 to 4 tiles by quarters of the maximum.
+/obj/machinery/particle_smasher/proc/energy_light_range()
+	var/power_percent = round((energy / max_energy) * 100)
+	switch(power_percent)
+		if(0 to 25)
+			return 1
+		if(26 to 50)
+			return 2
+		if(51 to 75)
+			return 3
+	return 4
+
+/obj/machinery/particle_smasher/proc/target_material_color()
+	if(istype(target, /obj/item/stack/material))
+		var/obj/item/stack/material/material_stack = target
+		return material_stack.material?.icon_colour || "#aaaaaa"
+	return "#aaaaaa"
+
+/obj/machinery/particle_smasher/bullet_act(obj/item/projectile/Proj)
+	if(istype(Proj, /obj/item/projectile/beam))
+		if(Proj.damage >= 50)
+			TryCraft()
+		return 0
+	return ..()
+
+/// Bleeds its stored energy (radiating) while it has any; empty, it sleeps until a particle hits.
+/obj/machinery/particle_smasher/proc/work_step(datum/act/timer/A)
+	if(!src.anchored)	// Rapidly loses focus.
+		radiation_pulse(
+			src,
+			max_range = 7,
+			threshold = RAD_HEAVY_INSULATION,
+			chance = round(((src.energy-150)/50)*5,1),
+			minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
+			strength = energy * 0.1 //60 rads at max energy.
+		)
+		set_energy(max(0, energy - 30))
+		return
+
+	if(istype(target, /obj/item/stack/material/processed_alloy))
+		try_material_stock_conditioning()
+	radiation_pulse(
+		src,
+		max_range = 7,
+		threshold = RAD_HEAVY_INSULATION,
+		chance = round(((src.energy-150)/50)*5,1),
+		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
+		strength = energy * 0.1 //60 rads at max energy.
+	)
+	set_energy(CLAMP(energy - 5, 0, max_energy))
+
+/obj/machinery/particle_smasher/proc/prepare_recipes()
+	rel_clear(src, nameof(recipes))
+	for(var/D in subtypesof(/datum/particle_smasher_recipe))
+		rel_add(src, nameof(recipes), new D)
+
+/obj/machinery/particle_smasher/proc/TryCraft()
+
+	if(!length(recipes))
+		prepare_recipes()
+
+	if(!target)	// You are just blasting an empty machine.
+		visible_message(span_infoplain(span_bold("\The [src]") + " shudders."))
+		return
+	if(istype(target, /obj/item/stack/material/processed_alloy))
+		try_material_stock_conditioning()
+		return
+
+	if(successful_craft)
+		visible_message(span_warning("\The [src] fizzles."))
+		if(prob(33))	// Why are you blasting it after it's already done!
+			radiation_pulse(
+				src,
+				max_range = 7,
+				threshold = RAD_HEAVY_INSULATION,
+				chance = URANIUM_IRRADIATION_CHANCE + round(src.energy / 60, 1),
+				minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
+				strength = energy * 0.1
+			)
+			set_energy(max(0, energy - 30))
+		return
+
+	var/list/possible_recipes = list()
+	var/max_prob = 0
+	for(var/datum/particle_smasher_recipe/R in recipes)	// Only things for the smasher. Don't get things like the chef's cake recipes.
+		if(R.probability)	// It's actually a recipe you're supposed to be able to make.
+			if(!(R.required_material) || istype(target, R.required_material))
+				if(energy >= R.required_energy_min && energy <= R.required_energy_max)	// The machine has enough Vaguely Defined 'Energy'.
+					var/turf/T = get_turf(src)
+					var/datum/gas_mixture/environment = T.return_air()
+					var/environment_temperature = environment.return_temperature()
+					if(environment_temperature >= R.required_atmos_temp_min && environment_temperature <= R.required_atmos_temp_max)	// Too hot, or too cold.
+						if(R.reagents && R.reagents.len)
+							if(!reagent_container() || R.check_reagents(reagent_container().reagents) == -1)	// It doesn't have a reagent storage when it needs it, or it's lacking what is needed.
+								continue
+						if(R.items && R.items.len)
+							if(!length(storage) || R.check_items(src) == -1)	// It's empty, or it doesn't contain what is needed.
+								continue
+						possible_recipes += R
+						max_prob += R.probability
+
+	if(possible_recipes.len)
+		var/local_prob = rand(0, max_prob - 1)%max_prob
+		var/cumulative = 0
+		for(var/datum/particle_smasher_recipe/R in possible_recipes)
+			cumulative += R.probability
+			if(local_prob < cumulative)
+				set_successful_craft(TRUE)
+				DoCraft(R)
+				break
+
+/obj/machinery/particle_smasher/proc/DoCraft(datum/particle_smasher_recipe/recipe)
+	if(!successful_craft || !recipe)
+		return
+
+	rel_clear(src, nameof(target), OWN_DELETE)
+
+	if(reagent_container())
+		reagent_container().reagents.clear_reagents()
+
+	if(recipe.items && recipe.items.len)
+		for(var/obj/item/I in storage)
+			for(var/item_type in recipe.items)
+				if(istype(I, item_type) && prob(recipe.item_consume_chance))
+					own_remove(src, nameof(storage), I) // consumed
+					break
+
+	var/result = recipe.result
+	if(recipe.recipe_type == PS_RESULT_STACK)
+		var/obj/item/stack/material/M = new result(src)
+		rel_set(src, nameof(target), M)
+	else if(recipe.recipe_type == PS_RESULT_ITEM)
+		new result(get_turf(src))
+
+/obj/machinery/particle_smasher/proc/interaction_eject_contents(datum/act/op/A)
+	DumpContents()
+
+/obj/machinery/particle_smasher/proc/DumpContents()
+	// Everything goes to the floor below: detach the owned slots first.
+	rel_take(src, nameof(target))
+	rel_take(src, nameof(reagent_container))
+	set_successful_craft(FALSE)
+	var/turf/T = get_turf(src)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		if(I in storage)
+			rel_take(src, nameof(storage), I)
+		I.forceMove(T)
+
+/*
+ * The special recipe datums used for the particle smasher.
+ */
+
+/datum/particle_smasher_recipe
+	var/display_name = ""
+	var/list/reagents	// example: = list(REAGENT_ID_PACID = 5)
+	var/list/items		// example: = list(/obj/item/tool/crowbar, /obj/item/welder) Place /foo/bar before /foo. Do not include fruit. Maximum of 3 items.
+	var/recipe_type = PS_RESULT_STACK			// Are we producing a stack or an item?
+
+	var/result = /obj/item/stack/material/iron		// The sheet this will produce.
+	var/required_material = /obj/item/stack/material/iron	// The required material sheet.
+	var/required_energy_min = 0			// The minimum energy this recipe can process at.
+	var/required_energy_max = 600		// The maximum energy this recipe can process at.
+	var/required_atmos_temp_min = 0		// The minimum ambient atmospheric temperature required, in kelvin.
+	var/required_atmos_temp_max = 600	// The maximum ambient atmospheric temperature required, in kelvin.
+	var/probability = 0					// The probability for the recipe to be produced. 0 will make it impossible.
+	var/item_consume_chance = 100		// The probability for the items (not materials) used in the recipe to be consume.
+	var/wiki_flag = NONE
+
+/datum/particle_smasher_recipe/proc/check_items(obj/container as obj)
+	. = 1
+	if (items && items.len)
+		var/list/checklist = list()
+		checklist = items.Copy() // You should really trust Copy
+		if(istype(container, /obj/machinery/particle_smasher))
+			var/obj/machinery/particle_smasher/machine = container
+			for(var/obj/O in machine.storage)
+				if(istype(O,/obj/item/reagent_containers/food/snacks/grown))
+					continue // Fruit is handled in check_fruit().
+				var/found = 0
+				for(var/i = 1; i < checklist.len+1; i++)
+					var/item_type = checklist[i]
+					if (istype(O,item_type))
+						checklist.Cut(i, i+1)
+						found = 1
+						break
+				if (!found)
+					. = 0
+		if (checklist.len)
+			. = -1
+	return .
+
+/datum/particle_smasher_recipe/proc/check_reagents(datum/reagents/avail_reagents)
+	. = 1
+	for (var/r_r in reagents)
+		var/aval_r_amnt = avail_reagents.get_reagent_amount(r_r)
+		if (!(abs(aval_r_amnt - reagents[r_r])<0.5)) //if NOT equals
+			if (aval_r_amnt>reagents[r_r])
+				. = 0
+			else
+				return -1
+	if ((reagents?(reagents.len):(0)) < avail_reagents.reagent_list.len)
+		return 0
+	return .
+
+/datum/particle_smasher_recipe/deuterium_tritium
+	display_name = MAT_TRITIUM + " from " + MAT_DEUTERIUM
+	reagents = list(REAGENT_ID_HYDROGEN = 15)
+
+	result = /obj/item/stack/material/tritium
+	required_material = /obj/item/stack/material/deuterium
+
+	required_energy_min = 200
+	required_energy_max = 400
+
+	required_atmos_temp_max = 200
+	probability = 30
+
+/datum/particle_smasher_recipe/verdantium_morphium
+	display_name = MAT_MORPHIUM + " from " + MAT_VERDANTIUM
+	result = /obj/item/stack/material/morphium
+	required_material = /obj/item/stack/material/verdantium
+
+	required_energy_min = 400
+	required_energy_max = 500
+	probability = 20
+
+/datum/particle_smasher_recipe/plasteel_morphium
+	display_name = MAT_MORPHIUM + " from Alien Junk"
+	items = list(/obj/item/prop/alien/junk)
+
+	result = /obj/item/stack/material/morphium
+	required_material = /obj/item/stack/material/plasteel
+
+	required_energy_min = 100
+	required_energy_max = 300
+	probability = 10
+
+/datum/particle_smasher_recipe/osmium_lead
+	display_name = MAT_OSMIUM + " from " + MAT_LEAD
+	reagents = list(REAGENT_ID_TUNGSTEN = 10)
+
+	result = /obj/item/stack/material/lead
+	required_material = /obj/item/stack/material/osmium
+
+	required_energy_min = 200
+	required_energy_max = 400
+
+	required_atmos_temp_min = 1000
+	required_atmos_temp_max = 8000
+	probability = 50
+
+/datum/particle_smasher_recipe/phoron_valhollide
+	display_name = MAT_VALHOLLIDE + " from " + MAT_PHORON
+	reagents = list(REAGENT_ID_PHORON = 10, REAGENT_ID_PACID = 10)
+
+	result = /obj/item/stack/material/valhollide
+	required_material = /obj/item/stack/material/phoron
+
+	required_energy_min = 300
+	required_energy_max = 500
+
+	required_atmos_temp_min = 1
+	required_atmos_temp_max = 100
+	probability = 10
+
+/datum/particle_smasher_recipe/valhollide_supermatter
+	display_name = MAT_SUPERMATTER + " from " + MAT_VALHOLLIDE
+	reagents = list(REAGENT_ID_PHORON = 300)
+
+	result = /obj/item/stack/material/supermatter
+	required_material = /obj/item/stack/material/valhollide
+
+	required_energy_min = 575
+	required_energy_max = 600
+
+	required_atmos_temp_min = 3000
+	required_atmos_temp_max = 10000
+	probability = 1
+
+/datum/particle_smasher_recipe/donkpockets_coal
+	display_name = "Ruined Donkpocket"
+	items = list(/obj/item/reagent_containers/food/snacks/donkpocket)
+
+	recipe_type = PS_RESULT_ITEM
+
+	result = /obj/item/ore/coal
+	required_material = null
+
+	required_energy_min = 1
+	required_energy_max = 500
+
+	required_atmos_temp_min = 400
+	required_atmos_temp_max = 20000
+	probability = 90
+
+/datum/particle_smasher_recipe/donkpockets_ascend
+	display_name = "Ascended Donkpocket"
+	items = list(/obj/item/reagent_containers/food/snacks/donkpocket)
+	reagents = list(REAGENT_ID_PHORON = 120)
+
+	recipe_type = PS_RESULT_ITEM
+
+	result = /obj/item/reagent_containers/food/snacks/donkpocket/ascended
+	required_material = /obj/item/stack/material/uranium
+
+	required_energy_min = 501
+	required_energy_max = 700
+
+	required_atmos_temp_min = 400
+	required_atmos_temp_max = 20000
+	probability = 20
+
+/datum/particle_smasher_recipe/glamour
+	display_name = "Synthesize " + MAT_GLAMOUR
+	items = list(/obj/item/glamour_unstable)
+
+	result = /obj/item/stack/material/glamour
+	required_material = /obj/item/stack/material/phoron
+
+	required_energy_min = 500
+	required_energy_max = 600
+
+	required_atmos_temp_min = 0
+	required_atmos_temp_max = 50
+	probability = 100
+	item_consume_chance = 10 //Allows only a few unstable glamour to be given out to get lots of stable ones.
+
+/datum/particle_smasher_recipe/platinum_lead
+	display_name = MAT_LEAD + " from " + MAT_PLATINUM
+	reagents = list(REAGENT_ID_TUNGSTEN = 10)
+
+	result = /obj/item/stack/material/lead
+	required_material = /obj/item/stack/material/platinum
+
+	required_energy_min = 100
+	required_energy_max = 300
+
+	required_atmos_temp_min = 2000
+	required_atmos_temp_max = 6000
+	probability = 50
+
+/datum/particle_smasher_recipe/uranium_lead
+	display_name = MAT_LEAD + " from " + MAT_URANIUM
+	reagents = list(REAGENT_ID_TUNGSTEN = 10)
+
+	result = /obj/item/stack/material/lead
+	required_material = /obj/item/stack/material/uranium
+
+	required_energy_min = 50
+	required_energy_max = 600
+
+	required_atmos_temp_min = 1000
+	required_atmos_temp_max = 10000
+	probability = 70
+
+/datum/particle_smasher_recipe/uranium_platinum
+	display_name = MAT_PLATINUM + " from " + MAT_URANIUM
+	reagents = list(REAGENT_ID_TUNGSTEN = 10)
+
+	result = /obj/item/stack/material/platinum
+	required_material = /obj/item/stack/material/uranium
+
+	required_energy_min = 600
+	required_energy_max = 650
+
+	required_atmos_temp_min = 6000
+	required_atmos_temp_max = 10000
+	probability = 30
+
+/datum/particle_smasher_recipe/platinum_uranium
+	display_name = MAT_URANIUM + " from " + MAT_PLATINUM
+	reagents = list(REAGENT_ID_SILICON = 10)
+
+	result = /obj/item/stack/material/uranium
+	required_material = /obj/item/stack/material/platinum
+
+	required_energy_min = 600
+	required_energy_max = 700
+
+	required_atmos_temp_min = 8000
+	required_atmos_temp_max = 12000
+	probability = 40
+
+/datum/particle_smasher_recipe/iron_copper
+	display_name = MAT_COPPER + " from " + MAT_IRON
+	reagents = list(REAGENT_ID_LITHIUM = 10)
+
+	result = /obj/item/stack/material/copper
+	required_material = /obj/item/stack/material/iron
+
+	required_energy_min = 100
+	required_energy_max = 300
+
+	required_atmos_temp_min = 2000
+	required_atmos_temp_max = 6000
+	probability = 40
+
+/datum/particle_smasher_recipe/copper_gold
+	display_name = MAT_GOLD + " from " + MAT_COPPER
+	reagents = list(REAGENT_ID_TIN = 10)
+
+	result = /obj/item/stack/material/gold
+	required_material = /obj/item/stack/material/copper
+
+	required_energy_min = 200
+	required_energy_max = 400
+
+	required_atmos_temp_min = 5000
+	required_atmos_temp_max = 8000
+	probability = 40
+
+/datum/particle_smasher_recipe/hydrogen_deuterium
+	display_name = MAT_DEUTERIUM + " from " + MAT_GRAPHITE
+	reagents = list(REAGENT_ID_HYDROGEN = 10)
+
+	result = /obj/item/stack/material/deuterium
+	required_material = /obj/item/stack/material/graphite
+
+	required_energy_min = 0
+	required_energy_max = 100
+
+	required_atmos_temp_min = 1000
+	required_atmos_temp_max = 3000
+	probability = 20
+
+/datum/particle_smasher_recipe/carbon_titanium
+	display_name = MAT_TITANIUM + " from " + MAT_GRAPHITE
+	reagents = list(REAGENT_ID_SULFUR = 10)
+
+	result = /obj/item/stack/material/titanium
+	required_material = /obj/item/stack/material/graphite
+
+	required_energy_min = 300
+	required_energy_max = 600
+
+	required_atmos_temp_min = 3000
+	required_atmos_temp_max = 8000
+	probability = 40
+
+/datum/particle_smasher_recipe/tritium_mhydrogen
+	display_name = MAT_METALHYDROGEN + " from " + MAT_TRITIUM
+	reagents = list(REAGENT_ID_RADIUM = 300)
+
+	result = /obj/item/stack/material/mhydrogen
+	required_material = /obj/item/stack/material/tritium
+
+	required_energy_min = 500
+	required_energy_max = 550
+
+	required_atmos_temp_min = 7000
+	required_atmos_temp_max = 12000
+	probability = 20
+
+/datum/particle_smasher_recipe/osmium_platinum
+	display_name = MAT_PLATINUM + " from " + MAT_OSMIUM
+	reagents = list(REAGENT_ID_TUNGSTEN = 10)
+
+	result = /obj/item/stack/material/platinum
+	required_material = /obj/item/stack/material/osmium
+
+	required_energy_min = 400
+	required_energy_max = 500
+
+	required_atmos_temp_min = 8000
+	required_atmos_temp_max = 10000
+	probability = 20
+
+/datum/particle_smasher_recipe/aluminium_iron
+	display_name = MAT_IRON + " from " + MAT_ALUMINIUM
+	reagents = list(REAGENT_ID_ALUMINIUM = 50)
+
+	result = /obj/item/stack/material/iron
+	required_material = /obj/item/stack/material/aluminium
+
+	required_energy_min = 200
+	required_energy_max = 300
+
+	required_atmos_temp_min = 1000
+	required_atmos_temp_max = 5000
+	probability = 30
+
+/datum/particle_smasher_recipe/lead_silver
+	display_name = MAT_SILVER + " from " + MAT_LEAD
+	reagents = list(REAGENT_ID_RADIUM = 50)
+
+	result = /obj/item/stack/material/silver
+	required_material = /obj/item/stack/material/lead
+
+	required_energy_min = 600
+	required_energy_max = 700
+
+	required_atmos_temp_min = 8000
+	required_atmos_temp_max = 10000
+	probability = 30
+
+#undef PS_RESULT_STACK
+#undef PS_RESULT_ITEM
+
+
+
+/// Holds the beaker (owned, in its contents). The process will consume ALL reagents inside it.
+/obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers
+	return reagent_container

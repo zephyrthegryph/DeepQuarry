@@ -16,9 +16,9 @@
 		return total
 	var/list/residents = slots[slot_id]
 	for(var/atom/movable/thing as anything in residents)
-		var/list/entry = entries[thing]
+		var/list/entry = entries[slot_known(thing)]
 		if(entry && entry[LEDGER_E_SLOT] == slot_id)
-			total += def.cost(holder, thing) - entry[LEDGER_E_COST]
+			total += def.cost(holder(), thing) - entry[LEDGER_E_COST]
 	return total
 
 
@@ -67,7 +67,7 @@
 		return
 	. += list(list(source, SLOT_OCCUPANCY_KEY))
 	var/datum/ledger/from = dq_ledger(source)
-	var/list/entry = from?.entries[thing]
+	var/list/entry = from?.entries[slot_known(thing)]
 	if(!entry)
 		return
 	var/id = entry[LEDGER_E_SLOT]

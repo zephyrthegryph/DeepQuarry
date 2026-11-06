@@ -44,7 +44,7 @@ pub const BASE_TYPES: &[&str] = &[
     "/mob",
 ];
 /// Where `REGISTRY_TYPE(...)` rows live.
-pub const REGISTRY_FILE: &str = "code/datums/ownership/registry_types.dm";
+pub const REGISTRY_FILE: &str = "code/library/ownership/registry_types.dm";
 
 /// A declared var (`class Var`).
 #[derive(Clone, Debug)]

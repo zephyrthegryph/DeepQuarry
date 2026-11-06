@@ -21,7 +21,7 @@
 // lifted brings back exactly what the rule says (no mixed-source desync).
 //
 // What a type has by what it is costs no per-instance store entry: DECLARE_VERB and friends
-// (code/__defines/lifecycle_decl.dm) live in the type's declaration table and are applied at init
+// (code/defines/engine/lifecycle_decl.dm) live in the type's declaration table and are applied at init
 // (Login for DECLARE_LOGIN_VERB). A per-instance grant is for what can change.
 //
 // Clients are not datums: a grant to a client goes to the client's /datum/client_verbs holder
@@ -177,7 +177,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 		var/atom/A = target // clients have verbs too; the var is read the same way
 		return key in A.verbs
 	var/datum/E = verb_grant_target(target, FALSE)
-	var/datum/scheduler_record/rec = E?.om_rec
+	var/datum/scheduler_record/rec = E?.sched_rec
 	return !!rec?.named_verbs?[key]
 
 // ---------------------------------------------------------------- the writer
@@ -210,7 +210,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	if(!istext(key))
 		var/atom/A = owner
 		return key in A.verbs
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	return !!rec?.named_verbs?[key]
 
 /// The one place a verbs list changes. `add`/`remove`: keys (paths or VERB_NAMED keys).
@@ -231,7 +231,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 			P = key
 			A.verbs -= key
 		else
-			var/datum/scheduler_record/rec = E.om_rec
+			var/datum/scheduler_record/rec = E.sched_rec
 			P = rec?.named_verbs?[key]
 			if(!P)
 				continue

@@ -1,5 +1,5 @@
-// Hand-converted om_hook sites: each test drives the real trigger of a hook that became observe() and checks what the handler did.
-// The handlers take (datum/act/notice/N); the notices of the before/ events that only watch are twins of the event (om_event_map.json).
+// Hand-converted hook sites: each test drives the real trigger of a hook that became observe() and checks what the handler did.
+// The handlers take (datum/act/notice/N); the notices of the before/ events that only watch are twins of the event (event_map.json).
 
 /// A receiver that counts HasProximity calls.
 /obj/dq_hook_hand_receiver
@@ -48,7 +48,7 @@
 	pulse.threshold = 0.2
 	pulse.max_range = 3
 	pulse.chance = 100
-	PUBLISH_LEGACY(counter, /datum/notice/in_range_of_irradiation, pulse, 0.5)
+	PUBLISH(counter, in_range_of_irradiation, pulse_information = pulse, insulation_to_target = 0.5)
 	TEST_ASSERT_EQUAL(counter.last_radiation_strength, 40, "the in_range_of_irradiation notice twin reached the geiger's handler")
 	TEST_ASSERT_EQUAL(counter.insulation_deficit, 0.3, "with the insulation it was told")
 	qdel(pulse)
@@ -78,5 +78,5 @@
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	container.set_materials_at(steel, 2000)
 	var/list/texts = list()
-	PUBLISH_LEGACY(silo, /datum/notice/examine, null, texts)
+	PUBLISH(silo, examine, user = null, texts = texts)
 	TEST_ASSERT(length(texts) > 0, "the examine notice reached the container's observer, which listed what it holds")

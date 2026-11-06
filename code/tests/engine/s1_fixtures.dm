@@ -1,7 +1,7 @@
 // The fixtures of the slots and inventory step (doc/rewrite/final_api.html, section 6 "Containment and slots", section 8 "providers", section 10
 // "while_slotted", section 11 "SPECIES_CAPABILITIES, hands()"): holders with real ledger slots whose items and occupants get hooks while they are
 // slotted, species that grant providers and hooks, a transfer that has requirements on both sides, a type-level every() and an on_change across a
-// relation hop. Test-only types, compiled under UNIT_TESTS only (code/modules/unit_tests/dq_s1_slots_tests.dm drives them).
+// relation hop. Test-only types, compiled under UNIT_TESTS only (code/tests/unit_tests/dq_s1_slots_tests.dm drives them).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

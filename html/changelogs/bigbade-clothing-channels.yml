@@ -1,0 +1,4 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - rscadd: "Loadout: any clothing can be recoloured through up to 3 colour channels, each its own colour or linked to a palette slot."

@@ -34,13 +34,13 @@
 	var/list/constants
 	/// TRUE once the entity's stats have been computed silently at init.
 	var/inited = FALSE
-	/// contributes_to entries: "[serial]" -> the entity currently holding this entity's contribution.
+	/// contributes_to entries: "[serial]" -> the slot of the entity currently holding this entity's contribution.
 	var/list/ct_targets
-	/// The entities holding rows that name this datum as their source (so its deletion can release them).
+	/// The slots of the entities holding rows that name this datum as their source (so its deletion can release them; slot_datums() reads them back).
 	var/list/held_on
 	/// Hop readers naming this datum through a single-valued relation: rel var -> the readers (the reverse of what the readers' relation vars name).
 	var/list/hop_in
-	/// What this datum's own hop relations name now: rel var -> target, so a change finds the list to leave.
+	/// What this datum's own hop relations name now: rel var -> the target's slot, so a change finds the list to leave.
 	var/list/hop_targets
 
 /datum/rx_state
@@ -160,7 +160,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		stat_rows_add(rec, row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
-			LAZYOR(src_rec.held_on, E)
+			LAZYOR(src_rec.held_on, SLOT(E))
 	if(expires)
 		stat_expiry_reschedule(E)
 	TEST_REC_DELTA(E, "hold:[def.name]", null, value)
@@ -276,7 +276,11 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 /proc/release(datum/E, stat, source, key = null)
 	OP_PURE_GUARD("a hold on [E?.type] was released")
 	var/datum/stat_def/def = stat_def_of(stat)
-	if(!isdatum(E) || !def)
+	if(!def)
+		// hold() reports an unknown stat; a release of one would leave the real hold in place for the rest of the round with nothing said.
+		declare_report("release([E?.type], [stat]): no such stat")
+		return FALSE
+	if(!isdatum(E))
 		return FALSE
 	var/datum/stat_record/rec = E.rx?.stats
 	if(!rec?.holds)
@@ -294,7 +298,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		stat_settle_def(E, def)
 	return removed
 
-/// Releases everything one source holds on E. A source holding more than HOLD_RELEASE_BATCH holds releases in slices (stat_release_slice, phase G).
+/// Releases everything one source holds on E, all at once: the slicing this once did left the rest held (its drain was deleted with the subsystems).
 /proc/release_all(datum/E, source)
 	var/datum/stat_record/rec = E?.rx?.stats
 	if(!rec?.holds)
@@ -305,11 +309,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 			mine += list(row)
 	if(!length(mine))
 		return 0
-	var/list/to_release = mine
-	if(length(mine) > HOLD_RELEASE_BATCH)
-		to_release = mine.Copy(1, HOLD_RELEASE_BATCH + 1)
-		stat_release_queue_add(E, source)
-	return stat_release_rows(E, rec, to_release)
+	return stat_release_rows(E, rec, mine)
 
 /// Removes rows and settles each stat they touched once.
 /proc/stat_release_rows(datum/E, datum/stat_record/rec, list/rows)
@@ -321,53 +321,6 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		stat_hold_remove(E, rec, row)
 	stat_expiry_reschedule(E)
 	stat_settle(E, touched)
-	return length(rows)
-
-GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for their next slice
-
-/proc/stat_release_queue_add(datum/E, source)
-	for(var/list/pending as anything in GLOB.stat_release_queue)
-		if(pending[1] == E && pending[2] == source)
-			return
-	GLOB.stat_release_queue += list(list(E, source))
-
-/// One slice of the releases a big source left behind: HOLD_RELEASE_BATCH rows per entity. Phase G runs it; the recompute it marks runs at the next
-/// marked drain. The holds not yet released still apply until their slice runs. Returns how many rows it released.
-/proc/stat_release_slice()
-	. = 0
-	var/list/pending = GLOB.stat_release_queue
-	GLOB.stat_release_queue = list()
-	for(var/list/entry as anything in pending)
-		var/datum/E = entry[1]
-		var/source = entry[2]
-		if(QDELETED(E))
-			continue
-		var/datum/stat_record/rec = E.rx?.stats
-		if(!rec?.holds)
-			continue
-		var/list/mine = list()
-		for(var/list/row as anything in rec.holds)
-			if(row[H_SOURCE] == source)
-				mine += list(row)
-		if(!length(mine))
-			continue
-		var/list/slice = mine
-		if(length(mine) > HOLD_RELEASE_BATCH)
-			slice = mine.Copy(1, HOLD_RELEASE_BATCH + 1)
-			GLOB.stat_release_queue += list(entry)
-		. += stat_release_rows_marked(E, rec, slice)
-
-/// stat_release_rows() for a slice: the stats it touches are marked for the next marked drain instead of recomputed inline.
-/proc/stat_release_rows_marked(datum/E, datum/stat_record/rec, list/rows)
-	var/list/touched = list()
-	for(var/list/row as anything in rows)
-		var/datum/stat_def/def = stat_def_of(row[H_STAT])
-		if(def && !(def in touched))
-			touched += def
-		stat_hold_remove(E, rec, row)
-	stat_expiry_reschedule(E)
-	for(var/datum/stat_def/def as anything in touched)
-		stat_mark(E, def)
 	return length(rows)
 
 /// Takes one row out of the record, and its source's index of where it holds.
@@ -395,7 +348,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 					still = TRUE
 					break
 			if(!still)
-				src_rec.held_on -= E
+				src_rec.held_on -= SLOT_KNOWN(E)
 				if(!length(src_rec.held_on))
 					src_rec.held_on = null
 	if(row[H_STAT] == HOLD_STANDING)
@@ -491,7 +444,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 	var/datum/stat_record/rec = D.rx?.stats
 	if(!rec)
 		return
-	for(var/datum/target as anything in rec.held_on?.Copy())
+	for(var/datum/target as anything in slot_datums(rec.held_on))
 		if(QDELETED(target))
 			continue
 		var/datum/stat_record/trec = target.rx?.stats
@@ -517,7 +470,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 			var/datum/src_datum = source
 			var/datum/stat_record/src_rec = src_datum.rx?.stats
 			if(src_rec?.held_on)
-				src_rec.held_on -= D
+				src_rec.held_on -= SLOT_KNOWN(D)
 	rec.holds = null
 	rec.by_stat = null
 	rec.sum_cache = null

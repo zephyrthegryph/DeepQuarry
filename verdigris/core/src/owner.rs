@@ -407,9 +407,11 @@ pub struct FallbackStats {
 /// Heap bytes one domain port holds, by part (capacities, not lengths).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct PortMemory {
-    /// Chunks of the pinned view (shared with the worker's live store and
+    /// Bytes of the pinned view's distinct allocations (shared with the worker's live store and
     /// older views wherever a chunk is unchanged).
     pub view: usize,
+    /// The pinned view's chunks by kind (default, uniform, dense).
+    pub view_chunks: crate::cow::CowMemory,
     /// The overlay of DM writes the pinned view does not include yet.
     pub overlay: usize,
     /// Commands queued for the next frame.
@@ -723,8 +725,10 @@ impl<D: Domain> MainPort<D> {
                     .map(|p| p.capacity() * size_of::<(u32, D::Value)>())
                     .sum::<usize>()
         });
+        let view_chunks = self.pinned.store.memory();
         PortMemory {
-            view: self.pinned.store.reserved_bytes(),
+            view: view_chunks.bytes,
+            view_chunks,
             overlay: self.overlay.capacity_bytes(),
             commands: self.commands.capacity_bytes(),
             fallback,

@@ -4,12 +4,13 @@ use super::*;
 use dq_analyze::{
     captured_actions::BorrowedActions, captured_declare::BorrowedDeclare,
     captured_declare_ids::BorrowedDeclareIds, captured_generator_budget::Budget,
-    captured_sparse_slots::BorrowedSparseSlots, captured_stats::BorrowedStats,
+    captured_stats::BorrowedStats,
     captured_system_accessors::BorrowedSystemAccessors, captured_ui_types::BorrowedUiTypes,
 };
 pub(super) const GENERATOR_RESULT: Kind = Kind(11);
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 pub enum GeneratorName {
+    #[cfg(test)]
     SparseSlots,
     SystemAccessors,
     Stats,
@@ -25,6 +26,8 @@ pub enum GeneratorName {
     Plans,
 }
 impl GeneratorName {
+    pub const REGISTERED_COUNT: usize = 12;
+
     pub(crate) fn name(self) -> &'static str {
         match self {
             Self::Deps => "deps",
@@ -33,6 +36,7 @@ impl GeneratorName {
             Self::Reads => "reads",
             Self::DerivedReads => "derived_reads",
             Self::TrackedLists => "tracked_lists",
+            #[cfg(test)]
             Self::SparseSlots => "sparse_slots",
             Self::SystemAccessors => "system_accessors",
             Self::Stats => "stats",
@@ -49,6 +53,7 @@ impl GeneratorName {
             Self::AutoTracked => "code/engine/_generated/auto_tracked.dm",
             Self::Reads => "code/engine/_generated/reads.dm",
             Self::TrackedLists => "code/engine/_generated/tracked_lists.dm",
+            #[cfg(test)]
             Self::SparseSlots => "code/engine/_generated/sparse_slots.dm",
             Self::SystemAccessors => "code/engine/_generated/system_accessors.dm",
             Self::Stats => "code/engine/_generated/stats.dm",
@@ -317,9 +322,10 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                 let checkpoint = || admission.abort.scan_checkpoint();
                 match p.name {
                     GeneratorName::Deps | GeneratorName::AutoTracked | GeneratorName::Plans | GeneratorName::Reads | GeneratorName::DerivedReads => unreachable!("typed reactive generator branch handled above"),
+                    #[cfg(test)]
                     GeneratorName::SparseSlots => {
                         let out =
-                            BorrowedSparseSlots::capture(&raw, capture.policy(), budget.clone())?
+                            dq_analyze::captured_sparse_slots::BorrowedSparseSlots::capture(&raw, capture.policy(), budget.clone())?
                                 .generate(checkpoint)?;
                         let text = out.captured_file_text(&budget)?;
                         Ok(Artifact {
@@ -630,13 +636,13 @@ mod tests;
 // DM include; DerivedReads owns its one historical generated DM path.
 impl QueryDb {
     pub(crate) fn generation_dm_outputs()->impl Iterator<Item=&'static str>{
-        [GeneratorName::SparseSlots,GeneratorName::SystemAccessors,GeneratorName::Stats,GeneratorName::Actions,GeneratorName::DeclareIds,GeneratorName::Declare,GeneratorName::TrackedLists,GeneratorName::Deps,GeneratorName::AutoTracked,GeneratorName::Reads,GeneratorName::Plans].into_iter().map(GeneratorName::path).chain(["code/_generated/reads.dm"])
+        [GeneratorName::SystemAccessors,GeneratorName::Stats,GeneratorName::Actions,GeneratorName::DeclareIds,GeneratorName::Declare,GeneratorName::TrackedLists,GeneratorName::Deps,GeneratorName::AutoTracked,GeneratorName::Reads,GeneratorName::Plans].into_iter().map(GeneratorName::path).chain(["code/_generated/reads.dm"])
     }
 }
 
 #[path="generator_policy_wire.rs"]mod wire;
 
-impl<'de> serde::Deserialize<'de> for GeneratorName{fn deserialize<D:serde::Deserializer<'de>>(decoder:D)->Result<Self,D::Error>{let name=<String as serde::Deserialize>::deserialize(decoder)?;match name.as_str(){"sparse_slots"=>Ok(Self::SparseSlots),"system_accessors"=>Ok(Self::SystemAccessors),"stats"=>Ok(Self::Stats),"actions"=>Ok(Self::Actions),"declare_ids"=>Ok(Self::DeclareIds),"declare"=>Ok(Self::Declare),"ui_types"=>Ok(Self::UiTypes),"tracked_lists"=>Ok(Self::TrackedLists),"deps"=>Ok(Self::Deps),"auto_tracked"=>Ok(Self::AutoTracked),"reads"=>Ok(Self::Reads),"derived_reads"=>Ok(Self::DerivedReads),"plans"=>Ok(Self::Plans),_=>Err(serde::de::Error::custom("unknown canonical generator name"))}}}
+impl<'de> serde::Deserialize<'de> for GeneratorName{fn deserialize<D:serde::Deserializer<'de>>(decoder:D)->Result<Self,D::Error>{let name=<String as serde::Deserialize>::deserialize(decoder)?;match name.as_str(){"system_accessors"=>Ok(Self::SystemAccessors),"stats"=>Ok(Self::Stats),"actions"=>Ok(Self::Actions),"declare_ids"=>Ok(Self::DeclareIds),"declare"=>Ok(Self::Declare),"ui_types"=>Ok(Self::UiTypes),"tracked_lists"=>Ok(Self::TrackedLists),"deps"=>Ok(Self::Deps),"auto_tracked"=>Ok(Self::AutoTracked),"reads"=>Ok(Self::Reads),"derived_reads"=>Ok(Self::DerivedReads),"plans"=>Ok(Self::Plans),_=>Err(serde::de::Error::custom("unknown canonical generator name"))}}}
 
 #[path="generator_files.rs"]mod generated_files;
 impl super::QueryDb {

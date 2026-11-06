@@ -1,0 +1,372 @@
+/// A mob spawner's shortest and its full-nest wait between steps (spawn_wait()).
+#define SPAWNER_MIN_WAIT (2 SECONDS)
+#define SPAWNER_FULL_WAIT (1 MINUTES)
+
+/obj/structure/mob_spawner
+	name = "mob spawner"
+	desc = "This shouldn't be seen, yell at a dev."
+	icon = 'icons/effects/effects.dmi'
+	icon_state = "rift"
+	anchored = TRUE
+
+	COOLDOWN_DECLARE(spawn_cooldown)
+	var/spawn_delay = 10 MINUTES
+
+
+	var/total_spawns = -1 //Total mob spawns, over all time, -1 for no limit
+	var/simultaneous_spawns = 3 //Max spawned mobs active at one time
+	var/mob_faction
+
+	var/destructible = 0
+	max_integrity = 50
+
+	var/list/spawned_mobs
+
+TYPE_TABLE_DECLARE(/obj/structure/mob_spawner, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/passive/dog/corgi = 100, \
+	/mob/living/simple_mob/animal/passive/cat = 25 \
+	))
+
+/obj/structure/mob_spawner/proximity_tracked = TRUE
+
+/// Setup: the first spawn waits one to two delays.
+/obj/structure/mob_spawner/proc/start_spawn_cooldown()
+	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
+
+// Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
+CAPABILITIES(/obj/structure/mob_spawner)
+	setup(PROC_REF(start_spawn_cooldown))
+	every(PROC_REF(spawn_wait), then(PROC_REF(mob_spawner_step)), when = STAT_RELEVANCE)
+	ref_many(nameof(spawned_mobs))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/// How long until the next step: when the spawn cooldown ends, so a nest does not wake every 2 s for a spawn that is minutes away. A full nest
+/// looks again in a minute (a spawned mob dying frees a place), a nest that may spawn now in 2 s.
+/obj/structure/mob_spawner/proc/spawn_wait(datum/act/A)
+	if(!total_spawns)
+		return SPAWNER_FULL_WAIT
+	if(length(spawned_mobs) >= simultaneous_spawns)
+		return SPAWNER_FULL_WAIT
+	return max(SPAWNER_MIN_WAIT, COOLDOWN_TIMELEFT(src, spawn_cooldown))
+
+/// Acts only while a player is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+/obj/structure/mob_spawner/proc/mob_spawner_step(datum/act/timer/A)
+	if(!can_spawn())
+		return
+	var/chosen_mob = choose_spawn()
+	if(chosen_mob)
+		do_spawn(chosen_mob)
+
+/obj/structure/mob_spawner/proc/can_spawn()
+	if(!total_spawns)
+		return 0
+	if(length(spawned_mobs) >= simultaneous_spawns)
+		return 0
+	if(!COOLDOWN_FINISHED(src, spawn_cooldown))
+		return 0
+	return 1
+
+/obj/structure/mob_spawner/proc/choose_spawn()
+	return pickweight(TYPE_TABLE_GET(src, mob_spawner_types))
+
+/obj/structure/mob_spawner/proc/do_spawn(mob_path)
+	if(!ispath(mob_path))
+		return 0
+	if(!ispath(mob_path, /mob/living) && !ispath(mob_path, /obj/structure/closet/crate/mimic))
+		return 0
+	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
+	if(total_spawns > 0)
+		total_spawns--
+	if(ispath(mob_path, /mob/living))
+		var/mob/living/L = new mob_path(get_turf(src))
+		set_nest(L, src)
+		rel_add(src, nameof(spawned_mobs), L)
+		if(mob_faction)
+			L.set_faction(mob_faction)
+		return L
+	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
+		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(src))
+		rel_add(src, nameof(spawned_mobs), O)
+		rel_set(O, nameof(O.nest), src)
+		return O
+	return 0
+
+/obj/structure/mob_spawner/proc/get_death_report(mob/living/L)
+	if(L in spawned_mobs)
+		rel_remove(src, nameof(spawned_mobs), L)
+
+/// Old attackby.
+/obj/structure/mob_spawner/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
+	if(!combat_of(I).force || I.flags & NOBLUDGEON || !destructible)
+		return OP_PASS
+
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	user.do_attack_animation(src)
+	act_message(src, user, others = span_warning("%U% has been [LAZYLEN(combat_of(I).attack_verbs) ? "[pick(combat_of(I).attack_verbs)]":"attacked"] with %I% by %T%."), item = I)
+	receive_weapon_hit(I, user, silent = FALSE)
+	return OP_PASS
+
+/obj/structure/mob_spawner/damage_sink(datum/damage_packet/packet)
+	if(!destructible)
+		return 0
+	return ..()
+// Reaching 0 integrity breaks the spawner apart.
+/obj/structure/mob_spawner/atom_destruction(damage_flag)
+	visible_message(span_warning("\The [src] breaks apart!"))
+	return ..()
+
+/obj/structure/mob_spawner/clear_zlevel/can_spawn()
+	if(!..())
+		return 0
+	var/turf/T = get_turf(src)
+	if(!T)
+		return 0
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		var/turf/L_T
+		if(L.stat == DEAD)
+			continue
+		L_T = get_turf(L)
+		if(T.z == L_T.z)
+			return 0
+	return 1
+
+/*
+This code is based on the mob spawner and the proximity sensor, the idea is to lazy load mobs to avoid having the server use mobs when they arent needed.
+It also makes it so a ghost wont know where all the goodies/mobs are.
+*/
+
+/obj/structure/mob_spawner/scanner
+	name ="Lazy Mob Spawner"
+	var/range = 10 //range in tiles from the spawner to detect moving stuff
+	var/datum/proximity_monitor/mobspawner/prox
+	var/list/mobs_in_range
+
+CAPABILITIES(/obj/structure/mob_spawner/scanner)
+	every(2 SECONDS, then(PROC_REF(scanner_spawn_step)))
+	owns_one(nameof(prox), /datum/proximity_monitor/mobspawner, starts = PROC_REF(make_prox))
+	ref_many(nameof(mobs_in_range))
+
+/// The starting proximity monitor (owns_one(starts =)): it watches `range` tiles.
+/obj/structure/mob_spawner/scanner/proc/make_prox(current)
+	return new /datum/proximity_monitor/mobspawner(src, range)
+
+/obj/structure/mob_spawner/scanner/do_spawn(mob_path)
+	if(!ispath(mob_path))
+		return 0
+	if(!ispath(mob_path, /mob/living) && !ispath(mob_path, /obj/structure/closet/crate/mimic))
+		return 0
+	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
+	if(total_spawns > 0)
+		total_spawns--
+	//how about we find a suitable location first
+	var/attempts = 0
+	var/turf/spawn_turf = null
+
+	while((!spawn_turf || spawn_turf.density) && attempts < 15)
+		var/xcoord = rand(-5,5)
+		var/ycoord = rand(-5,5)
+		spawn_turf = locate(x + xcoord, y + ycoord, z)
+		attempts++
+
+	//and then we spawn them
+	if(ispath(mob_path, /mob/living))
+		var/mob/living/L = new mob_path(get_turf(spawn_turf))
+		set_nest(L, src)
+		rel_add(src, nameof(spawned_mobs), L)
+		if(mob_faction)
+			L.set_faction(mob_faction)
+		return L
+	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
+		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(spawn_turf))
+		rel_add(src, nameof(spawned_mobs), O)
+		rel_set(O, nameof(O.nest), src)
+		return O
+	return 0
+
+/obj/structure/mob_spawner/scanner/proc/NewProximity(atom/movable/AM)
+	if(istype(AM,/mob/living) && !(AM in mobs_in_range))
+		rel_add(src, nameof(mobs_in_range), AM)
+
+/obj/structure/mob_spawner/scanner/proc/CheckProximity(atom/movable/AM,turf/new_loc)
+	if((AM in mobs_in_range) && (!AM || get_dist(src,new_loc) > range))
+		rel_remove(src, nameof(mobs_in_range), AM)
+
+/// The scanner spawner is not gated on a player being near: it spawns on those its proximity monitor sees (its own every(); the base step does nothing here).
+/obj/structure/mob_spawner/scanner/mob_spawner_step(datum/act/timer/A)
+	return
+
+/obj/structure/mob_spawner/scanner/proc/scanner_spawn_step(datum/act/timer/timer)
+	if(!can_spawn())
+		return
+	if(COOLDOWN_FINISHED(src, spawn_cooldown))
+		for(var/mob/living/A in mobs_in_range) //No more calling fucking range(10) every goddamn processing tick, christ.
+			if ((mob_rules_of(A).faction != mob_faction) && A.ckey)
+				var/chosen_mob = choose_spawn()
+				if(chosen_mob)
+					do_spawn(chosen_mob)
+					break //ALSO NO SPAWNING MULTIPLE MOBS
+
+//////////////
+// Spawners //
+/////////////
+/obj/structure/mob_spawner/scanner/corgi
+	name = "Corgi Lazy Spawner"
+	desc = "This is a proof of concept, not sure why you would use this one"
+	spawn_delay = 3 MINUTES
+	mob_faction = FACTION_CORGI
+
+	simultaneous_spawns = 5
+	range = 7
+	destructible = 1
+	max_integrity = 200
+	total_spawns = 100
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/corgi, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/passive/dog/corgi = 75, \
+	/mob/living/simple_mob/animal/passive/dog/corgi/puppy = 50 \
+	))
+
+/obj/structure/mob_spawner/scanner/wild_animals
+	name = "Wilderness Lazy Spawner"
+	spawn_delay = 10 MINUTES
+	range = 10
+	simultaneous_spawns = 1
+	mob_faction = FACTION_WILD_ANIMAL
+	total_spawns = -1
+	destructible = 0
+	anchored = TRUE
+	invisibility = INVISIBILITY_ABSTRACT
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/wild_animals, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/passive/gaslamp = 20, \
+/* /mob/living/simple_mob/vore/otie/feral = 10, */ \
+	/mob/living/simple_mob/vore/aggressive/dino/virgo3b = 5, \
+	/mob/living/simple_mob/vore/aggressive/dragon/virgo3b = 1 \
+	))
+
+/obj/structure/mob_spawner/scanner/xenos
+	name = "Xenomorph Egg"
+	spawn_delay = 10 MINUTES
+	range = 10
+	simultaneous_spawns = 1
+	mob_faction = FACTION_XENO
+	total_spawns = -1
+	destructible = 1
+	max_integrity = 50
+	anchored = TRUE
+	icon = 'icons/mob/actions.dmi'
+	icon_state = "alien_egg"
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/xenos, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/space/alien/drone = 20, \
+	/mob/living/simple_mob/animal/space/alien = 10, \
+	/mob/living/simple_mob/animal/space/alien/sentinel = 5, \
+	/mob/living/simple_mob/animal/space/alien/queen = 1 \
+	))
+
+/obj/structure/mob_spawner/scanner/xenos/royal
+	name = "Royal Xenomorph Egg"
+	spawn_delay = 10 MINUTES
+	range = 10
+	simultaneous_spawns = 1
+	mob_faction = FACTION_XENO
+	total_spawns = 1
+	destructible = 1
+	max_integrity = 50
+	anchored = TRUE
+	icon = 'icons/mob/actions.dmi'
+	icon_state = "alien_egg"
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/xenos/royal, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/space/alien/queen = 5, \
+	))
+
+/obj/structure/mob_spawner/scanner/mining_animals
+	name = "Mining Lazy Spawner"
+	spawn_delay = 10 MINUTES
+	range = 10
+	simultaneous_spawns = 1
+	mob_faction = "wild animal"
+	total_spawns = 2
+	destructible = 0
+	anchored = 1
+	invisibility = INVISIBILITY_ABSTRACT
+
+TYPE_TABLE(/obj/structure/mob_spawner/scanner/mining_animals, mob_spawner_types, list( \
+		/mob/living/simple_mob/vore/bat = 70, \
+		/mob/living/simple_mob/animal/passive/cockroach = 60, \
+		/obj/effect/spider/spiderling/non_growing = 50, \
+		/mob/living/simple_mob/animal/giant_spider/tunneler/cave = 50, \
+		/mob/living/simple_mob/vore/jelly = 40, \
+		/mob/living/simple_mob/vore/aggressive/rat = 30, \
+		/mob/living/simple_mob/animal/passive/mouse = 30, \
+		/mob/living/simple_mob/animal/passive/mouse/rat = 25, \
+		/mob/living/simple_mob/metroid/mine = 25, /* Downstream - CHOMPEnable */ \
+		/mob/living/simple_mob/vore/oregrub = 25, \
+		/mob/living/simple_mob/vore/aggressive/dino = 20, \
+		/mob/living/simple_mob/animal/space/carp = 20, \
+		/mob/living/simple_mob/vore/oregrub/lava = 15, \
+		/mob/living/simple_mob/vore/stalker = 10, \
+		/mob/living/simple_mob/vore/lamia/copper/cave = 10, \
+		/mob/living/simple_mob/vore/lamia/albino/cave = 5, \
+		/mob/living/simple_mob/vore/aggressive/lizardman = 5, \
+		/mob/living/simple_mob/vore/otie = 5, \
+		/mob/living/simple_mob/animal/passive/pillbug = 5, /* These aren't dangerous, but are made rare just because few people are going to bother killing them. */ \
+		/obj/structure/closet/crate/mimic/cointoss = 1, \
+		/obj/structure/closet/crate/mimic/closet/cointoss = 1, \
+		/mob/living/simple_mob/vore/otie/feral = 1, \
+/* /mob/living/simple_mob/vore/sonadile = 1, - Removed until sprite issues fixed. */ \
+		/mob/living/simple_mob/animal/space/bear/brown = 1, \
+		/mob/living/simple_mob/vore/aggressive/deathclaw = 1, \
+		/mob/living/simple_mob/vore/gryphon = 1, \
+		/mob/living/simple_mob/vore/demon = 0.5 /* VERY rare! */ \
+	))
+
+/obj/structure/mob_spawner/proc/get_used_report(obj/structure/closet/crate/mimic/O)
+	if(O in spawned_mobs)
+		rel_remove(src, nameof(spawned_mobs), O)
+
+/obj/structure/mob_spawner/mouse_nest/mousehole
+	name = "small hole"
+	desc = "A small hole, critters seem to move in and out from here."
+	icon = 'icons/effects/effects.dmi'
+	icon_state = "tunnel_hole"
+
+TYPE_TABLE(/obj/structure/mob_spawner/mouse_nest/mousehole, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/passive/mouse = 100, \
+	/mob/living/simple_mob/animal/passive/cockroach = 25, \
+	/mob/living/simple_mob/animal/passive/mouse/rat/strong = 10, /* Because I'm a horrible person. <3 */ \
+	/obj/effect/spider/spiderling/non_growing = 5))
+
+/// The look (the draw sweep: from its layers).
+/obj/structure/mob_spawner/mouse_nest/mousehole/draw(datum/look/look)
+	..()
+	look.state("tunnel_hole")
+
+/obj/structure/mob_spawner/recycler
+	desc = "A bizarre mess of robotic limbs, glowing microrefineries, and nanoassemblers gradually converting the pile of raw materials into active hivebots."
+	destructible = 1
+	icon = 'icons/obj/recycling.dmi'
+	icon_state = "grinder-b1"
+	name = "hivebot assembler"
+	simultaneous_spawns = 6
+	spawn_delay = 300
+
+TYPE_TABLE(/obj/structure/mob_spawner/recycler, mob_spawner_types, list(/mob/living/simple_mob/mechanical/hivebot/swarm = 200, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 50, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 25, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 10, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 10))
+
+/obj/structure/mob_spawner/recycler
+	desc = "A bizarre mess of robotic limbs, glowing microrefineries, and nanoassemblers gradually converting the pile of raw materials into active hivebots."
+	destructible = 1
+	icon = 'icons/obj/recycling.dmi'
+	icon_state = "grinder-b1"
+	name = "hivebot assembler"
+	simultaneous_spawns = 6
+	spawn_delay = 300
+
+TYPE_TABLE(/obj/structure/mob_spawner/recycler, mob_spawner_types, list(/mob/living/simple_mob/mechanical/hivebot/swarm = 200, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 50, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 25, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 10, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 10))
+
+
+#undef SPAWNER_MIN_WAIT
+#undef SPAWNER_FULL_WAIT

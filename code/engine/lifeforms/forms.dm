@@ -291,7 +291,7 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 /// TRUE when a form of E's type follows `key` (rx_readers() asks, so state_changed() publishes the write). Asked only for a key the reader plan
 /// says some form may follow (PLAN_READ_LIFEFORM, code/engine/change/plan.dm).
 /proc/lifeform_watching(datum/E, key)
-	var/datum/type_table/T = type_table_cache()[E.type]
+	var/datum/type_table/T = type_table_store?[E.type]
 	if(!T || !(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
 		return FALSE
 	var/datum/lifeform_plan/P = lifeform_plan_of(E)
@@ -302,7 +302,7 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 /proc/lifeform_published(datum/E, key)
 	if(QDELING(E) || param_writing)
 		return
-	var/datum/type_table/T = type_table_cache()[E.type]
+	var/datum/type_table/T = type_table_store?[E.type]
 	if(!T || !(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
 		return
 	var/datum/lifeform_plan/P = lifeform_plan_of(E)

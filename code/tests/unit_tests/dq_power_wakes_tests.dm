@@ -59,6 +59,7 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 	refresh_flush()
 	TEST_ASSERT(probe.rx?.look_key != looks[probe], "the probe redrew dark")
 	TEST_ASSERT(alarm.rx?.look_key != looks[alarm], "the air alarm redrew dark")
+	var/alarm_dark = alarm.rx?.look_key
 	var/parks_before = GLOB.every_activation_parks.n
 	test_time(2 SECONDS) // the probe's next interval comes due once, finds its gate false and parks
 	var/datum/activation/work = dq_power_wake_activation(probe)
@@ -81,7 +82,8 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 	TEST_ASSERT(!length(work?.every_parked), "the probe's work woke on the restore")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(probe.rx?.look_key, looks[probe], "the probe redrew lit")
-	TEST_ASSERT_EQUAL(alarm.rx?.look_key, looks[alarm], "the air alarm redrew lit")
+	// Not the look it had: while it was dark the area's mapped alarm took over as main, and keeps it.
+	TEST_ASSERT(alarm.rx?.look_key != alarm_dark, "the air alarm redrew lit")
 	test_time(3 SECONDS)
 	TEST_ASSERT(probe.steps > steps_unpowered, "the probe's work runs again")
 	apc.apply_area_power()

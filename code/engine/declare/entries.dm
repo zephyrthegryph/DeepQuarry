@@ -67,6 +67,13 @@
 	if(istype(value, /datum/entry))
 		var/datum/entry/E = value
 		return "e:[E.sig]"
+	if(istype(value, /alist))
+		// By key and value: an alist indexes by key, so the positional walk below would read every one as the same empty list and intern them all together.
+		var/alist/table = value
+		var/list/pairs = list()
+		for(var/k in table)
+			pairs += entry_value_signature(k) + "=" + entry_value_signature(table[k])
+		return "a\[[jointext(pairs, ",")]]"
 	if(islist(value))
 		var/list/L = value
 		var/list/parts = list()
@@ -105,11 +112,14 @@
 	var/line
 	/// The section of the block the entry is written under, or null.
 	var/section_name
+	/// The file of the entry when it is not the block's own: an entry written in a CAPABILITIES_PART(T, feature) block of another file.
+	var/file
 
-/proc/entry_line(line, section_name = null)
+/proc/entry_line(line, section_name = null, file = null)
 	var/datum/entry/line/L = new
 	L.line = line
 	L.section_name = section_name
+	L.file = file
 	return L
 
 /// Where an entry was declared: "file:line" of its CAPABILITIES list (with " section <name>" when it sits in a section), or "?" when unknown.
@@ -128,13 +138,17 @@
 /// `weak = TRUE` (relations proposal D5): the var stores a generation-checked handle, the build generates the accessor (`v()` reads the datum or
 /// null; a many reads the live members), and nothing is indexed or published. Nothing runs when the target dies, so on_unlink, on_other_deleted and
 /// by = are refused with it: a reader that must react to the death uses a normal ref_one.
+/// `unindexed = TRUE`: the write skips the target's reverse index, so the target cannot find this holder: rel_sources() and hops do not see it, and nothing clears
+/// the var when the target dies. Only for a link whose target clears it itself (rel_clear() in its on_destroy) and that no reactive read hops over; rel_names() still answers.
 /// The constructor arguments and early/starts_after phases are the same as owns_one().
-/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, starts = null, starts_args = null, early = FALSE, starts_after = null, weak = FALSE)
+/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, starts = null, starts_args = null, early = FALSE, starts_after = null, weak = FALSE, unindexed = FALSE)
 	ref_weak_check("ref_one", var_name, weak, on_other_deleted, on_unlink, by)
+	if(unindexed && (weak || on_other_deleted != OTHER_CLEAR || on_unlink || by))
+		declare_report("ref_one(\"[var_name]\", unindexed = TRUE): nothing finds the holder from the target, so weak, on_other_deleted, on_unlink and by cannot go with it")
 	if(!isnull(starts) && by)
 		declare_report("ref_one(): starts and keyed lookup by cannot both initialize the same reference")
 		return null
-	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "starts" = starts, "starts_args" = starts_args, "early" = !!early, "starts_after" = starts_after, "weak" = !!weak))
+	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "starts" = starts, "starts_args" = starts_args, "early" = !!early, "starts_after" = starts_after, "weak" = !!weak, "unindexed" = !!unindexed))
 
 /proc/ref_many(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, weak = FALSE)
 	ref_weak_check("ref_many", var_name, weak, on_other_deleted, on_unlink, by)
@@ -153,10 +167,15 @@
 /// else written; the camera's assembly starts_set = list(nameof(/obj/item/camera_assembly::state) = 4)). on_lost = PROC_REF(x) runs x(thing) on the
 /// holder whenever an occupant leaves the var, however it was filled (it was deleted, or moved out of a contained slot). starts_after = nameof(other)
 /// builds this occupant after the one in `other` (declaration order otherwise, ancestors first), so its init or starts_set can read it.
+/// lazy = TRUE (the storage contract, code/engine/declare/lazy_state.dm): rarely used state lives in a small owned state datum that does not exist until the
+/// first write. The var stays null, a read is `A.burn?.fuel`, and a write goes through the generated accessor `burn_of(A)`, which makes the datum on its first
+/// call: `burn_of(A).set_fuel(5)`. It is owned, so it dies with its holder. Needs the type (`owns_one(nameof(burn), /datum/burn_state, lazy = TRUE)`) and no starts.
 /// early = TRUE builds the occupant before the holder's Initialize() chain runs (phase 0 of the init contract, final_api.html section 6): a body
 /// part the type's own code before `..()` reads (an AI's radio). It cannot read rolls(), which run at the root of the chain.
-/proc/owns_one(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null, starts_set = null, on_lost = null, starts_after = null, early = FALSE)
-	return entry_make(ENTRY_OWNS_ONE, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var, "starts_set" = starts_set, "on_lost" = on_lost, "starts_after" = starts_after, "early" = !!early))
+/proc/owns_one(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null, starts_set = null, on_lost = null, starts_after = null, early = FALSE, lazy = FALSE)
+	if(lazy && (isnull(type) || !isnull(starts) || copy_on_write))
+		declare_report("owns_one(\"[var_name]\", lazy = TRUE): needs the state type and takes no starts and no copy_on_write")
+	return entry_make(ENTRY_OWNS_ONE, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var, "starts_set" = starts_set, "on_lost" = on_lost, "starts_after" = starts_after, "early" = !!early, "lazy" = !!lazy))
 
 /// A screen element of the client HUD (/datum/hud): the hud owns it, so it goes when the hud does (the mob drops its hud on logout and builds a
 /// new one on login). `when = PROC_REF(x)` builds the element with the hud whenever x() on the hud is true; without it, the mob's
@@ -180,7 +199,7 @@
 			declare_report("owns_many(\"[var_name]\", count = [count]): count needs one type in starts = or type =")
 	return entry_make(ENTRY_OWNS_MANY, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var, "starts_set" = starts_set, "on_lost" = on_lost, "starts_after" = starts_after, "early" = !!early))
 
-/// link_pair(/type::var, /type::var): the macro of code/__defines/engine/declare.dm passes each end as the text it was written as.
+/// link_pair(/type::var, /type::var): the macro of code/defines/engine/declare/declare.dm passes each end as the text it was written as.
 /// `a_many` / `b_many` say an end is a list var (DM has no way to read a var's declared type; the generator will derive it).
 /proc/entry_link(a_text, b_text, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null, a_on_other_deleted = OTHER_CLEAR, b_on_other_deleted = OTHER_CLEAR, a_on_unlink = null, b_on_unlink = null, sparse = FALSE, holds_while = null, a_contributes = null, b_contributes = null, conflict = REPLACE)
 	var/list/a = link_end(a_text)
@@ -191,7 +210,7 @@
 		declare_report("links([a_text], [b_text]): conflict is REPLACE or REFUSE")
 	return entry_make(ENTRY_LINK, key, list("a_type" = a[1], "a_var" = a[2], "b_type" = b[1], "b_var" = b[2], "hot" = hot, "a_many" = a_many, "b_many" = b_many, "a_on_other_deleted" = a_on_other_deleted, "b_on_other_deleted" = b_on_other_deleted, "a_on_unlink" = a_on_unlink, "b_on_unlink" = b_on_unlink, "sparse" = sparse, "holds_while" = holds_while, "a_contributes" = a_contributes, "b_contributes" = b_contributes, "conflict" = conflict))
 
-/// The base of the CAPABILITIES(T) block header (code/__defines/engine/markers.dm): each block is an override of this on T, so a subtype's block
+/// The base of the CAPABILITIES(T) block header (code/defines/engine/declare/markers.dm): each block is an override of this on T, so a subtype's block
 /// does not clash with its parent's. Nothing calls it; the statements of a block are read by `analyze` and compiled for their names and arguments.
 /datum/proc/__capabilities()
 	return
@@ -234,7 +253,11 @@
 /// extend(key | CAP_X | TAG_X | /datum/act/x, parts...): changes what the type inherits. `parts` are opaque to E1: the engine that owns
 /// the addressed thing reads them (E2 for an op key, E4 for an act). drop = "id" relaxes a named requirement.
 /proc/extend(key_or_id, ENTRY_SLOTS, drop = null)
-	return entry_make(ENTRY_EXTEND, null, list("target" = key_or_id, "drop" = drop), entry_flatten(ENTRY_SLOT_LIST))
+	var/list/parts = entry_flatten(ENTRY_SLOT_LIST)
+	if(!length(parts) && isnull(drop))
+		declare_report("extend([islist(key_or_id) ? "list" : key_or_id]): no parts and no drop: it changes nothing")
+		return null
+	return entry_make(ENTRY_EXTEND, null, list("target" = key_or_id, "drop" = drop), parts)
 
 /// configure(e1_widget("a", power = 9), variant = /datum/capability/x/other): rebuilds the capability of that id and selector with the params
 /// the call names (the ones left out keep their value). configure(loot(chance = 20)) changes the static entry (static_entries.dm) a supertype declared. DM cannot take a capability's params as named arguments of one generic proc, so the

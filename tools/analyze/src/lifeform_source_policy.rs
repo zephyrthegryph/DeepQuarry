@@ -10,14 +10,7 @@ static ALLOWS: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
-    policy: Policy::Sites {
-        baseline: "tools/ci/lifeform_allows_baseline.txt",
-        header: &[
-            "ALLOW keeps whose reason describes a lifecycle form (tools/analyze/src/lints/lifeforms.rs). rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: convert the site to its form, then `analyze baseline --update --lint lifeform_allows`. A new one fails.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "allow_matches_form", hint: "the reason names what a lifecycle form declares: convert the site (rolls(), param()/make(), expire()/spent()/consumed()/destroyed()/dissolved()/replace_with(), lives_while(), tooltip()/click_on()/drag_onto(), with_actor()) instead of keeping it" }],
     allow: &[],
     lists: crate::allow_registry_fields::lifeform_allows::SCOPE_META_0.lists,
@@ -30,13 +23,7 @@ static HATCHES: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
-    policy: Policy::Ceilings {
-        baseline: "tools/ci/escape_hatches_baseline.txt",
-        header: &[
-            "escape_hatches ceilings (tools/analyze/src/lints/lifeforms.rs): the Initialize(), qdel and usr sites the lifecycle forms replace that remain.",
-            "Shrink-only: `analyze baseline --update --lint escape_hatches` lowers them; a kind at 0 has no line, so its next site fails (the hard ban).",
-        ],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta { name: "init_allow", hint: "an Initialize() kept with ALLOW(init/...): declare what it sets (rolls(), param(), contains(), starts_as(), derives(), registry())" },
         RuleMeta { name: "lifecycle_allow", hint: "a qdel kept with ALLOW(lifecycle): end it with a verb that says why (spent(), consumed(), destroyed(), dissolved(), expire(), replace_with())" },
@@ -52,14 +39,14 @@ static HATCHES: Meta = Meta {
 const ENGINE_PREFIXES: &[&str] = &[
     "code/engine/",
     "code/library/",
-    "code/datums/lifecycle/",
-    "code/controllers/subsystems/garbage.dm",
-    "code/controllers/kernel/", // the Kernel is the engine's one loop (its target home is code/engine/kernel): its boot step and watchdog clear usr
-    "code/__defines/",
-    "code/modules/unit_tests/",
-    "code/modules/benchmarks/",
+    "code/library/lifecycle/",
+    "code/world/systems/garbage.dm",
+    "code/world/kernel/", // the Kernel is the engine's one loop (its target home is code/world/kernel): its boot step and watchdog clear usr
+    "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
+    "code/tests/unit_tests/",
+    "code/tests/benchmarks/",
     "code/tests/",
-    "code/modules/tgs/",
+    "code/world/tgs/",
 ];
 
 pub(crate) fn is_engine(rel: &str) -> bool {

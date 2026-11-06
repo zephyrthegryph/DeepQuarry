@@ -2,7 +2,7 @@
 //! absent; the same BuildHost then owns the final unchanged full frame.
 use super::*;
 use std::sync::Arc;
-pub(super) fn all_names()->Vec<GeneratorName>{vec![GeneratorName::Actions,GeneratorName::AutoTracked,GeneratorName::Declare,GeneratorName::DeclareIds,GeneratorName::Deps,GeneratorName::DerivedReads,GeneratorName::Plans,GeneratorName::Reads,GeneratorName::SparseSlots,GeneratorName::Stats,GeneratorName::SystemAccessors,GeneratorName::TrackedLists,GeneratorName::UiTypes]}
+pub(super) fn all_names()->Vec<GeneratorName>{vec![GeneratorName::Actions,GeneratorName::AutoTracked,GeneratorName::Declare,GeneratorName::DeclareIds,GeneratorName::Deps,GeneratorName::DerivedReads,GeneratorName::Plans,GeneratorName::Reads,GeneratorName::Stats,GeneratorName::SystemAccessors,GeneratorName::TrackedLists,GeneratorName::UiTypes]}
 pub(super) fn cold_fixture()->(BuildHost,BuildRequest,PathBuf,PathBuf){
  let(host,mut request,cache,root)=crate::generation_test_fixture::fixture();
  std::fs::remove_file(root.join(GeneratorName::Deps.path())).unwrap();
@@ -12,7 +12,7 @@ pub(super) fn cold_fixture()->(BuildHost,BuildRequest,PathBuf,PathBuf){
  // test standing in for Auto's actual body/read role.
  for(relative,text)in [("deepquarry.dme",include_str!("../../../../analyze/fixtures/native-cold-generation/basic/deepquarry.dme")),("code/probe.dm",include_str!("../../../../analyze/fixtures/native-cold-generation/basic/code/probe.dm")),("code/tests/only.dm",include_str!("../../../../analyze/fixtures/native-cold-generation/basic/code/tests/only.dm"))]{std::fs::write(root.join(relative),text).unwrap();}
  request.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots=vec![root.join("code")];
- // Unlike the Deps-only fixture, all13 explicitly requests Auto's fixed
+ // Unlike the Deps-only fixture, all roles explicitly requests Auto's fixed
  // configuration observation. Absence is recorded by the real reader.
  request.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().configuration=root.join("tools/ci/lint_scopes.toml");
  (host,request,cache,root)

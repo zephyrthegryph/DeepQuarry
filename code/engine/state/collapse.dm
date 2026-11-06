@@ -2,7 +2,8 @@
  * Collapse eligibility (doc/rewrite/state.md section 1): an object may collapse
  * into a latent entry only if nothing live depends on it. The checks:
  *   - outgoing references the codecs refuse (the serializer's errors);
- *   - active timers and processing (state_refusal());
+ *   - processing, and a timer that cannot be carried (a world-clock keyed one); own-clock timers are
+ *     carried on the latent entry as data and re-armed when it materializes (timers_export());
  *   - observe() hooks with anything outside the subtree
  *     (behaviours are fine: they are type behaviour, state.md section 8);
  *   - incoming references: refcount() of each object in the subtree must equal
@@ -85,11 +86,12 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 	. += state_hook_blockers(nodes, internal)
 	. += state_refcount_blockers(nodes, internal, held_refs, name_holders)
 
-/// Running behaviour: timers and processing.
+/// Running behaviour: processing, and a timer a latent entry cannot carry.
 /proc/state_running_blockers(datum/node)
 	. = list()
-	if(time_scheduler().timer_count(node))
-		. += "[node.type] has active timers"
+	var/timer_blocker = timers_collapse_blocker(node)
+	if(timer_blocker)
+		. += timer_blocker
 	if(node.datum_flags & DF_ISPROCESSING)
 		. += "[node.type] is processing"
 
@@ -138,7 +140,8 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 /// `internal_counts` (state_internal_ref_counts()) carries the subtree's references to every node,
 /// counted in one pass; without it they are counted for this node alone.
 /proc/state_refcount_excess(list/nodes, list/internal, i, list/internal_counts)
-	return refcount(nodes[i]) - state_accounted_refs(nodes[i], internal, internal_counts ? internal_counts[i] : null)
+	var/datum/node = nodes[i]
+	return refcount(node) - state_accounted_refs(node, internal, internal_counts ? internal_counts[i] : null)
 
 /// References to `node` that its container, its contents and the subtree account for.
 /// Relation views naming it count too: collapse parks them (entity_handle_park()) and they re-link
@@ -149,6 +152,15 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 	// skips a collapsed entity, not an outside holder.
 	if(node.refresh_queued)
 		.++
+	// Its slot (code/engine/refs/slots.dm) holds it in handle_data until the destroy transaction frees it: the same bookkeeping, and the reason a lazy state
+	// row (which names its holder by slot) must not pin its holder.
+	if(node.handle_slot > 0 && handle_data?[node.handle_slot] == node)
+		.++
+	// A queued Rust push (refresh_mark() with DEP_PUSH and not DEP_ALL: a rust_push read, a bind, or a write the plan spares the draw
+	// of, which marks everything but the look) holds it in GLOB.refresh_push_queue until phase S: the same bookkeeping, and the drain
+	// skips a deleted (collapsed) entity.
+	if(GLOB.refresh_push_queue[node])
+		.++
 	if(ismovable(node))
 		var/atom/movable/movable = node
 		if(movable.loc)
@@ -158,29 +170,23 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 			var/datum/ledger/L = movable.loc.containment_ledger()
 			if(L && !(movable.loc in internal))
 				. += L.refs_to(movable)
-		. += state_om_slot_refs(movable, internal)
+		. += state_slot_refs(movable, internal)
 	if(isatom(node))
 		var/atom/A = node
 		. += STATE_REFS_PER_CONTENT * length(A.contents)
 
-/// References to `movable` held by the object model for its containment: its
-/// own record (when the owned-part scan did not already count it) and the slot
-/// relation edge linking it to its loc (om_slot_entered()), which the loc's
-/// record holds from outside the subtree. Other edges stay outside holders.
-/proc/state_om_slot_refs(atom/movable/movable, list/internal)
+/// References to `movable` held by the engine for its containment: its
+/// own record, when the owned-part scan did not already count it. Its slot in its
+/// loc's ledger is counted by the caller (the ledger's refs_to()).
+/proc/state_slot_refs(atom/movable/movable, list/internal)
 	. = 0
-	var/datum/scheduler_record/rec = movable.om_rec
+	var/datum/scheduler_record/rec = movable.sched_rec
 	if(!rec)
 		return
 	if(!(rec in internal))
 		for(var/name in rec.vars)
 			if(!(name in GLOB.state_refscan_skip))
 				. += state_count_refs_in(rec.vars[name], movable, 0, (name in GLOB.state_refscan_flat))
-	for(var/datum/relation_edge/edge as anything in rec.edges)
-		if(edge in internal)
-			continue
-		if(edge.source == movable && edge.target == movable.loc && istype(edge.rel, /datum/relation_definition/slot))
-			. += 1
 
 /// References to `node` from the vars of the subtree and its owned parts.
 /proc/state_internal_refs(datum/node, list/internal)

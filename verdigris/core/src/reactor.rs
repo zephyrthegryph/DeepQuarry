@@ -218,6 +218,8 @@ impl RateWatch {
         match self.cmp {
             Cmp::Above => v >= self.level,
             Cmp::Below => v <= self.level,
+            Cmp::AboveStrict => v > self.level,
+            Cmp::BelowStrict => v < self.level,
         }
     }
 }

@@ -1,0 +1,194 @@
+GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/effects/fire.dmi', "fire", appearance_flags = RESET_COLOR|KEEP_APART))
+
+/**
+ * The burning state (doc/rewrite/temperature.md §5, H3; was /datum/component/burning).
+ * Three parts:
+ * - a heat source: BURN_POWER watts on the object's heat body;
+ * - an integrity damage stream through the damage pipeline: the heat released
+ *   burns fuel, BURN_ENERGY_PER_INTEGRITY joules per point of integrity;
+ * - oxygen use: a gas command on the tile, O2 to CO2, BURN_OXYGEN_PER_JOULE.
+ * It ends when the fuel runs out, the tile's oxygen runs out, or the object
+ * cools BURN_EXTINGUISH_MARGIN below its ignition point (a heat watch).
+ * The ignition rule (code/datums/rules/declarations.dm) starts it.
+ * Mobs use the fire stacks status effect; their body side is H2's.
+ *
+ * A capability the object grants itself, ticking once a second; the burning state lives on the
+ * object. Start with O.start_burning(); extinguish() ends it.
+ * Can only be used on objects that use the integrity system.
+ */
+CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
+/datum/capability/burning
+
+/datum/capability/burning/entries()
+	return list(
+		every(1 SECONDS, then(CAP_PROC(burn_tick))),
+		extend(/datum/act/attack_hand, instead(then(CAP_PROC(burn_touched)))),
+		on_notice(/datum/notice/examine, then(CAP_PROC(burn_examined))),
+	)
+
+
+/// TRUE while this object burns.
+/obj/proc/is_burning()
+	return granted(src, /datum/capability/burning)
+
+/// Catches fire. Refused (FALSE) unless the object uses integrity and is flammable.
+/obj/proc/start_burning(fire_overlay = GLOB.fire_overlay, fire_particles = /particles/smoke/burning)
+	if(is_burning())
+		return TRUE
+	if(!atom_rules_of(src).uses_integrity)
+		stack_trace("Tried to start burning an atom ([type]) that does not use atom_integrity!")
+		return FALSE
+	// only flammable atoms should burn, but it's not really an error if we try
+	if(!(resistance_flags & FLAMMABLE) || (resistance_flags & FIRE_PROOF))
+		return FALSE
+	STATE_SET(src, fire_fx, burn_overlay, fire_overlay)
+	STATE_SET(src, fire_fx, burn_ended_by, null)
+	if(fire_particles)
+		// burning particles look pretty bad when they stack on mobs, so that behavior is not wanted for items
+		add_shared_particles(fire_particles, "[fire_particles]_[isitem(src)]", isitem(src) ? NONE : PARTICLE_ATTACH_MOB)
+		STATE_SET(src, fire_fx, burn_particle_type, fire_particles)
+	STATE_SET(src, fire_fx, burn_fuel, max_integrity * BURN_ENERGY_PER_INTEGRITY)
+	grant(src, /datum/capability/burning, src)
+	return TRUE
+
+/datum/capability/burning/on_activate(datum/activation/A)
+	var/obj/O = A.holder()
+	O.burning_start_heat()
+	O.set_resistance_flags(O.resistance_flags | ON_FIRE)
+
+/// The flames show over the burning holder.
+/datum/capability/burning/draw(atom/holder, datum/look/look)
+	..()
+	var/obj/O = holder
+	look.overlay(STATE_PEEK(O, fire_fx, burn_overlay))
+
+/datum/capability/burning/on_deactivate(datum/activation/A)
+	var/obj/O = A.holder()
+	O.burning_stop_heat()
+	if(STATE_PEEK(O, fire_fx, burn_particle_type))
+		O.remove_shared_particles("[STATE_PEEK(O, fire_fx, burn_particle_type)]_[isitem(O)]")
+		STATE_SET(O, fire_fx, burn_particle_type, null)
+	if(!QDELETED(O))
+		O.set_resistance_flags(O.resistance_flags & (~ON_FIRE))
+	STATE_SET(O, fire_fx, burn_overlay, null)
+
+/// The heat source and the cooling watch on the object's heat body.
+/obj/proc/burning_start_heat()
+	if(!create_heat_body(TRUE))
+		return
+	heat_body_keep(heat_body, TRUE)
+	var/limit = burn_out_temperature()
+	// A lit object is at least at its ignition point.
+	if(get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
+		heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
+	heat_body_power(heat_body, BURN_POWER)
+	var/datum/sense_sub/heat/cool_watch = sense_heat(src, TYPE_PROC_REF(/obj, burning_cooled), src, list(limit))
+	if(cool_watch)
+		link_make(src, LK_BURN_COOL_WATCH, cool_watch)
+
+/// Below this the fire goes out.
+/obj/proc/burn_out_temperature()
+	var/ignition = PROPERTY(src, PROP_IGNITION_POINT)
+	if(isnull(ignition))
+		ignition = FIRE_MINIMUM_TEMPERATURE_TO_EXIST
+	return max(T0C + 50, ignition - BURN_EXTINGUISH_MARGIN)
+
+/obj/proc/burning_stop_heat()
+	spent(link_get(src, LK_BURN_COOL_WATCH)) // the cooling watch goes with the fire
+	if(QDELETED(src) || isnull(heat_body))
+		return
+	heat_body_power(heat_body, 0)
+	if(isnull(heat_fire_turf))
+		heat_body_keep(heat_body, FALSE)
+
+/// The object cooled below the burn-out temperature (the LK_BURN_COOL_WATCH watch).
+/obj/proc/burning_cooled(band, was)
+	if(band || QDELETED(src) || !is_burning())
+		return
+	if(get_temperature() < burn_out_temperature())
+		burning_end(BURN_ENDED_COOLED)
+
+/obj/proc/burning_end(reason)
+	STATE_SET(src, fire_fx, burn_ended_by, reason)
+	extinguish()
+
+/obj/extinguish()
+	. = ..()
+	if(is_burning())
+		revoke(src, /datum/capability/burning, src)
+
+/datum/capability/burning/proc/burn_tick(datum/act/timer/A)
+	var/obj/O = A.holder
+	O.burning_step(A.dt / (1 SECONDS))
+
+/// One step of burning, `seconds_per_tick` long.
+/obj/proc/burning_step(seconds_per_tick)
+	if(QDELETED(src))
+		return
+	// A burnt-down object can linger at <=0 integrity in a "broken"
+	// (integrity_failure) state without being qdel'd. take_damage() CRASHes on a
+	// <=0-integrity atom (atom_defense.dm), so stop burning it — put the fire out
+	// instead of re-damaging a wreck every tick (this was crashing repeatedly on
+	// benches/furniture caught in a sustained hotspot once atmos fires actually run).
+	if(atom_rules_of(src).uses_integrity && get_integrity() <= 0)
+		extinguish()
+		return
+	// Check if the object somehow became fireproof, put it out if so
+	if(resistance_flags & FIRE_PROOF)
+		extinguish()
+		return
+	// Oxygen: the fire draws BURN_OXYGEN_PER_JOULE from the tile (a gas command).
+	// Its heat is already on the object's body (the heat source).
+	var/joules = min(BURN_POWER * seconds_per_tick, STATE_PEEK(src, fire_fx, burn_fuel))
+	if(!burn_gas_step(get_turf(src), joules, FALSE))
+		burning_end(BURN_ENDED_OXYGEN)
+		return
+	// Fuel and the integrity damage stream.
+	STATE_SET(src, fire_fx, burn_fuel, STATE_PEEK(src, fire_fx, burn_fuel) - (joules))
+	deal_damage(DAMAGE_THERMAL, joules / BURN_ENERGY_PER_INTEGRITY, FIRE, flags = DAMAGE_PACKET_SILENT)
+	if(QDELETED(src) || !is_burning())
+		return
+	if(STATE_PEEK(src, fire_fx, burn_fuel) <= 0)
+		burning_end(BURN_ENDED_FUEL)
+
+/// Alerts any examiners that the object is on fire (even though it should be rather obvious)
+/datum/capability/burning/proc/burn_examined(datum/notice/examine/A)
+	var/obj/O = A.holder
+	A.texts += span_danger("[O.p_Theyre()] burning!")
+
+/// Handles searing the hand of anyone who tries to touch the object without protection.
+/datum/capability/burning/proc/burn_touched(datum/act/attack_hand/A)
+	var/obj/O = A.holder
+	var/mob/living/carbon/user = A.user
+	if(!iscarbon(user) || user.can_touch_burning(O))
+		to_chat(user, span_notice("You put out the fire on [O]."))
+		O.extinguish()
+		return TRUE
+
+	user.injure(INJURY_BURN, 5, user.hand ? BP_L_HAND : BP_R_HAND, O)
+	to_chat(user, span_userdanger("You burn your hand on [O]!"))
+	user.emote("scream")
+	play_sfx(O, SFX_ITEMS_WEAPONS_SEAR)
+	return TRUE
+
+/**
+ * The gas side of a fire releasing `joules` on `location`, shared by burning
+ * objects and burning mobs: a gas command turning the oxygen it needs
+ * (BURN_OXYGEN_PER_JOULE) into CO2, and, with `heat_to_gas`, the heat into the
+ * tile's gas (a burning object's heat goes to its own body instead).
+ * Returns FALSE, doing nothing, when the tile has too little oxygen.
+ */
+/proc/burn_gas_step(turf/location, joules, heat_to_gas = TRUE)
+	var/datum/gas_mixture/air = location?.return_air()
+	if(!air)
+		return FALSE
+	var/oxygen = joules * BURN_OXYGEN_PER_JOULE
+	if(air.get_moles(GAS_O2) < max(oxygen, BURN_MIN_OXYGEN_MOLES))
+		return FALSE
+	air.adjust_multiple_gases(list(GAS_O2 = -oxygen, GAS_CO2 = oxygen))
+	if(heat_to_gas)
+		heat_add(air, joules, HEAT_SOURCE_FIRE)
+	return TRUE
+
+CAPABILITIES_PART(/obj, burning)
+	links(LINK_END(/obj, LK_BURN_COOL_WATCH), LINK_END(/datum/sense_sub/heat, LK_BURN_COOL_WATCH_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the heat watch that puts the fire out when the object cools, gone with it

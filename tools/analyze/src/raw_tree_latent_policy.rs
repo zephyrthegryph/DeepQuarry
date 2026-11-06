@@ -5,7 +5,6 @@ use crate::lint::{Meta,Policy,RuleMeta,ScanKind};
 use crate::tree::{SourceFile,Select};
 use crate::dm::pylines::py_splitlines;
 use crate::util::is_py_space;
-pub const BASELINE: &str = "tools/ci/latent_baseline.txt";
 const HINT: &str = "go through latent_materialize_all()/latent_entries()/slot_contents()";
 
 pub static META: Meta = Meta {
@@ -16,14 +15,7 @@ pub static META: Meta = Meta {
     // os.walk: dot-files and dot-directories included.
     select: Select { roots: &[("code", "dm")], hidden: true },
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Raw contents walks on latent holders (tools/ci/latent_lint.py). rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: fix a site through the ledger API, then `python tools/ci/latent_lint.py --update`.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "raw_walks", hint: HINT }],
     allow: crate::allow_registry_fields::latent::ALLOW_0,
     lists: crate::allow_registry_fields::latent::SCOPE_META_0.lists,

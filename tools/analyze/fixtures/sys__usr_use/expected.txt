@@ -1,6 +1,6 @@
 usr_outside_verb	code/__defines_other/macros.dm	2
 usr_outside_verb	code/modules/__defines/macros.dm	2
-usr_outside_verb	code/modules/tgs/x.dm	2
+usr_outside_verb	code/world/tgs/x.dm	2
 usr_outside_verb	code/modules/uu/a.dm	2
 usr_outside_verb	code/modules/uu/a.dm	3
 usr_outside_verb	code/modules/uu/a.dm	14

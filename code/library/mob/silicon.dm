@@ -62,6 +62,14 @@
 	var/mob/actor = A.actor
 	return istype(actor) && actor.remote_link_allows(src)
 
+/// Is this mob a silicon unit (an AI, cyborg, drone or pAI), whatever its link state? A window's data and a helper that already hold the actor
+/// ask the actor's own type; the input's authority says how the input came, which a cyborg whose link is down no longer shows.
+/mob/proc/is_silicon_unit()
+	return FALSE
+
+/mob/living/silicon/is_silicon_unit()
+	return TRUE
+
 /mob/living/silicon/ai/click_authority()
 	return AUTH_REMOTE_ACCESS
 

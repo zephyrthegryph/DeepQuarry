@@ -1,0 +1,438 @@
+//Hello, welcome to the tyr outsider content.
+//We're going to have some oddities here.
+//Otherwise holds stuff meant for outsiders on tyr
+/obj/item/reagent_containers/food/snacks/weatherlily
+	name = "strange leaves"
+	desc = "A strange flower producing an odd substance."
+	icon = 'icons/obj/tribal_gear.dmi'
+	icon_state = "leaves"
+	bitesize = 1
+
+// REAGENT_ID_AMATOXIN would suit the lore of this being a strange bioengineered thing to mess with organic things, but it's one of two food sources
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/weatherlily)
+	configure(reagents(add = list(REAGENT_ID_LUMINOL = 1, REAGENT_ID_PROTEIN = 1)))
+
+//The source of the materials
+/obj/structure/outcrop/weathered_gate
+	name = "outcrop"
+	desc = "A boring rocky outcrop."
+	icon = 'icons/obj/tribal_gear.dmi'
+	density = TRUE
+	anchored = TRUE
+	icon_state = "outcrop"
+	mindrop = 3
+	upperdrop = 8
+	outcropdrop = /obj/item/stack/material/weathered_agate
+
+CAPABILITIES(/obj/structure/outcrop/weathered_gate)
+	configure(atom_rules(throwpass = 1))
+
+/obj/structure/flora/tyr
+	name = "flora"
+	desc = "A strange plant."
+	icon = 'icons/obj/tribal_gear.dmi'
+
+	randomize_size = TRUE
+
+	removal_tool = /obj/item/shovel
+	harvest_tool = /obj/item/material/knife
+	harvest_count = 0
+	destroy_on_harvest = FALSE
+	randomize_harvest_count = FALSE
+	max_harvests = 3
+	harvest_loot = list(/obj/item/stack/material/fiber = 1)
+
+/obj/structure/flora/tyr/stonetree
+	name = "flora"
+	desc = "A strange plant."
+	icon_state = "stonetree"
+	harvest_loot = list(/obj/item/stack/material/wood = 1)
+
+/obj/structure/flora/tyr/lilly
+	name = "flora"
+	desc = "A strange plant."
+	icon_state = "lilly"
+	harvest_loot = list(/obj/item/reagent_containers/food/snacks/weatherlily = 1)
+
+/obj/structure/flora/tyr/flowers
+	name = "flora"
+	desc = "A strange plant."
+	icon_state = "tyrflora"
+
+CAPABILITIES(/obj/structure/flora/tyr/flowers)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/tyr/flowers/roll_icon_state(datum/roller/R)
+	return "tyrflora[R.number(1, 5)]gb"
+
+//tier 2
+/obj/item/reagent_containers/food/snacks/ant
+	name = "ant meat"
+	desc = "A slice from a strange beast"
+	icon_state = "meat"
+	nutriment_amt = 3
+	nutriment_desc = list(REAGENT_ID_PROTEIN = 4)
+	bitesize = 2
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mutatedmeat)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
+
+/obj/item/prop/alien/prototype
+	name = "alien prototype"
+	desc = "You have no idea what this thing does."
+	icon = 'icons/obj/tribal_gear.dmi'
+	icon_state = "crystal"
+	w_class = ITEMSIZE_SMALL
+
+	var/static/list/possible_states = list("crystal", "generator","core", "hilt")
+
+CAPABILITIES(/obj/item/prop/alien/prototype)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/prop/alien/prototype/proc/roll_icon_state(datum/roller/R)
+	return R.choose(possible_states)
+
+/* Yoinked for refrence
+/obj/item/arrow/standard
+	name = "arrow"
+	desc = "It's got a tip for you - get the point?"
+	icon = 'icons/obj/guns/projectile/bows.dmi'
+	icon_state = "arrow"
+	item_state = "bolt"
+	w_class = ITEMSIZE_NORMAL
+
+CAPABILITIES(/obj/item/arrow/standard)
+	configure(item_thrown(force = 8))
+	configure(item_combat(sharp = TRUE, edge = FALSE))
+*/
+
+//So, going to have three/four intended source of damage
+//Bows,a hammer, and a sword for certian. Debating spear or throwing weapon.
+//From what I can tell, standard arrows deal 8 damage but have good range although strage ammo and slower
+//As I type this, just going to go with spear.
+//Hammer has a slower attack but thwacks harder.
+//spear gets reach
+//sword middling damage
+//Tier 1 gear
+/obj/item/melee/agate_spear
+	name = "makeshift spear"
+	desc = "A spear made from strange wood and gemstones"
+	icon = 'icons/obj/tribal_gear.dmi'
+	icon_state = "agate_spear"
+
+CAPABILITIES(/obj/item/melee/agate_spear)
+	configure(item_combat(force = 12, reach = 2))
+/*	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
+		)*/
+
+/obj/item/melee/agate_sword
+	name = "makeshift sword"
+	desc = "A sword made from strange wood and gemstones"
+	icon = 'icons/obj/tribal_gear.dmi'
+	icon_state = "agate_sword"
+/*	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
+		)*/
+
+CAPABILITIES(/obj/item/melee/agate_sword)
+	configure(item_combat(force = 15))
+
+/obj/item/melee/agate_hammer
+	name = "makeshift hammer"
+	desc = "A hammer made from strange wood and gemstones"
+	icon = 'icons/obj/tribal_gear.dmi'
+	icon_state = "agate_hammer"
+/*	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
+		)*/
+
+CAPABILITIES(/obj/item/melee/agate_hammer)
+	configure(item_combat(force = 40, attack_speed = 24)) // base attack speed is 8: three times slower
+
+/obj/item/clothing/suit/armor/tyrtribalcloak
+	name = "leaf cloak"
+	desc = "A strange cloak made of leaves and fiber. A strange residue resides upon the equipment"
+	icon = 'icons/mob/tribal_gear.dmi'
+	icon_override = 'icons/mob/tribal_gear.dmi'
+	icon_state = "lilly_cloak"
+	var/block_chance = 20
+
+CAPABILITIES(/obj/item/clothing/suit/armor/tyrtribalcloak)
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=20;energy=20;bio=60;rad=60"))
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.2)))
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS))
+
+/obj/item/clothing/suit/armor/tyrtribalcloak/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
+	if(prob(block_chance))
+		user.visible_message(span_danger("\The [src] completely deflects [attack_text]!"))
+		return TRUE
+	return FALSE
+
+//Placeholder placing here, but the special items found in the strange vaults of tyr.
+//Starry Night
+//ehh either making custom medicells later or some fancy science tool
+
+
+//Blizzard
+/obj/item/tool/wirecutters/hybrid/alien
+
+CAPABILITIES(/obj/item/tool/wirecutters/hybrid/alien)
+	configure(item_tooling(speed = 0.2))
+
+/obj/item/tool/wrench/hybrid/alien
+
+CAPABILITIES(/obj/item/tool/wrench/hybrid/alien)
+	configure(item_tooling(speed = 0.2))
+
+/obj/item/tool/crowbar/hybrid/alien
+
+CAPABILITIES(/obj/item/tool/crowbar/hybrid/alien)
+	configure(item_tooling(speed = 0.2))
+
+/obj/item/tool/screwdriver/hybrid/alien
+
+CAPABILITIES(/obj/item/tool/screwdriver/hybrid/alien)
+	configure(item_tooling(speed = 0.2))
+
+/obj/item/weldingtool/experimental/hybrid/alien
+	eye_safety_modifier = 0
+
+//Rad Storm
+/obj/item/pickaxe/diamonddrill/alien
+	name = "alien mining drill"
+	icon_state = "diamonddrill"
+	item_state = "jackhammer"
+	digspeed = 6
+	sand_dig = TRUE
+	color = "#FF3300"
+
+CAPABILITIES(/obj/item/pickaxe/diamonddrill/alien)
+	configure(item_combat(reach = 3))
+
+//Blood Moon
+/obj/item/melee/energy/sword/dualsaber
+	name = "dual energy sword"
+	desc = "May the force be within you."
+	active_force = 40
+	active_armourpen = 70
+	active_throwforce = 40
+	icon_state = "dualsaber"
+	item_state = "dualsaber"
+	colorable = TRUE
+	defend_chance = 65
+
+CAPABILITIES(/obj/item/melee/energy/sword/dualsaber)
+	configure(item_combat(injury_kind = INJURY_CUT))
+	configure(item_combat(sharp = TRUE, edge = TRUE, can_cleave = TRUE))
+
+
+/obj/item/shield_projector/rectangle/automatic/tyrbarrier/get_mechanics_info(list/additional_information)
+	return ..(list("The barrier has 150 health, and does not benefit from armor. It will fully regenerate every 180 seconds.") + additional_information)
+
+/obj/item/shield_projector/rectangle/automatic/tyrbarrier
+	name = "tyrian energy barrier"
+	desc = "An automatic shield generator made from tyr tech. Wearable as a belt."
+	max_integrity = 125
+	shield_regen_delay = 180 SECONDS
+	shield_regen_amount = 125
+	w_class = ITEMSIZE_NO_CONTAINER
+	size_x = 4
+	size_y = 4
+	color = "#FF3300"
+	high_color = "#FF3300"
+	low_color = "#F08F4F"
+
+CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
+	configure(item_worn(slots = SLOT_BELT))
+
+
+//other Tyr Loot
+/obj/item/melee/energy/sword/top_shield
+	name = "energy spike shield"
+	desc = "A makeshift shield."
+	icon = 'icons/mob/tribal_gear.dmi'
+	icon_state = "topshield"
+	item_state = "topshield"
+	active_force = 10
+	active_armourpen = 60
+	active_throwforce = 40
+	defend_chance = 70
+	projectile_parry_chance = 70
+	active_w_class = ITEMSIZE_HUGE
+	w_class = ITEMSIZE_HUGE
+	item_icons = list(
+		slot_l_hand_str = 'icons/obj/guns/precursor/lefthand.dmi',
+		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
+		)
+
+CAPABILITIES(/obj/item/melee/energy/sword/top_shield)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)))
+	configure(movable_motion(throw_range = 7, throw_speed = 1))
+
+//E sword has 30 damage, 50 AP, and 65% projectile block
+//Axe is 60 damage, 65 AP, no guard
+//Normal attackspeed is 8
+//The katar is meant for quick strikes, the real damage from from effects
+/obj/item/melee/energy/tyr_katar/get_mechanics_info(list/additional_information)
+	return ..(list("Grab attacks light a fire, Disarm attacks briefly increase your speed, and combat-mode attacks phase out your foe's armor.") + additional_information)
+
+/obj/item/melee/energy/tyr_katar
+	name = "tyrian scout katar"
+	desc = "A forgien blade made via techniques formly lost. Gains a diffrent effect base off your stance."
+	lcolor = null
+	colorable = FALSE
+	active_force = 5
+	active_armourpen = 70
+
+	projectile_parry_chance = 70
+
+	w_class = ITEMSIZE_SMALL
+	active_w_class = ITEMSIZE_HUGE
+
+	icon = 'icons/mob/tribal_gear.dmi'
+	icon_state = "katar"
+	item_state = "katar"
+
+	item_icons = list(
+		slot_l_hand_str = 'icons/obj/guns/precursor/lefthand.dmi',
+		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
+		)
+
+CAPABILITIES(/obj/item/melee/energy/tyr_katar)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
+	configure(item_combat(attack_speed = 4))
+
+/obj/item/melee/energy/tyr_katar/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
+	if(active)
+		. = ..()
+		switch(stance)
+			if(I_GRAB)
+				target.adjust_fire_stacks(7)
+				target.ignite_mob()
+			if(I_DISARM)
+				user.apply_body_effect(/datum/body_effect/technomancer/haste, 2 SECONDS)
+			if(I_HURT)
+				target.apply_body_effect(/datum/body_effect/phase_armor, 5 SECONDS)
+
+/datum/body_effect/phase_armor
+	name = "Phased Armor"
+	desc = "Your defense has been phased out."
+	on_created_text = span_notice("Part of your form phases out.")
+	on_expired_text = span_warning("Your missing form phases back in.")
+	stacks = MODIFIER_STACK_EXTEND
+	factors = alist(STAT_INCOMING_ALL = 1.5)
+
+//Trades speed for defense
+//you are the wall
+/obj/item/melee/energy/tyr_hammer/get_mechanics_info(list/additional_information)
+	return ..(list("Grab attacks restore the wielder's health, Disarm attacks weaken the target, and combat-mode attacks can throw the target back.") + additional_information)
+
+/obj/item/melee/energy/tyr_hammer
+	name = "tyrian guardian hammer"
+	desc = "A strange hammer made via techniques formly lost. Gains a diffrent effect base off your stance."
+	lcolor = null
+	colorable = FALSE
+
+	active_force = 35
+	active_armourpen = 40
+
+	defend_chance = 50
+	projectile_parry_chance = 50
+
+	active_w_class = ITEMSIZE_HUGE
+
+	icon = 'icons/mob/tribal_gear.dmi'
+	icon_state = "hammer"
+	item_state = "hammer"
+
+	item_icons = list(
+		slot_l_hand_str = 'icons/obj/guns/precursor/lefthand.dmi',
+		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
+		)
+
+CAPABILITIES(/obj/item/melee/energy/tyr_hammer)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
+	configure(item_combat(attack_speed = 20, can_cleave = TRUE))
+
+/obj/item/melee/energy/tyr_hammer/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
+	if(active)
+		. = ..()
+		switch(stance)
+			if(I_GRAB)
+				user.mend(TREAT_BURN_CARE, 5)
+				user.mend(TREAT_TISSUE_REPAIR, 5)
+			if(I_DISARM)
+				target.status_at_least(STAT_WEAKENED, 30)
+			if(I_HURT)
+				var/atom/target_zone = get_edge_target_turf(user,get_dir(user, target))
+				if(!target.anchored)
+					target.throw_at(target_zone, 5, 2, user, FALSE)
+
+/obj/item/melee/energy/tyr_chainsaw/get_mechanics_info(list/additional_information)
+	return ..(list("Utilizes charge, which recharges with time.") + additional_information)
+
+/obj/item/melee/energy/tyr_chainsaw
+	name = "tyrian butcher blade"
+	desc = "What appears to be a weaponized chainsaw."
+	lcolor = null
+	colorable = FALSE
+
+	active_force = 60
+	active_armourpen = 20
+
+	defend_chance = 0
+	projectile_parry_chance = 0
+
+	active_w_class = ITEMSIZE_HUGE
+
+	hitcost = 320
+	use_cell = TRUE
+
+	icon = 'icons/mob/tribal_gear.dmi'
+	icon_state = "chainsaw"
+	item_state = "chainsaw"
+
+	item_icons = list(
+		slot_l_hand_str = 'icons/obj/guns/precursor/lefthand.dmi',
+		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
+		)
+
+CAPABILITIES(/obj/item/melee/energy/tyr_chainsaw)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
+	configure(item_combat(attack_speed = 15, can_cleave = TRUE))
+	owns_one(nameof(bcell), starts = /obj/item/cell/device/weapon/recharge/alien/tyr, on_destroy = ON_DESTROY_CONTAINED)
+
+
+/obj/item/shield/tyr_shield
+	name = "tyrian portable energy barrier"
+	desc = "A shield with a strange property of reducing the damage of projectiles instead of being effective at blocking them."
+	icon = 'icons/mob/tribal_gear.dmi'
+	icon_state = "barrier"
+	item_state = "barrier"
+
+
+	w_class = ITEMSIZE_LARGE
+	base_block_chance = 15
+
+CAPABILITIES(/obj/item/shield/tyr_shield)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(attack_verbs = list("shoved", "bashed")))
+
+/obj/item/shield/tyr_shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
+	if(user.incapacitated())
+		return 0
+	var/bad_arc = reverse_direction(user.dir) //arc of directions from which we cannot block
+	if(check_shield_arc(user, bad_arc, damage_source, attacker))
+		if(prob(get_block_chance(user, damage, damage_source, attacker)))
+			act_message(user, src, others = span_danger("%U% blocks [attack_text] with %T%!"))
+			return 1
+	else
+		var/obj/item/projectile/P = damage_source
+		P.damage = P.damage / 2
+		return 0

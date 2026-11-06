@@ -1,5 +1,5 @@
 // Floor decals: map markers painted onto the floor under them at map time (map_resolver(),
-// code/__defines/map_resolvers.dm). They never become atoms; the turf keeps the image in its
+// code/defines/engine/map_resolvers.dm). They never become atoms; the turf keeps the image in its
 // decals list (so it re-applies them after cutting overlays). Use them rather than distinct
 // icon_states when mapping interesting floor designs. Painted at runtime by floor_decal_paint().
 GLOBAL_LIST_EMPTY(floor_decals)
@@ -34,7 +34,7 @@ CAPABILITIES(/obj/effect/floor_decal)
 
 /// Adds one decal image to floor `T` (shared per look), remembered in T.decals.
 /proc/floor_decal_apply(turf/T, icon, icon_state, dir, color, alpha, layer = MAPPER_DECAL_LAYER, extra_key = "")
-	if(!(istype(T, /turf/simulated/floor) || istype(T, /turf/unsimulated/floor) || istype(T, /turf/simulated/shuttle/floor)))
+	if(!(istype(T, /turf/simulated/floor) || istype(T, /turf/open/fixed/floor) || istype(T, /turf/simulated/shuttle/floor)))
 		return
 	var/cache_key = "[alpha]-[color]-[dir]-[icon_state]-[T.layer]-[icon]-[layer][extra_key]"
 	var/image/I = GLOB.floor_decals[cache_key]

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Break and destroy on integrity are one native check in take_damage() for every atom; the integrity rules, the damage-flavour rules and the legacy-replacement switch are gone, so machines, windows and grilles no longer need a rule binding."
+  - bugfix: "The generated rule-threshold test reads the fire count of an object the rule deleted (melting) through its pre-deletion token."

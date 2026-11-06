@@ -8,12 +8,10 @@
 	desc = "This leather has been cleaned but still needs to be dried."
 	singular_name = "wet leather piece"
 	icon_state = "sheet-wetleather"
-	var/drying_threshold_temperature = 500 //Kelvin to start drying
 	no_variants = FALSE
 	max_amount = 20
 	stacktype = "wetleather"
 
-	var/dry_type = /obj/item/stack/material/leather
 
 /// Reduced when exposed to high temperatures; 0 is dry. The rack's native draw
 /// reads this producer through its drying relation.

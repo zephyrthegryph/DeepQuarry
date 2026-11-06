@@ -5,8 +5,8 @@
  * Layout under `DQ_SLOTS_DIR` (default E:/dq-cache/slots, else ~/.cache/dq/slots), one directory per class:
  * - `slot.N/owner`: a held slot (an atomic mkdir). key=value lines: kind, pid, winpid, worktree, label, started, priority. The
  *   file's mtime is the holder's heartbeat, touched every 15 s while it holds the slot.
- * - `queue/P-T-PID`: a waiter. P is 0 for the merge worktree (DQ_MERGE_WT) and 1 for everyone else, T the arrival time (13
- *   digits), so the merge worktree jumps the queue and the rest go in arrival order. A waiter takes a slot only when first.
+ * - `queue/P-T-PID`: a waiter. P is 0 for a compiler lane (or DQ_SLOT_PRIORITY=0) and 1 for everyone else, T the arrival time (13
+ *   digits), so priority 0 jumps the queue and the rest go in arrival order. A waiter takes a slot only when first.
  * - `events.tsv`: one line per release: time, class, slot, worktree, label, waited seconds, held seconds.
  * A holder or waiter is dead when its pid is gone or its heartbeat is older than DQ_SLOTS_STALE_SEC (default 600). A dead slot is
  * removed by the next waiter, so a crashed run never blocks the queue.
@@ -72,7 +72,7 @@ export function slotCapacity(cls: SlotClass): number {
 }
 
 /**
- * Slots kept free for the merge worktree (same rule as slots_usable() in dq_machine_slots.sh): a caller with priority 1 may hold only
+ * Slots kept free for priority 0 callers, the compiler lanes (same rule as slots_usable() in dq_machine_slots.sh): a caller with priority 1 may hold only
  * the first (capacity - reserve) slots. DQ_SLOTS_MERGE_RESERVE_<CLASS> or DQ_SLOTS_MERGE_RESERVE; default 1 for test_world with at
  * least 3 slots, else 0.
  */
@@ -102,10 +102,9 @@ function isLane(top: string, kind: 'compiler' | 'light'): boolean {
   return kind === 'compiler' ? /^pool-c[0-9]/.test(base) : base === 'pool-light';
 }
 
-/** The merge worktree and a compiler lane go to the front of every queue (priority 0). */
+/** A compiler lane goes to the front of every queue (priority 0). */
 function priorityOf(top: string): number {
   if (process.env.DQ_SLOT_PRIORITY !== undefined && process.env.DQ_SLOT_PRIORITY !== '') return Number(process.env.DQ_SLOT_PRIORITY);
-  if (norm(top) === norm(process.env.DQ_MERGE_WT ?? 'E:/projects/dq-wt/merge-base')) return 0;
   return isLane(top, 'compiler') ? 0 : 1;
 }
 
@@ -436,7 +435,7 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
       } catch {
         // gone
       }
-      log(`== machine slots: ${cls}: waiting ${waited}s${want > 1 ? ` for a group of ${want}, holding ${taken.length}` : ''}, place ${pos} of ${total} in the queue (at most ${max} at once on this machine; the merge worktree goes first). Held by:${who(dir, max)}`);
+      log(`== machine slots: ${cls}: waiting ${waited}s${want > 1 ? ` for a group of ${want}, holding ${taken.length}` : ''}, place ${pos} of ${total} in the queue (at most ${max} at once on this machine; priority 0 goes first). Held by:${who(dir, max)}`);
     }
     try {
       const now = new Date();

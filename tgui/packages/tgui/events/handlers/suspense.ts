@@ -63,6 +63,10 @@ export function suspendStart(): void {
   store.set(suspendingAtom, true);
 
   logger.log(`suspending (${Byond.windowId})`);
+  // Hide at once: DM's reply (suspend()) can take seconds under tick overrun,
+  // and it still does the state reset when it arrives.
+  Byond.winset(Byond.windowId, { 'is-visible': false });
+  profileTransition('browser-suspend-optimistic-hide');
   suspendMsg();
   suspendInterval = setInterval(suspendMsg, TWO_SECONDS);
 }

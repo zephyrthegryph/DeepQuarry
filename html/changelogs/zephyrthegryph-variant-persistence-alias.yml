@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Saved filth, trash and storage entries that name the old path of a collapsed variant type load as the parent with its variant, and variants are saved under that path"

@@ -13,9 +13,8 @@
 //!     `v.Cut(`, `v.Insert(`, `v.Swap(`, `v = `) in a proc of the declaring type or a subtype, other than its build proc.
 //!   * `allow_matches_form`: an `ALLOW(init/...)`, `ALLOW(lifecycle)` or `ALLOW(sys_usr_outside_verb)` whose reason describes what a form
 //!     now declares (a random roll, a constructor argument, a timed or used-up ending, a tooltip, an admin call): the site is converted, not kept.
-//! * `escape_hatches` (count ceilings, `tools/ci/escape_hatches_baseline.txt`): the sites the forms replace that remain, by kind. Each
-//!   ceiling only falls (`analyze baseline --update --lint escape_hatches`); a kind whose count reached 0 has no ceiling, so its next site
-//!   fails: that is the hard ban. Kinds: `init_allow` (ALLOW(init/...) keeps), `lifecycle_allow` (ALLOW(lifecycle) keeps), `usr_allow`
+//! * `escape_hatches` (a hard ban, ceilings 0): the sites the forms replace that remain, by kind. Every
+//!   kind is at 0, so its next site fails: that is the hard ban. Kinds: `init_allow` (ALLOW(init/...) keeps), `lifecycle_allow` (ALLOW(lifecycle) keeps), `usr_allow`
 //!   (ALLOW(sys_usr_outside_verb) keeps), `qdel_content` (every qdel( outside the engine) and `usr_content` (every `usr` outside the engine
 //!   and verb bodies).
 

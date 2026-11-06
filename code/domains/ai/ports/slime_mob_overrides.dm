@@ -21,19 +21,19 @@
 		return slime_state.is_justified_to_discipline()
 	return FALSE
 
-/mob/living/simple_mob/slime/xenobio/enrage()
+/mob/living/simple_mob/slime/xenobio/proc/enrage()
 	if(harmless)
 		return
 	if(slime_state)
 		slime_state.enrage()
 
-/mob/living/simple_mob/slime/xenobio/relax()
+/mob/living/simple_mob/slime/xenobio/proc/relax()
 	if(harmless)
 		return
 	if(slime_state)
 		slime_state.relax()
 
-/mob/living/simple_mob/slime/xenobio/pacify()
+/mob/living/simple_mob/slime/xenobio/proc/pacify()
 	set_harmless(TRUE)
 	if(slime_state)
 		slime_state.pacify()
@@ -42,7 +42,7 @@
 	set_melee_damage_lower(0)
 	update_mood()
 
-/mob/living/simple_mob/slime/xenobio/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
+/mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
 	if(!predecessor || !predecessor.slime_state || !slime_state)
 		return
 	slime_state.discipline = max(predecessor.slime_state.discipline - 1, 0)

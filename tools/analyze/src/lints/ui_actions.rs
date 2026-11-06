@@ -5,7 +5,7 @@
 //! the dispatcher rejects or no host answers, a key it drops or the proc doesn't declare) are the
 //! banned rule `problem`; the C1/C2 ratchets are `ui_unsent_param` / `ui_unvalidated_param` on the
 //! fingerprint baseline. The dispatcher's `ui_action_key()` normalisation is read out of
-//! `code/datums/capabilities/ui_actions.dm`, as in the Python.
+//! `code/library/capabilities/ui_actions.dm`, as in the Python.
 //!
 //! Quirks replicated: the problem list is not baselined and ignores ALLOW; an unsent parameter
 //! yields one site per parameter (several sites on the proc head line); `$` in the dispatcher's
@@ -25,7 +25,7 @@ use crate::tree::{Select, SourceFile, Tree};
 use crate::util::{py_rstrip, py_strip};
 use crate::{pat, pat_match};
 
-use crate::ui_actions_policy::{META,BASELINE,DISPATCHER,INTERFACES,R_UNSENT,R_UNVALIDATED,R_PROBLEM};
+use crate::ui_actions_policy::{META,DISPATCHER,INTERFACES,R_UNSENT,R_UNVALIDATED,R_PROBLEM};
 use crate::ui_actions_hosts::CAPS_DIR;
 
 // SAME dispatcher normalizer shared by both actual source owners.
@@ -316,11 +316,11 @@ impl Lint for UiActions {
         Some(Parity {
             old: &["tools/ci/ui_actions_lint.py"],
             old_raw: &[],
-            blank: &[BASELINE],
+            blank: &[],
             parse: ParseKind::FileLine,
             update: Some(&["tools/ci/ui_actions_lint.py", "--update"]),
             seed: Some(&["tools/ci/ui_actions_lint.py", "--seed"]),
-            files: &[BASELINE],
+            files: &[],
             selftest: Some(&["tools/ci/ui_actions_lint.py", "--selftest"]),
         })
     }

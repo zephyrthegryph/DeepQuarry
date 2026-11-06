@@ -20,7 +20,7 @@ MSG_DEF(autolathe/uploading, "You begin to upload %I% into %T%.", "%U% begins to
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 
-	circuit = /obj/item/circuitboard/autolathe
+	circuit = VARIANT(/obj/item/circuitboard/autolathe)
 
 	/// A map's word that the lathe starts hacked: its hack wire starts cut (mending it unhacks the lathe).
 	var/hacked_at_start = FALSE

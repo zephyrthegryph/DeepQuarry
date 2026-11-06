@@ -1,5 +1,5 @@
 // Behaviour-preservation tests for the mob/living domain (hc-mobs): what a player, an AI or an explosion can observe of the mobs whose legacy
-// declarations (DAMAGE_REACTION, om_ask, DECLARE_UI and the legacy interaction declarations) are converted to the final forms. The file passes on the legacy
+// declarations (DAMAGE_REACTION, ask, DECLARE_UI and the legacy interaction declarations) are converted to the final forms. The file passes on the legacy
 // code and after the conversion; only the adapter block below changes.
 //
 // Rules the tests keep (as in dq_p2_*_behaviour.dm):
@@ -79,7 +79,7 @@
 	P.silence_time = 0
 	P.emp_act(EMP_MEDIUM)
 	own_around()
-	TEST_ASSERT(P.silence_time > world.timeofday, "a pulse starts the communication reboot")
+	TEST_ASSERT(P.silence_time > REALTIMEOFDAY, "a pulse starts the communication reboot")
 
 /// A synthetic simple mob takes ionic damage from a pulse, scaled to its endurance; an organic one takes none.
 /datum/unit_test/dq_hc_mobs/simple_mob_emp_surge

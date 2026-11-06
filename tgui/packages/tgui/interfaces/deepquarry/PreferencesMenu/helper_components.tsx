@@ -8,6 +8,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import { Button, ColorBox, ImageButton, Stack } from 'tgui-core/components';
@@ -44,6 +45,50 @@ export const preloadImage = (url: string): void => {
 /// we've already drawn this session.
 const bitmapCache = new Map<string, string>();
 
+/// Runs at most `limit` tasks at once, the rest in arrival order: a picker's sprites must not all hit the client's
+/// resource server and the canvas pipeline in the same frame.
+export const makeLimiter = (limit: number) => {
+  let running = 0;
+  const waiting: Array<() => void> = [];
+  return async <T,>(task: () => Promise<T>): Promise<T> => {
+    if (running >= limit) {
+      await new Promise<void>((resolve) => waiting.push(resolve));
+    } else {
+      running++;
+    }
+    try {
+      return await task();
+    } finally {
+      const next = waiting.shift();
+      if (next) next();
+      else running--;
+    }
+  };
+};
+const renderLimit = makeLimiter(8);
+
+/// Whether the element has come near the visible part of its scroller (once true, stays true).
+const useNearView = <T extends Element>(enabled: boolean) => {
+  const ref = useRef<T | null>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    if (!enabled || near || !ref.current) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setNear(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setNear(true);
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [enabled, near]);
+  return [ref, near] as const;
+};
+
 /// Renders the output of a user-supplied OffscreenCanvas draw callback into an <img>.
 /// Re-renders when the render prop reference changes; caller should memoize via useCallback.
 /// Pass `cacheKey` to reuse the rendered data: URL across remounts (much cheaper
@@ -60,6 +105,7 @@ export const CanvasBackedImage = (props: {
   const cached = props.cacheKey ? bitmapCache.get(props.cacheKey) : undefined;
   const [bitmap, setBitmap] = useState<string>(cached ?? '');
   const size = props.size ?? 64;
+  const [placeholder, near] = useNearView<HTMLSpanElement>(!bitmap);
 
   useEffect(() => {
     // Fast path: cached value already populated, no need to re-render.
@@ -67,6 +113,7 @@ export const CanvasBackedImage = (props: {
       setBitmap(bitmapCache.get(props.cacheKey) ?? '');
       return;
     }
+    if (!near) return;
     const offscreenCanvas = new OffscreenCanvas(size, size);
     const ctx = offscreenCanvas.getContext('2d');
     if (!ctx) return;
@@ -75,9 +122,13 @@ export const CanvasBackedImage = (props: {
     let url = '';
 
     (async () => {
-      await props.render(offscreenCanvas, ctx);
-      const blob = await offscreenCanvas.convertToBlob();
-      if (!active) return;
+      // Queued long enough to have scrolled away or closed: skip the work.
+      const blob = await renderLimit(async () => {
+        if (!active) return null;
+        await props.render(offscreenCanvas, ctx);
+        return offscreenCanvas.convertToBlob();
+      });
+      if (!active || !blob) return;
       // Use FileReader to get a data: URL — survives unmount/remount where
       // ObjectURL would be revoked. Slightly larger but cacheable.
       const reader = new FileReader();
@@ -93,7 +144,7 @@ export const CanvasBackedImage = (props: {
     return () => {
       active = false;
     };
-  }, [props.render, size, props.cacheKey]);
+  }, [props.render, size, props.cacheKey, near]);
 
   // imageRendering: 'pixelated' — the OffscreenCanvas draws at 1 px = 1 source-px, but at
   // HiDPI scaling the <img> picks bilinear by default and DMI sprites end up blurry.
@@ -106,7 +157,12 @@ export const CanvasBackedImage = (props: {
       alt=""
       style={{ imageRendering: 'pixelated' }}
     />
-  ) : null;
+  ) : (
+    <span
+      ref={placeholder}
+      style={{ display: 'inline-block', width: size, height: size }}
+    />
+  );
 };
 
 /// Renders an icon_state from a DMI ref, tinted with `color`. The standard pattern is:
@@ -165,6 +221,140 @@ export const ColorizedImage = (props: {
   // to the hair picker) reuse the previously-drawn data URL.
   const cacheKey = `${iconRef}|${iconState}|${color ?? ''}|${dir ?? ''}|${size ?? 64}`;
   return <CanvasBackedImage render={render} size={size} cacheKey={cacheKey} />;
+};
+
+const GRADIENT_THUMB_HAIR = '#5a4a42';
+const GRADIENT_THUMB_TINT = '#ff9a2e';
+
+/// A hair gradient on a hair sprite, composed the way the game does: the hair, then the gradient cut to the hair's shape.
+export const HairGradientImage = (props: {
+  hairRef: string;
+  hairState: string;
+  gradientRef: string;
+  gradientState: string;
+  size?: number;
+}) => {
+  const { hairRef, hairState, gradientRef, gradientState, size } = props;
+  const render = useCallback(
+    async (canvas: OffscreenCanvas, ctx: OffscreenCanvasRenderingContext2D) => {
+      ctx.imageSmoothingEnabled = false;
+      const px = canvas.width;
+      const hair = await getImage(
+        `${hairRef}?state=${hairState}&dir=2&frame=1`,
+      );
+      const gradient = await getImage(
+        `${gradientRef}?state=${gradientState}&dir=2&frame=1`,
+      );
+      ctx.drawImage(hair, 0, 0, px, px);
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = GRADIENT_THUMB_HAIR;
+      ctx.fillRect(0, 0, px, px);
+      const layer = new OffscreenCanvas(px, px);
+      const layerCtx = layer.getContext('2d');
+      if (!layerCtx) return;
+      layerCtx.imageSmoothingEnabled = false;
+      layerCtx.drawImage(gradient, 0, 0, px, px);
+      layerCtx.globalCompositeOperation = 'source-in';
+      layerCtx.fillStyle = GRADIENT_THUMB_TINT;
+      layerCtx.fillRect(0, 0, px, px);
+      layerCtx.globalCompositeOperation = 'destination-in';
+      layerCtx.drawImage(hair, 0, 0, px, px);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(layer, 0, 0);
+    },
+    [hairRef, hairState, gradientRef, gradientState],
+  );
+  return (
+    <CanvasBackedImage
+      render={render}
+      size={size}
+      cacheKey={`gradient|${hairRef}|${hairState}|${gradientState}|${size ?? 64}`}
+    />
+  );
+};
+
+/// One sprite of a LayeredImage, bottom first.
+export type ImageLayer = {
+  icon: string;
+  icon_state: string;
+  color?: string | null;
+  blend?: 'multiply' | 'add';
+};
+
+/// Where each sprite of a LayeredImage lands on a `px` square: every sprite shares one scale, set by the smallest
+/// sprite (the body's 32-pixel tile) filling the square, centred horizontally and standing on the bottom edge, as
+/// BYOND draws an oversized sprite over its tile. A 64-pixel wing or taur overhangs the square and is clipped; the
+/// body is never shrunk to make room for it.
+export const layerPlacements = (
+  px: number,
+  sizes: ({ width: number; height: number } | null)[],
+) => {
+  const loaded = sizes.filter((s): s is { width: number; height: number } => !!s);
+  const tile = Math.max(
+    1,
+    loaded.length ? Math.min(...loaded.map((s) => Math.max(s.width, s.height))) : 1,
+  );
+  const unit = px / tile;
+  return sizes.map((s) => {
+    if (!s) return null;
+    const w = s.width * unit;
+    const h = s.height * unit;
+    return { x: (px - w) / 2, y: px - h, w, h };
+  });
+};
+
+/// Sprites stacked into one picture, each tinted on its own: a body with a part on it, placed by layerPlacements.
+/// A sprite that fails to load is left out.
+export const LayeredImage = (props: {
+  layers: ImageLayer[];
+  size?: number;
+}) => {
+  const { layers, size } = props;
+  const key = layers
+    .map((l) => `${l.icon}|${l.icon_state}|${l.color ?? ''}|${l.blend ?? ''}`)
+    .join(';');
+  const render = useCallback(
+    async (canvas: OffscreenCanvas, ctx: OffscreenCanvasRenderingContext2D) => {
+      ctx.imageSmoothingEnabled = false;
+      const px = canvas.width;
+      const images = await Promise.all(
+        layers.map((l) =>
+          getImage(`${l.icon}?state=${l.icon_state}&dir=2&frame=1`).catch(
+            () => null,
+          ),
+        ),
+      );
+      const placements = layerPlacements(px, images);
+      images.forEach((image, index) => {
+        const place = placements[index];
+        if (!image || !place) return;
+        const { x, y, w, h } = place;
+        const layer = new OffscreenCanvas(px, px);
+        const lctx = layer.getContext('2d');
+        if (!lctx) return;
+        lctx.imageSmoothingEnabled = false;
+        lctx.drawImage(image, x, y, w, h);
+        const color = layers[index].color;
+        if (color) {
+          lctx.globalCompositeOperation =
+            layers[index].blend === 'add' ? 'lighter' : 'multiply';
+          lctx.fillStyle = color;
+          lctx.fillRect(0, 0, px, px);
+          lctx.globalCompositeOperation = 'destination-in';
+          lctx.drawImage(image, x, y, w, h);
+        }
+        ctx.drawImage(layer, 0, 0);
+      });
+    },
+    [layers],
+  );
+  return (
+    <CanvasBackedImage
+      render={render}
+      size={size}
+      cacheKey={`layers|${key}|${size ?? 64}`}
+    />
+  );
 };
 
 /// ImageButton wrapper that takes an arbitrary ReactNode as the image. Useful with

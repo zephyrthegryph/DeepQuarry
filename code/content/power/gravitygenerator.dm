@@ -1,4 +1,5 @@
 
+/// z-level (text) -> the slots of the generators serving it.
 GLOBAL_LIST_EMPTY(gravity_generators)
 
 //
@@ -452,9 +453,9 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 		if(!GLOB.gravity_generators["[z]"])
 			GLOB.gravity_generators["[z]"] = list()
 		if(use_power == USE_POWER_ACTIVE)
-			GLOB.gravity_generators["[z]"] |= src
+			GLOB.gravity_generators["[z]"] |= SLOT(src)
 		else
-			GLOB.gravity_generators["[z]"] -= src
+			GLOB.gravity_generators["[z]"] -= SLOT_KNOWN(src)
 
 /obj/machinery/gravity_generator/main/proc/update_areas()
 	LAZYCLEARLIST(areas)

@@ -44,13 +44,13 @@
 	dir = 8
 	},
 /obj/machinery/atmospherics/unary/vent_pump{
-	external_pressure_bound = 0;
+	init_external_pressure_bound = 0;
 	external_pressure_bound_default = 0;
 	icon_state = "map_vent_in";
 	initialize_directions = 8;
-	internal_pressure_bound = 4000;
+	init_internal_pressure_bound = 4000;
 	internal_pressure_bound_default = 4000;
-	pressure_checks = 2;
+	init_pressure_checks = 2;
 	pressure_checks_default = 2;
 	pump_direction = 0;
 	use_power = 1

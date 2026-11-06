@@ -1,10 +1,6 @@
 /obj/mecha/medical/odysseus
 	desc = "These exosuits are developed and produced by Vey-Med. (&copy; All rights reserved)."
 	name = "Odysseus"
-	catalogue_data = list(
-		/datum/category_item/catalogue/technology/odysseus,
-		/datum/category_item/catalogue/information/organization/vey_med
-		)
 	icon_state = "odysseus"
 	initial_icon = "odysseus"
 	step_in = 2
@@ -19,6 +15,7 @@
 	icon_scale_y = 1.2
 
 CAPABILITIES(/obj/mecha/medical/odysseus)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/odysseus, /datum/category_item/catalogue/information/organization/vey_med)))
 	owns_one(nameof(hud), starts = /obj/item/clothing/glasses/hud/health/mech)
 	owns_one(nameof(hud), on_destroy = ON_DESTROY_CONTAINED)
 

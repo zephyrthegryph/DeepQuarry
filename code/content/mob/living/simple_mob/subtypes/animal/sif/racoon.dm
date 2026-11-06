@@ -1,0 +1,142 @@
+// Sakimm are small scavengers with an adoration for shiny things. They won't attack you for them, but you will be their friend holding something like a coin.
+
+/datum/category_item/catalogue/fauna/sakimm
+	name = "Sivian Fauna - Sakimm"
+	desc = "Classification: S Procyon cogitae \
+	<br><br>\
+	Small, social omnivores known to collect objects within their dens. \
+	The Sakimm form colonies that have been known to grow up to a hundred individuals. Primarily carnivorous hunters, \
+	they often supplement their diets with nuts, roots, and other fruits. \
+	Individuals are known to steal food and reflective objects from unsuspecting Sivian residents. \
+	It is advised to keep any valuable items within dull wraps when venturing near the den of a Sakimm."
+	value = CATALOGUER_REWARD_EASY
+
+/mob/living/simple_mob/animal/sif/sakimm
+	name = "sakimm"
+	desc = "What appears to be an oversized rodent with hands."
+	tt_desc = "S Procyon cogitae"
+
+
+	icon_state = "raccoon"
+	icon_living = "raccoon"
+	icon_dead = "raccoon_dead"
+	icon_rest = "raccoon_dead"
+	icon = 'icons/mob/animal.dmi'
+
+	endurance = 50
+	has_hands = TRUE
+	humanoid_hands = TRUE
+	minbodytemp = 175
+	pass_flags = PASSTABLE
+
+
+	movement_cooldown = -1
+
+	melee_damage_lower = 5
+	melee_damage_upper = 15
+	attacktext = list("nipped", "bit", "cut", "clawed")
+
+
+
+	var/obj/item/clothing/head/hat = null // The hat the Sakimm may be wearing.
+	var/static/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
+	var/randomize_size = TRUE
+
+/mob/living/simple_mob/animal/sif/sakimm/proc/remove_hat_op(datum/act/op/A)
+	drop_hat(A.actor)
+
+/mob/living/simple_mob/animal/sif/sakimm/proc/drop_hat(mob/user)
+	if(hat)
+		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
+		old_hat.forceMove(get_turf(user))
+		if(user == src)
+			to_chat(user, span_notice("You removed your hat."))
+			return
+		to_chat(user, span_warning("You removed \the [src]'s hat. You monster."))
+	else
+		if(user == src)
+			to_chat(user, span_notice("You are not wearing a hat!"))
+			return
+		to_chat(user, span_notice("\The [src] is not wearing a hat!"))
+
+/mob/living/simple_mob/animal/sif/sakimm/proc/give_hat_op(datum/act/op/A)
+	take_hat(A.actor)
+
+/mob/living/simple_mob/animal/sif/sakimm/proc/take_hat(mob/user)
+	if(hat)
+		if(user == src)
+			to_chat(user, span_notice("You already have a hat!"))
+			return
+		to_chat(user, span_notice("\The [src] already has a hat!"))
+	else
+		if(user == src)
+			if(istype(get_active_hand(), /obj/item/clothing/head))
+				var/obj/item/clothing/head/new_hat = get_active_hand()
+				if(!move_into(src, nameof(src.hat), new_hat, user, ledger_slot = SLOT_ID_BODY)) // out of the paw, onto the head
+					return
+				to_chat(user, span_notice("You put on the hat."))
+			return
+		else if(ishuman(user))
+			var/mob/living/carbon/human/H = user
+
+			if(istype(H.get_active_hand(), /obj/item/clothing/head) && !get_active_hand())
+				var/obj/item/clothing/head/newhat = H.get_active_hand()
+				H.drop_from_inventory(newhat, get_turf(src))
+				if(!stat)
+					set_use_stance(I_HELP)
+					newhat.attack_hand(src)
+			else if(src.get_active_hand())
+				to_chat(user, span_notice("\The [src] seems busy with \the [get_active_hand()] already!"))
+
+			else
+				to_chat(user, span_warning("You aren't holding a hat..."))
+
+/datum/say_list/sakimm
+	speak = list("Shurr.", "|R|rr?", "Hss.")
+	emote_see = list("sniffs","looks around", "rubs its hands")
+	emote_hear = list("chitters", "clicks")
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	configure(atom_rules(armor_spec = "melee=15;bullet=5;laser=5;bomb=10;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/sakimm)))
+	op("remove_hat", menu(desc = "Remove the animal's hat. You monster."), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
+	op("give_hat", menu(desc = "Give the animal a hat. You hero."), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
+	configure(mob_rules(faction = FACTION_SAKIMM))
+	configure(living_rules(species_sounds = "Raccoon"))
+	configure(living_rules(say_list_type = /datum/say_list/sakimm, use_modern_ai = TRUE))
+	configure(butchery_rules(meat_amount = 3))
+	configure(mob_rules(universal_understand = 1))
+	configure(mob_nature(pain_1p = list("chitter"), pain_3p = list("chitters")))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+	configure(mob_kind(attack_cooldown = 1 SECOND))
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	rolls(nameof(icon_scale_x), range_of(0.8, 1.1, 0.1), when = nameof(randomize_size))
+	rolls(nameof(icon_scale_y), PROC_REF(roll_same_scale), from = list(nameof(icon_scale_x)), when = nameof(randomize_size))
+
+/// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
+/mob/living/simple_mob/animal/sif/sakimm/draw(datum/look/look)
+	..()
+	look.hat(hat, -15) // Sakimm are tiny!
+
+/mob/living/simple_mob/animal/sif/sakimm/IIsAlly(mob/living/L)
+	. = ..()
+
+	var/mob/living/carbon/human/H = L
+	if(!istype(H))
+		return .
+
+	if(!.)
+		var/has_loot = FALSE
+		var/obj/item/I = H.get_active_hand()
+		if(I)
+			for(var/item_type in friend_loot_list)
+				if(istype(I, item_type))
+					has_loot = TRUE
+					break
+		return has_loot
+
+/mob/living/simple_mob/animal/sif/sakimm/intelligent
+	desc = "What appears to be an oversized rodent with hands. This one has a curious look in its eyes."
+	randomize_size = FALSE	// Most likely to have a hat.
+	melee_attack_delay = 0	// For some reason, having a delay makes item pick-up not work.

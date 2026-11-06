@@ -22,7 +22,7 @@
 	var/datum/anomaly_stats/stats
 	var/danger_mult = 1
 
-	// An anomaly acts only while a player is near (the proximity tracker, code/controllers/subsystems/proximity.dm).
+	// An anomaly acts only while a player is near (the proximity tracker, code/world/systems/proximity.dm).
 	proximity_tracked = TRUE
 
 CAPABILITIES(/obj/effect/anomaly)

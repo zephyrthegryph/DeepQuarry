@@ -5,6 +5,7 @@ import { describe, expect, test, afterEach } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import {
   acquireBenchExclusiveLock,
   benchRunsDir,
@@ -15,6 +16,7 @@ import {
   formatComparison,
   gateFor,
   loadSimilar,
+  masterRef,
   statsOf,
   BENCH_RUNS_DIR,
   type BenchRun,
@@ -248,6 +250,23 @@ describe('bench-compare gates', () => {
     expect(rows.find((r) => r.metric === 'system.machines.p99_ms')?.gate).toBeUndefined();
   });
 
+  test('idle p99 rising over a quarter and 8 points, or one more overrun, is a gated regression', () => {
+    const base = run({ server_phases: { idle_tick_p99: timing([40], '%'), idle_overruns: timing([2], 'ticks') } });
+    const head = run({ server_phases: { idle_tick_p99: timing([60], '%'), idle_overruns: timing([5], 'ticks') } });
+    const rows = compareRuns(base, head, 5);
+    expect(rows.find((r) => r.metric === 'idle_tick_p99')?.gate).toContain('idle_tick_p99');
+    expect(rows.find((r) => r.metric === 'idle_overruns')?.verdict).toBe('regression');
+    expect(rows.find((r) => r.metric === 'idle_overruns')?.gate).toContain('idle_overruns');
+  });
+
+  test('idle p99 moving by machine jitter or overruns by one is not gated', () => {
+    const base = run({ server_phases: { idle_tick_p99: timing([40], '%'), idle_overruns: timing([2], 'ticks') } });
+    const head = run({ server_phases: { idle_tick_p99: timing([46], '%'), idle_overruns: timing([3], 'ticks') } });
+    const rows = compareRuns(base, head, 5);
+    expect(rows.find((r) => r.metric === 'idle_tick_p99')?.gate).toBeUndefined();
+    expect(rows.find((r) => r.metric === 'idle_overruns')?.gate).toBeUndefined();
+  });
+
   test('a gated timing metric under dissimilar load is not comparable, not a regression', () => {
     const base = run({ idle: { input_p99: timing([1]) } }, quiet);
     const head = run({ idle: { input_p99: timing([50]) } }, busy);
@@ -303,5 +322,30 @@ describe('acquireBenchExclusiveLock', () => {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
+  });
+});
+
+describe('masterRef', () => {
+  const cwd = process.cwd();
+  afterEach(() => process.chdir(cwd));
+
+  function repo(): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dq-masterref-'));
+    const run = (...args: string[]) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir });
+    run('init', '-q', '-b', 'master');
+    run('commit', '-q', '--allow-empty', '-m', 'one');
+    return dir;
+  }
+
+  test('a repo with only a local master measures against it', () => {
+    process.chdir(repo());
+    expect(masterRef()).toBe('master');
+  });
+
+  test('origin/master wins over a stale local master', () => {
+    const dir = repo();
+    spawnSync('git', ['update-ref', 'refs/remotes/origin/master', 'HEAD'], { cwd: dir });
+    process.chdir(dir);
+    expect(masterRef()).toBe('origin/master');
   });
 });

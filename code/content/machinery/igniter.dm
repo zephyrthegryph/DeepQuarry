@@ -21,8 +21,32 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/igniter)
 	configure(uses_power(idle = 2, active = 4))
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = all_of(nameof(on), nameof(air_burnable)), wakes_on = list(nameof(on), nameof(air_burnable)))
+	gas_watch(changed = PROC_REF(air_changed), mask = GAS_DEPENDENCY_COMPOSITION)
+	after_init(0, then(PROC_REF(settle_air)))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
+
+/// The air on its tile could catch (hotspot_expose()'s own test: oxygen and a fuel, or a fire already there). Its step only runs while it could:
+/// four igniters exposed vacuum or plain air every machine frame for the whole round (0.65 ms a second on an idle station).
+/obj/machinery/igniter/var/air_burnable = FALSE
+
+/// The tile's gas changed (its gas watch): it rereads whether the air could catch.
+/obj/machinery/igniter/proc/air_changed(list/observation, index)
+	settle_air()
+
+/obj/machinery/igniter/proc/settle_air(datum/act/A)
+	set_air_burnable(igniter_air_burnable(loc))
+
+/// Whether hotspot_expose() on `T` could light or feed a fire.
+/proc/igniter_air_burnable(turf/open/T)
+	if(!istype(T) || !T.air)
+		return FALSE
+	if(T.active_hotspot)
+		return TRUE
+	var/datum/gas_mixture/air = T.air
+	if(air.get_moles(/datum/gas/oxygen) < 0.5)
+		return FALSE
+	return air.get_moles(/datum/gas/plasma) > 0.5 || air.get_moles(/datum/gas/tritium) > 0.5 || air.get_moles(/datum/gas/hydrogen) > 0.5 || air.get_moles(/datum/gas/freon) > 0.5
 
 /obj/machinery/igniter/proc/work_step(datum/act/timer/A)
 	if(power_lost())
@@ -30,6 +54,7 @@ CAPABILITIES(/obj/machinery/igniter)
 	var/turf/location = src.loc
 	if(isturf(location))
 		location.hotspot_expose(1000,500,1)
+	settle_air() // the fire burnt out or the fuel ran out: the step stops
 
 /// The look (the draw sweep: from its layers).
 /obj/machinery/igniter/draw(datum/look/look)

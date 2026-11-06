@@ -55,6 +55,12 @@ SCHEMA(/obj/item/cell, c_uid, num())
 	var/tmp/recharging = TRUE
 	/// gradual_charge(): one-second charge steps still to run.
 	var/tmp/gradual_charge_left = 0
+	/// The charge overlay's step (0, 25, 50, 75 or 100): what the look reads, so a charge change that keeps the step redraws nothing. An APC's
+	/// cell hears a charge report at every whole percent; drawing on each one redrew every seated cell about 8 times a second station-wide.
+	var/tmp/charge_step = -1
+	/// Whether any charge is stored: what a machine that runs off this cell reads (a portable pump or scrubber draws its running look from it), so a
+	/// cell that runs dry or is charged again redraws the machine and nothing else.
+	var/tmp/charged = FALSE
 
 
 // A self-charging cell steps every two seconds while it is below full; a gradual charge steps every second while it has steps left.
@@ -73,8 +79,54 @@ CAPABILITIES(/obj/item/cell)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(cell_blast_corrupt)))
 	every(2 SECONDS, then(PROC_REF(recharge_step)), when = all_of(nameof(self_recharge), nameof(recharging)))
 	every(1 SECOND, then(PROC_REF(gradual_charge_tick)), when = nameof(gradual_charge_left))
+	setup(PROC_REF(update_charge_step))
+	on_change(nameof(charge), ANY, then(PROC_REF(update_charge_step)))
+	on_change(nameof(maxcharge), ANY, then(PROC_REF(update_charge_step)))
 	ref_one(nameof(gradual_user))
 	setup(PROC_REF(start_up))
+
+/// Whether a fresh cell has anything for a material service to do at once: a custom assembly or an exothermic stock. A plain cell at its
+/// surroundings' temperature would take its first sample, find nothing to track and retire (creating, sampling and destroying about five
+/// milliseconds of service for each of the map's cells); it gets a service later, from the event that gives it a reason (heavy use, heat, a
+/// monitoring tool), like any other assembly. Whether the surroundings differ is decided by material_service_ambient_check(): at map load the
+/// turf's air is not set up yet (it reads 2.7 K), so a cell made while the world starts asks after the boot spread, when the air is real.
+/obj/item/cell/proc/material_service_needed_at_start()
+	if(material_assembly_view(src).custom)
+		return TRUE
+	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || primary_construction_material()
+	if(thermal?.exothermic_heat_rate > 0)
+		return TRUE
+	if(!GLOB.cells_ambient_ready)
+		GLOB.cells_awaiting_ambient += ref_token(src) // a handle, not the cell: held until init completes, which is when the air is real (cells_ambient_checked())
+		return FALSE
+	return material_service_ambient_differs()
+
+/// Whether the air around the cell is a different temperature from the cell (a fresh cell is at T20C).
+/obj/item/cell/proc/material_service_ambient_differs()
+	var/turf/location = get_turf(src)
+	var/datum/gas_mixture/ambient = location?.return_air()
+	var/ambient_temperature = ambient?.return_temperature() || T20C
+	return abs(T20C - ambient_temperature) >= MATERIAL_THERMAL_RESOLUTION
+
+/// Handles (ref_token) of the cells made while the world was initializing, waiting for their surroundings' air to be real.
+GLOBAL_LIST_EMPTY(cells_awaiting_ambient)
+/// Set once initialization is complete (cells_ambient_checked()): from then on a new cell reads its air at once.
+GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
+
+/// Initialization is complete: every cell that waited gets a service when it sits in air of another temperature, and the list is let go.
+/proc/cells_ambient_checked()
+	GLOB.cells_ambient_ready = TRUE
+	var/list/waiting = GLOB.cells_awaiting_ambient
+	GLOB.cells_awaiting_ambient = list()
+	var/started = 0
+	for(var/handle in waiting)
+		var/obj/item/cell/C = resolve_token(handle)
+		if(!istype(C) || QDELETED(C) || material_service_of(C))
+			continue
+		if(C.material_service_ambient_differs())
+			C.enable_material_service()
+			started++
+	log_world("MATERIAL SERVICE after boot: [length(waiting)] cell(s) checked, [started] started a service (the rest are at their air's temperature)")
 
 /// Takes its blueprint's effects, starts its material service and gets its id.
 /obj/item/cell/proc/start_up()
@@ -82,7 +134,8 @@ CAPABILITIES(/obj/item/cell)
 	// the standard construction. Unlike idle machine housings, cells therefore
 	// always need a service datum; it sleeps dependency-driven when stable.
 	apply_blueprint_effects()
-	enable_material_service()
+	if(material_service_needed_at_start())
+		enable_material_service()
 	c_uid = next_serial(power_cell)
 
 /obj/item/cell/get_cell()
@@ -114,11 +167,19 @@ CAPABILITIES(/obj/item/cell)
 
 	return use(cell_amt) / CELLRATE
 
-/// The look: the charge-level overlay, a quarter step of the stored charge.
+/// The look: the charge-level overlay, a quarter step of the stored charge (charge_step).
 /obj/item/cell/draw(datum/look/look)
 	..()
 	if(standard_overlays)
-		look.overlay("[initial(icon_state)]_[clamp(round(percent() * 4 / 100, 1), 0, 4) * 25]")
+		look.overlay("[initial(icon_state)]_[charge_step]")
+
+/// Keeps charge_step on the quarter step of the stored charge (it changes, and the cell redraws, only when the step does) and charged on whether any is stored.
+/obj/item/cell/proc/update_charge_step(datum/act/A)
+	var/step = clamp(round(percent() * 4 / 100, 1), 0, 4) * 25
+	if(step != charge_step)
+		set_charge_step(step)
+	if((charge > 0) != charged)
+		set_charged(charge > 0)
 
 /obj/item/cell/proc/percent()		// return % charge of cell
 	var/charge_percent = 0

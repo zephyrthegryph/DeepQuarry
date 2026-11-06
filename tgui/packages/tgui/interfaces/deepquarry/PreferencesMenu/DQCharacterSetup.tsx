@@ -14,15 +14,15 @@ import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
 import { CategoryPage } from './CategoryPage';
 import {
   ColorToolsContext,
-  normalizeHex,
-  PALETTE_KEY,
-  paletteFromValue,
+  colorsInUse,
+  type SlotName,
+  slotColors,
 } from './colors';
 import { labelForCategory } from './labels';
 import {
   buildSearchIndex,
-  type SearchHit,
   SearchHighlightContext,
+  type SearchHit,
   SettingsSearch,
 } from './search';
 import type {
@@ -40,6 +40,7 @@ const editorDataCache: Record<string, Record<string, unknown>> = {};
 /// Widget values and preview frames persist across updates: the server sends values for
 /// the categories it is answering for, and the preview only when it changed.
 const valuesCache: Record<string, unknown> = {};
+const colorLinksCache: Record<string, string> = {};
 let previewCache: CharacterPreviewAssets = {};
 /// The owner (prefs + slot) whose every-tab prefetch has been requested.
 let prefetchedOwner = '';
@@ -114,7 +115,7 @@ const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
                 flex: 1,
                 minHeight: 0,
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-end',
                 justifyContent: 'center',
                 // Wider sprites (dogborgs) overflow horizontally rather than
                 // shrink vertically — without this they'd render at half the
@@ -126,13 +127,14 @@ const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
                 <img
                   src={`data:image/png;base64,${assets[dir]}`}
                   alt=""
+                  onLoad={(e) => {
+                    // The server bakes the body size into the sprite; keep it. A slot holds the largest body
+                    // (PREVIEW_MAX_SCALE x 32 px tall), so a normal body is that fraction of it and a bigger one fills more.
+                    const img = e.currentTarget;
+                    img.style.height = `${(100 * img.naturalHeight) / (32 * PREVIEW_MAX_SCALE)}%`;
+                  }}
                   style={{
-                    // Match the slot height; width auto preserves aspect ratio.
-                    // For 32x32 humans this fills the square slot exactly. For
-                    // wider sprites (64x32 dogborgs) the image overflows to the
-                    // sides at the same pixel scale — matches the user's
-                    // expectation of "same scale as a character".
-                    height: '100%',
+                    height: `${100 / PREVIEW_MAX_SCALE}%`,
                     width: 'auto',
                     imageRendering: 'pixelated',
                   }}
@@ -145,6 +147,9 @@ const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
     </Box>
   );
 };
+
+/// The largest body size (RESIZE_HUGE): a slot is tall enough for it, so every size shows at its true scale.
+const PREVIEW_MAX_SCALE = 2;
 
 // Editors that fill their container and manage their own internal scrolling. When the
 // active page hosts one of these, the wrapping Section drops `scrollable` so we don't
@@ -167,6 +172,7 @@ export const DQCharacterSetup = () => {
     clearRecord(editorStaticVersions);
     clearRecord(editorDataCache);
     clearRecord(valuesCache);
+    clearRecord(colorLinksCache);
   }
   const structureVersion = data.dq_structure_version ?? 1;
   if (cachedStructureVersion !== structureVersion) {
@@ -185,6 +191,7 @@ export const DQCharacterSetup = () => {
   }
   Object.assign(editorDataCache, data.dq_editor_data ?? {});
   Object.assign(valuesCache, data.dq_values ?? {});
+  Object.assign(colorLinksCache, data.dq_color_links ?? {});
   if (data.character_preview_assets) {
     previewCache = data.character_preview_assets;
   }
@@ -200,20 +207,13 @@ export const DQCharacterSetup = () => {
     (c) => !moreCategories.includes(c),
   );
   const [highlight, setHighlight] = useState<string | null>(null);
-  const [colorClipboard, setColorClipboard] = useState<string[] | null>(null);
-  const references: Record<string, string> = {};
-  for (const [name, key] of [
-    ['Skin', 'skin_color'],
-    ['Hair', 'hair_color'],
-  ]) {
-    const hex = normalizeHex(values[key]);
-    if (hex) references[name] = hex;
-  }
+  const [brush, setBrush] = useState<SlotName | null>(null);
   const colorTools = {
-    palette: paletteFromValue(values[PALETTE_KEY]),
-    clipboard: colorClipboard,
-    setClipboard: setColorClipboard,
-    references,
+    slots: slotColors(values),
+    links: colorLinksCache,
+    inUse: colorsInUse(values),
+    brush,
+    setBrush,
   };
   const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
   // Rebuilt when a category structure arrives (the prefetch fills every tab).

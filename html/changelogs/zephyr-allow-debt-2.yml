@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A cyborg whose AI link is down is still a silicon at the supply console: budget, market and the requisition form treat it as one"

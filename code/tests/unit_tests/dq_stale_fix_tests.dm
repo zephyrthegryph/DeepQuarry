@@ -108,9 +108,9 @@
 	assert_fresh(H, STAT_BLINDED, "sighted human, released again")
 
 /// A dose of blindness lapses on the Life clock and the stat follows it down.
-/datum/unit_test/life_om/dq_stale_fix_blinded_dose_lapses
+/datum/unit_test/life_seq/dq_stale_fix_blinded_dose_lapses
 
-/datum/unit_test/life_om/dq_stale_fix_blinded_dose_lapses/run_life()
+/datum/unit_test/life_seq/dq_stale_fix_blinded_dose_lapses/run_life()
 	var/mob/living/carbon/human/H = stale_fix_sighted_human(src)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.status_set(STAT_BLINDED, 2)
@@ -124,9 +124,9 @@
 	TEST_ASSERT(!difference, difference)
 
 /// A blindfold's hold is released when it comes off, and a visor's with it: the human is sighted again.
-/datum/unit_test/life_om/dq_stale_fix_blindfold_hold_released
+/datum/unit_test/life_seq/dq_stale_fix_blindfold_hold_released
 
-/datum/unit_test/life_om/dq_stale_fix_blindfold_hold_released/run_life()
+/datum/unit_test/life_seq/dq_stale_fix_blindfold_hold_released/run_life()
 	var/mob/living/carbon/human/H = stale_fix_sighted_human(src)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_disability_hold(H, STAT_BLINDED, SRC_BLINDFOLD, TRUE)
@@ -135,3 +135,15 @@
 	TEST_ASSERT(!held_by_source(H, STAT_BLINDED, SRC_BLINDFOLD), "Life finds no blindfold and releases the hold (holds: [stale_fix_holds(H, STAT_BLINDED)])")
 	var/difference = stale_fix_difference(H, STAT_BLINDED, "human without the blindfold")
 	TEST_ASSERT(!difference, difference)
+
+/// A placed machine or computer frame is solid through the stat layer: its served density is the composed one, and stays solid when the stat is recomposed.
+/datum/unit_test/dq_stale_fix/placed_frame_density_is_composed
+
+/datum/unit_test/dq_stale_fix/placed_frame_density_is_composed/Run()
+	var/obj/structure/frame/machine = allocate(/obj/structure/frame, test_floor(), SOUTH, TRUE, new /datum/frame/frame_types/machine)
+	var/obj/structure/frame/computer = allocate(/obj/structure/frame, test_floor(), SOUTH, TRUE, new /datum/frame/frame_types/computer)
+	for(var/obj/structure/frame/frame as anything in list(machine, computer))
+		TEST_ASSERT(frame.density, "a placed [frame.frame_type.name] frame is solid")
+		assert_fresh(frame, STAT_DENSITY, "placed [frame.frame_type.name] frame")
+		var/datum/stat_def/def = stat_def_of(STAT_DENSITY)
+		TEST_ASSERT(stat_compute(frame, def, stat_type_of(frame), frame.rx?.stats), "recomposed from scratch it is still solid: [stale_fix_holds(frame, STAT_DENSITY)]")

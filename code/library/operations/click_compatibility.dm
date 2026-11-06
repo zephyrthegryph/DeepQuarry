@@ -1,5 +1,5 @@
 /datum/input_event/click/publish_compatibility_click()
-	PUBLISH_LEGACY(target, /datum/notice/click, location, control, params, actor)
+	PUBLISH(target, click, location = location, control = control, params = params, user = actor)
 
 /mob/op_compatibility_click(atom/target, params)
 	return ClickOn(target, params)

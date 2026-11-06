@@ -36,7 +36,7 @@
 	W.set_reinf_material(get_material_by_name(MAT_PLASTEEL))
 	W.update_material()
 	var/cap = W.material.integrity + W.reinf_material.integrity
-	TEST_ASSERT(W.uses_integrity, "walls use integrity")
+	TEST_ASSERT(atom_rules_of(W).uses_integrity, "walls use integrity")
 	TEST_ASSERT_EQUAL(W.max_integrity, cap, "a wall's max integrity is its material cap")
 	TEST_ASSERT_EQUAL(W.get_integrity(), cap, "a new wall is intact")
 
@@ -73,7 +73,7 @@
 	W.take_damage(W.get_integrity() + 10)
 	TEST_ASSERT(!istype(T, /turf/simulated/wall), "a wall at zero integrity is dismantled ([T.type])")
 	// D-turf: floors keep integrity now; the overkill must not carry onto the floor left behind.
-	TEST_ASSERT(!T.uses_integrity || T.get_integrity() == T.max_integrity, "the floor left behind is undamaged ([T.uses_integrity ? T.get_integrity() : "n/a"])")
+	TEST_ASSERT(!atom_rules_of(T).uses_integrity || T.get_integrity() == T.max_integrity, "the floor left behind is undamaged ([atom_rules_of(T).uses_integrity ? T.get_integrity() : "n/a"])")
 
 	clear_debris(T)
 	T.ChangeTurf(old_type)
@@ -463,7 +463,7 @@
 	var/mob/living/carbon/human/bare = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/helper = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/striker = allocate(/mob/living/carbon/human, T)
-	var/turf/unsimulated/wall/supermatter/wall = T.ChangeTurf(/turf/unsimulated/wall/supermatter)
+	var/turf/open/fixed/wall/supermatter/wall = T.ChangeTurf(/turf/open/fixed/wall/supermatter)
 	var/obj/item/card/id/calm_card = allocate(/obj/item/card/id)
 	var/obj/item/card/id/hard_card = allocate(/obj/item/card/id)
 	bare.set_use_stance(I_HELP)

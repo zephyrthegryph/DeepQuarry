@@ -1,0 +1,1 @@
+GLOBAL_VAR(custom_event_msg)

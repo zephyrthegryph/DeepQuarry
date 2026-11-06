@@ -5,7 +5,7 @@
 //
 //   - Bookkeeping the driver owns outright, and which is real from E0: the roll counter behind chance(), the notice and
 //     spill counters, the lane budgets, the log queue, the recorder and the "not implemented" ledger. The engines feed
-//     them through the TEST_REC_* macros and TEST_ROLL / TEST_LANE_BUDGET (code/__defines/engine/test_hooks.dm).
+//     them through the TEST_REC_* macros and TEST_ROLL / TEST_LANE_BUDGET (code/defines/engine/declare/test_hooks.dm).
 //   - Forms that drive an engine: test_click, test_ui, test_menu, test_answer, test_drain, test_phase and test_time.
 //     Each calls one E0 stub (code/engine/kernel/stubs.dm), which says what it needs and returns null until that engine
 //     lands. Swapping the stub for the engine is the only change a driver form ever needs.

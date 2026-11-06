@@ -371,6 +371,7 @@
 
 /datum/unit_test/dq_hc_silicon/robopen_colour_and_mode/run_gate()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	interim_keep_awake(H) // the question is dropped if the body nobody plays falls asleep
 	var/obj/item/pen/robopen/pen = allocate(/obj/item/pen/robopen, test_floor())
 	hci_click(H, pen, pen)
 	settle()
@@ -383,6 +384,7 @@
 
 /datum/unit_test/dq_hc_silicon/robopen_mode_flips/run_gate()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	interim_keep_awake(H) // the question is dropped if the body nobody plays falls asleep
 	var/obj/item/pen/robopen/pen = allocate(/obj/item/pen/robopen, test_floor())
 	var/mode = pen.mode
 	hci_click(H, pen, pen)
@@ -513,6 +515,7 @@
 
 /datum/unit_test/dq_hc_silicon/shield_in_hand_asks_the_level/run_gate()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	interim_keep_awake(H) // the question is dropped if the body nobody plays falls asleep
 	var/obj/item/borg/combat/shield/shield = allocate(/obj/item/borg/combat/shield, test_floor())
 	hci_click(H, shield, shield)
 	settle()

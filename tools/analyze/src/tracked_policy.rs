@@ -27,8 +27,7 @@ pub(crate) static META: Meta = Meta {
 };
 
 /// The same writes in the test and benchmark trees, which `[lint.tracked]` exempts: a fixture that writes a tracked or stat var raw
-/// leaves shared map state changed with no mark (a later test's refresh sweep reports REFRESH DRIFT on it). Shrink-only over
-/// `tools/ci/tracked_tests_baseline.txt`; write through the setter (`A.set_equipment(...)`) or `set_var()` in a test.
+/// leaves shared map state changed with no mark (a later test's refresh sweep reports REFRESH DRIFT on it). Hard-banned; write through the setter (`A.set_equipment(...)`) or `set_var()` in a test.
 pub(crate) static META_TESTS: Meta = Meta {
     name: crate::allow_registry_fields::tracked::SCOPE_META_1.name,
     group: crate::allow_registry_fields::tracked::SCOPE_META_1.group,
@@ -36,21 +35,14 @@ pub(crate) static META_TESTS: Meta = Meta {
     legacy: "",
     select: CODE_MAPS_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/tracked_tests_baseline.txt",
-        header: &[
-            "tracked_tests: raw writes of TRACKED/SETTER/STAT/derive() vars in tests and benchmarks. rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: `analyze baseline --update --lint tracked_tests` drops fixed sites and never adds one.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[RuleMeta { name: "outside_setter", hint: "a test writes state through its setter too (A.set_x(v)), or set_var() when it must restore it" }, RuleMeta { name: "list_mutation", hint: LIST_HINT }],
     allow: crate::allow_registry_fields::tracked::ALLOW_0,
     lists: crate::allow_registry_fields::tracked::SCOPE_META_1.lists,
 };
 
 /// The test and benchmark trees `tracked_tests` reads (and `tracked` leaves to it).
-pub const TEST_PREFIXES: &[&str] = &["code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"];
+pub const TEST_PREFIXES: &[&str] = &["code/tests/unit_tests/", "code/tests/benchmarks/", "code/tests/"];
 
 /// The procs that construct an instance. A write of the instance's own tracked var there (`v = x`, `src.v = x`, `LAZYADD(v, x)`) is the construction of
 /// the instance, not a change of a live one: nothing reads or watches an object that is still being built, so the write sets the var and publishes
@@ -753,7 +745,7 @@ fn lexical_pattern_2()->&'static Pat{pat_match!(
             )}
 fn lexical_pattern_3()->&'static Pat{pat!(r"\bderive\(\s*nameof\(\s*(?:/[\w/]+::)?(\w+)\s*\)")}
 fn lexical_pattern_4()->&'static Pat{pat_match!(r"^\s*STAT\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,")}
-fn lexical_pattern_5()->&'static Pat{pat!(r"^CAPABILITIES\(\s*(/[\w/]+)\s*\)")}
+fn lexical_pattern_5()->&'static Pat{pat!(r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]")}
 fn lexical_pattern_6()->&'static Pat{pat!(r"\bsetup\(\s*PROC_REF\((\w+)\)")}
 fn lexical_pattern_7()->&'static Pat{pat!(r"(?:^|[(,])\s*(?:var/)?((?:/?[\w]+/)*[\w]+)/(\w+)\s*(?==|,|\)|$|\bas\b)")}
 fn lexical_pattern_8()->&'static Pat{pat!(r"^\s*set\s+(?:name|desc|category|hidden|src|popup_menu|instant|invisibility|background|waitfor)\s*=")}

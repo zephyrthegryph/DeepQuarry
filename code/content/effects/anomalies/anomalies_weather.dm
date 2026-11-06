@@ -88,12 +88,6 @@ CAPABILITIES(/obj/effect/anomaly/weather)
 		else
 			selected_weather.hear_sounds(mob, FALSE)
 
-/obj/effect/anomaly/weather/proc/pick_weather(new_weather_path)
-	if(!new_weather_path)
-		new_weather_path = pick(subtypesof(/datum/anomalous_weather))
-
-	rel_set(src, nameof(selected_weather), new new_weather_path)
-
 /// How long after init the telegraphed weather starts (after_init()).
 /obj/effect/anomaly/weather/var/telegraph_delay = 0
 

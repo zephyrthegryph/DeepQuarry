@@ -1,8 +1,8 @@
 // J6 batch 2: cleanup tests for the remaining kept keeps_dead sites (doc/rewrite/framework_gaps.md "J6 audit"). Same shape as dq_keeps_dead_cleanup_more_tests.dm.
 
-/datum/unit_test/om/keeps_dead_tube_arrival_opened_clears_moving
+/datum/unit_test/engine/keeps_dead_tube_arrival_opened_clears_moving
 
-/datum/unit_test/om/keeps_dead_tube_arrival_opened_clears_moving/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_tube_arrival_opened_clears_moving/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/structure/transit_tube/station/station = allocate(/obj/structure/transit_tube/station, T)
 	var/obj/structure/transit_tube_pod/pod = allocate(/obj/structure/transit_tube_pod, T)
@@ -12,9 +12,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(station.pod_moving, 0, "the station is not left busy after its pod is gone")
 
-/datum/unit_test/om/keeps_dead_tube_arrival_open_chain
+/datum/unit_test/engine/keeps_dead_tube_arrival_open_chain
 
-/datum/unit_test/om/keeps_dead_tube_arrival_open_chain/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_tube_arrival_open_chain/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/structure/transit_tube/station/station = allocate(/obj/structure/transit_tube/station, T)
 	var/obj/structure/transit_tube_pod/pod = allocate(/obj/structure/transit_tube_pod, T)
@@ -24,9 +24,9 @@
 	scheduler_advance(4)
 	TEST_ASSERT_EQUAL(station.pod_moving, 0, "the arrival still finishes opening when the pod is gone")
 
-/datum/unit_test/om/keeps_dead_toilet_tertiary_flush_refills
+/datum/unit_test/engine/keeps_dead_toilet_tertiary_flush_refills
 
-/datum/unit_test/om/keeps_dead_toilet_tertiary_flush_refills/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_toilet_tertiary_flush_refills/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/structure/toilet/toilet = allocate(/obj/structure/toilet, T)
 	var/obj/item/pen/flushed = allocate(/obj/item/pen, T)
@@ -36,9 +36,9 @@
 	scheduler_advance(25)
 	TEST_ASSERT(!toilet.refilling, "the toilet is not stuck refilling when the flushed object is gone")
 
-/datum/unit_test/om/keeps_dead_needle_cycle_resets_mode
+/datum/unit_test/engine/keeps_dead_needle_cycle_resets_mode
 
-/datum/unit_test/om/keeps_dead_needle_cycle_resets_mode/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_needle_cycle_resets_mode/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/item/reagent_containers/syringe/S = allocate(/obj/item/reagent_containers/syringe, T)
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
@@ -49,9 +49,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(S.mode, NEEDLE_DRAW, "the emptied syringe is set back to draw when the injector is gone")
 
-/datum/unit_test/om/keeps_dead_anomalock_clears_overlay_ref
+/datum/unit_test/engine/keeps_dead_anomalock_clears_overlay_ref
 
-/datum/unit_test/om/keeps_dead_anomalock_clears_overlay_ref/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_anomalock_clears_overlay_ref/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/organ/internal/heart/machine/anomalock/heart = allocate(/obj/item/organ/internal/heart/machine/anomalock, T)
@@ -61,9 +61,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(isnull(heart.lightning_overlay), "the heart does not keep a stale lightning overlay")
 
-/datum/unit_test/om/keeps_dead_stealth_armour_ends_stealth
+/datum/unit_test/engine/keeps_dead_stealth_armour_ends_stealth
 
-/datum/unit_test/om/keeps_dead_stealth_armour_ends_stealth/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_stealth_armour_ends_stealth/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clothing/suit/armor/reactive/stealth/armour = allocate(/obj/item/clothing/suit/armor/reactive/stealth, T)
@@ -73,9 +73,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!armour.in_stealth, "the armour is not left in stealth")
 
-/datum/unit_test/om/keeps_dead_vending_finish_resets_ready
+/datum/unit_test/engine/keeps_dead_vending_finish_resets_ready
 
-/datum/unit_test/om/keeps_dead_vending_finish_resets_ready/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_vending_finish_resets_ready/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/machinery/vending/V = allocate(/obj/machinery/vending, T)
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
@@ -91,9 +91,9 @@
 // makes the maw self-delete on Initialize), integrated circuit inject_mob (UNSURE).
 
 /// A lunge whose target vanished still drops the leaping flag.
-/datum/unit_test/om/keeps_dead_target_lunge_land_clears_leaping
+/datum/unit_test/engine/keeps_dead_target_lunge_land_clears_leaping
 
-/datum/unit_test/om/keeps_dead_target_lunge_land_clears_leaping/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_target_lunge_land_clears_leaping/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
@@ -104,9 +104,9 @@
 	TEST_ASSERT(!(H.status_flags & LEAPING), "the lunger stops leaping when the target is gone")
 
 /// A xenomorph leap at a vanished target still drops the leaping flag.
-/datum/unit_test/om/keeps_dead_alien_leap_land_clears_leaping
+/datum/unit_test/engine/keeps_dead_alien_leap_land_clears_leaping
 
-/datum/unit_test/om/keeps_dead_alien_leap_land_clears_leaping/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_alien_leap_land_clears_leaping/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
@@ -117,9 +117,9 @@
 	TEST_ASSERT(!(H.status_flags & LEAPING), "the leaper stops leaping when the target is gone")
 
 /// A borg leap at a vanished target still drops the leaping flag.
-/datum/unit_test/om/keeps_dead_borg_leap_land_clears_leaping
+/datum/unit_test/engine/keeps_dead_borg_leap_land_clears_leaping
 
-/datum/unit_test/om/keeps_dead_borg_leap_land_clears_leaping/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_borg_leap_land_clears_leaping/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
@@ -130,9 +130,9 @@
 	TEST_ASSERT(!(R.status_flags & LEAPING), "the borg stops leaping when the target is gone")
 
 /// A simple mob leap at a vanished target still drops the leaping flag.
-/datum/unit_test/om/keeps_dead_simple_mob_leap_land_clears_leaping
+/datum/unit_test/engine/keeps_dead_simple_mob_leap_land_clears_leaping
 
-/datum/unit_test/om/keeps_dead_simple_mob_leap_land_clears_leaping/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_simple_mob_leap_land_clears_leaping/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob, T)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
@@ -143,9 +143,9 @@
 	TEST_ASSERT(!(S.status_flags & LEAPING), "the mob stops leaping when the target is gone")
 
 /// A telegraphed attack whose target vanished still ends the AI hold.
-/datum/unit_test/om/keeps_dead_attack_delay_releases_ai_hold
+/datum/unit_test/engine/keeps_dead_attack_delay_releases_ai_hold
 
-/datum/unit_test/om/keeps_dead_attack_delay_releases_ai_hold/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_attack_delay_releases_ai_hold/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/combat_ai_test_subject, T)
 	var/obj/item/paper/A = allocate(/obj/item/paper, T)
@@ -157,9 +157,9 @@
 	TEST_ASSERT(!S.ai_brain.is_busy(), "the AI hold ends although the target is gone")
 
 /// A dragon lunge whose target vanished before the leap still releases the AI hold.
-/datum/unit_test/om/keeps_dead_ddraig_lunge_1_releases_ai_hold
+/datum/unit_test/engine/keeps_dead_ddraig_lunge_1_releases_ai_hold
 
-/datum/unit_test/om/keeps_dead_ddraig_lunge_1_releases_ai_hold/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_ddraig_lunge_1_releases_ai_hold/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/ddraig/D = allocate(/mob/living/simple_mob/vore/ddraig, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -172,9 +172,9 @@
 	TEST_ASSERT(!D.ai_brain.is_busy(), "the AI hold ends although the target is gone")
 
 /// The dragon's landing step drops the leaping flag and the AI hold when the target vanished.
-/datum/unit_test/om/keeps_dead_ddraig_lunge_2_lands
+/datum/unit_test/engine/keeps_dead_ddraig_lunge_2_lands
 
-/datum/unit_test/om/keeps_dead_ddraig_lunge_2_lands/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_ddraig_lunge_2_lands/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/ddraig/D = allocate(/mob/living/simple_mob/vore/ddraig, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -190,9 +190,9 @@
 // keeps_dead cleanup tests, batch 2: each schedules the real handler with keeps_dead, deletes the victim/target arg, and asserts the owner's busy hold was released.
 // cultist/wraith use a null destination (the handler's own abort path) so the hold release is reachable without a real jaunt.
 
-/datum/unit_test/om/keeps_dead_ddraig_firebreath_releases_busy
+/datum/unit_test/engine/keeps_dead_ddraig_firebreath_releases_busy
 
-/datum/unit_test/om/keeps_dead_ddraig_firebreath_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_ddraig_firebreath_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/ddraig/D = allocate(/mob/living/simple_mob/vore/ddraig, T)
 	var/mob/living/carbon/human/A = allocate(/mob/living/carbon/human, T)
@@ -203,9 +203,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!D.ai_brain.is_busy(), "the dragon busy hold is released when its target is gone")
 
-/datum/unit_test/om/keeps_dead_bigdragon_firebreath_releases_busy
+/datum/unit_test/engine/keeps_dead_bigdragon_firebreath_releases_busy
 
-/datum/unit_test/om/keeps_dead_bigdragon_firebreath_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_bigdragon_firebreath_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/bigdragon/D = allocate(/mob/living/simple_mob/vore/bigdragon, T)
 	var/mob/living/carbon/human/A = allocate(/mob/living/carbon/human, T)
@@ -216,9 +216,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!D.ai_brain.is_busy(), "the dragon busy hold is released when its target is gone")
 
-/datum/unit_test/om/keeps_dead_bigdragon_charge_releases_busy
+/datum/unit_test/engine/keeps_dead_bigdragon_charge_releases_busy
 
-/datum/unit_test/om/keeps_dead_bigdragon_charge_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_bigdragon_charge_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/bigdragon/D = allocate(/mob/living/simple_mob/vore/bigdragon, T)
 	var/mob/living/carbon/human/A = allocate(/mob/living/carbon/human, T)
@@ -229,9 +229,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!D.ai_brain.is_busy(), "the dragon busy hold is released when its target is gone")
 
-/datum/unit_test/om/keeps_dead_blackhole_leap_releases_busy
+/datum/unit_test/engine/keeps_dead_blackhole_leap_releases_busy
 
-/datum/unit_test/om/keeps_dead_blackhole_leap_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_blackhole_leap_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/otie/syndicate/blackhole/M = allocate(/mob/living/simple_mob/vore/otie/syndicate/blackhole, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -242,9 +242,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!M.ai_brain.is_busy(), "the busy hold is released when the leap target is gone")
 
-/datum/unit_test/om/keeps_dead_cryptdrake_leap_releases_busy
+/datum/unit_test/engine/keeps_dead_cryptdrake_leap_releases_busy
 
-/datum/unit_test/om/keeps_dead_cryptdrake_leap_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_cryptdrake_leap_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/cryptdrake/M = allocate(/mob/living/simple_mob/vore/cryptdrake, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -255,9 +255,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!M.ai_brain.is_busy(), "the busy hold is released when the leap target is gone")
 
-/datum/unit_test/om/keeps_dead_cryptdrake_landing_clears_leaping
+/datum/unit_test/engine/keeps_dead_cryptdrake_landing_clears_leaping
 
-/datum/unit_test/om/keeps_dead_cryptdrake_landing_clears_leaping/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_cryptdrake_landing_clears_leaping/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/cryptdrake/M = allocate(/mob/living/simple_mob/vore/cryptdrake, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -269,9 +269,9 @@
 	TEST_ASSERT(!(M.status_flags & LEAPING), "the leaping pass-through flag is cleared after landing")
 	TEST_ASSERT(!M.ai_brain.is_busy(), "the busy hold is released after landing")
 
-/datum/unit_test/om/keeps_dead_gryphon_leap_releases_busy
+/datum/unit_test/engine/keeps_dead_gryphon_leap_releases_busy
 
-/datum/unit_test/om/keeps_dead_gryphon_leap_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_gryphon_leap_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/gryphon/M = allocate(/mob/living/simple_mob/vore/gryphon, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -282,9 +282,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!M.ai_brain.is_busy(), "the busy hold is released when the leap target is gone")
 
-/datum/unit_test/om/keeps_dead_scel_lunge_releases_busy
+/datum/unit_test/engine/keeps_dead_scel_lunge_releases_busy
 
-/datum/unit_test/om/keeps_dead_scel_lunge_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_scel_lunge_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/scel/M = allocate(/mob/living/simple_mob/vore/scel, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -295,9 +295,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!M.ai_brain.is_busy(), "the busy hold is released when the lunge target is gone")
 
-/datum/unit_test/om/keeps_dead_scel_landing_clears_leaping
+/datum/unit_test/engine/keeps_dead_scel_landing_clears_leaping
 
-/datum/unit_test/om/keeps_dead_scel_landing_clears_leaping/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_scel_landing_clears_leaping/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/scel/M = allocate(/mob/living/simple_mob/vore/scel, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -309,9 +309,9 @@
 	TEST_ASSERT(!(M.status_flags & LEAPING), "the leaping pass-through flag is cleared after landing")
 	TEST_ASSERT(!M.ai_brain.is_busy(), "the busy hold is released after landing")
 
-/datum/unit_test/om/keeps_dead_bloodjaunt_arrival_releases_busy
+/datum/unit_test/engine/keeps_dead_bloodjaunt_arrival_releases_busy
 
-/datum/unit_test/om/keeps_dead_bloodjaunt_arrival_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_bloodjaunt_arrival_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/M = allocate(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt, T)
 	var/mob/living/carbon/human/A = allocate(/mob/living/carbon/human, T)
@@ -322,9 +322,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!M.ai_brain.is_busy(), "the busy hold is released when the jaunt target is gone")
 
-/datum/unit_test/om/keeps_dead_wraith_arrival_releases_busy
+/datum/unit_test/engine/keeps_dead_wraith_arrival_releases_busy
 
-/datum/unit_test/om/keeps_dead_wraith_arrival_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_wraith_arrival_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/construct/wraith/M = allocate(/mob/living/simple_mob/construct/wraith, T)
 	var/mob/living/carbon/human/A = allocate(/mob/living/carbon/human, T)
@@ -338,9 +338,9 @@
 // keeps_dead cleanup tests, batch 3: each schedules the site's real handler with keeps_dead, deletes an argument and asserts the cleanup still ran.
 
 /// A larva crawling toward a vent that vanished is put back out of the vent it entered.
-/datum/unit_test/om/keeps_dead_grub_arrive_exits_vent
+/datum/unit_test/engine/keeps_dead_grub_arrive_exits_vent
 
-/datum/unit_test/om/keeps_dead_grub_arrive_exits_vent/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_grub_arrive_exits_vent/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/machinery/atmospherics/unary/vent_pump/entry = allocate(/obj/machinery/atmospherics/unary/vent_pump, T)
 	var/obj/machinery/atmospherics/unary/vent_pump/end_vent = allocate(/obj/machinery/atmospherics/unary/vent_pump, T)
@@ -352,9 +352,9 @@
 	TEST_ASSERT_EQUAL(grub.loc, T, "the larva is not left inside the vent when its exit is gone")
 
 /// A leaper whose target vanished mid-windup releases its AI busy hold.
-/datum/unit_test/om/keeps_dead_leaper_leap_releases_busy
+/datum/unit_test/engine/keeps_dead_leaper_leap_releases_busy
 
-/datum/unit_test/om/keeps_dead_leaper_leap_releases_busy/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_leaper_leap_releases_busy/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/vore_hostile/leaper/leaper = allocate(/mob/living/simple_mob/vore/vore_hostile/leaper, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -366,9 +366,9 @@
 	TEST_ASSERT(!leaper.ai_brain?.is_busy(), "the leaper is not left busy after its target is gone")
 
 /// The resleeving computer stops sequencing even when the injector it made is gone.
-/datum/unit_test/om/keeps_dead_resleeving_injector_clears_sequencing
+/datum/unit_test/engine/keeps_dead_resleeving_injector_clears_sequencing
 
-/datum/unit_test/om/keeps_dead_resleeving_injector_clears_sequencing/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_resleeving_injector_clears_sequencing/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/machinery/computer/transhuman/resleeving/computer = allocate(/obj/machinery/computer/transhuman/resleeving, T)
 	var/obj/item/dnainjector/I = allocate(/obj/item/dnainjector, computer)
@@ -379,9 +379,9 @@
 	TEST_ASSERT(!computer.gene_sequencing, "the computer is not stuck sequencing")
 
 /// A jaunt whose animation vanished at resurface still frees the jaunter.
-/datum/unit_test/om/keeps_dead_jaunt_resurface_frees_jaunter
+/datum/unit_test/engine/keeps_dead_jaunt_resurface_frees_jaunter
 
-/datum/unit_test/om/keeps_dead_jaunt_resurface_frees_jaunter/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_jaunt_resurface_frees_jaunter/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/datum/spell/targeted/ethereal_jaunt/spell = allocate(/datum/spell/targeted/ethereal_jaunt)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
@@ -396,9 +396,9 @@
 	TEST_ASSERT_EQUAL(target.canmove, 1, "the jaunter can move again")
 
 /// A jaunt whose animation vanished at reform still frees the jaunter.
-/datum/unit_test/om/keeps_dead_jaunt_reform_frees_jaunter
+/datum/unit_test/engine/keeps_dead_jaunt_reform_frees_jaunter
 
-/datum/unit_test/om/keeps_dead_jaunt_reform_frees_jaunter/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_jaunt_reform_frees_jaunter/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/datum/spell/targeted/ethereal_jaunt/spell = allocate(/datum/spell/targeted/ethereal_jaunt)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
@@ -413,9 +413,9 @@
 	TEST_ASSERT_EQUAL(target.canmove, 1, "the jaunter can move again")
 
 /// The final jaunt step frees the jaunter even if the animation vanished.
-/datum/unit_test/om/keeps_dead_jaunt_finish_frees_jaunter
+/datum/unit_test/engine/keeps_dead_jaunt_finish_frees_jaunter
 
-/datum/unit_test/om/keeps_dead_jaunt_finish_frees_jaunter/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_jaunt_finish_frees_jaunter/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/datum/spell/targeted/ethereal_jaunt/spell = allocate(/datum/spell/targeted/ethereal_jaunt)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
@@ -430,9 +430,9 @@
 	TEST_ASSERT_EQUAL(target.canmove, 1, "the jaunter can move again")
 
 /// The shadekin phase-out restores the phased mob's state even when the shadekin datum was deleted meanwhile.
-/datum/unit_test/om/keeps_dead_shadekin_phase_out_applies
+/datum/unit_test/engine/keeps_dead_shadekin_phase_out_applies
 
-/datum/unit_test/om/keeps_dead_shadekin_phase_out_applies/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_shadekin_phase_out_applies/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/datum/shadekin/SK = new
@@ -449,9 +449,9 @@
 /mob/living/simple_mob/dq_rocket_probe/proc/rocket_followup(atom/target)
 	followed = TRUE
 
-/datum/unit_test/om/keeps_dead_rocket_volley_still_follows_up
+/datum/unit_test/engine/keeps_dead_rocket_volley_still_follows_up
 
-/datum/unit_test/om/keeps_dead_rocket_volley_still_follows_up/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_rocket_volley_still_follows_up/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/dq_rocket_probe/M = allocate(/mob/living/simple_mob/dq_rocket_probe, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -460,9 +460,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(M.followed, "the follow-up of a rocket volley runs although the target died")
 
-/datum/unit_test/om/keeps_dead_syndicate_otie_leap_lands
+/datum/unit_test/engine/keeps_dead_syndicate_otie_leap_lands
 
-/datum/unit_test/om/keeps_dead_syndicate_otie_leap_lands/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_syndicate_otie_leap_lands/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/otie/syndicate/M = allocate(/mob/living/simple_mob/vore/otie/syndicate, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -471,9 +471,9 @@
 	scheduler_advance(4)
 	TEST_ASSERT(!(M.status_flags & LEAPING), "the leap is not left running because the target died before the windup ended")
 
-/datum/unit_test/om/keeps_dead_jellyfish_dash_lands
+/datum/unit_test/engine/keeps_dead_jellyfish_dash_lands
 
-/datum/unit_test/om/keeps_dead_jellyfish_dash_lands/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_jellyfish_dash_lands/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/vore/boss_jellyfish/M = allocate(/mob/living/simple_mob/vore/boss_jellyfish, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -483,9 +483,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!(M.status_flags & LEAPING), "the dash ends although its target is gone")
 
-/datum/unit_test/om/keeps_dead_ammo_hud_flash_spends_itself
+/datum/unit_test/engine/keeps_dead_ammo_hud_flash_spends_itself
 
-/datum/unit_test/om/keeps_dead_ammo_hud_flash_spends_itself/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_ammo_hud_flash_spends_itself/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/atom/movable/screen/ammo/F = allocate(/atom/movable/screen/ammo)

@@ -82,7 +82,7 @@ CAPABILITIES(/obj/structure/toilet)
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
 	add_disposal_connection(FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
 	if(trunk)
-		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
+		PUBLISH(src, disposal_link, trunk = trunk)
 
 // non-basic bins, the teleplumb crystal and flushed objects drop out
 // (before phase 4 deletes the owned bin).
@@ -1096,14 +1096,14 @@ MSG_DEF_SELF(sink/washing_hands, span_notice("You start washing your hands."))
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_GLOVES))
 			H.get_equipped_item(SLOT_ID_GLOVES).wash(CLEAN_SCRUB)
-			H.get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
+			H.get_equipped_item(SLOT_ID_GLOVES).set_germs(0)
 		else
 			if(H.get_equipped_item(SLOT_ID_HAND_R))
 				H.get_equipped_item(SLOT_ID_HAND_R).wash(CLEAN_SCRUB)
 			if(H.get_equipped_item(SLOT_ID_HAND_L))
 				H.get_equipped_item(SLOT_ID_HAND_L).wash(CLEAN_SCRUB)
-			sparse_set_or(H, bloody_hands, 0, 0)
-			H.germ_level = 0
+			STATE_SET(H, mob_misc, bloody_hands, 0)
+			H.set_germs(0)
 			H.set_hand_blood_color(null)
 			H.forensic_data?.wash(CLEAN_SCRUB)
 	else

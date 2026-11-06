@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The sampled staleness audit and the look-drift sweep run in debug builds only, and now sample the chunks players can see instead of scanning around every client"

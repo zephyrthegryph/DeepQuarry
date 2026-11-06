@@ -3,8 +3,6 @@
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/preferences)
 
 /datum/preferences
-	/// The savefile relating to character preferences, PREFERENCE_CHARACTER
-	var/list/character_data
 
 	/// A list of keys that have been updated since the last save.
 	var/list/recently_updated_keys

@@ -584,9 +584,9 @@ mod tests {
     }
     #[test]
     fn medical_collection_contracts_attach_to_their_real_fields() {
-        let body = collect(include_str!("../../../code/modules/body/affliction.dm"));
+        let body = collect(include_str!("../../../code/content/body/affliction.dm"));
         let causes = collect(include_str!(
-            "../../../code/modules/medical/causes/_cause.dm"
+            "../../../code/content/medical/causes/_cause.dm"
         ));
         for (contracts, owner, member, ty) in [
             (&body, "/datum/affliction", "treated_by", "assoc<text,num>?"),
@@ -628,7 +628,7 @@ mod tests {
         assert_eq!(contracts[0].member, "chem_stage");
         assert_eq!(contracts[0].parameter.as_deref(), Some("symptoms"));
         let real = collect(include_str!(
-            "../../../code/modules/medical/conditions/pharmacology/_pharmacology.dm"
+            "../../../code/content/medical/conditions/pharmacology/_pharmacology.dm"
         ));
         assert!(real.iter().any(|contract| contract.owner == "/"
             && contract.member == "chem_stage"

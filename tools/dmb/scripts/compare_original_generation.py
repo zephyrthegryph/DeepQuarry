@@ -3,7 +3,7 @@
 import argparse,json,re
 from pathlib import Path
 CASES={"real","absent","noninclude","invalid_utf8"}
-NAMES={"actions","auto_tracked","declare","declare_ids","deps","derived_reads","plans","reads","sparse_slots","stats","system_accessors","tracked_lists","ui_types"}
+NAMES={"actions","auto_tracked","declare","declare_ids","deps","derived_reads","plans","reads","stats","system_accessors","tracked_lists","ui_types"}
 SELECTOR="actual_original_generation_all_thirteen_real_and_synthetic_subjects_settle_then_reuse_same_bodies"
 def strict_json(text):
  def fields(pairs):
@@ -40,7 +40,7 @@ def main():
  statuses=re.findall(r"^test ([^\r\n ]+) \.\.\. (\w+)$",native,re.M)
  if summaries!=[("ok","1","0","0","0")] or len(statuses)!=1 or statuses[0][0].split("::")[-1]!=SELECTOR or statuses[0][1]!="ok":raise ValueError("native proof is not exactly the full successful Original generation test")
  settled=[strict_json(line.split("=",1)[1]) for line in old.splitlines() if line.startswith("OLD_GENERATION_FIXEDPOINT_SETTLED=")]
- if len(settled)!=4 or any(not isinstance(value,dict) or set(value)!={"schema","settled","passes","stage_zero","stage_one","generators"} or value.get("schema")!="original-generation-fixedpoint-v1" or value.get("settled") is not True or type(value.get("passes")) is not int or not 1<=value["passes"]<=5 or type(value.get("stage_zero")) is not int or value["stage_zero"]!=8 or type(value.get("stage_one")) is not int or value["stage_one"]!=5 or not isinstance(value.get("generators"),list) or not all(isinstance(name,str) for name in value["generators"]) or len(value["generators"])!=13 or set(value["generators"])!=NAMES for value in settled):raise ValueError("four genuine complete original settled receipts are mandatory")
+ if len(settled)!=4 or any(not isinstance(value,dict) or set(value)!={"schema","settled","passes","stage_zero","stage_one","generators"} or value.get("schema")!="original-generation-fixedpoint-v1" or value.get("settled") is not True or type(value.get("passes")) is not int or not 1<=value["passes"]<=5 or type(value.get("stage_zero")) is not int or value["stage_zero"]!=7 or type(value.get("stage_one")) is not int or value["stage_one"]!=5 or not isinstance(value.get("generators"),list) or not all(isinstance(name,str) for name in value["generators"]) or len(value["generators"])!=len(NAMES) or set(value["generators"])!=NAMES for value in settled):raise ValueError("four genuine complete original settled receipts are mandatory")
  a=rows(old,"OLD_ORIGINAL_GENERATION_FULL=");b=rows(native,"NATIVE_ORIGINAL_GENERATION_FULL=")
  if a!=b:
   for key in sorted(a):

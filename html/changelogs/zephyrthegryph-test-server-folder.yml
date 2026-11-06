@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added a permanent test-server worktree and tools/dq_test_server.sh so the local server's saved characters survive pool releases"

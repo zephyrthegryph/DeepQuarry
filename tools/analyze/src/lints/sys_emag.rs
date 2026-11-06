@@ -12,7 +12,7 @@ use crate::util::before_slashes;
 
 use crate::allow_registry_fields::sys_emag::RULES;
 
-const CARD: &str = "code/game/objects/items/weapons/id cards/cards.dm";
+const CARD: &str = "code/content/items/weapons/id_cards/cards.dm";
 
 fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
     for (number, line) in f.raw().numbered() {

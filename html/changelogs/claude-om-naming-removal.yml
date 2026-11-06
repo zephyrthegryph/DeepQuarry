@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - refactor: "Renamed the old object-model engine internals (scheduler record, handle slots, pipeline globals, scheduler/pipeline/timer defines, world notice bus, kernel-measure keys, scheduler profiler) to current engine terms; the old names are hard-banned"

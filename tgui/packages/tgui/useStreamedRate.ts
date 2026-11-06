@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
  * second, and `at` the server's clock at that moment (it only tells samples
  * apart; the client anchors on the moment the sample arrived).
  *
- * The DM half is `om_ui_stream()` / `om_ui_rate()` (code/datums/om/ui.dm). A
+ * The DM half is `ui_stream()` / `ui_rate()` (code/engine/ui.dm). A
  * SMES charge, a grid's supply and load, or a tank's pressure is declared as a
  * stream rate; the server sends a new sample only when the rate changes.
  */

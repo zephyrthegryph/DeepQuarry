@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A valve closing in a large pipenet updates the region that keeps its handle in place instead of rebuilding every port of it (0.75-1.1 s down to under 0.1 s); a channel flip finds the hops of a reader type through its ancestry instead of testing every registered hop"
+  - code_imp: "Logged: APC_FLIP (a channel write of 25 ms or more by step), APC_REPORT_SLOW (a report of 50 ms or more by step), PIPE_COMMIT (a topology commit of 25 ms or more by phase)"

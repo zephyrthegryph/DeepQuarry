@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The unsimulated turf type is gone: the map's fixed fabric is /turf/open/fixed, indestructible by a turf flag and still outside the gas field"

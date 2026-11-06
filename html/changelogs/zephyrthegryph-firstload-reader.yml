@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A map template placed at a location plans each chunk's turfs and contents as data and places them together, in the load's one init frame"

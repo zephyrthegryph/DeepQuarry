@@ -6,7 +6,7 @@
 	anchored = TRUE
 	density = TRUE
 
-	circuit = /obj/item/circuitboard/bomb_tester
+	circuit = VARIANT(/obj/item/circuitboard/bomb_tester)
 
 	var/icon_name = "generic"
 

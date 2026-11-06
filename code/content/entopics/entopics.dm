@@ -1,0 +1,126 @@
+//Augmented reality objects and their associated systems for attaching to things
+/datum/entopic
+	var/name
+	var/suffix
+	var/icon
+	var/icon_state
+	var/plane
+	var/layer
+	/// Weak handle of the atom it is attached to (read it with holder()); the entopic does not keep its holder alive.
+	var/holder
+	var/alpha = 200 //Holo-ish
+	var/override = FALSE
+
+	var/image/my_image
+	var/registered = FALSE // Less expensive to make it a finite state than to use |= on entopic_images or anything like that.
+
+/datum/entopic/New(atom/aholder, icon/aicon, aicon_state, aalpha, aplane, alayer, aoverride, aname, asuffix)
+	ASSERT(aholder && (isicon(aicon) || isicon(icon)))
+
+	//Everything we need to set in the initializer
+	var/image/tempimage = image(icon = aicon || icon, loc = aholder, icon_state = aicon_state || icon_state)
+
+	//And everything we don't (order of prescidence: directly passed, datum-specified, then natural byond)
+	if(aplane)
+		tempimage.plane = plane = aplane
+	else if(plane)
+		tempimage.plane = plane
+
+	if(alayer)
+		tempimage.layer = layer = alayer
+	else if(layer)
+		tempimage.layer = layer
+
+	if(aalpha)
+		tempimage.alpha = alpha = aalpha
+	else if(alpha)
+		tempimage.alpha = alpha
+
+	if(aoverride)
+		tempimage.override = override = aoverride
+	else if(override)
+		tempimage.override = override
+
+	if(aname)
+		tempimage.name = name = aname
+	else if(name)
+		tempimage.name = name
+
+	if(asuffix)
+		tempimage.suffix = suffix = asuffix
+	else if(suffix)
+		tempimage.suffix = suffix
+
+	//Save these for later
+	rel_set(src, nameof(holder), aholder)
+	if(aicon)
+		icon = aicon
+	if(icon_state)
+		icon_state = aicon_state
+
+	my_image = tempimage
+
+	register_entopic()
+
+CAPABILITIES(/datum/entopic)
+	ref_one(nameof(holder), /atom, weak = TRUE)
+
+// it is unregistered from its viewers.
+/datum/entopic/on_destroy(force)
+	unregister_entopic()
+	..()
+
+/datum/entopic/proc/register_entopic()
+	if(registered || !my_image)
+		return
+
+	registered = TRUE
+	GLOB.entopic_images += my_image
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS))
+		if(M.client)
+			client_images_add(M.client, my_image)
+
+/datum/entopic/proc/unregister_entopic()
+	if(!registered || !my_image)
+		return
+
+	registered = FALSE
+	GLOB.entopic_images -= my_image
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS))
+		if(M.client)
+			client_images_remove(M.client, my_image)
+
+/datum/entopic/proc/show()
+	if(!my_image)
+		return
+
+	my_image.mouse_opacity = 1
+	my_image.invisibility = INVISIBILITY_NONE
+	my_image.alpha = alpha
+	my_image.override = override
+
+/datum/entopic/proc/hide()
+	if(!my_image)
+		return
+
+	my_image.mouse_opacity = 0
+	my_image.invisibility = INVISIBILITY_ABSTRACT
+	my_image.alpha = 0
+	my_image.override = FALSE
+
+//////////////////////////////////////
+// Debug helper stuff
+/obj/item/entopic_debug
+	name = "Entopic Debugger"
+	desc = "You shouldn't see this..."
+	icon = 'icons/obj/machines/ar_elements.dmi'
+	icon_state = "proj0"
+
+	var/datum/entopic/ent_debug
+
+CAPABILITIES(/obj/item/entopic_debug)
+	owns_one(nameof(ent_debug), /datum/entopic, starts = PROC_REF(make_ent_debug))
+
+/// The starting entopic (owns_one(starts =)).
+/obj/item/entopic_debug/proc/make_ent_debug(current)
+	return new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin")

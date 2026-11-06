@@ -1,0 +1,139 @@
+/*
+	'Monitor' wards are drones that yell at their creator if they see someone besides them that they are hostile to.
+	They can also force an invisible entity to uncloak if the invisible mob is hostile to the ward.
+	If AI controlled, they will also warn their faction if they see a hostile entity, acting as floating cameras.
+*/
+
+/datum/category_item/catalogue/technology/drone/ward
+	name = "Drone - Monitor Ward"
+	desc = "This is a small drone that appears to have been designed for a singular purpose, \
+	with little autonomous capability, common among the 'ward' models. This specific ward's \
+	purpose is simply to observe the environment around it, reacting when it detects entities \
+	it judges to be unfriendly. It presumably relays information about what it sees back to \
+	whoever owns the drone.\
+	<br><br>\
+	The sensors onboard the ward are much more advanced than what is typical for drones, \
+	allowing it to detect entities that might otherwise go unnoticed by inferior \
+	observers. If this ward sees such a thing, it fires a beam of energy at the hidden \
+	entity, which exposes them."
+	value = CATALOGUER_REWARD_EASY
+
+/mob/living/simple_mob/mechanical/ward/monitor
+	desc = "It's a little flying drone. This one seems to be watching you..."
+	icon_state = "ward"
+	icon_living = "ward"
+	glow_color = "#00FF00"
+	see_invisible = SEE_INVISIBLE_LEVEL_TWO
+
+	has_eye_glow = TRUE
+	glow_range = 3
+	glow_intensity = 3
+	glow_toggle = TRUE
+
+	player_msg = "You will automatically alert your owner (if one exists) of enemies you see nearby.<br>\
+	You can also <b>see invisible entities, and will automatically uncloak</b> nearby invisible or hidden enemies."
+
+	var/list/seen_mobs = list() // ALLOW(instance_list): d: per-mob seen_mobs, filled at runtime; mobs are few
+	var/view_range = 5
+
+// For PoIs.
+/mob/living/simple_mob/mechanical/ward/monitor/syndicate
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor/syndicate)
+	configure(mob_rules(faction = FACTION_SYNDICATE))
+
+/mob/living/simple_mob/mechanical/ward/monitor/crew
+	icon_state = "ward-nt"
+	icon_living = "ward-nt"
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor/crew)
+	op("monitor_ward_item", item(/obj/item), then(PROC_REF(monitor_ward_interaction_item)))
+
+/// Old attackby: claim with an ID card.
+/mob/living/simple_mob/mechanical/ward/monitor/crew/proc/monitor_ward_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
+	if(istype(O, /obj/item/card/id) && !owner)
+		rel_set(src, nameof(owner), user)
+		return
+	return OP_DECLINE
+
+/mob/living/simple_mob/mechanical/ward/monitor/crew/IIsAlly(mob/living/L)
+	. = ..()
+	if(!.)
+		if(isrobot(L)) // They ignore synths.
+			return TRUE
+		return L.assess_perp(src, FALSE, FALSE, TRUE, FALSE) <= 3
+
+/mob/living/simple_mob/mechanical/ward/monitor/on_death(gibbed)
+	if(owner)
+		to_chat(owner, span_warning("Your [src.name] inside [get_area(src)] was destroyed!"))
+	..()
+
+/mob/living/simple_mob/mechanical/ward/monitor/life_special(datum/seq_frame/life/F)
+	src.detect_mobs()
+
+/mob/living/simple_mob/mechanical/ward/monitor
+	var/spotted = FALSE // TRUE while it has seen someone (update_spotted())
+
+/// The ward's look is the base life state: icon_living follows whether it has spotted anyone (update_spotted()).
+/// Whether anyone is in sight: swaps the living sprite and the glow, and redraws.
+/mob/living/simple_mob/mechanical/ward/monitor/proc/update_spotted()
+	var/seen = seen_mobs.len ? TRUE : FALSE
+	if(seen)
+		set_icon_living("[initial(icon_state)]_spotted")
+		set_glow_color("#FF0000")
+	else
+		set_icon_living("[initial(icon_state)]")
+		set_glow_color("#00FF00")
+	refresh_glow() // Update the light immediately.
+	set_spotted(seen)
+
+/mob/living/simple_mob/mechanical/ward/monitor/proc/detect_mobs()
+	var/last_seen_mobs_len = seen_mobs.len
+	var/list/mobs_nearby = hearers(view_range, src)
+	var/list/newly_seen_mobs = list()
+	for(var/mob/living/L in mobs_nearby)
+		if(L == src) // Don't detect ourselves.
+			continue
+
+		if(L.stat) // Dead mobs aren't concerning.
+			continue
+
+		if(src.IIsAlly(L))
+			continue
+
+		// Decloak them .
+		if(L.is_cloaked())
+			Beam(L, icon_state = "solar_beam", time = 5)
+			play_sfx(L, SFX_EFFECTS_EMPULSE, 0.75)
+			L.break_cloak()
+
+			to_chat(L, span_danger("\The [src] disrupts your cloak!"))
+			if(owner)
+				to_chat(owner, span_notice("Your [src.name] at [get_area(src)] uncloaked \the [L]."))
+
+		// Warn the owner when it sees a new mob.
+		if(!(L in seen_mobs))
+			rel_add(src, nameof(seen_mobs), L)
+			newly_seen_mobs += L
+
+	if(newly_seen_mobs.len && owner) // Yell at our owner if someone new shows up.
+		to_chat(owner, span_notice("Your [src.name] at [get_area(src)] detected [english_list(newly_seen_mobs)]."))
+
+	// Now get rid of old mobs that left vision.
+	for(var/thing in seen_mobs)
+		if(!(thing in mobs_nearby))
+			rel_remove(src, nameof(seen_mobs), thing)
+
+	// Check if we need to update the sprite and glow.
+	if(seen_mobs.len != last_seen_mobs_len)
+		update_spotted()
+
+// Can't attack but calls for help. Used by the monitor and spotter wards.
+// Special attacks are not blocked since they might be used for things besides attacking, and can be conditional.
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/ward)))
+	ref_many(nameof(seen_mobs))

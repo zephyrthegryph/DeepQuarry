@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Lockers that start with random items or a built ledger are sized for everything they hold, so none of their contents is refused for room"
+  - code_imp: "The first draws the map owes finish during initialization; cells start a material service only when they sit in air of another temperature"
+  - code_imp: "Refused transfers into a closet log its capacity numbers and how it was sized; material service admissions are logged by event and type"

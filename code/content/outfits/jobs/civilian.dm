@@ -108,7 +108,7 @@
 
 /datum/decl/hierarchy/outfit/job/chaplain
 	name = OUTFIT_JOB_NAME(JOB_CHAPLAIN)
-	uniform = /obj/item/clothing/under/rank/chaplain
+	uniform = VARIANT(/obj/item/clothing/under/rank/chaplain)
 	l_hand = /obj/item/storage/bible
 	id_type = /obj/item/card/id/civilian/chaplain
 	pda_type = /obj/item/pda/chaplain

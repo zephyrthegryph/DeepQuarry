@@ -15,25 +15,25 @@
 // on_reactions_handled() together select the distilling regime and suppress the signal.
 
 // ---- Temperature-gated reactions (H3) ----
-// A distilling holder's reactions need a temperature. The holder watches its
-// atom's heat body with one ThresholdSet holding both ends of every candidate
+// A distilling holder's reactions need a temperature. The holder senses its
+// atom's heat body against the increasing bounds of every candidate
 // reaction's temp_range, and reacts when the temperature crosses one.
 
 /datum/reagents/distilling
-	/// The ThresholdSet on my_atom's heat body, or null.
-	var/tmp/datum/native_watch/heat/heat_set_watch
-	/// Levels in the set (payload = index).
+	/// The sensing of my_atom's temperature against the reaction bounds, or null.
+	var/tmp/datum/sense_sub/heat/heat_set_watch
+	/// The bounds it senses.
 	var/tmp/list/heat_set_levels
 
 CAPABILITIES(/datum/reagents/distilling)
-	owns_one(nameof(heat_set_watch), /datum/native_watch/heat)
+	owns_one(nameof(heat_set_watch), /datum/sense_sub/heat)
 
 
 /datum/reagents/distilling/update_total()
 	. = ..()
 	watch_reaction_temperatures()
 
-/// The temperature bounds of every distilling transformation the contents could run: the watch bands of their temperature_in() conditions.
+/// The temperature bounds of every distilling transformation the contents could run, increasing: the watch bands of their temperature_in() conditions.
 /datum/reagents/distilling/proc/reaction_temperatures()
 	var/list/levels = list()
 	for(var/datum/reagent/R as anything in reagent_list)
@@ -43,9 +43,9 @@ CAPABILITIES(/datum/reagents/distilling)
 					levels |= band[1]
 				if(!isnull(band[2]))
 					levels |= band[2]
-	return levels
+	return sortTim(levels, GLOBAL_PROC_REF(cmp_numeric_asc))
 
-/// (Re)builds the ThresholdSet when the candidate bounds change.
+/// (Re)builds the sensing when the candidate bounds change.
 /datum/reagents/distilling/proc/watch_reaction_temperatures()
 	if(QDELETED(my_atom) || isturf(my_atom))
 		return
@@ -55,21 +55,15 @@ CAPABILITIES(/datum/reagents/distilling)
 		return
 	if(heat_set_levels ~= levels && !isnull(heat_set_watch))
 		return
-	if(isnull(heat_set_watch))
-		rel_set(src, nameof(heat_set_watch), heat_watch_set(src, my_atom, PROC_REF(on_reaction_bound)))
-		if(isnull(heat_set_watch))
-			return
-	for(var/i in 1 to length(levels))
-		heat_set_watch.add_entry(i, 1, levels[i], TRUE, TRUE)
-	for(var/i in length(levels) + 1 to length(heat_set_levels))
-		heat_set_watch.remove_entry(i)
-	heat_set_levels = levels
+	rel_clear(src, nameof(heat_set_watch))
+	rel_set(src, nameof(heat_set_watch), sense_heat(src, PROC_REF(on_reaction_bound), my_atom, levels))
+	heat_set_levels = isnull(heat_set_watch) ? null : levels
 
 /datum/reagents/distilling/proc/unwatch_reaction_temperatures()
 	rel_clear(src, nameof(heat_set_watch))
 	heat_set_levels = null
 
 /// The holder's temperature crossed a reaction bound: react now.
-/datum/reagents/distilling/proc/on_reaction_bound(datum/native_watch/heat/watch, payload, entered, generation)
+/datum/reagents/distilling/proc/on_reaction_bound(band, was)
 	if(!QDELETED(my_atom))
 		handle_reactions()

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "74 50-stack spawner types become rows of one table; the variant tool merges a type written as several blocks"

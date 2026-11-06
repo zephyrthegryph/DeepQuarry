@@ -34,8 +34,6 @@
 	var/list/ordered_args
 	/// TRUE once the op passed Match and Require and started its Wait or Do: refusals after this point are logged.
 	var/started = FALSE
-	/// The slot units a put_in() moved, and the reservation they came from.
-	var/list/moved_units
 	/// TRUE once an effect answered OP_PASS: the op commits and the click goes on to the next candidate.
 	var/passed = FALSE
 
@@ -413,6 +411,8 @@
 	var/datum/entry/part/bind/binding
 	var/datum/op_result/result
 	var/datum/act/op/act
+	/// TRUE once the op's on_interrupt() ran because its target was deleted (borrow_ended()), so no other ending runs it a second time.
+	var/lost_target_heard = FALSE
 	/// The step the workflow is at (index into oplan.steps); the next one to start.
 	var/cursor = 1
 	var/origin
@@ -431,7 +431,6 @@
 	var/datum/progress_view/progbar
 	var/datum/cog_view/cog
 	var/progress_planned = FALSE
-	var/steps_done = 0
 	/// The actor's pending slot, and whether the pending ended.
 	var/active = TRUE
 	var/key
@@ -471,6 +470,7 @@
 	var/kept_turf_ref
 
 CAPABILITIES(/datum/pending_op)
+	on_notice(/datum/notice/borrow_ended, then(PROC_REF(borrow_ended)))
 	ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME)
@@ -490,7 +490,8 @@ CAPABILITIES(/datum/pending_op)
 	var/atom/movable/held
 	var/atom/kept
 
-/// actor ref text -> the list of its pending ops, oldest first: an actor has any number at once (OP_PENDING_CAP), exclusive only where their claims overlap.
+/// actor ref text -> the handles of its pending ops, oldest first: an actor has any number at once (OP_PENDING_CAP), exclusive only where their claims overlap.
+/// A handle names the record without holding it (the slot table keeps a pending op until its drop_record() deletes it).
 GLOBAL_LIST_EMPTY(op_pending_by_actor)
 /// REF(pending op) -> the handle of every pending op that is waiting, the system-origin ones too ("List Pending Ops"); read with resolve_token().
 GLOBAL_LIST_EMPTY(op_pending_all)
@@ -508,12 +509,12 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	registered = FALSE
 	var/list/mine = GLOB.op_pending_by_actor[registered_ref]
 	if(mine)
-		mine -= src
+		mine -= entity_handle_of(src)
 		if(!length(mine))
 			GLOB.op_pending_by_actor -= registered_ref
 	registered_ref = null
 	if(actor && !QDELETED(actor))
-		PUBLISH_LEGACY(actor, /datum/notice/do_after_ended)
+		PUBLISH(actor, do_after_ended)
 
 /// The open question is shown again to its answerer (they clicked the same thing a second time): its window comes to the front instead of a second one opening.
 /datum/pending_op/proc/focus_prompt()
@@ -532,8 +533,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /proc/op_pendings_of(mob/actor)
 	. = list()
 	var/list/registered_ops = GLOB.op_pending_by_actor["[REF(actor)]"]
-	for(var/datum/pending_op/P as anything in registered_ops)
-		if(P.active && !QDELETED(P))
+	for(var/op_handle in registered_ops)
+		var/datum/pending_op/P = handle_get(op_handle)
+		if(P?.active)
 			. += P
 
 /// The oldest live pending op of `actor`, or null (op_pendings_of() has them all).
@@ -589,8 +591,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(A.actor)
 		P.registered = TRUE
 		P.registered_ref = "[REF(A.actor)]"
-		LAZYADD(GLOB.op_pending_by_actor[P.registered_ref], P)
-		PUBLISH_LEGACY(A.actor, /datum/notice/do_after_began)
+		LAZYADD(GLOB.op_pending_by_actor[P.registered_ref], handle_of(P))
+		PUBLISH(A.actor, do_after_began)
 	GLOB.op_pending_all["[REF(P)]"] = ref_token(P)
 	if((P.claim_mask & CLAIM_TARGET) && A.target)
 		P.claim_target(A.target)
@@ -629,12 +631,13 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	A.activation = null // ALLOW(ownership): a pooled transient: reset on release
 	A.cap = null
 
-/// Restores the act's references from the relations (a wait ended, an answer arrived). False when one was lost.
-/datum/pending_op/proc/resume_act()
+/// Restores the act's references from the relations (a wait ended, an answer arrived). False when one was lost. `target_lost` (borrow_ended()): the target
+/// was deleted and its relation is clear, so the act gets no target; the holder and the actor must still be there.
+/datum/pending_op/proc/resume_act(target_lost = FALSE)
 	var/datum/act/op/A = act
 	if(!A || !active)
 		return FALSE
-	if(QDELETED(holder) || QDELETED(target) || (!isnull(actor) && QDELETED(actor)))
+	if(QDELETED(holder) || (QDELETED(target) && !target_lost) || (!isnull(actor) && QDELETED(actor)))
 		return FALSE
 	A.holder = holder // ALLOW(ownership): a pooled transient: reset on release
 	A.target = target
@@ -739,7 +742,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			if(answerer)
 				watch_answerer(answerer)
 				log_game("op [key]: question [R.type] put to [key_name(answerer)] on behalf of [key_name(A.actor)]")
-			R.waiting = result // ALLOW(ownership): the caller's plain record: the request hands it back to test_answer()
+			rel_set(R, nameof(R.waiting), result)
 			suspend_act()
 			return
 		cursor++
@@ -1253,7 +1256,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(request)
 		var/datum/request/R = request
 		rel_clear(src, nameof(request))
-		R.waiting = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		rel_take(R, nameof(R.waiting)) // the op's caller keeps the record
 		request_end(R, REQ_CANCELLED, null)
 	// The op is over: the record lets go of the four entities (their reverse links go with the relations) and of the act; its caller deletes it.
 	rel_clear(src, nameof(holder))
@@ -1281,6 +1284,28 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	op_end(A, ACT_REFUSED, reason, M)
 	drop_record()
 
+/// The op's target was deleted while it waits (K8): its on_interrupt() runs, with the reason and no target, before the record is deleted with the target
+/// (OTHER_DELETE_ME). A deleted holder cannot be called, and a deleted actor has nobody to tell: those end the op without it.
+/datum/pending_op/proc/borrow_ended(datum/act/notice_act)
+	var/datum/notice/borrow_ended/N = notice_act
+	if(!active || lost_target_heard || N.relation != nameof(target))
+		return
+	var/datum/act/op/A = act
+	if(!A || QDELETED(A) || !oplan?.interrupted)
+		return
+	lost_target_heard = TRUE
+	if(!resume_act(TRUE))
+		log_qdel("pending op: [oplan.key] lost its target ([N.other_type]) but its holder or actor is gone too; on_interrupt() not run")
+		return
+	A.reason = /datum/msg/op/target_gone
+	log_qdel("pending op: [oplan.key] lost its target ([N.other_type]); running on_interrupt()")
+	try
+		op_call(A, oplan.interrupted)
+	catch(var/exception/interrupt_fault)
+		dq_report_caught(interrupt_fault, "on_interrupt() of [oplan.key] after its target was deleted")
+	if(act && !QDELETED(act))
+		suspend_act()
+
 /// The pending op is deleted: one of its four entities is gone (OTHER_DELETE_ME) or the record is dropped. Before the reservation that cancels the op.
 /datum/pending_op/on_destroy(force)
 	if(active)
@@ -1293,7 +1318,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		watch_end()
 		if(request)
 			var/datum/request/R = request
-			R.waiting = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			rel_take(R, nameof(R.waiting)) // the op's caller keeps the record
 			request_end(R, REQ_CANCELLED, null)
 		if(A && !QDELETED(A))
 			A.pending = null // ALLOW(ownership): a pooled transient: reset on release

@@ -12,7 +12,7 @@
 //! * `var`: a var whose declared type is an atom or datum (not a turf, an area, a client, a registry or
 //!   flyweight type, or a type in `[lint.stored_refs.lists] exempt_types`) that no relation declares.
 //!   Reported at the declaration. Static and global vars count: a cache is storage too.
-//! * `list`: a list var (a type's var, a global, or a proc's `var/static/list`) that some proc body
+//! * `list`: a list or alist var (a type's var, a global, or a proc's `var/static/list` / `var/static/alist`) that some proc body
 //!   fills with an atom or datum: `L += x`, `L |= x`, `L[k] = x`, `L[x] = v`, `L.Add(x)`, `L.Insert(i, x)`,
 //!   `L = list(x, ...)`, LAZYADD and friends (macros are expanded by the parser), where the static type
 //!   of `x` is an atom or datum. A list typed in its declaration (`var/list/obj/item/L`) counts with no
@@ -24,8 +24,7 @@
 //! result has no type here, so a list filled only from calls is not seen (the lint under-counts; it never
 //! guesses).
 //!
-//! A shrink-only ratchet (`Policy::Sites`, `tools/ci/stored_refs_baseline.txt`, seeded at the count of the
-//! day the rule landed). The reference machinery itself (`[lint.stored_refs] exempt_prefixes`) and tests
+//! A hard ban (no baseline). The reference machinery itself (`[lint.stored_refs] exempt_prefixes`) and tests
 //! are exempt by path.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -211,7 +210,7 @@ pub(crate) fn collect_locals(
             Statement::Var(v) => {
                 let ty = path_of(&v.var_type.type_path);
                 let place = if v.var_type.flags.contains(VarTypeFlags::STATIC)
-                    && (ty == "/list" || ty.starts_with("/list/"))
+                    && (ty == "/list" || ty.starts_with("/list/") || ty == "/alist" || ty.starts_with("/alist/"))
                 {
                     Some(Place::ProcStatic(rel.to_string(), st.location.line))
                 } else {
@@ -383,6 +382,20 @@ impl<'a, 'k> Walker<'a, 'k> {
             .map(|o| Place::Member(o, last.to_string()))
     }
 
+    /// A nested indexed list stores into its base declaration.
+    pub(crate) fn container_place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
+        let mut cur = strip_parens(e).clone();
+        loop {
+            let Expression::Base { term, follow } = &cur else { return self.place_of(sc, &cur) };
+            match follow.last().map(|f| &f.elem) {
+                Some(Follow::Index(_, _)) => {
+                    cur = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
+                }
+                _ => return self.place_of(sc, &cur),
+            }
+        }
+    }
+
     /// The values `e` stores when added to a list: itself, or the members of a `list(...)` literal (keys and values).
     fn stored_ref(&self, sc: &ProcScope, e: &Expression) -> bool {
         let e = strip_parens(e);
@@ -423,7 +436,13 @@ impl<'a, 'k> Walker<'a, 'k> {
                                             .into_boxed_slice(),
                                     };
                                     if self.stored_ref(sc, key) || self.stored_ref(sc, rhs) {
-                                        if let Some(p) = self.place_of(sc, &list) {
+                                        if let Some(p) = self.container_place_of(sc, &list) {
+                                            out.push((p, line));
+                                        }
+                                    }
+                                } else if matches!(op, AssignOp::AddAssign | AssignOp::BitOrAssign | AssignOp::OrAssign) && self.stored_ref(sc, rhs) {
+                                    if let Some(p) = self.container_place_of(sc, lhs) {
+                                        if self.is_list_place(&p) {
                                             out.push((p, line));
                                         }
                                     }
@@ -481,7 +500,7 @@ impl<'a, 'k> Walker<'a, 'k> {
             Place::Member(o, v) => self
                 .sem
                 .var_decl(o, v)
-                .map(|s| s.is_list() || s.declared.is_empty())
+                .map(|s| s.is_list() || s.declared == "/alist" || s.declared.starts_with("/alist/") || s.declared.is_empty())
                 .unwrap_or(false),
         }
     }
@@ -545,7 +564,7 @@ impl Lint for StoredRefs {
         // Initialize() returns (code/engine/lifeforms/params.dm), so it is never stored past construction.
         let mut init_only: Vec<(String, String)> = Vec::new();
         {
-            let head = crate::pat!(r"^CAPABILITIES\((/[\w/]+)\)");
+            let head = crate::pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]");
             let param = crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");
             let successor = crate::pat!(r"\bsuccessor\s*=\s*nameof\((\w+)\)");
             for f in &files {
@@ -648,6 +667,7 @@ impl Lint for StoredRefs {
         for (owner, name, declared, rel, line) in decls {
             if pooled_holder(sem, &owner)
                 || transient_holder(sem, &transient, &owner)
+                || work_queue(&owner, &name)
                 || init_only_var(&owner, &name)
                 || declared_by_relation(sem, &rels, &owner, &name)
             {

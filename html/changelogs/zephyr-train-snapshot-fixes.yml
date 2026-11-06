@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The train snapshot now carries dq_live_world.sh (the disk budget could not tell a running game server's worktree from an idle one), the merge helpers keep gitignored generated includes, and the light checks run the new train self-tests"

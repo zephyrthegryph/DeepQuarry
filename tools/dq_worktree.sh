@@ -49,9 +49,9 @@ cmd_gc() {
 		[ "$(cd "$d" && pwd -P)" = "$(cd "$here" && pwd -P)" ] && continue
 		case "$n" in pool-[0-9]*) continue ;; esac  # pool slots are permanent: tools/dq_lane_pool.sh leases and releases them
 		case "$n" in train-pre[0-9]*|train-bisect|train-dc) echo "keep  $n (the batch train's precheck/bisect/DreamChecker worktree)"; continue ;; esac
-		# Never removed: the default keep list (the live game server and the merge worktree), DQ_WT_KEEP, the keep file, a detached HEAD
+		# Never removed: the default keep list (the live game server, the merge worktree and the test-server folder), DQ_WT_KEEP, the keep file, a detached HEAD
 		# (a server or a pool slot sits detached at a merged commit, which looks "merged and clean"), or a worktree a process is using.
-		case " play merge-base train-base ${DQ_WT_KEEP:-} $(keep_file_names) " in *" $n "*) echo "keep  $n (keep list)"; continue ;; esac
+		case " play merge-base train-base test-server ${DQ_WT_KEEP:-} $(keep_file_names) " in *" $n "*) echo "keep  $n (keep list)"; continue ;; esac
 		git -C "$d" symbolic-ref -q HEAD >/dev/null 2>&1 || { echo "keep  $n (detached HEAD)"; continue; }
 		if in_use "$d"; then echo "keep  $n (a process uses it)"; continue; fi
 		if merged_clean "$d"; then

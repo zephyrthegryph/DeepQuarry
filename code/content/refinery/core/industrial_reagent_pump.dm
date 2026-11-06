@@ -5,7 +5,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/industrial_reagent_pump
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_pump)
 
 CAPABILITIES(/obj/machinery/reagent_refinery/pump)
 	configure(uses_power(idle = 0, active = 50))

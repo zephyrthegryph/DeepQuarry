@@ -1,4 +1,4 @@
-// Object-model core: the registry (doc/rewrite/object_model_core.md, "Boot").
+// engine core: the registry (doc/rewrite/archive/object_model_core.md, "Boot").
 //
 // Built once, on first use (SSbehaviours.Initialize() forces it at boot).
 // It instantiates every DEF, parses every table row, compiles run order,
@@ -6,14 +6,14 @@
 // declaration error in `errors` (each also a stack_trace unless `quiet`).
 // Unit tests build private registries from a named set of decls.
 
-GLOBAL_DATUM(om_reg, /datum/definition_registry)
+GLOBAL_DATUM(definition_store, /datum/definition_registry)
 
 /proc/definition_registry()
 	RETURN_TYPE(/datum/definition_registry)
-	if(!GLOB.om_reg)
-		GLOB.om_reg = new /datum/definition_registry
-		GLOB.om_reg.build()
-	return GLOB.om_reg
+	if(!GLOB.definition_store)
+		GLOB.definition_store = new /datum/definition_registry
+		GLOB.definition_store.build()
+	return GLOB.definition_store
 
 /// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
@@ -57,9 +57,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	var/list/expansions
 	/// entity type -> /datum/scheduler_type_table (lazy).
 	var/list/type_tables
-	/// Internal behaviours (timers, edge refresh).
+	/// Internal behaviours (timers).
 	var/datum/scheduled_behaviour/timer_behaviour
-	var/datum/scheduled_behaviour/edge_behaviour
 
 /datum/definition_registry/proc/error(msg)
 	errors += msg
@@ -283,14 +282,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 				best = h
 	return isnull(best) ? null : slot_groups_by_holder[best]
 
-/// Returns a new list: a's entries, then b's (b wins). Neither is modified.
-/proc/definition_merge_assoc(list/a, list/b)
-	if(!length(b))
-		return a
-	. = a ? a.Copy() : list()
-	for(var/key in b)
-		.[key] = b[key]
-
 // ---------------------------------------------------------------- behaviours
 
 /datum/definition_registry/proc/build_behaviours()
@@ -311,7 +302,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		pending += B
 		behaviour_by_type[path] = B
 	timer_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/timers]
-	edge_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/edge_refresh]
 	// Inline behaviours from table rows.
 	for(var/datum/definition_bundle/bundle as anything in bundles)
 		bundle.compiled_behaviours = list()
@@ -496,10 +486,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			P.variants[T.family] = list()
 		P.variants[T.family] += T
 	for(var/root in P.variants)
-		P.variants[root] = sortTim(P.variants[root], GLOBAL_PROC_REF(cmp_om_stage_variant))
+		P.variants[root] = sortTim(P.variants[root], GLOBAL_PROC_REF(cmp_stage_variant))
 	// Order: after/before between families, then `order`, then path; deterministic.
 	var/n = length(nodes)
-	nodes = sortTim(nodes, GLOBAL_PROC_REF(cmp_om_stage_order))
+	nodes = sortTim(nodes, GLOBAL_PROC_REF(cmp_stage_order))
 	var/list/index_of = list()
 	for(var/i in 1 to n)
 		index_of[nodes[i]] = i
@@ -550,17 +540,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		compile_run_if(P, T)
 		T.gated = !isnull(T.run_if) || T.min_interval > 0
 	P.wake_on |= wake
-	P.run_mode = (P.frame_hooks ? OM_PIPE_MODE_HOOKS : 0) | (length(P.fact_procs) ? OM_PIPE_MODE_FACTS : 0) \
-		| (P.profile_stride ? OM_PIPE_MODE_PROFILING : 0) | (P.reactive ? OM_PIPE_MODE_REACTIVE : 0) \
-		| (!P.reactive && P.park_after ? OM_PIPE_MODE_PARKS : 0)
+	P.run_mode = (P.frame_hooks ? PIPE_MODE_HOOKS : 0) | (length(P.fact_procs) ? PIPE_MODE_FACTS : 0) \
+		| (P.profile_stride ? PIPE_MODE_PROFILING : 0) | (P.reactive ? PIPE_MODE_REACTIVE : 0) \
+		| (!P.reactive && P.park_after ? PIPE_MODE_PARKS : 0)
 
 /// Deepest `of` first; between equal depths, the least derived stage type.
-/proc/cmp_om_stage_variant(datum/work_stage/a, datum/work_stage/b)
+/proc/cmp_stage_variant(datum/work_stage/a, datum/work_stage/b)
 	if(a.depth != b.depth)
 		return b.depth - a.depth
 	return definition_type_depth(a.type) - definition_type_depth(b.type)
 
-/proc/cmp_om_stage_order(datum/work_stage/a, datum/work_stage/b)
+/proc/cmp_stage_order(datum/work_stage/a, datum/work_stage/b)
 	if(a.order != b.order)
 		return a.order - b.order
 	return sorttext(b.type, a.type)
@@ -646,7 +636,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			error("[B.name]: unknown clock [B.clock]")
 		else
 			B.clock_idx = C.idx
-	if(!(B.lane in 1 to OM_LANE_COUNT))
+	if(!(B.lane in 1 to LANE_COUNT))
 		error("[B.name]: bad lane [B.lane]")
 		B.lane = LANE_SIMULATION
 	if(B.wake_if)
@@ -663,14 +653,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 				continue
 			B.compiled_requires += C
 			B.requires_mask |= C.depends_on
-	B.compiled_related = definition_compile_related(B.wake_on_related, src, B.name)
-	if(!length(B.compiled_related))
-		B.compiled_related = null
-	for(var/list/entry as anything in B.compiled_related)
-		var/list/path = entry[1]
-		if(length(path) == 1)
-			B.related_added_mask |= entry[2] & (CHANGE_RELATION_ADDED | CHANGE_RELATION_REMOVED)
-	B.interest = B.wake_on | B.requires_mask | B.related_added_mask
+	B.interest = B.wake_on | B.requires_mask
 	var/list/intervals = list(B.every, B.every, B.every, B.every)
 	if(B.relevance)
 		if(length(B.relevance) != 4)
@@ -701,49 +684,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		return list(spec)
 	return L
 
-/// wake_on_related / related_inputs: relation type = mask, or list(rel, rel..., mask) entries.
-/proc/definition_compile_related(list/table, datum/definition_registry/reg, owner_name)
-	. = list()
-	for(var/key in table)
-		var/list/path = list()
-		var/mask
-		if(islist(key))
-			var/list/L = key
-			if(length(L) < 2 || !isnum(L[length(L)]))
-				reg.error("[owner_name]: related entry must be list(relation..., mask)")
-				continue
-			for(var/i in 1 to length(L) - 1)
-				path += L[i]
-			mask = L[length(L)]
-		else
-			path += key
-			mask = table[key]
-		var/list/ids = list()
-		var/ok = TRUE
-		for(var/rel_path in path)
-			var/datum/relation_definition/R = reg.relation_by_type[rel_path]
-			if(!R)
-				reg.error("[owner_name]: unknown relation [rel_path]")
-				ok = FALSE
-				break
-			ids += R.id
-		if(!ok)
-			continue
-		if(!isnum(mask) || !mask)
-			reg.error("[owner_name]: related entry for [rel_path_text(path)] needs a mask")
-			continue
-		. += list(list(ids, mask))
-
-/proc/rel_path_text(list/path)
-	return jointext(path, ">")
-
 /// Kahn's algorithm over order_after, deterministic by name. Cycles are boot
 /// errors. Producer -> consumer edges (produces & wake_on) are added where
 /// they don't create a cycle.
 /proc/definition_topo_order(list/nodes, datum/definition_registry/reg)
 	var/n = length(nodes)
 	var/list/index_of = list()
-	var/list/sorted_nodes = sortTim(nodes.Copy(), GLOBAL_PROC_REF(cmp_om_behaviour_name))
+	var/list/sorted_nodes = sortTim(nodes.Copy(), GLOBAL_PROC_REF(cmp_behaviour_name))
 	for(var/i in 1 to n)
 		var/datum/scheduled_behaviour/B = sorted_nodes[i]
 		index_of[B] = i
@@ -825,7 +772,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			stack += j
 	return FALSE
 
-/proc/cmp_om_behaviour_name(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
+/proc/cmp_behaviour_name(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
 	return sorttext(b.name, a.name)
 
 // ---------------------------------------------------------------- derived
@@ -864,7 +811,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	var/list/L = row
 	var/static/list/allowed
 	if(!allowed)
-		allowed = list("derive", "name", "expr", "channel", "over", "reader", "inputs", "derived_inputs", "member_inputs", "max_age", "related_inputs")
+		allowed = list("derive", "name", "expr", "channel", "inputs", "derived_inputs", "max_age")
 	for(var/key in L)
 		if(!istext(key) || !(key in allowed))
 			error("[B.type] derived: unknown key [key]")
@@ -878,38 +825,15 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 	D.channel = L["channel"] || 0
 	D.inputs = L["inputs"] || 0
 	D.derived_inputs = L["derived_inputs"]
-	D.member_inputs = L["member_inputs"] || 0
 	D.max_age = L["max_age"] || 0
-	D.related_inputs = L["related_inputs"]
 	switch(kind)
 		if("check")
 			D.expr = L["expr"]
 			if(isnull(D.expr))
 				error("[B.type] derived [D.name]: DERIVE needs a check expression")
 				return null
-		if("sum")
-			D.aggregate = AGG_SUM
-		if("count")
-			D.aggregate = AGG_COUNT
-		if("any")
-			D.aggregate = AGG_ANY
-		if("all")
-			D.aggregate = AGG_ALL
-		if("min")
-			D.aggregate = AGG_MIN
-		if("max")
-			D.aggregate = AGG_MAX
 		else
 			error("[B.type] derived [D.name]: unknown kind [kind]")
-			return null
-	if(D.aggregate)
-		D.over = L["over"]
-		D.reader = L["reader"]
-		if(isnull(D.over))
-			error("[B.type] derived [D.name]: aggregate needs `over`")
-			return null
-		if(D.aggregate != AGG_COUNT && isnull(D.reader))
-			error("[B.type] derived [D.name]: aggregate needs a reader")
 			return null
 	return D
 
@@ -920,20 +844,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			error("derived [D.name]: malformed check expression")
 		else
 			D.inputs |= D.compiled_expr.depends_on
-	if(D.aggregate)
-		var/datum/relation_definition/R = relation_by_type[D.over]
-		if(!R)
-			error("derived [D.name]: over names unknown relation [D.over]")
-		else
-			D.over_rel_id = R.id
-		if(islist(D.reader) && D.reader[1] == "derived")
-			var/datum/derived_definition/src_d = derived_by_name[D.reader[2]]
-			if(!src_d)
-				error("derived [D.name]: reader names unknown derived [D.reader[2]]")
-			else if(!src_d.channel)
-				error("derived [D.name]: reader derived [src_d.name] has no channel")
-			else
-				D.member_inputs |= src_d.channel
 	for(var/name in D.derived_inputs)
 		var/datum/derived_definition/src_d = derived_by_name[name]
 		if(!src_d)
@@ -942,9 +852,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			error("derived [D.name]: input derived [name] has no channel")
 		else
 			D.inputs |= src_d.channel
-	D.compiled_related = definition_compile_related(D.related_inputs, src, "derived [D.name]")
-	if(!length(D.compiled_related))
-		D.compiled_related = null
 
 /// Orders derived values so inputs come first; a cycle is a boot error.
 /datum/definition_registry/proc/order_derived()
@@ -956,10 +863,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		for(var/name in D.derived_inputs)
 			var/datum/derived_definition/src_d = derived_by_name[name]
 			if(src_d)
-				succ[src_d.idx] |= D.idx
-		if(islist(D.reader) && D.reader[1] == "derived")
-			var/datum/derived_definition/src_d = derived_by_name[D.reader[2]]
-			if(src_d && src_d != D)
 				succ[src_d.idx] |= D.idx
 	var/list/order = definition_kahn(succ, n)
 	if(length(order) < n)
@@ -1029,7 +932,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 				T.stages |= stage_path
 			for(var/row in B.ui)
 				T.ui += list(row)
-	T.behaviours = sortTim(behaviour_set, GLOBAL_PROC_REF(cmp_om_behaviour_id))
+	T.behaviours = sortTim(behaviour_set, GLOBAL_PROC_REF(cmp_behaviour_id))
 	for(var/datum/service_definition/S as anything in services)
 		var/mine = 0
 		for(var/observed in S.wake_on_any)
@@ -1044,7 +947,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		T.relay_mask |= scheduler_field_field_table(path)[T.derived_relays[i]]
 	return T
 
-/proc/cmp_om_behaviour_id(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
+/proc/cmp_behaviour_id(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
 	return a.id - b.id
 
 /datum/definition_registry/proc/behaviour(path_or_def)

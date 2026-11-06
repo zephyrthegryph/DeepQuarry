@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { FormattedText } from 'tgui-say/LanguagePreview';
 import { EmptyState } from './common/EmptyState';
 
 type Data = {
@@ -15,6 +16,8 @@ type Data = {
   ooc_favs: string;
   ooc_maybes: string;
   ooc_style: BooleanLike;
+  /// The chat's emphasis markers (GLOB.speech_toppings).
+  markers?: Record<string, string>;
 };
 
 type SectionDef = {
@@ -64,7 +67,9 @@ export const OocNotes = () => {
           }
         >
           {ooc_notes ? (
-            <Box preserveWhitespace>{ooc_notes}</Box>
+            <Box>
+              <FormattedText text={ooc_notes} markers={data.markers ?? {}} />
+            </Box>
           ) : (
             <EmptyState>(none)</EmptyState>
           )}
@@ -96,7 +101,9 @@ export const OocNotes = () => {
                   }
                 >
                   {text ? (
-                    <Box preserveWhitespace>{text}</Box>
+                    <Box>
+                      <FormattedText text={text} markers={data.markers ?? {}} />
+                    </Box>
                   ) : (
                     <EmptyState>(none)</EmptyState>
                   )}

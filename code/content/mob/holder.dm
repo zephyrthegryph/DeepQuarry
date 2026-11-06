@@ -1,0 +1,433 @@
+//Helper object for picking dionaea (and other creatures) up.
+
+/obj/item/holder
+	name = "holder"
+	desc = "You shouldn't ever see this."
+	icon = 'icons/obj/objects.dmi'
+
+	sprite_sheets = list(
+		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
+		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi'
+		)
+
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_holder.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_holder.dmi',
+		)
+	pixel_y = 8
+	var/mob/living/held_mob
+	var/matrix/original_transform
+	var/original_vis_flags = NONE
+
+/// The mob a holder is made around (its constructor param): it moves in at init, the holder keeps no reference to the argument.
+/obj/item/holder/var/tmp/mob/held_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/holder/proc/take_held(mob/held)
+	if(!ismob(held))
+		stack_trace("Holder was not passed a mob.")
+		spent(src)
+		return
+	held.forceMove(src)
+	if(isturf(loc) || isbelly(loc))
+		schedule_cleanup_check()
+
+/mob/living/get_status_tab_items()
+	. = ..()
+	if(. && istype(loc, /obj/item/holder))
+		var/location = ""
+		var/obj/item/holder/H = loc
+		if(ishuman(H.loc))
+			var/mob/living/carbon/human/HH = H.loc
+			if(HH.get_equipped_item(SLOT_ID_HAND_L) == H)
+				location = "[HH]'s left hand"
+			else if(HH.get_equipped_item(SLOT_ID_HAND_R) == H)
+				location = "[HH]'s right hand"
+			else if(HH.get_equipped_item(SLOT_ID_POCKET_R) == H || HH.get_equipped_item(SLOT_ID_POCKET_L) == H)
+				location = "[HH]'s pocket"
+			else if(HH.get_equipped_item(SLOT_ID_HEAD) == H)
+				location = "[HH]'s head"
+			else if(HH.get_equipped_item(SLOT_ID_SHOES) == H)
+				location = "[HH]'s feet"
+			else
+				location = "[HH]"
+		else if(ismob(H.loc))
+			var/mob/living/M = H.loc
+			if(M.get_equipped_item(SLOT_ID_HAND_L) == H)
+				location = "[M]'s left hand"
+			else if(M.get_equipped_item(SLOT_ID_HAND_R) == H)
+				location = "[M]'s right hand"
+			else
+				location = "[M]"
+		else if(ismob(H.loc.loc))
+			location = "[H.loc.loc]'s [H.loc]"
+		else
+			location = "[H.loc]"
+		if (location != "")
+			. += ""
+			. += "Location: [location]"
+
+/// Loads the mob into the holder and sets several vis_flags
+/obj/item/holder/Entered(mob/held, atom/OldLoc)
+	if(held_mob)
+		held.forceMove(get_turf(src))
+		return
+	ASSERT(ismob(held))
+	. = ..()
+	rel_set(src, nameof(held_mob), held)
+	original_vis_flags = held.vis_flags
+	held.vis_flags = VIS_INHERIT_ID|VIS_INHERIT_LAYER|VIS_INHERIT_PLANE
+	vis_add(src, held)
+	name = held.name
+	original_transform = held.transform
+	held.transform = null
+
+/// Handles restoring the vis flags and scale of the mob, also makes the holder invisible now that it's empty.
+/obj/item/holder/Exited(atom/movable/thing, atom/OldLoc)
+	if(thing == held_mob)
+		held_mob.transform = original_transform
+		held_mob.update_transform()
+		held_mob.vis_flags = original_vis_flags
+		rel_clear(src, nameof(held_mob))
+		set_invisibility(INVISIBILITY_ABSTRACT)
+		schedule_cleanup_check() // once the move is over
+	..()
+
+/obj/item/holder/Moved(atom/old_loc)
+	. = ..()
+	if(isturf(loc) || isbelly(loc))
+		schedule_cleanup_check()
+
+/// Dumps the mob if we still hold one, and if we are held by a mob clears us from its inventory.
+// the held mob is put down and its view reset.
+/obj/item/holder/on_destroy(force)
+	if(held_mob)
+		var/mob/cached_mob = held_mob
+		dump_mob()
+		cached_mob.reset_perspective() // This case cannot be handled gracefully, make sure the mob view is cleaned up.
+	if(ismob(loc))
+		var/mob/M = loc
+		M.drop_from_inventory(src, loc)
+	..()
+
+/// If the mob leaves the holder, or the holder lands on a turf or in a belly, clean us up: checked
+/// right after the move that did it (Exited(), Moved()), never polled.
+/obj/item/holder/proc/schedule_cleanup_check()
+	if(!after_pending(src, "cleanup_timer"))
+		after(src, 0, PROC_REF(cleanup_check), key = "cleanup_timer")
+
+/obj/item/holder/proc/cleanup_check()
+	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))
+		spent(src)
+
+/// Releases the mob from inside the holder. Calls forceMove() which calls Exited(). Then does cleanup for the client's eye location.
+/obj/item/holder/proc/dump_mob()
+	if(!held_mob)
+		return
+	if (held_mob.loc == src || isnull(held_mob.loc))
+		held_mob.forceMove(loc)
+
+/obj/item/holder/throw_at(atom/target, range, speed, thrower)
+	if(held_mob)
+		var/mob/localref = held_mob
+		dump_mob()
+		var/thrower_mob_size = 1
+		if(ismob(thrower))
+			var/mob/M = thrower
+			thrower_mob_size = M.mob_size
+		var/mob_range = round(range * min(thrower_mob_size / localref.mob_size, 1))
+		localref.throw_at(target, mob_range, speed, thrower)
+
+/obj/item/holder/GetID()
+	return held_mob?.GetIdCard()
+
+/obj/item/holder/GetAccess()
+	var/obj/item/I = GetID()
+	return I?.GetAccess() || ..()
+
+/obj/item/holder/container_resist(mob/living/held)
+	if(ismob(loc))
+		var/mob/M = loc
+		M.drop_from_inventory(src) // If it's another item, we can just continue existing, or if it's a turf we'll qdel() in Moved()
+		to_chat(M, span_warning("\The [held] wriggles out of your grip!"))
+		to_chat(held, span_warning("You wiggle out of [M]'s grip!"))
+	else if(istype(loc, /obj/item/clothing/accessory/holster))
+		var/obj/item/clothing/accessory/holster/holster = loc
+		if(holster.holstered == src)
+			holster.clear_holster()
+		to_chat(held, span_warning("You extricate yourself from [holster]."))
+		forceMove(get_turf(src))
+	else if(isitem(loc))
+		var/obj/item/I = loc
+		to_chat(held, span_warning("You struggle free of [loc]."))
+		forceMove(get_turf(src))
+		if(istype(I))
+			I.on_holder_escape(src)
+
+/obj/item/holder/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
+	. = ..()
+	EXTRAPOLATOR_ACT_ADD_DISEASES(., held_mob.get_contagions())
+
+//Mob specific holders.
+/obj/item/holder/diona
+	item_state = "diona"
+
+CAPABILITIES(/obj/item/holder/diona)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER))
+
+/obj/item/holder/drone
+	item_state = "repairbot"
+
+/obj/item/holder/drone/swarm
+	item_state = "constructiondrone"
+
+/obj/item/holder/pai
+
+/obj/item/holder/pai/take_held(mob/held)
+	..()
+	if(held)
+		set_item_state(held.icon_state)
+
+/obj/item/holder/mouse
+	name = "mouse"
+	desc = "It's a small rodent."
+	item_state = "mouse_gray"
+	w_class = ITEMSIZE_TINY
+
+/obj/item/holder/mouse/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
+	. = ..()
+	var/mob/living/simple_mob/animal/passive/mouse/M = held_mob
+	EXTRAPOLATOR_ACT_ADD_DISEASES(., M.rat_diseases)
+
+/obj/item/holder/mouse/white
+	item_state = "mouse_white"
+
+/obj/item/holder/mouse/gray
+	item_state = "mouse_gray"
+
+/obj/item/holder/mouse/brown
+	item_state = "mouse_brown"
+
+/obj/item/holder/mouse/black
+	item_state = "mouse_black"
+
+/obj/item/holder/mouse/operative
+	item_state = "mouse_operative"
+
+/obj/item/holder/mouse/rat
+	item_state = "mouse_rat"
+
+/obj/item/holder/possum
+	item_state = "possum"
+
+/obj/item/holder/possum/poppy
+	item_state = "poppy"
+
+/obj/item/holder/cat
+	item_state = "cat"
+
+/obj/item/holder/cat/runtime
+
+/obj/item/holder/fennec
+
+/obj/item/holder/cat/runtime
+
+/obj/item/holder/cat/cak
+	item_state = "cak"
+
+/obj/item/holder/cat/bluespace
+	item_state = "bscat"
+
+/obj/item/holder/cat/spacecat
+	item_state = "spacecat"
+
+/obj/item/holder/cat/original
+	item_state = "original"
+
+/obj/item/holder/cat/breadcat
+	item_state = "breadcat"
+
+/obj/item/holder/corgi
+	item_state = "corgi"
+
+/obj/item/holder/lisa
+	item_state = "lisa"
+
+/obj/item/holder/old_corgi
+	item_state = "old_corgi"
+
+/obj/item/holder/void_puppy
+	item_state = "void_puppy"
+
+/obj/item/holder/narsian
+	item_state = "narsian"
+
+/obj/item/holder/bullterrier
+	item_state = "bullterrier"
+
+/obj/item/holder/fox
+	item_state = "fox"
+
+/obj/item/holder/pug
+	item_state = "pug"
+
+/obj/item/holder/sloth
+	item_state = "sloth"
+
+/obj/item/holder/borer
+	item_state = "brainslug"
+
+/obj/item/holder/leech
+	color = "#003366"
+
+/obj/item/holder/cat/fluff/tabiranth
+	name = "Spirit"
+	desc = "A small, inquisitive feline, who constantly seems to investigate his surroundings."
+	gender = MALE
+	icon_state = "kitten"
+	w_class = ITEMSIZE_SMALL
+
+/obj/item/holder/cat/kitten
+	icon_state = "kitten"
+	w_class = ITEMSIZE_SMALL
+
+/obj/item/holder/cat/fluff/bones
+	name = "Bones"
+	desc = "It's Bones! Meow."
+	gender = MALE
+	icon_state = "cat3"
+
+/obj/item/holder/bird
+	name = "bird"
+	desc = "It's a bird!"
+	icon_state = null
+	item_icons = null
+	w_class = ITEMSIZE_SMALL
+
+/// Declared setup: settle held bird, after the complete parent chain.
+/obj/item/holder/bird/proc/settle_held_bird()
+	held_mob?.lay_down()
+
+/obj/item/holder/fish
+
+CAPABILITIES(/obj/item/holder/fish)
+	configure(item_worn(slots = SLOT_HOLSTER))
+	configure(item_combat(attack_verbs = list("fished", "disrespected", "smacked", "smackereled")))
+	configure(item_sounds(hit = SFX_EFFECTS_SLIME_SQUISH))
+
+/obj/item/holder/fish/afterattack(atom/target, mob/living/user, proximity)
+	if(!target)
+		return
+	if(!proximity)
+		return
+	if(isliving(target))
+		var/mob/living/L = target
+		if(prob(10))
+			L.status_at_least(STAT_STUNNED, 2)
+
+/// A holder struck with itself in harm intent squeezes what it holds (a stance-declared op ahead of holder_use, which passes the input on).
+/obj/item/holder/proc/holder_squeezed(datum/act/op/A)
+	var/mob/user = A.actor
+	if(A.held != src)
+		return OP_DECLINE
+	// ITION: MicroHandCrush
+	for(var/mob/living/M in contents_of(src))
+		if(user.size_multiplier > M.size_multiplier)
+			var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
+			to_chat(user, span_danger("You roughly squeeze [M]!"))
+			to_chat(M, span_danger("You are roughly squeezed by [user]!"))
+			log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]", A.actor)
+			M.injure(INJURY_BLUNT, dam, null, user)
+	// ITION: MicroHandCrush END
+	return OP_OK
+
+/// An item used on the holder is passed on to the creatures inside. The input is not used up: the item's afterattack still follows.
+/obj/item/holder/proc/holder_item_used(datum/act/op/A)
+	for(var/mob/M in contents_of(src))
+		M.item_used_on(A.held, A.actor)
+	return OP_OK
+
+//Mob procs and vars for scooping up
+/mob/living/var/holder_type
+
+/// A small mob dragged onto an upright, adjacent human (neither in combat mode) is scooped up by them, or climbs up when it is the one dragging.
+/// TRUE when the drop was this case (the scoop itself may still refuse), FALSE when it is not.
+/mob/living/proc/scoop_with_actor(mob/user, atom/over_object)
+	var/mob/living/carbon/human/H = over_object
+	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (!combat_mode && !H.combat_mode))
+		if(!issmall(H) || !ishuman(src))
+			get_scooped(H, user == src)
+		return TRUE
+	return FALSE
+
+/mob/living/proc/get_scooped(mob/living/carbon/grabber, self_grab)
+
+	if(!holder_type || src?.buckled_to() || LAZYLEN(pinned))
+		return
+
+	// Dodge pickup if enabled by personal space bubble.
+	if(!self_grab && (STATE_GET(src, living_misc, touch_reaction_flags) & SPECIES_TRAIT_PICKUP_DODGE))
+		act_message(src, grabber, others = span_notice("%U% deftly evades %T%'s attempt to pick them up!"))
+		to_chat(grabber, span_notice("[src] evaded your pickup attempt!"))
+		return
+
+	if(self_grab)
+		if(src.incapacitated()) return
+	else
+		if(grabber.incapacitated()) return
+
+	//size diff check
+	var/sizediff = grabber.size_multiplier - size_multiplier
+	if(sizediff < -0.5)
+		if(self_grab)
+			to_chat(src, span_warning("You are too big to fit in \the [grabber]\'s hands!"))
+		else
+			to_chat(grabber, span_warning("\The [src] is too big to fit in your hands!"))
+		return
+	//end
+
+	var/obj/item/holder/H = new holder_type(get_turf(src), src)
+	H.sync(src)
+	grabber.put_in_hands(H)
+
+	if(self_grab)
+		to_chat(grabber, span_notice("\The [src] clambers onto you!"))
+		to_chat(src, span_notice("You climb up onto \the [grabber]!"))
+		grabber.equip_to_slot_if_possible(H, SLOT_ID_BACK, 0, 1)
+	else
+		to_chat(grabber, span_notice("You scoop up \the [src]!"))
+		to_chat(src, span_notice("\The [grabber] scoops you up!"))
+
+	add_attack_logs(grabber, H.held_mob, "Scooped up", FALSE) // Not important enough to notify admins, but still helpful.
+	return H
+
+/obj/item/holder/proc/sync(mob/living/M)
+	set_dir(2)
+	overlays.Cut()
+	if(M.item_state)
+		set_item_state(M.item_state)
+	set_color(M.color)
+	name = M.name
+	desc = M.desc
+	overlays |= M.overlays
+
+/obj/item/holder/protoblob
+	w_class = ITEMSIZE_TINY
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/lefthand_holder.dmi',
+		slot_r_hand_str = 'icons/mob/righthand_holder.dmi',
+		slot_head_str = 'icons/mob/head.dmi',
+		slot_w_uniform_str = 'icons/mob/uniform.dmi',
+		slot_wear_suit_str = 'icons/mob/suit.dmi',
+		slot_r_ear_str = 'icons/mob/ears.dmi',
+		slot_l_ear_str = 'icons/mob/ears.dmi')
+
+
+
+
+CAPABILITIES(/obj/item/holder/protoblob)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack))
+
+CAPABILITIES(/obj/item/holder/bird)
+	setup(PROC_REF(settle_held_bird))

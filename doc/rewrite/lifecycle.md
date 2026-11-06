@@ -61,7 +61,7 @@ place the ordering hazards now scattered through code comments are encoded:
 | 2 | **Dematerialize.** Leave registries (L3) and drop rule bindings, as today. Every remaining `GLOB.x += src` moves into a registry declaration. | registries | ~72 list removals |
 | 3 | **Contents.** Resolve every slot's **declared destroy policy** (§3). This is depth-first post-order through nested holders: children before parents. No holder-managed or leftover `contents` loops remain. | containment ledger | hand spills, `QDEL_LIST` of parts, machinery `component_parts` loops, the movable `contents` sweep |
 | 4 | **Links.** `lifecycle_prerelease()`, the type's `on_destroy()` and behaviours' `on_entity_destroy(E)`, then dispose of every owned value by policy and clear every relation on both ends (§4, [archive/ownership.md](archive/ownership.md)). | links framework | ~400 null/QDEL_NULL/pair bodies |
-| 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; OM timers and task steps owned by the datum (`om_teardown_rest`); arguments naming it are handles and stop resolving; grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
+| 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; timers and task steps owned by the datum (`om_teardown_rest`); arguments naming it are handles and stop resolving; grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
 | 6 | **Effects.** Declared `destroy_effects` data: message, sound, debris type, neighbour update. | effects | ~60 effect bodies |
 | 7 | **Core `Destroy()`.** The core chain (`/atom/movable`, `/atom`, `/datum`). A `Destroy()` override anywhere else is banned outright (`lifecycle_counts_lint.py`); the only other `Destroy()` definitions are `/client` and the MC's `/datum/controller` tree. The GC hint is the type's `destroy_hint` var. | type | every per-type `Destroy()` |
 | 8 | **Scrub.** Null outbound declared owned and pair vars to break reference cycles, then hand the datum to GC. Nothing is parked in nullspace pending deletion. | links | cycle-breaking null-only bodies |
@@ -170,7 +170,7 @@ Pooled fields reset automatically; obsolete POOL_RESET declarations are removed 
 - Poisoning, `pool_set_poison(TRUE)` (tests and debugging): a released object is
   marked `POOL_STATE_POISONED` and never handed out again, and `POOL_ASSERT_LIVE(src)`
   at the top of the type's procs crashes on it, catching use after release.
-- `om_diagnostics()["pools"]` (`pool_diagnostics()`) reports free, out, peak,
+- `km_diagnostics()["pools"]` (`pool_diagnostics()`) reports free, out, peak,
   created, taken, released, double releases, poisoned, use-after-release and
   refused qdels per pooled type.
 
@@ -206,7 +206,7 @@ owns medical, body, organs, surgery and Life, so every sweep (LC-refs, the
 qdel and Destroy() ratchets, weakrefs) includes them. They use the same phases:
 - body part slots (w6/o2) use per-slot policies with children-first order;
 - the mind/brain `TRANSFER` resolver is declared by body plans;
-- clock-scheduled callbacks (w6/k1) are OM timers (`om_after`), cancelled in
+- clock-scheduled callbacks (w6/k1) are timers (`om_after`), cancelled in
   phase 5 with the rest of the record;
 - O4 (body destroy ordering) builds on §3.
 

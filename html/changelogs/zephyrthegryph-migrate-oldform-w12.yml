@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "A mecha passenger's Eject verb is granted on boarding and revoked on leaving"

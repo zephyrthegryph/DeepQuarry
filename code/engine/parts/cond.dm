@@ -217,9 +217,6 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 			return A.held_provider()
 	return A.target
 
-/proc/req_make(req_type, list/named)
-	return part_make(req_type, named)
-
 /// req(T, of = ON_HELD): the participant is of type T. A callback returns null to allow, or a refusal reason.
 /// silent = TRUE refuses without telling the actor anything (a guard the old code refused with a bare return FALSE): the reason is the empty message.
 /proc/req(what, of = ON_HELD, because = null, id = null, silent = FALSE)
@@ -737,13 +734,6 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	if(length(texts))
 		return jointext(texts, " or ")
 	return has_silent_refusal ? /datum/msg/req_silent : default_reason
-
-/// Does the entity carry the tag (a TAG_X): TAG_UI and TAG_TOPIC are on every op, others are declared by tag().
-/proc/op_has_tag(datum/D, tag_id)
-	for(var/datum/op_plan/P as anything in op_plans_of(D))
-		if(tag_id in P.tags)
-			return TRUE
-	return FALSE
 
 /// Does anything of `holder` listen for `notice_type`? (an op that only publishes a notice is offered only where a hook hears it.)
 /proc/op_notice_wanted(datum/D, notice_type)

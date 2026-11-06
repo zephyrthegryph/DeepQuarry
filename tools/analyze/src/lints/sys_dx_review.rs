@@ -30,7 +30,7 @@ use crate::tree::SourceFile;
 
 use crate::allow_registry_fields::sys_dx_review::RULES;
 
-const EXEMPT_PREFIXES: &[&str] = &["code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/"];
+const EXEMPT_PREFIXES: &[&str] = &["code/tests/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"];
 
 /// The proc a line belongs to: its type path, its name, whether it is an op effect, and whether it is an output.
 struct ProcCtx {
@@ -92,7 +92,7 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
         if at_col0 {
             ctx = None;
             block_type = None;
-            if let Some(c) = pat!(r"^CAPABILITIES\((/[\w/]+)\)").captures(code) {
+            if let Some(c) = pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]").captures(code) {
                 block_type = Some(c.s(1).to_string());
             } else if let Some((type_path, name, args)) = header(code) {
                 let effect = args.contains("datum/act/op/");
@@ -242,7 +242,7 @@ fn selftest() -> Result<String, String> {
     if got != want {
         return Err(format!("dx_review selftest: got {:?}", got));
     }
-    let t = SourceFile::from_text("code/modules/unit_tests/x.dm", "/obj/a/proc/b(datum/act/op/A)\n\topen_request(A, x)");
+    let t = SourceFile::from_text("code/tests/unit_tests/x.dm", "/obj/a/proc/b(datum/act/op/A)\n\topen_request(A, x)");
     let mut v2 = Vec::new();
     scan_file(&t, &mut v2);
     if !v2.is_empty() {

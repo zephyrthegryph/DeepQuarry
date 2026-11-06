@@ -15,7 +15,7 @@
 // rel_clear, rel_take) work on all three shapes alike.
 
 /datum/rx_state
-	/// Keyed many relations: var name -> alist of member key (own_key(), weak) -> the key (or a list of keys) the member sits under in that var.
+	/// Keyed many relations: var name -> alist of member slot (slot_of(), weak) -> the key (or a list of keys) the member sits under in that var.
 	var/list/rel_keys
 
 /// The members of a many relation container as a new list of datums: a list's elements, an alist set's keys, an alist map's values. A member
@@ -25,14 +25,21 @@
 		var/list/plain = L
 		return plain.Copy()
 	. = list()
+	// Slots, not the members: an alist freed with an object key keeps a reference to it (dq_alist_object_key_refs), even emptied.
 	var/alist/seen = alist()
 	for(var/key, value in L)
-		if(isdatum(key) && !seen[key])
-			seen[key] = TRUE
-			. += key
-		if(isdatum(value) && !seen[value])
-			seen[value] = TRUE
-			. += value
+		if(isdatum(key))
+			var/datum/member = key
+			var/member_key = SLOT(member)
+			if(!seen[member_key])
+				seen[member_key] = TRUE
+				. += key
+		if(isdatum(value))
+			var/datum/member = value
+			var/member_key = SLOT(member)
+			if(!seen[member_key])
+				seen[member_key] = TRUE
+				. += value
 
 /// TRUE when holder.var_name's container `L` holds `member` (as a list member, an alist key, or an alist value under some key). A long plain list
 /// asks the member's reverse index, so adding a member to a big ref_many does not scan it.
@@ -42,7 +49,7 @@
 	if(length(L) <= REL_SCAN_MAX)
 		return member in L
 	. = rel_names(holder, var_name, member)
-	#ifdef UNIT_TESTS
+	#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	// The index is written with the view: it must agree with the list (checked while the list is small enough that the scan costs nothing).
 	if(length(L) <= 256 && . != (member in L))
 		OWN_REPORT("[holder.type].[var_name]: the reverse index says [. ? "a member is present" : "a member is absent"] but the list disagrees; something wrote the list outside rel_add()/rel_remove()")
@@ -60,7 +67,7 @@
 		LAZYINITLIST(rx.rel_keys)
 		index = alist()
 		rx.rel_keys[var_name] = index
-	var/mkey = OWN_KEY(member)
+	var/mkey = SLOT(member)
 	var/current = index[mkey]
 	if(isnull(current))
 		index[mkey] = key
@@ -78,7 +85,7 @@
 	var/alist/index = rx.rel_keys[var_name]
 	if(!index || !isdatum(member))
 		return null
-	return index[OWN_KEY(member)]
+	return index[SLOT_KNOWN(member)]
 
 /// `member` no longer sits under `key` in holder.var_name.
 /proc/rel_keys_forget(datum/holder, var_name, datum/member, key)
@@ -86,7 +93,9 @@
 	var/alist/index = rx?.rel_keys?[var_name]
 	if(!index || !isdatum(member))
 		return
-	var/mkey = OWN_KEY(member)
+	var/mkey = SLOT_KNOWN(member)
+	if(!mkey)
+		return
 	var/current = index[mkey]
 	if(isnull(current))
 		return
@@ -108,7 +117,7 @@
 	var/alist/index = rx?.rel_keys?[var_name]
 	if(!index || !isdatum(member))
 		return
-	index -= OWN_KEY(member)
+	index -= SLOT_KNOWN(member)
 	if(!length(index))
 		rel_keys_clear(holder, var_name)
 

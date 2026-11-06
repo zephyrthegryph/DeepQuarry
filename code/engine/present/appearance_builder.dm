@@ -38,15 +38,15 @@
 	var/offset_y
 	/// look.effect(): list(proc_ref, args...) entries run on the holder, after the look is applied, outside the output.
 	var/list/effects
-	/// look.watch(): own keys of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
+	/// look.watch(): slots of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
 	var/list/watched
 	/// look.watch_worn(): the subset of `watched` this draw shows worn or held.
 	var/list/watched_worn
 	/// look.neighbours(): the types of the neighbours this draw looked for (the watched turfs tell the holder only of those).
 	var/list/neighbour_types
-	/// look.watch_look(): own key -> look serial (cap_engine_state.look_serial) of the atoms whose whole look this draw composes: only a change of THEIR LOOK
+	/// look.watch_look(): slot -> look serial (cap_engine_state.look_serial) of the atoms whose whole look this draw composes: only a change of THEIR LOOK
 	/// (look_published()) redraws the holder, and the serials are part of the change key, so the holder's look is applied again when one moved.
-	var/list/watched_looks
+	var/alist/watched_looks
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
 
@@ -223,7 +223,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /datum/look/proc/watch(datum/thing)
 	if(!isdatum(thing) || QDELETED(thing))
 		return
-	LAZYOR(watched, OWN_KEY(thing))
+	LAZYOR(watched, SLOT(thing))
 
 /**
  * watch() for a thing this draw shows worn or held (a human's clothes, what is in its hands): the draw reads whatever the thing shows (its sprite
@@ -233,7 +233,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /datum/look/proc/watch_worn(datum/thing)
 	if(!isdatum(thing) || QDELETED(thing))
 		return
-	var/key = OWN_KEY(thing)
+	var/key = SLOT(thing)
 	LAZYOR(watched, key)
 	LAZYOR(watched_worn, key)
 
@@ -248,7 +248,9 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /datum/look/proc/watch_look(atom/thing)
 	if(!isatom(thing) || QDELETED(thing))
 		return
-	LAZYSET(watched_looks, OWN_KEY(thing), cap_engine_state_of(thing)?.look_serial || 0)
+	if(!watched_looks)
+		watched_looks = alist()
+	watched_looks[SLOT(thing)] = cap_engine_state_of(thing)?.look_serial || 0
 
 /// watch_look() for a draw that shows `thing` on `wearer` (an item in a hand, on the body): `thing` is not followed through its look when its own draw
 /// composes the wearer's look (look_composes()), or each would redraw the other for good.
@@ -468,7 +470,16 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /// A fresh overlay image for look.overlay() with its placement and tint set in one call (a draw() writes nothing, so an overlay raised, tinted, put on
 /// another plane or turned is built here): `icon_state` of `icon`, or the appearance of `of` (an atom drawn into the look, a scanner's patient).
 /proc/look_overlay_image(icon, icon_state, layer = FLOAT_LAYER, plane = FLOAT_PLANE, alpha = 255, pixel_x = 0, pixel_y = 0, pixel_w = 0, pixel_z = 0, color = null, dir = null, matrix/transform = null, list/filters = null, atom/of = null, appearance_flags = null, invisibility = null, blend_mode = null)
-	var/image/I = of ? image(of) : image(icon = icon, icon_state = icon_state)
+	RETURN_TYPE(/image)
+	// A dir given to the constructor is kept when the image is shown as an overlay; one assigned afterwards (to an image, a mutable_appearance, or the
+	// .appearance of either) is dropped, whatever its value (the shuttle corners drew the lighting "diagonals" state in a cardinal dir, a pink X).
+	// So a turned image is built with its dir, from an icon or from `of`. Never write `.dir =` on an image or appearance bound for an overlay
+	// (the `image_dir_after_build` lint); dq_overlay_dir_renders holds the rule.
+	var/image/I
+	if(of)
+		I = isnull(dir) ? image(of) : image(of, dir = dir)
+	else
+		I = isnull(dir) ? image(icon = icon, icon_state = icon_state) : image(icon = icon, icon_state = icon_state, dir = dir)
 	I.layer = layer
 	I.plane = plane
 	I.alpha = alpha
@@ -478,8 +489,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	I.pixel_z = pixel_z
 	if(!isnull(color))
 		I.color = color
-	if(!isnull(dir))
-		I.dir = dir
 	if(transform)
 		I.transform = transform
 	if(length(filters))
@@ -645,6 +654,10 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /// runtime icons never share a key (their text is "/icon" for every one) and the same cached icon always has the same key.
 /proc/look_icon_key(icon)
 	READS_FROM()
+	if(isfile(icon) && !length("[icon]"))
+		// A runtime icon put on an image (image(icon)) becomes a cache resource whose text is empty: every one would share the key "", so a
+		// wing or tail redrawn in another style or colour kept the first one's look. Its reference names that resource.
+		return REF(icon)
 	if(isnull(icon) || isfile(icon) || istext(icon))
 		return "[icon]"
 	if(istype(icon, /icon))
@@ -786,22 +799,22 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		LAZYADD(cache.look_filters, name)
 	if(ismovable(A))
 		var/atom/movable/M = A
-		for(var/atom/movable/thing as anything in cache.look_vis)
+		for(var/atom/movable/thing as anything in slot_datums(cache.look_vis))
 			if(!vis || !(thing in vis))
 				M.vis_contents -= thing
 		cache.look_vis = null
 		for(var/atom/movable/thing as anything in vis)
 			M.vis_contents |= thing
-			LAZYADD(cache.look_vis, thing)
+			LAZYADD(cache.look_vis, SLOT(thing))
 	else if(isturf(A)) // a turf shows its shared visuals (an underwater tile's water layer) the same way a movable does
 		var/turf/T = A
-		for(var/atom/movable/thing as anything in cache.look_vis)
+		for(var/atom/movable/thing as anything in slot_datums(cache.look_vis))
 			if(!vis || !(thing in vis))
 				T.vis_contents -= thing
 		cache.look_vis = null
 		for(var/atom/movable/thing as anything in vis)
 			T.vis_contents |= thing
-			LAZYADD(cache.look_vis, thing)
+			LAZYADD(cache.look_vis, SLOT(thing))
 	vis = null // the atoms this draw showed are on the target's cache now: the look keeps none of them
 	if(flick_state)
 		flick(flick_state, A)

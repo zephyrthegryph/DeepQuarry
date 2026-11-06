@@ -1,5 +1,5 @@
 // Live simulation: timed cadence grants, the world step length, and gas threshold watches
-// (code/datums/om/cadence.dm, code/controllers/subsystems/vg.dm, code/engine/time/world_watches.dm),
+// (code/engine/cadence.dm, code/controllers/subsystems/vg.dm, code/engine/time/world_watches.dm),
 // and the null-safety helpers (code/_helpers/null_safety.dm).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -14,13 +14,13 @@
 	changes++
 	LAZYADD(seen, dt_seconds())
 
-/datum/unit_test/om/livesim_cadence_grants_stack_and_lapse
+/datum/unit_test/engine/livesim_cadence_grants_stack_and_lapse
 
-/datum/unit_test/om/livesim_cadence_grants_stack_and_lapse/run_om(list/made)
+/datum/unit_test/engine/livesim_cadence_grants_stack_and_lapse/run_engine(list/made)
 	var/datum/step_cadence/test/C = new
 	made += C
-	var/datum/om_test_entity/rupture = entity(made)
-	var/datum/om_test_entity/breach = entity(made)
+	var/datum/engine_test_entity/rupture = entity(made)
+	var/datum/engine_test_entity/breach = entity(made)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), CADENCE_BASE_DT, "no grant: the base step")
 	hold(C, STAT_CADENCE_HOLDS, 1, rupture, lasts = 3 SECONDS, key = CADENCE_GAS_BRISK)
 	act_drain_point() // the holder's on_change reaction runs at the next drain point
@@ -37,12 +37,12 @@
 	TEST_ASSERT_EQUAL(C.changes, 4, "the holder heard each change (grant, grant, lapse, lapse)")
 	TEST_ASSERT_EQUAL(jointext(C.seen, ","), "0.25,0.1,0.25,0.5", "and read the new step from the store when told")
 
-/datum/unit_test/om/livesim_cadence_grant_dies_with_its_source
+/datum/unit_test/engine/livesim_cadence_grant_dies_with_its_source
 
-/datum/unit_test/om/livesim_cadence_grant_dies_with_its_source/run_om(list/made)
+/datum/unit_test/engine/livesim_cadence_grant_dies_with_its_source/run_engine(list/made)
 	var/datum/step_cadence/test/C = new
 	made += C
-	var/datum/om_test_entity/source = entity(made)
+	var/datum/engine_test_entity/source = entity(made)
 	hold(C, STAT_CADENCE_HOLDS, 1, source, lasts = 60 SECONDS, key = CADENCE_GAS_FAST)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.1, "granted")
 	qdel(source)
@@ -64,10 +64,10 @@
 /datum/world_threshold_subscriber
 	var/wakes = 0
 
-/datum/world_threshold_subscriber/proc/on_cross(datum/native_watch/world/watch, reason, source, source_kind)
+/datum/world_threshold_subscriber/proc/on_cross(band, was)
 	wakes++
 
-/// A sensor watches a mixture's pressure through a world threshold watch: quiet while the gas
+/// A sensor senses a mixture's pressure against a level: quiet while the gas
 /// holds steady, and woken at the crossing without polling.
 /datum/unit_test/livesim_gas_threshold_watch
 
@@ -77,18 +77,15 @@
 	heat_set(tank, T20C, HEAT_SOURCE_OTHER)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	var/limit = tank.return_pressure() + 500
-	var/datum/native_watch/world/watch = world_watch_when(sub, COND_ABOVE_H(WORLD_GAS_HANDLE(tank), CH_GAS_PRESSURE, limit, 50), TYPE_PROC_REF(/datum/world_threshold_subscriber, on_cross), LANE_URGENT)
+	var/datum/sense_sub/watch = sense_gas(sub, TYPE_PROC_REF(/datum/world_threshold_subscriber, on_cross), tank, CH_GAS_PRESSURE, list(limit), hysteresis = 50)
 	TEST_ASSERT_NOTNULL(watch, "the watch was created")
 	SSair.run_gas_frames(2)
-	dq_test_ticks(3)
+	dq_sense_test_deliver()
 	TEST_ASSERT_EQUAL(sub.wakes, 0, "the sensor stays quiet below the threshold")
 	tank.adjust_gas(/datum/gas/nitrogen, 200)
 	SSair.run_gas_frames(1)
-	// The crossing is queued by the frame above, but the wake is delivered by the kernel's urgent phase, which
-	// a loaded full-suite world (sharded boots, overrun ticks) can skip for several ticks. Wait for the delivery
-	// itself, with a generous bound, instead of assuming six ticks always reach it.
-	dq_test_wait_for(sub, nameof(sub.wakes))
-	TEST_ASSERT(sub.wakes >= 1, "the pressure crossed [limit] kPa ([tank.return_pressure()]) but the watch did not fire; world wake diagnostics: [json_encode(world_diagnostics())]")
+	dq_sense_test_deliver()
+	TEST_ASSERT(sub.wakes >= 1, "the pressure crossed [limit] kPa ([tank.return_pressure()]) but the sensing did not fire")
 	qdel(watch)
 	qdel(tank)
 
@@ -122,63 +119,5 @@
 	TEST_ASSERT(threw, "and on the wrong type")
 	TEST_ASSERT_EQUAL(z_of(null), NO_Z, "an atom that is nowhere is on NO_Z")
 	TEST_ASSERT(z_of(locate(1, 1, 1)) != NO_Z, "a turf is on its own z")
-
-/// A holder for the gas_level() capability whose air is a test-set mixture.
-/obj/test_gas_holder
-	var/datum/gas_mixture/test_air
-	var/crowded = FALSE
-	var/crossings = 0
-
-
-CAPABILITIES(/obj/test_gas_holder)
-	gas_level(into = nameof(crowded), reading = CH_GAS_PRESSURE, above = 600, hysteresis = 50, air = nameof(test_air))
-	on_change(nameof(crowded), ENTER, then(PROC_REF(on_cross)))
-
-/obj/test_gas_holder/proc/set_air(datum/gas_mixture/mixture)
-	set_test_air(mixture)
-
-/obj/test_gas_holder/proc/on_cross(datum/act/A)
-	crossings++
-
-/// The gas_level() capability: armed on the holder's mixture, its var turned at the crossing, and it
-/// follows the air to another mixture.
-/datum/unit_test/livesim_gas_level_capability
-
-/datum/unit_test/livesim_gas_level_capability/Run()
-	var/datum/gas_mixture/first = new(70)
-	heat_set(first, T20C, HEAT_SOURCE_OTHER)
-	first.adjust_gas(/datum/gas/oxygen, 10)
-	var/datum/gas_mixture/second = new(70)
-	heat_set(second, T20C, HEAT_SOURCE_OTHER)
-	second.adjust_gas(/datum/gas/oxygen, 10)
-	var/obj/test_gas_holder/holder = allocate(/obj/test_gas_holder)
-	holder.set_air(first)
-	gas_level_rearm_all(holder)
-	var/datum/capability/lib/gas_level/def = cap_of(holder, CAP_GAS_LEVEL, "crowded")
-	TEST_ASSERT_NOTNULL(def, "the holder's table carries the level")
-	var/datum/cap_data/gas_level/state = gas_level_data(holder, def)
-	TEST_ASSERT_NOTNULL(state, "the level keeps its state in the holder's activation")
-	TEST_ASSERT_EQUAL(state.armed_id, first.arena_id(), "armed on the air's mixture")
-	SSair.run_gas_frames(2)
-	dq_test_ticks(3)
-	kernel_drain_now()
-	TEST_ASSERT(!holder.crowded, "the var is FALSE while the pressure is below the level")
-	TEST_ASSERT_EQUAL(holder.crossings, 0, "quiet while the pressure is below the level")
-	first.adjust_gas(/datum/gas/nitrogen, 200)
-	SSair.run_gas_frames(1)
-	OM_TEST_WAIT_UNTIL(holder.crowded, 60)
-	kernel_drain_now()
-	TEST_ASSERT(holder.crowded, "the crossing turned the var ([first.return_pressure()] kPa, watch [state.watch] live [state.watch?.is_live()], armed [state.armed_id])")
-	TEST_ASSERT_EQUAL(holder.crossings, 1, "and the holder's on_change ran once")
-	holder.set_air(second)
-	gas_level_rearm_all(holder)
-	TEST_ASSERT_EQUAL(state.armed_id, second.arena_id(), "re-armed when the air got another mixture")
-	TEST_ASSERT(!holder.crowded, "and the var follows the new mixture's reading")
-	holder.set_air(null)
-	gas_level_rearm_all(holder)
-	TEST_ASSERT_NULL(state.watch, "an air with no mixture has no watch")
-	qdel(holder)
-	qdel(first)
-	qdel(second)
 
 #endif

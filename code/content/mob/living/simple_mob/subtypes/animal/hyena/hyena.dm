@@ -1,0 +1,147 @@
+/*
+
+Hyenas are any feliform carnivoran mammals of the family Hyaenidae. With only four extant species (in three genera), it is the fifth-smallest biological family in the Carnivora, and one of the smallest in the class Mammalia.
+They're also cool, and Rykka/Nyria wrote this uwu
+
+*/
+
+// Cataloguer data here
+/datum/category_item/catalogue/fauna/hyena
+	name = "Desert Fauna - Hyena"
+	desc = "Classification: Crocuta crocuta \
+	<br><br>\
+	It is primarily a hunter but may also scavenge, with the capacity to eat and digest skin, bone and other animal waste. \
+	The spotted hyena displays greater plasticity in its hunting and foraging behaviour than other similar carnivores; \
+	it hunts alone, in small parties of 2–5 individuals or in large groups. \
+	During a hunt, spotted hyenas often run through ungulate herds in order to select an individual to attack. \
+	Once selected, their prey is chased over a long distance, often several kilometres, at speeds of up to 60 km/h."
+	value = CATALOGUER_REWARD_MEDIUM
+
+// Start Defining the mob here
+/mob/living/simple_mob/animal/hyena
+	name = "Hyena"
+	desc = "Yeen! Its fur is a dusty yellow-brown color with black spots, and it has rounded ears... and SHARP TEETH! You inexplicably want to pet it, though."
+	tt_desc = "Crocuta crocuta"
+
+	icon = 'icons/mob/hyena.dmi'
+	icon_state = "yeen"
+	icon_living = "yeen"
+	icon_dead = "yeen_dead"
+	has_eye_glow = FALSE // Change this to true for fun spooky eye glow in darkness. <3
+	minbodytemp = 175 // Make hyenas able to survive freezing cold. Someone criticize me later uwu
+	endurance = 125 // not as tanky as a spider for obvious reasons, but not a pushover.
+	pass_flags = PASSTABLE
+	movement_cooldown = 0 // Yeen go fast - nah, yeen still slower. gottagofast.
+	// movement_sound = null - TODO: find good animal pawb sounds
+	poison_resist = 0.1
+
+	see_in_dark = 25 // Hyenas are nocturnal, they should be able to see anything in the dark. <3
+
+	response_help = "rubrubs"
+	response_disarm = "boops aside"
+	response_harm = "smacks"
+
+	melee_damage_lower = 6 // hyenas go for the legs/lower bits
+	melee_damage_upper = 12 // not as high damage, but faster bites. nomnomnom <3
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("bit", "nipped", "chomped", "clawed", "scratched", "lewded")
+	attack_sound = SFX_WEAPONS_BITE // placeholder till I find a better bite
+
+	vore_active = 1 // nom settings. <3
+	vore_bump_chance = 25
+	vore_bump_emote = "nomfs!"
+	vore_pounce_chance = 35
+	vore_pounce_maxhealth = 90
+	vore_standing_too = 1 // nomf people while they're standing, yus.
+	swallowsound = SFX_VORE_SUNESOUND_PRED_INSERTION_01
+
+	vore_default_mode = DM_HOLD // yeengut takes a sec to kick in :3
+	vore_digest_chance = 95 // you move, yeengut is gonna kick in~
+	vore_escape_chance = 8 // 8% chance to escape a hot, slimy, kneading gut. Why would you want to leave~?
+
+	vore_stomach_name = "gut"
+	vore_stomach_flavor = "Hot, slimy, and kneading constantly around you, as the hyena's heartbeat thuds away above. All you can see are pink, slimy walls, \
+	kneading all over your entire form, and what looks like digestive acids pooling along the bottom of it's gut. \
+	You can hear cackling laughter and yaps, as well as the lurid sloshing of the hyena's belly as you're rocked around. Best not squirm, since it's belly isn't digesting you... yet."
+
+	vore_default_contamination_flavor = "Acrid"
+	vore_default_contamination_color = "yellow"
+
+	heat_damage_per_tick = 20
+	cold_damage_per_tick = 20
+
+	speak_emote = list("yaps")
+
+
+
+	var/obj/item/clothing/head/hat = null // The hat the yeen is wearing when initialized, var will update with the chosen hat.
+
+// Silly stuff. HATS! Give your yeen a hat today <3
+/mob/living/simple_mob/animal/hyena/proc/remove_hat_op(datum/act/op/A)
+	drop_hat(A.actor)
+
+/mob/living/simple_mob/animal/hyena/proc/drop_hat(mob/user)
+	if(hat)
+		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
+		old_hat.forceMove(get_turf(user))
+		if(user == src)
+			to_chat(user, span_notice("You removed your hat."))
+			return
+		to_chat(user, span_warning("You removed \the [src]'s hat. You monster. ;~;"))
+	else
+		if(user == src)
+			to_chat(user, span_notice("You are not wearing a hat!"))
+			return
+		to_chat(user, span_notice("\The [src] is not wearing a hat!"))
+
+/mob/living/simple_mob/animal/hyena/proc/give_hat_op(datum/act/op/A)
+	take_hat(A.actor)
+
+/mob/living/simple_mob/animal/hyena/proc/take_hat(mob/user)
+	if(hat)
+		if(user == src)
+			to_chat(user, span_notice("You already have a hat!"))
+			return
+		to_chat(user, span_notice("\The [src] already has a hat!"))
+	else
+		if(user == src)
+			if(istype(get_active_hand(), /obj/item/clothing/head))
+				var/obj/item/clothing/head/new_hat = get_active_hand()
+				if(!move_into(src, nameof(src.hat), new_hat, user, ledger_slot = SLOT_ID_BODY)) // out of the paw, onto the head
+					return
+				to_chat(user, span_notice("You put on the hat."))
+			return
+		else if(ishuman(user))
+			var/mob/living/carbon/human/H = user
+
+			if(istype(H.get_active_hand(), /obj/item/clothing/head) && !get_active_hand())
+				var/obj/item/clothing/head/newhat = H.get_active_hand()
+				H.drop_from_inventory(newhat, get_turf(src))
+				if(!stat)
+					set_use_stance(I_HELP)
+					newhat.attack_hand(src)
+			else if(src.get_active_hand())
+				to_chat(user, span_notice("\The [src] seems busy with \the [get_active_hand()] already!"))
+
+			else
+				to_chat(user, span_warning("You aren't holding a hat..."))
+
+/datum/say_list/hyena
+	speak = list("Huff.", "|R|rr?", "Yap.", "Grr.", "Yip.", "SCREM!")
+	emote_see = list("sniffs", "looks around", "grooms itself", "rolls around")
+	emote_hear = list("yawns", "cackles", "playfully yaps")
+
+CAPABILITIES(/mob/living/simple_mob/animal/hyena)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/hyena)))
+	op("remove_hat", menu(desc = "Remove the yeen's hat. You monster. ;~;"), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
+	op("give_hat", menu(desc = "Give the yeen a hat. You wonderful bean. <3"), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
+	configure(mob_rules(faction = "yeen"))
+	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/hyena))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+	configure(mob_kind(attack_cooldown = 2))
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+
+/// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
+/mob/living/simple_mob/animal/hyena/draw(datum/look/look)
+	..()
+	look.hat(hat, -15) // Hyenas are smol! - TODO: Test this.

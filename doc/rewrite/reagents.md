@@ -106,7 +106,7 @@ injury `min(removed * mod * floor(3 + 3 * volume / overdose), 3.6)`). Each reage
 (`cycle_taken()`), so the overrides that wrap it keep working. `overdose()` reads the cycle's injury (`overdose_injury`), or asks
 `vg_chem_overdose_injury()` when called outside a cycle.
 
-**Pins.** `code/modules/unit_tests/dq_chem_math_pins.dm`, recorded on the DM implementation before the move:
+**Pins.** `code/tests/unit_tests/dq_chem_math_pins.dm`, recorded on the DM implementation before the move:
 `dq_chem_reaction_progress_pin` (every reaction decl, reactants at 1, 4.3, 25 and 150 times their ratios, with and without product present:
 5,800 rows) and `dq_chem_metabolism_pin` (a human, three holders, five cycles: volume and dose of each reagent). The start state of every
 holder declared with the old macros is `dq_reagents_start_snapshot` (one row per type under each declaring root).

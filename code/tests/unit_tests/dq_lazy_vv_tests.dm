@@ -1,0 +1,77 @@
+// Lazy state fields in View Variables, mass edit and SDQL (code/engine/declare/lazy_vv.dm): every field a type can hold is listed as `@slot.name`,
+// edited by name through the feature's write proc, reset by clearing it, and reachable from SDQL.
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/mob/living/carbon/human/dq_sparse_probe
+
+/// The declaration registry has every sparse() line, and View Variables lists the slots a mob's type declares, set or not.
+/datum/unit_test/dq_sparse_slot_vv_listing
+
+/datum/unit_test/dq_sparse_slot_vv_listing/Run()
+	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
+	var/list/rows = vv_slot_rows_of(H)
+	TEST_ASSERT(length(rows) >= 49, "the registry holds the declared slots and lazy fields, got [length(rows)]")
+	for(var/list/row as anything in rows)
+		TEST_ASSERT(ispath(row[1]), "slot [row[2]] names a real owner type")
+	var/list/listed = vv_slots_of(H)
+	TEST_ASSERT_EQUAL(length(listed), length(vv_slot_rows_of(H)), "every declared slot is listed once")
+	TEST_ASSERT(vv_slot_label("special_voice") in listed, "an unset human slot is listed")
+	TEST_ASSERT(vv_slot_label("floatiness") in listed, "a /mob slot is listed on a human")
+	TEST_ASSERT(vv_slot_label("breath_cycle") in listed, "a /mob/living/carbon slot is listed on a human")
+	TEST_ASSERT_EQUAL(listed[vv_slot_label("special_voice")], "", "an unset lazy field shows its default")
+	var/obj/item/pen/pen = allocate(/obj/item/pen)
+	TEST_ASSERT_EQUAL(length(vv_slots_of(pen)), length(vv_slot_rows_of(pen)), "an object lists only what its type declares")
+	TEST_ASSERT(!(vv_slot_label("special_voice") in vv_slots_of(pen)), "a human slot is not listed on a pen")
+	STATE_SET(H, atom_misc, catalogue_delay, 23)
+	TEST_ASSERT_EQUAL(vv_slots_of(H)[vv_slot_label("catalogue_delay")], 23, "a set slot shows its value")
+	TEST_ASSERT(findtext("[H.vv_get_var(vv_slot_label("catalogue_delay"))]", "23"), "vv_get_var renders the slot value")
+
+/// Edit by name writes through the sparse path: by label and by bare name, null clears, an unknown name is refused.
+/datum/unit_test/dq_sparse_slot_vv_edit
+
+/datum/unit_test/dq_sparse_slot_vv_edit/Run()
+	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
+	TEST_ASSERT(H.vv_edit_var(vv_slot_label("catalogue_delay"), 11), "the VV edit of a slot is accepted")
+	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 11, "and lands in the slot")
+	TEST_ASSERT(H.vv_edit_var("catalogue_delay", 12), "the bare slot name is accepted where no var has it")
+	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 12, "and lands in the slot")
+	TEST_ASSERT(vars_write(H, "catalogue_delay", 13), "vars_write reaches the slot")
+	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 13, "and writes it")
+	TEST_ASSERT(!(vv_slot_label("catalogue_delay") in H.vars), "a slot is not a var")
+	TEST_ASSERT_EQUAL(vv_var_value(H, vv_slot_label("catalogue_delay")), 13, "the editors read the slot value")
+	TEST_ASSERT(H.vv_edit_var(vv_slot_label("catalogue_delay"), vv_var_default(H, vv_slot_label("catalogue_delay"))), "Restore to Default is accepted")
+	TEST_ASSERT(isnull(STATE_PEEK(H, atom_misc, catalogue_delay)), "reset clears the slot")
+	TEST_ASSERT_NULL(atom_misc_peek(H), "and the state goes with its last field")
+	TEST_ASSERT(!H.vv_edit_var("@slot.no_such_slot", 1), "an unknown slot is refused")
+	var/obj/item/pen/pen = allocate(/obj/item/pen)
+	TEST_ASSERT(!pen.vv_edit_var(vv_slot_label("special_voice"), "x"), "a slot the type does not declare is refused")
+	TEST_ASSERT_EQUAL(vv_var_value(H, "name"), H.name, "an ordinary var reads as before")
+
+/// SDQL reads and updates a slot by its name.
+/datum/unit_test/dq_sparse_slot_sdql
+
+/datum/unit_test/dq_sparse_slot_sdql/Run()
+	test_driver_begin()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
+	STATE_SET(H, atom_misc, catalogue_delay, 21)
+	var/datum/SDQL2_query/defaults = allocate(/datum/SDQL2_query, list())
+	var/datum/SDQL_parser/read_parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("SELECT /mob/living/carbon/human/dq_sparse_probe", actor))
+	var/list/read_tree = read_parser.parse(actor)
+	var/datum/SDQL2_query/reader = allocate(/datum/SDQL2_query, read_tree, FALSE, TRUE, defaults.options, FALSE, actor)
+	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("catalogue_delay")), 21, "SDQL reads a slot by its bare name")
+	var/datum/SDQL_parser/parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("UPDATE /mob/living/carbon/human/dq_sparse_probe FROM usr.loc.contents SET catalogue_delay = 22", actor))
+	var/list/tree = parser.parse(actor)
+	TEST_ASSERT(!parser.error, "the real parser accepts an update that names a slot")
+	var/datum/SDQL2_query/query = allocate(/datum/SDQL2_query, tree, FALSE, TRUE, defaults.options, FALSE, actor)
+	rel_set(query, nameof(query.requester), actor)
+	// The FROM bounds the scan to the actor's turf, so Run() spans few ticks and the world does not drift under it. Run() is what admin_run starts asynchronously; a scan yields to the tick budget (CHECK_TICK), so the ticks it needs depend on
+	// the world and the load of the test before it: calling Run() here waits for the query however long that is, with no fixed tick cap, and
+	// a runtime inside the query fails this test with its message instead of reading as a query that never finishes.
+	query.Run()
+	TEST_ASSERT(query.finished, "the update query finishes")
+	TEST_ASSERT_EQUAL(STATE_PEEK(H, atom_misc, catalogue_delay), 22, "SDQL UPDATE writes the slot through the sparse path")
+
+
+#endif

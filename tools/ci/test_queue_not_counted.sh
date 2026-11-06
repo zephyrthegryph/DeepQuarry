@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Self-test: time spent queued for a machine slot after a run started does not count against its wall-clock cap
-# (tools/dq_run_guard.js), and a focused run killed before it printed gets a clear CAPPED result line (tools/dq_gate_retry.sh).
+# (tools/dq_run_guard.js).
 #
 #   bash tools/ci/test_queue_not_counted.sh      # PASS/FAIL per case, exit 1 on any failure
 set -uo pipefail
@@ -44,13 +44,6 @@ out="$( export DQ_SLOTS_DIR="$tmp/slots" DQ_WORLD_REGISTRY="$tmp/reg3" DQ_SLOTS_
 	for _ in $(seq 1 40); do ls -a "$DQ_WORLD_REGISTRY" 2>/dev/null | grep -q '^\.waiting\.' && break; sleep 1; done; ls -a "$DQ_WORLD_REGISTRY" | grep -c '^\.waiting\.'; slots_release; wait "$w"; ls -a "$DQ_WORLD_REGISTRY" | grep -c '^\.waiting\.' )"
 check "a queued waiter writes .waiting.<pid> and every one is gone after release" '[ "$(echo "$out" | head -n 1)" -ge 1 ] && [ "$(echo "$out" | tail -n 1)" = 0 ]'
 
-# a result-less log gets a CAPPED line
-. "$here/tools/dq_gate_retry.sh"
-printf 'some output\n' >"$tmp/nolog"
-line="$(gate_ensure_result "$tmp/nolog" 143)"
-check "a log without a FOCUSED RESULT line gets a clear CAPPED one" 'grep -q "^FOCUSED RESULT: CAPPED" <<<"$line" && grep -q "^FOCUSED RESULT: CAPPED" "$tmp/nolog"'
-printf 'FOCUSED RESULT: 3 passed, 0 failed\n' >"$tmp/oklog"
-check "a log that has a result is left alone" '[ -z "$(gate_ensure_result "$tmp/oklog" 0)" ] && [ "$(wc -l <"$tmp/oklog")" -eq 1 ]'
 
 [ "$fail" -eq 0 ] && echo "test_queue_not_counted: all passed" || echo "test_queue_not_counted: FAILED"
 exit "$fail"

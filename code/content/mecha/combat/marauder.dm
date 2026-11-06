@@ -1,7 +1,6 @@
 /obj/mecha/combat/marauder
 	desc = "Heavy-duty, combat exosuit, developed after the Durand model. Rarely found among civilian populations."
 	name = "Marauder"
-	catalogue_data = list(/datum/category_item/catalogue/technology/marauder)
 	icon_state = "marauder"
 	initial_icon = "marauder"
 	step_in = 5
@@ -31,6 +30,9 @@
 	icon_scale_x = 1.5
 	icon_scale_y = 1.5
 
+CAPABILITIES(/obj/mecha/combat/marauder)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/marauder)))
+
 TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull/durable, \
 		/obj/item/mecha_parts/component/actuator, \
@@ -42,7 +44,6 @@ TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 /obj/mecha/combat/marauder/seraph
 	desc = "Heavy-duty, command-type exosuit. This is a custom model, utilized only by high-ranking military personnel."
 	name = "Seraph"
-	catalogue_data = list(/datum/category_item/catalogue/technology/seraph)
 	icon_state = "seraph"
 	initial_icon = "seraph"
 	operation_req_access = list(ACCESS_CENT_CREED)
@@ -52,6 +53,9 @@ TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 	internal_damage_threshold = 20
 	force = 55
 	max_equip = 5
+
+CAPABILITIES(/obj/mecha/combat/marauder/seraph)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/seraph)))
 
 
 //Note that is the Mauler

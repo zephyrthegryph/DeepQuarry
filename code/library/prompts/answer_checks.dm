@@ -18,7 +18,7 @@
 //   ANSWER_HELD          the subject is in one of the asker's hands
 //   ANSWER_CARRIED       the subject is somewhere on the asker (held, worn, in a bag)
 //
-// The flags are in code/__defines/answer_checks.dm. The answerer is `R.answerer`; the asker is `asker` (default: the answerer); the subject is what the question is about. A deleted subject or asker
+// The flags are in code/defines/engine/answer_checks.dm. The answerer is `R.answerer`; the asker is `asker` (default: the answerer); the subject is what the question is about. A deleted subject or asker
 // fails every condition that reads it.
 
 /// TRUE when every condition of `flags` holds for the request's answerer, `asker` and `subject` now. Reads only.

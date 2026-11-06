@@ -62,7 +62,7 @@
 # directory and results file (data/runs/runN), and is killed after
 # DQ_FOCUS_TIMEOUT_MINUTES (default 15) with the last log lines printed.
 set -euo pipefail
-# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+# User order (28 October 2026): the dmbc daemon must not run. Every focused run compiles without it, whatever the caller's environment.
 export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 
 cd "$(dirname "$0")/.."
@@ -110,9 +110,19 @@ done
 # ---- The rerun guard ---------------------------------------------------------------------------------------------------------
 LEDGER="$RUN_DIR/ledger.tsv"
 
+# The untracked, not-ignored files under the given paths (all of them with none): their names, then their content hashes, so an
+# edit to an untracked file moves whatever hashes this. One `git hash-object` for the whole list, so it stays fast.
+untracked_state() {
+	local names
+	names="$(git -c core.quotepath=off ls-files -o --exclude-standard -- "$@" 2>/dev/null)" || return 0
+	[ -n "$names" ] || return 0
+	printf '%s\n' "$names"
+	printf '%s\n' "$names" | git hash-object --stdin-paths 2>/dev/null
+}
+
 # A digest of the tree a run tests: HEAD, the tracked changes and the untracked sources. Any edit moves it.
 tree_digest() {
-	{ git rev-parse HEAD; git diff HEAD; git ls-files -o --exclude-standard -- code tools tgui/packages; } 2>/dev/null | sha1sum | cut -c1-16
+	{ git rev-parse HEAD; git diff HEAD; untracked_state code tools tgui/packages; } 2>/dev/null | sha1sum | cut -c1-16
 }
 
 # One ledger row per finished run: epoch, key, exit code, failed count, result json, head, the arguments.
@@ -294,7 +304,7 @@ test_types() {
 			i = index($0, ":"); file = substr($0, 1, i - 1); name = substr($0, i + 1)
 			if (!(file in inc)) next
 			if (name ~ /\/proc\/[A-Za-z0-9_]+\(/) next # a helper proc on a parent (dq_eg2/proc/run_gate()), not a test type
-			sub(/^\/datum\/unit_test\//, "", name); sub(/[[:space:]]+$/, "", name); sub(/\/(Run|run_[A-Za-z0-9_]+)\([^)]*\)$/, "", name) # a type may be declared only by its Run() or, under /datum/unit_test/om, its run_om(list/made)
+			sub(/^\/datum\/unit_test\//, "", name); sub(/[[:space:]]+$/, "", name); sub(/\/(Run|run_[A-Za-z0-9_]+)\([^)]*\)$/, "", name) # a type may be declared only by its Run() or, under /datum/unit_test/engine, its run_engine(list/made)
 			if (!seen[name]++) print name
 		}'
 }
@@ -442,20 +452,6 @@ fi
 # ---- the wall-clock cap -------------------------------------------------------------------------------------------------------
 # focused_cap_minutes <allow_exhaustive>: prints the cap in minutes (DQ_FOCUSED_MAX_MIN, default 10; clamped to 10 without --allow-exhaustive).
 focused_cap_minutes() {
-	# The merge gates (tools/dq_gate_retry.sh) pass DQ_GATE_FOCUSED_MAX_MIN, sized to the gate's test count; it replaces the agent cap
-	# and its 10-minute clamp, and has its own firm ceiling of 10. It is for the gates only: ad-hoc runs use DQ_FOCUSED_MAX_MIN.
-	if [ -n "${DQ_GATE_FOCUSED_MAX_MIN:-}" ]; then
-		case "$DQ_GATE_FOCUSED_MAX_MIN" in
-			*[!0-9]* | 0) echo "dq_focused_test: DQ_GATE_FOCUSED_MAX_MIN='$DQ_GATE_FOCUSED_MAX_MIN' is not a positive integer; ignoring it" >&2 ;;
-			*)
-				local gcap="$DQ_GATE_FOCUSED_MAX_MIN"
-				[ "$gcap" -gt 10 ] && gcap=10
-				echo "dq_focused_test: gate cap $gcap min (DQ_GATE_FOCUSED_MAX_MIN, ceiling 10)" >&2
-				echo "$gcap"
-				return 0
-				;;
-		esac
-	fi
 	local cap="${DQ_FOCUSED_MAX_MIN:-10}"
 	case "$cap" in '' | *[!0-9]* | 0) echo "dq_focused_test: DQ_FOCUSED_MAX_MIN='$cap' is not a positive integer; using 10" >&2; cap=10 ;; esac
 	if [ "$cap" -gt 10 ] && [ "${1:-0}" -eq 0 ]; then
@@ -647,7 +643,7 @@ print_result() {
 mkdir -p data/focused-runs
 combined_log="data/focused-runs/last.$$.log"
 
-# The end-of-test staleness sweep is bounded in an ordinary focused run; DQ_STALENESS=full (the merge gates, lane_ready, by hand) keeps it full.
+# The end-of-test staleness sweep is bounded in an ordinary focused run; DQ_STALENESS=full (by hand) keeps it full.
 # Call inside the subshell that starts a world: it adds the world param there. tests.log names the mode at suite start and at every test end.
 staleness_world_param() {
 	if [ "${DQ_STALENESS:-bounded}" = "full" ]; then
@@ -736,7 +732,7 @@ world_status() {
 	return "$rec"
 }
 focused_compile_key() { # what the test .dmb depends on in this run: HEAD's tree, the uncommitted diff, untracked files, the run's arguments
-	{ git rev-parse 'HEAD^{tree}'; git diff HEAD 2>/dev/null; git status --porcelain=v1 -uall 2>/dev/null; printf '%s\n' "${args[@]-}" "${DQ_DEFINES:-}"; } | git hash-object --stdin
+	{ git rev-parse 'HEAD^{tree}'; git diff HEAD 2>/dev/null; untracked_state; printf '%s\n' "${args[@]-}" "${DQ_DEFINES:-}"; } | git hash-object --stdin
 }
 run_worlds() {
 	local began n i waited=0 running jsons=() rc=0 j shard W_DONE

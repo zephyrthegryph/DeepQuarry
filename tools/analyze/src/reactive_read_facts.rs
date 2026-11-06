@@ -193,18 +193,18 @@ pub fn effect_call(name: &str) -> bool {
 }
 
 pub fn framework_file(rel: &str) -> bool {
-    ENGINE_DIRS.iter().any(|d| rel.starts_with(d)) || rel.starts_with("code/controllers/kernel/") || rel == "code/datums/datum.dm" || is_test_code(rel)
+    ENGINE_DIRS.iter().any(|d| rel.starts_with(d)) || rel.starts_with("code/world/kernel/") || rel == "code/library/datum/datum.dm" || is_test_code(rel)
 }
 
 pub fn is_test_code(rel: &str) -> bool {
-    rel.starts_with("code/tests/") || rel.starts_with("code/modules/unit_tests/")
+    crate::generator_test_scope::test_only(rel)
 }
 
 pub fn is_builtin_name(name: &str) -> bool {
     matches!(name, "type" | "parent_type" | "vars" | "tag" | "Cross" | "Uncross" | "Entered" | "Exited" | "New" | "Del" | "Topic" | "Move" | "Crossed" | "Uncrossed" | "contents" | "loc" | "x" | "y" | "z" | "usr")
 }
 
-pub const ENGINE_DIRS: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
+pub const ENGINE_DIRS: &[&str] = &["code/library/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/library/capabilities/", "code/library/reactions/", "code/library/ownership/", "code/engine/", "code/__defines/verdigris/"];
 /// SAME original narrowing iteration/first-candidate policy. The std HashMap
 /// values iterator and each authored Vec order remain observable; no sorting or
 /// union changes the original algorithm. Legacy None adds no admission work.

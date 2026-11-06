@@ -5,7 +5,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_OFF // Does not require power for pipes
-	circuit = /obj/item/circuitboard/industrial_reagent_pipe
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_pipe)
 	default_max_vol = 60 // smoll
 
 CAPABILITIES(/obj/machinery/reagent_refinery/pipe)

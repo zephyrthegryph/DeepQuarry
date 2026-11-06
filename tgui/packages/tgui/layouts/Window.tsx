@@ -10,6 +10,7 @@ import {
   type ReactNode,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
 } from 'react';
 import { UI_DISABLED, UI_INTERACTIVE } from 'tgui/constants';
@@ -21,6 +22,7 @@ import { decodeHtmlEntities } from 'tgui-core/string';
 import { useBackend } from '../backend';
 import {
   dragStartHandler,
+  growWindowHeight,
   type ResolvedWindowGeometry,
   recallWindowGeometry,
   resizeStartHandler,
@@ -34,6 +36,7 @@ import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
 import { claimReveal, revealWindow } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
+import { fitOverflow, measureContentBottom } from './fitWindow';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
 
@@ -71,6 +74,8 @@ type Props = Partial<{
   title: string;
   width: number;
   fitted: boolean;
+  /** Grow the window until all of its content shows (see fitWindow.ts). */
+  fitContent: boolean;
   scrollbars: boolean;
 }> &
   PropsWithChildren;
@@ -85,6 +90,7 @@ export function Window(props: Props) {
     width: requestedWidth,
     height: requestedHeight,
     fitted,
+    fitContent,
     scrollbars = true,
   } = props;
 
@@ -185,6 +191,29 @@ export function Window(props: Props) {
     width,
   ]);
 
+  const restRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const rest = restRef.current;
+    if (!fitContent || !rest || suspended) {
+      return;
+    }
+    const fit = () => {
+      const root =
+        rest.querySelector<HTMLElement>('.Window__contentPadding') ?? rest;
+      const over = fitOverflow(measureContentBottom(root), window.innerHeight);
+      if (over > 0) {
+        growWindowHeight(over);
+      }
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(rest);
+    for (const child of Array.from(rest.children)) {
+      observer.observe(child);
+    }
+    return () => observer.disconnect();
+  }, [fitContent, suspended, isReadyToRender]);
+
   const fancy = config.window?.fancy;
 
   // Determine when to show dimmer
@@ -199,7 +228,10 @@ export function Window(props: Props) {
   const readOnly = !!config.user?.observer && config.status < UI_INTERACTIVE;
 
   return suspended ? null : (
-    <Layout className={classes(['Window', readOnly && 'Window--readonly'])} theme={theme}>
+    <Layout
+      className={classes(['Window', readOnly && 'Window--readonly'])}
+      theme={theme}
+    >
       {!fitted && (
         <TitleBar
           className="Window__titleBar"
@@ -214,6 +246,7 @@ export function Window(props: Props) {
         </TitleBar>
       )}
       <div
+        ref={restRef}
         className={classes([
           'Window__rest',
           !fitted && 'Window__restwithTitlebar',

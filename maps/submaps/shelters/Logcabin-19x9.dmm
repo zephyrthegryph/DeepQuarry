@@ -241,7 +241,7 @@
 /turf/simulated/floor/wood/sif,
 /area/survivalpod/superpose/logcabin)
 "uI" = (
-/obj/structure/lightpost/atoll{
+/obj/structure/lightpost{
 	pixel_y = 9;
 	pixel_x = 1
 	},

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A new .dm file no longer regenerates the verdigris bindings before every merge gate"

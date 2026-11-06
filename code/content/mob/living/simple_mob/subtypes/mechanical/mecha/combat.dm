@@ -1,0 +1,57 @@
+/mob/living/simple_mob/mechanical/mecha/combat/durand
+	projectiletype = /obj/item/projectile/energy/mob/heavylaser
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand)
+	configure(atom_rules(armor_spec = "melee=50;bullet=35;laser=15;energy=10;bomb=20;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/durand)))
+	op("toggle_defense_mode", menu(desc = "Toggles a special mode which makes you immobile and much more resilient."), label("Toggle Defense Mode"), needs(req_self()), then(PROC_REF(toggle_defense_mode_op)))
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
+
+/mob/living/simple_mob/mechanical/mecha/combat/marauder
+	projectiletype = /obj/item/projectile/energy/mob/heavylaser
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/marauder)
+	configure(atom_rules(armor_spec = "melee=50;bullet=55;laser=40;energy=30;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/marauder)))
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
+
+/mob/living/simple_mob/mechanical/mecha/hoverpod
+	projectiletype = /obj/item/projectile/energy/mob/smalllaser
+/* Combat refactor walkback
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced
+	endurance = 225
+
+/mob/living/simple_mob/mechanical/mecha/combat/durand
+	endurance = 200
+	melee_damage_lower = 20
+	melee_damage_upper = 20
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax
+	endurance = 150
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark
+	endurance = 200
+
+/mob/living/simple_mob/mechanical/mecha/combat/marauder
+	endurance = 250
+	melee_damage_lower = 22
+	melee_damage_upper = 22
+
+/mob/living/simple_mob/mechanical/mecha/combat/marauder/seraph
+	melee_damage_lower = 27
+	melee_damage_upper = 27
+
+/mob/living/simple_mob/mechanical/mecha/odysseus
+	endurance = 60
+
+
+/mob/living/simple_mob/mechanical/mecha/combat
+	melee_damage_lower = 15
+	melee_damage_upper = 15
+
+/mob/living/simple_mob/mechanical/mecha/ripley
+	endurance = 100
+
+
+// Immune to heat damage, resistant to lasers, and somewhat beefier. Still tries to melee you.
+/mob/living/simple_mob/mechanical/mecha/ripley/firefighter
+	endurance = 125
+*/

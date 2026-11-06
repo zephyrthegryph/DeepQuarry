@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Service bots ask the path system for their routes instead of sleeping on the pathfinder; Morse loops no longer run detached; reasons for the remaining ALLOW keeps name their blocking primitive"

@@ -170,22 +170,17 @@
 	for(var/atom/movable/AM as anything in snapshot)
 		TEST_ASSERT(QDELETED(AM), "[AM.type] inside a deleted container was skipped by the contents qdel loop")
 
-// Docking controllers expose typed aliases for the two programs used by their
-// UI. Those aliases must not outlive the base controller's owning `program` var.
+// A docking console owns its docking port: the port goes with it.
 /datum/unit_test/dq_docking_controller_releases_program_aliases
 
 /datum/unit_test/dq_docking_controller_releases_program_aliases/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/obj/machinery/embedded_controller/radio/airlock/docking_port/controller = new(test_turf)
-	var/datum/embedded_program/docking/airlock/docking = controller.docking_program
-	var/datum/embedded_program/airlock/docking/airlock = controller.airlock_program
-	TEST_ASSERT_NOTNULL(docking, "docking controller made no docking program")
-	TEST_ASSERT_NOTNULL(airlock, "docking controller made no airlock program")
+	var/datum/docking_port/port = controller.port
+	TEST_ASSERT_NOTNULL(port, "docking controller made no docking port")
 	qdel(controller)
-	TEST_ASSERT(QDELETED(docking), "docking program was not destroyed with its controller")
-	TEST_ASSERT(QDELETED(airlock), "airlock program was not destroyed with its controller")
-	TEST_ASSERT_NULL(controller.docking_program, "destroyed controller retained its docking-program alias")
-	TEST_ASSERT_NULL(controller.airlock_program, "destroyed controller retained its airlock-program alias")
+	TEST_ASSERT(QDELETED(port), "docking port was not destroyed with its controller")
+	TEST_ASSERT_NULL(controller.port, "destroyed controller retained its docking port")
 
 // Integrated-electronics cases and their internal device form an ownership
 // pair. Both deletion directions must sever the pair rather than leave the two
@@ -274,11 +269,44 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/dq_gc_kept)
 /datum/unit_test/dq_refused_ending_drops_its_cause/Run()
 	var/datum/dq_gc_kept/kept = new
 	var/atom/movable/screen/by = new
-	GLOB.lifecycle_keep_expected = TRUE // this test checks the refusal itself
+	set_global(nameof(GLOB.lifecycle_keep_expected), TRUE) // this test checks the refusal itself
 	ended_with(kept, by)
-	GLOB.lifecycle_keep_expected = FALSE
+	set_global(nameof(GLOB.lifecycle_keep_expected), FALSE)
 	TEST_ASSERT(!QDELETED(kept), "the kept thing refused the delete")
 	TEST_ASSERT(!(kept in ending_causes), "the refused ending's cause stays in ending_causes, holding its `by`")
 	qdel(by)
 	qdel(kept, TRUE)
 	TEST_ASSERT(QDELETED(kept), "a forced qdel() ends it")
+
+/// A holder that keeps a deleted datum alive, the leak the check pass is for.
+/datum/dq_gc_leak_holder
+	var/datum/dq_gc_leak_subject/kept
+
+/datum/dq_gc_leak_subject
+
+// A deleted datum something still references is a leak: the check pass counts and logs it by type and does not hard-delete it, so the
+// holder still reads a datum (not a freed null) afterwards.
+/datum/unit_test/dq_gc_leak_is_counted_not_hard_deleted
+
+/datum/unit_test/dq_gc_leak_is_counted_not_hard_deleted/Run()
+	var/datum/system/garbage/G = SSgarbage
+	var/list/saved_timeouts = G.collection_timeout
+	var/saved_limit = Kernel.current_ticklimit
+	G.collection_timeout = list(-1, -1, -1) // every queued entry is due now
+	Kernel.current_ticklimit = 1000000 // the passes run to the end of their queues, not to this tick's budget
+	var/datum/dq_gc_leak_holder/holder = new
+	holder.kept = new
+	var/datum/dq_gc_leak_subject/subject = holder.kept
+	qdel(subject)
+	TEST_ASSERT(QDELETED(subject), "the subject was destroyed")
+	G.HandleQueue(GC_QUEUE_FILTER)
+	G.HandleQueue(GC_QUEUE_CHECK)
+	G.HandleQueue(GC_QUEUE_HARDDELETE)
+	G.collection_timeout = saved_timeouts
+	Kernel.current_ticklimit = saved_limit
+	var/datum/qdel_item/I = G.items[/datum/dq_gc_leak_subject]
+	TEST_ASSERT_NOTNULL(I, "the type has a qdel item")
+	TEST_ASSERT(I.leaks >= 1, "the still-referenced subject was counted as a leak ([I.leaks])")
+	TEST_ASSERT_EQUAL(I.hard_deletes, 0, "a leak is not hard-deleted")
+	TEST_ASSERT(!isnull(holder.kept), "the holder still reads the subject: it was not freed under it")
+	holder.kept = null

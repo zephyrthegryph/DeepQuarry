@@ -1,0 +1,4 @@
+author: "Ethan"
+delete-after: true
+changes:
+  - bugfix: "The chat pane no longer squeezes the map: the split defaults to 70% map, is not restored from a save, and the viewport fit keeps the map at least half the window."

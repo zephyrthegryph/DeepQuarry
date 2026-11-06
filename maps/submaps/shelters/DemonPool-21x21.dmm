@@ -352,7 +352,6 @@
 /mob/living/simple_mob/vore/demonAI/engorge{
 	evasion = 1;
 	faction = "neutral";
-	health = 750;
 	projectilesound = 'sound/weapons/taser2.ogg';
 	projectiletype = /obj/item/projectile/beam/stun/electric_spider;
 	size_multiplier = 3

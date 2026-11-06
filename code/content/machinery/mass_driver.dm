@@ -7,7 +7,7 @@
 	icon_state = "mass_driver"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/mass_driver
+	circuit = VARIANT(/obj/item/circuitboard/mass_driver)
 
 	var/power = 1.0
 	var/code = 1.0

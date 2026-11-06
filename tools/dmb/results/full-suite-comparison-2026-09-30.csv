@@ -338,7 +338,7 @@
 /obj/item/storage/box/halloween/whiteout: can't be created any more
 /obj/item/storage/box/halloween/marine: can't be created any more
 /obj/item/storage/chewables: can't be created any more
-/obj/item/storage/chewables/tobacco: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_constraint_tests.dm:64","	FAILURE #1: storage insert: 55 of 559922 cells differ from the legacy answer:
+/obj/item/storage/chewables/tobacco: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_constraint_tests.dm:64","	FAILURE #1: storage insert: 55 of 559922 cells differ from the legacy answer:
 /obj/item/storage/backpack/clown/loaded: can't be created any more
 /obj/item/storage/backpack/dufflebag/cratedrills: can't be created any more
 /obj/item/storage/backpack/mime/loaded: can't be created any more
@@ -368,7 +368,7 @@
 /obj/item/storage/box/halloween/whiteout: can't be created any more
 /obj/item/storage/box/halloween/marine: can't be created any more
 /obj/item/storage/chewables: can't be created any more
-/obj/item/storage/chewables/tobacco: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_constraint_tests.dm:64"
+/obj/item/storage/chewables/tobacco: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_constraint_tests.dm:64"
 /datum/unit_test/dq_constraint_parity/suit_storage,both_fail,fail,fail,True,other,other,196751,196744,"	FAILURE #1: suit storage: 7 of 863692 cells differ from the legacy answer:
 /obj/item/clothing/suit/storage/vest/heavy: can't be created any more
 /obj/item/clothing/suit/storage/vest/heavy/flexitac: can't be created any more
@@ -376,14 +376,14 @@
 /obj/item/clothing/suit/storage/vest/heavy/warden: can't be created any more
 /obj/item/clothing/suit/storage/vest/heavy/hos: can't be created any more
 /obj/item/clothing/suit/storage/vest/heavy/pcrc: can't be created any more
-/obj/item/clothing/suit/storage/vest/heavy/merc: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_constraint_tests.dm:64","	FAILURE #1: suit storage: 7 of 863692 cells differ from the legacy answer:
+/obj/item/clothing/suit/storage/vest/heavy/merc: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_constraint_tests.dm:64","	FAILURE #1: suit storage: 7 of 863692 cells differ from the legacy answer:
 /obj/item/clothing/suit/storage/vest/heavy: can't be created any more
 /obj/item/clothing/suit/storage/vest/heavy/flexitac: can't be created any more
 /obj/item/clothing/suit/storage/vest/heavy/officer: can't be created any more
 /obj/item/clothing/suit/storage/vest/heavy/warden: can't be created any more
 /obj/item/clothing/suit/storage/vest/heavy/hos: can't be created any more
 /obj/item/clothing/suit/storage/vest/heavy/pcrc: can't be created any more
-/obj/item/clothing/suit/storage/vest/heavy/merc: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_constraint_tests.dm:64"
+/obj/item/clothing/suit/storage/vest/heavy/merc: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_constraint_tests.dm:64"
 /datum/unit_test/dq_constraint_reasons,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_construction_assembly_forward_only,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_construction_ed209_assembly,both_pass,pass,pass,True,none,none,174,174,,
@@ -480,7 +480,7 @@
 /datum/unit_test/dq_cryo_cell_cools_mob,both_pass,pass,pass,True,none,none,10,10,,
 /datum/unit_test/dq_cure_rate_caps_at_dose_cap,both_pass,pass,pass,True,none,none,12,12,,
 /datum/unit_test/dq_cure_rate_scales_with_volume,both_pass,pass,pass,True,none,none,12,13,,
-/datum/unit_test/dq_damage_flavour_bands,rust_only_fail,pass,fail,False,none,assertion,125,12,,	FAILURE #1: Expected 3 to be equal to 2. at 0.45 integrity the band is 2 (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_breakpoint_tests.dm:143
+/datum/unit_test/dq_damage_flavour_bands,rust_only_fail,pass,fail,False,none,assertion,125,12,,	FAILURE #1: Expected 3 to be equal to 2. at 0.45 integrity the band is 2 (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_breakpoint_tests.dm:143
 /datum/unit_test/dq_damage_packet,intentional_exclusion,unrun,unrun,True,none,none,,,,
 /datum/unit_test/dq_damage_packet/attack_generic,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_damage_packet/blob_act,both_pass,pass,pass,True,none,none,0,0,,
@@ -509,13 +509,13 @@
 /datum/unit_test/dq_destroy_transaction_children_first_nested,both_pass,pass,pass,True,none,none,32,32,,
 /datum/unit_test/dq_destroy_transaction_destroying_flag_scoped,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_destroy_transaction_mass_delete_no_leak,both_pass,pass,pass,True,none,none,1600,1600,,
-/datum/unit_test/dq_destroy_transaction_mind_pre_order,both_fail,fail,fail,True,assertion,assertion,48,48,	FAILURE #1: Assertion failed: the body was still fully valid (had a loc) when its mind slot resolved (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_destroy_transaction_tests.dm:251,	FAILURE #1: Assertion failed: the body was still fully valid (had a loc) when its mind slot resolved (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_destroy_transaction_tests.dm:251
+/datum/unit_test/dq_destroy_transaction_mind_pre_order,both_fail,fail,fail,True,assertion,assertion,48,48,	FAILURE #1: Assertion failed: the body was still fully valid (had a loc) when its mind slot resolved (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_destroy_transaction_tests.dm:251,	FAILURE #1: Assertion failed: the body was still fully valid (had a loc) when its mind slot resolved (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_destroy_transaction_tests.dm:251
 /datum/unit_test/dq_destroy_transaction_occupant_ejection,both_pass,pass,pass,True,none,none,16,16,,
 /datum/unit_test/dq_destroy_transaction_pair_reentrancy,both_pass,pass,pass,True,none,none,12,12,,
 /datum/unit_test/dq_destroy_transaction_pair_symmetry,both_pass,pass,pass,True,none,none,6,6,,
 /datum/unit_test/dq_destroy_transaction_phase_order,both_pass,pass,pass,True,none,none,22,22,,
-/datum/unit_test/dq_destroy_transaction_phase_timing_recorded,native_only_fail,fail,pass,False,other,none,11,11,"	FAILURE #1: [03:22:01] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,399: list index out of bounds
- (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_destroy_transaction_tests.dm:399",
+/datum/unit_test/dq_destroy_transaction_phase_timing_recorded,native_only_fail,fail,pass,False,other,none,11,11,"	FAILURE #1: [03:22:01] Runtime in code/tests/unit_tests/dq_destroy_transaction_tests.dm,399: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_destroy_transaction_tests.dm:399",
 /datum/unit_test/dq_destroy_transaction_scrub_catches_leftover_reset,both_pass,pass,pass,True,none,none,6,6,,
 /datum/unit_test/dq_destruction_debris,both_pass,pass,pass,True,none,none,26,26,,
 /datum/unit_test/dq_diagnosis_fake_death,both_pass,pass,pass,True,none,none,18,18,,
@@ -651,7 +651,7 @@
 /datum/unit_test/dq_generated_station_valid_contract,both_skip,skip,skip,True,none,none,0,0,,
 /datum/unit_test/dq_get_all_contents_type_nested,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_h2fire_reaction_consumes_hydrogen,both_pass,pass,pass,True,none,none,0,0,,
-/datum/unit_test/dq_h3_appliance_energy,both_fail,fail,fail,True,assertion,assertion,30,30,	FAILURE #1: Assertion failed: the oven heated its contents (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_h3_heat_tests.dm:171,	FAILURE #1: Assertion failed: the oven heated its contents (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_h3_heat_tests.dm:171
+/datum/unit_test/dq_h3_appliance_energy,both_fail,fail,fail,True,assertion,assertion,30,30,	FAILURE #1: Assertion failed: the oven heated its contents (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_h3_heat_tests.dm:171,	FAILURE #1: Assertion failed: the oven heated its contents (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_h3_heat_tests.dm:171
 /datum/unit_test/dq_h3_burning_ends,both_pass,pass,pass,True,none,none,72,66,,
 /datum/unit_test/dq_h3_hotspot_heats_items,both_pass,pass,pass,True,none,none,22,22,,
 /datum/unit_test/dq_h3_ignition_at_threshold,both_pass,pass,pass,True,none,none,115,62,,
@@ -721,7 +721,7 @@
 /datum/unit_test/dq_interaction_domain_snapshot,intentional_exclusion,unrun,unrun,True,none,none,,,,
 /datum/unit_test/dq_interaction_domain_snapshot/i7_bulk,both_fail,fail,fail,False,assertion,assertion,16589,16589,"	FAILURE #1: [03:32:18] Runtime in code/game/machinery/food_replicator.dm,216: Division by zero
  (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/machinery/food_replicator.dm:216
-	FAILURE #2: Assertion failed: new or changed snapshot: /obj/machinery/computer/skills|human|none => |skills_insert_id:needs an identification card,skills_open_ui:you're too far away from the station!,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item at code/modules/unit_tests/dq_interaction_entry_tests.dm:253","	FAILURE #1: Assertion failed: new or changed snapshot: /obj/machinery/computer/skills|human|none => |skills_insert_id:needs an identification card,skills_open_ui:you're too far away from the station!,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_interaction_entry_tests.dm:253"
+	FAILURE #2: Assertion failed: new or changed snapshot: /obj/machinery/computer/skills|human|none => |skills_insert_id:needs an identification card,skills_open_ui:you're too far away from the station!,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item at code/tests/unit_tests/dq_interaction_entry_tests.dm:253","	FAILURE #1: Assertion failed: new or changed snapshot: /obj/machinery/computer/skills|human|none => |skills_insert_id:needs an identification card,skills_open_ui:you're too far away from the station!,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_interaction_entry_tests.dm:253"
 /datum/unit_test/dq_interaction_entry_hand,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_interaction_entry_item,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_interaction_entry_other,both_pass,pass,pass,True,none,none,0,0,,
@@ -782,11 +782,11 @@
 	FAILURE #12: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/fancy/crackers still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
   (This error will now be silenced for 10 minutes) at code/game/atoms_movable.dm:119"
 /datum/unit_test/dq_latent_collapse,both_pass,pass,pass,True,none,none,64,64,,
-/datum/unit_test/dq_latent_destroy_parity,both_fail,fail,fail,False,assertion,assertion,158,157,	FAILURE #1: Expected 0 to be equal to 3. entries moved into the outer closet as data (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:203,"	FAILURE #1: [03:21:29] Runtime in code/game/atoms_movable.dm,119: /obj/structure/closet/dq_latent_test still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+/datum/unit_test/dq_latent_destroy_parity,both_fail,fail,fail,False,assertion,assertion,158,157,	FAILURE #1: Expected 0 to be equal to 3. entries moved into the outer closet as data (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_latent_tests.dm:203,"	FAILURE #1: [03:21:29] Runtime in code/game/atoms_movable.dm,119: /obj/structure/closet/dq_latent_test still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
  (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
-	FAILURE #2: Expected 0 to be equal to 3. entries moved into the outer closet as data at code/modules/unit_tests/dq_latent_tests.dm:203"
-/datum/unit_test/dq_latent_light_emergency,both_fail,fail,fail,True,assertion,assertion,6,6,	FAILURE #1: Assertion failed: checking doesn't materialize (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:402,	FAILURE #1: Assertion failed: checking doesn't materialize (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:402
-/datum/unit_test/dq_latent_light_parts,both_fail,fail,fail,True,assertion,assertion,6,6,	FAILURE #1: Assertion failed: no cell atom yet (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:371,	FAILURE #1: Assertion failed: no cell atom yet (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:371
+	FAILURE #2: Expected 0 to be equal to 3. entries moved into the outer closet as data at code/tests/unit_tests/dq_latent_tests.dm:203"
+/datum/unit_test/dq_latent_light_emergency,both_fail,fail,fail,True,assertion,assertion,6,6,	FAILURE #1: Assertion failed: checking doesn't materialize (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_latent_tests.dm:402,	FAILURE #1: Assertion failed: checking doesn't materialize (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_latent_tests.dm:402
+/datum/unit_test/dq_latent_light_parts,both_fail,fail,fail,True,assertion,assertion,6,6,	FAILURE #1: Assertion failed: no cell atom yet (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_latent_tests.dm:371,	FAILURE #1: Assertion failed: no cell atom yet (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_latent_tests.dm:371
 /datum/unit_test/dq_latent_magazine_rounds,both_pass,pass,pass,True,none,none,364,364,,
 /datum/unit_test/dq_latent_materialize_once,both_pass,pass,pass,True,none,none,6,6,,
 /datum/unit_test/dq_latent_pill_bottle_chem_master,both_pass,pass,pass,True,none,none,346,346,,
@@ -822,10 +822,10 @@
 /datum/unit_test/dq_life_transforming_human_halts,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_life_wake_and_hibernation,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_lifecycle_hooks_wired,both_pass,pass,pass,True,none,none,10,10,,
-/datum/unit_test/dq_lifecycle_sandbox,native_only_fail,fail,pass,False,other,none,28949,11217,"	FAILURE #1: [03:31:31] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,91: Cannot read null._active_timers
- (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_lifecycle_tests.dm:91
-	FAILURE #2: [03:31:31] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,129: Cannot read null.flags
- at code/modules/unit_tests/dq_lifecycle_tests.dm:129",
+/datum/unit_test/dq_lifecycle_sandbox,native_only_fail,fail,pass,False,other,none,28949,11217,"	FAILURE #1: [03:31:31] Runtime in code/tests/unit_tests/dq_lifecycle_tests.dm,91: Cannot read null._active_timers
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_lifecycle_tests.dm:91
+	FAILURE #2: [03:31:31] Runtime in code/tests/unit_tests/dq_lifecycle_tests.dm,129: Cannot read null.flags
+ at code/tests/unit_tests/dq_lifecycle_tests.dm:129",
 /datum/unit_test/dq_lightweight_performance_diagnostics,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_lingering_fire_bridge,both_pass,pass,pass,True,none,none,16,16,,
 /datum/unit_test/dq_linked_personal_outcome,both_pass,pass,pass,True,none,none,958,958,,
@@ -1082,8 +1082,8 @@
  at code/modules/power/power_bridge.dm:151
 	FAILURE #20: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
  at code/modules/power/power_bridge.dm:151
-	FAILURE #21: Assertion failed: an empty isolated APC kept its area powered at code/modules/unit_tests/dq_power_tests.dm:146",	FAILURE #1: Assertion failed: an empty isolated APC kept its area powered (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:146
-/datum/unit_test/dq_power_cut_splits_and_repair_merges,both_fail,fail,fail,True,other,other,1,1,	FAILURE #1: Expected non-null value: the left machine is not on the cable (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:72,	FAILURE #1: Expected non-null value: the left machine is not on the cable (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:72
+	FAILURE #21: Assertion failed: an empty isolated APC kept its area powered at code/tests/unit_tests/dq_power_tests.dm:146",	FAILURE #1: Assertion failed: an empty isolated APC kept its area powered (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_power_tests.dm:146
+/datum/unit_test/dq_power_cut_splits_and_repair_merges,both_fail,fail,fail,True,other,other,1,1,	FAILURE #1: Expected non-null value: the left machine is not on the cable (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_power_tests.dm:72,	FAILURE #1: Expected non-null value: the left machine is not on the cable (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_power_tests.dm:72
 /datum/unit_test/dq_power_idle_apc_and_smes_sleep,native_only_fail,fail,pass,False,other,none,93,93,"	FAILURE #1: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
  (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:151
 	FAILURE #2: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
@@ -1147,7 +1147,7 @@
 	FAILURE #31: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
   (This error will now be silenced for 10 minutes) at code/modules/power/power_bridge.dm:151",
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning,both_pass,pass,pass,True,none,none,128,50,,
-/datum/unit_test/dq_power_monitor_reading,both_fail,fail,fail,True,other,other,2,2,	FAILURE #1: Expected non-null value: the sensor is not on the network (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:234,	FAILURE #1: Expected non-null value: the sensor is not on the network (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:234
+/datum/unit_test/dq_power_monitor_reading,both_fail,fail,fail,True,other,other,2,2,	FAILURE #1: Expected non-null value: the sensor is not on the network (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_power_tests.dm:234,	FAILURE #1: Expected non-null value: the sensor is not on the network (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_power_tests.dm:234
 /datum/unit_test/dq_predicate_clauses,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_predicate_combinators,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_predicate_table,both_pass,pass,pass,True,none,none,0,0,,
@@ -1392,7 +1392,7 @@
  at code/datums/state/serializer.dm:248
 	FAILURE #43: 2 of 6054 latent-safe types failed:
 /obj/item/clothing/head/fishing: round trip changed the state: at 116: before ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""level"":3,""name"":""'Women attempt to approach me, fish choke me with their thighs'... after ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""item_state_slots"":{""slot_head"":""bluesoft0"",""slot_l_hand"":""bluesoft"",""slot_r_hand...
-/obj/item/clothing/head/fishing: round trip through JSON changed the state: at 116: before ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""level"":3,""name"":""'Women attempt to approach me, fish choke me with their thighs'... after ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""item_state_slots"":{""slot_head"":""yellowsoft0"",""slot_l_hand"":""yellowsoft"",""slot_r_... at code/modules/unit_tests/dq_state_tests.dm:102",
+/obj/item/clothing/head/fishing: round trip through JSON changed the state: at 116: before ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""level"":3,""name"":""'Women attempt to approach me, fish choke me with their thighs'... after ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""item_state_slots"":{""slot_head"":""yellowsoft0"",""slot_l_hand"":""yellowsoft"",""slot_r_... at code/tests/unit_tests/dq_state_tests.dm:102",
 /datum/unit_test/dq_state_versioning,both_pass,pass,pass,True,none,none,30,30,,
 /datum/unit_test/dq_state_vore_belly_round_trip,both_pass,pass,pass,True,none,none,56,56,,
 /datum/unit_test/dq_station_alarm_component_is_sealed,both_pass,pass,pass,True,none,none,0,0,,
@@ -1401,7 +1401,7 @@
 /datum/unit_test/dq_station_monthly_income_tracking,both_pass,pass,pass,True,none,none,6,6,,
 /datum/unit_test/dq_station_route_rejects_carrier_port_alias,both_pass,pass,pass,True,none,none,18,18,,
 /datum/unit_test/dq_stock_sheets,both_pass,pass,pass,True,none,none,60,60,,
-/datum/unit_test/dq_stock_smartfridge,both_fail,fail,fail,True,assertion,assertion,144,144,	FAILURE #1: Expected 4 to be equal to 6. destroying the fridge spilled two latent and one real (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_stock_tests.dm:165,	FAILURE #1: Expected 4 to be equal to 6. destroying the fridge spilled two latent and one real (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_stock_tests.dm:165
+/datum/unit_test/dq_stock_smartfridge,both_fail,fail,fail,True,assertion,assertion,144,144,	FAILURE #1: Expected 4 to be equal to 6. destroying the fridge spilled two latent and one real (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_stock_tests.dm:165,	FAILURE #1: Expected 4 to be equal to 6. destroying the fridge spilled two latent and one real (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/dq_stock_tests.dm:165
 /datum/unit_test/dq_stock_vending,both_pass,pass,pass,True,none,none,106,106,,
 /datum/unit_test/dq_storage_gather_and_empty,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/dq_storage_hud_per_viewer,both_pass,pass,pass,True,none,none,204,204,,
@@ -1486,13 +1486,13 @@
 /datum/unit_test/enough_free_gene_slots_must_be_available,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/enough_neutral_genes_must_exist,both_pass,pass,pass,True,none,none,0,0,,
 /datum/unit_test/enough_positive_genes_must_exist,both_pass,pass,pass,True,none,none,0,0,,
-/datum/unit_test/find_reference_assoc_investigation,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:125,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:125
-/datum/unit_test/find_reference_baseline,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:50,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:50
-/datum/unit_test/find_reference_esoteric,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:91,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:91
-/datum/unit_test/find_reference_exotic,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:69,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:69
-/datum/unit_test/find_reference_null_key_entry,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 4 to be equal to 3. Should be: test references: 1 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:108,	FAILURE #1: Expected 4 to be equal to 3. Should be: test references: 1 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:108
-/datum/unit_test/find_reference_sanity,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 3 to be equal to 2. Should be: test references: 0 + baseline references: 2 (victim var and loc; BYOND 516 no longer exposes the allocated-list reference through refcount()) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:33,	FAILURE #1: Expected 3 to be equal to 2. Should be: test references: 0 + baseline references: 2 (victim var and loc; BYOND 516 no longer exposes the allocated-list reference through refcount()) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:33
-/datum/unit_test/find_reference_static_investigation,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:148,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:148
+/datum/unit_test/find_reference_assoc_investigation,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:125,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:125
+/datum/unit_test/find_reference_baseline,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:50,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:50
+/datum/unit_test/find_reference_esoteric,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:91,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:91
+/datum/unit_test/find_reference_exotic,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:69,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:69
+/datum/unit_test/find_reference_null_key_entry,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 4 to be equal to 3. Should be: test references: 1 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:108,	FAILURE #1: Expected 4 to be equal to 3. Should be: test references: 1 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:108
+/datum/unit_test/find_reference_sanity,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 3 to be equal to 2. Should be: test references: 0 + baseline references: 2 (victim var and loc; BYOND 516 no longer exposes the allocated-list reference through refcount()) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:33,	FAILURE #1: Expected 3 to be equal to 2. Should be: test references: 0 + baseline references: 2 (victim var and loc; BYOND 516 no longer exposes the allocated-list reference through refcount()) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:33
+/datum/unit_test/find_reference_static_investigation,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:148,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/tests/unit_tests/find_reference_sanity.dm:148
 /datum/unit_test/focus_only,intentional_exclusion,unrun,unrun,True,none,none,,,,
 /datum/unit_test/focus_only/atmos_and_temp_requirements,intentional_exclusion,unrun,unrun,True,none,none,,,,
 /datum/unit_test/focus_only/bad_cooking_crafting_icons,intentional_exclusion,unrun,unrun,True,none,none,,,,

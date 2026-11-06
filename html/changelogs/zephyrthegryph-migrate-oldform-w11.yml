@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The technomancer golem's spell test and the swoopie's vac-pack borrowing are menu ops that ask through the op"

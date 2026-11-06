@@ -1,0 +1,277 @@
+// View Variables — structured TGUI replacement for the legacy 320-line
+// debug_variables HTML panel.
+
+ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R_FUN|R_EVENT), "View Variables", "View the variables of a datum.", "Debug.Investigate", datum/thing in world)
+	user.debug_variables(thing)
+//
+// Structured chrome: typed header (sprite, type, refs, marker flags,
+// coords), dropdown options, search box (client-side React filter),
+// refresh. The per-variable rendering still goes through the legacy
+// vv_get_var() override chain (each type defines its own value/edit-link
+// HTML), so the panel ships per-variable `value_html` strings rendered
+// through HtmlRenderer with forwardTopic for the E/C/M / Mass-modify
+// click handlers. This avoids re-implementing dozens of type-specific
+// overrides while still giving the chrome a real component model.
+
+/client
+	/// Cached VV panel datum, lazily created the first time debug_variables runs.
+	var/datum/view_variables_panel/dq_vv_panel
+
+/// A list being viewed: the panel's target is always a datum, and a list is wrapped in one (the list itself cannot be held by a typed var).
+/datum/vv_list_target
+	/// The list being viewed.
+	var/list/items
+
+/datum/vv_list_target/New(list/viewed)
+	..()
+	items = viewed
+
+/datum/view_variables_panel
+	var/tmp/client/owner
+	/// The datum being viewed, or the /datum/vv_list_target wrapping the list being viewed.
+	var/datum/thing
+
+/datum/view_variables_panel/New(client/owner_client)
+	..()
+	owner = owner_client // a client, not a datum: the client owns us by design (dq_vv_panel)
+
+// clears the client's cached panel (clients aren't datums).
+
+CAPABILITIES(/datum/view_variables_panel)
+	ref_one(nameof(thing), /datum)
+	interface("ViewVariables", title = "Variables", rights = R_HOLDER)
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("forward_topic", ui_act("forward_topic", arg("href", schema_text(4096))), then(PROC_REF(ui_act_forward_topic)))
+	op("dropdown_select", ui_act("dropdown_select", arg("link", schema_text(4096))), then(PROC_REF(ui_act_dropdown_select)))
+
+/// The target the viewer was asked for: the datum, or the list a wrapper holds.
+/datum/view_variables_panel/proc/view_target()
+	var/datum/vv_list_target/wrapped = thing
+	if(istype(wrapped))
+		return wrapped.items
+	return thing
+
+/// The handle text of the viewed target, built when asked (a REF text is never stored).
+/datum/view_variables_panel/proc/refid()
+	return REF(view_target())
+
+/// Points the panel at `target` (a datum, or a list, which is wrapped), letting go of the wrapper of the target it had.
+/datum/view_variables_panel/proc/set_view_target(target)
+	var/datum/vv_list_target/old = thing
+	var/datum/new_thing = target
+	if(islist(target) || (!isdatum(target) && hascall(target, "Cut"))) // a list, or an object that behaves as one (an appearance's overlays)
+		new_thing = new /datum/vv_list_target(target)
+	rel_set(src, nameof(thing), new_thing)
+	if(istype(old))
+		spent(old)
+
+/// Parses the legacy "<option value='[link]'>[name]</option>" strings into
+/// typed (name, link) records. Separator rows ("---") and the empty-link
+/// "Select option" placeholder are tagged with is_separator/is_placeholder.
+/datum/view_variables_panel/proc/parse_dropdown_options(list/raw_options, mob/user)
+	var/list/out = list()
+	for(var/raw in raw_options)
+		var/text = "[raw]" // the options' links carry HREF_TOKEN_PLACEHOLDER, filled when the window data is sent
+		if(!length(text))
+			continue
+		// "<option value='LINK'>NAME</option>" or "<option value selected>NAME</option>"
+		var/name_start = findtext(text, ">")
+		var/name_end = findtext(text, "</option>")
+		var/name = (name_start && name_end) ? copytext(text, name_start + 1, name_end) : text
+		var/link = ""
+		var/value_start = findtext(text, "value='")
+		if(value_start)
+			var/link_start = value_start + 7
+			var/link_end = findtext(text, "'", link_start)
+			if(link_end)
+				link = copytext(text, link_start, link_end)
+		out += list(list(
+			"name" = name,
+			"link" = link,
+			"is_separator" = (name == "---"),
+		))
+	return out
+
+/datum/view_variables_panel/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["ref"] = refid()
+	var/list/merged_1 = ui_data_datum_view_variables_panel(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
+
+/// /datum/view_variables_panel's window data.
+/datum/view_variables_panel/proc/ui_data_datum_view_variables_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+	data["has_target"] = !!thing
+	if(!thing)
+		return data
+	var/is_listy = istype(thing, /datum/vv_list_target)
+	var/viewed = view_target()
+	data["is_list"] = !!is_listy
+	var/datum/maybe_datum = is_listy ? null : thing
+	var/type_text
+	if(is_listy)
+		type_text = "/list"
+	else
+		type_text = "[maybe_datum.type]"
+	data["type"] = type_text
+	data["ref_for_paste"] = "@[copytext(refid(), 2, -1)]"
+	data["title"] = "[viewed] ([refid()]) = [type_text]"
+
+	// Atom-specific cords + sprite handling.
+	if(isatom(thing))
+		var/atom/AT = thing
+		data["coords"] = list("x" = AT.x, "y" = AT.y, "z" = AT.z)
+	else
+		data["coords"] = null
+
+	// Marker flags.
+	var/datum/admins/holder = owner() ? admin_holder_of(owner()) : null
+	var/datum/thing_datum = is_listy ? null : thing
+	data["marked"] = (holder && holder.marked_datum() == viewed)
+	data["tagged_index"] = (holder && LAZYFIND(holder.tagged_datums, viewed)) || 0
+	data["varedited"] = (thing_datum && (thing_datum.datum_flags & DF_VAR_EDITED))
+	data["gc_destroyed"] = (thing_datum && thing_datum.gc_destroyed)
+
+	// Header text from vv_get_header() for datums (lists have no header).
+	if(is_listy)
+		data["header"] = list("<b>/list</b>")
+	else
+		data["header"] = thing_datum.vv_get_header()
+
+	// Dropdown options.
+	var/list/raw_dropdown
+	if(is_listy)
+		raw_dropdown = list(
+			"---",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_ADD)]'>Add Item</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_ERASE_NULLS)]'>Remove Nulls</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_ERASE_DUPES)]'>Remove Dupes</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_SET_LENGTH)]'>Set len</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_LIST_SHUFFLE)]'>Shuffle</option>",
+			"<option value='[VV_HREF_TARGETREF_INTERNAL(refid(), VV_HK_EXPOSE)]'>Show VV To Player</option>",
+			"---",
+		)
+		data["dropdown"] = parse_dropdown_options(raw_dropdown, user)
+	else
+		data["dropdown"] = parse_dropdown_options(thing_datum.vv_get_dropdown(), user)
+
+	// Variable list. Each entry's value_html comes from the legacy
+	// vv_get_var() / debug_variable() chain — we keep its rendering since
+	// reimplementing per-type would require rewriting dozens of overrides.
+	var/list/variables = list()
+	if(is_listy)
+		var/list/list_value = view_target()
+		for(var/i in 1 to list_value.len)
+			var/key = list_value[i]
+			var/value
+			if(IS_NORMAL_LIST(list_value) && IS_VALID_ASSOC_KEY(key))
+				value = list_value[key]
+			var/value_html = debug_variable(i, value, 0, list_value, viewer = user)
+			variables += list(list(
+				"index" = i,
+				"name" = "[key]",
+				"value_html" = "[value_html]",
+			))
+	else
+		var/list/names = list()
+		for(var/varname in thing_datum.vars)
+			names += varname
+		names = sortList(names)
+		for(var/varname in names)
+			if(thing_datum.can_vv_get(varname))
+				variables += list(list(
+					"name" = varname,
+					"value_html" = "[thing_datum.vv_get_var(varname, user)]",
+				))
+		// Its lazy state fields (every one its type can hold, set or not), edited through the feature's writer.
+		var/list/slot_fields = vv_slots_of(thing_datum)
+		for(var/slot_label in slot_fields)
+			variables += list(list(
+				"name" = slot_label,
+				"value_html" = "[debug_variable(slot_label, slot_fields[slot_label], 0, thing_datum, viewer = user)]",
+			))
+		// Its trait blocks (doc/rewrite/proposals/base_vars.md): each field as `@kind.field`, edited through set_trait().
+		var/list/trait_fields = type_trait_fields_of(thing_datum)
+		for(var/field_name in trait_fields)
+			variables += list(list(
+				"name" = field_name,
+				"value_html" = "[debug_variable(field_name, trait_fields[field_name], 0, thing_datum, viewer = user)]",
+			))
+	data["variables"] = variables
+
+	return data
+
+/datum/view_variables_panel/proc/ui_gate(datum/act/op/A)
+	if(!owner())
+		return FALSE
+	return TRUE
+
+/datum/view_variables_panel/proc/ui_act_refresh(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/refresh_target = view_target()
+	if(refresh_target && !QDELETED(refresh_target))
+		owner().debug_variables(refresh_target, user)
+	SStgui.update_uis(src)
+	return TRUE
+
+/datum/view_variables_panel/proc/ui_act_forward_topic(datum/act/op/A, href)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	// The variable HTML and dropdown links all use the byond:// scheme
+	// dispatched through /client.Topic with _src_=vars (or _src_=holder
+	// for some operations). dispatch_forwarded_topic mirrors what the
+	// browser would do.
+	dispatch_forwarded_topic(user, view_target(), "[href]")
+	SStgui.update_uis(src)
+	return TRUE
+
+/datum/view_variables_panel/proc/ui_act_dropdown_select(datum/act/op/A, link)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	// React passes us the chosen option's link string verbatim. The
+	// link is already a fully-formed byond:// querystring.
+	var/href_str = "[link]"
+	if(length(href_str))
+		dispatch_forwarded_topic(user, view_target(), href_str)
+		SStgui.update_uis(src)
+	return TRUE
+
+/client/proc/debug_variables(datum/thing in world, mob/requester)
+	requester = requester || mob
+	if(!requester?.client || !check_rights_for(requester.client, R_HOLDER))
+		to_chat(requester, span_danger("You need to be an administrator to access this."), confidential = TRUE)
+		return
+	if(!thing)
+		return
+	if(isappearance(thing))
+		thing = get_vv_appearance(thing)
+	var/islist = islist(thing) || (!isdatum(thing) && hascall(thing, "Cut"))
+	if(!islist && !isdatum(thing))
+		return
+	if(!dq_vv_panel)
+		rel_set(src, nameof(dq_vv_panel), new /datum/view_variables_panel(src))
+	dq_vv_panel.set_view_target(thing)
+	dq_vv_panel.tgui_interact(requester)
+	SStgui.update_uis(dq_vv_panel)
+
+/client/proc/vv_update_display(datum/thing, span, content)
+	// Legacy callers ping us for live single-span updates. Since the
+	// structured panel re-renders its full data shape per tgui_update, we
+	// just trigger an update if the open VV is on this same target.
+	if(!thing || QDELETED(thing) || !mob)
+		return
+	if(dq_vv_panel && dq_vv_panel.view_target() == thing)
+		SStgui.update_uis(dq_vv_panel)
+
+
+/// The client this panel belongs to.
+/datum/view_variables_panel/proc/owner() as /client
+	return owner
+

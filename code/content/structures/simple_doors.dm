@@ -14,7 +14,6 @@
 	var/datum/material/material
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
-	var/oreAmount = 7
 	var/knock_sound = SFX_MACHINES_DOOR_KNOCK_GLASS
 	var/knock_hammer_sound = SFX_WEAPONS_SONIC_JACKHAMMER
 
@@ -107,7 +106,7 @@ CAPABILITIES(/obj/structure/simple_door)
 		if(locked && state == 0)
 			to_chat(M,span_warning("It's locked!"))
 			return
-		if(stamp_elapsed(src, last_bumped, CLOCK_WORLD) <= 6 SECONDS)
+		if((TIME_NOW(CLOCK_WORLD, src) - STATE_PEEK(src, cooldowns, last_bumped)) <= 6 SECONDS)
 			return
 		if(M.client)
 			if(iscarbon(M))

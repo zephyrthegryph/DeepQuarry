@@ -13,6 +13,8 @@
 #   bash tools/ci/check_ratchets.sh --lint scheduler     # extra arguments go to `analyze check`
 #   tools/build/build.sh analyze                         # the same engine through the build tool
 set -uo pipefail
+# Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../dq_below_normal.sh"
 cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"
 failed=()
@@ -62,6 +64,17 @@ run_gen gen_dme_check tools/build/gen_dme.py --check
 if selftest_wanted '^tools/build/(gen_dme\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
 else echo "check_ratchets: gen_dme --selftest skipped (the generator is unchanged)"; fi
 
+# Variant families (code/content/variants/README.md): VARIANT() keys exist, and a converted family gets no new data-only leaf type.
+( "$PY" tools/ci/check_variants.py >"$gen_dir/check_variants.out" 2>&1; echo $? >"$gen_dir/check_variants.rc" ) &
+gen_names+=(check_variants)
+# The mapping dme (StrongDMM) and its stub types follow the variant tables.
+( "$PY" tools/build/gen_mapping_dme.py --check >"$gen_dir/check_mapping_dme.out" 2>&1; echo $? >"$gen_dir/check_mapping_dme.rc" ) &
+gen_names+=(check_mapping_dme)
+
+# .gitattributes must name files that exist and merge drivers that exist (a move once left the _unit_tests.dm union rule dead).
+( bash tools/ci/check_gitattributes.sh >"$gen_dir/gitattributes_check.out" 2>&1; echo $? >"$gen_dir/gitattributes_check.rc" ) &
+gen_names+=(gitattributes_check)
+
 # The generated DM (code/engine/_generated/, code/_generated/reads.dm, the tgui .d.ts) is not committed;
 # every build writes it, and so does this, before the lints that read it. It fails on what still matters:
 # a generator diagnostic (a bad declaration), a test-only type outside the guard, or a generated file
@@ -75,13 +88,32 @@ fi
 
 # Every lint runs here, check_grep included (it used to be excluded, so a failing check_grep passed this
 # script while tools/ci/check_grep.sh and build.sh lint failed).
-if ! "$bin" check --ci "$@"; then
+# The engine prints its own "All ratchet lints passed." when ITS lints pass; that line followed a failing tool self-test in the same output and read as an
+# overall pass (31 October). Only this script's last line says it, so the engine's is renamed.
+"$bin" check --ci "$@" | sed 's/^All ratchet lints passed\.$/analyze: all lints passed (the tool self-tests below decide the overall result)/'
+if [ "${PIPESTATUS[0]}" -ne 0 ]; then
 	failed+=("analyze check")
 fi
 
 if ! selftest_wanted '^tools/(dq_disk_budget\.sh|ci/disk_budget\.toml|ci/test_disk_budget\.sh)$'; then echo "check_ratchets: test_disk_budget skipped (the disk budget is unchanged)"
-elif ! bash tools/ci/test_disk_budget.sh; then
+elif ! bash "${DQ_RATCHETS_DISK_TEST:-tools/ci/test_disk_budget.sh}"; then   # the variable is the seam tools/ci/test_ratchets_selftest_fail.sh uses
 	failed+=("test_disk_budget")
+fi
+if ! selftest_wanted '^tools/dx/codemods/(type_trait|_guard)\.py$'; then echo "check_ratchets: type_trait selftest skipped (the codemod is unchanged)"
+elif ! python3 tools/dx/codemods/type_trait.py --selftest; then
+	failed+=("type_trait")
+fi
+if ! selftest_wanted '^tools/ci/dead_code_scan\.py$'; then echo "check_ratchets: dead_code_scan selftest skipped (the scan is unchanged)"
+elif ! python3 tools/ci/dead_code_scan.py --selftest; then
+	failed+=("dead_code_scan")
+fi
+# The design docs match the code: the gaps ledger's probes, the paths the docs name, the generated census of final_api.html section 19.
+if ! python3 tools/ci/check_docs_truth.py; then
+	failed+=("check_docs_truth")
+fi
+if ! selftest_wanted '^tools/ci/check_docs_truth\.py$'; then echo "check_ratchets: check_docs_truth selftest skipped (the checker is unchanged)"
+elif ! python3 tools/ci/check_docs_truth.py --selftest; then
+	failed+=("check_docs_truth_selftest")
 fi
 if ! selftest_wanted '\.rs$|^tools/ci/check_test_scratch\.sh$'; then echo "check_ratchets: check_test_scratch skipped (no Rust file changed)"
 elif ! bash tools/ci/check_test_scratch.sh; then

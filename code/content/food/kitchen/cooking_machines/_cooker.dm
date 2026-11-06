@@ -20,7 +20,7 @@
 	/// The heat source is on.
 	var/tmp/heating = FALSE
 	/// Heat watch that wakes a hibernating cooker when it cools.
-	var/tmp/datum/native_watch/heat/thermostat_watch
+	var/tmp/datum/sense_sub/heat/thermostat_watch
 
 	var/light_x = 0
 	var/light_y = 0
@@ -34,7 +34,7 @@
 CAPABILITIES(/obj/machinery/appliance/cooker)
 	setup(PROC_REF(prepare_cooker_state))
 	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
-	owns_one(nameof(thermostat_watch), /datum/native_watch/heat)
+	owns_one(nameof(thermostat_watch), /datum/sense_sub/heat)
 
 /obj/machinery/appliance/cooker/ui_data(datum/act/eval/A)
 	var/list/data = ..()
@@ -175,12 +175,12 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 			heating = FALSE
 			tracked_changed(src, nameof(heating))
 			return
-		vg_heat_body_keep(heat_body, TRUE)
-		vg_heat_body_power(heat_body, heating_power)
+		heat_body_keep(heat_body, TRUE)
+		heat_body_power(heat_body, heating_power)
 		warm_contents()
 	else if(!isnull(heat_body))
-		vg_heat_body_power(heat_body, 0)
-		vg_heat_body_keep(heat_body, !has_condition())
+		heat_body_power(heat_body, 0)
+		heat_body_keep(heat_body, !has_condition())
 		if(has_condition())
 			release_contents_heat()
 
@@ -188,11 +188,13 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 /obj/machinery/appliance/cooker/proc/arm_thermostat()
 	if(!isnull(thermostat_watch))
 		return TRUE
-	rel_set(src, nameof(thermostat_watch), heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
+	rel_set(src, nameof(thermostat_watch), sense_heat(src, PROC_REF(on_thermostat), src, list(optimal_temp - COOKER_THERMOSTAT_BAND)))
 	return !isnull(thermostat_watch)
 
 /// Cooled below the thermostat band (thermostat_watch): heat again.
-/obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
+/obj/machinery/appliance/cooker/proc/on_thermostat(band, was)
+	if(band)
+		return
 	rel_clear(src, nameof(thermostat_watch))
 	work_start(src)
 
@@ -221,8 +223,8 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 /obj/machinery/appliance/cooker/proc/cooker_couple(obj/item/thing, holder_body)
 	if(isnull(holder_body) || !thing.create_heat_body(TRUE))
 		return
-	vg_heat_body_keep(thing.heat_body, TRUE)
-	vg_heat_body_couple(thing.heat_body, 0, HEAT_TARGET_BODY, holder_body, COOKER_CONTENT_CONDUCTANCE)
+	heat_body_keep(thing.heat_body, TRUE)
+	heat_body_couple(thing.heat_body, 0, HEAT_TARGET_BODY, holder_body, COOKER_CONTENT_CONDUCTANCE)
 
 /// The cooker stopped heating: its contents may be released at equilibrium again.
 /obj/machinery/appliance/cooker/proc/release_contents_heat()
@@ -231,10 +233,10 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 		if(!container)
 			continue
 		if(!isnull(container.heat_body))
-			vg_heat_body_keep(container.heat_body, FALSE)
+			heat_body_keep(container.heat_body, FALSE)
 		for(var/obj/item/food in contents_of(container))
 			if(!isnull(food.heat_body))
-				vg_heat_body_keep(food.heat_body, FALSE)
+				heat_body_keep(food.heat_body, FALSE)
 
 //Cookers do differently, they use containers
 /obj/machinery/appliance/cooker/has_space(obj/item/I)

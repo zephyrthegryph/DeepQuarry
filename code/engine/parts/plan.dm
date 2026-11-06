@@ -56,7 +56,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 	var/consumes = FALSE
 	/// The captured fields: name -> resume policy.
 	var/list/captured
-	var/list/chance_entry
 	var/datum/entry/part/chance/chance
 	/// Effects in declaration order, the early ones (then(.., early = TRUE)) first.
 	var/list/effects

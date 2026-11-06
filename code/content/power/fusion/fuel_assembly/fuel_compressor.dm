@@ -7,7 +7,7 @@
 	density = TRUE
 	anchored = TRUE
 
-	circuit = /obj/item/circuitboard/fusion_fuel_compressor
+	circuit = VARIANT(/obj/item/circuitboard/fusion_fuel_compressor)
 
 
 // The fuel compressor (doc/rewrite/final_api.html section 16): sheets of a fusion fuel (FUSION_ROD_SHEET_AMT of them), an open container

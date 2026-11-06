@@ -1,5 +1,5 @@
 // Body part slots (doc/medical_frameworks.md §2.2-2.3, slice O2; as relation
-// slots, doc/rewrite/object_model_core.md §7 and containment.md §3).
+// slots, doc/rewrite/archive/object_model_core.md §7 and containment.md §3).
 //
 // The limb tree is physically nested and the ledger is its source of truth:
 //

@@ -48,8 +48,6 @@ pub use crate::reactive_read_facts::{IMPURE_CALLS,MESSAGE_CALLS,effect_call};
 const HANDLE_RESOLUTION_FILE: &str = "code/engine/time/handles.dm";
 
 
-/// Test-only code (the unit tests and the test driver): compiled out of production, so never an input of a stat or a look.
-
 /// Calls whose body is an effect or a diagnostic: the closed walk does not follow them. What they read is not an input of the value
 /// being computed (a `qdel()` runs the destroy machinery, `to_chat()` the chat service, `set_x()` a setter), and the call itself is
 /// recorded as an effect for the purity check.
@@ -1872,7 +1870,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             if p.is_builtin() {
                 return Val::local(None);
             }
-            if self.eng.virtual_dispatch && sem.rel(p.get().location).starts_with("code/_helpers/logging/") {
+            if self.eng.virtual_dispatch && sem.rel(p.get().location).starts_with("code/host/helpers/logging/") {
                 // The logging helpers write the world log; what they read is not an input of a value.
                 return Val::local(None);
             }

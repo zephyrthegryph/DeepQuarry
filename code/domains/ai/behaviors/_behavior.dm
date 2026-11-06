@@ -58,8 +58,6 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 	/// enforces this.
 	var/cooldown = 0
 
-	/// Charges available across uses. null = unlimited.
-	var/default_charges = null
 
 	/// Bitmask description of what evaluate()'s target field will be.
 	var/target_kind = DQ_TARGET_MOB

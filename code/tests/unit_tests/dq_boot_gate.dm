@@ -11,6 +11,7 @@
 /datum/unit_test/dq_boot_gate/Run()
 	// A clean boot reads boot_unclean as null; the run's verdict comes from FinishTestRun().
 	TEST_ASSERT(isnull(GLOB.boot_unclean), GLOB.boot_unclean)
+	// Leaked slots are judged at boot, in unit_test_boot_gate(), before any test can leak one.
 
 /// A flag only the state-guard test writes: the guard's control case (a 0/1 flag a test leaves changed is a leak).
 GLOBAL_VAR_INIT(dq_state_guard_probe, 0)

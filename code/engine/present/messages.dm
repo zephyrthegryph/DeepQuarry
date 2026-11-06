@@ -1,4 +1,4 @@
-// Message templates runtime (doc/rewrite/systems.md §15). See code/__defines/messages.dm.
+// Message templates runtime (doc/rewrite/systems.md §15). See code/defines/engine/messages.dm.
 
 MSG_DEF_SELF(req_failed, "You can't do that.")
 

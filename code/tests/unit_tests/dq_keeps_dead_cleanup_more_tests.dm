@@ -2,9 +2,9 @@
 // deletes an argument before it fires and asserts the cleanup still happened.
 
 /// The malf AI's unlock timer clears its hacking flag even when the cyborg was deleted meanwhile.
-/datum/unit_test/om/keeps_dead_malf_unlock_clears_hacking
+/datum/unit_test/engine/keeps_dead_malf_unlock_clears_hacking
 
-/datum/unit_test/om/keeps_dead_malf_unlock_clears_hacking/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_malf_unlock_clears_hacking/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
@@ -15,9 +15,9 @@
 	TEST_ASSERT_EQUAL(AI.hacking, 0, "the AI is not left hacking a cyborg that is gone")
 
 /// An apportionment whose target vanished still uses up the spell.
-/datum/unit_test/om/keeps_dead_apportation_consumes_spell
+/datum/unit_test/engine/keeps_dead_apportation_consumes_spell
 
-/datum/unit_test/om/keeps_dead_apportation_consumes_spell/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_apportation_consumes_spell/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/L = allocate(/mob/living/carbon/human, T)
@@ -28,9 +28,9 @@
 	TEST_ASSERT(QDELETED(spell) || spell.loc != T, "the spell is used up when its target is gone")
 
 /// A spiderling crawling through a vent that vanished comes back out of the entry vent.
-/datum/unit_test/om/keeps_dead_spiderling_vent_midway_returns
+/datum/unit_test/engine/keeps_dead_spiderling_vent_midway_returns
 
-/datum/unit_test/om/keeps_dead_spiderling_vent_midway_returns/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_spiderling_vent_midway_returns/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/machinery/atmospherics/unary/vent_pump/entry = allocate(/obj/machinery/atmospherics/unary/vent_pump, T)
 	var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = allocate(/obj/machinery/atmospherics/unary/vent_pump, T)
@@ -40,9 +40,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(S.loc, entry, "the spiderling is put back in the vent it entered")
 
-/datum/unit_test/om/keeps_dead_spiderling_vent_exit_returns
+/datum/unit_test/engine/keeps_dead_spiderling_vent_exit_returns
 
-/datum/unit_test/om/keeps_dead_spiderling_vent_exit_returns/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_spiderling_vent_exit_returns/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/machinery/atmospherics/unary/vent_pump/entry = allocate(/obj/machinery/atmospherics/unary/vent_pump, T)
 	var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = allocate(/obj/machinery/atmospherics/unary/vent_pump, T)
@@ -53,9 +53,9 @@
 	TEST_ASSERT_EQUAL(S.loc, entry, "the spiderling is put back in the vent it entered")
 
 /// A one-shot spawner is spent even when the body it made is gone.
-/datum/unit_test/om/keeps_dead_apprentice_spawner_is_spent
+/datum/unit_test/engine/keeps_dead_apprentice_spawner_is_spent
 
-/datum/unit_test/om/keeps_dead_apprentice_spawner_is_spent/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_apprentice_spawner_is_spent/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/antag_spawner/technomancer_apprentice/spawner = allocate(/obj/item/antag_spawner/technomancer_apprentice, T)
@@ -64,9 +64,9 @@
 	scheduler_advance(2)
 	TEST_ASSERT(spawner.used, "the spawner is marked used")
 
-/datum/unit_test/om/keeps_dead_drone_teleporter_is_spent
+/datum/unit_test/engine/keeps_dead_drone_teleporter_is_spent
 
-/datum/unit_test/om/keeps_dead_drone_teleporter_is_spent/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_drone_teleporter_is_spent/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	var/obj/item/antag_spawner/syndicate_drone/spawner = allocate(/obj/item/antag_spawner/syndicate_drone, T)
@@ -76,9 +76,9 @@
 	TEST_ASSERT(QDELETED(spawner), "the teleporter is used up")
 
 /// A card wiping an AI that was deleted stops flushing.
-/datum/unit_test/om/keeps_dead_aicard_wipe_stops
+/datum/unit_test/engine/keeps_dead_aicard_wipe_stops
 
-/datum/unit_test/om/keeps_dead_aicard_wipe_stops/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_aicard_wipe_stops/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	var/obj/item/aicard/card = allocate(/obj/item/aicard, T)
@@ -89,9 +89,9 @@
 	TEST_ASSERT(!card.flush, "the card is not left mid-wipe")
 
 /// The ghost call's last stage takes the black screen off even when the caller is gone.
-/datum/unit_test/om/keeps_dead_ghost_dial_removes_blackness
+/datum/unit_test/engine/keeps_dead_ghost_dial_removes_blackness
 
-/datum/unit_test/om/keeps_dead_ghost_dial_removes_blackness/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_ghost_dial_removes_blackness/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/communicator/comm = allocate(/obj/item/communicator, T)
@@ -103,9 +103,9 @@
 	TEST_ASSERT(QDELETED(blackness), "the black screen is spent when the dial-up finishes")
 
 /// A toy fight whose opponent toy was deleted ends and resets the survivor.
-/datum/unit_test/om/keeps_dead_toy_brawl_ends
+/datum/unit_test/engine/keeps_dead_toy_brawl_ends
 
-/datum/unit_test/om/keeps_dead_toy_brawl_ends/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_toy_brawl_ends/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/item/toy/mecha/toy = allocate(/obj/item/toy/mecha, T)
 	var/obj/item/toy/mecha/foe = allocate(/obj/item/toy/mecha, T)
@@ -117,9 +117,9 @@
 	TEST_ASSERT(!toy.in_combat, "the toy leaves combat")
 	TEST_ASSERT_EQUAL(toy.combat_health, toy.max_combat_health, "and is mended")
 
-/datum/unit_test/om/keeps_dead_toy_brawl_exchange_ends
+/datum/unit_test/engine/keeps_dead_toy_brawl_exchange_ends
 
-/datum/unit_test/om/keeps_dead_toy_brawl_exchange_ends/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_toy_brawl_exchange_ends/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/item/toy/mecha/toy = allocate(/obj/item/toy/mecha, T)
 	var/obj/item/toy/mecha/foe = allocate(/obj/item/toy/mecha, T)
@@ -131,9 +131,9 @@
 	TEST_ASSERT(!toy.in_combat, "the toy leaves combat")
 
 /// A chair pushed by an extinguisher stops being propelled even when its rider was deleted mid-way.
-/datum/unit_test/om/keeps_dead_extinguisher_chair_stops
+/datum/unit_test/engine/keeps_dead_extinguisher_chair_stops
 
-/datum/unit_test/om/keeps_dead_extinguisher_chair_stops/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_extinguisher_chair_stops/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/bed/chair/chair = allocate(/obj/structure/bed/chair, T)
@@ -146,9 +146,9 @@
 	TEST_ASSERT_EQUAL(chair.propelled, 0, "the chair's propulsion runs out")
 
 /// A shorted secure case stops sparking and opens when the one who shorted it is gone.
-/datum/unit_test/om/keeps_dead_secure_case_finishes_shorting
+/datum/unit_test/engine/keeps_dead_secure_case_finishes_shorting
 
-/datum/unit_test/om/keeps_dead_secure_case_finishes_shorting/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_secure_case_finishes_shorting/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/storage/secure/S = allocate(/obj/item/storage/secure, T)
@@ -159,9 +159,9 @@
 	TEST_ASSERT(!S.locked, "and is unlocked")
 
 /// A station that sent a pod which was then deleted stops being busy.
-/datum/unit_test/om/keeps_dead_tube_station_not_stuck_moving
+/datum/unit_test/engine/keeps_dead_tube_station_not_stuck_moving
 
-/datum/unit_test/om/keeps_dead_tube_station_not_stuck_moving/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_tube_station_not_stuck_moving/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/structure/transit_tube/station/station = allocate(/obj/structure/transit_tube/station, T)
 	var/obj/structure/transit_tube_pod/pod = allocate(/obj/structure/transit_tube_pod, T)
@@ -172,9 +172,9 @@
 	TEST_ASSERT_EQUAL(station.pod_moving, 0, "the station can launch again")
 
 /// The pod prop finishes changing state even if its door overlay is gone.
-/datum/unit_test/om/keeps_dead_nt_pod_finishes_state_change
+/datum/unit_test/engine/keeps_dead_nt_pod_finishes_state_change
 
-/datum/unit_test/om/keeps_dead_nt_pod_finishes_state_change/run_om(list/made)
+/datum/unit_test/engine/keeps_dead_nt_pod_finishes_state_change/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/structure/prop/machine/nt_pod/pod = allocate(/obj/structure/prop/machine/nt_pod, T)
 	var/obj/effect/overlay/vis/door = allocate(/obj/effect/overlay/vis)

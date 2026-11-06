@@ -1,0 +1,53 @@
+/mob/living/verb/toggle_autowhisper()
+	set name = "Autowhisper Toggle"
+	set desc = "Toggle whether you will automatically whisper/subtle"
+	set category = VERB_CAT_IC_SETTINGS
+
+	STATE_SET(src, connection, autowhisper, !STATE_GET(src, connection, autowhisper))
+	if(hud_used?.autowhisper_display)
+		hud_used?.autowhisper_display?.icon_state = "[STATE_GET(src, connection, autowhisper) ? "autowhisper1" : "autowhisper"]"
+
+	if(STATE_GET(src, connection, autowhisper_mode) == "Psay/Pme")
+		if(isbelly(loc) && absorbed)
+			var/obj/belly/b = loc
+			if(b.mode_flags & DM_FLAG_FORCEPSAY)
+				var/mes = "but you are affected by forced psay right now, so you will automatically use psay/pme instead of any other option."
+				to_chat(src, span_notice("autowhisper [STATE_GET(src, connection, autowhisper) ? "enabled, [mes]" : "disabled, [mes]"]."))
+				return
+		else
+			set_forced_psay(STATE_GET(src, connection, autowhisper))
+			balloon_alert(src, "autowhisper [STATE_GET(src, connection, autowhisper) ? "enabled, using psay/pme" : "disabled"]")
+	else
+		balloon_alert(src, "autowhisper [STATE_GET(src, connection, autowhisper) ? "enabled" : "disabled"]")
+
+/mob/living/verb/autowhisper_mode()
+	set name = "Autowhisper Mode"
+	set desc = "Set the mode your emotes will default to while using Autowhisper"
+	set category = VERB_CAT_IC_SETTINGS
+
+
+	open_request(src, /datum/prompt/choice, PROC_REF(autowhisper_mode_chosen), answerer = src, title = "Custom Subtle Mode", question = "Select Custom Subtle Mode", choices = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person", "Psay/Pme"), timeout = 0)
+
+/mob/living/proc/autowhisper_mode_chosen(datum/act/request/A)
+	var/choice
+	if(A.answer)
+		choice = A.answer.value
+	else
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.value) || QDELETED(A.request.answerer))
+			return
+		choice = "Adjacent Turfs (Default)"
+	if(!choice || choice == "Adjacent Turfs (Default)")
+		STATE_SET(src, connection, autowhisper_mode, null)
+		balloon_alert(src, "subtles returned to default setting")
+		return
+	if(choice == "Psay/Pme")
+		if(STATE_GET(src, connection, autowhisper))
+			if(isbelly(loc) && absorbed)
+				var/obj/belly/b = loc
+				if(b.mode_flags & DM_FLAG_FORCEPSAY)
+					to_chat(src, span_warning("You can't set that mode right now, as you appear to be absorbed in a belly using forced psay!"))
+					return
+			set_forced_psay(TRUE)
+			to_chat(src, span_notice("As a note, this option will only work if you are in a situation where you can send psay/pme messages! Otherwise it will work as default whisper/subtle."))
+	STATE_SET(src, connection, autowhisper_mode, choice)
+	balloon_alert(src, "subtles set to [STATE_GET(src, connection, autowhisper_mode)]")

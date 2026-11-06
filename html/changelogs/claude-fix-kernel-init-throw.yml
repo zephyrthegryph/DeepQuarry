@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "A throw out of a system's initialize() now reaches the runtime log and fails the boot gate; the boot-time world scan reports a failing atom and carries on with the rest"

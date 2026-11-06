@@ -2,7 +2,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("RCON remote control console")
 	id = "rcon_console"
 	// req_tech = list(TECH_DATA = 4, TECH_ENGINEERING = 3, TECH_POWER = 5)
-	build_path = /obj/item/circuitboard/rcon_console
+	build_path = VARIANT(/obj/item/circuitboard/rcon_console)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_ENGINEERING
 	)
@@ -12,7 +12,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("drone control console")
 	id = "dronecontrol"
 	// req_tech = list(TECH_DATA = 4)
-	build_path = /obj/item/circuitboard/drone_control
+	build_path = VARIANT(/obj/item/circuitboard/drone_control)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_ENGINEERING
 	)
@@ -21,7 +21,7 @@
 /datum/design_techweb/board/powermonitor
 	SET_CIRCUIT_DESIGN_NAMEDESC("power monitoring console")
 	id = "powermonitor"
-	build_path = /obj/item/circuitboard/powermonitor
+	build_path = VARIANT(/obj/item/circuitboard/powermonitor)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_ENGINEERING
 	)
@@ -30,7 +30,7 @@
 /datum/design_techweb/board/solarcontrol
 	SET_CIRCUIT_DESIGN_NAMEDESC("solar control console")
 	id = "solarcontrol"
-	build_path = /obj/item/circuitboard/solar_control
+	build_path = VARIANT(/obj/item/circuitboard/solar_control)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_COMPUTER_ENGINEERING
 	)
@@ -79,7 +79,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("cell rack PSU")
 	id = "batteryrack"
 	// req_tech = list(TECH_POWER = 3, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/batteryrack
+	build_path = VARIANT(/obj/item/circuitboard/batteryrack)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -100,7 +100,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("power grid checker")
 	id = "grid_checker"
 	// req_tech = list(TECH_POWER = 4, TECH_ENGINEERING = 3)
-	build_path = /obj/item/circuitboard/grid_checker
+	build_path = VARIANT(/obj/item/circuitboard/grid_checker)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -110,7 +110,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("breaker box")
 	id = "breakerbox"
 	// req_tech = list(TECH_POWER = 3, TECH_ENGINEERING = 3)
-	build_path = /obj/item/circuitboard/breakerbox
+	build_path = VARIANT(/obj/item/circuitboard/breakerbox)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -120,7 +120,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("hydromagnetic trap")
 	id = "hydromagnetic_trap"
 	// req_tech = list(TECH_POWER = 3, TECH_ENGINEERING = 3)
-	build_path = /obj/item/circuitboard/hydromagnetic_trap
+	build_path = VARIANT(/obj/item/circuitboard/hydromagnetic_trap)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -141,7 +141,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("shield generator")
 	id = "shield_generator"
 	// req_tech = list(TECH_MAGNET = 3, TECH_POWER = 4, TECH_BLUESPACE = 2, TECH_ENGINEERING = 3)
-	build_path = /obj/item/circuitboard/shield_generator
+	build_path = VARIANT(/obj/item/circuitboard/shield_generator)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -151,7 +151,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("shield diffuser")
 	id = "shield_diffuser"
 	// req_tech = list(TECH_MAGNET = 4, TECH_POWER = 2, TECH_ENGINEERING = 5)
-	build_path = /obj/item/circuitboard/shield_diffuser
+	build_path = VARIANT(/obj/item/circuitboard/shield_diffuser)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -161,7 +161,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("point defense battery")
 	id = "pointdefense"
 	// req_tech = list(TECH_DATA = 2, TECH_ENGINEERING = 3, TECH_COMBAT = 4)
-	build_path = /obj/item/circuitboard/pointdefense
+	build_path = VARIANT(/obj/item/circuitboard/pointdefense)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -171,7 +171,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("point defense control")
 	id = "pointdefense_control"
 	// req_tech = list(TECH_DATA = 4, TECH_ENGINEERING = 3, TECH_COMBAT = 2)
-	build_path = /obj/item/circuitboard/pointdefense_control
+	build_path = VARIANT(/obj/item/circuitboard/pointdefense_control)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -181,7 +181,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("recycling crusher")
 	id = "recycler_crusher"
 	// req_tech = list(TECH_MATERIAL = 2)
-	build_path = /obj/item/circuitboard/recycler_crusher
+	build_path = VARIANT(/obj/item/circuitboard/recycler_crusher)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -191,7 +191,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("recycling sorter")
 	id = "recycler_sorter"
 	// req_tech = list(TECH_MATERIAL = 2)
-	build_path = /obj/item/circuitboard/recycler_sorter
+	build_path = VARIANT(/obj/item/circuitboard/recycler_sorter)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -201,7 +201,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("recycling stamper")
 	id = "recycler_stamper"
 	// req_tech = list(TECH_MATERIAL = 2)
-	build_path = /obj/item/circuitboard/recycler_stamper
+	build_path = VARIANT(/obj/item/circuitboard/recycler_stamper)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -211,7 +211,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("Algae Oxygen Generator")
 	id = "algae_farm"
 	// req_tech = list(TECH_ENGINEERING = 3, TECH_BIO = 2)
-	build_path = /obj/item/circuitboard/algae_farm
+	build_path = VARIANT(/obj/item/circuitboard/algae_farm)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -221,7 +221,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("thermal regulator")
 	id = "thermoregulator"
 	// req_tech = list(TECH_ENGINEERING = 4, TECH_POWER = 3)
-	build_path = /obj/item/circuitboard/thermoregulator
+	build_path = VARIANT(/obj/item/circuitboard/thermoregulator)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -231,7 +231,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("Parts lathe")
 	id = "partslathe"
 	// req_tech = list(TECH_DATA = 2, TECH_ENGINEERING = 2)
-	build_path = /obj/item/circuitboard/partslathe
+	build_path = VARIANT(/obj/item/circuitboard/partslathe)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -283,7 +283,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("point defense battery")
 	id = "pointdefense"
 	// req_tech = list(TECH_DATA = 2, TECH_ENGINEERING = 3, TECH_COMBAT = 4)
-	build_path = /obj/item/circuitboard/pointdefense
+	build_path = VARIANT(/obj/item/circuitboard/pointdefense)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -293,7 +293,7 @@
 	SET_CIRCUIT_DESIGN_NAMEDESC("point defense control")
 	id = "pointdefense_control"
 	// req_tech = list(TECH_DATA = 4, TECH_ENGINEERING = 3, TECH_COMBAT = 2)
-	build_path = /obj/item/circuitboard/pointdefense_control
+	build_path = VARIANT(/obj/item/circuitboard/pointdefense_control)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -302,7 +302,7 @@
 /datum/design_techweb/board/fusion
 	SET_CIRCUIT_DESIGN_NAMEDESC("Fusion Core Control Console")
 	id = "fusion_core_control"
-	build_path = /obj/item/circuitboard/fusion_core_control
+	build_path = VARIANT(/obj/item/circuitboard/fusion_core_control)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -311,27 +311,27 @@
 /datum/design_techweb/board/fusion/fuel_compressor
 	SET_CIRCUIT_DESIGN_NAMEDESC("Fusion Fuel Compressor")
 	id = "fusion_fuel_compressor"
-	build_path = /obj/item/circuitboard/fusion_fuel_compressor
+	build_path = VARIANT(/obj/item/circuitboard/fusion_fuel_compressor)
 
 /datum/design_techweb/board/fusion/fuel_control
 	SET_CIRCUIT_DESIGN_NAMEDESC("Fusion Fuel Control Console")
 	id = "fusion_fuel_control"
-	build_path = /obj/item/circuitboard/fusion_fuel_control
+	build_path = VARIANT(/obj/item/circuitboard/fusion_fuel_control)
 
 /datum/design_techweb/board/fusion/gyrotron_control
 	SET_CIRCUIT_DESIGN_NAMEDESC("Gyrotron Control Console")
 	id = "gyrotron_control"
-	build_path = /obj/item/circuitboard/gyrotron_control
+	build_path = VARIANT(/obj/item/circuitboard/gyrotron_control)
 
 /datum/design_techweb/board/fusion/core
 	SET_CIRCUIT_DESIGN_NAMEDESC("Fusion Core")
 	id = "fusion_core"
-	build_path = /obj/item/circuitboard/fusion_core
+	build_path = VARIANT(/obj/item/circuitboard/fusion_core)
 
 /datum/design_techweb/board/fusion/injector
 	SET_CIRCUIT_DESIGN_NAMEDESC("Fusion Fuel Injector")
 	id = "fusion_injector"
-	build_path = /obj/item/circuitboard/fusion_injector
+	build_path = VARIANT(/obj/item/circuitboard/fusion_injector)
 
 /datum/design_techweb/board/airlock_cycling
 	name = "airlock cycling control circuit"
@@ -355,7 +355,7 @@
 /datum/design_techweb/board/grounding_rod
 	SET_CIRCUIT_DESIGN_NAMEDESC("grounding rod")
 	id = "grounding_rod"
-	build_path = /obj/item/circuitboard/grounding_rod
+	build_path = VARIANT(/obj/item/circuitboard/grounding_rod)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -364,7 +364,7 @@
 /datum/design_techweb/board/electrochromic
 	SET_CIRCUIT_DESIGN_NAMEDESC("electrochromic button")
 	id = "electrochromic"
-	build_path = /obj/item/circuitboard/electrochromic
+	build_path = VARIANT(/obj/item/circuitboard/electrochromic)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -373,7 +373,7 @@
 /datum/design_techweb/board/mass_driver_button
 	SET_CIRCUIT_DESIGN_NAMEDESC("mass driver button")
 	id = "mass_driver_button"
-	build_path = /obj/item/circuitboard/mass_driver_button
+	build_path = VARIANT(/obj/item/circuitboard/mass_driver_button)
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)
@@ -400,7 +400,7 @@
 /datum/design_techweb/board/gyrotron
 	SET_CIRCUIT_DESIGN_NAMEDESC("gyrotron")
 	id = "gyrotron"
-	build_path = /obj/item/circuitboard/gyrotron
+	build_path = VARIANT(/obj/item/circuitboard/gyrotron)
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_ENGINEERING
 	)

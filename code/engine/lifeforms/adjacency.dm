@@ -33,7 +33,7 @@
 
 /// kind text -> the number the Rust index knows it by.
 GLOBAL_LIST_EMPTY(adjacency_kind_ids)
-/// handle -> member (a handle is an index into this list; a freed one is null and reused).
+/// handle -> the member's slot (a handle is an index into this list; a freed one is null and reused). Slots, not the members: the index keeps no reference.
 GLOBAL_LIST_EMPTY(adjacency_members)
 GLOBAL_LIST_EMPTY(adjacency_free)
 
@@ -53,9 +53,9 @@ GLOBAL_LIST_EMPTY(adjacency_free)
 	if(length(GLOB.adjacency_free))
 		h = GLOB.adjacency_free[length(GLOB.adjacency_free)]
 		GLOB.adjacency_free.len--
-		GLOB.adjacency_members[h] = A
+		GLOB.adjacency_members[h] = SLOT(A)
 	else
-		GLOB.adjacency_members += A
+		GLOB.adjacency_members += SLOT(A)
 		h = length(GLOB.adjacency_members)
 	A.adj_handle = h
 	return h
@@ -126,7 +126,7 @@ GLOBAL_VAR_INIT(dq_adjacency_trace, 0)
 
 /proc/adjacency_recompute_handles(list/changed, kind)
 	for(var/h in changed)
-		var/atom/member = GLOB.adjacency_members[h]
+		var/atom/member = slot_datum(GLOB.adjacency_members[h])
 		if(!member || QDELETED(member))
 			continue
 		if(materialization_host().batch_defer(BATCH_WORK_ADJACENCY, member))
@@ -146,7 +146,7 @@ GLOBAL_VAR_INIT(dq_adjacency_trace, 0)
 	var/list/seen = vg_adjacency_seen(adjacency_kind_id(E.args["kind"]), holder.adj_handle)
 	DQ_ADJACENCY_TRACE(holder, "recompute: neighbours read")
 	for(var/i in 1 to length(seen) step 2)
-		var/atom/other = GLOB.adjacency_members[seen[i]]
+		var/atom/other = slot_datum(GLOB.adjacency_members[seen[i]])
 		var/bit = seen[i + 1]
 		if(!other || QDELETED(other))
 			continue
@@ -189,7 +189,7 @@ GLOBAL_VAR_INIT(dq_adjacency_trace, 0)
 		return
 	var/list/seen = vg_adjacency_seen(adjacency_kind_id(kind), holder.adj_handle)
 	for(var/i in 1 to length(seen) step 2)
-		var/atom/other = GLOB.adjacency_members[seen[i]]
+		var/atom/other = slot_datum(GLOB.adjacency_members[seen[i]])
 		if(other)
 			.[other] = seen[i + 1]
 

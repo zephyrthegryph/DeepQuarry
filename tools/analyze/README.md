@@ -246,14 +246,14 @@ generator's input, so it is not run again: running it again would parse the full
 declarations parses the model once, not once per pass. A run that converged records `data/analyze-cache/gen-state.bin`: the
 analyzer build, a digest of every file the generators can read (and `deepquarry.dme`) and the content digest of every output. The next
 run with the same inputs and intact outputs prints the fresh files and returns (about 0.4 s, from the tree walk), whatever else
-changed (`lint_scopes.toml`, a lint's baseline). `DQ_ANALYZE_TRACE=1` prints the passes, each generator's render time and
+changed (a lint's baseline, anything in `lint_scopes.toml` but the `auto_tracked` lists, which `auto_tracked` reads and which are part of the key). `DQ_ANALYZE_TRACE=1` prints the passes, each generator's render time and
 whether the model was built.
 
 **The shared store.** A converged run also copies its outputs into `E:/dq-cache/gen-store/<key>/` (`DQ_GEN_STORE`, `off` disables it; the 40 newest
 entries are kept), keyed by the analyzer build and the content of every file the generators read except the generated files themselves, so the key is
 the same before and after they are written. A run that meets a key the store holds (a new worktree of a commit another worktree generated, a merge
 of one lane whose lane-ready run generated the same tree, a hand-edited output) copies the files back after checking each against the manifest's digest,
-instead of generating them: a fresh worktree's first `gen` goes from 28-80 s to about 1 s. Only clean runs (no diagnostic) are stored.
+instead of generating them: a fresh worktree's first `gen` goes from 28-80 s to about 1 s. Only clean runs (no diagnostic) are stored. The key also takes in `auto_tracked`'s lists from `lint_scopes.toml` (no `.dm` changes when they do), and a run stores nothing, and exits 3, when an input changed while it ran (the first pass's key must still be the tree's key after it). `_bindings.dm` is an input (the reads generator follows calls into the `vg_*` binds: without it three `nameof(vg_entity)` reads are missing from `reads.dm`), so the build's `gen` target runs after the bindings target.
 
 The whole-tree scans the generators do (the defined types of every file, which files mention a notice type, `#define` names,
 `SYSTEM_DEF`) read the `.dm` tree on all cores first (`Tree::prewarm_dm`); the first two are per-file facts cached by content
@@ -295,7 +295,7 @@ includes that did not exist when the model was stored (a generated file, on the 
 reused the model without it, and `auto_tracked`, `plans` and `reads` wrote less than an uncached run (`print_cooldown` of the gold star and ticket
 printers was not tracked, so `untracked_inputs` failed on some trees and not on others). `model_store::appeared_include` now makes that a full parse.
 
-Merge gates take no cache on trust: `DQ_ANALYZE_COLD=1 bash tools/ci/check_ratchets.sh` (set by `tools/dq_merge_gates.sh`) runs gen and the lints
+For a run that takes no cache on trust, `DQ_ANALYZE_COLD=1 bash tools/ci/check_ratchets.sh` runs gen and the lints
 with an empty private cache directory, no shared-cache seed and no gen store. To compare by hand: wipe `data/analyze-cache` and the generated
 files, set `DQ_GEN_STORE=off DQ_ANALYZE_SHARED_CACHE=off`, and add `DQ_MODEL_STORE=off DQ_WALK_CACHE=off DQ_BODY_FACTS=off` for the uncached truth.
 

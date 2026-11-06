@@ -8,7 +8,7 @@
 	icon = 'icons/obj/machines/reagent.dmi'
 	icon_state = "pump"
 
-	circuit = /obj/item/circuitboard/fluidpump
+	circuit = VARIANT(/obj/item/circuitboard/fluidpump)
 
 	var/obj/item/cell/cell = null
 	var/reagents_per_cycle = 5
@@ -84,8 +84,7 @@ CAPABILITIES(/obj/machinery/pump)
 		return
 	T.pump_reagents(reagents, reagents_per_cycle)
 
-	if(notice_wanted(src, /datum/notice/hose_forcepump))
-		notice_publish(src, notice_take(/datum/notice/hose_forcepump))
+	PUBLISH(src, hose_forcepump)
 
 // Sets the power state, if possible.
 // Returns TRUE/FALSE on power state changing

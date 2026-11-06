@@ -279,6 +279,67 @@ fn null_guard(node: &Value) -> Option<(&str, bool)> {
     }
 }
 
+fn identifier_of(node: &Value) -> Option<&str> {
+    (kind(node) == "DMASTIdentifier")
+        .then(|| field(node, "Identifier").as_str())
+        .flatten()
+}
+
+/// The local a type check tests: `istype(x, T)`, `istype(x)`, or a builtin `isX(x)` that is false for null.
+fn type_guard(node: &Value) -> Option<&str> {
+    match kind(node) {
+        "DMASTIsType" => identifier_of(field(node, "LHS")),
+        "DMASTImplicitIsType" => identifier_of(field(node, "Value")),
+        "DMASTProcCall" => {
+            let callable = field(node, "Callable");
+            if kind(callable) != "DMASTCallableProcIdentifier" {
+                return None;
+            }
+            let name = field(callable, "Identifier").as_str()?;
+            if !matches!(
+                name,
+                "islist"
+                    | "isnum"
+                    | "istext"
+                    | "isarea"
+                    | "ismob"
+                    | "isobj"
+                    | "isturf"
+                    | "ismovable"
+                    | "isatom"
+                    | "isdatum"
+                    | "isicon"
+                    | "isfile"
+                    | "isclient"
+            ) {
+                return None;
+            }
+            let args = field(node, "Parameters").as_array()?;
+            if args.len() != 1 {
+                return None;
+            }
+            identifier_of(field(&args[0], "Value"))
+        }
+        _ => None,
+    }
+}
+
+fn narrow_nonnull(
+    result: &mut HashMap<String, TypeState>,
+    vars: &HashMap<String, TypeState>,
+    name: &str,
+) {
+    let Some(state) = vars.get(name) else {
+        return;
+    };
+    let alias_id = state.alias_id;
+    for (candidate, value) in result.iter_mut() {
+        if candidate == name || (alias_id != 0 && value.alias_id == alias_id) {
+            value.null = Nullability::NonNull;
+        }
+    }
+}
+
 fn narrowed(
     condition: &Value,
     truth: bool,
@@ -308,6 +369,22 @@ fn narrowed(
         }
         _ => {
             let mut result = vars.clone();
+            if let Some(name) = type_guard(condition) {
+                // A true type check (istype, islist, ismob ...) proves the value non-null; a false one
+                // proves nothing about null (it may hold another type).
+                if truth {
+                    narrow_nonnull(&mut result, vars, name);
+                }
+                return result;
+            }
+            if kind(condition) == "DMASTIsNull" {
+                if !truth {
+                    if let Some(name) = identifier_of(field(condition, "Value")) {
+                        narrow_nonnull(&mut result, vars, name);
+                    }
+                }
+                return result;
+            }
             if let Some((name, null_on_true)) = null_guard(condition) {
                 if let Some(state) = vars.get(name) {
                     let exact_null_check =
@@ -1062,6 +1139,58 @@ impl ProcAnalysis<'_> {
                 *vars = merge(vars, &body_vars);
                 false
             }
+            "DMASTProcStatementSwitch" => {
+                // Each case runs on its own copy of the state; the paths that fall out of the switch merge.
+                // Without a default case, the no-match path keeps the state from before the switch.
+                self.branches += 1;
+                self.inspect(field(node, "Value"), vars);
+                let mut outs: Vec<HashMap<String, TypeState>> = Vec::new();
+                let mut has_default = false;
+                for case in field(node, "Cases").as_array().into_iter().flatten() {
+                    if kind(case).contains("Default") {
+                        has_default = true;
+                    }
+                    for value in field(case, "Values").as_array().into_iter().flatten() {
+                        self.inspect(value, vars);
+                    }
+                    let mut case_vars = vars.clone();
+                    if !self.block(field(case, "Body"), &mut case_vars) {
+                        outs.push(case_vars);
+                    }
+                }
+                if !has_default {
+                    outs.push(vars.clone());
+                }
+                let Some(first) = outs.first().cloned() else {
+                    return true;
+                };
+                *vars = outs.iter().skip(1).fold(first, |acc, next| merge(&acc, next));
+                false
+            }
+            "DMASTProcStatementTryCatch" => {
+                // The catch body may start after any statement of the try body: it sees both states merged.
+                self.branches += 1;
+                let mut try_vars = vars.clone();
+                let try_return = self.block(field(node, "TryBody"), &mut try_vars);
+                let mut catch_vars = merge(vars, &try_vars);
+                let catch_return = if field(node, "CatchBody").is_null() {
+                    false
+                } else {
+                    self.block(field(node, "CatchBody"), &mut catch_vars)
+                };
+                *vars = if try_return {
+                    catch_vars
+                } else if catch_return {
+                    try_vars
+                } else {
+                    merge(&try_vars, &catch_vars)
+                };
+                try_return && catch_return
+            }
+            // `continue` ends this path: the loop head already sees the merged state, so an
+            // `if(!x) continue` guard leaves `x` non-null for the rest of the body. (`break` is not an
+            // exit here: its state would have to reach the code after the loop.)
+            "DMASTProcStatementContinue" => true,
             _ => {
                 self.inspect(node, vars);
                 false
@@ -1696,6 +1825,101 @@ mod tests {
         let result = value(&expression, &variables, &Symbols::default(), "/datum");
         assert_eq!(result.kind, "unknown");
         assert_eq!(result.null, Nullability::NonNull);
+    }
+    fn deref_a(line: u32) -> String {
+        format!(r#"{{"kind":"DMASTProcStatementExpression","file":"x.dm","line":{line},"fields":{{"Expression":{{"kind":"DMASTDereference","file":"x.dm","line":{line},"fields":{{"Expression":{{"kind":"DMASTIdentifier","fields":{{"Identifier":"A"}}}},"Operations":[{{"kind":"FieldOperation","fields":{{"Identifier":"name","Safe":false}}}}]}}}}}}}}"#)
+    }
+    fn assign_a(line: u32) -> String {
+        format!(r#"{{"kind":"DMASTProcStatementExpression","file":"x.dm","line":{line},"fields":{{"Expression":{{"kind":"DMASTAssign","file":"x.dm","line":{line},"fields":{{"LHS":{{"kind":"DMASTIdentifier","fields":{{"Identifier":"A"}}}},"RHS":{{"kind":"DMASTConstantInteger","fields":{{"Value":1}}}}}}}}}}}}"#)
+    }
+    fn proc_with(statements: &str) -> String {
+        format!(r#"{{"kind":"proc","file":"x.dm","line":1,"parameters":[],"body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{{"kind":"DMASTProcStatementVarDeclaration","file":"x.dm","line":2,"fields":{{"Name":"A","Type":"/mob","Value":{{"kind":"DMASTConstantNull"}}}}}},{statements}]}}}}}}"#)
+    }
+    fn null_derefs(input: &str) -> Vec<usize> {
+        analyze_reader(input.as_bytes(), &[])
+            .unwrap()
+            .into_iter()
+            .filter(|f| f.rule == "null-deref")
+            .map(|f| f.line)
+            .collect()
+    }
+    #[test]
+    fn switch_cases_carry_their_own_assignments() {
+        let case = |body: String| format!(r#"{{"kind":"SwitchCaseValues","fields":{{"Values":[{{"kind":"DMASTConstantInteger","fields":{{"Value":1}}}}],"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{body}]}}}}}}}}"#);
+        let switch = format!(
+            r#"{{"kind":"DMASTProcStatementSwitch","file":"x.dm","line":3,"fields":{{"Value":{{"kind":"DMASTConstantInteger","fields":{{"Value":1}}}},"Cases":[{},{}]}}}}"#,
+            case(format!("{},{}", assign_a(4), deref_a(5))),
+            case(deref_a(6)),
+        );
+        // The deref after its own assignment is fine; the case that never assigns still derefs null.
+        assert_eq!(null_derefs(&proc_with(&switch)), vec![6]);
+    }
+    fn maybe_null_derefs(input: &str) -> Vec<usize> {
+        analyze_reader(input.as_bytes(), &[])
+            .unwrap()
+            .into_iter()
+            .filter(|f| f.rule == "maybe-null-deref")
+            .map(|f| f.line)
+            .collect()
+    }
+    #[test]
+    fn continue_guard_narrows_the_rest_of_the_loop_body() {
+        let flag = r#"{"kind":"DMASTIdentifier","fields":{"Identifier":"flag"}}"#;
+        let maybe_assign = format!(
+            r#"{{"kind":"DMASTProcStatementIf","file":"x.dm","line":3,"fields":{{"Condition":{flag},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}},"ElseBody":null}}}}"#,
+            assign_a(3)
+        );
+        let guard = |jump: &str| {
+            format!(
+                r#"{{"kind":"DMASTProcStatementIf","file":"x.dm","line":5,"fields":{{"Condition":{{"kind":"DMASTNot","fields":{{"Value":{{"kind":"DMASTIdentifier","fields":{{"Identifier":"A"}}}}}}}},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{{"kind":"{jump}","file":"x.dm","line":5,"fields":{{}}}}]}}}},"ElseBody":null}}}}"#
+            )
+        };
+        let looped = |jump: &str| {
+            proc_with(&format!(
+                r#"{maybe_assign},{{"kind":"DMASTProcStatementWhile","file":"x.dm","line":4,"fields":{{"Conditional":{flag},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{},{}]}}}}}}}}"#,
+                guard(jump),
+                deref_a(6)
+            ))
+        };
+        assert!(maybe_null_derefs(&looped("DMASTProcStatementContinue")).is_empty());
+        // `break` leaves the loop with A still null, so it does not narrow (and nothing else here guards A).
+        assert_eq!(maybe_null_derefs(&looped("DMASTProcStatementBreak")), vec![6]);
+    }
+    #[test]
+    fn type_checks_prove_non_null() {
+        let flag = r#"{"kind":"DMASTIdentifier","fields":{"Identifier":"flag"}}"#;
+        let a = r#"{"kind":"DMASTIdentifier","fields":{"Identifier":"A"}}"#;
+        let maybe_assign = format!(
+            r#"{{"kind":"DMASTProcStatementIf","file":"x.dm","line":3,"fields":{{"Condition":{flag},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}},"ElseBody":null}}}}"#,
+            assign_a(3)
+        );
+        let guarded = |condition: String| {
+            proc_with(&format!(
+                r#"{maybe_assign},{{"kind":"DMASTProcStatementIf","file":"x.dm","line":4,"fields":{{"Condition":{condition},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}},"ElseBody":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}}}}}}"#,
+                deref_a(5),
+                deref_a(6)
+            ))
+        };
+        let istype = format!(
+            r#"{{"kind":"DMASTIsType","fields":{{"LHS":{a},"RHS":{{"kind":"DMASTConstantPath","fields":{{"Value":{{"Path":"/mob"}}}}}}}}}}"#
+        );
+        let implicit = format!(r#"{{"kind":"DMASTImplicitIsType","fields":{{"Value":{a}}}}}"#);
+        let islist = format!(
+            r#"{{"kind":"DMASTProcCall","fields":{{"Callable":{{"kind":"DMASTCallableProcIdentifier","fields":{{"Identifier":"islist"}}}},"Parameters":[{{"kind":"DMASTCallParameter","fields":{{"Value":{a},"Key":null}}}}]}}}}"#
+        );
+        // The true branch is narrowed; the false branch may still hold another non-null value or null.
+        for condition in [istype, implicit, islist] {
+            assert_eq!(maybe_null_derefs(&guarded(condition)), vec![6]);
+        }
+    }
+    #[test]
+    fn try_body_assignment_reaches_code_after_a_returning_catch() {
+        let try_catch = format!(
+            r#"{{"kind":"DMASTProcStatementTryCatch","file":"x.dm","line":3,"fields":{{"TryBody":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}},"CatchBody":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{{"kind":"DMASTProcStatementReturn","file":"x.dm","line":5,"fields":{{"Value":null}}}}]}}}}}}}},{}"#,
+            assign_a(4),
+            deref_a(6),
+        );
+        assert!(null_derefs(&proc_with(&try_catch)).is_empty());
     }
     #[test]
     fn ast_null_flow() {

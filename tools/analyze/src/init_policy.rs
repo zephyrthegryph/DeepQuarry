@@ -1,6 +1,6 @@
 //! Unique original Initialize policy, shared by legacy and borrowed workspace adapters.
 use crate::{tree::SourceFile,pat_match,dm::{sys::col0,pylines::py_splitlines},util::{before_slashes,py_lstrip},key_policy_control::{self as kc,Control}};
-/// One file's part of the table-init pass: its `init_from_table` flags `(type, on)` in file order,
+/// One file's part of the table-init pass: its declared table-init rows `(type, on)` in file order,
 /// and its `Initialize()` / `LateInitialize()` headers `(line, type)` that no ALLOW(init) kept.
 #[derive(serde::Serialize,serde::Deserialize,Default,PartialEq)]
 pub(crate) struct TableFacts {
@@ -13,27 +13,28 @@ pub(crate) fn table_facts_using<C:Control>(f:&SourceFile,control:&mut C,allowed:
  control.checkpoint()?;
     let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
     let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
-    let type_block = pat_match!(r"^(/[\w/]+)\s*(//.*)?$");
-    let table_flag = pat_match!(r"^\s+init_from_table\s*=\s*(TRUE|FALSE|1|0)\b");
+    let table_proc = pat_match!(r"^GLOBAL_LIST_INIT\(init_from_table_\w+, list\(");
+    let table_row = pat_match!(r"^\s+(/[\w/]+)\s*=\s*(TRUE|FALSE|1|0)\b");
+    let mut in_table = false;
     let mut out = TableFacts::default();
     let lines = crate::dm::pylines::py_splitlines_using(f.text(),control)?;
-    let mut block: Option<String> = None;
     for (i, line) in lines.iter().enumerate() {
         control.checkpoint()?;
         let number = i + 1;
         let line = *line;
-        if let Some(head) = type_block.captures(line) {
-            if !line.contains('(') {
-                block = Some(kc::own(control,head.s(1))?);
+        if table_proc.is_match(line) {
+            in_table = true;
+            continue;
+        }
+        if in_table {
+            if col0(line) {
+                in_table = false;
+            } else {
+                if let Some(row) = table_row.captures(line) {
+                    kc::row(control, &mut out.flags)?;
+                    out.flags.push((kc::own(control, row.s(1))?, matches!(row.s(2), "TRUE" | "1")));
+                }
                 continue;
-            }
-        }
-        if col0(line) {
-            block = None;
-        }
-        if let Some(flag) = table_flag.captures(line) {
-            if let Some(b) = &block {
-                kc::row(control,&mut out.flags)?;out.flags.push((kc::own(control,b)?,matches!(flag.s(1),"TRUE"|"1")));
             }
         }
         let header = init_header.captures(line).or_else(|| late_header.captures(line));

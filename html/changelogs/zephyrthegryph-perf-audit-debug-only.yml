@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The look-drift audit (REFRESH DRIFT) now runs only in debug and test builds; production runs no audit step and repairs no looks. REFRESH LOOKS logging stays in every build."

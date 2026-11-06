@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Spectral Whisper, the platform Set Eye Colour and the hardsuit AI's Open Hardsuit Interface use menu ops or granted verbs instead of native verbs and a verb-holder item"

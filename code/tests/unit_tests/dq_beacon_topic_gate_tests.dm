@@ -37,7 +37,7 @@ GLOBAL_VAR_INIT(beacon_topic_gate_denials, 0)
 
 /datum/unit_test/dq_e2/beacon_topic_gate_request
 /datum/unit_test/dq_e2/beacon_topic_gate_request/run_gate()
-	GLOB.beacon_topic_gate_denials = 0
+	set_global(nameof(GLOB.beacon_topic_gate_denials), 0)
 	var/mob/living/carbon/human/beacon_topic_gate_actor/user = allocate(/mob/living/carbon/human/beacon_topic_gate_actor, test_floor())
 	user.enable_godmode()
 	var/obj/machinery/syndicate_beacon/topic_gate_probe/B = allocate(/obj/machinery/syndicate_beacon/topic_gate_probe, get_turf(user))
@@ -67,7 +67,7 @@ GLOBAL_VAR_INIT(beacon_topic_gate_denials, 0)
 
 /datum/unit_test/dq_e2/beacon_topic_gate_ui
 /datum/unit_test/dq_e2/beacon_topic_gate_ui/run_gate()
-	GLOB.beacon_topic_gate_denials = 0
+	set_global(nameof(GLOB.beacon_topic_gate_denials), 0)
 	var/mob/living/carbon/human/beacon_topic_gate_actor/user = allocate(/mob/living/carbon/human/beacon_topic_gate_actor, test_floor())
 	user.enable_godmode()
 	var/obj/machinery/syndicate_beacon/virgo/topic_gate_probe/B = allocate(/obj/machinery/syndicate_beacon/virgo/topic_gate_probe, get_turf(user))

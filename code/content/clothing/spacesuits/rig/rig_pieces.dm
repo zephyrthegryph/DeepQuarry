@@ -1,0 +1,187 @@
+/*
+ * Defines the helmets, gloves and shoes for rigs.
+ */
+
+/obj/item/clothing/head/helmet/space/rig
+	name = "helmet"
+	sprite_sheets = list(
+		SPECIES_TAJARAN 		= 'icons/inventory/head/mob_tajaran.dmi',
+		SPECIES_SKRELL 			= 'icons/inventory/head/mob_skrell.dmi',
+		SPECIES_UNATHI 			= 'icons/inventory/head/mob_unathi.dmi',
+		SPECIES_XENOHYBRID 		= 'icons/inventory/head/mob_unathi.dmi',
+		SPECIES_AKULA 			= 'icons/inventory/head/mob_akula.dmi',
+		SPECIES_SERGAL			= 'icons/inventory/head/mob_sergal.dmi',
+		SPECIES_NEVREAN			= 'icons/inventory/head/mob_sergal.dmi',
+		SPECIES_VULPKANIN 		= 'icons/inventory/head/mob_vulpkanin.dmi',
+		SPECIES_ZORREN_HIGH 	= 'icons/inventory/head/mob_vulpkanin.dmi',
+		SPECIES_FENNEC 			= 'icons/inventory/head/mob_vulpkanin.dmi',
+		SPECIES_PROMETHEAN		= 'icons/inventory/head/mob_skrell.dmi',
+		SPECIES_VOX 			= 'icons/inventory/head/mob_vox.dmi',
+		SPECIES_TESHARI 		= 'icons/inventory/head/mob_teshari.dmi',
+		SPECIES_ALTEVIAN 		= 'icons/inventory/head/mob_altevian.dmi'
+		)
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig)
+	fits_as(FIT_HARDSUIT)
+	configure(light_glow(range = 4))
+	configure(item_worn(flags = THICKMATERIAL|ALLOW_SURVIVALFOOD, hides = HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR))
+	configure(item_protection(max_pressure = TRAIT_NONE, min_pressure = TRAIT_NONE))
+
+
+
+/obj/item/clothing/gloves/gauntlets/rig
+	name = "gauntlets"
+	icon_state = "security_rig"
+	flags = PHORONGUARD
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig)
+	fits_as(FIT_HARDSUIT)
+	configure(item_worn(flags = THICKMATERIAL))
+
+
+/obj/item/clothing/shoes/magboots/rig
+	name = "boots"
+	icon_base = null
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+
+
+/obj/item/clothing/suit/space/rig
+	name = "chestpiece"
+	//will reach 10 breach damage after 25 laser carbine blasts, 3 revolver hits, or ~1 PTR hit. Completely immune to smg or sts hits.
+	breach_threshold = 38
+	resilience = 0.2
+	can_breach = 1
+	sprite_sheets = list(
+		SPECIES_TAJARAN 		= 'icons/inventory/suit/mob_tajaran.dmi',
+		SPECIES_SKRELL 			= 'icons/inventory/suit/mob_skrell.dmi',
+		SPECIES_UNATHI 			= 'icons/inventory/suit/mob_unathi.dmi',
+		SPECIES_XENOHYBRID 		= 'icons/inventory/suit/mob_unathi.dmi',
+		SPECIES_AKULA 			= 'icons/inventory/suit/mob_akula.dmi',
+		SPECIES_SERGAL			= 'icons/inventory/suit/mob_sergal.dmi',
+		SPECIES_NEVREAN			= 'icons/inventory/suit/mob_sergal.dmi',
+		SPECIES_VULPKANIN		= 'icons/inventory/suit/mob_vulpkanin.dmi',
+		SPECIES_ZORREN_HIGH		= 'icons/inventory/suit/mob_vulpkanin.dmi',
+		SPECIES_FENNEC			= 'icons/inventory/suit/mob_vulpkanin.dmi',
+		SPECIES_PROMETHEAN		= 'icons/inventory/suit/mob_skrell.dmi',
+		SPECIES_VOX 			= 'icons/inventory/suit/mob_vox.dmi',
+		SPECIES_TESHARI 		= 'icons/inventory/suit/mob_teshari.dmi',
+		SPECIES_ALTEVIAN 		= 'icons/inventory/suit/mob_altevian.dmi'
+		)
+	supports_limbs = TRUE
+	var/obj/item/material/knife/tacknife
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+
+
+
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig)
+	configure(item_worn(worn_factors = TRAIT_NONE))
+	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage))
+	fits_as(FIT_HARDSUIT)
+	ref_one(nameof(tacknife), /obj/item/material/knife)
+	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEJUMPSUIT|HIDETAIL, flags = THICKMATERIAL | AIRTIGHT))
+	configure(item_protection(heat_parts = CHEST|LEGS|ARMS, cold_parts = CHEST|LEGS|ARMS, max_pressure = TRAIT_NONE, min_pressure = TRAIT_NONE))
+	op("rig_suit_draw_knife_hand", hand(), ungated(), label("Rig suit draw knife hand"), then(PROC_REF(rig_suit_draw_knife_hand)))
+	op("rig_suit_sheathe_knife_item", item(/obj/item), label("Rig suit sheathe knife item"), then(PROC_REF(rig_suit_sheathe_knife_item)))
+
+/// Old attack_hand: slide the tactical knife out.
+/obj/item/clothing/suit/space/rig/proc/rig_suit_draw_knife_hand(datum/act/op/A)
+	var/mob/living/M = A.actor
+	if(tacknife())
+		tacknife().forceMove(get_turf(src))
+		if(M.put_in_active_hand(tacknife()))
+			to_chat(M, span_notice("You slide \the [tacknife()] out of [src]."))
+			play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
+			rel_clear(src, nameof(tacknife))
+		return TRUE
+	return OP_DECLINE
+
+/// Old attackby: slide a tactical knife in. Always fell through to ..() afterwards.
+/obj/item/clothing/suit/space/rig/proc/rig_suit_sheathe_knife_item(datum/act/op/A)
+	var/mob/living/M = A.actor
+	var/obj/item/I = A.held
+	if(istype(I, /obj/item/material/knife/tacknife))
+		if(tacknife())
+			return OP_PASS
+		M.drop_item()
+		rel_set(src, nameof(tacknife), I)
+		I.forceMove(src)
+		to_chat(M, span_notice("You slide the [I] into [src]."))
+		play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
+	return OP_DECLINE
+
+/// The chestpiece shows the overlay of each module installed in the suit that controls it (a deployed piece knows its rig).
+/obj/item/clothing/suit/space/rig/draw(datum/look/look)
+	..()
+	var/obj/item/rig/suit = master_rig()
+	if(!suit)
+		return
+	look.watch(suit)
+	for(var/obj/item/rig_module/module in suit.installed_modules)
+		look.watch(module)
+		if(module.suit_overlay)
+			look.overlay(look_overlay_image(module.suit_overlay_icon, "[module.suit_overlay]", dir = SOUTH))
+
+//TODO: move this to modules
+/obj/item/clothing/head/helmet/space/rig/proc/prevent_track()
+	return 0
+
+/obj/item/clothing/gloves/gauntlets/rig/Touch(atom/A, proximity, stance = I_HURT, mob/user)
+
+	if(!A || !proximity)
+		return 0
+
+	var/mob/living/carbon/human/H = loc
+	if(!istype(H) || (!H.get_equipped_item(SLOT_ID_BACK) && !H.get_equipped_item(SLOT_ID_BELT)))
+		return 0
+
+	var/obj/item/rig/suit = H.get_equipped_item(SLOT_ID_BACK)
+	if(!suit || !istype(suit) || !length(suit.installed_modules))
+		return 0
+
+	for(var/obj/item/rig_module/module in suit.installed_modules)
+		if(module.active && module.activates_on_touch)
+			if(module.engage(A, FALSE, user))
+				return 1
+
+	return 0
+
+//Rig pieces for non-spacesuit based rigs
+
+/obj/item/clothing/head/lightrig
+	name = DEVELOPER_WARNING_NAME // "mask"
+	flags =              THICKMATERIAL|AIRTIGHT
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+CAPABILITIES(/obj/item/clothing/head/lightrig)
+	configure(item_worn(covers = HEAD|FACE|EYES))
+
+/obj/item/clothing/suit/lightrig
+	name = DEVELOPER_WARNING_NAME // "suit"
+	flags =              THICKMATERIAL
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+CAPABILITIES(/obj/item/clothing/suit/lightrig)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
+	configure(item_worn(hides = HIDEJUMPSUIT))
+
+
+/obj/item/clothing/shoes/lightrig
+	name = DEVELOPER_WARNING_NAME // "boots"
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+/obj/item/clothing/gloves/gauntlets/lightrig
+	flags = THICKMATERIAL
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+/// the tacknife this refers to (a relation view: null once it is deleted).
+/obj/item/clothing/suit/space/rig/proc/tacknife() as /obj/item/material/knife
+	return tacknife
+
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig)
+	fits_as(FIT_HARDSUIT)

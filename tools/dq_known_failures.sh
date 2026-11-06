@@ -10,9 +10,7 @@
 #   bash tools/dq_known_failures.sh --refresh-for-head <sha>              # --refresh from the data/test-runs records of that
 #                                                                         # commit (newest result per test); exit 10 if changed
 #
-# dq_focused_test.sh calls --check after a run that has failures; dq_merge_gates.sh prints a still-failing known test as
-# "KNOWN FAILURE STILL PRESENT - fix required". Nothing commits the list automatically (dq_push_master.sh no longer refreshes it
-# after a push); --refresh / --refresh-for-head are for a person or a lane that fixes a test and edits the list in its own commit.
+# dq_focused_test.sh calls --check after a run that has failures. Nothing commits the list automatically; --refresh / --refresh-for-head are for a person or a lane that fixes a test and edits the list in its own commit.
 # Adding a test to the list is a decision (--adopt, with a reason); nothing adds one automatically.
 set -euo pipefail
 cd "$(dirname "$0")/.."

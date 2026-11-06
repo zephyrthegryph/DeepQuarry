@@ -86,17 +86,6 @@ export const Cleanbot = (props) => {
                   {vocal ? 'On' : 'Off'}
                 </Button>
               </LabeledList.Item>
-              {/* VOREStation Edit: Not really used on Vore.*/}
-              {/* <LabeledList.Item label="Patrol">
-                <Button
-                  fluid
-                  icon={patrol ? "toggle-on" : "toggle-off"}
-                  selected={patrol}
-                  onClick={() => act("patrol")}>
-                  {patrol ? "On" : "Off"}
-                </Button>
-              </LabeledList.Item> */}
-              {/* VOREStation Edit End */}
             </LabeledList>
           </Section>
         )) ||

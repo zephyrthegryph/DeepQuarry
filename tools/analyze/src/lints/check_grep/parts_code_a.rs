@@ -114,7 +114,7 @@ pub fn parts() -> Vec<Part> {
             "rig_cells_move_through_the_power_ledger",
             "rig cells move through the power ledger",
             "a rig cell is drawn or charged directly. Use the rig's draw_power() / add_power() ledger.",
-            Files::Under(&["code/modules/clothing/spacesuits/rig", "code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm"], &["dm"]),
+            Files::Under(&["code/modules/clothing/spacesuits/rig", "code/content/clothing/spacesuits/rig", "code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm"], &["dm"]),
             line(r"\bcell\.(use|give)\("),
         )
         .allow(Allow::Strict)
@@ -161,12 +161,12 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "one_temperature_api_no_ad_hoc_return_temperature_procs_h1",
             "one temperature API: no ad-hoc return_temperature procs (H1)",
-            "return_temperature() is only the gas mixture accessor. Atoms override get_temperature() / get_interior_temperature() (code/modules/heat/heat.dm).",
+            "return_temperature() is only the gas mixture accessor. Atoms override get_temperature() / get_interior_temperature() (code/domains/heat/heat.dm).",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/return_temperature\("),
         )
         .allow(Allow::Strict)
-        .flt(vec![drop(r"^code/ATMOSPHERICS/gasmixtures/gas_mixture\.dm:[0-9]*:/datum/gas_mixture/proc/return_temperature\(")]),
+        .flt(vec![drop(r"^code/domains/atmos/gasmixtures/gas_mixture\.dm:[0-9]*:/datum/gas_mixture/proc/return_temperature\(")]),
         Part::new(
             "one_temperature_api_a_turf_keeps_no_live_temperature_of_its_own",
             "one temperature API: a turf keeps no live temperature of its own",
@@ -179,7 +179,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "input_modifier_ladders",
             "input: modifier ladders",
-            "a click modifier check outside the input router. Add a row to a click table in code/modules/keybindings/router.dm and branch on the INPUT_ACTION_* it produces.",
+            "a click modifier check outside the input router. Add a row to a click table in code/content/keybindings/router.dm and branch on the INPUT_ACTION_* it produces.",
             Files::Code,
             line(r#"\bmodifiers\[\s*"(shift|ctrl|alt|middle|right|left|xbutton1|xbutton2)"|LAZYACCESS\(\s*modifiers\s*,\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)|\bmodifiers\[\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)\s*\]"#),
         )
@@ -216,7 +216,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "interactions_no_legacy_handlers_or_object_verbs_i7",
             "interactions: no legacy handlers or object verbs (I7)",
-            "object verbs are interactions now. Declare an INTERACT_VERB (code/__defines/interactions.dm) instead.",
+            "object verbs are interactions now. Declare an INTERACT_VERB (code/defines/engine/interactions.dm) instead.",
             Files::Code,
             line(r"^/(obj|turf)(/[A-Za-z0-9_]+)*/verb/[A-Za-z0-9_]+\("),
         )
@@ -227,7 +227,7 @@ pub fn parts() -> Vec<Part> {
             "robot_cell_writes_outside_the_power_ledger",
             "robot cell writes outside the power ledger",
             "direct robot cell write detected. Use draw_power() / add_power() with ROBOT_CELL_JOULES().",
-            Files::Under(&["code/modules/mob/living/silicon/robot"], &["dm"]),
+            Files::Under(&["code/content/mob/living/silicon/robot", "code/content/mob/living/silicon/robot"], &["dm"]),
             line(r"\bcell\.(charge[[:space:]]*[-+*/]?=[^=]|use\(|give\(|checked_use\()"),
         )
         .flt(vec![drop(r"/robot/robot\.dm:")]),

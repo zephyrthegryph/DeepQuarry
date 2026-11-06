@@ -1,0 +1,482 @@
+/mob/living/silicon
+	gender = NEUTER
+	var/syndicate = 0
+	var/const/MAIN_CHANNEL = "Main Frequency"
+	var/lawchannel = MAIN_CHANNEL // Default channel on which to state laws
+	// ALLOW(instance_list): d: per-mob stating_laws, sized at creation and filled in place; mobs are few
+	var/list/stating_laws = list()// Channels laws are currently being stated on
+	var/obj/item/radio/common_radio
+
+	// ALLOW(instance_list): d: per-mob speech_synthesizer_langs, filled at runtime; mobs are few
+	var/list/speech_synthesizer_langs = list()	//which languages can be vocalized by the speech synthesizer
+
+	//Used in say.dm.
+	var/speak_statement = "states"
+	var/speak_exclamation = "declares"
+	var/speak_query = "queries"
+	var/pose //Yes, now AIs can pose too.
+	var/obj/item/camera/siliconcam/aiCamera = null //photography
+	var/local_transmit //If set, can only speak to others of the same type within a short range.
+
+	var/next_alarm_notice
+	/// One owned /datum/silicon_alarm_queue per registered alarm handler, keyed by "[handler.type]" text.
+	var/list/queued_alarms
+
+	var/obj/item/card/id/idcard
+
+	var/sensor_type = 0 // add - silicon omni "is sensor on or nah"
+
+	var/idcard_type = /obj/item/card/id/synthetic
+	// footsteps (footstep() in its CAPABILITIES)
+
+/mob/living/silicon/fire_stack_decay_rate()
+	return -0.55
+
+CAPABILITIES(/mob/living/silicon)
+	per_type(nameof(additional_law_channels), PROC_REF(build_additional_law_channels), copy_on_write = TRUE)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(silicon_blast))))
+	configure(mob_kind(voice_name = "synthesized voice"))
+	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))
+	configure(living_rules(has_huds = TRUE))
+	ref_one(nameof(common_radio), /obj/item/radio)
+	immune_to(STAT_DIZZY)
+	immune_to(STAT_JITTERY)
+	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam)
+	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor/all/robot, starts = when(not(nameof(decoy)), /datum/tgui_module/alarm_monitor/all/robot))
+	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control/robot, starts = when(not(nameof(decoy)), /datum/tgui_module/atmos_control/robot))
+	owns_one(nameof(crew_manifest), /datum/tgui_module/crew_manifest/robot, starts = when(not(nameof(decoy)), /datum/tgui_module/crew_manifest/robot))
+	owns_one(nameof(crew_monitor), /datum/tgui_module/crew_monitor/robot, starts = when(not(nameof(decoy)), /datum/tgui_module/crew_monitor/robot))
+	owns_one(nameof(idcard), /obj/item/card/id, starts = PROC_REF(start_idcard))
+	owns_one(nameof(law_manager), /datum/tgui_module/law_manager/robot, starts = when(not(nameof(decoy)), /datum/tgui_module/law_manager/robot))
+	owns_one(nameof(laws), /datum/ai_laws)
+	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor/robot, starts = when(not(nameof(decoy)), /datum/tgui_module/power_monitor/robot))
+	owns_one(nameof(rcon), /datum/tgui_module/rcon/robot, starts = when(not(nameof(decoy)), /datum/tgui_module/rcon/robot))
+	owns_many(nameof(queued_alarms), starts = PROC_REF(start_alarm_queues))
+	// a silicon that is not a decoy speaks galactic common; its subsystems and ID are above
+	knows(LANGUAGE_GALCOM, when = not(nameof(decoy)), default = TRUE)
+	per_type(nameof(silicon_subsystems), TYPE_PROC_REF(/datum, per_type_own))
+	footstep()
+	param(nameof(decoy), pos = 1)
+
+/// A decoy silicon (its constructor param): no ID, language or subsystems.
+/mob/living/silicon/var/decoy = FALSE
+
+/// Its ID card (owns_one(starts =)): the one it already has (a robot's module issues one before its parents' init), else its type's,
+/// filled in with its name; a decoy has none.
+/mob/living/silicon/proc/start_idcard(current, mapload)
+	if(current || decoy || !idcard_type)
+		return current
+	var/obj/item/card/id/card = new idcard_type(src)
+	set_id_info(card)
+	return card
+
+/// It listens to every alarm handler, one queue each, in handler order (owns_many(starts =)); a decoy or a silent type does not.
+/mob/living/silicon/proc/start_alarm_queues(current, mapload)
+	. = list()
+	if(decoy || !register_alarms)
+		return
+	for(var/datum/alarm_handler/AH in all_alarm_handlers())
+		AH.register_alarm(src, /mob/living/silicon/proc/receive_alarm)
+		.["[AH.type]"] = new /datum/silicon_alarm_queue(AH.category)	// Makes sure alarms remain listed in consistent order
+
+REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
+
+// The radio it speaks on belongs to the chassis (a borg's radio, an AI's aiRadio, a pAI's radio):
+// common_radio is a plain relation (rel_set) naming it, never an owner.
+// speech_synthesizer_langs holds shared language definitions: no declaration needed.
+
+// leaves every alarm handler and its subsystems.
+/mob/living/silicon/on_destroy(force)
+	for(var/datum/alarm_handler/AH in all_alarm_handlers())
+		AH.unregister_alarm(src)
+	..()
+
+/mob/living/silicon/proc/init_id(idcard_type)
+	if(!idcard_type)
+		return
+	if(idcard)
+		return
+	rel_set(src, nameof(idcard), new idcard_type(src))
+	set_id_info(idcard)
+
+/mob/living/silicon/proc/SetName(pickedName as text)
+	set_real_name(pickedName)
+	name = real_name
+
+/mob/living/silicon/proc/show_laws()
+	return
+
+/mob/living/silicon/drop_item(atom/Target)
+	return
+
+/// An EMP is an electrical injury that brings a power fault with it. Blocking
+/// components are asked before anything is pulsed, and the parent runs once.
+/mob/living/silicon/emp_act(severity, recursive)
+	if(in_godmode(src))
+		return EMP_PROTECT_SELF
+	. = ..()
+	if(. & EMP_PROTECT_SELF)
+		return
+	var/static/list/surge_by_severity = list(20, 15, 10, 5)
+	var/static/list/confusion_by_severity = list(5, 4, 3, 2)
+	var/band = round(severity)
+	if(band >= 1 && band <= length(surge_by_severity))
+		injure(INJURY_ELECTRIC, surge_by_severity[band], emp_injury_zone(), null, 0, /datum/affliction/synthetic/power_fault)
+		status_at_least(STAT_CONFUSED, confusion_by_severity[band])
+	flash_eyes(affect_silicon = 1)
+	to_chat(src, span_bolddanger("*BZZZT*"))
+	to_chat(src, span_danger("Warning: Electromagnetic pulse detected."))
+
+/// Where an EMP surge lands. Robots route it past their armour plating.
+/mob/living/silicon/proc/emp_injury_zone()
+	return null
+
+/mob/living/silicon/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
+	return	//immune
+
+/mob/living/silicon/electrocute_act(shock_damage, obj/source, siemens_coeff = 0.0, def_zone = null, stun = 1)
+	if(shock_damage > 0)
+		fx_sparks(loc, 5)
+
+		shock_damage *= siemens_coeff	//take reduced damage
+		receive_shock(shock_damage, source)
+		act_message(src, source, MSG_SELF(span_danger("Energy pulse detected, system damaged!")), \
+			MSG_OTHERS(span_warning("%U% was shocked by %T%!")), \
+			MSG_BLIND(span_warning("You hear an electrical crack.")))
+		if(prob(20))
+			status_at_least(STAT_STUNNED, 2)
+		return
+
+/mob/living/silicon/IsAdvancedToolUser()
+	return 1
+
+/mob/living/silicon/bullet_act(obj/item/projectile/Proj)
+
+	// Hardware takes located harm (impacts, burns, current); the synthetic body decides what each kind does.
+	if(!Proj.nodamage && injury_is_located(combat_of(Proj).injury_kind))
+		Proj.inflict_injury(src, null)
+
+	Proj.on_hit(src,2)
+	return 2
+
+/mob/living/silicon/apply_effect(effect = 0,effecttype = STUN, blocked = 0, check_protection = 1)
+	return 0//The only effect that can hit them atm is flashes and they still directly edit so this works for now
+
+/proc/islinked(mob/living/silicon/robot/bot, mob/living/silicon/ai/ai)
+	if(!istype(bot) || !istype(ai))
+		return 0
+	if (bot.connected_ai == ai)
+		return 1
+	return 0
+
+// this function shows the health of the AI in the Status panel
+// TGPanel
+/mob/living/silicon/proc/show_system_integrity()
+	if(!src.stat)
+		. = "System integrity: [round(vitality() * 100)]%"
+	else
+		. = "Systems nonfunctional"
+
+// This is a pure virtual function, it should be overwritten by all subclasses
+/mob/living/silicon/proc/show_malf_ai()
+	return ""
+
+// this function displays the shuttles ETA in the status panel if the shuttle has been called
+/mob/living/silicon/proc/show_emergency_shuttle_eta()
+	if(SSemergency_shuttle)
+		var/eta_status = SSemergency_shuttle.get_status_panel_eta()
+		if(eta_status)
+			. = "[eta_status]"
+
+// This adds the basic clock, shuttle recall timer, and malf_ai info to all silicon lifeforms
+/mob/living/silicon/get_status_tab_items()
+	. = ..()
+	. += ""
+	. += show_emergency_shuttle_eta()
+	. += show_system_integrity()
+	. += show_malf_ai()
+
+//can't inject synths
+/mob/living/silicon/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
+	if(error_msg)
+		to_chat(user, span_warning("The armoured plating is too tough."))
+	return 0
+
+//Silicon mob language procs
+
+/mob/living/silicon/can_speak(datum/language/speaking)
+	if(universal_speak)
+		return TRUE
+	//need speech synthesizer support to vocalize a language
+	if(speaking in speech_synthesizer_langs)
+		return TRUE
+	if(speaking && speaking.flags & INNATE)
+		return TRUE
+	return FALSE
+
+/mob/living/silicon/add_language(language, can_speak=1)
+	var/datum/language/added_language = GLOB.all_languages[language]
+	if(!added_language)
+		return
+
+	. = ..(language)
+	if (can_speak && (added_language in languages) && !(added_language in speech_synthesizer_langs))
+		add_speech_synthesizer_langs(added_language)
+		return 1
+
+/// knows(LANGUAGE_X, speaks = FALSE) learns a language the speech synthesizer leaves out.
+/mob/living/silicon/lifeform_learn(language, speaks = TRUE)
+	return add_language(language, speaks)
+
+/mob/living/silicon/remove_language(rem_language)
+	var/datum/language/removed_language = GLOB.all_languages[rem_language]
+	if(!removed_language)
+		return
+
+	..(rem_language)
+	remove_speech_synthesizer_langs(removed_language)
+
+/mob/living/silicon/proc/toggle_sensor_mode() // to make borgs use omni starts here - Tank, clueless bird
+	if(sensor_type)
+		if(hud_used?.plane_holder)
+			//Enable the planes, its basically just AR-Bs
+			hud_used?.plane_holder?.set_vis(VIS_CH_ID,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_WANTED,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPLOYAL,TRUE) //antag related so prob not useful but leaving them in
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPTRACK,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPCHEM,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_R,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH_VR,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_BACKUP,TRUE) //backup stuff from silicon_vr is here now
+			return TRUE
+
+	else
+		if(hud_used?.plane_holder)
+			//Disable the planes
+			hud_used?.plane_holder?.set_vis(VIS_CH_ID,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_WANTED,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPLOYAL,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPTRACK,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPCHEM,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_R,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH_VR,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_BACKUP,FALSE)
+			return FALSE
+
+//hudmode = sensor_type //This is checked in examine.dm on humans, so they can see medical/security records depending on mode
+//I made it work like omnis with records by adding stuff to examine.dm
+// ends here
+
+/mob/living/silicon/verb/pose()
+	set name = "Set Pose"
+	set desc = "Sets a description which will be shown when someone examines you."
+	set category = VERB_CAT_IC_SETTINGS
+
+	// A cancel answers "": the pose is cleared.
+	open_request(src, /datum/prompt/text, PROC_REF(silicon_pose_entered), answerer = src, title = "Pose", question = "This is [src]. It is...", timeout = 0)
+
+/mob/living/silicon/proc/silicon_pose_entered(datum/act/request/A)
+	var/text = A.answer ? A.answer.value : ""
+	pose = text ? strip_html_simple(text) : null
+
+/mob/living/silicon/verb/set_flavor()
+	set name = "Set Flavour Text"
+	set desc = "Sets an extended description of your character's features."
+	set category = VERB_CAT_IC_SETTINGS
+
+	open_request(src, /datum/prompt/text, PROC_REF(silicon_flavor_entered), answerer = src, title = "Flavour text", question = "Please enter your new flavour text.", default = bio.flavor_text, multiline = TRUE, timeout = 0)
+
+/mob/living/silicon/proc/silicon_flavor_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_flavortext = strip_html_simple(A.answer.value)
+	if(new_flavortext)
+		bio.flavor_text = new_flavortext
+
+/mob/living/silicon/binarycheck()
+	return 1
+
+/// A blast on a silicon (the explosion hit hook): the severity ladder below.
+/mob/living/silicon/proc/silicon_blast(datum/act/hit/explosion/A)
+	silicon_blast_ladder(A.packet.severity)
+	return OP_OK
+
+/mob/living/silicon/proc/silicon_blast_ladder(severity)
+	if(!blinded)
+		flash_eyes()
+
+	var/explosion_shift = src.explosion_shift
+	if(explosion_shift)
+		severity = CLAMP(severity + explosion_shift, 1, 4)
+
+	severity = round(severity)
+
+	if(severity > 3)
+		return
+
+	switch(severity)
+		if(1.0)
+			if (stat != 2)
+				injure(INJURY_BLUNT, 100, null, null, 0, null, INJURE_SILENT)
+				injure(INJURY_BURN, 100, null, null, 0, null, INJURE_SILENT)
+				if(!anchored)
+					gib()
+		if(2.0)
+			if (stat != 2)
+				injure(INJURY_BLUNT, 60, null, null, 0, null, INJURE_SILENT)
+				injure(INJURY_BURN, 60, null, null, 0, null, INJURE_SILENT)
+		if(3.0)
+			if (stat != 2)
+				injure(INJURY_BLUNT, 30, null, null, 0, null, INJURE_SILENT)
+
+/mob/living/silicon/proc/receive_alarm(datum/alarm_handler/alarm_handler, datum/alarm/alarm, was_raised)
+	if(!next_alarm_notice)
+		COOLDOWN_START(src, next_alarm_notice, (10 SECONDS))
+	if(alarm.hidden)
+		return
+	if(alarm.origin() && !(get_z(alarm.origin()) in using_map.get_map_levels(get_z(src), TRUE, om_range = DEFAULT_OVERMAP_RANGE)))
+		return
+
+	var/datum/silicon_alarm_queue/Q = LAZYACCESS(queued_alarms, "[alarm_handler.type]")
+	if(!Q)
+		return
+	if(was_raised)
+		// Raised alarms are always set
+		rel_remove(Q, nameof(Q.cleared), alarm)
+		rel_add(Q, nameof(Q.raised), alarm)
+	else
+		// Alarms that were raised but then cleared before the next notice are instead removed
+		if((alarm in Q.raised) || (alarm in Q.cleared))
+			rel_remove(Q, nameof(Q.raised), alarm)
+			rel_remove(Q, nameof(Q.cleared), alarm)
+		// And alarms that have only been cleared thus far are set as such
+		else
+			rel_add(Q, nameof(Q.cleared), alarm)
+
+/mob/living/silicon/proc/process_queued_alarms()
+	if(next_alarm_notice && (COOLDOWN_FINISHED(src, next_alarm_notice)))
+		next_alarm_notice = 0
+
+		var/alarm_raised = 0
+		for(var/key in queued_alarms)
+			var/datum/silicon_alarm_queue/Q = queued_alarms[key]
+			var/reported = 0
+			for(var/datum/alarm/A in Q.raised)
+				alarm_raised = 1
+				if(!reported)
+					reported = 1
+					to_chat(src, span_warning("--- [Q.category] Detected ---"))
+				raised_alarm(A)
+
+		for(var/key in queued_alarms)
+			var/datum/silicon_alarm_queue/Q = queued_alarms[key]
+			var/reported = 0
+			for(var/datum/alarm/A in Q.cleared)
+				if(!reported)
+					reported = 1
+					to_chat(src, span_notice("--- [Q.category] Cleared ---"))
+				to_chat(src, "\The [A.alarm_name()].")
+
+		if(alarm_raised)
+			to_chat(src, span_filter_notice("<A HREF='byond://?src=[REF(src)];showalerts=1'>\[Show Alerts\]</A>"))
+
+		for(var/key in queued_alarms)
+			var/datum/silicon_alarm_queue/Q = queued_alarms[key]
+			rel_clear(Q, nameof(Q.raised))
+			rel_clear(Q, nameof(Q.cleared))
+
+/// A silicon's pending alarm notices for one alarm handler: what was raised and what was cleared
+/// since the last notice. Owned by the silicon; the alarms themselves belong to their handler.
+/datum/silicon_alarm_queue
+	var/category
+	var/list/raised
+	var/list/cleared
+
+/datum/silicon_alarm_queue/New(category)
+	..()
+	src.category = category
+
+CAPABILITIES(/datum/silicon_alarm_queue)
+	ref_many(nameof(raised))
+	ref_many(nameof(cleared))
+
+/mob/living/silicon/proc/raised_alarm(datum/alarm/A)
+	to_chat(src, span_filter_warning("[A.alarm_name()]!"))
+
+/mob/living/silicon/ai/raised_alarm(datum/alarm/A)
+	var/cameratext = ""
+	for(var/obj/machinery/camera/C in A.cameras())
+		cameratext += "[(cameratext == "")? "" : "|"]<A HREF='byond://?src=[REF(src)];switchcamera=[REF(C)]'>[C.c_tag]</A>"
+	to_chat(src, span_filter_warning("[A.alarm_name()]! ([(cameratext)? cameratext : "No Camera"])"))
+
+/mob/living/silicon/proc/is_traitor()
+	return mind && (mind in antag_traitors().current_antagonists)
+
+/mob/living/silicon/proc/is_malf()
+	return mind && (mind in antag_malf().current_antagonists)
+
+/mob/living/silicon/proc/is_malf_or_traitor()
+	return is_traitor() || is_malf()
+
+/mob/living/silicon/adjustEarDamage()
+	return
+
+/mob/living/silicon/setEarDamage()
+	return
+
+/mob/living/silicon/ai/reset_perspective_clear_follow()
+	rel_clear(src, nameof(cameraFollow))
+
+/// What a perspective change ends on this silicon: an AI's follow-camera mode.
+/mob/living/silicon/proc/reset_perspective_clear_follow()
+	return
+
+/mob/living/silicon/reset_perspective(atom/new_eye)
+	. = ..()
+	reset_perspective_clear_follow()
+
+/mob/living/silicon/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
+	if(affect_silicon)
+		return ..()
+
+/mob/living/silicon/proc/clear_client()
+	//Handle job slot/tater cleanup.
+	var/job = mind.assigned_role
+
+	SSjob.free_role(job)
+
+	if(mind.objectives.len)
+		own_clear(mind, nameof(/datum/mind::objectives), OWN_DELETE)
+		mind.special_role = null
+
+	SSantag.clear_antag_roles(mind)
+
+	ghostize(0)
+	spent(src)
+
+/mob/living/silicon/has_vision()
+	return 0 //NOT REAL EYES
+
+/mob/living/silicon/can_feed()
+	return FALSE
+
+// === merged from silicon_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+// For handling any custom visibility in borgo sensor modes, like sleeve implants - not needed anymore but leaving anyways - Tank
+///mob/living/silicon/toggle_sensor_mode()
+//	. = ..()
+//	switch(hudmode) // This is set in parent
+//		if ("Security")
+//			//Disable Medical planes
+//			plane_holder?.set_vis(VIS_CH_BACKUP,FALSE)
+//
+//		if ("Medical")
+//			//Enable Medical planes
+//			plane_holder?.set_vis(VIS_CH_BACKUP,TRUE)
+//
+//		if ("Disable")
+//			//Disable Medical planes
+//			plane_holder?.set_vis(VIS_CH_BACKUP,FALSE)
+
+/// Silicon bodies draw no shock energy and trigger no grid warning or damage calculation.
+/mob/living/silicon/receive_power_shock(power_source, obj/source, siemens_coeff = 1.0)
+	return 0

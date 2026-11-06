@@ -1,0 +1,209 @@
+/**
+ * Client datum
+ *
+ * A datum that is created whenever a user joins a BYOND world, one will exist for every active connected
+ * player
+ *
+ * when they first connect, this client object is created and [/client/New] is called
+ *
+ * When they disconnect, this client object is deleted and [/client/Del] is called
+ *
+ * All client topic calls go through [/client/Topic] first, so a lot of our specialised
+ * topic handling starts here
+ */
+/client
+	/**
+	 * This line makes clients parent type be a datum
+	 *
+	 * By default in byond if you define a proc on datums, that proc will exist on nearly every single type
+	 * from icons to images to atoms to mobs to objs to turfs to areas, it won't however, appear on client
+	 *
+	 * instead by default they act like their own independent type so while you can do isdatum(icon)
+	 * and have it return true, you can't do isdatum(client), it will always return false.
+	 *
+	 * This makes writing oo code hard, when you have to consider this extra special case
+	 *
+	 * This line prevents that, and has never appeared to cause any ill effects, while saving us an extra
+	 * pain to think about
+	 *
+	 * This line is widely considered black fucking magic, and the fact it works is a puzzle to everyone
+	 * involved, including the current engine developer, lummox
+	 *
+	 * If you are a future developer and the engine source is now available and you can explain why this
+	 * is the way it is, please do update this comment
+	 */
+	parent_type = /datum
+		////////////////
+		//ADMIN THINGS//
+		////////////////
+	/// hides the byond verb panel as we use our own custom version
+	show_verb_panel = FALSE
+	///Contains admin info. Null if client is not an admin.
+	var/datum/admins/holder = null
+	var/buildmode		= 0
+
+	///Contains the last message sent by this client - used to protect against copy-paste spamming.
+	var/last_message	= ""
+	///contins a number of how many times a message identical to last_message was sent.
+	var/last_message_count = 0
+	var/datum/entity_narrate/entity_narrate_holder //Holds /datum/entity_narrate when using the relevant admin verbs.
+	var/datum/eventkit/fake_pdaconvos/fakeConversations //Holds fake PDA conversations for event set-up
+
+		/////////
+		//OTHER//
+		/////////
+	///Player preferences datum for the client
+	var/datum/preferences/prefs = null
+	var/moving			= null
+	var/adminobs		= null
+	var/area			= null
+	var/time_died_as_mouse = 0 //when the client last died as a mouse
+	var/datum/tooltip/tooltips 	= null
+	var/datum/volume_panel/volume_panel = null // Initialized by /client/verb/volume_panel()
+	var/seen_news = 0
+
+		///////////////
+		//SOUND STUFF//
+		///////////////
+	COOLDOWN_DECLARE(ambience_cooldown) // world.time when ambience may next play to this client, to space out ambience sounds.
+
+		////////////
+		//SECURITY//
+		////////////
+	// comment out the line below when debugging locally to enable the options & messages menu
+	//control_freak = 1
+	var/ip_reputation = 0 //Do we think they're using a proxy/vpn? Only if IP Reputation checking is enabled in config.
+
+	///Used for limiting the rate of topic sends by the client to avoid abuse
+	var/list/topiclimiter
+	///Used for limiting the rate of clicks sends by the client to avoid abuse
+	var/list/clicklimiter
+
+	///these persist between logins/logouts during the same round.
+	var/datum/persistent_client/persistent_client
+
+		////////////////////////////////////
+		//things that require the database//
+		////////////////////////////////////
+	var/player_age = "(Requires database)"	//So admins know why it isn't working - Used to determine how old the account is - in days.
+	var/related_accounts_ip = "(Requires database)"	//So admins know why it isn't working - Used to determine what other accounts previously logged in from this ip
+	var/related_accounts_cid = "(Requires database)"	//So admins know why it isn't working - Used to determine what other accounts previously logged in from this computer id
+	var/account_join_date = "(Requires database)"
+	var/account_age = "(Requires database)"
+	// ALLOW(instance_list): d: one per connected client; loaded from the database on login
+	var/list/department_hours = list() // Track hours of leave accured for each department.
+	// ALLOW(instance_list): d: one per connected client; loaded from the database on login
+	var/list/play_hours	= list() // Tracks total playtime hours for each departments.
+
+	preload_rsc = PRELOAD_RSC
+
+	control_freak = 0 // KSC 1/30/20 - This enables all clientside options for Players.
+	// List of all asset filenames sent to this client by the asset cache, along with their assoicated md5s
+	var/list/sent_assets = list() // ALLOW(instance_list): d: one per connected client; every client is sent assets on login
+
+	///Last ping of the client
+	var/lastping = 0
+	///Average ping of the client
+	var/avgping = 0
+
+	///world.time they connected
+	var/connection_time = 0
+	///world.realtime they connected
+	var/connection_realtime
+
+	// Runechat messages
+	/// message_loc -> the slots of the messages this client sees there (slot_datums() reads them back).
+	var/list/seen_messages
+	/// our current tab
+	var/stat_tab
+
+	/// list of all tabs
+	var/list/panel_tabs = list() // ALLOW(instance_list): d: one per connected client; rebuilt on every verb refresh
+	/// list of tabs containing spells and abilities
+	var/list/spell_tabs
+	/// list of misc tabs from mob
+	var/list/misc_tabs = list() // ALLOW(instance_list): d: one per connected client; stat panel tabs
+
+	var/list/misc_cache = list() // ALLOW(instance_list): d: one per connected client; protean code indexes it directly
+
+	var/tmp/examine_icon	//Cached examine icon source (icon2html text), useful for statpanel
+
+	//Hide top bars
+	var/fullscreen = FALSE
+	//Hide status bar
+	var/show_status_bar = TRUE
+
+		///////////
+		// INPUT //
+		///////////
+
+	/// Bitfield of modifier keys (Shift, Ctrl, Alt) held currently.
+	var/mod_keys_held = 0
+	/// Bitfield of movement keys (WASD/Cursor Keys) held currently.
+	var/move_keys_held = 0
+
+	/// These next two vars are to apply movement for keypresses and releases made while move delayed.
+	/// Because discarding that input makes the game less responsive.
+
+	/// Bitfield of movement dirs that were pressed down *this* cycle (even if not currently held).
+	/// Note that only dirs that actually are first pressed down during this cycle are included, if it was still held from last cycle it won't be in here.
+	/// On next move, add this dir to the move that would otherwise be done
+	var/next_move_dir_add
+
+	/// Bitfield of movement dirs that were released *this* cycle (even if currently held).
+	/// Note that only dirs that were already held at the start of this cycle are included, if it pressed then released it won't be in here.
+	/// On next move, subtract this dir from the move that would otherwise be done
+	var/next_move_dir_sub
+
+	#ifdef CARDINAL_INPUT_ONLY
+
+	/// Movement dir of the most recently pressed movement key.  Used in GLOB.cardinal-only movement mode.
+	var/last_move_dir_pressed = NONE
+
+	#endif
+
+	/// If this client has been fully initialized or not
+	var/fully_created = FALSE
+
+	/// Token used for the external chatlog api. Only valid for the current round.
+	var/chatlog_token
+
+	/// The DPI scale of the client. 1 is equivalent to 100% window scaling, 2 will be 200% window scaling
+	var/window_scaling
+
+	/// Loot panel for the client
+	var/datum/lootpanel/loot_panel
+
+
+// prefs, persistent_client and the admin holder outlive the connection (GLOB.preferences_datums,
+// REGISTRY_PERSISTENT_CLIENTS, GLOB.admin_datums).
+
+/// The client-level click intercept (held on the admin holder, a datum, as a relation view).
+/client/proc/click_intercept() as /datum
+	return holder?.click_intercept
+
+/// The cached examine icon source.
+/client/proc/examine_icon()
+	return examine_icon
+
+CAPABILITIES(/client)
+	// The connection-scoped datums the session owns, and the skybox screen: the client names them (relations proposal wave 5).
+	ref_one(nameof(volume_panel))
+	ref_one(nameof(loot_panel))
+	ref_one(nameof(tgui_shocker))
+	ref_one(nameof(stat_panel))
+	ref_one(nameof(keybind_editor))
+	ref_one(nameof(media))
+	ref_one(nameof(tgui_say))
+	ref_one(nameof(tgui_panel))
+	ref_one(nameof(prefs_vr))
+	ref_one(nameof(dq_vv_panel))
+	ref_one(nameof(entity_narrate_holder), /datum/entity_narrate)
+	ref_one(nameof(skybox))
+	ref_one(nameof(session))
+	ref_one(nameof(fakeConversations))
+	ref_one(nameof(tooltips))
+	ref_one(nameof(screentip))
+	ref_one(nameof(proximity_eye))
+	owns_one(nameof(verb_store), /datum/client_verbs)
+	owns_one(nameof(interaction_menu), /datum/interaction_menu)

@@ -20,7 +20,7 @@ use crate::lint::{Cx,Lint,Meta,Registry,Sink};
 use crate::parity::Parity;
 
 use crate::raw_tree_latent_policy as policy;
-use policy::{META,BASELINE};
+use policy::META;
 struct Latent;
 
 impl Lint for Latent {
@@ -67,7 +67,7 @@ impl Lint for Latent {
     }
 
     fn parity(&self) -> Option<Parity> {
-        let mut p = Parity::ratchet(&["tools/ci/latent_lint.py"], &[BASELINE]);
+        let mut p = Parity::ratchet(&["tools/ci/latent_lint.py"], &[]);
         p.update = Some(&["tools/ci/latent_lint.py", "--update"]);
         p.seed = Some(&["tools/ci/latent_lint.py", "--seed"]);
         Some(p)

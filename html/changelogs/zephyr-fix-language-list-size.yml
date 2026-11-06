@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The language picker only lists languages your character can take, in a compact scrollable list with a search box."
+  - bugfix: "The language picker no longer offers restricted languages or your species' own language."

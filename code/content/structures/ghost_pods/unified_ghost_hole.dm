@@ -137,7 +137,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 			if(is_lang_whitelisted(M, chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))
 				new_character.add_language(lang)
 
-	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
+	PUBLISH(new_character, human_dna_finalized)
 
 
 	new_character.update_transform()

@@ -8,7 +8,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	circuit = /obj/item/circuitboard/industrial_reagent_reactor
+	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_reactor)
 	default_max_vol = REAGENT_VAT_VOLUME
 	reagent_type = /datum/reagents/distilling
 

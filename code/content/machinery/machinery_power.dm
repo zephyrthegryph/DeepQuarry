@@ -1,0 +1,250 @@
+//
+// /obj/machinery POWER USAGE CODE HERE! GO GO GADGET STATIC POWER!
+// Note: You can find /obj/machinery/power power usage code in power.dm
+//
+// What a machine uses every power cycle: use_power (its mode) and its uses_power() trait (channel, idle and active draw).
+// Change them with the procs below, never directly.
+//
+
+// ---- what a machine draws: the uses_power() type trait ----
+//
+// The channel a machine draws on and its idle and active draw are per-type data, declared in the type's CAPABILITIES block, not vars on
+// /obj/machinery:
+//
+//	CAPABILITIES(/obj/machinery/firealarm)
+//		configure(uses_power(channel = ENVIRON, idle = 2, active = 6))
+//
+// /obj/machinery declares uses_power(EQUIP, 0, 0); a subtype names only what it changes. Read with power_of(M).channel / .idle / .active
+// (power_of_type(path) for a type's declared values, the old initial()). A machine whose draw changes at run time (its parts, a mode) writes
+// it with set_idle_power_usage() / set_active_power_usage() / set_power_channel(): the machine gets its own copy of the trait, and the write
+// publishes USES_POWER_KEY, the key power_of() reads as, so the area's demand follows.
+
+STATIC_ENTRY(uses_power)
+
+/// A machine's draw: the channel it draws on (EQUIP, LIGHT, ENVIRON), its idle draw and its active draw, in watts. Null inherits.
+/proc/uses_power(channel = null, idle = null, active = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_USES_POWER, null, list("channel" = channel, "idle" = idle, "active" = active))
+
+/datum/type_trait/power
+	var/channel = EQUIP
+	var/idle = 0
+	var/active = 0
+
+/datum/type_trait/power/copy_values(datum/type_trait/power/into)
+	into.channel = channel
+	into.set_idle(idle)
+	into.active = active
+
+/datum/entry_engine/type_trait/power
+	kind = ENTRY_USES_POWER
+	trait_type = /datum/type_trait/power
+	publish_key = USES_POWER_KEY
+	base_type = /obj/machinery
+	var_names = list("idle_power_usage" = "idle", "active_power_usage" = "active", "power_channel" = "channel")
+
+/// What `M` draws: its channel, idle and active draw (its own values once one was set at run time). Read only. A reader subscribes to
+/// USES_POWER_KEY, which the setters publish.
+READS_AS(/proc/power_of, USES_POWER_KEY)
+/proc/power_of(obj/machinery/M) as /datum/type_trait/power
+	READS_FROM(M)
+	return type_trait_of(M, ENTRY_USES_POWER)
+
+/// What a machine type declares it draws (no instance): the old initial(active_power_usage).
+/proc/power_of_type(type) as /datum/type_trait/power
+	READS_FROM() // declared per type: constant
+	return type_trait_of_type(type, ENTRY_USES_POWER)
+
+/// Sets the idle draw (the area's demand follows while the machine is idle).
+/obj/machinery/proc/set_idle_power_usage(value)
+	return set_trait(src, ENTRY_USES_POWER, "idle", value)
+
+/// Sets the active draw (the area's demand follows while the machine is active).
+/obj/machinery/proc/set_active_power_usage(value)
+	return set_trait(src, ENTRY_USES_POWER, "active", value)
+
+/// Sets the channel the machine draws on (its draw moves between the area's channel demands).
+/obj/machinery/proc/set_power_channel(value)
+	return set_trait(src, ENTRY_USES_POWER, "channel", value)
+
+// Current power consumption right now.
+#define POWER_CONSUMPTION (use_power == USE_POWER_IDLE ? power_of(src).idle : (use_power >= USE_POWER_ACTIVE ? power_of(src).active : 0))
+
+// returns true if the area has power on given channel (or doesn't require power).
+// defaults to power_channel
+/obj/machinery/proc/powered(chan = CURRENT_CHANNEL) // defaults to power_channel
+	//Don't do this. It allows machines that set use_power to 0 when off (many machines) to
+	//be turned on again and used after a power failure because they never gain the NOPOWER flag.
+	//if(!use_power)
+	//	return 1
+
+	var/area/A = get_area(src)		// make sure it's in an area
+	if(!A)
+		return 0					// if not, then not powered
+	if(chan == CURRENT_CHANNEL)
+		chan = power_of(src).channel
+	return A.powered(chan)			// return power status of the area
+
+// Called when the machine's has_power flips (has_power_changed(), the stat's on_change hook), and by hand where a type re-reads its own power.
+// Returns TRUE when has_power changed since the last call. Can be overridden.
+/obj/machinery/proc/power_change()
+	var/now = !!stat_value(src, STAT_HAS_POWER) // the grid's reading, a contribution (area_gives_power()), recomputed on read when its inputs moved
+	if(now == power_seen)
+		return FALSE
+	power_seen = now
+	condition_announce() // the `stat` publish: gates and layers that read the machine's power hear the flip
+	if(power_lost())
+		PUBLISH(src, machinery_power_lost)
+	else
+		PUBLISH(src, machinery_power_restored)
+	update_heat_output()
+	return TRUE
+
+/// STAT_HAS_POWER changed (the on_change hook in the machine's CAPABILITIES): the machine acts on the flip.
+/obj/machinery/proc/has_power_changed(datum/act/A)
+	power_change()
+
+/// STAT_HAS_POWER's reading of the grid: the machine's area has its channel energized. A machine with no area has power (nothing darkens it).
+/obj/machinery/proc/area_gives_power(datum/act/A)
+	var/area/served = power_area
+	return !served || served.powered(power_of(src).channel)
+
+/**
+ * COMPATIBILITY SHIM. The grid no longer writes the powered state: the machine's STAT_HAS_POWER is the area's channel read (area_gives_power()),
+ * and power_change() only acts on its flips. set_powered() remains as a manual override (a hold on STAT_HAS_POWER, source SRC_GRID, the NOPOWER
+ * bit's own writer) for the benchmark's old path and for callers that force a machine dark; it goes with them.
+ * The power capability's "powered" state (G8): a change publishes MACHINE_KEY_STAT and MACHINE_KEY_POWERED to its readers.
+ * power_lost() and operable() read it. Returns TRUE when the state changed.
+ */
+/obj/machinery/proc/set_powered(powered)
+	if(!set_grid_power(powered))
+		return FALSE
+	PUBLISH_CHANGE(src, MACHINE_KEY_POWERED)
+	return TRUE
+
+// Get the amount of power this machine will consume each cycle.  Override by experts only!
+/obj/machinery/proc/get_power_usage()
+	return POWER_CONSUMPTION
+
+// DEPRECATED! - USE use_power_oneoff() instead!
+/obj/machinery/proc/use_power(amount, chan = -1) // defaults to power_channel
+	return src.use_power_oneoff(amount, chan);
+
+// This will have this machine have its area eat this much power next tick, and not afterwards. Do not use for continued power draw.
+// Returns actual amount drawn (In theory this could be less than the amount asked for. In pratice it won't be FOR NOW)
+/obj/machinery/proc/use_power_oneoff(amount, chan = CURRENT_CHANNEL)
+	var/area/A = get_area(src)		// make sure it's in an area
+	if(!A)
+		return
+	if(chan == CURRENT_CHANNEL)
+		chan = power_of(src).channel
+	return A.use_power_oneoff(amount, chan)
+
+// Check if we CAN use a given amount of extra power as a one off. Returns amount we could use without actually using it.
+// For backwards compatibilty this returns true if the channel is powered. This is consistant with pre-static-power
+// behavior of APC powerd machines, but at some point we might want to make this a bit cooler.
+/obj/machinery/proc/can_use_power_oneoff(amount, chan = CURRENT_CHANNEL)
+	if(powered(chan))
+		return amount // If channel is powered then you can do it.
+	return 0
+
+// Do not do power stuff in New/Initialize until after ..()
+/// The machine reports its draw and joins its area's power once it is made.
+/obj/machinery/proc/machine_power_start()
+	// only add this if we init on a non-turf (and non-null)
+	if(!STATE_PEEK(src, machinery_misc, recursive_set) && loc && !isturf(loc))
+		STATE_SET(src, machinery_misc, recursive_set, TRUE)
+		dq_add_recursive_move(src)
+		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
+	STATE_SET(src, machinery_misc, power_init_complete, TRUE)
+	rel_set(src, nameof(power_area), get_area(src)) // the machine's draw reaches the area's demand with the relation
+
+// Or in Destroy at all, but especially after the ..().
+// the base machine: its power draw leaves the area budget.
+/obj/machinery/on_destroy(force)
+	rel_set(src, nameof(power_area), null) // the draw leaves the area's demand
+	..()
+
+// Registering moved_event observers for all machines is too expensive.  Instead we do it ourselves.
+// 99% of machines are always on a turf anyway, very few need recursive move handling.
+/obj/machinery/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	power_area_moved(old_loc, loc)
+
+	// only add this if we move into a non-turf (not null) and we've never been given recursive move handling
+	if(!STATE_PEEK(src, machinery_misc, recursive_set) && loc && !isturf(loc))
+		STATE_SET(src, machinery_misc, recursive_set, TRUE)
+		dq_add_recursive_move(src)
+		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
+
+/obj/machinery/proc/update_power_on_move(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/movable_attempted_move/event = A
+	power_area_moved(event.old_loc, event.new_loc)
+
+/obj/machinery/proc/power_area_moved(atom/old_loc, atom/new_loc)
+	var/area/old_area = get_area(old_loc)
+	var/area/new_area = get_area(new_loc)
+	if(old_area != new_area)
+		area_changed(old_area, new_area)
+
+/obj/machinery/proc/area_changed(area/old_area, area/new_area)
+	if(old_area == new_area)
+		return
+	if(!STATE_PEEK(src, machinery_misc, power_init_complete))
+		return
+	rel_set(src, nameof(power_area), new_area) // the draw follows the relation: it leaves the old area's demand and joins the new one's
+	power_change() // Force check in case the old area was powered and the new one isn't or vice versa.
+
+//
+// Usage Update Procs - the only way to change use_power and the uses_power() trait at run time
+//
+
+// Sets the use_power var. The draw is a contribution to the area's demand that reads it, so the write is the whole update.
+/obj/machinery/proc/set_use_power(new_use_power)
+	if(use_power == new_use_power)
+		return
+	use_power = new_use_power
+	// use_power is the power capability's tracked draw mode: the change publishes nameof(use_power) to its readers, and the
+	// area's demand stat that sums it recomputes before this returns.
+	tracked_changed(src, nameof(use_power))
+	return TRUE
+
+/// Sets the channel the machine draws on; the draw moves between the area's channel demands with it.
+/obj/machinery/proc/update_power_channel(new_channel)
+	return set_power_channel(new_channel)
+
+/// Convenience wrapper: sets idle or active power consumption depending on use_power_mode.
+/// Prefer calling update_idle_power_usage() / update_active_power_usage() directly in new code.
+/obj/machinery/proc/change_power_consumption(new_power_consumption, use_power_mode = USE_POWER_IDLE)
+	switch(use_power_mode)
+		if(USE_POWER_IDLE)
+			update_idle_power_usage(new_power_consumption)
+		if(USE_POWER_ACTIVE)
+			update_active_power_usage(new_power_consumption)
+
+/// Sets the idle draw (tracked: the area's demand follows while the machine is idle).
+/obj/machinery/proc/update_idle_power_usage(new_power_usage)
+	return set_idle_power_usage(new_power_usage)
+
+/// Sets the active draw (tracked: the area's demand follows while the machine is active).
+/obj/machinery/proc/update_active_power_usage(new_power_usage)
+	return set_active_power_usage(new_power_usage)
+
+// ---- the draw as the area's demand (doc/rewrite/power_grid.md) ----
+
+/// The channel the machine draws on is EQUIP (the cond of its equipment contribution).
+/obj/machinery/proc/draws_equip(datum/act/A)
+	return power_of(src).channel == EQUIP
+
+/obj/machinery/proc/draws_light(datum/act/A)
+	return power_of(src).channel == LIGHT
+
+/obj/machinery/proc/draws_environ(datum/act/A)
+	return power_of(src).channel == ENVIRON
+
+/// What the machine asks of its channel right now: its idle or active draw by the mode it is in, or nothing.
+/obj/machinery/proc/power_demand(datum/act/A)
+	return get_power_usage()
+
+#undef POWER_CONSUMPTION

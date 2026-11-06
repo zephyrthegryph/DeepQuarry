@@ -24,7 +24,7 @@ import sys
 
 FORMS = ("DECLARE_REAGENTS_TINTED", "DECLARE_REAGENTS_TYPED", "DECLARE_REAGENT_FROM_VAR", "DECLARE_NO_REAGENTS", "DECLARE_REAGENTS")
 LINE = re.compile(r"^(" + "|".join(FORMS) + r")\((.*)$")
-SKIP = ("code/__defines/lifecycle_decl.dm",)
+SKIP = ("code/defines/engine/lifecycle_decl.dm",)
 
 
 def split_args(s):

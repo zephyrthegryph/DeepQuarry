@@ -105,8 +105,7 @@
 "cI" = (
 /obj/singularity/narsie{
 	l_move_time = 0;
-	move_self = 0;
-	move_speed = 0
+	move_self = 0
 	},
 /turf/simulated/floor/lava,
 /area/survivalpod)

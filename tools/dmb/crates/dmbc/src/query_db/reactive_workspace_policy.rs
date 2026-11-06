@@ -166,7 +166,7 @@ impl QueryDb{
  }
  fn with_workspace_generator_guard_limit_budget<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,name:generator_policy::GeneratorName,limit:Option<usize>,consume:impl FnOnce(&generator_policy::Artifact,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
   use generator_policy::GeneratorName as G;
-  if !matches!(name,G::Reads|G::DerivedReads|G::AutoTracked|G::Deps|G::SparseSlots|G::DeclareIds|G::Declare|G::UiTypes|G::Stats|G::Actions|G::SystemAccessors|G::TrackedLists|G::Plans){return Err(io::Error::new(io::ErrorKind::Unsupported,"full original generator is not selected"))}
+  if !matches!(name,G::Reads|G::DerivedReads|G::AutoTracked|G::Deps|G::DeclareIds|G::Declare|G::UiTypes|G::Stats|G::Actions|G::SystemAccessors|G::TrackedLists|G::Plans){return Err(io::Error::new(io::ErrorKind::Unsupported,"full original generator is not selected"))}
   crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;
   if !guard.uses_queries(self){return Err(io::Error::new(io::ErrorKind::InvalidData,"generator guard belongs to another QueryDb"))}
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());

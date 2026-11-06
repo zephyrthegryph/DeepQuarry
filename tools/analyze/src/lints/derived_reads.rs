@@ -30,7 +30,6 @@ use crate::reactive_reaction_policy::{GENERATED_SKIP_DIRS,EXEMPT_VARS};
 pub(crate) use crate::reactive_reaction_policy::GENERATED_REL;
 
 const LINT: &str = "derived_reads";
-const SKIP_SITE_DIRS: &[&str] = &["code/modules/unit_tests/", "code/tests/unit_tests/"];
 const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];
 const OBJECT_ROOTS: &[&str] = &["datum", "obj", "mob", "atom", "turf", "area", "client", "image", "list"];
 
@@ -744,11 +743,11 @@ impl Lint for DerivedReads {
         Some(Parity {
             old: &["tools/ci/derived_reads_lint.py"],
             old_raw: &[],
-            blank: &["tools/ci/derived_reads_baseline.txt"],
+            blank: &[],
             parse: ParseKind::Tagged,
             update: Some(&["tools/ci/derived_reads_lint.py", "--update"]),
             seed: Some(&["tools/ci/derived_reads_lint.py", "--seed"]),
-            files: &["tools/ci/derived_reads_baseline.txt"],
+            files: &[],
             selftest: Some(&["tools/ci/derived_reads_lint.py", "--selftest"]),
         })
     }

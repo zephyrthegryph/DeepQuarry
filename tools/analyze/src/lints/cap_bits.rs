@@ -23,7 +23,7 @@ impl Lint for CapBits {
     }
 
     fn selftest(&self) -> Result<String, String> {
-        const REG: &str = "code/__defines/cap_bits.dm";
+        const REG: &str = "code/defines/engine/cap_bits.dm";
         let files = vec![
             SourceFile::from_text(REG, "#define CAP_A (1<<0)\n#define CAP_B (1<<1)\n"),
             SourceFile::from_text(
@@ -34,8 +34,8 @@ impl Lint for CapBits {
         ];
         let mut scope = LintScope::default();
         scope.lists.insert("registry".into(), vec![REG.into()]);
-        scope.lists.insert("writers".into(), vec!["code/datums/capabilities/capabilities.dm".into()]);
-        scope.lists.insert("write_exempt_prefixes".into(), vec!["code/modules/unit_tests/".into(), "code/tests/unit_tests/".into()]);
+        scope.lists.insert("writers".into(), vec!["code/library/capabilities/capabilities.dm".into()]);
+        scope.lists.insert("write_exempt_prefixes".into(), vec!["code/tests/unit_tests/".into()]);
         let refs: Vec<&SourceFile> = files.iter().collect();
         let mut out = Sink::new();
         check(&refs, scope.list("registry"), scope.list("writers"), scope.list("write_exempt_prefixes"), &mut out);

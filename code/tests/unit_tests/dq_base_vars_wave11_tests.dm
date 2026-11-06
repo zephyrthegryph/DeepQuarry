@@ -1,4 +1,4 @@
-// base_vars wave 11: the weak sparse slot (sparse(T, name, type = weak): lastattacker, LAssailant, teleop, autofire_target), the rare numeric mob state that
+// base_vars wave 11: the weak lazy state field (sparse(T, name, type = weak): lastattacker, LAssailant, teleop, autofire_target), the rare numeric mob state that
 // became slots (disabilities, losebreath, accumulated_rads) and the owned lists that became sparse links (side effects, glamour rings, map screens,
 // the cozy loop, the rig and its wearer).
 
@@ -11,40 +11,39 @@
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/holder = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT_NULL(sparse_ref(holder, teleop), "an unset weak slot reads null")
-	TEST_ASSERT_EQUAL(sparse_ref_set(holder, teleop, other), other, "the setter answers the target")
-	TEST_ASSERT_EQUAL(sparse_ref(holder, teleop), other, "the weak slot reads the live target")
+	TEST_ASSERT_NULL(STATE_REF(holder, mob_misc, teleop), "an unset weak slot reads null")
+	STATE_REF_SET(holder, mob_misc, teleop, other)
+	TEST_ASSERT_EQUAL(STATE_REF(holder, mob_misc, teleop), other, "the weak slot reads the live target")
 	TEST_ASSERT_EQUAL(holder.teleop(), other, "the teleop view reads the slot")
-	TEST_ASSERT(istext(holder.sparse_slots["teleop"]), "the slot holds a handle, not a reference")
-	sparse_ref_set(holder, teleop, holder)
-	TEST_ASSERT_EQUAL(sparse_ref(holder, teleop), holder, "a weak slot may name its own holder")
-	sparse_ref_set(holder, teleop, other)
+	TEST_ASSERT(istext(holder.mob_misc.vars["teleop"]), "the field holds a handle, not a reference")
+	STATE_REF_SET(holder, mob_misc, teleop, holder)
+	TEST_ASSERT_EQUAL(STATE_REF(holder, mob_misc, teleop), holder, "a weak slot may name its own holder")
+	STATE_REF_SET(holder, mob_misc, teleop, other)
 	qdel(other)
-	TEST_ASSERT_NULL(sparse_ref(holder, teleop), "a deleted target reads as none")
-	TEST_ASSERT(!sparse_has(holder, teleop), "the slot of a gone target is cleared as it is found")
-	sparse_ref_set(holder, teleop, holder)
-	sparse_ref_set(holder, teleop, null)
-	TEST_ASSERT_NULL(holder.sparse_slots, "a null value clears the slot and the list goes with its last slot")
-	TEST_ASSERT_NULL(sparse_ref_set(holder, teleop, "not a datum"), "a value that is not a datum is refused")
+	TEST_ASSERT_NULL(STATE_REF(holder, mob_misc, teleop), "a deleted target reads as none")
+	STATE_REF_SET(holder, mob_misc, teleop, holder)
+	STATE_REF_SET(holder, mob_misc, teleop, null)
+	TEST_ASSERT_NULL(holder.mob_misc, "a null value clears the field and the state goes with its last field")
 	var/turf/open_turf = get_turf(holder)
-	sparse_ref_set(holder, autofire_target, open_turf)
+	STATE_REF_SET(holder, autofire, autofire_target, open_turf)
 	TEST_ASSERT_EQUAL(holder.autofire_target(), open_turf, "a turf is a fine weak target")
 
 /// The weak slots are no longer vars, are listed by View Variables as slots and are edited through the slot writer.
 /datum/unit_test/dq_weak_sparse_slot_vv
 
 /datum/unit_test/dq_weak_sparse_slot_vv/Run()
+	set_global(nameof(GLOB.refresh_queue_base), GLOB.refresh_queue_base) // the edit publishes a change and the queue drains back to its start
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/holder = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
 	for(var/name in list("lastattacker", "LAssailant", "teleop", "autofire_target", "disabilities", "accumulated_rads"))
 		TEST_ASSERT(!(name in holder.vars), "[name] is no longer a var of [holder.type]")
-		TEST_ASSERT((sparse_slot_label(name) in sparse_slots_of(holder)), "[name] is listed as a slot of [holder.type]")
-	var/label = sparse_slot_label("teleop")
+		TEST_ASSERT((vv_slot_label(name) in vv_slots_of(holder)), "[name] is listed as a slot of [holder.type]")
+	var/label = vv_slot_label("teleop")
 	TEST_ASSERT(holder.vv_edit_var(label, other), "the VV edit of a weak slot is accepted")
 	TEST_ASSERT_EQUAL(vv_var_value(holder, label), other, "View Variables reads the datum a weak slot names")
 	TEST_ASSERT_EQUAL(holder.teleop(), other, "the edit went through the weak writer")
-	TEST_ASSERT_EQUAL(sparse_slots_of(holder)[label], other, "the slot list shows the datum")
+	TEST_ASSERT_EQUAL(vv_slots_of(holder)[label], other, "the slot list shows the datum")
 
 /// Who last hit a mob is remembered weakly, and the death record keeps the name of one who is gone.
 /datum/unit_test/dq_weak_slot_attacker
@@ -73,21 +72,20 @@
 	TEST_ASSERT_EQUAL(H.losebreath(), 0, "losebreath starts at 0")
 	TEST_ASSERT_EQUAL(H.accumulated_rads(), 0, "accumulated_rads starts at 0")
 	H.add_disabilities(NEARSIGHTED)
-	H.add_disabilities(CLUMSY)
-	TEST_ASSERT_EQUAL(H.disabilities(), NEARSIGHTED | CLUMSY, "disability flags add up")
+	H.add_disabilities(WINGDINGS) // not CLUMSY: that is mutation number 5, which shares NEARSIGHTED's bit
+	TEST_ASSERT_EQUAL(H.disabilities(), NEARSIGHTED | WINGDINGS, "disability flags add up")
 	H.remove_disabilities(NEARSIGHTED)
-	TEST_ASSERT_EQUAL(H.disabilities(), CLUMSY, "a flag comes off alone")
-	H.remove_disabilities(CLUMSY)
-	TEST_ASSERT(!sparse_has(H, disabilities), "no flags left clears the slot")
+	TEST_ASSERT_EQUAL(H.disabilities(), WINGDINGS, "a flag comes off alone")
+	H.remove_disabilities(WINGDINGS)
+	TEST_ASSERT_EQUAL(STATE_GET(H, mob_misc, disabilities), 0, "no flags left reads the default")
 	H.set_losebreath(5)
 	TEST_ASSERT_EQUAL(H.losebreath(), 5, "losebreath reads what was set")
 	H.set_losebreath(0)
 	TEST_ASSERT(!("losebreath" in H.vars), "losebreath is not a var of the mob")
-	TEST_ASSERT(!sparse_has(H, losebreath), "losebreath is not a slot: it lives on the physiology")
 	H.decay_radiation(0, 30)
 	TEST_ASSERT_EQUAL(H.accumulated_rads(), 30, "decay settles into the accumulated dose")
 	H.clear_radiation()
-	TEST_ASSERT(!sparse_has(H, accumulated_rads), "clearing radiation clears the accumulated dose slot")
+	TEST_ASSERT_EQUAL(STATE_GET(H, mob_misc, accumulated_rads), 0, "clearing radiation reads the default dose")
 
 /// Medication and genetic side effects, map screens and the cozy loop are sparse links that go with their owner.
 /datum/unit_test/dq_base_vars_wave11_owned_links

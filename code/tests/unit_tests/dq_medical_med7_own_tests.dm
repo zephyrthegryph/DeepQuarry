@@ -78,7 +78,7 @@
 	R.set_nutrition(0)
 	R.set_bodytemperature(350)
 	R.rejuvenate()
-	TEST_ASSERT_EQUAL(nutrition_of(R), 0, "a borg has no nutrition_of(src) to refill")
+	TEST_ASSERT_EQUAL(nutrition_of(R), 0, "a borg has no nutrition to refill")
 	TEST_ASSERT_EQUAL(R.body_temperature(), 350, "a borg's temperature is not reset to T20C")
 
 /// C11: a ticking body no longer rebuilds the treatment snapshot every cycle; regeneration is
@@ -185,9 +185,9 @@
 	H.claim_global_hud(GLOB.global_hud.meson)
 	H.claim_global_hud(GLOB.global_hud.meson)
 	H.claim_global_hud(null)
-	TEST_ASSERT_EQUAL(LAZYLEN(sparse_get(H, global_hud_claims)), 1, "claims are a set")
+	TEST_ASSERT_EQUAL(LAZYLEN(STATE_GET(H, mob_misc, global_hud_claims)), 1, "claims are a set")
 	H.reconcile_global_huds()
-	TEST_ASSERT_NULL(sparse_get(H, global_hud_claims), "a reconcile consumes the claims")
+	TEST_ASSERT_NULL(STATE_GET(H, mob_misc, global_hud_claims), "a reconcile consumes the claims")
 
 /datum/unit_test/dq_organ_preinit_identity
 	abstract_type = /datum/unit_test/dq_organ_preinit_identity

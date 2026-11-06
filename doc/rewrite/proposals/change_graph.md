@@ -32,7 +32,7 @@ consults:
 | 2 | stat inputs | `GLOB.stat_input_keys[var]`, `stat_type_info.inputs[var]` | inline | `stat_inputs_changed` (`stats/recompute.dm`) |
 | 3 | stat hops | `GLOB.stat_hop_index[var]`, backward walk with `hop_sources()` | inline or marked | `stat_notify_hops` |
 | 4 | stat systems | `GLOB.stat_sys_index["system.var"]` | inline or marked | `stat_notify_system` |
-| 5 | OM channels | `E.om_listen & channel` | immediate | `entity_dispatch_change` (legacy) |
+| 5 | channels | `E.change_listen & channel` | immediate | `entity_dispatch_change` (legacy) |
 | 6 | reactions, observers, worn watch, lifeforms, hooks | `rx_readers()`: `T.read_keys`, `E.rx.observed`, `E.rx.worn_watched`, `lifeform_watch_keys`, `hooks_watching` | gate for 7 | `rx_readers` |
 | 7 | publish | `publish_change()`: `T.by_key`, `T.crosses`, `E.rx.listeners`, `hooks_change_published`, `lifeform_published`, `op_reads_changed`, `seq_publish`, `lookup_reads_published` | mixed | `state.dm` |
 | 8 | draw hops | `draw_hop_reads_var(var)` then backward walk | marks | `refs/hops.dm` |
@@ -240,8 +240,8 @@ Existing debug and AI tracing is never removed. The trace gains the key id and t
 
 ## 9. Legacy adapter (D7)
 
-The OM channels (`CHANGE_*`, `om_listen`, `changed(E, channel)`, `entity_dispatch_change`) become one **dependent** on the graph
-(class DRAIN) generated from `om_listen` registrations: a write whose key maps to a channel dispatches it. It is deleted with the
+The channels (`CHANGE_*`, `change_listen`, `changed(E, channel)`, `entity_dispatch_change`) become one **dependent** on the graph
+(class DRAIN) generated from `change_listen` registrations: a write whose key maps to a channel dispatches it. It is deleted with the
 last `CHANGE_*` caller; no new use may be added.
 
 ## 10. Memory

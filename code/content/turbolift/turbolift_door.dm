@@ -64,10 +64,6 @@ CAPABILITIES(/obj/machinery/door/airlock/lift)
 /obj/machinery/door/airlock/lift/proc/lift() as /datum/turbolift
 	return lift
 
-/// the floor this refers to (a relation view: it reads null once the target is deleted).
-/obj/machinery/door/airlock/lift/proc/lift_floor() as /datum/turbolift_floor
-	return floor
-
 // Interior doors: two-sided with the lift's doors list.
 // Exterior doors: a floor lists its doors (airlocks and firedoors) in a one-sided REL_LIST
 // (turbolift_floor.dm), and each door names its floor in a one-sided view.

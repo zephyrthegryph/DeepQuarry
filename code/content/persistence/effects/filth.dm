@@ -1,0 +1,91 @@
+/datum/persistent/filth
+	name = "filth"
+	entries_expire_at = 4 // 4 rounds, 24 hours.
+	var/saves_dirt = TRUE
+	has_admin_data = TRUE
+
+/datum/persistent/filth/GetAdminDataStringFor(thing, can_modify, mob/user)
+	if(istype(thing, /obj/effect/decal/cleanable/crayon))
+		var/obj/effect/decal/cleanable/crayon/CRAY = thing
+		if(can_modify)
+			return "<td colspan = 3>[thing]</td><td>Loc:([CRAY.x],[CRAY.y],[CRAY.z]) P_X: [CRAY.pixel_x] P_Y: [CRAY.pixel_y] Color: [CRAY.art_color] Shading: [CRAY.art_shade] Type: [CRAY.art_type]</td><td><a href='byond://?src=[REF(src)];caller=[REF(user)];remove_entry=[REF(thing)]'>Destroy</a></td>"
+		return "<td colspan = 4>[thing]</td>"
+	return null
+
+/datum/persistent/filth/IsValidEntry(atom/entry)
+	. = ..() && entry.invisibility == 0
+
+/datum/persistent/filth/CheckTokenSanity(list/token)
+	// byond's json implementation is "questionable", and uses types as keys and values without quotes sometimes even though they aren't valid json
+	// A saved path of a type that became a variant row reads back as its parent, with the row's key in the token.
+	var/saved = saved_type(token["path"])
+	token["path"] = saved_type_path(saved)
+	if(istext(saved))
+		token["variant"] = variant_key(saved)
+	token["pixel_x"] = istext(token["pixel_x"]) ? text2num(token["pixel_x"]) : token["pixel_x"]
+	token["pixel_y"] = istext(token["pixel_y"]) ? text2num(token["pixel_y"]) : token["pixel_y"]
+	return ..() && ispath(token["path"]) && (!saves_dirt || isnum(token["dirt"])) && isnum(token["pixel_x"]) && isnum(token["pixel_y"])
+
+/datum/persistent/filth/CheckTurfContents(turf/T, list/token)
+	var/_path = token["path"]
+	// return (locate_on(T, _path)) ? FALSE : TRUE
+	if(!ispath(_path, /obj/effect/decal/cleanable/crayon))
+		return (locate_on(T, _path)) ? FALSE : TRUE
+
+// Crayon drawings aren't handled in graffiti, so we need to check if someone made "art" seperately from blood, dirt, etc.
+	var/too_much_crayon = 0
+	for(var/obj/effect/decal/cleanable/crayon/C in turf_contents_of_type(T, /obj/effect/decal/cleanable/crayon))
+		too_much_crayon++
+		if(too_much_crayon >= 5)
+			return FALSE
+	return TRUE
+
+/datum/persistent/filth/CreateEntryInstance(turf/creating, list/token)
+	var/_path = token["path"]
+	if (isspace(creating) || iswall(creating) ||isopenspace(creating))
+		return
+	// new _path(creating, token["age"]+1)
+	var/atom/inst
+	if(ispath(_path, /obj/effect/decal/cleanable/crayon))
+		if(!findtext(token["art_color"], GLOB.is_color) || !findtext(token["art_shade"], GLOB.is_color) || !istext(token["art_type"]))
+			return
+		inst = new _path(creating, token["art_color"], token["art_shade"], token["art_type"], token["age"]+1)
+	else
+		var/saved = token["variant"] ? variant_ref(_path, token["variant"]) : _path
+		if (saves_dirt)
+			variant_new(saved, creating, token["age"]+1, token["dirt"])
+		else
+			variant_new(saved, creating, token["age"]+1)
+	if(inst)
+		if(token["pixel_x"])
+			inst.set_pixel_x(token["pixel_x"])
+		if(token["pixel_y"])
+			inst.set_pixel_y(token["pixel_y"])
+
+/datum/persistent/filth/GetEntryAge(atom/entry)
+	var/obj/effect/decal/cleanable/filth = entry
+	return filth.age
+
+/datum/persistent/filth/proc/GetEntryDirt(atom/entry)
+	var/turf/simulated/T = get_turf(entry)
+	if (istype(T))
+		return T.dirt
+	return 0
+
+/datum/persistent/filth/proc/GetEntryPath(atom/entry)
+	var/obj/effect/decal/cleanable/filth = entry
+	return filth.generic_filth ? /obj/effect/decal/cleanable/filth : saved_type_text(filth)
+
+/datum/persistent/filth/CompileEntry(atom/entry)
+	. = ..()
+	LAZYADDASSOC(., "path", "[GetEntryPath(entry)]")
+	if (saves_dirt)
+		LAZYADDASSOC(., "dirt", GetEntryDirt(entry))
+	LAZYADDASSOC(., "pixel_x", "[entry.pixel_x]")
+	LAZYADDASSOC(., "pixel_y", "[entry.pixel_y]")
+
+	if(istype(entry, /obj/effect/decal/cleanable/crayon))
+		var/obj/effect/decal/cleanable/crayon/Inst = entry
+		LAZYADDASSOC(., "art_type", "[Inst.art_type]")
+		LAZYADDASSOC(., "art_color", "[Inst.art_color]")
+		LAZYADDASSOC(., "art_shade", "[Inst.art_shade]")

@@ -52,7 +52,7 @@ use crate::pat;
 use crate::tree::SourceFile;
 use crate::util::py_strip;
 
-use crate::base_var_metadata::{BASELINE, META};
+use crate::base_var_metadata::META;
 
 #[cfg(test)]
 use crate::base_var_hot_policy::hot_key;
@@ -442,7 +442,7 @@ impl Lint for BaseVars {
     }
 
     fn parity(&self) -> Option<Parity> {
-        let mut p = Parity::ratchet(&["tools/ci/base_vars_lint.py"], &[BASELINE]);
+        let mut p = Parity::ratchet(&["tools/ci/base_vars_lint.py"], &[]);
         p.update = Some(&["tools/ci/base_vars_lint.py", "--update"]);
         p.seed = Some(&["tools/ci/base_vars_lint.py", "--seed"]);
         Some(p)
@@ -612,7 +612,7 @@ mod tests {
             .collect()
     }
 
-    const GOOD: &str = "read every turf update in code/ATMOSPHERICS/environmental/LINDA_system.dm";
+    const GOOD: &str = "read every turf update in code/domains/atmos/environmental/LINDA_system.dm";
 
     #[test]
     fn listed_var_with_reader_and_justification_is_accepted() {

@@ -5,7 +5,7 @@
 	icon_state = "sextractor"
 	density = TRUE
 	anchored = TRUE
-	circuit = /obj/item/circuitboard/smart_centrifuge
+	circuit = VARIANT(/obj/item/circuitboard/smart_centrifuge)
 
 	/// Delay before the next separation step: the spin-up, then one bottle a second.
 	var/separate_delay = 10 SECONDS

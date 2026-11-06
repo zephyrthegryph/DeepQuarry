@@ -154,7 +154,7 @@
 /datum/uplink_item/item/tools/teleporter
 	name = "Teleporter Circuit Board"
 	item_cost = DEFAULT_TELECRYSTAL_AMOUNT * 1.5
-	path = /obj/item/circuitboard/teleporter
+	path = VARIANT(/obj/item/circuitboard/teleporter)
 	blacklisted = 1
 
 
@@ -231,7 +231,7 @@
 /datum/uplink_item/item/tools/glass
 	name = "Glass (50 sheets)"
 	item_cost = 15
-	path = /obj/fiftyspawner/glass
+	path = VARIANT(/obj/fiftyspawner/glass)
 
 /datum/uplink_item/item/tools/smallpouch
 	name = "Small Pouch"

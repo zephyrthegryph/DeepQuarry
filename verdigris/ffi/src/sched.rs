@@ -87,7 +87,9 @@ fn cmp(v: &ByondValue) -> Result<Cmp> {
     match whole(v, "cmp")? {
         0 => Ok(Cmp::Above),
         1 => Ok(Cmp::Below),
-        c => Err(eyre!("bad comparison {c} (0 above, 1 below)")),
+        2 => Ok(Cmp::AboveStrict),
+        3 => Ok(Cmp::BelowStrict),
+        c => Err(eyre!("bad comparison {c} (0 above, 1 below, 2 above strictly, 3 below strictly)")),
     }
 }
 
@@ -108,7 +110,7 @@ fn yes(b: bool) -> ByondValue {
     ByondValue::from(if b { 1.0f32 } else { 0.0 })
 }
 
-fn channels(code: u32) -> Result<Vec<ChannelInfo>> {
+pub(crate) fn channels(code: u32) -> Result<Vec<ChannelInfo>> {
     registry::with_domain(world_kind_domain(code), |d| d.channels())
         .ok_or_else(|| eyre!("code {code} has no watch port"))
 }
@@ -143,6 +145,11 @@ fn level(
         hysteresis: hysteresis(h)?,
         edge: if both { Edge::Both } else { Edge::Enter },
     })
+}
+
+/// Removes a watch the sense table registered under the hub (no scheduler subscription stands behind it).
+pub(crate) fn hub_unwatch(code: u32, port: u8, id: vg_core::outbox::WatchId) {
+    registry::with_domain(world_kind_domain(code), |d| d.unwatch(port, id));
 }
 
 fn unwatch(what: Subscription) {
@@ -207,6 +214,8 @@ pub(crate) fn step(
             .counter(&format!("frame.us.sched_domain_{id}"))
             .add(at.elapsed().as_micros() as u64);
     });
+    // The sense sets' wakes stay here: DM hears their crossings as band records (`crate::sense`), not as lane wakes.
+    watch_wakes.retain(|wk| wk.subscriber != crate::sense::SENSE_HUB);
     let owners = watch_wakes
         .iter()
         .map(|wk| (wk.watch.index, wk.subscriber))
@@ -389,61 +398,6 @@ fn world_watch_band(
     watch(&code, &sub, &lane, &cond)
 }
 
-/// `om_world_when` bands on several channels of one cell, as one watch: wakes
-/// when any of `chs` moves into a different band of its own increasing list in
-/// `levels` (the same position). `starts` holds each channel's band as the
-/// watcher read it itself (how many of its levels are at or under the value):
-/// the watch starts there, so only a move out of it wakes, never the
-/// registration. `hysteresis`
-/// < 0 takes each channel's. A breather's air watch (one per breather, on its
-/// turf: oxygen, toxins, temperature and pressure levels its species reacts to).
-/// `cell` is one cell for every channel, or a list with one cell per channel
-/// (the air watch also follows the temperature of the turfs around the mob).
-#[auxmacros::bind("/proc/world_watch_bands")]
-fn world_watch_bands(
-    code: ByondValue,
-    sub: ByondValue,
-    lane: ByondValue,
-    cell: ByondValue,
-    chs: ByondValue,
-    levels: ByondValue,
-    starts: ByondValue,
-    hysteresis: ByondValue,
-) -> Result<ByondValue> {
-    let chans = channels(whole(&code, "code")?)?;
-    let cells = match cell.get_list_values() {
-        Ok(list) => list.iter().map(cell_arg).collect::<Result<Vec<u32>>>()?,
-        Err(_) => Vec::new(),
-    };
-    let single = if cells.is_empty() { Some(cell_arg(&cell)?) } else { None };
-    let starts = starts.get_list_values()?;
-    let hyst = self::hysteresis(&hysteresis)?;
-    let chs = chs.get_list_values()?;
-    let lists = levels.get_list_values()?;
-    if chs.len() != lists.len() || chs.len() != starts.len() || chs.is_empty() || (single.is_none() && cells.len() != chs.len()) {
-        bail!("world_watch_bands: {} channels, {} level lists, {} cells", chs.len(), lists.len(), cells.len());
-    }
-    let mut bands = Vec::with_capacity(chs.len());
-    for (i, ((ch, list), start)) in chs.iter().zip(&lists).zip(&starts).enumerate() {
-        let cell = single.unwrap_or(cells[i]);
-        let ch_id = channel(&chans, ch)?;
-        let levels = list
-            .get_list_values()?
-            .iter()
-            .map(|v| Ok(v.get_number()?))
-            .collect::<Result<Vec<f32>>>()?;
-        bands.push(Cond::Band {
-            cell,
-            ch: ch_id,
-            unit: chans[ch_id.index()].unit,
-            levels,
-            hysteresis: hyst,
-            start: Some(whole(start, "start")? as usize),
-        });
-    }
-    watch(&code, &sub, &lane, &Cond::Any(bands))
-}
-
 /// `om_world_when` difference: `a - b` (or `|a - b|` with `abs`) on channel
 /// `ch` crosses `value` like a threshold.
 #[auxmacros::bind("/proc/world_watch_difference")]
@@ -524,6 +478,7 @@ fn world_watch_set_add(
         } else {
             Edge::Enter
         },
+        start: None,
     };
     registry::with_domain(world_kind_domain(code), |d| d.add_entry(port, id, entry))
         .ok_or_else(|| eyre!("code {code} has no watch port"))?
@@ -759,5 +714,58 @@ mod tests {
         mix::store(r, &tank, &after);
         let woke = step(2);
         assert_eq!(woke.len(), 1, "{woke:?}");
+    }
+
+    /// A band watch on a main-owned mixture's pressure (what `watched(A, WATCH_GAS, ...)` arms): the registration reports the starting
+    /// band once, a change inside a band wakes nothing, and a move into another band wakes once, up or down.
+    #[test]
+    fn a_gas_handle_band_watch_wakes_only_on_a_band_change() {
+        with_world(|_| Ok(())).unwrap();
+        let mut tank = Mixture::from_vol(70.0);
+        tank.set_moles(0, 10.0);
+        tank.set_temperature(293.15);
+        let r = MixRef::Main(mix::alloc(tank.clone()).unwrap());
+        let chans = channels(GAS_HANDLES).unwrap();
+        let ch = gas_ch::PRESSURE;
+        let cond = Cond::Band {
+            cell: r.id(),
+            ch,
+            unit: chans[ch.index()].unit,
+            levels: vec![100.0, 500.0],
+            hysteresis: None,
+            start: None,
+        };
+        let (port, id) = registry::with_domain(world_kind_domain(GAS_HANDLES), |d| {
+            d.watch(9, Lane::Urgent, &cond)
+        })
+        .unwrap()
+        .unwrap();
+        with_world(|w| {
+            w.sched_watch(9, GAS_HANDLES, port, id)
+                .map_err(|e| eyre!("{e}"))
+        })
+        .unwrap();
+        let step = |now| {
+            let mut wakes = Vec::new();
+            registry::for_each(|_, d| d.take_wakes(&mut wakes));
+            with_world(|w| Ok(w.sched_step(now, 100, &wakes))).unwrap()
+        };
+        let set = |from: &Mixture, moles: f32| {
+            let mut after = from.clone();
+            after.set_moles(0, moles);
+            mix::store(r, from, &after);
+            after
+        };
+        assert_eq!(step(1).len(), 1, "the registration reports the starting band");
+        assert!(step(2).is_empty(), "no change, no wake");
+        // 348 kPa -> 730 kPa: band 1 -> 2.
+        let up = set(&tank, 21.0);
+        assert_eq!(step(3).len(), 1, "a move into the next band wakes once");
+        // 730 kPa -> 696 kPa: still band 2.
+        let inside = set(&up, 20.0);
+        assert!(step(4).is_empty(), "a change inside a band wakes nothing");
+        // 696 kPa -> 70 kPa: band 2 -> 0.
+        let _ = set(&inside, 2.0);
+        assert_eq!(step(5).len(), 1, "a fall across two levels wakes once");
     }
 }

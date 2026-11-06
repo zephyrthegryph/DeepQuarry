@@ -11,15 +11,24 @@ PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter
 
 /// A runtime subscription made by observe().
 /datum/rx_listener
-	var/datum/source
+	/// The slots of the observed datum and of the listener (source() and listener() read them back): a listener record keeps no reference to either end.
+	var/source_slot = 0
 	var/datum/reaction/trigger
-	var/datum/listener
+	var/listener_slot = 0
 	var/handler
+
+/// The observed datum, or null once it is deleted.
+/datum/rx_listener/proc/source()
+	return slot_datum(source_slot)
+
+/// The listening datum, or null once it is deleted.
+/datum/rx_listener/proc/listener()
+	return slot_datum(listener_slot)
 
 /// Every listener record and the type it reads is torn down with either end (rx_teardown).
 /proc/rx_listener_remove(datum/rx_listener/L)
-	var/datum/source = L.source
-	var/datum/listener = L.listener
+	var/datum/source = L.source()
+	var/datum/listener = L.listener()
 	var/datum/reaction/R = L.trigger
 	if(source?.rx)
 		source.rx.listeners -= L
@@ -34,10 +43,8 @@ PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter
 		listener.rx.listening -= L
 		if(!length(listener.rx.listening))
 			listener.rx.listening = null
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
-	L.source = null
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
-	L.listener = null
+	L.source_slot = 0
+	L.listener_slot = 0
 
 /proc/rx_observed_adjust(datum/source, datum/reaction/R, delta)
 	var/datum/rx_state/S = rx_of(source)
@@ -70,18 +77,20 @@ PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter
  * dies. Returns the record (the same one if it already exists).
  */
 /proc/legacy_observe(datum/source, datum/reaction/trigger, datum/listener, handler)
-	if(!source || !listener || !istype(trigger) || QDELING(source) || QDELING(listener))
+	if(!istype(trigger))
+		// A path goes to the hook form in observe(), so this is a mistake: arguments out of order, or a trigger that came out null. It would never fire.
+		declare_report("observe(): the trigger must be a notice or act type or a reaction, got [isnull(trigger) ? "null" : "[trigger]"] (source [source], listener [listener]); arguments are observe(source, trigger, listener, ...)")
+		return null
+	if(!source || !listener || QDELING(source) || QDELING(listener))
 		return null
 	for(var/datum/rx_listener/known as anything in source.rx?.listeners)
-		if(known.listener == listener && known.trigger.sig == trigger.sig && known.handler == handler)
+		if(known.listener_slot == SLOT(listener) && known.trigger.sig == trigger.sig && known.handler == handler)
 			return known
 	var/datum/rx_listener/L = new
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
-	L.source = source
+	L.source_slot = SLOT(source)
 	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	L.trigger = trigger
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
-	L.listener = listener
+	L.listener_slot = SLOT(listener)
 	L.handler = handler
 	var/datum/rx_state/S = rx_of(source)
 	if(!S.listeners)
@@ -102,7 +111,7 @@ PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter
 /proc/legacy_unobserve(datum/source, datum/reaction/trigger, datum/listener)
 	. = 0
 	for(var/datum/rx_listener/L as anything in source?.rx?.listeners?.Copy())
-		if(listener && L.listener != listener)
+		if(listener && L.listener_slot != SLOT_KNOWN(listener))
 			continue
 		if(trigger && L.trigger.sig != trigger.sig)
 			continue
@@ -111,17 +120,18 @@ PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter
 
 // ---------------------------------------------------------------- change reactions
 
-/// (holder -> (reaction or listener -> list of keys)) waiting for the drain.
+/// (holder's handle (ref_token) -> (reaction or listener -> list of keys)) waiting for the drain.
 GLOBAL_LIST_EMPTY(rx_pending)
 /// Listener records with pending work (for cleanup on removal).
 GLOBAL_LIST_EMPTY(rx_pending_listeners)
 GLOBAL_VAR_INIT(rx_draining, FALSE)
 
 /proc/rx_pend(datum/E, target, key)
-	var/list/per = GLOB.rx_pending[E]
+	var/handle = ref_token(E)
+	var/list/per = GLOB.rx_pending[handle]
 	if(!per)
 		per = list()
-		GLOB.rx_pending[E] = per
+		GLOB.rx_pending[handle] = per
 	var/list/keys = per[target]
 	if(!keys)
 		keys = list()
@@ -140,6 +150,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 	if(GLOB.rx_draining || !(length(GLOB.rx_pending) || length(GLOB.rx_cross_jobs)))
 		return
 	GLOB.rx_draining = TRUE
+	var/datum/km_attr/attr = km_meter().attr
 	while(length(GLOB.rx_cross_jobs))
 		var/list/job = GLOB.rx_cross_jobs[1]
 		GLOB.rx_cross_jobs.Cut(1, 2)
@@ -154,10 +165,11 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 		var/list/batch = GLOB.rx_pending
 		GLOB.rx_pending = list()
 		GLOB.rx_pending_listeners = list()
-		for(var/datum/E as anything in batch)
+		for(var/handle in batch)
+			var/datum/E = resolve_token(handle)
 			if(QDELETED(E))
 				continue
-			var/list/per = batch[E]
+			var/list/per = batch[handle]
 			var/list/counts = deliveries[E]
 			if(!counts)
 				counts = list()
@@ -177,13 +189,17 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 						// at_most: inside its window the keys are held for one delivery when it ends.
 						if(R.at_most && !rx_at_most_admit(E, R, keys))
 							continue
+						var/attr_start = TICK_USAGE
 						rx_call_reaction(E, R, keys)
+						attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, E.type, R.handler, TICK_USAGE_TO_MS(attr_start))
 					else
 						var/datum/rx_listener/L = target
-						if(L.source && L.listener && !QDELETED(L.listener))
-							rx_call(L.listener, L.handler, E, keys)
+						if(L.source_slot && L.listener_slot && !QDELETED(L.listener()))
+							var/attr_start = TICK_USAGE
+							rx_call(L.listener(), L.handler, E, keys)
+							attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, L.listener().type, L.handler, TICK_USAGE_TO_MS(attr_start))
 				catch(var/exception/e)
-					stack_trace("rx_drain: [E.type]: [e] ([e.file]:[e.line])")
+					dq_report_caught(e, "rx_drain: [E.type]")
 	GLOB.rx_draining = FALSE
 
 /// A change reaction of `E` kept re-queueing itself past RX_DRAIN_PASSES deliveries in one drain: names the pair (the rest
@@ -304,8 +320,8 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 	if(QDELETED(E))
 		return
 	if(L)
-		if(L.source && L.listener && !QDELETED(L.listener))
-			rx_call(L.listener, L.handler, E, band, previous)
+		if(L.source_slot && L.listener_slot && !QDELETED(L.listener()))
+			rx_call(L.listener(), L.handler, E, band, previous)
 		return
 	var/started = TICK_USAGE
 	rx_call_reaction(E, R, band, previous)
@@ -337,8 +353,8 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 				return veto
 	for(var/datum/rx_listener/L as anything in D.rx?.listeners?.Copy())
 		var/datum/reaction/R = L.trigger
-		if(R.kind == RXN_BEFORE_OP && rx_op_listener_matches(R, key, cap_type) && L.listener && !QDELETED(L.listener))
-			var/veto = rx_call(L.listener, L.handler, D, ctx)
+		if(R.kind == RXN_BEFORE_OP && rx_op_listener_matches(R, key, cap_type) && L.listener() && !QDELETED(L.listener()))
+			var/veto = rx_call(L.listener(), L.handler, D, ctx)
 			if(!isnull(veto))
 				return veto
 	return null
@@ -351,8 +367,8 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 			rx_call_reaction(D, R, ctx)
 	for(var/datum/rx_listener/L as anything in D.rx?.listeners?.Copy())
 		var/datum/reaction/R = L.trigger
-		if(R.kind == RXN_AFTER_OP && rx_op_listener_matches(R, key, cap_type) && L.listener && !QDELETED(L.listener))
-			rx_call(L.listener, L.handler, D, ctx)
+		if(R.kind == RXN_AFTER_OP && rx_op_listener_matches(R, key, cap_type) && L.listener() && !QDELETED(L.listener()))
+			rx_call(L.listener(), L.handler, D, ctx)
 
 /proc/rx_op_listener_matches(datum/reaction/R, key, cap_type)
 	if(ispath(R.key))
@@ -363,7 +379,7 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 
 /**
  * An occurrence: something that happened once and must be heard in order (a door opened, a shot hit), as
- * opposed to a state that is. Pooled (code/datums/lifecycle/pool.dm): take_notice() takes a released one, and it is
+ * opposed to a state that is. Pooled (code/datums/lifecycle/pool.dm): notice_take() takes a released one, and it is
  * released after its delivery, so handlers must not keep it. Fields go back to their initial values on release;
  * subtypes name their fields and override fill() (and reset() for what a field cannot express).
  */
@@ -372,27 +388,13 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 	/// publisher for the legacy handlers and the activation's source for the hooks.
 	var/list/data
 	/// A read-back notice (a request the handlers answer): the sender reads, after PUBLISH returns, what the handlers wrote into it (examine
-	/// lines, a shield's scaled amount, post-change callbacks). publish() delivers one at once even inside another delivery, instead of
-	/// queueing it behind that delivery where the sender would read its fields before any handler ran. Notices its handlers publish still queue.
+	/// lines, a shield's scaled amount, post-change callbacks). Delivery is synchronous, so the sender always reads the answers; the flag is what the
+	/// read_back lint looks for on every notice a handler writes into.
 	var/read_back = FALSE
 
 /// Sets the notice up from PUBLISH's arguments.
 /datum/notice/proc/fill(...)
 	data = args.Copy()
-
-/// The notices waiting behind the delivery in progress: (source, notice) pairs in publish order.
-GLOBAL_LIST_EMPTY(rx_notice_queue)
-GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
-/// How many read-back notices are being answered inside one another (publish(), RX_ANSWER_DEPTH).
-GLOBAL_VAR_INIT(rx_answer_depth, 0)
-
-/// A notice of `type` taken from its pool and filled from the arguments after it. PUBLISH's helper: the
-/// notice is released by publish() once delivered.
-/proc/take_notice(type, ...)
-	RETURN_TYPE(/datum/notice)
-	var/datum/notice/N = take(type)
-	N.fill(arglist(length(args) > 1 ? args.Copy(2) : list()))
-	return N
 
 /// TRUE when a static reaction of E's type, or an observer of E, wants notices of `type`.
 /proc/rx_wants_notice(datum/E, type)
@@ -416,63 +418,6 @@ GLOBAL_VAR_INIT(rx_answer_depth, 0)
 		T.notice_cache[type] = cached
 	return cached
 
-/**
- * Delivers `N` (from take_notice) to the holder's on_notice reactions and observers, in that order, each
- * in registration order. Occurrences are never coalesced or dropped: one published while another is
- * being delivered (from a handler) is queued behind it and delivered, in order, before this returns to the
- * outermost caller. A read-back notice (`read_back`) is the exception: it is answered at once (rx_answer_notice()). A chain longer than RX_NOTICE_LIMIT is reported and cut.
- */
-/proc/publish(datum/E, datum/notice/N)
-	if(!E || !N)
-		return
-
-	N.source = E
-	if(GLOB.rx_notice_delivering)
-		if(N.read_back)
-			rx_answer_notice(E, N)
-			return
-		GLOB.rx_notice_queue += list(list(E, N))
-		return
-	GLOB.rx_notice_delivering = TRUE
-	var/delivered = 0
-	rx_deliver_notice(E, N)
-	while(length(GLOB.rx_notice_queue))
-		var/list/next = GLOB.rx_notice_queue[1]
-		GLOB.rx_notice_queue.Cut(1, 2)
-		if(++delivered > RX_NOTICE_LIMIT)
-			stack_trace("publish: more than [RX_NOTICE_LIMIT] notices chained from one delivery (a handler republishes what it hears?); dropping [length(GLOB.rx_notice_queue) + 1]")
-			for(var/list/rest as anything in GLOB.rx_notice_queue)
-				var/datum/notice/dropped = rest[2]
-				dropped.release()
-			GLOB.rx_notice_queue.Cut()
-			var/datum/notice/cut = next[2]
-			cut.release()
-			break
-		rx_deliver_notice(next[1], next[2])
-	GLOB.rx_notice_delivering = FALSE
-
-/**
- * A read-back notice published inside another delivery: delivered now, so the sender's next line reads the handlers' answers. The notices
- * its handlers publish join the outer queue as usual. Answers nest at most RX_ANSWER_DEPTH deep; past that one is reported and dropped
- * (the sender then reads its own unanswered values).
- */
-/proc/rx_answer_notice(datum/E, datum/notice/N)
-	if(GLOB.rx_answer_depth >= RX_ANSWER_DEPTH)
-		stack_trace("publish: read-back notice [N.type] on [E?.type] nested more than [RX_ANSWER_DEPTH] answers deep; not delivered")
-		N.release()
-		return
-	GLOB.rx_answer_depth++
-	try
-		rx_deliver_notice(E, N)
-	catch(var/exception/e)
-		stack_trace("publish: answering [N.type] on [E?.type]: [e] ([e.file]:[e.line])")
-	GLOB.rx_answer_depth--
-
-/proc/rx_deliver_notice(datum/E, datum/notice/N)
-	rx_deliver_notice_to(E, N)
-	notice_deliver_hooks(E, N, ACT_COMMITTED) // the hooks of the engine (code/engine/actions) hear a legacy publish too
-	N.release()
-
 /// The legacy half of a delivery: E's on_notice() reactions and observers, without releasing N.
 /proc/rx_deliver_notice_to(datum/E, datum/notice/N)
 	if(!QDELETED(E))
@@ -487,13 +432,13 @@ GLOBAL_VAR_INIT(rx_answer_depth, 0)
 					rx_call_reaction(E, R, N)
 				catch(var/exception/e)
 					faulted = TRUE
-					stack_trace("notice [N.type] handler [R.handler] on [E.type]: [e] ([e.file]:[e.line])")
+					dq_report_caught(e, "notice [N.type] handler [R.handler] on [E.type]")
 				R.work?.account(TICK_USAGE_TO_MS(started), faulted) // per-reaction cost; delivery stays synchronous and in order
 		for(var/datum/rx_listener/L as anything in E.rx?.listeners?.Copy())
 			var/datum/reaction/R = L.trigger
-			if(R.kind != RXN_NOTICE || !istype(N, R.key) || !L.listener || QDELETED(L.listener))
+			if(R.kind != RXN_NOTICE || !istype(N, R.key) || !L.listener() || QDELETED(L.listener()))
 				continue
 			try
-				rx_call(L.listener, L.handler, E, N)
+				rx_call(L.listener(), L.handler, E, N)
 			catch(var/exception/e2)
-				stack_trace("notice [N.type] observer [L.handler] on [L.listener.type]: [e2] ([e2.file]:[e2.line])")
+				dq_report_caught(e2, "notice [N.type] observer [L.handler] on [L.listener().type]")

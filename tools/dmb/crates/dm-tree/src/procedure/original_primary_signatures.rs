@@ -65,6 +65,26 @@ impl OriginalDeclarationHeaderObserver for OriginalSignatureObserver<'_,'_>{
  fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{let result=self.header_using(event);if result.is_err(){self.stream_failed=true}result}
 }
 impl OriginalSignatureObserver<'_,'_>{
+ /// Fund the exact replacement allocation while the existing row buffer
+ /// still owns its separate credit. A failed growth leaves both old owners
+ /// untouched, and row payloads keep their per-header reservations.
+ fn grow_rows(&mut self) -> std::io::Result<()> {
+    use std::{alloc::{alloc, Layout}, io::{Error, ErrorKind}, ptr::NonNull};
+    let capacity = self.rows.capacity().max(2).checked_mul(2).ok_or(ErrorKind::OutOfMemory)?;
+    let layout = Layout::array::<Row>(capacity).map_err(|_| Error::from(ErrorKind::OutOfMemory))?;
+    let next_storage = self.a.reserve(layout.size()).map_err(|error| self.a.take_operational_error().unwrap_or(error))?;
+    // SAFETY: Row is nonzero-sized and capacity is positive. The checked
+    // layout is funded above; the Global allocation becomes a standard Vec
+    // with the same layout. No Row is initialized yet.
+    let raw = unsafe { alloc(layout) };
+    let raw = NonNull::new(raw.cast::<Row>()).ok_or_else(|| Error::new(ErrorKind::OutOfMemory, "native prepared row allocation denied"))?;
+    let mut next = unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) };
+    checkpoint(self.a)?;
+    next.append(&mut self.rows);
+    drop(std::mem::replace(&mut self.rows, next));
+    self.row_storage = Some(next_storage);
+    Ok(())
+ }
  fn header_using(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{
   checkpoint(self.a)?;
   if self.stream_failed||self.failure.is_some()||self.unsupported.is_some(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual signature observer already stopped"))}
@@ -86,10 +106,8 @@ impl OriginalSignatureObserver<'_,'_>{
   let mut signature=match parsed{Ok(actual)=>actual,Err(mut actual)=>{self.notices_complete&=actual.formal_notices_complete;let origin=event.span().start.checked_add(argument_offset).ok_or(std::io::ErrorKind::InvalidInput)?;for notice in std::mem::take(&mut actual.formal_notices){self.record_formal_notice(event.span().start,notice.checked_shift(origin)?)?;}self.failure=Some(actual);self.failure_live=completed_live;return Ok(OriginalHeaderFlow::Stop)}};
   self.notices_complete&=signature.formal_notices_complete;let origin=event.span().start.checked_add(argument_offset).ok_or(std::io::ErrorKind::InvalidInput)?;for notice in std::mem::take(&mut signature.formal_notices){self.record_formal_notice(event.span().start,notice.checked_shift(origin)?)?;}
   checkpoint(self.a)?;
-  if self.rows.len()==self.rows.capacity(){
-   let capacity=self.rows.capacity().max(2).checked_mul(2).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;let bytes=capacity.checked_mul(std::mem::size_of::<Row>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(128)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
-   match &mut self.row_storage{Some(lease)=>{if bytes>lease.bytes(){let extra=bytes-lease.bytes();self.a.grow(lease,extra)?;}},None=>self.row_storage=Some(self.a.reserve(bytes)?)}
-   let mut next=Vec::new();next.try_reserve_exact(capacity).map_err(|actual|std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual))?;if next.capacity()>capacity.checked_mul(4).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native prepared row allocator exceeded admitted peak"))}next.append(&mut self.rows);self.rows=next;
+  if self.rows.len() == self.rows.capacity() {
+   self.grow_rows()?;
   }
   // Formal notices have moved to their own charged ledger. The remaining
   // payload may move to clause roots and detached IR aliases. They still share
@@ -117,10 +135,21 @@ impl PreparedOriginalSignatures{
 
  pub(crate) fn visit_signature_reservations(&self,mut visit:impl FnMut(&Arc<dm_syntax::SettingRootLease>)){for row in &self.rows{visit(&row._lease)}}
  pub(crate) fn require_consumed(&self)->Result<(),&'static str>{if self.rows.iter().any(|row|row.signature.is_some()){Err("actual primary formal metadata was not consumed by native adapter")}else{Ok(())}}
- /// Graph retention calls this only after require_consumed; no unconsumed
- /// signature allocation is hidden by this narrow row-buffer projection.
- pub(crate) fn visit_consumed_row_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
-  debug_assert!(self.require_consumed().is_ok());if let Some((_,message))=&self.input_failure_message{if message.capacity()!=0{visit(message.as_ptr()as usize,message.capacity(),1)}}if self.rows.capacity()!=0{visit(self.rows.as_ptr()as usize,self.rows.capacity()*std::mem::size_of::<Row>(),std::mem::align_of::<Row>())}
+ /// Alias capture now owns the per-header reservations. The consumed
+ /// allocation itself has no aliases and can be dropped before graph use.
+ pub(crate) fn release_consumed_rows(&mut self) {
+  debug_assert!(self.require_consumed().is_ok());
+  drop(std::mem::take(&mut self.rows));
+  self.row_storage = None;
+ }
+
+ pub(crate) fn visit_retained_failure_storage(&self, mut visit: impl FnMut(usize,usize,usize)) {
+  debug_assert_eq!(self.rows.capacity(), 0);
+  if let Some((_, message)) = &self.input_failure_message {
+   if message.capacity() != 0 {
+    visit(message.as_ptr() as usize, message.capacity(), 1);
+   }
+  }
  }
 
  pub(crate) fn take(&mut self,header:Span,offset:usize,headers:&OriginalProcedureHeaders)->Result<(ParsedSignature,usize),String>{
@@ -131,6 +160,40 @@ impl PreparedOriginalSignatures{
   let parsed=row.signature.take().ok_or("primary prepared signature was already consumed")?;Ok((parsed,row.argument_offset))
  }
  #[cfg(test)]pub(crate) fn remaining(&self)->usize{self.rows.iter().filter(|row|row.signature.is_some()).count()}
+}
+#[cfg(test)]
+mod signature_row_storage_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn row_growth_funds_both_exact_allocations_and_preserves_old_rows_on_failure() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
+        let source = "/proc/first()\n    return\n/proc/second()\n    return\n/proc/third()\n    return\n/proc/fourth()\n    return\n";
+        let mut observer = OriginalSignatureObserver::new(&a).unwrap();
+        let primary = dm_syntax::parse_original_declaration_skeleton_with_observer_using(source, &a, Some(&mut observer)).unwrap();
+        assert_eq!((observer.rows.len(), observer.rows.capacity()), (4, 4));
+        let row_bytes = std::mem::size_of::<Row>();
+        assert_eq!(observer.row_storage.as_ref().unwrap().bytes(), 4 * row_bytes);
+        let retained = used.load(Ordering::Acquire);
+        let old = observer.rows.as_ptr();
+        let tight = SettingAdmission::new(&used, retained + 8 * row_bytes - 1, &|| Ok(()));
+        observer.a = &tight;
+        assert_eq!(observer.grow_rows().unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(observer.rows.as_ptr(), old);
+        assert_eq!(observer.rows.len(), 4);
+        assert_eq!(used.load(Ordering::Acquire), retained);
+        let exact = SettingAdmission::new(&used, retained + 8 * row_bytes, &|| Ok(()));
+        observer.a = &exact;
+        observer.grow_rows().unwrap();
+        assert_ne!(observer.rows.as_ptr(), old);
+        assert_eq!((observer.rows.len(), observer.rows.capacity()), (4, 8));
+        assert_eq!(observer.row_storage.as_ref().unwrap().bytes(), 8 * row_bytes);
+        assert_eq!(used.load(Ordering::Acquire), retained + 4 * row_bytes);
+        drop((observer, primary));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 }
 /// Deliberately not ColdFrontend/Tree/compiled input. The partial-model owner
 /// must retain its genuine parser/signature leases and honor all outcomes.

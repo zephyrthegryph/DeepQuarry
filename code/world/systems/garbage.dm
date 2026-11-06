@@ -1,0 +1,540 @@
+/*!
+## Debugging GC issues
+
+In order to debug `qdel()` failures, there are several tools available.
+To enable these tools, define `TESTING` in [_compile_options.dm](https://github.com/tgstation/-tg-station/blob/master/code/_compile_options.dm).
+
+First is a verb called "Find References", which lists **every** refererence to an object in the world. This allows you to track down any indirect or obfuscated references that you might have missed.
+
+Complementing this is another verb, "qdel() then Find References".
+This does exactly what you'd expect; it calls `qdel()` on the object and then it finds all references remaining.
+This is great, because it means that `Destroy()` will have been called before it starts to find references,
+so the only references you'll find will be the ones preventing the object from `qdel()`ing gracefully.
+
+If you have a datum or something you are not destroying directly (say via the singulo),
+the next tool is `QDEL_HINT_FINDREFERENCE`. You can return this in `Destroy()` (where you would normally `return ..()`),
+to print a list of references once it enters the GC queue.
+
+Finally is a verb, "Show qdel() Log", which shows the deletion log that the garbage subsystem keeps. This is helpful if you are having race conditions or need to review the order of deletions.
+
+Note that for any of these tools to work `TESTING` must be defined.
+By using these methods of finding references, you can make your life far, far easier when dealing with `qdel()` failures.
+*/
+
+SYSTEM_DEF(garbage)
+	name = "Garbage"
+	phase = KERNEL_PHASE_G
+	latency_class = LATENCY_L0
+	wait = 2 SECONDS
+	periodic_runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
+	init_stage = INITSTAGE_FIRST
+
+	var/list/collection_timeout = list(GC_FILTER_QUEUE, GC_CHECK_QUEUE, GC_DEL_QUEUE) // deciseconds to wait before moving something up in the queue to the next level
+
+	//Stat tracking
+	var/delslasttick = 0 // number of del()'s we've done this tick
+	var/gcedlasttick = 0 // number of things that gc'ed last tick
+	var/totaldels = 0
+	var/totalgcs = 0
+	/// Deleted objects that were still referenced when the check pass ran: leaks. They are counted and logged, never hard-deleted (decision D2).
+	var/total_leaks = 0
+
+	var/highest_del_ms = 0
+	var/highest_del_type_string = ""
+
+	var/list/pass_counts
+	var/list/fail_counts
+
+	var/list/items = list() // Holds our qdel_item statistics datums
+
+	//Queue
+	var/list/queues
+	#ifdef REFERENCE_TRACKING
+	var/list/reference_find_on_fail = list()
+	var/find_reference_on_fail_global_toggle = FALSE
+
+	// start - unique to us
+	#ifdef REFERENCE_TRACKING_DEBUG
+	//Should we save found refs. Used for unit testing
+	var/should_save_refs = FALSE
+	#endif
+
+	#endif
+
+
+/datum/system/garbage/preinit()
+	InitQueues()
+
+/datum/system/garbage/stat_entry(msg)
+	var/list/counts = list()
+	for (var/list/L in queues)
+		counts += length(L)
+	msg += "Q:[counts.Join(",")]|D:[delslasttick]|G:[gcedlasttick]|"
+	msg += "GR:"
+	if (!(delslasttick+gcedlasttick))
+		msg += "n/a|"
+	else
+		msg += "[round((gcedlasttick/(delslasttick+gcedlasttick))*100, 0.01)]%|"
+
+	msg += "TD:[totaldels]|TG:[totalgcs]|TL:[total_leaks]|"
+	if (!(totaldels+totalgcs))
+		msg += "n/a|"
+	else
+		msg += "TGR:[round((totalgcs/(totaldels+totalgcs))*100, 0.01)]%"
+	msg += " P:[pass_counts.Join(",")]"
+	msg += "|F:[fail_counts.Join(",")]"
+	return ..()
+
+/// Bounded snapshot for the lightweight performance logger. The qdel type table
+/// is normally small; only the ten worst failure and hard-delete entries are
+/// serialized so diagnostics cannot become the workload they measure.
+/datum/system/garbage/proc/performance_diagnostics()
+	var/list/queue_counts = list()
+	for(var/list/queue as anything in queues)
+		queue_counts += length(queue)
+	var/list/failure_scores = list()
+	var/list/hard_delete_scores = list()
+	var/list/destroy_scores = list()
+	var/list/destroy_details = list()
+	var/list/hard_delete_details = list()
+	var/total_hard_deletes = 0
+	var/total_hard_delete_ms = 0
+	for(var/type_path in items)
+		var/datum/qdel_item/info = items[type_path]
+		if(info.failures)
+			failure_scores[type_path] = info.failures
+		if(info.hard_deletes)
+			hard_delete_scores[type_path] = info.hard_delete_time
+			total_hard_deletes += info.hard_deletes
+			total_hard_delete_ms += info.hard_delete_time
+		if(info.destroy_time)
+			destroy_scores[type_path] = info.destroy_time
+	sortTim(failure_scores, /proc/cmp_numeric_desc, TRUE)
+	sortTim(hard_delete_scores, /proc/cmp_numeric_desc, TRUE)
+	sortTim(destroy_scores, /proc/cmp_numeric_desc, TRUE)
+	if(length(failure_scores) > 10)
+		failure_scores.Cut(11)
+	if(length(hard_delete_scores) > 10)
+		hard_delete_scores.Cut(11)
+	if(length(destroy_scores) > 10)
+		destroy_scores.Cut(11)
+	for(var/type_path in destroy_scores)
+		var/datum/qdel_item/destroy_info = items[type_path]
+		destroy_details[type_path] = list("count" = destroy_info.destroy_timed, "total_ms" = destroy_info.destroy_time, "average_ms" = destroy_info.destroy_timed ? destroy_info.destroy_time / destroy_info.destroy_timed : 0, "max_ms" = destroy_info.destroy_max)
+	for(var/type_path in hard_delete_scores)
+		var/datum/qdel_item/hard_delete_info = items[type_path]
+		hard_delete_details[type_path] = list("count" = hard_delete_info.hard_deletes, "total_ms" = hard_delete_info.hard_delete_time, "average_ms" = hard_delete_info.hard_delete_time / hard_delete_info.hard_deletes, "max_ms" = hard_delete_info.hard_delete_max)
+	return list(
+		"queues" = queue_counts,
+		"last" = list("hard_deletes" = delslasttick, "collected" = gcedlasttick),
+		"totals" = list("hard_deletes" = totaldels, "collected" = totalgcs, "leaks" = total_leaks, "hard_delete_count" = total_hard_deletes, "hard_delete_ms" = total_hard_delete_ms),
+		"passes" = pass_counts.Copy(),
+		"failures" = fail_counts.Copy(),
+		"top_failed_types" = failure_scores,
+		"top_destroy_types_ms" = destroy_scores,
+		"destroy_type_details" = destroy_details,
+		"top_hard_delete_types_ms" = hard_delete_scores,
+		"hard_delete_type_details" = hard_delete_details,
+		"worst_hard_delete" = list("type" = highest_del_type_string, "ms" = highest_del_ms),
+	)
+
+/datum/system/garbage/on_shutdown()
+	//Adds the del() log to the qdel log file
+	var/list/del_log = list()
+
+	//sort by how long it's wasted hard deleting
+	sortTim(items, cmp=/proc/cmp_qdel_item_time, associative = TRUE)
+	for(var/path in items)
+		var/datum/qdel_item/I = items[path]
+		var/list/entry = list()
+		del_log[path] = entry
+
+		if (I.qdel_flags & QDEL_ITEM_SUSPENDED_FOR_LAG)
+			entry["SUSPENDED FOR LAG"] = TRUE
+		if (I.failures)
+			entry["Failures"] = I.failures
+		if (I.leaks)
+			entry["Leaks (still referenced after qdel)"] = I.leaks
+		entry["qdel() Count"] = I.qdels
+		entry["Destroy() Cost (ms)"] = I.destroy_time
+
+		if (I.hard_deletes)
+			entry["Total Hard Deletes"] = I.hard_deletes
+			entry["Time Spend Hard Deleting (ms)"] = I.hard_delete_time
+			entry["Highest Time Spend Hard Deleting (ms)"] = I.hard_delete_max
+			if (I.hard_deletes_over_threshold)
+				entry["Hard Deletes Over Threshold"] = I.hard_deletes_over_threshold
+		if (I.slept_destroy)
+			entry["Total Sleeps"] = I.slept_destroy
+		if (I.no_respect_force)
+			entry["Total Ignored Force"] = I.no_respect_force
+		if (I.no_hint)
+			entry["Total No Hint"] = I.no_hint
+		if(LAZYLEN(I.extra_details))
+			entry["Deleted Metadata"] = I.extra_details
+
+	log_qdel("", del_log)
+
+/// The garbage run (phase G, every `wait`): the queues, filter to hard delete. It resets its processing each run (rather than
+/// resuming where it left off) on purpose.
+/datum/system/garbage/reactions()
+	. = ..()
+	. += every(2 SECONDS, PROC_REF(collect), phase = KERNEL_PHASE_G, when = PROC_REF(work_ready), lane = LANE_URGENT)
+
+/datum/system/garbage/proc/collect(dt)
+	HandleQueue(GC_QUEUE_FILTER)
+	if(KERNEL_OVER_BUDGET)
+		return
+	HandleQueue(GC_QUEUE_CHECK)
+	if(KERNEL_OVER_BUDGET)
+		return
+	HandleQueue(GC_QUEUE_HARDDELETE)
+
+/datum/system/garbage/proc/InitQueues()
+	if (isnull(queues)) // Only init the queues if they don't already exist, prevents overriding of recovered lists
+		queues = new(GC_QUEUE_COUNT)
+		pass_counts = new(GC_QUEUE_COUNT)
+		fail_counts = new(GC_QUEUE_COUNT)
+		for(var/i in 1 to GC_QUEUE_COUNT)
+			queues[i] = list()
+			pass_counts[i] = 0
+			fail_counts[i] = 0
+
+
+/datum/system/garbage/proc/HandleQueue(level = GC_QUEUE_FILTER)
+	if (level == GC_QUEUE_FILTER)
+		delslasttick = 0
+		gcedlasttick = 0
+	var/cut_off_time = world.time - collection_timeout[level] //ignore entries newer then this
+	var/list/queue = queues[level]
+	var/static/lastlevel
+	var/static/count = 0
+	if (count) //runtime last run before we could do this.
+		var/c = count
+		count = 0 //so if we runtime on the Cut, we don't try again.
+		var/list/lastqueue = queues[lastlevel]
+		lastqueue.Cut(1, c+1)
+
+	lastlevel = level
+
+// 1 from the hard reference in the queue, and 1 from the variable used before this
+#define REFS_WE_EXPECT 2
+
+	//We do this rather then for(var/list/ref_info in queue) because that sort of for loop copies the whole list.
+	//Normally this isn't expensive, but the gc queue can grow to 40k items, and that gets costly/causes overrun.
+	for (var/i in 1 to length(queue))
+		var/list/L = queue[i]
+		if (length(L) < GC_QUEUE_ITEM_INDEX_COUNT)
+			count++
+			if(KERNEL_OVER_BUDGET)
+				return
+			continue
+
+		var/queued_at_time = L[GC_QUEUE_ITEM_QUEUE_TIME]
+		if(queued_at_time > cut_off_time)
+			break // Everything else is newer, skip them
+		count++
+
+		var/datum/D = L[GC_QUEUE_ITEM_REF]
+
+		// If that's all we've got, send er off
+		if (refcount(D) == REFS_WE_EXPECT)
+			++gcedlasttick
+			++totalgcs
+			pass_counts[level]++
+			#ifdef REFERENCE_TRACKING
+			reference_find_on_fail -= ref(D) //It's deleted we don't care anymore.
+			#endif
+			if(KERNEL_OVER_BUDGET)
+				return
+			continue
+
+		// Something's still referring to the qdel'd object.
+		fail_counts[level]++
+
+		#ifdef REFERENCE_TRACKING
+		var/ref_searching = FALSE
+		#endif
+
+		switch (level)
+			if (GC_QUEUE_CHECK)
+				#ifdef REFERENCE_TRACKING
+				// Decides how many refs to look for (potentially)
+				// Based off the remaining and the ones we can account for
+				var/remaining_refs = refcount(D) - REFS_WE_EXPECT
+				if(reference_find_on_fail[ref(D)])
+					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs) // ALLOW(scheduler): find_references is a long CHECK_TICK-yielding scan
+					ref_searching = TRUE
+				#ifdef GC_FAILURE_HARD_LOOKUP
+				else
+					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs) // ALLOW(scheduler): find_references is a long CHECK_TICK-yielding scan
+					ref_searching = TRUE
+				#endif
+				reference_find_on_fail -= ref(D)
+				#endif
+				var/type = D.type
+				var/datum/qdel_item/I = items[type]
+
+				var/message = "## TESTING: GC: -- [ref(D)] | [type] was unable to be GC'd --"
+				message = "[message] (ref count of [refcount(D)])"
+				log_world(message)
+				// Cycles among deleted objects are invisible to a reference
+				// search from live roots; the destroy postcondition names them.
+				for(var/leak_line in dq_lifecycle_leak_lines(D))
+					log_world("  [leak_line]")
+
+				/*var/detail = D.dump_harddel_info()
+				if(detail)
+					LAZYADD(I.extra_details, detail)*/
+
+				#ifdef TESTING
+				for(var/c in GLOB.admins) //Using testing() here would fill the logs with ADMIN_VV garbage
+					var/client/admin = c
+					if(!check_rights_for(admin, R_ADMIN))
+						continue
+					to_chat(admin, "## TESTING: GC: -- [ADMIN_VV(D)] | [type] was unable to be GC'd --")
+				#endif
+				I.failures++
+
+				if (I.qdel_flags & QDEL_ITEM_SUSPENDED_FOR_LAG)
+					#ifdef REFERENCE_TRACKING
+					if(ref_searching)
+						return //ref searching intentionally cancels all further fires while running so things that hold references don't end up getting deleted, so we want to return here instead of continue
+					#endif
+					continue
+			if (GC_QUEUE_HARDDELETE)
+				HardDelete(D)
+				if(KERNEL_OVER_BUDGET)
+					return
+				continue
+
+		if(level == GC_QUEUE_CHECK)
+			note_leak(D)
+		else
+			Queue(D, level+1)
+
+		#ifdef REFERENCE_TRACKING
+		if(ref_searching)
+			return
+		#endif
+
+		if(KERNEL_OVER_BUDGET)
+			return
+	if (count)
+		queue.Cut(1,count+1)
+		count = 0
+
+#undef REFS_WE_EXPECT
+
+/datum/system/garbage/proc/Queue(datum/D, level = GC_QUEUE_FILTER)
+	if (isnull(D))
+		return
+	if (level > GC_QUEUE_COUNT)
+		HardDelete(D)
+		return
+	var/queue_time = world.time
+
+	if (D.gc_destroyed <= 0)
+		D.gc_destroyed = queue_time
+
+	var/list/queue = queues[level]
+	queue[++queue.len] = list(queue_time, D, D.gc_destroyed) // not += for byond reasons
+
+/// A deleted object something still references after the check pass: a leak. Counted by type and logged (its holders are found with the
+/// reference finder or the destroy postcondition lines the check pass already logged); the object is NOT hard-deleted, so a stale holder is
+/// a counted bug and not a full-world reference walk. Whatever BYOND frees on its own when the last holder lets go is freed.
+/datum/system/garbage/proc/note_leak(datum/D)
+	var/type = D.type
+	var/datum/qdel_item/I = items[type]
+	if(!I)
+		return
+	total_leaks++
+	I.leaks++
+	log_world("GC LEAK: [type] [ref(D)] is still referenced [round((world.time - D.gc_destroyed) / (1 SECONDS))] s after qdel() (ref count [refcount(D)]); leaks of this type so far: [I.leaks]")
+
+//this is mainly to separate things profile wise.
+/datum/system/garbage/proc/HardDelete(datum/D)
+	++delslasttick
+	++totaldels
+	var/type = D.type
+	var/refID = ref(D)
+	var/datum/qdel_item/type_info = items[type]
+	/*var/detail = D.dump_harddel_info()
+	if(detail)
+		LAZYADD(type_info.extra_details, detail)*/
+
+	var/tick_usage = TICK_USAGE
+	del(D) // ALLOW(scheduler): GC: the hard delete behind qdel()
+	tick_usage = TICK_USAGE_TO_MS(tick_usage)
+
+	type_info.hard_deletes++
+	type_info.hard_delete_time += tick_usage
+	if (tick_usage > type_info.hard_delete_max)
+		type_info.hard_delete_max = tick_usage
+	if (tick_usage > highest_del_ms)
+		highest_del_ms = tick_usage
+		highest_del_type_string = "[type]"
+
+	var/time = MS2DS(tick_usage)
+
+	if (time > 0.1 SECONDS)
+		postpone(time)
+	var/threshold = 0.5 // Default, make a config
+	if (threshold && (time > threshold SECONDS))
+		if (!(type_info.qdel_flags & QDEL_ITEM_ADMINS_WARNED))
+			log_game("Error: [type]([refID]) took longer than [threshold] seconds to delete (took [round(time/10, 0.1)] seconds to delete)")
+			message_admins("Error: [type]([refID]) took longer than [threshold] seconds to delete (took [round(time/10, 0.1)] seconds to delete).")
+			type_info.qdel_flags |= QDEL_ITEM_ADMINS_WARNED
+		type_info.hard_deletes_over_threshold++
+		var/overrun_limit = 0 // Default, make a config
+		if (overrun_limit && type_info.hard_deletes_over_threshold >= overrun_limit)
+			type_info.qdel_flags |= QDEL_ITEM_SUSPENDED_FOR_LAG
+
+
+/// Qdel Item: Holds statistics on each type that passes thru qdel
+/datum/qdel_item
+	var/name = "" //!Holds the type as a string for this type
+	var/qdels = 0 //!Total number of times it's passed thru qdel.
+	var/destroy_time = 0 //!Total amount of milliseconds spent processing this type's Destroy()
+	var/destroy_timed = 0 //!Destroy calls which completed without sleeping and were timed.
+	var/destroy_max = 0 //!Largest synchronous Destroy cost for this type.
+	var/failures = 0 //!Times it was queued for soft deletion but failed to soft delete.
+	var/leaks = 0 //!Deleted objects of this type that were still referenced after the check pass.
+	var/hard_deletes = 0 //!Different from failures because it also includes QDEL_HINT_HARDDEL deletions
+	var/hard_delete_time = 0 //!Total amount of milliseconds spent hard deleting this type.
+	var/hard_delete_max = 0 //!Highest time spent hard_deleting this in ms.
+	var/hard_deletes_over_threshold = 0 //!Number of times hard deletes took longer than the configured threshold
+	var/no_respect_force = 0 //!Number of times it's not respected force=TRUE
+	var/no_hint = 0 //!Number of times it's not even bother to give a qdel hint
+	var/slept_destroy = 0 //!Number of times it's slept in its destroy
+	var/qdel_flags = 0 //!Flags related to this type's trip thru qdel.
+	var/list/extra_details //!Lazylist of string metadata about the deleted objects
+	/// L1 (doc/rewrite/lifecycle.md §2, §8): total milliseconds spent in
+	/// each LIFECYCLE_PHASE_*, indexed by phase id. Lazy -- a type that
+	/// never qdels pays nothing.
+	var/list/phase_ms
+
+/datum/qdel_item/New(mytype)
+	name = "[mytype]"
+
+/// Should be treated as a replacement for the 'del' keyword.
+///
+/// Datums passed to this will be given a chance to clean up references to allow the GC to collect them.
+/proc/qdel(datum/to_delete, force = FALSE)
+	if(!istype(to_delete))
+		if(isnull(to_delete))
+			return
+		else if(islist(to_delete))
+			stack_trace("Lists should not be directly passed to qdel! You likely want either list.Cut(), QDEL_LIST(list), QDEL_LIST_ASSOC(list), or QDEL_LIST_ASSOC_VAL(list)")
+		else if(to_delete != world)
+			stack_trace("Tried to qdel possibly invalid value: [to_delete]")
+		del(to_delete) // ALLOW(scheduler): GC: the hard delete behind qdel()
+		return
+
+	if(!isnull(to_delete.gc_destroyed))
+		if(to_delete.gc_destroyed == GC_BATCH_DOOMED)
+			return // qdel_batch() owns it and will run its transaction
+		var/datum/qdel_item/item_info = SSgarbage.items[to_delete.type]
+		if(item_info)
+			item_info.qdels++
+		if(to_delete.gc_destroyed == GC_CURRENTLY_BEING_QDELETED)
+			CRASH("[to_delete.type] destroy proc was called multiple times, likely due to a qdel loop in the Destroy logic")
+		return
+
+	// A collecting scope (dq_destroy_collect_begin(), batch.dm) defers movables into one batch.
+	if(GLOB.dq_destroy_collect_depth && ismovable(to_delete) && dq_destroy_collect_live())
+		to_delete.gc_destroyed = GC_BATCH_DOOMED
+		dq_destroy_collect_add(to_delete, force)
+		return
+
+	dq_qdel_run(to_delete, force)
+
+/// qdel()'s body once `to_delete` is known to need destroying: the destroy
+/// transaction plus the GC hint. qdel_batch() calls it directly for each
+/// doomed datum (their gc_destroyed is already set, so qdel() would skip them).
+/proc/dq_qdel_run(datum/to_delete, force)
+	var/datum/qdel_item/trash = SSgarbage.items[to_delete.type]
+	if (isnull(trash))
+		trash = SSgarbage.items[to_delete.type] = new /datum/qdel_item(to_delete.type)
+	trash.qdels++
+
+	// A type that refuses deletion (lifecycle_keep(), LIFECYCLE_KEEP_UNLESS_FORCED)
+	// says so before the destroy transaction starts, so a refused qdel() leaves it
+	// whole instead of half torn down (and a forced one is refused too, not queued).
+	if(to_delete.lifecycle_keep(force))
+		to_delete.gc_destroyed = null
+		// The caused ending a verb recorded for it (ending_cause()) is never read now: drop it, or the
+		// global ending_causes list holds the kept thing forever and it hard-deletes when it does end.
+		if(ending_causes)
+			ending_causes -= to_delete
+		if(force)
+			trash.no_respect_force++
+		return
+
+	// L1 (doc/rewrite/lifecycle.md §2): destroy_transaction() is the whole
+	// destruction, phases 0 through 8; phase 7 runs the core Destroy(force) chain.
+	var/start_time = world.time
+	var/start_tick = world.tick_usage
+	#ifdef BENCHMARK_DEEP_PROFILE
+	var/bench_depth = benchmark_qdel_frame_begin()
+	#endif
+	var/hint = destroy_transaction(to_delete, force, trash)
+	#ifdef BENCHMARK_DEEP_PROFILE
+	benchmark_qdel_frame_end(bench_depth, trash.name, TICK_USAGE_TO_MS(start_tick))
+	#endif
+
+	if(world.time != start_time)
+		trash.slept_destroy++
+	else
+		var/destroy_elapsed = TICK_USAGE_TO_MS(start_tick)
+		trash.destroy_timed++
+		trash.destroy_time += destroy_elapsed
+		trash.destroy_max = max(trash.destroy_max, destroy_elapsed)
+
+	if(isnull(to_delete))
+		return
+
+	switch(hint)
+		if (QDEL_HINT_QUEUE) //qdel should queue the object for deletion.
+			SSgarbage.Queue(to_delete)
+		if (QDEL_HINT_IWILLGC)
+			to_delete.gc_destroyed = world.time // ALLOW(sys_world_time_write): gc_destroyed doubles as the QDELETED flag and GC queue stamp; GC internals
+			return
+		if (QDEL_HINT_LETMELIVE) //qdel should let the object live after calling destory.
+			if(!force)
+				to_delete.gc_destroyed = null //clear the gc variable (important!)
+				to_delete.destroy_phase = 0 // alive again: the teardown guard lets it acquire
+				to_delete.datum_flags &= ~DF_DESTROYING
+				return
+			// Returning LETMELIVE after being told to force destroy
+			// indicates the objects Destroy() does not respect force
+			#ifdef TESTING
+			if(!trash.no_respect_force)
+				testing("WARNING: [to_delete.type] has been force deleted, but is \
+					returning an immortal QDEL_HINT, indicating it does \
+					not respect the force flag for qdel(). It has been \
+					placed in the queue, further instances of this type \
+					will also be queued.")
+			#endif
+			trash.no_respect_force++
+
+			SSgarbage.Queue(to_delete)
+		if (QDEL_HINT_HARDDEL) //qdel should assume this object won't gc, and queue a hard delete
+			SSgarbage.Queue(to_delete, GC_QUEUE_HARDDELETE)
+		if (QDEL_HINT_HARDDEL_NOW) //qdel should assume this object won't gc, and hard del it post haste.
+			SSgarbage.HardDelete(to_delete)
+		#ifdef REFERENCE_TRACKING
+		if (QDEL_HINT_FINDREFERENCE) //qdel will, if REFERENCE_TRACKING is enabled, display all references to this object, then queue the object for deletion.
+			SSgarbage.Queue(to_delete)
+			INVOKE_ASYNC(to_delete, TYPE_PROC_REF(/datum, find_references)) // ALLOW(scheduler): find_references is a long CHECK_TICK-yielding scan
+		if (QDEL_HINT_IFFAIL_FINDREFERENCE) //qdel will, if REFERENCE_TRACKING is enabled and the object fails to collect, display all references to this object.
+			SSgarbage.Queue(to_delete)
+			SSgarbage.reference_find_on_fail[ref(to_delete)] = TRUE
+		#endif
+		else
+			#ifdef TESTING
+			if(!trash.no_hint)
+				testing("WARNING: [to_delete.type] is not returning a qdel hint. It is being placed in the queue. Further instances of this type will also be queued.")
+			#endif
+			trash.no_hint++
+			SSgarbage.Queue(to_delete)

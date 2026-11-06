@@ -121,3 +121,13 @@ pub fn judge_file_using<C:crate::key_policy_control::Control>(f:&SourceFile,p:&R
                 i = j;
             }
         c.checkpoint()?;Ok(())}
+
+/// A notice declared by ACTION is delivered synchronously, so its sender reads back by default.
+pub fn action_notice(args: &[String]) -> Option<String> {
+    let name = args.first()?;
+    let notice = args[1..]
+        .iter()
+        .find_map(|arg| crate::actions_policy::split_notice_opt(arg))
+        .unwrap_or_else(|| format!("/datum/notice/{}", crate::actions_policy::past_tense(name)));
+    notice.strip_prefix("/datum/notice/").map(str::to_string)
+}

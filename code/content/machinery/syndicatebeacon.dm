@@ -53,10 +53,6 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 	var/mob/user = A.actor
 	betraitor(user, user)
 
-/// The only button of the second window ends the call.
-/obj/machinery/syndicate_beacon/proc/beacon_hung_up(datum/act/request/A)
-	return
-
 /// Offers `M` (who must be `user`) a traitor role; the beacon's accept path.
 /obj/machinery/syndicate_beacon/proc/betraitor(mob/user, mob/M)
 	if(charges < 1)

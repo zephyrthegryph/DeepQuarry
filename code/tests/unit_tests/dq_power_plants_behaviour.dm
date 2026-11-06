@@ -36,7 +36,10 @@
 /datum/unit_test/dq_pp/Run()
 	test_driver_begin()
 	test_rng(1)
+	var/list/hotspots_before = REGISTRY_MEMBERS(REGISTRY_HOTSPOTS).Copy()
 	run_pp()
+	for(var/obj/effect/hotspot/fire as anything in REGISTRY_MEMBERS(REGISTRY_HOTSPOTS) - hotspots_before)
+		qdel(fire) // a hot field lights the floor it stands on
 	test_driver_end()
 	dq_atmos_test_restore_walls()
 
@@ -371,6 +374,8 @@
 					break
 				run += cur
 			if(length(run) == n && !length(cand.contents))
+				for(var/turf/open/T as anything in run)
+					dq_atmos_test_snapshot_air(T) // a plant on this floor changes its air; the singularity eats it
 				return run
 	TEST_FAIL("no clear run of [n] floors")
 
@@ -378,8 +383,20 @@
 /proc/pp_run_dir(list/run)
 	return get_dir(run[1], run[2])
 
+/// Puts back the floors a singularity ate.
+/proc/pp_floors_back(list/floors)
+	for(var/turf/T as anything in floors)
+		if(T.type != floors[T])
+			T.ChangeTurf(floors[T])
+
 /// A singularity of `energy` at T that does not wander on its own (move_self 0) unless a test moves it.
 /datum/unit_test/dq_pp/proc/pp_singularity(turf/T, energy = 100)
+	// It eats floors: they go back when the test ends.
+	var/list/floors = list()
+	for(var/turf/simulated/floor/near in range(3, T))
+		floors[near] = near.type
+		dq_atmos_test_snapshot_air(near)
+	defer_cleanup(null, GLOBAL_PROC_REF(pp_floors_back), floors)
 	var/obj/singularity/S = allocate(/obj/singularity, T, energy)
 	S.move_self = 0
 	return S

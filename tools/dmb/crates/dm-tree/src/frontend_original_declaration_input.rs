@@ -192,14 +192,13 @@ impl OriginalDeclarationProducts{
 /// Existing native current-contribution machinery consumes SAME actual
 /// adapter/header rows, never reconstructs a declaration or parses a signature.
 impl CurrentOriginalDeclarations{
- fn into_current(self,progress:crate::adapter::DeclarationAdapterProgress,a:&dm_syntax::SettingAdmission<'_>)->io::Result<(super::declaration_state::CurrentContribution,OriginalPrimaryRoots)>{
+ fn into_current(mut self,progress:crate::adapter::DeclarationAdapterProgress,a:&dm_syntax::SettingAdmission<'_>)->io::Result<(super::declaration_state::CurrentContribution,OriginalPrimaryRoots)>{
   if !a.matches_lease_domain(&self._lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original current contribution belongs to another native resource domain"))}
   let(mut facts,rows,errors)=progress.into_parts();
   if let Some(error)=errors.first(){return Err(io::Error::new(io::ErrorKind::Unsupported,format!("unissued original declaration adapter state: {}",error.message)))}
   let receipt=crate::procedure::HeaderAllocationReceipt::from_rows_checked(&self.ast.items,&self.headers,self.offset,rows).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})?;
   let ledger=crate::allocation_ledger::capture_with_header_receipt(&self.ast.items,"/",&mut facts.symbols,&receipt).map_err(|error|io::Error::new(io::ErrorKind::Unsupported,error.message))?;drop(receipt);
-  self.prepared.require_consumed().map_err(|reason|io::Error::new(io::ErrorKind::InvalidData,reason))?;
-  let mut aliases=super::original_signature_funding::OriginalSignatureAliasGroup::capture(&facts,&self.prepared,a)?;
+  let mut aliases=super::original_signature_funding::OriginalSignatureAliasGroup::capture(&facts,&mut self.prepared,a)?;
   let current=super::declaration_state::CurrentContribution::fresh_source_headers(self.source,self.offset,self.ast.items,facts,ledger,Some(self.headers)).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"actual original prefix cannot bind native current contribution"))?;
   if let Some(items)=current.syntax.shared_relative().wide_relative_items(){let group=Arc::get_mut(&mut aliases).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"primary weak alias observations escaped before publication"))?;original_operation(a,||group.retain_wide_items(items,&self._lease,a))?;}
   if !current.syntax.shared_relative().initializer_admission_matches(a)?{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual original prefix contribution lacks same-counter initializer completion"))}
@@ -268,7 +267,7 @@ impl OriginalPrimaryRetention{
 
  pub(super) fn visit_retained_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   if self.primary_leases.capacity()!=0{visit(self.primary_leases.as_ptr()as usize,self.primary_leases.capacity()*std::mem::size_of::<OriginalPrimaryRoots>(),std::mem::align_of::<OriginalPrimaryRoots>())}
-  for roots in &self.primary_leases{roots._signatures.visit_consumed_row_storage(&mut visit);roots.aliases.visit_storage(&mut visit)}
+  for roots in &self.primary_leases{roots._signatures.visit_retained_failure_storage(&mut visit);roots.aliases.visit_storage(&mut visit)}
  }
 }
 impl OriginalCurrentDeclarations{
@@ -371,6 +370,34 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
 
 #[cfg(test)]mod original_primary_detached_syntax_resource_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]
+ fn alias_capture_releases_consumed_signature_rows_and_keeps_procedure_data() {
+  let counter = Arc::new(AtomicUsize::new(0));
+  let a = dm_syntax::SettingAdmission::new(&counter, 32 << 20, &|| Ok(()));
+  let text = "/proc/probe(argument=1)\n    return argument\n";
+  let native = OrderedOriginalDeclarations::parse(text.into(), &a).unwrap()
+   .adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+  let roots = &native.primary_leases[0];
+  let mut retained_rows = 0;
+  roots._signatures.visit_retained_failure_storage(|_, bytes, _| retained_rows += bytes);
+  assert_eq!(retained_rows, 0, "a successful alias capture leaves no row or failure allocation");
+  let skeletons = native.current[0].skeletons();
+  let metadata = skeletons.iter().find_map(|row| match row {
+   crate::Skeleton::Member { metadata, .. } => metadata.procedure.as_ref(),
+   _ => None,
+  }).expect("actual procedure metadata");
+  assert_eq!(metadata.signature.parameters.len(), 1);
+  let parameters = Arc::clone(&metadata.signature.parameters);
+  let mut census = OriginalSignatureAliasCensus::default();
+  census.retain(Arc::clone(&roots.aliases), &a).unwrap();
+  drop((skeletons, native));
+  census.prune(&a).unwrap();
+  assert_eq!(census.live_groups(), 1);
+  assert!(parameters[0].default.is_some());
+  drop(parameters);
+  census.prune(&a).unwrap();
+  assert_eq!(counter.load(Ordering::Acquire), 0);
+ }
  #[test]fn actual_detached_relative_syntax_and_header_owner_keep_same_primary_parser_credit_until_last_owner(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let native=OrderedOriginalDeclarations::parse("/datum/kept\n    var/value=1\n".into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
   let original=Arc::downgrade(&native.primary_leases[0].parser);let relative=Arc::clone(native.current[0].syntax.shared_relative());assert!(relative.wide_relative_items().is_none());let primary_bytes=original.upgrade().unwrap().bytes();drop(native);assert!(original.upgrade().is_some(),"public detached RelativeSyntax keeps the actual header/parser resource root");assert!(counter.load(Ordering::Acquire)>=primary_bytes);drop(relative);assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),0);

@@ -111,6 +111,8 @@ export function startSettingsMigration(next: MergedSettings): void {
       storedTypes: normalizeStoredTypes(defaultSettings.storedTypes),
       initialized: true,
     };
+    // The skin is dark, but the stat panel and fonts still need the settings.
+    generalSettingsHandler(initialized);
     storage.set('panel-settings', initialized);
     store.set(settingsAtom, initialized);
     console.log('Initialized settings with defaults.');
@@ -128,6 +130,12 @@ export function startSettingsMigration(next: MergedSettings): void {
   });
   draftSettings.initialized = true;
   draftSettings.view = defaultSettings.view; // Preserve view state
+  // Before version 2 'light' was the default, so a stored 'light' mostly means
+  // nobody chose. It moves to dark once; choosing light again sticks.
+  if ((next.version ?? 0) < 2 && draftSettings.theme === 'light') {
+    draftSettings.theme = defaultSettings.theme;
+  }
+  draftSettings.version = defaultSettings.version;
 
   generalSettingsHandler(draftSettings);
   setMusicVolume(draftSettings.adminMusicVolume);

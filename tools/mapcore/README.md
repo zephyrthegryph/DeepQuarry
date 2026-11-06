@@ -28,5 +28,5 @@ viewport draws sprites with WebGL2; a 2D canvas draws editing controls and is
 the fallback if WebGL2 is unavailable. Sprite indexing and full edit transactions
 still run in Python. Map Studio also uses the mapcore CLI as a second parser on
 every save. Runtime map loading is
-in `code/modules/maps/reader.dm`, and Southern Cross deck maps are compiled
+in `code/content/maps/reader.dm`, and Southern Cross deck maps are compiled
 through `maps/southern_cross/southern_cross.dm`.

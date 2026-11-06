@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Emergency floodlights give light only while switched on with a cell that can power them; taking the cell out, a flat cell or a floodlight that was never switched on no longer leaves the light shining"

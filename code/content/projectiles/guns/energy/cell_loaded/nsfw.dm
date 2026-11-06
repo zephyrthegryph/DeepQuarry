@@ -42,7 +42,9 @@ CAPABILITIES(/obj/item/gun/projectile/cell_loaded/combat/prototype)
 	icon_state = "nsfw_mag_prototype"
 	max_ammo = 2
 	x_offset = 6
-	catalogue_data = null
+
+CAPABILITIES(/obj/item/ammo_magazine/cell_mag/combat/prototype)
+	configure(atom_rules(catalogue_data = TRAIT_NONE))
 
 // The Pack //
 /obj/item/storage/secure/briefcase/nsfw_pack

@@ -1,0 +1,343 @@
+/datum/category_item/catalogue/fauna/rat
+	name = "Creature - Rat"
+	desc = "Classification: Mus muscular\
+	<br><br>\
+	Rats are various medium-sized, long-tailed rodents. Species of rats are found throughout the order Rodentia, \
+	but stereotypical rats are found in the genus Rattus. This specific species of rat is a mutated descendant from lab rats. \
+	It is unclear what experiment caused this species to grow to such an unnatural size, however it hasn't affected the rat's \
+	general docile nature. When encountered by humans or other species it generally ignores them unless provoked.\
+	<br>\
+	Rats become sexually mature at age 6 weeks, but reach social maturity at about 5 to 6 months of age. \
+	The average lifespan of rats varies by species, but many only live about a year due to predation. \
+	However, due to the large nature of this particular species of rat, predation is usually not that much of an issue. \
+	This doesn't mean that there is an overpopulation, though, quite the opposite. Giant Rats are rare and this is usually \
+	due to small litter sizes and lack of proper food sources. Areas that one would typically see a Giant Rat is large garbage \
+	disposals or areas that have large amounts of live food (other rats, mice, etc.) such as maintenance tunnels. \
+	<br>\
+	Male rats are called bucks; unmated females, does, pregnant or parent females, dams; and infants, kittens or pups. \
+	A group of rats is referred to as a mischief."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/mob/living/simple_mob/vore/aggressive/rat
+	drag_buckle = FALSE
+	name = "giant rat"
+	desc = "In what passes for a hierarchy among verminous rodents, this one is king."
+	tt_desc = "Mus muscular"
+
+	icon_state = "rous"
+	icon_living = "rous"
+	icon_dead = "rous-dead"
+	icon_rest = "rous_rest"
+	icon = 'icons/mob/vore64x32.dmi'
+
+	endurance = 150
+
+	melee_damage_lower = 8
+	melee_damage_upper = 16
+	grab_resist = 100
+	see_in_dark = 8
+
+	response_help = "pets"
+	response_disarm = "bops"
+	response_harm = "hits"
+	attacktext = list("ravaged")
+	friendly = list("nuzzles", "licks", "noses softly at", "noseboops", "headbumps against", "leans on", "nibbles affectionately on")
+
+
+	default_pixel_x = -16
+	pixel_x = -16
+	pixel_y = 0
+
+	can_buckle = TRUE
+	mount_offset_y = 10
+
+	vore_active = TRUE
+	vore_pounce_chance = 65
+	vore_icons = SA_ICON_LIVING | SA_ICON_REST
+
+	var/life_since_foodscan = 0
+
+
+
+/mob/living/simple_mob/vore/aggressive/rat/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = "In a cruel game of cat-and-mouse gone horribly wrong, you struggle to breathe clearly as the giant rat holds your head in its jaws, the rest of its bulk pinning you to the ground. Slimy slurps and its own muffled squeaking fill your senses as it simultaneously tosses its head while backing up. Quickly, ravenously consuming you, bit by bit, packing you down its gullet no matter how you struggle. Passing by its excited heartbeat, your thoroughly slickened head pushes out into its awaiting stomach, a dark and humid hammock eager to accept the rest of you. Soon, those too-warm, plush walls clench and squeeze around you with undeniable need! A need for mere filling, or, perhaps, a proper meal?"
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_fancy_vore(TRUE)
+	B.set_belly_fullscreen_color("#c47cb4")
+	B.set_belly_fullscreen("VBOanim_belly1")
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_HOLD, list(
+		"As time passes, the massive rat's stomach slowly churns and squeezes down around you, packing you into an easier to carry bundle amidst that oddly soothing massage.",
+		"The giant rat ambles around, its well-fed, underhanging belly doing little to hide that someone is inside it, with every heavy footfall swaying you from one side to the other.",
+		"A soft, growl-like rumble mutedly filters into your heated, humid confines... before a paw squishes into the weighty lump you give the overgrown rat.",
+		"While somewhat cramped, the giant rat's innards cling more to you like a hot, heavy blanket than anything else, lazily squeezing and relaxing to a casual, squelch-based rhythm.",
+		"For a while, most of your limited free space is squished away as the rat opts to rest atop its stuffed belly, a satisfied squeak drifting in here and there amidst the closer, more intimate massaging.",
+		"Every breath you take while trapped in the rat's stomach is a deep one, having to contend with the hot, stuffy atmosphere within it. It only further compounds upon the relaxation creeping into your body, urging you to curl up, to accept this impromptu, greedy sanctuary."))
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"With each passing moment, the giant rat's stomach forcefully churns and clenches down around you, massaging an ever-thicker layer of hot, ache-inducing ooze into your body!",
+		"The massive rat's stomach visibly twitches and shivers as it ambles around, every footfall sloshing fresh stomach juices over you as the chamber noisily gurgles away!",
+		"Everything suddenly turns onto its side, the rat sitting back atop its haunches to mash its forepaws into its belly... encouraging that its still-solid meal soften away!",
+		"The rat's restless innards show no respect for your personal space, clinging tightly to your figure as that ample, slimy flesh grinds tingling slime into you!",
+		"Your wiggle room disappears for a time as the giant rat flumps belly-first to the ground, vigorously squishing you under its bulk in hopes of weakening its meal more efficiently!",
+		"Every shallow breath taken is more unpleasant than the last, the lack of fresh air leaving you increasingly lightheaded. It only worsens the drained feeling permeating you, encouraging your worn, sore figure to give in entirely!"))
+
+/mob/living/simple_mob/vore/aggressive/rat/tame		//not quite tame but does not attack on sight
+	name = "curious giant rat"
+	desc = "In what passes for a hierarchy among verminous rodents, this one is king. It seems to be more interested on scavenging."
+	var/mob/living/carbon/human/food
+	var/hunger = 0
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
+	ref_one(nameof(food), /mob/living/carbon/human)
+
+/*
+/mob/living/simple_mob/vore/aggressive/rat/tame/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/vore/aggressive/rat/tame/life_type_post(datum/seq_frame/life/F)
+	..()
+	if(!F.alive() || ai_inactive)
+		return
+
+	if(hunger > 0 && life_since_foodscan++ > 5) //Only look for floor food when hungry.
+		life_since_foodscan = 0
+		for(var/obj/item/reagent_containers/food/snacks/S in oview(src,3)) //Accept thrown offerings and scavenge surroundings.
+			if(get_dist(src,S) <=1)
+				visible_emote("hungrily devours \the [S].")
+				play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
+				spent(S)
+				hunger = 0
+				rel_set(src, nameof(food), null)
+			else
+				WanderTowards(S.loc)
+			break
+
+	if(!food)
+		return
+
+	var/food_dist = get_dist(src,food)
+
+	if(food_dist > world.view) //Lose interest on this person.
+		rel_set(src, nameof(food), null)
+		hunger = Clamp(hunger+5, 0, 25)
+
+	if(food_dist > 1)
+		if(stance == STANCE_IDLE)
+			if(set_follow(food,10 SECONDS))
+				handle_stance(STANCE_FOLLOW)
+				if(resting)
+					lay_down()
+
+	if(food_dist <= 1)
+		if(hunger < 15)
+			if(prob(25))
+				visible_emote(pick("sniffs curiously at [food].",
+								   "stares at [food], seeming to want something.",
+								   "sniffs at [food]'s hands.",
+								   "sniffs curiously at [food]'s pockets.",
+								   "sits down for a moment, reaching towards [food] with its paws."))
+				hunger += 5
+		else if(hunger < 30)
+			if(prob(25))
+				visible_emote(pick("sniffs intently against [food], especially their pockets and gear.",
+								   "stands up to beg [food] for snacks.",
+								   "attempts to burrow into [food]'s pockets.",
+								   "leans against [food], licking its chops.",
+								   "hungrily nibbles onto [food]."))
+				hunger += 5
+		else if(hunger < 45)
+			if(prob(25))
+				visible_emote(pick("growls at [food], sounding rather hangry!",
+								   "aggressively bumps and nudges against [food], trying to make something fall out.",
+								   "salivates at [food] in an unsettling manner.",
+								   "pushes hard against [food], licking its chops.",
+								   "almost sinks its teeth into [food], just stopping to give them another chance."))
+				hunger += 5
+		else if(hunger < 50)
+			if(prob(25))
+				visible_emote("appears to have had enough and prepares to strike!")
+				hunger += 5
+		else
+			food.status_at_least(STAT_WEAKENED, 5)
+			food.visible_message(span_danger("\The [src] pounces on \the [food]!"))
+			target_mob = food
+			EatTarget()
+			hunger = 0
+			rel_set(src, nameof(food), null)
+
+/// Feed the rat your food to satisfy it.
+/mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(datum/act/op/A)
+	var/obj/item/O = A.held
+	consumed(O)
+	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
+	hunger = 0
+	rel_set(src, nameof(food), null)
+	return TRUE
+
+/mob/living/simple_mob/vore/aggressive/rat/tame/Found(atom/found_atom)
+	if(!SA_attackable(found_atom))
+		return null
+	else if(ishuman(found_atom) && will_eat(found_atom))
+		var/mob/living/carbon/human/H = found_atom
+		for(var/obj/item/reagent_containers/food/snacks/S in H)
+			if(!food)
+				visible_emote("sniffs around the air intently, seeming to have caught a whiff of food!")
+			if(resting)
+				lay_down()
+			rel_set(src, nameof(food), H)
+			return found_atom
+			break
+	return null
+
+/mob/living/simple_mob/vore/aggressive/rat/tame/FindTarget()
+	var/atom/T = null
+	for(var/atom/A in ListTargets(view_range))
+		if(A == src)
+			continue
+		var/atom/F = Found(A)
+		if(F)
+			T = F
+			break
+	return T
+*/
+/mob/living/simple_mob/vore/aggressive/rat/on_death(gibbed)
+	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD, volume = 50)
+	..()
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/rat)))
+	configure(mob_rules(faction = FACTION_MOUSE))
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/rat))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 6))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+
+/mob/living/simple_mob/vore/aggressive/rat/Login()
+	. = ..()
+	if(!riding_datum)
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+	movement_cooldown = 0
+
+/mob/living/simple_mob/vore/aggressive/rat/phoron
+	name = "phoron rat"
+	desc = "In what passes for a hierarchy among verminous rodents, this one is alien overlord."
+	tt_desc = "Mus muscular phoronis"
+
+	icon_state = "phorous"		//TODO: proper phoron rat sprites
+	icon_living = "phorous"
+	icon_dead = "phorous-dead"
+	icon_rest = "phorous_rest"
+
+	endurance = 175
+
+	melee_damage_lower = 8
+	melee_damage_upper = 16
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+
+/mob/living/simple_mob/vore/aggressive/rat/pet
+	name = "Giant Rat Siblings"
+
+// Which of the pet rats it is: Ratthew and ";help maint" as often as each other, Brick rarely.
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/pet)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
+	rolls(nameof(sibling), pick_one(list("Ratthew" = 50, ";help maint" = 50, "Brick" = 1)))
+	rolls(nameof(name), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(desc), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(endurance), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(melee_damage_lower), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(melee_damage_upper), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+
+/// Which sibling it is (rolls()).
+/mob/living/simple_mob/vore/aggressive/rat/pet/var/sibling
+
+/// The sibling's name, story and (Brick's) build (rolls(), after the sibling).
+/mob/living/simple_mob/vore/aggressive/rat/pet/proc/sibling_trait(datum/roller/R, target)
+	switch(target)
+		if("name")
+			return sibling
+		if("desc")
+			switch(sibling)
+				if("Ratthew")
+					return "When this oversized rodent and its sibling were officially adopted by Nanotrasen, a poll for a name was held. \
+					When said poll elected the name of one of station's altevian crewmembers twice in a row, ethics commitee stepped in. \
+					Then the name of ethics officer was elected. Ultimately, after a dozen or so names involving people with ratlike qualities, \
+					mental or physical, were removed from options as names, he was named Ratthew. Even though some still remember him as mouse number one."
+				if(";help maint")
+					return "While the other of the two trash rat siblings was named based on the poll, this one had misfortune of having official announcement \
+					of her poll results be interrupted by someone yelling on radio over an encounter with this rodent, earning her the name. Perhaps if not for \
+					this cruel twist of fate, she really would be named Julius Cheesar, after the name Jeremy was eliminated from the poll, considering nine hundred \
+					and eighty four rodent pets were named that already."
+				if("Brick")
+					return "Despite some conspiracy theories, this rat is not younger sibling of the other two rats commonly found in local trashpits, nor is it a \
+					younger sibling of any ratlike crew. Truth be told, it's just some random rat that barely ever shows up, yet people demanded it be given a name as well."
+		if("endurance")
+			return sibling == "Brick" ? 1750 : endurance
+		if("melee_damage_lower")
+			return sibling == "Brick" ? 1 : melee_damage_lower
+		if("melee_damage_upper")
+			return sibling == "Brick" ? 2 : melee_damage_upper
+
+/datum/say_list/rat
+	speak = list("Squeek!","SQUEEK!","Squeek?")
+	emote_hear = list("squeeks","squeaks","squiks")
+	emote_see = list("runs in a circle", "shakes", "scritches at something")
+	say_maybe_target = list("Squeek?")
+	say_got_target = list("SQUEEK!")
+
+/mob/living/simple_mob/vore/aggressive/rat/event
+	endurance = 50
+	vore_pounce_chance = 10
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/event)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
+
+/mob/living/simple_mob/vore/aggressive/rat/labrat
+	name = "giant lab rat"
+	desc = "In what passes for a hierarchy among lab rats, this one is a boss."
+	icon_state = "labrat"
+	icon_living = "labrat"
+	icon_dead = "labrat-dead"
+	icon_rest = "labrat_rest"
+	icon = 'icons/mob/vore64x32.dmi'
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/labrat)
+	configure(mob_rules(faction = "neutral"))
+
+/mob/living/simple_mob/vore/aggressive/rat/labrat/genetics
+	name = "Nibbles"
+	desc = "A giant rat that made it's nest in an abandoned genetics lab. This one seems fairly docile."
+
+	vore_active = 1
+	vore_escape_chance = 20
+	swallowTime = 25
+	vore_bump_chance = 100
+	vore_standing_too = TRUE
+	vore_pounce_chance = 75
+	vore_pounce_maxhealth = 80
+	vore_bump_emote = "knocks over and attempts to engulf"
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/labrat/genetics)
+	configure(living_rules(vore_capacity = 1))
+	configure(mob_nature(faction_bump_vore = 1))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = FALSE))
+
+

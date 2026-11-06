@@ -86,7 +86,7 @@ CAPABILITIES(/obj/dq_actor_probe)
 /// forwarding overrides read it).
 /datum/unit_test/proc/dq_actor_click(mob/user, atom/target, params = "left=1", ops_first = TRUE)
 	GLOB.dq_actor_calls.Cut()
-	cooldown_set_end(user, next_click, 0)
+	STATE_SET(user, cooldowns, next_click, 0)
 	if(ops_first)
 		input_submit(new /datum/input_event/click(user, target, null, null, params))
 	else

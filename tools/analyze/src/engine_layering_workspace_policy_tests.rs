@@ -30,3 +30,86 @@ impl crate::reactive_raw_policy_pages::RawPolicyPages for Pages<'_>{fn for_each(
  struct Paths;impl PathPages for Paths{fn for_each_path(&self,f:&mut dyn FnMut(&str)->Result<(),Failure>)->Result<bool,Failure>{f("code/engine/probe.dm")?;Ok(true)}}let budget=Budget::new(1024*1024).unwrap();let config=crate::captured_raw_file::Config::capture(crate::captured_raw_policy::Configuration::Captured(b"[lint.engine_layering]\nexempt_files=[\"code/engine/probe.dm\"]\n")).unwrap();let selection=current::preflight(&Paths,&config,&budget,&||Ok(())).unwrap();assert!(selection.is_empty());assert!(current::finish_unselected(selection,&budget,&||Ok(())).unwrap().sites().is_empty());
  let error=current::preflight(&Paths,&config,&budget,&||Err(std::io::Error::from_raw_os_error(1450))).err().unwrap();assert!(matches!(error,Failure::Operational(e)if e.raw_os_error()==Some(1450)));let selection=current::preflight(&Paths,&config,&budget,&||Ok(())).unwrap();assert!(current::finish_unselected(selection,&budget,&||Ok(())).is_ok());
 }
+
+#[test]
+fn merged_host_and_library_boundaries_preserve_selected_sources_and_fingerprints() {
+    use crate::engine_layering_policy::Layer;
+    let root = scratch::dir("merged-native-layering");
+    let sources = [
+        ("code/engine/uses_host.dm", "/proc/engine_entry(datum/host_type/value)\n    return value\n"),
+        ("code/host/probe.dm", concat!(
+            "/datum/host_type\n",
+            "/proc/host_entry()\n",
+            "    library_helper() // host may not call library\n",
+            "#define CAPABILITIES_PART(T, feature) /datum/marker\n",
+            "#define ERASE_CALLBACK(X) 1\n",
+            "CAPABILITIES_PART(/datum/host_type, fixture)\n",
+            "    var/marker_row = ERASE_CALLBACK(PROC_REF(library_only))\n",
+        )),
+        ("code/library/probe.dm", concat!(
+            "/datum/host_type\n",
+            "/datum/host_type/proc/library_only()\n",
+            "    return\n",
+            "/proc/library_helper()\n",
+            "    return\n",
+            "/proc/library_entry(datum/world_type/value)\n",
+            "\tcontent_helper()  // retain this raw comment in the fingerprint\n",
+            "    return value\n",
+        )),
+        ("code/domains/world_model/base.dm", "/datum/world_type\n"),
+        ("code/content/content.dm", "/datum/world_type\n/proc/content_helper()\n    return\n"),
+    ];
+    let mut dme = String::new();
+    for (relative, text) in sources {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, text).unwrap();
+        dme.push_str(&format!("#include \"{relative}\"\n"));
+    }
+    std::fs::write(root.join("deepquarry.dme"), dme).unwrap();
+    let inputs = input(&root);
+    for layer in [Layer::Engine, Layer::Library] {
+        let mut registry = Registry::default();
+        match layer {
+            Layer::Engine => crate::lints::engine_layering::register(&mut registry),
+            Layer::Library => crate::lints::library_layering::register(&mut registry),
+        }
+        let legacy = crate::run::Engine::new(registry, crate::run::Options {
+            root: root.clone(), lints: vec![layer.name().into()], no_cache: true, raw: true,
+            ..Default::default()
+        }).unwrap();
+        assert!(crate::sem::sem_for(&legacy.tree).unwrap().errors.is_empty(), "genuine merged-layout fixture must parse");
+        let expected = legacy.run_one(legacy.reg.lints[0].as_ref());
+        assert!(expected.internal_error.is_none());
+        let budget = Budget::new(64 * 1024 * 1024).unwrap();
+        let rows = sources.iter().map(|(p, text)| {
+            let source = dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(), ());
+            (p.to_string(), source.lease().source_text().clone())
+        }).collect();
+        let pages = Pages { root: &root, rows, budget: budget.clone(), visits: std::cell::Cell::new(0) };
+        let config = crate::captured_raw_file::Config::capture(crate::captured_raw_policy::Configuration::ProvenMissing).unwrap();
+        let selection = current::preflight_for(layer, &pages, &config, &budget, &|| Ok(())).unwrap();
+        let actual = current::collect_available(&pages, &inputs, &root, &config, selection, &budget, &|| Ok(())).unwrap();
+        assert_eq!(actual.metadata().name, layer.name());
+        assert_eq!(actual.sites(), expected.run.sites.as_slice(), "genuine current-master sites for {layer:?}");
+        assert_eq!(pages.visits.get(), 2);
+        match layer {
+            Layer::Engine => {
+                assert!(actual.source_text().is_none());
+                assert!(actual.sites().iter().all(|site| site.rel == "code/host/probe.dm"));
+                assert!(actual.sites().iter().any(|site| site.line == 3 && site.msg.contains("/proc/library_helper")));
+                assert!(actual.sites().iter().any(|site| site.line == 7 && site.msg.contains("/datum/host_type::library_only")));
+            }
+            Layer::Library => {
+                let text = actual.source_text().unwrap();
+                assert_eq!(text.len(), actual.sites().len());
+                for (site, actual_text) in actual.sites().iter().zip(text) {
+                    assert_eq!(*actual_text, legacy.tree.site_text(&site.rel, site.line as usize));
+                }
+                assert!(actual.sites().iter().all(|site| site.rel == "code/library/probe.dm"));
+                assert!(text.iter().any(|text| text == "content_helper() // retain this raw comment in the fingerprint"));
+                assert!(!actual.sites().iter().any(|site| site.msg.contains("/datum/world_type")), "world_model authorizes the shared type despite the content reopening");
+            }
+        }
+    }
+}

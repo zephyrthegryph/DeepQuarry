@@ -30,7 +30,7 @@
 	rel_clear(H, nameof(H.members))
 	TEST_ASSERT_EQUAL(length(H.members), 0, "rel_clear empties the long list")
 	var/datum/relperf_member/M = made[10]
-	TEST_ASSERT(isnull(M.om_refs_in), "no member keeps a reverse index entry")
+	TEST_ASSERT(isnull(M.refs_in), "no member keeps a reverse index entry")
 	qdel(H)
 
 /// A ref_many held as an alist set: constant-time membership, no duplicates, removal, deletion of a member and of the holder.
@@ -58,9 +58,14 @@
 	qdel(B)
 	TEST_ASSERT_EQUAL(length(H.member_set), 0, "a deleted member left the set")
 	TEST_ASSERT(istype(H.member_set, /alist), "an emptied set is still an alist")
+	slot_of(C) // naming C takes a slot: the table's reference is part of the baseline
+	var/refs_before = refcount(C)
 	rel_add(H, nameof(H.member_set), C)
 	qdel(H)
-	TEST_ASSERT(isnull(C.om_refs_in), "deleting the holder dropped its members' reverse index")
+	TEST_ASSERT(isnull(C.refs_in), "deleting the holder dropped its members' reverse index")
+	// An alist freed with an object key keeps a reference to it for ever (dq_alist_object_key_refs): a set must be emptied before it is freed.
+	TEST_ASSERT_EQUAL(length(H.member_set), 0, "deleting the holder emptied its alist set")
+	TEST_ASSERT_EQUAL(refcount(C), refs_before, "a member of a deleted holder's alist set keeps no extra reference")
 	qdel(A)
 	qdel(C)
 
@@ -100,7 +105,7 @@
 	TEST_ASSERT(!rel_names(H, nameof(H.member_table), B), "and unlinks its members")
 	rel_add(H, nameof(H.member_table), B, 7)
 	qdel(H)
-	TEST_ASSERT(isnull(B.om_refs_in), "deleting the holder unlinked the keyed members")
+	TEST_ASSERT(isnull(B.refs_in), "deleting the holder unlinked the keyed members")
 	qdel(B)
 
 /// An owns_many alist set: add, no duplicate, remove (disposes), a deleted child leaves, the holder takes its children with it.
@@ -248,5 +253,5 @@
 	TEST_ASSERT(ref_token(other) != th && resolve_token(ref_token(other)) == other, "a neighbouring turf has its own handle")
 	relation_z_generation_bump(T.z)
 	TEST_ASSERT_NULL(resolve_token(th), "a turf handle stops resolving when its z-level's generation moves on")
-	GLOB.om_z_generations[T.z]-- // the test map's z-level was not really released
+	GLOB.z_generations[T.z]-- // the test map's z-level was not really released
 	TEST_ASSERT_EQUAL(resolve_token(th), T, "and resolves again once the generation is back")

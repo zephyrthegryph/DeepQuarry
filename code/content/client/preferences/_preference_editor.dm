@@ -14,7 +14,8 @@
 //
 // Editors are singletons registered in GLOB.preference_editors.
 
-GLOBAL_LIST_INIT(preference_editors, init_preference_editors())
+/// Keeps the singletons if the invalidator index (character_setup.dm, earlier in the compile order) already built them.
+GLOBAL_LIST_INIT(preference_editors, preference_editors || init_preference_editors())
 GLOBAL_LIST_INIT(preference_editors_by_key, init_preference_editors_by_key())
 
 /proc/init_preference_editors()

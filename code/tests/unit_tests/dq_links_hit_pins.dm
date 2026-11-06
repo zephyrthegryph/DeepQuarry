@@ -1,5 +1,5 @@
 // Pins for the buckle, pull and grab links and for what an item click does on a target nothing else answers. Written against the old OM
-// relations (om_link) and read only through the accessors (buckled_to(), buckled_mob_list(), pulling_target(), pulled_by_mob(), grab_target(),
+// relations (link) and read only through the accessors (buckled_to(), buckled_mob_list(), pulling_target(), pulled_by_mob(), grab_target(),
 // grabbed_by_list()), so the same assertions hold on the declared links that replace them (doc/rewrite/final_api.html section 6, KR2).
 // A TEST_NOTICE line records an observation that is not asserted.
 

@@ -1,4 +1,4 @@
-// Rust world subscriptions (doc/rewrite/object_model_core.md §4.8).
+// Rust world subscriptions (doc/rewrite/archive/object_model_core.md §4.8).
 //
 // The Rust world (verdigris/ffi/src/sched.rs) holds the watches on Rust-owned state (gas, heat, probe cells). It holds no DM timers and no DM-owned
 // keys: a DM timer is the kernel's after() (a rule's hold_for is one), and a DM-owned fact is a tracked var or a rule key (code/datums/rules/world_adapter.dm).
@@ -14,7 +14,8 @@
 // then); owners that keep watches delete them in their teardown (an owned var, `kind = RELK_OWNED`).
 //
 //   world_watch_changed(owner, handle, mask, proc, lane)   a channel change on a Rust entity
-//   world_watch_when(owner, condition, proc, lane)         a COND_* condition
+//
+// A threshold or a band of a value is not a world watch: it is sensing (sense_gas(), sense_heat(), a sensed() declaration: code/domains/verdigris/sense.dm).
 //
 // Periodic work is not a world watch: it is a periodic lane (every()) or the kernel clock.
 
@@ -40,36 +41,13 @@
 /// `callback` runs when any channel in `mask` of the Rust entity `handle` (WORLD_HANDLE) changes.
 /proc/world_watch_changed(datum/owner, list/handle, mask, callback, lane)
 	var/datum/native_watch/world/W = world_watch_new(owner, callback, lane)
-	W.token = vg_world_watch_changed(handle[1], W.handle, world_rust_lane(W.lane), handle[2], mask)
+	world_watch_attach(W, handle, mask)
 	return W
 
-/// `callback` runs when a COND_* condition becomes true. Rust checks the condition (channel, unit, levels) and raises a runtime if it is invalid.
-/proc/world_watch_when(datum/owner, list/condition, callback, lane)
-	var/datum/native_watch/world/W = world_watch_new(owner, callback, lane)
-	var/rust_lane = world_rust_lane(W.lane)
-	try
-		switch(condition[1])
-			if(WORLD_COND_THRESHOLD)
-				var/list/handle = condition[2]
-				W.token = vg_world_watch_threshold(handle[1], W.handle, rust_lane, handle[2], condition[3], condition[4], condition[5], condition[6], condition[7])
-			if(WORLD_COND_BAND)
-				var/list/handle = condition[2]
-				W.token = vg_world_watch_band(handle[1], W.handle, rust_lane, handle[2], condition[3], condition[4], condition[5])
-			if(WORLD_COND_BANDS)
-				var/list/handle = condition[2]
-				W.token = vg_world_watch_bands(handle[1], W.handle, rust_lane, handle[2], condition[3], condition[4], condition[5], condition[6])
-			if(WORLD_COND_DIFFERENCE)
-				var/list/handle_a = condition[2]
-				var/list/handle_b = condition[3]
-				if(handle_a[1] != handle_b[1])
-					CRASH("world_watch_when: a difference across watch codes")
-				W.token = vg_world_watch_difference(handle_a[1], W.handle, rust_lane, handle_a[2], handle_b[2], condition[4], condition[5], condition[6], condition[7], condition[8])
-			else
-				CRASH("world_watch_when: unknown condition [condition[1]]")
-	catch(var/exception/e)
-		W.cancel()
-		throw e
-	return W
+/// Registers the change watch `W` (world_watch_new()) with Rust on `handle` for `mask`. A watch on a handle that does not exist yet is made first and attached
+/// when it does (a turf's air before the turfs register: SSair).
+/proc/world_watch_attach(datum/native_watch/world/W, list/handle, mask)
+	W.token = vg_world_watch_changed(handle[1], W.handle, world_rust_lane(W.lane), handle[2], mask)
 
 // ---------------------------------------------------------------- the step, on the scheduler
 
@@ -83,12 +61,12 @@
 
 /// World-wake counters for the profiler and the benchmarks: the scheduler's delivery counters and Rust's own.
 /proc/world_diagnostics(datum/time_scheduler/sched)
-	sched = sched || GLOB.om_live_sched || time_scheduler()
+	sched = sched || GLOB.live_scheduler || time_scheduler()
 	var/list/by_type = list()
 	for(var/type in sched.world_wakes_by_type)
 		by_type["[type]"] = sched.world_wakes_by_type[type]
 	var/list/queued = list()
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		queued += length(sched.world_q?[lane]) / 4
 	return list(
 		"total_wakes" = sched.world_wakes,

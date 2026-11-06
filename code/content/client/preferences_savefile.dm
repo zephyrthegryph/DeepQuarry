@@ -170,6 +170,7 @@
 	if(needs_update == -2) //fatal, can't load any data
 		return FALSE
 
+	var/palette_new_character = !length(save_data)
 	// Read everything into cache (pre-migrations, as migrations should have access to deserialized data)
 	// Uses priority order as some values may rely on others for creating default values
 	for(var/datum/preference/preference as anything in get_preferences_in_priority_order())
@@ -178,6 +179,16 @@
 
 		remove_value_cache(preference.type)
 		read_preference(preference.type)
+
+	link_palette_on_load(palette_new_character)
+	migrate_limb_colors()
+	link_skin_and_eyes()
+	migrate_robotic_parts()
+	// Markings always draw on robotic limbs now: the old Synth Markings toggle has no reader.
+	var/list/retired_keys = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
+	if(islist(retired_keys))
+		retired_keys -= "synth_markings"
+		retired_keys -= "Private_Notes" // private notes are gone; the save drops them
 
 	// Bay player_setup.load_character chain deleted; pre-cache loop above already
 	// loaded every PREFERENCE_CHARACTER pref from save_data via read_preference().
@@ -258,7 +269,7 @@
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
 		if(pref.savefile_identifier != PREFERENCE_CHARACTER)
 			continue
-		var/current = read_preference(pref_type)
+		var/current = read_preference_raw(pref_type) // the stored form: a palette link is not a stale value
 		var/sanitized = pref.sanitize(current, src)
 		if(islist(sanitized) || sanitized != current)
 			update_preference_by_type(pref_type, sanitized)

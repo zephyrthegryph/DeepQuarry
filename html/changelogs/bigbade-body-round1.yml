@@ -1,0 +1,6 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "Setting a limb cybernetic moves its children with it; Normal is greyed out below it."
+  - qol: "Skin always uses palette Primary and eyes always use Tertiary."
+  - qol: "Kitsuhana robotic ears are an ordinary ear style."

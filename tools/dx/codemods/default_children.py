@@ -116,7 +116,7 @@ def main():
     files = {}
     for p in sorted(pathlib.Path(ROOT, "code").rglob("*.dm")):
         rel = p.relative_to(ROOT).as_posix()
-        if rel.startswith("code/__defines/"):
+        if rel.startswith(("code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/")):
             continue
         files[rel] = open(p, encoding="utf-8", errors="surrogateescape", newline="").read().split("\n")
     # sentinels

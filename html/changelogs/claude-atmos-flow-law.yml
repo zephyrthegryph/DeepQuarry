@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "The gas pump's flow law reads its own Pump component in Rust; DM no longer forwards its settings to a separate device row"
+  - refactor: "Pipe devices push their Rust law from tracked state (power, pipe neighbours, settings) and one pipe_device_port() capability; the hand-bumped rust_device_rev is gone"
+  - refactor: "Content reaches the native heat, power, atmos and job binds through domain api procs; vg_ calls in code/content are a lint error"

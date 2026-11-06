@@ -239,8 +239,8 @@
 	own_clear(machine, nameof(machine.component_parts), OWN_DELETE)
 	rel_add(machine, nameof(machine.component_parts), part)
 	TEST_ASSERT(machine.finalize_material_assembly(), "A constructed machine must retain the material makeup of its installed parts")
-	TEST_ASSERT(length(sparse_get(machine, material_component_manifest)), "Machine material composition must remain inspectable after the frame is consumed")
-	TEST_ASSERT(sparse_get_or(machine, material_emp_resistance, 0) > 0, "Installed dielectric parts must affect whole-machine EMP behavior")
+	TEST_ASSERT(length(STATE_PEEK(machine, machinery_misc, material_component_manifest)), "Machine material composition must remain inspectable after the frame is consumed")
+	TEST_ASSERT(STATE_PEEK(machine, machinery_misc, material_emp_resistance) > 0, "Installed dielectric parts must affect whole-machine EMP behavior")
 	qdel(machine)
 
 /datum/unit_test/dq_material_environment_conserves_heat
@@ -410,6 +410,8 @@
 
 /datum/unit_test/dq_material_thermal_buffer_conserves_energy/Run()
 	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
+	var/datum/material_template/slots = material_template_for_application(MATERIAL_APPLICATION_CELL)
+	TEST_ASSERT(cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = MAT_SILVER, MATERIAL_ROLE_ELECTRODE = MAT_GOLD, MATERIAL_ROLE_STRUCTURE = MAT_STEEL, MATERIAL_ROLE_INSULATION = MAT_GLASS), slots.type, SHEET_MATERIAL_AMOUNT * 2), "a cell takes a built makeup (a stock one has no material service)")
 	var/datum/material_service/service = material_service_of(cell)
 	// The heat lives in Rust (f64) and reaches DM as f32: compare to a millionth of the energy the assembly holds.
 	var/before = service.temperature() * service.thermal_mass() + service.buffer_energy()
@@ -503,7 +505,7 @@
 	var/turf/destination = get_step(start, EAST) || get_step(start, WEST)
 	TEST_ASSERT(start && destination && start != destination, "Movement coverage requires two real map turfs")
 	var/obj/item/cell/cell = new(start)
-	var/datum/material_service/service = material_service_of(cell)
+	var/datum/material_service/service = material_service_of(cell) || cell.enable_material_service() // a cell at its air's temperature starts without one
 	service.rebind()
 	TEST_ASSERT(length(service.mixture_ids), "The test must actually subscribe to a real atmosphere")
 	TEST_ASSERT_EQUAL(length(service.gas_watches), length(service.mixture_ids), "Material subscriptions must be one native gas watch per watched mixture")
@@ -525,7 +527,7 @@
 	qdel(cell)
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
 	TEST_ASSERT(!after_pending(service, "material_service"), "Deleting an assembly must remove its queued exposure work")
-	for(var/datum/native_watch/gas/W as anything in watches)
+	for(var/datum/native_watch/world/W as anything in watches)
 		TEST_ASSERT(QDELETED(W) || !W.handle, "Deleted assemblies must release mixture subscriptions")
 
 /datum/unit_test/dq_material_gas_publication_filtering
@@ -536,23 +538,29 @@
 	var/datum/material_service/service = machine.enable_material_service()
 	TEST_ASSERT(service, "Explicit diagnostic monitoring must expose material service state")
 	TEST_ASSERT(!(service.gas_dependency_interest_mask() & GAS_DEPENDENCY_PRESSURE), "An ordinary housing must not subscribe to irrelevant turf pressure churn")
-	var/mixture_id = 12345
-	service.mixture_pressures = list("[mixture_id]" = ONE_ATMOSPHERE)
+	var/datum/gas_mixture/room = allocate(/datum/gas_mixture, CELL_VOLUME)
+	room.adjust_gas(/datum/gas/oxygen, 21)
+	room.adjust_gas(/datum/gas/nitrogen, 82)
+	heat_set(room, T20C, HEAT_SOURCE_OTHER)
+	var/mixture_id = room.arena_id()
+	service.mixture_pressures = list("[mixture_id]" = room.return_pressure())
 	service.mixture_corrosion = list("[mixture_id]" = 0)
-	var/list/pressure_jitter = list(mixture_id, GAS_DEPENDENCY_PRESSURE, 2, ONE_ATMOSPHERE + 5, T20C, CELL_VOLUME, 22, 82, 0, 0, 0, 0, 0, 0, 104)
-	TEST_ASSERT(!service.gas_notify_actionable(mixture_id, GAS_DEPENDENCY_PRESSURE, pressure_jitter, 1), "Harmless pressure-only publication must not wake an ordinary machine")
-	var/list/clean_composition = list(mixture_id, GAS_DEPENDENCY_COMPOSITION, 3, ONE_ATMOSPHERE, T20C, CELL_VOLUME, 21, 83, 0, 0, 0, 0, 0, 0, 104)
-	TEST_ASSERT(!service.gas_notify_actionable(mixture_id, GAS_DEPENDENCY_COMPOSITION, clean_composition, 1), "Non-corrosive room-air mixing must not wake an ordinary machine")
-	var/list/plasma_exposure = list(mixture_id, GAS_DEPENDENCY_COMPOSITION, 4, ONE_ATMOSPHERE, T20C, CELL_VOLUME, 20, 82, 2, 0, 0, 0, 0, 0, 104)
-	TEST_ASSERT(service.gas_notify_actionable(mixture_id, GAS_DEPENDENCY_COMPOSITION, plasma_exposure, 1), "A newly corrosive atmosphere must wake the material service")
+	room.adjust_gas(/datum/gas/oxygen, 0.2)
+	TEST_ASSERT(!service.gas_notify_actionable(mixture_id, GAS_DEPENDENCY_PRESSURE, room), "Harmless pressure-only publication must not wake an ordinary machine")
+	room.adjust_gas(/datum/gas/nitrogen, 0.2)
+	TEST_ASSERT(!service.gas_notify_actionable(mixture_id, GAS_DEPENDENCY_COMPOSITION, room), "Non-corrosive room-air mixing must not wake an ordinary machine")
+	room.adjust_gas(/datum/gas/plasma, 2)
+	TEST_ASSERT(service.gas_notify_actionable(mixture_id, GAS_DEPENDENCY_COMPOSITION, room), "A newly corrosive atmosphere must wake the material service")
 	qdel(machine)
 
 	var/obj/machinery/portable_atmospherics/canister/canister = new(run_loc_floor_bottom_left)
 	service = canister.enable_material_service()
 	TEST_ASSERT(service.gas_dependency_interest_mask() & GAS_DEPENDENCY_PRESSURE, "Pressure vessels must retain pressure-change subscriptions")
-	service.mixture_pressures = list("1" = 0, "2" = 0)
-	var/list/dangerous_pressure = list(1, GAS_DEPENDENCY_PRESSURE, 5, 100 * ONE_ATMOSPHERE, T20C, 1000, 0, 0, 0, 0, 0, 0, 0, 0, 100)
-	TEST_ASSERT(service.gas_notify_actionable(1, GAS_DEPENDENCY_PRESSURE, dangerous_pressure, 1), "A pressure vessel must wake when differential load approaches its material limit")
+	var/datum/gas_mixture/vessel = allocate(/datum/gas_mixture, 1000)
+	vessel.adjust_gas(/datum/gas/nitrogen, 4200)
+	heat_set(vessel, T20C, HEAT_SOURCE_OTHER)
+	service.mixture_pressures = list("[vessel.arena_id()]" = 0, "2" = 0)
+	TEST_ASSERT(service.gas_notify_actionable(vessel.arena_id(), GAS_DEPENDENCY_PRESSURE, vessel), "A pressure vessel must wake when differential load approaches its material limit")
 	qdel(canister)
 
 /datum/unit_test/dq_material_service_due_heap
@@ -561,7 +569,7 @@
 	// Exposure work is one core deadline per service (after()): scheduling again only ever moves
 	// it earlier, and deleting the assembly cancels it.
 	var/obj/item/cell/a = new(run_loc_floor_bottom_left)
-	var/datum/material_service/a_service = material_service_of(a)
+	var/datum/material_service/a_service = material_service_of(a) || a.enable_material_service() // a cell at its air's temperature starts without one
 	cancel_after(a_service, "material_service")
 	a_service.timer = FALSE
 	a_service.schedule(10 SECONDS)
@@ -844,10 +852,10 @@
 /datum/unit_test/dq_material_refit_clears_old_behaviors/Run()
 	var/obj/item/item = new
 	item.configure_material_behaviors(30, 20, 10, "#00ff00")
-	TEST_ASSERT(item.material_emitting() && sparse_get_or(item, mat_radioactivity, 0) > 0, "The initial material must actually emit radiation")
+	TEST_ASSERT(item.material_emitting() && STATE_PEEK(item, item_material, mat_radioactivity) > 0, "The initial material must actually emit radiation")
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	steel.dq_apply_material_behaviors(item)
-	TEST_ASSERT(!item.material_emitting() && !sparse_get_or(item, mat_radioactivity, 0) && !sparse_get_or(item, mat_toxicity, 0) && !sparse_get_or(item, mat_luminescence, 0), "Inert replacement stock must remove all old emissions and stop processing")
+	TEST_ASSERT(!item.material_emitting() && !STATE_PEEK(item, item_material, mat_radioactivity) && !STATE_PEEK(item, item_material, mat_toxicity) && !STATE_PEEK(item, item_material, mat_luminescence), "Inert replacement stock must remove all old emissions and stop processing")
 	qdel(item)
 
 /datum/unit_test/dq_material_physical_cable_loss

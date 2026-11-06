@@ -14,6 +14,7 @@ GLOBAL_LIST_INIT(dq_variants_head_beret_solgov, list(
 	"ttc" = list("name" = "transgressive technologies beret", "icon_state" = "beret_purpleyellow", "desc" = "A purple beret denoting service in the Transgressive Technologies Commission. For g-men that are more inclined towards style than safety."),
 	"eio" = list("name" = "intelligence oversight beret", "icon_state" = "beret_blue", "desc" = "A blue beret denoting service in Emergent Intelligent Oversight. For g-men that are more inclined towards style than safety."),
 	"inspector" = list("name" = "\improper Solar Inspection Group beret", "icon_state" = "beret_graysilver", "desc" = "A grey beret with a silver insignia, denoting service in the Solar Inspection Group. For Almach-inspection personnel who are more inclined towards style than safety."),
+	"health" = list("name" = "health service beret", "desc" = "A white beret denoting service in the Interstellar Health Service. For medics that are more inclined towards style than safety."),
 ))
 
 CAPABILITIES(/obj/item/clothing/head/beret/solgov)

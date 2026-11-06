@@ -38,38 +38,6 @@
 	TEST_ASSERT(N.last_records >= 0, "the frame reported a negative record count")
 	TEST_ASSERT(isnum(vg_frame_count()) && vg_frame_count() > 0, "Rust counted no frames")
 
-/// A heat watch registered through the generic world watch ports crosses through the frame, as a CROSSED record
-/// the native system hands to the watch's owner.
-/datum/unit_test/dq_native_heat_watch_crosses_through_the_frame
-
-/datum/unit_test/dq_native_heat_watch_crosses_through_the_frame/Run()
-	var/turf/simulated/floor/T
-	for(var/turf/simulated/floor/candidate in world)
-		if(candidate.thermal_conductivity > 0 && candidate.heat_capacity > 0)
-			T = candidate
-			break
-	TEST_ASSERT_NOTNULL(T, "no heat-tracked floor")
-	restore_solids_after(T)
-	var/datum/native_test_listener/listener = new
-	var/datum/native_watch/heat/watch = heat_watch_threshold(listener, T, T.get_temperature() + 50, TRUE, TYPE_PROC_REF(/datum/native_test_listener, on_cross))
-	TEST_ASSERT_NOTNULL(watch, "the turf watch was refused")
-	TEST_ASSERT(watch.is_live(), "the watch holds no Rust subscription")
-	vg_world_run_steps(2)
-	native_system().drain()
-	TEST_ASSERT_EQUAL(listener.crossed, 0, "the watch crossed before the limit")
-	T.add_heat(T.heat_capacity * 200)
-	vg_world_run_steps(2)
-	native_system().drain()
-	TEST_ASSERT(listener.crossed >= 1, "the crossing did not reach the owner through the frame")
-	qdel(watch)
-	TEST_ASSERT(!watch?.is_live(), "a cancelled watch is still live")
-
-/datum/native_test_listener
-	var/crossed = 0
-
-/datum/native_test_listener/proc/on_cross(datum/native_watch/watch, reason, source)
-	crossed++
-
 /// vg_pump moves what the plan says, conserves moles, and pump_gas() is a wrapper over it.
 /datum/unit_test/dq_native_pump_wrapper_conserves_moles
 
@@ -157,7 +125,7 @@
 	changes += list(keys.Copy())
 
 /datum/native_rx_fx/proc/on_native_notice(datum/notice/native/N)
-	notes += list(list(N.kind, N.data))
+	notes += list(list(N.kind, N.record))
 
 /datum/native_rx_fx/proc/on_level(band, previous)
 	crossings += list(list(band, previous))
@@ -166,7 +134,7 @@
 /datum/native_rx_deaf
 
 /// A CHANGED record's key, named for `native()`, reaches on_change handlers through publish_change; an entity that
-/// nobody reads is not published; the OM bridge still raises the channel.
+/// nobody reads is not published; the bridge still raises the channel.
 /datum/unit_test/dq_native_change_publishes_through_reactions
 
 /datum/unit_test/dq_native_change_publishes_through_reactions/Run()
@@ -276,3 +244,39 @@
 	TEST_ASSERT(islist(N.slow_frame_prev), "a report keeps the phase counters for the next one to diff")
 	N.slow_frame_prev = saved
 	N.slow_frames = before
+
+/// The slow-frame log is rate limited per minute, not capped for the round: past the limit a short slow frame is held back (and counted), a stall of
+/// NATIVE_STALL_FRAME_MS or more is always logged, and the next line says how many were held back.
+/datum/unit_test/dq_native_slow_frame_log_is_rate_limited
+
+/datum/unit_test/dq_native_slow_frame_log_is_rate_limited/Run()
+	var/datum/system/native/N = native_system()
+	var/saved_frames = N.slow_frames
+	var/saved_start = N.slow_log_minute_start
+	var/saved_lines = N.slow_log_lines
+	var/saved_held = N.slow_log_held_back
+	var/saved_ms = N.last_frame_ms
+	var/list/saved_prev = N.slow_frame_prev
+	N.slow_log_minute_start = REALTIMEOFDAY
+	N.slow_log_lines = NATIVE_SLOW_FRAME_LOG_PER_MINUTE
+	N.slow_log_held_back = 0
+	N.last_frame_ms = NATIVE_SLOW_FRAME_MS + 1
+	N.report_slow_frame()
+	N.report_slow_frame()
+	TEST_ASSERT_EQUAL(N.slow_log_held_back, 2, "past the minute's limit a short slow frame is held back, and counted")
+	TEST_ASSERT_EQUAL(N.slow_log_lines, NATIVE_SLOW_FRAME_LOG_PER_MINUTE, "a held-back report logs no line")
+	N.last_frame_ms = NATIVE_STALL_FRAME_MS
+	N.report_slow_frame()
+	TEST_ASSERT_EQUAL(N.slow_log_held_back, 0, "a stall is logged whatever the limit, and reports the ones held back before it")
+	TEST_ASSERT_EQUAL(N.slow_log_lines, NATIVE_SLOW_FRAME_LOG_PER_MINUTE + 1, "the stall's line counts")
+	N.slow_log_minute_start = REALTIMEOFDAY - 1 MINUTES
+	N.last_frame_ms = NATIVE_SLOW_FRAME_MS + 1
+	N.report_slow_frame()
+	TEST_ASSERT_EQUAL(N.slow_log_lines, 1, "a new minute starts the count again")
+	TEST_ASSERT_EQUAL(N.slow_frames, saved_frames + 4, "every report counts itself, logged or not")
+	N.slow_frames = saved_frames
+	N.slow_log_minute_start = saved_start
+	N.slow_log_lines = saved_lines
+	N.slow_log_held_back = saved_held
+	N.last_frame_ms = saved_ms
+	N.slow_frame_prev = saved_prev

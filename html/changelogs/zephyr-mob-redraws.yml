@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - refactor: "Bots, aliens, dionae and blob mobs draw their sprite and glow from tracked state; update_icons() is gone and banned"

@@ -4,340 +4,11 @@ this file deals with uniforms/under. */
 
 // Civvie
 
-/obj/item/clothing/under/rank/neo_chef_skirt
-	name = "chef's skirt"
-	desc = "a high class skirt, made of a stain resistant fabtic. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_chef_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_teal
-	name = "teal suit"
-	desc = "a somewhat garish teal suit. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_teal_suit"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_teal_skirt
-	name = "teal skirt"
-	desc = "a somewhat garish teal skirt. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_teal_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_hydro
-	name = "hydroponics jumpsuit"
-	desc = "a dirt resistant suit. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_hydroponics"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_hydro_skirt
-	name = "hydroponics jumpskirt"
-	desc = "a dirt resistant skirt. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_hydroponics_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_janitor
-	name = "janitor's jumpsuit"
-	desc = "a cleaning jumpsuit. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_janitor"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_janitor_skirt
-	name = "janitor's jumpskirt"
-	desc = "a cleaning jumpskirt. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_janitor_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_hop
-	name = "head of personnel's jumpsuit"
-	desc = "a proper HR professional's jumpsuit. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_hop"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_hop_skirt
-	name = "head of personnel's jumpskirt"
-	desc = "a proper HR professional's jumpskirt. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_hop_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_hop_parade_masc
-	name = "head of personnel's parade suit"
-	desc = "an over the top HR professional's wear. this one is a masculine fit. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_hop_parade_male"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_hop_parade_fem
-	name = "head of personnel's feminine parade suit"
-	desc = "an over the top HR professional's wear. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_hop_parade_female"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_hop_turtle
-	name = "head of personnel's turtleneck"
-	desc = "an HR worker's turtleneck. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_hopturtle"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_hop_turtle_skirt
-	name = "head of personnel's turtleskirt"
-	desc = "an HR worker's turtleskirt. it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_hopturtle_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
 // Command
-
-/obj/item/clothing/under/rank/neo_captain
-	name = "captain's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_captain"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_captain_skirt
-	name = "captain's jumpskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_captain_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_captain_parade
-	name = "captain's parade suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_captain_parade"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_captain_kilt
-	name = "captain's kilt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_capkilt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_captain_blacksuit
-	name = "captain's black suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_captainblacksuit"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/bodyguard_suit
-	name = "bodyguard's suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_blueshield"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/bodyguard_skirt
-	name = "bodyguard's skirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_blueshield_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/bodyguard_turtleneck
-	name = "bodyguard's turtleneck"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_blueshield_turtle"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/bodyguard_turtleskirt
-	name = "bodyguard's turtleskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_blueshield_turtle_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_ntrep
-	name = "NT rep's suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_ntrep"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_ntrep_skirt
-	name = "NT rep's suitskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_ntrep_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_commandutil
-	name = "command utility jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_util_com"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_pilot
-	name = "pilot's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_pilot"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_pilot_skirt
-	name = "pilot's jumpskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_pilot_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
 
 //'Suspicious'
 
-/obj/item/clothing/under/rank/neo_suspect_turtleneck
-	name = "suspiciously comfortable turtleneck"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_suspect_turtle"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_suspect_turtleskirt
-	name = "suspiciously comfortable turtleskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_suspect_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_suspect_turtleneck_blue
-	name = "curiously comfortable turtlneck"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_suspect_blue"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_suspect_turtleskirt_blue
-	name = "curiously comfortable turtleskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_suspect_blue_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_suspicious_turtleneck
-	name = "suspicious turtleneck"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_suspect_red"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_suspicious_turtleskirt
-	name = "suspicious turtleskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_suspect_red_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_suspect_overalls
-	name = "suspiciously comfortable overalls"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_suspect_overall"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_suspect_overalls_skirt
-	name = "suspiciously comfortable skirt overalls"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_suspect_overall_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
 // CC
-
-/obj/item/clothing/under/rank/neo_centcom
-	name = "centcom officer's suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_centcom"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_centcom_skirt
-	name = "centcom officer's skirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_centcom_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_centcom_official
-	name = "centcom official's suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_centcom_official"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_centcom_intern
-	name = "centcom intern's uniform"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_centcom_intern"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_centcom_turtleneck
-	name = "centcom official's turtleneck"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_centcom_officer"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_centcom_turtleskirt
-	name = "centcom official's turtleskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_centcom_officer_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_admiral_green
-	name = "admiral's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_admiral_green"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_admiral_white
-	name = "admiral's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_admiral_white"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_armsco
-	name = "arms company suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_armsco"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_armsco_tac
-	name = "tactical arms company jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_armsco_tac"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_contract
-	name = "contractor's suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_contract"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_contract_tac
-	name = "tactical contractor jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_contract_tac"
-	rolled_sleeves = -1
-	rolled_down = -1
 
 //Security
 
@@ -347,9 +18,9 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_red_skirt
@@ -358,9 +29,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red)
 	icon_state = "neo_sec_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_warden_red
@@ -369,9 +40,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red_skirt)
 	icon_state = "neo_warden_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_warden_red_skirt
@@ -380,9 +51,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red)
 	icon_state = "neo_warden_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_red
@@ -391,9 +62,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red_skirt)
 	icon_state = "neo_hos_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_red_skirt
@@ -402,9 +73,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red)
 	icon_state = "neo_hos_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackred
@@ -413,9 +84,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red_skirt)
 	icon_state = "neo_hos_blackred"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackred_skirt
@@ -424,9 +95,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred)
 	icon_state = "neo_hos_blackred_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade
@@ -435,9 +106,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred_skirt)
 	icon_state = "neo_hos_parade"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade_fem
@@ -446,9 +117,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade)
 	icon_state = "neo_hos_parade_fem"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_fem)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_blue
@@ -457,9 +128,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_fem)
 	icon_state = "neo_sec_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_suit
@@ -468,9 +139,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_blue)
 	icon_state = "neo_sec_suit"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_suit_blue
@@ -479,9 +150,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit)
 	icon_state = "neo_sec_suit_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_warden_blue
@@ -490,9 +161,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit_blue)
 	icon_state = "neo_warden_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blue
@@ -501,9 +172,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_blue)
 	icon_state = "neo_hos_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackblue
@@ -512,9 +183,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blue)
 	icon_state = "neo_hos_blackblue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackblue_skirt
@@ -523,9 +194,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue)
 	icon_state = "neo_hos_blackblue_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade_blue
@@ -534,9 +205,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue_skirt)
 	icon_state = "neo_hos_parade_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade_blue_fem
@@ -545,9 +216,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue)
 	icon_state = "neo_hos_parade_blue_fem"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue_fem)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_red
@@ -556,9 +227,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue_fem)
 	icon_state = "neo_sec_turtle_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_red_skirt
@@ -567,9 +238,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red)
 	icon_state = "neo_sec_turtle_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_blue
@@ -578,9 +249,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red_skirt)
 	icon_state = "neo_sec_turtle_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_blue_skirt
@@ -589,9 +260,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue)
 	icon_state = "neo_sec_turtle_blue_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_corrections
@@ -600,9 +271,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue_skirt)
 	icon_state = "neo_corrections"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_corrections_skirt
@@ -611,9 +282,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections)
 	icon_state = "neo_corrections_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_runner
@@ -622,139 +293,13 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections_skirt)
 	icon_state = "neo_runner"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 // Cargo
 
-
-/obj/item/clothing/under/rank/neo_qm
-	name = "QM's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_qm"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_qm_skirt
-	name = "QM's skirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_qm_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_cargo_shorts
-	name = "cargo tech's shorts"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_cargo_shorts"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_cargo_skirt
-	name = "cargo tech's skirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_cargo_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_miner
-	name = "miner's overalls"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_miner"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_miner_fauna
-	name = "hunter's suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_miner_fauna"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_qm_jacket
-	name = "QM's casualwear"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_qm_jacket"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_qm_white
-	name = "QM's button-up suit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_qm_white"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_qm_white_skirt
-	name = "QM's button-up skirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_qm_white_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_qm_turtle
-	name = "QM's turtleneck"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_qm_turtle"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_qm_turtle_skirt
-	name = "QM's turtleskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_qm_turtle_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_cargo
-	name = "cargo tech's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_cargo"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_util_cargo
-	name = "cargo utility uniform"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_util_cargo"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_cargo_dark
-	name = "dark cargo uniform"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_cargo_dark"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_cargo_casual
-	name = "casual cargo uniform"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_cargo_casual"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_cargo_turtle
-	name = "cargo tech's turtleneck"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_cargo_turtle"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_cargo_turtle_skirt
-	name = "cargo tech's turtleskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_cargo_turtle_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_cargo_customs
-	name = "customs uniform"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_cargo_customs"
-	rolled_sleeves = -1
-	rolled_down = -1
 
 //Engi
 
@@ -765,27 +310,11 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
 	icon_state = "neo_engi"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/neo_engi_skirt
 	name = "engineer's jumpskirt"
 	desc = "it has a tag denoting it's made by Total Gear & Co."
 	icon_state = "neo_engi_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-	armor_spec = "rad=10"
-
-/obj/item/clothing/under/rank/neo_atmos
-	name = "atmos tech's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_atmos"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_atmos_skirt
-	name = "atoms tech's jumpskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_atmos_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
 
@@ -795,7 +324,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
 	icon_state = "neo_chiefengi"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/neo_chiefengi_skirt
 	name = "chief engineer's jumpskirt"
@@ -803,86 +331,8 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
 	icon_state = "neo_chiefengi_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "rad=10"
 
 // Sci
-
-/obj/item/clothing/under/rank/neo_rd_turtle
-	name = "research director's turtleneck"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_rd_turtle"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_rd_turtle_skirt
-	name = "research director's turtleskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_rd_turtle_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_science
-	name = "scientist's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_science"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_science_skirt
-	name = "scientist's jumpskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_science_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_util_sci
-	name = "science utility uniform"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_util_sci"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_robo
-	name = "roboticist's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_robo"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_robo_skirt
-	name = "roboticist's skirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_robo_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_rd_suit
-	name = "research director's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_rd_suit"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_rd_suit_skirt
-	name = "research director's jumpskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_rd_suit_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_gene
-	name = "genetic engineer's jumpsuit"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_gene"
-	rolled_sleeves = -1
-	rolled_down = -1
-
-/obj/item/clothing/under/rank/neo_gene_skirt
-	name = "genetic engineer's jumpskirt"
-	desc = "it has a tag denoting it's made by Total Gear & Co."
-	icon_state = "neo_gene_skirt"
-	rolled_sleeves = -1
-	rolled_down = -1
 
 // Med
 
@@ -892,9 +342,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
 	icon_state = "neo_med"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_med)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_med_skirt
@@ -903,9 +353,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_med)
 	icon_state = "neo_med_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_med_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo
@@ -914,9 +364,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_med_skirt)
 	icon_state = "neo_cmo"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo_skirt
@@ -925,9 +375,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo)
 	icon_state = "neo_cmo_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo_turtle
@@ -936,9 +386,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_skirt)
 	icon_state = "neo_cmo_turtle"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo_turtle_skirt
@@ -947,9 +397,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle)
 	icon_state = "neo_cmo_turtle_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_viro
@@ -958,9 +408,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle_skirt)
 	icon_state = "neo_viro"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_viro)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_viro_skirt
@@ -969,9 +419,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_viro)
 	icon_state = "neo_viro_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_viro_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_chem
@@ -980,9 +430,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_viro_skirt)
 	icon_state = "neo_chem"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_chem)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_chem_skirt
@@ -991,9 +441,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_chem)
 	icon_state = "neo_chem_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_chem_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para
@@ -1002,9 +452,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_chem_skirt)
 	icon_state = "neo_para"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_para)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para_skirt
@@ -1013,9 +463,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_para)
 	icon_state = "neo_para_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_para_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para_light
@@ -1024,9 +474,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_para_skirt)
 	icon_state = "neo_para_light"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para_light_skirt
@@ -1035,9 +485,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light)
 	icon_state = "neo_para_light_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_pharma
@@ -1046,9 +496,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light_skirt)
 	icon_state = "neo_pharma"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_pharma_skirt
@@ -1057,9 +507,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma)
 	icon_state = "neo_pharma_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_med_dark
@@ -1068,9 +518,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma_skirt)
 	icon_state = "neo_med_dark"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_med_dark_skirt
@@ -1079,9 +529,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark)
 	icon_state = "neo_med_dark_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 // Neo Gorkas
@@ -1126,19 +576,19 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark_skirt)
 /obj/item/clothing/under/rank/neo_gorka/sec
 	name = "security officer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. For officers who expect to be patrolling in harsh conditions. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "melee=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/sec)
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/sec)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_gorka/hos
 	name = "head of security's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Favoured by the Head of Security who wants to stay dry no matter what. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "melee=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/sec,/obj/item/clothing/accessory/gorka/rank)
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/hos)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_gorka/cargo
@@ -1154,13 +604,11 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/hos)
 /obj/item/clothing/under/rank/neo_gorka/engi
 	name = "engineer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Not rated for high-power electrical shocks. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "rad=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/engi)
 
 /obj/item/clothing/under/rank/neo_gorka/ce
 	name = "chief engineer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. For the chief engineer who values style <i>and</i> safety. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "rad=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/engi,/obj/item/clothing/accessory/gorka/rank)
 
 /obj/item/clothing/under/rank/neo_gorka/sci
@@ -1176,17 +624,35 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/hos)
 /obj/item/clothing/under/rank/neo_gorka/med
 	name = "medical staff gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. A popular choice among paramedical personnel. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "bio=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/med)
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/med)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_gorka/cmo
 	name = "chief medical officer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Why worry about stains when everything slides right off? It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "bio=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/med,/obj/item/clothing/accessory/gorka/rank)
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/cmo)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_engi)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_engi_skirt)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_chiefengi)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_chiefengi_skirt)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/engi)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/ce)
+	configure(atom_rules(armor_spec = "rad=10"))

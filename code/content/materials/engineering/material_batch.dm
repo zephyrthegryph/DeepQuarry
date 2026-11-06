@@ -1,0 +1,530 @@
+/// Canonical state for a physical batch. Recipes do not select an alloy: player inputs and
+/// processing history produce one, and all consumers derive their properties from this datum.
+/datum/material_batch
+	var/list/composition
+	var/list/impurities
+	var/list/process_history
+	var/list/contributors = list() // ALLOW(instance_list): d: batch provenance, filled when the batch is made
+	var/list/feedstock_lots
+	var/list/test_results
+	var/list/process_counts
+	/// Persistent physical surface treatments. These are layers, not bulk ingredients.
+	var/list/surface_layers
+	/// Gases incorporated from the real processing atmosphere, in abstract retained units.
+	var/list/dissolved_gases
+	/// High-energy or field treatments applied to the lattice.
+	var/list/field_treatments
+	var/list/cost_ledger = list( // ALLOW(instance_list): d: edited in place per instance (6 writers)
+		MATERIAL_COST_FEEDSTOCK = 0,
+		MATERIAL_COST_CHEMICALS = 0,
+		MATERIAL_COST_CATALYSTS = 0,
+		MATERIAL_COST_ELECTRICITY = 0,
+		MATERIAL_COST_MEDIA = 0,
+		MATERIAL_COST_LABOR = 0,
+		MATERIAL_COST_EQUIPMENT = 0,
+		MATERIAL_COST_WASTE_HANDLING = 0,
+		MATERIAL_COST_RECOVERY = 0,
+		MATERIAL_COST_WASTE = 0,
+	)
+	var/list/structure = list( // ALLOW(instance_list): d: edited in place per instance (32 writers)
+		MATERIAL_STRUCTURE_SOFT = 70,
+		MATERIAL_STRUCTURE_HARDENED = 0,
+		MATERIAL_STRUCTURE_PRECIPITATE = 0,
+		MATERIAL_STRUCTURE_REINFORCEMENT = 0,
+		MATERIAL_STRUCTURE_AMORPHOUS = 10,
+		MATERIAL_STRUCTURE_DEFECT = 20,
+	)
+	var/amount = 0
+	var/phase = MATERIAL_PHASE_SOLID
+	/// The batch's temperature while it holds no heat store (at rest, at its surroundings), K.
+	var/rest_temperature = T20C
+	/// The Rust heat store (code/domains/heat/heat_store.dm) holding the batch's heat while it differs from its surroundings, or null.
+	var/heat_store
+	/// The heat links its store makes to where it cools (edge ids), and the "x,y,z" of the turf they were made for.
+	var/list/heat_links
+	var/heat_linked_at
+	var/purity = 90
+	var/grain_size = 50
+	var/internal_stress = 15
+	var/porosity = 10
+	var/homogeneity = 75
+	var/atmosphere = MATERIAL_ATMOSPHERE_AIR
+	var/quench_medium = "water"
+	var/solution_treated = FALSE
+	var/yield_fraction = 1
+	var/energy_spent = 0
+	var/oxidation = 0
+	var/cost_basis = 0
+	var/surface_protection = 0
+	var/hardness = 0
+	var/toughness = 0
+	var/conductivity = 0
+	var/heat_resistance = 0
+	var/corrosion_resistance = 0
+	var/brittleness = 0
+
+/datum/material_batch/proc/add_material(material_name, sheets = 1, datum/money_account/producer, source_purity = 100, lot_id)
+	var/datum/material/material = get_material_by_name(material_name)
+	if(!material || sheets <= 0)
+		return FALSE
+	LAZYSET(composition, material.name, (LAZYACCESS(composition, material.name) || 0) + sheets)
+	var/old_amount = amount
+	amount += sheets
+	purity = round((purity * old_amount + clamp(source_purity, 20, 100) * sheets) / max(amount, 1))
+	if(lot_id)
+		LAZYSET(feedstock_lots, lot_id, (LAZYACCESS(feedstock_lots, lot_id) || 0) + sheets)
+	var/feedstock_cost = max(material.supply_conversion_value, 0.1) * sheets
+	cost_basis += feedstock_cost
+	record_cost(MATERIAL_COST_FEEDSTOCK, feedstock_cost)
+	if(producer)
+		contributors[producer.account_number] = (contributors[producer.account_number] || 0) + sheets
+	recalculate()
+	return TRUE
+
+/datum/material_batch/proc/add_additive(additive_name, units, unit_cost = 1, cost_category = MATERIAL_COST_CHEMICALS)
+	if(!additive_name || units <= 0)
+		return FALSE
+	LAZYSET(impurities, additive_name, (LAZYACCESS(impurities, additive_name) || 0) + units)
+	var/concentration = units / max(amount, 1)
+	purity = clamp(purity - round(concentration * 0.4), 20, 100)
+	homogeneity = clamp(homogeneity - round(concentration * 0.2), 0, 100)
+	LAZYADD(process_history, "alloyed with [units]u [additive_name]")
+	var/additive_cost = max(unit_cost, 0) * units
+	cost_basis += additive_cost
+	record_cost(cost_category, additive_cost)
+	recalculate()
+	return TRUE
+
+/datum/material_batch/proc/add_surface_layer(layer_name, strength, additive_name, additive_units = 0)
+	if(!layer_name || strength <= 0)
+		return FALSE
+	LAZYSET(surface_layers, layer_name, clamp((LAZYACCESS(surface_layers, layer_name) || 0) + strength, 0, 100))
+	if(additive_name && additive_units > 0)
+		LAZYSET(impurities, additive_name, (LAZYACCESS(impurities, additive_name) || 0) + additive_units)
+	LAZYADD(process_history, "applied [layer_name]")
+	recalculate()
+	return TRUE
+
+/datum/material_batch/proc/add_dissolved_gas(gas_name, units)
+	if(!gas_name || units <= 0)
+		return FALSE
+	LAZYSET(dissolved_gases, gas_name, clamp((LAZYACCESS(dissolved_gases, gas_name) || 0) + units, 0, 100))
+	LAZYADD(process_history, "infused with [gas_name]")
+	recalculate()
+	return TRUE
+
+/datum/material_batch/proc/add_field_treatment(treatment_name, strength)
+	if(!treatment_name || strength <= 0)
+		return FALSE
+	LAZYSET(field_treatments, treatment_name, clamp((LAZYACCESS(field_treatments, treatment_name) || 0) + strength, 0, 100))
+	LAZYADD(process_history, treatment_name)
+	recalculate()
+	return TRUE
+
+/datum/material_batch/proc/apply_process(process, option)
+	if(!length(composition))
+		return FALSE
+	if(!can_process(process))
+		return FALSE
+	var/old_yield = yield_fraction
+	switch(process)
+		if(MATERIAL_PROCESS_MELT)
+			if(temperature() < melting_temperature())
+				return FALSE
+			phase = MATERIAL_PHASE_MOLTEN
+			homogeneity = clamp(homogeneity + 18, 0, 100)
+			porosity = clamp(porosity + 4, 0, 100)
+			structure[MATERIAL_STRUCTURE_AMORPHOUS] = 70
+			structure[MATERIAL_STRUCTURE_SOFT] = 10
+			structure[MATERIAL_STRUCTURE_DEFECT] = 20
+		if(MATERIAL_PROCESS_CAST)
+			if(phase != MATERIAL_PHASE_MOLTEN)
+				return FALSE
+			phase = MATERIAL_PHASE_SOLID
+			bring_to_temperature(T20C + 80, HEAT_SOURCE_MATERIAL) // the mould takes the casting's heat
+			grain_size = 72
+			internal_stress = 28
+			porosity = clamp(porosity + 8, 0, 100)
+			structure[MATERIAL_STRUCTURE_SOFT] = 65
+			structure[MATERIAL_STRUCTURE_AMORPHOUS] = 10
+			structure[MATERIAL_STRUCTURE_DEFECT] = 25
+			solution_treated = FALSE
+		if(MATERIAL_PROCESS_QUENCH)
+			if(phase != MATERIAL_PHASE_SOLID || !solution_treated || temperature() < melting_temperature() * 0.62)
+				return FALSE
+			phase = MATERIAL_PHASE_SOLID
+			grain_size = clamp(grain_size - 28, 1, 100)
+			internal_stress = clamp(internal_stress + (option == "oil" ? 18 : 30), 0, 100)
+			porosity = clamp(porosity - 4, 0, 100)
+			bring_to_temperature(T20C, HEAT_SOURCE_MATERIAL) // the quench bath takes the heat
+			var/quench_strength = option == "oil" ? 45 : (option == "cryo" ? 75 : 60)
+			structure[MATERIAL_STRUCTURE_HARDENED] = clamp(structure[MATERIAL_STRUCTURE_HARDENED] + quench_strength, 0, 90)
+			structure[MATERIAL_STRUCTURE_SOFT] = clamp(structure[MATERIAL_STRUCTURE_SOFT] - quench_strength, 0, 100)
+			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] + round(quench_strength / 8), 0, 100)
+			quench_medium = option || "water"
+			solution_treated = FALSE
+		if(MATERIAL_PROCESS_FORGE)
+			if(phase != MATERIAL_PHASE_SOLID || temperature() < melting_temperature() * 0.45 || temperature() > melting_temperature() * 0.9)
+				return FALSE
+			porosity = clamp(porosity - 22, 0, 100)
+			grain_size = clamp(grain_size - 8, 1, 100)
+			homogeneity = clamp(homogeneity + 8, 0, 100)
+			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 14, 0, 100)
+		if(MATERIAL_PROCESS_PURIFY)
+			var/removed_contamination = 0
+			for(var/impurity in LAZYCOPY(impurities))
+				var/lower_impurity = lowertext(impurity)
+				if(findtext(lower_impurity, "oxide") || findtext(lower_impurity, "sulfur"))
+					removed_contamination += LAZYACCESS(impurities, impurity)
+					LAZYREMOVE(impurities, impurity)
+			purity = clamp(purity + min(10, 2 + round(removed_contamination)), 0, 100)
+			oxidation = max(0, oxidation - 20)
+			homogeneity = clamp(homogeneity + 12, 0, 100)
+			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 10, 0, 100)
+		if(MATERIAL_PROCESS_HOMOGENIZE)
+			if(phase != MATERIAL_PHASE_MOLTEN)
+				return FALSE
+			homogeneity = clamp(homogeneity + 28, 0, 100)
+			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 8, 0, 100)
+		if(MATERIAL_PROCESS_SOLUTION_TREAT)
+			if(phase != MATERIAL_PHASE_SOLID || temperature() < melting_temperature() * 0.62 || temperature() > melting_temperature() * 0.9)
+				return FALSE
+			solution_treated = TRUE
+			structure[MATERIAL_STRUCTURE_PRECIPITATE] = clamp(structure[MATERIAL_STRUCTURE_PRECIPITATE] - 15, 0, 100)
+			structure[MATERIAL_STRUCTURE_SOFT] = clamp(structure[MATERIAL_STRUCTURE_SOFT] + 10, 0, 100)
+		else
+			return FALSE
+	LAZYADD(process_history, option ? "[process] ([option])" : process)
+	LAZYSET(process_counts, process, (LAZYACCESS(process_counts, process) || 0) + 1)
+	if(yield_fraction < old_yield)
+		record_yield_loss(old_yield - yield_fraction)
+	normalize_structure()
+	recalculate()
+	emit_contract_event(CONTRACT_EVENT_MATERIAL_PROCESSED, evidence_context(process))
+	return TRUE
+
+/datum/material_batch/proc/record_cost(category, value)
+	if(!category || !isnum(value) || value == 0)
+		return
+	cost_ledger[category] = (cost_ledger[category] || 0) + value
+
+/datum/material_batch/proc/record_electricity(power_units)
+	if(power_units <= 0)
+		return
+	energy_spent += power_units
+	record_cost(MATERIAL_COST_ELECTRICITY, power_units / MATERIAL_POWER_UNITS_PER_THALER)
+
+/datum/material_batch/proc/record_yield_loss(fraction_lost)
+	if(fraction_lost <= 0 || amount <= 0)
+		return
+	var/feedstock_per_sheet = (cost_ledger[MATERIAL_COST_FEEDSTOCK] || 0) / amount
+	record_cost(MATERIAL_COST_WASTE, amount * fraction_lost * feedstock_per_sheet)
+	record_cost(MATERIAL_COST_WASTE_HANDLING, amount * fraction_lost * 0.5)
+
+/datum/material_batch/proc/record_recovery(value)
+	if(value > 0)
+		record_cost(MATERIAL_COST_RECOVERY, value)
+
+/datum/material_batch/proc/usable_output()
+	return max(0.01, amount * yield_fraction)
+
+/datum/material_batch/proc/total_production_cost()
+	return max(0, (cost_ledger[MATERIAL_COST_FEEDSTOCK] || 0) + (cost_ledger[MATERIAL_COST_CHEMICALS] || 0) + (cost_ledger[MATERIAL_COST_CATALYSTS] || 0) + (cost_ledger[MATERIAL_COST_ELECTRICITY] || 0) + (cost_ledger[MATERIAL_COST_MEDIA] || 0) + (cost_ledger[MATERIAL_COST_LABOR] || 0) + (cost_ledger[MATERIAL_COST_EQUIPMENT] || 0) + (cost_ledger[MATERIAL_COST_WASTE_HANDLING] || 0) - (cost_ledger[MATERIAL_COST_RECOVERY] || 0))
+
+/datum/material_batch/proc/unit_production_cost()
+	return total_production_cost() / usable_output()
+
+/datum/material_batch/proc/can_process(process)
+	if(!length(composition))
+		return FALSE
+	switch(process)
+		if(MATERIAL_PROCESS_MELT)
+			return phase != MATERIAL_PHASE_MOLTEN && temperature() >= melting_temperature()
+		if(MATERIAL_PROCESS_CAST)
+			return phase == MATERIAL_PHASE_MOLTEN
+		if(MATERIAL_PROCESS_QUENCH)
+			return phase == MATERIAL_PHASE_SOLID && solution_treated && temperature() >= melting_temperature() * 0.62
+		if(MATERIAL_PROCESS_FORGE)
+			return phase == MATERIAL_PHASE_SOLID && temperature() >= melting_temperature() * 0.45 && temperature() <= melting_temperature() * 0.9 && (LAZYACCESS(process_counts, MATERIAL_PROCESS_FORGE) || 0) < 2
+		if(MATERIAL_PROCESS_HOMOGENIZE)
+			return phase == MATERIAL_PHASE_MOLTEN
+		if(MATERIAL_PROCESS_SOLUTION_TREAT)
+			return phase == MATERIAL_PHASE_SOLID && temperature() >= melting_temperature() * 0.62 && temperature() <= melting_temperature() * 0.9
+		if(MATERIAL_PROCESS_PURIFY)
+			return TRUE
+	return FALSE
+
+/datum/material_batch/proc/recalculate()
+	if(!length(composition) || amount <= 0)
+		return
+	var/base_hardness = 0
+	var/base_toughness = 0
+	var/base_conductivity = 0
+	var/base_heat = 0
+	var/base_corrosion = 0
+	var/hardener = 0
+	var/stabilizer = 0
+	var/reinforcement = 0
+	for(var/material_name in composition)
+		var/datum/material/material = get_material_by_name(material_name)
+		if(!material)
+			continue
+		var/share = LAZYACCESS(composition, material_name) / amount
+		var/material_heat = max(material.heat_resistance, clamp((material.melting_point - 500) / 60, 10, 100))
+		var/material_corrosion = max(material.corrosion_resistance, clamp(58 - material.reactivity * 0.4, 10, 85))
+		base_hardness += max(material.hardness, 20) * share
+		base_toughness += max(material.integrity + material.elasticity * 0.35, 20) * share
+		base_conductivity += max(material.conductivity, 5) * share
+		base_heat += material_heat * share
+		base_corrosion += material_corrosion * share
+		hardener += max(material.hardness - 45, 0) * share
+		stabilizer += max(material_heat + material_corrosion - 90, 0) * share
+		if(material.fracture_toughness >= 60 || (material.hardness >= 55 && material.brittleness >= 25))
+			reinforcement += share * 100
+	var/carbon_units = additive_units_matching("carbon")
+	var/silicon_units = additive_units_matching("silicon")
+	var/flux_units = additive_units_matching("flux")
+	var/conductive_dopant = additive_units_matching("conductive dopant")
+	var/thermal_catalyst = additive_units_matching("thermal phase")
+	var/corrosion_inhibitor = additive_units_matching("corrosion inhibitor")
+	var/grain_refiner = additive_units_matching("grain refiner")
+	var/nitrogen_infusion = (LAZYACCESS(dissolved_gases, "nitrogen") || 0) / max(amount, 1)
+	var/hydrogen_infusion = (LAZYACCESS(dissolved_gases, "hydrogen") || 0) / max(amount, 1)
+	var/oxygen_infusion = (LAZYACCESS(dissolved_gases, "oxygen") || 0) / max(amount, 1)
+	var/phoron_infusion = (LAZYACCESS(dissolved_gases, "phoron") || 0) / max(amount, 1)
+	var/carbon_case = LAZYACCESS(surface_layers, MATERIAL_SURFACE_CARBON) || 0
+	var/effective_porosity = max(0, porosity - min(flux_units, 8))
+	var/carbon_window = max(0, 18 - abs(carbon_units - 6) * 3)
+	var/silicon_window = max(0, 14 - abs(silicon_units - 4) * 2)
+	structure[MATERIAL_STRUCTURE_REINFORCEMENT] = clamp(max(structure[MATERIAL_STRUCTURE_REINFORCEMENT], reinforcement * 0.45), 0, 100)
+	var/quality = purity * 0.55 + homogeneity * 0.45
+	var/hardened_fraction = structure[MATERIAL_STRUCTURE_HARDENED] / 100
+	var/effective_precipitate = clamp(structure[MATERIAL_STRUCTURE_PRECIPITATE] + round((carbon_window + silicon_window) / 4), 0, 100)
+	var/precipitate_fraction = effective_precipitate / 100
+	var/defect_fraction = structure[MATERIAL_STRUCTURE_DEFECT] / 100
+	hardness = clamp(round(base_hardness * (0.62 + quality / 280) + hardened_fraction * (30 + hardener * 0.25) + precipitate_fraction * 18 + carbon_window + grain_refiner + nitrogen_infusion * 0.3 + carbon_case * 0.16 - grain_size * 0.08), 1, 100)
+	brittleness = clamp(round((100 - base_toughness) * 0.28 + internal_stress * 0.38 + effective_porosity * 0.28 + defect_fraction * 35 + max(carbon_units - 10, 0) * 3 + hydrogen_infusion * 0.18 + oxygen_infusion * 0.2), 0, 100)
+	toughness = clamp(round(base_toughness * (0.62 + quality / 300) + structure[MATERIAL_STRUCTURE_SOFT] * 0.14 + precipitate_fraction * 12 + grain_refiner * 0.5 - brittleness * 0.3), 1, 100)
+	conductivity = clamp(round(base_conductivity * (0.55 + purity / 180) - effective_porosity * 0.12 + conductive_dopant * 3), 0, 100)
+	heat_resistance = clamp(round(base_heat * (0.65 + purity / 260) + stabilizer * 0.15 + silicon_window * 0.4 + thermal_catalyst * 2 + phoron_infusion * 0.25), 1, 100)
+	corrosion_resistance = clamp(round(base_corrosion * (0.6 + purity / 240) + stabilizer * 0.12 - oxidation * 0.25 + surface_protection + corrosion_inhibitor * 3 - oxygen_infusion * 0.12), 1, 100)
+	heat_capacity_changed()
+
+/datum/material_batch/proc/additive_units_matching(fragment)
+	var/total = 0
+	for(var/additive in impurities)
+		if(findtext(lowertext(additive), lowertext(fragment)))
+			total += LAZYACCESS(impurities, additive)
+	return total / max(amount, 1)
+
+/datum/material_batch/proc/normalize_structure()
+	var/total = 0
+	for(var/structure_name in structure)
+		structure[structure_name] = max(0, structure[structure_name])
+		total += structure[structure_name]
+	if(total <= 0)
+		structure[MATERIAL_STRUCTURE_SOFT] = 100
+		return
+	for(var/structure_name in structure)
+		structure[structure_name] = round(structure[structure_name] * 100 / total)
+
+/datum/material_batch/proc/melting_temperature()
+	var/weighted = 0
+	for(var/material_name in composition)
+		var/datum/material/material = get_material_by_name(material_name)
+		if(material)
+			weighted += material.melting_point * (LAZYACCESS(composition, material_name) / max(amount, 1))
+	return max(round(weighted), 500)
+
+/datum/material_batch/proc/fingerprint()
+	var/list/parts = list()
+	var/quantity = max(amount, 0.01)
+	for(var/material_name in sortList(LAZYCOPY(composition)))
+		parts += "[material_name]=[round(LAZYACCESS(composition, material_name) / quantity, 0.001)]"
+	for(var/impurity in sortList(LAZYCOPY(impurities)))
+		parts += "+[impurity]=[round(LAZYACCESS(impurities, impurity) / quantity, 0.001)]"
+	for(var/layer_name in sortList(LAZYCOPY(surface_layers)))
+		parts += "l[layer_name]=[LAZYACCESS(surface_layers, layer_name)]"
+	for(var/gas_name in sortList(LAZYCOPY(dissolved_gases)))
+		parts += "g[gas_name]=[round(LAZYACCESS(dissolved_gases, gas_name) / quantity, 0.001)]"
+	for(var/treatment_name in sortList(LAZYCOPY(field_treatments)))
+		parts += "t[treatment_name]=[LAZYACCESS(field_treatments, treatment_name)]"
+	for(var/structure_name in sortList(structure.Copy()))
+		parts += "#[structure_name]=[structure[structure_name]]"
+	parts += "p[purity]g[grain_size]s[internal_stress]o[porosity]h[homogeneity]a[atmosphere]x[oxidation]"
+	return md5(jointext(parts, ";"))
+
+/datum/material_batch/proc/display_name()
+	var/list/names = list()
+	for(var/material_name in composition)
+		names += material_display_name(material_name) || material_name
+		if(length(names) >= 3)
+			break
+	return "[jointext(names, "-")] processed alloy"
+
+/datum/material_batch/proc/evidence_context(process)
+	return list(
+		"department" = DEPARTMENT_RESEARCH,
+		"process" = process,
+		"fingerprint" = fingerprint(),
+		"purity" = purity,
+		"hardness" = hardness,
+		"toughness" = toughness,
+		"brittleness" = brittleness,
+		"conductivity" = conductivity,
+		"heat_resistance" = heat_resistance,
+		"corrosion_resistance" = corrosion_resistance,
+		"composition_count" = length(composition),
+		"amount" = max(1, round(amount * yield_fraction)),
+		"yield" = round(yield_fraction * 100),
+		"energy_cost" = round(cost_ledger[MATERIAL_COST_ELECTRICITY], 0.01),
+		"production_cost" = round(total_production_cost(), 0.01),
+		"unit_cost" = round(unit_production_cost(), 0.01),
+		"waste_value" = round(cost_ledger[MATERIAL_COST_WASTE], 0.01),
+		"recovery_value" = round(cost_ledger[MATERIAL_COST_RECOVERY], 0.01),
+		"defect_fraction" = structure[MATERIAL_STRUCTURE_DEFECT],
+		"oxidation" = oxidation,
+	)
+
+/datum/material_batch/proc/copy_batch()
+	var/datum/material_batch/copy = new
+	copy.composition = LAZYCOPY(composition)
+	copy.impurities = LAZYCOPY(impurities)
+	copy.process_history = LAZYCOPY(process_history)
+	copy.contributors = contributors.Copy()
+	copy.feedstock_lots = LAZYCOPY(feedstock_lots)
+	copy.test_results = LAZYCOPY(test_results)
+	copy.process_counts = LAZYCOPY(process_counts)
+	copy.surface_layers = LAZYCOPY(surface_layers)
+	copy.dissolved_gases = LAZYCOPY(dissolved_gases)
+	copy.field_treatments = LAZYCOPY(field_treatments)
+	copy.cost_ledger = cost_ledger.Copy()
+	copy.structure = structure.Copy()
+	copy.amount = amount
+	copy.phase = phase
+	copy.rest_temperature = temperature()
+	if(heat_store)
+		copy.heat_store = heat_store_create(copy.thermal_capacity(), copy.rest_temperature) // its share of the heat: the original is replaced by its copies
+	copy.purity = purity
+	copy.grain_size = grain_size
+	copy.internal_stress = internal_stress
+	copy.porosity = porosity
+	copy.homogeneity = homogeneity
+	copy.atmosphere = atmosphere
+	copy.quench_medium = quench_medium
+	copy.solution_treated = solution_treated
+	copy.yield_fraction = yield_fraction
+	copy.energy_spent = energy_spent
+	copy.oxidation = oxidation
+	copy.cost_basis = cost_basis
+	copy.surface_protection = surface_protection
+	copy.recalculate()
+	return copy
+
+/// Preserve intensive properties while dividing quantity, provenance, energy,
+/// reagents, and expense with a physical piece of stock.
+/datum/material_batch/proc/copy_for_amount(new_amount)
+	var/datum/material_batch/copy = copy_batch()
+	var/ratio = max(0, new_amount / max(amount, 0.01))
+	copy.amount = new_amount
+	for(var/material_name in copy.composition)
+		copy.composition[material_name] *= ratio
+	for(var/impurity in copy.impurities)
+		copy.impurities[impurity] *= ratio
+	for(var/lot_id in copy.feedstock_lots)
+		copy.feedstock_lots[lot_id] *= ratio
+	for(var/account_number in copy.contributors)
+		copy.contributors[account_number] *= ratio
+	for(var/gas_name in copy.dissolved_gases)
+		copy.dissolved_gases[gas_name] *= ratio
+	for(var/category in copy.cost_ledger)
+		copy.cost_ledger[category] *= ratio
+	copy.cost_basis *= ratio
+	copy.energy_spent *= ratio
+	copy.heat_capacity_changed()
+	return copy
+
+/datum/material_batch/proc/thermal_capacity()
+	var/weighted_specific_heat = 0
+	for(var/material_name in composition)
+		var/datum/material/material = get_material_by_name(material_name)
+		if(material)
+			weighted_specific_heat += max(material.specific_heat, 100) * LAZYACCESS(composition, material_name) / max(amount, 1)
+	return max(1, amount * weighted_specific_heat / 160)
+
+/datum/material_batch/proc/add_batch_heat(joules, source = HEAT_SOURCE_MATERIAL)
+	if(!isnum(joules) || !joules)
+		return 0
+	var/old_temperature = temperature()
+	heat_store_add(ensure_heat_store(), joules, source)
+	return temperature() - old_temperature
+
+/// A batch's temperature, K.
+/proc/material_batch_temperature(datum/material_batch/batch)
+	return batch.temperature()
+
+/// Sets a batch's temperature (a spawn, a test), booked as an authority write.
+/proc/material_batch_set_temperature(datum/material_batch/batch, kelvin)
+	batch.bring_to_temperature(kelvin)
+
+// ---- heat (doc/rewrite/temperature.md §7) ----
+// A batch away from its surroundings holds its heat in a Rust heat store (code/domains/heat/heat_store.dm); at rest it holds none and reads its
+// rest temperature. Processed stock lying in a room cools through a heat link to the room's air (processed_material.dm).
+
+/datum/material_batch/proc/temperature()
+	return heat_store ? heat_store_temperature(heat_store, rest_temperature) : rest_temperature
+
+/// Brings the batch to `kelvin`, booked under `source` (a process step's bath or mould takes the difference).
+/datum/material_batch/proc/bring_to_temperature(kelvin, source = HEAT_SOURCE_AUTHORITY)
+	if(!isnum(kelvin) || !heat_store && kelvin == rest_temperature)
+		return
+	heat_store_set_temperature(ensure_heat_store(), kelvin, source)
+
+/// The batch's heat store, made at its rest temperature on first use.
+/datum/material_batch/proc/ensure_heat_store()
+	if(!heat_store)
+		heat_store = heat_store_create(thermal_capacity(), rest_temperature)
+	return heat_store
+
+/// Keeps the store's capacity with the batch's quantity and composition (the temperature is kept, as it always was).
+/datum/material_batch/proc/heat_capacity_changed()
+	if(heat_store)
+		heat_store_set_capacity(heat_store, thermal_capacity())
+
+/// Cools into `air` (a turf's) through a heat link at `conductance` W/K, re-made when the turf changes.
+/datum/material_batch/proc/cool_into(turf/T, conductance)
+	var/key = T ? "[T.x],[T.y],[T.z]" : null
+	if(key == heat_linked_at && length(heat_links))
+		return
+	drop_heat_links()
+	if(!T || !ensure_heat_store())
+		return
+	heat_linked_at = key
+	var/id = heat_store_link(heat_store, T, conductance)
+	if(id)
+		LAZYADD(heat_links, id)
+
+/datum/material_batch/proc/drop_heat_links()
+	for(var/id in heat_links)
+		heat_edge_drop(id)
+	heat_links = null
+	heat_linked_at = null
+
+/// At its surroundings' temperature: the batch gives what it still holds over `into`'s temperature to it and lets its store go.
+/datum/material_batch/proc/settle_heat(into)
+	if(!heat_store)
+		return
+	if(into)
+		heat_equalize(HEAT_STORE(heat_store), into)
+	rest_temperature = temperature()
+	drop_heat_links()
+	heat_store_drop(heat_store)
+	heat_store = null
+
+/datum/material_batch/on_destroy(force)
+	drop_heat_links()
+	if(heat_store)
+		heat_store_drop(heat_store)
+		heat_store = null
+	return ..()
+SCHEMA(/datum/material_batch, rest_temperature, num())

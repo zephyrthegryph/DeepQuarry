@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A player joining during the boot draw backlog sees the atoms around them drawn first"
+  - bugfix: "Closed laptops are drawn again (their draw skipped the base draw, so the engine never drew them)"
+  - code_imp: "Production logs REFRESH DRIFT for a look the audit had to repair; a serial declared inside an output logs on its next use"

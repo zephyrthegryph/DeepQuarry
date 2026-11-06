@@ -37,7 +37,7 @@ VIRGO3B_TURF_CREATE(/turf/simulated/floor/plating/external)
 VIRGO3B_TURF_CREATE(/turf/simulated/floor/reinforced)
 
 
-VIRGO2_TURF_CREATE(/turf/unsimulated/wall/planetary)
+VIRGO2_TURF_CREATE(/turf/open/fixed/wall/planetary)
 
 VIRGO2_TURF_CREATE(/turf/simulated/wall)
 VIRGO2_TURF_CREATE(/turf/simulated/floor/plating)

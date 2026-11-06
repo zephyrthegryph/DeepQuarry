@@ -1,0 +1,492 @@
+@use 'sass:meta';
+@use '~tgui-core/styles';
+
+@include meta.load-css('~tgui/styles/reset.scss');
+
+// tgui-panel/settings/palette.ts; palette.test.ts holds these to it.
+.dark:root {
+  --stat-base: #202020;
+  --stat-section: #151515;
+  --stat-text: #b3cce6;
+  --stat-link: #6699ff;
+  --stat-muted: #8fa1b5;
+  --stat-line: hsla(0, 0%, 100%, 0.1);
+  --stat-track: hsla(0, 0%, 100%, 0.12);
+  --color-base: var(--stat-base);
+  --color-section: var(--stat-section);
+  --base-gradient-spread: 0;
+}
+
+.light:root {
+  --stat-base: #eeeeee;
+  --stat-section: #ffffff;
+  --stat-text: #000000;
+  --stat-link: #003399;
+  --stat-muted: #59636e;
+  --stat-line: hsla(0, 0%, 0%, 0.15);
+  --stat-track: hsla(0, 0%, 0%, 0.15);
+  --color-base: var(--stat-base);
+  --color-section: var(--stat-section);
+  --base-gradient-spread: 0;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background-color: var(--stat-base);
+  color: var(--stat-text);
+  scrollbar-color: var(--color-scrollbar-thumb, #373737) var(--stat-section);
+}
+
+body {
+  font-size: 12px;
+}
+
+a {
+  color: var(--stat-link);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+img {
+  image-rendering: pixelated;
+  vertical-align: middle;
+}
+
+h3 {
+  margin: 0.75em 0 0.35em;
+  font-size: 1em;
+}
+
+.stat-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+// Underlined tgui-core Tabs, as in the chat. Tabs wrap onto more rows by
+// default; "scrollable" keeps one row that scrolls; "classic" is denser.
+.stat-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  flex: none;
+  gap: var(--space-s) var(--space-m);
+  align-items: flex-end;
+  padding: 0 var(--space-m);
+  background-color: var(--stat-section);
+  border-bottom: 1px solid var(--stat-line);
+
+  .stat-tabs__list {
+    flex: 1 1 16em;
+    flex-wrap: wrap;
+    min-width: 0;
+    margin: 0;
+    padding: var(--space-s) 0 0;
+    background-color: transparent;
+  }
+
+  .Tab {
+    min-width: 0;
+    min-height: 2em;
+  }
+
+  .Tab .Tab__text {
+    margin: 0 var(--space-ml);
+    white-space: nowrap;
+  }
+
+  &--classic {
+    .Tab {
+      min-height: 1.6em;
+    }
+
+    .Tab .Tab__text {
+      margin: 0 var(--space-sm);
+    }
+  }
+
+  &--scrollable {
+    flex-wrap: nowrap;
+
+    .stat-tabs__list {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .Tab {
+      flex-shrink: 0;
+    }
+  }
+}
+
+.stat-search {
+  flex: 0 1 13em;
+  min-width: 8em;
+  margin: var(--space-s) 0 var(--space-sm) auto;
+}
+
+.stat-content {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-m) var(--space-ml);
+  overflow: hidden auto;
+}
+
+.stat-empty {
+  color: var(--stat-muted);
+  font-style: italic;
+}
+
+.status-line {
+  margin-bottom: 0.25em;
+}
+
+.verb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10em, 1fr));
+  gap: var(--space-s);
+
+  .Button {
+    margin: 0;
+  }
+}
+
+.stat-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  td {
+    padding: 0.2em 0.35em;
+    border-bottom: 1px solid var(--stat-line);
+    vertical-align: top;
+  }
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.1em 0;
+}
+
+.item-link {
+  cursor: pointer;
+  color: var(--stat-text);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.spoiler {
+  background-color: gray;
+  color: transparent;
+
+  &:hover {
+    background-color: inherit;
+    color: inherit;
+  }
+}
+
+.examine {
+  p {
+    margin: 0 0 0.5em;
+  }
+
+  .giant {
+    font-size: 1.5em;
+  }
+
+  .blue {
+    color: hsl(212, 68%, 66%);
+  }
+
+  .green {
+    color: hsl(124, 50%, 55%);
+  }
+
+  .red {
+    color: hsl(0, 74%, 62%);
+  }
+}
+
+.menu-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em;
+  margin-bottom: 0.2em;
+
+  .Button {
+    margin: 0;
+  }
+}
+
+.mc-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+.mc-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
+  gap: var(--space-m);
+}
+
+.mc-navigation.Tabs {
+  flex-wrap: wrap;
+  margin: calc(-1 * var(--space-s)) 0 0;
+  padding: 0;
+  background-color: transparent;
+  border-bottom: 1px solid var(--stat-line);
+
+  .Tab {
+    min-width: 0;
+    min-height: 1.8em;
+  }
+
+  .Tab .Tab__text {
+    margin: 0 var(--space-m);
+  }
+}
+
+.mc-metric-card,
+.mc-panel {
+  padding: var(--space-m) var(--space-ml);
+  background-color: var(--stat-section);
+  border: 1px solid var(--stat-line);
+  border-radius: var(--border-radius-medium);
+}
+
+.mc-panel h3 + .mc-panel-hint {
+  display: block;
+  margin-top: calc(-1 * var(--space-s));
+}
+
+// Neutral unless a threshold is crossed; then the value and edge take the colour.
+.mc-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+
+  &--warning {
+    border-color: hsl(from var(--color-average) h s l / 0.6);
+
+    .mc-metric-value {
+      color: var(--color-average);
+    }
+  }
+
+  &--critical {
+    border-color: hsl(from var(--color-bad) h s l / 0.7);
+
+    .mc-metric-value {
+      color: var(--color-bad);
+    }
+  }
+}
+
+.mc-metric-label {
+  color: var(--stat-muted);
+  font-size: 0.78em;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mc-metric-value {
+  font-size: 1.6em;
+  font-weight: bold;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-metric-detail,
+.mc-panel-hint,
+.mc-outlier-note,
+.mc-empty {
+  color: var(--stat-muted);
+  font-size: 0.82em;
+}
+
+.mc-panel h3 {
+  margin: 0 0 0.35em;
+}
+
+.mc-tick-graph {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 7em;
+  margin-top: 0.4em;
+  overflow: hidden;
+}
+
+.mc-tick-bar {
+  flex: 1 1 1px;
+  min-width: 1px;
+}
+
+.mc-tick-bar,
+.mc-subsystem-used,
+.mc-breakdown-bar {
+  &.healthy {
+    background-color: var(--color-good);
+  }
+
+  &.warning {
+    background-color: var(--color-average);
+  }
+
+  &.critical {
+    background-color: var(--color-bad);
+  }
+}
+
+.mc-budget-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 50%;
+  border-top: 1px dashed var(--color-bad);
+  pointer-events: none;
+}
+
+.mc-performance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82em;
+
+  th,
+  td {
+    padding: 0.25em;
+    text-align: right;
+    border-bottom: 1px solid var(--stat-line);
+  }
+
+  th:first-child,
+  td:first-child {
+    text-align: left;
+  }
+}
+
+.mc-subsystem-row {
+  display: grid;
+  grid-template-columns: minmax(8em, 1fr) minmax(7em, 2fr) auto;
+  gap: 0.45em;
+  align-items: center;
+  margin: 0.23em 0;
+  font-size: 0.82em;
+}
+
+.mc-subsystem-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mc-subsystem-track,
+.mc-breakdown-track {
+  display: flex;
+  height: 0.6em;
+  overflow: hidden;
+  background-color: var(--stat-track);
+  border-radius: 1em;
+}
+
+.mc-subsystem-used,
+.mc-subsystem-overrun,
+.mc-breakdown-bar {
+  flex: none;
+  height: 100%;
+}
+
+.mc-subsystem-overrun {
+  background-color: hsl(from var(--color-bad) h s calc(l * 0.6));
+}
+
+.mc-subsystem-value {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-outlier {
+  padding: 0.27em 0;
+  border-bottom: 1px solid var(--stat-line);
+  font-size: 0.82em;
+}
+
+.mc-outlier-heading {
+  width: 100%;
+  padding: 0.2em;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font-family: monospace;
+}
+
+.mc-outlier-breakdown {
+  margin: 0.3em 0.5em 0.5em 1em;
+}
+
+.mc-breakdown-row {
+  display: grid;
+  grid-template-columns: minmax(9em, 1.2fr) minmax(6em, 2fr) 4em;
+  gap: 0.4em;
+  align-items: center;
+  margin: 0.2em 0;
+}
+
+.mc-runtime-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3em 0.8em;
+}
+
+.mc-runtime-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5em;
+  padding: 0.2em 0;
+  border-bottom: 1px solid var(--stat-line);
+  font-size: 0.82em;
+
+  span {
+    color: var(--stat-muted);
+  }
+}
+
+.mc-details {
+  margin-top: var(--space-m);
+  border: 1px solid var(--stat-line);
+  border-radius: var(--border-radius-medium);
+
+  summary {
+    padding: var(--space-sm) var(--space-ml);
+    cursor: pointer;
+    color: var(--stat-muted);
+    font-weight: bold;
+
+    &:hover {
+      color: var(--stat-text);
+    }
+  }
+
+  &[open] summary {
+    border-bottom: 1px solid var(--stat-line);
+  }
+
+  .stat-table {
+    margin: var(--space-s) 0;
+  }
+}

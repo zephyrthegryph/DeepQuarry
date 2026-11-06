@@ -5,7 +5,7 @@
 
 import { createHash, timingSafeEqual } from 'node:crypto';
 
-/** Admin rights bits (code/__defines/admin.dm). */
+/** Admin rights bits (code/defines/host/admin.dm). */
 export const R_ADMIN = 1 << 1;
 export const R_SERVER = 1 << 4;
 export const R_DEBUG = 1 << 5;

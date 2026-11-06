@@ -1,9 +1,36 @@
-// Flavor text editor. Manages the 9 body-part flavor slots (general/head/face/eyes/
-// torso/arms/hands/legs/feet) plus the robot module flavor map.
+// Flavor text editor. Manages the flavor entries (general/face/body) plus the robot module flavor map.
 
 /// Single source of truth for the body-part flavor slots — shared between the static-data
 /// payload and the Topic-validation whitelist so the two can't drift apart.
-GLOBAL_LIST_INIT(dq_flavor_zones, list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet"))
+GLOBAL_LIST_INIT(dq_flavor_zones, list("general", "face", "body"))
+
+/// The nine old zones as the three entries: a save's text moves into the entry named here, in this order. Several filled sources join under labels.
+GLOBAL_LIST_INIT(dq_flavor_zone_sources, list(
+	"general" = list("general"),
+	"face" = list("face", "head", "eyes"),
+	"body" = list("body", "torso", "arms", "hands", "legs", "feet"),
+))
+
+/// A save's flavor texts as the three entries, nothing lost. One filled source moves as it is; several join as "Label: text" paragraphs.
+/// Text in an entry already in the new shape is untouched, so it is safe on every load.
+/proc/dq_migrate_flavor_zones(list/saved)
+	. = list()
+	var/list/sources = GLOB.dq_flavor_zone_sources
+	for(var/entry in sources)
+		var/list/filled = list()
+		for(var/zone in sources[entry])
+			var/text = saved[zone]
+			if(istext(text) && length(text))
+				filled[zone] = text
+		if(!length(filled))
+			continue
+		if(length(filled) == 1)
+			.[entry] = filled[filled[1]]
+			continue
+		var/list/parts = list()
+		for(var/zone in filled)
+			parts += "[capitalize(zone)]: [filled[zone]]"
+		.[entry] = jointext(parts, "\n\n")
 
 /datum/preference_editor/flavor
 	key = "flavor"

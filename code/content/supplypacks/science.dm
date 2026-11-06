@@ -34,12 +34,12 @@
 	name = "Exotic seeds crate"
 	desc = "A supply of exotic seeds, for xenobotanical and hydroponics use. Requires Hydroponics access."
 	contains = list(
-			/obj/item/seeds/replicapod = 2,
-			/obj/item/seeds/ambrosiavulgarisseed = 2,
-			/obj/item/seeds/libertymycelium,
-			/obj/item/seeds/reishimycelium,
+			VARIANT(/obj/item/seeds/replicapod) = 2,
+			VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 2,
+			VARIANT(/obj/item/seeds/libertymycelium),
+			VARIANT(/obj/item/seeds/reishimycelium),
 			/obj/item/seeds/random = 6,
-			/obj/item/seeds/kudzuseed
+			VARIANT(/obj/item/seeds/kudzuseed)
 			)
 	cost = 15
 	containertype = /obj/structure/closet/crate/carp
@@ -176,8 +176,16 @@
 /datum/supply_pack/sci/borgos
 	name = "Borg-O's Five-Pack"
 	contains = list(
-			/obj/item/trash/rkibble = 5,
+			VARIANT(/obj/item/trash/rkibble) = 5,
 			)
 	cost = 45
 	containertype = /obj/structure/closet/crate/ward
 	containername = "Borg-O's crate"
+
+/datum/supply_pack/sci/pred_sect
+	name = "EXTREMELY Dangerous Bug"
+	cost = 200
+	containertype = /obj/structure/largecrate/animal/bugsect
+	containername = "EXTREMELY Dangerous Bug crate"
+	contraband = 1
+	access = ACCESS_XENOBIOLOGY

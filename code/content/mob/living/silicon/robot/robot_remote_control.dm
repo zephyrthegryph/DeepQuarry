@@ -1,0 +1,236 @@
+// This file holds things required for remote borg control by an AI.
+
+
+/mob/living/silicon/robot
+	var/shell = FALSE
+	var/deployed = FALSE
+	var/mob/living/silicon/ai/mainframe = null
+	var/first_transfer = TRUE
+
+// Premade AI shell, for roundstart shells: its brain is the AI remote interface (the robot's setup_brain() step, a setup() hook);
+// post_mmi_setup() makes it a shell and grants the transfer verb.
+/mob/living/silicon/robot/ai_shell/setup_brain()
+	rel_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src))
+	post_mmi_setup()
+
+// Call after inserting or instantiating an MMI.
+/mob/living/silicon/robot/proc/post_mmi_setup()
+	if(istype(mmi, /obj/item/mmi/inert/ai_remote))
+		make_shell()
+		play_sfx(src, SFX_MACHINES_TWOBEEP, vary = FALSE)
+	else
+		play_sfx(src, SFX_VOICE_LIVEAGAIN)
+	return
+
+REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
+
+/mob/living/silicon/robot/proc/make_shell()
+	grant(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // TGPanel // add sideloader
+	set_shell(TRUE)
+	braintype = "AI Shell"
+	SetName("[modtype] AI Shell [num2text(ident)]")
+	rel_set(src, nameof(rbPDA), new /obj/item/pda/ai/shell(src))
+	setup_PDA()
+	registry_join(REGISTRY_AI_SHELLS, src)
+	if(!QDELETED(camera))
+		camera.c_tag = real_name	//update the camera name too
+	notify_ai(ROBOT_NOTIFICATION_AI_SHELL)
+
+// ITION: Ai shell sideloading
+/mob/living/silicon/robot/proc/transfer_shell_act()
+	set category = VERB_CAT_ABILITIES_SILICON // TGPanel
+	set name = "Transfer to Shell"
+	transfer_shell()
+
+
+/// `picked`: the target came from the shell list (don't ask again if it's no longer usable).
+/mob/living/silicon/robot/proc/transfer_shell_picked(datum/act/request/A)
+	if(!A.answer)
+		to_chat(src, span_notice("Deployment aborted."))
+		return
+	transfer_shell(A.answer.value, TRUE)
+
+/mob/living/silicon/robot/proc/transfer_shell(mob/living/silicon/robot/target, picked = FALSE)
+	var/mob/living/silicon/ai/AI = mainframe
+	//relay AI
+	if(!CONFIG_GET(flag/allow_ai_shells))
+		to_chat(src, span_warning("AI Shells are not allowed on this server. You shouldn't have this verb because of it, so consider making a bug report."))
+		return
+
+	if(incapacitated())
+		to_chat(src, span_warning("You are incapacitated!"))
+		return
+
+	if(AI.lacks_power())
+		to_chat(src, span_warning("Your core lacks power, wireless is disabled."))
+		return
+
+	if(AI.control_disabled)
+		to_chat(src, span_warning("Wireless networking module is offline."))
+		return
+
+	var/list/possible = list()
+	for(var/mob/living/silicon/robot/R as anything in REGISTRY_MEMBERS(REGISTRY_AI_SHELLS))
+		if(R != src && R.shell && !R.deployed && (R.stat != DEAD) && (!R.connected_ai || (R.connected_ai == AI) ) ) // shell restrictions
+			if(istype(R.loc, /obj/machinery/recharge_station))	//Check Rechargers
+				var/obj/machinery/recharge_station/RS = R.loc
+				if(!(using_map.ai_shell_restricted && !(RS.z in using_map.ai_shell_allowed_levels)))	//Allow station borgs to be redeployed from Chargers.
+					possible += R
+
+			if(isbelly(R.loc))	//check belly space
+				var/obj/belly/B = R.loc
+				if(!(using_map.ai_shell_restricted && !(B.owner.z in using_map.ai_shell_allowed_levels)))	//No smuggling in borgs
+					possible += R
+
+			if(!(using_map.ai_shell_restricted && !(R.z in using_map.ai_shell_allowed_levels)))
+				possible += R
+
+	if(!LAZYLEN(possible))
+		to_chat(src, span_warning("No usable AI shell beacons detected."))
+		return
+
+	if(LAZYLEN(possible) < 2)
+		target = possible[1]
+
+	if(!picked && (!target || !(target in possible))) //If the AI is looking for a new shell, or its pre-selected shell is no longer valid
+		open_request(src, /datum/prompt/choice, PROC_REF(transfer_shell_picked), answerer = src, title = "Shell Choice", question = "Which body to control?", choices = possible, timeout = 0)
+		return
+	if(!(target in possible))
+		target = null
+
+	if(!target || target.stat == DEAD || target.deployed || !(!target.connected_ai || (target.connected_ai == AI) ) )
+		if(target)
+			to_chat(src, span_warning("It is no longer possible to deploy to \the [target]."))
+		else
+			to_chat(src, span_notice("Deployment aborted."))
+		return
+
+	else if(mind)
+		to_chat(src, span_notice("Transferring Shell"))
+		set_deployed(FALSE)
+		STATE_REF_SET(mainframe, mob_misc, teleop, null)
+		rel_clear(mainframe, nameof(mainframe.deployed_shell))
+		SetName("[modtype] AI Shell [num2text(ident)]")
+		if(radio) //Return radio to normal
+			radio.recalculateChannels()
+		if(!QDELETED(camera))
+			camera.c_tag = real_name	//update the camera name too
+		if(mainframe.laws)
+			mainframe.laws.show_laws(mainframe) //Always remind the AI when switching
+		rel_clear(src, nameof(mainframe))
+		soul_link(/datum/soul_link/shared_body, AI, target)
+		rel_set(AI, nameof(AI.deployed_shell), target)
+		target.deploy_init(AI)
+		if(src.client) // ITION: Resize shell based on our preffered size
+			target.resize(src.client.prefs.read_preference(/datum/preference/numeric/human/size_multiplier)) // ITION + size_multiplier migrated
+		mind.transfer_to(target)
+		if(target.first_transfer)
+			target.first_transfer = FALSE
+			target.copy_from_prefs_vr()
+			if(LAZYLEN(target.vore_organs))
+				set_vore_selected(target, target.vore_organs[1])
+		src.copy_vore_prefs_to_mob(target)
+		STATE_REF_SET(AI, mob_misc, teleop, target) // So the AI 'hears' messages near its core.
+		target.post_deploy()
+// ITION END
+
+/mob/living/silicon/robot/proc/revert_shell()
+	if(!shell)
+		return
+	revoke(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // remove sideloader //
+	undeploy()
+	set_shell(FALSE)
+	registry_leave(REGISTRY_AI_SHELLS, src)
+	if(!QDELETED(camera))
+		camera.c_tag = real_name
+
+// This should be called before the AI client/mind is actually moved.
+/mob/living/silicon/robot/proc/deploy_init(mob/living/silicon/ai/AI)
+	// Set the name when the AI steps inside.
+	SetName("[AI.real_name] shell [num2text(ident)]")
+	if(isnull(sprite_name)) // For custom sprites. It can only chance once in case there are two AIs with custom borg sprites.
+		set_sprite_name(AI.real_name)
+	if(!QDELETED(camera))
+		camera.c_tag = real_name
+
+	// Have the borg have eyes when active.
+	rel_set(src, nameof(mainframe), AI)
+	set_deployed(TRUE)
+
+	// Laws.
+	set_master_ai(mainframe, TRUE) // So they share laws.
+
+	// Outpost 21 upport: force the law sync when an AI enters this shell, unless emagged
+	var/org_lu = lawupdate
+	if(!emagged)
+		set_lawupdate(TRUE) // not emagged, so the AI shell should have law priority. Prevents confusion when you suddenly have two different ion laws. One in shell one in core.
+	lawsync()
+	set_lawupdate(org_lu)
+
+	// Give button to leave.
+	grant(src, granted_verb(/mob/living/silicon/robot/proc/undeploy_act), src)
+	to_chat(AI, span_notice("You have connected to an AI Shell remotely, and are now in control of it.<br>\
+	To return to your core, use the <b>Release Control</b> verb."))
+
+	// Languages and comms.
+	set_languages(AI.languages.Copy())
+	sync_language_state()
+	set_speech_synthesizer_langs(AI.speech_synthesizer_langs.Copy())
+	if(radio && AI.aiRadio) //AI keeps all channels, including Syndie if it is an Infiltrator.
+		radio.subspace_transmission = TRUE
+		radio.channels = AI.aiRadio.channels
+
+// Called after the AI transfers over.
+/mob/living/silicon/robot/proc/post_deploy()
+	return
+
+/mob/living/silicon/robot/proc/undeploy(message)
+	if(!deployed || !mind || !mainframe)
+		return
+	if(message)
+		to_chat(src, span_notice(message))
+	mind.transfer_to(mainframe)
+	src.copy_vore_prefs_to_mob(mainframe)
+	set_deployed(FALSE)
+	STATE_REF_SET(mainframe, mob_misc, teleop, null)
+	rel_clear(mainframe, nameof(mainframe.deployed_shell))
+	SetName("[modtype] AI Shell [num2text(ident)]")
+	if(radio) //Return radio to normal
+		radio.recalculateChannels()
+	if(!QDELETED(camera))
+		camera.c_tag = real_name	//update the camera name too
+	if(mainframe.laws)
+		mainframe.laws.show_laws(mainframe) //Always remind the AI when switching
+	rel_clear(src, nameof(mainframe))
+
+/mob/living/silicon/robot/proc/undeploy_act()
+	set name = "Release Control"
+	set desc = "Release control of a remote drone."
+	set category = VERB_CAT_ABILITIES_SILICON
+
+	undeploy("Remote session terminated.")
+
+/// An AI deploys into this shell (the op is only offered while shell_open_to_ai() holds, robot.dm).
+/mob/living/silicon/robot/proc/robot_ai_deploy_shell(datum/act/op/A)
+	var/mob/living/silicon/ai/AI = A.actor
+	if(istype(AI))		// Just in case we're clicked by a borg
+		AI.deploy_to_shell(src)
+	return OP_OK
+
+// Place this on your map to mark where a free AI shell will be.
+// This can be turned off in the config (and is off by default).
+// Note that mapping in more than one of these will result in multiple shells.
+/obj/effect/landmark/free_ai_shell
+	name = "free ai shell spawner"
+	icon = 'icons/mob/screen1.dmi'
+	icon_state = "x3"
+	delete_me = TRUE
+
+CAPABILITIES(/obj/effect/landmark/free_ai_shell)
+	setup(PROC_REF(spawn_shell))
+
+/// The free AI shell, when the config allows one (setup()).
+/obj/effect/landmark/free_ai_shell/proc/spawn_shell()
+	if(CONFIG_GET(flag/allow_ai_shells) && CONFIG_GET(flag/give_free_ai_shell))
+		new /mob/living/silicon/robot/ai_shell(get_turf(src))
+

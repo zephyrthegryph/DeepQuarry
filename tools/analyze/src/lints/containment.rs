@@ -29,7 +29,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta {
         name: "raw_writes",
-        hint: "use forceMove(), moveToNullspace(), the slot API (code/datums/containment/api.dm) or image_anchor(); a justified keep takes `// ALLOW(containment): <reason>`",
+        hint: "use forceMove(), moveToNullspace(), the slot API (code/library/containers/containment/api.dm) or image_anchor(); a justified keep takes `// ALLOW(containment): <reason>`",
     }],
     allow: crate::allow_registry_fields::containment::ALLOW_0,
     lists: crate::allow_registry_fields::containment::SCOPE_META_0.lists,

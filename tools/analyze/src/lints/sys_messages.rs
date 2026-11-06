@@ -13,7 +13,7 @@ use crate::{pat, pat_match};
 
 use crate::allow_registry_fields::sys_messages::RULES;
 
-const RUNTIME_PREFIX: &str = "code/modules/messages/";
+const RUNTIME_PREFIX: &str = "code/content/messages/";
 
 /// Top-level args of the call whose '(' ends at `start`. Returns (args, end_index).
 fn split_args(text: &str, start: usize) -> (Vec<String>, usize) {

@@ -1,0 +1,107 @@
+/mob/living/silicon/robot/get_jetpack()
+	if(module)
+		for(var/obj/item/tank/jetpack/J in module.modules)
+			return J
+
+/mob/living/silicon/robot/Check_Shoegrip()
+	return module && module.no_slip
+
+/mob/living/silicon/robot/Process_Spacemove(check_drift = 0)
+	if(..())//Can move due to other reasons, don't use jetpack fuel
+		return 1
+
+	var/obj/item/tank/jetpack/thrust = get_jetpack()
+	if(thrust && (!check_drift || (check_drift && thrust.stabilization_on)) && thrust.do_thrust(0.01))
+		STATE_SET(src, mob_misc, inertia_dir, 0)
+		return 1
+
+	return 0
+
+//No longer needed, but I'll leave it here incase we plan to re-use it.
+/mob/living/silicon/robot/movement_delay()
+	. = speed
+
+	if(module_active && istype(module_active,/obj/item/borg/combat/mobility))
+		. -= 2
+
+	if(get_restraining_bolt())	// Borgs with Restraining Bolts move slower.
+		. += 1
+
+	. += CONFIG_GET(number/robot_delay)
+
+	// Graded actuator function: a worn actuator drags.
+	. += (1 - component_function(ROBOT_SLOT_ACTUATOR)) * ROBOT_ACTUATOR_WEAR_SLOWDOWN
+
+	. += ..()
+
+// Moving spends the actuator's per-step power; a worn actuator is slower.
+/mob/living/silicon/robot/SelfMove(turf/n, direct, movetime)
+	if(!use_component(ROBOT_SLOT_ACTUATOR))
+		return 0
+	return ..()
+
+/mob/living/silicon/robot/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+
+	if(!module)
+		return
+
+	if(scrubbing && isturf(loc))
+		var/turf/tile = loc
+		tile.wash(CLEAN_SCRUB)
+		if (istype(tile, /turf/simulated))
+			var/turf/simulated/S = tile
+			S.dirt = 0
+		for(var/A in tile)
+			if(istype(A, /obj/effect))
+				if(istype(A, /obj/effect/rune) || istype(A, /obj/effect/decal/cleanable) || istype(A, /obj/effect/overlay))
+					dissolved(A, src)
+			else if(istype(A, /obj/item))
+				var/obj/item/cleaned_item = A
+				cleaned_item.wash(CLEAN_SCRUB)
+			else if(ishuman(A))
+				var/mob/living/carbon/human/cleaned_human = A
+				if(cleaned_human.lying)
+					if(cleaned_human.get_equipped_item(SLOT_ID_HEAD))
+						cleaned_human.get_equipped_item(SLOT_ID_HEAD).wash(CLEAN_SCRUB)
+					if(cleaned_human.get_equipped_item(SLOT_ID_SUIT))
+						cleaned_human.get_equipped_item(SLOT_ID_SUIT).wash(CLEAN_SCRUB)
+					else if(cleaned_human.get_equipped_item(SLOT_ID_UNIFORM))
+						cleaned_human.get_equipped_item(SLOT_ID_UNIFORM).wash(CLEAN_SCRUB)
+					if(cleaned_human.get_equipped_item(SLOT_ID_SHOES))
+						cleaned_human.get_equipped_item(SLOT_ID_SHOES).wash(CLEAN_SCRUB)
+					cleaned_human.wash(CLEAN_SCRUB)
+					to_chat(cleaned_human, span_warning("[src] cleans your face!"))
+
+
+//CHOMP reagent vore belly sloshing
+/* This is an ELEMENT now
+/mob/living/silicon/robot
+	var/step_count = 0
+
+/mob/living/silicon/robot/handle_footstep(turf/T)
+	if(step_count++ % 2)
+		check_vorefootstep(I_RUN, T) //CHOMPstation edit: sloshing reagent belly walk system
+
+// Handle footstep sounds
+/mob/living/silicon/robot/handle_vorefootstep(m_intent, turf/T)
+
+	if(!CONFIG_GET(number/vorefootstep_volume) || !T.vorefootstep_sounds || !T.vorefootstep_sounds.len || !vore_footstep_volume)
+		return
+	// Future Upgrades - Robot specific support
+	var/list/vorefootstep_sounds = T.vorefootstep_sounds["human"]
+	if(!vorefootstep_sounds)
+		return
+	var/S = pick(vorefootstep_sounds)
+	if(!S) return
+	var/volume = CONFIG_GET(number/vorefootstep_volume) * (vore_footstep_volume/100)
+
+	volume = CONFIG_GET(number/vorefootstep_volume) * (vore_footstep_volume/100)
+
+	if(buckled || lying || throwing)
+		return // people flying, lying down or sitting do not slosh
+	if(!get_gravity(src) && prob(75))
+		return // Far less likely to make noise in no gravity
+	playsound(T, S, volume, FALSE, preference = /datum/client_preference/digestion_noises)
+	return
+*/

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Starting lists: per_type(..., copy_on_write = TRUE) shares one starting list per type until an instance's first write, replacing about 100 per-instance list initializers"
+  - code_imp: "instance_list lint now recognises GLOBAL_DATUM_INIT singletons"

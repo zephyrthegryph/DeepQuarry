@@ -12,9 +12,6 @@
 
 /obj/item/uplink
 	var/welcome = "Welcome, Operative"	// Welcoming menu message
-	var/list/ItemsCategory				// List of categories with lists of items
-	var/list/ItemsReference				// List of references with an associated item
-	var/list/nanoui_items				// List of items for NanoUI use
 	var/faction = ""					//Antag faction holder.
 
 	var/offer_time = 10 MINUTES			//The time increment per discount offered

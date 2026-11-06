@@ -180,7 +180,33 @@ pub(crate) fn global_lists_of(f: &SourceFile) -> Vec<String> {
     names.into_iter().collect()
 }
 
-pub(crate) fn judge(f: &SourceFile, global_lists: &BTreeSet<String>) -> Vec<(u8, u32)> {
+/// The build procs of the starting lists a file declares. Each runs once
+/// per type, so a constant list is the shared table, rather than per-call work.
+pub(crate) fn visit_cow_builds<E>(
+    f: &SourceFile,
+    mut visit: impl FnMut(&str) -> Result<(), E>,
+) -> Result<(), E> {
+    if f.raw().text.contains("copy_on_write") {
+        for line in f.raw().lines() {
+            for c in pat!(r"\bper_type\([^\n]*?PROC_REF\(\s*(\w+)\s*\)[^\n]*\bcopy_on_write\s*=\s*TRUE").captures_iter(line) {
+                visit(c.s(1))?;
+            }
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature="legacy-sem")]
+fn cow_builds_of(f: &SourceFile) -> Vec<String> {
+    let mut names = BTreeSet::new();
+    visit_cow_builds(f, |name| {
+        names.insert(name.to_owned());
+        Ok::<_, std::convert::Infallible>(())
+    }).unwrap_or_else(|never| match never {});
+    names.into_iter().collect()
+}
+
+pub(crate) fn judge(f: &SourceFile, global_lists: &BTreeSet<String>, cow_builds: &BTreeSet<String>) -> Vec<(u8, u32)> {
     let mut out: Vec<(&'static str, String, usize)> = Vec::new();
     {
         let rel = f.rel.as_str();
@@ -200,6 +226,9 @@ pub(crate) fn judge(f: &SourceFile, global_lists: &BTreeSet<String>) -> Vec<(u8,
                 out.push(("not_worth_it_annotation", rel.to_string(), number));
             }
             if !in_proc {
+                continue;
+            }
+            if header.as_deref().and_then(|h| pat!(r"/(\w+)\(").captures(h).map(|c| c.s(1).to_string())).is_some_and(|n| cow_builds.contains(&n)) {
                 continue;
             }
             let code = before_comment(line);
@@ -260,8 +289,9 @@ pub(crate) fn judge(f: &SourceFile, global_lists: &BTreeSet<String>) -> Vec<(u8,
 fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
     let fs = incr::facts("sys-tables-facts", files, global_lists_of);
     let global_lists: BTreeSet<String> = fs.into_iter().flatten().collect();
-    let key = incr::ctx_key(&global_lists);
-    let results = incr::keyed("sys-tables-judge", key, files, |f| judge(f, &global_lists));
+    let cow_builds: BTreeSet<String> = incr::facts("sys-tables-cow-builds", files, cow_builds_of).into_iter().flatten().collect();
+    let key = incr::ctx_key(&(&global_lists, &cow_builds));
+    let results = incr::keyed("sys-tables-judge", key, files, |f| judge(f, &global_lists, &cow_builds));
     let mut out = Vec::new();
     for (f, v) in files.iter().zip(results) {
         for (rule, line) in v {

@@ -98,5 +98,5 @@
 	var/list/watches = service.gas_watches.Copy()
 	qdel_batch(list(C))
 	TEST_ASSERT(QDELETED(service), "the batch destroys the service with its owner")
-	for(var/datum/native_watch/gas/W as anything in watches)
+	for(var/datum/native_watch/world/W as anything in watches)
 		TEST_ASSERT(QDELETED(W) || !W.handle, "and its gas watches are cancelled with it")

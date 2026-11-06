@@ -21,7 +21,6 @@
 #define WEED_NODE_BASE "nodebase"
 
 /obj/effect/alien/weeds
-	uses_integrity = TRUE
 	name = "growth"
 	desc = "Weird organic growth."
 	icon_state = "weeds"
@@ -130,6 +129,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/effect/alien/weeds)
+	configure(atom_rules(uses_integrity = TRUE))
 	configure(movable_motion(unacidable = TRUE))
 	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
 	ref_one(nameof(linked_node), /obj/effect/alien/weeds/node)

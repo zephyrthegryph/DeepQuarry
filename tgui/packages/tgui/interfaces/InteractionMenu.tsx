@@ -19,6 +19,7 @@ import type { BooleanLike } from 'tgui-core/react';
 type Available = {
   id: string;
   name: string;
+  desc?: string | null;
   category: string | null;
   keys: string[];
 };
@@ -26,6 +27,7 @@ type Available = {
 type Blocked = {
   id: string;
   name: string;
+  desc?: string | null;
   category: string | null;
   reason: string;
 };
@@ -291,6 +293,7 @@ export const InteractionMenu = () => {
             type="button"
             key={entry.id}
             className="InteractionMenu__row"
+            title={entry.desc ?? undefined}
             onClick={() => act('run', { id: entry.id })}
           >
             {entry.name}
@@ -300,7 +303,7 @@ export const InteractionMenu = () => {
           <div
             key={entry.id}
             className="InteractionMenu__blocked"
-            title={entry.reason}
+            title={entry.reason || entry.desc || undefined}
           >
             {entry.name}
             {entry.reason ? ` (${entry.reason})` : ''}

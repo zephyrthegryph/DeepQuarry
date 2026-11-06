@@ -36,7 +36,6 @@
 	// The chassis uses integrity. Below integrity_failure the computer ceases to
 	// operate; at zero it breaks apart.
 	max_integrity = 100
-	integrity_failure = 0.5
 
 	// Important hardware (must be installed for computer to work)
 	var/obj/item/computer_hardware/processor_unit/processor_unit				// CPU. Without it the computer won't run. Better CPUs can run more programs at once.
@@ -51,13 +50,9 @@
 	var/tmp/datum/ai_slot	// AI slot, an intellicard housing that allows modifications of AIs.
 	var/obj/item/computer_hardware/tesla_link/tesla_link						// Tesla Link, Allows remote charging from nearest APC.
 
-	var/modifiable = TRUE	// can't be modified or damaged if false
 
-	var/stores_pen = FALSE
 	var/tmp/obj/item/pen/stored_pen
 
-	var/interact_sounds
-	var/interact_sound_volume = 40
 
 
 /// A currently active program running on the computer. (a relation view: null once that is deleted).
@@ -76,6 +71,7 @@
 MSG_DEF_SELF(modular_computer/already_on, "it is already on")
 
 CAPABILITIES(/obj/item/modular_computer)
+	configure(atom_rules(integrity_failure = 0.5))
 	on_notice(/datum/notice/atom_broken, then(PROC_REF(chassis_broken)))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(install_presets))

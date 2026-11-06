@@ -1,0 +1,126 @@
+/obj/item/melee/cultblade
+	name = "cult blade"
+	desc = "An arcane weapon wielded by the followers of Nar-Sie."
+	icon_state = "cultblade"
+	w_class = ITEMSIZE_LARGE
+
+CAPABILITIES(/obj/item/melee/cultblade)
+	configure(item_combat(injury_kind = INJURY_CUT))
+	configure(atom_rules(description_antag = "This sword is a powerful weapon, capable of severing limbs easily, if they are targeted.  Nonbelievers are unable to use this weapon."))
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+
+/obj/item/melee/cultblade/cultify()
+	return
+
+/obj/item/melee/cultblade/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+	if(iscultist(user) && !istype(user, /mob/living/simple_mob/construct))
+		return ..()
+
+	var/zone = (user.hand ? BP_L_ARM:BP_R_ARM)
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		var/obj/item/organ/external/affecting = H.get_organ(zone)
+		to_chat(user, span_danger("An inexplicable force rips through your [affecting.name], tearing the sword from your grasp!"))
+		//random amount of damage between half of the blade's force and the full force of the blade.
+		user.injure(INJURY_CUT, rand(combat_of(src).force/2, combat_of(src).force), zone, src)
+		user.status_at_least(STAT_WEAKENED, 5)
+	else if(!istype(user, /mob/living/simple_mob/construct))
+		to_chat(user, span_danger("An inexplicable force rips through you, tearing the sword from your grasp!"))
+	else
+		to_chat(user, span_critical("The blade hisses, forcing itself from your manipulators. \The [src] will only allow mortals to wield it against foes, not kin."))
+
+	user.drop_from_inventory(src, src.loc)
+	throw_at(get_edge_target_turf(src, pick(GLOB.alldirs)), rand(1,3), motion_of(src).throw_speed)
+
+	var/spooky = SFX_HALLUCINATIONS_GROWL_MIX
+	playsound(src, spooky, 50, 1)
+
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/melee/cultblade/pickup(mob/living/user as mob)
+	if(!iscultist(user) && !istype(user, /mob/living/simple_mob/construct))
+		to_chat(user, span_warning("An overwhelming feeling of dread comes over you as you pick up the cultist's sword. It would be wise to be rid of this blade quickly."))
+		user.status_adjust(STAT_DIZZY, 120)
+	if(istype(user, /mob/living/simple_mob/construct))
+		to_chat(user, span_warning("\The [src] hisses, as it is discontent with your acquisition of it. It would be wise to return it to a worthy mortal quickly."))
+
+/obj/item/clothing/head/culthood
+	name = "cult hood"
+	icon_state = "culthood"
+	desc = "A hood worn by the followers of Nar-Sie."
+
+CAPABILITIES(/obj/item/clothing/head/culthood)
+	configure(atom_rules(armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"))
+	configure(item_worn(hides = HIDEFACE))
+	configure(item_protection(min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
+
+/obj/item/clothing/head/culthood/cultify()
+	return
+
+/obj/item/clothing/head/culthood/magus
+	name = "magus helm"
+	icon_state = "magus"
+	desc = "A helm worn by the followers of Nar-Sie."
+
+CAPABILITIES(/obj/item/clothing/head/culthood/magus)
+	configure(item_worn(hides = HIDEFACE | BLOCKHAIR, covers = HEAD|FACE|EYES))
+
+/obj/item/clothing/head/culthood/alt
+	icon_state = "cult_hoodalt"
+
+/obj/item/clothing/suit/cultrobes
+	name = "cult robes"
+	desc = "A set of armored robes worn by the followers of Nar-Sie."
+	icon_state = "cultrobes"
+
+CAPABILITIES(/obj/item/clothing/suit/cultrobes)
+	configure(atom_rules(armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT))
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, hides = HIDEJUMPSUIT))
+	configure(item_protection(siemens = 0))
+
+
+/obj/item/clothing/suit/cultrobes/cultify()
+	return
+
+/obj/item/clothing/suit/cultrobes/alt
+	icon_state = "cultrobesalt"
+
+/obj/item/clothing/suit/cultrobes/magusred
+	name = "magus robes"
+	desc = "A set of armored robes worn by the followers of Nar-Sie."
+	icon_state = "magusred"
+
+CAPABILITIES(/obj/item/clothing/suit/cultrobes/magusred)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT))
+
+/obj/item/clothing/head/helmet/space/cult
+	name = "cult helmet"
+	desc = "A space worthy helmet used by the followers of Nar-Sie."
+	icon_state = "cult_helmet"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/cult)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"))
+	configure(item_protection(siemens = 0))
+
+/obj/item/clothing/head/helmet/space/cult/cultify()
+	return
+
+/obj/item/clothing/suit/space/cult
+	name = "cult armour"
+	icon_state = "cult_armour"
+	desc = "A bulky suit of armour, bristling with spikes. It looks space-worthy."
+	w_class = ITEMSIZE_NORMAL
+
+CAPABILITIES(/obj/item/clothing/suit/space/cult)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"))
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
+	suit_storage(list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT))
+	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
+	configure(item_protection(siemens = 0))
+
+
+/obj/item/clothing/suit/space/cult/cultify()
+	return

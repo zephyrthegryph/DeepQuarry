@@ -58,7 +58,7 @@ CAPABILITIES(/obj/effect/effect/water)
 		reagents.touch_turf(T, reagents.total_volume)
 		var/mob/M
 		for(var/atom/A in turf_contents_of_type(T, /atom))
-			if(!ismob(A) && A.simulated) // Mobs are handled differently
+			if(!ismob(A) && atom_rules_of(A).simulated) // Mobs are handled differently
 				reagents.touch(A, reagents.total_volume, spray_actor)
 			else if(ismob(A) && !M)
 				M = A
@@ -77,7 +77,7 @@ CAPABILITIES(/obj/effect/effect/water)
 	expire(1 SECOND)
 	stop_spray()
 
-/obj/effect/effect/water/Move(turf/newloc)
+/obj/effect/effect/water/Move(turf/newloc, direct = 0, movetime)
 	if(newloc.density)
 		return 0
 	. = ..()

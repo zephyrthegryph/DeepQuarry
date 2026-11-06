@@ -1,4 +1,4 @@
-// E4, actions and hooks: the gate fixtures of doc/rewrite/final_api.html section 19 "The seven workers" (code/modules/unit_tests/dq_e4_actions_tests.dm).
+// E4, actions and hooks: the gate fixtures of doc/rewrite/final_api.html section 19 "The seven workers" (code/tests/unit_tests/dq_e4_actions_tests.dm).
 //
 // One ACTION with an instead (its notice marked replaced), an adjusts and an on_notice; actions nothing hooks (ACT_PASS), actions only a committed
 // listener hears (an outcome nobody asked for), a recursive takeover (the nested-action cap), and while_slotted entries that are hooks. Compiled under
@@ -144,15 +144,18 @@ CAPABILITIES(/obj/e4_fixture/switch)
 /obj/e4_fixture/switch/proc/op_heard(datum/act/A)
 	ops_heard++
 
+/// A plain one-payload occurrence (was the old atom/Bumped() echo; walk-ins are /datum/notice/bumped now). The e4 twin-delivery test drives it.
+ACTION(atom_bumped, bumped, FIXED, notice = /datum/notice/atom_bumped)
+
 /// The twin pair of the bridge test: an entity that listens for the notice of an om event.
-/datum/om_test_entity/e4_twin
+/datum/engine_test_entity/e4_twin
 	var/notices_heard = 0
 	var/last_bumped
 
-CAPABILITIES(/datum/om_test_entity/e4_twin)
+CAPABILITIES(/datum/engine_test_entity/e4_twin)
 	on_notice(/datum/notice/atom_bumped, then(PROC_REF(notice_heard)))
 
-/datum/om_test_entity/e4_twin/proc/notice_heard(datum/act/A)
+/datum/engine_test_entity/e4_twin/proc/notice_heard(datum/act/A)
 	var/datum/notice/atom_bumped/N = A
 	notices_heard++
 	last_bumped = N.bumped

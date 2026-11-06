@@ -34,7 +34,7 @@ pub(crate) fn declarations<'a>(
 /// SAME original regexp/header-reset/declaration order over a borrowed source.
 pub(crate) fn declarations_file_using<C:crate::key_policy_control::Control>(f:&SourceFile,out:&mut HashMap<String,Vec<String>>,work:&mut C)->Result<(),C::Error>{
  use crate::key_policy_control as kc;
- let header=crate::pat!(r"^\s*CAPABILITIES\(\s*(/[\w/]+)\s*\)");
+ let header=crate::pat!(r"^\s*CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]");
  let decl=crate::pat!(r"\bref_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)[^\n]*\bweak\s*=\s*TRUE");
  work.checkpoint()?;if !f.rel.ends_with(".dm"){return Ok(())}let mut owner:Option<String>=None;
  for line in f.code().lines(){work.checkpoint()?;if let Some(c)=header.captures(line){owner=Some(kc::own(work,c.s(1))?);continue}if !line.starts_with(char::is_whitespace)&&!line.trim().is_empty(){owner=None}let Some(o)=owner.as_ref()else{continue};if let Some(c)=decl.captures(line){let name=c.s(1);if !out.contains_key(name){kc::reserve(work,||Some(2048))?;out.insert(kc::own(work,name)?,Vec::new());}let types=out.get_mut(name).unwrap();work.checkpoint()?;if !types.contains(o){kc::row(work,types)?;types.push(kc::own(work,o)?);}}}work.checkpoint()

@@ -1,6 +1,6 @@
-//! Entire immutable old declaration-policy extraction proof.
+//! Independent current-master declaration-policy comparison.
 use crate::lint::Registry;
-#[path="../fixtures/original_policies/init_workspace.rs"]mod original;
+#[path="../fixtures/original_policies/init_workspace_0660476914.rs"]mod original;
 #[path="../fixtures/native-init-workspace/fixture.rs"]mod fixture;
 #[path="../../dmb/shared/test_scratch.rs"]mod scratch;
 fn record(outcome:&crate::run::Outcome)->serde_json::Value{serde_json::json!({"sites":outcome.run.sites,"notes":outcome.run.notes,"allow_used":outcome.allow_used,"failed":outcome.failed,"text":outcome.text})}

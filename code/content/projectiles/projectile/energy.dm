@@ -271,7 +271,7 @@ CAPABILITIES(/obj/item/projectile/energy/plasmastun)
 	else
 		if (M.ear_damage >= 5)
 			to_chat(M, span_danger("Your ears start to ring!"))
-	M.update_icons() //Just to apply matrix transform for laying asap
+	M.update_transform() //Just to apply matrix transform for laying asap
 
 /obj/item/projectile/energy/plasmastun/on_hit(atom/target)
 	bang(target)

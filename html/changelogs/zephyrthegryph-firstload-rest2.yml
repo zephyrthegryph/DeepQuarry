@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Turbolift shafts, shuttle ceilings and rogue-miner zone cleaning place their turfs as one load; place_turfs can tell the universe and force lighting as ChangeTurf does"

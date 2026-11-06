@@ -19,7 +19,7 @@ impl std::fmt::Debug for OriginalSignatureAliasGroup{fn fmt(&self,f:&mut std::fm
 impl OriginalSignatureAliasGroup{
  fn live(&self)->bool{self.aliases.iter().any(Alias::live)}
  fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||self.reservations.iter().any(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
- pub(super) fn capture(facts:&crate::AdaptedDeclarations,prepared:&crate::procedure::original_primary_signatures::PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Arc<Self>>{
+ pub(super) fn capture(facts:&crate::AdaptedDeclarations,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Arc<Self>>{
   prepared.require_consumed().map_err(|reason|io::Error::new(io::ErrorKind::InvalidData,reason))?;
   let mut alias_count=0usize;let mut lease_count=0usize;
   visit_aliases(facts,&mut |_|{a.checkpoint()?;alias_count=alias_count.checked_add(1).ok_or_else(oom)?;Ok(())})?;
@@ -30,7 +30,10 @@ impl OriginalSignatureAliasGroup{
   if aliases.capacity()>alias_count.saturating_mul(4).saturating_add(1)||reservations.capacity()>lease_count.saturating_mul(4).saturating_add(1){return Err(oom())}
   visit_aliases(facts,&mut|row|{a.checkpoint()?;if aliases.len()==aliases.capacity(){return Err(oom())}aliases.push(row);Ok(())})?;
   prepared.visit_signature_reservations(|row|reservations.push(Arc::clone(row)));
-  a.checkpoint()?;Ok(Arc::new(Self{aliases,reservations,_coordination:coordination}))
+  a.checkpoint()?;
+  let group = Arc::new(Self { aliases, reservations, _coordination: coordination });
+  prepared.release_consumed_rows();
+  Ok(group)
  }
 
  pub(super) fn retain_wide_items(&mut self,items:&Arc<[dm_syntax::Item]>,parser:&Arc<dm_syntax::SettingRootLease>,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{

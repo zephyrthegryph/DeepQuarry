@@ -571,12 +571,12 @@ CAPABILITIES(/obj/item/storage/box/freezer)
 /obj/item/storage/box/ambrosia
 	name = "ambrosia seeds box"
 	desc = "Contains the seeds you need to get a little high."
-	starts_with = list(/obj/item/seeds/ambrosiavulgarisseed = 7)
+	starts_with = list(VARIANT(/obj/item/seeds/ambrosiavulgarisseed) = 7)
 
 /obj/item/storage/box/ambrosiadeus
 	name = "ambrosia deus seeds box"
 	desc = "Contains the seeds you need to get a proper healthy high."
-	starts_with = list(/obj/item/seeds/ambrosiadeusseed = 7)
+	starts_with = list(VARIANT(/obj/item/seeds/ambrosiadeusseed) = 7)
 
 /obj/item/storage/box/capguntoy
 	name = "\improper AlliCo \"Zipper\" Cap Gun"
@@ -700,11 +700,6 @@ CAPABILITIES(/obj/item/storage/box/altevian_ammo)
 	starts_with = list(/obj/item/cell/device/weapon = 7)
 
 
-/obj/item/storage/box/casino
-	name = "prize box"
-	desc = "It's a lovely golden tinted cardboard box, maybe theres something valuable inside?"
-	icon = 'icons/obj/storage_ch.dmi'
-	icon_state = "box_casino"
 
 /obj/item/storage/box/casino/foamcrossbow
 	name = "foam crossbow"
@@ -758,13 +753,6 @@ CAPABILITIES(/obj/item/storage/box/altevian_ammo)
 	/obj/item/clothing/head/kitty
 	)
 
-/obj/item/storage/box/casino/costume_wizard
-	name = "wizard costume"
-	starts_with = list(
-	/obj/item/clothing/suit/wizrobe/fake,
-	/obj/item/clothing/head/wizard/fake,
-	/obj/item/staff
-	)
 
 /obj/item/storage/box/casino/costume_chicken
 	name = "chicken costume"

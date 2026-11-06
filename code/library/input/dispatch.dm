@@ -63,7 +63,7 @@
 		interaction_menu.hide()
 	// Clients cannot be hooked: the click event is emitted on the client's mob.
 	if(mob)
-		PUBLISH_LEGACY(mob, /datum/notice/client_click, object, location, control, params, mob)
+		PUBLISH(mob, client_click, target_ = object, location = location, control = control, params = params, user = mob)
 	return TRUE
 
 /// In build mode a drag on the map is the builder's.

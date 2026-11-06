@@ -7,20 +7,28 @@
 //   - weak: every datum argument is captured as a handle (handles.dm) and resolved when the timer fires. A gone argument arrives as null and
 //     the call still runs (cleanup such as vend_ready = TRUE always happens; counted in sched.timers_nulled and logged). after_if_alive()
 //     opts a pure effect out: its call is dropped instead (counted in sched.timers_dropped).
-// No datum per timer: a timer is six slots in the owner's record (OM_TIMER_STRIDE, code/__defines/engine/time.dm) and the owner has one
+// No datum per timer: a timer is six slots in the owner's record (SCHED_TIMER_STRIDE, code/defines/engine/declare/time.dm) and the owner has one
 // deadline on the wheel (the soonest of its timers), as tasks do. The list is sorted by id (binary search finds a timer); a per-owner
 // min-heap of (due, id) pairs, rec.timer_heap, finds the next due timer in O(log n) with lazy deletion (cancelled timers leave stale heap
 // entries that are skipped when they surface and compacted when they outnumber the live ones).
 //
-// The behaviour-keyed deadline underneath is deadline_deadline() (code/datums/om/deadline.dm).
+// Keyed timers (after(key =)) keep their key in the owner's record too: rec.timer_keys, a lazy list (null until a keyed timer is pending) of
+// key -> list(timer id, token, clock). No /datum/rx_state and no ledger row per keyed timer.
+//
+// A latent collapse carries the owner's own-clock timers as data (timers_export(), on the latent entry) and the materialized thing re-arms them
+// (timers_import()), with the time they had left.
+//
+// The behaviour-keyed deadline underneath is deadline_deadline() (code/engine/deadline.dm).
 
 /datum/scheduler_record/var/list/timers
+/// The pending keyed timers (after(key =)) of this owner: key text -> list(timer id, token, clock). Null until one is pending (timer_key_set()).
+/datum/scheduler_record/var/list/timer_keys
 /// The soonest due time in rec.timers (timer-clock ds), or null with no timers. Kept in step by
 /// every add/remove so arming the wheel never rescans the list.
 /datum/scheduler_record/var/timer_soonest
 /// Timer ids, per record.
 /datum/scheduler_record/var/timer_seq = 0
-/// A binary min-heap of (due, id) pairs over rec.timers (OM_TIMER_HEAP_STRIDE numbers per entry): the next due timer is its root. Entries are
+/// A binary min-heap of (due, id) pairs over rec.timers (SCHED_TIMER_HEAP_STRIDE numbers per entry): the next due timer is its root. Entries are
 /// deleted lazily: one whose id is no longer in rec.timers is stale and dropped when it reaches the root. Null with no timers.
 /datum/scheduler_record/var/list/timer_heap
 /// The record's timer clock: list(local ds, settled at (sched ds), rate). Null until a timer.
@@ -42,7 +50,7 @@
 /// Timers that ran with at least one deleted argument passed as null (the default, timer_schedule()/after()).
 /datum/time_scheduler/var/timers_nulled = 0
 /// Deleted arguments resolve_captured_value() replaced with null during the current resolution.
-GLOBAL_VAR_INIT(om_resolve_nulled, 0)
+GLOBAL_VAR_INIT(handle_resolve_nulled, 0)
 
 /proc/timer_global_owner()
 	RETURN_TYPE(/datum/timer_owner)
@@ -66,6 +74,9 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /proc/timer_schedule_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = FALSE, owner_first = FALSE)
 	if(isnull(E))
 		E = timer_global_owner()
+	else if(!isdatum(E))
+		stack_trace("a timer ([proc_ref]) needs a datum owner or null, got [E]")
+		return 0
 	if(!own_guard(E, null, "a timer ([proc_ref])")) // the one teardown guard (guard.dm)
 		return 0
 	var/datum/scheduler_record/rec = scheduler_record_of(E)
@@ -79,15 +90,90 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 			return 0
 		captured = capture[1]
 		positions = capture[2]
+	return timer_row_add(rec, delay, proc_ref, captured, positions, (deferred_proc_is_global(proc_ref) ? SCHED_TIMER_GLOBAL : 0) | (nulls_for_gone ? SCHED_TIMER_NULLS_FOR_GONE : 0) | (owner_first ? SCHED_TIMER_OWNER_FIRST : 0))
+
+/// Adds a timer row to `rec`: due `delay` deciseconds of its timer clock from now, calling `proc_ref` with the already captured arguments. Returns the timer id.
+/proc/timer_row_add(datum/scheduler_record/rec, delay, proc_ref, list/captured, list/positions, flags)
 	var/local = timer_local(rec)
 	var/id = ++rec.timer_seq
 	var/due = local + max(delay, 0)
-	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, (deferred_proc_is_global(proc_ref) ? OM_TIMER_GLOBAL : 0) | (nulls_for_gone ? OM_TIMER_NULLS_FOR_GONE : 0) | (owner_first ? OM_TIMER_OWNER_FIRST : 0)))
+	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, flags))
 	timer_heap_push(rec, due, id)
 	if(isnull(rec.timer_soonest) || due < rec.timer_soonest)
 		rec.timer_soonest = due
 		timers_arm(rec)
 	return id
+
+// ---------------------------------------------------------------- keyed timers: the key table
+
+/// The pending keyed timer of `key` on `holder`: list(timer id, token, clock), or null.
+/proc/timer_key_get(datum/holder, key)
+	return holder.sched_rec?.timer_keys?[istext(key) ? key : "[key]"]
+
+/// Records `key` on `holder` as pending in timer `id` (token tells a replaced timer from the current one). The holder's record is made if it has none.
+/proc/timer_key_set(datum/holder, key, id, token, clock)
+	var/datum/scheduler_record/rec = scheduler_record_of(holder)
+	if(!rec)
+		return FALSE
+	var/list/keys = rec.timer_keys
+	if(!keys)
+		rec.timer_keys = keys = list()
+	keys[istext(key) ? key : "[key]"] = list(id, token, clock)
+	return TRUE
+
+/// Forgets `key` on `holder`; the table goes when it is empty.
+/proc/timer_key_clear(datum/holder, key)
+	var/datum/scheduler_record/rec = holder.sched_rec
+	var/list/keys = rec?.timer_keys
+	if(!keys)
+		return
+	keys -= (istext(key) ? key : "[key]")
+	if(!length(keys))
+		rec.timer_keys = null
+
+// ---------------------------------------------------------------- carried across a latent collapse
+
+/// Why E's timers keep it from collapsing into a latent entry, or null. Its own-clock timers are carried as data (timers_export()). A world-clock keyed
+/// timer is held on the global owner and names E only by its handle, which is parked while E is latent: it would fire into nothing, so E stays real.
+/proc/timers_collapse_blocker(datum/E)
+	var/list/keys = E.sched_rec?.timer_keys
+	for(var/key in keys)
+		var/list/pending = keys[key]
+		if(pending[3] == CLOCK_WORLD)
+			return "[E.type] has a world-clock timer"
+	return null
+
+/// E's pending own-clock timers as data: list(list(deciseconds left, proc ref, captured args, positions, flags), ...), or null with none. The arguments
+/// are handles already, so the rows name nothing. Does not change E's timers.
+/proc/timers_export(datum/E)
+	var/datum/scheduler_record/rec = E.sched_rec
+	var/list/T = rec?.timers
+	if(!length(T))
+		return null
+	var/local = timer_local(rec)
+	. = list()
+	for(var/i in 1 to length(T) step SCHED_TIMER_STRIDE)
+		. += list(list(max(T[i + 1] - local, 0), T[i + 2], T[i + 3], T[i + 4], T[i + 5]))
+	log_qdel("timers: [length(.)] timer(s) of [E.type] exported as data")
+
+/// Arms the timers timers_export() read on `E` (another instance of the same type, or the same thing materialized again): each runs after the time it had
+/// left. A keyed one takes its key back. Returns how many were armed.
+/proc/timers_import(datum/E, list/rows)
+	if(!length(rows))
+		return 0
+	var/datum/scheduler_record/rec = scheduler_record_of(E)
+	if(!rec || rec.torn_down)
+		return 0
+	. = 0
+	for(var/list/row as anything in rows)
+		var/proc_ref = row[2]
+		var/list/captured = row[3]
+		var/id = timer_row_add(rec, row[1], proc_ref, captured, row[4], row[5])
+		// A keyed after() is a call of rx_timer_fire(handler, key, token, ...): its key table entry follows the new timer id.
+		if(proc_ref == GLOBAL_PROC_REF(rx_timer_fire) && length(captured) >= 3 && !isnull(captured[2]))
+			timer_key_set(E, captured[2], id, captured[3], CLOCK_OWN)
+		.++
+	log_qdel("timers: [.] timer(s) re-armed on [E.type]")
 
 // ---------------------------------------------------------------- timer slots (legacy)
 //
@@ -104,19 +190,9 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /proc/after_slot(datum/E, slot, delay, proc_ref, ...)
 	return !!rx_after(E, delay, proc_ref, slot, CLOCK_OWN, length(args) > 4 ? args.Copy(5) : null, FALSE)
 
-/// Cancels whatever is pending in E's slot `slot`. Returns TRUE if a timer was pending.
-/proc/timer_cancel_slot(datum/E, slot)
-	return cancel_after(E, slot)
-
 /// TRUE while a timer is pending in E's slot `slot`.
 /proc/timer_slot_pending(datum/E, slot)
 	return after_pending(E, slot)
-
-/// Deciseconds of E's timer clock left on the timer in slot `slot`, or null when none is pending.
-/proc/timer_slot_left(datum/E, slot)
-	if(!after_pending(E, slot))
-		return null
-	return after_left(E, slot)
 
 /// TRUE when `proc_ref` is a global proc (/proc/x), FALSE for a type proc. Decided once, when a
 /// deferred call is recorded, so firing never stringifies the proc.
@@ -136,10 +212,10 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 	if(!T || !isnum(id))
 		return 0
 	var/lo = 1
-	var/hi = length(T) / OM_TIMER_STRIDE
+	var/hi = length(T) / SCHED_TIMER_STRIDE
 	while(lo <= hi)
 		var/mid = round((lo + hi) / 2)
-		var/at = (mid - 1) * OM_TIMER_STRIDE + 1
+		var/at = (mid - 1) * SCHED_TIMER_STRIDE + 1
 		var/mid_id = T[at]
 		if(mid_id == id)
 			return at
@@ -154,7 +230,7 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /proc/timer_remove_at(datum/scheduler_record/rec, at)
 	var/list/T = rec.timers
 	var/due = T[at + 1]
-	T.Cut(at, at + OM_TIMER_STRIDE)
+	T.Cut(at, at + SCHED_TIMER_STRIDE)
 	if(!length(T))
 		timers_clear(rec)
 		return TRUE
@@ -182,16 +258,16 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 	var/list/H = rec.timer_heap
 	if(!H)
 		rec.timer_heap = H = list()
-	else if(length(H) / OM_TIMER_HEAP_STRIDE > 2 * (length(rec.timers) / OM_TIMER_STRIDE) + OM_TIMER_HEAP_SLACK)
+	else if(length(H) / SCHED_TIMER_HEAP_STRIDE > 2 * (length(rec.timers) / SCHED_TIMER_STRIDE) + SCHED_TIMER_HEAP_SLACK)
 		timer_heap_rebuild(rec)
 		H = rec.timer_heap
 	H += due
 	H += id
-	var/child = length(H) / OM_TIMER_HEAP_STRIDE
+	var/child = length(H) / SCHED_TIMER_HEAP_STRIDE
 	while(child > 1)
 		var/parent = round(child / 2)
-		var/c = (child - 1) * OM_TIMER_HEAP_STRIDE + 1
-		var/p = (parent - 1) * OM_TIMER_HEAP_STRIDE + 1
+		var/c = (child - 1) * SCHED_TIMER_HEAP_STRIDE + 1
+		var/p = (parent - 1) * SCHED_TIMER_HEAP_STRIDE + 1
 		if(H[c] > H[p] || (H[c] == H[p] && H[c + 1] > H[p + 1]))
 			break
 		var/due_c = H[c]
@@ -205,14 +281,14 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /// Removes the root of the heap (the earliest (due, id) pair).
 /proc/timer_heap_pop(datum/scheduler_record/rec)
 	var/list/H = rec.timer_heap
-	var/count = length(H) / OM_TIMER_HEAP_STRIDE
+	var/count = length(H) / SCHED_TIMER_HEAP_STRIDE
 	if(count <= 1)
 		rec.timer_heap = null
 		return
-	var/last = (count - 1) * OM_TIMER_HEAP_STRIDE + 1
+	var/last = (count - 1) * SCHED_TIMER_HEAP_STRIDE + 1
 	H[1] = H[last]
 	H[2] = H[last + 1]
-	H.Cut(last, last + OM_TIMER_HEAP_STRIDE)
+	H.Cut(last, last + SCHED_TIMER_HEAP_STRIDE)
 	count--
 	var/parent = 1
 	while(TRUE)
@@ -220,14 +296,14 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 		if(left > count)
 			break
 		var/best = left
-		var/b = (best - 1) * OM_TIMER_HEAP_STRIDE + 1
+		var/b = (best - 1) * SCHED_TIMER_HEAP_STRIDE + 1
 		var/right = left + 1
 		if(right <= count)
-			var/r = (right - 1) * OM_TIMER_HEAP_STRIDE + 1
+			var/r = (right - 1) * SCHED_TIMER_HEAP_STRIDE + 1
 			if(H[r] < H[b] || (H[r] == H[b] && H[r + 1] < H[b + 1]))
 				best = right
 				b = r
-		var/p = (parent - 1) * OM_TIMER_HEAP_STRIDE + 1
+		var/p = (parent - 1) * SCHED_TIMER_HEAP_STRIDE + 1
 		if(H[p] < H[b] || (H[p] == H[b] && H[p + 1] < H[b + 1]))
 			break
 		var/due_p = H[p]
@@ -251,17 +327,17 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /proc/timer_heap_rebuild(datum/scheduler_record/rec)
 	rec.timer_heap = null
 	var/list/T = rec.timers
-	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
+	for(var/i in 1 to length(T) step SCHED_TIMER_STRIDE)
 		var/list/H = rec.timer_heap
 		if(!H)
 			rec.timer_heap = H = list()
 		H += T[i + 1]
 		H += T[i]
-		var/child = length(H) / OM_TIMER_HEAP_STRIDE
+		var/child = length(H) / SCHED_TIMER_HEAP_STRIDE
 		while(child > 1)
 			var/parent = round(child / 2)
-			var/c = (child - 1) * OM_TIMER_HEAP_STRIDE + 1
-			var/p = (parent - 1) * OM_TIMER_HEAP_STRIDE + 1
+			var/c = (child - 1) * SCHED_TIMER_HEAP_STRIDE + 1
+			var/p = (parent - 1) * SCHED_TIMER_HEAP_STRIDE + 1
 			if(H[c] > H[p] || (H[c] == H[p] && H[c + 1] > H[p + 1]))
 				break
 			var/due_c = H[c]
@@ -275,7 +351,7 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /// Cancels timer `id` on E. Always safe: nothing is suspended inside a timer.
 /proc/timer_cancel(datum/E, id)
 	var/datum/owner = E || timer_global_owner()
-	var/datum/scheduler_record/rec = owner.om_rec
+	var/datum/scheduler_record/rec = owner.sched_rec
 	var/at = timer_index(rec, id)
 	if(!at)
 		return FALSE
@@ -285,16 +361,16 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 
 /// How many timer_schedule() timers E has pending.
 /datum/time_scheduler/proc/timer_count(datum/E)
-	return length(E?.om_rec?.timers) / OM_TIMER_STRIDE
+	return length(E?.sched_rec?.timers) / SCHED_TIMER_STRIDE
 
 /proc/timer_pending(datum/E, id)
 	var/datum/owner = E || timer_global_owner()
-	return timer_index(owner.om_rec, id) != 0
+	return timer_index(owner.sched_rec, id) != 0
 
 /// Deciseconds of E's timer clock left on timer `id`, or null.
 /proc/timer_left(datum/E, id)
 	var/datum/owner = E || timer_global_owner()
-	var/datum/scheduler_record/rec = owner.om_rec
+	var/datum/scheduler_record/rec = owner.sched_rec
 	var/at = timer_index(rec, id)
 	if(!at)
 		return null
@@ -354,8 +430,8 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /// `is_global`: deferred_proc_is_global(proc_ref), when the caller recorded it; null decides here.
 /proc/deferred_invoke(datum/E, proc_ref, list/call_args, is_global = null)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-	if(E && GLOB.om_traced[E])
-		GLOB.om_traced[E]++
+	if(E && GLOB.pipeline_traced[E.handle_slot])
+		GLOB.pipeline_traced[E.handle_slot]++
 #endif
 	if(isnull(is_global))
 		is_global = deferred_proc_is_global(proc_ref)
@@ -367,12 +443,12 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 
 /datum/time_scheduler/var/callees_slept = 0
 /// Test hook: while set, a sleeping callee is counted and logged but does not fail the test.
-GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
+GLOBAL_VAR_INIT(timer_expect_sleep, FALSE)
 
 /// Runs a scheduler callback without letting it stall the scheduler. The call goes through
 /// a waitfor = FALSE trampoline: if the callee sleeps, control comes back here at once, the
 /// rest of the callee finishes on its own later, and the sleep is reported. Returns the
-/// callee's return value, or OM_CALLEE_SLEPT. Runtimes re-throw as before.
+/// callee's return value, or CALLEE_SLEPT. Runtimes re-throw as before.
 /proc/deferred_guarded_call(datum/E, proc_ref, list/call_args, is_global = null)
 	var/list/state = list(TRUE, null, null, FALSE) // running, result, exception, abandoned
 	deferred_trampoline(state, E, proc_ref, call_args, is_global)
@@ -385,16 +461,16 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	state[4] = TRUE
 	var/datum/time_scheduler/sched = time_scheduler()
 	sched.callees_slept++
-	log_runtime("OM: SLEPT [proc_ref] on [E]")
+	log_runtime("scheduler: SLEPT [proc_ref] on [E]")
 #ifdef UNIT_TESTS
-	if(!GLOB.om_expect_sleep && GLOB.current_test)
+	if(!GLOB.timer_expect_sleep && GLOB.current_test)
 		var/datum/unit_test/test = GLOB.current_test
-		test.Fail("OM: SLEPT [proc_ref] on [E]: scheduler callbacks must not sleep")
+		test.Fail("scheduler: SLEPT [proc_ref] on [E]: scheduler callbacks must not sleep")
 #endif
-	return OM_CALLEE_SLEPT
+	return CALLEE_SLEPT
 
 /proc/deferred_trampoline(list/state, datum/E, proc_ref, list/call_args, is_global = null)
-	set waitfor = FALSE // ALLOW(scheduler): OM sleep-guard trampoline (detects callees that sleep)
+	set waitfor = FALSE // ALLOW(scheduler): scheduler sleep-guard trampoline (detects callees that sleep)
 	try
 		if(E)
 			state[2] = deferred_invoke(E, proc_ref, call_args, is_global)
@@ -405,7 +481,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		// caller is gone and would never look, so report it here -- a silent
 		// swallow here once hid a double-qdel CRASH and hung a test batch.
 		if(state[4])
-			dq_report_caught(e, "OM trampoline (after sleep) [proc_ref] on [E]")
+			dq_report_caught(e, "scheduler trampoline (after sleep) [proc_ref] on [E]")
 		else
 			state[3] = e
 	state[1] = FALSE
@@ -416,7 +492,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	lane = LANE_URGENT
 
 /datum/scheduled_behaviour/internal/timers/on_deadline(datum/E)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec?.timers)
 		return
 	var/local = timer_local(rec) + 0.001
@@ -443,35 +519,49 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		var/list/captured = T[best + 3]
 		var/list/positions = T[best + 4]
 		var/timer_flags = T[best + 5]
-		var/is_global = !!(timer_flags & OM_TIMER_GLOBAL)
-		T.Cut(best, best + OM_TIMER_STRIDE)
+		var/is_global = !!(timer_flags & SCHED_TIMER_GLOBAL)
+		T.Cut(best, best + SCHED_TIMER_STRIDE)
 		if(!length(T))
 			timers_clear(rec)
-		var/saved_nulled = GLOB.om_resolve_nulled
-		GLOB.om_resolve_nulled = 0
+		var/saved_nulled = GLOB.handle_resolve_nulled
+		GLOB.handle_resolve_nulled = 0
 		var/resolved = FALSE
 		try
-			resolved = resolve_captured(captured, positions, !!(timer_flags & OM_TIMER_NULLS_FOR_GONE))
+			resolved = resolve_captured(captured, positions, !!(timer_flags & SCHED_TIMER_NULLS_FOR_GONE))
 		catch(var/exception/resolve_fault)
-			GLOB.om_resolve_nulled = saved_nulled
+			GLOB.handle_resolve_nulled = saved_nulled
 			throw resolve_fault
-		var/nulled = GLOB.om_resolve_nulled
-		GLOB.om_resolve_nulled = saved_nulled
+		var/nulled = GLOB.handle_resolve_nulled
+		GLOB.handle_resolve_nulled = saved_nulled
 		if(!resolved)
 			rec.sched.timers_dropped++
-			log_qdel("OM: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired (the default drop; keeps_dead = TRUE lets it run with null)")
+			log_qdel("scheduler: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired (the default drop; keeps_dead = TRUE lets it run with null)")
 			continue
 		if(nulled)
 			rec.sched.timers_nulled++
-			log_qdel("OM: timer [proc_ref] on [E] ([E.type]) runs with [nulled] deleted argument(s) passed as null")
-		if(timer_flags & OM_TIMER_OWNER_FIRST)
+			log_qdel("scheduler: timer [proc_ref] on [E] ([E.type]) runs with [nulled] deleted argument(s) passed as null")
+		if(timer_flags & SCHED_TIMER_OWNER_FIRST)
 			captured = captured ? list(E) + captured : list(E)
 		CHURN_COUNT(timers, "[E.type] [timer_census_name(proc_ref, captured)]")
 		GLOB.timer_fire_quiet = FALSE
+		// Attribution (controllers/measure/attribution.dm): a dispatcher inside the call may name the real handler (km_attr_a / km_attr_b).
+		var/attr_start = TICK_USAGE
+		GLOB.km_attr_a = null
+		GLOB.km_attr_b = null
+		GLOB.km_attr_entry = null
+		GLOB.km_attr_depth++
 		try
 			deferred_guarded_call(E, proc_ref, captured, is_global)
 		catch(var/exception/e)
 			dq_report_caught(e, "om timer [proc_ref] on [E]")
+		GLOB.km_attr_depth--
+		var/call_ms = TICK_USAGE_TO_MS(attr_start)
+		rec.sched.meter.attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, GLOB.km_attr_a || E.type, GLOB.km_attr_entry || GLOB.km_attr_b || proc_ref, call_ms)
+		if(call_ms >= KM_SLOW_CALL_MS)
+			km_slow_call(E, GLOB.km_attr_entry || GLOB.km_attr_b || proc_ref, call_ms)
+		GLOB.km_attr_a = null
+		GLOB.km_attr_b = null
+		GLOB.km_attr_entry = null
 		// A timer is a dispatched call: its owner may have state_changed (dx_conventions.md §1). Its derived procs
 		// re-run; no channel is raised (refresh_dispatched()). A fire that ran nothing of the owner's (an every() whose gate
 		// skipped the run, or that only queued it: timer_fire_quiet) changed nothing to redraw: a polling every() on an idle or
@@ -492,7 +582,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 /// The position in rec.timers of a pending timer calling `proc_ref` with `call_args`, or 0.
 /datum/time_scheduler/proc/timer_find(datum/scheduler_record/rec, proc_ref, list/call_args)
 	var/list/T = rec?.timers
-	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
+	for(var/i in 1 to length(T) step SCHED_TIMER_STRIDE)
 		if(T[i + 2] != proc_ref)
 			continue
 		var/list/captured = T[i + 3]
@@ -544,12 +634,12 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 
 /// Cancels every pending timer on E that calls `proc_ref`, whatever its arguments.
 /datum/time_scheduler/proc/cancel_calls(datum/E, proc_ref)
-	var/datum/scheduler_record/rec = E?.om_rec
+	var/datum/scheduler_record/rec = E?.sched_rec
 	var/list/T = rec?.timers
 	. = 0
-	for(var/i = length(T) - OM_TIMER_STRIDE + 1, i >= 1, i -= OM_TIMER_STRIDE)
+	for(var/i = length(T) - SCHED_TIMER_STRIDE + 1, i >= 1, i -= SCHED_TIMER_STRIDE)
 		if(T[i + 2] == proc_ref)
-			T.Cut(i, i + OM_TIMER_STRIDE)
+			T.Cut(i, i + SCHED_TIMER_STRIDE)
 			.++
 	if(.)
 		if(!length(T))
@@ -562,13 +652,6 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 // which slows under time dilation. They go on the global owner. The wheel runs in game
 // time, so a real-time timer is due at a REALTIMEOFDAY, and re-arms for what is left when the
 // wheel fires it early. (Was TIMER_CLIENT_TIME.)
-
-/// Runs `proc` after `delay` deciseconds of real time, on the global owner. Arguments are
-/// captured weakly, as timer_schedule() does. A global proc gets the arguments; a type proc runs on
-/// the first argument and gets the rest.
-/proc/timer_schedule_realtime(delay, proc_ref, ...)
-	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()
-	return timer_schedule(arglist(list(null, delay, /proc/timer_realtime_fire, REALTIMEOFDAY + max(delay, 0), proc_ref) + call_args))
 
 /proc/timer_realtime_fire(due, proc_ref, ...)
 	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()

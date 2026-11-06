@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { acquireSlot, acquireSlotGroup, defaultTestWorlds, focusedTestWorlds, roleCap, slotCapacity, slotGroupSize, slotsDir, slotsStatus, usableSlots } from './machine_slots';
 
-const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_MERGE_WT', 'DQ_SLOTS_PREHELD', 'DQ_SLOTS_MERGE_RESERVE', 'DQ_SLOTS_SUITE', 'DQ_SLOTS_TEST_WORLD_FOCUSED'] as const;
+const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_SLOTS_PREHELD', 'DQ_SLOTS_MERGE_RESERVE', 'DQ_SLOTS_SUITE', 'DQ_SLOTS_TEST_WORLD_FOCUSED'] as const;
 const saved: Record<string, string | undefined> = {};
 for (const k of ENV_KEYS) saved[k] = process.env[k];
 let tmp = '';
@@ -81,7 +81,7 @@ describe('test_world default', () => {
 });
 
 describe('merge reserve', () => {
-  test('a lane caller leaves the merge worktree one test_world slot when the class has three or more', () => {
+  test('a lane caller leaves priority 0 one test_world slot when the class has three or more', () => {
     delete process.env.DQ_SLOTS_MERGE_RESERVE;
     expect(usableSlots('test_world', 5, 1)).toBe(4);
     expect(usableSlots('test_world', 5, 0)).toBe(5);
@@ -140,7 +140,7 @@ describe('groups', () => {
 });
 
 describe('the queue', () => {
-  test('the second holder waits for the first, the merge worktree goes first', async () => {
+  test('the second holder waits for the first, priority 0 goes first', async () => {
     process.env.DQ_SLOTS_CARGO = '1';
     const a = await acquireSlot('cargo', 'a', quiet);
     expect(a).not.toBeNull();

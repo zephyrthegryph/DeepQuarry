@@ -114,6 +114,7 @@ verdigris/                  <- workspace root (this dir)
 - **Physics contract.** `FieldKind::flux(a, b, dt)` is the a-to-b flux; the framework applies it once with each sign, sums a cell's fluxes before applying them, and adds reservoir inflow to `FieldState::ledger`. Kernels must clamp to the pair equilibrium and to `Side::share` of the donor (positivity when sub-steps are capped), and report `stiffness` so `n = ceil(dt * faces * stiffness)` sub-steps are monotone.
 - **Sleep.** Commands, geometry changes and other tasks' writes wake chunks by CoW pointer diff; an edge into a sleeping chunk flows only once it is unsettled (so sleeping chunks are never written); a chunk sleeps when all its live edges are `settled` or the whole step left it `quiet` (the f32 fixed point).
 - **Channels need capacity.** Extractors see only the cell, so a kind caches intensive values (temperature, pressure) in `refresh`, which runs on every touched cell after a step.
+- **Chunk kinds.** A `CowStore` chunk is default (every cell `T::default()`, never allocated), uniform (one shared value; `ChunkView::uniform`) or dense. The first write densifies; the field step stores a chunk that goes to sleep with exactly one value in every cell as uniform (`compact_chunks`, equality is `T`'s `==`), and bulk registration does the same for what it touched. `CowStore::memory()` reports distinct allocations by kind and `memory.store.<port>.*` gauges carry it (`boot_memory_tests` prints the table for a synthetic Southern Cross, sealed and breached). Vacuum is the default `GasCell`; space and immutable air are cells whose `Geom.reservoir` is set and `planet == 0` (`GasCell::immutable_in`), and a `Delta` for one is refused at submit (`gas::submit_turf`), not by a flag in the cell.
 - **Precision.** Cells are f32: each step conserves to rounding (checked per step at 2e-6 relative), and long near-equilibrium runs random-walk at roughly 1e-8 relative per step.
 
 ### M3 notes (for S5, H4 and material power)
@@ -240,8 +241,8 @@ verdigris/                  <- workspace root (this dir)
   (`vg_ffi::reactor::ExternalDomain`): turf handles go to the field's watch port
   (evaluated in the frame), main-owned mixtures to a synchronous port evaluated
   at each reactor step. DM: `om_world_on_change` / `om_world_when` on `WORLD_GAS_HANDLE(mixture)`
-  with the `CH_GAS_*` channels. Pipe regions are not watchable until M2 moves
-  them into the frame.
+  with the `CH_GAS_*` channels. Pipe regions are watched through a mirror that a
+  drain refreshes from the network's own region revision.
 - **Heat.** `world::HeatGas` is the heat world's `GasExchange`: probes read the
   pinned gas views (and main-owned probes refreshed each gas tick), energy is
   queued and applied as gas commands at the next gas tick, and the `gas:post`
@@ -263,11 +264,11 @@ verdigris/                  <- workspace root (this dir)
   `Command` (gas deltas) and an overlay for region payloads, and integrate device
   flows in a task between the pipe network and the gas field. Region channels
   then mirror into a cell domain for watches (R7 notes).
-- **Left for M2/S2.** `machines.dm`'s gas subscribers still use the dirty
-  observations (`watch_dirty_gas_mixture`, `drain_dirty_gas_observations`),
-  which the gas world keeps: main and pipe writes are checked as they happen,
-  watched turf cells once per gas tick against the pinned view. Moving them to
-  gas watches is S2's.
+- **Gas watches for DM.** There is one kind: a world watch on a gas handle (`world_watch_changed` on `VG_GAS_HANDLES`; thresholds and bands are `sense_gas()`), whatever
+  the holder wants (a changed channel, a threshold, a band). The old dirty observations (`watch_dirty_gas_mixture`, `drain_dirty_gas_observations`,
+  the second mirror port and the turf mirror refresh that served them) are gone: a holder that slept on a gas change (`gas_watch()`) is woken by a
+  change watch and reads what it needs (`read_gas_mixtures()`, one call); a holder that only needs a level reads `watched(A, WATCH_GAS, levels, ...)`
+  (band watch, armed on first read). Turf cells are watched in the field's frame (a DM write reaches a turf watch at the end of the next frame).
 
 ## Building
 
@@ -376,6 +377,14 @@ The BYOND VM is single-threaded. `rayon` is fine *inside* Rust between FFI
 calls. **Never** hold a `ByondValue`, call into DM, or read DM state from a
 worker thread. The pattern for "Rust needs DM to do something" is a callback
 queue that DM drains on the main thread (see `auxcallback::byond_callback_sender`).
+
+### Rule 6 — The world's x/y size is fixed once Rust is configured
+
+A cell id is BYOND's turf ref, `(x - 1) + (y - 1) * max_x + (z - 1) * max_x * max_y` (`core/src/grid.rs`), and every per-turf table is keyed by it: the heat field,
+the gas arena's `turf_cell`, watches and the power network. `vg_configure_world` sizes them once and later calls are ignored (only z has headroom). Growing `maxx`
+or `maxy` afterwards renumbers every turf, so every cell then belongs to another one; nothing remaps them. Do not add growth. The DM side holds the rule
+(`code/content/maps/world_size.dm`): the world is grown once, before `vg_configure_world`, to hold the largest expedition template, and after that a template that
+does not fit is refused and `increase_max_x` / `increase_max_y` fail. A new per-cell table needs no remap code because the size never changes.
 
 ## CI
 
