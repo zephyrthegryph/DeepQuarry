@@ -2,9 +2,11 @@
 //! geometry comes once from OriginalOutputCursor, for lazy and batch delivery.
 use super::{original_source_arena::OriginalSourceArena,original_prepared_output::{OriginalOutputCursor,OriginalOutputIdentity,OriginalPreparedOutputToken,OriginalPreparedDeliveryToken,OriginalDeliveredValue,OriginalDeliveryFrontier}};
 use crate::{SourceProvider,macro_expansion::OriginalMacroToken as Token};
-use dm_syntax::{OriginalPrimaryDemand,SettingAdmission,SettingRootLease};use std::io;
+use dm_syntax::{OriginalPrimaryDemand,SettingAdmission,SpanToken};use std::io;
 pub(super) struct OriginalFinalOutput<'a>{arena:OriginalSourceArena<'a>,cursor:Option<OriginalOutputCursor>,owner:OriginalOutputIdentity,delivery:OriginalDeliveryFrontier,failed:bool}
-pub(super) struct OriginalEmittedToken{pub(super) token:dm_syntax::Token,pub(super) credit:SettingRootLease,pub(super) original:Option<OriginalDeliveredValue>}
+/// The receiver already owns the spelling in its source arena. Only an
+/// actual live formal pull turns this issued occurrence into an owned Token.
+pub(super) struct OriginalEmittedToken{pub(super) token:SpanToken,pub(super) original:Option<OriginalDeliveredValue>}
 impl<'a>OriginalFinalOutput<'a>{
  pub(super) fn new(work:&'a dyn crate::source_arena_credit::SourceArenaWork,a:&SettingAdmission<'_>)->io::Result<Self>{let cursor=OriginalOutputCursor::new(a)?;let owner=cursor.identity();let delivery=cursor.initial_delivery()?;Ok(Self{arena:OriginalSourceArena::new(work)?,cursor:Some(cursor),owner,delivery,failed:false})}
  pub(super) fn receiver(work:&'a dyn crate::source_arena_credit::SourceArenaWork,delivery:OriginalDeliveryFrontier)->io::Result<Self>{if delivery.end()!=0{return Err(io::ErrorKind::InvalidInput.into())}let owner=delivery.owner().clone();Ok(Self{arena:OriginalSourceArena::new(work)?,cursor:None,owner,delivery,failed:false})}

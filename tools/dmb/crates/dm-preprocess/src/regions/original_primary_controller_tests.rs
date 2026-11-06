@@ -36,7 +36,7 @@ struct Consumer{callables:usize,stop:bool}
 impl dm_syntax::OriginalDeclarationHeaderObserver for Consumer{fn header(&mut self,_:dm_syntax::OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}}
 impl OriginalPrimaryStreamConsumer for Consumer{
  fn callable(&mut self,live:OriginalPrimaryLiveHeader,source:&mut dyn super::super::OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
-  self.callables+=1;assert!(self.stop,"this control is a callback loan, not a second formal parser");let token=source.next_header_token()?.ok_or(io::ErrorKind::UnexpectedEof)?;assert_eq!(token.text,"datum");let at=SpanToken{kind:token.kind,span:token.span};assert!(matches!(source.current_header_value(at)?,dm_syntax::OriginalTokenValue::Ident{spelling,..}if spelling=="datum"));let mut visited=false;source.with_current_source(&mut|text,tokens|{assert!(token.span.start>=live.argument_start());assert_eq!(text.get(token.span.range()),Some("datum"));assert_eq!(tokens.last(),Some(at));let ordinal=tokens.len()-1;let issued=tokens.range(ordinal,ordinal+1).unwrap();assert_eq!(issued.get(0),Some(at));assert!(issued.same_interval(tokens.range(ordinal,ordinal+1).unwrap()));visited=true;Ok(())})?;assert!(visited);Ok(OriginalHeaderFlow::Stop)
+  self.callables+=1;assert!(self.stop,"this control is a callback loan, not a second formal parser");let token=source.next_header_token()?.ok_or(io::ErrorKind::UnexpectedEof)?;assert_eq!(token.text,"datum");let at=SpanToken{kind:token.kind,span:token.span};assert!(matches!(source.current_header_value(at)?,dm_syntax::OriginalTokenValue::Ident{spelling,..}if spelling=="datum"));let mut visited=false;source.with_current_source(&mut|text,tokens|{assert!(token.span.start>=live.argument_start());assert_eq!(text.get(token.span.range()),Some("datum"));assert_ne!(token.text.as_ptr(),text[token.span.range()].as_ptr(),"only the formal Token owns a separate spelling");assert_eq!(tokens.last(),Some(at));let ordinal=tokens.len()-1;let issued=tokens.range(ordinal,ordinal+1).unwrap();assert_eq!(issued.get(0),Some(at));assert!(issued.same_interval(tokens.range(ordinal,ordinal+1).unwrap()));visited=true;Ok(())})?;assert!(visited);Ok(OriginalHeaderFlow::Stop)
  }
 }
 struct Credit{bytes:AtomicUsize,live:Arc<AtomicUsize>}
@@ -240,4 +240,29 @@ fn genuine_logical_end_refuses_undelivered_and_foreign_frontiers() {
     drop((end,early,delivered,foreign_end,foreign_delivered));
     assert_eq!(used.load(Ordering::Acquire),0);
     assert_eq!(work.0.load(Ordering::Acquire),0);
+}
+
+
+#[test]
+fn ordinary_adoption_issues_scalar_geometry_without_retaining_the_token_spelling_credit() {
+    let used = Arc::new(AtomicUsize::new(0));
+    let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
+    let source_used = Arc::new(AtomicUsize::new(0));
+    let work = Work(source_used.clone());
+    let cursor = OriginalOutputCursor::new(&a).unwrap();
+    let mut cursor = cursor;
+    let initial = cursor.initial_delivery().unwrap();
+    let mut receiver = OriginalFinalOutput::receiver(&work, initial).unwrap();
+    let mut primary = OriginalPrimaryDemand::new(&a, None).unwrap();
+    let prepared = cursor.prepare_default_semicolon(&a).unwrap().into_delivery();
+    let adopted = receiver.adopt(prepared, &mut primary, &a).unwrap();
+    assert_eq!(adopted.token, primary.span_tokens().last().unwrap());
+    assert_eq!(adopted.token.text(receiver.source()), ";");
+    assert_eq!(receiver.delivery().unwrap().end(), receiver.source().len());
+    let before = used.load(Ordering::Acquire);
+    drop(adopted);
+    assert_eq!(used.load(Ordering::Acquire), before, "issued scalar data owns no spelling credit");
+    drop((cursor,receiver,primary));
+    assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(source_used.load(Ordering::Acquire), 0);
 }

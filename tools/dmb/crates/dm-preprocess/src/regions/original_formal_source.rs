@@ -1,7 +1,7 @@
 //! A scoped formal loan over the SAME actual driver/primary owner. No source
 //! copies, parser replay, external occurrence grants or independent token store.
 use super::{original_final_output::OriginalEmittedToken,original_prepared_output::OriginalDeliveredValue,OriginalFormalTokenStream};
-use crate::macro_expansion::OriginalMacroRows as Rows;
+use crate::macro_expansion::{OriginalMacroRows as Rows, OriginalMacroText as Text};
 use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,OriginalLiteralData,SettingRootLease,SettingAdmission,Span,Token};use std::io;
 /// Implemented by the real directive/macro/output owner. A pull runs that SAME
 /// owner once, appends its genuine token to primary, and moves only scratch.
@@ -34,8 +34,18 @@ impl<'a,'primary,'observer,'budget,P:OriginalFormalProducer> OriginalLiveFormalS
  fn check(&self)->io::Result<()>{if self.failed.get(){return Err(io::ErrorKind::InvalidInput.into())}let result=(||{self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;self.primary.validate_live_header(&self.live)})();if result.is_err(){self.failed.set(true)}result}
  fn pull(&mut self)->io::Result<Option<Token>>{
   self.check()?;let result=(||{let Some(emitted)=self.producer.pull_formal_token(self.primary)?else{return Ok(None)};
-   let span=emitted.token.span;if span.start<self.live.argument_start()||span.end>self.primary.consumed_frontier().max(self.producer.current_source().len())||self.primary.span_tokens().last().is_none_or(|actual|actual.span!=span){return Err(io::ErrorKind::InvalidInput.into())}
-   self.pulls.push(Pull{kind:emitted.token.kind,span,credit:Some(emitted.credit),original:emitted.original.ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"genuine formal token lost its actual typed value owner"))?},self.a)?;Ok(Some(emitted.token))})();if result.is_err(){self.failed.set(true)}result
+   let native=emitted.token;let span=native.span;
+   if span.start<self.live.argument_start()||self.primary.span_tokens().last()!=Some(native){return Err(io::ErrorKind::InvalidInput.into())}
+   let original=emitted.original.ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"genuine formal token lost its actual typed value owner"))?;
+   let spelling=self.producer.current_source().get(span.range()).ok_or(io::ErrorKind::InvalidInput)?;
+   let mut owned=Text::new(self.a)?;
+   owned.push_str(spelling,self.a)?;
+   // Until the row is admitted, the text keeps its own credit. A failed
+   // ledger append drops that physical spelling before refunding it.
+   self.pulls.push(Pull{kind:native.kind,span,credit:None,original},self.a)?;
+   let (text,credit)=owned.into_parts();
+   self.pulls.last_mut().expect("actual formal row was appended").credit=Some(credit);
+   Ok(Some(Token{kind:native.kind,span,text}))})();if result.is_err(){self.failed.set(true)}result
  }
  fn row(&self,occurrence:NativeExpressionTokenOccurrence)->io::Result<&Pull>{self.check()?;let at=self.expression_start.checked_add(occurrence.ordinal()).ok_or(io::ErrorKind::InvalidInput)?;let row=self.pulls.as_slice().get(at).ok_or(io::ErrorKind::InvalidInput)?;if row.span!=occurrence.span(){return Err(io::ErrorKind::InvalidInput.into())}Ok(row)}
  fn value(&self, pull: &Pull) -> io::Result<dm_syntax::OriginalTokenValue<&str>> {

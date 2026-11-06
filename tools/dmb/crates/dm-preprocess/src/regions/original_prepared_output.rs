@@ -252,6 +252,6 @@ impl OriginalPreparedDeliveryToken {
   if self.leading{arena.append(" ")?;}let span=arena.append(&self.token.text)?;if span!=self.token.span{return Err(io::ErrorKind::InvalidData.into())}let native=SpanToken{kind:self.token.kind,span};if let Some(OriginalDeliveredValue::Punctuation{spelling:":",close_colon})=self.actual{if self.token.text!=":"||self.literal.is_some(){return Err(io::ErrorKind::InvalidData.into())}primary.token_with_original_colon(native,close_colon)?;}else if let Some(data)=self.literal{primary.token_with_original_literal(native,data)?;}else{primary.token(native)?;}
   if self.trailing{arena.append("\n")?;}if arena.as_str().len()!=self.end{return Err(io::ErrorKind::InvalidData.into())}
   let delivery=OriginalDeliveryFrontier{owner:self.owner.clone(),end:self.end};
-  Ok((super::original_final_output::OriginalEmittedToken{token:self.token,credit:self.credit,original:self.actual},delivery))
+  Ok((super::original_final_output::OriginalEmittedToken{token:native,original:self.actual},delivery))
  }
 }
