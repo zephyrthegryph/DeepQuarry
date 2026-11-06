@@ -2775,3 +2775,24 @@ group bases. Four focused tests passed. The tape preserves full-width
 side entries and keeps the original page if it cannot fund conversion
 or represent a group exactly. Project-level savings from this second
 change have yet to be measured.
+
+The Original source origin archive now stores coordinate groups separately
+from runs of the same trace owner. Group geometry shrank from 40 to 24
+bytes on x64. Thirteen focused tests passed, including distinct owners
+with equal trace contents, partial-page truncation and refill, actual
+source limits, and rollback after a real OS error.
+
+The ordered Checker BODY pass now emits membership ambiguity before its
+operands and bitwise ambiguity after them. Real resident tests verified
+ordering against operand diagnostics, warning registration and overrides,
+the shared first `var` origin for comma-group initializers, and expressions
+the reference checker skips. Joined return tokens now take the existing
+Original expression path after verifying the issued keyword. This is
+additional selected coverage.
+
+The native-only Analyze client can read the named ImageDir result and
+publish just the verified report text with its original result status.
+Five focused client tests and same-daemon IPC parity passed. The separate
+embedding writer stages genuine Original warnings and hints independently
+of that report. Its control verified both streams and preserved empty
+outputs on refusal.

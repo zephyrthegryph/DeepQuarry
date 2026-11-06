@@ -198,6 +198,11 @@ impl<T, const PAGE_LEN: usize> FixedPages<T, PAGE_LEN> {
         self.pages.as_slice().get(index / PAGE_LEN)?.as_slice().get(index % PAGE_LEN)
     }
 
+    fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        if index >= self.len { return None; }
+        self.pages.get_mut(index / PAGE_LEN)?.get_mut(index % PAGE_LEN)
+    }
+
     fn last(&self) -> Option<&T> {
         self.pages.as_slice().last()?.as_slice().last()
     }
@@ -279,13 +284,60 @@ impl<T, const PAGE_LEN: usize> FixedPages<T, PAGE_LEN> {
     }
 }
 
-// The group payload holds one exact owned trace regardless of coordinate
-// width. Only coordinates that cannot round-trip use the sparse full-width
-// table; that table keeps an absolute usize ordinal, never a narrowed index.
-#[repr(C)]
-struct PackedGroup {
-    trace: OriginalMacroTrace,
-    fields: [u32; 6],
+// Group geometry is independent of the exact trace owner run. Only
+// coordinates that cannot round-trip use the sparse full-width table.
+#[repr(transparent)]
+struct PackedGroup([u32; 6]);
+
+const TRACE_WORD_BITS: usize = u64::BITS as usize;
+const TRACE_WORDS: usize = ROW_PAGE_LEN / TRACE_WORD_BITS;
+const TRACE_DIRECTORY_PAGE_LEN: usize = 16;
+const _: () = assert!(ROW_PAGE_LEN % TRACE_WORD_BITS == 0 && ROW_PAGE_LEN <= u16::MAX as usize);
+
+// The bit marks a new exact owner. The per-word prefix and full-width page
+// base locate the actual run with one masked popcount and no search.
+struct GroupTracePage {
+    before_page: usize,
+    bits: [u64; TRACE_WORDS],
+    before_word: [u16; TRACE_WORDS],
+}
+
+impl GroupTracePage {
+    fn new(before_page: usize) -> Self {
+        Self { before_page, bits: [0; TRACE_WORDS], before_word: [0; TRACE_WORDS] }
+    }
+
+    fn append(&mut self, index: usize, before: usize, changed: bool) {
+        let word = index / TRACE_WORD_BITS;
+        let bit = index % TRACE_WORD_BITS;
+        if bit == 0 {
+            self.before_word[word] = u16::try_from(before - self.before_page)
+                .expect("page-relative run count");
+        }
+        if changed { self.bits[word] |= 1u64 << bit; }
+    }
+
+    fn run(&self, index: usize) -> Option<usize> {
+        let word = index / TRACE_WORD_BITS;
+        let bit = index % TRACE_WORD_BITS;
+        let through = u64::MAX >> (TRACE_WORD_BITS - 1 - bit);
+        self.before_page
+            .checked_add(usize::from(self.before_word[word]))?
+            .checked_add((self.bits[word] & through).count_ones() as usize)?
+            .checked_sub(1)
+    }
+
+    fn truncate(&mut self, keep: usize) {
+        let word = keep / TRACE_WORD_BITS;
+        let bit = keep % TRACE_WORD_BITS;
+        if bit == 0 {
+            self.bits[word..].fill(0);
+        } else {
+            self.bits[word] &= (1u64 << bit) - 1;
+            self.bits[word + 1..].fill(0);
+        }
+        // A later append reissues each word's count at its first bit.
+    }
 }
 impl GroupGeometry {
     const ESCAPE: u32 = u32::MAX;
@@ -321,38 +373,40 @@ impl GroupGeometry {
 struct OriginGroups {
     packed: OriginPages<PackedGroup>,
     full: EscapePages<(usize, GroupGeometry)>,
+    trace_pages: FixedPages<GroupTracePage, TRACE_DIRECTORY_PAGE_LEN>,
+    traces: EscapePages<OriginalMacroTrace>,
 }
 impl OriginGroups {
     fn new() -> Self {
-        Self { packed: OriginPages::new(), full: EscapePages::new() }
+        Self {
+            packed: OriginPages::new(), full: EscapePages::new(),
+            trace_pages: FixedPages::new(), traces: EscapePages::new(),
+        }
     }
 
     fn len(&self) -> usize {
         self.packed.len()
     }
 
-    fn get(&self, ordinal: usize) -> Option<(GroupGeometry, &OriginalMacroTrace)> {
-        let packed = self.packed.get(ordinal)?;
-        self.view(ordinal, packed)
+    fn trace_run(&self, ordinal: usize) -> Option<usize> {
+        self.trace_pages.get(ordinal / ROW_PAGE_LEN)?.run(ordinal % ROW_PAGE_LEN)
     }
 
-    fn view<'a>(&self, ordinal: usize, packed: &'a PackedGroup) -> Option<(GroupGeometry, &'a OriginalMacroTrace)> {
-        let geometry = match GroupGeometry::unpack(packed.fields) {
-            Some(value) => value,
-            None => {
-                let index = self.full.partition_point(|_, (at, _)| *at < ordinal);
-                self.full.get(index).filter(|(at, _)| *at == ordinal)?.1
-            }
-        };
-        Some((geometry, &packed.trace))
+    fn get(&self, ordinal: usize) -> Option<(GroupGeometry, &OriginalMacroTrace)> {
+        Some((self.geometry(ordinal)?, self.traces.get(self.trace_run(ordinal)?)?))
     }
 
     fn geometry(&self, ordinal: usize) -> Option<GroupGeometry> {
-        self.get(ordinal).map(|(geometry, _)| geometry)
+        let packed = self.packed.get(ordinal)?;
+        if let Some(value) = GroupGeometry::unpack(packed.0) {
+            return Some(value);
+        }
+        let index = self.full.partition_point(|_, (at, _)| *at < ordinal);
+        self.full.get(index).filter(|(at, _)| *at == ordinal).map(|(_, geometry)| *geometry)
     }
 
     fn last(&self) -> Option<(GroupGeometry, &OriginalMacroTrace)> {
-        self.view(self.len().checked_sub(1)?, self.packed.last()?)
+        Some((self.geometry(self.len().checked_sub(1)?)?, self.traces.last()?))
     }
 
     fn push(
@@ -361,27 +415,55 @@ impl OriginGroups {
     ) -> io::Result<()> {
         let ordinal = self.len();
         let previous_full = self.full.len();
-        let fields = match geometry.pack() {
-            Some(fields) => fields,
-            None => {
-                self.full.push((ordinal, geometry), a, funding)?;
-                [GroupGeometry::ESCAPE; 6]
+        let previous_pages = self.trace_pages.len();
+        let before = self.traces.len();
+        let changed = self.traces.last().is_none_or(|prior| !prior.same_owner(&trace));
+        let result = (|| {
+            let fields = match geometry.pack() {
+                Some(fields) => fields,
+                None => {
+                    self.full.push((ordinal, geometry), a, funding)?;
+                    [GroupGeometry::ESCAPE; 6]
+                }
+            };
+            if ordinal % ROW_PAGE_LEN == 0 {
+                self.trace_pages.push(GroupTracePage::new(before), a, funding)?;
             }
-        };
-        if let Err(first) = self.packed.push(PackedGroup { trace, fields }, a, funding) {
+            if changed {
+                self.traces.push(trace, a, funding)?;
+            }
+            self.packed.push(PackedGroup(fields), a, funding)
+        })();
+        if let Err(first) = result {
+            // No trace bit has been published. Drop only rows added by this
+            // attempt and never replace the first original allocation error.
             let _ = self.full.truncate(previous_full, funding);
+            let _ = self.traces.truncate(before, funding);
+            let _ = self.trace_pages.truncate(previous_pages, funding);
             return Err(first);
         }
+        self.trace_pages.get_mut(ordinal / ROW_PAGE_LEN).expect("issued trace rank page")
+            .append(ordinal % ROW_PAGE_LEN, before, changed);
         Ok(())
     }
 
     fn truncate(&mut self, len: usize, funding: &mut PageFunding<'_>) -> io::Result<()> {
-        if len == self.len() {
-            return Ok(());
-        }
+        if len == self.len() { return Ok(()); }
         let full = self.full.partition_point(|_, (at, _)| *at < len);
+        let traces = match len.checked_sub(1) {
+            Some(last) => self.trace_run(last).and_then(|run| run.checked_add(1)).ok_or(io::ErrorKind::InvalidData)?,
+            None => 0,
+        };
+        let pages = len.div_ceil(ROW_PAGE_LEN);
         self.packed.truncate(len, funding)?;
-        self.full.truncate(full, funding)
+        self.full.truncate(full, funding)?;
+        self.traces.truncate(traces, funding)?;
+        self.trace_pages.truncate(pages, funding)?;
+        let tail = len % ROW_PAGE_LEN;
+        if tail != 0 {
+            self.trace_pages.get_mut(pages - 1).expect("issued partial trace rank page").truncate(tail);
+        }
+        Ok(())
     }
 
     #[cfg(test)]
@@ -391,7 +473,17 @@ impl OriginGroups {
 
     fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
         self.packed.visit_storage(&mut visit);
-        self.full.visit_storage(visit);
+        self.full.visit_storage(&mut visit);
+        self.trace_pages.visit_storage(&mut visit);
+        self.traces.visit_storage(visit);
+    }
+
+    #[cfg(debug_assertions)]
+    fn trace_capacity(&self) -> (usize, usize, usize) {
+        let (mut rank_bytes, mut run_bytes) = (0usize, 0usize);
+        self.trace_pages.visit_storage(|_, _, bytes| rank_bytes = rank_bytes.saturating_add(bytes));
+        self.traces.visit_storage(|_, _, bytes| run_bytes = run_bytes.saturating_add(bytes));
+        (self.traces.len(), rank_bytes, run_bytes)
     }
 }
 
@@ -618,6 +710,8 @@ impl OriginalRawOrigins{
   self.groups.visit_storage(|_, _, capacity| group_bytes = group_bytes.saturating_add(capacity));
   (self.rows.len(), compact_bytes, self.groups.len(), group_bytes, self.encounters.len(), full_bytes)
  }
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_run_capacity(&self) -> (usize, usize, usize) { self.groups.trace_capacity() }
  pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivery_sealed}
  #[cfg(debug_assertions)]
  pub(super) fn source_page_bytes(&self)->usize{self.page_credit.reserved_bytes()}
@@ -738,7 +832,12 @@ impl OriginalRawOrigins{
   let used=Arc::new(AtomicUsize::new(0));
   let page_bytes=ROW_PAGE_LEN*std::mem::size_of::<PackedGroup>();
   let directory_bytes=4*std::mem::size_of::<Vec<PackedGroup>>();
-  let cap=2*page_bytes+directory_bytes;
+  let rank_directory_bytes=4*std::mem::size_of::<Vec<GroupTracePage>>();
+  let rank_page_bytes=TRACE_DIRECTORY_PAGE_LEN*std::mem::size_of::<GroupTracePage>();
+  let run_directory_bytes=4*std::mem::size_of::<Vec<OriginalMacroTrace>>();
+  let run_page_bytes=128*std::mem::size_of::<OriginalMacroTrace>();
+  let trace_bytes=rank_directory_bytes+rank_page_bytes+run_directory_bytes+run_page_bytes;
+  let cap=2*page_bytes+directory_bytes+trace_bytes;
   let trace=OriginalMacroTrace::empty();
   let group=|line|GroupGeometry{
    encounter:7,decoded:Span::new(line,line+1),
@@ -768,13 +867,18 @@ impl OriginalRawOrigins{
     assert_eq!(used.load(Ordering::Acquire),cap);
     let mut buffers=Vec::new();
     groups.visit_storage(|_,len,bytes|buffers.push((len,bytes)));
-    assert_eq!(buffers,[(2,directory_bytes),(ROW_PAGE_LEN,page_bytes),(1,page_bytes)]);
+    assert_eq!(buffers,[
+     (2,directory_bytes),(ROW_PAGE_LEN,page_bytes),(1,page_bytes),
+     (1,rank_directory_bytes),(2,rank_page_bytes),
+     (1,run_directory_bytes),(1,run_page_bytes),
+    ]);
     groups.truncate(ROW_PAGE_LEN,&mut funding).unwrap();
    }
    assert_eq!(groups.packed.get(0).unwrap() as *const PackedGroup,first);
    assert!(groups.get(ROW_PAGE_LEN).is_none());
    assert_eq!(groups.iter().count(),ROW_PAGE_LEN);
-   assert_eq!(used.load(Ordering::Acquire),page_bytes+directory_bytes);
+   assert_eq!(used.load(Ordering::Acquire),page_bytes+directory_bytes+trace_bytes);
+   assert_eq!(groups.traces.len(),1,"one exact Arc is sufficient across both group pages");
    drop(groups);
    drop(credit);
    assert_eq!(used.load(Ordering::Acquire),0);
@@ -783,8 +887,7 @@ impl OriginalRawOrigins{
  }
  #[test]
  fn packed_group_width_and_encounter_bounds_preserve_original_coordinates() {
-  #[cfg(target_pointer_width = "64")]
-  assert_eq!(std::mem::size_of::<PackedGroup>(),40,"safe trace variants do not widen source origin pages");
+  assert_eq!(std::mem::size_of::<PackedGroup>(),24,"coordinates contain no per-group trace Arc");
   let normal=GroupGeometry{encounter:usize::from(u16::MAX)-1,
    decoded:Span::new(1,1+usize::from(u16::MAX)),line:27,output_line:200_000,output_base:200_003,raw_base:3};
   assert_eq!(GroupGeometry::unpack(normal.pack().unwrap()),Some(normal));
@@ -833,6 +936,137 @@ impl OriginalRawOrigins{
   drop(groups);
   drop(credit);
   assert_eq!(source.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn group_trace_rank_preserves_exact_owners_across_words_pages_and_trim() {
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+  let used=Arc::new(AtomicUsize::new(0));
+  let work=OutputWork(Arc::clone(&used));
+  let mut credit=work.reserve(0).unwrap();
+  let mut funding=PageFunding{work:&work,credit:&mut credit};
+  let distinct_a=OriginalMacroTrace::empty();
+  let distinct_b=OriginalMacroTrace::empty();
+  let distinct_c=OriginalMacroTrace::empty();
+  assert!(!distinct_a.same_owner(&distinct_b));
+  let group=|line|GroupGeometry{encounter:7,decoded:Span::new(line,line+1),
+   line,output_line:line,output_base:line,raw_base:line};
+  let expected=|index|match index {
+   0..=62 => &distinct_a,
+   63..=64 => &distinct_b,
+   65..=4096 => &distinct_a,
+   _ => &distinct_c,
+  };
+  let mut groups=OriginGroups::new();
+  for index in 0..ROW_PAGE_LEN+3 {
+   groups.push(group(index),expected(index).clone(),&a,&mut funding).unwrap();
+  }
+  assert_eq!(groups.traces.len(),4);
+  for index in 0..groups.len() {
+   let (geometry, trace)=groups.get(index).unwrap();
+   assert_eq!(geometry,group(index));
+   assert!(trace.same_owner(expected(index)));
+  }
+  // Keep a partial second page whose first bit carries the preceding
+  // page's owner. Removing a set bit must also clear it before a same-
+  // owner append at the exact discarded index.
+  groups.truncate(ROW_PAGE_LEN+1,&mut funding).unwrap();
+  assert!(groups.get(ROW_PAGE_LEN).unwrap().1.same_owner(&distinct_a));
+  assert_eq!(distinct_c.strong_count(),1);
+  groups.push(group(ROW_PAGE_LEN+1),distinct_a.clone(),&a,&mut funding).unwrap();
+  assert_eq!(groups.traces.len(),3);
+  assert!(groups.get(ROW_PAGE_LEN+1).unwrap().1.same_owner(&distinct_a));
+  groups.push(group(ROW_PAGE_LEN+2),distinct_c.clone(),&a,&mut funding).unwrap();
+  assert_eq!(groups.traces.len(),4);
+  assert!(groups.get(ROW_PAGE_LEN+2).unwrap().1.same_owner(&distinct_c));
+  groups.truncate(64,&mut funding).unwrap();
+  assert_eq!(groups.traces.len(),2);
+  assert_eq!(distinct_c.strong_count(),1,"the discarded suffix must release its trace");
+  groups.push(group(64),distinct_b.clone(),&a,&mut funding).unwrap();
+  groups.push(group(65),distinct_c.clone(),&a,&mut funding).unwrap();
+  assert!(groups.get(64).unwrap().1.same_owner(&distinct_b));
+  assert!(groups.get(65).unwrap().1.same_owner(&distinct_c));
+  groups.truncate(0,&mut funding).unwrap();
+  assert!(groups.get(0).is_none());
+  assert_eq!(groups.traces.len(),0);
+  groups.push(group(0),distinct_c.clone(),&a,&mut funding).unwrap();
+  assert!(groups.get(0).unwrap().1.same_owner(&distinct_c));
+  drop(groups);
+  drop(credit);
+  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn group_trace_geometry_grow_failure_rolls_back_prepaid_trace_page_and_preserves_io() {
+  use std::sync::atomic::AtomicBool;
+  struct DenySecondGeometry {
+   backing: OutputWork,
+   absent: PathBuf,
+   armed: AtomicBool,
+   run_grows: AtomicUsize,
+  }
+  impl SourceArenaWork for DenySecondGeometry {
+   fn checkpoint(&self)->io::Result<()>{self.backing.checkpoint()}
+   fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.backing.reserve(bytes)}
+   fn grow(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()> {
+    if self.armed.load(Ordering::Acquire) {
+     if bytes==ROW_PAGE_LEN*std::mem::size_of::<PackedGroup>() {
+      return std::fs::File::open(&self.absent).map(drop);
+     }
+     if bytes==128*std::mem::size_of::<OriginalMacroTrace>() {
+      self.run_grows.fetch_add(1,Ordering::AcqRel);
+     }
+    }
+    self.backing.grow(credit,bytes)
+   }
+   fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{self.backing.shrink(credit,bytes)}
+  }
+  // Obtain a genuine OS failure without relying on a platform-specific code.
+  let absent=std::env::current_exe().unwrap().join("not-a-directory/origin-provider");
+  let expected=std::fs::File::open(&absent).unwrap_err();
+  let raw=expected.raw_os_error().expect("real filesystem open error");
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+  let live=Arc::new(AtomicUsize::new(0));
+  let work=DenySecondGeometry{backing:OutputWork(Arc::clone(&live)),absent,
+   armed:AtomicBool::new(false),run_grows:AtomicUsize::new(0)};
+  let mut credit=work.reserve(0).unwrap();
+  let mut funding=PageFunding{work:&work,credit:&mut credit};
+  let owner_a=OriginalMacroTrace::empty();
+  let owner_b=OriginalMacroTrace::empty();
+  let rejected=OriginalMacroTrace::empty();
+  let group=|line|GroupGeometry{encounter:7,decoded:Span::new(line,line+1),
+   line,output_line:line,output_base:line,raw_base:line};
+  let mut groups=OriginGroups::new();
+  for line in 0..ROW_PAGE_LEN {
+   let owner=if line<128&&line%2==0{&owner_a}else{&owner_b};
+   groups.push(group(line),owner.clone(),&a,&mut funding).unwrap();
+  }
+  assert_eq!(groups.traces.len(),128);
+  assert_eq!(groups.trace_pages.len(),1);
+  let before=live.load(Ordering::Acquire);
+  work.armed.store(true,Ordering::Release);
+  let first=groups.push(group(ROW_PAGE_LEN),rejected.clone(),&a,&mut funding).unwrap_err();
+  assert_eq!(first.raw_os_error(),Some(raw));
+  assert_eq!(first.kind(),expected.kind());
+  assert_eq!(work.run_grows.load(Ordering::Acquire),1,"trace page was actually funded before refusal");
+  assert_eq!(live.load(Ordering::Acquire),before,"discarded trace page was released");
+  assert_eq!(groups.len(),ROW_PAGE_LEN);
+  assert_eq!(groups.traces.len(),128);
+  assert_eq!(groups.trace_pages.len(),1);
+  assert_eq!(rejected.strong_count(),1);
+  assert!(groups.get(0).unwrap().1.same_owner(&owner_a));
+  assert!(groups.last().unwrap().1.same_owner(&owner_b));
+  assert!(groups.get(ROW_PAGE_LEN).is_none());
+  work.armed.store(false,Ordering::Release);
+  groups.push(group(ROW_PAGE_LEN),owner_b.clone(),&a,&mut funding).unwrap();
+  assert_eq!(groups.traces.len(),128);
+  assert!(groups.get(ROW_PAGE_LEN).unwrap().1.same_owner(&owner_b));
+  drop((groups,credit));
+  assert_eq!(live.load(Ordering::Acquire),0);
   assert_eq!(syntax.load(Ordering::Acquire),0);
  }
 
