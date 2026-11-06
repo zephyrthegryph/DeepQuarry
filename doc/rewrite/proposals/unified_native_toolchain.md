@@ -2303,5 +2303,40 @@ preserves the exact first I/O error in both batch schedules.
 Whole-project parity and default cutover are still open. Cold Declare
 bootstrap must account for variables in the omitted generated source, since
 they can shadow inherited fields. Full ALLOW accounting still needs a cohort
-proof for layering, and selected layering sources without an authored
-manifest still need equivalent source acquisition.
+proof for layering.
+
+
+### November 6 source ownership and public policy reports
+
+The checked Original pipeline now keeps compact origin rows, shares source
+encounters and final macro allocations, and reuses scanned physical line
+ends. Origin coordinate pages and their directories retain their exact
+allocations through the existing source arena. The syntax and source budgets
+remain 128 MiB and 256 MiB. The syntax owner still verifies the actual token,
+acquisition, expanded output, and delivered frontier.
+
+On the same 6,755-source checkout, successive three-policy probes reached
+7,126, 8,878, 11,436, and 13,375 completed procedure headers before declining
+the next syntax reservation. The latest held 32,820,224 bytes of actual
+coordinate-page storage under the source budget at that point and emitted no
+report. This is preparation coverage, not whole-checkout semantic parity.
+
+The public standalone notice publisher completed on the checkout with zero
+findings using the exact CODE discovery without a manifest or semantic model.
+Its legacy/native controls match exact sites and annotation use. The catch
+policy shares the authored CODE scanner and preserves ordered findings and
+empty annotation use; a public report distinguishes a throwing call inside a
+catch from a call outside it.
+
+Focused native and pinned-library tests establish that the final contentless
+declaration in an include can take its diagnostic location from the actual
+root EOF token. Native declaration diagnostics now use that exact receipt
+while strict policy and initializer anchors retain authored provenance. The
+public library-layering report also matches its authored-manifest result
+when the fixed manifest is absent or supplies the old synthetic-input recipe.
+The resident checker test observes three ordered findings and preserves type
+hints through both operands of logical OR.
+
+Full semantic and checker parity, cold Declare on the checkout, transactional
+full generation, and default routing are still open. The stored-reference
+hard-ban route remains closed pending full-policy evidence.
