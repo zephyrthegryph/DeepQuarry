@@ -28,7 +28,7 @@ fn arc_payload<T>(len: usize) -> Option<usize> {
 // adapter funds ProcedureMetadata, its settings and member wrappers before
 // allocation, when their actual row payloads are known. The producer identity
 // is an alias of the separately funded shared primary layout.
-fn retained_signature_bytes(signature: &ParsedSignature) -> std::io::Result<usize> {
+fn retained_signature_bytes(signature: &CompletedSignature) -> std::io::Result<usize> {
     use std::mem::size_of;
     let overflow = || std::io::Error::from(std::io::ErrorKind::OutOfMemory);
     fn vec_payload<T>(vec: &Vec<T>) -> Option<usize> {
@@ -64,7 +64,36 @@ fn checkpoint(a:&SettingAdmission<'_>)->std::io::Result<()>{let status=a.checkpo
 fn write_input_failure(out:&mut dyn std::fmt::Write,value:dm_syntax::OriginalTokenValue<&str>,expected:dm_syntax::OriginalInputExpected)->std::fmt::Result{
  dm_syntax::write_original_input_failure(out,Some(value),expected)
 }
-struct Row{producer:Option<dm_syntax::OriginalPrimaryProducerIdentity>,header:Span,argument_offset:usize,signature:Option<ParsedSignature>,_lease:Arc<dm_syntax::SettingRootLease>}
+/// Completed rows never own the active parser's notice buffer. It has already
+/// been moved to the separate charged notice ledger before this conversion.
+struct CompletedSignature {
+    signature: dm_ir::ProcedureSignature,
+    declarations: Vec<super::HeaderTypeDeclaration>,
+    formal_notices_complete: bool,
+    original_clauses: super::FormalClauseRows,
+    original_clauses_complete: bool,
+}
+
+impl CompletedSignature {
+    fn after_notices(parsed: ParsedSignature) -> Self {
+        let ParsedSignature {
+            signature, declarations, formal_notices, formal_notices_complete,
+            original_clauses, original_clauses_complete,
+        } = parsed;
+        debug_assert!(formal_notices.is_empty() && formal_notices.capacity() == 0);
+        Self { signature, declarations, formal_notices_complete, original_clauses, original_clauses_complete }
+    }
+
+    fn into_parsed(self) -> ParsedSignature {
+        ParsedSignature {
+            signature: self.signature, declarations: self.declarations,
+            formal_notices: Vec::new(), formal_notices_complete: self.formal_notices_complete,
+            original_clauses: self.original_clauses, original_clauses_complete: self.original_clauses_complete,
+        }
+    }
+}
+
+struct Row{producer:Option<dm_syntax::OriginalPrimaryProducerIdentity>,header:Span,argument_offset:usize,signature:Option<CompletedSignature>,_lease:Arc<dm_syntax::SettingRootLease>}
 struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,symbol_shape:dm_ir::LocalSymbolStorage,credit:dm_syntax::SettingRootLease}
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
 struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot}
@@ -343,6 +372,7 @@ impl OriginalSignatureObserver<'_,'_>{
   }else{parts.parse_original(&mut self.symbols)};
   let mut signature=match parsed{Ok(actual)=>actual,Err(mut actual)=>{self.notices_complete&=actual.formal_notices_complete;let origin=event.span().start.checked_add(argument_offset).ok_or(std::io::ErrorKind::InvalidInput)?;for notice in std::mem::take(&mut actual.formal_notices){self.record_formal_notice(event.span().start,notice.checked_shift(origin)?)?;}self.failure=Some(actual);self.failure_live=completed_live;return Ok(OriginalHeaderFlow::Stop)}};
   self.notices_complete&=signature.formal_notices_complete;let origin=event.span().start.checked_add(argument_offset).ok_or(std::io::ErrorKind::InvalidInput)?;for notice in std::mem::take(&mut signature.formal_notices){self.record_formal_notice(event.span().start,notice.checked_shift(origin)?)?;}
+  let signature=CompletedSignature::after_notices(signature);
   checkpoint(self.a)?;
   self.rows.ensure_slot(self.a)?;
   // Formal notices have moved to their own charged ledger. The remaining
@@ -580,7 +610,7 @@ impl PreparedOriginalSignatures{
   let local=Span::new(header.start.checked_sub(offset).ok_or("prepared header before current source")?,header.end.checked_sub(offset).ok_or("prepared header before current source")?);
   let index=self.rows.find(local.start,|row|row.header.start).ok_or("primary prepared signature row absent")?;
   let row=self.rows.get_mut(index).ok_or("primary prepared signature row absent")?;if row.header!=local{return Err("primary prepared signature header differs".into())}
-  let parsed=row.signature.take().ok_or("primary prepared signature was already consumed")?;Ok((parsed,row.argument_offset))
+  let parsed=row.signature.take().ok_or("primary prepared signature was already consumed")?;Ok((parsed.into_parsed(),row.argument_offset))
  }
  #[cfg(test)]pub(crate) fn remaining(&self)->usize{self.rows.iter().filter(|row|row.signature.is_some()).count()}
 }
@@ -629,6 +659,33 @@ mod signature_row_storage_tests {
         assert_eq!(a.retained_bytes_for_trace(), before);
         assert_eq!(before, observed.row_buffer_bytes + observed.completed_header_bytes);
         drop(consumer);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn completed_signature_row_moves_actual_parameter_backing_and_drained_notices() {
+        assert!(std::mem::size_of::<Option<CompletedSignature>>()
+            + std::mem::size_of::<Vec<super::super::OriginalFormalNotice>>()
+            <= std::mem::size_of::<Option<ParsedSignature>>());
+
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let source: SourceText = "/proc/p(var/static/x;)\n    return\n".into();
+        let mut input = parse_original_signatures_using(source, &a).unwrap();
+        assert!(input.signature_failure.is_none());
+        let completed = input.prepared.rows.get(0).unwrap().signature.as_ref().unwrap();
+        let parameters = Arc::clone(&completed.signature.parameters);
+        let notices_complete = completed.formal_notices_complete;
+        let clauses_complete = completed.original_clauses_complete;
+        let header = input.items.dense()[0].header_span;
+        let (taken, _) = input.prepared.take(header, 0, &input.headers).unwrap();
+        assert!(Arc::ptr_eq(&taken.signature.parameters, &parameters));
+        assert_eq!(taken.formal_notices_complete, notices_complete);
+        assert_eq!(taken.original_clauses_complete, clauses_complete);
+        assert!(taken.formal_notices.is_empty());
+        assert_eq!(input.headers.all_formal_notices().unwrap().count(), 3);
+        assert!(input.prepared.take(header, 0, &input.headers).is_err());
+        drop((taken, parameters, input));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 

@@ -2957,6 +2957,13 @@ refusal, the first provider failure and detached storage. The resolution
 formatter separately passed both checks for borrowing its actual pre-build
 dictionary and preserving duplicate-definition order and messages.
 
+Completed formal rows retain the parsed data after removing the already
+drained notice vector. The adapter still consumes each row once. A single
+packed formal clause now fits inside its existing owner instead of using a
+separate vector. Thirteen focused checks passed for those rows and the live
+Original stream, including actual parameter backing, detached credit, wide
+clauses and fatal prefixes.
+
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified
 ordering against operand diagnostics, warning registration and overrides,
