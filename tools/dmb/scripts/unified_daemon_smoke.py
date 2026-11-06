@@ -481,15 +481,27 @@ class Smoke:
     def retire(self) -> None:
         # Never PID-kill or retire the default/published daemon. Only the exact
         # unique namespace created above is sent the normal draining request.
-        end = time.monotonic() + 15
-        while True:
-            result = self.run(["--daemon-retire"], cleanup=True, cleanup_deadline=end)
-            if "absent" in result.stdout:
-                return
+        end = time.monotonic() + 75
+        last_timeout = None
+        while time.monotonic() < end:
+            try:
+                result = self.run(
+                    ["--daemon-retire"], success=False, cleanup=True, cleanup_deadline=end
+                )
+            except subprocess.TimeoutExpired as error:
+                last_timeout = error
+            else:
+                if result.returncode == 0 and "absent" in result.stdout:
+                    return
+                if result.returncode:
+                    error = RuntimeError(result.stderr.strip())
+                    if result.stderr.strip() != "native daemon retire: daemon transport deadline expired":
+                        raise error
+                    last_timeout = error
             remaining = end - time.monotonic()
-            if remaining <= 0:
-                raise RuntimeError("owned daemon did not drain within cleanup budget")
-            time.sleep(min(0.2, remaining))
+            if remaining > 0:
+                time.sleep(min(0.2, remaining))
+        raise RuntimeError("owned daemon did not drain within cleanup budget") from last_timeout
 
 
 def main() -> None:
