@@ -55,7 +55,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   Ok(NativePrimaryLayoutIdentity{credit})
  }
  pub(super) fn advance(&mut self,source:&str,tokens:&[SpanToken],original:&OriginalParseState<'_,'_,'_>,final_input:bool)->io::Result<NativeLayoutBatch>{self.advance_with_literal_facts(source,TokenWindow::from_slice(tokens),original,final_input,None)}
- pub(super) fn advance_with_literal_facts(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,final_input:bool,facts:Option<&[(Span,crate::OriginalLiteralData)]>)->io::Result<NativeLayoutBatch>{
+ pub(super) fn advance_with_literal_facts(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,final_input:bool,facts:Option<crate::OriginalLiteralRows<'_>>)->io::Result<NativeLayoutBatch>{
   self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
   if !std::ptr::eq(original.storage.a,self.a){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native demanded layout belongs to a foreign primary resource host"))}
   if self.finished||self.counted_tokens>tokens.len()||self.source_base>source.len()||self.masks.visible.len()>source.len().saturating_sub(self.source_base){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native demanded layout has no new complete physical source frontier"))}

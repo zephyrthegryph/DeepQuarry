@@ -82,7 +82,7 @@ impl OriginalDefaultRoots{
   }
   if actual.next().is_some(){return Err(invalid("demanded default omitted actual primary RHS tokens"))}
   let facts=headers.original_literal_facts()?.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual default has no genuine primary literal binding"))?;let(rows,origin)=facts.raw_parts();
-  fn literals(root:&Expr,rows:&[(Span,dm_syntax::OriginalLiteralData)],origin:usize,a:&SettingAdmission<'_>)->io::Result<()>{
+  fn literals(root:&Expr,rows:dm_syntax::OriginalLiteralRows<'_>,origin:usize,a:&SettingAdmission<'_>)->io::Result<()>{
    checkpoint(a)?;let _frame=a.evaluation_frame()?;
    if let ExprKind::Literal(text)=&root.kind{
     if let Some(data)=text.original_data(){let span=Span::new(root.span.start.checked_add(origin).ok_or(io::ErrorKind::InvalidInput)?,root.span.end.checked_add(origin).ok_or(io::ErrorKind::InvalidInput)?);let at=rows.partition_point(|(p,_)|p.start<span.start);let(_,actual)=rows.get(at).filter(|(p,_)|*p==span).ok_or_else(||invalid("demanded literal has no actual same-primary occurrence"))?;if !data.same_owner(actual){return Err(invalid("demanded literal VALUE belongs to another actual primary producer"))}}

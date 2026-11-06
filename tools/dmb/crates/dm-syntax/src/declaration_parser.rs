@@ -4,7 +4,7 @@
 #[path="original_primary_assembly.rs"]mod demand_assembly;
 pub use demand_assembly::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalPrimaryProducerIdentity};
 #[path="original_primary_literal_facts.rs"]mod literal_facts;
-pub use literal_facts::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsView};
+pub use literal_facts::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsView,OriginalLiteralRows};
 use super::*;
 
 #[derive(Clone,Debug)]
@@ -193,7 +193,7 @@ pub(super) fn parse_original_span_range_in_window(source:&str,range:Span,tokens:
 }
 // The rows use sealed TU coordinates, while token spans are local to the
 // caller's authenticated SourceText view. This is layout DATA only.
-type LayoutLiteralRows<'a> = (&'a [(Span,crate::OriginalLiteralData)],usize);
+type LayoutLiteralRows<'a> = (OriginalLiteralRows<'a>,usize);
 pub(super) fn parse_original_body_span_range_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->(Vec<Item>,Vec<Diagnostic>){
     parse_original_span_range_with_outcome(source,range,tokens,false,None,facts.as_ref().map(|view|view.raw_parts()))
 }
@@ -1311,7 +1311,7 @@ impl OriginalDeclarationSkeleton{
  }
 
  /// None is unissued, distinct from a genuine completed zero-fact roster.
- pub fn original_literal_facts(&self)->Option<&[(Span,crate::OriginalLiteralData)]>{self.literal_facts.as_ref().map(OriginalPrimaryLiteralFacts::as_slice)}
+ pub fn original_literal_facts(&self)->Option<OriginalLiteralRows<'_>>{self.literal_facts.as_ref().map(OriginalPrimaryLiteralFacts::rows)}
  pub fn original_literal_fact_owner(&self)->Option<&OriginalPrimaryLiteralFacts>{self.literal_facts.as_ref()}
  /// Move the SAME completed neutral roster into the genuine final source binding.
  /// The actual primary outcome/source extent remains separately authenticated.

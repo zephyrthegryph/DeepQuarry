@@ -55,7 +55,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  /// its actual raw-pull ordinal→primary output-span association; this lookup
  /// cannot authenticate an external source/model or manufacture a missing row.
  pub fn original_literal_for_span(&self,span:Span)->io::Result<Option<&crate::OriginalLiteralData>>{
-  if self.failed||self.ended{return Err(io::ErrorKind::InvalidInput.into())}let rows=self.literal_facts.as_slice();let at=rows.partition_point(|(actual,_)|actual.start<span.start);Ok(rows.get(at).filter(|(actual,_)|*actual==span).map(|(_,data)|data))
+  if self.failed||self.ended{return Err(io::ErrorKind::InvalidInput.into())}let rows=self.literal_facts.rows();let at=rows.partition_point(|(actual,_)|actual.start<span.start);Ok(rows.get(at).filter(|(actual,_)|*actual==span).map(|(_,data)|data))
  }
  pub fn validate_live_header(&self,header:&OriginalPrimaryLiveHeader)->io::Result<()>{
   if self.failed||self.ended||self.original.stopped()||!self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.matches_identity(&header.owner){return Err(io::Error::new(io::ErrorKind::InvalidInput,"foreign or completed actual primary header owner"))}
@@ -116,7 +116,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   if self.original.stopped(){return Ok(false)}
   if self.tokens.window().last().is_some_and(|token|token.span.end>source.len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual native token exceeds current arena frontier"))}
   let tokens = self.tokens.window();
-  let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,tokens,&self.original,actual_eof,Some(self.literal_facts.as_slice()))?;
+  let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,tokens,&self.original,actual_eof,Some(self.literal_facts.rows()))?;
   for line in batch.iter(){
    // Line is scalar geometry; no header/source String is copied or reparsed.
    let line=Line{indent:line.indent,header_start:line.header_start,header_end:line.header_end,end:line.end,explicit_block_opener:line.explicit_block_opener,same_line_body:line.same_line_body};
@@ -246,7 +246,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  #[test]fn genuine_typed_primary_occurrence_retains_same_neutral_roster_and_untyped_literals_keep_none(){
   let source="/datum/a\n    var/value=1\n";let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut span=None;
   for token in lex_spans(source).tokens{if token.kind==TokenKind::Number{span=Some(token.span);let data=crate::OriginalLiteralData::from_value_using("1".to_owned(),crate::OriginalTokenValue::Int(1),&a).unwrap();primary.token_with_original_literal(token,data).unwrap();}else{primary.token(token).unwrap();}}
-  primary.advance(source,true).unwrap();let product=primary.finish(source,true).unwrap();let rows=product.original_literal_facts().unwrap();assert_eq!(rows.len(),1);assert_eq!(rows[0].0,span.unwrap());assert!(matches!(rows[0].1.value(),crate::OriginalTokenValue::Int(1)));let(_,_,_,lease,facts)=product.into_parts_with_literal_facts();let facts=facts.unwrap();assert!(facts.is_admitted_by(&a));drop(lease);assert_eq!(facts.as_slice().len(),1);assert!(used.load(Ordering::Acquire)>0);drop(facts);assert_eq!(used.load(Ordering::Acquire),0);
+  primary.advance(source,true).unwrap();let product=primary.finish(source,true).unwrap();let rows=product.original_literal_facts().unwrap();assert_eq!(rows.len(),1);assert_eq!(rows.get(0).unwrap().0,span.unwrap());assert!(matches!(rows.get(0).unwrap().1.value(),crate::OriginalTokenValue::Int(1)));let(_,_,_,lease,facts)=product.into_parts_with_literal_facts();let facts=facts.unwrap();assert!(facts.is_admitted_by(&a));drop(lease);assert_eq!(facts.rows().len(),1);assert!(used.load(Ordering::Acquire)>0);drop(facts);assert_eq!(used.load(Ordering::Acquire),0);
  }
 }
 

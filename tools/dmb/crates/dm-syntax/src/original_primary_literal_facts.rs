@@ -1,25 +1,162 @@
 //! Neutral facts on the SAME primary product. No public constructor, Weak,
 //! parser, body cache, current-source grant, or independently rebased roster.
-use super::*;use std::{io,sync::Arc};
-struct Payload{rows:Vec<(Span,crate::OriginalLiteralData)>,colons:Vec<(Span,bool)>,extent:Option<usize>,colon_credit:crate::SettingRootLease,rows_credit:crate::SettingRootLease,fixed_credit:crate::SettingRootLease}
+use super::*;
+use std::{alloc::{alloc,Layout},io,mem,ops::Range,ptr::NonNull,sync::Arc};
+
+type LiteralRow = (Span, crate::OriginalLiteralData);
+const LITERAL_PAGE_LEN: usize = 256;
+
+struct LiteralPage {
+    rows: Vec<LiteralRow>,
+    credit: crate::SettingRootLease,
+}
+struct LiteralPages {
+    pages: Vec<LiteralPage>,
+    len: usize,
+    directory_credit: crate::SettingRootLease,
+}
+
+fn allocate_literal_rows<T>(capacity: usize, a: &crate::SettingAdmission<'_>)
+    -> io::Result<(Vec<T>, crate::SettingRootLease)>
+{
+    let layout = Layout::array::<T>(capacity).map_err(|_| io::ErrorKind::OutOfMemory)?;
+    assert_ne!(layout.size(), 0);
+    let credit = a.reserve(layout.size()).map_err(|e| a.take_operational_error().unwrap_or(e))?;
+    let raw = NonNull::new(unsafe { alloc(layout) }.cast::<T>())
+        .ok_or(io::ErrorKind::OutOfMemory)?;
+    // The pointer is an exact funded Global layout, with no initialized rows.
+    Ok((unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) }, credit))
+}
+
+impl LiteralPages {
+    fn get(&self, index: usize) -> Option<&LiteralRow> {
+        self.pages.get(index / LITERAL_PAGE_LEN)?.rows.get(index % LITERAL_PAGE_LEN)
+    }
+
+    fn last(&self) -> Option<&LiteralRow> {
+        self.pages.last()?.rows.last()
+    }
+
+    fn window(&self) -> OriginalLiteralRows<'_> {
+        OriginalLiteralRows { storage: LiteralRowStorage::Pages(self), first: 0, last: self.len }
+    }
+
+    fn push(&mut self, row: LiteralRow, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
+        let len = self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
+        if self.len % LITERAL_PAGE_LEN == 0 {
+            let (rows, credit) = allocate_literal_rows(LITERAL_PAGE_LEN, a)?;
+            let page = LiteralPage { rows, credit };
+            if self.pages.len() == self.pages.capacity() {
+                let capacity = self.pages.capacity().max(2).checked_mul(2)
+                    .ok_or(io::ErrorKind::OutOfMemory)?;
+                let (mut pages, directory_credit) = allocate_literal_rows(capacity, a)?;
+                pages.append(&mut self.pages);
+                drop(mem::replace(&mut self.pages, pages));
+                self.directory_credit = directory_credit;
+            }
+            self.pages.push(page);
+        }
+        let page = self.pages.last_mut().expect("funded literal page");
+        assert!(page.rows.len() < page.rows.capacity());
+        page.rows.push(row);
+        self.len = len;
+        Ok(())
+    }
+
+    #[cfg(debug_assertions)]
+    fn reservation_bytes(&self) -> usize {
+        self.pages.iter().fold(self.directory_credit.bytes(), |bytes, page|
+            bytes.saturating_add(page.credit.bytes()))
+    }
+
+    fn visit_storage(&self, visit: &mut impl FnMut(usize,usize,usize)) {
+        if self.pages.capacity() != 0 {
+            visit(self.pages.as_ptr() as usize, self.pages.len() * mem::size_of::<LiteralPage>(),
+                self.pages.capacity() * mem::size_of::<LiteralPage>());
+        }
+        for page in &self.pages {
+            let bytes=page.rows.capacity()*mem::size_of::<LiteralRow>();
+            debug_assert_eq!(page.credit.bytes(),bytes);
+            visit(page.rows.as_ptr() as usize, page.rows.len()*mem::size_of::<LiteralRow>(),bytes);
+            for (_,data) in &page.rows {
+                data.visit_storage(&mut *visit);
+            }
+        }
+        self.directory_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
+    }
+}
+
+#[derive(Clone, Copy)]
+enum LiteralRowStorage<'a> {
+    Pages(&'a LiteralPages),
+    Slice(&'a [LiteralRow]),
+}
+
+/// A bounded borrowed interval of literal DATA. Creating an interval carries
+/// no source or issuance authority. The actual parser/source role still
+/// requires an OriginalLiteralFactsView from the authenticated owner.
+#[derive(Clone, Copy)]
+pub struct OriginalLiteralRows<'a> {
+    storage: LiteralRowStorage<'a>,
+    first: usize,
+    last: usize,
+}
+impl<'a> OriginalLiteralRows<'a> {
+    #[doc(hidden)]
+    pub fn from_slice(rows: &'a [(Span,crate::OriginalLiteralData)]) -> Self {
+        Self { storage: LiteralRowStorage::Slice(rows), first: 0, last: rows.len() }
+    }
+
+    pub fn len(self) -> usize { self.last - self.first }
+    pub fn is_empty(self) -> bool { self.len() == 0 }
+
+    pub fn get(self, ordinal: usize) -> Option<&'a (Span,crate::OriginalLiteralData)> {
+        if ordinal >= self.len() { return None; }
+        let index = self.first + ordinal;
+        match self.storage {
+            LiteralRowStorage::Pages(rows) => rows.get(index),
+            LiteralRowStorage::Slice(rows) => rows.get(index),
+        }
+    }
+
+    pub fn iter(self) -> impl DoubleEndedIterator<Item=&'a (Span,crate::OriginalLiteralData)> + ExactSizeIterator {
+        (0..self.len()).map(move |index| self.get(index).expect("issued literal fact ordinal"))
+    }
+
+    pub fn partition_point(self, mut before: impl FnMut(&(Span,crate::OriginalLiteralData)) -> bool) -> usize {
+        let (mut start, mut end) = (0, self.len());
+        while start < end {
+            let mid = start + (end - start) / 2;
+            if before(self.get(mid).expect("issued literal fact ordinal")) {
+                start = mid + 1;
+            } else {
+                end = mid;
+            }
+        }
+        start
+    }
+
+    pub fn range(self, range: Range<usize>) -> Option<Self> {
+        if range.start > range.end || range.end > self.len() { return None; }
+        Some(Self { storage: self.storage, first: self.first + range.start, last: self.first + range.end })
+    }
+}
+
+struct Payload{rows:LiteralPages,colons:Vec<(Span,bool)>,extent:Option<usize>,colon_credit:crate::SettingRootLease,fixed_credit:crate::SettingRootLease}
 pub struct OriginalPrimaryLiteralFacts(Option<Arc<Payload>>);
 impl Clone for OriginalPrimaryLiteralFacts{fn clone(&self)->Self{Self(Some(self.0.as_ref().expect("live primary facts").clone()))}}
 impl Drop for OriginalPrimaryLiteralFacts{fn drop(&mut self){if let Some(owner)=self.0.take(){if let Some(payload)=Arc::into_inner(owner){drop(payload)}}}}
 /// DATA projection only. Actual source-view/backing authorization belongs to
 /// the sealed preprocessing/header installer, not these numeric bounds.
-pub struct OriginalLiteralFactsView<'a>{rows:&'a[(Span,crate::OriginalLiteralData)],colons:&'a[(Span,bool)],origin:usize,owner:&'a Payload}
-impl<'a>OriginalLiteralFactsView<'a>{pub fn raw_colons(&self)->(&'a[(Span,bool)],usize){(self.colons,self.origin)}pub fn admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.owner.colon_credit)&&a.matches_lease_domain(&self.owner.rows_credit)&&a.matches_lease_domain(&self.owner.fixed_credit)}pub fn raw_parts(&self)->(&'a[(Span,crate::OriginalLiteralData)],usize){(self.rows,self.origin)}pub fn len(&self)->usize{self.rows.len()}pub fn is_empty(&self)->bool{self.rows.is_empty()}}
+pub struct OriginalLiteralFactsView<'a>{rows:OriginalLiteralRows<'a>,colons:&'a[(Span,bool)],origin:usize,owner:&'a Payload}
+impl<'a>OriginalLiteralFactsView<'a>{pub fn raw_colons(&self)->(&'a[(Span,bool)],usize){(self.colons,self.origin)}pub fn admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.owner.colon_credit)&&a.matches_lease_domain(&self.owner.rows.directory_credit)&&a.matches_lease_domain(&self.owner.fixed_credit)}pub fn raw_parts(&self)->(OriginalLiteralRows<'a>,usize){(self.rows,self.origin)}pub fn len(&self)->usize{self.rows.len()}pub fn is_empty(&self)->bool{self.rows.is_empty()}}
 impl OriginalPrimaryLiteralFacts{
  fn payload(&self)->&Payload{self.0.as_deref().expect("live primary facts")}
- pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{rows:Vec::new(),colons:Vec::new(),extent:None,colon_credit,rows_credit,fixed_credit}))))}
+ pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{rows:LiteralPages{pages:Vec::new(),len:0,directory_credit:rows_credit},colons:Vec::new(),extent:None,colon_credit,fixed_credit}))))}
  pub(super) fn append_actual(&mut self,span:Span,data:crate::OriginalLiteralData,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;
-  if owner.extent.is_some()||!a.matches_lease_domain(&owner.rows_credit)||!a.matches_lease_domain(&owner.fixed_credit)||span.start>=span.end||owner.rows.last().is_some_and(|(prior,_)|prior.end>span.start)||owner.colons.last().is_some_and(|(prior,_)|prior.end>span.start){return Err(io::ErrorKind::InvalidInput.into())}
-  if owner.rows.len()==owner.rows.capacity(){let capacity=owner.rows.capacity().checked_mul(2).unwrap_or(owner.rows.len()+1).max(4);let bytes=capacity.checked_mul(std::mem::size_of::<(Span,crate::OriginalLiteralData)>()).ok_or(io::ErrorKind::OutOfMemory)?;let credit=a.reserve(bytes).map_err(|e|a.take_operational_error().unwrap_or(e))?;let layout=std::alloc::Layout::array::<(Span,crate::OriginalLiteralData)>(capacity).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
-   // SAFETY: exact nonzero Global T layout, null checked, zero initialized
-   // elements. Ordinary Vec uniquely owns/deallocates the SAME layout/capacity.
-   let raw=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)}).ok_or(io::ErrorKind::OutOfMemory)?;let mut rows=unsafe{Vec::from_raw_parts(raw.as_ptr().cast::<(Span,crate::OriginalLiteralData)>(),0,capacity)};rows.append(&mut owner.rows);let old_rows=std::mem::replace(&mut owner.rows,rows);let old_credit=std::mem::replace(&mut owner.rows_credit,credit);drop(old_rows);drop(old_credit);
-  }owner.rows.push((span,data));Ok(())
+  if owner.extent.is_some()||!a.matches_lease_domain(&owner.rows.directory_credit)||!a.matches_lease_domain(&owner.fixed_credit)||span.start>=span.end||owner.rows.last().is_some_and(|(prior,_)|prior.end>span.start)||owner.colons.last().is_some_and(|(prior,_)|prior.end>span.start){return Err(io::ErrorKind::InvalidInput.into())}
+  owner.rows.push((span,data),a)
  }
  pub(super) fn append_actual_colon(&mut self,span:Span,close:bool,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;
@@ -33,26 +170,26 @@ impl OriginalPrimaryLiteralFacts{
  pub(super) fn seal_actual_frontier(&mut self,extent:usize,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;if owner.extent.is_some()||owner.rows.last().is_some_and(|(span,_)|span.end>extent)||owner.colons.last().is_some_and(|(span,_)|span.end>extent){return Err(io::ErrorKind::InvalidInput.into())}owner.extent=Some(extent);Ok(())
  }
- pub fn is_admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.payload().rows_credit)&&a.matches_lease_domain(&self.payload().colon_credit)&&a.matches_lease_domain(&self.payload().fixed_credit)}
+ pub fn is_admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.payload().rows.directory_credit)&&a.matches_lease_domain(&self.payload().colon_credit)&&a.matches_lease_domain(&self.payload().fixed_credit)}
  pub fn consumed_extent(&self)->Option<usize>{self.payload().extent}
- pub fn as_slice(&self)->&[(Span,crate::OriginalLiteralData)]{&self.payload().rows}
+ pub fn rows(&self)->OriginalLiteralRows<'_>{self.payload().rows.window()}
  pub fn colon_rows(&self)->&[(Span,bool)]{&self.payload().colons}
  /// Bounds are DATA, not source authorization. Source installer must first
  /// match the SAME real source backing/view, then borrow this no-copy window.
  pub fn checked_data_window(&self,window:Span)->io::Result<OriginalLiteralFactsView<'_>>{
   let owner=self.payload();let extent=owner.extent.ok_or(io::ErrorKind::NotConnected)?;if window.start>window.end||window.end>extent{return Err(io::ErrorKind::InvalidInput.into())}
-  let first=owner.rows.partition_point(|(span,_)|span.end<=window.start);let last=owner.rows.partition_point(|(span,_)|span.start<window.end);
-  if first<last&&(owner.rows[first].0.start<window.start||owner.rows[last-1].0.end>window.end){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual source view cuts an issued literal occurrence"))}
+  let rows=owner.rows.window();let first=rows.partition_point(|(span,_)|span.end<=window.start);let last=rows.partition_point(|(span,_)|span.start<window.end);
+  if first<last&&(rows.get(first).unwrap().0.start<window.start||rows.get(last-1).unwrap().0.end>window.end){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual source view cuts an issued literal occurrence"))}
   let cf=owner.colons.partition_point(|(span,_)|span.end<=window.start);let cl=owner.colons.partition_point(|(span,_)|span.start<window.end);
   if cf<cl&&(owner.colons[cf].0.start<window.start||owner.colons[cl-1].0.end>window.end){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual source view cuts an issued colon occurrence"))}
-  Ok(OriginalLiteralFactsView{rows:&owner.rows[first..last],colons:&owner.colons[cf..cl],origin:window.start,owner})
+  Ok(OriginalLiteralFactsView{rows:rows.range(first..last).ok_or(io::ErrorKind::InvalidData)?,colons:&owner.colons[cf..cl],origin:window.start,owner})
  }
  #[cfg(debug_assertions)]
  pub(crate) fn trace_retention(&self)->impl std::fmt::Debug{
   #[derive(Default)]
   struct Census{exclusive_payload_rows:usize,exclusive_payload_reserved:usize,shared_payload_references:usize,shared_payload_reserved_per_reference_upper:usize}
   let owner=self.payload();let mut census=Census::default();
-  for (_,data) in &owner.rows{
+  for (_,data) in owner.rows.window().iter(){
    let (exclusive,bytes)=data.trace_payload();
    if exclusive {
     census.exclusive_payload_rows=census.exclusive_payload_rows.saturating_add(1);
@@ -70,10 +207,10 @@ impl OriginalPrimaryLiteralFacts{
     .field("exclusive_payload_rows",&self.census.exclusive_payload_rows).field("exclusive_payload_reserved",&self.census.exclusive_payload_reserved)
     .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper).finish()
   }}
-  Snapshot{rows:owner.rows.len(),colons:owner.colons.len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows_credit.bytes(),colon_capacity:owner.colon_credit.bytes(),census}
+  Snapshot{rows:owner.rows.len,colons:owner.colons.len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colon_credit.bytes(),census}
  }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
-  let owner=self.0.as_ref().expect("live primary facts");let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);let bytes=owner.rows.capacity()*std::mem::size_of::<(Span,crate::OriginalLiteralData)>();if bytes!=0{visit(owner.rows.as_ptr()as usize,bytes,bytes)}for(_,data)in &owner.rows{data.visit_storage(&mut visit)}let n=owner.colons.capacity()*std::mem::size_of::<(Span,bool)>();if n!=0{visit(owner.colons.as_ptr()as usize,n,n)}owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.rows_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
+  let owner=self.0.as_ref().expect("live primary facts");let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(&mut visit);let n=owner.colons.capacity()*std::mem::size_of::<(Span,bool)>();if n!=0{visit(owner.colons.as_ptr()as usize,n,n)}owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
  }
 }
 #[cfg(test)]mod tests{
@@ -98,7 +235,7 @@ impl OriginalPrimaryLiteralFacts{
   drop(facts);assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn actual_same_roster_window_never_copies_or_cuts_literals_and_last_alias_keeps_real_credit(){
-  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();let data=crate::OriginalLiteralData::from_value_using("123".to_owned(),crate::OriginalTokenValue::Int(123),&a).unwrap();facts.append_actual(Span::new(5,8),data,&a).unwrap();assert!(facts.checked_data_window(Span::new(0,10)).is_err());facts.seal_actual_frontier(12,&a).unwrap();let view=facts.checked_data_window(Span::new(4,10)).unwrap();let(rows,origin)=view.raw_parts();assert_eq!(origin,4);assert_eq!(rows.as_ptr(),facts.as_slice().as_ptr());assert_eq!(rows[0].0,Span::new(5,8));assert!(facts.checked_data_window(Span::new(6,10)).is_err());assert!(facts.checked_data_window(Span::new(0,7)).is_err());assert!(facts.checked_data_window(Span::new(0,13)).is_err());let alias=facts.clone();drop(facts);assert!(used.load(Ordering::Acquire)>0);assert_eq!(alias.as_slice().len(),1);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();let data=crate::OriginalLiteralData::from_value_using("123".to_owned(),crate::OriginalTokenValue::Int(123),&a).unwrap();facts.append_actual(Span::new(5,8),data,&a).unwrap();assert!(facts.checked_data_window(Span::new(0,10)).is_err());facts.seal_actual_frontier(12,&a).unwrap();let view=facts.checked_data_window(Span::new(4,10)).unwrap();let(rows,origin)=view.raw_parts();assert_eq!(origin,4);assert!(std::ptr::eq(rows.get(0).unwrap(),facts.rows().get(0).unwrap()));assert_eq!(rows.get(0).unwrap().0,Span::new(5,8));assert!(facts.checked_data_window(Span::new(6,10)).is_err());assert!(facts.checked_data_window(Span::new(0,7)).is_err());assert!(facts.checked_data_window(Span::new(0,13)).is_err());let alias=facts.clone();drop(facts);assert!(used.load(Ordering::Acquire)>0);assert_eq!(alias.rows().len(),1);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);
  }
 }
 
@@ -108,7 +245,7 @@ impl OriginalPrimaryLiteralFacts{
  #[test]fn actual_full_slice_setting_parser_lends_exact_typed_value_across_checked_tu_window_without_reparse(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,1<<24,&poll);let raw="1.23457";let exact=f32::from_bits(0x3f9e0651);let facts=scalar_facts(raw,crate::OriginalTokenValue::Float(exact),113,&a);let lex=crate::lex_spans(raw);
   let root=crate::prepare_setting_expression_with_original_literal_facts(raw,&lex.tokens,Span::new(0,raw.len()),&a,Some(facts.checked_data_window(Span::new(113,113+raw.len())).unwrap())).unwrap();
-  let crate::ExprKind::Literal(literal)=&root.kind else{panic!("literal")};assert!(matches!(literal.original_value(),Some(crate::OriginalTokenValue::Float(value))if value.to_bits()==exact.to_bits()));assert!(literal.original_data().unwrap().same_owner(&facts.as_slice()[0].1));assert_eq!(literal.original_origin(),Some(0));drop(root);assert!(counter.load(Ordering::Acquire)>0);drop(facts);assert_eq!(counter.load(Ordering::Acquire),0);
+  let crate::ExprKind::Literal(literal)=&root.kind else{panic!("literal")};assert!(matches!(literal.original_value(),Some(crate::OriginalTokenValue::Float(value))if value.to_bits()==exact.to_bits()));assert!(literal.original_data().unwrap().same_owner(&facts.rows().get(0).unwrap().1));assert_eq!(literal.original_origin(),Some(0));drop(root);assert!(counter.load(Ordering::Acquire)>0);drop(facts);assert_eq!(counter.load(Ordering::Acquire),0);
  }
  #[test]fn actual_full_slice_static_string_uses_one_lexical_value_without_bracket_child_parse_or_runtime_grant(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,1<<24,&poll);let raw="\"[missing.field]\"";let facts=scalar_facts(raw,crate::OriginalTokenValue::String("[missing.field]"),0,&a);let lex=crate::lex_spans(raw);
@@ -128,7 +265,7 @@ impl OriginalPrimaryLiteralFacts{
  }
  #[test]fn actual_same_body_statement_parser_lends_one_primary_numeric_fact_to_its_original_root_and_coordinates(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,1<<24,&poll);let source="/proc/p()\n    return 1.23457\n";let start=source.find("1.23457").unwrap();let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();let data=crate::OriginalLiteralData::from_value_using("1.23457".into(),crate::OriginalTokenValue::Float(f32::from_bits(0x3f9e0651)),&a).unwrap();facts.append_actual(Span::new(start,start+7),data,&a).unwrap();facts.seal_actual_frontier(source.len(),&a).unwrap();let tokens=crate::lex_spans(source);let ast=crate::parse(source);let provider=BodySource{source,tokens:&tokens.tokens,facts:&facts,a:&a};let parsed=crate::parse_body_items_with_context_and_settings(&ast.items[0].children,source,&|_|None,&provider,&a);assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);
-  let crate::StatementKind::Return(Some(root))=&parsed.statements[0].kind else{panic!("return")};assert_eq!(root.span,Span::new(start,start+7));let crate::ExprKind::Literal(literal)=&root.kind else{panic!("literal")};assert!(matches!(literal.original_value(),Some(crate::OriginalTokenValue::Float(value))if value.to_bits()==0x3f9e0651));assert!(literal.original_data().unwrap().same_owner(&facts.as_slice()[0].1));drop(parsed);drop(facts);assert_eq!(counter.load(Ordering::Acquire),0);
+  let crate::StatementKind::Return(Some(root))=&parsed.statements[0].kind else{panic!("return")};assert_eq!(root.span,Span::new(start,start+7));let crate::ExprKind::Literal(literal)=&root.kind else{panic!("literal")};assert!(matches!(literal.original_value(),Some(crate::OriginalTokenValue::Float(value))if value.to_bits()==0x3f9e0651));assert!(literal.original_data().unwrap().same_owner(&facts.rows().get(0).unwrap().1));drop(parsed);drop(facts);assert_eq!(counter.load(Ordering::Acquire),0);
  }
 }
 
@@ -140,7 +277,7 @@ impl OriginalPrimaryLiteralFacts{
   facts.seal_actual_frontier(source.len(),a).unwrap();let tokens=vec![SpanToken{kind:TokenKind::Interpolation,span:Span::new(prefix,prefix+3)},SpanToken{kind:TokenKind::Number,span:Span::new(prefix+3,prefix+4)},SpanToken{kind:TokenKind::Interpolation,span:Span::new(prefix+4,prefix+7)}];(source,tokens,facts)
  }
  #[test]fn archived_template_borrows_exact_source_and_same_issued_parts_across_shifted_views(){
-  for prefix in [0,7]{let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let(source,tokens,facts)=input(prefix,&a);let before=crate::literal::literal_child_parses_for_test();let parsed=crate::parse_expression_original_token_view(&source,&tokens,prefix,&a,Some(facts.checked_data_window(Span::new(0,source.len())).unwrap()));assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);assert!(a.take_operational_error().is_none());let root=parsed.expr.as_ref().expect("actual typed template");assert_eq!(root.span,Span::new(0,7));let ExprKind::Literal(value)=&root.kind else{panic!("template")};let parts=value.syntax_parts().unwrap().unwrap();assert_eq!(parts.expressions.len(),1);assert_eq!(parts.expressions[0].span,Span::new(3,4));assert!(parts.fragments[0].original.as_ref().unwrap().same_owner(&facts.as_slice()[0].1));assert!(parts.fragments[1].original.as_ref().unwrap().same_owner(&facts.as_slice()[2].1));assert_eq!(crate::literal::literal_child_parses_for_test(),before);drop(parsed);drop(facts);assert_eq!(used.load(Ordering::Acquire),0);}
+  for prefix in [0,7]{let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let(source,tokens,facts)=input(prefix,&a);let before=crate::literal::literal_child_parses_for_test();let parsed=crate::parse_expression_original_token_view(&source,&tokens,prefix,&a,Some(facts.checked_data_window(Span::new(0,source.len())).unwrap()));assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);assert!(a.take_operational_error().is_none());let root=parsed.expr.as_ref().expect("actual typed template");assert_eq!(root.span,Span::new(0,7));let ExprKind::Literal(value)=&root.kind else{panic!("template")};let parts=value.syntax_parts().unwrap().unwrap();assert_eq!(parts.expressions.len(),1);assert_eq!(parts.expressions[0].span,Span::new(3,4));assert!(parts.fragments[0].original.as_ref().unwrap().same_owner(&facts.rows().get(0).unwrap().1));assert!(parts.fragments[1].original.as_ref().unwrap().same_owner(&facts.rows().get(2).unwrap().1));assert_eq!(crate::literal::literal_child_parses_for_test(),before);drop(parsed);drop(facts);assert_eq!(used.load(Ordering::Acquire),0);}
  }
  #[test]fn archived_template_rejects_missing_facts_and_changed_source_without_guessing_a_template(){
   for missing in [false,true]{let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let(mut source,tokens,facts)=input(0,&a);if !missing{source.replace_range(1..2,"z");}let view=(!missing).then(||facts.checked_data_window(Span::new(0,source.len())).unwrap());let parsed=crate::parse_expression_original_token_view(&source,&tokens,0,&a,view);assert!(parsed.expr.is_none());let failure=a.take_operational_error().expect("explicit unavailable/mismatched data");assert_eq!(failure.kind(),if missing{io::ErrorKind::Unsupported}else{io::ErrorKind::InvalidData});drop(parsed);drop(facts);assert_eq!(used.load(Ordering::Acquire),0);}
@@ -150,7 +287,7 @@ impl OriginalPrimaryLiteralFacts{
 #[cfg(test)]mod colon_ledger_controls{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn whole_original_colon_uses_same_fact_not_authored_spacing_and_keeps_scalar_rows_separate(){let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let source="value : key";let tokens=crate::lex_spans(source).tokens;
-  for(close,allowed)in[(true,true),(false,false)]{let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();facts.append_actual_colon(Span::new(6,7),close,&a).unwrap();facts.seal_actual_frontier(source.len(),&a).unwrap();assert!(facts.as_slice().is_empty());assert_eq!(facts.colon_rows(),[(Span::new(6,7),close)]);let parsed=crate::parse_expression_original_token_view(source,&tokens,0,&a,Some(facts.checked_data_window(Span::new(0,source.len())).unwrap()));assert_eq!(parsed.diagnostics.is_empty(),allowed);if allowed{assert!(matches!(parsed.expr.as_ref().unwrap().kind,crate::ExprKind::Member{via_colon:true,..}));}drop(parsed);drop(facts);assert_eq!(used.load(Ordering::Acquire),0);}
+  for(close,allowed)in[(true,true),(false,false)]{let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();facts.append_actual_colon(Span::new(6,7),close,&a).unwrap();facts.seal_actual_frontier(source.len(),&a).unwrap();assert!(facts.rows().is_empty());assert_eq!(facts.colon_rows(),[(Span::new(6,7),close)]);let parsed=crate::parse_expression_original_token_view(source,&tokens,0,&a,Some(facts.checked_data_window(Span::new(0,source.len())).unwrap()));assert_eq!(parsed.diagnostics.is_empty(),allowed);if allowed{assert!(matches!(parsed.expr.as_ref().unwrap().kind,crate::ExprKind::Member{via_colon:true,..}));}drop(parsed);drop(facts);assert_eq!(used.load(Ordering::Acquire),0);}
   assert!(crate::parse_expression(source).diagnostics.is_empty(),"ordinary compiler path unchanged");
  }
  #[test]fn whole_colon_reuses_exact_fact_window_and_offset_under_shifted_body_input(){let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let source="prefix value:key";let start=7;let tokens=crate::lex_spans(source).tokens.into_iter().filter(|t|t.span.start>=start).collect::<Vec<_>>();let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();facts.append_actual_colon(Span::new(12,13),true,&a).unwrap();facts.seal_actual_frontier(source.len(),&a).unwrap();let view=facts.checked_data_window(Span::new(0,source.len())).unwrap();let parsed=crate::parse_expression_original_token_view(source,&tokens,start,&a,Some(view));assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);assert_eq!(parsed.expr.as_ref().unwrap().span,Span::new(0,9));assert!(matches!(parsed.expr.as_ref().unwrap().kind,crate::ExprKind::Member{via_colon:true,..}));drop(parsed);let charged=used.load(Ordering::Acquire);let alias=facts.clone();drop(facts);assert_eq!(used.load(Ordering::Acquire),charged);assert_eq!(alias.colon_rows().len(),1);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);}
@@ -158,4 +295,52 @@ impl OriginalPrimaryLiteralFacts{
   let fresh=crate::SettingAdmission::new(&one,8<<20,&||Ok(()));let foreign=crate::SettingAdmission::new(&two,8<<20,&||Ok(()));let mut facts=OriginalPrimaryLiteralFacts::new(&fresh).unwrap();facts.append_actual_colon(Span::new(5,6),true,&fresh).unwrap();facts.seal_actual_frontier(source.len(),&fresh).unwrap();let parsed=crate::parse_expression_original_token_view(source,&tokens,0,&foreign,Some(facts.checked_data_window(Span::new(0,source.len())).unwrap()));assert!(parsed.expr.is_none());assert_eq!(foreign.take_operational_error().unwrap().kind(),io::ErrorKind::InvalidInput);drop((parsed,facts));assert_eq!(one.load(Ordering::Acquire),0);assert_eq!(two.load(Ordering::Acquire),0);
  }
  #[test]fn colon_ledger_quota_first_io_and_overlap_refuse_without_leaking_credit(){let used=Arc::new(AtomicUsize::new(0));let good=||Ok(());let a=crate::SettingAdmission::new(&used,8<<20,&good);let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();facts.append_actual_colon(Span::new(2,3),true,&a).unwrap();assert_eq!(facts.append_actual_colon(Span::new(2,3),false,&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);let stopped=||Err(io::Error::from_raw_os_error(1450));let fail=crate::SettingAdmission::new(&used,8<<20,&stopped);assert_eq!(facts.append_actual_colon(Span::new(4,5),false,&fail).unwrap_err().raw_os_error(),Some(1450));drop(facts);assert_eq!(used.load(Ordering::Acquire),0);let tiny=crate::SettingAdmission::new(&used,1,&good);assert_eq!(OriginalPrimaryLiteralFacts::new(&tiny).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);}
+}
+
+#[cfg(test)]
+mod literal_page_controls {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn literal_fact_pages_retain_exact_rows_and_refuse_growth_without_flattening() {
+        let used=Arc::new(AtomicUsize::new(0));
+        let healthy=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let mut facts=OriginalPrimaryLiteralFacts::new(&healthy).unwrap();
+        let data=crate::OriginalLiteralData::from_value_using("12".into(),crate::OriginalTokenValue::Int(12),&healthy).unwrap();
+        for row in 0..LITERAL_PAGE_LEN {
+            facts.append_actual(Span::new(row*3,row*3+2),data.clone(),&healthy).unwrap();
+        }
+        let first=facts.rows().get(0).unwrap() as *const LiteralRow;
+        let retained=used.load(Ordering::Acquire);
+        let page_bytes=LITERAL_PAGE_LEN*mem::size_of::<LiteralRow>();
+        let next=Span::new(LITERAL_PAGE_LEN*3,LITERAL_PAGE_LEN*3+2);
+        let tight=crate::SettingAdmission::new(&used,retained+page_bytes-1,&||Ok(()));
+        assert_eq!(facts.append_actual(next,data.clone(),&tight).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
+        assert_eq!(facts.rows().len(),LITERAL_PAGE_LEN);
+        assert_eq!(used.load(Ordering::Acquire),retained);
+        let fault=crate::SettingAdmission::new(&used,retained+page_bytes,&||Err(io::Error::from_raw_os_error(1450)));
+        assert_eq!(facts.append_actual(next,data.clone(),&fault).unwrap_err().raw_os_error(),Some(1450));
+        let exact=crate::SettingAdmission::new(&used,retained+page_bytes,&||Ok(()));
+        facts.append_actual(next,data.clone(),&exact).unwrap();
+        assert_eq!(facts.rows().get(0).unwrap() as *const LiteralRow,first);
+        assert_eq!(used.load(Ordering::Acquire),retained+page_bytes);
+        facts.seal_actual_frontier(next.end,&exact).unwrap();
+
+        let previous=Span::new(next.start-3,next.start-1);
+        let (window,origin)=facts.checked_data_window(Span::new(previous.start,next.end)).unwrap().raw_parts();
+        assert_eq!(origin,previous.start);
+        assert_eq!(window.iter().map(|row|row.0).collect::<Vec<_>>(),[previous,next]);
+        assert_eq!(window.partition_point(|row|row.0.start<next.start),1);
+        assert!(window.get(1).unwrap().1.same_owner(&data));
+        assert!(window.range(1..2).unwrap().get(0).unwrap().1.same_owner(&data));
+        assert!(window.range(1..3).is_none());
+        assert!(facts.checked_data_window(Span::new(next.start+1,next.end)).is_err());
+
+        let alias=facts.clone();
+        drop(facts);
+        assert_eq!(used.load(Ordering::Acquire),retained+page_bytes);
+        drop((alias,data));
+        assert_eq!(used.load(Ordering::Acquire),0);
+    }
 }

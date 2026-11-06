@@ -1627,7 +1627,7 @@ fn code_equal(left:&[u8],right:&[u8],a:&dm_syntax::SettingAdmission<'_>)->std::i
 }
 /// Compare only the actual already-produced sparse facts in this body. None
 /// is unissued, distinct from a completed zero-literal stream. No parse/cache.
-type CodeLiteralFacts<'a>=(&'a[(dm_syntax::Span,dm_syntax::OriginalLiteralData)],usize);
+type CodeLiteralFacts<'a>=(dm_syntax::OriginalLiteralRows<'a>,usize);
 fn code_literal_rows<'a>(rows:Option<CodeLiteralFacts<'a>>,body:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CodeLiteralFacts<'a>>>{
  let Some((rows,origin))=rows else{return Ok(None)};
  let start=origin.checked_add(body.start).ok_or_else(||code_io("actual literal body origin overflow"))?;
@@ -1636,15 +1636,15 @@ fn code_literal_rows<'a>(rows:Option<CodeLiteralFacts<'a>>,body:dm_syntax::Span,
  let begin=rows.partition_point(|(span,_)|span.end<=start);
  let limit=rows.partition_point(|(span,_)|span.start<end);
  if begin>limit{return Err(code_io("actual literal fact ordering differs"))}
- let selected=&rows[begin..limit];
- for(span,_)in selected{code_checkpoint(a)?;if span.start<start||span.end>end||span.end<span.start{return Err(code_io("actual literal fact crosses its body recipe"))}}
+ let selected=rows.range(begin..limit).ok_or_else(||code_io("actual literal fact ordering differs"))?;
+ for(span,_)in selected.iter(){code_checkpoint(a)?;if span.start<start||span.end>end||span.end<span.start{return Err(code_io("actual literal fact crosses its body recipe"))}}
  Ok(Some((selected,start)))
 }
 fn code_literal_hash(rows:Option<CodeLiteralFacts<'_>>,body:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<u64>{
  use std::hash::Hasher;let mut hash=std::collections::hash_map::DefaultHasher::new();
  code_checkpoint(a)?;let rows=code_literal_rows(rows,body,a)?;
  let Some((rows,base))=rows else{hash.write_u8(0);return Ok(hash.finish())};hash.write_u8(1);hash.write_usize(rows.len());
- for(span,value)in rows{code_checkpoint(a)?;hash.write_usize(span.start-base);hash.write_usize(span.end-base);
+ for(span,value)in rows.iter(){code_checkpoint(a)?;hash.write_usize(span.start-base);hash.write_usize(span.end-base);
   fn text(hash:&mut impl Hasher,value:&str,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{hash.write_usize(value.len());for bytes in value.as_bytes().chunks(4096){code_checkpoint(a)?;hash.write(bytes);}Ok(())}
   text(&mut hash,value.raw(),a)?;hash.write_u8(value.string_mode() as u8);
   match value.value(){
@@ -1660,7 +1660,7 @@ fn code_literal_equal(left:Option<CodeLiteralFacts<'_>>,left_body:dm_syntax::Spa
  code_checkpoint(a)?;let left=code_literal_rows(left,left_body,a)?;let right=code_literal_rows(right,right_body,a)?;
  let((left,left_base),(right,right_base))=match(left,right){(None,None)=>return Ok(true),(Some(left),Some(right))=>(left,right),_=>return Ok(false)};
  if left.len()!=right.len(){return Ok(false)}
- for((ls,lv),(rs,rv))in left.iter().zip(right){
+ for((ls,lv),(rs,rv))in left.iter().zip(right.iter()){
   code_checkpoint(a)?;if(ls.start-left_base,ls.end-left_base)!=(rs.start-right_base,rs.end-right_base)||!code_equal(lv.raw().as_bytes(),rv.raw().as_bytes(),a)?||lv.string_mode()!=rv.string_mode(){return Ok(false)}
   let equal=match(lv.value(),rv.value()){
    (dm_syntax::OriginalTokenValue::Int(l),dm_syntax::OriginalTokenValue::Int(r))=>l==r,
@@ -1792,17 +1792,17 @@ impl BodyCodeCandidates{
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
   let make=|value|vec![(Span::new(2,3),OriginalLiteralData::from_value_using("0".into(),value,&a).unwrap())];
   let int=make(OriginalTokenValue::Int(0));let float=make(OriginalTokenValue::Float(0.0));let negative=make(OriginalTokenValue::Float(-0.0));let body=Span::new(0,4);
-  for other in [&float,&negative]{assert!(!code_literal_equal(Some((&int,0)),body,Some((other,0)),body,&a).unwrap());assert_ne!(code_literal_hash(Some((&int,0)),body,&a).unwrap(),code_literal_hash(Some((other,0)),body,&a).unwrap());}
-  assert!(!code_literal_equal(Some((&float,0)),body,Some((&negative,0)),body,&a).unwrap());
+  for other in [&float,&negative]{assert!(!code_literal_equal(Some((dm_syntax::OriginalLiteralRows::from_slice(&int),0)),body,Some((dm_syntax::OriginalLiteralRows::from_slice(other),0)),body,&a).unwrap());assert_ne!(code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&int),0)),body,&a).unwrap(),code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(other),0)),body,&a).unwrap());}
+  assert!(!code_literal_equal(Some((dm_syntax::OriginalLiteralRows::from_slice(&float),0)),body,Some((dm_syntax::OriginalLiteralRows::from_slice(&negative),0)),body,&a).unwrap());
  }
  #[test]fn body_move_keeps_relative_facts_but_unissued_stream_and_changed_static_value_cannot_alias(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
   let data=OriginalLiteralData::from_value_using("same displayed token".into(),OriginalTokenValue::String("[static]"),&a).unwrap();
   let left=vec![(Span::new(2,3),data.clone())];let moved=vec![(Span::new(102,103),data.clone())];let before=Span::new(0,10);let after=Span::new(100,110);
-  assert!(code_literal_equal(Some((&left,0)),before,Some((&moved,0)),after,&a).unwrap());
-  assert!(code_literal_equal(Some((&left,0)),before,Some((&moved,100)),before,&a).unwrap(),"real TU-origin view projects the same chunk-local occurrence without copies");assert_eq!(code_literal_hash(Some((&left,0)),before,&a).unwrap(),code_literal_hash(Some((&moved,0)),after,&a).unwrap());
-  let changed=vec![(Span::new(2,3),OriginalLiteralData::from_value_using("same displayed token".into(),OriginalTokenValue::String("[different]"),&a).unwrap())];assert!(!code_literal_equal(Some((&left,0)),before,Some((&changed,0)),before,&a).unwrap());
-  assert!(!code_literal_equal(None,before,Some((&[],0)),before,&a).unwrap());assert_ne!(code_literal_hash(None,before,&a).unwrap(),code_literal_hash(Some((&[],0)),before,&a).unwrap());
+  assert!(code_literal_equal(Some((dm_syntax::OriginalLiteralRows::from_slice(&left),0)),before,Some((dm_syntax::OriginalLiteralRows::from_slice(&moved),0)),after,&a).unwrap());
+  assert!(code_literal_equal(Some((dm_syntax::OriginalLiteralRows::from_slice(&left),0)),before,Some((dm_syntax::OriginalLiteralRows::from_slice(&moved),100)),before,&a).unwrap(),"real TU-origin view projects the same chunk-local occurrence without copies");assert_eq!(code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&left),0)),before,&a).unwrap(),code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&moved),0)),after,&a).unwrap());
+  let changed=vec![(Span::new(2,3),OriginalLiteralData::from_value_using("same displayed token".into(),OriginalTokenValue::String("[different]"),&a).unwrap())];assert!(!code_literal_equal(Some((dm_syntax::OriginalLiteralRows::from_slice(&left),0)),before,Some((dm_syntax::OriginalLiteralRows::from_slice(&changed),0)),before,&a).unwrap());
+  assert!(!code_literal_equal(None,before,Some((dm_syntax::OriginalLiteralRows::from_slice(&[]),0)),before,&a).unwrap());assert_ne!(code_literal_hash(None,before,&a).unwrap(),code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&[]),0)),before,&a).unwrap());
  }
  #[test]fn sparse_literal_comparison_preserves_exact_operational_error(){
   let counter=Arc::new(AtomicUsize::new(0));let poll=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
@@ -1819,7 +1819,7 @@ impl BodyCodeCandidates{
  #[test]fn cancellation_during_selected_row_validation_stops_before_value_hashing_and_fresh_operation_recovers(){
   let counter=Arc::new(std::sync::atomic::AtomicUsize::new(0));let success=||Ok(());let seed=dm_syntax::SettingAdmission::new(&counter,1<<20,&success);
   let data=dm_syntax::OriginalLiteralData::from_value_using("0".into(),dm_syntax::OriginalTokenValue::Int(0),&seed).unwrap();let rows=vec![(dm_syntax::Span::new(1,2),data.clone()),(dm_syntax::Span::new(3,4),data)];let calls=std::cell::Cell::new(0);let poll=||{calls.set(calls.get()+1);if calls.get()==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let stopped=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
-  assert_eq!(code_literal_hash(Some((&rows,0)),dm_syntax::Span::new(0,5),&stopped).unwrap_err().raw_os_error(),Some(1450));assert_eq!(calls.get(),3);
-  let fresh=dm_syntax::SettingAdmission::new(&counter,1<<20,&success);assert!(code_literal_hash(Some((&rows,0)),dm_syntax::Span::new(0,5),&fresh).is_ok());
+  assert_eq!(code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&rows),0)),dm_syntax::Span::new(0,5),&stopped).unwrap_err().raw_os_error(),Some(1450));assert_eq!(calls.get(),3);
+  let fresh=dm_syntax::SettingAdmission::new(&counter,1<<20,&success);assert!(code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&rows),0)),dm_syntax::Span::new(0,5),&fresh).is_ok());
  }
 }

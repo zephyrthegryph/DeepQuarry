@@ -118,7 +118,7 @@ fn finish_expression_with_admission(
     diagnostics: Vec<Diagnostic>,
     admission: Option<&crate::SettingAdmission<'_>>,
 ) -> ParsedExpr {finish_expression_with_literal_facts(tokens,diagnostics,admission,None,None,false,None)}
-fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Vec<Diagnostic>,admission:Option<&crate::SettingAdmission<'_>>,literal_facts:Option<(&'facts[(Span,crate::OriginalLiteralData)],usize,usize,usize)>,colon_facts:Option<(&'facts[(Span,bool)],usize)>,original_profile:bool,original_source:Option<(&'facts str,usize,usize)>)->ParsedExpr {
+fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Vec<Diagnostic>,admission:Option<&crate::SettingAdmission<'_>>,literal_facts:Option<(crate::OriginalLiteralRows<'facts>,usize,usize,usize)>,colon_facts:Option<(&'facts[(Span,bool)],usize)>,original_profile:bool,original_source:Option<(&'facts str,usize,usize)>)->ParsedExpr {
     let mut parser = ExprParser {
         tokens: expression_tokens(tokens),
         index: 0,
@@ -350,7 +350,7 @@ struct ExprParser<'op,'input> {
     expected_term:Option<NativeTermExpectation>,expected_delimiter:Option<NativeDelimiterExpectation>,
     diagnostics: Vec<Diagnostic>,
     demand:Option<ExpressionDemandInput<'input>>,
-    literal_facts:Option<(&'input[(Span,crate::OriginalLiteralData)],usize,usize,usize)>,
+    literal_facts:Option<(crate::OriginalLiteralRows<'input>,usize,usize,usize)>,
     colon_facts:Option<(&'input[(Span,bool)],usize)>,
     // Exact borrowed parser input only; acquisition authority stays with its provider.
     original_source:Option<(&'input str,usize,usize)>,

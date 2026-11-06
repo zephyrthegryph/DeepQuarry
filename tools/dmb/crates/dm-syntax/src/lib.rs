@@ -360,7 +360,7 @@ pub mod original_scalar_transport;
 mod original_lexical_point;
 pub use original_lexical_point::{OriginalLexicalNoticePoint,OriginalLexicalPointKind};
 
-pub use declaration_parser::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsView};
+pub use declaration_parser::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsView,OriginalLiteralRows};
 
 pub use original_token_value::OriginalCommentKind;
 

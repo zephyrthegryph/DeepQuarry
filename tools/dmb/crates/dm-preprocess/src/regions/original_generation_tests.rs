@@ -243,8 +243,8 @@ fn actual_original_numeric_tokens_reuse_payload_without_collapsing_occurrence_po
  assert_eq!(origin,0);
  assert_eq!(facts.len(),4);
  for pair in [0..2,2..4] {
-  let (first_span,first)=&facts[pair.start];
-  let (second_span,second)=&facts[pair.start+1];
+  let (first_span,first)=facts.get(pair.start).unwrap();
+  let (second_span,second)=facts.get(pair.start+1).unwrap();
   assert!(first_span.end<second_span.start);
   assert_eq!(first,second);
   assert!(!first.same_owner(second));
@@ -257,8 +257,8 @@ fn actual_original_numeric_tokens_reuse_payload_without_collapsing_occurrence_po
    assert_eq!(raw_source_line.get(point.byte_column-1..),Some(first.raw()));
   }
  }
- assert!(matches!(facts[0].1.value(),dm_syntax::OriginalTokenValue::Int(7)));
- assert!(matches!(facts[2].1.value(),dm_syntax::OriginalTokenValue::Float(value) if value.to_bits()==7.0f32.to_bits()));
+ assert!(matches!(facts.get(0).unwrap().1.value(),dm_syntax::OriginalTokenValue::Int(7)));
+ assert!(matches!(facts.get(2).unwrap().1.value(),dm_syntax::OriginalTokenValue::Float(value) if value.to_bits()==7.0f32.to_bits()));
  drop(issued);
  drop(view);
  drop((plan,expanded,primary,binding));
@@ -285,8 +285,9 @@ fn actual_repeated_static_original_tokens_retain_distinct_issued_positions() {
  let (facts,origin)=issued.raw_parts();
  assert_eq!(origin,0);
  assert_eq!(facts.len(),4);
- for (index, pair) in facts.chunks_exact(2).enumerate() {
-  let [(first_span,first),(second_span,second)]=pair else { unreachable!() };
+ for index in 0..2 {
+  let (first_span,first)=facts.get(index*2).unwrap();
+  let (second_span,second)=facts.get(index*2+1).unwrap();
   assert!(first_span.end<second_span.start);
   assert_eq!(first,second);
   assert!(!first.same_owner(second));
@@ -300,12 +301,47 @@ fn actual_repeated_static_original_tokens_retain_distinct_issued_positions() {
    assert_eq!(raw_line.get(point.byte_column-1..),Some(first.raw()));
   }
  }
- assert_eq!(facts[0].1.string_mode(),dm_syntax::OriginalStringMode::Normal);
- assert!(matches!(facts[0].1.value(),dm_syntax::OriginalTokenValue::String("same string")));
- assert!(matches!(facts[2].1.value(),dm_syntax::OriginalTokenValue::Resource("icons/test.dmi")));
+ assert_eq!(facts.get(0).unwrap().1.string_mode(),dm_syntax::OriginalStringMode::Normal);
+ assert!(matches!(facts.get(0).unwrap().1.value(),dm_syntax::OriginalTokenValue::String("same string")));
+ assert!(matches!(facts.get(2).unwrap().1.value(),dm_syntax::OriginalTokenValue::Resource("icons/test.dmi")));
  drop(issued);
  drop(view);
  drop((plan,expanded,primary,binding));
+ assert_eq!(used.load(Ordering::Acquire),0);
+ assert_eq!(work.live.load(Ordering::Acquire),0);
+}
+
+#[test]
+fn actual_original_literal_fact_pages_keep_exact_source_owner_across_boundary() {
+ let source=format!("/datum/literal_page
+{}", "    var/value = 12
+".repeat(260));
+ let project="E:/controller/literal-page.dme";
+ let provider=Memory::new(&[(project,&source)]);
+ let work=Work{live:Arc::new(AtomicUsize::new(0))};
+ let used=Arc::new(AtomicUsize::new(0));
+ let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
+ let product=GenerationDirectivePlan::prepare_original_checker_stream_using(
+  Path::new(project),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer,
+ ).unwrap();
+ let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();
+ let full=binding.checked_view(&expanded.text,dm_syntax::Span::new(0,expanded.text.len()),&binding,&a).unwrap();
+ let (all,_)=full.checked_facts(&expanded.text).unwrap().raw_parts();
+ assert_eq!(all.len(),260);
+ let before=all.get(255).unwrap();
+ let after=all.get(256).unwrap();
+ assert!(!before.1.same_owner(&after.1));
+ let window=dm_syntax::Span::new(before.0.start,after.0.end);
+ let exact=expanded.text.checked_view(window.range()).unwrap();
+ let clipped=binding.checked_view(&exact,window,&binding,&a).unwrap();
+ let (rows,origin)=clipped.checked_facts(&exact).unwrap().raw_parts();
+ assert_eq!(origin,window.start);
+ assert_eq!(rows.len(),2);
+ assert!(std::ptr::eq(rows.get(0).unwrap(),before));
+ assert!(std::ptr::eq(rows.get(1).unwrap(),after));
+ let foreign=crate::SourceText::from(exact.as_str().to_owned());
+ assert!(clipped.checked_facts(&foreign).is_err());
+ drop((clipped,full,exact,plan,expanded,primary,binding));
  assert_eq!(used.load(Ordering::Acquire),0);
  assert_eq!(work.live.load(Ordering::Acquire),0);
 }
