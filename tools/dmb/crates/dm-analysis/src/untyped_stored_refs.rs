@@ -193,6 +193,22 @@ fn holder_exempt_using<E:From<Unsupported>+From<String>>(tree:&SemanticTree,prof
     }
     Ok(false)
 }
+/// The scope lists exact `owner::name` places, never type families.
+fn work_queue_using<E>(
+    p: &StoredPolicy<'_>,
+    owner: &str,
+    name: &str,
+    poll: &mut impl FnMut() -> Result<(), E>,
+) -> Result<bool, E> {
+    for row in p.work_queues {
+        poll()?;
+        if row.strip_prefix(owner).and_then(|tail| tail.strip_prefix("::")) == Some(name) {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
 fn related(
     tree: &SemanticTree,
     profile: PackedU128,
@@ -585,7 +601,9 @@ pub fn stored_findings_workspace_using<W:crate::policy_body_demand::WorkspaceWor
     let mut rows = Vec::new();
     for (owner,name,declared,rel,line,_)in vars {
         (checkpoint.borrow_mut())()?;
-        if holder_exempt_using(tree,profile,p,&owner,&mut||work.borrow_mut().checkpoint())? || related_using(tree,profile,p,&owner,&name,&mut||work.borrow_mut().checkpoint())? {
+        if holder_exempt_using(tree, profile, p, &owner, &mut || work.borrow_mut().checkpoint())?
+            || work_queue_using(p, &owner, &name, &mut || work.borrow_mut().checkpoint())?
+        {
             continue;
         }
         let mut init = false;
@@ -595,7 +613,7 @@ pub fn stored_findings_workspace_using<W:crate::policy_body_demand::WorkspaceWor
                 break;
             }
         }
-        if init {
+        if init || related_using(tree, profile, p, &owner, &name, &mut || work.borrow_mut().checkpoint())? {
             continue;
         }
         strings_charge_using(&[&owner, &name, &declared, &rel],remaining,&mut **work.borrow_mut())?;
@@ -804,7 +822,11 @@ pub fn stored_findings_workspace_using<W:crate::policy_body_demand::WorkspaceWor
                         break;
                     }
                 }
-                let mut skip=schema||holder_exempt_using(tree,profile,p,&owner,&mut||work.borrow_mut().checkpoint())?||related_using(tree,profile,p,&owner,&name,&mut||work.borrow_mut().checkpoint())?;if !skip{for q in p.work_queues{work.borrow_mut().checkpoint()?;if q==&format!("{owner}::{name}"){skip=true;break}}}if skip {
+                if schema
+                    || holder_exempt_using(tree, profile, p, &owner, &mut || work.borrow_mut().checkpoint())?
+                    || work_queue_using(p, &owner, &name, &mut || work.borrow_mut().checkpoint())?
+                    || related_using(tree, profile, p, &owner, &name, &mut || work.borrow_mut().checkpoint())?
+                {
                     continue;
                 }
                 let Some(fact) = crate::checker_variable_facts::variable_using(

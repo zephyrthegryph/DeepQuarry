@@ -100,3 +100,63 @@ fn stored_scope_lists_are_exact_for_reference_types_transients_and_work_queues()
     assert_eq!(run.run.sites.len(), 1);
     assert_eq!(run.run.sites[0].ident, "/datum/holder::plain");
 }
+
+#[cfg(feature = "legacy-sem")]
+#[path = "../../dmb/shared/test_scratch.rs"]
+mod scratch;
+
+#[test]
+fn native_stored_work_queue_exempts_exact_scalar_and_typed_list_places() {
+    const SOURCE: &str = concat!(
+        "/datum/queues\n",
+        "    var/datum/queued\n",
+        "    var/datum/queued_suffix\n",
+        "    var/list/datum/queued_list\n",
+        "/datum/queues_other\n",
+        "    var/datum/queued\n",
+        "    var/list/datum/queued_list\n",
+        // Give the legacy indenter a real following token so the preceding
+        // declaration is located at its authored EOL, not at the DME EOF.
+        "/datum/after_queue_declarations\n",
+    );
+    const CONFIG: &str = concat!(
+        "[lint.stored_refs.lists]\n",
+        "transient_types = []\n",
+        "exempt_types = []\n",
+        "work_queues = [\"/datum/queues::queued\", \"/datum/queues::queued_list\"]\n",
+    );
+    let native = captured(SOURCE, &[], Configuration::Captured(CONFIG.as_bytes()));
+    let summary: Vec<_> = native.run.sites.iter().map(|site| (site.rule.as_str(), site.ident.as_str())).collect();
+    assert_eq!(summary, [
+        ("var", "/datum/queues::queued_suffix"),
+        ("var", "/datum/queues_other::queued"),
+        ("list", "/datum/queues_other::queued_list"),
+    ]);
+    assert!(native.allow_used.is_empty());
+
+    #[cfg(feature = "legacy-sem")]
+    {
+        let root = scratch::dir("stored-work-queue-current-master");
+        std::fs::create_dir_all(root.join("tools/ci")).unwrap();
+        std::fs::create_dir_all(root.join("code")).unwrap();
+        std::fs::write(root.join("tools/ci/lint_scopes.toml"), CONFIG).unwrap();
+        std::fs::write(root.join("deepquarry.dme"), "#include \"code/probe.dm\"\n").unwrap();
+        std::fs::write(root.join("code/probe.dm"), SOURCE).unwrap();
+        let engine = crate::run::Engine::new(crate::run::registry(), crate::run::Options {
+            root, lints: vec!["stored_refs".into()], no_cache: true, raw: true,
+            ..Default::default()
+        }).unwrap();
+        let sem = crate::sem::sem_for(&engine.tree).unwrap();
+        assert!(sem.errors.is_empty(), "master fixture errors: {:?}", sem.errors);
+        for (owner, line) in [("/datum/queues", 4), ("/datum/queues_other", 7)] {
+            let declaration = sem.var_decl(owner, "queued_list").expect("original typed list seed");
+            assert_eq!(declaration.declared, "/list/datum");
+            assert_eq!((declaration.file.as_str(), declaration.line), ("code/probe.dm", line));
+        }
+        let lint = engine.reg.lints.iter().find(|lint| lint.meta().name == "stored_refs").unwrap();
+        let original = engine.run_one(lint.as_ref());
+        assert!(original.internal_error.is_none());
+        assert_eq!(native.run.sites, original.run.sites);
+        assert_eq!(native.allow_used, original.allow_used);
+    }
+}
