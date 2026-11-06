@@ -2,9 +2,9 @@
 //! is lent from SAME raw acquisition+lexical extent, never Token Display or a
 //! normalized SourceText offset. Typed value/kind/float bits stay unchanged.
 use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroText as Text,original_format_using,original_quote_delimiters}};
-use dm_syntax::{OriginalLiteralData,SettingAdmission};use std::io;
+use dm_syntax::{OriginalLiteralData,OriginalNumericLiteralPool,SettingAdmission};use std::io;
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
-pub(super) fn static_literal_using(token:&Token<'_>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<Option<OriginalLiteralData>>{
+pub(super) fn static_literal_using(token:&Token<'_>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>,numbers:Option<&mut OriginalNumericLiteralPool>)->io::Result<Option<OriginalLiteralData>>{
  poll(a)?;match &token.value{
   Value::Int(_)|Value::Float(_)|Value::String(_)|Value::Resource(_)|Value::InterpBegin(_)|Value::InterpPart(_)|Value::InterpEnd(_)=>(),
   _=>return Ok(None),
@@ -14,7 +14,11 @@ pub(super) fn static_literal_using(token:&Token<'_>,provider:&dyn SourceProvider
  // This moves the SAME String and existing allocation credit. Fixed metadata
  // and actual value-copy allocations are then funded by that SAME root, not a
  // second capacity reservation for bytes already live in the raw spelling.
- OriginalLiteralData::from_admitted_raw_with_mode_using(raw,credit,token.value.map_text(|text|text.get()),token.string_mode,a).map(Some)
+ let value=token.value.map_text(|text|text.get());
+ if matches!(&value,dm_syntax::OriginalTokenValue::Int(_)|dm_syntax::OriginalTokenValue::Float(_)){
+  if let Some(numbers)=numbers{return numbers.issue_using(raw,credit,value,token.string_mode,a).map(Some)}
+ }
+ OriginalLiteralData::from_admitted_raw_with_mode_using(raw,credit,value,token.string_mode,a).map(Some)
 }
 
 /// Lossless authored/genuinely generated grammar DATA. Macro metadata mirrors

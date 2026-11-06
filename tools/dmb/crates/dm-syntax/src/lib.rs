@@ -350,7 +350,7 @@ pub use syntax_ledger_views::ProjectedSettingExpression;
 pub use statements::{OriginalBodyGrammarOutcome,OriginalBodyGrammarKind};
 
 mod original_literal_data;
-pub use original_literal_data::{OriginalLiteralData,OriginalStringMode};
+pub use original_literal_data::{OriginalLiteralData,OriginalNumericLiteralPool,OriginalStringMode};
 
 pub use lexer_items::{NativeLexicalPurpose,OriginalPunctuationFacts,OriginalIdentFacts,OriginalWhitespaceFacts,OriginalResourceFacts,OriginalCommentFacts,OriginalNumberFacts,NativeTokenCursor,OriginalPreparedBoundary,NativeTokenProgress,NativeTokenStep};
 pub use lexer_items::{OriginalQuotedFrame,OriginalQuotedPart,OriginalQuotedPartKind,OriginalQuotedStep};
@@ -368,7 +368,7 @@ mod span_token_storage;
 pub use span_token_storage::{SpanTokenStorage,SharedSpanTokens,TokenWindow};
 pub use declaration_parser::OriginalDeclarationSyntax;
 
-pub use declaration_parser::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader};
+pub use declaration_parser::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalPrimaryProducerIdentity};
 
 mod admitted_message;
 pub use admitted_message::message_using as admitted_message_using;

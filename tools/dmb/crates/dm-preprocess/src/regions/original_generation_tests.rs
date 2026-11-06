@@ -220,3 +220,43 @@ fn real_nested_macro_tokens_share_their_exact_projection_across_one_invocation()
     assert_eq!(syntax.load(Ordering::Acquire), 0);
     assert_eq!(work.live.load(Ordering::Acquire), 0);
 }
+
+
+#[test]
+fn actual_original_numeric_tokens_reuse_payload_without_collapsing_occurrence_positions(){
+ let source="/datum/repeated_numbers\n    var/a = 7\n    var/b = 7\n    var/c = 7.0\n    var/d = 7.0\n";
+ let project="E:/controller/repeated-numbers.dme";
+ let provider=Memory::new(&[(project,source)]);
+ let work=Work{live:Arc::new(AtomicUsize::new(0))};
+ let used=Arc::new(AtomicUsize::new(0));
+ let a=SettingAdmission::new(&used,16<<20,&||Ok(()));
+ let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new(project),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).unwrap();
+ let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();
+ let view=binding.checked_view(&expanded.text,dm_syntax::Span::new(0,expanded.text.len()),&binding,&a).unwrap();
+ let issued=view.checked_facts(&expanded.text).unwrap();
+ let (facts,origin)=issued.raw_parts();
+ assert_eq!(origin,0);
+ assert_eq!(facts.len(),4);
+ for pair in [0..2,2..4] {
+  let (first_span,first)=&facts[pair.start];
+  let (second_span,second)=&facts[pair.start+1];
+  assert!(first_span.end<second_span.start);
+  assert_eq!(first,second);
+  assert!(!first.same_owner(second));
+  assert_eq!(first.raw_storage().as_ptr(),second.raw_storage().as_ptr());
+  for span in [first_span,second_span]{
+   assert_eq!(expanded.text.as_str().get(span.range()),Some(first.raw()));
+   let ordinal=expanded.origins.partition_point(|row|row.output_span.start<span.start);
+   let (_,point,_,_,_)=expanded.origins.original_raw_point_geometry(ordinal).unwrap();
+   let raw_source_line=source.lines().nth(point.line-1).unwrap();
+   assert_eq!(raw_source_line.get(point.byte_column-1..),Some(first.raw()));
+  }
+ }
+ assert!(matches!(facts[0].1.value(),dm_syntax::OriginalTokenValue::Int(7)));
+ assert!(matches!(facts[2].1.value(),dm_syntax::OriginalTokenValue::Float(value) if value.to_bits()==7.0f32.to_bits()));
+ drop(issued);
+ drop(view);
+ drop((plan,expanded,primary,binding));
+ assert_eq!(used.load(Ordering::Acquire),0);
+ assert_eq!(work.live.load(Ordering::Acquire),0);
+}
