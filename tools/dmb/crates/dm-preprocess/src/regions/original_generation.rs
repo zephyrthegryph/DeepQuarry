@@ -46,7 +46,23 @@ impl Recipe<'_>{
   let root=match root{crate::OriginalRawReadOutcome::Acquired(lease)=>lease,crate::OriginalRawReadOutcome::SourceOpenFailed(error)=>{if let Some(observer)=self.root_observer{observer.actual_root_open_failed_using(OriginalRootOpenFailureLoan{provider:self.provider,path:self.project,error:&error,work:self.work,a});}return Err(error)},crate::OriginalRawReadOutcome::Absent|crate::OriginalRawReadOutcome::Suppressed=>return Err(io::Error::new(io::ErrorKind::InvalidData,"actual root reader did not issue its source acquisition"))};
   let occurrence=shared.borrow_mut().plan.register_opened_using(self.project,self.project,root.clone(),None,dm_syntax::Span::default(),0,a)?;shared.borrow_mut().register_actual_root_semantic_file_using(a)?;driver.push_opened_at(self.provider,root,occurrence,self.project,a)?;
   let mut notices=NoticeSink(Rc::clone(&shared));let mut host=Host(Rc::clone(&shared),self.work);let mut control=Control{shared:Rc::clone(&shared),project:self.project,work:self.work,max_raw_bytes:self.max_raw_bytes,omissions:self.omissions};
-  {let mut source=OriginalLogicalProducer::new(&mut driver,self.provider,&mut notices,&mut host,&mut control,a)?;shared.borrow_mut().bind(&source.initial_delivery(),a)?;run(&mut source).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=producer_run {error:?}");}})?;}
+  let result = {
+   let mut source=OriginalLogicalProducer::new(&mut driver,self.provider,&mut notices,&mut host,&mut control,a)?;
+   shared.borrow_mut().bind(&source.initial_delivery(),a)?;
+   run(&mut source)
+  };
+  result.inspect_err(|_error| {
+   #[cfg(debug_assertions)]
+   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+    let state = shared.borrow();
+    let (rows, row_capacity_bytes, groups, group_capacity_bytes, encounters, wide_capacity_bytes) = state.origins.trace_capacity();
+    let (opened_occurrences, regions, plan_reserved_bytes) = state.plan.trace_reservations();
+    let (macro_names, macro_metadata_reserved_bytes, macro_map_reserved_bytes) = driver.trace_macro_reservations();
+    let counter_after_source_loan = a.retained_bytes_for_trace();
+    eprintln!("ORIGINAL_FATAL_STAGE=producer_run {_error:?}");
+    eprintln!("ORIGINAL_RETAINED_STAGE=producer counter_after_source_loan={counter_after_source_loan} rows={rows} row_capacity_bytes={row_capacity_bytes} groups={groups} group_capacity_bytes={group_capacity_bytes} encounters={encounters} wide_capacity_bytes={wide_capacity_bytes} opened_occurrences={opened_occurrences} regions={regions} plan_reserved_bytes={plan_reserved_bytes} macro_names={macro_names} macro_metadata_reserved_bytes={macro_metadata_reserved_bytes} macro_map_reserved_bytes={macro_map_reserved_bytes}");
+   }
+  })?;
   drop((control,host,notices));
   {let mut state=shared.borrow_mut();driver.capture_final_define_history_using(&mut state.history,a).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=producer_history {error:?}");}})?;}
   let final_macros=driver.into_final_environment_using(a).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=producer_final_macros {error:?}");}})?;

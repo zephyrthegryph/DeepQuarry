@@ -102,5 +102,5 @@ impl GenerationDirectivePlan {
 
 /// Borrowed iterator over the actual issued code-source domain. No allocation,
 /// source owner or compiler-completeness receipt is created by this adapter.
-pub struct GenerationOriginalSources<'a>{occurrences:std::iter::Enumerate<std::slice::Iter<'a,IncludeOccurrence>>,acquisitions:&'a BTreeMap<usize,crate::SourceAcquisitionLease>,omitted:&'a BTreeSet<PathBuf>}
+pub struct GenerationOriginalSources<'a>{occurrences:std::iter::Enumerate<std::slice::Iter<'a,IncludeOccurrence>>,acquisitions:&'a SourceAcquisitions,omitted:&'a BTreeSet<PathBuf>}
 impl<'a> Iterator for GenerationOriginalSources<'a>{type Item=(&'a Path,Option<&'a crate::SourceAcquisitionLease>);fn next(&mut self)->Option<Self::Item>{for(index,occurrence)in self.occurrences.by_ref(){if occurrence.non_text_kind().is_some()||self.omitted.contains(occurrence.path.as_ref()){continue}return Some((occurrence.path.as_path(),self.acquisitions.get(&index)))}None}}

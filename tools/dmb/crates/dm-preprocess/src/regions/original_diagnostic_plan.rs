@@ -29,7 +29,7 @@ impl OriginalDiagnosticPlan{
  pub fn regions(&self)->&Vec<IncludeRegion>{&self.inner().plan.regions}
  pub fn items(&self)->&Vec<OrderedItem>{&self.inner().plan.items}
  pub fn file_dirs(&self)->&Vec<PathBuf>{&self.inner().plan.file_dirs}
- pub fn source_acquisitions(&self)->&BTreeMap<usize,SourceAcquisitionLease>{&self.inner().plan.source_acquisitions}
+ pub fn source_acquisitions(&self)->&super::SourceAcquisitions{&self.inner().plan.source_acquisitions}
  pub fn source_texts(&self)->&BTreeMap<PathBuf,SourceText>{&self.inner().plan.source_texts}
  pub fn source_line_starts(&self)->&BTreeMap<PathBuf,Arc<[usize]>>{&self.inner().plan.source_line_starts}
  pub fn project_dir(&self)->&PathBuf{&self.inner().plan.project_dir}
@@ -49,6 +49,7 @@ impl OriginalDiagnosticPlan{
  pub fn original_sources(&self)->impl Iterator<Item=(&std::path::Path,Option<&SourceAcquisitionLease>)>{self.occurrences().iter().enumerate().filter_map(|(at,row)|row.non_text_kind().is_none().then(||(row.path.as_path(),self.source_acquisitions().get(&at))))}
  pub fn visit_storage(&self,mut visit:impl FnMut(OriginalDiagnosticStorage)){
   let owner=self.0.as_ref().unwrap();owner.retention.notices.visit_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));owner.retention.scripts.visit_allocation(|address,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical:owner.retention.scripts.len()*std::mem::size_of::<OriginalScriptInclude>(),capacity}));for row in owner.retention.scripts.as_slice(){row.path.visit_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));}owner.retention.conditionals.visit_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));visit(OriginalDiagnosticStorage::Owner{address:Arc::as_ptr(owner)as usize,bytes:std::mem::size_of::<Inner>()+2*std::mem::size_of::<usize>()});owner.control.visit_counter_storage(|address,bytes|visit(OriginalDiagnosticStorage::Owner{address,bytes:bytes+2*std::mem::size_of::<usize>()}));owner.retention.final_macros.visit_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));owner.retention.metadata.visit_storage(|address,bytes|visit(OriginalDiagnosticStorage::Owner{address,bytes:bytes+2*std::mem::size_of::<usize>()}));
+  owner.plan.source_acquisitions.visit_original_storage(|address,logical,capacity|visit(OriginalDiagnosticStorage::Buffer{address,logical,capacity}));
   macro_rules! rows{($field:ident,$t:ty)=>{{let rows=&owner.plan.$field;if rows.capacity()!=0{visit(OriginalDiagnosticStorage::Buffer{address:rows.as_ptr()as usize,logical:rows.len()*std::mem::size_of::<$t>(),capacity:rows.capacity()*std::mem::size_of::<$t>()});}}}}
   rows!(occurrences,IncludeOccurrence);rows!(regions,IncludeRegion);rows!(items,OrderedItem);rows!(diagnostic_ordinals,usize);rows!(diagnostics,Diagnostic);rows!(warnings,Diagnostic);rows!(file_dirs,PathBuf);
   // Existing persistent map/B-tree allocation geometry is not public. The

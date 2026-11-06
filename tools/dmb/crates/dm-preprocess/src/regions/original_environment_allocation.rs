@@ -133,6 +133,10 @@ impl OriginalEnvironment{
   let allowance=a.reserve(map).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   original_poll(a)?;Ok(Self{environment:MacroEnvironment::default(),allowance,metadata:0,map_high_water:map})
  }
+ #[cfg(debug_assertions)]
+ pub(crate) fn trace_reservations(&self) -> (usize, usize, usize) {
+  (self.environment.len(), self.metadata, self.map_high_water)
+ }
  /// An operation-scoped read loan, not an exported snapshot/owner.
  pub(crate) fn environment(&self)->&MacroEnvironment{&self.environment}
  pub(crate) fn len(&self)->usize{self.environment.len()}

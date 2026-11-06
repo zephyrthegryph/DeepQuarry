@@ -39,11 +39,15 @@ impl OriginalPlanOwner{
  pub(super) fn new(project:&Path,initial:InitialEnvironment,defines:&BTreeMap<String,String>,revision:Option<u64>,a:&SettingAdmission<'_>)->io::Result<Self>{
   poll(a)?;if initial!=InitialEnvironment::OriginalChecker0290{return Err(io::ErrorKind::InvalidInput.into())}
   let mut credit=a.reserve(add(mem::size_of::<Self>(),path_bound(project.parent().unwrap_or_else(||Path::new("")))?)?).map_err(|e|a.take_operational_error().unwrap_or(e))?;
-  let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
+  let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.source_acquisitions=super::SourceAcquisitions::original(a)?;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
   for(name,replacement)in defines{poll(a)?;let bytes=add(node::<String,String>()?,scaled(add(name.len(),replacement.len())?,4)?)?;grow(&mut credit,bytes,a)?;plan.defines.insert(owned_text(name)?,owned_text(replacement)?);}
   Ok(Self{plan,current_region:None,failed:false,empty_trace:None,last_trace:None,credit})
  }
  fn check(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=if !a.matches_lease_domain(&self.credit){Err(io::ErrorKind::InvalidInput.into())}else{poll(a)};if result.is_err(){self.failed=true}result}
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_reservations(&self) -> (usize, usize, usize) {
+  (self.plan.occurrences.len(), self.plan.regions.len(), self.credit.bytes())
+ }
  pub(super) fn plan(&self)->&DirectivePlan{&self.plan}
  /// Only the actual admitted read/recorded acquisition path supplies a lease.
  /// No normalization/preparation/reopen occurs; decoded line metadata is DATA
@@ -56,7 +60,6 @@ impl OriginalPlanOwner{
   let occurrence=self.plan.occurrences.len();let text=lease.source_text();let key_exists=self.plan.source_texts.contains_key(path);
   if self.plan.source_texts.get(path).is_some_and(|previous|previous.as_str()!=text.as_str()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"same captured source path changed during actual traversal"))}
   let mut metadata=add(path_bound(path)?,scaled(mem::size_of::<usize>(),8)?)?;
-  metadata=add(metadata,node::<usize,SourceAcquisitionLease>()?)?;
   if !self.plan.dependencies.contains(path){metadata=add(metadata,add(node::<PathBuf,()>()?,path_bound(path)?)?)?;}
   if !key_exists{metadata=add(metadata,add(node::<PathBuf,crate::SourceText>()?,path_bound(path)?)?)?;}
   path.to_str().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual semantic source path is not UTF8"))?;
@@ -79,7 +82,7 @@ impl OriginalPlanOwner{
    let key=owned_path(&path)?;unused=add(unused,opened_path_unused(&key)?)?;
    self.plan.dependencies.insert(key);
   }
-  self.plan.source_acquisitions.insert(occurrence,lease);
+  self.plan.source_acquisitions.append_original(occurrence,lease,a)?;
   // All real path allocations and map inserts happened in their original
   // order; retire only unused allowance after those owners are settled.
   if unused!=0{a.shrink(&mut self.credit,unused).map_err(|e|a.take_operational_error().unwrap_or(e))?;}

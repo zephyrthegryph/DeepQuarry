@@ -202,11 +202,14 @@ pub enum OrderedItem {
     },
 }
 
+mod source_acquisitions;
+pub use source_acquisitions::SourceAcquisitions;
+
 #[derive(Clone, Debug, Default)]
 pub struct DirectivePlan {
     pub initial_environment:crate::InitialEnvironment,
     /// Per-current-include acquisition binding, separate from interned text.
-    pub source_acquisitions: BTreeMap<usize, crate::SourceAcquisitionLease>,
+    pub source_acquisitions: SourceAcquisitions,
     pub source_texts: BTreeMap<PathBuf, crate::SourceText>,
     pub occurrences: Vec<IncludeOccurrence>,
     pub regions: Vec<IncludeRegion>,
@@ -239,7 +242,7 @@ pub struct DirectivePlan {
 /// completeness, directive interpretation or expansion capability.
 #[derive(Clone, Copy)]
 pub struct SourcePlanGeometry<'a> {
-    pub source_acquisitions:&'a BTreeMap<usize,crate::SourceAcquisitionLease>,
+    pub source_acquisitions:&'a SourceAcquisitions,
     pub source_texts: &'a BTreeMap<PathBuf, crate::SourceText>,
     pub occurrences: &'a [IncludeOccurrence],
     pub regions: &'a [IncludeRegion],

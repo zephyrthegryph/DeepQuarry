@@ -321,7 +321,7 @@ fn assemble(
             initial_environment:previous.initial_environment,
             // Never carry an old ledger binding through a retained plan.
             // The outer planner projects only current authenticated leases.
-            source_acquisitions: BTreeMap::new(),
+            source_acquisitions: Default::default(),
             source_texts,
             occurrences,
             regions,

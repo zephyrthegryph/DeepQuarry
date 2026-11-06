@@ -9,7 +9,7 @@ impl FrontendDirectivePlan{
  pub fn is_original_diagnostic(&self)->bool{matches!(self,Self::OriginalDiagnostic(_))}
  pub fn initial_environment(&self)->dm_preprocess::InitialEnvironment{match self{Self::Ordinary(plan)=>plan.initial_environment,Self::OriginalDiagnostic(plan)=>plan.initial_environment()}}
  pub fn source_geometry(&self)->dm_preprocess::regions::SourcePlanGeometry<'_>{match self{Self::Ordinary(plan)=>plan.source_geometry(),Self::OriginalDiagnostic(plan)=>plan.source_geometry()}}
- pub fn source_acquisitions(&self)->&BTreeMap<usize,dm_preprocess::SourceAcquisitionLease>{match self{Self::Ordinary(plan)=>&plan.source_acquisitions,Self::OriginalDiagnostic(plan)=>plan.source_acquisitions()}}
+ pub fn source_acquisitions(&self)->&dm_preprocess::regions::SourceAcquisitions{match self{Self::Ordinary(plan)=>&plan.source_acquisitions,Self::OriginalDiagnostic(plan)=>plan.source_acquisitions()}}
  pub fn source_texts(&self)->&BTreeMap<PathBuf,dm_preprocess::SourceText>{match self{Self::Ordinary(plan)=>&plan.source_texts,Self::OriginalDiagnostic(plan)=>plan.source_texts()}}
  pub fn source_line_starts(&self)->&BTreeMap<PathBuf,Arc<[usize]>>{match self{Self::Ordinary(plan)=>&plan.source_line_starts,Self::OriginalDiagnostic(plan)=>plan.source_line_starts()}}
  pub fn occurrences(&self)->&Vec<dm_preprocess::regions::IncludeOccurrence>{match self{Self::Ordinary(plan)=>&plan.occurrences,Self::OriginalDiagnostic(plan)=>plan.occurrences()}}

@@ -6,7 +6,25 @@ use crate::{SourceProvider,SourceAcquisitionLease,SourceAcquisitionIdentity,macr
 use dm_syntax::{Span,SettingAdmission,SettingRootLease};use std::{io,sync::Arc,path::PathBuf};
 // Adjacent tokens share only already-authenticated physical row metadata. The
 // compact token records remain distinct; grouping never proves a source point.
-struct Group{occurrence:usize,binding:SourceAcquisitionIdentity,path:Arc<PathBuf>,trace:Arc<Vec<MacroExpansion>>,decoded:Span,line:usize,output_line:usize,region:usize,output_base:usize,raw_base:usize}
+// A physical encounter can contain many distinct row groups, including
+// expansions with different macro traces. Keep its exact acquisition and
+// path owner once, independent of those row and trace transitions.
+struct Encounter {
+    occurrence: usize,
+    binding: SourceAcquisitionIdentity,
+    path: Arc<PathBuf>,
+    region: usize,
+}
+
+struct Group {
+    encounter: usize,
+    trace: Arc<Vec<MacroExpansion>>,
+    decoded: Span,
+    line: usize,
+    output_line: usize,
+    output_base: usize,
+    raw_base: usize,
+}
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Row {
     group: usize,
@@ -162,6 +180,7 @@ impl<T> OriginPages<T> {
         self.len = len;
     }
 
+    #[cfg(test)]
     fn iter(&self) -> impl Iterator<Item = &T> {
         self.pages.as_slice().iter().flat_map(|page| page.as_slice())
     }
@@ -174,10 +193,10 @@ impl<T> OriginPages<T> {
     }
 }
 
-pub(super) struct OriginalRawOrigins{rows:OriginPages<PackedRow>,wide:Rows<Row>,groups:OriginPages<Group>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
+pub(super) struct OriginalRawOrigins{rows:OriginPages<PackedRow>,wide:Rows<Row>,groups:OriginPages<Group>,encounters:Rows<Encounter>,nonphysical:Rows<Span>,output:Option<super::original_prepared_output::OriginalOutputIdentity>,delivery_sealed:bool,domain:SettingRootLease}
 impl std::fmt::Debug for OriginalRawOrigins{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalRawOrigins").field("rows",&self.rows.len()).finish()}}
 impl OriginalRawOrigins{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:OriginPages::new(a)?,wide:Rows::new(a)?,groups:OriginPages::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:OriginPages::new(a)?,wide:Rows::new(a)?,groups:OriginPages::new(a)?,encounters:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivery_sealed:false,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?})}
  /// The actual controller records once beside its final arena append. The
  /// private actual raw stack authenticates current occurrence/binding/point;
  /// the supplied source path and region come from that SAME DirectivePlan.
@@ -187,11 +206,34 @@ impl OriginalRawOrigins{
   if token.start>=token.end||output_cover.start!=token.start||output_cover.end<token.end||self.rows.last().is_some_and(|row|self.widen(row).output.end>output_cover.start){return Err(io::ErrorKind::InvalidInput.into())}
   let source=inputs.physical_row_using(actual.origin,lease,provider,a)?;
   match (&actual.lexical_frame,actual.lexical_span){(Some(frame),Some(_)) if frame.admitted_by(a)=>(),(None,None)=>(),_=>return Err(io::ErrorKind::InvalidData.into())};
-  // Share only the immediately preceding metadata group. This is linear in
-  // actual output size, with no path/trace dictionary or historical scan. The
-  // SAME raw owner has already authenticated every token above.
-  let shared=self.groups.last().is_some_and(|g|g.occurrence==actual.origin.occurrence&&g.binding.matches(lease)&&g.decoded==source.decoded&&g.raw_base==source.raw.start&&g.line==source.point.line&&g.output_line==output_line&&g.region==region&&Arc::ptr_eq(&g.path,&path)&&Arc::ptr_eq(&g.trace,&trace));
-  let group=if shared{self.groups.len()-1}else{let index=self.groups.len();self.groups.push(Group{occurrence:actual.origin.occurrence,binding:lease.identity(),path,trace,decoded:source.decoded,line:source.point.line,output_line,region,output_base:output_cover.start,raw_base:source.raw.start},a)?;index};
+  // Check every authority component even when reusing an encounter.
+  // Never identify a source acquisition by its spelling or region alone.
+  let share_encounter = self.encounters.as_slice().last().is_some_and(|last| {
+   last.occurrence == actual.origin.occurrence && last.binding.matches(lease)
+    && last.region == region && Arc::ptr_eq(&last.path, &path)
+  });
+  let share_group = share_encounter && self.groups.last().is_some_and(|last| {
+   last.decoded == source.decoded && last.raw_base == source.raw.start
+    && last.line == source.point.line && last.output_line == output_line
+    && Arc::ptr_eq(&last.trace, &trace)
+  });
+  if !share_encounter {
+   self.encounters.push(Encounter {
+    occurrence: actual.origin.occurrence, binding: lease.identity(), path, region,
+   }, a)?;
+  }
+  if !share_group {
+   let group = Group {
+    encounter: self.encounters.len() - 1, trace, decoded: source.decoded,
+    line: source.point.line, output_line, output_base: output_cover.start,
+    raw_base: source.raw.start,
+   };
+   if let Err(error) = self.groups.push(group, a) {
+    if !share_encounter { self.encounters.pop(); }
+    return Err(error);
+   }
+  }
+  let group = self.groups.len() - 1;
   // Group sharing already requires the same source line, and validation
   // above requires the token and output cover to start at the same byte.
   let row=Row{
@@ -199,7 +241,10 @@ impl OriginalRawOrigins{
    byte_column:source.point.byte_column, raw_extent:actual.origin.physical, actual_eof:source.actual_eof,
   };
   let result = self.push_row(row, a);
-  if result.is_err() && !shared { self.groups.truncate(self.groups.len() - 1); }
+  if result.is_err() {
+   if !share_group { self.groups.truncate(self.groups.len() - 1); }
+   if !share_encounter { self.encounters.pop(); }
+  }
   result
  }
 
@@ -254,36 +299,65 @@ impl OriginalRawOrigins{
   let keep=self.rows.partition_point(|row|self.widen(row).output.end<=delivered.end());
   let last=keep.checked_sub(1).and_then(|index|self.row(index));
   if delivered.end()!=0&&last.is_none_or(|row|row.output.end!=delivered.end())&&!self.nonphysical.as_slice().iter().any(|cover|cover.end==delivered.end()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivery receipt is not an actual recorded complete cover"))}
-  let groups=match last{Some(row)=>row.group.checked_add(1).ok_or(io::ErrorKind::InvalidData)?,None=>0};
+  let (groups, encounters) = match last {
+   Some(row) => {
+    let group = self.groups.get(row.group).ok_or(io::ErrorKind::InvalidData)?;
+    (row.group.checked_add(1).ok_or(io::ErrorKind::InvalidData)?,
+     group.encounter.checked_add(1).ok_or(io::ErrorKind::InvalidData)?)
+   }
+   None => (0, 0),
+  };
   // Wide records are a monotone subsequence. Removing a suffix preserves all
   // previously encoded side indexes and does not claim an unreceived EOF.
   let wide=self.wide.as_slice().partition_point(|row|row.output.end<=delivered.end());
-  self.rows.truncate(keep);self.wide.truncate(wide);self.groups.truncate(groups);let nonphysical=self.nonphysical.as_slice().partition_point(|cover|cover.end<=delivered.end());self.nonphysical.truncate(nonphysical);self.delivery_sealed=true;Ok(keep)
+  self.rows.truncate(keep);self.wide.truncate(wide);self.groups.truncate(groups);self.encounters.truncate(encounters);let nonphysical=self.nonphysical.as_slice().partition_point(|cover|cover.end<=delivered.end());self.nonphysical.truncate(nonphysical);self.delivery_sealed=true;Ok(keep)
+ }
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_capacity(&self) -> (usize, usize, usize, usize, usize, usize) {
+  let sum_pages = |pages: &OriginPages<PackedRow>| {
+   let mut bytes = 0usize;
+   pages.visit_storage(|_, _, capacity| bytes = bytes.saturating_add(capacity));
+   bytes
+  };
+  let mut group_bytes = 0usize;
+  self.groups.visit_storage(|_, _, capacity| group_bytes = group_bytes.saturating_add(capacity));
+  (self.rows.len(), sum_pages(&self.rows), self.groups.len(), group_bytes,
+   self.encounters.len(), self.wide.capacity().saturating_mul(std::mem::size_of::<Row>()))
  }
  pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivery_sealed}
  pub(super) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.domain)}
  pub(super) fn geometry(&self,index:usize)->Option<(usize,OriginalByteCursor,Span,Span,bool)>{
   let row=self.row(index)?;
   let group=self.groups.get(row.group)?;
-  Some((group.occurrence,row.point(group.line),row.token_span(),row.raw_extent,row.actual_eof))
+  let encounter = self.encounters.as_slice().get(group.encounter)?;
+  Some((encounter.occurrence,row.point(group.line),row.token_span(),row.raw_extent,row.actual_eof))
  }
  pub(super) fn equivalent(&self,other:&Self)->bool{self.len()==other.len()&&self.nonphysical.as_slice()==other.nonphysical.as_slice()&&(0..self.len()).all(|index|self.geometry(index)==other.geometry(index))}
  pub(super) fn len(&self)->usize{self.rows.len()}
- pub(super) fn get(&self,index:usize)->Option<ExpandedOriginView<'_>>{let row=self.row(index)?;let group=self.groups.get(row.group)?;Some(ExpandedOriginView{origin:OriginView{output_line:group.output_line,path:&group.path,source_line:group.line},output_span:row.output,source_span:group.decoded,region:group.region,macro_expansions:&group.trace})}
+ pub(super) fn get(&self,index:usize)->Option<ExpandedOriginView<'_>>{
+  let row = self.row(index)?;
+  let group = self.groups.get(row.group)?;
+  let encounter = self.encounters.as_slice().get(group.encounter)?;
+  Some(ExpandedOriginView {
+   origin: OriginView { output_line: group.output_line, path: &encounter.path, source_line: group.line },
+   output_span: row.output, source_span: group.decoded, region: encounter.region,
+   macro_expansions: &group.trace,
+  })
+ }
  /// Exact point projection only. Expanded grammar offsets inside a transformed
  /// token must never be mistaken for original source-byte deltas. Genuine raw
  /// EOF additionally lends its actual terminal point at the output boundary.
  pub(super) fn point(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<OriginalByteCursor,&'static str>{
-  let row=self.row(index).ok_or("actual raw origin row absent")?;let group=self.groups.get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease){return Err("actual raw origin belongs to another source acquisition or occurrence")}
+  let row=self.row(index).ok_or("actual raw origin row absent")?;let group=self.groups.get(row.group).ok_or("actual raw origin metadata absent")?;let encounter=self.encounters.as_slice().get(group.encounter).ok_or("actual raw origin encounter absent")?;if encounter.occurrence!=occurrence||!encounter.binding.matches(lease){return Err("actual raw origin belongs to another source acquisition or occurrence")}
   if offset!=row.output.start&&!(row.actual_eof&&(offset==row.token_end||offset==row.output.end)){return Err("expanded byte has no exact issued raw token point")}
   Ok(row.point(group.line))
  }
  pub(super) fn source_end_at(&self,index:usize,offset:usize)->bool{self.row(index).is_some_and(|row|row.actual_eof&&(offset==row.output.start||offset==row.token_end||offset==row.output.end))}
- pub(super) fn policy_line(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<usize,&'static str>{let row=self.row(index).ok_or("actual raw origin row absent")?;let group=self.groups.get(row.group).ok_or("actual raw origin metadata absent")?;if group.occurrence!=occurrence||!group.binding.matches(lease)||offset<row.output.start||offset>=row.output.end{return Err("actual raw policy point belongs to another input or interval")}Ok(group.line)}
+ pub(super) fn policy_line(&self,index:usize,occurrence:usize,lease:&SourceAcquisitionLease,offset:usize)->Result<usize,&'static str>{let row=self.row(index).ok_or("actual raw origin row absent")?;let group=self.groups.get(row.group).ok_or("actual raw origin metadata absent")?;let encounter=self.encounters.as_slice().get(group.encounter).ok_or("actual raw origin encounter absent")?;if encounter.occurrence!=occurrence||!encounter.binding.matches(lease)||offset<row.output.start||offset>=row.output.end{return Err("actual raw policy point belongs to another input or interval")}Ok(group.line)}
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   self.nonphysical.visit_allocation(|p,n|visit(p,self.nonphysical.len()*std::mem::size_of::<Span>(),n));
   if let Some(output)=&self.output{output.visit_storage(&mut visit);}
-  self.rows.visit_storage(&mut visit);self.wide.visit_allocation(|p,n|visit(p,self.wide.len(),n));self.groups.visit_storage(&mut visit);self.domain.visit_counter_storage(|p,n|visit(p,n,n));for group in self.groups.iter(){group.binding.visit_storage(|storage|if let crate::source_acquisition::AcquisitionStorage::Object{address,bytes}=storage{visit(address,1,bytes)});}
+  self.rows.visit_storage(&mut visit);self.wide.visit_allocation(|p,n|visit(p,self.wide.len(),n));self.groups.visit_storage(&mut visit);self.domain.visit_counter_storage(|p,n|visit(p,n,n));self.encounters.visit_allocation(|p,n|visit(p,self.encounters.len(),n));for encounter in self.encounters.as_slice(){encounter.binding.visit_storage(|storage|if let crate::source_acquisition::AcquisitionStorage::Object{address,bytes}=storage{visit(address,1,bytes)});}
  }
 }
 
@@ -364,12 +438,10 @@ impl OriginalRawOrigins{
   let page_bytes=ROW_PAGE_LEN*std::mem::size_of::<Group>();
   let directory_bytes=4*std::mem::size_of::<Rows<Group>>();
   let cap=2*page_bytes+directory_bytes;
-  let file=File::new(b"/datum/example");
-  let path=Arc::new(PathBuf::from("groups.dm"));
   let trace=Arc::new(Vec::new());
   let group=|line|Group{
-   occurrence:7,binding:file.lease.identity(),path:path.clone(),trace:trace.clone(),
-   decoded:Span::new(line,line+1),line,output_line:line,region:9,output_base:line,raw_base:line,
+   encounter:7,trace:trace.clone(),decoded:Span::new(line,line+1),
+   line,output_line:line,output_base:line,raw_base:line,
   };
   for denied in [false,true] {
    let a=SettingAdmission::new(&used,cap-usize::from(denied),&||Ok(()));
@@ -386,9 +458,7 @@ impl OriginalRawOrigins{
     next.unwrap();
     let last=groups.get(ROW_PAGE_LEN).unwrap();
     assert_eq!(last.line,ROW_PAGE_LEN);
-    assert_eq!(last.occurrence,7);
-    assert!(last.binding.matches(&file.lease));
-    assert!(Arc::ptr_eq(&last.path,&path));
+    assert_eq!(last.encounter,7);
     assert!(Arc::ptr_eq(&last.trace,&trace));
     assert_eq!(used.load(Ordering::Acquire),cap);
     let mut buffers=Vec::new();
@@ -406,8 +476,7 @@ impl OriginalRawOrigins{
  }
  #[test]
  fn packed_raw_rows_roundtrip_distinct_origins_and_fallback_indices() {
-  let file=File::new(b"\xef\xbb\xbfvar\r\n");
-  let group=Group{occurrence:2,binding:file.lease.identity(),path:Arc::new(PathBuf::from("points.dm")),trace:Arc::new(Vec::new()),decoded:Span::new(4,10),line:1,output_line:5,region:9,output_base:usize::MAX-65535,raw_base:3};
+  let group=Group{encounter:2,trace:Arc::new(Vec::new()),decoded:Span::new(4,10),line:1,output_line:5,output_base:usize::MAX-65535,raw_base:3};
   let start=group.output_base+7;
   let row=Row{group:0,output:Span::new(start,start+9),token_end:start+4,source_offset:9,byte_column:3,raw_extent:Span::new(5,10),actual_eof:true};
   let groups=[group];
@@ -436,7 +505,15 @@ impl OriginalRawOrigins{
  #[test]fn actual_receiver_receipt_trims_raw_eof_lookahead_without_claiming_consumed_eof_and_rejects_foreign_same_end(){
   use super::super::{original_prepared_output::OriginalOutputCursor,original_source_arena::OriginalSourceArena};
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let mut text=format!("/datum/{}\n", "x".repeat(usize::from(u16::MAX)+1));text.push_str(&"var/x\n".repeat(ROW_PAGE_LEN));let file=File::new(text.as_bytes());let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=Arc::new(Vec::new());let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
-  while let Some(actual)=next(&mut source,&file,&mut host,&a){let item=cursor.prepare(actual,&file,&a).unwrap();rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).unwrap();prepared.push(item);}
+  while let Some(actual)=next(&mut source,&file,&mut host,&a){
+   let item=cursor.prepare(actual,&file,&a).unwrap();
+   let region=usize::from(prepared.len() > ROW_PAGE_LEN);
+   rows.append_produced_using(item.actual().unwrap(),item.produced(),region,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).unwrap();
+   prepared.push(item);
+  }
+  assert!(rows.groups.len() > ROW_PAGE_LEN);
+  assert_eq!(rows.encounters.len(), 2, "physical rows and their traces share only the same encounter");
+  assert_eq!(rows.get(rows.len() - 1).unwrap().region, 1);
   assert!(rows.len()>ROW_PAGE_LEN);
   let before_pages=rows.rows.pages.len();
   assert!(before_pages>1);
@@ -453,7 +530,7 @@ impl OriginalRawOrigins{
   // A different actual cursor/receiver produces the SAME first span. Matching
   // numbers do not authorize trimming this producer's retained mappings.
   let mut foreign=OriginalOutputCursor::new(&a).unwrap();let foreign_item=foreign.prepare(prepared[0].actual().unwrap().duplicate(&a).unwrap(),&file,&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut foreign_arena=OriginalSourceArena::new(&work).unwrap();let mut foreign_primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(foreign_token,foreign_receipt)=foreign_item.into_delivery().adopt(&mut foreign_arena,&mut foreign_primary,&foreign.identity(),&a).unwrap();assert!(rows.retain_delivered_using(&foreign_receipt,&a).is_err());
-  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let keep=rows.retain_delivered_using(&receipt,&a).unwrap();assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.pages.len(),1,"real receipt drops every undelivered group page");assert!(rows.wide.as_slice().is_empty(),"unreceived wide suffix is logically dropped");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.retain_delivered_using(&receipt,&a).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
+  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let keep=rows.retain_delivered_using(&receipt,&a).unwrap();assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.pages.len(),1,"real receipt drops every undelivered group page");assert_eq!(rows.encounters.len(),1,"undelivered encounter drops with its rows");assert!(rows.wide.as_slice().is_empty(),"unreceived wide suffix is logically dropped");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.retain_delivered_using(&receipt,&a).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
  }
  #[test]fn same_actual_empty_delivery_discards_all_unreceived_rows_but_foreign_zero_cannot_bind(){
   use super::super::original_prepared_output::OriginalOutputCursor;let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let cursor=OriginalOutputCursor::new(&a).unwrap();let actual=cursor.initial_delivery().unwrap();let foreign=OriginalOutputCursor::new(&a).unwrap();let mut rows=OriginalRawOrigins::new(&a).unwrap();rows.bind_output_using(&actual,&a).unwrap();assert!(rows.bind_output_using(&foreign.initial_delivery().unwrap(),&a).is_err());assert_eq!(rows.retain_delivered_using(&actual,&a).unwrap(),0);assert!(rows.has_delivered_binding());drop((rows,actual,cursor,foreign));assert_eq!(used.load(Ordering::Acquire),0);
