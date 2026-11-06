@@ -29,6 +29,26 @@ pub(super) struct OriginalPreparedOutputToken{
  // Last: the physical token text above dies before its actual spelling credit.
  credit:SettingRootLease,
 }
+/// Once the producer has recorded source mapping, the receiver needs only
+/// the emitted value and lexical colon distinction. The value moves from the
+/// actual producer together with any storage it owns.
+pub(super) struct OriginalDeliveredValue {
+    pub(super) value: Value<'static>,
+    pub(super) punctuation_close: bool,
+}
+
+/// Queue payload for one actual emitted token. Source origin, raw spelling
+/// and lexer frame remain on the producer side of the mapping callback.
+pub(super) struct OriginalPreparedDeliveryToken {
+    token: dm_syntax::Token,
+    literal: Option<dm_syntax::OriginalLiteralData>,
+    actual: Option<OriginalDeliveredValue>,
+    leading: bool,
+    trailing: bool,
+    end: usize,
+    owner: OriginalOutputIdentity,
+    credit: SettingRootLease,
+}
 #[derive(Clone)]pub(super) struct OriginalDeliveryFrontier{owner:OriginalOutputIdentity,end:usize}
 impl OriginalDeliveryFrontier{
  pub(super) fn belongs_to(&self,owner:&OriginalOutputIdentity)->bool{self.owner.same(owner)}
@@ -111,11 +131,21 @@ impl OriginalPreparedOutputToken{
  pub(super) fn actual(&self)->io::Result<&Token<'static>>{self.actual.as_ref().ok_or_else(||io::ErrorKind::InvalidData.into())}
  pub(super) fn token(&self)->SpanToken{self.produced().token()}
  pub(super) fn cover(&self)->Span{self.cover}
+ pub(super) fn into_delivery(self) -> OriginalPreparedDeliveryToken {
+    let Self { token, literal, actual, leading, trailing, cover, owner, credit, .. } = self;
+    let actual = actual.map(|Token { value, punctuation_close, .. }| {
+        OriginalDeliveredValue { value, punctuation_close }
+    });
+    OriginalPreparedDeliveryToken { token, literal, actual, leading, trailing, end: cover.end, owner, credit }
+ }
+}
+
+impl OriginalPreparedDeliveryToken {
  pub(super) fn adopt(self,arena:&mut super::original_source_arena::OriginalSourceArena<'_>,primary:&mut dm_syntax::OriginalPrimaryDemand<'_,'_,'_>,owner:&OriginalOutputIdentity,a:&SettingAdmission<'_>)->io::Result<(super::original_final_output::OriginalEmittedToken,OriginalDeliveryFrontier)>{
   a.checkpoint()?;if !self.owner.same(owner)||!self.owner.admitted_by(a)||!a.matches_lease_domain(&self.credit)||self.credit.bytes()<self.token.text.capacity()||self.token.span.start.checked_sub(usize::from(self.leading))!=Some(arena.as_str().len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepared output does not continue this SAME actual receiver"))}
   if self.leading{arena.append(" ")?;}let span=arena.append(&self.token.text)?;if span!=self.token.span{return Err(io::ErrorKind::InvalidData.into())}let native=SpanToken{kind:self.token.kind,span};if self.actual.as_ref().is_some_and(|token|matches!(&token.value,Value::Punct(":"))){if self.token.text!=":"||self.literal.is_some(){return Err(io::ErrorKind::InvalidData.into())}primary.token_with_original_colon(native,self.actual.as_ref().unwrap().punctuation_close)?;}else if let Some(data)=self.literal{primary.token_with_original_literal(native,data)?;}else{primary.token(native)?;}
-  if self.trailing{arena.append("\n")?;}if arena.as_str().len()!=self.cover.end{return Err(io::ErrorKind::InvalidData.into())}
-  let delivery=OriginalDeliveryFrontier{owner:self.owner.clone(),end:self.cover.end};
-  Ok((super::original_final_output::OriginalEmittedToken{token:self.token,credit:self.credit,punctuation_close:self.actual.as_ref().is_some_and(|t|t.punctuation_close),original:self.actual},delivery))
+  if self.trailing{arena.append("\n")?;}if arena.as_str().len()!=self.end{return Err(io::ErrorKind::InvalidData.into())}
+  let delivery=OriginalDeliveryFrontier{owner:self.owner.clone(),end:self.end};
+  Ok((super::original_final_output::OriginalEmittedToken{token:self.token,credit:self.credit,original:self.actual},delivery))
  }
 }

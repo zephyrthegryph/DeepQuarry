@@ -2222,3 +2222,11 @@ Focused actual-source tests cover all three, including the native external
 call's string value. The real workspace now reaches the retained syntax
 budget and refuses without a report. It is still outside the opt-in's verified
 fixture coverage.
+
+The prepared token queue now drops producer-only source tracing after recording
+the source mapping. The admitted row fell from 328 to 168 bytes on Windows.
+The focused tests preserve the original read-ahead cadence, source owner and
+EOF/colon receipts, and first operational error. The three-policy resident
+comparison still matches legacy output after the change. The real checkout
+still reaches the 128 MiB limit during queue growth, so further compaction
+is needed before this route can run on the full checkout.

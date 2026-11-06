@@ -1,6 +1,6 @@
 //! Actual Analyze complete-batch delivery, with one bounded executor producer
 //! and a caller-thread primary receiver. No private threads or parser clones.
-use super::{original_batch_execution::OriginalBatchExecution,original_primary_controller::{OriginalPreparedTokenSource,OriginalPrimaryOutput,consume_prepared_primary_using},original_prepared_output::{OriginalPreparedOutputToken,OriginalDeliveryFrontier,OriginalProducedEnd},OriginalPrimaryStreamConsumer};
+use super::{original_batch_execution::OriginalBatchExecution,original_primary_controller::{OriginalPreparedTokenSource,OriginalPrimaryOutput,consume_prepared_primary_using},original_prepared_output::{OriginalPreparedDeliveryToken,OriginalDeliveryFrontier,OriginalProducedEnd},OriginalPrimaryStreamConsumer};
 use crate::{source_arena_credit::SourceArenaWork,macro_expansion::OriginalMacroRows as Rows};
 use dm_syntax::{SettingAdmission,SettingRootLease};use std::{io,sync::{Mutex,atomic::{AtomicBool,Ordering},mpsc::{sync_channel,SyncSender,Receiver}}};
 const UNITS:usize=8192;const QUEUED:usize=64;
@@ -11,8 +11,8 @@ pub(super) trait OriginalBatchRunner:Sync{
  type Metadata:Send;
  fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Self::Metadata>;
 }
-struct Batch{rows:Rows<OriginalPreparedOutputToken>}
-struct Cursor{tokens:std::vec::IntoIter<OriginalPreparedOutputToken>,_credit:SettingRootLease}
+struct Batch{rows:Rows<OriginalPreparedDeliveryToken>}
+struct Cursor{tokens:std::vec::IntoIter<OriginalPreparedDeliveryToken>,_credit:SettingRootLease}
 impl Batch{fn cursor(self)->Cursor{let(rows,credit)=self.rows.into_parts();Cursor{tokens:rows.into_iter(),_credit:credit}}}
 struct Signals{cancelled:AtomicBool,first:Mutex<Option<io::Error>>}
 impl Signals{
@@ -41,7 +41,7 @@ impl<'a> AsyncSource<'a>{
 impl Drop for AsyncSource<'_>{fn drop(&mut self){self.signals.cancelled.store(true,Ordering::Release);self.rx.take();}}
 impl OriginalPreparedTokenSource for AsyncSource<'_>{
  fn initial_delivery(&self)->OriginalDeliveryFrontier{self.initial.clone()}
- fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedOutputToken>>{
+ fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{
   if self.stopped{return Err(io::ErrorKind::InvalidInput.into())}if self.ended{return Ok(None)}
   loop{if let Some(token)=self.current.as_mut().and_then(|c|c.tokens.next()){return Ok(Some(token))}self.current.take();match self.rx.as_ref().ok_or(io::ErrorKind::InvalidInput)?.recv(){Ok(Message::Batch(batch))=>{if batch.rows.len()==0||batch.rows.len()>UNITS{return Err(io::ErrorKind::InvalidData.into())}self.current=Some(batch.cursor())},Ok(Message::End(actual))=>{self.actual_end=actual;self.ended=true;return Ok(None)},Ok(Message::Start(_))=>return Err(io::ErrorKind::InvalidData.into()),Err(_)=>return Err(io::Error::new(io::ErrorKind::UnexpectedEof,"actual batch producer disconnected before EOF"))}}
  }
@@ -71,7 +71,7 @@ impl<'source,'admission,'budget> Cooperative<'source,'admission,'budget>{
 impl Drop for Cooperative<'_,'_,'_>{fn drop(&mut self){if !self.ended{self.source.stop()}}}
 impl OriginalPreparedTokenSource for Cooperative<'_,'_,'_>{
  fn initial_delivery(&self)->OriginalDeliveryFrontier{self.initial.clone()}
- fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedOutputToken>>{if self.stopped{return Err(io::ErrorKind::InvalidInput.into())}if self.ended{return Ok(None)}loop{if let Some(token)=self.current.as_mut().and_then(|c|c.tokens.next()){return Ok(Some(token))}self.current.take();match self.receive()?{Some(batch)=>self.current=Some(batch.cursor()),None if self.eof&&self.pending.is_none()&&self.len==0=>{self.ended=true;return Ok(None)},None=>return Err(io::ErrorKind::InvalidData.into())}}}
+ fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{if self.stopped{return Err(io::ErrorKind::InvalidInput.into())}if self.ended{return Ok(None)}loop{if let Some(token)=self.current.as_mut().and_then(|c|c.tokens.next()){return Ok(Some(token))}self.current.take();match self.receive()?{Some(batch)=>self.current=Some(batch.cursor()),None if self.eof&&self.pending.is_none()&&self.len==0=>{self.ended=true;return Ok(None)},None=>return Err(io::ErrorKind::InvalidData.into())}}}
  fn reached_eof(&self)->bool{self.ended}
  fn actual_end(&self)->Option<OriginalProducedEnd>{if self.ended&&!self.stopped{self.source.actual_end()}else{None}}
  fn stop(&mut self){self.stopped=true;self.source.stop();self.current.take();self.pending.take();for row in &mut self.queue{row.take();}self.len=0;}

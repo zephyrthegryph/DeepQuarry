@@ -19,7 +19,7 @@ impl OriginalFormalActualEnd<'_>{
     }
 }
 
-struct Pull{kind:dm_syntax::TokenKind,span:Span,credit:Option<SettingRootLease>,original:crate::macro_expansion::OriginalMacroToken<'static>}
+struct Pull{kind:dm_syntax::TokenKind,span:Span,credit:Option<SettingRootLease>,original:super::original_prepared_output::OriginalDeliveredValue}
 struct MemberRecovery{separator:usize,following:usize,primitive_before:usize}
 /// Borrowed actual issued recovery DATA. Constructor is private to this SAME
 /// live source owner; consumers cannot manufacture a recovery from loose text.

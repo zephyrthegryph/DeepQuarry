@@ -1,6 +1,6 @@
 //! Actual logical producer and receiver-owned SAME primary continuation.
 //! The grammar never knows whether complete batches or lazy tokens fed it.
-use super::{OriginalPrimaryStreamConsumer,original_driver::{RawSourceDriver,DriverEvent,LogicalToken},original_macro_source::OriginalMacroHost,original_raw_inputs::OriginalRawNoticeSink,original_final_output::{OriginalFinalOutput,OriginalEmittedToken},original_formal_source::{OriginalFormalProducer,OriginalLiveFormalSource},original_prepared_output::{OriginalOutputCursor,OriginalPreparedOutputToken,OriginalDeliveryFrontier,OriginalProducedSpan,OriginalProducedEnd}};
+use super::{OriginalPrimaryStreamConsumer,original_driver::{RawSourceDriver,DriverEvent,LogicalToken},original_macro_source::OriginalMacroHost,original_raw_inputs::OriginalRawNoticeSink,original_final_output::{OriginalFinalOutput,OriginalEmittedToken},original_formal_source::{OriginalFormalProducer,OriginalLiveFormalSource},original_prepared_output::{OriginalOutputCursor,OriginalPreparedDeliveryToken,OriginalDeliveryFrontier,OriginalProducedSpan,OriginalProducedEnd}};
 use crate::{SourceProvider,source_arena_credit::SourceArenaWork,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroOrigin as Origin,OriginalMacroNotice as MacroNotice}};
 use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalDeclarationSkeleton,OriginalHeaderFlow,SettingAdmission,NativeIndentNotice,Span,SpanToken};use std::io;
 pub(super) trait OriginalStreamControl{
@@ -24,7 +24,7 @@ impl OriginalPrimaryOutput{
 /// effects, output cursor and actual end; adapters cannot turn a pause into EOF.
 pub(super) trait OriginalPreparedTokenSource{
  fn initial_delivery(&self)->OriginalDeliveryFrontier;
- fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedOutputToken>>;
+ fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>;
  fn reached_eof(&self)->bool;
  fn actual_end(&self)->Option<OriginalProducedEnd>{None}
  fn stop(&mut self);
@@ -32,11 +32,11 @@ pub(super) trait OriginalPreparedTokenSource{
 pub(super) struct OriginalLogicalProducer<'source,'loan,'budget>{driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>,cursor:OriginalOutputCursor,initial:OriginalDeliveryFrontier,actual_end:Option<OriginalProducedEnd>,ended:bool,failed:bool,stopped:bool}
 impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
  pub(super) fn new(driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>)->io::Result<Self>{let cursor=OriginalOutputCursor::new(a)?;let initial=cursor.initial_delivery()?;Ok(Self{driver,provider,notices,host,control,a,cursor,initial,actual_end:None,ended:false,failed:false,stopped:false})}
- fn pull_inner(&mut self)->io::Result<Option<OriginalPreparedOutputToken>>{
+ fn pull_inner(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{
   loop{self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
    let actual=match self.driver.next_logical_using(self.provider,self.notices,self.host,self.a)?{
     DriverEvent::Token(LogicalToken::Actual(token))=>token,
-    DriverEvent::Token(LogicalToken::Delimiter{spelling,location:None})=>{if spelling!=";"{return Err(io::Error::new(io::ErrorKind::InvalidData,"default logical state issued unexpected nonphysical punctuation"))}let prepared=self.cursor.prepare_default_semicolon(self.a)?;self.control.default_semicolon(prepared.produced(),self.driver,self.a)?;return Ok(Some(prepared))},
+    DriverEvent::Token(LogicalToken::Delimiter{spelling,location:None})=>{if spelling!=";"{return Err(io::Error::new(io::ErrorKind::InvalidData,"default logical state issued unexpected nonphysical punctuation"))}let prepared=self.cursor.prepare_default_semicolon(self.a)?;self.control.default_semicolon(prepared.produced(),self.driver,self.a)?;return Ok(Some(prepared.into_delivery()))},
     DriverEvent::Token(LogicalToken::Delimiter{spelling,location:Some(origin)})=>{Token{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:Value::Punct(spelling),origin}},
     DriverEvent::Directive{hash}=>{self.control.directive(hash,self.driver,self.provider,self.notices,self.host,self.a)?;continue},
     DriverEvent::MacroNotice(notice)=>{self.control.macro_notice(notice,self.driver,self.provider,self.notices,self.host,self.a)?;continue},
@@ -47,13 +47,13 @@ impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
     DriverEvent::Stopped=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"source stopped without its actual receiver stop handoff")),
    };
    let prepared=self.cursor.prepare(actual,self.provider,self.a)?;
-   self.control.emitted(prepared.actual()?,prepared.token(),prepared.cover(),prepared.produced(),self.driver,self.provider,self.a)?;return Ok(Some(prepared))
+   self.control.emitted(prepared.actual()?,prepared.token(),prepared.cover(),prepared.produced(),self.driver,self.provider,self.a)?;return Ok(Some(prepared.into_delivery()))
   }
  }
 }
 impl OriginalPreparedTokenSource for OriginalLogicalProducer<'_,'_,'_>{
  fn initial_delivery(&self)->OriginalDeliveryFrontier{self.initial.clone()}
- fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedOutputToken>>{if self.failed||self.stopped{return Err(io::ErrorKind::InvalidInput.into())}if self.ended{return Ok(None)}let result=self.pull_inner();if result.is_err(){self.failed=true;}result}
+ fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{if self.failed||self.stopped{return Err(io::ErrorKind::InvalidInput.into())}if self.ended{return Ok(None)}let result=self.pull_inner();if result.is_err(){self.failed=true;}result}
  fn reached_eof(&self)->bool{self.ended}
  fn actual_end(&self)->Option<OriginalProducedEnd>{if self.ended&&!self.stopped{self.actual_end.clone()}else{None}}
  fn stop(&mut self){self.stopped=true;self.driver.stop();}
