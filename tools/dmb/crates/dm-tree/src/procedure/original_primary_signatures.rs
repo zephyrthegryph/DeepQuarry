@@ -68,7 +68,7 @@ struct Row{producer:Option<dm_syntax::OriginalPrimaryProducerIdentity>,header:Sp
 struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,symbol_shape:dm_ir::LocalSymbolStorage,credit:dm_syntax::SettingRootLease}
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
 struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot}
-pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:Vec<Row>,row_storage:Option<dm_syntax::SettingRootLease>,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:PendingDefaultPages<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool}
+pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:CompletedSignatureRows,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:PendingDefaultPages<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool}
 /// Borrowed accounting from existing unique observer leases. The floor is
 /// the existing post-header reconciliation, including its fixed allowance,
 /// not a claim about allocator bytes or releasable memory.
@@ -103,7 +103,7 @@ impl OriginalSignatureObserver<'_, '_> {
         let mut trace = SignatureRetentionTrace {
             rows: self.rows.len(),
             row_capacity: self.rows.capacity(),
-            row_buffer_bytes: bytes(self.row_storage.as_ref()),
+            row_buffer_bytes: self.rows.buffer_bytes(),
             active_header_bytes: bytes(self.early.as_ref().map(|e| &e.credit)),
             failure_header_bytes: bytes(self.failure_storage.as_ref()),
             pending_defaults: self.defaults.len(),
@@ -119,7 +119,7 @@ impl OriginalSignatureObserver<'_, '_> {
             formal_notice_bytes: self.notices.as_ref().map_or(0, |n| n.retained_bytes_for_trace()),
             ..Default::default()
         };
-        for row in &self.rows {
+        for row in self.rows.iter() {
             let retained = row._lease.bytes();
             trace.completed_header_bytes = trace.completed_header_bytes.saturating_add(retained);
             if retained > trace.largest_header_bytes {
@@ -210,19 +210,22 @@ fn allocate_funded_rows<T>(
 }
 
 const PENDING_DEFAULT_PAGE_LEN: usize = 64;
+const COMPLETED_SIGNATURE_PAGE_LEN: usize = 128;
+type PendingDefaultPages<T> = FundedRowPages<T, PENDING_DEFAULT_PAGE_LEN>;
+type CompletedSignatureRows = FundedRowPages<Row, COMPLETED_SIGNATURE_PAGE_LEN>;
 
-struct PendingDefaultPage<T> {
+struct FundedRowPage<T> {
     rows: Vec<T>,
     credit: dm_syntax::SettingRootLease,
 }
 
-struct PendingDefaultPages<T> {
-    pages: Vec<PendingDefaultPage<T>>,
+struct FundedRowPages<T, const PAGE_LEN: usize> {
+    pages: Vec<FundedRowPage<T>>,
     directory: Option<dm_syntax::SettingRootLease>,
     len: usize,
 }
 
-impl<T> PendingDefaultPages<T> {
+impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
     fn new() -> Self {
         Self { pages: Vec::new(), directory: None, len: 0 }
     }
@@ -243,25 +246,66 @@ impl<T> PendingDefaultPages<T> {
         self.pages.iter().flat_map(|page| page.rows.iter())
     }
 
+    fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.pages.iter_mut().flat_map(|page| page.rows.iter_mut())
+    }
+
+    fn get(&self, ordinal: usize) -> Option<&T> {
+        self.pages.get(ordinal / PAGE_LEN)?.rows.get(ordinal % PAGE_LEN)
+    }
+
+    fn get_mut(&mut self, ordinal: usize) -> Option<&mut T> {
+        self.pages.get_mut(ordinal / PAGE_LEN)?.rows.get_mut(ordinal % PAGE_LEN)
+    }
+
+    fn find(&self, key: usize, key_of: impl Fn(&T) -> usize) -> Option<usize> {
+        let (mut left, mut right) = (0, self.len);
+        while left < right {
+            let mid = left + (right - left) / 2;
+            match key_of(self.get(mid)?).cmp(&key) {
+                std::cmp::Ordering::Less => left = mid + 1,
+                std::cmp::Ordering::Greater => right = mid,
+                std::cmp::Ordering::Equal => return Some(mid),
+            }
+        }
+        None
+    }
+
+    #[cfg(any(debug_assertions, test))]
+    fn capacity(&self) -> usize {
+        self.pages.len() * PAGE_LEN
+    }
+
     fn push(&mut self, row: T, a: &SettingAdmission<'_>) -> std::io::Result<()> {
-        let len = self.len.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;
+        self.ensure_slot(a)?;
+        self.push_reserved(row);
+        Ok(())
+    }
+
+    fn ensure_slot(&mut self, a: &SettingAdmission<'_>) -> std::io::Result<()> {
+        self.len.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;
         if self.directory.as_ref().is_some_and(|credit| !a.matches_lease_domain(credit)) {
             return Err(std::io::ErrorKind::InvalidInput.into());
         }
-        if self.pages.last().is_none_or(|page| page.rows.len() == PENDING_DEFAULT_PAGE_LEN) {
-            let (rows, credit) = allocate_funded_rows(PENDING_DEFAULT_PAGE_LEN, a)?;
-            let page = PendingDefaultPage { rows, credit };
+        if self.pages.last().is_none_or(|page| page.rows.len() == PAGE_LEN) {
+            let (rows, credit) = allocate_funded_rows(PAGE_LEN, a)?;
+            let page = FundedRowPage { rows, credit };
             grow_funded_rows(&mut self.pages, &mut self.directory, a)?;
             self.pages.push(page);
         }
-        self.pages.last_mut().expect("admitted pending default page").rows.push(row);
-        self.len = len;
         Ok(())
+    }
+
+    fn push_reserved(&mut self, row: T) {
+        let page = self.pages.last_mut().expect("admitted signature row page");
+        assert!(page.rows.len() < page.rows.capacity());
+        page.rows.push(row);
+        self.len += 1;
     }
 
     fn try_consume<E>(self, mut visit: impl FnMut(T) -> Result<(), E>) -> Result<(), E> {
         let Self { pages, directory: _directory, .. } = self;
-        for PendingDefaultPage { rows, credit: _credit } in pages {
+        for FundedRowPage { rows, credit: _credit } in pages {
             // The inner IntoIter destroys the actual row buffer before its
             // page credit drops. The directory likewise outlives its iterator.
             for row in rows {
@@ -279,9 +323,6 @@ impl<T> PendingDefaultPages<T> {
 }
 
 impl OriginalSignatureObserver<'_,'_>{
- fn grow_rows(&mut self) -> std::io::Result<()> {
-    grow_funded_rows(&mut self.rows, &mut self.row_storage, self.a)
- }
  fn header_using(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{
   checkpoint(self.a)?;
   if self.stream_failed||self.failure.is_some()||self.unsupported.is_some(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual signature observer already stopped"))}
@@ -303,9 +344,7 @@ impl OriginalSignatureObserver<'_,'_>{
   let mut signature=match parsed{Ok(actual)=>actual,Err(mut actual)=>{self.notices_complete&=actual.formal_notices_complete;let origin=event.span().start.checked_add(argument_offset).ok_or(std::io::ErrorKind::InvalidInput)?;for notice in std::mem::take(&mut actual.formal_notices){self.record_formal_notice(event.span().start,notice.checked_shift(origin)?)?;}self.failure=Some(actual);self.failure_live=completed_live;return Ok(OriginalHeaderFlow::Stop)}};
   self.notices_complete&=signature.formal_notices_complete;let origin=event.span().start.checked_add(argument_offset).ok_or(std::io::ErrorKind::InvalidInput)?;for notice in std::mem::take(&mut signature.formal_notices){self.record_formal_notice(event.span().start,notice.checked_shift(origin)?)?;}
   checkpoint(self.a)?;
-  if self.rows.len() == self.rows.capacity() {
-   self.grow_rows()?;
-  }
+  self.rows.ensure_slot(self.a)?;
   // Formal notices have moved to their own charged ledger. The remaining
   // payload may move to clause roots and detached IR aliases. They still share
   // this lease. Demanded syntax and retained input roots have their own leases.
@@ -318,7 +357,7 @@ impl OriginalSignatureObserver<'_,'_>{
    if unused!=0 { self.a.shrink(credit,unused).map_err(|proxy|self.a.take_operational_error().unwrap_or(proxy))?; }
   }
   let header_lease=self.failure_storage.take().expect("actual successful header credit");
-  self.rows.push(Row{producer:completed_live.map(dm_syntax::OriginalPrimaryLiveHeader::into_producer_identity),header:event.span(),argument_offset,signature:Some(signature),_lease:Arc::new(header_lease)});
+  self.rows.push_reserved(Row{producer:completed_live.map(dm_syntax::OriginalPrimaryLiveHeader::into_producer_identity),header:event.span(),argument_offset,signature:Some(signature),_lease:Arc::new(header_lease)});
   Ok(OriginalHeaderFlow::Continue)
  }
 }
@@ -451,7 +490,7 @@ impl OriginalSignatureSpellings {
 
 /// Unique once-consumed metadata results, bound to the exact native header owner.
 /// Coordinate/source equality cannot substitute another header owner.
-pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:Vec<Row>,row_storage:Option<dm_syntax::SettingRootLease>,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,adapter_storage:Option<dm_syntax::SettingRootLease>}
+pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,adapter_storage:Option<dm_syntax::SettingRootLease>}
 impl PreparedOriginalSignatures{
  pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<Arc<[u8]>>{
   append_procedure_canonical(header,procedure,&mut self.adapter_storage,a)
@@ -511,7 +550,7 @@ impl PreparedOriginalSignatures{
 
  pub(crate) fn take_spellings(&mut self)->OriginalSignatureSpellings{std::mem::take(&mut self.spellings)}
  pub(crate) fn visit_signature_reservations(&self,mut visit:impl FnMut(&Arc<dm_syntax::SettingRootLease>)){
-  for row in &self.rows{visit(&row._lease)}
+  for row in self.rows.iter(){visit(&row._lease)}
   // A fatal or interrupted header can intern a prefix of real symbols before
   // publishing a Row. Keep the same envelope on any detached spelling alias.
   if !self.spellings.rows.is_empty() {
@@ -524,12 +563,11 @@ impl PreparedOriginalSignatures{
  /// allocation itself has no aliases and can be dropped before graph use.
  pub(crate) fn release_consumed_rows(&mut self) {
   debug_assert!(self.require_consumed().is_ok());
-  drop(std::mem::take(&mut self.rows));
-  self.row_storage = None;
+  drop(std::mem::replace(&mut self.rows,CompletedSignatureRows::new()));
  }
 
  pub(crate) fn visit_retained_failure_storage(&self, mut visit: impl FnMut(usize,usize,usize)) {
-  debug_assert_eq!(self.rows.capacity(), 0);
+  debug_assert!(self.rows.is_empty()&&self.rows.pages.is_empty());
   if let Some((_, message)) = &self.input_failure_message {
    if message.capacity() != 0 {
     visit(message.as_ptr() as usize, message.capacity(), 1);
@@ -540,8 +578,8 @@ impl PreparedOriginalSignatures{
  pub(crate) fn take(&mut self,header:Span,offset:usize,headers:&OriginalProcedureHeaders)->Result<(ParsedSignature,usize),String>{
   if !std::ptr::eq(self.headers.as_ref(),headers){return Err("prepared formal signature belongs to another primary header owner".into())}
   let local=Span::new(header.start.checked_sub(offset).ok_or("prepared header before current source")?,header.end.checked_sub(offset).ok_or("prepared header before current source")?);
-  let index=self.rows.binary_search_by_key(&local.start,|row|row.header.start).map_err(|_|"primary prepared signature row absent")?;
-  let row=&mut self.rows[index];if row.header!=local{return Err("primary prepared signature header differs".into())}
+  let index=self.rows.find(local.start,|row|row.header.start).ok_or("primary prepared signature row absent")?;
+  let row=self.rows.get_mut(index).ok_or("primary prepared signature row absent")?;if row.header!=local{return Err("primary prepared signature header differs".into())}
   let parsed=row.signature.take().ok_or("primary prepared signature was already consumed")?;Ok((parsed,row.argument_offset))
  }
  #[cfg(test)]pub(crate) fn remaining(&self)->usize{self.rows.iter().filter(|row|row.signature.is_some()).count()}
@@ -579,8 +617,10 @@ mod signature_row_storage_tests {
         let before = used.load(Ordering::Acquire);
         let observed = consumer.observer.retention_for_trace();
         assert_eq!(observed.rows, 2);
-        assert_eq!(observed.row_capacity, 4);
-        assert_eq!(observed.row_buffer_bytes, 4 * std::mem::size_of::<Row>());
+        assert_eq!(observed.row_capacity, COMPLETED_SIGNATURE_PAGE_LEN);
+        assert_eq!(observed.row_buffer_bytes,
+            COMPLETED_SIGNATURE_PAGE_LEN * std::mem::size_of::<Row>()
+                + 4 * std::mem::size_of::<FundedRowPage<Row>>());
         assert_eq!(observed.above_floor_rows, 1, "first symbol spelling grows, reuse reconciles");
         assert_eq!(observed.completed_header_bytes,
             observed.reconciliation_floor_bytes + observed.above_floor_bytes);
@@ -733,31 +773,79 @@ mod signature_row_storage_tests {
     }
 
     #[test]
-    fn row_growth_funds_both_exact_allocations_and_preserves_old_rows_on_failure() {
+    fn completed_signature_pages_admit_exact_next_page_without_moving_old_rows() {
+        use std::fmt::Write as _;
         let used = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
-        let source = "/proc/first()\n    return\n/proc/second()\n    return\n/proc/third()\n    return\n/proc/fourth()\n    return\n";
+        let mut source = String::new();
+        for ordinal in 0..COMPLETED_SIGNATURE_PAGE_LEN {
+            writeln!(source, "/proc/page_{ordinal}()").unwrap();
+            source.push_str("    return\n");
+        }
         let mut observer = OriginalSignatureObserver::new(&a).unwrap();
-        let primary = dm_syntax::parse_original_declaration_skeleton_with_observer_using(source, &a, Some(&mut observer)).unwrap();
-        assert_eq!((observer.rows.len(), observer.rows.capacity()), (4, 4));
-        let row_bytes = std::mem::size_of::<Row>();
-        assert_eq!(observer.row_storage.as_ref().unwrap().bytes(), 4 * row_bytes);
+        let primary = dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source, &a, Some(&mut observer)).unwrap();
+        assert_eq!((observer.rows.len(), observer.rows.capacity()),
+            (COMPLETED_SIGNATURE_PAGE_LEN, COMPLETED_SIGNATURE_PAGE_LEN));
+        let page_bytes = COMPLETED_SIGNATURE_PAGE_LEN * std::mem::size_of::<Row>();
+        let directory_bytes = 4 * std::mem::size_of::<FundedRowPage<Row>>();
+        assert_eq!(observer.rows.buffer_bytes(), page_bytes + directory_bytes);
         let retained = used.load(Ordering::Acquire);
-        let old = observer.rows.as_ptr();
-        let tight = SettingAdmission::new(&used, retained + 8 * row_bytes - 1, &|| Ok(()));
-        observer.a = &tight;
-        assert_eq!(observer.grow_rows().unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
-        assert_eq!(observer.rows.as_ptr(), old);
-        assert_eq!(observer.rows.len(), 4);
+        let old = observer.rows.get(0).unwrap() as *const Row;
+
+        let tight = SettingAdmission::new(&used, retained + page_bytes - 1, &|| Ok(()));
+        assert_eq!(observer.rows.ensure_slot(&tight).unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(observer.rows.get(0).unwrap() as *const Row, old);
+        assert_eq!(observer.rows.len(), COMPLETED_SIGNATURE_PAGE_LEN);
         assert_eq!(used.load(Ordering::Acquire), retained);
-        let exact = SettingAdmission::new(&used, retained + 8 * row_bytes, &|| Ok(()));
-        observer.a = &exact;
-        observer.grow_rows().unwrap();
-        assert_ne!(observer.rows.as_ptr(), old);
-        assert_eq!((observer.rows.len(), observer.rows.capacity()), (4, 8));
-        assert_eq!(observer.row_storage.as_ref().unwrap().bytes(), 8 * row_bytes);
-        assert_eq!(used.load(Ordering::Acquire), retained + 4 * row_bytes);
+
+        let exact = SettingAdmission::new(&used, retained + page_bytes, &|| Ok(()));
+        observer.rows.ensure_slot(&exact).unwrap();
+        assert_eq!(observer.rows.get(0).unwrap() as *const Row, old);
+        assert_eq!(observer.rows.capacity(), 2 * COMPLETED_SIGNATURE_PAGE_LEN);
+        assert_eq!(observer.rows.buffer_bytes(), 2 * page_bytes + directory_bytes);
+        assert_eq!(used.load(Ordering::Acquire), retained + page_bytes);
         drop((observer, primary));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn completed_signature_pages_keep_source_order_and_exact_one_shot_lookup() {
+        use std::fmt::Write as _;
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
+        let mut source = String::new();
+        let count = 2 * COMPLETED_SIGNATURE_PAGE_LEN + 1;
+        for ordinal in 0..count {
+            writeln!(source, "/proc/page_{ordinal}(value)").unwrap();
+            source.push_str("    return\n");
+        }
+        let source = SourceText::from(source);
+        let mut actual = parse_original_signatures_using(source.clone(), &a).unwrap();
+        let foreign = parse_original_signatures_using(source, &a).unwrap();
+        assert_eq!(actual.prepared.rows.len(), count);
+        assert!(actual.prepared.rows.iter().zip(actual.items.iter())
+            .all(|(row, item)| row.header == item.header_span));
+
+        let header = actual.items[COMPLETED_SIGNATURE_PAGE_LEN].header_span;
+        assert!(actual.prepared.take(header, 0, &foreign.headers).is_err());
+        assert!(actual.prepared.take(Span::new(header.start, header.end + 1), 0, &actual.headers).is_err());
+        assert_eq!(actual.prepared.remaining(), count);
+        for ordinal in (0..count).rev() {
+            let header = actual.items[ordinal].header_span;
+            let (signature, offset) = actual.prepared.take(header, 0, &actual.headers).unwrap();
+            assert!(offset > 0);
+            assert_eq!(actual.symbols.text(signature.signature.parameters[0].name), Some("value"));
+            assert!(actual.prepared.take(header, 0, &actual.headers).is_err());
+        }
+        actual.prepared.require_consumed().unwrap();
+        let before = used.load(Ordering::Acquire);
+        let bytes = actual.prepared.rows.buffer_bytes();
+        // Mimic the actual alias-group handoff, which precedes releasing rows.
+        let mut reservations = Vec::new();
+        actual.prepared.visit_signature_reservations(|lease| reservations.push(Arc::clone(lease)));
+        actual.prepared.release_consumed_rows();
+        assert_eq!(used.load(Ordering::Acquire), before - bytes);
+        drop((actual, foreign, reservations));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 }
@@ -775,7 +863,7 @@ pub(crate) struct OriginalSignatureInput{
 impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  /// SAME signature producer state, created before genuine token demand starts.
  /// This allocates no header products or symbols speculatively.
- pub(crate) fn new(a:&'a SettingAdmission<'b>)->std::io::Result<Self>{checkpoint(a)?;Ok(Self{a,symbols:SymbolTable::default(),rows:Vec::new(),row_storage:None,failure_storage:None,failure:None,unsupported:None,early:None,defaults:PendingDefaultPages::new(),inputs:Vec::new(),input_storage:None,stream_failed:false,failure_live:None,failure_head_data:None,notices:None,notices_complete:true})}
+ pub(crate) fn new(a:&'a SettingAdmission<'b>)->std::io::Result<Self>{checkpoint(a)?;Ok(Self{a,symbols:SymbolTable::default(),rows:CompletedSignatureRows::new(),failure_storage:None,failure:None,unsupported:None,early:None,defaults:PendingDefaultPages::new(),inputs:Vec::new(),input_storage:None,stream_failed:false,failure_live:None,failure_head_data:None,notices:None,notices_complete:true})}
  /// Consume the actual stream-issued primary product exactly once. The source
  /// and neutral literal binding are authenticated together; no parse/expand or
  /// alternate SymbolTable is introduced at this handoff.
@@ -783,7 +871,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  let a=self.a;
  if self.stream_failed{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"failed actual formal stream cannot issue a primary model")))}
  let observer_stop=primary.observer_stop();
- for row in &mut self.rows{
+ for row in self.rows.iter_mut(){
   match row.producer.take(){Some(producer)if primary.same_primary_producer(&producer)=>(),Some(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"completed signature belongs to a foreign actual primary owner"))),None if literal_source.is_some()=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed signature lacks its actual live primary owner"))),None=>()}
  }
  match self.failure_live.take(){Some(live)if primary.same_primary_header(&live)=>(),Some(_)=>return Err(OriginalHeaderFailure::Operational(std::io::ErrorKind::InvalidInput.into())),None if self.failure.is_some()&&literal_source.is_some()=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed signature failure lacks actual primary ownership"))),None=>()}
@@ -799,16 +887,16 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
   if let Some((span,data))=self.failure_head_data.take(){let facts=headers.original_literal_facts()?.ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual rejected head has no final neutral-value binding")))?;let(rows,origin)=facts.raw_parts();let span=Span::new(span.start.checked_add(origin).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?,span.end.checked_add(origin).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?);let at=rows.partition_point(|(p,_)|p.start<span.start);if rows.get(at).filter(|(p,_)|*p==span).is_none_or(|(_,actual)|!data.same_owner(actual)){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"rejected formal VALUE belongs to another actual primary occurrence")))}}
 
   let mut roots=headers.new_default_roots(self.defaults.len(),binding,a).map_err(OriginalHeaderFailure::Operational)?;
-  for row in &mut self.rows{checkpoint(a)?;let signature=row.signature.as_mut().ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual formal metadata was consumed before clause publication")))?;if !signature.original_clauses_complete{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed formal expression clauses lack their actual native producer")))}let clauses=std::mem::take(&mut signature.original_clauses);headers.add_produced_clauses(&mut roots,row.header,row.argument_offset,&signature.signature.parameters,clauses,Arc::clone(&row._lease),a).map_err(OriginalHeaderFailure::Operational)?;}
+  for row in self.rows.iter_mut(){checkpoint(a)?;let signature=row.signature.as_mut().ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual formal metadata was consumed before clause publication")))?;if !signature.original_clauses_complete{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed formal expression clauses lack their actual native producer")))}let clauses=std::mem::take(&mut signature.original_clauses);headers.add_produced_clauses(&mut roots,row.header,row.argument_offset,&signature.signature.parameters,clauses,Arc::clone(&row._lease),a).map_err(OriginalHeaderFailure::Operational)?;}
 
   self.defaults.try_consume(|pending| {
-   checkpoint(a)?;let found=self.rows.binary_search_by_key(&pending.live.start(),|row|row.header.start);
-   let row=match found{Ok(index)=>&self.rows[index],Err(_)if observer_stop.is_some_and(|span|span.start==pending.live.start())=>return Ok(()),Err(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"demanded default has no actual completed header or genuine stop frontier")))};
+   checkpoint(a)?;let found=self.rows.find(pending.live.start(),|row|row.header.start);
+   let row=match found{Some(index)=>self.rows.get(index).expect("located default signature"),None if observer_stop.is_some_and(|span|span.start==pending.live.start())=>return Ok(()),None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"demanded default has no actual completed header or genuine stop frontier")))};
    let signature=row.signature.as_ref().ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual default metadata was consumed before primary publication")))?;let parameter=signature.signature.parameters.get(pending.root.parameter).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual demanded parameter slot is absent")))?;
    headers.add_default_root(&mut roots,row.header,row.argument_offset,parameter,&self.symbols,pending.root,a).map_err(OriginalHeaderFailure::Operational)
   })?;
   for pending in self.inputs{
-   checkpoint(a)?;let index=match self.rows.binary_search_by_key(&pending.live.start(),|row|row.header.start){Ok(index)=>index,Err(_)if observer_stop.is_some_and(|span|span.start==pending.live.start())=>continue,Err(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"input annotation has no actual completed header or genuine stop frontier")))};let row=&self.rows[index];let parameter=row.signature.as_ref().and_then(|signature|signature.signature.parameters.get(pending.parameter)).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native input parameter metadata absent")))?;
+   checkpoint(a)?;let index=match self.rows.find(pending.live.start(),|row|row.header.start){Some(index)=>index,None if observer_stop.is_some_and(|span|span.start==pending.live.start())=>continue,None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"input annotation has no actual completed header or genuine stop frontier")))};let row=self.rows.get(index).expect("located input signature");let parameter=row.signature.as_ref().and_then(|signature|signature.signature.parameters.get(pending.parameter)).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native input parameter metadata absent")))?;
    headers.add_input_root(&mut roots,row.header,row.argument_offset,parameter,&self.symbols,pending.parameter,pending.marker,pending.input,a).map_err(OriginalHeaderFailure::Operational)?;
   }
   self.input_storage = None;
@@ -824,7 +912,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
     let changed= self.symbols.local_storage().spelling_delta_without_bucket_growth(early.symbol_shape)!=Some(0);
     if changed { Some(Arc::new(early.credit)) } else { None }
  });
- let prepared=PreparedOriginalSignatures{headers:Arc::clone(&headers),rows:self.rows,row_storage:self.row_storage,spellings,
+ let prepared=PreparedOriginalSignatures{headers:Arc::clone(&headers),rows:self.rows,spellings,
    failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,adapter_storage:None};
  Ok(OriginalSignatureInput{items:syntax.items,diagnostics:syntax.diagnostics,comma_fatal,unavailable,observer_stop,signature_failure:self.failure,signature_unsupported:self.unsupported,source,headers,symbols:self.symbols,prepared,primary_lease})
  }
@@ -845,7 +933,7 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   let header=input.items[1].header_span;let(parsed,argument_offset)=input.prepared.take(header,0,&input.headers).unwrap();assert_eq!(argument_offset,"/proc/good(".len());assert_eq!(input.symbols.text(parsed.signature.parameters[0].name),Some("value"));assert_eq!(input.prepared.remaining(),0);assert!(input.prepared.take(header,0,&input.headers).is_err(),"prepared formal metadata cannot be replayed");assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before+2);
  }
  #[test]fn no_callable_headers_allocate_no_signature_product_or_row_geometry(){
-  let source:SourceText=format!("// {}\n/datum/value\n    var/item=1\n","unrelated declaration comment ".repeat(2048)).into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<27,&||Ok(()));let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let input=prepared(source,&a);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before);assert!(input.prepared.rows.is_empty());assert_eq!(input.prepared.rows.capacity(),0);assert!(input.prepared.row_storage.is_none());assert!(input.prepared.failure_storage.is_none());assert!(input.headers.checker_body_profile());
+  let source:SourceText=format!("// {}\n/datum/value\n    var/item=1\n","unrelated declaration comment ".repeat(2048)).into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<27,&||Ok(()));let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let input=prepared(source,&a);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before);assert!(input.prepared.rows.is_empty());assert_eq!(input.prepared.rows.capacity(),0);assert_eq!(input.prepared.rows.buffer_bytes(),0);assert!(input.prepared.failure_storage.is_none());assert!(input.headers.checker_body_profile());
  }
  #[test]fn demanded_header_admission_refuses_before_signature_interpretation_and_releases_primary(){
   struct Block<'a,'b>{inner:OriginalSignatureObserver<'a,'b>,entered:bool,held:Option<dm_syntax::SettingRootLease>}
@@ -898,10 +986,10 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   let rows=&actual.prepared.rows;
   assert_eq!(rows.len(),3);
   let retained=|row:&Row|retained_signature_bytes(row.signature.as_ref().unwrap()).unwrap();
-  assert_eq!(rows[0]._lease.bytes(),retained(&rows[0]));
-  assert!(rows[1]._lease.bytes()>retained(&rows[1]),"new spellings keep their original envelope");
-  assert_eq!(rows[2]._lease.bytes(),retained(&rows[2]));
-  assert!(rows[2]._lease.bytes()>rows[0]._lease.bytes(),"arrays, defaults and input tokens remain funded");
+  assert_eq!(rows.get(0).unwrap()._lease.bytes(),retained(rows.get(0).unwrap()));
+  assert!(rows.get(1).unwrap()._lease.bytes()>retained(rows.get(1).unwrap()),"new spellings keep their original envelope");
+  assert_eq!(rows.get(2).unwrap()._lease.bytes(),retained(rows.get(2).unwrap()));
+  assert!(rows.get(2).unwrap()._lease.bytes()>rows.get(0).unwrap()._lease.bytes(),"arrays, defaults and input tokens remain funded");
   drop(actual);
   assert_eq!(used.load(Ordering::Acquire),0);
  }
@@ -923,10 +1011,10 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   let empty=lease+arc_payload::<dm_ir::Parameter>(0).unwrap();
   let simple=lease+arc_payload::<dm_ir::Parameter>(1).unwrap();
   assert!(empty<ACTIVE_HEADER_FIXED&&simple<ACTIVE_HEADER_FIXED);
-  assert_eq!(rows[0]._lease.bytes(),empty);
-  assert!(rows[1]._lease.bytes()>simple,"actual growth of the symbol buckets keeps its conservative envelope");
-  assert_eq!(rows[2]._lease.bytes(),simple);
-  assert_eq!(rows[3]._lease.bytes(),empty);
+  assert_eq!(rows.get(0).unwrap()._lease.bytes(),empty);
+  assert!(rows.get(1).unwrap()._lease.bytes()>simple,"actual growth of the symbol buckets keeps its conservative envelope");
+  assert_eq!(rows.get(2).unwrap()._lease.bytes(),simple);
+  assert_eq!(rows.get(3).unwrap()._lease.bytes(),empty);
   drop(actual);
   assert_eq!(used.load(Ordering::Acquire),0);
  }
@@ -1180,7 +1268,7 @@ impl OriginalSignatureObserver<'_,'_>{
 #[cfg(test)]mod formal_notice_producer_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn same_original_head_producer_retains_var_static_and_semicolon_registrations_once(){
-  let text="/proc/p(var/static/x;)\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),3);assert_eq!(rows.iter().map(|row|row.registration().0).collect::<Vec<_>>(),[Some("var_in_proc_parameter"),Some("static_in_proc_parameter"),Some("semicolon_in_proc_parameter")]);assert_eq!(rows.iter().map(|row|row.span().start).collect::<Vec<_>>(),[8,8,text.find(';').unwrap()]);assert_eq!(rows[0].static_message(),Some("'var/' is unnecessary here"));assert_eq!(rows[1].registration().1,super::super::OriginalFormalNoticeLevel::Warning);assert!(input.prepared.rows[0].signature.as_ref().unwrap().signature.parameters[0].input_annotation.is_none());drop(input);assert_eq!(used.load(Ordering::Acquire),0);
+  let text="/proc/p(var/static/x;)\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),3);assert_eq!(rows.iter().map(|row|row.registration().0).collect::<Vec<_>>(),[Some("var_in_proc_parameter"),Some("static_in_proc_parameter"),Some("semicolon_in_proc_parameter")]);assert_eq!(rows.iter().map(|row|row.span().start).collect::<Vec<_>>(),[8,8,text.find(';').unwrap()]);assert_eq!(rows[0].static_message(),Some("'var/' is unnecessary here"));assert_eq!(rows[1].registration().1,super::super::OriginalFormalNoticeLevel::Warning);assert!(input.prepared.rows.get(0).unwrap().signature.as_ref().unwrap().signature.parameters[0].input_annotation.is_none());drop(input);assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn actual_prior_head_notices_survive_later_same_header_fatal_without_future_proc(){
   let text="/proc/p(var/static/value=)\n    return\n/proc/future()\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.as_ref().unwrap().original_fatal.is_some());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),2);assert_eq!(rows[0].registration().0,Some("var_in_proc_parameter"));assert_eq!(rows[1].registration().0,Some("static_in_proc_parameter"));assert!(input.items.iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),0);
