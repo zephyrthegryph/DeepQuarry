@@ -6,7 +6,10 @@ use dm_syntax::{SettingAdmission,SharedSpanTokens};
 use super::OriginalStreamPrimary;
 use std::{collections::BTreeMap,path::Path,io,rc::Rc,sync::Arc};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
-pub struct OriginalGenerationProduct{delivery:OriginalDemandDelivery,plan:DirectivePlan,omissions:GenerationOmissions,expanded:ExpandedRegions,primary:OriginalStreamPrimary,literals:OriginalLiteralSourceBinding,retention:OriginalPlanRetention}
+pub struct OriginalGenerationProduct{delivery:OriginalDemandDelivery,plan:DirectivePlan,omissions:GenerationOmissions,expanded:ExpandedRegions,primary:OriginalStreamPrimary,literals:OriginalLiteralSourceBinding,retention:OriginalPlanRetention,
+ #[cfg(test)]
+ token_projection:Result<ProjectionCheck, ProjectionMismatch>,
+}
 impl OriginalGenerationProduct{
  pub fn delivery(&self)->OriginalDemandDelivery{self.delivery}
  pub fn expanded(&self)->&ExpandedRegions{&self.expanded}
@@ -87,9 +90,61 @@ impl Recipe<'_>{
 /// mutable driver/notice/host/control is constructed locally inside its admission.
 struct BatchRecipe<'a>{project:&'a Path,provider:&'a(dyn SourceProvider+Sync),defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>}
 impl OriginalBatchRunner for BatchRecipe<'_>{type Metadata=Metadata;fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Metadata>{Recipe{project:self.project,provider:self.provider,defines:self.defines,omissions:self.omissions,max_raw_bytes:self.max_raw_bytes,work:self.work,root_observer:self.root_observer}.with_source(a,run)}}
+#[cfg(any(test, debug_assertions))]
+#[derive(Debug)]
+struct ProjectionMismatch {
+ reason: &'static str,
+ ordinal: usize,
+ origin: Option<dm_syntax::SpanToken>,
+ primary: Option<dm_syntax::SpanToken>,
+}
+
+#[cfg(any(test, debug_assertions))]
+#[derive(Debug)]
+struct ProjectionCheck {
+ rows: usize,
+ eof: bool,
+}
+
+#[cfg(any(test, debug_assertions))]
+fn check_delivered_projection(
+ origins: &super::origin_raw_rows::OriginalRawOrigins,
+ receipt: &super::original_prepared_output::OriginalDeliveryFrontier,
+ tokens: &SharedSpanTokens, eof: bool, a:&SettingAdmission<'_>,
+)->Result<ProjectionCheck,ProjectionMismatch>{
+ let projected=origins.delivered_tokens(receipt,a).map_err(|reason|ProjectionMismatch {
+  reason, ordinal:0, origin:None, primary:None,
+ })?;
+ let primary=tokens.window().iter();
+ let count=primary.len();
+ if projected.len()!=count{return Err(ProjectionMismatch {
+  reason:"retained output and primary lengths differ", ordinal:projected.len().min(count),
+  origin:None, primary:None,
+ })}
+ for (ordinal,(origin,token)) in projected.zip(primary).enumerate(){
+  if origin!=Some(token){return Err(ProjectionMismatch {
+   reason:"retained output and primary token differ", ordinal, origin, primary:Some(token),
+  })}
+ }
+ Ok(ProjectionCheck{rows:count,eof})
+}
+
 fn finalize(delivery:OriginalDemandDelivery,mut metadata:Metadata,output:OriginalPrimaryOutput,omissions:GenerationOmissions,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<OriginalGenerationProduct>{
  poll(a)?;metadata.state.origins.retain_delivered_using(&output.delivery,a,work).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=retain_delivered {error:?}");}})?;
+ #[cfg(any(test, debug_assertions))]
+ let delivered=output.delivery.clone();
  let(source,primary,tokens,literals,_actual_consumed_eof)=output.into_bound_parts_using(a).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=into_bound {error:?}");}})?;
+ #[cfg(test)]
+ let token_projection=check_delivered_projection(&metadata.state.origins,&delivered,&tokens,_actual_consumed_eof,a);
+ #[cfg(debug_assertions)]
+ if std::env::var_os("DMB_ORIGINAL_TRACE_SHARED_GEOMETRY").is_some(){
+  let outcome=check_delivered_projection(&metadata.state.origins,&delivered,&tokens,_actual_consumed_eof,a);
+  match outcome {
+   Ok(ProjectionCheck{rows,eof})=>eprintln!("ORIGINAL_SHARED_GEOMETRY rows={rows} eof={eof}"),
+   Err(ProjectionMismatch{reason,ordinal,origin,primary})=>eprintln!(
+    "ORIGINAL_SHARED_GEOMETRY mismatch={reason} ordinal={ordinal} origin={origin:?} primary={primary:?}"),
+  }
+ }
  // Every empty Arc control below is funded before allocation. No placeholder
  // full-source token/tree/EOF role is manufactured from metadata completion.
  metadata.state.plan.charge_using(6*std::mem::size_of::<usize>(),a)?;
@@ -97,7 +152,10 @@ fn finalize(delivery:OriginalDemandDelivery,mut metadata:Metadata,output:Origina
  let origins=super::ExpandedOriginArena::from_actual_raw_rows_using(metadata.state.origins,credit.clone(),a)?;
  let expanded=ExpandedRegions{input_keys:Arc::new(Vec::new()),text:source,tokens:tokens.into(),origins,dense_emission_regions:Vec::new(),diagnostics:Vec::new(),receipts:Vec::new(),lexical_diagnostics:Vec::new()};
  let retention=OriginalPlanRetention{paths,notices:metadata.state.notices,history:metadata.state.history,conditionals:metadata.state.conditionals,scripts:metadata.state.scripts,metadata:credit,final_macros:metadata.final_macros};
- Ok(OriginalGenerationProduct{delivery,plan,omissions,expanded,primary,literals,retention})
+ Ok(OriginalGenerationProduct{delivery,plan,omissions,expanded,primary,literals,retention,
+  #[cfg(test)]
+  token_projection,
+ })
 }
 impl GenerationDirectivePlan{
  pub fn prepare_original_stream_using(project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,max_raw_bytes:usize,source_work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,consumer:&mut dyn OriginalPrimaryStreamConsumer)->io::Result<OriginalGenerationProduct>{
