@@ -2,6 +2,7 @@
 use super::{QueryReply, QueryRequest, SourceQuery};
 use serde_json::Value;
 use std::io;
+pub(super) const CURRENT_UNDEFINED_VARIABLE: &str = "current_undefined_variable";
 fn invalid(detail: &str) -> io::Error {
     io::Error::new(
         io::ErrorKind::InvalidData,
@@ -43,6 +44,16 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                 configuration,
                 ..
             } => {
+                if family == CURRENT_UNDEFINED_VARIABLE
+                    && (request.analysis_context != Some(crate::policy_request::AnalysisContext::OriginalChecker0290)
+                        || !request.queries.is_empty()
+                        || request.source_queries.len() != 1)
+                {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "current undefined-variable diagnostics require one explicit Original checker source query",
+                    ));
+                }
                 environment.is_absolute()
                     && configuration.as_ref().is_none_or(|p| p.is_absolute())
                     && matches!(
@@ -65,6 +76,7 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                             | "proc_has_no_parent"
                             | "undefined_proc"
                             | "undefined_variable"
+                            | CURRENT_UNDEFINED_VARIABLE
                             | "field_access_static_type"
                             | "no_typehint_implicit_new"
                             | "proc_call_static_type" | "private_proc" | "protected_proc" | "must_call_parent" | "must_not_override" | "redefined_proc" | "call_arguments" | "filter_call" | "catch_parameter_count" | "static_reference" | "iteration_range" | "undefined_type" | "switch_case"
@@ -181,6 +193,15 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
             } => {
                 let access=matches!(family.as_str(),"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"|"iteration_range"|"undefined_type"|"switch_case");
                 let mut keys=vec!["row","schema","semantic_revision","source_revision","policy_revision","ordinal","family","environment","configuration","configuration_explicit","configuration_present","configuration_schema","full_checker_parity","diagnostics"];
+                let current_variables = family == CURRENT_UNDEFINED_VARIABLE;
+                if current_variables {
+                    keys.push("disposition");
+                    match row["disposition"].as_str() {
+                        Some("evaluated") => (),
+                        Some("skipped_original") if row["diagnostics"].as_array().is_some_and(Vec::is_empty) => (),
+                        _ => return Err(invalid("current undefined-variable disposition")),
+                    }
+                }
                 if access{keys.extend(["declaration_profile","native_declaration_error_count"]);}if matches!(family.as_str(),"redefined_proc"|"switch_case"){keys.push("untagged_companions");}
                 exact(&row,&keys)?;
                 if access {match(row["declaration_profile"].as_str(),row["native_declaration_error_count"].as_u64()){
@@ -212,7 +233,14 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     .ok_or_else(|| invalid("diagnostics"))?
                 {
                     let access=matches!(family.as_str(),"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"|"iteration_range"|"undefined_type"|"switch_case");
-                    if family=="redefined_proc"{exact(d,&["family","severity","file","line","column","location_kind","expanded_span","expression_span","message","notes","registration_tag"])?;}else if access{exact(d,&["family","severity","file","line","column","location_kind","expanded_span","expression_span","message","notes"])?;}else{
+                    if current_variables {
+                        exact(d, &["family","severity","file","line","column","expanded_span","expression_span","message","notes"])?;
+                        if d["family"] != "undefined_variable" || d["severity"] != "error"
+                            || !d["column"].as_u64().is_some_and(|n| n > 0)
+                        {
+                            return Err(invalid("current undefined-variable diagnostic"));
+                        }
+                    } else if family=="redefined_proc"{exact(d,&["family","severity","file","line","column","location_kind","expanded_span","expression_span","message","notes","registration_tag"])?;}else if access{exact(d,&["family","severity","file","line","column","location_kind","expanded_span","expression_span","message","notes"])?;}else{
                     exact(
                         d,
                         &[
@@ -238,7 +266,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     let undefined_type=family=="undefined_type"&&d["family"]=="undefined_type"&&d["severity"]=="error";
                     let switch_case=family=="switch_case"&&((d["family"]=="switch_case_or"&&d["severity"]=="warning")||(d["family"]=="do_while_unreachable"&&d["severity"]=="error"&&!reader&&!synthetic));
                     let iteration=family=="iteration_range"&&((d["family"]=="iteration_maybe_atom"&&d["severity"]=="hint")||(matches!(d["family"].as_str(),Some("iteration_noniterable_type"|"iteration_procpath"|"invalid_for_range"))&&d["severity"]=="error"));
-                    if !(structural||tagged||argument||catch||static_reference||iteration||undefined_type||switch_case)
+                    if !(current_variables||structural||tagged||argument||catch||static_reference||iteration||undefined_type||switch_case)
                         || !matches!(
                             d["severity"].as_str(),
                             Some("error" | "warning" | "info" | "hint")

@@ -204,3 +204,47 @@ fn actual_original_block_doc_keeps_the_next_declaration_at_the_same_scope() {
         assert!(body.statement_body().original_literal_syntax_complete());
     }
 }
+
+#[test]
+fn original_projected_super_return_keeps_its_issued_member_grammar() {
+    let root = scratch::dir("original-projected-super-return");
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", concat!(
+        "/datum/base/proc/probe()\n    return null\n",
+        "/datum/base/child/probe()\n    return ..().field\n",
+    ));
+    let inputs = Inputs(RecordingInputs::new(FileSystemInputs, 0)
+        .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290));
+    let db = Arc::new(dmbc::query_db::QueryDb::default());
+    let settings: Arc<dyn frontend::SettingExpressionQueries> = db.clone();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let seed = dm_tree::checker_builtins::original_analysis_seed().unwrap();
+    let front = frontend::build_for_checker_diagnostics_with_state_checked(
+        &root.join("deepquarry.dme"), &inputs, &BTreeMap::new(),
+        FrontendConfig { workers: 1, engine: Some(seed.frontend_seed()), observer: None },
+        None, &executor, None, &settings,
+    ).unwrap().with_body_queries(db).unwrap();
+    let view = front.checker_source_view().unwrap();
+    let archive = view.archive();
+    let child = dm_ir::SymbolId::of("/datum/base/child");
+    let ordinal = (0..archive.len())
+        .find(|&ordinal| archive.callables().identity(ordinal).is_some_and(|row| row.owner == child))
+        .expect("actual child override");
+    let body = archive.parse_checked(ordinal).unwrap();
+    let tokens = body.original_body_tokens().unwrap();
+    let significant: Vec<_> = tokens
+        .tokens(archive.occurrences()[ordinal].expanded_span).unwrap()
+        .filter(|(kind, _, _)| !matches!(kind, dm_syntax::TokenKind::Whitespace | dm_syntax::TokenKind::Newline | dm_syntax::TokenKind::Comment))
+        .collect();
+    let expression = significant.windows(6)
+        .find(|rows| rows.iter().map(|(_, _, spelling)| *spelling).eq(["return", "..", "(", ")", ".", "field"]))
+        .expect("actual return and single Super token sequence");
+    assert_eq!(expression[0].1.end, expression[1].1.start, "projected return and Super are joined");
+    assert!(expression[1].1.end < expression[2].1.start, "projected Super and parenthesis are separated");
+    let parsed = body.statement_body().parsed();
+    assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+    assert!(matches!(&parsed.statements[..], [row] if matches!(&row.kind, dm_syntax::StatementKind::Return(Some(_)))));
+    let outcome = parsed.original_grammar.expect("same token body issued Original grammar");
+    assert_eq!(outcome.kind(), dm_syntax::OriginalBodyGrammarKind::Available);
+    assert_eq!(outcome.statement_span(), Some(parsed.statements[0].header_span));
+}

@@ -1,0 +1,41 @@
+//! Explicit retained-source checker observation through real production IPC.
+#[path = "../../../shared/test_scratch.rs"]
+mod test_scratch;
+
+use std::{path::Path, process::Command};
+
+fn slash(path: impl AsRef<Path>) -> String {
+    path.as_ref().to_string_lossy().replace('\\', "/")
+}
+
+#[test]
+#[ignore = "requires current private dmbc; run outside cargo slot"]
+fn original_current_variable_ipc_parent_switch() {
+    let scratch = test_scratch::dir("unified-current-variable-ipc");
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let repository = crate_root.join("../../../..");
+    let bash = std::env::var_os("DQ_BASH").unwrap_or_else(|| "bash".into());
+    let python = std::env::var_os("DQ_PYTHON").unwrap_or_else(|| "python".into());
+    let output = Command::new(bash)
+        .arg(slash(repository.join("tools/dq_machine_slots.sh")))
+        .args(["run", "dm_compile", "--label", "unified-current-variable-ipc", "--"])
+        .arg(slash(Path::new(&python)))
+        .arg(slash(crate_root.join("../../scripts/unified_current_variable_ipc_smoke.py")))
+        .arg("--binary")
+        .arg(slash(env!("CARGO_BIN_EXE_dmbc")))
+        .arg("--scratch-root")
+        .arg(slash(scratch))
+        .arg("--repository")
+        .arg(slash(repository))
+        .env("DQ_PRIORITY", "low")
+        .env("PYTHONDONTWRITEBYTECODE", "1")
+        .output()
+        .expect("start bounded Original current-variable IPC smoke");
+    assert!(
+        output.status.success(),
+        "Original current-variable IPC failed\nstdout:{}\nstderr:{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    print!("{}", String::from_utf8_lossy(&output.stdout));
+}

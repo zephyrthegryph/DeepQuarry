@@ -63,7 +63,6 @@ fn current_callable_actual_parent_switch_retracts_previous_target_dependencies()
     let observe = |host: &crate::runner_host::BuildHost, root: &Path, receiver: &str| {
         current(host, |snapshot| {
             let archive = snapshot.body_archive.as_ref().unwrap();
-            let dot = archive.expanded_source().find("().field").unwrap() + 2;
             let mut rows = Vec::new();
             let disposition = snapshot.visit_current_variable_diagnostics(
                 ordinal(snapshot), &root.join("deepquarry.dme"), None, &snapshot.tree, |row| {
@@ -72,7 +71,12 @@ fn current_callable_actual_parent_switch_retracts_previous_target_dependencies()
                 },
             ).unwrap();
             assert_eq!(disposition, dm_analysis::checks_undefined_variable::CurrentUndefinedDisposition::Evaluated);
-            assert_eq!(rows, [(dot, dot + 1, format!("undefined field: \"field\" on {receiver}"))]);
+            let [(start, end, message)] = rows.as_slice() else { panic!("expected exactly one member diagnostic: {rows:?}") };
+            assert_eq!(message, &format!("undefined field: \"field\" on {receiver}"));
+            assert_eq!(archive.expanded_source().get(*start..*end), Some("."));
+            let point = archive.source_note_point(*start).unwrap();
+            let (line, original) = SOURCE.lines().enumerate().find(|(_, line)| line.contains("..().field")).unwrap();
+            assert_eq!((point.line, point.byte_column), (line + 1, original.find(".field").unwrap() + 1));
             [ancestry, child_chain].map(|query| dm_ir::Resolver::resolve(snapshot.tree.as_ref(), query).canonical_bytes())
         })
     };

@@ -690,7 +690,10 @@ fn parse_one(
     } else if header == "return" {
         if origins.original_terminal_header==Some(item.header_span){*origins.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings:0,scope_roots:None,kind:OriginalBodyGrammarKind::Available,statement:Some(item.header_span),expression:None,operator:None});}
         Some(StatementKind::Return(None))
-    } else if starts_keyword(header, "return") || header.starts_with("return..(") {
+    } else if starts_keyword(header, "return")
+        // Original joins the keyword to Super, then separates punctuation.
+        || header.strip_prefix("return..").is_some_and(|tail| tail.trim_start().starts_with('('))
+    {
         let rest = header.strip_prefix("return").unwrap().trim_start();
         let offset=item.header_span.start + item.header.find(rest).unwrap_or(0);
         parse_expr_observed(rest,offset,diagnostics,&mut|parsed|{

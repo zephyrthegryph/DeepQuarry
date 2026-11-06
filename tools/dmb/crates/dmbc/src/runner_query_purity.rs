@@ -254,6 +254,72 @@ impl SourceSnapshot{
 
 // Selected authentic current semantic producer, not a default checker cutover.
 impl SourceSnapshot{
+ pub(crate) fn write_current_undefined_variable(
+    &self,
+    ordinal: u32,
+    environment: &Path,
+    explicit: Option<&Path>,
+    tree: &dm_tree::SemanticTree,
+    output: &mut impl std::io::Write,
+ ) -> std::io::Result<()> {
+    use dm_analysis::{check_policy::DiagnosticSeverity, checks_undefined_variable::CurrentUndefinedDisposition};
+    use std::io;
+
+    let owner = self.original_checker_request_input(tree)?;
+    let input = owner.input();
+    self.with_effect_scope(input, environment, explicit, tree, |db, scope| {
+        let loaded = scope.configuration();
+        let policy_revision = self.policy_revision.ok_or_else(|| io::Error::other("Original checker policy revision unavailable"))?;
+        let metadata = serde_json::json!({
+            "row": "source_native_configured_checker",
+            "schema": "dm-session-source-query-v1",
+            "semantic_revision": format!("{:032x}", tree.identity()),
+            "source_revision": format!("{:032x}", self.source_revision),
+            "policy_revision": format!("{:032x}", policy_revision),
+            "ordinal": ordinal,
+            "family": "current_undefined_variable",
+            "environment": environment,
+            "configuration": loaded.selected.path,
+            "configuration_explicit": loaded.selected.explicit,
+            "configuration_present": loaded.present,
+            "configuration_schema": "complete_pinned_checker_schema",
+            "full_checker_parity": false,
+        });
+        let header = serde_json::to_vec(&metadata).map_err(io::Error::other)?;
+        output.write_all(header.strip_suffix(b"}").ok_or_else(|| io::Error::other("invalid current checker metadata object"))?)?;
+        output.write_all(b",\"diagnostics\":[")?;
+
+        // The caller owns a bounded reply buffer and publishes it only after
+        // the complete graph visit succeeds. Borrow one diagnostic at a time.
+        let severity = scope.policy().register(None, DiagnosticSeverity::Error);
+        let mut first = true;
+        let disposition = db.visit_current_variable_diagnostics(input, scope, ordinal as usize, |row| {
+            let Some(severity) = severity else { return Ok(()) };
+            let origin = input.archive().borrowed_source_note_point(row.span.start).map_err(io::Error::other)?;
+            let (file, line, column) = origin.reported_coordinates();
+            if !first { output.write_all(b",")?; }
+            first = false;
+            serde_json::to_writer(&mut *output, &serde_json::json!({
+                "family": row.diagnostic.family,
+                "severity": super::named_policy::severity(severity),
+                "file": file,
+                "line": line,
+                "column": column,
+                "expanded_span": [row.span.start, row.span.end],
+                "expression_span": [row.expression_span.start, row.expression_span.end],
+                "message": row.diagnostic.message,
+                "notes": row.diagnostic.notes.iter().map(|note| note.legacy_text()).collect::<Vec<_>>(),
+            })).map_err(io::Error::other)
+        })?;
+        let disposition = match disposition {
+            CurrentUndefinedDisposition::Evaluated => "evaluated",
+            CurrentUndefinedDisposition::SkippedOriginal => "skipped_original",
+        };
+        output.write_all(b"],\"disposition\":")?;
+        serde_json::to_writer(&mut *output, disposition).map_err(io::Error::other)?;
+        output.write_all(b"}\n")
+    })
+ }
  pub(super) fn visit_current_variable_diagnostics(&self,ordinal:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(dm_analysis::checks_undefined_variable::CurrentUndefinedRow<'_>)->std::io::Result<()>)->std::io::Result<dm_analysis::checks_undefined_variable::CurrentUndefinedDisposition>{
   let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.visit_current_variable_diagnostics(input,scope,ordinal,consume))
  }

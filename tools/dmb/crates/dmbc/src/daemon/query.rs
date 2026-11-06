@@ -485,7 +485,10 @@ fn validate_native_outer_row(
     row: &serde_json::Value,
     question: SourceQuery,
 ) -> io::Result<()> {
-    let shape = QueryRequest {analysis_context:None,
+    let analysis_context = matches!(&question, SourceQuery::NativeConfiguredChecker { family, .. }
+        if family == named_policy::CURRENT_UNDEFINED_VARIABLE)
+        .then_some(crate::policy_request::AnalysisContext::OriginalChecker0290);
+    let shape = QueryRequest {analysis_context,
         timeout_seconds: None,
         project: PathBuf::new(),
         defines: BTreeMap::new(),
@@ -827,7 +830,7 @@ pub(crate) fn evaluate_snapshot(
             || request.source_queries.iter().any(|question| {
                 !state.snapshot.as_ref().is_some_and(|snapshot|snapshot.admits_original_analysis_workspace_question(question))
                     && !matches!(question,SourceQuery::NativeConfiguredVariableVisibility{..}|SourceQuery::NativeKeywordOverrides{..})
-                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"|"directive_at_definition"|"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"|"iteration_range"|"undefined_type"|"switch_case"))
+                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"|"directive_at_definition"|"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"|"iteration_range"|"undefined_type"|"switch_case"|named_policy::CURRENT_UNDEFINED_VARIABLE))
             }))
     {
         return Err(io::Error::other("diagnostic declaration frame admits only registered source diagnostic checker questions; no ordinary ABI/model query"));
@@ -1072,6 +1075,12 @@ pub(crate) fn evaluate_snapshot(
             configuration,
         } = question
         {
+            if family == named_policy::CURRENT_UNDEFINED_VARIABLE {
+                snapshot.write_current_undefined_variable(
+                    *ordinal, environment, configuration.as_deref(), tree, &mut output,
+                )?;
+                continue;
+            }
             snapshot.write_native_configured_checker(
                 *ordinal,
                 family,
