@@ -910,3 +910,126 @@ fn public_compound_selected_compiles_and_verifies_both_reports_in_one_request() 
     assert!(rejected.stdout.is_empty());
     assert!(!cache.join("compound-native-error/artifacts/deepquarry.dmb-pair.json").exists());
 }
+
+
+#[test]
+#[ignore = "private dmbc transport plus the independent legacy Engine oracle"]
+fn public_selected_v2_library_sites_match_legacy_fingerprints_and_ceilings() {
+    use dq_analyze::{
+        captured_generator_budget::Budget,
+        captured_allow_annotations::{full_unused, Operation},
+        selected_exclusions_wire::{Hex128, JudgmentV2, Roster, Seal, TerminalV2},
+    };
+    use std::{ffi::OsStr, fs, time::{Duration, SystemTime, UNIX_EPOCH}};
+    let root = test_scratch::dir("public-library-sites-v2");
+    let transport = test_scratch::dir("public-library-sites-v2-transport");
+    let namespace = format!("library-sites-{}-{}", std::process::id(),
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis());
+    let daemon = LibraryTransport { root: &transport, namespace };
+    let oracle = PathBuf::from(std::env::var_os("DQ_SELECTED_ENGINE_INTERNAL_ORACLE")
+        .expect("actual legacy Engine comparator"));
+    assert!(oracle.is_absolute());
+    fs::create_dir(root.join("maps")).unwrap();
+    put(&root, "deepquarry.dme", concat!(
+        "#include \"code/library/current.dm\"\n",
+        "#include \"code/content/definition.dm\"\n",
+    ));
+    put(&root, "code/library/current.dm", concat!(
+        "/proc/use_content()\n    downstream()\n",
+        "/proc/use_content_again()\n    downstream()\n",
+    ));
+    put(&root, "code/content/definition.dm", "/proc/downstream()\n    return\n");
+    put(&root, "code/scheduler_usage.dm", concat!(
+        "/proc/scheduler_use()\n",
+        "    sleep(1) // ALLOW(scheduler): exercises actual selected report annotation consumption\n",
+    ));
+    let mut build = request(&root, Q::DocSnippets);
+    let cache = transport.join("cache");
+    fs::create_dir(&cache).unwrap();
+    build.cache_root = Some(cache);
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithLibraryLayering;
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let request_path = transport.join("library-sites-v2-request.json");
+    let write_request = |judgment: &str| fs::write(&request_path, serde_json::to_vec(
+        &serde_json::json!({"build":build,"exclusions":exclusions,"judgment":judgment})
+    ).unwrap()).unwrap();
+    let run = || daemon.run(&[OsStr::new("analyze-exclusions-v2"), request_path.as_os_str(),
+        OsStr::new("--report-batch")], Duration::from_secs(120)).unwrap();
+    let baseline = "tools/ci/library_layering_baseline.txt";
+    let row = "external_dependency\tcode/library/current.dm\tdownstream()\r\n";
+    let wrong = "external_dependency\tcode/library/current.dm\tdownstreaM()\r\n";
+    let bytes = |rows: &[&str]| rows.concat().into_bytes();
+    let stale = format!("{row}{row}{}# ignored comment\rmalformed\r",
+        format!("{}\r", wrong.trim_end()).repeat(8500));
+    let mut last = None;
+    let mut previous_ceiling = None;
+    let mut previous_match_time = None;
+    for (contents, ceiling, exit, marker) in [
+        (None, None, 1, "FAIL (2 new sites)"),
+        (Some(bytes(&[row])), None, 1, "FAIL (1 new site)"),
+        (Some(bytes(&[row, row])), None, 0, "(baseline 2)  ok"),
+        (Some(bytes(&[row, wrong])), None, 1, "FAIL (1 new site)"),
+        (Some(stale.into_bytes()), None, 0, "8500 baselined sites gone"),
+        (Some(vec![0xff]), None, 1, "FAIL (2 new sites)"),
+        (Some(bytes(&[row, row])), Some(1), 1, "FAIL (rose above its ceiling 1)"),
+        (Some(bytes(&[row, row])), Some(3), 0, "below ceiling 3"),
+    ] {
+        if previous_ceiling != Some(ceiling) {
+            let overlay = ceiling.map_or_else(|| "[lint.library_layering]\n".into(), |n| format!(
+                "[lint.library_layering.ceilings]\nexternal_dependency = {n}\n"));
+            put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(&overlay));
+            previous_ceiling = Some(ceiling);
+        }
+        if let Some(contents) = &contents {
+            put(&root, baseline, contents);
+            if ceiling.is_none() && contents == &bytes(&[row, row]) {
+                previous_match_time = Some(fs::metadata(root.join(baseline)).unwrap().modified().unwrap());
+            } else if contents == &bytes(&[row, wrong]) {
+                let prior = previous_match_time.expect("same-size valid baseline was observed first");
+                fs::File::options().write(true).open(root.join(baseline)).unwrap()
+                    .set_times(fs::FileTimes::new().set_modified(prior)).unwrap();
+                assert_eq!(fs::metadata(root.join(baseline)).unwrap().modified().unwrap(), prior);
+            }
+        }
+        write_request("ci_library_sites");
+        let output = run();
+        assert_eq!(output.status.code(), Some(exit), "{}", String::from_utf8_lossy(&output.stderr));
+        let end = output.stdout.iter().position(|byte| *byte == b'\n').expect("verified v2 terminal");
+        let terminal: TerminalV2 = serde_json::from_slice(&output.stdout[..end]).unwrap();
+        terminal.require_using(roster, JudgmentV2::CiLibrarySites).unwrap();
+        assert!(terminal.require(roster).is_err(), "raw v2 may not accept a Sites terminal");
+        if let Some(previous) = last { assert_ne!(terminal.frame.policy_revision, previous); }
+        last = Some(terminal.frame.policy_revision);
+        let report = &output.stdout[end+1..];
+        assert_eq!(terminal.report, Seal { length: report.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(report)) });
+        let text = std::str::from_utf8(report).unwrap();
+        assert!(text.contains(marker) && text.contains("allow annotations: 0 unused\n"), "{text}");
+        let actual_report = transport.join("library-sites-v2-report.txt");
+        fs::write(&actual_report, report).unwrap();
+        let old = daemon.run_program(&oracle, &[root.as_os_str(), actual_report.as_os_str(),
+            OsStr::new("--with-library-ci")], Duration::from_secs(120)).unwrap();
+        assert!(old.status.success(), "legacy Engine mismatch: {}", String::from_utf8_lossy(&old.stderr));
+        if let Some(contents) = &contents {
+            assert_eq!(&fs::read(root.join(baseline)).unwrap(), contents, "CI never writes the baseline");
+        } else {
+            assert_eq!(fs::metadata(root.join(baseline)).unwrap_err().kind(), std::io::ErrorKind::NotFound);
+        }
+    }
+    write_request("raw");
+    let raw = run();
+    assert_eq!(raw.status.code(), Some(2));
+    assert!(raw.stdout.is_empty(), "raw v2 has no library alias");
+    fs::remove_file(root.join(baseline)).unwrap();
+    fs::create_dir(root.join(baseline)).unwrap();
+    write_request("ci_library_sites");
+    let nonregular = run();
+    assert_eq!(nonregular.status.code(), Some(2));
+    assert!(nonregular.stdout.is_empty(), "nonregular baseline cannot publish a partial report");
+}

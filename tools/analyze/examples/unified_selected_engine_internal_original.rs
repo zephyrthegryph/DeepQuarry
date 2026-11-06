@@ -10,20 +10,25 @@ const SELECTED: &[&str] = &[
     "allow_annotations", "engine_internal", "notice_publisher", "report_in_catch", "scheduler",
 ];
 
+const LIBRARY: &[&str] = &[
+    "allow_annotations", "cooldown", "library_layering", "notice_publisher", "report_in_catch", "scheduler",
+];
+
 const MIXED: &[&str] = &[
     "allow_annotations", "cooldown", "engine_internal", "notice_publisher", "report_in_catch", "scheduler",
 ];
 
 fn main() {
     let paths: Vec<PathBuf> = std::env::args_os().skip(1).map(PathBuf::from).collect();
-    let (root, native, mixed, ci) = match paths.as_slice() {
-        [root, native] => (root, native, false, false),
-        [root, native, mode] if mode.as_os_str() == "--with-cooldown" => (root, native, true, false),
-        [root, native, mode] if mode.as_os_str() == "--with-cooldown-ci" => (root, native, true, true),
-        _ => panic!("usage: unified_selected_engine_internal_original ABSOLUTE_FIXTURE_ROOT ABSOLUTE_NATIVE_REPORT [--with-cooldown|--with-cooldown-ci]"),
+    let (root, native, mixed, library, ci) = match paths.as_slice() {
+        [root, native] => (root, native, false, false, false),
+        [root, native, mode] if mode.as_os_str() == "--with-cooldown" => (root, native, true, false, false),
+        [root, native, mode] if mode.as_os_str() == "--with-cooldown-ci" => (root, native, true, false, true),
+        [root, native, mode] if mode.as_os_str() == "--with-library-ci" => (root, native, false, true, true),
+        _ => panic!("usage: unified_selected_engine_internal_original ABSOLUTE_FIXTURE_ROOT ABSOLUTE_NATIVE_REPORT [--with-cooldown|--with-cooldown-ci|--with-library-ci]"),
     };
     assert!(root.is_absolute() && native.is_absolute());
-    let selected = if mixed { MIXED } else { SELECTED };
+    let selected = if library { LIBRARY } else if mixed { MIXED } else { SELECTED };
 
     let mut registry = dq_analyze::run::registry();
     registry.lints.retain(|lint| lint.meta().name != "allow_annotations");
@@ -42,25 +47,38 @@ fn main() {
 
     let outcomes: Vec<_> = selected.iter().map(|name| engine.run_one(engine.reg.find(name).unwrap())).collect();
     assert!(outcomes.iter().all(|outcome| outcome.internal_error.is_none()));
-    let internal = outcomes.iter().find(|outcome| outcome.name == "engine_internal").unwrap();
-    assert_eq!(internal.name, "engine_internal");
-    assert_eq!(internal.run.sites.iter().map(|site| (site.rule.as_str(), site.rel.as_str(), site.line)).collect::<Vec<_>>(),
-        [("internal", "code/raw.dm", 1), ("internal", "maps/raw.dm", 1)]);
-    assert_eq!(internal.allow_used.iter().map(|used| (used.name.as_str(), used.rel.as_str(), used.line)).collect::<Vec<_>>(),
-        [("engine_internal", "code/kept.dm", 1)]);
-    if mixed {
-        let cooldown = outcomes.iter().find(|outcome| outcome.name == "cooldown").unwrap();
-        assert_eq!(cooldown.run.sites.iter().map(|site| (site.rule.as_str(), site.rel.as_str(), site.line))
-            .collect::<Vec<_>>(), [("raw_compare", "code/probe.dm", 4)]);
-        assert_eq!(cooldown.allow_used.iter().map(|used| (used.name.as_str(), used.rel.as_str(), used.line))
-            .collect::<Vec<_>>(), [("cooldown", "code/probe.dm", 6)]);
-    }
     let used: Vec<_> = outcomes.iter().flat_map(|outcome| outcome.allow_used.iter().cloned()).collect();
     let unused = original_allow::unused(&engine.tree, &used, &[], &|_| String::new());
-    assert_eq!(unused.len(), if mixed { 2 } else { 1 }, "{unused:?}");
-    assert!(unused.iter().any(|row| row.starts_with("maps/unused.dm:1: ALLOW(engine_internal) is unused")), "{unused:?}");
-    if mixed {
-        assert!(unused.iter().any(|row| row.starts_with("maps/cooldown.dm:2: ALLOW(cooldown) is unused")), "{unused:?}");
+    if library {
+        let layering = outcomes.iter().find(|outcome| outcome.name == "library_layering").unwrap();
+        assert_eq!(layering.run.sites.iter().map(|site| (site.rule.as_str(), site.rel.as_str(), site.line))
+            .collect::<Vec<_>>(), [
+                ("external_dependency", "code/library/current.dm", 2),
+                ("external_dependency", "code/library/current.dm", 4),
+            ]);
+        let scheduler = outcomes.iter().find(|outcome| outcome.name == "scheduler").unwrap();
+        assert_eq!(scheduler.allow_used.iter().map(|used| (used.name.as_str(), used.rel.as_str(), used.line))
+            .collect::<Vec<_>>(), [("scheduler", "code/scheduler_usage.dm", 2)]);
+        assert!(unused.is_empty(), "{unused:?}");
+    } else {
+        let internal = outcomes.iter().find(|outcome| outcome.name == "engine_internal").unwrap();
+        assert_eq!(internal.name, "engine_internal");
+        assert_eq!(internal.run.sites.iter().map(|site| (site.rule.as_str(), site.rel.as_str(), site.line)).collect::<Vec<_>>(),
+            [("internal", "code/raw.dm", 1), ("internal", "maps/raw.dm", 1)]);
+        assert_eq!(internal.allow_used.iter().map(|used| (used.name.as_str(), used.rel.as_str(), used.line)).collect::<Vec<_>>(),
+            [("engine_internal", "code/kept.dm", 1)]);
+        if mixed {
+            let cooldown = outcomes.iter().find(|outcome| outcome.name == "cooldown").unwrap();
+            assert_eq!(cooldown.run.sites.iter().map(|site| (site.rule.as_str(), site.rel.as_str(), site.line))
+                .collect::<Vec<_>>(), [("raw_compare", "code/probe.dm", 4)]);
+            assert_eq!(cooldown.allow_used.iter().map(|used| (used.name.as_str(), used.rel.as_str(), used.line))
+                .collect::<Vec<_>>(), [("cooldown", "code/probe.dm", 6)]);
+        }
+        assert_eq!(unused.len(), if mixed { 2 } else { 1 }, "{unused:?}");
+        assert!(unused.iter().any(|row| row.starts_with("maps/unused.dm:1: ALLOW(engine_internal) is unused")), "{unused:?}");
+        if mixed {
+            assert!(unused.iter().any(|row| row.starts_with("maps/cooldown.dm:2: ALLOW(cooldown) is unused")), "{unused:?}");
+        }
     }
 
     let (mut expected, mut failed) = dq_analyze::run::render(&outcomes, ci);
@@ -68,7 +86,7 @@ fn main() {
         writeln!(expected, "{problem}").unwrap();
     }
     writeln!(expected, "allow annotations: {} unused", unused.len()).unwrap();
-    failed.push("allow_annotations --unused".to_owned());
+    if !unused.is_empty() { failed.push("allow_annotations --unused".to_owned()); }
     expected.push_str(&dq_analyze::policy_finish::result_line(&failed));
     assert_eq!(fs::read(native).expect("verified native report bytes"), expected.as_bytes());
 }

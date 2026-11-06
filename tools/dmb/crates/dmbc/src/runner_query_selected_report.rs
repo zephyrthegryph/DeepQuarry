@@ -37,7 +37,9 @@ impl SelectedReportPlan {
             control.checkpoint().map_err(operational)?;
             let producer = Producer::from_name(name).filter(|producer| producer.stages_report())
                 .ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "selected policy has no staged report adapter"))?;
-            if !judgment.is_raw() && !matches!(producer.metadata().policy, Policy::Hard) {
+            if !judgment.is_raw() && !matches!(producer.metadata().policy, Policy::Hard)
+                && !(judgment == JudgmentV2::CiLibrarySites && library_sites(producer.metadata()))
+            {
                 return Err(io::Error::new(io::ErrorKind::Unsupported, "selected CI ceiling judgment requires a Hard policy"));
             }
             if let Some(question) = producer.question() {
@@ -62,8 +64,17 @@ impl SelectedReportPlan {
 
     pub(in crate::runner_host) fn roster(&self) -> Roster { self.roster }
     pub(in crate::runner_host) fn questions(&self) -> &'static [Q] { self.questions }
+    pub(in crate::runner_host) fn needs_library_sites_baseline(&self) -> bool {
+        self.judgment == JudgmentV2::CiLibrarySites
+    }
     pub(in crate::runner_host) fn supports_combined(&self) -> bool { Q::admits_selected_reads(self.questions) }
     pub(in crate::runner_host) fn requires_handlers(&self) -> bool { self.questions == [Q::SemHandlersFullAllow] }
+}
+
+fn library_sites(meta: &Meta) -> bool {
+    meta.name == "library_layering" &&
+        matches!(meta.policy, Policy::Sites { baseline, .. }
+            if baseline == crate::runner_host::workspace_capture::LIBRARY_SITES_BASELINE)
 }
 
 pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: &Budget) -> io::Result<SelectedReportPlan> {
@@ -80,7 +91,7 @@ pub(in crate::runner_host) fn validate_selection_v2(exclusions: &[String], budge
     let registered = full_unused::registered_full_selection(&[], &mut control).map_err(operational)?;
     // Exactly the registry-order complement, using individual full names.
     // Aliases, duplicate/unknown names and caller-defined unions have no v2 plan.
-    for roster in Roster::GENERIC_V2 {
+    for &roster in Roster::v2_for(judgment) {
         control.checkpoint().map_err(operational)?;
         let names = || registered.names().iter().map(String::as_str);
         let selected = names().filter(|name| roster.names().contains(name));
@@ -146,14 +157,31 @@ enum ReportRows<'a,'borrow> {
     ImageDir(&'a dq_analyze::captured_image_dir::Data),
 }
 
-struct ReportStage {
+struct SitesWork<'a>(&'a Budget);
+impl dq_analyze::policy_finish::admitted::Work for SitesWork<'_> {
+    fn checkpoint(&self) -> io::Result<()> {
+        crate::daemon::control::checkpoint()?;
+        self.0.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))
+    }
+    fn reserve(&self, bytes: usize) -> io::Result<()> {
+        self.0.charge(bytes).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))
+    }
+    fn overflow(&self) -> io::Error {
+        self.0.deny();
+        io::ErrorKind::OutOfMemory.into()
+    }
+}
+
+struct ReportStage<'a> {
     file: Stage,
     finished: usize,
     selected: &'static [&'static str],
     failed: [bool; Roster::MAX_POLICIES],
     judgment: JudgmentV2,
+    // Outer None means the fixed role is unissued, inner None proven absent.
+    library_baseline: Option<Option<&'a [u8]>>,
 }
-impl ReportStage {
+impl ReportStage<'_> {
     fn observe(&mut self, root: &Path, meta: &Meta, rows: ReportRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
         if self.selected.get(self.finished).copied() != Some(meta.name) || !matches!(meta.policy, Policy::Hard | Policy::Sites { .. }) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report section order or judge differs"));
@@ -272,11 +300,19 @@ impl ReportStage {
 
         let source_text = Text { sites: &projection.run.sites, lines: &projection.text };
         let raw = self.judgment.is_raw();
-        if !raw && !matches!(meta.policy, Policy::Hard) {
+        let (failed, text) = if raw || matches!(meta.policy, Policy::Hard) {
+            policy_judge::judge_report(meta, scope, &source_text, &projection.run, root, &None, raw,
+                |_, _, _| false, |_, _| false)
+        } else if self.judgment == JudgmentV2::CiLibrarySites && library_sites(meta) {
+            let baseline = self.library_baseline.ok_or_else(|| io::Error::new(
+                io::ErrorKind::InvalidData, "staged library layering requires captured fixed baseline evidence",
+            ))?;
+            dq_analyze::policy_finish::admitted::judge_captured_sites(
+                meta, scope, &projection.text, &projection.run, root, baseline, &SitesWork(&scratch.budget),
+            )?
+        } else {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "staged CI judgment cannot read a baseline"));
-        }
-        let (failed, text) = policy_judge::judge_report(meta, scope, &source_text, &projection.run, root, &None, raw,
-            |_, _, _| false, |_, _| false);
+        };
         if !raw { writeln!(self.file, "::group::{}", meta.name)?; }
         self.file.write_all(text.as_bytes())?;
         if !raw { self.file.write_all(b"::endgroup::\n")?; }
@@ -322,7 +358,14 @@ impl SourceSnapshot {
             || pin(policy_revision) != Some(workspace.policy_revision()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation differs from its current workspace"));
         }
-        let stage = RefCell::new(ReportStage { file, finished: 0, selected: plan.roster().names(), failed: [false; Roster::MAX_POLICIES], judgment: plan.judgment });
+        let library_baseline = if plan.needs_library_sites_baseline() {
+            let guard = self.workspace_native_read()?;
+            Some(workspace.library_sites_baseline(&guard)?)
+        } else { None };
+        let stage = RefCell::new(ReportStage {
+            file, finished: 0, selected: plan.roster().names(), failed: [false; Roster::MAX_POLICIES],
+            judgment: plan.judgment, library_baseline,
+        });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
         }), |data, _, budget| stage.borrow_mut().finish(data,budget)).map_err(operational)?;
@@ -387,6 +430,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         selected: &["image_dir_after_build"],
         failed: [false; Roster::MAX_POLICIES],
         judgment: JudgmentV2::Raw,
+        library_baseline: None,
     };
     stage.observe(root, meta, ReportRows::ImageDir(&data), scope, budget)?;
     if stage.finished != 1 {

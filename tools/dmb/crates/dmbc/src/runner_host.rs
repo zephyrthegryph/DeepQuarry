@@ -1747,6 +1747,7 @@ impl BuildHost {
         let mut joined = None;
         let (prepared, checker_frame) = crate::request_runner::prepare_selected_report(
             request, self, &mut diagnostic_stage, checker_stage.as_mut(), retain_joined.then_some(&mut joined),
+            plan.needs_library_sites_baseline(),
         )?;
         let prepared_outcome = prepared.preparation?;
         prepared.diagnostics?;

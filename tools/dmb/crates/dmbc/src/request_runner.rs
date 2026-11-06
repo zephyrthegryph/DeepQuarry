@@ -861,6 +861,14 @@ fn run_build_attempt(
                     let discovery=if let Some(subject)=&analysis_subject{subject.bind_frontend(&view)?;Arc::clone(subject.discovery())}else{Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?})};
                     let captured=if intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::MapEdits]{
                         crate::runner_host::workspace_capture::capture_analysis_map_edits(&view,&inputs_capture,discovery,&workspace.configuration,source_policy_queries.as_ref())?
+                    }else if preparation_output.needs_library_sites_baseline(){
+                        if analysis_context != Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)
+                            || analysis_subject.as_ref().is_none_or(|subject|subject.synthetic()) {
+                            return Err(io::Error::new(io::ErrorKind::InvalidInput,"library Sites requires its authored Original Analyze subject").into());
+                        }
+                        crate::runner_host::workspace_capture::capture_analysis_with_library_baseline(
+                            &view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),
+                        )?
                     }else{
                         crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?
                     };
@@ -1932,7 +1940,7 @@ pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::B
 pub(crate) fn prepare_selected_report(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
-    joined: Option<&mut Option<JoinedSelectedInputs>>,
+    joined: Option<&mut Option<JoinedSelectedInputs>>, library_sites: bool,
 )->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
     if request.command != BuildCommand::PrepareQuery {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
@@ -1942,6 +1950,7 @@ pub(crate) fn prepare_selected_report(
         None=>PreparationDiagnosticOutput::selected_report(stage),
     };
     if let Some(joined) = joined { output.retain_joined_inputs(joined); }
+    if library_sites { output.require_library_sites_baseline()?; }
     let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);
     let diagnostics=output.take_error().map_or(Ok(()),Err);
     Ok((PreparationDiagnosticResult{preparation,diagnostics}, output.checker_frame()))

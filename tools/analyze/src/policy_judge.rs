@@ -32,14 +32,29 @@ pub fn judge_report<S:baseline::SiteText+?Sized>(
     mut custom:impl FnMut(&Run,&mut String,bool)->bool,
     mut post:impl FnMut(&Run,&mut String)->bool,
 )->(bool,String){
-    judge_report_prepared(meta,scope,source,run,root,changed,raw,custom,post,None)
+    judge_report_using(meta,scope,source,run,root,changed,raw,custom,post,None)
 }
 pub(crate) fn judge_report_prepared<S:baseline::SiteText+?Sized>(
     meta:&crate::lint::Meta,scope:&crate::scopes::LintScope,source:&S,
     run:&Run,root:&Path,changed:&Option<HashSet<String>>,raw:bool,
+    custom:impl FnMut(&Run,&mut String,bool)->bool,
+    post:impl FnMut(&Run,&mut String)->bool,
+ prepared:Option<&std::collections::BTreeMap<String,baseline::Counter>>
+)->(bool,String){
+    judge_report_using(meta,scope,source,run,root,changed,raw,custom,post,prepared.map(Sites::Complete))
+}
+
+pub(crate) enum Sites<'a> {
+    Complete(&'a std::collections::BTreeMap<String, baseline::Counter>),
+    Projected(baseline::ProjectedSites<'a>),
+}
+
+pub(crate) fn judge_report_using<S:baseline::SiteText+?Sized>(
+    meta:&crate::lint::Meta,scope:&crate::scopes::LintScope,source:&S,
+    run:&Run,root:&Path,changed:&Option<HashSet<String>>,raw:bool,
     mut custom:impl FnMut(&Run,&mut String,bool)->bool,
     mut post:impl FnMut(&Run,&mut String)->bool,
- prepared:Option<&std::collections::BTreeMap<String,baseline::Counter>>
+    prepared:Option<Sites<'_>>,
 )->(bool,String){
     let mut text = String::new();
     for n in &run.notes {
@@ -132,7 +147,11 @@ pub(crate) fn judge_report_prepared<S:baseline::SiteText+?Sized>(
                 } else {
                     root.join(baseline)
                 };
-                match prepared{Some(base)=>baseline::check_sites_with_base(meta.label,source,&by_rule,&hints,base,banned,&mut text),None=>baseline::check_sites(meta.label,source,&by_rule,&hints,&path,banned,&mut text)}
+                match prepared {
+                    Some(Sites::Complete(base)) => baseline::check_sites_with_base(meta.label,source,&by_rule,&hints,base,banned,&mut text),
+                    Some(Sites::Projected(base)) => baseline::check_sites_with_projection(meta.label,source,&by_rule,&hints,base,banned,&mut text),
+                    None => baseline::check_sites(meta.label,source,&by_rule,&hints,&path,banned,&mut text),
+                }
             }
             Policy::Ceilings { baseline, .. } => {
                 let path = if raw {

@@ -18,9 +18,65 @@ fn read_baseline(path:&Path,work:&dyn Work)->io::Result<BTreeMap<String,baseline
   bytes.extend_from_slice(&buffer[..n]);
  }
  let Ok(text)=String::from_utf8(bytes)else{return Ok(BTreeMap::new())};let lines=text.bytes().filter(|b|*b==b'\n').count().saturating_add(1);
- // Covers both universal-newline copies, canonical text's temporary pieces and
- // actual BTree key/node copies. It is an admission envelope, NOT a heap census.
+ // Covers canonical text's temporary pieces and actual BTree key/node
+ // copies. It is an admission envelope, not a heap census.
  work.reserve(add(work,mul(work,text.len().saturating_add(1),128)?,mul(work,lines,4096)?)?)?;Ok(baseline::parse_sites_text(text))
+}
+/// Fixed library baseline judgment over actual captured bytes and finding
+/// lines. None means proven missing; readable invalid UTF-8 yields the same
+/// empty allowance as the ordinary reader.
+pub fn judge_captured_sites(
+    meta: &crate::lint::Meta, scope: &LintScope, source_lines: &[String], run: &Run, root: &Path,
+    bytes: Option<&[u8]>, work: &dyn Work,
+) -> io::Result<(bool, String)> {
+    work.checkpoint()?;
+    if meta.name != "library_layering" || !matches!(meta.policy, Policy::Sites { .. })
+        || meta.rules.iter().any(|rule| rule.name == "init_lines") || run.sites.len() != source_lines.len()
+    {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "fixed library Sites judgment requires exact findings and literal fingerprint rules"));
+    }
+    // Both indexes borrow rule/path/source bytes. Fingerprints are the only
+    // new per-site text, at most one per issued row. Pre-grant their measured
+    // width and both maps' node/control geometry before allocating either.
+    let mut width = 0usize;
+    for (site, line) in run.sites.iter().zip(source_lines) {
+        work.checkpoint()?;
+        width = add(work, width, add(work, line.len(), add(work, site.ident.len(), 1)?)?)?;
+    }
+    let rows = add(work, run.sites.len(), add(work, meta.rules.len(), 1)?)?;
+    work.reserve(add(work, mul(work, width, 4)?, mul(work, rows, 4096)?)?)?;
+    struct CapturedLines<'a>(BTreeMap<&'a str, BTreeMap<u32, &'a str>>);
+    impl baseline::SiteText for CapturedLines<'_> {
+        fn site_text(&self, relative: &str, line: usize) -> String {
+            u32::try_from(line).ok().and_then(|line| self.0.get(relative)?.get(&line))
+                .copied().unwrap_or_default().to_owned()
+        }
+    }
+    let mut source = CapturedLines(BTreeMap::new());
+    let mut projected = baseline::ProjectedSites::default();
+    for rule in meta.rules { projected.register_rule(rule.name); }
+    for (site, line) in run.sites.iter().zip(source_lines) {
+        work.checkpoint()?;
+        let prior = source.0.entry(site.rel.as_str()).or_default().insert(site.line, line.as_str());
+        if prior.is_some_and(|prior| prior != line.as_str()) {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "conflicting captured text for a library finding"));
+        }
+        projected.register_site(site, line);
+    }
+    if let Some(text) = bytes.and_then(|bytes| std::str::from_utf8(bytes).ok()) {
+        // Each parsed row is borrowed, including the stale and unknown rows.
+        // No second copy or retained map of all baseline lines is required.
+        for line in baseline::sites_lines(text) {
+            work.checkpoint()?;
+            if let Some((rule, file, fingerprint)) = baseline::parse_sites_row(line) {
+                projected.observe_literal_row(rule, file, fingerprint).ok_or_else(|| work.overflow())?;
+            }
+        }
+    }
+    let report = crate::policy_judge::judge_report_using(meta, scope, &source, run, root, &None, false,
+        |_, _, _| false, |_, _| false, Some(crate::policy_judge::Sites::Projected(projected)));
+    work.checkpoint()?;
+    Ok(report)
 }
 pub struct Text{pub clean:bool,pub text:String,pub allow_usage:BTreeSet<(String,String,u32)>}
 /// Use the SAME policy judge and SAME baseline parser. Source-owned entries

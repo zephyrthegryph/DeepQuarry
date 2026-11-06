@@ -31,6 +31,17 @@ impl Roster {
         Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithCooldownAndEngineInternal,
     ];
 
+    fn names_v2() -> impl Iterator<Item = Self> {
+        Self::GENERIC_V2.into_iter().chain([Self::WithLibraryLayering])
+    }
+
+    pub fn v2_for(judgment: JudgmentV2) -> &'static [Self] {
+        match judgment {
+            JudgmentV2::Raw | JudgmentV2::CiCeilings => &Self::GENERIC_V2,
+            JudgmentV2::CiLibrarySites => &[Self::WithLibraryLayering],
+        }
+    }
+
     pub fn is_combined(self) -> bool {
         matches!(self, Self::WithSemanticReads | Self::WithReactivePolicies)
     }
@@ -101,7 +112,7 @@ pub struct Frame {
 pub struct SelectedPoliciesV2(Roster);
 impl SelectedPoliciesV2 {
     pub fn for_roster(roster: Roster) -> io::Result<Self> {
-        if !Roster::GENERIC_V2.contains(&roster) {
+        if !Roster::names_v2().any(|candidate| candidate == roster) {
             return Err(invalid("selected policy set is outside Analyze-only v2 qualification"));
         }
         Ok(Self(roster))
@@ -122,7 +133,8 @@ impl<'de> Deserialize<'de> for SelectedPoliciesV2 {
                 f.write_str("a qualified ordered Analyze-only policy set")
             }
             fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-                let mut candidates = Roster::GENERIC_V2.map(Some);
+                let mut candidates = [None; Roster::GENERIC_V2.len() + 1];
+                for (slot, roster) in candidates.iter_mut().zip(Roster::names_v2()) { *slot = Some(roster); }
                 for i in 0..=Roster::MAX_POLICIES {
                     let name = seq.next_element::<String>()?;
                     for roster in &mut candidates {
@@ -151,6 +163,7 @@ pub enum JudgmentV2 {
     #[default]
     Raw,
     CiCeilings,
+    CiLibrarySites,
 }
 impl JudgmentV2 {
     pub fn is_raw(&self) -> bool { *self == Self::Raw }
@@ -180,8 +193,8 @@ impl TerminalV2 {
         self.require_using(expected, JudgmentV2::Raw)
     }
     pub fn require_using(self, expected: Roster, judgment: JudgmentV2) -> io::Result<()> {
-        if self.judgment != judgment {
-            return Err(invalid("selected v2 terminal differs from the requested judgment"));
+        if self.judgment != judgment || !Roster::v2_for(judgment).contains(&expected) {
+            return Err(invalid("selected v2 terminal differs from the requested judgment or scope"));
         }
         if self.policies != SelectedPoliciesV2::for_roster(expected)? {
             return Err(invalid("selected v2 terminal names foreign policies"));

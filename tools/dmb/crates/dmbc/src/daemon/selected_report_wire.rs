@@ -481,6 +481,9 @@ pub(crate) fn receive_combined(stream: &mut impl Read, cache: &Path, expected: R
 }
 
 pub(crate) fn receive_v2(stream: &mut impl Read, cache: &Path, expected: Roster, judgment: JudgmentV2) -> Result<Delivered<TerminalV2>, Box<dyn Error>> {
+    if !Roster::v2_for(judgment).contains(&expected) {
+        return Err(invalid("selected v2 receive requires its admitted roster and judgment").into());
+    }
     SelectedPoliciesV2::for_roster(expected)?;
     match receive_mode(stream, cache, expected, Mode::GenericV2(judgment), false)? {
         Received::GenericV2(delivered) => Ok(delivered),

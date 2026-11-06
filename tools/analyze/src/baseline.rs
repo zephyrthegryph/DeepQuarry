@@ -64,16 +64,95 @@ pub fn read_sites(path: &Path) -> BTreeMap<String, Counter> {
 /// Shared baseline interpretation; native admission lends the actual read.
 pub(crate) fn parse_sites_text(text:String)->BTreeMap<String,Counter>{
     let mut base:BTreeMap<String,Counter>=BTreeMap::new();
-    let text = crate::util::universal_newlines(text);
-    for line in text.split('\n') {
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let mut parts = line.splitn(3, '\t');
-        let (Some(rule), Some(file), Some(txt)) = (parts.next(), parts.next(), parts.next()) else { continue };
+    for (rule, file, txt) in sites_lines(&text).filter_map(parse_sites_row) {
         *base.entry(rule.to_string()).or_default().entry((file.to_string(), canon_text(rule, txt))).or_insert(0) += 1;
     }
     base
+}
+
+/// A CRLF pair yields one extra empty segment, which the row grammar
+/// already ignores. Standalone CR and LF are both line terminators.
+pub(crate) fn sites_lines(text: &str) -> impl Iterator<Item = &str> {
+    text.split(['\r', '\n'])
+}
+
+pub(crate) fn parse_sites_row(line: &str) -> Option<(&str, &str, &str)> {
+    if line.is_empty() || line.starts_with('#') {
+        return None;
+    }
+    let mut parts = line.splitn(3, '\t');
+    Some((parts.next()?, parts.next()?, parts.next()?))
+}
+
+#[derive(Default)]
+struct ProjectedRule<'a> {
+    known: i64,
+    remaining: BTreeMap<&'a str, BTreeMap<String, i64>>,
+}
+
+/// Only actual finding keys are retained. Known still counts every parsed
+/// row for the rule, including duplicates and keys with no current finding.
+#[derive(Default)]
+pub(crate) struct ProjectedSites<'a>(BTreeMap<&'static str, ProjectedRule<'a>>);
+
+impl<'a> ProjectedSites<'a> {
+    pub(crate) fn register_rule(&mut self, rule: &'static str) {
+        self.0.entry(rule).or_default();
+    }
+
+    pub(crate) fn register_site(&mut self, site: &'a Site, line: &str) {
+        if let Some(rule) = self.0.get_mut(site.rule.as_str()) {
+            rule.remaining.entry(site.rel.as_str()).or_default().entry(fp_of(site, line)).or_default();
+        }
+    }
+
+    /// The producer excludes canon-transforming rules before using this fold.
+    pub(crate) fn observe_literal_row(&mut self, rule: &str, file: &str, fingerprint: &str) -> Option<()> {
+        if let Some(rule) = self.0.get_mut(rule) {
+            rule.known = rule.known.checked_add(1)?;
+            if let Some(count) = rule.remaining.get_mut(file).and_then(|rows| rows.get_mut(fingerprint)) {
+                *count = count.checked_add(1)?;
+            }
+        }
+        Some(())
+    }
+}
+
+enum RuleAllowance<'a> {
+    Full(Counter),
+    Projected { rule: ProjectedRule<'a>, claimed: i64 },
+}
+
+impl RuleAllowance<'_> {
+    fn known(&self) -> i64 {
+        match self {
+            Self::Full(rows) => rows.values().sum(),
+            Self::Projected { rule, .. } => rule.known,
+        }
+    }
+
+    fn claim(&mut self, site: &Site, fp: &str) -> bool {
+        let (count, claimed) = match self {
+            Self::Full(rows) => (rows.get_mut(&(site.rel.clone(), fp.to_owned())), None),
+            Self::Projected { rule, claimed } =>
+                (rule.remaining.get_mut(site.rel.as_str()).and_then(|rows| rows.get_mut(fp)), Some(claimed)),
+        };
+        match count {
+            Some(n) if *n > 0 => {
+                *n -= 1;
+                if let Some(claimed) = claimed { *claimed += 1; }
+                true
+            }
+            _ => false,
+        }
+    }
+
+    fn gone(&self) -> i64 {
+        match self {
+            Self::Full(rows) => rows.values().filter(|value| **value > 0).sum(),
+            Self::Projected { rule, claimed } => rule.known - *claimed,
+        }
+    }
 }
 
 /// A site with its fingerprint text.
@@ -219,24 +298,41 @@ pub(crate) fn check_sites_with_base<S:SiteText+?Sized>(
     out: &mut String,
 ) -> bool {
 
+    check_sites_with_allowance(label, tree, by_rule, hints, banned, out,
+        |rule| RuleAllowance::Full(base.get(rule).cloned().unwrap_or_default()))
+}
+
+pub(crate) fn check_sites_with_projection<S: SiteText + ?Sized>(
+    label: &str,
+    tree: &S,
+    by_rule: &[(&str, Vec<&Site>)],
+    hints: &dyn Fn(&str) -> String,
+    mut base: ProjectedSites<'_>,
+    banned: &[&str],
+    out: &mut String,
+) -> bool {
+    check_sites_with_allowance(label, tree, by_rule, hints, banned, out,
+        |rule| RuleAllowance::Projected { rule: base.0.remove(rule).unwrap_or_default(), claimed: 0 })
+}
+
+fn check_sites_with_allowance<'a, S: SiteText + ?Sized>(
+    label: &str, tree: &S, by_rule: &[(&str, Vec<&Site>)], hints: &dyn Fn(&str) -> String,
+    banned: &[&str], out: &mut String, mut allowance: impl FnMut(&str) -> RuleAllowance<'a>,
+) -> bool {
     let mut failed = false;
     let mut new_lines: Vec<String> = Vec::new();
     for (rule, found) in by_rule {
-        let mut budget: Counter = if banned.contains(rule) { Counter::new() } else { base.get(*rule).cloned().unwrap_or_default() };
-        let known: i64 = budget.values().sum();
+        let mut budget = if banned.contains(rule) { RuleAllowance::Full(Counter::new()) } else { allowance(rule) };
+        let known = budget.known();
         let mut fresh: Vec<(String, u32, String)> = Vec::new();
         for fp in fingerprints(tree, found) {
-            let key = (fp.site.rel.clone(), fp.fp.clone());
-            match budget.get_mut(&key) {
-                Some(b) if *b > 0 => *b -= 1,
-                _ => {
-                    // A declaration site carries its own message (the lines that offend); the declaration line alone does not help.
-                    let shown = if fp.site.msg.is_empty() || fp.site.ident.is_empty() { fp.text } else { fp.site.msg.clone() };
-                    fresh.push((fp.site.rel.clone(), fp.site.line, shown))
-                }
+            if !budget.claim(fp.site, &fp.fp) {
+                // A declaration site carries its own message (the lines that offend); the declaration line alone does not help.
+                let shown = if fp.site.msg.is_empty() || fp.site.ident.is_empty() { fp.text } else { fp.site.msg.clone() };
+                fresh.push((fp.site.rel.clone(), fp.site.line, shown));
             }
         }
-        let gone: i64 = budget.values().filter(|v| **v > 0).sum();
+        let gone = budget.gone();
         let status = if !fresh.is_empty() {
             failed = true;
             format!("FAIL ({} new site{})", fresh.len(), if fresh.len() == 1 { "" } else { "s" })
