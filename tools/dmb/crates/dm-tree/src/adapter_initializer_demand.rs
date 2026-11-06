@@ -42,14 +42,24 @@ pub(super) trait AdapterDemand:sealed::Sealed{
     )->Result<SymbolId,WalkFailure<Self::Operational>>{
         symbols.intern(text).map_err(|error|WalkFailure::Source(error.to_string()))
     }
+    fn lexical_procedure_header(
+        &self, text: &str, _prepared: bool,
+    ) -> Result<LexicalProcedureHeader, WalkFailure<Self::Operational>> {
+        canonical(text).map(LexicalProcedureHeader::Compatibility).map_err(WalkFailure::Source)
+    }
     fn procedure_canonical(
-        &self, header:Arc<[u8]>, procedure:&dm_ir::ProcedureMetadata,
+        &self, header:LexicalProcedureHeader, procedure:&dm_ir::ProcedureMetadata,
         prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
     )->Result<Arc<[u8]>,Self::Operational>;
     fn variable<'o,'n>(&self,span:dm_syntax::Span,normalized:&'n str,headers:Option<(&'o crate::procedure::OriginalProcedureHeaders,usize)>)->Result<VariableParts<'o,'n>,WalkFailure<Self::Operational>>;
     fn constant(&self,parts:&VariableParts<'_,'_>,expression:Option<&dm_ir::SymbolicExpression>,symbols:&mut SymbolTable)->Result<Option<dm_ir::SemanticValue>,WalkFailure<Self::Operational>>;
     fn assignment(&self,span:dm_syntax::Span,header:&str,index:usize,headers:Option<(&crate::procedure::OriginalProcedureHeaders,usize)>,symbols:&mut SymbolTable)->Result<dm_ir::SymbolicExpression,WalkFailure<Self::Operational>>;
 }
+pub(super) enum LexicalProcedureHeader {
+    Compatibility(Arc<[u8]>),
+    Original(crate::procedure::original_primary_signatures::FundedCanonicalHeader),
+}
+
 fn append_procedure_canonical_unmetered(header:Arc<[u8]>,procedure:&dm_ir::ProcedureMetadata)->Arc<[u8]>{
     let mut bytes=header.to_vec();
     drop(header);
@@ -76,7 +86,8 @@ impl AdapterDemand for Compatibility{
     fn member_metadata(&self, metadata:MemberMetadata,_:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<MemberMetadata>,Self::Operational>{
         Ok(Arc::new(metadata))
     }
-    fn procedure_canonical(&self,header:Arc<[u8]>,procedure:&dm_ir::ProcedureMetadata,_:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<[u8]>,Self::Operational>{
+    fn procedure_canonical(&self,header:LexicalProcedureHeader,procedure:&dm_ir::ProcedureMetadata,_:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<[u8]>,Self::Operational>{
+        let LexicalProcedureHeader::Compatibility(header) = header else { unreachable!("compatibility issued its own lexical header") };
         Ok(append_procedure_canonical_unmetered(header,procedure))
     }
     fn checkpoint(&self)->Result<(),Self::Operational>{Ok(())}
@@ -142,10 +153,22 @@ impl AdapterDemand for Checked<'_,'_>{
         };
         inserted.map_err(|error|WalkFailure::Source(error.to_string()))
     }
-    fn procedure_canonical(&self,header:Arc<[u8]>,procedure:&dm_ir::ProcedureMetadata,prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<[u8]>,Self::Operational>{
-        match prepared{
-            Some(actual)=>actual.append_procedure_canonical(header,procedure,self.admission),
-            None=>Ok(append_procedure_canonical_unmetered(header,procedure)),
+    fn lexical_procedure_header(
+        &self, text: &str, prepared: bool,
+    ) -> Result<LexicalProcedureHeader, WalkFailure<Self::Operational>> {
+        if !prepared {
+            return canonical(text).map(LexicalProcedureHeader::Compatibility).map_err(WalkFailure::Source);
+        }
+        use crate::procedure::original_primary_signatures::FundedCanonicalHeader;
+        FundedCanonicalHeader::encode(text, self.admission).map_err(WalkFailure::Operational)?
+            .map(LexicalProcedureHeader::Original)
+            .ok_or_else(|| WalkFailure::Source("invalid tokens in declaration metadata".into()))
+    }
+    fn procedure_canonical(&self,header:LexicalProcedureHeader,procedure:&dm_ir::ProcedureMetadata,prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<[u8]>,Self::Operational>{
+        match (prepared, header) {
+            (Some(actual), LexicalProcedureHeader::Original(header)) => actual.append_procedure_canonical(header,procedure,self.admission),
+            (None, LexicalProcedureHeader::Compatibility(header)) => Ok(append_procedure_canonical_unmetered(header,procedure)),
+            _ => Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "canonical header funding differs from the adapter role")),
         }
     }
     fn checkpoint(&self)->Result<(),Self::Operational>{let status=self.admission.checkpoint();if let Some(actual)=self.admission.take_operational_error(){return Err(actual);}status}

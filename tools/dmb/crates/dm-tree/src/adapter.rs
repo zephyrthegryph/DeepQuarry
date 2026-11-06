@@ -289,39 +289,50 @@ pub(crate) fn absolute(owner: &str, path: &str) -> Result<String, String> {
     TypePath::parse(&full).map_err(str::to_owned)?;
     Ok(full)
 }
+pub(crate) const CANONICAL_HEADER_PREFIX: &[u8] = b"dm-declaration-tokens-v1\0";
+
+/// One canonical token record. The default lexer supplies both the spelling
+/// and the span used to distinguish adjacent operators and punctuation.
+pub(crate) fn canonical_header_token<E>(
+    token: dm_syntax::SpanToken,
+    spelling: &str,
+    previous: &mut Option<(TokenKind, usize)>,
+    mut write: impl FnMut(&[u8]) -> Result<(), E>,
+) -> Result<(), E> {
+    if matches!(token.kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment) {
+        return Ok(());
+    }
+    let sensitive = previous.is_some_and(|(kind, _)| matches!(kind, TokenKind::Operator | TokenKind::Punctuation))
+        && matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation);
+    let mut frame = [0; 10];
+    frame[0] = if sensitive {
+        if previous.is_some_and(|(_, end)| end == token.span.start) { 1 } else { 2 }
+    } else { 0 };
+    frame[1] = token.kind as u8;
+    frame[2..].copy_from_slice(&(spelling.len() as u64).to_le_bytes());
+    *previous = Some((token.kind, token.span.end));
+    write(&frame)?;
+    write(spelling.as_bytes())
+}
+
 /// Lossless token spellings with explicit kind/length framing. Whitespace and
 /// comments are omitted; string contents and source settings are not rewritten.
-fn canonical(text: &str) -> Result<Arc<[u8]>, String> {
+pub(crate) fn canonical(text: &str) -> Result<Arc<[u8]>, String> {
     let tokens = dm_syntax::lex(text);
     if !tokens.diagnostics.is_empty() {
         return Err("invalid tokens in declaration metadata".into());
     }
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(b"dm-declaration-tokens-v1\0");
+    let mut bytes = CANONICAL_HEADER_PREFIX.to_vec();
     let mut previous = None;
     for token in tokens.tokens {
-        if matches!(
-            token.kind,
-            TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
-        ) {
-            continue;
+        let span = dm_syntax::SpanToken { kind: token.kind, span: token.span };
+        match canonical_header_token(span, &token.text, &mut previous, |chunk| {
+            bytes.extend_from_slice(chunk);
+            Ok::<_, std::convert::Infallible>(())
+        }) {
+            Ok(()) => (),
+            Err(never) => match never {},
         }
-        let sensitive = previous
-            .is_some_and(|(kind, _)| matches!(kind, TokenKind::Operator | TokenKind::Punctuation))
-            && matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation);
-        bytes.push(if sensitive {
-            if previous.is_some_and(|(_, end)| end == token.span.start) {
-                1
-            } else {
-                2
-            }
-        } else {
-            0
-        });
-        previous = Some((token.kind, token.span.end));
-        bytes.push(token.kind as u8);
-        bytes.extend_from_slice(&(token.text.len() as u64).to_le_bytes());
-        bytes.extend_from_slice(token.text.as_bytes());
     }
     Ok(bytes.into())
 }
@@ -626,7 +637,9 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         error.message
                     })?};
                     header_declarations = parsed_signature.declarations;
-                    let lexical_header = canonical(header)?;
+                    let lexical_header = context.demand.lexical_procedure_header(
+                        header, context.prepared_signatures.is_some(),
+                    )?;
                     let path = format!("{}/{}{name}", owner.trim_end_matches('/'), marker);
                     context.symbol(&path)?;
                     let owner_id = context.symbol(&owner)?;

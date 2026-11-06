@@ -166,8 +166,19 @@ pub(crate) fn grow_funded_rows<T>(
     storage: &mut Option<dm_syntax::SettingRootLease>,
     a: &SettingAdmission<'_>,
 ) -> std::io::Result<()> {
+    ensure_funded_rows(rows, storage, a, 1)
+}
+
+fn ensure_funded_rows<T>(
+    rows: &mut Vec<T>,
+    storage: &mut Option<dm_syntax::SettingRootLease>,
+    a: &SettingAdmission<'_>,
+    additional: usize,
+) -> std::io::Result<()> {
     use std::{alloc::{alloc, Layout}, io::{Error, ErrorKind}, ptr::NonNull};
-    let capacity = rows.capacity().max(2).checked_mul(2).ok_or(ErrorKind::OutOfMemory)?;
+    let needed = rows.len().checked_add(additional).ok_or(ErrorKind::OutOfMemory)?;
+    if needed <= rows.capacity() { return Ok(()); }
+    let capacity = rows.capacity().max(2).checked_mul(2).ok_or(ErrorKind::OutOfMemory)?.max(needed);
     let layout = Layout::array::<T>(capacity).map_err(|_| Error::from(ErrorKind::OutOfMemory))?;
     if layout.size() == 0 || storage.as_ref().is_some_and(|credit| !a.matches_lease_domain(credit)) {
         return Err(ErrorKind::InvalidInput.into());
@@ -248,51 +259,70 @@ impl dm_ir::CanonicalWork for ProcedureCanonicalWork<'_, '_> {
     }
 }
 
+/// The normalized lexical prefix moves into the final writer with its exact
+/// buffer reservation. Fields drop the actual Vec before the matching credit.
+pub(crate) struct FundedCanonicalHeader {
+    bytes: Vec<u8>,
+    storage: Option<dm_syntax::SettingRootLease>,
+}
+impl FundedCanonicalHeader {
+    pub(crate) fn encode(text: &str, a: &SettingAdmission<'_>) -> std::io::Result<Option<Self>> {
+        use dm_syntax::{NativeTokenCursor, NativeTokenStep};
+        let mut cursor = NativeTokenCursor::default();
+        let mut header = Self { bytes: Vec::new(), storage: None };
+        header.write(crate::adapter::CANONICAL_HEADER_PREFIX, a)?;
+        let mut previous = None;
+        loop {
+            let mut diagnostic = false;
+            let step = cursor.next_available_using(text, true, a, |_, _, _| {
+                diagnostic = true;
+                false
+            }).map_err(|error| a.take_operational_error().unwrap_or(error))?;
+            if diagnostic { return Ok(None); }
+            match step {
+                NativeTokenStep::Token(token) => {
+                    let spelling = text.get(token.span.range()).ok_or(std::io::ErrorKind::InvalidData)?;
+                    crate::adapter::canonical_header_token(token, spelling, &mut previous,
+                        |chunk| header.write(chunk, a))?;
+                }
+                NativeTokenStep::End => return Ok(Some(header)),
+                NativeTokenStep::NeedInput | NativeTokenStep::Stopped => return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData, "final canonical header lexer has no completed boundary",
+                )),
+            }
+        }
+    }
+
+    fn write(&mut self, chunk: &[u8], a: &SettingAdmission<'_>) -> std::io::Result<()> {
+        ensure_funded_rows(&mut self.bytes, &mut self.storage, a, chunk.len())?;
+        self.bytes.extend_from_slice(chunk);
+        Ok(())
+    }
+}
+
 fn append_procedure_canonical(
-    header: Arc<[u8]>,
+    mut header: FundedCanonicalHeader,
     procedure: &dm_ir::ProcedureMetadata,
     held: &mut Option<dm_syntax::SettingRootLease>,
     a: &SettingAdmission<'_>,
 ) -> std::io::Result<Arc<[u8]>> {
-    use dm_ir::CanonicalWork as _;
-    use std::alloc::Layout;
     use std::io::{Error, ErrorKind};
-    use std::sync::atomic::AtomicUsize;
-
+    checkpoint(a)?;
+    if header.storage.as_ref().is_none_or(|lease| !a.matches_lease_domain(lease)) {
+        return Err(Error::new(ErrorKind::InvalidInput, "canonical header uses another resource domain"));
+    }
     let reserve = |bytes| a.reserve(bytes)
         .map_err(|proxy| a.take_operational_error().unwrap_or(proxy));
     let mut work = ProcedureCanonicalWork { admission: a, scratch: reserve(0)? };
-    let header_bound = header.len().checked_mul(4).ok_or(ErrorKind::OutOfMemory)?;
-    work.reserve(header_bound)?;
-    let mut joined = Vec::new();
-    joined.try_reserve_exact(header.len()).map_err(|actual| Error::new(ErrorKind::OutOfMemory, actual))?;
-    if joined.capacity() > header_bound {
-        return Err(ErrorKind::OutOfMemory.into());
-    }
-    joined.extend_from_slice(&header);
-    drop(header);
     let encoded = procedure.canonical_bytes_using(&mut work)?;
-    let len = joined.len().checked_add(encoded.len()).ok_or(ErrorKind::OutOfMemory)?;
-    // Preserve the Arc accounting convention used by the signature roots:
-    // one inline byte slice and its two reference count words.
-    let bytes = Layout::array::<u8>(len).map_err(|_| ErrorKind::OutOfMemory)?;
-    let (layout, _) = Layout::new::<[AtomicUsize; 2]>().extend(bytes)
-        .map_err(|_| ErrorKind::OutOfMemory)?;
-    let mut retained = reserve(layout.pad_to_align().size())?;
-
-    // The joining Vec overlaps the already-funded encoded bytes and final Arc.
-    let join_bound = len.checked_mul(4).ok_or(ErrorKind::OutOfMemory)?;
-    if len > joined.capacity() {
-        work.reserve(join_bound)?;
-        joined.try_reserve_exact(encoded.len()).map_err(|actual| Error::new(ErrorKind::OutOfMemory, actual))?;
-        if joined.capacity() > join_bound {
-            return Err(ErrorKind::OutOfMemory.into());
-        }
-    }
-    joined.extend_from_slice(&encoded);
-    let result: Arc<[u8]> = joined.into();
+    let len = header.bytes.len().checked_add(encoded.len()).ok_or(ErrorKind::OutOfMemory)?;
+    header.write(&encoded, a)?;
     drop(encoded);
     drop(work);
+
+    let mut retained = reserve(arc_payload::<u8>(len).ok_or(ErrorKind::OutOfMemory)?)?;
+    let result: Arc<[u8]> = std::mem::take(&mut header.bytes).into();
+    drop(header);
     if let Some(owner) = held {
         a.absorb(owner, &mut retained)?;
     } else {
@@ -342,7 +372,7 @@ impl OriginalSignatureSpellings {
 /// Coordinate/source equality cannot substitute another header owner.
 pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:Vec<Row>,row_storage:Option<dm_syntax::SettingRootLease>,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,adapter_storage:Option<dm_syntax::SettingRootLease>}
 impl PreparedOriginalSignatures{
- pub(crate) fn append_procedure_canonical(&mut self,header:Arc<[u8]>,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<Arc<[u8]>>{
+ pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<Arc<[u8]>>{
   append_procedure_canonical(header,procedure,&mut self.adapter_storage,a)
  }
  pub(crate) fn admit_adapter_storage(&mut self,bytes:usize,a:&SettingAdmission<'_>)->std::io::Result<()>{
@@ -1046,6 +1076,47 @@ mod procedure_canonical_allocation_tests {
     use std::{cell::Cell, sync::atomic::{AtomicUsize, Ordering}};
 
     #[test]
+    fn funded_canonical_header_preserves_the_existing_wire_frame() {
+        use dm_syntax::TokenKind::{Ident, Punctuation};
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
+        for (text, closing) in [("/proc/p()", 1), ("/proc/p(/* gap */)", 2)] {
+            let mut expected = b"dm-declaration-tokens-v1\0".to_vec();
+            for (adjacency, kind, spelling) in [
+                (0, Punctuation, "/"), (0, Ident, "proc"), (0, Punctuation, "/"),
+                (0, Ident, "p"), (0, Punctuation, "("), (closing, Punctuation, ")"),
+            ] {
+                expected.extend([adjacency, kind as u8]);
+                expected.extend((spelling.len() as u64).to_le_bytes());
+                expected.extend(spelling.as_bytes());
+            }
+            let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
+            assert_eq!(header.bytes, expected);
+            assert_eq!(used.load(Ordering::Acquire), header.bytes.capacity());
+            drop(header);
+            assert_eq!(used.load(Ordering::Acquire), 0);
+        }
+    }
+
+    #[test]
+    fn malformed_funded_lexical_header_and_first_io_release_the_buffer() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
+        assert!(FundedCanonicalHeader::encode("/proc/p(\"unterminated", &a).unwrap().is_none());
+        assert_eq!(used.load(Ordering::Acquire), 0);
+
+        let calls = Cell::new(0);
+        let fault = || {
+            calls.set(calls.get() + 1);
+            if calls.get() == 6 { Err(std::io::Error::from_raw_os_error(1450)) } else { Ok(()) }
+        };
+        let failed = SettingAdmission::new(&used, 32 << 20, &fault);
+        let error = FundedCanonicalHeader::encode("/proc/p(a=1)", &failed).err().unwrap();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
     fn prepared_canonical_reconciles_per_call_scratch_and_preserves_first_io() {
         let proc = dm_ir::ProcedureMetadata {
             signature: dm_ir::ProcedureSignature {
@@ -1055,13 +1126,14 @@ mod procedure_canonical_allocation_tests {
             },
             settings: Arc::from([]),
         };
-        let header: Arc<[u8]> = Arc::from(b"existing lexical canonical".as_slice());
-        let mut expected = header.to_vec();
+        let text = r#"/datum/é/proc/probe(a = list(1, "a\n b"), b = (5+-2 /* spacing */ ))"#;
+        let mut expected = crate::adapter::canonical(text).unwrap().to_vec();
         expected.extend_from_slice(&proc.canonical_bytes());
         let used = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         let mut held = None;
-        let first = append_procedure_canonical(Arc::clone(&header), &proc, &mut held, &a).unwrap();
+        let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
+        let first = append_procedure_canonical(header, &proc, &mut held, &a).unwrap();
         assert_eq!(first.as_ref(), expected.as_slice());
         let retained = held.as_ref().unwrap().bytes();
         assert_eq!(used.load(Ordering::Acquire), retained);
@@ -1077,16 +1149,18 @@ mod procedure_canonical_allocation_tests {
             Ok(())
         };
         let failed = SettingAdmission::new(&used, 32 << 20, &error);
-        assert_eq!(append_procedure_canonical(Arc::clone(&header), &proc, &mut held, &failed)
+        let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
+        assert_eq!(append_procedure_canonical(header, &proc, &mut held, &failed)
             .unwrap_err().raw_os_error(), Some(1450));
         assert_eq!(used.load(Ordering::Acquire), retained);
         assert_eq!(held.as_ref().unwrap().bytes(), retained);
 
         let too_small = SettingAdmission::new(&used, retained, &|| Ok(()));
-        assert_eq!(append_procedure_canonical(Arc::clone(&header), &proc, &mut held, &too_small)
-            .unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(FundedCanonicalHeader::encode(text, &too_small).err().unwrap().kind(),
+            std::io::ErrorKind::OutOfMemory);
         assert_eq!(used.load(Ordering::Acquire), retained);
-        let second = append_procedure_canonical(Arc::clone(&header), &proc, &mut held, &a).unwrap();
+        let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
+        let second = append_procedure_canonical(header, &proc, &mut held, &a).unwrap();
         assert_eq!(second, first);
         assert_eq!(used.load(Ordering::Acquire), retained * 2);
         drop((first, second, held));
