@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The cash register and retail scanner share one till datum for the ticket, the sale and the window's buttons"
+  - bugfix: "The checkout window's add, subtract and remove-line buttons send the item name the way the window does"

@@ -69,7 +69,6 @@
 // locked: instance storage belongs to the machine families that use it.
 /obj/machinery/ai_slipper/var/locked = FALSE
 /obj/machinery/bodyscanner/var/locked = FALSE
-/obj/machinery/cash_register/var/locked = FALSE
 /obj/machinery/clonepod/var/locked = FALSE
 /obj/machinery/dna_scannernew/var/locked = FALSE
 /obj/machinery/navbeacon/var/locked = FALSE

@@ -58,8 +58,8 @@ CAPABILITIES(/datum/controller/kernel)
 	if (world.time < K.restart_timeout) // ALLOW(sys_world_time_expiry): the kernel loop's own bookkeeping (drift, restart rate limit), not an entity expiry
 		return 0
 	if (world.time < K.restart_clear) // ALLOW(sys_world_time_expiry): the kernel loop's own bookkeeping (drift, restart rate limit), not an entity expiry
-		K.restart_count *= 0.5
-	var/delay = 50 * ++K.restart_count
+		K.restart_count = round(K.restart_count / 2)
+	var/delay = 5 SECONDS * ++K.restart_count
 	K.restart_timeout = world.time + delay // ALLOW(sys_world_time_write): the kernel loop's own bookkeeping (drift, restart rate limit), not an entity expiry
 	K.restart_clear = world.time + (delay * 2) // ALLOW(sys_world_time_write): the kernel loop's own bookkeeping (drift, restart rate limit), not an entity expiry
 	try
@@ -73,7 +73,7 @@ CAPABILITIES(/datum/controller/kernel)
 /datum/controller/kernel/proc/restart_loop()
 	loop_gen++ // the old loop sees a stale generation at its next wake and exits
 	Kernel.processing = max(Kernel.processing, 1)
-	start_loop(10)
+	start_loop(1 SECOND)
 
 /// Drops every work item's in-flight run (a yielded sweep, an open cursor), so the next loop starts them clean.
 /datum/controller/kernel/proc/reset_work()
@@ -147,8 +147,7 @@ CAPABILITIES(/datum/controller/kernel)
 
 		//debug
 		if (Kernel.make_runtime)
-			var/datum/system/SS
-			SS.set_can_fire(0)
+			CRASH("Kernel.make_runtime: a runtime made on purpose to test the loop's restart")
 
 		if (!watchdog || (watchdog.processing_interval > 0 && (watchdog.lasttick+(watchdog.processing_interval*5)) < world.time)) // ALLOW(sys_world_time_expiry): the kernel loop's own bookkeeping (drift, restart rate limit), not an entity expiry
 			start_watchdog() // (re)start the watchdog

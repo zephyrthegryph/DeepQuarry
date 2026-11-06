@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Settles of an area's virtual stats (power demand) made while a map load frame runs are queued and run once per stat when the frame closes or a read needs them"

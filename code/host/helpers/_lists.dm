@@ -165,15 +165,6 @@
 
 //////////////////////////////////////////////////////
 
-/// TRUE when `L` (an alist or list, or null) holds nothing. Never length(): an alist's length counts its keys (linear), while asking for
-/// the first key is constant.
-/proc/alist_empty(list/L)
-	if(!L)
-		return TRUE
-	for(var/key in L)
-		return FALSE
-	return TRUE
-
 //Removes any null entries from the list
 /proc/listclearnulls(list/list)
 	if(istype(list))

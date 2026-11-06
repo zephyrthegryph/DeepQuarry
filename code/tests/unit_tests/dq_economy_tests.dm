@@ -386,7 +386,7 @@
 	var/obj/item/retail_scanner/civilian/terminal = new(test_turf)
 	var/mob/living/carbon/human/user = new(test_turf)
 	user.set_job(JOB_ENGINEER)
-	rel_set(terminal, nameof(terminal.linked_account), service)
+	terminal.till.link_provider(service)
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 101, customer.account_number, customer.account_number, service, service), "changed ticket amount survived confirmation validation")
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 2, 100, 100, customer.account_number, customer.account_number, service, service), "equal-value itemization change survived confirmation validation")
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 100, customer.account_number, impostor.account_number, service, service), "changed ID survived confirmation validation")
@@ -477,24 +477,24 @@
 /datum/unit_test/dq_service_ticket_canonicalization/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/obj/item/retail_scanner/scanner = new(test_turf)
-	scanner.set_locked(FALSE)
+	scanner.till.set_locked(FALSE)
 	// The handlers are op effects now (datum/act/op/A, args...); they read only the actor, which a direct call names here.
 	var/datum/dq_test_op_stub/op_stub = new
-	TEST_ASSERT(scanner.ui_act_custom_order(op_stub, 2, 10, "Meal"), "scanner rejected a valid custom-order row")
-	TEST_ASSERT(scanner.ui_act_custom_order(op_stub, 3, 10, "Meal"), "scanner did not deterministically merge a duplicate row")
-	TEST_ASSERT_EQUAL(scanner.item_list["Meal"], 5, "scanner duplicate row overwrote rather than merged quantity")
-	TEST_ASSERT_EQUAL(scanner.transaction_amount, 50, "scanner total diverged from merged itemization")
-	TEST_ASSERT(!scanner.ui_act_custom_order(op_stub, 1, 11, "Meal"), "scanner accepted one item label with conflicting prices")
-	TEST_ASSERT_EQUAL(scanner.transaction_amount, 50, "rejected scanner row changed the payable total")
-	TEST_ASSERT(scanner.ui_act_custom_order(op_stub, 1, 7, "Drink"), "scanner rejected a second valid custom-order row")
-	TEST_ASSERT_EQUAL(scanner.transaction_amount, 57, "scanner did not derive its total from every visible row")
-	TEST_ASSERT_EQUAL(service_ticket_total(scanner.item_list, scanner.price_list), scanner.transaction_amount, "scanner itemization and payable total did not reconcile")
-	TEST_ASSERT(findtext(scanner.transaction_purpose, "Meal") && findtext(scanner.transaction_purpose, "Drink"), "scanner confirmation description omitted an itemized row")
-	var/revision_before_invalid = scanner.ticket_revision
-	var/staff_before_invalid = scanner.service_staff_account_number
-	TEST_ASSERT(!scanner.ui_act_custom_order(op_stub, 1, 10, ""), "scanner accepted an invalid custom order")
-	TEST_ASSERT_EQUAL(scanner.ticket_revision, revision_before_invalid, "rejected scanner input mutated the ticket revision")
-	TEST_ASSERT_EQUAL(scanner.service_staff_account_number, staff_before_invalid, "rejected scanner input changed staff attribution")
+	TEST_ASSERT(scanner.till.ui_act_custom_order(op_stub, 2, 10, "Meal"), "scanner rejected a valid custom-order row")
+	TEST_ASSERT(scanner.till.ui_act_custom_order(op_stub, 3, 10, "Meal"), "scanner did not deterministically merge a duplicate row")
+	TEST_ASSERT_EQUAL(scanner.till.item_list["Meal"], 5, "scanner duplicate row overwrote rather than merged quantity")
+	TEST_ASSERT_EQUAL(scanner.till.transaction_amount, 50, "scanner total diverged from merged itemization")
+	TEST_ASSERT(!scanner.till.ui_act_custom_order(op_stub, 1, 11, "Meal"), "scanner accepted one item label with conflicting prices")
+	TEST_ASSERT_EQUAL(scanner.till.transaction_amount, 50, "rejected scanner row changed the payable total")
+	TEST_ASSERT(scanner.till.ui_act_custom_order(op_stub, 1, 7, "Drink"), "scanner rejected a second valid custom-order row")
+	TEST_ASSERT_EQUAL(scanner.till.transaction_amount, 57, "scanner did not derive its total from every visible row")
+	TEST_ASSERT_EQUAL(service_ticket_total(scanner.till.item_list, scanner.till.price_list), scanner.till.transaction_amount, "scanner itemization and payable total did not reconcile")
+	TEST_ASSERT(findtext(scanner.till.transaction_purpose, "Meal") && findtext(scanner.till.transaction_purpose, "Drink"), "scanner confirmation description omitted an itemized row")
+	var/revision_before_invalid = scanner.till.ticket_revision
+	var/staff_before_invalid = scanner.till.service_staff_account_number
+	TEST_ASSERT(!scanner.till.ui_act_custom_order(op_stub, 1, 10, ""), "scanner accepted an invalid custom order")
+	TEST_ASSERT_EQUAL(scanner.till.ticket_revision, revision_before_invalid, "rejected scanner input mutated the ticket revision")
+	TEST_ASSERT_EQUAL(scanner.till.service_staff_account_number, staff_before_invalid, "rejected scanner input changed staff attribution")
 	var/datum/money_account/first_provider = new
 	first_provider.set_owner_name("First provider")
 	first_provider.set_account_number(884001)
@@ -511,27 +511,27 @@
 	second_provider.set_department_id(DEPARTMENT_CARGO)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, first_provider)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, second_provider)
-	rel_set(scanner, nameof(scanner.linked_account), first_provider)
-	scanner.service_staff_account_number = 884003
-	scanner.service_staff_name = "Previous worker"
-	TEST_ASSERT(scanner.ui_act_link_account(op_stub, second_provider.account_number, second_provider.remote_access_pin), "scanner rejected a valid provider relink")
-	TEST_ASSERT_EQUAL(length(scanner.item_list), 0, "scanner carried an old ticket into a new provider account")
-	TEST_ASSERT_EQUAL(scanner.service_staff_account_number, 0, "scanner carried old staff attribution into a new provider account")
+	scanner.till.link_provider(first_provider)
+	scanner.till.service_staff_account_number = 884003
+	scanner.till.service_staff_name = "Previous worker"
+	TEST_ASSERT(scanner.till.ui_act_link_account(op_stub, second_provider.account_number, second_provider.remote_access_pin), "scanner rejected a valid provider relink")
+	TEST_ASSERT_EQUAL(length(scanner.till.item_list), 0, "scanner carried an old ticket into a new provider account")
+	TEST_ASSERT_EQUAL(scanner.till.service_staff_account_number, 0, "scanner carried old staff attribution into a new provider account")
 
 	var/obj/machinery/cash_register/register = new(test_turf)
-	register.set_locked(FALSE)
-	TEST_ASSERT(register.ui_act_custom_order(op_stub, 2, 15, "Repair"), "register rejected a valid custom-order row")
-	TEST_ASSERT(register.ui_act_custom_order(op_stub, 1, 15, "Repair"), "register did not deterministically merge a duplicate row")
-	TEST_ASSERT_EQUAL(register.item_list["Repair"], 3, "register duplicate row overwrote rather than merged quantity")
-	TEST_ASSERT_EQUAL(register.transaction_amount, 45, "register total diverged from its itemization")
-	TEST_ASSERT(!register.ui_act_custom_order(op_stub, 1, 20, "Repair"), "register accepted one item label with conflicting prices")
-	TEST_ASSERT_EQUAL(service_ticket_total(register.item_list, register.price_list), register.transaction_amount, "register itemization and payable total did not reconcile")
-	rel_set(register, nameof(register.linked_account), first_provider)
-	register.service_staff_account_number = 884003
-	register.service_staff_name = "Previous worker"
-	TEST_ASSERT(register.ui_act_link_account(op_stub, second_provider.account_number, second_provider.remote_access_pin), "register rejected a valid provider relink")
-	TEST_ASSERT_EQUAL(length(register.item_list), 0, "register carried an old ticket into a new provider account")
-	TEST_ASSERT_EQUAL(register.service_staff_account_number, 0, "register carried old staff attribution into a new provider account")
+	register.till.set_locked(FALSE)
+	TEST_ASSERT(register.till.ui_act_custom_order(op_stub, 2, 15, "Repair"), "register rejected a valid custom-order row")
+	TEST_ASSERT(register.till.ui_act_custom_order(op_stub, 1, 15, "Repair"), "register did not deterministically merge a duplicate row")
+	TEST_ASSERT_EQUAL(register.till.item_list["Repair"], 3, "register duplicate row overwrote rather than merged quantity")
+	TEST_ASSERT_EQUAL(register.till.transaction_amount, 45, "register total diverged from its itemization")
+	TEST_ASSERT(!register.till.ui_act_custom_order(op_stub, 1, 20, "Repair"), "register accepted one item label with conflicting prices")
+	TEST_ASSERT_EQUAL(service_ticket_total(register.till.item_list, register.till.price_list), register.till.transaction_amount, "register itemization and payable total did not reconcile")
+	register.till.link_provider(first_provider)
+	register.till.service_staff_account_number = 884003
+	register.till.service_staff_name = "Previous worker"
+	TEST_ASSERT(register.till.ui_act_link_account(op_stub, second_provider.account_number, second_provider.remote_access_pin), "register rejected a valid provider relink")
+	TEST_ASSERT_EQUAL(length(register.till.item_list), 0, "register carried an old ticket into a new provider account")
+	TEST_ASSERT_EQUAL(register.till.service_staff_account_number, 0, "register carried old staff attribution into a new provider account")
 	TEST_ASSERT(!SSsupply.create_service_invoice(null, first_provider, "Malformed checkout", list("Meal" = 1), list("Meal" = 10), list("total" = 10, "subsidy" = 0, "personal" = 9, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null, "Malformed customer"), "invoice accepted a financial split that did not reconcile")
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, first_provider)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, second_provider)
@@ -571,34 +571,34 @@
 	rel_set(customer_pda, nameof(customer_pda.id), customer_id)
 
 	var/obj/machinery/cash_register/civilian/register = new(test_turf)
-	rel_set(register, nameof(register.linked_account), service)
-	register.set_transaction_amount(25)
-	register.transaction_purpose = "Lifecycle meal"
-	register.set_item_list_at("meal", 1)
-	register.set_price_list_at("meal", 25)
+	register.till.link_provider(service)
+	register.till.set_transaction_amount(25)
+	register.till.transaction_purpose = "Lifecycle meal"
+	register.till.set_item_list_at("meal", 1)
+	register.till.set_price_list_at("meal", 25)
 	var/obj/item/spacecash/ewallet/wallet = new(customer)
 	wallet.owner_name = customer_account.owner_name
 	wallet.set_worth(60)
-	register.scan_wallet(wallet, customer)
+	register.till.scan_wallet(wallet, customer)
 	TEST_ASSERT_EQUAL(wallet.worth, 35, "real register did not debit the e-wallet")
 	TEST_ASSERT_EQUAL(service.money, service_money_before + 25, "real register did not credit Service for an e-wallet sale")
 	var/datum/service_invoice/ewallet_invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
 	TEST_ASSERT_EQUAL(ewallet_invoice.payment_method, "E-Wallet", "e-wallet invoice recorded the wrong payment channel")
 
-	register.set_transaction_amount(30)
-	register.transaction_purpose = "Lifecycle cash meal"
-	register.set_item_list_at("cash meal", 1)
-	register.set_price_list_at("cash meal", 30)
+	register.till.set_transaction_amount(30)
+	register.till.transaction_purpose = "Lifecycle cash meal"
+	register.till.set_item_list_at("cash meal", 1)
+	register.till.set_price_list_at("cash meal", 30)
 	var/cash_before = register.cash_stored
 	var/obj/item/spacecash/c50/cash = new(customer)
-	register.scan_cash(cash, customer)
+	register.till.scan_cash(cash, customer)
 	TEST_ASSERT_EQUAL(cash.worth, 20, "real register deducted the wrong cash amount")
 	TEST_ASSERT_EQUAL(register.cash_stored, cash_before, "Service cash sale remained off-books in the till")
 	TEST_ASSERT_EQUAL(service.money, service_money_before + 55, "Service cash deposit did not reach the department account")
 	var/datum/service_invoice/cash_invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
 	TEST_ASSERT_EQUAL(cash_invoice.payment_method, "Cash", "cash invoice recorded the wrong payment channel")
 
-	var/datum/service_invoice/account_invoice = complete_service_checkout(customer_account, service, 40, "Lifecycle account meal", register.machine_id, list("account meal" = 1), list("account meal" = 40), 0, null, 0)
+	var/datum/service_invoice/account_invoice = complete_service_checkout(customer_account, service, 40, "Lifecycle account meal", register.till.machine_id, list("account meal" = 1), list("account meal" = 40), 0, null, 0)
 	TEST_ASSERT(account_invoice, "account checkout backend did not create an invoice")
 	var/datum/data/pda/app/service_receipts/receipt_app = customer_pda.find_program(/datum/data/pda/app/service_receipts)
 	var/list/pda_data = list()
@@ -610,10 +610,10 @@
 	TEST_ASSERT(summary["cash_sales"] >= 30, "Service summary omitted cash revenue")
 	TEST_ASSERT(summary["ewallet_sales"] >= 25, "Service summary omitted e-wallet revenue")
 
-	TEST_ASSERT(!SSsupply.refund_service_invoice(account_invoice, service, register.machine_id, customer), "a customer could refund their own Service invoice")
+	TEST_ASSERT(!SSsupply.refund_service_invoice(account_invoice, service, register.till.machine_id, customer), "a customer could refund their own Service invoice")
 	var/mob/living/carbon/human/refund_operator = new(test_turf)
 	refund_operator.set_job(JOB_BARTENDER)
-	TEST_ASSERT(SSsupply.refund_service_invoice(account_invoice, service, register.machine_id, refund_operator), "authorized Service staff could not refund a real invoice")
+	TEST_ASSERT(SSsupply.refund_service_invoice(account_invoice, service, register.till.machine_id, refund_operator), "authorized Service staff could not refund a real invoice")
 	receipt_app.update_ui(customer, pda_data)
 	TEST_ASSERT_EQUAL(pda_data["service_receipts"][1]["state"], "Refunded", "PDA receipt did not update after refund")
 
@@ -728,15 +728,15 @@
 
 	// The same provenance supplies a crew-facing price through Research's departmental checkout scanner.
 	var/obj/item/retail_scanner/science/scanner = new(test_turf)
-	rel_set(scanner, nameof(scanner.linked_account), research)
+	scanner.till.link_provider(research)
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/obj/item/card/id/customer_id = new(customer)
 	customer_id.set_associated_account_number(producer.account_number)
 	dq_test_wear_id(customer, customer_id)
-	scanner.scan_item_price(prototype, customer)
-	TEST_ASSERT_EQUAL(scanner.transaction_amount, 500, "R&D prototype did not receive a crew-facing Thaler price")
+	scanner.till.scan_item_price(prototype, customer)
+	TEST_ASSERT_EQUAL(scanner.till.transaction_amount, 500, "R&D prototype did not receive a crew-facing Thaler price")
 	var/research_before_crew_sale = research.money
-	scanner.scan_card(customer_id, customer_id, customer)
+	scanner.till.scan_card(customer_id, customer_id, customer)
 	TEST_ASSERT_EQUAL(research.money - research_before_crew_sale, 500, "Crew-facing R&D sale did not credit Research")
 	TEST_ASSERT_EQUAL(producer.money, 525, "Crew-facing R&D sale did not debit the purchaser")
 	var/datum/service_invoice/research_invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
@@ -1240,6 +1240,443 @@
 	qdel(crate)
 	qdel(export)
 	qdel(extra)
+
+
+
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The sale at a terminal (retail scanner and cash register): scan, total, pay, receipt, void. Both terminals keep one ticket the same way,
+// so one flow is run against each.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_till
+	abstract_type = /datum/unit_test/dq_till
+	var/turf/pad
+	var/datum/money_account/research
+	var/datum/money_account/producer
+	var/datum/money_account/customer_account
+	var/mob/living/carbon/human/customer
+	var/obj/item/card/id/customer_id
+	var/invoices_before = 0
+	var/list/made = list()
+
+/// A seller (Research), a customer with an ID and `balance` Thalers, and the books to put back afterwards. `pin` makes the account ask for it.
+/datum/unit_test/dq_till/proc/stage(balance = 5000, pin = 0)
+	pad = test_floor()
+	research = GLOB.department_accounts[DEPARTMENT_RESEARCH]
+	set_var(research, "money", research.money)
+	set_var(research, "monthly_income", research.monthly_income)
+	set_var(research, "monthly_expenses", research.monthly_expenses)
+	set_var(research, "total_revenue", research.total_revenue)
+	set_var(research, "total_expenses", research.total_expenses)
+	set_var(SSsupply, "service_invoice_counter", SSsupply.service_invoice_counter)
+	invoices_before = length(SSsupply.service_invoices)
+	producer = new
+	producer.set_owner_name("Till Producer")
+	producer.set_account_number(918401)
+	producer.set_money(100)
+	producer.set_department_id(DEPARTMENT_RESEARCH)
+	registry_join(REGISTRY_MONEY_ACCOUNTS, producer)
+	customer_account = new
+	customer_account.set_owner_name("Till Customer")
+	customer_account.set_account_number(918402)
+	customer_account.set_money(balance)
+	if(pin)
+		customer_account.set_security_level(1)
+		customer_account.remote_access_pin = pin
+	registry_join(REGISTRY_MONEY_ACCOUNTS, customer_account)
+	customer = new(pad)
+	customer_id = new /obj/item/card/id(customer)
+	customer_id.set_associated_account_number(customer_account.account_number)
+	dq_test_wear_id(customer, customer_id)
+
+/datum/unit_test/dq_till/proc/unstage()
+	while(length(SSsupply.service_invoices) > invoices_before)
+		var/datum/service_invoice/invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
+		own_take_member(SSsupply, nameof(/datum/system/supply::service_invoices), invoice)
+		qdel(invoice)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, producer)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer_account)
+	for(var/datum/thing in made)
+		qdel(thing)
+	qdel(customer)
+	qdel(customer_account)
+	qdel(producer)
+
+/// What a direct call of an op effect hands it as its act: the customer is the actor.
+/datum/unit_test/dq_till/proc/actor_stub()
+	var/datum/dq_test_op_stub/op_stub = new
+	op_stub.actor = customer
+	made += op_stub
+	return op_stub
+
+/// An item the scanner can price: Research-made merchandise with a known export value.
+/datum/unit_test/dq_till/proc/priced_item(item_name)
+	var/obj/item/item = new(pad)
+	item.name = item_name
+	item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, producer.account_number)
+	made += item
+	return item
+
+/datum/unit_test/dq_till/proc/last_invoice()
+	return SSsupply.service_invoices[length(SSsupply.service_invoices)]
+
+/datum/unit_test/dq_till/proc/assert_empty_ticket(datum/till/till, context)
+	TEST_ASSERT(!till.transaction_amount, "[context]: the payable total was not cleared")
+	TEST_ASSERT_EQUAL(length(till.item_list), 0, "[context]: the itemization was not cleared")
+	TEST_ASSERT_EQUAL(length(till.price_list), 0, "[context]: the prices were not cleared")
+	TEST_ASSERT(!till.transaction_purpose, "[context]: the description was not cleared")
+	TEST_ASSERT_NULL(till.verified_sale_items, "[context]: the scanned-item evidence was not cleared")
+	TEST_ASSERT_EQUAL(till.service_staff_account_number, 0, "[context]: staff attribution was not cleared")
+	return TRUE
+
+/// Scan an item twice, swipe the card twice (a multi-unit ticket asks for a second swipe), then sell one item for an e-wallet.
+/datum/unit_test/dq_till/proc/card_and_wallet_sales(datum/till/till, machine_id)
+	var/price = SSsupply.export_revenue(10)
+	var/obj/item/item = priced_item("till widget")
+	till.scan_item_price(item, customer)
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "the total is the item's price")
+	TEST_ASSERT_EQUAL(length(till.item_list), 1, "one line on the ticket")
+	TEST_ASSERT_EQUAL(till.item_list[item.name], 1, "the line counts one")
+	TEST_ASSERT_EQUAL(till.price_list[item.name], price, "the line carries the price")
+	TEST_ASSERT(findtext(till.transaction_purpose, item.name), "the description names the item")
+	TEST_ASSERT_EQUAL(length(till.verified_sale_items), 1, "the physical item is recorded as sale evidence")
+	var/revision = till.ticket_revision
+	till.scan_item_price(item, customer)
+	TEST_ASSERT_EQUAL(till.item_list[item.name], 2, "scanning the same item again counts two")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price * 2, "the total follows the quantity")
+	TEST_ASSERT(till.ticket_revision > revision, "a changed ticket gets a new revision")
+
+	var/customer_before = customer_account.money
+	var/research_before = research.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "the first swipe of a multi-unit ticket only asks to confirm")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price * 2, "an unconfirmed swipe leaves the ticket alone")
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_before - customer_account.money, price * 2, "the confirming swipe charges the ticket total")
+	TEST_ASSERT_EQUAL(research.money - research_before, price * 2, "the seller is credited the ticket total")
+	var/datum/service_invoice/receipt = last_invoice()
+	TEST_ASSERT_EQUAL(receipt.payment_method, "ID account", "the receipt names the payment channel")
+	TEST_ASSERT_EQUAL(receipt.amount, price * 2, "the receipt carries the total")
+	TEST_ASSERT_EQUAL(receipt.terminal_id, machine_id, "the receipt names the terminal")
+	TEST_ASSERT_EQUAL(receipt.customer_account_number, customer_account.account_number, "the receipt names the customer")
+	TEST_ASSERT_EQUAL(receipt.items[item.name], 2, "the receipt itemizes the sale")
+	TEST_ASSERT_EQUAL(receipt.verified_item_count, 1, "the receipt keeps the physical evidence")
+	assert_empty_ticket(till, "after the card sale")
+
+	// Nothing to pay: a swipe changes nothing.
+	customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a swipe on an empty ticket charged the customer")
+
+	var/invoices = length(SSsupply.service_invoices)
+	var/obj/item/spacecash/ewallet/wallet = new(customer)
+	made += wallet
+	wallet.owner_name = "Till Customer"
+	wallet.set_worth(2000)
+	till.scan_item_price(item, customer)
+	research_before = research.money
+	till.scan_wallet(wallet, customer)
+	TEST_ASSERT_EQUAL(wallet.worth, 2000 - price, "the e-wallet pays the total")
+	TEST_ASSERT_EQUAL(research.money - research_before, price, "the seller is credited the wallet sale")
+	TEST_ASSERT_EQUAL(length(SSsupply.service_invoices), invoices + 1, "the wallet sale has a receipt")
+	TEST_ASSERT_EQUAL(last_invoice().payment_method, "E-Wallet", "the wallet receipt names its channel")
+	assert_empty_ticket(till, "after the wallet sale")
+
+	wallet.set_worth(price - 1)
+	till.scan_item_price(item, customer)
+	till.scan_wallet(wallet, customer)
+	TEST_ASSERT_EQUAL(wallet.worth, price - 1, "an e-wallet that cannot cover the ticket is not charged")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a refused payment keeps the ticket")
+	TEST_ASSERT_EQUAL(length(SSsupply.service_invoices), invoices + 1, "a refused payment has no receipt")
+	TEST_ASSERT(till.ui_act_clear_entry(actor_stub()), "the refused ticket could not be voided")
+	assert_empty_ticket(till, "after voiding the refused ticket")
+	return TRUE
+
+/datum/unit_test/dq_till/scanner_full_sale
+
+/datum/unit_test/dq_till/scanner_full_sale/Run()
+	stage()
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.till.set_locked(FALSE)
+	scanner.till.set_machine_id("Till test scanner")
+	scanner.till.link_provider(research)
+	card_and_wallet_sales(scanner.till, scanner.till.machine_id)
+	unstage()
+
+/datum/unit_test/dq_till/register_full_sale
+
+/datum/unit_test/dq_till/register_full_sale/Run()
+	stage()
+	var/obj/machinery/cash_register/register = new(pad)
+	made += register
+	register.till.set_locked(FALSE)
+	register.till.set_machine_id("Till test register")
+	register.till.link_provider(research)
+	var/datum/till/register/till = register.till
+	card_and_wallet_sales(till, register.till.machine_id)
+	if(!succeeded)
+		return
+	// Cash goes into the seller's account at once (a department sale), not into the drawer.
+	var/price = SSsupply.export_revenue(10)
+	var/obj/item/item = priced_item("till cash widget")
+	till.scan_item_price(item, customer)
+	var/drawer_before = register.cash_stored
+	var/research_before = research.money
+	var/obj/item/spacecash/c1000/cash = new(customer)
+	made += cash
+	var/invoices = length(SSsupply.service_invoices)
+	till.scan_cash(cash, customer)
+	TEST_ASSERT_EQUAL(cash.worth, 1000 - price, "the register takes the cash total from the note")
+	TEST_ASSERT_EQUAL(research.money - research_before, price, "the cash sale credits the seller")
+	TEST_ASSERT_EQUAL(register.cash_stored, drawer_before, "a department cash sale does not touch the drawer")
+	TEST_ASSERT_EQUAL(length(SSsupply.service_invoices), invoices + 1, "the cash sale has a receipt")
+	TEST_ASSERT_EQUAL(last_invoice().payment_method, "Cash", "the cash receipt names its channel")
+	assert_empty_ticket(till, "after the cash sale")
+	// An open cash box refuses scanning and every way of paying.
+	register.set_cash_open(1)
+	till.scan_item_price(item, customer)
+	TEST_ASSERT(!till.transaction_amount, "an open cash box took a scan")
+	register.set_cash_open(0)
+	till.scan_item_price(item, customer)
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a closed box scans again")
+	register.set_cash_open(1)
+	var/customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "an open cash box refuses a card")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a refused card keeps the ticket")
+	register.set_cash_open(0)
+	unstage()
+
+/// The ticket's edit buttons: custom lines, +/-, set quantity, remove a line, clear the whole ticket.
+/datum/unit_test/dq_till/proc/ticket_edits(datum/till/till)
+	var/datum/dq_test_op_stub/op_stub = actor_stub()
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 2, 10, "Tea"), "a custom line was refused")
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 1, 4, "Biscuit"), "a second custom line was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 24, "the custom lines total")
+	var/revision = till.ticket_revision
+	TEST_ASSERT(till.ui_act_add(op_stub, "Tea"), "+ was refused")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 3, "+ adds one")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 34, "+ changes the total")
+	TEST_ASSERT(till.ticket_revision > revision, "+ changes the ticket revision")
+	TEST_ASSERT(till.ui_act_subtract(op_stub, "Tea"), "- was refused")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 2, "- removes one")
+	TEST_ASSERT(till.ui_act_set_amount(op_stub, 5, "Tea"), "set amount was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 54, "set amount changes the total")
+	TEST_ASSERT(till.ui_act_set_amount(op_stub, 99, "Tea"), "set amount above the limit was refused outright")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 20, "set amount is limited to twenty")
+	TEST_ASSERT(till.ui_act_set_amount(op_stub, 1, "Tea"), "set amount back was refused")
+	TEST_ASSERT(!till.ui_act_add(op_stub, "Nothing here"), "+ on a line that is not there was accepted")
+	TEST_ASSERT(till.ui_act_clear(op_stub, "Biscuit"), "removing a line was refused")
+	TEST_ASSERT_NULL(till.item_list["Biscuit"], "the removed line is still there")
+	TEST_ASSERT_NULL(till.price_list["Biscuit"], "the removed line's price is still there")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 10, "removing a line changes the total")
+	TEST_ASSERT(till.ui_act_subtract(op_stub, "Tea"), "- on the last unit was refused")
+	TEST_ASSERT_EQUAL(length(till.item_list), 0, "- on the last unit removes the line")
+	TEST_ASSERT(!till.transaction_amount, "the empty ticket has a total")
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 1, 6, "Soup"), "a line after clearing was refused")
+	TEST_ASSERT(till.ui_act_clear_entry(op_stub), "voiding the ticket was refused")
+	assert_empty_ticket(till, "after voiding")
+	// A voided ticket cannot be paid, and a changed ticket drops a pending confirmation.
+	var/customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a voided ticket charged the customer")
+	TEST_ASSERT(till.ui_act_custom_order(op_stub, 2, 6, "Soup"), "a line for the confirmation check was refused")
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_NOTNULL(till.confirm_item, "the first swipe of a multi-unit ticket should wait for confirmation")
+	TEST_ASSERT(till.ui_act_add(op_stub, "Soup"), "+ for the confirmation check was refused")
+	TEST_ASSERT_NULL(till.confirm_item, "changing the ticket should drop the pending confirmation")
+	TEST_ASSERT(till.ui_act_clear_entry(op_stub), "clearing after the confirmation check was refused")
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "nothing was charged while editing")
+	return TRUE
+
+/datum/unit_test/dq_till/scanner_ticket_edits
+
+/datum/unit_test/dq_till/scanner_ticket_edits/Run()
+	stage()
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.till.set_locked(FALSE)
+	scanner.till.link_provider(research)
+	ticket_edits(scanner.till)
+	if(!succeeded)
+		return
+	scanner.till.set_locked(TRUE)
+	TEST_ASSERT(!scanner.till.ui_act_custom_order(actor_stub(), 1, 5, "Locked"), "a locked scanner took a line")
+	unstage()
+
+/datum/unit_test/dq_till/register_ticket_edits
+
+/datum/unit_test/dq_till/register_ticket_edits/Run()
+	stage()
+	var/obj/machinery/cash_register/register = new(pad)
+	made += register
+	register.till.set_locked(FALSE)
+	register.till.link_provider(research)
+	ticket_edits(register.till)
+	if(!succeeded)
+		return
+	register.till.set_locked(TRUE)
+	TEST_ASSERT(!register.till.ui_act_custom_order(actor_stub(), 1, 5, "Locked"), "a locked register took a line")
+	unstage()
+
+/// An account with a PIN: the swipe asks for it, the answer finishes the sale; a wrong PIN does not.
+/datum/unit_test/dq_till/proc/pin_sale(datum/till/till)
+	var/price = SSsupply.export_revenue(10)
+	var/obj/item/item = priced_item("till pin widget")
+	till.scan_item_price(item, customer)
+	var/customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "the swipe charged before the PIN")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "the swipe did not ask for the PIN")
+	test_answer(customer, 1111)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a wrong PIN charged the customer")
+	TEST_ASSERT_EQUAL(till.transaction_amount, price, "a wrong PIN dropped the ticket")
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "the second swipe did not ask for the PIN")
+	test_answer(customer, 4321)
+	TEST_ASSERT_EQUAL(customer_before - customer_account.money, price, "the right PIN did not charge the ticket")
+	var/datum/service_invoice/receipt = last_invoice()
+	TEST_ASSERT_EQUAL(receipt.amount, price, "the PIN sale has no receipt")
+	assert_empty_ticket(till, "after the PIN sale")
+	// The ticket changing while the PIN is being typed drops the sale.
+	till.scan_item_price(item, customer)
+	customer_before = customer_account.money
+	till.scan_card(customer_id, customer_id, customer)
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "the swipe for the changing ticket did not ask for the PIN")
+	till.scan_item_price(item, customer)
+	test_answer(customer, 4321)
+	TEST_ASSERT_EQUAL(customer_account.money, customer_before, "a PIN answer paid a ticket that changed under it")
+	TEST_ASSERT(till.ui_act_clear_entry(actor_stub()), "the changed ticket could not be voided")
+	return TRUE
+
+/datum/unit_test/dq_till/scanner_pin_sale
+
+/datum/unit_test/dq_till/scanner_pin_sale/Run()
+	stage(5000, 4321)
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.till.set_locked(FALSE)
+	scanner.till.link_provider(research)
+	pin_sale(scanner.till)
+	unstage()
+
+/datum/unit_test/dq_till/register_pin_sale
+
+/datum/unit_test/dq_till/register_pin_sale/Run()
+	stage(5000, 4321)
+	var/obj/machinery/cash_register/register = new(pad)
+	made += register
+	register.till.set_locked(FALSE)
+	register.till.link_provider(research)
+	pin_sale(register.till)
+	unstage()
+
+/// The window: its data and its buttons, by the names the interface sends.
+/datum/unit_test/dq_till/proc/window_checks(atom/terminal, datum/till/till)
+	var/list/data = terminal.tgui_data(customer)
+	for(var/key in list("locked", "linked_account", "machine_id", "department_checkout", "subsidized_checkout", "transaction_logs", "current_transactioon"))
+		TEST_ASSERT(key in data, "the window data lacks [key]")
+	TEST_ASSERT_EQUAL(data["linked_account"], research.owner_name, "the window names the seller")
+	TEST_ASSERT(data["department_checkout"], "a department seller is a department checkout")
+	TEST_ASSERT_EQUAL(length(data["current_transactioon"]), 0, "an empty ticket shows nothing")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "custom_order", list("amount" = 2, "price" = 7, "purpose" = "Tea"))), "the custom_order button was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 14, "the custom_order button did not add the line")
+	data = terminal.tgui_data(customer)
+	var/list/current = data["current_transactioon"]
+	TEST_ASSERT_EQUAL(current["amount"], 14, "the window shows the ticket total")
+	TEST_ASSERT_EQUAL(current["items"]["Tea"], 2, "the window shows the ticket lines")
+	TEST_ASSERT_EQUAL(current["prices"]["Tea"], 7, "the window shows the line prices")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "add", list("item" = "Tea"))), "the add button was refused")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 3, "the add button did not add a unit")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "subtract", list("item" = "Tea"))), "the subtract button was refused")
+	TEST_ASSERT_EQUAL(till.item_list["Tea"], 2, "the subtract button did not remove a unit")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "set_amount", list("amount" = 3, "item" = "Tea"))), "the set_amount button was refused")
+	TEST_ASSERT_EQUAL(till.transaction_amount, 21, "the set_amount button did not change the line")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "clear_entry", list())), "the clear_entry button was refused")
+	TEST_ASSERT(!till.transaction_amount, "the clear_entry button did not void the ticket")
+	TEST_ASSERT(test_op_committed(test_ui(customer, terminal, "reset_log", list())), "the reset_log button was refused")
+	return TRUE
+
+/datum/unit_test/dq_till/scanner_window
+
+/datum/unit_test/dq_till/scanner_window/Run()
+	stage()
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.till.set_locked(FALSE)
+	scanner.till.link_provider(research)
+	window_checks(scanner, scanner.till)
+	if(!succeeded)
+		return
+	scanner.till.set_locked(TRUE)
+	test_ui(customer, scanner, "toggle_lock", list())
+	TEST_ASSERT(scanner.till.locked, "a customer without access unlocked the scanner")
+	unstage()
+
+/datum/unit_test/dq_till/register_window
+
+/datum/unit_test/dq_till/register_window/Run()
+	stage()
+	var/obj/machinery/cash_register/register = new(pad)
+	made += register
+	register.till.set_locked(FALSE)
+	register.till.link_provider(research)
+	window_checks(register, register.till)
+	if(!succeeded)
+		return
+	var/list/data = register.tgui_data(customer)
+	TEST_ASSERT(("cash_locked" in data), "the register window lacks cash_locked")
+	register.till.set_locked(TRUE)
+	test_ui(customer, register, "toggle_lock", list())
+	TEST_ASSERT(register.till.locked, "a customer without access unlocked the register")
+	unstage()
+
+/// The sales-lot path: a scanner linked to a department certifies a crate of that department's goods through its prompts and prints the ledger.
+/datum/unit_test/dq_till/scanner_freight_certification
+
+/datum/unit_test/dq_till/scanner_freight_certification/Run()
+	stage()
+	customer.set_job(JOB_SCIENTIST)
+	var/obj/item/retail_scanner/scanner = new(pad)
+	made += scanner
+	scanner.till.set_machine_id("Till test freight")
+	var/obj/structure/closet/crate/crate = new(pad)
+	made += crate
+	var/obj/item/goods = priced_item("till freight goods")
+	goods.forceMove(crate)
+	var/obj/item/paper/blank = new(scanner)
+	made += blank
+	rel_add(scanner, nameof(scanner.freight_form_paper), blank)
+	// Locked, or linked to no department: refused without a question.
+	scanner.till.set_locked(TRUE)
+	scanner.till.link_provider(research)
+	TEST_ASSERT(!scanner.certify_freight_crate(crate, customer), "a locked scanner certified freight")
+	TEST_ASSERT_NULL(SSrequests.open_for(customer), "a locked scanner asked a question")
+	scanner.till.set_locked(FALSE)
+	scanner.till.link_provider(null)
+	TEST_ASSERT(!scanner.certify_freight_crate(crate, customer), "an unlinked scanner certified freight")
+	TEST_ASSERT_NULL(SSrequests.open_for(customer), "an unlinked scanner asked a question")
+	scanner.till.link_provider(research)
+	scanner.certify_freight_crate(crate, customer)
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "certifying did not ask for the valuation")
+	test_answer(customer, "Continue")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "certifying did not ask for the consignee")
+	test_answer(customer, "Unit buyer")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "certifying did not ask for the producer allocation")
+	test_answer(customer, "No producer share")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(customer), "certifying did not ask to print")
+	test_answer(customer, "Print")
+	TEST_ASSERT_NULL(SSrequests.open_for(customer), "certifying asked more after printing")
+	TEST_ASSERT_EQUAL(crate.shipping_ledger, blank, "the loaded sheet was not printed into the crate")
+	TEST_ASSERT_EQUAL(length(scanner.freight_form_paper), 0, "the printed sheet is still in the scanner")
+	TEST_ASSERT_EQUAL(blank.shipping_ledger_data["department"], DEPARTMENT_RESEARCH, "the ledger names the department")
+	TEST_ASSERT_EQUAL(blank.shipping_ledger_data["destination"], "Unit buyer", "the ledger names the consignee")
+	TEST_ASSERT_EQUAL(blank.shipping_ledger_data["scanner"], scanner.till.machine_id, "the ledger names the scanner")
+	TEST_ASSERT(crate.shipping_ledger_valid(), "the printed ledger is not valid")
+	unstage()
 
 #endif
 

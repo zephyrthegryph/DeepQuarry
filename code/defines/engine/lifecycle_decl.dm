@@ -56,13 +56,7 @@
 /// 8a. LEGACY: per behaviour, cap_trait() (a trait + examine line), on_notice (an after-fact) or before_op on a
 /// guard key (a veto): the audit is in doc/rewrite/lifecycle.md section 9.
 
-#define VERB_DECL_ALWAYS 1
-#define VERB_DECL_LOGIN 2
-#define VERB_DECL_HIDE 3
-
 // /datum/lifecycle_decls/var/work bits.
 #define DECL_WORK_INIT (1<<0)
 #define DECL_WORK_MATERIALIZE (1<<1)
 #define DECL_WORK_UNBIND (1<<2)
-/// Legacy declared-verb table work (kept while the verb store consumes it).
-#define DECL_WORK_VERBS (1<<5)

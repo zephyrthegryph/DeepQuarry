@@ -70,7 +70,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/nurse_spider)))
 	op("spin_web", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/webbing)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(web_done)), on_interrupt(PROC_REF(work_interrupted)))
 	op("lay_eggs", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/laying)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(eggs_done)), on_interrupt(PROC_REF(work_interrupted)))
-	op("spin_cocoon", ai(), reach(REACH_RANGE(1)), begins(MSG(spider/cocooning)), wait(5 SECONDS), then(PROC_REF(spin_cocoon_nurse_done)), on_interrupt(PROC_REF(spin_cocoon_nurse_failed)))
+	op("spin_cocoon", ai(), reach(REACH_RANGE(1)), needs(req(PROC_REF(cocoon_refusal))), begins(MSG(spider/cocooning)), wait(5 SECONDS), then(PROC_REF(spin_cocoon_nurse_done)), on_interrupt(PROC_REF(spin_cocoon_nurse_failed)))
 
 // Webs target in a web if able to.
 /mob/living/simple_mob/animal/giant_spider/nurse/attack_target(atom/A)
@@ -110,21 +110,19 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
 	var/datum/op_result/R = perform_op(src, AM, "spin_cocoon", null, ORIGIN_AI, AUTH_AI)
 	return !!R && R.outcome != ACT_REFUSED
 
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(datum/act/op/A)
+/// Why the cocoon can't be spun (checked when it starts and again when the wait ends), or null.
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/cocoon_refusal(datum/act/op/A)
 	var/atom/movable/AM = A.target
 	if(!AM) // Make sure it didn't get deleted for whatever reason.
-		to_chat(src, span_warning("Whatever you were spinning a web for, its no longer there..."))
-		return FALSE
-
+		return msg_reason("Whatever you were spinning a web for, its no longer there...")
 	if(!isturf(AM.loc))
-		to_chat(src, span_warning("You can't spin \the [AM] in a web while it is inside \the [AM.loc]."))
-		return FALSE
-
+		return msg_reason("You can't spin \the [AM] in a web while it is inside \the [AM.loc].")
 	if(!Adjacent(AM))
-		to_chat(src, span_warning("You need to be next to \the [AM] to spin it into a web."))
-		return FALSE
+		return msg_reason("You need to be next to \the [AM] to spin it into a web.")
+	return null
 
-	// Finally done with the checks.
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(datum/act/op/A)
+	var/atom/movable/AM = A.target
 	var/obj/effect/spider/cocoon/C = new(AM.loc)
 	var/large_cocoon = FALSE
 	for(var/mob/living/L in C.loc)

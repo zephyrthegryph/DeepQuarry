@@ -291,15 +291,14 @@ CAPABILITIES(/obj/item/robot_parts/head)
 CAPABILITIES(/obj/item/robot_parts)
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
-	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	emag(list(needs(req(PROC_REF(emag_refusal))), then(PROC_REF(on_emag))), repeatable = TRUE, powered = FALSE)
+
+/// Why the part can't be sabotaged, or null.
+/obj/item/robot_parts/proc/emag_refusal(datum/act/op/A)
+	return sabotaged ? msg_reason("[src] is already sabotaged!") : null
 
 /obj/item/robot_parts/proc/on_emag(datum/act/op/A)
-	var/mob/user = A.actor
-	if(sabotaged)
-		to_chat(user, span_warning("[src] is already sabotaged!"))
-	else
-		to_chat(user, span_warning("You short out the safeties."))
-		sabotaged = 1
-		return OP_OK
-	return OP_DECLINE
+	to_chat(A.actor, span_warning("You short out the safeties."))
+	set_sabotaged(1)
+	return OP_OK
 

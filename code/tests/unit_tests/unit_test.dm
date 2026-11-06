@@ -1307,6 +1307,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	// A test must delete everything it creates (allocate(), or its own qdel()s). Whatever
 	// is still on its block once `allocated` is gone fails the test.
 	var/leak = release_unit_test_block(block, test)
+	// The kernel drains the marked on_change hooks and queued reactions at the start of every tick's D, P and R phases; a test world runs no tick
+	// between tests, so what the test (or its deleted things) marked is drained here, as the next tick would. The guard then sees only a real leak.
+	act_drain_point()
+	rx_drain()
 	cost_mark = TICK_USAGE
 	var/site_leak = unit_test_site_leak(sites_before, test_path)
 	var/list/state_leaks = list()

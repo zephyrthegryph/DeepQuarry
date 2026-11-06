@@ -45,7 +45,9 @@ GLOBAL_LIST_EMPTY(boot_phase_counts)
 		if(totals[phase] < 50000) // under 0.05 s: the rows are many (a relation row per type and var) and these are timer noise
 			break
 		var/calls = GLOB.boot_phase_calls[phase]
-		log_world("Atoms boot phase ([label]): [phase] [round(totals[phase] / 1000000, 0.01)]s over [calls] calls ([round(totals[phase] / max(calls, 1), 0.1)] us each, [round(GLOB.boot_phase_first_us[phase] / 1000000, 0.01)]s of it the first call of each type)")
+		var/phase_line = "Atoms boot phase ([label]): [phase] [round(totals[phase] / 1000000, 0.01)]s over [calls] calls ([round(totals[phase] / max(calls, 1), 0.1)] us each, [round(GLOB.boot_phase_first_us[phase] / 1000000, 0.01)]s of it the first call of each type)"
+		log_world(phase_line)
+		text2file("[phase_line]\n", "[GLOB.log_directory]/boot_phase.log") // the bench harness keeps no world log: the timed rows are kept here with the counted row below
 	// The types that spend the most in each of the forty longest phases.
 	var/shown = 0
 	for(var/phase in totals)
@@ -61,7 +63,7 @@ GLOBAL_LIST_EMPTY(boot_phase_counts)
 		log_world("Atoms boot phase ([label]): top types of [phase]:[line]")
 	var/list/counted = sortTim(GLOB.boot_phase_counts.Copy(), GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
 	var/count_line = ""
-	for(var/i in 1 to min(25, length(counted)))
+	for(var/i in 1 to min(80, length(counted)))
 		count_line += " [counted[i]]=[counted[counted[i]]]"
 	log_world("Atoms boot phase ([label]): counted:[count_line]")
 	text2file("Atoms boot phase ([label]): counted:[count_line]\n", "[GLOB.log_directory]/boot_phase.log") // the bench harness keeps no world log; this file is what a counted run reads

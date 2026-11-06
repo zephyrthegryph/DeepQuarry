@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Map-load init: empty turfs skip the draw-hop walk, verb entries cache their sync keys, open turfs run one setup row, and boot phase timers label space turfs separately"

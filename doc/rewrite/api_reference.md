@@ -208,7 +208,7 @@ Notes: `hold_until` (`code/engine/stats/store.dm:112`) and `hold_override` (`cod
 #### `hold_table(E, source, table, scale =, stacks =, part =)`
 Need: place a source's whole table of stat values at once.
 Defined: `code/engine/stats/tables.dm:66`
-Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:794`.
+Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:824`.
 Replaces / bans: `BF_*`, `factor(`.
 Notes: normally reached through `factors()` rather than called.
 
@@ -887,7 +887,7 @@ Notes: per-subtype work goes in `life_type_pre` / `life_type_post`. Each step ha
 #### AI: `/datum/ai_brain` public API
 Need: external code steers a mob's AI.
 Defined: `code/domains/ai/brain/public_api.dm:1`
-Example: `ai_brain.go_wake()`, `code/content/mob/living/simple_mob/subtypes/animal/alien_animals/catslug/catslug.dm:152`
+Example: `ai_brain.go_wake()`, `code/content/mob/living/simple_mob/subtypes/animal/alien_animals/catslug/catslug.dm:142`
 Replaces / bans: `/datum/ai_holder`.
 Notes: behaviours are flyweights (`dq_get_behavior(type)`); per-mob state lives on the brain's `behavior_state_of(type)`. Pack, factions and standings are separate files under `code/domains/ai/`.
 
@@ -961,8 +961,8 @@ Macros are in `code/defines/host/` and `code/defines/engine/`; procs in `code/ho
 |---|---|---|
 | Null-safe per-instance list | `LAZYADD` / `LAZYSET` / `LAZYLEN` | `code/defines/host/_lists.dm:14` |
 | Random element with a fallback | `DEFAULTPICK(L, default)` | `code/defines/host/_lists.dm:5` |
-| Weighted pick from `list(item = weight)` | `pickweight(L)` (read-only, null-safe) | `code/host/helpers/_lists.dm:247` |
-| Take a random element out | `pick_n_take(list)` | `code/host/helpers/_lists.dm:273` |
+| Weighted pick from `list(item = weight)` | `pickweight(L)` (read-only, null-safe) | `code/host/helpers/_lists.dm:226` |
+| Take a random element out | `pick_n_take(list)` | `code/host/helpers/_lists.dm:252` |
 | "Is this one of these types" | `typecacheof()` into a `var/static/list`, then `is_type_in_typecache()` | `code/host/helpers/_lists.dm:139` |
 | Player text | `sanitize()`; names `reject_bad_name()` | `code/host/helpers/text.dm:42` |
 | Time constants | `5 SECONDS`, `TICKS` (postfix macros) | `code/defines/engine/time.dm:19` |
@@ -1096,7 +1096,7 @@ you are extending the winner, or the design is changing (section 1 of "Before yo
 | Power draw | `use_power` (deprecated); `use_power_oneoff`; `power_draw`; `set_power_supply` / `add_avail` | Consumers: `use_power_oneoff`. Producers: `set_power_supply` (steady), `add_avail` (pulse). | none |
 | Asking a question | `asks()`; `ask_steps()`; `ask_admin()`; `open_request(... /datum/prompt/x ...)`; `sql_view` | Choose by call context (section 9). All share `/datum/prompt` types. | none |
 | Window opening | `interface()`; `ui_window(mob/user)` (`code/library/sys/ui.dm:53`) | `interface()`. `ui_window` remains only for `preinitialized = TRUE` hosts. | none |
-| Random pick | `pickweight` (`code/host/helpers/_lists.dm:247`); `pick_weight` (`code/host/helpers/_lists.dm:892`); `safepick`; `DEFAULTPICK`; `pick_n_take` | `pickweight`. `pick_weight` writes into the caller's list. `DEFAULTPICK(L, null)` replaces `safepick`. | helper cleanup (migrate `pick_weight` callers) |
+| Random pick | `pickweight` (`code/host/helpers/_lists.dm:226`); `pick_weight` (`code/host/helpers/_lists.dm:854`); `safepick`; `DEFAULTPICK`; `pick_n_take` | `pickweight`. `pick_weight` writes into the caller's list. `DEFAULTPICK(L, null)` replaces `safepick`. | helper cleanup (migrate `pick_weight` callers) |
 | Text sanitising | `sanitize` (`code/host/helpers/text.dm:42`); `sanitize_simple`; `sanitize_old`; `strip_html_simple`; `pencode2html` (`code/host/helpers/text.dm:366`); `pencode_to_html` (`code/content/paperwork/paper.dm:862`) | `sanitize()` for free text, `reject_bad_name()` for names. | helper cleanup (`sanitize_old` goes; merge the two pencode procs) |
 | Test clocks | `test_driver_begin` (`code/tests/driver/driver.dm:133`); `kernel_test_begin` (`code/tests/driver/kernel_clock.dm:36`) | `test_driver_begin()` for new tests. | none |
 | Instance lists | ledger holders; registries; hand-rolled `GLOB.x +=` with an `ALLOW` | Registry. An `ALLOW` is only for ckey-keyed tables that outlive the client. | `registry` ratchet |

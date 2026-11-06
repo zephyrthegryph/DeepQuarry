@@ -399,16 +399,16 @@ CAPABILITIES(/obj/refs_param_probe)
 	qdel(book)
 	TEST_ASSERT_NULL(scanner.book, "deleting the book clears the scanner's pointer")
 
-/// w6a4: the retail scanner names its linked account as a relation: deleting the account clears the link.
+/// w6a4: the retail scanner's till names its linked account as a relation: deleting the account clears the link.
 /datum/unit_test/dq_refs_w6a4_retail_scanner_account_clears_on_delete
 
 /datum/unit_test/dq_refs_w6a4_retail_scanner_account_clears_on_delete/Run()
 	var/obj/item/retail_scanner/scanner = allocate(/obj/item/retail_scanner, run_loc_floor_bottom_left)
 	var/datum/money_account/account = new
-	rel_set(scanner, nameof(scanner.linked_account), account)
-	TEST_ASSERT_EQUAL(scanner.linked_account, account, "the scanner links the account")
+	scanner.till.link_provider(account)
+	TEST_ASSERT_EQUAL(scanner.till.linked_account, account, "the scanner's till links the account")
 	qdel(account, TRUE)
-	TEST_ASSERT_NULL(scanner.linked_account, "deleting the account unlinks the scanner")
+	TEST_ASSERT_NULL(scanner.till.linked_account, "deleting the account unlinks the scanner's till")
 
 /// w6a4: a flight port names the vessel occupying it as a relation: deleting the vessel frees the berth.
 /datum/unit_test/dq_refs_w6a4_flight_port_occupant_clears_on_delete

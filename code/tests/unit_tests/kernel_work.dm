@@ -375,22 +375,6 @@
 /datum/test_work_member/batched
 /datum/test_work_owner/batched
 
-/datum/unit_test/dq_alist_empty
-	boot_needs = list()
-
-/datum/unit_test/dq_alist_empty/Run()
-	var/alist/table = alist()
-	var/list/none = list()
-	var/list/zero = list(0)
-	TEST_ASSERT(alist_empty(table), "an empty alist is empty")
-	TEST_ASSERT(alist_empty(null), "null is empty")
-	TEST_ASSERT(alist_empty(none), "an empty list is empty")
-	table[7] = 1
-	TEST_ASSERT(!alist_empty(table), "an alist with a key is not")
-	table -= 7
-	TEST_ASSERT(alist_empty(table), "and is empty again once the key goes")
-	TEST_ASSERT(!alist_empty(zero), "a list holding a zero is not empty")
-
 /datum/test_work_stage_member
 	var/ready = FALSE
 	var/steps = 0

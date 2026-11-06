@@ -95,8 +95,8 @@ CAPABILITIES(/mob/living/simple_mob/slime)
 	configure(mob_movement(makes_dirt = FALSE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	hat_bearer(nameof(hat))
 	op("slime_item", item(/obj/item), then(PROC_REF(slime_interaction_item)))
-	op("slime_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat off"), then(PROC_REF(slime_interaction_hand)))
 
 /// It starts in its mood, glowing its own colour.
 /mob/living/simple_mob/slime/proc/start_glowing()
@@ -176,27 +176,12 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 	src.mend(TREAT_GENETIC_REPAIR, 1)
 	src.mend(TREAT_TISSUE_REPAIR, 1)
 
-// Clicked on by empty hand.
-
-/// Old attack_hand: grab the hat off.
-/mob/living/simple_mob/slime/proc/slime_interaction_hand(datum/act/op/A)
-	var/mob/living/L = A.actor
-	. = OP_OK
-	if(hat)
-		remove_hat(L)
-	else
-		return OP_DECLINE
-
 // Clicked on while holding an object.
-/// Old attackby: hat simulator, and weapons may pass through.
+/// Old attackby: weapons may pass through (a hat goes on through the hat_bearer capability).
 /mob/living/simple_mob/slime/proc/slime_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
 	. = OP_OK
-	if(istype(I, /obj/item/clothing/head)) // Handle hat simulator.
-		give_hat(I, user)
-		return
-
 	var/can_miss = TRUE
 	for(var/item_type in allowed_attack_types)
 		if(istype(I, item_type))
@@ -214,35 +199,6 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 // Subtypes react differently.
 /mob/living/simple_mob/slime/proc/slimebatoned(mob/living/user, amount)
 	return
-
-// Hat simulator
-/mob/living/simple_mob/slime/proc/give_hat(obj/item/clothing/head/new_hat, mob/living/user)
-	if(!istype(new_hat))
-		to_chat(user, span_warning("\The [new_hat] isn't a hat."))
-		return
-	if(hat)
-		to_chat(user, span_warning("\The [src] is already wearing \a [hat]."))
-		return
-	else
-		if(!move_into(src, nameof(src.hat), new_hat, user))
-			return
-		to_chat(user, span_notice("You place \a [new_hat] on \the [src].  How adorable!"))
-		return
-
-/mob/living/simple_mob/slime/proc/remove_hat(mob/living/user)
-	if(!hat)
-		to_chat(user, span_warning("\The [src] doesn't have a hat to remove."))
-	else
-		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
-		old_hat.forceMove(get_turf(src))
-		user.put_in_hands(old_hat)
-		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name].  How mean."))
-
-/mob/living/simple_mob/slime/proc/drop_hat()
-	if(!hat)
-		return
-	var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
-	old_hat.forceMove(get_turf(src))
 
 /mob/living/simple_mob/slime/speech_bubble_appearance()
 	return "slime"

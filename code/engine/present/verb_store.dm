@@ -124,9 +124,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	var/active = verb_activations_want(E, key)
 	if(active < 0)
 		return FALSE
-	var/datum/lifecycle_decls/decls = isatom(owner) ? lifecycle_decls_of(owner) : null
-	if(decls && (decls.work & DECL_WORK_VERBS) && decls.verbs_hidden && (key in decls.verbs_hidden))
-		return FALSE
 	// hidden_verbs() (dx_conventions.md §4): derived from state, applied by the refresh engine.
 	if(isatom(owner))
 		var/atom/hider = owner
@@ -156,17 +153,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 			return !!player.key
 	if(isatom(owner) && verb_entries_want(owner, key))
 		return TRUE // verb_entry(path, ...) of the type (code/engine/present/verbs.dm)
-	if(!decls || !(decls.work & DECL_WORK_VERBS))
-		return FALSE
-	if(decls.verbs_always && (key in decls.verbs_always))
-		return TRUE
-	var/var_name = decls.verbs_if?[key]
-	if(var_name)
-		var/atom/A = owner
-		return !!A.vars[var_name]
-	if(decls.verbs_login && (key in decls.verbs_login))
-		var/mob/M = owner
-		return !!M.key
 	return FALSE
 
 /// TRUE when verb `key` (a path, or a VERB_NAMED key) is on `target` (an atom or client) now.
@@ -260,36 +246,15 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	if(C)
 		C.present_verb_changes(panel_add, panel_remove)
 
-// ---------------------------------------------------------------- declared verbs
+// ---------------------------------------------------------------- login
 
-/// Init: the type's DECLARE_VERB, DECLARE_VERB_IF and DECLARE_VERB_HIDE lines (lifecycle_decls_init()).
-/proc/verb_store_apply_declared(atom/A, datum/lifecycle_decls/decls)
-	var/list/add
-	for(var/verb_path in decls.verbs_always)
-		if(!(verb_path in decls.verbs_hidden))
-			LAZYADD(add, verb_path)
-	for(var/verb_path in decls.verbs_if)
-		if(A.vars[decls.verbs_if[verb_path]])
-			LAZYADD(add, verb_path)
-	var/list/remove
-	for(var/verb_path in decls.verbs_hidden)
-		if(verb_path in A.verbs)
-			LAZYADD(remove, verb_path)
-	if(add || remove)
-		verb_store_write(A, A, add, remove)
-
-/// Login: the type's login verbs (type_verb(..., login = TRUE) in type_verbs(), which DECLARE_LOGIN_VERB expands
-/// to; the old declaration-table list while any type still fills it).
+/// Login: the type's login verbs (type_verb(..., login = TRUE) in type_verbs()).
 /proc/verb_store_login(mob/M)
 	verb_entries_login(M)
 	if(type_derive_flags(M) & TYPE_DERIVES_TYPE_VERBS)
 		var/list/login = type_verbs_login(M)
 		if(length(login))
 			verb_store_sync(M, login)
-	var/datum/lifecycle_decls/decls = lifecycle_decls_of(M)
-	if(!decls?.verbs_login)
-		return
-	verb_store_sync(M, decls.verbs_login)
 
 
 /client/proc/present_verb_changes(list/add, list/remove)

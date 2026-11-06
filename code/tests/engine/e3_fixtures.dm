@@ -90,6 +90,22 @@ CAPABILITIES(/obj/e3_wire)
 	ref_one(nameof(plugged), /obj/e3_machine)
 	when(nameof(live), contributes_to(nameof(plugged), STAT_E3_DRAW, 7))
 
+/// Contributes to the stat of what its relation names behind a holder-proc gate (a machine's draws_equip() shape) and a var gate.
+/obj/e3_pipe
+	name = "e3 pipe"
+	var/obj/e3_machine/plugged
+	var/live = TRUE
+	var/wide = FALSE
+
+
+CAPABILITIES(/obj/e3_pipe)
+	ref_one(nameof(plugged), /obj/e3_machine)
+	when(PROC_REF(draws_narrow), contributes_to(nameof(plugged), STAT_E3_DRAW, 5, reads = list("live", "wide")), reads = list("live", "wide"))
+	when(nameof(wide), contributes_to(nameof(plugged), STAT_E3_DRAW, 11, key = "wide_draw"))
+
+/obj/e3_pipe/proc/draws_narrow(datum/act/A)
+	return live && !wide
+
 /// A real machine, for the base stats declared on /obj/machinery.
 /obj/machinery/e3_probe
 	name = "e3 probe"

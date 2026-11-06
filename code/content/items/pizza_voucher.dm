@@ -22,7 +22,7 @@
 
 CAPABILITIES(/obj/item/pizzavoucher)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
-	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	emag(list(needs(req(PROC_REF(emag_refusal))), then(PROC_REF(on_emag))), repeatable = TRUE, powered = FALSE)
 	rolls(nameof(desc), PROC_REF(roll_desc))
 
 /// Old attack_self.
@@ -32,7 +32,7 @@ CAPABILITIES(/obj/item/pizzavoucher)
 	if(!spent)
 		act_message(user, src, others = span_notice("%U% presses a button on %T%!"))
 		desc = desc + " This one seems to be used-up."
-		spent = TRUE
+		set_spent(TRUE)
 		act_message(user, null, MSG_SELF(span_notice("A small bluespace rift opens just above your head and spits out a pizza box!")), \
 			MSG_OTHERS(span_notice("A small bluespace rift opens just above %U%'s head and spits out a pizza box!")), \
 			MSG_BLIND(span_notice("You hear a fwoosh followed by a thump.")))
@@ -45,18 +45,18 @@ CAPABILITIES(/obj/item/pizzavoucher)
 		to_chat(user, span_warning("The [src] is spent!"))
 	return TRUE
 
-/obj/item/pizzavoucher/proc/on_emag(datum/act/op/A)
-	var/mob/user = A.actor
+/// Why the voucher can't be switched to special delivery, or null.
+/obj/item/pizzavoucher/proc/emag_refusal(datum/act/op/A)
 	if(spent)
-		to_chat(user, span_warning("The [src] is spent!"))
-		return OP_DECLINE
-	if(!special_delivery)
-		to_chat(user, span_warning("You activate the special delivery protocol on the [src]!"))
-		special_delivery = TRUE
-		return OP_OK
-	else
-		to_chat(user, span_warning("The [src] is already in special delivery mode!"))
-	return OP_DECLINE
+		return msg_reason("The [src] is spent!")
+	if(special_delivery)
+		return msg_reason("The [src] is already in special delivery mode!")
+	return null
+
+/obj/item/pizzavoucher/proc/on_emag(datum/act/op/A)
+	to_chat(A.actor, span_warning("You activate the special delivery protocol on the [src]!"))
+	set_special_delivery(TRUE)
+	return OP_OK
 
 /obj/effect/falling_effect/pizza_delivery
 	name = "PIZZA PIE POWER!"

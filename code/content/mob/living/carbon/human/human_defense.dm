@@ -310,16 +310,19 @@ emp_act
 		return 1
 	return 0
 
+/// Why the targeted limb can't be sabotaged, or null.
+/mob/living/carbon/human/proc/emag_refusal(datum/act/op/A)
+	var/obj/item/organ/external/affecting = get_organ(hud_of(A.actor)?.zone_sel?.selecting)
+	if(!affecting || !(affecting.is_robotic()))
+		return msg_reason("That limb isn't robotic.")
+	if(affecting.sabotaged)
+		return msg_reason("[src]'s [affecting.name] is already sabotaged!")
+	return null
+
 /// A sequencer on a robotic limb sabotages it (the emag capability in CAPABILITIES(/mob/living/carbon/human), code/library/mob/hands.dm).
 /mob/living/carbon/human/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/organ/external/affecting = get_organ(hud_of(user)?.zone_sel?.selecting)
-	if(!affecting || !(affecting.is_robotic()))
-		to_chat(user, span_warning("That limb isn't robotic."))
-		return OP_DECLINE
-	if(affecting.sabotaged)
-		to_chat(user, span_warning("[src]'s [affecting.name] is already sabotaged!"))
-		return OP_DECLINE
 	to_chat(user, span_notice("You sneakily slide [A.held] into the dataport on [src]'s [affecting.name] and short out the safeties."))
 	affecting.sabotaged = 1
 	return OP_OK

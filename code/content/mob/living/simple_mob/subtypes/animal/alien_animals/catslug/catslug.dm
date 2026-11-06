@@ -87,25 +87,18 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	op("catslug_item", item(/obj/item), then(PROC_REF(catslug_interaction_item)))
 	op("catslug_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(catslug_interaction_hand_help)))
-	op("catslug_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat"), then(PROC_REF(catslug_interaction_hand_grab)))
+	hat_bearer(nameof(hat), allowed = nameof(can_wear_hat))
 
 /// The help-stance input of catslug_interaction_hand: the shared handler with its stance.
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand_help(datum/act/op/A)
 	return catslug_interaction_hand(A, I_HELP)
 
-/// The grab-stance input of catslug_interaction_hand: the shared handler with its stance.
-/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand_grab(datum/act/op/A)
-	return catslug_interaction_hand(A, I_GRAB)
-
-/// Old attackby: hats and feeding.
+/// Old attackby: feeding (a hat goes on through the hat_bearer capability).
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/reagent_containers/food/snacks/O = A.held
 	. = OP_OK
-	if(istype(O, /obj/item/clothing/head)) // Handle hat simulator.
-		give_hat(O, user)
-		return
-	else if(!istype(O, /obj/item/reagent_containers/food/snacks))
+	if(!istype(O, /obj/item/reagent_containers/food/snacks))
 		return OP_DECLINE
 	if(resting)
 		to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
@@ -141,9 +134,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	if(stat == DEAD)
 		return OP_DECLINE
 	if(stance != I_HELP)
-		if(stance == I_GRAB && hat)
-			remove_hat(M)
-			return
 		return OP_DECLINE
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
@@ -190,36 +180,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 /mob/living/simple_mob/vore/alienanimals/catslug/draw(datum/look/look)
 	..()
 	look.hat(hat, -7)
-
-/mob/living/simple_mob/vore/alienanimals/catslug/proc/give_hat(obj/item/clothing/head/new_hat, mob/living/user)
-	if(!istype(new_hat))
-		to_chat(user, span_warning("\The [new_hat] isn't a hat."))
-		return
-	if(hat)
-		to_chat(user, span_warning("\The [src] is already wearing \a [hat]."))
-		return
-	else if(!can_wear_hat)
-		to_chat(user, span_warning("\The [src] is unable to wear \a [hat]."))
-	else
-		if(!move_into(src, nameof(src.hat), new_hat, user))
-			return
-		to_chat(user, span_notice("You place \a [new_hat] on \the [src]. How adorable!"))
-		return
-
-/mob/living/simple_mob/vore/alienanimals/catslug/proc/remove_hat(mob/living/user)
-	if(!hat)
-		to_chat(user, span_warning("\The [src] doesn't have a hat to remove."))
-	else
-		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
-		old_hat.forceMove(get_turf(src))
-		user.put_in_hands(old_hat)
-		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name]. How mean."))
-
-/mob/living/simple_mob/vore/alienanimals/catslug/proc/drop_hat()
-	if(!hat)
-		return
-	var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
-	old_hat.forceMove(get_turf(src))
 
 /mob/living/simple_mob/vore/alienanimals/catslug/Login()	//If someone plays as us let's just be a passive mob in case accidents happen if the player D/Cs
 	. = ..()

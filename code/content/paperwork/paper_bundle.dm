@@ -129,9 +129,9 @@ CAPABILITIES(/obj/item/paper_bundle)
 	op("bundle_loosen", menu(), label("Loose bundle"), needs(carried()), then(PROC_REF(bundle_loosen_op)))
 	interface("PaperBundle")
 	without("ui_open")
-	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
-	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
-	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
+	op("next_page", ui_act("next_page"), needs(req(PROC_REF(hold_refusal))), then(PROC_REF(ui_act_next_page)))
+	op("prev_page", ui_act("prev_page"), needs(req(PROC_REF(hold_refusal))), then(PROC_REF(ui_act_prev_page)))
+	op("remove", ui_act("remove"), needs(req(PROC_REF(hold_refusal))), then(PROC_REF(ui_act_remove)))
 
 /obj/item/paper_bundle/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -169,18 +169,16 @@ CAPABILITIES(/obj/item/paper_bundle)
 		data["page_info"] = ""
 	return data
 
-/obj/item/paper_bundle/proc/ui_gate(datum/act/op/A)
+/// Why the bundle can't be worked from its window, or null: it must be held (or in a folder that is).
+/obj/item/paper_bundle/proc/hold_refusal(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!((src?.loc == user) || (istype(src.loc, /obj/item/folder) && (src.loc.loc == user))))
-		to_chat(user, span_notice("You need to hold it in hands!"))
-		return FALSE
-	user.set_machine(src)
-	return TRUE
+	if((src?.loc == user) || (istype(src.loc, /obj/item/folder) && (src.loc.loc == user)))
+		return null
+	return msg_reason("You need to hold it in hands!")
 
 /obj/item/paper_bundle/proc/ui_act_next_page(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
+	user.set_machine(src)
 	var/obj/item/in_hand = user.get_active_hand()
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
 		insert_sheet_at(user, page + 1, in_hand)
@@ -191,8 +189,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 
 /obj/item/paper_bundle/proc/ui_act_prev_page(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
+	user.set_machine(src)
 	var/obj/item/in_hand = user.get_active_hand()
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
 		insert_sheet_at(user, page, in_hand)
@@ -203,8 +200,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 
 /obj/item/paper_bundle/proc/ui_act_remove(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
+	user.set_machine(src)
 	if(!length(pages))
 		return TRUE
 	var/obj/item/W = pages[page]

@@ -30,7 +30,7 @@
 	rel_clear(H, nameof(H.members))
 	TEST_ASSERT_EQUAL(length(H.members), 0, "rel_clear empties the long list")
 	var/datum/relperf_member/M = made[10]
-	TEST_ASSERT(isnull(M.refs_in), "no member keeps a reverse index entry")
+	TEST_ASSERT(!length(M.refs_in), "no member keeps a reverse index entry")
 	qdel(H)
 
 /// A ref_many held as an alist set: constant-time membership, no duplicates, removal, deletion of a member and of the holder.
@@ -62,7 +62,7 @@
 	var/refs_before = refcount(C)
 	rel_add(H, nameof(H.member_set), C)
 	qdel(H)
-	TEST_ASSERT(isnull(C.refs_in), "deleting the holder dropped its members' reverse index")
+	TEST_ASSERT(!length(C.refs_in), "deleting the holder dropped its members' reverse index")
 	// An alist freed with an object key keeps a reference to it for ever (dq_alist_object_key_refs): a set must be emptied before it is freed.
 	TEST_ASSERT_EQUAL(length(H.member_set), 0, "deleting the holder emptied its alist set")
 	TEST_ASSERT_EQUAL(refcount(C), refs_before, "a member of a deleted holder's alist set keeps no extra reference")
@@ -105,7 +105,7 @@
 	TEST_ASSERT(!rel_names(H, nameof(H.member_table), B), "and unlinks its members")
 	rel_add(H, nameof(H.member_table), B, 7)
 	qdel(H)
-	TEST_ASSERT(isnull(B.refs_in), "deleting the holder unlinked the keyed members")
+	TEST_ASSERT(!length(B.refs_in), "deleting the holder unlinked the keyed members")
 	qdel(B)
 
 /// An owns_many alist set: add, no duplicate, remove (disposes), a deleted child leaves, the holder takes its children with it.

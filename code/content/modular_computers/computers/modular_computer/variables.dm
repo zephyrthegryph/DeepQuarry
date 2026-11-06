@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/modular_computer)
 	owns_one(nameof(portable_drive), /obj/item/computer_hardware/hard_drive/portable)
 	owns_one(nameof(tesla_link), /obj/item/computer_hardware/tesla_link)
 	every(2 SECONDS, then(PROC_REF(modular_computer_step)), when = nameof(enabled))
-	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	emag(list(needs(req(PROC_REF(emag_refusal))), then(PROC_REF(on_emag))), repeatable = TRUE, powered = FALSE)
 	interface("NtosMain", autoupdate = TRUE)
 	// A welder repairs the casing: as long as the damage says, for the fuel the damage says, both fixed when the weld starts.
 	op("weld_repair", tool(TOOL_WELDER), label("Repair"), needs(req(PROC_REF(needs_repair), because = MSG(modular_computer/no_repairs))), begins(MSG(modular_computer/welding)), costs(RES_FUEL, PROC_REF(weld_fuel), locked = TRUE), wait(PROC_REF(weld_time)), says(MSG(modular_computer/welded)), then(PROC_REF(weld_repair_done)))

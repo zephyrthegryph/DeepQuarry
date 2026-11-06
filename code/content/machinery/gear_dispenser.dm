@@ -164,11 +164,15 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 	op("vv_admin_add", topic_in(VV_TOPIC, "admin_add"), needs(req_rights(R_DEBUG|R_FUN)), asks(/datum/prompt/text, fields = list("title" = "Admin-load Dispenser", "question" = "Paste new gear pack JSON below. See example/code comments.", "default" = computed(PROC_REF(gear_pack_example)), "multiline" = TRUE, "timeout" = 0)), then(PROC_REF(vv_topic_admin_add)))
 	op("gear_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice/gear_dispenser, fields = list("title" = "Equipment Dispenser", "question" = "Select equipment to dispense.", "timeout" = 0), when = PROC_REF(gear_has_selection)), then(PROC_REF(interaction_use)))
 	owns_one(nameof(one_setting), /datum/gear_disp, starts = nameof(one_setting), starts_args = NO_LOC)
-	emag(then(PROC_REF(on_emag)))
+	emag(list(needs(req(PROC_REF(emag_refusal))), then(PROC_REF(on_emag))))
 
-/obj/machinery/gear_dispenser/custom/on_emag(datum/act/op/A)
-	to_chat(A.actor, span_warning("Your moral standards prevent you from emagging this machine!"))
-	return OP_DECLINE // Letting people emag this one would be bad times
+/// The custom dispenser is not emaggable (letting people emag this one would be bad times).
+/obj/machinery/gear_dispenser/custom/emag_refusal(datum/act/op/A)
+	return msg_reason("Your moral standards prevent you from emagging this machine!")
+
+/// Why the dispenser can't be emagged, or null.
+/obj/machinery/gear_dispenser/proc/emag_refusal(datum/act/op/A)
+	return null
 
 /obj/machinery/gear_dispenser/proc/make_gear_entries()
 	var/list/real_gear_list = list()

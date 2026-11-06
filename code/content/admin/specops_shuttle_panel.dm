@@ -12,7 +12,7 @@
 
 CAPABILITIES(/obj/machinery/computer/specops_shuttle)
 	configure(light_glow(color = "#00ffff"))
-	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	emag(needs(req(PROC_REF(emag_refusal))), powered = FALSE, repeatable = TRUE)
 	interface("SpecopsShuttle", title = "Special Operations Shuttle", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))

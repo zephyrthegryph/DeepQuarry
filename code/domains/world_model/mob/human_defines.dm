@@ -113,7 +113,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	wrapped_species_form()
 	configure(mob_kind(can_be_antagged = TRUE, inventory_panel = /datum/inventory_panel/human, voice_name = "unknown"))
 	configure(mob_movement(bump = HUMAN, push = ~HEAVY, swap = ~HEAVY))
-	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	emag(list(needs(req(PROC_REF(emag_refusal))), then(PROC_REF(on_emag))), repeatable = TRUE, powered = FALSE)
 	op("vr_transform", menu(), when(PROC_REF(vr_transform_granted)), label("Transform Into Creature"), needs(req_self(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Mob list", "question" = "Please select a creature:", "choices" = computed(PROC_REF(vr_creature_options)), "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "creature"), then(PROC_REF(vr_creature_chosen)))
 	op("vr_logout", menu(), when(PROC_REF(vr_logout_granted)), label("Log Out Of Virtual Reality"), needs(req_self()), asks(/datum/prompt/yes_no, fields = list("title" = "Log out?", "question" = "Would you like to log out of virtual reality?", "timeout" = 0), step = "logout"), then(PROC_REF(fake_exit_vr_answered)))
 	// Species and trait abilities (the verbs stay the player's entry; the work is the op).

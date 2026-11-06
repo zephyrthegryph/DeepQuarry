@@ -83,13 +83,13 @@
 	if(!crate || !user || crate.opened)
 		to_chat(user, span_warning("The crate must be closed before certification."))
 		return FALSE
-	if(locked || !linked_account?.is_department_budget() || !storefront_department_authorized(user, linked_account.department_id))
+	if(till.locked || !till.linked_account?.is_department_budget() || !storefront_department_authorized(user, till.linked_account.department_id))
 		to_chat(user, span_warning("Unlock and link this scanner to a department you are authorized to represent."))
 		return FALSE
 	if(!length(freight_form_paper))
 		to_chat(user, span_warning("The freight printer has no blank paper loaded."))
 		return FALSE
-	var/department = linked_account.department_id
+	var/department = till.linked_account.department_id
 	var/total_value = 0
 	var/eligible_value = 0
 	var/list/ineligible = list()
@@ -185,8 +185,8 @@
 	rel_remove(src, nameof(src.freight_form_paper), ledger)
 	move_into(crate, nameof(crate.shipping_ledger), ledger, force = TRUE) // printed into the crate, full or not
 	var/ledger_id = "FL-[stationtime2text()]-[rand(1000, 9999)]"
-	ledger.shipping_ledger_data = list("id" = ledger_id, "valid" = TRUE, "department" = department, "destination" = destination, "department_percent" = department_percent, "cargo_percent" = 20, "producer_percentages" = producer_percentages.Copy(), "sealed_by" = user.real_name, "scanner" = machine_id)
-	ledger.set_content("FREIGHT LEDGER [ledger_id]\n\nConsignor: [department]\nConsignee: [destination]\nCertified by: [user.real_name]\nScanner: [machine_id]\nEstimated eligible value: [eligible_value] Th\n\nRevenue: [department_percent]% [department], 20% Cargo[length(producer_rows) ? ", [jointext(producer_rows, "; ")]" : ""].\n\nOpening or changing the certified crate voids this document.", "freight ledger [ledger_id]")
+	ledger.shipping_ledger_data = list("id" = ledger_id, "valid" = TRUE, "department" = department, "destination" = destination, "department_percent" = department_percent, "cargo_percent" = 20, "producer_percentages" = producer_percentages.Copy(), "sealed_by" = user.real_name, "scanner" = till.machine_id)
+	ledger.set_content("FREIGHT LEDGER [ledger_id]\n\nConsignor: [department]\nConsignee: [destination]\nCertified by: [user.real_name]\nScanner: [till.machine_id]\nEstimated eligible value: [eligible_value] Th\n\nRevenue: [department_percent]% [department], 20% Cargo[length(producer_rows) ? ", [jointext(producer_rows, "; ")]" : ""].\n\nOpening or changing the certified crate voids this document.", "freight ledger [ledger_id]")
 	crate.shipping_ledger_snapshot = crate.freight_snapshot()
 	play_sfx(src, SFX_MACHINES_CHIME, 0.5, vary = FALSE)
 	to_chat(user, span_notice("[src] prints [ledger] into [crate] and seals its authenticated cargo snapshot."))

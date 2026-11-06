@@ -57,14 +57,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/services
 	/// /datum/decl_binder types.
 	var/list/binders
-	/// DECLARE_VERB: verb paths every instance has from init.
-	var/list/verbs_always
-	/// DECLARE_LOGIN_VERB: verb paths a mob has once a player had it.
-	var/list/verbs_login
-	/// DECLARE_VERB_IF: verb path -> the instance var that must be true.
-	var/list/verbs_if
-	/// DECLARE_VERB_HIDE: verb paths no instance has.
-	var/list/verbs_hidden
 
 /datum/lifecycle_decls/New(owner_type)
 	src.owner_type = owner_type
@@ -75,10 +67,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	registries = null
 	services = null
 	binders = null
-	verbs_always = null
-	verbs_login = null
-	verbs_if = null
-	verbs_hidden = null
 	return src
 
 /datum/lifecycle_decls/proc/set_gas(var_name, volume, temperature, list/gases)
@@ -94,24 +82,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /datum/lifecycle_decls/proc/add_binder(binder)
 	LAZYOR(binders, binder)
 
-/// DECLARE_VERB family: `how` is VERB_DECL_ALWAYS/LOGIN/HIDE or a var name (DECLARE_VERB_IF).
-/// A later declaration of the same verb replaces the parent's.
-/datum/lifecycle_decls/proc/add_verb_decl(verb_path, how)
-	LAZYREMOVE(verbs_always, verb_path)
-	LAZYREMOVE(verbs_login, verb_path)
-	LAZYREMOVE(verbs_if, verb_path)
-	LAZYREMOVE(verbs_hidden, verb_path)
-	if(istext(how))
-		LAZYSET(verbs_if, verb_path, how)
-		return
-	switch(how)
-		if(VERB_DECL_ALWAYS)
-			LAZYADD(verbs_always, verb_path)
-		if(VERB_DECL_LOGIN)
-			LAZYADD(verbs_login, verb_path)
-		if(VERB_DECL_HIDE)
-			LAZYADD(verbs_hidden, verb_path)
-
 /// Validates the declarations against the first instance and works out the work bits.
 /// A bad declaration is reported and dropped here, once per type, never mid-lifecycle.
 /datum/lifecycle_decls/proc/finish(datum/D)
@@ -119,32 +89,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		stack_trace("DECLARE_GAS([owner_type], \"[gas[1]]\"): no such var; dropped")
 		gas = null
 	validate_registries()
-	var/list/declared_verbs = list()
-	for(var/verb_path in verbs_always)
-		declared_verbs |= verb_path
-	for(var/verb_path in verbs_login)
-		declared_verbs |= verb_path
-	for(var/verb_path in verbs_hidden)
-		declared_verbs |= verb_path
-	for(var/verb_path in verbs_if)
-		declared_verbs |= verb_path
-	for(var/verb_path in declared_verbs)
-		if(istext(verb_path) || !(findtext("[verb_path]", "/proc/") || findtext("[verb_path]", "/verb/")))
-			stack_trace("DECLARE_VERB([owner_type], [verb_path]): not a verb path; dropped")
-			LAZYREMOVE(verbs_always, verb_path)
-			LAZYREMOVE(verbs_login, verb_path)
-			LAZYREMOVE(verbs_if, verb_path)
-			LAZYREMOVE(verbs_hidden, verb_path)
-	for(var/verb_path in verbs_if?.Copy())
-		if(!(verbs_if[verb_path] in D.vars))
-			stack_trace("DECLARE_VERB_IF([owner_type], [verb_path], \"[verbs_if[verb_path]]\"): no such var; dropped")
-			LAZYREMOVE(verbs_if, verb_path)
-	if(verbs_login && !D.lifecycle_can_login())
-		stack_trace("DECLARE_LOGIN_VERB([owner_type]): only mobs log in; dropped")
-		verbs_login = null
-	if(verbs_always || verbs_login || verbs_if || verbs_hidden)
-		work |= DECL_WORK_VERBS
-	if(gas || verbs_always || verbs_if || verbs_hidden)
+	if(gas)
 		work |= DECL_WORK_INIT
 	if(registries || services || binders)
 		work |= DECL_WORK_MATERIALIZE
@@ -160,9 +105,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 /datum/lifecycle_decls/proc/validate_registries()
 	return
-
-/datum/proc/lifecycle_can_login()
-	return FALSE
 
 /**
  * Makes D's starting occupants (owns_one() / owns_many() with `starts =`): for each declared var, the var itself wins (a path in it, a map edit, is made; an

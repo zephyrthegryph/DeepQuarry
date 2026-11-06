@@ -45,10 +45,10 @@ GLOBAL_VAR_INIT(economy_init, 0)
 
 	for(var/obj/item/retail_scanner/RS in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
 		if(RS.account_to_connect)
-			rel_set(RS, nameof(RS.linked_account), GLOB.department_accounts[RS.account_to_connect])
+			RS.till.link_provider(GLOB.department_accounts[RS.account_to_connect])
 	for(var/obj/machinery/cash_register/CR in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
 		if(CR.account_to_connect)
-			rel_set(CR, nameof(CR.linked_account), GLOB.department_accounts[CR.account_to_connect])
+			CR.till.link_provider(GLOB.department_accounts[CR.account_to_connect])
 	for(var/obj/machinery/department_storefront/store in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
 		rel_set(store, nameof(store.linked_account), GLOB.department_accounts[store.department_id])
 

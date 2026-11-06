@@ -275,6 +275,38 @@
 	qdel(W)
 	TEST_ASSERT_EQUAL(two.e3_draw, 2, "the wire's deletion releases it")
 
+/// A holder-proc gate and a var gate are told apart once, when the type is built, and each opens and closes its contribution on the target.
+/datum/unit_test/dq_e3/contributes_to_gate_kinds
+
+/datum/unit_test/dq_e3/contributes_to_gate_kinds/run_e3()
+	var/obj/e3_machine/M = allocate(/obj/e3_machine)
+	var/obj/e3_pipe/P = allocate(/obj/e3_pipe)
+	var/datum/stat_type_info/I = stat_type_of(P)
+	TEST_ASSERT(I, "the pipe type has stat info")
+	var/saw_proc = FALSE
+	var/saw_var = FALSE
+	var/datum/stat_contrib/var_gated = null
+	for(var/datum/stat_contrib/ct as anything in I.ct_entries)
+		TEST_ASSERT(ct.rel_declared, "the relation var of the entry is read from the type")
+		TEST_ASSERT(ct.def, "the stat of the entry is resolved with the type")
+		TEST_ASSERT_EQUAL(length(ct.gate_kinds), length(ct.whens), "one gate kind per when() block")
+		if(ct.gate_kinds[1] == CG_PROC)
+			saw_proc = TRUE
+		if(ct.gate_kinds[1] == CG_VAR)
+			saw_var = TRUE
+			var_gated = ct
+	TEST_ASSERT(saw_proc && saw_var, "a proc gate and a var gate are both recognised")
+	rel_set(P, "plugged", M)
+	TEST_ASSERT_EQUAL(M.e3_draw, 7, "the proc gate holds: 2 + 5")
+	TEST_ASSERT(!(var_gated.serial_text in P.rx?.stats?.ct_targets), "an entry whose gate never opened names no target, so nothing is looked for to release")
+	P.set_wide(TRUE)
+	TEST_ASSERT(var_gated.serial_text in P.rx?.stats?.ct_targets, "the entry names its target once it holds a row")
+	TEST_ASSERT_EQUAL(M.e3_draw, 13, "the proc gate closes and the var gate opens: 2 + 11")
+	P.set_wide(FALSE)
+	TEST_ASSERT_EQUAL(M.e3_draw, 7, "and back")
+	P.set_live(FALSE)
+	TEST_ASSERT_EQUAL(M.e3_draw, 2, "the proc gate reads a var it names: closed")
+
 /datum/unit_test/dq_e3/immunity_zeroes_a_status
 
 /datum/unit_test/dq_e3/immunity_zeroes_a_status/run_e3()

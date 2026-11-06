@@ -25,6 +25,12 @@ GLOBAL_VAR(stat_force_settle) // SETTLE_INLINE / SETTLE_MARKED: the apc_flip_50 
 GLOBAL_VAR_INIT(stat_spills, 0)
 GLOBAL_VAR_INIT(stat_tick_spent, 0) // what this kernel pass's marked drains have charged to the lane so far
 GLOBAL_VAR_INIT(stat_evals, 0)
+/// Settles the init frame queued instead of running (stat_settle_defer), how many it ran when the frame closed or a read needed them, and for how many targets.
+GLOBAL_VAR_INIT(stat_deferred, 0)
+GLOBAL_VAR_INIT(stat_deferred_settles, 0)
+GLOBAL_VAR_INIT(stat_deferred_targets, 0)
+/// The slots of the targets that have queued settles (rec.pending); a slot whose rows a read already settled is skipped when the frame closes.
+GLOBAL_LIST_EMPTY(stat_pending_slots)
 GLOBAL_LIST_EMPTY(stat_read_compute_by) // BENCHMARK builds: "type:stat" -> uncached read computes
 GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the value because nothing was cached (the bench's idle stat metric)
 
@@ -54,6 +60,7 @@ PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot en
 		return null
 	if(!isdatum(E))
 		return null
+	stat_pending_flush(E) // settles what the init frame queued for E: no reader sees a value a queued contribution has not reached
 	var/datum/stat_type_info/I = stat_type_of(E)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
 		. = E.vars[def.name]
@@ -314,9 +321,25 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 
 /// TRUE when every when() block around a contribution holds on E (a contribution gated by a condition is an input of the stat).
 /proc/stat_contrib_active(datum/E, datum/stat_contrib/C, datum/act/op/ctx = null)
-	for(var/datum/entry/W as anything in C.whens)
-		if(!condition_holds(E, W.args["cond"], ctx))
-			return FALSE
+	var/list/whens = C.whens
+	var/list/kinds = C.gate_kinds
+	for(var/i in 1 to length(whens))
+		var/datum/entry/W = whens[i]
+		var/cond = W.args["cond"]
+		switch(kinds?[i])
+			if(CG_VAR)
+				if(!E.vars[cond])
+					return FALSE
+			if(CG_PROC)
+				// A holder proc under the context the caller shares: the pure call, without the evaluator's form tests and its two scans of the vars.
+				if(ctx && !GLOB.op_menu_read_frame)
+					if(QDELETED(E) || !op_pure_call(E, cond, ctx))
+						return FALSE
+				else if(!condition_holds(E, cond, ctx))
+					return FALSE
+			else
+				if(!condition_holds(E, cond, ctx))
+					return FALSE
 	return TRUE
 
 /// What one contribution contributes: its constant, a var read, another stat, a capability key, a holder proc, or a condition tree.
@@ -567,7 +590,9 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 /// E's var/stat `key` changed: recompute what reads it on E, then tell the entities that read it through a relation or a system.
 /proc/stat_inputs_changed(datum/E, key)
 	GLOB.stat_input_queries++
-	var/datum/stat_type_info/I = stat_type_of(E)
+	var/datum/stat_type_info/I = GLOB.stat_type_index?[E.type] // stat_type_of() inlined: a pre-init write asks for every tracked var of every atom
+	if(isnull(I))
+		I = stat_type_of(E)
 	if(!(I && I.inputs[key]) && !GLOB.stat_hop_index[key] && !GLOB.stat_sys_vars[key])
 		GLOB.stat_input_noops++
 	if(I)
@@ -751,7 +776,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	var/datum/stat_record/rec = E.rx?.stats
 	var/ct_key = ct.serial_text
 	var/datum/old_target = slot_datum(rec?.ct_targets?[ct_key])
-	var/datum/target = (ct.rel in E.vars) ? E.vars[ct.rel] : null
+	var/datum/target = ct.rel_declared ? E.vars[ct.rel] : null
 	BOOT_PHASE_END(bp_pre, "stat_ct_update: prelude [ct.rel]", E)
 	if(old_target && old_target != target)
 		stat_ct_release(old_target, E, ct)
@@ -763,7 +788,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 		stat_ct_hold_table(E, target, rec || stat_record_of(E), ct_key, ct)
 		return
 	BOOT_PHASE_BEGIN(bp_defs)
-	var/datum/stat_def/def = stat_def_of(ct.stat_id)
+	var/datum/stat_def/def = ct.def || stat_def_of(ct.stat_id) // resolved with the type (stat_type_build); the lookup only for an entry whose stat is undeclared
 	var/declared_ok = def && stat_declared_on(target.type, def)
 	BOOT_PHASE_END(bp_defs, "stat_ct_update: def lookup [ct.rel]", E)
 	if(!declared_ok)
@@ -772,16 +797,21 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	BOOT_PHASE_BEGIN(bp_active)
 	var/gate_holds = stat_contrib_active(E, ct, gate_ctx)
 	BOOT_PHASE_END(bp_active, "stat_ct_update: gate [ct.rel]", E)
+	// The entry holds a row on `target` only if the record already named it (set when a row is placed, dropped when the target changes): an entry
+	// that never held anything here has no row to take off, and looking for one scans every row the target holds (an area holds one per machine).
+	var/held_before = (old_target == target)
 	if(!gate_holds)
-		BOOT_PHASE_BEGIN(bp_release)
-		stat_ct_release(target, E, ct)
-		BOOT_PHASE_END(bp_release, "stat_ct_update: release [ct.rel]", E)
+		if(held_before)
+			BOOT_PHASE_BEGIN(bp_release)
+			stat_ct_release(target, E, ct)
+			BOOT_PHASE_END(bp_release, "stat_ct_update: release [ct.rel]", E)
 		return
 	BOOT_PHASE_BEGIN(bp_value)
 	var/value = stat_contrib_value(E, def, ct)
 	BOOT_PHASE_END(bp_value, "stat_ct_update: value [ct.rel]", E)
 	if(stat_rule_is_boolean(def.rule) && ((def.rule == STAT_RULE_ALL && value) || (def.rule == STAT_RULE_ANY && !value)))
-		stat_ct_release(target, E, ct) // the neutral direction can never change anything: no row
+		if(held_before)
+			stat_ct_release(target, E, ct) // the neutral direction can never change anything: no row
 		return
 	rec ||= stat_record_of(E)
 	if(!rec.ct_targets)
@@ -871,7 +901,63 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		return
 	var/datum/stat_def/def = stat_def_of(ct.stat_id)
 	stat_hold_remove(target, trec, row)
-	stat_settle_def(target, def)
+	if(!stat_settle_defer(target, def))
+		stat_settle_def(target, def)
+
+/**
+ * Queues the settle of `def` on `target` while an init frame runs, instead of recomputing it now: an area's demand stat is settled once per machine that
+ * joins it, each time over the same rows. The rows are already placed; only the recompute (and what it moves) waits. It runs once per target and stat
+ * when the frame closes or yields (stat_pending_flush_all), or earlier when anything reads a stat of the target (stat_value() settles the target's
+ * queue first), so no reader sees a value a queued contribution has not reached. Only a virtual stat (one with no var of its own, read through
+ * stat_value()) with no unit and no side effect of its own waits. FALSE when it did not queue: the caller settles now.
+ */
+/proc/stat_settle_defer(datum/target, datum/stat_def/def)
+	if(def.keyed || def.units || def.id == STAT_RELEVANCE || def.id == STAT_SUSPENDED || def.id == STAT_CLOCK_RATE_BIO)
+		return FALSE
+	var/datum/materialization_host/host = materialization_host()
+	if(!host.frame_running())
+		return FALSE
+	var/datum/stat_type_info/I = stat_type_of(target)
+	if(!I || I.has_var[def.skey])
+		return FALSE
+	var/datum/stat_record/rec = stat_record_of(target)
+	var/list/queue = rec.pending
+	var/new_target = isnull(queue)
+	if(new_target)
+		queue = list()
+		rec.pending = queue
+		GLOB.stat_pending_slots += SLOT(target)
+		GLOB.stat_deferred_targets++
+	queue[def.skey] = def
+	GLOB.stat_deferred++
+	host.frame_note_stat_deferred(new_target)
+	return TRUE
+
+/// Settles what the init frame queued for `E`. A no-op when nothing is queued (one field read).
+/proc/stat_pending_flush(datum/E)
+	var/datum/stat_record/rec = E.rx?.stats
+	if(!rec?.pending)
+		return
+	var/list/queued = rec.pending
+	rec.pending = null
+	for(var/skey in queued)
+		var/datum/stat_def/def = queued[skey]
+		GLOB.stat_deferred_settles++
+		if(!QDELETED(E))
+			stat_settle_def(E, def)
+
+/// Settles every queued settle: the init frame closing or yielding. A target that is gone is dropped. Returns how many targets it settled.
+/proc/stat_pending_flush_all()
+	var/list/slots = GLOB.stat_pending_slots
+	if(!length(slots))
+		return 0
+	GLOB.stat_pending_slots = list()
+	for(var/slot in slots)
+		var/datum/E = slot_datum(slot)
+		if(!isdatum(E) || !E.rx?.stats?.pending)
+			continue
+		stat_pending_flush(E)
+		. += 1
 
 /// Places (or updates) an untimed keyed row without the hold() checks: the contribution engine's own writes. Settles the stat inline.
 /proc/stat_row_set(datum/target, datum/stat_def/def, source, value, priority, key)
@@ -899,7 +985,8 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 			var/datum/stat_record/src_rec = stat_record_of(source)
 			LAZYOR(src_rec.held_on, SLOT(target))
 	BOOT_PHASE_BEGIN(bp_settle)
-	stat_settle_def(target, def)
+	if(!stat_settle_defer(target, def))
+		stat_settle_def(target, def)
 	BOOT_PHASE_END(bp_settle, "stat_row_set: settle [def.name]", target)
 
 /// A contributes_to entity's relation var was written: its contribution moves to the new target and leaves the old one.

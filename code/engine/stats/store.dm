@@ -30,6 +30,8 @@
 	var/list/virtual
 	/// stat id ("[id]") -> TRUE while the stat waits in the marked queue.
 	var/list/marked
+	/// "[stat id]" -> the stat def whose settle the running init frame queued for this entity (stat_settle_defer()); null with nothing queued.
+	var/list/pending
 	/// A stat's map-edited constant: "[id]" -> the value the var held when the entity initialized, when it differed from the type's.
 	var/list/constants
 	/// TRUE once the entity's stats have been computed silently at init.

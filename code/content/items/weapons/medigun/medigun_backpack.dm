@@ -543,18 +543,6 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 				. = TRUE
 	return
 
-//checks that the base unit is in the correct slot to be used
-/obj/item/medigun_backpack/proc/slot_check()
-	var/mob/M = loc
-	if(!istype(M))
-		return FALSE //not equipped
-
-	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(SLOT_ID_BACK) == src)
-		return TRUE
-	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(SLOT_ID_SUIT_STORAGE) == src)
-		return TRUE
-	return FALSE
-
 /obj/item/medigun_backpack/dropped(mob/user, equipping, slot)
 	..()
 	replace_icon()

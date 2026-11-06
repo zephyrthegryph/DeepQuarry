@@ -251,9 +251,8 @@
 	var/list/shared_vars
 	/// Keyed relation var names.
 	var/list/keyed_vars
-	/// keep_after_destroy / pool_reset names.
+	/// keep_after_destroy names.
 	var/list/keep_vars
-	var/list/pool_reset_vars
 	/// TRUE when the type declares nothing to tear down (the fast path).
 	var/empty = TRUE
 	/// TRUE when materialize/dematerialize has keyed-link work (keyed views, or a keyed target).
@@ -331,7 +330,6 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	BOOT_PHASE_END(bp_links, "own_table build: link_entries_for", D)
 	T.engine_hooks = table_hook_flags_cached(table_of(D))
 	T.keep_vars = decl.keep
-	T.pool_reset_vars = decl.pool_reset
 	T.forward_vars = decl.forward
 	T.keyed_key = decl.keyed_key
 	var/list/reference_starts
