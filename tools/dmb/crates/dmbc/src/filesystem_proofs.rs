@@ -86,6 +86,19 @@ impl BulkFileSystemProofs {
                 .map(std::borrow::Cow::Borrowed),
         ))
     }
+    /// Reuse one current directory proof without merging output filters.
+    pub(crate) fn capture_snapshot_pair(
+        first: &crate::input_snapshot::InputSnapshot,
+        second: &crate::input_snapshot::InputSnapshot,
+    ) -> io::Result<Self> {
+        first.check_structure()?;
+        second.check_structure()?;
+        Ok(Self::capture_canonical(
+            first.canonical_proof_paths().chain(second.canonical_proof_paths()).map(std::borrow::Cow::Borrowed),
+            first.canonical_proof_folders().chain(second.canonical_proof_folders()).map(std::borrow::Cow::Borrowed),
+        ))
+    }
+
     fn capture_canonical<'a>(
         paths: impl IntoIterator<Item = std::borrow::Cow<'a, Path>>,
         folders: impl IntoIterator<Item = std::borrow::Cow<'a, Path>>,

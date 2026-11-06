@@ -1606,16 +1606,93 @@ impl BuildHost {
     }
 
     pub(crate) fn with_selected_original_reports_using<T>(
-        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String], mode: SelectedReportMode,
+        &mut self, request: crate::request::BuildRequest, exclusions: &[String], mode: SelectedReportMode,
         finish: impl FnOnce(
             crate::daemon::selected_report_wire::Roster, &crate::request::BuildOutcome, bool,
             Option<crate::selected_report_spool::Verified>, Option<(dq_analyze::selected_exclusions_wire::Frame, crate::selected_report_spool::Verified)>, crate::selected_report_spool::Verified,
             dm_preprocess::source_arena_credit::SourceArenaCredit,
         ) -> std::io::Result<T>,
     ) -> Result<T, Box<dyn std::error::Error>> {
+        self.stage_selected_original_reports_using(request, exclusions, mode, false, |roster, prepared, clean, diagnostics, checker, report, credit, _| {
+            finish(roster, prepared, clean, diagnostics, checker, report, credit)
+        })
+    }
+
+    /// Stage Checker and Analyze together, then compile through the ordinary
+    /// native frontend on this same retained host. Both actual input closures
+    /// must still be current before the compiled pair can be installed.
+    pub fn compile_with_original_selected_reports(
+        &mut self,
+        prepare: crate::request::BuildRequest,
+        compile: crate::request::BuildRequest,
+        exclusions: &[String],
+        diagnostics: &mut impl std::io::Write,
+        checker: &mut impl std::io::Write,
+        analyze: &mut impl std::io::Write,
+    ) -> Result<(crate::request::BuildOutcome, bool), Box<dyn std::error::Error>> {
+        use crate::daemon::{control, prepare_deadline};
+        use std::io;
+        original_exclusions_shape(&prepare)?;
+        crate::request_runner::validate_joined_compile_request(&compile, self)?;
+        if !compile.project.is_absolute()
+            || dm_preprocess::regions::canonical_path(&compile.project)
+                != dm_preprocess::regions::canonical_path(&prepare.project)
+            || !compile.defines.is_empty()
+            || compile.engine_template.is_some()
+            || compile.bootstrap_catalog
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                "compound phases require the same project and default source settings").into());
+        }
+        if prepare.timeout_seconds.is_none() || prepare.timeout_seconds != compile.timeout_seconds {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                "compound phases require one matching explicit deadline").into());
+        }
+        let requested = prepare_deadline::capture(
+            prepare.command, prepare.timeout_seconds, std::time::Instant::now(),
+        )?.ok_or_else(|| io::Error::other("compound request deadline absent"))?;
+        let _deadline = if control::WorkerContext::capture().is_none() {
+            Some(control::bind_with_deadline(control::Cancellation::default(), requested))
+        } else {
+            if control::current_deadline().is_none_or(|inherited| inherited > requested) {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                    "inherited operation must have a deadline within the compound request budget").into());
+            }
+            None
+        };
+        let (joined, clean, notices, checked, report, _spool_credit) =
+            self.stage_selected_original_reports_using(
+                prepare, exclusions, SelectedReportMode::Combined, true,
+                |_, _, clean, notices, checked, report, credit, joined| {
+                    let joined = joined.ok_or_else(|| io::Error::other("combined input closure absent"))?;
+                    let (_, checked) = checked.ok_or_else(|| io::Error::other("combined Checker output absent"))?;
+                    Ok((joined, clean, notices, checked, report, credit))
+                },
+            )?;
+        let compiled = crate::request_runner::compile_with_joined_selected_inputs(compile, self, &joined)?;
+        if !matches!(compiled, crate::request::BuildOutcome::Published { .. }) {
+            return Err(io::Error::other("exact native compilation did not publish a pair").into());
+        }
+        if let Some(notices) = notices { notices.publish(diagnostics)?; }
+        checked.publish(checker)?;
+        report.publish(analyze)?;
+        Ok((compiled, clean))
+    }
+
+    pub(crate) fn stage_selected_original_reports_using<T>(
+        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String], mode: SelectedReportMode, retain_joined: bool,
+        finish: impl FnOnce(
+            crate::daemon::selected_report_wire::Roster, &crate::request::BuildOutcome, bool,
+            Option<crate::selected_report_spool::Verified>, Option<(dq_analyze::selected_exclusions_wire::Frame, crate::selected_report_spool::Verified)>, crate::selected_report_spool::Verified,
+            dm_preprocess::source_arena_credit::SourceArenaCredit, Option<crate::request_runner::JoinedSelectedInputs>,
+        ) -> std::io::Result<T>,
+    ) -> Result<T, Box<dyn std::error::Error>> {
         use crate::selected_report_spool::Stage;
         use dq_analyze::captured_generator_budget::Budget;
         use std::io;
+        if retain_joined && mode != SelectedReportMode::Combined {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined input retention requires selected Checker and Analyze").into());
+        }
         if !self.retains_artifacts() {
             return Err(original_exclusions_invalid().into());
         }
@@ -1656,7 +1733,10 @@ impl BuildHost {
         let mut diagnostic_stage = Stage::new(&physical_cache)?;
         let report_stage = Stage::new(&physical_cache)?;
         let mut checker_stage=combined.then(||Stage::new(&physical_cache)).transpose()?;
-        let (prepared, checker_frame) = crate::request_runner::prepare_selected_report(request, self, &mut diagnostic_stage, checker_stage.as_mut())?;
+        let mut joined = None;
+        let (prepared, checker_frame) = crate::request_runner::prepare_selected_report(
+            request, self, &mut diagnostic_stage, checker_stage.as_mut(), retain_joined.then_some(&mut joined),
+        )?;
         let prepared_outcome = prepared.preparation?;
         prepared.diagnostics?;
         let (mut clean, verified) = {
@@ -1683,6 +1763,136 @@ impl BuildHost {
             (None, None) => None,
             _ => return Err(io::Error::other("combined checker did not issue its matching transcript").into()),
         };
-        Ok(finish(plan.roster(), &prepared_outcome, clean, verified_diagnostics, checker, verified, credit)?)
+        if retain_joined != joined.is_some() {
+            return Err(io::Error::other("selected report preparation did not retain its joined inputs").into());
+        }
+        Ok(finish(plan.roster(), &prepared_outcome, clean, verified_diagnostics, checker, verified, credit, joined)?)
+    }
+}
+
+#[cfg(test)]
+mod joined_selected_publication_control {
+    use super::*;
+    use crate::{
+        policy_request::{AnalysisContext, PolicyInputRequest, WorkspacePolicyRequest},
+        request::{BuildOutcome, BuildRequest, Command},
+    };
+    use std::path::Path;
+
+    fn put(root: &Path, relative: &str, text: &str) {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, text).unwrap();
+    }
+
+    fn request(command: &str, project: &Path, cache: &Path) -> BuildRequest {
+        let Command::Build(request) = crate::cli::parse(&[
+            command.into(), project.to_string_lossy().into_owned(),
+        ]).unwrap() else { panic!("expected a build request") };
+        let mut request = *request;
+        request.no_cache = true;
+        request.exact_inputs = true;
+        request.progress_enabled = false;
+        request.workers = 1;
+        request.timeout_seconds = Some(60);
+        request.cache_root = Some(cache.to_owned());
+        request
+    }
+
+    #[test]
+    fn actual_joined_selected_inputs_veto_native_install_and_recover() {
+        use crate::daemon::{control, selected_report_wire::Roster};
+        use dq_analyze::{captured_allow_annotations::{full_unused, Operation}, captured_generator_budget::Budget};
+        let root = crate::test_scratch::dir("joined-selected-project");
+        let cache = crate::test_scratch::dir("joined-selected-cache");
+        let project = root.join("deepquarry.dme");
+        let configuration = root.join("tools/ci/lint_scopes.toml");
+        let scopes = include_str!("../../../../ci/lint_scopes.toml");
+        put(&root, "deepquarry.dme", "#include \"code/bridge.dm\"\n");
+        put(&root, "code/bridge.dm", "#include \"common.dm\"\n");
+        put(&root, "code/common.dm", concat!(
+            "#define CAPABILITIES(...)\n#define PROC_REF(P) #P\n",
+            "/datum/act\n/datum/act/eval\n/datum/receiver\n",
+            "/proc/check_field(datum/receiver/argument)\n",
+            "#ifdef SPACEMAN_DMM\n    return argument.field\n",
+            "#else\n    return 1687\n#endif\n",
+            "/obj/probe\n/obj/probe/proc/dynamic(datum/act/eval/A)\n    return vars[\"probe\"]\n",
+            "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+        ));
+        put(&root, "tools/ci/lint_scopes.toml", scopes);
+        let mut prepare = request("prepare-query", &project, &cache);
+        prepare.policy_inputs = Some(PolicyInputRequest {
+            analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+            workspace: Some(WorkspacePolicyRequest {
+                root: root.clone(), recursive_roots: vec![root.join("code"), root.join("maps")],
+                configuration: configuration.clone(),
+            }),
+            ..Default::default()
+        });
+        let mut compile = request("compile", &project, &cache);
+        let artifacts = cache.join("artifacts");
+        compile.artifact_directory = Some(artifacts.clone());
+        compile.output_store = Some(cache.join("pairs"));
+
+        let budget = Budget::new(1 << 20).unwrap();
+        let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+        let selection = full_unused::registered_full_selection(&[], &mut work).unwrap();
+        let exclusions: Vec<_> = selection.names().iter()
+            .filter(|name| !Roster::WithSemanticReads.names().contains(&name.as_str()))
+            .map(|name| format!("-{name}")).collect();
+
+        let mut host = BuildHost::default();
+        let mut foreign = compile.clone();
+        foreign.defines.insert("NATIVE_ONLY_FIXTURE".into(), "1".into());
+        let incompatible = host.compile_with_original_selected_reports(
+            prepare.clone(), foreign, &exclusions,
+            &mut std::io::sink(), &mut std::io::sink(), &mut std::io::sink(),
+        ).expect_err("different source settings must fail before staging");
+        assert!(incompatible.to_string().contains("default source settings"), "{incompatible}");
+
+        for shared_edit in [false, true] {
+            let _deadline = control::bind_with_deadline(control::Cancellation::default(),
+                std::time::Instant::now() + std::time::Duration::from_secs(60));
+            let joined = host.stage_selected_original_reports_using(
+                prepare.clone(), &exclusions, SelectedReportMode::Combined, true,
+                |_, _, clean, _, checker, analyze, _, joined| {
+                    assert!(!clean);
+                    assert!(checker.is_some());
+                    assert!(analyze.length() > 0);
+                    Ok(joined.unwrap())
+                },
+            ).unwrap();
+            if shared_edit {
+                let shared_path = root.join("code/common.dm");
+                let before = std::fs::read_to_string(&shared_path).unwrap();
+                let after = before.replace("return 1687", "return 1688");
+                assert_ne!(before, after);
+                std::fs::write(shared_path, after).unwrap();
+            } else {
+                // Only the report observed this configuration file.
+                std::fs::write(&configuration, format!("{scopes}\n# newer report config\n")).unwrap();
+            }
+            let failure = crate::request_runner::compile_with_joined_selected_inputs(compile.clone(), &mut host, &joined)
+                .expect_err("stale Original closure must veto the actual native install");
+            assert!(failure.to_string().contains("both phases"), "{failure}");
+            if shared_edit {
+                assert!(failure.to_string().contains("shared input differs"), "{failure}");
+            }
+            assert!(!artifacts.join("deepquarry.dmb").exists());
+            assert!(!artifacts.join("deepquarry.rsc").exists());
+        }
+
+        let mut diagnostics = Vec::new();
+        let mut checker_bytes = Vec::new();
+        let mut analyze_bytes = Vec::new();
+        let (outcome, clean) = host.compile_with_original_selected_reports(
+            prepare, compile, &exclusions, &mut diagnostics, &mut checker_bytes, &mut analyze_bytes,
+        ).unwrap();
+        assert!(matches!(outcome, BuildOutcome::Published { .. }));
+        assert!(!clean);
+        assert!(artifacts.join("deepquarry.dmb").is_file());
+        assert!(artifacts.join("deepquarry.rsc").is_file());
+        assert!(String::from_utf8(checker_bytes).unwrap().contains("undefined field"));
+        assert!(String::from_utf8(analyze_bytes).unwrap().contains("[reads/dynamic_read]"));
     }
 }

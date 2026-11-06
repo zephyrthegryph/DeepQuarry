@@ -23,6 +23,10 @@ impl OriginalReadOpenStatus{
  /// admitted capture: unchanged facts keep their already-funded original owner.
  pub(crate) fn observed(error:&io::Error)->io::Result<Self>{Ok(Self::Failed(Some(Arc::new(Failure{kind:OriginalOpenFailureKind::from_io(error)?,raw:error.raw_os_error(),message:error.to_string(),credit:None}))))}
  pub(crate) fn is_readable(&self)->bool{matches!(self,Self::Readable)}
+ pub(crate) fn is_missing(&self) -> bool {
+    matches!(self, Self::Failed(Some(value))
+        if matches!(value.kind, OriginalOpenFailureKind::Missing | OriginalOpenFailureKind::NotDirectory))
+ }
  /// Replay retains the admitted failure string by alias, not by a hidden deep
  /// copy. OS errors preserve the actual raw code/kind without allocating text.
  pub(crate) fn error_using(&self,work:&dyn SourceArenaWork)->io::Result<io::Error>{let Self::Failed(value)=self else{return Err(io::ErrorKind::InvalidInput.into())};let value=value.as_ref().unwrap();if let Some(raw)=value.raw{let error=io::Error::from_raw_os_error(raw);if OriginalOpenFailureKind::from_io(&error)?!=value.kind||error.to_string()!=value.message{return Err(io::Error::new(io::ErrorKind::InvalidData,"recorded OS-open cause cannot be replayed faithfully on this host"))}return Ok(error)}let credit=work.reserve(std::mem::size_of::<ReplayedFailure>()+4*std::mem::size_of::<usize>())?;Ok(io::Error::new(value.kind.io(),ReplayedFailure{status:self.clone(),_credit:credit}))}

@@ -106,7 +106,38 @@ pub(crate) fn run_build_with_host_and_derived_sink_from(
 )->Result<BuildOutcome,Box<dyn std::error::Error>>{run_build_with_host_and_policy_sinks_from(request,host,derived_sink,None,preparation_output,source_override)}
 
 pub(crate) fn run_build_with_host_and_policy_sinks_from(
+    request:BuildRequest,host:&mut crate::runner_host::BuildHost,derived_sink:Option<&mut dyn DerivedFailureReportSink>,handlers_sink:Option<&mut dyn HandlersFailureReportSink>,preparation_output:&mut PreparationDiagnosticOutput<'_>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
+)->Result<BuildOutcome,Box<dyn std::error::Error>>{
+    run_build_with_selected_publication(request,host,derived_sink,handlers_sink,preparation_output,source_override,None)
+}
+
+pub(crate) use runner_freshness::JoinedSelectedInputs;
+pub(crate) fn validate_joined_compile_request(
+    request: &BuildRequest, host: &crate::runner_host::BuildHost,
+) -> io::Result<()> {
+    if request.command != BuildCommand::Compile || !request.exact_inputs || !request.no_cache
+        || request.record_inputs.is_some() || request.replay_inputs.is_some() || request.no_daemon
+        || request.policy_inputs.is_some() || request.source_questions.is_some()
+        || request.diagnostic_declarations || request.trace_path.is_some() || !host.retains_artifacts()
+        || request.warnings != crate::diagnostics::WarningPolicy::default() {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined selected reports require live exact no-cache native compilation"));
+    }
+    Ok(())
+}
+
+/// Strict native entry for private, already staged selected reports.
+pub(crate) fn compile_with_joined_selected_inputs(
+    request: BuildRequest, host: &mut crate::runner_host::BuildHost, joined: &JoinedSelectedInputs,
+) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    validate_joined_compile_request(&request, host)?;
+    let mut writer = crate::daemon::stderr_writer();
+    let mut output = PreparationDiagnosticOutput::immediate(&mut writer);
+    run_build_with_selected_publication(request,host,None,None,&mut output,None,Some(joined))
+}
+
+fn run_build_with_selected_publication(
     mut request:BuildRequest,host:&mut crate::runner_host::BuildHost,mut derived_sink:Option<&mut dyn DerivedFailureReportSink>,mut handlers_sink:Option<&mut dyn HandlersFailureReportSink>,preparation_output:&mut PreparationDiagnosticOutput<'_>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
+    joined: Option<&JoinedSelectedInputs>,
 )->Result<BuildOutcome,Box<dyn std::error::Error>>{
     if source_override.is_some(){
         if request.command!=BuildCommand::PrepareQuery||!host.retains_artifacts()||request.policy_inputs.as_ref().and_then(|p|p.analysis_context).is_none()||request.record_inputs.is_some()||request.replay_inputs.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"borrowed source requires retained Original preparation without journal overrides").into())}
@@ -130,7 +161,7 @@ pub(crate) fn run_build_with_host_and_policy_sinks_from(
     dmbc::diagnostics::begin(request.warnings.clone());
     let result = runner_freshness::run(request, |request| {
         preparation_output.start_attempt()?;
-        run_build_attempt(request, host,&mut derived_sink,&mut handlers_sink,preparation_output,source_override)
+        run_build_attempt(request, host,&mut derived_sink,&mut handlers_sink,preparation_output,source_override,joined)
     });
     match report {
         Some(project) => finish_report(&project, result),
@@ -151,6 +182,7 @@ fn run_build_attempt(
     handlers_sink:&mut Option<&mut dyn HandlersFailureReportSink>,
     preparation_output:&mut PreparationDiagnosticOutput<'_>,
     source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
+    joined: Option<&JoinedSelectedInputs>,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let retains_query_owners = host.retains_artifacts();
     let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(
@@ -849,7 +881,9 @@ fn run_build_attempt(
                     }else{None};
                     query_attempt.stage_analysis_workspace(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),workspace,&inputs_capture,intent)?;
                     let (admission,checker_ready)=if let Some((frame,policy))=checker{
-                        let (workspace,checker)=runner_freshness::admit_combined_workspace_captured_using(&inputs_capture,&stamped_provider,generated_paths,Arc::clone(&captured),policy,source_policy_queries.as_ref())?;
+                        let retain_for = preparation_output.wants_joined_inputs().then_some(project.as_path());
+                        let (workspace,checker,joined)=runner_freshness::admit_combined_workspace_captured_using(&inputs_capture,&stamped_provider,generated_paths,Arc::clone(&captured),policy,source_policy_queries.as_ref(),retain_for)?;
+                        preparation_output.record_joined_inputs(joined);
                         (workspace,Some((frame,checker)))
                     }else if intent.workspace_generators().is_empty(){
                         (runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),source_policy_queries.as_ref())?.1,None)
@@ -1524,6 +1558,7 @@ fn run_build_attempt(
         if let Some(admission) = workspace_admission { query_attempt.admit_workspace_policy(admission)?; }
         if let Some(admission) = source_admission { query_attempt.admit_source_frame(admission)?; }
         dm_profile::request_mark("publication.inputs_admitted");
+        if let Some(joined) = joined { joined.require_current(&project, &publication_inputs)?; }
         dmbc::daemon::control::begin_publication()?;
         let pair = match &publication.archive {
             dmbc::assets::ResourceArchive::Captured(bytes) => {
@@ -1897,6 +1932,7 @@ pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::B
 pub(crate) fn prepare_selected_report(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
+    joined: Option<&mut Option<JoinedSelectedInputs>>,
 )->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
     if request.command != BuildCommand::PrepareQuery {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
@@ -1905,6 +1941,7 @@ pub(crate) fn prepare_selected_report(
         Some(checker)=>PreparationDiagnosticOutput::selected_combined(stage,checker),
         None=>PreparationDiagnosticOutput::selected_report(stage),
     };
+    if let Some(joined) = joined { output.retain_joined_inputs(joined); }
     let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);
     let diagnostics=output.take_error().map_or(Ok(()),Err);
     Ok((PreparationDiagnosticResult{preparation,diagnostics}, output.checker_frame()))

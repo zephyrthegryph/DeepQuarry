@@ -548,6 +548,39 @@ pub(crate) fn admit_workspace_captured_using<P: SnapshotProvider>(
     Ok((inputs, WorkspacePolicyAdmission { capture: workspace, generation_inputs: None }))
 }
 
+/// Actual selected input facts, never native semantic/publication authority.
+pub(crate) struct JoinedSelectedInputs {
+    project: std::path::PathBuf,
+    inputs: InputSnapshot,
+    _credit: dm_preprocess::source_arena_credit::SourceArenaCredit,
+}
+impl JoinedSelectedInputs {
+    pub(super) fn require_current(
+        &self, project: &std::path::Path, native: &InputSnapshot,
+    ) -> Result<(), Box<dyn Error>> {
+        use crate::input_snapshot::GeneratedOutputInputs;
+        use std::io;
+        if self.project != project {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "staged reports belong to a different native project").into());
+        }
+        crate::daemon::control::checkpoint()?;
+        self.inputs.require_shared_native_files(native)?;
+        let proofs = crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot_pair(native, &self.inputs)?;
+        for inputs in [native, &self.inputs] {
+            let provider = GeneratedOutputInputs::new(&proofs, inputs.generated_outputs().iter().cloned());
+            if let Err(error) = admit(inputs, &provider) {
+                if !error.is::<InputsMoved>() { return Err(error); }
+                // A native-only retry cannot refresh the staged reports.
+                return Err(io::Error::new(io::ErrorKind::Interrupted, "compound inputs changed; prepare both phases again").into());
+            }
+            if !inputs.exact_positive_contents_match(&provider)? {
+                return Err(io::Error::new(io::ErrorKind::Interrupted, "compound file content changed; prepare both phases again").into());
+            }
+        }
+        Ok(())
+    }
+}
+
 /// Both private consumers must be present in the SAME freshness closure.
 pub(crate) fn admit_combined_workspace_captured_using<P: SnapshotProvider>(
     capture: &crate::input_snapshot::RecordingInputs<P>,
@@ -556,13 +589,24 @@ pub(crate) fn admit_combined_workspace_captured_using<P: SnapshotProvider>(
     workspace: std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
     checker: std::sync::Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,
     source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
-) -> Result<(WorkspacePolicyAdmission, DiagnosticPolicyAdmission), Box<dyn Error>> {
-    let inputs = admit_captured_using(capture, None, provider, generated_outputs, source_work)?;
+    retain_for: Option<&std::path::Path>,
+) -> Result<(WorkspacePolicyAdmission, DiagnosticPolicyAdmission, Option<JoinedSelectedInputs>), Box<dyn Error>> {
+    let (inputs, pending) = if let Some(project) = retain_for {
+        if !provider.uses_live_filesystem() {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "compound report requires live input facts").into());
+        }
+        let (inputs, credit) = capture.snapshot_for_joined_report(project, source_work)?;
+        admit_live(&inputs, generated_outputs)?;
+        (inputs, Some((project.to_owned(), credit)))
+    } else {
+        (admit_captured_using(capture, None, provider, generated_outputs, source_work)?, None)
+    };
     if !workspace.is_recorded_in(&inputs) || !checker.is_recorded_in(&inputs) {
         return Err(std::io::Error::other("one admitted input closure must contain both Original consumer captures").into());
     }
+    let joined = pending.map(|(project, credit)| JoinedSelectedInputs { project, inputs, _credit: credit });
     Ok((WorkspacePolicyAdmission { capture: workspace, generation_inputs: None },
-        DiagnosticPolicyAdmission { capture: checker }))
+        DiagnosticPolicyAdmission { capture: checker }, joined))
 }
 
 pub(crate) fn admit_diagnostic_captured_using<P: SnapshotProvider>(

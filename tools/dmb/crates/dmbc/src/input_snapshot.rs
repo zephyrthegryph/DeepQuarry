@@ -485,6 +485,19 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         self.mark(&snapshot);
         Ok(snapshot)
     }
+    /// Fund the actual joined ledger before cloning its recording facts.
+    pub(crate) fn snapshot_for_joined_report(
+        &self, project: &Path, work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+    ) -> io::Result<(InputSnapshot, dm_preprocess::source_arena_credit::SourceArenaCredit)> {
+        let (snapshot, credit) = {
+            let current = self.snapshot.lock().map_err(|_| invalid("input capture mutex poisoned"))?;
+            let credit = work.reserve(current.joined_report_clone_bound(project)?)?;
+            (current.clone(), credit)
+        };
+        self.mark(&snapshot);
+        Ok((snapshot, credit))
+    }
+
     pub fn into_snapshot(self) -> io::Result<InputSnapshot> {
         let snapshot = self
             .snapshot
@@ -1484,6 +1497,105 @@ impl InputSnapshot {
             }
         }
         Ok((report, next))
+    }
+
+    /// Conservative metadata admission, including aliased directory payloads.
+    /// Original immutable path trees already carry their physical owner credits.
+    fn joined_report_clone_bound(&self, project: &Path) -> io::Result<usize> {
+        let overflow = || io::Error::from(io::ErrorKind::OutOfMemory);
+        let mut bytes = 4096usize.checked_add(project.as_os_str().len()).ok_or_else(overflow)?;
+        let mut add = |width: usize| -> io::Result<()> {
+            bytes = bytes.checked_add(width).ok_or_else(overflow)?;
+            Ok(())
+        };
+        // Conservative fixed row envelope includes opaque standard B-tree nodes.
+        let path_row = |path: &PathBuf| 2048usize.checked_add(path.capacity()).ok_or_else(overflow);
+        for (path, file) in &self.files {
+            add(path_row(path)?.checked_add(file.path.capacity()).ok_or_else(overflow)?)?;
+        }
+        for path in self.negative_files.iter().chain(&self.generated_outputs) {
+            add(path_row(path)?)?;
+        }
+        for (path, listing) in &self.folders {
+            add(path_row(path)?)?;
+            if let FolderListing::Present(names) = listing {
+                add(names.capacity().checked_mul(std::mem::size_of::<String>()).ok_or_else(overflow)?)?;
+                for name in names { add(name.capacity())?; }
+            }
+        }
+        for (path, observation) in &self.policy_directories {
+            add(path_row(path)?)?;
+            if let PolicyDirectoryListing::Present(entries) = &observation.listing {
+                add(entries.capacity().checked_mul(std::mem::size_of::<PolicyDirectoryEntry>()).ok_or_else(overflow)?)?;
+                for entry in entries.iter() { add(entry.name.capacity())?; }
+            }
+        }
+        Ok(bytes)
+    }
+
+    /// Compare facts the two profiles actually observed in common. Path
+    /// normalization here grants no source identity or compiler authority.
+    pub(crate) fn require_shared_native_files(&self, native: &Self) -> io::Result<()> {
+        let mismatch = |path: &Path| io::Error::new(
+            io::ErrorKind::Interrupted,
+            format!("compound shared input differs at {}; prepare both phases again", path.display()),
+        );
+        let positive = |path: &Path, content: u128| {
+            let key = dm_preprocess::regions::canonical_path(path);
+            if native.negative_files.contains(&key)
+                || native.files.get(&key).is_some_and(|fact| fact.content != content)
+            {
+                return Err(mismatch(path));
+            }
+            Ok(())
+        };
+        for (path, fact) in &self.files {
+            crate::daemon::control::checkpoint()?;
+            positive(path, fact.content)?;
+        }
+        for (path, fact) in self.original_payloads.iter() {
+            crate::daemon::control::checkpoint()?;
+            positive(path, fact.content)?;
+        }
+        for path in &self.negative_files {
+            crate::daemon::control::checkpoint()?;
+            if native.files.contains_key(&dm_preprocess::regions::canonical_path(path)) {
+                return Err(mismatch(path));
+            }
+        }
+        for (path, present) in self.path_presence.iter() {
+            crate::daemon::control::checkpoint()?;
+            let key = dm_preprocess::regions::canonical_path(path);
+            if (*present && native.negative_files.contains(&key))
+                || (!*present && native.files.contains_key(&key))
+            {
+                return Err(mismatch(path));
+            }
+        }
+        for (path, status) in self.opened_reads.iter() {
+            crate::daemon::control::checkpoint()?;
+            let key = dm_preprocess::regions::canonical_path(path);
+            if (status.is_readable() && native.negative_files.contains(&key))
+                || (status.is_missing() && native.files.contains_key(&key))
+            {
+                return Err(mismatch(path));
+            }
+        }
+        Ok(())
+    }
+
+    /// Additional exact content check for the private compound operation.
+    pub(crate) fn exact_positive_contents_match(&self, provider: &impl SnapshotProvider) -> io::Result<bool> {
+        for (path, expected) in &self.files {
+            crate::daemon::control::checkpoint()?;
+            match provider.digest(path) {
+                Ok((stamp, content)) if stamp == expected.stamp && content == expected.content => {}
+                Ok(_) => return Ok(false),
+                Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+                Err(error) => return Err(error),
+            }
+        }
+        Ok(true)
     }
 
     /// Publication freshness is best effort; this does not replace content
