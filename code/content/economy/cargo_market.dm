@@ -1011,7 +1011,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 				outbound_crates.Add(list(list(
 					"ref" = handle_of(crate),
 					"name" = crate.name,
-					"contents" = length(crate.contents) + crate.latent_count(), // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+					"contents" = length(crate.contents),
 					"bid_id" = assigned_active ? assigned_bid.id : null,
 					"route" = assigned_active ? "[market_display_name(assigned_counterparty, user, assigned_bid.cover_name)] — [assigned_bid.profile.name]" : (assigned_bid && !assigned_visible ? "Encrypted private route" : "Spot market"),
 				)))

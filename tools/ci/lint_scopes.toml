@@ -5,7 +5,7 @@
 
 [allow]
 # ALLOW names read by lints that are not (yet) engine lints; the engine's own lints declare theirs.
-known = ["api", "cache", "check_grep", "containment", "cooldown", "doc_snippets", "decl", "derived_reads", "init", "instance_list", "interactions", "latent", "lifecycle", "engine_internal", "ownership", "organ_slots", "pollers", "radial", "registry", "scheduler", "silent_catch", "spatial", "tracked", "system_boundary", "verb_category", "subsystem_fire", "ui_actions"]
+known = ["api", "cache", "check_grep", "containment", "cooldown", "doc_snippets", "decl", "derived_reads", "init", "instance_list", "interactions", "lifecycle", "engine_internal", "ownership", "organ_slots", "pollers", "radial", "registry", "scheduler", "silent_catch", "spatial", "tracked", "system_boundary", "verb_category", "subsystem_fire", "ui_actions"]
 
 [lint.sys]
 # sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose; code/engine/_generated/ is written by `analyze gen`.
@@ -221,10 +221,6 @@ init_roots = [
 # The GLOBAL_DATUM_INIT singleton scan still reads these files (cx.all_files()).
 exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/"]
 exempt_files = ["code/defines/host/tgs.dm"]
-
-[lint.latent]
-# latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
-exempt_contains = ["/unit_tests/"]
 
 [lint.lifecycle_counts.lists]
 # lifecycle_counts_lint.py: a path listed here has its qdel( sites uncounted but is still checked for

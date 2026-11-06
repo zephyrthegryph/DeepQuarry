@@ -116,13 +116,5 @@
 			return I
 	return null
 
-// The latent ledger (code/engine/refs/containment/latent.dm) holds a VARIANT() reference as an entry for a holder that asks for it
-// (latent_variants_ok()): these answer what only the rows know.
-/atom/latent_variant_named(path)
-	return variant_alias_of(path) ? TRUE : FALSE
-
 /atom/variant_make_at(path, atom/where)
 	return variant_new(path, where)
-
-/atom/latent_variant_value(path, var_name)
-	return variant_initial(path, var_name)

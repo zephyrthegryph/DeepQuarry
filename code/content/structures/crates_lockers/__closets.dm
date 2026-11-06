@@ -105,9 +105,9 @@ CAPABILITIES(/obj/structure/closet)
 
 /// Declares what it starts with and takes in the loose items on its turf, once the map around it exists.
 /obj/structure/closet/proc/closet_after_init(datum/act/timer/A)
-	// starts_with is the generator: only types that can't be latent are made
-	// now; the rest stay declared until something needs them (C5).
-	dq_latent_declare(src)
+	// starts_with is the spawn list: its contents are made now.
+	create_spawn_contents(starts_with)
+	set_starts_with(null)
 
 	// A closed closet takes in the loose items on its turf; a body bag unfolded in play (collects_in_play FALSE) leaves the floor alone.
 	if(!opened && (collects_in_play || A?.mapload))
@@ -117,25 +117,15 @@ CAPABILITIES(/obj/structure/closet)
 			if(I.density || I.anchored) continue
 			loose += I
 		// adjust locker size to hold everything with 5 units of free store room.
-		// A closet whose ledger is already built (something asked about its contents before this ran) holds its starts as ledger entries, not as
-		// things in contents, so what it holds is the ledger's own count; summed without the ledger otherwise, so an untouched closet never builds one.
 		var/content_size = 0
-		var/list/generator
-		if(containment_ledger())
-			content_size = slot_used(CONTAINER_SLOT_INTERIOR)
-		else
-			for(var/atom/movable/AM as anything in contents) // ALLOW(latent): the generator's latent entries are summed below
-				content_size += storage_cost_of(AM)
-			generator = latent_is_declared() ? starts_with : null
-			for(var/path in generator)
-				if(dq_latent_eligible(path))
-					content_size += storage_cost_of_type(path) * dq_latent_spawn_count(generator[path])
+		for(var/atom/movable/AM as anything in contents)
+			content_size += storage_cost_of(AM)
 		for(var/obj/item/I as anything in loose)
 			content_size += storage_cost_of(I)
 		var/raised = content_size > storage_capacity-5
 		if(length(GLOB.closet_fit_log) < 400 && (raised || length(loose)))
 			// The sizing estimate, kept for the refusal line and the locker test: what it counted and what it chose.
-			GLOB.closet_fit_log["[type] @[x],[y],[z]"] = "counted [content_size] units (real [length(contents)] things, loose [length(loose)], latent starts [length(generator)] lines), capacity [storage_capacity][raised ? " raised to [content_size + 5]" : " kept"]"
+			GLOB.closet_fit_log["[type] @[x],[y],[z]"] = "counted [content_size] units (real [length(contents)] things, loose [length(loose)]), capacity [storage_capacity][raised ? " raised to [content_size + 5]" : " kept"]"
 		if(raised)
 			set_storage_capacity(content_size + 5)
 		for(var/obj/item/I as anything in loose)
@@ -163,27 +153,6 @@ CAPABILITIES(/obj/structure/closet)
 
 /datum/relation_definition/slot/closet_interior/accepts_requirements()
 	return req_loose()
-
-/obj/structure/closet/latent_generator()
-	return starts_with
-
-/obj/structure/closet/latent_generator_clear()
-	set_starts_with(null)
-
-/datum/relation_definition/slot/closet_interior/entry_cost(obj/structure/closet/holder, path)
-	return holder.storage_cost_of_type(path)
-
-/// What a thing of `path` would take up, from type data (latent entries).
-/obj/structure/closet/proc/storage_cost_of_type(path)
-	if(ispath(path, /obj/item))
-		var/obj/item/typed = path
-		return CEILING(initial(typed.w_class) / 2, 1)
-	if(ispath(path, /obj/structure/closet))
-		var/obj/structure/closet/typed_closet = path
-		return initial(typed_closet.storage_cost)
-	if(ispath(path, /obj/random))
-		return CLOSET_SPAWNER_COST
-	return 1
 
 /obj/structure/closet/move_refusal_detail(datum/item)
 	var/atom/movable/thing = item
@@ -232,8 +201,7 @@ CAPABILITIES(/obj/structure/closet)
 			. += "It is full."
 
 	if(!opened && isobserver(user))
-		var/list/latent = latent_names()
-		. += "It contains: [counting_english_list(user.client, contents)][length(latent) ? "; [english_list(latent)]" : ""]"
+		. += "It contains: [counting_english_list(user.client, contents)]"
 
 /obj/structure/closet/CanPass(atom/movable/mover, turf/target)
 	if(wall_mounted)
@@ -611,7 +579,7 @@ CAPABILITIES(/obj/structure/closet)
 /// Each devourable one shut in with `user`, other than `user`, by the name the choice shows (two with one name are told apart with a number). Names to mobs.
 /obj/structure/closet/proc/prey_by_name(mob/living/user)
 	var/list/by_name = list()
-	for(var/mob/living/L in contents_of(src, /mob/living)) // mobs are never latent
+	for(var/mob/living/L in contents_of(src, /mob/living))
 		if(L == user || !read_once(L.vore_prefs.devourable)) //no eating yourself. 1984.
 			continue
 		var/label = "[L]"

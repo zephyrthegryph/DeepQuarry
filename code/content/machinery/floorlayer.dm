@@ -107,16 +107,14 @@ CAPABILITIES(/obj/machinery/floorlayer)
 	return new_turf.is_plating()
 
 /obj/machinery/floorlayer/proc/TakeNewStack()
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/stack/tile/tile in contents)
 		rel_set(src, nameof(T), tile)
 		return 1
 	return 0
 
 /obj/machinery/floorlayer/proc/SortStacks()
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stack/tile/tile1 in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		for(var/obj/item/stack/tile/tile2 in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/stack/tile/tile1 in contents)
+		for(var/obj/item/stack/tile/tile2 in contents)
 			if(tile2 != tile1)
 				tile2.transfer_to(tile1)
 

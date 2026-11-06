@@ -2070,7 +2070,7 @@ const DOMAIN_PATTERNS: [RegExp, string][] = [
   [/medical|surgery|disease|genetics|\borgan\b|\bbody\b|physiology|stabilisation|diagnosis/i, 'medical'],
   [/vore|belly/i, 'vore'],
   [/\brule/i, 'rules'],
-  [/\bstate\b|latent/i, 'state'],
+  [/\bstate\b/i, 'state'],
   [/\bmob\b|\blife\b|hibernat/i, 'mobs'],
   [/tgui|\bui_|interface/i, 'ui'],
   [/construction|assembly|\bmech\b/i, 'construction'],
@@ -2167,8 +2167,8 @@ const SWEEP_HASH_CACHE_FILE = `${DMB_CACHE_DIR}/sweep-hashes.json`;
  * Every sweep here iterates `subtypesof()`/`typesof()` of some root and
  * reads `initial()` var values (or property-provider-derived values) per
  * type. That means its true input set is "every file that declares a
- * subtype of the root, anywhere in the tree" -- for dq_lifecycle_sandbox and
- * dq_state_latent_round_trip that's any /atom/movable subtype; a first
+ * subtype of the root, anywhere in the tree" -- for dq_lifecycle_sandbox
+ * that's any /atom/movable subtype; a first
  * attempt at scoping all_clothing_shall_be_valid to
  * code/modules/clothing/ and dq_property_type_values_valid to
  * code/datums/properties/ turned out to be exactly this mistake:

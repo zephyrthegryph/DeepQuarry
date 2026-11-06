@@ -352,10 +352,7 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 			var/severity = resolved_atoms[handle_of(AM)]
 			if(!severity)
 				continue
-			var/has_latent = AM.has_latent()
-			var/contents_severity = (length(AM.contents) || has_latent) ? explosion_contents_severity_of(AM, severity) : 0
-			if(contents_severity && has_latent)
-				AM.latent_blast(contents_severity) // entries resolve as data (C5)
+			var/contents_severity = length(AM.contents) ? explosion_contents_severity_of(AM, severity) : 0
 			if(contents_severity)
 				FOR_CONTENTS(var/atom/movable/inner as anything, AM)
 					queue_blast(inner, contents_severity)

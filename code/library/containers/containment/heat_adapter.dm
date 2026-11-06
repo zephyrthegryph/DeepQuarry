@@ -15,9 +15,6 @@
 //       conductance (thermal_properties()[THERMAL_CONDUCTANCE]) through this,
 //       so a closet's insulation and a suit over a jumpsuit slow the coupling
 //       instead of each type writing its own rule.
-//
-// Latent entries (C5) never get heat bodies: a container's body carries their
-// heat capacity (the ledger's PROP_HEAT_CAPACITY aggregate) and thresholds.
 
 /// Temperature inside `holder` with no heat added: its turf's air, else 20 C.
 /// A holder's own heat body is not the reference: propagate_fire() scales a

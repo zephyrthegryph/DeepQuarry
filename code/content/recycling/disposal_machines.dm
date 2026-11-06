@@ -870,5 +870,5 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/disposal/step_start_condition()
-	return mode == 1 || flush || contents_count(src) || has_latent() // ALLOW(latent): latent entries checked
+	return mode == 1 || flush || contents_count(src)
 

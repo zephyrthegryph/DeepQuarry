@@ -30,14 +30,12 @@
 
 /datum/unit_test/dq_init_children/storage_contents/Run()
 	var/obj/item/storage/box/dosimeter/box = allocate(/obj/item/storage/box/dosimeter, dq_containment_floor())
-	box.make_contents_real()
 	var/films = 0
 	for(var/obj/item/dosimeter_film/F in box.contents)
 		films++
 	TEST_ASSERT_EQUAL(films, 3, "the dosimeter box holds three films")
 	TEST_ASSERT(locate(/obj/item/clothing/accessory/dosimeter) in box.contents, "and the dosimeter")
 	var/obj/item/storage/excavation/picks = allocate(/obj/item/storage/excavation, dq_containment_floor())
-	picks.make_contents_real()
 	TEST_ASSERT_EQUAL(length(picks.contents), 7, "the excavation set holds its seven picks")
 
 /// Firefighting foam dissolves on its own after its lifetime.

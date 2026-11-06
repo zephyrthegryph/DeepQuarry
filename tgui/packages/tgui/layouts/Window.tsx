@@ -36,6 +36,7 @@ import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
 import { claimReveal, revealWindow } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
+import { useConsoleScanlines } from './consoleTheme';
 import { fitOverflow, measureNaturalBottom } from './fitWindow';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
@@ -95,6 +96,7 @@ export function Window(props: Props) {
   } = props;
 
   const { config, suspended, debug } = useBackend();
+  useConsoleScanlines(theme);
   const defaultGeometry = getStaticWindowGeometry(config?.interface?.name);
   const width = requestedWidth ?? defaultGeometry?.width;
   const height = requestedHeight ?? defaultGeometry?.height;

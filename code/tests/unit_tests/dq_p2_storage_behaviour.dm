@@ -15,7 +15,6 @@
 
 /// What the storage holds, in order.
 /proc/sb_items(obj/item/storage/S)
-	S.make_contents_real() // starting contents are declared, not made, until somebody looks
 	return S.stored_items()
 
 /// How many things count against the storage's count limit now.
@@ -120,7 +119,7 @@
 	run_gate()
 	for(var/atom/A as anything in sb_extra)
 		if(!QDELETED(A))
-			qdel(A)
+			qdel(A, TRUE) // a cleanup: forced, so a kit's bottle takes its pills with it instead of spilling them onto the block
 	own_turf_contents(run_loc_floor_bottom_left)
 	test_driver_end()
 

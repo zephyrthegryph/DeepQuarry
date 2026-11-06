@@ -117,18 +117,19 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 		else //Should never happen.
 			return OP_OK
 
-	// Carry the installed parts over to new_coil (roadmap C6). new_coil's
-	// own default board+parts already resolved into latent entries the
-	// moment its Initialize() first asked the ledger a question, so clear
-	// those before src's parts (real, or still latent) replace them.
-	materialize_parts()
-	var/datum/ledger/new_coil_ledger = dq_ledger(new_coil)
-	new_coil_ledger?.latent_clear()
+	// Carry the installed parts over to new_coil (roadmap C6). new_coil made its own default
+	// parts with it (start_circuit()), so delete those before src's parts replace them.
+	adopt_parts()
+	for(var/obj/item/default_part in new_coil.slot_contents(CONTAINER_SLOT_INTERNALS))
+		if(default_part != new_coil.circuit)
+			spent(default_part)
 	for(var/obj/item/stock_parts/C in component_parts)
 		rel_take(src, nameof(component_parts), C)
 		move_into(new_coil, CONTAINER_SLOT_INTERNALS, C)
 	rel_take_all(new_coil, nameof(new_coil.component_parts))
 	for(var/obj/item/I in new_coil.slot_contents(CONTAINER_SLOT_INTERNALS))
+		if(I == new_coil.circuit)
+			continue
 		rel_add(new_coil, nameof(new_coil.component_parts), I)
 	new_coil.RefreshParts()
 
@@ -296,9 +297,6 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 	input_power_multiplier = 0
 	for(var/obj/item/stock_parts/capacitor/C in slot_contents(CONTAINER_SLOT_INTERNALS))
 		input_power_multiplier += C.rating ** 2 //T1 = 200% T2 = 400% T3 = 900% T4 = 1600% T5 = 2500%
-	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
-		if(ispath(entry.path, /obj/item/stock_parts/capacitor))
-			input_power_multiplier += (dq_type_var(entry.path, "rating") ** 2) * entry.count
 	if(input_power_multiplier == 1)
 		input_power_multiplier = 2
 

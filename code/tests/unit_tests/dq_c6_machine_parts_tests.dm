@@ -1,10 +1,9 @@
 // Machine internals as data (roadmap C6, doc/rewrite/containment.md §5).
 //
-// A machine's board and stock parts are declared through latent_generator()
-// (machinery.dm) and resolved lazily into latent entries in
-// CONTAINER_SLOT_INTERNALS -- never eager objects. RefreshParts() and
-// get_part_rating()/get_part_count() read those entries (or the real objects
-// once something materializes them) instead of scanning component_parts.
+// A machine's board and stock parts are real objects made at init, held in
+// CONTAINER_SLOT_INTERNALS (default_parts() in machinery.dm lists the parts).
+// RefreshParts() and get_part_rating()/get_part_count() read that slot instead
+// of scanning component_parts.
 //
 // dq_type_var() (machinery.dm) is the primitive that reads a declared var off
 // a bare type path without the `:` operator (forbidden, AGENTS.md §3b): one
@@ -33,18 +32,18 @@
 	var/laser_default = dq_type_var(/obj/item/stock_parts/micro_laser, "rating")
 	TEST_ASSERT_EQUAL(laser_default, 1, "A stock part's declared rating defaults to 1.")
 
-/// A freshly constructed machine keeps its board and parts as data: no real
-/// circuitboard or stock part objects exist until something asks for them.
-/datum/unit_test/dq_c6_mapped_machine_stays_latent
+/// A freshly constructed machine holds a real board and its real parts, and the counts read the parts its board lists.
+/datum/unit_test/dq_c6_machine_has_real_board_and_parts
 
-/datum/unit_test/dq_c6_mapped_machine_stays_latent/Run()
+/datum/unit_test/dq_c6_machine_has_real_board_and_parts/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/obj/machinery/autolathe/machine = new(test_turf)
 
-	TEST_ASSERT(ispath(machine.circuit) || istext(machine.circuit), "A freshly mapped machine's circuit must stay a type path or a VARIANT() reference (roadmap C6), not a materialized board.")
-	TEST_ASSERT_NULL(machine.component_parts, "A freshly mapped machine must not hold real part objects before anything materializes them.")
+	TEST_ASSERT(istype(machine.circuit, /obj/item/circuitboard), "A freshly made machine's circuit must be a real board.")
+	machine.adopt_parts()
+	TEST_ASSERT_EQUAL(length(machine.component_parts), 5, "A freshly made autolathe holds all 5 parts (3 matter bins, 1 manipulator, 1 console screen).")
 
-	// Reading its board's own type still works: the autolathe board requires
+	// Reading its board's own type: the autolathe board requires
 	// 3 matter bins, not the recharger's or any other board's count.
 	TEST_ASSERT_EQUAL(machine.get_part_count(/obj/item/stock_parts/matter_bin), 3, "The autolathe board requires 3 matter bins.")
 	TEST_ASSERT_EQUAL(machine.get_part_count(/obj/item/stock_parts/manipulator), 1, "The autolathe board requires 1 manipulator.")
@@ -81,7 +80,7 @@
 	// autolathe's board declares 1 manipulator, so its rating starts at 1.
 	var/obj/machinery/autolathe/machine = new(test_turf)
 	machine.set_panel_open(TRUE)
-	TEST_ASSERT_EQUAL(machine.get_part_rating(/obj/item/stock_parts/manipulator), 1, "Precondition: the mapped autolathe starts with a rating-1 manipulator.")
+	TEST_ASSERT_EQUAL(machine.get_part_rating(/obj/item/stock_parts/manipulator), 1, "Precondition: the autolathe starts with a rating-1 manipulator.")
 
 	var/obj/item/storage/part_replacer/R = new(test_turf)
 	var/obj/item/stock_parts/manipulator/best = new(R)
@@ -92,16 +91,17 @@
 	qdel(machine)
 	qdel(R, TRUE) // a cleanup: forced, so the swapped-out part in the RPED goes with it (admission.md D10)
 
-/// Deconstructing a mapped (never-materialized) machine yields the same real
-/// board and parts as before machine internals became data.
-/datum/unit_test/dq_c6_deconstruct_materializes_parts
+/// adopt_parts() is a no-op once the parts are held: defensive calls (deconstruction, an RPED swap) change nothing.
+/datum/unit_test/dq_c6_adopt_parts_is_idempotent
 
-/datum/unit_test/dq_c6_deconstruct_materializes_parts/Run()
+/datum/unit_test/dq_c6_adopt_parts_is_idempotent/Run()
 	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/obj/machinery/autolathe/machine = new(test_turf)
-	TEST_ASSERT_NULL(machine.component_parts, "Precondition: parts must still be latent before deconstruction.")
-
-	machine.materialize_circuit()
-	TEST_ASSERT(!ispath(machine.circuit), "materialize_circuit() must produce a real board instance.")
-	TEST_ASSERT_EQUAL(length(machine.component_parts), 5, "Deconstruction-time materialization must produce all 5 declared parts (3 matter bins, 1 manipulator, 1 console screen).")
+	machine.adopt_parts()
+	var/board = machine.circuit
+	var/parts = length(machine.component_parts)
+	machine.adopt_parts()
+	TEST_ASSERT_EQUAL(machine.circuit, board, "adopting again keeps the board")
+	TEST_ASSERT_EQUAL(length(machine.component_parts), parts, "and the parts")
+	TEST_ASSERT_EQUAL(parts, 5, "the autolathe holds all 5 parts")
 	qdel(machine)

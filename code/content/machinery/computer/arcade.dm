@@ -202,7 +202,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 				log_game("[key_name_admin(user)] has outbombed Cuban Pete and been awarded a bomb.")
 				randomize_characters()
 				set_emagged(0)
-			else if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
+			else if(!contents_count(src))
 				feedback_inc("arcade_win_normal")
 				prizevend(user)
 

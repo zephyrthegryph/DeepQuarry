@@ -1,7 +1,6 @@
 /// This enables you to load mag to mag too. This includes from box to mag.
 /// Part of the magazine's item interaction (magazine_interaction_item()): FALSE stops it there.
 /obj/item/ammo_magazine/proc/load_from_magazine(obj/item/W, mob/user)
-	make_rounds_real()
 	if(istype(W, /obj/item/ammo_magazine))
 		var/obj/item/ammo_magazine/L = W
 		if(L.caliber != caliber)

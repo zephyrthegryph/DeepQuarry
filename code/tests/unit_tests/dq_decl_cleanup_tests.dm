@@ -9,8 +9,6 @@
 
 /datum/unit_test/dq_decl_cleanup_destroy/proc/scope_fixture()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.latency_last_ineligible), GLOB.latency_last_ineligible)
-	set_global(nameof(GLOB.latency_last_pin_reason), GLOB.latency_last_pin_reason)
 /mob/living/carbon/human/dq_decl_cleanup_subject
 	var/perspective_resets = 0
 	var/camera_cancels = 0

@@ -8,8 +8,6 @@
 #define STATE_KEY_COMPONENTS "components"
 /// On a child blob: the holder slot it is in, when not the holder's default slot (C5).
 #define STATE_KEY_SLOT "slot"
-/// Latent entries of a holder (C5): list(list("type", "count", "slot", "state"), ...).
-#define STATE_KEY_LATENT "latent"
 /// An /obj's state that is not a saved var (its cap_data records): name = encoded value, from /obj/state_extra().
 #define STATE_KEY_EXTRA "extra"
 
@@ -36,7 +34,7 @@
 /// Read back legacy component blobs (saves made before the DCS was deleted) into the
 /// entity state that replaced those components (GLOB.state_legacy_component_vars).
 #define STATE_COMPONENTS (1<<1)
-/// Everything: contents and legacy component blobs. What latent entries use.
+/// Everything: contents and legacy component blobs.
 #define STATE_FULL (STATE_CONTENTS|STATE_COMPONENTS)
 
 /// Default schema version of every type. Bump a type's state_version and add a
@@ -46,7 +44,4 @@
 #define STATE_VERSION_LEGACY 0
 
 // Inherited type policy keys: independent of per-instance state and prototype allocation.
-#define TYPE_META_LATENT_SAFE "latent_safe"
-#define TYPE_META_LATENT_CONTENTS "latent_contents"
-#define TYPE_META_LATENT_IDLE_DELAY "latent_idle_delay"
 #define TYPE_META_SLOT_HOOKS "has_slot_hooks"
