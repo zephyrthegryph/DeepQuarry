@@ -2812,8 +2812,16 @@ ledger with stable backing sizes. Exact sweeps still handle mutable
 observations, periodically prune dead weak entries, and confirm any
 refusal predicted from the conservative total. The actual Original
 source freezes fingerprint cache growth without changing its digest.
-Three real-file and ledger pressure tests passed. A bounded checkout
-run is needed to measure the reduction in full scans.
+Three real-file and ledger pressure tests passed. On the same 6,753-source
+checkout the next combined Checker and selected Analyze request reached
+39,333 headers and 4,113 opened source occurrences in 263.6 seconds.
+The last admission census showed 16,375 shortcuts out of 16,384 calls,
+with nine exact sweeps and 24,897 rows visited. The syntax ledger refused
+a 13,312-byte allocation at 134,205,515 of its unchanged 134,217,728-byte
+limit. The request emitted zero report bytes and its private daemon drained.
+The refusal trace attributed 18,721,024 bytes to committed item rows and
+7,723,035 bytes to their copied header text. Every measured committed
+header matched its span in the issued source.
 
 The ordered Checker BODY pass now emits membership ambiguity before its
 operands and bitwise ambiguity after them. Real resident tests verified

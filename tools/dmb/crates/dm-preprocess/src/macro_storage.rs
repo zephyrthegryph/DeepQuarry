@@ -32,7 +32,17 @@ pub(crate) fn empty_exact<T>(capacity:usize,a:&SettingAdmission<'_>)->io::Result
 
 pub(crate) struct MacroRows<T>{ rows:Vec<T>,root:SettingRootLease }
 impl<T> MacroRows<T>{
-    pub(crate) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:Vec::new(),root:a.reserve(0).map_err(|e|actual(a,e))?})}
+    pub(crate) fn new(a: &SettingAdmission<'_>) -> io::Result<Self> {
+        Self::with_capacity(0, a)
+    }
+
+    pub(crate) fn with_capacity(capacity: usize, a: &SettingAdmission<'_>) -> io::Result<Self> {
+        let bytes = capacity.checked_mul(std::mem::size_of::<T>())
+            .ok_or_else(|| failure(a, io::ErrorKind::OutOfMemory, "macro storage byte count overflow"))?;
+        let root = a.reserve(bytes).map_err(|error| actual(a, error))?;
+        let rows = empty_exact(capacity, a)?;
+        Ok(Self { rows, root })
+    }
     pub(crate) fn as_slice(&self)->&[T]{&self.rows}
     pub(crate) fn as_mut_slice(&mut self)->&mut[T]{&mut self.rows}
     pub(crate) fn len(&self)->usize{self.rows.len()}

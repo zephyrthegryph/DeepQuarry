@@ -88,7 +88,7 @@ impl Replacement{
  #[cfg(test)]
  pub(super) fn is_compact(&self)->bool{matches!(self,Self::Physical(_))}
  pub(super) fn duplicate_using(&self,name:Option<&OriginalDefinitionName>,a:&SettingAdmission<'_>)->io::Result<Rows<Token<'static>>>{
-  let mut result=Rows::new(a)?;
+  let mut result=Rows::with_capacity(self.len(),a)?;
   match self{
    Self::Exact(rows)=>for token in rows.as_slice(){original_poll(a)?;result.push(token.duplicate(a)?,a)?;},
    Self::Physical(packed)=>{
@@ -104,6 +104,41 @@ impl Replacement{
 mod punctuation_storage_tests {
     use super::*;
     use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+
+    #[test]
+    fn original_replacement_copy_reserves_only_its_complete_output_buffer() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let admission = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let count = 73;
+        let mut rows = Rows::with_capacity(count, &admission).unwrap();
+        for ordinal in 0..count {
+            let span = Span::new(ordinal, ordinal + 1);
+            rows.push(Token {
+                value: Value::Punct("+"),
+                punctuation_close: false,
+                origin: Origin { physical: span, line: 1, byte_column: Some(ordinal + 1),
+                    occurrence: 0, invocation: false },
+                lexical_frame: None,
+                lexical_span: None,
+                raw_spelling: None,
+                string_mode: OriginalStringMode::Unknown,
+            }, &admission).unwrap();
+        }
+        let mut credit = admission.reserve(0).unwrap();
+        let replacement = Replacement::capture(rows, None, &mut credit, &admission).unwrap();
+        let original_charge = used.load(Ordering::Acquire);
+        let output_bytes = count * size_of::<Token<'static>>();
+        let tight = SettingAdmission::new(&used, original_charge + output_bytes, &|| Ok(()));
+        let duplicate = replacement.duplicate_using(None, &tight).unwrap();
+        assert_eq!(duplicate.capacity(), count);
+        assert_eq!(used.load(Ordering::Acquire), original_charge + output_bytes);
+        for (original, copy) in replacement.wide().iter().zip(duplicate.as_slice()) {
+            assert!(matches!(copy.value, Value::Punct("+")));
+            assert_eq!(copy.origin, original.origin);
+        }
+        drop((duplicate, replacement, credit));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
 
     #[test]
     fn physical_punctuation_reserves_exact_compact_width_and_preserves_wide_fallback() {
