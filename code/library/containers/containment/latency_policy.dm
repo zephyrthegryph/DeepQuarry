@@ -62,14 +62,16 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 		return
 	var/checked = 0
 	var/index = cursor % count
-	// Snapshot the keys: deleted holders are pruned after the pass, never mid-iteration,
-	// so the indexes below stay valid for the whole frame.
-	var/list/keys = holders.Copy()
+	// Snapshot only the holders this frame can reach (the budget's worth from the cursor, not the whole list): a collapse
+	// can unregister a holder, which shifts the list, and deleted holders are pruned after the pass, never mid-iteration.
+	var/list/keys = list()
+	for(var/offset in 0 to min(LATENCY_SWEEP_BUDGET, count) - 1)
+		keys += holders[((index + offset) % count) + 1]
 	var/list/dead
 	var/frame_start = TICK_USAGE_REAL
 	var/out_of_time = FALSE
 	while(checked < LATENCY_SWEEP_BUDGET && checked < count && !out_of_time)
-		var/atom/holder = keys[(index % count) + 1]
+		var/atom/holder = keys[checked + 1]
 		index++
 		checked++
 		if(QDELETED(holder))

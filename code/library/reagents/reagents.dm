@@ -160,4 +160,8 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 	var/mob/M = target
 	if(!istype(M))
 		return FALSE
-	return !M.vore_prefs.consume_liquid_belly && reagents_from_belly(holder)
+	return M.refuses_belly_liquid(holder)
+
+/// Whether this mob refuses a holder whose contents came from a belly. Nothing is a belly's before the content layer says so.
+/mob/proc/refuses_belly_liquid(atom/holder)
+	return FALSE

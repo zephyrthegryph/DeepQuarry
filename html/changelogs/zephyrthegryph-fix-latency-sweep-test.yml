@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A materialized item restarts its idle clock, and the collapse check counts the container's references right, so an outside holder keeps an item real"
+  - code_imp: "The latency sweep copies only the holders it reaches; use_check has a pure form; boot timers and belly refusals no longer name content from the engine and library"

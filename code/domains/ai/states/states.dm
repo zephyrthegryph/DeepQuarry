@@ -138,18 +138,19 @@ CAPABILITY_TYPE(ai_state_regroup, CAP_AI_STATE_REGROUP, /datum/capability/ai_sta
 	/// The state capability the brain is in (modes(nameof(ai_state)) grants it): a faction or species may start in another.
 	var/ai_state = /datum/capability/ai_state/calm
 
+GLOBAL_LIST_INIT(ai_standard_states, list(
+	"calm" = /datum/capability/ai_state/calm,
+	"alert" = /datum/capability/ai_state/alert,
+	"engaged" = /datum/capability/ai_state/engaged,
+	"fleeing" = /datum/capability/ai_state/fleeing,
+	"regroup" = /datum/capability/ai_state/regroup))
+
 /// The five states, by what they are called in the traces and tests: the brain's faction may supply its own set (faction_data.states).
 /datum/ai_brain/proc/state_set()
 	var/datum/faction_data/data = dq_faction_data_for(mob_rules_of(holder).faction)
 	if(data.states)
 		return data.states
-	var/static/list/standard = list(
-		"calm" = /datum/capability/ai_state/calm,
-		"alert" = /datum/capability/ai_state/alert,
-		"engaged" = /datum/capability/ai_state/engaged,
-		"fleeing" = /datum/capability/ai_state/fleeing,
-		"regroup" = /datum/capability/ai_state/regroup)
-	return standard
+	return GLOB.ai_standard_states
 
 /// The state's definition (the flyweight).
 /datum/ai_brain/proc/state_def()

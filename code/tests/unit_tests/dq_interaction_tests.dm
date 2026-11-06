@@ -115,7 +115,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
-	R.locked = FALSE
+	R.set_locked(FALSE)
 	for(var/stance in list(I_HELP, I_DISARM, I_GRAB))
 		H.set_use_stance(stance)
 		H.put_in_active_hand(crowbar)

@@ -417,6 +417,9 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 		var/list/record = entries[slot_known(thing)]
 		if(record && record[LEDGER_E_SLOT] != slot)
 			reslot(thing, slot)
+		// The ledger touched it under the slot it was born with; its idle clock is a row of the slot it has now (the old one, parked
+		// with its aged stamp), so the arrival is a touch again, or the thing is eligible to collapse at once.
+		dq_latent_touch(thing)
 		dq_latency_log("materialized", path, holder().type, holder())
 		if(audit_blob)
 			dq_latency_audit_check(thing, audit_blob)

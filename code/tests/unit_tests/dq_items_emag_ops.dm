@@ -72,10 +72,10 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	var/obj/item/card/emag/E = card(T)
 	H.put_in_active_hand(E)
-	R.locked = FALSE
+	R.set_locked(FALSE)
 	TEST_ASSERT_EQUAL(emag_target(R, 1, H, E), EMAG_DECLINED, "an unlocked cover declines the emag")
 	TEST_ASSERT_EQUAL(E.uses, 5, "and spends nothing")
-	R.locked = TRUE
+	R.set_locked(TRUE)
 	for(var/attempt in 1 to 30)
 		if(!R.locked)
 			break

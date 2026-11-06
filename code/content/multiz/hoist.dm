@@ -40,7 +40,7 @@ CAPABILITIES(/obj/item/hoist_kit)
 		return msg_reason("you can't do that")
 	if(source_hoist().hoistee())
 		return msg_reason("[source_hoist().hoistee()] is already attached")
-	if(use_check(A.actor, 0))
+	if(use_check_failure(A.actor, 0))
 		return msg_reason("you can't reach the clamp right now")
 	return null
 

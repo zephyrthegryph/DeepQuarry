@@ -676,14 +676,12 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/datum/ledger/parent_ledger = dq_ledger_peek(holder().loc)
 	parent_ledger?.adjust_hooked(have ? 1 : -1)
 
-/// References this ledger holds to `thing` (for the collapse refcount check).
+/// References this ledger holds to `thing` (for the collapse refcount check). The entries table and the pending slot are keyed by the
+/// thing's slot number, which holds no reference; only the slot's list of things does.
 /datum/ledger/proc/refs_to(atom/movable/thing)
 	. = 0
 	var/list/entry = entries[slot_known(thing)]
 	if(entry)
-		. += 1 // the entries key
 		var/list/things = slots[entry[LEDGER_E_SLOT]]
 		if(thing in things)
 			. += 1
-	if(pending_thing_slot && pending_thing_slot == SLOT_KNOWN(thing))
-		. += 1

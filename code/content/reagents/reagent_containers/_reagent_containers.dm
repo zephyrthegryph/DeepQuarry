@@ -78,3 +78,6 @@ CAPABILITIES(/obj/item/reagent_containers)
 		balloon_alert(A.actor, "\The [A.held] burns the blood in \the [src].")
 		B.changling_blood_test(reagents)
 	return OP_OK
+
+/mob/living/refuses_belly_liquid(atom/holder)
+	return !vore_prefs.consume_liquid_belly && reagents_from_belly(holder)
