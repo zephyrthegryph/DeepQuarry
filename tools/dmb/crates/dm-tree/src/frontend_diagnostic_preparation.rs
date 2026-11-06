@@ -175,6 +175,17 @@ impl OriginalImageDirFrontend {
     pub fn archive(&self) -> &Arc<BodyArchive> { &self.0.archive }
     pub fn expanded_text(&self) -> &str { self.0.inner.expanded.text.as_str() }
     pub fn files(&self) -> &[SourceFile] { &self.0.inner.files }
+    pub fn source_revision(&self) -> u128 { self.0.inner.source_export_revision() }
+    pub fn original_text_sources(&self)->impl Iterator<Item=(&Path,Option<&dm_preprocess::SourceAcquisitionLease>)>{
+        let plan=&self.0.inner.plan;
+        let mapping=self.0.archive.source_mapping();
+        plan.occurrences().iter().enumerate().filter(|(_,row)|row.non_text_kind().is_none())
+            .map(move |(index,row)|(row.path.as_path(),mapping.source_acquisition(index)))
+    }
+    pub fn has_no_original_preprocess_notices(&self)->bool{
+        self.0.source_view().is_ok_and(|view|
+            view.original_preprocess_notices().is_some_and(|notices|notices.is_empty()))
+    }
     pub fn file_exact(&self,path:&Path)->Option<&SourceFile>{
         let index=self.0.inner.source_by_path.get(path)?.0 as usize;
         self.0.inner.files.get(index).filter(|file|file.captured&&file.path.as_path()==path)

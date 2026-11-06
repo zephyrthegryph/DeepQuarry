@@ -574,7 +574,8 @@ impl ArchivedBody<'_> {
         &self.archive.tree
     }
 }
-/// Two independent legacy lookups over one actual Original source roster.
+/// Authored results of two independent legacy lookups. A selected fixed
+/// builtin has neither an authored member nor a body in this archive.
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]
 pub struct OriginalImageDirCallable {
     pub formal: Option<crate::MemberId>,
@@ -681,12 +682,20 @@ impl BodyArchive {
             let catalog=crate::checker_builtins::pinned_catalog().map_err(|_|invalid("ImageDir pinned callable catalog unavailable"))?;
             let mut formal=None;
             let mut value=None;
+            let mut formal_resolved=false;
+            let mut value_resolved=false;
             let mut cursor=self.tree.lookup_type(owner);
             while let Some(ty)=cursor {
                 poll()?;
                 let owner=self.tree.type_node(ty).ok_or_else(||invalid("ImageDir callable owner absent"))?.path;
-                if [false,true].into_iter().any(|verb|catalog.own_callable(owner,name,verb).is_some()){
-                    return Err(BodySyntaxFailure::Operational(Error::new(ErrorKind::Unsupported,"ImageDir fixed builtin callable chronology is outside this source-only projection")));
+                let mut fixed=false;
+                for verb in [false,true] {
+                    let Some(row)=catalog.own_callable(owner,name,verb) else { continue };
+                    if row.definition!=DefinitionMode::Declare
+                        || !row.metadata.procedure.as_ref().is_some_and(|proc|proc.signature.return_annotation.is_none()) {
+                        return Err(invalid("ImageDir fixed callable differs from the pinned declaration-only form"));
+                    }
+                    fixed=true;
                 }
                 let mut first_formal:Option<(crate::OccurrenceId,crate::MemberId)>=None;
                 let mut last_implicit:Option<(crate::OccurrenceId,crate::MemberId)>=None;
@@ -714,9 +723,18 @@ impl BodyArchive {
                         next=node.previous;
                     }
                 }
-                if formal.is_none() { formal=first_formal.map(|(_,member)|member); }
-                if value.is_none() { value=last_implicit.or(first_formal); }
-                if formal.is_some() && value.is_some() { break; }
+                // Fixed declarations are registered before source. Their
+                // annotation and body are empty. Later explicit source
+                // values go to the front; an implicit value goes to the end.
+                if !formal_resolved && (fixed || first_formal.is_some()) {
+                    formal_resolved=true;
+                    formal=if fixed { None } else { first_formal.map(|(_,member)|member) };
+                }
+                if !value_resolved && (fixed || first_formal.is_some() || last_implicit.is_some()) {
+                    value_resolved=true;
+                    value=last_implicit.or(first_formal.filter(|_|!fixed));
+                }
+                if formal_resolved && value_resolved { break; }
                 cursor=self.tree.parent(ty);
             }
             let value_member=value.map(|(_,member)|member);

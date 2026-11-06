@@ -1344,6 +1344,68 @@ impl BuildHost{
 }
 
 const SELECTED_REPORT_RETAINED: usize = 1024 * 1024;
+impl BuildHost {
+    /// Standalone read-only native ImageDir report. No generic workspace
+    /// snapshot, exclusion roster, compiler or checker publication is issued.
+    pub fn write_original_image_dir_report(
+        &mut self, root:&std::path::Path, cache:&std::path::Path, timeout_seconds:u16,
+        output:&mut impl std::io::Write,
+    )->std::io::Result<bool>{
+        self.with_original_image_dir_report_using(root,cache,timeout_seconds,|terminal,report,_credit|{
+            crate::daemon::control::begin_publication()?;
+            report.publish(output)?;
+            Ok(terminal.clean)
+        })
+    }
+
+    pub(crate) fn with_original_image_dir_report_using<T>(
+        &mut self, root:&std::path::Path, cache:&std::path::Path, timeout_seconds:u16,
+        finish:impl FnOnce(
+            dq_analyze::selected_exclusions_wire::NamedImageDirTerminal,
+            crate::selected_report_spool::Verified,
+            dm_preprocess::source_arena_credit::SourceArenaCredit,
+        )->std::io::Result<T>,
+    )->std::io::Result<T>{
+        use crate::daemon::{control,prepare_deadline};
+        use dq_analyze::{captured_generator_budget::Budget,selected_exclusions_wire::{Hex128,NamedImageDirSchema,NamedImageDirTerminal,Seal}};
+        use std::io;
+        if !self.retains_artifacts() || !root.is_absolute() || !cache.is_absolute(){
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,"named ImageDir requires an actual resident host and absolute root/cache"));
+        }
+        let deadline=prepare_deadline::capture(crate::request::BuildCommand::PrepareQuery,Some(timeout_seconds),std::time::Instant::now())?
+            .ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"named ImageDir requires an explicit deadline"))?;
+        let _deadline=if control::WorkerContext::capture().is_none(){
+            Some(control::bind_with_deadline(control::Cancellation::default(),deadline))
+        }else{None};
+        control::checkpoint()?;
+        let path_bound=root.as_os_str().len().checked_add(cache.as_os_str().len())
+            .and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(32*1024))
+            .ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
+        let credit=self.source_arena_work().reserve(SELECTED_REPORT_RETAINED.checked_add(path_bound)
+            .ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?)?;
+        let root=std::fs::canonicalize(root)?;
+        let cache=std::fs::canonicalize(cache)?;
+        if !root.is_dir() || !cache.is_dir() || cache.starts_with(&root)
+            || root.capacity().checked_add(cache.capacity()).is_none_or(|n|n>path_bound){
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,"named ImageDir requires an existing cache outside its workspace"));
+        }
+        let capture=crate::input_snapshot::NamedImageDirCapture::prepare(&root,self.query_db())?;
+        let budget=Budget::new(SELECTED_REPORT_RETAINED).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+        let (clean,report)=query_snapshot::stage_named_image_dir(
+            &capture.frontend,&root,&capture.config,&budget,crate::selected_report_spool::Stage::new(&cache)?,
+        )?;
+        let frame=capture.require_current(self.source_arena_work())?;
+        let terminal=NamedImageDirTerminal{schema:NamedImageDirSchema::V1,frame,clean,
+            report:Seal{length:report.length(),hash:Hex128(report.hash())}};
+        terminal.require()?;
+        control::checkpoint()?;
+        // Keep the actual capture and both budgets alive through publication.
+        let result=finish(terminal,report,credit);
+        drop(capture);
+        result
+    }
+}
+
 
 fn original_exclusions_invalid() -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::InvalidInput, "selected report requires the exact authored Original workspace request")

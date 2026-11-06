@@ -67,6 +67,11 @@ impl Drop for SectionScratch {
     fn drop(&mut self) { if !self.complete { self.budget.keep_failed_scratch(); } }
 }
 
+enum ReportRows<'a,'borrow> {
+    Union(UnionRows<'a,'borrow>),
+    ImageDir(&'a dq_analyze::captured_image_dir::Data),
+}
+
 struct ReportStage {
     file: Stage,
     finished: usize,
@@ -74,7 +79,7 @@ struct ReportStage {
     failed: [bool; Roster::MAX_POLICIES],
 }
 impl ReportStage {
-    fn observe(&mut self, root: &Path, meta: &Meta, rows: UnionRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
+    fn observe(&mut self, root: &Path, meta: &Meta, rows: ReportRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
         if self.selected.get(self.finished).copied() != Some(meta.name) || !matches!(meta.policy, Policy::Hard | Policy::Sites { .. }) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report section order or judge differs"));
         }
@@ -83,6 +88,20 @@ impl ReportStage {
         let mut control = Operation { budget: &scratch.budget, poll: &|| crate::daemon::control::checkpoint() };
         let mut projection = Projection::new();
         match rows {
+            ReportRows::ImageDir(data) => {
+                if self.selected != ["image_dir_after_build"]
+                    || meta.name != "image_dir_after_build"
+                    || !std::ptr::eq(meta, data.metadata())
+                    || !matches!(meta.policy, Policy::Hard)
+                    || !data.allow_used().is_empty() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData,
+                        "named ImageDir report does not have its exact Hard output role"));
+                }
+                for site in data.sites() {
+                    projection.row(site, None, &mut control)?;
+                }
+            }
+            ReportRows::Union(rows) => match rows {
             UnionRows::Raw(files) => for file in files {
                 if file.name != meta.name { return Err(io::Error::new(io::ErrorKind::InvalidData, "raw result belongs to another policy")); }
                 for (index, site) in file.run.sites.iter().enumerate() {
@@ -162,6 +181,7 @@ impl ReportStage {
                     projection.row(site, Some(text), &mut control)?;
                 }
             }
+            },
         }
         // Includes the legacy grouping, normalized line clone, hints and final
         // text before the common renderer allocates them.
@@ -221,13 +241,46 @@ impl SourceSnapshot {
         }
         let stage = RefCell::new(ReportStage { file, finished: 0, selected, failed: [false; Roster::MAX_POLICIES] });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
-            stage.borrow_mut().observe(root, meta, rows, scope, budget)
+            stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
         }), |data, _, budget| stage.borrow_mut().finish(data,budget)).map_err(operational)?;
         let stage = stage.into_inner();
         let output = checked_stage(stage.file)?;
         workspace.require_scope(&self.workspace_native_read()?)?;
         Ok((clean, output))
     }
+}
+
+/// Stage exactly one named ImageDir section. The caller still holds its
+/// recorder/configuration proof and verifies freshness after this returns.
+/// This helper has no public request, capture authority or publication hook.
+pub(in crate::runner_host) fn stage_named_image_dir(
+    source: &dm_tree::frontend::OriginalImageDirFrontend,
+    root: &Path,
+    config: &dq_analyze::captured_raw_file::Config,
+    budget: &Arc<Budget>,
+    file: Stage,
+) -> io::Result<(bool, Verified)> {
+    let poll = || crate::daemon::control::checkpoint();
+    let data = dq_analyze::captured_image_dir::collect(source, root, config, budget, &poll)
+        .map_err(operational)?;
+    let empty = LintScope::default();
+    let meta = data.metadata();
+    let scope = config.borrowed_report_scope(meta.name, meta.group).unwrap_or(&empty);
+    let mut stage = ReportStage {
+        file,
+        finished: 0,
+        selected: &["image_dir_after_build"],
+        failed: [false; Roster::MAX_POLICIES],
+    };
+    stage.observe(root, meta, ReportRows::ImageDir(&data), scope, budget)?;
+    if stage.finished != 1 {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "named ImageDir section did not complete"));
+    }
+    let clean = !stage.failed[0];
+    let verified = checked_stage(stage.file)?;
+    poll()?;
+    budget.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+    Ok((clean, verified))
 }
 
 pub(in crate::runner_host) fn checked_stage(file: Stage) -> io::Result<Verified> {

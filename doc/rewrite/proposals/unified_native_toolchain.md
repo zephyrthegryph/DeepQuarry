@@ -2734,6 +2734,11 @@ metadata independently of the winning callable body, including authored
 proc and verb declarations with the same name. The native fixture matched
 all five findings and the complete named report from the pre-port Analyze
 oracle, preserved an injected I/O error, and produced no compiled world.
-The standalone resident request still needs exact input verification and
-its own terminal. The policy is outside the exclusions union, and callable
-resolution that reaches a fixed builtin is currently refused.
+The standalone resident writer stages the named result and revalidates the
+recorded source and config bytes before publishing through its own terminal
+type. Its embedding test matched the same report, preserved a missing-config
+I/O error without writing output, and recovered on the same host. Fixed
+builtin formal declarations now participate before authored values. The
+independent oracle matched four findings covering builtin overrides and
+inherited source formals. The public wire route, fixed implicit builtin
+values and the exclusions union remain separate work.

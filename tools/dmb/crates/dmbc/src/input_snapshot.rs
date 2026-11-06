@@ -368,6 +368,8 @@ pub use original_open_status::OriginalReadOpenStatus;
 type OriginalOpenFacts=ImmutablePathFacts<OriginalReadOpenStatus>;
 #[path="input_original_open_recording.rs"]mod original_open_recording;
 #[path="input_original_batch_view.rs"]mod original_batch_view;
+#[path="input_image_dir_report.rs"]mod image_dir_report;
+pub(crate) use image_dir_report::NamedImageDirCapture;
 pub(crate) use original_open_recording::OriginalPayloadDigest;
 type OriginalPayloadFacts=ImmutablePathFacts<OriginalPayloadDigest>;
 pub struct RecordingInputs<P = FileSystemInputs> {

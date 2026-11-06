@@ -106,6 +106,25 @@ impl Seal {
     }
 }
 
+/// Standalone named ImageDir terminal. It has no exclusions roster, ALLOW
+/// join, checker output or diagnostics channel.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub enum NamedImageDirSchema {
+    #[serde(rename = "native-analyze-image-dir-v1")]
+    V1,
+}
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct NamedImageDirTerminal {
+    pub schema: NamedImageDirSchema,
+    pub frame: Frame,
+    pub clean: bool,
+    pub report: Seal,
+}
+impl NamedImageDirTerminal {
+    pub fn require(self)->io::Result<()>{self.report.require_bound()}
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Terminal {

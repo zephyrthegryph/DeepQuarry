@@ -183,4 +183,4 @@ mod union_tests;
 
 #[path="runner_query_selected_report.rs"]
 mod selected_report;
-pub(in crate::runner_host) use selected_report::{checked_stage,validate_selection};
+pub(in crate::runner_host) use selected_report::{checked_stage,stage_named_image_dir,validate_selection};
