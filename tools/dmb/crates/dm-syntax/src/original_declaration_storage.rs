@@ -10,9 +10,11 @@ impl<'a,'b> Storage<'a,'b>{
  pub(super) fn fail(&self,actual:io::Error)->bool{if self.failure.borrow().is_none(){*self.failure.borrow_mut()=Some(self.a.take_operational_error().unwrap_or(actual));}false}
  pub(super) fn take_failure(&self)->Option<io::Error>{self.failure.borrow_mut().take()}
  pub(super) fn bytes(&self)->usize{self.owned.borrow().bytes()}
+ #[track_caller]
  fn grow(&self,bytes:usize)->bool{if !self.poll(){return false}match self.a.grow(&mut self.owned.borrow_mut(),bytes){Ok(())=>true,Err(actual)=>self.fail(actual)}}
  fn release(&self,bytes:usize)->bool{match self.a.shrink(&mut self.owned.borrow_mut(),bytes){Ok(())=>true,Err(actual)=>self.fail(actual)}}
  fn overflow(&self)->bool{self.fail(io::ErrorKind::OutOfMemory.into())}
+ #[track_caller]
  fn exact_vector<T>(&self,capacity:usize)->Option<Vec<T>>{
   let Ok(layout)=std::alloc::Layout::array::<T>(capacity)else{self.overflow();return None};
   if layout.size()==0{self.overflow();return None}
@@ -22,6 +24,7 @@ impl<'a,'b> Storage<'a,'b>{
   let Some(raw)=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)})else{self.overflow();return None};
   Some(unsafe{Vec::from_raw_parts(raw.as_ptr().cast::<T>(),0,capacity)})
  }
+ #[track_caller]
  pub(super) fn push<T>(&self,rows:&mut Vec<T>,value:T)->bool{
   if !self.poll(){return false}
   if rows.len()==rows.capacity(){
@@ -55,8 +58,14 @@ impl<'a,'b> Storage<'a,'b>{
   if !self.release(directory_bytes){return None}
   Some(result)
  }
+ #[track_caller]
  pub(super) fn text(&self,text:&str)->Option<String>{
-  let Some(extra)=text.len().checked_mul(4)else{self.overflow();return None};if !self.grow(extra){return None}let mut out=String::new();if let Err(actual)=out.try_reserve_exact(text.len()){self.fail(io::Error::new(io::ErrorKind::OutOfMemory,actual));return None}let Some(release)=extra.checked_sub(out.capacity())else{self.fail(io::Error::new(io::ErrorKind::OutOfMemory,"primary string allocator exceeded admitted growth peak"));return None};out.push_str(text);self.release(release).then_some(out)
+  if text.is_empty(){return self.poll().then(String::new)}
+  let mut bytes=self.exact_vector::<u8>(text.len())?;
+  bytes.extend_from_slice(text.as_bytes());
+  // The exact layout is funded before allocation. No allocator-sized
+  // allowance survives the copy, and the source bytes are already UTF-8.
+  self.poll().then(||String::from_utf8(bytes).expect("copied valid UTF-8"))
  }
  pub(super) fn diagnostic_parts(&self,rows:&mut Vec<Diagnostic>,span:Span,kind:DiagnosticKind,message:&str)->bool{let Some(message)=self.text(message)else{return false};self.push(rows,Diagnostic{span,kind,message})}
  /// SAME existing worker stack resource contract, not a grammar nesting limit.
@@ -92,6 +101,29 @@ mod exact_vector_funding_tests {
 
     fn token(at:usize)->SpanToken {
         SpanToken{kind:TokenKind::Ident,span:Span::new(at,at+1)}
+    }
+
+    #[test]
+    fn primary_text_reserves_only_its_actual_utf8_capacity() {
+        let text = "long header with a multibyte spelling: α";
+        let used = Arc::new(AtomicUsize::new(0));
+        let limit = 4096 + text.len();
+        let a = crate::SettingAdmission::new(&used, limit, &|| Ok(()));
+        let storage = Storage::new(&a).unwrap();
+        let retained = storage.text(text).unwrap();
+        assert_eq!(retained, text);
+        assert_eq!(retained.capacity(), text.len());
+        assert_eq!(used.load(Ordering::Acquire), limit);
+        drop(retained);
+        drop(storage);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+
+        let a = crate::SettingAdmission::new(&used, limit - 1, &|| Ok(()));
+        let storage = Storage::new(&a).unwrap();
+        assert!(storage.text(text).is_none());
+        assert_eq!(storage.take_failure().unwrap().kind(), io::ErrorKind::OutOfMemory);
+        drop(storage);
+        assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
     #[test]
