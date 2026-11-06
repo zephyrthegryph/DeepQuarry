@@ -24,9 +24,151 @@ struct CompactTokenGroup {
     rows: [ShortToken; GROUP_ROWS],
 }
 
+// A single funded byte buffer holds a full page and both narrow sides.
+struct NarrowTokenPage(Vec<u8>);
+
+const NARROW_WIDTH_BITS: u32 = 3;
+const NARROW_WIDTH_ESCAPE: u32 = 7;
+const NARROW_START_SHIFT: u32 = KIND_BITS + NARROW_WIDTH_BITS;
+const GEOMETRY_TAG: u32 = 14;
+const NARROW_GROUP_HEADER: usize = 4 + 2 + 8;
+const NARROW_GROUP_BYTES: usize = NARROW_GROUP_HEADER + 2 * GROUP_ROWS;
+const NARROW_FIXED_BYTES: usize = 2 + GROUPS_PER_PAGE * NARROW_GROUP_BYTES;
+
+enum NarrowCell { Inline, WidthSide, GeometrySide, ExistingWide }
+
+fn narrow_cell<const WIDTH: u32>(word: u32) -> NarrowCell {
+    let max_start = (1 << (16 - KIND_BITS - WIDTH)) - 1;
+    let width_escape = (1 << WIDTH) - 1;
+    if word & 15 == WIDE_TAG {
+        NarrowCell::ExistingWide
+    } else if word >> START_SHIFT > max_start {
+        NarrowCell::GeometrySide
+    } else if ((word >> KIND_BITS) & MAX_WIDTH as u32) >= width_escape {
+        NarrowCell::WidthSide
+    } else {
+        NarrowCell::Inline
+    }
+}
+
+fn group_word(word: u32, start_delta: u32) -> u32 {
+    if word & 15 == WIDE_TAG {
+        word
+    } else {
+        let start = (word >> START_SHIFT) - start_delta;
+        (word & ((1 << START_SHIFT) - 1)) | (start << START_SHIFT)
+    }
+}
+
+impl NarrowTokenPage {
+    fn read<const N: usize>(data: &[u8], offset: usize) -> [u8; N] {
+        data[offset..offset + N].try_into().expect("issued narrow token field")
+    }
+
+    fn word(&self, index: usize) -> (u32, u32) {
+        let group = 2 + (index / GROUP_ROWS) * NARROW_GROUP_BYTES;
+        let local = index % GROUP_ROWS;
+        let data = &self.0;
+        let base = u32::from_le_bytes(Self::read(data, group));
+        let word = u16::from_le_bytes(Self::read(data, group + NARROW_GROUP_HEADER + 2 * local)) as u32;
+        let kind = word & 15;
+        if kind == WIDE_TAG {
+            return (word, base);
+        }
+        if kind == GEOMETRY_TAG {
+            let width_total = u16::from_le_bytes(Self::read(data, 0)) as usize;
+            let offset = NARROW_FIXED_BYTES + width_total + 3 * (word >> KIND_BITS) as usize;
+            let [a, b, c] = Self::read(data, offset);
+            return (u32::from_le_bytes([a, b, c, 0]), base);
+        }
+        let width = (word >> KIND_BITS) & NARROW_WIDTH_ESCAPE;
+        let width = if width == NARROW_WIDTH_ESCAPE {
+            let width_base = u16::from_le_bytes(Self::read(data, group + 4)) as usize;
+            let mask = u64::from_le_bytes(Self::read(data, group + 6));
+            let rank = (mask & ((1u64 << local) - 1)).count_ones() as usize;
+            data[NARROW_FIXED_BYTES + width_base + rank] as u32
+        } else {
+            width
+        };
+        let start = word >> NARROW_START_SHIFT;
+        (kind | (width << KIND_BITS) | (start << START_SHIFT), base)
+    }
+
+    fn try_build(
+        words: &[PackedToken], bases: &[u32; GROUPS_PER_PAGE], compact_bytes: usize,
+        a: &SettingAdmission<'_>,
+    ) -> io::Result<Option<(Self, SettingRootLease)>> {
+        let mut widths = 0;
+        let mut geometries = 0;
+        for (group, &base) in words.chunks_exact(GROUP_ROWS).zip(bases) {
+            for row in group {
+                match narrow_cell::<NARROW_WIDTH_BITS>(group_word(row.0, base)) {
+                    NarrowCell::WidthSide => widths += 1,
+                    NarrowCell::GeometrySide => geometries += 1,
+                    NarrowCell::Inline | NarrowCell::ExistingWide => {}
+                }
+            }
+        }
+        let bytes = NARROW_FIXED_BYTES + widths + 3 * geometries;
+        if bytes >= compact_bytes {
+            return Ok(None);
+        }
+        let Some(_scratch) = a.try_reserve_optimization(mem::size_of_val(bases)).map_err(|status| a.take_operational_error().unwrap_or(status))? else {
+            return Ok(None);
+        };
+        let Some(credit) = a.try_reserve_optimization(bytes).map_err(|status| a.take_operational_error().unwrap_or(status))? else { return Ok(None) };
+        let layout = Layout::array::<u8>(bytes).map_err(io::Error::other)?;
+        let mut data = match alloc_funded_vec(bytes, layout) {
+            Ok(rows) => rows,
+            Err(error) if error.kind() == io::ErrorKind::OutOfMemory => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        data.resize(bytes, 0);
+        data[..2].copy_from_slice(&(widths as u16).to_le_bytes());
+        let mut next_width = 0;
+        let mut next_geometry = 0;
+        for (index, (group, &base)) in words.chunks_exact(GROUP_ROWS).zip(bases).enumerate() {
+            let offset = 2 + index * NARROW_GROUP_BYTES;
+            data[offset..offset + 4].copy_from_slice(&base.to_le_bytes());
+            data[offset + 4..offset + 6].copy_from_slice(&(next_width as u16).to_le_bytes());
+            let mut width_mask = 0u64;
+            for (local, row) in group.iter().enumerate() {
+                let word = group_word(row.0, base);
+                let width = (word >> KIND_BITS) & MAX_WIDTH as u32;
+                let kind = word & 15;
+                let start = word >> START_SHIFT;
+                let narrow = match narrow_cell::<NARROW_WIDTH_BITS>(word) {
+                    NarrowCell::Inline => kind | (width << KIND_BITS) | (start << NARROW_START_SHIFT),
+                    NarrowCell::WidthSide => {
+                        data[NARROW_FIXED_BYTES + next_width] = width as u8;
+                        next_width += 1;
+                        width_mask |= 1u64 << local;
+                        kind | (NARROW_WIDTH_ESCAPE << KIND_BITS) | (start << NARROW_START_SHIFT)
+                    }
+                    NarrowCell::GeometrySide => {
+                        let side = NARROW_FIXED_BYTES + widths + 3 * next_geometry;
+                        data[side..side + 3].copy_from_slice(&word.to_le_bytes()[..3]);
+                        let narrow = GEOMETRY_TAG | ((next_geometry as u32) << KIND_BITS);
+                        next_geometry += 1;
+                        narrow
+                    }
+                    NarrowCell::ExistingWide => word,
+                };
+                let cell = offset + NARROW_GROUP_HEADER + 2 * local;
+                debug_assert!(u16::try_from(narrow).is_ok());
+                data[cell..cell + 2].copy_from_slice(&(narrow as u16).to_le_bytes());
+            }
+            data[offset + 6..offset + NARROW_GROUP_HEADER].copy_from_slice(&width_mask.to_le_bytes());
+        }
+        debug_assert_eq!((next_width, next_geometry), (widths, geometries));
+        Ok(Some((Self(data), credit)))
+    }
+}
+
 enum TokenPageRows {
     Words(Vec<PackedToken>),
     Compact(Vec<CompactTokenGroup>),
+    Narrow(NarrowTokenPage),
 }
 
 struct TokenPage {
@@ -41,6 +183,12 @@ impl TokenPage {
             TokenPageRows::Words(rows) => {
                 let word = rows.get(index)?.0;
                 Some(PackedToken::decode_word(word, self.start_base, self.wide_base, wide))
+            }
+            TokenPageRows::Narrow(page) => {
+                let (word, start_delta) = page.word(index);
+                let base = self.start_base.checked_add(start_delta as usize)
+                    .expect("issued narrow group base");
+                Some(PackedToken::decode_word(word, base, self.wide_base, wide))
             }
             TokenPageRows::Compact(groups) => {
                 let group = groups.get(index / GROUP_ROWS)?;
@@ -82,11 +230,14 @@ impl TokenPage {
         if layout.size() >= old_bytes {
             return Ok(());
         }
+        if let Some((narrow, new_credit)) = NarrowTokenPage::try_build(words, &bases, layout.size(), a)? {
+            return self.replace_completed(TokenPageRows::Narrow(narrow), new_credit, old_bytes, credit, a);
+        }
         // The old words remain live through the whole conversion. New heap
         // and the bounded construction scratch need a separate actual grant.
         let scratch = mem::size_of_val(&bases) + mem::size_of::<CompactTokenGroup>();
-        let Some(_scratch) = a.try_reserve_optimization(scratch)? else { return Ok(()) };
-        let Some(mut new_credit) = a.try_reserve_optimization(layout.size())? else { return Ok(()) };
+        let Some(_scratch) = a.try_reserve_optimization(scratch).map_err(|status| a.take_operational_error().unwrap_or(status))? else { return Ok(()) };
+        let Some(new_credit) = a.try_reserve_optimization(layout.size()).map_err(|status| a.take_operational_error().unwrap_or(status))? else { return Ok(()) };
         let mut compact = match alloc_funded_vec(GROUPS_PER_PAGE, layout) {
             Ok(rows) => rows,
             Err(error) if error.kind() == io::ErrorKind::OutOfMemory => return Ok(()),
@@ -94,13 +245,7 @@ impl TokenPage {
         };
         for (group, start_delta) in words.chunks_exact(GROUP_ROWS).zip(bases) {
             let rows = std::array::from_fn(|index| {
-                let word = group[index].0;
-                let compact = if word & 15 == WIDE_TAG {
-                    word
-                } else {
-                    let start = (word >> START_SHIFT) - start_delta;
-                    (word & ((1 << START_SHIFT) - 1)) | (start << START_SHIFT)
-                };
+                let compact = group_word(group[index].0, start_delta);
                 let [a, b, c, high] = compact.to_le_bytes();
                 debug_assert_eq!(high, 0, "preflighted group and existing side index");
                 [a, b, c]
@@ -108,10 +253,20 @@ impl TokenPage {
             compact.push(CompactTokenGroup { start_delta, rows });
         }
 
+        self.replace_completed(TokenPageRows::Compact(compact), new_credit, old_bytes, credit, a)
+    }
+
+    fn replace_completed(
+        &mut self, next: TokenPageRows, mut new_credit: SettingRootLease,
+        old_bytes: usize, credit: &mut SettingRootLease, a: &SettingAdmission<'_>,
+    ) -> io::Result<()> {
         // Transfer the new grant only after successful construction. The
         // old grant stays with the tape until the old buffer has been freed.
-        a.absorb(credit, &mut new_credit)?;
-        drop(mem::replace(&mut self.rows, TokenPageRows::Compact(compact)));
+        if let Err(error) = a.absorb(credit, &mut new_credit) {
+            drop(next);
+            return Err(error);
+        }
+        drop(mem::replace(&mut self.rows, next));
         a.shrink(credit, old_bytes).map_err(|status| a.take_operational_error().unwrap_or(status))?;
         Ok(())
     }
@@ -131,16 +286,11 @@ struct NarrowTapeGeometry {
 #[cfg(debug_assertions)]
 impl NarrowTapeGeometry {
     fn count<const WIDTH: u32>(&mut self, word: u32) {
-        let max_start = (1 << (16 - KIND_BITS - WIDTH)) - 1;
-        let width_escape = (1 << WIDTH) - 1;
-        if word & 15 == WIDE_TAG {
-            self.existing_wide += 1;
-        } else if word >> START_SHIFT > max_start {
-            self.geometry_side += 1;
-        } else if ((word >> KIND_BITS) & MAX_WIDTH as u32) >= width_escape {
-            self.width_side += 1;
-        } else {
-            self.inline += 1;
+        match narrow_cell::<WIDTH>(word) {
+            NarrowCell::Inline => self.inline += 1,
+            NarrowCell::WidthSide => self.width_side += 1,
+            NarrowCell::GeometrySide => self.geometry_side += 1,
+            NarrowCell::ExistingWide => self.existing_wide += 1,
         }
     }
 
@@ -152,8 +302,7 @@ impl NarrowTapeGeometry {
         // Byte-array design: u16 width total; per group, u32 start
         // base, u16 width side base, u64 width rank mask, and 64 u16s.
         // Full-width entries keep their current funded side-table address.
-        let fixed = 2 + GROUPS_PER_PAGE * (4 + 2 + 8 + 2 * GROUP_ROWS);
-        let narrow = fixed + page.width_side + 3 * page.geometry_side;
+        let narrow = NARROW_FIXED_BYTES + page.width_side + 3 * page.geometry_side;
         let compact = GROUPS_PER_PAGE * mem::size_of::<CompactTokenGroup>();
         if narrow < compact {
             self.smaller_pages += 1;
@@ -331,6 +480,7 @@ impl PackedTokenBlocks {
             match &page.rows {
                 TokenPageRows::Words(words) => rows(words, &mut visit),
                 TokenPageRows::Compact(groups) => rows(groups, &mut visit),
+                TokenPageRows::Narrow(page) => rows(&page.0, &mut visit),
             }
         }
         rows(&self.wide, &mut visit);
@@ -346,6 +496,7 @@ impl PackedTokenBlocks {
             rows: usize,
             word_pages: usize,
             compact_pages: usize,
+            narrow_pages: usize,
             narrow_geometry_width_bits_2_3_4: Option<[NarrowTapeGeometry; 3]>,
             page_buffer_bytes: usize,
             wide_rows: usize,
@@ -359,6 +510,7 @@ impl PackedTokenBlocks {
                     .field("rows", &self.rows)
                     .field("word_pages", &self.word_pages)
                     .field("compact_pages", &self.compact_pages)
+                    .field("narrow_pages", &self.narrow_pages)
                     .field("narrow_geometry_width_bits_2_3_4", &self.narrow_geometry_width_bits_2_3_4)
                     .field("page_buffer_bytes", &self.page_buffer_bytes)
                     .field("wide_rows", &self.wide_rows)
@@ -369,7 +521,7 @@ impl PackedTokenBlocks {
             }
         }
         let mut report = Tape {
-            rows: self.len, word_pages: 0, compact_pages: 0, page_buffer_bytes: 0,
+            rows: self.len, word_pages: 0, compact_pages: 0, narrow_pages: 0, page_buffer_bytes: 0,
             narrow_geometry_width_bits_2_3_4: std::env::var_os("DMB_ORIGINAL_TRACE_TOKEN_GEOMETRY")
                 .map(|_| [NarrowTapeGeometry::default(); 3]),
             wide_rows: self.wide.len(), wide_capacity_bytes: self.wide.capacity() * mem::size_of::<SpanToken>(),
@@ -381,6 +533,22 @@ impl PackedTokenBlocks {
                 TokenPageRows::Words(words) => {
                     report.word_pages += 1;
                     report.page_buffer_bytes += words.capacity() * mem::size_of::<PackedToken>();
+                }
+                TokenPageRows::Narrow(page) => {
+                    report.narrow_pages += 1;
+                    report.page_buffer_bytes += page.0.capacity();
+                    if let Some(totals) = &mut report.narrow_geometry_width_bits_2_3_4 {
+                        let mut geometry = [NarrowTapeGeometry::default(); 3];
+                        for index in 0..PAGE_ROWS {
+                            let (word, _) = page.word(index);
+                            geometry[0].count::<2>(word);
+                            geometry[1].count::<3>(word);
+                            geometry[2].count::<4>(word);
+                        }
+                        for (total, page) in totals.iter_mut().zip(geometry) {
+                            total.include_page(page);
+                        }
+                    }
                 }
                 TokenPageRows::Compact(groups) => {
                     report.compact_pages += 1;
@@ -424,7 +592,7 @@ mod tests {
         for at in 0..PAGE_ROWS + 3 {
             tape.push(SpanToken { kind: TokenKind::Ident, span: Span::new(at * 2, at * 2 + 1) }, &a).unwrap();
         }
-        assert!(matches!(&tape.pages[0].rows, TokenPageRows::Compact(_)));
+        assert!(matches!(&tape.pages[0].rows, TokenPageRows::Narrow(_)));
         let wide = SpanToken { kind: TokenKind::String, span: Span::new(usize::MAX - MAX_WIDTH - 1, usize::MAX) };
         tape.push(wide, &a).unwrap();
         assert_eq!(tape.window().last(), Some(wide));
@@ -524,9 +692,9 @@ mod tests {
         }
         let old = used.load(Ordering::Acquire);
         let old_rows = PAGE_ROWS * mem::size_of::<PackedToken>();
-        let new_rows = GROUPS_PER_PAGE * mem::size_of::<CompactTokenGroup>();
-        let scratch = mem::size_of::<[u32; GROUPS_PER_PAGE]>() + mem::size_of::<CompactTokenGroup>();
-        assert_eq!(old_rows - new_rows, 3840);
+        let new_rows = NARROW_FIXED_BYTES;
+        let scratch = mem::size_of::<[u32; GROUPS_PER_PAGE]>();
+        assert_eq!(old_rows - new_rows, 7294);
 
         let tight = SettingAdmission::new(&used, old + new_rows + scratch - 1, &|| Ok(()));
         tape.pages[0].seal_completed_using(&mut tape.credit, &tight).unwrap();
@@ -534,20 +702,23 @@ mod tests {
         assert_eq!(used.load(Ordering::Acquire), old);
         assert!(matches!(&tape.pages[0].rows, TokenPageRows::Words(_)));
 
-        let checks = std::cell::Cell::new(0);
-        let first_error = || {
-            checks.set(checks.get() + 1);
-            if checks.get() == 3 {
-                Err(io::Error::from_raw_os_error(1450))
-            } else {
-                Ok(())
-            }
-        };
-        let failing = SettingAdmission::new(&used, old + new_rows + scratch, &first_error);
-        let error = tape.pages[0].seal_completed_using(&mut tape.credit, &failing).unwrap_err();
-        assert_eq!(error.raw_os_error(), Some(1450));
-        assert_eq!(used.load(Ordering::Acquire), old, "replacement dropped before its separate grant");
-        assert!(tape.window().iter().eq((0..PAGE_ROWS).map(expected)));
+        for fail_at in 1..=3 {
+            let checks = std::cell::Cell::new(0);
+            let first_error = || {
+                checks.set(checks.get() + 1);
+                if checks.get() == fail_at {
+                    Err(io::Error::from_raw_os_error(1450))
+                } else {
+                    Ok(())
+                }
+            };
+            let failing = SettingAdmission::new(&used, old + new_rows + scratch, &first_error);
+            let error = tape.pages[0].seal_completed_using(&mut tape.credit, &failing).unwrap_err();
+            assert_eq!(error.raw_os_error(), Some(1450));
+            assert_eq!(checks.get(), fail_at, "failed OS checks never try the compact fallback");
+            assert_eq!(used.load(Ordering::Acquire), old, "replacement dropped before its separate grant");
+            assert!(tape.window().iter().eq((0..PAGE_ROWS).map(expected)));
+        }
 
         let just = SettingAdmission::new(&used, old + new_rows + scratch, &|| Ok(()));
         let wide_before = tape.wide.as_ptr();
@@ -557,6 +728,61 @@ mod tests {
         assert!(tape.window().iter().eq((0..PAGE_ROWS).map(expected)));
         assert_eq!(tape.window().get(GROUP_ROWS - 1), Some(expected(GROUP_ROWS - 1)));
         assert_eq!(tape.window().get(GROUP_ROWS), Some(expected(GROUP_ROWS)));
+        drop(tape);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn narrow_completed_pages_keep_width_geometry_and_original_wide_sides_exact() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut tape = PackedTokenBlocks::new(&a).unwrap();
+        let expected = |at: usize| {
+            let group = at / GROUP_ROWS;
+            let local = at % GROUP_ROWS;
+            let base = 100 + group * 800;
+            let (kind, start, width) = match local {
+                0 => (TokenKind::Ident, base, 0),
+                1 => (TokenKind::Punctuation, base + 511, 6),
+                2 => (TokenKind::String, base + 511, 7),
+                3 => (TokenKind::Comment, base + 512, 255),
+                4..=8 => (TokenKind::Resource, base + 512, 256 + local),
+                63 => (TokenKind::Whitespace, base + 500, 255),
+                _ => (TokenKind::Ident, base + local, 1),
+            };
+            SpanToken { kind, span: Span::new(start, start + width) }
+        };
+        for at in 0..=PAGE_ROWS {
+            tape.push(expected(at), &a).unwrap();
+        }
+        let TokenPageRows::Narrow(page) = &tape.pages[0].rows else { panic!("sealed narrow page") };
+        assert_eq!(page.0.capacity(), NARROW_FIXED_BYTES + 5 * GROUPS_PER_PAGE);
+        assert_eq!(tape.wide.len(), 5 * GROUPS_PER_PAGE);
+        assert!(matches!(&tape.pages[1].rows, TokenPageRows::Words(_)));
+        assert_eq!(tape.get(PAGE_ROWS + 1), None);
+        assert!(tape.window().iter().eq((0..=PAGE_ROWS).map(expected)));
+        let mut storage = 0;
+        tape.visit_storage(|_, _, cap| storage += cap);
+        assert_eq!(storage, used.load(Ordering::Acquire) + 2 * mem::size_of::<usize>() + mem::size_of::<AtomicUsize>());
+        drop(tape);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn narrow_unprofitable_pages_keep_the_exact_three_byte_fallback() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut tape = PackedTokenBlocks::new(&a).unwrap();
+        let expected = |at: usize| {
+            let local = at % GROUP_ROWS;
+            let start = 100 + if local == 0 { 0 } else { 700 + local };
+            SpanToken { kind: TokenKind::Ident, span: Span::new(start, start + 1) }
+        };
+        for at in 0..=PAGE_ROWS {
+            tape.push(expected(at), &a).unwrap();
+        }
+        assert!(matches!(&tape.pages[0].rows, TokenPageRows::Compact(_)));
+        assert!(tape.window().iter().eq((0..=PAGE_ROWS).map(expected)));
         drop(tape);
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
