@@ -82,8 +82,13 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         let path = canonical_path(path);
         let parent = path.parent().ok_or_else(|| invalid("policy path has no parent"))?;
         self.record_search_folder(parent)?;
+        self.read_policy_payload_admitted(&path, limit, before_allocate)
+    }
+    /// Sibling input producers with a captured exact typed parent listing
+    /// can use the same payload kernel without acquiring a second listing.
+    pub(super) fn read_policy_payload_admitted(&self, path: &Path, limit: usize, before_allocate: &mut dyn FnMut(usize) -> io::Result<()>) -> io::Result<Option<Vec<u8>>> {
         let mut admission_error = None;
-        let result = self.provider.read_policy_bounded_admitted(&path, limit, &mut |size| {
+        let result = self.provider.read_policy_bounded_admitted(path, limit, &mut |size| {
             if admission_error.is_some() { return Err(io::ErrorKind::Other.into()); }
             match before_allocate(size) {
                 Ok(()) => Ok(()),
@@ -96,7 +101,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             }
         });
         if let Some(error) = admission_error { return Err(error); }
-        self.record_policy_read_result(&path, limit, result)
+        self.record_policy_read_result(path, limit, result)
     }
     fn record_policy_read_result(&self, path: &Path, limit: usize, result: io::Result<Option<CapturedInputRead>>) -> io::Result<Option<Vec<u8>>> {
         match result {

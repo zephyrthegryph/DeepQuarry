@@ -62,7 +62,7 @@ fn scope_json(scope:&LintScope,budget:&Budget)->io::Result<Fixed>{let lists=Sort
 struct Hex<'a>(&'a [u8;20]);impl Serialize for Hex<'_>{fn serialize<S:Serializer>(&self,s:S)->Result<S::Ok,S::Error>{let mut text=[0u8;40];for(i,b)in self.0.iter().enumerate(){text[2*i]=b"0123456789abcdef"[(b>>4)as usize];text[2*i+1]=b"0123456789abcdef"[(b&15)as usize];}s.serialize_str(std::str::from_utf8(&text).expect("hex is ASCII"))}}
 struct Items<'a>{data:&'a dyn ReportData,name:&'static str,start:usize,end:usize}
 impl Serialize for Items<'_>{fn serialize<S:Serializer>(&self,s:S)->Result<S::Ok,S::Error>{let mut out=s.serialize_seq(Some(self.end-self.start))?;for index in self.start..self.end{
- if index<self.data.sites().len(){let site=&self.data.sites()[index];if self.data.message_only(){if (!matches!(self.name,"sem/keys"|"sem/reads"|"untracked_inputs"|"setter_publishes"|"engine_layering"|"ownership"|"player_link"|"untyped_member"|"weak_raw_read"|"rel_write_undeclared")&&!dq_analyze::workspace_fold_policy::Policy::from_name(self.name).is_some_and(|p|p.message_only()&&matches!(p.metadata().policy,dq_analyze::lint::Policy::Hard))&&!dq_analyze::captured_raw_tree_pages::Policy::from_name(self.name).is_some_and(|p|p.message_only()&&matches!(p.metadata().policy,dq_analyze::lint::Policy::Hard)))||site.msg.is_empty(){return Err(serde::ser::Error::custom("unissued message-only finding"))}#[derive(Serialize)]struct HardSite<'a>{lint:&'static str,kind:&'static str,site:&'a dq_analyze::lint::Site}out.serialize_element(&HardSite{lint:self.name,kind:"hard_site",site})?;continue}let text=self.data.text_at(index).map_err(serde::ser::Error::custom)?;#[derive(Serialize)]struct Site<'a>{lint:&'static str,kind:&'static str,site:&'a dq_analyze::lint::Site,source_text:Option<&'a str>}out.serialize_element(&Site{lint:self.name,kind:"site",site,source_text:text})?;}
+ if index<self.data.sites().len(){let site=&self.data.sites()[index];if self.data.message_only(){if (!matches!(self.name,"sem/keys"|"sem/reads"|"untracked_inputs"|"setter_publishes"|"engine_layering"|"ownership"|"player_link"|"untyped_member"|"weak_raw_read"|"rel_write_undeclared"|"map_edits")&&!dq_analyze::workspace_fold_policy::Policy::from_name(self.name).is_some_and(|p|p.message_only()&&matches!(p.metadata().policy,dq_analyze::lint::Policy::Hard))&&!dq_analyze::captured_raw_tree_pages::Policy::from_name(self.name).is_some_and(|p|p.message_only()&&matches!(p.metadata().policy,dq_analyze::lint::Policy::Hard)))||site.msg.is_empty(){return Err(serde::ser::Error::custom("unissued message-only finding"))}#[derive(Serialize)]struct HardSite<'a>{lint:&'static str,kind:&'static str,site:&'a dq_analyze::lint::Site}out.serialize_element(&HardSite{lint:self.name,kind:"hard_site",site})?;continue}let text=self.data.text_at(index).map_err(serde::ser::Error::custom)?;#[derive(Serialize)]struct Site<'a>{lint:&'static str,kind:&'static str,site:&'a dq_analyze::lint::Site,source_text:Option<&'a str>}out.serialize_element(&Site{lint:self.name,kind:"site",site,source_text:text})?;}
  else if index<self.data.sites().len()+self.data.allow_used().len(){let used=&self.data.allow_used()[index-self.data.sites().len()];let digest=self.data.allow_source_digest(&used.rel).ok_or_else(||serde::ser::Error::custom("ALLOW original fingerprint absent"))?;#[derive(Serialize)]struct Allow<'a>{lint:&'static str,kind:&'static str,allow:&'a dq_analyze::lint::AllowUse,source_digest:Hex<'a>}out.serialize_element(&Allow{lint:self.name,kind:"allow",allow:used,source_digest:Hex(digest)})?;}
  else if index<self.data.sites().len()+self.data.allow_used().len()+self.data.notes().len(){let note=&self.data.notes()[index-self.data.sites().len()-self.data.allow_used().len()];#[derive(Serialize)]struct Note<'a>{lint:&'static str,kind:&'static str,text:&'a str}out.serialize_element(&Note{lint:self.name,kind:"note",text:note})?;}
  else{if self.name!="doc_snippets"{return Err(serde::ser::Error::custom("unissued doc summary role"))}let blocks=self.data.doc_blocks().ok_or_else(||serde::ser::Error::custom("doc summary absent"))?;let row=index-self.data.sites().len()-self.data.allow_used().len()-self.data.notes().len();if row<blocks.len(){#[derive(Serialize)]struct Block<'a>{lint:&'static str,kind:&'static str,block:&'a dq_analyze::doc_snippets_policy::SummaryBlock}out.serialize_element(&Block{lint:self.name,kind:"doc_block",block:&blocks[row]})?;}else if row==blocks.len(){#[derive(Serialize)]struct Complete{lint:&'static str,kind:&'static str,count:usize}out.serialize_element(&Complete{lint:self.name,kind:"doc_complete",count:blocks.len()})?;}else{return Err(serde::ser::Error::custom("doc summary row out of bounds"))}}
@@ -74,7 +74,7 @@ struct Hash(xxhash_rust::xxh3::Xxh3);impl Write for Hash{fn write(&mut self,b:&[
 struct ReportFrame<'a>{root:&'a Path,configuration:&'a Path,recursive_roots:&'a[std::path::PathBuf],semantic:u128,source:u128,policy:u128,configuration_present:bool,grep_purpose:Option<dq_analyze::lints::check_grep::native::Purpose>}
 fn write_data_page(data:&dyn ReportData,name:&'static str,frame:&ReportFrame<'_>,exact:&str,budget:&std::sync::Arc<Budget>,lints:&[String],cursor:Option<&crate::query_db::WorkspaceCursor>,limit:usize,output:&mut impl Write,current:&mut dyn FnMut()->io::Result<()>)->io::Result<()>{
  let complete_policy=dq_analyze::workspace_fold_policy::Policy::from_name(name);let raw_tree_policy=dq_analyze::captured_raw_tree_pages::Policy::from_name(name);let raw_tree=raw_tree_policy.is_some();let hygiene=name=="sys/hygiene";let keys=name=="sem/keys";let semantic_family=crate::daemon::query::semantic_report_metadata(name).is_some();let grep=name=="check_grep";let baseline=frame.grep_purpose==Some(dq_analyze::lints::check_grep::native::Purpose::Baseline);if grep!=frame.grep_purpose.is_some(){return Err(io::Error::other("report purpose differs from actual family"))}
-   let total=data.sites().len().checked_add(data.allow_used().len()).and_then(|n|n.checked_add(data.notes().len())).and_then(|n|match data.doc_blocks(){Some(blocks)=>n.checked_add(blocks.len())?.checked_add(1),None=>Some(n)}).ok_or_else(oom)?;data.require_text_shape()?;if data.doc_blocks().is_some()!=(name=="doc_snippets"){return Err(io::Error::other("custom doc summary differs from its actual closed role"))}let hard=match name{"lifeforms"=>Some(dq_analyze::lifeforms_policy::metadata()),"engine_layering"=>Some(dq_analyze::engine_layering_policy::metadata()),"ownership"=>Some(dq_analyze::ownership_policy::metadata()),"rel_write_undeclared"=>Some(dq_analyze::rel_write_policy::metadata()),"weak_raw_read"=>Some(dq_analyze::weak_relation_policy::metadata()),"untyped_member"=>Some(dq_analyze::untyped_member_policy::metadata()),"player_link"=>Some(dq_analyze::player_link_policy::metadata()),"sem/keys"=>Some(dq_analyze::keys_policy::metadata()),"sem/reads"=>Some(dq_analyze::sem_reads_policy::metadata()),"untracked_inputs"=>Some(dq_analyze::untracked_inputs_policy::metadata()),"setter_publishes"=>Some(dq_analyze::setter_publication_policy::metadata()),_=>complete_policy.filter(|p|p.message_only()).map(|p|p.metadata()).or_else(||raw_tree_policy.filter(|p|p.message_only()).map(|p|p.metadata()))};if data.message_only()!=hard.is_some()||hard.is_some_and(|meta|!matches!(meta.policy,dq_analyze::lint::Policy::Hard)){return Err(io::Error::other("message-only findings lack actual Hard contract"))}let macro_ceiling=data.macro_ceiling();if (grep&&!baseline)!=macro_ceiling.is_some(){return Err(io::Error::other("report context differs from actual family"))}
+   let total=data.sites().len().checked_add(data.allow_used().len()).and_then(|n|n.checked_add(data.notes().len())).and_then(|n|match data.doc_blocks(){Some(blocks)=>n.checked_add(blocks.len())?.checked_add(1),None=>Some(n)}).ok_or_else(oom)?;data.require_text_shape()?;if data.doc_blocks().is_some()!=(name=="doc_snippets"){return Err(io::Error::other("custom doc summary differs from its actual closed role"))}let hard=match name{"map_edits"=>Some(&dq_analyze::map_edits_policy::META),"lifeforms"=>Some(dq_analyze::lifeforms_policy::metadata()),"engine_layering"=>Some(dq_analyze::engine_layering_policy::metadata()),"ownership"=>Some(dq_analyze::ownership_policy::metadata()),"rel_write_undeclared"=>Some(dq_analyze::rel_write_policy::metadata()),"weak_raw_read"=>Some(dq_analyze::weak_relation_policy::metadata()),"untyped_member"=>Some(dq_analyze::untyped_member_policy::metadata()),"player_link"=>Some(dq_analyze::player_link_policy::metadata()),"sem/keys"=>Some(dq_analyze::keys_policy::metadata()),"sem/reads"=>Some(dq_analyze::sem_reads_policy::metadata()),"untracked_inputs"=>Some(dq_analyze::untracked_inputs_policy::metadata()),"setter_publishes"=>Some(dq_analyze::setter_publication_policy::metadata()),_=>complete_policy.filter(|p|p.message_only()).map(|p|p.metadata()).or_else(||raw_tree_policy.filter(|p|p.message_only()).map(|p|p.metadata()))};if data.message_only()!=hard.is_some()||hard.is_some_and(|meta|!matches!(meta.policy,dq_analyze::lint::Policy::Hard)){return Err(io::Error::other("message-only findings lack actual Hard contract"))}let macro_ceiling=data.macro_ceiling();if (grep&&!baseline)!=macro_ceiling.is_some(){return Err(io::Error::other("report context differs from actual family"))}
    // Fixed pin/cursor strings are funded before formatting/clone. This does
    // not claim serde/parser/global allocator geometry or process RSS.
    charge(budget,Some(2048))?;let semantic=format!("{:032x}",frame.semantic);let source=format!("{:032x}",frame.source);let policy=format!("{:032x}",frame.policy);let mut hash=Hash(xxhash_rust::xxh3::Xxh3::new());if grep{if baseline{hash.0.update(b"native-check-grep-baseline-report-v1")}else{hash.0.update(b"native-check-grep-complete-report-v1");hash.0.update(&macro_ceiling.unwrap().to_le_bytes())}}else if complete_policy.is_some(){hash.0.update(b"native-complete-policy-report-v1");hash.0.update(name.as_bytes());}else if raw_tree{hash.0.update(b"native-raw-tree-complete-report-v1");hash.0.update(name.as_bytes());}else if semantic_family{hash.0.update(b"native-semantic-complete-report-v1");hash.0.update(name.as_bytes());}else if keys{hash.0.update(b"native-keys-complete-report-v1")}else if hygiene{hash.0.update(b"native-hygiene-complete-report-v1")}else{hash.0.update(b"native-sys-complete-report-v1");hash.0.update(name.as_bytes());}serde_json::to_writer(&mut hash,&(&semantic,&source,&policy,frame.root,frame.configuration,exact,Items{data,name,start:0,end:total})).map_err(io::Error::from)?;let id=format!("{:032x}",hash.0.digest128());let start=cursor.map_or(0,|c|c.offset());if start>total||cursor.is_some_and(|c|c.aggregate_id()!=id){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Hygiene cursor belongs to another complete ordered result"))}
@@ -129,6 +129,7 @@ impl SourceSnapshot{
   if lints==["untyped"]{return self.write_native_workspace_untyped_report_page(root,configuration,lints,cursor,limit,tree,output)}
   if lints==["rel_write_undeclared"]{return self.write_native_workspace_rel_write_undeclared_report_page(root,configuration,lints,cursor,limit,tree,output)}
   if lints==["weak_raw_read"]{return self.write_native_workspace_weak_raw_read_report_page(root,configuration,lints,cursor,limit,tree,output)}
+  if lints==["map_edits"]{return self.write_native_workspace_map_edits_report_page(root,configuration,lints,cursor,limit,tree,output)}
   if lints==["silicon_entry"]{return self.write_native_workspace_silicon_entry_report_page(root,configuration,lints,cursor,limit,tree,output)}
   if lints==["untyped_member"]{return self.write_native_workspace_untyped_member_report_page(root,configuration,lints,cursor,limit,tree,output)}
   if lints==["player_link"]{return self.write_native_workspace_player_link_report_page(root,configuration,lints,cursor,limit,tree,output)}
@@ -173,6 +174,102 @@ impl SourceSnapshot{
   }
   self.require_original_fixed_report_subject(&self.tree)
  }
+}
+
+struct MapEditsReport<'a>(&'a [dq_analyze::lint::Site]);
+impl ReportData for MapEditsReport<'_> {
+    fn sites(&self) -> &[dq_analyze::lint::Site] { self.0 }
+    fn text_at(&self, _: usize) -> io::Result<Option<&str>> { Ok(None) }
+    fn require_text_shape(&self) -> io::Result<()> {
+        if self.0.iter().any(|site| site.msg.is_empty()) {
+            Err(io::Error::other("map_edits hard finding has no message"))
+        } else { Ok(()) }
+    }
+    fn message_only(&self) -> bool { true }
+    fn allow_used(&self) -> &[dq_analyze::lint::AllowUse] { &[] }
+    fn allow_source_digest(&self, _: &str) -> Option<&[u8; 20]> { None }
+}
+
+impl SourceSnapshot {
+    fn write_native_workspace_map_edits_report_page(
+        &self, root: &Path, configuration: &Path, lints: &[String],
+        cursor: Option<&crate::query_db::WorkspaceCursor>, limit: usize,
+        tree: &dm_tree::SemanticTree, output: &mut impl Write,
+    ) -> io::Result<()> {
+        use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+        use dq_analyze::{
+            captured_allow_annotations::Operation,
+            captured_raw_file::Config, captured_raw_policy::Configuration,
+            captured_reactive_reads::Failure, map_edits_policy::{self, CodeNames, META},
+        };
+        if lints != ["map_edits"] || !(1..=128).contains(&limit) || !self.matches_tree(tree) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "exact map_edits report required"));
+        }
+        self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290))?;
+        let workspace = self.native_workspace.as_ref().ok_or_else(|| io::Error::other("map_edits workspace absent"))?;
+        if root != workspace.root() || configuration != workspace.configuration().0
+            || self.policy_revision != Some(workspace.policy_revision())
+            || !workspace.matches_auxiliary_questions(&[Q::MapEdits]) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits capture differs"));
+        }
+        let guard = self.workspace_native_read()?;
+        workspace.require_scope(&guard)?;
+        let child = self.workspace_semantic_inputs(Q::MapEdits)?;
+        let inputs = child.policy();
+        child.semantic_source_evidence().check(inputs.mapping())?;
+        let subject = child.original_analysis_subject()
+            .ok_or_else(|| io::Error::other("map_edits actual Original subject absent"))?;
+        workspace.require_analysis_subject(subject)?;
+        subject.require_bound_mapping(inputs.mapping())?;
+        if subject.synthetic() {
+            return Err(io::Error::new(io::ErrorKind::Unsupported, "map_edits requires authored Original source"));
+        }
+        let profile = tree.checker_builtin_profile()
+            .ok_or_else(|| io::Error::other("map_edits pinned checker profile absent"))?;
+        let builtin = tree.validated_checker_profile(profile).map_err(|error| io::Error::other(format!("map_edits checker profile: {error:?}")))?;
+        let queries = self.native_raw_queries.as_ref().ok_or_else(|| io::Error::other("map_edits QueryDb absent"))?;
+        let frame = ReportFrame { root, configuration, recursive_roots: workspace.recursive_roots(),
+            semantic: tree.identity(), source: self.source_revision, policy: workspace.policy_revision(),
+            configuration_present: workspace.configuration().1.is_some(), grep_purpose: None };
+        let operational = |failure| match failure {
+            Failure::Operational(error) => error,
+            Failure::Unsupported(message) => io::Error::new(io::ErrorKind::Unsupported, message),
+        };
+        queries.with_workspace_code_pages(workspace, &guard, |reader| {
+            let budget = reader.budget();
+            let checkpoint = || {
+                budget.require().map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory, message))?;
+                crate::daemon::control::checkpoint()?;
+                workspace.require_scope(&guard)
+            };
+            let mut control = Operation { budget, poll: &checkpoint };
+            let (_, bytes) = reader.configuration();
+            charge(budget, bytes.map_or(Some(1024), |data| data.len().checked_mul(64).and_then(|n| n.checked_add(1024))))?;
+            let config = Config::capture(bytes.map_or(Configuration::ProvenMissing, Configuration::Captured))?;
+            let mut names = CodeNames::default();
+            let witness = reader.for_each_code_file_completed(inputs, &mut |relative, views| {
+                names.add_file_using(relative, views.raw()?.lines(), &mut control)?;
+                Ok(true)
+            })?.into_witness()?.ok_or("map_edits actual CODE_DM index did not complete")?;
+            let names = names.finish_using(&mut control)?;
+            let mut sites = Vec::new();
+            workspace.for_each_map_edit_file(&guard, |relative, rows| {
+                names.append_map_using(relative, rows, |owner, field| {
+                    map_edits_policy::native_declaration(tree, &builtin, profile, owner, field).map_err(Failure::Unsupported)
+                }, &mut sites, &mut control).map_err(operational)
+            })?;
+            if !witness.matches(workspace, &guard, inputs)? {
+                return Err("map_edits CODE completion belongs to another capture".into());
+            }
+            let empty = LintScope::default();
+            let scope = config.borrowed_report_scope(META.name, META.group).unwrap_or(&empty);
+            let exact = scope_json(scope, budget)?;
+            let exact = std::str::from_utf8(&exact.0).map_err(io::Error::other)?;
+            write_data_page(&MapEditsReport(&sites), META.name, &frame, exact, budget, lints,
+                cursor, limit, output, &mut || checkpoint())?;
+            Ok(())
+        }).map_err(operational)
+    }
 }
 
 impl SourceSnapshot{

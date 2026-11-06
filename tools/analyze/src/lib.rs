@@ -559,3 +559,5 @@ pub mod sem_handlers_pair_policy;
 pub mod sem_handlers_report_policy;
 
 #[cfg(feature="native-policy")]pub mod captured_sem_handlers;
+
+pub mod map_edits_policy;

@@ -2712,3 +2712,18 @@ error control passed. Public Checker IPC also matched a fresh workspace
 after a parent-type edit changed the diagnostic, with the old revision
 rejected. This reduces warm indexing work but still performs the live
 primary stream and does not prove sequential declaration-parse reuse.
+
+The explicit native `map_edits` request now uses the same actual Original
+model and the existing guarded CODE traversal. It captures only supported
+regular map trees, preserving path order and raw input bytes. Map file and
+directory facts participate in the policy revision. The public daemon
+fixture matched an independent pre-port Analyze executable byte for byte,
+including edits that changed only the map policy revision and a refusal
+that published no partial output. The refactored legacy Analyze binary
+also passed its build check. Alias and special-file geometry remains
+unsupported by this opt-in route.
+
+Common Original macro names now borrow exact spelling from their
+authenticated source frame. Five tests passed, including distinct
+same-spelling ownership, a full-width fallback, and actual undefinition
+history. The common product wrapper is at least 64 bytes smaller on x64.

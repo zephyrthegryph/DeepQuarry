@@ -16,6 +16,7 @@ pub(crate) fn semantic_report_metadata(name: &str) -> Option<&'static dq_analyze
         "base_vars" => dq_analyze::captured_base_vars_pages::metadata(),
         "requirement_bool" => dq_analyze::captured_requirement_bool_pages::metadata(),
         "player_link" => dq_analyze::player_link_policy::metadata(),
+        "map_edits" => &dq_analyze::map_edits_policy::META,
         "silicon_entry" => &dq_analyze::silicon_entry_policy::META,
         "untyped_member" => dq_analyze::untyped_member_policy::metadata(),
         "weak_raw_read" => dq_analyze::weak_relation_policy::metadata(),
@@ -322,6 +323,12 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     let site=&item["site"];exact(site,&["rule","rel","line","msg","key","ident"])?;
                     if meta.rule(text(site,"rule",true)?).is_none(){return Err(invalid("unknown hard site rule"))}
                     for name in ["rel","msg","key","ident"]{text(site,name,matches!(name,"rel"|"msg"))?;}
+                    if lint=="map_edits" && (!text(site,"rel",true)?.starts_with("maps/")
+                        || !text(site,"rel",true)?.ends_with(".dmm")
+                        || dq_analyze::map_edits_policy::skips_map(text(site,"rel",true)?)
+                        || !text(site,"ident",true)?.contains("::") || text(site,"key",false)?!="") {
+                        return Err(invalid("map_edits finding lacks its actual declaration-site shape"));
+                    }
                     if number(site,"line")?==0||number(site,"line")?>u32::MAX as usize{return Err(invalid("invalid hard site line"))}
                 }
                 "site" => {

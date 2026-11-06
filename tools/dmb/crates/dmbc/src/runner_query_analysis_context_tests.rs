@@ -304,3 +304,42 @@ fn actual_semantic_wire_pages_for_lifeforms_and_sys_reactive_pass_client_validat
         assert!(query::validate_workspace_report_delivery(&foreign, &question.source_queries).is_err());
     }
 }
+
+#[test]
+fn original_map_edits_joined_capture_pins_maps_and_reuses_source_tree() {
+    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    let (mut host, mut request, root) = fixture("/datum/probe\n    var/known\n");
+    let intent = request.policy_inputs.as_mut().unwrap();
+    intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
+    intent.workspace_auxiliary = vec![Q::MapEdits];
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code")];
+
+    let inspect = |snapshot: &SourceSnapshot, expected: &[(&str, &str, usize)]| {
+        let guard = snapshot.workspace_native_read().unwrap();
+        let workspace = snapshot.native_workspace.as_ref().unwrap();
+        let child = snapshot.workspace_semantic_inputs(Q::MapEdits).unwrap();
+        assert!(workspace.matches_source(child.policy().mapping(), snapshot.source_revision));
+        let mut rows = Vec::new();
+        workspace.for_each_map_edit_file(&guard, |relative, map| {
+            assert_eq!(relative, "maps/probe.dmm");
+            rows.extend(map.edits().map(|(ty, var, line)| (ty.to_owned(), var.to_owned(), line)));
+            Ok(())
+        }).unwrap();
+        assert_eq!(rows, expected.iter().map(|(ty, var, line)| (ty.to_string(), var.to_string(), *line)).collect::<Vec<_>>());
+        (snapshot.source_revision, workspace.policy_revision(), Arc::clone(&snapshot.tree))
+    };
+    run(&mut host, &request);
+    let empty = current(&host, |snapshot| inspect(snapshot, &[]));
+    std::fs::write(root.join("maps/probe.dmm"), b"/datum/probe{known = 1; lost = 2}\r\n").unwrap();
+    run(&mut host, &request);
+    let first = current(&host, |snapshot| inspect(snapshot, &[("/datum/probe", "known", 1), ("/datum/probe", "lost", 1)]));
+    assert_eq!(first.0, empty.0);
+    assert_ne!(first.1, empty.1);
+    assert!(Arc::ptr_eq(&first.2, &empty.2));
+    std::fs::write(root.join("maps/probe.dmm"), b"/datum/probe{known = 1; next = 3}\r\n").unwrap();
+    run(&mut host, &request);
+    let next = current(&host, |snapshot| inspect(snapshot, &[("/datum/probe", "known", 1), ("/datum/probe", "next", 1)]));
+    assert_eq!(next.0, first.0);
+    assert_ne!(next.1, first.1);
+    assert!(Arc::ptr_eq(&next.2, &first.2));
+}

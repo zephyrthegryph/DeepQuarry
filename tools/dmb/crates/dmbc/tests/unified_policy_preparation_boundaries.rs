@@ -437,3 +437,73 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
     assert!(!String::from_utf8_lossy(&rejected.stderr).contains("combined_transport_warning"));
     assert!(!root.join("deepquarry.dmb").exists());
 }
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_map_edits_transport_pins_regular_maps_and_refuses_other_geometry() {
+    use dmbc::daemon::analyze::AnalyzeRequest;
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+    let root = test_scratch::dir("public-map-edits");
+    let transport = test_scratch::dir("public-map-edits-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("map-edits-{}-{}", std::process::id(), SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", "/obj/base\n    var/known\n/obj/base/child\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let mut request = AnalyzeRequest { build: request(&root, Q::MapEdits), lints: vec!["map_edits".into()],
+        raw: false, changed: None, scopes_root: None, baseline_mode: None, ci: false };
+    let input = transport.join("map-edits-request.json");
+    let run = |request: &AnalyzeRequest, expected: i32| {
+        std::fs::write(&input, serde_json::to_vec(request).unwrap()).unwrap();
+        let output = daemon.run(&[OsStr::new("analyze-check"), input.as_os_str(), OsStr::new("--jsonl")], Duration::from_secs(120)).unwrap();
+        assert_eq!(output.status.code(), Some(expected), "stdout={}\nstderr={}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+        if expected == 2 {
+            assert!(output.stdout.is_empty(), "partial result before capture refusal");
+            return serde_json::Value::Null;
+        }
+        let row: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(row["complete"], true);
+        assert_eq!(row["lints"], serde_json::json!(["map_edits"]));
+        assert_eq!(row["clean"], expected == 0);
+        if let Some(oracle) = std::env::var_os("DQ_MAP_EDITS_LEGACY_ANALYZE") {
+            let oracle = PathBuf::from(oracle);
+            assert!(oracle.is_absolute(), "use an independent pre-port legacy Analyze binary");
+            let mut legacy = std::process::Command::new(oracle);
+            legacy.args(["check", "--lint", "map_edits", "--no-cache", "--root"]).arg(&root);
+            legacy.env_remove("DQ_ANALYZE_NATIVE").env_remove("DQ_ALLOW_USAGE");
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                legacy.creation_flags(0x08000000 | 0x00004000);
+            }
+            let legacy = legacy.output().expect("run independent pre-port MapEdits scanner");
+            assert_eq!(legacy.status.code(), Some(expected), "{}", String::from_utf8_lossy(&legacy.stderr));
+            assert_eq!(row["text"].as_str().unwrap().as_bytes(), legacy.stdout.as_slice());
+        }
+        row
+    };
+    let empty = run(&request, 0);
+    put(&root, "maps/.hidden/edit.dmm", b"/obj/base/child{known = 1; name = \"built-in\"; lost = 2}\r\n/obj/absent{stray = \"\xff\"}\r\n");
+    put(&root, "maps/palettes/ignored.dmm", b"/obj/absent{should_not_read = 3}\n");
+    let actual = run(&request, 1);
+    let text = actual["text"].as_str().unwrap();
+    assert!(text.contains("maps/.hidden/edit.dmm:1: [map_edits/unknown_var] /obj/base/child.lost"), "{text}");
+    assert!(text.contains("maps/.hidden/edit.dmm:2: [map_edits/unknown_type] /obj/absent"), "{text}");
+    assert_eq!(text.matches("[map_edits/unknown_").count(), 2, "{text}");
+    assert_eq!(actual["source_revision"], empty["source_revision"]);
+    assert_ne!(actual["policy_revision"], empty["policy_revision"]);
+    put(&root, "maps/.hidden/edit.dmm", b"/obj/base/child{known = 3}\n");
+    let repaired = run(&request, 0);
+    assert_eq!(repaired["source_revision"], actual["source_revision"]);
+    assert_ne!(repaired["policy_revision"], actual["policy_revision"]);
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(".hidden/edit.dmm", root.join("maps/alias.dmm")).unwrap();
+        run(&request, 2);
+    }
+    request.build.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots.push(root.join("maps"));
+    run(&request, 2);
+    assert!(!root.join("deepquarry.dmb").exists());
+}

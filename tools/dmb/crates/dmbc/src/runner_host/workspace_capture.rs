@@ -38,6 +38,11 @@ struct File {
     original: Original,
 }
 /// Data from the actual visible dispatcher acquisition, never a source witness.
+struct MapEditsFile {
+    relative: String,
+    rows: dq_analyze::map_edits_policy::ParsedMap,
+}
+
 struct UiDispatcherCapture{index:Option<usize>,prepared:dq_analyze::ui_actions_policy::PreparedDispatcher}
 pub(crate) struct WorkspaceCapture {
     source: Weak<SourceExportMapping>,
@@ -56,6 +61,7 @@ pub(crate) struct WorkspaceCapture {
     check_grep:Option<[Option<usize>;6]>,
     keys_manifest:Option<Option<usize>>,
     base_vars_configuration:Option<Option<usize>>,
+    map_edits: Option<Vec<MapEditsFile>>,
     facts: InputSnapshot,
 }
 /// Actor rows use the exact legacy selected Tree, including hidden DM.
@@ -81,6 +87,25 @@ impl WorkspaceCapture {
     }
     pub(crate) fn require_analysis_subject(&self,subject:&crate::input_snapshot::OriginalAnalysisSubject)->io::Result<()>{if !subject.same_discovery(&self.discovery)||!subject.matches_workspace_root(&self.discovery.contract().root){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Analyze subject belongs to another actual workspace discovery"))}Ok(())}
     pub(crate) fn semantic_order_question(&self)->Option<crate::policy_request::WorkspaceAuxiliaryQuestion>{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;[Q::SemReads,Q::UntrackedInputs,Q::SetterPublishes,Q::SysReactive,Q::Lifeforms,Q::DerivedReads].into_iter().find(|question|self.auxiliary.contains(question))}
+    pub(crate) fn for_each_map_edit_file(
+        &self, scope: &crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,
+        mut visit: impl FnMut(&str, &dq_analyze::map_edits_policy::ParsedMap) -> io::Result<()>,
+    ) -> io::Result<()> {
+        use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+        self.require_scope(scope)?;
+        if !self.matches_auxiliary_questions(&[Q::MapEdits]) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits current capture role differs"));
+        }
+        let maps = self.map_edits.as_ref()
+            .ok_or_else(|| io::Error::other("map_edits has no complete observed input owner"))?;
+        for map in maps {
+            crate::daemon::control::checkpoint()?;
+            visit(&map.relative, &map.rows)?;
+        }
+        self.require_scope(scope)?;
+        crate::daemon::control::checkpoint()
+    }
+
     pub(crate) fn has_semantic_question(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion)->bool{question.is_semantic()&&self.auxiliary.contains(&question)}
 
     pub(crate) fn has_auxiliary_question(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion)->bool{self.auxiliary.contains(&question)}
@@ -183,6 +208,16 @@ impl WorkspaceCapture {
         if let Some(bytes) = &self.config {
             if census.arc_object(owner, bytes.shared_owner()) {
                 census.vec_payload(owner, bytes.shared_owner().bytes());
+            }
+        }
+        if let Some(maps) = &self.map_edits {
+            let owner = "query_snapshot.workspace.map_edits";
+            census.vec_payload(owner, maps);
+            for map in maps {
+                census.string(owner, &map.relative);
+                map.rows.visit_storage(|pointer, payload, capacity| {
+                    if capacity != 0 { census.exposed_buffer(owner, pointer, payload, capacity); }
+                });
             }
         }
         census.vec_payload(owner,&self.auxiliary);
@@ -491,6 +526,16 @@ impl WorkspaceCapture {
             Ok(())
         };
         add(self.configuration.capacity())?;
+        if let Some(maps) = &self.map_edits {
+            add(maps.capacity().checked_mul(std::mem::size_of::<MapEditsFile>())
+                .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?)?;
+            for map in maps {
+                add(map.relative.capacity())?;
+                let mut bytes = Some(0usize);
+                map.rows.visit_storage(|_, _, capacity| bytes = bytes.and_then(|n| n.checked_add(capacity)));
+                add(bytes.ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?)?;
+            }
+        }
         if let Some(proof)=&self.engine_no_model{add(proof.preflight().charge())?;}
         if let Some(ui)=&self.ui_dispatcher{add(ui.prepared.budget_charge())?;}
         if self.raw_source.is_some(){add(std::mem::size_of::<RawSourceIdentity>()+std::mem::size_of::<crate::query_db::QueryDb>()+4*std::mem::size_of::<usize>())?;}
@@ -558,13 +603,70 @@ struct OriginalWorkspaceSource<'a>{mapping:&'a Arc<SourceExportMapping>,plan:&'a
 pub(crate) fn capture_analysis_with_auxiliary<P:SnapshotProvider>(frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
     if frontend.original_analysis_completeness().is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"workspace full source capture refuses partial diagnostic purpose"))}
     if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {return Err(io::Error::new(io::ErrorKind::InvalidInput,"analysis workspace requires its actual original context"))}
-    capture_original(OriginalWorkspaceSource{mapping:frontend.mapping(),plan:frontend.original_plan(),files:frontend.files(),revision:frontend.source_revision()},inputs,discovery,configuration,questions)
+    capture_original(OriginalWorkspaceSource{mapping:frontend.mapping(),plan:frontend.original_plan(),files:frontend.files(),revision:frontend.source_revision()},inputs,discovery,configuration,questions,None)
 }
 pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
     let mapping=frontend.source_export_mapping().ok_or_else(||io::Error::other("workspace compiler mapping unproven"))?;
-    capture_original(OriginalWorkspaceSource{mapping,plan:&frontend.plan,files:&frontend.files,revision:frontend.source_export_revision()},inputs,discovery,configuration,questions)
+    capture_original(OriginalWorkspaceSource{mapping,plan:&frontend.plan,files:&frontend.files,revision:frontend.source_export_revision()},inputs,discovery,configuration,questions,None)
 }
-fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
+/// Exclusive authored MapEdits capture. Keep the existing workspace
+/// capture allowance funded while the map provider owns its scratch and parsed
+/// rows, then register the one immutable joined owner in the existing ledger.
+pub(crate) fn capture_analysis_map_edits<P: SnapshotProvider>(
+    frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+    inputs: &RecordingInputs<P>,
+    discovery: Arc<DiscoveryReceipt>,
+    configuration: &Path,
+    queries: &crate::query_db::QueryDb,
+) -> io::Result<Arc<WorkspaceCapture>> {
+    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    use dq_analyze::captured_generator_budget::Budget;
+    use dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete;
+    let subject = inputs.original_analysis_subject()
+        .ok_or_else(|| io::Error::other("map_edits actual Original subject absent"))?;
+    subject.require_bound_mapping(frontend.mapping())?;
+    if subject.synthetic() || !subject.same_discovery(&discovery)
+        || frontend.preparation_purpose() != OriginalSharedComplete
+        || frontend.original_analysis_completeness().is_none()
+        || frontend.mapping().initial_environment() != dm_preprocess::InitialEnvironment::OriginalChecker0290
+        || discovery.contract().recursive_roots.as_slice() != [discovery.contract().root.join("code")]
+    {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits requires its fixed authored model and CODE discovery"));
+    }
+    queries.with_semantic_workspace_capture_inputs(|budget, credits| {
+        let ordinary = Budget::reserve_window(budget, EXTRA_BUDGET).map_err(map_edits_quota)?;
+        if ordinary.capacity() != EXTRA_BUDGET {
+            return Err(io::ErrorKind::OutOfMemory.into());
+        }
+        let capture = capture_original(
+            OriginalWorkspaceSource { mapping: frontend.mapping(), plan: frontend.original_plan(),
+                files: frontend.files(), revision: frontend.source_revision() },
+            inputs, discovery, configuration, &[Q::MapEdits], Some((budget, credits)),
+        )?;
+        let retained = capture.retained_charge()?.checked_add(2*std::mem::size_of::<usize>())
+            .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
+        ordinary.settle(retained).map_err(map_edits_quota)?;
+        credits.retain_capture_metadata(&capture, retained)?;
+        Ok(capture)
+    })
+}
+
+fn map_edits_quota(message: String) -> io::Error {
+    io::Error::new(io::ErrorKind::OutOfMemory, message)
+}
+
+fn map_edits_failure(failure: dq_analyze::captured_reactive_reads::Failure) -> io::Error {
+    match failure {
+        dq_analyze::captured_reactive_reads::Failure::Operational(error) => error,
+        dq_analyze::captured_reactive_reads::Failure::Unsupported(message) =>
+            io::Error::new(io::ErrorKind::Unsupported, message),
+    }
+}
+
+fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion],map_work:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>)->io::Result<Arc<WorkspaceCapture>>{
+    if questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::MapEdits) != map_work.is_some() {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits requires its actual capture producer"));
+    }
     if questions.len()>12||questions.windows(2).any(|pair|pair[0]>=pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual canonical auxiliary questions required"))}
     if questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)&&questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline){return Err(io::Error::new(io::ErrorKind::InvalidInput,"CheckGrep check and baseline purposes are mutually exclusive"))}
     discovery.validate_recording(inputs)?;
@@ -680,7 +782,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
      let mut existing=None;for(index,file)in files.iter().enumerate(){crate::daemon::control::checkpoint()?;if file.path==path{existing=Some(index);break}}let index=if let Some(existing)=existing{Some(existing)}else{let original=if path==configuration{config.as_ref().map(|bytes|inputs.recorded_file_fact(&path).map(|fact|CapturedOriginal{original:Original::Owned(bytes.clone()),fact})).transpose()?}else{capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&texts,&aliases,&path,&mut used,128)?};if let Some(CapturedOriginal{original,fact})=original{let index=files.len();files.push(File{path:path.clone(),fact,original});Some(index)}else{None}};base_vars_configuration=Some(index);base_vars_configuration_path=Some(path);
     }
 
-    let selected = files
+    let mut selected: std::collections::BTreeSet<_> = files
         .iter()
         .flat_map(|file| {
             let mut paths = vec![file.path.clone()];
@@ -695,7 +797,40 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         .chain(base_vars_configuration_path.iter().map(|path|canonical_path(path)))
         .chain(check_grep_paths.iter().flat_map(|paths|paths.iter().flatten().map(|path|canonical_path(path))))
         .collect();
-    let facts = inputs.policy_workspace_closure(&selected, discovery.directory_paths())?;
+    let mut map_edits = None;
+    let map_directories = if let Some((budget, lender)) = map_work {
+        use dq_analyze::{captured_allow_annotations::Operation, key_policy_control as kc, map_edits_policy::ParsedMap};
+        let poll = &crate::daemon::control::checkpoint;
+        let mut control = Operation { budget, poll };
+        let mut maps = Vec::new();
+        let directories = inputs.fold_regular_map_edits_inputs(&discovery.contract().root, budget, lender, |path, relative, bytes| {
+            let rows = ParsedMap::parse(bytes, budget, poll).map_err(map_edits_failure)?;
+            kc::row(&mut control, &mut maps).map_err(map_edits_failure)?;
+            let relative = kc::own(&mut control, relative).map_err(map_edits_failure)?;
+            // Both the selected path index and the copied InputSnapshot file
+            // fact are part of the map phase's funding before insertion.
+            let width = path.as_os_str().len().checked_mul(32).and_then(|n| n.checked_add(8192))
+                .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
+            budget.charge(width).map_err(map_edits_quota)?;
+            if !selected.insert(path.to_owned()) {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits source path has a second selected role"));
+            }
+            maps.push(MapEditsFile { relative, rows });
+            Ok(())
+        })?;
+        // The original directory backing is shared with the recorded facts.
+        // Budget the closure's second key/index allocation before it is made.
+        for directory in &directories {
+            let width = directory.capacity().checked_mul(8).and_then(|n| n.checked_add(4096))
+                .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
+            budget.charge(width).map_err(map_edits_quota)?;
+        }
+        map_edits = Some(maps);
+        directories
+    } else {
+        Vec::new()
+    };
+    let facts = inputs.policy_workspace_closure(&selected, discovery.directory_paths().chain(&map_directories))?;
     let policy_revision = crate::policy_request::workspace_revision(
         frontend.revision,
         &facts,
@@ -724,6 +859,12 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-sem-handlers-selected-full-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()
     }else{policy_revision};
     let policy_revision=if let Some(question)=crate::policy_request::WorkspaceAuxiliaryQuestion::exclusive_layering(&auxiliary){let mut hash=xxhash_rust::xxh3::Xxh3::new();match question.layering().expect("exact layering role"){dq_analyze::engine_layering_policy::Layer::Engine=>hash.update(b"native-workspace-engine_layering-intent-v1"),dq_analyze::engine_layering_policy::Layer::Library=>hash.update(b"native-workspace-library_layering-intent-v1")};hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
+    let policy_revision = if map_edits.is_some() {
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"native-workspace-map-edits-regular-v1");
+        hash.update(&policy_revision.to_le_bytes());
+        hash.digest128()
+    } else { policy_revision };
     let issuance=next_issuance()?;
     let result = Arc::new(WorkspaceCapture {
         source: Arc::downgrade(mapping),raw_source:None,engine_no_model:None,ui_dispatcher:None,
@@ -739,6 +880,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         check_grep,
         keys_manifest,
         base_vars_configuration,
+        map_edits,
         facts,
     });
     if result.retained_charge()? > EXTRA_BUDGET {
@@ -950,7 +1092,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
  let ui_dispatcher=prepared_ui.map(|prepared|UiDispatcherCapture{index:ui_dispatcher_index,prepared});
  let config_width=workspace.configuration.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(1024)).ok_or(io::ErrorKind::OutOfMemory)?;used=used.checked_add(config_width).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;let configuration=canonical_path(&workspace.configuration);if discovery.files().contains(&configuration){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw configuration cannot also be selected source"))}let config=match &engine{Some(proof)=>{if configuration!=proof.preflight().configuration().0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine configuration path differs"))}proof.preflight().configuration_bytes().cloned()},None=>match doc_config{Some(bytes)=>bytes,None=>inputs.read_policy_candidate(&configuration,EXTRA_BUDGET-used)?}};used=used.checked_add(config.as_ref().map_or(0,SharedBytes::capacity)).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;selected.push(configuration.clone());
  let selected=selected.into_iter().collect::<std::collections::BTreeSet<_>>();let facts=inputs.policy_workspace_closure(&selected,discovery.directory_paths())?;let revision=crate::policy_request::workspace_revision(0,&facts,&workspace.root,&workspace.recursive_roots,&configuration)?;let owner=Arc::new(RawSourceIdentity{revision,queries:Arc::downgrade(queries),purpose});let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"original-source-only-not-semantic-v1");hash.update(purpose.name().as_bytes());hash.update(&revision.to_le_bytes());let policy_revision=hash.digest128();
- let capture=Arc::new(WorkspaceCapture{source:Weak::new(),raw_source:Some(Arc::downgrade(&owner)),engine_no_model:engine,ui_dispatcher,source_revision:revision,policy_revision,issuance:next_issuance()?,discovery,files:files.into_boxed_slice(),configuration,config,auxiliary:vec![purpose.question()],deadline:None,check_grep:None,keys_manifest:op_order_manifest,base_vars_configuration:None,facts});
+ let capture=Arc::new(WorkspaceCapture{source:Weak::new(),raw_source:Some(Arc::downgrade(&owner)),engine_no_model:engine,ui_dispatcher,source_revision:revision,policy_revision,issuance:next_issuance()?,discovery,files:files.into_boxed_slice(),configuration,config,auxiliary:vec![purpose.question()],deadline:None,check_grep:None,keys_manifest:op_order_manifest,base_vars_configuration:None,map_edits:None,facts});
  if used>EXTRA_BUDGET||capture.retained_charge()?>EXTRA_BUDGET{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"raw Doc retained source exceeds existing capture allowance"))}capture.discovery.validate_recording(inputs)?;let metadata=capture.retained_charge()?;budget.charge(metadata).map_err(quota)?;credits.retain_capture_metadata(&capture,metadata)?;drop(metadata_peak);Ok((capture,owner))
 }
 

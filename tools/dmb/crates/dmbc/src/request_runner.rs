@@ -820,7 +820,11 @@ fn run_build_attempt(
                     }
                     let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
                     let discovery=if let Some(subject)=&analysis_subject{subject.bind_frontend(&view)?;Arc::clone(subject.discovery())}else{Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?})};
-                    let captured=crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?;
+                    let captured=if intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::MapEdits]{
+                        crate::runner_host::workspace_capture::capture_analysis_map_edits(&view,&inputs_capture,discovery,&workspace.configuration,source_policy_queries.as_ref())?
+                    }else{
+                        crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?
+                    };
                     let checker=if preparation_output.needs_combined_checker(){
                         use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
                         if !Q::admits_selected_reads(intent.workspace_auxiliary()) ||

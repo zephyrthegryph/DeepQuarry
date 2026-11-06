@@ -96,6 +96,27 @@ impl QueryDb{
  pub(crate) fn raw_source_input_charge_locked(&self)->io::Result<usize>{self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner()).refresh()}
  pub(super) fn refresh_raw_source_inputs_locked(&self)->io::Result<()>{let sources=self.raw_source_input_charge_locked()?;self.workspace_input_base_headroom_locked(sources)?;Ok(())}
  pub(super) fn raw_source_capture_fixed_credit_locked(&self,capture:&Arc<WorkspaceCapture>)->io::Result<Option<usize>>{Ok(self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner()).capture_metadata(capture))}
+ pub(crate) fn with_semantic_workspace_capture_inputs(
+    &self,
+    run: impl FnOnce(&Arc<Budget>, &mut RawInputCredits<'_>) -> io::Result<Arc<WorkspaceCapture>>,
+ ) -> io::Result<Arc<WorkspaceCapture>> {
+    crate::daemon::control::checkpoint()?;
+    let _gate = self.raw_policy.gate.lock().unwrap_or_else(|error| error.into_inner());
+    let mut ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|error| error.into_inner());
+    ledger.bind_source_arena(&self.raw_policy.admission)?;
+    let available = self.workspace_input_base_headroom_locked(ledger.refresh()?)?;
+    let budget = Budget::new(available).map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory, message))?;
+    charge(&budget, NODE)?;
+    let mut credits = RawInputCredits { ledger: &mut ledger, budget: &budget, source_nodes: 0, capture_node: true, prepared: false };
+    let capture = run(&budget, &mut credits)?;
+    if credits.ledger.capture_metadata(&capture).is_none() || capture.raw_input_files().next().is_some() {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "semantic workspace capture lacks its actual funded role"));
+    }
+    budget.require().map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory, message))?;
+    self.workspace_input_base_headroom_locked(credits.ledger.refresh()?)?;
+    crate::daemon::control::checkpoint()?;
+    Ok(capture)
+ }
  pub(crate) fn with_raw_source_capture_inputs(&self,run:impl FnOnce(&Arc<Budget>,&mut RawInputCredits<'_>)->io::Result<(Arc<WorkspaceCapture>,Arc<RawSourceIdentity>)>)->io::Result<(Arc<WorkspaceCapture>,Arc<RawSourceIdentity>)>{crate::daemon::control::checkpoint()?;let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());ledger.bind_source_arena(&self.raw_policy.admission)?;let live=ledger.refresh()?;let available=self.workspace_input_base_headroom_locked(live)?;let budget=Budget::new(available).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;charge(&budget,NODE)?;let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:true,prepared:false};let pending=run(&budget,&mut credits);match pending{Err(actual)=>Err(actual),Ok((capture,identity))=>{if credits.ledger.capture_metadata(&capture).is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"returned raw capture lacks actual funded metadata registration"))}for lease in capture.raw_input_files(){if !credits.ledger.has_source(lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"returned raw capture has unregistered original backing"))}}budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;let actual=credits.ledger.refresh()?;self.workspace_input_base_headroom_locked(actual)?;crate::daemon::control::checkpoint()?;Ok((capture,identity))}}}
 }
 
