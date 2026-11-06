@@ -24,5 +24,9 @@ GLOBAL_DATUM(materialization_host, /datum/materialization_host)
 /datum/materialization_host/proc/frame_note_index_row(new_target)
 	return
 
+/// The running frame queued one stat settle (stat_settle_defer); `new_target`: its target had none queued yet.
+/datum/materialization_host/proc/frame_note_stat_deferred(new_target)
+	return
+
 /datum/materialization_host/proc/after_init_wait(datum/holder)
 	after_init_arm(holder, FALSE)

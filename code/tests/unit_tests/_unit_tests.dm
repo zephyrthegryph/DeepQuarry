@@ -601,6 +601,7 @@
 #include "dq_relation_edge_tests.dm"
 #include "dq_slot_hook_tests.dm"
 #include "dq_rel_index_batch_tests.dm"
+#include "dq_stat_settle_batch_tests.dm"
 #include "dq_publish_notice_tests.dm"
 #include "dq_report_in_catch_tests.dm"
 #include "dq_ref_text_handles_tests.dm"

@@ -166,7 +166,7 @@ GLOBAL_VAR_INIT(draw_hop_vars_built, FALSE)
 	var/lone_turf = FALSE
 	if(isturf(E))
 		var/turf/where = E
-		lone_turf = !length(where.contents) && !_rel_index_of(where) // ALLOW(spatial): a length read of one turf's contents, no walk
+		lone_turf = !length(where.contents) && !_rel_index_of(where)
 	for(var/list/entry as anything in entries)
 		var/list/chain = entry[1]
 		var/read = entry[2]

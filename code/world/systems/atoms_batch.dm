@@ -41,6 +41,9 @@
 	/// Reverse-index rows this frame (as owner) queued for the close, and for how many targets (views.dm, rel_pending).
 	var/rel_index_queued = 0
 	var/rel_index_targets = 0
+	/// Stat settles this frame (as owner) queued for the close, and for how many targets (recompute.dm, stat_settle_defer).
+	var/stat_settles_queued = 0
+	var/stat_settle_targets = 0
 
 // Links between open frames; nothing here owns what it names.
 
@@ -78,6 +81,9 @@
 		var/merged = rel_pending_flush_all() // before the deferred work: its recomputes read the relations
 		if(batch.rel_index_queued)
 			testing("Relation index: [batch.rel_index_queued] queued rows for [batch.rel_index_targets] targets merged into [merged] live indexes")
+		stat_pending_flush_all() // after the relations, before the deferred work: a settle reads the area a machine joined
+		if(batch.stat_settles_queued)
+			testing("Stat settles: [batch.stat_settles_queued] queued for [batch.stat_settle_targets] targets, [GLOB.stat_deferred_settles] settles run in all")
 		var/list/work = batch.work
 		for(var/kind in 1 to BATCH_WORK_KINDS)
 			var/list/queued = work[kind]
@@ -105,6 +111,7 @@
 	var/list/probe = batch_yield_probe
 	batch.yields++
 	rel_pending_flush_all() // a suspended frame is not active: whatever runs meanwhile reads a complete index
+	stat_pending_flush_all() // and settled stats
 	active_batch = null
 	clear_tracked_initalize(batch.source)
 	if(probe)

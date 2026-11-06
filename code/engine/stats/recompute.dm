@@ -25,6 +25,12 @@ GLOBAL_VAR(stat_force_settle) // SETTLE_INLINE / SETTLE_MARKED: the apc_flip_50 
 GLOBAL_VAR_INIT(stat_spills, 0)
 GLOBAL_VAR_INIT(stat_tick_spent, 0) // what this kernel pass's marked drains have charged to the lane so far
 GLOBAL_VAR_INIT(stat_evals, 0)
+/// Settles the init frame queued instead of running (stat_settle_defer), how many it ran when the frame closed or a read needed them, and for how many targets.
+GLOBAL_VAR_INIT(stat_deferred, 0)
+GLOBAL_VAR_INIT(stat_deferred_settles, 0)
+GLOBAL_VAR_INIT(stat_deferred_targets, 0)
+/// The slots of the targets that have queued settles (rec.pending); a slot whose rows a read already settled is skipped when the frame closes.
+GLOBAL_LIST_EMPTY(stat_pending_slots)
 GLOBAL_LIST_EMPTY(stat_read_compute_by) // BENCHMARK builds: "type:stat" -> uncached read computes
 GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the value because nothing was cached (the bench's idle stat metric)
 
@@ -54,6 +60,7 @@ PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot en
 		return null
 	if(!isdatum(E))
 		return null
+	stat_pending_flush(E) // settles what the init frame queued for E: no reader sees a value a queued contribution has not reached
 	var/datum/stat_type_info/I = stat_type_of(E)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
 		. = E.vars[def.name]
@@ -873,7 +880,63 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		return
 	var/datum/stat_def/def = stat_def_of(ct.stat_id)
 	stat_hold_remove(target, trec, row)
-	stat_settle_def(target, def)
+	if(!stat_settle_defer(target, def))
+		stat_settle_def(target, def)
+
+/**
+ * Queues the settle of `def` on `target` while an init frame runs, instead of recomputing it now: an area's demand stat is settled once per machine that
+ * joins it, each time over the same rows. The rows are already placed; only the recompute (and what it moves) waits. It runs once per target and stat
+ * when the frame closes or yields (stat_pending_flush_all), or earlier when anything reads a stat of the target (stat_value() settles the target's
+ * queue first), so no reader sees a value a queued contribution has not reached. Only a virtual stat (one with no var of its own, read through
+ * stat_value()) with no unit and no side effect of its own waits. FALSE when it did not queue: the caller settles now.
+ */
+/proc/stat_settle_defer(datum/target, datum/stat_def/def)
+	if(def.keyed || def.units || def.id == STAT_RELEVANCE || def.id == STAT_SUSPENDED || def.id == STAT_CLOCK_RATE_BIO)
+		return FALSE
+	var/datum/materialization_host/host = materialization_host()
+	if(!host.frame_running())
+		return FALSE
+	var/datum/stat_type_info/I = stat_type_of(target)
+	if(!I || I.has_var[def.skey])
+		return FALSE
+	var/datum/stat_record/rec = stat_record_of(target)
+	var/list/queue = rec.pending
+	var/new_target = isnull(queue)
+	if(new_target)
+		queue = list()
+		rec.pending = queue
+		GLOB.stat_pending_slots += SLOT(target)
+		GLOB.stat_deferred_targets++
+	queue[def.skey] = def
+	GLOB.stat_deferred++
+	host.frame_note_stat_deferred(new_target)
+	return TRUE
+
+/// Settles what the init frame queued for `E`. A no-op when nothing is queued (one field read).
+/proc/stat_pending_flush(datum/E)
+	var/datum/stat_record/rec = E.rx?.stats
+	if(!rec?.pending)
+		return
+	var/list/queued = rec.pending
+	rec.pending = null
+	for(var/skey in queued)
+		var/datum/stat_def/def = queued[skey]
+		GLOB.stat_deferred_settles++
+		if(!QDELETED(E))
+			stat_settle_def(E, def)
+
+/// Settles every queued settle: the init frame closing or yielding. A target that is gone is dropped. Returns how many targets it settled.
+/proc/stat_pending_flush_all()
+	var/list/slots = GLOB.stat_pending_slots
+	if(!length(slots))
+		return 0
+	GLOB.stat_pending_slots = list()
+	for(var/slot in slots)
+		var/datum/E = slot_datum(slot)
+		if(!isdatum(E) || !E.rx?.stats?.pending)
+			continue
+		stat_pending_flush(E)
+		. += 1
 
 /// Places (or updates) an untimed keyed row without the hold() checks: the contribution engine's own writes. Settles the stat inline.
 /proc/stat_row_set(datum/target, datum/stat_def/def, source, value, priority, key)
@@ -901,7 +964,8 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 			var/datum/stat_record/src_rec = stat_record_of(source)
 			LAZYOR(src_rec.held_on, SLOT(target))
 	BOOT_PHASE_BEGIN(bp_settle)
-	stat_settle_def(target, def)
+	if(!stat_settle_defer(target, def))
+		stat_settle_def(target, def)
 	BOOT_PHASE_END(bp_settle, "stat_row_set: settle [def.name]", target)
 
 /// A contributes_to entity's relation var was written: its contribution moves to the new target and leaves the old one.
