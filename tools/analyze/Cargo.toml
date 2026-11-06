@@ -399,3 +399,7 @@ required-features = ["unified-oracle"]
 [[example]]
 name = "unified_selected_reads_original"
 required-features = ["unified-oracle"]
+
+[[example]]
+name = "unified_selected_setter_original"
+required-features = ["unified-oracle"]

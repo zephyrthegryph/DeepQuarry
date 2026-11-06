@@ -435,3 +435,102 @@ fn selected_semantic_reads_use_map_allows_without_expanding_code_markers() {
     assert_eq!(run(&mut BuildHost::default()), changed);
     assert!(!root.join("deepquarry.dmb").exists());
 }
+
+#[test]
+fn selected_setter_matches_old_tree_header_membership() {
+    use dq_analyze::selected_exclusions_wire::Roster;
+    let root = scratch::dir("selected-setter-membership");
+    let cache = scratch::dir("selected-setter-cache");
+    let config = concat!(
+        "[lint.auto_tracked.lists]\n",
+        "include=[\"/datum/probe::charge\", \"/datum/map_probe::map_charge\", ",
+        "\"/datum/hidden_probe::hidden_charge\", \"/datum/outside_probe::outside_charge\"]\n",
+    );
+    put(&root,"tools/ci/lint_scopes.toml",&report_config::with_overlay(config));
+    put(&root,"code/probe.dm",concat!(
+        "#define SETTER(T,V)\n",
+        "#define TRACKED_STATE(T,V) ##T/proc/set_##V(value) { V = value }\n",
+        "/datum/probe\n    var/charge\n",
+        "SETTER(/datum/probe, charge)\n",
+        "/datum/probe/proc/set_charge(value)\n    charge = value\n",
+        "/datum/map_probe\n    var/map_charge\n",
+        "/datum/hidden_probe\n    var/hidden_charge\n",
+        "/datum/outside_probe\n    var/outside_charge\n",
+    ));
+    put(&root,"maps/legacy_macro.dm","TRACKED_STATE(/datum/map_probe, map_charge)\n");
+    put(&root,"maps/.legacy_macro.dm","TRACKED_STATE(/datum/hidden_probe, hidden_charge)\n");
+    const OUTSIDE: &str = "interface/legacy_macro.dm";
+    const ADMITTED: &str = "maps/moved_macro.dm";
+    const BODY: &str = "TRACKED_STATE(/datum/outside_probe, outside_charge)\n";
+    put(&root,OUTSIDE,BODY);
+    let manifest = concat!(
+        "#include \"code/probe.dm\"\n",
+        "#include \"maps/legacy_macro.dm\"\n",
+        "#include \"maps/.legacy_macro.dm\"\n",
+    );
+    put(&root,"deepquarry.dme",&format!("{manifest}#include \"{OUTSIDE}\"\n"));
+    let Command::Build(request) = dmbc::cli::parse(&["prepare-query".into(), root.join("deepquarry.dme").to_string_lossy().into_owned()]).unwrap()
+    else { panic!("actual PrepareQuery") };
+    let mut request = *request;
+    request.no_cache = true;
+    request.exact_inputs = true;
+    request.progress_enabled = false;
+    request.workers = 1;
+    request.timeout_seconds = Some(60);
+    request.engine_template = None;
+    request.bootstrap_catalog = false;
+    request.cache_root = Some(cache);
+    request.policy_inputs = Some(PolicyInputRequest {
+        analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+        workspace: Some(WorkspacePolicyRequest {
+            root: root.clone(), recursive_roots: vec![root.join("code"), root.join("maps")],
+            configuration: root.join("tools/ci/lint_scopes.toml"),
+        }), ..Default::default()
+    });
+    let budget=Budget::new(1<<20).unwrap();
+    let mut work=Operation{budget:&budget,poll:&||Ok(())};
+    let all=full_unused::registered_full_selection(&[],&mut work).unwrap();
+    let exclusions:Vec<_>=all.names().iter().filter(|name|!Roster::WithSetterPublishes.names().contains(&name.as_str()))
+        .map(|name|format!("-{name}")).collect();
+    let run=|host:&mut BuildHost|{
+        let mut diagnostics=Vec::new();
+        let mut output=Vec::new();
+        assert!(!host.write_original_exclusions_report(request.clone(),&exclusions,&mut diagnostics,&mut output).unwrap());
+        (output,diagnostics)
+    };
+    let compare=|output:&[u8],expected:&str|{
+        let Some(oracle)=std::env::var_os("DQ_SELECTED_SETTER_ORACLE") else {return;};
+        let oracle=std::path::PathBuf::from(oracle);
+        assert!(oracle.is_absolute());
+        let native=root.join("selected-setter-verified-report.txt");
+        std::fs::write(&native,output).unwrap();
+        let mut command=std::process::Command::new(oracle);
+        command.arg(&root).arg(native).arg(expected);
+        #[cfg(windows)] {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x08000000 | 0x00004000);
+        }
+        let checked=command.output().expect("run frozen legacy setter oracle");
+        assert!(checked.status.success(),"legacy comparison failed: {}\n{}",
+            String::from_utf8_lossy(&checked.stdout),String::from_utf8_lossy(&checked.stderr));
+    };
+    let mut host=BuildHost::default();
+    let initial=run(&mut host);
+    let text=std::str::from_utf8(&initial.0).unwrap();
+    assert_eq!(text.matches("code/probe.dm:6: [setter_publishes/no_publish]").count(),2,"{text}");
+    assert!(text.contains("interface/legacy_macro.dm:1: [setter_publishes/no_publish]"),"{text}");
+    assert!(!text.contains("maps/legacy_macro.dm:") && !text.contains("maps/.legacy_macro.dm:"),"{text}");
+    compare(&initial.0,"outside");
+    assert_eq!(run(&mut host),initial);
+
+    put(&root,ADMITTED,BODY);
+    put(&root,"deepquarry.dme",&format!("{manifest}#include \"{ADMITTED}\"\n"));
+    let changed=run(&mut host);
+    let text=std::str::from_utf8(&changed.0).unwrap();
+    assert_eq!(text.matches("code/probe.dm:6: [setter_publishes/no_publish]").count(),2,"{text}");
+    assert!(!text.contains("legacy_macro.dm:") && !text.contains("maps/moved_macro.dm:"),"{text}");
+    compare(&changed.0,"admitted");
+    drop(host);
+    assert_eq!(run(&mut BuildHost::default()),changed);
+    assert!(!root.join("deepquarry.dmb").exists());
+}

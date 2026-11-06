@@ -1447,6 +1447,7 @@ impl BuildHost {
             Roster::WithSilicon => &[Q::SiliconEntry],
             Roster::WithLibraryLayering => &[Q::LibraryLayeringFullAllow],
             Roster::WithHandlers => &[Q::SemHandlersFullAllow],
+            Roster::WithSetterPublishes => &[Q::SetterPublishes],
             Roster::WithSemanticReads => &[Q::SemReads,Q::UntrackedInputs],
             Roster::Base | Roster::WithCooldown => &[],
         };

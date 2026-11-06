@@ -136,11 +136,12 @@ impl ReportStage {
                     projection.row(site, Some(text), &mut control)?;
                 }
             }
-            UnionRows::SemanticReads(question, data) => {
+            UnionRows::Semantic(question, data) => {
                 use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
                 let expected = match question {
                     Q::SemReads => dq_analyze::sem_reads_policy::metadata(),
                     Q::UntrackedInputs => dq_analyze::untracked_inputs_policy::metadata(),
+                    Q::SetterPublishes => dq_analyze::setter_publication_policy::metadata(),
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued semantic read report role")),
                 };
                 if !std::ptr::eq(meta, expected) || !matches!(meta.policy, Policy::Hard) {

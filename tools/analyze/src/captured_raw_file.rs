@@ -81,6 +81,15 @@ impl<'a> RawPolicyViews<'a>{
  pub fn clean(&self,fallback:&crate::captured_generator_budget::Budget)->Result<&'a str,crate::reactive_reads_native::Failure>{let budget=self.allocation_budget(fallback);self.require()?;let bytes=SourceFile::raw_policy_clean_bound(self.file.text()).ok_or_else(||{budget.deny();crate::reactive_reads_native::Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"original clean view admission overflow"))})?;budget.charge(bytes).map_err(|message|crate::reactive_reads_native::Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;let value=self.file.clean();self.require()?;Ok(&value.text)}
  pub fn code(&self)->Result<&'a crate::tree::View,crate::reactive_reads_native::Failure>{self.require()?;let value=self.file.code();self.require()?;Ok(value)}
 }
+/// Actual Tree file-loan DATA. A completed host owns selected discovery and
+/// must deliver an exact positive or negative. This trait grants no authority.
+#[cfg(feature="native-policy")]
+pub trait SelectedTreeFiles {
+ fn with_file(&self, relative: &str, visit: &mut dyn FnMut(
+  Option<RawPolicyViews<'_>>,
+ ) -> Result<(), crate::reactive_reads_native::Failure>) -> Result<(), crate::reactive_reads_native::Failure>;
+}
+
 /// Exact existing CODE_DM path policy, including hidden-component exclusion.
 #[cfg(feature="native-policy")]
 pub fn is_code_dm(relative:&str)->bool{crate::tree::CODE_DM.matches_path(relative)}

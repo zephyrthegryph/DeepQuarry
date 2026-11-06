@@ -10,7 +10,7 @@ const STATIC_FLAG:u32=1;const CONST_FLAG:u32=2;const TMP_FLAG:u32=4;
 use std::{path::Path,sync::Arc,collections::HashMap,borrow::Cow};
 
 /// Stack-only source binding. No raw/native tree, callable map or AST is copied.
-pub(crate) struct ReadSource<'a>{raw:Option<&'a CapturedRawPolicy>,raw_pages:Option<&'a dyn crate::reactive_raw_policy_pages::RawPolicyPages>,native_root:Option<&'a Path>,inputs:&'a PolicyInputs,budget:&'a Arc<Budget>,order:ReadOrder<'a>,checkpoint:Option<&'a dyn Fn()->std::io::Result<()>>,body_borrower:Option<&'a dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>>}
+pub(crate) struct ReadSource<'a>{raw:Option<&'a CapturedRawPolicy>,raw_pages:Option<&'a dyn crate::reactive_raw_policy_pages::RawPolicyPages>,native_root:Option<&'a Path>,selected_setter_files:Option<&'a dyn crate::captured_raw_file::SelectedTreeFiles>,inputs:&'a PolicyInputs,budget:&'a Arc<Budget>,order:ReadOrder<'a>,checkpoint:Option<&'a dyn Fn()->std::io::Result<()>>,body_borrower:Option<&'a dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>>}
 /// One existing include-order map; temporary page views borrow it directly.
 enum ReadOrder<'a>{Owned(HashMap<String,usize>),Borrowed(&'a HashMap<String,usize>)}
 impl std::ops::Deref for ReadOrder<'_>{type Target=HashMap<String,usize>;fn deref(&self)->&Self::Target{match self{Self::Owned(map)=>map,Self::Borrowed(map)=>map}}}
@@ -37,7 +37,7 @@ impl<'a> ReadSource<'a>{
     /// or credit is issued here. The caller must preadmit its temporary page
     /// and retain graph allocations under their real parent before page drop.
     pub(crate) fn with_budget<'page,T>(&'page self,budget:&'page Arc<Budget>,operation:impl FnOnce(&ReadSource<'page>)->T)->T{
-        let page=ReadSource{raw:self.raw,raw_pages:self.raw_pages,native_root:self.native_root,inputs:self.inputs,budget,order:ReadOrder::Borrowed(&self.order),checkpoint:self.checkpoint,body_borrower:self.body_borrower};operation(&page)
+        let page=ReadSource{raw:self.raw,raw_pages:self.raw_pages,native_root:self.native_root,selected_setter_files:self.selected_setter_files,inputs:self.inputs,budget,order:ReadOrder::Borrowed(&self.order),checkpoint:self.checkpoint,body_borrower:self.body_borrower};operation(&page)
     }
     pub(crate) fn reserve(&self,n:Option<usize>)->Result<(),String>{charge(self.budget,n)}
     pub(crate) fn inputs(&self)->&'a PolicyInputs{self.inputs}
@@ -65,7 +65,7 @@ impl<'a> ReadSource<'a>{
         let profile=tree.checker_builtin_profile().ok_or("reactive original source lacks exact builtin profile")?;
         tree.validate_checker_builtin_profile(profile).map_err(|e|format!("reactive source profile: {e:?}"))?;
         let order=crate::captured_sparse_slots::captured_order(raw,inputs,budget)?;
-        Ok(Self{raw:Some(raw),raw_pages:None,native_root:None,inputs,budget,order:ReadOrder::Owned(order),checkpoint:None,body_borrower:None})
+        Ok(Self{raw:Some(raw),raw_pages:None,native_root:None,selected_setter_files:None,inputs,budget,order:ReadOrder::Owned(order),checkpoint:None,body_borrower:None})
     }
     /// Original-native-only semantic source loan. PolicyInputs is the existing
     /// private captured archive/mapping producer; root is diagnostic formatting
@@ -76,7 +76,7 @@ impl<'a> ReadSource<'a>{
     }
     pub(crate) fn native_validated(inputs:&'a PolicyInputs,root:&'a Path,budget:&'a Arc<Budget>,proof:&dm_tree::checker_builtins::ValidatedCheckerProfile<'_>,profile:dm_ir::PackedU128)->Result<Self,String>{
         budget.require()?;if !root.is_absolute(){return Err("native reactive diagnostic root must be absolute".into())}proof.require(inputs.archive().tree(),profile).map_err(|e|format!("reactive source profile: {e:?}"))?;
-        Ok(Self{raw:None,raw_pages:None,native_root:Some(root),inputs,budget,order:ReadOrder::Owned(HashMap::new()),checkpoint:None,body_borrower:None})
+        Ok(Self{raw:None,raw_pages:None,native_root:Some(root),selected_setter_files:None,inputs,budget,order:ReadOrder::Owned(HashMap::new()),checkpoint:None,body_borrower:None})
     }
 
     /// Policy-only page provider. This does NOT prove full raw coverage; the
@@ -506,6 +506,40 @@ impl<'a> ReadSource<'a>{
 
 pub(crate) fn visit_setter_definitions(&self,mut emit:impl FnMut(&str,&str)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{crate::reactive_global_source::Source::visit_setter_definitions(self,&mut emit)}
 pub(crate) fn visit_own_declared_variables(&self,mut emit:impl FnMut(&str,&str)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{crate::reactive_global_source::Source::visit_own_declared_variables(self,&mut emit)}
+
+    pub(crate) fn with_selected_setter_files(mut self, files: Option<&'a dyn crate::captured_raw_file::SelectedTreeFiles>) -> Self {
+        self.selected_setter_files = files;
+        self
+    }
+
+    pub(crate) fn selected_setter_qualifies(&self, member: dm_tree::MemberId) -> Result<Option<bool>, crate::reactive_reads_native::Failure> {
+        use crate::reactive_reads_native::Failure;
+        let Some(files) = self.selected_setter_files else { return Ok(None); };
+        self.checkpoint()?;
+        self.require()?;
+        let origin = self.inputs.archive().callable_header_policy_line(member)?;
+        let relative = self.relative_file(&origin.path)?;
+        if relative == crate::auto_setter_calls_policy::AUTO_REL || relative == "code/engine/_generated/tracked_lists.dm" {
+            return Ok(Some(false));
+        }
+        let mut qualification = None;
+        files.with_file(&relative, &mut |file| {
+            if qualification.is_some() {
+                return Err("selected setter header source was delivered twice".into());
+            }
+            // This is the old Tree::get(...).raw().line(v.location.line)
+            // heuristic, not the displayed location of a final lint row.
+            let from_macro = if let Some(file) = file {
+                let line = file.source_file()?.raw().line(origin.line).trim_start();
+                line.starts_with("TRACKED(") || line.starts_with("TRACKED_BRIDGED(") || line.starts_with("TRACKED_STATE(")
+            } else { false };
+            qualification = Some(!from_macro);
+            Ok(())
+        })?;
+        self.checkpoint()?;
+        self.require()?;
+        qualification.map(Some).ok_or_else(|| Failure::Unsupported("selected setter header loan omitted actual source membership".into()))
+    }
 
     pub(crate) fn with_original_header_line(&self,member:dm_tree::MemberId,consume:&mut dyn FnMut(&str,usize,&str)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
         use crate::reactive_reads_native::Failure;

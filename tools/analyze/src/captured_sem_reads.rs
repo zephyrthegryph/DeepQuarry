@@ -14,13 +14,7 @@ impl RawFacts{
  pub(crate) fn collect(source:&dyn Source,poll:&dyn Fn()->io::Result<()>,purpose:Purpose)->Result<Self,Failure>{let mut facts=Self::default();let budget=source.budget();let completed=source.with_policy_files(&mut|relative,views|{let local=views.allocation_budget(budget);let pending=(||{let raw=views.raw()?;for(index,line)in raw.split('\n').enumerate(){let mut control=Operation{budget:local,poll};let Some(code)=crate::allow::keeps_with(line,purpose.allow_name(),&mut control)?else{continue};if !facts.allows.contains_key(relative){node(budget)?;facts.allows.insert(kc::own(&mut Operation{budget,poll},relative)?,FileAllows{rows:BTreeMap::new(),digest:crate::captured_raw_file::source_allow_digest_text(raw)});}let line_number=u32::try_from(index.checked_add(1).ok_or_else(||oom(budget,"semantic-read ALLOW line overflow"))?).map_err(|_|oom(budget,"semantic-read ALLOW line exceeds source range"))?;let code=code.unwrap_or_default();node(budget)?;budget.charge(code.capacity()).map_err(|m|oom(budget,m))?;facts.allows.get_mut(relative).ok_or("semantic-read ALLOW file disappeared")?.rows.insert(line_number,Allow{code,comment_only:crate::util::py_lstrip(line).starts_with("//")});}
   if matches!(purpose,Purpose::SemReads){let marker=views.marker()?;for line in marker.split('\n'){crate::raw_publishers_policy::visit_line(line,&mut Operation{budget:local,poll},|key|{if !facts.publishers.contains(key){node(budget)?;facts.publishers.insert(kc::own(&mut Operation{budget,poll},key)?);}Ok(())})?;}}Ok(true)})();if matches!(&pending,Err(Failure::Operational(_))){return pending}if local.denied(){return Err(oom(budget,"semantic-read original file temporary admission denied"))}pending})?;if !completed{return Err("semantic-read raw fact pass stopped before EOF".into())}checked(budget,poll)?;Ok(facts)}
 }
-/// Original finding-path source DATA. Marker and dependency scans do not use
-/// this loan. Only the concrete host can authenticate a complete selected Tree.
-pub trait SelectedReadAllowFiles {
- fn with_file(&self, relative: &str, visit: &mut dyn FnMut(
-  Option<crate::captured_raw_file::RawPolicyViews<'_>>,
- ) -> Result<(), Failure>) -> Result<(), Failure>;
-}
+pub use crate::captured_raw_file::SelectedTreeFiles as SelectedReadAllowFiles;
 
 fn with_selected_allow(
  files: &dyn SelectedReadAllowFiles, relative: &str, line: u32, lint: &str,

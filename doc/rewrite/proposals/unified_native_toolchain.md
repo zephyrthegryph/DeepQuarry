@@ -2563,3 +2563,17 @@ The Original physical-row lookup now reuses the active frame index, with
 the existing exact search for older frames. Both provider-loan tests passed.
 On the same 6,751-source checkout, boxed traces and paged facts advanced
 the completed-header frontier from 22,365 to 22,958 under the same cap.
+
+The separate selected `setter_publishes` report now qualifies handwritten
+setter headers using the legacy selected Tree's membership and raw model
+line, including the `TRACKED_STATE` spelling. Its result and dependency
+candidate keys are distinct from the ordinary lookup. The cold, warm, and
+edited fixture matched the frozen legacy report, including a true
+`interface/` Tree miss and retraction when that declaration moved into MAPS.
+
+Packing literal span rows and storing the seven typed literal kinds in
+a smaller payload passed 19 focused controls. The same 6,751-source probe
+advanced to 23,999 completed headers and 239,503 literals before the same
+syntax cap refused 16,384 bytes. Literal directory and row reservation fell
+from 7,405,568 to 5,832,704 bytes at those respective frontiers. The
+private daemon drained and the probe emitted no report.

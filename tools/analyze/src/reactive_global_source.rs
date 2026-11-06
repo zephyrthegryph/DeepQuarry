@@ -43,6 +43,7 @@ pub(crate) trait Source{
  fn with_reaction_code(&self,hint:&str,visit:&mut dyn FnMut(&str,&crate::tree::View)->Result<bool,Failure>)->Result<(),Failure>{self.with_policy_files(&mut|relative,views|{if !views.raw()?.contains(hint){return Ok(true)}visit(relative,views.code()?)})?;Ok(())}
  fn member_has_source(&self,member:dm_tree::MemberId)->Result<bool,Failure>;
  fn with_header_line(&self,member:dm_tree::MemberId,consume:&mut dyn FnMut(&str,usize,&str)->Result<(),Failure>)->Result<(),Failure>;
+ fn selected_setter_qualifies(&self,_member:dm_tree::MemberId)->Result<Option<bool>,Failure>{Ok(None)}
  fn visit_setter_definitions(&self,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{visit_setter_definitions_original(self,emit)}
  fn visit_own_declared_variables(&self,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{visit_own_declared_variables_original(self,emit)}
  fn visit_all_own_declared_variables(&self,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{visit_declared_variables_original(self,false,emit)}
@@ -77,6 +78,7 @@ impl Source for ReadSource<'_>{
  fn dependency_marker_rows(&self,poll:&mut dyn FnMut()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'_>,Failure>{self.dependency_marker_rows()}
  fn member_has_source(&self,member:dm_tree::MemberId)->Result<bool,Failure>{Ok(self.inputs().archive().member_location(member).is_some())}
  fn with_header_line(&self,member:dm_tree::MemberId,consume:&mut dyn FnMut(&str,usize,&str)->Result<(),Failure>)->Result<(),Failure>{self.with_original_header_line(member,consume)}
+ fn selected_setter_qualifies(&self,member:dm_tree::MemberId)->Result<Option<bool>,Failure>{self.selected_setter_qualifies(member)}
  fn with_policy_files(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{self.with_policy_files(visit)}
  fn complete_inputs(&self)->Option<&dm_analysis::policy_inputs::PolicyInputs>{Some(self.inputs())}
  fn occurrences(&self)->&[dm_tree::frontend::BodyOccurrence]{self.inputs().archive().occurrences()}
@@ -158,6 +160,10 @@ fn visit_setter_definitions_original<S:Source+?Sized>(source:&S,emit:&mut dyn Fn
                         version_node.kind == MemberKind::Verb, &version_node.metadata)
                         .map_err(|e| Failure::Unsupported(format!("setter builtin version: {e:?}")))?;
                     qualified = true;
+                    continue;
+                }
+                if let Some(is_handwritten)=source.selected_setter_qualifies(version)? {
+                    qualified |= is_handwritten;
                     continue;
                 }
                 source.with_header_line(version,&mut|relative,_display,line|{
