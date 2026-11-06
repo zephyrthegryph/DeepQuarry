@@ -2,7 +2,7 @@
 //! The grammar never knows whether complete batches or lazy tokens fed it.
 use super::{OriginalPrimaryStreamConsumer,original_driver::{RawSourceDriver,DriverEvent,LogicalToken},original_macro_source::OriginalMacroHost,original_raw_inputs::OriginalRawNoticeSink,original_final_output::{OriginalFinalOutput,OriginalEmittedToken},original_formal_source::{OriginalFormalProducer,OriginalLiveFormalSource},original_prepared_output::{OriginalOutputCursor,OriginalPreparedDeliveryToken,OriginalDeliveryFrontier,OriginalProducedSpan,OriginalProducedEnd}};
 use crate::{SourceProvider,source_arena_credit::SourceArenaWork,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroOrigin as Origin,OriginalMacroNotice as MacroNotice}};
-use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalDeclarationSkeleton,OriginalHeaderFlow,SettingAdmission,NativeIndentNotice,Span,SpanToken};use std::io;
+use dm_syntax::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader,OriginalCommittedPrimary,OriginalDeclarationSkeleton,OriginalHeaderFlow,SettingAdmission,NativeIndentNotice,Span,SpanToken};use std::io;
 pub(super) trait OriginalStreamControl{
  /// Genuine nonphysical default delimiter; no physical mapping may be forged.
  fn default_semicolon(&mut self,_produced:OriginalProducedSpan<'_>,_driver:&mut RawSourceDriver,_a:&SettingAdmission<'_>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual nonphysical default delimiter metadata consumer is unissued"))}
@@ -13,11 +13,58 @@ pub(super) trait OriginalStreamControl{
  fn indent_notice(&mut self,kind:NativeIndentNotice,location:Option<Origin>,a:&SettingAdmission<'_>)->io::Result<()>;
  fn emitted(&mut self,actual:&Token<'static>,token:SpanToken,cover:Span,produced:OriginalProducedSpan<'_>,driver:&mut RawSourceDriver,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<()>;
 }
-pub(super) struct OriginalPrimaryOutput{pub(super) source:crate::SourceText,pub(super) primary:OriginalDeclarationSkeleton,pub(super) consumed_eof:bool,pub(super) delivery:OriginalDeliveryFrontier}
+/// Both variants are issued by the same token receiver and declaration parser.
+pub enum OriginalStreamPrimary {
+    Dense(OriginalDeclarationSkeleton),
+    Committed(OriginalCommittedPrimary),
+}
+
+impl From<OriginalDeclarationSkeleton> for OriginalStreamPrimary {
+    fn from(primary: OriginalDeclarationSkeleton) -> Self { Self::Dense(primary) }
+}
+
+impl OriginalStreamPrimary {
+    pub fn observer_stop(&self) -> Option<Span> {
+        match self {
+            Self::Dense(primary) => primary.observer_stop(),
+            Self::Committed(primary) => primary.observer_stop(),
+        }
+    }
+
+    pub fn same_primary_header(&self, header: &OriginalPrimaryLiveHeader) -> bool {
+        match self {
+            Self::Dense(primary) => primary.same_primary_header(header),
+            Self::Committed(primary) => primary.same_primary_header(header),
+        }
+    }
+
+    pub fn same_primary_producer(&self, producer: &dm_syntax::OriginalPrimaryProducerIdentity) -> bool {
+        match self {
+            Self::Dense(primary) => primary.same_primary_producer(producer),
+            Self::Committed(primary) => primary.same_primary_producer(producer),
+        }
+    }
+}
+
+pub(super) struct OriginalPrimaryOutput{pub(super) source:crate::SourceText,pub(super) primary:OriginalStreamPrimary,pub(super) consumed_eof:bool,pub(super) delivery:OriginalDeliveryFrontier}
 impl OriginalPrimaryOutput{
- pub(super) fn into_bound_parts_using(mut self,a:&SettingAdmission<'_>)->io::Result<(crate::SourceText,OriginalDeclarationSkeleton,dm_syntax::SharedSpanTokens,super::original_literal_source::OriginalLiteralSourceBinding,bool)>{
-  let facts=self.primary.take_original_literal_fact_owner_using(a)?.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual logical primary has no issued neutral literal roster"))?;
-  let binding=super::original_literal_source::OriginalLiteralSourceBinding::issue_actual(&self.source,facts,a)?;let(primary,tokens)=self.primary.into_shared_tokens_using(a)?;Ok((self.source,primary,tokens,binding,self.consumed_eof))
+ pub(super) fn into_bound_parts_using(mut self,a:&SettingAdmission<'_>)->io::Result<(crate::SourceText,OriginalStreamPrimary,dm_syntax::SharedSpanTokens,super::original_literal_source::OriginalLiteralSourceBinding,bool)>{
+  let facts=match &mut self.primary {
+      OriginalStreamPrimary::Dense(primary) => primary.take_original_literal_fact_owner_using(a)?,
+      OriginalStreamPrimary::Committed(primary) => primary.take_original_literal_fact_owner_using(a)?,
+  }.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual logical primary has no issued neutral literal roster"))?;
+  let binding=super::original_literal_source::OriginalLiteralSourceBinding::issue_actual(&self.source,facts,a)?;
+  let (primary, tokens) = match self.primary {
+      OriginalStreamPrimary::Dense(primary) => {
+          let (primary, tokens) = primary.into_shared_tokens_using(a)?;
+          (OriginalStreamPrimary::Dense(primary), tokens)
+      }
+      OriginalStreamPrimary::Committed(primary) => {
+          let tokens = primary.tokens().clone();
+          (OriginalStreamPrimary::Committed(primary), tokens)
+      }
+  };
+  Ok((self.source,primary,tokens,binding,self.consumed_eof))
  }
 }
 /// Private pull side. Its real implementation owns raw traversal, directive
@@ -64,7 +111,9 @@ impl OriginalFormalProducer for PrimaryReceiver<'_,'_,'_,'_>{fn pull_formal_toke
 /// ONE grammar loop for both authentic delivery profiles. The source already
 /// enforces either lazy driver demand or the genuine complete-batch protocol.
 pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTokenSource,work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,consumer:&mut dyn OriginalPrimaryStreamConsumer)->io::Result<OriginalPrimaryOutput>{
- let initial=source.initial_delivery();if initial.end()!=0||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let mut primary=OriginalPrimaryDemand::new(a,None)?;let mut receiver=PrimaryReceiver{source,output:OriginalFinalOutput::receiver(work,initial)?,a,actual_end:None};let mut stopped_after_formals=false;let mut entered:Option<OriginalPrimaryLiveHeader>=None;
+ let initial=source.initial_delivery();if initial.end()!=0||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
+ let committed=consumer.retains_committed_items();
+ let mut primary=if committed{OriginalPrimaryDemand::new_committed(a,None)?}else{OriginalPrimaryDemand::new(a,None)?};let mut receiver=PrimaryReceiver{source,output:OriginalFinalOutput::receiver(work,initial)?,a,actual_end:None};let mut stopped_after_formals=false;let mut entered:Option<OriginalPrimaryLiveHeader>=None;
  let progress=(||->io::Result<()>{loop{
   if receiver.pull(&mut primary).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_pull {error:?}");}})?.is_none(){primary.advance_with_observer(receiver.output.source(),true,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_eof {error:?}");}})?;break}
   if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}
@@ -88,7 +137,13 @@ pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTok
  })?;
  // A real physical EOF inside a failed formal still leaves primary at its
  // authored Stop frontier, without the ordinary declaration EOF assembly.
- let consumed_eof=receiver.source.reached_eof()&&!stopped_after_formals;let actual=primary.finish(receiver.output.source(),consumed_eof).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=primary_finish {error:?}");}})?;let delivery=receiver.output.delivery().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_delivery {error:?}");}})?;let source=receiver.output.finish().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_finish {error:?}");}})?;Ok(OriginalPrimaryOutput{source,primary:actual,consumed_eof,delivery})
+ let consumed_eof=receiver.source.reached_eof()&&!stopped_after_formals;
+ let actual=if committed{
+     primary.finish_committed(receiver.output.source(),consumed_eof).map(OriginalStreamPrimary::Committed)
+ }else{
+     primary.finish(receiver.output.source(),consumed_eof).map(OriginalStreamPrimary::Dense)
+ }.inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=primary_finish {error:?}");}})?;
+ let delivery=receiver.output.delivery().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_delivery {error:?}");}})?;let source=receiver.output.finish().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_finish {error:?}");}})?;Ok(OriginalPrimaryOutput{source,primary:actual,consumed_eof,delivery})
 }
 pub(super) fn consume_lazy_primary_using(driver:&mut RawSourceDriver,provider:&dyn SourceProvider,work:&dyn SourceArenaWork,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,control:&mut dyn OriginalStreamControl,a:&SettingAdmission<'_>,consumer:&mut dyn OriginalPrimaryStreamConsumer)->io::Result<OriginalPrimaryOutput>{let mut source=OriginalLogicalProducer::new(driver,provider,notices,host,control,a)?;consume_prepared_primary_using(&mut source,work,a,consumer)}
 #[cfg(test)]#[path="original_primary_controller_tests.rs"]mod tests;

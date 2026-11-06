@@ -462,6 +462,7 @@ pub use original_diagnostic_plan::{OriginalDiagnosticPlan,OriginalDiagnosticStor
 mod original_plan_owner;
 mod original_source_controller;
 mod original_generation;
+pub use original_primary_controller::OriginalStreamPrimary;
 pub use original_generation::{OriginalGenerationProduct,OriginalRootOpenObserver,OriginalRootOpenFailureLoan};
 
 mod original_conditional_history;

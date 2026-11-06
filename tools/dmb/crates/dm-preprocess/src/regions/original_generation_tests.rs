@@ -28,6 +28,49 @@ impl SourceArenaWork for Work{
 struct Consumer;impl OriginalDeclarationHeaderObserver for Consumer{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}}
 impl OriginalPrimaryStreamConsumer for Consumer{fn callable(&mut self,_:OriginalPrimaryLiveHeader,_:&mut dyn super::super::OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{panic!("this raw traversal fixture has no callable declaration")}}
 fn omissions()->GenerationOmissions{GenerationOmissions::probe([], &mut |_|panic!("empty explicit output roster"),&mut |_|Ok(())).unwrap()}
+#[test]
+fn committed_original_stream_keeps_the_actual_token_and_literal_owners() {
+    struct Committed;
+    impl OriginalDeclarationHeaderObserver for Committed {
+        fn header(&mut self, _: OriginalPrimaryHeader<'_>) -> io::Result<OriginalHeaderFlow> {
+            Ok(OriginalHeaderFlow::Continue)
+        }
+    }
+    impl OriginalPrimaryStreamConsumer for Committed {
+        fn retains_committed_items(&self) -> bool { true }
+
+        fn callable(&mut self, _: OriginalPrimaryLiveHeader, _: &mut dyn super::super::OriginalFormalTokenStream) -> io::Result<OriginalHeaderFlow> {
+            panic!("this stream contains no callable")
+        }
+    }
+
+    let root = Path::new("E:/controller/committed.dme");
+    let provider = Memory::new(&[("E:/controller/committed.dme", "#define VALUE 7\n/datum/retained\n    var/value = VALUE\n")]);
+    let work = Work { live: Arc::new(AtomicUsize::new(0)) };
+    let syntax = Arc::new(AtomicUsize::new(0));
+    let a = SettingAdmission::new(&syntax, 8 << 20, &|| Ok(()));
+    let product = GenerationDirectivePlan::prepare_original_checker_stream_using(
+        root, &provider, &BTreeMap::new(), omissions(), 1 << 20, &work, &a, &mut Committed,
+    ).unwrap();
+    let (plan, expanded, primary, binding) = product.into_diagnostic_parts_using(&a).unwrap();
+    let OriginalStreamPrimary::Committed(primary) = primary else { panic!("compact consumer got dense items") };
+    assert!(primary.tokens().same_owner(expanded.tokens.shared().unwrap()));
+    let items = primary.items(&expanded.text).unwrap();
+    let owner = items.get(0).unwrap();
+    assert_eq!(owner.header(), "/datum/retained");
+    let var = owner.children().get(0).unwrap();
+    assert_eq!(var.header(), &expanded.text[var.header_span().range()]);
+    assert!(var.header().ends_with('7'));
+    let full = dm_syntax::Span::new(0, expanded.text.len());
+    let view = binding.checked_view(&expanded.text, full, &binding, &a).unwrap();
+    assert!(!view.checked_facts(&expanded.text).unwrap().raw_parts().0.is_empty());
+    let foreign = SourceText::from(expanded.text.as_str().to_owned());
+    assert!(binding.checked_view(&foreign, full, &binding, &a).is_err());
+    assert_eq!(*provider.opened.lock().unwrap(), [root.to_path_buf()]);
+    drop((view, plan, expanded, primary, binding));
+    assert_eq!(syntax.load(Ordering::Acquire), 0);
+    assert_eq!(work.live.load(Ordering::Acquire), 0);
+}
 #[test]fn real_lazy_controller_runs_include_define_pop_and_publishes_same_literal_binding_and_raw_mapping(){
  let provider=Memory::new(&[("E:/controller/main.dme","#define VALUE 3\n#include \"child.dm\"\n#undef VALUE\n/datum/root\n    var/value = VALUE\n"),("E:/controller/child.dm","#define VALUE 7\n/datum/child\n    var/value = VALUE\n")]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let syntax=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));
  let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/main.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).unwrap();assert_eq!(product.delivery(),OriginalDemandDelivery::CheckerLazy0290);assert!(product.expanded().text.as_str().contains('7'));assert!(product.expanded().text.as_str().contains('3'));assert!(product.expanded().origins.len()>0);let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();assert_eq!(plan.occurrences().len(),2);assert_eq!(plan.occurrences()[0].semantic_path.as_ref(),"E:/controller/main.dme");assert_eq!(plan.occurrences()[1].semantic_path.as_ref(),"child.dm");assert_eq!(plan.occurrences()[1].path.as_path(),Path::new("E:/controller/child.dm"));assert!(plan.original_notices().iter().any(|notice|notice.error_type==Some("macro_redefined")));assert_eq!(provider.opened.lock().unwrap().as_slice(),[PathBuf::from("E:/controller/main.dme"),PathBuf::from("E:/controller/child.dm")]);assert!(plan.source_line_starts().is_empty(),"no eager line walk over unread body" );drop((plan,expanded,primary,binding));assert_eq!(syntax.load(Ordering::Acquire),0);assert_eq!(work.live.load(Ordering::Acquire),0);

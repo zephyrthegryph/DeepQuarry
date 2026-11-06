@@ -27,6 +27,9 @@ pub trait OriginalFormalTokenStream:NativeExpressionTokenDemand{
  fn with_current_source(&self,read:&mut dyn FnMut(&str,TokenWindow<'_>)->io::Result<()>)->io::Result<()>;
 }
 pub trait OriginalPrimaryStreamConsumer:OriginalDeclarationHeaderObserver{
+ /// Opt in only if the receiver can retain the committed item forest directly.
+ fn retains_committed_items(&self) -> bool { false }
+
  /// Parse ONLY through genuine formal closing ')'. The later SAME complete
  /// header observer finishes return suffix and adopts the same prepared rows.
  fn callable(&mut self,header:OriginalPrimaryLiveHeader,source:&mut dyn OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>;

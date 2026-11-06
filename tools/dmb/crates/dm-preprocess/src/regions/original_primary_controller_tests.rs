@@ -53,7 +53,7 @@ impl SourceArenaWork for Work{
 fn driver(file:&File,a:&SettingAdmission<'_>)->RawSourceDriver{let mut driver=RawSourceDriver::new(InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),a,&mut|input,a|->io::Result<OriginalMacroDefinition<'static>>{original_token_factory::initial_definition_using(input,a,&mut|_|panic!("fixed defaults have no lexical notice"),&mut|_,_|panic!("fixed defaults have no numeric notice"))}).unwrap();driver.push_opened(file,file.lease.clone(),0,a).unwrap();driver}
 #[test]fn actual_raw_primary_seals_same_typed_literals_and_shared_tokens_into_real_binding(){
  let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("var/a=2147483647\nvar/s=\"stable\"\n");let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=Consumer{callables:0,stop:false};
- let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert!(output.consumed_eof);assert_eq!(consumer.callables,0);assert!(control.emitted>0);let(source,primary,tokens,binding,ended)=output.into_bound_parts_using(&a).unwrap();assert!(ended);assert!(primary.original_literal_fact_owner().is_none());assert!(primary.syntax().tokens.window().same_interval(tokens.window()));assert!(tokens.window().as_dense_slice().is_none());let view=binding.checked_view(&source,Span::new(0,source.len()),&binding,&a).unwrap();let facts=view.checked_facts(&source).unwrap();let(rows,_)=facts.raw_parts();assert_eq!(rows.len(),2);assert!(matches!(rows.get(0).unwrap().1.value(),dm_syntax::OriginalTokenValue::Int(i32::MAX)));assert!(matches!(rows.get(1).unwrap().1.value(),dm_syntax::OriginalTokenValue::String("stable")));drop(facts);drop(view);drop((binding,tokens,primary,source,driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);
+ let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert!(output.consumed_eof);assert_eq!(consumer.callables,0);assert!(control.emitted>0);let(source,primary,tokens,binding,ended)=output.into_bound_parts_using(&a).unwrap();assert!(ended);assert!(dense_primary(&primary).original_literal_fact_owner().is_none());assert!(dense_primary(&primary).syntax().tokens.window().same_interval(tokens.window()));assert!(tokens.window().as_dense_slice().is_none());let view=binding.checked_view(&source,Span::new(0,source.len()),&binding,&a).unwrap();let facts=view.checked_facts(&source).unwrap();let(rows,_)=facts.raw_parts();assert_eq!(rows.len(),2);assert!(matches!(rows.get(0).unwrap().1.value(),dm_syntax::OriginalTokenValue::Int(i32::MAX)));assert!(matches!(rows.get(1).unwrap().1.value(),dm_syntax::OriginalTokenValue::String("stable")));drop(facts);drop(view);drop((binding,tokens,primary,source,driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);
 }
 #[test]fn genuine_callable_dispatch_lends_current_typed_value_and_stops_before_bad_later_quote(){
  let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("/proc/probe(datum/act/A)\n    return \"unterminated\n");let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=Consumer{callables:0,stop:true};
@@ -203,7 +203,7 @@ fn actual_consumed_end_is_available_to_failed_formal_without_completing_primary(
     let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut EndConsumer).unwrap();
     assert!(!output.consumed_eof,"the failed primary stopped even though the physical receiver drained");
     assert!(output.primary.observer_stop().is_some());
-    assert!(output.primary.syntax().items.is_empty());
+    assert!(dense_primary(&output.primary).syntax().items.is_empty());
     drop((output,driver,host));
     assert_eq!(used.load(Ordering::Acquire),0);
     assert_eq!(source_used.load(Ordering::Acquire),0);
@@ -265,4 +265,11 @@ fn ordinary_adoption_issues_scalar_geometry_without_retaining_the_token_spelling
     drop((cursor,receiver,primary));
     assert_eq!(used.load(Ordering::Acquire), 0);
     assert_eq!(source_used.load(Ordering::Acquire), 0);
+}
+
+fn dense_primary(primary: &OriginalStreamPrimary) -> &OriginalDeclarationSkeleton {
+    match primary {
+        OriginalStreamPrimary::Dense(primary) => primary,
+        OriginalStreamPrimary::Committed(_) => panic!("fixture did not request compact storage"),
+    }
 }

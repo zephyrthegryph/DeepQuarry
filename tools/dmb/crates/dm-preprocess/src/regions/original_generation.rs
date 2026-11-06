@@ -2,18 +2,19 @@
 //! handoff. No ordinary planner, expanded-string reparse or compiler promotion.
 use super::{OriginalDemandDelivery,OriginalPrimaryStreamConsumer,OriginalBatchExecution,DirectivePlan,ExpandedRegions,GenerationDirectivePlan,GenerationOmissions,OriginalDiagnosticPlan,original_literal_source::OriginalLiteralSourceBinding,original_primary_controller::{OriginalLogicalProducer,OriginalPreparedTokenSource,OriginalPrimaryOutput,consume_prepared_primary_using},original_batch_primary::{OriginalBatchRunner,consume_batch_primary_using},original_source_controller::{State,NoticeSink,Host,Control},original_driver::RawSourceDriver,environment::OriginalFinalMacros,original_diagnostic_plan::OriginalPlanRetention};
 use crate::{SourceProvider,InitialEnvironment,SourceText,source_arena_credit::{SourceArenaWork,read_original_source_open_using},macro_expansion::{OriginalMacroText as Text,original_format_using}};
-use dm_syntax::{SettingAdmission,OriginalDeclarationSkeleton,SharedSpanTokens};
+use dm_syntax::{SettingAdmission,SharedSpanTokens};
+use super::OriginalStreamPrimary;
 use std::{collections::BTreeMap,path::Path,io,rc::Rc,sync::Arc};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
-pub struct OriginalGenerationProduct{delivery:OriginalDemandDelivery,plan:DirectivePlan,omissions:GenerationOmissions,expanded:ExpandedRegions,primary:OriginalDeclarationSkeleton,literals:OriginalLiteralSourceBinding,retention:OriginalPlanRetention}
+pub struct OriginalGenerationProduct{delivery:OriginalDemandDelivery,plan:DirectivePlan,omissions:GenerationOmissions,expanded:ExpandedRegions,primary:OriginalStreamPrimary,literals:OriginalLiteralSourceBinding,retention:OriginalPlanRetention}
 impl OriginalGenerationProduct{
  pub fn delivery(&self)->OriginalDemandDelivery{self.delivery}
  pub fn expanded(&self)->&ExpandedRegions{&self.expanded}
- pub fn primary(&self)->&OriginalDeclarationSkeleton{&self.primary}
+ pub fn primary(&self)->&OriginalStreamPrimary{&self.primary}
  pub fn literal_source(&self)->&OriginalLiteralSourceBinding{&self.literals}
- pub(super) fn into_primary_parts(self)->(DirectivePlan,GenerationOmissions,ExpandedRegions,OriginalDeclarationSkeleton,OriginalLiteralSourceBinding,OriginalPlanRetention){(self.plan,self.omissions,self.expanded,self.primary,self.literals,self.retention)}
- pub fn into_diagnostic_parts_using(self,a:&SettingAdmission<'_>)->io::Result<(OriginalDiagnosticPlan,ExpandedRegions,OriginalDeclarationSkeleton,OriginalLiteralSourceBinding)>{let(plan,omissions,expanded,primary,literals,retention)=self.into_primary_parts();let restricted=OriginalDiagnosticPlan::from_actual_using(plan,&omissions,retention,a)?;Ok((restricted,expanded,primary,literals))}
- pub fn into_generation_parts(self)->io::Result<(GenerationDirectivePlan,ExpandedRegions,OriginalDeclarationSkeleton,OriginalLiteralSourceBinding)>{GenerationDirectivePlan::from_original_product(self)}
+ pub(super) fn into_primary_parts(self)->(DirectivePlan,GenerationOmissions,ExpandedRegions,OriginalStreamPrimary,OriginalLiteralSourceBinding,OriginalPlanRetention){(self.plan,self.omissions,self.expanded,self.primary,self.literals,self.retention)}
+ pub fn into_diagnostic_parts_using(self,a:&SettingAdmission<'_>)->io::Result<(OriginalDiagnosticPlan,ExpandedRegions,OriginalStreamPrimary,OriginalLiteralSourceBinding)>{let(plan,omissions,expanded,primary,literals,retention)=self.into_primary_parts();let restricted=OriginalDiagnosticPlan::from_actual_using(plan,&omissions,retention,a)?;Ok((restricted,expanded,primary,literals))}
+ pub fn into_generation_parts(self)->io::Result<(GenerationDirectivePlan,ExpandedRegions,OriginalStreamPrimary,OriginalLiteralSourceBinding)>{GenerationDirectivePlan::from_original_product(self)}
 }
 /// Borrowed attempt-event observer, not a source/absence witness constructor.
 /// Only the actual top root branch invokes these callbacks; concrete recorders
