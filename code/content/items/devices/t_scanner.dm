@@ -11,7 +11,7 @@
 
 	var/scan_range = 1
 
-	var/list/active_scanned //assoc list of handles (ref_token) of the objects being scanned, mapped to their overlay
+	var/alist/active_scanned //assoc list of handles (handle_of) of the objects being scanned, mapped to their overlay
 	var/client/user_client //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
@@ -55,9 +55,9 @@ CAPABILITIES(/obj/item/t_scanner)
 
 	//get all objects in scan range
 	var/list/scanned = get_scanned_objects(scan_range)
-	var/list/scanned_by_h = list()
+	var/alist/scanned_by_h = alist()
 	for(var/obj/O in scanned)
-		var/object_h = ref_token(O)
+		var/object_h = handle_of(O)
 		if(object_h)
 			scanned_by_h[object_h] = O
 	var/list/update_remove = list()
@@ -67,21 +67,21 @@ CAPABILITIES(/obj/item/t_scanner)
 
 	//Add new overlays
 	for(var/object_h in scanned_by_h)
-		if(LAZYACCESS(active_scanned, object_h))
+		if(ALAZYACCESS(active_scanned, object_h))
 			continue
 		var/obj/O = scanned_by_h[object_h]
 		var/image/overlay = get_overlay(O)
-		LAZYSET(active_scanned, object_h, overlay)
+		ALAZYSET(active_scanned, object_h, overlay)
 		user_client().images += overlay
 
 	//Remove stale overlays
 	for(var/object_h in update_remove)
-		user_client().images -= LAZYACCESS(active_scanned, object_h)
+		user_client().images -= ALAZYACCESS(active_scanned, object_h)
 		LAZYREMOVE(active_scanned, object_h)
 
 	//Flicker effect
 	for(var/object_h in active_scanned)
-		var/image/overlay = LAZYACCESS(active_scanned, object_h)
+		var/image/overlay = ALAZYACCESS(active_scanned, object_h)
 		if(flicker)
 			overlay.alpha = 0
 		else
@@ -93,7 +93,7 @@ CAPABILITIES(/obj/item/t_scanner)
 	//Use a cache so we don't create a whole bunch of new images just because someone's walking back and forth in a room.
 	//Also means that images are reused if multiple people are using t-rays to look at the same objects.
 	// Keyed by the scanned object's handle: a cache entry never keeps a deleted object alive.
-	var/scanned_token = ref_token(scanned)
+	var/scanned_token = handle_of(scanned)
 	if(scanned_token && (scanned_token in GLOB.overlay_cache))
 		. = GLOB.overlay_cache[scanned_token]
 	else
@@ -112,8 +112,14 @@ CAPABILITIES(/obj/item/t_scanner)
 	// Add it to cache, cutting old entries if the list is too long
 	if(scanned_token)
 		GLOB.overlay_cache[scanned_token] = .
-	if(GLOB.overlay_cache.len > overlay_cache_LEN)
-		GLOB.overlay_cache.Cut(1, GLOB.overlay_cache.len-overlay_cache_LEN-1)
+	var/excess = length(GLOB.overlay_cache) - overlay_cache_LEN
+	if(excess > 0)
+		var/list/stale = list()
+		for(var/cached_h in GLOB.overlay_cache)
+			stale += cached_h
+			if(length(stale) >= excess)
+				break
+		GLOB.overlay_cache -= stale
 
 /obj/item/t_scanner/proc/get_scanned_objects(scan_dist)
 	. = list()
@@ -137,12 +143,12 @@ CAPABILITIES(/obj/item/t_scanner)
 		return
 	if(user_client())
 		for(var/scanned in active_scanned)
-			user_client().images -= LAZYACCESS(active_scanned, scanned)
+			user_client().images -= ALAZYACCESS(active_scanned, scanned)
 	if(new_client)
 		for(var/scanned in active_scanned)
-			client_images_add(new_client, LAZYACCESS(active_scanned, scanned))
+			client_images_add(new_client, ALAZYACCESS(active_scanned, scanned))
 	else
-		LAZYCLEARLIST(active_scanned)
+		active_scanned = null
 
 	rel_set(src, nameof(user_client), new_client)
 

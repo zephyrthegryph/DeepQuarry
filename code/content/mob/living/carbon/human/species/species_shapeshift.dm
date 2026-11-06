@@ -1,7 +1,7 @@
 // This is something of an intermediary species used for species that
 // need to emulate the appearance of another race. Currently it is only
 // used for slimes but it may be useful for changelings later.
-GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
+GLOBAL_ALIST_EMPTY(wrapped_species_by_ref)
 
 CAPABILITY_TYPE(wrapped_species_form, CAP_WRAPPED_SPECIES_FORM, /datum/capability/lib/wrapped_species_form, key = NONE)
 /datum/capability/lib/wrapped_species_form
@@ -24,7 +24,7 @@ SETTER(/datum/cap_data/wrapped_species_form, bodytype)
 		return FALSE
 	bodytype = value
 	if(holder)
-		GLOB.wrapped_species_by_ref[ref_token(holder)] = value
+		GLOB.wrapped_species_by_ref[handle_of(holder)] = value
 	tracked_changed(src, nameof(bodytype))
 	return TRUE
 /mob/living/carbon/human/proc/wrapped_species_state(create = FALSE)
@@ -290,7 +290,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(!new_species)
 		return
 
-	GLOB.wrapped_species_by_ref[ref_token(src)] = new_species
+	GLOB.wrapped_species_by_ref[handle_of(src)] = new_species
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
 */
 

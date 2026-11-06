@@ -11,7 +11,7 @@ CAPABILITIES(/datum/tgui_module/uav)
 	every(20 SECONDS, then(PROC_REF(signal_check)), when = nameof(current_uav))
 	interface("UAV")
 	op("switch_uav", ui_act("switch_uav", arg("switch_uav", schema_text(32))), then(PROC_REF(ui_act_switch_uav)))
-	op("del_uav", ui_act("del_uav", arg("del_uav", schema_text(4096))), then(PROC_REF(ui_act_del_uav)))
+	op("del_uav", ui_act("del_uav", arg("del_uav", schema_any())), then(PROC_REF(ui_act_del_uav)))
 	op("view_uav", ui_act("view_uav"), then(PROC_REF(ui_act_view_uav)))
 	op("power_uav", ui_act("power_uav"), then(PROC_REF(ui_act_power_uav)))
 	ref_one(nameof(current_uav))
@@ -41,7 +41,7 @@ CAPABILITIES(/datum/tgui_module/uav)
 	var/obj/item/modular_computer/mc_host = tgui_host()
 	if(istype(mc_host))
 		for(var/obj/item/uav/U in mc_host.paired_uavs) // a relation list: deleted UAVs leave it
-			paired_map.Add(list(list("name" = "[U.nickname]", "uavref" = ref_token(U))))
+			paired_map.Add(list(list("name" = "[U.nickname]", "uavref" = handle_of(U))))
 
 	data["paired_uavs"] = paired_map
 	return data
@@ -68,7 +68,7 @@ CAPABILITIES(/datum/tgui_module/uav)
 		return TRUE
 	//Deleted UAVs have already left the (relation) list; match on the handle the UI sent
 	for(var/obj/item/uav/U in mc_host.paired_uavs)
-		if(ref_token(U) == refstring)
+		if(handle_get(refstring) == U)
 			if(current_uav() == U)
 				set_current(null)
 			rel_remove(mc_host, nameof(/obj/item/modular_computer::paired_uavs), U)

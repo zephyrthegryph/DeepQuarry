@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		var/list/pda_msgs = list()
 		for(var/datum/data_pda_msg/pda in linkedServer().pda_msgs)
 			pda_msgs.Add(list(list(
-				"ref" = ref_token(pda),
+				"ref" = handle_of(pda),
 				"sender" = pda.sender,
 				"recipient" = pda.recipient,
 				"message" = pda.message,
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		var/list/rc_msgs = list()
 		for(var/datum/data_rc_msg/rc in linkedServer().rc_msgs)
 			rc_msgs.Add(list(list(
-				"ref" = ref_token(rc),
+				"ref" = handle_of(rc),
 				"sender" = rc.send_dpt,
 				"recipient" = rc.rec_dpt,
 				"message" = rc.message,
@@ -147,7 +147,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 			var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 			if(!M || M.toff)
 				continue
-			sendPDAs["[P.name]"] = ref_token(P)
+			sendPDAs["[P.name]"] = handle_of(P)
 		data["possibleRecipients"] = sendPDAs
 	var/mob/living/original = user.mind.original_character
 	data["isMalfAI"] = ((A.authority & AUTH_REMOTE_ACCESS) && (user.mind.special_role && (original && original == user)))
@@ -365,7 +365,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 
 		var/datum/data/pda/app/messenger/M = customrecepient().find_program(/datum/data/pda/app/messenger)
 		if(M)
-			M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = ref_token(PDARec)), ref_token(PDARec))
+			M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = handle_of(PDARec)), handle_of(PDARec))
 	//Finally..
 	ResetMessage()
 	. = TRUE

@@ -93,7 +93,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	data["open"] = !!open
 	var/list/c = list()
 	FOR_REAL_CONTENTS(var/obj/item/P, src)
-		c += list(list("ref" = ref_token(P), "name" = P.name))
+		c += list(list("ref" = handle_of(P), "name" = P.name))
 	data["contents"] = c
 	return data
 

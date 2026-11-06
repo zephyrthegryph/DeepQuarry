@@ -89,7 +89,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 	if(atoms_atom_initialized() == INITIALIZATION_INNEW_REGULAR && !atoms_initialize_depth())
 		call(proc_path)(loc, path, varedits)
 		return
-	SSatoms.defer_resolver(list(proc_path, ref_token(loc), path, varedits))
+	SSatoms.defer_resolver(list(proc_path, handle_of(loc), path, varedits))
 
 /// Runs the deferred resolvers and clears the load's scratch (the outermost InitializeAtoms(), once
 /// its atoms are created).
@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 	while(SSatoms.has_deferred_resolvers())
 		var/list/rows = SSatoms.take_deferred_resolvers()
 		for(var/list/row as anything in rows)
-			var/atom/where = resolve_token(row[2]) // a turf: null only when its z-level was recycled since
+			var/atom/where = handle_get(row[2]) // a turf: null only when its z-level was recycled since
 			if(!where)
 				continue
 			call(row[1])(where, row[3], row[4])

@@ -27,6 +27,11 @@
 // Reads the length of L, returning 0 if null
 #define LAZYLEN(L) length(L)
 
+// The same for an alist: a table keyed by numbers (a handle, a slot, a serial), which a plain list would read as an index. Remove with LAZYREMOVE (`-=` takes a key off an alist).
+// ALAZYSET makes the alist on first use; ALAZYACCESS reads null from a null table. Both multi-evaluate L.
+#define ALAZYSET(L, K, V) do { if(!L) { L = alist(); } L[K] = V; } while(0)
+#define ALAZYACCESS(L, K) ((L) ? (L)[K] : null)
+
 #define LAZYADDASSOC(L, K, V) do { if(!L) { L = list(); } L[K] += V; } while(0)
 ///This is used to add onto lazy assoc list when the value you're adding is a /list/. This one has extra safety over lazyaddassoc because the value could be null (and thus cant be used to += objects)
 #define LAZYADDASSOCLIST(L, K, V) do { if(!L) { L = list(); } L[K] += list(V); } while(0)

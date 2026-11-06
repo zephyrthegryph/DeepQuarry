@@ -138,7 +138,7 @@ CAPABILITIES(/datum/generated_station_director)
 		if(existing_report && !existing_report.is_expired() && existing_report.subject_id == subject_id && existing_report.category == category)
 			return existing_report
 	var/datum/generated_station_knowledge_report/report = new
-	report.id = "report-[next_serial_keyed(station_report, ref_token(src))]"
+	report.id = "report-[next_serial_keyed(station_report, handle_of(src))]"
 	report.subject_id = subject_id
 	report.category = category
 	report.details = details
@@ -207,7 +207,7 @@ CAPABILITIES(/datum/generated_station_director)
 	if(!(department_id in local_knowledge) || length(squads) >= GENERATED_STATION_MAX_SQUADS)
 		return null
 	var/datum/generated_station_squad/squad = new
-	squad.id = "squad-[next_serial_keyed(station_squad, ref_token(src))]"
+	squad.id = "squad-[next_serial_keyed(station_squad, handle_of(src))]"
 	squad.department_id = department_id
 	rel_add(src, nameof(squads), squad, squad.id)
 	return squad
@@ -223,7 +223,7 @@ CAPABILITIES(/datum/generated_station_director)
 	else if(!department_knows(squad.department_id, report_id))
 		return null
 	var/datum/generated_station_order/order = new
-	order.id = "order-[next_serial_keyed(station_order, ref_token(src))]"
+	order.id = "order-[next_serial_keyed(station_order, handle_of(src))]"
 	order.squad_id = squad.id
 	order.report_id = report_id
 	order.kind = kind

@@ -711,17 +711,17 @@ CAPABILITIES(/obj/item/organ/external)
 			return 0
 	*/
 	user.setClickCooldown(user.get_attack_speed(tool))
-	LAZYSET(robo_repairs, ref_token(user), list(repair_amount, damage_type, damage_desc, damage_amount, tool_proc, tool_args, ref_token(user.loc)))
+	ALAZYSET(robo_repairs, handle_of(user), list(repair_amount, damage_type, damage_desc, damage_amount, tool_proc, tool_args, handle_of(user.loc)))
 	var/datum/op_result/R = perform_op(user, src, "robo_repair", tool, ORIGIN_SYSTEM)
 	if(R?.outcome == ACT_REFUSED)
-		LAZYREMOVE(robo_repairs, ref_token(user))
+		LAZYREMOVE(robo_repairs, handle_of(user))
 		return FALSE
 	return TRUE
 
 /obj/item/organ/external
-	/// ref_token(repairer) -> list(amount, damage type, description, damage before, tool proc, tool args, ref_token(where the repairer stood)) of the patch
+	/// handle_of(repairer) -> list(amount, damage type, description, damage before, tool proc, tool args, handle_of(where the repairer stood)) of the patch
 	/// that repairer has under way.
-	var/list/robo_repairs
+	var/alist/robo_repairs
 
 
 /obj/item/organ/external/proc/robo_repair_failed(datum/act/op/A)
@@ -731,8 +731,8 @@ CAPABILITIES(/obj/item/organ/external)
 /obj/item/organ/external/proc/robo_repair_done(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/tool = A.held
-	var/list/record = LAZYACCESS(robo_repairs, ref_token(user))
-	LAZYREMOVE(robo_repairs, ref_token(user))
+	var/list/record = ALAZYACCESS(robo_repairs, handle_of(user))
+	LAZYREMOVE(robo_repairs, handle_of(user))
 	if(!record)
 		return
 	var/repair_amount = record[1]
@@ -741,7 +741,7 @@ CAPABILITIES(/obj/item/organ/external)
 	var/damage_amount = record[4]
 	var/tool_proc = record[5]
 	var/list/tool_args = record[6]
-	if(ref_token(user.loc) != record[7]) // the repairer must stand still for the whole patch
+	if(handle_of(user.loc) != record[7]) // the repairer must stand still for the whole patch
 		to_chat(user, span_warning("You must stand still to do that."))
 		return
 	// Repair by mechanism: plating for structural damage, wiring for scorching.

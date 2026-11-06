@@ -84,7 +84,8 @@
 	var/obj/item/gps/other = allocate(/obj/item/gps/on, T)
 	other.set_gps_tag("OTHR")
 	TEST_ASSERT(user.put_in_hands(mine), "the GPS is carried")
-	var/token = ref_token(other)
+	var/token = handle_of(other)
+	var/token_key = "[token]" // the gps keeps its track tables by the text of the handle
 	var/list/data = hc_data(mine, user)
 	var/list/row
 	for(var/list/signal in data["signals"])
@@ -95,14 +96,14 @@
 	own(test_ui(user, mine, "startTrack", list("ref" = "not a handle")))
 	TEST_ASSERT_EQUAL(length(mine.tracking_devices), 0, "a made-up name tracks nothing")
 	own(test_ui(user, mine, "startTrack", list("ref" = token)))
-	TEST_ASSERT_EQUAL(mine.tracking_devices[token], "#00ffff", "the track starts in the first colour")
-	TEST_ASSERT(mine.showing_tracked_names[token], "with its label shown")
+	TEST_ASSERT_EQUAL(mine.tracking_devices[token_key], "#00ffff", "the track starts in the first colour")
+	TEST_ASSERT(mine.showing_tracked_names[token_key], "with its label shown")
 	own(test_ui(user, mine, "trackColor", list("ref" = token, "color" = "#ff0000")))
-	TEST_ASSERT_EQUAL(mine.tracking_devices[token], "#ff0000", "the colour button sets the colour")
+	TEST_ASSERT_EQUAL(mine.tracking_devices[token_key], "#ff0000", "the colour button sets the colour")
 	own(test_ui(user, mine, "trackLabel", list("ref" = token)))
-	TEST_ASSERT(!mine.showing_tracked_names?[token], "the label button hides the label")
+	TEST_ASSERT(!mine.showing_tracked_names?[token_key], "the label button hides the label")
 	own(test_ui(user, mine, "trackLabel", list("ref" = token)))
-	TEST_ASSERT(mine.showing_tracked_names[token], "and shows it again")
+	TEST_ASSERT(mine.showing_tracked_names[token_key], "and shows it again")
 	data = hc_data(mine, user)
 	for(var/list/signal in data["signals"])
 		if(signal["gpsTag"] == "OTHR")
@@ -130,14 +131,14 @@
 	var/list/data = hc_data(clip, user)
 	TEST_ASSERT_EQUAL(length(data["items"]), 1, "the window lists the one sheet")
 	var/list/row = data["items"][1]
-	TEST_ASSERT_EQUAL(row["ref"], ref_token(sheet), "by its handle")
+	TEST_ASSERT_EQUAL(row["ref"], handle_of(sheet), "by its handle")
 	TEST_ASSERT(row["is_top"], "as the top sheet")
-	own(test_ui(user, clip, "remove", list("ref" = ref_token(elsewhere))))
+	own(test_ui(user, clip, "remove", list("ref" = handle_of(elsewhere))))
 	TEST_ASSERT_EQUAL(elsewhere.loc, T, "a sheet that is not on the clipboard is left alone")
 	own(test_ui(user, clip, "remove", list("ref" = "not a handle")))
 	TEST_ASSERT_EQUAL(sheet.loc, clip, "and a made-up name takes nothing off")
 	TEST_ASSERT_EQUAL(clip.tgui_status(user, clip.tgui_state(user)), STATUS_INTERACTIVE, "the carrier works the window")
-	own(test_ui(user, clip, "remove", list("ref" = ref_token(sheet))))
+	own(test_ui(user, clip, "remove", list("ref" = handle_of(sheet))))
 	TEST_ASSERT(sheet.loc != clip, "the remove button takes the sheet off")
 	TEST_ASSERT_EQUAL(clip.tgui_status(user, clip.tgui_state(user)), STATUS_INTERACTIVE, "the window is still open after a press")
 
@@ -156,13 +157,13 @@
 	var/list/data = hc_data(folder, user)
 	TEST_ASSERT_EQUAL(length(data["items"]), 1, "the window lists the one sheet")
 	var/list/row = data["items"][1]
-	TEST_ASSERT_EQUAL(row["ref"], ref_token(sheet), "by its handle")
+	TEST_ASSERT_EQUAL(row["ref"], handle_of(sheet), "by its handle")
 	TEST_ASSERT_EQUAL(row["kind"], "paper", "as a paper")
-	own(test_ui(user, folder, "remove", list("ref" = ref_token(elsewhere))))
+	own(test_ui(user, folder, "remove", list("ref" = handle_of(elsewhere))))
 	TEST_ASSERT_EQUAL(elsewhere.loc, T, "a sheet that is not in the folder is left alone")
 	own(test_ui(user, folder, "remove", list("ref" = "not a handle")))
 	TEST_ASSERT_EQUAL(sheet.loc, folder, "and a made-up name takes nothing out")
-	own(test_ui(user, folder, "remove", list("ref" = ref_token(sheet))))
+	own(test_ui(user, folder, "remove", list("ref" = handle_of(sheet))))
 	TEST_ASSERT(sheet.loc != folder, "the remove button takes the sheet out")
 
 /// The cloning console sends its pods and records by handle and takes them back by it; a made-up name selects nothing.
@@ -182,16 +183,16 @@
 	var/list/tokens = list()
 	for(var/list/row in data["pods"])
 		tokens += row["pod"]
-	TEST_ASSERT((ref_token(pod_a) in tokens) && (ref_token(pod_b) in tokens), "the window names the pods by handle")
-	TEST_ASSERT_EQUAL(data["selected_pod"], ref_token(console.selected_pod), "and the selected one")
+	TEST_ASSERT((handle_of(pod_a) in tokens) && (handle_of(pod_b) in tokens), "the window names the pods by handle")
+	TEST_ASSERT_EQUAL(data["selected_pod"], handle_of(console.selected_pod), "and the selected one")
 	var/obj/machinery/clonepod/other = console.selected_pod == pod_a ? pod_b : pod_a
 	own(test_ui(user, console, "selectpod", list("ref" = "not a handle")))
 	TEST_ASSERT(console.selected_pod != other, "a made-up name selects nothing")
-	own(test_ui(user, console, "selectpod", list("ref" = ref_token(other))))
+	own(test_ui(user, console, "selectpod", list("ref" = handle_of(other))))
 	TEST_ASSERT_EQUAL(console.selected_pod, other, "the other pod's handle selects it")
 	var/obj/machinery/clonepod/stray = allocate(/obj/machinery/clonepod, get_step(T, SOUTH))
 	var/selected_before = console.selected_pod
-	own(test_ui(user, console, "selectpod", list("ref" = ref_token(stray))))
+	own(test_ui(user, console, "selectpod", list("ref" = handle_of(stray))))
 	TEST_ASSERT_EQUAL(console.selected_pod, selected_before, "a pod the console is not linked to cannot be selected")
 	// a record is named by handle too
 	var/mob/living/carbon/human/subject = allocate(/mob/living/carbon/human, get_step(T, SOUTH))
@@ -202,7 +203,7 @@
 	data = hc_data(console, user)
 	TEST_ASSERT_EQUAL(length(data["records"]), 1, "the window lists the record")
 	var/list/record_row = data["records"][1]
-	TEST_ASSERT_EQUAL(record_row["record"], ref_token(record), "by its handle")
+	TEST_ASSERT_EQUAL(record_row["record"], handle_of(record), "by its handle")
 	own(test_ui(user, console, "view_rec", list("ref" = record_row["record"])))
 	TEST_ASSERT_EQUAL(console.active_BR, record, "the view button opens that record")
 	// a record of another console is not this console's to view or clone, and a console with no records names none
@@ -214,13 +215,13 @@
 	foreign.ckey = "dq_topic_cloning_foreign"
 	rel_add(other_console, nameof(/obj/machinery/computer/cloning::records), foreign)
 	var/datum/transhuman/body_record/active_before = console.active_BR
-	own(test_ui(user, console, "view_rec", list("ref" = ref_token(foreign))))
+	own(test_ui(user, console, "view_rec", list("ref" = handle_of(foreign))))
 	TEST_ASSERT_EQUAL(console.active_BR, active_before, "a record held by another console cannot be viewed")
-	own(test_ui(user, console, "clone", list("ref" = ref_token(foreign))))
+	own(test_ui(user, console, "clone", list("ref" = handle_of(foreign))))
 	TEST_ASSERT_EQUAL(console.active_BR, active_before, "or cloned")
 	TEST_ASSERT_EQUAL(other_console.active_BR, null, "and the other console is untouched")
 	var/obj/machinery/computer/cloning/empty_console = allocate(/obj/machinery/computer/cloning, get_step(T, NORTH))
 	empty_console.set_grid_power(TRUE)
-	own(test_ui(user, empty_console, "view_rec", list("ref" = ref_token(record))))
+	own(test_ui(user, empty_console, "view_rec", list("ref" = handle_of(record))))
 	TEST_ASSERT_NULL(empty_console.active_BR, "a console with no records at all names none")
-	TEST_ASSERT_NULL(empty_console.record_of(ref_token(record)), "so no handle finds a record in it")
+	TEST_ASSERT_NULL(empty_console.record_of(handle_of(record)), "so no handle finds a record in it")

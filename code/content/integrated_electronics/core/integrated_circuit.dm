@@ -134,7 +134,7 @@ CAPABILITIES(/datum/prompt/text/electronics_rename)
 /obj/item/integrated_circuit/proc/ui_data_obj_item_integrated_circuit(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["ref"] = ref_token(src)
+	data["ref"] = handle_of(src)
 
 
 	var/list/inputs_list = list()
@@ -163,13 +163,13 @@ CAPABILITIES(/datum/prompt/text/electronics_rename)
 	pindata["name"] = io.name
 	pindata["data"] = io.display_data(io.data)
 	pindata["rawdata"] = io.data
-	pindata["ref"] = ref_token(io)
+	pindata["ref"] = handle_of(io)
 	var/list/linked_list = list()
 	for(var/datum/integrated_io/linked in io.linked)
 		UNTYPED_LIST_ADD(linked_list, list(
-			"ref" = ref_token(linked),
+			"ref" = handle_of(linked),
 			"name" = linked.name,
-			"holder_ref" = ref_token(linked.holder()),
+			"holder_ref" = handle_of(linked.holder()),
 			"holder_name" = linked.holder().displayed_name,
 		))
 	pindata["linked"] = linked_list

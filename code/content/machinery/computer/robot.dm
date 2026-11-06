@@ -117,9 +117,9 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	interface("RoboticsControlConsole")
 	op("arm", ui_act("arm"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_arm)))
 	op("nuke", ui_act("nuke"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_nuke)))
-	op("killbot", ui_act("killbot", arg("ref", schema_text(32))), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_killbot)))
-	op("stopbot", ui_act("stopbot", arg("ref", schema_text(32))), needs(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/access_denied))), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_stopbot)))
-	op("hackbot", ui_act("hackbot", arg("ref", schema_text(32))), needs(req(PROC_REF(hack_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
+	op("killbot", ui_act("killbot", arg("ref", num())), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_killbot)))
+	op("stopbot", ui_act("stopbot", arg("ref", num())), needs(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/access_denied))), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_stopbot)))
+	op("hackbot", ui_act("hackbot", arg("ref", num())), needs(req(PROC_REF(hack_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_authenticated))))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	op("robotics_console_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(robotics_console_robot_use)))
@@ -138,7 +138,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 		var/turf/T = get_turf(R)
 		var/list/cyborg_data = list(
 			name = R.name,
-			ref = ref_token(R),
+			ref = handle_of(R),
 			locked_down = R.lockcharge,
 			locstring = "[cyborg_area.name] ([T.x], [T.y])",
 			status = R.stat,

@@ -1,7 +1,7 @@
 // Migration track 1c (doc/rewrite/lifecycle.md LC-refs): /datum/weakref is
 // gone. Live links are relations (code/engine/library.dm, read through
 // the accessor macros in code/defines/engine/scheduler.dm); "remember who it was" refs
-// are handles (ref_token()/resolve_token()). One test per relation added, plus
+// are handles (handle_of()/handle_get()). One test per relation added, plus
 // the handle behaviour weakrefs used to provide.
 
 // ---------------------------------------------------------------- handles
@@ -13,13 +13,13 @@
 /datum/unit_test/dq_refs_dropped_datum_is_a_leak/Run()
 	var/h = dq_refs_dropped_handle()
 	TEST_ASSERT(is_entity_handle(h), "the datum got a handle")
-	TEST_ASSERT(!isnull(resolve_token(h)), "a handle to a dropped datum still resolves: the table keeps it")
+	TEST_ASSERT(!isnull(handle_get(h)), "a handle to a dropped datum still resolves: the table keeps it")
 	TEST_ASSERT((slot_leak_report(log = FALSE)["/datum"] || 0) >= 1, "and the leak report counts the dropped datum by type")
 	qdel_handle(h)
-	TEST_ASSERT_NULL(resolve_token(h), "qdel() through the handle ends it")
+	TEST_ASSERT_NULL(handle_get(h), "qdel() through the handle ends it")
 	var/datum/E = new
-	TEST_ASSERT_NULL(resolve_token(h), "a new datum never answers an old handle")
-	TEST_ASSERT(ref_token(E) != h, "and gets a handle of its own")
+	TEST_ASSERT_NULL(handle_get(h), "a new datum never answers an old handle")
+	TEST_ASSERT(handle_of(E) != h, "and gets a handle of its own")
 	qdel(E)
 
 /// A handle to a datum nothing else references: it resolves while the datum
@@ -27,8 +27,8 @@
 /// because TEST_ASSERT_* keeps its operands in locals.)
 /proc/dq_refs_dropped_handle()
 	var/datum/D = new
-	. = ref_token(D)
-	if(resolve_token(.) != D)
+	. = handle_of(D)
+	if(handle_get(.) != D)
 		return null
 
 /// QDEL_IN past the GC filter queue defers through a handle: it still deletes
@@ -37,9 +37,9 @@
 
 /datum/unit_test/dq_refs_qdel_handle/Run()
 	var/obj/item/I = allocate(/obj/item/tape_roll)
-	qdel_handle(ref_token(I))
+	qdel_handle(handle_of(I))
 	TEST_ASSERT(QDELETED(I), "qdel_handle() deletes what the handle names")
-	qdel_handle(ref_token(I)) // a deleted datum has no handle: a no-op
+	qdel_handle(handle_of(I)) // a deleted datum has no handle: a no-op
 	qdel_handle("junk")
 
 /// IC refs: a reference on a circuit pin round-trips, and no sanitized string
@@ -53,7 +53,7 @@
 	TEST_ASSERT_EQUAL(ic_ref_resolve(r), I, "an IC ref resolves to its datum")
 	var/forged = sanitizeSafe(r, MAX_MESSAGE_LEN, 0, 0)
 	TEST_ASSERT(!ic_is_ref(forged), "sanitized pin text is never an IC ref")
-	TEST_ASSERT(!ic_is_ref(ref_token(I)), "a bare handle is not an IC ref")
+	TEST_ASSERT(!ic_is_ref("[handle_of(I)]"), "a bare handle is not an IC ref")
 	qdel(I)
 	TEST_ASSERT_NULL(ic_ref_resolve(r), "an IC ref to a deleted datum resolves to null")
 

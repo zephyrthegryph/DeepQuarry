@@ -27,7 +27,7 @@
 			"value" = displayed_data.value,
 			"cataloguers" = cataloguers_text,
 			"visible" = !!displayed_data.visible,
-			"ref" = ref_token(displayed_data),
+			"ref" = handle_of(displayed_data),
 		)
 	else
 		data["detail"] = null
@@ -38,7 +38,7 @@
 				if(item.visible || debug)
 					items += list(list(
 						"name" = item.name,
-						"ref" = ref_token(item),
+						"ref" = handle_of(item),
 						"visible" = !!item.visible,
 					))
 			if(items.len || debug)

@@ -90,7 +90,7 @@
 		rel_set(src, nameof(current_br), brDisk.stored)
 		to_chat(user, span_notice("\The [src] loads the body record from \the [W] before ejecting it."))
 		attack_hand(user)
-		view_b_rec(ref_token(brDisk.stored))
+		view_b_rec(handle_of(brDisk.stored))
 		return OP_PASS
 	return OP_DECLINE
 
@@ -144,7 +144,7 @@
 		else if(occupant && !pod.power_lost())
 			status = "cloning"
 		clonepods += list(list(
-			"pod" = ref_token(pod),
+			"pod" = handle_of(pod),
 			"name" = sanitize(capitalize(pod.name)),
 			"biomass" = pod.get_biomass(),
 			"status" = status,
@@ -155,7 +155,7 @@
 	var/list/synthpods = list()
 	for(var/obj/machinery/transhuman/synthprinter/spod in spods)
 		synthpods += list(list(
-			"spod" = ref_token(spod),
+			"spod" = handle_of(spod),
 			"name" = sanitize(capitalize(spod.name)),
 			"busy" = spod.busy,
 			"steel" = spod.stored_material[MAT_STEEL],
@@ -166,7 +166,7 @@
 	var/list/resleevers = list()
 	for(var/obj/machinery/transhuman/resleever/resleever in sleevers)
 		resleevers += list(list(
-			"sleever" = ref_token(resleever),
+			"sleever" = handle_of(resleever),
 			"name" = sanitize(capitalize(resleever.name)),
 			"occupied" = !!resleever.get_occupant(),
 			"occupant" = resleever.get_occupant() ? resleever.get_occupant().real_name : "None"
@@ -176,16 +176,16 @@
 	data["coredumped"] = our_db().core_dumped
 	data["emergency"] = disk()
 	data["temp"] = temp
-	data["selected_pod"] = ref_token(selected_pod())
-	data["selected_printer"] = ref_token(selected_printer())
-	data["selected_sleever"] = ref_token(selected_sleever())
+	data["selected_pod"] = handle_of(selected_pod())
+	data["selected_printer"] = handle_of(selected_printer())
+	data["selected_sleever"] = handle_of(selected_sleever())
 
 	var/list/bodyrecords_list_ui = list()
 	for(var/N in our_db().body_scans)
 		var/datum/transhuman/body_record/BR = our_db().body_scans[N]
 		bodyrecords_list_ui += list(list(
 			"name" = N,
-			"recref" = ref_token(BR)
+			"recref" = handle_of(BR)
 		))
 	data["bodyrecords"] = bodyrecords_list_ui
 
@@ -194,7 +194,7 @@
 		var/datum/transhuman/mind_record/MR = our_db().backed_up[N]
 		mindrecords_list_ui += list(list(
 			"name" = N,
-			"recref" = ref_token(MR)
+			"recref" = handle_of(MR)
 		))
 	data["mindrecords"] = mindrecords_list_ui
 
@@ -202,7 +202,7 @@
 	var/datum/transhuman/body_record/active_br = current_br
 	if(active_br)
 		data["active_b_rec"] = list(
-			activerecord = ref_token(active_br),
+			activerecord = handle_of(active_br),
 			realname = sanitize(active_br.mydna.name),
 			species = active_br.speciesname ? active_br.speciesname : active_br.mydna.dna.species,
 			sex = active_br.bodygender,
@@ -216,7 +216,7 @@
 	var/datum/transhuman/mind_record/active_mr = current_mr
 	if(active_mr)
 		data["active_m_rec"] = list(
-			activerecord = ref_token(active_mr),
+			activerecord = handle_of(active_mr),
 			realname = sanitize(active_mr.mindname),
 			obviously_dead = active_mr.dead_state == MR_DEAD ? "Past-due" : "Current",
 			oocnotes = active_mr.mind_ref?.identity?.ooc_notes || "None.",
@@ -601,7 +601,7 @@ CAPABILITIES(/obj/item/disk/transcore)
 	return ui_member(ref, listed, /datum/transhuman/mind_record)
 
 /obj/machinery/computer/transhuman/resleeving/proc/view_b_rec(ref)
-	if(!length(ref))
+	if(isnull(ref))
 		return
 
 	var/datum/transhuman/body_record/active_br = body_record_of(ref)
@@ -631,7 +631,7 @@ CAPABILITIES(/obj/item/disk/transcore)
 		show_temp("Error: Record missing.", "danger")
 
 /obj/machinery/computer/transhuman/resleeving/proc/view_m_rec(ref)
-	if(!length(ref))
+	if(isnull(ref))
 		return
 
 	var/datum/transhuman/mind_record/active_mr = mind_record_of(ref)

@@ -47,7 +47,7 @@ pub const MESSAGE_CALLS: &[&str] = &["to_chat", "visible_message", "audible_mess
 /// Files that declare the framework's own state besides [`ENGINE_DIRS`]: the kernel (`Kernel`, its work tables) and the base datum
 /// (`gc_destroyed`, `rx`). An engine body reading a var declared in one of them is the framework reading itself.
 /// The file whose procs resolve entity handles (see `global_internal`).
-const HANDLE_RESOLUTION_FILE: &str = "code/engine/time/handles.dm";
+const HANDLE_RESOLUTION_FILES: [&str; 2] = ["code/engine/time/handles.dm", "code/engine/refs/slots.dm"];
 
 pub fn framework_file(rel: &str) -> bool {
     ENGINE_DIRS.iter().any(|d| rel.starts_with(d)) || rel.starts_with("code/world/kernel/") || rel == "code/library/datum/datum.dm" || is_test_code(rel)
@@ -1822,9 +1822,9 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
             }
         }
-        // Handle resolution (`resolve_token()` and its keyed fallbacks) looks a handle up in the world's registries (`GLOB.directory` for a
+        // Handle resolution (`handle_get()` and its keyed fallbacks) looks a handle up in the world's registries (`GLOB.directory` for a
         // client's handle). A handle that resolves to null is the deletion signal the lifecycle already publishes, so the lookup is bookkeeping, not an input.
-        if fr.rel == HANDLE_RESOLUTION_FILE {
+        if HANDLE_RESOLUTION_FILES.contains(&fr.rel.as_str()) {
             return true;
         }
         framework_file(&fr.rel) && framework_file(decl_file)
@@ -2663,14 +2663,14 @@ TRACKED(/datum/thing, charge)
 
     #[test]
     fn a_handle_resolution_reads_the_registries_as_bookkeeping() {
-        let handles = "/proc/resolve_token(h)
+        let handles = "/proc/handle_get(h)
 	return GLOB.dyn
 ";
         let content = "/datum/thing
 	var/charge = 0
 TRACKED(/datum/thing, charge)
 /datum/thing/proc/probe(h)
-	return resolve_token(h) + charge
+	return handle_get(h) + charge
 /datum/thing/proc/direct()
 	return GLOB.dyn + charge
 ";
@@ -2679,7 +2679,7 @@ TRACKED(/datum/thing, charge)
         let ann = Annotations::get(&sem, &decls);
         let closed = ReadsEngine::new(&sem, &decls, &ann).closed();
         let via = closed.analyze("/datum/thing", "probe");
-        assert!(via.diags.iter().all(|d| d.rule != "untracked_global"), "resolve_token() is engine bookkeeping: {:?}", via.diags);
+        assert!(via.diags.iter().all(|d| d.rule != "untracked_global"), "handle_get() is engine bookkeeping: {:?}", via.diags);
         let direct = closed.analyze("/datum/thing", "direct");
         assert!(direct.diags.iter().any(|d| d.rule == "untracked_global" && d.msg == "GLOB.dyn"), "a content read of the same global is still found: {:?}", direct.diags);
         std::fs::remove_dir_all(root).unwrap();

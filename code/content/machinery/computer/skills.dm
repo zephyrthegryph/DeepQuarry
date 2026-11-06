@@ -402,7 +402,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 					data["records"] = records
 					for(var/datum/data/record/R in sortRecord(GLOB.data_core.general))
 						records[++records.len] = list(
-							"ref" = ref_token(R),
+							"ref" = handle_of(R),
 							"id" = R.fields["id"],
 							"name" = R.fields["name"],
 							"b_dna" = R.fields["b_dna"])

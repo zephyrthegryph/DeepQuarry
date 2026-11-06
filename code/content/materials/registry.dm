@@ -168,7 +168,7 @@ PROC_SUMMARY(/proc/get_material_by_name) // a registry lookup: a name maps to it
 /proc/material_argument_id(argument)
 	if(isdatum(argument))
 		var/datum/thing = argument
-		return ref_token(thing) || "deleted-[thing.type]"
+		return handle_of(thing) || "deleted-[thing.type]"
 	if(islist(argument))
 		return json_encode(argument)
 	return "[argument]"

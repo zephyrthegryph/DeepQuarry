@@ -125,7 +125,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		)
 
 	data["logs"] = list()
-	for(var/datum/ore_silo_log/entry as anything in GLOB.silo_access_logs[ref_token(src)])
+	for(var/datum/ore_silo_log/entry as anything in GLOB.silo_access_logs[handle_of(src)])
 		data["logs"] += list(
 			list(
 				"rawMaterials" = entry.get_raw_materials(""),
@@ -191,9 +191,9 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		return
 
 	var/datum/ore_silo_log/entry = new(M, action, amount, noun, mats)
-	var/list/datum/ore_silo_log/logs = GLOB.silo_access_logs[ref_token(src)]
+	var/list/datum/ore_silo_log/logs = GLOB.silo_access_logs[handle_of(src)]
 	if(!LAZYLEN(logs))
-		GLOB.silo_access_logs[ref_token(src)] = logs = list(entry)
+		GLOB.silo_access_logs[handle_of(src)] = logs = list(entry)
 	else if(!logs[1].merge(entry))
 		logs.Insert(1, entry)
 

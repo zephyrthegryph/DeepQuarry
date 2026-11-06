@@ -62,14 +62,14 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 		var/list/r = list()
 		for(var/i in 1 to cat.len)
 			var/datum/pipe_recipe/info = cat[i]
-			r += list(list("pipe_name" = info.name, "ref" = ref_token(info)))
+			r += list(list("pipe_name" = info.name, "ref" = handle_of(info)))
 			// Stationary pipe dispensers don't allow you to pre-select pipe directions.
 			// This makes it impossble to spawn bent versions of bendable pipes.
 			// We add a "Bent" pipe type with a special param to work around it.
 			if(info.dirtype == PIPE_BENDABLE)
 				r += list(list(
 					"pipe_name" = ("Bent " + info.name),
-					"ref" = ref_token(info),
+					"ref" = handle_of(info),
 					"bent" = TRUE
 				))
 		data["categories"] += list(list("cat_name" = c, "recipes" = r))

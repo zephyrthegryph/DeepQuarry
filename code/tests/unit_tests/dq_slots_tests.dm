@@ -29,16 +29,16 @@
 /datum/unit_test/dq_slots_aba/Run()
 	var/datum/slot_probe/old = new
 	var/old_handle = handle_of(old)
-	var/old_text = ref_token(old)
+	var/old_text = "[old_handle]"
 	var/id = slot_of(old)
 	TEST_ASSERT_EQUAL(handle_get(old_handle), old, "a handle resolves while its datum lives")
-	TEST_ASSERT_EQUAL(resolve_token(old_text), old, "and so does its text")
+	TEST_ASSERT_EQUAL(handle_get(old_text), old, "and so does its text")
 	qdel(old)
 	TEST_ASSERT_NULL(handle_get(old_handle), "a handle to a deleted datum resolves to nothing")
 	var/datum/slot_probe/fresh = new
 	TEST_ASSERT_EQUAL(slot_of(fresh), id, "the freed slot is the next one handed out")
 	TEST_ASSERT_NULL(handle_get(old_handle), "the datum in the reused slot is not what the old handle names")
-	TEST_ASSERT_NULL(resolve_token(old_text), "nor the old text")
+	TEST_ASSERT_NULL(handle_get(old_text), "nor the old text")
 	TEST_ASSERT_EQUAL(handle_get(handle_of(fresh)), fresh, "its own handle resolves")
 	TEST_ASSERT(handle_of(fresh) != old_handle, "and differs from the old one")
 	qdel(fresh)
@@ -65,7 +65,7 @@
 	var/datum/slot_probe/D = new
 	var/h = handle_of(D)
 	TEST_ASSERT(isnum(h), "a datum's handle is a number")
-	TEST_ASSERT_EQUAL(handle_get(ref_token(D)), D, "handle_get reads the text form too")
+	TEST_ASSERT_EQUAL(handle_get("[handle_of(D)]"), D, "handle_get reads the number's text form too")
 	var/turf/T = run_loc_floor_bottom_left
 	TEST_ASSERT(istext(handle_of(T)), "a turf's handle is its text")
 	TEST_ASSERT_EQUAL(handle_get(handle_of(T)), T, "and resolves")

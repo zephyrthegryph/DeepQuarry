@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 				continue
 			var/list/turret = list()
 			turret["id"] =          "#[i]"
-			turret["ref"] =         ref_token(PD)
+			turret["ref"] =         handle_of(PD)
 			turret["active"] =       PD.active
 			turret["effective_range"] = PD.active ? "[PD.kill_range] meter\s" : "OFFLINE."
 			turret["reaction_wheel_delay"] = PD.active ? "[(PD.rotation_speed / (1 SECONDS))] second\s" : "OFFLINE."

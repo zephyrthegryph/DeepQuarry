@@ -43,7 +43,7 @@ CAPABILITIES(/datum/notice)
 	return ..()
 
 /// The notices waiting for the next drain point: list(holder handle, notice, outcome, chain) in the order they were queued. The holder is a handle
-/// (ref_token()), never a reference; the notice's target is cleared while it waits.
+/// (handle_of()), never a reference; the notice's target is cleared while it waits.
 GLOBAL_LIST_EMPTY(notice_late_queue)
 GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 
@@ -109,7 +109,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		var/chain = act_chain_text()
 		GLOB.notice_late++
 		N.target = null // the row holds the holder by handle only: a queued notice keeps nothing alive
-		GLOB.notice_late_queue += list(list(ref_token(holder) || entity_handle_of(holder), N, outcome, chain))
+		GLOB.notice_late_queue += list(list(handle_of(holder) || entity_handle_of(holder), N, outcome, chain))
 		log_world("ACT: notice [N.type] from [holder?.type] queued to the next drain point: nested deeper than [ACT_MAX_DEPTH] ([chain])")
 		act_report(RULE_NOTICE_DEPTH, "notice [N.type] from [holder?.type] was queued to the next drain point (nested deeper than [ACT_MAX_DEPTH]; it is delivered late and out of publish order): [chain]")
 		return
@@ -185,7 +185,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 /// The holder of a late-queue row: a handle resolves to a live datum (null once it was deleted); a datum put in a row by hand is itself.
 /proc/notice_late_holder(list/row)
 	var/holder = row[1]
-	return istext(holder) ? resolve_token(holder) : holder
+	return isdatum(holder) ? holder : handle_get(holder)
 
 /// Delivers one late row to every receiver and releases it. `holder` is the datum the row names (live, or in its deleting state).
 /proc/notice_late_deliver(datum/holder, list/row)

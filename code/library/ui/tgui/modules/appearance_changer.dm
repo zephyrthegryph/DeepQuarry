@@ -921,7 +921,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 				var/datum/transhuman/body_record/BR = DC.our_db().body_scans[N]
 				var/datum/species/S = GLOB.all_species[BR.mydna.dna.species]
 				if((S.spawn_flags & (SPECIES_IS_WHITELISTED|SPECIES_CAN_JOIN)) != SPECIES_CAN_JOIN || BR.synthetic) continue
-				bodyrecords_list_ui[++bodyrecords_list_ui.len] = list("name" = N, "recref" = ref_token(BR))
+				bodyrecords_list_ui[++bodyrecords_list_ui.len] = list("name" = N, "recref" = handle_of(BR))
 			data["character_records"] = bodyrecords_list_ui
 			// Load all stock records printable
 			var/list/stock_bodyrecords_list_ui = list()
@@ -1084,7 +1084,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			if(can_use_sprite(instance, target, user))
 				add_valid_earstyles(list(list(
 					"name" = instance.name,
-					"instance" = ref_token(instance),
+					"instance" = handle_of(instance),
 					"color" = !!instance.do_colouration,
 					"second_color" = !!instance.extra_overlay,
 					"icon" = instance.icon,
@@ -1097,7 +1097,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			if(can_use_sprite(instance, target, user))
 				add_valid_tailstyles(list(list(
 					"name" = instance.name,
-					"instance" = ref_token(instance),
+					"instance" = handle_of(instance),
 					"color" = !!instance.do_colouration,
 					"second_color" = !!instance.extra_overlay,
 					"icon" = instance.icon,
@@ -1110,7 +1110,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			if(can_use_sprite(instance, target, user))
 				add_valid_wingstyles(list(list(
 					"name" = instance.name,
-					"instance" = ref_token(instance),
+					"instance" = handle_of(instance),
 					"color" = !!instance.do_colouration,
 					"second_color" = !!instance.extra_overlay,
 					"icon" = instance.icon,

@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/uplink)
 				"name" = item.name,
 				"cost" = cost,
 				"desc" = item.description(),
-				"ref" = ref_token(item),
+				"ref" = handle_of(item),
 			))
 		data["categories"] += list(cat)
 

@@ -26,7 +26,7 @@
 		clone = state_materialize(blob, loc || (ismovable(A) ? A.loc : null), STATE_FULL, errors)
 	else
 		var/datum/state_context/ctx = new(NONE)
-		ctx.ids = list()
+		ctx.ids = alist()
 		var/list/nested = ctx.serialize_datum(D, NONE)
 		if(nested)
 			clone = ctx.materialize_datum(nested)

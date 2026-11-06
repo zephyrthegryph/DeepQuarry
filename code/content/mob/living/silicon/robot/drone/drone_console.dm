@@ -66,7 +66,7 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 			"charge" = D.cell.charge,
 			"maxCharge" = D.cell.maxcharge,
 			"loc" = "[get_area(D)]",
-			"ref" = ref_token(D),
+			"ref" = handle_of(D),
 		)))
 	data["drones"] = drones
 

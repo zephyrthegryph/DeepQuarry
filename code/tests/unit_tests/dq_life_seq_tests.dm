@@ -251,7 +251,7 @@
 /// TRUE when `L`'s on_change hook with `handler` is marked for the next drain (its `when` gate is asked at the drain, not here).
 /proc/life_test_rx_queued(mob/living/L, handler)
 	var/datum/hook/H = life_test_hook(L, handler)
-	return !!H && !!GLOB.hook_change_pending[ref_token(L)]?[H]
+	return !!H && !!GLOB.hook_change_pending[handle_of(L)]?[H]
 
 /// TRUE while `L`'s coalesce window of the hook running `handler` is open (a trigger passed the hook's gates and its run is waiting).
 /proc/life_test_window_open(mob/living/L, handler)

@@ -53,7 +53,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 			if(isdatum(handler_args[i]))
 				LAZYADD(watched, i)
 	if(clock == CLOCK_WORLD)
-		var/holder_handle = ref_token(holder)
+		var/holder_handle = handle_of(holder)
 		if(isnull(holder_handle))
 			return 0 // the owner is already gone
 		id = timer_schedule_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(holder_handle, handler, key, token, handler_args, watched), TRUE)
@@ -80,7 +80,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 
 /// A world-clock timer went off: its owner is resolved from its handle, so a datum that was deleted (or whose ref was reused) never receives it.
 /proc/rx_timer_fire_ref(holder_handle, handler, key, token, list/handler_args, list/watched)
-	var/datum/holder = resolve_token(holder_handle)
+	var/datum/holder = handle_get(holder_handle)
 	if(!isdatum(holder))
 		log_qdel("scheduler: world timer [handler] dropped: its owner [holder_handle] no longer exists")
 		return

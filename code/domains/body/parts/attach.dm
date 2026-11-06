@@ -36,7 +36,7 @@ GLOBAL_VAR_INIT(dq_part_trace, FALSE)
 /// the length of that one move, or null. Its detach half is then a reparent.
 /// The handle of the organ moving inside its own body right now (set and cleared around one commit in place_into()); a handle holds no reference.
 GLOBAL_VAR(dq_part_reparenting)
-SCHEMA(/datum/controller/global_vars, dq_part_reparenting, schema_text())
+SCHEMA(/datum/controller/global_vars, dq_part_reparenting, schema_any())
 
 /obj/item/organ
 

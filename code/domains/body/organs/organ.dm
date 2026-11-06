@@ -544,7 +544,7 @@
 		return FALSE
 	var/reparent = owner && dq_part_destination_owner(holder, slot_id) == owner
 	if(reparent)
-		GLOB.dq_part_reparenting = ref_token(src)
+		GLOB.dq_part_reparenting = handle_of(src)
 	. = dq_ledger_commit(src, holder, slot_id)
 	if(reparent)
 		GLOB.dq_part_reparenting = null

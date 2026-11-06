@@ -16,7 +16,7 @@ CAPABILITIES(/datum/pai_software/sec_records)
 	for(var/datum/data/record/general in sortRecord(GLOB.data_core.general))
 		var/list/record = list()
 		record["name"] = general.fields["name"]
-		record["ref"] = ref_token(general)
+		record["ref"] = handle_of(general)
 		records.Add(list(record))
 
 	data["records"] = records
