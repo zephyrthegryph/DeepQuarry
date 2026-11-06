@@ -1,7 +1,7 @@
 //! Production raw producer, distinct from bounded fixture CapturedPolicyInputs.
 //! Native entries retain compare-only weak acquisition IDs, never all text views.
 use crate::input_snapshot::{
-    FileInput, InputSnapshot, RecordedSourceOriginal, RecordingInputs, SnapshotProvider,
+    FileInput, FixedLibraryBaseline, InputSnapshot, RecordedSourceOriginal, RecordingInputs, SnapshotProvider,
 };
 use crate::runner_host::workspace_discovery::DiscoveryReceipt;
 use crate::query_db::{CurrentWorkspaceRawFile as CurrentFile,WorkspaceRawSourceProof as SourceProof};
@@ -59,7 +59,7 @@ pub(crate) struct WorkspaceCapture {
     config: Option<SharedBytes>,
     auxiliary: Vec<crate::policy_request::WorkspaceAuxiliaryQuestion>,
     deadline: Option<(PathBuf,Option<SharedBytes>)>,
-    library_baseline: Option<(PathBuf,Option<SharedBytes>)>,
+    library_baseline: Option<(PathBuf, FixedLibraryBaseline)>,
     check_grep:Option<[Option<usize>;6]>,
     keys_manifest:Option<Option<usize>>,
     base_vars_configuration:Option<Option<usize>>,
@@ -223,7 +223,8 @@ impl WorkspaceCapture {
             }
         }
         census.vec_payload(owner,&self.auxiliary);
-        for (path, bytes) in self.deadline.iter().chain(&self.library_baseline) {
+        for (path, bytes) in self.deadline.iter().map(|(path, bytes)| (path, bytes.as_ref()))
+            .chain(self.library_baseline.iter().map(|(path, baseline)| (path, baseline.bytes()))) {
             census.path(owner,path);
             if let Some(bytes)=bytes{if census.arc_object(owner,bytes.shared_owner()){census.vec_payload(owner,bytes.shared_owner().bytes());}}
         }
@@ -245,7 +246,7 @@ impl WorkspaceCapture {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "actual fixed library baseline scope differs"));
         }
         crate::daemon::control::checkpoint()?;
-        Ok(bytes.as_ref().map(SharedBytes::as_slice))
+        Ok(bytes.bytes().map(SharedBytes::as_slice))
     }
     pub(crate) fn deadline_observation(&self)->io::Result<(&Path,Option<&[u8]>)>{self.deadline.as_ref().map(|(path,bytes)|(path.as_path(),bytes.as_ref().map(SharedBytes::as_slice))).ok_or_else(||io::Error::other("DeadlinePolling auxiliary was not admitted and observed"))}
     pub(crate) fn issuance(&self) -> u64 {
@@ -603,7 +604,8 @@ impl WorkspaceCapture {
             }
         }
         add(self.auxiliary.capacity()*std::mem::size_of::<crate::policy_request::WorkspaceAuxiliaryQuestion>())?;
-        for (path, bytes) in self.deadline.iter().chain(&self.library_baseline) {
+        for (path, bytes) in self.deadline.iter().map(|(path, bytes)| (path, bytes.as_ref()))
+            .chain(self.library_baseline.iter().map(|(path, baseline)| (path, baseline.bytes()))) {
             add(path.capacity())?;
             if let Some(bytes)=bytes{let owner=bytes.shared_owner();if seen.insert(Arc::as_ptr(owner)as usize){add(std::mem::size_of_val(owner.as_ref())+2*std::mem::size_of::<usize>())?;add(owner.bytes().capacity())?;}}
         }
@@ -626,11 +628,11 @@ struct OriginalWorkspaceSource<'a>{mapping:&'a Arc<SourceExportMapping>,plan:&'a
 pub(crate) fn capture_analysis_with_auxiliary<P:SnapshotProvider>(frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
     if frontend.original_analysis_completeness().is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"workspace full source capture refuses partial diagnostic purpose"))}
     if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {return Err(io::Error::new(io::ErrorKind::InvalidInput,"analysis workspace requires its actual original context"))}
-    capture_original(OriginalWorkspaceSource{mapping:frontend.mapping(),plan:frontend.original_plan(),files:frontend.files(),revision:frontend.source_revision()},inputs,discovery,configuration,questions,None,false)
+    capture_original(OriginalWorkspaceSource{mapping:frontend.mapping(),plan:frontend.original_plan(),files:frontend.files(),revision:frontend.source_revision()},inputs,discovery,configuration,questions,None,None)
 }
 pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
     let mapping=frontend.source_export_mapping().ok_or_else(||io::Error::other("workspace compiler mapping unproven"))?;
-    capture_original(OriginalWorkspaceSource{mapping,plan:&frontend.plan,files:&frontend.files,revision:frontend.source_export_revision()},inputs,discovery,configuration,questions,None,false)
+    capture_original(OriginalWorkspaceSource{mapping,plan:&frontend.plan,files:&frontend.files,revision:frontend.source_export_revision()},inputs,discovery,configuration,questions,None,None)
 }
 /// Same Original workspace and same library semantic child. Only this private
 /// selected attempt adds the fixed read-only baseline to the captured closure.
@@ -638,6 +640,7 @@ pub(crate) fn capture_analysis_with_library_baseline<P: SnapshotProvider>(
     frontend: &dm_tree::frontend::DiagnosticSourceView<'_>, inputs: &RecordingInputs<P>,
     discovery: Arc<DiscoveryReceipt>, configuration: &Path,
     questions: &[crate::policy_request::WorkspaceAuxiliaryQuestion],
+    work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
 ) -> io::Result<Arc<WorkspaceCapture>> {
     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
     if frontend.original_analysis_completeness().is_none()
@@ -652,7 +655,7 @@ pub(crate) fn capture_analysis_with_library_baseline<P: SnapshotProvider>(
     capture_original(OriginalWorkspaceSource {
         mapping: frontend.mapping(), plan: frontend.original_plan(), files: frontend.files(),
         revision: frontend.source_revision(),
-    }, inputs, discovery, configuration, questions, None, true)
+    }, inputs, discovery, configuration, questions, None, Some(work))
 }
 /// Exclusive authored MapEdits capture. Keep the existing workspace
 /// capture allowance funded while the map provider owns its scratch and parsed
@@ -686,7 +689,7 @@ pub(crate) fn capture_analysis_map_edits<P: SnapshotProvider>(
         let capture = capture_original(
             OriginalWorkspaceSource { mapping: frontend.mapping(), plan: frontend.original_plan(),
                 files: frontend.files(), revision: frontend.source_revision() },
-            inputs, discovery, configuration, &[Q::MapEdits], Some((budget, credits)), false,
+            inputs, discovery, configuration, &[Q::MapEdits], Some((budget, credits)), None,
         )?;
         let retained = capture.retained_charge()?.checked_add(2*std::mem::size_of::<usize>())
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
@@ -708,7 +711,7 @@ fn map_edits_failure(failure: dq_analyze::captured_reactive_reads::Failure) -> i
     }
 }
 
-fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion],map_work:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,library_sites:bool)->io::Result<Arc<WorkspaceCapture>>{
+fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion],map_work:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,library_sites:Option<&dyn dm_preprocess::source_arena_credit::SourceArenaWork>)->io::Result<Arc<WorkspaceCapture>>{
     if questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::MapEdits) != map_work.is_some() {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits requires its actual capture producer"));
     }
@@ -827,17 +830,15 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
      let mut existing=None;for(index,file)in files.iter().enumerate(){crate::daemon::control::checkpoint()?;if file.path==path{existing=Some(index);break}}let index=if let Some(existing)=existing{Some(existing)}else{let original=if path==configuration{config.as_ref().map(|bytes|inputs.recorded_file_fact(&path).map(|fact|CapturedOriginal{original:Original::Owned(bytes.clone()),fact})).transpose()?}else{capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&texts,&aliases,&path,&mut used,128)?};if let Some(CapturedOriginal{original,fact})=original{let index=files.len();files.push(File{path:path.clone(),fact,original});Some(index)}else{None}};base_vars_configuration=Some(index);base_vars_configuration_path=Some(path);
     }
 
-    let library_baseline = if library_sites {
+    let library_baseline = if let Some(work) = library_sites {
         let width=discovery.contract().root.as_os_str().len().checked_add(LIBRARY_SITES_BASELINE.len())
             .and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2176)).ok_or(io::ErrorKind::OutOfMemory)?;
         used=used.checked_add(width).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;
         let path=discovery.contract().root.join(LIBRARY_SITES_BASELINE);
-        // Strict qualified cohort: actual bytes (including invalid UTF-8)
-        // or recorded NotFound. Other IO must not become source absence.
         if known.contains_key(path.as_path()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "fixed library baseline also participates in the authored source plan"));
         }
-        let bytes=inputs.read_policy_candidate(&path, EXTRA_BUDGET-used)?;
+        let bytes=inputs.read_fixed_library_baseline(discovery.contract().root.as_path(), &path, EXTRA_BUDGET-used, work)?;
         Some((path,bytes))
     } else { None };
 
@@ -852,7 +853,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         })
         .chain(std::iter::once(canonical_path(configuration)))
         .chain(deadline.iter().map(|(path,_)|canonical_path(path)))
-        .chain(library_baseline.iter().map(|(path,_)|canonical_path(path)))
+        .chain(library_baseline.iter().filter(|(_, fact)| fact.selects_file_fact()).map(|(path,_)|canonical_path(path)))
         .chain(keys_manifest_path.iter().map(|path|canonical_path(path)))
         .chain(base_vars_configuration_path.iter().map(|path|canonical_path(path)))
         .chain(check_grep_paths.iter().flat_map(|paths|paths.iter().flatten().map(|path|canonical_path(path))))

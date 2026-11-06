@@ -178,7 +178,7 @@ struct ReportStage<'a> {
     selected: &'static [&'static str],
     failed: [bool; Roster::MAX_POLICIES],
     judgment: JudgmentV2,
-    // Outer None means the fixed role is unissued, inner None proven absent.
+    // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
 }
 impl ReportStage<'_> {

@@ -168,6 +168,7 @@ pub use source_alias::{SourceAliasChallenge, SourceAliasProof};
 mod policy_directories;
 #[path = "input_policy_read.rs"]
 mod policy_read;
+pub(crate) use policy_read::FixedLibraryBaseline;
 #[path = "input_map_edits.rs"]
 mod map_edits;
 pub(crate) use policy_directories::PolicyDirectoryStorage;

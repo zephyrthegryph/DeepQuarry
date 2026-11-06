@@ -868,6 +868,7 @@ fn run_build_attempt(
                         }
                         crate::runner_host::workspace_capture::capture_analysis_with_library_baseline(
                             &view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),
+                            source_policy_queries.as_ref(),
                         )?
                     }else{
                         crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?

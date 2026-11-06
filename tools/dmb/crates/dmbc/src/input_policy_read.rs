@@ -1,5 +1,121 @@
 //! Bounded original read, distinct from compiler's unchanged ordinary read API.
 use super::*;
+
+pub(crate) enum FixedLibraryBaseline {
+    Readable(dm_resources::SharedBytes),
+    Missing,
+    #[cfg(windows)]
+    OpenUnreadable,
+}
+
+impl FixedLibraryBaseline {
+    pub(crate) fn bytes(&self) -> Option<&dm_resources::SharedBytes> {
+        match self {
+            Self::Readable(bytes) => Some(bytes),
+            Self::Missing => None,
+            #[cfg(windows)]
+            Self::OpenUnreadable => None,
+        }
+    }
+
+    pub(crate) fn selects_file_fact(&self) -> bool {
+        match self {
+            Self::Readable(_) | Self::Missing => true,
+            #[cfg(windows)]
+            Self::OpenUnreadable => false, // selected by the typed open ledger
+        }
+    }
+}
+
+impl<P: SnapshotProvider> RecordingInputs<P> {
+    /// Selected authored Library Sites only. The existing Original opened
+    /// reader distinguishes an actual pre-payload OS denial from allocation,
+    /// cancellation, post-open I/O and admission errors.
+    pub(crate) fn read_fixed_library_baseline(
+        &self, root: &Path, path: &Path, limit: usize,
+        work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+    ) -> io::Result<FixedLibraryBaseline> {
+        use FixedLibraryBaseline as Seen;
+        if !root.is_absolute()
+            || path.strip_prefix(root).ok() != Some(Path::new(crate::runner_host::workspace_capture::LIBRARY_SITES_BASELINE))
+        {
+            return Err(invalid("fixed library baseline path differs from its selected root"));
+        }
+        work.checkpoint()?;
+        #[cfg(not(windows))]
+        {
+            // Unix can successfully open a directory and fail its first read.
+            // No fixed payload-failure currentness is issued on that host.
+            Ok(match self.read_policy_candidate(path, limit)? {
+                Some(bytes) => Seen::Readable(bytes),
+                None => Seen::Missing,
+            })
+        }
+        #[cfg(windows)]
+        {
+            let path = canonical_path(path);
+            self.record_search_folder(path.parent().ok_or_else(|| invalid("fixed baseline parent absent"))?)?;
+            let opened = std::cell::Cell::new(false);
+            let admitted = std::cell::Cell::new(None);
+            let first = std::cell::RefCell::new(None);
+            let result = self.provider.read_original_open_admitted(
+                &path, limit, work,
+                &mut || {
+                    if opened.replace(true) {
+                        let error = invalid("provider repeated the fixed baseline open");
+                        if first.borrow().is_none() { *first.borrow_mut() = Some(error); }
+                        return Err(io::ErrorKind::Other.into());
+                    }
+                    Ok(dm_preprocess::OriginalRawOpenDecision::Read)
+                },
+                &mut |size| {
+                    let status = if !opened.get() || admitted.get().is_some() || size > limit {
+                        Err(invalid("provider requested invalid fixed baseline payload admission"))
+                    } else {
+                        admitted.set(Some(size));
+                        work.checkpoint()
+                    };
+                    match status {
+                        Ok(()) => Ok(()),
+                        Err(error) => {
+                            if first.borrow().is_none() { *first.borrow_mut() = Some(error); }
+                            Err(io::ErrorKind::Other.into())
+                        }
+                    }
+                },
+            );
+            if let Some(actual) = first.into_inner() { return Err(actual); }
+            match result? {
+                OriginalOpenedRead::Read(read) if opened.get() && admitted.get().is_some() => {
+                    let bytes = self.record_policy_read_result(&path, admitted.get().unwrap(), Ok(Some(read)))?
+                        .ok_or_else(|| invalid("actual readable fixed baseline was not recorded"))?;
+                    Ok(Seen::Readable(bytes.into()))
+                }
+                OriginalOpenedRead::SourceOpenFailed(error) if !opened.get() => {
+                    if error.kind() == io::ErrorKind::NotFound && matches!(error.raw_os_error(), Some(2 | 3)) {
+                        self.record_policy_read_result(&path, limit, Err(error))?;
+                        return Ok(Seen::Missing);
+                    }
+                    // Windows File::open also issues ACCESS_DENIED on a
+                    // directory. Keep the exact code, not synthetic absence.
+                    if !matches!(error.raw_os_error(), Some(5 | 32 | 33)) { return Err(error); }
+                    let before = self.snapshot.lock().map_err(|_| invalid("input capture mutex poisoned"))?
+                        .opened_reads.clone();
+                    let prepaid = work.reserve(before.probe_pregrant(&path)?)?;
+                    let status = OriginalReadOpenStatus::capture_using(&error, work)?;
+                    let next = before.recorded_using(&path, status, prepaid, work)?;
+                    let mut snapshot = self.snapshot.lock().map_err(|_| invalid("input capture mutex poisoned"))?;
+                    if !snapshot.opened_reads.same_owner(&before) {
+                        return Err(io::Error::new(io::ErrorKind::Interrupted, "fixed baseline open capture changed before commit"));
+                    }
+                    snapshot.opened_reads = next;
+                    Ok(Seen::OpenUnreadable)
+                }
+                _ => Err(invalid("provider did not issue the fixed baseline's exact open/read result")),
+            }
+        }
+    }
+}
 pub(super) fn filesystem_bounded_read(path: &Path, limit: usize) -> io::Result<CapturedInputRead> {
     filesystem_bounded_read_admitted(path, limit, &mut |_| Ok(()))
 }

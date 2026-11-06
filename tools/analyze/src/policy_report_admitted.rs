@@ -23,8 +23,8 @@ fn read_baseline(path:&Path,work:&dyn Work)->io::Result<BTreeMap<String,baseline
  work.reserve(add(work,mul(work,text.len().saturating_add(1),128)?,mul(work,lines,4096)?)?)?;Ok(baseline::parse_sites_text(text))
 }
 /// Fixed library baseline judgment over actual captured bytes and finding
-/// lines. None means proven missing; readable invalid UTF-8 yields the same
-/// empty allowance as the ordinary reader.
+/// lines. None means proven missing or unreadable under the fixed role.
+/// Readable invalid UTF-8 also yields the ordinary reader's empty allowance.
 pub fn judge_captured_sites(
     meta: &crate::lint::Meta, scope: &LintScope, source_lines: &[String], run: &Run, root: &Path,
     bytes: Option<&[u8]>, work: &dyn Work,

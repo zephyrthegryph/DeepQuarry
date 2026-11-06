@@ -1,4 +1,54 @@
 use super::*;
+
+#[cfg(windows)]
+#[test]
+fn fixed_library_open_fact_restats_real_denial_and_never_records_admission_errors() {
+    use dm_preprocess::source_arena_credit::{SourceArenaCredit, SourceArenaWork};
+    use std::{os::windows::fs::OpenOptionsExt, sync::atomic::{AtomicUsize, Ordering}};
+    let root = crate::test_scratch::dir("fixed-library-open-fact");
+    let path = root.join(crate::runner_host::workspace_capture::LIBRARY_SITES_BASELINE);
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(&path, b"actual baseline").unwrap();
+    let work = crate::query_db::QueryDb::default();
+    let held = std::fs::OpenOptions::new().read(true).share_mode(0).open(&path).unwrap();
+    let inputs = RecordingInputs::new(FileSystemInputs, 1);
+    assert!(matches!(inputs.read_fixed_library_baseline(&root, &path, 64, &work).unwrap(),
+        FixedLibraryBaseline::OpenUnreadable));
+    let facts = inputs.snapshot().unwrap();
+    assert!(!facts.contains_file(&path));
+    assert!(!facts.negative_files.contains(&path));
+    assert!(!facts.opened_reads.get(&path).unwrap().is_readable());
+    assert!(facts.restat(&FileSystemInputs).unwrap().changed.is_empty());
+    drop(held);
+    assert!(facts.restat(&FileSystemInputs).unwrap().changed.contains(&path));
+
+    struct Fault(AtomicUsize, i32);
+    impl SourceArenaWork for Fault {
+        fn checkpoint(&self) -> io::Result<()> {
+            if self.0.fetch_add(1, Ordering::Relaxed) == 2 {
+                return Err(io::Error::from_raw_os_error(self.1));
+            }
+            Ok(())
+        }
+        fn reserve(&self, _: usize) -> io::Result<SourceArenaCredit> {
+            panic!("operation fault cannot reserve an open-status fact")
+        }
+        fn grow(&self, _: &mut SourceArenaCredit, _: usize) -> io::Result<()> { unreachable!() }
+        fn shrink(&self, _: &mut SourceArenaCredit, _: usize) -> io::Result<()> { unreachable!() }
+    }
+    for raw in [2, 32, 1450] {
+        let inputs = RecordingInputs::new(FileSystemInputs, 1);
+        let fault = Fault(AtomicUsize::new(0), raw);
+        let actual = inputs.read_fixed_library_baseline(&root, &path, 64, &fault)
+            .err().expect("actual pre-payload operational refusal");
+        assert_eq!(actual.raw_os_error(), Some(raw));
+        let facts = inputs.snapshot().unwrap();
+        assert!(!facts.contains_file(&path));
+        assert!(!facts.negative_files.contains(&path));
+        assert!(facts.opened_reads.get(&path).is_none());
+    }
+}
+
 #[test]
 fn oversized_actual_file_is_refused_without_a_recorded_payload() {
     let root = crate::test_scratch::dir("bounded-policy-large");

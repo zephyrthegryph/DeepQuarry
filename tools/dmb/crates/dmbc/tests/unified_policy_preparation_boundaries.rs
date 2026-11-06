@@ -1089,7 +1089,58 @@ fn public_selected_v2_library_sites_match_legacy_fingerprints_and_ceilings() {
     fs::remove_file(root.join(baseline)).unwrap();
     fs::create_dir(root.join(baseline)).unwrap();
     write_request("ci_library_sites");
-    let nonregular = run();
-    assert_eq!(nonregular.status.code(), Some(2));
-    assert!(nonregular.stdout.is_empty(), "nonregular baseline cannot publish a partial report");
+    #[cfg(not(windows))]
+    {
+        let nonregular = run();
+        assert_eq!(nonregular.status.code(), Some(2));
+        assert!(nonregular.stdout.is_empty(), "nonregular baseline cannot publish a partial report");
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(
+            "[lint.library_layering]\n",
+        ));
+        let baseline_path = root.join(baseline);
+        let check_empty = |output: std::process::Output| {
+            assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+            let end = output.stdout.iter().position(|byte| *byte == b'\n').expect("verified unreadable baseline terminal");
+            let terminal: TerminalV2 = serde_json::from_slice(&output.stdout[..end]).unwrap();
+            terminal.require_using(roster, JudgmentV2::CiLibrarySites).unwrap();
+            let report = &output.stdout[end + 1..];
+            assert_eq!(terminal.report, Seal { length: report.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(report)) });
+            let text = std::str::from_utf8(report).unwrap();
+            assert!(text.contains("FAIL (2 new sites)"), "{text}");
+            let report_path = transport.join("library-sites-unreadable-report.txt");
+            fs::write(&report_path, report).unwrap();
+            let legacy = daemon.run_program(&oracle, &[root.as_os_str(), report_path.as_os_str(),
+                OsStr::new("--with-library-ci")], Duration::from_secs(120)).unwrap();
+            assert!(legacy.status.success(), "legacy unreadable Engine mismatch: {}", String::from_utf8_lossy(&legacy.stderr));
+            terminal.frame.policy_revision
+        };
+        assert_eq!(fs::File::open(&baseline_path).unwrap_err().raw_os_error(), Some(5));
+        let directory = check_empty(run());
+        assert!(baseline_path.is_dir());
+        fs::remove_dir(&baseline_path).unwrap();
+        put(&root, baseline, bytes(&[row, row]));
+
+        // Hold the OS file handle through daemon freshness and the real old
+        // Engine comparison. This is Windows share denial, not chmod/mock IO.
+        let held = fs::OpenOptions::new().read(true).share_mode(0).open(&baseline_path).unwrap();
+        assert!(matches!(fs::File::open(&baseline_path).unwrap_err().raw_os_error(), Some(32 | 33)));
+        let denied = check_empty(run());
+        assert_ne!(directory, denied, "actual Windows denial code contributes to its revision");
+        drop(held);
+
+        // Same exact physical path and bytes now open successfully. Neither a
+        // retained empty counter nor denied-open role may masquerade as clean.
+        let readable = run();
+        assert_eq!(readable.status.code(), Some(0), "{}", String::from_utf8_lossy(&readable.stderr));
+        let end = readable.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+        let terminal: TerminalV2 = serde_json::from_slice(&readable.stdout[..end]).unwrap();
+        terminal.require_using(roster, JudgmentV2::CiLibrarySites).unwrap();
+        assert_ne!(terminal.frame.policy_revision, denied);
+        assert!(std::str::from_utf8(&readable.stdout[end + 1..]).unwrap().contains("(baseline 2)  ok"));
+        assert_eq!(fs::read(&baseline_path).unwrap(), bytes(&[row, row]));
+    }
 }
