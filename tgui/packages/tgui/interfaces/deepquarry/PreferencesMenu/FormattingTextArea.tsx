@@ -1,11 +1,10 @@
 // DQAdd — A text area that shows the chat's emphasis as you type, in the box itself: the text is drawn formatted behind a
 // transparent textarea (same monospace font, so bold never moves a character), and Ctrl+B/I/U toggle the chat's markers
-// with the say box's own edit (tgui-say toggleMarker). The markers come from the server (GLOB.speech_toppings).
+// with the say box's own edit (tgui/dq toggleMarker). The markers come from the server (GLOB.speech_toppings).
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import { FormattedBackdrop } from 'tgui-say/LanguagePreview';
-import { SHORTCUT_MARKERS, toggleMarker } from 'tgui-say/shortcuts';
+import { FormattedBackdrop, SHORTCUT_MARKERS, toggleMarker } from 'tgui/dq';
 
 /// The chat's markers; the say box's defaults until the server's arrive.
 export const DEFAULT_MARKERS: Record<string, string> = {

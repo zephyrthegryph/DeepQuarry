@@ -1,7 +1,5 @@
 import {
   CheckboxInput,
-  type FeatureNumeric,
-  FeatureSliderInput,
   type FeatureToggle,
 } from '../base';
 
@@ -57,20 +55,6 @@ export const tgui_swapped_buttons: FeatureToggle = {
   component: CheckboxInput,
 };
 
-export const TGUI_SAY: FeatureToggle = {
-  name: 'Say: Use TGUI',
-  category: 'UI',
-  description: 'Use TGUI for Say input.',
-  component: CheckboxInput,
-};
-
-export const TGUI_SAY_LIGHT_MODE: FeatureToggle = {
-  name: 'Say: Light mode',
-  category: 'UI',
-  description: 'Sets TGUI Say to use a light mode.',
-  component: CheckboxInput,
-};
-
 export const ui_scale: FeatureToggle = {
   name: 'Toggle UI scaling',
   category: 'UI',
@@ -78,40 +62,19 @@ export const ui_scale: FeatureToggle = {
   component: CheckboxInput,
 };
 
-export const tgui_say_emotes: FeatureToggle = {
-  name: 'Say: Use TGUI For Emotes',
-  category: 'UI',
-  description: 'Sets whether to use TGUI Say for emotes.',
-  component: CheckboxInput,
-};
-
 export const TGUI_ENABLE_SPELLCHECK: FeatureToggle = {
   name: 'TGUI: Spellcheck',
   category: 'UI',
-  description: 'Enables spellchecking on TGUI text areas and TGUI Say.',
+  description: 'Enables spellchecking on TGUI text areas.',
   component: CheckboxInput,
 };
 
 export const TGUI_SAY_PREVIEW: FeatureToggle = {
-  name: 'Say: Language and formatting preview',
+  name: 'Chat input: Language and formatting preview',
   category: 'UI',
   description:
     'Shows how a message with languages or formatting will read as you type it.',
   component: CheckboxInput,
-};
-
-export const tgui_say_height: FeatureNumeric = {
-  name: 'Say: TGUI Height (Lines)',
-  category: 'UI',
-  description: 'Amount of lines to show in the tgui say input.',
-  component: FeatureSliderInput,
-};
-
-export const tgui_say_width: FeatureNumeric = {
-  name: 'Say: TGUI Width (Pixel)',
-  category: 'UI',
-  description: 'The width to show in the tgui say input.',
-  component: FeatureSliderInput,
 };
 
 export const windowflashing: FeatureToggle = {

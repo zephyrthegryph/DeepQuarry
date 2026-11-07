@@ -71,21 +71,6 @@ TYPE_TABLE(/datum/preference/choiced/tgui_layout, pref_choices, list(TGUI_LAYOUT
 		// Force it to reload either way
 		tgui.update_tgui_static_data(client.mob)
 
-/datum/preference/toggle/tgui_say
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "TGUI_SAY"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/tgui_say_light
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "TGUI_SAY_LIGHT_MODE"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/tgui_say_light/apply_to_client(client/client, value)
-	client.tgui_say?.load()
-
 /datum/preference/toggle/tgui_say_preview
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "TGUI_SAY_PREVIEW"
@@ -93,53 +78,13 @@ TYPE_TABLE(/datum/preference/choiced/tgui_layout, pref_choices, list(TGUI_LAYOUT
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/tgui_say_preview/apply_to_client(client/client, value)
-	client.tgui_say?.load()
+	client.send_chat_language_rules()
 
 /datum/preference/toggle/tgui_use_spellcheck
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "TGUI_ENABLE_SPELLCHECK"
 	default_value = TRUE
 	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/tgui_say_emotes
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "tgui_say_emotes"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/tgui_say_emotes/apply_to_client(client/client, value)
-	client.tgui_say?.load()
-
-/datum/preference/numeric/tgui_say_height
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "tgui_say_height"
-	savefile_identifier = PREFERENCE_PLAYER
-
-	minimum = 1
-	maximum = 20
-	step = 1
-
-/datum/preference/numeric/tgui_say_height/create_default_value()
-	return 1
-
-/datum/preference/numeric/tgui_say_height/apply_to_client(client/client, value)
-	client.tgui_say?.load()
-
-
-/datum/preference/numeric/tgui_say_width
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "tgui_say_width"
-	savefile_identifier = PREFERENCE_PLAYER
-
-	minimum = 360
-	maximum = 800
-	step = 20
-
-/datum/preference/numeric/tgui_say_width/create_default_value()
-	return 360
-
-/datum/preference/numeric/tgui_say_width/apply_to_client(client/client, value)
-	client.tgui_say?.load()
 
 /datum/preference/text/preset_colors
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -161,7 +106,6 @@ TYPE_TABLE(/datum/preference/choiced/tgui_layout, pref_choices, list(TGUI_LAYOUT
 		return
 
 	client.refresh_tgui()
-	client.tgui_say?.load()
 
 /// Enables flashing the window in your task tray for important events
 /datum/preference/toggle/window_flashing

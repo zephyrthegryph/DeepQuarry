@@ -570,3 +570,31 @@ GLOBAL_LIST_INIT(dq_builtin_client_commands, list(".northeast", ".northwest", ".
 		if(problem)
 			failures += "the stat panel menu command [command] [problem]"
 	TEST_ASSERT(!length(failures), "dead commands: [jointext(failures, "; ")]")
+
+/// Every speech hotkey (the say popup is gone) is a binding whose command focuses the chat input row in its channel, and every channel the
+/// row offers is one a hotkey can open.
+/datum/unit_test/dq_speech_hotkeys_focus_chat_input
+
+/datum/unit_test/dq_speech_hotkeys_focus_chat_input/Run()
+	var/list/expected = list(
+		"say" = "Say-verb",
+		"emote" = "Me-verb",
+		"subtle" = "Subtle-verb",
+		"whisper" = "Whisper-verb",
+		"ooc" = ".dq-ooc-input",
+		"looc" = ".dq-looc-input",
+		"radio" = ".dq-radio-input",
+	)
+	var/list/rows = list()
+	for(var/list/row as anything in keybinding_definitions())
+		rows[row[1]] = row[4]
+	for(var/id in expected)
+		TEST_ASSERT_EQUAL(rows[id], expected[id], "the [id] hotkey sends its speech command")
+	for(var/channel in list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNEL, WHIS_CHANNEL, SUBTLE_CHANNEL, OOC_CHANNEL, LOOC_CHANNEL))
+		TEST_ASSERT(channel in GLOB.chat_input_channels, "[channel] can be focused in the chat input row")
+	TEST_ASSERT(!(ADMIN_CHANNEL in GLOB.chat_input_channels), "the admin channel is not a chat input channel")
+	var/datum/preferences/dq_test_stub/P = new()
+	var/list/save = list("TGUI_SAY" = 1, "TGUI_SAY_LIGHT_MODE" = 0, "tgui_say_height" = 1, "tgui_say_width" = 360, "tgui_say_emotes" = 1, "CHAT_INLINE_INPUT" = 1, "TGUI_SAY_PREVIEW" = 1)
+	P.drop_retired_player_keys(save)
+	TEST_ASSERT_EQUAL(length(save), 1, "an old save's say popup keys are dropped and the preview setting is kept")
+	TEST_ASSERT(save["TGUI_SAY_PREVIEW"] == 1, "the preview setting is kept")

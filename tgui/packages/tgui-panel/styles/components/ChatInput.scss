@@ -18,8 +18,8 @@
   font-weight: 700;
 }
 
-// The channel button, like the say popup's: one button on the left, coloured
-// by channel (radio.$mode-colors, the say popup's table).
+// The channel button: one button on the left, coloured by channel
+// (radio.$mode-colors).
 $channel-colors: radio.$mode-colors;
 
 .ChatInput__channel,
@@ -128,4 +128,11 @@ $channel-colors: radio.$mode-colors;
   &:focus {
     border-color: var(--chat-accent, #{console.$console-accent});
   }
+}
+
+// The row and, above it, the live speech preview (tgui/styles/dq/speech-preview.scss).
+.ChatInputBox {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }

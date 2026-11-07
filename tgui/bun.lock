@@ -82,17 +82,6 @@
         "zod": "^4.4.3",
       },
     },
-    "packages/tgui-say": {
-      "name": "tgui-say",
-      "version": "1.0.0",
-      "dependencies": {
-        "common": "workspace:*",
-        "react": "^19.2.6",
-        "react-dom": "^19.2.6",
-        "tgui": "workspace:*",
-        "tgui-core": "^5.10.0",
-      },
-    },
     "packages/tgui-setup": {
       "name": "tgui-setup",
       "version": "0.0.1",
@@ -775,7 +764,6 @@
 
     "tgui-panel": ["tgui-panel@workspace:packages/tgui-panel"],
 
-    "tgui-say": ["tgui-say@workspace:packages/tgui-say"],
 
     "tgui-setup": ["tgui-setup@workspace:packages/tgui-setup"],
 

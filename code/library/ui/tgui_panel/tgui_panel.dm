@@ -13,6 +13,8 @@
 	var/broken = FALSE
 	var/initialized_at = 0
 	var/oldchat = FALSE
+	/// A long entry's packets received so far (speech.dm handle_packets()).
+	var/tmp/list/partial_packets
 	/// Each client notifies on protected playback, so this prevents spamming admins.
 	var/static/admins_warned = 0 // COOLDOWN, shared by every panel
 
@@ -112,12 +114,9 @@ CAPABILITIES(/datum/tgui_panel)
 		// The page is up, so the chat pane can move to where the preference wants it without interrupting the load.
 		client()?.chat_layout_sync()
 		return TRUE
-	// The chat input row speaks through the say modal: same messages, same entry handling and typing bubbles.
-	if(type == "entry" || type == "typing" || type == "thinking" || type == "open" || type == "close" || type == "lenwarn")
-		// The row was focused: refresh the radio prefixes the speaker has now.
-		if(type == "open")
-			client()?.chat_send_radio_options()
-		return client()?.tgui_say?.on_message(type, payload, href_list)
+	// The chat input row: speech, typing bubbles and the live preview's rules (code/content/client/chat_speech.dm).
+	if(client()?.chat_speech_message(type, payload, href_list))
+		return TRUE
 	// The chat page pins, floats or resizes the chat pane.
 	if(type == "layout/pin")
 		client()?.chat_pin(payload?["mode"], payload?["via"], islist(payload?["at"]) ? payload["at"] : null, payload?["share"])

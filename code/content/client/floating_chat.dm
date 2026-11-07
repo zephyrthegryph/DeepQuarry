@@ -4,9 +4,8 @@
 // and its scrollback are the same page in every layout. The float window has no title bar: the chat page draws a header strip
 // that drags it and handles on every edge and corner that resize it; dropping it over the right-hand column docks it, and dragging a docked chat's tab row pops it out (tgui-panel/layout); it reports the pin and the share of the
 // column over the panel's messages (layout/pin, layout/share), and this file decides where the pane lives.
-// Typing goes through the chat page's input row (tgui-panel/input), whose messages the panel forwards to
-// tgui_say (see tgui_panel.dm), so the speech path is the popup's. The T/M/O hotkeys focus the row; with the
-// inline-input preference off they open the tgui_say popup.
+// Typing goes through the chat page's input row (tgui-panel/input); the panel speaks what it sends (tgui_panel/speech.dm). Every
+// speech hotkey focuses the row in its channel (chat_focus_input()).
 
 /// Where the chat pane is: the bottom or top of the right-hand column (pinned), or its own window.
 #define CHAT_MODE_BOTTOM "bottom"
@@ -78,18 +77,13 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 /client/var/chat_layout_mode = CHAT_MODE_UNKNOWN
 /client/var/chat_layout_share = CHAT_SHARE_DEFAULT
 
-/// Whether the T/M/O hotkeys focus the chat page's input row instead of opening the popup.
-/datum/preference/toggle/chat_inline_input
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "CHAT_INLINE_INPUT"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
+/// The channels a speech hotkey can focus the chat input row in (tgui-panel/input/model.ts INPUT_CHANNELS).
+GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNEL, WHIS_CHANNEL, SUBTLE_CHANNEL, OOC_CHANNEL, LOOC_CHANNEL))
 
-/// Sends a speech hotkey to the chat input row. Returns TRUE when the row took it, FALSE to open the popup instead.
+/// Sends a speech hotkey to the chat input row in `channel`; the row hands focus back to the map after sending or on Escape.
+/// Returns TRUE when the row took it, FALSE while the chat page is not loaded (the caller falls back to the plain verb prompt).
 /client/proc/chat_focus_input(channel)
-	if(channel != SAY_CHANNEL && channel != ME_CHANNEL && channel != OOC_CHANNEL && channel != LOOC_CHANNEL)
-		return FALSE
-	if(!prefs?.read_preference(/datum/preference/toggle/chat_inline_input))
+	if(!(channel in GLOB.chat_input_channels))
 		return FALSE
 	if(!tgui_panel?.is_ready())
 		return FALSE
@@ -106,6 +100,24 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 	if(chat_focus_input(OOC_CHANNEL))
 		return
 	winset(src, null, "command=ooc")
+
+/// The LOOC hotkey: the input row in LOOC, else the LOOC prompt.
+/client/verb/looc_input()
+	set name = ".dq-looc-input"
+	set hidden = TRUE
+
+	if(chat_focus_input(LOOC_CHANNEL))
+		return
+	winset(src, null, "command=looc")
+
+/// The radio hotkey: the input row in Radio (the department picked last, Common at first), else the say prompt.
+/client/verb/radio_input()
+	set name = ".dq-radio-input"
+	set hidden = TRUE
+
+	if(chat_focus_input(RADIO_CHANNEL))
+		return
+	mob?.say_verb_old()
 
 /// The mode the preferences ask for.
 /proc/chat_mode_for(floating, side)

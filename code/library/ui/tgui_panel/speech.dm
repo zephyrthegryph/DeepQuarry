@@ -1,5 +1,8 @@
+// The chat input row's long entries arrive in packets (tgui's sendMessage splits them); the panel reassembles them here. What the row's
+// messages mean (speech, typing bubbles, the live preview's rules) is the client's, in code/content/client/chat_speech.dm.
 
-/datum/tgui_say/proc/handle_packets(id, total_packets, packet, mob/user)
+/// A long entry arrives in packets (tgui's sendMessage splits it); returns the whole payload once the last one is in, else null.
+/datum/tgui_panel/proc/handle_packets(id, total_packets, packet, mob/user)
 	id = text2num(id)
 
 	var/total = text2num(total_packets)
@@ -27,9 +30,9 @@
 	cancel_after(src, "packet_timeout")
 	partial_packets = null
 	if (!rustg_json_is_valid(assembled_payload))
-		log_tgui(client()?.mob, "Error: Invalid JSON")
-		return
+		log_tgui(user, "Error: Invalid JSON")
+		return null
 	return json_decode(assembled_payload)
 
-/datum/tgui_say/proc/clear_oversized_payload()
+/datum/tgui_panel/proc/clear_oversized_payload()
 	partial_packets = null

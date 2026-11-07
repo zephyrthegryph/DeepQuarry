@@ -11,18 +11,15 @@
 	*/ // Removal Start
 	return I
 
+// The speech hotkeys (keybinding_defaults.dm) focus the chat input row in their channel (/client/proc/chat_focus_input); until the chat
+// page has loaded they fall back to the plain verb prompt.
+
 /mob/verb/say_wrapper()
 	set name = "Say verb"
 	set hidden = TRUE
 
 	if(client?.chat_focus_input(SAY_CHANNEL))
 		return
-
-	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
-		winset(src, null, "command=[client.tgui_say_create_open_command(SAY_CHANNEL)]")
-		winset(src, SKIN_SAY_BROWSER, "focus=true")
-		return
-
 	say_verb_old()
 
 /mob/verb/me_wrapper()
@@ -31,23 +28,14 @@
 
 	if(client?.chat_focus_input(ME_CHANNEL))
 		return
-
-	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say) && client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_emotes))
-		winset(src, null, "command=[client.tgui_say_create_open_command(ME_CHANNEL)]")
-		winset(src, SKIN_SAY_BROWSER, "focus=true")
-		return
-
 	me_verb_old()
 
 /mob/verb/whisper_wrapper()
 	set name = "Whisper verb"
 	set hidden = TRUE
 
-	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
-		winset(src, null, "command=[client.tgui_say_create_open_command(WHIS_CHANNEL)]")
-		winset(src, SKIN_SAY_BROWSER, "focus=true")
+	if(client?.chat_focus_input(WHIS_CHANNEL))
 		return
-
 	whisper_old()
 
 /mob/verb/subtle_wrapper()
@@ -55,9 +43,6 @@
 	set hidden = TRUE
 	set desc = "Emote to nearby people (and your pred/prey)"
 
-	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say) && client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_emotes))
-		winset(src, null, "command=[client.tgui_say_create_open_command(SUBTLE_CHANNEL)]")
-		winset(src, SKIN_SAY_BROWSER, "focus=true")
+	if(client?.chat_focus_input(SUBTLE_CHANNEL))
 		return
-
 	me_verb_subtle_old()

@@ -288,6 +288,12 @@ GLOBAL_LIST_INIT(retired_player_pref_keys, list(
 	"SHOW_PROGRESS", // no reader; progress bars always show
 	"SOUND_INSTRUMENT", // no reader; the Instruments volume (sound_instruments) is the setting
 	"BROWSER_STYLED", // no reader
+	"TGUI_SAY", // the say popup is gone; speech is the chat input row
+	"TGUI_SAY_LIGHT_MODE", // the say popup is gone
+	"tgui_say_emotes", // the say popup is gone; Me and Subtle use the chat input row
+	"tgui_say_height", // the say popup is gone
+	"tgui_say_width", // the say popup is gone
+	"CHAT_INLINE_INPUT", // the chat input row is the only speech input
 ))
 
 /// Character settings that were deleted. A slot that still holds one drops it on load.

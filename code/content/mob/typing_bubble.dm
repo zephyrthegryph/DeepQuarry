@@ -53,23 +53,3 @@
 /mob/Logout()
 	remove_all_indicators()
 	return ..()
-
-/** Sets the mob as "thinking" - with indicator and the TRAIT_THINKING_IN_CHARACTER trait */
-/datum/tgui_say/proc/start_thinking(channel)
-	if(!window_open)
-		return FALSE
-	return client().start_thinking(channel)
-
-/** Removes typing/thinking indicators and flags the mob as not thinking */
-/datum/tgui_say/proc/stop_thinking(channel)
-	return client().stop_thinking(channel)
-
-/**
- * Handles the user typing. After a brief period of inactivity,
- * signals the client mob to revert to the "thinking" icon.
- */
-/datum/tgui_say/proc/start_typing(channel)
-	if(!window_open)
-		return FALSE
-	return client().start_typing(channel)
-

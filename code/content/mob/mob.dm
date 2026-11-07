@@ -363,7 +363,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 		to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=[REF(src)];flavor_change=1'>Change</a>")))
 
 /// Flavor text as players read it: "||" pairs hide spoilers, the chat's emphasis markers (GLOB.speech_toppings) style the rest, line breaks kept.
-/// The character setup's live preview renders the same rules (tgui-say FormattedText).
+/// The character setup's live preview renders the same rules (tgui/dq FormattedText).
 /proc/dq_render_flavor(text)
 	var/list/parts = splittext(text, "||")
 	. = ""
