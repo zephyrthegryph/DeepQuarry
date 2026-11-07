@@ -437,8 +437,10 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 		A.base_turf = new_base
 
 	// Actually do the movement of everything - This replaces origin.move_contents_to(destination)
+	var/translate_start = TICK_USAGE_REAL
 	translate_turfs(turf_translation, current_location().landing_area(), current_location().base_turf)
 	rel_set(src, nameof(current_location), destination)
+	var/translate_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - translate_start)
 
 	// If there's a zlevel above our destination, paint in a ceiling on it so we retain our air
 	if(ceiling_type && HasAbove(current_location().z))
@@ -458,7 +460,9 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 	var/list/moved_turfs = list()
 	for(var/turf/source in turf_translation)
 		moved_turfs += turf_translation[source]
+	var/power_start = TICK_USAGE_REAL
 	SSmachines.power_reregister(moved_turfs)
+	log_world("SHUTTLE_MOVE_PROFILE: [src] to [destination]: translate_turfs [round(translate_ms, 0.1)] ms, power re-register of [length(moved_turfs)] turf(s) [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - power_start), 0.1)] ms")
 	for(var/obj/item/radio/intercom/I in radios)
 		if(istype(I))
 			I.update_broadcast_tiles()
