@@ -349,7 +349,7 @@ pub use prepared::{PreparedInputArtifacts, PreparedInputPayload};
 mod source_acquisition;
 #[path = "input_source_original.rs"]
 mod source_original;
-pub(crate) use source_acquisition::recorded_source_receipt_storage;
+pub(crate) use source_acquisition::{exact_open_receipt_charge, recorded_source_receipt_storage};
 pub(crate) use source_acquisition::SemanticSourceEvidence;
 pub(crate) use source_acquisition::{
     visit_raw_source_backing, recorded_source_original, recorded_source_receipt_original, RecordedSourceOriginal, normalize_recorded_policy_original,

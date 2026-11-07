@@ -49,25 +49,36 @@ impl SourceArenaCreditOwner for Allocation{
  fn reserved_bytes(&self)->usize{self.bytes.load(Ordering::Acquire)}
  fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){visit(std::ptr::from_ref(self)as usize,Self::metadata_bytes())}
 }
+fn split_owned_allocations<const N: usize>(
+    ledger: &mut super::raw_input_credits::Ledger,
+    donor: &Allocation,
+    sizes: [usize; N],
+    admit_extra: impl FnOnce(&mut super::raw_input_credits::Ledger, usize) -> io::Result<()>,
+) -> io::Result<[AllocationHandle; N]> {
+    if !ledger.has_source_arena(donor) { return Err(wrong()); }
+    let bookkeeping = N.checked_mul(raw_input_credits::NODE).ok_or_else(oom)?;
+    let transfer = sizes.iter().try_fold(bookkeeping, |total, bytes| {
+        total.checked_add(*bytes).ok_or_else(oom)
+    })?;
+    let remaining = donor.reserved_bytes().checked_sub(transfer).ok_or_else(oom)?;
+    let extra = N.checked_mul(Allocation::metadata_bytes()).ok_or_else(oom)?;
+    admit_extra(ledger, extra)?;
+    let children = sizes.map(|bytes| AllocationHandle::new(Arc::new(Allocation {
+        bytes: AtomicUsize::new(bytes), domain: donor.domain.clone(),
+    })));
+    ledger.partition_source_arena(donor, remaining, children.each_ref().map(AllocationHandle::arc))?;
+    Ok(children)
+}
+
 fn split_owned_text(
     ledger: &mut super::raw_input_credits::Ledger,
     donor: &Allocation,
     capacity: usize,
     admit_extra: impl FnOnce(&mut super::raw_input_credits::Ledger, usize) -> io::Result<()>,
 ) -> io::Result<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)> {
-    if !ledger.has_source_arena(donor) { return Err(wrong()); }
-    let control = SourceText::source_arena_control_bytes()?;
-    let transfer = capacity.checked_add(control)
-        .and_then(|n| n.checked_add(2 * raw_input_credits::NODE)).ok_or_else(oom)?;
-    let remaining = donor.reserved_bytes().checked_sub(transfer).ok_or_else(oom)?;
-    let extra = 2 * Allocation::metadata_bytes();
-    admit_extra(ledger, extra)?;
-    let create = |bytes| AllocationHandle::new(Arc::new(Allocation {
-        bytes: AtomicUsize::new(bytes), domain: donor.domain.clone(),
-    }));
-    let payload = create(capacity);
-    let backing = create(control);
-    ledger.partition_source_arena(donor, remaining, [payload.arc(), backing.arc()])?;
+    let [payload, backing] = split_owned_allocations(
+        ledger, donor, [capacity, SourceText::source_arena_control_bytes()?], admit_extra,
+    )?;
     Ok((payload.into_credit(), backing.into_credit().into_control()))
 }
 
@@ -124,6 +135,18 @@ impl QueryDb{
  }
 }
 impl SourceArenaWork for QueryDb{
+ fn split_original_receipt(&self, donor: &mut SourceArenaCredit, receipt: &(dyn std::any::Any + Send + Sync))
+     -> io::Result<Option<dm_preprocess::source_arena_credit::SourceArenaControlCredit>> {
+     self.checkpoint()?;
+     let actual = allocation(self, donor)?;
+     let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
+     let mut ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e| e.into_inner());
+     let bytes = crate::input_snapshot::exact_open_receipt_charge(receipt)?;
+     let [receipt] = split_owned_allocations(&mut ledger, actual, [bytes],
+         |ledger, extra| self.admit_source_arena(ledger, extra))?;
+     Ok(Some(receipt.into_credit().into_control()))
+ }
+
  fn split_original_text(&self, donor: &mut SourceArenaCredit, capacity: usize)
      -> io::Result<Option<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
      self.checkpoint()?;
@@ -254,6 +277,18 @@ impl<'a> HeldSourceWork<'a>{
  fn actual<'credit>(state:&HeldSourceState<'_>,credit:&'credit SourceArenaCredit)->io::Result<&'credit Allocation>{let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;if !actual.same_domain(&Arc::downgrade(state.domain))||!state.ledger.has_source_arena(actual){return Err(wrong())}Ok(actual)}
 }
 impl SourceArenaWork for HeldSourceWork<'_>{
+ fn split_original_receipt(&self, donor: &mut SourceArenaCredit, receipt: &(dyn std::any::Any + Send + Sync))
+     -> io::Result<Option<dm_preprocess::source_arena_credit::SourceArenaControlCredit>> {
+     self.checkpoint()?;
+     let mut state = self.lock()?;
+     let actual = Self::actual(&state, donor)?;
+     let budget = state.budget;
+     let bytes = crate::input_snapshot::exact_open_receipt_charge(receipt)?;
+     let [receipt] = split_owned_allocations(&mut *state.ledger, actual, [bytes],
+         |_, extra| budget.charge(extra).map_err(|_| oom()))?;
+     Ok(Some(receipt.into_credit().into_control()))
+ }
+
  fn split_original_text(&self, donor: &mut SourceArenaCredit, capacity: usize)
      -> io::Result<Option<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
      self.checkpoint()?;
@@ -328,5 +363,62 @@ mod owned_text_partition_tests {
         drop(backing);
         let held = db.source_input_admission_bytes().unwrap();
         assert_eq!(held, before - transferred);
+    }
+}
+
+#[cfg(test)]
+mod receipt_transfer_tests {
+    use super::*;
+    use crate::input_snapshot::{FileSystemInputs, RecordingInputs};
+    use dm_preprocess::{InitialEnvironment, OriginalRawOpenDecision, OriginalRawReadOutcome};
+    use dm_preprocess::source_acquisition::AcquisitionStorage;
+    use dm_preprocess::source_arena_credit::read_original_source_open_using;
+
+    #[test]
+    fn actual_opened_receipt_moves_exact_donor_bytes_and_rejects_short_or_foreign_grants() {
+        let db = QueryDb::default();
+        let foreign = QueryDb::default();
+        let root = crate::test_scratch::dir("native-owned-receipt");
+        let path = root.join("source.dm");
+        std::fs::write(&path, b"/datum/owned_receipt
+").unwrap();
+        let inputs = RecordingInputs::new(FileSystemInputs, 0)
+            .with_initial_environment(InitialEnvironment::OriginalChecker0290);
+        let OriginalRawReadOutcome::Acquired(lease) = read_original_source_open_using(
+            &inputs, &path, 1024, &db, &mut || Ok(OriginalRawOpenDecision::Read),
+        ).unwrap() else { panic!("actual exact opened receipt") };
+        let mut expected = None;
+        lease.visit_storage(|storage| {
+            let AcquisitionStorage::Receipt { value, .. } = storage else { return };
+            let bytes = crate::input_snapshot::exact_open_receipt_charge(value).unwrap();
+            assert!(expected.replace(bytes).is_none());
+            let transferred = bytes + raw_input_credits::NODE;
+            let mut short = SourceArenaWork::reserve(&db, transferred - 1).unwrap();
+            let mut donor = SourceArenaWork::reserve(&db, transferred + 31).unwrap();
+            let before = db.source_input_admission_bytes().unwrap();
+            assert_eq!(SourceArenaWork::split_original_receipt(&db, &mut short, value).err().unwrap().kind(),
+                io::ErrorKind::OutOfMemory);
+            assert_eq!(SourceArenaWork::split_original_receipt(&foreign, &mut donor, value).err().unwrap().kind(),
+                io::ErrorKind::InvalidInput);
+            assert_eq!(short.reserved_bytes(), transferred - 1);
+            assert_eq!(donor.reserved_bytes(), transferred + 31);
+            assert_eq!(db.source_input_admission_bytes().unwrap(), before);
+
+            let moved = SourceArenaWork::split_original_receipt(&db, &mut donor, value).unwrap().unwrap();
+            assert_eq!(moved.reserved_bytes(), bytes);
+            assert_eq!(donor.reserved_bytes(), 31);
+            assert_eq!(db.source_input_admission_bytes().unwrap(), before + Allocation::metadata_bytes());
+            drop(moved);
+            assert_eq!(db.source_input_admission_bytes().unwrap(), before - transferred);
+        });
+        let expected = expected.unwrap();
+        let mut funded_receipts = 0;
+        lease.visit_weak_resource_objects(|observation| {
+            if let Some(credit) = observation.receipt_control_credit() {
+                funded_receipts += 1;
+                assert_eq!(credit.reserved_bytes(), expected);
+            }
+        });
+        assert_eq!(funded_receipts, 1);
     }
 }

@@ -35,6 +35,8 @@ struct Original {
 struct Binding {
     original: Arc<Original>,
     receipt: Arc<dyn Any + Send + Sync>,
+    // The erased receipt Arc drops before its control reservation.
+    receipt_credit: Option<crate::source_arena_credit::SourceArenaControlCredit>,
 }
 /// Lightweight exact acquisition binding: no lexical PreparedSource owner.
 #[derive(Clone)]
@@ -78,13 +80,24 @@ impl SourceAcquisitionLease {
     /// preparing logical lines, directives, a parser or a semantic graph.
     pub fn from_raw_original_bytes<T:Any+Send+Sync>(bytes:Vec<u8>,receipt:T)->Self{
         let(text,encoding)=decode_original_bytes(bytes);
-        Self(Arc::new(Binding{original:Arc::new(Original{source:text.into(),encoding}),receipt:Arc::new(receipt)}))
+        Self(Arc::new(Binding{original:Arc::new(Original{source:text.into(),encoding}),receipt:Arc::new(receipt),receipt_credit:None}))
     }
 
     /// Actual private constructor layout; resource geometry only, not a source
     /// authorization. Receipt-owned path buffers are supplied by its issuer.
-    pub fn raw_constructor_storage_bytes<T>()->std::io::Result<usize>{
-        std::mem::size_of::<Binding>().checked_add(std::mem::size_of::<Original>()).and_then(|n|n.checked_add(std::mem::size_of::<T>())).and_then(|n|n.checked_add(6*std::mem::size_of::<usize>())).and_then(|n|SourceText::source_arena_control_bytes().ok().and_then(|m|n.checked_add(m))).ok_or_else(||std::io::ErrorKind::OutOfMemory.into())
+    pub fn raw_constructor_storage_bytes<T>() -> std::io::Result<usize> {
+        std::mem::size_of::<Binding>().checked_add(std::mem::size_of::<Original>())
+            .and_then(|n| n.checked_add(4 * std::mem::size_of::<usize>()))
+            .and_then(|n| n.checked_add(Self::receipt_allocation_bytes::<T>().ok()?))
+            .and_then(|n| n.checked_add(SourceText::source_arena_control_bytes().ok()?))
+            .ok_or_else(|| std::io::ErrorKind::OutOfMemory.into())
+    }
+
+    fn receipt_allocation_bytes<T>() -> std::io::Result<usize> {
+        use std::alloc::Layout;
+        Layout::new::<[usize; 2]>().extend(Layout::new::<T>())
+            .map(|(layout, _)| layout.pad_to_align().size())
+            .map_err(|_| std::io::ErrorKind::OutOfMemory.into())
     }
     /// SAME raw acquisition constructor after its one admitted decoder emitted
     /// text; private receipt remains the sole native issuer authorization.
@@ -103,7 +116,7 @@ impl SourceAcquisitionLease {
             Some(prior) if encoding==SourceEncoding::Utf8&&prior.can_reuse_for_exact_raw_utf8(&text)=>prior.clone(),
             _=>text.into(),
         };
-        Self(Arc::new(Binding{original:Arc::new(Original{source,encoding}),receipt:Arc::new(receipt)}))
+        Self(Arc::new(Binding{original:Arc::new(Original{source,encoding}),receipt:Arc::new(receipt),receipt_credit:None}))
     }
     /// Construct a fresh backing after the existing decoded-byte reuse check.
     /// The funding loan grants storage only. This constructor owns the actual String.
@@ -119,9 +132,11 @@ impl SourceAcquisitionLease {
                 None => text.into(),
             },
         };
+        let receipt_credit = fund_text.split_receipt(&receipt)?;
         Ok(Self(Arc::new(Binding {
             original: Arc::new(Original { source, encoding }),
             receipt: Arc::new(receipt),
+            receipt_credit,
         })))
     }
     /// Issue resource-only weak views over the THREE actual constructor
@@ -130,7 +145,7 @@ impl SourceAcquisitionLease {
     pub fn visit_weak_resource_objects(&self,mut emit:impl FnMut(WeakAcquisitionObject)){
         emit(WeakAcquisitionObject(WeakObject::Binding(Arc::downgrade(&self.0))));
         emit(WeakAcquisitionObject(WeakObject::Original(Arc::downgrade(&self.0.original))));
-        emit(WeakAcquisitionObject(WeakObject::Receipt{owner:Arc::downgrade(&self.0.receipt),bytes:std::mem::size_of_val(self.0.receipt.as_ref())}));
+        emit(WeakAcquisitionObject(WeakObject::Receipt{owner:Arc::downgrade(&self.0.receipt),bytes:std::mem::size_of_val(self.0.receipt.as_ref()),credit:self.0.receipt_credit.clone()}));
     }
     pub fn visit_storage(&self, mut visit: impl FnMut(AcquisitionStorage<'_>)) {
         visit(AcquisitionStorage::Object {
@@ -173,6 +188,7 @@ impl SourceAcquisitionLease {
         Self(Arc::new(Binding {
             original: Arc::clone(&self.0.original),
             receipt: Arc::new(receipt),
+            receipt_credit: None,
         }))
     }
 }
@@ -241,6 +257,7 @@ impl AcquiredSource {
             lease: SourceAcquisitionLease(Arc::new(Binding {
                 original,
                 receipt: Arc::new(receipt),
+            receipt_credit: None,
             })),
         }
     }
@@ -362,8 +379,17 @@ fn decode_original_bytes(bytes:Vec<u8>)->(String,SourceEncoding){
 /// Opaque weak allocation observation. It never returns a lease/Original/model,
 /// and a live receipt loan is limited to metadata visitors on this call stack.
 #[derive(Clone)]pub struct WeakAcquisitionObject(WeakObject);
-#[derive(Clone)]enum WeakObject{Binding(std::sync::Weak<Binding>),Original(std::sync::Weak<Original>),Receipt{owner:std::sync::Weak<dyn Any+Send+Sync>,bytes:usize}}
+#[derive(Clone)]enum WeakObject{Binding(std::sync::Weak<Binding>),Original(std::sync::Weak<Original>),Receipt{owner:std::sync::Weak<dyn Any+Send+Sync>,bytes:usize,credit:Option<crate::source_arena_credit::SourceArenaControlCredit>}}
 impl WeakAcquisitionObject{
+ /// Resource loan accompanying the erased receipt weak control. The Weak
+ /// field precedes this credit so its allocation can free before refund.
+ pub fn receipt_control_credit(&self) -> Option<&crate::source_arena_credit::SourceArenaControlCredit> {
+     match &self.0 {
+         WeakObject::Receipt { credit, .. } => credit.as_ref(),
+         _ => None,
+     }
+ }
+
  pub fn resource_key(&self)->(u8,usize){match &self.0{WeakObject::Binding(w)=>(0,w.as_ptr()as usize),WeakObject::Original(w)=>(1,w.as_ptr()as usize),WeakObject::Receipt{owner,..}=>(2,owner.as_ptr()as*const()as usize)}}
  pub fn is_alive(&self)->bool{match &self.0{WeakObject::Binding(w)=>w.strong_count()!=0,WeakObject::Original(w)=>w.strong_count()!=0,WeakObject::Receipt{owner,..}=>owner.strong_count()!=0}}
  /// Fixed allocation remains reserved by this Weak even when payload is dead.
@@ -376,7 +402,7 @@ impl WeakAcquisitionObject{
   match &self.0{
    WeakObject::Binding(w)=>{let Some(owner)=w.upgrade()else{return false};visit(AcquisitionStorage::Object{address:Arc::as_ptr(&owner)as usize,bytes:std::mem::size_of::<Binding>()});true},
    WeakObject::Original(w)=>{let Some(owner)=w.upgrade()else{return false};visit(AcquisitionStorage::Object{address:Arc::as_ptr(&owner)as usize,bytes:std::mem::size_of::<Original>()});true},
-   WeakObject::Receipt{owner,bytes}=>{let Some(owner)=owner.upgrade()else{return false};visit(AcquisitionStorage::Receipt{address:Arc::as_ptr(&owner)as*const()as usize,bytes:*bytes,value:owner.as_ref()});true},
+   WeakObject::Receipt{owner,bytes,..}=>{let Some(owner)=owner.upgrade()else{return false};visit(AcquisitionStorage::Receipt{address:Arc::as_ptr(&owner)as*const()as usize,bytes:*bytes,value:owner.as_ref()});true},
   }
  }
 }

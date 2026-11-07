@@ -201,11 +201,32 @@ fn real_opened_utf8_moves_buffer_into_independent_payload_and_control_credits() 
     assert_eq!(text.as_bytes().as_ptr() as usize, pointer.get());
     assert_eq!(text.source_arena_payload_credit().unwrap().reserved_bytes(), bytes.len());
     assert_eq!(text.source_arena_control_credit().unwrap().reserved_bytes(), SourceText::source_arena_control_bytes().unwrap());
+    let mut receipt_weak = None;
+    lease.visit_weak_resource_objects(|observation| {
+        if observation.receipt_control_credit().is_some() {
+            assert!(receipt_weak.replace(observation).is_none());
+        }
+    });
+    let receipt_weak = receipt_weak.expect("actual receipt owns a transferred credit");
+    let receipt_bytes = receipt_weak.receipt_control_credit().unwrap().reserved_bytes();
+    let binding = lease.identity();
+    let original = lease.original_identity();
+    let reissued = lease.reissued(());
+    assert!(!binding.matches(&reissued));
+    assert!(original.same_live_original(&reissued.original_identity()));
+    reissued.visit_weak_resource_objects(|observation| {
+        assert!(observation.receipt_control_credit().is_none());
+    });
     let weak_text = text.downgrade();
     drop(lease);
     drop(recorder);
     drop(db);
     assert!(weak_db.upgrade().is_none());
+    assert!(!receipt_weak.is_alive());
+    assert_eq!(receipt_weak.receipt_control_credit().unwrap().reserved_bytes(), receipt_bytes);
+    assert!(receipt_bytes > 0);
+    drop(receipt_weak);
+    drop(reissued);
     assert!(weak_text.upgrade().is_some());
     drop(text);
     assert!(weak_text.upgrade().is_none());

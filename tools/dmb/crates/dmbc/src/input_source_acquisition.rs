@@ -386,6 +386,20 @@ mod tests;
 mod semantic;
 pub(crate) use semantic::SemanticSourceEvidence;
 
+/// Exact opened-read receipt ownership, separate from resource-only weak
+/// observations and from the source issuance represented by this object.
+pub(crate) fn exact_open_receipt_charge(value: &(dyn std::any::Any + Send + Sync)) -> io::Result<usize> {
+    let receipt = value.downcast_ref::<RecordedSourceReceipt>()
+        .filter(|receipt| receipt.exact_open && receipt.original_bytes.is_none())
+        .ok_or_else(|| invalid("receipt credit requires the actual exact opened UTF-8 receipt"))?;
+    use std::alloc::Layout;
+    let allocation = Layout::new::<[usize; 2]>().extend(Layout::new::<RecordedSourceReceipt>())
+        .map_err(|_| io::ErrorKind::OutOfMemory)?.0.pad_to_align().size();
+    allocation.checked_add(receipt.path.capacity())
+        .and_then(|bytes| bytes.checked_add(receipt.fact.path.capacity()))
+        .ok_or_else(|| io::ErrorKind::OutOfMemory.into())
+}
+
 pub(crate) fn recorded_source_receipt_storage(
     value: &(dyn std::any::Any + Send + Sync),
 ) -> Option<(&PathBuf, &PathBuf, &Arc<()>)> {

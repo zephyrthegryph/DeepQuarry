@@ -104,16 +104,18 @@ impl Ledger{
  pub(super) fn bind_source_arena(&mut self,owner:&Arc<super::super::Admission>)->io::Result<()>{let weak=Arc::downgrade(owner);if self.arena_domain.as_ref().is_some_and(|old|!Weak::ptr_eq(old,&weak)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw input resource domain changed"))}self.arena_domain=Some(weak);Ok(())}
  pub(super) fn register_source_arena(&mut self,owner:&Arc<super::source_arena::Allocation>)->io::Result<()>{let key=(6,Arc::as_ptr(owner)as usize);if self.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"arena allocation resource identity collision"))}let bytes=owner.retained_bytes()?;self.replace_row(key,Row{owner:Observation::Arena(Arc::downgrade(owner)),bytes});Ok(())}
  /// Commit a prepaid partition. Validate the complete row set before mutation.
- pub(super) fn partition_source_arena(
+ pub(super) fn partition_source_arena<const N: usize>(
      &mut self, donor: &super::source_arena::Allocation, remaining: usize,
-     children: [&Arc<super::source_arena::Allocation>; 2],
+     children: [&Arc<super::source_arena::Allocation>; N],
  ) -> io::Result<()> {
-     let [first, second] = children;
-     let keys = [(6, Arc::as_ptr(first) as usize), (6, Arc::as_ptr(second) as usize)];
-     if keys[0] == keys[1] || keys.iter().any(|key| self.rows.contains_key(key)) {
-         return Err(io::Error::new(io::ErrorKind::InvalidInput, "source partition allocation collision"));
+     let keys = children.map(|child| (6, Arc::as_ptr(child) as usize));
+     let mut amounts = [0; N];
+     for (index, key) in keys.iter().enumerate() {
+         if keys[..index].contains(key) || self.rows.contains_key(key) {
+             return Err(io::Error::new(io::ErrorKind::InvalidInput, "source partition allocation collision"));
+         }
+         amounts[index] = children[index].retained_bytes()?;
      }
-     let amounts = [first.retained_bytes()?, second.retained_bytes()?];
      self.resize_arena(donor, remaining)?;
      for ((key, child), bytes) in keys.into_iter().zip(children).zip(amounts) {
          self.replace_row(key, Row { owner: Observation::Arena(Arc::downgrade(child)), bytes });
@@ -135,7 +137,12 @@ impl Ledger{
   if let Some((address,weak))=original{let owner=Observation::Original(weak);let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost original payload"))?;staged[1]=Some(((1,address),owner,n));}
   if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{let owner=Observation::Bytes(Arc::downgrade(bytes.shared_owner()));let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost exceptional bytes"))?;staged[2]=Some(((2,Arc::as_ptr(bytes.shared_owner())as usize),owner,n));}
   let mut next=3;let mut object_error=None;
-  lease.visit_weak_resource_objects(|weak|{if object_error.is_some(){return}let(kind,address)=weak.resource_key();let owner=Observation::Acquisition(weak);match owner.bytes(){Ok(Some(n))=>{staged[next]=Some(((7+kind,address),owner,n));next+=1},Ok(None)=>object_error=Some(io::Error::new(io::ErrorKind::InvalidInput,"actual acquisition constructor owner died")),Err(e)=>object_error=Some(e)}});
+  lease.visit_weak_resource_objects(|weak|{if object_error.is_some(){return}if weak.receipt_control_credit().and_then(|credit| credit.owner().as_any().downcast_ref::<super::source_arena::Allocation>())
+      .is_some_and(|allocation| self.has_source_arena(allocation)) {
+     // The receipt's prepaid row moved to this actual Arena allocation.
+     return;
+  }
+  let(kind,address)=weak.resource_key();let owner=Observation::Acquisition(weak);match owner.bytes(){Ok(Some(n))=>{staged[next]=Some(((7+kind,address),owner,n));next+=1},Ok(None)=>object_error=Some(io::Error::new(io::ErrorKind::InvalidInput,"actual acquisition constructor owner died")),Err(e)=>object_error=Some(e)}});
   if let Some(error)=object_error{return Err(error)}
   let new_rows = staged.iter().flatten().filter(|(key,_,_)| !self.rows.contains_key(key)).count();
   if new_rows.checked_mul(NODE).ok_or_else(oom)? > reservation {
