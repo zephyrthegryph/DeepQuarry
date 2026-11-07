@@ -128,3 +128,68 @@
 	TEST_ASSERT_EQUAL(length(W.sent), 1, "the same Status lines go out once")
 	TEST_NOTICE(src, "UI_PUSH_COST status: [length(json_encode(payload))] bytes/push, build [round(build_ms, 0.001)] ms/push, send (unchanged after the first) [round(send_ms, 0.001)] ms/push")
 
+
+/// The op menu read the Abilities tab, the right-click menu and the Inspect tab share: a first read (a build) and a second read of the
+/// unchanged menu (the cache), for a human's own menu and for another human as the target. A second read that rebuilds names what defeated the
+/// cache (a read_once() sample, or the read owner whose generation moved).
+/datum/unit_test/dq_ui_push_cost_op_menu
+/datum/unit_test/dq_ui_push_cost_op_menu/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	H.add_shadekin(/datum/shadekin/full)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, get_step(test_floor(), EAST))
+	op_menu_cache_clear()
+	measure(H, H, "self")
+	measure(H, other, "other human")
+	// The same without the test build's debug checks (strict staleness checking, poisoned pools): what a production server pays.
+	set_global(nameof(GLOB.staleness_on), FALSE)
+	set_global(nameof(GLOB.pool_poison), FALSE)
+	op_menu_cache_clear()
+	measure(H, H, "self, production checks")
+	measure(H, other, "other human, production checks")
+
+/datum/unit_test/dq_ui_push_cost_op_menu/proc/measure(mob/living/carbon/human/H, atom/target, label)
+	var/builds = GLOB.op_menu_builds
+	var/started = TICK_USAGE_REAL
+	var/list/rows = op_menu(H, target, null)
+	var/first_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	var/n = 10
+	started = TICK_USAGE_REAL
+	for(var/i in 1 to n)
+		op_menu(H, target, null)
+	var/warm_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / n
+	var/rebuilt = GLOB.op_menu_builds - builds - 1
+	// A build of the menu once the world's lazy tables are warm: what a right-click on a target not yet asked about costs.
+	started = TICK_USAGE_REAL
+	for(var/i in 1 to n)
+		op_menu_cache_clear()
+		op_menu(H, target, null)
+	var/build_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / n
+	TEST_NOTICE(src, "UI_PUSH_COST op_menu [label]: warm build [round(build_ms, 0.01)] ms")
+	TEST_NOTICE(src, "UI_PUSH_COST op_menu [label]: [length(rows)] rows, first read [round(first_ms, 0.01)] ms, unchanged read [round(warm_ms, 0.01)] ms, [rebuilt]/[n] unchanged reads rebuilt[rebuilt ? " ([why_uncached(H, target)])" : ""]")
+	// The right-click menu's open: on a target not asked about yet (the menu is built), then again (the cached menu).
+	op_menu_cache_clear()
+	started = TICK_USAGE_REAL
+	var/list/menu = interaction_menu_data(H, target)
+	var/cold_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	started = TICK_USAGE_REAL
+	interaction_menu_data(H, target)
+	TEST_NOTICE(src, "UI_PUSH_COST right-click menu [label]: open [round(cold_ms, 0.01)] ms on a new target, [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms again, [length(json_encode(menu))] bytes")
+	set_global(nameof(GLOB.op_menu_builds), GLOB.op_menu_builds)
+
+/// Why the cached menu of (H, target) was not used: the read_once() sampler, or the dependency whose generation moved.
+/datum/unit_test/dq_ui_push_cost_op_menu/proc/why_uncached(mob/H, atom/target)
+	var/datum/rx_state/actor_state = rx_of(H)
+	var/datum/rx_state/target_state = rx_of(target)
+	var/key = "[SHARED_CACHE_UID(H)]|[SHARED_CACHE_UID(target)]|-|[actor_state?.act_gen]|[target_state?.act_gen]||[actor_state?.provider_gen]"
+	var/list/cached = GLOB.op_menu_cache[key]
+	if(!cached)
+		return "not stored: uncacheable (a requirement or condition sampled state with read_once())"
+	if(!isnull(cached[2]))
+		return "timed (a cooldown row): cached for one tick only"
+	for(var/id in cached[3])
+		var/list/record = cached[3][id]
+		var/datum/D = handle_get(record[1])
+		if(!D || rx_of(D).act_gen != record[2])
+			return "dependency [D ? D.type : "deleted"] moved from generation [record[2]] to [D ? rx_of(D).act_gen : "-"]"
+	return "stored and valid: the key moved (actor [actor_state?.act_gen], target [target_state?.act_gen])"
+
