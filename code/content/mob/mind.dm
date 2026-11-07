@@ -462,6 +462,7 @@ ACTION(mob_mind_transferred_out_of, mob/new_character, FIXED, notice = /datum/no
 		mind.directory_tag = text_or_null(client.prefs.read_preference(/datum/preference/choiced/human/directory_tag))
 		mind.directory_erptag = text_or_null(client.prefs.read_preference(/datum/preference/choiced/human/directory_erptag))
 		mind.directory_ad = text_or_null(client.prefs.read_preference(/datum/preference/text/human/directory_ad))
+		mind.vantag_preference = text_or_null(client.prefs.read_preference(/datum/preference/choiced/human/vantag_preference))
 
 //HUMAN
 /mob/living/carbon/human/mind_initialize()

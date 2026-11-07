@@ -49,7 +49,7 @@ CAPABILITIES(/datum/character_directory)
 		data["personalVisibility"] = user.client.prefs.read_preference(/datum/preference/toggle/human/show_in_directory)
 		data["personalTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_tag) || "Unset"
 		data["personalErpTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_erptag) || "Unset"
-		data["personalEventTag"] = GLOB.vantag_choices_list[user.mind?.vantag_preference || VANTAG_NONE] // this round only
+		data["personalEventTag"] = GLOB.vantag_choices_list[user.client.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
 		data["personalGenderTag"] = user.mind?.directory_gendertag || "Unset"
 		data["personalSexualityTag"] = user.mind?.directory_sexualitytag || "Unset"
 
@@ -113,7 +113,7 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 			character_ad = C.prefs.read_preference(/datum/preference/text/human/directory_ad)
 			gendertag = "Unset"
 			sexualitytag = "Unset"
-			eventtag = GLOB.vantag_choices_list[VANTAG_NONE]
+			eventtag = GLOB.vantag_choices_list[C.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
 
 		if(ishuman(C.mob))
 			var/mob/living/carbon/human/H = C.mob
@@ -362,7 +362,7 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 			for(var/C in GLOB.vantag_choices_list)
 				names_list[GLOB.vantag_choices_list[C]] = C
 			if(isnull(selected_value))
-				open_directory_choice(user, action, overwrite_prefs, "Pick your preference for event involvement", "Event Preference Tag", names_list, user.mind?.vantag_preference || VANTAG_NONE)
+				open_directory_choice(user, action, overwrite_prefs, "Pick your preference for event involvement", "Event Preference Tag", names_list, user?.client?.prefs?.read_preference(/datum/preference/choiced/human/vantag_preference))
 				return
 			var/_answer_k329 = selected_value
 			if(isnull(_answer_k329))
@@ -407,9 +407,10 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 				user.mind.directory_ad = text_or_null(STRIP_HTML_SIMPLE(new_value, MAX_MESSAGE_LEN))
 			return TRUE
 		if ("setEventTag")
+			if (can_set_prefs)
+				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/vantag_preference, new_value)
 			if (can_set_mind)
 				user.mind.vantag_preference = text_or_null(new_value)
-			return TRUE
 		if ("setGenderTag")
 			if (can_set_mind)
 				user.mind.directory_gendertag = text_or_null(new_value)

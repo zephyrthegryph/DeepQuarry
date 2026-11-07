@@ -9,20 +9,6 @@
 /mob/proc/say_hiss_rules()
 	return null
 
-/mob/living/carbon/human/say_hiss_rules()
-	var/list/picked = client?.prefs ? GLOB.autohiss_choices[(AUTOHISS_DEFAULT_CHOICE)] : null
-	if(!picked || picked["mode"] == AUTOHISS_OFF)
-		return null
-	var/own = picked["species"]
-	var/list/basic = own ? species?.autohiss_basic_map : picked["basic"]
-	if(!basic)
-		return null
-	return list(
-		"basic" = basic,
-		"extra" = picked["mode"] == AUTOHISS_FULL ? (own ? species.autohiss_extra_map : picked["extra"]) : null,
-		"exempt" = (own ? species.autohiss_exempt : picked["exempt"]) || list(),
-	)
-
 /mob/proc/say_language_info(datum/language/L)
 	return list(
 		"verbs" = list(L.speech_verb, L.ask_verb, L.exclaim_verb),

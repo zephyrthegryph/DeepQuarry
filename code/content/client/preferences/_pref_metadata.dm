@@ -144,6 +144,7 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 
 	//// ANTAG ////
 	tag_pref(., /datum/preference/numeric/human/be_special, "antag", null, PREF_WIDGET_HIDDEN)
+	tag_pref(., /datum/preference/choiced/human/vantag_preference, "antag")
 
 	// VORE TAB REMOVED — prefs moved into Game / Identity. Backup/resleeve
 	// prefs go to Game/Persistence (they're save-state). Vore directory

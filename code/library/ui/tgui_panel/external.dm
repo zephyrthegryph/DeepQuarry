@@ -31,7 +31,7 @@
 	// Force show the panel to see if there are any errors
 	winset(src, SKIN_LEGACY_OUTPUT_SELECTOR, "left=output_browser")
 
-	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools) && check_rights_for(src, R_DEBUG))
+	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools))
 		winset(src, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS],devtools")
 
 /// Reinitializes every open TGUI window of this client.

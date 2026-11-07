@@ -421,7 +421,6 @@ GLOBAL_LIST_INIT(retired_character_pref_keys, list(
 	"tail_alpha",
 	"ttone",
 	"uplinklocation",
-	"vantag_preference",
 	"vore_egg_type",
 	"weight_gain",
 	"weight_loss",

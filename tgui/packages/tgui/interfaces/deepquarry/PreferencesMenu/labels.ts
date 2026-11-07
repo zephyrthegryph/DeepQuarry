@@ -17,6 +17,7 @@ export const GROUP_LABELS: Record<string, string> = {
   speech_verbs: 'Speech Verbs',
   starting_kit: 'Starting Kit',
   be_special: 'Antag Roles',
+  vantag_preference: 'Visitor-Antag Type',
   mind_body: 'Mind & Body',
   size_voice: 'Size & Voice',
   pai: 'pAI Card',

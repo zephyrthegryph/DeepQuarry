@@ -9,3 +9,6 @@
 	savefile_key = "CHAT_GHOSTEARS"
 	default_value = TRUE
 	savefile_identifier = PREFERENCE_PLAYER
+
+/mob/ghost_hears_all()
+	return client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears)
