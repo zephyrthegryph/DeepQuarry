@@ -183,13 +183,13 @@ impl DeclarationClaims {
     }
     pub(crate) fn adopt_authored<'a>(&self,currents:impl IntoIterator<Item=&'a mut CurrentContribution>)->Option<()>{
         if self.authored.is_none(){return Some(());}
-        match self.adopt_authored_using::<std::convert::Infallible>(currents,|_|Ok(()),|current|{
+        match self.adopt_authored_using::<std::convert::Infallible>(currents,None,|_|Ok(()),|current|{
             let key=RetainedDeclarations::key(&current.value.source);
             self.values.publish(&key,current).ok_or(AdoptionFailure::Declined)
         }){Ok(())=>Some(()),Err(AdoptionFailure::Declined)=>None,Err(AdoptionFailure::Operational(never))=>match never{}}
     }
-    pub(crate) fn adopt_authored_checked<'a>(&self,currents:impl IntoIterator<Item=&'a mut CurrentContribution>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<()>>{
-        let result=self.adopt_authored_using(currents,|current|{
+    pub(crate) fn adopt_authored_checked<'a>(&self,currents:impl IntoIterator<Item=&'a mut CurrentContribution>,a:&dm_syntax::SettingAdmission<'_>,loan:Option<crate::declaration_contributions::TypeContributionLoan<'_>>)->std::io::Result<Option<()>>{
+        let result=self.adopt_authored_using(currents,loan,|current|{
             if !current.value.syntax.initializer_admission_matches(a).map_err(AdoptionFailure::Operational)?{return Err(AdoptionFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"checked authored adoption lacks completed original header")));}Ok(())
         },|current|{
             let key=RetainedDeclarations::original_header_key(&current.value.source);
@@ -200,6 +200,7 @@ impl DeclarationClaims {
     fn adopt_authored_using<'a,E>(
         &self,
         currents: impl IntoIterator<Item = &'a mut CurrentContribution>,
+        loan: Option<crate::declaration_contributions::TypeContributionLoan<'_>>,
         mut admit:impl FnMut(&CurrentContribution)->Result<(),AdoptionFailure<E>>,
         mut publish:impl FnMut(&mut CurrentContribution)->Result<(),AdoptionFailure<E>>,
     ) -> Result<(),AdoptionFailure<E>> {
@@ -236,16 +237,22 @@ impl DeclarationClaims {
         }
         let mut roster = crate::skeleton_roster::SkeletonRoster::default();
         for current in &currents {
-            roster.push_leaf(current.skeletons());
+            if loan.is_some() {
+                roster.push_positional_leaf(current.skeletons());
+            } else {
+                roster.push_leaf(current.skeletons());
+            }
         }
         let (index, _) = {
             let previous = self
                 .authored_current
                 .lock()
                 .unwrap_or_else(|error| error.into_inner());
-            KeyedDeclarations::capture_view(
+            KeyedDeclarations::capture_view_with_type_loan(
                 previous.as_ref().map(|value| &value.index),
                 roster.view(),
+                loan,
+                |index| Some(currents.get(roster.leaf_index(index)?)?.symbols()),
             )
             .map_err(|_|AdoptionFailure::Declined)?
         };

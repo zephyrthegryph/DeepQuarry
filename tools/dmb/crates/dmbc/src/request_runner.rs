@@ -673,14 +673,17 @@ fn run_build_attempt(
         analysis_context == Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)
             && preparation_output.needs_combined_checker()
             && analysis_subject.as_ref().is_some_and(|subject| !subject.synthetic());
-    let ((frontend_memo, execution, mut semantic_state), strict_callable_prior) =
-        host.execution_with_selected_original_anchors(
+    let ((frontend_memo, execution, mut semantic_state), declaration_prior) =
+        host.execution_with_selected_declaration_loans(
             workers,
             expansion_memo
                 .as_ref()
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             selected_original_anchors,
+            joined.is_some(),
         )?;
+    let strict_callable_prior = selected_original_anchors.then_some(declaration_prior).flatten();
+    let original_type_prior = joined.is_some().then_some(declaration_prior).flatten();
     // One-shot compilation uses the same named declaration receipt issuer as
     // retained sessions. This owner lasts for this request only: disabling
     // caches must not change which semantic answers the compiler can prove.
@@ -958,7 +961,7 @@ fn run_build_attempt(
                 }
             }
         }else{
-        dm_tree::frontend::build_with_executor_and_semantic_state_for_policy_checked(
+        dm_tree::frontend::build_with_executor_and_semantic_state_with_original_types(
             &project,
             &provider,
             &defines,
@@ -974,9 +977,16 @@ fn run_build_attempt(
             Some(&mut *semantic_state),
             policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none() || !request.workspace_generators().is_empty() || request.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline))) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some(),
             &settings_host,
+            original_type_prior,
         )
         }
     };
+    if frontend_result.is_ok() && progress_enabled {
+        if let Some(prior) = original_type_prior {
+            let reused = semantic_state.shared_original_authored_type_owners(prior, &project);
+            dmbc::daemon_eprintln!("native compound shared authored type owners: {reused}");
+        }
+    }
     dm_profile::detail_mark("frontend", total);
     let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
     dmbc::daemon::control::checkpoint()?;

@@ -1489,6 +1489,7 @@ fn public_compound_selected_compiles_and_verifies_both_reports_in_one_request() 
     put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
     let mut build = request(&root, Q::DocSnippets);
     build.cache_root = Some(cache.clone());
+    build.progress_enabled = true;
     let intent = build.policy_inputs.as_mut().unwrap();
     intent.workspace_auxiliary.clear();
     intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
@@ -1514,6 +1515,14 @@ fn public_compound_selected_compiles_and_verifies_both_reports_in_one_request() 
 
     let actual = run("compound-current");
     assert_eq!(actual.status.code(), Some(1), "{}", String::from_utf8_lossy(&actual.stderr));
+    // The compound daemon writes native progress to its private lifecycle
+    // log. Client stderr is the selected diagnostic transcript.
+    let progress = std::fs::read_to_string(transport.join("daemon/lifecycle.log")).unwrap();
+    let borrowed = progress.lines().find_map(|line|
+        line.strip_prefix("native compound shared authored type owners: ")
+            .and_then(|value| value.parse::<usize>().ok())
+    ).unwrap_or(0);
+    assert!(borrowed > 0, "actual cold Strict phase must reuse Original-authored storage: {progress}");
     let newline = actual.stdout.iter().position(|&byte| byte == b'\n').unwrap();
     let terminal: Terminal = serde_json::from_slice(&actual.stdout[..newline]).unwrap();
     assert_eq!(terminal.schema, "native-compiled-selected-v1");
@@ -1554,6 +1563,14 @@ fn public_compound_selected_compiles_and_verifies_both_reports_in_one_request() 
     assert_eq!(rejected.status.code(), Some(2), "{}", String::from_utf8_lossy(&rejected.stderr));
     assert!(rejected.stdout.is_empty());
     assert!(!cache.join("compound-native-error/artifacts/deepquarry.dmb-pair.json").exists());
+
+    put(&root, "code/common.dm", source);
+    let recovered = run("compound-native-recovered");
+    assert_eq!(recovered.status.code(), Some(1), "{}", String::from_utf8_lossy(&recovered.stderr));
+    let retry_marker: OutputPair = serde_json::from_slice(&std::fs::read(
+        cache.join("compound-native-recovered/artifacts/deepquarry.dmb-pair.json"),
+    ).unwrap()).unwrap();
+    assert_eq!(retry_marker, independent);
 }
 
 

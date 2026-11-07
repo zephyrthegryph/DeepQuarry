@@ -681,19 +681,28 @@ impl BuildHost {
         workers: usize,
         disk: Option<&'a dyn dm_preprocess::regions::ExpansionMemo>,
     ) -> Result<HostParts<'a>, Box<dyn std::error::Error>> {
-        self.execution_with_selected_original_anchors(workers, disk, false)
+        self.execution_with_selected_declaration_loans(workers, disk, false, false)
             .map(|(parts, _)| parts)
     }
 
-    pub(crate) fn execution_with_selected_original_anchors<'a>(
+    pub(crate) fn execution_with_selected_declaration_loans<'a>(
         &'a mut self,
         workers: usize,
         disk: Option<&'a dyn dm_preprocess::regions::ExpansionMemo>,
         selected_original: bool,
+        joined_strict: bool,
     ) -> Result<(HostParts<'a>, Option<&'a dm_tree::frontend::RetainedSemanticTree>), Box<dyn std::error::Error>> {
-        let prior = selected_original.then(|| {
-            Self::stashed_strict_callable_prior(self.engine.as_ref()?, &self.variants)
-        }).flatten();
+        // These are mutually exclusive admitted request roles. Each returns a
+        // disjoint borrow of the existing stashed variant.
+        let prior = self.engine.as_ref().and_then(|engine| {
+            if selected_original {
+                Self::stashed_strict_callable_prior(engine, &self.variants)
+            } else if joined_strict {
+                Self::stashed_original_type_prior(engine, &self.variants)
+            } else {
+                None
+            }
+        });
         let execution = if let Some(shared) = &self.shared_executors {
             HostExecution::Leased(shared.checkout(workers)?)
         } else if self.memo.is_some() {
@@ -741,6 +750,30 @@ impl BuildHost {
         let semantic = strict.semantic.as_ref()?;
         semantic.has_current_strict_callable_anchors(&strict_configuration.project, &strict_configuration.defines)
             .then_some(semantic)
+    }
+
+    fn stashed_original_type_prior<'a>(
+        strict: &RetainedEngine,
+        variants: &'a BTreeMap<EngineConfiguration, VariantState>,
+    ) -> Option<&'a dm_tree::frontend::RetainedSemanticTree> {
+        use crate::policy_request::AnalysisContext;
+        let current = &strict.configuration;
+        if current.analysis_context.is_some() {
+            return None;
+        }
+        let mut expected = BTreeMap::new();
+        crate::pinned_target::admit_defines(&mut expected).ok()?;
+        if current.defines != expected {
+            return None;
+        }
+        let mut key = current.clone();
+        key.analysis_context = Some(AnalysisContext::OriginalChecker0290);
+        key.defines.clear();
+        let original = variants.get(&key)?;
+        if !Arc::ptr_eq(&strict.payload, &original.engine.payload) {
+            return None;
+        }
+        original.semantic.as_ref()
     }
 
     /// Leave the current variant (stash its define-dependent state) and enter `configuration` (restore it, or start it empty on the

@@ -192,14 +192,36 @@ pub fn build_for_checker_diagnostics_with_state<P: SourceProvider>(
 /// Checked original declaration producer; caller supplies its existing host.
 /// No source-root feature or request routing is enabled by this additive API.
 pub fn build_with_executor_and_semantic_state_for_policy_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,host:&Arc<dyn SettingExpressionQueries>)->Result<ColdFrontend,FrontendBuildFailure>{
+    build_with_executor_and_semantic_state_with_original_types(
+        project, provider, defines, config, memo, executor, state, require_primary_headers, host, None,
+    )
+}
+
+/// Prepare Strict declarations from the current provider. An optional complete
+/// Original predecessor can lend only equal span-free authored type owners.
+pub fn build_with_executor_and_semantic_state_with_original_types<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    executor: &dm_exec::BuildExecutor,
+    state: Option<&mut RetainedSemanticTree>,
+    require_primary_headers: bool,
+    host: &Arc<dyn SettingExpressionQueries>,
+    original: Option<&RetainedSemanticTree>,
+) -> Result<ColdFrontend, FrontendBuildFailure> {
     use super::declaration_demand::Demand;
-    let demand=super::declaration_demand::Checked{host};
+    // Original's default predecessor has no caller defines. Strict's own
+    // target defines still drive its current preprocessing and row proof.
+    let type_loan = original.and_then(|prior| prior.original_type_loan(project));
+    let demand = super::declaration_demand::Checked { host, type_loan };
     let result=build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,state,require_primary_headers,None,&demand);
     demand.finish(result)
 }
 pub fn build_for_checker_diagnostics_with_state_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
     use super::declaration_demand::Demand;
-    let demand=super::declaration_demand::Checked{host};
+    let demand=super::declaration_demand::Checked{host,type_loan:None};
     let mut receipt=None;
     let result=(||{
         let frontend=build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,state,true,Some(&mut receipt),&demand)?;
@@ -1212,7 +1234,7 @@ pub fn build_for_original_analysis_with_callable_anchors_checked<P:SourceProvide
     state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,
     prior_strict:Option<&RetainedSemanticTree>,
 )->Result<DiagnosticFrontend,FrontendBuildFailure>{
- use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{host};let mut receipt=None;let mut primary=None;
+ use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{host,type_loan:None};let mut receipt=None;let mut primary=None;
  let result=(||{
   let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,defines,config,memo,executor,state,true,Some(&mut receipt),&demand,Some(&mut primary),false,prior_strict.map(RetainedSemanticTree::authored_callable_owners))?;
   let diagnostic=DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("original analysis builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;
@@ -1227,7 +1249,7 @@ pub fn build_for_original_image_dir_checked<P:SourceProvider>(
     executor:&dm_exec::BuildExecutor, host:&Arc<dyn SettingExpressionQueries>,
 )->Result<super::OriginalImageDirFrontend,FrontendBuildFailure>{
     use super::declaration_demand::Demand;
-    let demand=super::declaration_demand::Checked{host};
+    let demand=super::declaration_demand::Checked{host,type_loan:None};
     let mut receipt=None;
     let mut primary=None;
     let result=(||{
@@ -1244,7 +1266,7 @@ pub fn build_for_original_image_dir_checked<P:SourceProvider>(
 /// No compiler semantic-state predecessor can be reused or published here.
 /// The host must bind its captured synthetic recipe/root acquisition separately.
 pub fn build_for_original_handlers_structural_checked<P:SourceProvider>(project:&Path,provider:&P,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
- use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{host};let mut receipt=None;let mut primary=None;let defines=BTreeMap::new();
+ use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{host,type_loan:None};let mut receipt=None;let mut primary=None;let defines=BTreeMap::new();
  let result=(||{
   let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,&defines,config,memo,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),false,None)?;
   let diagnostic=DiagnosticFrontend::bind_handlers_structural(frontend,receipt.ok_or_else(||vec![internal("handlers structural builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;

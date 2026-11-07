@@ -180,3 +180,57 @@ fn scalar_owner_shape_is_shared_across_metadata_content_changes() {
         third.owner(path("/a")).unwrap().shared_shape().as_ref()
     );
 }
+
+#[test]
+fn type_only_loan_requires_current_spelling_rows_and_encounter_order() {
+    let mut original_symbols = dm_ir::SymbolTable::default();
+    let mut strict_symbols = dm_ir::SymbolTable::default();
+    for name in ["/common", "/order", "/old_parent", "/new_parent", "/original_only",
+        "/strict_only", "/member", "/unproved", "v"] {
+        original_symbols.intern(name).unwrap();
+        if name != "/unproved" {
+            strict_symbols.intern(name).unwrap();
+        }
+    }
+    let extends = |owner, parent| Skeleton::Type {
+        path: path(owner),
+        explicit_parent: Some(path(parent)),
+    };
+    let var = || member("/member", "v", MemberKind::Var, DefinitionMode::Declare, 1);
+    let original_rows = [
+        ty("/original_only"),
+        ty("/common"),
+        extends("/order", "/old_parent"),
+        ty("/member"),
+        extends("/order", "/new_parent"),
+        extends("/unproved", "/old_parent"),
+        var(),
+        ty("/common"),
+    ];
+    let strict_rows = [
+        ty("/common"),
+        ty("/member"),
+        extends("/order", "/new_parent"),
+        extends("/unproved", "/old_parent"),
+        ty("/strict_only"),
+        extends("/order", "/old_parent"),
+        ty("/common"),
+        var(),
+    ];
+    let (original, _) = KeyedDeclarations::capture(None, &original_rows).unwrap();
+    let (strict, changes) = KeyedDeclarations::capture_view_with_type_loan(
+        None,
+        strict_rows.as_slice().into(),
+        Some(TypeContributionLoan { declarations: &original, symbols: &original_symbols }),
+        |_| Some(&strict_symbols),
+    ).unwrap();
+    assert_eq!(changes.reused_owners, 1);
+    assert!(strict.skeletons().eq(strict_rows.iter()));
+    assert!(strict.owner(path("/original_only")).is_none());
+    assert!(Arc::ptr_eq(original.owner(path("/common")).unwrap(),
+                        strict.owner(path("/common")).unwrap()));
+    for name in ["/order", "/member", "/unproved"] {
+        assert!(!Arc::ptr_eq(original.owner(path(name)).unwrap(),
+                             strict.owner(path(name)).unwrap()));
+    }
+}

@@ -723,7 +723,7 @@ mod tests {
     }
     #[test]
     fn exact_private_declaration_plan_origin_and_token_arc_issue_one_original_rhs_root() {
-        let host = Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0))))
+        let host = Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap()))
             as Arc<dyn SettingExpressionQueries>;
         for text in [
             "var/static/value = 1+2",
@@ -832,7 +832,7 @@ mod tests {
         let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let native = Arc::new(BudgetHost {
             counter: Arc::clone(&counter),
-            limit: AtomicUsize::new(0),
+            limit: AtomicUsize::new(dm_syntax::SettingChargeCounter::root_allocation_bytes()),
         });
         let host = Arc::clone(&native) as Arc<dyn SettingExpressionQueries>;
         {
@@ -920,7 +920,7 @@ mod tests {
     #[test]
     fn original_initializer_warm_include_keeps_exact_root_and_current_projection_and_refuses_foreign_counter(
     ) {
-        let host = Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0))))
+        let host = Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap()))
             as Arc<dyn SettingExpressionQueries>;
         let mut state = RetainedSemanticTree::default();
         let old = included(&mut state, &host, q_chunk("", 1));
@@ -957,7 +957,7 @@ mod tests {
         );
         assert_ne!(first.current_span(), now.current_span());
         assert_eq!(&current.expanded.text[now.current_span().range()], "1+2");
-        let other = Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0))))
+        let other = Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap()))
             as Arc<dyn SettingExpressionQueries>;
         let foreign = included(
             &mut state,
@@ -1012,7 +1012,7 @@ mod tests {
     }
     #[test]
     fn initializer_wave_validates_full_current_mapping_once_for_all_original_ordinals() {
-        let host = Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0))))
+        let host = Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap()))
             as Arc<dyn SettingExpressionQueries>;
         let mut source = String::new();
         for n in 0..32 {
@@ -1093,7 +1093,7 @@ mod tests {
     #[test]
     fn initializer_recipe_reborrows_same_root_at_current_offset_and_preserves_foreign_domain_error()
     {
-        let host = Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0))))
+        let host = Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap()))
             as Arc<dyn SettingExpressionQueries>;
         let mut state = RetainedSemanticTree::default();
         let old = included(&mut state, &host, q_chunk("", 1));
@@ -1126,7 +1126,7 @@ mod tests {
         assert_eq!(root.ast() as *const dm_syntax::Expr, pointer);
         assert_ne!(root.current_span(), old_span);
         assert_eq!(&current.expanded.text[root.current_span().range()], "1+2");
-        let other = Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0))))
+        let other = Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap()))
             as Arc<dyn SettingExpressionQueries>;
         let foreign = included(
             &mut state,
@@ -1149,7 +1149,7 @@ mod tests {
     }
     #[test]
     fn selected_declaration_source_requires_exact_current_metadata_and_reuses_original_plan_root_without_body_demand(){
-        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
         let front=front("/datum/probe\n    var/const/value=unknown+1\n/datum/child\n    parent_type=/datum/probe\n/proc/no_body()\n    return 1\n",&host);
         let tree=&front.snapshot.tree;let owner=dm_ir::SymbolId::of("/datum/probe");let name=dm_ir::SymbolId::of("value");let member=tree.resolve(tree.lookup_type(owner).unwrap(),name,crate::MemberKind::Var).unwrap();let metadata=&tree.member(member).unwrap().metadata;
         let context=front.original_declaration_expression_context().unwrap();
@@ -1165,7 +1165,7 @@ mod tests {
     }
     #[test]
     fn selected_source_foreign_frontend_cannot_reborrow_equal_text_recipe(){
-        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
         let a=front("var/const/value=unknown+1\n",&host);let b=front("var/const/value=unknown+1\n",&host);
         let select=|front:&ColdFrontend|{let tree=&front.snapshot.tree;tree.resolve(tree.lookup_type(dm_ir::SymbolId::of("/")).unwrap(),dm_ir::SymbolId::of("value"),crate::MemberKind::Var).unwrap()};
         let ai=select(&a);let bi=select(&b);
@@ -1177,7 +1177,7 @@ mod tests {
 
     #[test]
     fn transitive_context_requires_same_top_initializer_frontend_even_for_equal_source(){
-        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
         let a=front("var/const/value=unknown+1\n",&host);let b=front("var/const/value=unknown+1\n",&host);
         let pa=crate::initializers::capture_declaration_plan(&a.snapshot,&a.emission_order).unwrap();let pb=crate::initializers::capture_declaration_plan(&b.snapshot,&b.emission_order).unwrap();
         let ai=a.original_initializer_input(&pa,0).unwrap();let bi=b.original_initializer_input(&pb,0).unwrap();
@@ -1186,7 +1186,7 @@ mod tests {
     }
     #[test]
     fn transitive_context_shared_admission_reuses_original_root_without_new_body_demand() {
-        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
         let front=front("var/const/value=unknown+1\n",&host);let context=front.original_declaration_expression_context().unwrap();
         let tree=&front.snapshot.tree;let owner=dm_ir::SymbolId::of("/");let name=dm_ir::SymbolId::of("value");let id=tree.resolve(tree.lookup_type(owner).unwrap(),name,crate::MemberKind::Var).unwrap();let metadata=&tree.member(id).unwrap().metadata;
         let mut root=None;context.with_admission(&mut|a|{let _frame=a.evaluation_frame().map_err(BodySyntaxFailure::Operational)?;root=Some(context.selected_admitted(owner,name,metadata,a)?.prepare(a)?);Ok(())}).unwrap();
@@ -1195,7 +1195,7 @@ mod tests {
 
     #[test]
     fn complete_issued_declaration_ordinals_reuse_private_original_roots_and_refuse_foreign_frame() {
-        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
         let text="/datum/probe\n    var/static/value=1+2\n/proc/no_body()\n    return 1\n";
         let current=front(text,&host);
         let declarations=crate::initializers::capture_declaration_plan(&current.snapshot,&current.emission_order).unwrap();
@@ -1264,7 +1264,7 @@ mod tests {
 
     #[test]
     fn original_header_dimensions_are_distinct_authored_roots_in_same_slot_family(){
-      let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+      let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
       let front=front("var/static/list/value[1 + 2][][3 / 2]=null\n",&host);
       let plan=crate::initializers::capture_declaration_plan(&front.snapshot,&front.emission_order).unwrap();let context=front.original_initializer_context(&plan).unwrap();
       let rhs=context.input(0).unwrap().expression().unwrap();let first=context.dimension_input(0,0).unwrap();let root=first.expression().unwrap();
@@ -1279,7 +1279,7 @@ mod tests {
     }
     #[test]
     fn complete_static_dimensions_borrow_primary_ledger_roots_without_rhs_reparse(){
-      let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+      let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
       let source=Source(dm_preprocess::AcquiredSource::from_original_bytes(b"/proc/p()\n    var/static/list/value[2 + 1][][4 + 1]\n    return value\n".to_vec(),()));
       let front=build(Path::new("static-dimensions.dme"),&source,&Default::default(),1).unwrap().with_setting_expression_queries(&host).unwrap();let body=&front.bodies[0];let arena=BodyArena::new_typed(&front,|_|true);
       let (receipt,parent)=arena.with_parsed_checked(body,|parsed|(parsed.capture_stored_declarations(static_identity(&front,body)).unwrap(),parsed.shared_statement_body().unwrap())).unwrap();
@@ -1293,7 +1293,7 @@ mod tests {
 
     #[test]
     fn native_dimension_cursor_visits_original_header_once_and_uses_direct_slots(){
-      let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+      let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
       let count=128;let source=format!("var/static/list/value{}\n","[1 + 2]".repeat(count));let front=front(&source,&host);
       let plan=crate::initializers::capture_declaration_plan(&front.snapshot,&front.emission_order).unwrap();assert!(matches!(plan.plan().writes[0].value,InitializerValue::ArrayAllocation(_)),"fixture must retain its implicit no-RHS allocation");let context=front.original_initializer_context(&plan).unwrap();
       crate::procedure::reset_array_dimension_steps();let mut pointers=Vec::new();
@@ -1305,14 +1305,14 @@ mod tests {
 
     #[test]
     fn dimension_source_does_not_treat_path_component_as_as_annotation(){
-      let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+      let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
       let front=front("var/static/list/as[1+2]\n",&host);let plan=crate::initializers::capture_declaration_plan(&front.snapshot,&front.emission_order).unwrap();assert!(matches!(plan.plan().writes[0].value,InitializerValue::ArrayAllocation(_)),"fixture must retain its implicit no-RHS allocation");let context=front.original_initializer_context(&plan).unwrap();
       let rows=context.dimensions(0).unwrap().collect::<Result<Vec<_>,_>>().unwrap();assert_eq!(rows.len(),1);let root=rows[0].1.as_ref().unwrap().expression().unwrap();assert_eq!(root.source_text(root.ast().span),Some("1+2"));
     }
 
     #[test]
     fn implicit_array_terminator_at_ancestor_end_keeps_original_dimension_owner(){
-      let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+      let host=Arc::new(OriginalHost(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap())) as Arc<dyn SettingExpressionQueries>;
       let source="/datum/source_probe\n    var/value=7\n    var/list/items[2+1]\n/datum/source_probe/proc/read_value()\n    return 1\n";
       let current=front(source,&host);let plan=crate::initializers::capture_declaration_plan(&current.snapshot,&current.emission_order).unwrap();
       let ordinal=plan.plan().writes.iter().position(|write|matches!(write.value,InitializerValue::ArrayAllocation(_))).unwrap();
@@ -1402,7 +1402,7 @@ mod tests {
 }
 
 #[cfg(test)]mod original_admission_completion_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,AtomicBool,Ordering}};
+ use super::*;use std::sync::{Arc,atomic::{AtomicBool,Ordering}};
  #[derive(Debug,Clone,Copy)]enum Mode{Once,Omit,Repeat,Swallow,LaterIo}
  #[derive(Debug)]struct Provider{mode:Mode,counter:Arc<dm_syntax::SettingChargeCounter>,cancel:AtomicBool}
  impl SettingExpressionQueries for Provider{
@@ -1412,7 +1412,7 @@ mod tests {
    match self.mode{Mode::Omit=>Ok(()),Mode::Once=>callback(&admission),Mode::Swallow=>{let _=callback(&admission);Ok(())},Mode::Repeat=>{let _=callback(&admission);let _=callback(&admission);Ok(())},Mode::LaterIo=>{let _=callback(&admission);Err(BodySyntaxFailure::Operational(std::io::Error::from_raw_os_error(1450)))}}
   }
  }
- fn provider(mode:Mode)->(Arc<Provider>,std::sync::Weak<dyn SettingExpressionQueries>){let actual=Arc::new(Provider{mode,counter:Arc::new(AtomicUsize::new(0)),cancel:AtomicBool::new(false)});let erased:Arc<dyn SettingExpressionQueries>=actual.clone();(actual,Arc::downgrade(&erased))}
+ fn provider(mode:Mode)->(Arc<Provider>,std::sync::Weak<dyn SettingExpressionQueries>){let actual=Arc::new(Provider{mode,counter:dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap(),cancel:AtomicBool::new(false)});let erased:Arc<dyn SettingExpressionQueries>=actual.clone();(actual,Arc::downgrade(&erased))}
  #[test]fn original_admission_callback_completes_exactly_once_and_does_not_invent_missing_success(){
   for mode in[Mode::Omit,Mode::Repeat]{let(_owner,weak)=provider(mode);let result=original_admission_using(Some(&weak),|_|Ok(17));assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::InvalidData));}
   let(owner,weak)=provider(Mode::Once);assert_eq!(original_admission_using(Some(&weak),|_|Ok(17)).unwrap(),17);drop(owner);let result:Result<(),BodySyntaxFailure>=original_admission_using(Some(&weak),|_|panic!("expired provider must not run"));assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::NotConnected));

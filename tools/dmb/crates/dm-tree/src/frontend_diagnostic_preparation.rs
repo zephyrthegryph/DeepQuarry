@@ -49,6 +49,23 @@ impl DiagnosticFrontend {
         if self.purpose.is_structural()||!Arc::ptr_eq(tree,&self.inner.snapshot.tree){return None}
         crate::diagnostic_declarations::DiagnosticDeclarationReceipt::reused_diagnostic_tree(tree,&self.receipt)
     }
+    pub(super) fn original_type_loan(
+        &self,
+    ) -> Option<crate::declaration_contributions::TypeContributionLoan<'_>> {
+        if self.purpose != DiagnosticPreparationPurpose::OriginalSharedComplete
+            || !self.receipt.is_clean()
+            || !self.receipt.authenticates(self.inner.snapshot.tree.as_ref())
+            || self.inner.plan.initial_environment() != dm_preprocess::InitialEnvironment::OriginalChecker0290
+            || self.source_view().is_err()
+        {
+            return None;
+        }
+        let records = self.retained_records.as_deref()?;
+        // The two modes use distinct engine profiles. The loan only carries
+        // authored type rows; current per-chunk spelling and row equality are
+        // checked before any reuse, independent of inherited engine answers.
+        records.type_loan(&self.inner.snapshot.tree)
+    }
     pub(super) fn preparation_records(&self)->Option<Arc<super::DiagnosticRetainedRecords>> { self.retained_records.clone() }
     pub(super) fn preparation_original_variables(&self)->Option<crate::checker_builtins::OriginalVariableDeclarations>{if self.receipt.authenticates(self.inner.snapshot.tree.as_ref())&&self.inner.plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{self.receipt.original_variables}else{None}}
 
@@ -403,7 +420,7 @@ impl<'a> HandlersStructuralSource<'a>{pub fn view(&self)->&DiagnosticSourceView<
 /// Retained recipe discrimination only; never source/current-owner authority.
 pub const ORIGINAL_ANALYZE_PREPARATION_VERSION:u32=1;
 #[cfg(test)]mod original_analyze_prefix_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::Ordering;
  struct Source(dm_preprocess::AcquiredSource);
  impl SourceProvider for Source{
   fn initial_environment(&self)->dm_preprocess::InitialEnvironment{dm_preprocess::InitialEnvironment::OriginalChecker0290}
@@ -419,29 +436,29 @@ pub const ORIGINAL_ANALYZE_PREPARATION_VERSION:u32=1;
  }
  fn original(text:&str)->Source{Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()))}
  #[test]fn actual_analyze_prefix_model_keeps_real_first_field_prior_body_and_cannot_promote(){
-  let text="/datum/parent\n    var/before\n/proc/kept()\n    return 1\n/datum/child\n    parent_type=/datum/parent\n    var/const/value=1+2\n    var/datum/first, second\n/proc/after()\n    return 2\n";let source=original(text);let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let config=FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None};let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(Host{counter:counter.clone(),fault:false,aliases:Default::default()})as Arc<dyn SettingExpressionQueries>;let mut state=RetainedSemanticTree::new();
+  let text="/datum/parent\n    var/before\n/proc/kept()\n    return 1\n/datum/child\n    parent_type=/datum/parent\n    var/const/value=1+2\n    var/datum/first, second\n/proc/after()\n    return 2\n";let source=original(text);let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let config=FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None};let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let host=Arc::new(Host{counter:counter.clone(),fault:false,aliases:Default::default()})as Arc<dyn SettingExpressionQueries>;let mut state=RetainedSemanticTree::new();
   let analysis=super::super::build_for_original_analysis_with_state_checked(Path::new("actual-prefix.dme"),&source,&Default::default(),config,None,&executor,Some(&mut state),&host).unwrap();assert_eq!(analysis.original_analysis_completeness(),Some(OriginalAnalysisCompleteness::PrimaryPrefix));let view=analysis.source_view().unwrap();assert_eq!(view.expanded_text(),text);let owner=view.tree().lookup_type(dm_ir::SymbolId::of("/datum/child")).unwrap();let parent=view.tree().parent(owner).unwrap();assert_eq!(view.tree().type_node(parent).unwrap().path,dm_ir::SymbolId::of("/datum/parent"));assert!(view.tree().symbols().text(dm_ir::SymbolId::of("first")).is_some());assert!(view.tree().symbols().text(dm_ir::SymbolId::of("second")).is_none());assert!(view.tree().symbols().text(dm_ir::SymbolId::of("after")).is_none());assert!(view.bodies().iter().all(|body|body.expanded_span.start<text.find("var/datum/first").unwrap()));assert!(state.snapshot_tree().is_none(),"partial Analyze preparation never publishes a compiler-complete semantic state");
-  assert!(analysis.checker_source_view().is_err(),"Analyze purpose cannot stand for a checker view");assert!(analysis.try_into_compilable().is_err(),"actual partial role cannot promote through existing compiler API");drop(state);host.with_declaration_admission(&mut |_|Ok(())).unwrap();assert_eq!(counter.load(Ordering::Acquire),0);
+  assert!(analysis.checker_source_view().is_err(),"Analyze purpose cannot stand for a checker view");assert!(analysis.try_into_compilable().is_err(),"actual partial role cannot promote through existing compiler API");drop(state);host.with_declaration_admission(&mut |_|Ok(())).unwrap();assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_analyze_parameter_fatal_has_a_real_prefix_not_semantic_none_and_no_later_parent(){
-  let text="/datum/kept\n    var/value=1\n/proc/good(obj/value)\n    return value\n/proc/bad(value=)\n    return 7\n/datum/later\n    parent_type=/datum/missing\n";let source=original(text);let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(Host{counter:counter.clone(),fault:false,aliases:Default::default()})as Arc<dyn SettingExpressionQueries>;
-  let analysis=super::super::build_for_original_analysis_with_state_checked(Path::new("parameter-prefix.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host).unwrap();assert_eq!(analysis.original_analysis_completeness(),Some(OriginalAnalysisCompleteness::PrimaryPrefix));let view=analysis.source_view().unwrap();assert!(view.tree().symbols().text(dm_ir::SymbolId::of("good")).is_some());assert!(view.tree().symbols().text(dm_ir::SymbolId::of("bad")).is_none());assert!(view.tree().symbols().text(dm_ir::SymbolId::of("/datum/later")).is_none());assert_eq!(view.bodies().len(),1);let config=FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None};assert!(super::super::build_for_checker_diagnostics_with_state_checked(Path::new("parameter-prefix.dme"),&source,&Default::default(),config,None,&executor,None,&host).is_err());assert!(super::super::build_with_config(Path::new("parameter-prefix.dme"),&source,&Default::default(),config).is_err());drop(analysis);host.with_declaration_admission(&mut |_|Ok(())).unwrap();assert_eq!(counter.load(Ordering::Acquire),0);
+  let text="/datum/kept\n    var/value=1\n/proc/good(obj/value)\n    return value\n/proc/bad(value=)\n    return 7\n/datum/later\n    parent_type=/datum/missing\n";let source=original(text);let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let host=Arc::new(Host{counter:counter.clone(),fault:false,aliases:Default::default()})as Arc<dyn SettingExpressionQueries>;
+  let analysis=super::super::build_for_original_analysis_with_state_checked(Path::new("parameter-prefix.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host).unwrap();assert_eq!(analysis.original_analysis_completeness(),Some(OriginalAnalysisCompleteness::PrimaryPrefix));let view=analysis.source_view().unwrap();assert!(view.tree().symbols().text(dm_ir::SymbolId::of("good")).is_some());assert!(view.tree().symbols().text(dm_ir::SymbolId::of("bad")).is_none());assert!(view.tree().symbols().text(dm_ir::SymbolId::of("/datum/later")).is_none());assert_eq!(view.bodies().len(),1);let config=FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None};assert!(super::super::build_for_checker_diagnostics_with_state_checked(Path::new("parameter-prefix.dme"),&source,&Default::default(),config,None,&executor,None,&host).is_err());assert!(super::super::build_with_config(Path::new("parameter-prefix.dme"),&source,&Default::default(),config).is_err());drop(analysis);host.with_declaration_admission(&mut |_|Ok(())).unwrap();assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn original_analyze_operational_failure_stays_typed_and_unsupported_primary_state_never_becomes_empty_available_model(){
-  let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(Host{counter:counter.clone(),fault:true,aliases:Default::default()})as Arc<dyn SettingExpressionQueries>;let source=original("/datum/prefix\n");let result=super::super::build_for_original_analysis_with_state_checked(Path::new("failure.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host);assert!(matches!(result,Err(FrontendBuildFailure::Operational(actual))if actual.raw_os_error()==Some(1450)));assert_eq!(counter.load(Ordering::Acquire),0);
-  let host=Arc::new(Host{counter:counter.clone(),fault:false,aliases:Default::default()})as Arc<dyn SettingExpressionQueries>;let source=original("/datum/prefix\n    var/first = 1 + 2, second = 2\n");let result=super::super::build_for_original_analysis_with_state_checked(Path::new("unissued.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host);assert!(matches!(result,Err(FrontendBuildFailure::Operational(actual))if actual.kind()==std::io::ErrorKind::Unsupported));assert_eq!(counter.load(Ordering::Acquire),0);
+  let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let host=Arc::new(Host{counter:counter.clone(),fault:true,aliases:Default::default()})as Arc<dyn SettingExpressionQueries>;let source=original("/datum/prefix\n");let result=super::super::build_for_original_analysis_with_state_checked(Path::new("failure.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host);assert!(matches!(result,Err(FrontendBuildFailure::Operational(actual))if actual.raw_os_error()==Some(1450)));assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  let host=Arc::new(Host{counter:counter.clone(),fault:false,aliases:Default::default()})as Arc<dyn SettingExpressionQueries>;let source=original("/datum/prefix\n    var/first = 1 + 2, second = 2\n");let result=super::super::build_for_original_analysis_with_state_checked(Path::new("unissued.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host);assert!(matches!(result,Err(FrontendBuildFailure::Operational(actual))if actual.kind()==std::io::ErrorKind::Unsupported));assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_shared_complete_owner_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::Ordering;
  struct Source(dm_preprocess::AcquiredSource);impl SourceProvider for Source{fn initial_environment(&self)->dm_preprocess::InitialEnvironment{dm_preprocess::InitialEnvironment::OriginalChecker0290}fn read(&self,_:&Path)->Result<String,String>{Err("actual original lease required".into())}fn acquired_source(&self,_:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(Some(self.0.clone()))}fn source_acquisition(&self,_:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.0.lease().source_text().same_view(text).then(||self.0.clone())}}
  #[derive(Debug)]struct Host(Arc<dm_syntax::SettingChargeCounter>,std::sync::Mutex<OriginalSignatureAliasCensus>);impl SettingExpressionQueries for Host{fn retain_original_signature_aliases(&self,row:Arc<OriginalSignatureAliasGroup>,a:&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>{self.1.lock().unwrap().retain(row,a).map_err(BodySyntaxFailure::Operational)}fn with_declaration_admission(&self,operation:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&self.0,64*1024*1024,&poll);self.1.lock().unwrap().prune(&a).map_err(BodySyntaxFailure::Operational)?;let result=operation(&a);if matches!(&result,Err(BodySyntaxFailure::Operational(_))){return result}if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}result}fn expression(&self,_:&SettingExpressionInput<'_>)->Result<dm_syntax::SettingExpression,BodySyntaxFailure>{panic!("shared declaration preparation does not demand settings")}}
  #[test]fn complete_original_roles_share_native_tree_syntax_and_signature_work_and_aliases_keep_real_roots(){
-  let text="/datum/shared\n    var/value=1\n/proc/shared(argument=1)\n    return argument\n";let source=Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let config=FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None};let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(Host(counter.clone(),Default::default()))as Arc<dyn SettingExpressionQueries>;let mut state=RetainedSemanticTree::new();let project=Path::new("shared-complete.dme");let defines=Default::default();
+  let text="/datum/shared\n    var/value=1\n/proc/shared(argument=1)\n    return argument\n";let source=Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let config=FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None};let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let host=Arc::new(Host(counter.clone(),Default::default()))as Arc<dyn SettingExpressionQueries>;let mut state=RetainedSemanticTree::new();let project=Path::new("shared-complete.dme");let defines=Default::default();
   let first=Arc::new(super::super::build_for_checker_diagnostics_with_state_checked(project,&source,&defines,config,None,&executor,Some(&mut state),&host).unwrap());assert_eq!(first.preparation_purpose(),DiagnosticPreparationPurpose::OriginalSharedComplete);first.checker_source_view().unwrap();state.remember_analysis_frontend(project,&defines,Arc::clone(&first)).unwrap();let before=crate::procedure::signature_interpretations();
   let second=super::super::build_for_original_analysis_with_state_checked(project,&source,&defines,config,None,&executor,Some(&mut state),&host).unwrap();assert_eq!(crate::procedure::signature_interpretations(),before);assert!(Arc::ptr_eq(first.source_view().unwrap().tree(),second.source_view().unwrap().tree()));assert!(Arc::ptr_eq(&first.inner.syntax,&second.inner.syntax));assert_eq!(second.original_analysis_completeness(),Some(OriginalAnalysisCompleteness::Complete));second.checker_source_view().unwrap();
-  let tree=Arc::clone(second.source_view().unwrap().tree());let mapping=Arc::clone(second.source_view().unwrap().mapping());drop(second);drop(first);drop(state);assert!(counter.load(Ordering::Acquire)>0);drop(tree);assert!(counter.load(Ordering::Acquire)>0,"source/archive alias retains actual original roots independently of remembered frontend");drop(mapping);host.with_declaration_admission(&mut |_|Ok(())).unwrap();assert_eq!(counter.load(Ordering::Acquire),0);
+  let tree=Arc::clone(second.source_view().unwrap().tree());let mapping=Arc::clone(second.source_view().unwrap().mapping());drop(second);drop(first);drop(state);assert!(counter.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());drop(tree);assert!(counter.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes(),"source/archive alias retains actual original roots independently of remembered frontend");drop(mapping);host.with_declaration_admission(&mut |_|Ok(())).unwrap();assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -524,6 +541,63 @@ mod authored_callable_anchor_loan_tests {
         assert!(declaration(&native.snapshot.tree).is_none());
         assert!(declaration(same.source_view().unwrap().tree()).is_none());
         assert!(declaration(changed_view.tree()).is_some());
+    }
+
+    #[test]
+    fn strict_cold_adoption_borrows_only_current_original_authored_type_rows() {
+        let host = crate::frontend::declaration_checked_tests::original_test_host();
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let project = std::path::Path::new("actual-type-contribution-modes.dme");
+        let defines = Default::default();
+        let input = concat!(
+            "/datum/stable\n",
+            "#ifdef SPACEMAN_DMM\n",
+            "/datum/only_original\n",
+            "#else\n",
+            "/datum/only_strict\n",
+            "#endif\n",
+        );
+        let mut original = RetainedSemanticTree::new();
+        let seed = crate::checker_builtins::original_analysis_seed().unwrap();
+        let frontend = Arc::new(crate::frontend::build_for_original_analysis_with_state_checked(
+            project, &source(input, OriginalChecker0290), &defines,
+            FrontendConfig { workers: 1, engine: Some(seed.frontend_seed()), observer: None },
+            None, &executor, Some(&mut original), &host,
+        ).unwrap());
+        original.remember_analysis_frontend(project, &defines, Arc::clone(&frontend)).unwrap();
+        let donor = frontend.original_type_loan().unwrap();
+        let strict_defines = BTreeMap::from([
+            ("DM_VERSION".into(), "516".into()),
+            ("DM_BUILD".into(), "1687".into()),
+        ]);
+
+        let build = |prior| {
+            let mut state = RetainedSemanticTree::with_shared_normalized(
+                Arc::new(crate::SharedNormalizedDeclarations::default()),
+            );
+            let request = state.begin_declaration_request(true);
+            let built = crate::frontend::build_with_executor_and_semantic_state_with_original_types(
+                project, &source(input, Native5161687), &strict_defines,
+                FrontendConfig { workers: 1, engine: None, observer: None },
+                None, &executor, Some(&mut state), false, &host, prior,
+            ).unwrap();
+            assert!(request.publish_successful());
+            drop(request);
+            (state, built)
+        };
+        let (borrowed, current) = build(Some(&original));
+        let (unborrowed, independent) = build(None);
+        let strict = borrowed.retained_declaration_index().unwrap();
+        let plain = unborrowed.retained_declaration_index().unwrap();
+        assert!(strict.skeletons().eq(plain.skeletons()));
+        assert_eq!(current.snapshot.tree.identity(), independent.snapshot.tree.identity());
+        assert!(!Arc::ptr_eq(&current.snapshot.tree, frontend.source_view().unwrap().tree()));
+        assert!(strict.owner(SymbolId::of("/datum/only_original")).is_none());
+        assert!(strict.owner(SymbolId::of("/datum/only_strict")).is_some());
+        let stable = SymbolId::of("/datum/stable");
+        let original_rows = donor.declarations.owner(stable).unwrap().shared_rows();
+        assert!(Arc::ptr_eq(original_rows, strict.owner(stable).unwrap().shared_rows()));
+        assert!(!Arc::ptr_eq(original_rows, plain.owner(stable).unwrap().shared_rows()));
     }
 
     #[test]

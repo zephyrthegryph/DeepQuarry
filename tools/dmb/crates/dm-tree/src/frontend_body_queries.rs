@@ -594,7 +594,7 @@ mod current_original_body_product_binding_tests {
   fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.0.get(path).filter(|s|s.lease().source_text().same_view(text)).cloned()}
  }
  #[derive(Debug)]struct NativeHost{counter:Arc<dm_syntax::SettingChargeCounter>,parses:AtomicUsize}
- impl NativeHost{fn new()->Self{Self{counter:Arc::new(AtomicUsize::new(0)),parses:AtomicUsize::new(0)}}}
+ impl NativeHost{fn new()->Self{Self{counter:dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap(),parses:AtomicUsize::new(0)}}}
  impl BodySyntaxQueries for NativeHost{
   fn syntax(&self,_:&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,Diagnostic>{panic!("checked native admission only")}
   fn syntax_checked(&self,input:&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,BodySyntaxFailure>{self.parses.fetch_add(1,Ordering::Relaxed);let a=dm_syntax::SettingAdmission::new(&self.counter,1<<26,&||Ok(()));input.parse_with_setting_admission(&a).map(Arc::new)}

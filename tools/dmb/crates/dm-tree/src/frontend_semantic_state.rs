@@ -84,6 +84,18 @@ impl RetainedSemanticTree {
     pub(super) fn admits_preparation_owner(&self,frontend:&RememberedFrontend,engine:Option<&EngineSeed>)->bool {
         match frontend {RememberedFrontend::Compiler(row)=>self.admits_remembered_owner(row,engine),RememberedFrontend::Analysis(row)=>row.preparation_engine_matches(engine)}
     }
+    pub(super) fn original_type_loan(
+        &self,
+        project: &std::path::Path,
+    ) -> Option<crate::declaration_contributions::TypeContributionLoan<'_>> {
+        let (path, remembered, RememberedFrontend::Analysis(frontend)) = self.previous.as_ref()? else {
+            return None;
+        };
+        if path != project || !remembered.is_empty() {
+            return None;
+        }
+        frontend.original_type_loan()
+    }
     pub(super) fn previous_frontend(
         &self,
         project: &std::path::Path,
@@ -155,6 +167,27 @@ impl RetainedSemanticTree {
             );
         }
     }
+    /// Progress-only physical reuse census. This issues no semantic/source
+    /// admission and is only called after successful current Strict assembly.
+    pub fn shared_original_authored_type_owners(
+        &self,
+        prior: &Self,
+        project: &std::path::Path,
+    ) -> usize {
+        let Some(donor) = prior.original_type_loan(project) else {
+            return 0;
+        };
+        let Some(current) = self.retained_declaration_index() else {
+            return 0;
+        };
+        current.owners().filter(|(id, owner)| {
+            donor.declarations.owner(**id).is_some_and(|original| {
+                original.rows().iter().all(|row| matches!(row.skeleton, Skeleton::Type { .. }))
+                    && Arc::ptr_eq(original.shared_rows(), owner.shared_rows())
+            })
+        }).count()
+    }
+
     /// Diagnostic-only current keyed declaration owner.
     pub fn retained_declaration_index(
         &self,

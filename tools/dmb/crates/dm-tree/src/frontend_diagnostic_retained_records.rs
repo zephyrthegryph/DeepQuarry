@@ -21,6 +21,12 @@ impl DiagnosticRetainedRecords {
         &self.index
     }
 
+    pub(crate) fn type_loan(&self, tree: &Arc<SemanticTree>) -> Option<crate::declaration_contributions::TypeContributionLoan<'_>> {
+        std::ptr::eq(self.owner.as_ptr(), Arc::as_ptr(tree)).then_some(
+            crate::declaration_contributions::TypeContributionLoan { declarations: &self.index, symbols: &self.symbols },
+        )
+    }
+
     pub(crate) fn engine_matches(&self,engine:Option<&EngineSeed>)->bool { same_engine(self.engine.as_ref(),engine) }
     pub(crate) fn capture(
         adapted: &crate::SharedAdaptedDeclarations,

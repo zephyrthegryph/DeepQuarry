@@ -255,8 +255,8 @@ impl RetainedDeclarations {
             .with_pending(|claims| claims.adopt_authored(currents))
             .flatten()
     }
-    pub(crate) fn adopt_authored_checked<'a>(&self,currents:impl IntoIterator<Item=&'a mut CurrentContribution>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<()>>{
-        self.access.with_pending(|claims|claims.adopt_authored_checked(currents,a)).unwrap_or_else(||Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"checked authored adoption has no pending declaration request")))
+    pub(crate) fn adopt_authored_checked<'a>(&self,currents:impl IntoIterator<Item=&'a mut CurrentContribution>,a:&dm_syntax::SettingAdmission<'_>,loan:Option<crate::declaration_contributions::TypeContributionLoan<'_>>)->std::io::Result<Option<()>>{
+        self.access.with_pending(|claims|claims.adopt_authored_checked(currents,a,loan)).unwrap_or_else(||Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"checked authored adoption has no pending declaration request")))
     }
     pub(in crate::frontend) fn stats(&self) -> DeclarationRetentionStats {
         self.access

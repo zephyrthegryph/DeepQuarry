@@ -272,7 +272,7 @@ pub(crate) fn prepare_original_stream_using(
       reordered_plan,reordered_expanded,reordered,changed_plan,changed_expanded,changed,
       old_codes,reordered_codes,changed_codes));
   host.with_declaration_admission(&mut |_|Ok(())).unwrap();
-  assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   assert_eq!(source_live.load(Ordering::Acquire),0);
  }
 
@@ -340,7 +340,7 @@ pub(crate) fn prepare_original_stream_using(
 
  #[test]fn strict_fatal_report_retains_same_source_credit_after_actual_host_drop_then_releases_all(){
   let concrete=super::original_resource_host::Host::new();let counter=Arc::clone(&concrete.counter);let host=concrete.clone()as Arc<dyn SettingExpressionQueries>;let source=Source::new("#warn EARLY_RAW_OWNER\n/proc/p(var/A=)\n#error FUTURE_UNPULLED\n");let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let result=super::super::build_for_checker_diagnostics_with_state_checked(Path::new("strict-source-owner.dme"),&source,&BTreeMap::new(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host);let report=match result{Err(FrontendBuildFailure::Diagnostics(report))=>report,Err(FrontendBuildFailure::Operational(actual))=>panic!("real strict source report required: {actual:?}"),Ok(_)=>panic!("malformed formal cannot issue graph")};
-  drop(source);drop(executor);drop(host);drop(concrete);assert!(counter.load(Ordering::Acquire)>0,"actual retained raw/diagnostic payload still funds the same original counter after host disappears");let raw=report.original_preprocess_notices().unwrap();assert_eq!(raw.len(),1);let notice=raw.iter().next().unwrap().unwrap();assert!(notice.message.contains("EARLY_RAW_OWNER"));assert!(matches!(notice.point,super::super::OriginalDiagnosticPoint::Acquired{line:1,..}));drop(notice);drop(raw);drop(report);assert_eq!(counter.load(Ordering::Acquire),0,"no Weak or unfunded control allocation may survive last report");
+  drop(source);drop(executor);drop(host);drop(concrete);assert!(counter.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes(),"actual retained raw/diagnostic payload still funds the same original counter after host disappears");let raw=report.original_preprocess_notices().unwrap();assert_eq!(raw.len(),1);let notice=raw.iter().next().unwrap().unwrap();assert!(notice.message.contains("EARLY_RAW_OWNER"));assert!(matches!(notice.point,super::super::OriginalDiagnosticPoint::Acquired{line:1,..}));drop(notice);drop(raw);drop(report);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"no Weak or unfunded control allocation may survive last report");
  }
 
  #[test]fn productive_formal_member_recovery_keeps_actual_boundary_empty_selector_and_ordered_header_messages(){

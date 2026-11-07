@@ -74,8 +74,8 @@ impl Permit for Compatibility {
     fn syntax(&self,_:&DeclarationSyntax)->Result<bool,Self::Failure>{Ok(true)}
 }
 
-pub(super) struct Checked<'a>{pub host:&'a Arc<dyn SettingExpressionQueries>}
-struct CheckedPermit<'a,'op>{admission:&'a dm_syntax::SettingAdmission<'op>,host:&'a dyn SettingExpressionQueries}
+pub(super) struct Checked<'a>{pub host:&'a Arc<dyn SettingExpressionQueries>,pub type_loan:Option<crate::declaration_contributions::TypeContributionLoan<'a>>}
+struct CheckedPermit<'a,'op>{admission:&'a dm_syntax::SettingAdmission<'op>,host:&'a dyn SettingExpressionQueries,type_loan:Option<crate::declaration_contributions::TypeContributionLoan<'a>>}
 fn actual_checkpoint(admission:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()> {
     let result=admission.checkpoint();
     if let Some(actual)=admission.take_operational_error(){return Err(actual)}
@@ -88,7 +88,7 @@ impl Demand for Checked<'_>{
         let mut completed=None;
         let result=self.host.with_declaration_admission(&mut |admission|{
             let operation=operation.take().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"declaration admission callback was repeated")))?;
-            match operation(&CheckedPermit{admission,host:self.host.as_ref()}) {
+            match operation(&CheckedPermit{admission,host:self.host.as_ref(),type_loan:self.type_loan}) {
                 Err(FrontendBuildFailure::Operational(actual))=>Err(BodySyntaxFailure::Operational(actual)),
                 result=>{completed=Some(result);Ok(())},
             }
@@ -185,7 +185,7 @@ impl Permit for CheckedPermit<'_,'_>{
     fn cached_facts(&self,_:Option<&[u8]>,_:&str,_:usize)->Option<(crate::AdaptedDeclarations,crate::allocation_ledger::AllocationLedger)>{None}
     fn adapt<'a>(&self,ast:&'a AstFile,source:&str,headers:&'a OriginalProcedureHeaders,offset:usize)->Result<Result<(crate::AdaptedDeclarations,HeaderAllocationReceipt<'a>),Vec<crate::AdapterError>>,Self::Failure>{crate::adapter::from_ast_with_source_headers_checked(ast,SymbolTable::default(),FileId(0),0,0,source,headers,offset,self.admission).map_err(FrontendBuildFailure::Operational)}
     fn capture(&self,state:&RetainedDeclarations,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:crate::allocation_ledger::AllocationLedger,headers:Arc<OriginalProcedureHeaders>)->Result<Option<CurrentContribution>,Self::Failure>{state.capture_source_headers_checked(key,source,offset,items,facts,ledger,headers,self.admission).map_err(FrontendBuildFailure::Operational)}
-    fn adopt(&self,state:&RetainedDeclarations,chunks:&mut[Chunk])->Result<Option<()>,Self::Failure>{state.adopt_authored_checked(chunks.iter_mut().filter_map(|(_,_,_,_,current)|current.as_mut().ok()),self.admission).map_err(FrontendBuildFailure::Operational)}
+    fn adopt(&self,state:&RetainedDeclarations,chunks:&mut[Chunk])->Result<Option<()>,Self::Failure>{state.adopt_authored_checked(chunks.iter_mut().filter_map(|(_,_,_,_,current)|current.as_mut().ok()),self.admission,self.type_loan).map_err(FrontendBuildFailure::Operational)}
     fn syntax(&self,syntax:&DeclarationSyntax)->Result<bool,Self::Failure>{
         self.checkpoint()?;
         for chunk in syntax.chunks().iter(){if !chunk.shared_relative().initializer_admission_matches(self.admission).map_err(FrontendBuildFailure::Operational)?{return Ok(false)}}

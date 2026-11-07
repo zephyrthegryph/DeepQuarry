@@ -4,7 +4,7 @@ use super::*;
 use std::sync::{Arc,atomic::{AtomicBool,AtomicUsize,Ordering}};
 #[derive(Debug)]
 pub(crate) struct Host {
-    pub(crate) counter:Arc<AtomicUsize>,
+    pub(crate) counter:Arc<dm_syntax::SettingChargeCounter>,
     pub(crate) limit:AtomicUsize,
     pub(crate) fail:AtomicBool,
     pub(crate) entries:AtomicUsize,
@@ -12,7 +12,7 @@ pub(crate) struct Host {
     source_reads:std::sync::Mutex<SourceReadLedger>,
 }
 impl Host {
-    pub(crate) fn new()->Arc<Self>{Arc::new(Self{counter:Arc::new(AtomicUsize::new(0)),limit:AtomicUsize::new(128*1024*1024),fail:AtomicBool::new(false),entries:AtomicUsize::new(0),aliases:Default::default(),source_reads:Default::default()})}
+    pub(crate) fn new()->Arc<Self>{Arc::new(Self{counter:dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap(),limit:AtomicUsize::new(128*1024*1024),fail:AtomicBool::new(false),entries:AtomicUsize::new(0),aliases:Default::default(),source_reads:Default::default()})}
     fn checkpoint(&self)->std::io::Result<()>{if self.fail.load(Ordering::Acquire){Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}}
 }
 impl SettingExpressionQueries for Host {
@@ -93,6 +93,6 @@ impl dm_preprocess::source_arena_credit::SourceArenaWork for Host{
  #[test]fn pruning_one_source_keeps_shared_row_buffer_funded_and_rejects_foreign_credit(){
   let host=Host::new();let mut sources=Vec::new();for _ in 0..9{let source=dm_preprocess::SourceAcquisitionLease::from_raw_original_bytes(b"/datum/a\n".to_vec(),());let mut credit=host.reserve(host.original_read_bookkeeping_bytes().unwrap()+8192).unwrap();host.adopt_original_read(&mut credit,&source).unwrap();sources.push(source)}
   sources.pop();host.prune_source_reads();let(rows,capacity,storage)=host.source_resource_rows();assert_eq!(rows,8);assert!(storage>=capacity*std::mem::size_of::<SourceReadReservation>());
-  let foreign=Host::new();let mut wrong=foreign.reserve(8192).unwrap();assert_eq!(host.grow(&mut wrong,1).unwrap_err().kind(),std::io::ErrorKind::InvalidInput);drop(wrong);assert_eq!(foreign.counter.load(Ordering::Acquire),0);drop(sources);host.prune_source_reads();assert_eq!(host.source_resource_rows(),(0,0,0));assert_eq!(host.counter.load(Ordering::Acquire),0);
+  let foreign=Host::new();let mut wrong=foreign.reserve(8192).unwrap();assert_eq!(host.grow(&mut wrong,1).unwrap_err().kind(),std::io::ErrorKind::InvalidInput);drop(wrong);assert_eq!(foreign.counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());drop(sources);host.prune_source_reads();assert_eq!(host.source_resource_rows(),(0,0,0));assert_eq!(host.counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

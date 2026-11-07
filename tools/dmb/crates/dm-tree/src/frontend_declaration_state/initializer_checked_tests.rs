@@ -15,11 +15,11 @@ fn checked_declaration_same_table_declines_old_header_and_fresh_publish_stays_wa
         let old_owner=Arc::clone(&old.value);let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,4*1024*1024,&checkpoint);
         assert!(state.get_shared_checked(&key,source,0,&a).unwrap().is_none(),"equal source ledger cannot certify original initializer producer");
         let(items,facts,ledger,headers,original)=contribution(source,Some(&a));let mut fresh=state.capture_source_headers_checked(&key,original,0,items,facts,ledger,headers,&a).unwrap().unwrap();
-        state.adopt_authored_checked(std::iter::once(&mut fresh),&a).unwrap().unwrap();
+        state.adopt_authored_checked(std::iter::once(&mut fresh),&a,None).unwrap().unwrap();
         assert!(!Arc::ptr_eq(&old_owner,&fresh.value));assert!(fresh.value.syntax.initializer_admission_matches(&a).unwrap());assert!(!old_owner.syntax.initializer_admission_matches(&a).unwrap(),"old escaped owner is never grafted/promoted");
         let warm=state.get_shared_checked(&key,source,0,&a).unwrap().expect("same actual admitted producer reused");assert!(Arc::ptr_eq(&fresh.value,&warm.value));assert!(Arc::ptr_eq(&fresh.value.syntax,&warm.value.syntax));
         let foreign_counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign=dm_syntax::SettingAdmission::new(&foreign_counter,4*1024*1024,&checkpoint);assert!(state.get_shared_checked(&key,source,0,&foreign).unwrap().is_none());
-        let(items,facts,ledger,headers,original)=contribution(source,Some(&foreign));let mut other=state.capture_source_headers_checked(&key,original,0,items,facts,ledger,headers,&foreign).unwrap().unwrap();state.adopt_authored_checked(std::iter::once(&mut other),&foreign).unwrap().unwrap();assert!(!Arc::ptr_eq(&fresh.value.syntax,&other.value.syntax));
+        let(items,facts,ledger,headers,original)=contribution(source,Some(&foreign));let mut other=state.capture_source_headers_checked(&key,original,0,items,facts,ledger,headers,&foreign).unwrap().unwrap();state.adopt_authored_checked(std::iter::once(&mut other),&foreign,None).unwrap().unwrap();assert!(!Arc::ptr_eq(&fresh.value.syntax,&other.value.syntax));
         // This same lease deliberately adopted B: current-roster stores may
         // retire its unclaimed A candidate. Escaped owners remain immutable;
         // keeping an Arc alive does not create a separate publication claim.

@@ -53,7 +53,7 @@ pub fn prepare_generation_question_declarations<P:SourceProvider>(
 
 /// Actual directive planning before declaration selection; no syntax/model/body is parsed.
 pub fn prepare_generation_declaration_plan<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,omissions:dm_preprocess::regions::GenerationOmissions,host:&Arc<dyn SettingExpressionQueries>,read:&dyn Fn(&Path)->std::io::Result<Option<Arc<dm_preprocess::regions::prepared_source::PreparedSource>>>)->Result<dm_preprocess::regions::GenerationDirectivePlan,GenerationPreparationFailure>{
- let demand=super::declaration_demand::Checked{host};let result=(||{demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;let plan=dm_preprocess::regions::GenerationDirectivePlan::prepare(project,provider,defines,omissions,read).map_err(|actual|GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(actual)))?;if !plan.diagnostics().is_empty(){return Err(GenerationPreparationFailure::Preprocess(plan.diagnostics().to_vec()))}Ok(plan)})();if matches!(&result,Err(GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(_)))){return result}demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;result
+ let demand=super::declaration_demand::Checked{host,type_loan:None};let result=(||{demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;let plan=dm_preprocess::regions::GenerationDirectivePlan::prepare(project,provider,defines,omissions,read).map_err(|actual|GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(actual)))?;if !plan.diagnostics().is_empty(){return Err(GenerationPreparationFailure::Preprocess(plan.diagnostics().to_vec()))}Ok(plan)})();if matches!(&result,Err(GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(_)))){return result}demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;result
 }
 
 fn prepare_generation_declarations_inner<P:SourceProvider>(
@@ -74,7 +74,7 @@ pub fn prepare_generation_declarations_from_plan(
     host:&Arc<dyn SettingExpressionQueries>,
     questions:bool,
 )->Result<GenerationDeclarationFrame,GenerationPreparationFailure>{
-    let demand=super::declaration_demand::Checked{host};
+    let demand=super::declaration_demand::Checked{host,type_loan:None};
     let result=(||{
         demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;
         if !plan.diagnostics().is_empty(){return Err(GenerationPreparationFailure::Preprocess(plan.diagnostics().to_vec()))}
@@ -160,7 +160,7 @@ impl GenerationDeclarationFrame {
         control: &Arc<dyn SettingExpressionQueries>,
         declare_type_probe: bool,
     ) -> Result<GenerationNativeQuestions, GenerationPreparationFailure> {
-        let demand=super::declaration_demand::Checked{host:control};
+        let demand=super::declaration_demand::Checked{host:control,type_loan:None};
         let result=(||{
             demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;
             let Self{plan,parsed,question_expansion,question_host}=self;

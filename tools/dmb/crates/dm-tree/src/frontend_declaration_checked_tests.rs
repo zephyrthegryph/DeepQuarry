@@ -49,7 +49,7 @@ fn checked_frontend_compatibility_then_checked_then_warm_keeps_genuine_early_roo
 fn checked_frontend_actual_quota_and_os_failure_are_operational_and_same_source_recovers(){
     let src=source(TEXT);let mut state=RetainedSemanticTree::default();
     let raw=Host::new();let host=raw.clone() as Arc<dyn SettingExpressionQueries>;
-    raw.limit.store(0,Ordering::Release);
+    raw.limit.store(dm_syntax::SettingChargeCounter::root_allocation_bytes(),Ordering::Release);
     let error=checked(&src,&mut state,&host).err().expect("actual zero-headroom root admission");
     assert!(matches!(error,FrontendBuildFailure::Operational(ref actual)if actual.kind()==std::io::ErrorKind::OutOfMemory));
     raw.limit.store(128*1024*1024,Ordering::Release);

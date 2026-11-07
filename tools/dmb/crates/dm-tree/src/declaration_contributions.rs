@@ -97,6 +97,43 @@ fn family(skeleton: &Skeleton) -> DeclarationFamily {
         },
     }
 }
+/// Read-only loan of type declaration data and its issuing dictionary. This
+/// cannot lend original source coordinates, a resolved tree, or member facts.
+#[derive(Clone, Copy)]
+pub(crate) struct TypeContributionLoan<'a> {
+    pub(crate) declarations: &'a KeyedDeclarations,
+    pub(crate) symbols: &'a dm_ir::SymbolTable,
+}
+impl TypeContributionLoan<'_> {
+    fn matching_owner<'symbols>(
+        &self,
+        owner: SymbolId,
+        indices: &[usize],
+        skeletons: crate::skeleton_roster::SkeletonView<'_>,
+        current_symbols: &impl Fn(usize) -> Option<&'symbols dm_ir::SymbolTable>,
+    ) -> Option<&Arc<TypeContribution>> {
+        let prior = self.declarations.owners.get(&owner)?;
+        if prior.rows.len() != indices.len() {
+            return None;
+        }
+        for (row, &index) in prior.rows.iter().zip(indices) {
+            let Skeleton::Type { path, explicit_parent } = &skeletons[index] else {
+                return None;
+            };
+            if row.skeleton != skeletons[index] {
+                return None;
+            }
+            let current = current_symbols(index)?;
+            for id in std::iter::once(*path).chain(*explicit_parent) {
+                if self.symbols.text(id)? != current.text(id)? {
+                    return None;
+                }
+            }
+        }
+        Some(prior)
+    }
+}
+
 impl KeyedDeclarations {
     /// Build a new current roster. No old coordinates, symbols, or tree authority
     /// are retained here. Unchanged owners share only after exact row equality.
@@ -109,6 +146,15 @@ impl KeyedDeclarations {
     pub(crate) fn capture_view(
         previous: Option<&Self>,
         skeletons: crate::skeleton_roster::SkeletonView<'_>,
+    ) -> Result<(Self, ContributionChanges), ContributionError> {
+        Self::capture_view_with_type_loan(previous, skeletons, None, |_| None)
+    }
+
+    pub(crate) fn capture_view_with_type_loan<'symbols>(
+        previous: Option<&Self>,
+        skeletons: crate::skeleton_roster::SkeletonView<'_>,
+        loan: Option<TypeContributionLoan<'_>>,
+        current_symbols: impl Fn(usize) -> Option<&'symbols dm_ir::SymbolTable>,
     ) -> Result<(Self, ContributionChanges), ContributionError> {
         let mut grouped = BTreeMap::<SymbolId, Vec<usize>>::new();
         let mut roster = Vec::with_capacity(skeletons.len());
@@ -135,6 +181,13 @@ impl KeyedDeclarations {
                 })
             {
                 owners.insert(owner, prior.clone());
+                changes.reused_owners += 1;
+                continue;
+            }
+            if let Some(prior) = loan.as_ref().and_then(|loan| {
+                loan.matching_owner(owner, &indices, skeletons, &current_symbols)
+            }) {
+                owners.insert(owner, Arc::clone(prior));
                 changes.reused_owners += 1;
                 continue;
             }

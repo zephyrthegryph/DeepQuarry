@@ -20,6 +20,11 @@ impl SkeletonRoster {
         if leaf.is_empty() {
             return;
         }
+        self.push_positional_leaf(leaf);
+    }
+    // Request-local adoption can align this roster with the actual current
+    // dictionaries by retaining empty chunk positions as well.
+    pub(crate) fn push_positional_leaf(&mut self, leaf: Arc<Vec<Skeleton>>) {
         self.prefix.push(self.len);
         self.len += leaf.len();
         self.chunks.push(leaf);
@@ -41,11 +46,11 @@ impl SkeletonRoster {
     pub(crate) fn to_vec(&self) -> Vec<Skeleton> {
         self.iter().cloned().collect()
     }
+    pub(crate) fn leaf_index(&self, index: usize) -> Option<usize> {
+        (index < self.len).then(|| self.prefix.partition_point(|&begin| begin <= index) - 1)
+    }
     fn get(&self, index: usize) -> Option<&Skeleton> {
-        if index >= self.len {
-            return None;
-        }
-        let chunk = self.prefix.partition_point(|&begin| begin <= index) - 1;
+        let chunk = self.leaf_index(index)?;
         self.chunks[chunk].get(index - self.prefix[chunk])
     }
 }
