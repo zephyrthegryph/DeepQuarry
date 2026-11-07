@@ -367,7 +367,7 @@ fn real_redefinition_and_undef_restore_only_the_exact_definition_owner() {
     let root = "E:/controller/origin-stack.dme";
     let child = "E:/controller/origin-child.dm";
     let provider = Memory::new(&[
-        (root, "#define VALUE 3\n/datum/root\n    var/first = VALUE\n#include \"origin-child.dm\"\n#undef VALUE\n/datum/root\n    var/restored = VALUE\n"),
+        (root, "#define VALUE 3\n/datum/root\n    var/first = VALUE\n    var/again = VALUE\n#include \"origin-child.dm\"\n#undef VALUE\n/datum/root\n    var/restored = VALUE\n"),
         (child, "#define VALUE 7\n/datum/child\n    var/changed = VALUE\n"),
     ]);
     let work = Work { live: Arc::new(AtomicUsize::new(0)) };
@@ -379,13 +379,15 @@ fn real_redefinition_and_undef_restore_only_the_exact_definition_owner() {
     let rows: Vec<_> = product.expanded().origins.iter().filter(|row| {
         row.macro_expansions.get(0).is_some_and(|expansion| expansion.name == "VALUE")
     }).collect();
-    let [first, changed, restored] = rows.as_slice() else { panic!("expected three actual invocations"); };
+    let [first, again, changed, restored] = rows.as_slice() else { panic!("expected four actual invocations"); };
     let outer = first.macro_expansions.author_buffers(0).unwrap();
+    assert_eq!(again.macro_expansions.author_buffers(0), Some(outer));
+    assert!(!first.macro_expansions.same_owner(again.macro_expansions));
     let inner = changed.macro_expansions.author_buffers(0).unwrap();
     assert_eq!(restored.macro_expansions.author_buffers(0), Some(outer));
     assert_ne!(outer, inner);
     assert!(!first.macro_expansions.same_owner(restored.macro_expansions));
-    for (row, path) in [(first, root), (changed, child), (restored, root)] {
+    for (row, path) in [(first, root), (again, root), (changed, child), (restored, root)] {
         let definition = row.macro_expansions.get(0).unwrap().definition.unwrap();
         assert_eq!(definition.path.as_path(), Path::new(path));
         assert_eq!(definition.source_line, 1);

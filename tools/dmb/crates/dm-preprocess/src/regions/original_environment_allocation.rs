@@ -162,6 +162,11 @@ impl<'a> OriginalEnvironmentRead<'a>{
  pub(crate) fn actual_original_product(&self,name:&str)->io::Result<Option<&'a OriginalDefinitionProduct>>{
   self.0.actual_original_product(name)
  }
+ pub(in crate::regions) fn expansion_definition_using(&self, name: &str, a: &SettingAdmission<'_>)
+     -> io::Result<(Option<crate::macro_expansion::OriginalMacroOrigin>, Option<&'a Arc<super::super::macro_trace_view::OriginalMacroAuthor>>)>
+ {
+  self.0.original_expansion_definition_using(name, a)
+ }
  pub(crate) fn original_current_owner_using(&self,name:&str,a:&SettingAdmission<'_>)->io::Result<Option<Arc<OriginalDefinitionProduct>>>{
   self.0.original_current_owner_using(name,a)
  }

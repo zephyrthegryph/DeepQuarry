@@ -15,16 +15,22 @@ pub(super) struct OriginalMacroAuthor {
 impl OriginalMacroAuthor {
     const BYTES: usize = mem::size_of::<Self>() + 2 * mem::size_of::<usize>();
 
+    pub(super) fn allocation_bytes(name_bytes: usize) -> Option<usize> { Self::BYTES.checked_add(name_bytes) }
+
     pub(super) fn new_using(name: &str, origin: Option<DefinitionOrigin>, a: &SettingAdmission<'_>) -> io::Result<Arc<Self>> {
         let name_bytes = name.len();
-        let bytes = Self::BYTES.checked_add(name_bytes).ok_or(io::ErrorKind::OutOfMemory)?;
+        let bytes = Self::allocation_bytes(name_bytes).ok_or(io::ErrorKind::OutOfMemory)?;
         let credit = a.reserve(bytes).map_err(|error| a.take_operational_error().unwrap_or(error))?;
         let name = Box::from(name);
         Ok(Arc::new(Self { name, origin, credit }))
     }
 
     pub(super) fn matches(&self, name: &str, actual: &DefinitionOrigin, a: &SettingAdmission<'_>) -> bool {
-        a.matches_lease_domain(&self.credit) && self.name.as_ref() == name
+        self.name.as_ref() == name && self.matches_origin(actual, a)
+    }
+
+    pub(super) fn matches_origin(&self, actual: &DefinitionOrigin, a: &SettingAdmission<'_>) -> bool {
+        a.matches_lease_domain(&self.credit)
             && self.origin.as_ref().is_some_and(|origin| {
                 Arc::ptr_eq(&origin.path, &actual.path)
                     && origin.source_span == actual.source_span

@@ -54,7 +54,7 @@ impl Source<'static> for OriginalBorrowedMacroSource<'_>{
  fn include_depth(&self)->usize{self.inputs.depth()}
  fn dynamic(&mut self,file:bool,origin:Origin,a:&SettingAdmission<'_>)->io::Result<Token<'static>>{self.host.dynamic(file,origin,self.inputs.current_occurrence(),self.inputs.last_input(),a)}
  fn invocation(&mut self,name:&str,origin:Origin,a:&SettingAdmission<'_>)->io::Result<()>{self.host.invocation(name,origin,a)}
- fn expansion_pushed(&mut self,name:&str,origin:Origin,depth:usize,a:&SettingAdmission<'_>)->io::Result<()>{let actual=self.environment.actual_original_product(name)?;let definition_name=actual.and_then(|actual|actual.definition_name()).map(|token|token.origin());self.queue.trace_pushed_using(name,origin,depth,definition_name,actual.and_then(|actual|actual.projected_definition()),a)?;self.host.expansion_pushed(name,origin,depth,definition_name,a)}
+ fn expansion_pushed(&mut self,name:&str,origin:Origin,depth:usize,a:&SettingAdmission<'_>)->io::Result<()>{let (definition_name, author)=self.environment.expansion_definition_using(name,a)?;self.queue.trace_pushed_using(name,origin,depth,definition_name,author,a)?;self.host.expansion_pushed(name,origin,depth,definition_name,a)}
  fn expansion_popped(&mut self,depth:usize,a:&SettingAdmission<'_>)->io::Result<()>{self.queue.trace_popped_using(depth,a)?;self.host.expansion_popped(depth,a)}
 
 }

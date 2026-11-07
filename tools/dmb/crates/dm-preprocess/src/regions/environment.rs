@@ -6,7 +6,7 @@ use crate::macro_expansion::{OriginalMacroDefinition,OriginalMacroRows,OriginalM
 use crate::macro_expansion::{OriginalMacroToken,OriginalMacroOrigin};
 use dm_syntax::SettingAdmission;
 use std::io;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 #[derive(Clone, Debug)]
 pub(super) struct Binding {
@@ -35,8 +35,7 @@ impl PartialEq for Binding {
 impl Eq for Binding {}
 impl Binding {
     fn definition_origin(&self) -> Option<&DefinitionOrigin> {
-        self.original.as_deref().and_then(OriginalDefinitionProduct::projected_definition)
-            .and_then(|definition| definition.origin()).or(self.origin.as_ref())
+        self.origin.as_ref()
     }
 }
 
@@ -142,7 +141,7 @@ impl OriginalDefinitionName {
 #[path="original_replacement_roster.rs"]
 mod replacement_roster;
 struct RetainedDefinition{parameters:Option<Vec<OriginalMacroText>>,variadic:bool,replacement:replacement_roster::Replacement}
-pub(super) struct OriginalDefinitionProduct{name:Option<OriginalDefinitionName>,projected:Option<Arc<OriginalMacroAuthor>>,definition:RetainedDefinition,docs:Vec<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
+pub(super) struct OriginalDefinitionProduct{name:Option<OriginalDefinitionName>,projected:OnceLock<Arc<OriginalMacroAuthor>>,definition:RetainedDefinition,docs:Vec<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
 
 /// Sealed row buffers never outlive their product. Transfer actual allocation
 /// ownership and credit together without copying rows, consolidating their
@@ -182,6 +181,10 @@ pub(super) struct OriginalProductCensus {
  shared_direct_bytes_per_reference_upper:usize,
  source_text_references:usize,
  lexical_frame_references:usize,
+ author_materialized_references:usize,
+ author_materialized_bytes_per_reference_upper:usize,
+ author_unused_live_epochs:usize,
+ author_deferred_eager_bytes:usize,
 }
 #[cfg(debug_assertions)]
 impl OriginalProductCensus {
@@ -198,6 +201,10 @@ impl OriginalProductCensus {
    if let Some(value)=original_value_text(&token.value){text(value,bytes,source_refs)}
    if let Some(raw)=&token.raw_spelling{text(raw,bytes,source_refs)}
    add(frame_refs,usize::from(token.lexical_frame.is_some()));
+  }
+  if let Some(author) = product.projected.get() {
+   add(&mut self.author_materialized_references, 1);
+   add(&mut self.author_materialized_bytes_per_reference_upper, author.retained_bytes());
   }
   let mut replacement=0;
   let mut params=0;
@@ -259,19 +266,19 @@ impl OriginalDefinitionProduct{
  /// SAME Binding retains actual drained/following definition docs, in order.
  /// Invocations borrow this product before raw argument demand can change state.
  pub(super) fn from_actual_product_with_docs_using(definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
-  Self::from_product_with_name_using(None,None,definition,docs,HistoryPurpose::Full,a)
+  Self::from_product_with_name_using(None,definition,docs,HistoryPurpose::Full,a)
  }
  /// Keep the SAME issued #define spelling, point and lexical-frame owner.
  /// Physical identifier whitespace and replacement-token-only fields have
  /// no definition-name consumer. Bootstrap still has no physical name.
- pub(super) fn from_named_actual_product_using(name:OriginalMacroToken<'static>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,origin:Option<DefinitionOrigin>,purpose:HistoryPurpose,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
+ pub(super) fn from_named_actual_product_using(name:OriginalMacroToken<'static>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,purpose:HistoryPurpose,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
   original_poll(a)?;if !matches!(name.value,OriginalMacroValue::Ident{..})||name.origin.byte_column.is_none()||name.origin.line==0{return Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original definition-name point is unissued"))}
   if name.lexical_frame.as_ref().is_some_and(|frame|!frame.admitted_by(a)){return Err(io::ErrorKind::InvalidInput.into())}
   let OriginalMacroValue::Ident{spelling,..}=name.value else{unreachable!("checked actual definition name")};
   let pending=WideDefinitionName{origin:name.origin,spelling,lexical_frame:name.lexical_frame};
-  Self::from_product_with_name_using(Some((pending,name.lexical_span)),origin,definition,docs,purpose,a)
+  Self::from_product_with_name_using(Some((pending,name.lexical_span)),definition,docs,purpose,a)
  }
- fn from_product_with_name_using(name:Option<(WideDefinitionName,Option<dm_syntax::Span>)>,origin:Option<DefinitionOrigin>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,purpose:HistoryPurpose,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
+ fn from_product_with_name_using(name:Option<(WideDefinitionName,Option<dm_syntax::Span>)>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,purpose:HistoryPurpose,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
   original_poll(a)?;let mut credit=a.reserve(Self::wrapper_bytes()).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let name=name.map(|(pending,span)|OriginalDefinitionName::capture(pending,span,&mut credit,a)).transpose()?;
   let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"actual-original-definition-token-data-v1");hash.update(&[u8::from(definition.variadic)]);match &definition.parameters{None=>hash.update(&[0]),Some(params)=>{hash.update(&[1]);hash.update(&(params.len()as u64).to_le_bytes());for name in params.as_slice(){original_hash_text(&mut hash,name.as_str(),a)?;}}}
@@ -303,14 +310,29 @@ impl OriginalDefinitionProduct{
    }
   }
   let definition=RetainedDefinition{parameters,variadic,replacement};
-  let projected=origin.map(|origin| {
-   let issued_name=name.as_ref().ok_or(io::ErrorKind::InvalidData)?.spelling();
-   OriginalMacroAuthor::new_using(issued_name,Some(origin),a)
-  }).transpose()?;
-  Ok(Arc::new(Self{name,projected,definition,docs,digest,_credit:credit}))
+  Ok(Arc::new(Self{name,projected:OnceLock::new(),definition,docs,digest,_credit:credit}))
  }
  pub(super) fn definition_name(&self)->Option<&OriginalDefinitionName>{self.name.as_ref()}
- pub(super) fn projected_definition(&self)->Option<&Arc<OriginalMacroAuthor>>{self.projected.as_ref()}
+ /// Only the single actual Original expansion driver may fill this epoch
+ /// slot. Full history and detached readers can observe an existing author
+ /// but cannot acquire another one or change the installed definition site.
+ fn projected_definition_using(&self, origin: &DefinitionOrigin, a: &SettingAdmission<'_>)
+     -> io::Result<&Arc<OriginalMacroAuthor>>
+ {
+  if let Some(author) = self.projected.get() {
+   if !author.matches_origin(origin, a) {
+    return Err(io::Error::new(io::ErrorKind::InvalidData,
+     "actual macro author differs from its installed epoch"));
+   }
+   return Ok(author);
+  }
+  let name = self.definition_name().ok_or(io::ErrorKind::InvalidData)?.spelling();
+  if !a.matches_lease_domain(&self._credit) { return Err(io::ErrorKind::InvalidInput.into()); }
+  let author = OriginalMacroAuthor::new_using(name, Some(origin.clone()), a)?;
+  self.projected.set(author).map_err(|_| io::Error::new(io::ErrorKind::InvalidData,
+   "actual macro epoch has a second expansion writer"))?;
+  Ok(self.projected.get().expect("actual macro author installed"))
+ }
  #[cfg(test)]
  pub(super) fn uses_compact_replacement(&self)->bool{self.definition.replacement.is_compact()}
  pub(super) fn docs(&self)->&[OriginalMacroDoc<'static>]{self.docs.as_slice()}
@@ -325,7 +347,7 @@ impl OriginalDefinitionProduct{
  /// Source views retain SAME acquisition-backed allocation and are visited as
  /// views, never counted as newly owned text or reconstructed/reencoded bytes.
  pub(super) fn visit_owned_storage(&self,mut visit:impl FnMut(usize,usize)){
-  if let Some(projected)=&self.projected{projected.visit_storage(|address,_,bytes|visit(address,bytes));}
+  if let Some(projected)=self.projected.get(){projected.visit_storage(|address,_,bytes|visit(address,bytes));}
   visit_product_rows(&self.docs,&mut visit);for doc in self.docs.as_slice(){if let OriginalMacroTextValue::Owned(text)=&doc.text{text.visit_allocation(&mut visit);}}
   if let Some(params)=&self.definition.parameters{visit_product_rows(params,&mut visit);for name in params.as_slice(){name.visit_allocation(&mut visit);}}
   if let Some(OriginalDefinitionName(DefinitionNameStorage::Wide(row)))=&self.name {
@@ -396,11 +418,30 @@ impl MacroEnvironment{
   for(_,binding)in &self.bindings{
    let mut current=Some(binding);
    while let Some(binding)=current{
-    if let Some(product)=&binding.original{census.note(product);}
+    if let Some(product)=&binding.original{
+     census.note(product);
+     if binding.origin.is_some() && product.projected.get().is_none() {
+      if let Some(name) = product.definition_name() {
+       census.author_unused_live_epochs += 1;
+       census.author_deferred_eager_bytes += OriginalMacroAuthor::allocation_bytes(name.spelling().len())
+        .expect("actual macro author layout");
+      }
+     }
+    }
     current=binding.previous.as_ref();
    }
   }
   census
+ }
+ pub(super) fn original_expansion_definition_using<'a>(
+  &'a self, name: &str, a: &SettingAdmission<'_>,
+ ) -> io::Result<(Option<OriginalMacroOrigin>, Option<&'a Arc<OriginalMacroAuthor>>)> {
+  let Some(binding) = self.bindings.get(name) else { return Ok((None, None)); };
+  let product = binding.original.as_deref().ok_or_else(|| io::Error::new(
+   io::ErrorKind::Unsupported, "actual current macro binding has no issued Original definition tokens"))?;
+  let point = product.definition_name().map(OriginalDefinitionName::origin);
+  let author = binding.origin.as_ref().map(|origin| product.projected_definition_using(origin, a)).transpose()?;
+  Ok((point, author))
  }
  pub(super) fn actual_original_product(&self,name:&str)->io::Result<Option<&OriginalDefinitionProduct>>{match self.bindings.get(name){None=>Ok(None),Some(binding)=>binding.original.as_deref().map(Some).ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual current macro binding has no issued Original definition tokens"))}}
  pub(super) fn visit_original_products_while(&self,mut visit:impl FnMut(&Arc<str>,usize,usize,&OriginalDefinitionProduct)->bool){for(name,binding)in &self.bindings{let mut current=Some(binding);while let Some(binding)=current{if let Some(product)=&binding.original{let fixed=OriginalDefinitionProduct::wrapper_bytes();if !visit(name,Arc::as_ptr(product)as usize,fixed,product){break}}current=binding.previous.as_ref();}}}
@@ -798,7 +839,7 @@ mod tests {
     lexical_frame:None,lexical_span:None,
    },&a).unwrap();
    let definition=OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};
-   OriginalDefinitionProduct::from_product_with_name_using(None,None,definition,docs,purpose,&a).unwrap()
+   OriginalDefinitionProduct::from_product_with_name_using(None,definition,docs,purpose,&a).unwrap()
   };
   let full=make("actual doc",HistoryPurpose::Full);
   let retained=used.load(Ordering::Acquire);
@@ -910,7 +951,7 @@ mod tests {
   let origin=OriginalMacroOrigin{physical:span,line:1,byte_column:Some(9),occurrence:3,invocation:false};
   let token=OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:Some(frame.clone()),lexical_span:Some(span),raw_spelling:None,value:OriginalMacroValue::Ident{spelling:OriginalMacroTextValue::Source(spelling.clone()),whitespace:true},origin};
   let definition=OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};
-  let product=OriginalDefinitionProduct::from_named_actual_product_using(token,definition,OriginalMacroRows::new(&a).unwrap(),None,HistoryPurpose::Full,&a).unwrap();
+  let product=OriginalDefinitionProduct::from_named_actual_product_using(token,definition,OriginalMacroRows::new(&a).unwrap(),HistoryPurpose::Full,&a).unwrap();
   let name=product.definition_name().unwrap();
   assert_eq!(name.origin(),origin);
   assert!(name.uses_physical_storage());
@@ -924,6 +965,21 @@ mod tests {
   let mut frames=0;
   product.visit_lexical_frames(|actual|{assert!(actual.same_frame(&frame));frames+=1});
   assert_eq!((views,frames),(0,1));
+  let path = Arc::new(std::path::PathBuf::from("actual.dm"));
+  let installed = DefinitionOrigin { path, source_span: span, source_line: 1 };
+  assert!(product.projected.get().is_none());
+  let before = used.load(Ordering::Acquire);
+  let exact = OriginalMacroAuthor::allocation_bytes("ORIGINAL".len()).unwrap();
+  let denied = SettingAdmission::new(&used,before + exact - 1,&|| Ok(()));
+  assert_eq!(product.projected_definition_using(&installed,&denied).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
+  assert_eq!(used.load(Ordering::Acquire),before);
+  assert!(product.projected.get().is_none());
+  let first = product.projected_definition_using(&installed,&a).unwrap();
+  assert_eq!(used.load(Ordering::Acquire),before + exact);
+  assert!(Arc::ptr_eq(first,product.projected_definition_using(&installed,&a).unwrap()));
+  let other = DefinitionOrigin { source_line: 2, ..installed };
+  assert_eq!(product.projected_definition_using(&other,&a).unwrap_err().kind(), io::ErrorKind::InvalidData);
+  assert_eq!(used.load(Ordering::Acquire),before + exact);
   drop((product,frame,lease,spelling));
   assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
@@ -942,7 +998,7 @@ mod tests {
     punctuation_close:false,lexical_frame:Some(frame.clone()),lexical_span:Some(span),raw_spelling:None,
     value:OriginalMacroValue::Ident{spelling:OriginalMacroTextValue::Source(spelling.clone()),whitespace:false},origin};
    let definition=OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(a)?};
-   OriginalDefinitionProduct::from_named_actual_product_using(token,definition,OriginalMacroRows::new(a)?,None,HistoryPurpose::Full,a)
+   OriginalDefinitionProduct::from_named_actual_product_using(token,definition,OriginalMacroRows::new(a)?,HistoryPurpose::Full,a)
   };
   let before=used.load(Ordering::Acquire);
   let exact=OriginalDefinitionProduct::wrapper_bytes()+std::mem::size_of::<WideDefinitionName>();
@@ -969,7 +1025,7 @@ mod tests {
   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let make=||OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};
   let initial=OriginalDefinitionProduct::from_actual_product_using(make(),&a).unwrap();assert!(initial.definition_name().is_none());
   let origin=OriginalMacroOrigin{physical:dm_syntax::Span::new(31,35),line:7,byte_column:Some(9),occurrence:2,invocation:true};let name=OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:OriginalMacroValue::Ident{spelling:OriginalMacroTextValue::Borrowed("NAME"),whitespace:false},origin};
-  let product=OriginalDefinitionProduct::from_named_actual_product_using(name,make(),OriginalMacroRows::new(&a).unwrap(),None,HistoryPurpose::Full,&a).unwrap();assert_eq!(product.definition_name().unwrap().origin(),origin);
+  let product=OriginalDefinitionProduct::from_named_actual_product_using(name,make(),OriginalMacroRows::new(&a).unwrap(),HistoryPurpose::Full,&a).unwrap();assert_eq!(product.definition_name().unwrap().origin(),origin);
   assert_eq!(product.definition_name().unwrap().spelling(),"NAME");
   assert!(std::mem::size_of::<Option<OriginalDefinitionName>>()<std::mem::size_of::<Option<OriginalMacroToken<'static>>>());
   assert!(!product.definition_name().unwrap().uses_physical_storage());
