@@ -6,6 +6,7 @@ import './statpanel.scss';
 
 import { createRoot } from 'react-dom/client';
 import { App, PanelBoundary } from './App';
+import { applyDockPreview } from './dockPreview';
 import { StatStore } from './store';
 
 const win = window as any;
@@ -70,7 +71,13 @@ function restoreFocus(event: Event) {
 document.addEventListener('mouseup', restoreFocus);
 document.addEventListener('keyup', restoreFocus);
 
-Byond.subscribe((type: string, payload: any) => store.receive(type, payload));
+Byond.subscribe((type: string, payload: any) => {
+  if (type === 'dock/preview') {
+    applyDockPreview(payload);
+    return;
+  }
+  store.receive(type, payload);
+});
 
 function showFallback() {
   const fallback = document.getElementById('statpanel-fallback');

@@ -153,6 +153,7 @@ export function snapRect(
   win: Rect,
   area: Rect | null,
   distance = SNAP_DISTANCE,
+  lines: SnapLines = {},
 ): Rect {
   if (!area || area.w <= 0 || area.h <= 0 || distance <= 0) {
     return win;
@@ -162,22 +163,151 @@ export function snapRect(
     size: number,
     from: number,
     extent: number,
+    inner: number[] = [],
   ) => {
-    const low = Math.abs(pos - from);
-    const high = Math.abs(pos + size - (from + extent));
-    if (low <= distance && low <= high) {
-      return from;
+    // Candidate places: flush to either area edge, or either window edge on an inner line (a split border).
+    const places = [from, from + extent - size];
+    for (const line of inner) {
+      places.push(line, line - size);
     }
-    if (high <= distance) {
-      return from + extent - size;
+    let best = pos;
+    let bestGap = distance + 1;
+    for (const place of places) {
+      if (place < from || place + size > from + extent) {
+        continue;
+      }
+      const gap = Math.abs(pos - place);
+      if (gap <= distance && gap < bestGap) {
+        best = place;
+        bestGap = gap;
+      }
     }
-    return pos;
+    return best;
   };
   return {
     ...win,
-    x: snapAxis(win.x, win.w, area.x, area.w),
-    y: snapAxis(win.y, win.h, area.y, area.h),
+    x: snapAxis(win.x, win.w, area.x, area.w, lines.x),
+    y: snapAxis(win.y, win.h, area.y, area.h, lines.y),
   };
+}
+
+/** Extra lines (screen pixels) a window edge snaps to besides the area edges: the vertical border between the map and the right-hand column. */
+export type SnapLines = { x?: number[]; y?: number[] };
+
+/** The screen x of the splitter between the map and the right-hand column, from the client area, the split control's width and the percent the map takes. */
+export function splitBorderX(
+  client: Rect,
+  splitWidth: number,
+  percent: number,
+): number {
+  const width = splitWidth > 0 ? Math.min(splitWidth, client.w) : client.w;
+  return Math.round(client.x + (width * percent) / 100);
+}
+
+/** The percent of the main split the map takes when the splitter is dragged to screen x. */
+export function mapSplitFromX(
+  client: Rect,
+  splitWidth: number,
+  x: number,
+): number {
+  const width = splitWidth > 0 ? Math.min(splitWidth, client.w) : client.w;
+  if (!(width > 0)) {
+    return MAP_SPLIT_MIN;
+  }
+  return Math.min(
+    MAP_SPLIT_MAX,
+    Math.max(MAP_SPLIT_MIN, Math.round(((x - client.x) / width) * 100)),
+  );
+}
+
+/** The chat's share of the column when the pinned chat's edge is dragged to screen y. */
+export function shareFromY(mode: ChatMode, column: Rect, y: number): number {
+  if (column.h <= 0) {
+    return SHARE_DEFAULT;
+  }
+  const chatHeight = mode === 'top' ? y - column.y : column.y + column.h - y;
+  return clampShare((chatHeight / column.h) * 100);
+}
+
+export type ResizeEdges = {
+  left?: boolean;
+  right?: boolean;
+  top?: boolean;
+  bottom?: boolean;
+};
+
+/**
+ * The window rect while an edge or corner is dragged: each dragged edge moves
+ * with the mouse (physical pixels), is held inside the area and leaves the
+ * window at least `min` big (the edge stops, the opposite one never moves).
+ */
+export function resizeRect(
+  start: Rect,
+  edges: ResizeEdges,
+  startMouse: Point,
+  mouse: Point,
+  pixelRatio = 1,
+  area: Rect | null = null,
+  min: Point = MIN_WINDOW_SIZE,
+): Rect {
+  const dx = Math.round((mouse.x - startMouse.x) * pixelRatio);
+  const dy = Math.round((mouse.y - startMouse.y) * pixelRatio);
+  const usable = area && area.w > 0 && area.h > 0 ? area : null;
+  const axis = (
+    from: number,
+    extent: number,
+    low: boolean | undefined,
+    high: boolean | undefined,
+    delta: number,
+    limitLow: number,
+    limitHigh: number,
+    smallest: number,
+  ) => {
+    let a = from;
+    let b = from + extent;
+    if (low) {
+      a = Math.min(Math.max(from + delta, limitLow), b - smallest);
+    }
+    if (high) {
+      b = Math.max(Math.min(b + delta, limitHigh), a + smallest);
+    }
+    return { pos: a, size: b - a };
+  };
+  const horizontal = axis(
+    start.x,
+    start.w,
+    edges.left,
+    edges.right,
+    dx,
+    usable ? usable.x : Number.NEGATIVE_INFINITY,
+    usable ? usable.x + usable.w : Number.POSITIVE_INFINITY,
+    Math.min(min.x, usable ? usable.w : min.x),
+  );
+  const vertical = axis(
+    start.y,
+    start.h,
+    edges.top,
+    edges.bottom,
+    dy,
+    usable ? usable.y : Number.NEGATIVE_INFINITY,
+    usable ? usable.y + usable.h : Number.POSITIVE_INFINITY,
+    Math.min(min.y, usable ? usable.h : min.y),
+  );
+  return {
+    x: horizontal.pos,
+    y: vertical.pos,
+    w: horizontal.size,
+    h: vertical.size,
+  };
+}
+
+/** The box (percent of the column) a dock preview covers: the chat's share, at the top or the bottom. */
+export function previewBox(
+  side: 'top' | 'bottom',
+  share: number,
+): { top: number; height: number } {
+  const height = clampShare(share);
+  return { top: side === 'top' ? 0 : 100 - height, height };
 }
 
 /** The chat's share of the column when dropped as a window of height `winHeight` (same unit as `columnHeight`). */
@@ -200,7 +330,8 @@ export type MainReport = {
 
 /**
  * The main window's outer rect and client area in screen pixels, plus the part
- * of it that is on the screen. `screen` is the monitor's work area in screen
+ * of the client area that is on the screen (`visible`: what the float window is
+ * held inside; BYOND's inner-size leaves out the title bar, menu and borders). `screen` is the monitor's work area in screen
  * pixels.
  *
  * A maximized window reports the pos and size it has when NOT maximized (the
@@ -238,7 +369,8 @@ export function mainRects(
       ? { x: screen?.w ?? outerSize.x, y: screen?.h ?? outerSize.y }
       : (report.size ?? outerSize));
   const client = clientRect(outer, clientSize);
-  const visible = report.maximized && screen ? intersect(outer, screen) : outer;
+  // Contained and snapped to the client area only: the title bar, menu and borders are not inside the game window.
+  const visible = screen ? intersect(client, screen) : client;
   return { outer, client, visible };
 }
 

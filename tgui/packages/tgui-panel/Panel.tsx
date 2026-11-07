@@ -20,7 +20,8 @@ import { ChatInput } from './input/ChatInput';
 import { layoutModeAtom } from './layout/atoms';
 import {
   ChatPinHint,
-  ChatResizeGrip,
+  ChatResizeHandles,
+  ChatSplitHandles,
   useChatDrag,
   useShareReport,
 } from './layout/ChatLayout';
@@ -133,7 +134,8 @@ export function Panel(props) {
         </Stack.Item>
       </Stack>
       {floating && <ChatPinHint hint={drag.hint} />}
-      {floating && <ChatResizeGrip />}
+      {floating && <ChatResizeHandles />}
+      <ChatSplitHandles />
     </Pane>
   );
 }

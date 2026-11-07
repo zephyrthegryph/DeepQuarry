@@ -11,12 +11,17 @@ import {
   isMode,
   MIN_WINDOW_SIZE,
   mainRects,
+  mapSplitFromX,
   poppedOut,
+  previewBox,
+  resizeRect,
   resizeSize,
   SHARE_DEFAULT,
   shareFromHeights,
+  shareFromY,
   shareMoved,
   snapRect,
+  splitBorderX,
   splitterFor,
   windowUnderPointer,
 } from './model';
@@ -102,7 +107,9 @@ describe('keeping the float window exactly inside the main window', () => {
   it('places a maximized main window by its outer size, not by its restored pos', () => {
     const main = mainRects(maximized, screen);
     expect(main?.outer).toEqual({ x: -9, y: -9, w: 2578, h: 1458 });
-    expect(main?.visible).toEqual(screen);
+    // The area is the client area (no title bar or menu), cut to the screen.
+    expect(main?.client).toEqual({ x: 0, y: 32, w: 2560, h: 1408 });
+    expect(main?.visible).toEqual({ x: 0, y: 32, w: 2560, h: 1408 });
     // The old code took pos 960,500 as the origin: the drag stopped at the middle.
     const stuck = fitRect(
       { x: 0, y: 0, ...FLOAT },
@@ -116,7 +123,7 @@ describe('keeping the float window exactly inside the main window', () => {
     const area = mainRects(maximized, screen)?.visible ?? null;
     expect(fitRect({ x: -4000, y: -4000, ...FLOAT }, area)).toEqual({
       x: 0,
-      y: 0,
+      y: 32,
       ...FLOAT,
     });
     expect(fitRect({ x: 9000, y: 9000, ...FLOAT }, area)).toEqual({
@@ -138,11 +145,12 @@ describe('keeping the float window exactly inside the main window', () => {
       screen,
     );
     expect(main?.outer).toEqual({ x: 100, y: 50, w: 1936, h: 1047 });
-    expect(main?.visible).toEqual(main?.outer);
+    expect(main?.visible).toEqual(main?.client);
     expect(main?.client).toEqual({ x: 108, y: 81, w: 1920, h: 1008 });
+    // The title bar is not inside the game window: the top of the area is the client's top.
     expect(fitRect({ x: 0, y: 0, ...FLOAT }, main?.visible ?? null)).toEqual({
-      x: 100,
-      y: 50,
+      x: 108,
+      y: 81,
       ...FLOAT,
     });
   });
@@ -263,5 +271,149 @@ describe('corner snapping', () => {
     expect(dockShare(50, 1000)).toBe(20);
     expect(dockShare(900, 1000)).toBe(80);
     expect(dockShare(0, 1000)).toBe(40);
+  });
+});
+
+describe('snapping along the border between the map and the column', () => {
+  const client = { x: 8, y: 31, w: 1920, h: 1008 };
+  const border = splitBorderX(client, 1920, 70);
+  const win = { x: 0, y: 200, w: 300, h: 200 };
+
+  it('finds the border from the split control and the percent', () => {
+    expect(border).toBe(8 + 1344);
+  });
+
+  it('snaps the right edge to the border from the map side', () => {
+    const got = snapRect({ ...win, x: border - 300 - 10 }, client, 16, {
+      x: [border],
+    });
+    expect(got.x).toBe(border - 300);
+  });
+
+  it('snaps the left edge to the border from the column side', () => {
+    const got = snapRect({ ...win, x: border + 9 }, client, 16, {
+      x: [border],
+    });
+    expect(got.x).toBe(border);
+  });
+
+  it('prefers the nearer of the border and the area edge', () => {
+    const got = snapRect({ ...win, x: 14 }, client, 16, { x: [border] });
+    expect(got.x).toBe(client.x);
+  });
+
+  it('leaves a window far from the border alone', () => {
+    const far = { ...win, x: 500 };
+    expect(snapRect(far, client, 16, { x: [border] })).toEqual(far);
+  });
+
+  it('turns a pointer x into the map percent and keeps it in range', () => {
+    expect(mapSplitFromX(client, 1920, 8 + 960)).toBe(50);
+    expect(mapSplitFromX(client, 1920, -500)).toBe(10);
+    expect(mapSplitFromX(client, 1920, 5000)).toBe(90);
+  });
+});
+
+describe('resizing from edges and corners', () => {
+  const area = { x: 0, y: 32, w: 1000, h: 700 };
+  const start = { x: 300, y: 200, w: 400, h: 300 };
+  const at = { x: 0, y: 0 };
+
+  it('moves the right and bottom edges without moving the window', () => {
+    const got = resizeRect(
+      start,
+      { right: true, bottom: true },
+      at,
+      { x: 50, y: 30 },
+      1,
+      area,
+    );
+    expect(got).toEqual({ x: 300, y: 200, w: 450, h: 330 });
+  });
+
+  it('moves the window with the left and top edges', () => {
+    const got = resizeRect(
+      start,
+      { left: true, top: true },
+      at,
+      { x: -40, y: -20 },
+      1,
+      area,
+    );
+    expect(got).toEqual({ x: 260, y: 180, w: 440, h: 320 });
+  });
+
+  it('keeps the opposite edge fixed at the minimum size', () => {
+    const got = resizeRect(
+      start,
+      { left: true },
+      at,
+      { x: 900, y: 0 },
+      1,
+      area,
+    );
+    expect(got.x + got.w).toBe(700);
+    expect(got.w).toBe(MIN_WINDOW_SIZE.x);
+    const top = resizeRect(start, { top: true }, at, { x: 0, y: 900 }, 1, area);
+    expect(top.y + top.h).toBe(500);
+    expect(top.h).toBe(MIN_WINDOW_SIZE.y);
+  });
+
+  it('stops every edge exactly at the area', () => {
+    const got = resizeRect(
+      start,
+      { left: true, top: true, right: false },
+      at,
+      { x: -5000, y: -5000 },
+      1,
+      area,
+    );
+    expect(got.x).toBe(0);
+    expect(got.y).toBe(32);
+    const far = resizeRect(
+      start,
+      { right: true, bottom: true },
+      at,
+      { x: 5000, y: 5000 },
+      1,
+      area,
+    );
+    expect(far.x + far.w).toBe(1000);
+    expect(far.y + far.h).toBe(732);
+  });
+
+  it('scales the mouse by the pixel ratio and changes only the dragged axis', () => {
+    const got = resizeRect(
+      start,
+      { right: true },
+      at,
+      { x: 10, y: 99 },
+      2,
+      area,
+    );
+    expect(got).toEqual({ ...start, w: 420 });
+  });
+
+  it('does not limit the resize without an area', () => {
+    const got = resizeRect(start, { left: true }, at, { x: -100, y: 0 });
+    expect(got).toEqual({ x: 200, y: 200, w: 500, h: 300 });
+  });
+});
+
+describe('live split and dock preview math', () => {
+  const column = { x: 1400, y: 31, w: 520, h: 1000 };
+
+  it('takes the chat share from the pointer, from the bottom or the top', () => {
+    expect(shareFromY('bottom', column, 31 + 600)).toBe(40);
+    expect(shareFromY('top', column, 31 + 300)).toBe(30);
+    expect(shareFromY('bottom', column, 31)).toBe(80);
+    expect(shareFromY('top', column, 31 + 1000)).toBe(80);
+    expect(shareFromY('bottom', column, 5000)).toBe(20);
+  });
+
+  it('boxes the preview at the dock side with the share', () => {
+    expect(previewBox('top', 35)).toEqual({ top: 0, height: 35 });
+    expect(previewBox('bottom', 35)).toEqual({ top: 65, height: 35 });
+    expect(previewBox('bottom', 5)).toEqual({ top: 80, height: 20 });
   });
 });

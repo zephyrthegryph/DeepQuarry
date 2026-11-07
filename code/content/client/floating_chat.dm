@@ -2,7 +2,7 @@
 // bottom (the default, the skin's own layout) or its top with the stat panel (statwindow) taking the rest of the column, or
 // by the chat_float window's child control (floating). Moving the pane re-parents the same browser control, so the chat page
 // and its scrollback are the same page in every layout. The float window has no title bar: the chat page draws a header strip
-// that drags it and a grip that resizes it; dropping it over the right-hand column docks it, and dragging a docked chat's tab row pops it out (tgui-panel/layout); it reports the pin and the share of the
+// that drags it and handles on every edge and corner that resize it; dropping it over the right-hand column docks it, and dragging a docked chat's tab row pops it out (tgui-panel/layout); it reports the pin and the share of the
 // column over the panel's messages (layout/pin, layout/share), and this file decides where the pane lives.
 // Typing goes through the chat page's input row (tgui-panel/input), whose messages the panel forwards to
 // tgui_say (see tgui_panel.dm), so the speech path is the popup's. The T/M/O hotkeys focus the row; with the
@@ -182,6 +182,11 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 	if(!prefs)
 		return
 	map_split_apply()
+	// The lobby page can be left disabled (greyed) when the previous mob's Logout disables it after the lobby mob enabled it: this runs once
+	// the chat page is up, after both, so the lobby is put back whenever the layout settles.
+	var/mob/new_player/lobby_mob = mob
+	if(istype(lobby_mob) && lobby_mob.lobby_window)
+		winset(src, SKIN_LOBBY_BROWSER, "is-disabled=false;is-visible=true")
 	var/mode = chat_mode_for(prefs.read_preference(/datum/preference/toggle/chat_floating), prefs.read_preference(/datum/preference/choiced/chat_dock_side))
 	var/share = chat_share_clamped(prefs.read_preference(/datum/preference/numeric/chat_share))
 	switch(chat_layout_change(mode, share, chat_layout_mode, chat_layout_share))
@@ -231,6 +236,16 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 	winset(src, SKIN_CHAT_FLOAT_WINDOW, "pos=[placed[1]],[placed[2]]")
 	chat_pin(CHAT_MODE_FLOAT, "popout-placed")
 
+/// The chat page is dragged over the right-hand column (side "top"/"bottom") or off it (null): the stat panel outlines the part of the
+/// column the chat would take if dropped now.
+/client/proc/chat_dock_preview(side, share)
+	if(side != CHAT_MODE_TOP && side != CHAT_MODE_BOTTOM)
+		side = null
+	if(!stat_panel?.is_ready())
+		return
+	stat_panel.send_message("dock/preview", list("side" = side, "share" = chat_share_clamped(share)))
+	log_tgui(src, "Chat dock preview: [side || "none"] at [chat_share_clamped(share)]%.", context = "chat_float")
+
 /// The chat page measured its share of the right-hand column after the player moved the splitter.
 /client/proc/chat_report_share(share)
 	if(chat_layout_mode == CHAT_MODE_FLOAT || !isnum(share))
@@ -262,22 +277,32 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 		return null
 	return list(first, second)
 
+/// The main window's client area (x, y, w, h) in screen pixels from its outer rect (pos, outer size) and its inner size, which leaves out the
+/// title bar, the menu and the borders: the borders are even on the sides and the bottom, so the top is whatever is left above the client.
+/proc/chat_float_client_area(pos_x, pos_y, outer_w, outer_h, inner_w, inner_h)
+	var/border = max(0, (outer_w - inner_w) / 2)
+	var/top = max(0, outer_h - inner_h - border)
+	return list(pos_x + border, pos_y + top, min(inner_w, outer_w), min(inner_h, outer_h))
+
 /// dx_winget() callback: asks for the main window's place once the float window's place is known.
 /client/proc/chat_float_measured(window_params)
 	var/list/placed = params2list(window_params)
-	dx_winget(src, src, SKIN_MAINWINDOW, "pos;outer-size;size;is-maximized", PROC_REF(chat_float_clamp), placed["pos"], placed["size"])
+	dx_winget(src, src, SKIN_MAINWINDOW, "pos;outer-size;inner-size;size;is-maximized", PROC_REF(chat_float_clamp), placed["pos"], placed["size"])
 
 /// dx_winget() callback: puts the float window back inside the main window when any of it is outside.
 /client/proc/chat_float_clamp(main_params, pos, size)
 	var/list/main = params2list(main_params)
 	var/list/area_at = chat_float_pair(main["pos"], ",")
-	var/list/area_size = chat_float_pair(main["outer-size"], "x") || chat_float_pair(main["size"], "x")
+	var/list/outer_size = chat_float_pair(main["outer-size"], "x")
+	var/list/inner_size = chat_float_pair(main["inner-size"], "x")
 	var/list/at = chat_float_pair(pos, ",")
 	var/list/extent = chat_float_pair(size, "x")
-	if(!area_at || !area_size || !at || !extent || area_size[1] <= 0 || area_size[2] <= 0)
+	// A maximized window reports the place it has when not maximized: the chat page measures that one (tgui-panel/layout/geometry.ts).
+	if(main["is-maximized"] == "true" || !area_at || !outer_size || !inner_size || !at || !extent || inner_size[1] <= 0 || inner_size[2] <= 0)
 		log_tgui(src, "Chat float clamp skipped: main=[main_params] pos=[pos] size=[size].", context = "chat_float")
 		return
-	var/list/fitted = chat_float_fit(at[1], at[2], extent[1], extent[2], area_at[1], area_at[2], area_size[1], area_size[2])
+	var/list/client_area = chat_float_client_area(area_at[1], area_at[2], outer_size[1], outer_size[2], inner_size[1], inner_size[2])
+	var/list/fitted = chat_float_fit(at[1], at[2], extent[1], extent[2], client_area[1], client_area[2], client_area[3], client_area[4])
 	if(fitted[1] == at[1] && fitted[2] == at[2] && fitted[3] == extent[1] && fitted[4] == extent[2])
 		log_tgui(src, "Chat float inside the main window (pos [pos], size [size], main [main_params]).", context = "chat_float")
 		return

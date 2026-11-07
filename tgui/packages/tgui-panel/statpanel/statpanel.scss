@@ -624,3 +624,15 @@ body {
     font-weight: 400;
   }
 }
+
+// Live map/column splitter handle on the stat panel's left edge (layout/ChatLayout.tsx MapSplitHandle).
+.ChatSplitHandle {
+  position: fixed;
+  z-index: 210;
+  touch-action: none;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+}

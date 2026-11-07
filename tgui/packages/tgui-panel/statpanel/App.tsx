@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { Button, Input, Section, Tabs } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
+import { MapSplitHandle } from '../layout/ChatLayout';
 import { McTab } from './McTab';
 import { MenuPage } from './MenuPage';
 import {
@@ -277,6 +278,7 @@ export function App(props: {
   const found = searchVerbs(state, query);
   return (
     <div className="stat-root">
+      <MapSplitHandle />
       <div className={`stat-tabs stat-tabs--${tabsStyle}`}>
         <Tabs className="stat-tabs__list">
           {visibleTabs(state).map((tab) => (
@@ -292,10 +294,7 @@ export function App(props: {
               {tab}
             </Tabs.Tab>
           ))}
-          <Tabs.Tab
-            selected={menuOpen}
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
+          <Tabs.Tab selected={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
             Menu
           </Tabs.Tab>
         </Tabs>

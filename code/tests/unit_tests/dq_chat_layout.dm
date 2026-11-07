@@ -106,3 +106,12 @@
 	TEST_ASSERT_EQUAL(rows[2]["label"], CHANNEL_MEDICAL, "the label is the channel name")
 	TEST_ASSERT_EQUAL(rows[3]["key"], ":c", "command has :c")
 	TEST_ASSERT_EQUAL(length(chat_radio_rows(list(CHANNEL_MEDICAL, CHANNEL_MEDICAL))), 2, "a repeated channel is listed once")
+
+/datum/unit_test/dq_chat_float_client_area_excludes_title_bar
+/datum/unit_test/dq_chat_float_client_area_excludes_title_bar/Run()
+	// outer 1936x1047 at 100,50 with a 1920x1008 inner size: 8px side and bottom borders, the other 31 above (title bar and menu)
+	TEST_ASSERT_EQUAL(json_encode(chat_float_client_area(100, 50, 1936, 1047, 1920, 1008)), json_encode(list(108, 81, 1920, 1008)), "the client area starts under the title bar")
+	// the top of the area is where a window pinned to the top lands: not over the title bar
+	var/list/area = chat_float_client_area(100, 50, 1936, 1047, 1920, 1008)
+	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(0, 0, 560, 420, area[1], area[2], area[3], area[4])), json_encode(list(108, 81, 560, 420)), "pulled in under the title bar")
+	TEST_ASSERT_EQUAL(json_encode(chat_float_client_area(0, 0, 1000, 700, 1200, 800)), json_encode(list(0, 0, 1000, 700)), "an inner size larger than the outer one is cut")

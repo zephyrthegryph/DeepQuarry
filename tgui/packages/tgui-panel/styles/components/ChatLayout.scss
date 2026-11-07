@@ -26,21 +26,117 @@
   pointer-events: none;
 }
 
-// The corner that resizes the floating chat window.
-.ChatResizeGrip {
+// Page-drawn resize handles on every edge and corner of the floating window
+// (it has no OS frame): thin strips along the edges, larger squares at the
+// corners, above the frame and scanline overlays.
+$edge: 6px;
+$corner: 14px;
+
+.ChatResizeHandle {
   position: fixed;
-  right: 0;
-  bottom: 0;
-  width: 16px;
-  height: 16px;
-  cursor: nwse-resize;
+  z-index: 210;
   touch-action: none;
-  background: linear-gradient(
-    135deg,
-    transparent 0 50%,
-    console.$console-border 50% 60%,
-    transparent 60% 72%,
-    console.$console-border 72% 82%,
-    transparent 82%
-  );
+
+  &--n,
+  &--s {
+    left: $corner;
+    right: $corner;
+    height: $edge;
+    cursor: ns-resize;
+  }
+
+  &--n {
+    top: 0;
+  }
+
+  &--s {
+    bottom: 0;
+  }
+
+  &--w,
+  &--e {
+    top: $corner;
+    bottom: $corner;
+    width: $edge;
+    cursor: ew-resize;
+  }
+
+  &--w {
+    left: 0;
+  }
+
+  &--e {
+    right: 0;
+  }
+
+  &--nw,
+  &--ne,
+  &--sw,
+  &--se {
+    width: $corner;
+    height: $corner;
+  }
+
+  &--nw {
+    top: 0;
+    left: 0;
+    cursor: nwse-resize;
+  }
+
+  &--ne {
+    top: 0;
+    right: 0;
+    cursor: nesw-resize;
+  }
+
+  &--sw {
+    bottom: 0;
+    left: 0;
+    cursor: nesw-resize;
+  }
+
+  &--se {
+    bottom: 0;
+    right: 0;
+    cursor: nwse-resize;
+    background: linear-gradient(
+      135deg,
+      transparent 0 50%,
+      console.$console-border 50% 60%,
+      transparent 60% 72%,
+      console.$console-border 72% 82%,
+      transparent 82%
+    );
+  }
+}
+
+// Live splitter handles on the docked pane's edges (the chat/stat edge and the map edge).
+.ChatSplitHandle {
+  position: fixed;
+  z-index: 210;
+  touch-action: none;
+
+  &--top,
+  &--bottom {
+    left: 0;
+    right: 0;
+    height: 5px;
+    cursor: ns-resize;
+  }
+
+  &--top {
+    top: 0;
+  }
+
+  &--bottom {
+    bottom: 0;
+  }
+
+  &--left {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    cursor: ew-resize;
+  }
 }

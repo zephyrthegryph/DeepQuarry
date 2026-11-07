@@ -1,24 +1,16 @@
 import { useAtomValue } from 'jotai';
-import { useEffect, useRef, useState } from 'react';
-import { layoutModeAtom, layoutShareAtom } from './atoms';
+import { useEffect, useRef } from 'react';
+import { dragHandlers, requestMode } from './actions';
+import { dockHintAtom, layoutModeAtom, layoutShareAtom } from './atoms';
 import {
   measureMapSplit,
   measureShare,
   startDockedDrag,
+  startSplitDrag,
   startWindowDrag,
   startWindowResize,
 } from './geometry';
-import { type ChatMode, shareMoved } from './model';
-
-/** Asks the server to move the chat pane (layout/pin). */
-export function requestMode(
-  mode: ChatMode,
-  via = 'drop',
-  at?: { x: number; y: number },
-  share?: number,
-): void {
-  Byond.sendMessage('layout/pin', { mode, via, at, share });
-}
+import { type ResizeEdges, shareMoved } from './model';
 
 /** Parts of the tab row that keep their own clicks instead of starting a window drag. */
 const NO_DRAG =
@@ -33,10 +25,7 @@ const NO_DRAG =
  */
 export function useChatDrag() {
   const floating = useAtomValue(layoutModeAtom) === 'float';
-  const [hint, setHint] = useState<{
-    side: 'top' | 'bottom';
-    share: number;
-  } | null>(null);
+  const hint = useAtomValue(dockHintAtom);
   const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
     const target = event.target as HTMLElement;
     if (target.closest(NO_DRAG)) {
@@ -46,11 +35,7 @@ export function useChatDrag() {
       startDockedDrag(event, (at) => requestMode('float', 'popout', at));
       return;
     }
-    startWindowDrag(event, {
-      onHint: (side, share) =>
-        setHint(side ? { side, share: share ?? 0 } : null),
-      onPin: (mode, share) => requestMode(mode, 'drop', undefined, share),
-    });
+    startWindowDrag(event, dragHandlers);
   };
   return { hint, onPointerDown };
 }
@@ -70,13 +55,67 @@ export function ChatPinHint(props: {
   );
 }
 
-/** The corner that resizes the floating window. */
-export function ChatResizeGrip() {
+/** Every edge and corner of the floating window resizes it (the window has no OS frame, so the page draws the handles). */
+const RESIZE_HANDLES: { name: string; edges: ResizeEdges }[] = [
+  { name: 'n', edges: { top: true } },
+  { name: 's', edges: { bottom: true } },
+  { name: 'w', edges: { left: true } },
+  { name: 'e', edges: { right: true } },
+  { name: 'nw', edges: { top: true, left: true } },
+  { name: 'ne', edges: { top: true, right: true } },
+  { name: 'sw', edges: { bottom: true, left: true } },
+  { name: 'se', edges: { bottom: true, right: true } },
+];
+
+export function ChatResizeHandles() {
+  return (
+    <>
+      {RESIZE_HANDLES.map((handle) => (
+        <div
+          key={handle.name}
+          className={`ChatResizeHandle ChatResizeHandle--${handle.name}`}
+          onPointerDown={(event) => startWindowResize(event, handle.edges)}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * Live splitter handles on the docked chat: its edge toward the stat panel
+ * moves the chat/stat split, its left edge moves the map/column split. Both
+ * update while dragging (BYOND's own splitter only applies on release).
+ */
+export function ChatSplitHandles() {
+  const mode = useAtomValue(layoutModeAtom);
+  if (mode === 'float') {
+    return null;
+  }
+  return (
+    <>
+      <div
+        className={`ChatSplitHandle ChatSplitHandle--${mode === 'top' ? 'bottom' : 'top'}`}
+        onPointerDown={(event) =>
+          startSplitDrag(event, 'column', mode, (share) =>
+            Byond.sendMessage('layout/share', { share }),
+          )
+        }
+      />
+      <MapSplitHandle />
+    </>
+  );
+}
+
+/** The left edge of a column page: drags the map/column split live. */
+export function MapSplitHandle() {
   return (
     <div
-      className="ChatResizeGrip"
-      title="Resize"
-      onPointerDown={startWindowResize}
+      className="ChatSplitHandle ChatSplitHandle--left"
+      onPointerDown={(event) =>
+        startSplitDrag(event, 'map', 'bottom', (split) =>
+          Byond.sendMessage('layout/mapsplit', { split }),
+        )
+      }
     />
   );
 }

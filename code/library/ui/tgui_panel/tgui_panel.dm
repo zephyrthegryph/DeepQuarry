@@ -117,6 +117,9 @@ CAPABILITIES(/datum/tgui_panel)
 	if(type == "layout/pin")
 		client()?.chat_pin(payload?["mode"], payload?["via"], islist(payload?["at"]) ? payload["at"] : null, payload?["share"])
 		return TRUE
+	if(type == "layout/preview")
+		client()?.chat_dock_preview(payload?["side"], payload?["share"])
+		return TRUE
 	if(type == "layout/mapsplit")
 		client()?.map_split_report(payload?["split"])
 		return TRUE
