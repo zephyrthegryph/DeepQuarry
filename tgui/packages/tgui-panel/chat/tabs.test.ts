@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { moveBefore } from 'tgui/dq';
 import { NO_DRAG } from '../layout/ChatLayout';
-import { keepFirst } from './model';
+import { reorderedPages } from './model';
 
 const read = (path: string) =>
   readFileSync(join(import.meta.dir, '..', path), 'utf8');
@@ -14,15 +14,25 @@ describe('chat tabs', () => {
     expect(NO_DRAG.split(',').map((part) => part.trim())).toContain('.Tab');
   });
 
-  it('reorder by drag, the main tab staying first', () => {
+  it('reorder by drag, the main tab included', () => {
     const pages = ['main', 'radio', 'ooc'];
-    expect(keepFirst(pages, moveBefore(pages, 'ooc', 'radio'))).toEqual([
+    expect(reorderedPages(pages, moveBefore(pages, 'ooc', 'radio'))).toEqual([
       'main',
       'ooc',
       'radio',
     ]);
-    expect(keepFirst(pages, moveBefore(pages, 'radio', 'main'))).toBeNull();
-    expect(keepFirst(pages, ['main', 'radio'])).toBeNull();
+    expect(reorderedPages(pages, moveBefore(pages, 'radio', 'main'))).toEqual([
+      'radio',
+      'main',
+      'ooc',
+    ]);
+    expect(reorderedPages(pages, moveBefore(pages, 'main', 'ooc'))).toEqual([
+      'radio',
+      'ooc',
+      'main',
+    ]);
+    expect(reorderedPages(pages, ['main', 'radio'])).toBeNull();
+    expect(read('chat/ChatTabs.tsx')).not.toContain('fixed:');
   });
 
   it('share the stat panel tab row', () => {
