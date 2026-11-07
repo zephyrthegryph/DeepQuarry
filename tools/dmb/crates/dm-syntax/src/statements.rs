@@ -454,7 +454,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
         // SAME primary consumption; unproved families/children never grant availability.
         if starts_keyword(header,"if"){
             origins.original_compound_seen_statement=true;
-        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!local_statement&&!initial_setting){
+        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!original_simple_assignment_candidate(header)&&!local_statement&&!initial_setting){
             origins.original_compound_complete=false;
         }
         if !item.children.is_empty()
@@ -804,12 +804,14 @@ fn parse_one(
         None
     } else {
         let ordinary_call=original_ordinary_call_header(header);
+        let assignment=original_simple_assignment_candidate(header);
         parse_expr_observed(header,item.header_span.start,diagnostics,&mut|parsed|{
-            if ordinary_call{
+            if ordinary_call || assignment {
                 use crate::expression_parser::OriginalSimpleKind;
                 let issued=parsed.original_simple_expression.is_some_and(|actual|match actual.kind(){
-                    OriginalSimpleKind::OrdinaryCallStatement=>true,
-                    OriginalSimpleKind::Complete=>matches!(parsed.expr.as_ref().map(|expr|&expr.kind),Some(ExprKind::Call{callee,args})if args.is_empty()&&matches!(&callee.kind,ExprKind::Ident(_))),
+                    OriginalSimpleKind::OrdinaryCallStatement=>ordinary_call,
+                    OriginalSimpleKind::SimpleAssignmentStatement=>assignment,
+                    OriginalSimpleKind::Complete=>ordinary_call&&matches!(parsed.expr.as_ref().map(|expr|&expr.kind),Some(ExprKind::Call{callee,args})if args.is_empty()&&matches!(&callee.kind,ExprKind::Ident(_))),
                     OriginalSimpleKind::MissingArithmeticOperand=>false,
                 });
                 origins.original_compound_complete&=issued;
@@ -841,6 +843,15 @@ fn parse_one(
 fn original_ordinary_call_header(header:&str)->bool{
     let Some((name,_))=header.strip_suffix(')').and_then(|head|head.split_once('('))else{return false};
     crate::expression_parser::original_ordinary_call_name(name.trim_end())
+}
+
+// Route only names whose assignment-shaped statements reach the generic
+// expression parser. Its consuming token/AST proof decides acceptance.
+fn original_simple_assignment_candidate(header: &str) -> bool {
+    let Some((target, _)) = header.split_once('=') else { return false; };
+    let name = target.trim_end_matches(['+', '-', '*', '/', '%', '|', '&', '^', '<', '>']).trim();
+    crate::expression_parser::original_ordinary_call_name(name)
+        && !matches!(name, "break" | "continue" | "goto")
 }
 
 fn parse_set(item: &Item, diagnostics: &mut BodyDiagnostics<'_>) -> Option<StatementKind> {
@@ -1360,7 +1371,7 @@ impl OriginalBodyGrammarOutcome{
   let shift=|span:Span|Some(Span::new(span.start.checked_add(offset)?,span.end.checked_add(offset)?));
   let expression=shift(actual.span())?;let operator=match actual.operator(){Some(span)=>Some(shift(span)?),None=>None};
   if expression.start<statement.start||expression.end>statement.end{return None}
-  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
+  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement|crate::expression_parser::OriginalSimpleKind::SimpleAssignmentStatement=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
  }
  pub fn prefix_settings(self)->usize{self.prefix_settings}
  pub fn kind(self)->OriginalBodyGrammarKind{self.kind}
@@ -1543,6 +1554,53 @@ mod original_mixed_setting_scope_tests {
             "    set SpacemanDMM_return_type = x\n        choose()\n    return x\n",
             "    set SpacemanDMM_return_type = x\n        choose()\n",
             "    set SpacemanDMM_return_type = x\n    var/value = x\n    return value +\n",
+        ] {
+            let parsed = body(code);
+            assert!(parsed.original_grammar.is_none(), "{code}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod original_simple_assignment_witness_tests {
+    use super::*;
+
+    fn body(code: &str) -> ParsedBody {
+        let source = crate::parse(&format!("/proc/probe(argument)\n{code}"));
+        parse_proc_body(&source.items[0])
+    }
+
+    #[test]
+    fn original_simple_assignment_witness_owns_actual_statement_operator_and_operands() {
+        let parsed = body("    value = argument.field\n    return value\n");
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        assert!(matches!(&parsed.statements[0].kind, StatementKind::Assign { op, .. } if op == "="));
+        let proof = parsed.original_grammar.expect("simple statement assignment proof");
+        assert_eq!(proof.scope_roots(), Some(2));
+
+        // The compatibility lexer splits compound operators into punctuation
+        // characters. Its valid AST is insufficient for the Original proof.
+        // The host control supplies real indivisible Original tokens.
+        let split = body("    value += argument.field\n    return value\n");
+        assert!(split.diagnostics.is_empty(), "{:?}", split.diagnostics);
+        assert!(matches!(&split.statements[0].kind, StatementKind::Assign { op, .. } if op == "+="));
+        assert!(split.original_grammar.is_none(), "split compatibility assignment");
+        let nested = body("    if(argument)\n        value = 1\n    return argument\n");
+        assert_eq!(nested.original_grammar.unwrap().scope_roots(), Some(2));
+    }
+
+    #[test]
+    fn original_simple_assignment_witness_does_not_certify_other_productions() {
+        for code in [
+            "    value == argument\n    return value\n",
+            "    value.field = argument\n    return value\n",
+            "    value = other = argument\n    return value\n",
+            "    value = choose(argument)\n    return value\n",
+            "    value + = argument\n    return value\n",
+            "    value =\n    return value\n",
+            "    return (value = argument)\n",
+            "    if(value = argument)\n        return value\n",
+            "    break = 1\n    return value\n",
         ] {
             let parsed = body(code);
             assert!(parsed.original_grammar.is_none(), "{code}");

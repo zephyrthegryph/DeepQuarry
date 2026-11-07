@@ -374,3 +374,37 @@ fn current_original_single_local_visits_initializer_before_binding_and_return() 
   }).unwrap();
  });
 }
+
+#[test]
+fn current_original_simple_assignment_visits_lhs_then_rhs_and_matches_absolute_bytes() {
+ use dm_analysis::checker_effects::{ExecutionAdmission, OriginalBodyDiagnostic, OriginalDiagnosticPhase};
+ fn encode(rows: &[OriginalBodyDiagnostic]) -> Vec<u8> {
+  format!("{:?}", rows.iter().map(|row| (row.phase(), row.location(), row.registration_tag(), row.diagnostic())).collect::<Vec<_>>()).into_bytes()
+ }
+ let mut source = String::from("/proc/probe()\n    missing_left += missing_right\n    var/value = 1\n");
+ for op in ["+=", "-=", "*=", "/=", "%=", "|=", "&=", "^=", "<<=", ">>="] {
+  source.push_str(&format!("    value {op} 1\n"));
+ }
+ source.push_str("    return null\n");
+ let (mut host, request, _) = fixture(&source);
+ let db = host.query_db().clone();
+ run(&mut host, &request);
+ current(&host, |snapshot| {
+  let owner = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let input = owner.input();
+  let current = db.original_current_body_bytes_for_test(input, 0, |rows| {
+   let body: Vec<_> = rows.iter().filter(|row| row.phase() == OriginalDiagnosticPhase::Body).collect();
+   assert_eq!(body.len(), 2);
+   for (row, (name, column)) in body.into_iter().zip([("missing_left", 5), ("missing_right", 21)]) {
+    let diagnostic = row.diagnostic();
+    let point = input.archive().source_note_point(diagnostic.span.start).unwrap();
+    assert_eq!((point.line, point.byte_column), (2, column));
+    assert_eq!(diagnostic.family, "undefined_variable");
+    assert_eq!(diagnostic.message, format!("undefined var: {name:?}"));
+   }
+   encode(rows)
+  }).unwrap();
+  let absolute = input.compute_body_checked_controlled(0, snapshot.tree.as_ref(), &ExecutionAdmission::default(), &|| Ok(())).unwrap();
+  assert_eq!(current, absolute.with_original_diagnostics(input, encode).unwrap());
+ });
+}
