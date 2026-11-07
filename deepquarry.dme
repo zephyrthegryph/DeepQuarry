@@ -3688,7 +3688,6 @@
 #include "code\library\atom\states\cooldowns_state.dm"
 #include "code\library\atom\states\economy_state.dm"
 #include "code\library\atom\states\fire_fx_state.dm"
-#include "code\library\atom\states\germs_state.dm"
 #include "code\library\atom\states\item_clean_state.dm"
 #include "code\library\atom\states\item_material_state.dm"
 #include "code\library\atom\states\item_misc_state.dm"
