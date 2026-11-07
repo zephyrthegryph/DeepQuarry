@@ -33,7 +33,7 @@ impl SelectedReportPlan {
         }
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
-            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
+            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::Keys], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
             Q::SELECTED_LIFEFORMS_PLAYER_LINK, Q::SELECTED_REFERENCE_POLICIES, Q::SELECTED_STORED_AND_TRACKED, &[Q::RequirementBool], Q::SELECTED_DECLARATION_POLICIES,
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
@@ -329,6 +329,17 @@ impl ReportStage<'_> {
                 }
                 for (site, text) in data.sites().iter().zip(data.source_text()) {
                     projection.row(site, Some(text), &mut control)?;
+                }
+            }
+            UnionRows::Keys(data) => {
+                if self.selected != Roster::WithKeys.names()
+                    || !std::ptr::eq(meta, dq_analyze::keys_policy::metadata())
+                    || !matches!(meta.policy, Policy::Hard)
+                {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "keys require their exact Hard report profile"));
+                }
+                for site in data.sites() {
+                    projection.row(site, None, &mut control)?;
                 }
             }
             UnionRows::DerivedReads(data) => {
@@ -767,6 +778,7 @@ mod selected_plan_tests {
             (Roster::WithPlayerLink, &[Q::PlayerLink]),
             (Roster::WithLifeformsAndPlayerLink, Q::SELECTED_LIFEFORMS_PLAYER_LINK),
             (Roster::WithReferencePolicies, Q::SELECTED_REFERENCE_POLICIES),
+            (Roster::WithKeys, &[Q::Keys]),
             (Roster::WithRequirementBool, &[Q::RequirementBool]),
             (Roster::WithDeclarationPolicies, Q::SELECTED_DECLARATION_POLICIES),
         ];

@@ -28,6 +28,7 @@ pub enum Roster {
     WithLifeformsAndPlayerLink,
     WithReferencePolicies,
     WithRequirementBool,
+    WithKeys,
     WithDeclarationPolicies,
     WithRawDeclarationPolicies,
     AllRawFilePolicies,
@@ -42,7 +43,7 @@ impl Roster {
     // A V1 alias is a single wire token. This bound is for internal staged
     // sections only, independent of the V2 array decoder's seven-name cap.
     pub const MAX_STAGED_POLICIES: usize = 45;
-    pub const ALL: [Self; 24] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies, Self::WithRequirementBool, Self::WithDeclarationPolicies, Self::WithRawDeclarationPolicies, Self::AllRawFilePolicies, Self::WithRawRuntimePolicies, Self::WithWorkspaceFoldPolicies, Self::WithSysSourcePolicies, Self::WithStoredAndTracked];
+    pub const ALL: [Self; 25] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies, Self::WithRequirementBool, Self::WithKeys, Self::WithDeclarationPolicies, Self::WithRawDeclarationPolicies, Self::AllRawFilePolicies, Self::WithRawRuntimePolicies, Self::WithWorkspaceFoldPolicies, Self::WithSysSourcePolicies, Self::WithStoredAndTracked];
 
     /// Independently qualified Analyze-only capture plans.
     pub const GENERIC_V2: [Self; 4] = [
@@ -123,6 +124,7 @@ impl Roster {
             ],
             Self::WithRawDeclarationPolicies => &["allow_annotations", "cap_bits", "declaration_block", "duplicate_input_key", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithDeclarationPolicies => &["allow_annotations", "base_vars", "decl", "init", "notice_publisher", "report_in_catch", "scheduler"],
+            Self::WithKeys => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/keys"],
             Self::WithRequirementBool => &["allow_annotations", "notice_publisher", "report_in_catch", "requirement_bool", "scheduler"],
             Self::WithSysReactive => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sys/dx_reactive"],
             Self::WithUntyped => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "untyped"],

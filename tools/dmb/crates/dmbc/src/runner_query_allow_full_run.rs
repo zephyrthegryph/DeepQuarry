@@ -20,6 +20,7 @@ enum UnionRows<'a,'rows>{
  LibraryLayering(&'a dq_analyze::captured_engine_layering_pages::LayeringData),
  Handlers(&'a dq_analyze::captured_sem_handlers::Data),
  Untyped(&'a dq_analyze::captured_untyped_pages::UntypedData),
+ Keys(&'a dq_analyze::captured_keys_pages::KeyData),
  DerivedReads(&'a dq_analyze::captured_derived_reads::DerivedReadData),
  SysReactive(&'a dq_analyze::captured_sys_reactive::Data),
  DeclarationHard(Q, &'a [dq_analyze::lint::Site], &'a [String], &'a [String]),
@@ -62,7 +63,7 @@ impl Producer{
       | Policy::ConstructorShadow | Policy::LookEffects | Policy::ManualLog | Policy::StringNames
       | Policy::Expiry | Policy::Requirements | Policy::Sfx | Policy::Ui)
    | Self::Special("image_dir_after_build" | "allow_annotations" | "silicon_entry" | "library_layering" | "sem/handlers"
-      | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped" | "derived_reads" | "sys/dx_reactive" | "lifeforms" | "player_link" | "untyped_member" | "weak_raw_read" | "rel_write_undeclared" | "requirement_bool" | "base_vars" | "decl" | "init"
+      | "sem/keys" | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped" | "derived_reads" | "sys/dx_reactive" | "lifeforms" | "player_link" | "untyped_member" | "weak_raw_read" | "rel_write_undeclared" | "requirement_bool" | "base_vars" | "decl" | "init"
       | "sys/hygiene" | "sys/resolvers" | "sys/tables" | "system_boundary" | "stored_refs")
   )
  }
@@ -159,7 +160,17 @@ impl SourceSnapshot{
       }
      )?;
     },
-    Producer::Special("sem/keys")=>{self.with_native_keys(tree,|data,_,_|record(data.allow_used()))?;},
+    Producer::Special("sem/keys")=>{
+     self.with_native_keys(tree,|data,config,child_budget|{
+      if let Some(stage)=stage.as_deref_mut(){
+       let meta=producer.metadata();
+       let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::Keys(data),scope,child_budget)?;
+      }
+      record(data.allow_used())
+     })?;
+    },
     Producer::Special("check_grep")=>{self.with_native_check_grep_report(tree,|data,_,_|record(&data.allow_used).map_err(Failure::Operational))?;},
     Producer::Special("sys/hygiene")=>{
      queries.with_workspace_hygiene_report(capture,&guard,|data,config,child_budget|{

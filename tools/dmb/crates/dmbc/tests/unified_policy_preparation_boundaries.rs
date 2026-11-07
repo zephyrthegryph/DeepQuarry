@@ -3016,3 +3016,76 @@ fn public_combined_stored_and_tracked_match_original_full_report() {
     assert!(ordinary.stdout.is_empty());
     assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
 }
+
+#[test]
+fn selected_keys_stages_original_messages_and_exact_allow_usage() {
+    use dq_analyze::{
+        captured_allow_annotations::{Operation, full_unused},
+        captured_generator_budget::Budget, selected_exclusions_wire::Roster,
+    };
+    #[path = "../../../../analyze/fixtures/native-keys/fixture.rs"]
+    mod fixture;
+
+    let root = test_scratch::dir("selected-keys");
+    for (relative, bytes) in fixture::files("basic").unwrap() {
+        put(&root, relative, bytes);
+    }
+    put(&root, "deepquarry.dme", std::fs::read(root.join("p.dme")).unwrap());
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    put(&root, "maps/unused.dm",
+        "/proc/stale()\n    return // ALLOW(keys): this fixture records an unused keys annotation\n");
+
+    let mut build = request(&root, Q::Keys);
+    build.cache_root = Some(test_scratch::dir("selected-keys-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithKeys;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+
+    let mut host = BuildHost::default();
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+    let report = std::str::from_utf8(&output).unwrap();
+    assert_eq!(report.matches("[keys/").count(), 16, "{report}");
+    assert!(!report.contains("things.dm:30"), "{report}");
+    assert!(report.contains("maps/unused.dm:2: ALLOW(keys) is unused"), "{report}");
+
+    if let Some(oracle) = std::env::var_os("DQ_SELECTED_KEYS_ORACLE") {
+        let oracle = PathBuf::from(oracle);
+        assert!(oracle.is_absolute());
+        let mut command = std::process::Command::new(oracle);
+        command.arg("basic");
+        #[cfg(windows)] {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x08000000 | 0x00004000);
+        }
+        let old = command.output().expect("run frozen independent keys scanner");
+        assert!(old.status.success(), "{}", String::from_utf8_lossy(&old.stderr));
+        let old_stdout = std::str::from_utf8(&old.stdout).unwrap();
+        let payload = old_stdout.lines().find_map(|line| line.strip_prefix("OLD_KEYS_FULL=")).unwrap();
+        let record: serde_json::Value = serde_json::from_str(payload).unwrap();
+        assert_eq!(record["sites"].as_array().unwrap().len(), 16);
+        assert_eq!(record["allow_used"].as_array().unwrap().len(), 1);
+        let original_section = record["text"].as_str().unwrap();
+        assert!(!original_section.is_empty());
+        assert!(report.contains(original_section), "{report}");
+    }
+
+    let (mut warm_diagnostics, mut warm_output) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut warm_diagnostics, &mut warm_output).unwrap());
+    assert_eq!((diagnostics, output), (warm_diagnostics, warm_output));
+
+    build.policy_inputs.as_mut().unwrap().workspace_auxiliary = vec![Q::SiliconEntry];
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(host.write_original_exclusions_report(
+        build, &exclusions, &mut diagnostics, &mut output).is_err());
+    assert!(diagnostics.is_empty() && output.is_empty());
+}
