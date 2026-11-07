@@ -138,10 +138,6 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	if(isnull(prepared_steps))
 		return
 
-	if (source.client?.prefs?.read_preference(/datum/preference/toggle/human/ignore_shoes))
-		play_barefoot_sound(source, prepared_steps, volume_multiplier, range_adjustment)
-		return
-
 	//cache for sanic speed (lists are references anyways)
 	var/footstep_sounds = GLOB.footstep
 

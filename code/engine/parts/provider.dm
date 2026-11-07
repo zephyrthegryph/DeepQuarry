@@ -120,25 +120,68 @@
 /obj/proc/carry(obj/thing, mob/actor)
 	return FALSE
 
+/// Adds the providers `D` gives now to `into`. A holder with grants reads its merged provider rows (provider_rows(): made once per capability
+/// generation) and asks only their when() conditions; one with none walks its table's few provides() entries.
 /proc/provider_collect(datum/D, datum/source, list/into)
+	if(source != D || !length(D.rx?.activations) || GLOB.op_resolver_legacy)
+		provider_scan(D, source, into)
+		return
+	var/list/memo = provider_rows(D)
+	var/list/provs = memo[2]
+	var/list/conds = memo[3]
+	var/list/acts = memo[4]
+	for(var/i in 1 to length(provs))
+		var/datum/activation/granted_by = acts[i]
+		if(granted_by && (granted_by.dead || !granted_by.runs))
+			continue
+		var/list/whens = conds[i]
+		if(!length(whens) || op_whens_hold(D, whens))
+			into += provs[i]
+
+/// Every provider `D` could give, its when() blocks and the activation that brought it (null for the table's own), in collection order: interned on
+/// the holder until its capability generation moves (or the count of its activations, while a grant is being attached).
+/// list(activation count, providers, conditions, activations).
+/proc/provider_rows(datum/D)
+	var/datum/rx_state/state = D.rx
+	var/count = length(state.activations)
+	var/list/memo = state.op_provider_memo
+	if(memo && memo[1] == count)
+		return memo
+	var/list/provs = list()
+	var/list/conds = list()
+	var/list/acts = list()
+	provider_scan(D, D, provs, conds, acts)
+	memo = list(count, provs, conds, acts)
+	state.op_provider_memo = memo
+	return memo
+
+/// The providers of `D` (its table's provides() entries, then each running grant's) added to `into`: those whose when() blocks hold, or, with
+/// `conds_out`, every one with its when() blocks in `conds_out` and its activation in `acts_out`.
+/proc/provider_scan(datum/D, datum/source, list/into, list/conds_out = null, list/acts_out = null)
 	var/datum/type_table/T = table_of(D)
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_PROVIDES))
-		if(op_whens_hold(D, C.whens))
+		if(conds_out || op_whens_hold(D, C.whens))
 			var/datum/prov/P = new
 			P.entry = C.item // ALLOW(ownership): a transient record of one resolution: dropped with it
 			P.source = source // ALLOW(ownership): a transient record of one resolution: dropped with it
 			into += P
+			if(conds_out)
+				conds_out += list(C.whens)
+				acts_out += list(null)
 	for(var/datum/activation/A as anything in D.rx?.activations)
 		if(A.dead || !A.runs)
 			continue
 		if(T.caps[A.def.key])
 			continue // a type-level capability: its entries are in the table already
 		for(var/datum/centry/C as anything in activation_provides(A.def))
-			if(op_whens_hold(D, C.whens))
+			if(conds_out || op_whens_hold(D, C.whens))
 				var/datum/prov/P = new
 				P.entry = C.item // ALLOW(ownership): a transient record of one resolution: dropped with it
 				P.source = source // ALLOW(ownership): a transient record of one resolution: dropped with it
 				into += P
+				if(conds_out)
+					conds_out += list(C.whens)
+					acts_out += A
 
 /datum/capability
 	/// The provides() entries (centry) of activation_plan(src), in order, made on first use (activation_provides()).

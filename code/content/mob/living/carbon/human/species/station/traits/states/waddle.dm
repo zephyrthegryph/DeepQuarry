@@ -39,7 +39,6 @@
 /mob/living/proc/toggle_waddle()
 	set name = "Toggle or Enable Waddling"
 	set desc = "Allows you to toggle if you want to walk with a waddle or not!"
-	set category = VERB_CAT_PREFERENCES_CHARACTER
 	var/datum/trait_state/waddle_trait/comp = get_trait_state(/datum/trait_state/waddle_trait)
 	if(comp)
 		comp.waddling = !comp.waddling
@@ -48,7 +47,6 @@
 /mob/living/proc/waddle_adjust()
 	set name = "Waddle Adjust"
 	set desc = "Allows you to adjust your waddling."
-	set category = VERB_CAT_PREFERENCES_CHARACTER
 	return waddle_adjust_stage(list())
 
 /mob/living/proc/waddle_adjust_stage(list/waddle_answers)

@@ -64,6 +64,14 @@
 	/// providers_for(actor, held), read once by the first candidate that needs a provider: pass 1 runs no effects, so every candidate sees the same set.
 	var/list/providers
 
+/// The resolver's work, counted for benches and tests (code/tests/benchmarks/active_play.dm): candidate records made, reach gates asked, candidates whose
+/// when() conditions were tested, requirement checks (run.dm) and full resolutions.
+GLOBAL_VAR_INIT(op_count_cands, 0)
+GLOBAL_VAR_INIT(op_count_reach, 0)
+GLOBAL_VAR_INIT(op_count_whens, 0)
+GLOBAL_VAR_INIT(op_count_requires, 0)
+GLOBAL_VAR_INIT(op_count_resolves, 0)
+
 // ---- the ops an entity has ----
 
 /// An op an entity has now: the plan, and the activation that brought it (null for a type-level op).
@@ -220,9 +228,14 @@
 	/// signature -> list of /datum/op_row: the interned candidate rows of this index's ops (a table's own, or what one granted definition brings).
 	var/list/op_row_cache
 
+/// The key of one input shape: the facts every input of the shape shares (op_rows_for()).
+/proc/op_shape_signature(side, origin, authority, gesture, list/intents, held_type)
+	return "[side]|[origin]|[authority]|[isnull(gesture) ? "-" : gesture]|[intents ? jointext(intents, ",") : "-"]|[held_type || "-"]"
+
 /// Interned candidate rows of `index` whose silent drops (the ones every input of this shape shares) are applied. In declaration order.
-/proc/op_rows_for(datum/op_index/index, side, origin, authority, gesture, list/intents, held_type)
-	var/signature = "[side]|[origin]|[authority]|[isnull(gesture) ? "-" : gesture]|[intents ? jointext(intents, ",") : "-"]|[held_type || "-"]"
+/// `signature`: op_shape_signature() of the same arguments, when the caller has it.
+/proc/op_rows_for(datum/op_index/index, side, origin, authority, gesture, list/intents, held_type, signature = null)
+	signature ||= op_shape_signature(side, origin, authority, gesture, intents, held_type)
 	var/list/rows = index.op_row_cache?[signature]
 	if(!isnull(rows))
 		return rows
@@ -237,6 +250,65 @@
 			rows += row
 	LAZYSET(index.op_row_cache, signature, rows)
 	return rows
+
+// ---- dispatch rows: one holder's candidate rows for one input shape, merged over its table and its running grants ----
+
+/datum/rx_state
+	/// The holder's candidate rows per input shape, merged over its table and its running grants (op_side_rows()): list(activation count, signature -> list(rows,
+	/// activations)). Made on first read and dropped whenever the holder's capability generation moves (a grant attached, ended or restacked).
+	var/list/op_dispatch_memo
+	/// The holder's providers before their when() conditions (provider_rows()): list(providers, conditions, activations), dropped with the rows.
+	var/list/op_provider_memo
+
+/// TRUE runs every resolution through the collection as it was before the dispatch rows (a bench measures both in one run: active_play).
+GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
+
+/// The candidate rows a holder brings to one input shape on one side: its table's rows, then each running granted definition's, in the order a
+/// resolution collects them, and the activation that brought each (null for the table's own). Returns list(rows, activations), interned: on the
+/// table's index for a holder with no grants, else on the holder until its capability generation moves. A grant whose activation ended or stopped
+/// running since is skipped by the caller, so a read inside a teardown never offers a dead grant's ops. The third slot holds the compiled tables
+/// made from these rows (op_fast_side(), dispatch.dm), so they go with them.
+/proc/op_side_rows(datum/holder, datum/type_table/T, side, origin, authority, gesture, list/intents, held_type)
+	var/datum/op_index/index = op_index_of_table(T)
+	var/signature = op_shape_signature(side, origin, authority, gesture, intents, held_type)
+	var/datum/rx_state/state = holder.rx
+	var/count = length(state?.activations)
+	if(!count)
+		var/list/plain = index.op_side_rows?[signature]
+		if(isnull(plain))
+			var/list/own_rows = op_rows_for(index, side, origin, authority, gesture, intents, held_type, signature)
+			var/list/no_grants = list()
+			no_grants.len = length(own_rows)
+			plain = list(own_rows, no_grants, null)
+			LAZYSET(index.op_side_rows, signature, plain)
+		return plain
+	// Kept with the count of the holder's activations as well: a grant being attached is in the list before its restack moves the generation.
+	var/list/memo = state.op_dispatch_memo
+	if(isnull(memo) || memo[1] != count)
+		memo = list(count, list())
+		state.op_dispatch_memo = memo
+	var/list/by_shape = memo[2]
+	var/list/made = by_shape[signature]
+	if(made)
+		return made
+	var/list/rows = list()
+	var/list/acts = list()
+	for(var/datum/op_row/row as anything in op_rows_for(index, side, origin, authority, gesture, intents, held_type, signature))
+		rows += row
+		acts += list(null)
+	for(var/datum/activation/A as anything in state.activations)
+		if(A.dead || !A.runs || T.caps[A.def.key])
+			continue
+		for(var/datum/op_row/row as anything in op_rows_for(op_index_of_def(T, A.def), side, origin, authority, gesture, intents, held_type, signature))
+			rows += row
+			acts += A
+	made = list(rows, acts, null)
+	by_shape[signature] = made
+	return made
+
+/datum/op_index
+	/// signature -> list(rows, a null per row, compiled tables): op_side_rows() of a holder with no grants.
+	var/list/op_side_rows
 
 /// Can this (op, binding) never answer an input of this shape, whatever the origin or authority? An actor-side candidate whose binding is not
 /// one of the actor's own, and a gesture the binding kind or the op's intents do not answer: such a candidate is no near miss either (an origin
@@ -312,13 +384,11 @@
 	var/list/rows = null
 	if(key)
 		var/datum/op_plan/named = index.by_key[key]
-		rows = list()
 		if(named)
 			for(var/datum/entry/part/bind/B as anything in named.bindings)
-				var/datum/op_row/row = new
-				row.oplan = named // ALLOW(ownership): a transient record of one resolution: dropped with it
-				row.binding = B // ALLOW(ownership): a transient record of one resolution: dropped with it
-				rows += row
+				seq++
+				seq = op_add_cand(R, named, B, holder, side, null, gesture, keep_dropped, seq)
+		rows = list()
 	else if(keep_dropped)
 		rows = list()
 		for(var/datum/op_plan/P as anything in index.ordered)
@@ -327,6 +397,19 @@
 				row.oplan = P // ALLOW(ownership): a transient record of one resolution: dropped with it
 				row.binding = B // ALLOW(ownership): a transient record of one resolution: dropped with it
 				rows += row
+	else if(!GLOB.op_resolver_legacy)
+		// The holder's merged rows for this shape: the table's and every running grant's, one interned read.
+		var/list/merged = op_side_rows(holder, T, side, R.origin, R.authority, gesture, R.intents, R.held?.type)
+		var/list/merged_rows = merged[1]
+		var/list/merged_acts = merged[2]
+		for(var/i in 1 to length(merged_rows))
+			var/datum/activation/granted_by = merged_acts[i]
+			if(granted_by && (granted_by.dead || !granted_by.runs))
+				continue
+			var/datum/op_row/row = merged_rows[i]
+			seq++
+			seq = op_add_cand(R, row.oplan, row.binding, holder, side, granted_by, gesture, keep_dropped, seq)
+		return seq
 	else
 		rows = op_rows_for(index, side, R.origin, R.authority, gesture, R.intents, R.held?.type)
 	for(var/datum/op_row/row as anything in rows)
@@ -343,9 +426,14 @@
 				seq++
 				seq = op_add_cand(R, row.oplan, row.binding, holder, side, A, gesture, keep_dropped, seq)
 			continue
+		if(key)
+			// keys are unique in an index (op_index_build()): the one plan of that key, not a walk of every op the grant brings
+			var/datum/op_plan/granted_named = granted.by_key[key]
+			for(var/datum/entry/part/bind/B as anything in granted_named?.bindings)
+				seq++
+				seq = op_add_cand(R, granted_named, B, holder, side, A, gesture, keep_dropped, seq)
+			continue
 		for(var/datum/op_plan/P as anything in granted.ordered)
-			if(key && P.key != key)
-				continue
 			for(var/datum/entry/part/bind/B as anything in P.bindings)
 				seq++
 				seq = op_add_cand(R, P, B, holder, side, A, gesture, keep_dropped, seq)
@@ -355,6 +443,17 @@
 /proc/op_add_cand(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, gesture, keep_dropped, seq)
 	if(!keep_dropped && !R.gate_reason && op_silently_dropped(R, P, B, holder, side, gesture))
 		return seq
+	var/datum/op_cand/C = op_cand_make(P, B, holder, side, granted_by, seq)
+	R.all += C // ALLOW(ownership): a transient record of one resolution: dropped with it
+	op_cand_pass1(R, C, gesture)
+	if(!C.dropped_by)
+		R.ordered += C // ALLOW(ownership): a transient record of one resolution: dropped with it
+	return seq
+
+/// The candidate record of (op, binding) on `holder`, brought by `granted_by` (null: the holder's own), before any gate has looked at it.
+/proc/op_cand_make(datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, seq)
+	RETURN_TYPE(/datum/op_cand)
+	GLOB.op_count_cands++
 	var/datum/op_cand/C = new
 	C.oplan = P // ALLOW(ownership): a transient record of one resolution: dropped with it
 	C.binding = B // ALLOW(ownership): a transient record of one resolution: dropped with it
@@ -367,11 +466,7 @@
 		C.item_type = B.args["type"]
 	C.specificity = op_binding_specificity(B)
 	C.seq = seq
-	R.all += C // ALLOW(ownership): a transient record of one resolution: dropped with it
-	op_cand_pass1(R, C, gesture)
-	if(!C.dropped_by)
-		R.ordered += C // ALLOW(ownership): a transient record of one resolution: dropped with it
-	return seq
+	return C
 
 /// Builds the candidate list of an input. `gesture` null means a pick by key or a menu read (no intent filter). Pass 1: cheap gates only.
 /proc/op_resolve(mob/actor, atom/target, obj/held, origin, authority, gesture = null, key = null, keep_dropped = FALSE)
@@ -379,16 +474,8 @@
 	// A resolution that names a key, or explains itself, keeps every candidate and the filter that dropped it; the rest never allocate a
 	// candidate for one the binding's own input or the intent drops silently.
 	keep_dropped ||= !isnull(key)
-	var/datum/op_resolution/R = new
-	R.actor = actor // ALLOW(ownership): a transient record of one resolution: dropped with it
-	R.target = target // ALLOW(ownership): a transient record of one resolution: dropped with it
-	R.held = held // ALLOW(ownership): a transient record of one resolution: dropped with it
-	R.origin = origin
-	R.authority = authority
-	R.gesture = gesture
-	R.intents = isnull(gesture) ? null : op_intents_for(actor, gesture)
-	R.all = list()
-	R.ordered = list()
+	GLOB.op_count_resolves++
+	var/datum/op_resolution/R = op_resolution_new(actor, target, held, origin, authority, gesture)
 	R.gate_reason = actor_gate_reason(actor, origin, authority)
 	var/seq = 0
 	if(target && !QDELETED(target))
@@ -403,6 +490,21 @@
 			if(C.dropped_by in list(GATE_ORIGIN, GATE_PROVIDER, GATE_REACH))
 				if(!R.near_miss || op_cand_better(C, R.near_miss))
 					R.near_miss = C // ALLOW(ownership): a transient record of one resolution: dropped with it
+	return R
+
+/// An empty resolution of an input: who, on what, holding what, through which origin and authority, and the intents the gesture means.
+/proc/op_resolution_new(mob/actor, atom/target, obj/held, origin, authority, gesture)
+	RETURN_TYPE(/datum/op_resolution)
+	var/datum/op_resolution/R = new
+	R.actor = actor // ALLOW(ownership): a transient record of one resolution: dropped with it
+	R.target = target // ALLOW(ownership): a transient record of one resolution: dropped with it
+	R.held = held // ALLOW(ownership): a transient record of one resolution: dropped with it
+	R.origin = origin
+	R.authority = authority
+	R.gesture = gesture
+	R.intents = isnull(gesture) ? null : op_intents_for(actor, gesture)
+	R.all = list()
+	R.ordered = list()
 	return R
 
 /// Would pass 1 drop this (op, binding) at the binding's own input or the intent, which are silent and the same for every input of that kind?
@@ -495,6 +597,7 @@
 		var/list/chosen = list()
 		if(isnull(R.providers))
 			R.providers = providers_for(R.actor, R.held)
+		GLOB.op_count_reach++
 		var/why = reach_gate(R.actor, aim, R.held, P, B, R.authority, chosen, R.providers)
 		if(why)
 			C.dropped_by = (why == /datum/msg/op/no_hands) ? GATE_PROVIDER : GATE_REACH
@@ -507,6 +610,7 @@
 /proc/op_cand_when(datum/op_resolution/R, datum/op_cand/C)
 	if(!length(C.oplan.conds))
 		return TRUE
+	GLOB.op_count_whens++
 	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
 	var/ok = TRUE
 	try
@@ -540,6 +644,11 @@
 				break
 		sorted.Insert(position, C)
 	op_specificity_sort(sorted)
+	R.ordered = op_order_relative(sorted)
+
+/// The explicit relative priorities and click orders applied to candidates in resolution order (they win over intent, tier, side and
+/// specificity). Returns the list, reordered in place.
+/proc/op_order_relative(list/sorted)
 	// priority(above(key)) / priority(below(key)): moved next to the named candidate whatever the tiers
 	var/list/chained = null
 	for(var/datum/op_cand/C as anything in sorted.Copy())
@@ -573,7 +682,7 @@
 			continue
 		sorted -= C
 		sorted.Insert(sorted.Find(anchor), C)
-	R.ordered = sorted
+	return sorted
 
 /// How many ranks a click order puts below the candidate (the fewest, over its orders).
 /proc/op_click_depth(datum/op_cand/C)
@@ -683,10 +792,16 @@
 /// The winner of a click: the first survivor whose conditions hold and whose path is open. The silent-or-refuse rule of spaces (section 8): a
 /// candidate placed at(SPACE_X) behind a closed door is set aside while another candidate answers the same input; when none does, the first
 /// one set aside wins, and Require refuses it with the blocking door's reason.
+/// A compiled resolution (dispatch.dm) makes its order as this walks it, so the walk stops at the winner.
 /proc/op_resolution_winner(datum/op_resolution/R)
 	RETURN_TYPE(/datum/op_cand)
 	var/datum/op_cand/set_aside = null
-	for(var/datum/op_cand/C as anything in R.ordered)
+	var/i = 0
+	while(TRUE)
+		i++
+		if(i > length(R.ordered) && !op_fast_more(R))
+			break
+		var/datum/op_cand/C = R.ordered[i]
 		if(!op_cand_when(R, C))
 			continue
 		if(op_cand_path_reason(R, C))
@@ -1000,7 +1115,8 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 /proc/screentip_for(mob/actor, atom/target, obj/held, gesture = GESTURE_CLICK)
 	if(!isnull(held) && !isobj(held))
 		return null
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null)
+	var/authority = actor_authority(actor)
+	var/datum/op_resolution/R = op_click_resolution(actor, target, held, ORIGIN_CLICK, authority, gesture) || op_resolve(actor, target, held, ORIGIN_CLICK, authority, gesture, null)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	if(!winner)
 		return null

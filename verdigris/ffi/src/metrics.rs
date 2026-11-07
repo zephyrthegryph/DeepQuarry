@@ -167,3 +167,10 @@ pub fn snapshot_json() -> String {
 fn verdigris_metrics() -> Result<ByondValue> {
     Ok(ByondValue::new_str(snapshot_json())?)
 }
+
+/// The metrics whose names start with `prefix`, as one JSON object, without refreshing the sampled gauges: a cheap read of one family
+/// (the slow-frame report reads `frame.` on every slow frame, when a full snapshot would stall the tick it reports on).
+#[auxmacros::bind("/proc/verdigris_metrics_prefixed")]
+fn verdigris_metrics_prefixed(prefix: ByondValue) -> Result<ByondValue> {
+    Ok(ByondValue::new_str(registry().to_json_prefixed(&prefix.get_string()?))?)
+}

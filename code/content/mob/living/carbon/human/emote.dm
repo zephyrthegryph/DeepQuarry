@@ -535,9 +535,8 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		return
 	change_gender_identity(A.answer.value)
 
-/mob/living/carbon/human/verb/hide_wings_vr()
+/mob/living/carbon/human/proc/hide_wings_vr()
 	set name = "Show/Hide wings"
-	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Hide your wings, or show them if you already hid them."
 	set_wings_hidden(!wings_hidden)
 	var/message = ""
@@ -547,9 +546,8 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		message = "hides their wings."
 	act_message(src, null, others = span_filter_notice("%U% [message]"))
 
-/mob/living/carbon/human/verb/hide_tail_vr()
+/mob/living/carbon/human/proc/hide_tail_vr()
 	set name = "Show/Hide tail"
-	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Hide your tail, or show it if you already hid it."
 	if(!tail_style) //Just some checks.
 		to_chat(src,span_notice("You have no tail to hide!"))
@@ -574,7 +572,6 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 /mob/living/carbon/human/proc/toggle_speech_sounds()
 	set name = "Toggle Species Speech Sounds"
 	set desc = "Toggle if your species defined speech sound has a chance of playing on a Say"
-	set category = VERB_CAT_IC_SETTINGS
 
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))

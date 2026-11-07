@@ -128,6 +128,9 @@ GLOBAL_LIST_INIT(ability_keybind_rows, list(
 		list("subtle", "Subtle emote", KEYBIND_CAT_COMMS, "Subtle-verb", null, KB_BOTH("6")),
 		list("whisper", "Whisper", KEYBIND_CAT_COMMS, "Whisper-verb", null, KB_BOTH("Y", "CTRL+Y")),
 		list("ooc", "OOC", KEYBIND_CAT_COMMS, ".dq-ooc-input", null, KB_BOTH("F2")),
+		// Unbound by default: no key the old skin had is free for them; a player binds one.
+		list("looc", "LOOC", KEYBIND_CAT_COMMS, ".dq-looc-input", null, null),
+		list("radio", "Radio", KEYBIND_CAT_COMMS, ".dq-radio-input", null, null),
 		list("ahelp", "Admin help", KEYBIND_CAT_COMMS, "request-help", null, KB_BOTH("F1")),
 
 		// Client

@@ -240,7 +240,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
-	rel_set(src, nameof(tgui_say), new /datum/tgui_say(src, SKIN_TGUI_SAY))
 	rel_set(src, nameof(tgui_shocker), new /datum/tgui_shock(src, SKIN_TGUI_SHOCK))
 	initialize_commandbar_spy()
 	rel_set(src, nameof(tgui_panel), new /datum/tgui_panel(src, SKIN_CHAT_BROWSER))
@@ -323,8 +322,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	tgui_panel.initialize()
 
-	// Initialize tgui panel
-	tgui_say.initialize()
 	tgui_shocker.initialize()
 
 	rel_set(src, nameof(loot_panel), new /datum/lootpanel(src))
@@ -355,7 +352,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	SStgui.schedule_client_prewarm(src)
 
 	// Now that we're fully initialized, use our prefs
-	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools))
+	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools) && check_rights_for(src, R_DEBUG))
 		winset(src, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS],devtools")
 
 	//////////////
@@ -1001,6 +998,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	switch(type)
 		if("Update-Verbs")
 			init_verbs()
+			ability_sheet_send(src) // the button pictures, once per panel (code/content/abilities/ability_icons.dm)
 			mob?.abilities_changed() // the panel is ready to show the Abilities tab
 		if("Remove-Tabs")
 			panel_tabs -= payload["tab"]

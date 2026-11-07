@@ -754,6 +754,16 @@ body {
   object-fit: contain;
 }
 
+/* A sprite of the abilities sheet: 32px cells, shown at the icon's 24px. */
+.abilities__icon--sheet {
+  overflow: hidden;
+
+  > span {
+    transform: scale(0.75);
+    transform-origin: top left;
+  }
+}
+
 .abilities__name {
   flex: 1 1 auto;
   min-width: 0;

@@ -1,27 +1,9 @@
-/// tgui-say's preview parses on the client with no round trip per keystroke, from this data: the rules live here and in parse_languages,
-/// the client holds none of its own. Sent when the window opens, since the mob, its languages and its keys can change between messages.
-/datum/tgui_say/proc/send_language_rules()
-	var/mob/M = client()?.mob
-	if(M)
-		window.send_message("languageRules", M.say_language_rules())
+/// The chat input row's live preview parses on the client with no round trip per keystroke, from this data: the rules live here and in
+/// parse_languages, the client holds none of its own. Sent when the row opens (code/content/client/chat_speech.dm).
 
 /// An autohiss map for the preview, or null for a mob with none.
 /mob/proc/say_hiss_rules()
 	return null
-
-/mob/living/carbon/human/say_hiss_rules()
-	var/list/picked = client?.prefs ? GLOB.autohiss_choices[client.prefs.read_preference(/datum/preference/text/human/autohiss)] : null
-	if(!picked || picked["mode"] == AUTOHISS_OFF)
-		return null
-	var/own = picked["species"]
-	var/list/basic = own ? species?.autohiss_basic_map : picked["basic"]
-	if(!basic)
-		return null
-	return list(
-		"basic" = basic,
-		"extra" = picked["mode"] == AUTOHISS_FULL ? (own ? species.autohiss_extra_map : picked["extra"]) : null,
-		"exempt" = (own ? species.autohiss_exempt : picked["exempt"]) || list(),
-	)
 
 /mob/proc/say_language_info(datum/language/L)
 	return list(
@@ -67,7 +49,7 @@
 		radio_keys += radio_key
 
 	return list(
-		"mode" = client?.prefs?.read_preference(/datum/preference/choiced/multilingual_mode) || MULTILINGUAL_DEFAULT,
+		"mode" = MULTILINGUAL_DEFAULT,
 		"name" = name,
 		"defaultLanguage" = preferred?.name || "",
 		"gibberish" = gibberish.name,
@@ -77,7 +59,7 @@
 		"order" = order,
 		"markers" = GLOB.speech_toppings,
 		"radioKeys" = radio_keys,
-		"autopunctuation" = client?.prefs?.read_preference(/datum/preference/toggle/autopunctuation) ? TRUE : FALSE,
+		"autopunctuation" = FALSE,
 		"customVerbs" = custom_verbs,
 		"hiss" = say_hiss_rules(),
 	)

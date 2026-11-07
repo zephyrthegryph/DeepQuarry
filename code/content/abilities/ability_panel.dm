@@ -279,13 +279,16 @@ CAPABILITIES(/datum/ability_panel)
 /// One entry's data: the fields the tab shows.
 /proc/ability_entry_data(datum/action/entry, slot, client/viewer = null, list/menu_rows = null)
 	var/toggled = entry.ability_toggled()
+	// A button picture in the sheet the viewer's stat panel holds is named by its sprite; any other is an image of its own.
+	var/icon_class = viewer ? ability_icon_class(entry, viewer) : null
 	return list(
 		"ref" = handle_text(handle_of(entry)), // as text: a handle past a million does not survive a number in json
 		"id" = entry.ability_id(),
 		"name" = entry.name,
 		"desc" = entry.ability_desc(),
 		"category" = entry.ability_category,
-		"icon" = viewer ? ability_icon_src(entry, viewer) : null,
+		"icon" = (viewer && !icon_class) ? ability_icon_src(entry, viewer) : null,
+		"icon_class" = icon_class,
 		"cost" = entry.ability_cost(),
 		"cooldown" = entry.ability_cooldown_left(),
 		"toggled" = isnull(toggled) ? null : (toggled ? TRUE : FALSE),

@@ -1,7 +1,7 @@
 /// Whether `action` on `A` engaged a hardsuit module instead of its usual effect.
 /mob/living/proc/hardsuit_intercepts(action, atom/A)
 	var/list/actions = HARDSUIT_CLICK_ACTIONS
-	return client && actions[preference_or_default(/datum/preference/choiced/hardsuit_activation)] == action && HardsuitClickOn(A)
+	return client && actions[(HARDSUIT_CLICK_MIDDLE)] == action && HardsuitClickOn(A)
 
 /mob/living/action_swap_hands(atom/A)
 	if(hardsuit_intercepts(INPUT_ACTION_SWAP_HANDS, A))

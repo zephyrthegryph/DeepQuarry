@@ -150,8 +150,7 @@
 	//Check for clients with pref enabled
 	var/list/viewing = list()
 	for(var/mob/M as anything in viewers(A))
-		if(M.client?.prefs?.read_preference(/datum/preference/toggle/attack_icons))
-			viewing += M.client
+		viewing += M.client
 
 	//Animals attacking each other in the distance, probably. Forgeddaboutit.
 	if(!viewing.len)

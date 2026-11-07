@@ -55,9 +55,9 @@ CAPABILITIES(/datum/tgui_input_keycombo)
 /datum/tgui_input_keycombo/tgui_static_data(mob/user)
 	var/list/data = list()
 	data["init_value"] = default // Default is a reserved keyword
-	data["large_buttons"] = !user.client?.prefs || user.client.prefs.read_preference(/datum/preference/toggle/tgui_large_buttons)
+	data["large_buttons"] = TRUE
 	data["message"] = message
-	data["swapped_buttons"] = !user.client?.prefs || user.client.prefs.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
+	data["swapped_buttons"] = FALSE
 	data["title"] = title
 	return data
 

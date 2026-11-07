@@ -301,6 +301,7 @@
 /// The reason Require refuses the op now, or null: the implicit req_capable() of a physical binding, the bay, needs(), the require half of costs
 /// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
 /proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B, list/hide = null)
+	GLOB.op_count_requires++
 	lookup_reads_prepare(A.holder, A)
 	// Lazy caches the requirements read are refreshed here, outside the purity guard, so a requirement never writes one.
 	// Settling refreshes caches before anything is read; it is not an admission read, so an enclosing menu read neither records nor is marked

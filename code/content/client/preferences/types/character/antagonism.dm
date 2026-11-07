@@ -15,53 +15,6 @@
 /datum/preference/numeric/human/be_special/apply_to_human(mob/living/carbon/human/target, value)
 	return
 
-
-/datum/preference/text/human/antag_faction
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "antag_faction"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	maximum_value_length = MAX_NAME_LEN
-
-/datum/preference/text/human/antag_faction/create_default_value()
-	return "None"
-
-/datum/preference/text/human/antag_faction/get_pref_choices(datum/preferences/preferences)
-	return GLOB.faction_choices + list("None")
-
-/datum/preference/text/human/antag_faction/apply_to_human(mob/living/carbon/human/target, value)
-	target.bio.antag_faction = value
-
-
-/datum/preference/choiced/human/antag_vis
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "antag_vis"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-TYPE_TABLE(/datum/preference/choiced/human/antag_vis, pref_choices, GLOB.antag_visiblity_choices)
-/datum/preference/choiced/human/antag_vis/create_default_value()
-	return "Hidden"
-
-/datum/preference/choiced/human/antag_vis/apply_to_human(mob/living/carbon/human/target, value)
-	target.bio.antag_vis = value
-
-
-/datum/preference/text/human/exploit_record
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "exploit_record"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	maximum_value_length = MAX_RECORD_LENGTH
-
-/datum/preference/text/human/exploit_record/create_default_value()
-	return ""
-
-/datum/preference/text/human/exploit_record/apply_to_human(mob/living/carbon/human/target, value)
-	target.bio.exploit_record = value
-
-
-
 /datum/preference/choiced/human/vantag_preference
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "vantag_preference"

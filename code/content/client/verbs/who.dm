@@ -2,7 +2,7 @@
 
 /client/verb/who()
 	set name = "Who"
-	set category = VERB_CAT_OOC_RESOURCES
+	set hidden = TRUE // the Menu page
 
 	var/msg = span_bold("Current Players:") + "\n"
 

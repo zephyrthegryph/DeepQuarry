@@ -60,7 +60,7 @@
 	else
 		. = drop_r_hand(Target)
 
-	if (istype(item_dropped) && !QDELETED(item_dropped) && check_sound_preference(/datum/preference/toggle/drop_sounds))
+	if (istype(item_dropped) && !QDELETED(item_dropped) && TRUE)
 		after(src, 0.1 SECONDS, PROC_REF(make_item_drop_sound), with = list(item_dropped))
 
 /mob/proc/make_item_drop_sound(obj/item/I)
@@ -68,7 +68,7 @@
 		return
 
 	if(sounds_of(I).drop)
-		playsound(I, sounds_of(I).drop, 25, 0, preference = /datum/preference/toggle/drop_sounds)
+		playsound(I, sounds_of(I).drop, 25, 0)
 
 //Drops the item in our left hand
 /mob/living/drop_l_hand(atom/Target)
@@ -318,6 +318,13 @@ CAPABILITIES(/datum/inventory_panel/human)
 		get_asset_datum(/datum/asset/simple/inventory)
 	)
 
+/// The picture of `thing` for the inventory window of `viewer`: the address of its icon state as an asset, cut, hashed and registered once for
+/// the life of the world and sent to a client once (icon_file_asset_url()), not a base64 copy built and sent with every push. Null for nothing.
+/proc/inventory_panel_icon(obj/item/thing, mob/viewer)
+	if(!thing?.icon || !viewer?.client)
+		return null
+	return icon_file_asset_url(thing.icon, thing.icon_state, viewer.client)
+
 /// /datum/inventory_panel/human's window data.
 /datum/inventory_panel/human/ui_data(datum/act/eval/A)
 	var/list/data = list() // We don't inherit TGUI data because humans are soooo different.
@@ -337,7 +344,7 @@ CAPABILITIES(/datum/inventory_panel/human)
 		UNTYPED_LIST_ADD(slots, list(
 			"name" = slot_ref["name"],
 			"item" = thing_in_slot,
-			"icon" = thing_in_slot ? icon2base64(icon(thing_in_slot.icon, thing_in_slot.icon_state, frame = 1)) : null,
+			"icon" = inventory_panel_icon(thing_in_slot, A.actor),
 			"act" = "targetSlot",
 			"params" = list("slot" = slot_ref["slot"]),
 		))
@@ -348,14 +355,14 @@ CAPABILITIES(/datum/inventory_panel/human)
 		UNTYPED_LIST_ADD(specialSlots, list(
 			"name" = "Left Hand",
 			"item" = H.get_equipped_item(SLOT_ID_HAND_L),
-			"icon" = H.get_equipped_item(SLOT_ID_HAND_L) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_HAND_L).icon, H.get_equipped_item(SLOT_ID_HAND_L).icon_state, frame = 1)) : null,
+			"icon" = inventory_panel_icon(H.get_equipped_item(SLOT_ID_HAND_L), A.actor),
 			"act" = "targetSlot",
 			"params" = list("slot" = SLOT_ID_HAND_L),
 		))
 		UNTYPED_LIST_ADD(specialSlots, list(
 			"name" = "Right Hand",
 			"item" = H.get_equipped_item(SLOT_ID_HAND_R),
-			"icon" = H.get_equipped_item(SLOT_ID_HAND_R) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_HAND_R).icon, H.get_equipped_item(SLOT_ID_HAND_R).icon_state, frame = 1)) : null,
+			"icon" = inventory_panel_icon(H.get_equipped_item(SLOT_ID_HAND_R), A.actor),
 			"act" = "targetSlot",
 			"params" = list("slot" = SLOT_ID_HAND_R),
 		))

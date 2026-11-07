@@ -11,8 +11,6 @@
 	SHOULD_NOT_SLEEP(TRUE)
 
 	var/client/viewer_client = viewer?.client
-	if(!viewer_client?.prefs?.read_preference(/datum/preference/toggle/runechat_balloon_messages))
-		return //no! I don't want that.
 	// The text's height is measured on the viewer's client (a round trip): DX-exec answers later.
 	dx_measure_text(src, viewer_client, text, null, BALLOON_TEXT_WIDTH, PROC_REF(balloon_alert_perform), viewer, text)
 
@@ -40,10 +38,6 @@
 /atom/proc/balloon_alert_perform(measured, mob/viewer, text)
 
 	var/client/viewer_client = viewer?.client
-
-	if(!viewer_client?.prefs?.read_preference(/datum/preference/toggle/runechat_balloon_messages))
-		return //no! I don't want that.
-
 
 	if(isnull(viewer_client))
 		return

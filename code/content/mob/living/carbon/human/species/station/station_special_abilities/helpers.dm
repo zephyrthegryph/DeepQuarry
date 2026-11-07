@@ -1622,10 +1622,6 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 		if(!checkplayer.client) //no client, no problem
 			continue
 		if(checkplayer.name == chosen_name)
-			if(checkplayer.client.prefs.read_preference(/datum/preference/toggle/human/resleeve_lock)) // resleeve_lock migrated
-				to_chat(src, span_notice("\The [checkplayer]'s preferences forbid you from impersonating them."))
-				log_and_message_admins("[key_name(src)] attempted to impersonate [key_name(checkplayer)], but preferences prevented it.", src)
-				return
 			log_and_message_admins("[key_name(src)] impersonated [key_name(checkplayer)]!", src)
 
 	log_and_message_admins("[key_name(src)] set their name to [chosen_name]", src)

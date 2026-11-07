@@ -242,6 +242,10 @@
 	N.report_slow_frame()
 	TEST_ASSERT_EQUAL(N.slow_frames, before + 2, "each slow-frame report counts itself")
 	TEST_ASSERT(islist(N.slow_frame_prev), "a report keeps the phase counters for the next one to diff")
+	var/list/family = verdigris_metrics_family("frame.")
+	TEST_ASSERT(islist(family), "the frame family reads back as a list")
+	for(var/name in family)
+		TEST_ASSERT(findtext(name, "frame.") == 1, "the family read holds only frame metrics ([name])")
 	N.slow_frame_prev = saved
 	N.slow_frames = before
 

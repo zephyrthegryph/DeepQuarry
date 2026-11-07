@@ -1171,7 +1171,7 @@
 	if(src.vore_prefs.noisy == TRUE && nutrition_of(src) < 250 && prob(10))
 		var/sound/growlsound = sound(get_sfx(SFX_HUNGER_SOUNDS))
 		var/growlmultiplier = 100 - (nutrition_of(src) / 250 * 100)
-		playsound(src, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+		playsound(src, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 	if(nutrition_of(src) > 500 && src.vore_prefs.noisy_full == TRUE)
 		var/belch_prob = 5 //Maximum belch prob.
 		if(nutrition_of(src) < 4075)
@@ -1307,7 +1307,7 @@
 	if(!fear)
 		return
 	PUBLISH_CHANGE(src, MOB_KEY_STATUS) // the HUD's fear band follows the count down
-	if(fear >= 80 && src.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
+	if(fear >= 80)
 		if(COOLDOWN_FINISHED(cooldowns_view(src), fear_sound_cooldown))
 			src << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
 			STATE_SET(src, cooldowns, fear_sound_cooldown, world.time + (51 SECONDS))
@@ -2016,7 +2016,7 @@
 	if(!H || (H.is_robotic()))
 		return
 
-	if(src.pulse >= PULSE_2FAST || src.shock_stage >= 10 || (istype(get_turf(src), /turf/space) && src.read_preference(/datum/preference/toggle/play_ambience)))
+	if(src.pulse >= PULSE_2FAST || src.shock_stage >= 10 || (istype(get_turf(src), /turf/space)))
 		//PULSE_THREADY - maximum value for pulse, currently it 5.
 		//High pulse value corresponds to a fast rate of heartbeat.
 		//Divided by 2, otherwise it is too slow.
@@ -2286,10 +2286,9 @@
 	. = ..()
 
 	// Technically this does mean being dragged takes nutrition
+	// One write per step (a run burns twice a walk's share): each write publishes the nutrition key.
 	if(stat != DEAD)
-		adjust_nutrition(hunger_rate_of(src)/-10)
-		if(m_intent == I_RUN)
-			adjust_nutrition(hunger_rate_of(src)/-10)
+		adjust_nutrition(hunger_rate_of(src) / -10 * (m_intent == I_RUN ? 2 : 1))
 
 	// Moving around increases germ_level faster
 	// The roll first: the slot read stays off most moves.

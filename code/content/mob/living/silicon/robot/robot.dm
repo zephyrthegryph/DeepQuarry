@@ -598,7 +598,7 @@
 		identity().ooc_notes_favs = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_favs))
 		identity().ooc_notes_maybes = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_maybes))
 		identity().ooc_notes_style = num_or_null(read_preference(/datum/preference/toggle/living/ooc_notes_style))
-		STATE_SET(src, living_misc, custom_link, text_or_null(client.prefs.read_preference(/datum/preference/text/human/custom_link))) // migrated pref
+		STATE_SET(src, living_misc, custom_link, text_or_null(null)) // migrated pref
 
 ///Essentially, a Activate Held Object mode for borgs that acts just like pressing Z in hotkey mode but also works well with multibelts.
 /mob/living/silicon/robot/proc/alt_mode()
@@ -1103,7 +1103,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		if(I_HELP)
 			if(grabbable)
 				attempt_to_scoop(H)
-			else if(client && !client.prefs.read_preference(/datum/preference/toggle/human/borg_petting)) // migrated pref
+			else if(client && FALSE) // migrated pref
 				act_message(H, src, others = span_notice("%U% reaches out for %T%, but quickly refrains from petting."))
 			else
 				act_message(H, src, others = span_notice("%U% pets %T%."))
@@ -1465,10 +1465,9 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/lay_down()
 	. = ..()
 
-/mob/living/silicon/robot/verb/rest_style()
+/mob/living/silicon/robot/proc/rest_style()
 	set name = "Switch Rest Style"
 	set desc = "Select your resting pose."
-	set category = VERB_CAT_IC_SETTINGS
 
 	if(!sprite_datum || !sprite_datum.has_rest_sprites || sprite_datum.rest_sprite_options.len < 1)
 		to_chat(src, span_notice("Your current appearance doesn't have any resting styles!"))

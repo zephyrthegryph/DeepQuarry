@@ -1,4 +1,4 @@
-// Old style chat inputs, the fallback when TG Say is off. Procs, not verbs: the hidden say wrappers (typing_indicator.dm) call them.
+// Plain chat line prompts: the speech hotkeys' fallback while the chat page has not loaded (typing_indicator.dm). Procs, not verbs.
 
 /// Asks for a chat line and hands it to `action` (a proc on the mob taking the message).
 /// `typing` shows the typing indicator while the window is open.
@@ -23,22 +23,6 @@
 	client?.stop_thinking()
 	if(A.answer.value)
 		call(src, prompt.action)(A.answer.value)
-
-/mob/proc/say_verb_old()
-
-	ask_chat_line("Speak to people in sight.\nType your message:", "Say", /mob/verb/say_verb)
-
-/mob/proc/me_verb_old()
-
-	ask_chat_line("Emote to people in sight (and your pred/prey).\nType your message:", "Emote", /mob/verb/me_verb, TRUE)
-
-/mob/proc/whisper_old()
-
-	ask_chat_line("Speak to nearby people.\nType your message:", "Whisper", /mob/verb/whisper, FALSE, client?.prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
-
-/mob/proc/me_verb_subtle_old()
-
-	ask_chat_line("Emote to nearby people (and your pred/prey).\nType your message:", "Subtle", /mob/verb/me_verb_subtle, TRUE, client?.prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
 
 /mob/proc/me_verb_subtle_custom_old()
 

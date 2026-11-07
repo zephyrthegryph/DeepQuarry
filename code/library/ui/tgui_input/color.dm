@@ -20,8 +20,6 @@
 		return null
 
 	// Client does NOT have tgui_input on: Returns regular input
-	if(!user.client.prefs.read_preference(/datum/preference/toggle/tgui_input_mode))
-		return input(user, message, title, default) as color|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
 	var/datum/tgui_color_picker/picker = new(user, message, title, default, timeout, autofocus, ui_state)
 	picker.tgui_interact(user)
 	picker.wait()
@@ -99,8 +97,8 @@ CAPABILITIES(/datum/tgui_color_picker)
 /datum/tgui_color_picker/tgui_static_data(mob/user)
 	. = list()
 	.["autofocus"] = autofocus
-	.["large_buttons"] = !user.client?.prefs || user.client.prefs.read_preference(/datum/preference/toggle/tgui_large_buttons)
-	.["swapped_buttons"] = !user.client?.prefs || user.client.prefs.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
+	.["large_buttons"] = TRUE
+	.["swapped_buttons"] = FALSE
 	.["title"] = title
 	.["default_color"] = default
 	.["message"] = message

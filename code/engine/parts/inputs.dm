@@ -105,9 +105,12 @@ GLOBAL_ALIST_EMPTY(op_click_resolved)
 /// Resolves a click among the candidates and runs the winner. Returns its /datum/op_result, or null when nothing resolved (and `quiet`: nothing was said).
 /// `defer_legacy`: when every candidate declines or passes, the result is null, so the mob's own click handling takes the input from there, as it
 /// did before the type declared an op. A player's click takes it; a driver-built one does not.
+/// The winner comes from the compiled click (dispatch.dm) when it takes the input, else from the full resolver; why nothing answered is asked of
+/// the full resolver only when it is to be told.
 /proc/op_resolve_click(mob/actor, atom/target, obj/held, gesture, origin, quiet = FALSE, defer_legacy = FALSE, quality = null, no_tool = FALSE)
 	RETURN_TYPE(/datum/op_result)
-	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, actor_authority(actor), gesture, null)
+	var/authority = actor_authority(actor)
+	var/datum/op_resolution/R = op_click_resolution(actor, target, held, origin, authority, gesture) || op_resolve(actor, target, held, origin, authority, gesture, null)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	// `quality` / `no_tool`: a tool's own act (crowbar_act) or an item's plain use (item_interaction) asks for the winner of that kind only; any other winner is
 	// not this call's to run.
@@ -117,10 +120,13 @@ GLOBAL_ALIST_EMPTY(op_click_resolved)
 		if(no_tool && winner.binding?.bind_kind == BIND_TOOL)
 			return null
 	if(!winner)
-		if(!quiet && length(R.all))
-			// nothing survived: show the best near-miss's reason (rate limited), so a click never just does nothing
-			var/why = op_resolution_refusal(R)
-			op_gate_feedback(actor, why)
+		if(!quiet)
+			if(R.fast)
+				R = op_resolve(actor, target, held, origin, authority, gesture, null) // the reasons: every candidate and the filter that dropped it
+			if(length(R.all))
+				// nothing survived: show the best near-miss's reason (rate limited), so a click never just does nothing
+				var/why = op_resolution_refusal(R)
+				op_gate_feedback(actor, why)
 		return null
 	var/datum/op_result/result = op_begin(winner, R, null, FALSE)
 	// OP_DECLINE: the handler said "not handled": the next candidate whose conditions hold gets the click, then the next, until one takes it. Nothing
@@ -131,15 +137,7 @@ GLOBAL_ALIST_EMPTY(op_click_resolved)
 		// the click is spent.
 		if(op_input_consumed(R))
 			return result
-		var/datum/op_cand/next = null
-		var/seen = FALSE
-		for(var/datum/op_cand/C as anything in R.ordered)
-			if(C == tried)
-				seen = TRUE
-				continue
-			if(seen && op_cand_when(R, C))
-				next = C
-				break
+		var/datum/op_cand/next = op_resolution_next(R, tried)
 		if(!next)
 			return defer_legacy ? null : result
 		winner = next
@@ -157,15 +155,7 @@ GLOBAL_ALIST_EMPTY(op_click_resolved)
 		// What ran used the input up (a consumed grenade, a cigarette trodden into a butt): nothing is left to hand to the next candidate.
 		if(op_input_consumed(R))
 			return result
-		var/datum/op_cand/next = null
-		var/seen = FALSE
-		for(var/datum/op_cand/C as anything in R.ordered)
-			if(C == last)
-				seen = TRUE
-				continue
-			if(seen && op_cand_when(R, C))
-				next = C
-				break
+		var/datum/op_cand/next = op_resolution_next(R, last)
 		if(!next)
 			return defer_legacy ? null : result
 		result = op_begin(next, R, null, FALSE)

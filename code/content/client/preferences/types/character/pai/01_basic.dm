@@ -12,60 +12,8 @@
 	return
 
 
-/datum/preference/text/pai_description
-	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
-	savefile_identifier = PREFERENCE_CHARACTER
-	savefile_key = "Pai_Desc"
-	maximum_value_length = MAX_MESSAGE_LEN * 4
-	can_randomize = FALSE
-
-/datum/preference/text/pai_description/create_default_value()
-	return PAI_UNSET
-
-/datum/preference/text/pai_description/apply_pref_to(mob/living, value)
-	return
 
 
-/datum/preference/text/pai_role
-	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
-	savefile_identifier = PREFERENCE_CHARACTER
-	savefile_key = "Pai_Role"
-	maximum_value_length = MAX_MESSAGE_LEN
-	can_randomize = FALSE
-
-/datum/preference/text/pai_role/create_default_value()
-	return PAI_UNSET
-
-/datum/preference/text/pai_role/apply_pref_to(mob/living, value)
-	return
-
-
-/datum/preference/text/pai_ad
-	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
-	savefile_identifier = PREFERENCE_CHARACTER
-	savefile_key = "Pai_Ad"
-	maximum_value_length = MAX_MESSAGE_LEN
-	can_randomize = FALSE
-
-/datum/preference/text/pai_ad/create_default_value()
-	return PAI_UNSET
-
-/datum/preference/text/pai_ad/apply_pref_to(mob/living, value)
-	return
-
-
-/datum/preference/text/pai_comments
-	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
-	savefile_identifier = PREFERENCE_CHARACTER
-	savefile_key = "Pai_Comments"
-	maximum_value_length = MAX_MESSAGE_LEN
-	can_randomize = FALSE
-
-/datum/preference/text/pai_comments/create_default_value()
-	return PAI_UNSET
-
-/datum/preference/text/pai_comments/apply_pref_to(mob/living, value)
-	return
 
 
 /datum/preference/color/pai_eye_color

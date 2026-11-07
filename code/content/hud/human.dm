@@ -310,7 +310,7 @@
 		client_screen_add(client, hud_elements)
 		if(length(HUD.adding))
 			client_screen_add(client, HUD.adding)
-		HUD.hotkey_ui_hidden = !preference_or_default(/datum/preference/toggle/hotkey_buttons)
+		HUD.hotkey_ui_hidden = FALSE
 		if(length(HUD.hotkeybuttons) && !HUD.hotkey_ui_hidden)
 			client_screen_add(client, HUD.hotkeybuttons)
 		client_screen_add(client, GLOB.click_catcher)

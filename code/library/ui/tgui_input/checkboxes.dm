@@ -65,9 +65,9 @@ CAPABILITIES(/datum/tgui_checkbox_input)
 	data["items"] = items
 	data["min_checked"] = min_checked
 	data["max_checked"] = max_checked
-	data["large_buttons"] = user.read_preference(/datum/preference/toggle/tgui_large_buttons)
+	data["large_buttons"] = TRUE
 	data["message"] = message
-	data["swapped_buttons"] = !user.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
+	data["swapped_buttons"] = TRUE
 	data["title"] = title
 
 	return data

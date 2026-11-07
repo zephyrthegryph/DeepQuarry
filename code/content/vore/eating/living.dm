@@ -529,9 +529,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/list/vore_examine_data = list()
 	vore_examine_data += reagent_examine
 	vore_examine_data += examine_belly
-	if(!client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable))
-		return vore_examine_data
-
 	return span_details("🤰 | Vore Descriptions", vore_examine_data.Join("\n"))
 
 
@@ -1763,7 +1760,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	else
 		soundfile = GLOB.fancy_release_sounds[RTB.release_sound]
 	if(soundfile)
-		playsound(src, soundfile, vol = 100, vary = 1, falloff = VORE_SOUND_FALLOFF, preference = /datum/preference/toggle/eating_noises)
+		playsound(src, soundfile, vol = 100, vary = 1, falloff = VORE_SOUND_FALLOFF, volume_channel = VOLUME_CHANNEL_VORE)
 
 /mob/living/proc/vore_bellyrub(mob/living/T in view(1,src))
 

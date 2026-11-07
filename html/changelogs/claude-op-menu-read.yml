@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "The say popup keeps its minimum size and its dock from the skin's resize events instead of checking twice a second."
