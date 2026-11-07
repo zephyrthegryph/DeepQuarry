@@ -61,6 +61,9 @@
 	var/datum/op_cand/near_miss
 	/// The gate that dropped candidates before any was a candidate (the actor gate's reason), or null.
 	var/gate_reason
+	/// Whether the caller wants the near miss (a click's refusal reason): when it does not (a Menu read), a candidate the origin or authority refuses
+	/// is never made, the same as one its binding's input drops.
+	var/near_misses = TRUE
 	/// providers_for(actor, held), read once by the first candidate that needs a provider: pass 1 runs no effects, so every candidate sees the same set.
 	var/list/providers
 
@@ -134,24 +137,39 @@ GLOBAL_VAR_INIT(op_count_resolves, 0)
 
 // ---- intents ----
 
-/// The intents a gesture means for this actor, in order: the bind profile's intent list.
+/// The intent lists a gesture means (op_intents_for()): shared constants, never edited.
+GLOBAL_LIST_INIT(op_intents_use, list(INTENT_USE))
+GLOBAL_LIST_INIT(op_intents_attack_then_use, list(INTENT_ATTACK, INTENT_USE))
+GLOBAL_LIST_INIT(op_intents_alt, list(INTENT_TOGGLE, INTENT_OPEN, INTENT_EJECT))
+GLOBAL_LIST_INIT(op_intents_examine, list(INTENT_EXAMINE))
+GLOBAL_LIST_INIT(op_intents_drop_onto, list(INTENT_DROP_ONTO))
+GLOBAL_LIST_INIT(op_intents_ctrl, list(GESTURE_CTRL))
+GLOBAL_LIST_INIT(op_intents_middle, list(GESTURE_MIDDLE))
+GLOBAL_LIST_INIT(op_intents_right, list(GESTURE_RIGHT))
+GLOBAL_LIST_EMPTY(op_intents_none)
+
+/// The intents a gesture means for this actor, in order: the bind profile's intent list. The lists are shared constants: never edit one.
 /proc/op_intents_for(mob/actor, gesture)
 	switch(gesture)
 		if(GESTURE_CLICK, GESTURE_SELF)
 			if(actor && STANCE_IS_HOSTILE(actor.op_input_stance()))
-				return list(INTENT_ATTACK, INTENT_USE)
-			return list(INTENT_USE)
+				return GLOB.op_intents_attack_then_use
+			return GLOB.op_intents_use
 		if(GESTURE_ALT)
-			return list(INTENT_TOGGLE, INTENT_OPEN, INTENT_EJECT)
+			return GLOB.op_intents_alt
 		if(GESTURE_SHIFT)
-			return list(INTENT_EXAMINE)
+			return GLOB.op_intents_examine
 		if(GESTURE_DRAG)
-			return list(INTENT_DROP_ONTO)
-		if(GESTURE_CTRL, GESTURE_MIDDLE, GESTURE_RIGHT)
-			// No intent of its own: the gesture is its own token, so only an op that pins it (gesture(GESTURE_CTRL)) answers it. A right click is never a player's gesture here (it opens the menu); a call that stands for one, the
-			// secondary use of a tool (try_interaction()), resolves it so.
-			return list(gesture)
-	return list()
+			return GLOB.op_intents_drop_onto
+		// No intent of its own: the gesture is its own token, so only an op that pins it (gesture(GESTURE_CTRL)) answers it. A right click is never a player's gesture here (it opens the menu); a call that stands for one, the
+		// secondary use of a tool (try_interaction()), resolves it so.
+		if(GESTURE_CTRL)
+			return GLOB.op_intents_ctrl
+		if(GESTURE_MIDDLE)
+			return GLOB.op_intents_middle
+		if(GESTURE_RIGHT)
+			return GLOB.op_intents_right
+	return GLOB.op_intents_none
 
 /// The intents an op answers through a binding: answers() when written, else what the binding implies.
 /proc/op_answers(datum/op_plan/P, datum/entry/part/bind/B)
@@ -229,20 +247,20 @@ GLOBAL_VAR_INIT(op_count_resolves, 0)
 	var/list/op_row_cache
 
 /// The key of one input shape: the facts every input of the shape shares (op_rows_for()).
-/proc/op_shape_signature(side, origin, authority, gesture, list/intents, held_type)
-	return "[side]|[origin]|[authority]|[isnull(gesture) ? "-" : gesture]|[intents ? jointext(intents, ",") : "-"]|[held_type || "-"]"
+/proc/op_shape_signature(side, origin, authority, gesture, list/intents, held_type, near_misses = TRUE)
+	return "[side]|[origin]|[authority]|[isnull(gesture) ? "-" : gesture]|[intents ? jointext(intents, ",") : "-"]|[held_type || "-"][near_misses ? "" : "|x"]"
 
 /// Interned candidate rows of `index` whose silent drops (the ones every input of this shape shares) are applied. In declaration order.
 /// `signature`: op_shape_signature() of the same arguments, when the caller has it.
-/proc/op_rows_for(datum/op_index/index, side, origin, authority, gesture, list/intents, held_type, signature = null)
-	signature ||= op_shape_signature(side, origin, authority, gesture, intents, held_type)
+/proc/op_rows_for(datum/op_index/index, side, origin, authority, gesture, list/intents, held_type, signature = null, near_misses = TRUE)
+	signature ||= op_shape_signature(side, origin, authority, gesture, intents, held_type, near_misses)
 	var/list/rows = index.op_row_cache?[signature]
 	if(!isnull(rows))
 		return rows
 	rows = list()
 	for(var/datum/op_plan/P as anything in index.ordered)
 		for(var/datum/entry/part/bind/B as anything in P.bindings)
-			if(!op_row_maybe(P, B, side, origin, authority, gesture, intents, held_type))
+			if(!op_row_maybe(P, B, side, origin, authority, gesture, intents, held_type, near_misses))
 				continue
 			var/datum/op_row/row = new
 			row.oplan = P // ALLOW(ownership): an interned row of a compiled table: dropped with it
@@ -268,15 +286,15 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 /// table's index for a holder with no grants, else on the holder until its capability generation moves. A grant whose activation ended or stopped
 /// running since is skipped by the caller, so a read inside a teardown never offers a dead grant's ops. The third slot holds the compiled tables
 /// made from these rows (op_fast_side(), dispatch.dm), so they go with them.
-/proc/op_side_rows(datum/holder, datum/type_table/T, side, origin, authority, gesture, list/intents, held_type)
+/proc/op_side_rows(datum/holder, datum/type_table/T, side, origin, authority, gesture, list/intents, held_type, near_misses = TRUE)
 	var/datum/op_index/index = op_index_of_table(T)
-	var/signature = op_shape_signature(side, origin, authority, gesture, intents, held_type)
+	var/signature = op_shape_signature(side, origin, authority, gesture, intents, held_type, near_misses)
 	var/datum/rx_state/state = holder.rx
 	var/count = length(state?.activations)
 	if(!count)
 		var/list/plain = index.op_side_rows?[signature]
 		if(isnull(plain))
-			var/list/own_rows = op_rows_for(index, side, origin, authority, gesture, intents, held_type, signature)
+			var/list/own_rows = op_rows_for(index, side, origin, authority, gesture, intents, held_type, signature, near_misses)
 			var/list/no_grants = list()
 			no_grants.len = length(own_rows)
 			plain = list(own_rows, no_grants, null)
@@ -293,13 +311,13 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 		return made
 	var/list/rows = list()
 	var/list/acts = list()
-	for(var/datum/op_row/row as anything in op_rows_for(index, side, origin, authority, gesture, intents, held_type, signature))
+	for(var/datum/op_row/row as anything in op_rows_for(index, side, origin, authority, gesture, intents, held_type, signature, near_misses))
 		rows += row
 		acts += list(null)
 	for(var/datum/activation/A as anything in state.activations)
 		if(A.dead || !A.runs || T.caps[A.def.key])
 			continue
-		for(var/datum/op_row/row as anything in op_rows_for(op_index_of_def(T, A.def), side, origin, authority, gesture, intents, held_type, signature))
+		for(var/datum/op_row/row as anything in op_rows_for(op_index_of_def(T, A.def), side, origin, authority, gesture, intents, held_type, signature, near_misses))
 			rows += row
 			acts += A
 	made = list(rows, acts, null)
@@ -328,13 +346,14 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 
 /// Could (op, binding) answer an input of this shape? FALSE only when the shared facts drop it silently: the side, the binding kind, the intents and
 /// the held item's type. A candidate the origin or authority refuses is kept (it can be the near miss that explains a refusal).
-/proc/op_row_maybe(datum/op_plan/P, datum/entry/part/bind/B, side, origin, authority, gesture, list/intents, held_type)
+/// With `near_misses` FALSE (a Menu read) one the origin or authority refuses is dropped too.
+/proc/op_row_maybe(datum/op_plan/P, datum/entry/part/bind/B, side, origin, authority, gesture, list/intents, held_type, near_misses = TRUE)
 	if(op_shape_drops(P, B, side, gesture, intents))
 		return FALSE
 	if(!op_accepts_origin(P, B, origin))
-		return TRUE
+		return near_misses
 	if(origin != ORIGIN_SYSTEM && !op_accepts_authority(P, B, authority))
-		return TRUE
+		return near_misses
 	if(side == CAND_ACTOR && !op_actor_side_binding(B))
 		return FALSE
 	if(origin != ORIGIN_SYSTEM || !isnull(gesture))
@@ -399,7 +418,7 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 				rows += row
 	else if(!GLOB.op_resolver_legacy)
 		// The holder's merged rows for this shape: the table's and every running grant's, one interned read.
-		var/list/merged = op_side_rows(holder, T, side, R.origin, R.authority, gesture, R.intents, R.held?.type)
+		var/list/merged = op_side_rows(holder, T, side, R.origin, R.authority, gesture, R.intents, R.held?.type, R.near_misses)
 		var/list/merged_rows = merged[1]
 		var/list/merged_acts = merged[2]
 		for(var/i in 1 to length(merged_rows))
@@ -469,13 +488,15 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 	return C
 
 /// Builds the candidate list of an input. `gesture` null means a pick by key or a menu read (no intent filter). Pass 1: cheap gates only.
-/proc/op_resolve(mob/actor, atom/target, obj/held, origin, authority, gesture = null, key = null, keep_dropped = FALSE)
+/// `near_misses` FALSE: no candidate is made only to explain a refusal (a Menu read shows none).
+/proc/op_resolve(mob/actor, atom/target, obj/held, origin, authority, gesture = null, key = null, keep_dropped = FALSE, near_misses = TRUE)
 	RETURN_TYPE(/datum/op_resolution)
 	// A resolution that names a key, or explains itself, keeps every candidate and the filter that dropped it; the rest never allocate a
 	// candidate for one the binding's own input or the intent drops silently.
 	keep_dropped ||= !isnull(key)
 	GLOB.op_count_resolves++
 	var/datum/op_resolution/R = op_resolution_new(actor, target, held, origin, authority, gesture)
+	R.near_misses = near_misses || keep_dropped
 	R.gate_reason = actor_gate_reason(actor, origin, authority)
 	var/seq = 0
 	if(target && !QDELETED(target))
@@ -513,9 +534,9 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 	if(op_shape_drops(P, B, side, gesture, R.intents))
 		return TRUE
 	if(!op_accepts_origin(P, B, R.origin))
-		return FALSE
+		return !R.near_misses
 	if(R.origin != ORIGIN_SYSTEM && !op_accepts_authority(P, B, R.authority))
-		return FALSE
+		return !R.near_misses
 	if(side == CAND_ACTOR && !op_actor_side_binding(B))
 		return TRUE
 	if((R.origin != ORIGIN_SYSTEM || !isnull(gesture)) && !op_binding_fits(B, R.actor, R.target, R.held, holder, side))
@@ -594,17 +615,20 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 	// (observer(): only a ghost provides AFF_OBSERVE); the gate then runs no spatial step.
 	if(R.origin != ORIGIN_SYSTEM && (op_reach_policy(P, B) != REACH_ANY || op_affordance(P, B, R.held)))
 		var/atom/aim = (C.side == CAND_ACTOR && B.bind_kind != BIND_CLICKS) ? R.actor : R.target
-		var/list/chosen = list()
 		if(isnull(R.providers))
 			R.providers = providers_for(R.actor, R.held)
 		GLOB.op_count_reach++
-		var/why = reach_gate(R.actor, aim, R.held, P, B, R.authority, chosen, R.providers)
-		if(why)
-			C.dropped_by = (why == /datum/msg/op/no_hands) ? GATE_PROVIDER : GATE_REACH
-			C.dropped_reason = why
+		var/reached = reach_gate(R.actor, aim, R.held, P, B, R.authority, R.providers)
+		if(istype(reached, /datum/prov))
+			op_cand_set_provider(C, reached)
+		else if(reached)
+			C.dropped_by = (reached == /datum/msg/op/no_hands) ? GATE_PROVIDER : GATE_REACH
+			C.dropped_reason = reached
 			return
-		if(length(chosen))
-			C.provider = chosen[1] // ALLOW(ownership): a transient record of one resolution: dropped with it
+
+/// The provider the reach gate chose for candidate C.
+/proc/op_cand_set_provider(datum/op_cand/C, datum/prov/V)
+	C.provider = V // ALLOW(ownership): a transient record of one resolution: dropped with it
 
 /// Pass 2 for one candidate: its when conditions, in the context the op would run in. Sets dropped_by = GATE_MATCH and dropped_cond when one is false.
 /proc/op_cand_when(datum/op_resolution/R, datum/op_cand/C)
@@ -761,23 +785,29 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 /// A pooled op context for candidate C and an input: the fields a requirement or a condition reads. The caller releases it.
 /proc/op_act_for(datum/op_cand/C, mob/actor, datum/target, obj/held, origin, authority)
 	RETURN_TYPE(/datum/act/op)
+	return op_act_fill(C.oplan, C.binding, C.holder, C.side, C.activation, C.cap, C.provider, actor, target, held, origin, authority)
+
+/// A pooled op context for (op, binding) on `holder` from `side`, brought by `granted_by` (capability `cap`), performed by provider `V`: what
+/// op_act_for() fills from a candidate record, for a compiled survivor that has none (dispatch.dm). The caller releases it.
+/proc/op_act_fill(datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, datum/capability/cap, datum/prov/V, mob/actor, datum/target, obj/held, origin, authority)
+	RETURN_TYPE(/datum/act/op)
 	var/datum/act/op/A = take(/datum/act/op)
-	A.set_key(C.oplan.key)
-	A.holder = C.holder // ALLOW(ownership): a pooled transient: reset on release
-	A.cap = C.cap
-	A.activation = C.activation // ALLOW(ownership): a pooled transient: reset on release
-	A.source = C.activation ? C.activation.source : C.holder // ALLOW(ownership): a pooled transient: reset on release
+	A.set_key(P.key)
+	A.holder = holder // ALLOW(ownership): a pooled transient: reset on release
+	A.cap = cap
+	A.activation = granted_by // ALLOW(ownership): a pooled transient: reset on release
+	A.source = granted_by ? granted_by.source : holder // ALLOW(ownership): a pooled transient: reset on release
 	A.actor = actor
 	A.set_held_provider(held)
 	// An op with no target binding has A.target = A.holder (an actor's own op, a self ui_act()).
 	// An actor-side op that declares a reach (a natural weapon's bite) is aimed at what the input addressed.
-	var/aimed = C.side == CAND_ACTOR && !isnull(target) && target != actor && (!isnull(LAZYACCESS(C.oplan.selects, "reach")) || C.binding?.bind_kind == BIND_CLICKS)
-	A.target = ((C.side == CAND_ACTOR && !aimed) || isnull(target)) ? C.holder : target
+	var/aimed = side == CAND_ACTOR && !isnull(target) && target != actor && (!isnull(LAZYACCESS(P.selects, "reach")) || B?.bind_kind == BIND_CLICKS)
+	A.target = ((side == CAND_ACTOR && !aimed) || isnull(target)) ? holder : target
 	if(istype(A.target, /atom))
 		A.target_atom = A.target // ALLOW(ownership): a pooled transient: reset on release
 	A.origin = origin
 	A.authority = authority
-	A.provider = C.provider?.source
+	A.provider = V?.source
 	return A
 
 // ---- pass 2 and the winner ----
@@ -795,6 +825,11 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 /// A compiled resolution (dispatch.dm) makes its order as this walks it, so the walk stops at the winner.
 /proc/op_resolution_winner(datum/op_resolution/R)
 	RETURN_TYPE(/datum/op_cand)
+	if(R.fast_rows)
+		var/datum/op_cand/walked = op_fast_winner(R)
+		if(GLOB.op_click_parity)
+			op_click_parity_winner(R, walked)
+		return walked
 	var/datum/op_cand/set_aside = null
 	var/i = 0
 	while(TRUE)
@@ -821,16 +856,29 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 /proc/op_cand_catch_all(datum/op_cand/C)
 	return operation_compatibility().broad_item_type(C.item_type) || C.item_type == /atom/movable || C.item_type == /obj
 
+/// op_cand_catch_all() of a binding (the item type an item() or stack() binding takes).
+/proc/op_binding_catch_all(datum/entry/part/bind/B)
+	var/item_type = (B.bind_kind == BIND_ITEM || B.bind_kind == BIND_STACK) ? B.args["type"] : null
+	return operation_compatibility().broad_item_type(item_type) || item_type == /atom/movable || item_type == /obj
+
 /// Does candidate C's binding take the held thing (item(), tool(), stack(), in_hand())? A hand() binding answers whatever is held.
 /proc/op_cand_takes_held(datum/op_cand/C)
-	return C.binding && (C.binding.bind_kind in list(BIND_ITEM, BIND_TOOL, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET))
+	return op_binding_takes_held(C.binding)
+
+/// op_cand_takes_held() of a binding.
+/proc/op_binding_takes_held(datum/entry/part/bind/B)
+	return B && (B.bind_kind == BIND_ITEM || B.bind_kind == BIND_TOOL || B.bind_kind == BIND_STACK || B.bind_kind == BIND_IN_HAND || B.bind_kind == BIND_AT_TARGET)
 
 /// Why candidate C's path is blocked (the op is placed at a space of the target that a door on the way keeps shut), or null.
 /proc/op_cand_path_reason(datum/op_resolution/R, datum/op_cand/C)
-	var/space_id = C.oplan?.space
+	return op_path_reason(R, C.oplan, C.side, C.holder)
+
+/// op_cand_path_reason() of (op, side, holder).
+/proc/op_path_reason(datum/op_resolution/R, datum/op_plan/P, side, datum/holder)
+	var/space_id = P?.space
 	if(isnull(space_id) || R.origin == ORIGIN_SYSTEM)
 		return null
-	var/atom/T = (C.side == CAND_TARGET) ? R.target : C.holder
+	var/atom/T = (side == CAND_TARGET) ? R.target : holder
 	return istype(T) ? T.space_reason(space_id, R.authority, R.actor) : null
 
 /// The text label of an op: label("Text"), else its key's last segment, spaced.
@@ -998,7 +1046,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	var/datum/rx_state/held_state = held ? rx_of(held) : null
 	var/cache_key = "[actor ? SHARED_CACHE_UID(actor) : "-"]|[target ? SHARED_CACHE_UID(target) : "-"]|[held ? SHARED_CACHE_UID(held) : "-"]|[actor_state?.act_gen]|[target_state?.act_gen]|[held_state?.act_gen]|[actor_state?.provider_gen]"
 	var/list/cached = GLOB.op_menu_cache[cache_key]
-	if(cached && (isnull(cached[2]) || cached[2] == stamp) && op_menu_dependencies_valid(cached[3]))
+	if(cached && (isnull(cached[2]) || cached[2] == stamp) && op_menu_dependencies_valid(cached[3]) && op_menu_sampled_rows_same(cached, actor, target, held))
 		var/list/cached_rows = cached[1]
 		var/list/parent_frame = frame[1]
 		while(parent_frame)
@@ -1015,7 +1063,9 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			hidden_out += cached[5]
 		return cached_rows.Copy()
 	GLOB.op_menu_builds++
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null)
+	// A Menu shows no near miss: the candidates the menu origin refuses are never made.
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null, near_misses = FALSE)
+	var/list/sampled_rows = list() // the rows whose decision sampled state (read_once()): asked again on a later read, not the whole menu
 	var/list/rows = list()
 	var/list/hidden = list() // the rows left out, with the requirement that hid each (the admin "Show hidden" view)
 	var/list/seen = list()
@@ -1032,10 +1082,18 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			continue
 		if(op_cand_swallows_only(C))
 			continue
-		if(!op_cand_when(R, C))
+		// The row's own decision (when, path, requirements) in one act. A decision that sampled state with read_once() leaves the rest of the
+		// menu cacheable: the row is kept as a sampled row, and a later read asks it again and rebuilds only when its answer moved.
+		var/sampled_before = frame[2]
+		frame[2] = FALSE
+		var/list/decision = op_menu_decide(R, C)
+		if(frame[2])
+			sampled_rows += list(op_menu_sampled_row(C, decision[1]))
+		frame[2] = sampled_before
+		if(!decision[2])
 			hidden += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "hidden_by" = "when()"))
 			continue
-		if(op_cand_path_reason(R, C))
+		if(decision[3])
 			continue // behind a closed door: not a menu line, as a click sets it aside (spaces.dm)
 		seen[C.oplan.key] = TRUE
 		var/label = op_menu_label(R, C)
@@ -1044,8 +1102,8 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			timed = TRUE
 		var/enabled = TRUE
 		var/reason = null
-		var/list/hid_by = list()
-		var/why = op_cand_require_reason(R, C, hid_by)
+		var/list/hid_by = decision[5]
+		var/why = decision[4]
 		if(length(hid_by))
 			// A requirement about who the actor is or what the target is (FAILS_HIDDEN) failed: the row can never be chosen from here.
 			var/datum/entry/part/req/hider = hid_by[1]
@@ -1078,9 +1136,76 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		var/datum/lookup_read_scope/old_scope = length(replaced) >= 4 ? replaced[4] : null
 		if(old_scope && !QDELETED(old_scope))
 			lifeform_end(old_scope, END_SCOPE)
-		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4], hidden)
+		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4], hidden, length(sampled_rows) ? sampled_rows : null)
 		frame[5] = TRUE
 	return rows.Copy()
+
+/// A Menu row's decision, in the order the Menu asks: list(signature, when() holds, the path is shut, the requirements' refusal, the FAILS_HIDDEN
+/// requirements that hide it). The signature is the decision as text, what a sampled row is compared by. One pooled act serves the row's when()
+/// and its requirements (they read the same fields).
+/proc/op_menu_decide(datum/op_resolution/R, datum/op_cand/C)
+	return op_menu_decide_fields(R, C.oplan, C.binding, C.holder, C.side, C.activation, C.cap, C.provider)
+
+/proc/op_menu_decide_fields(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, datum/capability/cap, datum/prov/V)
+	var/datum/act/op/A = op_act_fill(P, B, holder, side, granted_by, cap, V, R.actor, R.target, R.held, R.origin, R.authority)
+	try
+		. = op_menu_decide_in(R, P, B, holder, side, A)
+	catch(var/exception/fault)
+		A.release()
+		throw fault
+	A.release()
+
+/proc/op_menu_decide_in(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/act/op/A)
+	if(length(P.conds))
+		GLOB.op_count_whens++
+	for(var/cond in P.conds)
+		if(!op_cond(A, cond))
+			return list("when", FALSE, FALSE, null, null)
+	if(op_path_reason(R, P, side, holder))
+		return list("path", TRUE, TRUE, null, null)
+	var/list/hid_by = list()
+	var/why = op_require_reason(A, P, B, hid_by)
+	if(length(hid_by))
+		var/datum/entry/part/req/hider = hid_by[1]
+		return list("hidden|[hider.type]", TRUE, FALSE, why, hid_by)
+	return list("open|[why ? reason_text(why) : ""]", TRUE, FALSE, why, hid_by)
+
+/// What a cached menu keeps of a row whose decision sampled state: enough to ask it again (the plan, binding and capability are compiled, shared
+/// parts; the entities are handles, never held; the provider is found again among the actor's by its entry and its source), and the answer.
+/proc/op_menu_sampled_row(datum/op_cand/C, signature)
+	return list(C.oplan, C.binding, handle_of(C.holder), C.side, C.activation ? handle_of(C.activation) : null, C.cap, C.provider?.entry, C.provider ? handle_of(C.provider.source) : null, signature)
+
+/// TRUE when every sampled row of the cached menu decides as it did when the menu was built, so the rows it shows are still right. A sampled row
+/// whose entities are gone counts as moved.
+/proc/op_menu_sampled_rows_same(list/cached, mob/actor, atom/target, obj/held)
+	var/list/sampled = length(cached) >= 6 ? cached[6] : null
+	if(!length(sampled))
+		return TRUE
+	var/datum/op_resolution/R = op_resolution_new(actor, target, held, ORIGIN_MENU, actor_authority(actor), null)
+	for(var/list/row as anything in sampled)
+		var/datum/holder = handle_get(row[3])
+		if(!holder || QDELETED(holder))
+			return FALSE
+		var/datum/activation/granted_by = row[5] ? handle_get(row[5]) : null
+		if(row[5] && (!granted_by || granted_by.dead))
+			return FALSE
+		var/datum/prov/V = null
+		if(row[7])
+			var/datum/source = handle_get(row[8])
+			if(!source)
+				return FALSE
+			if(isnull(R.providers))
+				R.providers = providers_for(actor, held)
+			for(var/datum/prov/candidate as anything in R.providers)
+				if(candidate.entry == row[7] && candidate.source == source)
+					V = candidate
+					break
+			if(!V)
+				return FALSE
+		var/list/decision = op_menu_decide_fields(R, row[1], row[2], holder, row[4], granted_by, row[6], V)
+		if(decision[1] != row[9])
+			return FALSE
+	return TRUE
 
 /// The ops that asked (menu(hint_tool = TRUE)) to be listed while the actor holds no tool that fits: a greyed row "needs a <tool>", unless the op is
 /// closed by its when() or its path. Adds to `rows`; `seen` keeps the keys already listed.
