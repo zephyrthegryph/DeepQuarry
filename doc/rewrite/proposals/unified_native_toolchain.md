@@ -3218,3 +3218,23 @@ frame. It returned the refusal with no report bytes and its daemon exited.
 The client took 285.27 seconds end to end. The larger source prefix
 demonstrates the reduction in retained roots, while complete report delivery
 is still open.
+
+
+Completed formal defaults now retain their issued expression, exact tokens,
+and lease rather than the parser completion envelope. Nested macro output can
+resume its exact already projected parent, still validating each source loan.
+Thirteen focused syntax, preprocess, and tree checks passed, as did both real
+combined and compound daemon fixtures.
+
+The compact-default checkout probe reached 9,803,869 producer rows, with
+9,796,508 rows adopted on 2,392 shared token pages. It observed 41,649 exact
+parent-trace hits and retained 1,544,704 bytes for 6,192 pending default rows,
+compared with 2,736,640 bytes for 6,184 rows in the preceding probe. It passed
+the previous syntax failure and reached a separate source-arena limit. The
+receiver's 45,968,278-byte contiguous expanded-source buffer was still live
+when its next growth requested a 68,952,417-byte replacement. The existing
+256 MiB input family had 25,914,170 bytes available, less than even a
+tightly sized replacement. The receiver returned that refusal before
+publication and the private daemon drained. The probe took 225.14 seconds
+end to end, with 219.562 CPU seconds at the final sample. It returned no
+report bytes.
