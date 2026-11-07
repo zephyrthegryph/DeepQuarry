@@ -677,13 +677,14 @@ struct BodyProjectionCensus{pages:usize,rows:usize,released_payload_bytes:usize,
 // The actual producer and append boundary both require a one-byte token.
 const COLON_COMPACT_MAX: usize = (u32::MAX >> 1) as usize;
 
-#[derive(Clone, Copy)]
-pub struct OriginalColonRows<'a>(ColonSlice<'a>);
+const COLON_FIRST_ROWS: usize = 4;
+const COLON_PAGE_ROWS: usize = 1024;
 
 #[derive(Clone, Copy)]
-enum ColonSlice<'a> {
-    Compact(&'a [u32]),
-    Wide(&'a [(Span, bool)]),
+pub struct OriginalColonRows<'a> {
+    storage: &'a ColonStorage,
+    first: usize,
+    last: usize,
 }
 
 fn decode_colon(value: u32) -> (Span, bool) {
@@ -692,20 +693,12 @@ fn decode_colon(value: u32) -> (Span, bool) {
 }
 
 impl<'a> OriginalColonRows<'a> {
-    pub fn len(self) -> usize {
-        match self.0 {
-            ColonSlice::Compact(rows) => rows.len(),
-            ColonSlice::Wide(rows) => rows.len(),
-        }
-    }
-
-    pub fn is_empty(self) -> bool { self.len() == 0 }
+    pub fn len(self) -> usize { self.last - self.first }
+    pub fn is_empty(self) -> bool { self.first == self.last }
 
     pub fn get(self, at: usize) -> Option<(Span, bool)> {
-        match self.0 {
-            ColonSlice::Compact(rows) => rows.get(at).copied().map(decode_colon),
-            ColonSlice::Wide(rows) => rows.get(at).copied(),
-        }
+        if at >= self.len() { return None; }
+        self.storage.get(self.first + at)
     }
 
     pub fn iter(self) -> impl ExactSizeIterator<Item = (Span, bool)> + DoubleEndedIterator + 'a {
@@ -713,98 +706,135 @@ impl<'a> OriginalColonRows<'a> {
     }
 
     pub fn partition_point(self, mut predicate: impl FnMut(&(Span, bool)) -> bool) -> usize {
-        match self.0 {
-            ColonSlice::Compact(rows) => rows.partition_point(|&row| predicate(&decode_colon(row))),
-            ColonSlice::Wide(rows) => rows.partition_point(predicate),
+        let mut left = 0;
+        let mut right = self.len();
+        while left < right {
+            let mid = left + (right - left) / 2;
+            if predicate(&self.get(mid).expect("issued colon ordinal")) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        left
+    }
+
+    fn range(self, range: Range<usize>) -> Self {
+        debug_assert!(range.start <= range.end && range.end <= self.len());
+        Self { storage: self.storage, first: self.first + range.start, last: self.first + range.end }
+    }
+}
+
+struct ColonPage<T> {
+    rows: Vec<T>,
+    credit: crate::SettingRootLease,
+}
+
+struct ColonPages<T> {
+    first: Option<ColonPage<T>>,
+    pages: Vec<ColonPage<T>>,
+    directory_credit: Option<crate::SettingRootLease>,
+    len: usize,
+}
+
+impl<T> Default for ColonPages<T> {
+    fn default() -> Self {
+        Self { first: None, pages: Vec::new(), directory_credit: None, len: 0 }
+    }
+}
+
+impl<T> ColonPages<T> {
+    fn get(&self, index: usize) -> Option<&T> {
+        if index >= self.len { return None; }
+        if index < COLON_FIRST_ROWS { return self.first.as_ref()?.rows.get(index); }
+        let index = index - COLON_FIRST_ROWS;
+        self.pages.get(index / COLON_PAGE_ROWS)?.rows.get(index % COLON_PAGE_ROWS)
+    }
+
+    fn push(&mut self, value: T, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
+        let len = self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
+        if self.len < COLON_FIRST_ROWS {
+            if self.first.is_none() {
+                let (rows, credit) = allocate_literal_rows(COLON_FIRST_ROWS, a)?;
+                self.first = Some(ColonPage { rows, credit });
+            }
+            self.first.as_mut().expect("funded initial colon page").rows.push(value);
+        } else {
+            if (self.len - COLON_FIRST_ROWS) % COLON_PAGE_ROWS == 0 {
+                let (rows, credit) = allocate_literal_rows(COLON_PAGE_ROWS, a)?;
+                let page = ColonPage { rows, credit };
+                if self.pages.len() == self.pages.capacity() {
+                    let capacity = self.pages.capacity().max(2).checked_mul(2)
+                        .ok_or(io::ErrorKind::OutOfMemory)?;
+                    let (mut pages, directory_credit) = allocate_literal_rows(capacity, a)?;
+                    // Both directories remain funded through the move. Existing
+                    // row allocations and their credits stay in the same pages.
+                    pages.append(&mut self.pages);
+                    drop(mem::replace(&mut self.pages, pages));
+                    drop(self.directory_credit.replace(directory_credit));
+                }
+                self.pages.push(page);
+            }
+            self.pages.last_mut().expect("funded colon page").rows.push(value);
+        }
+        self.len = len;
+        Ok(())
+    }
+
+    #[cfg(any(test, debug_assertions))]
+    fn reservation_bytes(&self) -> usize {
+        self.directory_credit.as_ref().map_or(0, |credit| credit.bytes())
+            + self.first.iter().chain(&self.pages).map(|page| page.credit.bytes()).sum::<usize>()
+    }
+
+    fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
+        if self.pages.capacity() != 0 {
+            let bytes = self.pages.capacity() * mem::size_of::<ColonPage<T>>();
+            visit(self.pages.as_ptr() as usize, bytes, bytes);
+        }
+        for page in self.first.iter().chain(&self.pages) {
+            let bytes = page.rows.capacity() * mem::size_of::<T>();
+            visit(page.rows.as_ptr() as usize, bytes, bytes);
         }
     }
-
-    fn range(self, range: std::ops::Range<usize>) -> Self {
-        Self(match self.0 {
-            ColonSlice::Compact(rows) => ColonSlice::Compact(&rows[range]),
-            ColonSlice::Wide(rows) => ColonSlice::Wide(&rows[range]),
-        })
-    }
 }
 
-enum ColonStorage {
-    Compact(Vec<u32>),
-    Wide(Vec<(Span, bool)>),
-}
-
-fn new_colon_rows<T>(
-    len: usize,
-    capacity: usize,
-    a: &crate::SettingAdmission<'_>,
-) -> io::Result<(Vec<T>, crate::SettingRootLease)> {
-    let capacity = if len == capacity {
-        capacity.checked_mul(2).ok_or(io::ErrorKind::OutOfMemory)?.max(4)
-    } else {
-        capacity
-    };
-    let layout = std::alloc::Layout::array::<T>(capacity)
-        .map_err(|e| io::Error::new(io::ErrorKind::OutOfMemory, e))?;
-    let credit = a.reserve(layout.size()).map_err(|e| a.take_operational_error().unwrap_or(e))?;
-    // EXACT admitted Global layout. The allocation is unique and initialized
-    // as an empty Vec, with the matching element capacity for deallocation.
-    let raw = std::ptr::NonNull::new(unsafe { std::alloc::alloc(layout) })
-        .ok_or(io::ErrorKind::OutOfMemory)?;
-    let rows = unsafe { Vec::from_raw_parts(raw.as_ptr().cast::<T>(), 0, capacity) };
-    Ok((rows, credit))
+#[derive(Default)]
+struct ColonStorage {
+    compact: ColonPages<u32>,
+    wide: ColonPages<(Span, bool)>,
 }
 
 impl ColonStorage {
     fn rows(&self) -> OriginalColonRows<'_> {
-        OriginalColonRows(match self {
-            Self::Compact(rows) => ColonSlice::Compact(rows),
-            Self::Wide(rows) => ColonSlice::Wide(rows),
-        })
+        OriginalColonRows { storage: self, first: 0, last: self.compact.len + self.wide.len }
     }
 
-    fn push(
-        &mut self, span: Span, close: bool,
-        credit: &mut crate::SettingRootLease, a: &crate::SettingAdmission<'_>,
-    ) -> io::Result<()> {
-        fn push<T>(rows: &mut Vec<T>, row: T, credit: &mut crate::SettingRootLease, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
-            if rows.len() == rows.capacity() {
-                let (mut next, next_credit) = new_colon_rows(rows.len(), rows.capacity(), a)?;
-                next.append(rows);
-                drop(std::mem::replace(rows, next));
-                drop(std::mem::replace(credit, next_credit));
-            }
-            rows.push(row);
-            Ok(())
-        }
-
-        match self {
-            Self::Compact(rows) if span.start <= COLON_COMPACT_MAX => {
-                push(rows, ((span.start as u32) << 1) | u32::from(close), credit, a)
-            }
-            Self::Compact(rows) => {
-                // Promote only for a genuine larger coordinate. Both buffers
-                // remain funded until the compact buffer has been destroyed.
-                let (mut next, next_credit) = new_colon_rows(rows.len(), rows.capacity(), a)?;
-                next.extend(rows.iter().copied().map(decode_colon));
-                next.push((span, close));
-                drop(std::mem::replace(self, Self::Wide(next)));
-                drop(std::mem::replace(credit, next_credit));
-                Ok(())
-            }
-            Self::Wide(rows) => push(rows, (span, close), credit, a),
+    fn get(&self, index: usize) -> Option<(Span, bool)> {
+        if index < self.compact.len {
+            self.compact.get(index).copied().map(decode_colon)
+        } else {
+            self.wide.get(index - self.compact.len).copied()
         }
     }
+
+    fn push(&mut self, span: Span, close: bool, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
+        // The producer already checked strictly ordered, unit-width spans.
+        // Once a start needs the wide suffix, no later row can be compact.
+        if span.start <= COLON_COMPACT_MAX {
+            debug_assert_eq!(self.wide.len, 0);
+            self.compact.push(((span.start as u32) << 1) | u32::from(close), a)
+        } else {
+            self.wide.push((span, close), a)
+        }
+    }
+
+    #[cfg(any(test, debug_assertions))]
+    fn reservation_bytes(&self) -> usize { self.compact.reservation_bytes() + self.wide.reservation_bytes() }
 
     fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
-        fn visit_rows<T>(rows: &Vec<T>, visit: &mut impl FnMut(usize, usize, usize)) {
-            if rows.capacity() != 0 {
-                let bytes = rows.capacity() * std::mem::size_of::<T>();
-                visit(rows.as_ptr() as usize, bytes, bytes);
-            }
-        }
-        match self {
-            Self::Compact(rows) => visit_rows(rows, visit),
-            Self::Wide(rows) => visit_rows(rows, visit),
-        }
+        self.compact.visit_storage(visit);
+        self.wide.visit_storage(visit);
     }
 }
 
@@ -865,7 +895,7 @@ impl OriginalPrimaryLiteralFacts{
   Ok(())
  }
  fn payload(&self)->&Payload{self.0.as_deref().expect("live primary facts")}
- pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{#[cfg(debug_assertions)]body_projection:BodyProjectionCensus::default(),projection:None,next_body_row:0,rows:LiteralPages{chunks:Vec::new(),len:0,directory_credit:rows_credit},colons:ColonStorage::Compact(Vec::new()),last_fact_end:0,extent:None,colon_credit,fixed_credit}))))}
+ pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{#[cfg(debug_assertions)]body_projection:BodyProjectionCensus::default(),projection:None,next_body_row:0,rows:LiteralPages{chunks:Vec::new(),len:0,directory_credit:rows_credit},colons:ColonStorage::default(),last_fact_end:0,extent:None,colon_credit,fixed_credit}))))}
  pub(super) fn append_actual(&mut self,span:Span,data:crate::OriginalLiteralData,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;
   if owner.extent.is_some()||!a.matches_lease_domain(&owner.rows.directory_credit)||!a.matches_lease_domain(&owner.fixed_credit)||span.start>=span.end||owner.last_fact_end>span.start{return Err(io::ErrorKind::InvalidInput.into())}
@@ -876,7 +906,7 @@ impl OriginalPrimaryLiteralFacts{
  pub(super) fn append_actual_colon(&mut self,span:Span,close:bool,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;
   if owner.extent.is_some()||span.end.checked_sub(span.start)!=Some(1)||owner.last_fact_end>span.start{return Err(io::ErrorKind::InvalidInput.into())}
-  owner.colons.push(span,close,&mut owner.colon_credit,a)?;
+  owner.colons.push(span,close,a)?;
   owner.last_fact_end=span.end;
   Ok(())
  }
@@ -979,7 +1009,7 @@ impl OriginalPrimaryLiteralFacts{
     .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper)
     .field("numeric",&self.numeric).field("body_projection",&self.body_projection).finish()
   }}
-  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colon_credit.bytes(),census,numeric,body_projection:owner.body_projection}
+  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection}
  }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   let owner=self.0.as_ref().expect("live primary facts");if let Some(projection)=&owner.projection{projection.visit_storage(&mut visit)}let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(&mut visit);owner.colons.visit_storage(&mut visit);owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
@@ -1112,7 +1142,7 @@ impl OriginalPrimaryLiteralFacts{
      let wide = Span::new(edge.end, edge.end + 1);
      facts.append_actual_colon(lower, false, &a).unwrap();
      facts.append_actual_colon(edge, true, &a).unwrap();
-     assert_eq!(facts.payload().colon_credit.bytes(), 4 * std::mem::size_of::<u32>());
+     assert_eq!(facts.payload().colons.reservation_bytes(), 4 * std::mem::size_of::<u32>());
      let before = used.load(Ordering::Acquire);
      let needed = 4 * std::mem::size_of::<(Span, bool)>();
      let tight = crate::SettingAdmission::new(&used, before + needed - 1, &|| Ok(()));
@@ -1122,7 +1152,7 @@ impl OriginalPrimaryLiteralFacts{
      assert_eq!(facts.payload().last_fact_end, edge.end);
      assert_eq!(facts.append_actual_colon(Span::new(wide.start, wide.end+1), true, &a).unwrap_err().kind(), io::ErrorKind::InvalidInput);
      facts.append_actual_colon(wide, false, &a).unwrap();
-     assert_eq!(used.load(Ordering::Acquire), before - 4 * std::mem::size_of::<u32>() + needed);
+     assert_eq!(used.load(Ordering::Acquire), before + needed);
      facts.seal_actual_frontier(wide.end, &a).unwrap();
      let (rows, origin) = facts.checked_data_window(Span::new(edge.start, wide.end)).unwrap().raw_colons();
      assert_eq!(origin, edge.start);
@@ -1135,6 +1165,35 @@ impl OriginalPrimaryLiteralFacts{
      assert_eq!(used.load(Ordering::Acquire), retained);
      drop(alias);
      assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn colon_pages_cross_boundary_without_reallocating_prior_rows() {
+     let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+     let used = crate::SettingChargeCounter::try_new(fixed).unwrap();
+     let a = crate::SettingAdmission::new(&used, 1<<20, &|| Ok(()));
+     let mut facts = OriginalPrimaryLiteralFacts::new(&a).unwrap();
+     let boundary = COLON_FIRST_ROWS + COLON_PAGE_ROWS;
+     for i in 0..boundary {
+         facts.append_actual_colon(Span::new(i*2,i*2+1),i%2==0,&a).unwrap();
+     }
+     let prior = facts.payload().colons.compact.pages[0].rows.as_ptr();
+     let before = used.load(Ordering::Acquire);
+     let next = Span::new(boundary*2,boundary*2+1);
+     let bytes = COLON_PAGE_ROWS * mem::size_of::<u32>();
+     let tight = crate::SettingAdmission::new(&used, before+bytes-1, &|| Ok(()));
+     assert_eq!(facts.append_actual_colon(next,true,&tight).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
+     assert_eq!(used.load(Ordering::Acquire),before);
+     assert_eq!(facts.colon_rows().len(),boundary);
+     facts.append_actual_colon(next,true,&a).unwrap();
+     assert_eq!(used.load(Ordering::Acquire),before+bytes);
+     assert_eq!(facts.payload().colons.compact.pages[0].rows.as_ptr(),prior);
+     facts.seal_actual_frontier(next.end,&a).unwrap();
+     let (window,origin) = facts.checked_data_window(Span::new(next.start-2,next.end)).unwrap().raw_colons();
+     assert_eq!(origin,next.start-2);
+     assert_eq!(window.partition_point(|(span,_)|span.start<next.start),1);
+     assert_eq!(window.iter().next_back(),Some((next,true)));
+     drop(facts);
+     assert_eq!(used.load(Ordering::Acquire),fixed);
  }
  #[test]fn colon_ledger_quota_first_io_and_overlap_refuse_without_leaking_credit(){let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let good=||Ok(());let a=crate::SettingAdmission::new(&used,8<<20,&good);let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();facts.append_actual_colon(Span::new(2,3),true,&a).unwrap();assert_eq!(facts.append_actual_colon(Span::new(2,3),false,&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);let stopped=||Err(io::Error::from_raw_os_error(1450));let fail=crate::SettingAdmission::new(&used,8<<20,&stopped);assert_eq!(facts.append_actual_colon(Span::new(4,5),false,&fail).unwrap_err().raw_os_error(),Some(1450));drop(facts);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());let tiny=crate::SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (1),&good);assert_eq!(OriginalPrimaryLiteralFacts::new(&tiny).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
 }
