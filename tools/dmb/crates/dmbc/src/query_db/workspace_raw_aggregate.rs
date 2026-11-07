@@ -508,7 +508,7 @@ impl QueryDb {
             cached
         } else {
             let (pages,scopes) =
-                self.build_workspace_pages_locked(capture, scope, names, scans, &inventory)?;
+                self.build_workspace_pages_locked(capture, scope, names, scans, &inventory, false)?;
             let remaining = RESULT_BOUND
                 .checked_sub(inventory.bytes())
                 .and_then(|n| n.checked_sub(self.raw_policy.charge.load(Ordering::Relaxed)))
@@ -672,7 +672,7 @@ impl QueryDb {
             .pages
             .lock()
             .unwrap_or_else(|e| e.into_inner());
-        pages.retain(|result, (input, _)| {
+        pages.retain(|result, (input, _, _)| {
             let reusable = self
                 .db
                 .retained_value::<Result<Arc<PageResult>, String>>(*result)

@@ -29,6 +29,28 @@ impl Physical {
     }
 }
 impl SnapshotProvider for Physical {
+    fn original_open_status(&self, p: &Path) -> io::Result<crate::input_snapshot::OriginalReadOpenStatus> {
+        FileSystemInputs.original_open_status(p)
+    }
+    fn path_presence(&self, p: &Path) -> io::Result<bool> {
+        FileSystemInputs.path_presence(p)
+    }
+    fn path_presence_admitted(
+        &self, p: &Path, work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+    ) -> io::Result<bool> {
+        FileSystemInputs.path_presence_admitted(p, work)
+    }
+    fn read_original_open_admitted(
+        &self,
+        p: &Path,
+        limit: usize,
+        work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+        after_open: &mut dyn FnMut() -> io::Result<dm_preprocess::OriginalRawOpenDecision>,
+        before_allocate: &mut dyn FnMut(usize) -> io::Result<()>,
+    ) -> io::Result<crate::input_snapshot::OriginalOpenedRead> {
+        self.bump(p);
+        FileSystemInputs.read_original_open_admitted(p, limit, work, after_open, before_allocate)
+    }
     fn stamp(&self, p: &Path) -> io::Result<Stamp> {
         FileSystemInputs.stamp(p)
     }

@@ -27,7 +27,7 @@ const MAX_SITES: usize = 10_000;
 #[derive(Default)]
 pub(super) struct State {
     raw_sources: Mutex<raw_input_credits::Ledger>,
-    pages: Mutex<BTreeMap<Key, (Key, std::time::Instant)>>,
+    pages: Mutex<BTreeMap<Key, (Key, std::time::Instant, bool)>>,
     roots: Mutex<BTreeMap<Key, (Key, std::time::Instant)>>,
 }
 
@@ -528,13 +528,13 @@ impl QueryDb {
             .pages
             .lock()
             .unwrap_or_else(|e| e.into_inner());
-        for (result, (input, _)) in pages.iter() {
+        for (result, (input, _, _)) in pages.iter() {
             self.db.remove(*input);
             self.db.remove(*result);
         }
         pages.clear();
     }
-    fn workspace_admit_page(&self, input: Key, result: Key) -> io::Result<()> {
+    fn workspace_admit_page(&self, input: Key, result: Key, bulk_raw: bool) -> io::Result<()> {
         let now = std::time::Instant::now();
         let mut pages = self
             .raw_policy
@@ -559,14 +559,14 @@ impl QueryDb {
             .saturating_add(root_nodes);
         let expired = pages
             .iter()
-            .filter(|(key, (_, t))| {
+            .filter(|(key, (_, t, _))| {
                 **key != result
                     && now.saturating_duration_since(*t) > std::time::Duration::from_secs(300)
             })
             .map(|(key, _)| *key)
             .collect::<Vec<_>>();
         for key in expired {
-            if let Some((input, _)) = pages.remove(&key) {
+            if let Some((input, _, _)) = pages.remove(&key) {
                 self.db.remove(input);
                 self.db.remove(key);
             }
@@ -582,15 +582,15 @@ impl QueryDb {
             let old = pages
                 .iter()
                 .filter(|(key, _)| **key != result)
-                .min_by_key(|(_, (_, t))| *t)
+                .min_by_key(|(_, (_, t, _))| *t)
                 .map(|(key, _)| *key)
                 .ok_or_else(|| invalid("native raw/workspace node budget exhausted"))?;
-            if let Some((input, _)) = pages.remove(&old) {
+            if let Some((input, _, _)) = pages.remove(&old) {
                 self.db.remove(input);
                 self.db.remove(old);
             }
         }
-        pages.insert(result, (input, now));
+        pages.insert(result, (input, now, bulk_raw));
         Ok(())
     }
     // Caller holds the existing raw-family gate. These return/trim metadata
@@ -605,13 +605,13 @@ impl QueryDb {
             .unwrap_or_else(|e| e.into_inner());
         let expired = pages
             .iter()
-            .filter(|(_, (_, time))| {
+            .filter(|(_, (_, time, _))| {
                 now.saturating_duration_since(*time) > std::time::Duration::from_secs(300)
             })
             .map(|(key, _)| *key)
             .collect::<Vec<_>>();
         for key in expired {
-            if let Some((input, _)) = pages.remove(&key) {
+            if let Some((input, _, _)) = pages.remove(&key) {
                 self.db.remove(input);
                 self.db.remove(key);
             }
@@ -689,15 +689,44 @@ impl QueryDb {
             }
             let Some(old) = pages
                 .iter()
-                .min_by_key(|(_, (_, time))| *time)
+                .min_by_key(|(_, (_, time, _))| *time)
                 .map(|(key, _)| *key)
             else {
                 break;
             };
-            if let Some((input, _)) = pages.remove(&old) {
+            if let Some((input, _, _)) = pages.remove(&old) {
                 self.db.remove(input);
                 self.db.remove(old);
             }
+        }
+    }
+    /// Trim only eligible previous raw-bulk payloads. Each stage takes
+    /// its exact inventory after this optional warm retention policy runs.
+    /// No value still held by an aggregate or operation is a candidate.
+    fn trim_bulk_raw_values_locked(&self, warm_target: usize) {
+        let pages = self.raw_policy.workspace.pages.lock().unwrap_or_else(|e| e.into_inner());
+        let mut estimated = pages.iter().filter(|(_, (_, _, bulk))| *bulk)
+            .fold(0usize, |total, (key, _)| total.saturating_add(self.db.value_bytes_at(*key)));
+        let mut cursor = None;
+        while estimated > warm_target {
+            let next = pages.iter()
+                .filter(|(_, (_, _, bulk))| *bulk)
+                .map(|(key, (_, time, _))| (*time, *key))
+                .filter(|candidate| cursor.is_none_or(|after| *candidate > after))
+                .min();
+            let Some((time, key)) = next else { break; };
+            cursor = Some((time, key));
+            let Some(value) = self.db.retained_value::<Result<Arc<PageResult>, String>>(key) else { continue; };
+            if Arc::strong_count(&value) != 2
+                || value.as_ref().as_ref().is_ok_and(|page| Arc::strong_count(page) != 1)
+            {
+                continue;
+            }
+            // Keep the real query node, parameters and dependency edges.
+            // This estimate only stops LRU work; it is never admission credit.
+            let dropped = self.db.evict_value_if_current(key, &value);
+            drop(value);
+            estimated = estimated.saturating_sub(dropped);
         }
     }
     pub(crate) fn workspace_raw_cache_stats(&self) -> (usize, usize) {
@@ -727,6 +756,7 @@ impl QueryDb {
         names: &[String],
         scans: Arc<AtomicUsize>,
         inventory: &ResourceInventory,
+        bulk_raw: bool,
     ) -> io::Result<(Vec<Arc<PageResult>>, Vec<Arc<Scope>>)> {
         crate::daemon::control::checkpoint()?;
         capture.require_scope(scope)?; // exact immutable map/revision BEFORE cache
@@ -818,7 +848,7 @@ impl QueryDb {
             let id = dm_query::hash_bytes(&serde_json::to_vec(&metadata).map_err(invalid)?);
             let input_key = Key::new(PAGE_INPUT, id);
             let result_key = Key::new(PAGE_RESULT, id);
-            self.workspace_admit_page(input_key, result_key)?;
+            self.workspace_admit_page(input_key, result_key, bulk_raw)?;
             let result_budget = RESULT_BOUND
                 .checked_sub(self.raw_policy.charge.load(Ordering::Relaxed))
                 .and_then(|n| n.checked_sub(inventory.bytes()))
@@ -911,7 +941,7 @@ impl QueryDb {
             .denied
             .store(false, Ordering::Relaxed);
         let inventory = self.workspace_resource_inventory_locked()?;
-        let (pages,_scopes) = self.build_workspace_pages_locked(capture, scope, names, scans, &inventory)?;
+        let (pages,_scopes) = self.build_workspace_pages_locked(capture, scope, names, scans, &inventory, false)?;
         let ordered = captured_raw_file::ordered_names(names).map_err(invalid)?;
         let mut available = RESULT_BOUND
             .checked_sub(inventory.bytes())
@@ -968,12 +998,22 @@ impl QueryDb{
  // Both cursors borrow the same completed pages. Traversing the result rows
  // and their ALLOW uses does not execute a second raw policy or source query.
  pub(crate) fn with_workspace_raw_union_rows<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,with_report:bool,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>)->io::Result<R>{
+  self.with_workspace_raw_union_rows_mode(capture,scope,name,budget,with_report,false,consume)
+ }
+ pub(crate) fn with_workspace_bulk_raw_union_rows<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>)->io::Result<R>{
+  if !capture.is_sealed_raw_file_capture(){return Err(invalid("bulk raw pages require the sealed raw capture"))}
+  self.with_workspace_raw_union_rows_mode(capture,scope,name,budget,true,true,consume)
+ }
+ fn with_workspace_raw_union_rows_mode<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,with_report:bool,bulk_raw:bool,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>)->io::Result<R>{
   crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;if !scope.uses_queries(self){return Err(invalid("full ALLOW raw producer uses another QueryDb"))}
   budget.charge(name.len().saturating_mul(4).saturating_add(4096)).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;let names=[name.to_owned()];
   if !capture.covers_selected_raw_policies(&names,&mut|bytes|budget.charge(bytes).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m)))?{return Err(io::Error::new(io::ErrorKind::Unsupported,"full ALLOW raw producer requires actual complete selected discovery"))}
   captured_raw_file::ordered_names(&names).map_err(invalid)?;
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_policy.admission.abort.begin();self.raw_policy.admission.denied.store(false,Ordering::Relaxed);
-  let inventory=self.workspace_resource_inventory_locked()?;let(pages,scopes)=self.build_workspace_pages_locked(capture,scope,&names,Arc::new(AtomicUsize::new(0)),&inventory)?;
+  // Cache retention target only. An active stage still uses the original
+  // full 64 MiB result-family admission, with its unchanged report reserve.
+  if bulk_raw { self.trim_bulk_raw_values_locked(16 * 1024 * 1024); }
+  let inventory=self.workspace_resource_inventory_locked()?;let(pages,scopes)=self.build_workspace_pages_locked(capture,scope,&names,Arc::new(AtomicUsize::new(0)),&inventory,bulk_raw)?;
   crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
   if pages.iter().flat_map(|page|page.files.iter()).any(|file|file.findings.len()!=1){return Err(invalid("actual raw usage producer returned another finding cohort"))}
   let mut rows=pages.iter().flat_map(|page|page.files.iter()).map(|file|file.findings[0].as_ref());

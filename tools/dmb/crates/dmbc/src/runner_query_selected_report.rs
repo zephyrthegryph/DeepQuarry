@@ -569,7 +569,7 @@ impl super::super::RawWorkspaceSnapshot {
             let meta = producer.metadata();
             match producer {
                 Producer::Raw(_) if producer.question().is_none() => {
-                    queries.with_workspace_raw_union_rows(capture, &guard, name, retained, true, |rows, allows, report| {
+                    queries.with_workspace_bulk_raw_union_rows(capture, &guard, name, retained, |rows, allows, report| {
                         let (scope, child) = report.ok_or_else(|| io::Error::other("raw-file producer omitted its report scope"))?;
                         stage.observe(root, meta, ReportRows::Union(UnionRows::Raw(rows)), scope, child)?;
                         usage.record_fold_iter(name, frame, allows, &mut work).map_err(operational)

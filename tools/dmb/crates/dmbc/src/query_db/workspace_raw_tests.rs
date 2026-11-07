@@ -274,7 +274,7 @@ fn regular_raw_and_workspace_share_node_input_and_result_limits_and_release() {
     page(&q.db, 0, &owners, policy(None), scans.clone(), q.id, 1);
     let input = Key::new(PAGE_INPUT, 0);
     let result = Key::new(PAGE_RESULT, 0);
-    q.workspace_admit_page(input, result).unwrap();
+    q.workspace_admit_page(input, result, false).unwrap();
     assert_eq!(q.workspace_counts_locked().0, 2);
     assert!(q.workspace_counts_locked().1 > 0);
     assert!(
@@ -310,7 +310,7 @@ fn page_trim_and_age_remove_actual_db_values_not_only_bookkeeping() {
     page(&q.db, 0, &owners, policy(None), scans.clone(), q.id, 1);
     let input = Key::new(PAGE_INPUT, 0);
     let result = Key::new(PAGE_RESULT, 0);
-    q.workspace_admit_page(input, result).unwrap();
+    q.workspace_admit_page(input, result, false).unwrap();
     q.workspace_trim_locked(0, RESULT_BOUND);
     assert_eq!(q.workspace_counts_locked(), (0, 0));
     assert!(q
@@ -318,7 +318,7 @@ fn page_trim_and_age_remove_actual_db_values_not_only_bookkeeping() {
         .retained_value::<Result<Arc<PageResult>, String>>(result)
         .is_none());
     page(&q.db, 0, &owners, policy(None), scans, q.id, 2);
-    q.workspace_admit_page(input, result).unwrap();
+    q.workspace_admit_page(input, result, false).unwrap();
     q.workspace_prune_expired_locked(
         std::time::Instant::now() + std::time::Duration::from_secs(301),
     );
@@ -442,7 +442,7 @@ fn new_query_frees_incompatible_partial_pages_but_preserves_compatible_contribut
             q.db.get::<Result<Arc<PageResult>, String>>(result, Arc::new(Params { input }))
                 .unwrap();
         let held = Arc::clone(value.as_ref().as_ref().unwrap());
-        q.workspace_admit_page(input, result).unwrap();
+        q.workspace_admit_page(input, result, false).unwrap();
         held
     };
     let keep = install(701, "scheduler");
@@ -611,7 +611,7 @@ fn incremental_inventory_has_exact_full_census_charge_and_linear_unique_page_vis
             .pages
             .lock()
             .unwrap()
-            .insert(key, (input, std::time::Instant::now()));
+            .insert(key, (input, std::time::Instant::now(), false));
         let result =
             q.db.retained_value::<Result<Arc<PageResult>, String>>(key)
                 .unwrap();
@@ -665,7 +665,7 @@ fn operation_pins_and_weak_input_inventory_drop_after_success_error_and_abort() 
             .pages
             .lock()
             .unwrap()
-            .insert(key, (input, std::time::Instant::now()));
+            .insert(key, (input, std::time::Instant::now(), false));
         let outcome =
             q.db.retained_value::<Result<Arc<PageResult>, String>>(key)
                 .unwrap();
@@ -733,4 +733,44 @@ fn operation_pins_and_weak_input_inventory_drop_after_success_error_and_abort() 
         );
         assert!(page_weak.upgrade().is_none(), "{disposition}: no page leak");
     }
+}
+
+#[test]
+fn bulk_raw_trim_retains_pinned_and_unrelated_results_and_keeps_query_coordinates() {
+    let q = QueryDb::default();
+    let originals = originals(PAGE_FILES * 3 + 1);
+    let scope = policy(None);
+    let scans = Arc::new(AtomicUsize::new(0));
+    let now = std::time::Instant::now();
+    for n in 0..4 {
+        let input = Key::new(PAGE_INPUT, n);
+        let key = Key::new(PAGE_RESULT, n);
+        q.raw_policy.workspace.pages.lock().unwrap()
+            .insert(key, (input, now + std::time::Duration::from_millis(n as u64), n != 3));
+        drop(page(&q.db, n as usize, &originals, scope.clone(), scans.clone(), q.id, 1));
+    }
+    let first = Key::new(PAGE_RESULT, 0);
+    let pinned = Key::new(PAGE_RESULT, 1);
+    let recent = Key::new(PAGE_RESULT, 2);
+    let unrelated = Key::new(PAGE_RESULT, 3);
+    let value = q.db.retained_value::<Result<Arc<PageResult>, String>>(pinned).unwrap();
+    let pinned_page = value.as_ref().as_ref().unwrap().clone();
+    drop(value);
+    let target = q.db.value_bytes_at(pinned) + q.db.value_bytes_at(recent);
+    q.trim_bulk_raw_values_locked(target);
+    assert_eq!(q.db.value_bytes_at(first), 0);
+    assert!(q.db.value_bytes_at(pinned) != 0);
+    assert!(q.db.value_bytes_at(recent) != 0);
+    assert!(q.db.value_bytes_at(unrelated) != 0);
+    assert!(q.raw_policy.workspace.pages.lock().unwrap().contains_key(&first));
+    q.trim_bulk_raw_values_locked(0);
+    assert!(q.db.value_bytes_at(pinned) != 0);
+    assert_eq!(q.db.value_bytes_at(recent), 0);
+    assert!(q.db.value_bytes_at(unrelated) != 0);
+    drop(pinned_page);
+    q.trim_bulk_raw_values_locked(0);
+    assert_eq!(q.db.value_bytes_at(pinned), 0);
+    let prior_scans = scans.load(Ordering::Relaxed);
+    drop(page(&q.db, 0, &originals, scope, scans.clone(), q.id, 2));
+    assert_eq!(scans.load(Ordering::Relaxed) - prior_scans, PAGE_FILES);
 }
