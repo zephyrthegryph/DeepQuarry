@@ -1,5 +1,6 @@
 @use 'sass:meta';
 @use '~tgui-core/styles';
+@use '~tgui/styles/console';
 
 @include meta.load-css('~tgui/styles/reset.scss');
 
@@ -488,5 +489,138 @@ h3 {
 
   .stat-table {
     margin: var(--space-s) 0;
+  }
+}
+
+// The console look (tgui/styles/console.scss), as the lobby and the chat pane
+// wear it: bold monospace chrome, #202020 panels, 3px #384e68 frame with
+// glow, solid blue buttons, CRT scanlines over the whole page. Light and dark
+// both take it, so the panes match.
+.dark:root,
+.light:root {
+  --color-base: #{console.$console-panel};
+  --color-section: #{console.$console-panel};
+  --color-primary: #{console.$console-button};
+  --color-border: #{console.$console-border};
+  --color-label: #{console.$console-accent};
+  --button-color: #{console.$console-text};
+  --button-background-default: #{console.$console-button};
+  --button-background-selected: #{console.$console-green};
+  --button-background-danger: #{console.$console-danger};
+  --button-background-disabled: #{console.$console-disabled};
+  --button-border-radius: 0;
+  --button-transition: 0s;
+  --tab-background: #{console.$console-disabled};
+  --tab-background-hover: #{console.$console-border};
+  --tab-background-selected: #{console.$console-button};
+  --tab-color: #{console.$console-muted};
+  --tab-color-selected: #{console.$console-text};
+  --tab-border-radius: 0;
+  --tabs-container-background: transparent;
+  --input-background: #{console.$console-background};
+  --input-color: #{console.$console-text};
+  --input-border-color: #{console.$console-border};
+  --input-border-color-focus: #{console.$console-accent};
+  --input-border-radius: 0;
+  --console-scanline-strength: 0.1;
+}
+
+html,
+body {
+  background-color: console.$console-background;
+  color: console.$console-text;
+  scrollbar-width: thin;
+  scrollbar-color: console.$console-border console.$console-panel;
+}
+
+.stat-root {
+  background-color: console.$console-panel;
+  font-family: console.$console-font;
+  font-weight: 700;
+
+  // The frame, drawn over the edge.
+  &::before {
+    content: ' ';
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    pointer-events: none;
+    border: console.$console-border-width solid console.$console-border;
+    box-shadow: inset 0 0 15px console.$console-border;
+  }
+
+  // CRT scanlines over the whole panel; clicks pass through.
+  &::after {
+    content: ' ';
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    @include console.console-scanlines(var(--console-scanline-strength, 0.1), 6px);
+  }
+
+  a {
+    color: console.$console-accent;
+  }
+
+  h3 {
+    margin: 0.75em 0 0.35em;
+    padding-bottom: 0.2em;
+    color: console.$console-accent;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 2px solid console.$console-border;
+  }
+
+  .stat-tabs {
+    margin: 3px 3px 0;
+    padding: 4px 6px 0;
+    background-color: console.$console-panel;
+    border-bottom: 2px solid console.$console-border;
+  }
+
+  .Tab {
+    margin-right: 2px;
+    letter-spacing: 0.02em;
+  }
+
+  .stat-content {
+    margin: 0 3px 3px;
+    padding: 8px 10px;
+  }
+
+  .stat-table td,
+  .mc-performance-table th,
+  .mc-performance-table td,
+  .mc-outlier,
+  .mc-runtime-item {
+    border-bottom-color: console.$console-border;
+  }
+
+  .mc-metric-card,
+  .mc-panel,
+  .mc-details {
+    background-color: console.$console-panel;
+    border: 2px solid console.$console-border;
+    border-radius: 0;
+  }
+
+  .mc-navigation.Tabs {
+    border-bottom: 2px solid console.$console-border;
+  }
+
+  .mc-subsystem-track,
+  .mc-breakdown-track {
+    border-radius: 0;
+  }
+
+  // Body text stays readable where the game writes prose.
+  .examine,
+  .status-line,
+  .stat-empty {
+    font-family: Verdana, Geneva, sans-serif;
+    font-weight: 400;
   }
 }

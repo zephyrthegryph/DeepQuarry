@@ -95,3 +95,14 @@
 	TEST_ASSERT_EQUAL(pref.create_default_value(), 0, "unset by default: the viewport fit picks the width")
 	TEST_ASSERT(pref.is_valid(MAP_SPLIT_MIN) && pref.is_valid(MAP_SPLIT_MAX) && pref.is_valid(0), "the kept range is valid")
 	TEST_ASSERT(!pref.is_valid(MAP_SPLIT_MAX + 1), "past the range is not")
+
+/datum/unit_test/dq_chat_radio_rows
+/datum/unit_test/dq_chat_radio_rows/Run()
+	TEST_ASSERT_EQUAL(length(chat_radio_rows(list())), 0, "no channels, no selector rows")
+	var/list/rows = chat_radio_rows(list(CHANNEL_MEDICAL, CHANNEL_COMMAND))
+	TEST_ASSERT_EQUAL(length(rows), 3, "department plus one row per channel")
+	TEST_ASSERT_EQUAL(rows[1]["key"], ":h", "the department key is first")
+	TEST_ASSERT_EQUAL(rows[2]["key"], ":m", "medical has :m")
+	TEST_ASSERT_EQUAL(rows[2]["label"], CHANNEL_MEDICAL, "the label is the channel name")
+	TEST_ASSERT_EQUAL(rows[3]["key"], ":c", "command has :c")
+	TEST_ASSERT_EQUAL(length(chat_radio_rows(list(CHANNEL_MEDICAL, CHANNEL_MEDICAL))), 2, "a repeated channel is listed once")

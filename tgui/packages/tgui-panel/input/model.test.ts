@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'bun:test';
 import {
   ChatInputModel,
+  COMMON_OPTION,
+  HISTORY_LIMIT,
   INPUT_CHANNELS,
   type InputChannel,
+  InputHistory,
   keyAction,
   nextChannel,
+  nextRadioOption,
+  parseRadioPrefix,
+  type RadioOption,
   TYPING_THROTTLE_MS,
 } from './model';
 
@@ -129,5 +135,119 @@ describe('channel toggle', () => {
     expect(model.channel).toBe('Say');
     model.step(1);
     expect(model.channel).toBe(nextChannel('Say'));
+  });
+});
+
+const MED: RadioOption = { key: ':m', label: 'Medical' };
+const SEC: RadioOption = { key: ':s', label: 'Security' };
+
+describe('chat input history', () => {
+  it('maps the arrow keys', () => {
+    expect(keyAction('ArrowUp', false)).toBe('older');
+    expect(keyAction('ArrowDown', false)).toBe('newer');
+    expect(keyAction('PageUp', false)).toBe('older');
+  });
+
+  it('recalls older then newer and restores the draft', () => {
+    const history = new InputHistory();
+    history.add('one');
+    history.add('two');
+    expect(history.older('draft')).toBe('two');
+    expect(history.older('two')).toBe('one');
+    expect(history.older('one')).toBeNull();
+    expect(history.newer()).toBe('two');
+    expect(history.newer()).toBe('draft');
+    expect(history.newer()).toBeNull();
+  });
+
+  it('is bounded and skips empties and immediate repeats', () => {
+    const history = new InputHistory();
+    history.add('');
+    history.add('a');
+    history.add('a');
+    expect(history.size).toBe(1);
+    for (let i = 0; i < HISTORY_LIMIT + 5; i++) {
+      history.add(`m${i}`);
+    }
+    expect(history.size).toBe(HISTORY_LIMIT);
+    expect(history.older('')).toBe(`m${HISTORY_LIMIT + 4}`);
+  });
+
+  it('the model records sent messages and recalls them', () => {
+    const { model } = setup();
+    model.open();
+    model.type('hello');
+    model.submit();
+    model.type('typing');
+    expect(model.recall('older')).toBe('hello');
+    expect(model.value).toBe('hello');
+    expect(model.recall('newer')).toBe('typing');
+    expect(model.recall('newer')).toBeNull();
+  });
+
+  it('typing over a recalled message starts a new draft', () => {
+    const { model } = setup();
+    model.open();
+    model.type('a');
+    model.submit();
+    model.recall('older');
+    model.type('ab');
+    expect(model.recall('newer')).toBeNull();
+    expect(model.recall('older')).toBe('a');
+  });
+});
+
+describe('chat input radio prefix', () => {
+  const options = [MED, SEC];
+
+  it('parses a typed prefix for a channel the speaker has', () => {
+    expect(parseRadioPrefix(':m hello', options)).toEqual({
+      option: MED,
+      rest: 'hello',
+    });
+    expect(parseRadioPrefix('.S go', options)?.option).toBe(SEC);
+  });
+
+  it('ignores unknown keys and prefixes not followed by a space', () => {
+    expect(parseRadioPrefix(':q hi', options)).toBeNull();
+    expect(parseRadioPrefix(':m', options)).toBeNull();
+    expect(parseRadioPrefix(':mx hi', options)).toBeNull();
+    expect(parseRadioPrefix('hi :m there', options)).toBeNull();
+    expect(parseRadioPrefix(':m hi', [])).toBeNull();
+  });
+
+  it('cycles common and the options, wrapping', () => {
+    expect(nextRadioOption(COMMON_OPTION, options)).toBe(MED);
+    expect(nextRadioOption(MED, options)).toBe(SEC);
+    expect(nextRadioOption(SEC, options)).toBe(COMMON_OPTION);
+    expect(nextRadioOption(COMMON_OPTION, options, -1)).toBe(SEC);
+  });
+
+  it('sends a department message in Say with its prefix', () => {
+    const { model, sent } = setup();
+    model.setChannel('Radio');
+    model.setRadio(MED);
+    model.open();
+    model.type('need a doctor');
+    model.submit();
+    expect(sent.at(-2)).toEqual([
+      'entry',
+      { channel: 'Say', entry: ':m need a doctor' },
+    ]);
+  });
+
+  it('sends common radio as Radio and falls back when the channel is gone', () => {
+    const { model, sent } = setup();
+    model.setChannel('Radio');
+    model.open();
+    model.type('hi');
+    model.submit();
+    expect(sent.at(-2)).toEqual(['entry', { channel: 'Radio', entry: 'hi' }]);
+    model.setRadio(MED);
+    model.syncRadio([SEC]);
+    expect(model.radio).toBe(COMMON_OPTION);
+    model.setRadio(SEC);
+    model.syncRadio([SEC]);
+    expect(model.radio).toBe(SEC);
   });
 });

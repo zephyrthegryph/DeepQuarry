@@ -317,3 +317,53 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 	chat_float_reset()
 	chat_pin(CHAT_MODE_FLOAT)
 	chat_layout_sync()
+
+/// The radios a mob speaks into with a channel prefix (the chat input row's radio selector). None by default.
+/mob/proc/chat_radio_sets()
+	return list()
+
+/mob/living/carbon/human/chat_radio_sets()
+	. = list()
+	for(var/slot in list(SLOT_ID_EAR_L, SLOT_ID_EAR_R))
+		var/obj/item/radio/R = get_equipped_item(slot)
+		if(isradio(R))
+			. += R
+
+/mob/living/silicon/robot/chat_radio_sets()
+	return radio ? list(radio) : list()
+
+/mob/living/silicon/ai/chat_radio_sets()
+	return aiRadio ? list(aiRadio) : list()
+
+/// The department prefixes the chat input row offers for these radio channel names: list of list("key" = ":m", "label" = "Medical"),
+/// the :h department key first, then one per channel that has a key. Common (";") is the row's own default and is not listed.
+/proc/chat_radio_rows(list/channel_names)
+	. = list()
+	if(!LAZYLEN(channel_names))
+		return
+	var/list/seen = list()
+	. += list(list("key" = ":h", "label" = "Dept"))
+	seen[":h"] = TRUE
+	for(var/channel_name in channel_names)
+		var/key = get_radio_key_from_channel(channel_name)
+		if(!key || seen[key])
+			continue
+		seen[key] = TRUE
+		. += list(list("key" = key, "label" = "[channel_name]"))
+
+/// The prefixes this client's mob can use on the radio: the on channels of its headsets.
+/client/proc/chat_radio_options()
+	var/list/names = list()
+	for(var/obj/item/radio/R as anything in mob?.chat_radio_sets())
+		for(var/channel_name in R.channels)
+			if(R.channels[channel_name])
+				names |= channel_name
+	return chat_radio_rows(names)
+
+/// Tells the chat input row which radio prefixes the speaker has.
+/client/proc/chat_send_radio_options()
+	if(!tgui_panel?.is_ready())
+		return
+	var/list/rows = chat_radio_options()
+	tgui_panel.window.send_message("chat/radioChannels", list("channels" = rows))
+	log_tgui(src, "Chat radio prefixes sent: [length(rows)].", context = "chat_float")

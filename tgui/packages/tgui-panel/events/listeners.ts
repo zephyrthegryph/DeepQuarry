@@ -2,7 +2,7 @@ import { loadStyleSheet } from 'common/assets';
 import { EventBus } from 'tgui-core/eventbus';
 import { playMusic, stopMusic } from '../audio/handlers';
 import { chatMessage, exportChatlog } from '../chat/handlers';
-import { focusInput } from '../input/handlers';
+import { focusInput, radioChannels } from '../input/handlers';
 import { chatLayout } from '../layout/handlers';
 import { pingReply, pingSoft } from '../ping/handlers';
 import {
@@ -22,6 +22,7 @@ const listeners = {
   'chat/focusInput': focusInput,
   'chat/layout': chatLayout,
   'chat/message': chatMessage,
+  'chat/radioChannels': radioChannels,
   connected,
   'ping/reply': pingReply,
   'ping/soft': pingSoft,
