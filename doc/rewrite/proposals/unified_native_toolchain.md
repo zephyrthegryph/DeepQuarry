@@ -3436,3 +3436,35 @@ shared callable store across modes. Publication from Original would need
 budgeted ownership for the resident index, keys, receipts and value backing
 through later Strict claims and detached aliases. The current logical store
 weight and transient warm lookup reservation cover different lifetimes.
+
+
+The completed source/syntax census at `0cd0b943a9` reached 11,010,048
+producer rows and 11,003,730 adopted rows before the existing 256 MiB
+source-input admission refused another 20,480-byte allocation. The syntax
+counter was 133,494,587 bytes, below its unchanged 128 MiB limit. No report
+was produced, so this run does not qualify whole-checkout completion.
+
+At that exact prefix, page-rounded origin geometry used 57,832,256 bytes.
+The simple four-byte proposal would require 69,355,712 bytes because more
+rows would escape into medium storage. Keeping every old narrow-row case
+and storing independent raw widths in a ranked byte table instead projects
+49,883,168 bytes, a 7,949,088-byte saving. These are census projections,
+not a measurement of an implemented layout or a completed checkout run.
+
+The BODY literal census observed 789,853 body rows, of which 612,524 had
+raw text matching the actual expanded-source span. It counted 368 exclusive
+standalone allocations with 2,058,369 reserved payload bytes. The larger
+per-reference capacity sum includes shared owners and is not reclaimable
+memory. Source-backed spelling still requires the authentic output identity,
+fallible data access and funding across detached syntax lifetimes.
+
+
+The ranked-width layout is now implemented. Four-byte cells retain every old
+narrow-row geometry; independent raw widths use a lazily allocated rank table
+and byte buffer under the existing source credit. Token-only readers do not
+need that buffer. Fifteen focused preprocessing controls passed for exact
+geometry, page boundaries, loans, append/trim, admission denial and actual
+filesystem failures. Two public combined/compound controls also passed.
+The three new failure controls cover an error after width staging, growth of
+an existing width vector and trim/recreation at a non-word boundary. The
+whole-checkout saving remains a projection until the next actual source run.

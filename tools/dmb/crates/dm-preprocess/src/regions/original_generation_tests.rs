@@ -598,7 +598,7 @@ fn actual_analyze_batches_share_full_physical_pages_and_trim_receiver_stop() {
         assert!(verified.rows>dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS);
         assert_eq!(product.expanded().text.as_str().contains("unread_1999"),!stop);
         let mut origin_addresses=std::collections::BTreeSet::new();
-        let narrow_bytes=5*dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS;
+        let narrow_bytes=4*dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS;
         product.expanded().origins.visit_storage(|address,_,capacity|{
             if capacity==narrow_bytes {origin_addresses.insert(address);}
         });

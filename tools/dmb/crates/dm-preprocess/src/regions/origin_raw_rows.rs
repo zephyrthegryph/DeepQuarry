@@ -109,24 +109,32 @@ impl Row {
 #[repr(C)]
 struct NarrowRow {
     tag: u8,
-    fields: [u8; 4],
+    fields: [u8; 3],
 }
 impl NarrowRow {
     const EOF: u8 = 1;
     const TRAILING: u8 = 2;
-    const MEDIUM: u8 = 4;
-    const FULL: u8 = 8;
-    const CLASS: u8 = Self::EOF | Self::MEDIUM | Self::FULL;
+    const DUAL_WIDTH: u8 = 4;
+    const SIDE_WIDTH: u8 = 8;
+    const ESCAPE: u8 = 12;
+    const MEDIUM: u8 = Self::ESCAPE;
+    const FULL: u8 = Self::ESCAPE | Self::EOF;
+    const MODE: u8 = 12;
 
     fn pack(row: Row, [output, cover, token, decoded, raw, raw_width]: [usize; 6]) -> Option<Self> {
         let trailing = cover.checked_sub(token)?;
         if trailing > 1 || decoded != raw { return None; }
-        let mut fields = [0; 4];
-        for (out, value) in fields.iter_mut().zip([output, token, raw, raw_width]) {
-            *out = u8::try_from(value).ok()?;
-        }
+        let (width, mode) = if let Some((width, dual)) = narrow_width_pair(token, raw_width) {
+            (width, if dual { Self::DUAL_WIDTH } else { 0 })
+        } else {
+            // Retain every old inline geometry. Only its independent raw
+            // width moves to the real page's ranked byte storage.
+            u8::try_from(raw_width).ok()?;
+            (u8::try_from(token).ok()?, Self::SIDE_WIDTH)
+        };
+        let fields = [u8::try_from(output).ok()?, u8::try_from(raw).ok()?, width];
         let tag = (if row.actual_eof { Self::EOF } else { 0 })
-            | (if trailing != 0 { Self::TRAILING } else { 0 });
+            | (if trailing != 0 { Self::TRAILING } else { 0 }) | mode;
         Some(Self { tag, fields })
     }
 
@@ -135,7 +143,7 @@ impl NarrowRow {
         // page-local index is encoded in the payload.
         assert!(index < ROW_PAGE_LEN);
         let [low, high] = (index as u16).to_le_bytes();
-        Self { tag: class, fields: [low, high, 0, 0] }
+        Self { tag: class, fields: [low, high, 0] }
     }
 
     fn with_projected_kind(mut self, kind: Option<dm_syntax::TokenKind>) -> Self {
@@ -160,13 +168,28 @@ impl NarrowRow {
          Whitespace, Newline, Comment, Unknown].get(code).copied()
     }
 
-    fn class(&self) -> u8 { self.tag & Self::CLASS }
+    fn class(&self) -> u8 {
+        if self.tag & Self::MODE == Self::ESCAPE { self.tag & Self::FULL }
+        else { self.tag & Self::EOF }
+    }
+    fn needs_raw_width(&self) -> bool { self.tag & Self::MODE == Self::SIDE_WIDTH }
+    fn token_width(&self) -> usize {
+        if self.tag & Self::MODE == Self::DUAL_WIDTH { usize::from(self.fields[2] >> 4) }
+        else { usize::from(self.fields[2]) }
+    }
     fn escape_index(&self) -> usize {
         usize::from(u16::from_le_bytes([self.fields[0], self.fields[1]]))
     }
-    fn offsets(&self) -> [usize; 6] {
-        let [output, token, raw, width] = self.fields.map(usize::from);
-        [output, token + usize::from(self.tag & Self::TRAILING != 0), token, raw, raw, width]
+    fn offsets(&self, side: impl FnOnce() -> Option<u8>) -> Option<[usize; 6]> {
+        let output = usize::from(self.fields[0]);
+        let raw = usize::from(self.fields[1]);
+        let token = self.token_width();
+        let width = match self.tag & Self::MODE {
+            Self::DUAL_WIDTH => usize::from(self.fields[2] & 15),
+            Self::SIDE_WIDTH => usize::from(side()?),
+            _ => token,
+        };
+        Some([output, token + usize::from(self.tag & Self::TRAILING != 0), token, raw, raw, width])
     }
 }
 
@@ -239,7 +262,7 @@ impl PageFunding<'_> {
 }
 
 const ROW_PAGE_LEN: usize = 4096;
-const _: () = assert!(std::mem::size_of::<NarrowRow>() == 5);
+const _: () = assert!(std::mem::size_of::<NarrowRow>() == 4);
 const _: () = assert!(std::mem::size_of::<MediumRow>() == 16);
 const _: () = assert!(ROW_PAGE_LEN <= u16::MAX as usize);
 
@@ -675,6 +698,27 @@ impl RowOutputBases {
     }
 }
 
+struct RankedRawWidths {
+    rank: RowGroupRank,
+    widths: Vec<u8>,
+}
+impl RankedRawWidths {
+    fn new(a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>) -> io::Result<Box<Self>> {
+        // The standard Box takes the same one-element Global allocation.
+        let mut backing = funding.allocate::<Self>(1, a)?;
+        backing.push(Self { rank: RowGroupRank::new(), widths: Vec::new() });
+        let pointer = backing.as_mut_ptr();
+        std::mem::forget(backing);
+        // SAFETY: allocation has exactly Layout::array::<Self>(1), with its
+        // sole Self initialized. Box uses the identical Global drop layout.
+        Ok(unsafe { Box::from_raw(pointer) })
+    }
+
+    fn get(&self, local: usize) -> Option<u8> {
+        self.widths.get(self.rank.through(local).checked_sub(1)?).copied()
+    }
+}
+
 // One source-budget owner for one physical token page and all of its exact
 // token geometry. Global source groups/trace owners and the page directory
 // are deliberately outside this owner.
@@ -682,6 +726,7 @@ struct PhysicalOriginPage {
     narrow: Vec<NarrowRow>,
     rank: RowGroupRank,
     output_bases: RowOutputBases,
+    raw_widths: Option<Box<RankedRawWidths>>,
     medium: FixedPages<MediumRow, 16>,
     full: FixedPages<Row, 16>,
     group_base: usize,
@@ -699,7 +744,7 @@ impl PhysicalOriginPage {
         let credit = work.reserve(Self::control_bytes())?;
         Ok(Self {
             narrow: Vec::new(), rank: RowGroupRank::new(),
-            output_bases: RowOutputBases::new(),
+            output_bases: RowOutputBases::new(), raw_widths: None,
             medium: FixedPages::new(), full: FixedPages::new(), group_base, credit,
         })
     }
@@ -712,6 +757,7 @@ impl PhysicalOriginPage {
         assert!(local < ROW_PAGE_LEN);
         let medium_before = self.medium.len();
         let full_before = self.full.len();
+        let widths_before = self.raw_widths.as_ref().map_or(0, |side| side.widths.len());
         let mut funding = PageFunding { work, credit: &mut self.credit };
         let result = (|| {
             let fields = row.offsets(geometry);
@@ -724,6 +770,15 @@ impl PhysicalOriginPage {
                 self.full.push(row, a, &mut funding)?;
                 NarrowRow::escape(NarrowRow::FULL, full_before)
             };
+            if cell.needs_raw_width() {
+                if self.raw_widths.is_none() {
+                    self.raw_widths = Some(RankedRawWidths::new(a, &mut funding)?);
+                }
+                let side = self.raw_widths.as_mut().expect("funded ranked raw widths");
+                funding.grow_rows(&mut side.widths, 16, a)?;
+                let width = fields.ok_or(io::ErrorKind::InvalidData)?[5];
+                side.widths.push(u8::try_from(width).map_err(|_|io::ErrorKind::InvalidData)?);
+            }
             a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
             if self.narrow.capacity() == 0 {
                 self.narrow = funding.allocate(ROW_PAGE_LEN, a)?;
@@ -737,10 +792,27 @@ impl PhysicalOriginPage {
         if let Err(first) = result {
             let _ = self.medium.truncate(medium_before, &mut funding);
             let _ = self.full.truncate(full_before, &mut funding);
+            if widths_before == 0 {
+                let _ = Self::release_raw_widths(&mut self.raw_widths, &mut funding);
+            } else if let Some(side) = &mut self.raw_widths {
+                side.widths.truncate(widths_before);
+            }
             return Err(first);
+        }
+        if let Some(side) = &mut self.raw_widths {
+            side.rank.append(local, widths_before, self.narrow[local].needs_raw_width());
         }
         let before = if local == 0 { 0 } else { prior_group - self.group_base };
         self.rank.append(local, before, local != 0 && row.group != prior_group);
+        Ok(())
+    }
+
+    fn release_raw_widths(side: &mut Option<Box<RankedRawWidths>>, funding: &mut PageFunding<'_>) -> io::Result<()> {
+        if let Some(side) = side.take() {
+            let bytes = std::mem::size_of::<RankedRawWidths>() + side.widths.capacity();
+            drop(side);
+            funding.work.shrink(funding.credit, bytes)?;
+        }
         Ok(())
     }
 
@@ -769,7 +841,7 @@ impl PhysicalOriginPage {
             NarrowRow::MEDIUM => self.medium.get(cell.escape_index())?
                 .unpack(|actual| if actual == group { geometry() } else { None }),
             NarrowRow::FULL => Some(*self.full.get(cell.escape_index())?),
-            class => Row::from_offsets(group, geometry()?, cell.offsets(), class == NarrowRow::EOF),
+            class => Row::from_offsets(group, geometry()?, cell.offsets(|| self.raw_widths.as_ref()?.get(local))?, class == NarrowRow::EOF),
         }?;
         (row.group == group).then_some(row)
     }
@@ -796,7 +868,7 @@ impl PhysicalOriginPage {
             }
             _ => {
                 let start = self.output_bases.get(rank)?.checked_add(usize::from(cell.fields[0]))?;
-                Span::new(start, start.checked_add(usize::from(cell.fields[1]))?)
+                Span::new(start, start.checked_add(cell.token_width())?)
             }
         };
         Some(dm_syntax::SpanToken { kind, span })
@@ -805,8 +877,9 @@ impl PhysicalOriginPage {
     fn truncate(&mut self, keep: usize, work: &dyn SourceArenaWork) -> io::Result<()> {
         assert!(keep > 0 && keep < self.narrow.len());
         let rank = self.rank.through(keep - 1);
-        let (mut medium, mut full) = (0, 0);
+        let (mut medium, mut full, mut widths) = (0, 0, 0);
         for cell in &self.narrow[..keep] {
+            widths += usize::from(cell.needs_raw_width());
             match cell.class() {
                 NarrowRow::MEDIUM => medium += 1,
                 NarrowRow::FULL => full += 1,
@@ -817,6 +890,12 @@ impl PhysicalOriginPage {
         self.output_bases.truncate(rank + 1, &mut funding)?;
         self.medium.truncate(medium, &mut funding)?;
         self.full.truncate(full, &mut funding)?;
+        if widths == 0 {
+            Self::release_raw_widths(&mut self.raw_widths, &mut funding)?;
+        } else if let Some(side) = &mut self.raw_widths {
+            side.widths.truncate(widths);
+            side.rank.truncate(keep);
+        }
         self.narrow.truncate(keep);
         self.rank.truncate(keep);
         Ok(())
@@ -849,6 +928,13 @@ impl PhysicalOriginPageOwner {
         visit(page.narrow.as_ptr() as usize, page.narrow.len(),
             page.narrow.capacity() * std::mem::size_of::<NarrowRow>());
         page.output_bases.visit_storage(visit);
+        if let Some(side) = &page.raw_widths {
+            let bytes = std::mem::size_of::<RankedRawWidths>();
+            visit(side.as_ref() as *const RankedRawWidths as usize, bytes, bytes);
+            if side.widths.capacity() != 0 {
+                visit(side.widths.as_ptr() as usize, side.widths.len(), side.widths.capacity());
+            }
+        }
         page.medium.visit_storage(visit);
     }
 }
@@ -1005,8 +1091,7 @@ impl RawTokenRows {
     }
 }
 
-// Width-only representation used by the four-byte projection census.
-#[cfg(debug_assertions)]
+// Shared exact width encoding for physical rows and the projection census.
 fn narrow_width_pair(token: usize, raw: usize) -> Option<(u8, bool)> {
     if token == raw {
         return Some((u8::try_from(token).ok()?, false));
@@ -1528,7 +1613,7 @@ impl OriginalRawOrigins{
    let mut credit=work.reserve(0).unwrap();
    let mut funding=PageFunding{work:&work,credit:&mut credit};
    let mut rows=OriginPages::new();
-   let row=|at|{let [low,high]=u16::try_from(at).unwrap().to_le_bytes();NarrowRow{tag:0,fields:[low,high,0,0]}};
+   let row=|at|{let [low,high]=u16::try_from(at).unwrap().to_le_bytes();NarrowRow{tag:0,fields:[low,high,0]}};
    let number=|row:&NarrowRow|u16::from_le_bytes([row.fields[0],row.fields[1]]);
    for at in 0..ROW_PAGE_LEN{rows.push(row(at),&a,&mut funding).unwrap();}
    let first=rows.get(0).unwrap() as *const NarrowRow;
@@ -1869,6 +1954,215 @@ impl OriginalRawOrigins{
   assert_eq!(cost.adaptive_steady_lower_bound_bytes,page_costs.iter().map(|p|p[2]).sum::<usize>());
   assert!(ProjectedWidthOnlyCost::page_bytes(1)[0]<ProjectedWidthOnlyCost::page_bytes(1)[1]);
   assert!(ProjectedWidthOnlyCost::page_bytes(4096)[0]>ProjectedWidthOnlyCost::page_bytes(4096)[1]);
+ }
+
+ #[test]
+ fn ranked_raw_width_cells_keep_page_edges_and_token_loans_without_side_reads() {
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
+  let work=OutputWork(Arc::new(AtomicUsize::new(0)));
+  let mut credit=work.reserve(0).unwrap();
+  let mut funding=PageFunding{work:&work,credit:&mut credit};
+  let geometry=GroupGeometry{encounter:0,decoded:Span::new(0,255),line:1,output_line:1,output_base:0,raw_base:0};
+  let mut groups=OriginGroups::new();
+  groups.push(geometry,OriginalMacroTrace::empty(),&a,&mut funding).unwrap();
+  let mut rows=RawTokenRows::new(&a).unwrap();
+  let make=|index:usize|{
+   let raw=if matches!(index,0|63|64)||index==ROW_PAGE_LEN-1||index==ROW_PAGE_LEN{255}else{80};
+   Row{group:0,output:Span::new(0,81),token_end:80,source_offset:0,byte_column:1,
+    raw_extent:Span::new(0,raw),actual_eof:index==ROW_PAGE_LEN-1}
+  };
+  for i in 0..=ROW_PAGE_LEN {
+   rows.push_projected(make(i),geometry,Some(dm_syntax::TokenKind::String),&a,&mut funding).unwrap();
+  }
+  assert_eq!(rows.medium_len(),0);
+  assert_eq!(rows.full_len(),0);
+  for index in [0,62,63,64,65,ROW_PAGE_LEN-1,ROW_PAGE_LEN] {
+   assert_eq!(rows.get(index,&groups),Some(make(index)));
+   assert_eq!(rows.projected_token(index),Some(dm_syntax::SpanToken{kind:dm_syntax::TokenKind::String,span:Span::new(0,80)}));
+  }
+  let page=rows.pages.get_mut(0).unwrap().get_mut().unwrap();
+  assert_eq!(page.raw_widths.as_ref().unwrap().widths.len(),4);
+  let side=page.raw_widths.take();
+  assert_eq!(page.projected_token(63).unwrap().span,Span::new(0,80),"token-only loan never reads raw-width storage");
+  assert!(page.decode(63,&groups).is_none(),"full geometry requires its actual raw width");
+  page.raw_widths=side;
+  rows.truncate(64,&mut funding).unwrap();
+  assert_eq!(rows.page(0).unwrap().raw_widths.as_ref().unwrap().widths.len(),2);
+  assert_eq!(rows.get(63,&groups),Some(make(63)));
+  rows.push_projected(make(64),geometry,Some(dm_syntax::TokenKind::String),&a,&mut funding).unwrap();
+  assert_eq!(rows.get(64,&groups),Some(make(64)));
+  drop((rows,groups,credit));
+  assert_eq!(work.0.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn ranked_raw_width_rollback_preserves_real_io_and_accepts_same_row_after_repair() {
+  use std::sync::atomic::AtomicBool;
+  struct FailingWidth{backing:OutputWork,armed:AtomicBool,absent:PathBuf}
+  impl SourceArenaWork for FailingWidth {
+   fn checkpoint(&self)->io::Result<()>{self.backing.checkpoint()}
+   fn reserve(&self,n:usize)->io::Result<SourceArenaCredit>{self.backing.reserve(n)}
+   fn grow(&self,c:&mut SourceArenaCredit,n:usize)->io::Result<()>{
+    if n==16&&self.armed.load(Ordering::Acquire){return std::fs::File::open(&self.absent).map(drop)}
+    self.backing.grow(c,n)
+   }
+   fn shrink(&self,c:&mut SourceArenaCredit,n:usize)->io::Result<()>{self.backing.shrink(c,n)}
+  }
+  let absent=std::env::current_exe().unwrap().join("missing-width/input");
+  let expected=std::fs::File::open(&absent).unwrap_err();
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
+  let work=FailingWidth{backing:OutputWork(Arc::new(AtomicUsize::new(0))),armed:AtomicBool::new(true),absent};
+  let mut credit=work.reserve(0).unwrap();
+  let mut funding=PageFunding{work:&work,credit:&mut credit};
+  let geometry=GroupGeometry{encounter:0,decoded:Span::new(0,255),line:1,output_line:1,output_base:0,raw_base:0};
+  let row=Row{group:0,output:Span::new(0,80),token_end:80,source_offset:0,byte_column:1,
+   raw_extent:Span::new(0,255),actual_eof:false};
+  let mut page=PhysicalOriginPage::new(0,&work).unwrap();
+  let before=work.backing.0.load(Ordering::Acquire);
+  let actual=page.push(row,geometry,0,Some(dm_syntax::TokenKind::Number),&a,&work).unwrap_err();
+  assert_eq!(actual.raw_os_error(),expected.raw_os_error());
+  assert!(page.raw_widths.is_none());
+  assert!(page.narrow.is_empty());
+  assert!(page.output_bases.compact.is_empty());
+  assert_eq!(work.backing.0.load(Ordering::Acquire),before);
+  work.armed.store(false,Ordering::Release);
+  page.push(row,geometry,0,Some(dm_syntax::TokenKind::Number),&a,&work).unwrap();
+  let mut groups=OriginGroups::new();
+  groups.push(geometry,OriginalMacroTrace::empty(),&a,&mut funding).unwrap();
+  assert_eq!(page.decode(0,&groups),Some(row));
+  for class in [NarrowRow::MEDIUM,NarrowRow::FULL] {
+   let escaped=NarrowRow::escape(class,ROW_PAGE_LEN-1).with_projected_kind(Some(dm_syntax::TokenKind::Unknown));
+   assert_eq!(escaped.class(),class);
+   assert_eq!(escaped.escape_index(),ROW_PAGE_LEN-1);
+   assert_eq!(escaped.projected_kind(),Some(dm_syntax::TokenKind::Unknown));
+  }
+  drop((page,groups,credit));
+  assert_eq!(work.backing.0.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
+ struct RankedWidthFailureWork {
+  backing:OutputWork,
+  absent:PathBuf,
+  fail_bytes:AtomicUsize,
+  first_width_allocations:AtomicUsize,
+ }
+ impl RankedWidthFailureWork {
+  fn new(fail_bytes:usize)->Self{
+   Self{backing:OutputWork(Arc::new(AtomicUsize::new(0))),
+    absent:std::env::current_exe().unwrap().join("missing-ranked-phase/input"),
+    fail_bytes:AtomicUsize::new(fail_bytes),first_width_allocations:AtomicUsize::new(0)}
+  }
+ }
+ impl SourceArenaWork for RankedWidthFailureWork {
+  fn checkpoint(&self)->io::Result<()>{self.backing.checkpoint()}
+  fn reserve(&self,n:usize)->io::Result<SourceArenaCredit>{self.backing.reserve(n)}
+  fn grow(&self,c:&mut SourceArenaCredit,n:usize)->io::Result<()>{
+   if n==16{self.first_width_allocations.fetch_add(1,Ordering::AcqRel);}
+   if n==self.fail_bytes.load(Ordering::Acquire){
+    return std::fs::File::open(&self.absent).map(drop)
+   }
+   self.backing.grow(c,n)
+  }
+  fn shrink(&self,c:&mut SourceArenaCredit,n:usize)->io::Result<()>{self.backing.shrink(c,n)}
+ }
+ fn ranked_test_geometry()->GroupGeometry{
+  GroupGeometry{encounter:0,decoded:Span::new(0,255),line:1,output_line:1,output_base:0,raw_base:0}
+ }
+ fn ranked_test_row(side:bool)->Row{
+  Row{group:0,output:Span::new(0,80),token_end:80,source_offset:0,byte_column:1,
+   raw_extent:Span::new(0,if side{255}else{80}),actual_eof:false}
+ }
+
+ #[test]
+ fn ranked_raw_width_staging_rolls_back_when_later_cell_or_output_base_allocation_fails(){
+  for fail_bytes in [ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>(),128*std::mem::size_of::<u32>()]{
+   let syntax=Arc::new(AtomicUsize::new(0));
+   let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
+   let work=RankedWidthFailureWork::new(fail_bytes);
+   let expected=std::fs::File::open(&work.absent).unwrap_err();
+   let mut page=PhysicalOriginPage::new(0,&work).unwrap();
+   let baseline=work.backing.0.load(Ordering::Acquire);
+   let error=page.push(ranked_test_row(true),ranked_test_geometry(),0,None,&a,&work).unwrap_err();
+   assert_eq!(error.raw_os_error(),expected.raw_os_error());
+   assert_eq!(work.first_width_allocations.load(Ordering::Acquire),1,"width was physically staged first");
+   assert!(page.raw_widths.is_none());
+   assert!(page.narrow.is_empty());
+   assert!(page.output_bases.compact.is_empty());
+   assert_eq!(work.backing.0.load(Ordering::Acquire),
+    baseline+page.narrow.capacity()*std::mem::size_of::<NarrowRow>());
+   work.fail_bytes.store(0,Ordering::Release);
+   page.push(ranked_test_row(true),ranked_test_geometry(),0,None,&a,&work).unwrap();
+   assert_eq!(page.raw_widths.as_ref().unwrap().widths.as_slice(),[255]);
+   assert_eq!(page.raw_widths.as_ref().unwrap().rank.through(0),1);
+   assert_eq!(page.narrow.len(),1);
+   assert_eq!(page.output_bases.compact.len(),1);
+   drop(page);
+   assert_eq!(work.backing.0.load(Ordering::Acquire),0);
+   assert_eq!(syntax.load(Ordering::Acquire),0);
+  }
+ }
+
+ #[test]
+ fn ranked_raw_width_existing_vector_growth_failure_keeps_prior_rank_and_capacity(){
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
+  let work=RankedWidthFailureWork::new(0);
+  let mut page=PhysicalOriginPage::new(0,&work).unwrap();
+  for _ in 0..16{page.push(ranked_test_row(true),ranked_test_geometry(),0,None,&a,&work).unwrap();}
+  let before=work.backing.0.load(Ordering::Acquire);
+  assert_eq!(page.raw_widths.as_ref().unwrap().widths.capacity(),16);
+  work.fail_bytes.store(32,Ordering::Release);
+  let expected=std::fs::File::open(&work.absent).unwrap_err();
+  let error=page.push(ranked_test_row(true),ranked_test_geometry(),0,None,&a,&work).unwrap_err();
+  assert_eq!(error.raw_os_error(),expected.raw_os_error());
+  assert_eq!(page.narrow.len(),16);
+  let side=page.raw_widths.as_ref().unwrap();
+  assert_eq!(side.widths.len(),16);
+  assert_eq!(side.widths.capacity(),16);
+  assert_eq!(side.rank.through(15),16);
+  assert_eq!(side.rank.through(16),16,"failed occurrence publishes no rank bit");
+  assert_eq!(work.backing.0.load(Ordering::Acquire),before);
+  work.fail_bytes.store(0,Ordering::Release);
+  page.push(ranked_test_row(true),ranked_test_geometry(),0,None,&a,&work).unwrap();
+  assert_eq!(page.raw_widths.as_ref().unwrap().widths.len(),17);
+  assert_eq!(page.raw_widths.as_ref().unwrap().rank.through(16),17);
+  drop(page);
+  assert_eq!(work.backing.0.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn ranked_raw_width_trim_drops_last_side_and_recreates_at_nonword_boundary(){
+  let syntax=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
+  let work=RankedWidthFailureWork::new(0);
+  let mut credit=work.reserve(0).unwrap();
+  let mut funding=PageFunding{work:&work,credit:&mut credit};
+  let mut groups=OriginGroups::new();
+  groups.push(ranked_test_geometry(),OriginalMacroTrace::empty(),&a,&mut funding).unwrap();
+  let mut page=PhysicalOriginPage::new(0,&work).unwrap();
+  for _ in 0..11{page.push(ranked_test_row(false),ranked_test_geometry(),0,None,&a,&work).unwrap();}
+  page.push(ranked_test_row(true),ranked_test_geometry(),0,None,&a,&work).unwrap();
+  page.push(ranked_test_row(false),ranked_test_geometry(),0,None,&a,&work).unwrap();
+  let before=work.backing.0.load(Ordering::Acquire);
+  let side_bytes=std::mem::size_of::<RankedRawWidths>()+page.raw_widths.as_ref().unwrap().widths.capacity();
+  page.truncate(11,&work).unwrap();
+  assert!(page.raw_widths.is_none());
+  assert_eq!(before-work.backing.0.load(Ordering::Acquire),side_bytes);
+  assert_eq!(page.decode(10,&groups),Some(ranked_test_row(false)));
+  page.push(ranked_test_row(false),ranked_test_geometry(),0,None,&a,&work).unwrap();
+  page.push(ranked_test_row(true),ranked_test_geometry(),0,None,&a,&work).unwrap();
+  assert_eq!(page.raw_widths.as_ref().unwrap().widths.as_slice(),[255]);
+  assert_eq!(page.raw_widths.as_ref().unwrap().rank.through(12),1);
+  assert_eq!(page.decode(11,&groups),Some(ranked_test_row(false)));
+  assert_eq!(page.decode(12,&groups),Some(ranked_test_row(true)));
+  drop((page,groups,credit));
+  assert_eq!(work.backing.0.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),0);
  }
 
  #[test]
@@ -2286,7 +2580,7 @@ impl OriginalRawOrigins{
   let mut credit=work.reserve(0).unwrap();
   let mut funding=PageFunding{work:&work,credit:&mut credit};
   let mut rows=OriginPages::new();
-  let row=NarrowRow{tag:0,fields:[0;4]};
+  let row=NarrowRow{tag:0,fields:[0;3]};
   assert_eq!(rows.push(row,&a,&mut funding).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
   assert_eq!(rows.len(),0);
   assert_eq!(rows.pages.capacity(),0);
