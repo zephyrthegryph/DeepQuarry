@@ -255,7 +255,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 		play_sfx(src, SFX_EFFECTS_SPRAY3)
 		if(isanimal(target()))
 			var/mob/living/simple_mob/M = target()
-			M.has_recoloured = TRUE
+			M.set_has_recoloured(TRUE)
 		if(isrobot(target()))
 			var/mob/living/silicon/robot/R = target()
 			R.set_has_recoloured(TRUE)

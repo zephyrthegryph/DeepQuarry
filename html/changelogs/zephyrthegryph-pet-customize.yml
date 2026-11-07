@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Simple mobs and pets customize their name, description, gender, colour and size in one Customize window, opened from their Abilities panel; the settings that can only be used once say so"
