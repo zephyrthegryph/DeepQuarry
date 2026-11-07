@@ -1,19 +1,22 @@
 import { describe, expect, it } from 'bun:test';
 import {
   clampShare,
+  clientRect,
+  columnRect,
+  dockTarget,
   dragPosition,
-  fitRect,
   fitSize,
   isMode,
+  looseFit,
   MIN_WINDOW_SIZE,
-  pinRequest,
-  pointerSnap,
+  poppedOut,
   resizeSize,
   SHARE_DEFAULT,
   shareFromHeights,
   shareMoved,
-  snapTarget,
   splitterFor,
+  trustedArea,
+  windowUnderPointer,
 } from './model';
 
 describe('pin layout math', () => {
@@ -53,14 +56,6 @@ describe('pin layout math', () => {
     expect(shareMoved(40, 35)).toBe(true);
     expect(shareMoved(40, null)).toBe(false);
   });
-
-  it('swaps the side and floats or re-pins', () => {
-    expect(pinRequest('bottom', 'side')).toBe('top');
-    expect(pinRequest('top', 'side')).toBe('bottom');
-    expect(pinRequest('bottom', 'float')).toBe('float');
-    expect(pinRequest('top', 'float')).toBe('float');
-    expect(pinRequest('float', 'float')).toBe('bottom');
-  });
 });
 
 describe('window drag math', () => {
@@ -89,81 +84,65 @@ describe('window drag math', () => {
   });
 });
 
-describe('snap to the right edge', () => {
-  const area = { x: 0, y: 0, w: 1600, h: 900 };
+describe('dragging the float window to the top and left', () => {
+  const FLOAT = { w: 560, h: 420 };
 
-  it('pins top right when the window ends near the right edge in the upper half', () => {
-    expect(snapTarget({ x: 1050, y: 40, w: 560, h: 300 }, area)).toBe('top');
+  // The player's report: the window could not be dragged above or left of the middle of the main window.
+  for (const ratio of [1, 1.5]) {
+    for (const main of [
+      { x: 0, y: 0, w: 1920, h: 1040 },
+      { x: 100, y: 50, w: 1920, h: 1040 },
+    ]) {
+      it(`reaches the top left corner (ratio ${ratio}, main at ${main.x},${main.y})`, () => {
+        const startWindow = { x: main.x + 1200, y: main.y + 600 };
+        const startMouse = { x: 1500, y: 800 };
+        // The pointer goes to the top left corner of the screen (CSS pixels).
+        const pos = dragPosition(
+          startWindow,
+          startMouse,
+          { x: 0, y: 0 },
+          ratio,
+        );
+        const rect = looseFit({ x: pos.x, y: pos.y, ...FLOAT }, main);
+        expect(rect.x).toBeLessThanOrEqual(main.x);
+        expect(rect.y).toBeLessThanOrEqual(main.y);
+        expect(rect.x).toBeGreaterThan(main.x - FLOAT.w);
+        // The window follows the mouse until it is nearly out of the main window.
+        const toCentre = looseFit(
+          { x: main.x + main.w / 2 - 1, y: main.y + main.h / 2 - 1, ...FLOAT },
+          main,
+        );
+        expect(toCentre.x).toBe(main.x + main.w / 2 - 1);
+      });
+    }
+  }
+
+  it('keeps a margin of the window reachable on every side', () => {
+    const main = { x: 0, y: 0, w: 1920, h: 1040 };
+    const far = looseFit({ x: -5000, y: -5000, ...FLOAT }, main);
+    expect(far.x + FLOAT.w).toBe(96);
+    expect(far.y).toBe(0);
+    const right = looseFit({ x: 9000, y: 9000, ...FLOAT }, main);
+    expect(right.x).toBe(1920 - 96);
+    expect(right.y).toBe(1040 - 96);
   });
 
-  it('pins bottom right in the lower half', () => {
-    expect(snapTarget({ x: 1050, y: 500, w: 560, h: 380 }, area)).toBe(
-      'bottom',
-    );
+  it('does not limit the drag without an area', () => {
+    const win = { x: -300, y: -20, ...FLOAT };
+    expect(looseFit(win, null)).toEqual(win);
   });
 
-  it('snaps at the threshold, not past it', () => {
-    expect(snapTarget({ x: 1000, y: 40, w: 600, h: 300 }, area, 72)).toBe(
-      'top',
-    );
-    expect(snapTarget({ x: 1000, y: 40, w: 528, h: 300 }, area, 72)).toBe(
-      'top',
-    );
-    expect(snapTarget({ x: 1000, y: 40, w: 527, h: 300 }, area, 72)).toBeNull();
-  });
-
-  it('does not snap in the middle of the screen or outside the area', () => {
-    expect(snapTarget({ x: 300, y: 40, w: 560, h: 300 }, area)).toBeNull();
-    expect(snapTarget({ x: 1050, y: -900, w: 560, h: 300 }, area)).toBeNull();
-    expect(
-      snapTarget(
-        { x: 1050, y: 40, w: 560, h: 300 },
-        { x: 0, y: 0, w: 0, h: 0 },
-      ),
-    ).toBeNull();
-  });
-
-  it('splits the halves at the vertical middle of the area', () => {
-    expect(snapTarget({ x: 1050, y: 300, w: 560, h: 300 }, area)).toBe(
-      'bottom',
-    );
-    expect(snapTarget({ x: 1050, y: 290, w: 560, h: 300 }, area)).toBe('top');
-  });
-});
-
-describe('keeping the window inside the main window', () => {
-  const area = { x: 100, y: 50, w: 1600, h: 900 };
-
-  it('leaves a window that fits alone', () => {
-    const win = { x: 300, y: 200, w: 560, h: 420 };
-    expect(fitRect(win, area)).toEqual(win);
-  });
-
-  it('pulls a window back from every side', () => {
-    expect(fitRect({ x: 0, y: 0, w: 500, h: 400 }, area)).toEqual({
-      x: 100,
-      y: 50,
-      w: 500,
-      h: 400,
-    });
-    expect(fitRect({ x: 1500, y: 800, w: 500, h: 400 }, area)).toEqual({
-      x: 1200,
-      y: 550,
-      w: 500,
-      h: 400,
-    });
-  });
-
-  it('cuts a window larger than the area to the area', () => {
-    expect(fitRect({ x: 0, y: 0, w: 2000, h: 1200 }, area)).toEqual(area);
-  });
-
-  it('changes nothing without an area', () => {
-    const win = { x: -50, y: 9000, w: 500, h: 400 };
-    expect(fitRect(win, { x: 0, y: 0, w: 0, h: 0 })).toEqual(win);
+  it('distrusts a main window that does not hold the float window', () => {
+    const start = { x: 60, y: 60, ...FLOAT };
+    expect(trustedArea({ x: 960, y: 520, w: 960, h: 520 }, start)).toBeNull();
+    const main = { x: 0, y: 0, w: 1920, h: 1040 };
+    expect(trustedArea(main, start)).toEqual(main);
+    expect(trustedArea(main, null)).toEqual(main);
+    expect(trustedArea({ x: 0, y: 0, w: 0, h: 0 }, start)).toBeNull();
   });
 
   it('stops a resize at the area edge and at the minimum', () => {
+    const area = { x: 100, y: 50, w: 1600, h: 900 };
     expect(fitSize({ x: 900, y: 900 }, { x: 1000, y: 500 }, area)).toEqual({
       x: 700,
       y: 450,
@@ -178,19 +157,41 @@ describe('keeping the window inside the main window', () => {
   });
 });
 
-describe('pin by pointer', () => {
-  const area = { x: 0, y: 0, w: 1600, h: 900 };
+describe('docking by dragging', () => {
+  const outer = { x: 0, y: 0, w: 1936, h: 1047 };
+  const client = clientRect(outer, { x: 1920, y: 1008 });
+  const column = columnRect(client, { x: 480, y: 1008 });
 
-  it('pins in the right strip by the vertical half', () => {
-    expect(pointerSnap({ x: 1550, y: 100 }, area)).toBe('top');
-    expect(pointerSnap({ x: 1550, y: 700 }, area)).toBe('bottom');
+  it('finds the client area inside the frame', () => {
+    expect(client).toEqual({ x: 8, y: 31, w: 1920, h: 1008 });
   });
 
-  it('does not pin elsewhere', () => {
-    expect(pointerSnap({ x: 800, y: 100 }, area)).toBeNull();
-    expect(pointerSnap({ x: 1550, y: -5 }, area)).toBeNull();
-    expect(
-      pointerSnap({ x: 1550, y: 100 }, { x: 0, y: 0, w: 0, h: 0 }),
-    ).toBeNull();
+  it('puts the column against the right edge of the client area', () => {
+    expect(column).toEqual({ x: 1448, y: 31, w: 480, h: 1008 });
+  });
+
+  it('docks by the half of the column the pointer is over', () => {
+    expect(dockTarget({ x: 1700, y: 200 }, column)).toBe('top');
+    expect(dockTarget({ x: 1700, y: 800 }, column)).toBe('bottom');
+  });
+
+  it('does not dock outside the column or without one', () => {
+    expect(dockTarget({ x: 900, y: 200 }, column)).toBeNull();
+    expect(dockTarget({ x: 1700, y: 5 }, column)).toBeNull();
+    expect(dockTarget({ x: 1700, y: 200 }, null)).toBeNull();
+  });
+
+  it('pops a docked chat out after a small drag only', () => {
+    expect(poppedOut({ x: 100, y: 100 }, { x: 104, y: 103 })).toBe(false);
+    expect(poppedOut({ x: 100, y: 100 }, { x: 80, y: 100 })).toBe(true);
+  });
+
+  it('puts the popped window under the pointer', () => {
+    expect(windowUnderPointer({ x: 1700, y: 300 }, { x: 560, y: 420 })).toEqual(
+      {
+        x: 1420,
+        y: 284,
+      },
+    );
   });
 });

@@ -1,14 +1,17 @@
 import {
   type ChatMode,
+  clientRect,
+  columnRect,
+  dockTarget,
   dragPosition,
-  fitRect,
   fitSize,
+  looseFit,
   type Point,
-  pointerSnap,
+  poppedOut,
   type Rect,
   resizeSize,
   shareFromHeights,
-  snapTarget,
+  trustedArea,
 } from './model';
 
 /** The skin's float window and the right-hand split (SKIN_CHAT_FLOAT_WINDOW, SKIN_RPANE_SPLIT). */
@@ -33,19 +36,47 @@ async function floatGeometry(): Promise<{ pos: Point; size: Point } | null> {
   }
 }
 
+type Bounds = { outer: Rect; client: Rect };
+
 /**
- * The main window's place and outer size in screen pixels: the area the float
- * window must stay inside, and what a pin snaps to.
+ * The main window's outer rect and client area in screen pixels: what a drag
+ * is kept near, and where the right-hand column is.
  */
-export async function mainArea(): Promise<Rect | null> {
+export async function mainBounds(): Promise<Bounds | null> {
   try {
     const got = await Byond.winget('mainwindow', ['pos', 'outer-size', 'size']);
-    const size = isPoint(got?.['outer-size']) ? got['outer-size'] : got?.size;
-    if (!isPoint(got?.pos) || !isPoint(size) || size.x <= 0 || size.y <= 0) {
+    const client = isPoint(got?.size) ? got.size : null;
+    const outerSize = isPoint(got?.['outer-size']) ? got['outer-size'] : client;
+    if (!isPoint(got?.pos) || !outerSize || !client || outerSize.x <= 0) {
       console.log('chat layout: main window bounds unknown', got);
       return null;
     }
-    return { x: got.pos.x, y: got.pos.y, w: size.x, h: size.y };
+    const outer = {
+      x: got.pos.x,
+      y: got.pos.y,
+      w: outerSize.x,
+      h: outerSize.y,
+    };
+    const bounds = { outer, client: clientRect(outer, client) };
+    console.log('chat layout: main window', {
+      got,
+      ratio: pixelRatio(),
+      ...bounds,
+    });
+    return bounds;
+  } catch {
+    return null;
+  }
+}
+
+/** The right-hand column (stat panel and chat) in screen pixels, or null when it cannot be told. */
+async function measureColumn(main: Bounds | null): Promise<Rect | null> {
+  if (!main) {
+    return null;
+  }
+  try {
+    const column = await Byond.winget(COLUMN_SPLIT, 'size');
+    return isPoint(column) ? columnRect(main.client, column) : null;
   } catch {
     return null;
   }
@@ -65,17 +96,18 @@ export async function measureShare(): Promise<number | null> {
 }
 
 type DragHandlers = {
-  /** A pin the drop would make, while dragging (null when none). */
+  /** The pin a drop would make right now, while dragging (null when none). */
   onHint?: (hint: 'top' | 'bottom' | null) => void;
-  /** The drop landed near the right edge: pin there. */
+  /** The drop landed over the right-hand column: dock there. */
   onPin: (mode: ChatMode) => void;
 };
 
 /**
  * Drags the float window with the mouse, with no OS title bar: the pointer is
- * captured by the strip, the window position follows the mouse deltas in
- * physical pixels (winset pos), and a drop near the main window's right edge
- * pins the chat to the top or the bottom of the column.
+ * captured by the strip and the window position follows the mouse deltas in
+ * physical pixels (winset pos). Dropping with the pointer over the main
+ * window's right-hand column docks the chat there, the upper half to the top
+ * and the lower half to the bottom; the hint shows that target while dragging.
  */
 export function startWindowDrag(
   event: React.PointerEvent<HTMLElement>,
@@ -91,38 +123,42 @@ export function startWindowDrag(
   const ratio = pixelRatio();
   let start: { pos: Point; size: Point } | null = null;
   let area: Rect | null = null;
+  let column: Rect | null = null;
   let latest: Point = startMouse;
   let frame = 0;
   let last: Point | null = null;
+  let hint: 'top' | 'bottom' | null = null;
 
-  /** The window rect for the latest mouse place, held inside the main window. */
   const placedRect = (): Rect | null => {
     if (!start) {
       return null;
     }
     const pos = dragPosition(start.pos, startMouse, latest, ratio);
-    const rect = { x: pos.x, y: pos.y, w: start.size.x, h: start.size.y };
-    return area ? fitRect(rect, area) : rect;
+    return looseFit(
+      { x: pos.x, y: pos.y, w: start.size.x, h: start.size.y },
+      area,
+    );
   };
 
-  /** The pin the latest mouse place asks for: the pointer in the right strip, or the window against the right edge. */
-  const pinFor = (rect: Rect): 'top' | 'bottom' | null => {
-    if (!area) {
-      return null;
-    }
-    const pointer = { x: latest.x * ratio, y: latest.y * ratio };
-    return pointerSnap(pointer, area) ?? snapTarget(rect, area);
-  };
+  const pinFor = (): 'top' | 'bottom' | null =>
+    dockTarget({ x: latest.x * ratio, y: latest.y * ratio }, column);
 
   const flush = () => {
     frame = 0;
     const rect = placedRect();
-    if (!rect || (last && last.x === rect.x && last.y === rect.y)) {
+    if (!rect) {
+      return;
+    }
+    const next = pinFor();
+    if (next !== hint) {
+      hint = next;
+      handlers.onHint?.(next);
+    }
+    if (last && last.x === rect.x && last.y === rect.y) {
       return;
     }
     last = { x: rect.x, y: rect.y };
     Byond.winset(FLOAT_WINDOW, 'pos', `${rect.x},${rect.y}`);
-    handlers.onHint?.(pinFor(rect));
   };
 
   const move = (e: PointerEvent) => {
@@ -144,9 +180,17 @@ export function startWindowDrag(
     }
     flush();
     handlers.onHint?.(null);
-    const rect = placedRect();
-    const pin = rect ? pinFor(rect) : null;
-    console.log('chat layout: drag ended', { rect, area, pin });
+    const pin = pinFor();
+    console.log('chat layout: drag ended', {
+      ratio,
+      startMouse,
+      latest,
+      start,
+      rect: placedRect(),
+      area,
+      column,
+      pin,
+    });
     if (pin) {
       handlers.onPin(pin);
     }
@@ -155,13 +199,77 @@ export function startWindowDrag(
   target.addEventListener('pointermove', move);
   target.addEventListener('pointerup', end);
   target.addEventListener('pointercancel', end);
-  Promise.all([floatGeometry(), mainArea()]).then(([geometry, main]) => {
-    start = geometry;
-    area = main;
-    if (frame === 0) {
-      frame = requestAnimationFrame(flush);
+  Promise.all([floatGeometry(), mainBounds()]).then(
+    async ([geometry, main]) => {
+      start = geometry;
+      const startRect = geometry
+        ? {
+            x: geometry.pos.x,
+            y: geometry.pos.y,
+            w: geometry.size.x,
+            h: geometry.size.y,
+          }
+        : null;
+      area = trustedArea(main?.outer ?? null, startRect);
+      if (main && !area) {
+        console.log(
+          'chat layout: main window does not hold the float window; the drag is not limited by it',
+          { outer: main.outer, startRect },
+        );
+      }
+      column = await measureColumn(main);
+      console.log('chat layout: drag started', {
+        ratio,
+        startMouse,
+        start,
+        area,
+        column,
+      });
+      if (frame === 0) {
+        frame = requestAnimationFrame(flush);
+      }
+    },
+  );
+}
+
+/**
+ * Drags a docked chat by its tab row: past a small distance the chat pops out
+ * into a float window under the pointer (onPopOut gets the pointer in physical
+ * screen pixels). A plain click does nothing.
+ */
+export function startDockedDrag(
+  event: React.PointerEvent<HTMLElement>,
+  onPopOut: (pointer: Point) => void,
+): void {
+  if (event.button !== 0) {
+    return;
+  }
+  const target = event.currentTarget;
+  const pointer = event.pointerId;
+  target.setPointerCapture(pointer);
+  const ratio = pixelRatio();
+  const startMouse: Point = { x: event.screenX, y: event.screenY };
+  const stop = () => {
+    target.removeEventListener('pointermove', move);
+    target.removeEventListener('pointerup', stop);
+    target.removeEventListener('pointercancel', stop);
+    if (target.hasPointerCapture(pointer)) {
+      target.releasePointerCapture(pointer);
     }
-  });
+  };
+  const move = (e: PointerEvent) => {
+    const now = { x: e.screenX, y: e.screenY };
+    if (!poppedOut(startMouse, now)) {
+      return;
+    }
+    stop();
+    const at = { x: Math.round(now.x * ratio), y: Math.round(now.y * ratio) };
+    console.log('chat layout: popping out', { ratio, startMouse, now, at });
+    onPopOut(at);
+  };
+  target.addEventListener('pointermove', move);
+  target.addEventListener('pointerup', stop);
+  target.addEventListener('pointercancel', stop);
 }
 
 /** Resizes the float window from its grip, with the same pointer capture. */
@@ -215,10 +323,10 @@ export function startWindowResize(
   target.addEventListener('pointermove', move);
   target.addEventListener('pointerup', end);
   target.addEventListener('pointercancel', end);
-  Promise.all([floatGeometry(), mainArea()]).then(([geometry, main]) => {
+  Promise.all([floatGeometry(), mainBounds()]).then(([geometry, main]) => {
     startSize = geometry?.size ?? null;
     startPos = geometry?.pos ?? null;
-    area = main;
+    area = main?.outer ?? null;
     if (!frame) {
       frame = requestAnimationFrame(flush);
     }

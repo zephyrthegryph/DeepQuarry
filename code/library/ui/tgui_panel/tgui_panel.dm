@@ -112,7 +112,7 @@ CAPABILITIES(/datum/tgui_panel)
 		return client()?.tgui_say?.on_message(type, payload, href_list)
 	// The chat page pins, floats or resizes the chat pane.
 	if(type == "layout/pin")
-		client()?.chat_pin(payload?["mode"], payload?["via"])
+		client()?.chat_pin(payload?["mode"], payload?["via"], islist(payload?["at"]) ? payload["at"] : null)
 		return TRUE
 	if(type == "layout/share")
 		client()?.chat_report_share(payload?["share"])

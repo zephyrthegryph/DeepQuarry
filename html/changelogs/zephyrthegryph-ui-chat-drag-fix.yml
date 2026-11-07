@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The floating chat window can be dragged above and left of the main window's middle again"
+  - qol: "Chat docking is by dragging only: drop the floating chat over the right-hand column to dock it top or bottom, drag the docked chat's tab row to pop it out"

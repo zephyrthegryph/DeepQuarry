@@ -76,3 +76,14 @@
 	TEST_ASSERT_EQUAL(json_encode(chat_float_pair("560x420", "x")), json_encode(list(560, 420)), "a size")
 	TEST_ASSERT_NULL(chat_float_pair("junk", "x"), "junk is nothing")
 	TEST_ASSERT_NULL(chat_float_pair(null, ","), "null is nothing")
+
+/datum/unit_test/dq_chat_float_under_pointer
+/datum/unit_test/dq_chat_float_under_pointer/Run()
+	TEST_ASSERT_EQUAL(json_encode(chat_float_under_pointer(1700, 300, 560)), json_encode(list(1420, 284)), "the pointer lands on the middle of the top strip")
+
+/datum/unit_test/dq_chat_float_fit_top_left_reachable
+/datum/unit_test/dq_chat_float_fit_top_left_reachable/Run()
+	// A main window at 0,0 and one at 100,50, both 1920x1040: a window pulled in from past the top left corner sits in the corner, not the middle.
+	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(-400, -300, 560, 420, 0, 0, 1920, 1040)), json_encode(list(0, 0, 560, 420)), "corner at 0,0")
+	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(40, 20, 560, 420, 100, 50, 1920, 1040)), json_encode(list(100, 50, 560, 420)), "corner at 100,50")
+	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(110, 60, 560, 420, 100, 50, 1920, 1040)), json_encode(list(110, 60, 560, 420)), "near the corner is left alone")
