@@ -3415,7 +3415,24 @@ exactly, including a Unicode comment. Existing source/body ownership,
 heap census and three public combined/compound transport controls passed
 in the same focused verification cohort.
 
-Warm authored-anchor sharing does not qualify a cold compound handoff.
-Strict compilation and Original still perform separate common frontend
-work. Whole-checkout completion, complete policy/Checker coverage,
+Cold compound sharing still needs a funded handoff between Strict and
+Original. The two modes still perform separate common frontend work. Whole-checkout completion, complete policy/Checker coverage,
 production cutover and the performance targets remain open.
+
+
+The Ordinary reference-policy roster stages `untyped_member`,
+`weak_raw_read` and `rel_write_undeclared` from one selected preparation.
+Their actual native producers keep the Hard messages and share the existing
+ALLOW audit. The focused control verified uncompiled declarations, each
+policy's distinct declaration and body exemptions, ordered findings, and
+used versus unused annotations. Its three source/configuration states
+matched the complete independent legacy Analyze report byte for byte.
+Twenty of the 106 names in the recorded exact registry now have selected
+report routes across the admitted rosters. The reference roster's qualified
+entry is Ordinary Analyze.
+
+The cold callable audit found the same engine payload already owns the
+shared callable store across modes. Publication from Original would need
+budgeted ownership for the resident index, keys, receipts and value backing
+through later Strict claims and detached aliases. The current logical store
+weight and transient warm lookup reservation cover different lifetimes.

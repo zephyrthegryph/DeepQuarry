@@ -30,7 +30,7 @@ impl SelectedReportPlan {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
             Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
-            Q::SELECTED_LIFEFORMS_PLAYER_LINK,
+            Q::SELECTED_LIFEFORMS_PLAYER_LINK, Q::SELECTED_REFERENCE_POLICIES,
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
         let mut count = 0;
@@ -251,12 +251,15 @@ impl ReportStage<'_> {
                 post_judge = data.post_judge_message();
             }
             UnionRows::MessageOnlyHard(question, sites, allows) => {
-                let (roster, expected) = match question {
-                    Q::Lifeforms => (Roster::WithLifeforms, dq_analyze::lifeforms_policy::metadata()),
-                    Q::PlayerLink => (Roster::WithPlayerLink, dq_analyze::player_link_policy::metadata()),
+                let (rosters, expected): (&[Roster], _) = match question {
+                    Q::Lifeforms => (&[Roster::WithLifeforms, Roster::WithLifeformsAndPlayerLink], dq_analyze::lifeforms_policy::metadata()),
+                    Q::PlayerLink => (&[Roster::WithPlayerLink, Roster::WithLifeformsAndPlayerLink], dq_analyze::player_link_policy::metadata()),
+                    Q::UntypedMember => (&[Roster::WithReferencePolicies], dq_analyze::untyped_member_policy::metadata()),
+                    Q::WeakRawRead => (&[Roster::WithReferencePolicies], dq_analyze::weak_relation_policy::metadata()),
+                    Q::RelWriteUndeclared => (&[Roster::WithReferencePolicies], dq_analyze::rel_write_policy::metadata()),
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued message-only selected report role")),
                 };
-                if (self.selected != roster.names() && self.selected != Roster::WithLifeformsAndPlayerLink.names())
+                if !rosters.iter().any(|roster| self.selected == roster.names())
                     || !std::ptr::eq(meta, expected)
                     || !matches!(meta.policy, Policy::Hard) || !meta.allow.is_empty()
                     || !allows.is_empty() {
@@ -461,6 +464,7 @@ mod selected_plan_tests {
             (Roster::WithLifeforms, &[Q::Lifeforms]),
             (Roster::WithPlayerLink, &[Q::PlayerLink]),
             (Roster::WithLifeformsAndPlayerLink, Q::SELECTED_LIFEFORMS_PLAYER_LINK),
+            (Roster::WithReferencePolicies, Q::SELECTED_REFERENCE_POLICIES),
         ];
         for (roster, questions) in expected {
             let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))

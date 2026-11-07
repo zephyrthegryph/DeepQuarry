@@ -407,3 +407,7 @@ required-features = ["unified-oracle"]
 [[example]]
 name = "unified_selected_engine_internal_original"
 required-features = ["unified-oracle"]
+
+[[example]]
+name = "unified_selected_reference_original"
+required-features = ["unified-oracle"]

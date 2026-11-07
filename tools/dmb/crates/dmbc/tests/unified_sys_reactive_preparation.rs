@@ -265,3 +265,136 @@ fn policy_or_source_changed(a:&Pins,b:&Pins){assert!(a.source!=b.source||a.polic
 #[test]fn actual_public_sys_role_prepares_real_model_and_refuses_missing_analysis_context(){let root=fixture("public-sys-original-model");let request=request(&root);let mut host=BuildHost::default();let first=prepare(&mut host,&request);assert_eq!(prepare(&mut host,&request),first);let mut missing=request.clone();missing.policy_inputs.as_mut().unwrap().analysis_context=None;assert!(dmbc::request_runner::run_build_with_host(missing,&mut host).is_err(),"semantic role cannot become a context-free raw-only grant");prepare(&mut host,&request);}
 #[test]fn actual_public_sys_uncompiled_auto_and_config_observations_reissue_same_host(){let root=fixture("public-sys-full-source-revisions");let request=request(&root);let mut host=BuildHost::default();let first=prepare(&mut host,&request);put(&root,"code/uncompiled.dm","/datum/uncompiled_raw\n");let added=prepare(&mut host,&request);policy_or_source_changed(&first,&added);put(&root,"code/engine/_generated/auto_tracked.dm","// actual AUTO exists without explicit TRACKED entries\n");let auto=prepare(&mut host,&request);policy_or_source_changed(&added,&auto);std::fs::remove_file(root.join("code/engine/_generated/auto_tracked.dm")).unwrap();let removed=prepare(&mut host,&request);policy_or_source_changed(&auto,&removed);put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay("[lint.\"sys/dx_reactive\"]\nexempt_files=[\"code/probe.dm\"]\n"));let configured=prepare(&mut host,&request);assert_ne!(configured.policy,removed.policy);}
 #[test]fn actual_public_sys_required_manifest_io_refuses_then_fresh_valid_input_recovers(){let root=fixture("public-sys-required-model-failure");let request=request(&root);let mut host=BuildHost::default();prepare(&mut host,&request);std::fs::remove_file(&request.project).unwrap();std::fs::create_dir(&request.project).unwrap();assert!(dmbc::request_runner::run_build_with_host(request.clone(),&mut host).is_err(),"actual required model acquisition IO cannot be treated as an authenticated absent model or clean raw result");std::fs::remove_dir(&request.project).unwrap();put(&root,"deepquarry.dme","#include \"code/probe.dm\"\n");prepare(&mut host,&request);}
+
+#[test]
+fn selected_reference_policies_keep_each_raw_scope_and_one_allow_join() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::Roster,
+    };
+    let root = fixture("public-selected-reference-policies");
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", concat!(
+        "/datum/static_holder\n    var/static/danger\n",
+        "/datum/static_holder/proc/read(U)\n    U.danger\n",
+        "/datum/weak_holder\n    var/datum/target\n",
+        "/datum/weak_holder/proc/read(datum/weak_holder/H)\n    H.target\n",
+        "/datum/relation_holder\n    var/datum/known\n    var/datum/missing\n",
+        "/datum/relation_holder/proc/write(datum/relation_holder/H)\n",
+        "    rel_clear(H, nameof(known))\n    rel_clear(H, nameof(missing))\n",
+    ));
+    // These actual CODE declarations are deliberately outside the DME. Both
+    // policies must consume their existing raw phases on the same capture.
+    put(&root, "code/weak_declarations.dm", concat!(
+        "CAPABILITIES(/datum/weak_holder)\n",
+        "    ref_one(nameof(target), weak = TRUE)\n",
+    ));
+    put(&root, "code/relation_declarations.dm", concat!(
+        "CAPABILITIES(/datum/relation_holder)\n",
+        "    ref_one(nameof(known))\n",
+    ));
+    put(&root, "code/scheduler_usage.dm", concat!(
+        "/proc/scheduled_probe()\n",
+        "    sleep(1) // ALLOW(scheduler): this report uses an actual scheduler annotation\n",
+    ));
+    put(&root, "maps/unused.dm", concat!(
+        "/proc/stale()\n",
+        "    return // ALLOW(scheduler): this fixture observes an unused annotation\n",
+    ));
+    let mut selected = request(&root);
+    selected.cache_root = Some(scratch::dir("public-selected-reference-cache"));
+    selected.policy_inputs.as_mut().unwrap().workspace_auxiliary.clear();
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithReferencePolicies;
+    assert_eq!(roster.names().len(), Roster::MAX_POLICIES);
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let mut run = || {
+        let mut output = Vec::new();
+        let clean = host.write_original_exclusions_report(
+            selected.clone(), &exclusions, &mut Vec::new(), &mut output,
+        ).unwrap();
+        if let Some(oracle) = std::env::var_os("DQ_SELECTED_REFERENCE_ORACLE") {
+            use std::{fs::File, process::{Command, Stdio}, time::{Duration, Instant}};
+            let oracle = PathBuf::from(oracle);
+            assert!(oracle.is_absolute());
+            let native = root.join("selected-reference-verified.txt");
+            std::fs::write(&native, &output).unwrap();
+            let stderr = root.join("selected-reference-oracle.stderr");
+            let mut command = Command::new(oracle);
+            command.arg(&root).arg(&native).stdin(Stdio::null()).stdout(Stdio::null())
+                .stderr(File::create(&stderr).unwrap());
+            #[cfg(windows)] {
+                use std::os::windows::process::CommandExt;
+                command.creation_flags(0x08000000 | 0x00004000);
+            }
+            let mut child = command.spawn().expect("run independent legacy reference oracle");
+            let started = Instant::now();
+            let status = loop {
+                if let Some(status) = child.try_wait().unwrap() { break status; }
+                if started.elapsed() > Duration::from_secs(45) {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    panic!("owned legacy reference oracle exceeded its watchdog");
+                }
+                std::thread::sleep(Duration::from_millis(20));
+            };
+            assert!(status.success(), "{}", std::fs::read_to_string(stderr).unwrap());
+        }
+        (clean, String::from_utf8(output).unwrap())
+    };
+    let check_allow = |report: &str| {
+        assert!(!report.contains("code/scheduler_usage.dm:"), "{report}");
+        assert!(report.contains("maps/unused.dm:2: ALLOW(scheduler) is unused"), "{report}");
+        assert!(report.contains("allow annotations: 1 unused"), "{report}");
+    };
+    let (clean, initial) = run();
+    assert!(!clean);
+    let relation = initial.find("[rel_write_undeclared/undeclared]").expect(&initial);
+    let member = initial.find("[untyped_member/static_member]").expect(&initial);
+    let weak = initial.find("[weak_raw_read/raw]").expect(&initial);
+    assert!(relation < member && member < weak, "{initial}");
+    assert_eq!(initial.matches("[rel_write_undeclared/undeclared]").count(), 1, "{initial}");
+    assert_eq!(initial.matches("[untyped_member/static_member]").count(), 1, "{initial}");
+    assert_eq!(initial.matches("[weak_raw_read/raw]").count(), 1, "{initial}");
+    assert!(initial.contains("is declared static"), "{initial}");
+    assert!(initial.contains("of /datum/weak_holder"), "{initial}");
+    check_allow(&initial);
+
+    // Weak's declaration roster is scope-filtered. Relation's declaration
+    // index remains complete when only its declaration path is exempt.
+    let configuration = "tools/ci/lint_scopes.toml";
+    put(&root, configuration, report_configuration::with_overlay(concat!(
+        "[lint.weak_raw_read]\nexempt_files=[\"code/weak_declarations.dm\"]\n",
+        "[lint.rel_write_undeclared]\nexempt_files=[\"code/relation_declarations.dm\"]\n",
+    )));
+    let (_, scopes) = run();
+    assert!(!scopes.contains("[weak_raw_read/"), "{scopes}");
+    assert_eq!(scopes.matches("[rel_write_undeclared/undeclared]").count(), 1, "{scopes}");
+    assert_eq!(scopes.matches("[untyped_member/static_member]").count(), 1, "{scopes}");
+    check_allow(&scopes);
+
+    put(&root, configuration, report_configuration::with_overlay(concat!(
+        "[lint.untyped_member]\nexempt_files=[\"code/probe.dm\"]\n",
+        "[lint.rel_write_undeclared]\nexempt_files=[\"code/probe.dm\"]\n",
+    )));
+    let (_, bodies) = run();
+    assert!(!bodies.contains("[untyped_member/") && !bodies.contains("[rel_write_undeclared/"), "{bodies}");
+    assert_eq!(bodies.matches("[weak_raw_read/raw]").count(), 1, "{bodies}");
+    check_allow(&bodies);
+    assert!(!root.join("deepquarry.dmb").exists());
+    assert!(!root.join("deepquarry.rsc").exists());
+
+    let mut diagnostics = Vec::new();
+    let mut checker = Vec::new();
+    let mut analyze = Vec::new();
+    assert!(host.write_combined_selected_original_reports(
+        selected, &exclusions, &mut diagnostics, &mut checker, &mut analyze,
+    ).is_err());
+    assert!(diagnostics.is_empty() && checker.is_empty() && analyze.is_empty());
+}
