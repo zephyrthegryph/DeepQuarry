@@ -199,7 +199,7 @@
 ///Gets late-load preferences for the shadekin datum. Used when it is applied post-spawn (manual add).
 /datum/shadekin/proc/lateload_pref_data()
 	if(owner.client)
-		set_flicker_color(("#E0EFF0"))
+		set_flicker_color("#E0EFF0")
 		set_flicker_time(10)
 		set_flicker_break_chance(0)
 		set_flicker_distance(4)

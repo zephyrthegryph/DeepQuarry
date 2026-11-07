@@ -598,7 +598,7 @@
 		identity().ooc_notes_favs = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_favs))
 		identity().ooc_notes_maybes = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_maybes))
 		identity().ooc_notes_style = num_or_null(read_preference(/datum/preference/toggle/living/ooc_notes_style))
-		STATE_SET(src, living_misc, custom_link, text_or_null((null))) // migrated pref
+		STATE_SET(src, living_misc, custom_link, text_or_null(null)) // migrated pref
 
 ///Essentially, a Activate Held Object mode for borgs that acts just like pressing Z in hotkey mode but also works well with multibelts.
 /mob/living/silicon/robot/proc/alt_mode()

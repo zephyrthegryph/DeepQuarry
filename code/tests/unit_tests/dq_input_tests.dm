@@ -509,10 +509,9 @@ GLOBAL_LIST_INIT(dq_builtin_client_commands, list(".northeast", ".northwest", ".
 		+ typesof(/mob/living/verb) + typesof(/mob/living/proc) \
 		+ typesof(/mob/living/carbon/brain/verb) + typesof(/mob/living/carbon/brain/caught_soul/verb) \
 		+ typesof(/mob/living/carbon/human/verb) + typesof(/mob/living/carbon/human/proc) \
-		+ typesof(/mob/living/silicon/verb) + typesof(/mob/living/silicon/robot/verb) \
+		+ typesof(/mob/living/silicon/proc) + typesof(/mob/living/silicon/robot/verb) \
 		+ typesof(/mob/living/silicon/ai/verb) + typesof(/mob/living/silicon/ai/proc) \
-		+ typesof(/mob/living/simple_mob/verb) + typesof(/mob/living/simple_mob/proc) \
-		+ typesof(/mob/living/simple_mob/animal/verb) \
+		+ typesof(/mob/living/simple_mob/proc) \
 		+ typesof(/mob/observer/dead/verb)
 
 /// Every verb name a command can reach, normalized the way BYOND matches a typed command (lowercase, spaces as hyphens), and the admin verbs.

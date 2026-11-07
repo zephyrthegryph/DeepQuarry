@@ -242,7 +242,6 @@
 	. = ..()
 
 /datum/shadekin/proc/ui_act_adjust_time(datum/act/op/A, val)
-	var/mob/user = A.actor
 	var/new_time = val
 	new_time = CLAMP(new_time, 2, 20)
 	if(!isnum(new_time))
@@ -254,14 +253,12 @@
 	return flicker_color
 
 /datum/shadekin/proc/ui_act_adjust_color(datum/act/op/A)
-	var/mob/user = A.actor
 	var/picked = A.step_value("color")
 	if(picked)
 		set_flicker_color(picked)
 	return TRUE
 
 /datum/shadekin/proc/ui_act_adjust_break(datum/act/op/A, val)
-	var/mob/user = A.actor
 	var/new_break_chance = val
 	new_break_chance = CLAMP(new_break_chance, 0, 25)
 	if(!isnum(new_break_chance))
@@ -270,7 +267,6 @@
 	return TRUE
 
 /datum/shadekin/proc/ui_act_adjust_distance(datum/act/op/A, val)
-	var/mob/user = A.actor
 	var/new_distance = val
 	new_distance = CLAMP(new_distance, 4, 10)
 	if(!isnum(new_distance))

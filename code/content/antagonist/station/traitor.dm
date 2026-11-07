@@ -114,7 +114,7 @@ CAPABILITIES(/datum/antagonist/traitor)
 	var/loc = ""
 	var/obj/item/R = locate() //Hide the uplink in a PDA if available, otherwise radio
 
-	var/uplinklocation = ("PDA")
+	var/uplinklocation = "PDA"
 
 	if(uplinklocation == "Headset")
 		R = locate_within(traitor_mob, /obj/item/radio)

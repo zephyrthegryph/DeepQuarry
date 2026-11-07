@@ -103,7 +103,7 @@ CAPABILITIES(/datum/job)
 
 	var/income = 1
 	if(H.client)
-		switch(("Average"))
+		switch("Average")
 			if(CLASS_UPPER)		income = 1.30
 			if(CLASS_UPMID)		income = 1.15
 			if(CLASS_MIDDLE)	income = 1
