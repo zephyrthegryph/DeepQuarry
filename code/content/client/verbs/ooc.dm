@@ -1,7 +1,7 @@
 
 /client/verb/ooc(msg as text)
 	set name = "OOC"
-	set category = VERB_CAT_OOC_CHAT
+	set hidden = TRUE // the chat input (OOC channel) and its key
 
 
 	if(!mob)	return
@@ -82,7 +82,7 @@
 /client/verb/looc(msg as text)
 	set name = "LOOC"
 	set desc = "Local OOC, seen only by those in view."
-	set category = VERB_CAT_OOC_CHAT
+	set hidden = TRUE // the chat input (LOOC channel)
 
 	if(!mob)
 		return
@@ -292,8 +292,6 @@
 
 /// Attempt to automatically fit the viewport, assuming the user wants it
 /client/proc/attempt_auto_fit_viewport()
-	if(!prefs.read_preference(/datum/preference/toggle/auto_fit_viewport))
-		return
 	if(prefs.read_preference(/datum/preference/numeric/map_split))
 		return // the player dragged the map/column splitter: their width stands until Fit Viewport is asked for
 	if(fully_created)

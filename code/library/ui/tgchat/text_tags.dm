@@ -11,7 +11,7 @@ DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 25
 	return chatassets.icon_tag(tagname)
 
 /proc/create_text_tag(tagname, tagdesc = tagname, client/C = null)
-	if(!(C && C.prefs?.read_preference(/datum/preference/toggle/chat_tags)))
+	if(!(C))
 		return tagdesc
 	if(!C.tgui_panel.is_ready() || C.tgui_panel.oldchat)
 		return "<IMG src='[REF(GLOB.text_tag_icons)]' class='text_tag' iconstate='[tagname]'" + (tagdesc ? " alt='[tagdesc]'" : "") + ">"

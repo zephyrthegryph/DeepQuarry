@@ -107,18 +107,6 @@
 /datum/preference/numeric/human/weight_vr/pref_deserialize(input, datum/preferences/preferences)
 	return isnum(input) ? clamp(round(input), WEIGHT_MIN, WEIGHT_MAX) : 137
 
-/datum/preference/numeric/human/weight_gain/sanitize(value, datum/preferences/preferences)
-	return sanitize_integer(value, 0, 100, 100)
-
-/datum/preference/numeric/human/weight_loss/sanitize(value, datum/preferences/preferences)
-	return sanitize_integer(value, 0, 100, 50)
-
-/datum/preference/toggle/human/fuzzy/sanitize(value, datum/preferences/preferences)
-	return sanitize_integer(value, 0, 1, 0)
-
-/datum/preference/toggle/human/offset_override/sanitize(value, datum/preferences/preferences)
-	return sanitize_integer(value, 0, 1, TRUE)
-
 /datum/preference/numeric/human/voice_freq/sanitize(value, datum/preferences/preferences)
 	if(value == 0)
 		return 0
@@ -128,17 +116,6 @@
 	if(isnull(value) || value < RESIZE_TINY || value > RESIZE_HUGE)
 		return RESIZE_NORMAL
 	return value
-
-/datum/preference/text/human/custom_speech_bubble/sanitize(value, datum/preferences/preferences)
-	if(!(value in GLOB.selectable_speech_bubbles))
-		return "default"
-	return value
-
-/datum/preference/text/human/custom_footstep/sanitize(value, datum/preferences/preferences)
-	return value || "Default"
-
-/datum/preference/text/human/species_sound/sanitize(value, datum/preferences/preferences)
-	return value || "Unset"
 
 // ----- Trait list type guards -----
 // Structural guards only — the typed_list base's pref_deserialize already does the
@@ -158,9 +135,6 @@
 
 /datum/preference/color/human/blood_color/sanitize(value, datum/preferences/preferences)
 	return sanitize_hexcolor(value, default = "#A10808")
-
-/datum/preference/text/human/blood_reagents/sanitize(value, datum/preferences/preferences)
-	return sanitize_text(value, "default")
 
 // ----- NIF -----
 

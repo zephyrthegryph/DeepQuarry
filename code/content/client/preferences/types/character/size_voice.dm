@@ -36,62 +36,8 @@
 	STATE_SET(target, bodyweight, weight, value)
 
 
-/datum/preference/numeric/human/weight_gain
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "weight_gain"
-	display_label = "Weight Gain Rate"
-	widget = PREF_WIDGET_NUMBER
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	minimum = 0
-	maximum = 1000
-
-/datum/preference/numeric/human/weight_gain/create_default_value()
-	return 100
-
-/datum/preference/numeric/human/weight_gain/apply_to_human(mob/living/carbon/human/target, value)
-	STATE_SET(target, bodyweight, weight_gain, value)
 
 
-/datum/preference/numeric/human/weight_loss
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "weight_loss"
-	display_label = "Weight Loss Rate"
-	widget = PREF_WIDGET_NUMBER
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	minimum = 0
-	maximum = 1000
-
-/datum/preference/numeric/human/weight_loss/create_default_value()
-	return 50
-
-/datum/preference/numeric/human/weight_loss/apply_to_human(mob/living/carbon/human/target, value)
-	STATE_SET(target, bodyweight, weight_loss, value)
-
-
-/datum/preference/toggle/human/fuzzy
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "fuzzy"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_CHARACTER
-	applies_live = TRUE
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/fuzzy/apply_to_human(mob/living/carbon/human/target, value)
-	target.set_fuzzy(value)
-
-
-/datum/preference/toggle/human/offset_override
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "offset_override"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_CHARACTER
-	applies_live = TRUE
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/offset_override/apply_to_human(mob/living/carbon/human/target, value)
-	target.set_offset_override(value)
 
 
 /datum/preference/numeric/human/voice_freq
@@ -134,59 +80,4 @@
 		STATE_SET(target, mob_misc, voice_sounds_list, get_talk_sound(value))
 
 
-/datum/preference/text/human/custom_speech_bubble
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "custom_speech_bubble"
-	savefile_identifier = PREFERENCE_CHARACTER
-	applies_live = TRUE
-	can_randomize = FALSE
-	maximum_value_length = MAX_NAME_LEN
 
-/datum/preference/text/human/custom_speech_bubble/create_default_value()
-	return "default"
-
-/datum/preference/text/human/custom_speech_bubble/get_pref_choices(datum/preferences/preferences)
-	return GLOB.selectable_speech_bubbles
-
-/datum/preference/text/human/custom_speech_bubble/apply_to_human(mob/living/carbon/human/target, value)
-	target.bio.custom_speech_bubble = text_or_null(value)
-	if(target.dna)
-		target.dna.custom_speech_bubble = text_or_null(value)
-
-
-/datum/preference/text/human/custom_footstep
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "custom_footstep"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	maximum_value_length = MAX_NAME_LEN
-
-/datum/preference/text/human/custom_footstep/create_default_value()
-	return "Default"
-
-/datum/preference/text/human/custom_footstep/get_pref_choices(datum/preferences/preferences)
-	// GLOB.selectable_footstep is display-name -> FOOTSTEP_MOB_* constant. Showing display
-	// names in the dropdown and translating on apply.
-	return GLOB.selectable_footstep ? assoc_to_keys(GLOB.selectable_footstep) : null
-
-/datum/preference/text/human/custom_footstep/apply_to_human(mob/living/carbon/human/target, value)
-	target.set_custom_footstep(GLOB.selectable_footstep[value] || FOOTSTEP_MOB_HUMAN)
-
-
-/datum/preference/text/human/species_sound
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "species_sound"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	maximum_value_length = MAX_NAME_LEN
-
-/datum/preference/text/human/species_sound/create_default_value()
-	return "Unset"
-
-/datum/preference/text/human/species_sound/get_pref_choices(datum/preferences/preferences)
-	if(!GLOB.species_sound_map)
-		return null
-	return list("Unset") + assoc_to_keys(GLOB.species_sound_map)
-
-/datum/preference/text/human/species_sound/apply_to_human(mob/living/carbon/human/target, value)
-	return

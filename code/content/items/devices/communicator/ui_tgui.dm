@@ -234,14 +234,6 @@ CAPABILITIES(/obj/item/communicator)
 				"address" = comm.exonet.address
 			)))
 
-	//Now for ghosts who we pretend have communicators.
-	for(var/mob/observer/dead/O in known_devices)
-		if(O.client && O.client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility) && O.exonet) // migrated pref
-			communicators.Add(list(list(
-				"name" = sanitize("[O.client.prefs.read_preference(/datum/preference/name/real_name)]'s communicator"),
-				"address" = O.exonet.address,
-				"ref" = handle_of(O)
-			)))
 
 	//Lists all the other communicators that we invited.
 	for(var/obj/item/communicator/comm in voice_invites)

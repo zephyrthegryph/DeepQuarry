@@ -83,7 +83,7 @@ CAPABILITIES(/obj/item/flamethrower/full)
 	if(!lit || !COOLDOWN_FINISHED(src, operating))
 		return
 	if(user && user.get_active_hand() == src)
-		if(stance == I_HELP && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
+		if(stance == I_HELP)
 			to_chat(user, span_warning("You refrain from firing \the [src] as you are out of combat mode."))
 			return
 		if(check_fuel())

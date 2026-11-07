@@ -24,30 +24,7 @@
 
 	// Anti message spam checks
 	// If multiple limbs are injured, cooldown is ignored to print all injuries until all limbs are iterated over
-	if(client?.prefs?.read_preference(/datum/preference/toggle/pain_frequency))
-		switch(power)
-			if(0 to 5)
-				force = 0
-			if(6 to 20)
-				force = prob(1)
-		if(force || (message != body.last_pain_message) || (COOLDOWN_FINISHED(body, next_pain_time)))
-			switch(power)
-				if(0 to 5)
-					COOLDOWN_START(body, next_pain_time, 300 SECONDS)
-					COOLDOWN_START(body, multilimb_pain_time, 1 MINUTE)
-				if(6 to 20)
-					COOLDOWN_START(body, next_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
-					COOLDOWN_START(body, multilimb_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
-				if(21 to INFINITY)
-					COOLDOWN_START(body, next_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
-					COOLDOWN_START(body, multilimb_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
-			body.last_pain_message = message
-			to_chat(src,message)
-			// Emote in pain for custom pain, too
-			if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
-				emote("pain")
-
-	else if(force || (message != body.last_pain_message) || (COOLDOWN_FINISHED(body, next_pain_time)))
+	if(force || (message != body.last_pain_message) || (COOLDOWN_FINISHED(body, next_pain_time)))
 		body.last_pain_message = message
 		to_chat(src,message)
 		COOLDOWN_START(body, next_pain_time, (10 SECONDS - power))

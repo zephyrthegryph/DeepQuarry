@@ -461,6 +461,8 @@ GLOBAL_LIST_EMPTY(##LIST_NAME);\
 #define VOLUME_CHANNEL_INJURY_SOUNDS "Mob Injury Sounds (Non-Verbal Feedback)" //NYI
 #define VOLUME_CHANNEL_MACHINERY "Machinery Noises"
 #define VOLUME_CHANNEL_MACHINERY_IDLE "Machinery Idle Noises"
+/// Speech blips, emote and radio sounds (the old say, bloop, whisper, subtle, emote and radio sound toggles).
+#define VOLUME_CHANNEL_VOICE "Voices and Emotes"
 
 // Make sure you update this or clients won't be able to adjust the channel
 GLOBAL_LIST_INIT(all_volume_channels, list(
@@ -476,7 +478,8 @@ GLOBAL_LIST_INIT(all_volume_channels, list(
 	VOLUME_CHANNEL_DEATH_SOUNDS,
 	VOLUME_CHANNEL_INJURY_SOUNDS,
 	VOLUME_CHANNEL_MACHINERY,
-	VOLUME_CHANNEL_MACHINERY_IDLE
+	VOLUME_CHANNEL_MACHINERY_IDLE,
+	VOLUME_CHANNEL_VOICE
 ))
 
 #define APPEARANCECHANGER_CHANGED_RACE "Race"

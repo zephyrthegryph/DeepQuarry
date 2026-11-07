@@ -280,10 +280,6 @@ CAPABILITIES(/datum/preferences)
 	character.set_species(read_preference(/datum/preference/choiced/species))
 	step_ms["set_species"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
 	// Special Case: This references variables owned by two different datums, so do it here.
-	if(read_preference(/datum/preference/toggle/human/name_is_always_random))
-		// write_ instead of update_ to avoid update_preference_by_type calling copy_to again.
-		write_preference_by_type(/datum/preference/name/real_name, random_name(read_preference(/datum/preference/choiced/gender/identifying), read_preference(/datum/preference/choiced/species)))
-
 	// apply pipeline:
 	//   1. Per-pref apply() walks every PREFERENCE_CHARACTER pref in priority order.
 	//   2. /datum/preference_apply_hook subtypes run after, for cross-pref orchestration that
@@ -414,7 +410,7 @@ CAPABILITIES(/datum/preferences)
 			continue
 		if(preference_type == /datum/preference/flavor_texts && !copy_flavour)
 			continue
-		if((preference_type == /datum/preference/name/real_name || preference_type == /datum/preference/name/nickname) && !copy_name)
+		if(preference_type == /datum/preference/name/real_name && !copy_name)
 			continue
 		if(preference_type in GLOB.vanity_ooc_pref_types)
 			if(!copy_ooc_notes)

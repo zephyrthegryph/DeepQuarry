@@ -415,7 +415,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 /mob/verb/abandon_mob()
 	set name = "Return to Menu"
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE // the Menu page
 	if(istype(src, /mob/new_player))
 		to_chat(src, span_boldnotice("You are already in the lobby!"))
 		return
@@ -542,7 +542,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 /mob/verb/observe()
 	set name = "Observe"
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE // the Menu page and the lobby
 	var/is_admin = 0
 
 	if(check_rights_for(client, R_ADMIN|R_EVENT))
@@ -591,7 +591,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 /mob/verb/cancel_camera()
 	set name = "Cancel Camera View"
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE // the Menu page
 	reset_perspective()
 
 
@@ -1266,8 +1266,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 /mob/proc/show_mob_hover_tip(mob/user, params)
 	if(user != src && will_show_tooltip())
-		if(user?.read_preference(/datum/preference/toggle/mob_tooltips))
-			openToolTip(user, src, params, title = get_nametag_name(user), content = get_nametag_desc(user))
+		openToolTip(user, src, params, title = get_nametag_name(user), content = get_nametag_desc(user))
 
 // Manages a global list of mobs with clients attached, indexed by z-level.
 /mob/proc/update_client_z(new_z) // +1 to register, null to unregister.

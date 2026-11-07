@@ -169,12 +169,9 @@
 		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	copy_to(mannequin, TRUE)
 
-	// The two preview toggles. Keep the same
-	// boolean shape so the rest of this proc is untouched.
-	var/_preview_loadout = show_outfit || read_preference(/datum/preference/toggle/human/preview_loadout)
-	var/_preview_job     = show_outfit || read_preference(/datum/preference/toggle/human/preview_job)
-	if(!_preview_loadout && !_preview_job)
-		return
+	// The preview always wears the loadout and the job outfit.
+	var/_preview_loadout = TRUE
+	var/_preview_job = TRUE
 
 	// was 25 lines of department-switch logic duplicated with get_highest_job().
 	// Single call now; the visitor sentinel is the explicit prefer_visitor_role pref. For
@@ -347,7 +344,7 @@
 	mannequin.delete_inventory(TRUE)
 	dress_preview_mob(mannequin, dq_active_category == "loadout")
 	mannequin.update_transform()
-	var/_animations_toggle = read_preference(/datum/preference/toggle/human/animations_toggle)
+	var/_animations_toggle = FALSE
 	mannequin.toggle_tail(setting = _animations_toggle)
 	mannequin.toggle_wing(setting = _animations_toggle)
 	update_character_previews(mannequin, south_only)

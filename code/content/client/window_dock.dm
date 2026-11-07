@@ -177,7 +177,7 @@ CAPABILITIES(/datum/window_dock)
 	var/client/player = user?.client
 	if(!player || !window())
 		return
-	var/framed = !docked && !user.read_preference(/datum/preference/toggle/tgui_fancy)
+	var/framed = !docked && FALSE
 	winset(player, window().id, "titlebar=[framed ? "true" : "false"];can-resize=[framed ? "true" : "false"]")
 
 /datum/tgui/dock_on_open()

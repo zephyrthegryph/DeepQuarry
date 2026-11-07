@@ -186,7 +186,7 @@ CAPABILITIES(/datum/tooltip)
 /proc/openToolTip(mob/user = null, atom/movable/tip_src = null, params = null, title = "", content = "", theme = "")
 	if(!istype(user) || !user.client?.tooltips)
 		return
-	var/ui_style = user.read_preference(/datum/preference/choiced/tooltip_style)
+	var/ui_style = GLOB.all_tooltip_styles[1]
 	if(!theme && ui_style)
 		theme = lowertext(ui_style)
 	if(!theme)

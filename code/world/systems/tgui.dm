@@ -337,7 +337,7 @@ CAPABILITIES(/datum/system/tgui)
 	STAMP(window, prewarm_started_at, CLOCK_WORLD)
 	window.initialize(
 		strict_mode = TRUE,
-		fancy = client.prefs?.read_preference(/datum/preference/toggle/tgui_fancy),
+		fancy = TRUE,
 		assets = list(get_current_asset_generation().shell_assets()),
 	)
 	var/flush_queue = window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/fontawesome))

@@ -516,13 +516,12 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 	for(var/mob/M as anything in vis_mobs)
 		if(isnewplayer(M))
 			continue
-		if(isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
+		if(isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears) || \
 		!L.client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) && !check_rights_for(M.client, R_HOLDER)))
 			M.show_message(undisplayed_message, 2)
 		else
 			M.show_message(message, 2)
-			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-				M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
+			M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
 
 /datum/decl/flooring/fur
 	name = "fur"
@@ -812,8 +811,6 @@ CAPABILITIES(/obj/structure/flora/tree/fur/wall)
 			new F(Turf)
 
 /area/redgate/stardog/flesh_abyss/play_ambience(mob/living/L, initial = TRUE)
-	if(!L.check_sound_preference(/datum/preference/toggle/digestion_noises))
-		return
 	..()
 
 /obj/structure/control_pod	//god someone is going to try to fuck with this, everyone is going to be angry, I'm so sorry
@@ -973,13 +970,12 @@ MSG_DEF_SELF(ship_emote/incapable, "you can't do that right now")
 	for(var/mob/M as anything in vis_mobs)
 		if(isnewplayer(M))
 			continue
-		if(isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
+		if(isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears) || \
 		!L.client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) && !check_rights_for(M.client, R_HOLDER)))
 			M.show_message(undisplayed_message, 2)
 		else
 			M.show_message(message, 2)
-			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-				M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
+			M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
 
 /area/redgate/stardog/eyes
 
@@ -1132,8 +1128,8 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	var/go = FALSE
 	if(isobserver(AM))
 		return
-	playsound(src, teleport_sound, vol = 100, vary = 1, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
-	playsound(target, teleport_sound, vol = 100, vary = 1, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
+	playsound(src, teleport_sound, vol = 100, vary = 1, volume_channel = VOLUME_CHANNEL_VORE)
+	playsound(target, teleport_sound, vol = 100, vary = 1, volume_channel = VOLUME_CHANNEL_VORE)
 	if(isliving(AM))
 		var/mob/living/L = AM
 		if(teleport_message && L.client)
@@ -1170,7 +1166,7 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
 		dog.adjust_nutrition(I.reagents.total_volume)
 		dog.adjust_affinity(25)
-		playsound(src, teleport_sound, vol = 100, vary = 1, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
+		playsound(src, teleport_sound, vol = 100, vary = 1, volume_channel = VOLUME_CHANNEL_VORE)
 		visible_message(span_warning("The dog gobbles up \the [I]!"))
 		if(dog.client)
 			var/mob/thrower = I.throwing?.get_thrower()
@@ -1486,7 +1482,7 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 /obj/structure/auto_flesh_door/proc/Open()
 	isSwitchingStates = 1
 	var/oursound = pick(open_sounds)
-	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
+	playsound(src, oursound, 100, 1 , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-opening",src)
 	after(src, 0.8 SECONDS, PROC_REF(open_finish))
 
@@ -1503,7 +1499,7 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 /obj/structure/auto_flesh_door/proc/Close()
 	isSwitchingStates = 1
 	var/oursound = pick(open_sounds)
-	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
+	playsound(src, oursound, 100, 1 , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-closing",src)
 	after(src, 0.8 SECONDS, PROC_REF(close_finish))
 

@@ -33,18 +33,6 @@
 		return null
 
 	// Client does NOT have tgui_input on: Returns regular input
-	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode))
-		if(encode)
-			if(multiline)
-				return stripped_multiline_input(user, message, title, default, PREVENT_CHARACTER_TRIM_LOSS(max_length))
-			else
-				return tgui_text_name_filter(stripped_input(user, message, title, default, PREVENT_CHARACTER_TRIM_LOSS(max_length)), max_length)
-		else
-			if(multiline)
-				return input(user, message, title, default) as message|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
-			else
-				return tgui_text_name_filter(input(user, message, title, default) as text|null, max_length) // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
-
 	var/datum/tgui_input_text/text_input = new(user, message, title, default, max_length, multiline, encode, timeout, ui_state)
 	text_input.tgui_interact(user)
 	text_input.wait()
@@ -117,12 +105,12 @@ CAPABILITIES(/datum/tgui_input_text)
 
 /datum/tgui_input_text/tgui_static_data(mob/user)
 	var/list/data = list()
-	data["large_buttons"] = user.read_preference(/datum/preference/toggle/tgui_large_buttons)
+	data["large_buttons"] = TRUE
 	data["max_length"] = max_length
 	data["message"] = message
 	data["multiline"] = multiline
 	data["placeholder"] = default // Default is a reserved keyword
-	data["swapped_buttons"] = !user.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
+	data["swapped_buttons"] = TRUE
 	data["title"] = title
 	data["spellcheck"] = user.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
 	return data

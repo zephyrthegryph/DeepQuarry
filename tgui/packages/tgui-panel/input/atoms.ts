@@ -14,5 +14,5 @@ export const radioOptionsAtom = atom<RadioOption[]>([]);
 /** The speaker's language and formatting rules for the live preview (chat/languageRules), sent when the row opens. */
 export const languageRulesAtom = atom<LanguageRules | null>(null);
 
-/** Whether the live preview shows (the TGUI_SAY_PREVIEW setting, sent with the rules). */
+/** Whether the live preview shows (sent with the rules; always on today). */
 export const previewEnabledAtom = atom(true);

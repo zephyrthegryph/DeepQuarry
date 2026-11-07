@@ -192,8 +192,6 @@
 
 		announce_ghost_joinleave(src)
 
-		if(client.prefs.read_preference(/datum/preference/toggle/human/name_is_always_random))
-			client.prefs.update_preference_by_type(/datum/preference/name/real_name, random_name(client.prefs.read_preference(/datum/preference/choiced/gender/identifying)))
 		observer.set_real_name(client.prefs.read_preference(/datum/preference/name/real_name))
 		observer.name = observer.real_name
 

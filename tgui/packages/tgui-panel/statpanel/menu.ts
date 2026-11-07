@@ -17,6 +17,17 @@ export const GAME_ITEMS: MenuItem[] = [
   { label: 'Quit', command: '.quit' },
 ];
 
+/** Round commands that left the verb panel. */
+export const ROUND_ITEMS: MenuItem[] = [
+  { label: 'Who is online', command: 'who' },
+  { label: 'Vote', command: 'vote' },
+  { label: 'Round info', command: 'check-round-info' },
+  { label: 'Observe', command: 'observe' },
+  { label: 'Return to lobby', command: 'return-to-menu' },
+  { label: 'Cancel camera view', command: 'cancel-camera-view' },
+  { label: 'Incorporeal speed', command: 'set-incorporeal-speed' },
+];
+
 export const CHAT_ITEMS: MenuItem[] = [
   { label: 'Float / dock chat', command: 'toggle-floating-chat' },
   { label: 'Reset chat window', command: 'reset-chat-window' },
@@ -68,6 +79,7 @@ export const LINK_ITEMS: MenuItem[] = [
 export function allCommands(): string[] {
   return [
     ...GAME_ITEMS.map((item) => item.command),
+    ...ROUND_ITEMS.map((item) => item.command),
     ...ICON_SIZES.map((size) => iconSizeCommand(size.value)),
     ...ZOOM_MODES.map((mode) => zoomModeCommand(mode.value)),
     ...HELP_ITEMS.map((item) => item.command),

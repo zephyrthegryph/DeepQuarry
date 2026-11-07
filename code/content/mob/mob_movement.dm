@@ -419,7 +419,7 @@
 	var/incorporeal_speed = 0.5
 
 /client/verb/set_incorporeal_speed()
-	set category = VERB_CAT_OOC_GAME_SETTINGS
+	set hidden = TRUE // the Menu page
 	set name = "Set Incorporeal Speed"
 
 	open_request(src, /datum/prompt/number, PROC_REF(incorporeal_speed_entered), answerer = usr, title = "Incorporeal movement speed", question = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max_value = 5, min_value = 0, timeout = 0)

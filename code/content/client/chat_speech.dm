@@ -44,14 +44,14 @@
 			return TRUE
 	return FALSE
 
-/// The data the row's live preview parses with, and whether the preview is on (TGUI_SAY_PREVIEW). Sent when the row opens: the mob,
-/// its languages and its keys change between messages.
+/// The data the row's live preview parses with (the preview is always on). Sent when the row opens: the mob, its languages and its
+/// keys change between messages.
 /client/proc/send_chat_language_rules()
 	if(!mob || !tgui_panel?.is_ready())
 		return
 	tgui_panel.window.send_message("chat/languageRules", list(
 		"rules" = mob.say_language_rules(),
-		"preview" = prefs?.read_preference(/datum/preference/toggle/tgui_say_preview) ? TRUE : FALSE,
+		"preview" = TRUE,
 	))
 
 /// Speaks an entry in its channel.

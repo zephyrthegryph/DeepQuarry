@@ -12,29 +12,3 @@
 // pref (job.dm equip_rank, outfit.dm equip_base) now equips the default unconditionally.
 
 
-/datum/preference/text/human/ringtone
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "ttone"     // matches legacy disk key
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	maximum_value_length = 20
-
-/datum/preference/text/human/ringtone/create_default_value()
-	return "beep"
-
-/datum/preference/text/human/ringtone/get_pref_choices(datum/preferences/preferences)
-	return GLOB.device_ringtones ? assoc_to_keys(GLOB.device_ringtones) : null
-
-/datum/preference/text/human/ringtone/apply_to_human(mob/living/carbon/human/target, value)
-	return // read directly from prefs when PDA is built
-
-
-/datum/preference/toggle/human/communicator_visibility
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "communicator_visibility"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/communicator_visibility/apply_to_human(mob/living/carbon/human/target, value)
-	return

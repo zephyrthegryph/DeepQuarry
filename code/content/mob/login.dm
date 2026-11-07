@@ -83,7 +83,7 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	plane_holder.set_ao(VIS_MOBS, ao_enabled)
 
 	// Status indicators
-	var/status_enabled = client.prefs?.read_preference(/datum/preference/toggle/status_indicators)
+	var/status_enabled = TRUE
 	plane_holder.set_vis(VIS_STATUS, status_enabled)
 
 	// Write this mob's keybinding profile (default or cyborg) into the skin's macro set.

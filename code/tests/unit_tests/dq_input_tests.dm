@@ -493,6 +493,8 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 		/client/verb/wiki, /client/verb/show_active_playtime, /client/verb/requesthelp,
 		/mob/verb/me_verb_subtle_custom, /mob/verb/psay, /mob/verb/pme, /mob/living/verb/player_narrate,
 		/client/verb/toggle_floating_chat, /client/verb/dock_chat, /client/verb/reset_chat_window, /client/verb/toggle_fullscreen, /client/verb/adminhelp,
+		/client/verb/who, /client/verb/vote, /mob/verb/check_round_info, /mob/verb/abandon_mob, /mob/verb/observe, /mob/verb/cancel_camera,
+		/client/verb/set_incorporeal_speed, /client/verb/ooc, /client/verb/looc,
 	)
 	for(var/path in hidden_by_cleanup)
 		TEST_ASSERT(!verb_panel_listed(path), "[path] must not be listed in the verb panel")
@@ -507,10 +509,9 @@ GLOBAL_LIST_INIT(dq_builtin_client_commands, list(".northeast", ".northwest", ".
 		+ typesof(/mob/living/verb) + typesof(/mob/living/proc) \
 		+ typesof(/mob/living/carbon/brain/verb) + typesof(/mob/living/carbon/brain/caught_soul/verb) \
 		+ typesof(/mob/living/carbon/human/verb) + typesof(/mob/living/carbon/human/proc) \
-		+ typesof(/mob/living/silicon/verb) + typesof(/mob/living/silicon/robot/verb) \
+		+ typesof(/mob/living/silicon/proc) + typesof(/mob/living/silicon/robot/verb) \
 		+ typesof(/mob/living/silicon/ai/verb) + typesof(/mob/living/silicon/ai/proc) \
-		+ typesof(/mob/living/simple_mob/verb) + typesof(/mob/living/simple_mob/proc) \
-		+ typesof(/mob/living/simple_mob/animal/verb) \
+		+ typesof(/mob/living/simple_mob/proc) \
 		+ typesof(/mob/observer/dead/verb)
 
 /// Every verb name a command can reach, normalized the way BYOND matches a typed command (lowercase, spaces as hyphens), and the admin verbs.
@@ -595,6 +596,7 @@ GLOBAL_LIST_INIT(dq_builtin_client_commands, list(".northeast", ".northwest", ".
 	TEST_ASSERT(!(ADMIN_CHANNEL in GLOB.chat_input_channels), "the admin channel is not a chat input channel")
 	var/datum/preferences/dq_test_stub/P = new()
 	var/list/save = list("TGUI_SAY" = 1, "TGUI_SAY_LIGHT_MODE" = 0, "tgui_say_height" = 1, "tgui_say_width" = 360, "tgui_say_emotes" = 1, "CHAT_INLINE_INPUT" = 1, "TGUI_SAY_PREVIEW" = 1)
+	save["CHAT_OOC"] = 1
 	P.drop_retired_player_keys(save)
-	TEST_ASSERT_EQUAL(length(save), 1, "an old save's say popup keys are dropped and the preview setting is kept")
-	TEST_ASSERT(save["TGUI_SAY_PREVIEW"] == 1, "the preview setting is kept")
+	TEST_ASSERT_EQUAL(length(save), 1, "an old save's say popup keys are dropped")
+	TEST_ASSERT(save["CHAT_OOC"] == 1, "a live setting is kept")

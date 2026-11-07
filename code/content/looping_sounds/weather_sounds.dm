@@ -1,5 +1,5 @@
 /datum/looping_sound/weather
-	pref_check = /datum/preference/toggle/weather_sounds
+	volume_chan = VOLUME_CHANNEL_WEATHER
 	volume_chan = VOLUME_CHANNEL_WEATHER
 
 // Blanket replace all wind with this, for now, in lieue of a snowstorm-specific wind

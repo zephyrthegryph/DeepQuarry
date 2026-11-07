@@ -35,32 +35,6 @@ TYPE_TABLE(/datum/preference/choiced/human/directory_tag, pref_choices, GLOB.cha
 	return
 
 
-/datum/preference/choiced/human/directory_gendertag
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "directory_gendertag"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-TYPE_TABLE(/datum/preference/choiced/human/directory_gendertag, pref_choices, GLOB.char_directory_gendertags)
-/datum/preference/choiced/human/directory_gendertag/create_default_value()
-	return "Unset"
-
-/datum/preference/choiced/human/directory_gendertag/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
-
-/datum/preference/choiced/human/directory_sexualitytag
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "directory_sexualitytag"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-TYPE_TABLE(/datum/preference/choiced/human/directory_sexualitytag, pref_choices, GLOB.char_directory_sexualitytags)
-/datum/preference/choiced/human/directory_sexualitytag/create_default_value()
-	return "Unset"
-
-/datum/preference/choiced/human/directory_sexualitytag/apply_to_human(mob/living/carbon/human/target, value)
-	return
 
 
 /datum/preference/choiced/human/directory_erptag
@@ -95,21 +69,6 @@ TYPE_TABLE(/datum/preference/choiced/human/directory_erptag, pref_choices, GLOB.
 
 // --- sensorpref ------------------------------------------------------------
 
-/datum/preference/numeric/human/sensorpref
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "sensorpref"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	minimum = 1
-	maximum = 5
-	step = 1
-
-/datum/preference/numeric/human/sensorpref/create_default_value()
-	return 5
-
-/datum/preference/numeric/human/sensorpref/apply_to_human(mob/living/carbon/human/target, value)
-	target.bio.sensorpref = value
-
 
 // --- capture_crystal -------------------------------------------------------
 
@@ -127,25 +86,5 @@ TYPE_TABLE(/datum/preference/choiced/human/directory_erptag, pref_choices, GLOB.
 
 // --- auto_backup_implant ---------------------------------------------------
 
-/datum/preference/toggle/human/auto_backup_implant
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "auto_backup_implant"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/auto_backup_implant/apply_to_human(mob/living/carbon/human/target, value)
-	return // read at spawn-time by ticker.dm
-
 
 // --- borg_petting ----------------------------------------------------------
-
-/datum/preference/toggle/human/borg_petting
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "borg_petting"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/borg_petting/apply_to_human(mob/living/carbon/human/target, value)
-	return

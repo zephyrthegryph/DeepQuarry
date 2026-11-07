@@ -1368,7 +1368,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	if(!identity().ooc_notes)
 		return
 	var/msg = encode_html_emphasis(identity().ooc_notes) // the chat's emphasis markers, as the notes window shows them
-	if(identity().ooc_notes_style && (identity().ooc_notes_favs || identity().ooc_notes_likes || identity().ooc_notes_maybes || identity().ooc_notes_dislikes) && !user.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable)) // Oldchat hates proper formatting
+	if(identity().ooc_notes_style && (identity().ooc_notes_favs || identity().ooc_notes_likes || identity().ooc_notes_maybes || identity().ooc_notes_dislikes) && FALSE) // Oldchat hates proper formatting
 		msg += "<br><br>"
 		msg += "<table><tr>"
 		if(identity().ooc_notes_favs)
