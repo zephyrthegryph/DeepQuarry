@@ -1359,6 +1359,18 @@ impl<'a> CallableHeaderSource<'a>{
  pub fn formal_notices(&self,member:crate::MemberId)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>),String>>+'a,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual formal member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual formal occurrence absent")?;let code=self.codes.get(ordinal).ok_or("actual formal code owner absent")?;self.syntax.original_formal_notice_rows(occurrence.expanded_span,&code.identity)}
  pub fn reported_policy_line(&self,member:crate::MemberId)->Result<SourcePolicyLineOrigin,String>{self.mapping.original_policy_line(self.cursor(member)?)}
  pub fn reported_point(&self,member:crate::MemberId)->Result<super::BorrowedSourceNoteOrigin<'a>,String>{self.mapping.borrowed_source_note_point(self.cursor(member)?).map_err(str::to_owned)}
+    /// Resolve the exact authored version before projecting its primary header.
+    /// No parameter/default or body syntax is demanded by a note.
+    pub fn reported_point_for_identity(
+        &self,
+        identity: dm_ir::ProcedureIdentity,
+    ) -> Result<super::BorrowedSourceNoteOrigin<'a>, String> {
+        let ordinal = self.callables.ordinal_for_identity(identity)
+            .ok_or("callable note has no issued primary body")?;
+        let member = self.callables.members().get(ordinal).copied()
+            .ok_or("callable note roster member unavailable")?;
+        self.reported_point(member)
+    }
  pub fn reported_span(&self,member:crate::MemberId)->Result<dm_syntax::Span,String>{let at=self.cursor(member)?;Ok(dm_syntax::Span::new(at,at.checked_add(1).ok_or("callable header point extent overflow")?))}
 }
 impl ColdFrontend{

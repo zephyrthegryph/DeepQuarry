@@ -43,7 +43,7 @@ pub(crate) fn notes_using<E: From<String> + for<'a> From<&'a str>>(
     };
     let (source, owner, kind, name) = match fix {
         ReturnFixHint::UnannotatedSource(identity) => (
-            archive.borrowed_callable_note_origin(identity)?,
+            archive.callable_header_source().reported_point_for_identity(identity)?,
             archive.tree().symbols().text(identity.owner)
                 .ok_or("return note owner unavailable")?.trim_end_matches('/'),
             if identity.verb { "verb" } else { "proc" },

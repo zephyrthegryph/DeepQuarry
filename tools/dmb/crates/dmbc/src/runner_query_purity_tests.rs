@@ -1225,6 +1225,46 @@ fn callable_note_from_already_issued_body_preserves_original_point_without_anoth
 }
 
 #[test]
+fn exact_callable_header_note_does_not_demand_callee_body_syntax() {
+    let (snapshot, _) = fixture(concat!(
+        "/datum/source_notes/proc/same/* é漢 */()\n",
+        "    return 1\n",
+        "/datum/source_notes/same()\n",
+        "    return 2\n",
+        "/datum/source_notes/verb/present_note()\n",
+        "    return 3\n",
+    ), None);
+    let input = snapshot.native_effect_source_input(&snapshot.tree).unwrap();
+    let archive = input.archive();
+    let headers = archive.callable_header_source();
+    let db = snapshot.native_raw_queries.as_ref().unwrap();
+    let before = db.db().stats(dm_query::Kind(4));
+    let mut points = Vec::new();
+    for &ordinal in archive.callables().source_order() {
+        let identity = archive.callables().identity(ordinal).unwrap();
+        let point = headers.reported_point_for_identity(identity).unwrap();
+        points.push((ordinal, identity, point));
+    }
+    assert_eq!(points.len(), 3);
+    assert_eq!(points[0].1.occurrence, 0);
+    assert_eq!(points[1].1.occurrence, 1);
+    assert!(points[2].1.verb);
+    assert!(!points[0].2.same_reported_point(&points[1].2));
+    let mut absent = points[0].1;
+    absent.occurrence = u32::MAX;
+    assert!(headers.reported_point_for_identity(absent).is_err());
+    let after = db.db().stats(dm_query::Kind(4));
+    assert_eq!(after.computed, before.computed);
+    assert_eq!(after.green, before.green);
+    for (ordinal, identity, header_point) in points {
+        let body = archive.parse_checked(ordinal).unwrap();
+        let parsed_point = archive.callable_note_origin_borrowed_from_parsed(identity, ordinal, &body).unwrap();
+        assert!(header_point.same_reported_point(&parsed_point));
+        assert_eq!(header_point.physical_path(), parsed_point.physical_path());
+    }
+}
+
+#[test]
 fn parsed_callable_note_projection_matches_original_proc_verb_override_versions_and_precharges_path_clone(){
  let(snapshot,_)=fixture("/datum/source_notes/proc/same()\n    return 1\n/datum/source_notes/same()\n    return 2\n/datum/source_notes/verb/present_note()\n    return 3\n",None);let input=snapshot.native_effect_source_input(&snapshot.tree).unwrap();let archive=input.archive();let mut procs=Vec::new();let mut verbs=0;
  for &ordinal in archive.callables().source_order(){let identity=archive.callables().identity(ordinal).unwrap();if identity.verb{verbs+=1}else{procs.push((ordinal,identity));}let body=archive.parse_checked(ordinal).unwrap();let expected=archive.callable_note_origin(identity).unwrap();let original_owners=Arc::strong_count(&expected.path);let borrowed=archive.callable_note_origin_borrowed_from_parsed(identity,ordinal,&body).unwrap();assert_eq!(Arc::strong_count(&expected.path),original_owners,"borrowed projection does not extend any path owner");let charge=borrowed.retained_charge().unwrap();let tiny=dm_analysis::checker_effects::ExecutionAdmission::with_limit(charge-1);assert!(tiny.reserve_external(charge).is_err());assert_eq!(Arc::strong_count(&expected.path),original_owners,"admission failure precedes path-owner clone");let admission=dm_analysis::checker_effects::ExecutionAdmission::default();admission.reserve_external(charge).unwrap();assert_eq!(borrowed.into_owned(),expected);assert_eq!(archive.callable_note_origin_from_parsed::<String>(identity,ordinal,&body).unwrap(),expected);}
