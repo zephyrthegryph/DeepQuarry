@@ -5251,7 +5251,6 @@
 #include "code\content\client\preferences\editors\underwear.dm"
 #include "code\content\client\preferences\editors\vore_messages.dm"
 #include "code\content\client\preferences\middleware\random.dm"
-#include "code\content\client\preferences\types\misc.dm"
 #include "code\content\client\preferences\types\sound.dm"
 #include "code\content\client\preferences\types\character\antagonism.dm"
 #include "code\content\client\preferences\types\character\background.dm"
