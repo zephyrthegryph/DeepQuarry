@@ -808,7 +808,10 @@ fn current_original_compact_whole_ordered_scales_past_per_body_node_cap() {
     let cache = request.cache_root.as_ref().unwrap().clone();
     std::fs::create_dir_all(&cache).unwrap();
     let db = host.query_db().clone();
+    let prepare_started = Instant::now();
+    eprintln!("compact scale: preparing {BODIES} bodies");
     run(&mut host, &request);
+    eprintln!("compact scale: preparation finished in {:?}", prepare_started.elapsed());
 
     let _deadline = crate::daemon::control::bind_with_deadline(
         crate::daemon::control::Cancellation::default(),
@@ -834,12 +837,24 @@ fn current_original_compact_whole_ordered_scales_past_per_body_node_cap() {
         let evaluated_before =
             dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread();
 
+        let report_started = Instant::now();
+        eprintln!("compact scale: starting ordered report with {BODIES} archived bodies");
         let mut wire = Vec::new();
         let clean = snapshot.write_compact_original_ordered_checker_for_test(
             &input, &environment, None, &snapshot.tree, &cache, ARCHIVED_CHUNK_WIDTH, &mut wire,
         ).unwrap_or_else(|error| {
             assert!(wire.is_empty(), "failed scale run published a partial report");
-            panic!("compact report failed at {BODIES} real bodies: {error}");
+            let evaluated = {
+                #[cfg(debug_assertions)]
+                { Some(dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread() - evaluated_before) }
+                #[cfg(not(debug_assertions))]
+                { None::<u64> }
+            };
+            panic!(
+                "compact report failed after {:?}: Kind4 parses={}, Kind32 chunks={}, evaluator entries={evaluated:?}, active graph work={}: {error}",
+                report_started.elapsed(), computed(4) - parsed_before,
+                computed(32) - chunks_before, db.effect_graph_work_for_test(),
+            );
         });
         assert!(!clean);
         assert_eq!(computed(4) - parsed_before, BODIES as u64);

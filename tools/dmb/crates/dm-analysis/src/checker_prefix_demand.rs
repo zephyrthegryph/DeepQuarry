@@ -70,12 +70,14 @@ impl<D:Demand> Demand for Original<D>{type Error=D::Error;fn source_checkpoint(&
 /// query owns every callee loan. This adapter never asks for absolute syntax.
 pub(crate) struct Current<'a,'op>{
  pub(crate) archive:&'a BodyArchive,
+ pub(crate) profile:dm_tree::checker_builtins::ValidatedCheckerProfile<'a>,
  pub(crate) admission:&'a dm_syntax::SettingAdmission<'op>,
  pub(crate) checkpoint:&'a dyn Fn()->std::io::Result<()>,
  pub(crate) obtain:Option<&'a crate::checker_effects::CanonicalOriginalBodyLoan<'a>>,
 }
 impl Demand for Current<'_,'_>{
  type Error=crate::policy_body_demand::PolicyFailure;
+ fn profile(&self)->Option<dm_tree::checker_builtins::ValidatedCheckerProfile<'_>>{Some(self.profile)}
  fn source_checkpoint(&self)->Option<&dyn Fn()->std::io::Result<()>>{Some(self.checkpoint)}
  fn checkpoint(&self)->Result<(),Self::Error>{(self.checkpoint)().map_err(Self::Error::Operational)}
  fn policy_failure(&self,failure:Self::Error)->Self::Error{failure}

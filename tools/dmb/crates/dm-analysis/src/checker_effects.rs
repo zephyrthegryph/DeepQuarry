@@ -96,6 +96,21 @@ pub struct EffectInput {
     order: Box<[(usize, ProcedureIdentity)]>,
     whole_roster: bool,
 }
+/// Stack-only authority to reuse validation of one immutable Original input.
+pub struct OriginalEffectSourceProof<'a> {
+    input: &'a EffectInput,
+    profile: dm_tree::checker_builtins::ValidatedCheckerProfile<'a>,
+}
+impl OriginalEffectSourceProof<'_> {
+    fn require(&self, input: &EffectInput) -> Result<(), String> {
+        if !std::ptr::eq(self.input, input) {
+            return Err("original checker proof belongs to another input".into());
+        }
+        input.check_original_source_owner()?;
+        self.profile.require(input.archive.tree(), input.profile)
+            .map_err(|error| format!("original checker input profile: {error:?}"))
+    }
+}
 impl EffectInput {
     /// Source-query coordination only; the bounded whole-plan constructor and
     /// policy remain unchanged. Actual page/body work is admitted on demand.
@@ -119,8 +134,18 @@ impl EffectInput {
     }
     pub fn is_original_checker_source(&self)->bool{matches!(self.purpose,BodyPurpose::OriginalChecker|BodyPurpose::OriginalCurrentChecker)}
     pub fn uses_current_original_bodies(&self)->bool{self.purpose==BodyPurpose::OriginalCurrentChecker}
-    pub fn require_original_checker_source(&self)->Result<(),String>{
-        if !self.is_original_checker_source()||self.original_receipt.as_ref().and_then(Weak::upgrade).is_none_or(|receipt|!receipt.authenticates(self.archive.tree()))||self.archive.body_query_host().is_none()||self.archive.source_mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err("original checker input lacks its authentic immutable diagnostic source owner".into())}self.archive.tree().validate_checker_builtin_profile(self.profile).map_err(|error|format!("original checker input profile: {error:?}"))?;Ok(())
+    fn check_original_source_owner(&self)->Result<(),String>{
+        if !self.is_original_checker_source()||self.original_receipt.as_ref().and_then(Weak::upgrade).is_none_or(|receipt|!receipt.authenticates(self.archive.tree()))||self.archive.body_query_host().is_none()||self.archive.source_mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err("original checker input lacks its authentic immutable diagnostic source owner".into())}
+        Ok(())
+    }
+    pub fn original_source_proof(&self) -> Result<OriginalEffectSourceProof<'_>, String> {
+        self.check_original_source_owner()?;
+        let profile = self.archive.tree().validated_checker_profile(self.profile)
+            .map_err(|error| format!("original checker input profile: {error:?}"))?;
+        Ok(OriginalEffectSourceProof { input: self, profile })
+    }
+    pub fn require_original_checker_source(&self) -> Result<(), String> {
+        self.original_source_proof().map(|_| ())
     }
     /// Only a current authentic Original input can lend its actual diagnostic receipt.
     /// The receipt cannot be fabricated or promoted to compiler acceptance.
@@ -392,8 +417,22 @@ pub fn compute_body_checked_using_admitted_controlled(
         checkpoint:&dyn Fn()->std::io::Result<()>,
         obtain:Option<&CanonicalOriginalBodyLoan<'_>>,
     )->Result<Arc<BodyEffects>,crate::policy_body_demand::PolicyFailure>{
+        let proof = self.original_source_proof()?;
+        self.compute_current_original_body_with_proof(body, syntax, resolver, admission, checkpoint, obtain, &proof)
+    }
+
+    pub fn compute_current_original_body_with_proof(
+        self: &Arc<Self>,
+        body: &dm_tree::frontend::CurrentArchivedBody<'_,'_>,
+        syntax: &dm_syntax::SettingAdmission<'_>,
+        resolver: &(impl Resolver + ?Sized),
+        admission: &ExecutionAdmission,
+        checkpoint: &dyn Fn() -> std::io::Result<()>,
+        obtain: Option<&CanonicalOriginalBodyLoan<'_>>,
+        proof: &OriginalEffectSourceProof<'_>,
+    ) -> Result<Arc<BodyEffects>, crate::policy_body_demand::PolicyFailure> {
         use crate::policy_body_demand::PolicyFailure;
-        self.require_original_checker_source()?;
+        proof.require(self)?;
         if !body.belongs_to(&self.archive)||resolver.source_owner()!=Resolver::source_owner(self.archive.tree()){
             return Err("current Original contribution has another archive or resolver".into());
         }
@@ -404,7 +443,7 @@ pub fn compute_body_checked_using_admitted_controlled(
         }
         let mut draft=Draft{transient:ReportBudget::for_operation(admission),..Default::default()};
         let demand=crate::checker_prefix_demand::Original(crate::checker_prefix_demand::Current{
-            archive:&self.archive,admission:syntax,checkpoint,obtain,
+            archive:&self.archive,admission:syntax,checkpoint,obtain,profile:proof.profile,
         });
         let settings=crate::checker_return_facts::PuritySettingsPermit::issue_using(
             &self.archive,self.profile,procedure,&demand,
@@ -616,7 +655,20 @@ impl BodyEffects {
     pub(super) fn immediate_len(&self)->usize{self.immediate_diagnostics().count()}
     pub fn with_original_keyword_uses<T>(&self,input:&Arc<EffectInput>,ordinal:usize,consume:impl FnOnce(&[AcceptedKeywordUse])->T)->Result<T,String>{self.validate(input)?;input.require_original_checker_source()?;if self.original_evaluations!=1||self.ordinal!=ordinal{return Err("keyword uses require actual once-evaluated original body at admitted ordinal".into())}Ok(consume(&self.keywords))}
     pub fn original_evaluation_count(&self)->usize{self.original_evaluations}
-    pub fn with_original_diagnostics<T>(&self,input:&Arc<EffectInput>,consume:impl FnOnce(&[OriginalBodyDiagnostic])->T)->Result<T,String>{self.validate(input)?;input.require_original_checker_source()?;if self.original_evaluations!=1{return Err("original diagnostics require the actual once-evaluated body contribution".into())}Ok(consume(&self.original))}
+    pub fn with_original_diagnostics<T>(&self,input:&Arc<EffectInput>,consume:impl FnOnce(&[OriginalBodyDiagnostic])->T)->Result<T,String>{
+        self.validate(input)?;
+        let proof=input.original_source_proof()?;
+        self.with_original_diagnostics_proven(input,&proof,consume)
+    }
+    pub fn with_original_diagnostics_proven<T>(
+        &self,input:&Arc<EffectInput>,proof:&OriginalEffectSourceProof<'_>,
+        consume:impl FnOnce(&[OriginalBodyDiagnostic])->T,
+    )->Result<T,String>{
+        self.validate(input)?;
+        proof.require(input)?;
+        if self.original_evaluations!=1{return Err("original diagnostics require the actual once-evaluated body contribution".into())}
+        Ok(consume(&self.original))
+    }
     fn validate(&self, input: &Arc<EffectInput>) -> Result<(), String> {
         if !self.input.ptr_eq(&Arc::downgrade(input)) {
             return Err("purity body belongs to another source issuance".into());

@@ -189,13 +189,16 @@ impl BodyPhases {
             first_prelude: true, first_body: true, rows: 0, clean: true })
     }
 
-    fn append(&mut self, input: &Arc<EffectInput>, body: &BodyEffects) -> io::Result<()> {
+    fn append(
+        &mut self, input: &Arc<EffectInput>, body: &BodyEffects,
+        proof: &dm_analysis::checker_effects::OriginalEffectSourceProof<'_>,
+    ) -> io::Result<()> {
         use dm_analysis::{check_policy::DiagnosticSeverity as Severity, checker_effects::OriginalDiagnosticPhase};
         use std::io::Write as _;
         if self.input != input.key() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "checker body stage belongs to another input"));
         }
-        body.with_original_diagnostics(input, |rows| {
+        body.with_original_diagnostics_proven(input, proof, |rows| {
             for row in rows {
                 crate::daemon::control::checkpoint()?;
                 let Some(severity) = self.policy.register(row.registration_tag(), row.default_level())
@@ -236,7 +239,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, body_charge: Arc<dm_
         let p = raw.downcast_ref::<Params>().expect("Original chunk params");
         pages::typed_publication(&ledger, p.key)?;
         let input = p.input.upgrade().ok_or(QueryError::Missing(p.key))?;
-        input.require_original_checker_source().map_err(|message| QueryError::operational(p.key, io::Error::other(message)))?;
+        let source_proof = input.original_source_proof().map_err(|message| QueryError::operational(p.key, io::Error::other(message)))?;
         let transport = |actual| QueryError::operational(p.key, actual);
         let failure = |actual| match actual {
             PolicyFailure::Operational(actual) => transport(actual),
@@ -284,7 +287,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, body_charge: Arc<dm_
                 input: &input, key: p.key, scratch: Mutex::new(&mut scratch), admission: &admission,
                 output: Mutex::new((&mut work, &mut lookups)), error: Mutex::new(None),
             };
-            let pending = compute_current_body_using(&input, ordinal, &recorder, &admission, &body_charge, &obtain);
+            let pending = compute_current_body_using(&input, ordinal, &recorder, &admission, &body_charge, &obtain, Some(&source_proof));
             if let Some(actual) = recorder.error.into_inner().unwrap_or_else(|error| error.into_inner()) {
                 return Err(actual);
             }
@@ -294,7 +297,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, body_charge: Arc<dm_
             work.reserve(body_charge).map_err(transport)?;
             if let Some(stage) = &stage {
                 let mut stage = stage.lock().unwrap_or_else(|error| error.into_inner());
-                stage.pending.as_mut().ok_or(QueryError::Missing(p.key))?.append(&input, &body).map_err(transport)?;
+                stage.pending.as_mut().ok_or(QueryError::Missing(p.key))?.append(&input, &body, &source_proof).map_err(transport)?;
             }
             builder.push(&body, &mut work).map_err(failure)?;
             drop(body);

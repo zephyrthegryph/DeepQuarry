@@ -620,10 +620,16 @@ fn compute_current_body_using(
     admission: &ExecutionAdmission,
     body_charge: &Arc<dm_syntax::SettingChargeCounter>,
     obtain: &dm_analysis::checker_effects::CanonicalOriginalBodyLoan<'_>,
+    proof: Option<&dm_analysis::checker_effects::OriginalEffectSourceProof<'_>>,
 ) -> Result<Arc<BodyEffects>, dm_analysis::policy_body_demand::PolicyFailure> {
     super::setting_syntax::with_setting_admission(body_charge,|syntax|{
         input.archive().with_current_body_checked_in(ordinal,syntax,&mut(),|_,requested|obtain(requested),|_,body|{
-            match input.compute_current_original_body_using(&body,syntax,resolver,admission,&||crate::daemon::control::checkpoint(),Some(obtain)){
+            let checkpoint = crate::daemon::control::checkpoint;
+            let result = match proof {
+                Some(proof) => input.compute_current_original_body_with_proof(&body,syntax,resolver,admission,&checkpoint,Some(obtain),proof),
+                None => input.compute_current_original_body_using(&body,syntax,resolver,admission,&checkpoint,Some(obtain)),
+            };
+            match result {
                 Ok(body)=>Ok(Ok(body)),
                 Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual)),
                 Err(actual)=>Ok(Err(actual)),
@@ -686,7 +692,7 @@ fn compute_body_in_query(
         };
         // QueryContext is locked only inside obtain. Neither the evaluator
         // nor its callee prefix or resolver callbacks run under that lock.
-        compute_current_body_using(&input, ordinal, &resolver, &admission, body_charge, &obtain)
+        compute_current_body_using(&input, ordinal, &resolver, &admission, body_charge, &obtain, None)
     } else if let Some(primary) = original_primary {
         let host = input.archive().body_query_host()
             .ok_or(QueryError::Missing(p.key))?;
