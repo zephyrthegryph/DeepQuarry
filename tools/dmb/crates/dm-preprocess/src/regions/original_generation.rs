@@ -87,6 +87,9 @@ impl Recipe<'_>{
     let (trace_runs,trace_rank_bytes,trace_run_bytes)=state.origins.trace_run_capacity();
     let (bases, delta_bytes, anchor_bytes, wide, wide_bytes) = state.origins.trace_output_base_capacity();
     eprintln!("ORIGINAL_OUTPUT_BASE_CAPACITY bases={bases} delta_bytes={delta_bytes} anchor_bytes={anchor_bytes} wide={wide} wide_bytes={wide_bytes}");
+    if std::env::var_os("DMB_ORIGINAL_TRACE_OUTPUT_BASE_WIDTHS").is_some(){
+     eprintln!("ORIGINAL_OUTPUT_BASE_PACKING {:?}",state.origins.trace_output_base_packing());
+    }
     let (omitted, owner_bytes, mapping_bytes) = state.origins.trace_run_compaction_capacity();
     eprintln!("ORIGINAL_TRACE_RUN_COMPACTION omitted={omitted} owner_bytes={owner_bytes} mapping_bytes={mapping_bytes}");
     if let Some(census)=state.origins.trace_row_geometry_census(){
