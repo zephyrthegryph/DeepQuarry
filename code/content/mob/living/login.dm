@@ -12,9 +12,6 @@
 	. += type_verb(/mob/living/proc/vore_check_reagents, login = TRUE) // If mob doesnt have bellies it cant use this verb for anything
 	. += type_verb(/mob/proc/nsay_vore, login = TRUE)
 	. += type_verb(/mob/proc/nme_vore, login = TRUE)
-	. += type_verb(/mob/proc/nsay_vore_ch, login = TRUE)
-	. += type_verb(/mob/proc/nme_vore_ch, login = TRUE)
-	. += type_verb(/mob/proc/enter_soulcatcher, login = TRUE)
 
 /mob/living/Login()
 	..()

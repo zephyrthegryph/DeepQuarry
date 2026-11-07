@@ -1,9 +1,3 @@
-/datum/preference/toggle/chat_tags
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "CHAT_SHOWICONS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
 /datum/preference/toggle/show_typing_indicator
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "SHOW_TYPING"
@@ -13,12 +7,6 @@
 /datum/preference/toggle/show_typing_indicator/apply_to_client(client/client, value)
 	if(!value)
 		client.stop_thinking()
-
-/datum/preference/toggle/show_typing_indicator_subtle
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SHOW_TYPING_SUBTLE"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/show_ooc
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
@@ -44,18 +32,6 @@
 	default_value = TRUE
 	savefile_identifier = PREFERENCE_PLAYER
 
-/datum/preference/toggle/player_tips
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "RECEIVE_TIPS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/pain_frequency
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "PAIN_FREQUENCY"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_PLAYER
-
 /// Examining writes to chat instead of the Inspect panel.
 /datum/preference/toggle/examine_in_chat
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
@@ -73,12 +49,3 @@ TYPE_TABLE(/datum/preference/choiced/examine_mode, pref_choices, list(EXAMINE_MO
 /datum/preference/choiced/examine_mode/create_default_value()
 	return EXAMINE_MODE_VERBOSE
 
-/datum/preference/choiced/multilingual_mode
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_identifier = PREFERENCE_PLAYER
-	savefile_key = "MULTI_LANGUAGE_YAP_MODE"
-
-TYPE_TABLE(/datum/preference/choiced/multilingual_mode, pref_choices, list(MULTILINGUAL_DEFAULT,MULTILINGUAL_SPACE,MULTILINGUAL_DOUBLE_DELIMITER, MULTILINGUAL_OFF))
-
-/datum/preference/choiced/multilingual_mode/create_default_value()
-	return MULTILINGUAL_DEFAULT

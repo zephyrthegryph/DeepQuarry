@@ -144,16 +144,10 @@
 	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/bday_day), 29, "the day follows the shorter month")
 	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_day", list("value" = "30"), null), PREF_UPDATE_REJECTED, "February 30th is refused")
 
-/// Old levels map to Default at that level; a named hiss applies on another species; Default follows the species; tooltips come from the maps.
+/// A named hiss applies on another species; Default follows the species; tooltips come from the maps.
 /datum/unit_test/dq_autohiss_exact_types
 
 /datum/unit_test/dq_autohiss_exact_types/Run()
-	var/datum/preference/text/human/autohiss/pref = GLOB.preference_entries[/datum/preference/text/human/autohiss]
-	TEST_ASSERT_EQUAL(pref.pref_deserialize("Full", null), "Default (Full)", "old Full")
-	TEST_ASSERT_EQUAL(pref.pref_deserialize("Basic", null), "Default (Basic)", "old Basic")
-	TEST_ASSERT_EQUAL(pref.pref_deserialize("Off", null), "Off", "Off stays")
-	TEST_ASSERT_EQUAL(pref.pref_deserialize("Tajaran r-roll", null), "Tajaran r-roll", "a chosen type stays")
-	TEST_ASSERT_EQUAL(pref.pref_deserialize("junk", null), "Default (Full)", "junk is the default")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/language/common = GLOB.all_languages[LANGUAGE_GALCOM]
 	TEST_ASSERT_EQUAL(H.autohiss_by_choice("sir", common, "Off"), "sir", "Off changes nothing")
@@ -295,7 +289,7 @@
 	said = test_chat_of(viewer)
 	TEST_ASSERT(length(said) && findtext(said[length(said)], "cats") && !findtext(said[length(said)], "+cats+"), "OOC notes in chat are formatted: [jointext(said, " | ")]")
 
-/// Private notes are gone from the save; OOC lists read sorted; weight is clamped to a real range; announce is set from the birthday row.
+/// Private notes are gone from the save; OOC lists read sorted; weight is clamped to a real range.
 /datum/unit_test/dq_setup_list_batch
 
 /datum/unit_test/dq_setup_list_batch/Run()
@@ -306,6 +300,3 @@
 	P = dq_test_load_character(list("species" = SPECIES_HUMAN, "weight_vr" = 3))
 	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/weight_vr), WEIGHT_MIN, "a tiny saved weight is clamped")
 	TEST_ASSERT_EQUAL(dq_sorted_note_lines("pears\nApples\n\nbananas\napples"), "Apples\napples\nbananas\npears", "sorted, case ignored, ties in written order")
-	var/datum/preference_editor/birthday/editor = GLOB.preference_editors_by_key["birthday"]
-	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_announce", list("value" = 1), null), PREF_UPDATE_ACCEPTED, "announce is set from the birthday row")
-	TEST_ASSERT(P.read_preference(/datum/preference/toggle/human/bday_announce), "and saved")

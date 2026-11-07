@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const read = (path: string) =>
@@ -39,5 +39,19 @@ describe('chat input wiring', () => {
     expect(read('events/listeners.ts')).toContain("'chat/layout'");
     expect(read('Panel.tsx')).toContain('useChatDrag');
     expect(read('styles/main.scss')).toContain('ChatLayout.scss');
+  });
+
+  it('ports the say popup: formatting keys, live preview and its rules', () => {
+    const input = read('input/ChatInput.tsx');
+    expect(input).toContain('SHORTCUT_MARKERS');
+    expect(input).toContain('toggleLanguage');
+    expect(input).toContain('buildPreview');
+    expect(input).toContain('LanguagePreview');
+    expect(input).toContain('focusMap');
+    expect(read('events/listeners.ts')).toContain("'chat/languageRules'");
+  });
+
+  it('has no say popup left', () => {
+    expect(existsSync(join(import.meta.dir, '../../tgui-say'))).toBe(false);
   });
 });

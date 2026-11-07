@@ -34,7 +34,7 @@
 @include meta.load-css('~tgui/styles/layouts/Window.scss');
 
 // Chat message styles: one sheet, coloured by the theme's tokens
-// (tgchat/chat-tokens.scss; dark here, the others in themes/*.scss).
+// (tgchat/chat-tokens.scss).
 @include meta.load-css('./tgchat/chat.scss');
 
 

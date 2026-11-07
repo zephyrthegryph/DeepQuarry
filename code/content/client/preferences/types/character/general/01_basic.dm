@@ -1,14 +1,4 @@
 // Toggles
-/datum/preference/toggle/human/bday_announce
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "bday_announce"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/bday_announce/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
 
 // Numerics
 /datum/preference/numeric/human/age
@@ -174,16 +164,6 @@
 /datum/preference/text/living/ooc_notes_favs/apply_to_living(mob/living/target, value)
 	target.identity().ooc_notes_favs = text_or_null(value)
 	return
-
-/datum/preference/toggle/human/name_is_always_random
-	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
-	savefile_key = "name_is_always_random"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/name_is_always_random/apply_to_human(mob/living/carbon/human/target, value)
-	return // handled in copy_to
 
 /datum/preference/choiced/living/spawnpoint
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED

@@ -386,7 +386,7 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
 			continue
 
 		// Ghosts hearing all radio chat don't want syndicate intercepts (duplicates) or the blacklisted channels
-		if(ghost_blacklisted && isobserver(R) && (data == DATA_ANTAG || istype(R, /mob/observer/dead)) && R.client?.prefs?.read_preference(/datum/preference/toggle/ghost_radio))
+		if(ghost_blacklisted && isobserver(R) && (data == DATA_ANTAG || istype(R, /mob/observer/dead)) && R.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 			continue
 
 		// --- Check for compression ---
@@ -482,37 +482,32 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
 		if(length(heard_masked))
 			for (var/mob/R in heard_masked)
 				R.hear_radio(message_pieces, verbage, part_a, part_b, part_c, part_d, part_e, M, 0, name)
-				if(R.read_preference(/datum/preference/toggle/radio_sounds))
-					R << 'sound/effects/radio_common_quieter.ogg'
+				R << 'sound/effects/radio_common_quieter.ogg'
 
 		/* --- Process all the mobs that heard the voice normally (understood) --- */
 		if(length(heard_normal))
 			for (var/mob/R in heard_normal)
 				R.hear_radio(message_pieces, verbage, part_a, part_b, part_c, part_d, part_e, M, 0, realname)
-				if(R.read_preference(/datum/preference/toggle/radio_sounds))
-					R << 'sound/effects/radio_common_quieter.ogg'
+				R << 'sound/effects/radio_common_quieter.ogg'
 
 		/* --- Process all the mobs that heard the voice normally (did not understand) --- */
 		if(length(heard_voice))
 			for (var/mob/R in heard_voice)
 				R.hear_radio(message_pieces, verbage, part_a, part_b, part_c, part_d, part_e, M,0, vname)
-				if(R.read_preference(/datum/preference/toggle/radio_sounds))
-					R << 'sound/effects/radio_common_quieter.ogg'
+				R << 'sound/effects/radio_common_quieter.ogg'
 
 		/* --- Process all the mobs that heard a garbled voice (did not understand) --- */
 			// Displays garbled message (ie "f*c* **u, **i*er!")
 		if(length(heard_garbled))
 			for (var/mob/R in heard_garbled)
 				R.hear_radio(message_pieces, verbage, part_a, part_b, part_c, part_d, part_e, M, 1, vname)
-				if(R.read_preference(/datum/preference/toggle/radio_sounds))
-					R << 'sound/effects/radio_common_quieter.ogg'
+				R << 'sound/effects/radio_common_quieter.ogg'
 
 		/* --- Complete gibberish. Usually happens when there's a compressed message --- */
 		if(length(heard_gibberish))
 			for (var/mob/R in heard_gibberish)
 				R.hear_radio(message_pieces, verbage, part_a, part_b, part_c, part_d, part_e, M, 1)
-				if(R.read_preference(/datum/preference/toggle/radio_sounds))
-					R << 'sound/effects/radio_common_quieter.ogg'
+				R << 'sound/effects/radio_common_quieter.ogg'
 
 	return 1
 

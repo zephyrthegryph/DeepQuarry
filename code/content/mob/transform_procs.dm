@@ -187,8 +187,8 @@
 		for(var/language in B.read_preference(/datum/preference/alternate_languages))
 			O.add_language(language)
 		O.resize(B.read_preference(/datum/preference/numeric/human/size_multiplier), animate = TRUE, ignore_prefs = TRUE)
-		O.set_fuzzy(B.read_preference(/datum/preference/toggle/human/fuzzy))
-		O.bio.custom_speech_bubble = text_or_null(B.read_preference(/datum/preference/text/human/custom_speech_bubble))
+		O.set_fuzzy(FALSE)
+		O.bio.custom_speech_bubble = text_or_null("default")
 
 
 	expire(0)	// Deleting now would end this proc before O is returned

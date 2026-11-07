@@ -1,22 +1,29 @@
 /**
- * The chat input row state and its messages to the server. The server end is
- * the say modal (`/datum/tgui_say` receives what the panel forwards, see
- * code/library/ui/tgui_panel/tgui_panel.dm), so the messages are the popup ones:
- * `open`/`close` bracket the typing, `typing`/`thinking` drive the bubble over
- * the head and `entry` speaks.
+ * The chat input row state and its messages to the server: the one place a
+ * player types speech (the say popup is gone). The server end is the chat
+ * panel (code/library/ui/tgui_panel/speech.dm): `open`/`close` bracket the
+ * typing, `typing`/`thinking` drive the bubble over the head and `entry` speaks.
  */
 
-export const INPUT_CHANNELS = ['Say', 'Radio', 'Me', 'OOC', 'LOOC'] as const;
+export const INPUT_CHANNELS = [
+  'Say',
+  'Radio',
+  'Me',
+  'Whis',
+  'Subtle',
+  'OOC',
+  'LOOC',
+] as const;
 
 export type InputChannel = (typeof INPUT_CHANNELS)[number];
 
-/** Channels that show no typing bubble (the popup "quiet" list). */
+/** Channels that show no typing bubble. */
 const QUIET_CHANNELS: readonly InputChannel[] = ['OOC', 'LOOC'];
 
 /** The server MAX_MESSAGE_LEN. */
 export const MAX_LENGTH = 4096;
 
-/** The popup throttles `typing` to one message per 4 seconds. */
+/** `typing` goes out at most once per 4 seconds. */
 export const TYPING_THROTTLE_MS = 4000;
 
 export type Send = (type: string, payload: Record<string, unknown>) => void;
@@ -106,7 +113,7 @@ export function nextRadioOption(
   return all[(at + direction + all.length) % all.length];
 }
 
-/** Sent messages, newest first, bounded; one list for every channel like the say popup. */
+/** Sent messages, newest first, bounded; one list for every channel. */
 export class InputHistory {
   private messages: string[] = [];
   private index = -1;
@@ -174,6 +181,18 @@ export function isChannel(value: unknown): value is InputChannel {
 
 export function isQuiet(channel: InputChannel): boolean {
   return QUIET_CHANNELS.includes(channel);
+}
+
+/** The text the server will speak, as the preview parses it: a radio key ahead of the text in Radio. */
+export function previewEntry(
+  channel: InputChannel,
+  radio: RadioOption,
+  value: string,
+): string {
+  if (channel === 'Radio') {
+    return `${radio.key || ';'} ${value}`;
+  }
+  return value;
 }
 
 /** What a key press in the text field means. */
@@ -291,7 +310,7 @@ export class ChatInputModel {
       this.send('lenwarn', { length: entry.length, maxlength: MAX_LENGTH });
       return false;
     }
-    // A department prefix goes out the way the say popup sends it: in Say, ahead of the text.
+    // A department prefix goes out in Say, ahead of the text (the server reads it as a radio key).
     if (this.channel === 'Radio' && this.radio.key) {
       this.send('entry', {
         channel: 'Say',

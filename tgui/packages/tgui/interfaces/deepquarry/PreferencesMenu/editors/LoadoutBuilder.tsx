@@ -1,5 +1,5 @@
 // DQAdd — Unified loadout panel. Integrates the gear catalog, starting-kit defaults
-// (headset/bag/PDA/ringtone/no-jacket/comm-visible), and underwear picker into one place
+// and underwear picker into one place
 // so the player has a single Loadout tab instead of three sibling sections.
 //
 // Layout:
@@ -78,15 +78,6 @@ type CatalogItem = {
   tweaks: GearTweakDescriptor[];
 };
 
-type StartingKitData = {
-  ringtone: string;
-  comm_visible: boolean;
-};
-
-type StartingKitStatic = {
-  ringtone_choices: string[];
-};
-
 type UnderwearItem = {
   name: string;
   icon?: string | null;
@@ -131,14 +122,12 @@ type LoadoutData = {
   max_gear_cost: number;
   job_defaults: Record<string, string>;
   preview_job: string | null;
-  starting_kit: StartingKitData;
   underwear: UnderwearData;
 };
 
 type LoadoutStatic = {
   categories: Record<string, CatalogItem[]>;
   body_slots: BodySlot[];
-  starting_kit: StartingKitStatic;
   underwear: UnderwearStatic;
 };
 
@@ -292,8 +281,6 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
   }, [allItems]);
 
   const d = applyOps(serverData, pending, costByName);
-  const sk = d.starting_kit ?? ({} as StartingKitData);
-  const sks = s.starting_kit ?? ({} as StartingKitStatic);
   const uw = d.underwear ?? ({ selections: {} } as UnderwearData);
   const uws = s.underwear ?? ({ categories: {} } as UnderwearStatic);
   // Role filter: scoped to the loadout currently being edited.
@@ -331,13 +318,6 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
 
   // Full-window datum picker state — used for the underwear selector. `null` = closed.
   const [pickerCategory, setPickerCategory] = useState<string | null>(null);
-
-  // The headset/backpack/PDA picks are now regular loadout gear datums in the catalog;
-  // the only remaining starting-kit-style controls are ringtone and comm-visibility.
-  const ringtoneOpts = (sks.ringtone_choices ?? []).map((x) => ({
-    value: x,
-    displayText: x,
-  }));
 
   // Build the loadout-picker dropdown options. The "_default" entry is always first;
   // job-specific loadouts follow, ordered server-side by priority then alphabetical.
@@ -545,32 +525,6 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
                 </Box>
               </Box>
             </Stack.Item>
-            {/* PDA slot: ringtone is now a per-PDA tweak (see standard_pda's
-                gear_tweaks). Comm-visible stays as a small inline toggle here because
-                it's a global pref, not a per-PDA setting. */}
-            {d.pda_slot && filterSlot === d.pda_slot && (
-              <Stack.Item>
-                <Stack align="center">
-                  <Stack.Item grow color="label" fontSize="0.85em">
-                    Comm visibility:
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button
-                      compact
-                      selected={sk.comm_visible}
-                      color={sk.comm_visible ? 'good' : undefined}
-                      icon={sk.comm_visible ? 'check' : 'xmark'}
-                      onClick={() =>
-                        sendTo(act, 'starting_kit', 'toggle_comm_visible')
-                      }
-                      tooltip="Communicator visible to others"
-                    >
-                      {sk.comm_visible ? 'Visible' : 'Hidden'}
-                    </Button>
-                  </Stack.Item>
-                </Stack>
-              </Stack.Item>
-            )}
             <Stack.Item grow style={{ minHeight: 0 }}>
               {filterSlot === '_uw' ? (
                 <div

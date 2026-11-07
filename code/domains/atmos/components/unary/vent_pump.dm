@@ -226,7 +226,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 	rust_push_running()
 	var/static/start_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSTART
 	var/static/stop_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSHUTDOWN
-	playsound(src, can_pump() ? start_sound : stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
+	playsound(src, can_pump() ? start_sound : stop_sound, 25, ignore_walls = FALSE, volume_channel = VOLUME_CHANNEL_MACHINERY_IDLE)
 
 /obj/machinery/atmospherics/unary/vent_pump/update_underlays()
 	..()

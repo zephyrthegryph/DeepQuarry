@@ -28,16 +28,14 @@ export const ChatPageSettings = (props) => {
   return (
     <Section>
       <Stack align="center">
-        {!page.isMain && (
-          <Stack.Item>
-            <Button
-              color="blue"
-              icon="angles-left"
-              tooltip="Reorder tab to the left"
-              onClick={moveChatLeft}
-            />
-          </Stack.Item>
-        )}
+        <Stack.Item>
+          <Button
+            color="blue"
+            icon="angles-left"
+            tooltip="Reorder tab to the left"
+            onClick={moveChatLeft}
+          />
+        </Stack.Item>
         <Stack.Item grow>
           <Input
             fluid
@@ -49,16 +47,14 @@ export const ChatPageSettings = (props) => {
             }
           />
         </Stack.Item>
-        {!page.isMain && (
-          <Stack.Item ml={0.5}>
-            <Button
-              color="blue"
-              icon="angles-right"
-              tooltip="Reorder tab to the right"
-              onClick={moveChatRight}
-            />
-          </Stack.Item>
-        )}
+        <Stack.Item ml={0.5}>
+          <Button
+            color="blue"
+            icon="angles-right"
+            tooltip="Reorder tab to the right"
+            onClick={moveChatRight}
+          />
+        </Stack.Item>
         <Stack.Item>
           <Button.Checkbox
             checked={page.hideUnreadCount}

@@ -2,8 +2,7 @@
 
 /**
  * The radio channel colours: the one table. The chat styles (`.sciradio`,
- * `.medradio`, ...), the say popup's channel button and the chat input row all
- * read it, so a department looks the same in a message and where it is typed.
+ * `.medradio`, ...) and the chat input row both read it, so a department looks the same in a message and where it is typed.
  * The class a radio message gets is chosen by get_radio_span()
  * (code/content/items/devices/radio/radio_channels.dm).
  */
@@ -23,8 +22,8 @@ $radio-colors: (
   'ai': hsl(332, 60%, 60%),
 );
 
-/// The speech mode colours (Say, Me, OOC, ...): the say popup's channel
-/// button and frame, and the chat input row's channel button. One table.
+/// The speech mode colours (Say, Me, Whis, Subtle, OOC, ...): the chat input
+/// row's channel button and its accent. One table.
 $mode-colors: (
   'LOOC': hsl(180, 44%, 41%),
   'Me': hsl(230, 58%, 55%),

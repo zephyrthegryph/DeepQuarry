@@ -4,6 +4,7 @@
  */
 import './statpanel.scss';
 
+import { loadMappings, loadStyleSheet } from 'common/assets';
 import { createRoot } from 'react-dom/client';
 import { App, PanelBoundary } from './App';
 import { dockHost } from './dockHost';
@@ -29,10 +30,6 @@ const displayStore = {
 };
 
 // tgui-panel drives these with `.output statbrowser:<name>`.
-win.set_theme = (name: string) => {
-  const light = name === 'light' || name === 'vchatlight';
-  document.documentElement.className = light ? 'light' : 'dark';
-};
 win.set_font_size = (size: string) => {
   document.body.style.setProperty('font-size', size);
 };
@@ -40,7 +37,7 @@ win.set_tabs_style = (style: string) => {
   tabsStyle = style;
   for (const listener of displayListeners) listener();
 };
-win.set_theme('dark');
+document.documentElement.className = 'dark';
 
 // Image assets can arrive after the markup: retry. Error events do not bubble,
 // so this listens in the capture phase.
@@ -72,7 +69,18 @@ function restoreFocus(event: Event) {
 document.addEventListener('mouseup', restoreFocus);
 document.addEventListener('keyup', restoreFocus);
 
+// Sprite sheets the server sends this page (the abilities sheet: code/content/abilities/ability_icons.dm).
+const assetMap: Record<string, string> = {};
+
 Byond.subscribe((type: string, payload: any) => {
+  if (type === 'asset/stylesheet') {
+    loadStyleSheet(payload);
+    return;
+  }
+  if (type === 'asset/mappings') {
+    loadMappings(payload, assetMap);
+    return;
+  }
   if (type === 'dock/preview') {
     applyDockPreview(payload);
     return;

@@ -28,11 +28,10 @@
 		l.adjust_nutrition(thismuch)
 	target.death()		// To make sure all on-death procs get properly called
 	if(target)
-		if(target.check_sound_preference(/datum/preference/toggle/digestion_noises))
-			if(!fancy_vore)
-				SEND_SOUND(target, sound(get_sfx(SFX_CLASSIC_DEATH_SOUNDS)))
-			else
-				SEND_SOUND(target, sound(get_sfx(SFX_FANCY_DEATH_PREY)))
+		if(!fancy_vore)
+			SEND_SOUND(target, sound(get_sfx(SFX_CLASSIC_DEATH_SOUNDS)))
+		else
+			SEND_SOUND(target, sound(get_sfx(SFX_FANCY_DEATH_PREY)))
 		target.mind?.vore_death = TRUE
 		handle_digestion_death(target)
 	return TRUE

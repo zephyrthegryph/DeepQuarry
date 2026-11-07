@@ -163,7 +163,6 @@ export default defineConfig({
   entry: {
     tgui: './packages/tgui',
     'tgui-panel': './packages/tgui-panel',
-    'tgui-say': './packages/tgui-say',
     'tgui-statpanel': './packages/tgui-panel/statpanel',
   },
   mode: 'production',
@@ -305,7 +304,6 @@ export default defineConfig({
     alias: {
       tgui: path.resolve(dirname, './packages/tgui'),
       'tgui-panel': path.resolve(dirname, './packages/tgui-panel'),
-      'tgui-say': path.resolve(dirname, './packages/tgui-say'),
       'tgui-dev-server': path.resolve(dirname, './packages/tgui-dev-server'),
     },
   },

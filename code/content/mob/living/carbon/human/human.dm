@@ -1480,7 +1480,6 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	species.update_vore_belly_def_variant()
 
 /mob/living/carbon/human/proc/bloody_doodle()
-	set category = VERB_CAT_IC_GAME
 	set name = "Write in blood"
 	set desc = "Use blood on your hands to write a short message on the floor or a wall, murder mystery style."
 

@@ -48,10 +48,9 @@ CAPABILITIES(/obj/effect/env_message)
 		if(tckey in EM.message_list)
 			EM.remove_message(tckey)
 
-/mob/living/verb/create_env_message()
+/mob/living/proc/create_env_message()
 	set name = "Create Env Message"
 	set desc = "Create an ooc message in the environment for other players to see."
-	set category = VERB_CAT_OOC_GAME
 
 	return environment_create_stage(list())
 
@@ -82,10 +81,9 @@ CAPABILITIES(/obj/effect/env_message)
 
 	log_game("[key_name(src)] created an Env Message: [new_message] at ([EM.x], [EM.y], [EM.z])")
 
-/mob/living/verb/remove_env_message()
+/mob/living/proc/remove_env_message()
 	set name = "Remove Env Message"
 	set desc = "Remove your current env message."
-	set category = VERB_CAT_OOC_GAME
 
 	return environment_remove_stage(list())
 

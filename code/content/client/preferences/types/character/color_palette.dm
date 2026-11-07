@@ -89,8 +89,6 @@
 	linkable = TRUE
 /datum/preference/color/human/facial_color
 	linkable = TRUE
-/datum/preference/color/human/grad_color
-	linkable = TRUE
 /datum/preference/color/human/eyes_color
 	linkable = TRUE
 /datum/preference/color/human/skin_color
@@ -167,7 +165,6 @@ GLOBAL_LIST_INIT(dq_palette_fields_table, list(
 		/datum/preference/color/human/hair_color = "secondary",
 		/datum/preference/color/human/eyes_color = "tertiary",
 		/datum/preference/color/human/facial_color = "secondary",
-		/datum/preference/color/human/grad_color = "tertiary",
 		/datum/preference/color/human/tail_color1 = "primary",
 		/datum/preference/color/human/tail_color2 = "secondary",
 		/datum/preference/color/human/tail_color3 = "tertiary",

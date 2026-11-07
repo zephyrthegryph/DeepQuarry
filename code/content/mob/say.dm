@@ -200,7 +200,7 @@
 	return null
 
 /// Finds the language switches in a raw message: list(list(language, start, text start), ...) in order. The first entry always starts at 1:
-/// text before the first switch is the mob's default language. tgui-say's preview parser (tgui/packages/tgui-say/parseLanguages.ts) follows
+/// text before the first switch is the mob's default language. the chat input preview's parser (tgui/packages/tgui/dq/speech/parseLanguages.ts) follows
 /// these same rules; code/tests/unit_tests/data/language_parse_cases.json is run over both.
 /// - A switch is a language's prefix at the message start or right after a space, so "3,5" and "well,no" stay text.
 /// - A string that is no language's prefix is literal text.
@@ -208,7 +208,7 @@
 ///   a stray ",q" mid-sentence must not garble the rest of it. At the start such a prefix speaks gibberish.
 /mob/proc/find_valid_prefixes(message)
 	var/list/prefixes = list()
-	var/multilingual_mode = client?.prefs?.read_preference(/datum/preference/choiced/multilingual_mode)
+	var/multilingual_mode = MULTILINGUAL_DEFAULT
 	for(var/i in 1 to length(message))
 		if(i > 1)
 			if(multilingual_mode == MULTILINGUAL_OFF) // Single language: only the message start can hold a prefix.
@@ -530,12 +530,12 @@
 				continue
 			if(src.client && M && !(get_z(src) == get_z(M)))
 				message = span_multizsay("[message]")
-			if(isobserver(M) && (!M.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
+			if(isobserver(M) && (!M.read_preference(/datum/preference/toggle/ghost_ears) || \
 			(!(read_preference(/datum/preference/toggle/whisubtle_vis) || (isbelly(M.loc) && src == M.loc:owner)) && !check_rights_for(M.client, R_HOLDER))))
 				M.show_message(undisplayed_message, 2)
 			else
 				M.show_message(message, 2)
-				if(M.Adjacent(src) && M.read_preference(/datum/preference/toggle/subtle_sounds)) // makes it so the sounds only play for ghosts when adjacent to the person making them
+				if(M.Adjacent(src)) // makes it so the sounds only play for ghosts when adjacent to the person making them
 					if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes to subtle emotes to use mob voice instead
 						M << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 
@@ -668,9 +668,8 @@
 		else
 			pb = db.pred_body
 			to_chat(pb, span_psay("The captive mind of \the [M] thinks, \"[message]\""))	//To our pred if dominated brain
-			if(pb.read_preference(/datum/preference/toggle/subtle_sounds))
-				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-					pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+				pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 			f = TRUE
 	else if(M.absorbed && isbelly(M.loc))
 		pb = M.loc.loc
@@ -683,9 +682,8 @@
 			to_chat(pb, span_psay("[formatted_name] thinks, \"[message]\""))
 		else
 			to_chat(pb, span_psay("\The [M] thinks, \"[message]\""))	//To our pred if absorbed
-		if(pb.read_preference(/datum/preference/toggle/subtle_sounds))
-			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-				pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+		if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+			pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 		f = TRUE
 
 	if(pb)	//We are prey, let's do the prey thing.
@@ -694,17 +692,15 @@
 			if(istype(I, /mob/living/dominated_brain) && I != M)
 				var/mob/living/dominated_brain/db = I
 				to_chat(db, span_psay("The captive mind of \the [M] thinks, \"[message]\""))	//To any dominated brains in the pred
-				if(db.read_preference(/datum/preference/toggle/subtle_sounds))
-					if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-						db << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+					db << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 				f = TRUE
 		for(var/B in pb.vore_organs)
 			for(var/mob/living/L in B)
 				if(L.absorbed && L != M && L.ckey)
 					to_chat(L, span_psay("[formatted_name] thinks, \"[message]\""))	//To any absorbed people in the pred
-					if(L.read_preference(/datum/preference/toggle/subtle_sounds))
-						if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-							L << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+					if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+						L << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 					f = TRUE
 
 	//Let's also check and see if there's anyone inside of us to send the message to.
@@ -712,35 +708,31 @@
 		if(istype(I, /mob/living/dominated_brain))
 			var/mob/living/dominated_brain/db = I
 			to_chat(db, span_psay(span_bold("[formatted_name] thinks, \"[message]\"")))	//To any dominated brains inside us
-			if(db.read_preference(/datum/preference/toggle/subtle_sounds))
-				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-					db << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+				db << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 			f = TRUE
 	for(var/B in M.vore_organs)
 		for(var/mob/living/L in B)
 			if(L.absorbed)
 				to_chat(L, span_psay(span_bold("[formatted_name] thinks, \"[message]\"")))	//To any absorbed people inside us
-				if(L.read_preference(/datum/preference/toggle/subtle_sounds))
-					if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-						L << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+					L << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 				f = TRUE
 
 	if(f)	//We found someone to send the message to
 		if(pb)
 			to_chat(M, span_psay("You think \"[message]\""))	//To us if we are the prey
-			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-					M << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+				M << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 		else
 			to_chat(M, span_psay(span_bold("You think \"[message]\"")))	//To us if we are the pred
-			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-					M << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+				M << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 		for (var/mob/G in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if (isnewplayer(G))
 				continue
 			else if(isobserver(G) &&  G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears) && \
-			G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle))
+			G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 				if(client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) || check_rights_for(G.client, R_HOLDER))
 					to_chat(G, span_psay("[formatted_name] thinks, \"[message]\""))
 		M.log_talk("(PSAY) [message]", LOG_SAY, color="#d900ff")
@@ -783,9 +775,8 @@
 		else
 			pb = db.pred_body
 			to_chat(pb, span_pemote("\The [M] [message]"))	//To our pred if dominated brain
-			if(pb.read_preference(/datum/preference/toggle/subtle_sounds))
-				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-					pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+				pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 			f = TRUE
 
 	else if(M.absorbed && isbelly(M.loc))
@@ -799,9 +790,8 @@
 			to_chat(pb, span_pemote("[formatted_name] [message]"))
 		else
 			to_chat(pb, span_pemote("\The [M] [message]"))	//To our pred if absorbed
-		if(pb.read_preference(/datum/preference/toggle/subtle_sounds))
-			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-				pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+		if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+			pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 		f = TRUE
 
 	if(pb)	//We are prey, let's do the prey thing.
@@ -810,17 +800,15 @@
 			if(istype(I, /mob/living/dominated_brain) && I != M)
 				var/mob/living/dominated_brain/db = I
 				to_chat(db, span_pemote("[formatted_name] [message]"))	//To any dominated brains in the pred
-				if(db.read_preference(/datum/preference/toggle/subtle_sounds))
-					if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-						pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+					pb << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 				f = TRUE
 		for(var/B in pb.vore_organs)
 			for(var/mob/living/L in B)
 				if(L.absorbed && L != M && L.ckey)
 					to_chat(L, span_pemote("[formatted_name] [message]"))	//To any absorbed people in the pred
-					if(L.read_preference(/datum/preference/toggle/subtle_sounds))
-						if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-							L << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+					if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+						L << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 					f = TRUE
 
 	//Let's also check and see if there's anyone inside of us to send the message to.
@@ -828,35 +816,31 @@
 		if(istype(I, /mob/living/dominated_brain))
 			var/mob/living/dominated_brain/db = I
 			to_chat(db, span_pemote(span_bold("[formatted_name] [message]")))	//To any dominated brains inside us
-			if(db.read_preference(/datum/preference/toggle/subtle_sounds))
-				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-					db << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+				db << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 			f = TRUE
 	for(var/B in M.vore_organs)
 		for(var/mob/living/L in B)
 			if(L.absorbed)
 				to_chat(L, span_pemote(span_bold("[formatted_name] [message]")))	//To any absorbed people inside us
-				if(L.read_preference(/datum/preference/toggle/subtle_sounds))
-					if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-						L << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+					L << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 				f = TRUE
 
 	if(f)	//We found someone to send the message to
 		if(pb)
 			to_chat(M, span_pemote("[formatted_name] [message]"))	//To us if we are the prey
-			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-					M << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+				M << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 		else
 			to_chat(M, span_pemote(span_bold("\The [M] [message]")))	//To us if we are the pred
-			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-				if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
-					M << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
+			if(STATE_GET(src, mob_misc, voice_sounds_list)) // changes subtle emote sound to use mob voice instead
+				M << sound(pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume = 25)
 		for (var/mob/G in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if (isnewplayer(G))
 				continue
 			else if(isobserver(G) && G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears) && \
-			G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle))
+			G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 				if(client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) || check_rights_for(G.client, R_HOLDER))
 					to_chat(G, span_pemote("[formatted_name] [message]"))
 		M.log_talk(message, LOG_SAY, color="#d900ff")
@@ -896,7 +880,7 @@
 		ourfreq = STATE_GET(src, mob_misc, voice_freq)
 
 	if(client)
-		playsound(T, SFX_TALKSOUNDS_EMOTE, 25, TRUE, falloff = 1 , is_global = TRUE, frequency = ourfreq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds) // ignore walls
+		playsound(T, SFX_TALKSOUNDS_EMOTE, 25, TRUE, falloff = 1 , is_global = TRUE, frequency = ourfreq, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VOICE) // ignore walls
 
 	var/list/in_range = get_mobs_and_objs_in_view_fast(T,world.view,2,remote_ghosts = client ? TRUE : FALSE)
 	var/list/m_viewers = in_range["mobs"]

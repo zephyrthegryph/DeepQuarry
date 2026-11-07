@@ -434,9 +434,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
 };
 
 const PREVIEW_LABELS: Record<string, string> = {
-  preview_loadout: 'Show loadout',
-  preview_job: 'Show job outfit',
-  animations_toggle: 'Animate',
 };
 
 const PreviewSwitch = ({ item }: { item: PrefWidgetItem }) => {

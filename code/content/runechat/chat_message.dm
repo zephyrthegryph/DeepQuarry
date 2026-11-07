@@ -111,7 +111,7 @@ CAPABILITIES(/datum/chatmessage)
 	// Clients cannot be hooked: a vanished client leaves owned_by() null and the
 	// message is dropped by its expire() lifespan timer.
 
-	var/extra_length = owned_by().prefs?.read_preference(/datum/preference/toggle/runechat_long_messages)
+	var/extra_length = FALSE
 	var/maxlen = extra_length ? CHAT_MESSAGE_EXT_LENGTH : CHAT_MESSAGE_LENGTH
 
 	// Clip message
@@ -324,9 +324,6 @@ CAPABILITIES(/datum/chatmessage)
 		if(!client.prefs?.read_preference(/datum/preference/toggle/runechat_mob))
 			return
 	// I know the pref is 'obj' but people dunno what turfs are
-	else if(!client.prefs?.read_preference(/datum/preference/toggle/runechat_obj))
-		return
-
 	// Incapable of receiving
 	if((audible && is_deaf()) || (!audible && is_blind()))
 		return
@@ -341,8 +338,7 @@ CAPABILITIES(/datum/chatmessage)
 	if(italics)
 		extra_classes |= "italics"
 
-	if(client.prefs?.read_preference(/datum/preference/toggle/runechat_border))
-		extra_classes |= "black_outline"
+	extra_classes |= "black_outline"
 
 	var/dist = get_dist(src, speaker)
 	switch (dist)

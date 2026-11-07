@@ -6,7 +6,7 @@
 	group = "demographics"
 	sort_order = 50
 	display_name = "Birthday"
-	pref_keys = list("bday_month", "bday_day", "bday_announce")
+	pref_keys = list("bday_month", "bday_day")
 
 TYPE_TABLE_DECLARE(/datum/preference_editor/birthday, get_months, list( \
 		"January", "February", "March", "April", "May", "June", \
@@ -19,7 +19,6 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/birthday, get_months, list( \
 		"month" = month,
 		"day"   = preferences.read_preference(/datum/preference/numeric/human/bday_day),
 		"max_day_for_month" = birth_month_days(month),
-		"announce" = !!preferences.read_preference(/datum/preference/toggle/human/bday_announce),
 	)
 
 /datum/preference_editor/birthday/build_ui_static_data(datum/preferences/preferences)
@@ -44,20 +43,10 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/birthday, get_months, list( \
 	preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, value)
 	return PREF_UPDATE_ACCEPTED
 
-/datum/preference_editor/birthday/proc/ui_act_set_announce(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	preferences.update_preference_by_type(/datum/preference/toggle/human/bday_announce, !!params["value"])
-	return PREF_UPDATE_ACCEPTED
-
 /// /datum/preference_editor/birthday's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
 /datum/preference_editor/birthday/handle_action(datum/preferences/preferences, action, list/params, mob/user)
 	var/list/typed
 	switch(action)
-		if("set_announce")
-			typed = payload_args(src, params, list("value" = null))
-			if(!typed)
-				return PREF_UPDATE_REJECTED
-			before_action(preferences, user, action)
-			return ui_act_set_announce(user, typed, preferences, null, action)
 		if("set_month")
 			typed = payload_args(src, params, list("value" = num()))
 			if(!typed)

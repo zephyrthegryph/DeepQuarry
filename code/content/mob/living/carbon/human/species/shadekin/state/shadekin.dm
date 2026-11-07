@@ -242,44 +242,36 @@
 	. = ..()
 
 /datum/shadekin/proc/ui_act_adjust_time(datum/act/op/A, val)
-	var/mob/user = A.actor
 	var/new_time = val
 	new_time = CLAMP(new_time, 2, 20)
 	if(!isnum(new_time))
 		return FALSE
 	set_flicker_time(new_time)
-	user.write_preference_directly(/datum/preference/numeric/living/flicker_time, new_time, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
 /datum/shadekin/proc/flicker_color_default(datum/act/op/A)
 	return flicker_color
 
 /datum/shadekin/proc/ui_act_adjust_color(datum/act/op/A)
-	var/mob/user = A.actor
 	var/picked = A.step_value("color")
 	if(picked)
 		set_flicker_color(picked)
-		user.write_preference_directly(/datum/preference/color/living/flicker_color, picked, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
 /datum/shadekin/proc/ui_act_adjust_break(datum/act/op/A, val)
-	var/mob/user = A.actor
 	var/new_break_chance = val
 	new_break_chance = CLAMP(new_break_chance, 0, 25)
 	if(!isnum(new_break_chance))
 		return FALSE
 	set_flicker_break_chance(new_break_chance)
-	user.write_preference_directly(/datum/preference/numeric/living/flicker_break_chance, new_break_chance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
 /datum/shadekin/proc/ui_act_adjust_distance(datum/act/op/A, val)
-	var/mob/user = A.actor
 	var/new_distance = val
 	new_distance = CLAMP(new_distance, 4, 10)
 	if(!isnum(new_distance))
 		return FALSE
 	set_flicker_distance(new_distance)
-	user.write_preference_directly(/datum/preference/numeric/living/flicker_distance, new_distance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
 /datum/shadekin/proc/ui_act_toggle_retreat(datum/act/op/A)

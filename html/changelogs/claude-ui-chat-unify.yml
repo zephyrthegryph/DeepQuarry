@@ -1,0 +1,8 @@
+author: "claude"
+delete-after: true
+changes:
+  - qol: "The chat pane is dark and styled from the moment you connect, even while the server is still starting; it no longer shows white or unstyled text until init finishes."
+  - del: "The chat has one theme, dark. The light, vchatdark and vchatlight themes and the theme setting are gone; old saved chat settings still load."
+  - rscadd: "Drag any chat tab to reorder it, Main included; the order is saved."
+  - rscdel: "The separate say popup is gone. Every speech hotkey (T, 5 emote, 6 subtle, Y whisper, F2 OOC, and new unbound LOOC and Radio keys) puts the cursor in the chat box's own input row in that mode; Enter sends and Escape cancels, both returning you to the map."
+  - rscadd: "The chat input row gained what the popup had: Ctrl+B/I/U and Ctrl+1..9 formatting and language keys, the live language and formatting preview (including Me and Subtle), Whisper and Subtle modes, the typing bubble and the channel colours."

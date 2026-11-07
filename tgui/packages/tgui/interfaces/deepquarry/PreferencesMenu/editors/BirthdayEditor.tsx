@@ -2,14 +2,13 @@
 // on the picked month). Sends `set_month` / `set_day` to /datum/preference_editor/birthday.
 
 import { useBackend } from 'tgui/backend';
-import { Button, Dropdown, Stack } from 'tgui-core/components';
+import { Dropdown, Stack } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
 type Data = {
   month: number;
   day: number;
   max_day_for_month: number;
-  announce: boolean;
 };
 
 type Static = {
@@ -73,22 +72,6 @@ export const BirthdayEditor = ({ data, staticData }: EditorProps) => {
           displayText={dayLabel}
           options={dayOptions}
           onSelected={(v) => send('set_day', String(v))}
-        />
-      </Stack.Item>
-      <Stack.Item color="label" ml={1}>
-        Announce?
-      </Stack.Item>
-      <Stack.Item>
-        <Button.Checkbox
-          checked={!!d.announce}
-          tooltip="Announce your birthday to the station"
-          onClick={() =>
-            act('dq_editor_action', {
-              editor: 'birthday',
-              action: 'set_announce',
-              params: { value: d.announce ? 0 : 1 },
-            })
-          }
         />
       </Stack.Item>
     </Stack>

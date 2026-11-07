@@ -75,13 +75,33 @@ PROC_SUMMARY(/proc/change_read_keys) // vars[] / call() dispatcher: the walk can
 		return
 	if(findtext(cond, "."))
 		return list(copytext(cond, 1, findtext(cond, ".")))
-	if(cond in E.vars)
+	// What the holder's type alone decides (a var of that name, a tracked setter, the build's read table) is worked out once per (type, name):
+	// a menu asks it for every condition of every candidate, and `in vars` walks the holder's whole var list.
+	var/list/typed = CACHED_KEY(change_text_read_keys, "[E.type]|[cond]", E, cond)
+	if(typed[1])
 		return list(cond)
-	if(hascall(E, "__setter_[cond]"))
-		. |= list(cond)
-	for(var/read in stat_generated_reads(E, cond, A, scope))
-		if(!findtext(read, ".") && (!findtext(read, ":") || findtext(read, "capkey:") == 1))
+	. |= typed[2]
+	for(var/read in lookup_reads_for(E, cond, A, scope))
+		if(change_read_key_kept(read))
 			. |= read
+
+/// The type half of change_read_keys() for a text condition: list(it is a var of the type, the keys its setter and its generated reads give).
+DECLARE_SHARED_CACHE(change_text_read_keys, GLOBAL_PROC_REF(build_change_text_read_keys), SC_NEVER)
+
+/proc/build_change_text_read_keys(datum/E, cond)
+	if(cond in E.vars)
+		return list(TRUE, list())
+	var/list/keys = list()
+	if(hascall(E, "__setter_[cond]"))
+		keys |= list(cond)
+	for(var/read in stat_generated_table_reads(E.type, cond))
+		if(change_read_key_kept(read))
+			keys |= read
+	return list(FALSE, keys)
+
+/// Whether a generated read is a key of the holder itself (not a hop through another entity, not a namespaced key other than a capability key).
+/proc/change_read_key_kept(read)
+	return !findtext(read, ".") && (!findtext(read, ":") || findtext(read, "capkey:") == 1)
 
 /// The value the hook's condition or key has on E now: a boolean for an edge hook, the raw value for ANY.
 /proc/change_value(datum/E, datum/hook/H)
@@ -315,7 +335,8 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 					hooks_carry_rest(batch, handle_index, hook_index)
 					GLOB.stat_spills++
 					TEST_REC_SPILL("on_change: [length(GLOB.hook_change_pending)] holder(s) carried at pass [passes]")
-					drain_spill_log("on_change", "ACT: the on_change drain spent its budget of [budget]us; [length(GLOB.hook_change_pending)] holder(s) resume at the next drain point (first: [E.type] [H.entry ? copytext(H.entry.sig, 1, 100) : H.type])")
+					if(drain_spill_log_due("on_change")) // the holder count is an O(n) alist length: counted only for a line that is written
+						drain_spill_log("on_change", "ACT: the on_change drain spent its budget of [budget]us; [length(GLOB.hook_change_pending)] holder(s) resume at the next drain point (first: [E.type] [H.entry ? copytext(H.entry.sig, 1, 100) : H.type])")
 					return
 				var/charge_started = stat_charge_begin()
 				var/hook_started = TICK_USAGE
@@ -335,6 +356,14 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 /// (7000 in 50 minutes) cost more than it told: one line per source per DRAIN_SPILL_LOG_INTERVAL says how many spills it stands for.
 GLOBAL_LIST_EMPTY(drain_spill_state)
 
+/// Whether drain_spill_log() for `source` writes a line now; when it does not, the spill is counted for the next line.
+/proc/drain_spill_log_due(source)
+	var/list/state = GLOB.drain_spill_state[source]
+	if(!state || state[1] <= TIME_NOW(CLOCK_WORLD))
+		return TRUE
+	state[2]++
+	return FALSE
+
 /// Logs `line` for a spilled budget of `source` at most once per DRAIN_SPILL_LOG_INTERVAL; the line says how many spills happened since the last one.
 /proc/drain_spill_log(source, line)
 	var/list/state = GLOB.drain_spill_state[source]
@@ -351,31 +380,40 @@ GLOBAL_LIST_EMPTY(drain_spill_state)
 
 /// The budget ran out at hook `hook_index` of holder `handle_index` of `batch`: that hook and everything after it go back to the pending marks, ahead of
 /// what was marked while the drain ran (a hook already pending for the same holder is one mark, not two).
+/// The batch itself becomes the rest: the holders already drained leave it and the stopped holder keeps its hooks from `hook_index` on, so a spill
+/// costs what the drain ran plus what was marked meanwhile, not the whole backlog (rebuilding a 35 k holder batch on each of ~560 boot spills was 30 s).
 /proc/hooks_carry_rest(alist/batch, handle_index, hook_index)
-	var/alist/rest = alist()
+	var/list/done = list()
 	var/at = 0
+	var/stopped
 	for(var/handle in batch)
-		at++
-		if(at < handle_index)
+		if(++at < handle_index)
+			done += handle
 			continue
-		var/list/hooks = list()
-		var/skip = (at == handle_index) ? hook_index - 1 : 0
-		var/seen = 0
-		for(var/datum/hook/H as anything in batch[handle])
-			if(++seen > skip)
-				hooks[H] = TRUE
-		if(length(hooks))
-			rest[handle] = hooks
+		stopped = handle
+		break
+	for(var/handle in done)
+		batch -= handle
+	if(!isnull(stopped) && hook_index > 1)
+		var/list/hooks = batch[stopped]
+		if(length(hooks) >= hook_index)
+			batch[stopped] = hooks.Copy(hook_index)
+		else
+			batch -= stopped
 	var/alist/newer = GLOB.hook_change_pending
 	if(newer)
 		for(var/handle in newer)
-			var/list/held = rest[handle]
+			var/list/held = batch[handle]
 			if(held)
 				for(var/datum/hook/H as anything in newer[handle])
 					held[H] = TRUE
 			else
-				rest[handle] = newer[handle]
-	GLOB.hook_change_pending = length(rest) ? rest : null
+				batch[handle] = newer[handle]
+	var/any = FALSE
+	for(var/handle in batch) // not length(): an alist's length walks every key
+		any = TRUE
+		break
+	GLOB.hook_change_pending = any ? batch : null
 
 /// Whether the hook marked against E is E's own. A turf that was replaced (ChangeTurf) since the mark is another object of another type behind the
 /// same reference, and a hook of the old type is not its own; a hook an activation brought belongs to its holder.

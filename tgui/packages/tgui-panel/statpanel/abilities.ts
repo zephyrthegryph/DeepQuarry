@@ -10,8 +10,10 @@ export type AbilityEntry = {
   name: string;
   desc: string;
   category: string;
-  /** The picture's address, or null. */
+  /** The picture's address, or null (null too when the picture is a sprite of the abilities sheet). */
   icon: string | null;
+  /** The picture as the abilities sprite sheet's CSS classes (the sheet the stat panel loaded), or null. */
+  icon_class?: string | null;
   cost: string | null;
   /** Deciseconds left of the cooldown when the message was sent. */
   cooldown: number;

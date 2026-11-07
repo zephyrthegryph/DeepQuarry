@@ -222,6 +222,9 @@
 				// Multi-tile objects can't reach here, otherwise you'd need to avoid uncrossing yourself
 				// ALLOW(spatial): Move() hot path, raw Crossed loop avoids a list copy per step
 				for(var/atom/movable/thing as anything in loc)
+					// The mover is in loc now: it does not cross itself (BYOND's own Crossed never names the mover, nor does doMove()).
+					if(thing == src)
+						continue
 					// We don't call parent so we are calling this for byond
 					thing.Crossed(src, oldloc)
 

@@ -199,9 +199,6 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 		pda.set_ownjob(assignment)
 		pda.ownrank = rank
 		pda.name = "PDA-[H.real_name] ([assignment])"
-		var/_ringtone = H.client?.prefs?.read_preference(/datum/preference/text/human/ringtone) // migrated pref
-		if(_ringtone)
-			pda.ttone = text_or_null(_ringtone)
 		return pda
 
 /datum/decl/hierarchy/outfit/dd_SortValue()
