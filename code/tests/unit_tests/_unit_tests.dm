@@ -199,6 +199,7 @@
 #include "dq_verb_menu_ops_tests.dm"
 #include "dq_ghost_panel_tests.dm"
 #include "dq_command_panel_tests.dm"
+#include "dq_pet_panel_tests.dm"
 #include "dq_atmos_tests.dm"
 #include "dq_bumped_notice_tests.dm"
 #include "dq_air_guard_tests.dm"

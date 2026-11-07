@@ -264,7 +264,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	var/new_size = A.answer.value
 	if(!picked_size && size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
-		picked_size = TRUE
+		set_picked_size(TRUE)
 
 /mob/living/simple_mob/proc/pick_color()
 	set name = "Pick Color"

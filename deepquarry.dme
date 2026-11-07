@@ -5547,6 +5547,7 @@
 #include "code\content\mob\living\simple_mob\life.dm"
 #include "code\content\mob\living\simple_mob\on_click.dm"
 #include "code\content\mob\living\simple_mob\overmap_mob.dm"
+#include "code\content\mob\living\simple_mob\pet_customize_panel.dm"
 #include "code\content\mob\living\simple_mob\sd_pets.dm"
 #include "code\content\mob\living\simple_mob\simple_hud.dm"
 #include "code\domains\world_model\mob\simple_mob.dm"

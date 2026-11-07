@@ -97,7 +97,7 @@
 	if (newname)
 		name = newname
 		set_voice_name(newname)
-		nameset = 1
+		set_nameset(1)
 
 /mob/living/simple_mob/proc/set_desc()
 	set name = "Set Description"
