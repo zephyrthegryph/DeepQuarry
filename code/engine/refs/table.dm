@@ -495,7 +495,7 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 
 /// own_field_static_work()'s answer, unmemoized: the static half of every check own_field_changed() runs.
 /proc/own_field_static_readers(datum/holder, var_name)
-	if(GLOB?.stat_input_keys?[var_name])
+	if(stat_type_reads_key(holder, var_name))
 		return TRUE
 	if(draw_hop_reads_var(var_name))
 		return TRUE
