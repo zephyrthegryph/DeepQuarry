@@ -222,22 +222,22 @@ impl<'de> serde::Deserialize<'de> for ReportUsageRows{fn deserialize<D:serde::De
 // SAME existing metadata allowance; physical old/new backing and later parser
 // scratch are admitted before growth. This is not a native/source counter.
 struct NativeReportWork{slots:std::cell::RefCell<[usize;3]>,denied:std::cell::Cell<bool>}
-impl NativeReportWork{fn new()->Self{Self{slots:std::cell::RefCell::new([0;3]),denied:std::cell::Cell::new(false)}}fn for_buffer(capacity:usize)->io::Result<Self>{let work=Self::new();crate::policy_finish::admitted::Work::temporary(&work,1,capacity)?;Ok(work)}}
-impl crate::policy_finish::admitted::Work for NativeReportWork{
+impl NativeReportWork{fn new()->Self{Self{slots:std::cell::RefCell::new([0;3]),denied:std::cell::Cell::new(false)}}fn for_buffer(capacity:usize)->io::Result<Self>{let work=Self::new();crate::report_work::Work::temporary(&work,1,capacity)?;Ok(work)}}
+impl crate::report_work::Work for NativeReportWork{
  fn checkpoint(&self)->io::Result<()>{if self.denied.get(){Err(io::ErrorKind::OutOfMemory.into())}else{Ok(())}}
  fn reserve(&self,n:usize)->io::Result<()>{let current=self.slots.borrow()[2];self.temporary(2,current.checked_add(n).ok_or_else(||self.overflow())?)}
  fn temporary(&self,slot:usize,n:usize)->io::Result<()>{self.checkpoint()?;let mut slots=self.slots.borrow_mut();if slot>=slots.len(){return Err(self.overflow())}let previous=slots[slot];let required=n.max(previous);let other=slots.iter().enumerate().filter(|(i,_)|*i!=slot).try_fold(0usize,|sum,(_,n)|sum.checked_add(*n)).ok_or_else(||self.overflow())?;if required.checked_add(other).is_none_or(|n|n>MAX_POLICY_OUTPUT){return Err(self.overflow())}slots[slot]=required;Ok(())}
  fn overflow(&self)->io::Error{self.denied.set(true);io::Error::new(io::ErrorKind::OutOfMemory,"native report physical transient envelope exhausted")}
 }
-fn policy_stdout_work(mut input:impl Read)->io::Result<StreamOutput>{use crate::policy_finish::admitted::Work;let work=NativeReportWork::new();let mut bytes=Vec::new();let mut chunk=[0u8;8192];loop{let count=input.read(&mut chunk)?;if count==0{return Ok(StreamOutput{bytes,policy_work:Some(work)})}let needed=bytes.len().checked_add(count).filter(|n|*n<=MAX_POLICY_OUTPUT).ok_or_else(||work.overflow())?;if needed>bytes.capacity(){let target=needed.max(bytes.capacity().saturating_mul(2)).max(8192);let peak=target.checked_mul(4).and_then(|n|n.checked_add(bytes.capacity())).and_then(|n|n.checked_add(64)).ok_or_else(||work.overflow())?;work.temporary(1,peak)?;bytes.try_reserve_exact(target-bytes.len()).map_err(|_|work.overflow())?;if bytes.capacity()>target.saturating_mul(4){return Err(work.overflow())}}bytes.extend_from_slice(&chunk[..count]);}}
+fn policy_stdout_work(mut input:impl Read)->io::Result<StreamOutput>{use crate::report_work::Work;let work=NativeReportWork::new();let mut bytes=Vec::new();let mut chunk=[0u8;8192];loop{let count=input.read(&mut chunk)?;if count==0{return Ok(StreamOutput{bytes,policy_work:Some(work)})}let needed=bytes.len().checked_add(count).filter(|n|*n<=MAX_POLICY_OUTPUT).ok_or_else(||work.overflow())?;if needed>bytes.capacity(){let target=needed.max(bytes.capacity().saturating_mul(2)).max(8192);let peak=target.checked_mul(4).and_then(|n|n.checked_add(bytes.capacity())).and_then(|n|n.checked_add(64)).ok_or_else(||work.overflow())?;work.temporary(1,peak)?;bytes.try_reserve_exact(target-bytes.len()).map_err(|_|work.overflow())?;if bytes.capacity()>target.saturating_mul(4){return Err(work.overflow())}}bytes.extend_from_slice(&chunk[..count]);}}
 #[cfg(test)]fn policy_stdout(input:impl Read)->io::Result<Vec<u8>>{policy_stdout_work(input).map(|out|out.bytes)}
 #[cfg(test)]fn validate_policy(bytes:&[u8],code:i32,baseline:bool)->io::Result<()>{let work=NativeReportWork::for_buffer(bytes.len())?;validate_policy_work(bytes,code,baseline,&work)}
 fn validate_policy_work(bytes:&[u8],code:i32,baseline:bool,work:&NativeReportWork)->io::Result<()>{
- use crate::policy_finish::admitted::Work;
+ use crate::report_work::Work;
  work.temporary(0,bytes.len().checked_mul(4).and_then(|n|n.checked_add(65_536)).ok_or_else(||work.overflow())?)?;
- if crate::policy_finish::derived_wire::has_derived_schema(bytes,work)?{if baseline||!matches!(code,0|1){return Err(invalid("native Derived analysis did not return a complete matching report"))}crate::policy_finish::derived_wire::validate(bytes,code==0,work)?;return Ok(())}
- if crate::policy_finish::derived_wire::has_handlers_schema(bytes,work)?{
-  if baseline||!matches!(code,0|1)||!crate::policy_finish::derived_wire::validate_handlers(bytes,code==0,work)?.complete(){return Err(invalid("native sem/handlers analysis did not return a complete matching report"))}
+ if crate::policy_report_wire::has_derived_schema(bytes,work)?{if baseline||!matches!(code,0|1){return Err(invalid("native Derived analysis did not return a complete matching report"))}crate::policy_report_wire::validate(bytes,code==0,work)?;return Ok(())}
+ if crate::policy_report_wire::has_handlers_schema(bytes,work)?{
+  if baseline||!matches!(code,0|1)||!crate::policy_report_wire::validate_handlers(bytes,code==0,work)?.complete(){return Err(invalid("native sem/handlers analysis did not return a complete matching report"))}
   return Ok(())
  }
  validate_legacy_policy(bytes,code,baseline).map(|_|())
@@ -327,7 +327,7 @@ fn workspace_check_options(args: &[String]) -> io::Result<WorkspaceCheck> {
 }
 
 fn workspace_check_text(bytes: &[u8], code: i32, work: &NativeReportWork) -> io::Result<String> {
-    use crate::policy_finish::admitted::Work;
+    use crate::report_work::Work;
     // Fund the decoded text and parser scratch before either pass. This is the
     // same physical allowance as the explicit JSON report client.
     work.temporary(0, bytes.len().checked_mul(4).and_then(|n| n.checked_add(65_536))
@@ -601,7 +601,7 @@ mod workspace_check_tests {
  #[test]fn native_policy_client_keys_is_exact_exclusive_hard_report_without_raw_authority(){
   let mut row:serde_json::Value=serde_json::from_slice(&wire(false,false)).unwrap();row["lints"]=serde_json::json!(["sem/keys"]);validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).unwrap();row["clean"]=true.into();row["baseline"]=true.into();validate_policy(&serde_json::to_vec(&row).unwrap(),0,true).unwrap();
   for names in [serde_json::json!(["sem/keys","scheduler"]),serde_json::json!(["scheduler","sem/keys"]),serde_json::json!(["sem/keys","sys/hygiene"]),serde_json::json!(["sem/keys","sem/keys"]),serde_json::json!(["sem/keys_unported"]),serde_json::json!(["sem/reads_unported"]),serde_json::json!(["SEM/KEYS"])]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),0,true).is_err());}
-  assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"sem/keys"));assert!(matches!(crate::keys_policy::metadata().policy,crate::lint::Policy::Hard));
+  assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"sem/keys"));
   assert_eq!((MAX_OUTPUT,MAX_POLICY_OUTPUT,MAX_STDERR),(524_288,64*1024*1024,4_194_304));
  }
 
@@ -620,7 +620,7 @@ mod workspace_check_tests {
 
 }
 
-#[cfg(test)]mod semantic_report_tests{use super::*;#[test]fn exact_semantic_reports_are_exclusive_and_do_not_expand_raw_roles(){for name in ["sem/reads","untracked_inputs"]{assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&name));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&name));}assert!(matches!(crate::sem_reads_policy::metadata().policy,crate::lint::Policy::Hard));assert!(matches!(crate::untracked_inputs_policy::metadata().policy,crate::lint::Policy::Hard));}}
+#[cfg(test)]mod semantic_report_tests{use super::*;#[test]fn exact_semantic_reports_are_exclusive_and_do_not_expand_raw_roles(){for name in ["sem/reads","untracked_inputs"]{assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&name));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&name));}}}
 
 #[cfg(test)]mod decl_report_tests{use super::*;#[test]fn exact_decl_report_is_exclusive_and_does_not_promote_raw_or_hard_roles(){assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&"decl"));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"decl"));let mut row=serde_json::json!({"schema":"native-analyze-report-v1","complete":true,"full_policy_parity":false,"baseline":false,"clean":false,"semantic_revision":"a".repeat(32),"source_revision":"b".repeat(32),"policy_revision":"c".repeat(32),"lints":["decl"],"text":"actual completed declaration report\n","allow_usage":[]});row["lints"]=serde_json::json!(["decl"]);assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_ok());for names in [serde_json::json!(["decl","scheduler"]),serde_json::json!(["scheduler","decl"]),serde_json::json!(["decl","sem/reads"]),serde_json::json!(["decl","decl"]),serde_json::json!(["BASE_VARS"]),serde_json::json!(["decl/unported"]) ]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());}}}
 
@@ -648,18 +648,12 @@ mod workspace_check_tests {
  #[test]fn ui_actions_completed_report_is_exactly_exclusive_and_never_raw_file(){assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&"ui_actions"));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"ui_actions"));let mut row=serde_json::json!({"schema":"native-analyze-report-v1","complete":true,"full_policy_parity":false,"baseline":false,"clean":false,"semantic_revision":"a".repeat(32),"source_revision":"b".repeat(32),"policy_revision":"c".repeat(32),"lints":["ui_actions"],"text":"whole actual original UI report\n","allow_usage":[]});validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).unwrap();for names in [serde_json::json!(["ui_actions","scheduler"]),serde_json::json!(["scheduler","ui_actions"]),serde_json::json!(["ui_actions","ui_actions"]),serde_json::json!(["UI_ACTIONS"])]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());}}
 }
 
-#[cfg(test)]mod setter_publishes_report_tests{use super::*;#[test]fn exact_setter_publishes_report_is_exclusive_hard_and_never_raw(){assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&"setter_publishes"));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"setter_publishes"));assert!(matches!(crate::setter_publication_policy::metadata().policy,crate::lint::Policy::Hard));let mut row=serde_json::json!({"schema":"native-analyze-report-v1","complete":true,"full_policy_parity":false,"baseline":false,"clean":false,"semantic_revision":"a".repeat(32),"source_revision":"b".repeat(32),"policy_revision":"c".repeat(32),"lints":["setter_publishes"],"text":"actual completed setter report\n","allow_usage":[]});assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_ok());for names in[serde_json::json!(["setter_publishes","sem/reads"]),serde_json::json!(["setter_publishes","scheduler"]),serde_json::json!(["scheduler","setter_publishes"]),serde_json::json!(["setter_publishes","setter_publishes"]),serde_json::json!(["SETTER_PUBLISHES"])]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());}}}
+#[cfg(test)]mod setter_publishes_report_tests{use super::*;#[test]fn exact_setter_publishes_report_is_exclusive_hard_and_never_raw(){assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&"setter_publishes"));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"setter_publishes"));let mut row=serde_json::json!({"schema":"native-analyze-report-v1","complete":true,"full_policy_parity":false,"baseline":false,"clean":false,"semantic_revision":"a".repeat(32),"source_revision":"b".repeat(32),"policy_revision":"c".repeat(32),"lints":["setter_publishes"],"text":"actual completed setter report\n","allow_usage":[]});assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_ok());for names in[serde_json::json!(["setter_publishes","sem/reads"]),serde_json::json!(["setter_publishes","scheduler"]),serde_json::json!(["scheduler","setter_publishes"]),serde_json::json!(["setter_publishes","setter_publishes"]),serde_json::json!(["SETTER_PUBLISHES"])]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());}}}
 
 
 #[cfg(test)]mod op_order_report_tests{use super::*;
 #[test]fn exact_op_order_ceiling_report_is_exclusive_and_does_not_expand_raw_file_authority(){
  assert!(EXCLUSIVE_TREE_REPORT_NAMES.contains(&"op_order"));assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"op_order"));
- assert!(matches!(crate::op_order_policy::META.policy,crate::lint::Policy::Ceilings{..}));
- #[cfg(feature="native-policy")]
- {
-  assert_eq!(crate::captured_raw_tree_pages::Policy::OpOrder.source_visits(),2);
-  assert!(!crate::captured_raw_tree_pages::Policy::OpOrder.selected_source_phase(0));assert!(crate::captured_raw_tree_pages::Policy::OpOrder.selected_source_phase(1));
- }
 }
 }
 
@@ -671,5 +665,5 @@ mod workspace_check_tests {
  use super::*;
  fn wire(failed:bool)->Vec<u8>{let preparation=if failed{serde_json::json!({"kind":"failed_root_one_shot","failure":{"kind":"Infrastructure","message":"actual root open failed"},"io_kind":"NotFound","os_code":2})}else{serde_json::json!({"kind":"current","semantic_revision":"a".repeat(32),"source_revision":"b".repeat(32),"policy_revision":"c".repeat(32)})};let row=serde_json::json!({"schema":"native-analyze-derived-report-v1","complete":true,"full_policy_parity":false,"baseline":false,"clean":false,"preparation":preparation,"lints":["derived_reads"],"text":"an exact selected report\n","allow_usage":[["derived_reads","0123456789012345678901234567890123456789",2]]});format!("{row}\n").into_bytes()}
  #[test]fn thin_client_accepts_only_honest_exclusive_current_or_failed_root_derived_data(){for failed in [false,true]{let bytes=wire(failed);validate_policy(&bytes,1,false).unwrap();assert!(validate_policy(&bytes,0,false).is_err());assert!(validate_policy(&bytes,1,true).is_err());let mut row:serde_json::Value=serde_json::from_slice(&bytes).unwrap();row["lints"]=serde_json::json!(["derived_reads","scheduler"]);assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());row["lints"]=serde_json::json!(["derived_reads"]);row["preparation"]["kind"]="foreign".into();assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());}assert!(!EXCLUSIVE_TREE_REPORT_NAMES.contains(&"derived_reads"),"no old-schema or default roster promotion");}
- #[test]fn thin_client_report_quota_precedes_decode_and_fresh_operation_recovers_without_reset(){use crate::policy_finish::admitted::Work;let bytes=wire(false);let denied=NativeReportWork::for_buffer(MAX_POLICY_OUTPUT).unwrap();assert_eq!(validate_policy_work(&bytes,1,false,&denied).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert!(denied.checkpoint().is_err());validate_policy(&bytes,1,false).unwrap();}
+ #[test]fn thin_client_report_quota_precedes_decode_and_fresh_operation_recovers_without_reset(){use crate::report_work::Work;let bytes=wire(false);let denied=NativeReportWork::for_buffer(MAX_POLICY_OUTPUT).unwrap();assert_eq!(validate_policy_work(&bytes,1,false,&denied).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert!(denied.checkpoint().is_err());validate_policy(&bytes,1,false).unwrap();}
 }

@@ -5,7 +5,7 @@ use crate::{baseline,lint::{Run,Policy},scopes::LintScope};
 #[cfg(feature="native-policy")]use crate::captured_derived_reads::DerivedReadData;
 /// A scoped loan from the actual hosting operation. Production issuers must
 /// reserve BEFORE allocation and retain that credit until physical payload drop.
-pub trait Work{fn temporary(&self,_slot:usize,bytes:usize)->io::Result<()>{self.reserve(bytes)}fn checkpoint(&self)->io::Result<()>;fn reserve(&self,bytes:usize)->io::Result<()>;fn overflow(&self)->io::Error;}
+pub use dq_analyze_client::report_work::Work;
 fn add(work:&dyn Work,a:usize,b:usize)->io::Result<usize>{a.checked_add(b).ok_or_else(||work.overflow())}
 fn mul(work:&dyn Work,a:usize,b:usize)->io::Result<usize>{a.checked_mul(b).ok_or_else(||work.overflow())}
 /// The old baseline reader deliberately treats actual read/UTF8 failure as an

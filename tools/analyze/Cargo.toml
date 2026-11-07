@@ -11,10 +11,6 @@ name = "analyze"
 path = "src/main.rs"
 required-features = ["legacy-sem"]
 
-[[bin]]
-name = "analyze-native"
-path = "src/native_main.rs"
-
 [lib]
 name = "dq_analyze"
 path = "src/lib.rs"
@@ -67,6 +63,7 @@ name = "unified_legacy_typed_policies"
 required-features = ["unified-oracle"]
 
 [dependencies]
+dq-analyze-client = { path = "client" }
 dm-preprocess = { path = "../dmb/crates/dm-preprocess" }
 dm-analysis = { path = "../dmb/crates/dm-analysis", optional = true }
 dm-tree = { path = "../dmb/crates/dm-tree", optional = true }
@@ -101,6 +98,7 @@ tempfile = "3"
 
 # One standalone crate, not a member of the verdigris workspace.
 [workspace]
+members = ["client"]
 
 [profile.release]
 opt-level = 3

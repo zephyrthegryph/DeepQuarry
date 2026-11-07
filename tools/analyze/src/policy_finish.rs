@@ -131,4 +131,4 @@ pub fn result_line(failed:&[String])->String{if failed.is_empty(){"All ratchet l
 
 #[path="policy_report_admitted.rs"]pub mod admitted;
 
-#[path="policy_report_wire.rs"]pub mod derived_wire;
+pub use dq_analyze_client::policy_report_wire as derived_wire;

@@ -1,6 +1,6 @@
 use super::*;
 use crate::selected_exclusions_wire::{Frame, Schema};
-#[path = "../../dmb/shared/test_scratch.rs"]
+#[path = "../../../dmb/shared/test_scratch.rs"]
 mod scratch;
 
 fn seal(bytes: &[u8]) -> Seal {

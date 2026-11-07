@@ -431,6 +431,7 @@ dependencies = [
  "dm-preprocess",
  "dm-syntax",
  "dm-tree",
+ "dq-analyze-client",
  "dreammaker",
  "fancy-regex",
  "md-5",
@@ -444,6 +445,15 @@ dependencies = [
  "tempfile",
  "toml 0.8.23",
  "walkdir",
+ "xxhash-rust",
+]
+
+[[package]]
+name = "dq-analyze-client"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
  "xxhash-rust",
 ]
 

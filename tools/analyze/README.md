@@ -16,6 +16,10 @@ analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--wri
 Build: `cargo build --release --manifest-path tools/analyze/Cargo.toml` (set `RUSTC_WRAPPER=sccache`
 when you can). Test: `cargo test --manifest-path tools/analyze/Cargo.toml`.
 
+The standalone native client uses the same command and wire validation as the
+opt-in routes below. Build it with
+`cargo build --locked --manifest-path tools/analyze/Cargo.toml -p dq-analyze-client --bin analyze-native`.
+
 ## Resident read-policy check (opt-in)
 
 ```sh

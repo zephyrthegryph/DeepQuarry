@@ -3,7 +3,7 @@
 //! which keys the on-disk cache so a rebuilt engine never serves a stale result.
 #[path = "cargo_source_inputs.rs"]
 mod cargo_source_inputs;
-#[path = "src/native_policy_roster.rs"]
+#[path = "client/src/native_policy_roster.rs"]
 mod native_policy_roster;
 use std::fmt::Write as _;
 use std::fs;
@@ -38,6 +38,7 @@ fn main() {
     let src = manifest.join("src");
 
     println!("cargo:rerun-if-changed=src");
+    println!("cargo:rerun-if-changed=client/src/native_policy_roster.rs");
     println!("cargo:rerun-if-changed=vendor");
     println!("cargo:rerun-if-changed=build.rs");
 

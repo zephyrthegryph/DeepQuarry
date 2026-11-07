@@ -4,8 +4,7 @@
 //! implementation ([`allow`]), one baseline implementation ([`baseline`]), one on-disk cache
 //! ([`cache`]); every lint is a [`lint::Lint`] in `src/lints/`.
 
-pub mod native_cli_client;
-pub mod selected_exclusions_wire;
+pub use dq_analyze_client::{cli_arguments, native_cli_client, native_policy_roster, selected_exclusions_wire};
 pub mod allow;
 #[cfg(feature = "legacy-sem")]
 pub mod base_vars_dead;
@@ -68,7 +67,6 @@ pub mod strip;
 pub mod tree;
 pub mod util;
 
-pub mod native_policy_roster;
 pub const LEGACY_SEMANTICS_ENABLED: bool = cfg!(feature = "legacy-sem");
 
 #[cfg(feature = "native-policy")]
@@ -346,7 +344,6 @@ pub mod required_scope_policy;
 
 #[cfg(feature="native-policy")]pub mod required_scope_registry;
 
-pub mod cli_arguments;
 
 pub mod state_schema_data;
 pub mod state_schema_policy;
@@ -563,3 +560,23 @@ pub mod sem_handlers_report_policy;
 #[cfg(feature="native-policy")]pub mod captured_sem_handlers;
 
 pub mod map_edits_policy;
+
+#[cfg(test)]
+mod client_producer_contract_tests {
+    #[test]
+    fn delivered_report_metadata_matches_the_issuing_policies() {
+        use crate::lint::Policy;
+        assert!(matches!(crate::keys_policy::metadata().policy, Policy::Hard));
+        assert!(matches!(crate::sem_reads_policy::metadata().policy, Policy::Hard));
+        assert!(matches!(crate::untracked_inputs_policy::metadata().policy, Policy::Hard));
+        assert!(matches!(crate::setter_publication_policy::metadata().policy, Policy::Hard));
+        assert!(matches!(crate::op_order_policy::META.policy, Policy::Ceilings { .. }));
+        #[cfg(feature = "native-policy")]
+        {
+            let op_order = crate::captured_raw_tree_pages::Policy::OpOrder;
+            assert_eq!(op_order.source_visits(), 2);
+            assert!(!op_order.selected_source_phase(0));
+            assert!(op_order.selected_source_phase(1));
+        }
+    }
+}

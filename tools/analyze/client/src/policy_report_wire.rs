@@ -3,7 +3,10 @@
 use serde::{Deserialize,de::{DeserializeSeed,Visitor,SeqAccess}};
 use serde_json::value::RawValue;
 use std::{fmt,io::{self,Write}};
-use super::admitted::Work;
+use crate::report_work::Work;
+
+/// Exact wire ALLOW name shared with the existing producer registration.
+pub const DERIVED_READS_ALLOW: &str = "derived_reads";
 fn invalid()->io::Error{io::Error::new(io::ErrorKind::InvalidData,"native Derived report is not complete/matching")}
 fn hex(value:&str,width:usize)->bool{value.len()==width&&value.bytes().all(|b|b.is_ascii_digit()||(b'a'..=b'f').contains(&b))}
 #[derive(Deserialize)]#[serde(deny_unknown_fields)]struct Failure<'a>{kind:FailureKind,#[serde(borrow)]message:&'a RawValue}
@@ -33,7 +36,7 @@ pub fn validate<'a>(bytes:&'a[u8],clean:bool,work:&dyn Work)->io::Result<Validat
   "failed_root_one_shot"=>{if p.semantic_revision.is_some()||p.source_revision.is_some()||p.policy_revision.is_some()||p.failure.as_ref().is_none_or(|f|!f.message.get().trim_start().starts_with('"')){return Err(invalid())}},
   _=>return Err(invalid()),
  }
- allows(document.allow_usage,crate::allow_registry_fields::derived_reads::ALLOW_0[0],None)?;Ok(Validated{document})
+ allows(document.allow_usage,DERIVED_READS_ALLOW,None)?;Ok(Validated{document})
 }
 impl Validated<'_>{pub fn write_allow_usage(&self,output:&mut dyn Write)->io::Result<()>{allows(self.document.allow_usage,"derived_reads",Some(output))}}
 
