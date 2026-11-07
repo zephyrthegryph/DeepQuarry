@@ -8,17 +8,6 @@
 	window_asked_by = user
 	log_world("TRACE use_in_hand: [src] asked to open its window for [user]")
 
-/// The default Use held item keys name verbs the client still has (the Z key once named a verb that was removed, and did nothing).
-/datum/unit_test/dq_item_use_in_hand_keybind_verbs
-
-/datum/unit_test/dq_item_use_in_hand_keybind_verbs/Run()
-	var/list/verb_paths = list()
-	for(var/verb_path in typesof(/client/verb))
-		verb_paths += "[verb_path]"
-	for(var/list/row as anything in keybinding_definitions())
-		if(row[1] == "self_use" || row[1] == "robot_self_use")
-			TEST_ASSERT(("/client/verb/[row[4]]" in verb_paths), "the [row[1]] key runs [row[4]], which must be a client verb")
-
 /// A held PDA opens its window when used in hand, through the Z key's path and through the resolver.
 /datum/unit_test/dq_item_use_in_hand_pda
 

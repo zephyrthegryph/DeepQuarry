@@ -96,6 +96,7 @@
 
 
 /client/verb/attack_self()
+	set name = "Use Held Item"
 	set hidden = 1
 	var/mob/living/L = mob
 	if(istype(L))
@@ -105,11 +106,24 @@
 
 /// The Use held module key (Ctrl+Z) of a cyborg: the module in use, multibelt aware.
 /client/verb/robot_alt_mode()
+	set name = "Use Held Module"
 	set hidden = 1
 	var/mob/living/silicon/robot/R = mob
 	if(istype(R))
 		R.alt_mode()
 	return
+
+/// The Holster key: holster or draw with the holster attached to the worn uniform, through the uniform's own op.
+/client/verb/holster_key()
+	set name = "Holster"
+	set hidden = 1
+	var/mob/living/carbon/human/H = mob
+	if(!istype(H))
+		return
+	var/obj/item/clothing/under/uniform = H.get_equipped_item(SLOT_ID_UNIFORM)
+	if(!istype(uniform))
+		return
+	perform_op(H, uniform, "under_holster_verb", null, ORIGIN_HOTKEY)
 
 /client/verb/toggle_throw_mode()
 	set hidden = 1

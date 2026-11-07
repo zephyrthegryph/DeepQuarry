@@ -8,7 +8,7 @@ export const GAME_ITEMS: MenuItem[] = [
   { label: 'Quick screenshot (F2)', command: '.screenshot auto' },
   { label: 'Save screenshot as... (Shift+F2)', command: '.screenshot' },
   { label: 'Reconnect', command: '.reconnect' },
-  { label: 'Check ping', command: '.ping' },
+  { label: 'Check ping', command: 'ping' },
   { label: 'Fit viewport', command: 'fit-viewport' },
   { label: 'Active playtime', command: 'active-playtime' },
   { label: 'Server revision', command: 'show-server-revision' },

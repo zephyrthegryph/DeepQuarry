@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Z and Ctrl+Z (use held item or module), H (holster) and the stat panel Ping button run verbs that exist again"
+  - rscdel: "Removed the Shift+U and Ctrl+U rest-left and rest-right bindings; no such verbs exist"
+  - code_imp: "A unit test checks every default keybinding and stat panel menu command names a real verb"

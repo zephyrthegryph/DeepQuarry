@@ -13,7 +13,7 @@ const NATIVE_MENU_COMMANDS = [
   '.screenshot auto',
   '.screenshot',
   '.reconnect',
-  '.ping',
+  'ping',
   '.quit',
   '.winset "mapwindow.map.icon-size=0"',
   '.winset "mapwindow.map.icon-size=128"',
