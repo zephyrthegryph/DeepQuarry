@@ -436,6 +436,21 @@ impl<'a> OriginalLiteralRef<'a> {
         let owner=self.owner;
         (Arc::strong_count(owner)==1,owner.credit.bytes())
     }
+    /// Estimates the potential spelling-only projection on this issued row.
+    /// Shared backing is a per-row upper bound. A standalone owner can be
+    /// counted separately only while its unique occurrence owns the payload.
+    #[cfg(debug_assertions)]
+    pub(crate) fn trace_source_projection(self) -> Option<(usize, Option<usize>)> {
+        let row = self.payload();
+        let eligible = match row.kind {
+            LiteralKind::Int | LiteralKind::Float => true,
+            LiteralKind::String | LiteralKind::Resource => row.value_in_raw[1] != 0 || row.text.is_empty(),
+            LiteralKind::InterpBegin | LiteralKind::InterpPart | LiteralKind::InterpEnd => false,
+        };
+        let standalone = (self.ordinal == 0 && self.page_storage_identity().is_none()
+            && Arc::strong_count(self.owner) == 1).then_some(self.owner.credit.bytes());
+        eligible.then_some((row.raw.capacity(), standalone))
+    }
     #[cfg(debug_assertions)]
     pub(crate) fn trace_numeric_raw(self) -> Option<usize> {
         let payload = self.payload();

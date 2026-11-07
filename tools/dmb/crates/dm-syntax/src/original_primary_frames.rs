@@ -210,6 +210,13 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   let scoped_observer=observer.is_some();if !original_header_before_child_lookahead_scoped(source,&line,frame.scope.context(tokens,original),&mut frame.items,observer){return Ok(false)}frame.pending=Some(PendingPrimary{line,scoped_observer});Ok(true)
  }
  #[cfg(debug_assertions)]
+ pub(super) fn trace_current_body_line(&self, span: Span) -> bool {
+  self.frames.last().is_some_and(|frame| frame.scope.in_body && frame.pending.as_ref().is_some_and(|pending| {
+   let line = &pending.line;
+   line.header_start == span.start && line.end == span.end && line.indent == frame.scope.indent
+  }))
+ }
+ #[cfg(debug_assertions)]
  pub(super) fn trace_items(&self, source: &str) -> PrimaryItemCensus {
   let mut census=PrimaryItemCensus::default();
   census.visit_settled(&self.root_items, source);

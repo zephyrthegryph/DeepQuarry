@@ -58,6 +58,39 @@ impl std::fmt::Debug for PrimaryTapeTrace<'_> {
     }
 }
 
+/// Observe exact completed BODY lines in output order. The census retains
+/// scalars only and does not participate in parsing or owner publication.
+#[cfg(debug_assertions)]
+#[derive(Default, Debug)]
+struct BodyLiteralCandidates {
+    next_row: usize,
+    body_rows: usize,
+    projectable_rows: usize,
+    raw_capacity_per_row_upper: usize,
+    observed_standalone_rows: usize,
+    observed_standalone_payload_bytes: usize,
+}
+#[cfg(debug_assertions)]
+impl BodyLiteralCandidates {
+    fn observe(&mut self, line: Span, in_body: bool, source: &str, rows: OriginalLiteralRows<'_>) {
+        while let Some((span, data)) = rows.get(self.next_row) {
+            if span.end > line.end { break; }
+            self.next_row += 1;
+            if !in_body || span.start < line.start { continue; }
+            self.body_rows += 1;
+            if source.get(span.range()) != Some(data.raw()) { continue; }
+            if let Some((raw, standalone)) = data.trace_source_projection() {
+                self.projectable_rows += 1;
+                self.raw_capacity_per_row_upper = self.raw_capacity_per_row_upper.saturating_add(raw);
+                if let Some(bytes) = standalone {
+                    self.observed_standalone_rows += 1;
+                    self.observed_standalone_payload_bytes = self.observed_standalone_payload_bytes.saturating_add(bytes);
+                }
+            }
+        }
+    }
+}
+
 enum PrimaryTokenTape {
     Packed(PackedTokenBlocks),
     Loaned(LoanedTokenPages),
@@ -91,6 +124,8 @@ pub struct OriginalPrimaryDemand<'a,'observer,'budget>{
  tokens:PrimaryTokenTape,diagnostics:Vec<Diagnostic>,lexical:Vec<Diagnostic>,literal_facts:OriginalPrimaryLiteralFacts,literal_facts_issued:bool,
  frontier:usize,ended:bool,failed:bool,
  live_callable_prefix:Option<LiveCallablePrefix>,
+ #[cfg(debug_assertions)]
+ body_literal_candidates: Option<BodyLiteralCandidates>,
  // Physical rows above are destroyed before the actual root below.
  original:OriginalParseState<'a,'observer,'budget>,
 }
@@ -149,7 +184,10 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  }
  fn new_with_mode(a:&'a crate::SettingAdmission<'budget>,observer:Option<&'observer mut dyn OriginalDeclarationHeaderObserver>,committed:bool)->io::Result<Self>{
   let original=OriginalParseState{storage:original_storage::Storage::new(a)?,fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:observer.map(std::cell::RefCell::new),observer_stop:Default::default(),first_outer_block:Default::default()};
-  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new_with_mode(a,committed)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PrimaryTokenTape::Packed(PackedTokenBlocks::new(a)?),diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,live_callable_prefix:None,original})
+  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new_with_mode(a,committed)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PrimaryTokenTape::Packed(PackedTokenBlocks::new(a)?),diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,live_callable_prefix:None,
+   #[cfg(debug_assertions)]
+   body_literal_candidates: std::env::var_os("DMB_ORIGINAL_TRACE_BODY_LITERAL_CANDIDATES").map(|_| BodyLiteralCandidates::default()),
+   original})
  }
  /// Enable immutable token DATA loans before the first actual adoption.
  /// The preprocessor must independently bind its real source/output receipts.
@@ -281,8 +319,15 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   for line in batch.iter(){
    // Line is scalar geometry; no header/source String is copied or reparsed.
    let line=Line{indent:line.indent,header_start:line.header_start,header_end:line.header_end,end:line.end,explicit_block_opener:line.explicit_block_opener,same_line_body:line.same_line_body};
+   #[cfg(debug_assertions)]
+   let line_span = Span::new(line.header_start, line.end);
    let continuing=match observer.as_mut(){Some(actual)=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line_scoped(source,tokens,line,&self.original,&mut self.diagnostics,Some(&mut **actual))?,None=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line(source,tokens,line,&self.original,&mut self.diagnostics)?};
    if !continuing{break}
+   #[cfg(debug_assertions)]
+   if let Some(candidates) = &mut self.body_literal_candidates {
+    let in_body = self.frames.as_ref().is_some_and(|frames| frames.trace_current_body_line(line_span));
+    candidates.observe(line_span, in_body, source, self.literal_facts.rows());
+   }
   }
   let continuing = if !self.original.stopped() {
    if let Some(start) = batch.take_header_start() {
@@ -299,6 +344,10 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  /// Borrow the existing live primary ledger before its failed attempt unwinds.
  #[cfg(debug_assertions)]
  pub fn trace_literal_retention(&self)->impl std::fmt::Debug{self.literal_facts.trace_retention()}
+ #[cfg(debug_assertions)]
+ pub fn trace_body_literal_candidates(&self) -> Option<impl std::fmt::Debug + '_> {
+  self.body_literal_candidates.as_ref()
+ }
  #[cfg(debug_assertions)]
  pub fn trace_token_retention(&self)->impl std::fmt::Debug + '_ { PrimaryTapeTrace(&self.tokens) }
  #[cfg(debug_assertions)]
@@ -342,6 +391,43 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
 
 #[cfg(test)]mod tests{
  use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[cfg(debug_assertions)]
+ #[test]
+ fn body_literal_candidates_use_actual_body_scope_and_exact_raw_ranges() {
+  let source="/proc/p(formal = 7)\n    var/local = \"raw\"\n    return \"a\\t\"\n/obj/initializers\n    name = \"initial\"\n";
+  let counter=Arc::new(AtomicUsize::new(0));
+  let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));
+  let mut primary=OriginalPrimaryDemand::new_committed(&a,None).unwrap();
+  primary.body_literal_candidates=Some(BodyLiteralCandidates::default());
+  for token in lex_spans(source).tokens {
+   let raw=&source[token.span.range()];
+   let value=match token.kind {
+    TokenKind::Number=>Some(OriginalTokenValue::Int(7)),
+    TokenKind::String=>Some(OriginalTokenValue::String(if raw=="\"a\\t\"" {"a\t"} else {&raw[1..raw.len()-1]})),
+    _=>None,
+   };
+   if let Some(value)=value {
+    let data=OriginalLiteralData::from_value_using(raw.to_owned(),value,&a).unwrap();
+    primary.token_with_original_literal(token,data).unwrap();
+   } else {
+    primary.token(token).unwrap();
+   }
+  }
+  assert!(primary.advance(source,true).unwrap());
+  let candidates=primary.body_literal_candidates.as_ref().unwrap();
+  assert_eq!(candidates.body_rows,2);
+  assert_eq!(candidates.projectable_rows,1,"escaped text and initializer/formal values retain full ownership");
+  assert_eq!(candidates.observed_standalone_rows,1);
+  assert_eq!(candidates.raw_capacity_per_row_upper,"\"raw\"".len());
+  let rows=primary.literal_facts.rows();
+  let mut foreign=BodyLiteralCandidates::default();
+  foreign.observe(Span::new(0,source.len()),true,&" ".repeat(source.len()),rows);
+  assert_eq!(foreign.body_rows,4);
+  assert_eq!(foreign.projectable_rows,0,"equal geometry alone cannot project spelling");
+  drop(primary);
+  assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+
  #[test]fn actual_primary_assembly_retains_one_traversal_across_physical_pauses_and_not_fake_eof(){
   let source="/datum/a\n    var/value=1\n    proc/p()\n        return 2\n/datum/b\n";let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut cursor=crate::NativeTokenCursor::default();let mut end=0;
   for line in source.split_inclusive('\n'){end+=line.len();loop{match cursor.next_available_using(&source[..end],end==source.len(),&a,|_,_,_|true).unwrap(){crate::NativeTokenStep::Token(token)=>primary.token(token).unwrap(),crate::NativeTokenStep::NeedInput|crate::NativeTokenStep::End=>break,crate::NativeTokenStep::Stopped=>panic!("no diagnostic stop")}}assert!(primary.advance(&source[..end],end==source.len()).unwrap());}

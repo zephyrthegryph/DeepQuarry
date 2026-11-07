@@ -1005,8 +1005,110 @@ impl RawTokenRows {
     }
 }
 
+// Width-only representation used by the four-byte projection census.
+#[cfg(debug_assertions)]
+fn narrow_width_pair(token: usize, raw: usize) -> Option<(u8, bool)> {
+    if token == raw {
+        return Some((u8::try_from(token).ok()?, false));
+    }
+    if token > 15 || raw > 15 { return None; }
+    Some((((token as u8) << 4) | raw as u8, true))
+}
+
 // Optional, allocation-free counts at the actual successful append. Used only
 // by the producer failure report, before receiver trim discards lookahead.
+#[cfg(debug_assertions)]
+#[derive(Debug, Default)]
+struct ProjectedOriginRowCost {
+    narrow_bytes: usize,
+    medium_bytes: usize,
+    full_bytes: usize,
+    escape_directory_bytes: usize,
+    // Current physical origin page only. Reset at the real page boundary.
+    medium: usize,
+    full: usize,
+}
+#[cfg(debug_assertions)]
+impl ProjectedOriginRowCost {
+    fn observe(&mut self, local: usize, cell_bytes: usize, class: usize) {
+        const SIDE_PAGE: usize = 16;
+        if local == 0 {
+            self.narrow_bytes += ROW_PAGE_LEN * cell_bytes;
+            self.medium = 0;
+            self.full = 0;
+        }
+        let (side_count, row_bytes) = match class {
+            1 => (&mut self.medium, std::mem::size_of::<MediumRow>()),
+            2 => (&mut self.full, std::mem::size_of::<Row>()),
+            _ => return,
+        };
+        if *side_count % SIDE_PAGE == 0 {
+            let pages = *side_count / SIDE_PAGE;
+            let slot_bytes = std::mem::size_of::<Vec<Row>>();
+            if pages == 0 {
+                self.escape_directory_bytes += 4 * slot_bytes;
+            } else if pages >= 4 && pages.is_power_of_two() {
+                self.escape_directory_bytes += pages * slot_bytes;
+            }
+            let bytes = SIDE_PAGE * row_bytes;
+            if class == 1 { self.medium_bytes += bytes; }
+            else { self.full_bytes += bytes; }
+        }
+        *side_count += 1;
+    }
+}
+// Model two exact width-only side storage choices. Sparse adds an inline
+// Vec header per page and a packed (u16 ordinal, u8 width) row with alignment.
+// Ranked adds an optional pointer per page, an exact rank + Vec box on first
+// use, and the one-byte payload. Both Vec capacities grow in 16-row steps.
+#[cfg(debug_assertions)]
+#[repr(C)]
+struct ProjectedSparseWidth { local: u16, raw_width: u8 }
+#[cfg(debug_assertions)]
+struct ProjectedRankedWidths { _rank: RowGroupRank, _widths: Vec<u8> }
+#[cfg(debug_assertions)]
+#[derive(Debug, Default)]
+struct ProjectedWidthOnlyCost {
+    rows: usize,
+    pages_with_side: usize,
+    sparse_bytes: usize,
+    ranked_bytes: usize,
+    adaptive_steady_lower_bound_bytes: usize,
+    page_side_rows: usize,
+}
+#[cfg(debug_assertions)]
+impl ProjectedWidthOnlyCost {
+    fn page_bytes(rows: usize) -> [usize; 3] {
+        let capacity = rows.div_ceil(16) * 16;
+        let sparse = std::mem::size_of::<Vec<ProjectedSparseWidth>>()
+            + capacity * std::mem::size_of::<ProjectedSparseWidth>();
+        let ranked = std::mem::size_of::<Option<Box<ProjectedRankedWidths>>>()
+            + if rows == 0 { 0 } else { std::mem::size_of::<ProjectedRankedWidths>() + capacity };
+        [sparse, ranked, sparse.min(ranked)]
+    }
+
+    fn observe(&mut self, local: usize, side: bool) {
+        if local == 0 {
+            self.page_side_rows = 0;
+            self.add(Self::page_bytes(0));
+        }
+        if side {
+            let before = Self::page_bytes(self.page_side_rows);
+            if self.page_side_rows == 0 { self.pages_with_side += 1; }
+            self.rows += 1;
+            self.page_side_rows += 1;
+            let after = Self::page_bytes(self.page_side_rows);
+            self.add(std::array::from_fn(|i| after[i] - before[i]));
+        }
+    }
+
+    fn add(&mut self, [sparse, ranked, adaptive]: [usize; 3]) {
+        self.sparse_bytes += sparse;
+        self.ranked_bytes += ranked;
+        self.adaptive_steady_lower_bound_bytes += adaptive;
+    }
+}
+
 #[cfg(debug_assertions)]
 #[derive(Debug, Default)]
 pub(super) struct RawRowGeometryCensus {
@@ -1016,6 +1118,12 @@ pub(super) struct RawRowGeometryCensus {
     current: [usize; 3],
     six_byte: [usize; 3],
     five_byte: [usize; 3],
+    four_byte: [usize; 3],
+    five_page_cost: ProjectedOriginRowCost,
+    four_page_cost: ProjectedOriginRowCost,
+    // Add each width_side storage estimate to this shared 4B+geometry cost.
+    four_width_side_base_cost: ProjectedOriginRowCost,
+    width_side: ProjectedWidthOnlyCost,
     // [inline, full] under the 16-byte group shape. The base is reset on
     // each real group page, even if its first cell needs a full escape.
     group_16_byte: [usize; 2],
@@ -1041,7 +1149,7 @@ impl RawRowGeometryCensus {
         *count = count.saturating_add(1);
     }
 
-    fn observe(&mut self, row: Row, geometry: GroupGeometry, page_base: usize) {
+    fn observe(&mut self, row: Row, geometry: GroupGeometry, page_base: usize, local: usize) {
         if self.previous_group.is_some_and(|prior| row.group != prior && prior.checked_add(1) != Some(row.group)) {
             self.group_jumps = self.group_jumps.saturating_add(1);
         }
@@ -1057,7 +1165,13 @@ impl RawRowGeometryCensus {
                 && [output, token, decoded, raw, width].into_iter().all(|value| value <= usize::from(u8::MAX))
         });
         let five = six && fields.is_some_and(|[_, _, _, decoded, raw, _]| decoded == raw);
-        for (counts, eligible) in [(&mut self.current, current), (&mut self.six_byte, six), (&mut self.five_byte, five)] {
+        let four = five && fields.is_some_and(|[_, _, token, _, _, width]| narrow_width_pair(token, width).is_some());
+        self.five_page_cost.observe(local, 5, if five { 0 } else { fallback });
+        self.four_page_cost.observe(local, 4, if four { 0 } else { fallback });
+        self.four_width_side_base_cost.observe(local, 4, if five { 0 } else { fallback });
+        self.width_side.observe(local, five && !four);
+        for (counts, eligible) in [(&mut self.current, current), (&mut self.six_byte, six),
+                                   (&mut self.five_byte, five), (&mut self.four_byte, four)] {
             let count = &mut counts[if eligible { 0 } else { fallback }];
             *count = count.saturating_add(1);
         }
@@ -1156,7 +1270,8 @@ impl OriginalRawOrigins{
   if result.is_ok() {
    if let Some(census)=&mut self.row_geometry_census {
     if !share_group { census.observe_group(geometry); }
-    census.observe(row,geometry,self.rows.page((self.rows.len()-1)/ROW_PAGE_LEN).expect("issued origin row page").group_base);
+    let ordinal=self.rows.len()-1;
+    census.observe(row,geometry,self.rows.page(ordinal/ROW_PAGE_LEN).expect("issued origin row page").group_base,ordinal%ROW_PAGE_LEN);
    }
   }
   if result.is_err() {
@@ -1736,6 +1851,24 @@ impl OriginalRawOrigins{
   drop((groups,credit));
   assert_eq!(live.load(Ordering::Acquire),0);
   assert_eq!(syntax.load(Ordering::Acquire),0);
+ }
+
+ #[cfg(debug_assertions)]
+ #[test]
+ fn raw_width_side_projection_accounts_for_per_page_blocks_and_controls() {
+  let mut cost=ProjectedWidthOnlyCost::default();
+  for local in 0..17 { cost.observe(local,true); }
+  cost.observe(0,false);
+  cost.observe(1,false);
+  cost.observe(0,true);
+  let page_costs=[17,0,1].map(ProjectedWidthOnlyCost::page_bytes);
+  assert_eq!(cost.rows,18);
+  assert_eq!(cost.pages_with_side,2);
+  assert_eq!(cost.sparse_bytes,page_costs.iter().map(|p|p[0]).sum::<usize>());
+  assert_eq!(cost.ranked_bytes,page_costs.iter().map(|p|p[1]).sum::<usize>());
+  assert_eq!(cost.adaptive_steady_lower_bound_bytes,page_costs.iter().map(|p|p[2]).sum::<usize>());
+  assert!(ProjectedWidthOnlyCost::page_bytes(1)[0]<ProjectedWidthOnlyCost::page_bytes(1)[1]);
+  assert!(ProjectedWidthOnlyCost::page_bytes(4096)[0]>ProjectedWidthOnlyCost::page_bytes(4096)[1]);
  }
 
  #[test]
