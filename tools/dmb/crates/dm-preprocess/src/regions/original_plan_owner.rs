@@ -4,7 +4,7 @@
 //! before allocation and moves its SAME root to final product/Mapping owners.
 use super::{DirectivePlan,IncludeOccurrence,IncludeRegion,OrderedItem,MacroEffect,ExpansionSegment};
 use crate::{SourceAcquisitionLease,InitialEnvironment,macro_expansion::{OriginalMacroRows as Rows, empty_exact as exact_rows}};
-use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace, OriginalMacroAuthor, NarrowOriginalMacroFrame, PendingOriginalSingleton}};
+use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace, OriginalMacroAuthor, NarrowOriginalMacroFrame, PendingOriginalSingleton, SingletonTracePool}};
 use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention,Span};
 use std::{io,mem,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
@@ -93,6 +93,7 @@ struct TraceProjectionReservations {
  name_grants:usize,
  name_hits:usize,
  total_plan_grants:usize,
+ pooled_singletons:usize,
 }
 pub(super) struct OriginalPlanOwner{
  plan:DirectivePlan,paths:OriginalPlanPaths,current_region:Option<usize>,failed:bool,
@@ -102,6 +103,7 @@ pub(super) struct OriginalPlanOwner{
  // One exact direct parent may resume after a nested macro emits a token.
  // It keeps only an already funded weak key and an existing projected Arc.
  parked_trace_parent:Option<LastTraceProjection>,
+ singleton_pages:SingletonTracePool,
  // Inline slots are already included in the owner's admitted size. Their
  // Arcs alias the same separately funded projection payloads.
  trace_names:[Option<Arc<OriginalMacroAuthor>>;TRACE_NAME_SLOTS],
@@ -115,7 +117,7 @@ impl OriginalPlanOwner{
   let mut credit=a.reserve(add(mem::size_of::<Self>(),path_bound(project.parent().unwrap_or_else(||Path::new("")))?)?).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.source_acquisitions=super::SourceAcquisitions::original(a)?;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
   for(name,replacement)in defines{poll(a)?;let bytes=add(node::<String,String>()?,scaled(add(name.len(),replacement.len())?,4)?)?;grow(&mut credit,bytes,a)?;plan.defines.insert(owned_text(name)?,owned_text(replacement)?);}
-  Ok(Self{plan,paths:OriginalPlanPaths::new(a)?,current_region:None,failed:false,empty_region:None,empty_trace:None,last_trace:None,parked_trace_parent:None,trace_names:std::array::from_fn(|_|None),
+  Ok(Self{plan,paths:OriginalPlanPaths::new(a)?,current_region:None,failed:false,empty_region:None,empty_trace:None,last_trace:None,parked_trace_parent:None,singleton_pages:SingletonTracePool::default(),trace_names:std::array::from_fn(|_|None),
    #[cfg(debug_assertions)]
    trace_projection:std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some().then(TraceProjectionReservations::default),
    credit})
@@ -137,7 +139,7 @@ impl OriginalPlanOwner{
   let plan_vector_capacity=capacity(&plan.occurrences).saturating_add(capacity(&plan.regions))
    .saturating_add(capacity(&plan.items)).saturating_add(capacity(&plan.file_dirs));
   let empty_region_arc_grants=self.empty_region.as_ref().map_or(0,|_|EmptyOriginalRegion::BYTES);
-  eprintln!("ORIGINAL_PLAN_RESERVATIONS opened_paths={} dependency_paths={} path_index_row_capacity={} occurrence_path_payload_capacity={occurrence_path_payload_capacity} semantic_path_bytes={semantic_path_bytes} plan_vector_capacity={plan_vector_capacity} empty_region_arc_grants={empty_region_arc_grants} projection={projection:?}",self.paths.sources().iter().count(),self.paths.dependencies().count(),self.paths.row_capacity_bytes());
+  eprintln!("ORIGINAL_PLAN_RESERVATIONS opened_paths={} dependency_paths={} path_index_row_capacity={} occurrence_path_payload_capacity={occurrence_path_payload_capacity} semantic_path_bytes={semantic_path_bytes} plan_vector_capacity={plan_vector_capacity} empty_region_arc_grants={empty_region_arc_grants} singleton_page_grants={} projection={projection:?}",self.paths.sources().iter().count(),self.paths.dependencies().count(),self.paths.row_capacity_bytes(),self.singleton_pages.bytes_granted());
  }
  pub(super) fn plan(&self)->&DirectivePlan{&self.plan}
  /// Only the actual admitted read/recorded acquisition path supplies a lease.
@@ -369,7 +371,16 @@ impl OriginalPlanOwner{
    Ok(())
   })?;
   let rows = if depth == 1 {
-   singleton.ok_or(io::ErrorKind::InvalidData)?.finish()
+   match singleton.ok_or(io::ErrorKind::InvalidData)? {
+    PendingOriginalSingleton::Narrow(frame) if self.singleton_pages.prepare_using(a)? => {
+     // No individual Arc was allocated. Keep the old staged reservation
+     // through the actual source checks, then refund it before publishing.
+     a.shrink(&mut self.credit, TRACE_ARC_HEADER + mem::size_of::<NarrowOriginalMacroFrame>())
+      .map_err(|error| a.take_operational_error().unwrap_or(error))?;
+     self.singleton_pages.append(frame)
+    }
+    pending => pending.finish(),
+   }
   } else if narrow {
    if narrow_rows.len() != depth { return Err(io::ErrorKind::InvalidData.into()); }
    narrow_rows.reverse();
@@ -389,11 +400,12 @@ impl OriginalPlanOwner{
    OriginalMacroTrace::Shared(Arc::new(boxed))
   };
   #[cfg(debug_assertions)]
-  let (row_count,row_bytes,wide_singleton)=(rows.len(),rows.frame_storage_bytes(),matches!(&rows,OriginalMacroTrace::Single(_)));
+  let (row_count,row_bytes,wide_singleton,pooled)=(rows.len(),rows.frame_storage_bytes(),matches!(&rows,OriginalMacroTrace::Single(_)),matches!(&rows,OriginalMacroTrace::PooledSingleton{..}));
   self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows });
   #[cfg(debug_assertions)]
   if let Some(trace)=&mut self.trace_projection {
    trace.projections=trace.projections.saturating_add(1);
+   trace.pooled_singletons+=usize::from(pooled);
    trace.singleton_projections=trace.singleton_projections.saturating_add(usize::from(depth==1));
    trace.rows=trace.rows.saturating_add(row_count);
    trace.wide_singleton_projections=trace.wide_singleton_projections.saturating_add(usize::from(wide_singleton));

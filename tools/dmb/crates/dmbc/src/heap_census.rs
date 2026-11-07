@@ -308,6 +308,15 @@ impl HeapCensus {
         );
     }
     fn macro_traces(&mut self, owner: &str, trace: dm_preprocess::regions::MacroTraceView<'_>) {
+        if let Some((address, bytes)) = trace.pooled_backing() {
+            if self.buffer(owner, address, bytes, bytes) {
+                trace.visit_pooled_authors(|buffers, definition| {
+                    for (address, bytes) in buffers { self.buffer(owner, address, bytes, bytes); }
+                    if let Some(definition) = definition { self.arc_path(owner, &definition.path); }
+                });
+            }
+            return;
+        }
         let [(wrapper, wrapper_bytes), (rows, row_bytes)] = trace.buffers();
         if !self.buffer(owner, wrapper, wrapper_bytes, wrapper_bytes) {
             return;

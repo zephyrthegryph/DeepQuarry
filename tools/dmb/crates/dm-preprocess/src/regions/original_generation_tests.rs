@@ -207,6 +207,7 @@ fn actual_original_origins_share_empty_trace_across_includes_without_losing_macr
     let expansion=trace.get(0).unwrap();
     assert!(expansion.definition.unwrap().path.ends_with("shared-trace.dme"));
     assert_eq!(trace.len(),1);
+    assert!(trace.pooled_backing().is_some(), "actual narrow Original trace uses its admitted page");
     #[cfg(target_pointer_width = "64")]
     assert_eq!(trace.buffers(), [(trace.owner_address(),16),(0,0)]);
     let escaped=trace.to_owned();
