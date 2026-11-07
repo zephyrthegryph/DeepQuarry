@@ -7,7 +7,8 @@
  * https://github.com/stylemistake/juke-build
  */
 
-import { spawn, spawnSync } from 'node:child_process';
+import { execFile, spawn, spawnSync } from 'node:child_process';
+import { promisify } from 'node:util';
 import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import net from 'node:net';
@@ -73,8 +74,10 @@ import { suiteBatches, exactSuiteUnion, bindSuitePlan, sameSuiteRuntime, suiteRo
 import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
-import { compilerMode, nativeDefaultCompiler } from './lib/compiler_selection';
-import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
+import { compilerMode, nativeDefaultCompiler, nativeWorkers } from './lib/compiler_selection';
+import { enterDaemonScope } from './lib/dmbc_daemons';
+import { nativeGenerationRequest, nativeGenerationWrittenCount } from './lib/native_generation';
+import { createNativeRequestDirectory, currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
 import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_archive';
@@ -933,11 +936,62 @@ export const DmeTarget = new Juke.Target({
 
 // `analyze gen` reads the gitignored `_bindings.dm` (the reads generator follows calls into the vg_* binds: without it
 // `rust_push(nameof(vg_entity))` is missing from three generated reads), so it runs after the bindings are current, never beside them.
+async function runPinnedNativeGeneration(): Promise<number> {
+  const root = process.cwd();
+  const executable = process.env.DQ_NATIVE_COMPILER;
+  const cache = process.env.DM_COMPILER_CACHE_ROOT;
+  if (compilerMode() !== 'native' || !executable || !path.isAbsolute(executable)
+      || !cache || !path.isAbsolute(cache) || process.env.DQ_NATIVE_NO_DAEMON === '1'
+      || process.env.DQ_COMPILER_FALLBACK === '1' || process.env.DQ_COMPILER_STRICT === '0') {
+    throw new Error('DQ_NATIVE_GEN=1 requires native resident compilation, an explicit absolute DQ_NATIVE_COMPILER and DM_COMPILER_CACHE_ROOT, and strict compiler selection.');
+  }
+  const compiler = fs.realpathSync.native(executable);
+  const cacheRoot = fs.realpathSync.native(cache);
+  const request = nativeGenerationRequest(root, cacheRoot, Number(nativeWorkers()));
+  return withSlot('dm_compile', 'native generation', async () => {
+    const scratch = createNativeRequestDirectory('native-gen');
+    const requestFile = path.join(scratch, 'request.json');
+    try {
+      fs.writeFileSync(requestFile, JSON.stringify(request), { flag: 'wx' });
+      const scope = enterDaemonScope(root, compiler);
+      try {
+        const { stdout, stderr } = await promisify(execFile)(
+          compiler, ['generate', requestFile, '--jsonl'],
+          { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 + 4096, timeout: 340_000, windowsHide: true },
+        );
+        if (stderr) process.stderr.write(stderr);
+        return nativeGenerationWrittenCount(stdout);
+      } catch (error) {
+        const failed = error as Error & { stdout?: string; stderr?: string };
+        if (failed.stderr) process.stderr.write(failed.stderr);
+        if (failed.stdout) process.stdout.write(failed.stdout);
+        throw error;
+      } finally {
+        scope.release();
+      }
+    } finally {
+      fs.rmSync(requestFile, { force: true });
+      fs.rmdirSync(scratch);
+    }
+  }, (message) => Juke.logger.info(message));
+}
+
 export const GenTarget = new Juke.Target({
-  dependsOn: [AnalyzeBuildTarget, DmeTarget, VerdigrisBindingsCheckTarget],
+  dependsOn: () => [process.env.DQ_NATIVE_GEN !== '1' && AnalyzeBuildTarget, DmeTarget, VerdigrisBindingsCheckTarget],
   executes: async () => {
     if (process.env.DQ_SKIP_GEN === '1') {
       Juke.logger.warn('gen: DQ_SKIP_GEN=1, not regenerating code/engine/_generated');
+      return;
+    }
+    if (process.env.DQ_NATIVE_GEN === '1') {
+      const started = Date.now();
+      try {
+        const written = await runPinnedNativeGeneration();
+        Juke.logger.info(`gen: ${written} generated file(s) rewritten in ${((Date.now() - started) / 1000).toFixed(1)} s`);
+      } catch (error) {
+        Juke.logger.error(`gen: native generation failed: ${String(error instanceof Error ? error.message.split('\n', 1)[0] : error)}`);
+        throw new Juke.ExitCode(1);
+      }
       return;
     }
     if (!fs.existsSync(ANALYZE_BIN)) {
@@ -980,7 +1034,7 @@ export const AnalyzeTestTarget = new Juke.Target({
 });
 
 export const AnalyzeTarget = new Juke.Target({
-  dependsOn: [GenTarget], // some lints read the generated DM (sem/reads)
+  dependsOn: [AnalyzeBuildTarget, GenTarget], // some lints read the generated DM (sem/reads)
   executes: async ({ args }) => {
     if (!fs.existsSync(ANALYZE_BIN)) {
       Juke.logger.warn('analyze: no binary, skipping the engine lints');

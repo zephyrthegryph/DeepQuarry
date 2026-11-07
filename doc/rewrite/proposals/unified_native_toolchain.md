@@ -3672,3 +3672,26 @@ open.
 The subsequent checkout run completed 44 policy stages before the same
 deadline. The inventory refactor has fixture parity evidence, but these
 checkout runs do not establish a speed improvement.
+
+The native Analyze client now has its own Cargo package,
+`dq-analyze-client`. Its dependency graph contains only serialization and
+hashing libraries and their dependencies. All 58 client tests passed.
+Generation and ImageDir IPC fixtures also passed with the isolated client.
+The host imports the same wire types and validation code.
+
+The build wrapper has an explicit native generation mode. Set
+`DQ_NATIVE_GEN=1` with an absolute `DQ_NATIVE_COMPILER` and an existing
+absolute `DM_COMPILER_CACHE_ROOT`. The mode requires resident native
+compilation and sends the complete generation request to that compiler
+under the compile slot. Failure stops the build. The generation fixture
+settled missing outputs and reused its daemon on the warm run. A real
+checkout invocation of the build target reached the daemon but refused a
+16,384-byte syntax allocation at the existing 128 MiB limit. The native
+generation mode remains opt-in.
+
+The combined checkout crossed the previous source-input refusal and the
+65,536-colon growth boundary. With paged colons it reached 11,895,685
+producer rows and then refused a 26,624-byte macro page under the unchanged
+syntax cap. A separate raw-only checkout completed all 45 stages at
+282.451 seconds. The final unused-ALLOW audit then refused the general
+code-view reservation. Neither run delivered a report.
