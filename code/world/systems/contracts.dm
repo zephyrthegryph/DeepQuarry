@@ -150,12 +150,16 @@ SYSTEM_DEF(contracts)
 /datum/system/contracts/proc/refresh_physical_custody(mob/living/carbon/human/subject)
 	if(QDELETED(subject))
 		return FALSE
+	// Asked on every step of every human: when the subject is not in custody now and nobody's custody is running, there is nothing to start
+	// or end, so the identity (two REF() keys, a mint on first use) is not looked up.
+	var/active = is_physically_custodied(subject)
+	if(!active && !length(custody_started_by_subject))
+		return FALSE
 	var/datum/contract_subject_identity/identity = subject_identity(subject)
 	if(!identity)
 		return FALSE
 	var/key = identity.id
 	var/started_at = custody_started_by_subject[key] || 0
-	var/active = is_physically_custodied(subject)
 	if(active && !started_at)
 		var/start_revision = next_custody_revision++
 		custody_started_by_subject[key] = TIME_NOW(CLOCK_WORLD)

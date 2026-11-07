@@ -2286,10 +2286,9 @@
 	. = ..()
 
 	// Technically this does mean being dragged takes nutrition
+	// One write per step (a run burns twice a walk's share): each write publishes the nutrition key.
 	if(stat != DEAD)
-		adjust_nutrition(hunger_rate_of(src)/-10)
-		if(m_intent == I_RUN)
-			adjust_nutrition(hunger_rate_of(src)/-10)
+		adjust_nutrition(hunger_rate_of(src) / -10 * (m_intent == I_RUN ? 2 : 1))
 
 	// Moving around increases germ_level faster
 	// The roll first: the slot read stays off most moves.
