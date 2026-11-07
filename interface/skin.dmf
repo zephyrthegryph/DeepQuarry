@@ -300,7 +300,8 @@ window "chat_float"
 		title = "Chat"
 		statusbar = false
 		can-minimize = false
-		can-resize = true
+		can-resize = false
+		titlebar = false
 		on-close = "dock-chat"
 	// Hosts the outputwindow pane while the chat floats (chat_apply_layout in code/content/tgui_panel/floating.dm).
 	elem "chat_float_host"

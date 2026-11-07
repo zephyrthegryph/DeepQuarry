@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "The chat pane is no longer moved while the client is still loading (it stalled the stat panel and chat from loading); it is docked by default and the floating chat window has no title bar"

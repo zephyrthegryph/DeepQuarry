@@ -1,6 +1,6 @@
 // Floating chat. The chat pane (outputwindow) is hosted either by the right-hand split
-// (rpane.rpanewindow, docked) or by the chat_float window's child control (floating, the
-// default). Moving the pane re-parents the same browser control, so the chat page and its
+// (rpane.rpanewindow, docked, the default) or by the chat_float window's child control (floating).
+// Moving the pane re-parents the same browser control, so the chat page and its
 // scrollback are the same page either way. The float window's position and size are saved by
 // the client (saved-params in skin.dmf); this file only decides where the pane lives.
 // Typing goes through the chat page's input row (tgui-panel/input), whose messages the panel forwards to
@@ -16,11 +16,20 @@
 /datum/preference/toggle/chat_floating
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "CHAT_FLOATING"
-	default_value = TRUE
+	default_value = FALSE
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/chat_floating/apply_to_client(client/client, value)
-	client.chat_apply_layout(value)
+	// Login applies every preference before the skin's browsers have loaded. Moving the chat pane then
+	// stalled the client (statbrowser, browseroutput and tgui windows never finished opening), so the
+	// layout is applied when the chat page reports ready (chat_layout_sync) and a later change applies at once.
+	if(client.tgui_panel?.is_ready())
+		client.chat_layout_sync(value)
+	else
+		log_tgui(client, "Chat layout [value ? "floating" : "docked"] waits for the chat page.", context = "chat_float")
+
+/// TRUE while the chat pane is hosted by the float window rather than the right-hand split. The skin starts docked.
+/client/var/chat_layout_floating = FALSE
 
 /// Whether the T/M/O hotkeys focus the chat page's input row (while the chat floats) instead of opening the popup.
 /datum/preference/toggle/chat_inline_input
@@ -51,21 +60,39 @@
 		return
 	winset(src, null, "command=ooc")
 
-/// Hosts the chat pane in the float window (floating) or the right-hand split (docked).
-/client/proc/chat_apply_layout(floating)
+/// The winset that hosts the chat pane in the float window (floating) or the right-hand split (docked).
+/proc/chat_layout_params(floating)
 	if(floating)
-		winset(src, null, list2params(list(
+		return list(
 			"[SKIN_RPANE_SPLIT].right" = "",
 			"[SKIN_CHAT_FLOAT_HOST].left" = SKIN_OUTPUT_PANE,
 			"[SKIN_CHAT_FLOAT_WINDOW].is-visible" = "true",
-		)))
+		)
+	return list(
+		"[SKIN_CHAT_FLOAT_WINDOW].is-visible" = "false",
+		"[SKIN_CHAT_FLOAT_HOST].left" = "",
+		"[SKIN_RPANE_SPLIT].right" = SKIN_OUTPUT_PANE,
+	)
+
+/// Whether the chat layout has to change: the pane is where the preference wants it already when this is FALSE.
+/proc/chat_layout_needs_change(floating, hosted_floating)
+	return !!floating != !!hosted_floating
+
+/// Puts the chat pane where the preference wants it. Called when the chat page is ready and when the preference changes; a no-op
+/// when the pane is there already (a chat page that reloads reports ready again, and a re-parent would reload it once more).
+/client/proc/chat_layout_sync(floating = null)
+	if(isnull(floating))
+		floating = !!prefs?.read_preference(/datum/preference/toggle/chat_floating)
+	if(!chat_layout_needs_change(floating, chat_layout_floating))
+		return
+	chat_apply_layout(floating)
+
+/// Hosts the chat pane in the float window (floating) or the right-hand split (docked).
+/client/proc/chat_apply_layout(floating)
+	winset(src, null, list2params(chat_layout_params(floating)))
+	chat_layout_floating = !!floating
+	if(floating)
 		dx_winget(src, src, SKIN_CHAT_FLOAT_WINDOW, "pos;size", PROC_REF(chat_float_measured))
-	else
-		winset(src, null, list2params(list(
-			"[SKIN_CHAT_FLOAT_WINDOW].is-visible" = "false",
-			"[SKIN_CHAT_FLOAT_HOST].left" = "",
-			"[SKIN_RPANE_SPLIT].right" = SKIN_OUTPUT_PANE,
-		)))
 	log_tgui(src, "Chat layout: [floating ? "floating" : "docked"].", context = "chat_float")
 
 /// dx_winget() callback: asks for the screen size once the float window's place is known.
@@ -121,6 +148,6 @@
 
 	chat_float_reset()
 	if(prefs?.read_preference(/datum/preference/toggle/chat_floating))
-		chat_apply_layout(TRUE)
+		chat_layout_sync()
 	else
 		prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, TRUE)

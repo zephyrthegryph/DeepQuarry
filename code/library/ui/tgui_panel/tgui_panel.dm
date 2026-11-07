@@ -104,6 +104,8 @@ CAPABILITIES(/datum/tgui_panel)
 				),
 			),
 		))
+		// The page is up, so the chat pane can move to where the preference wants it without interrupting the load.
+		client()?.chat_layout_sync()
 		return TRUE
 	// The chat input row speaks through the say modal: same messages, same entry handling and typing bubbles.
 	if(type == "entry" || type == "typing" || type == "thinking" || type == "open" || type == "close" || type == "lenwarn")
