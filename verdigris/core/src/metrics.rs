@@ -231,11 +231,23 @@ impl MetricsRegistry {
     /// `{"count","sum","max","bounds":[..],"buckets":[..]}`.
     #[must_use]
     pub fn to_json(&self) -> String {
+        self.to_json_prefixed("")
+    }
+
+    /// The metrics whose names start with `prefix`, as [`Self::to_json`] writes them: a reader that wants one family (the
+    /// slow-frame report reads `frame.`) pays for that family, not for every metric of the process.
+    #[must_use]
+    pub fn to_json_prefixed(&self, prefix: &str) -> String {
         let mut out = String::from("{");
-        for (i, (name, value)) in self.snapshot().iter().enumerate() {
-            if i > 0 {
+        let mut first = true;
+        for (name, value) in &self.snapshot() {
+            if !name.starts_with(prefix) {
+                continue;
+            }
+            if !first {
                 out.push(',');
             }
+            first = false;
             write_json_str(&mut out, name);
             out.push(':');
             match value {
