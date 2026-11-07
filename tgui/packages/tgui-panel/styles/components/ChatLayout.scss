@@ -7,16 +7,7 @@
   touch-action: none;
 }
 
-// The window has no chrome, so the console border (3px, glow, as the lobby panels) is drawn here, over the edge.
-.ChatConsole--float::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  pointer-events: none;
-  border: console.$console-border-width solid console.$console-border;
-  box-shadow: inset 0 0 15px console.$console-border;
-}
+// The floating window uses the same frame as the docked pane (ChatConsole.scss ::before).
 
 // What a drop would do while the window is dragged into the pin strip.
 .ChatPinHint {

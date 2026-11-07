@@ -6,6 +6,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { Button, Input, Section, Tabs } from 'tgui-core/components';
+import { useChatScanlines } from '../consoleScanlines';
 import { McTab } from './McTab';
 import { MenuPage } from './MenuPage';
 import {
@@ -269,6 +270,7 @@ export function App(props: {
     displayStore.subscribe,
     displayStore.get,
   );
+  useChatScanlines();
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const { state } = store;

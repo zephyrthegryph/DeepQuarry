@@ -5,9 +5,9 @@
   display: flex;
   align-items: stretch;
   gap: 4px;
-  padding: 4px;
+  padding: 6px 8px;
   background-color: console.$console-panel;
-  border-top: console.$console-border-width solid console.$console-border;
+  border-top: 2px solid console.$console-border;
   font-family: console.$console-font;
   font-weight: 700;
 }
