@@ -231,15 +231,15 @@ impl LiteralText {
             Self(Backing::Plain(raw))
         }
     }
-    pub fn raw_storage(&self) -> &String {
+    pub fn raw_storage(&self) -> crate::LiteralRawStorage<'_> {
         match &self.0 {
             Backing::Original{data,..} => data.raw_storage(),
-            Backing::Plain(raw) => raw,
-            Backing::Text(state) => &state.raw,
+            Backing::Plain(raw) => crate::LiteralRawStorage::from_string(raw),
+            Backing::Text(state) => crate::LiteralRawStorage::from_string(&state.raw),
         }
     }
     pub fn as_str(&self) -> &str {
-        self.raw_storage()
+        self.raw_storage().as_str()
     }
     /// Read-only census; never computes or retains additional syntax.
     pub fn shared_storage(&self) -> Option<(usize, usize)> {

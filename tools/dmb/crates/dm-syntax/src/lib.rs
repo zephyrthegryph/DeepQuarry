@@ -350,7 +350,7 @@ pub use syntax_ledger_views::ProjectedSettingExpression;
 pub use statements::{OriginalBodyGrammarOutcome,OriginalBodyGrammarKind};
 
 mod original_literal_data;
-pub use original_literal_data::{OriginalLiteralData,OriginalLiteralPool,OriginalLiteralRef,OriginalStringMode};
+pub use original_literal_data::{LiteralRawStorage,OriginalLiteralData,OriginalLiteralPool,OriginalLiteralRef,OriginalStringMode};
 
 pub use lexer_items::{NativeLexicalPurpose,OriginalPunctuationFacts,OriginalIdentFacts,OriginalWhitespaceFacts,OriginalResourceFacts,OriginalCommentFacts,OriginalNumberFacts,NativeTokenCursor,OriginalPreparedBoundary,NativeTokenProgress,NativeTokenStep};
 pub use lexer_items::{OriginalQuotedFrame,OriginalQuotedPart,OriginalQuotedPartKind,OriginalQuotedStep};

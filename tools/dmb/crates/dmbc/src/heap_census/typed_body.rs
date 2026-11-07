@@ -44,7 +44,8 @@ impl HeapCensus {
                 return;
             }
         }
-        self.string(owner, text.raw_storage());
+        let raw = text.raw_storage();
+        self.buffer(owner, raw.as_ptr() as usize, raw.as_str().len(), raw.capacity());
         text.visit_pinned_fragment_storage(|pointer,payload,capacity|{self.buffer(owner,pointer,payload,capacity);});
         match text.prepared_syntax_parts() {
             Some(Ok(Some(parts))) => {
