@@ -76,7 +76,7 @@ pub(super) struct PrimaryItemCensus {
     block_directory_capacity_bytes: usize,
     settled: ItemBuffers,
     active: ItemBuffers,
-    committed_compact: Option<(usize, usize, usize, usize)>,
+    committed_compact: Option<(usize, usize, usize, usize, usize)>,
 }
 
 #[cfg(debug_assertions)]
@@ -87,7 +87,7 @@ impl std::fmt::Debug for PrimaryItemCensus {
             .field("block_directory_capacity_bytes", &self.block_directory_capacity_bytes)
             .field("settled", &self.settled)
             .field("active", &self.active)
-            .field("committed_compact_blocks_rows_bytes_directory", &self.committed_compact)
+            .field("committed_compact_blocks_rows_bytes_directory_narrow_rows", &self.committed_compact)
             .finish()
     }
 }

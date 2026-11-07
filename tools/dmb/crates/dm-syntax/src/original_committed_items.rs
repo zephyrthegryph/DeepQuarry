@@ -13,6 +13,7 @@ const MAX_HEADER_BYTES: usize = 2 * 1024 * 1024;
 fn overflow() -> io::Error { io::ErrorKind::OutOfMemory.into() }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 struct CompactItem {
     span: [u32; 2],
     header: [u32; 2],
@@ -56,7 +57,67 @@ impl CompactItem {
     }
 }
 
+#[repr(C)]
+struct NarrowItem {
+    span: [u32; 2],
+    header_end: u32,
+    cursor_delta: u16,
+    indent: u16,
+    children: [u16; 2],
+    kind: ItemKind,
+    qualifiers: u8,
+    outer: Option<bool>,
+    empty_header: bool,
+}
+const _: () = assert!(size_of::<NarrowItem>() == 24);
+
+impl NarrowItem {
+    fn pack(item: CompactItem) -> Option<Self> {
+        let start = item.span[0];
+        if item.header[0] != start {
+            return None;
+        }
+        let cursor_delta = if item.cursor == u32::MAX {
+            u16::MAX
+        } else {
+            let delta = u16::try_from(item.cursor.checked_sub(start)?).ok()?;
+            if delta == u16::MAX { return None; }
+            delta
+        };
+        Some(Self {
+            span: item.span,
+            header_end: item.header[1],
+            cursor_delta,
+            indent: u16::try_from(item.indent).ok()?,
+            children: item.children,
+            kind: item.kind,
+            qualifiers: item.qualifiers,
+            outer: item.outer,
+            empty_header: item.empty_header,
+        })
+    }
+
+    fn unpack(&self) -> CompactItem {
+        CompactItem {
+            span: self.span,
+            header: [self.span[0], self.header_end],
+            cursor: if self.cursor_delta == u16::MAX {
+                u32::MAX
+            } else {
+                self.span[0] + u32::from(self.cursor_delta)
+            },
+            indent: u32::from(self.indent),
+            children: self.children,
+            kind: self.kind,
+            qualifiers: self.qualifiers,
+            outer: self.outer,
+            empty_header: self.empty_header,
+        }
+    }
+}
+
 enum Block {
+    Narrow { rows: Vec<NarrowItem>, roots: usize },
     Compact { rows: Vec<CompactItem>, roots: usize },
     Wide(Vec<Item>),
 }
@@ -84,6 +145,7 @@ impl PendingCommittedItems {
     pub(super) fn bytes(&self, storage: &Storage<'_, '_>) -> Option<usize> {
         self.blocks.iter().try_fold(self.blocks.capacity().checked_mul(size_of::<Block>())?, |bytes, block| {
             let buffer = match block {
+                Block::Narrow { rows, .. } => rows.capacity().checked_mul(size_of::<NarrowItem>()),
                 Block::Compact { rows, .. } => rows.capacity().checked_mul(size_of::<CompactItem>()),
                 Block::Wide(items) => storage.item_bytes(items),
             }?;
@@ -96,24 +158,32 @@ impl PendingCommittedItems {
     }
 
     #[cfg(debug_assertions)]
-    pub(super) fn trace_compact(&self) -> (usize, usize, usize, usize) {
+    pub(super) fn trace_compact(&self) -> (usize, usize, usize, usize, usize) {
         let mut blocks = 0usize;
         let mut rows = 0usize;
         let mut bytes = 0usize;
+        let mut narrow_rows = 0usize;
         for block in &self.blocks {
-            if let Block::Compact { rows: packed, .. } = block {
-                blocks += 1;
-                rows = rows.saturating_add(packed.len());
-                bytes = bytes.saturating_add(packed.capacity().saturating_mul(size_of::<CompactItem>()));
-            }
+            let (len, capacity_bytes) = match block {
+                Block::Narrow { rows, .. } => {
+                    narrow_rows = narrow_rows.saturating_add(rows.len());
+                    (rows.len(), rows.capacity().saturating_mul(size_of::<NarrowItem>()))
+                }
+                Block::Compact { rows, .. } =>
+                    (rows.len(), rows.capacity().saturating_mul(size_of::<CompactItem>())),
+                Block::Wide(_) => continue,
+            };
+            blocks += 1;
+            rows = rows.saturating_add(len);
+            bytes = bytes.saturating_add(capacity_bytes);
         }
-        (blocks, rows, bytes, self.blocks.capacity().saturating_mul(size_of::<Block>()))
+        (blocks, rows, bytes, self.blocks.capacity().saturating_mul(size_of::<Block>()), narrow_rows)
     }
 }
 
 fn compact_block(items: Vec<Item>, source: &str, storage: &Storage<'_, '_>) -> io::Result<Block> {
     #[derive(Default)]
-    struct ExactShape { rows: usize, old_bytes: usize, header_bytes: usize }
+    struct ExactShape { rows: usize, old_bytes: usize, header_bytes: usize, needs_full_compact: bool }
     fn inspect(items: &Vec<Item>, source: &str, shape: &mut ExactShape) -> Option<()> {
         shape.rows = shape.rows.checked_add(items.len())?;
         if shape.rows > MAX_BLOCK_ROWS { return None; }
@@ -122,19 +192,26 @@ fn compact_block(items: Vec<Item>, source: &str, storage: &Storage<'_, '_>) -> i
             shape.header_bytes = shape.header_bytes.checked_add(item.header.capacity())?;
             if shape.header_bytes > MAX_HEADER_BYTES { return None; }
             shape.old_bytes = shape.old_bytes.checked_add(item.header.capacity())?;
-            CompactItem::geometry(item, source)?;
+            let geometry = CompactItem::geometry(item, source)?;
+            shape.needs_full_compact |= NarrowItem::pack(geometry).is_none();
             // Depth is bounded by the actual admitted primary frame machine.
             inspect(&item.children, source, shape)?;
         }
         Some(())
     }
-    fn append(items: &[Item], source: &str, packed: &mut Vec<CompactItem>) -> [u16; 2] {
+    fn append<T>(
+        items: &[Item],
+        source: &str,
+        packed: &mut Vec<T>,
+        pack: fn(CompactItem) -> T,
+        set_children: fn(&mut T, [u16; 2]),
+    ) -> [u16; 2] {
         let start = packed.len();
-        packed.extend(items.iter().map(|item| CompactItem::geometry(item, source).expect("checked original item geometry")));
+        packed.extend(items.iter().map(|item| pack(CompactItem::geometry(item, source).expect("checked original item geometry"))));
         let end = packed.len();
         for (i, item) in items.iter().enumerate() {
-            let children = append(&item.children, source, packed);
-            packed[start + i].children = children;
+            let children = append(&item.children, source, packed, pack, set_children);
+            set_children(&mut packed[start + i], children);
         }
         [start, end].map(|ordinal| u16::try_from(ordinal).expect("preflight bounds block ordinals"))
     }
@@ -143,15 +220,28 @@ fn compact_block(items: Vec<Item>, source: &str, storage: &Storage<'_, '_>) -> i
     if inspect(&items, source, &mut shape).is_none() {
         return Ok(Block::Wide(items));
     }
-    let Some((mut packed, mut credit)) = storage.try_item_block_vector::<CompactItem>(shape.rows)? else {
-        return Ok(Block::Wide(items));
+    let (block, mut credit) = if shape.needs_full_compact {
+        let Some((mut packed, credit)) = storage.try_item_block_vector::<CompactItem>(shape.rows)? else {
+            return Ok(Block::Wide(items));
+        };
+        let [_, roots] = append(&items, source, &mut packed, |item| item, |item, children| item.children = children);
+        debug_assert_eq!(packed.len(), shape.rows);
+        (Block::Compact { rows: packed, roots: usize::from(roots) }, credit)
+    } else {
+        let Some((mut packed, credit)) = storage.try_item_block_vector::<NarrowItem>(shape.rows)? else {
+            return Ok(Block::Wide(items));
+        };
+        let [_, roots] = append(&items, source, &mut packed, |item| NarrowItem::pack(item).expect("checked narrow geometry"), |item, children| item.children = children);
+        debug_assert_eq!(packed.len(), shape.rows);
+        (Block::Narrow { rows: packed, roots: usize::from(roots) }, credit)
     };
-    let [_, roots] = append(&items, source, &mut packed);
-    debug_assert_eq!(packed.len(), shape.rows);
-    storage.adopt_item_block_credit(&mut credit)?;
+    if let Err(error) = storage.adopt_item_block_credit(&mut credit) {
+        drop(block);
+        return Err(error);
+    }
     drop(items);
     storage.release_item_block_bytes(shape.old_bytes)?;
-    Ok(Block::Compact { rows: packed, roots: roots as usize })
+    Ok(block)
 }
 
 /// Owned original rows and their exact separate resource lease. No duplicate
@@ -166,6 +256,8 @@ impl OriginalCommittedItems {
     pub fn view<'a>(&'a self, source: &'a str) -> io::Result<OriginalItems<'a>> {
         if source.len() != self.source_extent
             || self.data.blocks.iter().any(|block| match block {
+                Block::Narrow { rows, .. } => rows.iter().any(|row| !row.empty_header
+                    && source.get(CompactItem::span_of([row.span[0], row.header_end]).range()).is_none()),
                 Block::Compact { rows, .. } => rows.iter().any(|row| !row.empty_header
                     && source.get(CompactItem::span_of(row.header).range()).is_none()),
                 Block::Wide(_) => false,
@@ -207,6 +299,7 @@ impl OriginalCommittedItems {
         buffer(&self.data.blocks, &mut visit);
         for block in &self.data.blocks {
             match block {
+                Block::Narrow { rows, .. } => buffer(rows, &mut visit),
                 Block::Compact { rows, .. } => buffer(rows, &mut visit),
                 Block::Wide(rows) => wide(rows, &mut visit),
             }
@@ -230,9 +323,55 @@ impl std::fmt::Debug for OriginalCommittedItems {
 }
 
 #[derive(Clone, Copy)]
+enum CompactSlice<'a> {
+    Narrow(&'a [NarrowItem]),
+    Full(&'a [CompactItem]),
+}
+
+impl<'a> CompactSlice<'a> {
+    fn get(self, index: usize) -> Option<CompactRow<'a>> {
+        match self {
+            Self::Narrow(rows) => rows.get(index).map(CompactRow::Narrow),
+            Self::Full(rows) => rows.get(index).map(CompactRow::Full),
+        }
+    }
+
+    fn same(self, other: Self) -> bool {
+        match (self, other) {
+            (Self::Narrow(a), Self::Narrow(b)) => std::ptr::eq(a, b),
+            (Self::Full(a), Self::Full(b)) => std::ptr::eq(a, b),
+            _ => false,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum CompactRow<'a> {
+    Narrow(&'a NarrowItem),
+    Full(&'a CompactItem),
+}
+
+impl CompactRow<'_> {
+    fn geometry(self) -> CompactItem {
+        match self {
+            Self::Narrow(row) => row.unpack(),
+            Self::Full(row) => *row,
+        }
+    }
+
+    fn same(self, other: Self) -> bool {
+        match (self, other) {
+            (Self::Narrow(a), Self::Narrow(b)) => std::ptr::eq(a, b),
+            (Self::Full(a), Self::Full(b)) => std::ptr::eq(a, b),
+            _ => false,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 enum Siblings<'a> {
     Wide(&'a [Item]),
-    Compact { rows: &'a [CompactItem], interval: [u32; 2], source: &'a str },
+    Compact { rows: CompactSlice<'a>, interval: [u32; 2], source: &'a str },
     Blocks { blocks: &'a [Block], count: usize, source: &'a str },
 }
 
@@ -256,7 +395,7 @@ impl<'a> OriginalItems<'a> {
         match (self.0, other.0) {
             (Siblings::Wide(a), Siblings::Wide(b)) => std::ptr::eq(a, b),
             (Siblings::Compact { rows: a, interval: x, source: s },
-             Siblings::Compact { rows: b, interval: y, source: t }) => x == y && std::ptr::eq(a, b) && std::ptr::eq(s, t),
+             Siblings::Compact { rows: b, interval: y, source: t }) => x == y && a.same(b) && std::ptr::eq(s, t),
             (Siblings::Blocks { blocks: a, count: x, source: s },
              Siblings::Blocks { blocks: b, count: y, source: t }) => x == y && std::ptr::eq(a, b) && std::ptr::eq(s, t),
             _ => false,
@@ -269,7 +408,8 @@ impl<'a> OriginalItems<'a> {
             Siblings::Wide(items) => Some(OriginalItem(ItemView::Wide(items.get(index)?))),
             Siblings::Compact { rows, interval, source } => {
                 let row = rows.get(interval[0] as usize + index)?;
-                let header = if row.empty_header { "" } else { source.get(CompactItem::span_of(row.header).range())? };
+                let geometry = row.geometry();
+                let header = if geometry.empty_header { "" } else { source.get(CompactItem::span_of(geometry.header).range())? };
                 Some(OriginalItem(ItemView::Compact { row, rows, source, header }))
             }
             Siblings::Blocks { blocks, source, .. } => {
@@ -277,8 +417,11 @@ impl<'a> OriginalItems<'a> {
                 let local = index % ROOT_ITEM_BLOCK;
                 match block {
                     Block::Wide(items) => Self::from_items(items).get(local),
+                    Block::Narrow { rows, roots } => {
+                        Self(Siblings::Compact { rows: CompactSlice::Narrow(rows), interval: [0, *roots as u32], source }).get(local)
+                    }
                     Block::Compact { rows, roots } => {
-                        Self(Siblings::Compact { rows, interval: [0, *roots as u32], source }).get(local)
+                        Self(Siblings::Compact { rows: CompactSlice::Full(rows), interval: [0, *roots as u32], source }).get(local)
                     }
                 }
             }
@@ -293,7 +436,7 @@ impl<'a> OriginalItems<'a> {
 #[derive(Clone, Copy)]
 enum ItemView<'a> {
     Wide(&'a Item),
-    Compact { row: &'a CompactItem, rows: &'a [CompactItem], source: &'a str, header: &'a str },
+    Compact { row: CompactRow<'a>, rows: CompactSlice<'a>, source: &'a str, header: &'a str },
 }
 
 #[derive(Clone, Copy)]
@@ -310,7 +453,7 @@ impl std::fmt::Debug for OriginalItem<'_> {
 }
 
 impl<'a> OriginalItem<'a> {
-    pub fn kind(self) -> ItemKind { match self.0 { ItemView::Wide(i) => i.kind, ItemView::Compact { row, .. } => row.kind } }
+    pub fn kind(self) -> ItemKind { match self.0 { ItemView::Wide(i) => i.kind, ItemView::Compact { row, .. } => row.geometry().kind } }
     pub fn header(self) -> &'a str {
         match self.0 {
             ItemView::Wide(item) => &item.header,
@@ -321,25 +464,28 @@ impl<'a> OriginalItem<'a> {
         match (self.0, other.0) {
             (ItemView::Wide(a), ItemView::Wide(b)) => std::ptr::eq(a, b),
             (ItemView::Compact { row: a, source: s, .. }, ItemView::Compact { row: b, source: t, .. }) =>
-                std::ptr::eq(a, b) && std::ptr::eq(s, t),
+                a.same(b) && std::ptr::eq(s, t),
             _ => false,
         }
     }
-    pub fn span(self) -> Span { match self.0 { ItemView::Wide(i) => i.span, ItemView::Compact { row, .. } => CompactItem::span_of(row.span) } }
-    pub fn header_span(self) -> Span { match self.0 { ItemView::Wide(i) => i.header_span, ItemView::Compact { row, .. } => CompactItem::span_of(row.header) } }
+    pub fn span(self) -> Span { match self.0 { ItemView::Wide(i) => i.span, ItemView::Compact { row, .. } => CompactItem::span_of(row.geometry().span) } }
+    pub fn header_span(self) -> Span { match self.0 { ItemView::Wide(i) => i.header_span, ItemView::Compact { row, .. } => CompactItem::span_of(row.geometry().header) } }
     pub fn declaration_cursor(self) -> Option<usize> {
         match self.0 {
             ItemView::Wide(i) => i.declaration_cursor,
-            ItemView::Compact { row, .. } => (row.cursor != u32::MAX).then_some(row.cursor as usize),
+            ItemView::Compact { row, .. } => {
+                let cursor = row.geometry().cursor;
+                (cursor != u32::MAX).then_some(cursor as usize)
+            }
         }
     }
-    pub fn checker_qualifiers(self) -> u8 { match self.0 { ItemView::Wide(i) => i.checker_qualifiers, ItemView::Compact { row, .. } => row.qualifiers } }
-    pub fn original_outer_terminator(self) -> Option<bool> { match self.0 { ItemView::Wide(i) => i.original_outer_terminator, ItemView::Compact { row, .. } => row.outer } }
-    pub fn indent(self) -> usize { match self.0 { ItemView::Wide(i) => i.indent, ItemView::Compact { row, .. } => row.indent as usize } }
+    pub fn checker_qualifiers(self) -> u8 { match self.0 { ItemView::Wide(i) => i.checker_qualifiers, ItemView::Compact { row, .. } => row.geometry().qualifiers } }
+    pub fn original_outer_terminator(self) -> Option<bool> { match self.0 { ItemView::Wide(i) => i.original_outer_terminator, ItemView::Compact { row, .. } => row.geometry().outer } }
+    pub fn indent(self) -> usize { match self.0 { ItemView::Wide(i) => i.indent, ItemView::Compact { row, .. } => row.geometry().indent as usize } }
     pub fn children(self) -> OriginalItems<'a> {
         match self.0 {
             ItemView::Wide(i) => OriginalItems::from_items(&i.children),
-            ItemView::Compact { row, rows, source, .. } => OriginalItems(Siblings::Compact { rows, interval: row.children.map(u32::from), source }),
+            ItemView::Compact { row, rows, source, .. } => OriginalItems(Siblings::Compact { rows, interval: row.geometry().children.map(u32::from), source }),
         }
     }
 }
@@ -424,7 +570,7 @@ mod tests {
             assert!(!items.get(ROOT_ITEM_BLOCK).unwrap().same_item(items.get(ROOT_ITEM_BLOCK+1).unwrap()));
             compare(items, &dense.syntax().items, actual);
             let (forest, tokens, diagnostics, _, _, diagnostic_lease) = compact.into_parts();
-            assert!(forest.data.blocks.iter().all(|block| matches!(block, Block::Compact { .. })));
+            assert!(forest.data.blocks.iter().all(|block| matches!(block, Block::Narrow { .. })));
             assert!(forest.data.blocks.len() >= 3);
             assert!(compact_used.load(Ordering::Acquire) + 20_000 < dense_used.load(Ordering::Acquire));
             drop((tokens, diagnostics, diagnostic_lease));
@@ -460,7 +606,7 @@ mod tests {
                     assert_eq!(*roots, 1);
                     assert_eq!(rows[0].children, [1, MAX_BLOCK_ROWS as u16]);
                     assert_eq!(rows.last().unwrap().children, [MAX_BLOCK_ROWS as u16; 2]);
-                    let root = OriginalItems(Siblings::Compact { rows, interval: [0, 1], source }).get(0).unwrap();
+                    let root = OriginalItems(Siblings::Compact { rows: CompactSlice::Full(rows), interval: [0, 1], source }).get(0).unwrap();
                     assert_eq!(root.indent(), u32::MAX as usize);
                     let children = root.children();
                     assert_eq!(children.len(), count - 1);
@@ -479,12 +625,59 @@ mod tests {
     }
 
     #[test]
+    fn committed_narrow_geometry_preserves_exact_edge_and_full_compact_fallback() {
+        let source = "abc".repeat(22_000);
+        let span = Span::new(0, source.len());
+        for (cursor, indent, header_start, narrow) in [
+            (None, 0, 0, true),
+            (Some(65_534), 65_535, 0, true),
+            (Some(65_535), 0, 0, false),
+            (Some(1), 65_536, 0, false),
+            (Some(1), 1, 1, false),
+        ] {
+            let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+            let admission = SettingAdmission::new(&used, 1<<20, &|| Ok(()));
+            let storage = Storage::new(&admission).unwrap();
+            let header_span = Span::new(header_start, 3);
+            let mut items = Vec::new();
+            assert!(storage.push(&mut items, Item {
+                kind: ItemKind::Var,
+                header: storage.text(&source[header_span.range()]).unwrap(),
+                span,
+                header_span,
+                declaration_cursor: cursor,
+                checker_qualifiers: crate::UNKNOWN_HEADER_QUALIFIERS,
+                original_outer_terminator: Some(false),
+                indent,
+                children: Vec::new(),
+            }));
+            let block = compact_block(items, &source, &storage).unwrap();
+            let rows = match &block {
+                Block::Narrow { rows, roots: 1 } if narrow => CompactSlice::Narrow(rows),
+                Block::Compact { rows, roots: 1 } if !narrow => CompactSlice::Full(rows),
+                _ => panic!("unexpected compact geometry"),
+            };
+            let siblings = OriginalItems(Siblings::Compact { rows, interval: [0, 1], source: &source });
+            let row = siblings.get(0).unwrap();
+            assert!(row.same_item(siblings.get(0).unwrap()));
+            assert_eq!(row.span(), span);
+            assert_eq!(row.header_span(), header_span);
+            assert_eq!(row.header().as_ptr(), source[header_span.range()].as_ptr());
+            assert_eq!(row.declaration_cursor(), cursor);
+            assert_eq!(row.indent(), indent);
+            assert!(row.children().is_empty());
+            drop((block, storage));
+            assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+        }
+    }
+
+    #[test]
     fn committed_block_falls_back_for_distinct_spelling_and_unavailable_overlap() {
         for altered in [false, true] {
             let source = "/datum/p";
             let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let retained = 4096 + 4*size_of::<Item>() + source.len();
-            let limit = if altered { 1<<20 } else { retained + size_of::<CompactItem>() - 1 };
+            let limit = if altered { 1<<20 } else { retained + size_of::<NarrowItem>() - 1 };
             let admission = SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes() + (limit), &|| Ok(()));
             let storage = Storage::new(&admission).unwrap();
             let mut rows = Vec::new();
