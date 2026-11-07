@@ -11,6 +11,7 @@ import {
   nextRadioOption,
   parseCommonPrefix,
   parseRadioPrefix,
+  previewEntry,
   radioColorName,
   type RadioOption,
   TYPING_THROTTLE_MS,
@@ -267,5 +268,31 @@ describe('common prefix and radio colours', () => {
     expect(radioColorName(':e')).toBe('engineering');
     expect(radioColorName('')).toBe('common');
     expect(radioColorName(':zz')).toBe('common');
+  });
+});
+
+describe('every say popup channel', () => {
+  it('cycles Say, Radio, Me, Whis, Subtle, OOC, LOOC', () => {
+    expect([...INPUT_CHANNELS]).toEqual([
+      'Say',
+      'Radio',
+      'Me',
+      'Whis',
+      'Subtle',
+      'OOC',
+      'LOOC',
+    ]);
+  });
+
+  it('previews a radio message with its key', () => {
+    expect(previewEntry('Radio', { key: ':m', label: 'Medical' }, 'hi')).toBe(
+      ':m hi',
+    );
+    expect(previewEntry('Radio', { key: '', label: 'Common' }, 'hi')).toBe(
+      '; hi',
+    );
+    expect(previewEntry('Me', { key: ':m', label: 'Medical' }, 'waves')).toBe(
+      'waves',
+    );
   });
 });

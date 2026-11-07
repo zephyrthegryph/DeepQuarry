@@ -90,7 +90,6 @@
 #define VERB_CAT_IC_NOTES "IC.Notes"
 #define VERB_CAT_IC_SETTINGS "IC.Settings"
 #define VERB_CAT_IC_SUBTLE "IC.Subtle"
-#define VERB_CAT_IC_TGUI_SAY "IC.TGUI Say"
 #define VERB_CAT_IC_VORE "IC.Vore"
 #define VERB_CAT_MAPPING "Mapping"
 #define VERB_CAT_MAPPING_ATMOS "Mapping.Atmos"

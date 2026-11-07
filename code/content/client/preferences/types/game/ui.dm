@@ -51,7 +51,6 @@ TYPE_TABLE(/datum/preference/choiced/tgui_layout, pref_choices, list(TGUI_LAYOUT
 		return
 
 	client.refresh_tgui()
-	client.tgui_say?.load()
 
 /// Enables flashing the window in your task tray for important events
 /datum/preference/toggle/window_flashing

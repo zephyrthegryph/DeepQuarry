@@ -95,7 +95,11 @@ const AbilityButton = (props: ButtonProps) => {
       onDragEnd={onDragEnd}
     >
       {!!entry.slot && <span className="abilities__slot">{entry.slot}</span>}
-      {entry.icon ? (
+      {entry.icon_class ? (
+        <span className="abilities__icon abilities__icon--sheet">
+          <span className={entry.icon_class} />
+        </span>
+      ) : entry.icon ? (
         <img className="abilities__icon" alt="" src={entry.icon} />
       ) : (
         <span className="abilities__icon" />

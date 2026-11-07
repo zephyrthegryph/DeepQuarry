@@ -473,8 +473,12 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 // SSair runs after SSatoms (mapping/atoms deps), so by the time this fires
 // every atmos device exists with init_dir() done; it's safe to wire nodes.
 /datum/system/air/proc/setup_atmos_machinery()
+	var/started = REALTIMEOFDAY
+	var/count = 0
 	for (var/obj/machinery/atmospherics/AM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		AM.atmos_init()
+		count++
+	log_world("AIR_INIT: atmos_init (node matching) for [count] machine(s) took [(REALTIMEOFDAY - started) / 10]s")
 	setup_rust_pipenets()
 
 // setup_pipenets removed — see Initialize() comment.

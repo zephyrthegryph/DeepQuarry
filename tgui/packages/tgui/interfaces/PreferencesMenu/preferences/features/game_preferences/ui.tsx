@@ -18,7 +18,7 @@ export const ui_scale: FeatureToggle = {
 export const TGUI_ENABLE_SPELLCHECK: FeatureToggle = {
   name: 'TGUI: Spellcheck',
   category: 'UI',
-  description: 'Enables spellchecking on TGUI text areas and TGUI Say.',
+  description: 'Enables spellchecking on TGUI text areas.',
   component: CheckboxInput,
 };
 

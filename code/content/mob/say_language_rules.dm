@@ -1,9 +1,5 @@
-/// tgui-say's preview parses on the client with no round trip per keystroke, from this data: the rules live here and in parse_languages,
-/// the client holds none of its own. Sent when the window opens, since the mob, its languages and its keys can change between messages.
-/datum/tgui_say/proc/send_language_rules()
-	var/mob/M = client()?.mob
-	if(M)
-		window.send_message("languageRules", M.say_language_rules())
+/// The chat input row's live preview parses on the client with no round trip per keystroke, from this data: the rules live here and in
+/// parse_languages, the client holds none of its own. Sent when the row opens (code/content/client/chat_speech.dm).
 
 /// An autohiss map for the preview, or null for a mob with none.
 /mob/proc/say_hiss_rules()
@@ -53,7 +49,7 @@
 		radio_keys += radio_key
 
 	return list(
-		"mode" = MULTILINGUAL_DEFAULT || MULTILINGUAL_DEFAULT,
+		"mode" = MULTILINGUAL_DEFAULT,
 		"name" = name,
 		"defaultLanguage" = preferred?.name || "",
 		"gibberish" = gibberish.name,

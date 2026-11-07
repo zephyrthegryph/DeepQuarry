@@ -13,7 +13,7 @@ The DQ front end grew four surfaces that each styled the same things: the chat (
 | Title bar (name, subtitle, boxed close) | 2 | right-click menu, Inspect tab |
 | Frame + scanline overlay | 3 | `ChatConsole.scss`, `statpanel.scss`, `themes/console.scss`, each with its own strength |
 | tgui-core custom property block (`--button-*`, `--tab-*`, `--input-*`) | 3 | the same 30 lines in chat, stat panel and console theme |
-| Speech-mode colours (Say, Me, OOC, ...) | 2 | `tgui-say/styles/colors.scss`, `tgui-panel/styles/components/ChatInput.scss` |
+| Speech-mode colours (Say, Me, OOC, ...) | 1 (done) | `tgui/styles/radio-colors.scss` `$mode-colors`, read by `tgui-panel/styles/components/ChatInput.scss`; the say popup (`tgui-say`) was removed 2026-11 and its formatting keys, live preview and parser moved to `tgui/dq/speech/` |
 | Chat message stylesheets | 1 (done) | `tgchat/chat.scss` coloured by `chat-tokens.scss`; the chat has one theme, dark (the light/vchat themes were removed 2026-11) |
 | Scanline-preference hook | 2 | `tgui/layouts/consoleTheme.ts`, `tgui-panel/consoleScanlines.ts` |
 
