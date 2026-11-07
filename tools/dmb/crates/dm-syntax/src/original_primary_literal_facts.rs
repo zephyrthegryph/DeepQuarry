@@ -254,6 +254,103 @@ fn alloc_funded_literal_rows<T>(capacity: usize, layout: Layout) -> io::Result<V
     Ok(unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) })
 }
 
+// Failure-only geometry models. The high bit marks an escape; a
+// second bit distinguishes the original u32 word side from full Span.
+// Both side ordinals fit in the remaining 14 bits of a 256-row page.
+#[cfg(debug_assertions)]
+#[derive(Debug)]
+struct LiteralSpanShortCost {
+    group_rows: usize,
+    width_bits: usize,
+    old_span_buffer_bytes: usize,
+    short_pages: usize,
+    fallback_pages: usize,
+    partial_pages: usize,
+    selected_cells: usize,
+    selected_group_base_bytes: usize,
+    selected_word_escape_bytes: usize,
+    selected_full_escape_bytes: usize,
+    selected_side_owner_bytes: usize,
+    selected_page_bytes: usize,
+    directory_pointer_bytes: usize,
+    savings_after_directory: usize,
+}
+
+#[cfg(debug_assertions)]
+#[derive(Clone, Copy, Default)]
+struct LiteralSpanShortPage {
+    group_base: usize,
+    groups: usize,
+    word_escapes: usize,
+    full_escapes: usize,
+    has_wide_base: bool,
+}
+
+#[cfg(debug_assertions)]
+impl LiteralSpanShortCost {
+    fn new(group_rows: usize, width_bits: usize) -> Self {
+        Self {
+            group_rows, width_bits, old_span_buffer_bytes: 0, short_pages: 0, fallback_pages: 0, partial_pages: 0,
+            selected_cells: 0, selected_group_base_bytes: 0, selected_word_escape_bytes: 0,
+            selected_full_escape_bytes: 0, selected_side_owner_bytes: 0, selected_page_bytes: 0,
+            directory_pointer_bytes: 0, savings_after_directory: 0,
+        }
+    }
+
+    fn observe(&self, projected: &mut LiteralSpanShortPage, page: &LiteralPage, index: usize, span: Span) {
+        if index % self.group_rows == 0 {
+            projected.group_base = span.start;
+            projected.groups += 1;
+            projected.has_wide_base |= span.start.checked_sub(page.start_base)
+                .is_none_or(|delta| u32::try_from(delta).is_err());
+        }
+        let max_offset = (1usize << (15 - self.width_bits)) - 1;
+        let max_width = (1usize << self.width_bits) - 1;
+        let fits = span.start.checked_sub(projected.group_base).is_some_and(|delta| delta <= max_offset)
+            && span.end.checked_sub(span.start).is_some_and(|width| width <= max_width);
+        if !fits {
+            if page.spans[index] & WIDE_BIT == 0 { projected.word_escapes += 1; }
+            else { projected.full_escapes += 1; }
+        }
+    }
+
+    fn settle(&mut self, projected: LiteralSpanShortPage, page: &LiteralPage) {
+        let old = page.spans.capacity() * mem::size_of::<u32>() + page.wide.capacity() * mem::size_of::<Span>();
+        self.old_span_buffer_bytes += old;
+        if page.spans.len() != LITERAL_PAGE_LEN {
+            self.partial_pages += 1;
+            self.selected_page_bytes += old;
+            return;
+        }
+        let cells = page.spans.len() * mem::size_of::<u16>();
+        let bases = projected.groups * mem::size_of::<u32>();
+        let words = projected.word_escapes * mem::size_of::<u32>();
+        let wide = projected.full_escapes * mem::size_of::<Span>();
+        // Model one side box containing the base and old-word Vec headers.
+        // The existing full-span side header stays in the page.
+        let side = mem::size_of::<(Vec<u32>, Vec<u32>)>();
+        let bytes = cells + bases + words + wide + side;
+        if projected.has_wide_base || bytes >= old {
+            self.fallback_pages += 1;
+            self.selected_page_bytes += old;
+        } else {
+            self.short_pages += 1;
+            self.selected_cells += page.spans.len();
+            self.selected_group_base_bytes += bases;
+            self.selected_word_escape_bytes += words;
+            self.selected_full_escape_bytes += wide;
+            self.selected_side_owner_bytes += side;
+            self.selected_page_bytes += bytes;
+        }
+    }
+
+    fn finish(&mut self, page_capacity: usize) {
+        self.directory_pointer_bytes = page_capacity * mem::size_of::<usize>();
+        self.savings_after_directory = self.old_span_buffer_bytes
+            .saturating_sub(self.selected_page_bytes + self.directory_pointer_bytes);
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 struct FirstProjectionAttempts {
     #[cfg(debug_assertions)]
@@ -1207,7 +1304,12 @@ impl OriginalPrimaryLiteralFacts{
   let mut last_payload_page = None;
   let mut rejections = ProjectionRejections::default();
   let mut packed_run: Option<ProjectionPackedRun> = None;
+  let mut short_spans = [LiteralSpanShortCost::new(16, 5), LiteralSpanShortCost::new(16, 6),
+      LiteralSpanShortCost::new(32, 5), LiteralSpanShortCost::new(32, 6)];
+  let mut issued_pages = 0;
   for (page_at, page) in owner.rows.chunks.iter().flat_map(|chunk| &chunk.pages).enumerate() {
+   issued_pages += 1;
+   let mut short_page = [LiteralSpanShortPage::default(); 4];
    // Physical Arc counts alone no longer describe the logical shared rows.
    let mut occurrences = [0u16; LITERAL_PAGE_LEN];
    if let LiteralPageData::Compact(compact) = &page.data {
@@ -1216,7 +1318,10 @@ impl OriginalPrimaryLiteralFacts{
     }
    }
    for index in 0..page.spans.len() {
-   let data=page.get_data(index,0,None,owner.projection.as_ref()).expect("issued literal row").1;
+   let (span, data)=page.get_data(index,0,None,owner.projection.as_ref()).expect("issued literal row");
+   for (model, projected) in short_spans.iter().zip(&mut short_page) {
+    model.observe(projected, page, index, span);
+   }
    if data.is_projected() && !data.has_source_raw(){continue}
    let numeric_raw = data.trace_numeric_raw();
    numeric.delivered_rows += usize::from(numeric_raw.is_some());
@@ -1288,10 +1393,16 @@ impl OriginalPrimaryLiteralFacts{
     census.shared_payload_reserved_per_reference_upper=census.shared_payload_reserved_per_reference_upper.saturating_add(bytes);
    }
   }
+   for (model, projected) in short_spans.iter_mut().zip(short_page) {
+    model.settle(projected, page);
+   }
   }
+  // All earlier directory chunks are full by the append contract.
+  let unused_page_slots = owner.rows.chunks.last().map_or(0, |chunk| chunk.pages.capacity() - chunk.pages.len());
+  for model in &mut short_spans { model.finish(issued_pages + unused_page_slots); }
   if let Some(run) = packed_run { run.finish(&mut rejections); }
   // Use a named Debug builder so this snapshot has no owned text or alloc.
-  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census,numeric:NumericCensus,body_projection:BodyProjectionCensus,rejections:ProjectionRejections,first_attempts:FirstProjectionAttempts}
+  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census,numeric:NumericCensus,body_projection:BodyProjectionCensus,rejections:ProjectionRejections,first_attempts:FirstProjectionAttempts,short_spans:[LiteralSpanShortCost;4]}
   impl std::fmt::Debug for Snapshot{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{
    f.debug_struct("PrimaryLiteralCensus").field("rows",&self.rows).field("colons",&self.colons)
     .field("fixed_reserved",&self.fixed).field("row_capacity",&self.row_capacity).field("colon_capacity",&self.colon_capacity)
@@ -1300,9 +1411,9 @@ impl OriginalPrimaryLiteralFacts{
     .field("batch_payload_reserved",&self.census.batch_payload_reserved)
     .field("exclusive_payload_rows",&self.census.exclusive_payload_rows).field("exclusive_payload_reserved",&self.census.exclusive_payload_reserved)
     .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper)
-    .field("numeric",&self.numeric).field("body_projection",&self.body_projection).field("projection_rejections",&self.rejections).field("first_projection_attempts",&self.first_attempts).finish()
+    .field("numeric",&self.numeric).field("body_projection",&self.body_projection).field("projection_rejections",&self.rejections).field("first_projection_attempts",&self.first_attempts).field("short_span_projection",&self.short_spans).finish()
   }}
-  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections,first_attempts:owner.first_projection_attempts}
+  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections,first_attempts:owner.first_projection_attempts,short_spans}
  }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   let owner=self.0.as_ref().expect("live primary facts");if let Some(projection)=&owner.projection{projection.visit_storage(&mut visit)}let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(&mut visit);owner.colons.visit_storage(&mut visit);owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));

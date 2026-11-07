@@ -1456,8 +1456,66 @@ impl ProjectedWidthOnlyCost {
     }
 }
 
+/// Measure lossless 3B cells while keeping current medium/full and
+/// raw-width side ownership. A new escape may refer to one exact old 4B
+/// narrow row, whose own raw-width bit remains in the existing rank.
 #[cfg(debug_assertions)]
-#[derive(Debug, Default)]
+#[derive(Debug)]
+struct ProjectedThreeByteRows {
+    bits: [u8;3],
+    direct_rows: usize,
+    old_narrow_escapes: usize,
+    unchanged_medium_full: usize,
+    useful_full_pages: usize,
+    fallback_full_pages: usize,
+    old_narrow_side_bytes: usize,
+    projected_full_page_savings: usize,
+    local_escapes: usize,
+}
+#[cfg(debug_assertions)]
+impl ProjectedThreeByteRows {
+    fn new(bits: [u8;3]) -> Self {
+        Self { bits, direct_rows:0, old_narrow_escapes:0, unchanged_medium_full:0,
+            useful_full_pages:0, fallback_full_pages:0, old_narrow_side_bytes:0,
+            projected_full_page_savings:0, local_escapes:0 }
+    }
+    fn observe(&mut self, local: usize, fields: Option<[usize;6]>, old_narrow: bool, old_inline_width: bool) {
+        if local == 0 { self.local_escapes = 0; }
+        if old_narrow {
+            let [out_bits, raw_bits, width_bits]=self.bits;
+            let fits=fields.is_some_and(|[out, _, token, _, raw, raw_width]|{
+                out < (1 << out_bits) && raw < (1 << raw_bits)
+                    && if token != raw_width && old_inline_width {
+                        token < (1 << (width_bits / 2)) && raw_width < (1 << (width_bits - width_bits / 2))
+                    } else {
+                        token < (1 << width_bits)
+                    }
+            });
+            if fits { self.direct_rows += 1; }
+            else { self.old_narrow_escapes += 1; self.local_escapes += 1; }
+        } else {
+            self.unchanged_medium_full += 1;
+        }
+        if local + 1 != ROW_PAGE_LEN { return; }
+        // An in-cell 12-bit escape ordinal addresses the exact old rows.
+        // Model a single exact-fit Vec for these immutable fallback rows,
+        // one Vec Box payload only when nonempty, and a pointer per row page.
+        let side = if self.local_escapes == 0 { 0 } else {
+            self.local_escapes * std::mem::size_of::<NarrowRow>()
+                + std::mem::size_of::<Vec<NarrowRow>>()
+        };
+        let savings = ROW_PAGE_LEN.saturating_sub(side + std::mem::size_of::<usize>());
+        if savings == 0 { self.fallback_full_pages += 1; }
+        else {
+            self.useful_full_pages += 1;
+            self.old_narrow_side_bytes += side;
+            self.projected_full_page_savings += savings;
+        }
+    }
+}
+
+#[cfg(debug_assertions)]
+#[derive(Debug)]
 pub(super) struct RawRowGeometryCensus {
     previous_group: Option<usize>,
     group_jumps: usize,
@@ -1479,6 +1537,24 @@ pub(super) struct RawRowGeometryCensus {
     group_8_byte: [usize; 3],
     group_count: usize,
     group_output_line_base: usize,
+    three_byte_models: [ProjectedThreeByteRows;4],
+}
+
+#[cfg(debug_assertions)]
+impl Default for RawRowGeometryCensus {
+    fn default() -> Self {
+        Self {
+            previous_group: None, group_jumps: 0, current: [0;3], six_byte: [0;3], five_byte: [0;3], four_byte: [0;3],
+            five_page_cost: Default::default(), four_page_cost: Default::default(),
+            four_width_side_base_cost: Default::default(), width_side: Default::default(),
+            group_16_byte: [0;2], group_10_byte: [0;2], group_8_byte: [0;3],
+            group_count: 0, group_output_line_base: 0,
+            three_byte_models: [
+                ProjectedThreeByteRows::new([6,6,4]), ProjectedThreeByteRows::new([7,5,4]),
+                ProjectedThreeByteRows::new([7,6,3]), ProjectedThreeByteRows::new([5,7,4]),
+            ],
+        }
+    }
 }
 
 #[cfg(debug_assertions)]
@@ -1522,6 +1598,7 @@ impl RawRowGeometryCensus {
         self.four_page_cost.observe(local, 4, if four { 0 } else { fallback });
         self.four_width_side_base_cost.observe(local, 4, if five { 0 } else { fallback });
         self.width_side.observe(local, five && !four);
+        for model in &mut self.three_byte_models { model.observe(local,fields,five,four); }
         for (counts, eligible) in [(&mut self.current, current), (&mut self.six_byte, six),
                                    (&mut self.five_byte, five), (&mut self.four_byte, four)] {
             let count = &mut counts[if eligible { 0 } else { fallback }];

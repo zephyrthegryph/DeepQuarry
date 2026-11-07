@@ -72,6 +72,42 @@ impl Ledger{
     stats.grants,stats.shortcuts,stats.sweeps,stats.pressure,stats.rows,self.rows.len(),self.upper.is_some());
   }
  }
+ /// Called only after the existing denial sweep. The retained row charges
+ /// already reflect the authorized observation; no source/payload IO here.
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_exact_admission_categories(&self, exact: usize) {
+  #[derive(Default,Debug)]
+  struct SourceCharges {
+   acquisition_and_receipt:usize, ordinary_text_control_and_fingerprint:usize,
+   canonical_original_text:usize, exceptional_original_bytes:usize,
+   origin_arena_credit:usize, other_arena_credit:usize, expired_after_census_arena:usize,
+   capture:usize, derived:usize, recorder_metadata:usize, handlers:usize,
+   ledger_rows:usize, ledger_node_envelope:usize, fixed:usize,
+  }
+  let mut charges=SourceCharges{
+   ledger_rows:self.rows.len(),ledger_node_envelope:self.rows.len().saturating_mul(NODE),
+   fixed:FIXED,..Default::default()
+  };
+  for row in self.rows.values() {
+   let column=match &row.owner{
+    Observation::Acquisition(_)=>&mut charges.acquisition_and_receipt,
+    Observation::Text(..)|Observation::SealedText(..)=>&mut charges.ordinary_text_control_and_fingerprint,
+    Observation::Original(_)=>&mut charges.canonical_original_text,
+    Observation::Bytes(_)=>&mut charges.exceptional_original_bytes,
+    Observation::Arena(weak)=>match weak.upgrade().map(super::source_arena::AllocationHandle::new){
+     Some(handle) if handle.arc().is_origin_allocation()=>&mut charges.origin_arena_credit,
+     Some(_)=>&mut charges.other_arena_credit,
+     None=>&mut charges.expired_after_census_arena,
+    },
+    Observation::Capture(..)=>&mut charges.capture,
+    Observation::Derived(_)=>&mut charges.derived,
+    Observation::RecorderMetadata(..)=>&mut charges.recorder_metadata,
+    Observation::Handlers(_)=>&mut charges.handlers,
+   };
+   *column=column.saturating_add(row.bytes);
+  }
+  eprintln!("ORIGINAL_SOURCE_ADMISSION_CATEGORIES exact_after_sweep={exact} {charges:?}");
+ }
  pub(super) fn resize_arena(&mut self,owner:&super::source_arena::Allocation,reserved:usize)->io::Result<()>{
   if !self.has_source_arena(owner){return Err(io::Error::new(io::ErrorKind::InvalidInput,"source arena resize lost its actual ledger row"))}
   let bytes=super::source_arena::Allocation::metadata_bytes().checked_add(reserved).ok_or_else(oom)?;

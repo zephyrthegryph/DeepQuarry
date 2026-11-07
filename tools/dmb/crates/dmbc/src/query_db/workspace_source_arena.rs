@@ -25,6 +25,9 @@ fn parent_denied(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::
 const RETIRABLE_PATH_FACTS: usize = 1 << (usize::BITS - 1);
 const _: () = assert!(super::raw_policy::INPUT_BUDGET < RETIRABLE_PATH_FACTS);
 impl Allocation {
+    #[cfg(debug_assertions)]
+    pub(super) fn is_origin_allocation(&self) -> bool { self.origin_parent.is_some() }
+
     pub(super) fn metadata_bytes() -> usize { std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>() }
 
     pub(super) fn retained_bytes(&self) -> io::Result<usize> {
@@ -186,6 +189,12 @@ impl QueryDb{
   if was_cached && available.as_ref().map_or(true,|room|need>*room){
    live=ledger.refresh_after_pressure()?;
    available=self.workspace_input_base_headroom_locked(live);
+  }
+  if available.as_ref().map_or(true, |&room| need > room) {
+   #[cfg(debug_assertions)]
+   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+    ledger.trace_exact_admission_categories(live);
+   }
   }
   let available=available.map_err(|_|no_source_room(need,live,None))?;
   if need>available{return Err(no_source_room(need,live,Some(available)))}
