@@ -127,9 +127,9 @@ GLOBAL_VAR_INIT(turf_move_new_ms, 0)
 	unmake_z_transparent()
 	changing_turf = TRUE
 	// Its place in the adjacency index is handed to the successor: the neighbours recompute once, after it is placed.
-	var/atom/adjacency_replacing_before = GLOB.adjacency_replacing
+	var/adjacency_replacing_before = GLOB.adjacency_replacing
 	var/list/adjacency_pending_before = GLOB.adjacency_pending
-	GLOB.adjacency_replacing = src
+	GLOB.adjacency_replacing = src.adj_handle
 	GLOB.adjacency_pending = list()
 	replaced_by(src)
 

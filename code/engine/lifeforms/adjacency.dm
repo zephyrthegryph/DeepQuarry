@@ -113,10 +113,10 @@ GLOBAL_VAR_INIT(dq_adjacency_trace, 0)
 				out += "[AM.type]=[refcount(AM)]"
 	return jointext(out, ",")
 
-/// The turf ChangeTurf() is replacing in place, or null. Its successor is placed in the index within the same call, so the neighbours its removal
+/// The adjacency handle of the turf ChangeTurf() is replacing in place, or 0 (a handle is a number, not a reference). Its successor is placed in the index within the same call, so the neighbours its removal
 /// touches are not recomputed twice (once without the turf, once with its successor): they wait in `adjacency_pending` and recompute once with the
 /// successor in place.
-GLOBAL_DATUM(adjacency_replacing, /atom)
+GLOBAL_VAR_INIT(adjacency_replacing, 0)
 /// While a replacement runs: kind -> list of the member handles of the neighbours whose recompute waits for the successor.
 GLOBAL_LIST(adjacency_pending)
 
@@ -124,7 +124,7 @@ GLOBAL_LIST(adjacency_pending)
 /proc/adjacency_replacement_done()
 	var/list/pending = GLOB.adjacency_pending
 	GLOB.adjacency_pending = null
-	GLOB.adjacency_replacing = null
+	GLOB.adjacency_replacing = 0
 	for(var/kind in pending)
 		adjacency_recompute_handles(pending[kind], kind)
 
@@ -134,7 +134,7 @@ GLOBAL_LIST(adjacency_pending)
 	var/datum/entry/E = C.item
 	var/list/changed = vg_adjacency_remove(adjacency_kind_id(E.args["kind"]), holder.adj_handle)
 	DQ_ADJACENCY_TRACE(holder, "removed from the index")
-	if(holder == GLOB.adjacency_replacing && GLOB.adjacency_pending)
+	if(GLOB.adjacency_replacing && holder.adj_handle == GLOB.adjacency_replacing && GLOB.adjacency_pending)
 		var/list/waiting = GLOB.adjacency_pending[E.args["kind"]]
 		if(!waiting)
 			waiting = GLOB.adjacency_pending[E.args["kind"]] = list()
