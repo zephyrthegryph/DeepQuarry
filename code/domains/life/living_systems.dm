@@ -53,15 +53,14 @@
 
 // --- Upkeep ---------------------------------------------------------------------------------------
 
-/// Every mob's base upkeep (the old /mob/Life() chain): followers and spell buttons.
+/// Every mob's base upkeep (the old /mob/Life() chain): followers.
 /mob/living/proc/life_upkeep(datum/seq_frame/life/F)
 	// to catch teleports etc which directly set loc
 	src.update_following()
-	src.update_spell_masters()
 
-/// Followers are dragged along on Moved; spell buttons only matter for casters.
+/// Followers are dragged along on Moved.
 /mob/living/proc/life_upkeep_due()
-	return LAZYLEN(src?.follower_list()) || LAZYLEN(src.spell_masters)
+	return LAZYLEN(src?.follower_list())
 
 // --- Light --------------------------------------------------------------------------------------
 

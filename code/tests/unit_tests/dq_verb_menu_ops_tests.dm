@@ -92,7 +92,7 @@
 	TEST_ASSERT_NULL(dq_vmo_row(V, V, "hang_up"), "no communicator, no Hang Up")
 	TEST_ASSERT_NULL(dq_vmo_row(V, V, "change_name"), "no communicator, no Change Name")
 
-/// A changeling's powers are buttons of its ability bar and its four menu entries are on its own mob; none is a verb, and a plain human has none.
+/// A changeling's powers are abilities in its ability list and its four menu entries are on its own mob; none is a verb, and a plain human has none.
 /datum/unit_test/dq_verb_menu_ops_changeling
 
 /datum/unit_test/dq_verb_menu_ops_changeling/Run()
@@ -111,4 +111,8 @@
 	var/datum/changeling/comp = actor.get_changeling_state()
 	comp.purchasePower(actor, "Paralysis Sting")
 	TEST_ASSERT(!(/mob/proc/changeling_paralysis_sting in actor.verbs), "a purchased power is no verb either")
-	TEST_ASSERT(actor.ability_master && actor.ability_master.get_ability_by_proc_ref(/mob/proc/changeling_paralysis_sting), "it is a button of the ability bar")
+	var/found = FALSE
+	for(var/datum/action/verb_ability/entry in actor.actions)
+		if(entry.verb_to_call == /mob/proc/changeling_paralysis_sting)
+			found = TRUE
+	TEST_ASSERT(found, "it is an ability in the mob's ability list")

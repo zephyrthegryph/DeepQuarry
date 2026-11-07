@@ -441,7 +441,7 @@ CAPABILITIES(/datum/remote_view/viewer_managed)
 	rel_set(src, nameof(view_coordinator), coordinator)
 	view_coordinator.look(host_mob)
 	if("viewers" in view_coordinator.vars)
-		rel_add(view_coordinator, nameof(/datum/action::viewers), host_mob)
+		rel_add(view_coordinator, nameof(/datum/tgui_module/ship::viewers), host_mob)
 	observe(view_coordinator, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 
 // The view coordinator stops showing to this viewer.
@@ -449,7 +449,7 @@ CAPABILITIES(/datum/remote_view/viewer_managed)
 	if(host_mob && view_coordinator)
 		view_coordinator.unlook(host_mob, FALSE)
 		if("viewers" in view_coordinator.vars)
-			rel_remove(view_coordinator, nameof(/datum/action::viewers), host_mob)
+			rel_remove(view_coordinator, nameof(/datum/tgui_module/ship::viewers), host_mob)
 	rel_clear(src, nameof(view_coordinator))
 	. = ..()
 

@@ -347,6 +347,8 @@
 CAPABILITIES(/datum/shadekin)
 	ref_one(nameof(owner), /mob/living)
 	ref_many(nameof(active_dark_maws))
+	on_change(nameof(dark_energy), ANY, then(PROC_REF(energy_changed)))
+	on_change(nameof(max_dark_energy), ANY, then(PROC_REF(energy_changed)))
 	interface("ShadekinConfig", title = "Shadekin Config")
 	op("adjust_time", ui_act("adjust_time", arg("val", num())), then(PROC_REF(ui_act_adjust_time)))
 	op("adjust_color", ui_act("adjust_color"), asks(/datum/prompt/color, fields = list("question" = "Select a color you wish the lights to flicker as (Default is #E0EFF0)", "default" = computed(PROC_REF(flicker_color_default)), "title" = "Color Selector", "timeout" = 0), step = "color"), then(PROC_REF(ui_act_adjust_color)))

@@ -596,4 +596,5 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 
 CAPABILITIES(/datum/tgui_module/ship)
 	ref_one(nameof(linked))
+	ref_many(nameof(viewers))
 	ref_many(nameof(watchers))

@@ -64,9 +64,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// What right-click does on the map: INPUT_ACTION_MENU (the interaction menu) or INPUT_ACTION_ALTERNATE.
 	var/right_click_binding = INPUT_ACTION_MENU
 
-	// THIS IS NOT SAVED
-	// WE JUST HAVE NOWHERE ELSE TO STORE IT
-	var/list/action_button_screen_locs
 
 	///If they are currently in the process of swapping slots, don't let them open 999 windows for it and get confused
 	var/selecting_slots = FALSE

@@ -596,10 +596,30 @@ CAPABILITIES(/atom/movable/screen/inventory)
 			user.attack_ui(slot_id)
 	return 1
 
-// Hand slots are special to handle the handcuffs overlay
-/atom/movable/screen/inventory/hand
+// Hand slots are special: the handcuffs overlay, and a grey slot while the hand cannot be used
+CAPABILITIES(/atom/movable/screen/inventory/hand)
+	tooltip(PROC_REF(hand_tooltip))
 
-/// The handcuff overlay shows while the owner's mob wears handcuffs (the draw hears the mob's slot changes).
+/// Why the owner's hand in this slot cannot be used: a missing, dead or injured limb (kept on the human, tracked) or handcuffs; null while it works.
+/atom/movable/screen/inventory/hand/proc/unusable_reason()
+	var/datum/hud/owner_hud_now = src.hud
+	var/mob/M = owner_hud_now?.mymob()
+	if(!iscarbon(M))
+		return null
+	var/mob/living/carbon/C = M
+	if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
+		return "Your hands are cuffed."
+	if(!ishuman(C))
+		return null
+	var/mob/living/carbon/human/H = C
+	return (owner_hud_now.l_hand_hud_object == src) ? H.hand_off_l : H.hand_off_r
+
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm): the reason the hand is greyed, nothing while it works.
+/atom/movable/screen/inventory/hand/proc/hand_tooltip(mob/user)
+	var/reason = unusable_reason()
+	return isnull(reason) ? null : list(name, reason)
+
+/// The handcuff overlay shows while the owner's mob wears handcuffs (the draw hears the mob's slot changes); an unusable hand is drawn grey and faint (the colour matrix scales alpha).
 /atom/movable/screen/inventory/hand/draw(datum/look/look)
 	..()
 	var/datum/hud/owner_hud_now = src.hud // the relation itself: setting it redraws the hand
@@ -608,6 +628,8 @@ CAPABILITIES(/atom/movable/screen/inventory)
 	var/mob/M = owner_hud_now.mymob()
 	look.watch(owner_hud_now)
 	look.watch(M)
+	var/unusable = !isnull(unusable_reason())
+	look.color = unusable ? HAND_UNUSABLE_COLOR : owner_hud_now.ui_color
 	if(!iscarbon(M))
 		return
 	var/mob/living/carbon/C = M

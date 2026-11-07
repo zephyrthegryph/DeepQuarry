@@ -4,7 +4,6 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, T)
 	var/datum/hud/hud = allocate(/datum/hud, actor)
-	hud.build_action_groups()
 	var/atom/movable/screen/right = hud.r_hand_hud_object
 	var/atom/movable/screen/left = hud.l_hand_hud_object
 	TEST_ASSERT_NOTNULL(right, "the actual HUD supplies its right hand target")

@@ -138,10 +138,8 @@
 	qdel(E)
 	TEST_ASSERT(QDELETED(ec), "ecig cartridge not destroyed with its master")
 
-// Deleting a mob with a shadekin component must not resurrect HUD objects:
-// the component's Destroy() used to rebuild owner.ability_master AFTER
-// /mob/Destroy had already cleared it — allocating a fresh screen atom inside
-// the dying mob (my_mob ref + contents + var = immortal cycle pinning the mob).
+// Deleting a mob with a shadekin component must leave nothing behind that pins the mob: the shadekin state goes with it, and so do the
+// abilities it granted.
 /datum/unit_test/dq_shadekin_mob_deletion_leaves_no_hud
 
 /datum/unit_test/dq_shadekin_mob_deletion_leaves_no_hud/Run()
@@ -151,7 +149,7 @@
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "mob Destroy() did not run")
 	TEST_ASSERT(QDELETED(SK), "shadekin datum was not destroyed with its mob")
-	TEST_ASSERT(isnull(H.ability_master), "mob deletion left a resurrected ability_master screen object — immortal GC cycle")
+	TEST_ASSERT(!length(H.actions), "mob deletion left abilities in the list of the dead mob")
 
 // Deleting a container must Destroy() every item inside it — the base
 // /atom/movable/Destroy contents loop had the same live-list skip hazard

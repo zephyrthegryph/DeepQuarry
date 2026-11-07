@@ -8,6 +8,7 @@ import {
 import { Button, Input, Section, Tabs } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
 import { MapSplitHandle } from '../layout/ChatLayout';
+import { AbilitiesTab } from './AbilitiesTab';
 import { InspectTab } from './InspectTab';
 import { McTab } from './McTab';
 import { MenuPage } from './MenuPage';
@@ -238,6 +239,11 @@ function Content({ state, store }: { state: State; store: StatStore }) {
           row[2] ? `byond://?src=${row[2]};statpanel_item_click=left` : null
         }
       />
+    );
+  }
+  if (tab === 'Abilities') {
+    return (
+      <AbilitiesTab data={state.abilities} receivedAt={state.abilitiesAt} />
     );
   }
   if (tab === 'Inspect') return <InspectTab data={state.inspect} />;

@@ -11,6 +11,11 @@
 /// TRUE while a limb gives trouble the body checks each cycle (a poor stance, a broken or malfunctioning limb): the body holds it.
 STAT(/mob/living/carbon/human, limb_trouble, ANY)
 
+/// Why the right and left hands cannot be used (text), or null: kept by limb_refresh(), read by the hand HUD's draw.
+/mob/living/carbon/human
+	var/hand_off_r
+	var/hand_off_l
+
 /// The limb checks' entries, for the human's CAPABILITIES block: `active` is STAT_LIMB_TROUBLE.
 /proc/limb_clock(active)
 	return every(LIFE_CYCLE, then(TYPE_PROC_REF(/mob/living/carbon/human, limb_step)), when = active)
@@ -40,6 +45,20 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 		return
 	set_stance_damage(stance_from_limbs())
 	body_hold_flag(STAT_LIMB_TROUBLE, is_alive() && limb_trouble_now())
+	set_hand_off_r(hand_off_reason(BP_R_HAND, BP_R_ARM))
+	set_hand_off_l(hand_off_reason(BP_L_HAND, BP_L_ARM))
+
+/// Why the hand at the end of `arm_tag` cannot be used (it is gone, dead, or broken and not splinted), or null while it works. The hand HUD greys on it.
+/mob/living/carbon/human/proc/hand_off_reason(hand_tag, arm_tag)
+	for(var/limb_tag in list(hand_tag, arm_tag))
+		var/obj/item/organ/external/E = get_organ(limb_tag)
+		if(!E || E.is_stump())
+			return "You have no [parse_zone(limb_tag)]."
+		if(!E.is_usable())
+			return "Your [E.name] is dead and cannot be used."
+		if((E.is_broken() || E.is_dislocated()) && !E.splinted)
+			return "Your [E.name] is injured and cannot hold anything. A splint would help."
+	return null
 
 /mob/living/carbon/human/proc/limb_trouble_now()
 	if(stance_damage > 0)

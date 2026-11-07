@@ -111,6 +111,9 @@ CAPABILITIES(/obj/item/flashlight)
 /obj/item/flashlight/proc/interaction_self(datum/act/op/A)
 	return switch_light(A.actor) ? OP_OK : OP_DECLINE
 
+/obj/item/flashlight/action_toggle_state(actiontype)
+	return on ? TRUE : FALSE
+
 /obj/item/flashlight/proc/switch_light(mob/user)
 	if(single_use && on)
 		return FALSE

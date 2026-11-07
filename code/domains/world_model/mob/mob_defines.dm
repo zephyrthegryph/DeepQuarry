@@ -23,10 +23,6 @@
 
 
 
-	//spells hud icons - this interacts with add_spell and remove_spell
-	var/tmp/list/atom/movable/screen/movable/spell_master/spell_masters = null
-	var/tmp/atom/movable/screen/movable/ability_master/ability_master = null
-
 	/*A bunch of this stuff really needs to go under their own defines instead of being globally attached to mob.
 	A variable should only be globally attached to turfs/objects/whatever, when it is in fact needed as such.
 	The current method unnecessarily clusters up the variable list, especially for humans (although rearranging won't really clean it up a lot but the difference will be noticable for other mobs).
@@ -204,14 +200,12 @@ CAPABILITIES(/mob)
 	godmode_immunities()
 	every(1 DECISECONDS, then(PROC_REF(dizzy_shake_tick)), when = STAT_DIZZY)
 	every(1 DECISECONDS, then(PROC_REF(jittery_shake_tick)), when = STAT_JITTERY)
-	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
 	links(LINK_END(/mob, LK_BELLY_OVERLAY), LINK_END(/datum/belly_overlay_tgui, LK_BELLY_OVERLAY_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the belly overlay window datum, gone with the mob (belly_overlay_window())
 	owns_one(nameof(dna), /datum/dna)
 	owns_one(nameof(hud_used), /datum/hud)
 	links(LINK_END(/mob, LK_MACHINE_SHIM), LINK_END(/datum/using_machine_shim, LK_MACHINE_SHIM_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the helper that releases a used machine when the mob leaves it, gone with the mob (machine_shim())
 	owns_one(nameof(remote_view), /datum/remote_view)
 	links(LINK_END(/mob, LK_VORE_PANEL), LINK_END(/datum/vore_look, LK_VORE_PANEL_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the vore panel window datum, gone with the mob (vore_panel())
-	owns_many(nameof(spell_masters), /atom/movable/screen/movable/spell_master)
 	owns_many(nameof(vore_organs))
 	owns_many(nameof(alerts))
 	owns_many(nameof(screens))

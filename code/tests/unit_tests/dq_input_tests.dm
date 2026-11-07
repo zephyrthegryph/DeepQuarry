@@ -200,6 +200,25 @@
 		"[KEYBIND_PROFILE_DEFAULT]|F12|F12",
 		"[KEYBIND_PROFILE_DEFAULT]|CTRL+SHIFT+ADD|planeup",
 		"[KEYBIND_PROFILE_DEFAULT]|CTRL+SHIFT+SUBTRACT|planedown",
+		// The ability slot keys (the Abilities tab, code/content/abilities/): the plain digits are taken, so ALT+digit.
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+1|.use-ability-slot 1",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+2|.use-ability-slot 2",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+3|.use-ability-slot 3",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+4|.use-ability-slot 4",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+5|.use-ability-slot 5",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+6|.use-ability-slot 6",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+7|.use-ability-slot 7",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+8|.use-ability-slot 8",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+9|.use-ability-slot 9",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+1|.use-ability-slot 1",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+2|.use-ability-slot 2",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+3|.use-ability-slot 3",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+4|.use-ability-slot 4",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+5|.use-ability-slot 5",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+6|.use-ability-slot 6",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+7|.use-ability-slot 7",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+8|.use-ability-slot 8",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+9|.use-ability-slot 9",
 	)
 
 /datum/unit_test/dq_keybinding_defaults_match_old_skin/Run()

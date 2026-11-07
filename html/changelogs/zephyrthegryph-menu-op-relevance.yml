@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Right-click menu: ops that differ only by stance are one line, generic 'do the default thing with what you hold' ops read 'Use <item>' instead of a misleading specific label, and do-nothing click swallowers are no longer listed"

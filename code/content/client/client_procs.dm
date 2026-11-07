@@ -1001,6 +1001,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	switch(type)
 		if("Update-Verbs")
 			init_verbs()
+			mob?.abilities_changed() // the panel is ready to show the Abilities tab
 		if("Remove-Tabs")
 			panel_tabs -= payload["tab"]
 		if("Send-Tabs")
@@ -1014,6 +1015,10 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			// A button in the Inspect tab (code/content/examine/inspect_panel.dm).
 			if(islist(payload) && istext(payload["act"]))
 				inspect_panel?.act(payload["act"], payload)
+		if("Abilities-Act")
+			// A button or a drag in the Abilities tab (code/content/abilities/ability_panel.dm).
+			if(islist(payload) && istext(payload["act"]))
+				ability_panel_of(src).act(payload["act"], payload)
 
 /// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)
 /client/proc/acquire_dpi()

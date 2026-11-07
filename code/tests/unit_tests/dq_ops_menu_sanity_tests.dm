@@ -165,3 +165,91 @@
 		var/list/expect = held_labels[held_type]
 		for(var/label in expect)
 			TEST_ASSERT_EQUAL(!!(label in labels), expect[label], "[held_type] on plating: \"[label]\" listed = [expect[label]]: [json_encode(labels)]")
+
+/// What each Menu row of `actor` on `target` holding `held` runs through: row key -> its candidate, so a test can read the binding.
+/proc/dq_menu_row_candidates(mob/actor, atom/target, obj/held)
+	. = list()
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null)
+	for(var/datum/op_cand/C as anything in R.ordered)
+		if(!.[C.oplan.key])
+			.[C.oplan.key] = C
+
+/// The Menu lists what could apply, each choice once: for common held things on common targets no label repeats (stance variants and generic
+/// "use what you hold" ops collapse into one line), no listed op needs a tool the held thing is not, and no generic op wears a specific label.
+/datum/unit_test/dq_ops_menu_relevance_sanity
+
+/datum/unit_test/dq_ops_menu_relevance_sanity/Run()
+	var/turf/T = test_floor()
+	var/turf/plating = get_step(T, EAST)
+	var/turf/previous = plating.type
+	plating.ChangeTurf(/turf/simulated/floor/plating, tell_universe = FALSE)
+	plating = get_step(T, EAST)
+	var/turf/simulated/wall/W = dq_menu_sanity_wall(T)
+	TEST_ASSERT(W, "a wall near the test room")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/door/airlock/D = allocate(/obj/machinery/door/airlock, T)
+	var/obj/item/stack/tile/floor/tile = allocate(/obj/item/stack/tile/floor, T)
+	var/obj/machinery/power/apc/apc = null
+	for(var/obj/machinery/power/apc/found in REGISTRY_MEMBERS(REGISTRY_APCS))
+		apc = found
+		break
+	var/list/targets = list(plating, T, tile, W, D, other)
+	if(apc)
+		targets += apc
+	var/list/helds = list(null, /obj/item/analyzer, /obj/item/tool/wrench, /obj/item/tool/screwdriver, /obj/item/pen/crayon, /obj/item/pda)
+	var/list/stances = list(I_HELP, I_HURT)
+	var/rows_checked = 0
+	for(var/held_type in helds)
+		if(H.get_active_hand())
+			qdel(H.get_active_hand())
+		var/obj/item/held = null
+		if(held_type)
+			held = allocate(held_type, T)
+			H.put_in_active_hand(held)
+		for(var/stance in stances)
+			H.set_use_stance(stance)
+			for(var/atom/target as anything in targets)
+				var/list/data = interaction_menu_data(H, target)
+				var/list/candidates = dq_menu_row_candidates(H, target, held)
+				var/list/seen = list()
+				var/list/lines = list()
+				for(var/list/entry as anything in data["available"] + data["blocked"])
+					var/label = entry["name"]
+					lines += "[label][entry["reason"] ? " (grey: [entry["reason"]])" : ""]"
+					rows_checked++
+					TEST_ASSERT(!seen[label], "[target.type] holding [held_type || "nothing"] in stance [stance] lists \"[label]\" once: [json_encode(lines)]")
+					seen[label] = TRUE
+					var/datum/op_cand/C = candidates[entry["id"]]
+					if(!C)
+						continue // a tool hint or a legacy line
+					TEST_ASSERT(!C.oplan.passes || length(C.oplan.effects), "[target.type] holding [held_type || "nothing"] lists the do-nothing \"[label]\"")
+					if(C.binding?.bind_kind == BIND_TOOL && !entry["reason"]) // a greyed row is the hint "needs a <tool>"
+						var/fits = FALSE
+						for(var/quality in C.binding.args["quality"])
+							if(held?.op_tool_quality(quality))
+								fits = TRUE
+						TEST_ASSERT(fits, "[target.type] holding [held_type || "nothing"] lists the tool op \"[label]\" it is not the tool for: [json_encode(C.binding.args["quality"])]")
+					if(held && op_cand_click_carrier(C))
+						TEST_ASSERT_EQUAL(label, "Use [held.name]", "a generic item op reads as using the held thing, not \"[label]\" ([target.type], [held_type])")
+				log_test("MENU [held_type || "empty hand"] / [stance] on [target.type]: [json_encode(lines)]")
+	TEST_ASSERT(rows_checked, "the menus had rows to look at")
+	plating.ChangeTurf(previous, tell_universe = FALSE)
+
+/// The floor's stance variants of "do something with what you hold" are one line, "Use <item>", never "Hit the floor" twice or a graffiti line for a wrench.
+/datum/unit_test/dq_ops_menu_floor_item_one_line
+
+/datum/unit_test/dq_ops_menu_floor_item_one_line/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
+	H.put_in_active_hand(wrench)
+	for(var/stance in list(I_HELP, I_DISARM, I_GRAB, I_HURT))
+		H.set_use_stance(stance)
+		var/list/labels = dq_menu_sanity_labels(H, T)
+		TEST_ASSERT(!(("Hit the floor" in labels) || ("Draw graffiti" in labels)), "stance [stance]: no stance-named floor line for a wrench: [json_encode(labels)]")
+		var/uses = 0
+		for(var/label in labels)
+			if(label == "Use [wrench.name]")
+				uses++
+		TEST_ASSERT_EQUAL(uses, 1, "stance [stance]: one \"Use [wrench.name]\" line: [json_encode(labels)]")

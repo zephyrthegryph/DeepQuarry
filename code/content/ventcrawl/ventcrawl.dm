@@ -40,9 +40,6 @@
 	. = ..()
 
 /mob/living/proc/is_allowed_vent_crawl_item(obj/carried_item)
-	//Ability master easy test for allowed (cheaper than istype)
-	if(carried_item == ability_master)
-		return TRUE
 	if(isanimal(src))
 		var/mob/living/simple_mob/S = src
 		if(carried_item == S.myid)

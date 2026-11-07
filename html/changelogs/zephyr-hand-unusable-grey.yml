@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "A hand slot on the HUD is greyed out, with a tooltip saying why, when that hand is missing, dead, injured without a splint, or cuffed"

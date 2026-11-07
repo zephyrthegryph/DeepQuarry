@@ -50,11 +50,8 @@
 	var/hud_state = "" //name of the icon used in generating the spell hud object
 	var/override_base = ""
 
-	var/atom/movable/screen/connected_button
-
 CAPABILITIES(/datum/spell)
 	per_type(nameof(spell_levels), PROC_REF(build_spell_levels), copy_on_write = TRUE)
-	owns_one(nameof(connected_button), /atom/movable/screen)
 	every(1 SECOND, then(PROC_REF(recharge_tick)), when = nameof(recharging))
 	// The cast delay: no bar, the held item may change, and a spell that works unconscious or as a ghost does not need the caster up.
 	op("cast_delay", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY | ALIVE), silent_wait(), then(PROC_REF(cast_delayed)))
@@ -84,6 +81,10 @@ CAPABILITIES(/datum/spell)
 	charge_counter = min(charge_counter + 10, charge_max)
 	if(charge_counter >= charge_max)
 		set_recharging(FALSE)
+		// The tab counts the recharge down on its own; it is told when the spell is ready.
+		var/mob/caster = holder()
+		if(istype(caster))
+			caster.abilities_changed()
 
 /////////////////
 /////CASTING/////
@@ -326,9 +327,11 @@ CAPABILITIES(/datum/spell)
 			if(Sp_RECHARGE)
 				charge_counter = 0 //doesn't start recharging until the targets selecting ends
 				start_recharge()
+				user?.abilities_changed() // the tab shows the recharge
 				return 1
 			if(Sp_CHARGES)
 				charge_counter-- //returns the charge if the targets selecting fails
+				user?.abilities_changed() // the tab shows the charges left
 				return 1
 			if(Sp_HOLDVAR)
 				adjust_var(user, holder_var_type, holder_var_amount)

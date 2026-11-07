@@ -156,6 +156,10 @@ GLOBAL_LIST_INIT(ability_keybind_rows, list(
 	// pressed, by the op itself (abilities.dm). The row id stays ability_<old ability id>; the command carries the op key.
 	for(var/list/row as anything in GLOB.ability_keybind_rows)
 		. += list(list(ABILITY_KEYBIND(row[1]), row[2], KEYBIND_CAT_ABILITIES, ".use-ability [row[3]]", null, null))
+	// The first ABILITY_HOTKEY_SLOTS abilities of the mob's list, as it is ordered in the Abilities tab (code/content/abilities/). The plain
+	// digits are taken (1 to 4 are combat mode, 5 and 6 emotes, 1 to 3 a cyborg's modules), so the slots are ALT+digit; a player rebinds them.
+	for(var/slot in 1 to ABILITY_HOTKEY_SLOTS)
+		. += list(list(ABILITY_SLOT_KEYBIND(slot), "Ability in slot [slot]", KEYBIND_CAT_ABILITIES, ".use-ability-slot [slot]", null, KB_BOTH("ALT+[slot]")))
 
 #undef KB_BOTH
 #undef KB_HUMAN
