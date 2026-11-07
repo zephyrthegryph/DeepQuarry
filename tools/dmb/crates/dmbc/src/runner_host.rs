@@ -681,6 +681,19 @@ impl BuildHost {
         workers: usize,
         disk: Option<&'a dyn dm_preprocess::regions::ExpansionMemo>,
     ) -> Result<HostParts<'a>, Box<dyn std::error::Error>> {
+        self.execution_with_selected_original_anchors(workers, disk, false)
+            .map(|(parts, _)| parts)
+    }
+
+    pub(crate) fn execution_with_selected_original_anchors<'a>(
+        &'a mut self,
+        workers: usize,
+        disk: Option<&'a dyn dm_preprocess::regions::ExpansionMemo>,
+        selected_original: bool,
+    ) -> Result<(HostParts<'a>, Option<&'a dm_tree::frontend::RetainedSemanticTree>), Box<dyn std::error::Error>> {
+        let prior = selected_original.then(|| {
+            Self::stashed_strict_callable_prior(self.engine.as_ref()?, &self.variants)
+        }).flatten();
         let execution = if let Some(shared) = &self.shared_executors {
             HostExecution::Leased(shared.checkout(workers)?)
         } else if self.memo.is_some() {
@@ -702,7 +715,32 @@ impl BuildHost {
             Some(resident) => Some(resident.with_disk(disk)),
             None => disk.map(memo::MemoView::disk_only),
         };
-        Ok((memo, execution, self.semantic.as_mut()))
+        Ok(((memo, execution, self.semantic.as_mut()), prior))
+    }
+
+    fn stashed_strict_callable_prior<'a>(
+        original: &RetainedEngine,
+        variants: &'a BTreeMap<EngineConfiguration, VariantState>,
+    ) -> Option<&'a dm_tree::frontend::RetainedSemanticTree> {
+        use crate::policy_request::AnalysisContext;
+        let original_configuration = &original.configuration;
+        if original_configuration.analysis_context != Some(AnalysisContext::OriginalChecker0290)
+            || !original_configuration.defines.is_empty()
+        {
+            return None;
+        }
+        let mut strict_configuration = original_configuration.clone();
+        strict_configuration.analysis_context = None;
+        // Original uses its own initial environment. The ordinary default
+        // compiler variant already has these exact target defines admitted.
+        crate::pinned_target::admit_defines(&mut strict_configuration.defines).ok()?;
+        let strict = variants.get(&strict_configuration)?;
+        if !Arc::ptr_eq(&original.payload, &strict.engine.payload) {
+            return None;
+        }
+        let semantic = strict.semantic.as_ref()?;
+        semantic.has_current_strict_callable_anchors(&strict_configuration.project, &strict_configuration.defines)
+            .then_some(semantic)
     }
 
     /// Leave the current variant (stash its define-dependent state) and enter `configuration` (restore it, or start it empty on the
@@ -1985,13 +2023,49 @@ mod joined_selected_publication_control {
         let mut checker_bytes = Vec::new();
         let mut analyze_bytes = Vec::new();
         let (outcome, clean) = host.compile_with_original_selected_reports(
-            prepare, compile, &exclusions, &mut diagnostics, &mut checker_bytes, &mut analyze_bytes,
+            prepare.clone(), compile, &exclusions, &mut diagnostics, &mut checker_bytes, &mut analyze_bytes,
         ).unwrap();
         assert!(matches!(outcome, BuildOutcome::Published { .. }));
         assert!(!clean);
         assert!(artifacts.join("deepquarry.dmb").is_file());
         assert!(artifacts.join("deepquarry.rsc").is_file());
-        assert!(String::from_utf8(checker_bytes).unwrap().contains("undefined field"));
-        assert!(String::from_utf8(analyze_bytes).unwrap().contains("[reads/dynamic_read]"));
+        assert!(std::str::from_utf8(&checker_bytes).unwrap().contains("undefined field"));
+        assert!(std::str::from_utf8(&analyze_bytes).unwrap().contains("[reads/dynamic_read]"));
+
+        // The real publication left the Strict variant active. The next
+        // selected pair must lend exactly that variant's already-built memo.
+        let strict = host.engine.as_ref().unwrap().configuration.clone();
+        assert!(strict.analysis_context.is_none());
+        let before = host.semantic.as_ref().unwrap().callable_owner_hits();
+        // A source edit prevents exact same-mode Original frontend reuse from
+        // skipping the semantic pass under test. Existing owners are unchanged.
+        let path = root.join("code/common.dm");
+        let mut current = std::fs::read_to_string(&path).unwrap();
+        current.push_str("#ifdef SPACEMAN_DMM\n/datum/only_new_original/proc/anchor()\n    return 0\n#endif\n");
+        std::fs::write(path, current).unwrap();
+        let mut warm_notices = Vec::new();
+        let mut warm_checker = Vec::new();
+        let mut warm_analyze = Vec::new();
+        let warm = host.write_combined_selected_original_reports(
+            prepare, &exclusions, &mut warm_notices, &mut warm_checker, &mut warm_analyze,
+        ).unwrap();
+        let current = host.engine.as_ref().unwrap();
+        let prior = BuildHost::stashed_strict_callable_prior(current, &host.variants).unwrap();
+        assert!(std::ptr::eq(prior, host.variants[&strict].semantic.as_ref().unwrap()));
+        assert!(prior.callable_owner_hits() > before, "actual selected Original reused authored Strict callable owners");
+        assert_eq!(warm, clean);
+        assert_eq!(warm_notices, diagnostics);
+        let mut previous: serde_json::Value = serde_json::from_slice(&checker_bytes).unwrap();
+        let mut fresh: serde_json::Value = serde_json::from_slice(&warm_checker).unwrap();
+        for name in ["source_revision", "semantic_revision", "policy_revision"] {
+            let previous_revision = previous.as_object_mut().unwrap().remove(name).unwrap();
+            let fresh_revision = fresh.as_object_mut().unwrap().remove(name).unwrap();
+            let value = fresh_revision.as_str().unwrap();
+            assert_eq!(value.len(), 32);
+            assert!(value.bytes().all(|byte| byte.is_ascii_hexdigit()));
+            assert_ne!(previous_revision, fresh_revision, "actual Original source edit must reissue {name}");
+        }
+        assert_eq!(fresh, previous, "current diagnostic results retain their exact source locations and notes");
+        assert_eq!(warm_analyze, analyze_bytes);
     }
 }

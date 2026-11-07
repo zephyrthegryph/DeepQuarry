@@ -669,12 +669,18 @@ fn run_build_attempt(
     let host_facts = if executable { host.host_facts() } else { None };
     let query_db = host.retains_artifacts().then(|| std::sync::Arc::clone(host.query_db()));
     let source_policy_queries = std::sync::Arc::clone(host.query_db());
-    let (frontend_memo, execution, mut semantic_state) = host.execution(
-        workers,
-        expansion_memo
-            .as_ref()
-            .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
-    )?;
+    let selected_original_anchors =
+        analysis_context == Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)
+            && preparation_output.needs_combined_checker()
+            && analysis_subject.as_ref().is_some_and(|subject| !subject.synthetic());
+    let ((frontend_memo, execution, mut semantic_state), strict_callable_prior) =
+        host.execution_with_selected_original_anchors(
+            workers,
+            expansion_memo
+                .as_ref()
+                .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
+            selected_original_anchors,
+        )?;
     // One-shot compilation uses the same named declaration receipt issuer as
     // retained sessions. This owner lasts for this request only: disabling
     // caches must not change which semantic answers the compiler can prove.
@@ -774,9 +780,9 @@ fn run_build_attempt(
             // preparation; never infer Sync through erased generic providers.
             let original_provider=inputs_capture.original_batch_view(query_db.as_deref().map(|db|db as &(dyn dm_preprocess::SourceChanges+Sync)));
             let preparation=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){
-                dm_tree::frontend::build_for_original_analysis_with_state_checked(&project,&original_provider,&defines,
+                dm_tree::frontend::build_for_original_analysis_with_callable_anchors_checked(&project,&original_provider,&defines,
                     dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
-                    frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host)
+                    frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host,strict_callable_prior)
             }else{dm_tree::frontend::build_for_checker_diagnostics_with_state_checked(&project,&provider,&defines,
                 dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
                 frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host)};

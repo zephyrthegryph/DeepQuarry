@@ -199,6 +199,19 @@ impl RetainedSemanticTree {
     ) {
         self.normalization.storage.visit_storage(visit);
     }
+    /// Check the already-retained Strict variant, without exporting its tree
+    /// or granting its source or compiler authority to a diagnostic consumer.
+    pub fn has_current_strict_callable_anchors(
+        &self, project: &std::path::Path, defines: &std::collections::BTreeMap<String, String>,
+    ) -> bool {
+        let Some((path, admitted, RememberedFrontend::Compiler(frontend))) = &self.previous else {
+            return false;
+        };
+        path == project && admitted == defines
+            && frontend.plan.initial_environment() == dm_preprocess::InitialEnvironment::Native5161687
+            && self.entry.as_ref().is_some_and(|entry| Arc::ptr_eq(&entry.tree, &frontend.snapshot.tree))
+    }
+
     pub(in crate::frontend) fn authored_callable_owners(&self) -> &crate::owner_callable::RetainedCallableOwners {
         &self.normalization.callables
     }
