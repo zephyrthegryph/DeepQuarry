@@ -66,6 +66,22 @@ GLOBAL_LIST_EMPTY(dq_after_init_probes)
 	TEST_ASSERT(at("after", off), "the ungated after_init() of the subtype ran")
 	TEST_ASSERT(!at("gated", off), "a when() that is false skips its after_init()")
 
+/// Made inside a timed call (a shuttle move makes turfs from a timer): the after_init(0) it fires at once is part of that call, so it must
+/// not take the attribution slot (PERF_PROFILE named a whole shuttle move after the last turf's after_init).
+/datum/unit_test/dq_after_init/nested_keeps_attribution
+
+/datum/unit_test/dq_after_init/nested_keeps_attribution/Run()
+	GLOB.km_attr_depth++
+	GLOB.km_attr_a = /datum/unit_test
+	GLOB.km_attr_entry = null
+	var/obj/effect/dq_after_init_probe/probe = allocate(/obj/effect/dq_after_init_probe, dq_containment_floor())
+	var/named = GLOB.km_attr_a
+	GLOB.km_attr_depth--
+	GLOB.km_attr_a = null
+	GLOB.km_attr_entry = null
+	TEST_ASSERT(at("after", probe), "the nested after_init(0) still ran")
+	TEST_ASSERT_EQUAL(named, /datum/unit_test, "a direct after_init(0) inside a timed call leaves the call's attribution alone")
+
 /// Loaded with a map: every probe's after_init(0) runs when the frame closes, after every probe of the load has initialized.
 /datum/unit_test/dq_after_init/mapload
 

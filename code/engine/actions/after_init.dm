@@ -51,21 +51,25 @@
 		if(istext(delay))
 			delay = (delay in holder.vars) ? holder.vars[delay] : call(holder, delay)(null) // nameof(var), or PROC_REF(x) answering it
 		if(!isnum(delay) || delay <= 0)
-			after_init_fire(holder, C, mapload)
+			after_init_fire(holder, C, mapload, TRUE)
 		else
 			after(holder, delay, GLOBAL_PROC_REF(after_init_fire), key = "after_init:[index]", with = list(holder, C, mapload))
 		if(QDELETED(holder))
 			return
 
-/// One after_init() is due: its parts run on the holder (unless an enclosing when() is false now).
-/proc/after_init_fire(datum/holder, datum/centry/C, mapload)
+/// One after_init() is due: its parts run on the holder (unless an enclosing when() is false now). `direct` is a fire made at once by
+/// after_init_arm(), not carried by a timer: inside another timed call (a shuttle move that makes turfs) its cost belongs to that call, so it
+/// leaves the attribution slot alone; naming itself there made the whole enclosing call show up as this after_init() in PERF_PROFILE.
+/proc/after_init_fire(datum/holder, datum/centry/C, mapload, direct = FALSE)
 	if(!holder || QDELETED(holder) || !C)
 		return
 	if(!op_whens_hold(holder, C.whens))
 		return
 	var/datum/entry/E = C.item
-	GLOB.km_attr_a = holder.type // attribution: the declared after_init(), not the timer that carried it
-	GLOB.km_attr_entry = E
+	var/nested = direct && GLOB.km_attr_depth
+	if(!nested)
+		GLOB.km_attr_a = holder.type // attribution: the declared after_init(), not the timer that carried it
+		GLOB.km_attr_entry = E
 	// A fire made at once (delay 0, the close of the map load) is not inside a timer: it charges itself, as the settle record needs it.
 	var/attr_start = GLOB.km_attr_depth ? null : TICK_USAGE
 	var/datum/act/timer/T = every_context(holder, null, holder, 0)
