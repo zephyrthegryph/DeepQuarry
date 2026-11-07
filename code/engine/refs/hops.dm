@@ -106,11 +106,22 @@ GLOBAL_VAR_INIT(hop_segments_built, FALSE)
 	for(var/atom/movable/AM as anything in moved)
 		if(QDELETED(AM))
 			continue
-		// Per thing, not per world: a stat somewhere reading the turf hop does not make each organ of a walking human a reader of it.
-		if(turf_changed && (GLOB.derived_read_vars?[HOP_TURF] || stat_type_reads_key(AM, HOP_TURF) || READERS(AM, HOP_TURF)))
+		// Per thing, not per world, and memoized per type: a stat somewhere reading the turf hop does not make each organ of a walking human a
+		// reader of it. The static half (stats, reactions, lifecycle forms, on_change hooks of the type) is own_field_static_work()'s memo; the
+		// dynamic half is what READERS() adds on the instance (an observer of the segment, a worn watch).
+		var/datum/rx_state/S = AM.rx
+		if(turf_changed && hop_segment_heard(AM, S, HOP_TURF))
 			own_field_changed(AM, HOP_TURF)
-		if(area_changed && (GLOB.derived_read_vars?[HOP_AREA] || stat_type_reads_key(AM, HOP_AREA) || READERS(AM, HOP_AREA)))
+		if(area_changed && hop_segment_heard(AM, S, HOP_AREA))
 			own_field_changed(AM, HOP_AREA)
+
+/// Does a change of `segment` (turf or area) on AM reach anything? `S` is AM.rx.
+/proc/hop_segment_heard(atom/movable/AM, datum/rx_state/S, segment)
+	if(GLOB.derived_read_vars?[segment] || GLOB.change_hop_keys?[segment])
+		return TRUE
+	if(S && (S.observed?[segment] || S.worn_watched))
+		return TRUE
+	return own_field_static_work(AM, segment)
 
 /// TRUE when `segment` is a hop E's reads can start with: a var of E, or (on an atom) a pseudo segment.
 /proc/hop_segment_known(datum/E, segment)
