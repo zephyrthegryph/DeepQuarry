@@ -182,3 +182,70 @@ CAPABILITIES(/obj/dq_stamp_plain)
 	for(var/obj/item/stack/material/scrap in T)
 		qdel(scrap)
 	refresh_flush()
+
+/// A fixture whose setup() writes a var its draw reads: the writes an atom's own construction makes after Initialize() returned.
+/obj/dq_setup_marks_probe
+	name = "setup marks probe"
+	var/shade = 0
+
+CAPABILITIES(/obj/dq_setup_marks_probe)
+	setup(PROC_REF(probe_setup))
+
+/obj/dq_setup_marks_probe/draw(datum/look/look)
+	. = ..()
+	look.state("shade-[shade]")
+
+/obj/dq_setup_marks_probe/proc/probe_setup()
+	set_shade(2)
+
+/// What an atom's setup() writes is its construction (the first draw queued at creation covers it): the creation mark survives, so the type is
+/// still sampled at boot (refresh_settle_created()) instead of every instance waiting, unsampled, for the post-boot drain. A write after construction
+/// is a real mark and clears it, as before.
+/datum/unit_test/dq_refresh_setup_writes_are_construction
+
+/datum/unit_test/dq_refresh_setup_writes_are_construction/Run()
+	var/turf/T = test_floor()
+	refresh_flush()
+	GLOB.type_look_stamp -= /obj/dq_setup_marks_probe
+	GLOB.type_look_lazy -= /obj/dq_setup_marks_probe
+	var/obj/dq_setup_marks_probe/first = new(T)
+	var/obj/dq_setup_marks_probe/second = new(T)
+	TEST_ASSERT_EQUAL(first.shade, 2, "its setup() ran")
+	TEST_ASSERT(first.refresh_queued & DEP_CREATED, "the setup() write did not clear the creation mark")
+	TEST_ASSERT(first.refresh_queued & DEP_DRAW, "and its first draw is still owed")
+	refresh_settle_created()
+	TEST_ASSERT(!isnull(GLOB.type_look_stamp[/obj/dq_setup_marks_probe]), "the boot settle sampled the type: its instances were fresh")
+	TEST_ASSERT(!GLOB.type_look_stamp[/obj/dq_setup_marks_probe], "and its default look is not empty (the setup write is drawn)")
+	// A write after construction is a real mark.
+	second.set_shade(5)
+	TEST_ASSERT(!(second.refresh_queued & DEP_CREATED), "a write after construction clears the creation mark")
+	refresh_flush()
+	TEST_ASSERT_EQUAL(second.shade, 5, "and the write stands")
+	TEST_ASSERT_EQUAL(second.refresh_queued, 0, "and the drain draws it")
+	GLOB.type_look_stamp -= /obj/dq_setup_marks_probe
+	GLOB.type_look_lazy -= /obj/dq_setup_marks_probe
+	qdel(first)
+	qdel(second)
+	refresh_flush()
+
+/// A wall or floor built while the round runs (ChangeTurf) takes its material and flooring in setup(), is drawn from them and still answers later changes.
+/datum/unit_test/dq_refresh_runtime_built_turfs_draw
+
+/datum/unit_test/dq_refresh_runtime_built_turfs_draw/Run()
+	var/turf/T = test_floor()
+	var/floor_type = T.type
+	refresh_flush()
+	var/turf/simulated/wall/W = T.ChangeTurf(/turf/simulated/wall)
+	TEST_ASSERT(istype(W), "the floor became a wall")
+	if(!istype(W))
+		return
+	TEST_ASSERT(istype(W.material, /datum/material), "the wall took its material in setup()")
+	TEST_ASSERT(W.density, "the wall is solid")
+	refresh_flush()
+	TEST_ASSERT_EQUAL(W.refresh_queued, 0, "the wall's first draw ran")
+	var/before = W.icon_state
+	var/turf/back = W.ChangeTurf(floor_type)
+	refresh_flush()
+	TEST_ASSERT(!istype(back, /turf/simulated/wall), "the wall became a floor again ([back.type]; was drawn [before])")
+	TEST_ASSERT(!back.density, "which can be walked on")
+	TEST_ASSERT_EQUAL(back.refresh_queued, 0, "and the floor's draw ran")
