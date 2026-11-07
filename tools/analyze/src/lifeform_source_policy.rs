@@ -54,21 +54,26 @@ pub(crate) fn is_engine(rel: &str) -> bool {
 }
 
 /// (pattern, form) pairs: an ALLOW reason matching the pattern describes what the form declares.
-pub(crate) fn form_reasons() -> Vec<(&'static str, regex::Regex, &'static str)> {
-    let r = |p: &str| regex::Regex::new(p).expect("form reason pattern");
-    vec![
-        ("init", r(r"(?i)rolled at random|random(ly)? (roll|pick|chosen)"), "rolls()"),
-        ("init", r(r"(?i)constructor argument"), "param() and make()"),
-        ("lifecycle", r(r"(?i)\b(expires?|timed (delete|deletion|removal)|times out)\b"), "expire()"),
-        ("lifecycle", r(r"(?i)\b(used up|single[- ]use|spent)\b"), "spent()"),
-        ("lifecycle", r(r"(?i)\b(eaten|drunk|consumed by)\b"), "consumed()"),
-        ("lifecycle", r(r"(?i)\b(dissolve[sd]?|melts?|melted)\b"), "dissolved()"),
-        ("lifecycle", r(r"(?i)\b(replaced by|becomes (a|an|the))\b"), "replace_with()"),
-        ("sys_usr_outside_verb", r(r"(?i)\btooltip"), "tooltip()"),
-        ("sys_usr_outside_verb", r(r"(?i)\b(native|hud|screen)\b.*\bclick"), "click_on()"),
-        ("sys_usr_outside_verb", r(r"(?i)\b(drag|drop)\b"), "drag_onto()"),
-        ("sys_usr_outside_verb", r(r"(?i)\b(callback|proc ?call|admin call)\b"), "with_actor()"),
-    ]
+type FormReason = (&'static str, regex::Regex, &'static str);
+
+pub(crate) fn form_reasons() -> &'static [FormReason] {
+    static REASONS: std::sync::LazyLock<[FormReason; 11]> = std::sync::LazyLock::new(|| {
+        let r = |p: &str| regex::Regex::new(p).expect("form reason pattern");
+        [
+            ("init", r(r"(?i)rolled at random|random(ly)? (roll|pick|chosen)"), "rolls()"),
+            ("init", r(r"(?i)constructor argument"), "param() and make()"),
+            ("lifecycle", r(r"(?i)\b(expires?|timed (delete|deletion|removal)|times out)\b"), "expire()"),
+            ("lifecycle", r(r"(?i)\b(used up|single[- ]use|spent)\b"), "spent()"),
+            ("lifecycle", r(r"(?i)\b(eaten|drunk|consumed by)\b"), "consumed()"),
+            ("lifecycle", r(r"(?i)\b(dissolve[sd]?|melts?|melted)\b"), "dissolved()"),
+            ("lifecycle", r(r"(?i)\b(replaced by|becomes (a|an|the))\b"), "replace_with()"),
+            ("sys_usr_outside_verb", r(r"(?i)\btooltip"), "tooltip()"),
+            ("sys_usr_outside_verb", r(r"(?i)\b(native|hud|screen)\b.*\bclick"), "click_on()"),
+            ("sys_usr_outside_verb", r(r"(?i)\b(drag|drop)\b"), "drag_onto()"),
+            ("sys_usr_outside_verb", r(r"(?i)\b(callback|proc ?call|admin call)\b"), "with_actor()"),
+        ]
+    });
+    REASONS.as_slice()
 }
 
 /// What the CAPABILITIES blocks declare for the checks: per type, its params, required params, built_from and per_type vars.
@@ -88,7 +93,7 @@ impl Lint for LifeformAllows {
         for number in 1..=raw.num_lines() {
             let line = raw.line(number);
             let Some(a) = crate::allow::parse(line) else { continue };
-            for (lint, pat, form) in &reasons {
+            for (lint, pat, form) in reasons {
                 if a.names.contains(*lint) && pat.is_match(&a.reason) {
                     out.site_msg("allow_matches_form", number, format!("ALLOW({}) \"{}\": {} declares this", lint, a.reason, form));
                     break;
