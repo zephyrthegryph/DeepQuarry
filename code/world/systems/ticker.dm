@@ -8,6 +8,8 @@ SYSTEM_DEF(ticker)
 
 	/// state of current round (used by process()) Use the defines GAME_STATE_* !
 	var/current_state = GAME_STATE_STARTUP
+	/// How many times the lobby windows were pushed (a state change or an immediate-start change); tests read it.
+	var/lobby_refreshes = 0
 	/// Boolean to track if round should be forcibly ended next ticker tick.
 	/// Set by admin intervention ([ADMIN_FORCE_END_ROUND])
 	/// or a "round-ending" event, like summoning Nar'Sie, a blob victory, the nuke going off, etc. ([FORCE_END_ROUND])
@@ -95,7 +97,7 @@ SYSTEM_DEF(ticker)
 			to_chat(world, span_boldnotice("Welcome to [station_name()]!"))
 			for(var/channel_tag in CONFIG_GET(str_list/channel_announce_new_game))
 				send2chat(new /datum/tgs_message_content("New round starting on [using_map.full_name] ([using_map.name])!"), channel_tag)
-			current_state = GAME_STATE_PREGAME
+			set_current_state(GAME_STATE_PREGAME)
 
 			round_step(0)
 		if(GAME_STATE_PREGAME)
@@ -126,7 +128,7 @@ SYSTEM_DEF(ticker)
 			if(timeLeft <= 0 && round_start_blocked())
 				return
 			if(timeLeft <= 0)
-				current_state = GAME_STATE_SETTING_UP
+				set_current_state(GAME_STATE_SETTING_UP)
 				Kernel.SetRunLevel(RUNLEVEL_SETUP)
 				if(start_immediately)
 					round_step(0)
@@ -134,7 +136,7 @@ SYSTEM_DEF(ticker)
 		if(GAME_STATE_SETTING_UP)
 			if(!setup())
 				//setup failed
-				current_state = GAME_STATE_STARTUP
+				set_current_state(GAME_STATE_STARTUP)
 				COOLDOWN_START(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10))
 				timeLeft = null
 				Kernel.SetRunLevel(RUNLEVEL_LOBBY)
@@ -146,7 +148,7 @@ SYSTEM_DEF(ticker)
 				return // wait until explosion is done.
 
 			if(force_ending)
-				current_state = GAME_STATE_FINISHED
+				set_current_state(GAME_STATE_FINISHED)
 				mode.set_mode_running(FALSE)
 				declare_completion(force_ending)
 				Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
@@ -163,7 +165,7 @@ SYSTEM_DEF(ticker)
 
 				if(game_finished && mode_finished)
 					end_game_state = END_GAME_READY_TO_END
-					current_state = GAME_STATE_FINISHED
+					set_current_state(GAME_STATE_FINISHED)
 					mode.set_mode_running(FALSE)
 					Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 					declare_completion() // its SQL and TGS chat run off-thread (io_job, send2chat)
@@ -232,7 +234,7 @@ SYSTEM_DEF(ticker)
 	to_chat(world, span_notice(span_bold("Welcome to [station_name()], enjoy your stay!")))
 	play_simple_announcement(world, ANNOUNCER_MSG_ROUND_START)
 
-	current_state = GAME_STATE_PLAYING
+	set_current_state(GAME_STATE_PLAYING)
 	mode.set_mode_running(TRUE)
 	Kernel.SetRunLevel(RUNLEVEL_GAME)
 
