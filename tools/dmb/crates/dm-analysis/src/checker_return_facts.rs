@@ -154,9 +154,6 @@ fn return_hint_fact_controlled_using<D:PrefixDemand>(tree:&SemanticTree,resolver
             if let Some(permit) = permit {
                 permit.require(tree, archive, profile, identity)?;
             }
-            if identity.owner == SymbolId::of("/") && identity.name == SymbolId::of("astype") {
-                return Err("pinned astype needs shared argument typepath/value facts".into());
-            }
             let prefix = if metadata
                 .procedure
                 .as_ref()

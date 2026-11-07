@@ -1173,11 +1173,20 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 })?
             }
         }
+        let astype = self.original_values && match &fact {
+            CallableFact::Source { identity, .. } => {
+                identity.owner == SymbolId::of("/") && identity.name == SymbolId::of("astype")
+            }
+            CallableFact::CheckerBuiltin { declaring_owner, name, .. } => {
+                *declaring_owner == SymbolId::of("/") && *name == SymbolId::of("astype")
+            }
+            CallableFact::Missing => false,
+        };
         let mut capture_return=false;
         if self.original_values&&(self.effects.is_some()||self.source.projection.is_some())&&self.original_events.is_some()&&self.prefix_demand.owns_return_expression_binding(){if let CallableFact::Source{metadata,..}=&fact{for node in metadata.procedure.as_ref().ok_or("return capture source signature absent")?.settings.iter(){self.prefix_demand.checkpoint()?;if matches!(node,dm_ir::ProcedureSettingNode::Setting(setting)if setting.name==SymbolId::of("SpacemanDMM_return_type")){capture_return=true;break}}}}
 
         let mut return_arguments=Vec::new();
-        if capture_return{
+        if capture_return || astype {
             let bound=args.len().checked_mul(std::mem::size_of::<crate::checker_return_binding::Argument<'_>>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(256)).ok_or_else(||self.prefix_demand.resource("return argument capture capacity overflow"))?;
             if let Some(effects)=self.effects.as_ref(){effects.transient.charge(bound).map_err(|_|self.prefix_demand.resource("return argument capture admission denied"))?;}else{self.prefix_demand.storage(bound)?;}
             return_arguments.try_reserve_exact(args.len()).map_err(|_|self.prefix_demand.resource("return argument capture allocation refused"))?;
@@ -1188,7 +1197,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 let previous=self.evaluation_anchor.replace(crate::checker_effects::CallOrigin::Source(at));
                 let expression=match site{EvaluationCallSite::Written(expression)=>expression.span,EvaluationCallSite::ImplicitList(_)=>at};
                 let result=self.with_warning_anchor(Self::warning_source(at),|this|
-                    this.arguments_for_call_collect(args,Some(KeywordCall{fact:&fact,receiver,name,at:Some(at),expression,exact}),capture_return.then_some(&mut return_arguments)));
+                    this.arguments_for_call_collect(args,Some(KeywordCall{fact:&fact,receiver,name,at:Some(at),expression,exact}),(capture_return || astype).then_some(&mut return_arguments)));
                 self.evaluation_anchor=previous;result?;
             },
             EvaluationCallSite::ImplicitList(initializer) => {
@@ -1206,6 +1215,28 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             // procedure's return analysis. Its synthetic origin is not a
             // source cursor for a return-hint diagnostic.
             return Ok(TypeFact::Unhinted);
+        }
+        if astype {
+            let mut positional = return_arguments.iter().filter(|argument| argument.key.is_none());
+            let first = positional.next();
+            if let Some(value @ (OriginalValue::PrefabOwner(_) | OriginalValue::PrefabPath(_)
+                | OriginalValue::ProcedurePath { .. })) = positional.next().and_then(|argument| argument.value)
+            {
+                let owner = crate::checker_static_reference::prefab_type_using(
+                    self.tree, self.resolver, value, &mut || self.prefix_demand.checkpoint(),
+                )?;
+                if let Some(owner) = owner {
+                    return Ok(TypeFact::declared(Some(owner), None));
+                }
+            }
+            if let Some(first) = first {
+                // Original Analysis::from(static_ty) keeps the static shape
+                // but drops the argument's fix hint, value and impurity.
+                return Ok(match first.ty {
+                    TypeFact::Unknown | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) => TypeFact::Unhinted,
+                    ty => ty,
+                });
+            }
         }
         let mut skip_return_prefix=false;
         if capture_return{

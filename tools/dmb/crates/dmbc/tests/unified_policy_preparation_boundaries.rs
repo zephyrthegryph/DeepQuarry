@@ -617,6 +617,112 @@ fn public_original_dynamic_constructor_skips_target_and_args_but_checks_outer_fo
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_original_astype_preserves_resolved_root_positional_types() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Roster},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    let root = test_scratch::dir("public-astype-follow");
+    let transport = test_scratch::dir("public-astype-transport");
+    let cache = test_scratch::dir("public-astype-cache");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!(
+            "astype-follow-{}-{}",
+            std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+        ),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let source = concat!(
+        "/datum/cast_source\n",
+        "/datum/cast_target\n",
+        "/proc/probe(datum/cast_source/item)\n",
+        "    return astype(item, /datum/cast_target).cast_member\n",
+        "/proc/probe_fallback(datum/cast_source/item)\n",
+        "    return astype(item, Type = /datum/cast_target).fallback_member\n",
+    );
+    put(&root, "code/probe.dm", source);
+
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(cache);
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithSemanticReads;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}"))
+        .collect();
+    let request_path = transport.join("astype.json");
+    put(&transport, "astype.json", serde_json::to_vec(&serde_json::json!({
+        "build": build, "exclusions": exclusions,
+    })).unwrap());
+
+    // Pinned visit_call branches on the resolved root proc, even when
+    // an authored declaration shadows the same builtin.
+    for authored in [false, true] {
+        if authored {
+            put(&root, "code/probe.dm", format!("{source}/proc/astype(Val, Type)\n    return null\n"));
+        }
+        let output = daemon.run(
+            &[OsStr::new("checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
+            Duration::from_secs(90),
+        ).unwrap();
+        assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+        let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+        let terminal: CombinedTerminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+        terminal.require().unwrap();
+        assert_eq!(terminal.roster, roster);
+        let (checker, _) = output.stdout[header_end + 1..].split_at(terminal.checker.length as usize);
+        let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+        let rows = checker["diagnostics"].as_array().unwrap();
+        let body = if authored {
+            let (declaration, body) = rows.split_first().unwrap();
+            assert_eq!(declaration["phase"], "reader_declarations");
+            assert_eq!(declaration["family"], "procedure_redeclaration");
+            assert_eq!(declaration["severity"], "error");
+            assert_eq!(declaration["line"], 7);
+            assert_eq!(declaration["column"], 13);
+            assert_eq!(declaration["message"], "duplicate definition of proc/astype");
+            assert_eq!(declaration["notes"], serde_json::json!(["(builtins):1:1: previous definition"]));
+            body
+        } else {
+            rows.as_slice()
+        };
+        let actual: Vec<_> = body.iter().map(|row| {
+            assert_eq!(row["phase"], "body");
+            assert_eq!(row["location_kind"], "source");
+            assert!(Path::new(row["file"].as_str().unwrap()).ends_with("probe.dm"));
+            assert!(row["notes"].as_array().unwrap().is_empty(), "{row}");
+            (
+                row["family"].as_str().unwrap(),
+                row["registration_tag"].as_str(),
+                row["severity"].as_str().unwrap(),
+                row["line"].as_u64().unwrap(),
+                row["column"].as_u64().unwrap(),
+                row["message"].as_str().unwrap(),
+            )
+        }).collect();
+        assert_eq!(actual, [
+            ("undefined_variable", None, "error", 4, 44,
+                "undefined field: \"cast_member\" on /datum/cast_target"),
+            ("undefined_variable", None, "error", 6, 51,
+                "undefined field: \"fallback_member\" on /datum/cast_source"),
+        ]);
+        assert!(!root.join("deepquarry.rsc").exists());
+    }
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
 fn public_original_rand_switch_nonnumeric_cases_keep_warnings_and_body_errors() {
     use dq_analyze::{
         captured_allow_annotations::{full_unused, Operation},
