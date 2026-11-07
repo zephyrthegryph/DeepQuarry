@@ -5,12 +5,6 @@ import {
   type FeatureToggle,
 } from '../base';
 
-export const BROWSER_STYLED: FeatureToggle = {
-  name: 'Use Fake NanoUI Browser Style',
-  category: 'UI',
-  description: 'Enable a dark fake NanoUI browser style for older UIs.',
-  component: CheckboxInput,
-};
 
 export const VCHAT_ENABLE: FeatureToggle = {
   name: 'Enable TGChat',
