@@ -468,6 +468,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	rx.activations = null
 	rx.sourced = null
 	rx.rel_scopes = null
+	rx.op_dispatch_memo = null
+	rx.op_provider_memo = null
 
 // ---- state: capability keys and typed data ----
 
@@ -616,6 +618,9 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(TRACKED_UNCHANGED(capability_generation, value))
 		return FALSE
 	capability_generation = value
+	// What the resolver merged over the holder's grants (its candidate rows per input shape, its providers) is made again on the next read.
+	op_dispatch_memo = null
+	op_provider_memo = null
 	tracked_changed(src, nameof(capability_generation))
 	return TRUE
 SETTER(/datum/rx_state, capability_generation)

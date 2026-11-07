@@ -278,7 +278,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
 /proc/refresh_mark(datum/E, mask, channel = 0)
 	if(GLOB.refresh_mark_probe_type && istype(E, GLOB.refresh_mark_probe_type))
-		refresh_mark_probe_note()
+		refresh_mark_probe_note(mask)
 	var/datum/D = E
 	for(var/depth in 1 to 8)
 		// A parked atom (DEP_PARKED) is out of the queue and owes its whole first refresh: the real mark queues it and the owed draw rides with it.
@@ -429,8 +429,8 @@ GLOBAL_VAR_INIT(refresh_mark_probe_type, null)
 /// "caller <- caller's caller" -> marks.
 GLOBAL_LIST_EMPTY(refresh_mark_probe_sources)
 
-/proc/refresh_mark_probe_note()
-	var/chain = ""
+/proc/refresh_mark_probe_note(mask)
+	var/chain = (mask & DEP_DRAW) ? "DRAW: " : ""
 	var/n = 0
 	for(var/callee/frame = caller?.caller; frame && n < 4; frame = frame.caller)
 		chain += "[n ? " <- " : ""][frame.proc]"
