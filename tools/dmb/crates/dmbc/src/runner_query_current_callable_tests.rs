@@ -270,3 +270,53 @@ fn opt_in_original_kind17_retracts_edited_callee_sleep_and_matches_fresh_canonic
  run(&mut fresh,&fresh_request);
  assert_eq!(render(&fresh,&fresh_root).0,after,"retained output equals independent cold canonical output");
 }
+
+#[test]
+fn current_original_statement_call_evaluates_actual_positional_arguments_in_source_order(){
+ use dm_analysis::checker_effects::OriginalDiagnosticPhase;
+ let(mut host,request,_)=fixture("/proc/sink(a,b)\n    return null\n/proc/probe()\n    sink(missing_first, missing_second)\n    return null\n");
+ let db=host.query_db().clone();
+ run(&mut host,&request);
+ current(&host,|snapshot|{
+  let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let archive=owner.input().archive();
+  let bytes=db.original_current_body_bytes_for_test(owner.input(),1,|rows|{
+   let rows:Vec<_>=rows.iter().filter(|row|row.phase()==OriginalDiagnosticPhase::Body).collect();
+   assert_eq!(rows.len(),2);
+   for (row,(name,column)) in rows.into_iter().zip([("missing_first",10),("missing_second",25)]){
+    let diagnostic=row.diagnostic();
+    let at=archive.source_note_point(diagnostic.span.start).unwrap();
+    assert_eq!((at.line,at.byte_column),(4,column));
+    assert_eq!(diagnostic.family,"undefined_variable");
+    assert_eq!(diagnostic.message,format!("undefined var: {name:?}"));
+    assert!(diagnostic.notes.is_empty());
+   }
+   b"observed".to_vec()
+  }).unwrap();
+  assert_eq!(bytes,b"observed");
+ });
+}
+
+#[test]
+fn current_original_single_local_visits_initializer_before_binding_and_return() {
+ use dm_analysis::checker_effects::OriginalDiagnosticPhase;
+ let source = "/proc/probe()\n    var/local = missing_initializer\n    return local\n";
+ let (mut host, request, _) = fixture(source);
+ let db = host.query_db().clone();
+ run(&mut host, &request);
+ current(&host, |snapshot| {
+  let owner = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  db.original_current_body_bytes_for_test(owner.input(), 0, |rows| {
+   let rows: Vec<_> = rows.iter().filter(|row| row.phase() == OriginalDiagnosticPhase::Body).collect();
+   assert_eq!(rows.len(), 1);
+   let diagnostic = rows[0].diagnostic();
+   let point = snapshot.body_archive.as_ref().unwrap().source_note_point(diagnostic.span.start).unwrap();
+   assert_eq!((point.line, point.byte_column), (2, 17));
+   assert_eq!(diagnostic.family, "undefined_variable");
+   assert_eq!(diagnostic.severity, dm_analysis::checks::Severity::Error);
+   assert_eq!(diagnostic.message, "undefined var: \"missing_initializer\"");
+   assert!(diagnostic.notes.is_empty());
+   Vec::new()
+  }).unwrap();
+ });
+}

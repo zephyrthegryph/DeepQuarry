@@ -439,10 +439,13 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
         }
         let item = if index==0{first.unwrap_or(&items[index])}else{&items[index]};
         let header = item.header.trim();
+        let local_statement = item.children.is_empty()
+            && (header.starts_with("var/") || starts_keyword(header, "var"));
+        let mut original_local_head = false;
         // SAME primary consumption; unproved families/children never grant availability.
         if starts_keyword(header,"if"){
             origins.original_compound_seen_statement=true;
-        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_zero_call_header(header)){
+        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!local_statement){
             origins.original_compound_complete=false;
         }
         if !item.children.is_empty()
@@ -461,8 +464,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             index += 1;
             continue;
         }
-        if (header.starts_with("var/") || starts_keyword(header, "var")) && item.children.is_empty()
-        {
+        if local_statement {
             let (parts, lexical) = split_case_alternatives_with_tokens(header);
             let base =
                 item.header_span.start + (header.as_ptr() as usize - item.header.as_ptr() as usize);
@@ -474,10 +476,12 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                 crate::LocalSourceKind::Statement,
             );
             if parts.len() > 1 {
+                origins.original_compound_complete = false;
                 parse_var_parts(item, "", diagnostics, &mut statements,origins.deferred_literal_purity);
                 index += 1;
                 continue;
             }
+            original_local_head = original_single_local_head(header, &lexical);
         }
         if starts_keyword(header, "if") {
             let mut end = index + 1;
@@ -600,7 +604,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             index += 1;
             continue;
         }
-        statements.push(parse_one(item, diagnostics, origins));
+        statements.push(parse_one(item, diagnostics, origins, original_local_head));
         index += 1;
     }
     statements
@@ -672,6 +676,7 @@ fn parse_one(
     item: &Item,
     diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
+    mut original_local_head: bool,
 ) -> Statement {
     let header = item.header.trim();
     let joined_return = if header != "return" && header.starts_with("return")
@@ -767,7 +772,11 @@ fn parse_one(
     } else if let Some(label) = header.strip_prefix("continue ") {
         Some(StatementKind::ContinueLabel(label.trim().into()))
     } else if header.starts_with("var/") || starts_keyword(header, "var") {
-        parse_var(item, diagnostics,origins.deferred_literal_purity)
+        let parsed = parse_var(item, diagnostics, origins.deferred_literal_purity, &mut original_local_head);
+        let issued = original_local_head && parsed.is_some();
+        origins.original_compound_complete &= issued;
+        origins.original_compound_seen_statement |= issued;
+        parsed
     } else if !item.children.is_empty() {
         diagnostics.push(Diagnostic {
             span: item.header_span,
@@ -776,11 +785,15 @@ fn parse_one(
         });
         None
     } else {
-        let ordinary_zero_call=original_ordinary_zero_call_header(header);
+        let ordinary_call=original_ordinary_call_header(header);
         parse_expr_observed(header,item.header_span.start,diagnostics,&mut|parsed|{
-            if ordinary_zero_call{
-                let issued=parsed.original_simple_expression.is_some_and(|actual|actual.kind()==crate::expression_parser::OriginalSimpleKind::Complete)
-                    &&matches!(parsed.expr.as_ref().map(|expr|&expr.kind),Some(ExprKind::Call{callee,args})if args.is_empty()&&matches!(&callee.kind,ExprKind::Ident(_)));
+            if ordinary_call{
+                use crate::expression_parser::OriginalSimpleKind;
+                let issued=parsed.original_simple_expression.is_some_and(|actual|match actual.kind(){
+                    OriginalSimpleKind::OrdinaryCallStatement=>true,
+                    OriginalSimpleKind::Complete=>matches!(parsed.expr.as_ref().map(|expr|&expr.kind),Some(ExprKind::Call{callee,args})if args.is_empty()&&matches!(&callee.kind,ExprKind::Ident(_))),
+                    OriginalSimpleKind::MissingArithmeticOperand=>false,
+                });
                 origins.original_compound_complete&=issued;
                 origins.original_compound_seen_statement|=issued;
             }
@@ -805,17 +818,11 @@ fn parse_one(
     }
 }
 
-// Scope proof for the ordinary zero-argument statement-call grammar only.
-// This routing filter does not grant availability; the consuming expression
-// parser must separately issue its complete original token witness.
-fn original_ordinary_zero_call_header(header:&str)->bool{
-    let Some((name,arguments))=header.strip_suffix(')').and_then(|head|head.split_once('('))else{return false};
-    // The actual Original token renderer separates adjacent punctuation,
-    // so an authored empty call can be represented as "name( )".
-    let name=name.trim_end();
-    if !arguments.trim().is_empty(){return false}
-    crate::expression_parser::original_ascii_identifier(name)
-        &&!matches!(name,"CRASH"|"as"|"call"|"call_ext"|"catch"|"do"|"else"|"for"|"if"|"input"|"list"|"locate"|"new"|"newlist"|"pick"|"return"|"set"|"spawn"|"switch"|"throw"|"try"|"var"|"while")
+// A routing filter only. The consuming expression parser certifies the
+// actual callee, complete parentheses, argument roots and separator tokens.
+fn original_ordinary_call_header(header:&str)->bool{
+    let Some((name,_))=header.strip_suffix(')').and_then(|head|head.split_once('('))else{return false};
+    crate::expression_parser::original_ordinary_call_name(name.trim_end())
 }
 
 fn parse_set(item: &Item, diagnostics: &mut BodyDiagnostics<'_>) -> Option<StatementKind> {
@@ -1018,7 +1025,7 @@ fn parse_var_parts(
         );
         leaf.span = leaf.header_span;
         let prefix = if index == 0 { prefix } else { &inherited };
-        if let Some(kind) = parse_var_header(&leaf, prefix, diagnostics,deferred_literal_purity) {
+        if let Some(kind) = parse_var_header(&leaf, prefix, diagnostics,deferred_literal_purity,None) {
             statements.push(Statement {
                 kind,
                 span: leaf.span,
@@ -1029,7 +1036,35 @@ fn parse_var_parts(
     }
 }
 
-fn parse_var(item: &Item, diagnostics: &mut BodyDiagnostics<'_>,deferred_literal_purity:bool) -> Option<StatementKind> {
+// Reuse the lexical window that issued the local-source receipt. Only the
+// plain slash path is witnessed here. Modifiers, arrays and grouped locals
+// need their own Original grammar evidence.
+fn original_single_local_head(header: &str, lexical: &crate::SpannedLexed) -> bool {
+    use crate::TokenKind;
+    if !lexical.diagnostics.is_empty() { return false; }
+    let mut tokens = lexical.tokens.iter().filter(|token| {
+        !matches!(token.kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment)
+    });
+    if !tokens.next().is_some_and(|token| token.kind == TokenKind::Ident && token.text(header) == "var") {
+        return false;
+    }
+    for component in 0..16 {
+        let Some(slash) = tokens.next() else { return component != 0; };
+        if slash.text(header) == "=" { return component != 0; }
+        if slash.text(header) != "/" { return false; }
+        let Some(name) = tokens.next() else { return false; };
+        let text = name.text(header);
+        if name.kind != TokenKind::Ident
+            || !crate::expression_parser::original_ascii_identifier(text)
+            || matches!(text, "const" | "global" | "static" | "tmp" | "final")
+        {
+            return false;
+        }
+    }
+    false
+}
+
+fn parse_var(item: &Item, diagnostics: &mut BodyDiagnostics<'_>,deferred_literal_purity:bool,original_head:&mut bool) -> Option<StatementKind> {
     if let Some(child) = item.children.first() {
         // A block indented under an initialized `var/name = value` is never
         // DM; the statement lowerer reports DreamMaker's error.
@@ -1040,13 +1075,14 @@ fn parse_var(item: &Item, diagnostics: &mut BodyDiagnostics<'_>,deferred_literal
         });
         return None;
     }
-    parse_var_header(item, "", diagnostics,deferred_literal_purity)
+    parse_var_header(item, "", diagnostics,deferred_literal_purity,Some(original_head))
 }
 fn parse_var_header(
     item: &Item,
     prefix: &str,
     diagnostics: &mut BodyDiagnostics<'_>,
     deferred_literal_purity:bool,
+    mut original_head: Option<&mut bool>,
 ) -> Option<StatementKind> {
     let header = item.header.trim();
     let assignment = crate::local_variable_syntax::top_level_local_assignment(header);
@@ -1071,7 +1107,13 @@ fn parse_var_header(
         let source = header[at + 1..].trim();
         let offset =
             item.header_span.start + (source.as_ptr() as usize - item.header.as_ptr() as usize);
-        let parsed = parse_expr(source, offset, diagnostics)?;
+        let parsed = parse_expr_observed(source, offset, diagnostics, &mut |parsed| {
+            if let Some(proof) = original_head.as_deref_mut() {
+                *proof &= parsed.original_simple_expression.is_some_and(|value| {
+                    value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+                });
+            }
+        })?;
         // `in` binds looser than `=` in DreamMaker, so `var/x = a in L` is `(var/x = a) in L`: the local gets `a`, and a
         // membership test whose result nobody reads (and that has no effect) is dropped.
         if !deferred_literal_purity && pure_local_membership(&parsed,None){
@@ -1300,7 +1342,7 @@ impl OriginalBodyGrammarOutcome{
   let shift=|span:Span|Some(Span::new(span.start.checked_add(offset)?,span.end.checked_add(offset)?));
   let expression=shift(actual.span())?;let operator=match actual.operator(){Some(span)=>Some(shift(span)?),None=>None};
   if expression.start<statement.start||expression.end>statement.end{return None}
-  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
+  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
  }
  pub fn prefix_settings(self)->usize{self.prefix_settings}
  pub fn kind(self)->OriginalBodyGrammarKind{self.kind}
@@ -1375,8 +1417,75 @@ mod original_ordinary_statement_call_witness_tests{
 
  #[test]
  fn unsupported_or_recovering_statement_never_inherits_ordinary_call_witness(){
-  for code in ["    missing(1)\n","    missing(\n","    missing()\n    CRASH()\n","    missing()\n    input()\n","    missing()\n    var/value = 0\n"]{
+  for code in ["    missing(nested())\n","    missing(\n","    missing()\n    CRASH()\n","    missing()\n    input()\n","    missing()\n    var/static/value = 0\n"]{
    assert!(body(code).original_grammar.is_none(),"unissued {code}");
   }
  }
+}
+
+#[cfg(test)]
+mod original_positional_statement_call_witness_tests{
+ use super::*;
+ fn body(code:&str)->ParsedBody{
+  let primary=crate::parse(&format!("/proc/probe(argument)\n{code}"));
+  parse_proc_body(&primary.items[0])
+ }
+ #[test]
+ fn original_statement_call_uses_consumed_simple_argument_and_comma_tokens(){
+  for code in ["    sink(argument)\n","    sink(argument, null, 42)\n    return 0\n","    sink ( argument , other )\n"]{
+   let parsed=body(code);
+   assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);
+   let outcome=parsed.original_grammar.expect("issued ordinary statement call");
+   assert_eq!(outcome.kind(),OriginalBodyGrammarKind::Available);
+   assert_eq!(outcome.scope_roots(),Some(parsed.statements.len()));
+  }
+ }
+ #[test]
+ fn statement_call_witness_does_not_cover_other_argument_or_expression_grammars(){
+  for code in ["    sink(key=argument)\n","    sink(,argument)\n","    sink(argument,)\n","    sink(argument.field)\n","    sink(other())\n","    sink((argument))\n","    sink(-1)\n","    return sink(argument)\n","    if(sink(argument))\n        return 0\n"]{
+   assert!(body(code).original_grammar.is_none(),"unissued {code}");
+  }
+ }
+}
+
+#[cfg(test)]
+mod original_single_local_witness_tests {
+    use super::*;
+
+    fn body(code: &str) -> ParsedBody {
+        let syntax = crate::parse(&format!("/proc/probe(argument)\n{code}"));
+        parse_proc_body(&syntax.items[0])
+    }
+
+    #[test]
+    fn original_single_local_witness_uses_real_declaration_and_initializer() {
+        for code in [
+            "    var/value\n",
+            "    var/datum/value = argument\n    return value\n",
+            "    var/value = argument + 1\n    return value\n",
+            "    if(argument)\n        var/value = argument\n        return value\n",
+        ] {
+            let parsed = body(code);
+            assert!(parsed.diagnostics.is_empty(), "{code}: {:?}", parsed.diagnostics);
+            let proof = parsed.original_grammar.expect("single local declaration proof");
+            assert_eq!(proof.kind(), OriginalBodyGrammarKind::Available, "{code}");
+            assert_eq!(proof.scope_roots(), Some(parsed.statements.len()), "{code}");
+            assert_eq!(parsed.local_variables.entries().unwrap().len(), 1, "{code}");
+        }
+    }
+
+    #[test]
+    fn original_single_local_witness_refuses_unproved_local_syntax() {
+        for code in [
+            "    var/list/value[2]\n    return value\n",
+            "    var/static/value = 1\n    return value\n",
+            "    var/value = 1, other = 2\n    return value\n",
+            "    var/value = argument +\n    return value\n",
+            "    var/value = choose(argument)\n    return value\n",
+            "    var/value = argument in list()\n    return value\n",
+        ] {
+            let parsed = body(code);
+            assert!(parsed.original_grammar.is_none(), "{code}");
+        }
+    }
 }

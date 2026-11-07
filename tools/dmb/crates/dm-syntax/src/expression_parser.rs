@@ -1584,7 +1584,7 @@ pub(crate) fn parse_expression_with_primary_tokens(source:&str,admission:Option<
 /// Source-neutral private grammar provenance. A caller cannot construct this
 /// from diagnostics, an empty parse, a source hash or a semantic-model option.
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) struct OriginalSimpleExpression{kind:OriginalSimpleKind,span:Span,operator:Option<Span>}
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) enum OriginalSimpleKind{Complete,MissingArithmeticOperand}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) enum OriginalSimpleKind{Complete,OrdinaryCallStatement,MissingArithmeticOperand}
 impl OriginalSimpleExpression{
  pub(crate) fn kind(self)->OriginalSimpleKind{self.kind}
  pub(crate) fn span(self)->Span{self.span}
@@ -1611,6 +1611,25 @@ fn original_zero_call(expr: &Expr, tokens: &[Token], original_profile: bool) -> 
         || super_token
 }
 
+pub(crate) fn original_ordinary_call_name(name:&str)->bool{
+    original_ascii_identifier(name)
+        &&!matches!(name,"CRASH"|"as"|"call"|"call_ext"|"catch"|"do"|"else"|"for"|"if"|"input"|"list"|"locate"|"new"|"newlist"|"pick"|"return"|"set"|"spawn"|"switch"|"throw"|"try"|"var"|"while")
+}
+
+fn original_positional_statement_call(expr:&Expr,tokens:&[Token])->bool{
+    let ExprKind::Call{callee,args}=&expr.kind else{return false};
+    let ExprKind::Ident(name)=&callee.kind else{return false};
+    // Keep this additional receipt check bounded, with no copied token/AST
+    // storage. The parser still accepts larger calls in its other roles.
+    if !(1..=16).contains(&args.len())||!original_ordinary_call_name(name){return false}
+    let [head,open,tail @ ..,close]=tokens else{return false};
+    if !simple_term(callee,head)||open.kind!=TokenKind::Punctuation||close.kind!=TokenKind::Punctuation||open.text!="("||close.text!=")"||expr.span!=Span::new(head.span.start,close.span.end)||tail.len()!=args.len()*2-1{return false}
+    args.iter().enumerate().all(|(index,argument)|{
+        simple_term(argument,&tail[index*2])
+            &&(index==0||(tail[index*2-1].kind==TokenKind::Punctuation&&tail[index*2-1].text==","))
+    })
+}
+
 fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->Option<OriginalSimpleExpression>{
  let complete=match tokens{
   [only]=>simple_term(expr,only),
@@ -1619,7 +1638,8 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
   [_,_,_,dot,selector]=>matches!(&expr.kind,ExprKind::Member{object,selector:name,via_colon:false}if dot.text=="."&&selector.kind==TokenKind::Ident&&name==&selector.text&&original_ascii_identifier(name)&&original_zero_call(object,&tokens[..3],original_profile)),
   _=>false,
  };
- complete.then_some(OriginalSimpleExpression{kind:OriginalSimpleKind::Complete,span:expr.span,operator:None})
+ let kind=if complete{OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens){OriginalSimpleKind::OrdinaryCallStatement}else{return None};
+ Some(OriginalSimpleExpression{kind,span:expr.span,operator:None})
 }
 
 #[cfg(test)]
