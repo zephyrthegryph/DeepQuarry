@@ -8,7 +8,10 @@ import {
   type InputChannel,
   keyAction,
   MAX_LENGTH,
+  COMMON_OPTION,
   nextChannel,
+  parseCommonPrefix,
+  radioColorName,
   nextRadioOption,
   parseRadioPrefix,
   type RadioOption,
@@ -106,7 +109,14 @@ export function ChatInput() {
   }
 
   return (
-    <div className="ChatInput">
+    <div
+      className={classes([
+        'ChatInput',
+        channel === 'Radio'
+          ? `ChatInput--radio-${radioColorName(radio.key)}`
+          : `ChatInput--${channel}`,
+      ])}
+    >
       <button
         type="button"
         title="Change channel (Tab)"
@@ -126,7 +136,10 @@ export function ChatInput() {
         <button
           type="button"
           title="Change radio channel"
-          className="ChatInput__radio"
+          className={classes([
+            'ChatInput__radio',
+            `ChatInput__radio--${radioColorName(radio.key)}`,
+          ])}
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => {
             setRadio(nextRadioOption(radio, options, event.shiftKey ? -1 : 1));
@@ -155,10 +168,16 @@ export function ChatInput() {
             channel === 'Say' || channel === 'Radio'
               ? parseRadioPrefix(text, options)
               : null;
+          const common = parseCommonPrefix(text, channel);
           if (prefix) {
             text = prefix.rest;
             setChannel('Radio');
             setRadio(prefix.option);
+          } else if (common !== null) {
+            // A leading ";" is the common channel.
+            text = common;
+            setChannel('Radio');
+            setRadio(COMMON_OPTION);
           }
           setValue(text);
           input.type(text);

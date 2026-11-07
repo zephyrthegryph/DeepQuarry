@@ -9,9 +9,16 @@ import { type BooleanLike, classes } from 'tgui-core/react';
 import { type Channel, ChannelIterator } from './ChannelIterator';
 import { ChatHistory } from './ChatHistory';
 import { LineLength, RADIO_PREFIXES, WindowSize } from './constants';
-import { getPrefix, windowClose, windowOpen, windowSet } from './helpers';
+import {
+  loadPlacement,
+  rememberPlacement,
+  resetPlacement,
+  watchDock,
+} from './dock';
+import { resolvePrefix, windowClose, windowOpen, windowSet } from './helpers';
 import { LanguagePreview, previewHeight } from './LanguagePreview';
 import { buildPreview, type LanguageRules } from './parseLanguages';
+import { isDragMove } from './placement';
 import {
   activeAt,
   SHORTCUT_MARKERS,
@@ -62,6 +69,8 @@ export function TguiSay() {
   const isDragging = useRef(false);
   const appliedExtra = useRef(0);
   const pendingSelection = useRef<[number, number] | null>(null);
+  const dockSize = useRef({ w: WindowSize.Width, h: WindowSize.Small });
+  const stopDock = useRef<(() => void) | null>(null);
   const [caret, setCaret] = useState(0);
 
   function handleArrowKeys(direction: KEY.PageUp | KEY.PageDown): void {
@@ -108,15 +117,33 @@ export function TguiSay() {
     }
   }
 
+  /** Starts a window drag; if the pointer really moved, the new place is kept and auto-docking stops. */
+  function beginDrag(event: MouseEvent): void {
+    const from = { x: event.screenX, y: event.screenY };
+    dragStartHandler(event);
+    const onUp = (up: MouseEvent) => {
+      document.removeEventListener('mouseup', onUp);
+      if (isDragMove(from, { x: up.screenX, y: up.screenY })) {
+        void rememberPlacement();
+      }
+    };
+    document.addEventListener('mouseup', onUp);
+  }
+
   function handleButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
     isDragging.current = true;
 
     setTimeout(() => {
       // So the button doesn't jump around accidentally
       if (isDragging.current) {
-        dragStartHandler(event.nativeEvent);
+        beginDrag(event.nativeEvent);
       }
     }, 50);
+  }
+
+  /** Double-click on the frame: back to the docked position. */
+  function handleResetDock(): void {
+    void resetPlacement(dockSize.current.w, dockSize.current.h);
   }
 
   // Prevents the button from changing channels if it's dragged
@@ -133,6 +160,8 @@ export function TguiSay() {
   }
 
   function handleClose(): void {
+    stopDock.current?.();
+    stopDock.current = null;
     innerRef.current?.blur();
     windowClose(minimumWidth.current, minimumHeight.current, scale.current);
 
@@ -206,13 +235,16 @@ export function TguiSay() {
     const iterator = channelIterator.current;
     let newValue = event.currentTarget.value;
 
-    const newPrefix = getPrefix(newValue) || currentPrefix;
+    const result = resolvePrefix(newValue, currentPrefix, iterator.current());
+    const newPrefix = result.prefix;
     // Handles switching prefixes
-    if (newPrefix && newPrefix !== currentPrefix) {
-      setButtonContent(RADIO_PREFIXES[newPrefix]);
+    if (result.switched && result.channel) {
+      newValue = result.value;
+      iterator.set(result.channel);
       setCurrentPrefix(newPrefix);
-      newValue = newValue.slice(3);
-      iterator.set('Say');
+      setButtonContent(
+        newPrefix ? RADIO_PREFIXES[newPrefix] : iterator.current(),
+      );
 
       if (newPrefix === ',b ') {
         Byond.sendMessage('thinking', { visible: false });
@@ -313,6 +345,11 @@ export function TguiSay() {
       scale.current,
     );
 
+    stopDock.current?.();
+    stopDock.current = watchDock(
+      () => dockSize.current,
+      () => (scale.current ? window.devicePixelRatio : 1),
+    );
     innerRef.current?.focus();
   }
 
@@ -338,6 +375,7 @@ export function TguiSay() {
 
   /** Subscribe to Byond messages */
   useEffect(() => {
+    void loadPlacement();
     Byond.subscribeTo('props', handleProps);
     Byond.subscribeTo('force', handleForceSay);
     Byond.subscribeTo('open', handleOpen);
@@ -366,6 +404,11 @@ export function TguiSay() {
   const extraHeight = preview
     ? previewHeight(preview, minimumWidth.current)
     : 0;
+
+  dockSize.current = {
+    w: minimumWidth.current * (scale.current ? window.devicePixelRatio : 1),
+    h: (size + extraHeight) * (scale.current ? window.devicePixelRatio : 1),
+  };
 
   /** Value has changed, we need to check if the size of the window is ok */
   useEffect(() => {
@@ -401,10 +444,9 @@ export function TguiSay() {
           zoom: scale.current ? '' : `${100 / window.devicePixelRatio}%`,
           height: extraHeight ? size + extraHeight : undefined,
         }}
-        onMouseDown={dragStartHandler}
-      >
-        {!lightMode && <div className={`shine shine-${theme}`} />}
-      </div>
+        onMouseDown={(event) => beginDrag(event.nativeEvent)}
+        onDoubleClick={handleResetDock}
+      />
       <div
         className={classes(['content', lightMode && 'content-lightMode'])}
         style={{

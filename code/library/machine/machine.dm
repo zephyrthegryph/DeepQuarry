@@ -130,7 +130,9 @@ CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT, /datum/capability/lib/wall_mount, ke
 /// STAT_OPERABLE contribution from it.
 /proc/machine_without_area_power()
 	return list(
-		without("area_power"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		without("area_power_equip"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		without("area_power_light"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		without("area_power_environ"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 		without("power_operable")) // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 
 /// A machine that never draws power (a pipe): it carries no has_power at all, so an APC flip does not touch it.
