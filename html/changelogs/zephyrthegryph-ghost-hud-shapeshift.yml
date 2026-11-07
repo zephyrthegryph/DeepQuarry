@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Ghosts get Ghost Panel and Ghost Spawn buttons on their HUD"
+  - qol: "Shapeshifters change their appearance in one Shapeshift window, with a preview of how they look, opened from their Abilities panel"

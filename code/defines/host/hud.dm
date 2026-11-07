@@ -172,6 +172,8 @@
 #define ui_ghost_teleport "SOUTH:6,CENTER+1:24"
 #define ui_ghost_pai "SOUTH: 6,CENTER+2:24"
 #define ui_ghost_updown "SOUTH: 6,CENTER+3:24"
+#define ui_ghost_panel "SOUTH:6,CENTER+4:24"
+#define ui_ghost_spawn "SOUTH:6,CENTER+5:24"
 
 // NIF Soulcatcher guest ones
 #define ui_nifsc_reenter "SOUTH:6,CENTER-3:24"

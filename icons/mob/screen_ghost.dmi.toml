@@ -95,3 +95,13 @@ name = "entervr_anim"
 dirs = 1
 frames = 13
 delays = [1]
+
+[[state]]
+name = "ghostpanel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghostspawn"
+dirs = 1
+frames = 1

@@ -39,7 +39,7 @@
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/turf/original = get_turf(actor)
-	var/list/buttons = list(/atom/movable/screen/ghost/returntomenu, /atom/movable/screen/ghost/jumptomob, /atom/movable/screen/ghost/orbit, /atom/movable/screen/ghost/reenter_corpse, /atom/movable/screen/ghost/teleport, /atom/movable/screen/ghost/pai, /atom/movable/screen/ghost/up, /atom/movable/screen/ghost/down, /atom/movable/screen/ghost/vr)
+	var/list/buttons = list(/atom/movable/screen/ghost/returntomenu, /atom/movable/screen/ghost/jumptomob, /atom/movable/screen/ghost/orbit, /atom/movable/screen/ghost/reenter_corpse, /atom/movable/screen/ghost/teleport, /atom/movable/screen/ghost/pai, /atom/movable/screen/ghost/up, /atom/movable/screen/ghost/down, /atom/movable/screen/ghost/vr, /atom/movable/screen/ghost/ghostpanel, /atom/movable/screen/ghost/ghostspawn)
 	for(var/button_type in buttons)
 		var/atom/movable/screen/ghost/button = allocate(button_type)
 		km_synthetic_click(actor, button)

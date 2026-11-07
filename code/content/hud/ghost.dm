@@ -118,6 +118,30 @@ CAPABILITIES(/atom/movable/screen/ghost)
 	var/mob/observer/dead/G = user
 	G.zMove(DOWN)
 
+/atom/movable/screen/ghost/ghostpanel
+	name = "Ghost Panel"
+	desc = "Every ghost command in one window: the HUDs, respawning, messages and settings."
+	icon_state = "ghostpanel"
+
+/atom/movable/screen/ghost/ghostpanel/click_with_actor(mob/user, location, control, params)
+	..()
+	if(!isobserver(user))
+		return
+	var/mob/observer/dead/G = user
+	G.open_ghost_panel()
+
+/atom/movable/screen/ghost/ghostspawn
+	name = "Ghost Spawn"
+	desc = "Open the ghost spawn menu: the roles a ghost can take."
+	icon_state = "ghostspawn"
+
+/atom/movable/screen/ghost/ghostspawn/click_with_actor(mob/user, location, control, params)
+	..()
+	if(!isobserver(user))
+		return
+	var/mob/observer/dead/G = user
+	G.findghostpod()
+
 /atom/movable/screen/ghost/vr
 	name = "Enter VR"
 	desc = "Enter virtual reality."
@@ -221,6 +245,16 @@ CAPABILITIES(/atom/movable/screen/ghost)
 
 	using = new /atom/movable/screen/ghost/vr()
 	using.screen_loc = ui_ghost_vr
+	rel_set(using, nameof(using.hud), HUD)
+	rel_add(HUD, nameof(HUD.adding), using)
+
+	using = new /atom/movable/screen/ghost/ghostpanel()
+	using.screen_loc = ui_ghost_panel
+	rel_set(using, nameof(using.hud), HUD)
+	rel_add(HUD, nameof(HUD.adding), using)
+
+	using = new /atom/movable/screen/ghost/ghostspawn()
+	using.screen_loc = ui_ghost_spawn
 	rel_set(using, nameof(using.hud), HUD)
 	rel_add(HUD, nameof(HUD.adding), using)
 	if(client && apply_to_client)

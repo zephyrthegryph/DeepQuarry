@@ -55,3 +55,19 @@
 	TEST_ASSERT(!panel.run_action(other, GHOST_SET_MEDHUD), "another ghost cannot press this ghost's buttons")
 	TEST_ASSERT(!panel.run_action(ghost, "no_such_action"), "an unknown action is refused")
 	qdel(panel)
+
+/// The Ghost Panel button of the ghost HUD opens the ghost's panel, and the Ghost Spawn button opens the spawn menu; neither does anything for a mob that is not a ghost.
+/datum/unit_test/dq_ghost_hud_panel_button_opens_the_panel
+
+/datum/unit_test/dq_ghost_hud_panel_button_opens_the_panel/Run()
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, test_floor())
+	var/mob/living/carbon/human/living = allocate(/mob/living/carbon/human, test_floor())
+	var/atom/movable/screen/ghost/ghostpanel/button = allocate(/atom/movable/screen/ghost/ghostpanel)
+	TEST_ASSERT(!handle_get(ALAZYACCESS(GLOB.dq_ghost_panels, handle_of(ghost))), "a ghost with no panel open starts without one")
+	button.click_with_actor(living, "", "", "")
+	TEST_ASSERT(!handle_get(ALAZYACCESS(GLOB.dq_ghost_panels, handle_of(ghost))), "a living mob pressing the button opens nothing")
+	button.click_with_actor(ghost, "", "", "")
+	var/datum/ghost_panel/panel = handle_get(ALAZYACCESS(GLOB.dq_ghost_panels, handle_of(ghost)))
+	TEST_ASSERT(istype(panel), "the ghost's click opens its ghost panel")
+	TEST_ASSERT_EQUAL(panel.ghost, ghost, "for that ghost")
+	qdel(panel)

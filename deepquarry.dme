@@ -4783,6 +4783,7 @@
 #include "code\content\lighting\planet_sunlight.dm"
 #include "code\content\lighting\sunlight_handler.dm"
 #include "code\content\mob\living\carbon\human\ai_controlled\greytide.dm"
+#include "code\content\mob\living\carbon\human\species\shapeshift_panel.dm"
 #include "code\content\logging\log_category.dm"
 #include "code\content\logging\log_entry.dm"
 #include "code\content\logging\log_holder.dm"
