@@ -1313,7 +1313,15 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
     ) -> Result<TypeFact, D::Error> {
         use dm_syntax::native_special_forms::Constructor;
         let (owner, args) = match form {
-            Constructor::Dynamic => return Ok(TypeFact::Unknown), // old NewMiniExpr TODO skips target/args
+            Constructor::Dynamic => {
+                // Pinned NewMiniExpr skips its target and arguments, then
+                // returns an empty Analysis to any subsequent follows.
+                return Ok(if self.original_events.is_some() {
+                    TypeFact::Unhinted
+                } else {
+                    TypeFact::Unknown
+                });
+            }
             Constructor::Implicit { args } => {
                 let Some(owner) = hint else {
                     self.event(Event::MissingImplicitNewHint { expression })?;

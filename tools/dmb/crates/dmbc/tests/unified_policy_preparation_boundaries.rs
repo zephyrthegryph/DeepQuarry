@@ -443,6 +443,90 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_original_dynamic_constructor_skips_target_and_args_but_checks_outer_follows() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Roster},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    let root = test_scratch::dir("public-dynamic-new-follow");
+    let transport = test_scratch::dir("public-dynamic-new-transport");
+    let cache = test_scratch::dir("public-dynamic-new-cache");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!(
+            "dynamic-new-follow-{}-{}",
+            std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+        ),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    put(&root, "code/probe.dm", concat!(
+        "/proc/probe()\n",
+        "    var/first = new missing_target(missing_inside_field()).some_field\n",
+        "    var/second = new missing_target(missing_inside_call()).some_call(missing_outer_argument())\n",
+        "    return missing_after\n",
+    ));
+
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(cache);
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithSemanticReads;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}"))
+        .collect();
+    let request_path = transport.join("dynamic-new.json");
+    put(&transport, "dynamic-new.json", serde_json::to_vec(&serde_json::json!({
+        "build": build, "exclusions": exclusions,
+    })).unwrap());
+
+    let output = daemon.run(
+        &[OsStr::new("checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
+        Duration::from_secs(90),
+    ).unwrap();
+    assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+    let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+    let terminal: CombinedTerminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+    terminal.require().unwrap();
+    assert_eq!(terminal.roster, roster);
+    let (checker, _) = output.stdout[header_end + 1..].split_at(terminal.checker.length as usize);
+    let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+    let rows = checker["diagnostics"].as_array().unwrap();
+    let actual: Vec<_> = rows.iter().map(|row| {
+        assert_eq!(row["phase"], "body");
+        assert_eq!(row["location_kind"], "source");
+        assert!(Path::new(row["file"].as_str().unwrap()).ends_with("probe.dm"));
+        assert!(row["notes"].as_array().unwrap().is_empty(), "{row}");
+        (
+            row["family"].as_str().unwrap(),
+            row["registration_tag"].as_str(),
+            row["severity"].as_str().unwrap(),
+            row["line"].as_u64().unwrap(),
+            row["column"].as_u64().unwrap(),
+            row["message"].as_str().unwrap(),
+        )
+    }).collect();
+    assert_eq!(actual, [
+        ("field_access_static_type", Some("field_access_static_type"), "warning", 2, 59,
+            "field access requires static type: \"some_field\""),
+        ("proc_call_static_type", Some("proc_call_static_type"), "warning", 3, 59,
+            "proc call requires static type: \"some_call\""),
+        ("undefined_variable", None, "error", 4, 12, "undefined var: \"missing_after\""),
+    ]);
+    assert!(!root.join("deepquarry.rsc").exists());
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
 fn public_combined_untyped_qualifies_the_real_resident_request() {
     use dq_analyze::{
         captured_allow_annotations::{full_unused, Operation},
