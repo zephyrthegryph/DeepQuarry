@@ -81,7 +81,7 @@ impl Ledger{
   struct SourceCharges {
    acquisition_and_receipt:usize, ordinary_text_control_and_fingerprint:usize,
    canonical_original_text:usize, exceptional_original_bytes:usize,
-   origin_arena_credit:usize, other_arena_credit:usize, exact_read_group_credit:usize, expired_after_census_arena:usize,
+   origin_arena_credit:usize, other_arena_credit:usize, exact_read_group_credit:usize, path_fact_bank_credit:usize, expired_after_census_arena:usize,
    capture:usize, derived:usize, recorder_metadata:usize, handlers:usize,
    ledger_rows:usize, ledger_node_envelope:usize, fixed:usize,
   }
@@ -89,7 +89,7 @@ impl Ledger{
    ledger_rows:self.rows.len(),ledger_node_envelope:self.rows.len().saturating_mul(NODE),
    fixed:FIXED,..Default::default()
   };
-  for row in self.rows.values() {
+  for (key,row) in &self.rows {
    let column=match &row.owner{
     Observation::Acquisition(_)=>&mut charges.acquisition_and_receipt,
     Observation::Text(..)|Observation::SealedText(..)=>&mut charges.ordinary_text_control_and_fingerprint,
@@ -100,6 +100,7 @@ impl Ledger{
      Some(_)=>&mut charges.other_arena_credit,
      None=>&mut charges.expired_after_census_arena,
     },
+    Observation::ReadGroup(_) if key.0==17=>&mut charges.path_fact_bank_credit,
     Observation::ReadGroup(_)=>&mut charges.exact_read_group_credit,
     Observation::Capture(..)=>&mut charges.capture,
     Observation::Derived(_)=>&mut charges.derived,
@@ -176,6 +177,34 @@ impl Ledger{
   };
   let bytes=previous.checked_add(addition).ok_or_else(oom)?;
   self.resize_arena(donor,remaining)?;
+  group.add_admitted_parts(addition);
+  self.replace_row(key,Row{owner:Observation::ReadGroup(Arc::downgrade(group)),bytes});
+  Ok(())
+ }
+ // Separate role from acquisition groups. The recorder's erased handle
+ // must identify this exact family's registered immutable aggregate.
+ pub(super) fn loan_original_path_bank(&self,owner:&super::source_arena::OriginalReadGroup)->io::Result<Arc<super::source_arena::OriginalReadGroup>>{
+  let key=(17,std::ptr::from_ref(owner) as usize);
+  match self.rows.get(&key).map(|row|&row.owner){
+   Some(Observation::ReadGroup(weak)) if weak.as_ptr()==std::ptr::from_ref(owner)=>
+    weak.upgrade().ok_or_else(||io::ErrorKind::InvalidInput.into()),
+   _=>Err(io::ErrorKind::InvalidInput.into()),
+  }
+ }
+ pub(super) fn transfer_original_path_bank(&mut self,donor:&super::source_arena::Allocation,group:&Arc<super::source_arena::OriginalReadGroup>,first:bool)->io::Result<()>{
+  let key=(17,Arc::as_ptr(group) as usize);
+  let donor_key=(6,std::ptr::from_ref(donor) as usize);
+  if !self.has_source_arena(donor){return Err(io::ErrorKind::InvalidInput.into());}
+  let previous=match self.rows.get(&key){
+   None if first=>super::source_arena::OriginalReadGroup::metadata_bytes(),
+   Some(row) if !first&&matches!(&row.owner,Observation::ReadGroup(weak) if weak.as_ptr()==Arc::as_ptr(group))=>row.bytes,
+   _=>return Err(io::ErrorKind::InvalidInput.into()),
+  };
+  let addition=donor.retained_bytes()?;
+  let bytes=previous.checked_add(addition).ok_or_else(oom)?;
+  let removed=self.rows.remove(&donor_key).expect("checked live mutable donor");
+  self.upper=self.upper.and_then(|upper|upper.checked_sub(removed.bytes)?.checked_sub(NODE));
+  drop(removed); // No observer Weak retains the donor Arc allocation.
   group.add_admitted_parts(addition);
   self.replace_row(key,Row{owner:Observation::ReadGroup(Arc::downgrade(group)),bytes});
   Ok(())

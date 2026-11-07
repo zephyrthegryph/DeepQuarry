@@ -165,6 +165,9 @@ pub trait SourceArenaWork:Send+Sync{
  /// Settle actual read allocations before the provider may return/fail after
  /// exceptional publication. Cleanup operation: do not checkpoint mid-commit.
  fn adopt_original_read(&self,_credit:&mut SourceArenaCredit,_source:&crate::SourceAcquisitionLease)->io::Result<()>{Err(io::Error::new(io::ErrorKind::NotConnected,"host cannot adopt Original read observations"))}
+ /// Settle an already-funded immutable recorder path grant into one
+ /// recorder-owned aggregate. Unsupported lenders keep their exact grant.
+ fn bank_original_path_fact(&self,_credit:&mut SourceArenaCredit,_bank:&std::sync::Mutex<Option<SourceArenaControlCredit>>)->io::Result<bool>{Ok(false)}
  fn checkpoint(&self)->io::Result<()>;
  fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>;
  fn grow(&self,credit:&mut SourceArenaCredit,extra:usize)->io::Result<()>;

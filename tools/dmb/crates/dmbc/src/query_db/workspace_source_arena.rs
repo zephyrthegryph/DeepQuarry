@@ -16,6 +16,11 @@ pub(super) struct Allocation{
 impl Drop for Allocation {
     fn drop(&mut self) {
         if let Some(parent)=&self.origin_parent { parent.release(self.reserved_bytes()); }
+        if self.is_retirable_path_fact() {
+            if let Some(bank)=self.read_group.get() {
+                bank.release_parts(self.reserved_bytes() + Self::metadata_bytes());
+            }
+        }
     }
 }
 fn parent_denied(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::OutOfMemory,message)}
@@ -65,14 +70,17 @@ pub(crate) fn seal_path_fact_control(credit: SourceArenaCredit) {
 /// existing exact sweep observes it. No ledger lock can recurse from Drop.
 pub(crate) fn retire_path_fact_node(credit: &SourceArenaControlCredit, bytes: usize) {
     let Some(actual) = credit.owner().as_any().downcast_ref::<Allocation>() else { return; };
-    let _ = actual.bytes.fetch_update(Ordering::AcqRel, Ordering::Acquire, |state| {
+    let retired = actual.bytes.fetch_update(Ordering::AcqRel, Ordering::Acquire, |state| {
         if state & RETIRABLE_PATH_FACTS == 0 {
             return None;
         }
         let reserved = state & !RETIRABLE_PATH_FACTS;
         let remaining = reserved.checked_sub(bytes).expect("path fact node's unique reservation");
         Some(RETIRABLE_PATH_FACTS | remaining)
-    });
+    }).is_ok();
+    if retired {
+        if let Some(bank)=actual.read_group.get() { bank.release_parts(bytes); }
+    }
 }
 /// Concrete strong handles cover temporary ledger upgrades and registration
 /// failure before an owner enters the public, erased credit handles.
@@ -129,6 +137,20 @@ impl OriginalReadGroup {
         // row upper bound. Last-part drops can only decrease the atomic.
         self.parts.fetch_add(bytes, Ordering::AcqRel);
     }
+
+    fn release_parts(&self, bytes: usize) {
+        let prior = self.parts.fetch_sub(bytes, Ordering::AcqRel);
+        assert!(prior >= bytes, "one issued reservation part refund");
+    }
+}
+
+impl SourceArenaCreditOwner for OriginalReadGroup {
+    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn reserved_bytes(&self) -> usize { self.parts.load(Ordering::Acquire) }
+    fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize)) {
+        visit(std::ptr::from_ref(self) as usize, Self::metadata_bytes());
+    }
+    fn release(self: Arc<Self>) { drop(Arc::into_inner(self)); }
 }
 
 pub(super) struct OriginalReadPart {
@@ -305,6 +327,41 @@ impl QueryDb {
  }
 }
 impl SourceArenaWork for QueryDb{
+ fn bank_original_path_fact(&self,credit:&mut SourceArenaCredit,slot:&std::sync::Mutex<Option<SourceArenaControlCredit>>)->io::Result<bool>{
+  self.checkpoint()?;
+  let actual=allocation(self,credit)?;
+  if actual.origin_parent.is_some()||actual.read_group.get().is_some(){return Err(wrong());}
+  // Only this recorder touches this slot. No code holding the family gate
+  // enters it, including last-node cleanup.
+  let mut bank=slot.lock().map_err(|_|wrong())?;
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
+  let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
+  if !ledger.has_source_arena(actual){return Err(wrong());}
+  let first=bank.is_none();
+  let group=if let Some(bank)=bank.as_ref(){
+   // Erased bank handles never expose an Arc. The ledger lends the exact
+   // registered group from the same input family.
+   let identity=bank.owner().as_any().downcast_ref::<OriginalReadGroup>().ok_or_else(wrong)?;
+   ledger.loan_original_path_bank(identity)?
+  }else{
+   if self.raw_policy.admission.source_arena_needs_census.swap(false,Ordering::AcqRel){ledger.invalidate_upper();}
+   let (mut live,cached)=ledger.admission_charge()?;
+   let mut room=self.workspace_input_base_remaining_locked(live)?;
+   let extra=OriginalReadGroup::metadata_bytes();
+   if cached&&room.is_none_or(|room|room<extra){
+    live=ledger.refresh_after_pressure()?;
+    room=self.workspace_input_base_remaining_locked(live)?;
+   }
+   if room.is_none_or(|room|room<extra){return Ok(false);}
+   Arc::new(OriginalReadGroup{parts:AtomicUsize::new(0)})
+  };
+  ledger.transfer_original_path_bank(actual,&group,first)?;
+  assert!(actual.read_group.set(Arc::clone(&group)).is_ok(),"one settled path grant");
+  let prior=actual.bytes.fetch_or(RETIRABLE_PATH_FACTS,Ordering::AcqRel);
+  debug_assert_eq!(prior&RETIRABLE_PATH_FACTS,0);
+  if first{*bank=Some(SourceArenaCredit::from_resource_owner(group).into_control());}
+  Ok(true)
+ }
  fn reserve_original_origin_storage(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.reserve_source_arena(bytes,true)}
 
  fn split_original_acquisition_controls(&self, donor: &mut SourceArenaCredit, sizes: [usize; 2])

@@ -114,7 +114,10 @@ impl<V:ImmutableFactValue> ImmutablePathFacts<V>{
  /// provider probe. Construction keeps its full peak while the old tree and
  /// temporary copies coexist. Only this insertion's unused/transient bytes
  /// are refunded after the new root exists and before publication.
- pub(crate) fn recorded_using(&self,path:&Path,present:V,mut prepaid:SourceArenaCredit,work:&dyn SourceArenaWork)->io::Result<Self>{
+ pub(crate) fn recorded_using(&self,path:&Path,present:V,prepaid:SourceArenaCredit,work:&dyn SourceArenaWork)->io::Result<Self>{
+  self.recorded_original_using(path,present,prepaid,work,None)
+ }
+ pub(crate) fn recorded_original_using(&self,path:&Path,present:V,mut prepaid:SourceArenaCredit,work:&dyn SourceArenaWork,bank:Option<&std::sync::Mutex<Option<SourceArenaControlCredit>>>)->io::Result<Self>{
   work.checkpoint()?;
   if let Some(old)=self.get(path){return if old==present{Ok(self.clone())}else{Err(invalid("path presence changed during capture"))}}
   let needed=self.probe_pregrant(path)?;
@@ -135,7 +138,9 @@ impl<V:ImmutableFactValue> ImmutablePathFacts<V>{
   // separately funded controls. Cleanup performs no provider or parser work.
   let unused=prepaid.reserved_bytes().checked_sub(retained).ok_or_else(capacity_error)?;
   if unused!=0 {work.shrink(&mut prepaid,unused)?;}
-  crate::query_db::seal_path_fact_control(prepaid);
+  if !match bank {Some(bank)=>work.bank_original_path_fact(&mut prepaid,bank)?,None=>false}{
+   crate::query_db::seal_path_fact_control(prepaid);
+  }
   Ok(next)
  }
  pub(crate) fn from_observed_data<'a>(rows:impl IntoIterator<Item=(&'a Path,V)>)->io::Result<Self>{let mut out=Self::default();for(path,present)in rows{out.record_data(path,present)?;}Ok(out)}
@@ -189,6 +194,51 @@ mod exact_fact_credit_tests {
         for (credit, bytes) in owners.into_values() {
             assert_eq!(credit.reserved_bytes(), bytes, "only physically live keys/nodes keep bytes");
         }
+    }
+
+    #[test]
+    fn original_recorder_path_bank_refunds_last_nodes_and_keeps_detached_snapshot() {
+        let db=QueryDb::default();
+        let baseline=db.raw_source_input_charge_locked().unwrap();
+        let bank=std::sync::Mutex::new(None);
+        let mut tree=PathPresenceFacts::default();
+        let mut old=None;
+        for i in 0..64 {
+            let path=PathBuf::from(format!("E:/facts/{i:04}.dm"));
+            let prepaid=db.reserve(tree.probe_pregrant(&path).unwrap()).unwrap();
+            tree=tree.recorded_original_using(&path,true,prepaid,&db,Some(&bank)).unwrap();
+            if i==31{old=Some(tree.clone());}
+        }
+        let old=old.unwrap();
+        assert_exact(&[&tree,&old]);
+        let aliased=db.raw_source_input_charge_locked().unwrap();
+        std::thread::scope(|threads| {
+            for _ in 0..4 {
+                let alias=old.clone();
+                threads.spawn(move||drop(alias));
+            }
+            drop(old);
+        });
+        assert_exact(&[&tree]);
+        let one=db.raw_source_input_charge_locked().unwrap();
+        assert!(one<aliased);
+        // The immutable snapshot, not the recorder, keeps the exact bank.
+        drop(bank);
+        assert_eq!(db.raw_source_input_charge_locked().unwrap(),one);
+        let other=QueryDb::default();
+        let mut ordinary=PathPresenceFacts::default();
+        for i in 0..64 {
+            let path=PathBuf::from(format!("E:/facts/{i:04}.dm"));
+            let prepaid=other.reserve(ordinary.probe_pregrant(&path).unwrap()).unwrap();
+            ordinary=ordinary.recorded_using(&path,true,prepaid,&other).unwrap();
+        }
+        assert_eq!(ordinary,tree);
+        let ordinary_bytes=other.raw_source_input_charge_locked().unwrap();
+        let bank_bytes=std::mem::size_of::<std::sync::atomic::AtomicUsize>()
+            +2*std::mem::size_of::<usize>();
+        assert_eq!(ordinary_bytes-one,63*256-bank_bytes,"one shared bank ledger row and Arc");
+        drop(tree);
+        assert_eq!(db.raw_source_input_charge_locked().unwrap(),baseline);
     }
 
     #[test]
