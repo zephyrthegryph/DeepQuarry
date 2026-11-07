@@ -18,10 +18,32 @@ describe('console theme', () => {
     );
   });
 
-  it('declares its root class and the scanline variable', () => {
+  it('declares its root class and draws the shared scanlines', () => {
     const scss = read(`styles/themes/${CONSOLE_THEME}.scss`);
     expect(scss).toContain(`.theme-${CONSOLE_THEME}:root`);
-    expect(scss).toContain('--console-scanline-strength');
+    expect(scss).toContain('console.console-scanlines');
+    expect(scss).toContain('console.console-component-vars');
+  });
+
+  it('keeps each effect on one shared knob', () => {
+    const scss = read('styles/console.scss');
+    for (const knob of [
+      '--console-scanline-strength',
+      '--console-fringe-strength',
+      '--console-glow',
+      '--console-glow-inset',
+      '--console-vignette',
+    ]) {
+      expect(scss).toContain(`${knob}:`);
+    }
+    // No surface sets its own strength or bloom any more.
+    for (const path of [
+      `styles/themes/${CONSOLE_THEME}.scss`,
+      'styles/interfaces/LobbyMenu.scss',
+    ]) {
+      expect(read(path)).not.toContain('--console-scanline-strength:');
+      expect(read(path)).not.toContain('0 0 15px');
+    }
   });
 
   it('shares its values with the lobby', () => {

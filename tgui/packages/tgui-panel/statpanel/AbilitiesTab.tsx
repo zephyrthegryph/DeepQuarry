@@ -2,7 +2,7 @@
 // on at the top (code/content/abilities/ability_panel.dm). A click uses the ability, a drag onto another button moves it there; both go back
 // as "Abilities-Act" messages. The logic is in abilities.ts.
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import {
   type AbilitiesData,
   type AbilityEntry,
@@ -118,7 +118,8 @@ const AbilityButton = (props: ButtonProps) => {
   );
 };
 
-export const AbilitiesTab = ({
+/** Memoized: a status or misc message does not re-render it. */
+export const AbilitiesTab = memo(({
   data,
   receivedAt,
 }: {
@@ -181,4 +182,4 @@ export const AbilitiesTab = ({
       ))}
     </div>
   );
-};
+});

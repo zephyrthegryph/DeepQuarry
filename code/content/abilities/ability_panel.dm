@@ -218,7 +218,8 @@ CAPABILITIES(/datum/ability_panel)
 	if(!player?.stat_panel?.is_ready())
 		log_input("Input: Abilities tab data for [player ? key_name(player) : "nobody"] not sent (stat panel not ready).")
 		return
-	player.stat_panel.send_message("update_abilities", payload(player.mob, player))
+	// A push whose data is what the tab shows (a resource moved less than its shown rounding) is dropped by the window.
+	player.stat_panel.send_message("update_abilities", payload(player.mob, player), same_key = "update_abilities")
 
 /// The panel's data: the entries in order, with the resources, for `user`. `viewer` (a client) gets the icons.
 /datum/ability_panel/proc/payload(mob/user, client/viewer)
@@ -264,14 +265,19 @@ CAPABILITIES(/datum/ability_panel)
 /proc/ability_panel_data(mob/user, client/viewer = null)
 	var/list/entries = list()
 	var/list/abilities = ordered_abilities(user)
+	// The op entries' refusals come from the mob's op menu: read once for the push, not once per entry.
+	var/list/menu_rows = null
+	for(var/datum/action/op_ability/op_entry in abilities)
+		menu_rows = op_menu(user, user, null)
+		break
 	var/slot = 0
 	for(var/datum/action/entry as anything in abilities)
 		slot++
-		entries += list(ability_entry_data(entry, slot, viewer))
+		entries += list(ability_entry_data(entry, slot, viewer, menu_rows))
 	return list("abilities" = entries, "resources" = user ? user.ability_resources() : list(), "slots" = ABILITY_HOTKEY_SLOTS)
 
 /// One entry's data: the fields the tab shows.
-/proc/ability_entry_data(datum/action/entry, slot, client/viewer = null)
+/proc/ability_entry_data(datum/action/entry, slot, client/viewer = null, list/menu_rows = null)
 	var/toggled = entry.ability_toggled()
 	return list(
 		"ref" = handle_text(handle_of(entry)), // as text: a handle past a million does not survive a number in json
@@ -284,15 +290,19 @@ CAPABILITIES(/datum/ability_panel)
 		"cooldown" = entry.ability_cooldown_left(),
 		"toggled" = isnull(toggled) ? null : (toggled ? TRUE : FALSE),
 		"channel" = entry.ability_channel(),
-		"refusal" = entry.ability_refusal(),
+		"refusal" = entry.ability_refusal(menu_rows),
 		"slot" = slot <= ABILITY_HOTKEY_SLOTS ? slot : null,
 	)
 
-/// The source of the ability's icon for `viewer`: the target's own picture, or a state of the action's icon file.
+/// The source of the ability's icon for `viewer`: the target's own picture, or a state of the action's icon file. Both are a state of a
+/// compiled-in icon file, cut and hashed once per (file, state, dir) (icon_file_asset_url()), not on every push of the tab.
 /proc/ability_icon_src(datum/action/entry, client/viewer)
 	var/atom/source = entry.ability_icon_source()
 	if(source)
-		return icon2html(source, viewer, sourceonly = TRUE)
+		if(ishuman(source) || !source.icon)
+			return icon2html(source, viewer, sourceonly = TRUE)
+		var/state = isnull(source.icon_state) ? initial(source.icon_state) : source.icon_state
+		return icon_file_asset_url(source.icon, state, viewer, source.dir)
 	if(!entry.button_icon)
 		return null
-	return icon2html(icon(entry.button_icon, entry.button_icon_state), viewer, sourceonly = TRUE)
+	return icon_file_asset_url(entry.button_icon, entry.button_icon_state, viewer)

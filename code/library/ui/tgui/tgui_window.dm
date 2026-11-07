@@ -54,6 +54,11 @@
 	var/initial_inline_css
 
 	var/list/oversized_payloads
+	/// The JSON of the last message sent under each skip-same key (send_message's `same_key`), so a push that would hand the page what it
+	/// already shows is dropped. Forgotten whenever the page may have lost it: a new page, a close, another UI taking the window.
+	var/tmp/list/last_sent
+	/// State messages dropped because the page already showed them (send_message's same_key), for the trace and the tests.
+	var/tmp/unchanged_skipped = 0
 	/// TRUE from initialize() until the last client probe of the open answered. The output control depends on is_browser, which the last probe
 	/// decides, so nothing is flushed to the page while this holds (the messages wait in message_queue).
 	var/opening = FALSE
@@ -120,6 +125,7 @@
 	src.initial_inline_css = inline_css
 	status = TGUI_WINDOW_LOADING
 	fatally_errored = FALSE
+	last_sent = null // a fresh page holds nothing
 	// A fresh page gets a fresh document token; see on_message().
 	var/static/document_sequence = 0
 	document_id = "[id]-[world.time]-[++document_sequence]"
@@ -366,6 +372,7 @@
 		log_tgui(client(), "TGUI transition: stage=server-acquire-hide-sent generation=[generation + 1].", window = src)
 		#endif
 	generation++
+	last_sent = null // the next UI's page starts over
 	locked = TRUE
 	rel_set(src, nameof(locked_by), ui)
 	visible = FALSE
@@ -412,6 +419,7 @@
  * optional can_be_suspended bool
  */
 /datum/tgui_window/proc/close(can_be_suspended = TRUE)
+	last_sent = null
 	if(!reachable())
 		abort_open("closed without a client")
 		release_lock()
@@ -460,7 +468,7 @@
  * required payload list Message payload
  * optional force bool Send regardless of the ready status.
  */
-/datum/tgui_window/proc/send_message(type, payload, force)
+/datum/tgui_window/proc/send_message(type, payload, force, same_key)
 	if(!reachable())
 		return
 	// The one point every tgui push to a client goes through: the HREF_TOKEN_PLACEHOLDER of an admin link in the payload (ui_data text that
@@ -468,6 +476,17 @@
 	var/payload_json = json_encode(payload)
 	if(findtext(payload_json, HREF_TOKEN_PLACEHOLDER))
 		payload_json = href_deliver(client(), payload_json)
+	// `same_key`: a state message (the page replaces what it shows with it). One identical to the last sent under the key is dropped: the
+	// page would re-render the same thing. Any message of the type sent without a key (a full update, a reset) supersedes the record.
+	if(same_key)
+		if(last_sent && last_sent[same_key] == payload_json)
+			unchanged_skipped++
+			return
+		if(!last_sent)
+			last_sent = list()
+		last_sent[same_key] = payload_json
+	else if(last_sent && (type in last_sent))
+		last_sent -= type
 	var/message = "%7b%22type%22%3a%22[type]%22%2c%22payload%22%3a[url_encode(payload_json)]%7d" // TGUI_CREATE_MESSAGE's format
 	// Place into queue if window is still loading
 	if(!force && (status != TGUI_WINDOW_READY || opening))
@@ -476,6 +495,11 @@
 		message_queue += list(message)
 		return
 	deliver(message)
+
+/// Forgets what was last sent under `same_key`: the page dropped that state (a tab it removed), so the next message under it goes out.
+/datum/tgui_window/proc/forget_sent(same_key)
+	if(last_sent)
+		last_sent -= same_key
 
 /**
  * public

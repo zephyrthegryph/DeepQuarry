@@ -162,8 +162,9 @@ ACTION(mob_removed_action, datum/action/action, FIXED, notice = /datum/notice/mo
 /datum/action/proc/ability_channel()
 	return null
 
-/// Null when the ability can be used now, else why not (shown greyed on hover).
-/datum/action/proc/ability_refusal()
+/// Null when the ability can be used now, else why not (shown greyed on hover). `menu_rows`: the owner's op_menu() rows when the caller has
+/// them already (an op's entry reads its refusal there).
+/datum/action/proc/ability_refusal(list/menu_rows)
 	var/mob/owner = action_owner()
 	if(!owner)
 		return "nobody has this ability"
