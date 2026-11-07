@@ -4,14 +4,14 @@
  * close, a resize grip, and a placeholder the group's window is placed over
  * (dockHost.ts). A header drags: onto another header to stack its window there,
  * onto a gap to reorder (a stacked group's header splits its active tab out),
- * past the panel's left edge to float. Tabs reorder by dragging (ConsoleTabs).
+ * past the panel's left edge to float. Tabs reorder by dragging (tgui/dq Tabs).
  */
 import {
   type PointerEvent as ReactPointerEvent,
   useState,
   useSyncExternalStore,
 } from 'react';
-import { ConsoleTabs } from 'tgui/components';
+import { Tabs } from 'tgui/dq';
 import { Button } from 'tgui-core/components';
 import { type DockHost, dockHost } from './dockHost';
 import type { DockGroup } from './windowDock';
@@ -218,7 +218,7 @@ function Group(props: {
           onClick={toggle}
         />
         {stacked ? (
-          <ConsoleTabs
+          <Tabs
             className="dock-tabs"
             layout="scrollable"
             tabs={group.windows.map((id) => ({

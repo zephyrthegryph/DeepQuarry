@@ -47,11 +47,10 @@
 				. += T
 				. += hop_nested_contents(T)
 	BOOT_PHASE_BEGIN(bp_rel)
-	var/list/named_by = rel_sources(at)
+	var/list/named_by = rel_sources_via(at, segment)
 	BOOT_PHASE_END(bp_rel, "hop_sources: rel_sources of [segment]", at)
-	for(var/list/pair as anything in named_by)
-		if(pair[2] == segment)
-			. |= list(pair[1])
+	for(var/datum/source as anything in named_by)
+		. |= list(source)
 
 /// Everything inside `A` at any depth (not `A` itself).
 /proc/hop_nested_contents(atom/A)
@@ -107,9 +106,10 @@ GLOBAL_VAR_INIT(hop_segments_built, FALSE)
 	for(var/atom/movable/AM as anything in moved)
 		if(QDELETED(AM))
 			continue
-		if(turf_changed && (GLOB.stat_input_keys?[HOP_TURF] || GLOB.derived_read_vars?[HOP_TURF] || READERS(AM, HOP_TURF)))
+		// Per thing, not per world: a stat somewhere reading the turf hop does not make each organ of a walking human a reader of it.
+		if(turf_changed && (GLOB.derived_read_vars?[HOP_TURF] || stat_type_reads_key(AM, HOP_TURF) || READERS(AM, HOP_TURF)))
 			own_field_changed(AM, HOP_TURF)
-		if(area_changed && (GLOB.stat_input_keys?[HOP_AREA] || GLOB.derived_read_vars?[HOP_AREA] || READERS(AM, HOP_AREA)))
+		if(area_changed && (GLOB.derived_read_vars?[HOP_AREA] || stat_type_reads_key(AM, HOP_AREA) || READERS(AM, HOP_AREA)))
 			own_field_changed(AM, HOP_AREA)
 
 /// TRUE when `segment` is a hop E's reads can start with: a var of E, or (on an atom) a pseudo segment.

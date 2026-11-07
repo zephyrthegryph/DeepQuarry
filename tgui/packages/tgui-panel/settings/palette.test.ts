@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DARK_PALETTE } from './palette';
-import { clientThemeWinset, SKIN_PANES } from './themes';
+import { SKIN_PANES } from './themes';
 
 const root = join(import.meta.dir, '../../../..');
 const skin = readFileSync(join(root, 'interface/skin.dmf'), 'utf8');
@@ -27,7 +27,7 @@ function tokenMixin(name: string): string {
   return chatTokens.slice(start, end);
 }
 
-/** The chat sheet as one theme sees it: every --chat- token replaced by that theme's value, plus its own rules. */
+/** The chat sheet as the theme sees it: every --chat- token replaced by its value. */
 function chatSheetFor(theme: string): string {
   const values = new Map<string, string>();
   for (const match of tokenMixin(theme).matchAll(
@@ -39,7 +39,7 @@ function chatSheetFor(theme: string): string {
     /var\((--chat-[\w-]+)\)/g,
     (whole, name: string) => values.get(name) ?? whole,
   );
-  return `${resolved}\n${tokenMixin(`${theme}-rules`)}`;
+  return resolved;
 }
 
 const chatDark = chatSheetFor('dark');
@@ -67,9 +67,9 @@ function hslToRgb(h: number, s: number, l: number): number[] {
 }
 
 describe('native dark palette', () => {
-  it('every skin element the theme sets exists in skin.dmf', () => {
-    for (const key of Object.keys(clientThemeWinset('dark'))) {
-      expect(skin).toContain(`elem "${key.split('.')[0]}"`);
+  it('every pane listed exists in skin.dmf', () => {
+    for (const name of SKIN_PANES) {
+      expect(skin).toContain(`elem "${name}"`);
     }
   });
 
@@ -81,11 +81,6 @@ describe('native dark palette', () => {
     }
   });
 
-  it('the light theme undoes every colour the dark theme sets', () => {
-    expect(Object.keys(clientThemeWinset('light')).sort()).toEqual(
-      Object.keys(clientThemeWinset('dark')).sort(),
-    );
-  });
 
   it('the stat panel reads the palette', () => {
     const hex = (value: string) => value.toLowerCase();
@@ -93,28 +88,6 @@ describe('native dark palette', () => {
     expect(statCss).toContain(`--stat-section: ${hex(DARK_PALETTE.section)}`);
     expect(statCss).toContain(`--stat-text: ${hex(DARK_PALETTE.text)}`);
     expect(statCss).toContain(`--stat-link: ${hex(DARK_PALETTE.hyperlink)}`);
-  });
-});
-
-describe('vchatdark chat colours', () => {
-  const vchatDark = chatSheetFor('vchatdark');
-
-  it('every text colour on the bare chat background is readable', () => {
-    const background = luminance(hslToRgb(0, 0, 12.5));
-    const unreadable: string[] = [];
-    for (const rule of vchatDark.matchAll(/([^{};]+)\{([^{}]*)\}/g)) {
-      if (rule[2].includes('background')) continue;
-      const color = rule[2].match(
-        /(?:^|\s)color:\s*hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)/,
-      );
-      if (!color) continue;
-      const [h, s, l] = color.slice(1).map(Number);
-      const text = luminance(hslToRgb(h, s, l));
-      if ((text + 0.05) / (background + 0.05) < 4.5) {
-        unreadable.push(rule[1].trim());
-      }
-    }
-    expect(unreadable).toEqual([]);
   });
 });
 
@@ -145,16 +118,20 @@ describe('dark chat colours', () => {
 });
 
 describe('one chat stylesheet', () => {
-  it('every token the sheet reads is defined for every theme', () => {
+  it('every token the sheet reads is defined', () => {
     const used = new Set(
       [...chatSheet.matchAll(/var\((--chat-[\w-]+)\)/g)]
         .map((match) => match[1])
         .filter((name) => !name.includes('#{')),
     );
-    for (const theme of ['dark', 'light', 'vchatdark', 'vchatlight']) {
-      const body = tokenMixin(theme);
-      const missing = [...used].filter((name) => !body.includes(`${name}:`));
-      expect({ theme, missing }).toEqual({ theme, missing: [] });
-    }
+    const body = tokenMixin('dark');
+    const missing = [...used].filter((name) => !body.includes(`${name}:`));
+    expect(missing).toEqual([]);
+  });
+});
+
+describe('one chat theme', () => {
+  it('chat-tokens.scss defines only the dark theme', () => {
+    expect([...chatTokens.matchAll(/^@mixin ([\w-]+)/gm)].map((m) => m[1])).toEqual(['dark']);
   });
 });

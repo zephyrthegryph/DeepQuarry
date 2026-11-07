@@ -2,6 +2,7 @@
 // (code/content/examine/inspect_panel.dm). Buttons go back as "Inspect-Act" messages.
 
 import { memo, useState } from 'react';
+import { Tabs, TitleBar } from 'tgui/dq';
 import { HtmlRenderer } from 'tgui/interfaces/common/HtmlRenderer';
 import {
   chipText,
@@ -74,26 +75,22 @@ export const InspectTab = memo(({ data }: { data: InspectData | null }) => {
   } = data;
   return (
     <div className="inspect">
-      <div className="inspect__header">
-        <div className="inspect__name">{target}</div>
-        <div className="inspect__subtitle">
-          {inspectSubtitle(kind, role, distance)}
-        </div>
-      </div>
+      <TitleBar
+        className="inspect__header"
+        title={target}
+        subtitle={inspectSubtitle(kind, role, distance)}
+      />
       {tabs.length > 1 && (
-        <div className="inspect__tabs">
-          {tabs.map((tab) => (
-            <button
-              type="button"
-              key={tab.ref}
-              title={tab.name}
-              className={`inspect__tab${tab.active ? ' inspect__tab--active' : ''}`}
-              onClick={() => act('select', { ref: tab.ref })}
-            >
-              {tab.name.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          size="small"
+          tabs={tabs.map((tab) => ({
+            id: tab.ref,
+            label: tab.name.toUpperCase(),
+            title: tab.name,
+            selected: !!tab.active,
+          }))}
+          onSelect={(ref) => act('select', { ref })}
+        />
       )}
       <div className="inspect__body">
         <div className="inspect__main">

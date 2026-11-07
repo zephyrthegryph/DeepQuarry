@@ -61,8 +61,8 @@ export function activeToggles(entries: AbilityEntry[]): AbilityEntry[] {
   return entries.filter((entry) => entry.toggled === true);
 }
 
-/** Drag-to-reorder for the ability buttons: the shared helper (tgui/components/reorder.ts). */
-export { moveBefore } from 'tgui/components/reorder';
+/** Drag-to-reorder for the ability buttons: the shared helper (tgui/dq/reorder.ts). */
+export { moveBefore } from 'tgui/dq/reorder';
 
 /** Milliseconds of cooldown left at `now`, for a message received at `receivedAt` (both Date.now() values). */
 export function cooldownMs(

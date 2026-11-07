@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { ListRow, ListRows, TitleBar } from 'tgui/dq';
 import { CONSOLE_THEME } from 'tgui/layouts/consoleTheme';
 import type { BooleanLike } from 'tgui-core/react';
 import { cursorInMap, placeMenu } from './InteractionMenuPlacement';
@@ -219,57 +220,39 @@ export const InteractionMenu = () => {
     <div className="InteractionMenuRoot">
       <style>{MENU_RESET_CSS}</style>
       <div ref={boxRef} className="InteractionMenu">
-        <div className="InteractionMenu__header">
-          <div className="InteractionMenu__heading">
-            <div className="InteractionMenu__name">{target || 'Nothing'}</div>
-            {!!target && (
-              <div className="InteractionMenu__subtitle">
-                {menuSubtitle(role, distance)}
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            className="InteractionMenu__close"
-            onClick={() => act('close')}
-          >
-            ×
-          </button>
-        </div>
+        <TitleBar
+          title={target || 'Nothing'}
+          subtitle={target ? menuSubtitle(role, distance) : undefined}
+          onClose={() => act('close')}
+        />
         {target && nothing && (
-          <div className="InteractionMenu__blocked">Nothing to do here.</div>
+          <ListRows>
+            <ListRow blocked>Nothing to do here.</ListRow>
+          </ListRows>
         )}
         {(available.length > 0 || blocked.length > 0) && (
-          <div className="InteractionMenu__rows">
+          <ListRows>
             {available.map((entry) => (
-              <button
-                type="button"
+              <ListRow
                 key={entry.id}
-                className="InteractionMenu__row"
                 title={entry.desc ?? undefined}
+                trailing={entry.keys?.[0]}
                 onClick={() => act('run', { id: entry.id })}
               >
-                <span>{`> ${entry.name}`}</span>
-                {!!entry.keys?.[0] && (
-                  <span className="InteractionMenu__key">{entry.keys[0]}</span>
-                )}
-              </button>
+                {`> ${entry.name}`}
+              </ListRow>
             ))}
             {blocked.map((entry) => (
-              <div
+              <ListRow
                 key={entry.id}
-                className="InteractionMenu__blocked"
+                blocked
+                reason={entry.reason || undefined}
                 title={entry.reason || entry.desc || undefined}
               >
                 {`x ${entry.name}`}
-                {!!entry.reason && (
-                  <span className="InteractionMenu__reason">
-                    {` [${entry.reason.toUpperCase()}]`}
-                  </span>
-                )}
-              </div>
+              </ListRow>
             ))}
-          </div>
+          </ListRows>
         )}
         {target && actions.length > 0 && (
           <div className="InteractionMenu__actions">
@@ -286,18 +269,13 @@ export const InteractionMenu = () => {
           </div>
         )}
         {target && verbs.length > 0 && (
-          <div className="InteractionMenu__rows InteractionMenu__verbs">
+          <ListRows className="InteractionMenu__verbs">
             {verbs.map((name) => (
-              <button
-                type="button"
-                key={name}
-                className="InteractionMenu__row"
-                onClick={() => act('verb', { name })}
-              >
-                <span>{`> ${name}`}</span>
-              </button>
+              <ListRow key={name} onClick={() => act('verb', { name })}>
+                {`> ${name}`}
+              </ListRow>
             ))}
-          </div>
+          </ListRows>
         )}
       </div>
     </div>

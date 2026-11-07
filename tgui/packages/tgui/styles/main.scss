@@ -24,6 +24,9 @@
 // Components
 @include meta.load-css('./components/NanoMap.scss');
 
+// The DQ UI layer (tgui/dq/)
+@include meta.load-css('./dq/index.scss');
+
 // Interfaces
 @include meta.load-css('./interfaces/AutomatedTellerMachine.scss');
 @include meta.load-css('./interfaces/ListInput.scss');

@@ -1,34 +1,38 @@
 /**
- * The one tab row of the console UI: the stat panel's tabs and the chat's.
- * A flat tgui-core Tabs list sitting on the row's 2px bottom rule, so the
- * selected tab's underline lands on that rule whatever else the row holds;
- * `children` go at the row's end (buttons, a search box). With `onReorder`
- * the tabs can be dragged onto each other to change their order.
- * Styles: tgui/styles/components/ConsoleTabs.scss.
+ * The DQ tab row: every tab strip of the DQ UI (the stat panel's tabs, the
+ * chat's, the Inspect and MC sub-tabs). A flat tgui-core Tabs list sitting on
+ * the row's 2px bottom rule, so the selected tab's underline lands on that
+ * rule whatever else the row holds; `children` go at the row's end (buttons,
+ * a search box). With `onReorder` the tabs can be dragged onto each other to
+ * change their order. Styles: tgui/styles/dq/tabs.scss.
  */
 
 import { type ReactNode, useState } from 'react';
-import { Tabs } from 'tgui-core/components';
+import { Tabs as CoreTabs } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
 import { moveBefore } from './reorder';
 
-export type ConsoleTab = {
+export type Tab = {
   id: string;
   label: ReactNode;
   selected?: boolean;
   /** A tab that may not be dragged or dropped on (a pinned first tab). */
   fixed?: boolean;
+  /** Hover text (a label cut short by the row). */
+  title?: string;
 };
 
 /** How the row lays out its tabs: wrap onto more rows, one scrolling row, or the denser classic look. */
-export type ConsoleTabsLayout = 'wrap' | 'scrollable' | 'classic';
+export type TabsLayout = 'wrap' | 'scrollable' | 'classic';
 
 type Props = {
-  tabs: ConsoleTab[];
+  tabs: Tab[];
   onSelect: (id: string) => void;
   /** Called with the new order after a tab is dropped on another; omit to disable dragging. */
   onReorder?: (order: string[]) => void;
-  layout?: ConsoleTabsLayout;
+  layout?: TabsLayout;
+  /** `small` for a sub-tab row inside a page (Inspect, MC). */
+  size?: 'normal' | 'small';
   className?: string;
   /** Right after the last tab (an add-tab button). */
   afterTabs?: ReactNode;
@@ -36,14 +40,15 @@ type Props = {
   children?: ReactNode;
 };
 
-const DRAG_TYPE = 'text/x-console-tab';
+const DRAG_TYPE = 'text/x-dq-tab';
 
-export function ConsoleTabs(props: Props) {
+export function Tabs(props: Props) {
   const {
     tabs,
     onSelect,
     onReorder,
     layout = 'wrap',
+    size = 'normal',
     className,
     afterTabs,
     children,
@@ -58,20 +63,23 @@ export function ConsoleTabs(props: Props) {
 
   return (
     <div
-      className={classes(['ConsoleTabs', `ConsoleTabs--${layout}`, className])}
+      className={classes([
+        'DqTabs',
+        `DqTabs--${layout}`,
+        size === 'small' && 'DqTabs--small',
+        className,
+      ])}
     >
-      <Tabs className="ConsoleTabs__list">
+      <CoreTabs className="DqTabs__list">
         {tabs.map((tab) => {
           const movable = !!onReorder && !tab.fixed;
           return (
-            <Tabs.Tab
+            <CoreTabs.Tab
               key={tab.id}
               selected={tab.selected}
               className={classes([
-                dragging === tab.id && 'ConsoleTabs__tab--dragged',
-                over === tab.id &&
-                  dragging !== tab.id &&
-                  'ConsoleTabs__tab--over',
+                dragging === tab.id && 'DqTabs__tab--dragged',
+                over === tab.id && dragging !== tab.id && 'DqTabs__tab--over',
               ])}
               onClick={() => onSelect(tab.id)}
               draggable={movable}
@@ -99,17 +107,19 @@ export function ConsoleTabs(props: Props) {
               }}
               onDragEnd={end}
             >
-              {tab.label}
-            </Tabs.Tab>
+              {tab.title ? (
+                <span title={tab.title}>{tab.label}</span>
+              ) : (
+                tab.label
+              )}
+            </CoreTabs.Tab>
           );
         })}
-      </Tabs>
+      </CoreTabs>
       {afterTabs !== undefined && (
-        <div className="ConsoleTabs__after">{afterTabs}</div>
+        <div className="DqTabs__after">{afterTabs}</div>
       )}
-      {children !== undefined && (
-        <div className="ConsoleTabs__end">{children}</div>
-      )}
+      {children !== undefined && <div className="DqTabs__end">{children}</div>}
     </div>
   );
 }

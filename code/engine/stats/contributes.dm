@@ -157,6 +157,25 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_type_info)
 		return info
 	return stat_type_build(E)
 
+/// Does a write of `key` on E reach the stat layer? stat_input_keys says some type's stat reads the key; this narrows it to E's type: a stat of
+/// E's type reads it (inputs), a contribution of E's type is carried by it (ct_entries) or hops over it (hop_rels), or a reader elsewhere reaches
+/// E through it (stat_hop_index) or a system reads it (stat_sys_vars). Those are everything stat_relation_changed() and stat_inputs_changed()
+/// act on, so FALSE means both would do nothing. Before the type tables exist the answer is TRUE (asked again later, never cached).
+/proc/stat_type_reads_key(datum/E, key)
+	if(!GLOB?.stat_input_keys?[key])
+		return FALSE
+	if(GLOB.stat_hop_index?[key] || GLOB.stat_sys_vars?[key])
+		return TRUE
+	var/datum/stat_type_info/I = stat_type_of(E)
+	if(!I)
+		return !islist(GLOB?.stat_type_index) || table_of(E) == table_empty()
+	if(I.inputs[key] || (I.hop_rels && (key in I.hop_rels)))
+		return TRUE
+	for(var/datum/stat_contrib/ct as anything in I.ct_entries)
+		if(ct.rel == key)
+			return TRUE
+	return FALSE
+
 PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_type_build(datum/E)
 	var/datum/type_table/T = table_of(E)
