@@ -372,27 +372,59 @@ impl<T, const PAGE_LEN: usize> FixedPages<T, PAGE_LEN> {
     }
 }
 
-// Group geometry shares the actual encounter and output-line bases from
-// its rank page. The final word is a page-relative output line, or a
-// reserved escape tag followed by the exact full geometry side ordinal.
+// Group geometry shares encounter and output-line bases from the rank
+// page. The two reserved output words select ordered exact side storage.
 #[repr(transparent)]
-struct PackedGroup([u16; 5]);
-const _: () = assert!(std::mem::size_of::<PackedGroup>() == 10);
+struct PackedGroup([u16; 4]);
+const _: () = assert!(std::mem::size_of::<PackedGroup>() == 8);
 
 impl PackedGroup {
-    const ESCAPE: u16 = u16::MAX;
+    const OLD: u16 = u16::MAX - 1;
+    const FULL: u16 = u16::MAX;
 
-    fn escape(index: usize) -> io::Result<Self> {
-        let index = u64::try_from(index).map_err(|_| io::ErrorKind::OutOfMemory)?;
-        Ok(Self([index as u16, (index >> 16) as u16, (index >> 32) as u16,
-            (index >> 48) as u16, Self::ESCAPE]))
+    fn pack(old: &OldPackedGroup) -> Option<Self> {
+        let [low, high, width, line, output] = old.0;
+        if high >= 1 << 8 || width >= 1 << 12 || line >= 1 << 12 || output >= Self::OLD {
+            return None;
+        }
+        Some(Self([low, high | (width << 8), (width >> 8) | (line << 4), output]))
     }
 
-    fn escape_index(&self) -> Option<usize> {
-        let [a, b, c, d, tag] = self.0;
-        if tag != Self::ESCAPE { return None; }
-        usize::try_from(u64::from(a) | (u64::from(b) << 16)
-            | (u64::from(c) << 32) | (u64::from(d) << 48)).ok()
+    fn unpack(&self) -> Option<OldPackedGroup> {
+        let [low, high, width_line, output] = self.0;
+        if output >= Self::OLD { return None; }
+        Some(OldPackedGroup([low, high & 255, (high >> 8) | ((width_line & 15) << 8),
+            width_line >> 4, output]))
+    }
+
+    fn is_full(&self) -> bool { self.0[3] == Self::FULL }
+    fn is_old(&self) -> bool { self.0[3] == Self::OLD }
+    fn old() -> Self { Self([0, 0, 0, Self::OLD]) }
+    fn full() -> Self { Self([0, 0, 0, Self::FULL]) }
+}
+
+#[repr(transparent)]
+struct OldPackedGroup([u16; 5]);
+
+// Keep the previous compact geometry for common, modest overflows without
+// allocating a full source record. Only a larger group ordinal needs full.
+#[repr(transparent)]
+struct OldGroupSide([u16; 7]);
+const _: () = assert!(std::mem::size_of::<OldGroupSide>() == 14);
+impl OldGroupSide {
+    fn new(ordinal: usize, row: &OldPackedGroup) -> Option<Self> {
+        let ordinal = u32::try_from(ordinal).ok()?;
+        let [a, b, c, d, e] = row.0;
+        Some(Self([ordinal as u16, (ordinal >> 16) as u16, a, b, c, d, e]))
+    }
+
+    fn ordinal(&self) -> usize {
+        (u32::from(self.0[0]) | (u32::from(self.0[1]) << 16)) as usize
+    }
+
+    fn row(&self) -> OldPackedGroup {
+        let [_, _, a, b, c, d, e] = self.0;
+        OldPackedGroup([a, b, c, d, e])
     }
 }
 
@@ -458,19 +490,19 @@ impl GroupTracePage {
     }
 }
 impl GroupGeometry {
-    fn pack(self, output_line_base: usize) -> Option<PackedGroup> {
+    fn pack(self, output_line_base: usize) -> Option<OldPackedGroup> {
         if self.raw_base != self.decoded.start { return None; }
         let width = u16::try_from(self.decoded.end.checked_sub(self.decoded.start)?).ok()?;
         let start = u32::try_from(self.decoded.start).ok()?;
         let line = u16::try_from(self.line).ok()?;
         let output_delta = u16::try_from(self.output_line.checked_sub(output_line_base)?).ok()?;
-        if output_delta == PackedGroup::ESCAPE { return None; }
-        Some(PackedGroup([start as u16, (start >> 16) as u16, width, line, output_delta]))
+        if output_delta == PackedGroup::FULL { return None; }
+        Some(OldPackedGroup([start as u16, (start >> 16) as u16, width, line, output_delta]))
     }
 
-    fn unpack(packed: &PackedGroup, output_line_base: usize, encounter: usize) -> Option<GroupSourceGeometry> {
+    fn unpack(packed: &OldPackedGroup, output_line_base: usize, encounter: usize) -> Option<GroupSourceGeometry> {
         let [low, high, width, line, output_delta] = packed.0;
-        if output_delta == PackedGroup::ESCAPE { return None; }
+        if output_delta == PackedGroup::FULL { return None; }
         let start = usize::try_from(u32::from(low) | (u32::from(high) << 16)).ok()?;
         let end = start.checked_add(usize::from(width))?;
         Some(GroupSourceGeometry {
@@ -637,6 +669,7 @@ impl TraceRuns {
 
 struct OriginGroups {
     packed: OriginPages<PackedGroup>,
+    old: EscapePages<OldGroupSide>,
     full: EscapePages<(usize, GroupGeometry)>,
     trace_pages: FixedPages<GroupTracePage, TRACE_DIRECTORY_PAGE_LEN>,
     traces: TraceRuns,
@@ -644,7 +677,7 @@ struct OriginGroups {
 impl OriginGroups {
     fn new() -> Self {
         Self {
-            packed: OriginPages::new(), full: EscapePages::new(),
+            packed: OriginPages::new(), old: EscapePages::new(), full: EscapePages::new(),
             trace_pages: FixedPages::new(), traces: TraceRuns::new(),
         }
     }
@@ -663,11 +696,18 @@ impl OriginGroups {
 
     fn source_geometry(&self, ordinal: usize) -> Option<GroupSourceGeometry> {
         let packed = self.packed.get(ordinal)?;
-        if let Some(index) = packed.escape_index() {
-            return self.full.get(index).filter(|(at, _)| *at == ordinal).map(|(_, geometry)| geometry.source());
+        if packed.is_full() {
+            let at = self.full.partition_point(|_, (at, _)| *at < ordinal);
+            return self.full.get(at).filter(|(at, _)| *at == ordinal).map(|(_, geometry)| geometry.source());
         }
+        let old = if packed.is_old() {
+            let at = self.old.partition_point(|_, row| row.ordinal() < ordinal);
+            self.old.get(at).filter(|row| row.ordinal() == ordinal)?.row()
+        } else {
+            packed.unpack()?
+        };
         let page = self.trace_pages.get(ordinal / ROW_PAGE_LEN)?;
-        GroupGeometry::unpack(packed, page.output_line_base, page.encounter(ordinal % ROW_PAGE_LEN)?)
+        GroupGeometry::unpack(&old, page.output_line_base, page.encounter(ordinal % ROW_PAGE_LEN)?)
     }
 
     #[cfg(test)]
@@ -680,6 +720,7 @@ impl OriginGroups {
         a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>,
     ) -> io::Result<()> {
         let ordinal = self.len();
+        let previous_old = self.old.len();
         let previous_full = self.full.len();
         let previous_pages = self.trace_pages.len();
         let before = self.traces.len();
@@ -702,13 +743,14 @@ impl OriginGroups {
         let inline_encounter = encounter == geometry.encounter || encounter_changed;
         let packed = if inline_encounter { geometry.pack(output_line_base) } else { None };
         let result = (|| {
-            let cell = match packed {
-                Some(cell) => cell,
-                None => {
-                    let cell = PackedGroup::escape(previous_full)?;
-                    self.full.push((ordinal, geometry), a, funding)?;
-                    cell
-                }
+            let cell = if let Some(cell) = packed.as_ref().and_then(PackedGroup::pack) {
+                cell
+            } else if let Some(side) = packed.as_ref().and_then(|row| OldGroupSide::new(ordinal, row)) {
+                self.old.push(side, a, funding)?;
+                PackedGroup::old()
+            } else {
+                self.full.push((ordinal, geometry), a, funding)?;
+                PackedGroup::full()
             };
             if new_page {
                 self.trace_pages.push(GroupTracePage::new(before, output_line_base, geometry.encounter), a, funding)?;
@@ -721,6 +763,7 @@ impl OriginGroups {
         if let Err(first) = result {
             // No trace bit has been published. Drop only rows added by this
             // attempt and never replace the first original allocation error.
+            let _ = self.old.truncate(previous_old, funding);
             let _ = self.full.truncate(previous_full, funding);
             let _ = self.traces.truncate(before, funding);
             let _ = self.trace_pages.truncate(previous_pages, funding);
@@ -734,6 +777,7 @@ impl OriginGroups {
 
     fn truncate(&mut self, len: usize, funding: &mut PageFunding<'_>) -> io::Result<()> {
         if len == self.len() { return Ok(()); }
+        let old = self.old.partition_point(|_, row| row.ordinal() < len);
         let full = self.full.partition_point(|_, (at, _)| *at < len);
         let traces = match len.checked_sub(1) {
             Some(last) => self.trace_run(last).and_then(|run| run.checked_add(1)).ok_or(io::ErrorKind::InvalidData)?,
@@ -741,6 +785,7 @@ impl OriginGroups {
         };
         let pages = len.div_ceil(ROW_PAGE_LEN);
         self.packed.truncate(len, funding)?;
+        self.old.truncate(old, funding)?;
         self.full.truncate(full, funding)?;
         self.traces.truncate(traces, funding)?;
         self.trace_pages.truncate(pages, funding)?;
@@ -758,6 +803,7 @@ impl OriginGroups {
 
     fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
         self.packed.visit_storage(&mut visit);
+        self.old.visit_storage(&mut visit);
         self.full.visit_storage(&mut visit);
         self.trace_pages.visit_storage(&mut visit);
         self.traces.visit_storage(&mut visit);
@@ -765,6 +811,15 @@ impl OriginGroups {
 
     #[cfg(debug_assertions)]
     fn trace_capacity(&self) -> (usize, usize, usize) {
+        if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+            let mut central = 0usize;
+            let mut old = 0usize;
+            let mut full = 0usize;
+            self.packed.visit_storage(|_, _, n| central = central.saturating_add(n));
+            self.old.visit_storage(|_, _, n| old = old.saturating_add(n));
+            self.full.visit_storage(|_, _, n| full = full.saturating_add(n));
+            eprintln!("ORIGINAL_ORIGIN_GROUP_GEOMETRY central_bytes={central} old_side_bytes={old} full_side_bytes={full}");
+        }
         let mut rank_bytes = 0usize;
         self.trace_pages.visit_storage(|_, _, bytes| rank_bytes = rank_bytes.saturating_add(bytes));
         let (_, owners, mapping) = self.traces.trace_capacity();
@@ -1420,14 +1475,17 @@ pub(super) struct RawRowGeometryCensus {
     // each real group page, even if its first cell needs a full escape.
     group_16_byte: [usize; 2],
     group_10_byte: [usize; 2],
+    // [inline 8, exact old 10 on the side, full geometry].
+    group_8_byte: [usize; 3],
     group_count: usize,
     group_output_line_base: usize,
 }
 
 #[cfg(debug_assertions)]
 impl RawRowGeometryCensus {
-    fn observe_group(&mut self, geometry: GroupGeometry, actual_escape: bool) {
-        self.group_10_byte[usize::from(actual_escape)] += 1;
+    fn observe_group(&mut self, geometry: GroupGeometry, cell: &PackedGroup) {
+        self.group_10_byte[usize::from(cell.is_full())] += 1;
+        self.group_8_byte[if cell.is_full() { 2 } else { usize::from(cell.is_old()) }] += 1;
         if self.group_count % ROW_PAGE_LEN == 0 {
             self.group_output_line_base = geometry.output_line;
         }
@@ -1564,8 +1622,8 @@ impl OriginalRawOrigins{
   if result.is_ok() {
    if let Some(census)=&mut self.row_geometry_census {
     if !share_group {
-    let escaped = self.groups.packed.get(group).expect("issued group").escape_index().is_some();
-    census.observe_group(geometry, escaped);
+    let cell = self.groups.packed.get(group).expect("issued group");
+    census.observe_group(geometry, cell);
    }
     let ordinal=self.rows.len()-1;
     census.observe(row,geometry,self.rows.page(ordinal/ROW_PAGE_LEN).expect("issued origin row page").group_base,ordinal%ROW_PAGE_LEN);
@@ -1883,7 +1941,7 @@ impl OriginalRawOrigins{
   let trace=OriginalMacroTrace::empty();
   let group=|line|GroupGeometry{
    encounter:7,decoded:Span::new(line,line+1),
-   line,output_line:line,output_base:line,raw_base:line,
+   line:line.min(4095),output_line:line,output_base:line,raw_base:line,
   };
   for denied in [false,true] {
    let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
@@ -1903,7 +1961,7 @@ impl OriginalRawOrigins{
    } else {
     next.unwrap();
     let (last, last_trace)=groups.get(ROW_PAGE_LEN).unwrap();
-    assert_eq!(last.line,ROW_PAGE_LEN);
+    assert_eq!(last.line,4095);
     assert_eq!(last.encounter,7);
     assert!(last_trace.same_owner(&trace));
     assert_eq!(used.load(Ordering::Acquire),cap);
@@ -1928,6 +1986,51 @@ impl OriginalRawOrigins{
   }
  }
  #[test]
+ fn eight_byte_groups_keep_exact_edges_and_both_escape_rosters() {
+    let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a = SettingAdmission::new(&syntax, fixed, &|| Ok(()));
+    let used = Arc::new(AtomicUsize::new(0));
+    let work = OutputWork(Arc::clone(&used));
+    let mut credit = work.reserve(0).unwrap();
+    let mut funding = PageFunding { work: &work, credit: &mut credit };
+    let trace = OriginalMacroTrace::empty();
+    let mut groups = OriginGroups::new();
+    let start = (1 << 24) - 1;
+    let base = GroupGeometry {
+        encounter: 0, decoded: Span::new(start, start+4095), line: 4095,
+        raw_base: start, output_line: 50, output_base: 0,
+    };
+    let cases = [
+        (base, false, false),
+        (GroupGeometry { output_line: 50 + 65_533, ..base }, false, false),
+        (GroupGeometry { output_line: 50 + 65_534, ..base }, true, false),
+        (GroupGeometry { output_line: 50 + 65_535, ..base }, false, true),
+        (GroupGeometry { raw_base: start + 1, decoded: Span::new(start+1,start+2), ..base }, true, false),
+        (GroupGeometry { decoded: Span::new(start,start+4096), ..base }, true, false),
+        (GroupGeometry { line: 4096, ..base }, true, false),
+    ];
+    for (at, (row, old, full)) in cases.into_iter().enumerate() {
+        groups.push(row, trace.clone(), &a, &mut funding).unwrap();
+        assert_eq!(groups.source_geometry(at), Some(row.source()));
+        assert_eq!(groups.packed.get(at).unwrap().is_old(), old);
+        assert_eq!(groups.packed.get(at).unwrap().is_full(), full);
+        assert!(groups.get(at).unwrap().1.same_owner(&trace));
+    }
+    assert_eq!(groups.old.len(), 4);
+    assert_eq!(groups.full.len(), 1);
+    groups.truncate(2,&mut funding).unwrap();
+    assert_eq!(groups.old.len(), 0);
+    assert_eq!(groups.full.len(), 0);
+    groups.push(cases[6].0,trace.clone(),&a,&mut funding).unwrap();
+    assert_eq!(groups.old.get(0).unwrap().ordinal(),2);
+    assert_eq!(groups.source_geometry(2),Some(cases[6].0.source()));
+    assert!(groups.source_geometry(3).is_none());
+    drop((groups,credit));
+    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(syntax.load(Ordering::Acquire),fixed);
+ }
+ #[test]
  fn packed_group_width_and_encounter_bounds_preserve_original_coordinates() {
   let base=200_000;
   let normal=GroupGeometry{encounter:usize::MAX,
@@ -1942,7 +2045,7 @@ impl OriginalRawOrigins{
    GroupGeometry{output_line:base-1,..normal},
    GroupGeometry{output_line:normal.output_line+1,..normal},
   ]{assert!(wide.pack(base).is_none());}
-  assert_eq!(PackedGroup::escape(usize::MAX).unwrap().escape_index(),Some(usize::MAX));
+  assert!(PackedGroup::pack(&normal.pack(base).unwrap()).is_none());
  }
  #[test]
  fn packed_groups_preserve_wide_coordinates_and_refund_only_retired_owners() {
@@ -2011,8 +2114,10 @@ impl OriginalRawOrigins{
   groups.push(start,trace.clone(),&a,&mut funding).unwrap();
   groups.push(shifted,trace.clone(),&a,&mut funding).unwrap();
   assert_eq!(groups.full.len(),2);
-  assert_eq!(groups.packed.get(2).unwrap().escape_index(),Some(0));
-  assert_eq!(groups.packed.get(ROW_PAGE_LEN+1).unwrap().escape_index(),Some(1));
+  assert!(groups.packed.get(2).unwrap().is_full());
+  assert_eq!(groups.full.get(0).unwrap().0,2);
+  assert!(groups.packed.get(ROW_PAGE_LEN+1).unwrap().is_full());
+  assert_eq!(groups.full.get(1).unwrap().0,ROW_PAGE_LEN+1);
   assert_eq!(groups.source_geometry(ROW_PAGE_LEN),Some(start.source()));
   assert_eq!(groups.source_geometry(ROW_PAGE_LEN+1),Some(shifted.source()));
 
@@ -2020,7 +2125,8 @@ impl OriginalRawOrigins{
   assert_eq!(groups.full.len(),1);
   let replacement=GroupGeometry{raw_base:7,output_line:start.output_line+1,..ordinary(ROW_PAGE_LEN+1)};
   groups.push(replacement,trace.clone(),&a,&mut funding).unwrap();
-  assert_eq!(groups.packed.get(ROW_PAGE_LEN+1).unwrap().escape_index(),Some(1));
+  assert!(groups.packed.get(ROW_PAGE_LEN+1).unwrap().is_full());
+  assert_eq!(groups.full.get(1).unwrap().0,ROW_PAGE_LEN+1);
   assert_eq!(groups.source_geometry(ROW_PAGE_LEN+1),Some(replacement.source()));
   assert!(groups.get(ROW_PAGE_LEN+1).unwrap().1.same_owner(&trace));
 
@@ -2066,32 +2172,32 @@ impl OriginalRawOrigins{
         assert_eq!(actual, row.source(), "group {index}");
         assert!(actual_trace.same_owner(&trace));
         assert_eq!(
-            groups.packed.get(index).unwrap().escape_index().is_some(),
+            groups.packed.get(index).unwrap().is_full(),
             matches!(index, 62 | 63 | 65),
         );
     }
     let same_max = geometry(ROW_PAGE_LEN + 1, usize::MAX);
     groups.push(same_max, trace.clone(), &a, &mut funding).unwrap();
     assert_eq!(groups.source_geometry(ROW_PAGE_LEN + 1), Some(same_max.source()));
-    assert!(groups.packed.get(ROW_PAGE_LEN + 1).unwrap().escape_index().is_none());
+    assert!(!groups.packed.get(ROW_PAGE_LEN + 1).unwrap().is_full());
     let would_wrap = geometry(ROW_PAGE_LEN + 2, 0);
     groups.push(would_wrap, trace.clone(), &a, &mut funding).unwrap();
     assert_eq!(groups.source_geometry(ROW_PAGE_LEN + 2), Some(would_wrap.source()));
-    assert!(groups.packed.get(ROW_PAGE_LEN + 2).unwrap().escape_index().is_some());
+    assert!(groups.packed.get(ROW_PAGE_LEN + 2).unwrap().is_full());
 
     // A new page establishes its own base, including a lower encounter.
     groups.truncate(ROW_PAGE_LEN, &mut funding).unwrap();
     let first = geometry(ROW_PAGE_LEN, 77);
     groups.push(first, trace.clone(), &a, &mut funding).unwrap();
     assert_eq!(groups.source_geometry(ROW_PAGE_LEN), Some(first.source()));
-    assert!(groups.packed.get(ROW_PAGE_LEN).unwrap().escape_index().is_none());
+    assert!(!groups.packed.get(ROW_PAGE_LEN).unwrap().is_full());
 
     // Trimming the first bit of a word must keep the prior escaped +1.
     groups.truncate(64, &mut funding).unwrap();
     let at_word = geometry(64, 102);
     groups.push(at_word, trace.clone(), &a, &mut funding).unwrap();
     assert_eq!(groups.source_geometry(64), Some(at_word.source()));
-    assert!(groups.packed.get(64).unwrap().escape_index().is_none());
+    assert!(!groups.packed.get(64).unwrap().is_full());
 
     // Now remove the escaped +1 too, and issue that rank again.
     groups.truncate(63, &mut funding).unwrap();
@@ -2100,7 +2206,7 @@ impl OriginalRawOrigins{
     groups.push(at_word, trace.clone(), &a, &mut funding).unwrap();
     assert_eq!(groups.source_geometry(63), Some(before_word.source()));
     assert_eq!(groups.source_geometry(64), Some(at_word.source()));
-    assert!(groups.packed.get(63).unwrap().escape_index().is_none());
+    assert!(!groups.packed.get(63).unwrap().is_full());
     assert_eq!(groups.full.len(), 1);
     assert_eq!(groups.source_geometry(62), Some(geometry(62, 501).source()));
     drop((groups, credit));
@@ -2268,7 +2374,7 @@ impl OriginalRawOrigins{
   let owner_b=OriginalMacroTrace::empty();
   let rejected=OriginalMacroTrace::empty();
   let group=|line|GroupGeometry{encounter:7,decoded:Span::new(line,line+1),
-   line,output_line:line,output_base:line,raw_base:line};
+   line:line.min(4095),output_line:line,output_base:line,raw_base:line,};
   let mut groups=OriginGroups::new();
   for line in 0..ROW_PAGE_LEN {
    let owner=if line<128&&line%2==0{&owner_a}else{&owner_b};
@@ -2696,7 +2802,7 @@ impl OriginalRawOrigins{
   let replacement=GroupGeometry{output_base:31,..group};
   groups.push(group,trace.clone(),&a,&mut funding).unwrap();
   groups.push(replacement,trace,&a,&mut funding).unwrap();
-  assert!(groups.packed.get(0).unwrap().escape_index().is_none(),"wide output base is independent of compact source geometry");
+  assert!(!groups.packed.get(0).unwrap().is_full(),"wide output base is independent of compact source geometry");
   let row=Row{group:0,output:Span::new(group.output_base+1,group.output_base+5),
    token_end:group.output_base+4,source_offset:0,byte_column:1,raw_extent:Span::new(0,1),actual_eof:false};
   let next=Row{group:1,output:Span::new(32,36),token_end:35,..row};
