@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Floors (and other turfs) now keep damage: lazy per-holder state was never found for turfs, so floor integrity always read full"

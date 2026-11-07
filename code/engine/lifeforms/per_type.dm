@@ -91,7 +91,7 @@ GLOBAL_LIST_EMPTY(per_type_copies)
 
 /// The copy of `key` that `holder` has made, or null while it still reads the type's shared datum. Never makes a row or a slot.
 /proc/per_type_copy_peek(datum/holder, key)
-	var/slot = holder.handle_slot
+	var/slot = slot_known(holder)
 	if(!slot || !length(GLOB.per_type_copies))
 		return null
 	var/alist/rows = GLOB.per_type_copies[key]
@@ -109,14 +109,14 @@ GLOBAL_LIST_EMPTY(per_type_copies)
 
 /// The holder's own copy of `key` ends: it reads the type's shared datum again.
 /proc/per_type_copy_clear(datum/holder, key)
-	var/slot = holder.handle_slot
+	var/slot = slot_known(holder)
 	var/alist/rows = GLOB.per_type_copies[key]
 	if(slot && rows)
 		rows -= slot
 
 /// engine_forget(): a destroyed holder leaves every copy table, so its copies are freed with it.
 /proc/per_type_forget(datum/D)
-	var/slot = D.handle_slot
+	var/slot = slot_known(D)
 	if(!slot || !length(GLOB.per_type_copies))
 		return
 	for(var/key in GLOB.per_type_copies)
