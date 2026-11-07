@@ -107,6 +107,7 @@ impl Row {
 // share an inline byte only after exact equality relative to their own line
 // bases. Group ordinals are indexed by the page's exact transition rank.
 #[repr(C)]
+#[derive(Clone,Copy)]
 struct NarrowRow {
     tag: u8,
     fields: [u8; 3],
@@ -981,11 +982,72 @@ impl RankedRawWidths {
     }
 }
 
+// Same NarrowRow tags and exact [6,6,4] payload geometry. Only the
+// unchanged medium/full escape cells and non-fitting original cells use
+// the independent 4B column.
+#[repr(transparent)]
+struct ShortOriginCell([u8;3]);
+impl ShortOriginCell {
+    fn pack(row: NarrowRow) -> Option<Self> {
+        if row.tag & NarrowRow::MODE == NarrowRow::ESCAPE { return None; }
+        let [out, raw, width] = row.fields;
+        let width = if row.tag & NarrowRow::MODE == NarrowRow::DUAL_WIDTH {
+            let (token, raw) = (width >> 4, width & 15);
+            if token >= 4 || raw >= 4 { return None; }
+            (token << 2) | raw
+        } else { width };
+        if out >= 64 || raw >= 64 || width >= 16 { return None; }
+        let payload = u16::from(out) | (u16::from(raw) << 6) | (u16::from(width) << 12);
+        let [lo, hi] = payload.to_le_bytes();
+        Some(Self([row.tag, lo, hi]))
+    }
+    fn unpack(&self) -> NarrowRow {
+        let [tag, lo, hi] = self.0;
+        let payload = u16::from_le_bytes([lo, hi]);
+        let mut width = (payload >> 12) as u8;
+        if tag & NarrowRow::MODE == NarrowRow::DUAL_WIDTH {
+            width = ((width >> 2) << 4) | (width & 3);
+        }
+        NarrowRow { tag, fields:[(payload & 63) as u8, ((payload >> 6) & 63) as u8, width] }
+    }
+}
+const _: () = assert!(std::mem::size_of::<ShortOriginCell>() == 3);
+
+struct MixedOriginCells {
+    // Rank contains the count of unchanged four-byte cells through local.
+    rank: RowGroupRank,
+    short: Vec<ShortOriginCell>,
+    four: Vec<NarrowRow>,
+}
+impl MixedOriginCells {
+    fn len(&self) -> usize { self.short.len() + self.four.len() }
+    fn cell(&self, local: usize) -> Option<NarrowRow> {
+        if local >= self.len() { return None; }
+        let four = self.rank.through(local);
+        if self.rank.bits[local / TRACE_WORD_BITS] & (1 << (local % TRACE_WORD_BITS)) != 0 {
+            self.four.get(four - 1).copied()
+        } else {
+            self.short.get(local - four).map(ShortOriginCell::unpack)
+        }
+    }
+    fn bytes(&self) -> usize {
+        std::mem::size_of::<Self>() + self.short.capacity() * std::mem::size_of::<ShortOriginCell>()
+            + self.four.capacity() * std::mem::size_of::<NarrowRow>()
+    }
+    fn truncate(&mut self, keep: usize) {
+        let four = self.rank.through(keep - 1);
+        self.short.truncate(keep - four);
+        self.four.truncate(four);
+        self.rank.truncate(keep);
+    }
+}
+
 // One source-budget owner for one physical token page and all of its exact
 // token geometry. Global source groups/trace owners and the page directory
 // are deliberately outside this owner.
 struct PhysicalOriginPage {
     narrow: Vec<NarrowRow>,
+    mixed: Option<Box<MixedOriginCells>>,
     rank: RowGroupRank,
     output_bases: RowOutputBases,
     raw_widths: Option<Box<RankedRawWidths>>,
@@ -1005,16 +1067,81 @@ impl PhysicalOriginPage {
     fn new(group_base: usize, work: &dyn SourceArenaWork) -> io::Result<Self> {
         let credit = work.reserve_original_origin_storage(Self::control_bytes())?;
         Ok(Self {
-            narrow: Vec::new(), rank: RowGroupRank::new(),
+            narrow: Vec::new(), mixed: None, rank: RowGroupRank::new(),
             output_bases: RowOutputBases::new(), raw_widths: None,
             medium: FixedPages::new(), full: FixedPages::new(), group_base, credit,
         })
+    }
+
+    fn len(&self) -> usize { self.mixed.as_ref().map_or(self.narrow.len(), |mixed| mixed.len()) }
+
+    fn cell(&self, local: usize) -> Option<NarrowRow> {
+        match &self.mixed {
+            Some(mixed) => mixed.cell(local),
+            None => self.narrow.get(local).copied(),
+        }
+    }
+
+    fn settle_full_columns(&mut self, a: &SettingAdmission<'_>, work: &dyn SourceArenaWork) -> io::Result<()> {
+        if self.mixed.is_some() || self.narrow.len() != ROW_PAGE_LEN { return Ok(()); }
+        let short = self.narrow.iter().filter(|&&row| ShortOriginCell::pack(row).is_some()).count();
+        let four = ROW_PAGE_LEN - short;
+        let box_bytes = std::mem::size_of::<MixedOriginCells>();
+        let bytes = box_bytes + short * std::mem::size_of::<ShortOriginCell>()
+            + four * std::mem::size_of::<NarrowRow>();
+        let old = self.narrow.capacity() * std::mem::size_of::<NarrowRow>();
+        if bytes >= old || !work.try_grow_original_origin_storage(&mut self.credit, bytes)? { return Ok(()); }
+
+        let build = || -> io::Result<Box<MixedOriginCells>> {
+            a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+            let mut packed = exact_rows(short, a)?;
+            let mut old_cells = exact_rows(four, a)?;
+            let mut rank = RowGroupRank::new();
+            for (at, &row) in self.narrow.iter().enumerate() {
+                let before = old_cells.len();
+                if let Some(cell) = ShortOriginCell::pack(row) { packed.push(cell); }
+                else { old_cells.push(row); }
+                rank.append(at, before, before != old_cells.len());
+            }
+            // The optional family grant includes the exact nonzero Global
+            // layout. No old physical storage is returned on first failure.
+            let pointer = std::ptr::NonNull::new(unsafe { std::alloc::alloc(
+                std::alloc::Layout::new::<MixedOriginCells>()) }.cast::<MixedOriginCells>())
+                .ok_or(io::ErrorKind::OutOfMemory)?;
+            // SAFETY: pointer is one funded Global cell; write once before
+            // Box assumes its ordinary drop layout.
+            Ok(unsafe {
+                pointer.as_ptr().write(MixedOriginCells { rank, short: packed, four: old_cells });
+                Box::from_raw(pointer.as_ptr())
+            })
+        };
+        let mixed = match build() {
+            Ok(mixed) => mixed,
+            Err(first) => { let _=work.shrink(&mut self.credit, bytes); return Err(first); }
+        };
+        self.mixed = Some(mixed);
+        drop(std::mem::take(&mut self.narrow));
+        work.shrink(&mut self.credit, old)
+    }
+
+    fn resume_dense_after_trim(&mut self, a: &SettingAdmission<'_>, work: &dyn SourceArenaWork) -> io::Result<()> {
+        let Some(mixed) = &self.mixed else { return Ok(()); };
+        if mixed.len() == ROW_PAGE_LEN { return Err(io::ErrorKind::InvalidInput.into()); }
+        let mut funding = PageFunding { work, credit: &mut self.credit };
+        let mut dense = funding.allocate(ROW_PAGE_LEN, a)?;
+        dense.extend((0..mixed.len()).map(|at|mixed.cell(at).expect("issued original cell")));
+        let mixed = self.mixed.take().expect("actual compact cell owner");
+        let bytes = mixed.bytes();
+        self.narrow = dense;
+        drop(mixed);
+        funding.work.shrink(funding.credit, bytes)
     }
 
     fn push(
         &mut self, row: Row, geometry: GroupGeometry, prior_group: usize,
         kind: Option<dm_syntax::TokenKind>, a: &SettingAdmission<'_>, work: &dyn SourceArenaWork,
     ) -> io::Result<()> {
+        self.resume_dense_after_trim(a, work)?;
         let local = self.narrow.len();
         assert!(local < ROW_PAGE_LEN);
         let medium_before = self.medium.len();
@@ -1079,12 +1206,12 @@ impl PhysicalOriginPage {
     }
 
     fn group_at(&self, local: usize) -> Option<usize> {
-        self.narrow.get(local)?;
+        if local >= self.len() { return None; }
         self.group_base.checked_add(self.rank.through(local))
     }
 
     fn group_geometry(&self, local: usize, groups: &OriginGroups) -> Option<GroupGeometry> {
-        self.narrow.get(local)?;
+        if local >= self.len() { return None; }
         let rank = self.rank.through(local);
         let group = self.group_base.checked_add(rank)?;
         self.geometry_at_rank(rank, group, groups)
@@ -1095,7 +1222,7 @@ impl PhysicalOriginPage {
     }
 
     fn decode(&self, local: usize, groups: &OriginGroups) -> Option<Row> {
-        let cell = self.narrow.get(local)?;
+        let cell = self.cell(local)?;
         let rank = self.rank.through(local);
         let group = self.group_base.checked_add(rank)?;
         let geometry = || self.geometry_at_rank(rank, group, groups);
@@ -1111,7 +1238,7 @@ impl PhysicalOriginPage {
     // Reads only this exact page's issued geometry. No source-group/trace
     // loan, source provider, re-lex, or frontier/EOF grant.
     fn projected_token(&self, local: usize) -> Option<dm_syntax::SpanToken> {
-        let cell = self.narrow.get(local)?;
+        let cell = self.cell(local)?;
         let kind = cell.projected_kind()?;
         let rank = self.rank.through(local);
         let span = match cell.class() {
@@ -1137,10 +1264,11 @@ impl PhysicalOriginPage {
     }
 
     fn truncate(&mut self, keep: usize, work: &dyn SourceArenaWork) -> io::Result<()> {
-        assert!(keep > 0 && keep < self.narrow.len());
+        assert!(keep > 0 && keep < self.len());
         let rank = self.rank.through(keep - 1);
         let (mut medium, mut full, mut widths) = (0, 0, 0);
-        for cell in &self.narrow[..keep] {
+        for local in 0..keep {
+            let cell = self.cell(local).expect("issued retained row");
             widths += usize::from(cell.needs_raw_width());
             match cell.class() {
                 NarrowRow::MEDIUM => medium += 1,
@@ -1158,7 +1286,8 @@ impl PhysicalOriginPage {
             side.widths.truncate(widths);
             side.rank.truncate(keep);
         }
-        self.narrow.truncate(keep);
+        if let Some(mixed) = &mut self.mixed { mixed.truncate(keep); }
+        else { self.narrow.truncate(keep); }
         self.rank.truncate(keep);
         Ok(())
     }
@@ -1179,7 +1308,7 @@ impl PhysicalOriginPageOwner {
     }
 
     fn loan_full(&self) -> Option<Self> {
-        (self.get().narrow.len() == ROW_PAGE_LEN)
+        (self.get().len() == ROW_PAGE_LEN)
             .then(|| Self(Some(Arc::clone(self.0.as_ref().expect("live physical origin page")))))
     }
 
@@ -1187,8 +1316,17 @@ impl PhysicalOriginPageOwner {
         let page = self.get();
         let bytes = PhysicalOriginPage::control_bytes();
         visit(page as *const PhysicalOriginPage as usize, bytes, bytes);
-        visit(page.narrow.as_ptr() as usize, page.narrow.len(),
-            page.narrow.capacity() * std::mem::size_of::<NarrowRow>());
+        fn column<T>(rows: &[T], capacity: usize, visit: &mut impl FnMut(usize,usize,usize)) {
+            if capacity == 0 { return; }
+            visit(rows.as_ptr() as usize, rows.len(), capacity * std::mem::size_of::<T>());
+        }
+        column(&page.narrow, page.narrow.capacity(), visit);
+        if let Some(mixed) = &page.mixed {
+            let bytes = std::mem::size_of::<MixedOriginCells>();
+            visit(mixed.as_ref() as *const _ as usize, bytes, bytes);
+            column(&mixed.short, mixed.short.capacity(), visit);
+            column(&mixed.four, mixed.four.capacity(), visit);
+        }
         page.output_bases.visit_storage(visit);
         if let Some(side) = &page.raw_widths {
             let bytes = std::mem::size_of::<RankedRawWidths>();
@@ -1764,8 +1902,8 @@ impl OriginalRawOrigins{
  // This loan is issued only at the existing complete-batch send boundary.
  // No source read or lexer/indent demand can occur here.
  pub(super) fn batch_token_pages(
-  &self, owner:&super::original_prepared_output::OriginalOutputIdentity,
-  end:usize, count:usize, a:&SettingAdmission<'_>,
+  &mut self, owner:&super::original_prepared_output::OriginalOutputIdentity,
+  end:usize, count:usize, a:&SettingAdmission<'_>, work:&dyn SourceArenaWork,
  )->io::Result<[Option<super::original_prepared_output::OriginalBatchTokenPage>;2]> {
   use super::original_prepared_output::OriginalBatchTokenPage;
   const _: () = assert!(ROW_PAGE_LEN == dm_syntax::ORIGINAL_TOKEN_PAGE_ROWS);
@@ -1786,8 +1924,11 @@ impl OriginalRawOrigins{
   let last_page=total/ROW_PAGE_LEN;
   if last_page-first_page>pages.len(){return Err(io::ErrorKind::InvalidData.into());}
   for (slot,page) in (first_page..last_page).enumerate(){
-   let actual=self.rows.pages.get(page).and_then(PhysicalOriginPageOwner::loan_full)
-    .ok_or(io::ErrorKind::InvalidData)?;
+   let page_owner=self.rows.pages.get_mut(page).ok_or(io::ErrorKind::InvalidData)?;
+   // A replay can reuse the same completed loan. An existing immutable
+   // alias prevents relocation, but never prevents issuing that loan.
+   if let Ok(page)=page_owner.get_mut(){page.settle_full_columns(a,work)?;}
+   let actual=page_owner.loan_full().ok_or(io::ErrorKind::InvalidData)?;
    pages[slot]=Some(OriginalBatchTokenPage{
     first:page*ROW_PAGE_LEN, within_batch:(page-first_page)*ROW_PAGE_LEN,
     loan:dm_syntax::OriginalTokenPageLoan::new(actual,a)?,
@@ -2768,6 +2909,73 @@ impl OriginalRawOrigins{
   assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
+ fn mixed_origin_columns_preserve_page_ordinals_credit_and_trim_reappend() {
+  use dm_syntax::TokenKind::{Ident,Number,Resource};
+  let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let syntax=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+  let a=SettingAdmission::new(&syntax,4<<20,&||Ok(()));
+  let live=Arc::new(AtomicUsize::new(0));
+  let work=CappedWork::new(Arc::clone(&live),usize::MAX);
+  let group=GroupGeometry{encounter:0,decoded:Span::new(0,800),line:1,output_line:1,
+   output_base:0,raw_base:0};
+  let short=Row{group:0,output:Span::new(3,6),token_end:6,source_offset:2,byte_column:3,
+   raw_extent:Span::new(2,3),actual_eof:false};
+  let medium=Row{output:Span::new(3,301),token_end:300,..short};
+  let full=Row{byte_column:99,..short};
+  let escaped=Row{output:Span::new(64,67),token_end:67,..short};
+  let ranked_width=Row{raw_extent:Span::new(2,33),..short};
+  let eof=Row{output:Span::new(3,7),actual_eof:true,..short};
+  let expected=|at| match at {
+   63 => (medium,Resource),
+   64 => (full,Number),
+   65 => (ranked_width,Ident),
+   66 => (eof,Ident),
+   4095 => (escaped,Ident),
+   _ => (short,Ident),
+  };
+  let mut page=PhysicalOriginPageOwner::new(PhysicalOriginPage::new(0,&work).unwrap());
+  for at in 0..ROW_PAGE_LEN {
+   let (row,kind)=expected(at);
+   page.get_mut().unwrap().push(row,group,0,Some(kind),&a,&work).unwrap();
+  }
+  let exact_cells=[0,63,64,65,66,4095].map(|at|(at,page.get().cell(at).unwrap()));
+  let before=live.load(Ordering::Acquire);
+  work.limit.store(before,Ordering::Release);
+  page.get_mut().unwrap().settle_full_columns(&a,&work).unwrap();
+  assert!(page.get().mixed.is_none());
+  assert_eq!(live.load(Ordering::Acquire),before);
+  work.limit.store(usize::MAX,Ordering::Release);
+  page.get_mut().unwrap().settle_full_columns(&a,&work).unwrap();
+  let mixed=page.get().mixed.as_ref().unwrap();
+  assert_eq!((mixed.short.len(),mixed.four.len()),(ROW_PAGE_LEN-3,3));
+  for (at, old) in exact_cells {
+   let actual=mixed.cell(at).unwrap();
+   assert_eq!((actual.tag,actual.fields),(old.tag,old.fields));
+  }
+  let after=before-ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>()+mixed.bytes();
+  assert_eq!(live.load(Ordering::Acquire),after);
+  let loan=page.loan_full().unwrap();
+  assert!(std::ptr::eq(page.get(),loan.get()));
+  assert!(page.get_mut().is_err());
+  for at in 0..ROW_PAGE_LEN {
+   let (row,kind)=expected(at);
+   assert_eq!(loan.get().projected_token(at),Some(dm_syntax::SpanToken{kind,span:row.token_span()}));
+  }
+  assert!(loan.get().projected_token(ROW_PAGE_LEN).is_none());
+  drop(loan);
+  let page_mut=page.get_mut().unwrap();
+  page_mut.truncate(65,&work).unwrap();
+  assert_eq!(page_mut.len(),65);
+  assert!(page_mut.projected_token(65).is_none());
+  page_mut.push(short,group,0,Some(Ident),&a,&work).unwrap();
+  assert!(page_mut.mixed.is_none());
+  assert_eq!(page_mut.projected_token(65).unwrap().span,short.token_span());
+  drop(page);
+  assert_eq!(live.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),fixed);
+ }
+
+ #[test]
  fn completed_physical_page_loan_keeps_one_exact_credit_without_producer_or_groups() {
   let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&syntax,4<<20,&||Ok(()));
@@ -3166,6 +3374,11 @@ impl OriginalRawOrigins{
  }
  impl SourceArenaWork for CappedWork {
   fn checkpoint(&self)->io::Result<()>{Ok(())}
+  fn try_grow_original_origin_storage(&self, credit:&mut SourceArenaCredit, bytes:usize)->io::Result<bool>{
+   if self.allow(bytes).is_err(){return Ok(false)}
+   self.backing.grow(credit,bytes)?;
+   Ok(true)
+  }
   fn reserve(&self, bytes:usize)->io::Result<SourceArenaCredit>{self.allow(bytes)?;self.backing.reserve(bytes)}
   fn grow(&self, credit:&mut SourceArenaCredit, bytes:usize)->io::Result<()>{self.allow(bytes)?;self.backing.grow(credit,bytes)}
   fn shrink(&self, credit:&mut SourceArenaCredit, bytes:usize)->io::Result<()>{self.backing.shrink(credit,bytes)}

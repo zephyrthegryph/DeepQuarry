@@ -667,6 +667,10 @@ impl QueryDb {
         }
     }
     pub(super) fn workspace_input_base_headroom_locked(&self, fixed: usize) -> io::Result<usize> {
+        self.workspace_input_base_remaining_locked(fixed)?.filter(|n| *n > 0)
+            .ok_or_else(|| invalid("shared raw input-family budget exhausted"))
+    }
+    pub(super) fn workspace_input_base_remaining_locked(&self, fixed: usize) -> io::Result<Option<usize>> {
         let raw_inputs = self
             .raw_policy
             .admission.leases
@@ -679,13 +683,11 @@ impl QueryDb {
             })?;
         let manifests = self.workspace_manifest_charge_locked();
         let coordination = self.workspace_nodes_locked().saturating_mul(96);
-        INPUT_BOUND
+        Ok(INPUT_BOUND
             .checked_sub(raw_inputs)
             .and_then(|n| n.checked_sub(manifests))
             .and_then(|n| n.checked_sub(coordination))
-            .and_then(|n| n.checked_sub(fixed))
-            .filter(|n| *n > 0)
-            .ok_or_else(|| invalid("shared raw input-family budget exhausted"))
+            .and_then(|n| n.checked_sub(fixed)))
     }
     pub(super) fn workspace_nodes_locked(&self) -> usize {
         self.raw_policy

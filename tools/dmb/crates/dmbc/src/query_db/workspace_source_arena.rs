@@ -374,6 +374,27 @@ impl SourceArenaWork for QueryDb{
   if let Some(grant)=grant{grant.commit();}
   Ok(())
  }
+ fn try_grow_original_origin_storage(&self, credit:&mut SourceArenaCredit, extra:usize)->io::Result<bool>{
+  self.checkpoint()?;
+  let actual=allocation(self,credit)?;
+  let parent=actual.origin_parent.as_ref().ok_or_else(wrong)?;
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
+  let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
+  if !ledger.has_source_arena(actual){return Err(wrong());}
+  if self.raw_policy.admission.source_arena_needs_census.swap(false,Ordering::AcqRel){ledger.invalidate_upper();}
+  let (mut live,cached)=ledger.admission_charge()?;
+  let mut room=self.workspace_input_base_remaining_locked(live)?;
+  if cached&&room.is_none_or(|room|extra>room){
+   live=ledger.refresh_after_pressure()?;
+   room=self.workspace_input_base_remaining_locked(live)?;
+  }
+  if room.is_none_or(|room|extra>room){return Ok(false);}
+  let next=actual.reserved_bytes().checked_add(extra).ok_or_else(oom)?;
+  let Ok(grant)=parent.provisional(extra) else{return Ok(false);};
+  ledger.resize_arena(actual,next)?;
+  grant.commit();
+  Ok(true)
+ }
  fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{
   // Releasing known freed storage never polls a new cancellation/error over the
   // first allocation failure. It still verifies the SAME private issuer/row.

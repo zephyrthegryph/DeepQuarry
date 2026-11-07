@@ -121,6 +121,11 @@ pub trait SourceArenaWork:Send+Sync{
  /// credit grows or shrinks in place and never enters raw-read adoption.
  fn reserve_original_origin_storage(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.reserve(bytes)}
 
+ /// Optional exact geometry optimization. Ordinary/unqualified lenders
+ /// preserve the existing representation. Native pressure declines only
+ /// the extra staged grant, never an authored or operational error.
+ fn try_grow_original_origin_storage(&self,_credit:&mut SourceArenaCredit,_extra:usize)->io::Result<bool>{Ok(false)}
+
  /// Partition an actual read grant into fresh String payload and backing credits.
  /// Providers without an owned transfer retain their existing allocation path.
  fn split_original_text(
