@@ -893,6 +893,95 @@ fn public_selected_v2_is_canonical_analyze_only_and_preserves_v1_transcripts() {
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_sys_reactive_paged_report_preserves_hard_findings_and_source_text() {
+    use dmbc::daemon::analyze::AnalyzeRequest;
+    use std::{
+        ffi::OsStr,
+        time::{Duration, SystemTime, UNIX_EPOCH},
+    };
+
+    let root = test_scratch::dir("public-paged-sys-reactive");
+    let transport = test_scratch::dir("public-paged-sys-reactive-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!(
+            "paged-sys-reactive-{}-{}",
+            std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+        ),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/defs.dm\"\n#include \"maps/probe.dm\"\n");
+    put(&root, "code/defs.dm", "/datum/look\n/datum/probe\n    var/power\n    var/datum/probe/cell\n");
+    put(
+        &root,
+        "maps/probe.dm",
+        concat!(
+            "/datum/probe/proc/draw(datum/look/look)\n",
+            "    return cell.power\n",
+            "/datum/probe/proc/should_run()\n",
+            "    return cell.power // ALLOW(sys_dx_untracked_read): this fixture preserves a deliberately observed foreign dependency\n",
+        ),
+    );
+    let configuration = "tools/ci/lint_scopes.toml";
+    put(&root, configuration, report_configuration::with_overlay(""));
+    let mut build = request(&root, Q::SysReactive);
+    build.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap()
+        .recursive_roots.push(root.join("maps"));
+    let request = AnalyzeRequest {
+        build,
+        lints: vec!["sys/dx_reactive".into()],
+        raw: true,
+        changed: None,
+        scopes_root: None,
+        baseline_mode: None,
+        ci: false,
+    };
+    let input = transport.join("request.json");
+    std::fs::write(&input, serde_json::to_vec(&request).unwrap()).unwrap();
+    let run = |status| {
+        let result = daemon.run(
+            &[OsStr::new("analyze-check"), input.as_os_str(), OsStr::new("--jsonl")],
+            Duration::from_secs(90),
+        ).unwrap();
+        assert_eq!(
+            result.status.code(), Some(status), "stdout={}\nstderr={}",
+            String::from_utf8_lossy(&result.stdout), String::from_utf8_lossy(&result.stderr),
+        );
+        let report: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+        assert_eq!(report["schema"], "native-analyze-report-v1");
+        assert_eq!(report["complete"], true);
+        assert_eq!(report["full_policy_parity"], false);
+        assert_eq!(report["lints"], serde_json::json!(["sys/dx_reactive"]));
+        assert_eq!(report["clean"], status == 0);
+        report
+    };
+
+    let cold = run(1);
+    let text = cold["text"].as_str().unwrap();
+    assert!(text.contains("sys/dx_reactive: dx_untracked_read 1 FAIL"), "{text}");
+    assert!(text.contains("maps/probe.dm:2: [sys/dx_reactive/dx_untracked_read] return cell.power"), "{text}");
+    assert!(!text.contains("maps/probe.dm:4:"), "{text}");
+    let usage = cold["allow_usage"].as_array().unwrap();
+    assert_eq!(usage.len(), 1);
+    assert_eq!(usage[0][0], "sys_dx_untracked_read");
+    assert_eq!(usage[0][1].as_str().unwrap().len(), 40);
+    assert_eq!(usage[0][2], 4);
+
+    put(&root, configuration, report_configuration::with_overlay(
+        "[lint.\"sys/dx_reactive\"]\nexempt_files=[\"maps/probe.dm\"]\n",
+    ));
+    let exempt = run(0);
+    assert_ne!(exempt["policy_revision"], cold["policy_revision"]);
+    let text = exempt["text"].as_str().unwrap();
+    assert!(text.contains("sys/dx_reactive: dx_untracked_read 0 OK"), "{text}");
+    assert!(!text.contains("maps/probe.dm:"));
+    assert_eq!(exempt["allow_usage"], serde_json::json!([]));
+    assert!(!root.join("deepquarry.dmb").exists());
+    assert!(!root.join("deepquarry.rsc").exists());
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
 fn public_map_edits_transport_pins_regular_maps_and_refuses_other_geometry() {
     use dmbc::daemon::analyze::AnalyzeRequest;
     use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
