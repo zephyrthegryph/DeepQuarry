@@ -7,12 +7,6 @@ export const WHISUBTLE_VIS: FeatureToggle = {
   component: CheckboxInput,
 };
 
-export const GHOST_SEE_WHISUBTLE: FeatureToggle = {
-  name: 'See whispers/subtles as ghost',
-  category: 'GHOST',
-  description: 'As a ghost, see whispers and subtles.',
-  component: CheckboxInput,
-};
 
 export const CHAT_GHOSTEARS: FeatureToggle = {
   name: 'Ghost Ears',
@@ -21,16 +15,4 @@ export const CHAT_GHOSTEARS: FeatureToggle = {
   component: CheckboxInput,
 };
 
-export const CHAT_GHOSTSIGHT: FeatureToggle = {
-  name: 'Ghost Sight',
-  category: 'GHOST',
-  description: 'When enabled, hear all emotes; otherwise, only hear nearby.',
-  component: CheckboxInput,
-};
 
-export const CHAT_GHOSTRADIO: FeatureToggle = {
-  name: 'Ghost Radio',
-  category: 'GHOST',
-  description: 'When enabled, hear all radio; otherwise, only hear nearby.',
-  component: CheckboxInput,
-};

@@ -177,7 +177,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	act_message(user, src, MSG_SELF(span_notice("Your %T% lights up as [H] slips inside. Life support functions engaged.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside.")))
 	log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
-	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, volume_channel = VOLUME_CHANNEL_VORE)
 	return OP_OK
 
 /// A thing put in the compactor (an item, a mouse): the compartment may have filled up meanwhile.
@@ -189,7 +189,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	target.forceMove(src)
 	act_message(user, target, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as [target.name] slips inside.")))
-	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, volume_channel = VOLUME_CHANNEL_VORE)
 	if(delivery)
 		if(islist(deliverylists[delivery_tag]))
 			set_deliverylists_at(delivery_tag, deliverylists[delivery_tag] | target)
@@ -208,7 +208,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	act_message(user, trashman, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as %T% slips inside.")))
 	log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
-	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, volume_channel = VOLUME_CHANNEL_VORE)
 	if(delivery)
 		if(islist(deliverylists[delivery_tag]))
 			set_deliverylists_at(delivery_tag, deliverylists[delivery_tag] | trashman)
@@ -528,7 +528,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 
 	if(prob(20))
 		var/churnsound = SFX_CLASSIC_DIGESTION_SOUNDS
-		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 	//If the timing is right, and there are items to be touched
 	if(SSair.cycles_run()%3==1)
 		// digest_brute / digest_burn are rates per BELLY_BASELINE_TICK, applied as
@@ -549,11 +549,11 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /// The belly is empty: announce it and stop cleaning.
 /obj/item/dogborg/sleeper/proc/finish_clean_cycle()
 	var/finisher = SFX_CLASSIC_DEATH_SOUNDS
-	playsound(src, finisher, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	playsound(src, finisher, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 	to_chat(hound, span_notice("Your [src.name] is now clean. Ending self-cleaning cycle."))
 	set_cleaning(0)
 	update_patient()
-	play_sfx(src, SFX_MACHINES_DING, 2, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	play_sfx(src, SFX_MACHINES_DING, 2, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
@@ -575,7 +575,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	to_chat(hound, span_notice("You feel your belly slowly churn around [T], breaking them down into a soft slurry to be used as power for your systems."))
 	to_chat(T, span_notice("You feel [hound]'s belly slowly churn around your form, breaking you down into a soft slurry to be used as power for [hound]'s systems."))
 	var/deathsound = SFX_CLASSIC_DEATH_SOUNDS
-	playsound(src, deathsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	playsound(src, deathsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 	if(is_vore_predator(T))
 		for(var/obj/belly/B as anything in T.vore_organs)
 			for(var/atom/movable/thing in B)

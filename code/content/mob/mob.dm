@@ -1266,8 +1266,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 
 /mob/proc/show_mob_hover_tip(mob/user, params)
 	if(user != src && will_show_tooltip())
-		if(user?.read_preference(/datum/preference/toggle/mob_tooltips))
-			openToolTip(user, src, params, title = get_nametag_name(user), content = get_nametag_desc(user))
+		openToolTip(user, src, params, title = get_nametag_name(user), content = get_nametag_desc(user))
 
 // Manages a global list of mobs with clients attached, indexed by z-level.
 /mob/proc/update_client_z(new_z) // +1 to register, null to unregister.

@@ -28,7 +28,7 @@
 		return null
 
 	// Client does NOT have tgui_input on: Returns regular input
-	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode) || strict_byond)
+	if(FALSE || strict_byond)
 		if(length(buttons) == 2)
 			return alert(user, message, title, buttons[1], buttons[2]) // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
 		if(length(buttons) == 3)
@@ -103,8 +103,8 @@ CAPABILITIES(/datum/tgui_alert)
 	data["autofocus"] = autofocus
 	data["buttons"] = buttons
 	data["message"] = message
-	data["large_buttons"] = user.read_preference(/datum/preference/toggle/tgui_large_buttons)
-	data["swapped_buttons"] = !user.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
+	data["large_buttons"] = TRUE
+	data["swapped_buttons"] = TRUE
 	data["title"] = title
 	return data
 

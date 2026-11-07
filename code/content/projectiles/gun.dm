@@ -264,7 +264,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.
 		return
 
-	if(user && stance == I_HELP && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring)) //regardless of what happens, refuse to shoot out of combat mode
+	if(user && stance == I_HELP) //regardless of what happens, refuse to shoot out of combat mode
 		to_chat(user, span_warning("You refrain from firing your [src] as you are out of combat mode."))
 		return
 

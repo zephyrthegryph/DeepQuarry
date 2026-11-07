@@ -67,7 +67,7 @@
 		radio_keys += radio_key
 
 	return list(
-		"mode" = client?.prefs?.read_preference(/datum/preference/choiced/multilingual_mode) || MULTILINGUAL_DEFAULT,
+		"mode" = MULTILINGUAL_DEFAULT || MULTILINGUAL_DEFAULT,
 		"name" = name,
 		"defaultLanguage" = preferred?.name || "",
 		"gibberish" = gibberish.name,
@@ -77,7 +77,7 @@
 		"order" = order,
 		"markers" = GLOB.speech_toppings,
 		"radioKeys" = radio_keys,
-		"autopunctuation" = client?.prefs?.read_preference(/datum/preference/toggle/autopunctuation) ? TRUE : FALSE,
+		"autopunctuation" = FALSE,
 		"customVerbs" = custom_verbs,
 		"hiss" = say_hiss_rules(),
 	)

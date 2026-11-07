@@ -67,12 +67,12 @@ CAPABILITIES(/obj/item/radio/headset)
 	if(!ishuman(src.loc)) //ition, this IF block.
 		return ..(freq, level) //ition end
 	if (aiOverride)
-		play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, preference = /datum/preference/toggle/radio_sounds)
+		play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, volume_channel = VOLUME_CHANNEL_VOICE)
 		return ..(freq, level)
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
 		if(H.get_equipped_item(SLOT_ID_EAR_L) == src || H.get_equipped_item(SLOT_ID_EAR_R) == src)
-			play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, preference = /datum/preference/toggle/radio_sounds)
+			play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, volume_channel = VOLUME_CHANNEL_VOICE)
 			return ..(freq, level)
 	return -1
 

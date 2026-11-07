@@ -121,11 +121,6 @@
 	input_dispatch(C, actor, INPUT_CLICK_ON)
 	TEST_ASSERT(M.finished, "The real center click closes its matching user menu")
 
-/mob/living/carbon/human/dq_d6_tip_actor/read_preference(preference_type)
-	if(preference_type == /datum/preference/toggle/inv_tooltips)
-		return TRUE
-	return ..(preference_type)
-
 /obj/item/dq_d6_tip_probe
 	var/tip_actor_id
 	var/tip_calls = 0

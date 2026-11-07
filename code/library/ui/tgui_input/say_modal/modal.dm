@@ -71,18 +71,18 @@ CAPABILITIES(/datum/tgui_say)
 /datum/tgui_say/proc/load()
 	window_open = FALSE
 
-	var/minimum_width = client()?.prefs?.read_preference(/datum/preference/numeric/tgui_say_width) || 1
-	var/minimum_height = (client()?.prefs?.read_preference(/datum/preference/numeric/tgui_say_height) || 1) * 20 + 10
+	var/minimum_width = 360
+	var/minimum_height = 30
 	winset(client(), SKIN_TGUI_SAY, "is-visible=0;") // the popup docks itself to the map (tgui-say dock.ts) each time it opens
 
 	window.send_message("props", list(
-		"lightMode" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_say_light),
+		"lightMode" = FALSE,
 		"scale" = client()?.prefs?.read_preference(/datum/preference/toggle/ui_scale),
 		"minimumWidth" = minimum_width,
 		"minimumHeight" = minimum_height,
 		"maxLength" = max_length,
 		"spellcheck" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_use_spellcheck),
-		"preview" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_say_preview),
+		"preview" = TRUE,
 	))
 
 	stop_thinking()

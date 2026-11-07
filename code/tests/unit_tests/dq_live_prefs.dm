@@ -53,13 +53,10 @@
 /datum/unit_test/dq_live_prefs/game_settings_read_their_defaults
 /datum/unit_test/dq_live_prefs/game_settings_read_their_defaults/run_live()
 	// A mob nobody plays reads as a player who never changed a setting.
-	TEST_ASSERT(subject.preference_or_default(/datum/preference/toggle/hotkey_buttons), "the hotkey buttons show by default")
 	TEST_ASSERT(subject.preference_or_default(/datum/preference/toggle/micro_pickup), "micro pick-up is on by default")
-	TEST_ASSERT(subject.preference_or_default(/datum/preference/toggle/show_nutrition), "nutrition is shown by default")
-	TEST_ASSERT_EQUAL(subject.preference_or_default(/datum/preference/choiced/hardsuit_activation), HARDSUIT_CLICK_MIDDLE, "hardsuits engage on a middle click by default")
 	var/list/actions = HARDSUIT_CLICK_ACTIONS
 	TEST_ASSERT_EQUAL(actions[HARDSUIT_CLICK_ALT], INPUT_ACTION_ALTERNATE, "alt-click is the alternate action")
-	for(var/pref_type in list(/datum/preference/toggle/hotkey_buttons, /datum/preference/choiced/hardsuit_activation, /datum/preference/toggle/show_nutrition, /datum/preference/toggle/micro_pickup, /datum/preference/toggle/belly_entrance_logs, /datum/preference/toggle/liquidbelly_visuals))
+	for(var/pref_type in list(/datum/preference/toggle/micro_pickup))
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
 		TEST_ASSERT_EQUAL(pref.category, PREFERENCE_CATEGORY_GAME_PREFERENCES, "[pref_type] is in the Game Preferences window")
 		TEST_ASSERT_EQUAL(pref.savefile_identifier, PREFERENCE_PLAYER, "[pref_type] belongs to the player")

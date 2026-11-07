@@ -244,7 +244,7 @@
 	return R // radio, true, false, what's the difference
 
 /mob/observer/dead/can_hear_radio(list/hearturfs)
-	return client?.prefs?.read_preference(/datum/preference/toggle/ghost_radio)
+	return client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears)
 
 
 //Uses dview to quickly return mobs and objects in view,
@@ -298,7 +298,7 @@
 					if(M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 						mobs |= M
 				if(2) //Visual messages use ghost_sight
-					if(M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_sight))
+					if(M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 						mobs |= M
 
 	//For objects below the top level who still want to hear

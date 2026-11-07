@@ -292,8 +292,6 @@
 
 /// Attempt to automatically fit the viewport, assuming the user wants it
 /client/proc/attempt_auto_fit_viewport()
-	if(!prefs.read_preference(/datum/preference/toggle/auto_fit_viewport))
-		return
 	if(prefs.read_preference(/datum/preference/numeric/map_split))
 		return // the player dragged the map/column splitter: their width stands until Fit Viewport is asked for
 	if(fully_created)

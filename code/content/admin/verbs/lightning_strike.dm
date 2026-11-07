@@ -74,8 +74,7 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 	var/sound = get_sfx(SFX_THUNDER)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if( (P && (M.z in P.expected_z_levels)) || M.z == T.z)
-			if(M.check_sound_preference(/datum/preference/toggle/weather_sounds))
-				M.playsound_local(get_turf(M), soundin = sound, vol = 70, vary = FALSE, is_global = TRUE)
+			M.playsound_local(get_turf(M), soundin = sound, vol = 70, vary = FALSE, is_global = TRUE)
 
 	// Prevent lightning on central command level from being simulated
 	if(T.z in using_map.admin_levels)

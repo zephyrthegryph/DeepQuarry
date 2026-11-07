@@ -92,5 +92,5 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 	if(!get_gravity(source) && prob(75))
 		return
 
-	playsound(source.loc, S, volume, FALSE, preference = /datum/preference/toggle/digestion_noises)
+	playsound(source.loc, S, volume, FALSE, volume_channel = VOLUME_CHANNEL_VORE)
 	return

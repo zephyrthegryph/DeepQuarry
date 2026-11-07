@@ -43,8 +43,8 @@
 		var/datum/job/refJob = null
 		for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			refJob = player.client?.prefs.get_highest_job()
-			var/obfuscate_key = player.read_preference(/datum/preference/toggle/obfuscate_key)
-			var/obfuscate_job = player.read_preference(/datum/preference/toggle/obfuscate_job)
+			var/obfuscate_key = FALSE
+			var/obfuscate_job = FALSE
 			if(obfuscate_key && obfuscate_job)
 				. += "Anonymous User [player.ready ? "Ready!" : null]"
 			else if(obfuscate_key)

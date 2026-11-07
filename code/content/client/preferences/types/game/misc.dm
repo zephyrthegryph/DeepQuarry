@@ -13,53 +13,6 @@
 		PH.set_ao(VIS_OBJS, value)
 		PH.set_ao(VIS_MOBS, value)
 
-/datum/preference/toggle/attack_icons
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "ATTACK_ICONS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/precision_placement
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "PRECISE_PLACEMENT"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/safefiring
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SAFE_FIRING"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/status_indicators
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SHOW_STATUS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/status_indicators/apply_to_client(client/client, value)
-	var/datum/plane_holder/PH = hud_of(client?.mob)?.plane_holder
-	if(PH)
-		PH.set_vis(VIS_STATUS, value)
-
-/datum/preference/toggle/auto_afk
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "AUTO_AFK"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/messenger_embeds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "MessengerEmbeds"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/autopunctuation
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "AutoPunctuation"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_PLAYER
-
 /datum/preference/toggle/browser_dev_tools
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "BrowserDevTools"
@@ -72,18 +25,6 @@
 	else
 		winset(client, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS]")
 
-/datum/preference/toggle/obfuscate_key
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "obfuscate_key"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/obfuscate_job
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "obfuscate_job"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_PLAYER
-
 // Text
 
 /datum/preference/text/lastchangelog
@@ -94,11 +35,6 @@
 /datum/preference/text/lastchangelog/is_accessible(datum/preferences/preferences)
 	..()
 	return FALSE
-
-/datum/preference/toggle/random_emote_pitch
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "EMOTE_VARY"
-	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/autotranscore
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES

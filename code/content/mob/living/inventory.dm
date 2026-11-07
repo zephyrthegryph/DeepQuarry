@@ -60,7 +60,7 @@
 	else
 		. = drop_r_hand(Target)
 
-	if (istype(item_dropped) && !QDELETED(item_dropped) && check_sound_preference(/datum/preference/toggle/drop_sounds))
+	if (istype(item_dropped) && !QDELETED(item_dropped) && TRUE)
 		after(src, 0.1 SECONDS, PROC_REF(make_item_drop_sound), with = list(item_dropped))
 
 /mob/proc/make_item_drop_sound(obj/item/I)
@@ -68,7 +68,7 @@
 		return
 
 	if(sounds_of(I).drop)
-		playsound(I, sounds_of(I).drop, 25, 0, preference = /datum/preference/toggle/drop_sounds)
+		playsound(I, sounds_of(I).drop, 25, 0)
 
 //Drops the item in our left hand
 /mob/living/drop_l_hand(atom/Target)

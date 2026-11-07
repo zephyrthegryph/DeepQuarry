@@ -70,14 +70,4 @@ export const UI_style: FeatureChoiced = {
   component: UIStyleInput,
 };
 
-export const UI_style_alpha: FeatureNumeric = {
-  name: 'UI Alpha',
-  category: 'UI',
-  component: FeatureNumberInput,
-};
 
-export const UI_style_color: Feature<string> = {
-  name: 'UI Color',
-  category: 'UI',
-  component: FeatureColorInput,
-};

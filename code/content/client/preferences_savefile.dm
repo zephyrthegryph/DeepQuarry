@@ -288,6 +288,78 @@ GLOBAL_LIST_INIT(retired_player_pref_keys, list(
 	"SHOW_PROGRESS", // no reader; progress bars always show
 	"SOUND_INSTRUMENT", // no reader; the Instruments volume (sound_instruments) is the setting
 	"BROWSER_STYLED", // no reader
+	// The second audit (doc/rewrite/proposals/settings_audit.md): the default serves almost everyone, or a volume channel replaced it.
+	"ATTACK_ICONS",
+	"AUTO_AFK",
+	"AutoPunctuation",
+	"BELCH_NOISES",
+	"BLOOP_SOUNDS",
+	"BellyEntranceLogs",
+	"CHAT_GHOSTRADIO",
+	"CHAT_GHOSTSIGHT",
+	"CHAT_INLINE_INPUT",
+	"CHAT_SHOWICONS",
+	"DIGEST_NOISES",
+	"EATING_NOISES",
+	"EMOTE_NOISES",
+	"EMOTE_SOUNDS",
+	"EMOTE_VARY",
+	"GHOST_SEE_WHISUBTLE",
+	"HardsuitActivation",
+	"HotkeyButtons",
+	"INV_TOOLTIPS",
+	"LiquidbellyVisuals",
+	"MOB_TOOLTIPS",
+	"MULTI_LANGUAGE_YAP_MODE",
+	"MessengerEmbeds",
+	"PAIN_FREQUENCY",
+	"PRECISE_PLACEMENT",
+	"RADIO_SOUNDS",
+	"RECEIVE_TIPS",
+	"RUNECHAT_BALLOON_MESSAGES",
+	"RUNECHAT_BORDER",
+	"RUNECHAT_LONG",
+	"RUNECHAT_OBJ",
+	"SAFE_FIRING",
+	"SAY_SOUNDS",
+	"SHOW_STATUS",
+	"SHOW_TYPING_SUBTLE",
+	"SLEEP_MUSIC",
+	"SOUND_AIRPUMP",
+	"SOUND_ALARMLOOP",
+	"SOUND_AMBIENCE",
+	"SOUND_DEPARTMENTDOORS",
+	"SOUND_DROPPED",
+	"SOUND_FRIDGEHUM",
+	"SOUND_JUKEBOX",
+	"SOUND_OLDDOORS",
+	"SOUND_PICKED",
+	"SOUND_SUPERMATTER",
+	"SOUND_WEATHER",
+	"SUBTLE_SOUNDS",
+	"ShowNutrition",
+	"TGUI_SAY",
+	"TGUI_SAY_LIGHT_MODE",
+	"TGUI_SAY_PREVIEW",
+	"UI_style_alpha",
+	"UI_style_color",
+	"VCHAT_ENABLE",
+	"VORE_HEALTH_BARS",
+	"WHISPER_SOUNDS",
+	"ambience_chance",
+	"ambience_freq",
+	"auto_fit_viewport",
+	"obfuscate_job",
+	"obfuscate_key",
+	"tgui_fancy",
+	"tgui_input_mode",
+	"tgui_large_buttons",
+	"tgui_lock",
+	"tgui_say_emotes",
+	"tgui_say_height",
+	"tgui_say_width",
+	"tgui_swapped_buttons",
+	"tooltipstyle",
 ))
 
 /// Character settings that were deleted. A slot that still holds one drops it on load.
@@ -298,9 +370,42 @@ GLOBAL_LIST_INIT(retired_character_pref_keys, list(
 	"equip_preview_mob", // replaced by preview_loadout and preview_job (migrated below)
 ))
 
+/// A per-sound toggle that was switched off mutes the volume channel that replaced it.
+GLOBAL_LIST_INIT(retired_sound_toggle_channels, list(
+	"BELCH_NOISES" = VOLUME_CHANNEL_VORE,
+	"BLOOP_SOUNDS" = VOLUME_CHANNEL_VOICE,
+	"DIGEST_NOISES" = VOLUME_CHANNEL_VORE,
+	"EATING_NOISES" = VOLUME_CHANNEL_VORE,
+	"EMOTE_NOISES" = VOLUME_CHANNEL_VOICE,
+	"EMOTE_SOUNDS" = VOLUME_CHANNEL_VOICE,
+	"RADIO_SOUNDS" = VOLUME_CHANNEL_VOICE,
+	"SAY_SOUNDS" = VOLUME_CHANNEL_VOICE,
+	"SOUND_AIRPUMP" = VOLUME_CHANNEL_MACHINERY_IDLE,
+	"SOUND_ALARMLOOP" = VOLUME_CHANNEL_ALARMS,
+	"SOUND_AMBIENCE" = VOLUME_CHANNEL_AMBIENCE,
+	"SOUND_FRIDGEHUM" = VOLUME_CHANNEL_MACHINERY_IDLE,
+	"SOUND_SUPERMATTER" = VOLUME_CHANNEL_MACHINERY,
+	"SOUND_WEATHER" = VOLUME_CHANNEL_WEATHER,
+	"SUBTLE_SOUNDS" = VOLUME_CHANNEL_VOICE,
+	"WHISPER_SOUNDS" = VOLUME_CHANNEL_VOICE,
+	"SOUND_JUKEBOX" = null, // media_volume
+))
+
 /datum/preferences/proc/drop_retired_player_keys(list/save_data)
 	if(!islist(save_data))
 		return
+	for(var/key in GLOB.retired_sound_toggle_channels)
+		if(isnull(save_data[key]) || text2num("[save_data[key]]"))
+			continue
+		var/channel = GLOB.retired_sound_toggle_channels[key]
+		if(!channel)
+			save_data["media_volume"] = 0
+			continue
+		var/list/volumes = save_data["volume_channels"]
+		if(!islist(volumes))
+			volumes = list()
+			save_data["volume_channels"] = volumes
+		volumes[channel] = 0
 	save_data -= GLOB.retired_player_pref_keys
 
 /// Carries a retired character key over to the setting that replaced it, then drops every retired key from the slot.

@@ -100,9 +100,6 @@ SCHEMA(/atom, description_fluff, schema_text())
 	. = ""
 	if(!(source.client?.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_VERBOSE))
 		return
-	if(!source.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable))
-		return //sorry oldchat
-
 	//do pref check here
 	var/desc_info_temp = A.get_mechanics_info()
 	if(desc_info_temp)
