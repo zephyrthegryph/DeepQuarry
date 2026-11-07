@@ -133,3 +133,52 @@ export function reorderedPages(
   }
   return order;
 }
+
+/** Whether `page` shows a message of `type`: the renderer's own test (an admin-only page may hide important messages). */
+export function pageShowsType(
+  page: Page,
+  type: string,
+  hideImportantInAdminTab: boolean,
+): boolean {
+  return (
+    canPageAcceptType(page, type) &&
+    !(adminPageOnly(page) && typeIsImportant(type) && hideImportantInAdminTab)
+  );
+}
+
+/**
+ * New unread counts per page id for a processed batch. A message counts as
+ * unread on a page that shows it only when the player has not already seen it:
+ * one the tab being viewed showed (scrolled to the bottom) is seen everywhere.
+ * While the viewed tab is scrolled up, its own new messages count on it alone.
+ */
+export function unreadAfterBatch(
+  pages: readonly string[],
+  pagesById: Record<string, Page>,
+  currentPageId: string,
+  scrollTracking: boolean,
+  countByType: Record<string, number>,
+  hideImportantInAdminTab: boolean,
+): Record<string, number> {
+  const current = pagesById[currentPageId];
+  const added: Record<string, number> = {};
+  for (const pageId of pages) {
+    const page = pagesById[pageId];
+    if (!page) continue;
+    let count = 0;
+    for (const type in countByType) {
+      if (!pageShowsType(page, type, hideImportantInAdminTab)) continue;
+      const shownOnCurrent =
+        !!current && pageShowsType(current, type, hideImportantInAdminTab);
+      if (pageId === currentPageId) {
+        if (scrollTracking) continue;
+      } else if (shownOnCurrent) {
+        // The player has it in front of them on the viewed tab (or will, when they scroll down there).
+        continue;
+      }
+      count += countByType[type];
+    }
+    if (count > 0) added[pageId] = count;
+  }
+  return added;
+}

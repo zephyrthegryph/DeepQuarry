@@ -1,12 +1,13 @@
 import { store } from '../events/store';
 import type { LanguageRules } from 'tgui/dq';
 import {
+  availableChannelsAtom,
   inputFocusRequestAtom,
   languageRulesAtom,
   previewEnabledAtom,
   radioOptionsAtom,
 } from './atoms';
-import { isChannel, type RadioOption } from './model';
+import { isChannel, parseAvailableChannels, type RadioOption } from './model';
 
 /** A speech hotkey (T, 5, 6, Y, F2, ...): focus the input row in that channel. */
 export function focusInput(payload: { channel?: unknown } | undefined) {
@@ -43,4 +44,9 @@ export function languageRules(
 ) {
   store.set(languageRulesAtom, payload?.rules ?? null);
   store.set(previewEnabledAtom, payload?.preview !== false && payload?.preview !== 0);
+}
+
+/** The channels the speaker can use now; the row hides the rest. */
+export function availableChannels(payload: { channels?: unknown } | undefined) {
+  store.set(availableChannelsAtom, parseAvailableChannels(payload?.channels));
 }

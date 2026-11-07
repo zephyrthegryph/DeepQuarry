@@ -12,7 +12,7 @@
 		if("open")
 			chat_speech_open = TRUE
 			send_chat_language_rules()
-			chat_send_radio_options()
+			chat_send_input_state()
 			var/channel = payload?["channel"]
 			if(channel != OOC_CHANNEL && channel != LOOC_CHANNEL && channel != ADMIN_CHANNEL)
 				start_thinking(channel)
@@ -84,3 +84,39 @@
 		else
 			return FALSE
 	return TRUE
+
+/// The lobby's only chat input channel. Callers read it, never change it.
+GLOBAL_LIST_INIT(chat_lobby_channels, list(OOC_CHANNEL))
+
+/// The channels this client's mob can speak in right now, in the row's order (/mob/proc/chat_input_channels()); OOC with no mob.
+/client/proc/chat_available_channels()
+	return mob ? mob.chat_input_channels() : GLOB.chat_lobby_channels
+
+/// The channels this mob's player can speak in now: the lobby has OOC only; a body adds Say, Me and LOOC; a living one Whisper and
+/// Subtle; Radio needs a radio it can talk through (chat_radio_sets(), the same headsets its prefixes come from).
+/mob/proc/chat_input_channels()
+	if(isnewplayer(src))
+		return GLOB.chat_lobby_channels
+	. = list(SAY_CHANNEL)
+	if(isliving(src) && length(chat_radio_sets()))
+		. += RADIO_CHANNEL
+	. += ME_CHANNEL
+	if(isliving(src))
+		. += WHIS_CHANNEL
+		. += SUBTLE_CHANNEL
+	. += OOC_CHANNEL
+	. += LOOC_CHANNEL
+
+/// Tells the chat input row what the speaker can use now: its channels and its radio prefixes. Sent when the chat page is ready, when the
+/// client takes a mob (lobby, spawn, ghost, transfer) and when the row opens.
+/client/proc/chat_send_input_state()
+	if(!tgui_panel?.is_ready())
+		return
+	var/list/channels = chat_available_channels()
+	tgui_panel.window.send_message("chat/channels", list("channels" = channels))
+	log_tgui(src, "Chat input channels sent: [jointext(channels, ",")].", context = "chat_float")
+	chat_send_radio_options()
+
+/mob/Login()
+	. = ..()
+	client?.chat_send_input_state()

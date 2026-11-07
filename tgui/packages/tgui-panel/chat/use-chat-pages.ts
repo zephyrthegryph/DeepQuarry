@@ -6,6 +6,7 @@ import {
   currentPageIdAtom,
   mainPage,
 } from './atoms';
+import { store } from '../events/store';
 import { createPage, reorderedPages } from './model';
 import { chatRenderer } from './renderer';
 import type { Page } from './types';
@@ -33,13 +34,15 @@ export function useChatPages() {
   function changeChatPage(page: Page): void {
     setCurrentPageId(page.id);
 
+    // From the record as it is now, not this render's copy: a batch may have counted since.
+    const record = store.get(chatPagesRecordAtom);
     const draft: Page = {
-      ...pagesRecord[page.id],
+      ...record[page.id],
       unreadCount: 0,
     };
 
-    setPagesRecord({
-      ...pagesRecord,
+    store.set(chatPagesRecordAtom, {
+      ...record,
       [page.id]: draft,
     });
 

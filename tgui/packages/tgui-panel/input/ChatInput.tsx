@@ -12,6 +12,7 @@ import {
 import { focusMap } from 'tgui/focus';
 import { classes } from 'tgui-core/react';
 import {
+  availableChannelsAtom,
   inputFocusRequestAtom,
   languageRulesAtom,
   previewEnabledAtom,
@@ -28,6 +29,7 @@ import {
   parseCommonPrefix,
   parseRadioPrefix,
   previewEntry,
+  settleChannel,
   type RadioOption,
   radioColorName,
 } from './model';
@@ -58,6 +60,7 @@ export function ChatInput() {
   const request = useAtomValue(inputFocusRequestAtom);
   const options = useAtomValue(radioOptionsAtom);
   const rules = useAtomValue(languageRulesAtom);
+  const available = useAtomValue(availableChannelsAtom);
   const previewEnabled = useAtomValue(previewEnabledAtom);
   const [radio, setRadioState] = useState<RadioOption>(input.radio);
 
@@ -94,11 +97,19 @@ export function ChatInput() {
     }
   }
 
+  // The speaker's channels changed (lobby, spawn, ghost, a headset): leave one that is gone.
+  useEffect(() => {
+    const next = settleChannel(input.channel, available);
+    if (next !== input.channel) {
+      setChannel(next);
+    }
+  }, [available]);
+
   useEffect(() => {
     if (!request) {
       return;
     }
-    if (request.channel) {
+    if (request.channel && available.includes(request.channel)) {
       setChannel(request.channel);
     }
     field.current?.focus();
@@ -170,7 +181,7 @@ export function ChatInput() {
         break;
       case 'next':
       case 'prev':
-        input.step(action === 'next' ? 1 : -1);
+        input.step(action === 'next' ? 1 : -1, available);
         setChannelState(input.channel);
         break;
       case 'older':
@@ -217,7 +228,9 @@ export function ChatInput() {
           ])}
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => {
-            setChannel(nextChannel(channel, event.shiftKey ? -1 : 1));
+            setChannel(
+            nextChannel(channel, event.shiftKey ? -1 : 1, available),
+          );
             field.current?.focus();
           }}
         >
@@ -260,11 +273,15 @@ export function ChatInput() {
           onChange={(event) => {
             let text = event.target.value;
             // A typed ":m " switches to that radio channel.
+            // Only when the speaker can use the radio now.
+            const radioUsable = available.includes('Radio');
             const prefix =
-              channel === 'Say' || channel === 'Radio'
+              radioUsable && (channel === 'Say' || channel === 'Radio')
                 ? parseRadioPrefix(text, options)
                 : null;
-            const common = parseCommonPrefix(text, channel);
+            const common = radioUsable
+              ? parseCommonPrefix(text, channel)
+              : null;
             if (prefix) {
               text = prefix.rest;
               setChannel('Radio');
