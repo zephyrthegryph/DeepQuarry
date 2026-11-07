@@ -5301,6 +5301,7 @@
 #include "code\content\client\preferences\types\game\ghost.dm"
 #include "code\content\client\preferences\types\game\ignored_players.dm"
 #include "code\content\client\preferences\types\game\in_game.dm"
+#include "code\content\client\preferences\types\game\map_split.dm"
 #include "code\content\client\preferences\types\game\misc.dm"
 #include "code\content\client\preferences\types\game\runechat.dm"
 #include "code\content\client\preferences\types\game\tooltip.dm"

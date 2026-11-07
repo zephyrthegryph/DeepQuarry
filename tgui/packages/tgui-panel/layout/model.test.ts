@@ -3,6 +3,7 @@ import {
   clampShare,
   clientRect,
   columnRect,
+  dockShare,
   dockTarget,
   dragPosition,
   fitRect,
@@ -15,6 +16,7 @@ import {
   SHARE_DEFAULT,
   shareFromHeights,
   shareMoved,
+  snapRect,
   splitterFor,
   windowUnderPointer,
 } from './model';
@@ -223,5 +225,43 @@ describe('docking by dragging', () => {
         y: 284,
       },
     );
+  });
+});
+
+describe('corner snapping', () => {
+  const area = { x: 100, y: 50, w: 1000, h: 800 };
+  const win = { x: 0, y: 0, w: 300, h: 200 };
+
+  it('snaps flush to a near edge', () => {
+    expect(snapRect({ ...win, x: 110, y: 400 }, area, 16)).toEqual({
+      ...win,
+      x: 100,
+      y: 400,
+    });
+    expect(snapRect({ ...win, x: 790, y: 400 }, area, 16).x).toBe(800);
+  });
+
+  it('snaps both axes in a corner', () => {
+    const got = snapRect({ ...win, x: 795, y: 655 }, area, 16);
+    expect(got).toEqual({ ...win, x: 800, y: 650 });
+  });
+
+  it('leaves a far window alone and never leaves the area', () => {
+    const far = { ...win, x: 400, y: 300 };
+    expect(snapRect(far, area, 16)).toEqual(far);
+    const got = snapRect({ ...win, x: 105, y: 53 }, area, 16);
+    expect(got.x).toBeGreaterThanOrEqual(area.x);
+    expect(got.y).toBeGreaterThanOrEqual(area.y);
+  });
+
+  it('does nothing without an area', () => {
+    expect(snapRect(win, null)).toEqual(win);
+  });
+
+  it('takes the dock share from the dropped height', () => {
+    expect(dockShare(300, 1000)).toBe(30);
+    expect(dockShare(50, 1000)).toBe(20);
+    expect(dockShare(900, 1000)).toBe(80);
+    expect(dockShare(0, 1000)).toBe(40);
   });
 });

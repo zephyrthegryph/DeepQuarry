@@ -1,17 +1,23 @@
 import {
   type ChatMode,
   columnRect,
+  dockShare,
   dockTarget,
   dragPosition,
   fitRect,
   fitSize,
+  MAP_SPLIT_MAX,
+  MAP_SPLIT_MIN,
   type MainReport,
   mainRects,
   type Point,
   poppedOut,
   type Rect,
   resizeSize,
+  SHARE_DEFAULT,
+  SNAP_DISTANCE,
   shareFromHeights,
+  snapRect,
 } from './model';
 
 /** The skin's float window and the right-hand split (SKIN_CHAT_FLOAT_WINDOW, SKIN_RPANE_SPLIT). */
@@ -123,11 +129,26 @@ export async function measureShare(): Promise<number | null> {
   }
 }
 
+/** The main window's map/column split (percent the map takes), or null when it cannot be told or is out of range. */
+export async function measureMapSplit(): Promise<number | null> {
+  try {
+    const got = await Byond.winget('mainwindow.mainvsplit', 'splitter');
+    const split = Math.round(Number(got));
+    return Number.isFinite(split) &&
+      split >= MAP_SPLIT_MIN &&
+      split <= MAP_SPLIT_MAX
+      ? split
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 type DragHandlers = {
   /** The pin a drop would make right now, while dragging (null when none). */
-  onHint?: (hint: 'top' | 'bottom' | null) => void;
+  onHint?: (hint: 'top' | 'bottom' | null, share?: number) => void;
   /** The drop landed over the right-hand column: dock there. */
-  onPin: (mode: ChatMode) => void;
+  onPin: (mode: ChatMode, share: number) => void;
 };
 
 /**
@@ -156,17 +177,22 @@ export function startWindowDrag(
   let frame = 0;
   let last: Point | null = null;
   let hint: 'top' | 'bottom' | null = null;
+  let hintShare = 0;
 
   const placedRect = (): Rect | null => {
     if (!start) {
       return null;
     }
     const pos = dragPosition(start.pos, startMouse, latest, ratio);
-    return fitRect(
+    const fitted = fitRect(
       { x: pos.x, y: pos.y, w: start.size.x, h: start.size.y },
       area,
     );
+    return snapRect(fitted, area, SNAP_DISTANCE * ratio);
   };
+
+  const shareHere = (rect: Rect | null): number =>
+    column && rect ? dockShare(rect.h, column.h) : SHARE_DEFAULT;
 
   const pinFor = (): 'top' | 'bottom' | null =>
     dockTarget({ x: latest.x * ratio, y: latest.y * ratio }, column);
@@ -178,9 +204,11 @@ export function startWindowDrag(
       return;
     }
     const next = pinFor();
-    if (next !== hint) {
+    const share = shareHere(rect);
+    if (next !== hint || share !== hintShare) {
       hint = next;
-      handlers.onHint?.(next);
+      hintShare = share;
+      handlers.onHint?.(next, share);
     }
     if (last && last.x === rect.x && last.y === rect.y) {
       return;
@@ -218,9 +246,10 @@ export function startWindowDrag(
       area,
       column,
       pin,
+      share: shareHere(placedRect()),
     });
     if (pin) {
-      handlers.onPin(pin);
+      handlers.onPin(pin, shareHere(placedRect()));
     }
   };
 

@@ -2,6 +2,7 @@ import { useAtomValue } from 'jotai';
 import { useEffect, useRef, useState } from 'react';
 import { layoutModeAtom, layoutShareAtom } from './atoms';
 import {
+  measureMapSplit,
   measureShare,
   startDockedDrag,
   startWindowDrag,
@@ -14,8 +15,9 @@ export function requestMode(
   mode: ChatMode,
   via = 'drop',
   at?: { x: number; y: number },
+  share?: number,
 ): void {
-  Byond.sendMessage('layout/pin', { mode, via, at });
+  Byond.sendMessage('layout/pin', { mode, via, at, share });
 }
 
 /** Parts of the tab row that keep their own clicks instead of starting a window drag. */
@@ -31,7 +33,10 @@ const NO_DRAG =
  */
 export function useChatDrag() {
   const floating = useAtomValue(layoutModeAtom) === 'float';
-  const [hint, setHint] = useState<'top' | 'bottom' | null>(null);
+  const [hint, setHint] = useState<{
+    side: 'top' | 'bottom';
+    share: number;
+  } | null>(null);
   const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
     const target = event.target as HTMLElement;
     if (target.closest(NO_DRAG)) {
@@ -42,20 +47,26 @@ export function useChatDrag() {
       return;
     }
     startWindowDrag(event, {
-      onHint: setHint,
-      onPin: (mode) => requestMode(mode, 'drop'),
+      onHint: (side, share) =>
+        setHint(side ? { side, share: share ?? 0 } : null),
+      onPin: (mode, share) => requestMode(mode, 'drop', undefined, share),
     });
   };
   return { hint, onPointerDown };
 }
 
 /** Says what a drop would do, over the chat, while the window is dragged over the column. */
-export function ChatPinHint(props: { hint: 'top' | 'bottom' | null }) {
+export function ChatPinHint(props: {
+  hint: { side: 'top' | 'bottom'; share: number } | null;
+}) {
   if (!props.hint) {
     return null;
   }
   return (
-    <div className="ChatPinHint">Release to dock at the {props.hint} right</div>
+    <div className="ChatPinHint">
+      Release to dock at the {props.hint.side} right ({props.hint.share}% of the
+      column)
+    </div>
   );
 }
 
@@ -78,6 +89,7 @@ export function useShareReport(): void {
   const mode = useAtomValue(layoutModeAtom);
   const share = useAtomValue(layoutShareAtom);
   const known = useRef(share);
+  const lastSplit = useRef<number | null>(null);
   known.current = share;
   useEffect(() => {
     if (mode === 'float') {
@@ -90,6 +102,12 @@ export function useShareReport(): void {
         const measured = await measureShare();
         if (measured !== null && shareMoved(known.current, measured)) {
           Byond.sendMessage('layout/share', { share: measured });
+        }
+        const split = await measureMapSplit();
+        if (split !== null && split !== lastSplit.current) {
+          lastSplit.current = split;
+          console.log('chat layout: map split measured', { split });
+          Byond.sendMessage('layout/mapsplit', { split });
         }
       }, 700);
     };

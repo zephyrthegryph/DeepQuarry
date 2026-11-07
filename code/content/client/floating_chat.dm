@@ -181,6 +181,7 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 /client/proc/chat_layout_sync()
 	if(!prefs)
 		return
+	map_split_apply()
 	var/mode = chat_mode_for(prefs.read_preference(/datum/preference/toggle/chat_floating), prefs.read_preference(/datum/preference/choiced/chat_dock_side))
 	var/share = chat_share_clamped(prefs.read_preference(/datum/preference/numeric/chat_share))
 	switch(chat_layout_change(mode, share, chat_layout_mode, chat_layout_share))
@@ -204,7 +205,7 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 
 /// The chat page pins or floats the chat: a drop over the right-hand column docks it, a drag of the docked chat pops it out
 /// (`at` is then the pointer in screen pixels, list("x", "y")).
-/client/proc/chat_pin(mode, via = "drop", list/at = null)
+/client/proc/chat_pin(mode, via = "drop", list/at = null, share = null)
 	if(mode != CHAT_MODE_TOP && mode != CHAT_MODE_BOTTOM && mode != CHAT_MODE_FLOAT)
 		log_tgui(src, "Chat pin refused: unknown mode [mode].", context = "chat_float")
 		return
@@ -215,7 +216,10 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 	if(mode == CHAT_MODE_FLOAT)
 		prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, TRUE)
 		return
-	// The side first, then the float flag: the flag's apply is the one that moves the pane to the side.
+	// The side and the share (the dropped window's height against the column) first, then the float flag: the flag's apply is the one that moves the pane.
+	if(isnum(share))
+		log_tgui(src, "Chat dock share from the drop: [chat_share_clamped(share)].", context = "chat_float")
+		prefs?.update_preference_by_type(/datum/preference/numeric/chat_share, chat_share_clamped(share))
 	prefs?.update_preference_by_type(/datum/preference/choiced/chat_dock_side, (mode == CHAT_MODE_TOP) ? CHAT_DOCK_TOP_RIGHT : CHAT_DOCK_BOTTOM_RIGHT)
 	prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, FALSE)
 

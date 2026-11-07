@@ -141,6 +141,54 @@ export function fitRect(
   };
 }
 
+/** How near (CSS pixels, scaled by the pixel ratio) a window edge gets to a main-window edge before it snaps flush to it. */
+export const SNAP_DISTANCE = 16;
+
+/**
+ * A window rect pulled flush to the area's edges when one is within `distance`
+ * (physical pixels): each axis snaps on its own, so a rect near a corner
+ * snaps on both. Snapping never leaves the area, so containment holds.
+ */
+export function snapRect(
+  win: Rect,
+  area: Rect | null,
+  distance = SNAP_DISTANCE,
+): Rect {
+  if (!area || area.w <= 0 || area.h <= 0 || distance <= 0) {
+    return win;
+  }
+  const snapAxis = (
+    pos: number,
+    size: number,
+    from: number,
+    extent: number,
+  ) => {
+    const low = Math.abs(pos - from);
+    const high = Math.abs(pos + size - (from + extent));
+    if (low <= distance && low <= high) {
+      return from;
+    }
+    if (high <= distance) {
+      return from + extent - size;
+    }
+    return pos;
+  };
+  return {
+    ...win,
+    x: snapAxis(win.x, win.w, area.x, area.w),
+    y: snapAxis(win.y, win.h, area.y, area.h),
+  };
+}
+
+/** The chat's share of the column when dropped as a window of height `winHeight` (same unit as `columnHeight`). */
+export function dockShare(winHeight: number, columnHeight: number): number {
+  return shareFromHeights(winHeight, columnHeight) ?? SHARE_DEFAULT;
+}
+
+/** The main window's split between the map and the right-hand column is kept in this range (percent the map takes). */
+export const MAP_SPLIT_MIN = 10;
+export const MAP_SPLIT_MAX = 90;
+
 /** What BYOND reports for the main window (winget), parsed. */
 export type MainReport = {
   pos: Point | null;

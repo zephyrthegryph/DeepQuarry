@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The floating chat snaps to the main window's edges and corners, docks with the height it was dropped at, and the map/column splitter you drag is remembered"

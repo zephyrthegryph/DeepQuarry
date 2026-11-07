@@ -87,3 +87,11 @@
 	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(-400, -300, 560, 420, 0, 0, 1920, 1040)), json_encode(list(0, 0, 560, 420)), "corner at 0,0")
 	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(40, 20, 560, 420, 100, 50, 1920, 1040)), json_encode(list(100, 50, 560, 420)), "corner at 100,50")
 	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(110, 60, 560, 420, 100, 50, 1920, 1040)), json_encode(list(110, 60, 560, 420)), "near the corner is left alone")
+
+/datum/unit_test/dq_chat_map_split_pref_range
+/datum/unit_test/dq_chat_map_split_pref_range/Run()
+	var/datum/preference/numeric/map_split/pref = GLOB.preference_entries[/datum/preference/numeric/map_split]
+	TEST_ASSERT_NOTNULL(pref, "the map split preference exists")
+	TEST_ASSERT_EQUAL(pref.create_default_value(), 0, "unset by default: the viewport fit picks the width")
+	TEST_ASSERT(pref.is_valid(MAP_SPLIT_MIN) && pref.is_valid(MAP_SPLIT_MAX) && pref.is_valid(0), "the kept range is valid")
+	TEST_ASSERT(!pref.is_valid(MAP_SPLIT_MAX + 1), "past the range is not")

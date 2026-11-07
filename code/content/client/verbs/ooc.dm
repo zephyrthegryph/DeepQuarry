@@ -205,6 +205,9 @@
 	set hidden = TRUE // the Menu page
 	set desc = "Fit the width of the map window to match the viewport"
 
+	// An explicit fit replaces the width the player dragged the splitter to.
+	map_split_forget()
+
 	// Fetch aspect ratio
 	var/view_size = getviewsize(view)
 	var/aspect_ratio = view_size[1] / view_size[2]
@@ -291,6 +294,8 @@
 /client/proc/attempt_auto_fit_viewport()
 	if(!prefs.read_preference(/datum/preference/toggle/auto_fit_viewport))
 		return
+	if(prefs.read_preference(/datum/preference/numeric/map_split))
+		return // the player dragged the map/column splitter: their width stands until Fit Viewport is asked for
 	if(fully_created)
 		fit_viewport() // its wingets go through DX-exec
 	else //Delayed to avoid wingets from Login calls.
