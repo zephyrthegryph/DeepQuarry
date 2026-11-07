@@ -33,6 +33,7 @@ pub(super) enum DriverEvent{Token(LogicalToken),Directive{hash:Origin},MacroNoti
 /// a frame retires; this allowance pays only the live controller's fixed bytes.
 pub(super) struct RawSourceDriver{
  environment:OriginalEnvironment,inputs:OriginalRawInputs,pump:OriginalTokenPump,
+ history_purpose:super::original_define_history::HistoryPurpose,
  queue:OriginalOutputQueue<'static>,conditionals:Rows<Frame>,
  held:Option<Token<'static>>,indent:NativeIndentTransition<LogicalLocation>,delivery:Option<super::original_output_trace::OriginalOutputTrace>,
  raw_end:bool,failed:bool,stopped:bool,env_file:Option<super::original_file_path::OriginalFilePath>,credit:SettingRootLease,
@@ -42,12 +43,12 @@ impl RawSourceDriver{
  pub(super) fn new(initial:InitialEnvironment,caller:&BTreeMap<String,String>,a:&SettingAdmission<'_>,factory:&mut dyn FnMut(crate::initial_environment::OriginalInitialDefinition<'_>,&SettingAdmission<'_>)->io::Result<Definition<'static>>)->io::Result<Self>{
   poll(a)?;let credit=a.reserve(mem::size_of::<Self>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut environment=OriginalEnvironment::new(a)?;environment.install_initial_definitions_using(initial,caller,a,factory)?;
-  Ok(Self{environment,inputs:OriginalRawInputs::new(a)?,pump:OriginalTokenPump::new(a)?,queue:OriginalOutputQueue::new(a)?,conditionals:Rows::new(a)?,held:None,indent:NativeIndentTransition::original_0290(LogicalLocation{origin:None,trace:Default::default()}),delivery:None,raw_end:false,failed:false,stopped:false,env_file:None,credit})
+  Ok(Self{environment,history_purpose:super::original_define_history::HistoryPurpose::Full,inputs:OriginalRawInputs::new(a)?,pump:OriginalTokenPump::new(a)?,queue:OriginalOutputQueue::new(a)?,conditionals:Rows::new(a)?,held:None,indent:NativeIndentTransition::original_0290(LogicalLocation{origin:None,trace:Default::default()}),delivery:None,raw_end:false,failed:false,stopped:false,env_file:None,credit})
  }
  /// The productive controller supplies the constructor's exact env_file
  /// spelling, matching pinned Preprocessor::new; no canonicalization guessed.
- pub(super) fn new_for_project(initial:InitialEnvironment,caller:&BTreeMap<String,String>,env_file:&std::path::Path,a:&SettingAdmission<'_>,factory:&mut dyn FnMut(crate::initial_environment::OriginalInitialDefinition<'_>,&SettingAdmission<'_>)->io::Result<Definition<'static>>)->io::Result<Self>{
-  let mut actual=Self::new(initial,caller,a,factory)?;actual.env_file=Some(super::original_file_path::OriginalFilePath::new(env_file,a)?);Ok(actual)
+ pub(super) fn new_for_project(initial:InitialEnvironment,caller:&BTreeMap<String,String>,env_file:&std::path::Path,history_purpose:super::original_define_history::HistoryPurpose,a:&SettingAdmission<'_>,factory:&mut dyn FnMut(crate::initial_environment::OriginalInitialDefinition<'_>,&SettingAdmission<'_>)->io::Result<Definition<'static>>)->io::Result<Self>{
+  let mut actual=Self::new(initial,caller,a,factory)?;actual.history_purpose=history_purpose;actual.env_file=Some(super::original_file_path::OriginalFilePath::new(env_file,a)?);Ok(actual)
  }
  /// #ifdef/__MAIN__ uses the nearest active physical file, not the macro
  /// definition/invocation occurrence. Ordinary defined() does not call this.
@@ -135,7 +136,7 @@ impl RawSourceDriver{
    if name_text.get()=="DEBUG"&&!self.in_environment_using(a)?{return Ok(DefinitionInstallation::IgnoredDebugOutsideEnvironment)}
    let previous=self.environment.environment().actual_original_product(name_text.get())?;let replaced=previous.is_some();let previous_name=previous.and_then(|p|p.definition_name()).map(|token|token.origin());let warn_redefinition=name_text.get()!="FILE_DIR";
    let mut mirror=crate::macro_expansion::OriginalMacroText::new(a)?;for token in definition.replacement.as_slice(){poll(a)?;let spelling=super::original_literal_owner::actual_grammar_spelling_using(token,provider,a)?;if !mirror.as_str().is_empty(){mirror.push_str(" ",a)?;}mirror.push_str(spelling.as_str(),a)?;}
-   let name_origin=name.origin;let product=super::environment::OriginalDefinitionProduct::from_named_actual_product_using(name,definition,docs,origin,a)?;let name=product.definition_name().ok_or(io::ErrorKind::InvalidData)?.spelling();self.environment.insert_product_using(name,mirror.as_str(),None,std::sync::Arc::clone(&product),a)?;Ok(DefinitionInstallation::Installed{origin:name_origin,replaced,previous_name,warn_redefinition})})();if result.is_err(){self.failed=true}result
+   let name_origin=name.origin;let product=super::environment::OriginalDefinitionProduct::from_named_actual_product_using(name,definition,docs,origin,self.history_purpose,a)?;let name=product.definition_name().ok_or(io::ErrorKind::InvalidData)?.spelling();self.environment.insert_product_using(name,mirror.as_str(),None,std::sync::Arc::clone(&product),a)?;Ok(DefinitionInstallation::Installed{origin:name_origin,replaced,previous_name,warn_redefinition})})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn undefine_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<Undefinition>{
   self.check(a)?;let result=(||{let removed=self.environment.environment().original_current_owner_using(name,a)?;let found=removed.is_some();let previous_name=removed.as_deref().and_then(|p|p.definition_name()).map(|t|t.origin());self.environment.remove_using(name,a)?;Ok(Undefinition{found,previous_name,removed})})();if result.is_err(){self.failed=true}result
@@ -189,7 +190,9 @@ impl RawSourceDriver{
  }
  pub(super) fn take_delivery_trace_using(&mut self,a:&SettingAdmission<'_>)->io::Result<super::original_output_trace::OriginalOutputTrace>{self.check(a)?;self.delivery.take().ok_or_else(||io::ErrorKind::InvalidInput.into())}
  pub(super) fn last_outer_using(&mut self,a:&SettingAdmission<'_>)->io::Result<Origin>{self.check(a)?;self.pump.last_outer().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual outer reader has not issued a location"))}
- pub(super) fn capture_final_define_history_using(&mut self,history:&mut super::original_define_history::OriginalDefineHistory,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let result=history.capture_current_using(self.environment.environment(),a);if result.is_err(){self.failed=true}result}
+ pub(super) fn capture_final_define_history_using(&mut self,history:&mut super::original_define_history::OriginalDefineHistory,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let result=if history.is_full()!=(self.history_purpose==super::original_define_history::HistoryPurpose::Full){
+  Err(io::Error::new(io::ErrorKind::InvalidInput,"macro product and define history have different purposes"))
+ }else{history.capture_current_using(self.environment.environment(),a)};if result.is_err(){self.failed=true}result}
  pub(super) fn physical_row_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<super::original_raw_inputs::OriginalPhysicalRow>{
   self.observe_physical_row_using(origin,lease,provider,None,a).map(super::original_raw_inputs::OriginalPhysicalRowObservation::into_row)
  }
@@ -254,7 +257,7 @@ impl RawSourceDriver{
  #[test]fn first_real_host_io_poisons_same_controller_and_fresh_owner_can_recover(){
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,16<<20,&||Ok(()));let file=File::new("var/a=1\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);host.fail=true;let mut notices=Notices{lexical:0,numeric:0};assert_eq!(source.next_logical_using(&file,&mut notices,&mut host,&a).err().unwrap().raw_os_error(),Some(1450));host.fail=false;assert_eq!(source.next_logical_using(&file,&mut notices,&mut host,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert!(!source.raw_end);drop(source);let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();assert!(matches!(source.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(),DriverEvent::Token(_)));drop((source,host));assert_eq!(used.load(Ordering::Acquire),0);
  }
- fn project_driver(project:&Path,a:&SettingAdmission<'_>)->RawSourceDriver{RawSourceDriver::new_for_project(InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),project,a,&mut|input,a|super::super::original_token_factory::initial_definition_using(input,a,&mut|_|panic!("fixed default lexical notice"),&mut|_,_|panic!("fixed default numeric notice"))).unwrap()}
+ fn project_driver(project:&Path,a:&SettingAdmission<'_>)->RawSourceDriver{RawSourceDriver::new_for_project(InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),project,super::super::original_define_history::HistoryPurpose::Full,a,&mut|input,a|super::super::original_token_factory::initial_definition_using(input,a,&mut|_|panic!("fixed default lexical notice"),&mut|_,_|panic!("fixed default numeric notice"))).unwrap()}
  struct Pair{root:File,child:File}
  impl SourceProvider for Pair{
   fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::OriginalChecker0290}

@@ -1,6 +1,6 @@
 //! Structurally shared exact expansion environments. Each binding owns its
 //! replacement and definition origin once; snapshots retain only persistent roots.
-use super::{DefinitionOrigin, macro_trace_view::OriginalMacroAuthor};
+use super::{DefinitionOrigin, macro_trace_view::OriginalMacroAuthor, original_define_history::HistoryPurpose};
 use crate::{Macro, MacroLookup};
 use crate::macro_expansion::{OriginalMacroDefinition,OriginalMacroRows,OriginalMacroText,OriginalMacroValue,OriginalMacroTextValue,OriginalMacroDoc};
 use crate::macro_expansion::{OriginalMacroToken,OriginalMacroOrigin};
@@ -253,19 +253,19 @@ impl OriginalDefinitionProduct{
  /// SAME Binding retains actual drained/following definition docs, in order.
  /// Invocations borrow this product before raw argument demand can change state.
  pub(super) fn from_actual_product_with_docs_using(definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
-  Self::from_product_with_name_using(None,None,definition,docs,a)
+  Self::from_product_with_name_using(None,None,definition,docs,HistoryPurpose::Full,a)
  }
  /// Keep the SAME issued #define spelling, point and lexical-frame owner.
  /// Physical identifier whitespace and replacement-token-only fields have
  /// no definition-name consumer. Bootstrap still has no physical name.
- pub(super) fn from_named_actual_product_using(name:OriginalMacroToken<'static>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,origin:Option<DefinitionOrigin>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
+ pub(super) fn from_named_actual_product_using(name:OriginalMacroToken<'static>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,origin:Option<DefinitionOrigin>,purpose:HistoryPurpose,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
   original_poll(a)?;if !matches!(name.value,OriginalMacroValue::Ident{..})||name.origin.byte_column.is_none()||name.origin.line==0{return Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original definition-name point is unissued"))}
   if name.lexical_frame.as_ref().is_some_and(|frame|!frame.admitted_by(a)){return Err(io::ErrorKind::InvalidInput.into())}
   let OriginalMacroValue::Ident{spelling,..}=name.value else{unreachable!("checked actual definition name")};
   let pending=WideDefinitionName{origin:name.origin,spelling,lexical_frame:name.lexical_frame};
-  Self::from_product_with_name_using(Some((pending,name.lexical_span)),origin,definition,docs,a)
+  Self::from_product_with_name_using(Some((pending,name.lexical_span)),origin,definition,docs,purpose,a)
  }
- fn from_product_with_name_using(name:Option<(WideDefinitionName,Option<dm_syntax::Span>)>,origin:Option<DefinitionOrigin>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
+ fn from_product_with_name_using(name:Option<(WideDefinitionName,Option<dm_syntax::Span>)>,origin:Option<DefinitionOrigin>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,purpose:HistoryPurpose,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
   original_poll(a)?;let mut credit=a.reserve(Self::wrapper_bytes()).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let name=name.map(|(pending,span)|OriginalDefinitionName::capture(pending,span,&mut credit,a)).transpose()?;
   let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"actual-original-definition-token-data-v1");hash.update(&[u8::from(definition.variadic)]);match &definition.parameters{None=>hash.update(&[0]),Some(params)=>{hash.update(&[1]);hash.update(&(params.len()as u64).to_le_bytes());for name in params.as_slice(){original_hash_text(&mut hash,name.as_str(),a)?;}}}
@@ -284,7 +284,18 @@ impl OriginalDefinitionProduct{
   let OriginalMacroDefinition{parameters,variadic,replacement}=definition;
   let replacement=replacement_roster::Replacement::capture(replacement,name.as_ref(),&mut credit,a)?;
   let parameters=parameters.map(|rows|retain_product_rows(rows,&mut credit,a)).transpose()?;
-  let docs=retain_product_rows(docs,&mut credit,a)?;
+  let before_docs=credit.bytes();
+  let mut docs=retain_product_rows(docs,&mut credit,a)?;
+  if purpose==HistoryPurpose::Diagnostic{
+   // The exact ordered doc payload already contributed to the SAME digest.
+   // Its physical contents cannot be requested through diagnostic history.
+   // Drop the actual rows (and their child owners) before refunding the Vec.
+   let doc_row_bytes=credit.bytes()-before_docs;
+   drop(std::mem::take(&mut docs));
+   if doc_row_bytes!=0 {
+    a.shrink(&mut credit,doc_row_bytes).map_err(|error|a.take_operational_error().unwrap_or(error))?;
+   }
+  }
   let definition=RetainedDefinition{parameters,variadic,replacement};
   let projected=origin.map(|origin| {
    let issued_name=name.as_ref().ok_or(io::ErrorKind::InvalidData)?.spelling();
@@ -768,6 +779,36 @@ mod tests {
  }
 
  #[test]
+ fn diagnostic_macro_docs_release_physical_rows_after_the_same_digest() {
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let make=|text:&str,purpose|{
+   let mut bytes=OriginalMacroText::new(&a).unwrap();
+   bytes.push_str(text,&a).unwrap();
+   let mut docs=OriginalMacroRows::new(&a).unwrap();
+   docs.push_definition_row(OriginalMacroDoc{
+    kind:dm_syntax::OriginalCommentKind::LineFollowing,text:OriginalMacroTextValue::Owned(bytes),
+    origin:OriginalMacroOrigin{physical:dm_syntax::Span::new(1,17),line:3,byte_column:Some(2),occurrence:4,invocation:false},
+    lexical_frame:None,lexical_span:None,
+   },&a).unwrap();
+   let definition=OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};
+   OriginalDefinitionProduct::from_product_with_name_using(None,None,definition,docs,purpose,&a).unwrap()
+  };
+  let full=make("actual doc",HistoryPurpose::Full);
+  let retained=used.load(Ordering::Acquire);
+  let compact=make("actual doc",HistoryPurpose::Diagnostic);
+  assert_eq!(used.load(Ordering::Acquire)-retained,OriginalDefinitionProduct::wrapper_bytes());
+  assert_eq!(compact.digest,full.digest);
+  assert!(compact.docs().is_empty());
+  assert_eq!(full.docs()[0].text.get(),"actual doc");
+  assert_eq!(full.docs()[0].origin.line,3);
+  let changed=make("other doc",HistoryPurpose::Diagnostic);
+  assert_ne!(changed.digest,compact.digest);
+  drop((full,compact,changed));
+  assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+ #[test]
  fn completed_macro_product_moves_funded_rows_without_cloning_or_double_census() {
   let used=Arc::new(AtomicUsize::new(0));
   let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
@@ -863,7 +904,7 @@ mod tests {
   let origin=OriginalMacroOrigin{physical:span,line:1,byte_column:Some(9),occurrence:3,invocation:false};
   let token=OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:Some(frame.clone()),lexical_span:Some(span),raw_spelling:None,value:OriginalMacroValue::Ident{spelling:OriginalMacroTextValue::Source(spelling.clone()),whitespace:true},origin};
   let definition=OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};
-  let product=OriginalDefinitionProduct::from_named_actual_product_using(token,definition,OriginalMacroRows::new(&a).unwrap(),None,&a).unwrap();
+  let product=OriginalDefinitionProduct::from_named_actual_product_using(token,definition,OriginalMacroRows::new(&a).unwrap(),None,HistoryPurpose::Full,&a).unwrap();
   let name=product.definition_name().unwrap();
   assert_eq!(name.origin(),origin);
   assert!(name.uses_physical_storage());
@@ -895,7 +936,7 @@ mod tests {
     punctuation_close:false,lexical_frame:Some(frame.clone()),lexical_span:Some(span),raw_spelling:None,
     value:OriginalMacroValue::Ident{spelling:OriginalMacroTextValue::Source(spelling.clone()),whitespace:false},origin};
    let definition=OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(a)?};
-   OriginalDefinitionProduct::from_named_actual_product_using(token,definition,OriginalMacroRows::new(a)?,None,a)
+   OriginalDefinitionProduct::from_named_actual_product_using(token,definition,OriginalMacroRows::new(a)?,None,HistoryPurpose::Full,a)
   };
   let before=used.load(Ordering::Acquire);
   let exact=OriginalDefinitionProduct::wrapper_bytes()+std::mem::size_of::<WideDefinitionName>();
@@ -922,7 +963,7 @@ mod tests {
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let make=||OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};
   let initial=OriginalDefinitionProduct::from_actual_product_using(make(),&a).unwrap();assert!(initial.definition_name().is_none());
   let origin=OriginalMacroOrigin{physical:dm_syntax::Span::new(31,35),line:7,byte_column:Some(9),occurrence:2,invocation:true};let name=OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:OriginalMacroValue::Ident{spelling:OriginalMacroTextValue::Borrowed("NAME"),whitespace:false},origin};
-  let product=OriginalDefinitionProduct::from_named_actual_product_using(name,make(),OriginalMacroRows::new(&a).unwrap(),None,&a).unwrap();assert_eq!(product.definition_name().unwrap().origin(),origin);
+  let product=OriginalDefinitionProduct::from_named_actual_product_using(name,make(),OriginalMacroRows::new(&a).unwrap(),None,HistoryPurpose::Full,&a).unwrap();assert_eq!(product.definition_name().unwrap().origin(),origin);
   assert_eq!(product.definition_name().unwrap().spelling(),"NAME");
   assert!(std::mem::size_of::<Option<OriginalDefinitionName>>()<std::mem::size_of::<Option<OriginalMacroToken<'static>>>());
   assert!(!product.definition_name().unwrap().uses_physical_storage());

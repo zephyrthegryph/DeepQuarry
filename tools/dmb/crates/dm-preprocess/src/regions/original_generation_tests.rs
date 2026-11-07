@@ -35,6 +35,7 @@ fn original_diagnostic_history_preserves_macro_origins_but_cannot_issue_generati
     }
     let root = "E:/controller/diagnostic-history.dme";
     let provider = Memory::new(&[(root, concat!(
+        "/// Original docs for the first VALUE\n",
         "#define VALUE 3\n",
         "#define VALUE 7\n",
         "/datum/before\n    var/value = VALUE\n",
@@ -66,6 +67,7 @@ fn original_diagnostic_history_preserves_macro_origins_but_cannot_issue_generati
     assert!(full_generation.into_generation_parts().is_ok());
     let restricted_generation = run(true);
     assert_eq!(restricted_generation.delivery(), OriginalDemandDelivery::AnalyzeBatch8192x64);
+    assert!(restricted_generation.token_projection.as_ref().unwrap().eof);
     assert_eq!(restricted_generation.into_generation_parts().err().unwrap().kind(), io::ErrorKind::InvalidInput);
     assert_eq!(syntax.load(Ordering::Acquire), 0);
 
@@ -78,8 +80,12 @@ fn original_diagnostic_history_preserves_macro_origins_but_cannot_issue_generati
     let removed = marks.collect::<Vec<_>>();
     assert_eq!(removed.len(), 1);
     assert_eq!(removed[0].0, "VALUE");
-    assert_eq!(removed[0].1.unwrap().line, 2);
-    assert_eq!(removed[0].2.line, 5);
+    assert_eq!(removed[0].1.unwrap().line, 3);
+    assert_eq!(removed[0].2.line, 6);
+    let with_docs = full.retention.history.entries()
+        .find(|entry| entry.name == "VALUE" && entry.defined_at.is_some_and(|point| point.line == 2))
+        .unwrap();
+    assert!(with_docs.product.docs().iter().any(|doc| doc.text.get().contains("Original docs for the first VALUE")));
     let full_current = full.retention.history.entries()
         .filter(|entry| matches!(entry.end, super::super::original_define_history::OriginalDefineHistoryEnd::Final { .. }));
     assert_eq!(full_current.count(), live);
