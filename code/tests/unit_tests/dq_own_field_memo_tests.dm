@@ -24,7 +24,11 @@
 				continue
 			skips++
 			TEST_ASSERT(!READERS(A, var_name), "[A.type].[var_name]: the fast path skips a write that READERS() says is read")
-			TEST_ASSERT(!GLOB.stat_input_keys[var_name], "[A.type].[var_name]: skipped, but a stat reads it")
+			// A stat of some other type reading the var is no reader here: a skip needs only that nothing of this type's stat layer acts on it.
+			TEST_ASSERT(!stat_type_reads_key(A, var_name), "[A.type].[var_name]: skipped, but a stat reads it")
+			if(GLOB.stat_input_keys[var_name])
+				var/datum/stat_type_info/I = stat_type_of(A)
+				TEST_ASSERT(!I || !I.inputs[var_name], "[A.type].[var_name]: skipped, but a stat of its type takes it as an input")
 			TEST_ASSERT(!draw_hop_reads_var(var_name), "[A.type].[var_name]: skipped, but a draw reads it a hop away")
 			var/list/fields = GLOB.definition_store.fields_of(A.type)
 			TEST_ASSERT(!fields[var_name], "[A.type].[var_name]: skipped, but it raises an channel")
