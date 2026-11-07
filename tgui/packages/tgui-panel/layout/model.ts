@@ -82,8 +82,14 @@ export function resizeSize(
   min: Point = MIN_WINDOW_SIZE,
 ): Point {
   return {
-    x: Math.max(min.x, Math.round(startSize.x + (mouse.x - startMouse.x) * pixelRatio)),
-    y: Math.max(min.y, Math.round(startSize.y + (mouse.y - startMouse.y) * pixelRatio)),
+    x: Math.max(
+      min.x,
+      Math.round(startSize.x + (mouse.x - startMouse.x) * pixelRatio),
+    ),
+    y: Math.max(
+      min.y,
+      Math.round(startSize.y + (mouse.y - startMouse.y) * pixelRatio),
+    ),
   };
 }
 
@@ -110,6 +116,62 @@ export function snapTarget(
     return null;
   }
   return centre < area.y + area.h / 2 ? 'top' : 'bottom';
+}
+
+/** A window rect held fully inside the area: the size is cut to the area first, then the place. */
+export function fitRect(win: Rect, area: Rect): Rect {
+  if (area.w <= 0 || area.h <= 0) {
+    return win;
+  }
+  const w = Math.min(win.w, area.w);
+  const h = Math.min(win.h, area.h);
+  return {
+    x: Math.min(Math.max(win.x, area.x), area.x + area.w - w),
+    y: Math.min(Math.max(win.y, area.y), area.y + area.h - h),
+    w,
+    h,
+  };
+}
+
+/** The window size while resizing, held to the minimum and to what is left of the area at the window's place. */
+export function fitSize(
+  size: Point,
+  pos: Point,
+  area: Rect,
+  min: Point = MIN_WINDOW_SIZE,
+): Point {
+  if (area.w <= 0 || area.h <= 0) {
+    return size;
+  }
+  const maxW = Math.max(1, area.x + area.w - pos.x);
+  const maxH = Math.max(1, area.y + area.h - pos.y);
+  return {
+    x: Math.min(Math.max(size.x, Math.min(min.x, maxW)), maxW),
+    y: Math.min(Math.max(size.y, Math.min(min.y, maxH)), maxH),
+  };
+}
+
+/**
+ * Where a drop pins by the pointer: in the right strip of the area (the
+ * wider of the threshold and an eighth of it) the upper half pins top right
+ * and the lower half bottom right. Null anywhere else.
+ */
+export function pointerSnap(
+  pointer: Point,
+  area: Rect,
+  threshold = SNAP_THRESHOLD,
+): 'top' | 'bottom' | null {
+  if (area.w <= 0 || area.h <= 0) {
+    return null;
+  }
+  const strip = Math.max(threshold, area.w / 8);
+  if (pointer.x < area.x + area.w - strip || pointer.x > area.x + area.w) {
+    return null;
+  }
+  if (pointer.y < area.y || pointer.y > area.y + area.h) {
+    return null;
+  }
+  return pointer.y < area.y + area.h / 2 ? 'top' : 'bottom';
 }
 
 /** The next mode a layout button asks for. */

@@ -19,9 +19,10 @@ import { useKeepAlive } from './game/use-keep-alive';
 import { ChatInput } from './input/ChatInput';
 import { layoutModeAtom } from './layout/atoms';
 import {
-  ChatHeader,
+  ChatPinHint,
   ChatResizeGrip,
   LayoutButtons,
+  useChatDrag,
   useShareReport,
 } from './layout/ChatLayout';
 import { Notifications } from './Notifications';
@@ -42,48 +43,55 @@ export function Panel(props) {
   useKeepAlive(setDismissedWarning);
   useShareReport();
   const floating = useAtomValue(layoutModeAtom) === 'float';
+  const drag = useChatDrag();
 
   return (
-    <Pane theme={settings.theme} canSuspend={false} className="ChatConsole">
+    <Pane
+      theme={settings.theme}
+      canSuspend={false}
+      className={floating ? 'ChatConsole ChatConsole--float' : 'ChatConsole'}
+    >
       <Stack fill vertical>
-        {floating && (
-          <Stack.Item>
-            <ChatHeader />
-          </Stack.Item>
-        )}
         <Stack.Item>
           <Section fitted>
-            <Stack mx={0.5} my={0.25} align="center">
-              <Stack.Item grow>
-                <ChatTabs />
-              </Stack.Item>
-              <Stack.Item>
-                <PingIndicator />
-              </Stack.Item>
-              <Stack.Item>
-                <LayoutButtons />
-              </Stack.Item>
-              <Stack.Item>
-                <Button
-                  selected={audioVisible}
-                  icon="music"
-                  tooltip="Music player"
-                  tooltipPosition="bottom-start"
-                  onClick={() => {
-                    setAudioVisible((v) => !v);
-                  }}
-                />
-              </Stack.Item>
-              <Stack.Item>
-                <Button
-                  icon={settingsVisible ? 'times' : 'cog'}
-                  selected={settingsVisible}
-                  tooltip={settingsVisible ? 'Close settings' : 'Open settings'}
-                  tooltipPosition="bottom-start"
-                  onClick={() => setSettingsVisible((v) => !v)}
-                />
-              </Stack.Item>
-            </Stack>
+            <div
+              className={floating ? 'ChatDragRow' : undefined}
+              onPointerDown={floating ? drag.onPointerDown : undefined}
+            >
+              <Stack mx={0.5} my={0.25} align="center">
+                <Stack.Item grow>
+                  <ChatTabs />
+                </Stack.Item>
+                <Stack.Item>
+                  <PingIndicator />
+                </Stack.Item>
+                <Stack.Item>
+                  <LayoutButtons />
+                </Stack.Item>
+                <Stack.Item>
+                  <Button
+                    selected={audioVisible}
+                    icon="music"
+                    tooltip="Music player"
+                    tooltipPosition="bottom-start"
+                    onClick={() => {
+                      setAudioVisible((v) => !v);
+                    }}
+                  />
+                </Stack.Item>
+                <Stack.Item>
+                  <Button
+                    icon={settingsVisible ? 'times' : 'cog'}
+                    selected={settingsVisible}
+                    tooltip={
+                      settingsVisible ? 'Close settings' : 'Open settings'
+                    }
+                    tooltipPosition="bottom-start"
+                    onClick={() => setSettingsVisible((v) => !v)}
+                  />
+                </Stack.Item>
+              </Stack>
+            </div>
           </Section>
         </Stack.Item>
         {audioVisible && (
@@ -131,6 +139,7 @@ export function Panel(props) {
           <ChatInput />
         </Stack.Item>
       </Stack>
+      {floating && <ChatPinHint hint={drag.hint} />}
       {floating && <ChatResizeGrip />}
     </Pane>
   );

@@ -6,8 +6,8 @@ import { measureShare, startWindowDrag, startWindowResize } from './geometry';
 import { type ChatMode, pinRequest, shareMoved } from './model';
 
 /** Asks the server to move the chat pane (layout/pin). */
-export function requestMode(mode: ChatMode): void {
-  Byond.sendMessage('layout/pin', { mode });
+export function requestMode(mode: ChatMode, via = 'button'): void {
+  Byond.sendMessage('layout/pin', { mode, via });
 }
 
 /** Buttons in the tab row: swap the pinned side, or float / re-pin the chat. */
@@ -53,22 +53,37 @@ export function LayoutButtons() {
   );
 }
 
-/** The strip that moves the floating window (it has no OS title bar). */
-export function ChatHeader() {
+/** Parts of the tab row that keep their own clicks instead of starting a window drag. */
+const NO_DRAG =
+  'button, input, textarea, a, .Tabs__tab, .Button, [data-chat-input]';
+
+/**
+ * Drag handling for the floating window, which has no title bar at all: the
+ * free space of the tab row moves it. Returns the pin the drag would make
+ * (null when none) and the pointer handler for the row.
+ */
+export function useChatDrag() {
   const [hint, setHint] = useState<'top' | 'bottom' | null>(null);
+  const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest(NO_DRAG)) {
+      return;
+    }
+    startWindowDrag(event, {
+      onHint: setHint,
+      onPin: (mode) => requestMode(mode, 'drop'),
+    });
+  };
+  return { hint, onPointerDown };
+}
+
+/** Says what a drop would do, over the chat, while the window is dragged into the pin strip. */
+export function ChatPinHint(props: { hint: 'top' | 'bottom' | null }) {
+  if (!props.hint) {
+    return null;
+  }
   return (
-    <div
-      className="ChatHeader"
-      onPointerDown={(event) =>
-        startWindowDrag(event, { onHint: setHint, onPin: requestMode })
-      }
-    >
-      <span className="ChatHeader__title">
-        {hint
-          ? `Release to pin to the ${hint} right`
-          : 'CHAT - drag to move, drop at the right edge to pin'}
-      </span>
-    </div>
+    <div className="ChatPinHint">Release to pin to the {props.hint} right</div>
   );
 }
 
