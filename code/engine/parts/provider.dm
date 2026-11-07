@@ -133,13 +133,28 @@
 			continue
 		if(T.caps[A.def.key])
 			continue // a type-level capability: its entries are in the table already
-		for(var/datum/centry/C as anything in activation_plan(A.def))
-			var/datum/entry/E = C.item
-			if(istype(E) && E.kind == ENTRY_PROVIDES && op_whens_hold(D, C.whens))
+		for(var/datum/centry/C as anything in activation_provides(A.def))
+			if(op_whens_hold(D, C.whens))
 				var/datum/prov/P = new
-				P.entry = E // ALLOW(ownership): a transient record of one resolution: dropped with it
+				P.entry = C.item // ALLOW(ownership): a transient record of one resolution: dropped with it
 				P.source = source // ALLOW(ownership): a transient record of one resolution: dropped with it
 				into += P
+
+/datum/capability
+	/// The provides() entries (centry) of activation_plan(src), in order, made on first use (activation_provides()).
+	var/list/provides_plan
+
+/// The provides() entries of a definition's expansion. The plan is built once per interned definition, so its provides are too: a provider read
+/// walks only them, not every entry of every activation the holder has.
+/proc/activation_provides(datum/capability/def)
+	if(isnull(def.provides_plan))
+		var/list/found = list()
+		for(var/datum/centry/C as anything in activation_plan(def))
+			var/datum/entry/E = C.item
+			if(istype(E) && E.kind == ENTRY_PROVIDES)
+				found += C
+		def.provides_plan = found
+	return def.provides_plan
 
 /// Do the when() blocks an entry sits inside all hold on `holder`? (Evaluated when read: a condition used for matching.)
 /proc/op_whens_hold(datum/holder, list/whens)
@@ -229,10 +244,12 @@
 
 /// The reason an op of `plan` cannot reach `target`, or null when it can, and the provider that does it (set in `chosen`). Providers are
 /// the actor's and the held item's now.
-/proc/reach_gate(mob/actor, atom/target, obj/held, datum/op_plan/P, datum/entry/part/bind/B, authority, list/chosen)
+/// `provs`, when given, is providers_for(actor, held) already read (a resolution reads it once for all its candidates).
+/proc/reach_gate(mob/actor, atom/target, obj/held, datum/op_plan/P, datum/entry/part/bind/B, authority, list/chosen, list/provs = null)
 	var/policy = op_reach_policy(P, B)
 	var/need = op_affordance(P, B, held)
-	var/list/provs = providers_for(actor, held)
+	if(isnull(provs))
+		provs = providers_for(actor, held)
 	var/list/fits = list()
 	// The authority a provider has to carry is the input's narrowed to what the binding accepts: a borg's click carries both physical and remote
 	// access, and a hand op takes only its hand, a remote() op only its interface.

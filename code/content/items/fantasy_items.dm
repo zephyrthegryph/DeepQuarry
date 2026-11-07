@@ -126,7 +126,6 @@ CAPABILITIES(/obj/structure/bed/bath)
 	desc = "Old fashioned cookies are ready, dear."
 	icon_state = "yeoldovenopen"
 	state_prefix = "yeoldoven"
-	tgui_id = "CookingOvenOld"
 
 //toilet
 

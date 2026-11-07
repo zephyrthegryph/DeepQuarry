@@ -122,6 +122,23 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 	/// How many op items (centry of kind op, built or not) the index was built over: a subtype's table that only appends numbers its own ops from here.
 	var/op_items = 0
 
+/datum/op_index
+	/// op key -> button name of the ops of this index that have a menu() button (op_index_buttons()), made on first use.
+	var/list/button_cache
+
+/// The ops of a compiled index that show as abilities (a menu() binding with a button): op key -> button name. An index never changes once
+/// built, so this is interned on it; a holder's ability list (sync_op_abilities()) reads it on every capability change.
+/proc/op_index_buttons(datum/op_index/index)
+	if(isnull(index.button_cache))
+		var/list/buttons = list()
+		for(var/datum/op_plan/plan as anything in index.ordered)
+			for(var/datum/entry/part/bind/binding as anything in plan.bindings)
+				if(binding.bind_kind == BIND_MENU && istext(binding.args?["button"]))
+					buttons[plan.key] = binding.args["button"]
+					break
+		index.button_cache = buttons
+	return index.button_cache
+
 /datum/type_table
 	/// The compiled ops of the table (made on first use), and the ones each granted capability definition would bring to a holder of it, by definition key.
 	var/datum/op_index/op_index

@@ -15,7 +15,7 @@ import { ApplianceStatus, type Data } from './Appliance';
 export const CookingOven = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { containersRemovable, our_contents, is_open } = data;
+  const { our_contents, is_open, state_prefix = 'oven' } = data;
 
   return (
     <Window width={600} height={600}>
@@ -170,7 +170,7 @@ export const CookingOven = (props) => {
               </Stack>
               <DmIcon
                 icon="icons/obj/cooking_machines.dmi"
-                icon_state={is_open ? 'ovenopen' : 'ovenclosed_on'}
+                icon_state={`${state_prefix}${is_open ? 'open' : 'closed_on'}`}
                 width={30}
               />
             </Stack.Item>
