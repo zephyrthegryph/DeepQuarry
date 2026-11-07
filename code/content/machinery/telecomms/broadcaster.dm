@@ -380,6 +380,10 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
 	var/list/heard_garbled	= list() // garbled message (ie "f*c* **u, **i*er!")
 	var/list/heard_gibberish= list() // completely screwed over message (ie "F%! (O*# *#!<>&**%!")
 
+	// Ghosts hearing all radio chat skip these channels: the blacklist does not depend on the listener.
+	var/static/list/ghostradio_freq_blacklist = list(ENT_FREQ, BDCM_FREQ) // Kept for Downstream use // Enable BDCM_FREQ
+	var/ghost_blacklisted = (data == DATA_ANTAG) || (connection.frequency in ghostradio_freq_blacklist)
+
 	for (var/mob/R in receive)
 
 	  /* --- Loop through the receivers and categorize them --- */
@@ -391,12 +395,8 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
 		if(isnewplayer(R)) // we don't want new players to hear messages. rare but generates runtimes.
 			continue
 
-		// Ghosts hearing all radio chat don't want to hear syndicate intercepts, they're duplicates
-		if(data == DATA_ANTAG && isobserver(R) && R.client?.prefs?.read_preference(/datum/preference/toggle/ghost_radio))
-			continue
-
-		var/list/ghostradio_freq_blacklist = list(ENT_FREQ, BDCM_FREQ) // Kept for Downstream use // Enable BDCM_FREQ
-		if(istype(R, /mob/observer/dead) && R.client?.prefs?.read_preference(/datum/preference/toggle/ghost_radio) && (connection.frequency in ghostradio_freq_blacklist))
+		// Ghosts hearing all radio chat don't want syndicate intercepts (duplicates) or the blacklisted channels
+		if(ghost_blacklisted && isobserver(R) && (data == DATA_ANTAG || istype(R, /mob/observer/dead)) && R.client?.prefs?.read_preference(/datum/preference/toggle/ghost_radio))
 			continue
 
 		// --- Check for compression ---
@@ -774,3 +774,43 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/link)
 /obj/machinery/telecomms/broadcaster/proc/clear_recent_messages()
 	GLOB.message_delay = 0
 	GLOB.recentmessages = list()
+
+/// The mobs who hear any of `radios`: every player with a client on a turf one of them reaches, and every observer.
+/proc/get_mobs_in_radio_ranges(list/obj/item/radio/radios)
+	var/list/candidates = list()
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if(M.client || isobserver(M))
+			candidates += M
+	return radio_hearers(radios, candidates)
+
+/// Which of `candidates` hear any of `radios`. Observers hear everything; anyone else hears a radio that reaches their turf.
+/// Starts from the listeners, a few players, rather than from the radios' ranges: a broadcast reaches hundreds of intercoms,
+/// and walking the turfs round each of them cost most of a Common message.
+/proc/radio_hearers(list/obj/item/radio/radios, list/mob/candidates)
+	. = list()
+	var/list/turfs_by_z = list() // "z" -> mob -> turf, the listeners not yet placed in range of a radio
+	for(var/mob/M as anything in candidates)
+		if(isobserver(M))
+			. |= M
+			continue
+		var/turf/T = get_turf(M)
+		if(!T)
+			continue
+		var/list/on_level = turfs_by_z["[T.z]"]
+		if(!on_level)
+			on_level = list()
+			turfs_by_z["[T.z]"] = on_level
+		on_level[M] = T
+	if(!length(turfs_by_z))
+		return
+	for(var/obj/item/radio/R as anything in radios)
+		var/turf/from = get_turf(R)
+		if(!from)
+			continue
+		var/list/on_level = turfs_by_z["[from.z]"]
+		if(!length(on_level))
+			continue
+		for(var/mob/M as anything in on_level)
+			if(R.reaches(from, on_level[M]))
+				. |= M
+				on_level -= M

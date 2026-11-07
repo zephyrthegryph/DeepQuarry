@@ -733,6 +733,7 @@
 #include "dq_wall_frame_behaviour.dm"
 #include "dq_emp_disable_behaviour.dm"
 #include "dq_join_cost.dm"
+#include "dq_radio_hearing_tests.dm"
 #include "dq_roundstart_churn.dm"
 #include "dq_idle_settle.dm"
 #include "dq_overlay_dir_renders.dm"

@@ -213,40 +213,6 @@
 
 	return hear
 
-/proc/get_mobs_in_radio_ranges(list/obj/item/radio/radios)
-
-	. = list()
-	// Returns a list of mobs who can hear any of the radios given in @radios
-	for(var/obj/item/radio/R as anything in radios)
-		if(get_turf(R))
-			for(var/turf/T in R.can_broadcast_to())
-				for (var/atom/movable/hearing in contents_of(T))
-					var/list/hearing_listeners = dq_get_recursive_listeners(hearing)
-					if (hearing_listeners)
-						. |= hearing_listeners
-
-	for (var/mob/M as anything in .)
-		if (!istype(M) || !M.client)
-			. -= M
-	for (var/mob/observer/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		. |= O
-
-/mob/proc/can_hear_radio(list/hearturfs)
-	return FALSE
-
-/mob/living/can_hear_radio(list/hearturfs)
-	return get_turf(src) in hearturfs
-
-/mob/living/silicon/robot/can_hear_radio(list/hearturfs)
-	var/turf/T = get_turf(src)
-	var/obj/item/radio/borg/R = hearturfs[T] // this should be an assoc list of turf-to-radio
-
-	return R // radio, true, false, what's the difference
-
-/mob/observer/dead/can_hear_radio(list/hearturfs)
-	return client?.prefs?.read_preference(/datum/preference/toggle/ghost_radio)
-
-
 //Uses dview to quickly return mobs and objects in view,
 // then adds additional mobs or objects if they are in range 'smartly',
 // based on their presence in lists of players or registered objects
