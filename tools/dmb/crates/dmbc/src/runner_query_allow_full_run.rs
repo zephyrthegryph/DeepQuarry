@@ -49,7 +49,8 @@ impl Producer{
  fn stages_report(self)->bool {
   use dq_analyze::captured_raw_tree_pages::Policy;
   matches!(self,
-   Self::Raw(_) | Self::Tree(Policy::NoticePublisher | Policy::ReportInCatch | Policy::Cooldown)
+   Self::Raw(_) | Self::Tree(Policy::NoticePublisher | Policy::ReportInCatch | Policy::Cooldown
+      | Policy::CapBits | Policy::DeclarationBlock | Policy::DuplicateInputKey)
    | Self::Special("allow_annotations" | "silicon_entry" | "library_layering" | "sem/handlers"
       | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped" | "derived_reads" | "sys/dx_reactive" | "lifeforms" | "player_link" | "untyped_member" | "weak_raw_read" | "rel_write_undeclared" | "requirement_bool" | "base_vars" | "decl" | "init")
   )

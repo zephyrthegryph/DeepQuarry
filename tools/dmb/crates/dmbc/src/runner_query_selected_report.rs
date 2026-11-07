@@ -486,6 +486,7 @@ mod selected_plan_tests {
         let registry = full_unused::registered_full_selection(&[], &mut work).unwrap();
         let expected: [(Roster, &[Q]); Roster::ALL.len()] = [
             (Roster::Base, &[]),
+            (Roster::WithRawDeclarationPolicies, &[]),
             (Roster::WithCooldown, &[]),
             (Roster::WithEngineInternal, &[]),
             (Roster::WithSilicon, &[Q::SiliconEntry]),
