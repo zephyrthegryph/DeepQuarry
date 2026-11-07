@@ -119,6 +119,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_type_info)
 	var/list/consts
 	/// TRUE when instances need their stats computed at init (any static contribution or gating).
 	var/init_needed = FALSE
+	/// The stats an instance computes at init, in rank order (stat_type_init_todo()): built on the first init, never written after.
+	var/list/init_todo
 	/// The relation vars of this type's one-relation hops, whose targets the stat layer indexes (stat_hop_attach).
 	var/list/hop_rels
 	/// "[stat id]" -> its rank: one above the highest rank of any stat it reads on the entity (0 when it reads none).

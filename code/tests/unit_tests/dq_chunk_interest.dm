@@ -324,17 +324,25 @@
 	TEST_ASSERT_EQUAL(loading.refresh_queued, DEP_PARKED, "an atom whose own init frame is open is left alone")
 	init_open_end(loading)
 	TEST_ASSERT_EQUAL(loading.refresh_queued, 0, "and draws when its frame ends")
-	// An atom deleted inside its own init frame leaves nothing behind: the open-frame table is keyed by slot and holds no atom, and the slot's entry goes
-	// with the slot (a datum that takes the slot next is not taken for one still setting up).
+	// An atom deleted inside its own init frame leaves nothing behind: the open frame is a bit of the atom's own datum_flags, it holds nothing and needs
+	// no slot, and its destroy clears it (a datum that takes its slot next is not taken for one still setting up).
 	init_open_begin(dying)
+	TEST_ASSERT(dying.datum_flags & DF_INIT_OPEN, "an open frame is recorded on the atom")
 	var/dying_slot = dying.handle_slot
-	TEST_ASSERT(dying_slot, "an open frame names the atom by a slot")
-	TEST_ASSERT(init_open?[dying_slot], "and is recorded")
 	qdel(dying)
-	TEST_ASSERT(isnull(init_open?[dying_slot]), "a deleted atom's open frame is gone with its slot")
+	TEST_ASSERT(!(dying.datum_flags & DF_INIT_OPEN), "a deleted atom's open frame is gone with it")
+	TEST_ASSERT(!dying_slot || isnull(init_open?[dying_slot]), "and nothing is left counted under its slot")
 	init_open_end(dying) // the frame's own end finds nothing and does nothing
 	probes -= dying
-	TEST_ASSERT(isnull(init_open?[loading.handle_slot]), "no frame of the load's atom is left open")
+	TEST_ASSERT(!(loading.datum_flags & DF_INIT_OPEN), "no frame of the load's atom is left open")
+	// A frame opened inside an open frame is counted: the atom stays held until the outer one ends.
+	init_open_begin(loading)
+	init_open_begin(loading)
+	init_open_end(loading)
+	TEST_ASSERT(loading.datum_flags & DF_INIT_OPEN, "a nested frame keeps the atom held when it ends")
+	init_open_end(loading)
+	TEST_ASSERT(!(loading.datum_flags & DF_INIT_OPEN), "and the outer frame's end lets it go")
+	TEST_ASSERT(isnull(init_open?[loading.handle_slot]), "with nothing left counted")
 	interest_clean(probes)
 
 /// A deleted datum leaves the refresh queues: they hold datums by reference, and a deleted holder must not stay pinned by them.
