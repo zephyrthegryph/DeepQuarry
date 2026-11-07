@@ -9,10 +9,16 @@ import { type BooleanLike, classes } from 'tgui-core/react';
 import { type Channel, ChannelIterator } from './ChannelIterator';
 import { ChatHistory } from './ChatHistory';
 import { LineLength, RADIO_PREFIXES, WindowSize } from './constants';
-import { watchDock } from './dock';
+import {
+  loadPlacement,
+  rememberPlacement,
+  resetPlacement,
+  watchDock,
+} from './dock';
 import { resolvePrefix, windowClose, windowOpen, windowSet } from './helpers';
 import { LanguagePreview, previewHeight } from './LanguagePreview';
 import { buildPreview, type LanguageRules } from './parseLanguages';
+import { isDragMove } from './placement';
 import {
   activeAt,
   SHORTCUT_MARKERS,
@@ -111,15 +117,33 @@ export function TguiSay() {
     }
   }
 
+  /** Starts a window drag; if the pointer really moved, the new place is kept and auto-docking stops. */
+  function beginDrag(event: MouseEvent): void {
+    const from = { x: event.screenX, y: event.screenY };
+    dragStartHandler(event);
+    const onUp = (up: MouseEvent) => {
+      document.removeEventListener('mouseup', onUp);
+      if (isDragMove(from, { x: up.screenX, y: up.screenY })) {
+        void rememberPlacement();
+      }
+    };
+    document.addEventListener('mouseup', onUp);
+  }
+
   function handleButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
     isDragging.current = true;
 
     setTimeout(() => {
       // So the button doesn't jump around accidentally
       if (isDragging.current) {
-        dragStartHandler(event.nativeEvent);
+        beginDrag(event.nativeEvent);
       }
     }, 50);
+  }
+
+  /** Double-click on the frame: back to the docked position. */
+  function handleResetDock(): void {
+    void resetPlacement(dockSize.current.w, dockSize.current.h);
   }
 
   // Prevents the button from changing channels if it's dragged
@@ -322,7 +346,10 @@ export function TguiSay() {
     );
 
     stopDock.current?.();
-    stopDock.current = watchDock(() => dockSize.current);
+    stopDock.current = watchDock(
+      () => dockSize.current,
+      () => (scale.current ? window.devicePixelRatio : 1),
+    );
     innerRef.current?.focus();
   }
 
@@ -348,6 +375,7 @@ export function TguiSay() {
 
   /** Subscribe to Byond messages */
   useEffect(() => {
+    void loadPlacement();
     Byond.subscribeTo('props', handleProps);
     Byond.subscribeTo('force', handleForceSay);
     Byond.subscribeTo('open', handleOpen);
@@ -416,7 +444,8 @@ export function TguiSay() {
           zoom: scale.current ? '' : `${100 / window.devicePixelRatio}%`,
           height: extraHeight ? size + extraHeight : undefined,
         }}
-        onMouseDown={dragStartHandler}
+        onMouseDown={(event) => beginDrag(event.nativeEvent)}
+        onDoubleClick={handleResetDock}
       />
       <div
         className={classes(['content', lightMode && 'content-lightMode'])}
