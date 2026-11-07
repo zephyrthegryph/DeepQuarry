@@ -229,6 +229,8 @@ impl NetworkKind for Pipes {
 	/// be `device::DeviceParams` stored right here).
 	type Device = ();
 	type Command = ();
+	/// Ports connect only by the edges DM sends (`vg_pipe_connect_list`, `CONNECT` ops): no occupancy search at bind.
+	const GEOMETRIC: bool = false;
 
 	fn summarize(node: &f32) -> f64 {
 		f64::from(node.max(0.0))

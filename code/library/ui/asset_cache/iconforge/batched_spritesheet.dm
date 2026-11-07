@@ -20,6 +20,8 @@
 
 	/// JSON encoded version of entries.
 	var/entries_json = null
+	/// TRUE once create_spritesheets() has run (at the first realize_spritesheets(), not at register()).
+	var/entries_created = FALSE
 
 	/// If this spritesheet exists in a completed state.
 	var/fully_generated = FALSE
@@ -137,10 +139,11 @@
 	if (!name)
 		CRASH("spritesheet [type] cannot register without a name")
 
-	// Create our input data first, so we can compare to the cache.
-	create_spritesheets()
-
+	// The input data is made when the sheet is realized (realize_spritesheets()): a deferred sheet builds it in the asset loading service after boot,
+	// not in the Assets system's init (the vending sheet makes and deletes every vending machine type to list their products, ~3 s of boot).
 	if(should_load_immediately())
+		entries_created = TRUE
+		create_spritesheets()
 		realize_spritesheets(yield = FALSE)
 	else
 		SSasset_loading.queue_asset(src)
@@ -168,6 +171,9 @@
 	if(fully_generated)
 		finish_queued_generation()
 		return
+	if(!entries_created)
+		entries_created = TRUE
+		create_spritesheets() // the input data, compared with the cache below
 	if(!length(entries))
 		CRASH("Spritesheet [name] ([type]) is empty! What are you doing?")
 

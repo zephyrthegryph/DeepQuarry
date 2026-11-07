@@ -123,6 +123,12 @@ pub trait NetworkKind:
         let _ = node;
         None
     }
+
+    /// Whether nodes connect by where they are ([`NetworkKind::connects`] over the cells [`NetworkKind::reach`] names). `false` for a kind whose
+    /// topology DM sends as explicit edges ([`super::host::NetworkHost::connect_entities`], pipes' `CONNECT` ops): binding such a node keeps no
+    /// occupancy row and runs no candidate search, which could only find nothing ([`NetworkKind::connects`] keeps its default `false`). Every
+    /// pipe port binds at cell 0, so that search scanned every port bound before it: quadratic in the map's ports (11.7 k ports, ~4 s at boot).
+    const GEOMETRIC: bool = true;
 }
 
 use crate::grid::CellId;

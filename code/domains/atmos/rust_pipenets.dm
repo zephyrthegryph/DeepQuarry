@@ -107,6 +107,15 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		rel_add(src, nameof(rust_unbound_port_air), air, "[index]")
 	return air
 
+/// Whether port `index` joins the boot upsert (setup_rust_pipenets()): a port with air.
+/obj/machinery/atmospherics/proc/rust_pipe_port_present(index)
+	return !!rust_pipe_port_air(index)
+
+/// The gas port `index` brings to its region at the boot upsert: its air, or null for none (Rust then starts the port empty, at TCMB, as an empty
+/// mixture would).
+/obj/machinery/atmospherics/proc/rust_pipe_port_seed_air(index)
+	return rust_pipe_port_air(index)
+
 /obj/machinery/atmospherics/proc/rust_pipe_port_volume(index)
 	return 0
 
@@ -443,19 +452,24 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	// (init_and_turfs.md §3.3 step 4), not one call per port and edge.
 	var/list/upserts = list()
 	var/list/edges = list()
+	var/phase_started = REALTIMEOFDAY
+	var/list/phase_s = list()
 
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		machine.rust_allocate_pipe_ports()
 		for(var/index = 1 to machine.rust_pipe_port_count())
-			var/datum/gas_mixture/port_air = machine.rust_pipe_port_air(index)
-			if(!port_air)
+			if(!machine.rust_pipe_port_present(index))
 				continue
 			upserts += machine.rust_pipe_port_ids[index]
-			upserts += port_air
+			upserts += machine.rust_pipe_port_seed_air(index)
 			upserts += machine.rust_pipe_port_volume(index)
 
+	phase_s["ports and port air"] = (REALTIMEOFDAY - phase_started) / 10
+	phase_started = REALTIMEOFDAY
 	if(length(upserts))
 		vg_pipe_upsert_list(upserts)
+	phase_s["upsert"] = (REALTIMEOFDAY - phase_started) / 10
+	phase_started = REALTIMEOFDAY
 
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		for(var/index = 1 to machine.rust_pipe_port_count())
@@ -478,10 +492,19 @@ CAPABILITIES(/obj/machinery/atmospherics)
 			edges += machine.rust_pipe_port_ids[first_index]
 			edges += machine.rust_pipe_port_ids[second_index]
 
+	phase_s["edges"] = (REALTIMEOFDAY - phase_started) / 10
+	phase_started = REALTIMEOFDAY
 	if(length(edges))
 		vg_pipe_connect_list(edges)
+	phase_s["connect"] = (REALTIMEOFDAY - phase_started) / 10
+	phase_started = REALTIMEOFDAY
 	rust_pipe_topology_dirty = TRUE
 	rust_commit_pending_pipenets()
+	phase_s["commit"] = (REALTIMEOFDAY - phase_started) / 10
+	var/list/parts = list()
+	for(var/name in phase_s)
+		parts += "[name] [phase_s[name]]s"
+	log_world("AIR_INIT: rust pipenets for [length(upserts) / 3] port(s), [length(edges) / 2] edge(s): [jointext(parts, ", ")]")
 
 /// Commits this batch of topology edits to the Rust pipe network (R7) and
 /// rebuilds the compatibility wrappers of every region whose membership
@@ -725,6 +748,14 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	if(!air_temporary)
 		rel_set(src, nameof(air_temporary), new /datum/gas_mixture(max(volume, 1)))
 	return air_temporary
+
+/// A fixed pipe is always a port; it seeds its region with gas only when it has some (a mapped tank, a pipeline's share): an empty pipe gets no
+/// throwaway mixture (10 k of them were made and destroyed at boot).
+/obj/machinery/atmospherics/pipe/rust_pipe_port_present(index)
+	return TRUE
+
+/obj/machinery/atmospherics/pipe/rust_pipe_port_seed_air(index)
+	return parent?.air || air_temporary
 
 /obj/machinery/atmospherics/pipe/rust_pipe_port_volume(index)
 	return volume
