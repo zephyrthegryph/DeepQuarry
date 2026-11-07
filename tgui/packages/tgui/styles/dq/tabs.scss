@@ -1,11 +1,11 @@
-// The console tab row (components/ConsoleTabs.tsx): the stat panel's and the
-// chat's. The tabs sit on the row's 2px bottom rule (the row aligns its items
+// The DQ tab row (dq/Tabs.tsx): the stat panel's, the chat's and the
+// Inspect/MC sub-tabs. The tabs sit on the row's 2px bottom rule (the row aligns its items
 // to the end and has no bottom padding), so the selected tab's underline, the
 // tgui-core .Tab:before indicator, is drawn on that rule.
 
 @use '../console';
 
-.ConsoleTabs {
+.DqTabs {
   display: flex;
   flex: none;
   flex-wrap: wrap;
@@ -15,7 +15,7 @@
   background-color: console.$console-panel;
   border-bottom: 2px solid console.$console-border;
 
-  .ConsoleTabs__list {
+  .DqTabs__list {
     flex: 0 1 auto;
     flex-wrap: wrap;
     min-width: 0;
@@ -40,7 +40,7 @@
     white-space: nowrap;
   }
 
-  .ConsoleTabs__after {
+  .DqTabs__after {
     flex: none;
     align-self: center;
     padding-bottom: 2px;
@@ -48,7 +48,7 @@
 
   // Row-end content (buttons, a search box), centred on the tabs and clear
   // of the bottom rule.
-  .ConsoleTabs__end {
+  .DqTabs__end {
     display: flex;
     flex: none;
     align-items: center;
@@ -58,11 +58,11 @@
     padding-bottom: 2px;
   }
 
-  .ConsoleTabs__tab--dragged {
+  .DqTabs__tab--dragged {
     opacity: 0.5;
   }
 
-  .ConsoleTabs__tab--over {
+  .DqTabs__tab--over {
     box-shadow: inset 2px 0 0 console.$console-accent;
   }
 
@@ -80,10 +80,29 @@
     }
   }
 
+  // A sub-tab row inside a page: no panel background or padding, smaller tabs.
+  &--small {
+    padding: 0;
+    margin-bottom: 0.5em;
+    background-color: transparent;
+
+    .Tab {
+      min-height: 1.6em;
+      font-size: 11px;
+      max-width: 12em;
+    }
+
+    .Tab .Tab__text {
+      margin: 0 var(--space-sm);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
   &--scrollable {
     flex-wrap: nowrap;
 
-    .ConsoleTabs__list {
+    .DqTabs__list {
       flex-wrap: nowrap;
       overflow-x: auto;
       scrollbar-width: thin;

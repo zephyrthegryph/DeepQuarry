@@ -18,14 +18,9 @@
   font-weight: 700;
 }
 
-// The channel button, like the say popup's: one button on the left, coloured by channel.
-$channel-colors: (
-  'Say': hsl(214, 38%, 74%),
-  'Radio': map.get(radio.$radio-colors, 'common'),
-  'Me': hsl(230, 58%, 55%),
-  'OOC': hsl(48, 100%, 40%),
-  'LOOC': hsl(180, 44%, 41%),
-);
+// The channel button, like the say popup's: one button on the left, coloured
+// by channel (radio.$mode-colors, the say popup's table).
+$channel-colors: radio.$mode-colors;
 
 .ChatInput__channel,
 .ChatInput__radio,

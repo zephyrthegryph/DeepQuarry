@@ -24,7 +24,7 @@
 @include meta.load-css('./components/Chat.scss');
 @include meta.load-css('./components/Ping.scss');
 @include meta.load-css('./components/UnreadCount.scss');
-@include meta.load-css('~tgui/styles/components/ConsoleTabs.scss');
+@include meta.load-css('~tgui/styles/dq/index.scss');
 @include meta.load-css('./components/ChatConsole.scss');
 @include meta.load-css('./components/ChatInput.scss');
 @include meta.load-css('./components/ChatLayout.scss');

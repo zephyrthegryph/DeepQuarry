@@ -6,7 +6,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { ConsoleTabs, type ConsoleTabsLayout } from 'tgui/components';
+import { Tabs, type TabsLayout } from 'tgui/dq';
 import { Button, Input, Section } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
 import { MapSplitHandle } from '../layout/ChatLayout';
@@ -294,7 +294,7 @@ export function App(props: {
   return (
     <div className="stat-root">
       <MapSplitHandle />
-      <ConsoleTabs
+      <Tabs
         layout={tabsLayout(tabsStyle)}
         tabs={[
           ...tabs.map((tab) => ({
@@ -320,7 +320,7 @@ export function App(props: {
           value={query}
           onChange={setQuery}
         />
-      </ConsoleTabs>
+      </Tabs>
       <div className="stat-content">
         {menuOpen ? (
           <MenuPage />
@@ -342,7 +342,7 @@ export function App(props: {
 const MENU_TAB = '\u0000menu';
 
 /** The display setting's tab style, as the shared tab row's layout. */
-function tabsLayout(style: string): ConsoleTabsLayout {
+function tabsLayout(style: string): TabsLayout {
   return style === 'scrollable' || style === 'classic' ? style : 'wrap';
 }
 

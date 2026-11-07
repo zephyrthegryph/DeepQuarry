@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { moveBefore } from 'tgui/components/reorder';
+import { moveBefore } from 'tgui/dq';
 import { NO_DRAG } from '../layout/ChatLayout';
 import { keepFirst } from './model';
 
@@ -26,9 +26,19 @@ describe('chat tabs', () => {
   });
 
   it('share the stat panel tab row', () => {
-    expect(read('chat/ChatTabs.tsx')).toContain('ConsoleTabs');
-    expect(read('statpanel/App.tsx')).toContain('ConsoleTabs');
-    expect(read('chat/ChatTabs.tsx')).not.toContain('<Tabs');
-    expect(read('statpanel/App.tsx')).not.toContain('<Tabs');
+    expect(read('chat/ChatTabs.tsx')).toContain("from 'tgui/dq'");
+    expect(read('statpanel/App.tsx')).toContain("from 'tgui/dq'");
+    // No second tab row of their own (tgui-core's Tabs.Tab used directly).
+    for (const path of [
+      'chat/ChatTabs.tsx',
+      'statpanel/App.tsx',
+      'statpanel/InspectTab.tsx',
+      'statpanel/McTab.tsx',
+    ]) {
+      expect(read(path)).not.toContain('Tabs.Tab');
+      expect(read(path)).not.toMatch(
+        /import \{[^}]*\bTabs\b[^}]*\} from 'tgui-core\/components'/,
+      );
+    }
   });
 });

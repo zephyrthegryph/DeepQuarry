@@ -6,3 +6,4 @@ changes:
   - bugfix: "The selected chat tab's underline sits on the tab row's rule, as in the stat panel: both now use one shared tab row."
   - qol: "Console UI scanlines, phosphor stripes, glow and lobby vignette toned down, each set by one shared theme variable."
   - refactor: "Chat themes share one message stylesheet; each theme only sets its colours. The phobia/hypnosis text animations use each theme's own colours again."
+  - qol: "Right-click menu, Inspect tab and MC tab use the shared DQ title bar, list rows and tabs; the say popup wears the console colours and square buttons."

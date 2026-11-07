@@ -3,7 +3,7 @@
 @use '~tgui/styles/console';
 
 @include meta.load-css('~tgui/styles/reset.scss');
-@include meta.load-css('~tgui/styles/components/ConsoleTabs.scss');
+@include meta.load-css('~tgui/styles/dq/index.scss');
 
 // tgui-panel/settings/palette.ts; palette.test.ts holds these to it.
 .dark:root {
@@ -183,23 +183,6 @@ h3 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
   gap: var(--space-m);
-}
-
-.mc-navigation.Tabs {
-  flex-wrap: wrap;
-  margin: calc(-1 * var(--space-s)) 0 0;
-  padding: 0;
-  background-color: transparent;
-  border-bottom: 1px solid var(--stat-line);
-
-  .Tab {
-    min-width: 0;
-    min-height: 1.8em;
-  }
-
-  .Tab .Tab__text {
-    margin: 0 var(--space-m);
-  }
 }
 
 .mc-metric-card,
@@ -475,7 +458,7 @@ body {
     border-bottom: 2px solid console.$console-border;
   }
 
-  .ConsoleTabs {
+  .DqTabs:not(.DqTabs--small) {
     margin: 3px 3px 0;
   }
 
@@ -498,10 +481,6 @@ body {
     background-color: console.$console-panel;
     border: 2px solid console.$console-border;
     border-radius: 0;
-  }
-
-  .mc-navigation.Tabs {
-    border-bottom: 2px solid console.$console-border;
   }
 
   .mc-subsystem-track,
@@ -535,47 +514,10 @@ body {
   font-weight: 400;
 }
 
+// The header is the DQ TitleBar (tgui/dq/TitleBar.tsx), flush with the page.
 .inspect__header {
   margin-bottom: 0.5em;
-  padding-bottom: 0.35em;
-  border-bottom: 1px solid console.$console-border;
-}
-
-.inspect__name {
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
-.inspect__subtitle {
-  color: console.$console-accent;
-  font-size: 0.9em;
-  letter-spacing: 0.05em;
-}
-
-.inspect__tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 0.5em;
-  font-size: 0.9em;
-}
-
-.inspect__tab {
-  max-width: 9em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  border: 0;
-  padding: 2px 6px;
-  background: console.$console-disabled;
-  color: console.$console-muted;
-  font: inherit;
-  cursor: pointer;
-
-  &--active {
-    background: console.$console-button;
-    color: console.$console-text;
-  }
+  padding: 0 0 0.35em;
 }
 
 .inspect__body {

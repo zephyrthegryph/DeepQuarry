@@ -6,7 +6,7 @@
 
 import { useAtom } from 'jotai';
 import type { ReactNode } from 'react';
-import { ConsoleTabs } from 'tgui/components';
+import { Tabs } from 'tgui/dq';
 import { Box, Button } from 'tgui-core/components';
 import { settingsVisibleAtom } from '../settings/atoms';
 import { useChatPages } from './use-chat-pages';
@@ -21,7 +21,7 @@ function UnreadCountWidget(props: UnreadCountWidgetProps) {
 }
 
 /**
- * The chat's tab row: the shared console tab row (the stat panel's), with the
+ * The chat's tab row: the DQ tab row (tgui/dq, the stat panel's), with the
  * add-tab button and `children` (ping, music, settings) at its end. Tabs can
  * be dragged onto each other to reorder them; the main tab stays first.
  */
@@ -38,7 +38,7 @@ export function ChatTabs(props: { children?: ReactNode }) {
   const [, setSettingsVisible] = useAtom(settingsVisibleAtom);
 
   return (
-    <ConsoleTabs
+    <Tabs
       className="ChatTabs"
       layout="scrollable"
       tabs={pages.map((page, index) => {
@@ -72,6 +72,6 @@ export function ChatTabs(props: { children?: ReactNode }) {
       }
     >
       {props.children}
-    </ConsoleTabs>
+    </Tabs>
   );
 }
