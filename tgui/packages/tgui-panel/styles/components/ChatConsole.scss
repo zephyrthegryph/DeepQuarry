@@ -61,17 +61,33 @@
   }
 
   // The tab row: tight padding, flat tabs, the selected one in the console blue.
+  // The row has no vertical padding and the tab column stretches to its full
+  // height, so the selected tab's underline (the .Tab:before indicator, the
+  // only one) sits on the row's bottom rule instead of floating above it.
   .ChatDragRow {
-    padding: 2px 0;
+    padding: 0;
+  }
+
+  .ChatTabsItem {
+    align-self: stretch;
   }
 
   .Tabs--horizontal {
     border-bottom: 0;
     margin: 0;
+    padding: 0;
+  }
+
+  .ChatDragRow .Tabs {
+    height: 100%;
+  }
+
+  .ChatTabsAdd {
+    align-self: center;
   }
 
   .Tab {
-    padding: 2px 8px;
+    padding: 2px 8px calc(2px + var(--tab-indicator-size));
     letter-spacing: 0.02em;
     margin-right: 4px;
     line-height: 1.4;

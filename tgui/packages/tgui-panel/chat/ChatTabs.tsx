@@ -25,7 +25,7 @@ export function ChatTabs(props) {
   const [, setSettingsVisible] = useAtom(settingsVisibleAtom);
 
   return (
-    <Stack align="center">
+    <Stack align="stretch">
       <Stack.Item>
         <Tabs textAlign="center">
           {pages.map((page) => {
@@ -45,7 +45,7 @@ export function ChatTabs(props) {
           })}
         </Tabs>
       </Stack.Item>
-      <Stack.Item ml={1}>
+      <Stack.Item ml={1} className="ChatTabsAdd">
         <Button
           icon="plus"
           tooltip="Add a chat tab"

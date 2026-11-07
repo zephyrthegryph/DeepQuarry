@@ -53,8 +53,8 @@ export function Panel(props) {
         <Stack.Item>
           <Section fitted>
             <div className="ChatDragRow" onPointerDown={drag.onPointerDown}>
-              <Stack mx={0.5} my={0.25} align="center">
-                <Stack.Item grow>
+              <Stack mx={0.5} align="center">
+                <Stack.Item grow className="ChatTabsItem">
                   <ChatTabs />
                 </Stack.Item>
                 <Stack.Item>

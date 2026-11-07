@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The underline under the selected chat tab now spans the tab and sits on the tab bar's bottom rule"
