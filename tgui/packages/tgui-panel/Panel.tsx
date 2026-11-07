@@ -26,7 +26,11 @@ import {
 } from './layout/ChatLayout';
 import { Notifications } from './Notifications';
 import { PingIndicator } from './ping/PingIndicator';
-import { ReconnectButton } from './reconnect';
+import {
+  AutoReconnectNotice,
+  ReconnectButton,
+  useAutoReconnect,
+} from './reconnect';
 import { settingsVisibleAtom } from './settings/atoms';
 import { SettingsPanel } from './settings/SettingsPanel';
 import { useSettings } from './settings/use-settings';
@@ -38,6 +42,7 @@ export function Panel(props) {
   const [settingsVisible, setSettingsVisible] = useAtom(settingsVisibleAtom);
   const [dismissedWarning, setDismissedWarning] = useState(false);
   useChatPersistence();
+  useAutoReconnect(!!game.connectionLostAt || !!game.roundRestartedAt);
   useChatScanlines();
   useKeepAlive(setDismissedWarning);
   useShareReport();
@@ -105,6 +110,7 @@ export function Panel(props) {
               <ChatPanel lineHeight={settings.lineHeight} />
             </Pane.Content>
             <Notifications>
+              <AutoReconnectNotice />
               {settings.showReconnectWarning &&
                 game.connectionLostAt &&
                 !dismissedWarning && (

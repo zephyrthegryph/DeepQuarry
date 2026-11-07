@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The chat panel now reconnects automatically after a lost connection or round restart (retrying after 2s, 5s, 10s, then every 15s), with a Cancel button"
