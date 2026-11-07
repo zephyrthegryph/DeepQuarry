@@ -179,7 +179,7 @@ struct Row {
 }
 struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,symbol_shape:dm_ir::LocalSymbolStorage,credit:dm_syntax::SettingRootLease}
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
-struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot}
+struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::CompletedFormalRoot}
 pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:CompletedSignatureRows,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:PendingDefaultPages<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool}
 /// Borrowed accounting from existing unique observer leases. The floor is
 /// the existing post-header reconciliation, including its fixed allowance,
@@ -1032,6 +1032,13 @@ mod signature_row_storage_tests {
     }
 
     #[test]
+    fn pending_default_row_no_longer_carries_parser_only_completion_fields() {
+        assert!(std::mem::size_of::<PendingDefault>() < std::mem::size_of::<(
+            dm_syntax::OriginalPrimaryLiveHeader, super::super::DemandedFormalRoot,
+        )>());
+    }
+
+    #[test]
     fn pending_default_pages_cross_real_growth_boundary_with_only_page_and_directory_peak() {
         const OLD_ROWS: usize = 2048;
         let used = Arc::new(AtomicUsize::new(0));
@@ -1607,9 +1614,11 @@ impl OriginalSignatureObserver<'_,'_>{
  }
  pub(crate) fn observe_formal_outcome_notices(&mut self,source:&dyn dm_preprocess::regions::OriginalFormalTokenStream,actual:&super::DemandedFormalDefault)->std::io::Result<()>{match actual{super::DemandedFormalDefault::Complete{root,..}=>self.observe_stream_expression_notices(source,&root.syntax),super::DemandedFormalDefault::ExpectedTerm(failure)=>self.observe_stream_expression_notices(source,&failure.syntax),super::DemandedFormalDefault::NativeSyntax{syntax,..}=>self.observe_stream_expression_notices(source,syntax)}}
  pub(crate) fn retain_formal_expression(&mut self,root:super::DemandedFormalRoot)->std::io::Result<()>{let live=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?.live.clone();self.retain_default(live,root)}
- fn retain_default(&mut self,live:dm_syntax::OriginalPrimaryLiveHeader,mut root:super::DemandedFormalRoot)->std::io::Result<()>{
+ fn retain_default(&mut self,live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot)->std::io::Result<()>{
   checkpoint(self.a)?;if self.defaults.last().is_some_and(|row|(row.live.start(),row.root.parameter,row.root.role)>=(live.start(),root.parameter,root.role)){return Err(std::io::ErrorKind::InvalidInput.into())}
-  root.syntax.settle_completed_syntax(self.a)?;
+  let super::DemandedFormalRoot{role,enclosure,parameter,assignment,syntax}=root;
+  let syntax=syntax.into_completed_syntax(self.a)?;
+  let root=super::DemandedFormalRoot{role,enclosure,parameter,assignment,syntax};
   self.defaults.push(PendingDefault{live,root},self.a)
  }
  /// No source borrow survives this call. The actual driver supplies a completed

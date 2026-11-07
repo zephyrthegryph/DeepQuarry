@@ -257,7 +257,42 @@ impl NativeDelimiterExpectation{pub fn token_span(self)->Option<Span>{self.token
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct NativeTermExpectation{token:Option<Span>}
 impl NativeTermExpectation{pub fn token_span(self)->Option<Span>{self.token}}
 pub struct DemandedExpression{parsed:ParsedExpr,tokens:Vec<Token>,expected_term:Option<NativeTermExpectation>,expected_delimiter:Option<NativeDelimiterExpectation>,lease:crate::SettingRootLease}
+/// The native root and exact token loan needed for later source binding.
+/// Parser-only success/diagnostic products have already served their consumer.
+/// Field order keeps the root and tokens funded through destruction.
+pub struct CompletedDemandedExpression {
+    root: Expr,
+    tokens: Vec<Token>,
+    lease: crate::SettingRootLease,
+}
+
+impl CompletedDemandedExpression {
+    pub fn expression(&self) -> &Expr { &self.root }
+    pub fn tokens(&self) -> &[Token] { &self.tokens }
+    #[cfg(debug_assertions)]
+    pub fn retained_bytes_for_trace(&self) -> usize { self.lease.bytes() }
+    pub(crate) fn into_parts(self) -> (Expr, Vec<Token>, crate::SettingRootLease) {
+        (self.root, self.tokens, self.lease)
+    }
+}
+
 impl DemandedExpression{
+ /// Seal a root after its consumer has processed the live parser notices.
+ /// This conveys no primary source authority and moves the exact AST/tokens.
+ pub fn into_completed_syntax(mut self, a: &crate::SettingAdmission<'_>) -> std::io::Result<CompletedDemandedExpression> {
+    if self.parsed.expr.is_none() || !self.parsed.diagnostics.is_empty()
+        || self.parsed.original_input_failure.is_some()
+        || self.expected_term.is_some() || self.expected_delimiter.is_some() {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "only an actual completed native expression can be sealed"));
+    }
+    if !a.matches_lease_domain(&self.lease) {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "completed native expression belongs to another resource owner"));
+    }
+    self.settle_completed_syntax(a)?;
+    let Self { parsed, tokens, lease, .. } = self;
+    let ParsedExpr { expr, .. } = parsed;
+    Ok(CompletedDemandedExpression { root: expr.expect("checked actual completed root"), tokens, lease })
+ }
  #[cfg(debug_assertions)]
  pub fn retained_bytes_for_trace(&self)->usize{self.lease.bytes()}
  /// Reconcile an unpublished completed root after the Pratt cursor and its
@@ -1690,6 +1725,51 @@ mod original_super_provenance {
     assert_eq!(used.load(Ordering::Acquire), before);
     drop(produced);
     assert_eq!(used.load(Ordering::Acquire), 0);
+ }
+
+ #[test]
+ fn completed_demanded_expression_seals_the_exact_root_and_tokens_after_live_notices() {
+    let used = Arc::new(AtomicUsize::new(0));
+    let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+    let mut input = feed("()");
+    let produced = parse_original_expression_demanded(&mut input, &admission).unwrap();
+    let notices = produced.parsed().original_input_notices().unwrap().as_slice();
+    assert_eq!(notices.len(), 1);
+    assert_eq!(notices[0].kind(), crate::OriginalInputNoticeKind::EmptyParentheses);
+    let root = produced.parsed().expr.as_ref().unwrap();
+    let ExprKind::Literal(literal) = &root.kind else { panic!("actual empty-parentheses recovery"); };
+    let literal_storage = literal.raw_storage().as_ptr();
+    let token_storage = produced.tokens().as_ptr();
+    let pulls = input.pulls;
+
+    let completed = produced.into_completed_syntax(&admission).unwrap();
+    assert_eq!(completed.tokens().as_ptr(), token_storage);
+    let ExprKind::Literal(literal) = &completed.expression().kind else { panic!("same recovered root"); };
+    assert_eq!(literal.raw_storage().as_ptr(), literal_storage);
+    let retained = completed.retain(&admission).unwrap();
+    let ExprKind::Literal(literal) = &retained.original_expression().kind else { panic!("same published root"); };
+    assert_eq!(literal.raw_storage().as_ptr(), literal_storage);
+    assert_eq!(input.pulls, pulls);
+    drop(retained);
+    assert_eq!(used.load(Ordering::Acquire), 0);
+ }
+
+ #[test]
+ fn completed_demanded_expression_rejects_syntax_failure_foreign_owner_and_first_io() {
+    use std::io::ErrorKind;
+    let used = Arc::new(AtomicUsize::new(0));
+    let foreign_used = Arc::new(AtomicUsize::new(0));
+    let a = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+    let foreign = crate::SettingAdmission::new(&foreign_used, 8 << 20, &|| Ok(()));
+    let invalid = parse_original_expression_demanded(&mut feed("(1+)"), &a).unwrap();
+    assert_eq!(invalid.into_completed_syntax(&a).err().unwrap().kind(), ErrorKind::InvalidData);
+    let valid = parse_original_expression_demanded(&mut feed("owner.field"), &a).unwrap();
+    assert_eq!(valid.into_completed_syntax(&foreign).err().unwrap().kind(), ErrorKind::InvalidInput);
+    let valid = parse_original_expression_demanded(&mut feed("owner.field"), &a).unwrap();
+    let fail = crate::SettingAdmission::new(&used, 8 << 20, &|| Err(std::io::Error::from_raw_os_error(1450)));
+    assert_eq!(valid.into_completed_syntax(&fail).err().unwrap().raw_os_error(), Some(1450));
+    assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(foreign_used.load(Ordering::Acquire), 0);
  }
 
  #[test]

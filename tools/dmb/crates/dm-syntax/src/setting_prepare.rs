@@ -567,9 +567,31 @@ pub(crate) fn literal_parser_peak(raw:&str,a:&SettingAdmission<'_>)->io::Result<
 pub fn retain_demanded_expression(demanded:crate::DemandedExpression,a:&SettingAdmission<'_>)->Result<SettingExpression,SettingSyntaxFailure>{
  let(mut parsed,tokens,peak)=demanded.into_parts();drop(tokens);
  let mut guard=Unpublished{expression:parsed.expr.take(),anchor:None,_peak:peak,_admission:a};
- if !a.matches_lease_domain(&guard._peak){return Err(SettingSyntaxFailure::Operational(fail(a,io::ErrorKind::InvalidInput,"demanded default root belongs to another actual native resource owner")))}
- a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
+ check_demanded_retention(&guard,a)?;
  if let Some(error)=parsed.diagnostics.into_iter().next(){return Err(SettingSyntaxFailure::Syntax(error))}
+ retain_demanded_root(&mut guard,a)
+}
+
+impl crate::CompletedDemandedExpression {
+    /// Publish a source-authenticated completed root through the same owner
+    /// used by ordinary demanded expression retention.
+    pub fn retain(self, a: &SettingAdmission<'_>) -> Result<SettingExpression, SettingSyntaxFailure> {
+        let (expression, tokens, peak) = self.into_parts();
+        drop(tokens);
+        let mut guard = Unpublished { expression: Some(expression), anchor: None, _peak: peak, _admission: a };
+        check_demanded_retention(&guard, a)?;
+        retain_demanded_root(&mut guard, a)
+    }
+}
+
+fn check_demanded_retention(guard: &Unpublished<'_, '_>, a: &SettingAdmission<'_>) -> Result<(), SettingSyntaxFailure> {
+    if !a.matches_lease_domain(&guard._peak) {
+        return Err(SettingSyntaxFailure::Operational(fail(a,io::ErrorKind::InvalidInput,"demanded default root belongs to another actual native resource owner")));
+    }
+    a.checkpoint().map_err(SettingSyntaxFailure::Operational)
+}
+
+fn retain_demanded_root(guard: &mut Unpublished<'_, '_>, a: &SettingAdmission<'_>) -> Result<SettingExpression, SettingSyntaxFailure> {
  let expression=guard.expression.as_ref().ok_or_else(||SettingSyntaxFailure::Operational(fail(a,io::ErrorKind::InvalidData,"demanded default has no native root")))?;
  let measured=prepare_measure(expression,a).map_err(SettingSyntaxFailure::Operational)?;
  let cleanup=mul(a,measured.nodes,4*(size_of::<Expr>()+size_of::<SharedSettingRetention>())).map_err(SettingSyntaxFailure::Operational)?;

@@ -464,7 +464,14 @@ impl FormalParameterAccumulator{
 /// recipe, never reparsed from their spelling. These outcomes confer no source
 /// or compatibility authority until the SAME primary frame joins the receipt.
 #[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd)]pub(crate) enum FormalExpressionRole{Dimension(usize),Default,Source}
-pub(crate) struct DemandedFormalRoot{pub(crate) role:FormalExpressionRole,pub(crate) enclosure:Option<Span>,pub(crate) parameter:usize,pub(crate) assignment:Span,pub(crate) syntax:dm_syntax::DemandedExpression}
+pub(crate) struct DemandedFormalRoot<Syntax = dm_syntax::DemandedExpression>{
+ pub(crate) role:FormalExpressionRole,
+ pub(crate) enclosure:Option<Span>,
+ pub(crate) parameter:usize,
+ pub(crate) assignment:Span,
+ pub(crate) syntax:Syntax,
+}
+pub(crate) type CompletedFormalRoot = DemandedFormalRoot<dm_syntax::CompletedDemandedExpression>;
 pub(crate) enum DemandedFormalDimension{Complete{root:DemandedFormalRoot,boundary:dm_syntax::Token},Empty{boundary:dm_syntax::Token},Failure(DemandedFormalDefault)}
 pub(crate) struct DemandedFormalTermFailure{pub(crate) expected:dm_syntax::NativeTermExpectation,pub(crate) syntax:dm_syntax::DemandedExpression,pub(crate) boundary:Option<dm_syntax::Token>}
 pub(crate) enum DemandedFormalDefault{Complete{root:DemandedFormalRoot,boundary:Option<dm_syntax::Token>},ExpectedTerm(DemandedFormalTermFailure),NativeSyntax{syntax:dm_syntax::DemandedExpression,boundary:Option<dm_syntax::Token>}}

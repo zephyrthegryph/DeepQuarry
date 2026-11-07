@@ -1,7 +1,7 @@
 //! Once-produced defaults on the SAME actual header source owner. No parser,
 //! semantic table, second AST, or authority from a numeric span is introduced.
 use super::OriginalProcedureHeaders;
-use crate::procedure::{DemandedFormalRoot,FormalExpressionRole,FormalClauseRows};
+use crate::procedure::{CompletedFormalRoot,FormalExpressionRole,FormalClauseRows};
 use dm_syntax::{Expr,ExprKind,Span,SettingAdmission,SettingExpression,SettingRootLease,TokenKind};
 use std::io;
 fn invalid(text:&'static str)->io::Error{io::Error::new(io::ErrorKind::InvalidData,text)}
@@ -57,7 +57,7 @@ impl OriginalDefaultRoots{
   checkpoint(a)
  }
  fn clauses_for(&self,header:Span,parameter:usize)->Result<dm_syntax::ParameterClauseSpans,&'static str>{let at=self.clauses.binary_search_by_key(&header.start,|row|row.header.start).map_err(|_|"actual produced formal clauses are unissued")?;let row=&self.clauses[at];if row.header!=header{return Err("actual clause header differs")}let mut parts=row.clauses.get(parameter).ok_or("actual clause ordinal absent")?;let origin=header.start.checked_add(row.argument_offset).ok_or("actual clause origin overflow")?;let shift=|span:Span|->Result<Span,&'static str>{Ok(Span::new(span.start.checked_add(origin).ok_or("actual clause coordinate overflow")?,span.end.checked_add(origin).ok_or("actual clause coordinate overflow")?))};parts.parameter=shift(parts.parameter)?;parts.assignment=parts.assignment.map(shift).transpose()?;parts.annotation=parts.annotation.map(shift).transpose()?;parts.source=parts.source.map(shift).transpose()?;parts.post_source_annotation=parts.post_source_annotation.map(shift).transpose()?;Ok(parts)}
- pub(super) fn add(&mut self,headers:&OriginalProcedureHeaders,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&dm_ir::SymbolTable,demanded:DemandedFormalRoot,a:&SettingAdmission<'_>)->io::Result<()>{
+ pub(super) fn add(&mut self,headers:&OriginalProcedureHeaders,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&dm_ir::SymbolTable,demanded:CompletedFormalRoot,a:&SettingAdmission<'_>)->io::Result<()>{
   checkpoint(a)?;if self.rows.len()==self.rows.capacity(){return Err(invalid("actual default directory exceeds its admitted completed cohort"))}
   if self.rows.last().is_some_and(|row|(row.header.start,row.parameter,row.role)>=(header.start,demanded.parameter,demanded.role)){return Err(invalid("actual default directory repeats or reverses primary source order"))}
   let parameter_start=header.start.checked_add(argument_offset).and_then(|n|n.checked_add(parameter.relative_span.start)).ok_or(io::ErrorKind::InvalidInput)?;
@@ -79,8 +79,8 @@ impl OriginalDefaultRoots{
   let mut native=actual.iter().filter(|token|!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment));
   for token in expected.tokens.iter(){checkpoint(a)?;let actual=native.next().ok_or_else(||invalid("actual formal metadata has extra RHS tokens"))?;if actual.kind!=token.kind||actual.span.start.checked_sub(start)!=Some(token.relative_span.start)||actual.span.end.checked_sub(start)!=Some(token.relative_span.end)||symbols.text(token.text)!=Some(actual.text(&headers.source)){return Err(invalid("formal default metadata differs from the actual primary RHS occurrences"))}}
   if native.next().is_some(){return Err(invalid("actual primary RHS has extra formal default tokens"))}
-  let produced=demanded.syntax.parsed().expr.as_ref().ok_or_else(||invalid("completed demanded default has no actual native root"))?;
-  if !demanded.syntax.parsed().diagnostics.is_empty()||produced.span!=expression{return Err(invalid("demanded root is not the complete actual formal RHS"))}
+  let produced=demanded.syntax.expression();
+  if produced.span!=expression{return Err(invalid("demanded root is not the complete actual formal RHS"))}
   // SAME native normalizer only combines adjacent colons. No blanket raw-text
   // equality can authorize another token kind or a different operator stream.
   let mut actual=actual.iter().filter(|token|!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment));
@@ -100,7 +100,7 @@ impl OriginalDefaultRoots{
    dm_syntax::try_for_each_expression_child(root,|_,child|literals(child,rows,origin,a))
   }
   literals(produced,rows,origin,a)?;
-  let root=dm_syntax::retain_demanded_expression(demanded.syntax,a).map_err(|failure|match failure{dm_syntax::SettingSyntaxFailure::Operational(actual)=>a.take_operational_error().unwrap_or(actual),dm_syntax::SettingSyntaxFailure::Syntax(_)=>invalid("completed demanded root unexpectedly retained syntax diagnostics")})?;
+  let root=demanded.syntax.retain(a).map_err(|failure|match failure{dm_syntax::SettingSyntaxFailure::Operational(actual)=>a.take_operational_error().unwrap_or(actual),dm_syntax::SettingSyntaxFailure::Syntax(_)=>invalid("completed demanded root unexpectedly retained syntax diagnostics")})?;
   self.rows.push(Row{header,parameter:demanded.parameter,role:demanded.role,enclosure:demanded.enclosure,assignment:demanded.assignment,expression,root});checkpoint(a)
  }
  pub(super) fn add_input(&mut self,headers:&OriginalProcedureHeaders,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,_symbols:&dm_ir::SymbolTable,ordinal:usize,marker:Span,input:dm_syntax::RetainedParameterInput,a:&SettingAdmission<'_>)->io::Result<()>{
