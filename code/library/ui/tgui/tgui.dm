@@ -359,9 +359,10 @@
 	if(!user?.client || !initialized || closing)
 		return
 	var/should_update_data = force || status >= STATUS_UPDATE
+	// A data push the page already shows (the reads that marked the window changed, the data did not) is dropped by the window.
 	window().send_message("update", get_payload(
 		custom_data,
-		with_data = should_update_data))
+		with_data = should_update_data), same_key = "update")
 
 /**
  * private
