@@ -5,6 +5,7 @@
 
 @use 'sass:color';
 @use 'sass:meta';
+@use '../tgchat/chat-tokens' as chat-tokens;
 
 .theme-vchatlight:root {
   --chat-text-color: var(--color-black);
@@ -28,6 +29,7 @@
   --input-background: var(--color-base);
   --tooltip-background-lightness: 90;
 
-  // Chat styles
-  @include meta.load-css('../tgchat/chat-vchatlight.scss');
+  // Chat message colours (tgchat/chat-tokens.scss) and its own extra rules.
+  @include chat-tokens.vchatlight;
+  @include chat-tokens.vchatlight-rules;
 }

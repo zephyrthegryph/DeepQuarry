@@ -5,3 +5,4 @@ changes:
   - rscadd: "Drag a chat tab onto another to reorder the tabs (Main stays first)."
   - bugfix: "The selected chat tab's underline sits on the tab row's rule, as in the stat panel: both now use one shared tab row."
   - qol: "Console UI scanlines, phosphor stripes, glow and lobby vignette toned down, each set by one shared theme variable."
+  - refactor: "Chat themes share one message stylesheet; each theme only sets its colours. The phobia/hypnosis text animations use each theme's own colours again."
