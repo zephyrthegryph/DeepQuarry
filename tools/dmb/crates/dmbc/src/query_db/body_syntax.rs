@@ -241,9 +241,16 @@ fn checked_query_failure(error:QueryError)->BodySyntaxFailure{
 pub(super) fn obtain(
  ctx:&mut dm_query::Ctx<'_>,input:&Arc<BodySyntaxInput>,
 )->Result<Arc<BodySyntax>,BodySyntaxFailure>{
+ obtain_issued(ctx,input).map_err(checked_query_failure)?.map_err(BodySyntaxFailure::Syntax)
+}
+
+/// Loan the exact issued child to a policy that must preserve the distinction
+/// between an operational query failure and the child's authored syntax result.
+pub(super) fn obtain_issued(
+ ctx:&mut dm_query::Ctx<'_>,input:&Arc<BodySyntaxInput>,
+)->Result<Result<Arc<BodySyntax>,Diagnostic>,QueryError>{
  let key=Key::new(BODY_SYNTAX,input.key().into());
- let result=ctx.get::<BodyQueryValue>(key,Arc::new(Params{input:Arc::downgrade(input),key,code:None})).map_err(checked_query_failure)?;
- result.issued().map_err(BodySyntaxFailure::Syntax)
+ Ok(ctx.get::<BodyQueryValue>(key,Arc::new(Params{input:Arc::downgrade(input),key,code:None}))?.issued())
 }
 
 /// Record a real syntax dependency of a derived policy query. The archive's

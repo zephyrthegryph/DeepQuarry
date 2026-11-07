@@ -649,7 +649,12 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
             .and_then(|v| v.get(p.ordinal))
             .ok_or(QueryError::Missing(p.key))?;
         edge(&l, p.key).map_err(|_| QueryError::Missing(p.key))?;
-        body_syntax::observe(ctx, syntax)?;
+        let original_primary = if input.is_original_checker_source() {
+            Some(body_syntax::obtain_issued(ctx, syntax)?)
+        } else {
+            body_syntax::observe(ctx, syntax)?;
+            None
+        };
         let resolver = Observed {
             ctx: Mutex::new(ctx),
             input: &input,
@@ -660,7 +665,25 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
             error: Mutex::new(None),
         };
         let admission = match &p.body_admission{Some(loan)=>{let headroom=pages::page_execution_headroom(&l).map_err(|message|QueryError::operational(p.key,std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;loan.upgrade_for_job(headroom).map_err(|actual|QueryError::operational(p.key,actual))?},None=>execution_admission(&l)};
-        let computed = input.compute_body_checked_controlled(p.ordinal,&resolver,&admission,&||crate::daemon::control::checkpoint());
+        let computed = if let Some(primary) = original_primary {
+            let host = input.archive().body_query_host()
+                .ok_or(QueryError::Missing(p.key))?;
+            input.compute_original_body_checked_using_admitted_controlled(
+                p.ordinal, &resolver, &admission,
+                &|requested, _| {
+                    // A setting read can ask for this same caller body too.
+                    // Only the exact active child may consume the saved value.
+                    if Arc::ptr_eq(requested, syntax) {
+                        primary.clone().map_err(dm_tree::frontend::BodySyntaxFailure::Syntax)
+                    } else {
+                        host.syntax_checked(requested)
+                    }
+                },
+                &||crate::daemon::control::checkpoint(),
+            )
+        } else {
+            input.compute_body_checked_controlled(p.ordinal,&resolver,&admission,&||crate::daemon::control::checkpoint())
+        };
         let result = resolver
             .finish()
             .and_then(|_| computed.map_err(|e| policy_read_failure(p.key, e)));
