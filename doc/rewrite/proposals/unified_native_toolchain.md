@@ -3606,3 +3606,18 @@ Output line bases now use exact page-local anchors and narrow deltas with
 an absolute escape. Three focused origin tests passed for boundaries,
 continuations, exact escape and source-refusal behavior. Checkout savings
 for the new layout are not yet measured.
+
+The closed 45-policy raw roster now prepares and publishes through a
+distinct source-only frame. It carries the actual query, source and policy
+revisions and cannot grant a semantic report or a compile. Local and public
+daemon tests passed with an absent DME, a malformed include and a directory
+at the DME path. The public report matched the independent scanner on all
+three states and after configuration and source edits.
+
+The first whole-checkout source-only request at d0646c0e66 hit its
+300-second deadline and produced no report. Exact acquisition proofs had
+completed at about six seconds. The remaining request is dominated by
+post-capture work and needs phase-specific evidence. In particular, the
+raw page path currently repeats a live source-ledger census for page
+admission and prepares separate file views for individual policies.
+The request returned a timeout and the private daemon exited.
