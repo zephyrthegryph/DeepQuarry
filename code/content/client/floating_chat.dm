@@ -117,7 +117,7 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 
 	if(chat_focus_input(RADIO_CHANNEL))
 		return
-	mob?.say_verb_old()
+	mob?.ask_chat_line("Speak on the radio.\nType your message (start with ; or a department key):", "Radio", /mob/verb/say_verb)
 
 /// The mode the preferences ask for.
 /proc/chat_mode_for(floating, side)

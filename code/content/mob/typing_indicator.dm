@@ -20,7 +20,7 @@
 
 	if(client?.chat_focus_input(SAY_CHANNEL))
 		return
-	say_verb_old()
+	ask_chat_line("Speak to people in sight.\nType your message:", "Say", /mob/verb/say_verb)
 
 /mob/verb/me_wrapper()
 	set name = "Me verb"
@@ -28,7 +28,7 @@
 
 	if(client?.chat_focus_input(ME_CHANNEL))
 		return
-	me_verb_old()
+	ask_chat_line("Emote to people in sight (and your pred/prey).\nType your message:", "Emote", /mob/verb/me_verb, TRUE)
 
 /mob/verb/whisper_wrapper()
 	set name = "Whisper verb"
@@ -36,7 +36,7 @@
 
 	if(client?.chat_focus_input(WHIS_CHANNEL))
 		return
-	whisper_old()
+	ask_chat_line("Speak to nearby people.\nType your message:", "Whisper", /mob/verb/whisper)
 
 /mob/verb/subtle_wrapper()
 	set name = "Subtle verb"
@@ -45,4 +45,4 @@
 
 	if(client?.chat_focus_input(SUBTLE_CHANNEL))
 		return
-	me_verb_subtle_old()
+	ask_chat_line("Emote to nearby people (and your pred/prey).\nType your message:", "Subtle", /mob/verb/me_verb_subtle, TRUE)
