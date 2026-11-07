@@ -18,6 +18,7 @@ enum UnionRows<'a,'rows>{
  LibraryLayering(&'a dq_analyze::captured_engine_layering_pages::LayeringData),
  Handlers(&'a dq_analyze::captured_sem_handlers::Data),
  Untyped(&'a dq_analyze::captured_untyped_pages::UntypedData),
+ DerivedReads(&'a dq_analyze::captured_derived_reads::DerivedReadData),
  Semantic(Q,&'a dq_analyze::captured_sem_reads::SemanticPolicyData),
  Validation(&'a ValidationData),
 }
@@ -32,12 +33,12 @@ impl Producer{
   if let Some(policy)=dq_analyze::workspace_fold_policy::Policy::from_name(name){return Some(Self::Fold(policy))}
   Some(Self::Special(match name{
    "silicon_entry"=>"silicon_entry","sem/keys"=>"sem/keys","check_grep"=>"check_grep","sys/hygiene"=>"sys/hygiene","sys/resolvers"=>"sys/resolvers","sys/tables"=>"sys/tables","system_boundary"=>"system_boundary",
-   "sem/handlers"=>"sem/handlers","sem/reads"=>"sem/reads","untracked_inputs"=>"untracked_inputs","setter_publishes"=>"setter_publishes","decl"=>"decl","init"=>"init","base_vars"=>"base_vars","requirement_bool"=>"requirement_bool","player_link"=>"player_link","untyped_member"=>"untyped_member","weak_raw_read"=>"weak_raw_read","rel_write_undeclared"=>"rel_write_undeclared","untyped"=>"untyped","stored_refs"=>"stored_refs","engine_layering"=>"engine_layering","library_layering"=>"library_layering","sys/dx_reactive"=>"sys/dx_reactive","lifeforms"=>"lifeforms",_=>return None,
+   "derived_reads"=>"derived_reads","sem/handlers"=>"sem/handlers","sem/reads"=>"sem/reads","untracked_inputs"=>"untracked_inputs","setter_publishes"=>"setter_publishes","decl"=>"decl","init"=>"init","base_vars"=>"base_vars","requirement_bool"=>"requirement_bool","player_link"=>"player_link","untyped_member"=>"untyped_member","weak_raw_read"=>"weak_raw_read","rel_write_undeclared"=>"rel_write_undeclared","untyped"=>"untyped","stored_refs"=>"stored_refs","engine_layering"=>"engine_layering","library_layering"=>"library_layering","sys/dx_reactive"=>"sys/dx_reactive","lifeforms"=>"lifeforms",_=>return None,
   }))
  }
  fn metadata(self)->&'static dq_analyze::lint::Meta{match self{
   Self::Raw(name)=>dq_analyze::captured_raw_policy::metadata(name).expect("closed raw metadata"),Self::Tree(policy)=>policy.metadata(),Self::Fold(policy)=>policy.metadata(),Self::Special(name)=>match name{
-   "allow_annotations"=>dq_analyze::allow_annotation_policy::metadata(),"silicon_entry"=>&dq_analyze::silicon_entry_policy::META,"sem/keys"=>dq_analyze::keys_policy::metadata(),"check_grep"=>dq_analyze::lints::check_grep::native::metadata(),"sys/hygiene"=>dq_analyze::captured_sys_hygiene_pages::metadata(),"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),"sem/handlers"=>dq_analyze::sem_handlers_policy::metadata(),"sem/reads"=>dq_analyze::sem_reads_policy::metadata(),"untracked_inputs"=>dq_analyze::untracked_inputs_policy::metadata(),"setter_publishes"=>dq_analyze::setter_publication_policy::metadata(),"decl"=>dq_analyze::captured_decl_pages::metadata(),"init"=>dq_analyze::captured_init_pages::metadata(),"base_vars"=>dq_analyze::captured_base_vars_pages::metadata(),"requirement_bool"=>dq_analyze::captured_requirement_bool::metadata(),"player_link"=>dq_analyze::player_link_policy::metadata(),"untyped_member"=>dq_analyze::untyped_member_policy::metadata(),"weak_raw_read"=>dq_analyze::weak_relation_policy::metadata(),"rel_write_undeclared"=>dq_analyze::rel_write_policy::metadata(),"untyped"=>dq_analyze::untyped_policy_metadata::metadata(),"stored_refs"=>dq_analyze::stored_refs_policy::metadata(),"engine_layering"=>dq_analyze::engine_layering_policy::metadata(),"library_layering"=>dq_analyze::engine_layering_policy::Layer::Library.metadata(),"sys/dx_reactive"=>dq_analyze::sys_reactive_policy::metadata(),"lifeforms"=>dq_analyze::lifeforms_policy::metadata(),_=>unreachable!("closed producer metadata")
+   "allow_annotations"=>dq_analyze::allow_annotation_policy::metadata(),"silicon_entry"=>&dq_analyze::silicon_entry_policy::META,"sem/keys"=>dq_analyze::keys_policy::metadata(),"check_grep"=>dq_analyze::lints::check_grep::native::metadata(),"sys/hygiene"=>dq_analyze::captured_sys_hygiene_pages::metadata(),"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),"derived_reads"=>dq_analyze::captured_derived_reads::metadata(),"sem/handlers"=>dq_analyze::sem_handlers_policy::metadata(),"sem/reads"=>dq_analyze::sem_reads_policy::metadata(),"untracked_inputs"=>dq_analyze::untracked_inputs_policy::metadata(),"setter_publishes"=>dq_analyze::setter_publication_policy::metadata(),"decl"=>dq_analyze::captured_decl_pages::metadata(),"init"=>dq_analyze::captured_init_pages::metadata(),"base_vars"=>dq_analyze::captured_base_vars_pages::metadata(),"requirement_bool"=>dq_analyze::captured_requirement_bool::metadata(),"player_link"=>dq_analyze::player_link_policy::metadata(),"untyped_member"=>dq_analyze::untyped_member_policy::metadata(),"weak_raw_read"=>dq_analyze::weak_relation_policy::metadata(),"rel_write_undeclared"=>dq_analyze::rel_write_policy::metadata(),"untyped"=>dq_analyze::untyped_policy_metadata::metadata(),"stored_refs"=>dq_analyze::stored_refs_policy::metadata(),"engine_layering"=>dq_analyze::engine_layering_policy::metadata(),"library_layering"=>dq_analyze::engine_layering_policy::Layer::Library.metadata(),"sys/dx_reactive"=>dq_analyze::sys_reactive_policy::metadata(),"lifeforms"=>dq_analyze::lifeforms_policy::metadata(),_=>unreachable!("closed producer metadata")
   }
  }}
  fn name(self)->&'static str{match self{Self::Raw(name)|Self::Special(name)=>name,Self::Tree(policy)=>policy.name(),Self::Fold(policy)=>policy.name()}}
@@ -46,10 +47,10 @@ impl Producer{
   matches!(self,
    Self::Raw(_) | Self::Tree(Policy::NoticePublisher | Policy::ReportInCatch | Policy::Cooldown)
    | Self::Special("allow_annotations" | "silicon_entry" | "library_layering" | "sem/handlers"
-      | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped")
+      | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped" | "derived_reads")
   )
  }
- fn question(self)->Option<Q>{Some(match self.name(){"silicon_entry"=>Q::SiliconEntry,"sem/keys"=>Q::Keys,"check_grep"=>Q::CheckGrep,"deadline_polling"=>Q::DeadlinePollingAllowlist,"op_order"=>Q::OpOrder,"ui_actions"=>Q::UiActions,"doc_snippets"=>Q::DocSnippets,"ownership"=>Q::Ownership,"sem/handlers"=>Q::SemHandlersFullAllow,"sem/reads"=>Q::SemReads,"untracked_inputs"=>Q::UntrackedInputs,"setter_publishes"=>Q::SetterPublishes,"tracked"=>Q::Tracked,"tracked_tests"=>Q::TrackedTests,"decl"=>Q::Decl,"init"=>Q::Init,"base_vars"=>Q::BaseVars,"requirement_bool"=>Q::RequirementBool,"player_link"=>Q::PlayerLink,"untyped_member"=>Q::UntypedMember,"weak_raw_read"=>Q::WeakRawRead,"rel_write_undeclared"=>Q::RelWriteUndeclared,"untyped"=>Q::Untyped,"stored_refs"=>Q::StoredRefs,"engine_layering"=>Q::EngineLayering,"library_layering"=>Q::LibraryLayeringFullAllow,"sys/dx_reactive"=>Q::SysReactive,"lifeforms"=>Q::Lifeforms,_=>return None})}
+ fn question(self)->Option<Q>{Some(match self.name(){"silicon_entry"=>Q::SiliconEntry,"sem/keys"=>Q::Keys,"check_grep"=>Q::CheckGrep,"deadline_polling"=>Q::DeadlinePollingAllowlist,"op_order"=>Q::OpOrder,"ui_actions"=>Q::UiActions,"doc_snippets"=>Q::DocSnippets,"ownership"=>Q::Ownership,"derived_reads"=>Q::DerivedReads,"sem/handlers"=>Q::SemHandlersFullAllow,"sem/reads"=>Q::SemReads,"untracked_inputs"=>Q::UntrackedInputs,"setter_publishes"=>Q::SetterPublishes,"tracked"=>Q::Tracked,"tracked_tests"=>Q::TrackedTests,"decl"=>Q::Decl,"init"=>Q::Init,"base_vars"=>Q::BaseVars,"requirement_bool"=>Q::RequirementBool,"player_link"=>Q::PlayerLink,"untyped_member"=>Q::UntypedMember,"weak_raw_read"=>Q::WeakRawRead,"rel_write_undeclared"=>Q::RelWriteUndeclared,"untyped"=>Q::Untyped,"stored_refs"=>Q::StoredRefs,"engine_layering"=>Q::EngineLayering,"library_layering"=>Q::LibraryLayeringFullAllow,"sys/dx_reactive"=>Q::SysReactive,"lifeforms"=>Q::Lifeforms,_=>return None})}
 }
 fn copy_validation(data:&ValidationData,c:&mut impl Control<Error=Failure>)->Result<ValidationData,Failure>{
  if data.sites.len()!=data.source_text.len(){return Err("actual ALLOW validation shape differs".into())}let mut out=ValidationData{sites:Vec::new(),source_text:Vec::new()};
@@ -156,6 +157,21 @@ impl SourceSnapshot{
     Producer::Special("untyped_member")=>{self.with_original_untyped_member_policy(|data,_,_|record(data.allow_used()))?;},
     Producer::Special("weak_raw_read")=>{self.with_original_weak_raw_read_policy(|data,_,_|record(data.allow_used()))?;},
     Producer::Special("rel_write_undeclared")=>{self.with_original_rel_write_undeclared_policy(|data,_,_|record(data.allow_used()))?;},
+    Producer::Special("derived_reads")=>{
+     let child=self.workspace_semantic_inputs_with_guard(Q::DerivedReads,&guard)?;
+     let subject=child.original_analysis_subject().ok_or("Derived ALLOW requires its actual full Original subject")?;
+     subject.derived_preflight()?.require_current(subject,capture,&guard,child.policy(),queries)?;
+     // Selected preparation already owns the preprocessing transcript. The
+     // exclusive wrapper would replay it, so borrow the actual judge directly.
+     queries.with_original_workspace_derived_guard_report(capture,&guard,child,|data,config,child_budget|{
+      if let Some(stage)=stage.as_deref_mut(){
+       let meta=producer.metadata();let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::DerivedReads(data),scope,child_budget)?;
+      }
+      record(data.allow_used())
+     })?;
+    },
     Producer::Special("untyped")=>{
      if let Some(stage)=stage.as_deref_mut(){
       let child=self.workspace_semantic_inputs_with_guard(Q::Untyped,&guard)?;
@@ -199,8 +215,8 @@ impl SourceSnapshot{
 #[cfg(test)]mod metadata_controls{
  use super::*;
  #[test]fn unported_producers_never_become_zero_use_completions_and_every_dispatch_has_its_actual_name(){
-  for name in ["derived_reads","not_a_registered_policy"]{assert!(Producer::from_name(name).is_none(),"no source authority or completion for {name}");}
-  for name in ["allow_annotations","scheduler","silicon_entry","sem/handlers","op_order","ui_actions","sem/keys","check_grep","tracked","tracked_tests","sem/reads","setter_publishes","init","decl","base_vars","requirement_bool","sys/dx_reactive","lifeforms"]{let producer=Producer::from_name(name).unwrap();assert_eq!(producer.name(),name);if let Some(question)=producer.question(){assert!(Q::ALL.contains(&question));}}
+  for name in ["not_a_registered_policy"]{assert!(Producer::from_name(name).is_none(),"no source authority or completion for {name}");}
+  for name in ["allow_annotations","scheduler","derived_reads","silicon_entry","sem/handlers","op_order","ui_actions","sem/keys","check_grep","tracked","tracked_tests","sem/reads","setter_publishes","init","decl","base_vars","requirement_bool","sys/dx_reactive","lifeforms"]{let producer=Producer::from_name(name).unwrap();assert_eq!(producer.name(),name);if let Some(question)=producer.question(){assert!(Q::ALL.contains(&question));}}
  }
 }
 

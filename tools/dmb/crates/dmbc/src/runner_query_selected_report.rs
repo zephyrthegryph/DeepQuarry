@@ -29,7 +29,7 @@ impl SelectedReportPlan {
     fn for_roster(roster: Roster, judgment: JudgmentV2, control: &mut Operation<'_>) -> io::Result<Self> {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
-            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped],
+            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads],
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
         let mut count = 0;
@@ -190,6 +190,7 @@ impl ReportStage<'_> {
             .map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?, complete: false };
         let mut control = Operation { budget: &scratch.budget, poll: &|| crate::daemon::control::checkpoint() };
         let mut projection = Projection::new();
+        let mut post_judge = None;
         match rows {
             ReportRows::ImageDir(data) => {
                 if self.selected != ["image_dir_after_build"]
@@ -236,6 +237,17 @@ impl ReportStage<'_> {
                 for (site, text) in data.sites().iter().zip(data.source_text()) {
                     projection.row(site, Some(text), &mut control)?;
                 }
+            }
+            UnionRows::DerivedReads(data) => {
+                if self.selected != Roster::WithDerivedReads.names() || !std::ptr::eq(meta, data.metadata())
+                    || !std::ptr::eq(meta, dq_analyze::captured_derived_reads::metadata())
+                    || !matches!(meta.policy, Policy::Hard) || data.sites().len() != data.source_text().len() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "selected Derived findings differ from their actual Hard source shape"));
+                }
+                for (site, text) in data.sites().iter().zip(data.source_text()) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
+                post_judge = data.post_judge_message();
             }
             UnionRows::Untyped(data) => {
                 if self.selected != Roster::WithUntyped.names() || !std::ptr::eq(meta, data.metadata())
@@ -313,7 +325,9 @@ impl ReportStage<'_> {
         let raw = self.judgment.is_raw();
         let (failed, text) = if raw || matches!(meta.policy, Policy::Hard) {
             policy_judge::judge_report(meta, scope, &source_text, &projection.run, root, &None, raw,
-                |_, _, _| false, |_, _| false)
+                |_, _, _| false, |_, text| {
+                    if let Some(message) = post_judge { text.push_str(message); true } else { false }
+                })
         } else if self.judgment == JudgmentV2::CiLibrarySites && library_sites(meta) {
             let baseline = self.library_baseline.ok_or_else(|| io::Error::new(
                 io::ErrorKind::InvalidData, "staged library layering requires captured fixed baseline evidence",
@@ -407,6 +421,7 @@ mod selected_plan_tests {
             (Roster::WithSetterPublishes, Q::SELECTED_SETTER),
             (Roster::WithReactivePolicies, Q::SELECTED_REACTIVE),
             (Roster::WithUntyped, &[Q::Untyped]),
+            (Roster::WithDerivedReads, &[Q::DerivedReads]),
         ];
         for (roster, questions) in expected {
             let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
