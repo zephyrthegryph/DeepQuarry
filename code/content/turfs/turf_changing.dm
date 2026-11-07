@@ -126,11 +126,19 @@ GLOBAL_VAR_INIT(turf_move_new_ms, 0)
 
 	unmake_z_transparent()
 	changing_turf = TRUE
+	// Its place in the adjacency index is handed to the successor: the neighbours recompute once, after it is placed.
+	var/atom/adjacency_replacing_before = GLOB.adjacency_replacing
+	var/list/adjacency_pending_before = GLOB.adjacency_pending
+	GLOB.adjacency_replacing = src
+	GLOB.adjacency_pending = list()
 	replaced_by(src)
 
 	var/move_batch = GLOB.turf_move_open
 	var/new_start = move_batch ? TICK_USAGE_REAL : 0
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
+	adjacency_replacement_done()
+	GLOB.adjacency_replacing = adjacency_replacing_before
+	GLOB.adjacency_pending = adjacency_pending_before
 	if(move_batch)
 		GLOB.turf_move_calls++
 		GLOB.turf_move_new_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - new_start)

@@ -2,3 +2,4 @@ author: "zephyr"
 delete-after: true
 changes:
   - code_imp: "A shuttle move runs the starlight and edge-mask updates around its changed turfs once per turf when the move ends, not once per ChangeTurf call; the move profile log now says how much of it is ChangeTurf's own new()"
+  - code_imp: "Replacing a turf in place no longer recomputes its adjacency neighbours twice (without it, then with its successor): they recompute once after the successor is placed, which was a third of a shuttle move's turf-replace cost"
