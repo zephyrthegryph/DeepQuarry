@@ -1276,6 +1276,14 @@ impl BodyArchive {
         self.mapping
             .declaration_policy_point(self.member_policy_occurrence(member)?)
     }
+
+    pub fn borrowed_member_policy_point(
+        &self,
+        member: crate::MemberId,
+    ) -> Result<super::BorrowedSourceNoteOrigin<'_>, String> {
+        self.mapping
+            .borrowed_declaration_policy_point(self.member_policy_occurrence(member)?)
+    }
 }
 
 #[path = "frontend_checker_variable_properties.rs"]

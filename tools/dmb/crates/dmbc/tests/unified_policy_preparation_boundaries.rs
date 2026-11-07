@@ -443,6 +443,96 @@ fn public_combined_checker_analyze_transport_shares_source_and_keeps_ordinary_v1
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_original_missing_lookup_heads_keep_ordered_unhinted_follows() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Roster},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    let root = test_scratch::dir("public-missing-lookup-follow");
+    let transport = test_scratch::dir("public-missing-lookup-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!(
+            "missing-lookup-follow-{}-{}",
+            std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+        ),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    put(&root, "code/probe.dm", concat!(
+        "/datum/carrier\n",
+        "/proc/probe(datum/carrier/holder)\n",
+        "    var/a = missing_root.first.second\n",
+        "    var/b = holder.missing_field.last\n",
+        "    var/c = missing_proc(hidden_inner()).last_call(hidden_outer())\n",
+        "    return missing_after\n",
+    ));
+
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(test_scratch::dir("public-missing-lookup-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithSemanticReads;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}"))
+        .collect();
+    let request_path = transport.join("missing-lookup.json");
+    put(&transport, "missing-lookup.json", serde_json::to_vec(&serde_json::json!({
+        "build": build, "exclusions": exclusions,
+    })).unwrap());
+
+    let output = daemon.run(
+        &[OsStr::new("checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
+        Duration::from_secs(90),
+    ).unwrap();
+    assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+    let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+    let terminal: CombinedTerminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+    terminal.require().unwrap();
+    assert_eq!(terminal.roster, roster);
+    let (checker, _) = output.stdout[header_end + 1..].split_at(terminal.checker.length as usize);
+    let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+    let expected = [
+        ("undefined_variable", None, "error", 3, 13, "undefined var: \"missing_root\""),
+        ("field_access_static_type", Some("field_access_static_type"), "warning", 3, 25,
+            "field access requires static type: \"first\""),
+        ("field_access_static_type", Some("field_access_static_type"), "warning", 3, 31,
+            "field access requires static type: \"second\""),
+        ("undefined_variable", None, "error", 4, 19, "undefined field: \"missing_field\" on /datum/carrier"),
+        ("field_access_static_type", Some("field_access_static_type"), "warning", 4, 33,
+            "field access requires static type: \"last\""),
+        ("undefined_proc", None, "error", 5, 13, "undefined proc: \"missing_proc\" on (global)"),
+        ("proc_call_static_type", Some("proc_call_static_type"), "warning", 5, 41,
+            "proc call requires static type: \"last_call\""),
+        ("undefined_variable", None, "error", 6, 12, "undefined var: \"missing_after\""),
+    ];
+    let rows = checker["diagnostics"].as_array().unwrap();
+    assert_eq!(rows.len(), expected.len(), "{checker}");
+    for (row, (family, tag, severity, line, column, message)) in rows.iter().zip(expected) {
+        assert_eq!(row["phase"], "body");
+        assert_eq!(row["location_kind"], "source");
+        assert!(Path::new(row["file"].as_str().unwrap()).ends_with("probe.dm"));
+        assert_eq!(row["family"], family);
+        assert_eq!(row["registration_tag"].as_str(), tag);
+        assert_eq!(row["severity"], severity);
+        assert_eq!(row["line"], line);
+        assert_eq!(row["column"], column);
+        assert_eq!(row["message"], message);
+        assert!(row["notes"].as_array().unwrap().is_empty(), "{row}");
+    }
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
 fn public_original_dynamic_constructor_skips_target_and_args_but_checks_outer_follows() {
     use dq_analyze::{
         captured_allow_annotations::{full_unused, Operation},
@@ -547,14 +637,14 @@ fn public_original_missing_authored_type_continues_with_exact_definition_notes()
     };
     put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
     put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
-    put(&root, "code/probe.dm", concat!(
-        "/datum/carrier\n",
-        "    var/absent/typed_value = null\n",
+    let declaration = "/datum/carrier\n    var/absent/typed_value = null\n";
+    let body = concat!(
         "/proc/probe(datum/carrier/holder)\n",
         "    var/observed = holder.typed_value.first.second\n",
         "    var/invoked = holder.typed_value.call(missing_hidden())\n",
         "    return missing_after\n",
-    ));
+    );
+    put(&root, "code/probe.dm", format!("{declaration}{body}"));
 
     let mut build = request(&root, Q::DocSnippets);
     build.cache_root = Some(test_scratch::dir("public-authored-type-cache"));
@@ -574,19 +664,36 @@ fn public_original_missing_authored_type_continues_with_exact_definition_notes()
         "build": build, "exclusions": exclusions,
     })).unwrap());
 
-    let definition = &["2:28: add additional type info here"][..];
-    let expected = [
-        ("undefined_type", None, "error", 4, 26, "undefined type: /absent", &[][..]),
-        ("field_access_static_type", Some("field_access_static_type"), "warning", 4, 38,
-            "field access requires static type: \"first\"", definition),
-        ("field_access_static_type", Some("field_access_static_type"), "warning", 4, 44,
-            "field access requires static type: \"second\"", &[][..]),
-        ("undefined_type", None, "error", 5, 25, "undefined type: /absent", &[][..]),
-        ("proc_call_static_type", Some("proc_call_static_type"), "warning", 5, 37,
-            "proc call requires static type: \"call\"", definition),
-        ("undefined_variable", None, "error", 6, 12, "undefined var: \"missing_after\"", &[][..]),
-    ];
-    for suppress_warnings in [false, true] {
+    for (split_files, suppress_warnings) in [(false, false), (false, true), (true, false), (true, true)] {
+        if split_files && !suppress_warnings {
+            put(&root, "deepquarry.dme", "#include \"code/decl.dm\"\n#include \"code/probe.dm\"\n");
+            put(&root, "code/decl.dm", declaration);
+            put(&root, "code/probe.dm", body);
+            put(&root, "SpacemanDMM.toml", "");
+        }
+        let definition_note = if split_files {
+            // FileList stores the path relative to the canonical project
+            // directory. A Windows verbatim path normalizes separators on join.
+            let environment = root.canonicalize().unwrap();
+            let include = environment.join("code/decl.dm");
+            let registered = include.strip_prefix(&environment).unwrap();
+            format!("{}:2:28: add additional type info here", registered.display())
+        } else {
+            "2:28: add additional type info here".to_owned()
+        };
+        let definition = &[definition_note.as_str()][..];
+        let expected = [
+            ("undefined_type", None, "error", 4, 26, "undefined type: /absent", &[][..]),
+            ("field_access_static_type", Some("field_access_static_type"), "warning", 4, 38,
+                "field access requires static type: \"first\"", definition),
+            ("field_access_static_type", Some("field_access_static_type"), "warning", 4, 44,
+                "field access requires static type: \"second\"", &[][..]),
+            ("undefined_type", None, "error", 5, 25, "undefined type: /absent", &[][..]),
+            ("proc_call_static_type", Some("proc_call_static_type"), "warning", 5, 37,
+                "proc call requires static type: \"call\"", definition),
+            ("undefined_variable", None, "error", 6, 12, "undefined var: \"missing_after\"", &[][..]),
+        ];
+        let line_shift = if split_files { 2 } else { 0 };
         if suppress_warnings {
             put(&root, "SpacemanDMM.toml", concat!(
                 "[diagnostics]\n",
@@ -612,11 +719,11 @@ fn public_original_missing_authored_type_continues_with_exact_definition_notes()
         for (row, &(family, tag, severity, line, column, message, notes)) in rows.iter().zip(expected) {
             assert_eq!(row["phase"], "body");
             assert_eq!(row["location_kind"], "source");
-            assert!(Path::new(row["file"].as_str().unwrap()).ends_with("probe.dm"));
+            assert_eq!(Path::new(row["file"].as_str().unwrap()), Path::new("code/probe.dm"));
             assert_eq!(row["family"], family);
             assert_eq!(row["registration_tag"].as_str(), tag);
             assert_eq!(row["severity"], severity);
-            assert_eq!(row["line"], line);
+            assert_eq!(row["line"], line - line_shift);
             assert_eq!(row["column"], column);
             assert_eq!(row["message"], message);
             assert_eq!(row["notes"], serde_json::to_value(notes).unwrap());

@@ -16,52 +16,67 @@ pub fn notes(
     at: Span,
     hint: Option<FixHint>,
 ) -> Result<Vec<Note>, String> {
-    let warning_source = archive.source_note_point(at.start)?;
-    let mut notes = Vec::new();
-    if let Some(fix) = hint {
-        let (source, message) = match fix {
-            FixHint::Return(ReturnFixHint::UnannotatedSource(identity), _) => {
-                let owner = archive
-                    .tree()
-                    .symbols()
-                    .text(identity.owner)
-                    .ok_or("return note owner unavailable")?;
-                let name = archive
-                    .tree()
-                    .symbols()
-                    .text(identity.name)
-                    .ok_or("return note name unavailable")?;
-                let kind = if identity.verb { "verb" } else { "proc" };
-                (
-                    archive.callable_note_origin(identity)?,
-                    format!(
-                        "add a return type annotation to {}/{kind}/{name}",
-                        owner.trim_end_matches('/')
-                    ),
-                )
-            }
-            FixHint::Return(ReturnFixHint::EvaluatedNone, call) => (
-                archive.source_note_point(call.start)?,
-                "return type evaluated to None".into(),
-            ),
-            FixHint::Return(ReturnFixHint::None, _) => {
-                return Err("empty return hint must not produce a source note".into())
-            }
-            FixHint::Return(ReturnFixHint::UnissuedBuiltin, _) => {
-                return Err("builtin return note provenance is not issued".into())
-            }
-            FixHint::AuthoredVariable(formal) => (
-                archive.member_policy_point(formal)?,
-                "add additional type info here".into(),
-            ),
-        };
-        if source.path != warning_source.path {
-            return Err("cross-file checker note formatting is not yet admitted".into());
+    notes_using(archive, at, hint, |_| Ok(()))
+}
+
+pub(crate) fn notes_using<E: From<String> + for<'a> From<&'a str>>(
+    archive: &BodyArchive,
+    at: Span,
+    hint: Option<FixHint>,
+    fund_authored: impl FnOnce(usize) -> Result<(), E>,
+) -> Result<Vec<Note>, E> {
+    let current = archive.borrowed_source_note_point(at.start)?;
+    let Some(hint) = hint else { return Ok(Vec::new()); };
+    let (fix, call) = match hint {
+        FixHint::Return(fix, call) => (fix, call),
+        FixHint::AuthoredVariable(formal) => {
+            let source = archive.borrowed_member_policy_point(formal)?;
+            let (path, _, _) = source.reported_coordinates();
+            let path_bytes = if path == current.reported_coordinates().0 {
+                0
+            } else {
+                path.as_os_str().len()
+            };
+            fund_authored(path_bytes)?;
+            return Ok(vec![crate::checks_directive_binding::original_note_message(
+                source, current, "add additional type info here",
+            )]);
         }
-        notes.push(Note {
-            message,
-            source: Some(source),
-        });
+    };
+    let (source, message) = match fix {
+        ReturnFixHint::UnannotatedSource(identity) => {
+            let owner = archive
+                .tree()
+                .symbols()
+                .text(identity.owner)
+                .ok_or("return note owner unavailable")?;
+            let name = archive
+                .tree()
+                .symbols()
+                .text(identity.name)
+                .ok_or("return note name unavailable")?;
+            let kind = if identity.verb { "verb" } else { "proc" };
+            (
+                archive.callable_note_origin(identity)?,
+                format!(
+                    "add a return type annotation to {}/{kind}/{name}",
+                    owner.trim_end_matches('/')
+                ),
+            )
+        }
+        ReturnFixHint::EvaluatedNone => (
+            archive.source_note_point(call.start)?,
+            "return type evaluated to None".into(),
+        ),
+        ReturnFixHint::None => {
+            return Err("empty return hint must not produce a source note".into())
+        }
+        ReturnFixHint::UnissuedBuiltin => {
+            return Err("builtin return note provenance is not issued".into())
+        }
+    };
+    if source.path.as_path() != current.physical_path() {
+        return Err("cross-file checker note formatting is not yet admitted".into());
     }
-    Ok(notes)
+    Ok(vec![Note { message, source: Some(source) }])
 }

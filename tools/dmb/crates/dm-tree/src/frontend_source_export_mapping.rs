@@ -554,6 +554,15 @@ impl SourceExportMapping {
             })
     }
     pub fn original_note_origin(&self, offset: usize) -> Result<SourceNoteOrigin, String> {
+        let point = self.strict_note_point(offset)?;
+        Ok(SourceNoteOrigin {
+            path: Arc::clone(point.path),
+            line: point.line,
+            byte_column: point.byte_column,
+        })
+    }
+
+    fn strict_note_point(&self, offset: usize) -> Result<OriginalNotePoint<'_>, String> {
         let index = self
             .origins
             .partition_point(|origin| origin.output_span.end <= offset);
@@ -576,8 +585,9 @@ impl SourceExportMapping {
             .includes
             .get(include)
             .ok_or("note include coordinates unavailable")?;
-        Ok(SourceNoteOrigin {
-            path: Arc::clone(&coordinates.path),
+        Ok(OriginalNotePoint {
+            include,
+            path: &coordinates.path,
             line: cursor.line,
             byte_column: cursor.byte_column,
         })
@@ -803,6 +813,22 @@ impl SourceExportMapping {
         ordinal: OccurrenceId,
     ) -> Result<SourceNoteOrigin, String> {
         self.original_note_origin(self.declaration_policy_cursor(ordinal)?)
+    }
+
+    /// Borrow the registered filename for the SAME strict declaration byte
+    /// cursor. Macro/line-only evidence gains no additional authority here.
+    pub(super) fn borrowed_declaration_policy_point(
+        &self,
+        ordinal: OccurrenceId,
+    ) -> Result<BorrowedSourceNoteOrigin<'_>, String> {
+        let point = self.strict_note_point(self.declaration_policy_cursor(ordinal)?)?;
+        Ok(BorrowedSourceNoteOrigin {
+            include: point.include,
+            path: point.path,
+            registration: self.registered_checker_path(point.include)?,
+            line: point.line,
+            byte_column: point.byte_column,
+        })
     }
 }
 

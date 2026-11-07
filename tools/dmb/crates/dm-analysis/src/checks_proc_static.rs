@@ -27,29 +27,32 @@ fn rows(
     walk: Walk<'_>,
     severity: Severity,
 ) -> Result<Vec<Diagnostic>, String> {
-    let mut out=Vec::new();visit_events(archive,severity,walk.events,|row|{out.push(row);Ok::<(),String>(())})?;Ok(out)
-}
-pub(crate) fn visit_events<'a,E:From<String>+for<'e>From<&'e str>>(archive:&BodyArchive,severity:Severity,events:impl IntoIterator<Item=Event<'a>>,mut emit:impl FnMut(Diagnostic)->Result<(),E>)->Result<(),E>{
-    for event in events {
-        let Event::UnknownReceiverCall {
-            expression,
-            at,
-            name,
-            hint,
-        } = event
-        else {
-            continue;
-        };
-        let hint = hint.map_err(str::to_owned)?;
-        let notes = crate::checker_static_type_notes::notes(archive, at, hint)?;
-        emit(Diagnostic {
-            family: "proc_call_static_type",
-            severity,
-            span: at,
-            expression_span: expression.span,
-            message: format!("proc call requires static type: {name:?}"),
-            notes,
-        })?;
+    let mut rows = Vec::new();
+    for event in walk.events {
+        if let Some(row) = diagnostic(archive, severity, event, |_| Ok::<(), String>(()))? {
+            rows.push(row);
+        }
     }
-    Ok(())
+    Ok(rows)
+}
+
+pub(crate) fn diagnostic<E: From<String> + for<'a> From<&'a str>>(
+    archive: &BodyArchive,
+    severity: Severity,
+    event: Event<'_>,
+    fund_authored: impl FnOnce(usize) -> Result<(), E>,
+) -> Result<Option<Diagnostic>, E> {
+    let Event::UnknownReceiverCall { expression, at, name, hint } = event else {
+        return Ok(None);
+    };
+    let hint = hint.map_err(str::to_owned)?;
+    let notes = crate::checker_static_type_notes::notes_using(archive, at, hint, fund_authored)?;
+    Ok(Some(Diagnostic {
+        family: "proc_call_static_type",
+        severity,
+        span: at,
+        expression_span: expression.span,
+        message: format!("proc call requires static type: {name:?}"),
+        notes,
+    }))
 }

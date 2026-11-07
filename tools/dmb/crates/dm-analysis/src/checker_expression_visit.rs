@@ -986,6 +986,11 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     name,
                     receiver,
                 })?;
+                if self.original_events.is_some() {
+                    // Pinned missing calls skip their arguments and give any
+                    // outer follow an empty analysis without a type hint.
+                    return Ok(TypeFact::Unhinted);
+                }
             }
             // Exact old missing-callee branch never evaluates arguments.
             return Ok(TypeFact::Unknown);
@@ -1556,7 +1561,11 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             name,
                             explicit_global: false,
                         })?;
-                        Ok(TypeFact::Unknown)
+                        Ok(if self.original_events.is_some() {
+                            TypeFact::Unhinted
+                        } else {
+                            TypeFact::Unknown
+                        })
                     }
                 }
             }
@@ -1899,7 +1908,11 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             name: selector,
                             receiver,
                         })?;
-                        Ok(TypeFact::Unknown)
+                        Ok(if self.original_events.is_some() {
+                            TypeFact::Unhinted
+                        } else {
+                            TypeFact::Unknown
+                        })
                     }
                 }
             }
