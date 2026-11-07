@@ -197,6 +197,7 @@
 #include "dq_admin_accessors_tests.dm"
 #include "dq_admin_verb_browser_tests.dm"
 #include "dq_verb_menu_ops_tests.dm"
+#include "dq_item_use_in_hand.dm"
 #include "dq_ghost_panel_tests.dm"
 #include "dq_command_panel_tests.dm"
 #include "dq_pet_panel_tests.dm"

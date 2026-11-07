@@ -603,17 +603,17 @@
 ///Essentially, a Activate Held Object mode for borgs that acts just like pressing Z in hotkey mode but also works well with multibelts.
 /mob/living/silicon/robot/proc/alt_mode()
 	if(!checkClickCooldown())
-		return
-
-/mob/living/silicon/robot/proc/alt_mode_op(datum/act/op/A)
-	alt_mode()
+		return FALSE
 
 	setClickCooldown(1)
 
 	var/obj/item/W = module_active
-	if(module_active)
+	if(W)
 		W.attack_self(src)
-	return
+	return TRUE
+
+/mob/living/silicon/robot/proc/alt_mode_op(datum/act/op/A)
+	return alt_mode() ? OP_OK : OP_FAILED
 
 // this function displays jetpack pressure in the stat panel
 // TGPanel
