@@ -3,15 +3,16 @@
 use super::*;use dq_analyze::captured_generator_budget::Budget;use dm_preprocess::{SourceAcquisitionLease,SourceText,SourceTextStorage,WeakSourceText};use crate::runner_host::workspace_capture::RawSourceIdentity;
 pub(super) const NODE:usize=256;const FIXED:usize=4096;
 type ResourceKey=(u8,usize);
-enum Observation{Acquisition(dm_preprocess::source_acquisition::WeakAcquisitionObject),Text(WeakSourceText,Option<Weak<super::super::Admission>>),SealedText(WeakSourceText,Option<Weak<super::super::Admission>>),Arena(Weak<super::source_arena::Allocation>),Original(Weak<str>),Bytes(dm_resources::WeakSharedBytes),Capture(Weak<WorkspaceCapture>,usize),Derived(Weak<crate::input_snapshot::DerivedPreflight>),RecorderMetadata(Weak<()>,usize),Handlers(Weak<crate::input_snapshot::HandlerStructuralSubject>)}
+enum Observation{Acquisition(dm_preprocess::source_acquisition::WeakAcquisitionObject),Text(WeakSourceText,Option<Weak<super::super::Admission>>),SealedText(WeakSourceText,Option<Weak<super::super::Admission>>),Arena(Weak<super::source_arena::Allocation>),ReadGroup(Weak<super::source_arena::OriginalReadGroup>),Original(Weak<str>),Bytes(dm_resources::WeakSharedBytes),Capture(Weak<WorkspaceCapture>,usize),Derived(Weak<crate::input_snapshot::DerivedPreflight>),RecorderMetadata(Weak<()>,usize),Handlers(Weak<crate::input_snapshot::HandlerStructuralSubject>)}
 impl Observation{
  fn has_tracked_bytes(&self)->bool{!matches!(self,Self::Text(..)|Self::Derived(_)|Self::Handlers(_))}
- fn live(&self)->bool{match self{Self::Acquisition(w)=>w.is_alive(),Self::Text(w,_)|Self::SealedText(w,_)=>w.upgrade().is_some(),Self::Arena(w)=>w.strong_count()!=0,Self::Original(w)=>w.strong_count()!=0,Self::Bytes(w)=>w.strong_count()!=0,Self::Capture(w,_)=>w.strong_count()!=0,Self::Derived(w)=>w.strong_count()!=0,Self::Handlers(w)=>w.strong_count()!=0,Self::RecorderMetadata(w,_)=>w.strong_count()!=0}}
+ fn live(&self)->bool{match self{Self::Acquisition(w)=>w.is_alive(),Self::Text(w,_)|Self::SealedText(w,_)=>w.upgrade().is_some(),Self::Arena(w)=>w.strong_count()!=0,Self::ReadGroup(w)=>w.strong_count()!=0,Self::Original(w)=>w.strong_count()!=0,Self::Bytes(w)=>w.strong_count()!=0,Self::Capture(w,_)=>w.strong_count()!=0,Self::Derived(w)=>w.strong_count()!=0,Self::Handlers(w)=>w.strong_count()!=0,Self::RecorderMetadata(w,_)=>w.strong_count()!=0}}
  fn bytes(&self)->io::Result<Option<usize>>{let add=|a:usize,b:usize|a.checked_add(b).ok_or_else(oom);match self{
  Self::Acquisition(w)=>{let mut n=0usize;let mut failed=false;let live=w.visit_live_storage(|storage|{use dm_preprocess::source_acquisition::AcquisitionStorage as S;let add=match storage{S::Object{bytes,..}=>bytes.checked_add(2*std::mem::size_of::<usize>()),S::Receipt{bytes,value,..}=>{let base=bytes.checked_add(2*std::mem::size_of::<usize>());if let Some((path,fact,_))=crate::input_snapshot::recorded_source_receipt_storage(value){base.and_then(|n|n.checked_add(path.capacity())).and_then(|n|n.checked_add(fact.capacity()))}else{None}},S::Source(_)=>None};match add{Some(bytes)=>n=bytes,None=>failed=true}});if failed{Err(oom())}else{Ok(live.then_some(n))}},
  Self::Arena(w)=>w.upgrade()
      .map(super::source_arena::AllocationHandle::new)
      .map(|owner|owner.arc().retained_bytes()).transpose(),
+ Self::ReadGroup(w)=>w.upgrade().map(|owner|owner.retained_bytes()).transpose(),
  Self::Text(w,domain)|Self::SealedText(w,domain)=>{let Some(text)=w.upgrade()else{return Ok(None)};let(control,payload)=super::source_arena::funded_parts(&text,domain.as_ref());let mut n=0usize;let mut failed=false;text.visit_storage(|_,bytes,storage|{let base=if control{Some(0)}else{bytes.checked_add(2*std::mem::size_of::<usize>())};let next=base.and_then(|v|match storage{SourceTextStorage::Original(_)=>Some(v),SourceTextStorage::Transformed(s)=>if payload{Some(v)}else{v.checked_add(s.capacity())},SourceTextStorage::Reserved{committed,..}=>if payload{Some(v)}else{v.checked_add(committed)}});match next{Some(v)=>n=v,None=>failed=true}});text.visit_fingerprint_storage(|_,_,capacity|{match n.checked_add(capacity){Some(v)=>n=v,None=>failed=true}});if failed{Err(oom())}else{Ok(Some(n))}},
  Self::Original(w)=>match w.upgrade(){Some(text)=>Ok(Some(text.len().checked_add(2*std::mem::size_of::<usize>()).ok_or_else(oom)?)),None=>Ok(None)},
  Self::Bytes(w)=>{let Some(bytes)=w.upgrade()else{return Ok(None)};add(std::mem::size_of::<SharedBytesOwner>()+2*std::mem::size_of::<usize>(),bytes.bytes().capacity()).map(Some)},
@@ -80,7 +81,7 @@ impl Ledger{
   struct SourceCharges {
    acquisition_and_receipt:usize, ordinary_text_control_and_fingerprint:usize,
    canonical_original_text:usize, exceptional_original_bytes:usize,
-   origin_arena_credit:usize, other_arena_credit:usize, expired_after_census_arena:usize,
+   origin_arena_credit:usize, other_arena_credit:usize, exact_read_group_credit:usize, expired_after_census_arena:usize,
    capture:usize, derived:usize, recorder_metadata:usize, handlers:usize,
    ledger_rows:usize, ledger_node_envelope:usize, fixed:usize,
   }
@@ -99,6 +100,7 @@ impl Ledger{
      Some(_)=>&mut charges.other_arena_credit,
      None=>&mut charges.expired_after_census_arena,
     },
+    Observation::ReadGroup(_)=>&mut charges.exact_read_group_credit,
     Observation::Capture(..)=>&mut charges.capture,
     Observation::Derived(_)=>&mut charges.derived,
     Observation::RecorderMetadata(..)=>&mut charges.recorder_metadata,
@@ -126,6 +128,7 @@ impl Ledger{
   c.collection_entries::<(ResourceKey,Row)>(owner,&self.rows as*const _ as usize,self.rows.len());
   for row in self.rows.values(){match &row.owner{
    Observation::Arena(weak)=>{let bytes=super::source_arena::Allocation::metadata_bytes();c.exposed_buffer("query_snapshot.raw_source_inputs.arena_credit",weak.as_ptr()as usize,if weak.strong_count()!=0{bytes}else{0},bytes);},
+   Observation::ReadGroup(weak)=>{let bytes=super::source_arena::OriginalReadGroup::metadata_bytes();c.exposed_buffer("query_snapshot.raw_source_inputs.exact_read_group",weak.as_ptr()as usize,if weak.strong_count()!=0{bytes}else{0},bytes);},
    Observation::Acquisition(w)=>{w.visit_control_storage(|ptr,logical,capacity|{c.exposed_buffer("raw_source_inputs.acquisition",ptr,logical,capacity);});w.visit_live_storage(|storage|{if let dm_preprocess::source_acquisition::AcquisitionStorage::Receipt{value,..}=storage{if let Some((path,fact,issuer))=crate::input_snapshot::recorded_source_receipt_storage(value){c.path("raw_source_inputs.receipt_paths",path);c.path("raw_source_inputs.receipt_paths",fact);c.arc_object("raw_source_inputs.issuer",issuer);}}});},
    Observation::Text(weak,_)|Observation::SealedText(weak,_)=>c.weak_source_text_resource("query_snapshot.raw_source_inputs.source",weak),
    Observation::Original(weak)=>{let live=weak.strong_count()!=0;c.exposed_buffer("query_snapshot.raw_source_inputs.original",weak.as_ptr()as*const u8 as usize,if live{row.bytes}else{0},row.bytes);},
@@ -158,6 +161,34 @@ impl Ledger{
      }
      Ok(())
  }
+ /// Move prepaid exact read payloads into one real weak group row.
+ /// The old row charge is an upper bound even while immutable child drops
+ /// race this transaction; a later exact sweep observes each refund.
+ pub(super) fn partition_original_read_group(
+  &mut self, donor:&super::source_arena::Allocation, remaining:usize,
+  group:&Arc<super::source_arena::OriginalReadGroup>, first:bool, addition:usize,
+ )->io::Result<()>{
+  let key=(16,Arc::as_ptr(group)as usize);
+  let previous=match self.rows.get(&key){
+   None if first=>super::source_arena::OriginalReadGroup::metadata_bytes(),
+   Some(row) if !first&&matches!(&row.owner,Observation::ReadGroup(weak)if weak.as_ptr()==Arc::as_ptr(group))=>row.bytes,
+   _=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"original read group identity differs from donor")),
+  };
+  let bytes=previous.checked_add(addition).ok_or_else(oom)?;
+  self.resize_arena(donor,remaining)?;
+  group.add_admitted_parts(addition);
+  self.replace_row(key,Row{owner:Observation::ReadGroup(Arc::downgrade(group)),bytes});
+  Ok(())
+ }
+ fn has_funded_acquisition_control(&self, credit:&dyn dm_preprocess::source_arena_credit::SourceArenaCreditOwner)->bool {
+  if let Some(allocation)=credit.as_any().downcast_ref::<super::source_arena::Allocation>() {
+   return self.has_source_arena(allocation);
+  }
+  let Some(part)=credit.as_any().downcast_ref::<super::source_arena::OriginalReadPart>() else{return false};
+  let group=part.group();
+  self.rows.get(&(16,Arc::as_ptr(group)as usize))
+   .is_some_and(|row|matches!(&row.owner,Observation::ReadGroup(weak)if weak.as_ptr()==Arc::as_ptr(group)))
+ }
  fn funds_exceptional_bytes(&self, bytes: &dm_resources::SharedBytes) -> bool {
   let payload = bytes.source_arena_payload_credit().map(|credit| credit.owner());
   let control = bytes.source_arena_control_credit().map(|credit| credit.owner());
@@ -180,8 +211,7 @@ impl Ledger{
   if let Some((address,weak))=original{let owner=Observation::Original(weak);let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost original payload"))?;staged[1]=Some(((1,address),owner,n));}
   if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{if !self.funds_exceptional_bytes(bytes){let owner=Observation::Bytes(bytes.downgrade());let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost exceptional bytes"))?;staged[2]=Some(((2,bytes.owner_address()),owner,n));}}
   let mut next=3;let mut object_error=None;
-  lease.visit_weak_resource_objects(|weak|{if object_error.is_some(){return}if weak.control_credit().and_then(|credit| credit.owner().as_any().downcast_ref::<super::source_arena::Allocation>())
-      .is_some_and(|allocation| self.has_source_arena(allocation)) {
+  lease.visit_weak_resource_objects(|weak|{if object_error.is_some(){return}if weak.control_credit().is_some_and(|credit| self.has_funded_acquisition_control(credit.owner())) {
      // The constructor object's prepaid row moved to this actual Arena allocation.
      return;
   }
