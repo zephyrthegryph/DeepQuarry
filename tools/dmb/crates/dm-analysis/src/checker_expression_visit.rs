@@ -242,7 +242,7 @@ impl LocalFact<'_> {
 }
 /// Borrowed pre-RHS hook in the existing evaluated call transition.
 /// The callback may retain source metadata, never the temporary CallableFact.
-pub(crate) trait CaseObserver<E>{fn switch_started(&mut self,_selector:&Expr,_cases:&[dm_syntax::SwitchCase],_default_present:bool,_at:Span)->Result<(),E>{Ok(())}fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),E>;fn logical_or(&mut self,cursor:dm_syntax::OriginalCaseCursor,expression:Span)->Result<(),E>;}
+pub(crate) trait CaseObserver<E>{fn switch_started(&mut self,_selector:&Expr,_cases:&[dm_syntax::SwitchCase],_default_present:bool,_at:Span)->Result<(),E>{Ok(())}fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),E>;fn logical_or(&mut self,site:dm_syntax::OriginalCaseSite,expression:Span)->Result<(),E>;}
 pub(crate) trait TypeIssueObserver<E>{fn undefined_type(&mut self,path:&str,at:Span)->Result<(),E>;}
 pub(crate) trait IterationObserver<E>{fn iterable(&mut self,ty:TypeFact,at:Span)->Result<(),E>;fn invalid_range(&mut self,at:Span)->Result<(),E>;}
 pub(crate) trait StaticObserver<E>{fn failure(&mut self,failure:crate::checker_static_reference::Failure<'_>,name:&str,procedure:bool,at:Span,expression:Span)->Result<(),E>;}
@@ -272,7 +272,7 @@ trait OriginalEvents<'a,E>{fn expression_event(&mut self,event:Event<'a>)->Resul
 #[path="checker_original_union.rs"]mod original_union;
 #[path="checker_current_evaluation.rs"]mod current_evaluation;
 pub(crate) use current_evaluation::{events_using as current_events_using,CurrentEvaluation};
-pub(crate) use original_union::archived_using as original_union_archived_using;
+pub(crate) use original_union::{using as original_union_using,UnionBody};
 
 #[derive(Clone,Copy)]struct KeywordCall<'c>{fact:&'c CallableFact,receiver:SymbolId,name:&'c str,at:Option<Span>,expression:Span,exact:bool}
 /// Borrowed coordinate adapter for the SAME evaluator and primary roots.
@@ -291,6 +291,13 @@ impl<'a> CodeSource<'a>{
    Some(projection)=>projection.span(span).ok_or("checker diagnostic span escapes actual current BODY projection"),
    None=>Ok(span),
   }
+ }
+ fn expanded_effect_origin(self,origin:crate::checker_effects::CallOrigin)->Result<crate::checker_effects::CallOrigin,&'static str>{
+  use crate::checker_effects::CallOrigin;
+  Ok(match origin{
+   CallOrigin::Source(at)=>CallOrigin::Source(self.expanded_span(at)?),
+   CallOrigin::ImplicitList(_)=>origin,
+  })
  }
  fn canonical_parameter_cursor(self,current:Span)->Result<Span,String>{match self.projection{Some(projection)=>projection.inverse().span(current).ok_or_else(||"current parameter cursor escaped actual canonical body binding".into()),None=>Ok(current)}}
 }
@@ -881,6 +888,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             .map(crate::checker_effects::CallOrigin::Source)
             .or(self.evaluation_anchor)
             .ok_or("mutation effect needs original enclosing evaluation anchor")?;
+        let origin = self.source.expanded_effect_origin(origin)?;
         let effects = self.effects.as_mut().unwrap();
         if self.finite_effect_events && effects.direct.len() >= crate::checker_effects::MAX_EVENTS {
             return Err("native direct effects exceed bounded admission".into());
@@ -1144,7 +1152,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     callee: target,
                     origin: match site {
                         EvaluationCallSite::Written(_) => {
-                            crate::checker_effects::CallOrigin::Source(at)
+                            crate::checker_effects::CallOrigin::Source(self.source.expanded_span(at)?)
                         }
                         EvaluationCallSite::ImplicitList(initializer) => {
                             crate::checker_effects::CallOrigin::ImplicitList(initializer.origin)
@@ -1172,7 +1180,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         effects.transient.push(
                             &mut effects.blocking,
                             crate::checker_effects::DirectEffect {
-                                origin: crate::checker_effects::CallOrigin::Source(at),
+                                origin: crate::checker_effects::CallOrigin::Source(self.source.expanded_span(at)?),
                                 reason,
                             },
                         )?;
@@ -1496,7 +1504,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 effects.transient.push(
                     &mut effects.blocking,
                     crate::checker_effects::DirectEffect {
-                        origin: crate::checker_effects::CallOrigin::Source(form.at),
+                        origin: crate::checker_effects::CallOrigin::Source(self.source.expanded_span(form.at)?),
                         reason: "input",
                     },
                 )?;
@@ -2280,7 +2288,7 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
     }
     fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;observer.do_while_unreachable(at,condition)?;}Ok(())}
     fn switch_started(&mut self,selector:&'a Expr,cases:&'a [dm_syntax::SwitchCase],default_present:bool,at:Span)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;observer.switch_started(selector,cases,default_present,at)?;}Ok(())}
-    fn switch_case(&mut self,case:&'a dm_syntax::SwitchCase)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;let cursor=case.original_cursor.map_err(D::Error::from)?;if let [dm_syntax::SwitchAlternative::Exact(value)]=case.alternatives.as_slice(){if matches!(&value.kind,ExprKind::Binary{op,..}if op=="||"){observer.logical_or(cursor,value.span)?;}}}Ok(())}
+    fn switch_case(&mut self,case:&'a dm_syntax::SwitchCase)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;if let [dm_syntax::SwitchAlternative::Exact(value)]=case.alternatives.as_slice(){if matches!(&value.kind,ExprKind::Binary{op,..}if op=="||"){observer.logical_or(case.original_site,value.span)?;}}}Ok(())}
     fn iterable(&mut self,expression:&'a Expr,at:Span)->Result<(),D::Error>{let ty=self.with_warning_anchor(Self::warning_source(at),|this|Walker::expression(this,expression,None))?;self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.iterable(ty,at)?;}Ok(())}
     fn invalid_range(&mut self,at:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.invalid_range(at)?;}Ok(())}
     fn catch_parameters(&mut self,count:usize,at:Span,catch_header:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.catch_errors.as_mut(){observer.parameters(count,at,catch_header)?;}Ok(())}

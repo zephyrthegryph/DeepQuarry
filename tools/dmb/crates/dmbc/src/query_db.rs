@@ -132,7 +132,7 @@ impl QueryDb {
         );
         let purity = purity::State::default();
         let sources = Arc::new(Mutex::new(BTreeMap::new()));
-        purity::register(&db, Arc::clone(&purity.ledger), Arc::clone(&sources));
+        purity::register(&db, Arc::clone(&purity.ledger), Arc::clone(&sources), Arc::clone(&body_charge));
         db.define_input(SOURCE, "source");
         db.define_input(PROJECT, "project");
         db.define(PROGRAM, "program", |ctx, params| {

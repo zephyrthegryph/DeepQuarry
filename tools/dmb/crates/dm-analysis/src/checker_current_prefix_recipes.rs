@@ -21,6 +21,23 @@ impl CurrentSettingPrelude{
  pub fn visit_current<W:EffectReportWork>(&self,body:&CurrentArchivedBody<'_,'_>,a:&dm_syntax::SettingAdmission<'_>,work:&mut W,checkpoint:&dyn Fn()->io::Result<()>,mut emit:impl FnMut(&Diagnostic)->io::Result<()>)->Result<(),PolicyFailure>{self.visit_current_registered(body,a,work,checkpoint,|row|emit(row.diagnostic()))}
  /// Current delivery only. Full aggregate must call ALL preludes before bodies.
  pub fn visit_current_registered<W:EffectReportWork>(&self,body:&CurrentArchivedBody<'_,'_>,a:&dm_syntax::SettingAdmission<'_>,work:&mut W,checkpoint:&dyn Fn()->io::Result<()>,mut emit:impl FnMut(CurrentPreludeFinding<'_>)->io::Result<()>)->Result<(),PolicyFailure>{
+  self.deliver_current(body,a,work,checkpoint,|row,tag,level|{
+   emit(CurrentPreludeFinding{diagnostic:&row,tag,level})?;
+   Ok(0)
+  })
+ }
+ /// Move rendered rows to the already-admitted effect draft. The caller
+ /// reserves its output vector before rendering; only the physical backing
+ /// owned by each moved row is retained across the per-row mark.
+ pub(crate) fn move_current_registered<W:EffectReportWork>(&self,body:&CurrentArchivedBody<'_,'_>,a:&dm_syntax::SettingAdmission<'_>,work:&mut W,checkpoint:&dyn Fn()->io::Result<()>,mut emit:impl FnMut(Diagnostic,Option<&'static str>,crate::check_policy::DiagnosticSeverity)->io::Result<()>)->Result<(),PolicyFailure>{
+  self.deliver_current(body,a,work,checkpoint,|row,tag,level|{
+   let retained=current_prelude_diagnostic_backing(&row).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"current prelude retained diagnostic capacity overflows"))?;
+   emit(row,tag,level)?;
+   Ok(retained)
+  })
+ }
+ pub(crate) fn row_count(&self)->usize{self.rows.len()}
+ fn deliver_current<W:EffectReportWork>(&self,body:&CurrentArchivedBody<'_,'_>,a:&dm_syntax::SettingAdmission<'_>,work:&mut W,checkpoint:&dyn Fn()->io::Result<()>,mut emit:impl FnMut(Diagnostic,Option<&'static str>,crate::check_policy::DiagnosticSeverity)->io::Result<usize>)->Result<(),PolicyFailure>{
   checkpoint().map_err(PolicyFailure::Operational)?;if !Weak::ptr_eq(&self.code,&Arc::downgrade(body.syntax().original_code_owner()))||self.window!=body.syntax().canonical_window(){return Err("initial-setting recipes belong to another canonical body".into())}
   let pending=body.with_initial_setting_prefix(self.identity,a,|prefix|{if self.skipped{if !prefix.settings().is_empty()||prefix.first_non_setting().is_some(){return Err("skipped initial-setting recipe rebound to available code".into())}return Ok(())}
    // Admit actual current formatting geometry before ANY name/path/message Vec
@@ -42,11 +59,22 @@ impl CurrentSettingPrelude{
     // genuine current source points by their recipe-specific producer route.
     use crate::check_policy::DiagnosticSeverity as Level;
     let(tag,level)=match recipe{Recipe::GlobalFinal=>(Some("incompatible_directive"),Level::Error),Recipe::Unknown(_)=>{let name=statement.ok_or("unknown prefix statement absent")?.setting().ok_or("unknown prefix setting absent")?.attribute;(name.starts_with("SpacemanDMM_").then_some("unknown_linter_setting"),Level::Warning)},Recipe::AtDefinition(_)|Recipe::Invalid(_)=>(None,Level::Warning),Recipe::Return(_)=>(None,Level::Error),Recipe::Rejected{family:0,..}=>(Some("incompatible_directive"),Level::Error),Recipe::Rejected{family:1,..}=>(Some("disabled_directive"),Level::Warning),Recipe::Rejected{family:2,..}=>(Some("sets_directive_twice"),Level::Warning),_=>return Err("prefix recipe registration absent".into())};
-    checkpoint().map_err(PolicyFailure::Operational)?;emit(CurrentPreludeFinding{diagnostic:&row,tag,level}).map_err(PolicyFailure::Operational)
-   })();let cleanup=work.reconcile(mark,0);if matches!(&result,Err(PolicyFailure::Operational(_))){return result}cleanup.map_err(PolicyFailure::Operational)?;result?;}
+    checkpoint().map_err(PolicyFailure::Operational)?;emit(row,tag,level).map_err(PolicyFailure::Operational)
+   })();let retained=match result{Ok(bytes)=>bytes,Err(actual)=>{let cleanup=work.reconcile(mark,0);if matches!(&actual,PolicyFailure::Operational(_)){return Err(actual)}cleanup.map_err(PolicyFailure::Operational)?;return Err(actual)}};work.reconcile(mark,retained).map_err(PolicyFailure::Operational)?;}
    Ok(())
   });match pending{Ok(value)=>value,Err(actual)=>Err(syntax_failure(actual))}
  }
+}
+
+pub(crate) fn current_prelude_diagnostic_backing(row:&Diagnostic)->Option<usize>{
+ let initial=row.notes.capacity().checked_mul(std::mem::size_of::<crate::checks::Note>())?.checked_add(row.message.capacity())?;
+ row.notes.iter().try_fold(initial,|bytes,note|{
+  let bytes=bytes.checked_add(note.message.capacity())?;
+  match &note.source{
+   Some(source)=>bytes.checked_add(std::mem::size_of::<std::path::PathBuf>()+2*std::mem::size_of::<usize>())?.checked_add(source.path.capacity()),
+   None=>Some(bytes),
+  }
+ })
 }
 
 pub fn current_setting_prelude<W:EffectReportWork>(body:&CurrentArchivedBody<'_,'_>,resolver:&(impl Resolver+?Sized),a:&dm_syntax::SettingAdmission<'_>,work:&mut W,checkpoint:&dyn Fn()->io::Result<()>)->Result<CurrentSettingPrelude,PolicyFailure>{

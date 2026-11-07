@@ -43,7 +43,7 @@ pub use audit::{
 pub use statements::{
     parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
     ControlOrigin, ForControl, ForListBinding, ForInitializer, ParsedBody, Statement, StatementKind,
-    SwitchAlternative, SwitchCase, OriginalCaseCursor,
+    SwitchAlternative, SwitchCase, OriginalCaseCursor, OriginalCaseSite,
 };
 #[cfg(test)]
 mod control_origin_tests;
@@ -352,7 +352,7 @@ pub use statements::{OriginalBodyGrammarOutcome,OriginalBodyGrammarKind};
 mod original_literal_data;
 mod original_literal_projection;
 pub use original_literal_projection::{OriginalLiteralOutputOwner,OriginalLiteralProjectionOwner};
-pub use original_literal_data::{LiteralRawStorage,OriginalLiteralData,OriginalLiteralPool,OriginalLiteralRef,OriginalStringMode};
+pub use original_literal_data::{LiteralRawStorage,OriginalLiteralData,OriginalLiteralDeliverySlot,OriginalLiteralPool,OriginalLiteralRef,OriginalStringMode};
 
 pub use lexer_items::{NativeLexicalPurpose,OriginalPunctuationFacts,OriginalIdentFacts,OriginalWhitespaceFacts,OriginalResourceFacts,OriginalCommentFacts,OriginalNumberFacts,NativeTokenCursor,OriginalPreparedBoundary,NativeTokenProgress,NativeTokenStep};
 pub use lexer_items::{OriginalQuotedFrame,OriginalQuotedPart,OriginalQuotedPartKind,OriginalQuotedStep};
@@ -382,4 +382,4 @@ mod original_failure_format;
 pub use original_failure_format::{write_original_input_failure,write_original_term_failure,write_original_delimiter_failure};
 
 mod setting_charge_counter;
-pub use setting_charge_counter::{SettingChargeCounter, SharedNativeReservation};
+pub use setting_charge_counter::{ProvisionalNativeGrant, SettingChargeCounter, SharedNativeReservation};

@@ -1698,3 +1698,54 @@ fn exact_original_fixture_note(note:String,fixture:&std::path::Path)->String{
   assert_eq!(exact_original_fixture_note(note.to_owned(),fixture),note);
  }
 }
+
+#[test]
+fn current_whole_original_body_rows_match_absolute_report_bytes_and_keep_warm_syntax(){
+ use dm_analysis::checker_effects::{ExecutionAdmission,OriginalBodyDiagnostic};
+ fn encode(rows:&[OriginalBodyDiagnostic])->Vec<u8>{
+  use std::io::Write;
+  let mut bytes=Vec::new();
+  for row in rows{
+   writeln!(bytes,"{:?} {:?} {:?} {:?} {:?}",row.phase(),row.location(),row.registration_tag(),row.default_level(),row.diagnostic()).unwrap();
+  }
+  bytes
+ }
+ let source=concat!(
+  "// earlier authored text moves the canonical body away from zero\n",
+  "/proc/untyped()\n    return null\n",
+  "/proc/probe(item)\n",
+  "    set SpacemanDMM_should_not_sleep = 0\n",
+  "    set SpacemanDMM_should_not_sleep = 1\n",
+  "    set SpacemanDMM_should_not_sleep = 1\n",
+  "    set SpacemanDMM_made_up = 1\n",
+  "    return item.member\n",
+  "/proc/probe_call()\n",
+  "    return untyped().other\n",
+  "/proc/unissued(item)\n",
+  "    var/value = null\n",
+  "    value.member\n",
+  "    item.use()\n",
+  "    switch(rand(1, 2))\n        if(1 || 2)\n            return missing\n",
+ );
+ let(host,_)=original_declared_types_host(source.as_bytes(),None);
+ let state=host.query_state();let held=state.lock().unwrap();let snapshot=held.snapshot.as_ref().unwrap();
+ let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();let input=owner.input();
+ let db=snapshot.native_raw_queries.as_ref().unwrap();
+ for name in ["probe","probe_call"]{
+  let ordinal=filter_ordinal(snapshot,name) as usize;
+  let current=db.original_current_body_bytes_for_test(input,ordinal,encode).unwrap();
+  let count=db.db().stats(dm_query::Kind(4)).computed;
+  assert_eq!(db.original_current_body_bytes_for_test(input,ordinal,encode).unwrap(),current);
+  assert_eq!(db.db().stats(dm_query::Kind(4)).computed,count);
+  let reference=input.compute_body_checked_controlled(ordinal,snapshot.tree.as_ref(),&ExecutionAdmission::default(),&||Ok(())).unwrap();
+  assert_eq!(reference.original_evaluation_count(),1);
+  let expected=reference.with_original_diagnostics(input,encode).unwrap();
+  assert!(!expected.is_empty(),"{name}");
+  if name=="probe"{assert!(std::str::from_utf8(&expected).unwrap().starts_with("Prelude Expanded"));}
+  assert_eq!(current,expected,"{name}");
+ }
+ let unissued=filter_ordinal(snapshot,"unissued") as usize;
+ let error=db.original_current_body_bytes_for_test(input,unissued,|_|panic!("unissued code published rows")).unwrap_err();
+ assert!(matches!(error,dm_tree::frontend::BodySyntaxFailure::Operational(actual)
+  if actual.kind()==std::io::ErrorKind::Unsupported&&actual.to_string().contains("genuine original per-body grammar outcome is not issued")));
+}

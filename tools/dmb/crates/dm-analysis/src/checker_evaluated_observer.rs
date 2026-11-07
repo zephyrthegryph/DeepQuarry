@@ -19,7 +19,7 @@ pub enum ScopeKind {
 #[derive(Clone, Copy)]
 pub enum ExpressionOrigin {
     Source(Span),
-    Case(Result<dm_syntax::OriginalCaseCursor, &'static str>),
+    Case(dm_syntax::OriginalCaseSite),
 }
 
 /// The observer stages findings privately and publishes only after traversal

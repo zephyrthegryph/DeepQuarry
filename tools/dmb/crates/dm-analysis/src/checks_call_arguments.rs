@@ -56,4 +56,4 @@ pub use declared_types::with_archived_body as with_declared_types_archived_body;
 pub use switch_cases::with_archived_body as with_switch_cases_archived_body;
 
 #[path="checks_original_union.rs"]mod original_union;
-pub(crate) use original_union::with_body_using as with_original_union_body_using;
+pub(crate) use original_union::{with_body_using as with_original_union_body_using,with_current_body_using as with_original_union_current_body_using};

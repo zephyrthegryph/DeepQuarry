@@ -23,15 +23,15 @@ impl<'a,'loan,'w,W:EffectReportWork,R:Resolver+?Sized> Combined<'a,'loan,'w,'_,W
 impl<W:EffectReportWork,R:Resolver+?Sized> ArgumentObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{
  fn reserve(&mut self,n:usize)->Result<(),PolicyFailure>{reserve(self.inner().work,n)}fn original_values(&self)->bool{true}
  fn begin_call(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,name:&str)->Result<(),PolicyFailure>{ArgumentObserver::begin_call(self.inner(),tree,fact,name)}
- fn argument(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,name:&str,key:Option<&Expr>,after:bool,at:Option<Span>,expression:Span)->Result<(),PolicyFailure>{ArgumentObserver::argument(self.inner(),tree,fact,name,key,after,at,expression)}
- fn finished(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,name:&str,args:&[Expr],named:&NamedArguments<'_>,values:OriginalArguments<'_>,at:Option<Span>,expression:Span)->Result<(),PolicyFailure>{self.with_filter(|filter|ArgumentObserver::finished(filter,tree,fact,name,args,named,values,at,expression))}
+ fn argument(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,name:&str,key:Option<&Expr>,after:bool,at:Option<Span>,expression:Span)->Result<(),PolicyFailure>{let at=at.map(|at|self.body.source_point(at)).transpose()?;let expression=self.body.source_point(expression)?;ArgumentObserver::argument(self.inner(),tree,fact,name,key,after,at,expression)}
+ fn finished(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,name:&str,args:&[Expr],named:&NamedArguments<'_>,values:OriginalArguments<'_>,at:Option<Span>,expression:Span)->Result<(),PolicyFailure>{let at=at.map(|at|self.body.source_point(at)).transpose()?;let expression=self.body.source_point(expression)?;self.with_filter(|filter|ArgumentObserver::finished(filter,tree,fact,name,args,named,values,at,expression))}
 }
-impl<W:EffectReportWork,R:Resolver+?Sized> KeywordObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn begin_call(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,name:&str)->Result<(),PolicyFailure>{self.keywords.begin_call(tree,fact,name)}fn accepted_argument(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,receiver:SymbolId,name:&str,key:&Expr,at:Span)->Result<(),PolicyFailure>{self.keywords.accepted_argument(tree,fact,receiver,name,key,at)}}
-impl<W:EffectReportWork,R:Resolver+?Sized> TypeIssueObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn undefined_type(&mut self,path:&str,at:Span)->Result<(),PolicyFailure>{self.with_types(|types|types.undefined_type(path,at))}}
-impl<W:EffectReportWork,R:Resolver+?Sized> IterationObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn iterable(&mut self,ty:TypeFact,at:Span)->Result<(),PolicyFailure>{self.with_iteration(|iteration|iteration.iterable(ty,at))}fn invalid_range(&mut self,at:Span)->Result<(),PolicyFailure>{self.with_iteration(|iteration|iteration.invalid_range(at))}}
-impl<W:EffectReportWork,R:Resolver+?Sized> StaticObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn failure(&mut self,failure:crate::checker_static_reference::Failure<'_>,name:&str,procedure:bool,at:Span,expression:Span)->Result<(),PolicyFailure>{self.with_static(|references|references.failure(failure,name,procedure,at,expression))}}
-impl<W:EffectReportWork,R:Resolver+?Sized> CatchObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn parameters(&mut self,count:usize,at:Span,expression:Span)->Result<(),PolicyFailure>{self.with_catch(|catch|catch.parameters(count,at,expression))}}
-impl<W:EffectReportWork,R:Resolver+?Sized> CaseObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn switch_started(&mut self,selector:&Expr,cases:&[dm_syntax::SwitchCase],default_present:bool,at:Span)->Result<(),PolicyFailure>{let body=self.body;self.with_cases(|adapter|adapter.rand_range(body,selector,cases,default_present,at))}fn logical_or(&mut self,cursor:dm_syntax::OriginalCaseCursor,expression:Span)->Result<(),PolicyFailure>{self.with_cases(|cases|cases.logical_or(cursor,expression))}fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),PolicyFailure>{self.with_cases(|cases|cases.do_while_unreachable(at,condition))}}
+impl<W:EffectReportWork,R:Resolver+?Sized> KeywordObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn begin_call(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,name:&str)->Result<(),PolicyFailure>{self.keywords.begin_call(tree,fact,name)}fn accepted_argument(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,receiver:SymbolId,name:&str,key:&Expr,at:Span)->Result<(),PolicyFailure>{self.keywords.accepted_argument(tree,fact,receiver,name,key,self.body.source_point(at)?)}}
+impl<W:EffectReportWork,R:Resolver+?Sized> TypeIssueObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn undefined_type(&mut self,path:&str,at:Span)->Result<(),PolicyFailure>{let at=self.body.source_point(at)?;self.with_types(|types|types.undefined_type(path,at))}}
+impl<W:EffectReportWork,R:Resolver+?Sized> IterationObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn iterable(&mut self,ty:TypeFact,at:Span)->Result<(),PolicyFailure>{let at=self.body.source_point(at)?;self.with_iteration(|iteration|iteration.iterable(ty,at))}fn invalid_range(&mut self,at:Span)->Result<(),PolicyFailure>{let at=self.body.source_point(at)?;self.with_iteration(|iteration|iteration.invalid_range(at))}}
+impl<W:EffectReportWork,R:Resolver+?Sized> StaticObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn failure(&mut self,failure:crate::checker_static_reference::Failure<'_>,name:&str,procedure:bool,at:Span,expression:Span)->Result<(),PolicyFailure>{let at=self.body.source_point(at)?;let expression=self.body.source_point(expression)?;self.with_static(|references|references.failure(failure,name,procedure,at,expression))}}
+impl<W:EffectReportWork,R:Resolver+?Sized> CatchObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn parameters(&mut self,count:usize,at:Span,expression:Span)->Result<(),PolicyFailure>{let at=self.body.source_point(at)?;let expression=self.body.source_point(expression)?;self.with_catch(|catch|catch.parameters(count,at,expression))}}
+impl<W:EffectReportWork,R:Resolver+?Sized> CaseObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn switch_started(&mut self,selector:&Expr,cases:&[dm_syntax::SwitchCase],default_present:bool,at:Span)->Result<(),PolicyFailure>{let body=self.body;self.with_cases(|adapter|adapter.rand_range(body,selector,cases,default_present,at))}fn logical_or(&mut self,site:dm_syntax::OriginalCaseSite,expression:Span)->Result<(),PolicyFailure>{let cursor=self.body.original_switch_case_cursor(site).map_err(syntax_failure)?.map_err(PolicyFailure::from)?;let expression=self.body.source_point(expression)?;self.with_cases(|cases|cases.logical_or_expanded(cursor,expression))}fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),PolicyFailure>{let at=self.body.source_point(at)?;let condition=self.body.source_point(condition)?;self.with_cases(|cases|cases.do_while_unreachable(at,condition))}}
 
 impl<W:EffectReportWork,R:Resolver+?Sized> Combined<'_,'_,'_,'_,W,R>{
  fn emit(&mut self,mut diagnostic:Diagnostic,tag:Option<&'static str>,level:crate::check_policy::DiagnosticSeverity)->Result<(),PolicyFailure>{
@@ -43,16 +43,6 @@ impl<W:EffectReportWork,R:Resolver+?Sized> Combined<'_,'_,'_,'_,W,R>{
   let inner=self.inner();
   push(inner.work,&mut inner.rows,Row{registration:Some((tag,level)),diagnostic,synthetic:false,reported:None})
  }
-}
-fn project_case_cursor(cursor:dm_syntax::OriginalCaseCursor,project:impl Fn(Span)->Result<Span,String>)->Result<dm_syntax::OriginalCaseCursor,String>{
- use dm_syntax::OriginalCaseCursor;
- Ok(match cursor{
-  OriginalCaseCursor::Token(at)=>OriginalCaseCursor::Token(project(at)?),
-  OriginalCaseCursor::SourceEnd{offset,fallback}=>OriginalCaseCursor::SourceEnd{
-   offset:project(Span::new(offset,offset))?.start,
-   fallback:project(fallback)?,
-  },
- })
 }
 impl<'a,W:EffectReportWork,R:Resolver+?Sized> OriginalObserver<'a> for Combined<'a,'_,'_,'_,W,R>{
  fn access_levels(&self)->[Severity;5]{[Severity::Error,Severity::Error,Severity::Error,Severity::Error,Severity::Warning]}
@@ -84,7 +74,7 @@ impl<'a,W:EffectReportWork,R:Resolver+?Sized> OriginalObserver<'a> for Combined<
   let inner=self.inner();
   let (span,point)=match at.ok_or("Original binary warning has no authored evaluation anchor")? {
    ExpressionOrigin::Source(span)=>(body.source_point(span)?,None),
-   ExpressionOrigin::Case(cursor)=>match project_case_cursor(cursor.map_err(PolicyFailure::from)?,|span|body.source_point(span))?{
+   ExpressionOrigin::Case(site)=>match body.original_switch_case_cursor(site).map_err(syntax_failure)?.map_err(PolicyFailure::from)?{
     dm_syntax::OriginalCaseCursor::Token(span)=>{
      let point=if inner.archive.borrowed_source_note_point(span.start).is_ok(){None}else{
       inner.archive.source_mapping().borrowed_case_end_point_using(span.end,span,&mut||inner.poll())?
@@ -137,27 +127,38 @@ impl<'a,W:EffectReportWork,R:Resolver+?Sized> OriginalObserver<'a> for Combined<
 pub(crate) fn with_body_using<'a,W:EffectReportWork,R:Resolver+?Sized,D:crate::checker_prefix_demand::Demand<Error=PolicyFailure>>(
  archive:&'a BodyArchive,body:&'a ArchivedBody<'a>,resolver:&R,profile:PackedU128,loan:crate::checker_effects::DraftLoan<'_>,prefix_demand:D,work:&mut W,checkpoint:&dyn Fn()->io::Result<()>,keywords:&mut dyn KeywordObserver<PolicyFailure>,consume:impl FnOnce(Findings<'a>,usize)->Result<(),PolicyFailure>
 )->Result<(),PolicyFailure>{
- let mut combined=Combined{inner:Some(Arguments{archive,profile,work,checkpoint,resolver,rows:Vec::new()}),body,keywords,evaluations:0};
- let pending=(||{visit::original_union_archived_using(archive,body,resolver,profile,loan,prefix_demand,checkpoint,&mut combined)?;if combined.evaluations!=1{return Err("original contribution did not evaluate its actual body exactly once".into())}let rows=std::mem::take(&mut combined.inner().rows);consume(Findings::from_rows(archive,rows),combined.evaluations)})();
- if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;pending
+ with_union_using(archive,visit::UnionBody::Archived(body),body,resolver,profile,loan,prefix_demand,work,checkpoint,keywords,consume)
 }
 
-#[cfg(test)]
-mod projection_tests {
- use super::*;
- use dm_syntax::OriginalCaseCursor;
-
- #[test]
- fn original_case_source_end_projects_both_coordinates_and_refuses_stale_fallback() {
-  let projection=dm_syntax::SyntaxProjection::new(Span::new(0,12),Span::new(80,92)).unwrap();
-  let project=|span|projection.span(span).ok_or_else(||"outside current occurrence".to_owned());
-  let source_end=OriginalCaseCursor::SourceEnd{offset:12,fallback:Span::new(9,11)};
-  assert_eq!(project_case_cursor(source_end,project).unwrap(),OriginalCaseCursor::SourceEnd{
-   offset:92,fallback:Span::new(89,91),
-  });
-  assert_eq!(project_case_cursor(OriginalCaseCursor::Token(Span::new(3,4)),project).unwrap(),
-   OriginalCaseCursor::Token(Span::new(83,84)));
-  assert!(project_case_cursor(OriginalCaseCursor::SourceEnd{offset:12,fallback:Span::new(89,91)},project).is_err());
-  assert!(project_case_cursor(OriginalCaseCursor::SourceEnd{offset:13,fallback:Span::new(9,11)},project).is_err());
+/// A complete current expression/flow/effects traversal over the supplied
+/// live canonical BODY loan. Prelude preparation remains the caller's phase.
+pub(crate) fn with_current_body_using<'a,W:EffectReportWork,R:Resolver+?Sized,D:crate::checker_prefix_demand::Demand<Error=PolicyFailure>>(
+ archive:&'a BodyArchive,body:&'a dm_tree::frontend::CurrentArchivedBody<'_,'_>,admission:&dm_syntax::SettingAdmission<'_>,resolver:&R,profile:PackedU128,loan:crate::checker_effects::DraftLoan<'_>,prefix_demand:D,work:&mut W,checkpoint:&dyn Fn()->std::io::Result<()>,keywords:&mut dyn KeywordObserver<PolicyFailure>,consume:impl FnOnce(Findings<'a>,usize)->Result<(),PolicyFailure>,
+)->Result<(),PolicyFailure>{
+ checkpoint().map_err(PolicyFailure::Operational)?;
+ match body.syntax().original_code_disposition().map_err(syntax_failure)?{
+  dm_tree::frontend::OriginalBodyDisposition::Available(_)=>{},
+  dm_tree::frontend::OriginalBodyDisposition::Skipped(_)=>return Err("current full Original evaluator requires available body code".into()),
  }
+ let pending=body.with_original_body_source(admission,|source|{
+  with_union_using(archive,visit::UnionBody::Current(body,admission),source,resolver,profile,loan,prefix_demand,work,checkpoint,keywords,consume)
+ }).map_err(syntax_failure)?;
+ if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}
+ if let Some(actual)=admission.take_operational_error(){return Err(PolicyFailure::Operational(actual))}
+ checkpoint().map_err(PolicyFailure::Operational)?;pending
+}
+
+pub(super) fn syntax_failure(actual:dm_tree::frontend::BodySyntaxFailure)->PolicyFailure{
+ match actual{
+  dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>PolicyFailure::Operational(actual),
+  dm_tree::frontend::BodySyntaxFailure::Syntax(actual)=>actual.message.into(),
+ }
+}
+
+fn with_union_using<'a,W:EffectReportWork,R:Resolver+?Sized,D:crate::checker_prefix_demand::Demand<Error=PolicyFailure>>(
+ archive:&'a BodyArchive,body:visit::UnionBody<'a,'_,'_,'_,'_>,source:&dyn dm_tree::frontend::InitialSettingSource,resolver:&R,profile:PackedU128,loan:crate::checker_effects::DraftLoan<'_>,prefix_demand:D,work:&mut W,checkpoint:&dyn Fn()->std::io::Result<()>,keywords:&mut dyn KeywordObserver<PolicyFailure>,consume:impl FnOnce(Findings<'a>,usize)->Result<(),PolicyFailure>,
+)->Result<(),PolicyFailure>{
+ let mut combined=Combined{inner:Some(Arguments{archive,profile,work,checkpoint,resolver,rows:Vec::new()}),body:source,keywords,evaluations:0};
+ let pending=(||{visit::original_union_using(archive,body,source,resolver,profile,loan,prefix_demand,checkpoint,&mut combined)?;if combined.evaluations!=1{return Err("original contribution did not evaluate its actual body exactly once".into())}let rows=std::mem::take(&mut combined.inner().rows);consume(Findings::from_rows(archive,rows),combined.evaluations)})();
+ if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;pending
 }

@@ -67,9 +67,17 @@ pub enum SwitchAlternative {
 
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]
 pub enum OriginalCaseCursor{Token(Span),SourceEnd{offset:usize,fallback:Span}}
+/// In-body authored anchors, distinct from the Original reader's cursor,
+/// which may point past the item extent to a trailing token or source EOF.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct OriginalCaseSite {
+    pub header: Span,
+    pub body: Span,
+    pub cursor: Result<OriginalCaseCursor, &'static str>,
+}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SwitchCase {
-    pub original_cursor:Result<OriginalCaseCursor,&'static str>,
+    pub original_site:OriginalCaseSite,
     pub alternatives: Vec<SwitchAlternative>,
     pub body: Vec<Statement>,
 }
@@ -236,7 +244,7 @@ fn parse_body_items_using_settings(
         admission,
         deferred_literal_purity,
         original_compound_complete:true,
-        original_compound_seen_if:false,
+        original_compound_seen_statement:false,
         original_terminal_header:items.last().filter(|item|item.children.is_empty()).map(|item|item.header_span),
         original_grammar:&mut result.original_grammar,
     };
@@ -244,7 +252,7 @@ fn parse_body_items_using_settings(
     let mut diagnostics=BodyDiagnostics{rows:&mut result.diagnostics,settings,admission};
     result.statements = parse_sequence(items, &mut diagnostics, &mut origins);
     drop(diagnostics);
-    let compound=origins.original_compound_complete&&origins.original_compound_seen_if;
+    let compound=origins.original_compound_complete&&origins.original_compound_seen_statement;
     result.local_variables.finish_source_order();
     finish_original_setting_prefix(&mut result);
     if compound&&result.diagnostics.is_empty(){result.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings:0,scope_roots:Some(result.statements.len()),kind:OriginalBodyGrammarKind::Available,statement:None,expression:None,operator:None});}
@@ -294,7 +302,7 @@ impl std::ops::DerefMut for BodyDiagnostics<'_>{fn deref_mut(&mut self)->&mut Se
 /// One existing native parser pass owns control AND local declaration origins.
 struct BodyOrigins<'a> {
     original_compound_complete:bool,
-    original_compound_seen_if:bool,
+    original_compound_seen_statement:bool,
     original_terminal_header:Option<Span>,
     original_grammar:&'a mut Option<OriginalBodyGrammarOutcome>,
     controls: &'a mut Vec<ControlOrigin>,
@@ -432,7 +440,11 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
         let item = if index==0{first.unwrap_or(&items[index])}else{&items[index]};
         let header = item.header.trim();
         // SAME primary consumption; unproved families/children never grant availability.
-        if starts_keyword(header,"if"){origins.original_compound_seen_if=true;}else if !starts_keyword(header,"return")||!item.children.is_empty(){origins.original_compound_complete=false;}
+        if starts_keyword(header,"if"){
+            origins.original_compound_seen_statement=true;
+        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_zero_call_header(header)){
+            origins.original_compound_complete=false;
+        }
         if !item.children.is_empty()
             && (header == "var" || (header.starts_with("var/") && !header.contains('=')))
         {
@@ -764,7 +776,15 @@ fn parse_one(
         });
         None
     } else {
-        parse_expr(header, item.header_span.start, diagnostics).map(|expr| match expr.kind {
+        let ordinary_zero_call=original_ordinary_zero_call_header(header);
+        parse_expr_observed(header,item.header_span.start,diagnostics,&mut|parsed|{
+            if ordinary_zero_call{
+                let issued=parsed.original_simple_expression.is_some_and(|actual|actual.kind()==crate::expression_parser::OriginalSimpleKind::Complete)
+                    &&matches!(parsed.expr.as_ref().map(|expr|&expr.kind),Some(ExprKind::Call{callee,args})if args.is_empty()&&matches!(&callee.kind,ExprKind::Ident(_)));
+                origins.original_compound_complete&=issued;
+                origins.original_compound_seen_statement|=issued;
+            }
+        }).map(|expr| match expr.kind {
             ExprKind::Binary { op, lhs, rhs } if is_assignment(&op) => StatementKind::Assign {
                 target: *lhs,
                 op,
@@ -783,6 +803,19 @@ fn parse_one(
         },
         None => unsupported(item),
     }
+}
+
+// Scope proof for the ordinary zero-argument statement-call grammar only.
+// This routing filter does not grant availability; the consuming expression
+// parser must separately issue its complete original token witness.
+fn original_ordinary_zero_call_header(header:&str)->bool{
+    let Some((name,arguments))=header.strip_suffix(')').and_then(|head|head.split_once('('))else{return false};
+    // The actual Original token renderer separates adjacent punctuation,
+    // so an authored empty call can be represented as "name( )".
+    let name=name.trim_end();
+    if !arguments.trim().is_empty(){return false}
+    crate::expression_parser::original_ascii_identifier(name)
+        &&!matches!(name,"CRASH"|"as"|"call"|"call_ext"|"catch"|"do"|"else"|"for"|"if"|"input"|"list"|"locate"|"new"|"newlist"|"pick"|"return"|"set"|"spawn"|"switch"|"throw"|"try"|"var"|"while")
 }
 
 fn parse_set(item: &Item, diagnostics: &mut BodyDiagnostics<'_>) -> Option<StatementKind> {
@@ -1133,7 +1166,10 @@ fn parse_switch(
         }
         let body=if let Some(inline)=inline{let mut nested=case.clone();nested.header=inline.into();nested.header_span.start+=inline.as_ptr() as usize-case.header.as_ptr() as usize;nested.span.start=nested.header_span.start;parse_sequence_first(&item.children[index..next],Some(&nested),diagnostics,origins)}else{control_body_from_inline(case,None,diagnostics,origins)};
         cases.push(SwitchCase {
-            original_cursor:origins.settings.map_or(Err("original switch block cursor provider unavailable"),|provider|provider.switch_case_cursor(case)),
+            original_site:OriginalCaseSite{
+                header:case.header_span,body:case.span,
+                cursor:origins.settings.map_or(Err("original switch block cursor provider unavailable"),|provider|provider.switch_case_cursor(case)),
+            },
             alternatives,
             body,
         });
@@ -1314,5 +1350,33 @@ fn finish_original_setting_prefix(body:&mut ParsedBody){
  }
  #[test]fn unknown_statement_expression_or_recovery_never_inherits_compound_scope(){
   for code in["    if(argument)\n        return 1\n    else return 2\n    else if(argument)\n        return 3\n","    if(argument)\n        return 1 +\n    return 2\n","    if(choose(1))\n        return 1\n    return 2\n","    if(argument)\n        argument = 1\n    return 2\n","    if(argument)\n        var/value = 1\n    return 2\n","    if(argument)\n        return 1\n    throw\n"]{assert!(body(code).original_grammar.is_none(),"unissued {code}");}
+ }
+}
+
+#[cfg(test)]
+mod original_ordinary_statement_call_witness_tests{
+ use super::*;
+ fn body(code:&str)->ParsedBody{
+  let primary=crate::parse(&format!("/proc/probe()\n{code}"));
+  parse_proc_body(&primary.items[0])
+ }
+
+ #[test]
+ fn original_scope_accepts_actual_ordinary_zero_argument_statement_call(){
+  for code in ["    missing()\n","    missing()\n    return 0\n","    missing( )\n    return 0\n"]{
+   let parsed=body(code);
+   assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);
+   assert!(matches!(parsed.statements[0].kind,StatementKind::Call(_)));
+   let proof=parsed.original_grammar.expect("actual complete Original statement-call witness");
+   assert_eq!(proof.kind(),OriginalBodyGrammarKind::Available);
+   assert_eq!(proof.scope_roots(),Some(parsed.statements.len()));
+  }
+ }
+
+ #[test]
+ fn unsupported_or_recovering_statement_never_inherits_ordinary_call_witness(){
+  for code in ["    missing(1)\n","    missing(\n","    missing()\n    CRASH()\n","    missing()\n    input()\n","    missing()\n    var/value = 0\n"]{
+   assert!(body(code).original_grammar.is_none(),"unissued {code}");
+  }
  }
 }

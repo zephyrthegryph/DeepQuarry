@@ -121,3 +121,152 @@ fn current_callable_actual_parent_switch_retracts_previous_target_dependencies()
     run(&mut fresh, &fresh_request);
     assert_eq!(changed_answers, observe(&fresh, &fresh_root, "/datum/result_b"));
 }
+
+#[test]
+fn current_full_body_consumes_ordinary_call_witness_and_reports_original_missing_proc(){
+ use dm_analysis::checker_effects::OriginalDiagnosticPhase;
+ let(mut host,request,_)=fixture("/proc/probe()\n    missing_statement_target()\n    return 0\n");
+ let db=host.query_db().clone();
+ run(&mut host,&request);
+ let observed=current(&host,|snapshot|{
+  let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  db.original_current_body_bytes_for_test(owner.input(),0,|rows|{
+   let rows:Vec<_>=rows.iter().filter(|row|row.phase()==OriginalDiagnosticPhase::Body).collect();
+   assert_eq!(rows.len(),1);
+   let diagnostic=rows[0].diagnostic();
+   let at=snapshot.body_archive.as_ref().unwrap().source_note_point(diagnostic.span.start).unwrap();
+   assert_eq!((at.line,at.byte_column),(2,5));
+   assert_eq!(diagnostic.family,"undefined_proc");
+   assert_eq!(diagnostic.severity,dm_analysis::checks::Severity::Error);
+   assert!(diagnostic.notes.is_empty());
+   diagnostic.message.as_bytes().to_vec()
+  }).unwrap()
+ });
+ assert_eq!(observed,b"undefined proc: \"missing_statement_target\" on (global)");
+}
+
+#[test]
+fn opt_in_original_kind17_reuses_canonical_callees_and_matches_absolute_graph_bytes(){
+ use dm_analysis::checker_effects::EffectInput;
+ const SOURCE:&str=concat!(
+  "/proc/leaf()\n    return sleep()\n",
+  "/proc/probe(item)\n",
+  "    set SpacemanDMM_should_not_sleep = 1\n",
+  "    set SpacemanDMM_made_up = 1\n",
+  "    return leaf()\n",
+  "/proc/note(item)\n    return item.field\n",
+ );
+ let(mut host,mut request,root)=fixture(SOURCE);
+ let env=root.join("code/probe.dm");
+ request.policy_inputs.as_mut().unwrap().files.push(crate::policy_request::PolicyInputFile{path:env.clone(),role:crate::policy_request::PolicyInputRole::DmSource,required:true});
+ let configuration=root.join("SpacemanDMM.toml");
+ std::fs::write(&configuration,b"").unwrap();
+ let db=host.query_db().clone();run(&mut host,&request);
+ current(&host,|snapshot|{
+  let absolute=snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let receipt=snapshot.diagnostic_declarations.as_ref().unwrap();
+  let archive=Arc::clone(absolute.input().archive());
+  let selected=EffectInput::original_checker_source_with_current_bodies(archive,absolute.input().profile(),receipt,db.as_ref()).unwrap();
+  let before=db.db().stats(Kind(4)).computed;
+  let render=|input:&Arc<EffectInput>|{
+   let mut bytes=Vec::new();
+   let clean=snapshot.write_original_ordered_checker_using(input,&env,Some(&configuration),&snapshot.tree,&mut bytes).unwrap();
+   assert!(!clean);
+   bytes
+  };
+  let canonical=render(&selected);
+  let syntax=db.db().stats(Kind(4)).computed;
+  assert_eq!(syntax-before,3,"one canonical syntax owner for each actual body; no absolute sibling");
+  assert_eq!(render(&selected),canonical);
+  assert_eq!(db.db().stats(Kind(4)).computed,syntax);
+  let rows:serde_json::Value=serde_json::from_slice(&canonical).unwrap();
+  let tags:Vec<_>=rows["diagnostics"].as_array().unwrap().iter().filter_map(|row|row["registration_tag"].as_str()).collect();
+  assert!(tags.contains(&"unknown_linter_setting"),"{rows}");
+  assert!(tags.contains(&"field_access_static_type"),"{rows}");
+  assert!(tags.contains(&"must_not_sleep"),"{rows}");
+  assert_eq!(canonical,render(absolute.input()),"same complete ordered production wire, including the actual effect graph");
+ });
+}
+
+#[test]
+fn opt_in_original_kind17_retracts_edited_callee_sleep_and_matches_fresh_canonical_report(){
+ use dm_analysis::checker_effects::EffectInput;
+ use dm_tree::frontend::BodyCodeIdentity;
+ use std::sync::Weak;
+ const BEFORE:&str=concat!(
+  "/proc/leaf()\n    return sleep()\n",
+  "/proc/probe(item)\n",
+  "    set SpacemanDMM_should_not_sleep = 1\n",
+  "    set SpacemanDMM_made_up = 1\n",
+  "    return leaf()\n",
+  "/proc/note(item)\n    return item.field\n",
+ );
+
+ fn prepare(source:&str)->(crate::runner_host::BuildHost,crate::request::BuildRequest,std::path::PathBuf){
+  use crate::policy_request::{PolicyInputFile,PolicyInputRole};
+  let(host,mut request,root)=fixture(source);
+  request.policy_inputs.as_mut().unwrap().files.push(PolicyInputFile{path:root.join("code/probe.dm"),role:PolicyInputRole::DmSource,required:true});
+  std::fs::write(root.join("SpacemanDMM.toml"),b"").unwrap();
+  (host,request,root)
+ }
+
+ fn render(host:&crate::runner_host::BuildHost,root:&Path)->(Vec<serde_json::Value>,[Weak<BodyCodeIdentity>;3]){
+  let db=host.query_db();
+  let env=root.join("code/probe.dm");
+  let config=root.join("SpacemanDMM.toml");
+  current(host,|snapshot|{
+   let input=snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+   let receipt=snapshot.diagnostic_declarations.as_ref().unwrap();
+   let canonical=EffectInput::original_checker_source_with_current_bodies(
+    Arc::clone(input.input().archive()),input.input().profile(),receipt,db.as_ref(),
+   ).unwrap();
+   let archive=canonical.archive();
+   let codes=["leaf","probe","note"].map(|name|{
+    let ordinal=(0..archive.len()).find(|&ordinal|archive.callables().identity(ordinal).is_some_and(|id|id.name==SymbolId::of(name))).unwrap();
+    Arc::downgrade(archive.syntax_inputs().unwrap()[ordinal].original_code_owner().unwrap())
+   });
+   let mut bytes=Vec::new();
+   assert!(!snapshot.write_original_ordered_checker_using(&canonical,&env,Some(&config),&snapshot.tree,&mut bytes).unwrap());
+   let mut report:serde_json::Value=serde_json::from_slice(&bytes).unwrap();
+   let rows=report["diagnostics"].as_array_mut().unwrap();
+   for row in rows.iter_mut(){
+    let file=Path::new(row["file"].as_str().unwrap());
+    if file.is_absolute(){
+     assert_eq!(dm_preprocess::regions::canonical_path(file),dm_preprocess::regions::canonical_path(&env));
+    }else{
+     assert!(file.ends_with(Path::new("code/probe.dm")),"unexpected original registration: {file:?}");
+    }
+    // Independent scratch roots legitimately differ. Every remaining field,
+    // including registration tag, order, physical coordinates and note bytes,
+    // is compared without normalization.
+    row["file"]="code/probe.dm".into();
+   }
+   (std::mem::take(rows),codes)
+  })
+ }
+
+ let changed=BEFORE.replace("return sleep()","return null");
+ let(mut host,request,root)=prepare(BEFORE);
+ let db=host.query_db().clone();
+ run(&mut host,&request);
+ let (before,old_codes)=render(&host,&root);
+ let syntax=db.db().stats(Kind(4)).computed;
+ assert_eq!(before.iter().filter(|row|row["registration_tag"]=="must_not_sleep").count(),1,"{before:?}");
+ let unaffected:Vec<_>=before.into_iter().filter(|row|row["registration_tag"]!="must_not_sleep").collect();
+ assert!(unaffected.iter().any(|row|row["registration_tag"]=="unknown_linter_setting"));
+ assert!(unaffected.iter().any(|row|row["registration_tag"]=="field_access_static_type"));
+
+ std::fs::write(root.join("code/probe.dm"),&changed).unwrap();
+ run(&mut host,&request);
+ let (after,new_codes)=render(&host,&root);
+ assert_eq!(after,unaffected,"only the graph row whose callee changed should retract");
+ assert!(!Weak::ptr_eq(&old_codes[0],&new_codes[0]),"edited leaf needs a new native body");
+ for ordinal in [1,2]{
+  assert!(Weak::ptr_eq(&old_codes[ordinal],&new_codes[ordinal]),"unchanged caller/unrelated body retains its syntax identity");
+ }
+ assert_eq!(db.db().stats(Kind(4)).computed,syntax+1,"only the edited callee is parsed");
+
+ let(mut fresh,fresh_request,fresh_root)=prepare(&changed);
+ run(&mut fresh,&fresh_request);
+ assert_eq!(render(&fresh,&fresh_root).0,after,"retained output equals independent cold canonical output");
+}

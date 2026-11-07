@@ -459,11 +459,11 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                         for alternative in &case.alternatives {
                             match alternative {
                                 dm_syntax::SwitchAlternative::Exact(value) => {
-                                    this.evaluated(value,Some(Case(case.original_cursor)))?
+                                    this.evaluated(value,Some(Case(case.original_site)))?
                                 }
                                 dm_syntax::SwitchAlternative::Range(start, end) => {
-                                    this.evaluated(start,Some(Case(case.original_cursor)))?;
-                                    this.evaluated(end,Some(Case(case.original_cursor)))?;
+                                    this.evaluated(start,Some(Case(case.original_site)))?;
+                                    this.evaluated(end,Some(Case(case.original_site)))?;
                                 }
                             }
                         }

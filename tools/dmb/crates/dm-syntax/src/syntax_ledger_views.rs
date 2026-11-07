@@ -120,7 +120,10 @@ impl<'a> ProjectedSwitchCases<'a>{pub fn iter(self)->impl Iterator<Item=Projecte
 #[derive(Clone,Copy)]pub struct ProjectedSwitchCase<'a>{original:&'a crate::SwitchCase,projection:SyntaxProjection}
 pub enum ProjectedSwitchAlternative<'a>{Exact(ProjectedSyntaxExpr<'a>),Range(ProjectedSyntaxExpr<'a>,ProjectedSyntaxExpr<'a>)}
 impl<'a> ProjectedSwitchCase<'a>{
- pub fn projected_cursor(self)->Result<crate::OriginalCaseCursor,SyntaxViewError>{let cursor=self.original.original_cursor.map_err(SyntaxViewError::Unavailable)?;Ok(match cursor{crate::OriginalCaseCursor::Token(at)=>crate::OriginalCaseCursor::Token(point(self.projection,at)?),crate::OriginalCaseCursor::SourceEnd{offset,fallback}=>crate::OriginalCaseCursor::SourceEnd{offset:point(self.projection,Span::new(offset,offset))?.start,fallback:point(self.projection,fallback)?}})}
+ /// Authored case geometry only. A reader cursor must be reissued from
+ /// current source because its continuation can escape the retained body.
+ pub fn projected_case_site(self)->Result<(Span,Span),SyntaxViewError>{let site=self.original.original_site;Ok((point(self.projection,site.header)?,point(self.projection,site.body)?))}
+ pub fn projected_cursor(self)->Result<crate::OriginalCaseCursor,SyntaxViewError>{let cursor=self.original.original_site.cursor.map_err(SyntaxViewError::Unavailable)?;Ok(match cursor{crate::OriginalCaseCursor::Token(at)=>crate::OriginalCaseCursor::Token(point(self.projection,at)?),crate::OriginalCaseCursor::SourceEnd{offset,fallback}=>crate::OriginalCaseCursor::SourceEnd{offset:point(self.projection,Span::new(offset,offset))?.start,fallback:point(self.projection,fallback)?}})}
  pub fn alternatives(self)->impl Iterator<Item=Result<ProjectedSwitchAlternative<'a>,SyntaxViewError>>+'a{self.original.alternatives.iter().map(move|alternative|Ok(match alternative{crate::SwitchAlternative::Exact(root)=>ProjectedSwitchAlternative::Exact(ProjectedSyntaxExpr::new(root,self.projection)?),crate::SwitchAlternative::Range(start,end)=>ProjectedSwitchAlternative::Range(ProjectedSyntaxExpr::new(start,self.projection)?,ProjectedSyntaxExpr::new(end,self.projection)?)}))}
  pub fn body(self)->ProjectedStatements<'a>{ProjectedStatements::new(&self.original.body,self.projection)}
 }

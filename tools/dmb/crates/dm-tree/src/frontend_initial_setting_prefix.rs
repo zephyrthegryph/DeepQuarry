@@ -101,6 +101,7 @@ pub trait InitialSettingSource:source_seal::Sealed{
  fn original_body_tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,super::BodySyntaxFailure>;
  fn source_point(&self,canonical:Span)->Result<Span,String>;
  fn canonical_point(&self,current:Span)->Result<Span,String>;
+ fn original_switch_case_cursor(&self,site:dm_syntax::OriginalCaseSite)->Result<Result<dm_syntax::OriginalCaseCursor,&'static str>,super::BodySyntaxFailure>;
  fn source_admission(&self,consume:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),super::BodySyntaxFailure>)->Result<(),super::BodySyntaxFailure>;
 }
 impl source_seal::Sealed for super::ArchivedBody<'_>{}
@@ -112,6 +113,9 @@ impl InitialSettingSource for super::ArchivedBody<'_>{
  fn original_body_tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,super::BodySyntaxFailure>{super::ArchivedBody::original_body_tokens(self).map_err(|message|super::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,message)))}
  fn source_point(&self,point:Span)->Result<Span,String>{Ok(point)}
  fn canonical_point(&self,point:Span)->Result<Span,String>{Ok(point)}
+ fn original_switch_case_cursor(&self,site:dm_syntax::OriginalCaseSite)->Result<Result<dm_syntax::OriginalCaseCursor,&'static str>,super::BodySyntaxFailure>{
+  Ok(site.cursor)
+ }
  fn source_admission(&self,consume:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),super::BodySyntaxFailure>)->Result<(),super::BodySyntaxFailure>{self.with_original_syntax_admission(|admission|consume(admission))}
 }
 struct CurrentPrefixSource<'guard,'archive,'syntax,'operation>{body:&'guard super::CurrentArchivedBody<'archive,'syntax>,admission:&'guard dm_syntax::SettingAdmission<'operation>}
@@ -124,6 +128,17 @@ impl InitialSettingSource for CurrentPrefixSource<'_,'_,'_,'_>{
  fn original_body_tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,super::BodySyntaxFailure>{self.body.native_current_tokens()}
  fn source_point(&self,point:Span)->Result<Span,String>{self.body.syntax().projection().span(point).ok_or_else(||"canonical setting point escapes actual current BODY".into())}
  fn canonical_point(&self,point:Span)->Result<Span,String>{self.body.syntax().projection().inverse().span(point).ok_or_else(||"current setting point escapes actual canonical BODY".into())}
+ fn original_switch_case_cursor(&self,site:dm_syntax::OriginalCaseSite)->Result<Result<dm_syntax::OriginalCaseCursor,&'static str>,super::BodySyntaxFailure>{
+  let invalid=|message|super::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,message));
+  let header=self.source_point(site.header).map_err(|_|invalid("canonical switch header escapes actual body"))?;
+  let body=self.source_point(site.body).map_err(|_|invalid("canonical switch case escapes actual body"))?;
+  let tokens=self.original_body_tokens()?;
+  let result=tokens.switch_case_cursor_using(header,body,&mut||{
+   self.admission.checkpoint().map_err(|actual|{self.admission.record_operational_error(actual);"current switch cursor operation stopped"})
+  });
+  if let Some(actual)=self.admission.take_operational_error(){return Err(super::BodySyntaxFailure::Operational(actual))}
+  Ok(result)
+ }
  fn source_admission(&self,consume:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),super::BodySyntaxFailure>)->Result<(),super::BodySyntaxFailure>{
   let pending=consume(self.admission);if let Some(actual)=self.admission.take_operational_error(){return Err(super::BodySyntaxFailure::Operational(actual))}if matches!(&pending,Err(super::BodySyntaxFailure::Operational(_))){return pending}let status=self.admission.checkpoint();if let Some(actual)=self.admission.take_operational_error(){return Err(super::BodySyntaxFailure::Operational(actual))}status.map_err(super::BodySyntaxFailure::Operational)?;pending
  }
@@ -134,6 +149,15 @@ impl dyn InitialSettingSource+'_ {
  pub fn with_source_admission<T>(&self,consume:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,super::BodySyntaxFailure>)->Result<T,super::BodySyntaxFailure>{let mut consume=Some(consume);let mut result=None;self.source_admission(&mut|admission|{let operation=consume.take().ok_or_else(||super::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"initial setting source callback repeated")))?;result=Some(operation(admission)?);Ok(())})?;result.ok_or_else(||super::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"initial setting source callback omitted")))}
 }
 impl super::CurrentArchivedBody<'_,'_>{
+ /// Lend the current body coordinates and its actual host admission to a
+ /// consumer of the already-issued syntax. No setting walk or parse is run.
+ pub fn with_original_body_source<T>(&self,admission:&dm_syntax::SettingAdmission<'_>,consume:impl FnOnce(&dyn InitialSettingSource)->T)->Result<T,super::BodySyntaxFailure>{
+  if !self.syntax().canonical_statement_storage().is_native_literal_syntax_admitted_by(admission){
+   return Err(super::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"current original body source admission differs")))
+  }
+  let pending=admission.checkpoint();if let Some(actual)=admission.take_operational_error(){return Err(super::BodySyntaxFailure::Operational(actual))}pending.map_err(super::BodySyntaxFailure::Operational)?;
+  Ok(consume(&CurrentPrefixSource{body:self,admission}))
+ }
  /// Same prefix selector over the canonical parsed product, with the current
  /// source/tree/token/admission guard. No ArchivedBody is forged or reparsed.
  pub fn with_initial_setting_prefix<T>(&self,identity:ProcedureIdentity,admission:&dm_syntax::SettingAdmission<'_>,consume:impl FnOnce(InitialSettingPrefix<'_>)->T)->Result<T,super::BodySyntaxFailure>{

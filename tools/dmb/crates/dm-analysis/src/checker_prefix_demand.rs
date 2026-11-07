@@ -66,6 +66,35 @@ impl Demand for Policy<'_>{
 pub(crate) struct Original<D>(pub(crate) D);
 impl<D:Demand> Demand for Original<D>{type Error=D::Error;fn source_checkpoint(&self)->Option<&dyn Fn()->std::io::Result<()>>{self.0.source_checkpoint()}fn policy_failure(&self,failure:crate::policy_body_demand::PolicyFailure)->Self::Error{self.0.policy_failure(failure)}fn checkpoint(&self)->Result<(),Self::Error>{self.0.checkpoint()}fn storage(&self,bytes:usize)->Result<(),Self::Error>{self.0.storage(bytes)}fn owns_directive_binding(&self)->bool{true}fn owns_return_expression_binding(&self)->bool{true}fn profile(&self)->Option<dm_tree::checker_builtins::ValidatedCheckerProfile<'_>>{self.0.profile()}fn resource(&self,message:&'static str)->Self::Error{self.0.resource(message)}fn prefix_with_budget<T>(&self,archive:&BodyArchive,identity:dm_ir::ProcedureIdentity,budget:Option<&ReportBudget>,consume:impl FnOnce(InitialSettingPrefix<'_>)->T)->Result<T,Self::Error>{self.0.prefix_with_budget(archive,identity,budget,consume)}}
 
+/// Opt-in direct canonical transport. The existing archive's retained BODY
+/// query owns every callee loan. This adapter never asks for absolute syntax.
+pub(crate) struct Current<'a,'op>{
+ pub(crate) archive:&'a BodyArchive,
+ pub(crate) admission:&'a dm_syntax::SettingAdmission<'op>,
+ pub(crate) checkpoint:&'a dyn Fn()->std::io::Result<()>,
+ pub(crate) obtain:Option<&'a crate::checker_effects::CanonicalOriginalBodyLoan<'a>>,
+}
+impl Demand for Current<'_,'_>{
+ type Error=crate::policy_body_demand::PolicyFailure;
+ fn source_checkpoint(&self)->Option<&dyn Fn()->std::io::Result<()>>{Some(self.checkpoint)}
+ fn checkpoint(&self)->Result<(),Self::Error>{(self.checkpoint)().map_err(Self::Error::Operational)}
+ fn policy_failure(&self,failure:Self::Error)->Self::Error{failure}
+ fn resource(&self,message:&'static str)->Self::Error{Self::Error::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message))}
+ fn prefix_with_budget<T>(&self,archive:&BodyArchive,identity:dm_ir::ProcedureIdentity,_:Option<&ReportBudget>,consume:impl FnOnce(InitialSettingPrefix<'_>)->T)->Result<T,Self::Error>{
+  self.checkpoint()?;
+  if !std::ptr::eq(self.archive,archive){return Err("current Original callee archive differs".into())}
+  let ordinal=archive.callables().ordinal_for_identity_using(identity,&mut||self.checkpoint())?.ok_or("current Original callee occurrence absent")?;
+  let pending=match self.obtain{
+   Some(obtain)=>archive.with_current_body_checked_in(ordinal,self.admission,&mut(),|_,input|obtain(input),|_,body|body.with_initial_setting_prefix(identity,self.admission,consume)),
+   None=>archive.with_current_body_checked(ordinal,self.admission,|body|body.with_initial_setting_prefix(identity,self.admission,consume)),
+  };
+  pending.map_err(|actual|match actual{
+   BodySyntaxFailure::Operational(actual)=>Self::Error::Operational(actual),
+   BodySyntaxFailure::Syntax(actual)=>actual.message.into(),
+  })
+ }
+}
+
 #[cfg(test)]mod return_binding_ownership_tests{
  use super::*;
  #[test]fn complete_return_binding_ownership_is_not_the_selected_directive_flag(){

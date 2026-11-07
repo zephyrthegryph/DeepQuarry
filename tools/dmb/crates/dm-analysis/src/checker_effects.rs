@@ -36,6 +36,7 @@ pub const TARGET_GROUP_ORDER_CONTRACT: &str =
     "unspecified_whole_target_group_permutation;native_authored_order;exact_within_target_order";
 pub const EFFECT_PHASE_ORDER: [&str; 3] = ["body_immediate", "must_not_sleep", "must_be_pure"];
 
+pub type CanonicalOriginalBodyLoan<'a>=dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,dm_tree::frontend::BodySyntaxFailure>+'a;
 #[path = "checker_effects_output.rs"]
 pub(crate) mod output;
 pub use output::{ExecutionAdmission,ExecutionAdmissionLoan};
@@ -85,7 +86,7 @@ pub struct OriginalBodyDiagnostic{effect_immediate:bool,phase:OriginalDiagnostic
 impl OriginalBodyDiagnostic{pub fn phase(&self)->OriginalDiagnosticPhase{self.phase}pub fn registration_tag(&self)->Option<&'static str>{self.registration_tag}pub fn default_level(&self)->DiagnosticSeverity{self.default_level}pub fn diagnostic(&self)->&Diagnostic{&self.diagnostic}pub fn location(&self)->OriginalDiagnosticLocation{self.location}}
 /// Factory-issued source context. Params/results keep this weak, not a graph
 /// clone. A caller must present this same current archive/Db BEFORE cache hits.
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]enum BodyPurpose{Effects,OriginalChecker}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]enum BodyPurpose{Effects,OriginalChecker,OriginalCurrentChecker}
 pub struct EffectInput {
     purpose:BodyPurpose,
     original_receipt:Option<Weak<dm_tree::diagnostic_declarations::DiagnosticDeclarationReceipt>>,
@@ -109,7 +110,15 @@ impl EffectInput {
         if !receipt.authenticates(archive.tree())||!archive.uses_body_queries(host)||archive.source_mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err("original checker body purpose needs actual current Original diagnostic archive/Db/receipt".into())}
         let mut input=Self::source_pages(archive,profile)?;let fresh=Arc::get_mut(&mut input).ok_or("fresh original body purpose unexpectedly shared")?;fresh.purpose=BodyPurpose::OriginalChecker;fresh.original_receipt=Some(Arc::downgrade(receipt));Ok(input)
     }
-    pub fn is_original_checker_source(&self)->bool{self.purpose==BodyPurpose::OriginalChecker}
+    /// Same authenticated Original source purpose and a fresh graph identity.
+    /// The caller opts in before any body/effect query enters the graph.
+    pub fn original_checker_source_with_current_bodies(archive:Arc<BodyArchive>,profile:PackedU128,receipt:&Arc<dm_tree::diagnostic_declarations::DiagnosticDeclarationReceipt>,host:&dyn BodySyntaxQueries)->Result<Arc<Self>,String>{
+        let mut input=Self::original_checker_source(archive,profile,receipt,host)?;
+        Arc::get_mut(&mut input).ok_or("fresh current Original input unexpectedly shared")?.purpose=BodyPurpose::OriginalCurrentChecker;
+        Ok(input)
+    }
+    pub fn is_original_checker_source(&self)->bool{matches!(self.purpose,BodyPurpose::OriginalChecker|BodyPurpose::OriginalCurrentChecker)}
+    pub fn uses_current_original_bodies(&self)->bool{self.purpose==BodyPurpose::OriginalCurrentChecker}
     pub fn require_original_checker_source(&self)->Result<(),String>{
         if !self.is_original_checker_source()||self.original_receipt.as_ref().and_then(Weak::upgrade).is_none_or(|receipt|!receipt.authenticates(self.archive.tree()))||self.archive.body_query_host().is_none()||self.archive.source_mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err("original checker input lacks its authentic immutable diagnostic source owner".into())}self.archive.tree().validate_checker_builtin_profile(self.profile).map_err(|error|format!("original checker input profile: {error:?}"))?;Ok(())
     }
@@ -212,6 +221,7 @@ impl EffectInput {
     )->Result<Arc<BodyEffects>,crate::policy_body_demand::PolicyFailure>{
         use crate::policy_body_demand::PolicyFailure;
         if !self.is_original_checker_source(){return Err("ordinary effects input cannot promote to original checker BODY".into())}
+        if self.uses_current_original_bodies(){return Err("current Original graph input requires its active canonical body loan".into())}
         self.require_original_checker_source()?;
         let profile=self.archive.tree().validated_checker_profile(self.profile).map_err(|e|PolicyFailure::from(format!("original body actual profile: {e:?}")))?;
         let demand=crate::checker_prefix_demand::Original(crate::checker_prefix_demand::Checked{body,admission,profile,checkpoint,original_syntax:true});
@@ -264,7 +274,7 @@ pub fn compute_body_checked_using_admitted_controlled(
     )->Result<Arc<BodyEffects>,E>{
         if self.is_original_checker_source(){self.require_original_checker_source()?;}
         let procedure = identity(&self.archive, ordinal)?;
-        if self.purpose!=BodyPurpose::OriginalChecker&&!self
+        if !self.is_original_checker_source()&&!self
             .order
             .iter()
             .any(|&(i, p)| i == ordinal && p == procedure)
@@ -278,25 +288,30 @@ pub fn compute_body_checked_using_admitted_controlled(
             &self.archive,
             self.profile,
             procedure, &&prefix_demand)?;
-        let pure = settings.own_pure();
         let body = parse(&self.archive, ordinal)?;
         let draft=evaluate(&body,&prefix_demand)?;
+        let opening_parenthesis=body.signature_opening_parenthesis();
+        let original_note=self.archive.callable_note_origin_borrowed_from_parsed(procedure,ordinal,&body);
+        self.finish_evaluated_body(ordinal,procedure,resolver,admission,&prefix_demand,&settings,draft,opening_parenthesis,original_note)
+    }
+
+    fn finish_evaluated_body<E:From<String>+for<'b>From<&'b str>,D:crate::checker_prefix_demand::Demand<Error=E>>(
+        self:&Arc<Self>,ordinal:usize,procedure:ProcedureIdentity,resolver:&(impl Resolver+?Sized),
+        admission:&ExecutionAdmission,prefix_demand:&D,settings:&crate::checker_return_facts::PuritySettingsPermit<'_>,
+        draft:Draft,opening_parenthesis:Option<Span>,
+        original_note:Result<dm_tree::frontend::BorrowedSourceNoteOrigin<'_>,dm_tree::frontend::BorrowedCallableOriginError>,
+    )->Result<Arc<BodyEffects>,E>{
         if draft
             .direct
             .len()
             .checked_add(draft.calls.len())
             .and_then(|n| n.checked_add(draft.blocking.len()))
             .and_then(|n| n.checked_add(draft.immediate.len()))
-            .is_none_or(|n| self.purpose!=BodyPurpose::OriginalChecker&&n > MAX_EVENTS)
+            .is_none_or(|n| !self.is_original_checker_source()&&n > MAX_EVENTS)
         {
             ReportBudget::for_operation(admission).deny();
             return Err(prefix_demand.resource("purity body exceeds bounded event admission"));
         }
-        // Reuse the actual already-obtained primary body. The stored optional
-        // point/result preserves deferred report-source refusal without adding
-        // an earlier body demand or a full roster search for each target.
-        let opening_parenthesis=body.signature_opening_parenthesis();
-        let original_note=self.archive.callable_note_origin_borrowed_from_parsed(procedure,ordinal,&body);
         let origin_charge=match &original_note{Ok(point)=>point.retained_charge(),Err(_)=>Some(0)}.and_then(|n|n.checked_add(std::mem::size_of::<Option<Span>>()+std::mem::size_of::<Result<SourceNoteOrigin,dm_tree::frontend::BorrowedCallableOriginError>>())).ok_or_else(||prefix_demand.resource("effect original note capacity overflow"))?;
         // Borrowed lookup above allocates/clones nothing, including failures.
         // Admit the actual path backing BEFORE extending its Arc lifetime.
@@ -320,7 +335,7 @@ pub fn compute_body_checked_using_admitted_controlled(
             input: Arc::downgrade(self),
             ordinal,
             procedure,
-            pure,
+            pure:settings.own_pure(),
             sleep: SleepSettings {
                 no_sleep: settings.own_no_sleep(),
                 exempt: settings.own_sleep_exempt(),
@@ -337,6 +352,83 @@ pub fn compute_body_checked_using_admitted_controlled(
             opening_parenthesis,
             callable_origin,
         }))
+    }
+    /// Opt-in full Original body traversal. The supplied live canonical loan
+    /// controls all body-relative coordinates. Prelude and body are emitted
+    /// privately in order. Graph publication remains a separate phase.
+    pub fn with_current_original_body_rows<T>(
+        self:&Arc<Self>,
+        body:&dm_tree::frontend::CurrentArchivedBody<'_,'_>,
+        syntax:&dm_syntax::SettingAdmission<'_>,
+        resolver:&(impl Resolver+?Sized),
+        admission:&ExecutionAdmission,
+        checkpoint:&dyn Fn()->std::io::Result<()>,
+        consume:impl FnOnce(&[OriginalBodyDiagnostic])->Result<T,crate::policy_body_demand::PolicyFailure>,
+    )->Result<T,crate::policy_body_demand::PolicyFailure>{
+        let result=self.compute_current_original_body_direct(body,syntax,resolver,admission,checkpoint)?;
+        result.with_original_diagnostics(self,consume)?
+    }
+
+    /// Opt-in canonical body contribution using the retained host's direct
+    /// syntax queries. A production graph owner must lend its active child
+    /// lookup when switching Kind17, to retain its existing dependencies.
+    pub fn compute_current_original_body_direct(
+        self:&Arc<Self>,
+        body:&dm_tree::frontend::CurrentArchivedBody<'_,'_>,
+        syntax:&dm_syntax::SettingAdmission<'_>,
+        resolver:&(impl Resolver+?Sized),
+        admission:&ExecutionAdmission,
+        checkpoint:&dyn Fn()->std::io::Result<()>,
+    )->Result<Arc<BodyEffects>,crate::policy_body_demand::PolicyFailure>{
+        self.compute_current_original_body_using(body,syntax,resolver,admission,checkpoint,None)
+    }
+
+    pub fn compute_current_original_body_using(
+        self:&Arc<Self>,
+        body:&dm_tree::frontend::CurrentArchivedBody<'_,'_>,
+        syntax:&dm_syntax::SettingAdmission<'_>,
+        resolver:&(impl Resolver+?Sized),
+        admission:&ExecutionAdmission,
+        checkpoint:&dyn Fn()->std::io::Result<()>,
+        obtain:Option<&CanonicalOriginalBodyLoan<'_>>,
+    )->Result<Arc<BodyEffects>,crate::policy_body_demand::PolicyFailure>{
+        use crate::policy_body_demand::PolicyFailure;
+        self.require_original_checker_source()?;
+        if !body.belongs_to(&self.archive)||resolver.source_owner()!=Resolver::source_owner(self.archive.tree()){
+            return Err("current Original contribution has another archive or resolver".into());
+        }
+        let ordinal=self.archive.callables().ordinal(body.occurrence().member).ok_or("current Original body ordinal unavailable")?;
+        let procedure=identity(&self.archive,ordinal)?;
+        if !self.archive.occurrences().get(ordinal).is_some_and(|expected|std::ptr::eq(expected,body.occurrence())){
+            return Err("current Original body occurrence differs".into());
+        }
+        let mut draft=Draft{transient:ReportBudget::for_operation(admission),..Default::default()};
+        let demand=crate::checker_prefix_demand::Original(crate::checker_prefix_demand::Current{
+            archive:&self.archive,admission:syntax,checkpoint,obtain,
+        });
+        let settings=crate::checker_return_facts::PuritySettingsPermit::issue_using(
+            &self.archive,self.profile,procedure,&demand,
+        )?;
+        append_current_original_prelude(body,syntax,resolver,&draft.transient,&mut draft.original,checkpoint)?;
+        let mut work=DraftPolicyWork(&draft.transient);
+        let mut recorder=crate::checks_keyword_overrides::Recorder{
+            archive:&self.archive,profile:self.profile,budget:&draft.transient,poll:checkpoint,rows:&mut draft.keywords,
+        };
+        let loan=DraftLoan{direct:&mut draft.direct,calls:&mut draft.calls,immediate:&mut draft.immediate,blocking:&mut draft.blocking,waitfor_disabled:&mut draft.waitfor_disabled,transient:&draft.transient};
+        crate::checks_call_arguments::with_original_union_current_body_using(&self.archive,body,syntax,resolver,self.profile,loan,&demand,&mut work,checkpoint,&mut recorder,|findings,count|{
+            publish_original_body_rows(&self.archive,&draft.transient,&mut draft.original,findings,checkpoint)?;
+            draft.original_evaluations=count;
+            Ok(())
+        })?;
+        checkpoint().map_err(PolicyFailure::Operational)?;
+        let opening=body.syntax().opening_parenthesis().map_err(|actual|match actual{
+            dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>PolicyFailure::Operational(actual),
+            dm_tree::frontend::BodySyntaxFailure::Syntax(actual)=>actual.message.into(),
+        })?;
+        let original_note=opening
+            .ok_or(dm_tree::frontend::BorrowedCallableOriginError::Body("primary callable opening token unavailable"))
+            .and_then(|at|self.archive.borrowed_source_note_point(at.start).map_err(dm_tree::frontend::BorrowedCallableOriginError::Projection));
+        self.finish_evaluated_body(ordinal,procedure,resolver,admission,&demand,&settings,draft,opening,original_note)
     }
     pub fn plan(
         self: &Arc<Self>,
@@ -456,10 +548,51 @@ fn original_draft_using<D:crate::checker_prefix_demand::Demand<Error=crate::poli
   for diagnostic in prefix{checkpoint().map_err(PolicyFailure::Operational)?;let(tag,default_level)=match diagnostic.family{"invalid_lint_directive_value"|"directive_at_definition"|"unknown_setting"=>(None,DiagnosticSeverity::Warning),"unknown_linter_setting"=>(Some("unknown_linter_setting"),DiagnosticSeverity::Warning),"return_type_expression"=>(None,DiagnosticSeverity::Error),"incompatible_directive"=>(Some("incompatible_directive"),DiagnosticSeverity::Error),"disabled_directive"=>(Some("disabled_directive"),DiagnosticSeverity::Warning),"sets_directive_twice"=>(Some("sets_directive_twice"),DiagnosticSeverity::Warning),_=>return Err("original directive prelude returned an unissued producer family".into())};transient.push(original,OriginalBodyDiagnostic{effect_immediate:false,phase:OriginalDiagnosticPhase::Prelude,diagnostic,location:OriginalDiagnosticLocation::Expanded,registration_tag:tag,default_level}).map_err(|message|PolicyFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;}
   let loan=DraftLoan{direct,calls,immediate,blocking,waitfor_disabled,transient};let mut recorder=crate::checks_keyword_overrides::Recorder{archive,profile,budget:transient,poll:checkpoint,rows:keywords};
   crate::checks_call_arguments::with_original_union_body_using(archive,body,resolver,profile,loan,demand,&mut work,checkpoint,&mut recorder,|findings,count|{
-   for row in findings.into_rows(){checkpoint().map_err(PolicyFailure::Operational)?;let(tag,level)=row.registration.ok_or("original BODY row lacks its actual producer registration")?;let location=if row.synthetic{OriginalDiagnosticLocation::ParserSynthetic}else if let Some(point)=row.reported{match point{crate::checks_proc_visibility::OriginalReported::Source(point)=>OriginalDiagnosticLocation::Reader(archive.source_mapping().store_original_reported_point(point)?),crate::checks_proc_visibility::OriginalReported::Builtin=>return Err("builtin declaration event cannot be delivered through a BODY producer".into())}}else{OriginalDiagnosticLocation::Expanded};let phase=if row.diagnostic.family=="procedure_redeclaration"{OriginalDiagnosticPhase::Prelude}else{OriginalDiagnosticPhase::Body};let effect_immediate=matches!(row.diagnostic.family,"spawn_return"|"pure_discard"|"operator_overload");transient.push(original,OriginalBodyDiagnostic{effect_immediate,phase,diagnostic:row.diagnostic,location,registration_tag:tag,default_level:level}).map_err(|message|PolicyFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;
-   }*original_evaluations=count;Ok(())
+   publish_original_body_rows(archive,transient,original,findings,checkpoint)?;
+   *original_evaluations=count;Ok(())
   })?;
  }checkpoint().map_err(PolicyFailure::Operational)?;Ok(draft)
+}
+fn append_current_original_prelude(
+ body:&dm_tree::frontend::CurrentArchivedBody<'_,'_>,syntax:&dm_syntax::SettingAdmission<'_>,
+ resolver:&(impl Resolver+?Sized),transient:&ReportBudget,original:&mut Vec<OriginalBodyDiagnostic>,
+ checkpoint:&dyn Fn()->std::io::Result<()>,
+)->Result<(),crate::policy_body_demand::PolicyFailure>{
+ use crate::policy_body_demand::PolicyFailure;
+ use crate::checks_directive_binding::{current_setting_prelude,current_prelude_diagnostic_backing};
+ let oom=||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"current Original prelude retained storage denied");
+ if original.capacity()!=0{return Err("current Original prelude must precede all other body rows".into())}
+ let mut work=DraftPolicyWork(transient);
+ let mark=work.mark().map_err(PolicyFailure::Operational)?;
+ let prelude=current_setting_prelude(body,resolver,syntax,&mut work,checkpoint)?;
+ let count=prelude.row_count();
+ let max_count=count.checked_mul(4).ok_or_else(||PolicyFailure::Operational(oom()))?;
+ let row_size=std::mem::size_of::<OriginalBodyDiagnostic>();
+ let capacity_bytes=max_count.checked_mul(row_size).ok_or_else(||PolicyFailure::Operational(oom()))?;
+ work.reserve(capacity_bytes).map_err(PolicyFailure::Operational)?;
+ original.try_reserve_exact(count).map_err(|_|PolicyFailure::Operational(oom()))?;
+ if original.capacity()>max_count{return Err(PolicyFailure::Operational(oom()))}
+ prelude.move_current_registered(body,syntax,&mut work,checkpoint,|diagnostic,tag,level|{
+  if original.len()>=count{return Err(oom())}
+  original.push(OriginalBodyDiagnostic{
+   effect_immediate:false,phase:OriginalDiagnosticPhase::Prelude,diagnostic,
+   location:OriginalDiagnosticLocation::Expanded,registration_tag:tag,default_level:level,
+  });
+  Ok(())
+ })?;
+ drop(prelude);
+ let retained=original.capacity().checked_mul(row_size).and_then(|bytes|original.iter().try_fold(bytes,|sum,row|sum.checked_add(current_prelude_diagnostic_backing(&row.diagnostic)?))).ok_or_else(||PolicyFailure::Operational(oom()))?;
+ work.reconcile(mark,retained).map_err(PolicyFailure::Operational)
+}
+
+fn publish_original_body_rows(
+ archive:&BodyArchive,transient:&ReportBudget,original:&mut Vec<OriginalBodyDiagnostic>,
+ findings:crate::checks_proc_visibility::Findings<'_>,checkpoint:&dyn Fn()->std::io::Result<()>,
+)->Result<(),crate::policy_body_demand::PolicyFailure>{
+ use crate::policy_body_demand::PolicyFailure;
+   for row in findings.into_rows(){checkpoint().map_err(PolicyFailure::Operational)?;let(tag,level)=row.registration.ok_or("original BODY row lacks its actual producer registration")?;let location=if row.synthetic{OriginalDiagnosticLocation::ParserSynthetic}else if let Some(point)=row.reported{match point{crate::checks_proc_visibility::OriginalReported::Source(point)=>OriginalDiagnosticLocation::Reader(archive.source_mapping().store_original_reported_point(point)?),crate::checks_proc_visibility::OriginalReported::Builtin=>return Err("builtin declaration event cannot be delivered through a BODY producer".into())}}else{OriginalDiagnosticLocation::Expanded};let phase=if row.diagnostic.family=="procedure_redeclaration"{OriginalDiagnosticPhase::Prelude}else{OriginalDiagnosticPhase::Body};let effect_immediate=matches!(row.diagnostic.family,"spawn_return"|"pure_discard"|"operator_overload");transient.push(original,OriginalBodyDiagnostic{effect_immediate,phase,diagnostic:row.diagnostic,location,registration_tag:tag,default_level:level}).map_err(|message|PolicyFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;
+   }
+ Ok(())
 }
 pub struct BodyEffects {
     input: Weak<EffectInput>,

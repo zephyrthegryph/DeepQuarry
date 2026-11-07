@@ -23,7 +23,7 @@ struct Params {
     code:Option<Arc<BodyCodeIdentity>>,
 }
 const CANONICAL_DOMAIN:u128=1u128<<127;
-fn code_key(input:&BodySyntaxInput)->Result<Key,BodySyntaxFailure>{
+pub(super) fn code_key(input:&BodySyntaxInput)->Result<Key,BodySyntaxFailure>{
  let code=input.original_code_owner().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"actual canonical BODY code owner absent")))?;
  Ok(Key::new(BODY_SYNTAX,CANONICAL_DOMAIN|Arc::as_ptr(code)as usize as u128))
 }
@@ -494,4 +494,16 @@ pub(super) fn obtain_product(ctx:&mut dm_query::Ctx<'_>,input:&Arc<BodySyntaxInp
  let key=code_key(input)?;let code=Arc::clone(input.original_code_owner().expect("actual canonical code locator checked"));
  let result=ctx.get::<BodyQueryValue>(key,Arc::new(Params{input:Arc::downgrade(input),key,code:Some(code)})).map_err(checked_query_failure)?;
  match result.as_ref(){BodyQueryValue::Canonical(result)=>result.clone().map_err(BodySyntaxFailure::Syntax),BodyQueryValue::Issued(_)=>Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"active native context returned issued syntax for canonical key")))}
+}
+
+#[cfg(test)]
+impl QueryDb{
+ pub(crate) fn original_current_body_bytes_for_test(&self,input:&Arc<dm_analysis::checker_effects::EffectInput>,ordinal:usize,encode:impl FnOnce(&[dm_analysis::checker_effects::OriginalBodyDiagnostic])->Vec<u8>)->Result<Vec<u8>,BodySyntaxFailure>{
+  self.with_setting_admission(|syntax|input.archive().with_current_body_checked(ordinal,syntax,|body|{
+   input.with_current_original_body_rows(&body,syntax,input.archive().tree(),&dm_analysis::checker_effects::ExecutionAdmission::default(),&||crate::daemon::control::checkpoint(),|rows|Ok(encode(rows))).map_err(|actual|match actual{
+    dm_analysis::policy_body_demand::PolicyFailure::Operational(actual)=>BodySyntaxFailure::Operational(actual),
+    actual=>BodySyntaxFailure::Operational(std::io::Error::other(actual.to_string())),
+   })
+  }))
+ }
 }

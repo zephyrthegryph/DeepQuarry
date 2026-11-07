@@ -143,7 +143,17 @@ impl SourceSnapshot {
         output: &mut impl io::Write,
     ) -> io::Result<bool> {
         let owner = self.original_checker_request_input(tree)?;
-        let input = owner.input();
+        self.write_original_ordered_checker_using(owner.input(),environment,explicit,tree,output)
+    }
+
+    pub(super) fn write_original_ordered_checker_using(
+        &self,
+        input:&std::sync::Arc<EffectInput>,
+        environment:&Path,
+        explicit:Option<&Path>,
+        tree:&dm_tree::SemanticTree,
+        output:&mut impl io::Write,
+    )->io::Result<bool>{
         self.with_effect_scope(input, environment, explicit, tree, |db, scope| {
             let loaded = scope.configuration();
             let policy_revision = self.policy_revision.ok_or_else(|| io::Error::other("Original checker policy revision unavailable"))?;

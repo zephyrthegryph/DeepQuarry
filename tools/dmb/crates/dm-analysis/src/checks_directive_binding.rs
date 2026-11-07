@@ -207,6 +207,7 @@ pub fn current_invalid_setting_recipes<W:crate::checker_effects::EffectReportWor
 #[path="checker_current_prefix_recipes.rs"]mod current_prefix_recipes;
 pub use current_prefix_recipes::{CurrentSettingPrelude,CurrentPreludeFinding};
 pub use current_prefix_recipes::current_setting_prelude;
+pub(crate) use current_prefix_recipes::current_prelude_diagnostic_backing;
 
 #[cfg(test)]mod typed_literal_directive_tests{
  use super::*;

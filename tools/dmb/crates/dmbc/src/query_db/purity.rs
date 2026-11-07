@@ -613,7 +613,7 @@ impl Resolver for Observed<'_, '_> {
         }
     }
 }
-pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegistry) {
+pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegistry,body_charge:Arc<dm_syntax::SettingChargeCounter>) {
     current_variables::register(db,Arc::clone(&ledger));
     pages::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     global_graph::register(db,Arc::clone(&ledger),Arc::clone(&registry));
@@ -648,8 +648,11 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
             .syntax_inputs()
             .and_then(|v| v.get(p.ordinal))
             .ok_or(QueryError::Missing(p.key))?;
-        edge(&l, p.key).map_err(|_| QueryError::Missing(p.key))?;
-        let original_primary = if input.is_original_checker_source() {
+        let canonical=input.uses_current_original_bodies();
+        if !canonical{edge(&l,p.key).map_err(|_|QueryError::Missing(p.key))?;}
+        let original_primary = if canonical {
+            None
+        } else if input.is_original_checker_source() {
             Some(body_syntax::obtain_issued(ctx, syntax)?)
         } else {
             body_syntax::observe(ctx, syntax)?;
@@ -665,7 +668,30 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
             error: Mutex::new(None),
         };
         let admission = match &p.body_admission{Some(loan)=>{let headroom=pages::page_execution_headroom(&l).map_err(|message|QueryError::operational(p.key,std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;loan.upgrade_for_job(headroom).map_err(|actual|QueryError::operational(p.key,actual))?},None=>execution_admission(&l)};
-        let computed = if let Some(primary) = original_primary {
+        let computed = if canonical {
+            let obtain=|requested:&Arc<dm_tree::frontend::BodySyntaxInput>|{
+                let child=body_syntax::code_key(requested)?;
+                let mut ctx=resolver.ctx.lock().unwrap_or_else(|error|error.into_inner());
+                if !ctx.has_dependency(child){
+                    edge(&l,p.key).map_err(|_|dm_tree::frontend::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"canonical effect body dependency admission denied")))?;
+                }
+                body_syntax::obtain_product(&mut ctx,requested)
+            };
+            // QueryContext is locked only inside obtain. Neither the evaluator
+            // nor its callee prefix or resolver callbacks run under that lock.
+            super::setting_syntax::with_setting_admission(&body_charge,|syntax|{
+                input.archive().with_current_body_checked_in(p.ordinal,syntax,&mut(),|_,requested|obtain(requested),|_,body|{
+                    match input.compute_current_original_body_using(&body,syntax,&resolver,&admission,&||crate::daemon::control::checkpoint(),Some(&obtain)){
+                        Ok(body)=>Ok(Ok(body)),
+                        Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual)),
+                        Err(actual)=>Ok(Err(actual)),
+                    }
+                })
+            }).map_err(|actual|match actual{
+                dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>dm_analysis::policy_body_demand::PolicyFailure::Operational(actual),
+                dm_tree::frontend::BodySyntaxFailure::Syntax(actual)=>actual.message.into(),
+            }).and_then(|value|value)
+        } else if let Some(primary) = original_primary {
             let host = input.archive().body_query_host()
                 .ok_or(QueryError::Missing(p.key))?;
             input.compute_original_body_checked_using_admitted_controlled(
