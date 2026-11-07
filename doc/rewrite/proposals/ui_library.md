@@ -80,7 +80,7 @@ Themes no window, device or DM data names: `ntOS95`, `ntos_cat`, `ntos_darkmode`
 `hackerman`, `malfunction`, `ntos`, `paper`, `retro`, `syndicate`.
 
 Interfaces nothing opens: `AmControl` (the antimatter engine was deleted), `MechaLog` (no `interface("MechaLog")`).
-`CookingOvenOld` stays: the fantasy oven opens it (`tgui_id` in `code/content/items/fantasy_items.dm`). The `Ntos*` program windows are
+The `Ntos*` program windows are
 opened as `"Ntos" + name` (`code/library/ui/tgui/modules/_base.dm`), so a plain grep reports them unused; they are not.
 
 ## 6. Open work (not started)

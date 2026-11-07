@@ -29,6 +29,7 @@ export type Data = {
     container: string | null;
   }[];
   is_open?: BooleanLike;
+  state_prefix?: string;
   icon_used?: string;
   reagents?: { name: string; volume: number; max: number };
 };
