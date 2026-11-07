@@ -1914,12 +1914,14 @@ GLOBAL_VAR(boot_unclean)
 	var/list/leak_lines = list()
 	for(var/type_text in leaks)
 		leak_lines += "[leaks[type_text]] x [type_text]"
-	if(!runtimes && !noise && !length(GLOB.boot_system_failures) && !length(leak_lines))
+	if(!runtimes && !noise && !length(GLOB.boot_system_failures) && !length(leak_lines) && !globals_init_mismatch)
 		log_test("Boot gate: clean (0 runtimes, 0 warnings, 0 leaked slots before the first test).")
 		return
 	GLOB.boot_unclean = "Boot was not clean: [runtimes] runtime(s) and [noise] warning(s) before the first test (data/logs/<run>/boot_report.json, runtime-errors.log)"
 	if(length(leak_lines))
 		GLOB.boot_unclean += "; SLOT LEAK after boot: [jointext(leak_lines, ", ")]"
+	if(globals_init_mismatch)
+		GLOB.boot_unclean += "; the InitGlobal procs do not match the declared globals ([globals_init_mismatch])"
 	if(length(GLOB.boot_system_failures))
 		GLOB.boot_unclean += "; system initialize() threw: [jointext(GLOB.boot_system_failures, " | ")]"
 	log_test("::error title=Boot gate::[GLOB.boot_unclean]")
