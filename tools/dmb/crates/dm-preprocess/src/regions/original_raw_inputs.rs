@@ -2,7 +2,7 @@
 //! supplied by the existing bounded RecordingInputs acquisition/adoption path;
 //! this module never substitutes PreparedSource, text equality or a private read.
 use super::{original_raw_frame::{OriginalRawFrame,OriginalRawNotice},original_raw_points::OriginalRawPointIndex,original_token_factory::{self,Geometry},original_lexical_frame::OriginalLexicalFrameIdentity};
-use crate::{SourceProvider,SourceAcquisitionLease,macro_expansion::{OriginalMacroRows as Rows,OriginalMacroToken as Token,OriginalMacroOrigin as Origin,OriginalMacroRawStep as RawStep}};
+use crate::{SourceProvider,SourceAcquisitionLease,macro_expansion::{OriginalMacroRows as Rows,OriginalPagedMacroRows as PagedRows,OriginalMacroToken as Token,OriginalMacroOrigin as Origin,OriginalMacroRawStep as RawStep}};
 use dm_syntax::{SettingAdmission,Span,OriginalLexicalNoticePoint,numeric_form::OriginalNumberNotice};
 use std::{io,cell::RefCell};
 struct OpenFrame{frame:OriginalRawFrame,path:Option<super::original_file_path::OriginalFilePath>,geometry_at:usize,occurrence:usize,expansion_floor:usize}
@@ -35,14 +35,14 @@ impl OriginalPhysicalRowObservation<'_>{
  pub(super) fn row(&self)->&OriginalPhysicalRow{&self.row}
  pub(super) fn into_row(self)->OriginalPhysicalRow{self.row}
 }
-pub(super) struct OriginalRawInputs{frames:Rows<OpenFrame>,geometries:Rows<SourceGeometry>,failed:bool,stack_changed:bool,last_input:Option<Origin>}
+pub(super) struct OriginalRawInputs{frames:Rows<OpenFrame>,geometries:PagedRows<SourceGeometry>,failed:bool,stack_changed:bool,last_input:Option<Origin>}
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 impl OriginalRawInputs{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{frames:Rows::new(a)?,geometries:Rows::new(a)?,failed:false,stack_changed:false,last_input:None})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{frames:Rows::new(a)?,geometries:PagedRows::new(a)?,failed:false,stack_changed:false,last_input:None})}
  /// The caller has already funded/read/adopted this SAME acquisition through
  /// the host's actual source-family lender. No frame-pop refunds that backing.
  pub(super) fn push_opened(&mut self,provider:&dyn SourceProvider,acquisition:SourceAcquisitionLease,occurrence:usize,expansion_floor:usize,a:&SettingAdmission<'_>)->io::Result<()>{
-  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{poll(a)?;if self.geometries.as_slice().last().is_some_and(|prior|prior.occurrence>=occurrence){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source occurrences must follow the actual unique open order"))}let bytes=provider.original_source_bytes(&acquisition)?.ok_or(io::ErrorKind::NotConnected)?;let points=OriginalRawPointIndex::new(bytes,a)?;let geometry=super::original_raw_geometry::OriginalRawGeometry::from_acquired_using(provider,&acquisition,a)?;let frame=OriginalRawFrame::from_opened(provider,acquisition,a)?;let geometry_at=self.geometries.len();self.geometries.push(SourceGeometry{occurrence,geometry,points,actual_eof:false},a)?;self.frames.push(OpenFrame{frame,path:None,geometry_at,occurrence,expansion_floor},a)})();if result.is_err(){self.failed=true}result
+  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{poll(a)?;if self.geometries.last().is_some_and(|prior|prior.occurrence>=occurrence){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source occurrences must follow the actual unique open order"))}let bytes=provider.original_source_bytes(&acquisition)?.ok_or(io::ErrorKind::NotConnected)?;let points=OriginalRawPointIndex::new(bytes,a)?;let geometry=super::original_raw_geometry::OriginalRawGeometry::from_acquired_using(provider,&acquisition,a)?;let frame=OriginalRawFrame::from_opened(provider,acquisition,a)?;let geometry_at=self.geometries.len();self.geometries.push(SourceGeometry{occurrence,geometry,points,actual_eof:false},a)?;self.frames.push(OpenFrame{frame,path:None,geometry_at,occurrence,expansion_floor},a)})();if result.is_err(){self.failed=true}result
  }
  /// The actual source owner calls this with the path of its SAME admitted
  /// read/recorded acquisition. No invocation-origin path is substituted.
@@ -56,21 +56,18 @@ impl OriginalRawInputs{
  /// independently of a replacement token's rebound invocation Origin. Loan
  /// validation and byte geometry remain tied to the SAME current acquisition.
  pub(super) fn with_current_read_point<T>(&mut self,provider:&dyn SourceProvider,a:&SettingAdmission<'_>,run:impl FnOnce(&OriginalLexicalFrameIdentity,usize,super::original_raw_points::OriginalRawPoint)->io::Result<T>)->io::Result<Option<T>>{
-  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{poll(a)?;let Some(open)=self.frames.last_mut()else{return Ok(None)};let point=open.frame.read_point().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual current raw reader has not issued a location"))?;let identity=open.frame.identity();let bytes=provider.original_source_bytes(identity.acquisition())?.ok_or(io::ErrorKind::NotConnected)?;let actual=self.geometries.as_mut_slice()[open.geometry_at].points.notice(bytes,point,a)?;run(identity,open.occurrence,actual).map(Some)})();if result.is_err(){self.failed=true}result
+  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{poll(a)?;let Some(open)=self.frames.last_mut()else{return Ok(None)};let point=open.frame.read_point().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual current raw reader has not issued a location"))?;let identity=open.frame.identity();let bytes=provider.original_source_bytes(identity.acquisition())?.ok_or(io::ErrorKind::NotConnected)?;let actual=self.geometries.get_mut(open.geometry_at).expect("opened source geometry").points.notice(bytes,point,a)?;run(identity,open.occurrence,actual).map(Some)})();if result.is_err(){self.failed=true}result
  }
  /// Decode the END of the same short-lived observation. The observation
  /// already selected its actual occurrence, so no second roster search is
  /// needed. The original admission, exact lease and coordinate checks remain.
  pub(super) fn decoded_observed_end_using(&self,observed:&OriginalPhysicalRowObservation<'_>,a:&SettingAdmission<'_>)->io::Result<usize>{
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}
-  let row=self.geometries.as_slice().get(observed.geometry_at)
+  let row=self.geometries.get(observed.geometry_at)
    .filter(|row|row.occurrence==observed.origin.occurrence)
    .ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"raw mapping occurrence was never opened"))?;
   row.geometry.decoded_point_using(observed.lease,observed.origin.physical.end,a)
  }
- /// Consumed by the SAME final mapping owner; no row copy, raw source payload,
- /// source EOF claim or second geometry dictionary is introduced.
- fn into_source_geometries(self)->Rows<SourceGeometry>{self.geometries}
  /// One actual raw-token point plus physical source-line envelope. The row
  /// end is a real LF/physical byte EOF boundary, never a rounded token end.
  #[cfg(test)]
@@ -79,7 +76,7 @@ impl OriginalRawInputs{
  }
  pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}poll(a)?;
-  let geometries = self.geometries.as_slice();
+  let geometries = &self.geometries;
   let active = self.frames.as_slice().last().filter(|open| {
    open.occurrence == origin.occurrence
     && geometries.get(open.geometry_at).is_some_and(|row| row.occurrence == origin.occurrence)
@@ -88,10 +85,24 @@ impl OriginalRawInputs{
   // earlier includes can still address any exact, previously opened frame.
   let at = match active {
    Some(open) => open.geometry_at,
-   None => geometries.binary_search_by_key(&origin.occurrence, |row| row.occurrence)
-    .map_err(|_| io::ErrorKind::InvalidInput)?,
+   None => {
+    let mut first = 0;
+    let mut end = geometries.len();
+    while first < end {
+     let mid = first + (end - first) / 2;
+     if geometries.get(mid).expect("issued source geometry ordinal").occurrence < origin.occurrence {
+      first = mid + 1;
+     } else {
+      end = mid;
+     }
+    }
+    if geometries.get(first).is_none_or(|row| row.occurrence != origin.occurrence) {
+     return Err(io::ErrorKind::InvalidInput.into());
+    }
+    first
+   }
   };
-  let geometry=&mut self.geometries.as_mut_slice()[at];let raw=provider.original_source_bytes(lease)?.ok_or(io::ErrorKind::NotConnected)?;
+  let geometry=&mut self.geometries.get_mut(at).expect("located source geometry");let raw=provider.original_source_bytes(lease)?.ok_or(io::ErrorKind::NotConnected)?;
   let offset=origin.physical.start;let eof_token=!origin.invocation&&origin.physical.start==origin.physical.end&&offset==raw.len()&&geometry.actual_eof;
   if let Some(prior)=prior.filter(|prior|prior.origin==origin&&prior.lease.same_binding(lease)
    &&std::ptr::eq(prior.bytes,raw)&&prior.row.actual_eof==eof_token
@@ -126,7 +137,7 @@ impl OriginalRawInputs{
  }
  fn next_inner(&mut self,provider:&dyn SourceProvider,a:&SettingAdmission<'_>,sink:&mut dyn OriginalRawNoticeSink)->io::Result<RawStep<'static>>{
   loop{poll(a)?;let Some(open)=self.frames.last_mut()else{return Ok(RawStep::End)};
-   let OpenFrame{frame,geometry_at,occurrence,..}=open;let points=&mut self.geometries.as_mut_slice()[*geometry_at].points;let occurrence=*occurrence;
+   let OpenFrame{frame,geometry_at,occurrence,..}=open;let points=&mut self.geometries.get_mut(*geometry_at).expect("opened source geometry").points;let occurrence=*occurrence;
    // Both callbacks execute synchronously and sequentially inside the one
    // actual lexical pull. No RefCell loan survives a callback or another pull.
    let sink=RefCell::new(&mut *sink);let points=RefCell::new(points);
@@ -136,7 +147,7 @@ impl OriginalRawInputs{
     original_token_factory::project_using(event,bytes,Geometry::Physical{origin,frame:identity},a,&mut|point,notice|{let location=points.borrow_mut().notice(bytes,point,a)?;sink.borrow_mut().numeric(identity,occurrence,location,point,notice,a)})
    })?;
    match token{Some(Some(token))=>{self.last_input=Some(token.origin);return Ok(RawStep::Token(token))},Some(None)=>continue,None=>{
-    frame.finish_actual_end(provider,a)?;self.geometries.as_mut_slice()[*geometry_at].actual_eof=true;self.frames.pop();self.stack_changed=true;return Ok(RawStep::NeedInput);
+    frame.finish_actual_end(provider,a)?;self.geometries.get_mut(*geometry_at).expect("opened source geometry").actual_eof=true;self.frames.pop();self.stack_changed=true;return Ok(RawStep::NeedInput);
     // Actual file End is the only pop path. A paused/fatal macro demand never
     // calls this method again and therefore never retires an unfinished source.
    }}
@@ -287,6 +298,42 @@ mod row_tests {
         assert_eq!(wrong.kind(), io::ErrorKind::InvalidInput);
         drop((inputs, inner, outer));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
+    }
+
+    #[test]
+    fn paged_geometries_keep_older_issued_points_and_page_boundary_order() {
+        let open = |bytes: &[u8]| File {
+            bytes: bytes.to_vec(),
+            lease: SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(), ()),
+            failure: Cell::new(None),
+        };
+        let first = open(b"var/old\r\n");
+        let later = open(b"var/new\n");
+        let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut inputs = OriginalRawInputs::new(&a).unwrap();
+        let mut sampled = Vec::new();
+        for i in 0..258 {
+            let file = if i == 0 { &first } else { &later };
+            inputs.push_opened(file,file.lease.clone(),i*2,0,&a).unwrap();
+            let RawStep::Token(token) = inputs.next_using(file,&a,&mut NoNotices).unwrap()
+                else { panic!("actual first token"); };
+            if matches!(i,0|127|128|255|256|257) { sampled.push((i,token.origin)); }
+            while inputs.current_occurrence().is_some() {
+                inputs.next_using(file,&a,&mut NoNotices).unwrap();
+            }
+        }
+        assert_eq!(inputs.geometries.len(),258);
+        for (i, origin) in sampled {
+            let file = if i==0 { &first } else { &later };
+            let row = inputs.physical_row_using(origin,&file.lease,file,&a).unwrap();
+            assert_eq!(row.raw,Span::new(0,file.bytes.len()));
+            let missing = Origin { occurrence: i*2+1, ..origin };
+            assert_eq!(inputs.physical_row_using(missing,&file.lease,file,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);
+        }
+        drop(inputs);
+        assert_eq!(used.load(Ordering::Acquire),fixed);
     }
 
     #[test]

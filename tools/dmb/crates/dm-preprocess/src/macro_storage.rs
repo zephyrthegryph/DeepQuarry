@@ -156,6 +156,28 @@ impl<T> MacroTokenRows<T> {
         bytes
     }
 
+    /// Packed pages keep their actual ordinal. Only the tail may be short.
+    pub(crate) fn len(&self) -> usize {
+        self.later.as_slice().last().map_or(self.first.len(), |last|
+            self.first.len() + (self.later.len() - 1) * TOKEN_PAGE_ROWS + last.len())
+    }
+
+    pub(crate) fn last(&self) -> Option<&T> {
+        self.later.as_slice().last().unwrap_or(&self.first).as_slice().last()
+    }
+
+    pub(crate) fn get(&self, index: usize) -> Option<&T> {
+        if index < TOKEN_PAGE_ROWS { return self.first.as_slice().get(index); }
+        let index = index - TOKEN_PAGE_ROWS;
+        self.later.as_slice().get(index / TOKEN_PAGE_ROWS)?.as_slice().get(index % TOKEN_PAGE_ROWS)
+    }
+
+    pub(crate) fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        if index < TOKEN_PAGE_ROWS { return self.first.as_mut_slice().get_mut(index); }
+        let index = index - TOKEN_PAGE_ROWS;
+        self.later.as_mut_slice().get_mut(index / TOKEN_PAGE_ROWS)?.as_mut_slice().get_mut(index % TOKEN_PAGE_ROWS)
+    }
+
     pub(crate) fn into_cursor(self) -> MacroTokenCursor<T> {
         MacroTokenCursor {
             current: Some(self.first.into_cursor()),
