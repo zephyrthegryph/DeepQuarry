@@ -252,7 +252,6 @@
 
 /// Does some basic regeneration on a host
 /mob/living/carbon/human/proc/jumpstart()
-	set category = VERB_CAT_ABILITIES_BORER
 	set name = "Revive Host"
 	set desc = "Send a jolt of electricity through your host, reviving them."
 

@@ -23,7 +23,6 @@ GLOBAL_LIST_INIT(robot_panel_commands, list(
 /mob/living/silicon/robot/proc/robot_panel()
 	set name = "Silicon Panel"
 	set desc = "Every cyborg command and subsystem in one window."
-	set category = VERB_CAT_ABILITIES_SILICON
 
 	command_panel_open(src, "robot", "Silicon Panel", GLOB.robot_panel_commands, TYPE_PROC_REF(/mob/living/silicon/robot, robot_panel_blocked))
 

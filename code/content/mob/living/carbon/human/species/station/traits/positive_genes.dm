@@ -182,6 +182,5 @@
 
 /mob/living/carbon/human/proc/shapeshfit_form()
 	set name = "Transform Shape"
-	set category = VERB_CAT_ABILITIES_SUPERPOWER
 	var/datum/tgui_module/appearance_changer/superpower/V = new(src, src)
 	V.tgui_interact(src)

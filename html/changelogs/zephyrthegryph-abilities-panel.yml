@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The species, trait and mob-type abilities that filled the Abilities tabs (shapeshift, vore, alien, lleill, protean, promethean, synx, settings and the rest) are now one Abilities window, opened from the Abilities entry of your own right-click menu; it lists the abilities you have"

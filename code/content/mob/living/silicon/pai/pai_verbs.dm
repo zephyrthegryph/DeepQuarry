@@ -33,7 +33,6 @@
 	reset_record_view()
 
 /mob/living/silicon/pai/proc/choose_verbs()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Choose Speech Verbs"
 
 	open_request(src, /datum/prompt/choice, PROC_REF(speech_verbs_chosen), answerer = src, title = "Theme Choice", question = "What theme would you like to use for your speech verbs?", choices = GLOB.possible_say_verbs, timeout = 0)

@@ -1004,7 +1004,6 @@ CAPABILITIES(/datum/morph_review)
 
 /mob/living/carbon/human/proc/remotesay()
 	set name = "Project mind"
-	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
 	if(stat != CONSCIOUS)
 		return
@@ -1087,7 +1086,6 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 /mob/living/carbon/human/proc/remoteobserve()
 	set name = "Remote View"
-	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
 	if(stat != CONSCIOUS)
 		return
@@ -2166,7 +2164,6 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/synth_reag_toggle()
 	set name = "Toggle Reagent Processing"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle reagent processing as synth."
 	STATE_SET(src, carbon_misc, synth_reag_processing, !STATE_GET(src, carbon_misc, synth_reag_processing))
 

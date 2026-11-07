@@ -36,6 +36,11 @@ export const CommandPanel = () => {
               <NoticeBox danger>{blocked}</NoticeBox>
             </Stack.Item>
           )}
+          {!groups.length && (
+            <Stack.Item>
+              <NoticeBox>There is nothing here for you.</NoticeBox>
+            </Stack.Item>
+          )}
           {groups.map((group) => (
             <Stack.Item key={group.title}>
               <Section title={group.title}>

@@ -6,6 +6,10 @@
 // The commands of a mob type are a GLOBAL_LIST_INIT of panel_command() rows. Opening is command_panel_open(); a mob type gives the
 // player one verb or one HUD button for it.
 
+/// A `shown` value: the command is listed while its proc is among the owner's verbs, that is while the owner has been granted it (a proc with no
+/// `set category` is no tab entry, so what a species, trait or mob type grants appears here and not in the verb panel).
+#define PANEL_IF_GRANTED "granted"
+
 /// One row of a mob type's command list: the id the window sends back, the button label, its hover text, the group it sits under and
 /// the proc of the owner it calls.
 /// `shown` is an optional proc of the owner called with the command id: the command is listed only while it returns true.
@@ -43,7 +47,7 @@ GLOBAL_ALIST_EMPTY(command_panels)
 CAPABILITIES(/datum/command_panel)
 	ref_one(nameof(owner), /mob)
 	interface("CommandPanel", title = "Commands", state = nameof(GLOB.tgui_always_state))
-	op("run_command", ui_act("run_command", arg("id", schema_text(64))), then(PROC_REF(ui_act_run_command)))
+	op("run_command", ui_act("run_command", arg("id", schema_text(160))), then(PROC_REF(ui_act_run_command)))
 
 /datum/command_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!owner || user != owner)
@@ -79,7 +83,23 @@ CAPABILITIES(/datum/command_panel)
 /datum/command_panel/proc/entry_shown(list/entry)
 	if(!entry["shown"])
 		return TRUE
+	if(entry["shown"] == PANEL_IF_GRANTED)
+		return granted_command_listed(entry)
 	return call(owner, entry["shown"])(entry["id"])
+
+/// A PANEL_IF_GRANTED command has no proc reference: its id is the proc's path with dots for slashes ("mob.living.carbon.human.proc.hatch").
+/// It is listed while that proc is among the owner's verbs.
+/datum/command_panel/proc/granted_command_listed(list/entry)
+	var/wanted = "/[replacetext(entry["id"], ".", "/")]"
+	for(var/granted_verb in owner.verbs)
+		if("[granted_verb]" == wanted)
+			return TRUE
+	return FALSE
+
+/// The name of the proc a PANEL_IF_GRANTED command calls: the last part of its id.
+/datum/command_panel/proc/granted_command_proc_name(list/entry)
+	var/list/parts = splittext(entry["id"], ".")
+	return parts[length(parts)]
 
 /datum/command_panel/proc/ui_act_run_command(datum/act/op/A, id)
 	return run_command(A.actor, id)
@@ -90,7 +110,10 @@ CAPABILITIES(/datum/command_panel)
 		return FALSE
 	for(var/list/entry as anything in commands)
 		if(entry["id"] == id && entry_shown(entry))
-			call(owner, entry["proc"])()
+			if(entry["shown"] == PANEL_IF_GRANTED)
+				call(owner, granted_command_proc_name(entry))()
+			else
+				call(owner, entry["proc"])()
 			SStgui.update_uis(src)
 			return TRUE
 	return FALSE

@@ -195,7 +195,6 @@
 
 /mob/living/proc/set_size()
 	set name = "Adjust Mass"
-	set category = VERB_CAT_ABILITIES_GENERAL //Seeing as prometheans have an IC reason to be changing mass.
 
 	open_request(src, /datum/prompt/number/personal_mass, PROC_REF(personal_mass_answered), answerer = src, default = size_multiplier * 100)
 

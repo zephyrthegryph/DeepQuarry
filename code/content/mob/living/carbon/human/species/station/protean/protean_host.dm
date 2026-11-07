@@ -133,5 +133,4 @@ CAPABILITIES(/datum/protean_power/latch_host)
 /mob/living/carbon/human/proc/usehardsuit()
 	set name = "Utilize Hardsuit Interface"
 	set desc = "Allows a protean to open its hardsuit interface."
-	set category = VERB_CAT_ABILITIES_PROTEAN
 	activate_protean_power(/datum/protean_power/rig_interface)

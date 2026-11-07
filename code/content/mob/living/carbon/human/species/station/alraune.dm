@@ -193,7 +193,6 @@ CAPABILITIES(/obj/item/organ/internal/fruitgland)
 /mob/living/carbon/human/proc/alraune_fruit_select() //So if someone doesn't want fruit/vegetables, they don't have to select one.
 	set name = "Select fruit"
 	set desc = "Select what fruit/vegetable you wish to grow."
-	set category = VERB_CAT_ABILITIES_ALRAUNE
 	var/obj/item/organ/internal/fruitgland/fruit_gland
 	for(var/F in contents)
 		if(istype(F, /obj/item/organ/internal/fruitgland))
@@ -290,7 +289,6 @@ CAPABILITIES(/datum/prompt/choice/fruit_gland)
 /mob/living/carbon/human/proc/alraune_fruit_reagent()
 	set name = "Poison Fruit"
 	set desc = "Select a reagent to be placed in your fruit."
-	set category = VERB_CAT_ABILITIES_ALRAUNE
 
 	if(!isliving(usr) || !usr.checkClickCooldown())
 		return

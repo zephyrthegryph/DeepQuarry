@@ -70,7 +70,6 @@
 /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex()
 	set name = "Set Sex"
 	set desc = "Set what sprite set you use (male/female)"
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	open_request(src, /datum/prompt/choice, PROC_REF(sex_chosen), answerer = src, title = "Set Sex", question = "Please select a sex:", choices = list(FEMALE, MALE), timeout = 0)
 
 /mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(datum/act/request/A)
@@ -91,7 +90,6 @@
 /mob/living/simple_mob/vore/retaliate/lion/proc/pick_mane_color()
 	set name = "Set Mane Color"
 	set desc = "Set the color of your mane"
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	open_request(src, /datum/prompt/color, PROC_REF(mane_color_picked), answerer = src, title = "Mane Color", question = "Please pick a mane color:", default = mane_color, timeout = 0)
 
 /mob/living/simple_mob/vore/retaliate/lion/proc/mane_color_picked(datum/act/request/A)
