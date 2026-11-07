@@ -21,7 +21,7 @@ impl Observation{
 struct Row{owner:Observation,bytes:usize}
 #[cfg(debug_assertions)]
 #[derive(Default)]
-struct AdmissionCensus { grants:usize, shortcuts:usize, sweeps:usize, pressure:usize, rows:usize }
+struct AdmissionCensus { grants:usize, shortcuts:usize, sweeps:usize, pressure:usize, rows:usize, grouped_text_rows_omitted:usize }
 
 #[derive(Default)]
 pub(super) struct Ledger {
@@ -109,7 +109,7 @@ impl Ledger{
    };
    *column=column.saturating_add(row.bytes);
   }
-  eprintln!("ORIGINAL_SOURCE_ADMISSION_CATEGORIES exact_after_sweep={exact} {charges:?}");
+  eprintln!("ORIGINAL_SOURCE_ADMISSION_CATEGORIES exact_after_sweep={exact} grouped_text_rows_omitted={} {charges:?}",self.census.grouped_text_rows_omitted);
  }
  pub(super) fn resize_arena(&mut self,owner:&super::source_arena::Allocation,reserved:usize)->io::Result<()>{
   if !self.has_source_arena(owner){return Err(io::Error::new(io::ErrorKind::InvalidInput,"source arena resize lost its actual ledger row"))}
@@ -214,9 +214,19 @@ impl Ledger{
    return self.has_source_arena(allocation);
   }
   let Some(part)=credit.as_any().downcast_ref::<super::source_arena::OriginalReadPart>() else{return false};
-  let group=part.group();
+  part.role()==super::source_arena::ReadPartRole::Acquisition
+   && self.has_read_group(part.group())
+ }
+ fn has_read_group(&self,group:&Arc<super::source_arena::OriginalReadGroup>)->bool{
   self.rows.get(&(16,Arc::as_ptr(group)as usize))
    .is_some_and(|row|matches!(&row.owner,Observation::ReadGroup(weak)if weak.as_ptr()==Arc::as_ptr(group)))
+ }
+ fn has_funded_grouped_text(&self,text:&SourceText)->bool{
+  use super::source_arena::{OriginalReadPart,ReadPartRole};
+  let Some(control)=text.source_arena_control_credit().and_then(|c|c.owner().as_any().downcast_ref::<OriginalReadPart>())else{return false};
+  let Some(payload)=text.source_arena_payload_credit().and_then(|c|c.owner().as_any().downcast_ref::<OriginalReadPart>())else{return false};
+  control.role()==ReadPartRole::TextControl && payload.role()==ReadPartRole::TextPayload
+   && Arc::ptr_eq(control.group(),payload.group()) && self.has_read_group(control.group())
  }
  fn funds_exceptional_bytes(&self, bytes: &dm_resources::SharedBytes) -> bool {
   let payload = bytes.source_arena_payload_credit().map(|credit| credit.owner());
@@ -232,11 +242,23 @@ impl Ledger{
  /// provider allocation or hide retained exceptional originals on error.
  pub(super) fn adopt_original_read(&mut self,lease:&SourceAcquisitionLease,reservation:usize)->io::Result<usize>{
   lease.seal_input_fingerprint_storage();
-  let text=lease.source_text();let mut backing=0;let mut original=None;
-  text.visit_storage(|address,_,storage|{backing=address;if let SourceTextStorage::Original(payload)=storage{original=Some((Arc::as_ptr(payload)as*const u8 as usize,Arc::downgrade(payload)))}});
+  let text=lease.source_text();let mut backing=0;let mut original=None;let mut transformed=false;
+  text.visit_storage(|address,_,storage|{
+   backing=address;
+   transformed=matches!(&storage,SourceTextStorage::Transformed(_));
+   if let SourceTextStorage::Original(payload)=storage{original=Some((Arc::as_ptr(payload)as*const u8 as usize,Arc::downgrade(payload)))}
+  });
   let mut staged:[Option<(ResourceKey,Observation,usize)>;6]=[None,None,None,None,None,None];
   let owner=Observation::SealedText(text.downgrade(),self.arena_domain.clone());
-  let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost its backing"))?;staged[0]=Some(((0,backing),owner,n));
+  let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost its backing"))?;
+  // A zero-byte sealed row is redundant only when both physical lifetimes
+  // are already covered by this exact group. Keep any preexisting observation.
+  if n!=0 || !transformed || self.rows.contains_key(&(0,backing))
+       || !self.has_funded_grouped_text(text) {
+   staged[0]=Some(((0,backing),owner,n));
+  } else {
+   #[cfg(debug_assertions)]{self.census.grouped_text_rows_omitted+=1;}
+  }
   if let Some((address,weak))=original{let owner=Observation::Original(weak);let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost original payload"))?;staged[1]=Some(((1,address),owner,n));}
   if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{if !self.funds_exceptional_bytes(bytes){let owner=Observation::Bytes(bytes.downgrade());let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost exceptional bytes"))?;staged[2]=Some(((2,bytes.owner_address()),owner,n));}}
   let mut next=3;let mut object_error=None;
@@ -410,6 +432,59 @@ impl QueryDb{
 
 #[cfg(test)]mod actual_arena_portion_census_tests{
  use super::*;use dm_preprocess::source_arena_credit::SourceArenaWork;
+ #[test]
+ fn exact_open_grouped_text_omits_only_funded_empty_observation_and_refunds_last_weak() {
+  use crate::input_snapshot::{FileSystemInputs,RecordingInputs};
+  use dm_preprocess::{InitialEnvironment,OriginalRawOpenDecision,OriginalRawReadOutcome};
+  use super::super::source_arena::{funded_parts,OriginalReadPart,ReadPartRole};
+  let db=QueryDb::default();
+  let foreign=QueryDb::default();
+  let baseline=db.raw_source_input_charge_locked().unwrap();
+  let root=crate::test_scratch::dir("raw-ledger-grouped-text");
+  let path=root.join("actual.dm");
+  std::fs::write(&path,b"/datum/probe/actual\n").unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0)
+   .with_initial_environment(InitialEnvironment::OriginalChecker0290);
+  let OriginalRawReadOutcome::Acquired(lease)=dm_preprocess::source_arena_credit::read_original_source_open_using(
+   &inputs,&path,1024,&db,&mut||Ok(OriginalRawOpenDecision::Read),
+  ).unwrap() else{panic!("actual exact read")};
+  let text=lease.source_text();
+  assert_eq!(funded_parts(text,Some(&Arc::downgrade(&db.raw_policy.admission))),(true,true));
+  assert_eq!(funded_parts(text,Some(&Arc::downgrade(&foreign.raw_policy.admission))),(false,false));
+  let payload=text.source_arena_payload_credit().unwrap();
+  let control=text.source_arena_control_credit().unwrap();
+  let payload_bytes=payload.reserved_bytes();
+  let control_bytes=control.reserved_bytes();
+  let part_bytes={
+   let payload=payload.owner().as_any().downcast_ref::<OriginalReadPart>().unwrap();
+   let control=control.owner().as_any().downcast_ref::<OriginalReadPart>().unwrap();
+   assert!(payload.role()==ReadPartRole::TextPayload && control.role()==ReadPartRole::TextControl);
+   assert!(Arc::ptr_eq(payload.group(),control.group()));
+   let mut actual=0;
+   dm_preprocess::source_arena_credit::SourceArenaCreditOwner::visit_storage(
+    payload,&mut|_,bytes|{if actual==0{actual=bytes;}}
+   );
+   actual
+  };
+  {
+   let ledger=db.raw_policy.workspace.raw_sources.lock().unwrap();
+   assert!(ledger.has_funded_grouped_text(text));
+   assert!(!ledger.rows.values().any(|row|matches!(row.owner,Observation::SealedText(..))));
+  }
+  let view=text.checked_view(0..text.len()).unwrap();
+  let weak=view.downgrade();
+  assert_eq!(weak.upgrade().unwrap().as_str(),"/datum/probe/actual\n");
+  drop((inputs,lease));
+  let strong=db.raw_source_input_charge_locked().unwrap();
+  drop(view);
+  assert!(weak.upgrade().is_none());
+  let only_weak=db.raw_source_input_charge_locked().unwrap();
+  assert_eq!(strong-only_weak,payload_bytes+part_bytes);
+  assert!(only_weak>=baseline+control_bytes+part_bytes+NODE);
+  drop(weak);
+  assert_eq!(db.raw_source_input_charge_locked().unwrap(),baseline);
+ }
+
  #[test]
  fn actual_original_frozen_input_uses_fast_admission_and_keeps_exact_digest() {
   use crate::input_snapshot::{FileSystemInputs,RecordingInputs};

@@ -235,7 +235,7 @@ mod exact_fact_credit_tests {
         assert_eq!(ordinary,tree);
         let ordinary_bytes=other.raw_source_input_charge_locked().unwrap();
         let bank_bytes=std::mem::size_of::<std::sync::atomic::AtomicUsize>()
-            +2*std::mem::size_of::<usize>();
+            +3*std::mem::size_of::<usize>();
         assert_eq!(ordinary_bytes-one,63*256-bank_bytes,"one shared bank ledger row and Arc");
         drop(tree);
         assert_eq!(db.raw_source_input_charge_locked().unwrap(),baseline);

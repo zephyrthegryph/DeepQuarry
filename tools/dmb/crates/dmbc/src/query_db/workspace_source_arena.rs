@@ -124,9 +124,18 @@ impl SourceArenaCreditOwner for Allocation{
 /// These parts keep their own exact release lifetimes.
 pub(super) struct OriginalReadGroup {
     parts: AtomicUsize,
+    domain: Weak<super::super::Admission>,
 }
 
 impl OriginalReadGroup {
+    fn new(domain: &Weak<super::super::Admission>) -> Self {
+        Self { parts: AtomicUsize::new(0), domain:domain.clone() }
+    }
+
+    fn same_domain(&self, domain:&Weak<super::super::Admission>) -> bool {
+        Weak::ptr_eq(&self.domain,domain)
+    }
+
     pub(super) fn metadata_bytes() -> usize { std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>() }
     pub(super) fn retained_bytes(&self) -> io::Result<usize> {
         self.parts.load(Ordering::Acquire).checked_add(Self::metadata_bytes()).ok_or_else(oom)
@@ -153,19 +162,41 @@ impl SourceArenaCreditOwner for OriginalReadGroup {
     fn release(self: Arc<Self>) { drop(Arc::into_inner(self)); }
 }
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+#[repr(usize)]
+pub(super) enum ReadPartRole { Acquisition=0, TextPayload=1, TextControl=2 }
+
 pub(super) struct OriginalReadPart {
     group: Arc<OriginalReadGroup>,
-    bytes: usize,
+    encoded: usize,
 }
 
 impl OriginalReadPart {
     fn metadata_bytes() -> usize { std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>() }
+    const ROLE_SHIFT: u32 = usize::BITS - 2;
+    const BYTE_MASK: usize = (1usize << Self::ROLE_SHIFT) - 1;
+
+    fn new(group:Arc<OriginalReadGroup>, bytes:usize, role:ReadPartRole)->Self{
+        debug_assert!(bytes<=Self::BYTE_MASK);
+        Self{group,encoded:bytes|((role as usize)<<Self::ROLE_SHIFT)}
+    }
+
     pub(super) fn group(&self) -> &Arc<OriginalReadGroup> { &self.group }
+    pub(super) fn role(&self) -> ReadPartRole {
+        match self.encoded >> Self::ROLE_SHIFT {
+            0=>ReadPartRole::Acquisition,
+            1=>ReadPartRole::TextPayload,
+            2=>ReadPartRole::TextControl,
+            _=>unreachable!("issued read part role"),
+        }
+    }
 }
+
+const _: () = assert!(super::raw_policy::INPUT_BUDGET <= OriginalReadPart::BYTE_MASK);
 
 impl Drop for OriginalReadPart {
     fn drop(&mut self) {
-        let released = self.bytes + Self::metadata_bytes();
+        let released = self.reserved_bytes() + Self::metadata_bytes();
         let prior = self.group.parts.fetch_sub(released, Ordering::AcqRel);
         assert!(prior >= released, "one issued acquisition part refund");
     }
@@ -173,7 +204,7 @@ impl Drop for OriginalReadPart {
 
 impl SourceArenaCreditOwner for OriginalReadPart {
     fn as_any(&self) -> &dyn std::any::Any { self }
-    fn reserved_bytes(&self) -> usize { self.bytes }
+    fn reserved_bytes(&self) -> usize { self.encoded & Self::BYTE_MASK }
     fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize)) {
         visit(std::ptr::from_ref(self) as usize, Self::metadata_bytes());
         visit(Arc::as_ptr(&self.group) as usize, OriginalReadGroup::metadata_bytes());
@@ -188,12 +219,12 @@ impl SourceArenaCreditOwner for OriginalReadPart {
 fn split_read_parts<const N: usize>(
     ledger: &mut super::raw_input_credits::Ledger,
     donor: &Allocation,
-    sizes: [usize; N],
+    parts: [(usize, ReadPartRole); N],
     admit_extra: impl FnOnce(&mut super::raw_input_credits::Ledger, usize) -> io::Result<()>,
-) -> io::Result<[SourceArenaControlCredit; N]> {
+) -> io::Result<[SourceArenaCredit; N]> {
     if donor.origin_parent.is_some() || !ledger.has_source_arena(donor) { return Err(wrong()); }
     let first = donor.read_group.get().is_none();
-    let transfer = sizes.iter().try_fold(if first { raw_input_credits::NODE } else { 0 }, |total, bytes| {
+    let transfer = parts.iter().try_fold(if first { raw_input_credits::NODE } else { 0 }, |total, (bytes,_)| {
         total.checked_add(*bytes).ok_or_else(oom)
     })?;
     let remaining = donor.reserved_bytes().checked_sub(transfer).ok_or_else(oom)?;
@@ -206,14 +237,14 @@ fn split_read_parts<const N: usize>(
     // group/part allocation or observable transfer occurs before admission.
     admit_extra(ledger, extra)?;
     let group = donor.read_group.get().map(Arc::clone)
-        .unwrap_or_else(|| Arc::new(OriginalReadGroup { parts: AtomicUsize::new(0) }));
+        .unwrap_or_else(|| Arc::new(OriginalReadGroup::new(&donor.domain)));
     ledger.partition_original_read_group(donor, remaining, &group, first, addition)?;
     if first {
         assert!(donor.read_group.set(Arc::clone(&group)).is_ok(), "one mutable read donor");
     }
-    Ok(sizes.map(|bytes| SourceArenaCredit::from_resource_owner(Arc::new(OriginalReadPart {
-        group: Arc::clone(&group), bytes,
-    })).into_control()))
+    Ok(parts.map(|(bytes,role)| SourceArenaCredit::from_resource_owner(Arc::new(
+        OriginalReadPart::new(Arc::clone(&group),bytes,role),
+    ))))
 }
 
 fn split_owned_allocations<const N: usize>(
@@ -243,10 +274,11 @@ fn split_owned_text(
     capacity: usize,
     admit_extra: impl FnOnce(&mut super::raw_input_credits::Ledger, usize) -> io::Result<()>,
 ) -> io::Result<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)> {
-    let [payload, backing] = split_owned_allocations(
-        ledger, donor, [capacity, SourceText::source_arena_control_bytes()?], admit_extra,
-    )?;
-    Ok((payload.into_credit(), backing.into_credit().into_control()))
+    let [payload, backing] = split_read_parts(ledger, donor, [
+        (capacity, ReadPartRole::TextPayload),
+        (SourceText::source_arena_control_bytes()?, ReadPartRole::TextControl),
+    ], admit_extra)?;
+    Ok((payload, backing.into_control()))
 }
 
 fn oom()->io::Error{io::Error::new(io::ErrorKind::OutOfMemory,"native source arena exceeds existing shared input-family allowance")}
@@ -264,8 +296,13 @@ fn allocation<'a>(db:&QueryDb,credit:&'a SourceArenaCredit)->io::Result<&'a Allo
 }
 pub(super) fn funded_parts(text:&SourceText,domain:Option<&Weak<crate::query_db::raw_policy::Admission>>)->(bool,bool){
  let Some(expected)=domain else{return(false,false)};
- let control=text.source_arena_control_credit().and_then(|credit|credit.owner().as_any().downcast_ref::<Allocation>()).is_some_and(|actual|actual.same_domain(expected));
- let payload=text.source_arena_payload_credit().and_then(|credit|credit.owner().as_any().downcast_ref::<Allocation>()).is_some_and(|actual|actual.same_domain(expected));
+ let funded=|credit:Option<&dyn SourceArenaCreditOwner>, role| credit.is_some_and(|credit| {
+  credit.as_any().downcast_ref::<Allocation>().is_some_and(|actual|actual.same_domain(expected))
+   || credit.as_any().downcast_ref::<OriginalReadPart>().is_some_and(|part|
+     part.role()==role && part.group.same_domain(expected))
+ });
+ let control=funded(text.source_arena_control_credit().map(|credit|credit.owner()),ReadPartRole::TextControl);
+ let payload=funded(text.source_arena_payload_credit().map(|credit|credit.owner()),ReadPartRole::TextPayload);
  (control,payload)
 }
 impl QueryDb{
@@ -353,7 +390,7 @@ impl SourceArenaWork for QueryDb{
     room=self.workspace_input_base_remaining_locked(live)?;
    }
    if room.is_none_or(|room|room<extra){return Ok(false);}
-   Arc::new(OriginalReadGroup{parts:AtomicUsize::new(0)})
+   Arc::new(OriginalReadGroup::new(&actual.domain))
   };
   ledger.transfer_original_path_bank(actual,&group,first)?;
   assert!(actual.read_group.set(Arc::clone(&group)).is_ok(),"one settled path grant");
@@ -371,9 +408,9 @@ impl SourceArenaWork for QueryDb{
      let actual = allocation(self, donor)?;
      let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
      let mut ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e| e.into_inner());
-     let [binding, original] = split_read_parts(&mut ledger, actual, sizes,
+     let [binding, original] = split_read_parts(&mut ledger, actual, sizes.map(|bytes|(bytes,ReadPartRole::Acquisition)),
          |ledger, extra| self.admit_source_arena(ledger, extra))?;
-     Ok(Some((binding, original)))
+     Ok(Some((binding.into_control(), original.into_control())))
  }
 
  fn split_original_receipt(&self, donor: &mut SourceArenaCredit, receipt: &(dyn std::any::Any + Send + Sync))
@@ -383,9 +420,9 @@ impl SourceArenaWork for QueryDb{
      let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
      let mut ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e| e.into_inner());
      let bytes = crate::input_snapshot::exact_open_receipt_charge(receipt)?;
-     let [receipt] = split_read_parts(&mut ledger, actual, [bytes],
+     let [receipt] = split_read_parts(&mut ledger, actual, [(bytes,ReadPartRole::Acquisition)],
          |ledger, extra| self.admit_source_arena(ledger, extra))?;
-     Ok(Some(receipt))
+     Ok(Some(receipt.into_control()))
  }
 
  fn split_original_exceptional_bytes(&self, donor: &mut SourceArenaCredit, capacity: usize, control: usize)
@@ -556,9 +593,9 @@ impl SourceArenaWork for HeldSourceWork<'_>{
      let mut state = self.lock()?;
      let actual = Self::actual(&state, donor)?;
      let budget = state.budget;
-     let [binding, original] = split_read_parts(&mut *state.ledger, actual, sizes,
+     let [binding, original] = split_read_parts(&mut *state.ledger, actual, sizes.map(|bytes|(bytes,ReadPartRole::Acquisition)),
          |_, extra| budget.charge(extra).map_err(|_| oom()))?;
-     Ok(Some((binding, original)))
+     Ok(Some((binding.into_control(), original.into_control())))
  }
 
  fn split_original_receipt(&self, donor: &mut SourceArenaCredit, receipt: &(dyn std::any::Any + Send + Sync))
@@ -568,9 +605,9 @@ impl SourceArenaWork for HeldSourceWork<'_>{
      let actual = Self::actual(&state, donor)?;
      let budget = state.budget;
      let bytes = crate::input_snapshot::exact_open_receipt_charge(receipt)?;
-     let [receipt] = split_read_parts(&mut *state.ledger, actual, [bytes],
+     let [receipt] = split_read_parts(&mut *state.ledger, actual, [(bytes,ReadPartRole::Acquisition)],
          |_, extra| budget.charge(extra).map_err(|_| oom()))?;
-     Ok(Some(receipt))
+     Ok(Some(receipt.into_control()))
  }
 
  fn split_original_exceptional_bytes(&self, donor: &mut SourceArenaCredit, capacity: usize, control: usize)
@@ -641,7 +678,7 @@ mod owned_text_partition_tests {
         let foreign = QueryDb::default();
         let capacity = 127;
         let control = SourceText::source_arena_control_bytes().unwrap();
-        let transferred = capacity + control + 2 * raw_input_credits::NODE;
+        let transferred = capacity + control + raw_input_credits::NODE;
         let remaining = 4 * raw_input_credits::NODE + 512;
         let mut donor = SourceArenaWork::reserve(&db, transferred + remaining).unwrap();
         let before = db.source_input_admission_bytes().unwrap();
@@ -656,11 +693,11 @@ mod owned_text_partition_tests {
         assert_eq!(donor.reserved_bytes(), remaining);
         assert_eq!(payload.reserved_bytes(), capacity);
         assert_eq!(backing.reserved_bytes(), control);
-        assert_eq!(db.source_input_admission_bytes().unwrap(), before + 2 * Allocation::metadata_bytes());
+        assert_eq!(db.source_input_admission_bytes().unwrap(), before + OriginalReadGroup::metadata_bytes() + 2 * OriginalReadPart::metadata_bytes());
         drop(payload);
         drop(backing);
         let held = db.source_input_admission_bytes().unwrap();
-        assert_eq!(held, before - transferred);
+        assert_eq!(held, before - capacity - control + OriginalReadGroup::metadata_bytes());
     }
 }
 
