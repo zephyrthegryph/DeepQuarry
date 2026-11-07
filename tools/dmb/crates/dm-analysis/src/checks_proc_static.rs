@@ -40,13 +40,13 @@ pub(crate) fn diagnostic<E: From<String> + for<'a> From<&'a str>>(
     archive: &BodyArchive,
     severity: Severity,
     event: Event<'_>,
-    fund_authored: impl FnOnce(usize) -> Result<(), E>,
+    fund_note: impl FnOnce(usize) -> Result<(), E>,
 ) -> Result<Option<Diagnostic>, E> {
     let Event::UnknownReceiverCall { expression, at, name, hint } = event else {
         return Ok(None);
     };
     let hint = hint.map_err(str::to_owned)?;
-    let notes = crate::checker_static_type_notes::notes_using(archive, at, hint, fund_authored)?;
+    let notes = crate::checker_static_type_notes::notes_using(archive, at, hint, fund_note)?;
     Ok(Some(Diagnostic {
         family: "proc_call_static_type",
         severity,

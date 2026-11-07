@@ -733,6 +733,108 @@ fn public_original_missing_authored_type_continues_with_exact_definition_notes()
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_original_return_notes_keep_callee_and_call_site_provenance() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Roster},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    let root = test_scratch::dir("public-return-note-follow");
+    let transport = test_scratch::dir("public-return-note-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!(
+            "return-note-follow-{}-{}",
+            std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+        ),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/decl.dm\"\n#include \"code/probe.dm\"\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    put(&root, "code/decl.dm", concat!(
+        "/proc/plain()\n",
+        "\treturn null\n",
+        "/proc/none()\n",
+        "\tset SpacemanDMM_return_type = null\n",
+        "\treturn null\n",
+    ));
+    put(&root, "code/probe.dm", concat!(
+        "/proc/probe()\n",
+        "\tplain().invoke(hidden_missing())\n",
+        "\tnone().invoke(hidden_missing())\n",
+        "\treturn missing_after\n",
+    ));
+
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(test_scratch::dir("public-return-note-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithSemanticReads;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}"))
+        .collect();
+    let request_path = transport.join("return-note.json");
+    put(&transport, "return-note.json", serde_json::to_vec(&serde_json::json!({
+        "build": build, "exclusions": exclusions,
+    })).unwrap());
+
+    let environment = root.canonicalize().unwrap();
+    let include = environment.join("code/decl.dm");
+    let registered = include.strip_prefix(&environment).unwrap();
+    let unannotated = format!(
+        "{}:1:12: add a return type annotation to /proc/plain",
+        registered.display(),
+    );
+    let expected = [
+        ("proc_call_static_type", Some("proc_call_static_type"), "warning", 2, 9,
+            "proc call requires static type: \"invoke\"", &[unannotated.as_str()][..]),
+        ("proc_call_static_type", Some("proc_call_static_type"), "warning", 3, 8,
+            "proc call requires static type: \"invoke\"", &["3:2: return type evaluated to None"][..]),
+        ("undefined_variable", None, "error", 4, 9,
+            "undefined var: \"missing_after\"", &[][..]),
+    ];
+    for suppress in [false, true] {
+        if suppress {
+            put(&root, "SpacemanDMM.toml", "[diagnostics]\nproc_call_static_type = 'off'\n");
+        }
+        let output = daemon.run(
+            &[OsStr::new("checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
+            Duration::from_secs(90),
+        ).unwrap();
+        assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+        let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+        let terminal: CombinedTerminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+        terminal.require().unwrap();
+        assert_eq!(terminal.roster, roster);
+        let (checker, _) = output.stdout[header_end + 1..].split_at(terminal.checker.length as usize);
+        let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+        let rows = checker["diagnostics"].as_array().unwrap();
+        let expected = expected.iter().filter(|row| !suppress || row.2 == "error");
+        assert_eq!(rows.len(), expected.clone().count(), "{checker}");
+        for (row, &(family, tag, severity, line, column, message, notes)) in rows.iter().zip(expected) {
+            assert_eq!(row["phase"], "body");
+            assert_eq!(row["location_kind"], "source");
+            assert_eq!(Path::new(row["file"].as_str().unwrap()), Path::new("code/probe.dm"));
+            assert_eq!(row["family"], family);
+            assert_eq!(row["registration_tag"].as_str(), tag);
+            assert_eq!(row["severity"], severity);
+            assert_eq!(row["line"], line);
+            assert_eq!(row["column"], column);
+            assert_eq!(row["message"], message);
+            assert_eq!(row["notes"], serde_json::to_value(notes).unwrap());
+        }
+    }
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
 fn public_combined_untyped_qualifies_the_real_resident_request() {
     use dq_analyze::{
         captured_allow_annotations::{full_unused, Operation},

@@ -5,12 +5,12 @@ use crate::checker_expression_visit::{self as visit,ArgumentObserver,KeywordObse
 struct Combined<'a,'b,'loan,'w,'k,W,R:?Sized>{inner:Option<Arguments<'a,'w,W,R>>,body:&'loan ArchivedBody<'b>,keywords:&'k mut dyn KeywordObserver<PolicyFailure>,evaluations:usize}
 impl<'a,'b,'loan,'w,W:EffectReportWork,R:Resolver+?Sized> Combined<'a,'b,'loan,'w,'_,W,R>{
  fn inner(&mut self)->&mut Arguments<'a,'w,W,R>{self.inner.as_mut().expect("actual combined sink")}
- fn fund_authored_follow_note(&mut self, path_bytes: usize) -> Result<(), PolicyFailure> {
+ fn fund_follow_note(&mut self, variable_bytes: usize) -> Result<(), PolicyFailure> {
     let inner = self.inner();
     inner.poll()?;
     // Covers the retained note row, lossy display of the original registered
     // path and its coordinates before formatting can allocate.
-    let bytes = path_bytes.checked_mul(8).and_then(|n| n.checked_add(1024)).ok_or_else(oom)?;
+    let bytes = variable_bytes.checked_mul(8).and_then(|n| n.checked_add(1024)).ok_or_else(oom)?;
     reserve(inner.work, bytes)
  }
  fn with_filter<T>(&mut self,f:impl FnOnce(&mut filter::Filter<'a,'b,'loan,'w,W,R>)->Result<T,PolicyFailure>)->Result<T,PolicyFailure>{let mut adapter=filter::Filter{inner:self.inner.take().expect("actual combined sink"),body:self.body};let result=f(&mut adapter);self.inner=Some(adapter.inner);result}
@@ -90,13 +90,13 @@ impl<'a,W:EffectReportWork,R:Resolver+?Sized> OriginalObserver<'a> for Combined<
    event@visit::Event::MissingVariable{..}|event@visit::Event::MissingField{..}=>crate::checks_undefined_variable::visit_events(archive.tree(),std::iter::once(event),|diagnostic|self.emit(diagnostic,None,crate::check_policy::DiagnosticSeverity::Error)),
    event@visit::Event::MissingCall{..}=>crate::checks_undefined_proc::visit_events(archive.tree(),std::iter::once(event),|diagnostic|self.emit(diagnostic,None,crate::check_policy::DiagnosticSeverity::Error)),
    event@visit::Event::FieldWithoutStaticType{..}=>{
-    if let Some(diagnostic) = crate::checks_field_static::diagnostic(archive, Severity::Warning, event, |n| self.fund_authored_follow_note(n))? {
+    if let Some(diagnostic) = crate::checks_field_static::diagnostic(archive, Severity::Warning, event, |n| self.fund_follow_note(n))? {
      self.emit(diagnostic, Some("field_access_static_type"), crate::check_policy::DiagnosticSeverity::Warning)?;
     }
     Ok(())
    },
    event@visit::Event::UnknownReceiverCall{..}=>{
-    if let Some(diagnostic) = crate::checks_proc_static::diagnostic(archive, Severity::Warning, event, |n| self.fund_authored_follow_note(n))? {
+    if let Some(diagnostic) = crate::checks_proc_static::diagnostic(archive, Severity::Warning, event, |n| self.fund_follow_note(n))? {
      self.emit(diagnostic, Some("proc_call_static_type"), crate::check_policy::DiagnosticSeverity::Warning)?;
     }
     Ok(())

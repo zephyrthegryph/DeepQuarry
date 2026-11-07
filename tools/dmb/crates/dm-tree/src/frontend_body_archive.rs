@@ -1178,7 +1178,16 @@ impl BodyArchive {
         &self,
         identity: dm_ir::ProcedureIdentity,
     ) -> Result<SourceNoteOrigin, String> {
-        self.callable_note_origin_with(identity, |archive, ordinal| {
+        self.borrowed_callable_note_origin(identity)
+            .map(super::BorrowedSourceNoteOrigin::into_owned)
+    }
+
+    /// Borrow the same retained callable note with its original FileList key.
+    pub fn borrowed_callable_note_origin(
+        &self,
+        identity: dm_ir::ProcedureIdentity,
+    ) -> Result<super::BorrowedSourceNoteOrigin<'_>, String> {
+        self.borrowed_callable_note_origin_with(identity, |archive, ordinal| {
             archive.parse(ordinal).map_err(|e| e.message)
         })
     }
@@ -1189,6 +1198,15 @@ impl BodyArchive {
         identity: dm_ir::ProcedureIdentity,
         parse: impl FnOnce(&'a Self, usize) -> Result<ArchivedBody<'a>, E>,
     ) -> Result<SourceNoteOrigin, E> {
+        self.borrowed_callable_note_origin_with(identity, parse)
+            .map(super::BorrowedSourceNoteOrigin::into_owned)
+    }
+
+    fn borrowed_callable_note_origin_with<'a, E: From<String> + From<&'static str>>(
+        &'a self,
+        identity: dm_ir::ProcedureIdentity,
+        parse: impl FnOnce(&'a Self, usize) -> Result<ArchivedBody<'a>, E>,
+    ) -> Result<super::BorrowedSourceNoteOrigin<'a>, E> {
         if self.body_query_host().is_none() {
             return Err("callable note needs original retained BodySyntax owner".into());
         }
@@ -1217,7 +1235,8 @@ impl BodyArchive {
         }
         let ordinal = selected.ok_or("callable note has no issued primary body")?;
         let body = parse(self, ordinal)?;
-        self.callable_note_origin_from_parsed::<E>(identity,ordinal,&body)
+        self.callable_note_origin_borrowed_from_parsed(identity, ordinal, &body)
+            .map_err(BorrowedCallableOriginError::into_error::<E>)
     }
 }
 
