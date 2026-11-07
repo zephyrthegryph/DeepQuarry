@@ -132,7 +132,15 @@ impl LiteralPageData {
                         data.projections.as_ref().expect("issued compact descriptors")[key],
                         span, ordinal, loan, owner,
                     ),
-                    _ => data.owners[key].at(packed_ordinal as usize),
+                    _ => {
+                        let issued = data.owners[key].at(packed_ordinal as usize);
+                        if !issued.has_source_raw() { return issued; }
+                        debug_assert!(owner.is_some(), "source spelling has issued projection owner");
+                        let raw = loan.and_then(|loan| loan.source.get(
+                            span.start.checked_sub(loan.origin)?..span.end.checked_sub(loan.origin)?,
+                        ));
+                        issued.with_source_raw(raw, 0)
+                    }
                 }
             }
         }
@@ -323,10 +331,20 @@ impl LiteralPage {
             references: u32,
             eligible: u32,
             duplicates: bool,
-            singleton: bool,
+            bank_references: u16,
+            singleton: Option<u8>,
             raw_bytes: usize,
             owner_bytes: usize,
             owner_mask: u32,
+        }
+        impl Group {
+            fn includes(self, at: usize, ordinal: u32) -> bool {
+                if let Some(single) = self.singleton {
+                    self.bank_references == 1 && usize::from(single) == at
+                } else {
+                    ordinal < u32::BITS && self.eligible & (1 << ordinal) != 0
+                }
+            }
         }
         let scratch_bytes = mem::size_of::<[Group; LITERAL_PAGE_LEN]>()
             + mem::size_of::<[Option<ProjectedLiteral>; LITERAL_PAGE_LEN]>();
@@ -341,29 +359,32 @@ impl LiteralPage {
                 a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
             }
             let ordinal = code >> 8;
-            // Packed payloads have at most 32 physical rows. Wide codes are
-            // never packed, and shared standalone occurrences are ineligible.
-            if ordinal >= u32::BITS {
-                continue;
-            }
+            if ordinal >= PROJECTED_COMPACT_ORDINAL { continue; }
             let bank = (code & 255) as usize;
             let group = &mut groups[bank];
-            let bit = 1 << ordinal;
-            group.duplicates |= group.references & bit != 0;
-            group.references |= bit;
-            if self.body[index / 64] & (1 << (index % 64)) == 0 {
+            group.bank_references += 1;
+            // These are physical packed row ordinals only when the candidate
+            // below is actually packed. Singleton serials have no bitmask.
+            if ordinal < u32::BITS {
+                let bit = 1 << ordinal;
+                group.duplicates |= group.references & bit != 0;
+                group.references |= bit;
+            }
+            if self.body[index / 64] & (1 << (index % 64)) == 0 { continue; }
+            let data = compact.owners[bank].at(ordinal as usize);
+            if let Some((descriptor, bytes)) = data.projection_candidate() {
+                let span = self.span_at(index).ok_or(io::ErrorKind::InvalidData)?;
+                if data.raw()? != source.get(span.range()).ok_or(io::ErrorKind::InvalidData)? {
+                    return Err(io::ErrorKind::InvalidData.into());
+                }
+                candidates[index] = Some(descriptor);
+                group.singleton = Some(index as u8);
+                group.owner_bytes = bytes;
                 continue;
             }
-            let data = compact.owners[bank].at(ordinal as usize);
-            let (descriptor, raw_bytes, owner_bytes, owner_mask) =
-                if let Some((descriptor, bytes)) = data.projection_candidate() {
-                    group.singleton = true;
-                    (descriptor, 0, bytes, 1)
-                } else if let Some(packed) = data.packed_projection_candidate() {
-                    packed
-                } else {
-                    continue;
-                };
+            let Some((descriptor, raw_bytes, owner_bytes, owner_mask)) =
+                data.packed_projection_candidate() else { continue; };
+            let bit = 1u32.checked_shl(ordinal).ok_or(io::ErrorKind::InvalidData)?;
             let span = self.span_at(index).ok_or(io::ErrorKind::InvalidData)?;
             if data.raw()? != source.get(span.range()).ok_or(io::ErrorKind::InvalidData)? {
                 return Err(io::ErrorKind::InvalidData.into());
@@ -377,6 +398,15 @@ impl LiteralPage {
         let mut count = 0;
         let mut gross = 0;
         for group in &mut groups {
+            if group.singleton.is_some() {
+                if group.bank_references == 1 && group.owner_bytes > mem::size_of::<ProjectedLiteral>() {
+                    count += 1;
+                    gross += group.owner_bytes;
+                } else {
+                    group.singleton = None;
+                }
+                continue;
+            }
             let rows = group.eligible.count_ones() as usize;
             let bytes = if group.eligible == group.references {
                 group.owner_bytes
@@ -408,7 +438,7 @@ impl LiteralPage {
             let code = compact.codes[index];
             let group = &groups[(code & 255) as usize];
             if let Some(descriptor) = candidate {
-                if group.eligible & (1 << (code >> 8)) != 0 {
+                if group.includes(index, code >> 8) {
                     descriptors.push(*descriptor);
                 }
             }
@@ -428,13 +458,14 @@ impl LiteralPage {
         compact.projections = Some(boxed);
 
         let mut released = 0;
-        for (bank, group) in groups.iter().enumerate().filter(|(_, group)| group.eligible != 0) {
+        for (bank, group) in groups.iter().enumerate().filter(|(_, group)| group.eligible != 0 || group.singleton.is_some()) {
             // Either preflight fails with this entry untouched, or physical
             // withdrawal succeeds and all its old codes are replaced immediately.
             let owner = &mut compact.owners[bank];
-            released += if group.singleton {
-                debug_assert_eq!((group.eligible, group.references), (1, 1));
-                owner.retire_projected_single_using(a)?
+            released += if let Some(single) = group.singleton {
+                debug_assert_eq!(group.bank_references, 1);
+                let ordinal = compact.codes[usize::from(single)] >> 8;
+                owner.retire_projected_single_using(ordinal as usize, a)?
             } else {
                 owner.withdraw_packed_using(group.eligible, group.eligible == group.references, a)?
             };
@@ -450,7 +481,7 @@ impl LiteralPage {
                     // Already projected by an earlier bank. Its descriptor
                     // still occupies this ordinal in the common column.
                     descriptor_index += 1;
-                } else if groups[old_bank].eligible & (1 << ordinal) != 0 {
+                } else if groups[old_bank].includes(index, ordinal) {
                     if old_bank == bank {
                         compact.codes[index] = (PROJECTED_COMPACT_ORDINAL << 8)
                             | descriptor_index as u32;
@@ -461,6 +492,46 @@ impl LiteralPage {
         }
         debug_assert_eq!(released, gross);
         Ok(Some((count, released, old_bytes, compact.credit.bytes())))
+    }
+
+    /// Release only exact expanded RAW spelling, leaving cooked bytes and
+    /// original owner/ordinal in the same compact bank code. The packed
+    /// row's funded metadata already has the one-bit source marker.
+    fn withdraw_compact_source_raw(&mut self, source: &str, a: &crate::SettingAdmission<'_>)
+        -> io::Result<usize>
+    {
+        if self.body.iter().all(|word| *word == 0) { return Ok(0); }
+        let LiteralPageData::Compact(data) = &self.data else { return Ok(0); };
+        let Some(_scratch) = a.try_reserve_optimization(2 * mem::size_of::<[u32; LITERAL_PAGE_LEN]>())
+            .map_err(|error| a.take_operational_error().unwrap_or(error))? else { return Ok(0); };
+        let mut seen = [0u32; LITERAL_PAGE_LEN];
+        let mut masks = [0u32; LITERAL_PAGE_LEN];
+        for (at, &code) in data.codes.iter().enumerate() {
+            if at % 32 == 0 { a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?; }
+            let ordinal = code >> 8;
+            if ordinal >= u32::BITS { continue; }
+            let key = (code & 255) as usize;
+            let bit = 1 << ordinal;
+            if seen[key] & bit != 0 {
+                masks[key] &= !bit;
+                continue;
+            }
+            seen[key] |= bit;
+            if self.body[at / 64] & (1 << (at % 64)) == 0 { continue; }
+            let issued = data.owners[key].at(ordinal as usize);
+            if issued.packed_source_raw_candidate().is_none() { continue; }
+            let span = self.span_at(at).ok_or(io::ErrorKind::InvalidData)?;
+            if issued.raw()? != source.get(span.range()).ok_or(io::ErrorKind::InvalidData)? {
+                return Err(io::ErrorKind::InvalidData.into());
+            }
+            masks[key] |= bit;
+        }
+        let LiteralPageData::Compact(data) = &mut self.data else { unreachable!() };
+        let mut released = 0;
+        for (key, mask) in masks.into_iter().enumerate().filter(|&(_, mask)| mask != 0) {
+            released += data.owners[key].withdraw_source_raw_using(mask, a)?;
+        }
+        Ok(released)
     }
 
     fn new(start_base: usize, a: &crate::SettingAdmission<'_>) -> io::Result<Self> {
@@ -684,7 +755,7 @@ impl<'a> OriginalLiteralRows<'a> {
 
 #[cfg(debug_assertions)]
 #[derive(Default,Debug,Clone,Copy)]
-struct BodyProjectionCensus{pages:usize,rows:usize,released_payload_bytes:usize,released_row_bytes:usize,retained_row_bytes:usize}
+struct BodyProjectionCensus{raw_only_released_bytes:usize,pages:usize,rows:usize,released_payload_bytes:usize,released_row_bytes:usize,retained_row_bytes:usize}
 
 #[cfg(debug_assertions)]
 #[derive(Debug, Default)]
@@ -699,6 +770,10 @@ struct ProjectionRejections {
     packed_other_shared_eligible_raw: usize,
     single_unique_unsupported_body_lease: usize,
     single_unique_eligible_body_lease: usize,
+    single_unique_zero_serial_body_lease: usize,
+    single_unique_nonzero_compact_body_lease: usize,
+    single_unique_nonzero_wide_body_lease: usize,
+    single_unique_nonzero_other_body_lease: usize,
     single_shared_eligible_body_references: usize,
 }
 
@@ -741,7 +816,7 @@ impl ProjectionPackedRun {
         self.seen |= bit;
         self.last_page = page;
         self.compact_banks &= compact_bank;
-        if body {
+        if body && !data.has_source_raw() {
             if let Some((raw, _)) = data.trace_source_projection() {
                 self.eligible |= bit;
                 self.candidate_raw += raw;
@@ -994,6 +1069,8 @@ impl OriginalPrimaryLiteralFacts{
         Some(settled) => Some(settled),
         None => page.settle_compact_body_projection(source, a)?,
     };
+    let _raw_only = page.withdraw_compact_source_raw(source, a)?;
+    #[cfg(debug_assertions)]{owner.body_projection.raw_only_released_bytes += _raw_only;}
     if let Some((_rows,_payload,_old,_new)) = settlement {
      #[cfg(debug_assertions)]{let c=&mut owner.body_projection;c.pages+=1;c.rows+=_rows;c.released_payload_bytes+=_payload;c.released_row_bytes+=_old;c.retained_row_bytes+=_new;}
     }
@@ -1067,7 +1144,7 @@ impl OriginalPrimaryLiteralFacts{
    }
    for index in 0..page.spans.len() {
    let data=page.get_data(index,0,None,owner.projection.as_ref()).expect("issued literal row").1;
-   if data.is_projected(){continue}
+   if data.is_projected() && !data.has_source_raw(){continue}
    let numeric_raw = data.trace_numeric_raw();
    numeric.delivered_rows += usize::from(numeric_raw.is_some());
    let settled_body = page.body[index / 64] & (1 << (index % 64)) != 0;
@@ -1108,6 +1185,16 @@ impl OriginalPrimaryLiteralFacts{
     if exclusive && !repeated {
      if data.trace_source_projection().is_some() {
       rejections.single_unique_eligible_body_lease += bytes;
+      if data.ordinal() == 0 {
+       rejections.single_unique_zero_serial_body_lease += bytes;
+      } else {
+       match &page.data {
+        LiteralPageData::Compact(compact) if compact.codes[index] >> 8 == WIDE_LITERAL_ORDINAL =>
+         rejections.single_unique_nonzero_wide_body_lease += bytes,
+        LiteralPageData::Compact(_) => rejections.single_unique_nonzero_compact_body_lease += bytes,
+        _ => rejections.single_unique_nonzero_other_body_lease += bytes,
+       }
+      }
      } else {
       rejections.single_unique_unsupported_body_lease += bytes;
      }
@@ -1652,11 +1739,17 @@ mod literal_page_controls {
     let mut source = "\"one sparse body string\"\n".to_owned();
     let span = Span::new(0, source.len() - 1);
     let before_singleton = used.load(Ordering::Acquire);
-    let singleton = crate::OriginalLiteralData::from_value_with_mode_using(
-        source[span.range()].to_owned(),
+    let mut pool = crate::OriginalLiteralPool::new(&a).unwrap();
+    pool.advance_empty_pool_for_test(65_536);
+    let raw = source[span.range()].to_owned();
+    let credit = a.reserve(raw.capacity()).unwrap();
+    let singleton = pool.issue_using(raw, credit,
         crate::OriginalTokenValue::String("one sparse body string"),
         crate::OriginalStringMode::Normal, &a,
     ).unwrap();
+    assert_eq!(singleton.as_view().ordinal(), 65_537);
+    assert!(singleton.as_view().projection_candidate().is_none(), "pool alias is live");
+    drop(pool);
     let payload = used.load(Ordering::Acquire) - before_singleton;
     let raw_pointer = singleton.raw().as_ptr();
     let filler = crate::OriginalLiteralData::from_value_using(
@@ -1795,6 +1888,40 @@ mod literal_page_controls {
             assert_eq!(survivor.raw().unwrap().as_ptr(), survivor_pointer);
             assert!(matches!(survivor.value().unwrap(), crate::OriginalTokenValue::String("different cooked")));
             survivor.visit_storage(|_, _, _| {});
+            let raw_capacity = survivor.raw_storage().unwrap().capacity();
+            let cooked_pointer = match survivor.value().unwrap() {
+                crate::OriginalTokenValue::String(text) => text.as_ptr(),
+                _ => panic!("expected actual cooked owner"),
+            };
+            let before = used.load(Ordering::Acquire);
+            let borrowed = survivor.detach_using(&a).unwrap();
+            assert_eq!(page.withdraw_compact_source_raw(&source, &a).unwrap(), 0);
+            assert_eq!(borrowed.raw().as_ptr(), survivor_pointer);
+            drop(borrowed);
+            let denied = crate::SettingAdmission::new(&used, before, &|| Ok(()));
+            assert_eq!(page.withdraw_compact_source_raw(&source, &denied).unwrap(), 0);
+            let mut wrong = source.clone();
+            wrong.replace_range(1..2, "X");
+            assert_eq!(page.withdraw_compact_source_raw(&wrong, &a).unwrap_err().kind(), io::ErrorKind::InvalidData);
+            assert_eq!(page.get(0).unwrap().1.raw().unwrap().as_ptr(), survivor_pointer);
+            assert_eq!(used.load(Ordering::Acquire), before);
+
+            assert_eq!(page.withdraw_compact_source_raw(&source, &a).unwrap(), raw_capacity);
+            assert_eq!(used.load(Ordering::Acquire), before - raw_capacity);
+            let (span, unbound) = page.get_data(0, 0, None, Some(&output)).unwrap();
+            assert_eq!(unbound.raw().unwrap_err().kind(), io::ErrorKind::NotConnected);
+            assert_eq!(unbound.detach_using(&a).unwrap_err().kind(), io::ErrorKind::NotConnected);
+            let (_, bound) = page.get_data(0, 0, Some(loan), Some(&output)).unwrap();
+            assert_eq!(bound.raw().unwrap().as_ptr(), source[span.range()].as_ptr());
+            let detached = bound.detach_using(&a).unwrap();
+            assert!(bound.same_owner(&detached));
+            assert_eq!(detached.raw(), &source[span.range()]);
+            assert_ne!(detached.raw().as_ptr(), source[span.range()].as_ptr());
+            assert_eq!(detached.raw_storage().capacity(), detached.raw().len());
+            let crate::OriginalTokenValue::String(cooked) = detached.value() else { panic!("cooked value"); };
+            assert_eq!((cooked, cooked.as_ptr()), ("different cooked", cooked_pointer));
+            assert_eq!(page.withdraw_compact_source_raw(&source, &a).unwrap(), 0);
+            drop(detached);
         }
         drop((page, filler, output));
         assert_eq!(used.load(Ordering::Acquire), fixed);

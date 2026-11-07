@@ -72,6 +72,7 @@ impl PackedBatchValue {
     const KIND_SHIFT: u32 = 54;
     const MODE_SHIFT: u32 = 57;
     const WITHDRAWN: u64 = 1 << 59;
+    const RAW_PROJECTED: u64 = 1 << 60;
     const RAW_MASK: u64 = (1 << 11) - 1;
 
     fn raw_geometry(len: usize, capacity: usize) -> Option<(u32, u32)> {
@@ -149,8 +150,11 @@ impl PackedBatchValue {
     fn raw_capacity(&self) -> usize { ((self.meta >> Self::CAPACITY_SHIFT) & Self::RAW_MASK) as usize }
     fn is_withdrawn(&self) -> bool { self.meta & Self::WITHDRAWN != 0 }
 
+    fn has_source_raw(&self) -> bool { self.meta & Self::RAW_PROJECTED != 0 }
+    fn raw_is_gone(&self) -> bool { self.is_withdrawn() || self.has_source_raw() }
+
     fn raw_view(&self) -> LiteralRawStorage<'_> {
-        assert!(!self.is_withdrawn(), "withdrawn packed spelling has no full view");
+        assert!(!self.raw_is_gone(), "withdrawn packed spelling has no full view");
         // SAFETY: exclusive String ownership is still live. The exact
         // initialized UTF-8 prefix and allocation geometry never change.
         let bytes = unsafe { std::slice::from_raw_parts(self.pointer.as_ptr(), self.raw_len()) };
@@ -158,12 +162,37 @@ impl PackedBatchValue {
         LiteralRawStorage { text, capacity: self.raw_capacity() }
     }
 
-    fn withdraw_raw(&mut self) {
-        if self.is_withdrawn() { return; }
-        self.meta |= Self::WITHDRAWN;
+    fn withdraw_raw(&mut self) { self.release_raw(Self::WITHDRAWN); }
+
+    fn release_raw(&mut self, mode: u64) {
+        if self.raw_is_gone() { return; }
+        self.meta |= mode;
         // SAFETY: the allocation is uniquely adopted. Mark withdrawn before
         // rebuilding the one matching Global String, so no second free occurs.
         drop(unsafe { String::from_raw_parts(self.pointer.as_ptr(), self.raw_len(), self.raw_capacity()) });
+    }
+
+    fn source_raw_candidate(&self) -> Option<usize> {
+        if self.raw_is_gone() || self.value_in_raw()[1] != 0 || self.raw_capacity() == 0 { return None; }
+        match self.kind() {
+            LiteralKind::String | LiteralKind::Resource if self.scalar_or_text() != 0 => Some(self.raw_capacity()),
+            LiteralKind::InterpBegin | LiteralKind::InterpPart | LiteralKind::InterpEnd => Some(self.raw_capacity()),
+            _ => None,
+        }
+    }
+
+    fn cooked_value<'a>(&self, cooked: &'a [Box<str>]) -> OriginalTokenValue<&'a str> {
+        assert!(self.has_source_raw() && self.value_in_raw()[1] == 0);
+        let slot = self.scalar_or_text() as usize;
+        let text = if slot == 0 { "" } else { cooked[slot - 1].as_ref() };
+        match self.kind() {
+            LiteralKind::String => OriginalTokenValue::String(text),
+            LiteralKind::Resource => OriginalTokenValue::Resource(text),
+            LiteralKind::InterpBegin => OriginalTokenValue::InterpBegin(text),
+            LiteralKind::InterpPart => OriginalTokenValue::InterpPart(text),
+            LiteralKind::InterpEnd => OriginalTokenValue::InterpEnd(text),
+            _ => unreachable!("source raw retains a cooked packed value"),
+        }
     }
 
     fn view<'a>(&'a self, cooked: &'a [Box<str>]) -> LiteralValueView<'a> {
@@ -188,7 +217,14 @@ impl Drop for PackedBatchValue {
 enum LiteralStorage {
     Single(LiteralValue),
     Page(BatchValues),
+    RawDetached(Box<DetachedRaw>),
     Projected(Box<crate::original_literal_projection::DetachedProjectedLiteral>),
+}
+
+struct DetachedRaw {
+    raw: Box<str>,
+    owner: OriginalLiteralOwner,
+    ordinal: usize,
 }
 
 struct Payload {
@@ -210,6 +246,7 @@ pub struct OriginalLiteralRef<'a> {
     owner: Option<&'a Arc<Payload>>,
     ordinal: usize,
     projected: Option<crate::original_literal_projection::ProjectedLiteralRef<'a>>,
+    source_raw: Option<LiteralRawStorage<'a>>,
 }
 
 /// One actual owner retained by a compact fact page. The credit follows the
@@ -221,22 +258,40 @@ impl OriginalLiteralOwner {
         if let LiteralStorage::Page(page) = &owner.storage {
             assert!(!page.rows[ordinal].is_withdrawn(), "packed bank code must point at live spelling");
         }
-        OriginalLiteralRef { owner: Some(owner), ordinal, projected: None }
+        OriginalLiteralRef { owner: Some(owner), ordinal, projected: None, source_raw: None }
     }
 
     /// Retire the unique singleton after its projected descriptor is funded.
     /// Its sole compact code changes immediately after this returns.
-    pub(crate) fn retire_projected_single_using(&mut self, a: &SettingAdmission<'_>) -> io::Result<usize> {
+    pub(crate) fn retire_projected_single_using(&mut self, ordinal: usize, a: &SettingAdmission<'_>) -> io::Result<usize> {
         let owner = self.0.as_ref().ok_or(io::ErrorKind::InvalidData)?;
         if !a.matches_lease_domain(&owner.credit) {
             return Err(io::ErrorKind::InvalidInput.into());
         }
-        let Some((_, released)) = self.at(0).projection_candidate() else {
+        let Some((_, released)) = self.at(ordinal).projection_candidate() else {
             return Err(io::ErrorKind::InvalidData.into());
         };
         a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
         drop_owner(&mut self.0);
         Ok(released)
+    }
+
+    pub(crate) fn withdraw_source_raw_using(&mut self, mask: u32, a: &SettingAdmission<'_>) -> io::Result<usize> {
+        let owner = self.0.as_mut().and_then(Arc::get_mut).ok_or(io::ErrorKind::InvalidData)?;
+        if !a.matches_lease_domain(&owner.credit) { return Err(io::ErrorKind::InvalidInput.into()); }
+        let LiteralStorage::Page(page) = &mut owner.storage else { return Err(io::ErrorKind::InvalidData.into()); };
+        let mut bytes = 0;
+        for at in 0..PAGE_ROWS {
+            if mask & (1 << at) == 0 { continue; }
+            let row = page.rows.get(at).ok_or(io::ErrorKind::InvalidData)?;
+            bytes += row.source_raw_candidate().ok_or(io::ErrorKind::InvalidData)?;
+        }
+        let credit = a.split(&mut owner.credit, bytes)?;
+        for (at, row) in page.rows.iter_mut().enumerate() {
+            if mask & (1 << at) != 0 { row.release_raw(PackedBatchValue::RAW_PROJECTED); }
+        }
+        drop(credit);
+        Ok(bytes)
     }
 
     /// Withdraw only after the caller has funded every replacement descriptor.
@@ -260,7 +315,7 @@ impl OriginalLiteralOwner {
                 continue;
             }
             let row = page.rows.get(ordinal).ok_or(io::ErrorKind::InvalidData)?;
-            if row.is_withdrawn() {
+            if row.raw_is_gone() {
                 return Err(io::ErrorKind::InvalidData.into());
             }
             raw_bytes += row.raw_capacity();
@@ -370,7 +425,11 @@ impl OriginalLiteralData {
     fn payload(&self) -> LiteralValueView<'_> { self.as_view().payload() }
 
     pub fn as_view(&self) -> OriginalLiteralRef<'_> {
-        OriginalLiteralRef { owner: Some(self.0.as_ref().expect("live literal DATA")), ordinal: self.1, projected: None }
+        let owner = self.0.as_ref().expect("live literal DATA");
+        if let LiteralStorage::RawDetached(detached) = &owner.storage {
+            return detached.owner.at(detached.ordinal).with_source_raw(Some(&detached.raw), detached.raw.len());
+        }
+        OriginalLiteralRef { owner: Some(owner), ordinal: self.1, projected: None, source_raw: None }
     }
     pub(crate) fn into_bank_owner(mut self) -> OriginalLiteralOwner {
         OriginalLiteralOwner(self.0.take())
@@ -459,7 +518,17 @@ impl OriginalLiteralData {
     pub fn kind(&self) -> &'static str { self.as_view().kind() }
     #[cfg(test)]
     fn page_storage_identity(&self) -> Option<usize> { self.as_view().page_storage_identity() }
-    pub fn visit_storage(&self, visit: impl FnMut(usize,usize,usize)) {
+    pub fn visit_storage(&self, mut visit: impl FnMut(usize,usize,usize)) {
+        let owner = self.0.as_ref().expect("live literal DATA");
+        if let LiteralStorage::RawDetached(detached) = &owner.storage {
+            let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
+            visit(Arc::as_ptr(owner) as usize, fixed, fixed);
+            let bytes = size_of::<DetachedRaw>();
+            visit(detached.as_ref() as *const _ as usize, bytes, bytes);
+            if !detached.raw.is_empty() {
+                visit(detached.raw.as_ptr() as usize, detached.raw.len(), detached.raw.len());
+            }
+        }
         self.as_view().visit_storage(visit)
     }
 }
@@ -473,13 +542,30 @@ impl<'a> OriginalLiteralRef<'a> {
     fn projection(self)->Option<crate::original_literal_projection::ProjectedLiteralRef<'a>>{
      self.projected.or_else(||match &self.owner?.storage{LiteralStorage::Projected(data)=>Some(data.view()),_=>None})
     }
-    pub fn is_projected(self)->bool{self.projection().is_some()}
+    pub fn is_projected(self)->bool{self.projection().is_some() || self.has_source_raw()}
+    pub(crate) fn has_source_raw(self) -> bool {
+        self.owner.is_some_and(|owner| match &owner.storage {
+            LiteralStorage::Page(page) => page.rows[self.ordinal].has_source_raw(),
+            _ => false,
+        })
+    }
+    pub(crate) fn with_source_raw(mut self, source: Option<&'a str>, capacity: usize) -> Self {
+        debug_assert!(self.has_source_raw());
+        self.source_raw = source.map(|text| LiteralRawStorage { text, capacity });
+        self
+    }
+    pub(crate) fn packed_source_raw_candidate(self) -> Option<usize> {
+        let owner = self.full_owner();
+        if Arc::strong_count(owner) != 1 || Arc::weak_count(owner) != 0 { return None; }
+        let LiteralStorage::Page(page) = &owner.storage else { return None; };
+        page.rows.get(self.ordinal)?.source_raw_candidate()
+    }
     pub(crate) fn from_projection(data:crate::original_literal_projection::ProjectedLiteralRef<'a>)->Self{
-     Self{owner:None,ordinal:data.ordinal,projected:Some(data)}
+     Self{owner:None,ordinal:data.ordinal,projected:Some(data),source_raw:None}
     }
     pub(crate) fn projection_candidate(self)->Option<(crate::original_literal_projection::ProjectedLiteral,usize)>{
      let owner=self.full_owner();
-     if self.ordinal!=0||Arc::strong_count(owner)!=1||Arc::weak_count(owner)!=0{return None}
+     if Arc::strong_count(owner)!=1||Arc::weak_count(owner)!=0{return None}
      let LiteralStorage::Single(data)=&owner.storage else{return None};
      let kind=match data.kind{
       LiteralKind::Int=>0,LiteralKind::Float=>1,
@@ -500,7 +586,7 @@ impl<'a> OriginalLiteralRef<'a> {
         }
         let LiteralStorage::Page(page) = &owner.storage else { return None };
         let row = page.rows.get(self.ordinal)?;
-        if row.is_withdrawn() {
+        if row.raw_is_gone() {
             return None;
         }
         let kind = match row.kind() {
@@ -530,7 +616,7 @@ impl<'a> OriginalLiteralRef<'a> {
                 value_in_raw: value.value_in_raw, raw: LiteralRawStorage::from_string(&value.raw), text: &value.text,
             },
             LiteralStorage::Page(values) => values.rows[self.ordinal].view(&values.cooked),
-            LiteralStorage::Projected(_)=>unreachable!("projection handled before payload view"),
+            LiteralStorage::Projected(_) | LiteralStorage::RawDetached(_)=>unreachable!("projection handled before payload view"),
         }
     }
     pub fn string_mode(self)->OriginalStringMode {
@@ -538,23 +624,31 @@ impl<'a> OriginalLiteralRef<'a> {
         match &self.full_owner().storage {
             LiteralStorage::Single(value) => value.string_mode,
             LiteralStorage::Page(values) => values.rows[self.ordinal].string_mode(),
-            LiteralStorage::Projected(_)=>unreachable!("projection handled before mode"),
+            LiteralStorage::Projected(_) | LiteralStorage::RawDetached(_)=>unreachable!("projection handled before mode"),
         }
     }
     pub fn raw(self)->io::Result<&'a str> { Ok(self.raw_storage()?.as_str()) }
     pub fn raw_storage(self)->io::Result<LiteralRawStorage<'a>> {
         if let Some(data)=self.projection(){return Ok(LiteralRawStorage{text:data.raw()?,capacity:data.raw_capacity})}
+        if self.has_source_raw() {
+            return self.source_raw.ok_or_else(|| io::Error::new(
+                io::ErrorKind::NotConnected, "Original projected spelling has no authenticated source loan"));
+        }
         Ok(self.full_raw_storage())
     }
     fn full_raw_storage(self)->LiteralRawStorage<'a> {
         match &self.full_owner().storage {
             LiteralStorage::Single(value) => LiteralRawStorage::from_string(&value.raw),
             LiteralStorage::Page(values) => values.rows[self.ordinal].raw_view(),
-            LiteralStorage::Projected(_)=>unreachable!("projection handled before spelling"),
+            LiteralStorage::Projected(_) | LiteralStorage::RawDetached(_)=>unreachable!("projection handled before spelling"),
         }
     }
     pub fn value(self)->io::Result<OriginalTokenValue<&'a str>> {
         if let Some(data)=self.projection(){return data.descriptor.value(data.raw()?)}
+        if self.has_source_raw() {
+            let LiteralStorage::Page(page) = &self.full_owner().storage else { unreachable!() };
+            return Ok(page.rows[self.ordinal].cooked_value(&page.cooked));
+        }
         Ok(self.full_value())
     }
     fn full_value(self)->OriginalTokenValue<&'a str> {
@@ -594,6 +688,19 @@ impl<'a> OriginalLiteralRef<'a> {
          }
          return Ok(OriginalLiteralData(Some(Arc::new(Payload{storage:LiteralStorage::Projected(projected),credit})),0));
         }
+        if self.has_source_raw() {
+            if !a.matches_lease_domain(&self.full_owner().credit) { return Err(io::ErrorKind::InvalidInput.into()); }
+            let raw = self.raw()?;
+            let fixed = size_of::<Payload>() + 2 * size_of::<usize>() + size_of::<DetachedRaw>();
+            let mut credit = a.reserve(fixed).map_err(|error| a.take_operational_error().unwrap_or(error))?;
+            let raw = copy_value_text(raw, a, &mut credit)?;
+            let detached = Box::new(DetachedRaw {
+                raw, owner: OriginalLiteralOwner(Some(Arc::clone(self.full_owner()))), ordinal: self.ordinal,
+            });
+            return Ok(OriginalLiteralData(Some(Arc::new(Payload {
+                storage: LiteralStorage::RawDetached(detached), credit,
+            })), 0));
+        }
         Ok(OriginalLiteralData(Some(Arc::clone(self.full_owner())), self.ordinal))
     }
     pub(crate) fn owner_key(self) -> usize { Arc::as_ptr(self.full_owner()) as usize }
@@ -603,7 +710,7 @@ impl<'a> OriginalLiteralRef<'a> {
         let kind = match &self.full_owner().storage {
             LiteralStorage::Single(value) => value.kind,
             LiteralStorage::Page(values) => values.rows[self.ordinal].kind(),
-            LiteralStorage::Projected(_)=>unreachable!("projection handled before kind"),
+            LiteralStorage::Projected(_) | LiteralStorage::RawDetached(_)=>unreachable!("projection handled before kind"),
         };
         match kind {
             LiteralKind::Int => "Int",
@@ -627,6 +734,7 @@ impl<'a> OriginalLiteralRef<'a> {
     /// counted separately only while its unique occurrence owns the payload.
     #[cfg(debug_assertions)]
     pub(crate) fn trace_source_projection(self) -> Option<(usize, Option<usize>)> {
+        if self.has_source_raw() { return None; }
         let row = self.payload();
         let eligible = match row.kind {
             LiteralKind::Int | LiteralKind::Float => true,
@@ -639,6 +747,7 @@ impl<'a> OriginalLiteralRef<'a> {
     }
     #[cfg(debug_assertions)]
     pub(crate) fn trace_numeric_raw(self) -> Option<usize> {
+        if self.has_source_raw() { return None; }
         let payload = self.payload();
         matches!(payload.kind, LiteralKind::Int | LiteralKind::Float)
             .then_some(payload.raw.capacity())
@@ -709,6 +818,7 @@ impl<'a> OriginalLiteralRef<'a> {
              raw_storage(LiteralRawStorage{text:&data.raw,capacity:data.raw.len()},&mut visit);
              data.owner.visit_storage(&mut visit);
             }
+            LiteralStorage::RawDetached(_) => unreachable!("detached raw view resolves original packed owner"),
             LiteralStorage::Single(value) => {
                 raw_storage(LiteralRawStorage::from_string(&value.raw), &mut visit);
                 cooked_storage(&value.text, &mut visit);
@@ -718,7 +828,7 @@ impl<'a> OriginalLiteralRef<'a> {
                 visit(rows.as_ptr() as usize, rows.len() * size_of::<PackedBatchValue>(),
                     rows.capacity() * size_of::<PackedBatchValue>());
                 for row in rows {
-                    if !row.is_withdrawn() {
+                    if !row.raw_is_gone() {
                         raw_storage(row.raw_view(), &mut visit);
                     }
                 }
