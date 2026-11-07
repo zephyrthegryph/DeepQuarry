@@ -133,6 +133,35 @@ fn actual_original_origins_share_empty_trace_across_includes_without_losing_macr
     assert_eq!(work.live.load(Ordering::Acquire),0);
 }
 
+#[test]
+fn actual_nested_macro_resumes_the_same_projected_outer_origin() {
+    let root = Path::new("E:/controller/trace-resume.dme");
+    let provider = Memory::new(&[("E:/controller/trace-resume.dme",
+        "#define INNER 200\n#define OUTER 100 + INNER + 300\n/datum/holder\n    var/value = OUTER\n")]);
+    let work = Work { live: Arc::new(AtomicUsize::new(0)) };
+    let syntax = Arc::new(AtomicUsize::new(0));
+    let a = SettingAdmission::new(&syntax, 8 << 20, &|| Ok(()));
+    let product = GenerationDirectivePlan::prepare_original_checker_stream_using(
+        root, &provider, &BTreeMap::new(), omissions(), 1 << 20, &work, &a, &mut Consumer,
+    ).unwrap();
+    let expanded = product.expanded();
+    let find_trace = |token| expanded.origins.iter()
+        .find(|row| expanded.text.as_str().get(row.output_span.range()) == Some(token))
+        .expect("actual emitted replacement token").macro_expansions;
+    let first = find_trace("100");
+    let nested = find_trace("200");
+    let resumed = find_trace("300");
+    assert_eq!(first.iter().map(|row| row.name).collect::<Vec<_>>(), ["OUTER"]);
+    assert_eq!(nested.iter().map(|row| row.name).collect::<Vec<_>>(), ["OUTER", "INNER"]);
+    assert!(first.same_owner(resumed));
+    assert!(!first.same_owner(nested));
+    assert!(resumed.get(0).unwrap().definition.unwrap().path.ends_with("trace-resume.dme"));
+    assert_eq!(*provider.opened.lock().unwrap(), [root.to_path_buf()]);
+    drop(product);
+    assert_eq!(syntax.load(Ordering::Acquire), 0);
+    assert_eq!(work.live.load(Ordering::Acquire), 0);
+}
+
 #[test]fn real_controller_duplicate_still_opens_before_suppression_and_nontext_only_probes_metadata(){
  let provider=Memory::new(&[("E:/controller/main.dme","#include \"child.dm\"\n#include \"child.dm\"\n#include \"map.dmm\"\n/datum/root\n"),("E:/controller/child.dm","/datum/child\n"),("E:/controller/map.dmm","this must not be read as source")]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let syntax=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/main.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).unwrap();let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();assert_eq!(provider.opened.lock().unwrap().iter().filter(|path|path.ends_with("child.dm")).count(),2);assert!(!provider.opened.lock().unwrap().iter().any(|path|path.ends_with("map.dmm")));let notice=plan.original_notices().iter().find(|notice|notice.error_type==Some("duplicate_include")).unwrap();assert_eq!(notice.notes.count(),1);assert!(plan.items().iter().any(|item|matches!(item,super::super::OrderedItem::NonText{kind:super::super::NonTextKind::Map,..})));drop((plan,expanded,primary,binding));assert_eq!(syntax.load(Ordering::Acquire),0);assert_eq!(work.live.load(Ordering::Acquire),0);
 }

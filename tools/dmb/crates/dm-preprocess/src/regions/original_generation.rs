@@ -66,6 +66,11 @@ impl Recipe<'_>{
     let (macro_names, macro_metadata_reserved_bytes, macro_map_reserved_bytes) = driver.trace_macro_reservations();
     let counter_after_source_loan = a.retained_bytes_for_trace();
     eprintln!("ORIGINAL_FATAL_STAGE=producer_run {_error:?}");
+    if let Some(origin) = driver.trace_last_outer_origin() {
+     let path = state.plan.occurrence(origin.occurrence).ok().map(|row| row.path.as_path());
+     eprintln!("ORIGINAL_SOURCE_FRONTIER last_outer_path={path:?} occurrence={} line={} physical={:?}",
+      origin.occurrence, origin.line, origin.physical);
+    }
     state.plan.log_failure_reservations();
     // No source/lexer calls, additional credit, or first-error mutation.
     // Shared product columns are reference-weighted upper bounds only.

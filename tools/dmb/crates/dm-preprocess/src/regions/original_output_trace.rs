@@ -5,7 +5,7 @@ use super::macro_trace_view::OriginalMacroAuthor;
 use dm_syntax::{SettingAdmission,SettingRootLease};use std::{io,sync::{Arc,Weak},mem};
 struct Node{parent:OriginalOutputTrace,name:Text,origin:Origin,definition:Option<Origin>,projected:Option<Arc<OriginalMacroAuthor>>,depth:usize,credit:SettingRootLease}
 #[derive(Clone,Default)]pub(super) struct OriginalOutputTrace(Option<Arc<Node>>);
-/// A one-entry projection cache can identify the same trace without keeping
+/// A projection cache can identify the same trace without keeping
 /// the node, its name or its ancestor chain alive. The weak allocation can
 /// outlive the node's own lease, so retain its exact fixed backing separately.
 pub(super) struct OriginalTraceProjectionKey {
@@ -16,6 +16,13 @@ impl OriginalTraceProjectionKey {
     pub(super) fn matches(&self, trace: &OriginalOutputTrace, a: &SettingAdmission<'_>) -> bool {
         a.matches_lease_domain(&self.credit)
             && trace.0.as_ref().is_some_and(|node| self.owner.as_ptr() == Arc::as_ptr(node))
+    }
+    /// Compare to the exact direct parent already retained by this node.
+    /// No lookup by span, macro spelling or structurally equal lineage.
+    pub(super) fn matches_direct_parent(
+        &self, trace: &OriginalOutputTrace, a: &SettingAdmission<'_>,
+    ) -> bool {
+        trace.0.as_deref().is_some_and(|node| self.matches(&node.parent, a))
     }
 }
 pub(super) struct OriginalOutputTraceView<'a>{pub(super) name:&'a str,pub(super) origin:Origin,pub(super) definition:Option<Origin>,pub(super) projected:Option<&'a Arc<OriginalMacroAuthor>>,pub(super) depth:usize}

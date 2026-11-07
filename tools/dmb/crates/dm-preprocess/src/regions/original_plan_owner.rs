@@ -72,6 +72,7 @@ struct TraceProjectionReservations {
  projections:usize,
  singleton_projections:usize,
  exact_hits:usize,
+ parent_hits:usize,
  rows:usize,
  row_bytes:usize,
  name_grants:usize,
@@ -83,6 +84,9 @@ pub(super) struct OriginalPlanOwner{
  empty_region:Option<EmptyOriginalRegion>,
  empty_trace:Option<OriginalMacroTrace>,
  last_trace:Option<LastTraceProjection>,
+ // One exact direct parent may resume after a nested macro emits a token.
+ // It keeps only an already funded weak key and an existing projected Arc.
+ parked_trace_parent:Option<LastTraceProjection>,
  // Inline slots are already included in the owner's admitted size. Their
  // Arcs alias the same separately funded projection payloads.
  trace_names:[Option<Arc<OriginalMacroAuthor>>;TRACE_NAME_SLOTS],
@@ -96,7 +100,7 @@ impl OriginalPlanOwner{
   let mut credit=a.reserve(add(mem::size_of::<Self>(),path_bound(project.parent().unwrap_or_else(||Path::new("")))?)?).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let mut plan=DirectivePlan::default();plan.initial_environment=initial;plan.input_revision=revision;plan.source_acquisitions=super::SourceAcquisitions::original(a)?;plan.project_dir=owned_path(project.parent().unwrap_or_else(||Path::new("")))?;
   for(name,replacement)in defines{poll(a)?;let bytes=add(node::<String,String>()?,scaled(add(name.len(),replacement.len())?,4)?)?;grow(&mut credit,bytes,a)?;plan.defines.insert(owned_text(name)?,owned_text(replacement)?);}
-  Ok(Self{plan,paths:OriginalPlanPaths::new(a)?,current_region:None,failed:false,empty_region:None,empty_trace:None,last_trace:None,trace_names:std::array::from_fn(|_|None),
+  Ok(Self{plan,paths:OriginalPlanPaths::new(a)?,current_region:None,failed:false,empty_region:None,empty_trace:None,last_trace:None,parked_trace_parent:None,trace_names:std::array::from_fn(|_|None),
    #[cfg(debug_assertions)]
    trace_projection:std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some().then(TraceProjectionReservations::default),
    credit})
@@ -241,7 +245,12 @@ impl OriginalPlanOwner{
    }
    return Ok(());
   }
-  if let Some(last) = self.last_trace.as_ref().filter(|last| last.key.matches(actual, a)) {
+  let hit = self.last_trace.as_ref().filter(|last| last.key.matches(actual, a))
+   .map(|last|(last,false)).or_else(||{
+    self.parked_trace_parent.as_ref().filter(|last| last.key.matches(actual, a))
+     .map(|last|(last,true))
+   });
+  if let Some((last,parent_hit)) = hit {
    let mut matches = true;
    actual.visit_inner_to_outer_using(a, |entry| {
     // Geometry still borrows real provider bytes, in exactly the old order.
@@ -259,12 +268,28 @@ impl OriginalPlanOwner{
    if !matches {
     return Err(io::Error::new(io::ErrorKind::InvalidData, "actual macro trace definition changed within its source acquisition"));
    }
+   if parent_hit {
+    // A provider or geometry refusal above cannot promote a parked trace.
+    self.last_trace = self.parked_trace_parent.take();
+   }
    #[cfg(debug_assertions)]
-   if let Some(trace)=&mut self.trace_projection {trace.exact_hits=trace.exact_hits.saturating_add(1);}
+   if let Some(trace)=&mut self.trace_projection {
+    trace.exact_hits=trace.exact_hits.saturating_add(1);
+    trace.parent_hits=trace.parent_hits.saturating_add(usize::from(parent_hit));
+   }
    return Ok(());
   }
-  // Retire the previous weak backing before funding any new key.
-  self.last_trace = None;
+  // Keep at most the real parent that the new node already holds alive.
+  // Drop every unrelated weak backing before funding a new key.
+  let previous = self.last_trace.take();
+  if previous.as_ref().is_some_and(|last|last.key.matches_direct_parent(actual,a)) {
+   self.parked_trace_parent=previous;
+  } else {
+   drop(previous);
+   if !self.parked_trace_parent.as_ref().is_some_and(|last|last.key.matches_direct_parent(actual,a)) {
+    self.parked_trace_parent=None;
+   }
+  }
   #[cfg(debug_assertions)]
   let before=self.credit.bytes();
   let depth = actual.depth();
@@ -557,6 +582,9 @@ mod trace_storage_tests {
         let trace = outer.pushed_using("INNER", invocation, 2, Some(inner_definition), &a).unwrap();
 
         sources.calls.borrow_mut().clear();
+        let first_parent = plan.trace_using(&outer, &mut driver, &sources, &a).unwrap();
+        assert_eq!(*sources.calls.borrow(), [0]);
+        sources.calls.borrow_mut().clear();
         let first = plan.trace_using(&trace, &mut driver, &sources, &a).unwrap();
         assert_eq!(*sources.calls.borrow(), [1, 0]);
         assert_eq!(first[0].author.origin().unwrap().path.as_path(), Path::new("outer.dme"));
@@ -569,6 +597,16 @@ mod trace_storage_tests {
         assert_eq!(*sources.calls.borrow(), [1, 0]);
         assert!(repeat.same_owner(&first));
         assert_eq!(used.load(Ordering::Acquire), before);
+
+        // The actual child can lend its live parent again. Both the
+        // same-node hit and the normal consecutive hit still borrow source.
+        let returned = trace.popped_using(1, &a).unwrap();
+        let before_parent_return = plan.credit.bytes();
+        sources.calls.borrow_mut().clear();
+        let resumed = plan.trace_using(&returned, &mut driver, &sources, &a).unwrap();
+        assert_eq!(*sources.calls.borrow(), [0]);
+        assert!(resumed.same_owner(&first_parent));
+        assert_eq!(plan.credit.bytes(), before_parent_return);
 
         let issued = first[1].author.origin().unwrap();
         let mut foreign_origin = issued.clone();
@@ -608,7 +646,7 @@ mod trace_storage_tests {
         assert_eq!(error.raw_os_error(), Some(1450));
         assert_eq!(*sources.calls.borrow(), [1, 0], "hit must neither skip nor replay real IO");
 
-        drop((wrong_spelling, wrong_name, different_issuer, foreign, trace, equal_but_distinct, outer, driver, plan, first, repeat, other));
+        drop((first_parent, resumed, returned, wrong_spelling, wrong_name, different_issuer, foreign, trace, equal_but_distinct, outer, driver, plan, first, repeat, other));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 }

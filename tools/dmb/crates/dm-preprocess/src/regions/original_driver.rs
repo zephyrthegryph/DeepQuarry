@@ -200,6 +200,10 @@ impl RawSourceDriver{
  pub(super) fn include_phantom_newline_using(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let origin=self.last_outer_using(a)?;self.queue.push(Token{value:crate::macro_expansion::OriginalMacroValue::Punct("\n"),origin,string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None},a)}
  pub(super) fn current_location_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<super::original_current_location::OriginalCurrentLocation>{self.check(a)?;let result={let cursor=self.pump.cursor_for_location()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};super::original_current_location::current_using(cursor,&mut source,a)};if result.is_err(){self.failed=true}result}
  pub(super) fn current_physical_path_using(&self,a:&SettingAdmission<'_>)->io::Result<Option<&std::path::Path>>{self.inputs.current_physical_path(a)}
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_last_outer_origin(&self) -> Option<Origin> {
+  self.pump.last_outer()
+ }
  pub(super) fn decoded_offset_using(&self,occurrence:usize,lease:&SourceAcquisitionLease,raw:usize,a:&SettingAdmission<'_>)->io::Result<usize>{self.inputs.decoded_point_using(occurrence,lease,raw,a)}
  #[cfg(debug_assertions)]
  pub(super) fn trace_macro_reservations(&self) -> (usize, usize, usize) {
