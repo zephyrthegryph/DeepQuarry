@@ -13,13 +13,16 @@ pub(super) struct OriginalRawPointIndex {
 // One width per opened source, chosen before its first allocation. Each start
 // is the byte after a consumed LF, so it never exceeds the original byte length.
 enum LineStarts {
+    Short(OriginalMacroRows<u16>),
     Compact(OriginalMacroRows<u32>),
     Wide(OriginalMacroRows<usize>),
 }
 
 impl LineStarts {
     fn new(source_len: usize, a: &SettingAdmission<'_>) -> io::Result<Self> {
-        if usize::BITS > u32::BITS && u32::try_from(source_len).is_ok() {
+        if usize::BITS > u16::BITS && u16::try_from(source_len).is_ok() {
+            Ok(Self::Short(OriginalMacroRows::new(a)?))
+        } else if usize::BITS > u32::BITS && u32::try_from(source_len).is_ok() {
             Ok(Self::Compact(OriginalMacroRows::new(a)?))
         } else {
             Ok(Self::Wide(OriginalMacroRows::new(a)?))
@@ -28,6 +31,10 @@ impl LineStarts {
 
     fn push(&mut self, start: usize, a: &SettingAdmission<'_>) -> io::Result<()> {
         match self {
+            Self::Short(starts) => starts.push(
+                u16::try_from(start).map_err(|_| io::ErrorKind::InvalidInput)?,
+                a,
+            ),
             Self::Compact(starts) => starts.push(
                 u32::try_from(start).map_err(|_| io::ErrorKind::InvalidInput)?,
                 a,
@@ -38,6 +45,7 @@ impl LineStarts {
 
     fn at_or_before(&self, offset: usize) -> Option<(usize, usize)> {
         match self {
+            Self::Short(starts) => actual_line_start(starts.as_slice(), offset, usize::from),
             Self::Compact(starts) => actual_line_start(starts.as_slice(), offset, |start| start as usize),
             Self::Wide(starts) => actual_line_start(starts.as_slice(), offset, |start| start),
         }
@@ -45,11 +53,44 @@ impl LineStarts {
 
     fn get(&self, index: usize) -> Option<usize> {
         match self {
+            Self::Short(starts) => starts.as_slice().get(index).map(|&start| usize::from(start)),
             Self::Compact(starts) => starts.as_slice().get(index).map(|&start| start as usize),
             Self::Wide(starts) => starts.as_slice().get(index).copied(),
         }
     }
 }
+#[cfg(debug_assertions)]
+#[derive(Debug, Default)]
+pub(super) struct PhysicalLineStartCensus {
+    short_occurrences: usize,
+    compact_occurrences: usize,
+    wide_occurrences: usize,
+    rows: usize,
+    short_bytes: usize,
+    compact_bytes: usize,
+    wide_bytes: usize,
+    saved_short_bytes: usize,
+}
+
+impl OriginalRawPointIndex {
+    #[cfg(debug_assertions)]
+    pub(super) fn record_line_starts(&self, census: &mut PhysicalLineStartCensus) {
+        let (len, capacity, width, occurrences, bytes) = match &self.starts {
+            LineStarts::Short(rows) => (rows.len(), rows.capacity(), 2, &mut census.short_occurrences, &mut census.short_bytes),
+            LineStarts::Compact(rows) => (rows.len(), rows.capacity(), 4, &mut census.compact_occurrences, &mut census.compact_bytes),
+            LineStarts::Wide(rows) => (rows.len(), rows.capacity(), std::mem::size_of::<usize>(), &mut census.wide_occurrences, &mut census.wide_bytes),
+        };
+        *occurrences += 1;
+        *bytes += capacity * width;
+        census.rows += len;
+        // The prior 32/64-bit representation had four bytes at the same
+        // logical capacity. Measure only this changed allocation.
+        if width == 2 {
+            census.saved_short_bytes += capacity * 2;
+        }
+    }
+}
+
 // The previous demand has already extended the real starts roster through
 // offset. Its last entry therefore answers every current/forward point.
 // Historical macro-definition offsets use the unchanged full search.
@@ -180,21 +221,64 @@ impl OriginalRawPointIndex{
 
  #[test]
  fn actual_source_line_starts_stay_exact_under_compact_allocation_cap() {
-     let bytes = b"x\n".repeat(2048);
+     let mut bytes = b"x\n".repeat(2048);
+     bytes.resize(65_536, b'x');
      let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
      // The largest exact overlap is 2,048 old + 4,096 new four-byte starts.
      // This cap cannot admit the former eight-byte growth on 64-bit.
      let a = SettingAdmission::new(&used, 32 << 10, &|| Ok(()));
      let mut index = OriginalRawPointIndex::new(&bytes, &a).unwrap();
      assert_eq!(index.notice(&bytes, OriginalLexicalNoticePoint::eof(bytes.len()), &a).unwrap(),
-         OriginalRawPoint { line: 2049, column: 0 });
+         OriginalRawPoint { line: 2049, column: 61_440 });
      assert_eq!(index.at(&bytes, 1023, &a).unwrap(), OriginalRawPoint { line: 512, column: 2 });
      assert_eq!(index.line_start(1), Some(0));
-     assert_eq!(index.line_start(2049), Some(bytes.len()));
+     assert_eq!(index.line_start(2049), Some(4096));
      assert_eq!(index.line_start(2050), None);
      assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (4096 * std::mem::size_of::<u32>()));
      drop(index);
      assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
+ #[test]
+ fn physical_line_starts_use_exact_short_boundary_and_funded_fallback() {
+     let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+     let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+     let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+     for (length, width) in [(65_535, 2), (65_536, 4)] {
+         let mut bytes = vec![b'x'; length];
+         bytes[..6].copy_from_slice(b"\xef\xbb\xbfX\r\n");
+         bytes[length - 1] = b'\n';
+         let mut points = OriginalRawPointIndex::new(&bytes, &a).unwrap();
+         assert_eq!(matches!(points.starts, LineStarts::Short(_)), width == 2);
+         assert_eq!(points.notice(&bytes, OriginalLexicalNoticePoint::eof(length), &a).unwrap(),
+             OriginalRawPoint { line: 3, column: 0 });
+         assert_eq!(points.at(&bytes, 4, &a).unwrap(), OriginalRawPoint { line: 1, column: 2 });
+         assert_eq!(points.line_end_using(&bytes, 1, &a).unwrap(), 6);
+         assert_eq!(points.line_start(3), Some(length));
+         assert_eq!(points.line_end_using(&bytes, 2, &a).unwrap(), length);
+         assert_eq!(used.load(Ordering::Acquire), fixed + 4 * width);
+         drop(points);
+         assert_eq!(used.load(Ordering::Acquire), fixed);
+     }
+ }
+
+ #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
+ #[test]
+ fn short_physical_start_growth_denial_preserves_preceding_rows() {
+     let bytes = b"x\nx\nx\nx\nx\n";
+     let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+     let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+     // One byte short of holding the previous 4 and candidate 8 u16 rows.
+     let a = SettingAdmission::new(&used, fixed + 8 + 16 - 1, &|| Ok(()));
+     let mut points = OriginalRawPointIndex::new(bytes, &a).unwrap();
+     assert_eq!(points.at(bytes, 6, &a).unwrap(), OriginalRawPoint { line: 4, column: 1 });
+     assert_eq!(points.at(bytes, 8, &a).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
+     assert_eq!(points.line_start(4), Some(6));
+     assert_eq!(points.line_start(5), None);
+     assert_eq!(used.load(Ordering::Acquire), fixed + 8);
+     drop(points);
+     assert_eq!(used.load(Ordering::Acquire), fixed);
  }
 
  #[cfg(target_pointer_width = "64")]

@@ -397,6 +397,40 @@ fn real_redefinition_and_undef_restore_only_the_exact_definition_owner() {
 }
 
 #[test]
+fn physical_short_line_starts_preserve_macro_definition_after_include_eof() {
+    let root = "E:/controller/short-lines.dme";
+    let child = "E:/controller/short-lines.dm";
+    let child_prefix = "// earlier line\n";
+    let define = "#define OLD_VALUE 29\n";
+    let child_text = format!("{child_prefix}{define}// later physical line\n");
+    let provider = Memory::new(&[
+        (root, "#include \"short-lines.dm\"\n/datum/probe\n    var/number = OLD_VALUE\n"),
+        (child, &child_text),
+    ]);
+    let work = Work { live: Arc::new(AtomicUsize::new(0)) };
+    let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a = SettingAdmission::new(&syntax, 64 << 20, &|| Ok(()));
+    let product = GenerationDirectivePlan::prepare_original_checker_stream_using(
+        Path::new(root), &provider, &BTreeMap::new(), omissions(), 1 << 20, &work, &a, &mut Consumer,
+    ).unwrap();
+    let invocation = product.expanded().origins.iter().find(|row| {
+        row.macro_expansions.get(0).is_some_and(|entry| entry.name == "OLD_VALUE")
+    }).expect("actual expansion after the child frame has returned");
+    assert_eq!(invocation.origin.source_line, 3);
+    let definition = invocation.macro_expansions.get(0).unwrap().definition.unwrap();
+    assert_eq!(definition.path.as_path(), Path::new(child));
+    assert_eq!(definition.source_line, 2);
+    let start = child_prefix.len() + "#define ".len();
+    assert_eq!(definition.source_span, dm_syntax::Span::new(start, start + "OLD_VALUE".len()));
+    assert!(product.expanded().text.as_str().contains("29"));
+    assert_eq!(provider.opened.lock().unwrap().as_slice(), [PathBuf::from(root), PathBuf::from(child)]);
+    drop(product);
+    assert_eq!(syntax.load(Ordering::Acquire), fixed);
+    assert_eq!(work.live.load(Ordering::Acquire), 0);
+}
+
+#[test]
 fn real_nested_macro_tokens_share_their_exact_projection_across_one_invocation() {
     let provider = Memory::new(&[(
         "E:/controller/trace-pair.dme",

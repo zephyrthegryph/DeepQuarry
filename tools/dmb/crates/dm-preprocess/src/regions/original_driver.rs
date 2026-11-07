@@ -203,6 +203,10 @@ impl RawSourceDriver{
   self.pump.last_outer()
  }
  #[cfg(debug_assertions)]
+ pub(super) fn trace_line_starts(&self) -> super::original_raw_points::PhysicalLineStartCensus {
+  self.inputs.trace_line_starts()
+ }
+ #[cfg(debug_assertions)]
  pub(super) fn trace_macro_reservations(&self) -> (usize, usize, usize) {
   self.environment.trace_reservations()
  }

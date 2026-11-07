@@ -58,6 +58,10 @@ impl Recipe<'_>{
    shared.borrow_mut().bind(&source.initial_delivery(),a)?;
    run(&mut source)
   };
+  #[cfg(debug_assertions)]
+  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+   eprintln!("ORIGINAL_PHYSICAL_LINE_STARTS failed={} {:?}", result.is_err(), driver.trace_line_starts());
+  }
   result.inspect_err(|_error| {
    #[cfg(debug_assertions)]
    if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {

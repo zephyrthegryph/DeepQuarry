@@ -39,6 +39,14 @@ pub(super) struct OriginalRawInputs{frames:Rows<OpenFrame>,geometries:PagedRows<
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 impl OriginalRawInputs{
  pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{frames:Rows::new(a)?,geometries:PagedRows::new(a)?,failed:false,stack_changed:false,last_input:None})}
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_line_starts(&self) -> super::original_raw_points::PhysicalLineStartCensus {
+  let mut census = super::original_raw_points::PhysicalLineStartCensus::default();
+  for geometry in self.geometries.iter() {
+   geometry.points.record_line_starts(&mut census);
+  }
+  census
+ }
  /// The caller has already funded/read/adopted this SAME acquisition through
  /// the host's actual source-family lender. No frame-pop refunds that backing.
  pub(super) fn push_opened(&mut self,provider:&dyn SourceProvider,acquisition:SourceAcquisitionLease,occurrence:usize,expansion_floor:usize,a:&SettingAdmission<'_>)->io::Result<()>{
