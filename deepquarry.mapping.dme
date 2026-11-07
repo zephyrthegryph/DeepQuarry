@@ -5020,6 +5020,7 @@
 #include "code\content\mob\language\station.dm"
 #include "code\content\mob\language\grey_language.dm"
 #include "code\content\mob\language\synthetic.dm"
+#include "code\content\mob\living\abilities_panel.dm"
 #include "code\content\mob\living\autohiss.dm"
 #include "code\content\mob\living\butchering.dm"
 #include "code\content\mob\living\butchery_rules.dm"

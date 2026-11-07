@@ -84,7 +84,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
 /mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color()
 	set name = "Set Glow Color"
 	set desc = "Customize your eyes and abdomen glow color."
-	set category = VERB_CAT_ABILITIES_SECT_DRONE
 
 	open_request(src, /datum/prompt/color, PROC_REF(abdomen_color_picked), answerer = src, title = "Glow Color", question = "Please select color.", default = custom_eye_color, timeout = 0)
 

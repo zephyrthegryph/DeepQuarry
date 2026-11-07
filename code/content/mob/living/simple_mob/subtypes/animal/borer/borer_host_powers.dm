@@ -3,7 +3,6 @@
  */
 /mob/living/carbon/proc/release_control()
 
-	set category = VERB_CAT_ABILITIES_BRAINSLUG
 	set name = "Release Control"
 	set desc = "Release control of your host's body."
 
@@ -20,7 +19,6 @@
  *  Brain slug proc for tormenting the host.
  */
 /mob/living/carbon/proc/punish_host()
-	set category = VERB_CAT_ABILITIES_BRAINSLUG
 	set name = "Torment host"
 	set desc = "Punish your host with agony."
 
@@ -45,7 +43,6 @@
  *  Brain slug proc for spitting up new borers. They are ghostjoin by default, but are infertile.
  */
 /mob/living/carbon/proc/spawn_larvae()
-	set category = VERB_CAT_ABILITIES_BRAINSLUG
 	set name = "Reproduce"
 	set desc = "Spawn several young."
 

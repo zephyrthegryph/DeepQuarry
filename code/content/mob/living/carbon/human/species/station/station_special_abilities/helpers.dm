@@ -25,7 +25,6 @@
 /mob/living/carbon/human/proc/bloodsuck()
 	set name = "Partially Drain prey of blood"
 	set desc = "Bites prey and drains them of a significant portion of blood, feeding you in the process. You may only do this once per minute."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
@@ -187,7 +186,6 @@
 /mob/living/carbon/human/proc/succubus_drain()
 	set name = "Drain prey of nutrition"
 	set desc = "Slowly drain prey of all the nutrition in their body, feeding you in the process. You may only do this to one person at a time."
-	set category = VERB_CAT_ABILITIES_SUCCUBUS
 	if(!ishuman(src))
 		return //If you're not a human you don't have permission to do this.
 	var/mob/living/carbon/human/C = src
@@ -250,7 +248,6 @@
 /mob/living/carbon/human/proc/succubus_drain_lethal()
 	set name = "Lethally drain prey" //Provide a warning that THIS WILL KILL YOUR PREY.
 	set desc = "Slowly drain prey of all the nutrition in their body, feeding you in the process. Once prey run out of nutrition, you will begin to drain them lethally. You may only do this to one person at a time."
-	set category = VERB_CAT_ABILITIES_SUCCUBUS
 	if(!ishuman(src))
 		return //If you're not a human you don't have permission to do this.
 
@@ -347,7 +344,6 @@
 /mob/living/carbon/human/proc/slime_feed()
 	set name = "Feed prey with self"
 	set desc = "Slowly feed prey with your body, draining you in the process. You may only do this to one person at a time."
-	set category = VERB_CAT_ABILITIES_VORE
 	if(!ishuman(src))
 		return //If you're not a human you don't have permission to do this.
 	var/mob/living/carbon/human/C = src
@@ -408,7 +404,6 @@
 /mob/living/carbon/human/proc/succubus_drain_finalize()
 	set name = "Drain/Feed Finalization"
 	set desc = "Toggle to allow for draining to be prolonged. Turn this on to make it so prey will be knocked out/die while being drained, or you will feed yourself to the prey's selected stomach if you're feeding them. Can be toggled at any time."
-	set category = VERB_CAT_ABILITIES_SUCCUBUS
 
 	var/mob/living/carbon/human/C = src
 	STATE_SET(C, vore_fx, drain_finalized, !STATE_GET(C, vore_fx, drain_finalized))
@@ -484,7 +479,6 @@
 /mob/living/proc/shred_limb()
 	set name = "Damage/Remove Prey's Organ"
 	set desc = "Severely damages prey's organ. If the limb is already severely damaged, it will be torn off."
-	set category = VERB_CAT_ABILITIES_VORE
 
 	//can_shred() will return a mob we can shred, if we can shred any.
 	var/mob/living/carbon/human/T = can_shred()
@@ -686,13 +680,11 @@ CAPABILITIES(/datum/shred_limb_review)
 /mob/living/proc/shred_limb_temp()
 	set name = "Damage/Remove Prey's Organ (beartrap)"
 	set desc = "Severely damages prey's organ. If the limb is already severely damaged, it will be torn off."
-	set category = VERB_CAT_ABILITIES_VORE
 	shred_limb()
 
 /mob/living/proc/flying_toggle()
 	set name = "Toggle Flight"
 	set desc = "While flying over open spaces, you will use up some nutrition. If you run out nutrition, you will fall."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	var/mob/living/carbon/human/C = src
 	if(!istype(C) || !C.wing_style) //The species var isn't taken into account here, as it's only purpose is to give this proc to a person.
@@ -712,7 +704,6 @@ CAPABILITIES(/datum/shred_limb_review)
 /mob/living/proc/flying_vore_toggle()
 	set name = "Toggle Flight Vore"
 	set desc = "Allows you to engage in voracious misadventures while flying."
-	set category = VERB_CAT_ABILITIES_VORE
 
 	STATE_SET(src, vore_fx, flight_vore, !STATE_GET(src, vore_fx, flight_vore))
 	if(STATE_GET(src, vore_fx, flight_vore))
@@ -724,7 +715,6 @@ CAPABILITIES(/datum/shred_limb_review)
 /mob/living/proc/start_wings_hovering()
 	set name = "Hover"
 	set desc = "Allows you to stop gliding and hover. This will take a fair amount of nutrition to perform."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	var/mob/living/carbon/human/C = src
 	if(!istype(C) || !C.wing_style) //The species var isn't taken into account here, as it's only purpose is to give this proc to a person.
@@ -755,13 +745,11 @@ CAPABILITIES(/datum/shred_limb_review)
 /mob/living/proc/toggle_pass_table()
 	set name = "Toggle Agility" //Dunno a better name for this. You have to be pretty agile to hop over stuff!!!
 	set desc = "Allows you to start/stop hopping over things such as hydroponics trays, tables, and railings."
-	set category = VERB_CAT_ABILITIES_GENERAL
 	pass_flags ^= PASSTABLE //I dunno what this fancy ^= is but Aronai gave it to me.
 	to_chat(src, "You [pass_flags&PASSTABLE ? "will" : "will NOT"] move over tables/railings/trays!")
 
 /mob/living/carbon/human/proc/toggle_eye_glow()
 	set name = "Toggle Eye Glowing"
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.set_has_glowing_eyes(!species.has_glowing_eyes)
@@ -772,7 +760,6 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 
 /mob/living/carbon/human/proc/enter_cocoon()
 	set name = "Spin Cocoon"
-	set category = VERB_CAT_ABILITIES_WEAVER
 
 	perform_op(src, src, "enter_cocoon", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
@@ -801,7 +788,6 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 /mob/living/carbon/human/proc/water_stealth()
 	set name = "Dive under water / Resurface"
 	set desc = "Dive under water, allowing for you to be stealthy and move faster."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -833,7 +819,6 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 /mob/living/carbon/human/proc/underwater_devour()
 	set name = "Devour From Water"
 	set desc = "Grab something in the water with you and devour them with your selected stomach."
-	set category = VERB_CAT_ABILITIES_VORE
 
 	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -901,7 +886,6 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 /mob/living/carbon/human/proc/toggle_pain_module()
 	set name = "Toggle pain simulation."
 	set desc = "Turn on your pain simulation for that organic experience! Or turn it off for repairs, or if it's too much."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(synth_cosmetic_pain)
 		to_chat(src, span_notice(" You turn off your pain simulators."))
@@ -916,7 +900,6 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 
 /mob/living/proc/long_vore() // Allows the user to tongue grab a creature in range. Made a /living proc so frogs can frog you.
 	set name = "Grab Prey With Appendage"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Grab a target with any of your appendages!"
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special) || is_incorporeal()) //No tongue flicking while status_units(STAT_STUNNED).
@@ -1131,7 +1114,6 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 
 /mob/living/proc/target_lunge() //The leaper leap, but usable as an ability
 	set name = "Lunge At Prey"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Dive atop your prey and gobble them up!"
 
 	var/leap_warmup = 1 SECOND //Easy to modify
@@ -1208,7 +1190,6 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 
 /mob/living/proc/injection() // Allows the user to inject reagents into others somehow, like stinging, or biting.
 	set name = "Injection"
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Inject another being with something!"
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special)) //Epic copypasta from tongue grabbing.
@@ -1379,7 +1360,6 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 /mob/living/proc/succubus_bite()
 	set name = "Inject Prey"
 	set desc = "Bite prey and inject them with various toxins."
-	set category = VERB_CAT_ABILITIES_SUCCUBUS
 
 	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -1501,7 +1481,6 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 /mob/living/proc/mobegglaying()
 	set name = "Egg laying"
 	set desc = "you can lay Eggs"
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -1538,7 +1517,6 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 /mob/living/proc/insect_sting()
 	set name = "Insect Sting"
 	set desc = "Sting a target and inject a small amount of toxin"
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -1624,7 +1602,6 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 /mob/living/proc/name_change_verb()
 	set name = "Change Name"
 	set desc = "Change your name. Notifies admins."
-	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
 	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return

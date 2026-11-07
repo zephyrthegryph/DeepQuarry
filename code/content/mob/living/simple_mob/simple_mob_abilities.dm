@@ -34,7 +34,6 @@
 /mob/living/simple_mob/proc/pounce_toggle()
 	set name = "Toggle Pouncing"
 	set desc = "Toggle pouncing. Doubleclick to pounce."
-	set category = VERB_CAT_ABILITIES_MOB
 
 	if(pouncing)
 		to_chat(src, span_notice("Pouncing toggled off."))
@@ -169,7 +168,6 @@
 /mob/living/simple_mob/proc/neurotoxin()
 	set name = "Toggle Neurotoxic Spit"
 	set desc = "Readies a neurotoxic spit, which paralyzes the target for a short time if they are not wearing protective gear."
-	set category = VERB_CAT_ABILITIES_MOB
 
 	if(spitting)
 		to_chat(src, span_notice("You stop preparing to spit."))
@@ -182,7 +180,6 @@
 /mob/living/simple_mob/proc/acidspit()
 	set name = "Toggle Acid Spit"
 	set desc = "Readies an acidic spit, which burns the target if they are not wearing protective gear."
-	set category = VERB_CAT_ABILITIES_MOB
 
 	if(spitting)
 		to_chat(src, span_notice("You stop preparing to spit."))

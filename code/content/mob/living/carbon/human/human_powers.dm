@@ -33,7 +33,6 @@
 		to_chat(src, span_notice("You're already using that style."))
 
 /mob/living/carbon/human/proc/tackle()
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set name = "Tackle"
 	set desc = "Tackle someone down."
 
@@ -100,7 +99,6 @@
 			O.show_message(span_warning(span_red(span_bold("[src] [failed ? "tried to tackle" : "has tackled"] down [T]!"))), 1)
 
 /mob/living/carbon/human/proc/commune()
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
@@ -165,7 +163,6 @@
 /mob/living/carbon/human/proc/diona_split_nymph()
 	set name = "Split"
 	set desc = "Split your humanoid form into its constituent nymphs."
-	set category = VERB_CAT_ABILITIES_DIONA
 	diona_split_into_nymphs(5)	// Separate proc to void argments being supplied when used as a verb
 
 /mob/living/carbon/human/proc/diona_split_into_nymphs(number_of_resulting_nymphs)
@@ -222,7 +219,6 @@
 /mob/living/carbon/human/proc/self_diagnostics()
 	set name = "Self-Diagnostics"
 	set desc = "Run an internal self-diagnostic to check for damage."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(stat == DEAD) return
 
@@ -266,7 +262,6 @@
 /mob/living/carbon/human/proc/sonar_ping()
 	set name = "Listen In"
 	set desc = "Allows you to listen in to movement and noises around you."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
@@ -314,7 +309,6 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 /mob/living/carbon/human/proc/regenerate()
 	set name = "Regenerate"
 	set desc = "Allows you to regrow limbs and heal organs after a period of rest."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	perform_op(src, src, "regenerate", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
@@ -775,7 +769,6 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 /mob/living/carbon/human/proc/play_dead()
 	set name = "Play Dead"
 	set desc = "Literally just die on the spot. It's okay, you can get better."
-	set category = VERB_CAT_ABILITIES_SPARKLEDOG
 
 	if(stat)
 		to_chat(src, span_warning("You're too messed up right now to act all messed up, it's, like, for real."))

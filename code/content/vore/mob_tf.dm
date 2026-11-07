@@ -221,7 +221,6 @@
 
 /mob/living/proc/shapeshift_form()
 	set name = "Shapeshift Form"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 	set desc = "Shape shift between set mob forms. (Requires a spawned mob to be varedited into the user's tf_form var as mob reference.)"
 	if(!istype(tf_form_of(src), /mob/living))
 		to_chat(src, span_notice("No shapeshift form set. (Requires a spawned mob to be varedited into the user's tf_form var as mob reference.)"))

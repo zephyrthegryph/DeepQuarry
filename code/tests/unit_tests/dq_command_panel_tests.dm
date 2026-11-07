@@ -59,3 +59,20 @@
 	TEST_ASSERT(drone_ids["reset_codes"], "a drone can reset its identity codes")
 	TEST_ASSERT(!drone_ids["state_laws"] && !drone_ids["take_image"], "but has no cyborg commands")
 	qdel(drone_panel)
+
+/// The abilities panel lists what a mob has been granted, and the abilities are no verb panel entries.
+/datum/unit_test/dq_command_panel_abilities_follow_the_grants
+
+/datum/unit_test/dq_command_panel_abilities_follow_the_grants/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/datum/command_panel/panel = new(H, "abilities", "Abilities", GLOB.ability_panel_commands)
+	var/list/before = dq_panel_ids(panel)
+	TEST_ASSERT(!before["mob.living.carbon.human.proc.shapeshifter_select_hair"], "an ability the mob was not granted is not listed")
+	grant(H, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_hair), H)
+	var/list/after = dq_panel_ids(panel)
+	TEST_ASSERT_EQUAL(after["mob.living.carbon.human.proc.shapeshifter_select_hair"], "Shapeshift", "a granted ability is listed under its group")
+	revoke(H, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_hair), H)
+	TEST_ASSERT(!dq_panel_ids(panel)["mob.living.carbon.human.proc.shapeshifter_select_hair"], "and goes when the grant does")
+	TEST_ASSERT(!verb_panel_listed(/mob/living/carbon/human/proc/shapeshifter_select_hair), "the ability has no tab of its own")
+	TEST_ASSERT(dq_vmo_row(H, H, "abilities_panel"), "every living mob has the Abilities entry in its own menu")
+	qdel(panel)

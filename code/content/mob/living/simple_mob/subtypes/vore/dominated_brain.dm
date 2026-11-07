@@ -211,7 +211,6 @@ CAPABILITIES(/mob/living/dominated_brain)
 
 //Welcome to the adapted borer code.
 /mob/proc/dominate_predator()
-	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Dominate Predator"
 	set desc = "Connect to and dominate the brain of your predator."
 
@@ -392,7 +391,6 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 		to_chat(pred, span_notice("The dominant sensation fades away..."))
 
 /mob/proc/release_predator()
-	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Restore Control"
 	set desc = "Release control of your predator's body."
 
@@ -410,7 +408,6 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 	revoke(src, granted_verb(/mob/proc/release_predator), src)
 
 /mob/living/proc/dominate_prey()
-	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Dominate Prey"
 	set desc = "Connect to and dominate the brain of your prey."
 
@@ -575,7 +572,6 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
 
 /mob/living/proc/lend_prey_control()
-	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Give Prey Control"
 	set desc = "Allow prey control of your body."
 

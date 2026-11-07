@@ -975,7 +975,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/glow_toggle()
 	set name = "Glow (Toggle)"
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Toggle your glowing on/off!"
 
 	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
@@ -990,7 +989,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/glow_color()
 	set name = "Glow (Set Color)"
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "Pick a color for your body's glow."
 
 	//Again, no real need for a check on this. I'm unsure how it could be somehow abused.
@@ -1022,7 +1020,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/eat_trash()
 	set name = "Eat Trash"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Consume held garbage."
 
 	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
@@ -1048,14 +1045,12 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/toggle_trash_catching() //Ported from chompstation
 	set name = "Toggle Trash Catching"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater throw vore abilities."
 	STATE_SET(src, living_misc, trash_catching, !STATE_GET(src, living_misc, trash_catching))
 	to_chat(src, span_vwarning("Trash catching [STATE_GET(src, living_misc, trash_catching) ? "enabled" : "disabled"]."))
 
 /mob/living/proc/eat_minerals() //Actual eating abstracted so the user isn't given a prompt due to an argument in this verb.
 	set name = "Eat Minerals"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Consume held raw ore, gems and refined minerals. Snack time!"
 
 	handle_eat_minerals()
@@ -1198,7 +1193,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/toggle_stuffing_mode()
 	set name = "Toggle feeding mode"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Switch whether you will try to feed other people food whole or normally, bite by bite."
 
 	STATE_SET(src, vore_fx, stuffing_feeder, !STATE_GET(src, vore_fx, stuffing_feeder))
@@ -1792,7 +1786,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/restrict_trasheater()
 	set name = "Restrict Trash Eater"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater restriction level."
 	set_adminbus_trash(!living_rules_of(src).adminbus_trash)
 	to_chat(src, span_vwarning("Trash Eater restriction level set to [living_rules_of(src).adminbus_trash ? "everything not blacklisted" : "only whitelisted items"]."))

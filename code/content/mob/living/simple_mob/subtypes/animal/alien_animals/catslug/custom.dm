@@ -196,7 +196,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate()
 	set name = "Kill Innocent"
-	set category = VERB_CAT_ABILITIES_CATSLUG
 	set desc = "Kill an innocent suslug!"
 	if(!is_impostor)
 		to_chat(src, span_notice("You are not an impostor! You can't kill like that!"))

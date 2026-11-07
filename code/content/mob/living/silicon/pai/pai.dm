@@ -246,7 +246,6 @@ CAPABILITIES(/mob/living/silicon/pai)
 
 /// Verb used to select a chassis from the list of available chassis
 /mob/living/silicon/pai/proc/choose_chassis()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Choose Chassis"
 
 	pai_ui_chassis.tgui_interact(src)
