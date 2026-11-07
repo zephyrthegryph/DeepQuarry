@@ -3337,3 +3337,42 @@ The receiver's exclusive literal payload rose to 15,335,037 bytes from
 11,683,241 bytes as the request progressed through large quoted test
 sources. This is a separate live owner class. The numeric census does
 not account for that increase.
+
+
+Exact plain UTF-8 geometry now reuses the actual validated source loan. A
+borrowed definition observation also reuses its checked physical occurrence
+for the decoded end. Both paths preserve checkpoint and first-I/O-error
+order. Long cooked literal values can share their exact raw UTF-8 range
+when bounded prefix and suffix offsets encode it. Escaped text still has
+its own value allocation. The committed item block stores both child
+endpoints as 16-bit ordinals within its existing 8,192-row bound. Nested
+macro projections use narrow coordinates when the entire actual lineage
+fits, with the same wide fallback and author/source order.
+
+The focused cohorts recorded 26 passing checks. The authored missing-type
+notes use the actual registered declaration filename across files. The
+Windows fixture checks the pinned FileList spelling for the same canonical
+DME input. Historical relative CLI entry spelling is a separate parity
+case. Missing written names continue into outer field/call diagnostics
+without visiting the failed call's arguments. Lifeforms and PlayerLink
+now have separate selected Ordinary rosters. The paged SysReactive route
+returns its sourced Hard findings and used annotations through the public
+client. Its check also verified recovery after changing the scope.
+
+The bounded checkout probe at `78125f53f6` reached 6,044,707 producer
+rows and 6,037,504 adopted rows on 1,474 shared token pages before its
+300-second request deadline. It ended in `code/content/mining/drilling/
+drill.dm`, with zero report bytes. The 215,889 committed item rows occupied
+6,908,448 bytes at 32 bytes each, saving 863,556 bytes at that frontier
+relative to the previous item layout. The last private-daemon sample was
+142.969 CPU seconds at 302.118 wall seconds. The daemon drained. This run
+ended before the previous syntax-cap cutoff, so it does not establish a
+new capacity frontier or a performance change.
+
+The remaining primary literal roster is used to prove exact revision reuse.
+Only bounded windows are needed for body and initializer parsing. A larger
+storage reduction needs to settle eligible body literals against the exact
+expanded-source owner during streaming. Live formal and rejected-head
+occurrences still need their original owner proofs. Such a projection must
+preserve exact spelling, typed values and order, admit the new descriptor
+before releasing its old owner, and refuse an equal-text foreign source.
