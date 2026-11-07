@@ -7,6 +7,7 @@ use std::{io, mem::size_of, ops::Range};
 
 pub(super) const ROOT_ITEM_BLOCK: usize = 256;
 const MAX_BLOCK_ROWS: usize = 8192;
+const _: () = assert!(MAX_BLOCK_ROWS <= u16::MAX as usize);
 const MAX_HEADER_BYTES: usize = 2 * 1024 * 1024;
 
 fn overflow() -> io::Error { io::ErrorKind::OutOfMemory.into() }
@@ -17,13 +18,13 @@ struct CompactItem {
     header: [u32; 2],
     cursor: u32,
     indent: u32,
-    children: [u32; 2],
+    children: [u16; 2],
     kind: ItemKind,
     qualifiers: u8,
     outer: Option<bool>,
     empty_header: bool,
 }
-const _: () = assert!(size_of::<CompactItem>() == 36);
+const _: () = assert!(size_of::<CompactItem>() == 32);
 
 impl CompactItem {
     fn geometry(item: &Item, source: &str) -> Option<Self> {
@@ -127,7 +128,7 @@ fn compact_block(items: Vec<Item>, source: &str, storage: &Storage<'_, '_>) -> i
         }
         Some(())
     }
-    fn append(items: &[Item], source: &str, packed: &mut Vec<CompactItem>) -> [u32; 2] {
+    fn append(items: &[Item], source: &str, packed: &mut Vec<CompactItem>) -> [u16; 2] {
         let start = packed.len();
         packed.extend(items.iter().map(|item| CompactItem::geometry(item, source).expect("checked original item geometry")));
         let end = packed.len();
@@ -135,7 +136,7 @@ fn compact_block(items: Vec<Item>, source: &str, storage: &Storage<'_, '_>) -> i
             let children = append(&item.children, source, packed);
             packed[start + i].children = children;
         }
-        [start as u32, end as u32] // Preflight bounds every ordinal.
+        [start, end].map(|ordinal| u16::try_from(ordinal).expect("preflight bounds block ordinals"))
     }
 
     let mut shape = ExactShape::default();
@@ -338,7 +339,7 @@ impl<'a> OriginalItem<'a> {
     pub fn children(self) -> OriginalItems<'a> {
         match self.0 {
             ItemView::Wide(i) => OriginalItems::from_items(&i.children),
-            ItemView::Compact { row, rows, source, .. } => OriginalItems(Siblings::Compact { rows, interval: row.children, source }),
+            ItemView::Compact { row, rows, source, .. } => OriginalItems(Siblings::Compact { rows, interval: row.children.map(u32::from), source }),
         }
     }
 }
@@ -431,6 +432,49 @@ mod tests {
             drop((forest, dense));
             assert_eq!(compact_used.load(Ordering::Acquire), 0);
             assert_eq!(dense_used.load(Ordering::Acquire), 0);
+        }
+    }
+
+    #[test]
+    fn committed_item_child_endpoints_include_the_exact_block_bound() {
+        let source = "/datum/p";
+        let span = Span::new(0, source.len());
+        for count in [MAX_BLOCK_ROWS, MAX_BLOCK_ROWS + 1] {
+            let used = Arc::new(AtomicUsize::new(0));
+            let admission = SettingAdmission::new(&used, 8<<20, &|| Ok(()));
+            let storage = Storage::new(&admission).unwrap();
+            let make = |children| Item {
+                kind: ItemKind::Type, header: storage.text(source).unwrap(), span, header_span: span,
+                declaration_cursor: None, checker_qualifiers: crate::UNKNOWN_HEADER_QUALIFIERS,
+                original_outer_terminator: Some(false), indent: u32::MAX as usize, children,
+            };
+            let mut children = Vec::new();
+            for _ in 1..count {
+                assert!(storage.push(&mut children, make(Vec::new())));
+            }
+            let mut items = Vec::new();
+            assert!(storage.push(&mut items, make(children)));
+            let block = compact_block(items, source, &storage).unwrap();
+            match &block {
+                Block::Compact { rows, roots } if count == MAX_BLOCK_ROWS => {
+                    assert_eq!(*roots, 1);
+                    assert_eq!(rows[0].children, [1, MAX_BLOCK_ROWS as u16]);
+                    assert_eq!(rows.last().unwrap().children, [MAX_BLOCK_ROWS as u16; 2]);
+                    let root = OriginalItems(Siblings::Compact { rows, interval: [0, 1], source }).get(0).unwrap();
+                    assert_eq!(root.indent(), u32::MAX as usize);
+                    let children = root.children();
+                    assert_eq!(children.len(), count - 1);
+                    assert_eq!(children.iter().next_back().unwrap().header().as_ptr(), source.as_ptr());
+                    assert!(children.get(count - 1).is_none());
+                }
+                Block::Wide(items) if count == MAX_BLOCK_ROWS + 1 => {
+                    assert_eq!(items[0].children.len(), count - 1);
+                    assert_eq!(items[0].indent, u32::MAX as usize);
+                }
+                _ => panic!("block bound must select its original exact representation"),
+            }
+            drop((block, storage));
+            assert_eq!(used.load(Ordering::Acquire), 0);
         }
     }
 
