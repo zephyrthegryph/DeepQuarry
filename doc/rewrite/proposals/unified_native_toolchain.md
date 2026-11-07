@@ -3503,3 +3503,14 @@ three source and scope states. Its call-site scan uses issued Original literal
 syntax, including static strings that have no runtime decoding entry. The
 verified selected roster now covers 21 of the recorded 106 policies. This
 cohort did not rerun the whole-checkout probe or change the default route.
+
+
+The bounded checkout probe at `1cdf9294dc` reached 11,298,089 producer rows
+and 11,296,768 adopted rows. The diagnostic receiver projected 364 unique
+literal payloads across ten pages. It released 2,053,680 bytes of payload
+reservations and replaced 29,856 bytes of row reservations with 43,168
+bytes, for a net release of 2,040,368 bytes. The run then refused a
+26,624-byte macro buffer allocation with 134,193,748 bytes charged against
+the unchanged 134,217,728-byte syntax limit. It produced no report, and the
+private daemon drained and exited. The larger frontier does not establish
+whole-checkout parity or a performance improvement at equal workload.
