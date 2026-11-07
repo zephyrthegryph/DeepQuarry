@@ -81,6 +81,8 @@ impl Recipe<'_>{
     use std::io::Write;
     let _=writeln!(io::stderr().lock(),"ORIGINAL_MACRO_PRODUCT_CENSUS stage=producer_after_source_loan live={live:?} removed={removed:?} history_rows={history_rows} history_row_capacity={history_row_capacity} history_name_capacity={history_name_capacity}");
     let (trace_runs,trace_rank_bytes,trace_run_bytes)=state.origins.trace_run_capacity();
+    let (omitted, owner_bytes, mapping_bytes) = state.origins.trace_run_compaction_capacity();
+    eprintln!("ORIGINAL_TRACE_RUN_COMPACTION omitted={omitted} owner_bytes={owner_bytes} mapping_bytes={mapping_bytes}");
     if let Some(census)=state.origins.trace_row_geometry_census(){
      eprintln!("ORIGINAL_ORIGIN_ROW_GEOMETRY stage=producer {census:?}");
     }

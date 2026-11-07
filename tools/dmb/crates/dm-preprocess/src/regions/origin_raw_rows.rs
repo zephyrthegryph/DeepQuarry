@@ -480,17 +480,172 @@ impl GroupGeometry {
     }
 }
 
+// Match the physical trace page width. A short prefix is still directly
+// indexed until a real, nonadjacent repeat of the exact empty owner occurs.
+const TRACE_RUN_PAGE_LEN: usize = 128;
+
+struct TraceRunRank {
+    stored_before: usize,
+    bits: [u64; 2],
+}
+
+impl TraceRunRank {
+    fn new(stored_before: usize) -> Self {
+        Self { stored_before, bits: [0; 2] }
+    }
+
+    fn stored(&self, local: usize) -> bool {
+        self.bits[local / 64] & (1 << (local % 64)) != 0
+    }
+
+    fn before(&self, local: usize) -> usize {
+        let word = local / 64;
+        let mask = (1u64 << (local % 64)) - 1;
+        let preceding_words = if word == 0 { 0 } else { self.bits[0].count_ones() as usize };
+        self.stored_before + preceding_words + (self.bits[word] & mask).count_ones() as usize
+    }
+
+    fn append(&mut self, local: usize, stored: bool) {
+        if stored { self.bits[local / 64] |= 1 << (local % 64); }
+    }
+
+    fn truncate(&mut self, keep: usize) {
+        let word = keep / 64;
+        self.bits[word] &= (1u64 << (keep % 64)) - 1;
+        self.bits[word + 1..].fill(0);
+    }
+}
+
+struct TraceRuns {
+    stored: EscapePages<OriginalMacroTrace>,
+    rank: FixedPages<TraceRunRank, TRACE_DIRECTORY_PAGE_LEN>,
+    len: usize,
+    mapped_from: Option<usize>,
+    last_slot: Option<usize>,
+    // Physical slot of the first actual empty owner. It stays in stored,
+    // so even the canonical row keeps the original Arc and allocation.
+    canonical: Option<usize>,
+}
+
+impl TraceRuns {
+    fn new() -> Self {
+        Self {
+            stored: EscapePages::new(), rank: FixedPages::new(),
+            len: 0, mapped_from: None, last_slot: None, canonical: None,
+        }
+    }
+
+    fn len(&self) -> usize { self.len }
+
+    fn physical_slot(&self, run: usize) -> Option<usize> {
+        if run >= self.len { return None; }
+        let Some(mapped) = self.mapped_from.and_then(|start| run.checked_sub(start)) else {
+            return Some(run);
+        };
+        let page = self.rank.get(mapped / TRACE_RUN_PAGE_LEN)?;
+        let local = mapped % TRACE_RUN_PAGE_LEN;
+        if page.stored(local) { Some(page.before(local)) } else { self.canonical }
+    }
+
+    fn get(&self, run: usize) -> Option<&OriginalMacroTrace> {
+        self.stored.get(self.physical_slot(run)?)
+    }
+
+    // The producer consults last on every token. Cache only the exact
+    // physical index, with no new Arc alias or repeated rank lookup.
+    fn last(&self) -> Option<&OriginalMacroTrace> { self.stored.get(self.last_slot?) }
+
+    fn push(
+        &mut self,
+        trace: OriginalMacroTrace,
+        a: &SettingAdmission<'_>,
+        funding: &mut PageFunding<'_>,
+    ) -> io::Result<()> {
+        let len = self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
+        let old_rank = self.rank.len();
+        let old_stored = self.stored.len();
+        let repeated = self.canonical.and_then(|slot| self.stored.get(slot))
+            .is_some_and(|empty| empty.same_owner(&trace));
+        let first_empty = self.canonical.is_none() && trace.len() == 0;
+        let mapped_from = self.mapped_from.or_else(|| repeated.then_some(self.len));
+        let mapped = mapped_from.map(|start| self.len - start);
+
+        if mapped.is_some_and(|at| at % TRACE_RUN_PAGE_LEN == 0) {
+            self.rank.push(TraceRunRank::new(old_stored), a, funding)?;
+        } else if repeated {
+            a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        }
+        if !repeated {
+            if let Err(first) = self.stored.push(trace, a, funding) {
+                let _ = self.rank.truncate(old_rank, funding);
+                return Err(first);
+            }
+        }
+        if let Some(at) = mapped {
+            self.rank.get_mut(at / TRACE_RUN_PAGE_LEN).expect("issued trace run rank")
+                .append(at % TRACE_RUN_PAGE_LEN, !repeated);
+        }
+        if first_empty { self.canonical = Some(old_stored); }
+        self.mapped_from = mapped_from;
+        self.last_slot = if repeated { self.canonical } else { Some(old_stored) };
+        self.len = len;
+        Ok(())
+    }
+
+    fn truncate(&mut self, len: usize, funding: &mut PageFunding<'_>) -> io::Result<()> {
+        assert!(len <= self.len);
+        if len == self.len { return Ok(()); }
+        let mapped = self.mapped_from.map_or(0, |start| len.saturating_sub(start));
+        let stored = if let Some(last) = mapped.checked_sub(1) {
+            let page = self.rank.get(last / TRACE_RUN_PAGE_LEN).expect("issued trace run rank");
+            let local = last % TRACE_RUN_PAGE_LEN;
+            page.before(local) + usize::from(page.stored(local))
+        } else {
+            len
+        };
+        let pages = mapped.div_ceil(TRACE_RUN_PAGE_LEN);
+        let last_slot = len.checked_sub(1).and_then(|run| self.physical_slot(run));
+        let stored_status = self.stored.truncate(stored, funding);
+        let rank_status = self.rank.truncate(pages, funding);
+        if mapped == 0 {
+            self.mapped_from = None;
+        } else if mapped % TRACE_RUN_PAGE_LEN != 0 {
+            self.rank.get_mut(pages - 1).expect("issued partial trace run rank")
+                .truncate(mapped % TRACE_RUN_PAGE_LEN);
+        }
+        if self.canonical.is_some_and(|slot| slot >= stored) { self.canonical = None; }
+        self.last_slot = last_slot;
+        self.len = len;
+        // Finish both geometry trims after physical releases. Preserve the
+        // first error, including a failed source-credit reconciliation.
+        stored_status.and(rank_status)
+    }
+
+    fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
+        self.stored.visit_storage(&mut *visit);
+        self.rank.visit_storage(visit);
+    }
+
+    #[cfg(debug_assertions)]
+    fn trace_capacity(&self) -> (usize, usize, usize) {
+        let (mut owners, mut mapping) = (0usize, 0usize);
+        self.stored.visit_storage(|_, _, bytes| owners = owners.saturating_add(bytes));
+        self.rank.visit_storage(|_, _, bytes| mapping = mapping.saturating_add(bytes));
+        (self.len - self.stored.len(), owners, mapping)
+    }
+}
+
 struct OriginGroups {
     packed: OriginPages<PackedGroup>,
     full: EscapePages<(usize, GroupGeometry)>,
     trace_pages: FixedPages<GroupTracePage, TRACE_DIRECTORY_PAGE_LEN>,
-    traces: EscapePages<OriginalMacroTrace>,
+    traces: TraceRuns,
 }
 impl OriginGroups {
     fn new() -> Self {
         Self {
             packed: OriginPages::new(), full: EscapePages::new(),
-            trace_pages: FixedPages::new(), traces: EscapePages::new(),
+            trace_pages: FixedPages::new(), traces: TraceRuns::new(),
         }
     }
 
@@ -605,15 +760,15 @@ impl OriginGroups {
         self.packed.visit_storage(&mut visit);
         self.full.visit_storage(&mut visit);
         self.trace_pages.visit_storage(&mut visit);
-        self.traces.visit_storage(visit);
+        self.traces.visit_storage(&mut visit);
     }
 
     #[cfg(debug_assertions)]
     fn trace_capacity(&self) -> (usize, usize, usize) {
-        let (mut rank_bytes, mut run_bytes) = (0usize, 0usize);
+        let mut rank_bytes = 0usize;
         self.trace_pages.visit_storage(|_, _, bytes| rank_bytes = rank_bytes.saturating_add(bytes));
-        self.traces.visit_storage(|_, _, bytes| run_bytes = run_bytes.saturating_add(bytes));
-        (self.traces.len(), rank_bytes, run_bytes)
+        let (_, owners, mapping) = self.traces.trace_capacity();
+        (self.traces.len(), rank_bytes, owners.saturating_add(mapping))
     }
 }
 
@@ -1499,6 +1654,10 @@ impl OriginalRawOrigins{
  #[cfg(debug_assertions)]
  pub(super) fn trace_run_capacity(&self) -> (usize, usize, usize) { self.groups.trace_capacity() }
  #[cfg(debug_assertions)]
+ pub(super) fn trace_run_compaction_capacity(&self) -> (usize, usize, usize) {
+    self.groups.traces.trace_capacity()
+ }
+ #[cfg(debug_assertions)]
  pub(super) fn trace_row_geometry_census(&self)->Option<&RawRowGeometryCensus>{self.row_geometry_census.as_ref()}
  pub(super) fn has_delivered_binding(&self)->bool{self.output.is_some()&&self.delivered_end.is_some()}
  #[cfg(debug_assertions)]
@@ -1896,6 +2055,66 @@ impl OriginalRawOrigins{
     assert_eq!(groups.source_geometry(62), Some(geometry(62, 501).source()));
     drop((groups, credit));
     assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(syntax.load(Ordering::Acquire), fixed);
+ }
+
+ #[test]
+ fn compact_trace_runs_preserve_logical_ordinals_exact_empty_owners_and_trim() {
+    let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a = SettingAdmission::new(&syntax, fixed, &|| Ok(()));
+    let live = Arc::new(AtomicUsize::new(0));
+    let work = CappedWork::new(Arc::clone(&live), usize::MAX);
+    let mut credit = work.reserve(0).unwrap();
+    let mut funding = PageFunding { work: &work, credit: &mut credit };
+    let canonical = OriginalMacroTrace::empty();
+    let distinct = OriginalMacroTrace::empty();
+    let mut runs = TraceRuns::new();
+    for ordinal in 0..=260 {
+        let expected = if ordinal % 2 == 0 { &canonical } else { &distinct };
+        runs.push(expected.clone(), &a, &mut funding).unwrap();
+        assert!(runs.get(ordinal).unwrap().same_owner(expected), "logical run {ordinal}");
+    }
+    assert_eq!(runs.len(), 261);
+    assert_eq!(runs.stored.len(), 131);
+    assert_eq!(runs.mapped_from, Some(2));
+    assert_eq!(runs.rank.len(), 3);
+    assert_eq!(canonical.strong_count(), 2, "one real canonical owner slot");
+    assert_eq!(distinct.strong_count(), 131, "different empty identity stays full");
+
+    // Remove a word boundary and a subsequent page. Reappend must reissue
+    // the physical bit even when the old slot held the canonical owner.
+    runs.truncate(66, &mut funding).unwrap();
+    assert_eq!(runs.rank.len(), 1);
+    runs.push(distinct.clone(), &a, &mut funding).unwrap();
+    assert!(runs.last().unwrap().same_owner(&distinct));
+    assert_eq!(runs.stored.len(), 35);
+
+    runs.truncate(2, &mut funding).unwrap();
+    assert!(runs.mapped_from.is_none());
+    assert_eq!(runs.rank.len(), 0);
+    assert_eq!(runs.stored.len(), 2);
+    assert!(runs.last().unwrap().same_owner(&distinct));
+    let before = live.load(Ordering::Acquire);
+    work.limit.store(before, Ordering::Release);
+    let failure = runs.push(canonical.clone(), &a, &mut funding).unwrap_err();
+    assert_eq!(failure.kind(), io::ErrorKind::OutOfMemory);
+    assert_eq!(live.load(Ordering::Acquire), before);
+    assert_eq!(runs.len(), 2);
+    assert!(runs.mapped_from.is_none());
+    assert!(runs.last().unwrap().same_owner(&distinct));
+
+    work.limit.store(usize::MAX, Ordering::Release);
+    runs.push(canonical.clone(), &a, &mut funding).unwrap();
+    assert!(runs.last().unwrap().same_owner(&canonical));
+    runs.truncate(0, &mut funding).unwrap();
+    assert!(runs.canonical.is_none());
+    assert_eq!(canonical.strong_count(), 1);
+    assert_eq!(distinct.strong_count(), 1);
+    runs.push(distinct.clone(), &a, &mut funding).unwrap();
+    assert!(runs.last().unwrap().same_owner(&distinct));
+    drop((runs, credit));
+    assert_eq!(live.load(Ordering::Acquire), 0);
     assert_eq!(syntax.load(Ordering::Acquire), fixed);
  }
 
