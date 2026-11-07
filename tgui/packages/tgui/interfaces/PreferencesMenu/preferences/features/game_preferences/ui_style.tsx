@@ -2,12 +2,8 @@ import { Box, Dropdown, Stack } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
 
 import {
-  type Feature,
   type FeatureChoiced,
   type FeatureChoicedServerData,
-  FeatureColorInput,
-  FeatureNumberInput,
-  type FeatureNumeric,
   type FeatureValueProps,
   sortChoices,
 } from '../base';
@@ -69,5 +65,3 @@ export const UI_style: FeatureChoiced = {
   category: 'UI',
   component: UIStyleInput,
 };
-
-

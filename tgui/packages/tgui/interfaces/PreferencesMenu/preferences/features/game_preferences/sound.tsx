@@ -21,7 +21,6 @@ export const SOUND_LOBBY: FeatureToggle = {
   component: CheckboxInput,
 };
 
-
 export const sound_instruments: Feature<number> = {
   name: 'Instruments volume',
   category: 'SOUND',
@@ -29,30 +28,12 @@ export const sound_instruments: Feature<number> = {
   component: FeatureSliderInput,
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 export const SOUND_MENTORHELP: FeatureToggle = {
   name: 'Mentorhelp Pings',
   category: 'SOUNDS',
   description: 'Enable hearing mentorhelp pings.',
   component: CheckboxInput,
 };
-
-
 
 export const media_volume: FeatureNumeric = {
   name: 'Jukebox Volume',

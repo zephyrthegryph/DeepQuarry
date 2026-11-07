@@ -7,12 +7,9 @@ export const WHISUBTLE_VIS: FeatureToggle = {
   component: CheckboxInput,
 };
 
-
 export const CHAT_GHOSTEARS: FeatureToggle = {
   name: 'Ghost Ears',
   category: 'GHOST',
   description: 'When enabled, hear all speech; otherwise, only hear nearby.',
   component: CheckboxInput,
 };
-
-

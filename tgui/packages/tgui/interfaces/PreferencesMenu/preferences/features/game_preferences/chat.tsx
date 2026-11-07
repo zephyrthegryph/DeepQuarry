@@ -5,14 +5,12 @@ import {
 } from '../base';
 import { FeatureDropdownInput } from '../dropdowns';
 
-
 export const SHOW_TYPING: FeatureToggle = {
   name: 'Typing Indicator',
   category: 'CHAT',
   description: 'Show a typing indicator when you are typing ingame.',
   component: CheckboxInput,
 };
-
 
 export const CHAT_OOC: FeatureToggle = {
   name: 'OOC Chat',
@@ -43,9 +41,6 @@ export const CHAT_MENTION: FeatureToggle = {
   component: CheckboxInput,
 };
 
-
-
-
 export const EXAMINE_MODE: FeatureChoiced = {
   name: 'Examine Mode',
   category: 'CHAT',
@@ -53,4 +48,3 @@ export const EXAMINE_MODE: FeatureChoiced = {
     'Choose how you want to examine items. "Verbose" will include all information found in the examine panel as foldable groups, "Switch To Panel" will switch you to the examine panel upon examining, and "Slim" will do neither. ',
   component: FeatureDropdownInput,
 };
-

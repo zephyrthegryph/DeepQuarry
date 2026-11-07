@@ -1,12 +1,4 @@
-import {
-  CheckboxInput,
-  type FeatureChoiced,
-  type FeatureToggle,
-} from '../base';
-import { FeatureDropdownInput } from '../dropdowns';
-
-
-
+import { CheckboxInput, type FeatureToggle } from '../base';
 
 export const MicroPickup: FeatureToggle = {
   name: 'Micro Pick-up',
@@ -15,5 +7,3 @@ export const MicroPickup: FeatureToggle = {
     'Whether your help action (combat mode off) tries to pick up a micro, or to pet, hug or help them. It does not turn off the pick-up mechanics: see the Vore Panel preferences for that.',
   component: CheckboxInput,
 };
-
-

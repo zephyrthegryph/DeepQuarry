@@ -7,15 +7,6 @@ export const AMBIENT_OCCLUSION_PREF: FeatureToggle = {
   component: CheckboxInput,
 };
 
-
-
-
-
-
-
-
-
-
 export const BrowserDevTools: FeatureToggle = {
   name: 'Browser Dev Tools',
   category: 'UI',
@@ -23,9 +14,6 @@ export const BrowserDevTools: FeatureToggle = {
     'When enabled, you can right click -> inspect to open Microsoft Edge dev tools. BYOND 516+ Only.',
   component: CheckboxInput,
 };
-
-
-
 
 export const AUTOTRANSCORE: FeatureToggle = {
   name: 'Automatically Notify Transcore on Death',

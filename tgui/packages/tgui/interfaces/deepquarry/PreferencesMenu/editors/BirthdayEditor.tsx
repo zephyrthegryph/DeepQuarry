@@ -2,7 +2,7 @@
 // on the picked month). Sends `set_month` / `set_day` to /datum/preference_editor/birthday.
 
 import { useBackend } from 'tgui/backend';
-import { Button, Dropdown, Stack } from 'tgui-core/components';
+import { Dropdown, Stack } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
 type Data = {

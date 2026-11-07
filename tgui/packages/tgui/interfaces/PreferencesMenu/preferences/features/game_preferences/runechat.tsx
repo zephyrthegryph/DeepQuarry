@@ -6,7 +6,3 @@ export const RUNECHAT_MOB: FeatureToggle = {
   description: 'Chat messages will show above heads.',
   component: CheckboxInput,
 };
-
-
-
-

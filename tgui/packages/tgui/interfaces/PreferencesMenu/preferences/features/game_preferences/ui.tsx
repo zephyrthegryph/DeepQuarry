@@ -1,11 +1,4 @@
-import {
-  CheckboxInput,
-  type FeatureNumeric,
-  FeatureSliderInput,
-  type FeatureToggle,
-} from '../base';
-
-
+import { CheckboxInput, type FeatureToggle } from '../base';
 
 export const screentips_optin: FeatureToggle = {
   name: 'Screentips',
@@ -15,13 +8,6 @@ export const screentips_optin: FeatureToggle = {
   component: CheckboxInput,
 };
 
-
-
-
-
-
-
-
 export const ui_scale: FeatureToggle = {
   name: 'Toggle UI scaling',
   category: 'UI',
@@ -29,16 +15,12 @@ export const ui_scale: FeatureToggle = {
   component: CheckboxInput,
 };
 
-
 export const TGUI_ENABLE_SPELLCHECK: FeatureToggle = {
   name: 'TGUI: Spellcheck',
   category: 'UI',
   description: 'Enables spellchecking on TGUI text areas and TGUI Say.',
   component: CheckboxInput,
 };
-
-
-
 
 export const windowflashing: FeatureToggle = {
   name: 'Enable window flashing',
