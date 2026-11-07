@@ -78,7 +78,9 @@ export const cursorInMap = (
   }
   const xs = axis(xRaw, true);
   const ys = axis(yRaw, false);
-  if (!xs || !ys || xs[0] < 1 || ys[0] < 1) return null;
+  if (!xs || !ys) return null;
+  // A tile outside the view is not a position inside the map: no cursor, not a clamp to a wall.
+  if (xs[0] < 1 || ys[0] < 1 || xs[0] > g.viewW || ys[0] > g.viewH) return null;
   const tile = g.tileSize || 32;
   const { scale, left, top } = mapScale(g);
   // Pixel offsets inside a tile run 1..tile from the left and from the bottom.

@@ -49,7 +49,8 @@
 	menu.set_visible(TRUE)
 	menu.set_cursor_params(istext(params) ? params : "")
 	menu.set_revision(menu.revision + 1)
-	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]).")
+	var/list/view_size = getviewsize(player.view || world.view)
+	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]) params=\"[menu.cursor_params]\" view=[view_size[1]]x[view_size[2]] icon_size=[world.icon_size] self=[target == user ? "yes" : "no"].")
 	menu.tgui_interact(user)
 	return TRUE
 
@@ -83,6 +84,7 @@ CAPABILITIES(/datum/interaction_menu)
 	op("action", ui_act("action", arg("id", schema_text(4096))), then(PROC_REF(ui_act_action)))
 	op("verb", ui_act("verb", arg("name", schema_text(4096))), then(PROC_REF(ui_act_verb)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	op("placed", ui_act("placed", arg("report", schema_text(4096))), then(PROC_REF(ui_act_placed)))
 	ref_one(nameof(owner))
 
 /// /datum/interaction_menu's window data.
@@ -250,6 +252,11 @@ CAPABILITIES(/datum/interaction_menu)
 
 /datum/interaction_menu/proc/ui_act_close(datum/act/op/A)
 	hide()
+	return TRUE
+
+/// The page reports where it put the popup (the map size, the parsed cursor and the final position), so a misplaced menu can be read off the log.
+/datum/interaction_menu/proc/ui_act_placed(datum/act/op/A, report)
+	log_input("Input: [owner() ? key_name(owner()) : "nobody"] interaction menu placed: [report]")
 	return TRUE
 
 /// Runs the op `key` of `target` chosen in the Menu (ORIGIN_MENU), with what the user holds. TRUE when it ran or started.

@@ -144,16 +144,28 @@ export const InteractionMenu = () => {
             ),
             mapH,
           );
-          const cursor = cursorInMap(data.cursor_params, {
+          const parsed = cursorInMap(data.cursor_params, {
             mapW,
             mapH,
             iconSize,
             viewW: data.view_w,
             viewH: data.view_h,
             tileSize: data.tile_size,
-          }) ?? [Math.round((mapW - w) / 2), Math.round((mapH - h) / 2)];
+          });
+          const cursor = parsed ?? [
+            Math.round((mapW - w) / 2),
+            Math.round((mapH - h) / 2),
+          ];
           // Open down and right of the cursor, flipped and clamped at the map's edges, as the native popup does.
           const [px, py] = placeMenu(cursor, w, h, mapW, mapH);
+          // Reported to the server log so a misplaced menu can be read off it.
+          act('placed', {
+            report:
+              `params="${data.cursor_params}" map=${mapW}x${mapH} ` +
+              `icon_size=${iconSize} view=${data.view_w}x${data.view_h} ` +
+              `tile=${data.tile_size} box=${w}x${h} dpr=${pixelRatio} ` +
+              `cursor=${parsed ? parsed.join(',') : 'none'} pos=${px},${py}`,
+          });
           Byond.winset(winId, {
             pos: `${px},${py}`,
             size: `${w}x${h}`,
