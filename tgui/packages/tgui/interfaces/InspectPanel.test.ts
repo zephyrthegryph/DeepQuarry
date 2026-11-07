@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   chipText,
   chipTone,
+  clampPanelSize,
   inspectSubtitle,
   panelWidth,
   placeTopRight,
@@ -42,5 +43,16 @@ describe('placement', () => {
   test('width is capped by the map', () => {
     expect(panelWidth(400, 1.5, 1100)).toBe(600);
     expect(panelWidth(400, 1.5, 300)).toBe(300);
+  });
+});
+
+describe('clampPanelSize', () => {
+  test('keeps a dragged size inside the minimum and the map', () => {
+    expect(clampPanelSize(50, 50, 1000, 800, 10)).toEqual([300, 200]);
+    expect(clampPanelSize(5000, 5000, 1000, 800, 10)).toEqual([980, 780]);
+    expect(clampPanelSize(450, 350, 1000, 800, 10)).toEqual([450, 350]);
+  });
+  test('a map smaller than the minimum still gives the minimum', () => {
+    expect(clampPanelSize(400, 400, 200, 100, 10)).toEqual([300, 200]);
   });
 });

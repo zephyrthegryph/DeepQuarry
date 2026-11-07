@@ -37,3 +37,32 @@ export const placeTopRight = (
   mapW: number,
   margin: number,
 ): [number, number] => [Math.max(0, mapW - w - margin), Math.max(0, margin)];
+
+/** The smallest the player can drag the panel to, in css pixels. */
+export const MIN_PANEL_W = 300;
+export const MIN_PANEL_H = 200;
+
+/**
+ * A size the player dragged the panel to, kept between the minimum and what fits in the map element (all css
+ * pixels; `margin` is the gap kept to the map's edges).
+ */
+export const clampPanelSize = (
+  w: number,
+  h: number,
+  mapCssW: number,
+  mapCssH: number,
+  margin: number,
+): [number, number] => [
+  Math.round(
+    Math.max(
+      MIN_PANEL_W,
+      Math.min(w, Math.max(MIN_PANEL_W, mapCssW - margin * 2)),
+    ),
+  ),
+  Math.round(
+    Math.max(
+      MIN_PANEL_H,
+      Math.min(h, Math.max(MIN_PANEL_H, mapCssH - margin * 2)),
+    ),
+  ),
+];

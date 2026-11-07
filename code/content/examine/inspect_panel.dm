@@ -223,16 +223,14 @@ CAPABILITIES(/datum/inspect_panel)
 		break
 	return data
 
-/// The portrait of `shown` facing `facing` as a base64 PNG. A mob uses its cached examine composite or its plain
-/// base icon: flattening a human's overlays synchronously froze the thread for about a second.
+/// The portrait of `shown` facing `facing` as a base64 PNG, worn clothing and overlays included: the full appearance
+/// is flattened, on the examine or the click that turned it. (examine_icon() is not used: its force_south flatten
+/// drops a human's worn overlays.)
 /proc/inspect_portrait(atom/shown, facing)
 	if(!shown)
 		return null
 	var/icon/picture
-	if(ismob(shown))
-		var/icon/cached = get_cached_examine_icon(shown)
-		picture = cached ? icon(cached, dir = facing) : icon(shown.icon, shown.icon_state, facing)
-	else if(length(shown.overlays))
+	if(ismob(shown) || length(shown.overlays) || length(shown.underlays))
 		picture = getFlatIcon(shown, defdir = facing, no_anim = TRUE)
 	else
 		picture = icon(shown.icon, shown.icon_state, facing)

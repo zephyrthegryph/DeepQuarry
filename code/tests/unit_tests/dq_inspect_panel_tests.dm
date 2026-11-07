@@ -93,3 +93,19 @@
 	TEST_ASSERT(!pref.create_default_value(), "examining opens the panel unless the player asks for chat")
 	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human, tile(1, 1))
 	TEST_ASSERT(!viewer.examine_to_panel(), "a mob with no client keeps its examine text in chat")
+
+/// The portrait shows what the target wears: dressing a human changes the picture, in the cached south view and a turned one.
+/datum/unit_test/dq_inspect_panel/portrait_shows_worn_clothing
+
+/datum/unit_test/dq_inspect_panel/portrait_shows_worn_clothing/run_gate()
+	var/mob/living/carbon/human/bare = allocate(/mob/living/carbon/human, tile(2, 1))
+	var/mob/living/carbon/human/dressed = allocate(/mob/living/carbon/human, tile(3, 1))
+	var/obj/item/clothing/under/uniform = allocate(/obj/item/clothing/under/color/red)
+	TEST_ASSERT(dressed.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, quiet = TRUE), "the subject can wear a uniform")
+	// A draw waits for the next frame; the portrait reads the drawn look, as it does for a player who has been on screen.
+	draw_now(bare)
+	draw_now(dressed)
+	var/bare_south = inspect_portrait(bare, SOUTH)
+	TEST_ASSERT(istext(bare_south) && length(bare_south), "a bare human has a portrait")
+	TEST_ASSERT(inspect_portrait(dressed, SOUTH) != bare_south, "the south portrait shows the uniform")
+	TEST_ASSERT(inspect_portrait(dressed, EAST) != inspect_portrait(bare, EAST), "a turned portrait shows the uniform")

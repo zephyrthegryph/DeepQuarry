@@ -5,7 +5,7 @@
 // ONE winset, so it appears already placed. It renders a bare <div> rather than a tgui <Window> and takes the
 // console theme the way Layout does. The close button or Escape hides it; examining something shows it again.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { CONSOLE_THEME } from 'tgui/layouts/consoleTheme';
 import type { BooleanLike } from 'tgui-core/react';
@@ -14,6 +14,7 @@ import {
   type Chip,
   chipText,
   chipTone,
+  clampPanelSize,
   inspectSubtitle,
   panelWidth,
   placeTopRight,
@@ -67,9 +68,15 @@ const PANEL_CSS_WIDTH = 400;
 const MARGIN = 10;
 const MAX_HEIGHT = 560;
 
+type Size = { w: number; h: number };
+
 export const InspectPanel = () => {
   const { act, data } = useBackend<Data>();
   const boxRef = useRef<HTMLDivElement>(null);
+  // The size the player dragged the panel to (css pixels), kept across examines; null until they drag.
+  const [userSize, setUserSize] = useState<Size | null>(null);
+  const userSizeRef = useRef<Size | null>(null);
+  const mapRef = useRef<[number, number]>([0, 0]);
   const {
     target,
     kind,
@@ -103,7 +110,20 @@ export const InspectPanel = () => {
         if (!mapW || !mapH) {
           return;
         }
+        mapRef.current = [mapW, mapH];
         const pixelRatio = window.devicePixelRatio || 1;
+        const sized = userSizeRef.current;
+        if (sized) {
+          // The player chose a size: keep it rather than fitting the content.
+          const pw = Math.ceil(sized.w * pixelRatio);
+          const [px, py] = placeTopRight(pw, mapW, MARGIN * pixelRatio);
+          Byond.winset(winId, {
+            pos: `${px},${py}`,
+            size: `${pw}x${Math.ceil(sized.h * pixelRatio)}`,
+            'is-visible': true,
+          });
+          return;
+        }
         // Measure after this revision has rendered.
         requestAnimationFrame(() => {
           if (cancelled) return;
@@ -143,6 +163,51 @@ export const InspectPanel = () => {
     show_flavor,
   ]);
 
+  // Drag the bottom left corner to resize: the panel is anchored to the map's top right, so it grows leftwards
+  // and downwards. The element is resized as the pointer moves.
+  const startResize = (event: React.PointerEvent<HTMLDivElement>) => {
+    const box = boxRef.current;
+    const [mapW, mapH] = mapRef.current;
+    if (!box || !mapW || !mapH) {
+      return;
+    }
+    event.preventDefault();
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    const pixelRatio = window.devicePixelRatio || 1;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startW = box.offsetWidth;
+    const startH = box.offsetHeight;
+    const winId = data.control || Byond.windowId;
+    const onMove = (move: PointerEvent) => {
+      const [w, h] = clampPanelSize(
+        startW + (startX - move.clientX),
+        startH + (move.clientY - startY),
+        mapW / pixelRatio,
+        mapH / pixelRatio,
+        MARGIN,
+      );
+      const next = { w, h };
+      userSizeRef.current = next;
+      setUserSize(next);
+      const pw = Math.ceil(w * pixelRatio);
+      const [px, py] = placeTopRight(pw, mapW, MARGIN * pixelRatio);
+      Byond.winset(winId, {
+        pos: `${px},${py}`,
+        size: `${pw}x${Math.ceil(h * pixelRatio)}`,
+      });
+    };
+    const onUp = () => {
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
+    };
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onUp);
+  };
+
   // The panel is a bare page (no <Window>), so it takes the console theme the way Layout does.
   useEffect(() => {
     document.documentElement.className = `theme-${CONSOLE_THEME}`;
@@ -162,7 +227,20 @@ export const InspectPanel = () => {
   return (
     <div className="InspectPanelRoot">
       <style>{PANEL_RESET_CSS}</style>
-      <div ref={boxRef} className="InspectPanel">
+      <div
+        ref={boxRef}
+        className="InspectPanel"
+        style={
+          userSize
+            ? { width: `${userSize.w}px`, height: `${userSize.h}px` }
+            : undefined
+        }
+      >
+        <div
+          className="InspectPanel__resize"
+          title="Drag to resize"
+          onPointerDown={startResize}
+        />
         <div className="InspectPanel__header">
           <div className="InspectPanel__heading">
             <div className="InspectPanel__name">

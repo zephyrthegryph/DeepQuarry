@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The Inspect panel can be resized by dragging its bottom left corner."
+  - bugfix: "The Inspect panel portrait shows the target's worn clothing."
