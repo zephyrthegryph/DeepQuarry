@@ -47,6 +47,7 @@ mod resource_inventory;
 pub use aggregate::{WorkspaceCursor, WorkspacePageReader, WorkspacePageView};
 use resource_inventory::ResourceInventory;
 #[path="workspace_source_arena.rs"]mod source_arena;
+pub(crate) use source_arena::{retire_path_fact_node, seal_path_fact_control};
 #[path="workspace_raw_input_credits.rs"]mod raw_input_credits;
 pub(crate) use raw_input_credits::RawInputCredits;
 /// Resource-only live allocation census. Addresses never authorize content or

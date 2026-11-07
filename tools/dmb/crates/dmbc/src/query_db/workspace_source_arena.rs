@@ -1,16 +1,60 @@
 //! One resource-only allocation role in the EXISTING raw input-family ledger.
 //! No query kind, semantic cache, cap or independent domain counter is added.
 use super::*;
-use dm_preprocess::source_arena_credit::{SourceArenaCredit,SourceArenaCreditOwner,SourceArenaWork};
+use dm_preprocess::source_arena_credit::{SourceArenaControlCredit,SourceArenaCredit,SourceArenaCreditOwner,SourceArenaWork};
 use std::sync::atomic::{AtomicUsize,Ordering};
 /// Only actual reservation size and a WEAK identity of the existing Admission.
 /// No QueryDb, ledger or source/model owner is retained by an escaped SourceText.
 pub(super) struct Allocation{bytes:AtomicUsize,domain:Weak<crate::query_db::raw_policy::Admission>}
-impl Allocation{
- pub(super) fn metadata_bytes()->usize{std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>()}
- pub(super) fn retained_bytes(&self)->io::Result<usize>{Self::metadata_bytes().checked_add(self.bytes.load(Ordering::Acquire)).ok_or_else(oom)}
- pub(super) fn store_reserved_bytes(&self,bytes:usize){self.bytes.store(bytes,Ordering::Release);}
- fn same_domain(&self,domain:&Weak<crate::query_db::raw_policy::Admission>)->bool{Weak::ptr_eq(&self.domain,domain)}
+// Every native allocation is admitted under the existing raw input-family
+// limit, well below this flag even on 32-bit hosts. A settled path-fact
+// insertion is immutable except for exact last-owner refunds.
+const RETIRABLE_PATH_FACTS: usize = 1 << (usize::BITS - 1);
+const _: () = assert!(super::raw_policy::INPUT_BUDGET < RETIRABLE_PATH_FACTS);
+impl Allocation {
+    pub(super) fn metadata_bytes() -> usize { std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>() }
+
+    pub(super) fn retained_bytes(&self) -> io::Result<usize> {
+        Self::metadata_bytes().checked_add(self.reserved_bytes()).ok_or_else(oom)
+    }
+
+    pub(super) fn store_reserved_bytes(&self, bytes: usize) {
+        assert!(bytes < RETIRABLE_PATH_FACTS && !self.is_retirable_path_fact());
+        self.bytes.store(bytes, Ordering::Release);
+    }
+
+    fn is_retirable_path_fact(&self) -> bool {
+        self.bytes.load(Ordering::Acquire) & RETIRABLE_PATH_FACTS != 0
+    }
+
+    fn same_domain(&self, domain: &Weak<crate::query_db::raw_policy::Admission>) -> bool {
+        Weak::ptr_eq(&self.domain, domain)
+    }
+}
+
+/// Path-fact insertion consumes its mutable credit and settles all temporary
+/// nodes before the new immutable root escapes. Other arena credits never
+/// enter this mode; nonnative fixture lenders keep their conservative grants.
+pub(crate) fn seal_path_fact_control(credit: SourceArenaCredit) {
+    if let Some(actual) = credit.owner().as_any().downcast_ref::<Allocation>() {
+        let previous = actual.bytes.fetch_or(RETIRABLE_PATH_FACTS, Ordering::AcqRel);
+        debug_assert_eq!(previous & RETIRABLE_PATH_FACTS, 0);
+    }
+}
+
+/// The path-fact owner invokes this only after destroying one exact node.
+/// This monotone decrease cannot undercount a cached ledger upper; the next
+/// existing exact sweep observes it. No ledger lock can recurse from Drop.
+pub(crate) fn retire_path_fact_node(credit: &SourceArenaControlCredit, bytes: usize) {
+    let Some(actual) = credit.owner().as_any().downcast_ref::<Allocation>() else { return; };
+    let _ = actual.bytes.fetch_update(Ordering::AcqRel, Ordering::Acquire, |state| {
+        if state & RETIRABLE_PATH_FACTS == 0 {
+            return None;
+        }
+        let reserved = state & !RETIRABLE_PATH_FACTS;
+        let remaining = reserved.checked_sub(bytes).expect("path fact node's unique reservation");
+        Some(RETIRABLE_PATH_FACTS | remaining)
+    });
 }
 /// Concrete strong handles cover temporary ledger upgrades and registration
 /// failure before an owner enters the public, erased credit handles.
@@ -46,7 +90,7 @@ impl SourceArenaCreditOwner for Allocation{
     drop(Arc::into_inner(self));
  }
 
- fn reserved_bytes(&self)->usize{self.bytes.load(Ordering::Acquire)}
+ fn reserved_bytes(&self)->usize{self.bytes.load(Ordering::Acquire) & !RETIRABLE_PATH_FACTS}
  fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){visit(std::ptr::from_ref(self)as usize,Self::metadata_bytes())}
 }
 fn split_owned_allocations<const N: usize>(
@@ -93,7 +137,7 @@ fn no_source_room(_requested:usize,_ledger_live:usize,_remaining:Option<usize>)-
 fn wrong()->io::Error{io::Error::new(io::ErrorKind::InvalidInput,"source arena credit was not issued in this native input family")}
 fn allocation<'a>(db:&QueryDb,credit:&'a SourceArenaCredit)->io::Result<&'a Allocation>{
  let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;
- if !actual.same_domain(&Arc::downgrade(&db.raw_policy.admission)){return Err(wrong())}Ok(actual)
+ if actual.is_retirable_path_fact() || !actual.same_domain(&Arc::downgrade(&db.raw_policy.admission)){return Err(wrong())}Ok(actual)
 }
 pub(super) fn funded_parts(text:&SourceText,domain:Option<&Weak<crate::query_db::raw_policy::Admission>>)->(bool,bool){
  let Some(expected)=domain else{return(false,false)};
@@ -300,7 +344,7 @@ struct HeldSourceState<'a>{ledger:&'a mut super::raw_input_credits::Ledger,domai
 struct HeldSourceWork<'a>{state:std::sync::Mutex<HeldSourceState<'a>>}
 impl<'a> HeldSourceWork<'a>{
  fn lock<'s>(&'s self)->io::Result<std::sync::MutexGuard<'s,HeldSourceState<'a>>>{self.state.lock().map_err(|_|io::Error::new(io::ErrorKind::InvalidData,"held source resource loan poisoned"))}
- fn actual<'credit>(state:&HeldSourceState<'_>,credit:&'credit SourceArenaCredit)->io::Result<&'credit Allocation>{let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;if !actual.same_domain(&Arc::downgrade(state.domain))||!state.ledger.has_source_arena(actual){return Err(wrong())}Ok(actual)}
+ fn actual<'credit>(state:&HeldSourceState<'_>,credit:&'credit SourceArenaCredit)->io::Result<&'credit Allocation>{let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;if actual.is_retirable_path_fact() || !actual.same_domain(&Arc::downgrade(state.domain))||!state.ledger.has_source_arena(actual){return Err(wrong())}Ok(actual)}
 }
 impl SourceArenaWork for HeldSourceWork<'_>{
  fn split_original_acquisition_controls(&self, donor: &mut SourceArenaCredit, sizes: [usize; 2])

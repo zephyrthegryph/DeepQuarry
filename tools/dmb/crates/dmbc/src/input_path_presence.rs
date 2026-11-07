@@ -18,7 +18,15 @@ impl<V:ImmutableFactValue> Drop for ImmutablePathFacts<V>{fn drop(&mut self){
  // An AVL with a usize-sized count cannot reach this stack bound. Tear down
  // both child handles explicitly, so last-alias cleanup never recurses.
  let mut pending:[Option<Arc<Node<V>>>;usize::BITS as usize*2]=std::array::from_fn(|_|None);let mut count=0usize;let mut next=self.0.take();
- loop{if let Some(owner)=next.take(){if let Some(mut node)=Arc::into_inner(owner){let left=node.left.0.take();let right=node.right.0.take();if let Some(right)=right{assert!(count<pending.len());pending[count]=Some(right);count+=1;}next=left;drop(node);continue}}
+ loop{if let Some(owner)=next.take(){if let Some(mut node)=Arc::into_inner(owner){let left=node.left.0.take();let right=node.right.0.take();if let Some(right)=right{assert!(count<pending.len());pending[count]=Some(right);count+=1;}next=left;
+ // Arc::into_inner removed the last physical node backing. Move its
+ // existing control out and drop the node payload before retiring bytes.
+ let credit=node._credit.take();
+ drop(node);
+ if let Some(credit)=credit {
+  crate::query_db::retire_path_fact_node(&credit,arc_bytes::<Node<V>>().expect("existing fact node layout"));
+ }
+ continue}}
  if count==0{break}count-=1;next=pending[count].take();}
 }}
 impl<V:ImmutableFactValue+std::fmt::Debug> std::fmt::Debug for ImmutablePathFacts<V>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_map().entries(self.iter()).finish()}}
@@ -127,6 +135,7 @@ impl<V:ImmutableFactValue> ImmutablePathFacts<V>{
   // separately funded controls. Cleanup performs no provider or parser work.
   let unused=prepaid.reserved_bytes().checked_sub(retained).ok_or_else(capacity_error)?;
   if unused!=0 {work.shrink(&mut prepaid,unused)?;}
+  crate::query_db::seal_path_fact_control(prepaid);
   Ok(next)
  }
  pub(crate) fn from_observed_data<'a>(rows:impl IntoIterator<Item=(&'a Path,V)>)->io::Result<Self>{let mut out=Self::default();for(path,present)in rows{out.record_data(path,present)?;}Ok(out)}
@@ -145,4 +154,70 @@ impl<V:ImmutableFactValue> ImmutablePathFacts<V>{
  #[test]fn sorted_nonboolean_status_values_keep_balanced_immutable_aliases_and_exact_roundtrip(){
   let mut facts=ImmutablePathFacts::<Status>::default();for at in 0..1024{let path=PathBuf::from(format!("E:/fact-fixture/{at:04}.dm"));facts.record_data(&path,if at%2==0{Status::Readable}else{Status::SourceFailure{kind:1,code:Some(5)}}).unwrap();}assert_eq!(facts.len(),1024);assert!(facts.height()<24,"sorted metadata observations cannot become an unbounded linked tree");let alias=facts.clone();for at in 1024..2048{facts.record_data(&PathBuf::from(format!("E:/fact-fixture/{at:04}.dm")),Status::Readable).unwrap();}assert_eq!(alias.len(),1024);assert_eq!(facts.len(),2048);assert!(facts.height()<24);assert_eq!(alias.get(Path::new("E:/fact-fixture/0001.dm")),Some(Status::SourceFailure{kind:1,code:Some(5)}));assert!(alias.get(Path::new("E:/fact-fixture/1024.dm")).is_none());let restored:ImmutablePathFacts<Status>=serde_json::from_slice(&serde_json::to_vec(&alias).unwrap()).unwrap();assert_eq!(restored,alias);drop((facts,alias,restored));
  }
+}
+
+#[cfg(test)]
+mod exact_fact_credit_tests {
+    use super::*;
+    use crate::query_db::QueryDb;
+
+    fn node_credits(
+        tree: &PathPresenceFacts,
+        seen: &mut std::collections::BTreeSet<usize>,
+        owners: &mut BTreeMap<usize, (SourceArenaControlCredit, usize)>,
+    ) {
+        fn add(owners: &mut BTreeMap<usize, (SourceArenaControlCredit, usize)>,
+               credit: &SourceArenaControlCredit, bytes: usize) {
+            let addr = std::ptr::from_ref(credit.owner()).cast::<()>() as usize;
+            owners.entry(addr).or_insert_with(|| (credit.clone(), 0)).1 += bytes;
+        }
+        let Some(node) = &tree.0 else { return; };
+        if !seen.insert(Arc::as_ptr(node) as usize) { return; }
+        if seen.insert(Arc::as_ptr(&node.key) as usize) {
+            add(owners,node.key._credit.as_ref().unwrap(),
+                arc_bytes::<Key>().unwrap() + node.key.path.capacity());
+        }
+        add(owners,node._credit.as_ref().unwrap(),arc_bytes::<Node<bool>>().unwrap());
+        node_credits(&node.left,seen,owners);
+        node_credits(&node.right,seen,owners);
+    }
+
+    fn assert_exact(roots: &[&PathPresenceFacts]) {
+        let mut seen = std::collections::BTreeSet::new();
+        let mut owners = BTreeMap::new();
+        for root in roots { node_credits(root, &mut seen, &mut owners); }
+        for (credit, bytes) in owners.into_values() {
+            assert_eq!(credit.reserved_bytes(), bytes, "only physically live keys/nodes keep bytes");
+        }
+    }
+
+    #[test]
+    fn actual_path_fact_credits_follow_last_nodes_through_rotations_and_concurrent_alias_drop() {
+        let db = QueryDb::default();
+        let empty = db.raw_source_input_charge_locked().unwrap();
+        let mut tree = PathPresenceFacts::default();
+        let mut snapshot = None;
+        for i in 0..384 {
+            let path = PathBuf::from(format!("E:/facts/{i:04}.dm"));
+            let prepaid = db.reserve(tree.probe_pregrant(&path).unwrap()).unwrap();
+            tree = tree.recorded_using(&path,true,prepaid,&db).unwrap();
+            if i == 191 { snapshot = Some(tree.clone()); }
+        }
+        let snapshot = snapshot.unwrap();
+        assert_exact(&[&tree,&snapshot]);
+        let with_snapshot = db.raw_source_input_charge_locked().unwrap();
+        std::thread::scope(|threads| {
+            for _ in 0..4 {
+                let alias = snapshot.clone();
+                threads.spawn(move || drop(alias));
+            }
+            drop(snapshot);
+        });
+        assert_eq!(tree.len(),384);
+        assert!(tree.height() < 20);
+        assert_exact(&[&tree]);
+        assert!(db.raw_source_input_charge_locked().unwrap() < with_snapshot);
+        drop(tree);
+        assert_eq!(db.raw_source_input_charge_locked().unwrap(),empty);
+    }
 }
