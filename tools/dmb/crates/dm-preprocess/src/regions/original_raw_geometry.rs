@@ -34,6 +34,47 @@ impl OriginalRawGeometry{
  struct File{raw:Vec<u8>,lease:SourceAcquisitionLease}
  impl File{fn new(raw:&[u8])->Self{Self{raw:raw.to_vec(),lease:SourceAcquisitionLease::from_raw_original_bytes(raw.to_vec(),123u64)}}}
  impl SourceProvider for File{fn read(&self,_:&Path)->Result<String,String>{panic!("raw geometry never prepares/reads another source")}fn original_source_bytes<'a>(&'a self,lease:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{if !lease.same_original_acquisition(&self.lease){return Err(io::ErrorKind::InvalidInput.into())}Ok(Some(&self.raw))}}
+ #[test]
+ fn exact_geometry_shortcut_keeps_the_actual_lender_and_first_failure_order() {
+  use std::cell::RefCell;
+  struct Loan<'a> { file: &'a File, events: &'a RefCell<Vec<&'static str>>, same: bool, fail: bool }
+  impl SourceProvider for Loan<'_> {
+   fn read(&self, _: &Path) -> Result<String, String> { panic!("no secondary read") }
+   fn original_source_bytes<'a>(&'a self, lease: &'a SourceAcquisitionLease) -> io::Result<Option<&'a [u8]>> {
+    self.events.borrow_mut().push("loan");
+    if self.fail { return Err(io::Error::from_raw_os_error(1450)); }
+    if !lease.same_binding(&self.file.lease) { return Err(io::ErrorKind::InvalidInput.into()); }
+    Ok(Some(if self.same { lease.source_text().as_bytes() } else { &self.file.raw }))
+   }
+  }
+
+  let file=File::new("café\n".as_bytes());
+  let mut observed=Vec::new();
+  for same in [false,true] {
+   let used=Arc::new(AtomicUsize::new(0));
+   let events=RefCell::new(Vec::new());
+   let poll=||{events.borrow_mut().push("checkpoint");Ok(())};
+   let a=SettingAdmission::new(&used,1<<20,&poll);
+   let loan=Loan{file:&file,events:&events,same,fail:false};
+   let geometry=OriginalRawGeometry::from_acquired_using(&loan,&file.lease,&a).unwrap();
+   let log=events.take();
+   assert_eq!(log.iter().filter(|&&event|event=="loan").count(),1);
+   assert_eq!(&log[log.iter().position(|&event|event=="loan").unwrap()+1..],
+       &["checkpoint","checkpoint","checkpoint"]);
+   assert_eq!(geometry.decoded_point_using(&file.lease,3,&a).unwrap(),3);
+   assert_eq!(geometry.decoded_point_using(&file.lease,4,&a).unwrap_err().kind(),io::ErrorKind::Unsupported);
+   drop(geometry);
+
+   events.borrow_mut().clear();
+   let failing=Loan{fail:true,..loan};
+   let error=OriginalRawGeometry::from_acquired_using(&failing,&file.lease,&a).err().unwrap();
+   assert_eq!(error.raw_os_error(),Some(1450));
+   assert_eq!(events.borrow().last(),Some(&"loan"));
+   assert_eq!(used.load(Ordering::Acquire),0);
+   observed.push(log);
+  }
+  assert_eq!(observed[0],observed[1],"sharing cannot change provider or checkpoint order");
+ }
  #[test]fn actual_acquired_geometry_preserves_raw_columns_while_decoded_offsets_follow_bom_cp1252_latin1_and_utf8(){
   let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let file=File::new(b"\xef\xbb\xbfA\x80\xc3\xa9\xffZ\n");let geometry=OriginalRawGeometry::from_acquired_using(&file,&file.lease,&a).unwrap();
   for(raw,decoded)in [(3,0),(4,1),(5,4),(7,6),(8,8),(9,9),(10,10)]{assert_eq!(geometry.decoded_point_using(&file.lease,raw,&a).unwrap(),decoded)}

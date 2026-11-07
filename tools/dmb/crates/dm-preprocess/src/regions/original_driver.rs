@@ -186,8 +186,10 @@ impl RawSourceDriver{
  pub(super) fn capture_final_define_history_using(&mut self,history:&mut super::original_define_history::OriginalDefineHistory,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let result=if history.is_full()!=(self.history_purpose==super::original_define_history::HistoryPurpose::Full){
   Err(io::Error::new(io::ErrorKind::InvalidInput,"macro product and define history have different purposes"))
  }else{self.environment.read().capture_history_using(history,a)};if result.is_err(){self.failed=true}result}
- pub(super) fn physical_row_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<super::original_raw_inputs::OriginalPhysicalRow>{
-  self.observe_physical_row_using(origin,lease,provider,None,a).map(super::original_raw_inputs::OriginalPhysicalRowObservation::into_row)
+ pub(super) fn definition_geometry_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<(super::OriginalByteCursor,usize)>{
+  let observed=self.observe_physical_row_using(origin,lease,provider,None,a)?;
+  let end=self.inputs.decoded_observed_end_using(&observed,a)?;
+  Ok((observed.row().point,end))
  }
  pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>)->io::Result<super::original_raw_inputs::OriginalPhysicalRowObservation<'source>>{
   self.check(a)?;let result=self.inputs.observe_physical_row_using(origin,lease,provider,prior,a);if result.is_err(){self.failed=true}result
@@ -200,7 +202,6 @@ impl RawSourceDriver{
  pub(super) fn trace_last_outer_origin(&self) -> Option<Origin> {
   self.pump.last_outer()
  }
- pub(super) fn decoded_offset_using(&self,occurrence:usize,lease:&SourceAcquisitionLease,raw:usize,a:&SettingAdmission<'_>)->io::Result<usize>{self.inputs.decoded_point_using(occurrence,lease,raw,a)}
  #[cfg(debug_assertions)]
  pub(super) fn trace_macro_reservations(&self) -> (usize, usize, usize) {
   self.environment.trace_reservations()

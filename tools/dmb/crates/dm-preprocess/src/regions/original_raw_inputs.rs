@@ -26,6 +26,7 @@ pub(super) struct OriginalPhysicalRow{pub(super) raw:Span,pub(super) decoded:Spa
 /// authorization to skip a later current-source loan.
 pub(super) struct OriginalPhysicalRowObservation<'source>{
  origin:Origin,
+ geometry_at:usize,
  lease:&'source SourceAcquisitionLease,
  bytes:&'source [u8],
  row:OriginalPhysicalRow,
@@ -57,11 +58,15 @@ impl OriginalRawInputs{
  pub(super) fn with_current_read_point<T>(&mut self,provider:&dyn SourceProvider,a:&SettingAdmission<'_>,run:impl FnOnce(&OriginalLexicalFrameIdentity,usize,super::original_raw_points::OriginalRawPoint)->io::Result<T>)->io::Result<Option<T>>{
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=(||{poll(a)?;let Some(open)=self.frames.last_mut()else{return Ok(None)};let point=open.frame.read_point().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual current raw reader has not issued a location"))?;let identity=open.frame.identity();let bytes=provider.original_source_bytes(identity.acquisition())?.ok_or(io::ErrorKind::NotConnected)?;let actual=self.geometries.as_mut_slice()[open.geometry_at].points.notice(bytes,point,a)?;run(identity,open.occurrence,actual).map(Some)})();if result.is_err(){self.failed=true}result
  }
- /// Retired file frames never retire their mapping evidence. Binary search
- /// selects the actual opened occurrence, then the private weak binding checks
- /// the independently retained current source lease before translating a point.
- pub(super) fn decoded_point_using(&self,occurrence:usize,lease:&SourceAcquisitionLease,raw_point:usize,a:&SettingAdmission<'_>)->io::Result<usize>{
-  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let at=self.geometries.as_slice().binary_search_by_key(&occurrence,|row|row.occurrence).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"raw mapping occurrence was never opened"))?;self.geometries.as_slice()[at].geometry.decoded_point_using(lease,raw_point,a)
+ /// Decode the END of the same short-lived observation. The observation
+ /// already selected its actual occurrence, so no second roster search is
+ /// needed. The original admission, exact lease and coordinate checks remain.
+ pub(super) fn decoded_observed_end_using(&self,observed:&OriginalPhysicalRowObservation<'_>,a:&SettingAdmission<'_>)->io::Result<usize>{
+  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}
+  let row=self.geometries.as_slice().get(observed.geometry_at)
+   .filter(|row|row.occurrence==observed.origin.occurrence)
+   .ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"raw mapping occurrence was never opened"))?;
+  row.geometry.decoded_point_using(observed.lease,observed.origin.physical.end,a)
  }
  /// Consumed by the SAME final mapping owner; no row copy, raw source payload,
  /// source EOF claim or second geometry dictionary is introduced.
@@ -99,7 +104,7 @@ impl OriginalRawInputs{
    poll(a)?;
    poll(a)?;
    poll(a)?;
-   return Ok(OriginalPhysicalRowObservation{origin,lease,bytes:raw,row:prior.row})
+   return Ok(OriginalPhysicalRowObservation{origin,geometry_at:at,lease,bytes:raw,row:prior.row})
   }
   // A real final-newline token is issued one column after the tracker EOF.
   // Error notices retain their separate EOF tracker point (column before it).
@@ -109,7 +114,7 @@ impl OriginalRawInputs{
   let end=geometry.points.line_end_using(raw,point.line,a)?;
   let decoded_start=geometry.geometry.decoded_point_using(lease,start,a)?;let decoded_end=geometry.geometry.decoded_point_using(lease,end,a)?;let decoded_point=geometry.geometry.decoded_point_using(lease,offset,a)?;
   let row=OriginalPhysicalRow{raw:Span::new(start,end),decoded:Span::new(decoded_start,decoded_end),point:super::OriginalByteCursor{line:point.line,byte_column:point.column,source_offset:decoded_point},actual_eof:eof_token};
-  Ok(OriginalPhysicalRowObservation{origin,lease,bytes:raw,row})
+  Ok(OriginalPhysicalRowObservation{origin,geometry_at:at,lease,bytes:raw,row})
  }
  pub(super) fn frame_precedes_expansion(&self,depth:usize)->bool{self.frames.as_slice().last().is_some_and(|open|depth<=open.expansion_floor)}
  pub(super) fn take_stack_change(&mut self)->bool{std::mem::take(&mut self.stack_changed)}
@@ -163,6 +168,40 @@ mod row_tests {
             }
             Ok(Some(&self.bytes))
         }
+    }
+
+    #[test]
+    fn observed_definition_end_reuses_only_its_exact_slot_and_preserves_first_error() {
+        let bytes="café\n".as_bytes();
+        let make=||File{bytes:bytes.to_vec(),lease:SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(),()),failure:Cell::new(None)};
+        let file=make();
+        let foreign=make();
+        let used=Arc::new(AtomicUsize::new(0));
+        let polls=Cell::new(0);
+        let checkpoint=||{polls.set(polls.get()+1);Ok(())};
+        let a=SettingAdmission::new(&used,1<<20,&checkpoint);
+        let mut inputs=OriginalRawInputs::new(&a).unwrap();
+        let mut other=OriginalRawInputs::new(&a).unwrap();
+        inputs.push_opened(&file,file.lease.clone(),7,0,&a).unwrap();
+        other.push_opened(&foreign,foreign.lease.clone(),7,0,&a).unwrap();
+        let origin=Origin{physical:Span::new(0,5),line:1,byte_column:Some(1),occurrence:7,invocation:false};
+        let row=inputs.observe_physical_row_using(origin,&file.lease,&file,None,&a).unwrap();
+        let interior=inputs.observe_physical_row_using(Origin{physical:Span::new(0,4),..origin},&file.lease,&file,None,&a).unwrap();
+        let before=polls.get();
+        // A definition end never makes a second provider loan.
+        file.failure.set(Some(1450));
+        assert_eq!(inputs.decoded_observed_end_using(&row,&a).unwrap(),5);
+        assert_eq!(polls.get()-before,1);
+        assert_eq!(inputs.decoded_observed_end_using(&interior,&a).unwrap_err().kind(),io::ErrorKind::Unsupported);
+        assert_eq!(other.decoded_observed_end_using(&row,&a).unwrap_err().kind(),io::ErrorKind::InvalidInput,
+            "same slot and bytes from a foreign acquisition cannot authorize a decoded point");
+        let actual=||Err(io::Error::from_raw_os_error(1451));
+        let failed=SettingAdmission::new(&used,1<<20,&actual);
+        assert_eq!(inputs.decoded_observed_end_using(&row,&failed).unwrap_err().raw_os_error(),Some(1451));
+        assert_eq!(inputs.observe_physical_row_using(origin,&file.lease,&file,None,&a).err().unwrap().raw_os_error(),Some(1450),
+            "the next actual row observation still requires the real provider");
+        drop((inputs,other));
+        assert_eq!(used.load(Ordering::Acquire),0);
     }
 
     #[test]

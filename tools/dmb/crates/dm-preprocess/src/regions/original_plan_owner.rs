@@ -60,6 +60,12 @@ impl EmptyOriginalRegion {
         + mem::size_of::<Vec<MacroEffect>>() + 2 * TRACE_ARC_HEADER;
 }
 
+struct BorrowedDefinition<'a> {
+    path: &'a Arc<PathBuf>,
+    source_span: Span,
+    source_line: usize,
+}
+
 struct LastTraceProjection {
     key: OriginalTraceProjectionKey,
     rows: OriginalMacroTrace,
@@ -180,7 +186,16 @@ impl OriginalPlanOwner{
  pub(super) fn occurrence(&self,index:usize)->io::Result<&IncludeOccurrence>{self.plan.occurrences.get(index).ok_or_else(||io::ErrorKind::InvalidInput.into())}
  pub(super) fn lease(&self,index:usize)->io::Result<SourceAcquisitionLease>{self.plan.source_acquisitions.get(&index).cloned().ok_or_else(||io::ErrorKind::InvalidInput.into())}
  pub(super) fn charge_using(&mut self,bytes:usize,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;grow(&mut self.credit,bytes,a)}
- pub(super) fn definition_using(&self,origin:crate::macro_expansion::OriginalMacroOrigin,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<super::DefinitionOrigin>{let occurrence=self.occurrence(origin.occurrence)?;let lease=self.lease(origin.occurrence)?;let row=driver.physical_row_using(origin,&lease,provider,a)?;let end=driver.decoded_offset_using(origin.occurrence,&lease,origin.physical.end,a)?;Ok(super::DefinitionOrigin{path:Arc::clone(&occurrence.path),source_span:Span::new(row.point.source_offset,end),source_line:row.point.line})}
+ fn borrowed_definition_using(&self,origin:crate::macro_expansion::OriginalMacroOrigin,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<BorrowedDefinition<'_>>{
+  let occurrence=self.occurrence(origin.occurrence)?;
+  let lease=self.plan.source_acquisitions.get(&origin.occurrence).ok_or(io::ErrorKind::InvalidInput)?;
+  let (point,end)=driver.definition_geometry_using(origin,lease,provider,a)?;
+  Ok(BorrowedDefinition{path:&occurrence.path,source_span:Span::new(point.source_offset,end),source_line:point.line})
+ }
+ pub(super) fn definition_using(&self,origin:crate::macro_expansion::OriginalMacroOrigin,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<super::DefinitionOrigin>{
+  let actual=self.borrowed_definition_using(origin,driver,provider,a)?;
+  Ok(super::DefinitionOrigin{path:Arc::clone(actual.path),source_span:actual.source_span,source_line:actual.source_line})
+ }
  pub(super) fn add_dependency_using(&mut self,path:&Path,a:&SettingAdmission<'_>)->io::Result<()>{
   self.check(a)?;
   if !self.paths.contains_dependency(path){
@@ -256,11 +271,11 @@ impl OriginalPlanOwner{
    actual.visit_inner_to_outer_using(a, |entry| {
     // Geometry still borrows real provider bytes, in exactly the old order.
     // Never skip or replay that call on a hit, including its first IO error.
-    let definition = entry.definition.map(|origin| self.definition_using(origin, driver, provider, a)).transpose()?;
+    let definition = entry.definition.map(|origin| self.borrowed_definition_using(origin, driver, provider, a)).transpose()?;
     let prior = last.rows.frame(entry.depth - 1).ok_or(io::ErrorKind::InvalidData)?.author.origin();
     matches &= match (&definition, prior) {
      (None, None) => true,
-     (Some(current), Some(previous)) => Arc::ptr_eq(&current.path, &previous.path)
+     (Some(current), Some(previous)) => Arc::ptr_eq(current.path, &previous.path)
       && current.source_span == previous.source_span && current.source_line == previous.source_line,
      _ => false,
     };
