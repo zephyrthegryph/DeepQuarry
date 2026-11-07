@@ -32,6 +32,35 @@ ACTION(turf_change, path, new_baseturfs, flags, post_change_callbacks, FIXED, no
 /// ChangeTurf() calls since boot (a deterministic cost counter for first loads: tests read the difference across a build).
 GLOBAL_VAR_INIT(turf_change_calls, 0)
 
+/// While a shuttle move runs (translate_turfs()), the work that reads a changed turf's neighbourhood waits for the move's end and runs once per turf:
+/// starlight of the space around a changed turf and the edge masks of its 3x3 are functions of the final layout, not of each ChangeTurf() call.
+/// A shuttle move is running (translate_turfs()).
+GLOBAL_VAR_INIT(turf_move_open, FALSE)
+/// The turfs ChangeTurf() made during the move: turf -> TRUE.
+GLOBAL_LIST_EMPTY(turf_move_changed)
+/// Simulated turfs whose edge masks were asked for again during the move: turf -> TRUE.
+GLOBAL_LIST_EMPTY(turf_move_edges)
+/// ChangeTurf() calls the move made, and the time `new N` took in them (diagnostics for SHUTTLE_MOVE_PROFILE).
+GLOBAL_VAR_INIT(turf_move_calls, 0)
+GLOBAL_VAR_INIT(turf_move_new_ms, 0)
+/// Runs the deferred neighbourhood work of a move once: starlight on each space turf next to a changed turf, then each queued edge mask.
+/proc/turf_move_flush()
+	if(CONFIG_GET(number/starlight))
+		var/list/seen = list()
+		for(var/turf/changed_turf as anything in GLOB.turf_move_changed)
+			if(QDELETED(changed_turf)) // replaced again during the move: its replacement is in the list
+				continue
+			for(var/turf/space/S in RANGE_TURFS(1, changed_turf))
+				if(seen[S])
+					continue
+				seen[S] = TRUE
+				S.update_starlight()
+	var/list/queued = GLOB.turf_move_edges.Copy()
+	GLOB.turf_move_edges.Cut()
+	for(var/turf/simulated/S as anything in queued)
+		if(!QDELETED(S))
+			adjacency_refresh(S)
+
 //Creates a new turf
 /turf/proc/ChangeTurf(turf/N, tell_universe=1, force_lighting_update = 0, preserve_outdoors = FALSE)
 	if (!N)
@@ -99,7 +128,13 @@ GLOBAL_VAR_INIT(turf_change_calls, 0)
 	changing_turf = TRUE
 	replaced_by(src)
 
+	var/move_batch = GLOB.turf_move_open
+	var/new_start = move_batch ? TICK_USAGE_REAL : 0
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
+	if(move_batch)
+		GLOB.turf_move_calls++
+		GLOB.turf_move_new_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - new_start)
+		GLOB.turf_move_changed[W] = TRUE
 	// Each row is list(owner, PROC_REF[, with]): after(owner, 0, PROC_REF, with = with + the new turf) (a handler appends its row, see /datum/notice/turf_change).
 	for(var/list/post_change as anything in post_change_callbacks)
 		var/list/row_with = length(post_change) >= 3 ? post_change[3] : null
@@ -145,7 +180,7 @@ GLOBAL_VAR_INIT(turf_change_calls, 0)
 		SSair.mark_for_update(W)
 
 	var/defer_explosion_appearance = SSexplosions.is_bulk_resolving()
-	if(CONFIG_GET(number/starlight) && !defer_explosion_appearance)
+	if(CONFIG_GET(number/starlight) && !defer_explosion_appearance && !move_batch)
 		for(var/turf/space/S in range(W, 1))
 			S.update_starlight()
 	if(defer_explosion_appearance)
@@ -179,7 +214,7 @@ GLOBAL_VAR_INIT(turf_change_calls, 0)
 		else if(!defer_explosion_appearance && lighting_object && !lighting_object.needs_update)
 			lighting_object.update()
 
-		if(CONFIG_GET(number/starlight) && !defer_explosion_appearance)
+		if(CONFIG_GET(number/starlight) && !defer_explosion_appearance && !move_batch)
 			for(var/turf/space/space_tile in RANGE_TURFS(1, src))
 				space_tile.update_starlight()
 

@@ -63,6 +63,9 @@
 /turf/simulated/proc/edges_refresh()
 	if(materialization_host().batch_defer(BATCH_WORK_ADJACENCY, src))
 		return
+	if(GLOB.turf_move_open) // a shuttle move reads the final layout once
+		GLOB.turf_move_edges[src] = TRUE
+		return
 	adjacency_refresh(src)
 
 /// The simulated turfs in the 3x3 around `center` (and `center` itself) read their edges again: `center` was replaced, or a blocker of edges came or

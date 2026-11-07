@@ -6463,6 +6463,7 @@
 #include "code\content\shuttles\shuttles.dm"
 #include "code\content\shuttles\shuttles_multi.dm"
 #include "code\content\shuttles\shuttles_web.dm"
+#include "code\content\shuttles\translate_turfs.dm"
 #include "code\content\shuttles\web_datums.dm"
 #include "code\content\spells\artifacts.dm"
 #include "code\content\spells\spell_code.dm"
