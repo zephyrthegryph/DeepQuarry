@@ -88,7 +88,7 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 // Called when the machine's has_power flips (has_power_changed(), the stat's on_change hook), and by hand where a type re-reads its own power.
 // Returns TRUE when has_power changed since the last call. Can be overridden.
 /obj/machinery/proc/power_change()
-	var/now = !!stat_value(src, STAT_HAS_POWER) // the grid's reading, a contribution (area_gives_power()), recomputed on read when its inputs moved
+	var/now = !!stat_value(src, STAT_HAS_POWER) // the grid's reading, a contribution (the area_gives_* reads), recomputed on read when its inputs moved
 	if(now == power_seen)
 		return FALSE
 	power_seen = now
@@ -104,13 +104,22 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 /obj/machinery/proc/has_power_changed(datum/act/A)
 	power_change()
 
-/// STAT_HAS_POWER's reading of the grid: the machine's area has its channel energized. A machine with no area has power (nothing darkens it).
-/obj/machinery/proc/area_gives_power(datum/act/A)
+/// STAT_HAS_POWER's reading of the grid, one proc per channel (each reads only its own channel var, so a flip of one channel re-evaluates only the
+/// machines drawing on it): the machine's area has the channel energized. A machine with no area has power (nothing darkens it).
+/obj/machinery/proc/area_gives_equip(datum/act/A)
 	var/area/served = power_area
-	return !served || served.powered(power_of(src).channel)
+	return !served || served.equip_powered()
+
+/obj/machinery/proc/area_gives_light(datum/act/A)
+	var/area/served = power_area
+	return !served || served.light_powered()
+
+/obj/machinery/proc/area_gives_environ(datum/act/A)
+	var/area/served = power_area
+	return !served || served.environ_powered()
 
 /**
- * COMPATIBILITY SHIM. The grid no longer writes the powered state: the machine's STAT_HAS_POWER is the area's channel read (area_gives_power()),
+ * COMPATIBILITY SHIM. The grid no longer writes the powered state: the machine's STAT_HAS_POWER is the area's channel read (the area_gives_* reads),
  * and power_change() only acts on its flips. set_powered() remains as a manual override (a hold on STAT_HAS_POWER, source SRC_GRID, the NOPOWER
  * bit's own writer) for the benchmark's old path and for callers that force a machine dark; it goes with them.
  * The power capability's "powered" state (G8): a change publishes MACHINE_KEY_STAT and MACHINE_KEY_POWERED to its readers.

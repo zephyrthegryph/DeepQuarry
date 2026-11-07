@@ -184,6 +184,8 @@ export type Preview = {
   name: string;
   verb: string;
   whole: boolean;
+  /** An emote (Me, Subtle): the name and the text, no verb or quotes. */
+  emote?: boolean;
   pieces: PreviewPiece[];
 };
 
@@ -220,7 +222,8 @@ export function emphasize(
     }
     if (hidden[i]) {
       // An editor's backdrop keeps the marker in place (dimmed), so the text lines up with what is typed.
-      if (keepMarkers) result[result.length - 1].push({ text: joined[i], tags: ['marker'] });
+      if (keepMarkers)
+        result[result.length - 1].push({ text: joined[i], tags: ['marker'] });
       continue;
     }
     const segments = result[result.length - 1];
@@ -248,6 +251,28 @@ export function stripChannel(
 }
 
 /**
+ * An emote reads as its text with the emphasis markers applied (emote.dm and
+ * custom_emote.dm run encode_html_emphasis over it); OOC and LOOC apply none,
+ * so they have no preview. Null when no marker changes the text.
+ */
+function buildEmotePreview(
+  entry: string,
+  rules: LanguageRules,
+): Preview | null {
+  const text = trim(entry);
+  if (!text) return null;
+  const [segments] = emphasize([text], rules);
+  if (!segments.some((segment) => segment.tags.length)) return null;
+  return {
+    name: rules.name,
+    verb: '',
+    whole: false,
+    emote: true,
+    pieces: [{ language: '', segments }],
+  };
+}
+
+/**
  * What the speaker will see, or null for a message with nothing to show:
  * one piece in the preferred language, no formatting, nothing hissed.
  */
@@ -256,6 +281,9 @@ export function buildPreview(
   channel: string,
   rules: LanguageRules,
 ): Preview | null {
+  if (channel === 'Me' || channel === 'Subtle') {
+    return buildEmotePreview(entry, rules);
+  }
   if (!['Say', 'Radio', 'Whis'].includes(channel)) return null;
   if (!trim(entry) || entry[0] === '*' || entry[0] === '^') return null;
   const stripped = stripChannel(entry, rules);

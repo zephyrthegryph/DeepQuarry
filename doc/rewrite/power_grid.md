@@ -241,7 +241,7 @@ Not done, and why:
 
 ## 7. Stage 2: the grid's reading is a contribution (rewrite/power-grid)
 
-* **The writer is gone.** `/obj/machinery` declares `contributes(STAT_HAS_POWER, area_gives_power, key = "area_power", reads = power_channel and the
+* **The writer is gone.** `/obj/machinery` declares `contributes(STAT_HAS_POWER, area_gives_equip|light|environ, key = "area_power_<chan>", reads = power_channel and the
   area's three tracked channel vars through power_area)`, and `contributes(STAT_OPERABLE, STAT_HAS_POWER, key = "power_operable")`. A machine's power is
   whatever its area's channel says, with no hold and nothing pushed. `power_change()` no longer writes: it compares the current reading with the last
   one it acted on (`power_seen`), publishes `stat`, the lost/restored notices and the heat update on a flip, and returns TRUE on a flip (the 65 overrides
@@ -257,12 +257,12 @@ Not done, and why:
   reading that is now a stat; the machines' bodies are unchanged. If a type's reaction is only to a flip it can move to `on_change(STAT_HAS_POWER, ANY, ...)`
   one file at a time with no engine change.
 * **Self-powered types drop the area's reading by key.** `machine_basics(powered = FALSE, area_power = FALSE)` (the APC, the SMES) and `wall_machine(...)`
-  with it drop `area_power` and `power_operable`. The RCD turret (`/obj/machinery/porta_turret/rcd`) says its own supply: area power never stops it
+  with it drop `area_power_*` and `power_operable`. The RCD turret (`/obj/machinery/porta_turret/rcd`) says its own supply: area power never stops it
   (BROKEN and EMPED still do): fixed, `dq_machine_rcd_turret_ignores_power` passes.
-* **Declared delays on the type's side.** A turret's capacitors: its `area_gives_power()` is TRUE and it contributes `power_held`, which its
+* **Declared delays on the type's side.** A turret's capacitors: its `area_gives_equip()` and its siblings is TRUE and it contributes `power_held`, which its
   `power_change()` moves (at once on restore, after 0 to 1.5 s on loss). A jukebox contributes `anchored`. Neither is a second writer of the grid's state.
 * **`set_powered()` and `stat_add/stat_remove(NOPOWER)` are a compatibility shim.** A caller that forces a machine dark holds `has_power` FALSE (source
-  SRC_GRID); one that clears NOPOWER on a dark machine sets `power_forced`, which `area_gives_power()` honours. Both are for tests and the benchmark's old path.
+  SRC_GRID); one that clears NOPOWER on a dark machine sets `power_forced`, which `area_gives_equip()` and its siblings honours. Both are for tests and the benchmark's old path.
 * **A machine created in a dark area is dark at once** (before, it kept power until some later area event). Tests that built machines in a dark area and
   relied on that now power the machine's area or force it with the shim.
 

@@ -21,6 +21,56 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 /proc/dq_power_wake_activation(obj/machinery/dq_power_wake_probe/probe)
 	return cap_activation(probe, CAP_STARTED_WORK, null)
 
+/// A machine drawing on the lighting channel.
+/obj/machinery/dq_power_wake_light_probe
+	use_power = USE_POWER_IDLE
+
+CAPABILITIES(/obj/machinery/dq_power_wake_light_probe)
+	configure(uses_power(idle = 5, channel = LIGHT))
+
+/// A machine's has_power depends on its own channel alone: one channel's flip re-evaluates (and flips) the machines drawing on it, and leaves the
+/// machines on the other channels unread and unflipped.
+/datum/unit_test/dq_power_change_is_per_channel
+
+/datum/unit_test/dq_power_change_is_per_channel/Run()
+	var/obj/machinery/power/apc/apc = dq_power_test_apc()
+	TEST_ASSERT_NOTNULL(apc, "the test map has no working APC")
+	if(!apc)
+		return
+	test_driver_begin()
+	var/turf/T = get_turf(apc)
+	var/area/A = apc.area
+	var/list/equip_probes = list()
+	for(var/i in 1 to 8)
+		equip_probes += allocate(/obj/machinery/dq_power_wake_probe, T)
+	var/obj/machinery/dq_power_wake_light_probe/lamp = allocate(/obj/machinery/dq_power_wake_light_probe, T)
+	A.set_channels(TRUE, TRUE, TRUE)
+	test_drain()
+	for(var/obj/machinery/M as anything in equip_probes + lamp)
+		TEST_ASSERT(stat_value(M, STAT_HAS_POWER), "[M.type] is powered before the cut")
+	var/computes = GLOB.stat_read_computes
+	A.set_channels(TRUE, FALSE, TRUE) // only the lighting channel goes dark
+	test_drain()
+	TEST_ASSERT(!stat_value(lamp, STAT_HAS_POWER), "the machine on the lighting channel went dark")
+	for(var/obj/machinery/M as anything in equip_probes)
+		TEST_ASSERT(stat_value(M, STAT_HAS_POWER), "a machine on the equipment channel kept its power when only lighting went dark")
+	var/composed = GLOB.stat_read_computes - computes
+	TEST_ASSERT(composed < length(equip_probes), "the lighting flip recomposed [composed] has_power readings: the 8 equipment machines were not re-evaluated")
+	A.set_channels(TRUE, TRUE, FALSE) // lighting back, environment dark: nothing here draws on it
+	test_drain()
+	TEST_ASSERT(stat_value(lamp, STAT_HAS_POWER), "lighting is back")
+	for(var/obj/machinery/M as anything in equip_probes)
+		TEST_ASSERT(stat_value(M, STAT_HAS_POWER), "an environment cut does not darken an equipment machine")
+	A.set_channels(FALSE, TRUE, TRUE)
+	test_drain()
+	for(var/obj/machinery/M as anything in equip_probes)
+		TEST_ASSERT(!stat_value(M, STAT_HAS_POWER), "an equipment cut darkens the equipment machines")
+	TEST_ASSERT(stat_value(lamp, STAT_HAS_POWER), "and leaves the lighting machine lit")
+	A.set_channels(TRUE, TRUE, TRUE)
+	apc.apply_area_power()
+	test_drain()
+	test_driver_end()
+
 /// The machines of one area, cut off and restored through the area's channels: each one's has_power and operable flip within one drain,
 /// its look changes, and the probe's gated work parks (no step, no timer) while unpowered and runs again once power is back.
 /datum/unit_test/dq_power_wakes_cut_and_restore

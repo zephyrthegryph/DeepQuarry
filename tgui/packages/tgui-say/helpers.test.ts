@@ -58,3 +58,19 @@ describe('resolvePrefix', () => {
     });
   });
 });
+
+describe('resolvePrefix with emote characters', () => {
+  // '*' runs a named emote and '^' a custom emote in the server's say; neither is the Me
+  // channel (me_verb routes by mob kind), so typing them must not switch channel or strip.
+  it('leaves a leading * or ^ alone in every channel', () => {
+    for (const channel of ['Say', 'Radio', 'Me', 'OOC', 'LOOC'] as const) {
+      for (const raw of ['*nod', '^waves']) {
+        expect(resolvePrefix(raw, null, channel)).toEqual({
+          value: raw,
+          switched: false,
+          prefix: null,
+        });
+      }
+    }
+  });
+});

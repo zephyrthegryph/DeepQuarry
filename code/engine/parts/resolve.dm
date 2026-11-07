@@ -704,8 +704,52 @@
 			return B.args["desc"]
 	return null
 
+/// Is candidate C a click carrier: an item()/stack() binding that takes any item, with no when() and no requirement narrowing it, whose label is
+/// then either missing or only one stance's name for "do the default thing with what is held" ("Hit the floor", "Shove with")? The Menu words it
+/// for the held thing, not by the label, which is wrong for most items (op_menu_label()).
+/proc/op_cand_click_carrier(datum/op_cand/C)
+	if(!C.binding || !(C.binding.bind_kind in list(BIND_ITEM, BIND_STACK)) || !op_cand_catch_all(C))
+		return FALSE
+	if(!C.oplan.label)
+		return TRUE
+	if(length(C.oplan.conds) || length(C.oplan.needs))
+		return FALSE
+	return length(LAZYACCESS(C.oplan.selects, "stance")) || C.oplan.hostile || C.oplan.passes
+
+/// Is candidate C an op that swallows an item click and does nothing else (passes() with no effect: "Nothing")? Not a Menu line.
+/proc/op_cand_swallows_only(datum/op_cand/C)
+	return C.oplan.passes && !length(C.oplan.effects) && !length(C.oplan.steps)
+
+/// The stance variants the Menu collapses: candidates that differ only by stance() (stance(I_HELP) / stance(I_HURT) ... of one binding on one holder)
+/// are one choice. Returns the candidates to leave out: of each group the one for the actor's stance stays, else (no variant for it) the first.
+/proc/op_menu_stance_skips(datum/op_resolution/R)
+	. = list()
+	var/list/groups = list()
+	for(var/datum/op_cand/C as anything in R.ordered)
+		if(!length(LAZYACCESS(C.oplan.selects, "stance")) || !op_menu_lists(C))
+			continue
+		var/group_key = "[C.side]|[ref(C.holder)]|[C.binding?.bind_kind]|[C.item_type]|[C.tier]|[length(C.oplan.conds)]|[length(C.oplan.needs)]"
+		var/list/members = groups[group_key]
+		if(!members)
+			members = list()
+			groups[group_key] = members
+		members += C
+	var/stance = R.actor?.op_input_stance()
+	for(var/group_key in groups)
+		var/list/members = groups[group_key]
+		if(length(members) < 2)
+			continue
+		var/datum/op_cand/keeper = members[1]
+		for(var/datum/op_cand/C as anything in members)
+			if(stance in LAZYACCESS(C.oplan.selects, "stance"))
+				keeper = C
+				break
+		for(var/datum/op_cand/C as anything in members)
+			if(C != keeper)
+				.[C] = TRUE
+
 /proc/op_menu_label(datum/op_resolution/R, datum/op_cand/C)
-	if(!C.oplan.label && R.held && C.binding && (C.binding.bind_kind in list(BIND_ITEM, BIND_STACK)) && op_cand_catch_all(C))
+	if(R.held && !C.oplan.label_state && op_cand_click_carrier(C))
 		return "Use [R.held.name]"
 	var/datum/op_plan/P = C.oplan
 	if(P.label_state_text && !isnull(P.label_state))
@@ -819,10 +863,16 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	var/list/seen = list()
 	var/list/label_rows = list() // label -> the row listed under it: one line per label (op_menu_lists())
 	var/timed = FALSE
+	var/list/stance_skips = op_menu_stance_skips(R)
 	for(var/datum/op_cand/C as anything in R.ordered)
 		if(seen[C.oplan.key])
 			continue
 		if(!op_menu_lists(C))
+			continue
+		if(stance_skips[C])
+			hidden += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "hidden_by" = "another stance variant of the same choice"))
+			continue
+		if(op_cand_swallows_only(C))
 			continue
 		if(!op_cand_when(R, C))
 			hidden += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "hidden_by" = "when()"))

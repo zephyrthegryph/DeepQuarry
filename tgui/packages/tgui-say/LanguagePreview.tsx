@@ -15,7 +15,7 @@ const CHAR_WIDTH = 6;
 export function previewHeight(preview: Preview, width: number): number {
   let length = preview.name.length + preview.verb.length + 3;
   for (const piece of preview.pieces) {
-    length += piece.language.length + 6;
+    length += preview.emote ? 1 : piece.language.length + 6;
     for (const segment of piece.segments) length += segment.text.length;
   }
   const lines = Math.ceil((length * CHAR_WIDTH) / Math.max(width - 12, 60));
@@ -27,7 +27,8 @@ export function renderSegment(segment: Segment, key: number) {
   if (segment.tags.includes('b')) node = <b>{node}</b>;
   if (segment.tags.includes('i')) node = <i>{node}</i>;
   if (segment.tags.includes('u')) node = <u>{node}</u>;
-  if (segment.tags.includes('marker')) node = <span style={{ opacity: 0.4 }}>{node}</span>;
+  if (segment.tags.includes('marker'))
+    node = <span style={{ opacity: 0.4 }}>{node}</span>;
   return <span key={key}>{node}</span>;
 }
 
@@ -46,13 +47,20 @@ export function LanguagePreview(props: Props) {
       className={classes(['preview', lightMode && 'preview-lightMode'])}
       style={{ height: height - 2, zoom }}
     >
-      <span className="preview-name">{preview.name}</span> {preview.verb},{' '}
-      {preview.pieces.map((piece, index) => (
-        <span key={index}>
-          <span className="preview-language">{piece.language}</span>"
-          {piece.segments.map(renderSegment)}"{' '}
-        </span>
-      ))}
+      <span className="preview-name">{preview.name}</span>{' '}
+      {preview.emote ? (
+        preview.pieces[0].segments.map(renderSegment)
+      ) : (
+        <>
+          {preview.verb},{' '}
+          {preview.pieces.map((piece, index) => (
+            <span key={index}>
+              <span className="preview-language">{piece.language}</span>"
+              {piece.segments.map(renderSegment)}"{' '}
+            </span>
+          ))}
+        </>
+      )}
     </div>
   );
 }

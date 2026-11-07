@@ -211,6 +211,9 @@
 	if(target && !QDELETED(target))
 		native_publish_change(target, key)
 
+/// A native notice that takes this many ms (handler, lookup, publish) is logged with its phases (NATIVE_NOTICE_SLOW).
+#define NATIVE_NOTICE_SLOW_MS 25
+
 /// NOTICE (`entity`, `header`, fields at box[p]): a pipe device's step, else a generated typed event.
 /datum/system/native/proc/on_notice(entity, header, list/box, p, count)
 	if(header == NATIVE_NOTICE_PIPE_DEVICE)
@@ -219,12 +222,28 @@
 		if(istype(device) && device.rust_owns_device(entity))
 			device.rust_device_stepped(box[p], box[p + 1], box[p + 2])
 		return
+	var/start = TICK_USAGE
 	vg_dispatch_notice(header, entity, box, p)
+	var/dispatch_ms = TICK_USAGE_TO_MS(start)
 	if(!entity)
 		return
+	var/lookup_start = TICK_USAGE
 	var/datum/target = SSvg.entity_lookup(entity)
+	var/lookup_ms = TICK_USAGE_TO_MS(lookup_start)
+	var/wanted_ms = 0
+	var/publish_ms = 0
 	if(target && !QDELETED(target))
-		native_publish_notice(target, header, box.Copy(p, p + count))
+		// The record's fields are copied only for a notice somebody hears: most entities have no reaction or observer on /datum/notice/native.
+		var/wanted_start = TICK_USAGE
+		var/wanted = notice_wanted(target, /datum/notice/native)
+		wanted_ms = TICK_USAGE_TO_MS(wanted_start)
+		if(wanted)
+			var/publish_start = TICK_USAGE
+			native_publish_notice(target, header, box.Copy(p, p + count))
+			publish_ms = TICK_USAGE_TO_MS(publish_start)
+	var/total_ms = TICK_USAGE_TO_MS(start)
+	if(total_ms >= NATIVE_NOTICE_SLOW_MS)
+		log_world("NATIVE_NOTICE_SLOW: header [header] entity [entity] ([target ? target.type : "none"]) payload [count] took [round(total_ms, 0.1)] ms: handler (vg_dispatch_notice) [round(dispatch_ms, 0.1)], entity lookup [round(lookup_ms, 0.1)], notice_wanted [round(wanted_ms, 0.1)], publish [round(publish_ms, 0.1)], unaccounted [round(total_ms - dispatch_ms - lookup_ms - wanted_ms - publish_ms, 0.1)]")
 
 /// CROSSED (`watch`, `band`): the watch's own delivery.
 /datum/system/native/proc/on_crossed(handle, band, list/box, p, count)

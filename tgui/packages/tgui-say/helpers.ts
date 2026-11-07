@@ -1,5 +1,7 @@
 import type { Channel } from './ChannelIterator';
 import { RADIO_PREFIXES, WindowSize } from './constants';
+import { cachedMap, dockPosition, dockWindow, placedPosition } from './dock';
+import { clampCssSize } from './placement';
 
 /**
  * Once byond signals this via keystroke, it
@@ -40,6 +42,7 @@ export function windowSet(
   scale: boolean,
 ): void {
   const pixelRatio = scale ? window.devicePixelRatio : 1;
+  ({ w: width, h: size } = clampCssSize(width, size));
 
   const sizeStr = `${width * pixelRatio}x${size * pixelRatio}`;
 
@@ -47,6 +50,7 @@ export function windowSet(
     'tgui_say.size': sizeStr,
     'tgui_say.browser.size': sizeStr,
   });
+  void dockWindow(width * pixelRatio, size * pixelRatio);
 }
 
 /** Helper function to set window size and visibility */
@@ -57,14 +61,31 @@ function setWindowVisibility(
   scale: boolean,
 ): void {
   const pixelRatio = scale ? window.devicePixelRatio : 1;
+  ({ w: width, h: height } = clampCssSize(width, height));
 
   const sizeStr = `${width * pixelRatio}x${height * pixelRatio}`;
 
-  Byond.winset(null, {
+  const props: Record<string, string | boolean> = {
     'tgui_say.is-visible': visible,
     'tgui_say.size': sizeStr,
     'tgui_say.browser.size': sizeStr,
-  });
+  };
+  if (visible) {
+    // Where the player left it, else docked from the last measure, at once, then measured again for a map that changed.
+    const placed = placedPosition();
+    const map = cachedMap();
+    if (placed) {
+      props['tgui_say.pos'] = `${placed.x},${placed.y}`;
+    } else if (map) {
+      const pos = dockPosition(map, {
+        w: width * pixelRatio,
+        h: height * pixelRatio,
+      });
+      props['tgui_say.pos'] = `${pos.x},${pos.y}`;
+    }
+    void dockWindow(width * pixelRatio, height * pixelRatio);
+  }
+  Byond.winset(null, props);
 }
 
 const CHANNEL_REGEX = /^[:.]\w\s|^,b\s/;

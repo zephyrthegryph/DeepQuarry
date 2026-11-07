@@ -103,6 +103,14 @@
 	return
 
 
+/// The Use held module key (Ctrl+Z) of a cyborg: the module in use, multibelt aware.
+/client/verb/robot_alt_mode()
+	set hidden = 1
+	var/mob/living/silicon/robot/R = mob
+	if(istype(R))
+		R.alt_mode()
+	return
+
 /client/verb/toggle_throw_mode()
 	set hidden = 1
 	var/mob/living/carbon/C = mob

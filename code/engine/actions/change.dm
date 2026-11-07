@@ -315,7 +315,7 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 					hooks_carry_rest(batch, handle_index, hook_index)
 					GLOB.stat_spills++
 					TEST_REC_SPILL("on_change: [length(GLOB.hook_change_pending)] holder(s) carried at pass [passes]")
-					log_world("ACT: the on_change drain spent its budget of [budget]us; [length(GLOB.hook_change_pending)] holder(s) resume at the next drain point (first: [E.type] [H.entry ? copytext(H.entry.sig, 1, 100) : H.type])")
+					drain_spill_log("on_change", "ACT: the on_change drain spent its budget of [budget]us; [length(GLOB.hook_change_pending)] holder(s) resume at the next drain point (first: [E.type] [H.entry ? copytext(H.entry.sig, 1, 100) : H.type])")
 					return
 				var/charge_started = stat_charge_begin()
 				var/hook_started = TICK_USAGE
@@ -330,6 +330,24 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 				GLOB.stat_tick_spent = spent + stat_charge_end(charge_started)
 	if(GLOB.hook_change_pending)
 		log_world("ACT: the on_change drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.hook_change_pending)] holder(s) still marked (a hook keeps writing what another hook watches); they wait for the next drain point")
+
+/// Source -> list(time of the next line, spills not yet in a line). A busy station spills the budget on most ticks of a brownout, and a line per spill
+/// (7000 in 50 minutes) cost more than it told: one line per source per DRAIN_SPILL_LOG_INTERVAL says how many spills it stands for.
+GLOBAL_LIST_EMPTY(drain_spill_state)
+
+/// Logs `line` for a spilled budget of `source` at most once per DRAIN_SPILL_LOG_INTERVAL; the line says how many spills happened since the last one.
+/proc/drain_spill_log(source, line)
+	var/list/state = GLOB.drain_spill_state[source]
+	if(!state)
+		state = list(0, 0)
+		GLOB.drain_spill_state[source] = state
+	state[2]++
+	var/now = TIME_NOW(CLOCK_WORLD)
+	if(state[1] > now)
+		return
+	state[1] = now + DRAIN_SPILL_LOG_INTERVAL
+	log_world("[line] ([state[2]] spill\s of the [source] budget since the last line)")
+	state[2] = 0
 
 /// The budget ran out at hook `hook_index` of holder `handle_index` of `batch`: that hook and everything after it go back to the pending marks, ahead of
 /// what was marked while the drain ran (a hook already pending for the same holder is one mark, not two).
