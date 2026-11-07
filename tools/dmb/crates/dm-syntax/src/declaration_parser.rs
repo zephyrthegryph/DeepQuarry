@@ -6,7 +6,7 @@ pub use demand_assembly::{OriginalCommittedPrimary,OriginalPrimaryDemand,Origina
 #[path="original_committed_items.rs"]mod committed_items;
 pub use committed_items::{OriginalCommittedItems,OriginalItem,OriginalItems};
 #[path="original_primary_literal_facts.rs"]mod literal_facts;
-pub use literal_facts::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsView,OriginalLiteralRows};
+pub use literal_facts::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsView,OriginalLiteralRows,OriginalColonRows};
 use super::*;
 
 #[derive(Clone,Debug)]

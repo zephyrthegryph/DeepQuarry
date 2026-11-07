@@ -118,7 +118,7 @@ fn finish_expression_with_admission(
     diagnostics: Vec<Diagnostic>,
     admission: Option<&crate::SettingAdmission<'_>>,
 ) -> ParsedExpr {finish_expression_with_literal_facts(tokens,diagnostics,admission,None,None,false,None)}
-fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Vec<Diagnostic>,admission:Option<&crate::SettingAdmission<'_>>,literal_facts:Option<(crate::OriginalLiteralRows<'facts>,usize,usize,usize)>,colon_facts:Option<(&'facts[(Span,bool)],usize)>,original_profile:bool,original_source:Option<(&'facts str,usize,usize)>)->ParsedExpr {
+fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Vec<Diagnostic>,admission:Option<&crate::SettingAdmission<'_>>,literal_facts:Option<(crate::OriginalLiteralRows<'facts>,usize,usize,usize)>,colon_facts:Option<(crate::OriginalColonRows<'facts>,usize)>,original_profile:bool,original_source:Option<(&'facts str,usize,usize)>)->ParsedExpr {
     let mut parser = ExprParser {
         tokens: expression_tokens(tokens),
         index: 0,
@@ -412,7 +412,7 @@ struct ExprParser<'op,'input> {
     diagnostics: Vec<Diagnostic>,
     demand:Option<ExpressionDemandInput<'input>>,
     literal_facts:Option<(crate::OriginalLiteralRows<'input>,usize,usize,usize)>,
-    colon_facts:Option<(&'input[(Span,bool)],usize)>,
+    colon_facts:Option<(crate::OriginalColonRows<'input>,usize)>,
     // Exact borrowed parser input only; acquisition authority stays with its provider.
     original_source:Option<(&'input str,usize,usize)>,
 }
@@ -902,7 +902,7 @@ impl ExprParser<'_,'_> {
             let(_,current_offset,source_origin)=self.original_source.ok_or(std::io::ErrorKind::InvalidInput)?;
             let token=self.tokens.get(index).ok_or(std::io::ErrorKind::InvalidData)?;if token.text!=":"||!matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator){return Err(std::io::ErrorKind::InvalidData.into())}
             let actual=Span::new(token.span.start.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?,token.span.end.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?);
-            let at=rows.partition_point(|(span,_)|span.start<actual.start);let(_,close)=rows.get(at).filter(|(span,_)|*span==actual).ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"Original whole-token Colon/CloseColon has no SAME issued occurrence"))?;Ok(Some(*close))
+            let at=rows.partition_point(|(span,_)|span.start<actual.start);let(_,close)=rows.get(at).filter(|(span,_)|*span==actual).ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"Original whole-token Colon/CloseColon has no SAME issued occurrence"))?;Ok(Some(close))
         })();
         match result{Ok(value)=>Some(value),Err(error)=>{self.original_operational(error);None}}
     }
