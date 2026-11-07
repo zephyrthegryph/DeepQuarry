@@ -976,7 +976,7 @@ mod original_local_scope_tests;
 
 #[path = "untyped_image_dir.rs"]
 mod image_dir;
-pub use image_dir::{image_dir_findings_using, ImageDirFinding, ImageDirWork};
+pub use image_dir::{image_dir_findings_shared_using, image_dir_findings_using, ImageDirFinding, ImageDirWork};
 
 #[path = "untyped_stored_refs_scope.rs"]
 mod stored_refs_scope;

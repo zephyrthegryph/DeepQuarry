@@ -3,7 +3,9 @@
 use super::*;
 use crate::image_dir_body::{self, Event, Phase};
 use crate::policy_body_demand::WorkspaceWork;
-use dm_tree::frontend::OriginalImageDirFrontend;
+use dm_tree::frontend::{BodyArchive, CleanOriginalImageDirArchive, OriginalImageDirCallable, OriginalImageDirFrontend};
+use crate::policy_inputs::{PolicyInputs, TextView};
+use std::{io, sync::Arc};
 use dm_tree::SemanticTree;
 use std::path::Path;
 
@@ -74,7 +76,7 @@ fn formal_return<W: WorkspaceWork>(
 }
 
 fn callable_return<W: ImageDirWork>(
-    inputs:&OriginalImageDirFrontend,owner:SymbolId,name:&str,work:&mut W,
+    inputs:&impl ImageDirSource,owner:SymbolId,name:&str,work:&mut W,
 )->Result<Option<String>,W::Error>{
     let archive=inputs.archive();
     let tree=archive.tree();
@@ -107,7 +109,7 @@ fn field<W: WorkspaceWork>(
 }
 
 fn receiver<W: ImageDirWork>(
-    scope: &Walker<'_, SemanticTree>, inputs: &OriginalImageDirFrontend, expression: &Expr, work: &mut W,
+    scope: &Walker<'_, SemanticTree>, inputs: &impl ImageDirSource, expression: &Expr, work: &mut W,
 ) -> Result<Option<String>, W::Error> {
     work.checkpoint()?;
     let global = SymbolId::of("/");
@@ -196,12 +198,12 @@ fn dir_receiver<'a, W: WorkspaceWork>(mut node: &'a Expr, work: &mut W) -> Resul
 // file's lone-CR rows. The line can exceed the procedure file's physical EOF:
 // the statement itself can belong to another registered compiler input.
 fn legacy_report_line<W: WorkspaceWork>(
-    owner: &dm_tree::frontend::SourceFile, statement: usize, work: &mut W,
+    owner: &str, statement: usize, work: &mut W,
 ) -> Result<usize, W::Error> {
     if statement == 0 {
         return Err("image dir original statement line is absent".into());
     }
-    let bytes = owner.text.as_str().as_bytes();
+    let bytes = owner.as_bytes();
     let mut physical_line = 1usize;
     let mut extra = 0usize;
     for (index, byte) in bytes.iter().enumerate() {
@@ -222,12 +224,73 @@ fn legacy_report_line<W: WorkspaceWork>(
     statement.checked_add(extra).ok_or_else(|| work.overflow())
 }
 
+trait ImageDirSource {
+    fn archive(&self) -> &Arc<BodyArchive>;
+    fn paths(&self) -> impl Iterator<Item = &Path>;
+    fn file_text(&self, path: &Path) -> Option<&str>;
+    fn callable(
+        &self, owner: SymbolId, name: SymbolId, checkpoint: &mut dyn FnMut() -> io::Result<()>,
+    ) -> io::Result<OriginalImageDirCallable>;
+}
+impl ImageDirSource for OriginalImageDirFrontend {
+    fn archive(&self) -> &Arc<BodyArchive> { self.archive() }
+    fn paths(&self) -> impl Iterator<Item = &Path> {
+        self.files().iter().filter(|file| file.captured).map(|file| file.path.as_path())
+    }
+    fn file_text(&self, path: &Path) -> Option<&str> {
+        self.file_exact(path).map(|file| file.text.as_str())
+    }
+    fn callable(&self, owner: SymbolId, name: SymbolId, checkpoint: &mut dyn FnMut() -> io::Result<()>) -> io::Result<OriginalImageDirCallable> {
+        self.callable(owner, name, checkpoint)
+    }
+}
+
+struct SharedImageDirSource<'a> {
+    loan: &'a CleanOriginalImageDirArchive<'a>,
+    inputs: &'a PolicyInputs,
+}
+impl ImageDirSource for SharedImageDirSource<'_> {
+    fn archive(&self) -> &Arc<BodyArchive> { self.loan.archive() }
+    fn paths(&self) -> impl Iterator<Item = &Path> {
+        self.inputs.files().filter(|file| file.is_compiled()).map(|file| file.path().as_path())
+    }
+    fn file_text(&self, path: &Path) -> Option<&str> {
+        let file = self.inputs.file_exact(path)?;
+        if !file.is_compiled() { return None; }
+        file.view(TextView::CompilerDecoded).ok().map(|text| text.as_str())
+    }
+    fn callable(&self, owner: SymbolId, name: SymbolId, checkpoint: &mut dyn FnMut() -> io::Result<()>) -> io::Result<OriginalImageDirCallable> {
+        self.loan.callable(owner, name, checkpoint)
+    }
+}
+
+/// Source/recorder freshness is the hosting operation's responsibility.
+/// Match both existing archive and mapping owners before scanning any body.
+pub fn image_dir_findings_shared_using<W: ImageDirWork>(
+    loan: &CleanOriginalImageDirArchive<'_>, inputs: &PolicyInputs, root: &Path,
+    exempt: impl Fn(&str) -> bool, work: &mut W,
+) -> Result<Vec<ImageDirFinding>, W::Error> {
+    work.checkpoint()?;
+    if !Arc::ptr_eq(loan.archive(), inputs.archive())
+        || !Arc::ptr_eq(loan.archive().source_mapping(), inputs.mapping())
+    {
+        return Err("shared ImageDir inputs belong to another Original archive".into());
+    }
+    image_dir_findings_from(&SharedImageDirSource { loan, inputs }, root, exempt, work)
+}
+
 pub fn image_dir_findings_using<W: ImageDirWork>(
     inputs: &OriginalImageDirFrontend, root: &Path, exempt: impl Fn(&str) -> bool, work: &mut W,
 ) -> Result<Vec<ImageDirFinding>, W::Error> {
+    image_dir_findings_from(inputs, root, exempt, work)
+}
+
+fn image_dir_findings_from<W: ImageDirWork>(
+    inputs: &impl ImageDirSource, root: &Path, exempt: impl Fn(&str) -> bool, work: &mut W,
+) -> Result<Vec<ImageDirFinding>, W::Error> {
     let archive=inputs.archive();
     let tree=archive.tree();
-    let paths=std::iter::once(root).chain(inputs.files().iter().filter(|file|file.captured).map(|file|file.path.as_path()));
+    let paths=std::iter::once(root).chain(inputs.paths());
     let temp = stored_refs::maximum_policy_temporary_width_for_paths_using(archive, paths, || work.checkpoint(), W::CHECKED)?
         .checked_mul(64).and_then(|bytes| bytes.checked_add(4096)).ok_or_else(|| work.overflow())?;
     work.temporary(temp)?;
@@ -245,7 +308,7 @@ pub fn image_dir_findings_using<W: ImageDirWork>(
         if !relative.starts_with("code/") || exempt(&relative) {
             continue;
         }
-        let file = inputs.file_exact(header.physical_path()).ok_or("image dir selected procedure source is not captured as compiled")?;
+        let file = inputs.file_text(header.physical_path()).ok_or("image dir selected procedure source is not captured as compiled")?;
         let body = work.body(archive, ordinal)?;
         if !body.belongs_to(archive) || !std::ptr::eq(body.occurrence(), occurrence) {
             return Err("image dir selected procedure received a foreign body".into());

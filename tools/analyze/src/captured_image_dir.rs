@@ -58,8 +58,29 @@ impl dm_analysis::untyped::ImageDirWork for Work<'_>{
     fn operational(&mut self,error:io::Error)->Failure{Failure::Operational(error)}
 }
 
+pub fn metadata() -> &'static Meta { &META }
+
+enum Inputs<'a> {
+    Named(&'a OriginalImageDirFrontend),
+    Shared(&'a dm_tree::frontend::CleanOriginalImageDirArchive<'a>, &'a dm_analysis::policy_inputs::PolicyInputs),
+}
+pub fn collect_shared(
+    archive: &dm_tree::frontend::CleanOriginalImageDirArchive<'_>,
+    inputs: &dm_analysis::policy_inputs::PolicyInputs, root: &Path, config: &Config,
+    budget: &Arc<Budget>, poll: &dyn Fn() -> io::Result<()>,
+) -> Result<Data, Failure> {
+    collect_using(Inputs::Shared(archive, inputs), root, config, budget, poll)
+}
+
 pub fn collect(
     inputs: &OriginalImageDirFrontend, root: &Path, config: &Config, budget: &Arc<Budget>,
+    poll: &dyn Fn() -> io::Result<()>,
+) -> Result<Data, Failure> {
+    collect_using(Inputs::Named(inputs), root, config, budget, poll)
+}
+
+fn collect_using(
+    inputs: Inputs<'_>, root: &Path, config: &Config, budget: &Arc<Budget>,
     poll: &dyn Fn() -> io::Result<()>,
 ) -> Result<Data, Failure> {
     fund::checked(budget, poll)?;
@@ -68,11 +89,12 @@ pub fn collect(
     let scratch = Budget::scoped_temporaries(budget)
         .map_err(|message| Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory, message)))?;
     let pending = (|| {
-        let found = dm_analysis::untyped::image_dir_findings_using(
-            inputs, root,
-            |relative| scope.exempt(relative) || scope.list("exempt_files").iter().any(|path| path == relative),
-            &mut Work { budget: &scratch, poll, peak: 0 },
-        )?;
+        let exempt = |relative: &str| scope.exempt(relative) || scope.list("exempt_files").iter().any(|path| path == relative);
+        let mut work = Work { budget: &scratch, poll, peak: 0 };
+        let found = match inputs {
+            Inputs::Named(inputs) => dm_analysis::untyped::image_dir_findings_using(inputs, root, exempt, &mut work)?,
+            Inputs::Shared(archive, inputs) => dm_analysis::untyped::image_dir_findings_shared_using(archive, inputs, root, exempt, &mut work)?,
+        };
         let mut sites = Vec::new();
         for row in found {
             fund::checked(budget, poll)?;

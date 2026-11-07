@@ -99,6 +99,7 @@ pub(crate) struct SourceSnapshot {
     occurrences: Arc<dm_tree::OccurrenceTable>,
     /// Same immutable current producer owner; no parsed syntax or source arena.
     bodies: Option<Arc<[dm_tree::frontend::BodyOccurrence]>>,
+    image_dir_proof: Option<dm_tree::frontend::CleanOriginalImageDirProof>,
     body_archive: Option<Arc<dm_tree::frontend::BodyArchive>>,
     native_policy_inputs: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
     policy_role: SnapshotPolicyRole,
@@ -477,6 +478,7 @@ impl SourceSnapshot {
         Self {
             analysis_subject:None,
             diagnostic_declarations: None,
+            image_dir_proof: None,
             original_notice_replay:OriginalNoticeReplay::Ordinary,
             model_preparation:None,
             semantic_sources: policy
@@ -1314,6 +1316,7 @@ impl SourceSnapshot {
         Ok(Self {
             analysis_subject:None,
             diagnostic_declarations: Some(Arc::clone(frontend.receipt())),
+            image_dir_proof: None,
             original_notice_replay:frontend.retain_original_preprocess_notices().map_or(OriginalNoticeReplay::Ordinary,OriginalNoticeReplay::Retained),
             model_preparation:Some(frontend.preparation_purpose()),
             semantic_sources: Some(evidence),
@@ -1396,6 +1399,10 @@ impl QueryAttempt {
         let evidence=if let Some(child)=&child{Arc::clone(child.semantic_source_evidence())}else{inputs.diagnostic_source_evidence(frontend)?};
         let mut snapshot=SourceSnapshot::capture_diagnostic_sources(frontend,Arc::clone(&queries),child,evidence)?;
         if intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let subject=inputs.original_analysis_subject().ok_or_else(||std::io::Error::other("full Analyze subject issuance absent"))?;subject.bind_frontend(frontend)?;subject.discovery().validate_recording(inputs)?;snapshot.analysis_subject=Some(Arc::clone(subject));}
+        if intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::ImageDir]{
+            snapshot.image_dir_proof=Some(frontend.clean_original_image_dir_proof()
+                .map_err(|message|std::io::Error::new(std::io::ErrorKind::Unsupported,message))?);
+        }
         if selected.is_some(){snapshot.policy_role=SnapshotPolicyRole::WorkspaceSemanticChild;snapshot.policy_revision=None;snapshot.workspace_semantic_selection=selected;}
         if let Some(generators)=generators{snapshot.policy_role=SnapshotPolicyRole::WorkspaceGeneratorChild;snapshot.policy_revision=None;snapshot.workspace_generator_selection=Some(generators);}
         self.pending_diagnostic=None;self.pending_source=None;

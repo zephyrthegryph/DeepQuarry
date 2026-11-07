@@ -1,5 +1,5 @@
 //! Explicit selected-policy embedding pilot. No default/IPC/baseline route.
-use super::{full_unused, operational, CompleteAllowRun, Producer, SourceSnapshot, UnionRows};
+use super::{full_unused, operational, CompleteAllowRun, Producer, SourceSnapshot, UnionRows, PRIVATE_IMAGE_DIR_ROSTER};
 use crate::{
     daemon::selected_report_wire::Roster,
     policy_request::WorkspaceAuxiliaryQuestion as Q,
@@ -256,6 +256,14 @@ impl ReportStage<'_> {
                 }
             }
             ReportRows::Union(rows) => match rows {
+            UnionRows::ImageDir(data) => {
+                if self.selected != PRIVATE_IMAGE_DIR_ROSTER || meta.name != "image_dir_after_build"
+                    || !std::ptr::eq(meta,data.metadata()) || !matches!(meta.policy,Policy::Hard)
+                    || !data.allow_used().is_empty() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData,"selected ImageDir role differs"));
+                }
+                for site in data.sites() { projection.row(site,None,&mut control)?; }
+            }
             UnionRows::Raw(files) => for file in files {
                 if file.name != meta.name { return Err(io::Error::new(io::ErrorKind::InvalidData, "raw result belongs to another policy")); }
                 for (index, site) in file.run.sites.iter().enumerate() {
@@ -675,6 +683,27 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, plan: &SelectedReportPlan, handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage,
     ) -> io::Result<(bool, Verified)> {
+        self.stage_selected_report_using(prepared, exclusions, retained, root,
+            plan.roster().names(), plan.questions(), plan.judgment,
+            plan.needs_library_sites_baseline(), plan.requires_handlers(), handlers, file)
+    }
+
+    /// Private until the exact report cohort has an independently qualified wire identity.
+    #[cfg(test)]
+    pub(super) fn stage_private_image_dir_report(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_selected_report_using(prepared, exclusions, retained, root,
+            PRIVATE_IMAGE_DIR_ROSTER, &[Q::ImageDir], JudgmentV2::Raw, false, false, None, file)
+    }
+
+    fn stage_selected_report_using(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, selected: &'static [&'static str], questions: &[Q], judgment: JudgmentV2,
+        needs_library_sites_baseline: bool, requires_handlers: bool,
+        handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
         use crate::request::BuildOutcome;
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation did not issue a current Original frame"));
@@ -682,19 +711,19 @@ impl SourceSnapshot {
         let pin = |text: &str| u128::from_str_radix(text, 16).ok();
         let workspace = self.native_workspace.as_ref().ok_or_else(|| io::Error::other("selected report has no actual workspace"))?;
         if workspace.root() != root || workspace.configuration().1.is_none()
-            || !workspace.matches_auxiliary_questions(plan.questions())
-            || handlers.is_some() != plan.requires_handlers()
+            || !workspace.matches_auxiliary_questions(questions)
+            || handlers.is_some() != requires_handlers
             || pin(semantic_revision) != Some(self.tree.identity()) || pin(source_revision) != Some(self.source_revision)
             || pin(policy_revision) != Some(workspace.policy_revision()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation differs from its current workspace"));
         }
-        let library_baseline = if plan.needs_library_sites_baseline() {
+        let library_baseline = if needs_library_sites_baseline {
             let guard = self.workspace_native_read()?;
             Some(workspace.library_sites_baseline(&guard)?)
         } else { None };
         let stage = RefCell::new(ReportStage {
-            file, finished: 0, selected: plan.roster().names(), failed: [false; Roster::MAX_STAGED_POLICIES],
-            judgment: plan.judgment, library_baseline,
+            file, finished: 0, selected, failed: [false; Roster::MAX_STAGED_POLICIES],
+            judgment, library_baseline,
         });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)

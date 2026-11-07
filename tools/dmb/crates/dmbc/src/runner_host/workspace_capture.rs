@@ -928,6 +928,11 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlersFullAllow){
         let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-sem-handlers-selected-full-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()
     }else{policy_revision};
+    let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::ImageDir){
+        let mut hash=xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"native-workspace-clean-image-dir-intent-v1");
+        hash.update(&policy_revision.to_le_bytes());hash.digest128()
+    }else{policy_revision};
     let policy_revision=if let Some(question)=crate::policy_request::WorkspaceAuxiliaryQuestion::exclusive_layering(&auxiliary){let mut hash=xxhash_rust::xxh3::Xxh3::new();match question.layering().expect("exact layering role"){dq_analyze::engine_layering_policy::Layer::Engine=>hash.update(b"native-workspace-engine_layering-intent-v1"),dq_analyze::engine_layering_policy::Layer::Library=>hash.update(b"native-workspace-library_layering-intent-v1")};hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision = if map_edits.is_some() {
         let mut hash = xxhash_rust::xxh3::Xxh3::new();

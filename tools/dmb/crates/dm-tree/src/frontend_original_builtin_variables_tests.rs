@@ -201,3 +201,39 @@ fn original_diagnostic_formal_defaults_publish_across_pending_pages_in_source_or
         assert!(expressions.in_source(2).unwrap().is_some());
     }
 }
+
+#[test]
+fn shared_image_dir_proof_uses_the_actual_archive_after_frontend_drop() {
+    let host = crate::frontend::declaration_checked_tests::original_test_host();
+    let text = "/datum/image_loan_base/proc/image_loan_pick()
+    return new /image
+/datum/image_loan_base/child
+";
+    let first = build_using(text, &host);
+    let view = first.source_view().unwrap();
+    let proof = view.clean_original_image_dir_proof().unwrap();
+    let archive = Arc::clone(view.archive());
+    let foreign = build_using(text, &host);
+    assert!(proof.bind(foreign.source_view().unwrap().archive()).is_err());
+    drop(first);
+    let loan = proof.bind(&archive).unwrap();
+    assert!(Arc::ptr_eq(loan.archive(), &archive));
+    let selected = loan.callable(
+        SymbolId::of("/datum/image_loan_base/child"),
+        SymbolId::of("image_loan_pick"),
+        &mut || Ok(()),
+    ).unwrap();
+    assert_eq!(selected.value, Some(archive.occurrences()[selected.body.unwrap()].member));
+
+    let duplicate = build_using(
+        "/proc/image_loan_repeat()
+    return new /image
+/proc/image_loan_repeat()
+    return new /mutable_appearance
+",
+        &host,
+    );
+    let view = duplicate.source_view().unwrap();
+    assert!(!view.receipt().is_clean());
+    assert!(view.clean_original_image_dir_proof().is_err());
+}

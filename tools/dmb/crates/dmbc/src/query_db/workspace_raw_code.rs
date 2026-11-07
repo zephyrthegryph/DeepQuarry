@@ -20,6 +20,27 @@ pub(crate) struct SelectedHandlerFiles<'reader,'capture,'scope>{
  domain:SiliconActorDomain<'reader>,
 }
 impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
+ pub(crate) fn image_dir_using<R>(
+  &self, proof: &dm_tree::frontend::CleanOriginalImageDirProof, inputs: &dm_analysis::policy_inputs::PolicyInputs,
+  consume: impl FnOnce(&dq_analyze::captured_image_dir::Data,&Config,&Arc<Budget>)->io::Result<R>,
+ )->Result<R,Failure>{
+  self.require_policy_inputs(inputs)?;
+  self.require_full_code_discovery()?;
+  let archive=proof.bind(inputs.archive())?;
+  let(_,bytes)=self.configuration();
+  let bytes=bytes.ok_or("image_dir_after_build needs its captured fixed configuration")?;
+  let peak=bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))
+   .ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+  self.budget().charge(peak).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))?;
+  let config=Config::capture(Configuration::Captured(bytes))?;
+  let poll=||self.checkpoint().map_err(|failure|match failure{Failure::Operational(error)=>error,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)});
+  let data=dq_analyze::captured_image_dir::collect_shared(&archive,inputs,self.root(),&config,self.budget(),&poll)?;
+  self.require_policy_inputs(inputs)?;
+  let pending=consume(&data,&config,self.budget()).map_err(Failure::Operational);
+  if pending.is_err(){return pending}
+  self.checkpoint()?;pending
+ }
+
  pub(super) fn with_setting_admission<T>(&self,run:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,dm_tree::frontend::BodySyntaxFailure>)->Result<T,dm_tree::frontend::BodySyntaxFailure>{
   self.db.with_setting_admission(run)
  }

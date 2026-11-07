@@ -240,7 +240,43 @@ impl DecodedSourceCandidates {
         (file.captured && file.path.as_path() == path).then_some(&file.text)
     }
 }
+/// Narrow detached proof for the actual clean complete Original archive.
+/// Retains no frontend, source-file index, or strong archive handle.
+pub struct CleanOriginalImageDirProof(std::sync::Weak<BodyArchive>);
+
+pub struct CleanOriginalImageDirArchive<'a>(&'a Arc<BodyArchive>);
+impl CleanOriginalImageDirProof {
+    pub fn bind<'a>(&self, archive: &'a Arc<BodyArchive>) -> Result<CleanOriginalImageDirArchive<'a>, String> {
+        if self.0.as_ptr() != Arc::as_ptr(archive) {
+            return Err("clean ImageDir proof belongs to another Original archive".into());
+        }
+        Ok(CleanOriginalImageDirArchive(archive))
+    }
+}
+impl CleanOriginalImageDirArchive<'_> {
+    pub fn archive(&self) -> &Arc<BodyArchive> { self.0 }
+    pub fn callable(
+        &self, owner: dm_ir::SymbolId, name: dm_ir::SymbolId,
+        checkpoint: &mut dyn FnMut() -> std::io::Result<()>,
+    ) -> std::io::Result<super::OriginalImageDirCallable> {
+        self.0.original_image_dir_callable(owner, name, checkpoint)
+    }
+}
+
 impl DiagnosticSourceView<'_> {
+    /// The hosting operation must separately validate current source inputs.
+    pub fn clean_original_image_dir_proof(&self) -> Result<CleanOriginalImageDirProof, String> {
+        self.require_original_analysis_seed()?;
+        if self.preparation_purpose() != DiagnosticPreparationPurpose::OriginalSharedComplete
+            || !self.original_plan().is_original_diagnostic()
+            || self.receipt().image_dir_mixed_callables
+            || !self.receipt().is_clean()
+        {
+            return Err("shared ImageDir requires its own clean complete Original archive".into());
+        }
+        Ok(CleanOriginalImageDirProof(Arc::downgrade(self.archive())))
+    }
+
     pub fn complete_original_decoded_sources(&self) -> Option<DecodedSourceCandidates> {
         (self.preparation_purpose() == DiagnosticPreparationPurpose::OriginalSharedComplete
             && self.original_plan().is_original_diagnostic()).then(|| DecodedSourceCandidates {

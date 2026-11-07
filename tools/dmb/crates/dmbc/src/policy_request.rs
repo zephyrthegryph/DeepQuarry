@@ -64,7 +64,7 @@ pub enum PolicyInputRole {
 /// Explicit fixed auxiliary questions, independent of generator/source roles.
 #[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd,Serialize,Deserialize)]
 #[serde(rename_all="snake_case")]
-pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,LibraryLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms,DerivedReads,SemHandlers,NoticePublisher,SiliconEntry,LibraryLayeringFullAllow,SemHandlersFullAllow,MapEdits,AllRawFilePolicies}
+pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,LibraryLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms,DerivedReads,SemHandlers,NoticePublisher,SiliconEntry,LibraryLayeringFullAllow,SemHandlersFullAllow,MapEdits,AllRawFilePolicies,ImageDir}
 impl WorkspaceAuxiliaryQuestion {
     pub(crate) const SELECTED_READS: &'static [Self] = &[Self::SemReads, Self::UntrackedInputs];
     pub(crate) const SELECTED_SETTER: &'static [Self] = &[Self::SetterPublishes];
@@ -93,7 +93,7 @@ impl WorkspaceAuxiliaryQuestion {
     }
 }
 
-impl WorkspaceAuxiliaryQuestion { pub(crate) const ALL:&'static[Self]=&[Self::DeadlinePollingAllowlist,Self::CheckGrep,Self::Keys,Self::SemReads,Self::UntrackedInputs,Self::Tracked,Self::TrackedTests,Self::CheckGrepBaseline,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::DocSnippets,Self::StoredRefs,Self::Ownership,Self::EngineLayering,Self::LibraryLayering,Self::UiActions,Self::SetterPublishes,Self::OpOrder,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::SemHandlers,Self::NoticePublisher,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow,Self::MapEdits,Self::AllRawFilePolicies]; pub(crate) const SEMANTIC:&'static[Self]=&[Self::SemReads,Self::UntrackedInputs,Self::SetterPublishes,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::Tracked,Self::TrackedTests,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::StoredRefs,Self::EngineLayering,Self::LibraryLayering,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow,Self::MapEdits]; pub(crate) fn is_semantic(self)->bool {Self::SEMANTIC.contains(&self)} }
+impl WorkspaceAuxiliaryQuestion { pub(crate) const ALL:&'static[Self]=&[Self::DeadlinePollingAllowlist,Self::CheckGrep,Self::Keys,Self::SemReads,Self::UntrackedInputs,Self::Tracked,Self::TrackedTests,Self::CheckGrepBaseline,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::DocSnippets,Self::StoredRefs,Self::Ownership,Self::EngineLayering,Self::LibraryLayering,Self::UiActions,Self::SetterPublishes,Self::OpOrder,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::SemHandlers,Self::NoticePublisher,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow,Self::MapEdits,Self::AllRawFilePolicies,Self::ImageDir]; pub(crate) const SEMANTIC:&'static[Self]=&[Self::SemReads,Self::UntrackedInputs,Self::SetterPublishes,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::Tracked,Self::TrackedTests,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::StoredRefs,Self::EngineLayering,Self::LibraryLayering,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow,Self::MapEdits,Self::ImageDir]; pub(crate) fn is_semantic(self)->bool {Self::SEMANTIC.contains(&self)} }
 
 impl WorkspaceAuxiliaryQuestion {
     pub(crate) fn layering(self) -> Option<dq_analyze::engine_layering_policy::Layer> {
@@ -158,6 +158,15 @@ impl PolicyInputRequest {
                 || !self.search_folders.is_empty())
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "raw file roster requires its exclusive Original workspace purpose"));
+        }
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::ImageDir)
+            && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
+                || workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::ImageDir]
+                || !workspace_generators.is_empty() || !self.files.is_empty()
+                || !self.search_folders.is_empty())
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                "image_dir_after_build requires its exact clean Original selected purpose"));
         }
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::MapEdits)
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
@@ -444,7 +453,7 @@ mod auxiliary_questions{
  use super::*;
  #[test]fn exact_registered_question_capacities_cover_union_and_preserve_duplicate_unknown_and_wrong_context_rejection(){
   let mut all=WorkspaceAuxiliaryQuestion::ALL.to_vec();all.sort_unstable();all.dedup();assert_eq!(all.len(),WorkspaceAuxiliaryQuestion::ALL.len());for question in WorkspaceAuxiliaryQuestion::ALL{assert_eq!(question.is_semantic(),WorkspaceAuxiliaryQuestion::SEMANTIC.contains(question));}
-  let root=crate::test_scratch::dir("full-allow-question-union");let mut request=PolicyInputRequest::default();request.analysis_context=Some(AnalysisContext::OriginalAnalyze0290);request.workspace=Some(WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code"),root.join("maps")],configuration:root.join("tools/ci/lint_scopes.toml")});request.workspace_auxiliary=WorkspaceAuxiliaryQuestion::ALL.iter().copied().filter(|question|!matches!(question,WorkspaceAuxiliaryQuestion::CheckGrepBaseline|WorkspaceAuxiliaryQuestion::SemHandlers|WorkspaceAuxiliaryQuestion::NoticePublisher|WorkspaceAuxiliaryQuestion::SiliconEntry|WorkspaceAuxiliaryQuestion::EngineLayering|WorkspaceAuxiliaryQuestion::LibraryLayering|WorkspaceAuxiliaryQuestion::LibraryLayeringFullAllow|WorkspaceAuxiliaryQuestion::SemHandlersFullAllow|WorkspaceAuxiliaryQuestion::MapEdits)).collect();let admitted=request.clone().admit().unwrap();assert_eq!(admitted.workspace_auxiliary().len(),WorkspaceAuxiliaryQuestion::ALL.len()-9);let json=serde_json::to_vec(&request).unwrap();let decoded:PolicyInputRequest=serde_json::from_slice(&json).unwrap();assert_eq!(decoded,request);
+  let root=crate::test_scratch::dir("full-allow-question-union");let mut request=PolicyInputRequest::default();request.analysis_context=Some(AnalysisContext::OriginalAnalyze0290);request.workspace=Some(WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code"),root.join("maps")],configuration:root.join("tools/ci/lint_scopes.toml")});request.workspace_auxiliary=WorkspaceAuxiliaryQuestion::ALL.iter().copied().filter(|question|!matches!(question,WorkspaceAuxiliaryQuestion::CheckGrepBaseline|WorkspaceAuxiliaryQuestion::SemHandlers|WorkspaceAuxiliaryQuestion::NoticePublisher|WorkspaceAuxiliaryQuestion::SiliconEntry|WorkspaceAuxiliaryQuestion::EngineLayering|WorkspaceAuxiliaryQuestion::LibraryLayering|WorkspaceAuxiliaryQuestion::LibraryLayeringFullAllow|WorkspaceAuxiliaryQuestion::SemHandlersFullAllow|WorkspaceAuxiliaryQuestion::MapEdits|WorkspaceAuxiliaryQuestion::ImageDir)).collect();let admitted=request.clone().admit().unwrap();assert_eq!(admitted.workspace_auxiliary().len(),WorkspaceAuxiliaryQuestion::ALL.len()-10);let json=serde_json::to_vec(&request).unwrap();let decoded:PolicyInputRequest=serde_json::from_slice(&json).unwrap();assert_eq!(decoded,request);
   let mut handlers=request.clone();
   handlers.workspace_auxiliary=vec![WorkspaceAuxiliaryQuestion::SemHandlers];
   assert_eq!(handlers.clone().admit().unwrap().workspace_auxiliary(),[WorkspaceAuxiliaryQuestion::SemHandlers]);

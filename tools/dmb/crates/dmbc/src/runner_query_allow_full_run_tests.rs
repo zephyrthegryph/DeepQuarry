@@ -116,3 +116,53 @@ fn selected_handler_raw_loan_uses_hidden_maps_and_preserves_a_true_missing_path(
   }).unwrap();
  });
 }
+
+#[test]
+fn actual_clean_image_dir_private_selected_stages_same_named_section_and_refuses_foreign() {
+ use crate::selected_report_spool::Stage;
+ let source="/proc/image_loan_probe(image/actual)
+    actual.dir = 2
+";
+ let (mut host,mut request,root)=fixture(source);
+ let intent=request.policy_inputs.as_mut().unwrap();
+ intent.analysis_context=Some(AnalysisContext::OriginalAnalyze0290);
+ intent.workspace_auxiliary=vec![Q::ImageDir];
+ std::fs::write(root.join("tools/ci/lint_scopes.toml"),
+  report_config::with_overlay("[lint.image_dir_after_build.lists]
+exempt_files=[]
+")).unwrap();
+ let cache=crate::test_scratch::dir("private-selected-image-report-spools");
+ let prepared=crate::request_runner::run_build_with_host(request,&mut host).unwrap();
+ let budget=Budget::new(8<<20).unwrap();
+ let mut control=Operation{budget:&budget,poll:&||Ok(())};
+ let all=full_unused::registered_full_selection(&[],&mut control).unwrap();
+ let exclusions:Vec<_>=all.names().iter().filter(|name|!PRIVATE_IMAGE_DIR_ROSTER.contains(&name.as_str()))
+  .map(|name|format!("-{name}")).collect();
+ let mut standalone=Vec::new();
+ let mut named=crate::runner_host::BuildHost::default();
+ assert!(!named.write_original_image_dir_report(&root,&cache,60,&mut standalone).unwrap());
+ let mut shared=Vec::new();
+ current(&host,|snapshot|{
+  let (clean,report)=snapshot.stage_private_image_dir_report(&prepared,&exclusions,&budget,&root,Stage::new(&cache).unwrap()).unwrap();
+  assert!(!clean);
+  report.publish(&mut shared).unwrap();
+ });
+ assert!(standalone.windows(b"code/probe.dm:2".len()).any(|part|part==b"code/probe.dm:2"));
+ assert!(shared.windows(standalone.len()).any(|part|part==standalone));
+
+ let (mut foreign,mut foreign_request,foreign_root)=fixture(source);
+ let foreign_intent=foreign_request.policy_inputs.as_mut().unwrap();
+ foreign_intent.analysis_context=Some(AnalysisContext::OriginalAnalyze0290);
+ foreign_intent.workspace_auxiliary=vec![Q::ImageDir];
+ std::fs::write(foreign_root.join("tools/ci/lint_scopes.toml"),
+  report_config::with_overlay("[lint.image_dir_after_build.lists]
+exempt_files=[]
+")).unwrap();
+ run(&mut foreign,&foreign_request);
+ current(&host,|actual|current(&foreign,|other|{
+  let proof=actual.image_dir_proof.as_ref().unwrap();
+  assert!(proof.bind(actual.body_archive.as_ref().unwrap()).is_ok());
+  assert!(proof.bind(other.body_archive.as_ref().unwrap()).is_err());
+  assert!(other.stage_private_image_dir_report(&prepared,&exclusions,&budget,&foreign_root,Stage::new(&cache).unwrap()).is_err());
+ }));
+}
