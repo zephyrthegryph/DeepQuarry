@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "Borderless fullscreen is now the default (Game Preferences, or the Fullscreen button on the Menu page); it stays on the monitor the game is on instead of spilling onto a second one."

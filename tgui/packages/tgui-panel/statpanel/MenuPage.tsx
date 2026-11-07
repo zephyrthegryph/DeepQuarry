@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { Button, Section } from 'tgui-core/components';
 import {
   CHAT_ITEMS,
-  FULLSCREEN_OFF,
-  FULLSCREEN_ON,
   GAME_ITEMS,
   HELP_ITEMS,
   ICON_SIZES,
@@ -50,16 +48,17 @@ export function MenuPage() {
         setTextMode(prop(props, 'text-mode') === 'true');
       },
     );
+    Byond.winget('mainwindow', ['is-fullscreen']).then(
+      (props: Record<string, any>) => {
+        setFullscreen(prop(props, 'is-fullscreen') === 'true');
+      },
+    );
   }, []);
 
+  // The server owns the choice (a saved preference, borderless fullscreen by default).
   function toggleFullscreen() {
-    const on = !fullscreen;
-    setFullscreen(on);
-    Byond.winset('mainwindow', { 'is-maximized': false });
-    Byond.winset('mainwindow', {
-      ...(on ? FULLSCREEN_ON : FULLSCREEN_OFF),
-      'is-maximized': true,
-    });
+    setFullscreen(!fullscreen);
+    run('toggle-fullscreen');
   }
 
   return (

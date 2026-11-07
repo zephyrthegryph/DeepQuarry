@@ -1,9 +1,11 @@
 import {
   type ChatMode,
+  chatHeightInColumn,
   columnRect,
   dockShare,
   dockTarget,
   dragPosition,
+  fitBrowserSize,
   fitRect,
   MAP_SPLIT_MAX,
   MAP_SPLIT_MIN,
@@ -746,5 +748,59 @@ export async function clampFloatToMain(): Promise<void> {
       pos: `${rect.x},${rect.y}`,
       size: `${rect.w}x${rect.h}`,
     });
+  }
+}
+
+const OUTPUT_PANE = 'output_browser';
+const CHAT_BROWSER = 'browseroutput';
+const FLOAT_HOST = 'chat_float_host';
+
+/**
+ * Sizes the chat browser to the space it really has, once the layout settles
+ * (on start and whenever the server moves the pane). The anchors keep it right
+ * through every later resize, so nothing runs on a window resize. The pane
+ * window's own size can be stale (a pane that was hidden keeps the size it
+ * had), which left the page taller than the column and past the screen bottom;
+ * so the size is held to what the host (the chat's part of the column, or the
+ * float window) reports.
+ */
+export async function fitChatBrowser(
+  mode: ChatMode,
+  reason: string,
+): Promise<void> {
+  try {
+    const pane = await Byond.winget(OUTPUT_PANE, 'size');
+    if (!isPoint(pane)) {
+      console.log('chat layout: fit skipped, pane size unknown', {
+        reason,
+        pane,
+      });
+      return;
+    }
+    let expected: Point | null = null;
+    if (mode === 'float') {
+      const host = await Byond.winget(FLOAT_HOST, 'size');
+      expected = isPoint(host) ? host : null;
+    } else {
+      const got = await Byond.winget(COLUMN_SPLIT, ['size', 'splitter']);
+      const splitter = Number(got?.splitter);
+      if (isPoint(got?.size) && Number.isFinite(splitter)) {
+        expected = {
+          x: got.size.x,
+          y: chatHeightInColumn(mode, got.size.y, splitter),
+        };
+      }
+    }
+    const size = fitBrowserSize(pane, expected);
+    console.log('chat layout: fit chat browser', {
+      reason,
+      mode,
+      pane,
+      expected,
+      size,
+    });
+    Byond.winset(CHAT_BROWSER, { pos: '0,0', size: `${size.x}x${size.y}` });
+  } catch (error) {
+    console.log('chat layout: fit chat browser failed', { reason, error });
   }
 }

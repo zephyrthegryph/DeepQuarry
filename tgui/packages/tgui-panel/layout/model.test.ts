@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  chatHeightInColumn,
   clampShare,
   clientRect,
   columnRect,
   dockShare,
   dockTarget,
   dragPosition,
+  fitBrowserSize,
   fitRect,
   fitSize,
   isMode,
@@ -415,5 +417,34 @@ describe('live split and dock preview math', () => {
     expect(previewBox('top', 35)).toEqual({ top: 0, height: 35 });
     expect(previewBox('bottom', 35)).toEqual({ top: 65, height: 35 });
     expect(previewBox('bottom', 5)).toEqual({ top: 80, height: 20 });
+  });
+});
+
+describe('chat browser fit', () => {
+  it('reads the chat height from the column splitter', () => {
+    expect(chatHeightInColumn('bottom', 1000, 60)).toBe(400);
+    expect(chatHeightInColumn('top', 1000, 35)).toBe(350);
+  });
+
+  it('never gives the browser more than its host has', () => {
+    expect(fitBrowserSize({ x: 640, y: 480 }, { x: 600, y: 300 })).toEqual({
+      x: 600,
+      y: 300,
+    });
+    expect(fitBrowserSize({ x: 500, y: 200 }, { x: 600, y: 300 })).toEqual({
+      x: 500,
+      y: 200,
+    });
+  });
+
+  it('uses the report when the host cannot be measured', () => {
+    expect(fitBrowserSize({ x: 640, y: 480 }, null)).toEqual({
+      x: 640,
+      y: 480,
+    });
+    expect(fitBrowserSize({ x: 640, y: 480 }, { x: 0, y: 0 })).toEqual({
+      x: 640,
+      y: 480,
+    });
   });
 });

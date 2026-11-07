@@ -16,6 +16,10 @@
 		set_status_tab(target)
 		return TRUE
 
+	if(target.stat_tab == "Inspect")
+		target.inspect_panel?.push()
+		return TRUE
+
 	var/mob/target_mob = target.mob
 
 	// Handle actions

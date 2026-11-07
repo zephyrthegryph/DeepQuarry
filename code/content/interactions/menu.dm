@@ -49,7 +49,8 @@
 	menu.set_visible(TRUE)
 	menu.set_cursor_params(istext(params) ? params : "")
 	menu.set_revision(menu.revision + 1)
-	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]).")
+	var/list/view_size = getviewsize(player.view || world.view)
+	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]) params=\"[menu.cursor_params]\" view=[view_size[1]]x[view_size[2]] icon_size=[world.icon_size] self=[target == user ? "yes" : "no"].")
 	menu.tgui_interact(user)
 	return TRUE
 
@@ -83,6 +84,7 @@ CAPABILITIES(/datum/interaction_menu)
 	op("action", ui_act("action", arg("id", schema_text(4096))), then(PROC_REF(ui_act_action)))
 	op("verb", ui_act("verb", arg("name", schema_text(4096))), then(PROC_REF(ui_act_verb)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	op("placed", ui_act("placed", arg("report", schema_text(4096))), then(PROC_REF(ui_act_placed)))
 	ref_one(nameof(owner))
 
 /// /datum/interaction_menu's window data.
@@ -115,22 +117,24 @@ CAPABILITIES(/datum/interaction_menu)
 		if(row["enabled"])
 			available += list(list(
 				"id" = row["key"],
-				"name" = row["label"],
-				"desc" = row["desc"],
+				"name" = interaction_menu_plain(row["label"]),
+				"desc" = interaction_menu_plain(row["desc"]),
 				"category" = null,
 				"keys" = list(),
 			))
 		else
 			blocked += list(list(
 				"id" = row["key"],
-				"name" = row["label"],
-				"desc" = row["desc"],
+				"name" = interaction_menu_plain(row["label"]),
+				"desc" = interaction_menu_plain(row["desc"]),
 				"category" = null,
-				"reason" = row["reason"],
+				"reason" = interaction_menu_plain(row["reason"]),
 			))
 	var/list/verb_names = list()
-	// Only the verbs the user could run on this target: choosing one is refused out of reach (ui_act_verb()), so a verb the user cannot invoke is not listed.
-	if(interaction_menu_can_reach(user, target))
+	// Legacy verbs are the target's own context verbs, so only those a player would pick from a popup are listed: in reach (choosing
+	// one is refused out of reach, ui_act_verb()), and not on the user's own
+	// body, whose verbs are the verb panel's and the keys' (a self menu of every mob verb is noise next to its ops).
+	if(interaction_menu_can_reach(user, target) && !interaction_menu_is_self(user, target))
 		for(var/procpath/target_verb as anything in target.verbs)
 			if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
 				continue
@@ -143,7 +147,7 @@ CAPABILITIES(/datum/interaction_menu)
 		for(var/list/hidden_row as anything in hidden_rows)
 			admin_view += list(list("id" = hidden_row["key"], "name" = hidden_row["label"], "hidden_by" = hidden_row["hidden_by"]))
 	return list(
-		"target" = capitalize(target.name),
+		"target" = capitalize(interaction_menu_plain(target.name)),
 		"role" = interaction_menu_role(target),
 		"distance" = interaction_menu_distance(user, target),
 		"available" = available,
@@ -152,6 +156,18 @@ CAPABILITIES(/datum/interaction_menu)
 		"verbs" = verb_names,
 		"hidden" = admin_view,
 	)
+
+/// Text for the menu: tags stripped and entities decoded, since the page draws it as plain text (a refusal or description
+/// written with markup would otherwise show its tags). Null when nothing is left.
+/proc/interaction_menu_plain(text)
+	if(!istext(text))
+		return null
+	var/plain = trim(html_decode(strip_html_properly(text)))
+	return length(plain) ? plain : null
+
+/// Is `target` the user's own body (the mob itself, or the mob its client controls)?
+/proc/interaction_menu_is_self(mob/user, atom/target)
+	return target == user || (user.client && target == user.client.mob)
 
 /// The "ROLE" half of the menu's subtitle: a mob's assigned role, else what kind of thing the target is.
 /proc/interaction_menu_role(atom/target)
@@ -236,6 +252,11 @@ CAPABILITIES(/datum/interaction_menu)
 
 /datum/interaction_menu/proc/ui_act_close(datum/act/op/A)
 	hide()
+	return TRUE
+
+/// The page reports where it put the popup (the map size, the parsed cursor and the final position), so a misplaced menu can be read off the log.
+/datum/interaction_menu/proc/ui_act_placed(datum/act/op/A, report)
+	log_input("Input: [owner() ? key_name(owner()) : "nobody"] interaction menu placed: [report]")
 	return TRUE
 
 /// Runs the op `key` of `target` chosen in the Menu (ORIGIN_MENU), with what the user holds. TRUE when it ran or started.

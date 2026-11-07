@@ -1010,6 +1010,10 @@ GLOBAL_VAR_INIT(login_seq, 0)
 		if("Set-Tab")
 			stat_tab = payload["tab"]
 			SSstatpanels.immediate_send_stat_data(src)
+		if("Inspect-Act")
+			// A button in the Inspect tab (code/content/examine/inspect_panel.dm).
+			if(islist(payload) && istext(payload["act"]))
+				inspect_panel?.act(payload["act"], payload)
 
 /// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)
 /client/proc/acquire_dpi()

@@ -83,7 +83,6 @@ SCHEMA(/atom, description_fluff, schema_text())
 		face_atom(A)
 	if(examine_to_panel())
 		examine_in_panel(A)
-		update_examine_panel(A)
 		return
 	var/list/results = A.examine(src)
 	if(!results || !results.len)

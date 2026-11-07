@@ -4,6 +4,8 @@
  * derived from them instead of kept in the DOM.
  */
 
+import type { InspectData } from './inspect';
+
 export type Host = {
   sendMessage: (type: string, payload?: object) => void;
 };
@@ -21,6 +23,7 @@ export type State = {
   verbs: Verb[];
   spells: string[][];
   examine: string[];
+  inspect: InspectData | null;
   tickets: string[][];
   misc: Record<string, any[][]>;
   sdql2: string[][];
@@ -41,6 +44,7 @@ export function initialState(): State {
     verbs: [],
     spells: [],
     examine: [],
+    inspect: null,
     tickets: [],
     misc: {},
     sdql2: [],
@@ -306,6 +310,13 @@ export class StatStore {
             : tabs,
         });
         if (payload.UPD) this.setTab('Examine');
+        break;
+      case 'update_inspect':
+        this.changed({
+          inspect: payload.data ?? null,
+          permanentTabs: payload.data ? this.withTab(tabs, 'Inspect') : tabs,
+        });
+        if (payload.switch) this.setTab('Inspect');
         break;
       case 'update_split_admin_tabs':
         this.changed({ splitAdminTabs: payload === true });

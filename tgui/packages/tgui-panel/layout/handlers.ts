@@ -1,7 +1,7 @@
 import { store } from '../events/store';
 import { dragHandlers } from './actions';
 import { layoutModeAtom, layoutShareAtom } from './atoms';
-import { clampFloatToMain, resumePopoutDrag } from './geometry';
+import { clampFloatToMain, fitChatBrowser, resumePopoutDrag } from './geometry';
 import { clampShare, isMode } from './model';
 
 /** The server moved the chat pane, or told which layout it is in (chat/layout). */
@@ -11,6 +11,12 @@ export function chatLayout(
   if (isMode(payload?.mode)) {
     const was = store.get(layoutModeAtom);
     store.set(layoutModeAtom, payload.mode);
+    // The pane has just been moved: size the page to its new place, again once it settles.
+    fitChatBrowser(payload.mode, 'layout');
+    setTimeout(
+      () => fitChatBrowser(store.get(layoutModeAtom), 'layout-settled'),
+      600,
+    );
     if (payload.mode === 'float') {
       clampFloatToMain();
       if (was !== 'float') {

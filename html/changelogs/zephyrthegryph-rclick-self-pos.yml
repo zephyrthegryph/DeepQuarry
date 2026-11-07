@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The right-click menu no longer clamps a click position outside the view to the map's left wall; it centres instead."
+  - code_imp: "The interaction menu logs the raw click params and the position the page computed."
