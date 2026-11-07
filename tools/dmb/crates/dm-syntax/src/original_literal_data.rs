@@ -566,14 +566,23 @@ impl<'a> OriginalLiteralRef<'a> {
     pub(crate) fn projection_candidate(self)->Option<(crate::original_literal_projection::ProjectedLiteral,usize)>{
      let owner=self.full_owner();
      if Arc::strong_count(owner)!=1||Arc::weak_count(owner)!=0{return None}
-     let LiteralStorage::Single(data)=&owner.storage else{return None};
+     self.singleton_descriptor().map(|descriptor| (descriptor, owner.credit.bytes()))
+    }
+    fn singleton_descriptor(self)->Option<crate::original_literal_projection::ProjectedLiteral>{
+     let LiteralStorage::Single(data)=&self.full_owner().storage else{return None};
      let kind=match data.kind{
       LiteralKind::Int=>0,LiteralKind::Float=>1,
       LiteralKind::String if data.value_in_raw[1]!=0||data.text.is_empty()=>2,
       LiteralKind::Resource if data.value_in_raw[1]!=0||data.text.is_empty()=>3,
       _=>return None,
      };
-     Some((crate::original_literal_projection::ProjectedLiteral{bits:data.scalar_bits,kind,mode:data.string_mode,alias:data.value_in_raw},owner.credit.bytes()))
+     Some(crate::original_literal_projection::ProjectedLiteral{bits:data.scalar_bits,kind,mode:data.string_mode,alias:data.value_in_raw})
+    }
+    #[cfg(debug_assertions)]
+    pub(crate) fn trace_shared_singleton_projection(self)->Option<usize>{
+     let owner=self.full_owner();
+     if Arc::strong_count(owner)==1&&Arc::weak_count(owner)==0{return None}
+     self.singleton_descriptor().map(|_|owner.credit.bytes())
     }
     /// Descriptor and real raw bytes in this uniquely owned packed row.
     /// The total lease is separately reported for complete owner retirement.

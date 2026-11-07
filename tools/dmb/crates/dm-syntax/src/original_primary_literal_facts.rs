@@ -254,14 +254,40 @@ fn alloc_funded_literal_rows<T>(capacity: usize, layout: Layout) -> io::Result<V
     Ok(unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) })
 }
 
+#[derive(Clone, Copy, Debug, Default)]
+struct FirstProjectionAttempts {
+    #[cfg(debug_assertions)]
+    compact_pages: usize,
+    #[cfg(debug_assertions)]
+    full_pages: usize,
+    #[cfg(debug_assertions)]
+    alias_refs: usize,
+    #[cfg(debug_assertions)]
+    alias_lease_per_reference_upper: usize,
+    #[cfg(debug_assertions)]
+    scratch_credit_declines: usize,
+    #[cfg(debug_assertions)]
+    layout_declines: usize,
+    #[cfg(debug_assertions)]
+    layout_declined_gross_payload: usize,
+    #[cfg(debug_assertions)]
+    payload_credit_declines: usize,
+    #[cfg(debug_assertions)]
+    credit_declined_gross_payload: usize,
+}
+
 impl LiteralPage {
  #[cfg(test)]
  fn get(&self,index:usize)->Option<BorrowedLiteralRow<'_>>{self.get_data(index,0,None,None)}
- fn settle_body_projection(&mut self,source:&str,base:usize,owner:&crate::OriginalLiteralProjectionOwner,a:&crate::SettingAdmission<'_>)->io::Result<Option<(usize,usize,usize,usize)>>{
+ fn settle_body_projection_using(&mut self,source:&str,base:usize,owner:&crate::OriginalLiteralProjectionOwner,a:&crate::SettingAdmission<'_>,mut _attempt:Option<&mut FirstProjectionAttempts>)->io::Result<Option<(usize,usize,usize,usize)>>{
+  #[cfg(debug_assertions)] if let Some(attempt)=_attempt.as_deref_mut(){attempt.full_pages+=1;}
   if matches!(self.data,LiteralPageData::Projected(_))
    || matches!(&self.data,LiteralPageData::Compact(data) if data.projections.is_some())
   {return Ok(None)}
-  let Some(_scratch)=a.try_reserve_optimization(LITERAL_PAGE_LEN+LITERAL_PAGE_LEN*std::mem::size_of::<u16>()).map_err(|e|a.take_operational_error().unwrap_or(e))?else{return Ok(None)};
+  let Some(_scratch)=a.try_reserve_optimization(LITERAL_PAGE_LEN+LITERAL_PAGE_LEN*std::mem::size_of::<u16>()).map_err(|e|a.take_operational_error().unwrap_or(e))?else{
+   #[cfg(debug_assertions)] if let Some(attempt)=_attempt.as_deref_mut(){attempt.scratch_credit_declines+=1;}
+   return Ok(None)
+  };
   let mut candidates=[false;LITERAL_PAGE_LEN];
   let mut references=[0u16;LITERAL_PAGE_LEN];
   if let LiteralPageData::Compact(data)=&self.data{
@@ -277,6 +303,9 @@ impl LiteralPage {
    let(span,data)=self.get_data(at,base,None,Some(owner)).ok_or(io::ErrorKind::InvalidData)?;
    if data.raw()?!=source.get(span.range()).ok_or(io::ErrorKind::InvalidInput)?{return Err(io::ErrorKind::InvalidData.into())}
    if let Some((_,bytes))=data.projection_candidate(){candidates[at]=true;count+=1;released=released.checked_add(bytes).ok_or(io::ErrorKind::OutOfMemory)?;}
+   #[cfg(debug_assertions)] if let Some(attempt)=_attempt.as_deref_mut(){
+    if let Some(bytes)=data.trace_shared_singleton_projection(){attempt.alias_refs+=1;attempt.alias_lease_per_reference_upper+=bytes;}
+   }
   }
   if count==0{return Ok(None)}
   let len=self.spans.len();
@@ -285,8 +314,14 @@ impl LiteralPage {
   let descriptor_layout=Layout::array::<crate::original_literal_projection::ProjectedLiteral>(count).map_err(|_|io::ErrorKind::OutOfMemory)?;
   let bytes=code_layout.size()+full_layout.size()+descriptor_layout.size();
   let old_rows=self.data.reservation_bytes();
-  if bytes>=old_rows.saturating_add(released){return Ok(None)}
-  let Some(credit)=a.try_reserve_optimization(bytes).map_err(|e|a.take_operational_error().unwrap_or(e))?else{return Ok(None)};
+  if bytes>=old_rows.saturating_add(released){
+   #[cfg(debug_assertions)] if let Some(attempt)=_attempt.as_deref_mut(){attempt.layout_declines+=1;attempt.layout_declined_gross_payload+=released;}
+   return Ok(None)
+  }
+  let Some(credit)=a.try_reserve_optimization(bytes).map_err(|e|a.take_operational_error().unwrap_or(e))?else{
+   #[cfg(debug_assertions)] if let Some(attempt)=_attempt.as_deref_mut(){attempt.payload_credit_declines+=1;attempt.credit_declined_gross_payload+=released;}
+   return Ok(None)
+  };
   let mut next=ProjectedLiteralData{
    codes:alloc_funded_literal_rows(len,code_layout)?,
    full:alloc_funded_literal_rows(len-count,full_layout)?,
@@ -312,11 +347,21 @@ impl LiteralPage {
  }
     /// Reuse the compact owner bank for both singleton and packed owners.
     /// A surviving packed entry keeps its Arc and untouched full rows.
+    #[cfg(test)]
     fn settle_compact_body_projection(
+        &mut self, source: &str, a: &crate::SettingAdmission<'_>,
+    ) -> io::Result<Option<(usize, usize, usize, usize)>> {
+        self.settle_compact_body_projection_using(source, a, None)
+    }
+
+    fn settle_compact_body_projection_using(
         &mut self,
         source: &str,
         a: &crate::SettingAdmission<'_>,
+        mut _attempt: Option<&mut FirstProjectionAttempts>,
     ) -> io::Result<Option<(usize, usize, usize, usize)>> {
+        #[cfg(debug_assertions)]
+        if let Some(attempt) = _attempt.as_deref_mut() { attempt.compact_pages += 1; }
         if self.body.iter().all(|word| *word == 0) {
             return Ok(None);
         }
@@ -350,6 +395,8 @@ impl LiteralPage {
             + mem::size_of::<[Option<ProjectedLiteral>; LITERAL_PAGE_LEN]>();
         let Some(_scratch) = a.try_reserve_optimization(scratch_bytes)
             .map_err(|error| a.take_operational_error().unwrap_or(error))? else {
+            #[cfg(debug_assertions)]
+            if let Some(attempt) = _attempt.as_deref_mut() { attempt.scratch_credit_declines += 1; }
             return Ok(None);
         };
         let mut groups = [Group::default(); LITERAL_PAGE_LEN];
@@ -381,6 +428,13 @@ impl LiteralPage {
                 group.singleton = Some(index as u8);
                 group.owner_bytes = bytes;
                 continue;
+            }
+            #[cfg(debug_assertions)]
+            if let Some(attempt) = _attempt.as_deref_mut() {
+                if let Some(bytes) = data.trace_shared_singleton_projection() {
+                    attempt.alias_refs += 1;
+                    attempt.alias_lease_per_reference_upper += bytes;
+                }
             }
             let Some((descriptor, raw_bytes, owner_bytes, owner_mask)) =
                 data.packed_projection_candidate() else { continue; };
@@ -427,10 +481,20 @@ impl LiteralPage {
         let metadata_bytes = layout.size() + control.size();
         // Include the optional pointer carried by the compact representation.
         if gross <= metadata_bytes + mem::size_of::<Option<Box<Vec<ProjectedLiteral>>>>() {
+            #[cfg(debug_assertions)]
+            if let Some(attempt) = _attempt.as_deref_mut().filter(|_| gross != 0) {
+                attempt.layout_declines += 1;
+                attempt.layout_declined_gross_payload += gross;
+            }
             return Ok(None);
         }
         let Some(mut credit) = a.try_reserve_optimization(metadata_bytes)
             .map_err(|error| a.take_operational_error().unwrap_or(error))? else {
+            #[cfg(debug_assertions)]
+            if let Some(attempt) = _attempt.as_deref_mut() {
+                attempt.payload_credit_declines += 1;
+                attempt.credit_declined_gross_payload += gross;
+            }
             return Ok(None);
         };
         let mut descriptors = alloc_funded_literal_rows(count, layout)?;
@@ -1022,6 +1086,7 @@ impl ColonStorage {
 
 struct Payload{
  #[cfg(debug_assertions)]body_projection:BodyProjectionCensus,
+ first_projection_attempts:FirstProjectionAttempts,
  projection:Option<crate::OriginalLiteralProjectionOwner>,next_body_row:usize,
  rows:LiteralPages,colons:ColonStorage,
  // Both append paths order against this shared frontier. Zero means empty
@@ -1064,10 +1129,18 @@ impl OriginalPrimaryLiteralFacts{
    }
    owner.next_body_row+=1;
    if at+1==LITERAL_PAGE_LEN{
-    let settlement = page.settle_body_projection(source,page_index*LITERAL_PAGE_LEN,owner.projection.as_ref().unwrap(),a)?;
-    let settlement = match settlement {
-        Some(settled) => Some(settled),
-        None => page.settle_compact_body_projection(source, a)?,
+    let base=page_index*LITERAL_PAGE_LEN;
+    let projection=owner.projection.as_ref().unwrap();
+    let settlement = if matches!(page.data, LiteralPageData::Compact(_)) {
+     match page.settle_compact_body_projection_using(source,a,Some(&mut owner.first_projection_attempts))? {
+      Some(settled) => Some(settled),
+      None => page.settle_body_projection_using(source,base,projection,a,None)?,
+     }
+    } else {
+     match page.settle_body_projection_using(source,base,projection,a,Some(&mut owner.first_projection_attempts))? {
+      Some(settled) => Some(settled),
+      None => page.settle_compact_body_projection_using(source,a,None)?,
+     }
     };
     let _raw_only = page.withdraw_compact_source_raw(source, a)?;
     #[cfg(debug_assertions)]{owner.body_projection.raw_only_released_bytes += _raw_only;}
@@ -1079,7 +1152,7 @@ impl OriginalPrimaryLiteralFacts{
   Ok(())
  }
  fn payload(&self)->&Payload{self.0.as_deref().expect("live primary facts")}
- pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{#[cfg(debug_assertions)]body_projection:BodyProjectionCensus::default(),projection:None,next_body_row:0,rows:LiteralPages{chunks:Vec::new(),len:0,directory_credit:rows_credit},colons:ColonStorage::default(),last_fact_end:0,extent:None,colon_credit,fixed_credit}))))}
+ pub(super) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{let fixed_credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;let rows_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;let colon_credit=a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Self(Some(Arc::new(Payload{#[cfg(debug_assertions)]body_projection:BodyProjectionCensus::default(),first_projection_attempts:FirstProjectionAttempts::default(),projection:None,next_body_row:0,rows:LiteralPages{chunks:Vec::new(),len:0,directory_credit:rows_credit},colons:ColonStorage::default(),last_fact_end:0,extent:None,colon_credit,fixed_credit}))))}
  pub(super) fn append_actual(&mut self,span:Span,data:crate::OriginalLiteralData,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;
   if owner.extent.is_some()||!a.matches_lease_domain(&owner.rows.directory_credit)||!a.matches_lease_domain(&owner.fixed_credit)||span.start>=span.end||owner.last_fact_end>span.start{return Err(io::ErrorKind::InvalidInput.into())}
@@ -1218,7 +1291,7 @@ impl OriginalPrimaryLiteralFacts{
   }
   if let Some(run) = packed_run { run.finish(&mut rejections); }
   // Use a named Debug builder so this snapshot has no owned text or alloc.
-  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census,numeric:NumericCensus,body_projection:BodyProjectionCensus,rejections:ProjectionRejections}
+  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census,numeric:NumericCensus,body_projection:BodyProjectionCensus,rejections:ProjectionRejections,first_attempts:FirstProjectionAttempts}
   impl std::fmt::Debug for Snapshot{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{
    f.debug_struct("PrimaryLiteralCensus").field("rows",&self.rows).field("colons",&self.colons)
     .field("fixed_reserved",&self.fixed).field("row_capacity",&self.row_capacity).field("colon_capacity",&self.colon_capacity)
@@ -1227,9 +1300,9 @@ impl OriginalPrimaryLiteralFacts{
     .field("batch_payload_reserved",&self.census.batch_payload_reserved)
     .field("exclusive_payload_rows",&self.census.exclusive_payload_rows).field("exclusive_payload_reserved",&self.census.exclusive_payload_reserved)
     .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper)
-    .field("numeric",&self.numeric).field("body_projection",&self.body_projection).field("projection_rejections",&self.rejections).finish()
+    .field("numeric",&self.numeric).field("body_projection",&self.body_projection).field("projection_rejections",&self.rejections).field("first_projection_attempts",&self.first_attempts).finish()
   }}
-  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections}
+  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections,first_attempts:owner.first_projection_attempts}
  }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   let owner=self.0.as_ref().expect("live primary facts");if let Some(projection)=&owner.projection{projection.visit_storage(&mut visit)}let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(&mut visit);owner.colons.visit_storage(&mut visit);owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
@@ -1765,14 +1838,21 @@ mod literal_page_controls {
     page.data.settle_full_using(&a).unwrap();
     assert!(matches!(page.data, LiteralPageData::Compact(_)));
     let before = used.load(Ordering::Acquire);
-    assert!(page.settle_body_projection(&source, 0, &output, &a).unwrap().is_none(),
+    let mut attempts = FirstProjectionAttempts::default();
+    assert!(page.settle_body_projection_using(&source, 0, &output, &a, Some(&mut attempts)).unwrap().is_none(),
         "rewriting the shared page into full handles loses the singleton saving");
     let alias = page.get(0).unwrap().1.detach_using(&a).unwrap();
-    assert!(page.settle_compact_body_projection(&source, &a).unwrap().is_none());
+    assert!(page.settle_compact_body_projection_using(&source, &a, Some(&mut attempts)).unwrap().is_none());
     assert_eq!(alias.raw().as_ptr(), raw_pointer);
     drop(alias);
     let denied = crate::SettingAdmission::new(&used, before, &|| Ok(()));
-    assert!(page.settle_compact_body_projection(&source, &denied).unwrap().is_none());
+    assert!(page.settle_compact_body_projection_using(&source, &denied, Some(&mut attempts)).unwrap().is_none());
+    #[cfg(debug_assertions)]
+    {
+        assert_eq!((attempts.full_pages, attempts.compact_pages), (1, 2));
+        assert_eq!((attempts.layout_declines, attempts.alias_refs, attempts.scratch_credit_declines), (1, 1, 1));
+        assert_eq!(attempts.layout_declined_gross_payload, payload);
+    }
     let mut wrong = source.clone();
     wrong.replace_range(1..2, "X");
     assert_eq!(page.settle_compact_body_projection(&wrong, &a).unwrap_err().kind(), io::ErrorKind::InvalidData);

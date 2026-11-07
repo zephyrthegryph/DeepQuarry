@@ -3720,3 +3720,35 @@ policies, separate from the full semantic and Checker gates.
 MapEdits also passed its public transport fixture with the isolated native
 client and the archived standalone Analyze oracle. The fixture preserves
 the report and refuses incompatible map geometry.
+
+
+### Canonical Checker graph and checkout syntax frontier
+
+The opt-in Original Checker uses the current canonical body product for the
+caller and its demanded callees. The absolute and canonical routes assemble
+the same body contribution type and use the same ordered graph writer.
+A fixture produced byte-identical output across routes with three canonical
+body computations and no further body computation on warm delivery. An edit
+removed the callee's sleep warning, reparsed only the callee, and matched an
+independently prepared canonical report. The test retained the other two
+canonical body identities across the edit. This proof covers the witnessed
+fixture grammar. The production route remains unchanged.
+
+The selected Keys route stages the existing native producer's findings and
+its actual ALLOW usage. Its fixture delivered sixteen findings, preserved the
+consumed and unused annotations, and repeated the same warm report. The Keys
+section matched a fresh independent legacy scanner byte for byte.
+
+The shared native reservation now charges actual syntax leases and physical
+origin storage. The local limits remain in effect. It currently covers these
+two families and does not represent whole-process memory.
+
+Smaller line indexes, compact literal ownership, lazy macro authors and
+pooled trace rows moved the selected semantic checkout from 12,262,382 to
+13,321,206 producer rows. At that latter frontier 329,588 actual singleton
+trace rows shared 5,479,600 bytes of page reservations, compared with
+10,546,816 bytes for the previous individually allocated layout at the same
+row count. The request reached generated `declare.dm` line 30,513 and
+refused a 16,384-byte syntax grant under the unchanged 128 MiB local cap.
+It emitted no semantic report. This run does not establish whole-checkout
+parity or the combined performance targets.
