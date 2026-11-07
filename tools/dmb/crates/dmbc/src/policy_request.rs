@@ -72,8 +72,11 @@ impl WorkspaceAuxiliaryQuestion {
     pub(crate) const SELECTED_MAP_AND_LAYERING: &'static [Self] =
         &[Self::LibraryLayeringFullAllow, Self::MapEdits, Self::EngineLayeringFullAllow];
 
+    pub(crate) const PRIVATE_AUTHORED_DOC_UI: &'static [Self] =
+        &[Self::LibraryLayeringFullAllow, Self::MapEdits, Self::EngineLayeringFullAllow, Self::DocUiFullAllow];
+
     pub(crate) fn admits_map_edits_capture(questions: &[Self]) -> bool {
-        questions == [Self::MapEdits] || questions == Self::SELECTED_MAP_AND_LAYERING
+        questions == [Self::MapEdits] || questions == Self::SELECTED_MAP_AND_LAYERING || questions == Self::PRIVATE_AUTHORED_DOC_UI
     }
 
     pub(crate) const SELECTED_READS: &'static [Self] = &[Self::SemReads, Self::UntrackedInputs];
@@ -145,6 +148,14 @@ pub struct AdmittedPolicyRequest {
 }
 impl PolicyInputRequest {
     pub fn admit(self) -> io::Result<AdmittedPolicyRequest> {
+        self.admit_using(false)
+    }
+
+    pub(crate) fn admit_private_authored_doc_ui(self) -> io::Result<AdmittedPolicyRequest> {
+        self.admit_using(true)
+    }
+
+    fn admit_using(self, private_authored_doc_ui: bool) -> io::Result<AdmittedPolicyRequest> {
         fn absolute(path: PathBuf) -> io::Result<PathBuf> {
             if !path.is_absolute() {
                 return Err(io::Error::new(
@@ -169,6 +180,17 @@ impl PolicyInputRequest {
         if !self.workspace_auxiliary.is_empty() && self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions require actual workspace intent"))}
         if self.workspace_auxiliary.len()>WorkspaceAuxiliaryQuestion::ALL.len(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions exceed fixed registered set"))}
         let mut workspace_auxiliary=self.workspace_auxiliary;workspace_auxiliary.sort_unstable();if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::CheckGrep)&&workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::CheckGrepBaseline){return Err(io::Error::new(io::ErrorKind::InvalidInput,"CheckGrep check and baseline purposes are mutually exclusive"))}if workspace_auxiliary.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate auxiliary question"))}
+        let mixed = workspace_auxiliary == WorkspaceAuxiliaryQuestion::PRIVATE_AUTHORED_DOC_UI;
+        if mixed != private_authored_doc_ui
+            || mixed && self.workspace.as_ref().is_none_or(|w| {
+                w.recursive_roots.as_slice() != [
+                    w.root.join("code"), w.root.join("doc/rewrite"), w.root.join("maps"),
+                    w.root.join("tgui/packages/tgui/interfaces"),
+                ]
+            })
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "private authored Docs/UI requires its exact mixed roster and roots"));
+        }
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::PlayerLink)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"player-link requires its actual full Original Analyze subject"))}
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::AllRawFilePolicies)
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
@@ -194,7 +216,7 @@ impl PolicyInputRequest {
         }
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::DocUiFullAllow)
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
-                || workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::DocUiFullAllow]
+                || (workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::DocUiFullAllow] && !mixed)
                 || !workspace_generators.is_empty() || !self.files.is_empty() || !self.search_folders.is_empty())
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined Docs and UI Actions requires its exact Original workspace purpose"));
@@ -212,7 +234,7 @@ impl PolicyInputRequest {
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
                 || !WorkspaceAuxiliaryQuestion::admits_map_edits_capture(&workspace_auxiliary)
                 || self.workspace.as_ref().is_none_or(|w| {
-                    w.recursive_roots.as_slice() != [w.root.join("code"), w.root.join("maps")]
+                    !mixed && w.recursive_roots.as_slice() != [w.root.join("code"), w.root.join("maps")]
                         && (workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::MapEdits]
                             || w.recursive_roots.as_slice() != [w.root.join("code")])
                 }))
@@ -242,7 +264,7 @@ impl PolicyInputRequest {
         if workspace_auxiliary.iter().any(|question| question.selected_layering().is_some())
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
                 || (workspace_auxiliary.len() != 1
-                    && workspace_auxiliary.as_slice() != WorkspaceAuxiliaryQuestion::SELECTED_MAP_AND_LAYERING)
+                    && workspace_auxiliary.as_slice() != WorkspaceAuxiliaryQuestion::SELECTED_MAP_AND_LAYERING && !mixed)
                 || !workspace_generators.is_empty() || !self.files.is_empty() || !self.search_folders.is_empty())
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "layering selected report requires its exact Original Analyze role"));

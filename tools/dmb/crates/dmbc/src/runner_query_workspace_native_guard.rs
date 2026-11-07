@@ -98,6 +98,9 @@ impl NativeReadGuard<'_> {
                 .workspace
                 .is_some_and(|registered| std::ptr::eq(registered.as_ref(), capture))
     }
+    pub(crate) fn queries_owner(&self) -> &Arc<crate::query_db::QueryDb> {
+        self.queries
+    }
     pub(crate) fn uses_queries(&self, queries: &crate::query_db::QueryDb) -> bool {
         std::ptr::eq(self.queries.as_ref(), queries)
     }
@@ -182,6 +185,37 @@ impl WorkspaceQueryScope {
         inputs: &dm_analysis::policy_inputs::PolicyInputs,
         consume: impl for<'loan> FnOnce(&NativeReadGuard<'loan>) -> io::Result<Result<R, S>>,
     ) -> io::Result<Result<R, S>> {
+        self.with_workspace_guard(expected, capture, || {
+            if !capture.matches_source(inputs.mapping(), inputs.revision().compiler_source) {
+                return Err(io::Error::other("workspace query scope/compiler input frame differs"));
+            }
+            Ok(())
+        }, consume)
+    }
+
+    pub(crate) fn with_authored_ui_guard<R, S>(
+        &self,
+        expected: &crate::query_db::QueryDb,
+        capture: &Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+        consume: impl for<'loan> FnOnce(&NativeReadGuard<'loan>) -> io::Result<Result<R, S>>,
+    ) -> io::Result<Result<R, S>> {
+        self.with_workspace_guard(expected, capture, || {
+            if !capture.has_authored_doc_ui_capture()
+                || self.model_preparation != Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete)
+            {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "UI child requires its actual complete authored capture"));
+            }
+            Ok(())
+        }, consume)
+    }
+
+    fn with_workspace_guard<R, S>(
+        &self,
+        expected: &crate::query_db::QueryDb,
+        capture: &Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+        validate: impl Fn() -> io::Result<()>,
+        consume: impl for<'loan> FnOnce(&NativeReadGuard<'loan>) -> io::Result<Result<R, S>>,
+    ) -> io::Result<Result<R, S>> {
         crate::daemon::control::checkpoint()?;
         let missing = || io::Error::new(io::ErrorKind::NotFound, "workspace query scope owner expired");
         let mapping = self.mapping.upgrade().ok_or_else(missing)?;
@@ -201,10 +235,7 @@ impl WorkspaceQueryScope {
         let require = || -> io::Result<()> {
             crate::daemon::control::checkpoint()?;
             capture.require_scope(&guard)?;
-            if !capture.matches_source(inputs.mapping(), inputs.revision().compiler_source) {
-                return Err(io::Error::other("workspace query scope/compiler input frame differs"));
-            }
-            Ok(())
+            validate()
         };
         require()?;
         // Operational errors keep first-error precedence. A semantic refusal

@@ -361,6 +361,20 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .cloned()
             .ok_or_else(|| invalid("policy file not recorded"))
     }
+    /// A bounded policy-file read records only the exact file stamp/digest
+    /// or an observed negative. The requester binds the path and issuer.
+    pub(crate) fn recorded_policy_file_observation(&self, path: &Path) -> io::Result<Option<(Stamp, u128)>> {
+        let path = canonical_path(path);
+        let current = self.snapshot.lock().map_err(|_| invalid("input mutex poisoned"))?;
+        if let Some(file) = current.files.get(&path) {
+            return Ok(Some((file.stamp.clone(), file.content)));
+        }
+        if current.negative_files.contains(&path) {
+            return Ok(None);
+        }
+        Err(invalid("policy file or its absence was not recorded"))
+    }
+
     pub(crate) fn matches_policy_directory_facts(&self, facts: &InputSnapshot) -> io::Result<bool> {
         let current = self
             .snapshot

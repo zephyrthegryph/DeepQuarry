@@ -33,6 +33,21 @@ enum Original {
     RawInput(dm_preprocess::SourceAcquisitionLease),
 }
 struct CapturedOriginal{original:Original,fact:FileInput}
+impl CapturedOriginal {
+    fn borrow_original<'a>(&'a self, mapping: &'a SourceExportMapping) -> io::Result<RecordedSourceOriginal<'a>> {
+        match &self.original {
+            Original::Native(native) => {
+                let lease = mapping.source_acquisition(native.occurrence)
+                    .filter(|lease| native.identity.matches(lease))
+                    .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "dispatcher Original acquisition differs"))?;
+                crate::input_snapshot::recorded_source_original(lease)
+            }
+            Original::Owned(bytes) => Ok(RecordedSourceOriginal::Bytes(bytes)),
+            Original::RawInput(_) => Err(io::Error::new(io::ErrorKind::InvalidInput, "dispatcher requires its authored capture owner")),
+        }
+    }
+}
+
 struct File {
     path: PathBuf,
     fact: FileInput,
@@ -91,6 +106,16 @@ impl WorkspaceCapture {
     pub(crate) fn semantic_order_question(&self)->Option<crate::policy_request::WorkspaceAuxiliaryQuestion>{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;[Q::SemReads,Q::UntrackedInputs,Q::SetterPublishes,Q::SysReactive,Q::Lifeforms,Q::DerivedReads].into_iter().find(|question|self.auxiliary.contains(question))}
     pub(crate) fn has_map_edits_capture(&self) -> bool {
         crate::policy_request::WorkspaceAuxiliaryQuestion::admits_map_edits_capture(&self.auxiliary)
+    }
+
+    pub(crate) fn has_authored_doc_ui_capture(&self) -> bool {
+        use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+
+        self.raw_source.is_none()
+            && self.discovery.has_authored_doc_ui_facets()
+            && self.matches_auxiliary_questions(Q::PRIVATE_AUTHORED_DOC_UI)
+            && self.ui_dispatcher.is_some()
+            && self.map_edits.is_some()
     }
 
     pub(crate) fn for_each_map_edit_file(
@@ -699,7 +724,13 @@ pub(crate) fn capture_analysis_map_edits<P: SnapshotProvider>(
         || frontend.mapping().initial_environment() != dm_preprocess::InitialEnvironment::OriginalChecker0290
         || !((questions == [Q::MapEdits] && discovery.contract().recursive_roots.as_slice() == [discovery.contract().root.join("code")])
             || discovery.contract().recursive_roots.as_slice()
-                == [discovery.contract().root.join("code"), discovery.contract().root.join("maps")])
+                == [discovery.contract().root.join("code"), discovery.contract().root.join("maps")]
+            || (questions == Q::PRIVATE_AUTHORED_DOC_UI
+                && discovery.has_authored_doc_ui_facets()
+                && discovery.contract().recursive_roots.as_slice() == [
+                    discovery.contract().root.join("code"), discovery.contract().root.join("doc/rewrite"),
+                    discovery.contract().root.join("maps"), discovery.contract().root.join("tgui/packages/tgui/interfaces"),
+                ]))
     {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits requires its fixed authored model and CODE discovery"));
     }
@@ -789,10 +820,73 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         ));
     }
     let aliases = alias_index::AliasIndex::new(known.keys().copied(), alias_reserve)?;
+    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    let mut ui = if questions.contains(&Q::DocUiFullAllow) {
+        // The funded MapEdits caller holds an ordinary capture window covering
+        // all EXTRA_BUDGET bytes. The dispatcher uses only the remainder of that
+        // window, and its surviving owner is settled once with the capture.
+        if map_work.is_none() || !discovery.has_authored_doc_ui_facets() {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "authored UI requires its actual joined discovery and capture funding"));
+        }
+        let root = &discovery.contract().root;
+        let mut admit = |bytes: usize| -> io::Result<()> {
+            used = used.checked_add(bytes).filter(|&used| used <= EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;
+            Ok(())
+        };
+        if !discovery.covers_doc_snippets(&mut admit)?
+            || !discovery.covers_ui_actions(&mut admit)?
+            || !discovery.covers_dm_roots(dq_analyze::tree::CODE_MAPS_DM.roots, false, &mut admit)?
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "authored UI joined domains were not completely observed"));
+        }
+        discovery.productive_ui_configuration(configuration)?
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "authored UI lacks its actual discovery configuration"))?;
+        const DISPATCHER: &str = dq_analyze::ui_actions_policy::DISPATCHER;
+        let width = root.as_os_str().len().checked_add(DISPATCHER.len())
+            .and_then(|n| n.checked_mul(8)).and_then(|n| n.checked_add(1024))
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        admit(width)?;
+        let path = root.join(DISPATCHER);
+        let mut captured = None;
+        if discovery.files().contains(&path) {
+            crate::daemon::control::checkpoint()?;
+            captured = Some(capture_optional_original(
+                inputs, mapping, frontend.plan, &discovery, &known, &texts, &aliases, &path, &mut used, 0,
+            )?.ok_or_else(|| io::Error::other("discovered UI dispatcher disappeared before capture"))?);
+        }
+        let original = captured.as_ref().map(|file| file.borrow_original(mapping)).transpose()?;
+        let room = EXTRA_BUDGET.checked_sub(used).ok_or(io::ErrorKind::OutOfMemory)?;
+        let budget = dq_analyze::captured_generator_budget::Budget::new(room).map_err(map_edits_quota)?;
+        let prepared = prepare_captured_ui_dispatcher(original.as_ref(), &budget)?;
+        used = used.checked_add(prepared.budget_charge()).filter(|&used| used <= EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;
+        Some((path, captured, UiDispatcherCapture { index: None, prepared }))
+    } else {
+        None
+    };
     let mut files = Vec::with_capacity(discovery.files().len());
     for path in discovery.files() {
         crate::daemon::control::checkpoint()?;
-        let captured=capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&texts,&aliases,path,&mut used,0)?.ok_or_else(||io::Error::other("discovered source disappeared before capture"))?;
+        let captured = if let Some((dispatcher, acquired, status)) = &mut ui {
+            if dispatcher.as_path() == path.as_path() {
+                status.index = Some(files.len());
+                acquired.take().ok_or_else(|| io::Error::other("actual authored dispatcher acquisition missing"))?
+            } else {
+                let relative = path.strip_prefix(&discovery.contract().root)
+                    .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "authored UI source escapes actual root"))?;
+                if relative.starts_with("tgui/packages/tgui/interfaces") &&
+                    !keeps_discovered_ui_path(relative, true, true, status.prepared.needs_sources(), |relative| {
+                        Ok(discovery.productive_ui_configuration(configuration)?
+                            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "authored UI lacks its actual discovery configuration"))?
+                            .policy_path_exempt("ui_actions", dq_analyze::ui_actions_policy::metadata().group, relative))
+                    })?
+                {
+                    continue;
+                }
+                capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&texts,&aliases,path,&mut used,0)?.ok_or_else(||io::Error::other("discovered source disappeared before capture"))?
+            }
+        } else {
+            capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&texts,&aliases,path,&mut used,0)?.ok_or_else(||io::Error::other("discovered source disappeared before capture"))?
+        };
         files.push(File {
             path: path.clone(),
             fact:captured.fact,
@@ -961,9 +1055,18 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         hash.update(&policy_revision.to_le_bytes());
         hash.digest128()
     } else { policy_revision };
+    let ui_dispatcher = ui.map(|(_, _, status)| status);
+    let policy_revision = if ui_dispatcher.is_some() {
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"native-workspace-authored-doc-ui-v1");
+        hash.update(&policy_revision.to_le_bytes());
+        hash.digest128()
+    } else {
+        policy_revision
+    };
     let issuance=next_issuance()?;
     let result = Arc::new(WorkspaceCapture {
-        source: Arc::downgrade(mapping),raw_source:None,engine_no_model:None,ui_dispatcher:None,
+        source: Arc::downgrade(mapping),raw_source:None,engine_no_model:None,ui_dispatcher,
         source_revision: frontend.revision,
         policy_revision,
         issuance,
@@ -1044,7 +1147,35 @@ impl WorkspaceCapture{
 }
 
 impl WorkspaceCapture{
- pub(crate) fn covers_raw_tree_policy(&self,policy:dq_analyze::captured_raw_tree_pages::Policy,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{if matches!(policy,dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher|dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch){return self.covers_code_dm(admit)}if policy==dq_analyze::captured_raw_tree_pages::Policy::UiActions{if !matches!(self.auxiliary.as_slice(),[crate::policy_request::WorkspaceAuxiliaryQuestion::UiActions|crate::policy_request::WorkspaceAuxiliaryQuestion::UiActionsFullAllow|crate::policy_request::WorkspaceAuxiliaryQuestion::DocUiFullAllow]){return Ok(false)}return self.discovery.covers_ui_actions(admit)}if policy==dq_analyze::captured_raw_tree_pages::Policy::DocSnippets{if !matches!(self.auxiliary.as_slice(),[crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets|crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippetsFullAllow|crate::policy_request::WorkspaceAuxiliaryQuestion::DocUiFullAllow]){return Ok(false)}self.discovery.covers_doc_snippets(admit)}else{self.discovery.covers_dm_roots(policy.metadata().select.roots,true,admit)}}
+ pub(crate) fn covers_raw_tree_policy(
+     &self,
+     policy: dq_analyze::captured_raw_tree_pages::Policy,
+     admit: &mut dyn FnMut(usize) -> io::Result<()>,
+ ) -> io::Result<bool> {
+     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+     use dq_analyze::captured_raw_tree_pages::Policy;
+
+     match policy {
+         Policy::NoticePublisher | Policy::ReportInCatch => self.covers_code_dm(admit),
+         Policy::UiActions => {
+             if !self.has_authored_doc_ui_capture()
+                 && !matches!(self.auxiliary.as_slice(), [Q::UiActions | Q::UiActionsFullAllow | Q::DocUiFullAllow])
+             {
+                 return Ok(false);
+             }
+             self.discovery.covers_ui_actions(admit)
+         }
+         Policy::DocSnippets => {
+             if !self.has_authored_doc_ui_capture()
+                 && !matches!(self.auxiliary.as_slice(), [Q::DocSnippets | Q::DocSnippetsFullAllow | Q::DocUiFullAllow])
+             {
+                 return Ok(false);
+             }
+             self.discovery.covers_doc_snippets(admit)
+         }
+         _ => self.discovery.covers_dm_roots(policy.metadata().select.roots, true, admit),
+     }
+ }
  pub(crate) fn raw_tree_policy_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,config:&dq_analyze::captured_raw_file::Config,policy:dq_analyze::captured_raw_tree_pages::Policy,selected:bool)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(policy.selects_path(relative)&&(!selected||!config.policy_path_exempt(policy.name(),policy.metadata().group,relative))))}
  pub(crate) fn covers_decl(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{self.discovery.covers_dm_roots(dq_analyze::captured_decl_pages::metadata().select.roots,false,admit)}
  pub(crate) fn decl_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,config:Option<&dq_analyze::captured_raw_file::Config>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_decl_pages::selects_path(relative)&&!config.is_some_and(|config|config.policy_path_exempt("decl","",relative))))}
@@ -1262,7 +1393,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
  let ui_joined=matches!(purpose,RawSourcePurpose::UiActionsFullAllow|RawSourcePurpose::DocUiFullAllow);
  let ui_purpose=purpose.is_ui();
  let ui_dispatcher_path=if ui_purpose{
-  Some(workspace.root.join("code/datums/capabilities/ui_actions.dm"))
+  Some(workspace.root.join(dq_analyze::ui_actions_policy::DISPATCHER))
  }else{None};
  let mut acquire=|path:&Path|->io::Result<dm_preprocess::SourceAcquisitionLease>{
   crate::daemon::control::checkpoint()?;

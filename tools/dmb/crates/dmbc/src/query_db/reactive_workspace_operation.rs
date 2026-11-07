@@ -22,15 +22,107 @@ impl Admission{
 }
 
 #[derive(Clone)]pub(super) enum Frame{Semantic(SemanticFrame),UiRaw(UiFrame),Handlers(HandlerFrame)}
-#[derive(Clone)]pub(super) struct UiFrame{proof:Weak<super::workspace::UiInputProof>,budget:Weak<Budget>,workspace:Weak<WorkspaceCapture>,source:Weak<crate::runner_host::workspace_capture::RawSourceIdentity>,queries:Weak<QueryDb>}
-pub(super) struct UiLoan{pub proof:Arc<super::workspace::UiInputProof>,pub budget:Arc<Budget>,pub workspace:Arc<WorkspaceCapture>,pub source:Arc<crate::runner_host::workspace_capture::RawSourceIdentity>,pub queries:Arc<QueryDb>}
-impl Admission{
- pub(super) fn bind_ui_operation<'a>(&'a self,budget:&Arc<Budget>,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,proof:&Arc<super::workspace::UiInputProof>)->io::Result<Guard<'a>>{
-  crate::daemon::control::checkpoint()?;let(source,queries)=guard.ui_raw_operation_owner(workspace)?;proof.require_owner(workspace)?;let mut slot=self.workspace_operation.lock().unwrap_or_else(|e|e.into_inner());if slot.is_some(){return Err(io::Error::new(io::ErrorKind::WouldBlock,"workspace operation control is already bound"))}budget.charge(std::mem::size_of::<Frame>()+std::mem::size_of::<WorkspaceCapture>()+8*std::mem::size_of::<usize>()).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;*slot=Some(Frame::UiRaw(UiFrame{proof:Arc::downgrade(proof),budget:Arc::downgrade(budget),workspace:Arc::downgrade(workspace),source:Arc::downgrade(&source),queries:Arc::downgrade(&queries)}));Ok(Guard{admission:self})
- }
- pub(super) fn current_ui_operation(&self)->io::Result<UiLoan>{
-  crate::daemon::control::checkpoint()?;let slot=self.workspace_operation.lock().unwrap_or_else(|e|e.into_inner());let Some(Frame::UiRaw(frame))=slot.as_ref()else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"UI child has no current sealed raw operation"))};let expired=||io::Error::new(io::ErrorKind::NotConnected,"UI raw operation owner expired");let loan=UiLoan{proof:frame.proof.upgrade().ok_or_else(expired)?,budget:frame.budget.upgrade().ok_or_else(expired)?,workspace:frame.workspace.upgrade().ok_or_else(expired)?,source:frame.source.upgrade().ok_or_else(expired)?,queries:frame.queries.upgrade().ok_or_else(expired)?};crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard::raw_owned(&loan.workspace,&loan.source,&loan.queries)?;if !loan.source.purpose().is_ui(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"UI child cannot borrow another raw purpose"))}loan.proof.require_published(&loan.workspace)?;loan.budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;Ok(loan)
- }
+type RawIdentity = crate::runner_host::workspace_capture::RawSourceIdentity;
+#[derive(Clone)]
+enum UiFrameSource {
+    Raw(Weak<RawIdentity>),
+    Authored(Arc<WorkspaceQueryScope>),
+}
+#[derive(Clone)]
+pub(super) struct UiFrame {
+    proof: Weak<super::workspace::UiInputProof>,
+    budget: Weak<Budget>,
+    workspace: Weak<WorkspaceCapture>,
+    source: UiFrameSource,
+    queries: Weak<QueryDb>,
+}
+enum UiLoanSource {
+    Raw(Arc<RawIdentity>),
+    Authored(Arc<WorkspaceQueryScope>),
+}
+pub(super) struct UiLoan {
+    pub proof: Arc<super::workspace::UiInputProof>,
+    pub budget: Arc<Budget>,
+    pub workspace: Arc<WorkspaceCapture>,
+    source: UiLoanSource,
+    pub queries: Arc<QueryDb>,
+}
+impl UiLoan {
+    pub(super) fn with_guard<R>(
+        &self, consume: impl for<'a> FnOnce(&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'a>)
+            -> Result<R, dq_analyze::captured_reactive_reads::Failure>,
+    ) -> Result<R, dq_analyze::captured_reactive_reads::Failure> {
+        use crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard;
+        use dq_analyze::captured_reactive_reads::Failure;
+        match &self.source {
+            UiLoanSource::Raw(source) => {
+                let guard = NativeReadGuard::raw_owned(&self.workspace, source, &self.queries)?;
+                consume(&guard)
+            }
+            UiLoanSource::Authored(scope) => scope.with_authored_ui_guard(&self.queries, &self.workspace, |guard| {
+                match consume(guard) {
+                    Err(Failure::Operational(actual)) => Err(actual),
+                    pending => Ok(pending),
+                }
+            })?,
+        }
+    }
+}
+impl Admission {
+    pub(super) fn bind_ui_operation<'a>(
+        &'a self, queries: &Arc<QueryDb>, budget: &Arc<Budget>, workspace: &Arc<WorkspaceCapture>,
+        guard: &crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,
+        proof: &Arc<super::workspace::UiInputProof>,
+    ) -> io::Result<Guard<'a>> {
+        crate::daemon::control::checkpoint()?;
+        proof.require_owner(workspace)?;
+        let mut slot = self.workspace_operation.lock().unwrap_or_else(|e|e.into_inner());
+        if slot.is_some() { return Err(io::Error::new(io::ErrorKind::WouldBlock, "workspace operation control is already bound")); }
+        let quota = |message| io::Error::new(io::ErrorKind::OutOfMemory, message);
+        let source = if workspace.has_authored_doc_ui_capture() {
+            if !guard.uses_queries(queries) || guard.model_preparation() != Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete) {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "UI control needs its actual authored capture and graph"));
+            }
+            budget.charge(2 * std::mem::size_of::<usize>()).map_err(quota)?;
+            UiFrameSource::Authored(Arc::new(guard.query_receipt(&mut |bytes| budget.charge(bytes).map_err(quota))?))
+        } else {
+            let (raw, actual) = guard.ui_raw_operation_owner(workspace)?;
+            if !Arc::ptr_eq(&actual, queries) { return Err(io::Error::new(io::ErrorKind::InvalidInput, "UI raw control graph differs")); }
+            UiFrameSource::Raw(Arc::downgrade(&raw))
+        };
+        budget.charge(std::mem::size_of::<Frame>() + std::mem::size_of::<WorkspaceCapture>() + 8 * std::mem::size_of::<usize>()).map_err(quota)?;
+        *slot = Some(Frame::UiRaw(UiFrame {
+            proof: Arc::downgrade(proof), budget: Arc::downgrade(budget), workspace: Arc::downgrade(workspace),
+            source, queries: Arc::downgrade(queries),
+        }));
+        Ok(Guard { admission: self })
+    }
+
+    pub(super) fn current_ui_operation(&self) -> io::Result<UiLoan> {
+        crate::daemon::control::checkpoint()?;
+        let slot = self.workspace_operation.lock().unwrap_or_else(|e|e.into_inner());
+        let Some(Frame::UiRaw(frame)) = slot.as_ref() else {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "UI child has no current sealed raw operation"));
+        };
+        let expired = || io::Error::new(io::ErrorKind::NotConnected, "UI raw operation owner expired");
+        let source = match &frame.source {
+            UiFrameSource::Raw(source) => {
+                let source = source.upgrade().ok_or_else(expired)?;
+                if !source.purpose().is_ui() { return Err(io::Error::new(io::ErrorKind::InvalidInput, "UI child cannot borrow another raw purpose")); }
+                UiLoanSource::Raw(source)
+            }
+            UiFrameSource::Authored(scope) => UiLoanSource::Authored(Arc::clone(scope)),
+        };
+        let loan = UiLoan { proof: frame.proof.upgrade().ok_or_else(expired)?, budget: frame.budget.upgrade().ok_or_else(expired)?,
+            workspace: frame.workspace.upgrade().ok_or_else(expired)?, source, queries: frame.queries.upgrade().ok_or_else(expired)? };
+        loan.with_guard(|_| Ok(())).map_err(|failure| match failure {
+            dq_analyze::captured_reactive_reads::Failure::Operational(actual) => actual,
+            dq_analyze::captured_reactive_reads::Failure::Unsupported(message) => io::Error::new(io::ErrorKind::Unsupported, message),
+        })?;
+        loan.proof.require_published(&loan.workspace)?;
+        loan.budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+        Ok(loan)
+    }
 }
 
 impl Admission{pub(super) fn ui_operation_is_bound(&self)->bool{matches!(self.workspace_operation.lock().unwrap_or_else(|e|e.into_inner()).as_ref(),Some(Frame::UiRaw(_)))}}

@@ -2,7 +2,7 @@
 //! Data only: no filesystem/model/cache/source or whole-report completion authority.
 use std::collections::{HashMap,HashSet};
 use crate::{pat::{Pat,Caps},pat,key_policy_control::{self as kc,Control,Compatibility}};
-pub(crate) const DISPATCHER:&str="code/datums/capabilities/ui_actions.dm";
+use crate::ui_actions_policy::DISPATCHER;
 pub(crate) struct Normaliser{raw:Pat,camel:Pat,replacement:String,max_length:usize,pub(crate) reserved:HashSet<String>}
 fn push<C:Control>(out:&mut String,text:&str,c:&mut C)->Result<(),C::Error>{
  if C::CHECKED{let need=out.len().checked_add(text.len()).ok_or_else(||c.overflow())?;if need>out.capacity(){let cap=need.max(out.capacity().saturating_mul(2)).max(64);kc::reserve(c,||cap.checked_add(64))?;out.try_reserve_exact(cap-out.len()).map_err(|_|c.allocation_failed())?;}}out.push_str(text);Ok(())

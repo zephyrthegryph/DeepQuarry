@@ -23,6 +23,11 @@ pub(super) const PRIVATE_DOC_UI: &[&str] = &[
 ];
 
 
+pub(super) const PRIVATE_AUTHORED_DOC_UI: &[&str] = &[
+    "allow_annotations", "doc_snippets", "engine_layering", "library_layering", "map_edits",
+    "notice_publisher", "report_in_catch", "scheduler", "ui_actions",
+];
+
 pub(super) const PRIVATE_MAP_AND_LAYERING: &[&str] = &[
     "allow_annotations", "engine_layering", "library_layering", "map_edits",
     "notice_publisher", "report_in_catch", "scheduler",
@@ -419,14 +424,14 @@ impl ReportStage<'_> {
             }
             UnionRows::Tree(tree) => {
                 if meta.name == "ui_actions"
-                    && ((self.selected != Roster::WithUiActions.names() && self.selected != PRIVATE_DOC_UI)
+                    && ((self.selected != Roster::WithUiActions.names() && self.selected != PRIVATE_DOC_UI && self.selected != PRIVATE_AUTHORED_DOC_UI)
                         || !std::ptr::eq(meta, dq_analyze::ui_actions_policy::metadata())
                         || !self.judgment.is_raw())
                 {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "UI Actions requires its exact source-only profile"));
                 }
                 if meta.name == "doc_snippets" {
-                    if (self.selected != Roster::WithDocSnippets.names() && self.selected != PRIVATE_DOC_UI)
+                    if (self.selected != Roster::WithDocSnippets.names() && self.selected != PRIVATE_DOC_UI && self.selected != PRIVATE_AUTHORED_DOC_UI)
                         || !std::ptr::eq(meta, dq_analyze::doc_snippets_policy::metadata())
                         || !self.judgment.is_raw()
                     {
@@ -461,7 +466,7 @@ impl ReportStage<'_> {
                 }
             }
             UnionRows::MapEdits(sites) => {
-                if (self.selected != Roster::WithMapEdits.names() && self.selected != PRIVATE_MAP_AND_LAYERING)
+                if (self.selected != Roster::WithMapEdits.names() && self.selected != PRIVATE_MAP_AND_LAYERING && self.selected != PRIVATE_AUTHORED_DOC_UI)
                     || !std::ptr::eq(meta, &dq_analyze::map_edits_policy::META)
                     || !matches!(meta.policy, Policy::Hard)
                 {
@@ -503,7 +508,7 @@ impl ReportStage<'_> {
                     Q::RelWriteUndeclared => (&[Roster::WithReferencePolicies], dq_analyze::rel_write_policy::metadata()),
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued message-only selected report role")),
                 };
-                let joined_engine = self.selected == PRIVATE_MAP_AND_LAYERING
+                let joined_engine = (self.selected == PRIVATE_MAP_AND_LAYERING || self.selected == PRIVATE_AUTHORED_DOC_UI)
                     && question == Q::EngineLayeringFullAllow;
                 if (!joined_engine && !rosters.iter().any(|roster| self.selected == roster.names()))
                     || !std::ptr::eq(meta, expected)
@@ -620,7 +625,7 @@ impl ReportStage<'_> {
                 let text = data.source_text().ok_or_else(|| io::Error::new(
                     io::ErrorKind::InvalidData, "selected library layering source evidence is absent"))?;
                 if (self.selected != Roster::WithLibraryLayering.names()
-                    && self.selected != PRIVATE_MAP_AND_LAYERING)
+                    && self.selected != PRIVATE_MAP_AND_LAYERING && self.selected != PRIVATE_AUTHORED_DOC_UI)
                     || meta.name != "library_layering" || !std::ptr::eq(meta, data.metadata())
                     || !matches!(meta.policy, Policy::Sites { .. }) || data.sites().len() != text.len() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "selected library layering findings differ from their actual Sites shape"));
@@ -916,6 +921,23 @@ impl SourceSnapshot {
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
             PRIVATE_MAP_AND_LAYERING, Q::SELECTED_MAP_AND_LAYERING,
+            JudgmentV2::Raw, false, false, None, file)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_authored_doc_ui(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
+        let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
+        if !selection.names().iter().map(String::as_str).eq(PRIVATE_AUTHORED_DOC_UI.iter().copied())
+            || !self.native_workspace.as_ref().is_some_and(|capture| capture.has_authored_doc_ui_capture())
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "mixed report needs its exact private selection and authored capture"));
+        }
+        self.stage_selected_report_using(prepared, exclusions, retained, root,
+            PRIVATE_AUTHORED_DOC_UI, Q::PRIVATE_AUTHORED_DOC_UI,
             JudgmentV2::Raw, false, false, None, file)
     }
 

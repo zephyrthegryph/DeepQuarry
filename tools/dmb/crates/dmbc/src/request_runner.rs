@@ -108,7 +108,7 @@ pub(crate) fn run_build_with_host_and_derived_sink_from(
 pub(crate) fn run_build_with_host_and_policy_sinks_from(
     request:BuildRequest,host:&mut crate::runner_host::BuildHost,derived_sink:Option<&mut dyn DerivedFailureReportSink>,handlers_sink:Option<&mut dyn HandlersFailureReportSink>,preparation_output:&mut PreparationDiagnosticOutput<'_>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
 )->Result<BuildOutcome,Box<dyn std::error::Error>>{
-    run_build_with_selected_publication(request,host,derived_sink,handlers_sink,preparation_output,source_override,None)
+    run_build_with_selected_publication(request,host,derived_sink,handlers_sink,preparation_output,source_override,None,false)
 }
 
 pub(crate) use runner_freshness::JoinedSelectedInputs;
@@ -132,12 +132,28 @@ pub(crate) fn compile_with_joined_selected_inputs(
     validate_joined_compile_request(&request, host)?;
     let mut writer = crate::daemon::stderr_writer();
     let mut output = PreparationDiagnosticOutput::immediate(&mut writer);
-    run_build_with_selected_publication(request,host,None,None,&mut output,None,Some(joined))
+    run_build_with_selected_publication(request,host,None,None,&mut output,None,Some(joined),false)
+}
+
+/// Private host entry. Ordinary request admission cannot acquire this roster.
+pub(crate) fn prepare_private_authored_doc_ui(
+    request: BuildRequest, host: &mut crate::runner_host::BuildHost,
+) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    if request.command != BuildCommand::PrepareQuery || !host.retains_artifacts()
+        || request.record_inputs.is_some() || request.replay_inputs.is_some()
+        || request.policy_inputs.is_none()
+    {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "private authored Docs/UI requires live retained preparation").into());
+    }
+    let mut writer = crate::daemon::stderr_writer();
+    let mut output = PreparationDiagnosticOutput::immediate(&mut writer);
+    run_build_with_selected_publication(request,host,None,None,&mut output,None,None,true)
 }
 
 fn run_build_with_selected_publication(
     mut request:BuildRequest,host:&mut crate::runner_host::BuildHost,mut derived_sink:Option<&mut dyn DerivedFailureReportSink>,mut handlers_sink:Option<&mut dyn HandlersFailureReportSink>,preparation_output:&mut PreparationDiagnosticOutput<'_>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
     joined: Option<&JoinedSelectedInputs>,
+    private_authored_doc_ui: bool,
 )->Result<BuildOutcome,Box<dyn std::error::Error>>{
     if source_override.is_some(){
         if request.command!=BuildCommand::PrepareQuery||!host.retains_artifacts()||request.policy_inputs.as_ref().and_then(|p|p.analysis_context).is_none()||request.record_inputs.is_some()||request.replay_inputs.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"borrowed source requires retained Original preparation without journal overrides").into())}
@@ -161,7 +177,7 @@ fn run_build_with_selected_publication(
     dmbc::diagnostics::begin(request.warnings.clone());
     let result = runner_freshness::run(request, |request| {
         preparation_output.start_attempt()?;
-        run_build_attempt(request, host,&mut derived_sink,&mut handlers_sink,preparation_output,source_override,joined)
+        run_build_attempt(request, host,&mut derived_sink,&mut handlers_sink,preparation_output,source_override,joined,private_authored_doc_ui)
     });
     match report {
         Some(project) => finish_report(&project, result),
@@ -183,6 +199,7 @@ fn run_build_attempt(
     preparation_output:&mut PreparationDiagnosticOutput<'_>,
     source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,
     joined: Option<&JoinedSelectedInputs>,
+    private_authored_doc_ui: bool,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let retains_query_owners = host.retains_artifacts();
     let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(
@@ -217,7 +234,9 @@ fn run_build_attempt(
         trace_path,
         warnings: _,
     } = request;
-    let policy_inputs = policy_inputs.map(|request| request.admit()).transpose()?;
+    let policy_inputs = policy_inputs.map(|request| if private_authored_doc_ui {
+        request.admit_private_authored_doc_ui()
+    } else { request.admit() }).transpose()?;
     let analysis_context=policy_inputs.as_ref().and_then(|request|request.analysis_context());
     if analysis_context.is_some(){
         if command!=BuildCommand::PrepareQuery || !retains_query_owners || !defines.is_empty()

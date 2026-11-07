@@ -384,7 +384,8 @@ impl QueryDb{
   let layer=question.selected_layering().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual selected layering role required"))?;
   crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;workspace.require_analysis_subject(subject)?;subject.require_bound_mapping(capture.policy().mapping())?;
   if !guard.uses_queries(self)||(!workspace.matches_auxiliary_questions(&[question])
-    && !workspace.matches_auxiliary_questions(crate::policy_request::WorkspaceAuxiliaryQuestion::SELECTED_MAP_AND_LAYERING))
+    && !workspace.matches_auxiliary_questions(crate::policy_request::WorkspaceAuxiliaryQuestion::SELECTED_MAP_AND_LAYERING)
+    && !workspace.has_authored_doc_ui_capture())
    ||!workspace.has_semantic_question(question)||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{
    return Err(io::Error::new(io::ErrorKind::InvalidInput,"layering selected union requires its actual Original subject and same QueryDb"))
   }

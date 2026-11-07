@@ -257,7 +257,7 @@ fn actual_private_doc_ui_uses_one_source_capture_and_keeps_productive_roles_sepa
  let (mut host,mut request,root)=fixture("/proc/known_doc()\n    return\n");
  let live_doc="\x60\x60\x60dm\nknown_doc()\nmissing_doc()\n\x60\x60\x60\n";
  let interface="act('bogus', {});";
- let dispatcher="code/datums/capabilities/ui_actions.dm";
+ let dispatcher=dq_analyze::ui_actions_policy::DISPATCHER;
  for (relative,text) in [
   ("deepquarry.dme","#include \"missing-compiled-file.dm\"\n"),
   (dispatcher,ui_fixture::DISPATCHER),
@@ -312,4 +312,118 @@ fn actual_private_doc_ui_uses_one_source_capture_and_keeps_productive_roles_sepa
   assert_eq!(report.matches("allow annotations: 1 unused").count(),1,"{report}");
   assert!(raw.stage_private_doc_ui(&prepared,&[],&budget,&root,Stage::new(&cache).unwrap()).is_err());
  }
+}
+
+#[test]
+fn private_authored_doc_ui_dispatcher_precedes_productive_interface_reads() {
+    let (mut host, mut request, root) = fixture("/obj/base\n    var/known\n/proc/known_doc()\n    return\n");
+    let dispatcher = dq_analyze::ui_actions_policy::DISPATCHER;
+    let interface = "tgui/packages/tgui/interfaces/Machine.tsx";
+    let markdown = "doc/rewrite/live.md";
+    for (relative, content) in [
+        ("deepquarry.dme", concat!(
+            "#include \"code/probe.dm\"\n",
+            "#include \"code/engine/probe.dm\"\n",
+            "#include \"code/library/probe.dm\"\n",
+            "#include \"code/content/probe.dm\"\n",
+        )),
+        ("code/engine/probe.dm", "/proc/engine_probe()\n    library_probe()\n"),
+        ("code/library/probe.dm", "/proc/library_probe()\n    downstream_probe()\n"),
+        ("code/content/probe.dm", "/proc/downstream_probe()\n    return\n"),
+        ("code/main.dm", "/obj/machine\n    tgui_id = \"Machine\"\n/obj/machine/proc/act_go(mob/user, value)\n    return value\n"),
+        ("maps/stale.dm", "/proc/stale()\n    return // ALLOW(scheduler): exact mixed capture unused annotation\n"),
+        (dispatcher, ui_fixture::DISPATCHER),
+        (interface, "act('bogus', {});"),
+        (markdown, "\x60\x60\x60dm\nknown_doc()\nmissing_doc()\n\x60\x60\x60\n"),
+        ("maps/edit.dmm", "/obj/base{known = 1; lost = 2}\n"),
+    ] {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+    std::fs::write(root.join("tools/ci/lint_scopes.toml"), report_config::with_overlay("")).unwrap();
+    let intent = request.policy_inputs.as_mut().unwrap();
+    intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
+    intent.workspace_auxiliary = Q::PRIVATE_AUTHORED_DOC_UI.to_vec();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![
+        root.join("code"), root.join("doc/rewrite"), root.join("maps"),
+        root.join("tgui/packages/tgui/interfaces"),
+    ];
+    assert!(request.policy_inputs.clone().unwrap().admit().is_err());
+    let mut foreign = request.clone();
+    foreign.policy_inputs.as_mut().unwrap().workspace_auxiliary.push(Q::Keys);
+    assert!(foreign.policy_inputs.unwrap().admit_private_authored_doc_ui().is_err());
+    let inspect = |host: &crate::runner_host::BuildHost, productive| {
+        current(host, |snapshot| {
+            let owner = snapshot.native_workspace.as_ref().unwrap();
+            assert!(owner.has_map_edits_capture());
+            assert!(owner.matches_auxiliary_questions(Q::PRIVATE_AUTHORED_DOC_UI));
+            use dq_analyze::captured_raw_tree_pages::Policy;
+            assert!(owner.covers_raw_tree_policy(Policy::DocSnippets, &mut |_| Ok(())).unwrap());
+            assert!(owner.covers_raw_tree_policy(Policy::UiActions, &mut |_| Ok(())).unwrap());
+            assert_eq!(owner.prepared_ui_dispatcher().unwrap().needs_sources(), productive);
+            let dispatcher_index = owner.ui_dispatcher_index().unwrap().unwrap();
+            assert!(owner.path(dispatcher_index).unwrap().ends_with(dispatcher));
+            let contains = |suffix: &str| (0..owner.file_count()).any(|i| owner.path(i).unwrap().ends_with(suffix));
+            assert!(contains(markdown));
+            assert_eq!(contains(interface), productive);
+        });
+    };
+    let prepared = crate::request_runner::prepare_private_authored_doc_ui(request.clone(), &mut host).unwrap();
+    inspect(&host, true);
+    let budget = Budget::new(8 << 20).unwrap();
+    let mut control = Operation { budget: &budget, poll: &|| Ok(()) };
+    let registry = full_unused::registered_full_selection(&[], &mut control).unwrap();
+    let names = super::selected_report::PRIVATE_AUTHORED_DOC_UI;
+    let exclusions: Vec<_> = registry.names().iter().filter(|name| !names.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let cache = crate::test_scratch::dir("private-authored-doc-ui-report");
+    let mut output = Vec::new();
+    current(&host, |snapshot| {
+        let (clean, verified) = snapshot.stage_private_authored_doc_ui(
+            &prepared, &exclusions, &budget, &root, crate::selected_report_spool::Stage::new(&cache).unwrap(),
+        ).unwrap();
+        assert!(!clean);
+        verified.publish(&mut output).unwrap();
+        assert!(snapshot.stage_private_authored_doc_ui(
+            &prepared, &[], &budget, &root, crate::selected_report_spool::Stage::new(&cache).unwrap(),
+        ).is_err());
+    });
+    let report = std::str::from_utf8(&output).unwrap();
+    let doc = report.find("[doc_snippets/doc_unknown_name]").unwrap_or_else(|| panic!("{report}"));
+    let engine = report.find("[engine_layering/external_dependency]").unwrap_or_else(|| panic!("{report}"));
+    let library = report.find("[library_layering/external_dependency]").unwrap_or_else(|| panic!("{report}"));
+    let map = report.find("[map_edits/unknown_var]").unwrap_or_else(|| panic!("{report}"));
+    let ui = report.find("tgui/packages/tgui/interfaces/Machine.tsx:").unwrap_or_else(|| panic!("{report}"));
+    assert!(doc < engine && engine < library && library < map && map < ui, "{report}");
+    assert!(report.contains("code/main.dm:4: [ui_actions/ui_unvalidated_param]"), "{report}");
+    assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
+
+    // Only an independently built legacy CLI is accepted here.
+    if let Some(legacy) = std::env::var_os("DQ_PRIVATE_MIXED_LEGACY_ANALYZE") {
+        let legacy = std::path::PathBuf::from(legacy);
+        assert!(legacy.is_absolute());
+        let mut command = std::process::Command::new(legacy);
+        command.args(["check", "--raw", "--no-cache", "--no-selftest", "--unused", "--root"])
+            .arg(&root).arg("--lint").args(&exclusions).env_remove("DQ_ALLOW_USAGE");
+        #[cfg(windows)] {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x08000000 | 0x00004000);
+        }
+        let expected = command.output().expect("run independent legacy mixed Analyze");
+        assert_eq!(expected.status.code(), Some(1), "{}", String::from_utf8_lossy(&expected.stderr));
+        assert_eq!(report, std::str::from_utf8(&expected.stdout).unwrap());
+    }
+
+    // Set the oversized length without allocating its contents in the test.
+    std::fs::OpenOptions::new().write(true).open(root.join(interface)).unwrap().set_len(64 << 20).unwrap();
+    std::fs::write(root.join(dispatcher), "// no dispatcher\n").unwrap();
+    crate::request_runner::prepare_private_authored_doc_ui(request.clone(), &mut host).unwrap();
+    inspect(&host, false);
+
+    std::fs::write(root.join(dispatcher), ui_fixture::DISPATCHER).unwrap();
+    let error = crate::request_runner::prepare_private_authored_doc_ui(request, &mut host).unwrap_err();
+    assert!(error.downcast_ref::<std::io::Error>().is_some_and(|error|
+        error.kind() == std::io::ErrorKind::InvalidData && error.to_string().contains("policy original exceeds remaining capture budget")
+    ), "{error}");
 }

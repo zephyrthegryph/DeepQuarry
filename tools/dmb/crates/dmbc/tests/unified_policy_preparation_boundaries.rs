@@ -52,7 +52,7 @@ fn doc_root(label:&str)->PathBuf{
  let root=test_scratch::dir("public-ui-raw-preparation");for(relative,text)in ui_fixture::files("basic"){put(&root,relative,text);}let request=request(&root,Q::UiActions);let mut host=BuildHost::default();let first=prepare_raw(&mut host,&request);
  put(&root,"code/helper.dm",b"/proc/helper(value)\n    return ui_text(value)\n");let added=prepare_raw(&mut host,&request);assert_ne!(added.source,first.source);std::fs::remove_file(root.join("code/helper.dm")).unwrap();let removed=prepare_raw(&mut host,&request);assert_ne!(removed.source,added.source);
  put(&root,"tools/ci/lint_scopes.toml",ui_fixture::configuration("[lint.ui_actions]\nexempt_files=[\"code/helper.dm\"]\n"));let config=prepare_raw(&mut host,&request);assert_ne!(config.policy,removed.policy);
- put(&root,"code/datums/capabilities/ui_actions.dm",b"invalid actual dispatcher\n");let bad=prepare_raw(&mut host,&request);assert_ne!(bad.source,config.source);put(&root,"code/datums/capabilities/ui_actions.dm",ui_fixture::DISPATCHER);prepare_raw(&mut host,&request);
+ put(&root,dq_analyze::ui_actions_policy::DISPATCHER,b"invalid actual dispatcher\n");let bad=prepare_raw(&mut host,&request);assert_ne!(bad.source,config.source);put(&root,dq_analyze::ui_actions_policy::DISPATCHER,ui_fixture::DISPATCHER);prepare_raw(&mut host,&request);
  // This is actual issuer/preparation coverage. It does not call private C1/C2
  // reporting or claim helper dependency/Kind12/TTL regressions passed.
 }
@@ -3454,10 +3454,10 @@ fn selected_ui_actions_joins_productive_dispatcher_with_complete_dm_allow_scope(
     assert!(!productive.contains("maps/player.dm"), "{productive}");
 
     // Malformed dispatcher has its original refusal but demands no C2 source.
-    put(&root, "code/datums/capabilities/ui_actions.dm", "not a dispatcher\n");
+    put(&root, dq_analyze::ui_actions_policy::DISPATCHER, "not a dispatcher\n");
     let malformed = read();
     assert!(!malformed.contains("tgui/packages/tgui/interfaces/Machine.tsx"), "{malformed}");
-    assert!(malformed.contains("code/datums/capabilities/ui_actions.dm"), "{malformed}");
+    assert!(malformed.contains(dq_analyze::ui_actions_policy::DISPATCHER), "{malformed}");
 
     build.policy_inputs.as_mut().unwrap().workspace_auxiliary = vec![Q::UiActions];
     let (mut diagnostics, mut output) = (Vec::new(), Vec::new());

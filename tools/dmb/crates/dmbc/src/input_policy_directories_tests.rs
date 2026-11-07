@@ -178,3 +178,24 @@ fn discovery_own_metadata_is_reserved_before_requesting_another_directory() {
         .unwrap();
     assert!(inputs.provider.0.load(Ordering::SeqCst) < METADATA_BOUND - 1024);
 }
+
+#[test]
+fn policy_file_observation_distinguishes_actual_content_absence_and_unobserved() {
+    let root = crate::test_scratch::dir("policy-file-observation");
+    let config = root.join("lint_scopes.toml");
+    let absent = root.join("missing.toml");
+    let input = RecordingInputs::new(FileSystemInputs, 0);
+    assert!(input.recorded_policy_file_observation(&absent).is_err());
+    assert!(input.read_policy_candidate(&absent, 4096).unwrap().is_none());
+    assert_eq!(input.recorded_policy_file_observation(&absent).unwrap(), None);
+
+    std::fs::write(&config, "[lint.one]\n").unwrap();
+    input.read_policy_candidate(&config, 4096).unwrap().unwrap();
+    let first = input.recorded_policy_file_observation(&config).unwrap().unwrap();
+    std::fs::write(&config, "[lint.two]\n").unwrap();
+    let later = RecordingInputs::new(FileSystemInputs, 0);
+    later.read_policy_candidate(&config, 4096).unwrap().unwrap();
+    let second = later.recorded_policy_file_observation(&config).unwrap().unwrap();
+    assert_eq!(first.0.size, second.0.size);
+    assert_ne!(first.1, second.1);
+}

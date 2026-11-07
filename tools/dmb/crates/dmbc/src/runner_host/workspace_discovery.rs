@@ -20,7 +20,7 @@ pub(crate) struct DiscoveryContract {
 /// The selector actually executed by the only recursive receipt issuer.
 /// No caller flag, include glob or exclusion list can construct this value.
 #[derive(Clone,Copy)]
-enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1}
+enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1, AuthoredDocUiJoinedV1}
 /// Obligations of the one physical traversal selected by the private issuer.
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 struct DiscoveryFacets {
@@ -46,16 +46,16 @@ impl DiscoverySelection{
  fn facets(self) -> DiscoveryFacets {
      use DiscoverySelection::*;
      DiscoveryFacets {
-         map_root_no_follow: matches!(self, MapEditsJoinedDmNoLinksV1),
-         productive_docs: matches!(self, DocSnippetsDemandV2 | DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1),
-         docs_share_complete_dm: matches!(self, DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1),
-         visible_ui: matches!(self, UiActionsVisibleRootsV1 | UiActionsJoinedAllowV1 | DocUiJoinedAllowV1),
-         ui_shares_complete_dm: matches!(self, UiActionsJoinedAllowV1 | DocUiJoinedAllowV1),
+         map_root_no_follow: matches!(self, MapEditsJoinedDmNoLinksV1 | AuthoredDocUiJoinedV1),
+         productive_docs: matches!(self, DocSnippetsDemandV2 | DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1),
+         docs_share_complete_dm: matches!(self, DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1),
+         visible_ui: matches!(self, UiActionsVisibleRootsV1 | UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1),
+         ui_shares_complete_dm: matches!(self, UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1),
      }
  }
 
  fn includes_file(self,path:&Path,root:&Path)->bool{match self{
-  Self::DocUiJoinedAllowV1=>Self::UiActionsJoinedAllowV1.includes_file(path,root)
+  Self::DocUiJoinedAllowV1|Self::AuthoredDocUiJoinedV1=>Self::UiActionsJoinedAllowV1.includes_file(path,root)
    ||path.strip_prefix(root).is_ok_and(|relative|
     dq_analyze::doc_snippets_policy::is_doc_path(&relative.to_string_lossy().replace('\\',"/"))),
   Self::UiActionsJoinedAllowV1=>path.strip_prefix(root).is_ok_and(|relative|
@@ -82,7 +82,7 @@ impl DiscoverySelection{
  }}
 }
 /// Names are issued only by the actual private CheckGrep traversal.
-struct DocConfiguration{path:PathBuf,facts:InputSnapshot,value:Arc<dq_analyze::captured_raw_file::Config>}
+struct DocConfiguration{path:PathBuf,observation:Option<(crate::input_snapshot::Stamp,u128)>,value:Arc<dq_analyze::captured_raw_file::Config>}
 impl DocConfiguration{fn excludes(&self,relative:&str)->bool{self.value.policy_path_exempt("doc_snippets",dq_analyze::doc_snippets_policy::metadata().group,relative)}fn excludes_subtree(&self,relative:&str)->bool{self.value.borrowed_report_scope("doc_snippets",dq_analyze::doc_snippets_policy::metadata().group).is_some_and(|scope|scope.exempt_prefixes.iter().any(|prefix|relative.starts_with(prefix))||scope.exempt_contains.iter().any(|part|relative.contains(part)))}}
 struct CheckGrepNames{dmes:Vec<PathBuf>,jsx:Vec<PathBuf>}
 
@@ -112,7 +112,7 @@ impl DiscoveryReceipt {
         if matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1){return Ok(false)}
         if matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2){return Ok(false)}
         if matches!(self.selection,DiscoverySelection::OwnershipCodeDmV2)&&roots!=[("code","dm")]{return Ok(false)}
-        if matches!(self.selection,DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1)
+        if matches!(self.selection,DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1)
             && roots.iter().any(|(root,ext)| *ext!="dm"
                 || !(Path::new(root).starts_with("code")||Path::new(root).starts_with("maps"))) {
             return Ok(false)
@@ -121,7 +121,7 @@ impl DiscoveryReceipt {
     }
     /// A mixed MD receipt can certify only the actual doc purpose, never CODE authority.
     pub(crate) fn covers_doc_snippets(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
-        if !matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1){return Ok(false)}
+        if !matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1){return Ok(false)}
         if self.selection.facets().productive_docs{
           let config=self.doc_configuration.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"productive Doc discovery has no actual configuration owner"))?;
           for relative in ["code/","doc/rewrite/"]{crate::daemon::control::checkpoint()?;admit(1024)?;if config.excludes_subtree(relative){continue}if !self.facts.policy_directories().contains_key(&self.contract.root.join(relative.trim_end_matches('/'))){return Ok(false)}}return Ok(true)
@@ -137,7 +137,7 @@ impl DiscoveryReceipt {
     fn covers_selected_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,doc:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
         for &(directory,extension) in roots{
             crate::daemon::control::checkpoint()?;
-            if extension!="dm"&&!(doc&&directory=="doc/rewrite"&&extension=="md")&&!(matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1)&&directory=="tgui/packages/tgui/interfaces"&&matches!(extension,"tsx"|"ts"|"jsx"|"js")){return Ok(false)}
+            if extension!="dm"&&!(doc&&directory=="doc/rewrite"&&extension=="md")&&!(matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1)&&directory=="tgui/packages/tgui/interfaces"&&matches!(extension,"tsx"|"ts"|"jsx"|"js")){return Ok(false)}
             if matches!(self.selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1)&&!["code","maps","tgui/packages/tgui/interfaces"].iter().any(|root|Path::new(directory).starts_with(root)){return Ok(false)}
             if !self.contract.recursive_roots.iter().any(|root|root.strip_prefix(&self.contract.root).is_ok_and(|relative|Path::new(directory).starts_with(relative))){return Ok(false)}
             admit(self.contract.root.as_os_str().len().checked_add(directory.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(512)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"code discovery proof path overflow"))?)?;
@@ -166,6 +166,13 @@ impl DiscoveryReceipt {
         Ok(true)
     }
 
+    /// Only the issuer can combine these obligations. The already-issued raw
+    /// Docs/UI profile follows its maps root and therefore cannot qualify.
+    pub(crate) fn has_authored_doc_ui_facets(&self) -> bool {
+        let facets = self.selection.facets();
+        facets.map_root_no_follow && facets.docs_share_complete_dm && facets.ui_shares_complete_dm
+    }
+
     pub(crate) fn productive_ui_configuration(&self,path:&Path)->io::Result<Option<&dq_analyze::captured_raw_file::Config>>{
      if !self.selection.facets().visible_ui{return Ok(None)}
      match &self.doc_configuration{Some(config)if config.path==path=>Ok(Some(config.value.as_ref())),_=>Err(io::Error::new(io::ErrorKind::InvalidInput,"actual UI productive configuration absent or foreign"))}
@@ -186,7 +193,7 @@ impl DiscoveryReceipt {
             census.path(owner, path);
         }
         if let Some(names)=&self.check_grep{for rows in [&names.dmes,&names.jsx]{census.vec_payload(owner,rows);for path in rows{census.path(owner,path);}}}
-        if let Some(config)=&self.doc_configuration{census.path(owner,&config.path);census.workspace_policy_facts(&config.facts);census.arc_object(owner,&config.value);census.unknown(owner,"Doc interpreted scope nested allocations use conservative existing Config admission charge");}
+        if let Some(config)=&self.doc_configuration{census.path(owner,&config.path);census.arc_object(owner,&config.value);census.unknown(owner,"Doc interpreted scope nested allocations use conservative existing Config admission charge");}
         census.workspace_policy_facts(&self.facts);
     }
 
@@ -207,14 +214,14 @@ impl DiscoveryReceipt {
                 "discovery receipt belongs to another capture/closure",
             ));
         }
-        if let Some(config)=&self.doc_configuration{let current=inputs.policy_workspace_closure(&BTreeSet::from([config.path.clone()]),std::iter::empty())?;if !current.same_recorded_facts(&config.facts){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Doc configuration was not recorded by this actual discovery issuer"))}}
+        if let Some(config)=&self.doc_configuration{if inputs.recorded_policy_file_observation(&config.path)? != config.observation{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Doc configuration was not recorded by this actual discovery issuer"))}}
         Ok(())
     }
     pub(crate) fn retained_charge(&self) -> io::Result<usize> {
         self.retained_charge_with(&mut BTreeSet::new())
     }
     pub(crate) fn retained_charge_with(&self, seen: &mut BTreeSet<usize>) -> io::Result<usize> {
-        let doc=match &self.doc_configuration{None=>0,Some(config)=>config.path.capacity().checked_add(config.value.budget_charge()).and_then(|n|n.checked_add(std::mem::size_of::<DocConfiguration>()+std::mem::size_of::<dq_analyze::captured_raw_file::Config>()+2*std::mem::size_of::<usize>())).and_then(|n|config.facts.policy_closure_charge_with(seen).ok().and_then(|facts|n.checked_add(facts))).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc interpreted configuration metadata overflow"))?};
+        let doc=match &self.doc_configuration{None=>0,Some(config)=>config.path.capacity().checked_add(config.value.budget_charge()).and_then(|n|n.checked_add(std::mem::size_of::<DocConfiguration>()+std::mem::size_of::<dq_analyze::captured_raw_file::Config>()+2*std::mem::size_of::<usize>())).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc interpreted configuration metadata overflow"))?};
         self.facts
             .policy_closure_charge_with(seen)?.checked_add(doc).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc metadata overflow"))?
             .checked_add(
@@ -301,8 +308,8 @@ fn discover_productive_ui_domains<P:SnapshotProvider>(inputs:&RecordingInputs<P>
  let peak=bytes.as_ref().map_or(Some(1024),|bytes|bytes.capacity().checked_mul(64).and_then(|n|n.checked_add(8192+path.capacity()*8))).ok_or(io::ErrorKind::OutOfMemory)?;
  if inputs.policy_discovery_metadata_charge()?.checked_add(peak).is_none_or(|n|n>64*1024*1024){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"UI configuration exceeds existing metadata grant before interpretation"))}
  let config=Arc::new(dq_analyze::captured_raw_file::Config::capture(bytes.as_ref().map_or(dq_analyze::captured_raw_policy::Configuration::ProvenMissing,|bytes|dq_analyze::captured_raw_policy::Configuration::Captured(bytes.as_slice()))).map_err(io::Error::other)?);
- let facts=inputs.policy_workspace_closure(&BTreeSet::from([path.clone()]),std::iter::empty())?;
- let receipt=discover_selected_using(inputs,contract,selection,Some(DocConfiguration{path,facts,value:config}))?;
+ let observation=inputs.recorded_policy_file_observation(&path)?;
+ let receipt=discover_selected_using(inputs,contract,selection,Some(DocConfiguration{path,observation,value:config}))?;
  let mut admit=|_:usize|Ok(());if !receipt.covers_ui_actions(&mut admit)?{return Err(io::Error::new(io::ErrorKind::Unsupported,"UI productive root alias is unissued"))}
  Ok((receipt,bytes))
 }
@@ -554,12 +561,21 @@ pub(crate) fn discover_doc_ui_joined<P:SnapshotProvider>(inputs:&RecordingInputs
  discover_productive_doc_domains(inputs,contract,configuration,&["code","doc/rewrite","maps","tgui/packages/tgui/interfaces"],DiscoverySelection::DocUiJoinedAllowV1)
 }
 
+pub(crate) fn discover_authored_doc_ui<P: SnapshotProvider>(
+    inputs: &RecordingInputs<P>, contract: DiscoveryContract, configuration: &Path,
+) -> io::Result<DiscoveryReceipt> {
+    discover_productive_doc_domains(
+        inputs, contract, configuration, &["code", "doc/rewrite", "maps", "tgui/packages/tgui/interfaces"],
+        DiscoverySelection::AuthoredDocUiJoinedV1,
+    ).map(|(receipt, _)| receipt)
+}
+
 fn discover_productive_doc_domains<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,configuration:&Path,expected:&[&str],selection:DiscoverySelection)->io::Result<(DiscoveryReceipt,Option<dm_resources::SharedBytes>)>{
  let root=&contract.root;if !root.is_absolute()||contract.recursive_roots.len()!=expected.len()||expected.iter().any(|name|!contract.recursive_roots.contains(&root.join(name))){return Err(io::Error::new(io::ErrorKind::InvalidInput,"productive Doc requires its exact source roots"))}
  let path=canonical_path(configuration);if !path.is_absolute(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual Doc configuration must be absolute"))}
  let bytes=inputs.read_policy_candidate(&path,64*1024*1024)?;let peak=bytes.as_ref().map_or(Some(1024),|bytes|bytes.capacity().checked_mul(64).and_then(|n|n.checked_add(8192+path.capacity()*8))).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;if inputs.policy_discovery_metadata_charge()?.checked_add(peak).is_none_or(|n|n>64*1024*1024){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"Doc configuration exceeds existing metadata grant before interpretation"))}
  let config=Arc::new(dq_analyze::captured_raw_file::Config::capture(bytes.as_ref().map_or(dq_analyze::captured_raw_policy::Configuration::ProvenMissing,|bytes|dq_analyze::captured_raw_policy::Configuration::Captured(bytes.as_slice()))).map_err(io::Error::other)?);
- let facts=inputs.policy_workspace_closure(&BTreeSet::from([path.clone()]),std::iter::empty())?;let receipt=discover_selected_using(inputs,contract,selection,Some(DocConfiguration{path,facts,value:config}))?;
+ let observation=inputs.recorded_policy_file_observation(&path)?;let receipt=discover_selected_using(inputs,contract,selection,Some(DocConfiguration{path,observation,value:config}))?;
  if expected.iter().any(|name|!receipt.contract.recursive_roots.contains(&receipt.contract.root.join(name))){return Err(io::Error::new(io::ErrorKind::InvalidInput,"productive Doc root alias changes report namespace"))}Ok((receipt,bytes))
 }
 

@@ -74,7 +74,7 @@ fn ui_raw_fixture(label:&str)->(crate::runner_host::BuildHost,BuildRequest,PathB
 #[test]fn raw_ui_actual_dispatcher_missing_or_bad_does_not_open_other_payload_or_manifest(){
  for bad in[false,true]{for refused in["code/a.dm","tgui/packages/tgui/interfaces/Probe.tsx"]{
   let(_,request,root)=ui_raw_fixture("raw-ui-dispatcher-early-stop");
-  if bad{std::fs::write(root.join("code/datums/capabilities/ui_actions.dm"),"// missing normalization contract\n").unwrap();}
+  if bad{std::fs::write(root.join(dq_analyze::ui_actions_policy::DISPATCHER),"// missing normalization contract\n").unwrap();}
   let intent=request.policy_inputs.unwrap().admit().unwrap();
   let provider=Physical{manifest_attempts:AtomicUsize::new(0),fail:Some(root.join(refused))};
   let inputs=RecordingInputs::new(&provider,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
@@ -89,7 +89,7 @@ fn ui_raw_fixture(label:&str)->(crate::runner_host::BuildHost,BuildRequest,PathB
 }
 #[test]fn raw_ui_valid_dispatcher_keeps_required_io_and_same_querydb_recovery(){
  let(_,request,root)=ui_raw_fixture("raw-ui-dispatcher-required-io");
- std::fs::write(root.join("code/datums/capabilities/ui_actions.dm"),UI_RAW_DISPATCHER_INPUT).unwrap();
+ std::fs::write(root.join(dq_analyze::ui_actions_policy::DISPATCHER),UI_RAW_DISPATCHER_INPUT).unwrap();
  let intent=request.policy_inputs.unwrap().admit().unwrap();let db=Arc::new(crate::query_db::QueryDb::default());
  for refused in["code/a.dm","tgui/packages/tgui/interfaces/Probe.tsx"]{
   let provider=Physical{manifest_attempts:AtomicUsize::new(0),fail:Some(root.join(refused))};
@@ -105,7 +105,7 @@ fn ui_raw_fixture(label:&str)->(crate::runner_host::BuildHost,BuildRequest,PathB
 #[test]fn raw_ui_actual_prepare_ignores_broken_dme_without_semantic_tree(){
  for bad in[false,true]{
   let(mut host,request,root)=ui_raw_fixture("raw-ui-prepare-without-model");
-  if bad{std::fs::write(root.join("code/datums/capabilities/ui_actions.dm"),"// invalid dispatcher\n").unwrap();}
+  if bad{std::fs::write(root.join(dq_analyze::ui_actions_policy::DISPATCHER),"// invalid dispatcher\n").unwrap();}
   let db=Arc::clone(host.query_db());let before=db.db().stats(dm_query::Kind(4)).computed;
   let outcome=crate::request_runner::run_build_with_host(request,&mut host).unwrap();
   assert!(matches!(outcome,BuildOutcome::RawQueryPrepared{retained:true,..}));assert!(host.query_tree().is_none());
@@ -130,9 +130,9 @@ fn ui_raw_fixture(label:&str)->(crate::runner_host::BuildHost,BuildRequest,PathB
 
 #[test]fn raw_ui_ignored_payloads_stay_unread_but_exempt_fixed_dispatcher_is_required(){
  let(_,request,root)=ui_raw_fixture("raw-ui-ignored-payloads");
- std::fs::write(root.join("code/datums/capabilities/ui_actions.dm"),UI_RAW_DISPATCHER_INPUT).unwrap();
+ std::fs::write(root.join(dq_analyze::ui_actions_policy::DISPATCHER),UI_RAW_DISPATCHER_INPUT).unwrap();
  std::fs::write(root.join("tgui/packages/tgui/interfaces/definitions.d.ts"),"declare const ignored: unknown;\n").unwrap();
- std::fs::write(root.join("tools/ci/lint_scopes.toml"),"[lint.ui_actions]\nexempt_prefixes = [\"code/a.dm\", \"tgui/packages/tgui/interfaces/Probe.tsx\", \"code/datums/capabilities/ui_actions.dm\"]\n").unwrap();
+ std::fs::write(root.join("tools/ci/lint_scopes.toml"),"[lint.ui_actions]\nexempt_prefixes = [\"code/a.dm\", \"tgui/packages/tgui/interfaces/Probe.tsx\", \"code/library/capabilities/ui_actions.dm\"]\n").unwrap();
  let intent=request.policy_inputs.unwrap().admit().unwrap();let db=Arc::new(crate::query_db::QueryDb::default());
  for refused in["code/a.dm","tgui/packages/tgui/interfaces/Probe.tsx","tgui/packages/tgui/interfaces/definitions.d.ts"]{
   let provider=Physical{manifest_attempts:AtomicUsize::new(0),fail:Some(root.join(refused))};
@@ -142,7 +142,7 @@ fn ui_raw_fixture(label:&str)->(crate::runner_host::BuildHost,BuildRequest,PathB
   assert!(capture.productive_ui_configuration().unwrap().unwrap().policy_path_exempt("ui_actions",dq_analyze::ui_actions_policy::metadata().group,"code/a.dm"));
   assert!(capture.productive_doc_configuration().unwrap().is_none());assert_eq!(provider.manifest_attempts.load(Ordering::SeqCst),0);
  }
- let provider=Physical{manifest_attempts:AtomicUsize::new(0),fail:Some(root.join("code/datums/capabilities/ui_actions.dm"))};
+ let provider=Physical{manifest_attempts:AtomicUsize::new(0),fail:Some(root.join(dq_analyze::ui_actions_policy::DISPATCHER))};
  let inputs=RecordingInputs::new(&provider,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
  let error=crate::runner_host::workspace_capture::capture_raw_only(&inputs,&intent,&db).err().expect("fixed dispatcher remains required despite source exemption");
  assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(provider.manifest_attempts.load(Ordering::SeqCst),0);
