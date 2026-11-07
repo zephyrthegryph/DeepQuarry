@@ -3,30 +3,81 @@
 use std::{any::Any,io,sync::Arc};
 /// Host-private issuer implements this for one actual allocation reservation.
 /// The native host verifies its own concrete owner and existing resource domain.
-pub trait SourceArenaCreditOwner:Send+Sync{
- fn as_any(&self)->&dyn Any;
- fn reserved_bytes(&self)->usize;
- fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize));
+pub trait SourceArenaCreditOwner: Send + Sync {
+    fn as_any(&self) -> &dyn Any;
+    fn reserved_bytes(&self) -> usize;
+    fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize));
+
+    /// Release one strong resource owner. An issuer with allocation-order
+    /// requirements may extract its concrete Arc payload before dropping it.
+    /// Every strong alias of that issuer must use the same release path.
+    fn release(self: Arc<Self>) {
+        drop(self);
+    }
 }
+
 /// Move-only. SourceText retains this with its last physical backing owner;
 /// cloning a SourceText aliases that backing, never duplicates this reservation.
-pub struct SourceArenaCredit{owner:Arc<dyn SourceArenaCreditOwner>}
+pub struct SourceArenaCredit {
+    owner: Option<Arc<dyn SourceArenaCreditOwner>>,
+}
+
 /// Immutable control-block credit. Clones pay no allocation and cannot be grown
 /// or converted back into a mutable payload reservation.
-#[derive(Clone)]pub struct SourceArenaControlCredit{owner:Arc<dyn SourceArenaCreditOwner>}
-impl SourceArenaControlCredit{
- pub fn reserved_bytes(&self)->usize{self.owner.reserved_bytes()}
- pub fn owner(&self)->&dyn SourceArenaCreditOwner{self.owner.as_ref()}
- pub fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){self.owner.visit_storage(visit)}
+#[derive(Clone)]
+pub struct SourceArenaControlCredit {
+    owner: Option<Arc<dyn SourceArenaCreditOwner>>,
 }
-impl SourceArenaCredit{
- pub fn control(&self)->SourceArenaControlCredit{SourceArenaControlCredit{owner:Arc::clone(&self.owner)}}
- pub fn into_control(self)->SourceArenaControlCredit{SourceArenaControlCredit{owner:self.owner}}
- pub fn from_resource_owner(owner:Arc<dyn SourceArenaCreditOwner>)->Self{Self{owner}}
- pub fn reserved_bytes(&self)->usize{self.owner.reserved_bytes()}
- pub fn owner(&self)->&dyn SourceArenaCreditOwner{self.owner.as_ref()}
- pub fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){self.owner.visit_storage(visit)}
+
+impl SourceArenaControlCredit {
+    pub fn reserved_bytes(&self) -> usize {
+        self.owner().reserved_bytes()
+    }
+    pub fn owner(&self) -> &dyn SourceArenaCreditOwner {
+        self.owner.as_deref().expect("live source arena control credit")
+    }
+    pub fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize)) {
+        self.owner().visit_storage(visit)
+    }
 }
+
+impl Drop for SourceArenaControlCredit {
+    fn drop(&mut self) {
+        if let Some(owner) = self.owner.take() {
+            owner.release();
+        }
+    }
+}
+
+impl SourceArenaCredit {
+    pub fn control(&self) -> SourceArenaControlCredit {
+        SourceArenaControlCredit { owner: self.owner.clone() }
+    }
+    pub fn into_control(mut self) -> SourceArenaControlCredit {
+        SourceArenaControlCredit { owner: self.owner.take() }
+    }
+    pub fn from_resource_owner(owner: Arc<dyn SourceArenaCreditOwner>) -> Self {
+        Self { owner: Some(owner) }
+    }
+    pub fn reserved_bytes(&self) -> usize {
+        self.owner().reserved_bytes()
+    }
+    pub fn owner(&self) -> &dyn SourceArenaCreditOwner {
+        self.owner.as_deref().expect("live source arena payload credit")
+    }
+    pub fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize)) {
+        self.owner().visit_storage(visit)
+    }
+}
+
+impl Drop for SourceArenaCredit {
+    fn drop(&mut self) {
+        if let Some(owner) = self.owner.take() {
+            owner.release();
+        }
+    }
+}
+
 /// Borrowed operation lender. Retained credits must not retain this lender,
 /// QueryDb, the source census, a source model or an independent budget manager.
 /// Reserve the complete new allocation while old storage is still live. Shrink
@@ -110,4 +161,59 @@ pub fn read_original_source_open_using(provider:&dyn crate::SourceProvider,path:
  #[test]fn resource_bookkeeping_refusal_precedes_actual_provider_open(){let work=Work::new(0);let provider=Provider::new(Mode::Suppress);assert_eq!(read_original_source_open_using(&provider,Path::new("source.dm"),0,&work,&mut||panic!("no provider open after quota")).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(provider.calls.get(),0);assert_eq!(work.live.load(Ordering::Acquire),0);}
  #[test]fn fake_suppression_and_payload_after_suppression_cannot_issue_results(){for mode in [Mode::WithoutOpen,Mode::ReadAfterSuppress]{let work=Work::new(64);let provider=Provider::new(mode);assert_eq!(read_original_source_open_using(&provider,Path::new("source.dm"),64,&work,&mut||Ok(crate::OriginalRawOpenDecision::Suppress)).err().unwrap().kind(),io::ErrorKind::InvalidData);assert_eq!(work.live.load(Ordering::Acquire),0);}}
  #[test]fn real_prepaid_subject_decision_still_requires_same_decode_and_acquired_protocol(){let work=Work::new(16);let provider=Provider::new(Mode::Prepaid);let crate::OriginalRawReadOutcome::Acquired(source)=read_original_source_open_using(&provider,Path::new("captured-subject"),1,&work,&mut||Ok(crate::OriginalRawOpenDecision::Read)).unwrap()else{panic!("actual prepaid subject")};assert!(source.same_original_acquisition(&provider.source));assert_eq!(work.live.load(Ordering::Acquire),0);}
+}
+
+#[cfg(test)]
+mod release_dispatch_tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    struct Probe(Arc<Mutex<Vec<&'static str>>>);
+
+    impl SourceArenaCreditOwner for Probe {
+        fn as_any(&self) -> &dyn Any { self }
+        fn reserved_bytes(&self) -> usize { 31 }
+        fn visit_storage(&self, _: &mut dyn FnMut(usize, usize)) {}
+        fn release(self: Arc<Self>) {
+            if let Some(payload) = Arc::into_inner(self) {
+                payload.0.lock().unwrap().push("arc released");
+                drop(payload);
+            }
+        }
+    }
+
+    impl Drop for Probe {
+        fn drop(&mut self) {
+            self.0.lock().unwrap().push("payload dropped");
+        }
+    }
+
+    #[test]
+    fn payload_credit_dispatches_release_before_concrete_payload_drop() {
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let payload = SourceArenaCredit::from_resource_owner(Arc::new(Probe(events.clone())));
+        drop(payload);
+        assert_eq!(*events.lock().unwrap(), ["arc released", "payload dropped"]);
+    }
+
+    #[test]
+    fn converted_control_alias_preserves_identity_and_releases_last() {
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let owner = Arc::new(Probe(events.clone()));
+        let weak = Arc::downgrade(&owner);
+        let payload = SourceArenaCredit::from_resource_owner(owner);
+        let alias = payload.control();
+        let identity = alias.owner().as_any().downcast_ref::<Probe>().unwrap() as *const Probe;
+        let converted = payload.into_control();
+        assert_eq!(weak.strong_count(), 2);
+        assert_eq!(converted.owner().as_any().downcast_ref::<Probe>().unwrap() as *const Probe, identity);
+        assert_eq!(converted.reserved_bytes(), 31);
+        drop(alias);
+        assert!(events.lock().unwrap().is_empty());
+        drop(converted);
+        assert_eq!(weak.strong_count(), 0);
+        assert_eq!(*events.lock().unwrap(), ["arc released", "payload dropped"]);
+        assert_eq!(std::mem::size_of::<SourceArenaCredit>(), std::mem::size_of::<Arc<dyn SourceArenaCreditOwner>>());
+        assert_eq!(std::mem::size_of::<SourceArenaControlCredit>(), std::mem::size_of::<Arc<dyn SourceArenaCreditOwner>>());
+    }
 }

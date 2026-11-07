@@ -12,8 +12,37 @@ impl Allocation{
  pub(super) fn store_reserved_bytes(&self,bytes:usize){self.bytes.store(bytes,Ordering::Release);}
  fn same_domain(&self,domain:&Weak<crate::query_db::raw_policy::Admission>)->bool{Weak::ptr_eq(&self.domain,domain)}
 }
+/// Concrete strong handles cover temporary ledger upgrades and registration
+/// failure before an owner enters the public, erased credit handles.
+pub(super) struct AllocationHandle(Option<Arc<Allocation>>);
+impl AllocationHandle {
+    pub(super) fn new(owner: Arc<Allocation>) -> Self {
+        Self(Some(owner))
+    }
+    pub(super) fn arc(&self) -> &Arc<Allocation> {
+        self.0.as_ref().expect("live native allocation handle")
+    }
+    fn register(mut self, ledger: &mut super::raw_input_credits::Ledger) -> io::Result<SourceArenaCredit> {
+        ledger.register_source_arena(self.arc())?;
+        Ok(SourceArenaCredit::from_resource_owner(self.0.take().expect("registered native allocation")))
+    }
+}
+impl Drop for AllocationHandle {
+    fn drop(&mut self) {
+        if let Some(owner) = self.0.take() {
+            owner.release();
+        }
+    }
+}
 impl SourceArenaCreditOwner for Allocation{
  fn as_any(&self)->&dyn std::any::Any{self}
+ fn release(self: Arc<Self>) {
+    // Every strong handle uses this path. Extraction relinquishes the Arc's
+    // implicit Weak before payload drop. Explicit ledger Weak references
+    // retain their control allocation independently.
+    drop(Arc::into_inner(self));
+ }
+
  fn reserved_bytes(&self)->usize{self.bytes.load(Ordering::Acquire)}
  fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){visit(std::ptr::from_ref(self)as usize,Self::metadata_bytes())}
 }
@@ -85,7 +114,7 @@ impl SourceArenaWork for QueryDb{
   self.admit_source_arena(&mut ledger,need)?;
   // Both Arc metadata and the existing weak map row were admitted BEFORE growth.
   let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(&self.raw_policy.admission)});
-  ledger.register_source_arena(&actual)?;Ok(SourceArenaCredit::from_resource_owner(actual))
+  AllocationHandle::new(actual).register(&mut ledger)
  }
  fn grow(&self,credit:&mut SourceArenaCredit,extra:usize)->io::Result<()>{
   self.checkpoint()?;let actual=allocation(self,credit)?;
@@ -192,7 +221,7 @@ impl<'a> HeldSourceWork<'a>{
 impl SourceArenaWork for HeldSourceWork<'_>{
  fn original_read_bookkeeping_bytes(&self)->io::Result<usize>{6usize.checked_mul(raw_input_credits::NODE).ok_or_else(oom)}
  fn checkpoint(&self)->io::Result<()>{let state=self.lock()?;if state.budget.denied(){return Err(oom())}drop(state);crate::daemon::control::checkpoint()}
- fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.checkpoint()?;let mut state=self.lock()?;let needed=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(||{state.budget.deny();oom()})?;state.budget.charge(needed).map_err(|_|oom())?;let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(state.domain)});state.ledger.register_source_arena(&actual)?;Ok(SourceArenaCredit::from_resource_owner(actual))}
+ fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.checkpoint()?;let mut state=self.lock()?;let needed=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(||{state.budget.deny();oom()})?;state.budget.charge(needed).map_err(|_|oom())?;let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(state.domain)});AllocationHandle::new(actual).register(state.ledger)}
  fn grow(&self,credit:&mut SourceArenaCredit,extra:usize)->io::Result<()>{self.checkpoint()?;let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let next=charge_allocation_growth(actual,state.budget,extra)?;state.ledger.resize_arena(actual,next)}
  fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let next=actual.reserved_bytes().checked_sub(bytes).ok_or_else(wrong)?;state.ledger.resize_arena(actual,next)}
  fn adopt_original_read(&self,credit:&mut SourceArenaCredit,source:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let reserved=actual.reserved_bytes();state.ledger.adopt_original_read(source,reserved)?;state.ledger.resize_arena(actual,0)}
