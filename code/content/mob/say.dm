@@ -200,7 +200,7 @@
 	return null
 
 /// Finds the language switches in a raw message: list(list(language, start, text start), ...) in order. The first entry always starts at 1:
-/// text before the first switch is the mob's default language. tgui-say's preview parser (tgui/packages/tgui-say/parseLanguages.ts) follows
+/// text before the first switch is the mob's default language. the chat input preview's parser (tgui/packages/tgui/dq/speech/parseLanguages.ts) follows
 /// these same rules; code/tests/unit_tests/data/language_parse_cases.json is run over both.
 /// - A switch is a language's prefix at the message start or right after a space, so "3,5" and "well,no" stay text.
 /// - A string that is no language's prefix is literal text.
