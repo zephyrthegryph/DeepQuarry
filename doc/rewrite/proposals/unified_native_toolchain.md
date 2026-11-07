@@ -3621,3 +3621,26 @@ post-capture work and needs phase-specific evidence. In particular, the
 raw page path currently repeats a live source-ledger census for page
 admission and prepares separate file views for individual policies.
 The request returned a timeout and the private daemon exited.
+
+Twelve additional Sys policies matched the independent selected report,
+for 93 of 106 recorded names across fixtures. The exceptional opened-byte
+path now keeps its exact payload and control grants through reissue and
+weak aliases. The focused controls also verify that sealed raw report
+inputs preserve exact fingerprints and that page admission retries an
+exact ledger sweep under pressure. Eight of nine focused direct report
+tests passed. The CheckGrep fixture still used a provider without the
+current opened-reader method.
+
+The first checkout run with bounded raw-page ledger scans completed
+12 policies through leftovers at about 92 seconds. It then reached the
+300-second deadline in legacy_forms without a report. The old scanner
+tests each line separately against the checkout's 1,084 configured bans.
+This is an identified scanner bottleneck after capture, independent of
+the remaining semantic admission limit.
+
+The combined checkout probe at 56e14be70a reached 11,451,091 producer
+rows. Its mixed macro rosters used 549,128 bytes where their observed
+old capacities totalled 2,184,832 bytes. Anchored output bases at that
+frontier used 4,215,200 bytes including escapes. The 128 MiB syntax cap
+still refused a 26,624-byte macro page with 134,191,463 bytes retained.
+It emitted no report. Both private probe daemons exited.
