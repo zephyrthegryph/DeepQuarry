@@ -85,6 +85,10 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 /client/proc/chat_focus_input(channel)
 	if(!(channel in GLOB.chat_input_channels))
 		return FALSE
+	// A hotkey for a channel the speaker cannot use now (Say in the lobby) is not taken; OOC is always there.
+	if(!(channel in chat_available_channels()))
+		to_chat(src, span_warning("You can't use [channel] right now."))
+		return TRUE
 	if(!tgui_panel?.is_ready())
 		return FALSE
 	tgui_panel.window.send_message("chat/focusInput", list("channel" = channel))

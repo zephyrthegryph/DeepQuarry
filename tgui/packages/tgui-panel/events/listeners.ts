@@ -3,6 +3,7 @@ import { EventBus } from 'tgui-core/eventbus';
 import { playMusic, stopMusic } from '../audio/handlers';
 import { chatMessage, exportChatlog } from '../chat/handlers';
 import {
+  availableChannels,
   focusInput,
   languageRules,
   radioChannels,
@@ -23,6 +24,7 @@ const listeners = {
   'asset/mappings': handleLoadAssets,
   'audio/playMusic': playMusic,
   'audio/stopMusic': stopMusic,
+  'chat/channels': availableChannels,
   'chat/focusInput': focusInput,
   'chat/languageRules': languageRules,
   'chat/layout': chatLayout,

@@ -600,3 +600,18 @@ GLOBAL_LIST_INIT(dq_builtin_client_commands, list(".northeast", ".northwest", ".
 	P.drop_retired_player_keys(save)
 	TEST_ASSERT_EQUAL(length(save), 1, "an old save's say popup keys are dropped")
 	TEST_ASSERT(save["CHAT_OOC"] == 1, "a live setting is kept")
+
+/// The chat input row shows only the channels the speaker can use now, from the server: the lobby has OOC only; a body speaks, emotes,
+/// whispers and uses LOOC; Radio needs a headset.
+/datum/unit_test/dq_chat_input_channels_follow_the_mob
+
+/datum/unit_test/dq_chat_input_channels_follow_the_mob/Run()
+	var/mob/new_player/lobby = allocate(/mob/new_player)
+	TEST_ASSERT_EQUAL(jointext(lobby.chat_input_channels(), ","), OOC_CHANNEL, "the lobby has OOC only")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/list/channels = H.chat_input_channels()
+	for(var/channel in list(SAY_CHANNEL, ME_CHANNEL, WHIS_CHANNEL, SUBTLE_CHANNEL, OOC_CHANNEL, LOOC_CHANNEL))
+		TEST_ASSERT(channel in channels, "a living body has [channel]")
+	TEST_ASSERT_EQUAL(!!(RADIO_CHANNEL in channels), !!length(H.chat_radio_sets()), "Radio shows exactly when the body has a radio")
+	for(var/channel in channels)
+		TEST_ASSERT(channel in GLOB.chat_input_channels, "[channel] is a channel the row knows")
