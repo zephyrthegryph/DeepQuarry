@@ -25,7 +25,7 @@
 
     .sectionLoad {
       animation: section-loading 1s forwards;
-      box-shadow: 0 0 15px;
+      box-shadow: var(--console-glow);
       background-color: console.$console-panel;
     }
 
@@ -86,7 +86,11 @@
       left: 0;
       bottom: 0;
       right: 0;
-      @include console.console-scanlines(0.25, 8px);
+      // The lobby's lines are twice the shared strength (styles/console.scss).
+      @include console.console-scanlines(
+        calc(var(--console-scanline-strength) * 2),
+        8px
+      );
       z-index: 2;
       pointer-events: none;
     }
@@ -106,7 +110,7 @@
     }
 
     @supports (not (-webkit-hyphens: none)) and (not (-moz-appearance: none)) {
-      box-shadow: 0 0 500px 25px rgba(0, 0, 0, 0.9) inset;
+      box-shadow: var(--console-vignette);
     }
   }
 }

@@ -1,25 +1,20 @@
 /**
  * The console theme: the lobby main menu look (styles/console.scss) for
  * ordinary windows. Bold monospace, #202020 panels with a 3px #384e68 border
- * and glow, solid blue buttons, a green primary action, optional CRT
- * scanlines (--console-scanline-strength, 0 turns them off; the lobby's
- * "Disable Scanlines" preference sets it, see layouts/consoleTheme.ts).
+ * and glow, solid blue buttons, a green primary action, CRT scanlines. The
+ * glow and scanline strengths are the shared knobs in styles/console.scss
+ * (--console-glow, --console-scanline-strength, ...); the lobby's "Disable
+ * Scanlines" preference sets the scanlines to 0 (layouts/consoleTheme.ts).
  */
 
 @use '../console';
 
 .theme-console:root {
-  --console-scanline-strength: 0.1;
+  @include console.console-component-vars;
 
   // Base
-  --color-base: #{console.$console-panel};
-  --color-primary: #{console.$console-button};
   --color-secondary: #{console.$console-border};
-  --color-section: #{console.$console-panel};
-  --color-label: #{console.$console-accent};
   --color-text: #{console.$console-text};
-  --color-border: #{console.$console-border};
-  --base-gradient-spread: 0;
   --font-family: #{console.$console-font};
   --font-family-mono: #{console.$console-font};
 
@@ -30,29 +25,7 @@
   --titlebar-shadow-core: #{console.$console-border};
 
   // Components
-  --section-background: #{console.$console-panel};
-  --section-separator-color: #{console.$console-border};
   --section-separator-thickness: 2px;
-  --section-title-color: #{console.$console-accent};
-  --button-color: #{console.$console-text};
-  --button-background-default: #{console.$console-button};
-  --button-background-selected: #{console.$console-green};
-  --button-background-danger: #{console.$console-danger};
-  --button-background-disabled: #{console.$console-disabled};
-  --button-border-radius: 0;
-  --button-transition: 0s;
-  --tab-background: #{console.$console-disabled};
-  --tab-background-hover: #{console.$console-border};
-  --tab-background-selected: #{console.$console-button};
-  --tab-color: #{console.$console-muted};
-  --tab-color-selected: #{console.$console-text};
-  --tab-border-radius: 0;
-  --tabs-container-background: transparent;
-  --input-background: #{console.$console-background};
-  --input-color: #{console.$console-text};
-  --input-border-color: #{console.$console-border};
-  --input-border-color-focus: #{console.$console-accent};
-  --input-border-radius: 0;
   --divider-color: #{console.$console-border};
   --notice-box-background: #{console.$console-button};
   --notice-box-color: #{console.$console-text};
@@ -135,6 +108,6 @@
     inset: 0;
     z-index: 200;
     pointer-events: none;
-    @include console.console-scanlines(var(--console-scanline-strength), 6px);
+    @include console.console-scanlines;
   }
 }

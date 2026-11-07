@@ -117,3 +117,16 @@ export function isSameMessage(
     (typeof a.html === 'string' && a.html === b.html)
   );
 }
+
+/**
+ * A reordered tab list, or null when it is not a permutation of `pages` or
+ * would move the first (main) page from the front.
+ */
+export function keepFirst(pages: string[], order: string[]): string[] | null {
+  if (order.length !== pages.length || order[0] !== pages[0]) return null;
+  const seen = new Set(order);
+  if (seen.size !== pages.length || pages.some((id) => !seen.has(id))) {
+    return null;
+  }
+  return order;
+}

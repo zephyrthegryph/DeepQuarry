@@ -5,7 +5,8 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { Button, Input, Section, Tabs } from 'tgui-core/components';
+import { ConsoleTabs, type ConsoleTabsLayout } from 'tgui/components';
+import { Button, Input, Section } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { AbilitiesTab } from './AbilitiesTab';
@@ -287,32 +288,33 @@ export function App(props: {
   return (
     <div className="stat-root">
       <MapSplitHandle />
-      <div className={`stat-tabs stat-tabs--${tabsStyle}`}>
-        <Tabs className="stat-tabs__list">
-          {visibleTabs(state).map((tab) => (
-            <Tabs.Tab
-              key={tab}
-              selected={!menuOpen && tab === state.currentTab}
-              onClick={() => {
-                setQuery('');
-                setMenuOpen(false);
-                store.setTab(tab);
-              }}
-            >
-              {tab}
-            </Tabs.Tab>
-          ))}
-          <Tabs.Tab selected={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
-            Menu
-          </Tabs.Tab>
-        </Tabs>
+      <ConsoleTabs
+        layout={tabsLayout(tabsStyle)}
+        tabs={[
+          ...visibleTabs(state).map((tab) => ({
+            id: tab,
+            label: tab,
+            selected: !menuOpen && tab === state.currentTab,
+          })),
+          { id: MENU_TAB, label: 'Menu', selected: menuOpen },
+        ]}
+        onSelect={(tab) => {
+          if (tab === MENU_TAB) {
+            setMenuOpen(!menuOpen);
+            return;
+          }
+          setQuery('');
+          setMenuOpen(false);
+          store.setTab(tab);
+        }}
+      >
         <Input
           className="stat-search"
           placeholder="Search verbs..."
           value={query}
           onChange={setQuery}
         />
-      </div>
+      </ConsoleTabs>
       <div className="stat-content">
         {menuOpen ? (
           <MenuPage />
@@ -328,6 +330,14 @@ export function App(props: {
       </div>
     </div>
   );
+}
+
+/** The Menu pseudo-tab's id; no verb tab can be named with the leading NUL. */
+const MENU_TAB = '\u0000menu';
+
+/** The display setting's tab style, as the shared tab row's layout. */
+function tabsLayout(style: string): ConsoleTabsLayout {
+  return style === 'scrollable' || style === 'classic' ? style : 'wrap';
 }
 
 /** A render error leaves the reload link rather than a blank panel. */
