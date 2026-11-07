@@ -4,33 +4,68 @@ use super::super::analysis_context_tests::{checker_fixture as fixture,run,curren
 use dm_ir::{ResolveQuery,SymbolId};use dm_query::Kind;
 const MISSING_TYPE:&str="/proc/choose()\n    set SpacemanDMM_return_type=/datum/result\n    return null\n/proc/probe()\n    return choose().field\n";
 const PRESENT_TYPE:&str="/datum/result\n/proc/choose()\n    set SpacemanDMM_return_type=/datum/result\n    return null\n/proc/probe()\n    return choose().field\n";
-fn observed(host:&crate::runner_host::BuildHost,root:&Path)->(Vec<(usize,usize,String)>,usize){current(host,|snapshot|{let archive=snapshot.body_archive.as_ref().unwrap();assert_eq!(archive.len(),2);let dot=archive.expanded_source().find("().field").unwrap()+2;let mut rows=Vec::new();let result=snapshot.visit_current_variable_diagnostics(1,&root.join("deepquarry.dme"),None,&snapshot.tree,|row|{rows.push((row.span.start,row.span.end,row.diagnostic.message.clone()));Ok(())});println!("CURRENT_CALLABLE_NATIVE={:?}",(&result,&rows,dot));assert_eq!(result.unwrap(),dm_analysis::checks_undefined_variable::CurrentUndefinedDisposition::Evaluated);(rows,dot)})}
+fn current_callee_fixture(source: &str) -> (crate::runner_host::BuildHost, crate::request::BuildRequest, std::path::PathBuf) {
+    let (host, mut request, root) = fixture(source);
+    std::fs::write(root.join("SpacemanDMM.toml"), b"").unwrap();
+    request.policy_inputs.as_mut().unwrap().files.push(crate::policy_request::PolicyInputFile {
+        path: root.join("code/probe.dm"),
+        role: crate::policy_request::PolicyInputRole::DmSource,
+        required: true,
+    });
+    (host, request, root)
+}
+
+fn observed(host: &crate::runner_host::BuildHost, root: &Path) -> (Vec<(usize, usize, String)>, usize) {
+    current(host, |snapshot| {
+        let archive = snapshot.body_archive.as_ref().unwrap();
+        assert_eq!(archive.len(), 2);
+        let source = archive.expanded_source();
+        // Original capture can add trivia between punctuation occurrences.
+        // Locate the field token and verify its dot against authored geometry.
+        let field = source.rfind("field").expect("expanded probe field token");
+        let before_field = source[..field].trim_end();
+        let dot = before_field.strip_suffix('.').expect("probe field has a preceding dot").len();
+        let environment = root.join("code/probe.dm");
+        let authored = std::fs::read_to_string(&environment).unwrap();
+        let (line, text) = authored.lines().enumerate().find(|(_, line)| line.contains("choose().field")).unwrap();
+        let point = archive.source_note_point(dot).unwrap();
+        assert_eq!((point.line, point.byte_column), (line + 1, text.find(".field").unwrap() + 1));
+        let mut rows = Vec::new();
+        let result = snapshot.visit_current_variable_diagnostics(1, &environment, Some(&root.join("SpacemanDMM.toml")), &snapshot.tree, |row| {
+            rows.push((row.span.start, row.span.end, row.diagnostic.message.clone()));
+            Ok(())
+        });
+        println!("CURRENT_CALLABLE_NATIVE={:?}", (&result, &rows, dot));
+        assert_eq!(result.unwrap(), dm_analysis::checks_undefined_variable::CurrentUndefinedDisposition::Evaluated);
+        (rows, dot)
+    })
+}
 #[test]fn current_callable_actual_rejected_return_type_absence_is_a_dependency_before_eval_and_rebinds_on_type_add(){
- let(mut host,request,root)=fixture(MISSING_TYPE);let queries=host.query_db().clone();run(&mut host,&request);let first=observed(&host,&root);assert!(first.0.is_empty(),"selected variable error family excludes the separately owned return-compile error/warning prelude");let syntax=queries.db().stats(Kind(4)).computed;assert_eq!(syntax,2,"caller and callee use their two canonical products, no issued absolute sibling parse");let semantics=queries.db().stats(Kind(28)).computed;
+ let(mut host,request,root)=current_callee_fixture(MISSING_TYPE);let queries=host.query_db().clone();run(&mut host,&request);let first=observed(&host,&root);assert!(first.0.is_empty(),"selected variable error family excludes the separately owned return-compile error/warning prelude");let syntax=queries.db().stats(Kind(4)).computed;assert_eq!(syntax,2,"caller and callee use their two canonical products, no issued absolute sibling parse");let semantics=queries.db().stats(Kind(28)).computed;
  let(parent,type_lookup,_)=current(&host,|snapshot|{let input=snapshot.original_checker_request_input(&snapshot.tree).unwrap();queries.current_variable_keys_for_test(input.input(),1,ResolveQuery::Type(SymbolId::of("/datum/result")))});assert!(queries.db().dependants(&[type_lookup]).contains(&parent),"compile-rejected Type lookup must exist even when Eval did not execute");
  std::fs::write(root.join("code/probe.dm"),PRESENT_TYPE).unwrap();run(&mut host,&request);let present=observed(&host,&root);assert_eq!(present.0,[(present.1,present.1+1,"undefined field: \"field\" on /datum/result".to_owned())]);assert_eq!(queries.db().stats(Kind(28)).computed,semantics+1,"a real missing->present type changes return binding while both code identities stay equal");assert_eq!(queries.db().stats(Kind(4)).computed,syntax);
- let shifted=format!("// α both unchanged bodies shift\n{PRESENT_TYPE}// later file shift\n");std::fs::write(root.join("code/probe.dm"),shifted).unwrap();run(&mut host,&request);let shifted=observed(&host,&root);assert_eq!(shifted.0,[(shifted.1,shifted.1+1,"undefined field: \"field\" on /datum/result".to_owned())]);assert_ne!(present.1,shifted.1);assert_eq!(queries.db().stats(Kind(28)).computed,semantics+1,"unchanged actual callee/type answers must cut off semantic reevaluation");assert_eq!(queries.db().stats(Kind(4)).computed,syntax);
+ let shifted=format!("/datum/unrelated_shift\n// α both unchanged bodies shift\n{PRESENT_TYPE}// later file shift\n");std::fs::write(root.join("code/probe.dm"),shifted).unwrap();run(&mut host,&request);let shifted=observed(&host,&root);assert_eq!(shifted.0,[(shifted.1,shifted.1+1,"undefined field: \"field\" on /datum/result".to_owned())]);assert_ne!(present.1,shifted.1);assert_eq!(queries.db().stats(Kind(28)).computed,semantics+1,"unchanged actual callee/type answers must cut off semantic reevaluation");assert_eq!(queries.db().stats(Kind(4)).computed,syntax);
 }
 #[test]fn current_callable_actual_callee_setting_edit_retracts_old_type_dependency_and_changes_caller_receiver(){
- let(mut host,request,root)=fixture(PRESENT_TYPE);let queries=host.query_db().clone();run(&mut host,&request);let first=observed(&host,&root);assert_eq!(first.0.len(),1);let(old_parent,old_type,_)=current(&host,|snapshot|{let input=snapshot.original_checker_request_input(&snapshot.tree).unwrap();queries.current_variable_keys_for_test(input.input(),1,ResolveQuery::Type(SymbolId::of("/datum/result")))});assert!(queries.db().dependants(&[old_type]).contains(&old_parent));let semantics=queries.db().stats(Kind(28)).computed;
+ let(mut host,request,root)=current_callee_fixture(PRESENT_TYPE);let queries=host.query_db().clone();run(&mut host,&request);let first=observed(&host,&root);assert_eq!(first.0.len(),1);let(old_parent,old_type,_)=current(&host,|snapshot|{let input=snapshot.original_checker_request_input(&snapshot.tree).unwrap();queries.current_variable_keys_for_test(input.input(),1,ResolveQuery::Type(SymbolId::of("/datum/result")))});assert!(queries.db().dependants(&[old_type]).contains(&old_parent));let semantics=queries.db().stats(Kind(28)).computed;
  let changed="/datum/result\n/datum/other\n/proc/choose()\n    set SpacemanDMM_return_type=/datum/other\n    return null\n/proc/probe()\n    return choose().field\n";std::fs::write(root.join("code/probe.dm"),changed).unwrap();run(&mut host,&request);let changed=observed(&host,&root);assert_eq!(changed.0,[(changed.1,changed.1+1,"undefined field: \"field\" on /datum/other".to_owned())]);assert_eq!(queries.db().stats(Kind(28)).computed,semantics+1);assert!(!queries.db().dependants(&[old_type]).contains(&old_parent),"changing the actual callee directive retracts the caller's previous return-type edge");let(parent,new_type,_)=current(&host,|snapshot|{let input=snapshot.original_checker_request_input(&snapshot.tree).unwrap();queries.current_variable_keys_for_test(input.input(),1,ResolveQuery::Type(SymbolId::of("/datum/other")))});assert_eq!(parent,old_parent,"caller code is unchanged; only actual source meaning changed");assert!(queries.db().dependants(&[new_type]).contains(&parent));
 }
 
 #[test]fn current_callable_same_metadata_body_choice_is_current_even_with_old_archive_retained(){
- fn read(host:&crate::runner_host::BuildHost,root:&Path)->(dm_analysis::checks_undefined_variable::CurrentUndefinedDisposition,Vec<(usize,usize,String)>){current(host,|snapshot|{let mut rows=Vec::new();let actual=snapshot.visit_current_variable_diagnostics(1,&root.join("deepquarry.dme"),None,&snapshot.tree,|row|{rows.push((row.span.start,row.span.end,row.diagnostic.message.clone()));Ok(())});println!("CURRENT_CALLEE_CODE_CHOICE={actual:?} rows={rows:?}");(actual.unwrap(),rows)})}
+ fn read(host:&crate::runner_host::BuildHost,root:&Path)->(dm_analysis::checks_undefined_variable::CurrentUndefinedDisposition,Vec<(usize,usize,String)>){current(host,|snapshot|{let mut rows=Vec::new();let actual=snapshot.visit_current_variable_diagnostics(1,&root.join("code/probe.dm"),Some(&root.join("SpacemanDMM.toml")),&snapshot.tree,|row|{rows.push((row.span.start,row.span.end,row.diagnostic.message.clone()));Ok(())});println!("CURRENT_CALLEE_CODE_CHOICE={actual:?} rows={rows:?}");(actual.unwrap(),rows)})}
  fn native_chain(host:&crate::runner_host::BuildHost)->Vec<u8>{current(host,|snapshot|{dm_ir::Resolver::resolve(snapshot.tree.as_ref(),ResolveQuery::SourceDeclarationChain{owner:SymbolId::of("/"),name:SymbolId::of("choose"),verb:false}).canonical_bytes()})}
- let(mut host,request,root)=fixture(PRESENT_TYPE);let queries=host.query_db().clone();run(&mut host,&request);let first=read(&host,&root);assert_eq!(first.1.len(),1);let metadata=native_chain(&host);let semantic=queries.db().stats(Kind(28)).computed;let syntax=queries.db().stats(Kind(4)).computed;
+ let(mut host,request,root)=current_callee_fixture(PRESENT_TYPE);let queries=host.query_db().clone();run(&mut host,&request);let first=read(&host,&root);assert_eq!(first.1.len(),1);let metadata=native_chain(&host);let semantic=queries.db().stats(Kind(28)).computed;let syntax=queries.db().stats(Kind(4)).computed;
  let retained_old=current(&host,|snapshot|{let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();Arc::clone(owner.input())});
  let old_callee=Arc::downgrade(retained_old.archive().syntax_inputs().unwrap()[0].original_code_owner().unwrap());let old_caller=Arc::downgrade(retained_old.archive().syntax_inputs().unwrap()[1].original_code_owner().unwrap());
  let(parent,chain,_)=current(&host,|snapshot|{let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();queries.current_variable_keys_for_test(owner.input(),1,ResolveQuery::SourceDeclarationChain{owner:SymbolId::of("/"),name:SymbolId::of("choose"),verb:false})});assert!(queries.db().dependants(&[chain]).contains(&parent));
  for(index,body)in ["return 1","return 1 +","return null"].into_iter().enumerate(){
   let source=PRESENT_TYPE.replace("return null",body);std::fs::write(root.join("code/probe.dm"),&source).unwrap();run(&mut host,&request);assert_eq!(native_chain(&host),metadata,"this control changes actual BODY choice while native signature/settings metadata is byte-identical");
-  let incremental=read(&host,&root);let(mut fresh,fresh_request,fresh_root)=fixture(&source);run(&mut fresh,&fresh_request);let independent=read(&fresh,&fresh_root);assert_eq!(incremental,independent,"complete current selected rows must match genuine fresh execution for {body}");
+  let incremental=read(&host,&root);let(mut fresh,fresh_request,fresh_root)=current_callee_fixture(&source);run(&mut fresh,&fresh_request);let independent=read(&fresh,&fresh_root);assert_eq!(incremental,independent,"complete current selected rows must match genuine fresh execution for {body}");
   assert_eq!(queries.db().stats(Kind(28)).computed,semantic+index as u64+1,"the actual current callee code choice invalidates the existing caller contribution");assert_eq!(queries.db().stats(Kind(4)).computed,syntax+index as u64+1,"only the edited callee parses; unchanged caller uses its SAME canonical product");
   current(&host,|snapshot|{let inputs=snapshot.body_archive.as_ref().unwrap().syntax_inputs().unwrap();assert!(std::sync::Weak::ptr_eq(&old_caller,&Arc::downgrade(inputs[1].original_code_owner().unwrap())));if index==0{assert!(!std::sync::Weak::ptr_eq(&old_callee,&Arc::downgrade(inputs[0].original_code_owner().unwrap())));}});
  }
  assert_eq!(retained_old.archive().len(),2,"genuine old input/source/archive stayed live through all edits; old child liveness cannot authorize its current choice");assert_eq!(queries.effect_graph_work_for_test(),0);
- let stable=queries.db().stats(Kind(28)).computed;let parses=queries.db().stats(Kind(4)).computed;std::fs::write(root.join("code/probe.dm"),format!("// α source-only shift\n{PRESENT_TYPE}")).unwrap();run(&mut host,&request);let shifted=read(&host,&root);assert_eq!(shifted.1.len(),first.1.len());assert_eq!(shifted.1[0].2,first.1[0].2);assert_ne!(shifted.1[0].0,first.1[0].0);assert_eq!(queries.db().stats(Kind(28)).computed,stable,"actual unchanged code-choice answers cut off semantic work");assert_eq!(queries.db().stats(Kind(4)).computed,parses);
+ let stable=queries.db().stats(Kind(28)).computed;let parses=queries.db().stats(Kind(4)).computed;std::fs::write(root.join("code/probe.dm"),format!("/datum/unrelated_shift\n// α source-only shift\n{PRESENT_TYPE}")).unwrap();run(&mut host,&request);let shifted=read(&host,&root);assert_eq!(shifted.1.len(),first.1.len());assert_eq!(shifted.1[0].2,first.1[0].2);assert_ne!(shifted.1[0].0,first.1[0].0);assert_eq!(queries.db().stats(Kind(28)).computed,stable,"actual unchanged code-choice answers cut off semantic work");assert_eq!(queries.db().stats(Kind(4)).computed,parses);
 }
 
 
