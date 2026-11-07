@@ -321,12 +321,8 @@ impl SourceFile {
         if let Some(error) = budget.error() {
             return Err(error);
         }
-        let lines = text
-            .bytes()
-            .filter(|b| *b == b'\n')
-            .count()
-            .checked_add(1)
-            .and_then(|n| n.checked_mul(4));
+        let count = captured_budget::line_count(&text);
+        let lines = count.and_then(|n| n.checked_mul(4));
         let permit = budget.reserve(lines).ok_or_else(|| {
             budget
                 .error()
@@ -334,7 +330,10 @@ impl SourceFile {
         })?;
         let size = text.len() as u64;
         let hash = hash_bytes(text.as_bytes());
-        let raw = captured_budget::indexed(text)?;
+        let raw = captured_budget::indexed_with_count(
+            text,
+            count.ok_or("captured view line count overflow")?,
+        )?;
         permit.complete(|visit| captured_budget::view_storage(&raw, visit));
         if let Some(error) = budget.error() {
             return Err(error);

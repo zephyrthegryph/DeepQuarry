@@ -217,12 +217,23 @@ pub(super) fn indexed(text: dm_preprocess::SourceText) -> Result<View, String> {
     if text.len() > u32::MAX as usize {
         return Err("captured view exceeds native line-index range".into());
     }
-    let count = text
-        .bytes()
-        .filter(|b| *b == b'\n')
-        .count()
-        .checked_add(1)
-        .ok_or("captured view line count overflow")?;
+    let count = line_count(&text).ok_or("captured view line count overflow")?;
+    indexed_with_count(text, count)
+}
+
+pub(super) fn line_count(text: &str) -> Option<usize> {
+    text.bytes().filter(|b| *b == b'\n').count().checked_add(1)
+}
+
+/// Use the exact count already measured on this same immutable text to fund
+/// the raw index. This does not accept counts from a caller outside tree.
+pub(super) fn indexed_with_count(
+    text: dm_preprocess::SourceText,
+    count: usize,
+) -> Result<View, String> {
+    if text.len() > u32::MAX as usize {
+        return Err("captured view exceeds native line-index range".into());
+    }
     let mut starts = Vec::new();
     starts
         .try_reserve_exact(count)
