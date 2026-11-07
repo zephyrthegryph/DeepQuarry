@@ -115,22 +115,24 @@ CAPABILITIES(/datum/interaction_menu)
 		if(row["enabled"])
 			available += list(list(
 				"id" = row["key"],
-				"name" = row["label"],
-				"desc" = row["desc"],
+				"name" = interaction_menu_plain(row["label"]),
+				"desc" = interaction_menu_plain(row["desc"]),
 				"category" = null,
 				"keys" = list(),
 			))
 		else
 			blocked += list(list(
 				"id" = row["key"],
-				"name" = row["label"],
-				"desc" = row["desc"],
+				"name" = interaction_menu_plain(row["label"]),
+				"desc" = interaction_menu_plain(row["desc"]),
 				"category" = null,
-				"reason" = row["reason"],
+				"reason" = interaction_menu_plain(row["reason"]),
 			))
 	var/list/verb_names = list()
-	// Only the verbs the user could run on this target: choosing one is refused out of reach (ui_act_verb()), so a verb the user cannot invoke is not listed.
-	if(interaction_menu_can_reach(user, target))
+	// Legacy verbs are the target's own context verbs, so only those a player would pick from a popup are listed: in reach (choosing
+	// one is refused out of reach, ui_act_verb()), and not on the user's own
+	// body, whose verbs are the verb panel's and the keys' (a self menu of every mob verb is noise next to its ops).
+	if(interaction_menu_can_reach(user, target) && !interaction_menu_is_self(user, target))
 		for(var/procpath/target_verb as anything in target.verbs)
 			if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
 				continue
@@ -143,7 +145,7 @@ CAPABILITIES(/datum/interaction_menu)
 		for(var/list/hidden_row as anything in hidden_rows)
 			admin_view += list(list("id" = hidden_row["key"], "name" = hidden_row["label"], "hidden_by" = hidden_row["hidden_by"]))
 	return list(
-		"target" = capitalize(target.name),
+		"target" = capitalize(interaction_menu_plain(target.name)),
 		"role" = interaction_menu_role(target),
 		"distance" = interaction_menu_distance(user, target),
 		"available" = available,
@@ -152,6 +154,18 @@ CAPABILITIES(/datum/interaction_menu)
 		"verbs" = verb_names,
 		"hidden" = admin_view,
 	)
+
+/// Text for the menu: tags stripped and entities decoded, since the page draws it as plain text (a refusal or description
+/// written with markup would otherwise show its tags). Null when nothing is left.
+/proc/interaction_menu_plain(text)
+	if(!istext(text))
+		return null
+	var/plain = trim(html_decode(strip_html_properly(text)))
+	return length(plain) ? plain : null
+
+/// Is `target` the user's own body (the mob itself, or the mob its client controls)?
+/proc/interaction_menu_is_self(mob/user, atom/target)
+	return target == user || (user.client && target == user.client.mob)
 
 /// The "ROLE" half of the menu's subtitle: a mob's assigned role, else what kind of thing the target is.
 /proc/interaction_menu_role(atom/target)

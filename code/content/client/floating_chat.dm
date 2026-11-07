@@ -12,6 +12,9 @@
 #define CHAT_MODE_BOTTOM "bottom"
 #define CHAT_MODE_TOP "top"
 #define CHAT_MODE_FLOAT "float"
+/// Before the first sync of a connection: where the client's skin really has the chat pane is not known yet (a reconnect after a
+/// round restart keeps the client's skin as the player left it, while this server-side state starts over).
+#define CHAT_MODE_UNKNOWN "unknown"
 #define CHAT_DOCK_BOTTOM_RIGHT "Bottom right"
 #define CHAT_DOCK_TOP_RIGHT "Top right"
 /// The pinned chat's share of the right-hand column, in percent.
@@ -71,8 +74,8 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 /datum/preference/numeric/chat_share/apply_to_client(client/client, value)
 	client.chat_layout_pref_changed()
 
-/// Where the chat pane is on this client, and the share it has: the skin starts bottom right with the default share.
-/client/var/chat_layout_mode = CHAT_MODE_BOTTOM
+/// Where the chat pane is on this client, and the share it has: unknown until the first sync has looked at the skin.
+/client/var/chat_layout_mode = CHAT_MODE_UNKNOWN
 /client/var/chat_layout_share = CHAT_SHARE_DEFAULT
 
 /// Whether the T/M/O hotkeys focus the chat page's input row instead of opening the popup.
@@ -159,6 +162,22 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 			steps += "[SKIN_CHAT_FLOAT_WINDOW].is-visible=true"
 	return jointext(steps, ";")
 
+/// Where the chat pane is, from a winget of the right-hand split ("left=..;right=..;splitter=.."): list(mode, share). The chat is the
+/// split's right pane at the bottom, its left pane at the top, and in neither when it floats. Anything unreadable is the skin's own
+/// layout (bottom right, the default share).
+/proc/chat_layout_observe(split_params)
+	var/list/read = params2list("[split_params]")
+	var/left = read["left"]
+	var/right = read["right"]
+	var/splitter = text2num(read["splitter"])
+	if(right == SKIN_OUTPUT_PANE)
+		return list(CHAT_MODE_BOTTOM, isnum(splitter) ? chat_share_for_splitter(CHAT_MODE_BOTTOM, splitter) : CHAT_SHARE_DEFAULT)
+	if(left == SKIN_OUTPUT_PANE)
+		return list(CHAT_MODE_TOP, isnum(splitter) ? chat_share_for_splitter(CHAT_MODE_TOP, splitter) : CHAT_SHARE_DEFAULT)
+	if(length(read) && left == SKIN_STAT_PANE)
+		return list(CHAT_MODE_FLOAT, CHAT_SHARE_DEFAULT)
+	return list(CHAT_MODE_BOTTOM, CHAT_SHARE_DEFAULT)
+
 /// What a layout request does: CHAT_CHANGE_NONE, _SPLITTER (the pane stays, its share moves) or _LAYOUT (the pane moves).
 /proc/chat_layout_change(mode, share, applied_mode, applied_share)
 	if(mode != applied_mode)
@@ -181,6 +200,13 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 /client/proc/chat_layout_sync()
 	if(!prefs)
 		return
+	if(chat_layout_mode == CHAT_MODE_UNKNOWN)
+		// A new connection: the skin is however the player left it (a round restart reconnects with the same skin), so look before moving.
+		log_tgui(src, "Chat layout: looking at the skin before the first sync.", context = "chat_float")
+		if(!dx_winget(src, src, SKIN_RPANE_SPLIT, "left;right;splitter", PROC_REF(chat_layout_observed)))
+			chat_layout_mode = CHAT_MODE_BOTTOM
+		else
+			return
 	map_split_apply()
 	fullscreen_apply()
 	// The lobby page can be left disabled (greyed) when the previous mob's Logout disables it after the lobby mob enabled it: this runs once
@@ -204,6 +230,14 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 			log_tgui(src, "Chat share: [chat_layout_share] -> [share].", context = "chat_float")
 			chat_layout_share = share
 	tgui_panel?.window?.send_message("chat/layout", list("mode" = chat_layout_mode, "share" = chat_layout_share))
+
+/// dx_winget() callback: the chat pane's real place is known, so the first sync can move it only if the preferences ask for another.
+/client/proc/chat_layout_observed(split_params)
+	var/list/seen = chat_layout_observe(split_params)
+	log_tgui(src, "Chat layout observed: [split_params] -> [seen[1]], share [seen[2]].", context = "chat_float")
+	chat_layout_mode = seen[1]
+	chat_layout_share = seen[2]
+	chat_layout_sync()
 
 /// The float window's place that puts a pointer (screen pixels) on the middle of the window's top strip.
 /proc/chat_float_under_pointer(pointer_x, pointer_y, width)

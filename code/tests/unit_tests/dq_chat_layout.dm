@@ -115,3 +115,17 @@
 	var/list/area = chat_float_client_area(100, 50, 1936, 1047, 1920, 1008)
 	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(0, 0, 560, 420, area[1], area[2], area[3], area[4])), json_encode(list(108, 81, 560, 420)), "pulled in under the title bar")
 	TEST_ASSERT_EQUAL(json_encode(chat_float_client_area(0, 0, 1000, 700, 1200, 800)), json_encode(list(0, 0, 1000, 700)), "an inner size larger than the outer one is cut")
+
+/datum/unit_test/dq_chat_layout_observed_from_skin
+/datum/unit_test/dq_chat_layout_observed_from_skin/Run()
+	var/list/seen = chat_layout_observe("left=[SKIN_STAT_PANE];right=[SKIN_OUTPUT_PANE];splitter=60")
+	TEST_ASSERT_EQUAL(seen[1], CHAT_MODE_BOTTOM, "the chat in the right pane is at the bottom")
+	TEST_ASSERT_EQUAL(seen[2], 40, "the stat panel keeps 60, so the chat has 40")
+	seen = chat_layout_observe("left=[SKIN_OUTPUT_PANE];right=[SKIN_STAT_PANE];splitter=35")
+	TEST_ASSERT_EQUAL(seen[1], CHAT_MODE_TOP, "the chat in the left pane is at the top")
+	TEST_ASSERT_EQUAL(seen[2], 35, "the splitter is the chat share at the top")
+	seen = chat_layout_observe("left=[SKIN_STAT_PANE];right=;splitter=100")
+	TEST_ASSERT_EQUAL(seen[1], CHAT_MODE_FLOAT, "the stat panel alone in the split means the chat floats")
+	seen = chat_layout_observe(null)
+	TEST_ASSERT_EQUAL(seen[1], CHAT_MODE_BOTTOM, "an unreadable report is the skin's own layout")
+	TEST_ASSERT_EQUAL(seen[2], CHAT_SHARE_DEFAULT, "with the default share")
