@@ -3514,3 +3514,23 @@ bytes, for a net release of 2,040,368 bytes. The run then refused a
 the unchanged 134,217,728-byte syntax limit. It produced no report, and the
 private daemon drained and exited. The larger frontier does not establish
 whole-checkout parity or a performance improvement at equal workload.
+
+
+The packed BODY cohort retained the existing standalone projection and also
+released raw spelling from packed owners that had no external aliases. The
+focused controls verified exact reservation returns, mixed-owner spelling
+pointers, and retirement only when every physical row was covered. Source
+arena release now dispatches through concrete owners, including temporary
+ledger upgrades. The focused source, literal, and report tests passed.
+
+The selected report route now covers 24 of the recorded 106 policies. The
+new base_vars, decl, and init roster matched the independent legacy Analyze
+report byte for byte on the initial, warm, and path-exempt fixture states.
+
+The checkout probe at `9cc076d6c4` reached 11,231,952 producer rows and
+11,225,286 adopted rows. It projected 21,337 literals across 1,028 pages,
+with a net 2,577,885-byte release of payload and row reservations at that
+frontier. It refused a 4,096-byte source allocation with 3,444 bytes of
+headroom in the unchanged input limit and produced no report. This probe
+stopped earlier than the previous syntax-limited probe and does not measure
+savings on equal workloads. The private daemon drained and exited.
