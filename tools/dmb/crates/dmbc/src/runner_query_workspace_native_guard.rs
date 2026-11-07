@@ -226,7 +226,7 @@ impl<'a> NativeReadGuard<'a>{
 impl NativeReadGuard<'_>{
  /// Narrow control loan for the already-issued UI raw purpose. No model scope.
  pub(crate) fn ui_raw_operation_owner(&self,capture:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>)->io::Result<(Arc<crate::runner_host::workspace_capture::RawSourceIdentity>,Arc<crate::query_db::QueryDb>)>{
-  capture.require_scope(self)?;let owner=self.raw_source.filter(|owner|owner.purpose()==crate::runner_host::workspace_capture::RawSourcePurpose::UiActions).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"UI operation needs its actual raw source identity"))?;
+  capture.require_scope(self)?;let owner=self.raw_source.filter(|owner|owner.purpose().is_ui()).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"UI operation needs its actual raw source identity"))?;
   if !capture.matches_raw_source(owner,owner.revision())||!owner.uses_queries(self.queries){return Err(io::Error::new(io::ErrorKind::InvalidInput,"UI raw control differs from active source/capture/Db"))}Ok((Arc::clone(owner),Arc::clone(self.queries)))
  }
 }

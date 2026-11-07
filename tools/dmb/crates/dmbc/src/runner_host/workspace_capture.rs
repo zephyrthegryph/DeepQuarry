@@ -121,7 +121,13 @@ impl WorkspaceCapture {
      self.with_order_manifest(scope,visit)
     }
     pub(crate) fn with_op_order_manifest<R>(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,visit:impl FnOnce(Option<&[u8]>)->Result<R,dq_analyze::captured_reactive_reads::Failure>)->Result<R,dq_analyze::captured_reactive_reads::Failure>{
-     self.require_scope(scope)?;if self.auxiliary.as_slice()!=[crate::policy_request::WorkspaceAuxiliaryQuestion::OpOrder]{return Err("actual op_order fixed manifest purpose absent".into())}self.with_order_manifest(scope,visit)
+     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+     self.require_scope(scope)?;
+     let questions=self.auxiliary.as_slice();
+     if questions!=[Q::OpOrder]&&questions!=Q::SELECTED_ORDER_AND_OWNERSHIP{
+      return Err("actual op_order fixed manifest purpose absent".into());
+     }
+     self.with_order_manifest(scope,visit)
     }
     pub(crate) fn with_semantic_manifest<R>(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,question:crate::policy_request::WorkspaceAuxiliaryQuestion,visit:impl FnOnce(Option<&[u8]>)->Result<R,dq_analyze::captured_reactive_reads::Failure>)->Result<R,dq_analyze::captured_reactive_reads::Failure>{
      use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
@@ -686,7 +692,9 @@ pub(crate) fn capture_analysis_map_edits<P: SnapshotProvider>(
         || frontend.preparation_purpose() != OriginalSharedComplete
         || frontend.original_analysis_completeness().is_none()
         || frontend.mapping().initial_environment() != dm_preprocess::InitialEnvironment::OriginalChecker0290
-        || discovery.contract().recursive_roots.as_slice() != [discovery.contract().root.join("code")]
+        || !(discovery.contract().recursive_roots.as_slice() == [discovery.contract().root.join("code")]
+            || discovery.contract().recursive_roots.as_slice()
+                == [discovery.contract().root.join("code"), discovery.contract().root.join("maps")])
     {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits requires its fixed authored model and CODE discovery"));
     }
@@ -821,7 +829,8 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
      }
      check_grep=Some(indices);check_grep_paths=Some(paths);
     }
-    if questions.iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::Keys|crate::policy_request::WorkspaceAuxiliaryQuestion::SemReads|crate::policy_request::WorkspaceAuxiliaryQuestion::UntrackedInputs|crate::policy_request::WorkspaceAuxiliaryQuestion::SetterPublishes|crate::policy_request::WorkspaceAuxiliaryQuestion::SysReactive|crate::policy_request::WorkspaceAuxiliaryQuestion::Lifeforms)){
+    if questions == crate::policy_request::WorkspaceAuxiliaryQuestion::SELECTED_ORDER_AND_OWNERSHIP
+        || questions.iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::Keys|crate::policy_request::WorkspaceAuxiliaryQuestion::SemReads|crate::policy_request::WorkspaceAuxiliaryQuestion::UntrackedInputs|crate::policy_request::WorkspaceAuxiliaryQuestion::SetterPublishes|crate::policy_request::WorkspaceAuxiliaryQuestion::SysReactive|crate::policy_request::WorkspaceAuxiliaryQuestion::Lifeforms)){
      let width=discovery.contract().root.as_os_str().len().checked_add("/deepquarry.dme".len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2048)).ok_or(io::ErrorKind::OutOfMemory)?;
      let wanted=files.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;let capacity=wanted.checked_mul(4).ok_or(io::ErrorKind::OutOfMemory)?;
      used=used.checked_add(width).and_then(|n|if files.capacity()<wanted{n.checked_add(capacity.checked_mul(std::mem::size_of::<File>())?)}else{Some(n)}).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;
@@ -925,6 +934,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::Untyped){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-untyped-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::StoredRefs){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-stored_refs-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::LibraryLayeringFullAllow){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-library-layering-selected-union-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
+    let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::EngineLayeringFullAllow){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-engine-layering-selected-union-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlersFullAllow){
         let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-sem-handlers-selected-full-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()
     }else{policy_revision};
@@ -1029,7 +1039,7 @@ impl WorkspaceCapture{
 }
 
 impl WorkspaceCapture{
- pub(crate) fn covers_raw_tree_policy(&self,policy:dq_analyze::captured_raw_tree_pages::Policy,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{if matches!(policy,dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher|dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch){return self.covers_code_dm(admit)}if policy==dq_analyze::captured_raw_tree_pages::Policy::UiActions{if self.auxiliary.as_slice()!=[crate::policy_request::WorkspaceAuxiliaryQuestion::UiActions]{return Ok(false)}return self.discovery.covers_ui_actions(admit)}if policy==dq_analyze::captured_raw_tree_pages::Policy::DocSnippets{if self.auxiliary.as_slice()!=[crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets]{return Ok(false)}self.discovery.covers_doc_snippets(admit)}else{self.discovery.covers_dm_roots(policy.metadata().select.roots,true,admit)}}
+ pub(crate) fn covers_raw_tree_policy(&self,policy:dq_analyze::captured_raw_tree_pages::Policy,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{if matches!(policy,dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher|dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch){return self.covers_code_dm(admit)}if policy==dq_analyze::captured_raw_tree_pages::Policy::UiActions{if !matches!(self.auxiliary.as_slice(),[crate::policy_request::WorkspaceAuxiliaryQuestion::UiActions|crate::policy_request::WorkspaceAuxiliaryQuestion::UiActionsFullAllow]){return Ok(false)}return self.discovery.covers_ui_actions(admit)}if policy==dq_analyze::captured_raw_tree_pages::Policy::DocSnippets{if !matches!(self.auxiliary.as_slice(),[crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets|crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippetsFullAllow]){return Ok(false)}self.discovery.covers_doc_snippets(admit)}else{self.discovery.covers_dm_roots(policy.metadata().select.roots,true,admit)}}
  pub(crate) fn raw_tree_policy_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,config:&dq_analyze::captured_raw_file::Config,policy:dq_analyze::captured_raw_tree_pages::Policy,selected:bool)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(policy.selects_path(relative)&&(!selected||!config.policy_path_exempt(policy.name(),policy.metadata().group,relative))))}
  pub(crate) fn covers_decl(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{self.discovery.covers_dm_roots(dq_analyze::captured_decl_pages::metadata().select.roots,false,admit)}
  pub(crate) fn decl_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,config:Option<&dq_analyze::captured_raw_file::Config>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_decl_pages::selects_path(relative)&&!config.is_some_and(|config|config.policy_path_exempt("decl","",relative))))}
@@ -1062,9 +1072,11 @@ Ok(issuance)
 
 /// Private identity issued only after actual complete source acquisition.
 /// It is neither a successful semantic graph nor a semantic-unavailable result.
-#[derive(Clone,Copy,PartialEq,Eq)]pub(crate) enum RawSourcePurpose{DocSnippets,Ownership,EngineNoModel,LibraryNoModel,UiActions,OpOrder,NoticePublisher,AllRawFilePolicies}
-impl RawSourcePurpose{pub(crate) fn name(self)->&'static str{match self{Self::AllRawFilePolicies=>"all_raw_file_policies",Self::OpOrder=>"op_order",Self::DocSnippets=>"doc_snippets",Self::Ownership=>"ownership",Self::NoticePublisher=>"notice_publisher",Self::EngineNoModel=>"engine_layering",Self::LibraryNoModel=>"library_layering",Self::UiActions=>"ui_actions"}}pub(crate) fn question(self)->crate::policy_request::WorkspaceAuxiliaryQuestion{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;match self{Self::AllRawFilePolicies=>Q::AllRawFilePolicies,Self::OpOrder=>Q::OpOrder,Self::DocSnippets=>Q::DocSnippets,Self::Ownership=>Q::Ownership,Self::NoticePublisher=>Q::NoticePublisher,Self::EngineNoModel=>Q::EngineLayering,Self::LibraryNoModel=>Q::LibraryLayering,Self::UiActions=>Q::UiActions}}}
-impl RawSourcePurpose {pub(crate) fn layering_no_model(self)->bool{matches!(self,Self::EngineNoModel|Self::LibraryNoModel)}}
+#[derive(Clone,Copy,PartialEq,Eq)]pub(crate) enum RawSourcePurpose{DocSnippets,DocSnippetsFullAllow,Ownership,EngineNoModel,LibraryNoModel,UiActions,OpOrder,NoticePublisher,AllRawFilePolicies,UiActionsFullAllow}
+impl RawSourcePurpose{pub(crate) fn name(self)->&'static str{match self{Self::AllRawFilePolicies=>"all_raw_file_policies",Self::OpOrder=>"op_order",Self::DocSnippets=>"doc_snippets",Self::DocSnippetsFullAllow=>"doc_snippets_full_allow",Self::Ownership=>"ownership",Self::NoticePublisher=>"notice_publisher",Self::EngineNoModel=>"engine_layering",Self::LibraryNoModel=>"library_layering",Self::UiActions=>"ui_actions",Self::UiActionsFullAllow=>"ui_actions_full_allow"}}pub(crate) fn question(self)->crate::policy_request::WorkspaceAuxiliaryQuestion{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;match self{Self::AllRawFilePolicies=>Q::AllRawFilePolicies,Self::OpOrder=>Q::OpOrder,Self::DocSnippets=>Q::DocSnippets,Self::DocSnippetsFullAllow=>Q::DocSnippetsFullAllow,Self::Ownership=>Q::Ownership,Self::NoticePublisher=>Q::NoticePublisher,Self::EngineNoModel=>Q::EngineLayering,Self::LibraryNoModel=>Q::LibraryLayering,Self::UiActions=>Q::UiActions,Self::UiActionsFullAllow=>Q::UiActionsFullAllow}}}
+impl RawSourcePurpose {
+ pub(crate) fn is_ui(self)->bool{matches!(self,Self::UiActions|Self::UiActionsFullAllow)}
+ pub(crate) fn layering_no_model(self)->bool{matches!(self,Self::EngineNoModel|Self::LibraryNoModel)}}
 pub(crate) struct RawSourceIdentity{revision:u128,queries:Weak<crate::query_db::QueryDb>,purpose:RawSourcePurpose}
 impl RawSourceIdentity{pub(crate) fn revision(&self)->u128{self.revision}pub(crate) fn purpose(&self)->RawSourcePurpose{self.purpose}pub(crate) fn uses_queries(&self,db:&crate::query_db::QueryDb)->bool{self.queries.upgrade().is_some_and(|held|std::ptr::eq(held.as_ref(),db))}}
 impl WorkspaceCapture{
@@ -1126,7 +1138,7 @@ pub(crate) fn capture_engine_unselected<P:SnapshotProvider>(inputs:&RecordingInp
 fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest,queries:&Arc<crate::query_db::QueryDb>,prior:Option<&Arc<WorkspaceCapture>>,engine:Option<crate::runner_host::workspace_discovery::EngineNoModelProof>,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,credits:&mut crate::query_db::RawInputCredits<'_>)->io::Result<(Arc<WorkspaceCapture>,Arc<RawSourceIdentity>)>{
  let capture_started = std::time::Instant::now();
  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
- let purpose=match intent.workspace_auxiliary(){[Q::AllRawFilePolicies]=>RawSourcePurpose::AllRawFilePolicies,[Q::OpOrder]=>RawSourcePurpose::OpOrder,[Q::DocSnippets]=>RawSourcePurpose::DocSnippets,[Q::Ownership]=>RawSourcePurpose::Ownership,[Q::NoticePublisher]=>RawSourcePurpose::NoticePublisher,[Q::UiActions]=>RawSourcePurpose::UiActions,[Q::EngineLayering]if engine.as_ref().is_some_and(|p|p.preflight().question()==Q::EngineLayering)=>RawSourcePurpose::EngineNoModel,[Q::LibraryLayering]if engine.as_ref().is_some_and(|p|p.preflight().question()==Q::LibraryLayering)=>RawSourcePurpose::LibraryNoModel,_=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual exclusive raw source purpose required"))};
+ let purpose=match intent.workspace_auxiliary(){[Q::AllRawFilePolicies]=>RawSourcePurpose::AllRawFilePolicies,[Q::OpOrder]=>RawSourcePurpose::OpOrder,[Q::DocSnippets]=>RawSourcePurpose::DocSnippets,[Q::DocSnippetsFullAllow]=>RawSourcePurpose::DocSnippetsFullAllow,[Q::Ownership]=>RawSourcePurpose::Ownership,[Q::NoticePublisher]=>RawSourcePurpose::NoticePublisher,[Q::UiActions]=>RawSourcePurpose::UiActions,[Q::UiActionsFullAllow]=>RawSourcePurpose::UiActionsFullAllow,[Q::EngineLayering]if engine.as_ref().is_some_and(|p|p.preflight().question()==Q::EngineLayering)=>RawSourcePurpose::EngineNoModel,[Q::LibraryLayering]if engine.as_ref().is_some_and(|p|p.preflight().question()==Q::LibraryLayering)=>RawSourcePurpose::LibraryNoModel,_=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual exclusive raw source purpose required"))};
  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||dm_preprocess::SourceProvider::initial_environment(inputs)!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!intent.workspace_generators().is_empty()||!intent.files().is_empty()||!intent.search_folders().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source requires its exact admitted original purpose"))}
  let workspace=intent.workspace().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"raw Doc workspace intent absent"))?;
  let prior = prior.and_then(|capture| {
@@ -1145,7 +1157,8 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
     ||workspace.configuration!=workspace.root.join("tools/ci/lint_scopes.toml"){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw file roster needs its actual closed roots and configuration"))}
    crate::runner_host::workspace_discovery::discover(inputs,contract)?
   },
-  RawSourcePurpose::DocSnippets=>{let(discovery,config)=crate::runner_host::workspace_discovery::discover_doc_snippets_productive(inputs,contract,&workspace.configuration)?;doc_config=Some(config);discovery},RawSourcePurpose::Ownership|RawSourcePurpose::OpOrder|RawSourcePurpose::NoticePublisher=>{if workspace.recursive_roots.as_slice()!=[workspace.root.join("code")]{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source purpose requires exactly actual CODE_DM"))}crate::runner_host::workspace_discovery::discover_ownership_code(inputs,contract)?},RawSourcePurpose::UiActions=>{let(discovery,config)=crate::runner_host::workspace_discovery::discover_ui_actions_productive(inputs,contract,&workspace.configuration)?;doc_config=Some(config);discovery},RawSourcePurpose::EngineNoModel|RawSourcePurpose::LibraryNoModel=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine no-model capture requires authentic selection proof"))})};discovery.validate_recording(inputs)?;
+  RawSourcePurpose::DocSnippetsFullAllow=>{let(discovery,config)=crate::runner_host::workspace_discovery::discover_doc_snippets_joined(inputs,contract,&workspace.configuration)?;doc_config=Some(config);discovery},
+  RawSourcePurpose::DocSnippets=>{let(discovery,config)=crate::runner_host::workspace_discovery::discover_doc_snippets_productive(inputs,contract,&workspace.configuration)?;doc_config=Some(config);discovery},RawSourcePurpose::Ownership|RawSourcePurpose::OpOrder|RawSourcePurpose::NoticePublisher=>{if workspace.recursive_roots.as_slice()!=[workspace.root.join("code")]{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source purpose requires exactly actual CODE_DM"))}crate::runner_host::workspace_discovery::discover_ownership_code(inputs,contract)?},RawSourcePurpose::UiActionsFullAllow=>{let(discovery,config)=crate::runner_host::workspace_discovery::discover_ui_actions_joined(inputs,contract,&workspace.configuration)?;doc_config=Some(config);discovery},RawSourcePurpose::UiActions=>{let(discovery,config)=crate::runner_host::workspace_discovery::discover_ui_actions_productive(inputs,contract,&workspace.configuration)?;doc_config=Some(config);discovery},RawSourcePurpose::EngineNoModel|RawSourcePurpose::LibraryNoModel=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine no-model capture requires authentic selection proof"))})};discovery.validate_recording(inputs)?;
  dm_profile::detail_mark("raw_capture.discovery", capture_started);
  let mut used=discovery.retained_charge()?.checked_add(std::mem::size_of::<WorkspaceCapture>()+std::mem::size_of::<RawSourceIdentity>()+std::mem::size_of::<crate::query_db::QueryDb>()+512).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
  let mut admit=|bytes:usize|->io::Result<()>{used=used.checked_add(bytes).filter(|n|*n<=EXTRA_BUDGET).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"raw Doc source exceeds existing capture allowance"))?;Ok(())};
@@ -1163,11 +1176,13 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
    }
    covered&&discovery.covers_dm_roots(dq_analyze::tree::CODE_MAPS_DM.roots,false,&mut admit)?
   },
-  RawSourcePurpose::DocSnippets=>discovery.covers_doc_snippets(&mut admit)?,RawSourcePurpose::UiActions=>discovery.covers_ui_actions(&mut admit)?,RawSourcePurpose::OpOrder|RawSourcePurpose::Ownership|RawSourcePurpose::NoticePublisher|RawSourcePurpose::EngineNoModel|RawSourcePurpose::LibraryNoModel=>discovery.covers_code_dm(&mut admit)?};if !covered{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source lacks its actual purpose-specific discovery"))}drop(admit);
+  RawSourcePurpose::DocSnippetsFullAllow=>discovery.covers_doc_snippets(&mut admit)?&&discovery.covers_code_dm(&mut admit)?&&discovery.covers_dm_roots(&[("maps","dm")],false,&mut admit)?,RawSourcePurpose::DocSnippets=>discovery.covers_doc_snippets(&mut admit)?,RawSourcePurpose::UiActionsFullAllow=>discovery.covers_ui_actions(&mut admit)?&&discovery.covers_code_dm(&mut admit)?&&discovery.covers_dm_roots(&[("maps","dm")],false,&mut admit)?,RawSourcePurpose::UiActions=>discovery.covers_ui_actions(&mut admit)?,RawSourcePurpose::OpOrder|RawSourcePurpose::Ownership|RawSourcePurpose::NoticePublisher|RawSourcePurpose::EngineNoModel|RawSourcePurpose::LibraryNoModel=>discovery.covers_code_dm(&mut admit)?};if !covered{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source lacks its actual purpose-specific discovery"))}drop(admit);
  // Capture the actual dispatcher first. Missing/bad source never opens any
  // other selected body. A visible path is selected by discovery, not reopened
  // as a guessed filesystem path outside the original UI namespace.
- let ui_dispatcher_path=if purpose==RawSourcePurpose::UiActions{
+ let ui_joined=purpose==RawSourcePurpose::UiActionsFullAllow;
+ let ui_purpose=purpose.is_ui();
+ let ui_dispatcher_path=if ui_purpose{
   Some(workspace.root.join("code/datums/capabilities/ui_actions.dm"))
  }else{None};
  let mut acquire=|path:&Path|->io::Result<dm_preprocess::SourceAcquisitionLease>{
@@ -1185,7 +1200,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
  let mut ui_original=match &ui_dispatcher_path{
   Some(path)if discovery.files().contains(path)=>Some(acquire(path)?),_=>None,
  };
- let prepared_ui=if purpose==RawSourcePurpose::UiActions{
+ let prepared_ui=if ui_purpose{
   // The old raw facade is lossy UTF-8 with universal newlines and preserves
   // BOM bytes. Native compiler decoding is a distinct view, not UI source text.
   let normalization=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(quota)?;
@@ -1207,7 +1222,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
   drop(text);drop(normalization);Some(prepared)
  }else{None};
  let ui_needs_sources=prepared_ui.as_ref().is_some_and(|value|value.needs_sources());
- let source_count=if engine.is_some(){0}else if prepared_ui.is_some()&&!ui_needs_sources{usize::from(ui_original.is_some())}else{discovery.files().len()};
+ let source_count=if engine.is_some(){0}else if !ui_joined&&prepared_ui.is_some()&&!ui_needs_sources{usize::from(ui_original.is_some())}else{discovery.files().len()};
  let slots=source_count.checked_add(1+usize::from(purpose==RawSourcePurpose::OpOrder)).ok_or(io::ErrorKind::OutOfMemory)?;let max_slots=slots.checked_mul(4).ok_or(io::ErrorKind::OutOfMemory)?;
  let capacity=max_slots.checked_mul(std::mem::size_of::<File>()+std::mem::size_of::<PathBuf>()).and_then(|n|n.checked_add(128)).ok_or(io::ErrorKind::OutOfMemory)?;
  drop(acquire);
@@ -1217,10 +1232,15 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
  let mut ui_dispatcher_index=None;
  for path in discovery.files(){
   if engine.is_some(){break}
-  if prepared_ui.is_some()&&!ui_needs_sources&&ui_dispatcher_path.as_ref()!=Some(path){continue}
   if prepared_ui.is_some()&&ui_dispatcher_path.as_ref()!=Some(path){
-   let relative=path.strip_prefix(&workspace.root).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"UI selected source escapes actual root"))?.to_string_lossy().replace('\\',"/");
-   if relative.ends_with(".d.ts")||discovery.productive_ui_configuration(&workspace.configuration)?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"UI source selection lacks actual configuration"))?.policy_path_exempt("ui_actions",dq_analyze::ui_actions_policy::metadata().group,&relative){continue}
+   let relative=path.strip_prefix(&workspace.root).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"UI selected source escapes actual root"))?;
+   let aggregate_dm=ui_joined&&(relative.starts_with("code")||relative.starts_with("maps"))
+    &&relative.extension().is_some_and(|extension|extension=="dm");
+   if !aggregate_dm{
+    if !ui_needs_sources{continue}
+    let relative=relative.to_string_lossy().replace('\\',"/");
+    if relative.ends_with(".d.ts")||discovery.productive_ui_configuration(&workspace.configuration)?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"UI source selection lacks actual configuration"))?.policy_path_exempt("ui_actions",dq_analyze::ui_actions_policy::metadata().group,&relative){continue}
+   }
   }
 
   crate::daemon::control::checkpoint()?;

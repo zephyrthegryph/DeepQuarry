@@ -702,3 +702,84 @@ fn selected_engine_internal_uses_visible_raw_findings_and_exact_allow_usage() {
     assert!(denied.is_empty() && denied_diagnostics.is_empty());
     assert!(!root.join("deepquarry.dmb").exists());
 }
+
+#[test]
+fn selected_engine_layering_uses_exact_complete_model_and_empty_scope_proofs() {
+    use dmbc::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    use dq_analyze::selected_exclusions_wire::Roster;
+    let root = scratch::dir("selected-engine-layering");
+    let cache = scratch::dir("selected-engine-layering-cache");
+    std::fs::create_dir(root.join("maps")).unwrap();
+    put(&root, "deepquarry.dme", concat!(
+        "#include \"code/engine/probe.dm\"\n",
+        "#include \"code/library/arbitrary.dm\"\n",
+    ));
+    put(&root, "code/engine/probe.dm", "/proc/entry()\n    ordinary_helper()\n");
+    put(&root, "code/library/arbitrary.dm", "/proc/ordinary_helper()\n    return 1\n");
+    put(&root, "code/scheduled.dm", concat!(
+        "/proc/scheduled()\n",
+        "    sleep(1) // ALLOW(scheduler): this fixture consumes actual scheduler usage\n",
+    ));
+    let Command::Build(request) = dmbc::cli::parse(&[
+        "prepare-query".into(), root.join("deepquarry.dme").to_string_lossy().into_owned(),
+    ]).unwrap() else { panic!("actual PrepareQuery"); };
+    let mut request = *request;
+    request.no_cache = true;
+    request.exact_inputs = true;
+    request.progress_enabled = false;
+    request.workers = 1;
+    request.engine_template = None;
+    request.bootstrap_catalog = false;
+    request.cache_root = Some(cache);
+    request.timeout_seconds = Some(30);
+    request.policy_inputs = Some(PolicyInputRequest {
+        analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+        workspace: Some(WorkspacePolicyRequest {
+            root: root.clone(), recursive_roots: vec![root.join("code"), root.join("maps")],
+            configuration: root.join("tools/ci/lint_scopes.toml"),
+        }),
+        ..Default::default()
+    });
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !Roster::WithEngineLayering.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    for (exempt, overlay) in [
+        (false, ""),
+        (true, "[lint.engine_layering]\nexempt_files=[\"code/engine/probe.dm\"]\n"),
+    ] {
+        put(&root, "tools/ci/lint_scopes.toml", &report_config::with_overlay(overlay));
+        let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+        let clean = host.write_original_exclusions_report(
+            request.clone(), &exclusions, &mut diagnostics, &mut output).unwrap();
+        let report = std::str::from_utf8(&output).unwrap();
+        assert_eq!(clean, exempt, "{report}");
+        assert_eq!(report.contains("code/engine/probe.dm:2: [engine_layering/external_dependency]"), !exempt, "{report}");
+        assert!(report.contains("allow annotations: 0 unused"), "{report}");
+        if let Some(legacy) = std::env::var_os("DQ_SELECTED_ENGINE_LAYERING_LEGACY_ANALYZE") {
+            let legacy = std::path::PathBuf::from(legacy);
+            assert!(legacy.is_absolute());
+            let mut command = std::process::Command::new(legacy);
+            command.args(["check", "--lint", "engine_layering", "--raw", "--no-cache", "--root"]).arg(&root);
+            #[cfg(windows)] {
+                use std::os::windows::process::CommandExt;
+                command.creation_flags(0x08000000 | 0x00004000);
+            }
+            let old = command.output().expect("run independent legacy engine-layering CLI");
+            assert_eq!(old.status.code(), Some(if exempt { 0 } else { 1 }),
+                "{}", String::from_utf8_lossy(&old.stderr));
+            let old = std::str::from_utf8(&old.stdout).unwrap();
+            let actual: Vec<_> = report.lines().filter(|line| line.contains("[engine_layering/")).collect();
+            let expected: Vec<_> = old.lines().filter(|line| line.contains("[engine_layering/")).collect();
+            assert_eq!(actual, expected);
+        }
+    }
+    request.policy_inputs.as_mut().unwrap().workspace_auxiliary = vec![Q::EngineLayering];
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(host.write_original_exclusions_report(
+        request, &exclusions, &mut diagnostics, &mut output).is_err());
+    assert!(diagnostics.is_empty() && output.is_empty());
+}

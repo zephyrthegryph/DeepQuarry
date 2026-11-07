@@ -210,11 +210,7 @@ impl SourceSnapshot {
         tree: &dm_tree::SemanticTree, output: &mut impl Write,
     ) -> io::Result<()> {
         use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
-        use dq_analyze::{
-            captured_allow_annotations::Operation,
-            captured_raw_file::Config, captured_raw_policy::Configuration,
-            captured_reactive_reads::Failure, map_edits_policy::{self, CodeNames, META},
-        };
+        use dq_analyze::map_edits_policy::META;
         if lints != ["map_edits"] || !(1..=128).contains(&limit) || !self.matches_tree(tree) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "exact map_edits report required"));
         }
@@ -222,6 +218,39 @@ impl SourceSnapshot {
         let workspace = self.native_workspace.as_ref().ok_or_else(|| io::Error::other("map_edits workspace absent"))?;
         if root != workspace.root() || configuration != workspace.configuration().0
             || self.policy_revision != Some(workspace.policy_revision())
+            || !workspace.matches_auxiliary_questions(&[Q::MapEdits]) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits capture differs"));
+        }
+        let frame = ReportFrame { root, configuration, recursive_roots: workspace.recursive_roots(),
+            semantic: tree.identity(), source: self.source_revision, policy: workspace.policy_revision(),
+            configuration_present: workspace.configuration().1.is_some(), grep_purpose: None };
+        self.with_original_map_edits_policy(tree, |sites, config, budget, checkpoint| {
+            let empty = LintScope::default();
+            let scope = config.borrowed_report_scope(META.name, META.group).unwrap_or(&empty);
+            let exact = scope_json(scope, budget)?;
+            let exact = std::str::from_utf8(&exact.0).map_err(io::Error::other)?;
+            write_data_page(&MapEditsReport(sites), META.name, &frame, exact, budget, lints,
+                cursor, limit, output, &mut || checkpoint())?;
+            Ok(())
+        })
+    }
+
+    pub(super) fn with_original_map_edits_policy<R>(
+        &self, tree: &dm_tree::SemanticTree,
+        consume: impl FnOnce(&[dq_analyze::lint::Site], &dq_analyze::captured_raw_file::Config, &std::sync::Arc<Budget>, &dyn Fn() -> io::Result<()>) -> io::Result<R>,
+    ) -> io::Result<R> {
+        use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+        use dq_analyze::{
+            captured_allow_annotations::Operation,
+            captured_raw_file::Config, captured_raw_policy::Configuration,
+            captured_reactive_reads::Failure, map_edits_policy::{self, CodeNames},
+        };
+        if !self.matches_tree(tree) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "exact map_edits model required"));
+        }
+        self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290))?;
+        let workspace = self.native_workspace.as_ref().ok_or_else(|| io::Error::other("map_edits workspace absent"))?;
+        if self.policy_revision != Some(workspace.policy_revision())
             || !workspace.matches_auxiliary_questions(&[Q::MapEdits]) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits capture differs"));
         }
@@ -241,9 +270,6 @@ impl SourceSnapshot {
             .ok_or_else(|| io::Error::other("map_edits pinned checker profile absent"))?;
         let builtin = tree.validated_checker_profile(profile).map_err(|error| io::Error::other(format!("map_edits checker profile: {error:?}")))?;
         let queries = self.native_raw_queries.as_ref().ok_or_else(|| io::Error::other("map_edits QueryDb absent"))?;
-        let frame = ReportFrame { root, configuration, recursive_roots: workspace.recursive_roots(),
-            semantic: tree.identity(), source: self.source_revision, policy: workspace.policy_revision(),
-            configuration_present: workspace.configuration().1.is_some(), grep_purpose: None };
         let operational = |failure| match failure {
             Failure::Operational(error) => error,
             Failure::Unsupported(message) => io::Error::new(io::ErrorKind::Unsupported, message),
@@ -274,13 +300,7 @@ impl SourceSnapshot {
             if !witness.matches(workspace, &guard, inputs)? {
                 return Err("map_edits CODE completion belongs to another capture".into());
             }
-            let empty = LintScope::default();
-            let scope = config.borrowed_report_scope(META.name, META.group).unwrap_or(&empty);
-            let exact = scope_json(scope, budget)?;
-            let exact = std::str::from_utf8(&exact.0).map_err(io::Error::other)?;
-            write_data_page(&MapEditsReport(&sites), META.name, &frame, exact, budget, lints,
-                cursor, limit, output, &mut || checkpoint())?;
-            Ok(())
+            consume(&sites, &config, budget, &checkpoint).map_err(Failure::Operational)
         }).map_err(operational)
     }
 }

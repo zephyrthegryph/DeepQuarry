@@ -14,6 +14,8 @@ impl CompleteAllowRun<'_>{pub(crate) fn selected(&self)->&[String]{self.selected
 /// producer calls. The final callback still owns authorization to publish.
 enum UnionRows<'a,'rows>{
  Raw(&'a mut dyn Iterator<Item=&'rows dq_analyze::captured_raw_file::Findings>),
+ CheckGrep(&'a dq_analyze::lints::check_grep::native::Output),
+ Deadline(&'a mut dyn Iterator<Item=&'rows dq_analyze::captured_raw_file::Findings>, &'a std::path::Path, Option<&'a [u8]>),
  Tree(&'a dq_analyze::captured_raw_tree_pages::Data),
  Fold(dq_analyze::workspace_fold_policy::Policy, &'a dq_analyze::workspace_fold_policy::Data<'rows>),
  Silicon(&'a dq_analyze::captured_silicon_entry::Data),
@@ -21,6 +23,7 @@ enum UnionRows<'a,'rows>{
  Handlers(&'a dq_analyze::captured_sem_handlers::Data),
  Untyped(&'a dq_analyze::captured_untyped_pages::UntypedData),
  Keys(&'a dq_analyze::captured_keys_pages::KeyData),
+ MapEdits(&'a [dq_analyze::lint::Site]),
  DerivedReads(&'a dq_analyze::captured_derived_reads::DerivedReadData),
  SysReactive(&'a dq_analyze::captured_sys_reactive::Data),
  DeclarationHard(Q, &'a [dq_analyze::lint::Site], &'a [String], &'a [String]),
@@ -38,6 +41,7 @@ impl Producer{
   // The union has its own validation plus unused-usage join. Its special
   // producer must remain distinct from explicit check-only report delivery.
   if name=="allow_annotations"{return Some(Self::Special("allow_annotations"))}
+  if name=="map_edits"{return Some(Self::Special("map_edits"))}
   if name=="image_dir_after_build"{return Some(Self::Special("image_dir_after_build"))}
   if dq_analyze::captured_raw_policy::RAW_FILE_LINTS.contains(&name){return dq_analyze::captured_raw_policy::metadata(name).map(|meta|Self::Raw(meta.name))}
   if let Some(policy)=dq_analyze::captured_raw_tree_pages::Policy::from_name(name){return Some(Self::Tree(policy))}
@@ -49,6 +53,7 @@ impl Producer{
  }
  fn metadata(self)->&'static dq_analyze::lint::Meta{match self{
   Self::Raw(name)=>dq_analyze::captured_raw_policy::metadata(name).expect("closed raw metadata"),Self::Tree(policy)=>policy.metadata(),Self::Fold(policy)=>policy.metadata(),Self::Special(name)=>match name{
+   "map_edits"=>&dq_analyze::map_edits_policy::META,
    "image_dir_after_build"=>dq_analyze::captured_image_dir::metadata(),"allow_annotations"=>dq_analyze::allow_annotation_policy::metadata(),"silicon_entry"=>&dq_analyze::silicon_entry_policy::META,"sem/keys"=>dq_analyze::keys_policy::metadata(),"check_grep"=>dq_analyze::lints::check_grep::native::metadata(),"sys/hygiene"=>dq_analyze::captured_sys_hygiene_pages::metadata(),"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),"derived_reads"=>dq_analyze::captured_derived_reads::metadata(),"sem/handlers"=>dq_analyze::sem_handlers_policy::metadata(),"sem/reads"=>dq_analyze::sem_reads_policy::metadata(),"untracked_inputs"=>dq_analyze::untracked_inputs_policy::metadata(),"setter_publishes"=>dq_analyze::setter_publication_policy::metadata(),"decl"=>dq_analyze::captured_decl_pages::metadata(),"init"=>dq_analyze::captured_init_pages::metadata(),"base_vars"=>dq_analyze::captured_base_vars_pages::metadata(),"requirement_bool"=>dq_analyze::captured_requirement_bool::metadata(),"player_link"=>dq_analyze::player_link_policy::metadata(),"untyped_member"=>dq_analyze::untyped_member_policy::metadata(),"weak_raw_read"=>dq_analyze::weak_relation_policy::metadata(),"rel_write_undeclared"=>dq_analyze::rel_write_policy::metadata(),"untyped"=>dq_analyze::untyped_policy_metadata::metadata(),"stored_refs"=>dq_analyze::stored_refs_policy::metadata(),"engine_layering"=>dq_analyze::engine_layering_policy::metadata(),"library_layering"=>dq_analyze::engine_layering_policy::Layer::Library.metadata(),"sys/dx_reactive"=>dq_analyze::sys_reactive_policy::metadata(),"lifeforms"=>dq_analyze::lifeforms_policy::metadata(),_=>unreachable!("closed producer metadata")
   }
  }}
@@ -60,14 +65,15 @@ impl Producer{
    | Self::Tree(Policy::NoticePublisher | Policy::ReportInCatch | Policy::Cooldown
       | Policy::CapBits | Policy::DeclarationBlock | Policy::DuplicateInputKey
       | Policy::Interactions | Policy::Latent | Policy::Pollers | Policy::Pool | Policy::ReadBack
+      | Policy::OpOrder | Policy::Ownership | Policy::DocSnippets | Policy::UiActions
       | Policy::ConstructorShadow | Policy::LookEffects | Policy::ManualLog | Policy::StringNames
       | Policy::Expiry | Policy::Requirements | Policy::Sfx | Policy::Ui)
-   | Self::Special("image_dir_after_build" | "allow_annotations" | "silicon_entry" | "library_layering" | "sem/handlers"
+   | Self::Special("check_grep" | "map_edits" | "image_dir_after_build" | "allow_annotations" | "silicon_entry" | "engine_layering" | "library_layering" | "sem/handlers"
       | "sem/keys" | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped" | "derived_reads" | "sys/dx_reactive" | "lifeforms" | "player_link" | "untyped_member" | "weak_raw_read" | "rel_write_undeclared" | "requirement_bool" | "base_vars" | "decl" | "init"
       | "sys/hygiene" | "sys/resolvers" | "sys/tables" | "system_boundary" | "stored_refs")
   )
  }
- fn question(self)->Option<Q>{Some(match self.name(){"image_dir_after_build"=>Q::ImageDir,"silicon_entry"=>Q::SiliconEntry,"sem/keys"=>Q::Keys,"check_grep"=>Q::CheckGrep,"deadline_polling"=>Q::DeadlinePollingAllowlist,"op_order"=>Q::OpOrder,"ui_actions"=>Q::UiActions,"doc_snippets"=>Q::DocSnippets,"ownership"=>Q::Ownership,"derived_reads"=>Q::DerivedReads,"sem/handlers"=>Q::SemHandlersFullAllow,"sem/reads"=>Q::SemReads,"untracked_inputs"=>Q::UntrackedInputs,"setter_publishes"=>Q::SetterPublishes,"tracked"=>Q::Tracked,"tracked_tests"=>Q::TrackedTests,"decl"=>Q::Decl,"init"=>Q::Init,"base_vars"=>Q::BaseVars,"requirement_bool"=>Q::RequirementBool,"player_link"=>Q::PlayerLink,"untyped_member"=>Q::UntypedMember,"weak_raw_read"=>Q::WeakRawRead,"rel_write_undeclared"=>Q::RelWriteUndeclared,"untyped"=>Q::Untyped,"stored_refs"=>Q::StoredRefs,"engine_layering"=>Q::EngineLayering,"library_layering"=>Q::LibraryLayeringFullAllow,"sys/dx_reactive"=>Q::SysReactive,"lifeforms"=>Q::Lifeforms,_=>return None})}
+ fn question(self)->Option<Q>{Some(match self.name(){"map_edits"=>Q::MapEdits,"image_dir_after_build"=>Q::ImageDir,"silicon_entry"=>Q::SiliconEntry,"sem/keys"=>Q::Keys,"check_grep"=>Q::CheckGrep,"deadline_polling"=>Q::DeadlinePollingAllowlist,"op_order"=>Q::OpOrder,"ui_actions"=>Q::UiActionsFullAllow,"doc_snippets"=>Q::DocSnippetsFullAllow,"ownership"=>Q::Ownership,"derived_reads"=>Q::DerivedReads,"sem/handlers"=>Q::SemHandlersFullAllow,"sem/reads"=>Q::SemReads,"untracked_inputs"=>Q::UntrackedInputs,"setter_publishes"=>Q::SetterPublishes,"tracked"=>Q::Tracked,"tracked_tests"=>Q::TrackedTests,"decl"=>Q::Decl,"init"=>Q::Init,"base_vars"=>Q::BaseVars,"requirement_bool"=>Q::RequirementBool,"player_link"=>Q::PlayerLink,"untyped_member"=>Q::UntypedMember,"weak_raw_read"=>Q::WeakRawRead,"rel_write_undeclared"=>Q::RelWriteUndeclared,"untyped"=>Q::Untyped,"stored_refs"=>Q::StoredRefs,"engine_layering"=>Q::EngineLayeringFullAllow,"library_layering"=>Q::LibraryLayeringFullAllow,"sys/dx_reactive"=>Q::SysReactive,"lifeforms"=>Q::Lifeforms,_=>return None})}
 }
 fn copy_validation(data:&ValidationData,c:&mut impl Control<Error=Failure>)->Result<ValidationData,Failure>{
  if data.sites.len()!=data.source_text.len(){return Err("actual ALLOW validation shape differs".into())}let mut out=ValidationData{sites:Vec::new(),source_text:Vec::new()};
@@ -97,7 +103,7 @@ impl SourceSnapshot{
     .bind(child.policy().archive())?;
   }
   let mut producers=Vec::new();
-  for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if matches!(producer,Producer::Special("silicon_entry"))&&stage.is_none(){return Err("silicon_entry usage requires the qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("library_layering"))&&stage.is_none(){return Err("library layering usage requires its qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("sem/handlers"))&&(stage.is_none()||handlers.is_none()){return Err("handlers usage requires its actual current demanded-full staged pair".into())}if stage.is_some()&&!producer.stages_report(){return Err("selected policy has no staged report adapter".into())}if let Some(question)=producer.question(){if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs_with_guard(question,&guard)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
+  for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if matches!(producer,Producer::Special("silicon_entry"))&&stage.is_none(){return Err("silicon_entry usage requires the qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("library_layering"))&&stage.is_none(){return Err("library layering usage requires its qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("sem/handlers"))&&(stage.is_none()||handlers.is_none()){return Err("handlers usage requires its actual current demanded-full staged pair".into())}if stage.is_some()&&!producer.stages_report(){return Err("selected policy has no staged report adapter".into())}if let Some(question)=producer.question(){let question=if name=="engine_layering"&&stage.is_none(){Q::EngineLayering}else{question};if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs_with_guard(question,&guard)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
   let selected_tree=full_unused::SelectedTreePlanData::new(producers.iter().map(|producer|producer.metadata().select),&mut c)?;
   let frame=FrameData{owner:FrameOwner::Semantic(tree.identity()),source:self.source_revision,configuration:capture.policy_revision()};let mut usage=UsageJoinData::new(&selection,frame);let mut validation=None;
   for producer in producers{poll()?;let name=producer.name();
@@ -109,7 +115,12 @@ impl SourceSnapshot{
      if let Some(stage)=stage.as_deref_mut(){
       queries.with_workspace_raw_union_rows(capture,&guard,name,budget,true,|rows,allows,report|{
        let (scope,child)=report.ok_or_else(||io::Error::other("raw union report has no actual child render budget"))?;
-       stage(producer.metadata(),UnionRows::Raw(rows),scope,child)?;usage.record_fold_iter(name,frame,allows,&mut c).map_err(operational)})?;
+       let rows=if name=="deadline_polling"{
+        let(path,bytes)=capture.deadline_observation()?;
+        UnionRows::Deadline(rows,path,bytes)
+       }else{UnionRows::Raw(rows)};
+       stage(producer.metadata(),rows,scope,child)?;
+       usage.record_fold_iter(name,frame,allows,&mut c).map_err(operational)})?;
      }else{
       queries.with_workspace_raw_allow_usage(capture,&guard,name,budget,|rows|usage.record_fold_iter(name,frame,rows,&mut c).map_err(operational))?;
      }
@@ -171,7 +182,14 @@ impl SourceSnapshot{
       record(data.allow_used())
      })?;
     },
-    Producer::Special("check_grep")=>{self.with_native_check_grep_report(tree,|data,_,_|record(&data.allow_used).map_err(Failure::Operational))?;},
+    Producer::Special("check_grep")=>{
+     self.with_native_check_grep_report(tree,|data,scope,child_budget|{
+      if let Some(stage)=stage.as_deref_mut(){
+       stage(producer.metadata(),UnionRows::CheckGrep(data),scope.report_scope(),child_budget)?;
+      }
+      record(&data.allow_used).map_err(Failure::Operational)
+     })?;
+    },
     Producer::Special("sys/hygiene")=>{
      queries.with_workspace_hygiene_report(capture,&guard,|data,config,child_budget|{
       if let Some(stage)=stage.as_deref_mut(){
@@ -391,12 +409,27 @@ impl SourceSnapshot{
       record(data.allow_used())
      })?;
     },
-    Producer::Special("engine_layering")=>{self.with_original_engine_layering_policy(|data,_,_|record(data.allow_used()))?;},
+    Producer::Special("engine_layering")=>{
+     if let Some(stage)=stage.as_deref_mut(){
+      let question=Q::EngineLayeringFullAllow;
+      let child=self.workspace_semantic_inputs(question)?;
+      let subject=self.analysis_subject.as_ref().ok_or("engine layering selected Original subject unavailable")?;
+      queries.with_original_workspace_layering_selected_union(question,capture,&guard,child,subject,|data,config,child_budget|{
+       if data.source_text().is_some(){return Err(io::Error::other("engine layering source shape differs"))}
+       let meta=producer.metadata();let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::MessageOnlyHard(question,data.sites(),data.allow_used()),scope,child_budget)?;
+       record(data.allow_used())
+      })?;
+     }else{
+      self.with_original_engine_layering_policy(|data,_,_|record(data.allow_used()))?;
+     }
+    },
     Producer::Special("library_layering")=>{
      let stage=stage.as_deref_mut().ok_or("library layering selected report adapter absent")?;
      let child=self.workspace_semantic_inputs(Q::LibraryLayeringFullAllow)?;
      let subject=self.analysis_subject.as_ref().ok_or("library layering selected Original subject unavailable")?;
-     queries.with_original_workspace_library_layering_selected_union(capture,&guard,child,subject,|data,config,child_budget|{
+     queries.with_original_workspace_layering_selected_union(Q::LibraryLayeringFullAllow,capture,&guard,child,subject,|data,config,child_budget|{
       let meta=producer.metadata();let empty=dq_analyze::scopes::LintScope::default();
       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
       stage(meta,UnionRows::LibraryLayering(data),scope,child_budget)?;
@@ -422,6 +455,17 @@ impl SourceSnapshot{
        stage(meta,UnionRows::MessageOnlyHard(Q::Lifeforms,data.sites(),data.allow_used()),scope,child_budget)?;
       }
       record(data.allow_used())
+     })?;
+    },
+    Producer::Special("map_edits")=>{
+     self.with_original_map_edits_policy(tree,|sites,config,child_budget,_|{
+      if let Some(stage)=stage.as_deref_mut(){
+       let meta=producer.metadata();
+       let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::MapEdits(sites),scope,child_budget)?;
+      }
+      record(&[])
      })?;
     },
     Producer::Special("image_dir_after_build")=>{

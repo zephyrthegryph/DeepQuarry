@@ -32,8 +32,8 @@ impl SelectedReportPlan {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report sections exceed the staged bound"));
         }
         const PROFILES: &[&[Q]] = &[
-            &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
-            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::Keys], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
+            &[], &[Q::DocSnippetsFullAllow], &[Q::UiActionsFullAllow], &[Q::CheckGrep], &[Q::DeadlinePollingAllowlist], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::EngineLayeringFullAllow], &[Q::SemHandlersFullAllow],
+            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::Keys], &[Q::MapEdits], Q::SELECTED_ORDER_AND_OWNERSHIP, &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
             Q::SELECTED_LIFEFORMS_PLAYER_LINK, Q::SELECTED_REFERENCE_POLICIES, Q::SELECTED_STORED_AND_TRACKED, &[Q::RequirementBool], Q::SELECTED_DECLARATION_POLICIES,
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
@@ -233,7 +233,38 @@ struct ReportStage<'a> {
 }
 impl ReportStage<'_> {
     fn observe(&mut self, root: &Path, meta: &Meta, rows: ReportRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
-        if self.selected.get(self.finished).copied() != Some(meta.name) || !matches!(meta.policy, Policy::Hard | Policy::Sites { .. }) {
+        if let ReportRows::Union(UnionRows::CheckGrep(data)) = &rows {
+            if self.selected != Roster::WithCheckGrep.names()
+                || self.selected.get(self.finished).copied() != Some(meta.name)
+                || !std::ptr::eq(meta, dq_analyze::lints::check_grep::native::metadata())
+                || !self.judgment.is_raw() || !matches!(meta.policy, Policy::Custom)
+            {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "check_grep requires its exact completed raw report"));
+            }
+            let checkpoint = || -> io::Result<()> {
+                crate::daemon::control::checkpoint()?;
+                child.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))
+            };
+            // This producer has already run the original custom renderer over
+            // the actual Check observations, and owns its admitted report
+            // bytes. The generic judge prefixes notes before that hook.
+            checkpoint()?;
+            for note in &data.run.notes {
+                writeln!(self.file, "{note}")?;
+            }
+            self.file.write_all(data.report.as_bytes())?;
+            checkpoint()?;
+            self.failed[self.finished] = data.failed;
+            self.finished += 1;
+            return Ok(());
+        }
+        let deadline = matches!(&rows, ReportRows::Union(UnionRows::Deadline(..)))
+            && self.selected == Roster::WithDeadlinePolling.names()
+            && self.judgment.is_raw() && matches!(meta.policy, Policy::Custom)
+            && dq_analyze::captured_raw_policy::metadata("deadline_polling")
+                .is_some_and(|expected| std::ptr::eq(meta, expected));
+        if self.selected.get(self.finished).copied() != Some(meta.name)
+            || (!deadline && !matches!(meta.policy, Policy::Hard | Policy::Sites { .. })) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report section order or judge differs"));
         }
         let mut scratch = SectionScratch { budget: Budget::scoped_temporaries(child)
@@ -241,6 +272,8 @@ impl ReportStage<'_> {
         let mut control = Operation { budget: &scratch.budget, poll: &|| crate::daemon::control::checkpoint() };
         let mut projection = Projection::new();
         let mut post_judge = None;
+        let mut doc_summary = None;
+        let mut deadline_judge = None;
         match rows {
             ReportRows::ImageDir(data) => {
                 if self.selected != ["image_dir_after_build"]
@@ -264,6 +297,38 @@ impl ReportStage<'_> {
                 }
                 for site in data.sites() { projection.row(site,None,&mut control)?; }
             }
+            UnionRows::Deadline(files, path, bytes) => {
+                use dq_analyze::lints::deadline_polling::{prepare_observed_report, ReportAllowlist};
+                if !deadline {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Deadline requires its exact raw observed judge"));
+                }
+                let observation = match bytes.map(std::str::from_utf8) {
+                    None => ReportAllowlist::ProvenMissing,
+                    Some(Ok(text)) => ReportAllowlist::CapturedUtf8(text),
+                    Some(Err(_)) => ReportAllowlist::CapturedNonUtf8,
+                };
+                let parsed = prepare_observed_report(observation, &mut control).map_err(operational)?;
+                // The custom renderer can print one stale line for every
+                // physical allowlist line, repeating the exact observed path.
+                let input = bytes.unwrap_or_default();
+                let count = input.split(|byte| *byte == b'\n').count();
+                kc::reserve(&mut control, || {
+                    let prefix = path.as_os_str().len().checked_mul(4)?.checked_add(128)?;
+                    input.len().checked_add(count.checked_mul(prefix)?)?.checked_mul(8)
+                }).map_err(operational)?;
+                let shown = path.to_string_lossy();
+                deadline_judge = Some((parsed, shown));
+                for file in files {
+                    if file.name != meta.name {
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, "Deadline raw result belongs to another policy"));
+                    }
+                    for (index, site) in file.run.sites.iter().enumerate() {
+                        projection.row(site, file.site_text(index), &mut control)?;
+                    }
+                    projection.notes(&file.run.notes, &mut control)?;
+                }
+            }
+            UnionRows::CheckGrep(_) => unreachable!("CheckGrep has its exact pre-rendered stage"),
             UnionRows::Raw(files) => for file in files {
                 if file.name != meta.name { return Err(io::Error::new(io::ErrorKind::InvalidData, "raw result belongs to another policy")); }
                 for (index, site) in file.run.sites.iter().enumerate() {
@@ -307,6 +372,24 @@ impl ReportStage<'_> {
                 projection.notes(data.notes(), &mut control)?;
             }
             UnionRows::Tree(tree) => {
+                if meta.name == "ui_actions"
+                    && (self.selected != Roster::WithUiActions.names()
+                        || !std::ptr::eq(meta, dq_analyze::ui_actions_policy::metadata())
+                        || !self.judgment.is_raw())
+                {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "UI Actions requires its exact source-only profile"));
+                }
+                if meta.name == "doc_snippets" {
+                    if self.selected != Roster::WithDocSnippets.names()
+                        || !std::ptr::eq(meta, dq_analyze::doc_snippets_policy::metadata())
+                        || !self.judgment.is_raw()
+                    {
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, "Docs report requires its exact source-only profile"));
+                    }
+                    let blocks = tree.doc_blocks().ok_or_else(|| io::Error::other("actual Docs summary phase missing"))?;
+                    kc::reserve(&mut control, || blocks.len().checked_mul(512)?.checked_add(4096)).map_err(operational)?;
+                    doc_summary = Some(blocks);
+                }
                 if tree.message_only() {
                     if !matches!(meta.policy, Policy::Hard) || !tree.source_text().is_empty() {
                         return Err(io::Error::new(io::ErrorKind::InvalidData, "message-only tree findings require the exact hard-judge source shape"));
@@ -329,6 +412,17 @@ impl ReportStage<'_> {
                 }
                 for (site, text) in data.sites().iter().zip(data.source_text()) {
                     projection.row(site, Some(text), &mut control)?;
+                }
+            }
+            UnionRows::MapEdits(sites) => {
+                if self.selected != Roster::WithMapEdits.names()
+                    || !std::ptr::eq(meta, &dq_analyze::map_edits_policy::META)
+                    || !matches!(meta.policy, Policy::Hard)
+                {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "map_edits requires its exact Hard report profile"));
+                }
+                for site in sites {
+                    projection.row(site, None, &mut control)?;
                 }
             }
             UnionRows::Keys(data) => {
@@ -355,6 +449,7 @@ impl ReportStage<'_> {
             }
             UnionRows::MessageOnlyHard(question, sites, allows) => {
                 let (rosters, expected): (&[Roster], _) = match question {
+                    Q::EngineLayeringFullAllow => (&[Roster::WithEngineLayering], dq_analyze::engine_layering_policy::metadata()),
                     Q::Lifeforms => (&[Roster::WithLifeforms, Roster::WithLifeformsAndPlayerLink], dq_analyze::lifeforms_policy::metadata()),
                     Q::PlayerLink => (&[Roster::WithPlayerLink, Roster::WithLifeformsAndPlayerLink], dq_analyze::player_link_policy::metadata()),
                     Q::UntypedMember => (&[Roster::WithReferencePolicies], dq_analyze::untyped_member_policy::metadata()),
@@ -538,7 +633,11 @@ impl ReportStage<'_> {
         let raw = self.judgment.is_raw();
         let (failed, text) = if raw || matches!(meta.policy, Policy::Hard) {
             policy_judge::judge_report(meta, scope, &source_text, &projection.run, root, &None, raw,
-                |_, _, _| false, |_, text| {
+                |run, text, _| deadline_judge.take().is_some_and(|(parsed, shown)| parsed.finish(run, &shown, text)),
+                |run, text| {
+                    if let Some(blocks) = doc_summary {
+                        return dq_analyze::doc_snippets_policy::finish_summary(meta, root, &source_text, blocks, run, text, raw);
+                    }
                     if let Some(message) = post_judge { text.push_str(message); true } else { false }
                 })
         } else if self.judgment == JudgmentV2::CiLibrarySites && library_sites(meta) {
@@ -592,11 +691,19 @@ impl super::super::RawWorkspaceSnapshot {
         let pin = |text: &str| u128::from_str_radix(text, 16).ok();
         let capture = &self.capture;
         let queries = &self.queries;
-        let roster = Roster::AllRawFilePolicies;
-        if plan.roster() != roster || !plan.judgment.is_raw()
-            || self.source.purpose() != RawSourcePurpose::AllRawFilePolicies
+        let roster = plan.roster();
+        let purpose = match roster {
+            Roster::AllRawFilePolicies => RawSourcePurpose::AllRawFilePolicies,
+            Roster::WithDocSnippets => RawSourcePurpose::DocSnippetsFullAllow,
+            Roster::WithUiActions => RawSourcePurpose::UiActionsFullAllow,
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued source-only report profile")),
+        };
+        let sealed_bulk = purpose == RawSourcePurpose::AllRawFilePolicies;
+        if !plan.judgment.is_raw()
+            || (!sealed_bulk && (cache_report || prior.is_some()))
+            || self.source.purpose() != purpose
             || capture.root() != root || capture.configuration().1.is_none()
-            || !capture.matches_auxiliary_questions(&[Q::AllRawFilePolicies])
+            || !capture.matches_auxiliary_questions(&[purpose.question()])
             || pin(query_revision) != Some(self.revision())
             || pin(source_revision) != Some(self.source_revision())
             || pin(policy_revision) != Some(self.policy_revision())
@@ -647,14 +754,30 @@ impl super::super::RawWorkspaceSnapshot {
             let meta = producer.metadata();
             match producer {
                 Producer::Raw(_) if producer.question().is_none() => {
-                    queries.with_workspace_bulk_raw_union_rows(capture, &guard, name, retained, |rows, allows, report| {
+                    let consume = |
+                        rows: &mut dyn Iterator<Item = &dq_analyze::captured_raw_file::Findings>,
+                        allows: &mut dyn Iterator<Item = &dq_analyze::lint::AllowUse>,
+                        report: Option<(&LintScope, &Arc<Budget>)>,
+                    | {
                         let (scope, child) = report.ok_or_else(|| io::Error::other("raw-file producer omitted its report scope"))?;
                         stage.observe(root, meta, ReportRows::Union(UnionRows::Raw(rows)), scope, child)?;
                         usage.record_fold_iter(name, frame, allows, &mut work).map_err(operational)
-                    })?;
+                    };
+                    if sealed_bulk {
+                        queries.with_workspace_bulk_raw_union_rows(capture, &guard, name, retained, consume)?;
+                    } else {
+                        // Joined Docs/UI use an ordinary live raw capture, so
+                        // their base raw policies must take the ordinary lender.
+                        queries.with_workspace_raw_union_rows(capture, &guard, name, retained, true, consume)?;
+                    }
                 }
-                Producer::Tree(policy @ (dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher
-                    | dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch)) => {
+                Producer::Tree(policy) if matches!(policy,
+                    dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher
+                    | dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch)
+                    || (roster == Roster::WithDocSnippets
+                        && policy == dq_analyze::captured_raw_tree_pages::Policy::DocSnippets)
+                    || (roster == Roster::WithUiActions
+                        && policy == dq_analyze::captured_raw_tree_pages::Policy::UiActions) => {
                     queries.with_workspace_raw_tree(capture, &guard, policy, |data, config, child| {
                         let empty = LintScope::default();
                         let scope = config.borrowed_report_scope(meta.name, meta.group).unwrap_or(&empty);
@@ -758,6 +881,8 @@ mod selected_plan_tests {
         let expected: [(Roster, &[Q]); Roster::ALL.len()] = [
             (Roster::Base, &[]),
             (Roster::AllRawFilePolicies, &[]),
+            (Roster::WithDocSnippets, &[Q::DocSnippetsFullAllow]),
+            (Roster::WithUiActions, &[Q::UiActionsFullAllow]),
             (Roster::WithWorkspaceFoldPolicies, &[]),
             (Roster::WithSysSourcePolicies, &[]),
             (Roster::WithStoredAndTracked, Q::SELECTED_STORED_AND_TRACKED),
@@ -765,8 +890,11 @@ mod selected_plan_tests {
             (Roster::WithRawDeclarationPolicies, &[]),
             (Roster::WithCooldown, &[]),
             (Roster::WithEngineInternal, &[]),
+            (Roster::WithDeadlinePolling, &[Q::DeadlinePollingAllowlist]),
+            (Roster::WithCheckGrep, &[Q::CheckGrep]),
             (Roster::WithSilicon, &[Q::SiliconEntry]),
             (Roster::WithLibraryLayering, &[Q::LibraryLayeringFullAllow]),
+            (Roster::WithEngineLayering, &[Q::EngineLayeringFullAllow]),
             (Roster::WithHandlers, &[Q::SemHandlersFullAllow]),
             (Roster::WithSemanticReads, Q::SELECTED_READS),
             (Roster::WithSetterPublishes, Q::SELECTED_SETTER),
@@ -779,6 +907,8 @@ mod selected_plan_tests {
             (Roster::WithLifeformsAndPlayerLink, Q::SELECTED_LIFEFORMS_PLAYER_LINK),
             (Roster::WithReferencePolicies, Q::SELECTED_REFERENCE_POLICIES),
             (Roster::WithKeys, &[Q::Keys]),
+            (Roster::WithMapEdits, &[Q::MapEdits]),
+            (Roster::WithOrderAndOwnership, Q::SELECTED_ORDER_AND_OWNERSHIP),
             (Roster::WithRequirementBool, &[Q::RequirementBool]),
             (Roster::WithDeclarationPolicies, Q::SELECTED_DECLARATION_POLICIES),
         ];

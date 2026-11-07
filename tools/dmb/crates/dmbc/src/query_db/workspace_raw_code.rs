@@ -764,13 +764,13 @@ impl WorkspaceCodeReader<'_,'_>{
   self.layering_using(layer,inputs,config,false,consume)
  }
 
- pub(crate) fn library_layering_selected_union_using<R>(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+ pub(crate) fn layering_selected_union_using<R>(&self,layer:dq_analyze::engine_layering_policy::Layer,inputs:&dm_analysis::policy_inputs::PolicyInputs,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
   self.require_policy_inputs(inputs)?;self.require_full_code_discovery()?;
   let (_,bytes)=self.configuration();
   let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
   self.budget().charge(bound).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
   let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
-  self.layering_using(dq_analyze::engine_layering_policy::Layer::Library,inputs,&config,true,consume)
+  self.layering_using(layer,inputs,&config,true,consume)
  }
 
  fn layering_using<R>(&self,layer:dq_analyze::engine_layering_policy::Layer,inputs:&dm_analysis::policy_inputs::PolicyInputs,config:&Config,allow_empty_selection:bool,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{

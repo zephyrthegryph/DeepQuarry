@@ -91,7 +91,7 @@ pub(super) struct Completed {
 
 impl Completed {
     pub(super) fn stage(host: &mut BuildHost, build: BuildRequest, roster: wire::Roster, exclusions: &[String], mode: Mode) -> Result<Self, Box<dyn Error>> {
-        if roster == wire::Roster::AllRawFilePolicies && mode == Mode::Ordinary {
+        if roster.is_source_only() && mode == Mode::Ordinary {
             return host.with_raw_file_exclusions_report(build, exclusions, |prepared, clean, report, credit| {
                 let frame = CompletedFrame::Raw(wire::RawFrame::from_prepared(prepared)?);
                 Ok(Self { roster, mode, frame, clean, diagnostics: None, checker: None, report, _credit: credit })
@@ -111,8 +111,8 @@ impl Completed {
         let Self { roster, mode, frame, clean, diagnostics, checker, report, _credit } = self;
         match (mode, checker, frame) {
             (Mode::Combined, Some(checker), CompletedFrame::Semantic(frame)) => wire::send_combined(stream, roster, frame, clean, diagnostics, checker, report, work),
-            (Mode::Ordinary, None, CompletedFrame::Raw(frame)) if roster == wire::Roster::AllRawFilePolicies && diagnostics.is_none() =>
-                wire::send_raw_selected(stream, frame, clean, report, work),
+            (Mode::Ordinary, None, CompletedFrame::Raw(frame)) if roster.is_source_only() && diagnostics.is_none() =>
+                wire::send_raw_selected(stream, roster, frame, clean, report, work),
             (Mode::Ordinary, None, CompletedFrame::Semantic(frame)) => wire::send(stream, roster, frame, clean, diagnostics, report, work),
             (Mode::GenericV2(judgment), None, CompletedFrame::Semantic(frame)) => wire::send_v2(stream, roster, frame, clean, diagnostics, report, work, judgment),
             _ => Err(wire::SendFailure::BeforePublication(io::Error::other("selected report checker transcript differs from its mode"))),
@@ -160,8 +160,8 @@ fn run_request_mode(request: Request, mode: Mode) -> Result<bool, Box<dyn Error>
         }
         Mode::Ordinary => {
             protocol::send(&mut stream, &protocol::Request::SelectedExclusions(request))?;
-            if roster == wire::Roster::AllRawFilePolicies {
-                let report = wire::receive_raw_selected(&mut stream, &cache)?;
+            if roster.is_source_only() {
+                let report = wire::receive_raw_selected(&mut stream, &cache, roster)?;
                 Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
             } else {
                 let report = wire::receive(&mut stream, &cache, roster)?;

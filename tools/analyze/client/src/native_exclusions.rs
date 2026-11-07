@@ -38,7 +38,7 @@ struct Options {
 
 fn options(args: &[String], role: Role) -> io::Result<Options> {
     let usage = || io::Error::new(io::ErrorKind::InvalidInput, match role {
-        Role::Exclusions => "usage: analyze native-exclusions --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR --roster base|with-cooldown|with-engine-internal|with-silicon|with-library-layering|with-handlers|with-semantic-reads|with-setter-publishes|with-reactive-policies|with-derived-reads|with-sys-reactive|with-lifeforms|with-player-link|with-lifeforms-and-player-link|with-reference-policies|with-requirement-bool|with-keys|with-declaration-policies|with-raw-declaration-policies|all-raw-file-policies|with-raw-runtime-policies|with-workspace-fold-policies|with-sys-source-policies REQUEST.json",
+        Role::Exclusions => "usage: analyze native-exclusions --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR --roster base|with-cooldown|with-check-grep|with-deadline-polling|with-engine-internal|with-silicon|with-library-layering|with-engine-layering|with-handlers|with-semantic-reads|with-setter-publishes|with-reactive-policies|with-derived-reads|with-sys-reactive|with-lifeforms|with-player-link|with-lifeforms-and-player-link|with-reference-policies|with-requirement-bool|with-keys|with-map-edits|with-order-and-ownership|with-declaration-policies|with-raw-declaration-policies|all-raw-file-policies|with-doc-snippets|with-ui-actions|with-raw-runtime-policies|with-workspace-fold-policies|with-sys-source-policies REQUEST.json",
         Role::ImageDir => "usage: analyze-native native-image-dir --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR REQUEST.json",
     });
     let mut program = None;
@@ -52,9 +52,12 @@ fn options(args: &[String], role: Role) -> io::Result<Options> {
             "--scratch" if scratch.is_none() => scratch = Some(PathBuf::from(rest.next().ok_or_else(usage)?)),
             "--roster" if matches!(role, Role::Exclusions) && roster.is_none() => roster = Some(match rest.next().map(String::as_str) {
                 Some("base") => Roster::Base,
+                Some("with-deadline-polling") => Roster::WithDeadlinePolling,
+                Some("with-check-grep") => Roster::WithCheckGrep,
                 Some("with-cooldown") => Roster::WithCooldown,
                 Some("with-engine-internal") => Roster::WithEngineInternal,
                 Some("with-silicon") => Roster::WithSilicon,
+                Some("with-engine-layering") => Roster::WithEngineLayering,
                 Some("with-library-layering") => Roster::WithLibraryLayering,
                 Some("with-handlers") => Roster::WithHandlers,
                 Some("with-semantic-reads") => Roster::WithSemanticReads,
@@ -69,9 +72,13 @@ fn options(args: &[String], role: Role) -> io::Result<Options> {
                 Some("with-raw-runtime-policies") => Roster::WithRawRuntimePolicies,
                 Some("with-sys-source-policies") => Roster::WithSysSourcePolicies,
                 Some("with-workspace-fold-policies") => Roster::WithWorkspaceFoldPolicies,
+                Some("with-ui-actions") => Roster::WithUiActions,
+                Some("with-doc-snippets") => Roster::WithDocSnippets,
                 Some("all-raw-file-policies") => Roster::AllRawFilePolicies,
                 Some("with-raw-declaration-policies") => Roster::WithRawDeclarationPolicies,
                 Some("with-declaration-policies") => Roster::WithDeclarationPolicies,
+                Some("with-map-edits") => Roster::WithMapEdits,
+                Some("with-order-and-ownership") => Roster::WithOrderAndOwnership,
                 Some("with-keys") => Roster::WithKeys,
                 Some("with-requirement-bool") => Roster::WithRequirementBool,
                 _ => return Err(usage()),
@@ -204,9 +211,9 @@ fn capture_stdout(input: impl Read, root: &Path, expected: Roster) -> io::Result
     capture_batch(input, root, |header: &Terminal| { header.require(expected)?; Ok(header.report) })
 }
 
-fn capture_raw_selected_stdout(input: impl Read, root: &Path) -> io::Result<Option<Stdout<RawSelectedTerminal>>> {
+fn capture_raw_selected_stdout(input: impl Read, root: &Path, expected: Roster) -> io::Result<Option<Stdout<RawSelectedTerminal>>> {
     capture_batch(input, root, |header: &RawSelectedTerminal| {
-        header.require(Roster::AllRawFilePolicies)?;
+        header.require(expected)?;
         Ok(header.report)
     })
 }
@@ -294,9 +301,9 @@ fn run_cli(args: &[String], role: Role, output: &mut impl Write, diagnostics: &m
     let stderr_root = scratch.clone();
     let read_stderr = move |mut stderr| Captured::read(&mut stderr, &stderr_root, MAX_STREAM);
     match selection {
-        Selection::Exclusions(Roster::AllRawFilePolicies) => {
+        Selection::Exclusions(roster) if roster.is_source_only() => {
             let (status, stdout, stderr) = capture_command(command, OUTER_WATCHDOG,
-                move |stdout| capture_raw_selected_stdout(stdout, &scratch), read_stderr)?;
+                move |stdout| capture_raw_selected_stdout(stdout, &scratch, roster), read_stderr)?;
             deliver_raw_selected(status.code(), stdout, stderr, output, diagnostics)
         }
         Selection::Exclusions(roster) => {

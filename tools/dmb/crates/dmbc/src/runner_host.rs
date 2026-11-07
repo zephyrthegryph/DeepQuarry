@@ -1638,7 +1638,7 @@ impl BuildHost {
         diagnostics: &mut impl std::io::Write, output: &mut impl std::io::Write,
     ) -> Result<bool, Box<dyn std::error::Error>> {
         use dq_analyze::selected_exclusions_wire::Roster;
-        if Self::qualify_original_exclusions(exclusions, SelectedReportMode::Ordinary)? == Roster::AllRawFilePolicies {
+        if Self::qualify_original_exclusions(exclusions, SelectedReportMode::Ordinary)?.is_source_only() {
             return self.with_raw_file_exclusions_report(request, exclusions, |_, clean, report, _credit| {
                 crate::daemon::control::begin_publication()?;
                 report.publish(output)?;
@@ -1667,7 +1667,12 @@ impl BuildHost {
         use std::io;
         if !self.retains_artifacts() { return Err(original_exclusions_invalid().into()); }
         let plan = Self::plan_original_exclusions(exclusions, SelectedReportMode::Ordinary)?;
-        if plan.roster() != Roster::AllRawFilePolicies { return Err(original_exclusions_invalid().into()); }
+        let question = match plan.roster() {
+            Roster::AllRawFilePolicies => crate::policy_request::WorkspaceAuxiliaryQuestion::AllRawFilePolicies,
+            Roster::WithDocSnippets => crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippetsFullAllow,
+            Roster::WithUiActions => crate::policy_request::WorkspaceAuxiliaryQuestion::UiActionsFullAllow,
+            _ => return Err(original_exclusions_invalid().into()),
+        };
         let (workspace, cache) = original_exclusions_shape(&request, plan.roster())?;
         let _deadline = if control::WorkerContext::capture().is_none() {
             prepare_deadline::capture(request.command, request.timeout_seconds, std::time::Instant::now())?
@@ -1683,10 +1688,10 @@ impl BuildHost {
         let credit = self.source_arena_work().reserve(total)?;
         let (root, physical_cache) = Self::original_exclusions_paths(&request, plan.roster())?;
         request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary =
-            vec![crate::policy_request::WorkspaceAuxiliaryQuestion::AllRawFilePolicies];
+            vec![question];
         let retained = Budget::new(SELECTED_REPORT_RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let stage = crate::selected_report_spool::Stage::new(&physical_cache)?;
-        let cache_report = !request.no_cache;
+        let cache_report = plan.roster() == Roster::AllRawFilePolicies && !request.no_cache;
         let prior = if cache_report {
             let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected raw-file query state is borrowed"))?;
             state.raw_snapshot.as_ref().and_then(|raw| raw.bulk_prior_capture())

@@ -200,14 +200,14 @@ pub(crate) fn send(
 }
 
 pub(crate) fn send_raw_selected(
-    stream: &mut impl Write, frame: RawFrame, clean: bool,
+    stream: &mut impl Write, roster: Roster, frame: RawFrame, clean: bool,
     report: Verified, work: &dyn SourceArenaWork,
 ) -> Result<(), SendFailure> {
     let terminal = RawSelectedTerminal {
-        schema: RawSelectedSchema::V1, roster: Roster::AllRawFilePolicies,
+        schema: RawSelectedSchema::V1, roster,
         frame: frame.0, clean, report: seal_of(&report),
     };
-    terminal.require(Roster::AllRawFilePolicies).map_err(SendFailure::BeforePublication)?;
+    terminal.require(roster).map_err(SendFailure::BeforePublication)?;
     encode_header(&terminal).map_err(SendFailure::BeforePublication)?;
     let _frame = work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
     control::begin_publication().map_err(SendFailure::BeforePublication)?;
@@ -517,7 +517,7 @@ pub(crate) fn receive(stream: &mut impl Read, cache: &Path, expected: Roster) ->
 }
 
 pub(crate) fn receive_raw_selected(
-    stream: &mut impl Read, cache: &Path,
+    stream: &mut impl Read, cache: &Path, expected: Roster,
 ) -> Result<Delivered<RawSelectedTerminal>, Box<dyn Error>> {
     let mut report = Collector::default();
     let mut accepted = false;
@@ -530,7 +530,7 @@ pub(crate) fn receive_raw_selected(
             ReceiveReply::SelectedReportFragment(fragment) if accepted && fragment.channel == Channel::Report =>
                 report.push(cache, &fragment)?,
             ReceiveReply::RawSelectedReportFinished(terminal) if accepted => {
-                terminal.require(Roster::AllRawFilePolicies)?;
+                terminal.require(expected)?;
                 require_end(stream)?;
                 let report = report.finish(Some(terminal.report))?.ok_or_else(|| invalid("raw selected report has no body"))?;
                 return Ok(Delivered { terminal, diagnostics: None, report });

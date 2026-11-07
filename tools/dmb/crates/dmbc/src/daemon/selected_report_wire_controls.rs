@@ -419,24 +419,31 @@ fn source_only_selected_wire_refuses_semantic_terminals_and_foreign_channels() {
     assert!(Frame::from_prepared(&prepared).is_err());
     let mut wire = Vec::new();
     protocol::send(&mut wire, &protocol::Reply::Accepted).unwrap();
-    send_raw_selected(&mut wire, RawFrame::from_prepared(&prepared).unwrap(), false,
+    send_raw_selected(&mut wire, Roster::AllRawFilePolicies, RawFrame::from_prepared(&prepared).unwrap(), false,
         verified(&cache, text), &Work { allow: true }).unwrap();
     assert!(receive(&mut wire.as_slice(), &cache, Roster::AllRawFilePolicies).is_err());
-    let delivered = receive_raw_selected(&mut wire.as_slice(), &cache).unwrap();
+    let delivered = receive_raw_selected(&mut wire.as_slice(), &cache, Roster::AllRawFilePolicies).unwrap();
     assert_eq!(delivered.terminal.frame.query_revision, Hex128(1));
     assert_eq!(delivered.terminal.report, seal(text));
     assert!(!delivered.terminal.clean);
+    let mut docs = Vec::new();
+    protocol::send(&mut docs, &protocol::Reply::Accepted).unwrap();
+    send_raw_selected(&mut docs, Roster::WithDocSnippets, RawFrame::from_prepared(&prepared).unwrap(),
+        false, verified(&cache, text), &Work { allow: true }).unwrap();
+    assert!(receive_raw_selected(&mut docs.as_slice(), &cache, Roster::AllRawFilePolicies).is_err());
+    let docs = receive_raw_selected(&mut docs.as_slice(), &cache, Roster::WithDocSnippets).unwrap();
+    assert_eq!(docs.terminal.report, seal(text));
 
     let mut semantic = Vec::new();
     protocol::send(&mut semantic, &protocol::Reply::Accepted).unwrap();
     send(&mut semantic, Roster::Base, frame(), false, None,
         verified(&cache, text), &Work { allow: true }).unwrap();
-    assert!(receive_raw_selected(&mut semantic.as_slice(), &cache).is_err());
+    assert!(receive_raw_selected(&mut semantic.as_slice(), &cache, Roster::AllRawFilePolicies).is_err());
 
     let mut foreign = Vec::new();
     protocol::send(&mut foreign, &protocol::Reply::Accepted).unwrap();
     protocol::send(&mut foreign, &SendReply::SelectedReportFragment {
         channel: Channel::Diagnostics, sequence: 0, offset: 0, bytes: b"foreign diagnostics",
     }).unwrap();
-    assert!(receive_raw_selected(&mut foreign.as_slice(), &cache).is_err());
+    assert!(receive_raw_selected(&mut foreign.as_slice(), &cache, Roster::AllRawFilePolicies).is_err());
 }

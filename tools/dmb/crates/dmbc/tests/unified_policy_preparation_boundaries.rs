@@ -3089,3 +3089,385 @@ fn selected_keys_stages_original_messages_and_exact_allow_usage() {
         build, &exclusions, &mut diagnostics, &mut output).is_err());
     assert!(diagnostics.is_empty() && output.is_empty());
 }
+
+#[test]
+fn selected_order_and_ownership_stage_same_capture_and_fold_both_allow_producers() {
+    use dq_analyze::{
+        captured_allow_annotations::{Operation, full_unused},
+        captured_generator_budget::Budget, selected_exclusions_wire::Roster,
+    };
+    let root = test_scratch::dir("selected-order-and-ownership");
+    put(&root, "deepquarry.dme", "#include \"code/compiled.dm\"\n");
+    put(&root, "code/compiled.dm", "/proc/probe()
+    return
+");
+    put(&root, "code/order_bad.dm",
+        "CAPABILITIES(/obj/order_bad, op(\"a\", hand()), op(\"b\", hand()))\n");
+    put(&root, "code/order_kept.dm", concat!(
+        "// ALLOW(op_order): fixture retains an actual ambiguous ordering pair
+",
+        "CAPABILITIES(/obj/order_kept, op(\"a\", hand()), op(\"b\", hand()))\n",
+    ));
+    put(&root, "code/ownership_bad.dm",
+        "/obj/holder/proc/x()
+    own_set(src, nameof(missing), null)
+");
+    put(&root, "code/ownership_kept.dm", concat!(
+        "/obj/kept
+    var/obj/child
+/obj/kept/proc/x()
+",
+        "    child = new /obj/item // ALLOW(ownership): fixture retains an actual raw ownership write
+",
+    ));
+    put(&root, "maps/unused.dm", concat!(
+        "/proc/map_probe()
+",
+        "    return // ALLOW(op_order): this fixture expects an unused map annotation
+",
+    ));
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let mut build = request(&root, Q::OpOrder);
+    build.cache_root = Some(test_scratch::dir("selected-order-and-ownership-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithOrderAndOwnership;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+
+    let mut host = BuildHost::default();
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+    let report = std::str::from_utf8(&output).unwrap();
+    assert!(report.contains("code/order_bad.dm:1: [op_order/unordered_clash]"), "{report}");
+    assert!(report.contains("code/ownership_bad.dm:2: [ownership/unknown_var]"), "{report}");
+    assert!(!report.contains("code/order_kept.dm"), "{report}");
+    assert!(!report.contains("code/ownership_kept.dm"), "{report}");
+    assert!(report.contains("maps/unused.dm:2: ALLOW(op_order) is unused"), "{report}");
+
+    if let Some(oracle) = std::env::var_os("DQ_SELECTED_ORDER_OWNERSHIP_ORACLE") {
+        let oracle = PathBuf::from(oracle);
+        assert!(oracle.is_absolute());
+        let native = root.join("selected-order-and-ownership.txt");
+        std::fs::write(&native, &output).unwrap();
+        let mut command = std::process::Command::new(oracle);
+        command.arg(&root).arg(native);
+        #[cfg(windows)] {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x08000000 | 0x00004000);
+        }
+        let old = command.output().expect("run independent legacy report and unused scanner");
+        assert!(old.status.success(), "{}", String::from_utf8_lossy(&old.stderr));
+    }
+
+    let (mut warm_diagnostics, mut warm_output) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut warm_diagnostics, &mut warm_output).unwrap());
+    assert_eq!((diagnostics, output), (warm_diagnostics, warm_output));
+
+    build.policy_inputs.as_mut().unwrap().workspace_auxiliary = vec![Q::OpOrder];
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(host.write_original_exclusions_report(
+        build, &exclusions, &mut diagnostics, &mut output).is_err());
+    assert!(diagnostics.is_empty() && output.is_empty());
+}
+
+#[test]
+fn selected_map_edits_keeps_one_joined_code_and_regular_map_capture() {
+    use dq_analyze::{
+        captured_allow_annotations::{Operation, full_unused},
+        captured_generator_budget::Budget, selected_exclusions_wire::Roster,
+    };
+    let root = test_scratch::dir("selected-map-edits");
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", "/obj/base
+    var/known
+/obj/base/child
+");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    put(&root, "maps/.hidden/edit.dmm",
+        b"/obj/base/child{known = 1; name = \"built-in\"; lost = 2}\r\n/obj/absent{stray = \"\xff\"}\r\n");
+    put(&root, "maps/palettes/ignored.dmm", b"/obj/absent{not_read = 3}
+");
+    put(&root, "maps/source.dm",
+        "/proc/unused()
+    return // ALLOW(scheduler): this fixture expects an unused map annotation
+");
+    let mut build = request(&root, Q::MapEdits);
+    build.cache_root = Some(test_scratch::dir("selected-map-edits-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithMapEdits.names()
+        .contains(&name.as_str())).map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+    let report = std::str::from_utf8(&output).unwrap();
+    assert!(report.contains("maps/.hidden/edit.dmm:1: [map_edits/unknown_var] /obj/base/child.lost"), "{report}");
+    assert!(report.contains("maps/.hidden/edit.dmm:2: [map_edits/unknown_type] /obj/absent"), "{report}");
+    assert_eq!(report.matches("[map_edits/unknown_").count(), 2, "{report}");
+    assert!(report.contains("ALLOW(scheduler): 1 annotation, but no lint run used any"), "{report}");
+
+    put(&root, "maps/.hidden/edit.dmm", "/obj/base/child{known = 1}
+");
+    let (mut next_diagnostics, mut next_output) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut next_diagnostics, &mut next_output).unwrap());
+    let next = std::str::from_utf8(&next_output).unwrap();
+    assert!(!next.contains("[map_edits/unknown_"), "{next}");
+    assert!(next.contains("ALLOW(scheduler): 1 annotation, but no lint run used any"), "{next}");
+
+    build.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots = vec![root.join("code")];
+    let (mut denied_diagnostics, mut denied_output) = (Vec::new(), Vec::new());
+    assert!(host.write_original_exclusions_report(
+        build, &exclusions, &mut denied_diagnostics, &mut denied_output).is_err());
+    assert!(denied_diagnostics.is_empty() && denied_output.is_empty());
+}
+
+#[test]
+fn selected_deadline_raw_judgment_uses_only_its_actual_fixed_observation() {
+    use dq_analyze::{
+        captured_allow_annotations::{Operation, full_unused},
+        captured_generator_budget::Budget, selected_exclusions_wire::Roster,
+    };
+    let root = test_scratch::dir("selected-deadline-polling");
+    put(&root, "deepquarry.dme", "#include \"code/compiled.dm\"\n");
+    put(&root, "code/compiled.dm", "/proc/probe()
+    return
+");
+    put(&root, "code/deadline.dm", concat!(
+        "/obj/machine/process()
+",
+        "	if(world.time > expires)
+		return
+",
+        "	if(world.time < expires) // ALLOW(sys_deadline_poll): this fixture consumes its inline annotation
+		return
+",
+    ));
+    put(&root, "maps/unused.dm",
+        "/proc/unused()
+    return // ALLOW(scheduler): this fixture expects a separately unused annotation
+");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let mut build = request(&root, Q::DeadlinePollingAllowlist);
+    build.cache_root = Some(test_scratch::dir("selected-deadline-polling-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithDeadlinePolling.names()
+        .contains(&name.as_str())).map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let mut read = || {
+        let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+        assert!(!host.write_original_exclusions_report(
+            build.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+        let report = String::from_utf8(output).unwrap();
+        assert!(!report.contains("ALLOW(sys_deadline_poll) is unused"), "{report}");
+        assert!(report.contains("ALLOW(scheduler): 1 annotation, but no lint run used any"), "{report}");
+        report
+    };
+    let missing = read();
+    assert!(missing.contains("1 periodic bodies found, 0 allowlisted, 1 new finding(s)"), "{missing}");
+    assert!(missing.contains("code/deadline.dm:2:"), "{missing}");
+    let path = "tools/ci/deadline_polling_allowlist.txt";
+    put(&root, path, "code/deadline.dm:/obj/machine/process # explicit observed reason
+");
+    let kept = read();
+    assert!(kept.contains("1 periodic bodies found, 1 allowlisted, 0 new finding(s)"), "{kept}");
+    assert!(!kept.contains("code/deadline.dm:2:"), "{kept}");
+    put(&root, path, "entry without reason
+");
+    let malformed = read();
+    assert!(malformed.contains("entry has no reason: entry without reason"), "{malformed}");
+    put(&root, path, [0xff]);
+    assert_eq!(read(), missing);
+}
+
+#[test]
+fn selected_check_grep_reuses_exact_custom_bytes_and_actual_allow_rows() {
+    use dq_analyze::{
+        captured_allow_annotations::{Operation, full_unused},
+        captured_generator_budget::Budget, selected_exclusions_wire::Roster,
+    };
+    let root = test_scratch::dir("selected-check-grep");
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", "/proc/probe()\n\treturn\n");
+    put(&root, "code/public_allow.dm", concat!(
+        "/proc/public_allow()\n",
+        "\tisSynthetic(null) // ALLOW(check_grep): retains the original compatibility spelling\n",
+    ));
+    put(&root, "maps/probe.dmm", "// TGM map declaration source\n");
+    put(&root, "tgui/probe.jsx", "observed name only\n");
+    put(&root, "tgui/hidden/.child/omit.jsx", "hidden name excluded\n");
+    put(&root, "dependencies.sh", "export MACRO_COUNT=0\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let mut build = request(&root, Q::CheckGrep);
+    build.cache_root = Some(test_scratch::dir("selected-check-grep-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps"), root.join("tgui")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithCheckGrep.names()
+        .contains(&name.as_str())).map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+    let report = std::str::from_utf8(&output).unwrap();
+    assert!(report.contains("tgui/probe.jsx"), "{report}");
+    assert!(!report.contains("omit.jsx"), "{report}");
+    assert!(!report.contains("public_allow.dm"), "{report}");
+    assert!(report.contains("allow annotations: 0 unused"), "{report}");
+    if let Some(legacy) = std::env::var_os("DQ_SELECTED_CHECK_GREP_LEGACY_ANALYZE") {
+        let legacy = PathBuf::from(legacy);
+        assert!(legacy.is_absolute());
+        let mut command = std::process::Command::new(legacy);
+        command.args(["check", "--lint", "check_grep", "--raw", "--no-cache", "--root"]).arg(&root);
+        #[cfg(windows)] {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x08000000 | 0x00004000);
+        }
+        let old = command.output().expect("run independent legacy CheckGrep CLI");
+        assert_eq!(old.status.code(), Some(1), "{}", String::from_utf8_lossy(&old.stderr));
+        let old = std::str::from_utf8(&old.stdout).unwrap();
+        let body = old.strip_suffix("Ratchet lints failed: check_grep\n").unwrap();
+        assert!(body.contains("tgui/probe.jsx"));
+        assert!(report.contains(body), "{report}");
+    }
+    build.policy_inputs.as_mut().unwrap().workspace_auxiliary = vec![Q::CheckGrepBaseline];
+    let (mut denied_diagnostics, mut denied_output) = (Vec::new(), Vec::new());
+    assert!(host.write_original_exclusions_report(
+        build, &exclusions, &mut denied_diagnostics, &mut denied_output).is_err());
+    assert!(denied_diagnostics.is_empty() && denied_output.is_empty());
+}
+
+#[test]
+fn selected_doc_snippets_stays_source_only_and_finishes_exact_summary_and_allow_domains() {
+    use dq_analyze::{
+        captured_allow_annotations::{Operation, full_unused},
+        captured_generator_budget::Budget, selected_exclusions_wire::Roster,
+    };
+    let root = test_scratch::dir("joined-doc-selected");
+    // A report that silently falls back to a semantic preparation fails here.
+    put(&root, "deepquarry.dme", "#include \"missing-compiled-file.dm\"\n");
+    put(&root, "code/live.dm", "/proc/known_doc()\n    return\n");
+    put(&root, "code/exempt.dm", "/proc/hidden_doc()\n    return\n");
+    put(&root, "doc/rewrite/live.md",
+        "\x60\x60\x60dm\nknown_doc()\nhidden_doc()\n\x60\x60\x60\n");
+    put(&root, "doc/rewrite/exempt.md",
+        "\x60\x60\x60dm\nmust_not_appear()\n\x60\x60\x60\n");
+    put(&root, "doc/rewrite/nested/ignored.md",
+        "\x60\x60\x60dm\nmust_not_appear()\n\x60\x60\x60\n");
+    put(&root, "maps/unused.dm",
+        "/proc/map_probe()\n    return // ALLOW(scheduler): the joined aggregate sees this independent map source\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(
+        "[lint.doc_snippets]\nexempt_files=['code/exempt.dm','doc/rewrite/exempt.md']\n",
+    ));
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(test_scratch::dir("joined-doc-selected-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots =
+        vec![root.join("code"), root.join("doc/rewrite"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithDocSnippets.names()
+        .contains(&name.as_str())).map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(!host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+    assert!(diagnostics.is_empty());
+    let report = std::str::from_utf8(&output).unwrap();
+    assert!(report.contains("doc/rewrite/live.md:3: [doc_snippets/doc_unknown_name] hidden_doc()"), "{report}");
+    assert!(report.contains("doc_snippets: 1 block(s): complete 1; 1 complete block(s) compiled under -DDOC_SNIPPETS\n"), "{report}");
+    assert!(!report.contains("must_not_appear"), "{report}");
+    assert!(report.contains("ALLOW(scheduler): 1 annotation, but no lint run used any"), "{report}");
+
+    build.policy_inputs.as_mut().unwrap().workspace_auxiliary = vec![Q::DocSnippets];
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut diagnostics, &mut output).is_err());
+    assert!(diagnostics.is_empty() && output.is_empty());
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots.pop();
+    assert!(host.write_original_exclusions_report(
+        build, &exclusions, &mut diagnostics, &mut output).is_err());
+    assert!(diagnostics.is_empty() && output.is_empty());
+}
+
+#[test]
+fn selected_ui_actions_joins_productive_dispatcher_with_complete_dm_allow_scope() {
+    use dq_analyze::{
+        captured_allow_annotations::{Operation, full_unused},
+        captured_generator_budget::Budget, selected_exclusions_wire::Roster,
+    };
+    let root = test_scratch::dir("joined-ui-selected");
+    for (relative, bytes) in ui_fixture::files("basic") {
+        put(&root, relative, bytes);
+    }
+    put(&root, "maps/unused.dm",
+        "/proc/map_probe()\n    return // ALLOW(scheduler): this map participates only in the aggregate audit\n");
+    let mut build = request(&root, Q::UiActions);
+    build.cache_root = Some(test_scratch::dir("joined-ui-selected-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots =
+        vec![root.join("code"), root.join("maps"), root.join("tgui/packages/tgui/interfaces")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !Roster::WithUiActions.names()
+        .contains(&name.as_str())).map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let mut read = || {
+        let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+        assert!(!host.write_original_exclusions_report(
+            build.clone(), &exclusions, &mut diagnostics, &mut output).unwrap());
+        assert!(diagnostics.is_empty());
+        let report = String::from_utf8(output).unwrap();
+        assert!(report.contains("ALLOW(scheduler): 1 annotation, but no lint run used any"), "{report}");
+        report
+    };
+    let productive = read();
+    assert!(productive.contains("tgui/packages/tgui/interfaces/Machine.tsx"), "{productive}");
+    assert!(!productive.contains("ignored.d.ts"), "{productive}");
+    assert!(!productive.contains("maps/player.dm"), "{productive}");
+
+    // Malformed dispatcher has its original refusal but demands no C2 source.
+    put(&root, "code/datums/capabilities/ui_actions.dm", "not a dispatcher\n");
+    let malformed = read();
+    assert!(!malformed.contains("tgui/packages/tgui/interfaces/Machine.tsx"), "{malformed}");
+    assert!(malformed.contains("code/datums/capabilities/ui_actions.dm"), "{malformed}");
+
+    build.policy_inputs.as_mut().unwrap().workspace_auxiliary = vec![Q::UiActions];
+    let (mut diagnostics, mut output) = (Vec::new(), Vec::new());
+    assert!(host.write_original_exclusions_report(
+        build.clone(), &exclusions, &mut diagnostics, &mut output).is_err());
+    assert!(diagnostics.is_empty() && output.is_empty());
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots.remove(1);
+    assert!(host.write_original_exclusions_report(
+        build, &exclusions, &mut diagnostics, &mut output).is_err());
+    assert!(diagnostics.is_empty() && output.is_empty());
+}

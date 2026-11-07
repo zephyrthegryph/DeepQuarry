@@ -10,12 +10,15 @@ pub const MAX_STREAM: u64 = 64 * 1024 * 1024;
 pub enum Roster {
     Base,
     WithCooldown,
+    WithCheckGrep,
+    WithDeadlinePolling,
     WithEngineInternal,
     // V1 must neither serialize nor accept this v2-only plan as an alias.
     #[serde(skip)]
     WithCooldownAndEngineInternal,
     WithSilicon,
     WithLibraryLayering,
+    WithEngineLayering,
     WithHandlers,
     WithSemanticReads,
     WithSetterPublishes,
@@ -29,9 +32,13 @@ pub enum Roster {
     WithReferencePolicies,
     WithRequirementBool,
     WithKeys,
+    WithMapEdits,
+    WithOrderAndOwnership,
     WithDeclarationPolicies,
     WithRawDeclarationPolicies,
     AllRawFilePolicies,
+    WithDocSnippets,
+    WithUiActions,
     WithWorkspaceFoldPolicies,
     WithSysSourcePolicies,
     WithStoredAndTracked,
@@ -43,7 +50,7 @@ impl Roster {
     // A V1 alias is a single wire token. This bound is for internal staged
     // sections only, independent of the V2 array decoder's seven-name cap.
     pub const MAX_STAGED_POLICIES: usize = 45;
-    pub const ALL: [Self; 25] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies, Self::WithRequirementBool, Self::WithKeys, Self::WithDeclarationPolicies, Self::WithRawDeclarationPolicies, Self::AllRawFilePolicies, Self::WithRawRuntimePolicies, Self::WithWorkspaceFoldPolicies, Self::WithSysSourcePolicies, Self::WithStoredAndTracked];
+    pub const ALL: [Self; 32] = [Self::Base, Self::WithCooldown, Self::WithCheckGrep, Self::WithDeadlinePolling, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithEngineLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies, Self::WithRequirementBool, Self::WithKeys, Self::WithMapEdits, Self::WithOrderAndOwnership, Self::WithDeclarationPolicies, Self::WithRawDeclarationPolicies, Self::AllRawFilePolicies, Self::WithDocSnippets, Self::WithUiActions, Self::WithRawRuntimePolicies, Self::WithWorkspaceFoldPolicies, Self::WithSysSourcePolicies, Self::WithStoredAndTracked];
 
     /// Independently qualified Analyze-only capture plans.
     pub const GENERIC_V2: [Self; 4] = [
@@ -61,9 +68,16 @@ impl Roster {
         }
     }
 
+    pub fn is_source_only(self) -> bool {
+        matches!(self, Self::AllRawFilePolicies | Self::WithDocSnippets | Self::WithUiActions)
+    }
+
     pub fn workspace_roots(self) -> &'static [&'static str] {
         match self {
             Self::AllRawFilePolicies => &["code", "interface", "maps", "modular_chomp"],
+            Self::WithDocSnippets => &["code", "doc/rewrite", "maps"],
+            Self::WithUiActions => &["code", "maps", "tgui/packages/tgui/interfaces"],
+            Self::WithCheckGrep => &["code", "maps", "tgui"],
             _ => &["code", "maps"],
         }
     }
@@ -75,6 +89,8 @@ impl Roster {
     pub fn names(self) -> &'static [&'static str] {
         match self {
             Self::Base => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler"],
+            Self::WithDeadlinePolling => &["allow_annotations", "deadline_polling", "notice_publisher", "report_in_catch", "scheduler"],
+            Self::WithCheckGrep => &["allow_annotations", "check_grep", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithCooldown => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithEngineInternal => &["allow_annotations", "engine_internal", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithCooldownAndEngineInternal => &["allow_annotations", "cooldown", "engine_internal", "notice_publisher", "report_in_catch", "scheduler"],
@@ -107,6 +123,8 @@ impl Roster {
                 "state_schema", "sys/appearance", "sys/dx_ownership_forms", "sys/fields",
                 "sys/loot",
             ],
+            Self::WithUiActions => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "ui_actions"],
+            Self::WithDocSnippets => &["allow_annotations", "doc_snippets", "notice_publisher", "report_in_catch", "scheduler"],
             Self::AllRawFilePolicies => &[
                 // deadline_polling has its own configuration/allowlist subject.
                 "actor_forwarding", "allow_annotations", "breakpoint", "containment",
@@ -124,11 +142,14 @@ impl Roster {
             ],
             Self::WithRawDeclarationPolicies => &["allow_annotations", "cap_bits", "declaration_block", "duplicate_input_key", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithDeclarationPolicies => &["allow_annotations", "base_vars", "decl", "init", "notice_publisher", "report_in_catch", "scheduler"],
+            Self::WithMapEdits => &["allow_annotations", "map_edits", "notice_publisher", "report_in_catch", "scheduler"],
+            Self::WithOrderAndOwnership => &["allow_annotations", "notice_publisher", "op_order", "ownership", "report_in_catch", "scheduler"],
             Self::WithKeys => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/keys"],
             Self::WithRequirementBool => &["allow_annotations", "notice_publisher", "report_in_catch", "requirement_bool", "scheduler"],
             Self::WithSysReactive => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sys/dx_reactive"],
             Self::WithUntyped => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "untyped"],
             Self::WithHandlers => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "sem/handlers"],
+            Self::WithEngineLayering => &["allow_annotations", "engine_layering", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithLibraryLayering => &["allow_annotations", "cooldown", "library_layering", "notice_publisher", "report_in_catch", "scheduler"],
         }
     }
@@ -267,7 +288,7 @@ pub struct RawSelectedTerminal {
 }
 impl RawSelectedTerminal {
     pub fn require(self, expected: Roster) -> io::Result<()> {
-        if expected != Roster::AllRawFilePolicies || self.roster != expected {
+        if !expected.is_source_only() || self.roster != expected {
             return Err(invalid("raw selected terminal differs from its closed roster"));
         }
         self.report.require_bound()
@@ -402,7 +423,7 @@ fn explicit_option<'de, D: serde::Deserializer<'de>, T: Deserialize<'de>>(deseri
 
 impl Terminal {
     pub fn require(self, expected: Roster) -> io::Result<()> {
-        if self.roster != expected {
+        if expected.is_source_only() || self.roster != expected {
             return Err(invalid("selected report terminal names a foreign roster"));
         }
         self.report.require_bound()?;
