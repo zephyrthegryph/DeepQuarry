@@ -498,3 +498,168 @@ Admin verbs live in the admin verb browser and are out of scope. Panel is the ve
 | `/client/verb/github` | GitHub | no | `interface/interface.dm:57` | KEEP | keep |
 | `/client/verb/discord` | Discord | no | `interface/interface.dm:70` | KEEP | keep |
 | `/client/verb/patreon` | Patreon | no | `interface/interface.dm:83` | KEEP | keep |
+
+## Second pass (2026-11-07, user-approved: halve every area)
+
+| Area | Before | After |
+|---|---|---|
+| Character preferences | 162 | 105 |
+| Game settings | 119 (the first count missed BELCH_NOISES) | 48 |
+| Verbs in the verb panel | 50 | 19 |
+
+### Game settings cut
+
+| Key | Type | Now |
+|---|---|---|
+| `ambience_chance` | `/datum/preference/numeric/ambience_chance` | hardcoded `35` |
+| `ambience_freq` | `/datum/preference/numeric/ambience_freq` | hardcoded `5` |
+| `ATTACK_ICONS` | `/datum/preference/toggle/attack_icons` | hardcoded `TRUE` |
+| `AUTO_AFK` | `/datum/preference/toggle/auto_afk` | hardcoded `TRUE` |
+| `auto_fit_viewport` | `/datum/preference/toggle/auto_fit_viewport` | hardcoded `TRUE` |
+| `AutoPunctuation` | `/datum/preference/toggle/autopunctuation` | hardcoded `FALSE` |
+| `BELCH_NOISES` | `/datum/preference/toggle/belch_noises` | volume channel `VOLUME_CHANNEL_VORE` |
+| `BellyEntranceLogs` | `/datum/preference/toggle/belly_entrance_logs` | hardcoded `TRUE` |
+| `BLOOP_SOUNDS` | `/datum/preference/toggle/bloop_sounds` | volume channel `VOLUME_CHANNEL_VOICE` |
+| `CHAT_GHOSTRADIO` | `/datum/preference/toggle/ghost_radio` | merged into `CHAT_GHOSTEARS` |
+| `CHAT_GHOSTSIGHT` | `/datum/preference/toggle/ghost_sight` | merged into `CHAT_GHOSTEARS` |
+| `CHAT_INLINE_INPUT` | `/datum/preference/toggle/chat_inline_input` | hardcoded `TRUE` |
+| `CHAT_SHOWICONS` | `/datum/preference/toggle/chat_tags` | hardcoded `TRUE` |
+| `DIGEST_NOISES` | `/datum/preference/toggle/digestion_noises` | volume channel `VOLUME_CHANNEL_VORE` |
+| `EATING_NOISES` | `/datum/preference/toggle/eating_noises` | volume channel `VOLUME_CHANNEL_VORE` |
+| `EMOTE_NOISES` | `/datum/preference/toggle/emote_noises` | volume channel `VOLUME_CHANNEL_VOICE` |
+| `EMOTE_SOUNDS` | `/datum/preference/toggle/emote_sounds` | volume channel `VOLUME_CHANNEL_VOICE` |
+| `EMOTE_VARY` | `/datum/preference/toggle/random_emote_pitch` | hardcoded `TRUE` |
+| `GHOST_SEE_WHISUBTLE` | `/datum/preference/toggle/ghost_see_whisubtle` | merged into `CHAT_GHOSTEARS` |
+| `HardsuitActivation` | `/datum/preference/choiced/hardsuit_activation` | hardcoded `HARDSUIT_CLICK_MIDDLE` |
+| `HotkeyButtons` | `/datum/preference/toggle/hotkey_buttons` | hardcoded `TRUE` |
+| `INV_TOOLTIPS` | `/datum/preference/toggle/inv_tooltips` | hardcoded `TRUE` |
+| `LiquidbellyVisuals` | `/datum/preference/toggle/liquidbelly_visuals` | hardcoded `TRUE` |
+| `MessengerEmbeds` | `/datum/preference/toggle/messenger_embeds` | hardcoded `TRUE` |
+| `MOB_TOOLTIPS` | `/datum/preference/toggle/mob_tooltips` | hardcoded `TRUE` |
+| `MULTI_LANGUAGE_YAP_MODE` | `/datum/preference/choiced/multilingual_mode` | hardcoded `MULTILINGUAL_DEFAULT` |
+| `obfuscate_job` | `/datum/preference/toggle/obfuscate_job` | hardcoded `FALSE` |
+| `obfuscate_key` | `/datum/preference/toggle/obfuscate_key` | hardcoded `FALSE` |
+| `PAIN_FREQUENCY` | `/datum/preference/toggle/pain_frequency` | hardcoded `FALSE` |
+| `PRECISE_PLACEMENT` | `/datum/preference/toggle/precision_placement` | hardcoded `TRUE` |
+| `RADIO_SOUNDS` | `/datum/preference/toggle/radio_sounds` | volume channel `VOLUME_CHANNEL_VOICE` |
+| `RECEIVE_TIPS` | `/datum/preference/toggle/player_tips` | hardcoded `TRUE` |
+| `RUNECHAT_BALLOON_MESSAGES` | `/datum/preference/toggle/runechat_balloon_messages` | hardcoded `TRUE` |
+| `RUNECHAT_BORDER` | `/datum/preference/toggle/runechat_border` | hardcoded `TRUE` |
+| `RUNECHAT_LONG` | `/datum/preference/toggle/runechat_long_messages` | hardcoded `FALSE` |
+| `RUNECHAT_OBJ` | `/datum/preference/toggle/runechat_obj` | hardcoded `TRUE` |
+| `SAFE_FIRING` | `/datum/preference/toggle/safefiring` | hardcoded `TRUE` |
+| `SAY_SOUNDS` | `/datum/preference/toggle/say_sounds` | volume channel `VOLUME_CHANNEL_VOICE` |
+| `SHOW_STATUS` | `/datum/preference/toggle/status_indicators` | hardcoded `TRUE` |
+| `SHOW_TYPING_SUBTLE` | `/datum/preference/toggle/show_typing_indicator_subtle` | merged into `SHOW_TYPING` |
+| `ShowNutrition` | `/datum/preference/toggle/show_nutrition` | hardcoded `TRUE` |
+| `SLEEP_MUSIC` | `/datum/preference/toggle/sleep_music` | hardcoded `TRUE` |
+| `SOUND_AIRPUMP` | `/datum/preference/toggle/air_pump_noise` | volume channel `VOLUME_CHANNEL_MACHINERY_IDLE` |
+| `SOUND_ALARMLOOP` | `/datum/preference/toggle/looping_alarms` | volume channel `VOLUME_CHANNEL_ALARMS` |
+| `SOUND_AMBIENCE` | `/datum/preference/toggle/play_ambience` | volume channel `VOLUME_CHANNEL_AMBIENCE` |
+| `SOUND_DEPARTMENTDOORS` | `/datum/preference/toggle/department_door_sounds` | hardcoded `TRUE` |
+| `SOUND_DROPPED` | `/datum/preference/toggle/drop_sounds` | hardcoded `TRUE` |
+| `SOUND_FRIDGEHUM` | `/datum/preference/toggle/fridge_hum` | volume channel `VOLUME_CHANNEL_MACHINERY_IDLE` |
+| `SOUND_JUKEBOX` | `/datum/preference/toggle/play_jukebox` | the jukebox volume (`media_volume`) |
+| `SOUND_OLDDOORS` | `/datum/preference/toggle/old_door_sounds` | hardcoded `FALSE` |
+| `SOUND_PICKED` | `/datum/preference/toggle/pickup_sounds` | hardcoded `TRUE` |
+| `SOUND_SUPERMATTER` | `/datum/preference/toggle/supermatter_hum` | volume channel `VOLUME_CHANNEL_MACHINERY` |
+| `SOUND_WEATHER` | `/datum/preference/toggle/weather_sounds` | volume channel `VOLUME_CHANNEL_WEATHER` |
+| `SUBTLE_SOUNDS` | `/datum/preference/toggle/subtle_sounds` | volume channel `VOLUME_CHANNEL_VOICE` |
+| `tgui_fancy` | `/datum/preference/toggle/tgui_fancy` | hardcoded `TRUE` |
+| `tgui_input_mode` | `/datum/preference/toggle/tgui_input_mode` | hardcoded `TRUE` |
+| `tgui_large_buttons` | `/datum/preference/toggle/tgui_large_buttons` | hardcoded `TRUE` |
+| `tgui_lock` | `/datum/preference/toggle/tgui_lock` | hardcoded `FALSE` |
+| `TGUI_SAY` | `/datum/preference/toggle/tgui_say` | hardcoded `TRUE` |
+| `tgui_say_emotes` | `/datum/preference/toggle/tgui_say_emotes` | hardcoded `TRUE` |
+| `tgui_say_height` | `/datum/preference/numeric/tgui_say_height` | hardcoded `1` |
+| `TGUI_SAY_LIGHT_MODE` | `/datum/preference/toggle/tgui_say_light` | hardcoded `FALSE` |
+| `TGUI_SAY_PREVIEW` | `/datum/preference/toggle/tgui_say_preview` | hardcoded `TRUE` |
+| `tgui_say_width` | `/datum/preference/numeric/tgui_say_width` | hardcoded `360` |
+| `tgui_swapped_buttons` | `/datum/preference/toggle/tgui_swapped_buttons` | hardcoded `FALSE` |
+| `tooltipstyle` | `/datum/preference/choiced/tooltip_style` | hardcoded `GLOB.all_tooltip_styles[1]` |
+| `UI_style_alpha` | `/datum/preference/numeric/ui_style_alpha` | hardcoded `255` |
+| `UI_style_color` | `/datum/preference/color/ui_style_color` | hardcoded `COLOR_WHITE` |
+| `VCHAT_ENABLE` | `/datum/preference/toggle/vchat_enable` | hardcoded `TRUE` |
+| `VORE_HEALTH_BARS` | `/datum/preference/toggle/vore_health_bars` | hardcoded `TRUE` |
+| `WHISPER_SOUNDS` | `/datum/preference/toggle/whisper_sounds` | volume channel `VOLUME_CHANNEL_VOICE` |
+
+Moved to staff only: `BrowserDevTools` (debug rights), `SOUND_MENTORHELP` (mentors and admins).
+
+A per-sound toggle that was off in an old save sets its volume channel to 0 (`GLOB.retired_sound_toggle_channels`). A new channel, Voices and Emotes, carries speech blips, emote and radio sounds.
+
+### Character preferences cut
+
+| Key | Type | Now |
+|---|---|---|
+| `animations_toggle` | `/datum/preference/toggle/human/animations_toggle` | hardcoded `FALSE` |
+| `antag_faction` | `/datum/preference/text/human/antag_faction` | hardcoded `"None"` |
+| `antag_vis` | `/datum/preference/choiced/human/antag_vis` | hardcoded `"Hidden"` |
+| `auto_backup_implant` | `/datum/preference/toggle/human/auto_backup_implant` | hardcoded `FALSE` |
+| `autohiss` | `/datum/preference/text/human/autohiss` | hardcoded `AUTOHISS_DEFAULT_CHOICE` |
+| `bday_announce` | `/datum/preference/toggle/human/bday_announce` | hardcoded `FALSE` |
+| `birthplace` | `/datum/preference/text/human/birthplace` | hardcoded `"Unset"` |
+| `blood_reagents` | `/datum/preference/text/human/blood_reagents` | hardcoded `"default"` |
+| `borg_petting` | `/datum/preference/toggle/human/borg_petting` | hardcoded `TRUE` |
+| `citizenship` | `/datum/preference/text/human/citizenship` | hardcoded `"None"` |
+| `communicator_visibility` | `/datum/preference/toggle/human/communicator_visibility` | hardcoded `FALSE` |
+| `custom_ask` | `/datum/preference/text/human/custom_ask` | hardcoded `null` |
+| `custom_exclaim` | `/datum/preference/text/human/custom_exclaim` | hardcoded `null` |
+| `custom_footstep` | `/datum/preference/text/human/custom_footstep` | hardcoded `"Default"` |
+| `custom_link` | `/datum/preference/text/human/custom_link` | hardcoded `null` |
+| `custom_say` | `/datum/preference/text/human/custom_say` | hardcoded `null` |
+| `custom_speech_bubble` | `/datum/preference/text/human/custom_speech_bubble` | hardcoded `"default"` |
+| `custom_whisper` | `/datum/preference/text/human/custom_whisper` | hardcoded `null` |
+| `directory_gendertag` | `/datum/preference/choiced/human/directory_gendertag` | hardcoded `"Unset"` |
+| `directory_sexualitytag` | `/datum/preference/choiced/human/directory_sexualitytag` | hardcoded `"Unset"` |
+| `ears_alpha` | `/datum/preference/numeric/human/ears_alpha` | hardcoded `255` |
+| `economic_status` | `/datum/preference/choiced/human/economic_status` | hardcoded `"Average"` |
+| `exploit_record` | `/datum/preference/text/human/exploit_record` | hardcoded `""` |
+| `flicker_break_chance` | `/datum/preference/numeric/living/flicker_break_chance` | hardcoded `0` |
+| `flicker_color` | `/datum/preference/color/living/flicker_color` | hardcoded `"#E0EFF0"` |
+| `flicker_distance` | `/datum/preference/numeric/living/flicker_distance` | hardcoded `4` |
+| `flicker_time` | `/datum/preference/numeric/living/flicker_time` | hardcoded `10` |
+| `fuzzy` | `/datum/preference/toggle/human/fuzzy` | hardcoded `FALSE` |
+| `gen_record` | `/datum/preference/text/human/gen_record` | hardcoded `""` |
+| `grad_color` | `/datum/preference/color/human/grad_color` | hardcoded `null` |
+| `grad_style_name` | `/datum/preference/text/human/grad_style` | hardcoded `null` |
+| `home_system` | `/datum/preference/text/human/home_system` | hardcoded `"Unset"` |
+| `ignore_shoes` | `/datum/preference/toggle/human/ignore_shoes` | hardcoded `FALSE` |
+| `med_record` | `/datum/preference/text/human/med_record` | hardcoded `""` |
+| `name_is_always_random` | `/datum/preference/toggle/human/name_is_always_random` | hardcoded `FALSE` |
+| `nickname` | `/datum/preference/name/nickname` | hardcoded `null` |
+| `offset_override` | `/datum/preference/toggle/human/offset_override` | hardcoded `TRUE` |
+| `Pai_Ad` | `/datum/preference/text/pai_ad` | hardcoded `PAI_UNSET` |
+| `Pai_Comments` | `/datum/preference/text/pai_comments` | hardcoded `PAI_UNSET` |
+| `Pai_Desc` | `/datum/preference/text/pai_description` | hardcoded `PAI_UNSET` |
+| `Pai_Role` | `/datum/preference/text/pai_role` | hardcoded `PAI_UNSET` |
+| `preview_job` | `/datum/preference/toggle/human/preview_job` | hardcoded `TRUE` |
+| `preview_loadout` | `/datum/preference/toggle/human/preview_loadout` | hardcoded `TRUE` |
+| `religion` | `/datum/preference/text/human/religion` | hardcoded `"None"` |
+| `resleeve_lock` | `/datum/preference/toggle/human/resleeve_lock` | hardcoded `FALSE` |
+| `sec_record` | `/datum/preference/text/human/sec_record` | hardcoded `""` |
+| `secondary_ears_alpha` | `/datum/preference/numeric/human/ears_alpha/secondary` | hardcoded `255` |
+| `sensorpref` | `/datum/preference/numeric/human/sensorpref` | hardcoded `5` |
+| `species_sound` | `/datum/preference/text/human/species_sound` | hardcoded `"Unset"` |
+| `tail_alpha` | `/datum/preference/numeric/human/tail_alpha` | hardcoded `255` |
+| `ttone` | `/datum/preference/text/human/ringtone` | hardcoded `"beep"` |
+| `uplinklocation` | `/datum/preference/choiced/uplinklocation` | hardcoded `"PDA"` |
+| `vantag_preference` | `/datum/preference/choiced/human/vantag_preference` | hardcoded `VANTAG_NONE` |
+| `vore_egg_type` | `/datum/preference/text/human/vore_egg_type` | hardcoded `"Egg"` |
+| `weight_gain` | `/datum/preference/numeric/human/weight_gain` | hardcoded `100` |
+| `weight_loss` | `/datum/preference/numeric/human/weight_loss` | hardcoded `50` |
+| `wing_alpha` | `/datum/preference/numeric/human/wing_alpha` | hardcoded `255` |
+
+The event, gender and sexuality directory tags are kept for the round on the mind (set from the Character Directory) instead of saved. The shadekin flicker settings are set per round from the shadekin panel. The starting-kit editor is deleted.
+
+### Verb panel
+
+- Menu page, new Round section: Who, Vote, Check Round Info, Observe, Return to Menu, Cancel Camera View, Set Incorporeal Speed.
+- Chat input channels: OOC, LOOC (hidden verbs, still bound).
+- Abilities panel rows: Set Ambition, Adjust Special Language Range, Toggle Species Speech Sounds (human and simple mob), Write in blood, Tie Hair, Set monitor display, Purge Reagents, Toggle Waddling, Waddle Adjust, NIF Appearance, Show/Hide wings, Show/Hide tail, Switch Eyes/Monitor Layer, Switch Rest Style, Set Flavour Text (animal, silicon), Create/Remove Env Message, and the soulcatcher commands (Enter Soulcatcher, NSay/NMe Vore CH), which show only for a mob with a soulcatcher instead of being granted to every mob.
+- Left in the panel: Ghost, Ghost Panel, Quit This Round (ghosts), OOC Escape, AI Panel, Malfunction Panel, NIF Menu, NSay/NMe (NIF and caught souls), Transfer Self, Re-enter Body, Change Eye Color, the animal digestion/gurgle toggles and the swoopie settings (used on an adjacent mob), Pray.
+
+### Kept although considered
+
+- OOC notes (six fields): merging them needs the notes editor reworked; left for a later pass.
+- Colour slots (tail/wing/ear colour 3, palette): the palette links them; cutting them needs the palette editor changed.
+- `bgstate`, `capture_crystal`, resleeving scans, NIF settings, job and loadout settings: the default does not serve almost everyone.
