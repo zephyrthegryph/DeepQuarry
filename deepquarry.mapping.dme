@@ -366,6 +366,7 @@
 #include "code\host\helpers\sorts\comparators.dm"
 #include "code\host\helpers\sorts\tim_sort.dm"
 #include "code\engine\_generated\ids.dm"
+#include "code\content\abilities\ability_icons.dm"
 #include "code\content\abilities\ability_panel.dm"
 #include "code\content\abilities\action.dm"
 #include "code\content\abilities\innate_action.dm"
