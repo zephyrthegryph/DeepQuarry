@@ -3283,3 +3283,30 @@ does not replace the raw-read credit or encoding checks. Focused controls
 verify shared bytes with distinct receipts, same-stamp changed content,
 and refusal to substitute prepared data for BOM, Latin-1, suppression or
 missing-source outcomes. Whole-project reuse rates are not measured.
+
+
+The selected Sys reactive route borrows the current native policy results.
+Its focused map fixture reports four rule families, returns the same
+text on replay, and applies a current map-file scope exemption. The
+Original Checker also preserves the first authored declaration note
+when an unknown declared variable type reaches an outer field or call.
+The real combined test compares all six rows and their locations,
+including a nested follow without that note, skipped call arguments,
+and suppression of tagged warnings while untagged errors remain.
+
+The next checkout probe reached 10,020,579 producer rows in 7,299 opened
+occurrences, with 10,018,816 receiver rows on 2,446 shared pages. It
+returned an 8,192-byte lexical allocation refusal at 134,212,682 retained
+syntax bytes, against the unchanged 128 MiB syntax cap. The request
+returned no report bytes and the private daemon exited. The client took
+227.89 seconds with 194.781 CPU seconds at the last sample. Source shape,
+host scheduling and the larger processed prefix differ from the preceding
+deadline run. This is not an isolated timing comparison for the file-loan
+memo that was included in this probe.
+
+The literal census counted 336,333 numeric rows out of 899,500. Exclusive
+numeric singleton and all-numeric batch owners accounted for 580,616
+reserved bytes together. Numeric spellings on mixed batches held
+214,387 capacity bytes, while those entire mixed owners held 11,451,915
+bytes and also contained still-live nonnumeric rows. These quantities
+rule out treating the whole mixed payload as a reclaimable numeric cost.
