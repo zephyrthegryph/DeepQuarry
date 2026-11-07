@@ -54,6 +54,66 @@ fn selected_sys_reactive_reports_actual_map_sites_and_rechecks_scope() {
     assert!(exempt.contains("sys/dx_reactive: dx_untracked_read 0 OK"));
 }
 
+
+#[test]
+fn selected_lifeforms_reports_actual_constructor_and_position_findings() {
+    use dq_analyze::{captured_allow_annotations::{full_unused, Operation}, captured_generator_budget::Budget, selected_exclusions_wire::Roster};
+
+    let root = fixture("public-selected-lifeforms");
+    // Minimal existing Lifeforms oracle shapes: a dead explicit constructor
+    // argument and a position override with no corresponding ancestor entry.
+    put(&root, "code/probe.dm", concat!(
+        "#define CAPABILITIES(...)\n#define nameof(V) #V\n",
+        "/obj/no_reader\n/obj/bad_position\n    var/value\n",
+        "CAPABILITIES(/obj/bad_position, param(nameof(value), pos = 3, overrides = TRUE))\n",
+        "/proc/probe(loc)\n    new /obj/no_reader(loc, 2)\n",
+    ));
+    let mut selected = request(&root);
+    selected.cache_root = Some(scratch::dir("public-selected-lifeforms-cache"));
+    selected.policy_inputs.as_mut().unwrap().workspace_auxiliary.clear();
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !Roster::WithLifeforms.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let mut run = || {
+        let mut output = Vec::new();
+        let clean = host.write_original_exclusions_report(
+            selected.clone(), &exclusions, &mut Vec::new(), &mut output,
+        ).unwrap();
+        (clean, String::from_utf8(output).unwrap())
+    };
+    let (clean, cold) = run();
+    assert!(!clean);
+    assert!(cold.contains("[lifeforms/ctor_dead_arg]"), "{cold}");
+    assert!(cold.contains("[lifeforms/param_overrides_nothing]"), "{cold}");
+    assert!(cold.contains("overrides no ancestor's position"), "{cold}");
+    assert!(cold.contains("code/probe.dm:"), "{cold}");
+    assert!(cold.contains("allow annotations: 0 unused"), "{cold}");
+    assert_eq!(run(), (clean, cold));
+
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(
+        "[lint.lifeforms]\nexempt_files=[\"code/probe.dm\"]\n",
+    ));
+    let (clean, exempt) = run();
+    assert!(clean, "{exempt}");
+    assert!(!exempt.contains("[lifeforms/ctor_dead_arg]"));
+    assert!(!exempt.contains("[lifeforms/param_overrides_nothing]"));
+
+    let mut diagnostics = Vec::new();
+    let mut checker = Vec::new();
+    let mut analyze = Vec::new();
+    assert!(host.write_combined_selected_original_reports(
+        selected.clone(), &exclusions, &mut diagnostics, &mut checker, &mut analyze,
+    ).is_err());
+    assert!(diagnostics.is_empty() && checker.is_empty() && analyze.is_empty());
+    let unsupported: Vec<_> = exclusions.iter().filter(|name| name.as_str() != "-cooldown").cloned().collect();
+    assert!(host.write_original_exclusions_report(selected, &unsupported, &mut diagnostics, &mut analyze).is_err());
+    assert!(diagnostics.is_empty() && analyze.is_empty());
+}
+
 fn policy_or_source_changed(a:&Pins,b:&Pins){assert!(a.source!=b.source||a.policy!=b.policy,"actual raw discovery/configuration change must reissue public source/policy pins: {a:?}");}
 #[test]fn actual_public_sys_role_prepares_real_model_and_refuses_missing_analysis_context(){let root=fixture("public-sys-original-model");let request=request(&root);let mut host=BuildHost::default();let first=prepare(&mut host,&request);assert_eq!(prepare(&mut host,&request),first);let mut missing=request.clone();missing.policy_inputs.as_mut().unwrap().analysis_context=None;assert!(dmbc::request_runner::run_build_with_host(missing,&mut host).is_err(),"semantic role cannot become a context-free raw-only grant");prepare(&mut host,&request);}
 #[test]fn actual_public_sys_uncompiled_auto_and_config_observations_reissue_same_host(){let root=fixture("public-sys-full-source-revisions");let request=request(&root);let mut host=BuildHost::default();let first=prepare(&mut host,&request);put(&root,"code/uncompiled.dm","/datum/uncompiled_raw\n");let added=prepare(&mut host,&request);policy_or_source_changed(&first,&added);put(&root,"code/engine/_generated/auto_tracked.dm","// actual AUTO exists without explicit TRACKED entries\n");let auto=prepare(&mut host,&request);policy_or_source_changed(&added,&auto);std::fs::remove_file(root.join("code/engine/_generated/auto_tracked.dm")).unwrap();let removed=prepare(&mut host,&request);policy_or_source_changed(&auto,&removed);put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay("[lint.\"sys/dx_reactive\"]\nexempt_files=[\"code/probe.dm\"]\n"));let configured=prepare(&mut host,&request);assert_ne!(configured.policy,removed.policy);}
