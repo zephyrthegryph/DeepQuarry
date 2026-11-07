@@ -24,12 +24,33 @@ struct LiteralPage {
     // Split columns avoid per-row padding without moving or copying any
     // issued literal backing. Both allocations die before their shared credit.
     spans: Vec<u32>,
+    short_spans: Option<Box<ShortLiteralSpans>>,
     data: LiteralPageData,
     start_base: usize,
-    span_credit: crate::SettingRootLease,
     wide: Vec<Span>,
     wide_credit: Option<crate::SettingRootLease>,
+    span_credit: crate::SettingRootLease,
 }
+const SHORT_GROUP_ROWS: usize = 16;
+const SHORT_GROUPS: usize = LITERAL_PAGE_LEN / SHORT_GROUP_ROWS;
+const SHORT_WIDTH_BITS: u32 = 5;
+const SHORT_ESCAPE: u16 = 1 << 15;
+const SHORT_WIDE: u16 = 1 << 14;
+const SHORT_INDEX: u16 = SHORT_WIDE - 1;
+
+struct ShortLiteralSpans {
+    cells: [u16; LITERAL_PAGE_LEN],
+    bases: [u32; SHORT_GROUPS],
+    words: Vec<u32>,
+}
+
+fn short_span_cell(span: Span, group_base: usize) -> Option<u16> {
+    let delta = span.start.checked_sub(group_base)?;
+    let width = span.end.checked_sub(span.start)?;
+    if delta > 1023 || width > 31 { return None; }
+    Some(((delta as u16) << SHORT_WIDTH_BITS) | width as u16)
+}
+
 struct DenseLiteralData {
     rows: Vec<crate::OriginalLiteralData>,
     credit: crate::SettingRootLease,
@@ -309,20 +330,24 @@ impl LiteralSpanShortCost {
         let fits = span.start.checked_sub(projected.group_base).is_some_and(|delta| delta <= max_offset)
             && span.end.checked_sub(span.start).is_some_and(|width| width <= max_width);
         if !fits {
-            if page.spans[index] & WIDE_BIT == 0 { projected.word_escapes += 1; }
+            if span.start - page.start_base <= MAX_START_DELTA && span.end - span.start <= MAX_WIDTH { projected.word_escapes += 1; }
             else { projected.full_escapes += 1; }
         }
     }
 
     fn settle(&mut self, projected: LiteralSpanShortPage, page: &LiteralPage) {
-        let old = page.spans.capacity() * mem::size_of::<u32>() + page.wide.capacity() * mem::size_of::<Span>();
+        let old = page.span_storage_bytes();
         self.old_span_buffer_bytes += old;
-        if page.spans.len() != LITERAL_PAGE_LEN {
+        if page.short_spans.is_some() {
+            self.selected_page_bytes += old;
+            return;
+        }
+        if page.len() != LITERAL_PAGE_LEN {
             self.partial_pages += 1;
             self.selected_page_bytes += old;
             return;
         }
-        let cells = page.spans.len() * mem::size_of::<u16>();
+        let cells = page.len() * mem::size_of::<u16>();
         let bases = projected.groups * mem::size_of::<u32>();
         let words = projected.word_escapes * mem::size_of::<u32>();
         let wide = projected.full_escapes * mem::size_of::<Span>();
@@ -335,7 +360,7 @@ impl LiteralSpanShortCost {
             self.selected_page_bytes += old;
         } else {
             self.short_pages += 1;
-            self.selected_cells += page.spans.len();
+            self.selected_cells += page.len();
             self.selected_group_base_bytes += bases;
             self.selected_word_escape_bytes += words;
             self.selected_full_escape_bytes += wide;
@@ -391,7 +416,7 @@ impl LiteralPage {
    for code in &data.codes{if code>>8!=WIDE_LITERAL_ORDINAL{references[(code&255)as usize]+=1;}}
   }
   let mut count=0usize;let mut released=0usize;
-  for at in 0..self.spans.len(){
+  for at in 0..self.len(){
    a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
    if self.body[at/64]&(1u64<<(at%64))==0{continue}
    if let LiteralPageData::Compact(data)=&self.data{
@@ -405,7 +430,7 @@ impl LiteralPage {
    }
   }
   if count==0{return Ok(None)}
-  let len=self.spans.len();
+  let len=self.len();
   let code_layout=Layout::array::<u16>(len).map_err(|_|io::ErrorKind::OutOfMemory)?;
   let full_layout=Layout::array::<crate::OriginalLiteralData>(len-count).map_err(|_|io::ErrorKind::OutOfMemory)?;
   let descriptor_layout=Layout::array::<crate::original_literal_projection::ProjectedLiteral>(count).map_err(|_|io::ErrorKind::OutOfMemory)?;
@@ -699,17 +724,106 @@ impl LiteralPage {
         let (spans, span_credit) = allocate_literal_rows(LITERAL_PAGE_LEN, a)?;
         let (rows, credit) = allocate_literal_rows(LITERAL_PAGE_LEN, a)?;
         let data = LiteralPageData::Dense(DenseLiteralData { rows, credit });
-        Ok(Self { body:[0;4],spans, data, start_base, span_credit, wide: Vec::new(), wide_credit: None })
+        Ok(Self { body:[0;4],spans, short_spans:None, data, start_base, span_credit, wide: Vec::new(), wide_credit: None })
+    }
+
+    fn len(&self) -> usize {
+        if self.short_spans.is_some() { LITERAL_PAGE_LEN } else { self.spans.len() }
+    }
+
+    #[cfg(debug_assertions)]
+    fn span_storage_bytes(&self) -> usize {
+        self.span_credit.bytes() + self.wide_credit.as_ref().map_or(0, |credit|credit.bytes())
+    }
+
+    fn decode_span_word(&self, word: u32) -> Span {
+        let start = self.start_base + (word >> WIDTH_BITS) as usize;
+        Span::new(start, start + (word as usize & MAX_WIDTH))
     }
 
     fn span_at(&self, index: usize) -> Option<Span> {
+        if let Some(short) = &self.short_spans {
+            let cell = *short.cells.get(index)?;
+            if cell & SHORT_ESCAPE == 0 {
+                let base = self.start_base + short.bases[index / SHORT_GROUP_ROWS] as usize;
+                let start = base + (cell >> SHORT_WIDTH_BITS) as usize;
+                return Some(Span::new(start, start + (cell as usize & 31)));
+            }
+            let ordinal = (cell & SHORT_INDEX) as usize;
+            return if cell & SHORT_WIDE == 0 {
+                short.words.get(ordinal).map(|&word|self.decode_span_word(word))
+            } else {
+                self.wide.get(ordinal).copied()
+            };
+        }
         let word = *self.spans.get(index)?;
-        Some(if word & WIDE_BIT != 0 {
-            self.wide[(word & !WIDE_BIT) as usize]
+        if word & WIDE_BIT != 0 {
+            self.wide.get((word & !WIDE_BIT) as usize).copied()
         } else {
-            let start = self.start_base + (word >> WIDTH_BITS) as usize;
-            Span::new(start, start + (word as usize & MAX_WIDTH))
-        })
+            Some(self.decode_span_word(word))
+        }
+    }
+
+    // Run only on a completed private page. The old span/escape buffers
+    // retain their actual credit until all new storage is admitted, written
+    // and polled. No literal value, range loan or source owner is changed.
+    fn settle_spans_using(&mut self, a:&crate::SettingAdmission<'_>) -> io::Result<()> {
+        if self.short_spans.is_some() || self.spans.len() != LITERAL_PAGE_LEN { return Ok(()); }
+        if !a.matches_lease_domain(&self.span_credit) { return Err(io::ErrorKind::InvalidInput.into()); }
+        let mut bases = [0u32; SHORT_GROUPS];
+        let mut group_base = 0;
+        let (mut words,mut wide) = (0,0);
+        for (index,&word) in self.spans.iter().enumerate() {
+            let span = self.span_at(index).ok_or(io::ErrorKind::InvalidData)?;
+            if index % SHORT_GROUP_ROWS == 0 {
+                group_base = span.start;
+                let Ok(delta) = u32::try_from(group_base-self.start_base) else { return Ok(()); };
+                bases[index / SHORT_GROUP_ROWS] = delta;
+            }
+            if short_span_cell(span, group_base).is_none() {
+                if word & WIDE_BIT == 0 { words += 1; } else { wide += 1; }
+            }
+        }
+        let word_layout = Layout::array::<u32>(words).expect("bounded literal escape words");
+        let wide_layout = Layout::array::<Span>(wide).expect("bounded literal escape spans");
+        let box_layout = Layout::new::<ShortLiteralSpans>();
+        let bytes = box_layout.size() + word_layout.size() + wide_layout.size();
+        let old = self.span_credit.bytes() + self.wide_credit.as_ref().map_or(0, |credit|credit.bytes());
+        if bytes >= old { return Ok(()); }
+        let Some(credit) = a.try_reserve_optimization(bytes)
+            .map_err(|proxy|a.take_operational_error().unwrap_or(proxy))? else { return Ok(()); };
+        let mut next = ShortLiteralSpans {
+            cells: [0; LITERAL_PAGE_LEN], bases,
+            words: alloc_funded_literal_rows(words, word_layout)?,
+        };
+        let mut next_wide = alloc_funded_literal_rows(wide, wide_layout)?;
+        for (index,&word) in self.spans.iter().enumerate() {
+            let span = self.span_at(index).ok_or(io::ErrorKind::InvalidData)?;
+            let base = self.start_base + next.bases[index/SHORT_GROUP_ROWS] as usize;
+            next.cells[index] = if let Some(cell) = short_span_cell(span,base) {
+                cell
+            } else if word & WIDE_BIT == 0 {
+                let ordinal = next.words.len() as u16;
+                next.words.push(word);
+                SHORT_ESCAPE | ordinal
+            } else {
+                let ordinal = next_wide.len() as u16;
+                next_wide.push(span);
+                SHORT_ESCAPE | SHORT_WIDE | ordinal
+            };
+        }
+        a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
+        let ptr = NonNull::new(unsafe { alloc(box_layout) }.cast::<ShortLiteralSpans>())
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        // SAFETY: the funded Global allocation has the exact Box layout.
+        // The original immutable cells remain available until this write.
+        let next = unsafe { ptr.as_ptr().write(next); Box::from_raw(ptr.as_ptr()) };
+        self.short_spans = Some(next);
+        drop(mem::take(&mut self.spans));
+        drop(mem::replace(&mut self.wide,next_wide));
+        self.wide_credit = None;
+        self.span_credit = credit;
+        Ok(())
     }
 
     fn get_data<'a>(&'a self,index:usize,base:usize,loan:Option<ProjectionLoan<'a>>,owner:Option<&'a crate::OriginalLiteralProjectionOwner>)->Option<BorrowedLiteralRow<'a>>{
@@ -792,6 +906,7 @@ impl LiteralPages {
     fn settle_previous_using(&mut self, a: &crate::SettingAdmission<'_>) -> io::Result<()> {
         if let Some(last) = self.chunks.last_mut().and_then(|chunk| chunk.pages.last_mut()) {
             last.data.settle_full_using(a)?;
+            last.settle_spans_using(a)?;
         }
         Ok(())
     }
@@ -819,20 +934,35 @@ impl LiteralPages {
         }
         let mut last_payload_page = None;
         for page in self.chunks.iter().flat_map(|chunk| &chunk.pages) {
-            let span_width = mem::size_of::<u32>();
-            let span_bytes = page.spans.capacity() * span_width;
-            debug_assert_eq!(page.span_credit.bytes(), span_bytes);
-            visit(page.spans.as_ptr() as usize, page.spans.len() * span_width, span_bytes);
-            page.data.visit_storage(visit);
-            if page.wide.capacity() != 0 {
-                let bytes = page.wide.capacity() * mem::size_of::<Span>();
-                debug_assert_eq!(page.wide_credit.as_ref().map_or(0, |credit| credit.bytes()), bytes);
-                visit(page.wide.as_ptr() as usize, page.wide.len() * mem::size_of::<Span>(), bytes);
+            if let Some(short) = &page.short_spans {
+                let boxed = mem::size_of::<ShortLiteralSpans>();
+                let words = short.words.capacity() * mem::size_of::<u32>();
+                let wide = page.wide.capacity() * mem::size_of::<Span>();
+                debug_assert!(page.wide_credit.is_none());
+                debug_assert_eq!(page.span_credit.bytes(), boxed + words + wide);
+                visit(short.as_ref() as *const _ as usize, boxed, boxed);
+                if words != 0 {
+                    visit(short.words.as_ptr() as usize, short.words.len()*mem::size_of::<u32>(), words);
+                }
+                if wide != 0 {
+                    visit(page.wide.as_ptr() as usize, page.wide.len()*mem::size_of::<Span>(), wide);
+                }
+            } else {
+                let span_width = mem::size_of::<u32>();
+                let span_bytes = page.spans.capacity() * span_width;
+                debug_assert_eq!(page.span_credit.bytes(), span_bytes);
+                visit(page.spans.as_ptr() as usize, page.spans.len() * span_width, span_bytes);
+                if page.wide.capacity() != 0 {
+                    let bytes = page.wide.capacity() * mem::size_of::<Span>();
+                    debug_assert_eq!(page.wide_credit.as_ref().map_or(0, |credit| credit.bytes()), bytes);
+                    visit(page.wide.as_ptr() as usize, page.wide.len() * mem::size_of::<Span>(), bytes);
+                }
             }
+            page.data.visit_storage(visit);
             if let LiteralPageData::Projected(data)=&page.data{
                 for value in &data.full{value.visit_storage(&mut *visit);}continue
             }
-            for index in 0..page.spans.len() {
+            for index in 0..page.len() {
                 if matches!(&page.data, LiteralPageData::Compact(data)
                     if data.codes[index] >> 8 == PROJECTED_COMPACT_ORDINAL)
                 {
@@ -1266,7 +1396,7 @@ impl OriginalPrimaryLiteralFacts{
  }
 
  pub(super) fn seal_actual_frontier(&mut self,extent:usize,a:&crate::SettingAdmission<'_>)->io::Result<()>{
-  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;if owner.extent.is_some()||owner.last_fact_end>extent{return Err(io::ErrorKind::InvalidInput.into())}owner.extent=Some(extent);Ok(())
+  a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;if owner.extent.is_some()||owner.last_fact_end>extent{return Err(io::ErrorKind::InvalidInput.into())}if let Some(last)=owner.rows.chunks.last_mut().and_then(|chunk|chunk.pages.last_mut()){last.settle_spans_using(a)?;}owner.extent=Some(extent);Ok(())
  }
  pub fn is_admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.payload().rows.directory_credit)&&a.matches_lease_domain(&self.payload().colon_credit)&&a.matches_lease_domain(&self.payload().fixed_credit)}
  pub fn consumed_extent(&self)->Option<usize>{self.payload().extent}
@@ -1304,6 +1434,7 @@ impl OriginalPrimaryLiteralFacts{
   let mut last_payload_page = None;
   let mut rejections = ProjectionRejections::default();
   let mut packed_run: Option<ProjectionPackedRun> = None;
+  let mut settled_span_pages = 0;
   let mut short_spans = [LiteralSpanShortCost::new(16, 5), LiteralSpanShortCost::new(16, 6),
       LiteralSpanShortCost::new(32, 5), LiteralSpanShortCost::new(32, 6)];
   let mut issued_pages = 0;
@@ -1317,7 +1448,8 @@ impl OriginalPrimaryLiteralFacts{
      if code >> 8 < PROJECTED_COMPACT_ORDINAL { occurrences[(code & 0xff) as usize] += 1; }
     }
    }
-   for index in 0..page.spans.len() {
+   settled_span_pages += usize::from(page.short_spans.is_some());
+   for index in 0..page.len() {
    let (span, data)=page.get_data(index,0,None,owner.projection.as_ref()).expect("issued literal row");
    for (model, projected) in short_spans.iter().zip(&mut short_page) {
     model.observe(projected, page, index, span);
@@ -1402,7 +1534,7 @@ impl OriginalPrimaryLiteralFacts{
   for model in &mut short_spans { model.finish(issued_pages + unused_page_slots); }
   if let Some(run) = packed_run { run.finish(&mut rejections); }
   // Use a named Debug builder so this snapshot has no owned text or alloc.
-  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census,numeric:NumericCensus,body_projection:BodyProjectionCensus,rejections:ProjectionRejections,first_attempts:FirstProjectionAttempts,short_spans:[LiteralSpanShortCost;4]}
+  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census,numeric:NumericCensus,body_projection:BodyProjectionCensus,rejections:ProjectionRejections,first_attempts:FirstProjectionAttempts,short_spans:[LiteralSpanShortCost;4],settled_span_pages:usize}
   impl std::fmt::Debug for Snapshot{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{
    f.debug_struct("PrimaryLiteralCensus").field("rows",&self.rows).field("colons",&self.colons)
     .field("fixed_reserved",&self.fixed).field("row_capacity",&self.row_capacity).field("colon_capacity",&self.colon_capacity)
@@ -1411,9 +1543,9 @@ impl OriginalPrimaryLiteralFacts{
     .field("batch_payload_reserved",&self.census.batch_payload_reserved)
     .field("exclusive_payload_rows",&self.census.exclusive_payload_rows).field("exclusive_payload_reserved",&self.census.exclusive_payload_reserved)
     .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper)
-    .field("numeric",&self.numeric).field("body_projection",&self.body_projection).field("projection_rejections",&self.rejections).field("first_projection_attempts",&self.first_attempts).field("short_span_projection",&self.short_spans).finish()
+    .field("numeric",&self.numeric).field("body_projection",&self.body_projection).field("projection_rejections",&self.rejections).field("first_projection_attempts",&self.first_attempts).field("settled_short_span_pages",&self.settled_span_pages).field("short_span_projection",&self.short_spans).finish()
   }}
-  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections,first_attempts:owner.first_projection_attempts,short_spans}
+  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections,first_attempts:owner.first_projection_attempts,short_spans,settled_span_pages}
  }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   let owner=self.0.as_ref().expect("live primary facts");if let Some(projection)=&owner.projection{projection.visit_storage(&mut visit)}let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(&mut visit);owner.colons.visit_storage(&mut visit);owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
@@ -1606,6 +1738,61 @@ impl OriginalPrimaryLiteralFacts{
 mod literal_page_controls {
     use super::*;
     use std::sync::atomic::{Ordering};
+
+    #[test]
+    fn short_literal_spans_keep_exact_escape_geometry_and_detached_owner() {
+        let fixed=crate::SettingChargeCounter::root_allocation_bytes();
+        let used=crate::SettingChargeCounter::try_new(fixed).unwrap();
+        let healthy=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let mut page=LiteralPage::new(7,&healthy).unwrap();
+        let literal=crate::OriginalLiteralData::from_value_using(
+            "7".into(),crate::OriginalTokenValue::Int(7),&healthy,
+        ).unwrap();
+        let raw=literal.raw().as_ptr();
+        let mut start=7;
+        let expected:[Span;LITERAL_PAGE_LEN]=std::array::from_fn(|index|{
+            if index==15 { start+=1024; }
+            let width=match index {14=>31,15=>32,17=>MAX_WIDTH+1,_=>1};
+            let span=Span::new(start,start+width);
+            start=span.end+1;
+            page.push((span,literal.clone()),&healthy).unwrap();
+            span
+        });
+        let old=used.load(Ordering::Acquire);
+        let old_geometry=page.span_credit.bytes()+page.wide_credit.as_ref().unwrap().bytes();
+        let no_room=crate::SettingAdmission::new(&used,old,&||Ok(()));
+        page.settle_spans_using(&no_room).unwrap();
+        assert!(page.short_spans.is_none());
+        assert_eq!(used.load(Ordering::Acquire),old);
+        let polls=std::cell::Cell::new(0);
+        let checkpoint=||{
+            polls.set(polls.get()+1);
+            if polls.get()==2 {Err(io::Error::from_raw_os_error(1450))} else {Ok(())}
+        };
+        let interrupted=crate::SettingAdmission::new(&used,1<<20,&checkpoint);
+        assert_eq!(page.settle_spans_using(&interrupted).unwrap_err().raw_os_error(),Some(1450));
+        assert!(page.short_spans.is_none());
+        assert_eq!(used.load(Ordering::Acquire),old);
+        page.settle_spans_using(&healthy).unwrap();
+        let short=page.short_spans.as_ref().unwrap();
+        assert_eq!(short.cells[14] & SHORT_ESCAPE,0);
+        assert_eq!(short.cells[15] & (SHORT_ESCAPE|SHORT_WIDE),SHORT_ESCAPE);
+        assert_eq!(short.cells[16] >> SHORT_WIDTH_BITS,0,"next group starts from its own base");
+        assert_eq!(short.cells[17] & (SHORT_ESCAPE|SHORT_WIDE),SHORT_ESCAPE|SHORT_WIDE);
+        assert_eq!(used.load(Ordering::Acquire),old-old_geometry+page.span_credit.bytes());
+        for (index,span) in expected.into_iter().enumerate() {
+            let (actual,view)=page.get(index).unwrap();
+            assert_eq!(actual,span);
+            assert!(view.same_owner(&literal));
+            assert_eq!(view.raw().unwrap().as_ptr(),raw);
+        }
+        assert!(page.get(LITERAL_PAGE_LEN).is_none());
+        let detached=page.get(17).unwrap().1.detach_using(&healthy).unwrap();
+        drop((page,literal));
+        assert_eq!(detached.raw().as_ptr(),raw);
+        drop(detached);
+        assert_eq!(used.load(Ordering::Acquire),fixed);
+    }
 
     #[test]
     fn compact_literal_page_keeps_exact_data_on_denial_first_error_and_detach() {
