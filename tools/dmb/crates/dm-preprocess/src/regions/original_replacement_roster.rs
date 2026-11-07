@@ -62,13 +62,46 @@ impl PhysicalToken{
  }
 }
 
-pub(super) enum Replacement{Exact(Vec<Token<'static>>),Physical(Vec<PhysicalToken>)}
+enum MixedCell {
+    Physical(PhysicalToken),
+    Exact(u32),
+}
+
+pub(super) struct MixedReplacement {
+    cells: Vec<MixedCell>,
+    exact: Vec<Token<'static>>,
+    #[cfg(debug_assertions)]
+    previous_capacity_bytes: usize,
+}
+
+impl MixedReplacement {
+    fn bytes(rows: usize, exact: usize) -> io::Result<usize> {
+        rows.checked_mul(size_of::<MixedCell>())
+            .and_then(|cells| cells.checked_add(exact.checked_mul(size_of::<Token<'static>>())?))
+            .and_then(|payload| payload.checked_add(size_of::<Self>()))
+            .ok_or_else(|| io::ErrorKind::OutOfMemory.into())
+    }
+}
+
+pub(super) enum Replacement {
+    Exact(Vec<Token<'static>>),
+    Physical(Vec<PhysicalToken>),
+    Mixed(Box<MixedReplacement>),
+}
 impl Replacement{
  pub(super) fn capture(rows:Rows<Token<'static>>,name:Option<&OriginalDefinitionName>,credit:&mut SettingRootLease,a:&SettingAdmission<'_>)->io::Result<Self>{
   let Some(name)=name.filter(|name|name.lexical_frame().is_some())else{return retain_product_rows(rows,credit,a).map(Self::Exact)};
   if rows.len()==0||!rows.is_admitted_by(a)||size_of::<PhysicalToken>()>=size_of::<Token<'static>>(){return retain_product_rows(rows,credit,a).map(Self::Exact)}
-  // Prove eligibility for the entire roster before reserving any overlap.
-  for token in rows.as_slice(){original_poll(a)?;if PhysicalToken::encode(token,name).is_none(){return retain_product_rows(rows,credit,a).map(Self::Exact)}}
+  // Classify the actual issued rows before reserving overlap. A single
+  // independently owned string or uncommon token need only stay wide itself.
+  let mut physical = 0;
+  for token in rows.as_slice() {
+      original_poll(a)?;
+      physical += usize::from(PhysicalToken::encode(token, name).is_some());
+  }
+  if physical != rows.len() {
+      return Self::capture_mixed(rows, physical, name, credit, a);
+  }
   let bytes=rows.len().checked_mul(size_of::<PhysicalToken>()).ok_or(io::ErrorKind::OutOfMemory)?;
   // Keep the actual original rows funded through the compact allocation.
   a.grow(credit,bytes).map_err(|error|a.take_operational_error().unwrap_or(error))?;
@@ -80,11 +113,90 @@ impl Replacement{
   drop(rows);
   Ok(Self::Physical(packed))
  }
- pub(super) fn len(&self)->usize{match self{Self::Exact(rows)=>rows.len(),Self::Physical(packed)=>packed.len()}}
- pub(super) fn visit_allocation(&self,mut visit:impl FnMut(usize,usize)){
-  match self{Self::Exact(rows)=>visit_product_rows(rows,&mut visit),Self::Physical(packed)=>visit_product_rows(packed,&mut visit)}
+ fn capture_mixed(
+     rows: Rows<Token<'static>>,
+     physical: usize,
+     name: &OriginalDefinitionName,
+     credit: &mut SettingRootLease,
+     a: &SettingAdmission<'_>,
+ ) -> io::Result<Self> {
+     let exact_count = rows.len() - physical;
+     // Keep short mixed definitions in one allocation.
+     if physical < 4 || u32::try_from(exact_count).is_err() {
+         return retain_product_rows(rows, credit, a).map(Self::Exact);
+     }
+     let before = rows.capacity().checked_mul(size_of::<Token<'static>>())
+         .ok_or(io::ErrorKind::OutOfMemory)?;
+     let after = MixedReplacement::bytes(rows.len(), exact_count)?;
+     if after >= before {
+         return retain_product_rows(rows, credit, a).map(Self::Exact);
+     }
+     let Some(mut staging) = a.try_reserve_optimization(after)
+         .map_err(|error| a.take_operational_error().unwrap_or(error))? else {
+         return retain_product_rows(rows, credit, a).map(Self::Exact);
+     };
+     let mut cells = empty_exact(rows.len(), a)?;
+     let mut exact = empty_exact(exact_count, a)?;
+     let mut holder = empty_exact::<MixedReplacement>(1, a)?;
+     a.absorb(credit, &mut staging)?;
+     let (tokens, prior) = rows.into_parts();
+     for token in tokens {
+         if let Some(physical) = PhysicalToken::encode(&token, name) {
+             cells.push(MixedCell::Physical(physical));
+         } else {
+             if exact.len() == exact_count {
+                 return Err(io::ErrorKind::InvalidData.into());
+             }
+             cells.push(MixedCell::Exact(exact.len() as u32));
+             exact.push(token);
+         }
+     }
+     // The old Vec's consuming iterator has physically freed its allocation.
+     drop(prior);
+     holder.push(MixedReplacement {
+         cells, exact,
+         #[cfg(debug_assertions)]
+         previous_capacity_bytes: before,
+     });
+     let pointer = holder.as_mut_ptr();
+     std::mem::forget(holder);
+     // SAFETY: exact one-element Global layout was funded before allocation.
+     // The element is initialized once and Box uses its identical drop layout.
+     Ok(Self::Mixed(unsafe { Box::from_raw(pointer) }))
  }
- pub(super) fn wide(&self)->&[Token<'static>]{match self{Self::Exact(rows)=>rows.as_slice(),Self::Physical(_)=>&[]}}
+
+ pub(super) fn len(&self) -> usize {
+     match self {
+         Self::Exact(rows) => rows.len(),
+         Self::Physical(packed) => packed.len(),
+         Self::Mixed(mixed) => mixed.cells.len(),
+     }
+ }
+
+ #[cfg(debug_assertions)]
+ pub(super) fn mixed_capacity_change(&self) -> Option<(usize, usize)> {
+     let Self::Mixed(mixed) = self else { return None };
+     Some((mixed.previous_capacity_bytes,
+         MixedReplacement::bytes(mixed.cells.capacity(), mixed.exact.capacity()).expect("funded mixed roster")))
+ }
+ pub(super) fn visit_allocation(&self,mut visit:impl FnMut(usize,usize)){
+  match self {
+      Self::Exact(rows) => visit_product_rows(rows, &mut visit),
+      Self::Physical(packed) => visit_product_rows(packed, &mut visit),
+      Self::Mixed(mixed) => {
+          visit(mixed.as_ref() as *const MixedReplacement as usize, size_of::<MixedReplacement>());
+          visit_product_rows(&mixed.cells, &mut visit);
+          visit_product_rows(&mixed.exact, &mut visit);
+      }
+  }
+ }
+ pub(super) fn wide(&self) -> &[Token<'static>] {
+     match self {
+         Self::Exact(rows) => rows,
+         Self::Physical(_) => &[],
+         Self::Mixed(mixed) => &mixed.exact,
+     }
+ }
  #[cfg(test)]
  pub(super) fn is_compact(&self)->bool{matches!(self,Self::Physical(_))}
  pub(super) fn duplicate_using(&self,name:Option<&OriginalDefinitionName>,a:&SettingAdmission<'_>)->io::Result<Rows<Token<'static>>>{
@@ -94,6 +206,18 @@ impl Replacement{
    Self::Physical(packed)=>{
     let name=name.ok_or(io::ErrorKind::InvalidData)?;
     for token in packed{original_poll(a)?;original_poll(a)?;result.push(token.decode(name)?,a)?;}
+   }
+   Self::Mixed(mixed) => {
+       let name = name.ok_or(io::ErrorKind::InvalidData)?;
+       for cell in &mixed.cells {
+           original_poll(a)?;
+           let token = match cell {
+               MixedCell::Physical(token) => token.decode(name)?,
+               MixedCell::Exact(index) => mixed.exact.get(*index as usize)
+                   .ok_or(io::ErrorKind::InvalidData)?.duplicate(a)?,
+           };
+           result.push(token, a)?;
+       }
    }
   }
   Ok(result)
@@ -212,7 +336,48 @@ mod punctuation_storage_tests {
         assert_eq!(wide.wide().as_ptr(), original);
         assert!(matches!(wide.wide()[0].value, Value::Punct(":")));
         assert!(matches!(wide.wide()[1].value, Value::Punct(":::")));
-        drop((wide, credit, name, frame, lease));
+        drop((wide, credit));
+
+        let mixed_rows = || {
+            let mut rows = Rows::new(&healthy).unwrap();
+            for _ in 0..4 {
+                rows.push_definition_row(make(":").pop().unwrap(), &healthy).unwrap();
+            }
+            rows.push_definition_row(make(":::").pop().unwrap(), &healthy).unwrap();
+            rows
+        };
+        let pending = mixed_rows();
+        let original_bytes = pending.capacity() * size_of::<Token<'static>>();
+        let replacement_bytes = MixedReplacement::bytes(5, 1).unwrap();
+        let mut credit = healthy.reserve(0).unwrap();
+        let under = SettingAdmission::new(
+            &used, used.load(Ordering::Acquire) + replacement_bytes - 1, &|| Ok(()),
+        );
+        let fallback = Replacement::capture(pending, Some(&name), &mut credit, &under).unwrap();
+        assert!(matches!(&fallback, Replacement::Exact(_)));
+        assert_eq!(credit.bytes(), original_bytes);
+        drop((fallback, credit));
+
+        let mut credit = healthy.reserve(0).unwrap();
+        let pending = mixed_rows();
+        let full = SettingAdmission::new(
+            &used, used.load(Ordering::Acquire) + replacement_bytes, &|| Ok(()),
+        );
+        let mixed = Replacement::capture(pending, Some(&name), &mut credit, &full).unwrap();
+        assert!(matches!(&mixed, Replacement::Mixed(_)));
+        assert_eq!(credit.bytes(), replacement_bytes);
+        assert_eq!(mixed.wide().len(), 1);
+        let copied = mixed.duplicate_using(Some(&name), &healthy).unwrap();
+        assert_eq!(copied.len(), 5);
+        for token in &copied.as_slice()[..4] {
+            assert!(matches!(token.value, Value::Punct(":")));
+            assert_eq!(token.origin, origin);
+            assert!(token.lexical_frame.as_ref().unwrap().same_frame(&frame));
+        }
+        assert!(matches!(copied.as_slice()[4].value, Value::Punct(":::")));
+        drop((copied, mixed, credit));
+
+        drop((name, frame, lease));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

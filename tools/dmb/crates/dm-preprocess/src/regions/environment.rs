@@ -170,6 +170,8 @@ pub(super) struct OriginalProductCensus {
  exclusive_products:usize,
  exclusive_wrapper_reserved:usize,
  exclusive_replacement_capacity:usize,
+ mixed_replacement_old_bytes:usize,
+ mixed_replacement_retained_bytes:usize,
  exclusive_parameter_row_capacity:usize,
  exclusive_doc_row_capacity:usize,
  exclusive_wide_name_row_capacity:usize,
@@ -229,6 +231,10 @@ impl OriginalProductCensus {
    add(&mut self.exclusive_products,1);
    add(&mut self.exclusive_wrapper_reserved,wrapper);
    add(&mut self.exclusive_replacement_capacity,replacement);
+   if let Some((old, retained)) = product.definition.replacement.mixed_capacity_change() {
+    add(&mut self.mixed_replacement_old_bytes, old);
+    add(&mut self.mixed_replacement_retained_bytes, retained);
+   }
    add(&mut self.exclusive_parameter_row_capacity,params);
    add(&mut self.exclusive_doc_row_capacity,docs);
    add(&mut self.exclusive_wide_name_row_capacity,wide_name);
