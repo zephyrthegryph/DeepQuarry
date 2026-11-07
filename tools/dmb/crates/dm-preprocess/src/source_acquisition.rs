@@ -89,7 +89,21 @@ impl SourceAcquisitionLease {
     /// SAME raw acquisition constructor after its one admitted decoder emitted
     /// text; private receipt remains the sole native issuer authorization.
     pub fn from_raw_original_decoded<T:Any+Send+Sync>(text:String,encoding:SourceEncoding,receipt:T)->Self{
-        Self(Arc::new(Binding{original:Arc::new(Original{source:text.into(),encoding}),receipt:Arc::new(receipt)}))
+        Self::from_raw_original_decoded_with_candidate(text,encoding,receipt,None)
+    }
+    /// Optional DATA-only reuse after an actual admitted read. Equal bytes
+    /// can share storage, while every call allocates a fresh original binding
+    /// and keeps the caller's newly issued private receipt. Never grants a
+    /// prepared lexical owner, a read receipt, or exceptional raw bytes.
+    #[doc(hidden)]
+    pub fn from_raw_original_decoded_with_candidate<T:Any+Send+Sync>(
+        text:String,encoding:SourceEncoding,receipt:T,candidate:Option<&SourceText>,
+    )->Self{
+        let source=match candidate{
+            Some(prior) if encoding==SourceEncoding::Utf8&&prior.can_reuse_for_exact_raw_utf8(&text)=>prior.clone(),
+            _=>text.into(),
+        };
+        Self(Arc::new(Binding{original:Arc::new(Original{source,encoding}),receipt:Arc::new(receipt)}))
     }
     /// Issue resource-only weak views over the THREE actual constructor
     /// allocations. Sharing/reissuance preserves real Original addresses and

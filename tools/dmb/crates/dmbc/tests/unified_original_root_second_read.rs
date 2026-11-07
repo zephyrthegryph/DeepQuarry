@@ -43,3 +43,154 @@ fn has_root<T>(rows:&BTreeMap<PathBuf,T>)->bool{rows.keys().any(|p|p.file_name()
   let facts:Facts=serde_json::from_str(&serde_json::to_string(&replayed.snapshot().unwrap()).unwrap()).unwrap();assert!(has_root(&facts.files));assert!(has_root(&facts.opened_reads));assert_eq!(has_root(&facts.original_payloads),!deleted);
  }
 }
+
+// Exercise the production recorder and QueryDb settlement, with an exact
+// pre-scan allocation so backing reuse is eligible regardless of read_to_end
+// spare capacity on this Rust standard library or filesystem.
+struct PreparedRead {
+    opens: AtomicUsize,
+    extra_capacity: usize,
+}
+impl SnapshotProvider for PreparedRead {
+    fn stamp(&self, path: &Path) -> io::Result<Stamp> { FileSystemInputs.stamp(path) }
+    fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
+        let (stamp, bytes) = FileSystemInputs.read(path)?;
+        let bytes = bytes.into_boxed_slice().into_vec();
+        if self.extra_capacity == 0 { return Ok((stamp, bytes)); }
+        let mut spare = Vec::with_capacity(bytes.len() + self.extra_capacity);
+        spare.extend_from_slice(&bytes);
+        Ok((stamp, spare))
+    }
+    fn list(&self, path: &Path) -> io::Result<FolderListing> { FileSystemInputs.list(path) }
+    fn read_original_open_admitted(
+        &self, path: &Path, limit: usize, work: &dyn SourceArenaWork,
+        opened: &mut dyn FnMut() -> io::Result<Decision>,
+        before: &mut dyn FnMut(usize) -> io::Result<()>,
+    ) -> io::Result<OriginalOpenedRead> {
+        self.opens.fetch_add(1, Ordering::Relaxed);
+        FileSystemInputs.read_original_open_admitted(path, limit, work, opened, before)
+    }
+}
+
+fn prescanned(provider: &PreparedRead) -> RecordingInputs<&PreparedRead> {
+    RecordingInputs::new(provider, 0)
+        .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290)
+        .with_prepared_sources(Some(std::sync::Arc::new(dmbc::input_snapshot::PreparedInputArtifacts::default())))
+}
+
+#[test]
+fn exact_open_shares_only_equal_admitted_utf8_storage_and_keeps_a_new_receipt() {
+    let root = scratch::dir("public-original-prepared-backing");
+    for extra_capacity in [0, 4096] {
+        let path = root.join(format!("probe-{extra_capacity}.dm"));
+        let bytes = format!("/datum/exact_prepared_backing_{extra_capacity}\n");
+        std::fs::write(&path, bytes.as_bytes()).unwrap();
+        let path = dm_preprocess::regions::canonical_path(&path);
+        let provider = PreparedRead { opens: AtomicUsize::new(0), extra_capacity };
+        let input = prescanned(&provider);
+        let prepared = input.prepared_source(&path).unwrap();
+        let old = input.source_acquisition(&path, prepared.original()).unwrap();
+        let host = BuildHost::default();
+        let read = || {
+            let Outcome::Acquired(lease) = read_original_source_open_using(
+                &input, &path, 1<<20, host.source_arena_work(), &mut || Ok(Decision::Read),
+            ).unwrap() else { panic!("actual exact read"); };
+            lease
+        };
+        let lease = read();
+        let again = read();
+        assert_eq!(provider.opens.load(Ordering::Relaxed), 2);
+        assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(), bytes.as_bytes());
+        assert_eq!(lease.source_text().same_view(prepared.original()), extra_capacity == 0);
+        assert_eq!(again.source_text().same_view(prepared.original()), extra_capacity == 0);
+        assert!(!lease.same_binding(old.lease()));
+        assert!(!lease.same_original_acquisition(old.lease()));
+        assert!(!lease.same_binding(&again));
+        assert!(!lease.same_original_acquisition(&again));
+    }
+}
+
+#[test]
+fn exact_open_rejects_prepared_backing_when_bytes_change_at_the_same_stamp() {
+    use std::fs::{File, FileTimes};
+
+    let root = scratch::dir("public-original-prepared-same-stamp");
+    let path = root.join("changed.dm");
+    let before = b"/datum/prepared_backing_before_a\n";
+    let after = b"/datum/prepared_backing_before_b\n";
+    std::fs::write(&path, before).unwrap();
+    let path = dm_preprocess::regions::canonical_path(&path);
+    let provider = PreparedRead { opens: AtomicUsize::new(0), extra_capacity: 0 };
+    let input = prescanned(&provider);
+    let prepared = input.prepared_source(&path).unwrap();
+    let stamp = provider.stamp(&path).unwrap();
+    let modified = std::fs::metadata(&path).unwrap().modified().unwrap();
+    std::fs::write(&path, after).unwrap();
+    File::options().write(true).open(&path).unwrap()
+        .set_times(FileTimes::new().set_modified(modified)).unwrap();
+    assert_eq!(provider.stamp(&path).unwrap(), stamp, "same actual file, size and timestamp");
+
+    let host = BuildHost::default();
+    let Outcome::Acquired(lease) = read_original_source_open_using(
+        &input, &path, 1<<20, host.source_arena_work(), &mut || Ok(Decision::Read),
+    ).unwrap() else { panic!("actual exact read"); };
+    assert_eq!(provider.opens.load(Ordering::Relaxed), 1);
+    assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(), after);
+    assert_eq!(prepared.original().as_bytes(), before);
+    assert!(!lease.source_text().same_view(prepared.original()));
+}
+
+#[test]
+fn prepared_backing_cannot_replace_exceptional_raw_bytes_or_real_open_disposition() {
+    let root = scratch::dir("public-original-prepared-exceptional");
+    let provider = PreparedRead { opens: AtomicUsize::new(0), extra_capacity: 0 };
+    let host = BuildHost::default();
+    for (name, bytes, encoding) in [
+        ("bom.dm", &b"\xef\xbb\xbf/datum/prepared_bom\n"[..], dm_preprocess::SourceEncoding::Utf8Bom),
+        ("latin.dm", &b"/datum/prepared_latin // \xe9\n"[..], dm_preprocess::SourceEncoding::IncompatibleOriginal),
+    ] {
+        let path = root.join(name);
+        std::fs::write(&path, bytes).unwrap();
+        let path = dm_preprocess::regions::canonical_path(&path);
+        let input = prescanned(&provider);
+        let prepared = input.prepared_source(&path).unwrap();
+        let Outcome::Acquired(lease) = read_original_source_open_using(
+            &input, &path, 1<<20, host.source_arena_work(), &mut || Ok(Decision::Read),
+        ).unwrap() else { panic!("actual exact read"); };
+        assert_eq!(lease.encoding(), encoding);
+        assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(), bytes);
+        assert!(!lease.source_text().same_view(prepared.original()));
+    }
+
+    let path = root.join("suppressed.dm");
+    std::fs::write(&path, b"/datum/prepared_suppressed_backing\n").unwrap();
+    let path = dm_preprocess::regions::canonical_path(&path);
+    let input = prescanned(&provider);
+    let _prepared = input.prepared_source(&path).unwrap();
+    let outcome = read_original_source_open_using(
+        &input, &path, 1<<20, host.source_arena_work(), &mut || Ok(Decision::Suppress),
+    ).unwrap();
+    assert!(matches!(outcome, Outcome::Suppressed));
+    let facts: Facts = serde_json::from_str(&serde_json::to_string(&input.snapshot().unwrap()).unwrap()).unwrap();
+    assert!(facts.opened_reads.contains_key(&path));
+    assert!(facts.original_payloads.is_empty());
+
+    let missing = prescanned(&provider);
+    // Repeat with a live prepared candidate on the same recorder that opens
+    // the now missing path, without converting its prior ordinary fact.
+    let alias = root.join("missing-after-prescan.dm");
+    std::fs::write(&alias, b"/datum/prepared_disappeared_backing\n").unwrap();
+    let alias = dm_preprocess::regions::canonical_path(&alias);
+    let _old = missing.prepared_source(&alias).unwrap();
+    std::fs::remove_file(&alias).unwrap();
+    let outcome = read_original_source_open_using(
+        &missing, &alias, 1<<20, host.source_arena_work(), &mut || panic!("failed actual open must precede suppression"),
+    ).unwrap();
+    let Outcome::SourceOpenFailed(error) = outcome else { panic!("prepared bytes cannot authorize a failed open"); };
+    assert_eq!(error.kind(), io::ErrorKind::NotFound);
+    let facts: Facts = serde_json::from_str(&serde_json::to_string(&missing.snapshot().unwrap()).unwrap()).unwrap();
+    assert!(facts.files.contains_key(&alias));
+    assert!(facts.opened_reads.contains_key(&alias));
+    assert!(facts.original_payloads.is_empty());
+    assert_eq!(provider.opens.load(Ordering::Relaxed), 4);
+}

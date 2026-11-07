@@ -199,13 +199,30 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             let _=actual_path; // raw bytes remain on this actual receipt; no legacy cache alias
             source
         }else{
-            // The ordinary path must move its raw allocation (see wrapper below).
-            dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded(decoded,encoding,receipt)
+            // The actual opened read and its full raw allocation have already
+            // been admitted. Borrow prepared bytes only as a candidate, after
+            // all actual digest, encoding and before_decode checks.
+            let candidate=self.prepared_text_for_exact_open(actual_path);
+            dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded_with_candidate(
+                decoded,encoding,receipt,candidate.as_ref(),
+            )
         };
         acquired(&source)?;
         let actual_path=&source.receipt::<RecordedSourceReceipt>().expect("same private receipt").path;
         if !self.validate_recorded_source_lease(actual_path,&source){return Err(invalid("actual raw read acquisition issuer/path/facts differ"))}
         Ok(source)
+    }
+    fn prepared_text_for_exact_open(&self,path:&Path)->Option<SourceText>{
+        let ordinary=self.source_acquisitions.lock().ok()?;
+        let candidate=ordinary.get(path)?;
+        let receipt=candidate.receipt::<RecordedSourceReceipt>()?;
+        // No canonicalization, filesystem metadata, old content digest,
+        // prepared artifact validation, or previous proof enters this loan.
+        (!receipt.exact_open
+            && receipt.path.as_os_str().as_encoded_bytes()==path.as_os_str().as_encoded_bytes()
+            && Arc::ptr_eq(&receipt.issuer,&self.source_issuer)
+            && candidate.encoding()==dm_preprocess::SourceEncoding::Utf8)
+            .then(||candidate.lease().source_text().clone())
     }
     /// Borrow the actual recorded original, never a decoded-text reencoding.
     /// This authenticates current byte input only, not logical/token EOF.

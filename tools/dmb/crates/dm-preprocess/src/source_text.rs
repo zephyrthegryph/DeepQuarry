@@ -209,6 +209,28 @@ impl SourceText {
         self.backing.fingerprints.get_or_init(Default::default)
             .lock().unwrap_or_else(|poison| poison.into_inner()).frozen = true;
     }
+    /// Only an ordinary full UTF-8 backing within the actual raw grant may
+    /// replace a freshly read String. Compare the bytes before freezing its
+    /// optional span cache. The ledger will observe this same stable capacity.
+    pub(crate) fn can_reuse_for_exact_raw_utf8(&self, fresh: &String) -> bool {
+        let TextBacking::Transformed(prior) = &self.backing.text else { return false; };
+        if self._source_arena_control.is_some() || self.backing._source_arena_payload.is_some()
+            || self.range != (0..prior.len()) || prior.capacity() > fresh.capacity()
+            || prior.as_bytes() != fresh.as_bytes()
+        {
+            return false;
+        }
+        let mut fingerprints = self.backing.fingerprints.get_or_init(Default::default)
+            .lock().unwrap_or_else(|poison| poison.into_inner());
+        let capacity = fingerprints.entries.capacity()
+            .checked_mul(std::mem::size_of::<SpanFingerprint>())
+            .and_then(|bytes| bytes.checked_add(prior.capacity()));
+        if capacity.is_none_or(|bytes| bytes > fresh.capacity()) {
+            return false;
+        }
+        fingerprints.frozen = true;
+        true
+    }
     /// Borrow memo storage for pointer-deduplicated retained-owner accounting.
     pub fn visit_fingerprint_storage(&self, visitor: impl FnOnce(usize, usize, usize)) {
         if let Some(cache) = self.backing.fingerprints.get() {
