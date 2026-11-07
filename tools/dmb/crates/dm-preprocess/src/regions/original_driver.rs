@@ -206,7 +206,15 @@ impl RawSourceDriver{
  pub(super) fn trace_macro_reservations(&self) -> (usize, usize, usize) {
   self.environment.trace_reservations()
  }
- pub(super) fn into_final_environment_using(mut self,a:&SettingAdmission<'_>)->io::Result<super::environment::OriginalFinalMacros>{self.check(a)?;let Self{environment,..}=self;environment.into_final_macros_using(a)}
+ pub(super) fn into_final_environment_using(mut self,a:&SettingAdmission<'_>)->io::Result<super::environment::OriginalFinalMacros>{
+  self.check(a)?;
+  let Self { environment, inputs, pump, queue, conditionals, held, indent, delivery, env_file, credit, .. } = self;
+  // The actual producer has finished (or reached its authored stop). The
+  // caller captured final history before this consuming handoff. No raw
+  // geometry, line index or token queue is needed by the final macro roster.
+  drop((inputs, pump, queue, conditionals, held, indent, delivery, env_file, credit));
+  environment.into_final_macros_using(a)
+ }
  pub(super) fn environment(&self)->&OriginalEnvironment{&self.environment}
  pub(super) fn environment_mut(&mut self)->&mut OriginalEnvironment{&mut self.environment}
 
@@ -244,6 +252,30 @@ impl RawSourceDriver{
   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,16<<20,&||Ok(()));let text=format!("var/a=1\n{}var/b=2\n","\n".repeat(12000));let file=File::new(&text);let mut driver=driver(&a);driver.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut output=Vec::new();
   loop{match driver.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(){DriverEvent::Token(token)=>output.push(rendered(token)),DriverEvent::ActualEnd=>break,DriverEvent::NeedInput=>continue,_=>panic!("unexpected valid raw stream event")}}
   assert_eq!(output,["var","/","a","=","1",";","var","/","b","=","2",";"]);assert_eq!((notices.lexical,notices.numeric),(0,0));drop((driver,host));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]fn final_macro_roster_reclaims_exhausted_driver_before_allocating(){
+  let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let used=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+  let a=SettingAdmission::new(&used,16<<20,&||Ok(()));
+  let text=format!("var/a=1\n{}var/b=2\n","\n".repeat(12000));
+  let file=File::new(&text);
+  let mut source=driver(&a);
+  source.push_opened(&file,file.lease.clone(),0,&a).unwrap();
+  let mut host=Host::new(&a);
+  let mut notices=Notices{lexical:0,numeric:0};
+  loop{match source.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(){
+   DriverEvent::Token(_)|DriverEvent::NeedInput=>(),
+   DriverEvent::ActualEnd=>break,
+   _=>panic!("expected actual end"),
+  }}
+  drop(host);
+  let before=used.load(Ordering::Acquire);
+  let tight=SettingAdmission::new(&used,before,&||Ok(()));
+  let macros=source.into_final_environment_using(&tight).unwrap();
+  assert!(macros.get("TRUE").is_some());
+  assert!(used.load(Ordering::Acquire)<before);
+  drop(macros);
+  assert_eq!(used.load(Ordering::Acquire),fixed);
  }
  #[test]fn genuine_lazy_stop_never_reads_later_bad_quote_or_publishes_source_end(){
   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,16<<20,&||Ok(()));let file=File::new("var/a=1\n\"unterminated");let mut driver=driver(&a);driver.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let DriverEvent::Token(token)=driver.next_logical_using(&file,&mut notices,&mut host,&a).unwrap()else{panic!("real first token")};assert_eq!(rendered(token),"var");assert!(!driver.raw_end);assert_eq!(notices.lexical,0);driver.stop();assert!(matches!(driver.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(),DriverEvent::Stopped));assert!(!driver.raw_end);assert_eq!(notices.lexical,0);drop((driver,host));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
