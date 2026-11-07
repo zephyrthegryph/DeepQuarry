@@ -2779,6 +2779,7 @@
 #include "code\engine\parts\answers.dm"
 #include "code\engine\parts\compatibility.dm"
 #include "code\engine\parts\cond.dm"
+#include "code\engine\parts\dispatch.dm"
 #include "code\engine\parts\explain.dm"
 #include "code\engine\parts\graph_ops.dm"
 #include "code\engine\parts\input_adapter.dm"

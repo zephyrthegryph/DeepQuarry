@@ -391,6 +391,7 @@
 #include "dq_materialize_batch_tests.dm"
 #include "dq_own_field_memo_tests.dm"
 #include "dq_op_index_inherit_tests.dm"
+#include "dq_op_compiled_tests.dm"
 #include "dq_map_load_job_tests.dm"
 #include "dq_firstload_tests.dm"
 #include "dq_firstload_place_tests.dm"

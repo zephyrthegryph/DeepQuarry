@@ -110,6 +110,26 @@
 	metric("ap_item_drop_us", item_ops ? drop_ms * 1000 / item_ops : 0, "us")
 	count_metric("ap_item_toggles_switched", toggled, "toggles", "none")
 	active_play_op_count_metrics("ap_items", op_counts, item_ops)
+	// The same toggles through the collection as it was before the compiled dispatch (GLOB.op_resolver_legacy), in the same world: the A/B.
+	var/legacy_ms = 0
+	var/legacy_ops = 0
+	GLOB.op_resolver_legacy = TRUE
+	for(var/n in 1 to param("item_rounds", 10))
+		for(var/i in 1 to length(crew))
+			var/mob/living/carbon/human/H = crew[i]
+			var/obj/item/flashlight/F = lights[i]
+			if(F.loc != H.loc)
+				F.forceMove(H.loc)
+			H.put_in_hands(F)
+			var/stamp = TICK_USAGE_REAL
+			F.attack_self(H)
+			F.attack_self(H)
+			legacy_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+			legacy_ops += 2
+			H.drop_from_inventory(F, H.loc)
+		stoplag()
+	GLOB.op_resolver_legacy = FALSE
+	metric("ap_item_toggle_legacy_us", legacy_ops ? legacy_ms * 1000 / legacy_ops : 0, "us")
 	for(var/obj/item/flashlight/F as anything in lights)
 		qdel(F)
 
@@ -188,6 +208,24 @@
 	metric("ap_melee_us_per_hit", hits ? hit_ms * 1000 / hits : 0, "us")
 	detail("ap_melee_outcomes", outcomes)
 	active_play_op_count_metrics("ap_melee", op_counts, hits)
+	var/legacy_hits = 0
+	var/legacy_hit_ms = 0
+	GLOB.op_resolver_legacy = TRUE
+	for(var/n in 1 to param("hit_rounds", 6))
+		for(var/i in 1 to length(crew) step 2)
+			var/mob/living/carbon/human/A = crew[i]
+			var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+			var/obj/item/T = A.get_active_hand()
+			if(!T || A == B)
+				continue
+			STATE_SET(A, cooldowns, next_click, 0)
+			var/stamp = TICK_USAGE_REAL
+			op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK)
+			legacy_hit_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+			legacy_hits++
+		stoplag()
+	GLOB.op_resolver_legacy = FALSE
+	metric("ap_melee_legacy_us_per_hit", legacy_hits ? legacy_hit_ms * 1000 / legacy_hits : 0, "us")
 
 	// Menu read: the right-click menu of a crewmate (what the interaction menu's window data computes), with the menu cache cold (a state
 	// change of the target since the last read) and warm (read again at once).
@@ -221,6 +259,23 @@
 	count_metric("ap_menu_rows", menu_reads ? menu_rows / menu_reads : 0, "rows", "none")
 	count_metric("ap_menu_builds", GLOB.op_menu_builds - builds_before, "builds")
 	active_play_op_count_metrics("ap_menu", op_counts, menu_reads)
+	var/legacy_reads = 0
+	var/legacy_menu_ms = 0
+	GLOB.op_resolver_legacy = TRUE
+	for(var/n in 1 to param("menu_rounds", 5))
+		for(var/i in 1 to length(crew) step 2)
+			var/mob/living/carbon/human/A = crew[i]
+			var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+			if(A == B)
+				continue
+			op_changed(B)
+			var/stamp = TICK_USAGE_REAL
+			interaction_menu_data(A, B)
+			legacy_menu_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+			legacy_reads++
+		stoplag()
+	GLOB.op_resolver_legacy = FALSE
+	metric("ap_menu_cold_legacy_us", legacy_reads ? legacy_menu_ms * 1000 / legacy_reads : 0, "us")
 	for(var/obj/item/T as anything in boxes)
 		qdel(T)
 
