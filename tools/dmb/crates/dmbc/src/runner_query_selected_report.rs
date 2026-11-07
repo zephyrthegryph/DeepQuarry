@@ -29,7 +29,7 @@ impl SelectedReportPlan {
     fn for_roster(roster: Roster, judgment: JudgmentV2, control: &mut Operation<'_>) -> io::Result<Self> {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
-            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads],
+            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive],
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
         let mut count = 0;
@@ -249,6 +249,19 @@ impl ReportStage<'_> {
                 }
                 post_judge = data.post_judge_message();
             }
+            UnionRows::SysReactive(data) => {
+                if self.selected != Roster::WithSysReactive.names()
+                    || !std::ptr::eq(meta, dq_analyze::sys_reactive_policy::metadata())
+                    || !matches!(meta.policy, Policy::Hard)
+                    || data.sites().len() != data.source_text().len()
+                {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData,
+                        "selected Sys reactive findings differ from their actual Hard source shape"));
+                }
+                for (site, text) in data.sites().iter().zip(data.source_text()) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
+            }
             UnionRows::Untyped(data) => {
                 if self.selected != Roster::WithUntyped.names() || !std::ptr::eq(meta, data.metadata())
                     || !std::ptr::eq(meta, dq_analyze::untyped_policy_metadata::metadata())
@@ -422,6 +435,7 @@ mod selected_plan_tests {
             (Roster::WithReactivePolicies, Q::SELECTED_REACTIVE),
             (Roster::WithUntyped, &[Q::Untyped]),
             (Roster::WithDerivedReads, &[Q::DerivedReads]),
+            (Roster::WithSysReactive, &[Q::SysReactive]),
         ];
         for (roster, questions) in expected {
             let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))

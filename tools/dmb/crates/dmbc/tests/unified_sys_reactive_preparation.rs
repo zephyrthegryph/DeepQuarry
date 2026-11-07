@@ -3,6 +3,7 @@
 //! No daemon, game world, GUI, alternate parser or visibility widening.
 #[path="../../../shared/test_scratch.rs"]mod scratch;
 #[path="../../../../analyze/fixtures/report_configuration.rs"]mod report_configuration;
+#[path="../../../../analyze/fixtures/native-sys-reactive/fixture.rs"]mod sys_reactive_fixture;
 use dmbc::{policy_request::{AnalysisContext,PolicyInputRequest,WorkspacePolicyRequest,WorkspaceAuxiliaryQuestion as Q},request::{BuildRequest,BuildOutcome,Command},runner_host::BuildHost};
 use std::path::{Path,PathBuf};
 fn put(root:&Path,relative:&str,bytes:impl AsRef<[u8]>){let path=root.join(relative);std::fs::create_dir_all(path.parent().unwrap()).unwrap();std::fs::write(path,bytes).unwrap();}
@@ -10,6 +11,49 @@ fn fixture(label:&str)->PathBuf{let root=scratch::dir(label);std::fs::create_dir
 fn request(root:&Path)->BuildRequest{let Command::Build(request)=dmbc::cli::parse(&["prepare-query".into(),root.join("deepquarry.dme").to_string_lossy().into_owned()]).unwrap()else{panic!("actual public PrepareQuery parser")};let mut request=*request;request.no_cache=true;request.exact_inputs=true;request.progress_enabled=false;request.workers=1;request.timeout_seconds=Some(60);request.engine_template=None;request.bootstrap_catalog=false;request.cache_root=Some(root.join("cache"));request.policy_inputs=Some(PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalAnalyze0290),workspace:Some(WorkspacePolicyRequest{root:root.to_owned(),recursive_roots:vec![root.join("code"),root.join("maps")],configuration:root.join("tools/ci/lint_scopes.toml")}),workspace_auxiliary:vec![Q::SysReactive],..Default::default()});request}
 #[derive(Debug,Eq,PartialEq)]struct Pins{semantic:String,source:String,policy:String}
 fn prepare(host:&mut BuildHost,request:&BuildRequest)->Pins{let outcome=dmbc::request_runner::run_build_with_host(request.clone(),host).unwrap();let BuildOutcome::QueryPrepared{semantic_revision,source_revision,policy_revision:Some(policy_revision),retained:true}=outcome else{panic!("actual Sys semantic model owner required; raw/empty substitute forbidden: {outcome:?}")};for value in [&semantic_revision,&source_revision,&policy_revision]{assert_eq!(value.len(),32);assert!(value.bytes().all(|byte|byte.is_ascii_hexdigit()));}assert!(host.declaration_retention_stats().is_some(),"semantic question needs genuine declaration owner");assert!(host.symbolic_retention_stats().is_none(),"PrepareQuery cannot silently lower executable code");assert!(!request.project.with_extension("dmb").exists());assert!(!request.project.with_extension("rsc").exists());Pins{semantic:semantic_revision,source:source_revision,policy:policy_revision}}
+#[test]
+fn selected_sys_reactive_reports_actual_map_sites_and_rechecks_scope() {
+    use dq_analyze::{captured_allow_annotations::{full_unused, Operation}, captured_generator_budget::Budget, selected_exclusions_wire::Roster};
+
+    let root = scratch::dir("public-selected-sys-reactive");
+    assert!(sys_reactive_fixture::CASES.contains(&"maps"));
+    for (relative, source) in sys_reactive_fixture::files("maps") {
+        put(&root, &relative, source);
+    }
+    let mut selected = request(&root);
+    selected.cache_root = Some(scratch::dir("public-selected-sys-cache"));
+    selected.policy_inputs.as_mut().unwrap().workspace_auxiliary.clear();
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !Roster::WithSysReactive.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let mut run = || {
+        let mut output = Vec::new();
+        let clean = host.write_original_exclusions_report(
+            selected.clone(), &exclusions, &mut Vec::new(), &mut output,
+        ).unwrap();
+        (clean, String::from_utf8(output).unwrap())
+    };
+    let (clean, cold) = run();
+    assert!(!clean);
+    for rule in ["dx_untracked_read", "dx_reactive_write", "dx_caps_instance_read", "dx_timed_write"] {
+        assert!(cold.contains(&format!("[sys/dx_reactive/{rule}]")), "{rule}: {cold}");
+    }
+    assert!(cold.contains("maps/probe.dm:"));
+    assert_eq!(run(), (clean, cold));
+
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(
+        "[lint.\"sys/dx_reactive\"]\nexempt_files=[\"maps/probe.dm\"]\n",
+    ));
+    let (clean, exempt) = run();
+    assert!(clean, "{exempt}");
+    assert!(!exempt.contains("maps/probe.dm:"));
+    assert!(exempt.contains("sys/dx_reactive: dx_untracked_read 0 OK"));
+}
+
 fn policy_or_source_changed(a:&Pins,b:&Pins){assert!(a.source!=b.source||a.policy!=b.policy,"actual raw discovery/configuration change must reissue public source/policy pins: {a:?}");}
 #[test]fn actual_public_sys_role_prepares_real_model_and_refuses_missing_analysis_context(){let root=fixture("public-sys-original-model");let request=request(&root);let mut host=BuildHost::default();let first=prepare(&mut host,&request);assert_eq!(prepare(&mut host,&request),first);let mut missing=request.clone();missing.policy_inputs.as_mut().unwrap().analysis_context=None;assert!(dmbc::request_runner::run_build_with_host(missing,&mut host).is_err(),"semantic role cannot become a context-free raw-only grant");prepare(&mut host,&request);}
 #[test]fn actual_public_sys_uncompiled_auto_and_config_observations_reissue_same_host(){let root=fixture("public-sys-full-source-revisions");let request=request(&root);let mut host=BuildHost::default();let first=prepare(&mut host,&request);put(&root,"code/uncompiled.dm","/datum/uncompiled_raw\n");let added=prepare(&mut host,&request);policy_or_source_changed(&first,&added);put(&root,"code/engine/_generated/auto_tracked.dm","// actual AUTO exists without explicit TRACKED entries\n");let auto=prepare(&mut host,&request);policy_or_source_changed(&added,&auto);std::fs::remove_file(root.join("code/engine/_generated/auto_tracked.dm")).unwrap();let removed=prepare(&mut host,&request);policy_or_source_changed(&auto,&removed);put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay("[lint.\"sys/dx_reactive\"]\nexempt_files=[\"code/probe.dm\"]\n"));let configured=prepare(&mut host,&request);assert_ne!(configured.policy,removed.policy);}
