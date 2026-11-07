@@ -14,14 +14,6 @@ use std::{io,collections::BTreeMap,mem};
 pub(super) enum LogicalToken{Actual(Token<'static>),Delimiter{spelling:&'static str,location:Option<Origin>}}
 pub(super) enum ConditionResult{Value(bool),DisabledAfterExpansion,SourceFailure(crate::macro_expansion::OriginalMacroText),SourceWarning(crate::macro_expansion::OriginalMacroText)}
 pub(super) struct ConditionEvaluation{pub(super) last_input:Origin,pub(super) outcome:ConditionResult,pub(super) failure_at:Option<Origin>}
-/// defined() is an ordinary lookup in the SAME current map. Unlike #ifdef,
-/// it never substitutes the nearest file's __MAIN__ special case.
-struct OriginalConditionLookup<'a>{environment:&'a super::environment::MacroEnvironment}
-impl crate::MacroLookup for OriginalConditionLookup<'_>{
- fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::OriginalChecker0290}
- fn get_key_value(&self,name:&str)->Option<(&str,&crate::Macro)>{crate::MacroLookup::get_key_value(self.environment,name)}
- fn contains_key(&self,name:&str)->bool{crate::MacroLookup::contains_key(self.environment,name)}
-}
 /// Productive definition result DATA; warning/history registration stays on
 /// the same controller. FILE_DIR has ordinary replacement, only no warning.
 pub(super) enum DefinitionInstallation{IgnoredDebugOutsideEnvironment,Installed{origin:Origin,replaced:bool,previous_name:Option<Origin>,warn_redefinition:bool}}
@@ -56,7 +48,7 @@ impl RawSourceDriver{
   self.check(a)?;let result=(||{let env=self.env_file.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual constructor environment file is unissued"))?;if !env.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}Ok(self.inputs.current_physical_path(a)?.is_some_and(|path|path==env.path()))})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn is_defined_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<bool>{
-  self.check(a)?;if name=="__MAIN__"{return self.in_environment_using(a)}let result=self.environment.environment().actual_original_product(name).map(|actual|actual.is_some());if result.is_err(){self.failed=true}result
+  self.check(a)?;if name=="__MAIN__"{return self.in_environment_using(a)}let result=self.environment.read().actual_original_product(name).map(|actual|actual.is_some());if result.is_err(){self.failed=true}result
  }
  /// Adopt the SAME actual acquired input registered by the directive owner,
  /// with the spelling used by that actual source read. Private DATA only.
@@ -95,7 +87,7 @@ impl RawSourceDriver{
    // after that transition has no remaining output; Keep already moved it.
    self.held.take();
    if self.raw_end{return Ok(DriverEvent::ActualEnd)}
-   let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};
+   let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.read(),queue:&mut self.queue,provider,notices,host};
    match self.pump.next_using(&mut source,self.conditionals.as_slice(),a)?{
     PumpEvent::Token(token)=>{let trace=self.pump.take_delivery_trace()?;self.indent.begin_using(&token.value,LogicalLocation{origin:Some(token.origin),trace},a)?;self.held=Some(token);},
     PumpEvent::Directive{hash}=>return Ok(DriverEvent::Directive{hash}),
@@ -114,13 +106,13 @@ impl RawSourceDriver{
  /// The actual directive controller borrows this SAME cursor/raw stack. No
  /// expanded next(), new dictionary or physical-only definition scanner.
  pub(super) fn next_directive_raw_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<crate::macro_expansion::OriginalMacroRawStep<'static>>{
-  self.check(a)?;let result=(||{let cursor=self.pump.cursor_for_directive()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};cursor.next_undispatched_using(&mut source,a)})();if result.is_err(){self.failed=true}result
+  self.check(a)?;let result=(||{let cursor=self.pump.cursor_for_directive()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.read(),queue:&mut self.queue,provider,notices,host};cursor.next_undispatched_using(&mut source,a)})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn finish_directive_using(&mut self,success:bool,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<()>{
-  self.check(a)?;let result={let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};self.pump.finish_directive(success,&mut source,a)};if result.is_err(){self.failed=true}result
+  self.check(a)?;let result={let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.read(),queue:&mut self.queue,provider,notices,host};self.pump.finish_directive(success,&mut source,a)};if result.is_err(){self.failed=true}result
  }
  pub(super) fn with_directive_source_using<T>(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>,run:impl FnOnce(&mut crate::macro_expansion::OriginalMacroCursor<'static>,&mut OriginalBorrowedMacroSource<'_>)->io::Result<T>)->io::Result<T>{
-  self.check(a)?;let result=(||{let cursor=self.pump.cursor_for_directive()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};run(cursor,&mut source)})();if result.is_err(){self.failed=true}result
+  self.check(a)?;let result=(||{let cursor=self.pump.cursor_for_directive()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.read(),queue:&mut self.queue,provider,notices,host};run(cursor,&mut source)})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn directive_request_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>,hint:&mut dyn FnMut(&mut RawSourceDriver,Origin,&'static str)->io::Result<()>)->io::Result<super::original_directive_dispatch::DirectiveRequest>{
   self.check(a)?;let result=super::original_directive_dispatch::read_using(self,provider,notices,host,a,hint);if result.is_err(){self.failed=true}result
@@ -134,12 +126,12 @@ impl RawSourceDriver{
  pub(super) fn install_defined_using(&mut self,defined:crate::macro_expansion::OriginalDefinedMacro<'static>,provider:&dyn SourceProvider,origin:Option<super::DefinitionOrigin>,a:&SettingAdmission<'_>)->io::Result<DefinitionInstallation>{
   self.check(a)?;let result=(||{let crate::macro_expansion::OriginalDefinedMacro{name,definition,docs}=defined;let crate::macro_expansion::OriginalMacroValue::Ident{spelling:ref name_text,..}=name.value else{return Err(io::ErrorKind::InvalidData.into())};
    if name_text.get()=="DEBUG"&&!self.in_environment_using(a)?{return Ok(DefinitionInstallation::IgnoredDebugOutsideEnvironment)}
-   let previous=self.environment.environment().actual_original_product(name_text.get())?;let replaced=previous.is_some();let previous_name=previous.and_then(|p|p.definition_name()).map(|token|token.origin());let warn_redefinition=name_text.get()!="FILE_DIR";
+   let previous=self.environment.read().actual_original_product(name_text.get())?;let replaced=previous.is_some();let previous_name=previous.and_then(|p|p.definition_name()).map(|token|token.origin());let warn_redefinition=name_text.get()!="FILE_DIR";
    let mut mirror=crate::macro_expansion::OriginalMacroText::new(a)?;for token in definition.replacement.as_slice(){poll(a)?;let spelling=super::original_literal_owner::actual_grammar_spelling_using(token,provider,a)?;if !mirror.as_str().is_empty(){mirror.push_str(" ",a)?;}mirror.push_str(spelling.as_str(),a)?;}
    let name_origin=name.origin;let product=super::environment::OriginalDefinitionProduct::from_named_actual_product_using(name,definition,docs,origin,self.history_purpose,a)?;let name=product.definition_name().ok_or(io::ErrorKind::InvalidData)?.spelling();self.environment.insert_product_using(name,mirror.as_str(),None,std::sync::Arc::clone(&product),a)?;Ok(DefinitionInstallation::Installed{origin:name_origin,replaced,previous_name,warn_redefinition})})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn undefine_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<Undefinition>{
-  self.check(a)?;let result=(||{let removed=self.environment.environment().original_current_owner_using(name,a)?;let found=removed.is_some();let previous_name=removed.as_deref().and_then(|p|p.definition_name()).map(|t|t.origin());self.environment.remove_using(name,a)?;Ok(Undefinition{found,previous_name,removed})})();if result.is_err(){self.failed=true}result
+  self.check(a)?;let result=(||{let removed=self.environment.read().original_current_owner_using(name,a)?;let found=removed.is_some();let previous_name=removed.as_deref().and_then(|p|p.definition_name()).map(|t|t.origin());self.environment.remove_using(name,a)?;Ok(Undefinition{found,previous_name,removed})})();if result.is_err(){self.failed=true}result
  }
  pub(super) fn directive_disabled_using(&mut self,a:&SettingAdmission<'_>)->io::Result<bool>{self.check(a)?;let result=super::original_conditional::is_disabled_using(self.conditionals.as_slice(),a);if result.is_err(){self.failed=true}result}
  pub(super) fn begin_conditional_using(&mut self,directive:super::original_conditional::Directive,hash:Origin,a:&SettingAdmission<'_>)->io::Result<super::original_conditional::Action>{self.check(a)?;let result=super::original_conditional::begin_using(&mut self.conditionals,directive,hash,a);if result.is_err(){self.failed=true}result}
@@ -180,7 +172,8 @@ impl RawSourceDriver{
    // Refuse explicitly until the SAME parser branch/typed notice join exists.
    if !syntax.parsed().diagnostics.is_empty(){return Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original malformed condition diagnostic branch is unissued"))}
    let expression=syntax.parsed().expr.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual Original empty condition diagnostic branch is unissued"))?;
-   let macros=OriginalConditionLookup{environment:self.environment.environment()};
+   // defined() uses the current map without the nearest-file #ifdef exception.
+   let macros=self.environment.read();
    let actual_host=std::cell::RefCell::new(host);
    let evaluated=super::original_condition_value::evaluate_with_debug_inputs_using(expression,&macros,a,Some(&mut|passed|actual_host.try_borrow_mut().map_err(|_|a.take_operational_error().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual condition host was re-entered")))?.condition_file_exists_using(hash,passed,provider,a)),syntax.parsed().original_constructor_facts(),Some(&mut|child,out|tokens.write_expression_debug_using(child,out,&mut|occurrence|actual_host.try_borrow_mut().map_err(|_|a.take_operational_error().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual condition Debug host was re-entered")))?.condition_debug_file_id_using(occurrence,a))))?;
    drop(tokens);
@@ -192,7 +185,7 @@ impl RawSourceDriver{
  pub(super) fn last_outer_using(&mut self,a:&SettingAdmission<'_>)->io::Result<Origin>{self.check(a)?;self.pump.last_outer().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual outer reader has not issued a location"))}
  pub(super) fn capture_final_define_history_using(&mut self,history:&mut super::original_define_history::OriginalDefineHistory,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let result=if history.is_full()!=(self.history_purpose==super::original_define_history::HistoryPurpose::Full){
   Err(io::Error::new(io::ErrorKind::InvalidInput,"macro product and define history have different purposes"))
- }else{history.capture_current_using(self.environment.environment(),a)};if result.is_err(){self.failed=true}result}
+ }else{self.environment.read().capture_history_using(history,a)};if result.is_err(){self.failed=true}result}
  pub(super) fn physical_row_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<super::original_raw_inputs::OriginalPhysicalRow>{
   self.observe_physical_row_using(origin,lease,provider,None,a).map(super::original_raw_inputs::OriginalPhysicalRowObservation::into_row)
  }
@@ -201,7 +194,7 @@ impl RawSourceDriver{
  }
 
  pub(super) fn include_phantom_newline_using(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let origin=self.last_outer_using(a)?;self.queue.push(Token{value:crate::macro_expansion::OriginalMacroValue::Punct("\n"),origin,string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None},a)}
- pub(super) fn current_location_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<super::original_current_location::OriginalCurrentLocation>{self.check(a)?;let result={let cursor=self.pump.cursor_for_location()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};super::original_current_location::current_using(cursor,&mut source,a)};if result.is_err(){self.failed=true}result}
+ pub(super) fn current_location_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<super::original_current_location::OriginalCurrentLocation>{self.check(a)?;let result={let cursor=self.pump.cursor_for_location()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.read(),queue:&mut self.queue,provider,notices,host};super::original_current_location::current_using(cursor,&mut source,a)};if result.is_err(){self.failed=true}result}
  pub(super) fn current_physical_path_using(&self,a:&SettingAdmission<'_>)->io::Result<Option<&std::path::Path>>{self.inputs.current_physical_path(a)}
  #[cfg(debug_assertions)]
  pub(super) fn trace_last_outer_origin(&self) -> Option<Origin> {

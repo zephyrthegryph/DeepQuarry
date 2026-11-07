@@ -1,7 +1,7 @@
 //! Short-lived borrow adapter, not another macro environment or input manager.
 //! DirectivePass mutates its SAME binding map between pulls; a pull borrows that
 //! map plus the actual raw stack/output queue and returns owned token DATA.
-use super::{environment::MacroEnvironment,original_raw_inputs::{OriginalRawInputs,OriginalRawNoticeSink},original_output_queue::OriginalOutputQueue};
+use super::{environment::OriginalEnvironmentRead,original_raw_inputs::{OriginalRawInputs,OriginalRawNoticeSink},original_output_queue::OriginalOutputQueue};
 use crate::{SourceProvider,macro_expansion::{OriginalMacroSource as Source,OriginalMacroDefinition as Definition,OriginalMacroRawStep as RawStep,OriginalMacroToken as Token,OriginalMacroOrigin as Origin}};
 use dm_syntax::SettingAdmission;use std::io;
 /// Implemented by the actual directive/trace owner. Callbacks receive genuine
@@ -33,7 +33,7 @@ pub(super) trait OriginalMacroHost{
 }
 pub(super) struct OriginalBorrowedMacroSource<'a>{
  pub(super) inputs:&'a mut OriginalRawInputs,
- pub(super) environment:&'a MacroEnvironment,
+ pub(super) environment:OriginalEnvironmentRead<'a>,
  pub(super) queue:&'a mut OriginalOutputQueue<'static>,
  pub(super) provider:&'a dyn SourceProvider,
  pub(super) notices:&'a mut dyn OriginalRawNoticeSink,

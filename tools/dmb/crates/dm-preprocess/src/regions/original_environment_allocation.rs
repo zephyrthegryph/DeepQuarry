@@ -17,6 +17,11 @@ fn node_bytes()->io::Result<usize>{
   .and_then(|n|n.checked_add(65*2*word))
   .and_then(|n|n.checked_add(8*word)).ok_or(io::ErrorKind::OutOfMemory.into())
 }
+fn map_live(names:usize)->io::Result<usize>{
+ // Pinned im's median is 32. Every completed nonroot has at least
+ // 31 keys after split, steal, or merge. The empty root also allocates.
+ (names/31+1).checked_mul(node_bytes()?).ok_or(io::ErrorKind::OutOfMemory.into())
+}
 fn map_peak(names:usize)->io::Result<usize>{
  // Every completed nonroot node contains >=31 keys. A mutation can hold the
  // old and new trees and <=8 node-sized temporaries per level (the pinned
@@ -134,9 +139,32 @@ pub(crate) struct OriginalEnvironment{
  metadata:usize,
  map_high_water:usize,
 }
+/// Lookup-only Original loan. Unlike the ordinary MacroEnvironment, this
+/// view cannot clone or expose an OrdMap root beyond a scoped read.
+pub(crate) struct OriginalEnvironmentRead<'a>(&'a MacroEnvironment);
+impl<'a> OriginalEnvironmentRead<'a>{
+ pub(crate) fn actual_original_product(&self,name:&str)->io::Result<Option<&'a OriginalDefinitionProduct>>{
+  self.0.actual_original_product(name)
+ }
+ pub(crate) fn original_current_owner_using(&self,name:&str,a:&SettingAdmission<'_>)->io::Result<Option<Arc<OriginalDefinitionProduct>>>{
+  self.0.original_current_owner_using(name,a)
+ }
+ pub(crate) fn capture_history_using(&self,history:&mut super::super::original_define_history::OriginalDefineHistory,a:&SettingAdmission<'_>)->io::Result<()>{
+  history.capture_current_using(self.0,a)
+ }
+ #[cfg(debug_assertions)]
+ pub(crate) fn trace_original_products(&self)->super::OriginalProductCensus{
+  self.0.trace_original_products()
+ }
+}
+impl crate::MacroLookup for OriginalEnvironmentRead<'_>{
+ fn initial_environment(&self)->crate::InitialEnvironment{crate::InitialEnvironment::OriginalChecker0290}
+ fn get_key_value(&self,name:&str)->Option<(&str,&Macro)>{crate::MacroLookup::get_key_value(self.0,name)}
+ fn contains_key(&self,name:&str)->bool{crate::MacroLookup::contains_key(self.0,name)}
+}
 impl OriginalEnvironment{
  pub(crate) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{
-  original_poll(a)?;let map=map_peak(0)?;
+  original_poll(a)?;let map=map_live(0)?;
   let allowance=a.reserve(map).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   original_poll(a)?;Ok(Self{environment:MacroEnvironment::default(),allowance,metadata:0,map_high_water:map})
  }
@@ -145,15 +173,24 @@ impl OriginalEnvironment{
   (self.environment.len(), self.metadata, self.map_high_water)
  }
  /// An operation-scoped read loan, not an exported snapshot/owner.
+ pub(crate) fn read(&self)->OriginalEnvironmentRead<'_>{OriginalEnvironmentRead(&self.environment)}
+ #[cfg(test)]
  pub(crate) fn environment(&self)->&MacroEnvironment{&self.environment}
  pub(crate) fn len(&self)->usize{self.environment.len()}
- fn admit(&mut self,extra_metadata:usize,names:usize,a:&SettingAdmission<'_>)->io::Result<()>{
+ // Returns operation-local node headroom. Original production callers
+ // borrow the environment synchronously, so neither OrdMap root can
+ // outlive the mutation call. Separate Arc payloads keep epoch funding.
+ fn admit(&mut self,extra_metadata:usize,names:usize,a:&SettingAdmission<'_>)->io::Result<SettingRootLease>{
   original_poll(a)?;if !a.matches_lease_domain(&self.allowance){return Err(io::Error::new(io::ErrorKind::InvalidInput,"macro coordination belongs to another resource operation"))}
   let metadata=self.metadata.checked_add(extra_metadata).ok_or(io::ErrorKind::OutOfMemory)?;
-  let map=self.map_high_water.max(map_peak(names)?);let target=metadata.checked_add(map).ok_or(io::ErrorKind::OutOfMemory)?;
+  let map=self.map_high_water.max(map_live(names)?);
+  let target=metadata.checked_add(map).ok_or(io::ErrorKind::OutOfMemory)?;
   let extra=target.checked_sub(self.allowance.bytes()).ok_or(io::ErrorKind::InvalidInput)?;
+  let transient=map_peak(names)?.saturating_sub(map);
+  let mutation=a.reserve(transient).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   if extra!=0{a.grow(&mut self.allowance,extra).map_err(|e|a.take_operational_error().unwrap_or(e))?;}
-  self.metadata=metadata;self.map_high_water=map;original_poll(a)
+  self.metadata=metadata;self.map_high_water=map;original_poll(a)?;
+  Ok(mutation)
  }
  fn insert_measured_using(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,bound:usize,a:&SettingAdmission<'_>)->io::Result<()>{
   let retained=retained_metadata_bound(name,&definition)?;
@@ -179,7 +216,7 @@ impl OriginalEnvironment{
   add(&mut bound,text_bound(metadata.replacement.len())?)?;
   add(&mut bound,count.checked_mul(4*mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?)?;
   if let Some(names)=&metadata.parameters{for name in names{original_poll(a)?;add(&mut bound,text_bound(name.len())?)?;}}
-  self.admit(bound,self.environment.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?,a)?;
+  let _map_mutation=self.admit(bound,self.environment.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?,a)?;
   // No metadata clone or key/Binding/Macro Arc allocation occurs before admit.
   let parameters=match &metadata.parameters{None=>None,Some(names)=>{let mut values=Vec::new();values.try_reserve_exact(count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if values.capacity()>count.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for name in names{original_poll(a)?;values.push(owned_text(name)?);}Some(values)}};
   let definition=Macro{parameters,variadic:metadata.variadic,replacement:owned_text(&metadata.replacement)?};
@@ -191,7 +228,7 @@ impl OriginalEnvironment{
   original_poll(a)?;let params=product.definition.parameters.as_ref();let count=params.map_or(0,|p|p.len());
   let mut bound=metadata_fixed_bound(name)?;add(&mut bound,text_bound(replacement.len())?)?;add(&mut bound,count.checked_mul(4*mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?)?;
   if let Some(names)=params{for name in names.as_slice(){original_poll(a)?;add(&mut bound,text_bound(name.as_str().len())?)?;}}
-  self.admit(bound,self.environment.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?,a)?;
+  let _map_mutation=self.admit(bound,self.environment.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?,a)?;
   let parameters=match params{None=>None,Some(names)=>{let mut values=Vec::new();values.try_reserve_exact(count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if values.capacity()>count.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for name in names.as_slice(){original_poll(a)?;values.push(owned_text(name.as_str())?);}Some(values)}};
   let definition=Macro{parameters,variadic:product.definition.variadic,replacement:owned_text(replacement)?};self.insert_measured_using(name,definition,origin,product,bound,a)
  }
@@ -235,7 +272,8 @@ impl OriginalEnvironment{
  pub(crate) fn remove_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<()>{self.remove_stacked_using(name,a)}
  pub(crate) fn remove_stacked_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<()>{
   // Restoration allocates a fresh key Arc in the existing implementation.
-  self.admit(text_bound(name.len())?,self.environment.len(),a)?;
+  let _map_mutation=self.admit(text_bound(name.len())?,self.environment.len(),a)?;
+  // Keep headroom through both removal and restoration of a prior binding.
   self.environment.remove_stacked(name);Ok(())
  }
  /// Build the SAME final initial binding recipe directly from borrowed
@@ -304,6 +342,65 @@ impl OriginalEnvironment{
   let tiny=SettingAdmission::new(&used,1,&||Ok(()));assert_eq!(OriginalEnvironment::new(&tiny).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);
  }
  fn empty_product(a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{OriginalDefinitionProduct::from_actual_product_using(crate::macro_expansion::OriginalMacroDefinition{parameters:None,variadic:false,replacement:crate::macro_expansion::OriginalMacroRows::new(a).unwrap()},a).unwrap()}
+
+ #[test]
+ fn original_map_mutations_release_only_scoped_node_headroom() {
+  let used=Arc::new(AtomicUsize::new(0));
+  let good=SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let mut env=OriginalEnvironment::new(&good).unwrap();
+  let row=Macro{parameters:None,variadic:false,replacement:"first".into()};
+  // The next distinct key splits the full pinned 64-key root.
+  for ordinal in 0..64{
+   env.insert_borrowed_using(&format!("K{ordinal:02}"),&row,None,empty_product(&good),&good).unwrap();
+  }
+  let key="K64";
+  let cap=map_peak(65).unwrap();
+  let bound=metadata_fixed_bound(key).unwrap()+text_bound(row.replacement.len()).unwrap();
+  let before=used.load(Ordering::Acquire);
+  let fingerprint=env.environment.fingerprint();
+  let old_map=env.map_high_water;
+  let old_metadata=env.metadata;
+  let product=empty_product(&good);
+  let requested=used.load(Ordering::Acquire)+cap-old_map+bound;
+  let short=SettingAdmission::new(&used,requested-1,&||Ok(()));
+  assert_eq!(env.insert_borrowed_using(key,&row,None,product.clone(),&short).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
+  assert_eq!(env.environment.fingerprint(),fingerprint);
+  assert_eq!(env.len(),64);
+  assert_eq!(env.map_high_water,old_map);
+  assert_eq!(env.metadata,old_metadata);
+  let exact=SettingAdmission::new(&used,requested,&||Ok(()));
+  env.insert_borrowed_using(key,&row,None,product,&exact).unwrap();
+  assert_eq!(env.len(),65);
+  assert_eq!(env.map_high_water,map_live(65).unwrap());
+  assert!(used.load(Ordering::Acquire)<requested);
+  assert!(used.load(Ordering::Acquire)>before);
+
+  let stacked=Macro{replacement:"second".into(),..row};
+  env.insert_borrowed_using(key,&stacked,None,empty_product(&good),&good).unwrap();
+  let removed_product=env.environment.original_current_owner_using(key,&good).unwrap().unwrap();
+  let before=used.load(Ordering::Acquire);
+  let requested=before+map_peak(65).unwrap()-env.map_high_water+text_bound(key.len()).unwrap();
+  let old_metadata=env.metadata;
+  let fingerprint=env.environment.fingerprint();
+  let short=SettingAdmission::new(&used,requested-1,&||Ok(()));
+  assert_eq!(env.remove_stacked_using(key,&short).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
+  assert_eq!(env.environment.fingerprint(),fingerprint);
+  assert_eq!(used.load(Ordering::Acquire),before);
+  assert_eq!(env.metadata,old_metadata);
+  let fault=||Err(io::Error::from_raw_os_error(1450));
+  let stopped=SettingAdmission::new(&used,requested,&fault);
+  assert_eq!(env.remove_stacked_using(key,&stopped).unwrap_err().raw_os_error(),Some(1450));
+  assert_eq!(env.environment.fingerprint(),fingerprint);
+  let exact=SettingAdmission::new(&used,requested,&||Ok(()));
+  env.remove_stacked_using(key,&exact).unwrap();
+  assert_eq!(env.environment.bindings.get(key).unwrap().definition.replacement,"first");
+  assert_eq!(used.load(Ordering::Acquire),before+text_bound(key.len()).unwrap());
+  env.remove_stacked_using("missing",&good).unwrap();
+  assert_eq!(env.len(),65);
+  assert_eq!(env.allowance.bytes(),env.metadata+map_live(65).unwrap());
+  drop((env,removed_product));
+  assert_eq!(used.load(Ordering::Acquire),0);
+ }
 
  #[test]
  fn actual_metadata_settles_exact_binding_macro_and_key_layouts_for_each_epoch() {

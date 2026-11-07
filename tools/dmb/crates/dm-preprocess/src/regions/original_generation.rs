@@ -75,7 +75,7 @@ impl Recipe<'_>{
     state.plan.log_failure_reservations();
     // No source/lexer calls, additional credit, or first-error mutation.
     // Shared product columns are reference-weighted upper bounds only.
-    let live=driver.environment().environment().trace_original_products();
+    let live=driver.environment().read().trace_original_products();
     let(history_rows,history_row_capacity,history_name_capacity,removed)=state.history.trace_original_products();
     use std::io::Write;
     let _=writeln!(io::stderr().lock(),"ORIGINAL_MACRO_PRODUCT_CENSUS stage=producer_after_source_loan live={live:?} removed={removed:?} history_rows={history_rows} history_row_capacity={history_row_capacity} history_name_capacity={history_name_capacity}");
