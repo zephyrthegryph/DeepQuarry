@@ -294,6 +294,13 @@ export async function revealWindow(
   if (!isCurrentGeneration(generation)) {
     return false;
   }
+  if (config?.window?.docked) {
+    // Docked (doc/rewrite/proposals/window_system.md): the stat panel places
+    // and shows this window; tell it the page is up.
+    revealedGeneration = currentGeneration;
+    Byond.sendMessage('wm/ready');
+    return true;
+  }
   const nativeGeometry = buildNativeGeometryPayload(geometry);
   const warmGeometry =
     Boolean(config?.window?.geometry_preapplied) &&

@@ -98,7 +98,6 @@
 #define VERB_CAT_OBJECT "Object"
 #define VERB_CAT_OOC_CHAT "OOC.Chat"
 #define VERB_CAT_OOC_CHAT_SETTINGS "OOC.Chat Settings"
-#define VERB_CAT_OOC_CLIENT_SETTINGS "OOC.Client Settings"
 #define VERB_CAT_OOC_DEBUG "OOC.Debug"
 #define VERB_CAT_OOC_GAME "OOC.Game"
 #define VERB_CAT_OOC_GAME_SETTINGS "OOC.Game Settings"

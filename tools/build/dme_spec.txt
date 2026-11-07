@@ -34,6 +34,8 @@ before code/content/integrated_electronics/** code/content/integrated_electronic
 # The ability list uses generated ids (STAT_STUNNED, in ids.dm); its folder sorts ahead of every other code/content folder, which would put it before them.
 before code/engine/_generated/ids.dm code/content/abilities/**   # STAT_* ids
 
+before code/library/ui/window_dock/window_dock.dm code/content/client/window_dock.dm   # the content file implements the library's /datum/tgui dock hooks
+
 # Definition precedence. A type's var or proc defined in two files is the later file's (a proc's ..() calls the earlier one): these
 # pairs are the files that redefine what another file defines (mostly the former modular override files under code/content,
 # code/domains and the vore/serdy/alt files). Each keeps the order it had; folding the two definitions into one file removes the rule.

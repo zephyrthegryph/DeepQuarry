@@ -1,9 +1,3 @@
-/datum/preference/toggle/browser_style
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "BROWSER_STYLED"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
 /datum/preference/toggle/vchat_enable
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "VCHAT_ENABLE"

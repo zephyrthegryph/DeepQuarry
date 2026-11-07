@@ -28,6 +28,10 @@ type TguiWindow = {
   default_geometry?: { width: number; height: number };
   geometry_preapplied?: BinaryIO;
   preapplied_geometry?: { pos?: string; size?: string };
+  /** Framed by the stat panel's window dock (no own titlebar; the panel shows it). */
+  docked?: BinaryIO;
+  /** May dock (a pooled window that is not a modal prompt). */
+  dockable?: BinaryIO;
 };
 
 type User = {
