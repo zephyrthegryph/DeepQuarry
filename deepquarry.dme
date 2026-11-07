@@ -5296,6 +5296,7 @@
 #include "code\content\client\preferences\types\game\auto_fit_viewport.dm"
 #include "code\content\client\preferences\types\game\chat.dm"
 #include "code\content\client\preferences\types\game\fps.dm"
+#include "code\content\client\preferences\types\game\fullscreen.dm"
 #include "code\content\client\preferences\types\game\ghost.dm"
 #include "code\content\client\preferences\types\game\ignored_players.dm"
 #include "code\content\client\preferences\types\game\in_game.dm"

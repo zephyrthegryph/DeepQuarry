@@ -64,14 +64,6 @@ export const LINK_ITEMS: MenuItem[] = [
   { label: 'Patreon', command: 'patreon' },
 ];
 
-/**
- * BYOND has no native borderless mode that keeps moving and resizing, so this is
- * a toggle: maximized with no title bar, and back. Maximize is cleared first
- * because the client ignores a title bar change on an already maximized window.
- */
-export const FULLSCREEN_ON = { titlebar: false, 'can-resize': false };
-export const FULLSCREEN_OFF = { titlebar: true, 'can-resize': true };
-
 /** Every command the page can send, for the test. */
 export function allCommands(): string[] {
   return [

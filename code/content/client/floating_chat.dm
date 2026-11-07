@@ -208,6 +208,7 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 		else
 			return
 	map_split_apply()
+	fullscreen_apply()
 	// The lobby page can be left disabled (greyed) when the previous mob's Logout disables it after the lobby mob enabled it: this runs once
 	// the chat page is up, after both, so the lobby is put back whenever the layout settles.
 	var/mob/new_player/lobby_mob = mob
