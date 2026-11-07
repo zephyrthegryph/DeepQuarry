@@ -40,6 +40,7 @@ pub enum TypeFact {
     /// This is diagnostic provenance, never a native receiver type.
     AuthoredVariableHint(MemberId),
     LocalVariableHint(Span),
+    ParameterHint(MemberId),
     Deferred(&'static str),
 }
 impl TypeFact {
@@ -54,7 +55,7 @@ impl TypeFact {
         match self {
             Self::Known(owner) => Ok(Some(owner)),
             Self::List(_) | Self::NestedList{..} => Ok(Some(SymbolId::of("/list"))),
-            Self::Unknown | Self::Unhinted | Self::Proc | Self::ReturnHint(..) | Self::AuthoredVariableHint(_) | Self::LocalVariableHint(_) => Ok(None),
+            Self::Unknown | Self::Unhinted | Self::Proc | Self::ReturnHint(..) | Self::AuthoredVariableHint(_) | Self::LocalVariableHint(_) | Self::ParameterHint(_) => Ok(None),
             Self::Deferred(reason) => Err(reason.into()),
         }
     }
@@ -424,7 +425,11 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             }else{let bytes=parameter.type_components().iter().try_fold(5usize,|sum,span|sum.checked_add(span.end.checked_sub(span.start)?).and_then(|n|n.checked_add(1))).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(128)).ok_or_else(||prefix_demand.resource("current parameter path geometry overflow"))?;prefix_demand.storage(bytes)?;}
             let path = parameters.type_path(parameter)?;
             let ty = if let Some(observer)=type_errors.as_deref_mut(){let at=source.canonical_parameter_cursor(parameters.declaration_cursor(parameter)?)?;prefix_demand.checkpoint()?;checked_parameter_type_using(tree,resolver,profile,path.as_deref(),&mut|path|observer.undefined_type(path,at),&mut||prefix_demand.checkpoint())?}else{checked_parameter_type_using(tree,resolver,profile,path.as_deref(),&mut|_|Err(D::Error::from("parameter checker type needs undefined-type diagnostic projection")),&mut||prefix_demand.checkpoint())?};
-            let mut fact = LocalFact::unproved(ty);
+            let mut fact = LocalFact::unproved(if ty == TypeFact::Unknown {
+                TypeFact::ParameterHint(member)
+            } else {
+                ty
+            });
             fact.impurity = Some(true); // Pinned checker: every parameter is impure.
             locals.insert(SymbolId::of(parameters.name(parameter)?), fact);
         }
@@ -1238,7 +1243,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 // Original Analysis::from(static_ty) keeps the static shape
                 // but drops the argument's fix hint, value and impurity.
                 return Ok(match first.ty {
-                    TypeFact::Unknown | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) | TypeFact::LocalVariableHint(_) => TypeFact::Unhinted,
+                    TypeFact::Unknown | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) | TypeFact::LocalVariableHint(_) | TypeFact::ParameterHint(_) => TypeFact::Unhinted,
                     ty => ty,
                 });
             }
@@ -1565,7 +1570,10 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         match &expression.kind {
             ExprKind::Ident(name) => {
                 if let Some(local) = self.locals.get(&SymbolId::of(name)).copied() {
-                    let ty = local.ty;
+                    let ty = match local.ty {
+                        TypeFact::ParameterHint(_) if self.original_events.is_none() => TypeFact::Unknown,
+                        ty => ty,
+                    };
                     self.last_impurity = local.impurity;
                     self.original_value=local.original_value;
                     if self.in_arguments {
@@ -1858,6 +1866,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             TypeFact::ReturnHint(hint, call) => Ok(Some(FixHint::Return(hint, call))),
                             TypeFact::AuthoredVariableHint(formal) => Ok(Some(FixHint::AuthoredVariable(formal))),
                             TypeFact::LocalVariableHint(anchor) => Ok(Some(FixHint::LocalVariable(anchor))),
+                            TypeFact::ParameterHint(member) => Ok(Some(FixHint::Parameter(member))),
                             _ => Err(
                                 "unknown-receiver call needs pinned fix-hint/declaration origins",
                             ),
@@ -1900,6 +1909,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         TypeFact::ReturnHint(hint,call)=>Some(FixHint::Return(hint,call)),
                         TypeFact::AuthoredVariableHint(formal)=>Some(FixHint::AuthoredVariable(formal)),
                         TypeFact::LocalVariableHint(anchor) => Some(FixHint::LocalVariable(anchor)),
+                        TypeFact::ParameterHint(member) => Some(FixHint::Parameter(member)),
                         _=>return Err("unknown-receiver field access needs pinned fix-hint/declaration origins".into()),
                     };
                     let at = member_origin_source(self.source, expression, object, selector, false)?;
@@ -2000,7 +2010,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     }
                     self.last_impurity = None;
                     return match operand {
-                        TypeFact::Unknown | TypeFact::Unhinted | TypeFact::Proc | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) | TypeFact::LocalVariableHint(_) => {
+                        TypeFact::Unknown | TypeFact::Unhinted | TypeFact::Proc | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) | TypeFact::LocalVariableHint(_) | TypeFact::ParameterHint(_) => {
                             Ok(TypeFact::Unhinted)
                         }
                         TypeFact::Known(owner) => {
@@ -2063,7 +2073,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     // Exact pinned check_operator_overload: StaticType::None
                     // returns Analysis::empty, clearing any return fix hint.
                     // A direct local target has no non-local impurity effect.
-                    TypeFact::Unknown | TypeFact::Unhinted | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) | TypeFact::LocalVariableHint(_) => {
+                    TypeFact::Unknown | TypeFact::Unhinted | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) | TypeFact::LocalVariableHint(_) | TypeFact::ParameterHint(_) => {
                         Ok(TypeFact::Unhinted)
                     }
                     _ => Err(

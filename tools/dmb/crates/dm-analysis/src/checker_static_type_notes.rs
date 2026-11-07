@@ -11,6 +11,7 @@ pub enum FixHint {
     /// The original evaluator selected this formal in the same archive.
     AuthoredVariable(MemberId),
     LocalVariable(Span),
+    Parameter(MemberId),
 }
 pub fn notes(
     archive: &BodyArchive,
@@ -34,6 +35,15 @@ pub(crate) fn notes_using<E: From<String> + for<'a> From<&'a str>>(
     };
     let (fix, call) = match hint {
         FixHint::Return(fix, call) => (fix, call),
+        FixHint::Parameter(member) => {
+            // Pinned local_vars gives parameters the proc location rather
+            // than the parameter token location used for its type check.
+            let source = archive.callable_header_source().reported_point(member)?;
+            fund_note(cross_file_bytes(source))?;
+            return Ok(vec![crate::checks_directive_binding::original_note_message(
+                source, current, "add additional type info here",
+            )]);
+        }
         FixHint::LocalVariable(anchor) => {
             let source = archive.borrowed_source_note_point(anchor.start)?;
             fund_note(cross_file_bytes(source))?;
