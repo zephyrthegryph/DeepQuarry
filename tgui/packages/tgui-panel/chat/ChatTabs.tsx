@@ -5,7 +5,9 @@
  */
 
 import { useAtom } from 'jotai';
-import { Box, Button, Stack, Tabs } from 'tgui-core/components';
+import type { ReactNode } from 'react';
+import { Tabs } from 'tgui/dq';
+import { Box, Button } from 'tgui-core/components';
 import { settingsVisibleAtom } from '../settings/atoms';
 import { useChatPages } from './use-chat-pages';
 
@@ -18,34 +20,46 @@ function UnreadCountWidget(props: UnreadCountWidgetProps) {
   return <Box className="UnreadCount">{value > 99 ? '99+' : value}</Box>;
 }
 
-export function ChatTabs(props) {
-  const { addChatPage, changeChatPage, pages, pagesRecord, currentPageId } =
-    useChatPages();
+/**
+ * The chat's tab row: the DQ tab row (tgui/dq, the stat panel's), with the
+ * add-tab button and `children` (ping, music, settings) at its end. Tabs can
+ * be dragged onto each other to reorder them; the main tab stays first.
+ */
+export function ChatTabs(props: { children?: ReactNode }) {
+  const {
+    addChatPage,
+    changeChatPage,
+    reorderChatPages,
+    pages,
+    pagesRecord,
+    currentPageId,
+  } = useChatPages();
 
   const [, setSettingsVisible] = useAtom(settingsVisibleAtom);
 
   return (
-    <Stack align="stretch">
-      <Stack.Item>
-        <Tabs textAlign="center">
-          {pages.map((page) => {
-            const actual = pagesRecord[page];
-            return (
-              <Tabs.Tab
-                key={page}
-                selected={page === currentPageId}
-                onClick={() => changeChatPage(actual)}
-              >
-                {actual.name}
-                {!actual.hideUnreadCount && actual.unreadCount > 0 && (
-                  <UnreadCountWidget value={actual.unreadCount} />
-                )}
-              </Tabs.Tab>
-            );
-          })}
-        </Tabs>
-      </Stack.Item>
-      <Stack.Item ml={1} className="ChatTabsAdd">
+    <Tabs
+      className="ChatTabs"
+      layout="scrollable"
+      tabs={pages.map((page, index) => {
+        const actual = pagesRecord[page];
+        return {
+          id: page,
+          selected: page === currentPageId,
+          fixed: index === 0,
+          label: (
+            <>
+              {actual.name}
+              {!actual.hideUnreadCount && actual.unreadCount > 0 && (
+                <UnreadCountWidget value={actual.unreadCount} />
+              )}
+            </>
+          ),
+        };
+      })}
+      onSelect={(id) => changeChatPage(pagesRecord[id])}
+      onReorder={reorderChatPages}
+      afterTabs={
         <Button
           icon="plus"
           tooltip="Add a chat tab"
@@ -55,7 +69,9 @@ export function ChatTabs(props) {
             setSettingsVisible(true);
           }}
         />
-      </Stack.Item>
-    </Stack>
+      }
+    >
+      {props.children}
+    </Tabs>
   );
 }

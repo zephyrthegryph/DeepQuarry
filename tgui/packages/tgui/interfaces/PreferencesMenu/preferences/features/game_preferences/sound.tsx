@@ -42,12 +42,6 @@ export const SOUND_JUKEBOX: FeatureToggle = {
   component: CheckboxInput,
 };
 
-export const SOUND_INSTRUMENT: FeatureToggle = {
-  name: 'Hear In-game Instruments',
-  category: 'SOUNDS',
-  description: 'Enable hearing instruments playing.',
-  component: CheckboxInput,
-};
 
 export const EMOTE_NOISES: FeatureToggle = {
   name: 'Emote Noises',

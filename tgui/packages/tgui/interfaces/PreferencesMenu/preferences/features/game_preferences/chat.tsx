@@ -55,12 +55,6 @@ export const CHAT_MENTION: FeatureToggle = {
   component: CheckboxInput,
 };
 
-export const NEWS_POPUP: FeatureToggle = {
-  name: 'Lore News Popups',
-  category: 'CHAT',
-  description: 'Show new lore news on login.',
-  component: CheckboxInput,
-};
 
 export const RECEIVE_TIPS: FeatureToggle = {
   name: 'Receive Tips Periodically',

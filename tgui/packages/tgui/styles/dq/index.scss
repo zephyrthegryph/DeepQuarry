@@ -1,0 +1,9 @@
+// Every DQ UI layer stylesheet (tgui/dq/). Loaded once by each bundle that
+// renders DQ components: tgui (styles/main.scss), the chat
+// (tgui-panel/styles/main.scss) and the stat panel (statpanel.scss).
+
+@use 'sass:meta';
+
+@include meta.load-css('./tabs.scss');
+@include meta.load-css('./titlebar.scss');
+@include meta.load-css('./list-row.scss');

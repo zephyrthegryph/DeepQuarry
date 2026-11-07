@@ -42,13 +42,15 @@
 	return isnum(ends) ? max(0, ends - op_now()) : 0
 
 /// The op's own requirements say whether it can be used and why not (the same answer as the Menu gives).
-/datum/action/op_ability/ability_refusal()
+/// `menu_rows`: the owner's op_menu() rows when the caller already has them (a push of the Abilities tab reads the menu once for all its
+/// entries, not once per entry: each read evaluates every op's requirements).
+/datum/action/op_ability/ability_refusal(list/menu_rows)
 	var/mob/owner = action_owner()
 	if(!owner)
 		return "nobody has this ability"
 	if(ability_cooldown_left() > 0)
 		return "recharging"
-	for(var/list/row as anything in op_menu(owner, owner, null))
+	for(var/list/row as anything in (islist(menu_rows) ? menu_rows : op_menu(owner, owner, null)))
 		if(row["key"] == op_key)
 			return row["enabled"] ? null : (row["reason"] || "not available now")
 	return "not available now"

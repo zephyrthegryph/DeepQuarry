@@ -25,18 +25,6 @@
 	default_value = TRUE
 	savefile_identifier = PREFERENCE_PLAYER
 
-/datum/preference/toggle/hotkeys_default
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "HUD_HOTKEYS"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/show_progress_bar
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SHOW_PROGRESS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
 /datum/preference/toggle/safefiring
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "SAFE_FIRING"

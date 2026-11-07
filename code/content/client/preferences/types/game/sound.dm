@@ -39,12 +39,6 @@
 	else
 		client?.mob?.stop_all_music()
 
-/datum/preference/toggle/instrument_toggle
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_INSTRUMENT"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
 /datum/preference/toggle/emote_noises
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "EMOTE_NOISES"

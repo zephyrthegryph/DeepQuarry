@@ -1,3 +1,5 @@
+@use 'sass:map';
+
 /**
  * The radio channel colours: the one table. The chat styles (`.sciradio`,
  * `.medradio`, ...), the say popup's channel button and the chat input row all
@@ -19,4 +21,16 @@ $radio-colors: (
   'syndicate': hsl(359, 32%, 59%),
   'centcom': hsl(197, 63%, 45%),
   'ai': hsl(332, 60%, 60%),
+);
+
+/// The speech mode colours (Say, Me, OOC, ...): the say popup's channel
+/// button and frame, and the chat input row's channel button. One table.
+$mode-colors: (
+  'LOOC': hsl(180, 44%, 41%),
+  'Me': hsl(230, 58%, 55%),
+  'OOC': hsl(48, 100%, 40%),
+  'Radio': map.get($radio-colors, 'common'),
+  'Say': hsl(214, 38%, 74%),
+  'Whis': hsl(238, 55%, 67%),
+  'Subtle': hsl(329, 72%, 45%),
 );

@@ -10,10 +10,39 @@ const statCss = readFileSync(
   join(import.meta.dir, '../statpanel/statpanel.scss'),
   'utf8',
 );
-const chatDark = readFileSync(
-  join(import.meta.dir, '../styles/tgchat/chat-dark.scss'),
+const chatSheet = readFileSync(
+  join(import.meta.dir, '../styles/tgchat/chat.scss'),
   'utf8',
 );
+const chatTokens = readFileSync(
+  join(import.meta.dir, '../styles/tgchat/chat-tokens.scss'),
+  'utf8',
+);
+
+/** The body of `@mixin name { ... }` in chat-tokens.scss (empty when absent). */
+function tokenMixin(name: string): string {
+  const start = chatTokens.indexOf(`@mixin ${name} {`);
+  if (start < 0) return '';
+  const end = chatTokens.indexOf('\n}\n', start);
+  return chatTokens.slice(start, end);
+}
+
+/** The chat sheet as one theme sees it: every --chat- token replaced by that theme's value, plus its own rules. */
+function chatSheetFor(theme: string): string {
+  const values = new Map<string, string>();
+  for (const match of tokenMixin(theme).matchAll(
+    /^ {2}(--chat-[\w-]+): (.+);$/gm,
+  )) {
+    values.set(match[1], match[2]);
+  }
+  const resolved = chatSheet.replace(
+    /var\((--chat-[\w-]+)\)/g,
+    (whole, name: string) => values.get(name) ?? whole,
+  );
+  return `${resolved}\n${tokenMixin(`${theme}-rules`)}`;
+}
+
+const chatDark = chatSheetFor('dark');
 
 /** The body of one element in skin.dmf, up to the next elem or window. */
 function skinElem(name: string): string {
@@ -68,10 +97,7 @@ describe('native dark palette', () => {
 });
 
 describe('vchatdark chat colours', () => {
-  const vchatDark = readFileSync(
-    join(import.meta.dir, '../styles/tgchat/chat-vchatdark.scss'),
-    'utf8',
-  );
+  const vchatDark = chatSheetFor('vchatdark');
 
   it('every text colour on the bare chat background is readable', () => {
     const background = luminance(hslToRgb(0, 0, 12.5));
@@ -115,5 +141,20 @@ describe('dark chat colours', () => {
     const text = luminance(hslToRgb(h, s, l));
     const background = luminance(hslToRgb(0, 0, 12.5));
     expect((text + 0.05) / (background + 0.05)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe('one chat stylesheet', () => {
+  it('every token the sheet reads is defined for every theme', () => {
+    const used = new Set(
+      [...chatSheet.matchAll(/var\((--chat-[\w-]+)\)/g)]
+        .map((match) => match[1])
+        .filter((name) => !name.includes('#{')),
+    );
+    for (const theme of ['dark', 'light', 'vchatdark', 'vchatlight']) {
+      const body = tokenMixin(theme);
+      const missing = [...used].filter((name) => !body.includes(`${name}:`));
+      expect({ theme, missing }).toEqual({ theme, missing: [] });
+    }
   });
 });

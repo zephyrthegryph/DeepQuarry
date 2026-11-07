@@ -1,0 +1,380 @@
+/**
+ * The window dock's layout (doc/rewrite/proposals/window_system.md section 4):
+ * the docked tgui windows in the stat panel, as an ordered list of groups. A
+ * group of one window is a list entry; of more, a tabbed stack. Pure: every
+ * action returns a new state, and `saved` is re-snapshotted each time so it
+ * always says where each interface was last seen (persisted per player).
+ */
+
+export type DockWindow = { id: string; iface: string; title: string };
+
+export type DockGroup = {
+  id: string;
+  windows: string[];
+  active: string;
+  collapsed: boolean;
+  /** Body height in CSS pixels. */
+  height: number;
+};
+
+/** Where an interface sits when it is docked again. */
+export type Placement = {
+  dock: boolean;
+  group: string;
+  order: number;
+  tab: number;
+  collapsed: boolean;
+  height: number;
+};
+
+export type DockState = {
+  windows: Record<string, DockWindow>;
+  groups: DockGroup[];
+  saved: Record<string, Placement>;
+  nextGroup: number;
+};
+
+export const DOCK_HEIGHT_DEFAULT = 260;
+export const DOCK_HEIGHT_MIN = 80;
+export const DOCK_HEIGHT_MAX = 2000;
+/** The saved layout's limit (the window_layout preference keeps at most this). */
+export const DOCK_SAVE_MAX = 8000;
+
+export type DockAction =
+  | { type: 'open'; window: DockWindow }
+  | { type: 'close'; id: string }
+  | { type: 'float'; id: string }
+  | { type: 'title'; id: string; title: string }
+  | { type: 'activate'; id: string }
+  | { type: 'collapse'; group: string; collapsed: boolean }
+  | { type: 'resize'; group: string; height: number }
+  | { type: 'moveGroup'; group: string; index: number }
+  | { type: 'moveWindow'; id: string; group: string; index: number }
+  | { type: 'splitWindow'; id: string; index: number }
+  | { type: 'load'; saved: Record<string, Placement> };
+
+export function emptyDock(): DockState {
+  return { windows: {}, groups: [], saved: {}, nextGroup: 1 };
+}
+
+const clampHeight = (h: unknown): number => {
+  const n = Math.round(Number(h));
+  if (!Number.isFinite(n)) {
+    return DOCK_HEIGHT_DEFAULT;
+  }
+  return Math.min(DOCK_HEIGHT_MAX, Math.max(DOCK_HEIGHT_MIN, n));
+};
+
+const clampIndex = (index: number, length: number): number =>
+  Math.min(length, Math.max(0, Math.round(Number(index)) || 0));
+
+/** The group holding window `id`, or -1. */
+export function groupIndexOf(state: DockState, id: string): number {
+  return state.groups.findIndex((group) => group.windows.includes(id));
+}
+
+/** Takes window `id` out of its group; an emptied group goes. */
+function detach(groups: DockGroup[], id: string): DockGroup[] {
+  const out: DockGroup[] = [];
+  for (const group of groups) {
+    const at = group.windows.indexOf(id);
+    if (at < 0) {
+      out.push(group);
+      continue;
+    }
+    const windows = group.windows.filter((w) => w !== id);
+    if (!windows.length) {
+      continue;
+    }
+    const active =
+      group.active === id
+        ? windows[Math.min(at, windows.length - 1)]
+        : group.active;
+    out.push({ ...group, windows, active });
+  }
+  return out;
+}
+
+/** Records every docked window's placement in `saved`. */
+export function snapshot(state: DockState): DockState {
+  const saved = { ...state.saved };
+  state.groups.forEach((group, order) => {
+    group.windows.forEach((id, tab) => {
+      const win = state.windows[id];
+      if (!win) {
+        return;
+      }
+      saved[win.iface] = {
+        dock: true,
+        group: group.id,
+        order,
+        tab,
+        collapsed: group.collapsed,
+        height: group.height,
+      };
+    });
+  });
+  return { ...state, saved };
+}
+
+function newGroupId(state: DockState): [string, number] {
+  let next = state.nextGroup;
+  const taken = new Set(state.groups.map((g) => g.id));
+  while (taken.has(`g${next}`)) {
+    next++;
+  }
+  return [`g${next}`, next + 1];
+}
+
+function open(state: DockState, window: DockWindow): DockState {
+  if (state.windows[window.id]) {
+    // Already docked: a new interface in the same pooled window keeps its place.
+    return {
+      ...state,
+      windows: { ...state.windows, [window.id]: window },
+    };
+  }
+  const windows = { ...state.windows, [window.id]: window };
+  const place = state.saved[window.iface];
+  const groups = state.groups.slice();
+  const joined = place ? groups.findIndex((g) => g.id === place.group) : -1;
+  if (joined >= 0) {
+    const group = groups[joined];
+    const list = group.windows.slice();
+    list.splice(clampIndex(place!.tab, list.length), 0, window.id);
+    groups[joined] = { ...group, windows: list, active: window.id };
+    return { ...state, windows, groups };
+  }
+  let id: string;
+  let nextGroup = state.nextGroup;
+  if (place?.group && !groups.some((g) => g.id === place.group)) {
+    id = place.group;
+  } else {
+    [id, nextGroup] = newGroupId(state);
+  }
+  const group: DockGroup = {
+    id,
+    windows: [window.id],
+    active: window.id,
+    collapsed: Boolean(place?.collapsed),
+    height: clampHeight(place?.height ?? DOCK_HEIGHT_DEFAULT),
+  };
+  const at = place ? clampIndex(place.order, groups.length) : groups.length;
+  groups.splice(at, 0, group);
+  return { ...state, windows, groups, nextGroup };
+}
+
+function forget(state: DockState, id: string): DockState {
+  const { [id]: _gone, ...windows } = state.windows;
+  return { ...state, windows, groups: detach(state.groups, id) };
+}
+
+const mapGroup = (
+  state: DockState,
+  id: string,
+  change: (group: DockGroup) => DockGroup,
+): DockState => ({
+  ...state,
+  groups: state.groups.map((g) => (g.id === id ? change(g) : g)),
+});
+
+function reduce(state: DockState, action: DockAction): DockState {
+  switch (action.type) {
+    case 'open':
+      return open(state, action.window);
+    case 'close':
+      return forget(state, action.id);
+    case 'float': {
+      const win = state.windows[action.id];
+      const next = forget(state, action.id);
+      if (win && next.saved[win.iface]) {
+        next.saved = {
+          ...next.saved,
+          [win.iface]: { ...next.saved[win.iface], dock: false },
+        };
+      }
+      return next;
+    }
+    case 'title': {
+      const win = state.windows[action.id];
+      return win
+        ? {
+            ...state,
+            windows: {
+              ...state.windows,
+              [action.id]: { ...win, title: action.title },
+            },
+          }
+        : state;
+    }
+    case 'activate': {
+      const at = groupIndexOf(state, action.id);
+      if (at < 0) {
+        return state;
+      }
+      return mapGroup(state, state.groups[at].id, (g) => ({
+        ...g,
+        active: action.id,
+        collapsed: false,
+      }));
+    }
+    case 'collapse':
+      return mapGroup(state, action.group, (g) => ({
+        ...g,
+        collapsed: action.collapsed,
+      }));
+    case 'resize':
+      return mapGroup(state, action.group, (g) => ({
+        ...g,
+        height: clampHeight(action.height),
+      }));
+    case 'moveGroup': {
+      const from = state.groups.findIndex((g) => g.id === action.group);
+      if (from < 0) {
+        return state;
+      }
+      const groups = state.groups.slice();
+      const [group] = groups.splice(from, 1);
+      // The index counts positions in the list before the move.
+      const to = clampIndex(
+        action.index > from ? action.index - 1 : action.index,
+        groups.length,
+      );
+      groups.splice(to, 0, group);
+      return { ...state, groups };
+    }
+    case 'moveWindow': {
+      if (!state.windows[action.id]) {
+        return state;
+      }
+      const target = state.groups.find((g) => g.id === action.group);
+      if (!target) {
+        return state;
+      }
+      const fromGroup = state.groups[groupIndexOf(state, action.id)];
+      let index = action.index;
+      if (fromGroup?.id === target.id) {
+        const from = target.windows.indexOf(action.id);
+        if (index > from) {
+          index--;
+        }
+      }
+      const groups = detach(state.groups, action.id);
+      const at = groups.findIndex((g) => g.id === target.id);
+      if (at < 0) {
+        // The target was the window's own group and it held only this window.
+        return state;
+      }
+      const list = groups[at].windows.slice();
+      list.splice(clampIndex(index, list.length), 0, action.id);
+      groups[at] = { ...groups[at], windows: list, active: action.id };
+      return { ...state, groups };
+    }
+    case 'splitWindow': {
+      const from = groupIndexOf(state, action.id);
+      if (from < 0) {
+        return state;
+      }
+      const source = state.groups[from];
+      if (source.windows.length === 1) {
+        return reduce(state, {
+          type: 'moveGroup',
+          group: source.id,
+          index: action.index,
+        });
+      }
+      // Indexes before the removal: the source group stays, so nothing shifts.
+      const [id, nextGroup] = newGroupId(state);
+      const groups = detach(state.groups, action.id);
+      groups.splice(clampIndex(action.index, groups.length), 0, {
+        id,
+        windows: [action.id],
+        active: action.id,
+        collapsed: false,
+        height: source.height,
+      });
+      return { ...state, groups, nextGroup };
+    }
+    case 'load':
+      return { ...state, saved: { ...action.saved, ...state.saved } };
+  }
+  return state;
+}
+
+/** Applies `action`, then records the placements. */
+export function dockReduce(state: DockState, action: DockAction): DockState {
+  const next = reduce(state, action);
+  return next === state ? state : snapshot(next);
+}
+
+/** The docked windows not on screen: in a collapsed group or behind another tab. */
+export function hiddenIds(state: DockState): string[] {
+  const hidden: string[] = [];
+  for (const group of state.groups) {
+    for (const id of group.windows) {
+      if (group.collapsed || id !== group.active) {
+        hidden.push(id);
+      }
+    }
+  }
+  return hidden.sort();
+}
+
+/** The docked windows on screen, in list order. */
+export function shownIds(state: DockState): string[] {
+  return state.groups.filter((g) => !g.collapsed).map((g) => g.active);
+}
+
+const isPlacement = (value: unknown): value is Placement =>
+  !!value &&
+  typeof value === 'object' &&
+  typeof (value as Placement).group === 'string';
+
+/** The saved layout from its preference text; junk gives an empty layout. */
+export function parseSaved(text: unknown): Record<string, Placement> {
+  if (typeof text !== 'string' || !text) {
+    return {};
+  }
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return {};
+  }
+  const out: Record<string, Placement> = {};
+  if (!raw || typeof raw !== 'object') {
+    return out;
+  }
+  for (const [iface, value] of Object.entries(raw as object)) {
+    if (!isPlacement(value)) {
+      continue;
+    }
+    out[iface] = {
+      dock: Boolean(value.dock),
+      group: value.group,
+      order: Math.max(0, Math.round(Number(value.order)) || 0),
+      tab: Math.max(0, Math.round(Number(value.tab)) || 0),
+      collapsed: Boolean(value.collapsed),
+      height: clampHeight(value.height),
+    };
+  }
+  return out;
+}
+
+/**
+ * The saved layout as preference text, within DOCK_SAVE_MAX: when it is too
+ * long, floating entries go first, then the rest, until it fits.
+ */
+export function serializeSaved(saved: Record<string, Placement>): string {
+  const entries = Object.entries(saved).sort(
+    ([, a], [, b]) => Number(b.dock) - Number(a.dock),
+  );
+  while (entries.length) {
+    const text = JSON.stringify(Object.fromEntries(entries));
+    if (text.length <= DOCK_SAVE_MAX) {
+      return text;
+    }
+    entries.pop();
+  }
+  return '{}';
+}

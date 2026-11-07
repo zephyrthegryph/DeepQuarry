@@ -5,26 +5,7 @@
 @use '~tgui/styles/console';
 
 .ChatConsole {
-  --color-base: #{console.$console-panel};
-  --color-section: #{console.$console-panel};
-  --color-primary: #{console.$console-button};
-  --color-border: #{console.$console-border};
-  --section-background: #{console.$console-panel};
-  --section-separator-color: #{console.$console-border};
-  --section-title-color: #{console.$console-accent};
-  --button-color: #{console.$console-text};
-  --button-background-default: #{console.$console-button};
-  --button-background-selected: #{console.$console-green};
-  --button-border-radius: 0;
-  --button-transition: 0s;
-  --tab-background: #{console.$console-disabled};
-  --tab-background-hover: #{console.$console-border};
-  --tab-background-selected: #{console.$console-button};
-  --tab-color: #{console.$console-muted};
-  --tab-color-selected: #{console.$console-text};
-  --tab-border-radius: 0;
-  --tabs-container-background: transparent;
-  --base-gradient-spread: 0;
+  @include console.console-component-vars;
 
   background-color: console.$console-background;
 
@@ -47,12 +28,7 @@
     margin: 0;
   }
 
-  .ChatDragRow {
-    border-bottom: 2px solid console.$console-border;
-  }
-
   // Chrome is bold monospace at one small size; the messages inside .Chat are left alone.
-  .Tabs,
   .Button,
   .Section__title {
     font-family: console.$console-font;
@@ -60,37 +36,10 @@
     font-size: 12px;
   }
 
-  // The tab row: tight padding, flat tabs, the selected one in the console blue.
-  // The row has no vertical padding and the tab column stretches to its full
-  // height, so the selected tab's underline (the .Tab:before indicator, the
-  // only one) sits on the row's bottom rule instead of floating above it.
+  // The tab row is the DQ Tabs (tgui/styles/dq/tabs.scss),
+  // the stat panel's: it draws the bottom rule and the selected-tab underline.
   .ChatDragRow {
     padding: 0;
-  }
-
-  .ChatTabsItem {
-    align-self: stretch;
-  }
-
-  .Tabs--horizontal {
-    border-bottom: 0;
-    margin: 0;
-    padding: 0;
-  }
-
-  .ChatDragRow .Tabs {
-    height: 100%;
-  }
-
-  .ChatTabsAdd {
-    align-self: center;
-  }
-
-  .Tab {
-    padding: 2px 8px calc(2px + var(--tab-indicator-size));
-    letter-spacing: 0.02em;
-    margin-right: 4px;
-    line-height: 1.4;
   }
 
   .Button {
@@ -118,7 +67,7 @@
     color: console.$console-text;
     background-color: console.$console-button;
     border: 2px solid console.$console-border;
-    box-shadow: 0 0 8px console.$console-border;
+    box-shadow: var(--console-glow);
   }
 
   // "Reconnected" and other dividers: a 2px console rule with a flat label.
@@ -147,26 +96,6 @@
     scrollbar-color: console.$console-border console.$console-panel;
   }
 
-  // The frame: 3px border and inner glow, drawn over the pane edge.
-  &::before {
-    content: ' ';
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 199;
-    pointer-events: none;
-    border: console.$console-border-width solid console.$console-border;
-    box-shadow: inset 0 0 15px console.$console-border;
-  }
-
-  // CRT scanlines over the whole panel; clicks pass through.
-  &::after {
-    content: ' ';
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    pointer-events: none;
-    @include console.console-scanlines(var(--console-scanline-strength, 0.04), 6px);
-  }
+  // The frame over the pane edge and the scanlines (styles/console.scss).
+  @include console.console-frame;
 }

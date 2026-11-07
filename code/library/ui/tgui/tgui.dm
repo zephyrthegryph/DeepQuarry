@@ -127,6 +127,7 @@
 	STAMP(src, opened_at, CLOCK_WORLD)
 	var/list/default_geometry = SStgui.get_default_geometry(interface)
 	window().acquire_lock(src, default_geometry)
+	dock_on_open()
 	if(!window().is_ready() && !preinitialized)
 		window().initialize(
 			strict_mode = TRUE,
@@ -254,6 +255,8 @@
 		child.close(can_be_suspended, logout)
 	// If we don't have window_id, open proc did not have the opportunity
 	// to finish, therefore it's safe to skip this whole block.
+	if(docked)
+		dock_on_close()
 	if(window())
 		// Windows you want to keep are usually blue screens of death
 		// and we want to keep them around, to allow user to read
@@ -341,6 +344,9 @@
 /datum/tgui/proc/send_full_update(custom_data, force)
 	if(!user?.client || !initialized || closing)
 		return
+	if(view_hidden)
+		view_stale = TRUE // docked off screen: one full update when shown (window_dock.dm)
+		return
 	var/should_update_data = force || status >= STATUS_UPDATE
 	window().send_message("update", get_payload(
 		custom_data,
@@ -358,10 +364,14 @@
 /datum/tgui/proc/send_update(custom_data, force)
 	if(!user?.client || !initialized || closing)
 		return
+	if(view_hidden)
+		view_stale = TRUE
+		return
 	var/should_update_data = force || status >= STATUS_UPDATE
+	// A data push the page already shows (the reads that marked the window changed, the data did not) is dropped by the window.
 	window().send_message("update", get_payload(
 		custom_data,
-		with_data = should_update_data))
+		with_data = should_update_data), same_key = "update")
 
 /**
  * private
@@ -410,6 +420,8 @@
 			"default_geometry" = default_geometry,
 			"geometry_preapplied" = window()?.geometry_preapplied ? TRUE : FALSE,
 			"preapplied_geometry" = window()?.preapplied_geometry,
+			"docked" = docked ? TRUE : FALSE,
+			"dockable" = dockable() ? TRUE : FALSE,
 		),
 		"client" = list(
 			"ckey" = user.client.ckey,
@@ -581,6 +593,8 @@
 				send_full_update()
 			initialized = TRUE
 			cancel_after(src, "ping")
+		if("wm/dock", "wm/ready")
+			dock_message(type)
 		if("ping/reply")
 			initialized = TRUE
 			cancel_after(src, "ping")
