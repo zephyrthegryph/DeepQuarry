@@ -71,7 +71,8 @@ impl QueryDb{
           let poll = || crate::daemon::control::checkpoint();
           let template = dq_analyze::captured_declare_pages::collect_template(reader, order, budget, &poll)?;
           reader.require_completed()?;
-          let output = template.prove(budget, &poll, |text, candidates| {
+          let parent = self.body_charge.shared_reservation().expect("production syntax parent");
+          let output = template.prove(budget, Some(parent), &poll, |text, candidates| {
               inputs.probe_declare_overlay(frame, text, candidates, budget, probe)
           })?;
           reader.require_completed()?;

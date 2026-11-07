@@ -39,6 +39,64 @@ pub fn generate_from_typed_pages(
         .map(|(output, _)| output)
 }
 
+/// One exactly funded named file during a closed probe. The String always
+/// dies before its root Budget reservation, including an early failure.
+struct CapturedNamedFile<'a> {
+    text: String,
+    _window: crate::captured_generator_budget::ReservedWindow,
+    // Drop the allocation before refunding either admission domain.
+    _parent: Option<dm_syntax::ProvisionalNativeGrant<'a>>,
+}
+impl CapturedNamedFile<'_> {
+    fn as_str(&self) -> &str { &self.text }
+}
+/// One admission and one allocation for the exact current named bytes.
+/// Both passes use the existing renderer. The returned owner cannot
+/// refund the backing while a caller still borrows the staged text.
+fn capture_exact_named_file<'a>(
+    output: &Output,
+    name: &str,
+    filename: &str,
+    budget: &Arc<Budget>,
+    parent: Option<&'a dm_syntax::SharedNativeReservation>,
+) -> io::Result<CapturedNamedFile<'a>> {
+    use std::{alloc::Layout, fmt, ptr::NonNull};
+    struct Count(usize);
+    impl fmt::Write for Count {
+        fn write_str(&mut self, text: &str) -> fmt::Result {
+            self.0 = self.0.checked_add(text.len()).ok_or(fmt::Error)?;
+            Ok(())
+        }
+    }
+    struct Fixed(String);
+    impl fmt::Write for Fixed {
+        fn write_str(&mut self, text: &str) -> fmt::Result {
+            if text.len() > self.0.capacity() - self.0.len() { return Err(fmt::Error); }
+            self.0.push_str(text);
+            Ok(())
+        }
+    }
+    let denied = || io::Error::from(io::ErrorKind::OutOfMemory);
+    let mut width = Count(0);
+    output.write_named_file_text(name, filename, &mut width).map_err(|_| denied())?;
+    let layout = Layout::array::<u8>(width.0).map_err(|_| denied())?;
+    // The common renderer always emits its preamble.
+    if layout.size() == 0 { return Err(io::ErrorKind::InvalidData.into()); }
+    let window = crate::captured_generator_budget::Budget::reserve_window(budget, layout.size())
+        .map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory, message))?;
+    if window.capacity() != layout.size() { return Err(denied()); }
+    let parent_grant = parent.map(|parent| parent.provisional(layout.size())).transpose()
+        .map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory, message))?;
+    // SAFETY: admitted nonzero Layout for an ordinary Global Vec<u8>.
+    // The unique Vec starts empty, and every following byte is UTF-8.
+    let data = NonNull::new(unsafe { std::alloc::alloc(layout) }).ok_or_else(denied)?;
+    let bytes = unsafe { Vec::from_raw_parts(data.as_ptr(), 0, layout.size()) };
+    let mut out = Fixed(String::from_utf8(bytes).expect("empty UTF8 backing"));
+    output.write_named_file_text(name, filename, &mut out).map_err(|_| io::ErrorKind::InvalidData)?;
+    if out.0.len() != layout.size() { return Err(io::ErrorKind::InvalidData.into()); }
+    Ok(CapturedNamedFile { text: out.0, _window: window, _parent: parent_grant })
+}
+
 /// Generator-owned bytes and insertion boundary. There is deliberately no
 /// conversion to a named output artifact until both typed probes agree.
 pub struct DeclareTemplate {
@@ -49,12 +107,13 @@ impl DeclareTemplate {
     pub fn prove(
         self,
         root: &Arc<Budget>,
+        parent: Option<&dm_syntax::SharedNativeReservation>,
         poll: &dyn Fn() -> io::Result<()>,
         mut probe: impl FnMut(&str, &[crate::declare_policy::RelationTypeCandidate]) -> Result<Vec<Option<String>>, Failure>,
     ) -> Result<Output, Failure> {
         let Self { empty, slot } = self;
         let file = |output: &Output| {
-            output.capture_exact_named_file("declare", "declare.dm", root)
+            capture_exact_named_file(output, "declare", "declare.dm", root, parent)
                 .map_err(Failure::Operational)
         };
         let mut control = Control { budget: root, poll };
@@ -257,7 +316,10 @@ CAPABILITIES(/obj/device)
   let budget = Budget::new(32 * 1024 * 1024).unwrap();
   let template = collect_template(&pages, &HashMap::new(), &budget, &|| Ok(())).unwrap();
   let mut passes = 0;
-  let output = template.prove(&budget, &|| Ok(()), |text, roster| {
+  let parent = dm_syntax::SharedNativeReservation::try_new(32 * 1024 * 1024).unwrap();
+  let baseline = parent.reserved_bytes();
+  let output = template.prove(&budget, Some(&parent), &|| Ok(()), |text, roster| {
+   assert_eq!(parent.reserved_bytes(), baseline + text.len());
    let requested: Vec<_> = roster.iter().map(|row| (row.owner.as_str(), row.var.as_str())).collect();
    assert_eq!(requested, [
     ("/datum/probe", "zeta"), ("/datum/probe", "alpha"), ("/datum/probe", "listed"),
@@ -281,7 +343,7 @@ CAPABILITIES(/obj/device)
   let denied = Budget::new(32 * 1024 * 1024).unwrap();
   let template = collect_template(&pages, &HashMap::new(), &denied, &|| Ok(())).unwrap();
   let mut passes = 0;
-  let failure = template.prove(&denied, &|| Ok(()), |_, _| {
+  let failure = template.prove(&denied, None, &|| Ok(()), |_, _| {
    passes += 1;
    Ok(vec![Some(if passes == 1 { "/datum" } else { "/obj" }.into()), None, None])
   }).err().unwrap();
@@ -291,7 +353,7 @@ CAPABILITIES(/obj/device)
   let empty = Budget::new(32 * 1024 * 1024).unwrap();
   let template = collect_template(&pages, &HashMap::new(), &empty, &|| Ok(())).unwrap();
   let mut passes = 0;
-  let output = template.prove(&empty, &|| Ok(()), |_, roster| {
+  let output = template.prove(&empty, None, &|| Ok(()), |_, roster| {
    passes += 1;
    Ok(vec![None; roster.len()])
   }).unwrap();
@@ -425,4 +487,67 @@ CAPABILITIES(/obj/device)
   let expected=frozen.replace("    declare_ids_policy::{split_opt, Cap},\n","").replace("use std::collections::{BTreeMap, BTreeSet};","use std::collections::{BTreeMap,BTreeSet};\nuse super::declare_before_ids::{split_opt,Cap};").replace("crate::declare_ids_policy::parse_capability","super::declare_before_ids::parse_capability");assert_eq!(projected,expected);
  }
 
+}
+
+#[cfg(test)]
+mod exact_named_stage_tests {
+    use super::*;
+
+    #[test]
+    fn exact_named_stage_preserves_bytes_and_releases_before_the_next_probe() {
+        use crate::captured_generator_budget::Budget;
+        for body in ["", "one line", "one line\n", "text: \u{6f22}\nsecond"] {
+            let mut output = Output::default();
+            output.body = body.to_owned();
+            let mut expected = String::new();
+            output.write_named_file_text("declare", "declare.dm", &mut expected).unwrap();
+            let budget = Budget::new(65536).unwrap();
+            let baseline = budget.used();
+            let stage = capture_exact_named_file(&output, "declare", "declare.dm", &budget, None).unwrap();
+            assert_eq!(stage.as_str(), expected);
+            assert_eq!(budget.used(), baseline + expected.len());
+            drop(stage);
+            assert_eq!(budget.used(), baseline);
+            let stage = capture_exact_named_file(&output, "declare", "declare.dm", &budget, None).unwrap();
+            assert_eq!(stage.as_str(), expected);
+            drop(stage);
+            let short = Budget::new(baseline + expected.len() - 1).unwrap();
+            let failure = capture_exact_named_file(&output, "declare", "declare.dm", &short, None).err().unwrap();
+            assert_eq!(failure.kind(), std::io::ErrorKind::OutOfMemory);
+            assert_eq!(short.used(), baseline);
+        }
+    }
+
+    #[test]
+    fn exact_named_stage_holds_parent_bytes_only_until_the_backing_is_freed() {
+        let mut output = Output::default();
+        output.body = "one line".to_owned();
+        let mut expected = String::new();
+        output.write_named_file_text("declare", "declare.dm", &mut expected).unwrap();
+        let bytes = expected.len();
+        let budget = Budget::new(65536).unwrap();
+        let local_base = budget.used();
+        let measure = dm_syntax::SharedNativeReservation::try_new(65536).unwrap();
+        let parent_base = measure.reserved_bytes();
+        let parent = dm_syntax::SharedNativeReservation::try_new(parent_base + bytes).unwrap();
+
+        let stage = capture_exact_named_file(&output, "declare", "declare.dm", &budget, Some(&parent)).unwrap();
+        assert_eq!(stage.as_str(), expected);
+        assert_eq!(budget.used(), local_base + bytes);
+        assert_eq!(parent.reserved_bytes(), parent_base + bytes);
+
+        let denied = capture_exact_named_file(&output, "declare", "declare.dm", &budget, Some(&parent));
+        assert_eq!(denied.err().unwrap().kind(), io::ErrorKind::OutOfMemory);
+        assert_eq!(budget.used(), local_base + bytes);
+        assert_eq!(parent.reserved_bytes(), parent_base + bytes);
+        drop(stage);
+        assert_eq!(budget.used(), local_base);
+        assert_eq!(parent.reserved_bytes(), parent_base);
+
+        let short = Budget::new(local_base + bytes - 1).unwrap();
+        let denied = capture_exact_named_file(&output, "declare", "declare.dm", &short, Some(&parent));
+        assert_eq!(denied.err().unwrap().kind(), io::ErrorKind::OutOfMemory);
+        assert_eq!(short.used(), local_base);
+        assert_eq!(parent.reserved_bytes(), parent_base);
+    }
 }

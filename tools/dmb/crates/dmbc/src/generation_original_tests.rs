@@ -40,7 +40,7 @@ fn actual_fixed_declare_overlay_check_leaves_absence_and_write_installs_only_ver
     assert!(!check.committed);
     assert!(check.changed.is_empty());
     assert!(!target.exists());
-    assert!(host.query_tree().is_none());
+    assert!(host.query_state().lock().unwrap().snapshot.is_none());
 
     let mut replacements = 0;
     let write = run_declare_overlay(&mut host, &request, Mode::Write, &cache, &mut |event| {
@@ -58,7 +58,15 @@ fn actual_fixed_declare_overlay_check_leaves_absence_and_write_installs_only_ver
     assert_eq!(replacements, 1);
     assert_eq!(write.rows[0].state, State::Written);
     assert_eq!(write.changed, [target.clone()]);
-    assert!(host.query_tree().is_some(), "only the installed physical output permits full preparation");
+    {
+        let state = host.query_state();
+        let state = state.lock().unwrap();
+        let prepared = state.snapshot.as_ref()
+            .expect("only the installed physical output permits Original preparation");
+        assert!(prepared.prepared_query_tree().unwrap()
+            .lookup_type(dm_ir::SymbolId::of("/datum/overlay_child")).is_some());
+        prepared.workspace_generator_inputs(GeneratorName::Declare).unwrap();
+    }
     let fresh = run(&mut host, &request, &[GeneratorName::Declare], Mode::Check, &cache).unwrap();
     assert_eq!(fresh.rows[0].state, State::Fresh);
 
