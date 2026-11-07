@@ -1622,9 +1622,10 @@ impl BuildHost {
                 query_snapshot::validate_selected_report_selection_v2(exclusions, &budget, judgment),
             _ => query_snapshot::validate_selected_report_selection(exclusions, &budget),
         }?;
-        if plan.roster() == dq_analyze::selected_exclusions_wire::Roster::WithUntyped
+        if matches!(plan.roster(), dq_analyze::selected_exclusions_wire::Roster::WithUntyped
+            | dq_analyze::selected_exclusions_wire::Roster::WithStoredAndTracked)
             && mode != SelectedReportMode::Combined {
-            return Err(Error::new(ErrorKind::Unsupported, "the selected untyped roster requires the combined Original Checker report"));
+            return Err(Error::new(ErrorKind::Unsupported, "the selected semantic roster requires the combined Original Checker report"));
         }
         Ok(plan)
     }

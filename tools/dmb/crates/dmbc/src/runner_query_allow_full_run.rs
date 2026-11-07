@@ -22,6 +22,7 @@ enum UnionRows<'a,'rows>{
  DerivedReads(&'a dq_analyze::captured_derived_reads::DerivedReadData),
  SysReactive(&'a dq_analyze::captured_sys_reactive::Data),
  DeclarationHard(Q, &'a [dq_analyze::lint::Site], &'a [String], &'a [String]),
+ StoredAndTracked(Q, &'a [dq_analyze::lint::Site], &'a [String], &'a [String]),
  SysSource(&'static str, &'a [dq_analyze::lint::Site], &'a [String]),
  RequirementBool(&'a dq_analyze::captured_requirement_bool_pages::RequirementData),
  MessageOnlyHard(Q, &'a [dq_analyze::lint::Site], &'a [AllowUse]),
@@ -51,7 +52,7 @@ impl Producer{
  fn stages_report(self)->bool {
   use dq_analyze::{captured_raw_tree_pages::Policy, workspace_fold_policy::Policy as Fold};
   matches!(self,
-   Self::Raw(_) | Self::Fold(Fold::StateSchema | Fold::Lifecycle | Fold::Loot | Fold::InstanceList | Fold::Cache | Fold::OwnershipForms | Fold::Api | Fold::Fields | Fold::Appearance)
+   Self::Raw(_) | Self::Fold(Fold::StateSchema | Fold::Lifecycle | Fold::Loot | Fold::InstanceList | Fold::Cache | Fold::OwnershipForms | Fold::Api | Fold::Fields | Fold::Appearance | Fold::Tracked | Fold::TrackedTests)
    | Self::Tree(Policy::NoticePublisher | Policy::ReportInCatch | Policy::Cooldown
       | Policy::CapBits | Policy::DeclarationBlock | Policy::DuplicateInputKey
       | Policy::Interactions | Policy::Latent | Policy::Pollers | Policy::Pool | Policy::ReadBack
@@ -59,7 +60,7 @@ impl Producer{
       | Policy::Expiry | Policy::Requirements | Policy::Sfx | Policy::Ui)
    | Self::Special("allow_annotations" | "silicon_entry" | "library_layering" | "sem/handlers"
       | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped" | "derived_reads" | "sys/dx_reactive" | "lifeforms" | "player_link" | "untyped_member" | "weak_raw_read" | "rel_write_undeclared" | "requirement_bool" | "base_vars" | "decl" | "init"
-      | "sys/hygiene" | "sys/resolvers" | "sys/tables" | "system_boundary")
+      | "sys/hygiene" | "sys/resolvers" | "sys/tables" | "system_boundary" | "stored_refs")
   )
  }
  fn question(self)->Option<Q>{Some(match self.name(){"silicon_entry"=>Q::SiliconEntry,"sem/keys"=>Q::Keys,"check_grep"=>Q::CheckGrep,"deadline_polling"=>Q::DeadlinePollingAllowlist,"op_order"=>Q::OpOrder,"ui_actions"=>Q::UiActions,"doc_snippets"=>Q::DocSnippets,"ownership"=>Q::Ownership,"derived_reads"=>Q::DerivedReads,"sem/handlers"=>Q::SemHandlersFullAllow,"sem/reads"=>Q::SemReads,"untracked_inputs"=>Q::UntrackedInputs,"setter_publishes"=>Q::SetterPublishes,"tracked"=>Q::Tracked,"tracked_tests"=>Q::TrackedTests,"decl"=>Q::Decl,"init"=>Q::Init,"base_vars"=>Q::BaseVars,"requirement_bool"=>Q::RequirementBool,"player_link"=>Q::PlayerLink,"untyped_member"=>Q::UntypedMember,"weak_raw_read"=>Q::WeakRawRead,"rel_write_undeclared"=>Q::RelWriteUndeclared,"untyped"=>Q::Untyped,"stored_refs"=>Q::StoredRefs,"engine_layering"=>Q::EngineLayering,"library_layering"=>Q::LibraryLayeringFullAllow,"sys/dx_reactive"=>Q::SysReactive,"lifeforms"=>Q::Lifeforms,_=>return None})}
@@ -101,6 +102,23 @@ impl SourceSnapshot{
      }
     },
     Producer::Tree(policy)=>{self.with_native_raw_tree(tree,policy,|data,config,child|{if let Some(stage)=stage.as_deref_mut(){let meta=producer.metadata();let default=dq_analyze::scopes::LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&default);stage(meta,UnionRows::Tree(data),scope,child)?}record(data.allow_used())})?;},
+    Producer::Fold(policy) if policy.tracked().is_some()=>{
+     let tests=policy.tracked().expect("selected tracked policy");
+     let question=if tests{Q::TrackedTests}else{Q::Tracked};
+     if !capture.matches_auxiliary_questions(Q::SELECTED_STORED_AND_TRACKED){
+      return Err("tracked union needs its complete selected stored/track profile".into());
+     }
+     let child=self.workspace_semantic_inputs_with_guard(question,&guard)?;
+     queries.with_original_workspace_tracked_guard_report(capture,&guard,child,tests,|data,config,child_budget|{
+      if let Some(stage)=stage.as_deref_mut(){
+       let meta=producer.metadata();
+       let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::StoredAndTracked(question,data.sites(),data.source_text(),data.notes()),scope,child_budget)?;
+      }
+      record(data.allow_used())
+     })?;
+    },
     Producer::Fold(policy)=>{
      self.with_native_workspace_fold_report(tree,policy,|data,config,child_budget|{
       let allows=data.allow_used();
@@ -338,7 +356,18 @@ impl SourceSnapshot{
       })?;
      }else{self.with_original_untyped_policy(|data,_,_|record(data.allow_used()))?;}
     },
-    Producer::Special("stored_refs")=>{self.with_original_stored_refs_policy(|data,_,_|record(data.allow_used()))?;},
+    Producer::Special("stored_refs")=>{
+     self.with_original_stored_refs_policy(|data,config,child_budget|{
+      if let Some(stage)=stage.as_deref_mut(){
+       let meta=producer.metadata();
+       if !std::ptr::eq(meta,data.metadata()){return Err(io::Error::new(io::ErrorKind::InvalidData,"selected stored_refs metadata differs"));}
+       let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::StoredAndTracked(Q::StoredRefs,data.sites(),data.source_text(),data.notes()),scope,child_budget)?;
+      }
+      record(data.allow_used())
+     })?;
+    },
     Producer::Special("engine_layering")=>{self.with_original_engine_layering_policy(|data,_,_|record(data.allow_used()))?;},
     Producer::Special("library_layering")=>{
      let stage=stage.as_deref_mut().ok_or("library layering selected report adapter absent")?;

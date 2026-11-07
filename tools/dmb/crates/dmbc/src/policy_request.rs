@@ -72,6 +72,8 @@ impl WorkspaceAuxiliaryQuestion {
         &[Self::PlayerLink, Self::Lifeforms];
     pub(crate) const SELECTED_REFERENCE_POLICIES: &'static [Self] =
         &[Self::UntypedMember, Self::WeakRawRead, Self::RelWriteUndeclared];
+    pub(crate) const SELECTED_STORED_AND_TRACKED: &'static [Self] =
+        &[Self::Tracked, Self::TrackedTests, Self::StoredRefs];
     pub(crate) const SELECTED_DECLARATION_POLICIES: &'static [Self] =
         &[Self::Decl, Self::Init, Self::BaseVars];
     pub(crate) const SELECTED_REACTIVE: &'static [Self] =
@@ -83,6 +85,7 @@ impl WorkspaceAuxiliaryQuestion {
 
     pub(crate) fn admits_combined_reports(questions: &[Self]) -> bool {
         Self::admits_selected_reads(questions) || questions == [Self::Untyped]
+            || questions == Self::SELECTED_STORED_AND_TRACKED
     }
 
     pub(crate) fn admits_selected_setter(questions: &[Self]) -> bool {

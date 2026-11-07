@@ -33,7 +33,7 @@ impl SelectedReportPlan {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
             Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
-            Q::SELECTED_LIFEFORMS_PLAYER_LINK, Q::SELECTED_REFERENCE_POLICIES, &[Q::RequirementBool], Q::SELECTED_DECLARATION_POLICIES,
+            Q::SELECTED_LIFEFORMS_PLAYER_LINK, Q::SELECTED_REFERENCE_POLICIES, Q::SELECTED_STORED_AND_TRACKED, &[Q::RequirementBool], Q::SELECTED_DECLARATION_POLICIES,
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
         let mut count = 0;
@@ -326,6 +326,24 @@ impl ReportStage<'_> {
                 {
                     return Err(io::Error::new(io::ErrorKind::InvalidData,
                         "selected declaration findings differ from their actual Hard source shape"));
+                }
+                for (site, text) in sites.iter().zip(source_text) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
+                projection.notes(notes, &mut control)?;
+            }
+            UnionRows::StoredAndTracked(question, sites, source_text, notes) => {
+                let expected = match question {
+                    Q::StoredRefs => dq_analyze::stored_refs_policy::metadata(),
+                    Q::Tracked => dq_analyze::tracked_policy::metadata(false),
+                    Q::TrackedTests => dq_analyze::tracked_policy::metadata(true),
+                    _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued stored or tracked role")),
+                };
+                if self.selected != Roster::WithStoredAndTracked.names()
+                    || !std::ptr::eq(meta, expected) || !matches!(meta.policy, Policy::Hard)
+                    || sites.len() != source_text.len()
+                {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "stored or tracked findings differ from their issued Hard shape"));
                 }
                 for (site, text) in sites.iter().zip(source_text) {
                     projection.row(site, Some(text), &mut control)?;
@@ -639,6 +657,7 @@ mod selected_plan_tests {
             (Roster::AllRawFilePolicies, &[]),
             (Roster::WithWorkspaceFoldPolicies, &[]),
             (Roster::WithSysSourcePolicies, &[]),
+            (Roster::WithStoredAndTracked, Q::SELECTED_STORED_AND_TRACKED),
             (Roster::WithRawRuntimePolicies, &[]),
             (Roster::WithRawDeclarationPolicies, &[]),
             (Roster::WithCooldown, &[]),

@@ -33,6 +33,7 @@ pub enum Roster {
     AllRawFilePolicies,
     WithWorkspaceFoldPolicies,
     WithSysSourcePolicies,
+    WithStoredAndTracked,
     WithRawRuntimePolicies,
 }
 
@@ -41,7 +42,7 @@ impl Roster {
     // A V1 alias is a single wire token. This bound is for internal staged
     // sections only, independent of the V2 array decoder's seven-name cap.
     pub const MAX_STAGED_POLICIES: usize = 45;
-    pub const ALL: [Self; 23] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies, Self::WithRequirementBool, Self::WithDeclarationPolicies, Self::WithRawDeclarationPolicies, Self::AllRawFilePolicies, Self::WithRawRuntimePolicies, Self::WithWorkspaceFoldPolicies, Self::WithSysSourcePolicies];
+    pub const ALL: [Self; 24] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies, Self::WithRequirementBool, Self::WithDeclarationPolicies, Self::WithRawDeclarationPolicies, Self::AllRawFilePolicies, Self::WithRawRuntimePolicies, Self::WithWorkspaceFoldPolicies, Self::WithSysSourcePolicies, Self::WithStoredAndTracked];
 
     /// Independently qualified Analyze-only capture plans.
     pub const GENERIC_V2: [Self; 4] = [
@@ -67,7 +68,7 @@ impl Roster {
     }
 
     pub fn is_combined(self) -> bool {
-        matches!(self, Self::WithSemanticReads | Self::WithReactivePolicies | Self::WithUntyped)
+        matches!(self, Self::WithSemanticReads | Self::WithReactivePolicies | Self::WithUntyped | Self::WithStoredAndTracked)
     }
 
     pub fn names(self) -> &'static [&'static str] {
@@ -88,6 +89,10 @@ impl Roster {
             Self::WithRawRuntimePolicies => &[
                 "allow_annotations", "interactions", "latent", "notice_publisher", "pollers",
                 "pool", "read_back", "report_in_catch", "scheduler",
+            ],
+            Self::WithStoredAndTracked => &[
+                "allow_annotations", "notice_publisher", "report_in_catch", "scheduler",
+                "stored_refs", "tracked", "tracked_tests",
             ],
             Self::WithSysSourcePolicies => &[
                 "allow_annotations", "notice_publisher", "report_in_catch", "scheduler",

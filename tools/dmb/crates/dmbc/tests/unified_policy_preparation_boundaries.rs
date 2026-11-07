@@ -2618,3 +2618,131 @@ fn public_selected_sys_source_policies_match_standalone_report_with_nonempty_fix
         assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
     }
 }
+
+#[test]
+#[ignore = "private dmbc transport and independent legacy Analyze oracle; run outside Cargo with the dm_compile machine slot"]
+fn public_combined_stored_and_tracked_match_original_full_report() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Roster},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    let oracle = PathBuf::from(std::env::var_os("DQ_SELECTED_STORED_AND_TRACKED_ORACLE")
+        .expect("build and provide the independent unified_selected_stored_and_tracked_original"));
+    assert!(oracle.is_absolute());
+    let root = test_scratch::dir("public-combined-stored-and-tracked");
+    let transport = test_scratch::dir("public-combined-stored-and-tracked-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("combined-stored-and-tracked-{}-{}", std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    put(&root, "deepquarry.dme", concat!(
+        "#include \"code/holder.dm\"\n",
+        "#include \"code/tests/unit_tests/tracked.dm\"\n",
+        "#include \"code/checker.dm\"\n",
+    ));
+    put(&root, "code/holder.dm", concat!(
+        "#define TRACKED(T,V)\n",
+        "/datum/holder\n    var/plain = 0\n    var/list/items\n",
+        "TRACKED(/datum/holder, plain)\n",
+        "/datum/holder/proc/update(datum/D)\n    plain = 2\n    items += D\n",
+        "/datum/holder/proc/kept()\n",
+        "    plain = 1 // ALLOW(tracked): the authored fixture retains this intentional write\n",
+    ));
+    put(&root, "code/tests/unit_tests/tracked.dm", "/datum/holder/proc/test_update()\n    plain = 3\n");
+    put(&root, "code/checker.dm", "/proc/checker_control()\n    return missing_combined\n");
+    put(&root, "maps/stale.dm",
+        "/proc/stale()\n    return // ALLOW(tracked): an authored stale annotation stays unused\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(test_scratch::dir("public-combined-stored-and-tracked-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithStoredAndTracked;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let request_path = transport.join("combined-stored-and-tracked.json");
+    put(&transport, "combined-stored-and-tracked.json", serde_json::to_vec(&serde_json::json!({
+        "build": build, "exclusions": exclusions,
+    })).unwrap());
+
+    let mut original = None;
+    let mut original_frame = None;
+    for stage in 0..3 {
+        if stage == 2 {
+            put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(concat!(
+                "[lint.tracked]\nexempt_prefixes=['code/tests/']\n",
+                "exempt_files=['code/holder.dm']\n",
+            )));
+        }
+        let output = daemon.run(
+            &[OsStr::new("checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
+            Duration::from_secs(90),
+        ).unwrap();
+        assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+        let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+        let terminal: CombinedTerminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+        terminal.require().unwrap();
+        assert_eq!(terminal.roster, roster);
+        assert!(!terminal.clean);
+        let (checker, report) = output.stdout[header_end + 1..].split_at(terminal.checker.length as usize);
+        assert_eq!(report.len() as u64, terminal.report.length);
+        assert_eq!(xxhash_rust::xxh3::xxh3_128(checker), terminal.checker.hash.0);
+        assert_eq!(xxhash_rust::xxh3::xxh3_128(report), terminal.report.hash.0);
+        let checker_json: serde_json::Value = serde_json::from_slice(checker).unwrap();
+        let rows = checker_json["diagnostics"].as_array().unwrap();
+        assert_eq!(rows.len(), 1, "{checker_json}");
+        let row = &rows[0];
+        assert_eq!(row["family"], "undefined_variable");
+        assert_eq!(row["severity"], "error");
+        assert_eq!(row["line"], 2);
+        assert_eq!(row["column"], 12);
+        assert_eq!(row["message"], "undefined var: \"missing_combined\"");
+        assert!(Path::new(row["file"].as_str().unwrap()).ends_with("checker.dm"));
+        assert!(row["notes"].as_array().unwrap().is_empty());
+        let text = std::str::from_utf8(report).unwrap();
+        assert!(text.contains("[stored_refs/"), "{text}");
+        assert_eq!(text.contains("[tracked/outside_setter]"), stage != 2, "{text}");
+        assert!(text.contains("[tracked_tests/outside_setter]"), "{text}");
+        if stage == 0 {
+            assert!(text.contains("maps/stale.dm:2: ALLOW(tracked) is unused"), "{text}");
+            assert!(!text.contains("code/holder.dm:10:"), "{text}");
+            original = Some((checker.to_vec(), report.to_vec()));
+            original_frame = Some(terminal.frame);
+        } else {
+            let (old_checker, old_report) = original.as_ref().unwrap();
+            if stage == 1 {
+                assert_eq!(checker, old_checker);
+                assert_eq!(report, old_report);
+            } else {
+                let mut previous: serde_json::Value = serde_json::from_slice(old_checker).unwrap();
+                let mut current = checker_json.clone();
+                let previous_policy = previous.as_object_mut().unwrap().remove("policy_revision").unwrap();
+                let current_policy = current.as_object_mut().unwrap().remove("policy_revision").unwrap();
+                assert_ne!(current_policy, previous_policy);
+                assert_eq!(current, previous, "only the policy revision changes after a scope edit");
+                assert_ne!(terminal.frame.policy_revision, original_frame.unwrap().policy_revision);
+                assert_eq!(terminal.frame.semantic_revision, original_frame.unwrap().semantic_revision);
+            }
+        }
+        let native = transport.join("native-stored-and-tracked.txt");
+        std::fs::write(&native, report).unwrap();
+        let reference = daemon.run_program(&oracle, &[root.as_os_str(), native.as_os_str()], Duration::from_secs(45)).unwrap();
+        assert!(reference.status.success(), "{}", String::from_utf8_lossy(&reference.stderr));
+    }
+    let ordinary = daemon.run(
+        &[OsStr::new("analyze-exclusions"), request_path.as_os_str(), OsStr::new("--report-batch")],
+        Duration::from_secs(30),
+    ).unwrap();
+    assert!(!ordinary.status.success());
+    assert!(ordinary.stdout.is_empty());
+    assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
+}
