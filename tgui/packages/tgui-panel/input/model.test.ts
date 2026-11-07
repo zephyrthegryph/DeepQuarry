@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'bun:test';
-import { ChatInputModel, keyAction, TYPING_THROTTLE_MS } from './model';
+import {
+  ChatInputModel,
+  INPUT_CHANNELS,
+  type InputChannel,
+  keyAction,
+  nextChannel,
+  TYPING_THROTTLE_MS,
+} from './model';
 
 function setup() {
   const sent: [string, any][] = [];
@@ -97,5 +104,30 @@ describe('chat input row', () => {
       ['open', { channel: 'Say' }],
       ['close', {}],
     ]);
+  });
+});
+
+describe('channel toggle', () => {
+  it('cycles forward through every channel and wraps', () => {
+    let channel: InputChannel = INPUT_CHANNELS[0];
+    const seen: InputChannel[] = [channel];
+    for (let i = 1; i < INPUT_CHANNELS.length; i++) {
+      channel = nextChannel(channel);
+      seen.push(channel);
+    }
+    expect(seen).toEqual([...INPUT_CHANNELS]);
+    expect(nextChannel(channel)).toBe(INPUT_CHANNELS[0]);
+  });
+
+  it('goes back with a negative direction and wraps', () => {
+    expect(nextChannel('Say', -1)).toBe('LOOC');
+    expect(nextChannel('Radio', -1)).toBe('Say');
+  });
+
+  it('starts at Say and steps the same way a click does', () => {
+    const { model } = setup();
+    expect(model.channel).toBe('Say');
+    model.step(1);
+    expect(model.channel).toBe(nextChannel('Say'));
   });
 });

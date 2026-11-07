@@ -9,6 +9,7 @@
 #define SKIN_ASSET_CACHE_BROWSER "asset_cache_browser"
 #define SKIN_CHAT_FLOAT_WINDOW "chat_float"
 #define SKIN_OUTPUT_PANE "outputwindow"
+#define SKIN_STAT_PANE "statwindow"
 
 // Controls
 #define SKIN_MAIN_SPLIT "mainwindow.mainvsplit"

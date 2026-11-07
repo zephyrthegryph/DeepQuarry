@@ -822,6 +822,7 @@
 #include "dq_p2_reagent_rag_behaviour.dm"
 #include "dq_eg2_gap_tests.dm"
 #include "dq_live_prefs.dm"
+#include "dq_chat_layout.dm"
 #include "dq_mfo_doors_behaviour.dm"
 #include "dq_mfo_blast_contents.dm"
 #include "dq_mfo_dna_console.dm"

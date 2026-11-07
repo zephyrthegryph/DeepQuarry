@@ -1,28 +1,75 @@
-// Floating chat. The chat pane (outputwindow) is hosted either by the right-hand split
-// (rpane.rpanewindow, docked) or by the chat_float window's child control (floating, the
-// default). Moving the pane re-parents the same browser control, so the chat page and its
-// scrollback are the same page either way. The float window's position and size are saved by
-// the client (saved-params in skin.dmf); this file only decides where the pane lives.
+// Pinned and floating chat. The chat pane (outputwindow) is hosted by the right-hand split (rpane.rpanewindow), at its
+// bottom (the default, the skin's own layout) or its top with the stat panel (statwindow) taking the rest of the column, or
+// by the chat_float window's child control (floating). Moving the pane re-parents the same browser control, so the chat page
+// and its scrollback are the same page in every layout. The float window has no title bar: the chat page draws a header strip
+// that drags it, a grip that resizes it, and buttons that pin it (tgui-panel/layout); it reports the pin and the share of the
+// column over the panel's messages (layout/pin, layout/share), and this file decides where the pane lives.
 // Typing goes through the chat page's input row (tgui-panel/input), whose messages the panel forwards to
-// tgui_say (see tgui_panel.dm), so the speech path is the popup's. The T/M/O hotkeys focus the row while
-// the chat floats; docked, or with the inline-input preference off, they open the tgui_say popup.
+// tgui_say (see tgui_panel.dm), so the speech path is the popup's. The T/M/O hotkeys focus the row; with the
+// inline-input preference off they open the tgui_say popup.
+
+/// Where the chat pane is: the bottom or top of the right-hand column (pinned), or its own window.
+#define CHAT_MODE_BOTTOM "bottom"
+#define CHAT_MODE_TOP "top"
+#define CHAT_MODE_FLOAT "float"
+#define CHAT_DOCK_BOTTOM_RIGHT "Bottom right"
+#define CHAT_DOCK_TOP_RIGHT "Top right"
+/// The pinned chat's share of the right-hand column, in percent.
+#define CHAT_SHARE_DEFAULT 40
+#define CHAT_SHARE_MIN 20
+#define CHAT_SHARE_MAX 80
+#define CHAT_CHANGE_NONE 0
+#define CHAT_CHANGE_SPLITTER 1
+#define CHAT_CHANGE_LAYOUT 2
 
 #define CHAT_FLOAT_DEFAULT_POS "60,60"
-#define CHAT_FLOAT_DEFAULT_SIZE "480x300"
+#define CHAT_FLOAT_DEFAULT_SIZE "560x420"
 /// Pixels of the float window that must stay on the screen, or it is put back.
 #define CHAT_FLOAT_MIN_VISIBLE 48
 
-/// Whether the chat is a floating window (default) or docked in the right-hand pane.
+/// Whether the chat is a floating window or pinned to the right-hand column (default).
 /datum/preference/toggle/chat_floating
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "CHAT_FLOATING"
-	default_value = TRUE
+	default_value = FALSE
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/chat_floating/apply_to_client(client/client, value)
-	client.chat_apply_layout(value)
+	client.chat_layout_pref_changed()
 
-/// Whether the T/M/O hotkeys focus the chat page's input row (while the chat floats) instead of opening the popup.
+/// Which end of the right-hand column the pinned chat takes; the stat panel has the rest.
+/datum/preference/choiced/chat_dock_side
+	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
+	savefile_key = "CHAT_DOCK_SIDE"
+	savefile_identifier = PREFERENCE_PLAYER
+
+TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOCK_BOTTOM_RIGHT, CHAT_DOCK_TOP_RIGHT))
+
+/datum/preference/choiced/chat_dock_side/create_default_value()
+	return CHAT_DOCK_BOTTOM_RIGHT
+
+/datum/preference/choiced/chat_dock_side/apply_to_client(client/client, value)
+	client.chat_layout_pref_changed()
+
+/// The share of the right-hand column the pinned chat takes, in percent. The chat page reports it when the player drags the splitter.
+/datum/preference/numeric/chat_share
+	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
+	savefile_key = "CHAT_SHARE"
+	savefile_identifier = PREFERENCE_PLAYER
+	minimum = CHAT_SHARE_MIN
+	maximum = CHAT_SHARE_MAX
+
+/datum/preference/numeric/chat_share/create_default_value()
+	return CHAT_SHARE_DEFAULT
+
+/datum/preference/numeric/chat_share/apply_to_client(client/client, value)
+	client.chat_layout_pref_changed()
+
+/// Where the chat pane is on this client, and the share it has: the skin starts bottom right with the default share.
+/client/var/chat_layout_mode = CHAT_MODE_BOTTOM
+/client/var/chat_layout_share = CHAT_SHARE_DEFAULT
+
+/// Whether the T/M/O hotkeys focus the chat page's input row instead of opening the popup.
 /datum/preference/toggle/chat_inline_input
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "CHAT_INLINE_INPUT"
@@ -33,7 +80,7 @@
 /client/proc/chat_focus_input(channel)
 	if(channel != SAY_CHANNEL && channel != ME_CHANNEL && channel != OOC_CHANNEL && channel != LOOC_CHANNEL)
 		return FALSE
-	if(!prefs?.read_preference(/datum/preference/toggle/chat_floating) || !prefs.read_preference(/datum/preference/toggle/chat_inline_input))
+	if(!prefs?.read_preference(/datum/preference/toggle/chat_inline_input))
 		return FALSE
 	if(!tgui_panel?.is_ready())
 		return FALSE
@@ -42,7 +89,7 @@
 	log_tgui(src, "Chat input focused in [channel].", context = "chat_float")
 	return TRUE
 
-/// The OOC hotkey: the input row in OOC while the chat floats, else the OOC prompt.
+/// The OOC hotkey: the input row in OOC, else the OOC prompt.
 /client/verb/ooc_input()
 	set name = ".dq-ooc-input"
 	set hidden = TRUE
@@ -51,22 +98,118 @@
 		return
 	winset(src, null, "command=ooc")
 
-/// Hosts the chat pane in the float window (floating) or the right-hand split (docked).
-/client/proc/chat_apply_layout(floating)
+/// The mode the preferences ask for.
+/proc/chat_mode_for(floating, side)
 	if(floating)
-		winset(src, null, list2params(list(
-			"[SKIN_RPANE_SPLIT].right" = "",
-			"[SKIN_CHAT_FLOAT_HOST].left" = SKIN_OUTPUT_PANE,
-			"[SKIN_CHAT_FLOAT_WINDOW].is-visible" = "true",
-		)))
-		dx_winget(src, src, SKIN_CHAT_FLOAT_WINDOW, "pos;size", PROC_REF(chat_float_measured))
+		return CHAT_MODE_FLOAT
+	return (side == CHAT_DOCK_TOP_RIGHT) ? CHAT_MODE_TOP : CHAT_MODE_BOTTOM
+
+/// A chat share held to what the column can show.
+/proc/chat_share_clamped(share)
+	if(!isnum(share))
+		return CHAT_SHARE_DEFAULT
+	return clamp(round(share), CHAT_SHARE_MIN, CHAT_SHARE_MAX)
+
+/// The splitter of rpane.rpanewindow (the percent its first pane takes) for a chat share: the chat is the first pane at the top and the second at the bottom.
+/proc/chat_splitter_for(mode, share)
+	share = chat_share_clamped(share)
+	return (mode == CHAT_MODE_TOP) ? share : 100 - share
+
+/// The share of the column the chat takes for a splitter position (the inverse of chat_splitter_for()).
+/proc/chat_share_for_splitter(mode, splitter)
+	return chat_share_clamped((mode == CHAT_MODE_TOP) ? splitter : 100 - splitter)
+
+/// The winset text that takes the chat pane from the layout `from` to the layout `mode`, one call, in order. The stat panel is the
+/// right-column pane that is not the chat: it keeps its place when only the chat pane comes or goes (bottom and float), and is
+/// re-seated when the chat takes or leaves the top.
+/proc/chat_layout_params(mode, share, from = CHAT_MODE_BOTTOM)
+	var/list/steps = list()
+	if(from == CHAT_MODE_FLOAT)
+		steps += "[SKIN_CHAT_FLOAT_WINDOW].is-visible=false"
+		steps += "[SKIN_CHAT_FLOAT_HOST].left="
+	if(from == CHAT_MODE_TOP || mode == CHAT_MODE_TOP)
+		steps += "[SKIN_RPANE_SPLIT].left="
+		steps += "[SKIN_RPANE_SPLIT].right="
+	switch(mode)
+		if(CHAT_MODE_TOP)
+			steps += "[SKIN_RPANE_SPLIT].left=[SKIN_OUTPUT_PANE]"
+			steps += "[SKIN_RPANE_SPLIT].right=[SKIN_STAT_PANE]"
+			steps += "[SKIN_RPANE_SPLIT].splitter=[chat_splitter_for(mode, share)]"
+		if(CHAT_MODE_BOTTOM)
+			if(from == CHAT_MODE_TOP)
+				steps += "[SKIN_RPANE_SPLIT].left=[SKIN_STAT_PANE]"
+			steps += "[SKIN_RPANE_SPLIT].right=[SKIN_OUTPUT_PANE]"
+			steps += "[SKIN_RPANE_SPLIT].splitter=[chat_splitter_for(mode, share)]"
+		if(CHAT_MODE_FLOAT)
+			if(from == CHAT_MODE_TOP)
+				steps += "[SKIN_RPANE_SPLIT].left=[SKIN_STAT_PANE]"
+			else
+				steps += "[SKIN_RPANE_SPLIT].right="
+			steps += "[SKIN_CHAT_FLOAT_HOST].left=[SKIN_OUTPUT_PANE]"
+			steps += "[SKIN_CHAT_FLOAT_WINDOW].is-visible=true"
+	return jointext(steps, ";")
+
+/// What a layout request does: CHAT_CHANGE_NONE, _SPLITTER (the pane stays, its share moves) or _LAYOUT (the pane moves).
+/proc/chat_layout_change(mode, share, applied_mode, applied_share)
+	if(mode != applied_mode)
+		return CHAT_CHANGE_LAYOUT
+	if(mode != CHAT_MODE_FLOAT && chat_share_clamped(share) != chat_share_clamped(applied_share))
+		return CHAT_CHANGE_SPLITTER
+	return CHAT_CHANGE_NONE
+
+/// A layout preference changed. Login applies every preference before the skin's browsers have loaded, and moving the chat pane then
+/// stalled the client (the stat panel, chat and tgui windows never finished opening), so nothing moves until the chat page is ready;
+/// its ready message runs chat_layout_sync() and so applies what the preferences say by then.
+/client/proc/chat_layout_pref_changed()
+	if(tgui_panel?.is_ready())
+		chat_layout_sync()
 	else
-		winset(src, null, list2params(list(
-			"[SKIN_CHAT_FLOAT_WINDOW].is-visible" = "false",
-			"[SKIN_CHAT_FLOAT_HOST].left" = "",
-			"[SKIN_RPANE_SPLIT].right" = SKIN_OUTPUT_PANE,
-		)))
-	log_tgui(src, "Chat layout: [floating ? "floating" : "docked"].", context = "chat_float")
+		log_tgui(src, "Chat layout change waits for the chat page.", context = "chat_float")
+
+/// Puts the chat pane where the preferences want it and tells the chat page which layout it is in. The pane is left alone when it is
+/// there already (a chat page that reloads reports ready again, and a re-parent would reload it once more).
+/client/proc/chat_layout_sync()
+	if(!prefs)
+		return
+	var/mode = chat_mode_for(prefs.read_preference(/datum/preference/toggle/chat_floating), prefs.read_preference(/datum/preference/choiced/chat_dock_side))
+	var/share = chat_share_clamped(prefs.read_preference(/datum/preference/numeric/chat_share))
+	switch(chat_layout_change(mode, share, chat_layout_mode, chat_layout_share))
+		if(CHAT_CHANGE_LAYOUT)
+			winset(src, null, chat_layout_params(mode, share, chat_layout_mode))
+			log_tgui(src, "Chat layout: [chat_layout_mode] -> [mode], share [share].", context = "chat_float")
+			chat_layout_mode = mode
+			chat_layout_share = share
+			if(mode == CHAT_MODE_FLOAT)
+				dx_winget(src, src, SKIN_CHAT_FLOAT_WINDOW, "pos;size", PROC_REF(chat_float_measured))
+		if(CHAT_CHANGE_SPLITTER)
+			winset(src, SKIN_RPANE_SPLIT, "splitter=[chat_splitter_for(mode, share)]")
+			log_tgui(src, "Chat share: [chat_layout_share] -> [share].", context = "chat_float")
+			chat_layout_share = share
+	tgui_panel?.window?.send_message("chat/layout", list("mode" = chat_layout_mode, "share" = chat_layout_share))
+
+/// The chat page pins or floats the chat (its buttons, or a drag that ended near the right edge).
+/client/proc/chat_pin(mode)
+	if(mode != CHAT_MODE_TOP && mode != CHAT_MODE_BOTTOM && mode != CHAT_MODE_FLOAT)
+		log_tgui(src, "Chat pin refused: unknown mode [mode].", context = "chat_float")
+		return
+	log_tgui(src, "Chat pin asked: [mode].", context = "chat_float")
+	if(mode == CHAT_MODE_FLOAT)
+		prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, TRUE)
+		return
+	// The side first, then the float flag: the flag's apply is the one that moves the pane to the side.
+	prefs?.update_preference_by_type(/datum/preference/choiced/chat_dock_side, (mode == CHAT_MODE_TOP) ? CHAT_DOCK_TOP_RIGHT : CHAT_DOCK_BOTTOM_RIGHT)
+	prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, FALSE)
+
+/// The chat page measured its share of the right-hand column after the player moved the splitter.
+/client/proc/chat_report_share(share)
+	if(chat_layout_mode == CHAT_MODE_FLOAT || !isnum(share))
+		return
+	share = chat_share_clamped(share)
+	if(share == chat_layout_share)
+		return
+	log_tgui(src, "Chat share reported: [chat_layout_share] -> [share].", context = "chat_float")
+	chat_layout_share = share // the splitter is there already; the preference write must not move it again
+	prefs?.update_preference_by_type(/datum/preference/numeric/chat_share, share)
 
 /// dx_winget() callback: asks for the screen size once the float window's place is known.
 /client/proc/chat_float_measured(window_params)
@@ -120,7 +263,5 @@
 	set category = VERB_CAT_OOC_CLIENT_SETTINGS
 
 	chat_float_reset()
-	if(prefs?.read_preference(/datum/preference/toggle/chat_floating))
-		chat_apply_layout(TRUE)
-	else
-		prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, TRUE)
+	chat_pin(CHAT_MODE_FLOAT)
+	chat_layout_sync()

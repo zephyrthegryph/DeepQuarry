@@ -104,10 +104,19 @@ CAPABILITIES(/datum/tgui_panel)
 				),
 			),
 		))
+		// The page is up, so the chat pane can move to where the preference wants it without interrupting the load.
+		client()?.chat_layout_sync()
 		return TRUE
 	// The chat input row speaks through the say modal: same messages, same entry handling and typing bubbles.
 	if(type == "entry" || type == "typing" || type == "thinking" || type == "open" || type == "close" || type == "lenwarn")
 		return client()?.tgui_say?.on_message(type, payload, href_list)
+	// The chat page pins, floats or resizes the chat pane.
+	if(type == "layout/pin")
+		client()?.chat_pin(payload?["mode"])
+		return TRUE
+	if(type == "layout/share")
+		client()?.chat_report_share(payload?["share"])
+		return TRUE
 	if(type == "audio/setAdminMusicVolume")
 		client().admin_music_volume = payload["volume"]
 		return TRUE

@@ -1,0 +1,43 @@
+@use '~tgui/styles/console';
+
+// The strip that drags the floating chat window (it has no OS title bar).
+.ChatHeader {
+  display: flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-family: console.$console-font;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: console.$console-accent;
+  background-color: console.$console-panel;
+  border-bottom: console.$console-border-width solid console.$console-border;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.ChatHeader__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// The corner that resizes the floating chat window.
+.ChatResizeGrip {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(
+    135deg,
+    transparent 0 50%,
+    console.$console-border 50% 60%,
+    transparent 60% 72%,
+    console.$console-border 72% 82%,
+    transparent 82%
+  );
+}

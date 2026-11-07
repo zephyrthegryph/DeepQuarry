@@ -17,6 +17,13 @@ import { useChatScanlines } from './consoleScanlines';
 import { gameAtom } from './game/atoms';
 import { useKeepAlive } from './game/use-keep-alive';
 import { ChatInput } from './input/ChatInput';
+import { layoutModeAtom } from './layout/atoms';
+import {
+  ChatHeader,
+  ChatResizeGrip,
+  LayoutButtons,
+  useShareReport,
+} from './layout/ChatLayout';
 import { Notifications } from './Notifications';
 import { PingIndicator } from './ping/PingIndicator';
 import { ReconnectButton } from './reconnect';
@@ -33,10 +40,17 @@ export function Panel(props) {
   useChatPersistence();
   useChatScanlines();
   useKeepAlive(setDismissedWarning);
+  useShareReport();
+  const floating = useAtomValue(layoutModeAtom) === 'float';
 
   return (
     <Pane theme={settings.theme} canSuspend={false} className="ChatConsole">
       <Stack fill vertical>
+        {floating && (
+          <Stack.Item>
+            <ChatHeader />
+          </Stack.Item>
+        )}
         <Stack.Item>
           <Section fitted>
             <Stack mx={0.5} my={0.25} align="center">
@@ -45,6 +59,9 @@ export function Panel(props) {
               </Stack.Item>
               <Stack.Item>
                 <PingIndicator />
+              </Stack.Item>
+              <Stack.Item>
+                <LayoutButtons />
               </Stack.Item>
               <Stack.Item>
                 <Button
@@ -114,6 +131,7 @@ export function Panel(props) {
           <ChatInput />
         </Stack.Item>
       </Stack>
+      {floating && <ChatResizeGrip />}
     </Pane>
   );
 }

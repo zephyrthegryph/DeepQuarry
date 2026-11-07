@@ -26,4 +26,12 @@ describe('chat input wiring', () => {
   it('listens for the server focus request', () => {
     expect(read('events/listeners.ts')).toContain("'chat/focusInput'");
   });
+
+  it('has one channel button on the left and listens for the layout', () => {
+    expect(read('input/ChatInput.tsx')).toContain('nextChannel');
+    expect(read('input/ChatInput.tsx')).not.toContain('INPUT_CHANNELS.map');
+    expect(read('events/listeners.ts')).toContain("'chat/layout'");
+    expect(read('Panel.tsx')).toContain('ChatHeader');
+    expect(read('styles/main.scss')).toContain('ChatLayout.scss');
+  });
 });

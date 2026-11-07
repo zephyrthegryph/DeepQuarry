@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '~tgui/styles/console';
 
 .ChatInput {
@@ -11,10 +12,14 @@
   font-weight: 700;
 }
 
-.ChatInput__channels {
-  display: flex;
-  gap: 2px;
-}
+// The channel button, like the say popup's: one button on the left, coloured by channel.
+$channel-colors: (
+  'Say': hsl(214, 38%, 74%),
+  'Radio': hsl(133, 74%, 46%),
+  'Me': hsl(230, 58%, 55%),
+  'OOC': hsl(48, 100%, 40%),
+  'LOOC': hsl(180, 44%, 41%),
+);
 
 .ChatInput__channel,
 .ChatInput__send {
@@ -32,9 +37,24 @@
   }
 }
 
-.ChatInput__channel--selected {
-  color: console.$console-text;
-  background-color: console.$console-button;
+.ChatInput__channel {
+  flex: 0 0 auto;
+  min-width: 56px;
+  text-align: center;
+  user-select: none;
+  border: 2px solid console.$console-border;
+}
+
+@each $name, $color in $channel-colors {
+  .ChatInput__channel--#{$name} {
+    color: $color;
+    border-color: color.adjust($color, $lightness: -20%, $space: hsl);
+
+    &:hover {
+      color: color.adjust($color, $lightness: 8%, $space: hsl);
+      border-color: $color;
+    }
+  }
 }
 
 .ChatInput__send {
