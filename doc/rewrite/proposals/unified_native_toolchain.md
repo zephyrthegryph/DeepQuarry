@@ -3238,3 +3238,25 @@ tightly sized replacement. The receiver returned that refusal before
 publication and the private daemon drained. The probe took 225.14 seconds
 end to end, with 219.562 CPU seconds at the final sample. It returned no
 report bytes.
+
+
+The Original expanded source now grows at a stable reserved address on
+64-bit Windows and Unix. Each committed page takes its exact physical
+grant from the existing source family. Sealing transfers the same mapped
+prefix into SourceText without a copy. The fallback String still funds
+both live allocations on growth. The controls verify stable UTF-8 ranges,
+denial without a partial seal, release after the last strong view, and
+continued control funding for a weak view. Diagnostic macro history keeps
+undef origins and live-epoch counts, without retaining removed replacement
+and documentation payloads. Generation still requires full history.
+Completed header rows use packed coordinates with exact funded wide
+fallback and the same producer identity and one-shot lookup.
+
+The next checkout run got past the previous receiver-side source growth
+failure. Its producer reached 9,871,050 rows, 7,239 opened occurrences,
+and a later test file, `dq_power_plants_behaviour.dm`. The receiver adopted
+9,863,168 rows on 2,408 physical token pages with no copied tail.
+The run stopped at the 300-second request deadline. It recorded 239.703
+CPU seconds at the last sample, returned no report bytes, and its private
+daemon drained and exited. It establishes the later observed frontier,
+while whole-checkout completion and performance remain unqualified.
