@@ -147,3 +147,23 @@ CAPABILITIES(/obj/dq_menu_probe)
 				TEST_ASSERT(row["reason"] != wrong_actor, "[actor.type] on [target.type]: \"[row["label"]]\" is not greyed for being the wrong kind of actor")
 				TEST_ASSERT(row["reason"] != no_rights, "[actor.type] on [target.type]: \"[row["label"]]\" is not greyed for lacking admin rights")
 	TEST_ASSERT(checked, "the menus had rows to look at")
+
+/// The Menu's text is plain: markup in a description or reason is stripped and entities decoded, never sent as tags.
+/datum/unit_test/dq_interaction_menu_plain_text
+
+/datum/unit_test/dq_interaction_menu_plain_text/Run()
+	TEST_ASSERT_EQUAL(interaction_menu_plain("<span class='warning'>It&#39;s <b>shut</b>.</span>"), "It's shut.", "tags are stripped and entities decoded")
+	TEST_ASSERT_NULL(interaction_menu_plain("<br>"), "markup alone leaves nothing")
+	TEST_ASSERT_NULL(interaction_menu_plain(null), "no text stays none")
+
+/// A self Menu lists no legacy verbs (the user's own verbs are the verb panel's).
+/datum/unit_test/dq_interaction_menu_self_no_verbs
+
+/datum/unit_test/dq_interaction_menu_self_no_verbs/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/list/own = interaction_menu_data(H, H)
+	TEST_ASSERT_EQUAL(length(own["verbs"]), 0, "a self menu lists no legacy verbs: [json_encode(own["verbs"])]")
+	TEST_ASSERT(interaction_menu_is_self(H, H), "the user's own mob is self")
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
+	TEST_ASSERT(!interaction_menu_is_self(H, other), "another mob is not self")
