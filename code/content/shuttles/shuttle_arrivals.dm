@@ -47,6 +47,7 @@
 				await_passengers()
 			else // No point arriving with an empty shuttle.
 				warmup_time = initial(warmup_time)
+				log_world("Arrivals [src]: passengers aboard at the offsite landmark; launching to the station.")
 				launch()
 				message_passengers("Arriving at [using_map.station_name] in thirty seconds...")
 				after(src, 10 SECONDS, PROC_REF(message_passengers), with = list("Arriving at [using_map.station_name] in twenty seconds."))
@@ -59,6 +60,7 @@
 				else
 					launch_delay = initial(launch_delay)
 					warmup_time = 0 // Gotta go fast.
+					log_world("Arrivals [src]: empty at the station; launching back off-station.")
 					launch()
 
 	..() // Do everything else
@@ -68,6 +70,7 @@
 /// passengers every 2 s for the whole round (2.3 ms a look on Southern Cross, with no players at all).
 /datum/shuttle/autodock/ferry/arrivals/proc/await_passengers()
 	awaiting_passengers = TRUE
+	log_world("Arrivals [src] has nobody aboard (at [location ? "the offsite landmark" : "the station"]): waiting for a passenger to enter.")
 	SSshuttles.watch_for_passengers(src, TRUE)
 	refresh_working()
 
@@ -76,8 +79,13 @@
 	if(!awaiting_passengers)
 		return
 	awaiting_passengers = FALSE
+	log_world("Arrivals [src]: a passenger entered; stepping again.")
 	SSshuttles.watch_for_passengers(src, FALSE)
 	refresh_working()
 
 /datum/shuttle/autodock/ferry/arrivals/shuttle_working()
 	return !awaiting_passengers && ..()
+
+/datum/shuttle/autodock/ferry/arrivals/arrived()
+	log_world("Arrivals [src] arrived at [current_location()] (location [location ? "offsite" : "station"], docking [shuttle_docking_controller ? "controller present" : "no controller"]).")
+	return ..()

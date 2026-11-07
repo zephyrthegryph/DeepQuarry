@@ -56,6 +56,8 @@
 	// The ambient snapshot is taken now, before any time passes: taken lazily at the first declared turf (mid-flight), it recorded an alarm
 	// the drifting server room had already raised and put that back.
 	capture_ambient()
+	// Minutes of live world time: the station's air alarms run elections meanwhile; the counter is put back at teardown.
+	set_global("air_election_runs", GLOB.air_election_runs)
 	if(baseline?["solids"])
 		defer_cleanup(null, GLOBAL_PROC_REF(unit_test_solid_restore), baseline["solids"])
 	area_alarms = list()
@@ -237,5 +239,52 @@
 		waited += 2 SECONDS
 	TEST_ASSERT(S.location == FERRY_LOCATION_OFFSITE, "the empty arrivals shuttle undocked and went back after [waited / (1 SECOND)] s: \
 		shuttle side {[dq_dock_e2e_describe(S.shuttle_docking_controller)]}")
+
+// ---- A late joiner is made in place on the arrivals shuttle (never walking in), as the join does ----
+
+/datum/unit_test/dq_docking_end_to_end/arrivals_joiner
+
+/datum/unit_test/dq_docking_end_to_end/arrivals_joiner/run_flow()
+	var/datum/shuttle/autodock/ferry/arrivals/S
+	for(var/name in shuttles_shuttles())
+		S = shuttles_shuttles()[name]
+		if(istype(S))
+			break
+		S = null
+	if(!S)
+		log_test("this map has no arrivals shuttle")
+		return
+	var/turf/seat
+	for(var/area/A in S.shuttle_area)
+		for(var/turf/simulated/floor/T in A)
+			seat = T
+			break
+		if(seat)
+			break
+	TEST_ASSERT_NOTNULL(seat, "the arrivals shuttle has a floor to stand on")
+	hurry(S)
+	declare_flight_air(S, S.landmark_station())
+	var/idle = 0
+	while(!S.awaiting_passengers && idle < 30 SECONDS)
+		wait_real(2 SECONDS)
+		idle += 2 SECONDS
+	TEST_ASSERT(S.awaiting_passengers, "the empty arrivals shuttle waits for a passenger (process [S.process_state], moving [S.moving_status], working [S.working])")
+	// The late join: the body is made in place on the arrivals spot, then the join tells the shuttle system.
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, seat)
+	H.enable_godmode()
+	SSshuttles.body_placed(H)
+	TEST_ASSERT(!S.awaiting_passengers, "a joiner made in place on the arrivals shuttle wakes it")
+	actor = H
+	var/failure = await_docked(S, S.landmark_station())
+	TEST_ASSERT(!failure, "arrivals (joiner): [failure]")
+	check_docked(S, "the station")
+	// Empty, it goes back on its own (the test leaves the shuttle where it found it).
+	declare_flight_air(S, S.landmark_offsite())
+	actor.forceMove(get_turf(S.active_docking_controller().console))
+	var/waited = 0
+	while(waited < DQ_DOCK_E2E_FLIGHT_LIMIT && !(S.location == FERRY_LOCATION_OFFSITE && S.moving_status == SHUTTLE_IDLE && S.process_state == IDLE_STATE))
+		wait_real(2 SECONDS)
+		waited += 2 SECONDS
+	TEST_ASSERT(S.location == FERRY_LOCATION_OFFSITE, "the empty arrivals shuttle went back after [waited / (1 SECOND)] s")
 
 #undef DQ_DOCK_E2E_FLIGHT_LIMIT

@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "The arrivals shuttle now leaves for the station when a late joiner is made aboard it (it ignored joiners made in place and sat waiting for a passenger forever)"

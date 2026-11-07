@@ -243,3 +243,8 @@ ACTION(observer_shuttle_added, datum/shuttle/shuttle, FIXED, notice = /datum/not
 	for(var/datum/shuttle/autodock/ferry/arrivals/S as anything in waiting_for_passengers)
 		if((A in S.shuttle_area) && (isliving(AM) || locate_within(AM, /mob/living)))
 			S.passenger_entered()
+
+/// A body was made in place (a late joiner on the arrivals shuttle): it never moved into its area, so area/Entered did not run for it; tell a shuttle waiting there.
+/datum/system/shuttles/proc/body_placed(mob/living/M)
+	if(length(waiting_for_passengers))
+		area_entered(get_area(M), M)

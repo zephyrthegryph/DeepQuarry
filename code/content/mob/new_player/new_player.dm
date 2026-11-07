@@ -213,6 +213,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	character = SSjob.equip_rank(character, rank, 1)					//equips the human
 	var/equip_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
 	UpdateFactionList(character)
+	SSshuttles.body_placed(character)
 
 	var/datum/job/J = SSjob.get_job(rank)
 
