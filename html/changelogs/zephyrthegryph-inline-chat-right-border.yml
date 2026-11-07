@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The stat panel now fills its pane, so the chat below it lines up with the right panel's right border"

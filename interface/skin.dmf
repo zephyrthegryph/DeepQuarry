@@ -401,7 +401,7 @@ window "statwindow"
 		background-color = #202020
 		text-color = #B3CCE6
 		pos = 0,0
-		size = 638x477
+		size = 640x480
 		anchor1 = 0,0
 		anchor2 = 100,100
 		is-visible = false
@@ -441,7 +441,7 @@ window "statwindow"
 		background-color = #202020
 		text-color = #B3CCE6
 		pos = 0,0
-		size = 638x477
+		size = 640x480
 		anchor1 = 0,0
 		anchor2 = 100,100
 		is-visible = false
