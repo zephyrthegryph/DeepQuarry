@@ -263,8 +263,8 @@
 		return
 
 	// Calculate and apply a best estimate
-	// +4 pixels are for the width of the splitter's handle
-	var/pct = clamp(100 * (desired_width + 4) / split_width, FIT_VIEWPORT_MIN_PCT, FIT_VIEWPORT_MAX_PCT)
+	// The skin hides the splitter bar (show-splitter = false), so the map gets the whole share
+	var/pct = clamp(100 * desired_width / split_width, FIT_VIEWPORT_MIN_PCT, FIT_VIEWPORT_MAX_PCT)
 	winset(src, SKIN_MAIN_SPLIT, "splitter=[pct]")
 
 	// Apply an ever-lowering offset until we finish or fail: one round trip per step.
