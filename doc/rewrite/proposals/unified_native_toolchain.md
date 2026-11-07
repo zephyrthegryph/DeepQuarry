@@ -3574,3 +3574,13 @@ open and reissue, independently retained weak identities and exact refunds.
 The work still leaves exceptional storage and other unfunded backing paths
 outside this ownership scope. The combined admission budget and production
 cutover remain open.
+
+Repeated origin runs with the same physical empty trace owner now retain
+one owner slot and an exact rank map. Two focused tests passed for identity,
+distinct empty owners, trim and reappend, and source admission refusal.
+The probe after 42d5c45f59 omitted 289,035 repeated owners and measured
+6,737,920 bytes of owner storage plus 144,384 bytes of new mapping at its
+11,286,655-row frontier. The syntax limit refused a 26,624-byte macro page
+with 134,192,780 bytes already reserved. It emitted no report. This is a
+different frontier from the preceding input-limited probe. It does not
+establish an equal-workload memory or throughput comparison.
