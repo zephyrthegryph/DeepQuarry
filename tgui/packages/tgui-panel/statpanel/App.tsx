@@ -9,6 +9,7 @@ import { Button, Input, Section, Tabs } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { AbilitiesTab } from './AbilitiesTab';
+import { DockArea } from './DockArea';
 import { InspectTab } from './InspectTab';
 import { McTab } from './McTab';
 import { MenuPage } from './MenuPage';
@@ -287,6 +288,7 @@ export function App(props: {
   return (
     <div className="stat-root">
       <MapSplitHandle />
+      <DockArea />
       <div className={`stat-tabs stat-tabs--${tabsStyle}`}>
         <Tabs className="stat-tabs__list">
           {visibleTabs(state).map((tab) => (
