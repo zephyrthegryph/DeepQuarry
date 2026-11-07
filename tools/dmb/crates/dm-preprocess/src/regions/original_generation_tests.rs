@@ -201,15 +201,25 @@ fn actual_original_origins_share_empty_trace_across_includes_without_losing_macr
         saw_child|=row.origin.path.ends_with("child.dm");
     }
     assert!(saw_root&&saw_child);
-    let expansion=expanded.origins.iter().find_map(|row|
-        row.macro_expansions.iter().find(|entry|entry.name=="FROM_ROOT")
-    ).expect("actual rooted macro expansion in child");
-    assert!(expansion.definition.as_ref().unwrap().path.ends_with("shared-trace.dme"));
+    let trace=expanded.origins.iter().map(|row|row.macro_expansions)
+        .find(|trace|trace.get(0).is_some_and(|entry|entry.name=="FROM_ROOT"))
+        .expect("actual rooted macro expansion in child");
+    let expansion=trace.get(0).unwrap();
+    assert!(expansion.definition.unwrap().path.ends_with("shared-trace.dme"));
+    assert_eq!(trace.len(),1);
+    #[cfg(target_pointer_width = "64")]
+    assert_eq!(trace.buffers(), [(trace.owner_address(),16),(0,0)]);
+    let escaped=trace.to_owned();
+    let pointer=trace.owner_address();
+    assert!(escaped.view().same_owner(trace));
     assert_eq!(provider.opened.lock().unwrap().len(),2);
     let alias=expanded.origins.clone();
     drop((plan,expanded,primary,binding));
     assert!(syntax.load(Ordering::Acquire)>0);
     drop(alias);
+    assert_eq!(escaped.view().owner_address(),pointer);
+    assert!(escaped.view().get(0).unwrap().definition.unwrap().path.ends_with("shared-trace.dme"));
+    drop(escaped);
     assert_eq!(syntax.load(Ordering::Acquire),0);
     assert_eq!(work.live.load(Ordering::Acquire),0);
 }

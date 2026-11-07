@@ -4,7 +4,7 @@
 //! before allocation and moves its SAME root to final product/Mapping owners.
 use super::{DirectivePlan,IncludeOccurrence,IncludeRegion,OrderedItem,MacroEffect,ExpansionSegment};
 use crate::{SourceAcquisitionLease,InitialEnvironment,macro_expansion::{OriginalMacroRows as Rows, empty_exact as exact_rows}};
-use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace, OriginalMacroAuthor}};
+use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace, OriginalMacroAuthor, PendingOriginalSingleton}};
 use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention,Span};
 use std::{io,mem,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
@@ -71,6 +71,7 @@ struct LastTraceProjection {
 struct TraceProjectionReservations {
  projections:usize,
  singleton_projections:usize,
+ wide_singleton_projections:usize,
  exact_hits:usize,
  parent_hits:usize,
  rows:usize,
@@ -256,7 +257,7 @@ impl OriginalPlanOwner{
     // Geometry still borrows real provider bytes, in exactly the old order.
     // Never skip or replay that call on a hit, including its first IO error.
     let definition = entry.definition.map(|origin| self.definition_using(origin, driver, provider, a)).transpose()?;
-    let prior = last.rows[entry.depth - 1].author.origin();
+    let prior = last.rows.frame(entry.depth - 1).ok_or(io::ErrorKind::InvalidData)?.author.origin();
     matches &= match (&definition, prior) {
      (None, None) => true,
      (Some(current), Some(previous)) => Arc::ptr_eq(&current.path, &previous.path)
@@ -296,7 +297,7 @@ impl OriginalPlanOwner{
   #[cfg(debug_assertions)]
   let mut name_usage=self.trace_projection.as_ref().map(|_|(0usize,0usize));
   // Fund control before the first definition loan, and the actual frame
-  // storage after it, as before. One frame uses just the standard Arc.
+  // storage after it, as before. A singleton packs only its own span.
   let mut rows = Vec::new();
   let mut singleton = None;
   let control = if depth == 1 { TRACE_ARC_HEADER } else { TRACE_BOX_WRAPPER };
@@ -321,7 +322,8 @@ impl OriginalPlanOwner{
    let frame = OriginalMacroFrame { author, invocation_span: entry.origin.physical };
    if depth == 1 {
     if singleton.is_some() { return Err(io::ErrorKind::InvalidData.into()); }
-    grow(&mut self.credit, mem::size_of::<OriginalMacroFrame>(), a)?;
+    let frame = PendingOriginalSingleton::from_frame(frame);
+    grow(&mut self.credit, frame.bytes(), a)?;
     singleton = Some(frame);
    } else {
     if rows.is_empty() {
@@ -334,7 +336,7 @@ impl OriginalPlanOwner{
    Ok(())
   })?;
   let rows = if depth == 1 {
-   OriginalMacroTrace::Single(Arc::new(singleton.ok_or(io::ErrorKind::InvalidData)?))
+   singleton.ok_or(io::ErrorKind::InvalidData)?.finish()
   } else {
    if rows.len() != depth { return Err(io::ErrorKind::InvalidData.into()); }
    rows.reverse();
@@ -346,14 +348,15 @@ impl OriginalPlanOwner{
    OriginalMacroTrace::Shared(Arc::new(boxed))
   };
   #[cfg(debug_assertions)]
-  let row_count=rows.len();
+  let (row_count,row_bytes,wide_singleton)=(rows.len(),rows.frame_storage_bytes(),matches!(&rows,OriginalMacroTrace::Single(_)));
   self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows });
   #[cfg(debug_assertions)]
   if let Some(trace)=&mut self.trace_projection {
    trace.projections=trace.projections.saturating_add(1);
    trace.singleton_projections=trace.singleton_projections.saturating_add(usize::from(depth==1));
    trace.rows=trace.rows.saturating_add(row_count);
-   trace.row_bytes=trace.row_bytes.saturating_add(row_count.saturating_mul(mem::size_of::<OriginalMacroFrame>()));
+   trace.wide_singleton_projections=trace.wide_singleton_projections.saturating_add(usize::from(wide_singleton));
+   trace.row_bytes=trace.row_bytes.saturating_add(row_bytes);
    trace.total_plan_grants=trace.total_plan_grants.saturating_add(self.credit.bytes().saturating_sub(before));
    let (grants,hits)=name_usage.expect("trace counters enabled for this projection");
    trace.name_grants=trace.name_grants.saturating_add(grants);
@@ -420,12 +423,12 @@ mod trace_storage_tests {
         let actual = empty.pushed_using("TRACE", origin, 1, None, &a).unwrap();
         let nonempty = plan.trace_using(&actual, &mut driver, &NoSource, &a).unwrap();
         assert_eq!(nonempty.len(), 1);
-        assert_eq!(nonempty[0].author.name(), "TRACE");
-        assert_eq!(nonempty[0].invocation_span, origin.physical);
+        assert_eq!(nonempty.frame(0).unwrap().author.name(), "TRACE");
+        assert_eq!(nonempty.frame(0).unwrap().invocation_span, origin.physical);
         let before = used.load(Ordering::Acquire);
         for _ in 0..32 {
             let next = plan.trace_using(&empty, &mut driver, &NoSource, &a).unwrap();
-            assert!(next.is_empty());
+            assert_eq!(next.len(),0);
             assert!(first.same_owner(&next));
             assert_eq!(used.load(Ordering::Acquire), before);
         }
@@ -466,8 +469,8 @@ mod trace_storage_tests {
         for (at, row) in super::super::MacroTraceView::original(&rows).iter().enumerate() {
             assert_eq!(row.name, names[at]);
             assert_eq!(row.replacement_chain.len(), at);
-            for (alias, parent) in row.replacement_chain.iter().zip(&rows[..at]) {
-                assert!(std::ptr::eq(alias, parent.author.name()));
+            for (ordinal, alias) in row.replacement_chain.iter().enumerate() {
+                assert!(std::ptr::eq(alias, rows.frame(ordinal).unwrap().author.name()));
             }
         }
         let expected = TRACE_BOX_WRAPPER + names.len() * mem::size_of::<OriginalMacroFrame>();
@@ -478,7 +481,7 @@ mod trace_storage_tests {
         let next = plan.trace_using(&other, &mut driver, &NoSource, &a).unwrap();
         assert!(super::super::MacroTraceView::original(&next).get(0).unwrap().replacement_chain.is_empty());
         assert_eq!(plan.credit.bytes() - previous,
-            TRACE_ARC_HEADER + mem::size_of::<OriginalMacroFrame>());
+            TRACE_ARC_HEADER + super::super::MacroTraceView::original(&next).buffers()[0].1);
         drop((rows, next, other, actual, driver, plan));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
@@ -505,16 +508,16 @@ mod trace_storage_tests {
         let first_rows=plan.trace_using(&first,&mut driver,&NoSource,&a).unwrap();
         let before=plan.credit.bytes();
         let repeated_rows=plan.trace_using(&repeated,&mut driver,&NoSource,&a).unwrap();
-        assert_eq!(plan.credit.bytes()-before,TRACE_ARC_HEADER+mem::size_of::<OriginalMacroFrame>());
-        assert!(Arc::ptr_eq(&first_rows[0].author,&repeated_rows[0].author));
+        assert_eq!(plan.credit.bytes()-before,TRACE_ARC_HEADER+super::super::MacroTraceView::original(&repeated_rows).buffers()[0].1);
+        assert!(Arc::ptr_eq(first_rows.frame(0).unwrap().author,repeated_rows.frame(0).unwrap().author));
         assert!(!first_rows.same_owner(&repeated_rows));
-        assert_eq!(first_rows[0].invocation_span,Span::new(0,1));
-        assert_eq!(repeated_rows[0].invocation_span,Span::new(2,3));
+        assert_eq!(first_rows.frame(0).unwrap().invocation_span,Span::new(0,1));
+        assert_eq!(repeated_rows.frame(0).unwrap().invocation_span,Span::new(2,3));
         let collided_rows=plan.trace_using(&collision,&mut driver,&NoSource,&a).unwrap();
-        assert_eq!(collided_rows[0].author.name(),"DIFFERENT_187");
+        assert_eq!(collided_rows.frame(0).unwrap().author.name(),"DIFFERENT_187");
         let replayed=plan.trace_using(&first,&mut driver,&NoSource,&a).unwrap();
         assert_eq!(replayed,first_rows);
-        assert!(!Arc::ptr_eq(&replayed[0].author,&first_rows[0].author),"collision only evicts the pool alias");
+        assert!(!Arc::ptr_eq(replayed.frame(0).unwrap().author,first_rows.frame(0).unwrap().author),"collision only evicts the pool alias");
         drop((first_rows,repeated_rows,collided_rows,replayed,first,repeated,collision,driver,plan));
         assert_eq!(used.load(Ordering::Acquire),0);
     }
@@ -587,8 +590,8 @@ mod trace_storage_tests {
         sources.calls.borrow_mut().clear();
         let first = plan.trace_using(&trace, &mut driver, &sources, &a).unwrap();
         assert_eq!(*sources.calls.borrow(), [1, 0]);
-        assert_eq!(first[0].author.origin().unwrap().path.as_path(), Path::new("outer.dme"));
-        assert_eq!(first[1].author.origin().unwrap().path.as_path(), Path::new("inner.dm"));
+        assert_eq!(first.frame(0).unwrap().author.origin().unwrap().path.as_path(), Path::new("outer.dme"));
+        assert_eq!(first.frame(1).unwrap().author.origin().unwrap().path.as_path(), Path::new("inner.dm"));
         assert_eq!(super::super::MacroTraceView::original(&first).get(1).unwrap().replacement_chain.get(0).unwrap(), "OUTER");
 
         sources.calls.borrow_mut().clear();
@@ -608,7 +611,7 @@ mod trace_storage_tests {
         assert!(resumed.same_owner(&first_parent));
         assert_eq!(plan.credit.bytes(), before_parent_return);
 
-        let issued = first[1].author.origin().unwrap();
+        let issued = first.frame(1).unwrap().author.origin().unwrap();
         let mut foreign_origin = issued.clone();
         foreign_origin.path = Arc::new(issued.path.as_ref().clone());
         assert_eq!(&foreign_origin, issued);
@@ -628,8 +631,8 @@ mod trace_storage_tests {
         assert_eq!(*sources.calls.borrow(), [1, 0]);
         assert_eq!(other, first);
         assert!(!other.same_owner(&first));
-        assert!(other[0].author.name() == first[0].author.name());
-        assert!(other[1].author.name() == first[1].author.name());
+        assert!(other.frame(0).unwrap().author.name() == first.frame(0).unwrap().author.name());
+        assert!(other.frame(1).unwrap().author.name() == first.frame(1).unwrap().author.name());
 
         let wrong_name = OriginalMacroAuthor::new_using("WRONG", Some(issued.clone()), &a).unwrap();
         let wrong_spelling = outer.pushed_with_definition_using(

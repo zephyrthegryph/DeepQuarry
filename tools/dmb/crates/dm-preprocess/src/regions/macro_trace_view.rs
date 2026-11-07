@@ -63,11 +63,52 @@ pub(super) struct OriginalMacroFrame {
     pub(super) author: Arc<OriginalMacroAuthor>,
 }
 
-/// A point owns its exact projected trace. A singleton needs only a normal
-/// Arc allocation around the actual frame, with no secondary boxed array.
+#[derive(Debug, Eq, PartialEq)]
+pub(super) struct NarrowOriginalMacroFrame {
+    invocation_span: [u32; 2],
+    author: Arc<OriginalMacroAuthor>,
+}
+
+pub(super) struct OriginalMacroFrameView<'a> {
+    pub(super) invocation_span: Span,
+    pub(super) author: &'a Arc<OriginalMacroAuthor>,
+}
+
+/// Fully issued singleton DATA on the producer stack. Its representation
+/// chooses the exact allocation width before the original frame admission.
+pub(super) enum PendingOriginalSingleton {
+    Narrow(NarrowOriginalMacroFrame),
+    Wide(OriginalMacroFrame),
+}
+impl PendingOriginalSingleton {
+    pub(super) fn from_frame(frame: OriginalMacroFrame) -> Self {
+        if mem::size_of::<NarrowOriginalMacroFrame>() < mem::size_of::<OriginalMacroFrame>() {
+            if let (Ok(start), Ok(end)) = (u32::try_from(frame.invocation_span.start), u32::try_from(frame.invocation_span.end)) {
+                return Self::Narrow(NarrowOriginalMacroFrame { invocation_span: [start, end], author: frame.author });
+            }
+        }
+        Self::Wide(frame)
+    }
+    pub(super) fn bytes(&self) -> usize {
+        match self {
+            Self::Narrow(_) => mem::size_of::<NarrowOriginalMacroFrame>(),
+            Self::Wide(_) => mem::size_of::<OriginalMacroFrame>(),
+        }
+    }
+    pub(super) fn finish(self) -> OriginalMacroTrace {
+        match self {
+            Self::Narrow(frame) => OriginalMacroTrace::NarrowSingle(Arc::new(frame)),
+            Self::Wide(frame) => OriginalMacroTrace::Single(Arc::new(frame)),
+        }
+    }
+}
+
+/// A point owns one exact projected trace allocation. Narrow singletons
+/// retain only their own author, with lossless wide and multi-frame fallbacks.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum OriginalMacroTrace {
     Single(Arc<OriginalMacroFrame>),
+    NarrowSingle(Arc<NarrowOriginalMacroFrame>),
     Shared(Arc<Box<[OriginalMacroFrame]>>),
 }
 impl OriginalMacroTrace {
@@ -76,6 +117,7 @@ impl OriginalMacroTrace {
     pub(super) fn same_owner(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Single(a), Self::Single(b)) => Arc::ptr_eq(a, b),
+            (Self::NarrowSingle(a), Self::NarrowSingle(b)) => Arc::ptr_eq(a, b),
             (Self::Shared(a), Self::Shared(b)) => Arc::ptr_eq(a, b),
             _ => false,
         }
@@ -84,6 +126,7 @@ impl OriginalMacroTrace {
     fn owner_address(&self) -> usize {
         match self {
             Self::Single(rows) => Arc::as_ptr(rows) as usize,
+            Self::NarrowSingle(rows) => Arc::as_ptr(rows) as usize,
             Self::Shared(rows) => Arc::as_ptr(rows) as usize,
         }
     }
@@ -91,6 +134,7 @@ impl OriginalMacroTrace {
     fn buffers(&self) -> [(usize, usize); 2] {
         match self {
             Self::Single(_) => [(self.owner_address(), mem::size_of::<OriginalMacroFrame>()), (0, 0)],
+            Self::NarrowSingle(_) => [(self.owner_address(), mem::size_of::<NarrowOriginalMacroFrame>()), (0, 0)],
             Self::Shared(rows) => [
                 (self.owner_address(), mem::size_of::<Box<[OriginalMacroFrame]>>()),
                 (rows.as_ptr() as usize, mem::size_of_val(rows.as_ref().as_ref())),
@@ -102,16 +146,42 @@ impl OriginalMacroTrace {
     pub(super) fn strong_count(&self) -> usize {
         match self {
             Self::Single(rows) => Arc::strong_count(rows),
+            Self::NarrowSingle(rows) => Arc::strong_count(rows),
             Self::Shared(rows) => Arc::strong_count(rows),
         }
     }
-}
-impl std::ops::Deref for OriginalMacroTrace {
-    type Target = [OriginalMacroFrame];
-    fn deref(&self) -> &Self::Target {
+    pub(super) fn len(&self) -> usize {
+        match self { Self::Shared(rows) => rows.len(), _ => 1 }
+    }
+
+    pub(super) fn frame(&self, at: usize) -> Option<OriginalMacroFrameView<'_>> {
+        let row: &OriginalMacroFrame = match self {
+            Self::Single(row) if at == 0 => row,
+            Self::NarrowSingle(row) if at == 0 => {
+                let [start, end] = row.invocation_span;
+                return Some(OriginalMacroFrameView {
+                    invocation_span: Span::new(start as usize, end as usize), author: &row.author,
+                });
+            }
+            Self::Shared(rows) => rows.get(at)?,
+            _ => return None,
+        };
+        Some(OriginalMacroFrameView { invocation_span: row.invocation_span, author: &row.author })
+    }
+
+    #[cfg(debug_assertions)]
+    pub(super) fn frame_storage_bytes(&self) -> usize {
         match self {
-            Self::Single(row) => std::slice::from_ref(row.as_ref()),
-            Self::Shared(rows) => rows.as_ref().as_ref(),
+            Self::Single(_) => mem::size_of::<OriginalMacroFrame>(),
+            Self::NarrowSingle(_) => mem::size_of::<NarrowOriginalMacroFrame>(),
+            Self::Shared(rows) => mem::size_of_val(rows.as_ref().as_ref()),
+        }
+    }
+
+    fn parents(&self, at: usize) -> &[OriginalMacroFrame] {
+        match self {
+            Self::Shared(rows) => &rows[..at],
+            _ => &[],
         }
     }
 }
@@ -255,11 +325,11 @@ impl<'a> MacroTraceView<'a> {
                 }
             }
             Borrowed::Original(rows) => {
-                let row = rows.get(at)?;
+                let row = rows.frame(at)?;
                 MacroExpansionView {
                     name: row.author.name(), invocation_span: row.invocation_span,
                     definition: row.author.origin(),
-                    replacement_chain: MacroTraceParents(Parents::Original(&rows[..at])),
+                    replacement_chain: MacroTraceParents(Parents::Original(rows.parents(at))),
                 }
             }
         })
@@ -272,7 +342,7 @@ impl<'a> MacroTraceView<'a> {
     pub fn author_buffers(self, at: usize) -> Option<[(usize, usize); 2]> {
         match self.0 {
             Borrowed::Native(_) => None,
-            Borrowed::Original(rows) => Some(rows.get(at)?.author.buffers()),
+            Borrowed::Original(rows) => Some(rows.frame(at)?.author.buffers()),
         }
     }
     /// Exact row array and Box payload, exclusive of Arc control and children.
@@ -331,6 +401,61 @@ mod tests {
         assert_eq!(used.load(Ordering::Acquire), bytes + name_bytes);
         drop(escaped);
         assert!(first.upgrade().is_none());
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn narrow_singleton_exposes_its_own_stable_allocation_and_exact_wide_fallback() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let author = OriginalMacroAuthor::new_using("POINT", Some(DefinitionOrigin {
+            path: Arc::new("narrow-actual.dm".into()), source_span: Span::new(8, 10), source_line: 9,
+        }), &a).unwrap();
+        let expected_path = Arc::clone(&author.origin().unwrap().path);
+        let make = |span| PendingOriginalSingleton::from_frame(OriginalMacroFrame {
+            invocation_span: span, author: Arc::clone(&author),
+        });
+        let last = u32::MAX as usize;
+        let span = Span::new(last - 1, last);
+        let pending = make(span);
+        #[cfg(target_pointer_width = "64")]
+        {
+            assert!(matches!(&pending, PendingOriginalSingleton::Narrow(_)));
+            assert_eq!(pending.bytes(), 16);
+            assert_eq!(mem::size_of::<OriginalMacroTrace>(), 16);
+        }
+        let size = pending.bytes();
+        let trace = pending.finish();
+        let view = MacroTraceView::original(&trace);
+        let duplicate = make(span).finish();
+        assert_eq!(view, MacroTraceView::original(&duplicate));
+        assert_ne!(view.owner_address(), MacroTraceView::original(&duplicate).owner_address());
+        assert!(!view.same_owner(MacroTraceView::original(&duplicate)));
+        assert_eq!(view.buffers(), [(view.owner_address(), size), (0, 0)]);
+        assert_eq!(view.get(0).unwrap().invocation_span, span);
+        assert!(view.get(0).unwrap().replacement_chain.is_empty());
+        assert!(view.get(1).is_none());
+        assert!(Arc::ptr_eq(&view.get(0).unwrap().definition.unwrap().path, &expected_path));
+        let escaped = view.to_owned();
+        let pointer = view.owner_address();
+        assert!(escaped.view().same_owner(view));
+
+        #[cfg(target_pointer_width = "64")]
+        {
+            let wide_span = Span::new(last + 1, usize::MAX);
+            let pending = make(wide_span);
+            assert!(matches!(&pending, PendingOriginalSingleton::Wide(_)));
+            assert_eq!(pending.bytes(), 24);
+            let wide = pending.finish();
+            assert_eq!(MacroTraceView::original(&wide).get(0).unwrap().invocation_span, wide_span);
+            assert!(!escaped.view().same_owner(MacroTraceView::original(&wide)));
+        }
+        drop((trace, duplicate, author));
+        assert_eq!(escaped.view().owner_address(), pointer);
+        assert_eq!(escaped.view().get(0).unwrap().invocation_span, span);
+        assert_eq!(used.load(Ordering::Acquire), OriginalMacroAuthor::BYTES + "POINT".len());
+        drop(escaped);
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
