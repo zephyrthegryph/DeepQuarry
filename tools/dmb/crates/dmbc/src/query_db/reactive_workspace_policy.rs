@@ -383,7 +383,9 @@ impl QueryDb{
  pub(crate) fn with_original_workspace_layering_selected_union<T>(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,subject:&crate::input_snapshot::OriginalAnalysisSubject,consume:impl FnOnce(&dq_analyze::captured_engine_layering_pages::LayeringData,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
   let layer=question.selected_layering().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual selected layering role required"))?;
   crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;workspace.require_analysis_subject(subject)?;subject.require_bound_mapping(capture.policy().mapping())?;
-  if !guard.uses_queries(self)||!workspace.matches_auxiliary_questions(&[question])||!workspace.has_semantic_question(question)||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{
+  if !guard.uses_queries(self)||(!workspace.matches_auxiliary_questions(&[question])
+    && !workspace.matches_auxiliary_questions(crate::policy_request::WorkspaceAuxiliaryQuestion::SELECTED_MAP_AND_LAYERING))
+   ||!workspace.has_semantic_question(question)||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{
    return Err(io::Error::new(io::ErrorKind::InvalidInput,"layering selected union requires its actual Original subject and same QueryDb"))
   }
   capture.semantic_source_evidence().check(capture.policy().mapping())?;

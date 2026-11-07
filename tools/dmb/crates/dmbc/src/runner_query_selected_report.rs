@@ -18,6 +18,17 @@ use dq_analyze::{
 };
 use std::{cell::RefCell, io::{self, Write}, path::Path, sync::Arc};
 
+pub(super) const PRIVATE_DOC_UI: &[&str] = &[
+    "allow_annotations", "doc_snippets", "notice_publisher", "report_in_catch", "scheduler", "ui_actions",
+];
+
+
+pub(super) const PRIVATE_MAP_AND_LAYERING: &[&str] = &[
+    "allow_annotations", "engine_layering", "library_layering", "map_edits",
+    "notice_publisher", "report_in_catch", "scheduler",
+];
+
+
 /// Existing v1 aliases still choose the exact producer order. Preparation
 /// derives its evidence from those producers, under the same closed profiles.
 pub(in crate::runner_host) struct SelectedReportPlan {
@@ -373,14 +384,14 @@ impl ReportStage<'_> {
             }
             UnionRows::Tree(tree) => {
                 if meta.name == "ui_actions"
-                    && (self.selected != Roster::WithUiActions.names()
+                    && ((self.selected != Roster::WithUiActions.names() && self.selected != PRIVATE_DOC_UI)
                         || !std::ptr::eq(meta, dq_analyze::ui_actions_policy::metadata())
                         || !self.judgment.is_raw())
                 {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "UI Actions requires its exact source-only profile"));
                 }
                 if meta.name == "doc_snippets" {
-                    if self.selected != Roster::WithDocSnippets.names()
+                    if (self.selected != Roster::WithDocSnippets.names() && self.selected != PRIVATE_DOC_UI)
                         || !std::ptr::eq(meta, dq_analyze::doc_snippets_policy::metadata())
                         || !self.judgment.is_raw()
                     {
@@ -415,7 +426,7 @@ impl ReportStage<'_> {
                 }
             }
             UnionRows::MapEdits(sites) => {
-                if self.selected != Roster::WithMapEdits.names()
+                if (self.selected != Roster::WithMapEdits.names() && self.selected != PRIVATE_MAP_AND_LAYERING)
                     || !std::ptr::eq(meta, &dq_analyze::map_edits_policy::META)
                     || !matches!(meta.policy, Policy::Hard)
                 {
@@ -457,7 +468,9 @@ impl ReportStage<'_> {
                     Q::RelWriteUndeclared => (&[Roster::WithReferencePolicies], dq_analyze::rel_write_policy::metadata()),
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued message-only selected report role")),
                 };
-                if !rosters.iter().any(|roster| self.selected == roster.names())
+                let joined_engine = self.selected == PRIVATE_MAP_AND_LAYERING
+                    && question == Q::EngineLayeringFullAllow;
+                if (!joined_engine && !rosters.iter().any(|roster| self.selected == roster.names()))
                     || !std::ptr::eq(meta, expected)
                     || !matches!(meta.policy, Policy::Hard) || !meta.allow.is_empty()
                     || !allows.is_empty() {
@@ -571,7 +584,9 @@ impl ReportStage<'_> {
             UnionRows::LibraryLayering(data) => {
                 let text = data.source_text().ok_or_else(|| io::Error::new(
                     io::ErrorKind::InvalidData, "selected library layering source evidence is absent"))?;
-                if meta.name != "library_layering" || !std::ptr::eq(meta, data.metadata())
+                if (self.selected != Roster::WithLibraryLayering.names()
+                    && self.selected != PRIVATE_MAP_AND_LAYERING)
+                    || meta.name != "library_layering" || !std::ptr::eq(meta, data.metadata())
                     || !matches!(meta.policy, Policy::Sites { .. }) || data.sites().len() != text.len() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "selected library layering findings differ from their actual Sites shape"));
                 }
@@ -667,20 +682,50 @@ impl ReportStage<'_> {
         }
         for problem in data.unused() { writeln!(self.file, "{problem}")?; }
         writeln!(self.file, "allow annotations: {} unused", data.unused().len())?;
-        // Only the admitted roster's policy names and at most one unused-audit label.
-        budget.charge(4096).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
-        let mut failed: Vec<String> = self.selected.iter().copied().zip(self.failed)
-            .filter(|(_, failed)| *failed).map(|(name, _)| name.to_owned()).collect();
-        if !data.unused().is_empty() { failed.push("allow_annotations --unused".to_owned()); }
-        self.file.write_all(policy_finish::result_line(&failed).as_bytes())?;
-        Ok(failed.is_empty())
+        budget.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+        let failed = self.selected.iter().copied().zip(self.failed)
+            .filter_map(|(name, failed)| failed.then_some(name))
+            .chain((!data.unused().is_empty()).then_some("allow_annotations --unused"));
+        policy_finish::write_result_line(failed, &mut self.file)
     }
 }
 
 impl super::super::RawWorkspaceSnapshot {
     pub(in crate::runner_host) fn stage_raw_file_report(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
-        root: &Path, plan: &SelectedReportPlan, mut file: Stage,
+        root: &Path, plan: &SelectedReportPlan, file: Stage,
+        cache_report: bool, prior: Option<Arc<WorkspaceCapture>>,
+    ) -> io::Result<(bool, Verified)> {
+        use crate::runner_host::workspace_capture::RawSourcePurpose;
+        let roster = plan.roster();
+        let purpose = match roster {
+            Roster::AllRawFilePolicies => RawSourcePurpose::AllRawFilePolicies,
+            Roster::WithDocSnippets => RawSourcePurpose::DocSnippetsFullAllow,
+            Roster::WithUiActions => RawSourcePurpose::UiActionsFullAllow,
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued source-only report profile")),
+        };
+
+        if !plan.judgment.is_raw() {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "source-only report requires raw judgment"));
+        }
+        self.stage_raw_file_report_using(prepared, exclusions, retained, root, roster.names(),
+            purpose, file, cache_report, prior)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_doc_ui(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        use crate::runner_host::workspace_capture::RawSourcePurpose;
+        self.stage_raw_file_report_using(prepared, exclusions, retained, root, PRIVATE_DOC_UI,
+            RawSourcePurpose::DocUiFullAllow, file, false, None)
+    }
+
+    fn stage_raw_file_report_using(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, selected: &'static [&'static str],
+        purpose: crate::runner_host::workspace_capture::RawSourcePurpose, mut file: Stage,
         cache_report: bool, prior: Option<Arc<WorkspaceCapture>>,
     ) -> io::Result<(bool, Verified)> {
         use crate::{request::BuildOutcome, runner_host::workspace_capture::RawSourcePurpose};
@@ -691,16 +736,8 @@ impl super::super::RawWorkspaceSnapshot {
         let pin = |text: &str| u128::from_str_radix(text, 16).ok();
         let capture = &self.capture;
         let queries = &self.queries;
-        let roster = plan.roster();
-        let purpose = match roster {
-            Roster::AllRawFilePolicies => RawSourcePurpose::AllRawFilePolicies,
-            Roster::WithDocSnippets => RawSourcePurpose::DocSnippetsFullAllow,
-            Roster::WithUiActions => RawSourcePurpose::UiActionsFullAllow,
-            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued source-only report profile")),
-        };
         let sealed_bulk = purpose == RawSourcePurpose::AllRawFilePolicies;
-        if !plan.judgment.is_raw()
-            || (!sealed_bulk && (cache_report || prior.is_some()))
+        if (!sealed_bulk && (cache_report || prior.is_some()))
             || self.source.purpose() != purpose
             || capture.root() != root || capture.configuration().1.is_none()
             || !capture.matches_auxiliary_questions(&[purpose.question()])
@@ -719,7 +756,7 @@ impl super::super::RawWorkspaceSnapshot {
         queries.require_workspace_report_configuration(capture, &guard).map_err(operational)?;
         let mut work = Operation { budget: retained, poll: &poll };
         let selection = full_unused::registered_full_selection(exclusions, &mut work).map_err(operational)?;
-        if !selection.names().iter().map(String::as_str).eq(roster.names().iter().copied()) {
+        if !selection.names().iter().map(String::as_str).eq(selected.iter().copied()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "raw-file scope differs from the registered selected report"));
         }
         if let Some(prior) = prior {
@@ -735,7 +772,7 @@ impl super::super::RawWorkspaceSnapshot {
             }
         }
         let producer = |name| Producer::from_name(name).expect("selected raw roster already admitted");
-        let selected_tree = SelectedTreePlanData::new(roster.names().iter().map(|&name| producer(name).metadata().select), &mut work)
+        let selected_tree = SelectedTreePlanData::new(selected.iter().map(|&name| producer(name).metadata().select), &mut work)
             .map_err(operational)?;
         let frame = FrameData {
             owner: FrameOwner::RawQuery(self.revision()),
@@ -744,10 +781,10 @@ impl super::super::RawWorkspaceSnapshot {
         };
         let mut usage = UsageJoinData::new(&selection, frame);
         let mut stage = ReportStage {
-            file, finished: 0, selected: roster.names(), failed: [false; Roster::MAX_STAGED_POLICIES],
-            judgment: plan.judgment, library_baseline: None,
+            file, finished: 0, selected: selected, failed: [false; Roster::MAX_STAGED_POLICIES],
+            judgment: JudgmentV2::Raw, library_baseline: None,
         };
-        for &name in roster.names() {
+        for &name in selected {
             let policy_started = std::time::Instant::now();
             poll()?;
             let producer = producer(name);
@@ -774,9 +811,9 @@ impl super::super::RawWorkspaceSnapshot {
                 Producer::Tree(policy) if matches!(policy,
                     dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher
                     | dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch)
-                    || (roster == Roster::WithDocSnippets
+                    || (matches!(purpose, RawSourcePurpose::DocSnippetsFullAllow | RawSourcePurpose::DocUiFullAllow)
                         && policy == dq_analyze::captured_raw_tree_pages::Policy::DocSnippets)
-                    || (roster == Roster::WithUiActions
+                    || (matches!(purpose, RawSourcePurpose::UiActionsFullAllow | RawSourcePurpose::DocUiFullAllow)
                         && policy == dq_analyze::captured_raw_tree_pages::Policy::UiActions) => {
                     queries.with_workspace_raw_tree(capture, &guard, policy, |data, config, child| {
                         let empty = LintScope::default();
@@ -830,6 +867,21 @@ impl SourceSnapshot {
     ) -> io::Result<(bool, Verified)> {
         self.stage_selected_report_using(prepared, exclusions, retained, root,
             PRIVATE_IMAGE_DIR_ROSTER, &[Q::ImageDir], JudgmentV2::Raw, false, false, None, file)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_map_and_layering(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
+        let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
+        if !selection.names().iter().map(String::as_str).eq(PRIVATE_MAP_AND_LAYERING.iter().copied()) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined capture requires its exact private report roster"));
+        }
+        self.stage_selected_report_using(prepared, exclusions, retained, root,
+            PRIVATE_MAP_AND_LAYERING, Q::SELECTED_MAP_AND_LAYERING,
+            JudgmentV2::Raw, false, false, None, file)
     }
 
     fn stage_selected_report_using(

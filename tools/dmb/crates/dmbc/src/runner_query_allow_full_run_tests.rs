@@ -166,3 +166,150 @@ exempt_files=[]
   assert!(other.stage_private_image_dir_report(&prepared,&exclusions,&budget,&foreign_root,Stage::new(&cache).unwrap()).is_err());
  }));
 }
+
+#[test]
+fn actual_private_map_and_layering_share_complete_capture_and_warm_report() {
+ use super::selected_report::PRIVATE_MAP_AND_LAYERING;
+ use crate::selected_report_spool::Stage;
+ let (mut host,mut request,root)=fixture(concat!(
+  "/obj/base\n    var/known\n/obj/base/child\n",
+  "/proc/scheduled()\n",
+  "    sleep(1) // ALLOW(scheduler): actual joined report consumes this annotation\n",
+ ));
+ for (relative,source) in [
+  ("deepquarry.dme",concat!(
+   "#include \"code/probe.dm\"\n",
+   "#include \"code/engine/probe.dm\"\n",
+   "#include \"code/library/probe.dm\"\n",
+   "#include \"code/content/probe.dm\"\n",
+  )),
+  ("code/engine/probe.dm","/proc/engine_probe()\n    library_probe()\n"),
+  ("code/library/probe.dm","/proc/library_probe()\n    downstream_probe()\n"),
+  ("code/content/probe.dm","/proc/downstream_probe()\n    return\n"),
+  ("maps/.hidden/edit.dmm","/obj/base/child{known = 1; lost = 2}\n"),
+  ("maps/stale.dm","/proc/stale()\n    return // ALLOW(scheduler): actual joined report sees this unused map annotation\n"),
+ ] {
+  let path=root.join(relative);
+  std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+  std::fs::write(path,source).unwrap();
+ }
+ std::fs::write(root.join("tools/ci/lint_scopes.toml"),report_config::with_overlay("")).unwrap();
+ request.no_cache=false;
+ let intent=request.policy_inputs.as_mut().unwrap();
+ intent.analysis_context=Some(AnalysisContext::OriginalAnalyze0290);
+ intent.workspace_auxiliary=Q::SELECTED_MAP_AND_LAYERING.to_vec();
+ let cache=crate::test_scratch::dir("private-map-layering-spools");
+ let roster_budget=Budget::new(8<<20).unwrap();
+ let mut control=Operation{budget:&roster_budget,poll:&||Ok(())};
+ let all=full_unused::registered_full_selection(&[],&mut control).unwrap();
+ let exclusions:Vec<_>=all.names().iter().filter(|name|!PRIVATE_MAP_AND_LAYERING.contains(&name.as_str()))
+  .map(|name|format!("-{name}")).collect();
+
+ let mut mixed=request.clone();
+ mixed.policy_inputs.as_mut().unwrap().workspace_auxiliary.push(Q::Keys);
+ assert!(mixed.policy_inputs.unwrap().admit().is_err());
+ let mut partial=request.clone();
+ partial.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots.pop();
+ assert!(partial.policy_inputs.unwrap().admit().is_err());
+
+ let db=Arc::clone(host.query_db());
+ let mut prior=None;
+ for _ in 0..2 {
+  let prepared=crate::request_runner::run_build_with_host(request.clone(),&mut host).unwrap();
+  assert!(Arc::ptr_eq(&db,host.query_db()));
+  current(&host,|snapshot|{
+   let workspace=snapshot.native_workspace.as_ref().unwrap();
+   assert!(workspace.matches_auxiliary_questions(Q::SELECTED_MAP_AND_LAYERING));
+   assert!(workspace.has_map_edits_capture());
+   let budget=Budget::new(8<<20).unwrap();
+   let (clean,staged)=snapshot.stage_private_map_and_layering(
+    &prepared,&exclusions,&budget,&root,Stage::new(&cache).unwrap()).unwrap();
+   assert!(!clean);
+   let mut output=Vec::new();
+   staged.publish(&mut output).unwrap();
+   let report=std::str::from_utf8(&output).unwrap();
+   let engine=report.find("code/engine/probe.dm:2: [engine_layering/external_dependency]").unwrap_or_else(||panic!("{report}"));
+   let library=report.find("code/library/probe.dm:2: [library_layering/external_dependency]").unwrap_or_else(||panic!("{report}"));
+   let map=report.find("maps/.hidden/edit.dmm:1: [map_edits/unknown_var]").unwrap_or_else(||panic!("{report}"));
+   assert!(engine<library&&library<map,"{report}");
+   assert!(report.contains("maps/stale.dm:2: ALLOW(scheduler) is unused"),"{report}");
+   if let Some(previous)=&prior{assert_eq!(&output,previous)}else{prior=Some(output)}
+  });
+ }
+
+ request.policy_inputs.as_mut().unwrap().workspace_auxiliary=vec![Q::MapEdits];
+ let foreign=crate::request_runner::run_build_with_host(request,&mut host).unwrap();
+ current(&host,|snapshot|{
+  let budget=Budget::new(8<<20).unwrap();
+  assert!(snapshot.stage_private_map_and_layering(
+   &foreign,&exclusions,&budget,&root,Stage::new(&cache).unwrap()).is_err());
+ });
+ assert!(!root.join("deepquarry.dmb").exists());
+}
+
+#[path="../../../../analyze/fixtures/native-ui-actions-workspace/fixture.rs"]
+mod ui_fixture;
+
+#[test]
+fn actual_private_doc_ui_uses_one_source_capture_and_keeps_productive_roles_separate() {
+ use super::selected_report::PRIVATE_DOC_UI;
+ use crate::selected_report_spool::Stage;
+ let (mut host,mut request,root)=fixture("/proc/known_doc()\n    return\n");
+ let live_doc="\x60\x60\x60dm\nknown_doc()\nmissing_doc()\n\x60\x60\x60\n";
+ let interface="act('bogus', {});";
+ let dispatcher="code/datums/capabilities/ui_actions.dm";
+ for (relative,text) in [
+  ("deepquarry.dme","#include \"missing-compiled-file.dm\"\n"),
+  (dispatcher,ui_fixture::DISPATCHER),
+  ("code/main.dm","/obj/machine\n    tgui_id = \"Machine\"\n/obj/machine/proc/act_go(mob/user, value)\n    return ui_text(value)\n"),
+  ("doc/rewrite/live.md",live_doc),
+  ("doc/rewrite/exempt.md","excluded Markdown must not be acquired"),
+  ("tgui/packages/tgui/interfaces/Machine.tsx",interface),
+  ("maps/unused.dm","/proc/stale()\n    return // ALLOW(scheduler): actual unused annotation in joined source\n"),
+ ] {
+  let path=root.join(relative);
+  std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+  std::fs::write(path,text).unwrap();
+ }
+ std::fs::write(root.join("tools/ci/lint_scopes.toml"),report_config::with_overlay(
+  "[lint.doc_snippets]\nexempt_files=['doc/rewrite/exempt.md']\n")).unwrap();
+ let intent=request.policy_inputs.as_mut().unwrap();
+ intent.analysis_context=Some(AnalysisContext::OriginalAnalyze0290);
+ intent.workspace_auxiliary=vec![Q::DocUiFullAllow];
+ intent.workspace.as_mut().unwrap().recursive_roots=vec![
+  root.join("code"),root.join("doc/rewrite"),root.join("maps"),root.join("tgui/packages/tgui/interfaces"),
+ ];
+ let mut foreign=request.clone();
+ foreign.policy_inputs.as_mut().unwrap().workspace_auxiliary.push(Q::UiActionsFullAllow);
+ assert!(foreign.policy_inputs.unwrap().admit().is_err());
+ let budget=Budget::new(8<<20).unwrap();
+ let mut work=Operation{budget:&budget,poll:&||Ok(())};
+ let all=full_unused::registered_full_selection(&[],&mut work).unwrap();
+ let exclusions:Vec<_>=all.names().iter().filter(|name|!PRIVATE_DOC_UI.contains(&name.as_str()))
+  .map(|name|format!("-{name}")).collect();
+ let cache=crate::test_scratch::dir("private-doc-ui-spools");
+ for productive in [true,false] {
+  if !productive {std::fs::write(root.join(dispatcher),"not a dispatcher\n").unwrap();}
+  let prepared=crate::request_runner::run_build_with_host(request.clone(),&mut host).unwrap();
+  assert!(matches!(prepared,crate::request::BuildOutcome::RawQueryPrepared{retained:true,..}));
+  let state=host.query_state();
+  let held=state.lock().unwrap();
+  assert!(held.snapshot.is_none());
+  let raw=held.raw_snapshot.as_ref().unwrap();
+  let count=|text:&str|raw.capture.raw_input_files().filter(|lease|lease.source_text().as_str()==text).count();
+  assert_eq!(count(live_doc),1,"Docs payload remains productive for both dispatcher outcomes");
+  assert_eq!(count(interface),usize::from(productive),"UI-only payload is acquired at most once");
+  assert_eq!(count("excluded Markdown must not be acquired"),0);
+  let budget=Budget::new(8<<20).unwrap();
+  let (clean,verified)=raw.stage_private_doc_ui(&prepared,&exclusions,&budget,&root,Stage::new(&cache).unwrap()).unwrap();
+  assert!(!clean);
+  let mut bytes=Vec::new();
+  verified.publish(&mut bytes).unwrap();
+  let report=std::str::from_utf8(&bytes).unwrap();
+  assert!(report.contains("doc/rewrite/live.md:3: [doc_snippets/doc_unknown_name] missing_doc()"),"{report}");
+  assert_eq!(report.contains("tgui/packages/tgui/interfaces/Machine.tsx"),productive,"{report}");
+  assert!(report.contains("ALLOW(scheduler): 1 annotation, but no lint run used any"),"{report}");
+  assert_eq!(report.matches("allow annotations: 1 unused").count(),1,"{report}");
+  assert!(raw.stage_private_doc_ui(&prepared,&[],&budget,&root,Stage::new(&cache).unwrap()).is_err());
+ }
+}

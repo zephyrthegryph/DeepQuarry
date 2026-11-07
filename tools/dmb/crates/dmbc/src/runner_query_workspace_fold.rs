@@ -251,7 +251,7 @@ impl SourceSnapshot {
         self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290))?;
         let workspace = self.native_workspace.as_ref().ok_or_else(|| io::Error::other("map_edits workspace absent"))?;
         if self.policy_revision != Some(workspace.policy_revision())
-            || !workspace.matches_auxiliary_questions(&[Q::MapEdits]) {
+            || !workspace.has_map_edits_capture() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits capture differs"));
         }
         let guard = self.workspace_native_read()?;

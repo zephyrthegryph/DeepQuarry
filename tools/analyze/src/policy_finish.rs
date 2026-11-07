@@ -126,8 +126,66 @@ pub fn write_allow_rows(rows:&BTreeSet<(String,String,u32)>,output:&mut impl std
 
 /// Exact final CLI line, after any existing timing/unused-ALLOW presentation.
 /// Failed labels intentionally retain input order and duplicates.
-pub fn result_line(failed:&[String])->String{if failed.is_empty(){"All ratchet lints passed.\n".to_owned()}else{format!("Ratchet lints failed: {}\n",failed.join(" "))}}
-#[cfg(test)]mod result_line_tests{use super::*;#[test]fn whole_cli_result_line_preserves_success_order_duplicates_and_selftest_labels(){assert_eq!(result_line(&[]),"All ratchet lints passed.\n");assert_eq!(result_line(&["qdel_src".into(),"scheduler".into(),"scheduler --selftest".into(),"scheduler".into()]),"Ratchet lints failed: qdel_src scheduler scheduler --selftest scheduler\n");}}
+pub fn result_line(failed: &[String]) -> String {
+    let mut line = Vec::new();
+    write_result_line(failed.iter().map(String::as_str), &mut line)
+        .expect("writing the result line into a Vec cannot return an I/O error");
+    String::from_utf8(line).expect("the result line writes only valid UTF-8")
+}
+
+/// Borrow labels from the actual ordered result producer and write once.
+/// True means no failed labels, including the optional unused-ALLOW suffix.
+pub fn write_result_line<'a>(
+    failed: impl IntoIterator<Item = &'a str>, output: &mut impl std::io::Write,
+) -> std::io::Result<bool> {
+    let mut labels = failed.into_iter();
+    let Some(first) = labels.next() else {
+        output.write_all(b"All ratchet lints passed.\n")?;
+        return Ok(true);
+    };
+    output.write_all(b"Ratchet lints failed: ")?;
+    output.write_all(first.as_bytes())?;
+    for label in labels {
+        output.write_all(b" ")?;
+        output.write_all(label.as_bytes())?;
+    }
+    output.write_all(b"\n")?;
+    Ok(false)
+}
+
+#[cfg(test)]
+mod result_line_tests {
+    use super::*;
+
+    #[test]
+    fn whole_cli_result_line_preserves_success_order_duplicates_and_selftest_labels() {
+        assert_eq!(result_line(&[]), "All ratchet lints passed.\n");
+        assert_eq!(
+            result_line(&["qdel_src".into(),"scheduler".into(),"scheduler --selftest".into(),"scheduler".into()]),
+            "Ratchet lints failed: qdel_src scheduler scheduler --selftest scheduler\n",
+        );
+    }
+
+    #[test]
+    fn streamed_result_handles_registry_sized_sequence_and_preserves_first_io() {
+        let labels: Vec<_> = (0..104).map(|n| format!("policy_{n}")).collect();
+        let mut line = Vec::new();
+        assert!(!write_result_line(labels.iter().map(String::as_str), &mut line).unwrap());
+        assert_eq!(line, format!("Ratchet lints failed: {}\n", labels.join(" ")).as_bytes());
+
+        struct Fails;
+        impl std::io::Write for Fails {
+            fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
+                Err(std::io::Error::from_raw_os_error(1450))
+            }
+            fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
+        }
+        let mut labels = ["one", "two"].into_iter();
+        let error = write_result_line(&mut labels, &mut Fails).unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(labels.next(), Some("two"));
+    }
+}
 
 #[path="policy_report_admitted.rs"]pub mod admitted;
 
