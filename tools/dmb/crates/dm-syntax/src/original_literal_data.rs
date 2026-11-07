@@ -224,6 +224,21 @@ impl OriginalLiteralOwner {
         OriginalLiteralRef { owner: Some(owner), ordinal, projected: None }
     }
 
+    /// Retire the unique singleton after its projected descriptor is funded.
+    /// Its sole compact code changes immediately after this returns.
+    pub(crate) fn retire_projected_single_using(&mut self, a: &SettingAdmission<'_>) -> io::Result<usize> {
+        let owner = self.0.as_ref().ok_or(io::ErrorKind::InvalidData)?;
+        if !a.matches_lease_domain(&owner.credit) {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
+        let Some((_, released)) = self.at(0).projection_candidate() else {
+            return Err(io::ErrorKind::InvalidData.into());
+        };
+        a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        drop_owner(&mut self.0);
+        Ok(released)
+    }
+
     /// Withdraw only after the caller has funded every replacement descriptor.
     /// No second handle or Weak can exist while this Arc is exclusively borrowed.
     pub(crate) fn withdraw_packed_using(
@@ -627,6 +642,18 @@ impl<'a> OriginalLiteralRef<'a> {
         let payload = self.payload();
         matches!(payload.kind, LiteralKind::Int | LiteralKind::Float)
             .then_some(payload.raw.capacity())
+    }
+
+    /// Debug-only actual packed allocation geometry. Withdrawn rows have
+    /// already released their spelling and cannot enter this live mask.
+    #[cfg(debug_assertions)]
+    pub(crate) fn trace_packed_owner(self) -> (u32, usize, usize, usize) {
+        let owner = self.full_owner();
+        let LiteralStorage::Page(batch) = &owner.storage else { unreachable!("actual batch owner") };
+        let live = batch.rows.iter().enumerate().fold(0u32, |mask, (at, row)| {
+            if row.is_withdrawn() { mask } else { mask | (1 << at) }
+        });
+        (live, Arc::strong_count(owner), Arc::weak_count(owner), owner.credit.bytes())
     }
 
     /// Inspect the physical owner, including siblings not yet delivered.

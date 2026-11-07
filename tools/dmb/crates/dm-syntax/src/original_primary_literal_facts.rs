@@ -302,9 +302,9 @@ impl LiteralPage {
   drop(mem::replace(&mut self.data,LiteralPageData::Projected(next)));
   Ok(Some((count,released,old_rows,bytes)))
  }
-    /// Reuse the original compact owner bank. A mixed bank entry keeps its
-    /// existing Arc and any Full rows, while individual raw allocations die.
-    fn settle_packed_body_projection(
+    /// Reuse the compact owner bank for both singleton and packed owners.
+    /// A surviving packed entry keeps its Arc and untouched full rows.
+    fn settle_compact_body_projection(
         &mut self,
         source: &str,
         a: &crate::SettingAdmission<'_>,
@@ -323,6 +323,7 @@ impl LiteralPage {
             references: u32,
             eligible: u32,
             duplicates: bool,
+            singleton: bool,
             raw_bytes: usize,
             owner_bytes: usize,
             owner_mask: u32,
@@ -354,9 +355,15 @@ impl LiteralPage {
                 continue;
             }
             let data = compact.owners[bank].at(ordinal as usize);
-            let Some((descriptor, raw_bytes, owner_bytes, owner_mask)) = data.packed_projection_candidate() else {
-                continue;
-            };
+            let (descriptor, raw_bytes, owner_bytes, owner_mask) =
+                if let Some((descriptor, bytes)) = data.projection_candidate() {
+                    group.singleton = true;
+                    (descriptor, 0, bytes, 1)
+                } else if let Some(packed) = data.packed_projection_candidate() {
+                    packed
+                } else {
+                    continue;
+                };
             let span = self.span_at(index).ok_or(io::ErrorKind::InvalidData)?;
             if data.raw()? != source.get(span.range()).ok_or(io::ErrorKind::InvalidData)? {
                 return Err(io::ErrorKind::InvalidData.into());
@@ -424,9 +431,13 @@ impl LiteralPage {
         for (bank, group) in groups.iter().enumerate().filter(|(_, group)| group.eligible != 0) {
             // Either preflight fails with this entry untouched, or physical
             // withdrawal succeeds and all its old codes are replaced immediately.
-            released += compact.owners[bank].withdraw_packed_using(
-                group.eligible, group.eligible == group.references, a,
-            )?;
+            let owner = &mut compact.owners[bank];
+            released += if group.singleton {
+                debug_assert_eq!((group.eligible, group.references), (1, 1));
+                owner.retire_projected_single_using(a)?
+            } else {
+                owner.withdraw_packed_using(group.eligible, group.eligible == group.references, a)?
+            };
             let mut descriptor_index = 0;
             for (index, candidate) in candidates.iter().enumerate() {
                 let code = compact.codes[index];
@@ -674,6 +685,102 @@ impl<'a> OriginalLiteralRows<'a> {
 #[cfg(debug_assertions)]
 #[derive(Default,Debug,Clone,Copy)]
 struct BodyProjectionCensus{pages:usize,rows:usize,released_payload_bytes:usize,released_row_bytes:usize,retained_row_bytes:usize}
+
+#[cfg(debug_assertions)]
+#[derive(Debug, Default)]
+struct ProjectionRejections {
+    packed_unproven_owner_runs: usize,
+    packed_unproven_candidate_raw_upper: usize,
+    packed_two_adjacent_owners: usize,
+    packed_two_adjacent_whole_eligible_lease: usize,
+    packed_two_adjacent_partial_eligible_raw: usize,
+    packed_other_eligible_raw: usize,
+    packed_unsupported_body_raw: usize,
+    packed_other_shared_eligible_raw: usize,
+    single_unique_unsupported_body_lease: usize,
+    single_unique_eligible_body_lease: usize,
+    single_shared_eligible_body_references: usize,
+}
+
+#[cfg(debug_assertions)]
+struct ProjectionPackedRun {
+    owner: usize,
+    first_page: usize,
+    last_page: usize,
+    compact_banks: bool,
+    live: u32,
+    seen: u32,
+    eligible: u32,
+    next: usize,
+    ordered: bool,
+    strong: usize,
+    weak: usize,
+    lease: usize,
+    candidate_raw: usize,
+    unsupported_body_raw: usize,
+}
+
+#[cfg(debug_assertions)]
+impl ProjectionPackedRun {
+    fn new(data: crate::OriginalLiteralRef<'_>, owner: usize, page: usize) -> Self {
+        let (live, strong, weak, lease) = data.trace_packed_owner();
+        Self {
+            owner, first_page: page, last_page: page, compact_banks: true,
+            live, seen: 0, eligible: 0, next: 0, ordered: true, strong, weak, lease,
+            candidate_raw: 0, unsupported_body_raw: 0,
+        }
+    }
+
+    fn observe(&mut self, data: crate::OriginalLiteralRef<'_>, page: usize, compact_bank: bool, body: bool) {
+        // The producer issues bounded packed ordinals in input order. Only
+        // runs proving every still-live ordinal can contribute physical bytes.
+        let ordinal = data.ordinal();
+        let bit = 1u32 << ordinal;
+        self.ordered &= ordinal >= self.next;
+        self.next = ordinal + 1;
+        self.seen |= bit;
+        self.last_page = page;
+        self.compact_banks &= compact_bank;
+        if body {
+            if let Some((raw, _)) = data.trace_source_projection() {
+                self.eligible |= bit;
+                self.candidate_raw += raw;
+            } else {
+                self.unsupported_body_raw += data.raw_storage().expect("full issued spelling").capacity();
+            }
+        }
+    }
+
+    fn finish(self, census: &mut ProjectionRejections) {
+        if !self.ordered || self.seen != self.live {
+            census.packed_unproven_owner_runs += 1;
+            census.packed_unproven_candidate_raw_upper += self.candidate_raw;
+            return;
+        }
+        // All columns below count each proved raw allocation/lease once.
+        // The production bank's Arc count additionally distinguishes two
+        // adjacent sole bank aliases from any escaped or unobserved owner.
+        census.packed_unsupported_body_raw += self.unsupported_body_raw;
+        if self.eligible == 0 {
+            return;
+        }
+        if self.compact_banks && self.last_page == self.first_page + 1
+            && self.strong == 2 && self.weak == 0
+        {
+            census.packed_two_adjacent_owners += 1;
+            if self.eligible == self.live {
+                census.packed_two_adjacent_whole_eligible_lease += self.lease;
+            } else {
+                census.packed_two_adjacent_partial_eligible_raw += self.candidate_raw;
+            }
+        } else if self.strong == 1 && self.weak == 0 {
+            census.packed_other_eligible_raw += self.candidate_raw;
+        } else {
+            census.packed_other_shared_eligible_raw += self.candidate_raw;
+        }
+    }
+}
+
 // The actual producer and append boundary both require a one-byte token.
 const COLON_COMPACT_MAX: usize = (u32::MAX >> 1) as usize;
 
@@ -885,7 +992,7 @@ impl OriginalPrimaryLiteralFacts{
     let settlement = page.settle_body_projection(source,page_index*LITERAL_PAGE_LEN,owner.projection.as_ref().unwrap(),a)?;
     let settlement = match settlement {
         Some(settled) => Some(settled),
-        None => page.settle_packed_body_projection(source, a)?,
+        None => page.settle_compact_body_projection(source, a)?,
     };
     if let Some((_rows,_payload,_old,_new)) = settlement {
      #[cfg(debug_assertions)]{let c=&mut owner.body_projection;c.pages+=1;c.rows+=_rows;c.released_payload_bytes+=_payload;c.released_row_bytes+=_old;c.retained_row_bytes+=_new;}
@@ -948,7 +1055,9 @@ impl OriginalPrimaryLiteralFacts{
   }
   let owner=self.payload();let mut census=Census::default();let mut numeric=NumericCensus::default();
   let mut last_payload_page = None;
-  for page in owner.rows.chunks.iter().flat_map(|chunk| &chunk.pages) {
+  let mut rejections = ProjectionRejections::default();
+  let mut packed_run: Option<ProjectionPackedRun> = None;
+  for (page_at, page) in owner.rows.chunks.iter().flat_map(|chunk| &chunk.pages).enumerate() {
    // Physical Arc counts alone no longer describe the logical shared rows.
    let mut occurrences = [0u16; LITERAL_PAGE_LEN];
    if let LiteralPageData::Compact(compact) = &page.data {
@@ -961,7 +1070,17 @@ impl OriginalPrimaryLiteralFacts{
    if data.is_projected(){continue}
    let numeric_raw = data.trace_numeric_raw();
    numeric.delivered_rows += usize::from(numeric_raw.is_some());
+   let settled_body = page.body[index / 64] & (1 << (index % 64)) != 0;
    if let Some(current) = data.page_storage_identity() {
+    if packed_run.as_ref().is_some_and(|run| run.owner != current) {
+     packed_run.take().unwrap().finish(&mut rejections);
+    }
+    let bank = match &page.data {
+     LiteralPageData::Compact(compact) => compact.codes[index] >> 8 < PROJECTED_COMPACT_ORDINAL,
+     _ => false,
+    };
+    packed_run.get_or_insert_with(|| ProjectionPackedRun::new(data, current, page_at))
+     .observe(data, page_at, bank, settled_body);
     if last_payload_page == Some(current) { continue; }
     last_payload_page = Some(current);
     census.batch_payload_pages += 1;
@@ -985,6 +1104,17 @@ impl OriginalPrimaryLiteralFacts{
     let code = compact.codes[index];
     code >> 8 != WIDE_LITERAL_ORDINAL && occurrences[(code & 0xff) as usize] > 1
    } else { false };
+   if settled_body {
+    if exclusive && !repeated {
+     if data.trace_source_projection().is_some() {
+      rejections.single_unique_eligible_body_lease += bytes;
+     } else {
+      rejections.single_unique_unsupported_body_lease += bytes;
+     }
+    } else if data.trace_source_projection().is_some() {
+     rejections.single_shared_eligible_body_references += 1;
+    }
+   }
    if exclusive && !repeated {
     census.exclusive_payload_rows=census.exclusive_payload_rows.saturating_add(1);
     census.exclusive_payload_reserved=census.exclusive_payload_reserved.saturating_add(bytes);
@@ -999,8 +1129,9 @@ impl OriginalPrimaryLiteralFacts{
    }
   }
   }
+  if let Some(run) = packed_run { run.finish(&mut rejections); }
   // Use a named Debug builder so this snapshot has no owned text or alloc.
-  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census,numeric:NumericCensus,body_projection:BodyProjectionCensus}
+  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census,numeric:NumericCensus,body_projection:BodyProjectionCensus,rejections:ProjectionRejections}
   impl std::fmt::Debug for Snapshot{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{
    f.debug_struct("PrimaryLiteralCensus").field("rows",&self.rows).field("colons",&self.colons)
     .field("fixed_reserved",&self.fixed).field("row_capacity",&self.row_capacity).field("colon_capacity",&self.colon_capacity)
@@ -1009,9 +1140,9 @@ impl OriginalPrimaryLiteralFacts{
     .field("batch_payload_reserved",&self.census.batch_payload_reserved)
     .field("exclusive_payload_rows",&self.census.exclusive_payload_rows).field("exclusive_payload_reserved",&self.census.exclusive_payload_reserved)
     .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper)
-    .field("numeric",&self.numeric).field("body_projection",&self.body_projection).finish()
+    .field("numeric",&self.numeric).field("body_projection",&self.body_projection).field("projection_rejections",&self.rejections).finish()
   }}
-  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection}
+  Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections}
  }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   let owner=self.0.as_ref().expect("live primary facts");if let Some(projection)=&owner.projection{projection.visit_storage(&mut visit)}let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(&mut visit);owner.colons.visit_storage(&mut visit);owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
@@ -1505,6 +1636,72 @@ mod literal_page_controls {
 
  #[cfg(debug_assertions)]
  #[test]
+ fn sparse_body_singleton_retires_without_expanding_compact_survivors() {
+    #[derive(Debug)]
+    struct Output;
+    impl crate::OriginalLiteralOutputOwner for Output {
+        fn as_any(&self) -> &dyn std::any::Any { self }
+        fn release(self: Arc<Self>) { drop(Arc::into_inner(self)); }
+        fn visit_storage(&self, _: &mut dyn FnMut(usize,usize,usize)) {}
+    }
+    let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+    let used = crate::SettingChargeCounter::try_new(fixed).unwrap();
+    let a = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+    let output = crate::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output));
+    let mut page = LiteralPage::new(0, &a).unwrap();
+    let mut source = "\"one sparse body string\"\n".to_owned();
+    let span = Span::new(0, source.len() - 1);
+    let before_singleton = used.load(Ordering::Acquire);
+    let singleton = crate::OriginalLiteralData::from_value_with_mode_using(
+        source[span.range()].to_owned(),
+        crate::OriginalTokenValue::String("one sparse body string"),
+        crate::OriginalStringMode::Normal, &a,
+    ).unwrap();
+    let payload = used.load(Ordering::Acquire) - before_singleton;
+    let raw_pointer = singleton.raw().as_ptr();
+    let filler = crate::OriginalLiteralData::from_value_using(
+        "0".to_owned(), crate::OriginalTokenValue::Int(0), &a,
+    ).unwrap();
+    page.push((span, singleton), &a).unwrap();
+    for _ in 1..LITERAL_PAGE_LEN {
+        let start = source.len();
+        source.push_str("0\n");
+        page.push((Span::new(start, start + 1), filler.clone()), &a).unwrap();
+    }
+    page.body[0] = 1;
+    page.data.settle_full_using(&a).unwrap();
+    assert!(matches!(page.data, LiteralPageData::Compact(_)));
+    let before = used.load(Ordering::Acquire);
+    assert!(page.settle_body_projection(&source, 0, &output, &a).unwrap().is_none(),
+        "rewriting the shared page into full handles loses the singleton saving");
+    let alias = page.get(0).unwrap().1.detach_using(&a).unwrap();
+    assert!(page.settle_compact_body_projection(&source, &a).unwrap().is_none());
+    assert_eq!(alias.raw().as_ptr(), raw_pointer);
+    drop(alias);
+    let denied = crate::SettingAdmission::new(&used, before, &|| Ok(()));
+    assert!(page.settle_compact_body_projection(&source, &denied).unwrap().is_none());
+    let mut wrong = source.clone();
+    wrong.replace_range(1..2, "X");
+    assert_eq!(page.settle_compact_body_projection(&wrong, &a).unwrap_err().kind(), io::ErrorKind::InvalidData);
+    assert_eq!(page.get(0).unwrap().1.raw().unwrap().as_ptr(), raw_pointer);
+    assert_eq!(used.load(Ordering::Acquire), before);
+
+    let (count, released, old, new) = page.settle_compact_body_projection(&source, &a).unwrap().unwrap();
+    assert_eq!((count, released), (1, payload));
+    assert_eq!(used.load(Ordering::Acquire), before + new - old - released);
+    let unbound = page.get_data(0, 0, None, Some(&output)).unwrap().1;
+    assert_eq!(unbound.raw().unwrap_err().kind(), io::ErrorKind::NotConnected);
+    let loan = ProjectionLoan { source: &source, origin: 0 };
+    let bound = page.get_data(0, 0, Some(loan), Some(&output)).unwrap().1;
+    assert_eq!(bound.raw().unwrap().as_ptr(), source.as_ptr());
+    assert!(matches!(bound.value().unwrap(), crate::OriginalTokenValue::String("one sparse body string")));
+    assert!(page.get(1).unwrap().1.same_owner(filler.as_view()));
+    assert!(matches!(page.data, LiteralPageData::Compact(_)));
+    drop((page, filler, output));
+    assert_eq!(used.load(Ordering::Acquire), fixed);
+ }
+
+ #[test]
  fn compact_body_bank_withdrawal_pays_descriptors_and_keeps_mixed_survivor() {
     struct Output;
     impl crate::OriginalLiteralOutputOwner for Output {
@@ -1557,13 +1754,13 @@ mod literal_page_controls {
 
         let escaped = page.get(0).unwrap().1.detach_using(&a).unwrap();
         let before = used.load(Ordering::Acquire);
-        assert!(page.settle_packed_body_projection(&source, &a).unwrap().is_none());
+        assert!(page.settle_compact_body_projection(&source, &a).unwrap().is_none());
         assert_eq!(used.load(Ordering::Acquire), before);
         assert_eq!(escaped.raw().as_ptr(), survivor_pointer);
         drop(escaped);
 
         let denied = crate::SettingAdmission::new(&used, before, &|| Ok(()));
-        assert!(page.settle_packed_body_projection(&source, &denied).unwrap().is_none());
+        assert!(page.settle_compact_body_projection(&source, &denied).unwrap().is_none());
         assert_eq!(used.load(Ordering::Acquire), before);
         assert_eq!(page.get(0).unwrap().1.raw().unwrap().as_ptr(), survivor_pointer);
 
@@ -1580,7 +1777,7 @@ mod literal_page_controls {
         assert_eq!(used.load(Ordering::Acquire), before);
         assert_eq!(page.get(1).unwrap().1.raw().unwrap().as_ptr(), second_pointer);
 
-        let (count, released, old, new) = page.settle_packed_body_projection(&source, &a).unwrap().unwrap();
+        let (count, released, old, new) = page.settle_compact_body_projection(&source, &a).unwrap().unwrap();
         assert_eq!(count, if whole_group { 4 } else { 3 });
         assert_eq!(released, if whole_group { total_owner_bytes } else { raw_bytes });
         assert_eq!(used.load(Ordering::Acquire), before + new - old - released);
