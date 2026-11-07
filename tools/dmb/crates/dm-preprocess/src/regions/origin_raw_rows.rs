@@ -811,46 +811,82 @@ impl RowGroupRank {
     }
 }
 
-// One physical row page owns its group output bases in rank order. The
-// leading run may continue the previous page and repeats only that one base.
+// One physical row page owns its output bases in group-rank order. The
+// first group can continue the preceding page. Anchors are its actual
+// absolute values, and a wide cell keeps its exact local rank and base.
 struct RowOutputBases {
-    compact: Vec<u32>,
-    wide: Vec<usize>,
+    compact: Vec<u16>,
+    anchors: Vec<usize>,
+    wide: Vec<WideOutputBase>,
+}
+
+#[repr(transparent)]
+struct WideOutputBase([u16; 5]);
+const _: () = assert!(std::mem::size_of::<WideOutputBase>() == 10);
+
+impl WideOutputBase {
+    fn new(rank: usize, value: usize) -> io::Result<Self> {
+        let rank = u16::try_from(rank).map_err(|_| io::ErrorKind::InvalidData)?;
+        let value = u64::try_from(value).map_err(|_| io::ErrorKind::InvalidData)?;
+        Ok(Self([rank, value as u16, (value >> 16) as u16,
+            (value >> 32) as u16, (value >> 48) as u16]))
+    }
+
+    fn rank(&self) -> usize { usize::from(self.0[0]) }
+
+    fn value(&self) -> Option<usize> {
+        let [_, a, b, c, d] = self.0;
+        usize::try_from(u64::from(a) | (u64::from(b) << 16)
+            | (u64::from(c) << 32) | (u64::from(d) << 48)).ok()
+    }
 }
 
 impl RowOutputBases {
-    const WIDE: u32 = 1 << 31;
+    const BLOCK: usize = 128;
+    const ESCAPE: u16 = u16::MAX;
 
     fn new() -> Self {
-        Self { compact: Vec::new(), wide: Vec::new() }
+        Self { compact: Vec::new(), anchors: Vec::new(), wide: Vec::new() }
     }
 
     fn push(&mut self, value: usize, a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>) -> io::Result<()> {
-        // Small bounded increments cap steady slack at 127 words per page.
-        funding.grow_rows(&mut self.compact, 128, a)?;
-        let encoded = match u32::try_from(value).ok().filter(|&base| base < Self::WIDE) {
-            Some(base) => base,
-            None => {
-                funding.grow_rows(&mut self.wide, 16, a)?;
-                let ordinal = u32::try_from(self.wide.len()).expect("local output-base ordinal");
-                self.wide.push(value);
-                Self::WIDE | ordinal
-            }
+        let rank = self.compact.len();
+        let starts_block = rank % Self::BLOCK == 0;
+        let delta = if starts_block {
+            0
+        } else {
+            value.checked_sub(self.anchors[rank / Self::BLOCK])
+                .and_then(|delta| u16::try_from(delta).ok())
+                .unwrap_or(Self::ESCAPE)
         };
-        self.compact.push(encoded);
+        funding.grow_rows(&mut self.compact, Self::BLOCK, a)?;
+        if starts_block {
+            funding.grow_rows(&mut self.anchors, 4, a)?;
+            self.anchors.push(value);
+        } else if delta == Self::ESCAPE {
+            let escape = WideOutputBase::new(rank, value)?;
+            funding.grow_rows(&mut self.wide, 16, a)?;
+            self.wide.push(escape);
+        }
+        // The anchor/escape is funded and the compact cell cannot fail.
+        self.compact.push(delta);
         Ok(())
     }
 
     fn get(&self, rank: usize) -> Option<usize> {
-        let value = *self.compact.get(rank)?;
-        if value & Self::WIDE == 0 { Some(value as usize) }
-        else { self.wide.get((value & !Self::WIDE) as usize).copied() }
+        let delta = *self.compact.get(rank)?;
+        if delta == Self::ESCAPE {
+            let index = self.wide.binary_search_by_key(&rank, WideOutputBase::rank).ok()?;
+            self.wide[index].value()
+        } else {
+            self.anchors.get(rank / Self::BLOCK)?.checked_add(usize::from(delta))
+        }
     }
 
     fn truncate(&mut self, keep: usize, funding: &mut PageFunding<'_>) -> io::Result<()> {
         self.compact.truncate(keep);
-        let wide = self.compact.iter().rev().find(|&&base| base & Self::WIDE != 0)
-            .map_or(0, |base| (base & !Self::WIDE) as usize + 1);
+        self.anchors.truncate(keep.div_ceil(Self::BLOCK));
+        let wide = self.wide.partition_point(|escape| escape.rank() < keep);
         if wide == 0 { funding.release(std::mem::take(&mut self.wide))?; }
         else { self.wide.truncate(wide); }
         Ok(())
@@ -864,6 +900,7 @@ impl RowOutputBases {
             }
         }
         rows(&self.compact, visit);
+        rows(&self.anchors, visit);
         rows(&self.wide, visit);
     }
 }
@@ -1654,6 +1691,19 @@ impl OriginalRawOrigins{
  #[cfg(debug_assertions)]
  pub(super) fn trace_run_capacity(&self) -> (usize, usize, usize) { self.groups.trace_capacity() }
  #[cfg(debug_assertions)]
+ pub(super) fn trace_output_base_capacity(&self) -> (usize, usize, usize, usize, usize) {
+    self.rows.pages.iter().fold((0, 0, 0, 0, 0), |totals, page| {
+        let bases = &page.get().output_bases;
+        (
+            totals.0 + bases.compact.len(),
+            totals.1 + bases.compact.capacity() * std::mem::size_of::<u16>(),
+            totals.2 + bases.anchors.capacity() * std::mem::size_of::<usize>(),
+            totals.3 + bases.wide.len(),
+            totals.4 + bases.wide.capacity() * std::mem::size_of::<WideOutputBase>(),
+        )
+    })
+ }
+ #[cfg(debug_assertions)]
  pub(super) fn trace_run_compaction_capacity(&self) -> (usize, usize, usize) {
     self.groups.traces.trace_capacity()
  }
@@ -2390,7 +2440,7 @@ impl OriginalRawOrigins{
 
  #[test]
  fn ranked_raw_width_staging_rolls_back_when_later_cell_or_output_base_allocation_fails(){
-  for fail_bytes in [ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>(),128*std::mem::size_of::<u32>()]{
+  for fail_bytes in [ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>(),RowOutputBases::BLOCK*std::mem::size_of::<u16>()]{
    let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
    let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
    let work=RankedWidthFailureWork::new(fail_bytes);
@@ -2583,6 +2633,56 @@ impl OriginalRawOrigins{
  }
 
  #[test]
+ fn anchored_output_bases_preserve_exact_escape_and_reissue_trimmed_block() {
+    let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a = SettingAdmission::new(&syntax, fixed, &|| Ok(()));
+    let used = Arc::new(AtomicUsize::new(0));
+    let work = CappedWork::new(Arc::clone(&used), usize::MAX);
+    let mut credit = work.reserve(0).unwrap();
+    let mut funding = PageFunding { work: &work, credit: &mut credit };
+    let mut bases = RowOutputBases::new();
+    let base = 99_000;
+    for rank in 0..RowOutputBases::BLOCK {
+        let value = match rank {
+            1 => base + usize::from(u16::MAX) - 1,
+            2 => base + usize::from(u16::MAX),
+            3 => base - 1,
+            _ => base + rank,
+        };
+        bases.push(value, &a, &mut funding).unwrap();
+        assert_eq!(bases.get(rank), Some(value));
+    }
+    assert_eq!(bases.wide.iter().map(WideOutputBase::rank).collect::<Vec<_>>(), [2, 3]);
+    bases.push(usize::MAX, &a, &mut funding).unwrap();
+    bases.push(usize::MAX, &a, &mut funding).unwrap();
+    assert_eq!(bases.get(128), Some(usize::MAX));
+    assert_eq!(bases.get(129), Some(usize::MAX));
+    bases.truncate(128, &mut funding).unwrap();
+    assert_eq!(bases.anchors, [base]);
+    bases.push(17, &a, &mut funding).unwrap();
+    bases.push(18, &a, &mut funding).unwrap();
+    assert_eq!(bases.get(128), Some(17));
+    assert_eq!(bases.get(129), Some(18));
+    let before = used.load(Ordering::Acquire);
+    let escaped_bytes = bases.wide.capacity() * std::mem::size_of::<WideOutputBase>();
+    bases.truncate(2, &mut funding).unwrap();
+    assert_eq!(used.load(Ordering::Acquire), before - escaped_bytes);
+    assert_eq!(bases.get(2), None);
+    assert!(bases.wide.is_empty());
+    work.limit.store(used.load(Ordering::Acquire), Ordering::Release);
+    assert_eq!(bases.push(base - 1, &a, &mut funding).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
+    assert_eq!(bases.get(1), Some(base + usize::from(u16::MAX) - 1));
+    assert_eq!(bases.get(2), None);
+    work.limit.store(usize::MAX, Ordering::Release);
+    bases.push(base - 1, &a, &mut funding).unwrap();
+    assert_eq!(bases.get(2), Some(base - 1));
+    drop((bases, credit));
+    assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(syntax.load(Ordering::Acquire), fixed);
+ }
+
+ #[test]
  fn physical_output_bases_keep_continued_groups_and_exact_wide_offsets() {
   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,4<<20,&||Ok(()));
@@ -2606,7 +2706,12 @@ impl OriginalRawOrigins{
   for page in 0..2 {
    let output=&rows.page(page).unwrap().output_bases;
    assert_eq!(output.get(0),Some(group.output_base));
-   assert_eq!(output.wide,[group.output_base]);
+   assert_eq!(output.anchors, [group.output_base]);
+   assert_eq!(output.wide.len(), page);
+   if page == 1 {
+    assert_eq!(output.wide[0].rank(), 1);
+    assert_eq!(output.wide[0].value(), Some(replacement.output_base));
+   }
   }
   assert_eq!(rows.get(ROW_PAGE_LEN-1,&groups),Some(row));
   assert_eq!(rows.get(ROW_PAGE_LEN,&groups),Some(row));
