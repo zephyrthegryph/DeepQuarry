@@ -19,6 +19,13 @@
 	default_value = FALSE
 	savefile_identifier = PREFERENCE_PLAYER
 
+/// A developer setting: staff with debug rights only.
+/datum/preference/toggle/browser_dev_tools/is_accessible(datum/preferences/preferences)
+	. = ..()
+	if(!.)
+		return
+	return check_rights_for(preferences.client(), R_DEBUG)
+
 /datum/preference/toggle/browser_dev_tools/apply_to_client(client/client, value)
 	if(value)
 		winset(client, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS],devtools")

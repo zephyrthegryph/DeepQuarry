@@ -22,6 +22,13 @@
 	default_value = TRUE
 	savefile_identifier = PREFERENCE_PLAYER
 
+/// Staff only: mentors and admins hear the ping.
+/datum/preference/toggle/play_mentorhelp_ping/is_accessible(datum/preferences/preferences)
+	. = ..()
+	if(!.)
+		return
+	return check_rights_for(preferences.client(), R_ADMIN|R_MOD|R_MENTOR)
+
 // Volume channels
 /datum/preference/volume_channels
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED

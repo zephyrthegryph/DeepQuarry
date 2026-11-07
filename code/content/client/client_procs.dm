@@ -355,7 +355,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	SStgui.schedule_client_prewarm(src)
 
 	// Now that we're fully initialized, use our prefs
-	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools))
+	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools) && check_rights_for(src, R_DEBUG))
 		winset(src, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS],devtools")
 
 	//////////////
