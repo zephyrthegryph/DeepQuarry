@@ -582,8 +582,223 @@ impl TraceRunRank {
     }
 }
 
+const STORED_TRACE_PAGE_ROWS:usize=128;
+const TRACE_FALLBACK:u16=1<<15;
+const TRACE_POOL_ROW_BITS:u32=6;
+
+#[derive(Clone,Copy)]
+struct StoredTraceView<'a>(MacroTraceView<'a>);
+impl StoredTraceView<'_>{
+    fn same_owner(self,other:&OriginalMacroTrace)->bool{self.0.same_owner(MacroTraceView::original(other))}
+}
+
+struct PackedStoredTraces{
+    codes:[u16;STORED_TRACE_PAGE_ROWS],
+    bank:Vec<super::macro_trace_view::SingletonPageOwner>,
+    fallback:Vec<OriginalMacroTrace>,
+    len:usize,
+}
+
+impl PackedStoredTraces{
+    fn storage_bytes(&self)->usize{
+        std::mem::size_of::<Self>()
+            +self.bank.capacity()*std::mem::size_of::<super::macro_trace_view::SingletonPageOwner>()
+            +self.fallback.capacity()*std::mem::size_of::<OriginalMacroTrace>()
+    }
+
+    fn view(&self,at:usize)->Option<MacroTraceView<'_>>{
+        if at>=self.len{return None;}
+        let code=self.codes[at];
+        if code&TRACE_FALLBACK!=0{
+            return self.fallback.get(usize::from(code&!TRACE_FALLBACK)).map(MacroTraceView::original);
+        }
+        let page=self.bank.get(usize::from(code>>TRACE_POOL_ROW_BITS))?;
+        Some(MacroTraceView::pooled(page,code&((1<<TRACE_POOL_ROW_BITS)-1)))
+    }
+
+    fn truncate(&mut self,keep:usize){
+        let mut bank=0;
+        let mut fallback=0;
+        // Both side columns are ordered by first use. Any retained prefix
+        // therefore retains only a prefix of each actual owner column.
+        for &code in &self.codes[..keep]{
+            if code&TRACE_FALLBACK!=0{fallback=fallback.max(usize::from(code&!TRACE_FALLBACK)+1);}
+            else{bank=bank.max(usize::from(code>>TRACE_POOL_ROW_BITS)+1);}
+        }
+        self.bank.truncate(bank);
+        self.fallback.truncate(fallback);
+        self.len=keep;
+    }
+}
+
+enum StoredTracePage{
+    Dense(Vec<OriginalMacroTrace>),
+    Packed(Box<PackedStoredTraces>),
+}
+impl StoredTracePage{
+    fn view(&self,at:usize)->Option<MacroTraceView<'_>>{
+        match self{
+            Self::Dense(rows)=>rows.get(at).map(MacroTraceView::original),
+            Self::Packed(rows)=>rows.view(at),
+        }
+    }
+
+    fn storage_bytes(&self)->usize{
+        match self{
+            Self::Dense(rows)=>rows.capacity()*std::mem::size_of::<OriginalMacroTrace>(),
+            Self::Packed(rows)=>rows.storage_bytes(),
+        }
+    }
+
+    fn settle_using(&mut self,a:&SettingAdmission<'_>,funding:&mut PageFunding<'_>)->io::Result<()>{
+        let old=self.storage_bytes();
+        let Self::Dense(rows)=self else{return Ok(());};
+        if rows.len()!=STORED_TRACE_PAGE_ROWS{return Ok(());}
+        let mut bank:[Option<&super::macro_trace_view::SingletonPageOwner>;STORED_TRACE_PAGE_ROWS]=[None;STORED_TRACE_PAGE_ROWS];
+        let mut codes=[0u16;STORED_TRACE_PAGE_ROWS];
+        let (mut bank_len,mut fallback_len)=(0,0);
+        for (at,row) in rows.iter().enumerate(){
+            codes[at]=if let OriginalMacroTrace::PooledSingleton{page,ordinal}=row{
+                debug_assert!(*ordinal < (1<<TRACE_POOL_ROW_BITS));
+                let index=bank[..bank_len].iter().position(|entry|entry.is_some_and(|prior|prior.same_page(page)))
+                    .unwrap_or_else(||{let index=bank_len;bank[index]=Some(page);bank_len+=1;index});
+                ((index as u16)<<TRACE_POOL_ROW_BITS)|*ordinal
+            }else{
+                let index=fallback_len;
+                fallback_len+=1;
+                TRACE_FALLBACK|index as u16
+            };
+        }
+        let bytes=std::mem::size_of::<PackedStoredTraces>()
+            +bank_len*std::mem::size_of::<super::macro_trace_view::SingletonPageOwner>()
+            +fallback_len*std::mem::size_of::<OriginalMacroTrace>();
+        if bytes>=old || !funding.work.try_grow_original_origin_storage(funding.credit,bytes)?{
+            return Ok(());
+        }
+        let staged=||->io::Result<Box<PackedStoredTraces>>{
+            let mut next=PackedStoredTraces{
+                codes,len:STORED_TRACE_PAGE_ROWS,bank:exact_rows(bank_len,a)?,fallback:exact_rows(fallback_len,a)?,
+            };
+            for page in bank[..bank_len].iter().flatten(){next.bank.push(super::macro_trace_view::SingletonPageOwner::clone(page));}
+            a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
+            let layout=std::alloc::Layout::new::<PackedStoredTraces>();
+            let pointer=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)}.cast::<PackedStoredTraces>())
+                .ok_or(io::ErrorKind::OutOfMemory)?;
+            // SAFETY: one exact funded Global allocation, initialized before
+            // Box takes ownership. The dense source is still untouched.
+            Ok(unsafe{pointer.as_ptr().write(next);Box::from_raw(pointer.as_ptr())})
+        };
+        let mut next=match staged(){
+            Ok(next)=>next,
+            Err(first)=>{let _=funding.work.shrink(funding.credit,bytes);return Err(first);}
+        };
+        for (row,code) in rows.drain(..).zip(codes){
+            if code&TRACE_FALLBACK!=0{next.fallback.push(row);}
+        }
+        let dense=std::mem::replace(self,Self::Packed(next));
+        drop(dense);
+        funding.work.shrink(funding.credit,old)
+    }
+
+    fn append(&mut self,row:OriginalMacroTrace,a:&SettingAdmission<'_>,funding:&mut PageFunding<'_>)->io::Result<()>{
+        if let Self::Packed(packed)=self{
+            // Only a producer prefix trim can re-open a previously sealed
+            // page. Rebuild the original dense layout in one exact grant.
+            let old=packed.storage_bytes();
+            let mut dense=funding.allocate(STORED_TRACE_PAGE_ROWS,a)?;
+            dense.extend((0..packed.len).map(|at|packed.view(at).and_then(MacroTraceView::clone_original)
+                .expect("retained exact Original trace")));
+            drop(std::mem::replace(self,Self::Dense(dense)));
+            funding.work.shrink(funding.credit,old)?;
+        }
+        let Self::Dense(rows)=self else{unreachable!()};
+        rows.push(row);
+        Ok(())
+    }
+
+    fn truncate(&mut self,keep:usize){
+        match self{Self::Dense(rows)=>rows.truncate(keep),Self::Packed(rows)=>rows.truncate(keep)}
+    }
+
+    fn visit_storage(&self,visit:&mut impl FnMut(usize,usize,usize)){
+        fn column<T>(rows:&Vec<T>,visit:&mut impl FnMut(usize,usize,usize)){
+            if rows.capacity()!=0{visit(rows.as_ptr() as usize,rows.len(),rows.capacity()*std::mem::size_of::<T>());}
+        }
+        match self{
+            Self::Dense(rows)=>column(rows,visit),
+            Self::Packed(rows)=>{
+                let bytes=std::mem::size_of::<PackedStoredTraces>();
+                visit(rows.as_ref() as *const _ as usize,bytes,bytes);
+                column(&rows.bank,visit);
+                column(&rows.fallback,visit);
+            }
+        }
+    }
+}
+
+struct StoredTracePages{
+    pages:Vec<StoredTracePage>,
+    len:usize,
+}
+
+impl StoredTracePages{
+    fn new()->Self{Self{pages:Vec::new(),len:0}}
+    fn len(&self)->usize{self.len}
+    fn get(&self,at:usize)->Option<StoredTraceView<'_>>{
+        if at>=self.len{return None;}
+        self.pages.get(at/STORED_TRACE_PAGE_ROWS)?.view(at%STORED_TRACE_PAGE_ROWS).map(StoredTraceView)
+    }
+    fn push(&mut self,row:OriginalMacroTrace,a:&SettingAdmission<'_>,funding:&mut PageFunding<'_>)->io::Result<()>{
+        a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
+        let len=self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
+        if self.len%STORED_TRACE_PAGE_ROWS==0{
+            if let Some(last)=self.pages.last_mut(){last.settle_using(a,funding)?;}
+            let mut page=funding.allocate(STORED_TRACE_PAGE_ROWS,a)?;
+            page.push(row);
+            if self.pages.len()==self.pages.capacity(){
+                let capacity=self.pages.capacity().max(2).checked_mul(2)
+                    .ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory));
+                match capacity.and_then(|capacity|funding.allocate(capacity,a)){
+                    Ok(mut next)=>{
+                        next.append(&mut self.pages);
+                        if let Err(first)=funding.release(std::mem::replace(&mut self.pages,next)){
+                            let _=funding.release(page);
+                            return Err(first);
+                        }
+                    }
+                    Err(first)=>{let _=funding.release(page);return Err(first);}
+                }
+            }
+            self.pages.push(StoredTracePage::Dense(page));
+        }else{
+            self.pages.last_mut().expect("issued trace storage page").append(row,a,funding)?;
+        }
+        self.len=len;
+        Ok(())
+    }
+    fn truncate(&mut self,len:usize,funding:&mut PageFunding<'_>)->io::Result<()>{
+        assert!(len<=self.len);
+        let keep=len.div_ceil(STORED_TRACE_PAGE_ROWS);
+        let released=self.pages[keep..].iter().try_fold(0usize,|bytes,page|
+            bytes.checked_add(page.storage_bytes()).ok_or(io::ErrorKind::OutOfMemory))?;
+        self.pages.truncate(keep);
+        if len%STORED_TRACE_PAGE_ROWS!=0{
+            self.pages.last_mut().expect("issued trace storage page").truncate(len%STORED_TRACE_PAGE_ROWS);
+        }
+        self.len=len;
+        if released!=0{funding.work.shrink(funding.credit,released)?;}
+        Ok(())
+    }
+    fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
+        if self.pages.capacity()!=0{
+            visit(self.pages.as_ptr() as usize,self.pages.len(),self.pages.capacity()*std::mem::size_of::<StoredTracePage>());
+        }
+        for page in &self.pages{page.visit_storage(&mut visit);}
+    }
+}
+
 struct TraceRuns {
-    stored: EscapePages<OriginalMacroTrace>,
+    stored: StoredTracePages,
     rank: FixedPages<TraceRunRank, TRACE_DIRECTORY_PAGE_LEN>,
     len: usize,
     mapped_from: Option<usize>,
@@ -596,7 +811,7 @@ struct TraceRuns {
 impl TraceRuns {
     fn new() -> Self {
         Self {
-            stored: EscapePages::new(), rank: FixedPages::new(),
+            stored: StoredTracePages::new(), rank: FixedPages::new(),
             len: 0, mapped_from: None, last_slot: None, canonical: None,
         }
     }
@@ -613,13 +828,13 @@ impl TraceRuns {
         if page.stored(local) { Some(page.before(local)) } else { self.canonical }
     }
 
-    fn get(&self, run: usize) -> Option<&OriginalMacroTrace> {
+    fn get(&self, run: usize) -> Option<StoredTraceView<'_>> {
         self.stored.get(self.physical_slot(run)?)
     }
 
     // The producer consults last on every token. Cache only the exact
     // physical index, with no new Arc alias or repeated rank lookup.
-    fn last(&self) -> Option<&OriginalMacroTrace> { self.stored.get(self.last_slot?) }
+    fn last(&self) -> Option<StoredTraceView<'_>> { self.stored.get(self.last_slot?) }
 
     fn push(
         &mut self,
@@ -724,7 +939,7 @@ impl OriginGroups {
         self.trace_pages.get(ordinal / ROW_PAGE_LEN)?.run(ordinal % ROW_PAGE_LEN)
     }
 
-    fn get(&self, ordinal: usize) -> Option<(GroupSourceGeometry, &OriginalMacroTrace)> {
+    fn get(&self, ordinal: usize) -> Option<(GroupSourceGeometry, StoredTraceView<'_>)> {
         Some((self.source_geometry(ordinal)?, self.traces.get(self.trace_run(ordinal)?)?))
     }
 
@@ -746,7 +961,7 @@ impl OriginGroups {
     }
 
     #[cfg(test)]
-    fn last(&self) -> Option<(GroupSourceGeometry, &OriginalMacroTrace)> {
+    fn last(&self) -> Option<(GroupSourceGeometry, StoredTraceView<'_>)> {
         Some((self.source_geometry(self.len().checked_sub(1)?)?, self.traces.last()?))
     }
 
@@ -992,6 +1207,76 @@ impl RowOutputBases {
         rows(&self.compact, visit);
         rows(&self.anchors, visit);
         rows(&self.wide, visit);
+    }
+}
+
+// Failure-only model for relocating an already issued immutable output-base
+// column. This does no work while individual tokens or groups are emitted.
+#[cfg(debug_assertions)]
+#[derive(Debug, Default)]
+pub(super) struct OutputBasePackingCensus {
+    block_rows: usize,
+    full_pages: usize,
+    partial_pages: usize,
+    profitable_pages: usize,
+    geometry_declines: usize,
+    original_bytes: usize,
+    projected_bytes: usize,
+    largest_staged_bytes: usize,
+    selected_blocks_by_bit_width: [usize; 17],
+}
+
+#[cfg(debug_assertions)]
+impl OutputBasePackingCensus {
+    fn with_block(block_rows:usize)->Self { Self{block_rows,..Self::default()} }
+
+    fn projected_page(&self,bases:&RowOutputBases)->Option<(usize,[usize;17])>{
+        let page_anchor=bases.get(0)?;
+        let mut widths=[0;17];
+        let mut payload=0;
+        for first in (0..bases.compact.len()).step_by(self.block_rows) {
+            let anchor=bases.get(first)?;
+            u32::try_from(anchor.checked_sub(page_anchor)?).ok()?;
+            let end=(first+self.block_rows).min(bases.compact.len());
+            let mut largest=0;
+            let mut has_escape=false;
+            for rank in first..end {
+                if bases.compact[rank]==RowOutputBases::ESCAPE {
+                    // Preserve existing wide payload and its exact ordinal.
+                    has_escape=true;
+                } else {
+                    let delta=bases.get(rank)?.checked_sub(anchor)?;
+                    if delta>=usize::from(RowOutputBases::ESCAPE){return None;}
+                    largest=largest.max(delta);
+                }
+            }
+            let bits=if has_escape {16} else {usize::BITS as usize-largest.leading_zeros() as usize};
+            widths[bits]+=1;
+            payload+=((end-first)*bits).div_ceil(8);
+        }
+        // One box with full page anchor and two exact Vec controls. Each
+        // descriptor has a u32 anchor delta and u32 packed offset/bit width.
+        let fixed=std::mem::size_of::<(usize,Vec<u8>,Vec<[u32;2]>)>();
+        let index=bases.compact.len().div_ceil(self.block_rows)*std::mem::size_of::<[u32;2]>();
+        Some((fixed+index+payload,widths))
+    }
+
+    fn observe(&mut self,page:&PhysicalOriginPage){
+        let bases=&page.output_bases;
+        let old=bases.compact.capacity()*std::mem::size_of::<u16>()
+            +bases.anchors.capacity()*std::mem::size_of::<usize>();
+        self.original_bytes+=old;
+        self.projected_bytes+=old;
+        if page.len()!=ROW_PAGE_LEN{self.partial_pages+=1;return;}
+        self.full_pages+=1;
+        let Some((bytes,widths))=self.projected_page(bases)else{self.geometry_declines+=1;return;};
+        // Old side storage is unmodified. All physical page controls would
+        // carry one additional optional box pointer, profitable or not.
+        if bytes>=old{return;}
+        self.profitable_pages+=1;
+        self.projected_bytes-=old-bytes;
+        self.largest_staged_bytes=self.largest_staged_bytes.max(bytes);
+        for (all,page) in self.selected_blocks_by_bit_width.iter_mut().zip(widths){*all+=page;}
     }
 }
 
@@ -2037,6 +2322,17 @@ impl OriginalRawOrigins{
     })
  }
  #[cfg(debug_assertions)]
+ pub(super) fn trace_output_base_packing(&self)->[OutputBasePackingCensus;3]{
+    let mut models=[16,32,64].map(OutputBasePackingCensus::with_block);
+    for page in self.rows.pages.iter(){
+        for model in &mut models{model.observe(page.get());}
+    }
+    for model in &mut models{
+        model.projected_bytes+=(model.full_pages+model.partial_pages)*std::mem::size_of::<usize>();
+    }
+    models
+ }
+ #[cfg(debug_assertions)]
  pub(super) fn trace_run_compaction_capacity(&self) -> (usize, usize, usize) {
     self.groups.traces.trace_capacity()
  }
@@ -2061,7 +2357,7 @@ impl OriginalRawOrigins{
   Some(ExpandedOriginView {
    origin: OriginView { output_line: group.output_line, path: &encounter.path, source_line: group.line },
    output_span: row.output, source_span: group.decoded, region: encounter.region,
-   macro_expansions: MacroTraceView::original(trace),
+   macro_expansions: trace.0,
   })
  }
  /// Exact point projection only. Expanded grammar offsets inside a transformed
@@ -2209,7 +2505,7 @@ impl OriginalRawOrigins{
   let directory_bytes=4*std::mem::size_of::<Vec<PackedGroup>>();
   let rank_directory_bytes=4*std::mem::size_of::<Vec<GroupTracePage>>();
   let rank_page_bytes=TRACE_DIRECTORY_PAGE_LEN*std::mem::size_of::<GroupTracePage>();
-  let run_directory_bytes=4*std::mem::size_of::<Vec<OriginalMacroTrace>>();
+  let run_directory_bytes=4*std::mem::size_of::<StoredTracePage>();
   let run_page_bytes=128*std::mem::size_of::<OriginalMacroTrace>();
   let trace_bytes=rank_directory_bytes+rank_page_bytes+run_directory_bytes+run_page_bytes;
   let cap=2*page_bytes+directory_bytes+trace_bytes;
@@ -2639,6 +2935,73 @@ impl OriginalRawOrigins{
     drop((runs, credit));
     assert_eq!(live.load(Ordering::Acquire), 0);
     assert_eq!(syntax.load(Ordering::Acquire), fixed);
+ }
+
+ #[test]
+ fn packed_origin_trace_bank_preserves_exact_pool_owner_and_first_error() {
+    use super::super::macro_trace_view::{NarrowOriginalMacroFrame,OriginalMacroAuthor,OriginalMacroFrame,SingletonTracePool};
+    let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a=SettingAdmission::new(&syntax,1<<20,&||Ok(()));
+    let live=Arc::new(AtomicUsize::new(0));
+    let work=CappedWork::new(Arc::clone(&live),usize::MAX);
+    let mut credit=work.reserve(0).unwrap();
+    let mut funding=PageFunding{work:&work,credit:&mut credit};
+    let mut pages=StoredTracePages::new();
+    let mut pool=SingletonTracePool::default();
+    let author=OriginalMacroAuthor::new_using("ACTUAL",None,&a).unwrap();
+    let fallback=OriginalMacroTrace::empty();
+    let mut exact=Vec::new();
+    for index in 0..STORED_TRACE_PAGE_ROWS {
+        let trace=if index==1||index==67{fallback.clone()}else{
+            assert!(pool.prepare_using(&a).unwrap());
+            pool.append(NarrowOriginalMacroFrame::checked(OriginalMacroFrame{
+                invocation_span:Span::new(index,index+1),author:Arc::clone(&author),
+            }).unwrap())
+        };
+        exact.push(MacroTraceView::original(&trace).to_owned());
+        pages.push(trace,&a,&mut funding).unwrap();
+    }
+    let before=live.load(Ordering::Acquire);
+    work.limit.store(before,Ordering::Release);
+    pages.pages[0].settle_using(&a,&mut funding).unwrap();
+    assert!(matches!(pages.pages[0],StoredTracePage::Dense(_)));
+    assert_eq!(live.load(Ordering::Acquire),before);
+    work.limit.store(usize::MAX,Ordering::Release);
+    let fault=SettingAdmission::new(&syntax,1<<20,&||Err(io::Error::from_raw_os_error(1450)));
+    let error=pages.pages[0].settle_using(&fault,&mut funding).unwrap_err();
+    assert_eq!(error.raw_os_error(),Some(1450));
+    assert!(matches!(pages.pages[0],StoredTracePage::Dense(_)));
+    assert_eq!(live.load(Ordering::Acquire),before);
+
+    // Real page rollover settles the prior immutable page before the next
+    // paid dense page, without altering logical order or detach identity.
+    pages.push(fallback.clone(),&a,&mut funding).unwrap();
+    let StoredTracePage::Packed(packed)=&pages.pages[0] else{panic!("actual pooled trace bank")};
+    assert_eq!((packed.bank.len(),packed.fallback.len()),(2,2));
+    assert_eq!(live.load(Ordering::Acquire),before+packed.storage_bytes());
+    for (index,prior) in exact.iter().enumerate(){
+        let view=pages.get(index).unwrap().0;
+        assert!(view.same_owner(prior.view()));
+        assert_eq!(view.owner_address(),prior.view().owner_address());
+        assert_eq!(view.pooled_backing(),prior.view().pooled_backing());
+        assert_eq!(view.get(0),prior.view().get(0));
+    }
+    let detached=pages.get(80).unwrap().0.to_owned();
+    let detached_address=detached.view().owner_address();
+    pages.truncate(64,&mut funding).unwrap();
+    let StoredTracePage::Packed(packed)=&pages.pages[0] else{panic!("retained partial bank")};
+    assert_eq!((packed.bank.len(),packed.fallback.len()),(1,1));
+    pages.push(fallback.clone(),&a,&mut funding).unwrap();
+    assert!(matches!(pages.pages[0],StoredTracePage::Dense(_)));
+    assert!(pages.get(64).unwrap().same_owner(&fallback));
+    for (index,prior) in exact.iter().take(64).enumerate(){assert!(pages.get(index).unwrap().0.same_owner(prior.view()));}
+    drop((pages,credit,exact,pool,author,fallback));
+    assert_eq!(live.load(Ordering::Acquire),0);
+    assert_eq!(detached.view().owner_address(),detached_address);
+    assert_eq!(detached.view().get(0).unwrap().invocation_span,Span::new(80,81));
+    drop(detached);
+    assert_eq!(syntax.load(Ordering::Acquire),fixed);
  }
 
  #[test]

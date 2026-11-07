@@ -173,6 +173,7 @@ impl Drop for SingletonTracePage {
 pub(super) struct SingletonPageOwner(Option<Arc<SingletonTracePage>>);
 impl SingletonPageOwner {
     fn shared(&self) -> &Arc<SingletonTracePage> { self.0.as_ref().expect("live singleton trace page") }
+    pub(super) fn same_page(&self, other:&Self)->bool{Arc::ptr_eq(self.shared(),other.shared())}
 }
 impl std::ops::Deref for SingletonPageOwner {
     type Target = SingletonTracePage;
@@ -362,6 +363,7 @@ pub struct MacroTrace(Owned);
 enum Borrowed<'a> {
     Native(&'a Arc<Box<[MacroExpansion]>>),
     Original(&'a OriginalMacroTrace),
+    Pooled(&'a SingletonPageOwner,u16),
 }
 
 #[derive(Clone, Copy)]
@@ -453,32 +455,51 @@ impl<'a> From<&'a Arc<Box<[MacroExpansion]>>> for MacroTraceView<'a> {
     fn from(rows: &'a Arc<Box<[MacroExpansion]>>) -> Self { Self(Borrowed::Native(rows)) }
 }
 impl<'a> MacroTraceView<'a> {
-    pub(super) fn original(rows: &'a OriginalMacroTrace) -> Self { Self(Borrowed::Original(rows)) }
+    pub(super) fn original(rows: &'a OriginalMacroTrace) -> Self {
+        match rows {
+            OriginalMacroTrace::PooledSingleton{ordinal,page}=>Self::pooled(page,*ordinal),
+            _=>Self(Borrowed::Original(rows)),
+        }
+    }
+
+    pub(super) fn pooled(page:&'a SingletonPageOwner,ordinal:u16)->Self{
+        Self(Borrowed::Pooled(page,ordinal))
+    }
+
+    pub(super) fn clone_original(self)->Option<OriginalMacroTrace>{
+        match self.0 {
+            Borrowed::Native(_)=>None,
+            Borrowed::Original(rows)=>Some(rows.clone()),
+            Borrowed::Pooled(page,ordinal)=>Some(OriginalMacroTrace::PooledSingleton{page:page.clone(),ordinal}),
+        }
+    }
 
     pub fn to_owned(self) -> MacroTrace {
         match self.0 {
             Borrowed::Native(rows) => MacroTrace(Owned::Native(Arc::clone(rows))),
-            Borrowed::Original(rows) => MacroTrace(Owned::Original(rows.clone())),
+            _ => MacroTrace(Owned::Original(self.clone_original().expect("actual Original trace"))),
         }
     }
     pub fn native_owner(self) -> Option<&'a Arc<Box<[MacroExpansion]>>> {
-        match self.0 { Borrowed::Native(rows) => Some(rows), Borrowed::Original(_) => None }
+        match self.0 { Borrowed::Native(rows) => Some(rows), Borrowed::Original(_) | Borrowed::Pooled(..) => None }
     }
     pub fn owner_address(self) -> usize {
         match self.0 {
             Borrowed::Native(rows) => Arc::as_ptr(rows) as usize,
             Borrowed::Original(rows) => rows.owner_address(),
+            Borrowed::Pooled(page,ordinal)=>page.row(usize::from(ordinal)) as *const _ as usize,
         }
     }
     pub fn same_owner(self, other: Self) -> bool {
         match (self.0, other.0) {
             (Borrowed::Native(a), Borrowed::Native(b)) => Arc::ptr_eq(a,b),
             (Borrowed::Original(a), Borrowed::Original(b)) => a.same_owner(b),
+            (Borrowed::Pooled(a,x),Borrowed::Pooled(b,y))=>x==y&&a.same_page(b),
             _ => false,
         }
     }
     pub fn len(self) -> usize {
-        match self.0 { Borrowed::Native(rows) => rows.len(), Borrowed::Original(rows) => rows.len() }
+        match self.0 { Borrowed::Native(rows) => rows.len(), Borrowed::Original(rows) => rows.len(), Borrowed::Pooled(..)=>1 }
     }
     pub fn is_empty(self) -> bool { self.len() == 0 }
     pub fn get(self, at: usize) -> Option<MacroExpansionView<'a>> {
@@ -489,6 +510,14 @@ impl<'a> MacroTraceView<'a> {
                     name: &row.name, invocation_span: row.invocation_span,
                     definition: row.definition.as_ref(),
                     replacement_chain: MacroTraceParents(Parents::Native(&row.replacement_chain)),
+                }
+            }
+            Borrowed::Pooled(page,ordinal)=>{
+                if at!=0{return None;}
+                let row=page.row(usize::from(ordinal)).view();
+                MacroExpansionView{
+                    name:row.author.name(), invocation_span:row.invocation_span,
+                    definition:row.author.origin(),replacement_chain:MacroTraceParents(Parents::Original(&[])),
                 }
             }
             Borrowed::Original(rows) => {
@@ -510,19 +539,21 @@ impl<'a> MacroTraceView<'a> {
         match self.0 {
             Borrowed::Native(_) => None,
             Borrowed::Original(rows) => Some(rows.frame(at)?.author.buffers()),
+            Borrowed::Pooled(page,ordinal) if at==0=>Some(page.row(usize::from(ordinal)).author.buffers()),
+            Borrowed::Pooled(..)=>None,
         }
     }
     /// Physical pooled backing. A detached trace keeps the whole small
     /// page, while its logical address remains the selected frame address.
     pub fn pooled_backing(self) -> Option<(usize, usize)> {
-        let Borrowed::Original(OriginalMacroTrace::PooledSingleton { page, .. }) = self.0 else { return None; };
+        let Borrowed::Pooled(page,_) = self.0 else { return None; };
         Some((Arc::as_ptr(page.shared()) as usize, SingletonTracePage::BYTES))
     }
 
     /// Author allocations reachable through all initialized pooled rows,
     /// including sibling rows retained only by a detached trace.
     pub fn visit_pooled_authors(self, mut visit: impl FnMut([(usize, usize); 2], Option<&'a DefinitionOrigin>)) {
-        let Borrowed::Original(OriginalMacroTrace::PooledSingleton { page, .. }) = self.0 else { return; };
+        let Borrowed::Pooled(page,_) = self.0 else { return; };
         for at in 0..page.issued() {
             let author = &page.row(at).author;
             visit(author.buffers(), author.origin());
@@ -537,6 +568,7 @@ impl<'a> MacroTraceView<'a> {
                 (rows.as_ptr() as usize, mem::size_of_val(rows.as_ref().as_ref())),
             ],
             Borrowed::Original(rows) => rows.buffers(),
+            Borrowed::Pooled(..)=>[(self.owner_address(),mem::size_of::<NarrowOriginalMacroFrame>()),(0,0)],
         }
     }
 }
