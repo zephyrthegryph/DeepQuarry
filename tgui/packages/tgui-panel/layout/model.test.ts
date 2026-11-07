@@ -5,17 +5,17 @@ import {
   columnRect,
   dockTarget,
   dragPosition,
+  fitRect,
   fitSize,
   isMode,
-  looseFit,
   MIN_WINDOW_SIZE,
+  mainRects,
   poppedOut,
   resizeSize,
   SHARE_DEFAULT,
   shareFromHeights,
   shareMoved,
   splitterFor,
-  trustedArea,
   windowUnderPointer,
 } from './model';
 
@@ -84,61 +84,91 @@ describe('window drag math', () => {
   });
 });
 
-describe('dragging the float window to the top and left', () => {
+describe('keeping the float window exactly inside the main window', () => {
   const FLOAT = { w: 560, h: 420 };
+  const screen = { x: 0, y: 0, w: 2560, h: 1440 };
+  // The live report of a maximized main window: pos and size are the restored
+  // ones (the skin's 640x440 centred on the screen), outer-size is the real one.
+  const maximized = {
+    pos: { x: 960, y: 500 },
+    outerSize: { x: 2578, y: 1458 },
+    size: { x: 640, y: 440 },
+    innerSize: { x: 2560, y: 1408 },
+    maximized: true,
+  };
 
-  // The player's report: the window could not be dragged above or left of the middle of the main window.
-  for (const ratio of [1, 1.5]) {
-    for (const main of [
-      { x: 0, y: 0, w: 1920, h: 1040 },
-      { x: 100, y: 50, w: 1920, h: 1040 },
-    ]) {
-      it(`reaches the top left corner (ratio ${ratio}, main at ${main.x},${main.y})`, () => {
-        const startWindow = { x: main.x + 1200, y: main.y + 600 };
-        const startMouse = { x: 1500, y: 800 };
-        // The pointer goes to the top left corner of the screen (CSS pixels).
-        const pos = dragPosition(
-          startWindow,
-          startMouse,
-          { x: 0, y: 0 },
-          ratio,
-        );
-        const rect = looseFit({ x: pos.x, y: pos.y, ...FLOAT }, main);
-        expect(rect.x).toBeLessThanOrEqual(main.x);
-        expect(rect.y).toBeLessThanOrEqual(main.y);
-        expect(rect.x).toBeGreaterThan(main.x - FLOAT.w);
-        // The window follows the mouse until it is nearly out of the main window.
-        const toCentre = looseFit(
-          { x: main.x + main.w / 2 - 1, y: main.y + main.h / 2 - 1, ...FLOAT },
-          main,
-        );
-        expect(toCentre.x).toBe(main.x + main.w / 2 - 1);
-      });
-    }
-  }
+  it('places a maximized main window by its outer size, not by its restored pos', () => {
+    const main = mainRects(maximized, screen);
+    expect(main?.outer).toEqual({ x: -9, y: -9, w: 2578, h: 1458 });
+    expect(main?.visible).toEqual(screen);
+    // The old code took pos 960,500 as the origin: the drag stopped at the middle.
+    const stuck = fitRect(
+      { x: 0, y: 0, ...FLOAT },
+      { x: 960, y: 500, w: 2578, h: 1458 },
+    );
+    expect(stuck.x).toBe(960);
+    expect(stuck.y).toBe(500);
+  });
 
-  it('keeps a margin of the window reachable on every side', () => {
-    const main = { x: 0, y: 0, w: 1920, h: 1040 };
-    const far = looseFit({ x: -5000, y: -5000, ...FLOAT }, main);
-    expect(far.x + FLOAT.w).toBe(96);
-    expect(far.y).toBe(0);
-    const right = looseFit({ x: 9000, y: 9000, ...FLOAT }, main);
-    expect(right.x).toBe(1920 - 96);
-    expect(right.y).toBe(1040 - 96);
+  it('reaches the top left and bottom right corners of a maximized window', () => {
+    const area = mainRects(maximized, screen)?.visible ?? null;
+    expect(fitRect({ x: -4000, y: -4000, ...FLOAT }, area)).toEqual({
+      x: 0,
+      y: 0,
+      ...FLOAT,
+    });
+    expect(fitRect({ x: 9000, y: 9000, ...FLOAT }, area)).toEqual({
+      x: 2560 - FLOAT.w,
+      y: 1440 - FLOAT.h,
+      ...FLOAT,
+    });
+  });
+
+  it('uses the reported pos and outer size of a window that is not maximized', () => {
+    const main = mainRects(
+      {
+        pos: { x: 100, y: 50 },
+        outerSize: { x: 1936, y: 1047 },
+        size: { x: 1920, y: 1008 },
+        innerSize: null,
+        maximized: false,
+      },
+      screen,
+    );
+    expect(main?.outer).toEqual({ x: 100, y: 50, w: 1936, h: 1047 });
+    expect(main?.visible).toEqual(main?.outer);
+    expect(main?.client).toEqual({ x: 108, y: 81, w: 1920, h: 1008 });
+    expect(fitRect({ x: 0, y: 0, ...FLOAT }, main?.visible ?? null)).toEqual({
+      x: 100,
+      y: 50,
+      ...FLOAT,
+    });
+  });
+
+  it('knows nothing of a window without a size or a place', () => {
+    const none = { pos: null, outerSize: null, size: null, innerSize: null };
+    expect(mainRects({ ...none, maximized: false }, screen)).toBeNull();
+    expect(
+      mainRects(
+        { ...none, size: { x: 640, y: 440 }, maximized: false },
+        screen,
+      ),
+    ).toBeNull();
   });
 
   it('does not limit the drag without an area', () => {
     const win = { x: -300, y: -20, ...FLOAT };
-    expect(looseFit(win, null)).toEqual(win);
+    expect(fitRect(win, null)).toEqual(win);
   });
 
-  it('distrusts a main window that does not hold the float window', () => {
-    const start = { x: 60, y: 60, ...FLOAT };
-    expect(trustedArea({ x: 960, y: 520, w: 960, h: 520 }, start)).toBeNull();
-    const main = { x: 0, y: 0, w: 1920, h: 1040 };
-    expect(trustedArea(main, start)).toEqual(main);
-    expect(trustedArea(main, null)).toEqual(main);
-    expect(trustedArea({ x: 0, y: 0, w: 0, h: 0 }, start)).toBeNull();
+  it('cuts a window larger than the area and raises a tiny one', () => {
+    const area = { x: 100, y: 50, w: 1600, h: 900 };
+    expect(fitRect({ x: 0, y: 0, w: 2000, h: 1200 }, area)).toEqual(area);
+    expect(fitRect({ x: 100, y: 50, w: 100, h: 100 }, area)).toEqual({
+      x: 100,
+      y: 50,
+      ...{ w: MIN_WINDOW_SIZE.x, h: MIN_WINDOW_SIZE.y },
+    });
   });
 
   it('stops a resize at the area edge and at the minimum', () => {

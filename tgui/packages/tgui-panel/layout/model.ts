@@ -108,9 +108,6 @@ export function fitSize(
   };
 }
 
-/** How much of a dragged window must stay over the main window, so it cannot be lost off to the side. */
-export const GRAB_MARGIN = 96;
-
 /** Whether a point lies in a rect. */
 export function contains(rect: Rect, point: Point): boolean {
   return (
@@ -122,46 +119,90 @@ export function contains(rect: Rect, point: Point): boolean {
 }
 
 /**
- * The area a drag may use, or null when it cannot be trusted: a measured main
- * window that does not even hold the float window's starting place (a wrong
- * origin or scale) must not pin the window to a corner of it.
+ * A window rect held fully inside the area: the size is cut to the area first
+ * (never under the minimum unless the area is smaller), then the place. The
+ * area's own edges are the limits, so the window reaches every side of it.
  */
-export function trustedArea(
-  area: Rect | null,
-  start: Rect | null,
-): Rect | null {
-  if (!area || area.w <= 0 || area.h <= 0) {
-    return null;
-  }
-  if (!start) {
-    return area;
-  }
-  const centre = { x: start.x + start.w / 2, y: start.y + start.h / 2 };
-  return contains(area, centre) ? area : null;
-}
-
-/**
- * A dragged window rect kept reachable: it may leave the main window on any
- * side (to the top or left of it too) as long as GRAB_MARGIN of it stays over
- * the area and its top edge stays on a screen. The size is never changed.
- */
-export function looseFit(
+export function fitRect(
   win: Rect,
   area: Rect | null,
-  margin = GRAB_MARGIN,
+  min: Point = MIN_WINDOW_SIZE,
 ): Rect {
   if (!area || area.w <= 0 || area.h <= 0) {
     return win;
   }
-  const m = Math.min(margin, win.w, win.h);
+  const w = Math.min(Math.max(win.w, Math.min(min.x, area.w)), area.w);
+  const h = Math.min(Math.max(win.h, Math.min(min.y, area.h)), area.h);
   return {
-    x: Math.min(Math.max(win.x, area.x - win.w + m), area.x + area.w - m),
-    y: Math.min(
-      Math.max(win.y, Math.min(0, area.y), area.y - win.h + m),
-      area.y + area.h - m,
-    ),
-    w: win.w,
-    h: win.h,
+    x: Math.min(Math.max(win.x, area.x), area.x + area.w - w),
+    y: Math.min(Math.max(win.y, area.y), area.y + area.h - h),
+    w,
+    h,
+  };
+}
+
+/** What BYOND reports for the main window (winget), parsed. */
+export type MainReport = {
+  pos: Point | null;
+  outerSize: Point | null;
+  size: Point | null;
+  innerSize: Point | null;
+  maximized: boolean;
+};
+
+/**
+ * The main window's outer rect and client area in screen pixels, plus the part
+ * of it that is on the screen. `screen` is the monitor's work area in screen
+ * pixels.
+ *
+ * A maximized window reports the pos and size it has when NOT maximized (the
+ * skin's 640x440 centred on the screen), only outer-size and inner-size are
+ * live. Taking that pos as the origin put the "main window" at the middle of
+ * the screen, so the float window could not go above or left of it. A
+ * maximized window is as large as its outer size and centred on the work
+ * area (its borders hang over the edges evenly), so its origin follows from
+ * those.
+ */
+export function mainRects(
+  report: MainReport,
+  screen: Rect | null,
+): { outer: Rect; client: Rect; visible: Rect } | null {
+  const outerSize = report.outerSize ?? report.size;
+  if (!outerSize || outerSize.x <= 0 || outerSize.y <= 0) {
+    return null;
+  }
+  let origin: Point;
+  if (report.maximized) {
+    const work = screen ?? { x: 0, y: 0, w: outerSize.x, h: outerSize.y };
+    origin = {
+      x: Math.round(work.x + (work.w - outerSize.x) / 2),
+      y: Math.round(work.y + (work.h - outerSize.y) / 2),
+    };
+  } else if (report.pos) {
+    origin = report.pos;
+  } else {
+    return null;
+  }
+  const outer = { x: origin.x, y: origin.y, w: outerSize.x, h: outerSize.y };
+  const clientSize =
+    report.innerSize ??
+    (report.maximized
+      ? { x: screen?.w ?? outerSize.x, y: screen?.h ?? outerSize.y }
+      : (report.size ?? outerSize));
+  const client = clientRect(outer, clientSize);
+  const visible = report.maximized && screen ? intersect(outer, screen) : outer;
+  return { outer, client, visible };
+}
+
+/** The overlap of two rects (zero-sized when they do not meet). */
+export function intersect(a: Rect, b: Rect): Rect {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  return {
+    x,
+    y,
+    w: Math.max(0, Math.min(a.x + a.w, b.x + b.w) - x),
+    h: Math.max(0, Math.min(a.y + a.h, b.y + b.h) - y),
   };
 }
 

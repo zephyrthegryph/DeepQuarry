@@ -261,7 +261,7 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 /// dx_winget() callback: asks for the main window's place once the float window's place is known.
 /client/proc/chat_float_measured(window_params)
 	var/list/placed = params2list(window_params)
-	dx_winget(src, src, SKIN_MAINWINDOW, "pos;outer-size;size", PROC_REF(chat_float_clamp), placed["pos"], placed["size"])
+	dx_winget(src, src, SKIN_MAINWINDOW, "pos;outer-size;size;is-maximized", PROC_REF(chat_float_clamp), placed["pos"], placed["size"])
 
 /// dx_winget() callback: puts the float window back inside the main window when any of it is outside.
 /client/proc/chat_float_clamp(main_params, pos, size)

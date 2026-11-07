@@ -1,5 +1,6 @@
 import { store } from '../events/store';
 import { layoutModeAtom, layoutShareAtom } from './atoms';
+import { clampFloatToMain } from './geometry';
 import { clampShare, isMode } from './model';
 
 /** The server moved the chat pane, or told which layout it is in (chat/layout). */
@@ -8,6 +9,9 @@ export function chatLayout(
 ) {
   if (isMode(payload?.mode)) {
     store.set(layoutModeAtom, payload.mode);
+    if (payload.mode === 'float') {
+      clampFloatToMain();
+    }
   }
   if (typeof payload?.share === 'number') {
     store.set(layoutShareAtom, clampShare(payload.share));
