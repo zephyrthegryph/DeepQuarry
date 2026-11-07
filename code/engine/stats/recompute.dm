@@ -1082,7 +1082,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 				GLOB.stat_marked = rest + GLOB.stat_marked
 				GLOB.stat_spills++
 				TEST_REC_SPILL("[lane]:[def ? def.name : "ct"] x[length(rest)] at pass [passes]")
-				log_world("STATS: marked drain on lane [lane] spent its budget of [budget]us; [length(rest)] evaluation\s resume at the next drain (first: [E.type] [def ? def.name : "contributes_to"])")
+				drain_spill_log("stats lane [lane]", "STATS: marked drain on lane [lane] spent its budget of [budget]us; [length(rest)] evaluation\s resume at the next drain (first: [E.type] [def ? def.name : "contributes_to"])")
 				return
 			var/datum/stat_record/rec = E.rx?.stats
 			if(rec?.marked)

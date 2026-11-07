@@ -250,7 +250,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 				GLOB.notice_late_queue = rest + GLOB.notice_late_queue
 				GLOB.stat_spills++
 				TEST_REC_SPILL("late notices: [length(rest)] carried at pass [passes]")
-				log_world("ACT: the late notice drain spent its budget of [budget]us; [length(rest)] notice\s resume at the next drain point")
+				drain_spill_log("late notice", "ACT: the late notice drain spent its budget of [budget]us; [length(rest)] notice\s resume at the next drain point")
 				GLOB.notice_draining_late = FALSE
 				return
 			var/charge_started = stat_charge_begin()
