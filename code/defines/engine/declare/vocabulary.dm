@@ -144,3 +144,5 @@
 // ---- Kernel and drain constants (sections 2 and 7). ----
 /// Passes of one drain before the engine logs the key chain and spills the rest to the next drain point.
 #define DRAIN_MAX_PASSES 8
+/// A spilled drain budget is logged at most once per source this often (drain_spill_log()).
+#define DRAIN_SPILL_LOG_INTERVAL (10 SECONDS)

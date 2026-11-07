@@ -729,6 +729,7 @@
 #include "dq_emp_disable_behaviour.dm"
 #include "dq_join_cost.dm"
 #include "dq_roundstart_churn.dm"
+#include "dq_idle_settle.dm"
 #include "dq_overlay_dir_renders.dm"
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"
