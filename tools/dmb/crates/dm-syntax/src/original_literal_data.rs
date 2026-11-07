@@ -351,6 +351,28 @@ impl<'a> OriginalLiteralRef<'a> {
         let owner=self.owner;
         (Arc::strong_count(owner)==1,owner.credit.bytes())
     }
+    #[cfg(debug_assertions)]
+    pub(crate) fn trace_numeric_raw(self) -> Option<usize> {
+        let payload = self.payload();
+        matches!(payload.kind, LiteralKind::Int | LiteralKind::Float)
+            .then_some(payload.raw.capacity())
+    }
+
+    /// Inspect the physical owner, including siblings not yet delivered.
+    #[cfg(debug_assertions)]
+    pub(crate) fn trace_batch_numeric_raw(self) -> (usize, usize, usize) {
+        let LiteralStorage::Page(batch) = &self.owner.storage else { unreachable!("actual batch owner") };
+        let mut rows = 0;
+        let mut raw_bytes = 0usize;
+        for row in &batch.rows {
+            if matches!(row.kind, LiteralKind::Int | LiteralKind::Float) {
+                rows += 1;
+                raw_bytes += row.raw.capacity();
+            }
+        }
+        (rows, batch.rows.len(), raw_bytes)
+    }
+
     pub(crate) fn page_storage_identity(self) -> Option<usize> {
         let owner = self.owner.as_ref();
         matches!(&owner.storage, LiteralStorage::Page(_)).then_some(owner as *const Payload as usize)

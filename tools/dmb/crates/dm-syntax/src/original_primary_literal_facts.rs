@@ -458,7 +458,20 @@ impl OriginalPrimaryLiteralFacts{
  pub(crate) fn trace_retention(&self)->impl std::fmt::Debug{
   #[derive(Default)]
   struct Census{batch_payload_pages:usize,batch_payload_reserved:usize,exclusive_payload_rows:usize,exclusive_payload_reserved:usize,shared_payload_references:usize,shared_payload_reserved_per_reference_upper:usize}
-  let owner=self.payload();let mut census=Census::default();
+  #[derive(Default,Debug)]
+  struct NumericCensus{
+   delivered_rows:usize,
+   exclusive_singleton_rows:usize,
+   exclusive_singleton_raw_capacity:usize,
+   exclusive_singleton_reserved:usize,
+   all_numeric_batch_pages:usize,
+   all_numeric_batch_raw_capacity:usize,
+   all_numeric_batch_reserved:usize,
+   mixed_batch_pages:usize,
+   mixed_batch_numeric_raw_capacity:usize,
+   mixed_batch_reserved:usize,
+  }
+  let owner=self.payload();let mut census=Census::default();let mut numeric=NumericCensus::default();
   let mut last_payload_page = None;
   for page in owner.rows.chunks.iter().flat_map(|chunk| &chunk.pages) {
    // Physical Arc counts alone no longer describe the logical shared rows.
@@ -470,11 +483,24 @@ impl OriginalPrimaryLiteralFacts{
    }
    for index in 0..page.spans.len() {
    let data = page.data.get(index);
+   let numeric_raw = data.trace_numeric_raw();
+   numeric.delivered_rows += usize::from(numeric_raw.is_some());
    if let Some(current) = data.page_storage_identity() {
     if last_payload_page == Some(current) { continue; }
     last_payload_page = Some(current);
     census.batch_payload_pages += 1;
-    census.batch_payload_reserved += data.trace_payload().1;
+    let reserved = data.trace_payload().1;
+    census.batch_payload_reserved += reserved;
+    let (numeric_rows, total_rows, numeric_raw) = data.trace_batch_numeric_raw();
+    if numeric_rows == total_rows {
+     numeric.all_numeric_batch_pages += 1;
+     numeric.all_numeric_batch_raw_capacity += numeric_raw;
+     numeric.all_numeric_batch_reserved += reserved;
+    } else if numeric_rows != 0 {
+     numeric.mixed_batch_pages += 1;
+     numeric.mixed_batch_numeric_raw_capacity += numeric_raw;
+     numeric.mixed_batch_reserved += reserved;
+    }
     continue;
    }
    let (exclusive,bytes)=data.trace_payload();
@@ -485,6 +511,11 @@ impl OriginalPrimaryLiteralFacts{
    if exclusive && !repeated {
     census.exclusive_payload_rows=census.exclusive_payload_rows.saturating_add(1);
     census.exclusive_payload_reserved=census.exclusive_payload_reserved.saturating_add(bytes);
+    if let Some(raw) = numeric_raw {
+     numeric.exclusive_singleton_rows += 1;
+     numeric.exclusive_singleton_raw_capacity += raw;
+     numeric.exclusive_singleton_reserved += bytes;
+    }
    } else {
     census.shared_payload_references=census.shared_payload_references.saturating_add(1);
     census.shared_payload_reserved_per_reference_upper=census.shared_payload_reserved_per_reference_upper.saturating_add(bytes);
@@ -492,16 +523,17 @@ impl OriginalPrimaryLiteralFacts{
   }
   }
   // Use a named Debug builder so this snapshot has no owned text or alloc.
-  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census}
+  struct Snapshot{rows:usize,colons:usize,fixed:usize,row_capacity:usize,colon_capacity:usize,census:Census,numeric:NumericCensus}
   impl std::fmt::Debug for Snapshot{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{
    f.debug_struct("PrimaryLiteralCensus").field("rows",&self.rows).field("colons",&self.colons)
     .field("fixed_reserved",&self.fixed).field("row_capacity",&self.row_capacity).field("colon_capacity",&self.colon_capacity)
     .field("batch_payload_pages",&self.census.batch_payload_pages)
     .field("batch_payload_reserved",&self.census.batch_payload_reserved)
     .field("exclusive_payload_rows",&self.census.exclusive_payload_rows).field("exclusive_payload_reserved",&self.census.exclusive_payload_reserved)
-    .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper).finish()
+    .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper)
+    .field("numeric",&self.numeric).finish()
   }}
-  Snapshot{rows:owner.rows.len,colons:owner.colons.len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colon_credit.bytes(),census}
+  Snapshot{rows:owner.rows.len,colons:owner.colons.len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colon_credit.bytes(),census,numeric}
  }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   let owner=self.0.as_ref().expect("live primary facts");let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(&mut visit);let n=owner.colons.capacity()*std::mem::size_of::<(Span,bool)>();if n!=0{visit(owner.colons.as_ptr()as usize,n,n)}owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
@@ -527,6 +559,42 @@ impl OriginalPrimaryLiteralFacts{
   assert!(census.contains(&format!("shared_payload_references: 2, shared_payload_reserved_per_reference_upper: {}",2*bytes)));
   assert_eq!(used.load(Ordering::Acquire),before);
   drop(facts);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[cfg(debug_assertions)]
+ #[test]
+ fn numeric_census_classifies_real_owner_even_if_only_numeric_prefix_was_delivered(){
+  use crate::{OriginalLiteralData,OriginalTokenValue};
+  let used=Arc::new(AtomicUsize::new(0));
+  let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();
+  let make=|value|Some(OriginalLiteralData::from_value_using("123".to_owned(),value,&a).unwrap());
+  let single=make(OriginalTokenValue::Int(0)).unwrap();
+  let single_raw=single.as_view().raw_storage().capacity();
+  facts.append_actual(Span::new(0,3),single,&a).unwrap();
+
+  let mut all=[make(OriginalTokenValue::Int(1)),make(OriginalTokenValue::Int(2)),
+               make(OriginalTokenValue::Int(3)),make(OriginalTokenValue::Float(-0.0))];
+  OriginalLiteralData::pack_delivery_batch_using(&mut all,&a).unwrap();
+  let all_raw:usize=all.iter().flatten().map(|d|d.as_view().raw_storage().capacity()).sum();
+  for (i,slot) in all.iter_mut().enumerate(){
+   facts.append_actual(Span::new(3+i*3,6+i*3),slot.take().unwrap(),&a).unwrap();
+  }
+
+  let mut mixed=[make(OriginalTokenValue::Int(4)),make(OriginalTokenValue::Int(5)),
+                 make(OriginalTokenValue::Int(6)),make(OriginalTokenValue::String("x"))];
+  OriginalLiteralData::pack_delivery_batch_using(&mut mixed,&a).unwrap();
+  let mixed_raw:usize=mixed[..3].iter().flatten().map(|d|d.as_view().raw_storage().capacity()).sum();
+  facts.append_actual(Span::new(15,18),mixed[0].take().unwrap(),&a).unwrap();
+  let before=used.load(Ordering::Acquire);
+  let census=format!("{:?}",facts.trace_retention());
+  assert!(census.contains("batch_payload_pages: 2"),"{census}");
+  assert!(census.contains("delivered_rows: 6, exclusive_singleton_rows: 1"),"{census}");
+  assert!(census.contains(&format!("exclusive_singleton_raw_capacity: {single_raw},")),"{census}");
+  assert!(census.contains(&format!("all_numeric_batch_pages: 1, all_numeric_batch_raw_capacity: {all_raw},")),"{census}");
+  assert!(census.contains(&format!("mixed_batch_pages: 1, mixed_batch_numeric_raw_capacity: {mixed_raw},")),"{census}");
+  assert_eq!(used.load(Ordering::Acquire),before);
+  drop((mixed,facts));
+  assert_eq!(used.load(Ordering::Acquire),0);
  }
  #[test]fn actual_same_roster_window_never_copies_or_cuts_literals_and_last_alias_keeps_real_credit(){
   let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();let data=crate::OriginalLiteralData::from_value_using("123".to_owned(),crate::OriginalTokenValue::Int(123),&a).unwrap();facts.append_actual(Span::new(5,8),data,&a).unwrap();assert!(facts.checked_data_window(Span::new(0,10)).is_err());facts.seal_actual_frontier(12,&a).unwrap();let view=facts.checked_data_window(Span::new(4,10)).unwrap();let(rows,origin)=view.raw_parts();assert_eq!(origin,4);assert!(rows.get(0).unwrap().1.same_owner(facts.rows().get(0).unwrap().1));assert_eq!(rows.get(0).unwrap().0,Span::new(5,8));assert!(facts.checked_data_window(Span::new(6,10)).is_err());assert!(facts.checked_data_window(Span::new(0,7)).is_err());assert!(facts.checked_data_window(Span::new(0,13)).is_err());let alias=facts.clone();drop(facts);assert!(used.load(Ordering::Acquire)>0);assert_eq!(alias.rows().len(),1);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);
