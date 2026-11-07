@@ -250,12 +250,13 @@ fn parse_body_items_using_settings(
     };
     if items.is_empty(){*origins.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings:0,scope_roots:None,kind:OriginalBodyGrammarKind::Available,statement:None,expression:None,operator:None});}
     let mut diagnostics=BodyDiagnostics{rows:&mut result.diagnostics,settings,admission};
-    result.statements = parse_sequence(items, &mut diagnostics, &mut origins);
+    let mut prefix_settings = 0;
+    result.statements = parse_sequence_first(items, None, &mut diagnostics, &mut origins, Some(&mut prefix_settings));
     drop(diagnostics);
     let compound=origins.original_compound_complete&&origins.original_compound_seen_statement;
     result.local_variables.finish_source_order();
-    finish_original_setting_prefix(&mut result);
-    if compound&&result.diagnostics.is_empty(){result.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings:0,scope_roots:Some(result.statements.len()),kind:OriginalBodyGrammarKind::Available,statement:None,expression:None,operator:None});}
+    finish_original_setting_prefix(&mut result, prefix_settings);
+    if compound&&result.diagnostics.is_empty(){result.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings,scope_roots:Some(result.statements.len()),kind:OriginalBodyGrammarKind::Available,statement:None,expression:None,operator:None});}
     result
 }
 
@@ -424,10 +425,10 @@ impl BodyOrigins<'_> {
     }
 }
 
-fn parse_sequence(items:&[Item],diagnostics:&mut BodyDiagnostics<'_>,origins:&mut BodyOrigins<'_>)->Vec<Statement>{parse_sequence_first(items,None,diagnostics,origins)}
+fn parse_sequence(items:&[Item],diagnostics:&mut BodyDiagnostics<'_>,origins:&mut BodyOrigins<'_>)->Vec<Statement>{parse_sequence_first(items,None,diagnostics,origins,None)}
 // Same sequence parser with its existing single inline normalization loan. The
 // remaining items keep their original ownership and source coordinates.
-fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyDiagnostics<'_>,origins:&mut BodyOrigins<'_>)->Vec<Statement>{
+fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyDiagnostics<'_>,origins:&mut BodyOrigins<'_>,mut root_prefix:Option<&mut usize>)->Vec<Statement>{
     let mut statements = Vec::new();
     let mut index = 0;
     while index < items.len() {
@@ -442,10 +443,18 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
         let local_statement = item.children.is_empty()
             && (header.starts_with("var/") || starts_keyword(header, "var"));
         let mut original_local_head = false;
+        // Only the outer body parser can lend this prefix. A non-setting
+        // closes it before that statement can recursively consume children.
+        let initial_setting = root_prefix.is_some()
+            && item.children.is_empty()
+            && starts_keyword(header, "set");
+        if !initial_setting {
+            root_prefix = None;
+        }
         // SAME primary consumption; unproved families/children never grant availability.
         if starts_keyword(header,"if"){
             origins.original_compound_seen_statement=true;
-        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!local_statement){
+        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!local_statement&&!initial_setting){
             origins.original_compound_complete=false;
         }
         if !item.children.is_empty()
@@ -604,7 +613,16 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             index += 1;
             continue;
         }
-        statements.push(parse_one(item, diagnostics, origins, original_local_head));
+        let statement = parse_one(item, diagnostics, origins, original_local_head);
+        if let Some(count) = root_prefix.as_deref_mut() {
+            if original_initial_setting(&statement) {
+                *count += 1;
+            } else {
+                root_prefix = None;
+                origins.original_compound_complete = false;
+            }
+        }
+        statements.push(statement);
         index += 1;
     }
     statements
@@ -1206,7 +1224,7 @@ fn parse_switch(
             else if inline=="try"&&item.children.get(next).is_some_and(|next|starts_keyword(next.header.trim(),"catch")){next+=1;}
             else if inline=="do"&&item.children.get(next).is_some_and(|next|starts_keyword(next.header.trim(),"while")&&next.children.is_empty()){next+=1;}
         }
-        let body=if let Some(inline)=inline{let mut nested=case.clone();nested.header=inline.into();nested.header_span.start+=inline.as_ptr() as usize-case.header.as_ptr() as usize;nested.span.start=nested.header_span.start;parse_sequence_first(&item.children[index..next],Some(&nested),diagnostics,origins)}else{control_body_from_inline(case,None,diagnostics,origins)};
+        let body=if let Some(inline)=inline{let mut nested=case.clone();nested.header=inline.into();nested.header_span.start+=inline.as_ptr() as usize-case.header.as_ptr() as usize;nested.span.start=nested.header_span.start;parse_sequence_first(&item.children[index..next],Some(&nested),diagnostics,origins,None)}else{control_body_from_inline(case,None,diagnostics,origins)};
         cases.push(SwitchCase {
             original_site:OriginalCaseSite{
                 header:case.header_span,body:case.span,
@@ -1371,8 +1389,7 @@ fn original_setting_leaf(expr:&Expr)->bool{match &expr.kind{ExprKind::Ident(name
 fn original_setting_receiver(expr:&Expr)->bool{original_setting_leaf(expr)||matches!(&expr.kind,ExprKind::Index{object,index}if original_setting_leaf(object)&&original_setting_leaf(index))}
 fn original_setting_expression(expr:&Expr)->bool{original_setting_leaf(expr)||match &expr.kind{ExprKind::Member{object,selector,via_colon:false}=>original_setting_receiver(object)&&crate::expression_parser::original_ascii_identifier(selector),ExprKind::Index{object,index}=>original_setting_leaf(object)&&original_setting_leaf(index),ExprKind::Binary{op,lhs,rhs}=>matches!(op.as_str(),"+"|"-"|"*"|"/"|"%"|"||"|"&&")&&original_setting_leaf(lhs)&&original_setting_leaf(rhs),_=>false}}
 fn original_initial_setting(row:&Statement)->bool{match &row.kind{StatementKind::Set{attribute,relation,value}=>crate::expression_parser::original_ascii_identifier(attribute)&&matches!(relation.as_str(),"="|"in")&&original_setting_expression(value),StatementKind::ProjectedSet{attribute,relation,value}=>crate::expression_parser::original_ascii_identifier(attribute)&&matches!(relation.as_str(),"="|"in")&&original_setting_expression(value.original_expression()),_=>false}}
-fn finish_original_setting_prefix(body:&mut ParsedBody){
- let settings=body.statements.iter().take_while(|row|original_initial_setting(row)).count();
+fn finish_original_setting_prefix(body:&mut ParsedBody, settings: usize){
  if settings==body.statements.len()&&!body.statements.is_empty()&&body.diagnostics.is_empty(){body.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings:settings,scope_roots:None,kind:OriginalBodyGrammarKind::Available,statement:None,expression:None,operator:None});return}
  let Some(mut outcome)=body.original_grammar else{return};
  if body.statements.is_empty()&&outcome.statement.is_none(){return}
@@ -1381,7 +1398,7 @@ fn finish_original_setting_prefix(body:&mut ParsedBody){
 #[cfg(test)]mod original_initial_setting_outcome_tests{use super::*;
  #[test]fn actual_native_setting_prefix_has_only_demonstrated_original_grammar(){for rhs in["x","x.type","x[_]","x[_].type","x || /datum/a","/datum/b","1+2"]{let syntax=crate::parse(&format!("/proc/probe(x)\n    set SpacemanDMM_return_type={rhs}\n    return null\n"));let body=parse_proc_body(&syntax.items[0]);let outcome=body.original_grammar.unwrap();assert_eq!(outcome.kind(),OriginalBodyGrammarKind::Available,"{rhs}");assert_eq!(outcome.prefix_settings(),1);assert!(outcome.statement_span().is_some());}}
  #[test]fn actual_native_setting_only_and_zero_argument_source_call_and_member_are_issued(){for code in["    set SpacemanDMM_return_type=x\n","    return choose()\n","    return choose().field\n"]{let syntax=crate::parse(&format!("/proc/probe(x)\n{code}"));let body=parse_proc_body(&syntax.items[0]);assert_eq!(body.original_grammar.unwrap().kind(),OriginalBodyGrammarKind::Available,"{code}");}}
- #[test]fn malformed_number_and_unissued_setting_shapes_never_gain_original_availability(){for code in["    return 123abc\n","    return 1e3\n","    set SpacemanDMM_return_type=missing_call()\n    return null\n","    var/value=1\n    return value\n","    return choose(1)\n"]{let syntax=crate::parse(&format!("/proc/probe(x)\n{code}"));let body=parse_proc_body(&syntax.items[0]);assert!(body.original_grammar.is_none(),"unissued {code}");}}
+ #[test]fn malformed_number_and_unissued_setting_shapes_never_gain_original_availability(){for code in["    return 123abc\n","    return 1e3\n","    set SpacemanDMM_return_type=missing_call()\n    return null\n","    return choose(1)\n"]{let syntax=crate::parse(&format!("/proc/probe(x)\n{code}"));let body=parse_proc_body(&syntax.items[0]);assert!(body.original_grammar.is_none(),"unissued {code}");}}
 }
 
 #[cfg(test)]mod original_compound_if_witness_tests{
@@ -1483,6 +1500,49 @@ mod original_single_local_witness_tests {
             "    var/value = argument +\n    return value\n",
             "    var/value = choose(argument)\n    return value\n",
             "    var/value = argument in list()\n    return value\n",
+        ] {
+            let parsed = body(code);
+            assert!(parsed.original_grammar.is_none(), "{code}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod original_mixed_setting_scope_tests {
+    use super::*;
+
+    fn body(code: &str) -> ParsedBody {
+        let syntax = crate::parse(&format!("/proc/probe(x)\n{code}"));
+        parse_proc_body(&syntax.items[0])
+    }
+
+    #[test]
+    fn original_mixed_setting_scope_uses_consumed_outer_prefix() {
+        let parsed = body(concat!(
+            "    set SpacemanDMM_should_not_sleep = 1\n",
+            "    set SpacemanDMM_return_type = x\n",
+            "    var/value = x\n",
+            "    if(value)\n",
+            "        choose()\n",
+            "    return value\n",
+        ));
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        let proof = parsed.original_grammar.expect("actual mixed scope proof");
+        assert_eq!(proof.kind(), OriginalBodyGrammarKind::Available);
+        assert_eq!(proof.prefix_settings(), 2);
+        assert_eq!(proof.scope_roots(), Some(5));
+        assert_eq!(proof.statement_span(), None);
+    }
+
+    #[test]
+    fn original_mixed_setting_scope_does_not_adopt_unconsumed_or_nonprefix_settings() {
+        for code in [
+            "    var/value = x\n    set SpacemanDMM_return_type = x\n    return value\n",
+            "    set SpacemanDMM_return_type = x\n    if(x)\n        set SpacemanDMM_made_up = 1\n    return x\n",
+            "    set SpacemanDMM_return_type = choose()\n    var/value = x\n    return value\n",
+            "    set SpacemanDMM_return_type = x\n        choose()\n    return x\n",
+            "    set SpacemanDMM_return_type = x\n        choose()\n",
+            "    set SpacemanDMM_return_type = x\n    var/value = x\n    return value +\n",
         ] {
             let parsed = body(code);
             assert!(parsed.original_grammar.is_none(), "{code}");

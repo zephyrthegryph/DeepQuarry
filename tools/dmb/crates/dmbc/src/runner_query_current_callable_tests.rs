@@ -147,7 +147,6 @@ fn current_full_body_consumes_ordinary_call_witness_and_reports_original_missing
 
 #[test]
 fn opt_in_original_kind17_reuses_canonical_callees_and_matches_absolute_graph_bytes(){
- use dm_analysis::checker_effects::EffectInput;
  const SOURCE:&str=concat!(
   "/proc/leaf()\n    return sleep()\n",
   "/proc/probe(item)\n",
@@ -156,7 +155,27 @@ fn opt_in_original_kind17_reuses_canonical_callees_and_matches_absolute_graph_by
   "    return leaf()\n",
   "/proc/note(item)\n    return item.field\n",
  );
- let(mut host,mut request,root)=fixture(SOURCE);
+ assert_current_graph_matches_absolute(SOURCE);
+}
+
+#[test]
+fn opt_in_original_kind17_mixed_setting_scope_matches_absolute_graph_bytes(){
+ const SOURCE:&str=concat!(
+  "/proc/leaf()\n    return sleep()\n",
+  "/proc/probe(item)\n",
+  "    set SpacemanDMM_should_not_sleep = 1\n",
+  "    set SpacemanDMM_made_up = 1\n",
+  "    var/value = item\n",
+  "    if(value)\n        leaf()\n",
+  "    return value\n",
+  "/proc/note(item)\n    return item.field\n",
+ );
+ assert_current_graph_matches_absolute(SOURCE);
+}
+
+fn assert_current_graph_matches_absolute(source:&str){
+ use dm_analysis::checker_effects::EffectInput;
+ let(mut host,mut request,root)=fixture(source);
  let env=root.join("code/probe.dm");
  request.policy_inputs.as_mut().unwrap().files.push(crate::policy_request::PolicyInputFile{path:env.clone(),role:crate::policy_request::PolicyInputRole::DmSource,required:true});
  let configuration=root.join("SpacemanDMM.toml");

@@ -746,7 +746,7 @@ impl<'syntax> CurrentBodySyntax<'syntax>{
   if !recipe.setting_headers().is_some_and(|headers|headers.checker_body_profile()){return Err(unissued_original_body("original body grammar profile is not actually issued"))}
   let parsed:&'syntax dm_syntax::ParsedBody=self.original.statements.parsed();let outcome=parsed.original_grammar.as_ref().ok_or_else(||unissued_original_body("genuine original per-body grammar outcome is not issued for this syntax"))?;
   if let Some(roots)=outcome.scope_roots(){
-   if roots!=parsed.statements.len()||outcome.prefix_settings()!=0||outcome.statement_span().is_some()||outcome.kind()!=dm_syntax::OriginalBodyGrammarKind::Available||!parsed.diagnostics.is_empty(){return Err(binding_error("original compound scope differs from the same consuming Native body"))}
+   if roots!=parsed.statements.len()||outcome.prefix_settings()>=roots||outcome.statement_span().is_some()||outcome.kind()!=dm_syntax::OriginalBodyGrammarKind::Available||!parsed.diagnostics.is_empty(){return Err(binding_error("original compound scope differs from the same consuming Native body"))}
   }else{match outcome.statement_span(){
    None=>if parsed.statements.len()!=outcome.prefix_settings()||!parsed.diagnostics.is_empty()||outcome.kind()!=dm_syntax::OriginalBodyGrammarKind::Available{return Err(binding_error("original empty/setting-only grammar outcome differs from native producer"))},
    Some(span)=>{
