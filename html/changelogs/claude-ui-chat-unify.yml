@@ -2,3 +2,4 @@ author: "claude"
 delete-after: true
 changes:
   - qol: "The chat pane is dark and styled from the moment you connect, even while the server is still starting; it no longer shows white or unstyled text until init finishes."
+  - del: "The chat has one theme, dark. The light, vchatdark and vchatlight themes and the theme setting are gone; old saved chat settings still load."

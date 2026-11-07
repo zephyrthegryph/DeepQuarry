@@ -29,10 +29,6 @@ const displayStore = {
 };
 
 // tgui-panel drives these with `.output statbrowser:<name>`.
-win.set_theme = (name: string) => {
-  const light = name === 'light' || name === 'vchatlight';
-  document.documentElement.className = light ? 'light' : 'dark';
-};
 win.set_font_size = (size: string) => {
   document.body.style.setProperty('font-size', size);
 };
@@ -40,7 +36,7 @@ win.set_tabs_style = (style: string) => {
   tabsStyle = style;
   for (const listener of displayListeners) listener();
 };
-win.set_theme('dark');
+document.documentElement.className = 'dark';
 
 // Image assets can arrive after the markup: retry. Error events do not bubble,
 // so this listens in the capture phase.

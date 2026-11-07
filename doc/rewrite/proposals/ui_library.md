@@ -14,7 +14,7 @@ The DQ front end grew four surfaces that each styled the same things: the chat (
 | Frame + scanline overlay | 3 | `ChatConsole.scss`, `statpanel.scss`, `themes/console.scss`, each with its own strength |
 | tgui-core custom property block (`--button-*`, `--tab-*`, `--input-*`) | 3 | the same 30 lines in chat, stat panel and console theme |
 | Speech-mode colours (Say, Me, OOC, ...) | 2 | `tgui-say/styles/colors.scss`, `tgui-panel/styles/components/ChatInput.scss` |
-| Chat message stylesheets | 4 | `tgchat/chat-{dark,light,vchatdark,vchatlight}.scss`, ~1,600 lines each, the same rules with different colours |
+| Chat message stylesheets | 1 (done) | `tgchat/chat.scss` coloured by `chat-tokens.scss`; the chat has one theme, dark (the light/vchat themes were removed 2026-11) |
 | Scanline-preference hook | 2 | `tgui/layouts/consoleTheme.ts`, `tgui-panel/consoleScanlines.ts` |
 
 ## 2. What the layer is

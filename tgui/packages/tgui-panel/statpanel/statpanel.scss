@@ -19,18 +19,6 @@
   --base-gradient-spread: 0;
 }
 
-.light:root {
-  --stat-base: #eeeeee;
-  --stat-section: #ffffff;
-  --stat-text: #000000;
-  --stat-link: #003399;
-  --stat-muted: #59636e;
-  --stat-line: hsla(0, 0%, 0%, 0.15);
-  --stat-track: hsla(0, 0%, 0%, 0.15);
-  --color-base: var(--stat-base);
-  --color-section: var(--stat-section);
-  --base-gradient-spread: 0;
-}
 
 html,
 body {
@@ -422,10 +410,8 @@ h3 {
 
 // The console look (tgui/styles/console.scss), as the lobby and the chat pane
 // wear it: bold monospace chrome, #202020 panels, 3px #384e68 frame with
-// glow, solid blue buttons, CRT scanlines over the whole page. Light and dark
-// both take it, so the panes match.
-.dark:root,
-.light:root {
+// glow, solid blue buttons, CRT scanlines over the whole page.
+.dark:root {
   @include console.console-component-vars;
 }
 
