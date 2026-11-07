@@ -146,7 +146,6 @@ export const PREF_KEY_LABELS: Record<string, string> = {
   Pai_Emotion: 'Default Emotion',
   antag_faction: 'Antag Faction',
   antag_vis: 'Antag Visibility',
-  vantag_volunteer: 'Volunteer for Visitor-Antag',
   vantag_preference: 'Visitor-Antag Type',
   exploit_record: 'Exploitable Record',
 };

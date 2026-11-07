@@ -359,20 +359,20 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 
 /client/verb/toggle_floating_chat()
 	set name = "toggle-floating-chat"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+	set hidden = TRUE // the Menu page: Float / dock chat
 
 	prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, !prefs.read_preference(/datum/preference/toggle/chat_floating))
 
 /client/verb/dock_chat()
 	set name = "dock-chat"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+	set hidden = TRUE // the floating chat window closing runs it
 
 	prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, FALSE)
 
 /// Floats the chat if needed and puts its window back at the default place, for a window that got lost.
 /client/verb/reset_chat_window()
 	set name = "reset-chat-window"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+	set hidden = TRUE // the Menu page: Reset chat window
 
 	chat_float_reset()
 	chat_pin(CHAT_MODE_FLOAT)

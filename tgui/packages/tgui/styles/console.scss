@@ -1,8 +1,18 @@
 /**
- * The "console" look shared by the lobby main menu and the `console` theme
- * (themes/console.scss): bold monospace, #202020 panels with a 3px #384e68
- * border and glow, solid blue buttons, a green primary action and optional
- * CRT scanlines. One place for the values; the lobby and the theme read them.
+ * The "console" look: the lobby main menu, the `console` theme
+ * (themes/console.scss), the chat pane and the stat panel all read it from
+ * here. Bold monospace, #202020 panels with a 3px #384e68 border, solid blue
+ * buttons, a green primary action, CRT scanlines.
+ *
+ * Each effect is one knob, a CSS custom property with a subtle default set on
+ * :root below (any console surface that @uses this file gets it):
+ *   --console-scanline-strength  darkness of the scanlines (0 turns them off;
+ *                                the lobby "Disable Scanlines" preference sets 0)
+ *   --console-fringe-strength    the red/green/blue phosphor stripes
+ *   --console-glow               box-shadow bloom round panels and the title bar
+ *   --console-glow-inset         the pane frame's inner bloom
+ *   --console-vignette           the lobby's darkened edges (the "curvature")
+ * There is no flicker animation.
  */
 
 $console-font: 'Courier New', consolas, monospace;
@@ -16,34 +26,111 @@ $console-disabled: #2a2f36;
 $console-muted: #8a96a3;
 $console-background: #0b0e13;
 $console-text: #e8eef5;
+$console-button-hover: #4a6d96;
+$console-dim: #6f7d8c;
+$console-key: #9fc3ef;
 $console-border-width: 3px;
-$console-glow: 0 0 15px $console-border;
+$console-glow: var(--console-glow);
 
-/// A glowing console panel.
+/// The effect knobs' defaults.
+@mixin console-effects {
+  --console-scanline-strength: 0.035;
+  --console-fringe-strength: 0.02;
+  --console-glow: 0 0 4px rgba(56, 78, 104, 0.55);
+  --console-glow-inset: inset 0 0 4px rgba(56, 78, 104, 0.45);
+  --console-vignette: inset 0 0 160px 10px rgba(0, 0, 0, 0.45);
+}
+
+/// The custom properties tgui-core components read, in console colours: one
+/// block for the theme, the chat pane and the stat panel.
+@mixin console-component-vars {
+  --color-base: #{$console-panel};
+  --color-section: #{$console-panel};
+  --color-primary: #{$console-button};
+  --color-border: #{$console-border};
+  --color-label: #{$console-accent};
+  --section-background: #{$console-panel};
+  --section-separator-color: #{$console-border};
+  --section-title-color: #{$console-accent};
+  --button-color: #{$console-text};
+  --button-background-default: #{$console-button};
+  --button-background-selected: #{$console-green};
+  --button-background-danger: #{$console-danger};
+  --button-background-disabled: #{$console-disabled};
+  --button-border-radius: 0;
+  --button-transition: 0s;
+  --tab-background: #{$console-disabled};
+  --tab-background-hover: #{$console-border};
+  --tab-background-selected: #{$console-button};
+  --tab-color: #{$console-muted};
+  --tab-color-selected: #{$console-text};
+  --tab-border-radius: 0;
+  --tabs-container-background: transparent;
+  --input-background: #{$console-background};
+  --input-color: #{$console-text};
+  --input-border-color: #{$console-border};
+  --input-border-color-focus: #{$console-accent};
+  --input-border-radius: 0;
+  --base-gradient-spread: 0;
+}
+
+/// A console panel: flat #202020 with the 3px border.
 @mixin console-panel {
   background-color: $console-panel;
   border: $console-border-width solid $console-border;
 }
 
 @mixin console-glow {
-  box-shadow: $console-glow;
+  box-shadow: var(--console-glow);
 }
 
-/// The CRT scanline gradient pair, `$strength` scaling the darkness of the
-/// lines (the lobby uses 0.25 at 8px; the theme a lighter default).
-@mixin console-scanlines($strength: 0.25, $pitch: 8px) {
+/// The CRT scanline gradient pair. `$strength` is the darkness of the lines
+/// (a number or a var()); the phosphor stripes read --console-fringe-strength.
+@mixin console-scanlines(
+  $strength: var(--console-scanline-strength),
+  $pitch: 6px
+) {
   background:
-    linear-gradient(
-      rgba(18, 16, 16, 0) 50%,
-      rgba(0, 0, 0, $strength) 50%
-    ),
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, $strength) 50%),
     linear-gradient(
       90deg,
-      rgba(255, 0, 0, 0.06),
-      rgba(0, 255, 0, 0.02),
-      rgba(0, 0, 255, 0.06)
+      rgba(255, 0, 0, var(--console-fringe-strength)),
+      rgba(0, 255, 0, calc(var(--console-fringe-strength) / 3)),
+      rgba(0, 0, 255, var(--console-fringe-strength))
     );
   background-size:
     100% $pitch,
     6px 100%;
+}
+
+/// The frame a console pane draws over its edge (`::before`: the 3px border
+/// and inner bloom) and the scanlines over its whole area (`::after`). Both
+/// are fixed to the viewport and let clicks through.
+@mixin console-frame($frame: true) {
+  @if $frame {
+    &::before {
+      content: ' ';
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 199;
+      pointer-events: none;
+      border: $console-border-width solid $console-border;
+      box-shadow: var(--console-glow-inset);
+    }
+  }
+
+  &::after {
+    content: ' ';
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    @include console-scanlines;
+  }
+}
+
+:root {
+  @include console-effects;
 }

@@ -45,7 +45,6 @@ export function Panel(props) {
 
   return (
     <Pane
-      theme={settings.theme}
       canSuspend={false}
       className={floating ? 'ChatConsole ChatConsole--float' : 'ChatConsole'}
     >
@@ -53,36 +52,25 @@ export function Panel(props) {
         <Stack.Item>
           <Section fitted>
             <div className="ChatDragRow" onPointerDown={drag.onPointerDown}>
-              <Stack mx={0.5} align="center">
-                <Stack.Item grow className="ChatTabsItem">
-                  <ChatTabs />
-                </Stack.Item>
-                <Stack.Item>
-                  <PingIndicator />
-                </Stack.Item>
-                <Stack.Item>
-                  <Button
-                    selected={audioVisible}
-                    icon="music"
-                    tooltip="Music player"
-                    tooltipPosition="bottom-start"
-                    onClick={() => {
-                      setAudioVisible((v) => !v);
-                    }}
-                  />
-                </Stack.Item>
-                <Stack.Item>
-                  <Button
-                    icon={settingsVisible ? 'times' : 'cog'}
-                    selected={settingsVisible}
-                    tooltip={
-                      settingsVisible ? 'Close settings' : 'Open settings'
-                    }
-                    tooltipPosition="bottom-start"
-                    onClick={() => setSettingsVisible((v) => !v)}
-                  />
-                </Stack.Item>
-              </Stack>
+              <ChatTabs>
+                <PingIndicator />
+                <Button
+                  selected={audioVisible}
+                  icon="music"
+                  tooltip="Music player"
+                  tooltipPosition="bottom-start"
+                  onClick={() => {
+                    setAudioVisible((v) => !v);
+                  }}
+                />
+                <Button
+                  icon={settingsVisible ? 'times' : 'cog'}
+                  selected={settingsVisible}
+                  tooltip={settingsVisible ? 'Close settings' : 'Open settings'}
+                  tooltipPosition="bottom-start"
+                  onClick={() => setSettingsVisible((v) => !v)}
+                />
+              </ChatTabs>
             </div>
           </Section>
         </Stack.Item>

@@ -44,6 +44,7 @@ window "mainwindow"
 		anchor2 = 100,100
 		saved-params = ""	// not saved: a stale share must not squeeze the map on the next connect
 		splitter = 70
+		show-splitter = false	// no bar between the map and the column: the column pages draw the live handle (MapSplitHandle)
 		right = "rpane"
 		is-vert = true
 	// input, status_bar, and saybutton elements deleted (non-hotkey
@@ -161,6 +162,8 @@ window "output_legacy"
 		size = 640x480
 		anchor1 = 0,0
 		anchor2 = 100,100
+		background-color = #151515
+		text-color = #B3CCE6
 		is-default = true
 		saved-params = "max-lines"
 		style = ".system {color:#FF0000;}"

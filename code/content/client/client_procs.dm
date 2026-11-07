@@ -1015,6 +1015,9 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			// A button in the Inspect tab (code/content/examine/inspect_panel.dm).
 			if(islist(payload) && istext(payload["act"]))
 				inspect_panel?.act(payload["act"], payload)
+		if("WM-Ready", "WM-View", "WM-Float", "WM-Close", "WM-Save")
+			// The window dock's frame in the stat panel (code/library/ui/window_dock/window_dock.dm).
+			window_dock_of(src).panel_message(type, payload)
 		if("Abilities-Act")
 			// A button or a drag in the Abilities tab (code/content/abilities/ability_panel.dm).
 			if(islist(payload) && istext(payload["act"]))

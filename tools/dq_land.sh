@@ -5,11 +5,25 @@
 #
 # Fetches, merges origin/master, pushes to master, and on a lost race merges and pushes again.
 # Refuses only: a checkout that is not a lane (the main checkout, test-server, play worktrees, master itself), a dirty tree, a merge conflict, and committing
-# user save data. A conflict is left in the tree for you to resolve and commit; run this again afterwards. --light is accepted and means nothing.
+# user save data. A lane that adds, moves or deletes .dm files (or merged master's) lands with its manifests regenerated: the dme merge driver unions
+# include sets, which can leave an order gen_dme.py would not write (2026-11-07, window_dock.dm), so a stale manifest is committed here, never pushed.
+# A conflict is left in the tree for you to resolve and commit; run this again afterwards. --light is accepted and means nothing.
 set -uo pipefail
 # Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dq_below_normal.sh"
 die() { echo "dq_land: REFUSED: $*" >&2; exit 1; }
+# Regenerates deepquarry.dme (and the mapping manifest) when the lane's change against master touches what they list, and commits the difference.
+regen_manifests() {
+	[ -f tools/build/gen_dme.py ] || return 0
+	git diff --quiet origin/master HEAD -- '*.dm' '*.dme' tools/build/dme_spec.txt tools/build/gen_dme.py tools/build/gen_mapping_dme.py 'maps/**' && return 0
+	python3 tools/build/gen_dme.py >/dev/null || die "tools/build/gen_dme.py failed"
+	[ ! -f tools/build/gen_mapping_dme.py ] || python3 tools/build/gen_mapping_dme.py >/dev/null || die "tools/build/gen_mapping_dme.py failed"
+	local files=""; for f in deepquarry.dme deepquarry.mapping.dme 'maps/~mapping/variant_stubs.dm'; do [ -e "$f" ] && files="$files $f"; done
+	git diff --quiet -- $files && return 0
+	git add -- $files && git commit -q -m "Regenerate deepquarry.dme and deepquarry.mapping.dme (dq_land: the merged manifest was stale)" -- $files || die "could not commit the regenerated manifests"
+	echo "dq_land: the manifest was stale after the merge; regenerated and committed it"
+	[ -z "$(git status --porcelain --untracked-files=normal | head -n 1)" ] || die "regenerating the manifests left other changes: $(git status --short | head -3 | tr '\n' ' ')"
+}
 # The merge drivers (deepquarry.dme, baselines, lint_scopes.toml) are supplied per command; without them a plain merge conflicts on those files.
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh" || die "cannot load dq_git_safe.sh"
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not in a git checkout"
@@ -34,6 +48,7 @@ for round in 1 2 3 4 5 6; do
 	if ! git merge-base --is-ancestor origin/master HEAD; then
 		git merge -q --no-edit origin/master || die "a merge conflict with master: resolve and commit it, then run this again"
 	fi
+	regen_manifests
 	sha="$(git rev-parse HEAD)"
 	if git push -q origin "$sha:refs/heads/master"; then
 		git fetch -q origin

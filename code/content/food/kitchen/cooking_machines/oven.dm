@@ -55,6 +55,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 /obj/machinery/appliance/cooker/oven/ui_data(datum/act/eval/A)
 	var/list/data = ..()
 	data["is_open"] = open
+	data["state_prefix"] = state_prefix
 	return data
 
 /obj/machinery/appliance/cooker/oven/proc/ui_act_toggle_door(datum/act/op/A)

@@ -4,8 +4,6 @@
  * @license MIT
  */
 
-export const THEMES = ['light', 'dark', 'vchatlight', 'vchatdark'] as const;
-
 export const SETTINGS_TABS = [
   {
     id: 'general',

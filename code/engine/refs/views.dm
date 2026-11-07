@@ -627,9 +627,24 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 /proc/rel_sources_via(datum/target, var_name)
 	READS_FROM(target)
 	. = list()
-	for(var/list/pair as anything in rel_sources(target))
-		if(pair[2] == var_name)
-			. += pair[1]
+	var/list/index = target ? _rel_index_of(target) : null
+	// The row's name ids are compared first: a target many sources name (a human: its organs, its body, what it wears) resolves only the
+	// sources that name it through `var_name`, with no (source, name) pair built per row.
+	for(var/source_ref in index)
+		var/row = index[source_ref]
+		var/named = FALSE
+		if(islist(row))
+			for(var/id in row)
+				if(rel_names_by_id[id] == var_name)
+					named = TRUE
+					break
+		else
+			named = !isnull(row) && rel_names_by_id[row] == var_name
+		if(!named)
+			continue
+		var/datum/S = slot_datum(source_ref)
+		if(isdatum(S))
+			. += S
 
 /// How many references to `target` relation views hold (one per single view, one per list view
 /// holding it). 

@@ -23,19 +23,7 @@ export const PRECISE_PLACEMENT: FeatureToggle = {
   component: CheckboxInput,
 };
 
-export const HUD_HOTKEYS: FeatureToggle = {
-  name: 'Hotkeys Default',
-  category: 'GAMEPLAY',
-  description: 'Enables turning hotkey mode on by default.',
-  component: CheckboxInput,
-};
 
-export const SHOW_PROGRESS: FeatureToggle = {
-  name: 'Progress Bar',
-  category: 'GAMEPLAY',
-  description: 'Enables seeing progress bars for various actions.',
-  component: CheckboxInput,
-};
 
 export const SAFE_FIRING: FeatureToggle = {
   name: 'Gun Firing Intent Requirement',

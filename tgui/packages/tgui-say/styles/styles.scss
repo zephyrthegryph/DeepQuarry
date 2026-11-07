@@ -8,7 +8,6 @@
 }
 
 .window-lightMode {
-  background-color: black;
   background-color: colors.$lightMode;
   border: 2px solid colors.$lightBorder;
 }
@@ -95,9 +94,10 @@
 }
 
 .content {
-  background-color: black;
+  background-color: colors.$background;
   display: grid;
-  font: 'tgfont';
+  font-family: colors.$font;
+  font-weight: 700;
   grid-template-columns: 7rem 1fr 2rem;
   inset: 2px;
   overflow: hidden;
@@ -113,7 +113,7 @@
 .button {
   color: white;
   background-color: colors.$button;
-  border-radius: 0.3rem;
+  border-radius: 0;
   border: none;
   display: flex;
   align-items: center;
@@ -175,7 +175,7 @@
 }
 
 .preview {
-  background-color: black;
+  background-color: colors.$background;
   bottom: 2px;
   color: #ddd;
   font-size: 11px;
@@ -206,7 +206,7 @@
 }
 
 .indicator {
-  background-color: black;
+  background-color: colors.$background;
   border-radius: 0.2rem;
   color: #ddd;
   font-size: 9px;

@@ -39,13 +39,31 @@ ensure_wt() {
 	git -C "$REPO" worktree add -q --detach "$WT" origin/master
 }
 
+# Tracked files a build regenerates (gen_dme.py, gen_mapping_dme.py). A boot that rewrites one (a master whose committed manifest is stale)
+# leaves the private worktree dirty and the next `git switch --detach` would abort ("local changes would be overwritten"), wedging the
+# checker at status=unknown. Before every switch, settle() puts HEAD's content back in these files and in the index (a hand-staged copy
+# too). They are build output in the checker's own worktree, never anyone's work. Any other local change is left alone; the switch reports it.
+GENERATED="deepquarry.dme deepquarry.mapping.dme maps/~mapping/variant_stubs.dm"
+settle() { # <worktree>
+	local f blob
+	for f in $GENERATED; do
+		blob="$(git -C "$1" rev-parse -q --verify "HEAD:$f" 2>/dev/null)" || continue
+		git -C "$1" diff --quiet HEAD -- "$f" 2>/dev/null && continue
+		echo "dq_post_push_check: settling regenerated $f to HEAD's content before switching"
+		git -C "$1" cat-file blob "$blob" >"$1/$f" || return 1
+		git -C "$1" update-index -q --cacheinfo "100644,$blob,$f" || return 1
+		git -C "$1" update-index -q --refresh >/dev/null 2>&1
+	done
+	return 0
+}
+
 # One boot of <sha>. Prints pass, FAIL or unknown; the log is $STATE/last.log.
 boot() {
 	local sha="$1" out
 	if [ -n "${DQ_HEALTH_CMD:-}" ]; then
 		$DQ_HEALTH_CMD "$sha" >"$STATE/last.log" 2>&1
 	else
-		( cd "$WT" && git switch -q --detach "$sha" && bash tools/dq_focused_test.sh --force --boot ) >"$STATE/last.log" 2>&1
+		( cd "$WT" && settle "$WT" && git switch -q --detach "$sha" && bash tools/dq_focused_test.sh --force --boot ) >"$STATE/last.log" 2>&1
 	fi
 	out="$(sed -n 's/^FOCUSED RESULT: //p' "$STATE/last.log" | tail -n 1)"
 	case "$out" in
@@ -98,6 +116,7 @@ main() {
 			( nohup bash "$0" run >>"$STATE/runner.log" 2>&1 </dev/null & ) >/dev/null 2>&1
 			;;
 		run) run ;;
+		settle) settle "${2:?settle <worktree>}" ;; # the self-test calls it
 		status)
 			[ ! -f "$STATE/MASTER_BROKEN.txt" ] || cat "$STATE/MASTER_BROKEN.txt"
 			cat "$STATE/verdict.txt" 2>/dev/null || echo "no check has run yet"

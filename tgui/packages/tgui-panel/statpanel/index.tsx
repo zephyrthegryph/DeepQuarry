@@ -6,6 +6,7 @@ import './statpanel.scss';
 
 import { createRoot } from 'react-dom/client';
 import { App, PanelBoundary } from './App';
+import { dockHost } from './dockHost';
 import { applyDockPreview } from './dockPreview';
 import { StatStore } from './store';
 
@@ -28,10 +29,6 @@ const displayStore = {
 };
 
 // tgui-panel drives these with `.output statbrowser:<name>`.
-win.set_theme = (name: string) => {
-  const light = name === 'light' || name === 'vchatlight';
-  document.documentElement.className = light ? 'light' : 'dark';
-};
 win.set_font_size = (size: string) => {
   document.body.style.setProperty('font-size', size);
 };
@@ -39,7 +36,7 @@ win.set_tabs_style = (style: string) => {
   tabsStyle = style;
   for (const listener of displayListeners) listener();
 };
-win.set_theme('dark');
+document.documentElement.className = 'dark';
 
 // Image assets can arrive after the markup: retry. Error events do not bubble,
 // so this listens in the capture phase.
@@ -76,6 +73,9 @@ Byond.subscribe((type: string, payload: any) => {
     applyDockPreview(payload);
     return;
   }
+  if (dockHost.receive(type, payload)) {
+    return;
+  }
   store.receive(type, payload);
 });
 
@@ -94,6 +94,7 @@ function mount() {
   Byond.winset(Byond.windowId, { 'is-visible': true });
   Byond.sendMessage('Set-Tab', { tab: 'Status' });
   Byond.sendMessage('Update-Verbs');
+  dockHost.ready();
   // The server can miss the first request while the client is still logging in.
   setTimeout(() => {
     if (!store.state.verbs.length) Byond.sendMessage('Update-Verbs');

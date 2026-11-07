@@ -1,10 +1,13 @@
 @use 'sass:map';
+@use '~tgui/styles/console';
 @use '~tgui/styles/radio-colors' as radio;
 
 $_radio: radio.$radio-colors;
 
-$background: hsl(0, 0%, 7.5%);
-$button: hsl(0, 0%, 12.2%);
+// Dark mode wears the console tokens (tgui/styles/console.scss), as the chat does.
+$background: console.$console-background;
+$button: console.$console-disabled;
+$font: console.$console-font;
 $lightMode: hsl(0, 0%, 100%);
 $lightBorder: hsl(0, 0%, 73.3%);
 $lightHover: hsl(0, 0%, 91.8%);
@@ -26,15 +29,9 @@ $_channel_map: (
   'Srv': map.get($_radio, 'service'),
   'Rai': map.get($_radio, 'syndicate'),
   'ITV': map.get($_radio, 'exploration'),
-  // Modes
-  'LOOC': hsl(180, 44%, 41%),
-  'Me': hsl(230, 58%, 55%),
-  'OOC': hsl(48, 100%, 40%),
-  'Radio': map.get($_radio, 'common'),
-  'Say': hsl(214, 38%, 74%),
-  'Whis': hsl(238, 55%, 67%),
-  'Subtle': hsl(329, 72%, 45%)
+  // Modes: radio.$mode-colors, shared with the chat input row
 );
+$_channel_map: map.merge($_channel_map, radio.$mode-colors);
 
 $channel_keys: map.keys($_channel_map) !default;
 

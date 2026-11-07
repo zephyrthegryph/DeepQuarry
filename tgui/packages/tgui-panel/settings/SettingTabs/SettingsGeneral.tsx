@@ -10,9 +10,8 @@ import {
   Slider,
   Stack,
 } from 'tgui-core/components';
-import { capitalize } from 'tgui-core/string';
 import { chatRenderer } from '../../chat/renderer';
-import { FONTS, THEMES } from '../constants';
+import { FONTS } from '../constants';
 import { resetPaneSplitters, setEditPaneSplitters } from '../scaling';
 import { useSettings } from '../use-settings';
 
@@ -25,22 +24,6 @@ export function SettingsGeneral(props) {
   return (
     <Section>
       <LabeledList>
-        <LabeledList.Item label="Theme">
-          {THEMES.map((THEME) => (
-            <Button
-              key={THEME}
-              selected={settings.theme === THEME}
-              color="transparent"
-              onClick={() =>
-                updateSettings({
-                  theme: THEME,
-                })
-              }
-            >
-              {capitalize(THEME)}
-            </Button>
-          ))}
-        </LabeledList.Item>
         <LabeledList.Item label="UI sizes">
           <Stack>
             <Stack.Item>

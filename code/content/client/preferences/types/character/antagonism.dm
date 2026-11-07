@@ -61,16 +61,6 @@ TYPE_TABLE(/datum/preference/choiced/human/antag_vis, pref_choices, GLOB.antag_v
 	target.bio.exploit_record = value
 
 
-/datum/preference/toggle/human/vantag_volunteer
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "vantag_volunteer"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/vantag_volunteer/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
 
 /datum/preference/choiced/human/vantag_preference
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL

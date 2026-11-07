@@ -44,12 +44,6 @@
 	default_value = TRUE
 	savefile_identifier = PREFERENCE_PLAYER
 
-/datum/preference/toggle/show_lore_news
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "NEWS_POPUP"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
 /datum/preference/toggle/player_tips
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "RECEIVE_TIPS"

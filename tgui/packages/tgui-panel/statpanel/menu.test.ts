@@ -37,6 +37,8 @@ describe('stat panel menu', () => {
       .split('\n\n')[0];
     expect(split).toContain('splitter = 70');
     expect(split).toContain('saved-params = ""');
+    // No BYOND bar between the map and the column (the gap): the pages draw the handle.
+    expect(split).toContain('show-splitter = false');
   });
 
   it('reaches every command of the old native menu bar', () => {

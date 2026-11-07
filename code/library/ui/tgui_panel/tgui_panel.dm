@@ -44,9 +44,11 @@ CAPABILITIES(/datum/tgui_panel)
  * Initializes tgui panel.
  */
 /datum/tgui_panel/proc/initialize(force = FALSE)
-	// Deferred a tick, until after the client constructor: a timer, the constructor never waits.
-	after(src, 1 TICKS, PROC_REF(initialize_window))
+	initialize_window()
 
+/// The page, its bundle (CSS and JS) and fonts go out now, at connect, like the stat panel's: a timer here waited for the whole
+/// server init (timers start with the kernel), so the chat pane sat white and showed unstyled text until then. Only the chat
+/// spritesheet waits for a timer: building it can sleep (ensure_ready), and the constructor never waits.
 /datum/tgui_panel/proc/initialize_window()
 	STAMP(src, initialized_at, CLOCK_WORLD)
 	// Perform a clean initialization
@@ -57,11 +59,14 @@ CAPABILITIES(/datum/tgui_panel)
 		))
 	window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/fontawesome))
 	window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/tgfont))
-	window.send_asset(get_asset_datum(/datum/asset/spritesheet_batched/chat))
+	after(src, 1 TICKS, PROC_REF(send_chat_spritesheet))
 	// Other setup
 	request_telemetry()
 	after(src, 5 SECONDS, PROC_REF(on_initialize_timed_out))
 	window.send_message("testTelemetryCommand")
+
+/datum/tgui_panel/proc/send_chat_spritesheet()
+	window.send_asset(get_asset_datum(/datum/asset/spritesheet_batched/chat))
 
 /**
  * private

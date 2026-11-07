@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "No gap between the map and the right panel: the main splitter bar is hidden (drag the panel edge to resize)"

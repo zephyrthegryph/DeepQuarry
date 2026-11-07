@@ -40,6 +40,6 @@ SCHEMA(/client, fullscreen_applied, num())
 
 /client/verb/toggle_fullscreen()
 	set name = "toggle-fullscreen"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+	set hidden = TRUE // the Menu page and the Borderless fullscreen setting
 
 	prefs?.update_preference_by_type(/datum/preference/toggle/borderless_fullscreen, !prefs.read_preference(/datum/preference/toggle/borderless_fullscreen))

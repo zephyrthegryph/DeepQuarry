@@ -25,7 +25,6 @@ export const defaultSettings: SettingsState = {
   statLinked: true,
   statTabsStyle: 'default',
   storedTypes: {},
-  theme: 'dark',
   ttsCategories: {},
   ttsVoice: '',
   version: 2,

@@ -3,13 +3,6 @@
 // one entry in the mob's ability list for each, added when the mob comes to have the op and dropped when it loses it, so the Abilities tab
 // shows them with the items' and the innate powers. Using the entry performs the op exactly as its keybinding does.
 
-/// The display name an op's menu() binding gives its button, or null when the op has no button (a target's menu entry, not an ability).
-/proc/op_ability_button(datum/op_plan/plan)
-	for(var/datum/entry/part/bind/binding as anything in plan.bindings)
-		if(binding.bind_kind == BIND_MENU && istext(binding.args?["button"]))
-			return binding.args["button"]
-	return null
-
 /// An ability that is the op `op_key` of the mob it is granted to.
 /datum/action/op_ability
 	ability_category = ABILITY_CATEGORY_SPECIES
@@ -49,13 +42,15 @@
 	return isnum(ends) ? max(0, ends - op_now()) : 0
 
 /// The op's own requirements say whether it can be used and why not (the same answer as the Menu gives).
-/datum/action/op_ability/ability_refusal()
+/// `menu_rows`: the owner's op_menu() rows when the caller already has them (a push of the Abilities tab reads the menu once for all its
+/// entries, not once per entry: each read evaluates every op's requirements).
+/datum/action/op_ability/ability_refusal(list/menu_rows)
 	var/mob/owner = action_owner()
 	if(!owner)
 		return "nobody has this ability"
 	if(ability_cooldown_left() > 0)
 		return "recharging"
-	for(var/list/row as anything in op_menu(owner, owner, null))
+	for(var/list/row as anything in (islist(menu_rows) ? menu_rows : op_menu(owner, owner, null)))
 		if(row["key"] == op_key)
 			return row["enabled"] ? null : (row["reason"] || "not available now")
 	return "not available now"
@@ -71,11 +66,11 @@
 /// Makes the mob's ability list match the ops with a button that it has now: an entry for each, none for an op it lost.
 /mob/proc/sync_op_abilities()
 	var/list/wanted = list()
-	for(var/datum/op_src/source as anything in op_sources_of(src))
-		var/datum/op_plan/plan = source.oplan
-		var/button = op_ability_button(plan)
-		if(button)
-			wanted[plan.key] = button
+	// Read from each index's interned button table: a capability change (every equip and drop) walks the activations, not every op of the mob.
+	for(var/datum/op_index/index as anything in op_indexes_of(src))
+		var/list/buttons = op_index_buttons(index)
+		for(var/key in buttons)
+			wanted[key] = buttons[key]
 	for(var/datum/action/op_ability/entry in actions?.Copy())
 		if(!wanted[entry.op_key])
 			entry.Remove(src)

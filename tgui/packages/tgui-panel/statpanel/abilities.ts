@@ -61,23 +61,8 @@ export function activeToggles(entries: AbilityEntry[]): AbilityEntry[] {
   return entries.filter((entry) => entry.toggled === true);
 }
 
-/**
- * The order of refs after dragging `dragged` onto `target`: it takes the place of `target`, the ones between shift over. `order` is
- * returned as is when nothing moves (the same ref, or one that is not in the list).
- */
-export function moveBefore(
-  order: string[],
-  dragged: string,
-  target: string,
-): string[] {
-  const from = order.indexOf(dragged);
-  const to = order.indexOf(target);
-  if (from < 0 || to < 0 || from === to) return order;
-  const next = order.filter((ref) => ref !== dragged);
-  // It takes the target's place: dragged down it lands after the target, dragged up it lands before it.
-  next.splice(to, 0, dragged);
-  return next;
-}
+/** Drag-to-reorder for the ability buttons: the shared helper (tgui/dq/reorder.ts). */
+export { moveBefore } from 'tgui/dq/reorder';
 
 /** Milliseconds of cooldown left at `now`, for a message received at `receivedAt` (both Date.now() values). */
 export function cooldownMs(
