@@ -178,6 +178,28 @@ GLOBAL_LIST_INIT(ability_panel_commands, list(
 	panel_command("mob.living.simple_mob.animal.synx.ai.pet.debug.proc.resprite", "Resprite", "Resprites the synx.", "Synx", null, PANEL_IF_GRANTED),
 	panel_command("integrated_communicator", "Use Communicator", "Utilizes your built-in communicator.", "Silicon", TYPE_PROC_REF(/mob/living, use_integrated_communicator), TYPE_PROC_REF(/mob/living, has_integrated_communicator)),
 	panel_command("integrated_pda", "Use PDA", "Utilizes your built-in PDA.", "Silicon", TYPE_PROC_REF(/mob/living, use_integrated_pda), TYPE_PROC_REF(/mob/living, has_integrated_pda)),
+	panel_command("mob.living.proc.write_ambition", "Set Ambition", "Write your antagonist ambition.", "Antag", null, PANEL_IF_GRANTED),
+	panel_command("mob.proc.adjust_hive_range", "Adjust Special Language Range", "Changes the range you will transmit your hive language to.", "Settings", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.carbon.human.proc.toggle_speech_sounds", "Toggle Species Speech Sounds", "Toggle if your species speech sound can play on a Say.", "Settings", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.carbon.human.proc.bloody_doodle", "Write in blood", "Use blood on your hands to write a short message on the floor or a wall.", "General", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.carbon.human.proc.tie_hair", "Tie Hair", "Style your hair.", "General", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.carbon.human.proc.setmonitor_state", "Set monitor display", "Set your monitor display.", "Settings", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.carbon.human.proc.reagent_purge", "Purge Reagents", "Empty yourself of any reagents you may have consumed or come into contact with.", "General", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.proc.toggle_waddle", "Toggle Waddling", "Toggle walking with a waddle.", "Settings", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.proc.waddle_adjust", "Waddle Adjust", "Adjust your waddling.", "Settings", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.carbon.human.proc.set_nif_examine", "NIF Appearance", "If your NIF alters your appearance, describe it here.", "Settings", null, PANEL_IF_GRANTED),
+	panel_command("show_hide_wings", "Show/Hide wings", "Hide your wings, or show them if you hid them.", "Settings", TYPE_PROC_REF(/mob/living/carbon/human, hide_wings_vr), TYPE_PROC_REF(/mob/living, panel_owner_can_call)),
+	panel_command("show_hide_tail", "Show/Hide tail", "Hide your tail, or show it if you hid it.", "Settings", TYPE_PROC_REF(/mob/living/carbon/human, hide_tail_vr), TYPE_PROC_REF(/mob/living, panel_owner_can_call)),
+	panel_command("eyes_layer", "Switch Eyes/Monitor Layer", "Draw your eyes or monitor above or below your markings.", "Settings", TYPE_PROC_REF(/mob/living/carbon/human, toggle_eyes_layer), TYPE_PROC_REF(/mob/living, panel_owner_can_call)),
+	panel_command("robot_rest_style", "Switch Rest Style", "Select your resting pose.", "Settings", TYPE_PROC_REF(/mob/living/silicon/robot, rest_style), TYPE_PROC_REF(/mob/living, panel_owner_can_call)),
+	panel_command("animal_flavour", "Set Flavour Text", "Set your flavour text.", "Settings", TYPE_PROC_REF(/mob/living/simple_mob/animal, set_flavour_text), TYPE_PROC_REF(/mob/living, panel_owner_can_call)),
+	panel_command("silicon_flavour", "Set Flavour Text", "Set an extended description of your features.", "Settings", TYPE_PROC_REF(/mob/living/silicon, set_flavor), TYPE_PROC_REF(/mob/living, panel_owner_can_call)),
+	panel_command("mob_speech_sounds", "Toggle Species Speech Sounds", "Toggle if your species speech sound can play on a Say.", "Settings", TYPE_PROC_REF(/mob/living/simple_mob, toggle_speech_sounds), TYPE_PROC_REF(/mob/living, panel_owner_can_call)),
+	panel_command("env_message_create", "Create Env Message", "Leave an OOC message in the environment for other players to see.", "General", TYPE_PROC_REF(/mob/living, create_env_message)),
+	panel_command("env_message_remove", "Remove Env Message", "Remove your current env message.", "General", TYPE_PROC_REF(/mob/living, remove_env_message)),
+	panel_command("soulcatcher_enter", "Enter Soulcatcher", "Enter your own soulcatcher.", "Vore", TYPE_PROC_REF(/mob, enter_soulcatcher), TYPE_PROC_REF(/mob/living, panel_has_soulgem)),
+	panel_command("soulcatcher_nsay", "NSay (soulcatcher)", "Speak into your soulcatcher.", "Vore", TYPE_PROC_REF(/mob, nsay_vore_ch), TYPE_PROC_REF(/mob/living, panel_has_soulgem)),
+	panel_command("soulcatcher_nme", "NMe (soulcatcher)", "Emote into your soulcatcher.", "Vore", TYPE_PROC_REF(/mob, nme_vore_ch), TYPE_PROC_REF(/mob/living, panel_has_soulgem)),
 ))
 
 /// The Abilities menu entry: opens the abilities panel of the mob.
@@ -269,3 +291,17 @@ GLOBAL_LIST_INIT(ability_panel_commands, list(
 	if(!pda_item)
 		return
 	pda_item.open_for(src)
+
+/// A panel row's `shown` proc: listed while the owner's type has the row's command proc (a human's tail toggle, a cyborg's rest style).
+/mob/living/proc/panel_owner_can_call(id)
+	for(var/list/entry as anything in GLOB.ability_panel_commands)
+		if(entry["id"] != id)
+			continue
+		var/proc_text = "[entry["proc"]]"
+		var/owner_type = text2path(copytext(proc_text, 1, findtext(proc_text, "/proc/")))
+		return owner_type && istype(src, owner_type)
+	return FALSE
+
+/// A panel row's `shown` proc: listed while the owner has a soulcatcher of their own.
+/mob/living/proc/panel_has_soulgem(id)
+	return !!soulgem

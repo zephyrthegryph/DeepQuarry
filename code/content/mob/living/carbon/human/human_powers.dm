@@ -4,7 +4,6 @@
 /mob/living/carbon/human/proc/tie_hair()
 	set name = "Tie Hair"
 	set desc = "Style your hair."
-	set category = VERB_CAT_IC_GAME
 
 	if(incapacitated())
 		to_chat(src, span_warning("You can't mess with your hair right now!"))
@@ -375,7 +374,6 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 /mob/living/carbon/human/proc/setmonitor_state()
 	set name = "Set monitor display"
 	set desc = "Set your monitor display"
-	set category = VERB_CAT_IC_SETTINGS
 	if(stat)
 		to_chat(src,span_warning("You must be awake and standing to perform this action!"))
 		return
@@ -441,7 +439,6 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 /mob/living/carbon/human/proc/reagent_purge()
 	set name = "Purge Reagents"
 	set desc = "Empty yourself of any reagents you may have consumed or come into contact with."
-	set category = VERB_CAT_IC_GAME
 
 	if(stat == DEAD) return
 
@@ -455,10 +452,9 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 	src.touching.clear_reagents()
 	to_chat(src, span_notice("Reagents purged!"))
 
-/mob/living/carbon/human/verb/toggle_eyes_layer()
+/mob/living/carbon/human/proc/toggle_eyes_layer()
 	set name = "Switch Eyes/Monitor Layer"
 	set desc = "Toggle rendering of eyes/monitor above markings."
-	set category = VERB_CAT_IC_SETTINGS
 
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))

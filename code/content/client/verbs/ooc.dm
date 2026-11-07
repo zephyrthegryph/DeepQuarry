@@ -1,7 +1,7 @@
 
 /client/verb/ooc(msg as text)
 	set name = "OOC"
-	set category = VERB_CAT_OOC_CHAT
+	set hidden = TRUE // the chat input (OOC channel) and its key
 
 
 	if(!mob)	return
@@ -82,7 +82,7 @@
 /client/verb/looc(msg as text)
 	set name = "LOOC"
 	set desc = "Local OOC, seen only by those in view."
-	set category = VERB_CAT_OOC_CHAT
+	set hidden = TRUE // the chat input (LOOC channel)
 
 	if(!mob)
 		return

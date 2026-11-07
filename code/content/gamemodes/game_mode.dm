@@ -594,7 +594,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 /mob/verb/check_round_info()
 	set name = "Check Round Info"
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE // the Menu page
 
 	if(!SSticker|| !ticker_mode())
 		to_chat(usr, span_warning("Something is terribly wrong; there is no gametype."))

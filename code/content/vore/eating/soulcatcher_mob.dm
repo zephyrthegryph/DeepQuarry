@@ -79,7 +79,6 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 /mob/proc/enter_soulcatcher()
 	set name = "Enter Soulcatcher"
 	set desc = "Enter your own Soulcatcher."
-	set category = VERB_CAT_IC_VORE
 
 	if(!soulgem) // Only sanity...
 		return
@@ -100,7 +99,6 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 /mob/proc/nsay_vore_ch()
 	set name = "NSay Vore CH"
 	set desc = "Speak into your Soulcatcher."
-	set category = VERB_CAT_IC_VORE
 
 	src.nsay_vore_act()
 
@@ -137,7 +135,6 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 /mob/proc/nme_vore_ch()
 	set name = "NMe Vore CH"
 	set desc = "Emote into your Soulcatcher."
-	set category = VERB_CAT_IC_VORE
 
 	src.nme_vore_act()
 

@@ -63,8 +63,7 @@
 /// A new human's own verbs that show in the verb panel are the few commands the panel keeps: everything else is a setting, a HUD control, a keybinding or a menu entry.
 /datum/unit_test/dq_live_prefs/baseline_human_panel_verbs
 /datum/unit_test/dq_live_prefs/baseline_human_panel_verbs/run_live()
-	// The second row is shown only until the verbs that apply to some bodies, a state or a place are granted when they apply (ux/verbs-conditional).
-	var/static/list/allowed = list("Pray", "Ghost", "Return to Menu", "Tie Hair", "Switch Eyes/Monitor Layer", "Show/Hide tail", "Show/Hide wings", "Remove Env Message", "Create Env Message", "Cancel Camera View", "Observe", "Check Round Info")
+	var/static/list/allowed = list("Pray", "Ghost")
 	var/list/unexpected = list()
 	for(var/verb_ref in subject.verbs)
 		var/procpath/V = verb_ref

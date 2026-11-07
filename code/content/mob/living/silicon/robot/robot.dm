@@ -1465,10 +1465,9 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/lay_down()
 	. = ..()
 
-/mob/living/silicon/robot/verb/rest_style()
+/mob/living/silicon/robot/proc/rest_style()
 	set name = "Switch Rest Style"
 	set desc = "Select your resting pose."
-	set category = VERB_CAT_IC_SETTINGS
 
 	if(!sprite_datum || !sprite_datum.has_rest_sprites || sprite_datum.rest_sprite_options.len < 1)
 		to_chat(src, span_notice("Your current appearance doesn't have any resting styles!"))
