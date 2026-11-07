@@ -7,14 +7,11 @@
 	cost = 250
 	wear = 0
 	p_drain = 0.01
-	other_flags = (NIF_O_COMMLINK)
+	other_flags = NIF_O_COMMLINK
 
 /datum/nifsoft/commlink/install()
 	if((. = ..()))
 		rel_set(nif(), nameof(/mob/living/voice::comm), new /obj/item/communicator/commlink(nif(),src))
-		if(nif().human?.client?.prefs?.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated
-			nif().comm.initialize_exonet(nif().human) //no harm in running this twice.
-
 /datum/nifsoft/commlink/uninstall()
 	var/obj/item/nif/lnif = nif() //Awkward. Parent clears it in an attempt to clean up.
 	if((. = ..()) && lnif)

@@ -38,11 +38,6 @@
 			verb, and select that name to answer the call."))
 			src << 'sound/machines/defib_SafetyOn.ogg'
 			rel_add(comm, nameof(comm.voice_invites), src)
-	if(message == "ping")
-		if(client && client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
-			var/random = rand(450,700)
-			random = random / 10
-			exonet.send_message(origin_address, "64 bytes received from [exonet.address] ecmp_seq=1 ttl=51 time=[random] ms")
 	if(message == "text")
 		to_chat(src, span_notice("[icon2html(origin_atom,src.client)] Received text message from [origin_atom]: " + span_bold("\"[text]\"")))
 		src << 'sound/machines/defib_safetyOff.ogg'

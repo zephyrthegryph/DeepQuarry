@@ -205,12 +205,12 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 
 	if(!length(current_profile_data)) //Would be nice to have explicit proc to check this
 		stack_trace("Warning, profiling stopped manually before dump.")
-	var/prof_file = file("[GLOB.log_directory]/profiler/profiler-[round(world.time * 0.1, 10)].json")
+	var/prof_file = file("[GLOB.log_directory]/profiler/profiler-[round(world.time)].json")
 	if(fexists(prof_file))
 		fdel(prof_file)
 	if(!length(current_sendmaps_data)) //Would be nice to have explicit proc to check this
 		stack_trace("Warning, sendmaps profiling stopped manually before dump.")
-	var/sendmaps_file = file("[GLOB.log_directory]/profiler/sendmaps-[round(world.time * 0.1, 10)].json")
+	var/sendmaps_file = file("[GLOB.log_directory]/profiler/sendmaps-[round(world.time)].json")
 	if(fexists(sendmaps_file))
 		fdel(sendmaps_file)
 
@@ -221,6 +221,19 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 
 /// Every Rust metric (counters, gauges, histograms; see verdigris/ffi/src/metrics.rs)
 /// from one verdigris call, decoded, or null if the library did not answer.
+/// The Rust metrics whose names start with `prefix` (one family: "frame."), decoded, or null. No sampled gauge is refreshed and nothing DM-side
+/// rides along: the cheap read for a report that runs inside a stalled tick.
+/proc/verdigris_metrics_family(prefix)
+	var/text = vg_verdigris_metrics_prefixed(prefix)
+	if(!istext(text) || !length(text))
+		return null
+	var/list/decoded
+	try
+		decoded = json_decode(text)
+	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
+		return null
+	return decoded
+
 /proc/verdigris_metrics_list()
 	var/text = vg_verdigris_metrics()
 	if(!istext(text) || !length(text))

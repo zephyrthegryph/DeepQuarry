@@ -722,7 +722,6 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 /mob/living/carbon/human/proc/set_nif_examine()
 	set name = "NIF Appearance"
 	set desc = "If your NIF alters your appearance in some way, describe it here."
-	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	if(!nif)
 		// The NIF granted this verb; its unimplant or deletion already revoked it.

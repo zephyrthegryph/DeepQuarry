@@ -72,27 +72,5 @@
 	var/species_name = current_species?.name || SPECIES_HUMAN
 	return random_name(gender, species_name)
 
-/// Character's nickname (optional)
-/datum/preference/name/nickname
-	savefile_key = "nickname"
-
-/datum/preference/name/nickname/is_valid(value)
-	if(isnull(value) || value == "")
-		return TRUE
-	return ..()
-
-/datum/preference/name/nickname/pref_deserialize(input, datum/preferences/preferences)
-	if(isnull(input) || input == "")
-		return null
-	return ..()
-
-/datum/preference/name/nickname/pref_serialize(value, datum/preferences/preferences)
-	if(isnull(value) || value == "")
-		return null
-	return ..()
-
-/datum/preference/name/nickname/create_default_value()
-	return null
-
-/datum/preference/name/nickname/apply_to_human(mob/living/carbon/human/target, value)
-	target.bio.nickname = value// was handled in Bay copy_to_mob, now per-pref
+/datum/tgui_module/late_choices/late_join_name(mob/user)
+	return user.client.prefs.read_preference(/datum/preference/name/real_name)

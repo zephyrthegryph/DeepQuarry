@@ -1041,9 +1041,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		var/sound
 		if(!powered)
 			sound = open_sound_unpowered
-		else if(M.read_preference(/datum/preference/toggle/old_door_sounds))
-			sound = opening ? legacy_open_powered : legacy_close_powered
-		else if(M.read_preference(/datum/preference/toggle/department_door_sounds) && (opening ? department_open_powered : department_close_powered))
+		else if((opening ? department_open_powered : department_close_powered))
 			sound = opening ? department_open_powered : department_close_powered
 		else
 			sound = opening ? open_sound_powered : close_sound_powered

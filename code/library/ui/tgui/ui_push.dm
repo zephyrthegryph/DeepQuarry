@@ -89,6 +89,11 @@ SYSTEM_DEF(ui_push)
 	var/datum/host = src_object()
 	if(QDELETED(host) || QDELETED(user))
 		return FALSE
+	if(view_hidden && (owed & (UI_PUSH_DATA|UI_PUSH_INTERACT)))
+		view_stale = TRUE // docked off screen: no ui_data() until shown (window_dock.dm)
+		if(process_status() && status <= STATUS_CLOSE)
+			close()
+		return FALSE
 	if(owed & UI_PUSH_INTERACT)
 		// An update_uis() request: re-run the host's interact, as the old inline push did.
 		process(TRUE)

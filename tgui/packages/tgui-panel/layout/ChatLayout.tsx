@@ -12,9 +12,14 @@ import {
 } from './geometry';
 import { type ResizeEdges, shareMoved } from './model';
 
-/** Parts of the tab row that keep their own clicks instead of starting a window drag. */
-const NO_DRAG =
-  'button, input, textarea, a, .Tabs__tab, .Button, [data-chat-input]';
+/**
+ * Parts of the tab row that keep their own clicks instead of starting a window
+ * drag: the tabs themselves (a click selects, a drag reorders) and the buttons.
+ * Only the row's empty space moves the window. tgui-core's tab class is `.Tab`
+ * (the old `.Tabs__tab` matched nothing, so every tab press started a drag).
+ */
+export const NO_DRAG =
+  'button, input, textarea, a, .Tab, .Button, [data-chat-input]';
 
 /**
  * Drag handling for the tab row. A floating chat has no title bar: the free

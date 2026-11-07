@@ -167,54 +167,8 @@
 	return
 
 
-/datum/preference/numeric/human/equip_preview_mob
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "equip_preview_mob"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	minimum = 0
-	maximum = 65535
-	widget = PREF_WIDGET_HIDDEN  // bitfield; surfaced via the two toggles below
-
-// two toggles that mirror the equip_preview_mob bitfield. Cleaner UX than a single
-// 0-65535 numeric. The actual pref stays a bitfield so existing consumers keep working;
-// the toggles bridge into it via apply hooks.
-/datum/preference/toggle/human/preview_loadout
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "preview_loadout"
-	savefile_identifier = PREFERENCE_CHARACTER
-	default_value = TRUE
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/preview_loadout/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
-/datum/preference/toggle/human/preview_job
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "preview_job"
-	savefile_identifier = PREFERENCE_CHARACTER
-	default_value = TRUE
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/preview_job/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
-/datum/preference/numeric/human/equip_preview_mob/create_default_value()
-	return EQUIP_PREVIEW_ALL
-
-/datum/preference/numeric/human/equip_preview_mob/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
-
-/datum/preference/toggle/human/animations_toggle
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "animations_toggle"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/animations_toggle/apply_to_human(mob/living/carbon/human/target, value)
-	return
+// What the preview mannequin wears: the loadout, the job outfit. (They replaced the equip_preview_mob bitfield;
+// load_character() migrates an old save.)
 
 
 // Ears, tail and wings are optional: an empty value (the default) means the character has none, and the

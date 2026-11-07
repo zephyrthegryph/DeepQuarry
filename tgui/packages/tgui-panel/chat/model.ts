@@ -117,3 +117,19 @@ export function isSameMessage(
     (typeof a.html === 'string' && a.html === b.html)
   );
 }
+
+/**
+ * A reordered tab list, or null when it is not a permutation of `pages`. Any
+ * tab may move, the main one included; the order is saved with the pages.
+ */
+export function reorderedPages(
+  pages: string[],
+  order: string[],
+): string[] | null {
+  if (order.length !== pages.length) return null;
+  const seen = new Set(order);
+  if (seen.size !== pages.length || pages.some((id) => !seen.has(id))) {
+    return null;
+  }
+  return order;
+}

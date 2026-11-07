@@ -14,7 +14,7 @@ import {
   useState,
 } from 'react';
 import { UI_DISABLED, UI_INTERACTIVE } from 'tgui/constants';
-import { type Box, KeyListener } from 'tgui-core/components';
+import { type Box, Button, KeyListener } from 'tgui-core/components';
 import type { KeyEvent } from 'tgui-core/events';
 import { KEY_ALT } from 'tgui-core/keycodes';
 import { type BooleanLike, classes } from 'tgui-core/react';
@@ -150,7 +150,7 @@ export function Window(props: Props) {
         // windows, so a fresh window would otherwise stay invisible forever.
         let geometry: ResolvedWindowGeometry | undefined;
         try {
-          if (!fitted) {
+          if (!fitted && !config.window?.docked) {
             geometry = await recallWindowGeometry(
               options,
               parsePreappliedGeometry(config.window?.preapplied_geometry),
@@ -185,6 +185,7 @@ export function Window(props: Props) {
     config.window?.generation,
     config.window?.key,
     config.window?.locked,
+    config.window?.docked,
     fitted,
     height,
     isReadyToRender,
@@ -196,7 +197,7 @@ export function Window(props: Props) {
   const restRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const rest = restRef.current;
-    if (!fitContent || !rest || suspended) {
+    if (!fitContent || !rest || suspended || config.window?.docked) {
       return;
     }
     const fit = () => {
@@ -214,9 +215,12 @@ export function Window(props: Props) {
       observer.observe(child);
     }
     return () => observer.disconnect();
-  }, [fitContent, suspended, isReadyToRender]);
+  }, [fitContent, suspended, isReadyToRender, config.window?.docked]);
 
   const fancy = config.window?.fancy;
+  // Docked in the stat panel (doc/rewrite/proposals/window_system.md): the panel draws the titlebar and frame.
+  const docked = !!config.window?.docked;
+  const dockable = !!config.window?.dockable;
 
   // Determine when to show dimmer
   const showDimmer =
@@ -234,7 +238,7 @@ export function Window(props: Props) {
       className={classes(['Window', readOnly && 'Window--readonly'])}
       theme={theme}
     >
-      {!fitted && (
+      {!fitted && !docked && (
         <TitleBar
           className="Window__titleBar"
           title={title || decodeHtmlEntities(config.title)}
@@ -245,20 +249,29 @@ export function Window(props: Props) {
           canClose={canClose}
         >
           {buttons}
+          {dockable && (
+            <Button
+              icon="table-columns"
+              tooltip="Dock in the side panel"
+              tooltipPosition="bottom-start"
+              color="transparent"
+              onClick={() => Byond.sendMessage('wm/dock')}
+            />
+          )}
         </TitleBar>
       )}
       <div
         ref={restRef}
         className={classes([
           'Window__rest',
-          !fitted && 'Window__restwithTitlebar',
+          !fitted && !docked && 'Window__restwithTitlebar',
           debug.debugLayout && 'debug-layout',
         ])}
       >
         {!suspended && children}
         {showDimmer && <div className="Window__dimmer" />}
       </div>
-      {fancy && scrollbars && (
+      {fancy && scrollbars && !docked && (
         <>
           <div
             className="Window__resizeHandle__e"

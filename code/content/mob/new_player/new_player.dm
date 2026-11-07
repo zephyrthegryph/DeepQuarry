@@ -43,8 +43,8 @@
 		var/datum/job/refJob = null
 		for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			refJob = player.client?.prefs.get_highest_job()
-			var/obfuscate_key = player.read_preference(/datum/preference/toggle/obfuscate_key)
-			var/obfuscate_job = player.read_preference(/datum/preference/toggle/obfuscate_job)
+			var/obfuscate_key = FALSE
+			var/obfuscate_job = FALSE
 			if(obfuscate_key && obfuscate_job)
 				. += "Anonymous User [player.ready ? "Ready!" : null]"
 			else if(obfuscate_key)
@@ -264,11 +264,6 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 		after(character, 1 TICKS, GLOBAL_PROC_REF(latejoin_register), with = list(character, rank, join_message, announce_channel, character.z))
 		SSticker.remember_mind(character.mind) //Cyborgs and AIs handle this in the transform proc.	//TODO!!!!! ~Carn
 	if(ishuman(character))
-		if(character.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // migrated pref
-			var/obj/item/implant/backup/imp = new(src)
-
-			if(imp.handle_implant(character,hud_of(character)?.zone_sel?.selecting))
-				imp.post_implant(character)
 	var/gut = join_props["voreny"]
 	var/start_absorbed = join_props["absorb"]
 	var/mob/living/prey = join_props["prey"]

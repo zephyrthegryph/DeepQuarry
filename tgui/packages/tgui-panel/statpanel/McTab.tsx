@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tabs } from 'tgui-core/components';
+import { Tabs } from 'tgui/dq';
 
 function num(value: any, digits = 1): string {
   const number = Number(value);
@@ -391,17 +391,16 @@ export function McTab(props: {
     <>
       {metrics && (
         <div className="mc-dashboard">
-          <Tabs className="mc-navigation">
-            {VIEWS.map(([id, label]) => (
-              <Tabs.Tab
-                key={id}
-                selected={view === id}
-                onClick={() => setView(id)}
-              >
-                {label}
-              </Tabs.Tab>
-            ))}
-          </Tabs>
+          <Tabs
+            size="small"
+            className="mc-navigation"
+            tabs={VIEWS.map(([id, label]) => ({
+              id,
+              label,
+              selected: view === id,
+            }))}
+            onSelect={setView}
+          />
           {view === 'overview' && (
             <>
               <Headline metrics={metrics} />

@@ -5,9 +5,6 @@
  */
 
 import './styles/main.scss';
-import './styles/themes/light.scss';
-import './styles/themes/vchatlight.scss';
-import './styles/themes/vchatdark.scss';
 
 import { createRoot } from 'react-dom/client';
 import { setupGlobalEvents } from 'tgui-core/events';

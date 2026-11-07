@@ -7,6 +7,7 @@
 import { storage } from 'common/storage';
 import type { BooleanLike } from 'tgui-core/react';
 import { vecAdd, vecMultiply, vecScale, vecSubtract } from 'tgui-core/vector';
+import { configAtom, store } from './events/store';
 import { createLogger } from './logging';
 
 export type Point = [number, number];
@@ -397,6 +398,36 @@ function dragEndHandler(event): void {
   document.removeEventListener('mouseup', dragEndHandler);
   dragging = false;
   storeWindowGeometry();
+  dockIfOverPanel([event.screenX * pixelRatio, event.screenY * pixelRatio]);
+}
+
+/**
+ * A floating window dropped with the pointer over the stat panel docks there
+ * (doc/rewrite/proposals/window_system.md); the server answers with docked.
+ */
+async function dockIfOverPanel(pointer: [number, number]): Promise<void> {
+  if (!store.get(configAtom)?.window?.dockable) {
+    return;
+  }
+  try {
+    const got = await Byond.winget('statwindow', ['screen-pos', 'size']);
+    const pos = got?.['screen-pos'];
+    const size = got?.size;
+    if (
+      typeof pos?.x !== 'number' ||
+      typeof size?.x !== 'number' ||
+      pointer[0] < pos.x ||
+      pointer[1] < pos.y ||
+      pointer[0] >= pos.x + size.x ||
+      pointer[1] >= pos.y + size.y
+    ) {
+      return;
+    }
+  } catch {
+    return;
+  }
+  logger.log('dropped over the stat panel: docking');
+  Byond.sendMessage('wm/dock');
 }
 
 // Move the window while dragging

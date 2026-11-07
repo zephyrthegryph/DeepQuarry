@@ -119,7 +119,8 @@
 	slow_log_lines++
 	var/held_back = slow_log_held_back
 	slow_log_held_back = 0
-	var/list/rust = verdigris_metrics_list()
+	// Only the frame family: a full verdigris_metrics_list() snapshot took about 90 ms, inside the slow tick it reports on.
+	var/list/rust = verdigris_metrics_family("frame.")
 	var/list/now_us = list()
 	for(var/name in rust)
 		if(findtext(name, "frame.slow_us.") == 1 && isnum(rust[name]))

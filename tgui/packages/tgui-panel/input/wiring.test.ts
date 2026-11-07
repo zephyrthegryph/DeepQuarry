@@ -11,7 +11,7 @@ describe('chat input wiring', () => {
       "@use '~tgui/styles/console'",
     );
     expect(read('styles/components/ChatConsole.scss')).toContain(
-      '--console-scanline-strength',
+      'console.console-frame',
     );
     expect(read('styles/components/ChatInput.scss')).toContain(
       "@use '~tgui/styles/console'",

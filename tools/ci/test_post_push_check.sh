@@ -38,4 +38,9 @@ f="$(c six)"; : >"$tmp/booted"; DQ_HEALTH_MIN_FREE_GB=99999 DQ_HEALTH_RAM_WAITS=
 mkdir "$tmp/s/run.lock"; sleep 30 & h=$!; echo "$h" >"$tmp/s/run.lock/pid"; bash "$t" run; [ ! -s "$tmp/booted" ] && ok "one runner at a time" || bad "two runners"; kill "$h" 2>/dev/null
 bash "$t" run; [ "$(cat "$tmp/booted")" = "$f" ] && ok "a dead runner's lock is replaced" || bad "dead lock"
 s=$(date +%s); bash "$t" start; [ $(( $(date +%s) - s )) -lt 10 ] && ok "start returns at once" || bad "start blocks"
+# a boot that regenerated a tracked manifest (stale on master) must not wedge the next switch: settle puts HEAD's content back, staged or not
+git init -q "$tmp/w"; ( cd "$tmp/w" && git config user.email t@t && git config user.name t && echo old >deepquarry.dme && echo keep >other.txt && git add -A && git commit -qm w && git commit -q --allow-empty -m next )
+echo regenerated >"$tmp/w/deepquarry.dme"; ( cd "$tmp/w" && git add deepquarry.dme ); echo mine >"$tmp/w/other.txt"
+bash "$t" settle "$tmp/w" >/dev/null
+if [ "$(cat "$tmp/w/deepquarry.dme")" = old ] && git -C "$tmp/w" diff --quiet HEAD -- deepquarry.dme && [ "$(cat "$tmp/w/other.txt")" = mine ] && git -C "$tmp/w" switch -q --detach HEAD~1 2>/dev/null; then ok "settle clears a regenerated manifest (and only it) so the switch goes through"; else bad "settle: $(git -C "$tmp/w" status --short)"; fi
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }

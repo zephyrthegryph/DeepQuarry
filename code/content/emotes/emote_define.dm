@@ -45,7 +45,6 @@
 	var/conscious = TRUE                                // Do we need to be awake to emote this?
 	var/emote_range = 0                                 // If >0, restricts emote visibility to viewers within range.
 
-	var/sound_preferences = list(/datum/preference/toggle/emote_noises) // Default emote sound_preferences is just emote_noises. Belch emote overrides this list for pref-checks.
 	var/sound_vary = FALSE
 
 /datum/decl/emote/proc/get_emote_message_1p(atom/user, atom/target, extra_params)
@@ -198,9 +197,9 @@
 			var/freq_to_use = STATE_GET(u, mob_misc, voice_freq)
 			if(STATE_GET(u, mob_misc, emote_sound_mode) == EMOTE_SOUND_NO_FREQ)
 				freq_to_use = 0
-			playsound(user.loc, sound_to_play, use_sound["vol"], u.read_preference(/datum/preference/toggle/random_emote_pitch) && sound_vary, extrarange = use_sound["exr"], frequency = freq_to_use, preference = sound_preferences, volume_channel = use_sound["volchannel"])
+			playsound(user.loc, sound_to_play, use_sound["vol"], sound_vary, extrarange = use_sound["exr"], frequency = freq_to_use, volume_channel = use_sound["volchannel"] || VOLUME_CHANNEL_VOICE)
 		else
-			playsound(user.loc, sound_to_play, use_sound["vol"], sound_vary, extrarange = use_sound["exr"], frequency = null, preference = sound_preferences, volume_channel = use_sound["volchannel"])
+			playsound(user.loc, sound_to_play, use_sound["vol"], sound_vary, extrarange = use_sound["exr"], frequency = null, volume_channel = use_sound["volchannel"] || VOLUME_CHANNEL_VOICE)
 
 /datum/decl/emote/proc/mob_can_use(mob/user)
 	return istype(user) && user.stat != DEAD && (type in user.get_available_emotes())

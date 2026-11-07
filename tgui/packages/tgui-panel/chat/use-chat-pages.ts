@@ -6,7 +6,7 @@ import {
   currentPageIdAtom,
   mainPage,
 } from './atoms';
-import { createPage } from './model';
+import { createPage, reorderedPages } from './model';
 import { chatRenderer } from './renderer';
 import type { Page } from './types';
 
@@ -51,10 +51,7 @@ export function useChatPages() {
     const fromIndex = pages.indexOf(tmpPage.id);
     const toIndex = fromIndex - 1;
 
-    // don't ever move leftmost page
     if (fromIndex <= 0) return;
-    // don't ever move anything to the leftmost page
-    if (toIndex <= 0) return;
 
     const draftPages = [...pages];
     const tmp = draftPages[fromIndex];
@@ -69,8 +66,7 @@ export function useChatPages() {
     const fromIndex = pages.indexOf(tmpPage.id);
     const toIndex = fromIndex + 1;
 
-    // don't ever move leftmost page
-    if (fromIndex <= 0) return;
+    if (fromIndex < 0) return;
     // don't ever move anything out of the array
     if (toIndex >= pages.length) return;
 
@@ -80,6 +76,12 @@ export function useChatPages() {
     draftPages[toIndex] = tmp;
 
     setPages(draftPages);
+  }
+
+  /** Takes a new tab order from a drag; any tab may move, Main included. */
+  function reorderChatPages(order: string[]): void {
+    const next = reorderedPages(pages, order);
+    if (next) setPages(next);
   }
 
   function removeChatPage(): void {
@@ -139,6 +141,7 @@ export function useChatPages() {
     changeChatPage,
     moveChatLeft,
     moveChatRight,
+    reorderChatPages,
     removeChatPage,
     toggleAcceptedType,
     updateChatPage,

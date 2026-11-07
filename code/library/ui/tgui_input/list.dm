@@ -24,7 +24,7 @@
 		return null
 
 	/// Client does NOT have tgui_input on: Returns regular input
-	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode) && !strict_modern)
+	if(FALSE && !strict_modern)
 		return input(user, message, title, default) as null|anything in items // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
 	var/datum/tgui_list_input/input = new(user, message, title, items, default, timeout, ui_state)
 	if(input.invalid)
@@ -116,9 +116,9 @@ CAPABILITIES(/datum/tgui_list_input)
 	var/list/data = list()
 	data["init_value"] = default || items[1]
 	data["items"] = items
-	data["large_buttons"] = user.read_preference(/datum/preference/toggle/tgui_large_buttons)
+	data["large_buttons"] = TRUE
 	data["message"] = message
-	data["swapped_buttons"] = !user.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
+	data["swapped_buttons"] = TRUE
 	data["title"] = title
 	return data
 

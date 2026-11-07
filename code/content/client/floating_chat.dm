@@ -78,18 +78,9 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 /client/var/chat_layout_mode = CHAT_MODE_UNKNOWN
 /client/var/chat_layout_share = CHAT_SHARE_DEFAULT
 
-/// Whether the T/M/O hotkeys focus the chat page's input row instead of opening the popup.
-/datum/preference/toggle/chat_inline_input
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "CHAT_INLINE_INPUT"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
 /// Sends a speech hotkey to the chat input row. Returns TRUE when the row took it, FALSE to open the popup instead.
 /client/proc/chat_focus_input(channel)
 	if(channel != SAY_CHANNEL && channel != ME_CHANNEL && channel != OOC_CHANNEL && channel != LOOC_CHANNEL)
-		return FALSE
-	if(!prefs?.read_preference(/datum/preference/toggle/chat_inline_input))
 		return FALSE
 	if(!tgui_panel?.is_ready())
 		return FALSE
@@ -359,20 +350,20 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 
 /client/verb/toggle_floating_chat()
 	set name = "toggle-floating-chat"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+	set hidden = TRUE // the Menu page: Float / dock chat
 
 	prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, !prefs.read_preference(/datum/preference/toggle/chat_floating))
 
 /client/verb/dock_chat()
 	set name = "dock-chat"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+	set hidden = TRUE // the floating chat window closing runs it
 
 	prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, FALSE)
 
 /// Floats the chat if needed and puts its window back at the default place, for a window that got lost.
 /client/verb/reset_chat_window()
 	set name = "reset-chat-window"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+	set hidden = TRUE // the Menu page: Reset chat window
 
 	chat_float_reset()
 	chat_pin(CHAT_MODE_FLOAT)

@@ -2,7 +2,7 @@
 
 /datum/looping_sound/alarm
 	volume_chan = VOLUME_CHANNEL_ALARMS
-	pref_check = /datum/preference/toggle/looping_alarms
+	volume_chan = VOLUME_CHANNEL_ALARMS
 
 /datum/looping_sound/alarm/fire_alarm // Commented out start/end as I don't feel they're very fitting
 	mid_sounds = list('sound/effects/alarms/fire_alarm/Fire_alarm_mid.ogg' = 1)

@@ -61,6 +61,8 @@
 	var/datum/op_cand/near_miss
 	/// The gate that dropped candidates before any was a candidate (the actor gate's reason), or null.
 	var/gate_reason
+	/// providers_for(actor, held), read once by the first candidate that needs a provider: pass 1 runs no effects, so every candidate sees the same set.
+	var/list/providers
 
 // ---- the ops an entity has ----
 
@@ -90,6 +92,19 @@
 			S.oplan = P // ALLOW(ownership): a transient record of one resolution: dropped with it
 			S.activation = A // ALLOW(ownership): a transient record of one resolution: dropped with it
 			. += S
+
+/// The compiled op indexes an entity's ops come from: its table's, then each running granted definition's (the same set op_sources_of() walks,
+/// with no record per op).
+/proc/op_indexes_of(datum/D)
+	. = list()
+	if(!D || QDELETED(D))
+		return
+	var/datum/type_table/T = table_of(D)
+	. += op_index_of_table(T)
+	for(var/datum/activation/A as anything in D.rx?.activations)
+		if(A.dead || !A.runs || T.caps[A.def.key])
+			continue
+		. += op_index_of_def(T, A.def)
 
 /// The plan of `key` an entity has, or null; `activation` is set to the one that brought it.
 /proc/op_plan_for(datum/D, key, list/found_activation)
@@ -201,14 +216,14 @@
 	var/datum/op_plan/oplan
 	var/datum/entry/part/bind/binding
 
-/datum/type_table
-	/// signature -> list of /datum/op_row: the interned candidate rows of this table's own ops.
+/datum/op_index
+	/// signature -> list of /datum/op_row: the interned candidate rows of this index's ops (a table's own, or what one granted definition brings).
 	var/list/op_row_cache
 
-/// Interned candidate rows whose silent drops (the ones every input of this shape shares) are applied. In declaration order.
-/proc/op_rows_for(datum/type_table/T, datum/op_index/index, side, origin, authority, gesture, list/intents, held_type)
+/// Interned candidate rows of `index` whose silent drops (the ones every input of this shape shares) are applied. In declaration order.
+/proc/op_rows_for(datum/op_index/index, side, origin, authority, gesture, list/intents, held_type)
 	var/signature = "[side]|[origin]|[authority]|[isnull(gesture) ? "-" : gesture]|[intents ? jointext(intents, ",") : "-"]|[held_type || "-"]"
-	var/list/rows = T.op_row_cache?[signature]
+	var/list/rows = index.op_row_cache?[signature]
 	if(!isnull(rows))
 		return rows
 	rows = list()
@@ -220,12 +235,30 @@
 			row.oplan = P // ALLOW(ownership): an interned row of a compiled table: dropped with it
 			row.binding = B // ALLOW(ownership): an interned row of a compiled table: dropped with it
 			rows += row
-	LAZYSET(T.op_row_cache, signature, rows)
+	LAZYSET(index.op_row_cache, signature, rows)
 	return rows
+
+/// Can this (op, binding) never answer an input of this shape, whatever the origin or authority? An actor-side candidate whose binding is not
+/// one of the actor's own, and a gesture the binding kind or the op's intents do not answer: such a candidate is no near miss either (an origin
+/// that refused it explains nothing), so it is dropped before the origin and authority filters keep it for the near-miss reason.
+/proc/op_shape_drops(datum/op_plan/P, datum/entry/part/bind/B, side, gesture, list/intents)
+	if(side == CAND_ACTOR && !op_actor_side_binding(B))
+		return TRUE
+	if(isnull(gesture))
+		return FALSE
+	if(B.bind_kind == BIND_MENU || B.bind_kind == BIND_UI || B.bind_kind == BIND_TOPIC || B.bind_kind == BIND_AI)
+		return TRUE
+	var/list/answered = op_answers(P, B)
+	for(var/intent in intents)
+		if(intent in answered)
+			return FALSE
+	return TRUE
 
 /// Could (op, binding) answer an input of this shape? FALSE only when the shared facts drop it silently: the side, the binding kind, the intents and
 /// the held item's type. A candidate the origin or authority refuses is kept (it can be the near miss that explains a refusal).
 /proc/op_row_maybe(datum/op_plan/P, datum/entry/part/bind/B, side, origin, authority, gesture, list/intents, held_type)
+	if(op_shape_drops(P, B, side, gesture, intents))
+		return FALSE
 	if(!op_accepts_origin(P, B, origin))
 		return TRUE
 	if(origin != ORIGIN_SYSTEM && !op_accepts_authority(P, B, authority))
@@ -295,7 +328,7 @@
 				row.binding = B // ALLOW(ownership): a transient record of one resolution: dropped with it
 				rows += row
 	else
-		rows = op_rows_for(T, index, side, R.origin, R.authority, gesture, R.intents, R.held?.type)
+		rows = op_rows_for(index, side, R.origin, R.authority, gesture, R.intents, R.held?.type)
 	for(var/datum/op_row/row as anything in rows)
 		seq++
 		seq = op_add_cand(R, row.oplan, row.binding, holder, side, null, gesture, keep_dropped, seq)
@@ -304,6 +337,12 @@
 		if(A.dead || !A.runs || T.caps[A.def.key])
 			continue
 		var/datum/op_index/granted = op_index_of_def(T, A.def)
+		if(!key && !keep_dropped)
+			// The same interned rows as the table's own: a holder with many granted capabilities (a human's organs and body) walks only what can answer.
+			for(var/datum/op_row/row as anything in op_rows_for(granted, side, R.origin, R.authority, gesture, R.intents, R.held?.type))
+				seq++
+				seq = op_add_cand(R, row.oplan, row.binding, holder, side, A, gesture, keep_dropped, seq)
+			continue
 		for(var/datum/op_plan/P as anything in granted.ordered)
 			if(key && P.key != key)
 				continue
@@ -369,6 +408,8 @@
 /// Would pass 1 drop this (op, binding) at the binding's own input or the intent, which are silent and the same for every input of that kind?
 /// (Only after the origin and authority filters accepted it: those drops are kept for the near-miss reason.)
 /proc/op_silently_dropped(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, gesture)
+	if(op_shape_drops(P, B, side, gesture, R.intents))
+		return TRUE
 	if(!op_accepts_origin(P, B, R.origin))
 		return FALSE
 	if(R.origin != ORIGIN_SYSTEM && !op_accepts_authority(P, B, R.authority))
@@ -452,7 +493,9 @@
 	if(R.origin != ORIGIN_SYSTEM && (op_reach_policy(P, B) != REACH_ANY || op_affordance(P, B, R.held)))
 		var/atom/aim = (C.side == CAND_ACTOR && B.bind_kind != BIND_CLICKS) ? R.actor : R.target
 		var/list/chosen = list()
-		var/why = reach_gate(R.actor, aim, R.held, P, B, R.authority, chosen)
+		if(isnull(R.providers))
+			R.providers = providers_for(R.actor, R.held)
+		var/why = reach_gate(R.actor, aim, R.held, P, B, R.authority, chosen, R.providers)
 		if(why)
 			C.dropped_by = (why == /datum/msg/op/no_hands) ? GATE_PROVIDER : GATE_REACH
 			C.dropped_reason = why

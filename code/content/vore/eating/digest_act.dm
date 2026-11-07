@@ -111,7 +111,7 @@
 			soundfile = SFX_VORE_SHORTGURGLES_GURGLE_M_MIX
 		else
 			soundfile = SFX_VORE_SHORTGURGLES_GURGLE_S_MIX
-		playsound(src, soundfile, vol = g_sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
+		playsound(src, soundfile, vol = g_sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, volume_channel = VOLUME_CHANNEL_VORE)
 		//Allow those turned into items to become the recycled item
 		var/recycled = B?.recycle(src)
 		if(!recycled)
