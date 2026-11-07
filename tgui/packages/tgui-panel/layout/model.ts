@@ -438,3 +438,30 @@ export function windowUnderPointer(pointer: Point, size: Point): Point {
     y: Math.round(pointer.y - 16),
   };
 }
+
+/** The height of the chat's part of the column for a splitter reading (the chat is the first pane at the top, the second at the bottom). */
+export function chatHeightInColumn(
+  mode: ChatMode,
+  columnHeight: number,
+  splitter: number,
+): number {
+  const percent = mode === 'top' ? splitter : 100 - splitter;
+  return Math.max(0, Math.round((columnHeight * percent) / 100));
+}
+
+/**
+ * The size to give the chat browser so it fits its pane. `reported` is what the
+ * pane window says it is (which can be stale: a hidden pane keeps the size it
+ * had), `expected` is what the host (the column's chat part, or the float
+ * window) really has. Never bigger than the host, or the page overflows the
+ * screen; with no expectation the report is used.
+ */
+export function fitBrowserSize(reported: Point, expected: Point | null): Point {
+  if (!expected || !(expected.x > 0) || !(expected.y > 0)) {
+    return reported;
+  }
+  return {
+    x: Math.min(reported.x, expected.x),
+    y: Math.min(reported.y, expected.y),
+  };
+}

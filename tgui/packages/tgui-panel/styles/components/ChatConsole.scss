@@ -51,31 +51,78 @@
     border-bottom: 2px solid console.$console-border;
   }
 
-  // Chrome is bold monospace; the messages inside .Chat are left alone.
+  // Chrome is bold monospace at one small size; the messages inside .Chat are left alone.
   .Tabs,
   .Button,
   .Section__title {
     font-family: console.$console-font;
     font-weight: 700;
+    font-size: 12px;
+  }
+
+  // The tab row: tight padding, flat tabs, the selected one in the console blue.
+  .ChatDragRow {
+    padding: 2px 0;
   }
 
   .Tabs--horizontal {
     border-bottom: 0;
+    margin: 0;
   }
 
   .Tab {
+    padding: 2px 8px;
     letter-spacing: 0.02em;
-    margin-right: 2px;
+    margin-right: 4px;
+    line-height: 1.4;
   }
 
-  // Readable message text: a plain sans face at a fixed comfortable size,
-  // normal weight (the chrome above is the bold monospace).
+  .Button {
+    padding: 2px 8px;
+    line-height: 1.4;
+    border: 0;
+  }
+
+  // Readable message text, like the mock: a plain sans face at 12px, normal
+  // weight, 1.5 line height (the chrome above is the bold monospace). A size
+  // from the player's settings is an inline style and wins over this.
   .Chat {
-    padding: 4px 8px;
+    padding: 8px;
     font-family: Verdana, Geneva, sans-serif;
+    font-size: 12px;
     font-weight: 400;
-    line-height: 1.45;
+    line-height: 1.5;
     word-wrap: break-word;
+  }
+
+  // The jump-to-newest button, in the console look.
+  .Chat__scrollButton {
+    font-family: console.$console-font;
+    font-weight: 700;
+    color: console.$console-text;
+    background-color: console.$console-button;
+    border: 2px solid console.$console-border;
+    box-shadow: 0 0 8px console.$console-border;
+  }
+
+  // "Reconnected" and other dividers: a 2px console rule with a flat label.
+  .Chat__reconnected {
+    font-family: console.$console-font;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: console.$console-accent;
+
+    &:before,
+    &:after {
+      border-bottom: 2px solid console.$console-border;
+    }
+
+    > span {
+      border-radius: 0;
+      background-color: console.$console-disabled;
+    }
   }
 
   // Thin scrollbar in the console colours (standard properties; WebView2 honours them).
