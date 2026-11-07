@@ -31,7 +31,7 @@ describe('chat input wiring', () => {
     expect(read('input/ChatInput.tsx')).toContain('nextChannel');
     expect(read('input/ChatInput.tsx')).not.toContain('INPUT_CHANNELS.map');
     expect(read('events/listeners.ts')).toContain("'chat/layout'");
-    expect(read('Panel.tsx')).toContain('ChatHeader');
+    expect(read('Panel.tsx')).toContain('useChatDrag');
     expect(read('styles/main.scss')).toContain('ChatLayout.scss');
   });
 });

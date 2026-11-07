@@ -303,6 +303,7 @@ window "chat_float"
 		can-minimize = false
 		can-resize = false
 		titlebar = false
+		can-close = false
 		on-close = "dock-chat"
 	// Hosts the outputwindow pane while the chat floats (chat_layout_sync in code/content/client/floating_chat.dm).
 	elem "chat_float_host"

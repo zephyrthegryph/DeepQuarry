@@ -1,7 +1,10 @@
 import {
   type ChatMode,
   dragPosition,
+  fitRect,
+  fitSize,
   type Point,
+  pointerSnap,
   type Rect,
   resizeSize,
   shareFromHeights,
@@ -30,13 +33,19 @@ async function floatGeometry(): Promise<{ pos: Point; size: Point } | null> {
   }
 }
 
-/** The main window's place: what a pin snaps to. */
-async function mainArea(): Promise<Rect | null> {
+/**
+ * The main window's place and outer size in screen pixels: the area the float
+ * window must stay inside, and what a pin snaps to.
+ */
+export async function mainArea(): Promise<Rect | null> {
   try {
-    const got = await Byond.winget('mainwindow', ['pos', 'size']);
-    return isPoint(got?.pos) && isPoint(got?.size)
-      ? { x: got.pos.x, y: got.pos.y, w: got.size.x, h: got.size.y }
-      : null;
+    const got = await Byond.winget('mainwindow', ['pos', 'outer-size', 'size']);
+    const size = isPoint(got?.['outer-size']) ? got['outer-size'] : got?.size;
+    if (!isPoint(got?.pos) || !isPoint(size) || size.x <= 0 || size.y <= 0) {
+      console.log('chat layout: main window bounds unknown', got);
+      return null;
+    }
+    return { x: got.pos.x, y: got.pos.y, w: size.x, h: size.y };
   } catch {
     return null;
   }
@@ -86,25 +95,34 @@ export function startWindowDrag(
   let frame = 0;
   let last: Point | null = null;
 
-  const placed = (): Point | null =>
-    start ? dragPosition(start.pos, startMouse, latest, ratio) : null;
+  /** The window rect for the latest mouse place, held inside the main window. */
+  const placedRect = (): Rect | null => {
+    if (!start) {
+      return null;
+    }
+    const pos = dragPosition(start.pos, startMouse, latest, ratio);
+    const rect = { x: pos.x, y: pos.y, w: start.size.x, h: start.size.y };
+    return area ? fitRect(rect, area) : rect;
+  };
+
+  /** The pin the latest mouse place asks for: the pointer in the right strip, or the window against the right edge. */
+  const pinFor = (rect: Rect): 'top' | 'bottom' | null => {
+    if (!area) {
+      return null;
+    }
+    const pointer = { x: latest.x * ratio, y: latest.y * ratio };
+    return pointerSnap(pointer, area) ?? snapTarget(rect, area);
+  };
 
   const flush = () => {
     frame = 0;
-    const pos = placed();
-    if (!pos || (last && last.x === pos.x && last.y === pos.y)) {
+    const rect = placedRect();
+    if (!rect || (last && last.x === rect.x && last.y === rect.y)) {
       return;
     }
-    last = pos;
-    Byond.winset(FLOAT_WINDOW, 'pos', `${pos.x},${pos.y}`);
-    if (start && area) {
-      handlers.onHint?.(
-        snapTarget(
-          { x: pos.x, y: pos.y, w: start.size.x, h: start.size.y },
-          area,
-        ),
-      );
-    }
+    last = { x: rect.x, y: rect.y };
+    Byond.winset(FLOAT_WINDOW, 'pos', `${rect.x},${rect.y}`);
+    handlers.onHint?.(pinFor(rect));
   };
 
   const move = (e: PointerEvent) => {
@@ -126,15 +144,11 @@ export function startWindowDrag(
     }
     flush();
     handlers.onHint?.(null);
-    const pos = placed();
-    if (pos && start && area) {
-      const pin = snapTarget(
-        { x: pos.x, y: pos.y, w: start.size.x, h: start.size.y },
-        area,
-      );
-      if (pin) {
-        handlers.onPin(pin);
-      }
+    const rect = placedRect();
+    const pin = rect ? pinFor(rect) : null;
+    console.log('chat layout: drag ended', { rect, area, pin });
+    if (pin) {
+      handlers.onPin(pin);
     }
   };
 
@@ -163,6 +177,8 @@ export function startWindowResize(
   const startMouse: Point = { x: event.screenX, y: event.screenY };
   const ratio = pixelRatio();
   let startSize: Point | null = null;
+  let startPos: Point | null = null;
+  let area: Rect | null = null;
   let latest: Point = startMouse;
   let frame = 0;
 
@@ -171,7 +187,8 @@ export function startWindowResize(
     if (!startSize) {
       return;
     }
-    const size = resizeSize(startSize, startMouse, latest, ratio);
+    const grown = resizeSize(startSize, startMouse, latest, ratio);
+    const size = area && startPos ? fitSize(grown, startPos, area) : grown;
     Byond.winset(FLOAT_WINDOW, 'size', `${size.x}x${size.y}`);
   };
 
@@ -198,8 +215,10 @@ export function startWindowResize(
   target.addEventListener('pointermove', move);
   target.addEventListener('pointerup', end);
   target.addEventListener('pointercancel', end);
-  floatGeometry().then((geometry) => {
+  Promise.all([floatGeometry(), mainArea()]).then(([geometry, main]) => {
     startSize = geometry?.size ?? null;
+    startPos = geometry?.pos ?? null;
+    area = main;
     if (!frame) {
       frame = requestAnimationFrame(flush);
     }

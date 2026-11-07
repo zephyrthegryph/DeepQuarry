@@ -2,9 +2,12 @@ import { describe, expect, it } from 'bun:test';
 import {
   clampShare,
   dragPosition,
+  fitRect,
+  fitSize,
   isMode,
   MIN_WINDOW_SIZE,
   pinRequest,
+  pointerSnap,
   resizeSize,
   SHARE_DEFAULT,
   shareFromHeights,
@@ -106,9 +109,7 @@ describe('snap to the right edge', () => {
     expect(snapTarget({ x: 1000, y: 40, w: 528, h: 300 }, area, 72)).toBe(
       'top',
     );
-    expect(
-      snapTarget({ x: 1000, y: 40, w: 527, h: 300 }, area, 72),
-    ).toBeNull();
+    expect(snapTarget({ x: 1000, y: 40, w: 527, h: 300 }, area, 72)).toBeNull();
   });
 
   it('does not snap in the middle of the screen or outside the area', () => {
@@ -127,5 +128,69 @@ describe('snap to the right edge', () => {
       'bottom',
     );
     expect(snapTarget({ x: 1050, y: 290, w: 560, h: 300 }, area)).toBe('top');
+  });
+});
+
+describe('keeping the window inside the main window', () => {
+  const area = { x: 100, y: 50, w: 1600, h: 900 };
+
+  it('leaves a window that fits alone', () => {
+    const win = { x: 300, y: 200, w: 560, h: 420 };
+    expect(fitRect(win, area)).toEqual(win);
+  });
+
+  it('pulls a window back from every side', () => {
+    expect(fitRect({ x: 0, y: 0, w: 500, h: 400 }, area)).toEqual({
+      x: 100,
+      y: 50,
+      w: 500,
+      h: 400,
+    });
+    expect(fitRect({ x: 1500, y: 800, w: 500, h: 400 }, area)).toEqual({
+      x: 1200,
+      y: 550,
+      w: 500,
+      h: 400,
+    });
+  });
+
+  it('cuts a window larger than the area to the area', () => {
+    expect(fitRect({ x: 0, y: 0, w: 2000, h: 1200 }, area)).toEqual(area);
+  });
+
+  it('changes nothing without an area', () => {
+    const win = { x: -50, y: 9000, w: 500, h: 400 };
+    expect(fitRect(win, { x: 0, y: 0, w: 0, h: 0 })).toEqual(win);
+  });
+
+  it('stops a resize at the area edge and at the minimum', () => {
+    expect(fitSize({ x: 900, y: 900 }, { x: 1000, y: 500 }, area)).toEqual({
+      x: 700,
+      y: 450,
+    });
+    expect(fitSize({ x: 10, y: 10 }, { x: 200, y: 100 }, area)).toEqual(
+      MIN_WINDOW_SIZE,
+    );
+    expect(fitSize({ x: 400, y: 300 }, { x: 200, y: 100 }, area)).toEqual({
+      x: 400,
+      y: 300,
+    });
+  });
+});
+
+describe('pin by pointer', () => {
+  const area = { x: 0, y: 0, w: 1600, h: 900 };
+
+  it('pins in the right strip by the vertical half', () => {
+    expect(pointerSnap({ x: 1550, y: 100 }, area)).toBe('top');
+    expect(pointerSnap({ x: 1550, y: 700 }, area)).toBe('bottom');
+  });
+
+  it('does not pin elsewhere', () => {
+    expect(pointerSnap({ x: 800, y: 100 }, area)).toBeNull();
+    expect(pointerSnap({ x: 1550, y: -5 }, area)).toBeNull();
+    expect(
+      pointerSnap({ x: 1550, y: 100 }, { x: 0, y: 0, w: 0, h: 0 }),
+    ).toBeNull();
   });
 });

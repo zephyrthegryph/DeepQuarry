@@ -47,8 +47,9 @@
 	var/split = SKIN_RPANE_SPLIT
 	var/host = SKIN_CHAT_FLOAT_HOST
 	var/window = SKIN_CHAT_FLOAT_WINDOW
-	TEST_ASSERT_EQUAL(chat_layout_params(CHAT_MODE_FLOAT, 40, CHAT_MODE_BOTTOM), "[split].right=;[host].left=[SKIN_OUTPUT_PANE];[window].is-visible=true", "bottom to float lets the stat panel fill the column")
-	TEST_ASSERT_EQUAL(chat_layout_params(CHAT_MODE_FLOAT, 40, CHAT_MODE_TOP), "[split].left=;[split].right=;[split].left=[SKIN_STAT_PANE];[host].left=[SKIN_OUTPUT_PANE];[window].is-visible=true", "top to float seats the stat panel first")
+	var/chrome = "[window].titlebar=false;[window].can-resize=false;[window].can-minimize=false;[window].can-close=false;[window].statusbar=false"
+	TEST_ASSERT_EQUAL(chat_layout_params(CHAT_MODE_FLOAT, 40, CHAT_MODE_BOTTOM), "[split].right=;[split].splitter=100;[host].left=[SKIN_OUTPUT_PANE];[chrome];[window].is-visible=true", "bottom to float lets the stat panel fill the column")
+	TEST_ASSERT_EQUAL(chat_layout_params(CHAT_MODE_FLOAT, 40, CHAT_MODE_TOP), "[split].left=;[split].right=;[split].left=[SKIN_STAT_PANE];[split].splitter=100;[host].left=[SKIN_OUTPUT_PANE];[chrome];[window].is-visible=true", "top to float seats the stat panel first")
 	TEST_ASSERT_EQUAL(chat_layout_params(CHAT_MODE_BOTTOM, 40, CHAT_MODE_FLOAT), "[window].is-visible=false;[host].left=;[split].right=[SKIN_OUTPUT_PANE];[split].splitter=60", "float to bottom hides the window then re-seats the chat")
 	TEST_ASSERT_EQUAL(chat_layout_params(CHAT_MODE_TOP, 40, CHAT_MODE_FLOAT), "[window].is-visible=false;[host].left=;[split].left=;[split].right=;[split].left=[SKIN_OUTPUT_PANE];[split].right=[SKIN_STAT_PANE];[split].splitter=40", "float to top")
 
@@ -59,3 +60,19 @@
 	TEST_ASSERT_EQUAL(chat_layout_change(CHAT_MODE_TOP, 55, CHAT_MODE_TOP, 40), CHAT_CHANGE_SPLITTER, "same end, new share: only the splitter")
 	TEST_ASSERT_EQUAL(chat_layout_change(CHAT_MODE_TOP, 40, CHAT_MODE_BOTTOM, 40), CHAT_CHANGE_LAYOUT, "another end moves the pane")
 	TEST_ASSERT_EQUAL(chat_layout_change(CHAT_MODE_FLOAT, 40, CHAT_MODE_BOTTOM, 40), CHAT_CHANGE_LAYOUT, "floating moves the pane")
+
+/datum/unit_test/dq_chat_float_fit_inside_main
+/datum/unit_test/dq_chat_float_fit_inside_main/Run()
+	// area: main window at 100,50, 1600x900
+	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(300, 200, 560, 420, 100, 50, 1600, 900)), json_encode(list(300, 200, 560, 420)), "a window inside is left alone")
+	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(0, 0, 500, 400, 100, 50, 1600, 900)), json_encode(list(100, 50, 500, 400)), "pulled in from the top left")
+	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(1500, 800, 500, 400, 100, 50, 1600, 900)), json_encode(list(1200, 550, 500, 400)), "pulled in from the bottom right")
+	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(0, 0, 2000, 1200, 100, 50, 1600, 900)), json_encode(list(100, 50, 1600, 900)), "a window larger than the main window is cut to it")
+	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(100, 50, 100, 100, 100, 50, 1600, 900)), json_encode(list(100, 50, CHAT_FLOAT_MIN_W, CHAT_FLOAT_MIN_H)), "a tiny window is raised to the minimum")
+
+/datum/unit_test/dq_chat_float_pair_parse
+/datum/unit_test/dq_chat_float_pair_parse/Run()
+	TEST_ASSERT_EQUAL(json_encode(chat_float_pair("60,60", ",")), json_encode(list(60, 60)), "a position")
+	TEST_ASSERT_EQUAL(json_encode(chat_float_pair("560x420", "x")), json_encode(list(560, 420)), "a size")
+	TEST_ASSERT_NULL(chat_float_pair("junk", "x"), "junk is nothing")
+	TEST_ASSERT_NULL(chat_float_pair(null, ","), "null is nothing")

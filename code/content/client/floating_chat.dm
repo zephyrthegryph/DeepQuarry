@@ -24,8 +24,12 @@
 
 #define CHAT_FLOAT_DEFAULT_POS "60,60"
 #define CHAT_FLOAT_DEFAULT_SIZE "560x420"
-/// Pixels of the float window that must stay on the screen, or it is put back.
-#define CHAT_FLOAT_MIN_VISIBLE 48
+/// The float window is chrome-less: no title bar, border, minimize or close button. Set at runtime, before the window is shown,
+/// as well as in the skin, because BYOND only draws a window without its frame when these are false when it opens.
+#define CHAT_FLOAT_CHROME_OFF "titlebar=false;can-resize=false;can-minimize=false;can-close=false;statusbar=false"
+/// The float window never gets smaller than this inside the main window, in pixels.
+#define CHAT_FLOAT_MIN_W 320
+#define CHAT_FLOAT_MIN_H 200
 
 /// Whether the chat is a floating window or pinned to the right-hand column (default).
 /datum/preference/toggle/chat_floating
@@ -145,7 +149,11 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 				steps += "[SKIN_RPANE_SPLIT].left=[SKIN_STAT_PANE]"
 			else
 				steps += "[SKIN_RPANE_SPLIT].right="
+			// The stat panel is alone in the column: the split gives it all of it, whatever the splitter was.
+			steps += "[SKIN_RPANE_SPLIT].splitter=100"
 			steps += "[SKIN_CHAT_FLOAT_HOST].left=[SKIN_OUTPUT_PANE]"
+			for(var/param in splittext(CHAT_FLOAT_CHROME_OFF, ";"))
+				steps += "[SKIN_CHAT_FLOAT_WINDOW].[param]"
 			steps += "[SKIN_CHAT_FLOAT_WINDOW].is-visible=true"
 	return jointext(steps, ";")
 
@@ -175,8 +183,9 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 	var/share = chat_share_clamped(prefs.read_preference(/datum/preference/numeric/chat_share))
 	switch(chat_layout_change(mode, share, chat_layout_mode, chat_layout_share))
 		if(CHAT_CHANGE_LAYOUT)
-			winset(src, null, chat_layout_params(mode, share, chat_layout_mode))
-			log_tgui(src, "Chat layout: [chat_layout_mode] -> [mode], share [share].", context = "chat_float")
+			var/params = chat_layout_params(mode, share, chat_layout_mode)
+			winset(src, null, params)
+			log_tgui(src, "Chat layout: [chat_layout_mode] -> [mode], share [share]. winset: [params]", context = "chat_float")
 			chat_layout_mode = mode
 			chat_layout_share = share
 			if(mode == CHAT_MODE_FLOAT)
@@ -188,11 +197,11 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 	tgui_panel?.window?.send_message("chat/layout", list("mode" = chat_layout_mode, "share" = chat_layout_share))
 
 /// The chat page pins or floats the chat (its buttons, or a drag that ended near the right edge).
-/client/proc/chat_pin(mode)
+/client/proc/chat_pin(mode, via = "button")
 	if(mode != CHAT_MODE_TOP && mode != CHAT_MODE_BOTTOM && mode != CHAT_MODE_FLOAT)
 		log_tgui(src, "Chat pin refused: unknown mode [mode].", context = "chat_float")
 		return
-	log_tgui(src, "Chat pin asked: [mode].", context = "chat_float")
+	log_tgui(src, "Chat pin asked: [mode] (via [via], from [chat_layout_mode]).", context = "chat_float")
 	if(mode == CHAT_MODE_FLOAT)
 		prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, TRUE)
 		return
@@ -211,30 +220,50 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 	chat_layout_share = share // the splitter is there already; the preference write must not move it again
 	prefs?.update_preference_by_type(/datum/preference/numeric/chat_share, share)
 
-/// dx_winget() callback: asks for the screen size once the float window's place is known.
+/// A float window rect held inside an area (both x, y, w, h): the size is cut to the area first (never under the minimum
+/// unless the area is smaller), then the place. Returns list(x, y, w, h).
+/proc/chat_float_fit(x, y, w, h, area_x, area_y, area_w, area_h)
+	w = min(max(w, min(CHAT_FLOAT_MIN_W, area_w)), area_w)
+	h = min(max(h, min(CHAT_FLOAT_MIN_H, area_h)), area_h)
+	x = min(max(x, area_x), area_x + area_w - w)
+	y = min(max(y, area_y), area_y + area_h - h)
+	return list(x, y, w, h)
+
+/// Reads "WxH" or "X,Y" text into two numbers, or null.
+/proc/chat_float_pair(text, separator)
+	var/list/parts = splittext("[text]", separator)
+	if(length(parts) != 2)
+		return null
+	var/first = text2num(parts[1])
+	var/second = text2num(parts[2])
+	if(isnull(first) || isnull(second))
+		return null
+	return list(first, second)
+
+/// dx_winget() callback: asks for the main window's place once the float window's place is known.
 /client/proc/chat_float_measured(window_params)
 	var/list/placed = params2list(window_params)
-	dx_winget(src, src, SKIN_MAINWINDOW, "screen-size", PROC_REF(chat_float_clamp), placed["pos"], placed["size"])
+	dx_winget(src, src, SKIN_MAINWINDOW, "pos;outer-size;size", PROC_REF(chat_float_clamp), placed["pos"], placed["size"])
 
-/// dx_winget() callback: puts the float window back when too little of it is on the screen.
-/client/proc/chat_float_clamp(screen_size, pos, size)
-	var/list/screen = splittext("[screen_size]", "x")
-	var/list/at = splittext("[pos]", ",")
-	var/list/extent = splittext("[size]", "x")
-	if(length(screen) != 2 || length(at) != 2 || length(extent) != 2)
-		log_tgui(src, "Chat float clamp skipped: screen=[screen_size] pos=[pos] size=[size].", context = "chat_float")
+/// dx_winget() callback: puts the float window back inside the main window when any of it is outside.
+/client/proc/chat_float_clamp(main_params, pos, size)
+	var/list/main = params2list(main_params)
+	var/list/area_at = chat_float_pair(main["pos"], ",")
+	var/list/area_size = chat_float_pair(main["outer-size"], "x") || chat_float_pair(main["size"], "x")
+	var/list/at = chat_float_pair(pos, ",")
+	var/list/extent = chat_float_pair(size, "x")
+	if(!area_at || !area_size || !at || !extent || area_size[1] <= 0 || area_size[2] <= 0)
+		log_tgui(src, "Chat float clamp skipped: main=[main_params] pos=[pos] size=[size].", context = "chat_float")
 		return
-	var/screen_w = text2num(screen[1])
-	var/screen_h = text2num(screen[2])
-	var/x = text2num(at[1])
-	var/y = text2num(at[2])
-	var/w = text2num(extent[1])
-	var/h = text2num(extent[2])
-	if(isnull(screen_w) || isnull(screen_h) || isnull(x) || isnull(y) || isnull(w) || isnull(h))
+	var/list/fitted = chat_float_fit(at[1], at[2], extent[1], extent[2], area_at[1], area_at[2], area_size[1], area_size[2])
+	if(fitted[1] == at[1] && fitted[2] == at[2] && fitted[3] == extent[1] && fitted[4] == extent[2])
+		log_tgui(src, "Chat float inside the main window (pos [pos], size [size], main [main_params]).", context = "chat_float")
 		return
-	if(x > screen_w - CHAT_FLOAT_MIN_VISIBLE || y > screen_h - CHAT_FLOAT_MIN_VISIBLE || y < -CHAT_FLOAT_MIN_VISIBLE || w <= 0 || h <= 0)
-		log_tgui(src, "Chat float window off screen (pos [pos], size [size], screen [screen_size]); reset.", context = "chat_float")
-		chat_float_reset()
+	log_tgui(src, "Chat float outside the main window (pos [pos], size [size], main [main_params]); moved to [fitted[1]],[fitted[2]] [fitted[3]]x[fitted[4]].", context = "chat_float")
+	winset(src, SKIN_CHAT_FLOAT_WINDOW, list2params(list(
+		"pos" = "[fitted[1]],[fitted[2]]",
+		"size" = "[fitted[3]]x[fitted[4]]",
+	)))
 
 /// Puts the float window at its default place and size.
 /client/proc/chat_float_reset()
@@ -244,6 +273,7 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 		"is-maximized" = "false",
 		"is-minimized" = "false",
 	)))
+	dx_winget(src, src, SKIN_CHAT_FLOAT_WINDOW, "pos;size", PROC_REF(chat_float_measured))
 
 /client/verb/toggle_floating_chat()
 	set name = "toggle-floating-chat"
