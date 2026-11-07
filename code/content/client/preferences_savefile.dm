@@ -367,7 +367,65 @@ GLOBAL_LIST_INIT(retired_character_pref_keys, list(
 	"synth_markings", // markings always draw on robotic limbs
 	"Private_Notes", // private notes are gone
 	"vantag_volunteer", // no reader; vantag_preference is the setting
-	"equip_preview_mob", // replaced by preview_loadout and preview_job (migrated below)
+	"equip_preview_mob", // the preview always wears the loadout and job outfit
+	// The second audit: the default serves almost everyone, or the field duplicated another.
+	"Pai_Ad",
+	"Pai_Comments",
+	"Pai_Desc",
+	"Pai_Role",
+	"animations_toggle",
+	"antag_faction",
+	"antag_vis",
+	"auto_backup_implant",
+	"autohiss",
+	"bday_announce",
+	"birthplace",
+	"blood_reagents",
+	"borg_petting",
+	"citizenship",
+	"communicator_visibility",
+	"custom_ask",
+	"custom_exclaim",
+	"custom_footstep",
+	"custom_link",
+	"custom_say",
+	"custom_speech_bubble",
+	"custom_whisper",
+	"directory_gendertag",
+	"directory_sexualitytag",
+	"ears_alpha",
+	"economic_status",
+	"exploit_record",
+	"flicker_break_chance",
+	"flicker_color",
+	"flicker_distance",
+	"flicker_time",
+	"fuzzy",
+	"gen_record",
+	"grad_color",
+	"grad_style_name",
+	"home_system",
+	"ignore_shoes",
+	"med_record",
+	"name_is_always_random",
+	"nickname",
+	"offset_override",
+	"preview_job",
+	"preview_loadout",
+	"religion",
+	"resleeve_lock",
+	"sec_record",
+	"secondary_ears_alpha",
+	"sensorpref",
+	"species_sound",
+	"tail_alpha",
+	"ttone",
+	"uplinklocation",
+	"vantag_preference",
+	"vore_egg_type",
+	"weight_gain",
+	"weight_loss",
+	"wing_alpha",
 ))
 
 /// A per-sound toggle that was switched off mutes the volume channel that replaced it.
@@ -408,12 +466,8 @@ GLOBAL_LIST_INIT(retired_sound_toggle_channels, list(
 		volumes[channel] = 0
 	save_data -= GLOB.retired_player_pref_keys
 
-/// Carries a retired character key over to the setting that replaced it, then drops every retired key from the slot.
+/// Drops every retired key from the slot.
 /datum/preferences/proc/migrate_retired_character_keys(list/save_data)
 	if(!islist(save_data))
 		return
-	if(!isnull(save_data["equip_preview_mob"]) && isnull(save_data["preview_loadout"]))
-		var/bits = text2num("[save_data["equip_preview_mob"]]")
-		save_data["preview_loadout"] = (bits & EQUIP_PREVIEW_LOADOUT) ? TRUE : FALSE
-		save_data["preview_job"] = (bits & EQUIP_PREVIEW_JOB) ? TRUE : FALSE
 	save_data -= GLOB.retired_character_pref_keys

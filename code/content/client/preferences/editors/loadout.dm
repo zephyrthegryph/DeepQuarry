@@ -329,14 +329,10 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	// case anything else still references the proc with two args (slated to drop).
 	var/list/job_defaults = job_default_labels(preview_job, null)
 
-	// Pull dynamic data from the (hidden) starting-kit and underwear editors so the
+	// Pull dynamic data from the (hidden) underwear editor so the
 	// loadout panel can show all of it in one place. The editors themselves don't render on
 	// their own; their action dispatch still works because they're registered.
-	var/list/sk_data = list()
 	var/list/uw_data = list()
-	var/datum/preference_editor/sk = GLOB.preference_editors_by_key["starting_kit"]
-	if(sk)
-		sk_data = sk.build_ui_data(preferences)
 	var/datum/preference_editor/uw = GLOB.preference_editors_by_key["underwear"]
 	if(uw)
 		uw_data = uw.build_ui_data(preferences)
@@ -373,7 +369,6 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		"max_gear_cost" = MAX_GEAR_COST,
 		"job_defaults" = job_defaults,
 		"preview_job" = preview_job ? preview_job.title : null,
-		"starting_kit" = sk_data,
 		"underwear" = uw_data,
 	)
 
@@ -456,11 +451,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	// embed starting-kit and underwear static payloads so the loadout React side
 	// can render those controls inline. The standalone editors are marked hidden=TRUE so
 	// they don't render their own panels.
-	var/list/sk_static = list()
 	var/list/uw_static = list()
-	var/datum/preference_editor/sk = GLOB.preference_editors_by_key["starting_kit"]
-	if(sk)
-		sk_static = sk.build_ui_static_data(preferences)
 	var/datum/preference_editor/uw = GLOB.preference_editors_by_key["underwear"]
 	if(uw)
 		uw_static = uw.build_ui_static_data(preferences)
@@ -468,7 +459,6 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	return list(
 		"categories" = categories,
 		"body_slots" = TYPE_TABLE_GET(src, body_slot_table),
-		"starting_kit" = sk_static,
 		"underwear" = uw_static,
 	)
 

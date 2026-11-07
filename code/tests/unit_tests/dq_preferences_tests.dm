@@ -556,7 +556,6 @@
 /datum/unit_test/dq_pref_blood_settings_live_in_identity/Run()
 	var/list/expected = list(
 		/datum/preference/text/human/b_type = "b_type",
-		/datum/preference/text/human/blood_reagents = "blood_reagents",
 		/datum/preference/color/human/blood_color = "blood_color",
 	)
 	for(var/pref_type in expected)

@@ -10,7 +10,7 @@
 	return null
 
 /mob/living/carbon/human/say_hiss_rules()
-	var/list/picked = client?.prefs ? GLOB.autohiss_choices[client.prefs.read_preference(/datum/preference/text/human/autohiss)] : null
+	var/list/picked = client?.prefs ? GLOB.autohiss_choices[(AUTOHISS_DEFAULT_CHOICE)] : null
 	if(!picked || picked["mode"] == AUTOHISS_OFF)
 		return null
 	var/own = picked["species"]

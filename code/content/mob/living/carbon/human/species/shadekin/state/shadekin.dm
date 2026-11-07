@@ -248,7 +248,6 @@
 	if(!isnum(new_time))
 		return FALSE
 	set_flicker_time(new_time)
-	user.write_preference_directly(/datum/preference/numeric/living/flicker_time, new_time, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
 /datum/shadekin/proc/flicker_color_default(datum/act/op/A)
@@ -259,7 +258,6 @@
 	var/picked = A.step_value("color")
 	if(picked)
 		set_flicker_color(picked)
-		user.write_preference_directly(/datum/preference/color/living/flicker_color, picked, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
 /datum/shadekin/proc/ui_act_adjust_break(datum/act/op/A, val)
@@ -269,7 +267,6 @@
 	if(!isnum(new_break_chance))
 		return FALSE
 	set_flicker_break_chance(new_break_chance)
-	user.write_preference_directly(/datum/preference/numeric/living/flicker_break_chance, new_break_chance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
 /datum/shadekin/proc/ui_act_adjust_distance(datum/act/op/A, val)
@@ -279,7 +276,6 @@
 	if(!isnum(new_distance))
 		return FALSE
 	set_flicker_distance(new_distance)
-	user.write_preference_directly(/datum/preference/numeric/living/flicker_distance, new_distance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
 /datum/shadekin/proc/ui_act_toggle_retreat(datum/act/op/A)

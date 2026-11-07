@@ -8,7 +8,7 @@
 /mob/living/carbon/human/handle_autohiss(message, datum/language/L)
 	if(!client?.prefs)
 		return message
-	return autohiss_by_choice(message, L, client.prefs.read_preference(/datum/preference/text/human/autohiss))
+	return autohiss_by_choice(message, L, (AUTOHISS_DEFAULT_CHOICE))
 
 /// `message` as this body says it under an autohiss choice: Off changes nothing, Default is whatever the species (with its traits) does, a named type applies on any species.
 /mob/living/carbon/human/proc/autohiss_by_choice(message, datum/language/L, choice)

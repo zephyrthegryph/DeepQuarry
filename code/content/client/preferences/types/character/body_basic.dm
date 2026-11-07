@@ -19,23 +19,6 @@
 		target.dna.b_type = text_or_null(value)
 
 
-/datum/preference/text/human/blood_reagents
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "blood_reagents"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	maximum_value_length = MAX_NAME_LEN
-	var/static/list/blood_reagent_choices = list("default", "blood", "ammonia", "vinegar", "milk", "water", "wine")
-
-/datum/preference/text/human/blood_reagents/create_default_value()
-	return "default"
-
-/datum/preference/text/human/blood_reagents/get_pref_choices(datum/preferences/preferences)
-	return blood_reagent_choices
-
-/datum/preference/text/human/blood_reagents/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
 
 /datum/preference/text/human/h_style
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
@@ -76,46 +59,6 @@
 /datum/preference/text/human/f_style/apply_to_human(mob/living/carbon/human/target, value)
 	target.looks.set_facial_style(value)
 
-
-/datum/preference/text/human/grad_style
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "grad_style_name"  // disk-key match
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	maximum_value_length = MAX_NAME_LEN
-
-/datum/preference/text/human/grad_style/create_default_value()
-	return "none"
-
-/datum/preference/text/human/grad_style/get_pref_choices(datum/preferences/preferences)
-	// GLOB.hair_gradients is display-name -> internal-id; the saved pref is the internal id,
-	// so flatten the values for the dropdown.
-	if(!GLOB.hair_gradients)
-		return null
-	var/list/out = list()
-	for(var/key in GLOB.hair_gradients)
-		out += "[GLOB.hair_gradients[key]]"
-	return out
-
-/// Each gradient on a sample head of hair; the window composes the two sprites.
-/datum/preference/text/human/grad_style/get_pref_thumbnails(datum/preferences/preferences)
-	var/datum/sprite_accessory/hair/sample = GLOB.hair_styles_list["Very Long Hair"] || GLOB.hair_styles_list["Long Hair"]
-	if(!sample || !GLOB.hair_gradients)
-		return null
-	var/list/out = list()
-	var/gradient_icon = "[REF('icons/mob/hair_gradients.dmi')]"
-	for(var/name in GLOB.hair_gradients)
-		var/state = GLOB.hair_gradients[name]
-		out[state] = list(
-			"icon" = gradient_icon,
-			"icon_state" = state,
-			"hair_icon" = "[REF(sample.icon)]",
-			"hair_state" = "[sample.icon_state]_s",
-		)
-	return out
-
-/datum/preference/text/human/grad_style/apply_to_human(mob/living/carbon/human/target, value)
-	target.looks.set_grad_style(value)
 
 
 /datum/preference/toggle/human/digitigrade

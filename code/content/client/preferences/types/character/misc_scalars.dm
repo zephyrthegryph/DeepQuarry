@@ -41,17 +41,3 @@
 /datum/preference/toggle/human/gross_meatbag/apply_to_human(mob/living/carbon/human/target, value)
 	return
 
-
-/datum/preference/text/human/custom_link
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "custom_link"
-	savefile_identifier = PREFERENCE_CHARACTER
-	applies_live = TRUE
-	can_randomize = FALSE
-	maximum_value_length = 100
-
-/datum/preference/text/human/custom_link/create_default_value()
-	return null
-
-/datum/preference/text/human/custom_link/apply_to_human(mob/living/carbon/human/target, value)
-	STATE_SET(target, living_misc, custom_link, text_or_null(value))

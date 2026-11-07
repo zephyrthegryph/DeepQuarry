@@ -30,8 +30,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// background toggle). play_mode is hidden — it's driven by the
 	// SpeciesPicker editor (Robot / pAI entries set it).
 	tag_pref(., /datum/preference/name/real_name, "identity", "name")
-	tag_pref(., /datum/preference/name/nickname, "identity", "name")
-	tag_pref(., /datum/preference/toggle/human/name_is_always_random, "identity", "name", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/text/human/play_mode, "identity", "species", PREF_WIDGET_HIDDEN)
 	// Gender
 	// Gender. identifying gender is merged into biological — see
@@ -44,7 +42,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// Age is a NumberInput (not a slider) — easier to type a specific number,
 	// matches how weight is rendered.
 	tag_pref(., /datum/preference/numeric/human/age, "identity", "demographics", PREF_WIDGET_NUMBER)
-	tag_pref(., /datum/preference/toggle/human/bday_announce, "identity", "demographics", PREF_WIDGET_HIDDEN) // on the Birthday editor's row
 	// Species — owned by the species_picker editor; underlying prefs hidden
 	// from the auto-renderer so the popup is the only entry point.
 	tag_pref(., /datum/preference/choiced/species, "identity", "species", PREF_WIDGET_HIDDEN)
@@ -53,16 +50,7 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// Spawn point
 	tag_pref(., /datum/preference/choiced/living/spawnpoint, "identity", "spawn")
 	// Background (formerly its own tab)
-	tag_pref(., /datum/preference/text/human/birthplace, "identity", "background")
-	tag_pref(., /datum/preference/text/human/citizenship, "identity", "background")
-	tag_pref(., /datum/preference/text/human/home_system, "identity", "background")
-	tag_pref(., /datum/preference/text/human/religion, "identity", "background")
-	tag_pref(., /datum/preference/choiced/human/economic_status, "identity", "background")
 	// Speech verbs
-	tag_pref(., /datum/preference/text/human/custom_say, "identity", "speech_verbs")
-	tag_pref(., /datum/preference/text/human/custom_whisper, "identity", "speech_verbs")
-	tag_pref(., /datum/preference/text/human/custom_ask, "identity", "speech_verbs")
-	tag_pref(., /datum/preference/text/human/custom_exclaim, "identity", "speech_verbs")
 	// Language (formerly its own tab). extra_languages is a derived stat
 	// (computed from traits, NIF, etc.) — not a player-editable preference.
 	tag_pref(., /datum/preference/numeric/human/extra_languages, "identity", "language", PREF_WIDGET_HIDDEN)
@@ -70,13 +58,9 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/alternate_languages, "identity", "language", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/language_custom_keys, "identity", "language", PREF_WIDGET_HIDDEN)
 	// Flavor / custom link
-	tag_pref(., /datum/preference/text/human/custom_link, "identity", "flavor")
 	tag_pref(., /datum/preference/flavor_texts, "identity", "flavor", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/flavour_texts_robot, "identity", "flavor", PREF_WIDGET_HIDDEN)
 	// Records (collapsible — long-form text)
-	tag_pref(., /datum/preference/text/human/med_record, "identity", "records", PREF_WIDGET_LONGTEXT)
-	tag_pref(., /datum/preference/text/human/sec_record, "identity", "records", PREF_WIDGET_LONGTEXT)
-	tag_pref(., /datum/preference/text/human/gen_record, "identity", "records", PREF_WIDGET_LONGTEXT)
 	// OOC notes family (collapsible — multi-textarea wall)
 	tag_pref(., /datum/preference/text/living/ooc_notes, "identity", "ooc_notes", PREF_WIDGET_LONGTEXT)
 	tag_pref(., /datum/preference/text/living/ooc_notes_likes, "identity", "ooc_notes", PREF_WIDGET_LONGTEXT)
@@ -96,62 +80,43 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/text/human/robot_chassis, "appearance", "chassis", PREF_WIDGET_HIDDEN)
 	// Blood (moved to Identity; the savefile keys are unchanged, so saved values carry over)
 	tag_pref(., /datum/preference/text/human/b_type, "identity", "blood")
-	tag_pref(., /datum/preference/text/human/blood_reagents, "identity", "blood")
 	tag_pref(., /datum/preference/color/human/blood_color, "identity", "blood")
 	// Hair
 	tag_pref(., /datum/preference/text/human/h_style, "appearance", "hair")
 	tag_pref(., /datum/preference/text/human/f_style, "appearance", "hair")
-	tag_pref(., /datum/preference/text/human/grad_style, "appearance", "hair")
 	tag_pref(., /datum/preference/color/human/hair_color, "appearance", "hair")
 	tag_pref(., /datum/preference/color/human/facial_color, "appearance", "hair")
-	tag_pref(., /datum/preference/color/human/grad_color, "appearance", "hair")
 	// Ears
 	tag_pref(., /datum/preference/text/human/ear_style, "appearance", "ears")
 	tag_pref(., /datum/preference/text/human/ear_secondary_style, "appearance", "ears")
 	tag_pref(., /datum/preference/color/human/ears_color1, "appearance", "ears")
 	tag_pref(., /datum/preference/color/human/ears_color2, "appearance", "ears")
 	tag_pref(., /datum/preference/color/human/ears_color3, "appearance", "ears")
-	tag_pref(., /datum/preference/numeric/human/ears_alpha, "appearance", "ears")
-	tag_pref(., /datum/preference/numeric/human/ears_alpha/secondary, "appearance", "ears")
 	tag_pref(., /datum/preference/ear_secondary_colors, "appearance", "ears", PREF_WIDGET_HIDDEN)
 	// Tail
 	tag_pref(., /datum/preference/text/human/tail_style, "appearance", "tail")
 	tag_pref(., /datum/preference/color/human/tail_color1, "appearance", "tail")
 	tag_pref(., /datum/preference/color/human/tail_color2, "appearance", "tail")
 	tag_pref(., /datum/preference/color/human/tail_color3, "appearance", "tail")
-	tag_pref(., /datum/preference/numeric/human/tail_alpha, "appearance", "tail")
 	// Wings
 	tag_pref(., /datum/preference/text/human/wing_style, "appearance", "wings")
 	tag_pref(., /datum/preference/color/human/wing_color1, "appearance", "wings")
 	tag_pref(., /datum/preference/color/human/wing_color2, "appearance", "wings")
 	tag_pref(., /datum/preference/color/human/wing_color3, "appearance", "wings")
-	tag_pref(., /datum/preference/numeric/human/wing_alpha, "appearance", "wings")
 	// Markings (handled by editor)
 	tag_pref(., /datum/preference/body_markings, "appearance", "markings", PREF_WIDGET_HIDDEN)
 	// Preview controls
-	tag_pref(., /datum/preference/toggle/human/preview_loadout, "appearance", "preview")
-	tag_pref(., /datum/preference/toggle/human/preview_job, "appearance", "preview")
-	tag_pref(., /datum/preference/toggle/human/animations_toggle, "appearance", "preview")
 
 	//// SIZE & VOICE ////
 	tag_pref(., /datum/preference/numeric/human/size_multiplier, "identity", "size")
 	tag_pref(., /datum/preference/numeric/human/weight_vr, "identity", "size")
-	tag_pref(., /datum/preference/numeric/human/weight_gain, "identity", "size")
-	tag_pref(., /datum/preference/numeric/human/weight_loss, "identity", "size")
-	tag_pref(., /datum/preference/toggle/human/fuzzy, "identity", "size")
-	tag_pref(., /datum/preference/toggle/human/offset_override, "identity", "size")
 	tag_pref(., /datum/preference/numeric/human/voice_freq, "identity", "voice")
 	tag_pref(., /datum/preference/text/human/voice_sound, "identity", "voice")
-	tag_pref(., /datum/preference/text/human/custom_speech_bubble, "identity", "voice")
-	tag_pref(., /datum/preference/text/human/custom_footstep, "identity", "voice")
-	tag_pref(., /datum/preference/text/human/species_sound, "identity", "voice")
 
 	//// LOADOUT ////
 	// headset/backbag/pdachoice prefs deleted; their variants are loadout gear
 	// datums now. Remaining starting-kit prefs (no_jacket toggle, ringtone, comm visibility)
 	// stay hidden and surface via the starting_kit editor or the loadout panel.
-	tag_pref(., /datum/preference/text/human/ringtone, "loadout", "starting_kit", PREF_WIDGET_HIDDEN)
-	tag_pref(., /datum/preference/toggle/human/communicator_visibility, "loadout", "starting_kit", PREF_WIDGET_HIDDEN)
 	// Composite (editors)
 	tag_pref(., /datum/preference/all_underwear, "loadout", "underwear", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/all_underwear_metadata, "loadout", null, PREF_WIDGET_HIDDEN)
@@ -179,29 +144,16 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 
 	//// ANTAG ////
 	tag_pref(., /datum/preference/numeric/human/be_special, "antag", null, PREF_WIDGET_HIDDEN)
-	tag_pref(., /datum/preference/text/human/antag_faction, "antag")
-	tag_pref(., /datum/preference/choiced/human/antag_vis, "antag")
-	tag_pref(., /datum/preference/text/human/exploit_record, "antag", null, PREF_WIDGET_LONGTEXT)
-	tag_pref(., /datum/preference/choiced/human/vantag_preference, "antag")
-	tag_pref(., /datum/preference/choiced/uplinklocation, "antag")
 
 	// VORE TAB REMOVED — prefs moved into Game / Identity. Backup/resleeve
 	// prefs go to Game/Persistence (they're save-state). Vore directory
 	// (player-facing ad copy) goes to Identity/Directory. Thermal messages
 	// and personal kink prefs go to Game/Roleplay.
-	tag_pref(., /datum/preference/text/human/vore_egg_type, "game", "roleplay")
-	tag_pref(., /datum/preference/text/human/autohiss, "identity", "speech_verbs")
-	tag_pref(., /datum/preference/numeric/human/sensorpref, "game", "input")
-	tag_pref(., /datum/preference/toggle/human/ignore_shoes, "game", "roleplay")
 	// Backup / persistence
 	tag_pref(., /datum/preference/toggle/human/capture_crystal, "game", "persistence")
-	tag_pref(., /datum/preference/toggle/human/auto_backup_implant, "game", "persistence")
-	tag_pref(., /datum/preference/toggle/human/borg_petting, "game", "roleplay")
 	// Directory subgroup (player ad copy / OOC tags) — lives under Identity.
 	tag_pref(., /datum/preference/toggle/human/show_in_directory, "identity", "directory")
 	tag_pref(., /datum/preference/choiced/human/directory_tag, "identity", "directory")
-	tag_pref(., /datum/preference/choiced/human/directory_gendertag, "identity", "directory")
-	tag_pref(., /datum/preference/choiced/human/directory_sexualitytag, "identity", "directory")
 	tag_pref(., /datum/preference/choiced/human/directory_erptag, "identity", "directory")
 	tag_pref(., /datum/preference/text/human/directory_ad, "identity", "directory")
 	// Thermal composite (editor) — under Game/Roleplay.
@@ -211,15 +163,10 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	//// GAME (formerly: persistence + nif + pai + misc) ////
 	// Persistence
 	tag_pref(., /datum/preference/numeric/human/persistence_settings, "game", "persistence", PREF_WIDGET_HIDDEN)
-	tag_pref(., /datum/preference/toggle/human/resleeve_lock, "game", "persistence")
 	tag_pref(., /datum/preference/toggle/human/resleeve_scan, "game", "persistence")
 	tag_pref(., /datum/preference/toggle/human/mind_scan, "game", "persistence")
 	// PAI char config
 	tag_pref(., /datum/preference/text/pai_name, "game", "pai")
-	tag_pref(., /datum/preference/text/pai_description, "game", "pai", PREF_WIDGET_LONGTEXT)
-	tag_pref(., /datum/preference/text/pai_role, "game", "pai")
-	tag_pref(., /datum/preference/text/pai_ad, "game", "pai", PREF_WIDGET_LONGTEXT)
-	tag_pref(., /datum/preference/text/pai_comments, "game", "pai", PREF_WIDGET_LONGTEXT)
 	tag_pref(., /datum/preference/color/pai_eye_color, "game", "pai")
 	tag_pref(., /datum/preference/text/pai_chassis, "game", "pai")
 	tag_pref(., /datum/preference/text/pai_emotion, "game", "pai")

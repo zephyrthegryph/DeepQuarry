@@ -574,7 +574,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/list/dudes = list()
 	for(var/mob/living/carbon/human/man in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(man.client)
-			var/econ_status = man.client.prefs.read_preference(/datum/preference/choiced/human/economic_status)
+			var/econ_status = ("Average")
 			if((econ_status == CLASS_LOWER) || (econ_status == CLASS_BROKE))
 				dudes += man
 			else if(econ_status == CLASS_LOWMID && prob(50))

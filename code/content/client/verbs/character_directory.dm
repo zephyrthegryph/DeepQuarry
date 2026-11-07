@@ -49,9 +49,9 @@ CAPABILITIES(/datum/character_directory)
 		data["personalVisibility"] = user.client.prefs.read_preference(/datum/preference/toggle/human/show_in_directory)
 		data["personalTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_tag) || "Unset"
 		data["personalErpTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_erptag) || "Unset"
-		data["personalEventTag"] = GLOB.vantag_choices_list[user.client.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
-		data["personalGenderTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_gendertag) || "Unset"
-		data["personalSexualityTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_sexualitytag) || "Unset"
+		data["personalEventTag"] = GLOB.vantag_choices_list[user.mind?.vantag_preference || VANTAG_NONE] // this round only
+		data["personalGenderTag"] = user.mind?.directory_gendertag || "Unset"
+		data["personalSexualityTag"] = user.mind?.directory_sexualitytag || "Unset"
 
 	return data
 
@@ -111,9 +111,9 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 			tag = C.prefs.read_preference(/datum/preference/choiced/human/directory_tag) || "Unset"
 			erptag = C.prefs.read_preference(/datum/preference/choiced/human/directory_erptag) || "Unset"
 			character_ad = C.prefs.read_preference(/datum/preference/text/human/directory_ad)
-			gendertag = C.prefs.read_preference(/datum/preference/choiced/human/directory_gendertag) || "Unset"
-			sexualitytag = C.prefs.read_preference(/datum/preference/choiced/human/directory_sexualitytag) || "Unset"
-			eventtag = GLOB.vantag_choices_list[C.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
+			gendertag = "Unset"
+			sexualitytag = "Unset"
+			eventtag = GLOB.vantag_choices_list[VANTAG_NONE]
 
 		if(ishuman(C.mob))
 			var/mob/living/carbon/human/H = C.mob
@@ -362,7 +362,7 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 			for(var/C in GLOB.vantag_choices_list)
 				names_list[GLOB.vantag_choices_list[C]] = C
 			if(isnull(selected_value))
-				open_directory_choice(user, action, overwrite_prefs, "Pick your preference for event involvement", "Event Preference Tag", names_list, user?.client?.prefs?.read_preference(/datum/preference/choiced/human/vantag_preference))
+				open_directory_choice(user, action, overwrite_prefs, "Pick your preference for event involvement", "Event Preference Tag", names_list, user.mind?.vantag_preference || VANTAG_NONE)
 				return
 			var/_answer_k329 = selected_value
 			if(isnull(_answer_k329))
@@ -407,20 +407,17 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 				user.mind.directory_ad = text_or_null(STRIP_HTML_SIMPLE(new_value, MAX_MESSAGE_LEN))
 			return TRUE
 		if ("setEventTag")
-			if (can_set_prefs)
-				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/vantag_preference, new_value)
 			if (can_set_mind)
 				user.mind.vantag_preference = text_or_null(new_value)
+			return TRUE
 		if ("setGenderTag")
-			if (can_set_prefs)
-				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_gendertag, new_value)
 			if (can_set_mind)
 				user.mind.directory_gendertag = text_or_null(new_value)
+			return TRUE
 		if ("setSexualityTag")
-			if (can_set_prefs)
-				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_sexualitytag, new_value)
 			if (can_set_mind)
 				user.mind.directory_sexualitytag = text_or_null(new_value)
+			return TRUE
 
 /datum/character_directory/proc/open_directory_choice(mob/user, action, overwrite_prefs, question, title, list/choices, default_value)
 	open_request(src, /datum/prompt/choice/directory_setting, PROC_REF(directory_choice_entered), answerer = user, directory_action = action, overwrite_prefs = overwrite_prefs, question = question, title = title, choices = choices, default = default_value)

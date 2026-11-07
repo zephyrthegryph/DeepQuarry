@@ -213,18 +213,8 @@ CAPABILITIES(/datum/record_update_review)
 		return
 
 	// Update records in the consoles, remember this can happen a while after a record is closed on the console... Use cached data.
-	switch(console_path)
-		if(/obj/machinery/computer/med_data)
-			prefs.write_preference_by_type(/datum/preference/text/human/med_record, new_data)
-		if(/obj/machinery/computer/skills)
-			prefs.write_preference_by_type(/datum/preference/text/human/gen_record, new_data)
-		if(/obj/machinery/computer/secure_data)
-			prefs.write_preference_by_type(/datum/preference/text/human/sec_record, new_data)
 	record.fields["notes"] = new_data
 
-	// Update player record
-	prefs.save_preferences()
-	prefs.save_character()
 	to_chat(M,span_notice("Your [record_string] record for [record.fields["name"]] has been updated."))
 	message_admins("[record.fields["name"]] accepted the [record_string] record update from [pusher].")
 	console_says("dings", SFX_MACHINES_DING)
