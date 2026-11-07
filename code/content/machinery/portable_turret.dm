@@ -217,8 +217,14 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(power_off_delayed), key = "power_loss")
 
-/obj/machinery/porta_turret/area_gives_power(datum/act/A)
+/obj/machinery/porta_turret/area_gives_equip(datum/act/A)
 	return TRUE // the capacitors' reading (power_held) is the turret's own
+
+/obj/machinery/porta_turret/area_gives_light(datum/act/A)
+	return TRUE
+
+/obj/machinery/porta_turret/area_gives_environ(datum/act/A)
+	return TRUE
 
 /obj/machinery/porta_turret/proc/power_off_delayed()
 	set_power_held(FALSE)

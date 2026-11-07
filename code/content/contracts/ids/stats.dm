@@ -4,7 +4,7 @@
 
 STAT(/obj/machinery, operable, ALL, virtual = TRUE)
 STAT(/obj/machinery, power_draw, SUM, virtual = TRUE)
-/// The machine has power for its controls: false while any source holds it down (its area channel is dark: area_gives_power(); SRC_GRID is the manual override set_powered() holds). The NOPOWER condition bit.
+/// The machine has power for its controls: false while any source holds it down (its area channel is dark: area_gives_equip() and its siblings; SRC_GRID is the manual override set_powered() holds). The NOPOWER condition bit.
 STAT(/obj/machinery, has_power, ALL, base = TRUE, virtual = TRUE)
 /// The machine is under maintenance (the MAINT bit): true while any source holds it so (SRC_MAINTENANCE: an open service hatch).
 STAT(/obj/machinery, in_maintenance, ANY, virtual = TRUE)

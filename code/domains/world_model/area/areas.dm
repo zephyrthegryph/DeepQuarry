@@ -275,6 +275,28 @@ ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
 
 	return 0
 
+/// Whether one channel is energized, each reading only its own var (a machine's has_power depends on its channel alone).
+/area/proc/equip_powered()
+	if(!requires_power)
+		return 1
+	if(always_unpowered)
+		return 0
+	return power_equip
+
+/area/proc/light_powered()
+	if(!requires_power)
+		return 1
+	if(always_unpowered)
+		return 0
+	return power_light
+
+/area/proc/environ_powered()
+	if(!requires_power)
+		return 1
+	if(always_unpowered)
+		return 0
+	return power_environ
+
 /// The machines standing in this area: the other end of their power_area relation. Each contributes its draw to the demand stats, and its
 /// has_power reads this area's channels.
 /area/var/list/power_machines
