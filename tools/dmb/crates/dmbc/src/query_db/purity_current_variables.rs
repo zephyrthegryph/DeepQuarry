@@ -21,8 +21,12 @@ fn product_key(code:&Arc<BodyCodeIdentity>,caller:dm_ir::ProcedureIdentity,profi
 fn lookup_key(parent:Key,query:ResolveQuery)->Key{let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(&parent.id.to_le_bytes());hash.update(&query_id(&query).to_le_bytes());Key::new(CURRENT_LOOKUP,hash.digest128())}
 fn code_from_lease(key:Key,lease:&NodeLease)->Option<Weak<BodyCodeIdentity>>{let params=lease.params.as_ref()?.upgrade()?;if key.kind==CURRENT_VARIABLES{Some(params.downcast_ref::<CurrentParams>()?.code.clone())}else if key.kind==CURRENT_LOOKUP{Some(params.downcast_ref::<LookupParams>()?.code.clone())}else{None}}
 pub(super) fn is_current_node(key:Key)->bool{key.kind==CURRENT_VARIABLES||key.kind==CURRENT_LOOKUP}
-pub(super) fn retains(key:Key,lease:&NodeLease,db:&Db)->bool{
+pub(super) fn retains(key:Key,lease:&NodeLease,db:&Db,current_driver:Option<Key>)->bool{
  let Some(params)=lease.params.as_ref().and_then(Weak::upgrade)else{return false};let(driver,caller,code)=if key.kind==CURRENT_VARIABLES{let Some(params)=params.downcast_ref::<CurrentParams>()else{return false};(params.driver,params.caller,&params.code)}else if key.kind==CURRENT_LOOKUP{let Some(params)=params.downcast_ref::<LookupParams>()else{return false};(params.driver,params.caller,&params.code)}else{return false};
+ // Before a new driver is authenticated, the previous request input may
+ // already be gone even though the canonical code and its answer are live.
+ // Only the newly selected profile can prove exact archive membership.
+ if current_driver != Some(driver) { return code.strong_count() > 0; }
  // Resource membership only. The actual private scoped entry selected this
  // existing driver; old escaped archives/CodeIDs cannot select themselves.
  let Some(driver)=db.input::<Driver>(driver)else{return false};let Some(input)=driver.input.upgrade()else{return false};let Some(ordinal)=input.archive().callables().ordinal_for_identity(caller)else{return false};input.archive().syntax_inputs().and_then(|rows|rows.get(ordinal)).and_then(|syntax|syntax.original_code_owner()).is_some_and(|actual|Weak::ptr_eq(code,&Arc::downgrade(actual)))
@@ -123,7 +127,7 @@ impl QueryDb{
   crate::daemon::control::checkpoint()?;scope.validate(self,input).map_err(io::Error::other)?;input.require_original_checker_source().map_err(io::Error::other)?;
   let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());scope.validate(self,input).map_err(io::Error::other)?;{let mut ledger=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());ledger.denied=false;ledger.aborted=None;}
   let driver=Key::new(CURRENT_MODEL,input.profile().get());let _driver=reserve_node(&self.purity.ledger,input,driver,None,std::mem::size_of::<Driver>())?;self.db.set_input(driver,Driver{input:Arc::downgrade(input)},input.key()as u128);
-  self.prune_purity_under_gate();
+  self.prune_purity_under_gate(Some(driver));
   let syntax=input.archive().syntax_inputs().and_then(|rows|rows.get(ordinal)).ok_or_else(||invalid("current variable actual body input absent"))?;let code=syntax.original_code_owner().ok_or_else(||unsupported("current variable actual code identity unissued"))?;let caller=input.archive().callables().identity(ordinal).ok_or_else(||invalid("current variable callable occurrence absent"))?;let key=product_key(code,caller,input.profile());
   let code=Arc::downgrade(code);let _reservation=reserve_node(&self.purity.ledger,input,key,Some(&code),std::mem::size_of::<CurrentParams>())?;let mut peak=pages::reserve_dependencies(&self.purity.ledger,key,0).map_err(io::Error::other)?;let params=Arc::new(CurrentParams{key,driver,input:Arc::downgrade(input),code,caller,syntax_charge:self.body_charge.clone(),old_edges:peak.old,dependencies:std::sync::atomic::AtomicUsize::new(0)});remember_params(&self.purity.ledger,input,key,&params);
   let result=self.db.get::<Result<Arc<NativeCurrentVariables>,String>>(key,params.clone()).map_err(|actual|pages::restore_graph_error(&self.purity.ledger,actual))?;peak.commit(params.dependencies.load(std::sync::atomic::Ordering::Acquire));let value=result.as_ref().as_ref().map_err(|message|io::Error::other(message.clone()))?;scope.validate(self,input).map_err(io::Error::other)?;

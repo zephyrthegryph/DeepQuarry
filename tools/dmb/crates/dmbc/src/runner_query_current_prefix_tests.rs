@@ -46,9 +46,9 @@ const INVALID_SETTING_SOURCE:&str="/proc/probe()\n    set SpacemanDMM_should_not
 
 
 const COMPLETE_CURRENT_PREFIX:&str="/proc/probe(x)\n    set SpacemanDMM_should_not_sleep = 0\n    set SpacemanDMM_should_not_sleep = 1\n    set SpacemanDMM_should_not_sleep = 1\n    set SpacemanDMM_made_up = 1\n    set SpacemanDMM_return_type = 1 + 2\n    set SpacemanDMM_return_type = missing\n    set SpacemanDMM_return_type = x.other\n    set SpacemanDMM_return_type = /datum/missing\n    return null\n";
-fn observe_complete_current_prefix(host:&crate::runner_host::BuildHost,root:&std::path::Path,ordinal:usize,case:&str)->Vec<(String,usize,usize,String,Vec<String>)>{current(host,|snapshot|{let archive=snapshot.body_archive.as_ref().unwrap();let mut rows=Vec::new();snapshot.visit_current_selected_diagnostics(ordinal,&root.join("deepquarry.dme"),None,&snapshot.tree,|row|{if let crate::query_db::CurrentSelectedDiagnostic::Prelude(row)=row{let point=archive.source_note_point(row.span.start).unwrap();assert_eq!(dm_preprocess::regions::canonical_path(&point.path),dm_preprocess::regions::canonical_path(&root.join("code/probe.dm")),"every delivered row must originate from the exact physical fixture, not a basename alias");rows.push((format!("{:?}",row.severity),point.line,point.byte_column,row.message.clone(),row.notes.iter().map(|note|note.legacy_text()).collect()));}Ok(())}).unwrap();println!("CURRENT_COMPLETE_PREFIX={rows:?}");use sha2::Digest;let source=std::fs::read(root.join("code/probe.dm")).unwrap();let source_sha256=format!("{:x}",sha2::Sha256::digest(&source));let observed=rows.iter().map(|row|serde_json::json!({"level":row.0.to_lowercase(),"line":row.1,"column":row.2,"message":row.3,"notes":row.4})).collect::<Vec<_>>();println!("CURRENT_COMPLETE_PREFIX_NATIVE {}",serde_json::json!({"case":case,"source_sha256":source_sha256,"rows":observed}));rows})}
+fn observe_complete_current_prefix(host:&crate::runner_host::BuildHost,root:&std::path::Path,ordinal:usize,case:&str)->Vec<(String,usize,usize,String,Vec<String>)>{current(host,|snapshot|{let archive=snapshot.body_archive.as_ref().unwrap();let mut rows=Vec::new();snapshot.visit_current_selected_diagnostics(ordinal,&root.join("code/probe.dm"),Some(&root.join("SpacemanDMM.toml")),&snapshot.tree,|row|{if let crate::query_db::CurrentSelectedDiagnostic::Prelude(row)=row{let point=archive.source_note_point(row.span.start).unwrap();assert_eq!(std::fs::canonicalize(point.path.as_path()).unwrap(),std::fs::canonicalize(root.join("code/probe.dm")).unwrap(),"every delivered row must originate from the exact physical fixture, not a basename alias");rows.push((format!("{:?}",row.severity),point.line,point.byte_column,row.message.clone(),row.notes.iter().map(|note|note.legacy_text()).collect()));}Ok(())}).unwrap();println!("CURRENT_COMPLETE_PREFIX={rows:?}");use sha2::Digest;let source=std::fs::read(root.join("code/probe.dm")).unwrap();let source_sha256=format!("{:x}",sha2::Sha256::digest(&source));let observed=rows.iter().map(|row|serde_json::json!({"level":row.0.to_lowercase(),"line":row.1,"column":row.2,"message":row.3,"notes":row.4})).collect::<Vec<_>>();println!("CURRENT_COMPLETE_PREFIX_NATIVE {}",serde_json::json!({"case":case,"source_sha256":source_sha256,"rows":observed}));rows})}
 #[test]fn current_complete_initial_prefix_preserves_all_ordered_judges_and_current_duplicate_notes(){
- let(mut host,request,root)=fixture(COMPLETE_CURRENT_PREFIX);let queries=host.query_db().clone();run(&mut host,&request);let first=observe_complete_current_prefix(&host,&root,0,"complete");assert_eq!(first.len(),7);assert_eq!(first.iter().map(|row|row.1).collect::<Vec<_>>(),[2,4,5,6,7,8,9]);assert_eq!(first.iter().map(|row|row.2).collect::<Vec<_>>(),[5,5,5,5,35,36,5]);assert_eq!(first.iter().map(|row|row.0.as_str()).collect::<Vec<_>>(),["Warning","Warning","Warning","Error","Error","Error","Error"]);assert_eq!(first[0].3,"/proc/probe sets SpacemanDMM_should_not_sleep false, but it cannot be disabled.");assert_eq!(first[1].3,"/proc/probe sets SpacemanDMM_should_not_sleep twice");assert_eq!(first[1].4,["3:5: first definition here"]);assert_eq!(first[2].3,"unknown linter setting \"SpacemanDMM_made_up\"");assert_eq!(first[3].3,"type expr: bad expression node");assert_eq!(first[4].3,"type expr: no such parameter \"missing\"");assert_eq!(first[5].3,"type expr: bad follow node Field(Dot, \"other\")");assert_eq!(first[6].3,"undefined type: /datum/missing");let syntax=queries.db().stats(dm_query::Kind(4)).computed;let semantic=queries.db().stats(dm_query::Kind(28)).computed;
+ let(mut host,mut request,root)=fixture(COMPLETE_CURRENT_PREFIX);std::fs::write(root.join("SpacemanDMM.toml"),b"").unwrap();request.policy_inputs.as_mut().unwrap().files.push(crate::policy_request::PolicyInputFile{path:root.join("code/probe.dm"),role:crate::policy_request::PolicyInputRole::DmSource,required:true});let queries=host.query_db().clone();run(&mut host,&request);let first=observe_complete_current_prefix(&host,&root,0,"complete");assert_eq!(first.len(),7);assert_eq!(first.iter().map(|row|row.1).collect::<Vec<_>>(),[2,4,5,6,7,8,9]);assert_eq!(first.iter().map(|row|row.2).collect::<Vec<_>>(),[5,5,5,5,35,36,5]);assert_eq!(first.iter().map(|row|row.0.as_str()).collect::<Vec<_>>(),["Warning","Warning","Warning","Error","Error","Error","Error"]);assert_eq!(first[0].3,"/proc/probe sets SpacemanDMM_should_not_sleep false, but it cannot be disabled.");assert_eq!(first[1].3,"/proc/probe sets SpacemanDMM_should_not_sleep twice");assert_eq!(first[1].4,["3:5: first definition here"]);assert_eq!(first[2].3,"unknown linter setting \"SpacemanDMM_made_up\"");assert_eq!(first[3].3,"type expr: bad expression node");assert_eq!(first[4].3,"type expr: no such parameter \"missing\"");assert_eq!(first[5].3,"type expr: bad follow node Field(Dot, \"other\")");assert_eq!(first[6].3,"undefined type: /datum/missing");let syntax=queries.db().stats(dm_query::Kind(4)).computed;let semantic=queries.db().stats(dm_query::Kind(28)).computed;
  std::fs::write(root.join("code/probe.dm"),format!("// α source-only shift\n{COMPLETE_CURRENT_PREFIX}")).unwrap();run(&mut host,&request);let shifted=observe_complete_current_prefix(&host,&root,0,"utf8_shift");assert_eq!(shifted.len(),7);assert_eq!(shifted[1].4,["4:5: first definition here"]);assert_eq!(shifted.iter().map(|row|row.1).collect::<Vec<_>>(),[3,5,6,7,8,9,10]);assert_eq!(queries.db().stats(dm_query::Kind(4)).computed,syntax);assert_eq!(queries.db().stats(dm_query::Kind(28)).computed,semantic,"complete prelude presentation never recompiles/evaluates on source-only rebinding");
  // The previously missing static type is an actual compile dependency, including
  // its rejected/empty binding. Adding it retracts the real old error.
@@ -56,6 +56,43 @@ fn observe_complete_current_prefix(host:&crate::runner_host::BuildHost,root:&std
 }
 #[test]fn current_complete_prefix_retains_definition_gate_and_final_header_without_settings(){
  let gate="/datum/definition_gate/proc/probe()\n    set SpacemanDMM_can_be_redefined = TRUE\n    return 0\n/datum/definition_gate/probe()\n    set SpacemanDMM_private_proc = 2\n    set SpacemanDMM_should_be_pure = FALSE\n    return 0\n";
- let(mut host,request,root)=fixture(gate);run(&mut host,&request);let rows=observe_complete_current_prefix(&host,&root,1,"definition_gate");assert_eq!(rows.len(),2);assert_eq!(rows[0].3,"Can't define procs SpacemanDMM_private_proc outside their initial definition");assert_eq!(rows[1].3,"Can't define procs SpacemanDMM_should_be_pure outside their initial definition");
+ let(mut host,request,root)=fixture(gate);std::fs::write(root.join("SpacemanDMM.toml"),b"").unwrap();run(&mut host,&request);let rows=observe_complete_current_prefix(&host,&root,1,"definition_gate");assert_eq!(rows.len(),2);assert_eq!(rows[0].3,"Can't define procs SpacemanDMM_private_proc outside their initial definition");assert_eq!(rows[1].3,"Can't define procs SpacemanDMM_should_be_pure outside their initial definition");
  std::fs::write(root.join("code/probe.dm"),"/proc/final/probe()\n    return 0\n").unwrap();run(&mut host,&request);let rows=observe_complete_current_prefix(&host,&root,0,"global_final");assert_eq!(rows.len(),1);assert_eq!(rows[0].1,1);assert_eq!(rows[0].3,"/proc/probe sets SpacemanDMM_should_not_override, which cannot be set on global procs");
+}
+
+#[test]
+fn current_original_switch_cursor_reissues_reader_eof_after_unchanged_body_moves(){
+ use dm_syntax::StatementKind;
+ const PROBE:&str="/proc/probe()\n    switch(rand(1,2))\n        if(1 || 2)\n            return 0\n";
+ let(mut host,request,root)=fixture(PROBE);
+ let queries=host.query_db().clone();
+ run(&mut host,&request);
+ let get=|host:&crate::runner_host::BuildHost|current(host,|snapshot|{
+  let archive=snapshot.body_archive.as_ref().unwrap();
+  let mut observed=None;
+  SettingExpressionQueries::with_declaration_admission(queries.as_ref(),&mut|a|archive.with_current_body_checked(0,a,|body|{
+   let syntax=body.syntax().canonical_statement_storage();
+   let StatementKind::Switch{cases,..}=&syntax.parsed().statements[0].kind else{panic!("actual original switch")};
+   let cursor=body.with_original_body_source(a,|source|source.original_switch_case_cursor(cases[0].original_site))??.unwrap();
+   observed=Some((cursor,std::sync::Arc::as_ptr(syntax) as usize));
+   Ok(())
+  })).unwrap();
+  observed.unwrap()
+ });
+ let original_cursor=|host:&crate::runner_host::BuildHost|current(host,|snapshot|{
+  let archive=snapshot.body_archive.as_ref().unwrap();
+  let body=archive.parse_checked(0).unwrap();
+  let StatementKind::Switch{cases,..}=&body.statement_body().parsed().statements[0].kind else{panic!("actual absolute switch")};
+  cases[0].original_site.cursor.unwrap()
+ });
+ let first=get(&host);
+ assert_eq!(first.0,original_cursor(&host),"current cursor equals genuine absolute parser issuance");
+ let before=queries.db().stats(dm_query::Kind(4)).computed;
+ std::fs::write(root.join("code/probe.dm"),format!("/datum/cursor_shift\n{PROBE}/proc/next()\n    return 1\n")).unwrap();
+ run(&mut host,&request);
+ let moved=get(&host);
+ assert_eq!(first.1,moved.1,"unchanged syntax must reuse the actual native product");
+ assert_eq!(queries.db().stats(dm_query::Kind(4)).computed,before);
+ assert_ne!(first.0,moved.0,"current authored cursor must move with the live source");
+ assert_eq!(moved.0,original_cursor(&host),"after source edit the same AST must use the fresh reader cursor");
 }

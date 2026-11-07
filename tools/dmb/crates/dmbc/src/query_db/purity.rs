@@ -833,14 +833,14 @@ impl Drop for PolicyWorkingSet {
 impl QueryDb {
     pub(super) fn prune_purity(&self) {
         let _gate = self.purity.gate.lock().unwrap_or_else(|e| e.into_inner());
-        self.prune_purity_under_gate();
+        self.prune_purity_under_gate(None);
     }
     // Callers either acquired the family gate here or are the authenticated
     // current source selection already holding that SAME gate.
-    fn prune_purity_under_gate(&self){
+    fn prune_purity_under_gate(&self, current_driver: Option<Key>){
         let mut l = self.purity.ledger.lock().unwrap_or_else(|e| e.into_inner());
         l.nodes.retain(|key, lease| {
-            if if current_variables::is_current_node(*key){current_variables::retains(*key,lease,&self.db)}else{lease.input.strong_count()>0} {
+            if if current_variables::is_current_node(*key){current_variables::retains(*key,lease,&self.db,current_driver)}else{lease.input.strong_count()>0} {
                 true
             } else {
                 self.db.remove(*key);
