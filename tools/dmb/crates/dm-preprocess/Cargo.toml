@@ -20,3 +20,9 @@ dm-wire = { path = "../dm-wire" }
 
 # Exact pinned Original rgb conversion behavior.
 color_space = "=0.5.4"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Memory", "Win32_System_SystemInformation"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

@@ -316,9 +316,11 @@ dependencies = [
  "dm-syntax",
  "dm-wire",
  "im",
+ "libc",
  "serde",
  "serde_json",
  "sha2",
+ "windows-sys",
  "xxhash-rust",
 ]
 

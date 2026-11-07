@@ -66,6 +66,9 @@ impl Owners {
                     SourceTextStorage::Transformed(owner) => {
                         (2, owner.as_ptr() as usize, owner.capacity(), 0)
                     }
+                    SourceTextStorage::Reserved { text, committed } => {
+                        (2, text.as_ptr() as usize, committed, 0)
+                    }
                 };
                 if (capacity > 0 || header > 0) && self.seen.insert((class, pointer)) {
                     add(&mut self.totals.payload_capacity, capacity)?;

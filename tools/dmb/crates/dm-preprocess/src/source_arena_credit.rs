@@ -33,6 +33,10 @@ impl SourceArenaCredit{
 /// only AFTER physical release. A failed allocation keeps its peak reservation
 /// until credit drop, so cleanup cannot replace the original operational error.
 pub trait SourceArenaWork:Send+Sync{
+ /// Maximum address range for the transformed source. Reserved addresses have
+ /// no backing until the arena uses the existing reserve/grow methods to pay
+ /// for each newly committed page. Hosts without this facility keep the String.
+ fn transformed_source_address_limit(&self)->Option<usize>{None}
  /// Existing family bookkeeping pregrant for the actual maximum source/object
  /// observation count. No semantic authority or second budget is issued.
  fn original_read_bookkeeping_bytes(&self)->io::Result<usize>{Err(io::Error::new(io::ErrorKind::NotConnected,"host cannot fund Original read observations"))}

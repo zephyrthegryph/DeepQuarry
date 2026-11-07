@@ -5,16 +5,19 @@ use std::{
     sync::{Arc, Mutex, OnceLock, Weak},
 };
 
-#[derive(Clone)]
+use crate::source_text_reservation::ReservedSourceBuffer;
+
 enum TextBacking {
     Original(Arc<str>),
     Transformed(String),
+    Reserved(ReservedSourceBuffer),
 }
 impl TextBacking {
     fn text(&self) -> &str {
         match self {
             Self::Original(text) => text,
             Self::Transformed(text) => text,
+            Self::Reserved(text) => text.as_str(),
         }
     }
 }
@@ -73,10 +76,11 @@ impl WeakSourceText {
     }
 }
 /// Borrow actual backing allocations for a deduplicated retained-owner census.
-/// Transformed storage exposes its String capacity without copying its payload.
+/// Transformed storage exposes its physical capacity without copying its payload.
 pub enum SourceTextStorage<'a> {
     Original(&'a Arc<str>),
     Transformed(&'a String),
+    Reserved { text: &'a str, committed: usize },
 }
 impl SourceText {
     pub fn source_arena_control_bytes()->std::io::Result<usize>{std::mem::size_of::<Backing>().checked_add(2*std::mem::size_of::<usize>()).ok_or_else(||std::io::ErrorKind::OutOfMemory.into())}
@@ -84,14 +88,44 @@ impl SourceText {
     /// input/source family. Neither credit carries acquisition/model authority.
     /// String payload and last-weak control metadata have distinct lifetimes.
     pub fn from_source_arena(text:String,payload:crate::source_arena_credit::SourceArenaCredit,control:crate::source_arena_credit::SourceArenaControlCredit)->std::io::Result<Self>{
-      // This guard fixes failure drop order too: physical String before either
-      // credit even when capacity/metadata validation returns immediately.
-      struct Pending{ text:Option<String>,payload:Option<crate::source_arena_credit::SourceArenaCredit>,control:Option<crate::source_arena_credit::SourceArenaControlCredit> }
-      let mut pending=Pending{text:Some(text),payload:Some(payload),control:Some(control)};
-      let metadata=Self::source_arena_control_bytes()?;
-      if pending.payload.as_ref().unwrap().reserved_bytes()<pending.text.as_ref().unwrap().capacity()||pending.control.as_ref().unwrap().reserved_bytes()<metadata{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"transformed source adoption exceeds its actual input-family allocation credit"))}
-      let length=pending.text.as_ref().unwrap().len();let backing=Backing{text:TextBacking::Transformed(pending.text.take().unwrap()),fingerprints:OnceLock::new(),_source_arena_payload:pending.payload.take()};
-      Ok(Self{backing:Arc::new(backing),range:0..length,_source_arena_control:pending.control.take()})
+        let capacity = text.capacity();
+        Self::adopt_transformed(TextBacking::Transformed(text), capacity, payload, control)
+    }
+
+    pub(crate) fn from_reserved_source_arena(
+        text: ReservedSourceBuffer,
+        payload: crate::source_arena_credit::SourceArenaCredit,
+        control: crate::source_arena_credit::SourceArenaControlCredit,
+    ) -> std::io::Result<Self> {
+        let capacity = text.capacity();
+        Self::adopt_transformed(TextBacking::Reserved(text), capacity, payload, control)
+    }
+
+    fn adopt_transformed(
+        text: TextBacking,
+        capacity: usize,
+        payload: crate::source_arena_credit::SourceArenaCredit,
+        control: crate::source_arena_credit::SourceArenaControlCredit,
+    ) -> std::io::Result<Self> {
+        // Tuple fields drop left to right, including on failed validation.
+        // Release the actual backing before either allocation credit.
+        let pending = (text, payload, control);
+        if pending.1.reserved_bytes() < capacity
+            || pending.2.reserved_bytes() < Self::source_arena_control_bytes()?
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::OutOfMemory,
+                "transformed source adoption exceeds its actual input-family allocation credit",
+            ));
+        }
+        let (text, payload, control) = pending;
+        let length = text.text().len();
+        let backing = Backing {
+            text,
+            fingerprints: OnceLock::new(),
+            _source_arena_payload: Some(payload),
+        };
+        Ok(Self { backing: Arc::new(backing), range: 0..length, _source_arena_control: Some(control) })
     }
     pub fn source_arena_payload_credit(&self)->Option<&crate::source_arena_credit::SourceArenaCredit>{self.backing._source_arena_payload.as_ref()}
     pub fn source_arena_control_credit(&self)->Option<&crate::source_arena_credit::SourceArenaControlCredit>{self._source_arena_control.as_ref()}
@@ -126,6 +160,10 @@ impl SourceText {
                 text: TextBacking::Transformed(text),
                 ..
             } => SourceTextStorage::Transformed(text),
+            Backing { text: TextBacking::Reserved(text), .. } => SourceTextStorage::Reserved {
+                text: text.as_str(),
+                committed: text.capacity(),
+            },
         };
         visitor(
             Arc::as_ptr(&self.backing) as usize,
@@ -439,9 +477,7 @@ mod tests {
                 assert_eq!(text.as_ptr(), pointer);
                 assert_eq!(text.capacity(), capacity);
             }
-            SourceTextStorage::Original(_) => {
-                panic!("owned string was copied into a different backing")
-            }
+            _ => panic!("owned string was copied into a different backing"),
         });
     }
 
@@ -473,7 +509,7 @@ mod tests {
             .text
             .visit_storage(|_, _, storage| match storage {
                 SourceTextStorage::Original(text) => assert!(Arc::ptr_eq(text, &original)),
-                SourceTextStorage::Transformed(_) => panic!("ordinary source line was copied"),
+                _ => panic!("ordinary source line was copied"),
             });
         assert_eq!(lines.get(2).unwrap().text.as_str(), "#define X 1  + 2\n");
         assert_eq!(lines.get(3).unwrap().text.as_str(), "#define Y 3  + 4\n");

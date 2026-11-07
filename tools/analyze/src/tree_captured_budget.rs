@@ -151,7 +151,12 @@ pub(super) fn source_storage(
                 PolicyStorageKey(K::TransformedPayload, value.as_ptr() as usize),
                 value.capacity(),
             ),
-            dm_preprocess::SourceTextStorage::Transformed(_) => (),
+            dm_preprocess::SourceTextStorage::Reserved { text, committed } if committed != 0 => visit(
+                PolicyStorageKey(K::TransformedPayload, text.as_ptr() as usize),
+                committed,
+            ),
+            dm_preprocess::SourceTextStorage::Transformed(_)
+            | dm_preprocess::SourceTextStorage::Reserved { .. } => (),
         }
     });
     source.visit_fingerprint_storage(|_, _, capacity| {

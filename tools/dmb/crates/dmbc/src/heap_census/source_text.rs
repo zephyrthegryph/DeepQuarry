@@ -21,6 +21,9 @@ impl HeapCensus {
                 match storage {
                     dm_preprocess::SourceTextStorage::Original(text) => self.arc_text(owner, text),
                     dm_preprocess::SourceTextStorage::Transformed(text) => self.string(owner, text),
+                    dm_preprocess::SourceTextStorage::Reserved { text, committed } => {
+                        self.buffer(owner, text.as_ptr() as usize, text.len(), committed);
+                    }
                 }
             }
         });

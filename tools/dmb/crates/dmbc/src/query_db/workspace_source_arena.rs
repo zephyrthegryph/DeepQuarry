@@ -70,6 +70,9 @@ impl QueryDb{
  }
 }
 impl SourceArenaWork for QueryDb{
+ fn transformed_source_address_limit(&self)->Option<usize>{
+  cfg!(all(target_pointer_width="64",any(windows,unix))).then_some(super::raw_policy::INPUT_BUDGET)
+ }
  fn original_read_bookkeeping_bytes(&self)->io::Result<usize>{6usize.checked_mul(raw_input_credits::NODE).ok_or_else(oom)}
  fn adopt_original_read(&self,credit:&mut SourceArenaCredit,source:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{self.adopt_original_raw_read(credit,source)}
  fn checkpoint(&self)->io::Result<()>{crate::daemon::control::checkpoint()}

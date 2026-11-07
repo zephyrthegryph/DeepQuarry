@@ -23,6 +23,7 @@ pub(super) fn retained_size(text: &SourceText) -> usize {
         bytes = bytes.saturating_add(match storage {
             SourceTextStorage::Original(value) => super::retained_size::slice::<u8>(value.len()),
             SourceTextStorage::Transformed(value) => value.capacity(),
+            SourceTextStorage::Reserved { committed, .. } => committed,
         });
     });
     text.visit_fingerprint_storage(|_, _, capacity| bytes = bytes.saturating_add(capacity));

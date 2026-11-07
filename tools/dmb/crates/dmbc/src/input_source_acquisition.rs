@@ -419,7 +419,7 @@ pub(crate) fn normalize_recorded_policy_original(original:&RecordedSourceOrigina
 
 /// Resource DATA only: actual source backing addresses never grant a read role.
 pub(crate) fn visit_raw_source_backing(lease:&dm_preprocess::SourceAcquisitionLease,mut visit:impl FnMut((u8,usize),usize)){
- lease.source_text().visit_storage(|address,bytes,storage|{visit((0,address),bytes.saturating_add(2*std::mem::size_of::<usize>()));match storage{dm_preprocess::SourceTextStorage::Original(text)=>visit((1,Arc::as_ptr(text)as *const u8 as usize),text.len().saturating_add(2*std::mem::size_of::<usize>())),dm_preprocess::SourceTextStorage::Transformed(text)=>visit((1,text.as_ptr()as usize),text.capacity())}});
+ lease.source_text().visit_storage(|address,bytes,storage|{visit((0,address),bytes.saturating_add(2*std::mem::size_of::<usize>()));match storage{dm_preprocess::SourceTextStorage::Original(text)=>visit((1,Arc::as_ptr(text)as *const u8 as usize),text.len().saturating_add(2*std::mem::size_of::<usize>())),dm_preprocess::SourceTextStorage::Transformed(text)=>visit((1,text.as_ptr()as usize),text.capacity()),dm_preprocess::SourceTextStorage::Reserved{text,committed}=>visit((1,text.as_ptr()as usize),committed)}});
  lease.source_text().visit_fingerprint_storage(|address,_,bytes|{if bytes!=0{visit((4,address),bytes);}});
  if let Some(bytes)=lease.receipt::<RecordedSourceReceipt>().and_then(|r|r.original_bytes.as_ref()){visit((2,Arc::as_ptr(bytes.shared_owner())as usize),std::mem::size_of_val(bytes.shared_owner().as_ref())+2*std::mem::size_of::<usize>());visit((3,bytes.as_ptr()as usize),bytes.capacity());}
 }
