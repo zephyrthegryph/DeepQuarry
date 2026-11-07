@@ -2,6 +2,7 @@ import {
   Component,
   type MouseEvent,
   type ReactNode,
+  useMemo,
   useState,
   useSyncExternalStore,
 } from 'react';
@@ -284,12 +285,17 @@ export function App(props: {
   const [menuOpen, setMenuOpen] = useState(false);
   const { state } = store;
   const found = searchVerbs(state, query);
+  // The tab bar walks and sorts every verb: rebuilt only when what it reads changed, not on every status line.
+  const tabs = useMemo(
+    () => visibleTabs(state),
+    [state.verbs, state.spells, state.permanentTabs, state.splitAdminTabs],
+  );
   return (
     <div className="stat-root">
       <MapSplitHandle />
       <div className={`stat-tabs stat-tabs--${tabsStyle}`}>
         <Tabs className="stat-tabs__list">
-          {visibleTabs(state).map((tab) => (
+          {tabs.map((tab) => (
             <Tabs.Tab
               key={tab}
               selected={!menuOpen && tab === state.currentTab}
