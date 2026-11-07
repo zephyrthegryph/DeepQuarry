@@ -10,7 +10,7 @@ import { Pane } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
 import { visibleAtom } from './audio/atoms';
 import { NowPlayingWidget } from './audio/NowPlayingWidget';
-import { ChatPanel } from './chat/ChatPanel';
+import { ChatPanel, ScrollToBottom } from './chat/ChatPanel';
 import { ChatTabs } from './chat/ChatTabs';
 import { useChatPersistence } from './chat/use-chat-persistence';
 import { useChatScanlines } from './consoleScanlines';
@@ -110,6 +110,7 @@ export function Panel(props) {
             <Pane.Content scrollable id="chat-pane">
               <ChatPanel lineHeight={settings.lineHeight} />
             </Pane.Content>
+            <ScrollToBottom />
             <Notifications>
               <AutoReconnectNotice />
               {settings.showReconnectWarning &&

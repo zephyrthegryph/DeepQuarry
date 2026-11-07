@@ -4,8 +4,12 @@
 .ChatInput {
   display: flex;
   align-items: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   gap: 4px;
   padding: 6px 8px;
+  font-size: 12px;
   background-color: console.$console-panel;
   border-top: 2px solid console.$console-border;
   font-family: console.$console-font;
@@ -24,7 +28,8 @@ $channel-colors: (
 .ChatInput__channel,
 .ChatInput__radio,
 .ChatInput__send {
-  padding: 2px 8px;
+  box-sizing: border-box;
+  padding: 3px 8px;
   font: inherit;
   color: console.$console-muted;
   background-color: console.$console-disabled;
@@ -69,15 +74,26 @@ $channel-colors: (
   }
 }
 
+// Send is always whole: it never shrinks, whatever the width of the row.
 .ChatInput__send {
+  flex: 0 0 auto;
+  min-width: 56px;
+  text-align: center;
   color: console.$console-text;
   background-color: console.$console-green;
+  border: 2px solid color.adjust(console.$console-green, $lightness: 12%, $space: hsl);
+
+  &:hover {
+    background-color: color.adjust(console.$console-green, $lightness: 8%, $space: hsl);
+    color: console.$console-text;
+  }
 }
 
 .ChatInput__field {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 2px 6px;
+  box-sizing: border-box;
+  padding: 3px 6px;
   font: inherit;
   color: console.$console-text;
   background-color: console.$console-background;

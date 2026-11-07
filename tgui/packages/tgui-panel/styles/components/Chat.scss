@@ -34,9 +34,11 @@
 }
 
 .Chat__scrollButton {
-  position: fixed;
-  right: 2em;
-  bottom: 1em;
+  // Inside the message area (its Section is the positioned parent), above the input row.
+  position: absolute;
+  right: 1.5em;
+  bottom: 0.5em;
+  z-index: 5;
 }
 
 // A quiet themed divider: a hairline with a pill label, not a red rule.
