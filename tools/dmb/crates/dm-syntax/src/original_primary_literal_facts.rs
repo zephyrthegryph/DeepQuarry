@@ -6,6 +6,7 @@ use std::{alloc::{alloc,Layout},io,mem,ops::Range,ptr::NonNull,sync::Arc};
 type LiteralRow = (Span, crate::OriginalLiteralData);
 type BorrowedLiteralRow<'a> = (Span, crate::OriginalLiteralRef<'a>);
 use crate::original_literal_data::OriginalLiteralOwner;
+use crate::original_literal_projection::{ProjectedLiteral, ProjectedLiteralRef};
 const LITERAL_PAGE_LEN: usize = 256;
 const DIRECTORY_CHUNK_LEN: usize = 64;
 
@@ -37,6 +38,7 @@ struct CompactLiteralData {
     codes: Vec<u32>,
     owners: Vec<OriginalLiteralOwner>,
     wide: Vec<crate::OriginalLiteralData>,
+    projections: Option<Box<Vec<ProjectedLiteral>>>,
     credit: crate::SettingRootLease,
 }
 enum LiteralPageData {
@@ -53,6 +55,7 @@ struct ProjectedLiteralData{
 }
 const PROJECTED_BIT:u16=1<<15;
 const WIDE_LITERAL_ORDINAL: u32 = 0x00ff_ffff;
+const PROJECTED_COMPACT_ORDINAL: u32 = WIDE_LITERAL_ORDINAL - 1;
 const OWNER_CACHE_LEN: usize = 64;
 struct LiteralPagePlan {
     codes: [u32; LITERAL_PAGE_LEN],
@@ -69,7 +72,7 @@ impl LiteralPagePlan {
         let mut previous = None;
         for (index, data) in rows.iter().enumerate() {
             let data = data.as_view();
-            if data.ordinal() >= WIDE_LITERAL_ORDINAL as usize {
+            if data.ordinal() >= PROJECTED_COMPACT_ORDINAL as usize {
                 plan.codes[index] = (WIDE_LITERAL_ORDINAL << 8) | plan.wide as u32;
                 plan.wide += 1;
                 continue;
@@ -92,6 +95,23 @@ impl LiteralPagePlan {
         plan
     }
 }
+fn projected_ref<'a>(
+    descriptor: ProjectedLiteral,
+    span: Span,
+    ordinal: usize,
+    loan: Option<ProjectionLoan<'a>>,
+    owner: Option<&'a crate::OriginalLiteralProjectionOwner>,
+) -> crate::OriginalLiteralRef<'a> {
+    let raw = loan.and_then(|loan| {
+        loan.source.get(span.start.checked_sub(loan.origin)?..span.end.checked_sub(loan.origin)?)
+    });
+    crate::OriginalLiteralRef::from_projection(ProjectedLiteralRef {
+        descriptor, raw, raw_capacity: 0,
+        owner: owner.expect("projected page has actual output DATA"),
+        ordinal,
+    })
+}
+
 impl LiteralPageData {
     fn get<'a>(&'a self,index:usize,span:Span,ordinal:usize,loan:Option<ProjectionLoan<'a>>,owner:Option<&'a crate::OriginalLiteralProjectionOwner>)->crate::OriginalLiteralRef<'a>{
         match self {
@@ -99,16 +119,21 @@ impl LiteralPageData {
              let code=data.codes[index];
              if code&PROJECTED_BIT==0{return data.full[code as usize].as_view()}
              let descriptor=data.descriptors[(code&!PROJECTED_BIT)as usize];
-             let raw=loan.and_then(|loan|span.start.checked_sub(loan.origin).zip(span.end.checked_sub(loan.origin)).and_then(|(first,last)|loan.source.get(first..last)));
-             crate::OriginalLiteralRef::from_projection(crate::original_literal_projection::ProjectedLiteralRef{descriptor,raw,raw_capacity:0,owner:owner.expect("projected page has actual output DATA"),ordinal})
+             projected_ref(descriptor, span, ordinal, loan, owner)
             },
             Self::Dense(data) => data.rows[index].as_view(),
             Self::Compact(data) => {
                 let code = data.codes[index];
                 let key = (code & 0xff) as usize;
-                let ordinal = code >> 8;
-                if ordinal == WIDE_LITERAL_ORDINAL { data.wide[key].as_view() }
-                else { data.owners[key].at(ordinal as usize) }
+                let packed_ordinal = code >> 8;
+                match packed_ordinal {
+                    WIDE_LITERAL_ORDINAL => data.wide[key].as_view(),
+                    PROJECTED_COMPACT_ORDINAL => projected_ref(
+                        data.projections.as_ref().expect("issued compact descriptors")[key],
+                        span, ordinal, loan, owner,
+                    ),
+                    _ => data.owners[key].at(packed_ordinal as usize),
+                }
             }
         }
     }
@@ -135,6 +160,11 @@ impl LiteralPageData {
                 buffer(&data.codes, visit);
                 buffer(&data.owners, visit);
                 buffer(&data.wide, visit);
+                if let Some(projections) = &data.projections {
+                    let control = mem::size_of::<Vec<ProjectedLiteral>>();
+                    visit(projections.as_ref() as *const _ as usize, control, control);
+                    buffer(projections, visit);
+                }
             }
         }
     }
@@ -161,6 +191,7 @@ impl LiteralPageData {
             codes: alloc_funded_literal_rows(LITERAL_PAGE_LEN, codes_layout)?,
             owners: alloc_funded_literal_rows(plan.owners, owner_layout)?,
             wide: alloc_funded_literal_rows(plan.wide, wide_layout)?,
+            projections: None,
             credit,
         };
         a.checkpoint().map_err(|proxy| a.take_operational_error().unwrap_or(proxy))?;
@@ -219,7 +250,9 @@ impl LiteralPage {
  #[cfg(test)]
  fn get(&self,index:usize)->Option<BorrowedLiteralRow<'_>>{self.get_data(index,0,None,None)}
  fn settle_body_projection(&mut self,source:&str,base:usize,owner:&crate::OriginalLiteralProjectionOwner,a:&crate::SettingAdmission<'_>)->io::Result<Option<(usize,usize,usize,usize)>>{
-  if matches!(self.data,LiteralPageData::Projected(_)){return Ok(None)}
+  if matches!(self.data,LiteralPageData::Projected(_))
+   || matches!(&self.data,LiteralPageData::Compact(data) if data.projections.is_some())
+  {return Ok(None)}
   let Some(_scratch)=a.try_reserve_optimization(LITERAL_PAGE_LEN+LITERAL_PAGE_LEN*std::mem::size_of::<u16>()).map_err(|e|a.take_operational_error().unwrap_or(e))?else{return Ok(None)};
   let mut candidates=[false;LITERAL_PAGE_LEN];
   let mut references=[0u16;LITERAL_PAGE_LEN];
@@ -269,6 +302,156 @@ impl LiteralPage {
   drop(mem::replace(&mut self.data,LiteralPageData::Projected(next)));
   Ok(Some((count,released,old_rows,bytes)))
  }
+    /// Reuse the original compact owner bank. A mixed bank entry keeps its
+    /// existing Arc and any Full rows, while individual raw allocations die.
+    fn settle_packed_body_projection(
+        &mut self,
+        source: &str,
+        a: &crate::SettingAdmission<'_>,
+    ) -> io::Result<Option<(usize, usize, usize, usize)>> {
+        if self.body.iter().all(|word| *word == 0) {
+            return Ok(None);
+        }
+        self.data.settle_full_using(a)?;
+        let LiteralPageData::Compact(compact) = &self.data else { return Ok(None) };
+        if compact.projections.is_some() {
+            return Ok(None);
+        }
+
+        #[derive(Clone, Copy, Default)]
+        struct Group {
+            references: u32,
+            eligible: u32,
+            duplicates: bool,
+            raw_bytes: usize,
+            owner_bytes: usize,
+            owner_mask: u32,
+        }
+        let scratch_bytes = mem::size_of::<[Group; LITERAL_PAGE_LEN]>()
+            + mem::size_of::<[Option<ProjectedLiteral>; LITERAL_PAGE_LEN]>();
+        let Some(_scratch) = a.try_reserve_optimization(scratch_bytes)
+            .map_err(|error| a.take_operational_error().unwrap_or(error))? else {
+            return Ok(None);
+        };
+        let mut groups = [Group::default(); LITERAL_PAGE_LEN];
+        let mut candidates = [None; LITERAL_PAGE_LEN];
+        for (index, &code) in compact.codes.iter().enumerate() {
+            if index % 32 == 0 {
+                a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+            }
+            let ordinal = code >> 8;
+            // Packed payloads have at most 32 physical rows. Wide codes are
+            // never packed, and shared standalone occurrences are ineligible.
+            if ordinal >= u32::BITS {
+                continue;
+            }
+            let bank = (code & 255) as usize;
+            let group = &mut groups[bank];
+            let bit = 1 << ordinal;
+            group.duplicates |= group.references & bit != 0;
+            group.references |= bit;
+            if self.body[index / 64] & (1 << (index % 64)) == 0 {
+                continue;
+            }
+            let data = compact.owners[bank].at(ordinal as usize);
+            let Some((descriptor, raw_bytes, owner_bytes, owner_mask)) = data.packed_projection_candidate() else {
+                continue;
+            };
+            let span = self.span_at(index).ok_or(io::ErrorKind::InvalidData)?;
+            if data.raw()? != source.get(span.range()).ok_or(io::ErrorKind::InvalidData)? {
+                return Err(io::ErrorKind::InvalidData.into());
+            }
+            candidates[index] = Some(descriptor);
+            group.eligible |= bit;
+            group.raw_bytes += raw_bytes;
+            group.owner_bytes = owner_bytes;
+            group.owner_mask = owner_mask;
+        }
+        let mut count = 0;
+        let mut gross = 0;
+        for group in &mut groups {
+            let rows = group.eligible.count_ones() as usize;
+            let bytes = if group.eligible == group.references {
+                group.owner_bytes
+            } else {
+                group.raw_bytes
+            };
+            let incomplete_retirement = group.eligible == group.references
+                && group.eligible != group.owner_mask;
+            if group.duplicates || incomplete_retirement || bytes <= rows * mem::size_of::<ProjectedLiteral>() {
+                group.eligible = 0;
+            } else {
+                count += rows;
+                gross += bytes;
+            }
+        }
+        let layout = Layout::array::<ProjectedLiteral>(count).map_err(|_| io::ErrorKind::OutOfMemory)?;
+        let control = Layout::new::<Vec<ProjectedLiteral>>();
+        let metadata_bytes = layout.size() + control.size();
+        // Include the optional pointer carried by the compact representation.
+        if gross <= metadata_bytes + mem::size_of::<Option<Box<Vec<ProjectedLiteral>>>>() {
+            return Ok(None);
+        }
+        let Some(mut credit) = a.try_reserve_optimization(metadata_bytes)
+            .map_err(|error| a.take_operational_error().unwrap_or(error))? else {
+            return Ok(None);
+        };
+        let mut descriptors = alloc_funded_literal_rows(count, layout)?;
+        for (index, candidate) in candidates.iter().enumerate() {
+            let code = compact.codes[index];
+            let group = &groups[(code & 255) as usize];
+            if let Some(descriptor) = candidate {
+                if group.eligible & (1 << (code >> 8)) != 0 {
+                    descriptors.push(*descriptor);
+                }
+            }
+        }
+        debug_assert_eq!(descriptors.len(), count);
+        let pointer = NonNull::new(unsafe { alloc(control) }.cast::<Vec<ProjectedLiteral>>())
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        // SAFETY: the exact nonempty Global Box layout and descriptor buffer
+        // have been funded. The initialized Vec moves once into its Box.
+        let boxed = unsafe {
+            pointer.as_ptr().write(descriptors);
+            Box::from_raw(pointer.as_ptr())
+        };
+        let LiteralPageData::Compact(compact) = &mut self.data else { unreachable!() };
+        let old_bytes = compact.credit.bytes();
+        a.absorb(&mut compact.credit, &mut credit)?;
+        compact.projections = Some(boxed);
+
+        let mut released = 0;
+        for (bank, group) in groups.iter().enumerate().filter(|(_, group)| group.eligible != 0) {
+            // Either preflight fails with this entry untouched, or physical
+            // withdrawal succeeds and all its old codes are replaced immediately.
+            released += compact.owners[bank].withdraw_packed_using(
+                group.eligible, group.eligible == group.references, a,
+            )?;
+            let mut descriptor_index = 0;
+            for (index, candidate) in candidates.iter().enumerate() {
+                let code = compact.codes[index];
+                let old_bank = (code & 255) as usize;
+                let ordinal = code >> 8;
+                if candidate.is_none() {
+                    continue;
+                }
+                if ordinal == PROJECTED_COMPACT_ORDINAL {
+                    // Already projected by an earlier bank. Its descriptor
+                    // still occupies this ordinal in the common column.
+                    descriptor_index += 1;
+                } else if groups[old_bank].eligible & (1 << ordinal) != 0 {
+                    if old_bank == bank {
+                        compact.codes[index] = (PROJECTED_COMPACT_ORDINAL << 8)
+                            | descriptor_index as u32;
+                    }
+                    descriptor_index += 1;
+                }
+            }
+        }
+        debug_assert_eq!(released, gross);
+        Ok(Some((count, released, old_bytes, compact.credit.bytes())))
+    }
+
     fn new(start_base: usize, a: &crate::SettingAdmission<'_>) -> io::Result<Self> {
         let (spans, span_credit) = allocate_literal_rows(LITERAL_PAGE_LEN, a)?;
         let (rows, credit) = allocate_literal_rows(LITERAL_PAGE_LEN, a)?;
@@ -276,14 +459,18 @@ impl LiteralPage {
         Ok(Self { body:[0;4],spans, data, start_base, span_credit, wide: Vec::new(), wide_credit: None })
     }
 
-    fn get_data<'a>(&'a self,index:usize,base:usize,loan:Option<ProjectionLoan<'a>>,owner:Option<&'a crate::OriginalLiteralProjectionOwner>)->Option<BorrowedLiteralRow<'a>>{
+    fn span_at(&self, index: usize) -> Option<Span> {
         let word = *self.spans.get(index)?;
-        let span = if word & WIDE_BIT != 0 {
+        Some(if word & WIDE_BIT != 0 {
             self.wide[(word & !WIDE_BIT) as usize]
         } else {
             let start = self.start_base + (word >> WIDTH_BITS) as usize;
             Span::new(start, start + (word as usize & MAX_WIDTH))
-        };
+        })
+    }
+
+    fn get_data<'a>(&'a self,index:usize,base:usize,loan:Option<ProjectionLoan<'a>>,owner:Option<&'a crate::OriginalLiteralProjectionOwner>)->Option<BorrowedLiteralRow<'a>>{
+        let span = self.span_at(index)?;
         Some((span, self.data.get(index,span,base+index,loan,owner)))
     }
 
@@ -403,6 +590,11 @@ impl LiteralPages {
                 for value in &data.full{value.visit_storage(&mut *visit);}continue
             }
             for index in 0..page.spans.len() {
+                if matches!(&page.data, LiteralPageData::Compact(data)
+                    if data.codes[index] >> 8 == PROJECTED_COMPACT_ORDINAL)
+                {
+                    continue;
+                }
                 let data = page.get_data(index,0,None,None).expect("issued literal row").1;
                 if let Some(current) = data.page_storage_identity() {
                     if last_payload_page == Some(current) {
@@ -526,7 +718,12 @@ impl OriginalPrimaryLiteralFacts{
    }
    owner.next_body_row+=1;
    if at+1==LITERAL_PAGE_LEN{
-    if let Some((_rows,_payload,_old,_new))=page.settle_body_projection(source,page_index*LITERAL_PAGE_LEN,owner.projection.as_ref().unwrap(),a)?{
+    let settlement = page.settle_body_projection(source,page_index*LITERAL_PAGE_LEN,owner.projection.as_ref().unwrap(),a)?;
+    let settlement = match settlement {
+        Some(settled) => Some(settled),
+        None => page.settle_packed_body_projection(source, a)?,
+    };
+    if let Some((_rows,_payload,_old,_new)) = settlement {
      #[cfg(debug_assertions)]{let c=&mut owner.body_projection;c.pages+=1;c.rows+=_rows;c.released_payload_bytes+=_payload;c.released_row_bytes+=_old;c.retained_row_bytes+=_new;}
     }
    }
@@ -595,7 +792,7 @@ impl OriginalPrimaryLiteralFacts{
    let mut occurrences = [0u16; LITERAL_PAGE_LEN];
    if let LiteralPageData::Compact(compact) = &page.data {
     for &code in &compact.codes {
-     if code >> 8 != WIDE_LITERAL_ORDINAL { occurrences[(code & 0xff) as usize] += 1; }
+     if code >> 8 < PROJECTED_COMPACT_ORDINAL { occurrences[(code & 0xff) as usize] += 1; }
     }
    }
    for index in 0..page.spans.len() {
@@ -1078,5 +1275,106 @@ mod literal_page_controls {
   let full_bytes=used.load(Ordering::Acquire);let detached=same.detach_using(&a).unwrap();
   assert!(detached.as_view().same_owner(same));assert!(used.load(Ordering::Acquire)>full_bytes);
   drop(bound);drop(facts);assert!(detached.raw().ends_with("-13\""));drop(detached);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[cfg(debug_assertions)]
+ #[test]
+ fn compact_body_bank_withdrawal_pays_descriptors_and_keeps_mixed_survivor() {
+    struct Output;
+    impl crate::OriginalLiteralOutputOwner for Output {
+        fn as_any(&self) -> &dyn std::any::Any { self }
+        fn release(self: Arc<Self>) { drop(Arc::into_inner(self)); }
+        fn visit_storage(&self, _: &mut dyn FnMut(usize, usize, usize)) {}
+    }
+
+    for whole_group in [false, true] {
+        let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+        let used = crate::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let output = crate::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output));
+        let mut page = LiteralPage::new(0, &a).unwrap();
+        let mut source = String::new();
+        let mut issued: Vec<_> = (0..4).map(|index| {
+            let raw = format!("\"{}-{index}\"", "body".repeat(24));
+            let start = source.len();
+            source.push_str(&raw);
+            source.push('\n');
+            let value = if !whole_group && index == 0 {
+                crate::OriginalTokenValue::String("different cooked")
+            } else {
+                crate::OriginalTokenValue::String(&raw[1..raw.len()-1])
+            };
+            let data = crate::OriginalLiteralData::from_value_with_mode_using(
+                raw.clone(), value, crate::OriginalStringMode::Normal, &a,
+            ).unwrap();
+            (Span::new(start, start + raw.len()), Some(data))
+        }).collect();
+        let mut slots: Vec<_> = issued.iter_mut().map(|(_, data)| data.take()).collect();
+        crate::OriginalLiteralData::pack_delivery_batch_using(&mut slots, &a).unwrap();
+        let packed_key = slots[0].as_ref().unwrap().as_view().page_storage_identity().unwrap();
+        let survivor_pointer = slots[0].as_ref().unwrap().raw().as_ptr();
+        let total_owner_bytes = slots[0].as_ref().unwrap().as_view().trace_payload().1;
+        let raw_bytes: usize = slots[1..].iter().map(|data| data.as_ref().unwrap().raw_storage().capacity()).sum();
+        for ((span, _), data) in issued.into_iter().zip(slots) {
+            page.push((span, data.unwrap()), &a).unwrap();
+        }
+        let filler = crate::OriginalLiteralData::from_value_using(
+            "0".to_owned(), crate::OriginalTokenValue::Int(0), &a,
+        ).unwrap();
+        for _ in 4..LITERAL_PAGE_LEN {
+            let start = source.len();
+            source.push_str("0\n");
+            page.push((Span::new(start, start+1), filler.clone()), &a).unwrap();
+        }
+        page.body[0] = 0b1111;
+        page.data.settle_full_using(&a).unwrap();
+
+        let escaped = page.get(0).unwrap().1.detach_using(&a).unwrap();
+        let before = used.load(Ordering::Acquire);
+        assert!(page.settle_packed_body_projection(&source, &a).unwrap().is_none());
+        assert_eq!(used.load(Ordering::Acquire), before);
+        assert_eq!(escaped.raw().as_ptr(), survivor_pointer);
+        drop(escaped);
+
+        let denied = crate::SettingAdmission::new(&used, before, &|| Ok(()));
+        assert!(page.settle_packed_body_projection(&source, &denied).unwrap().is_none());
+        assert_eq!(used.load(Ordering::Acquire), before);
+        assert_eq!(page.get(0).unwrap().1.raw().unwrap().as_ptr(), survivor_pointer);
+
+        let second_pointer = page.get(1).unwrap().1.raw().unwrap().as_ptr();
+        let fault = || Err(io::Error::from_raw_os_error(1450));
+        let failing = crate::SettingAdmission::new(&used, 8 << 20, &fault);
+        let LiteralPageData::Compact(compact) = &mut page.data else { panic!("compact bank") };
+        let bank = (compact.codes[1] & 255) as usize;
+        let ordinal = compact.codes[1] >> 8;
+        let incomplete = compact.owners[bank].withdraw_packed_using(1 << ordinal, true, &a).unwrap_err();
+        assert_eq!(incomplete.kind(), io::ErrorKind::InvalidData);
+        let error = compact.owners[bank].withdraw_packed_using(1 << ordinal, false, &failing).unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(used.load(Ordering::Acquire), before);
+        assert_eq!(page.get(1).unwrap().1.raw().unwrap().as_ptr(), second_pointer);
+
+        let (count, released, old, new) = page.settle_packed_body_projection(&source, &a).unwrap().unwrap();
+        assert_eq!(count, if whole_group { 4 } else { 3 });
+        assert_eq!(released, if whole_group { total_owner_bytes } else { raw_bytes });
+        assert_eq!(used.load(Ordering::Acquire), before + new - old - released);
+        let loan = ProjectionLoan { source: &source, origin: 0 };
+        for index in usize::from(!whole_group)..4 {
+            let (_, unbound) = page.get_data(index, 0, None, Some(&output)).unwrap();
+            assert!(unbound.is_projected());
+            assert_eq!(unbound.raw().unwrap_err().kind(), io::ErrorKind::NotConnected);
+            let (span, bound) = page.get_data(index, 0, Some(loan), Some(&output)).unwrap();
+            assert_eq!(bound.raw().unwrap().as_ptr(), source[span.range()].as_ptr());
+        }
+        if !whole_group {
+            let (_, survivor) = page.get(0).unwrap();
+            assert_eq!(survivor.page_storage_identity(), Some(packed_key));
+            assert_eq!(survivor.raw().unwrap().as_ptr(), survivor_pointer);
+            assert!(matches!(survivor.value().unwrap(), crate::OriginalTokenValue::String("different cooked")));
+            survivor.visit_storage(|_, _, _| {});
+        }
+        drop((page, filler, output));
+        assert_eq!(used.load(Ordering::Acquire), fixed);
+    }
  }
 }
