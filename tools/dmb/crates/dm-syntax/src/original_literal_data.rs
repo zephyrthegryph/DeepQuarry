@@ -39,80 +39,19 @@ impl<'a> LiteralRawStorage<'a> {
     pub fn capacity(self) -> usize { self.capacity }
 }
 
-/// Private immutable owner of the SAME Global String allocation, with checked
-/// lengths. This type has no borrowed storage, mutable API or clone.
-#[repr(C)]
-struct PackedRaw {
-    pointer: NonNull<u8>,
-    len: u32,
-    capacity: u32,
-}
-
-impl PackedRaw {
-    fn geometry(len: usize, capacity: usize) -> Option<(u32, u32)> {
-        if len > capacity { return None; }
-        Some((u32::try_from(len).ok()?, u32::try_from(capacity).ok()?))
-    }
-
-    fn adopt(raw: String) -> Self {
-        let (len, capacity) = Self::geometry(raw.len(), raw.capacity())
-            .expect("preflight checked packed raw allocation geometry");
-        let mut raw = ManuallyDrop::new(raw);
-        let pointer = NonNull::new(raw.as_mut_ptr()).expect("String backing is non-null");
-        Self { pointer, len, capacity }
-    }
-
-    // The invalid len/cap pair is private and cannot come from String.
-    fn is_withdrawn(&self) -> bool { self.len > self.capacity }
-
-    fn withdrawn() -> Self {
-        Self { pointer: NonNull::dangling(), len: 1, capacity: 0 }
-    }
-
-    fn view(&self) -> LiteralRawStorage<'_> {
-        assert!(!self.is_withdrawn(), "withdrawn packed spelling has no full view");
-        // SAFETY: the unique original String allocation is live for this
-        // borrow, its initialized prefix is still exactly the original UTF-8,
-        // and the original String length is within isize::MAX. A zero-length
-        // String has a non-null, u8-aligned pointer even when unallocated.
-        let bytes = unsafe { std::slice::from_raw_parts(self.pointer.as_ptr(), self.len as usize) };
-        let text = unsafe { std::str::from_utf8_unchecked(bytes) };
-        LiteralRawStorage { text, capacity: self.capacity() }
-    }
-
-    fn capacity(&self) -> usize { self.capacity as usize }
-}
-
-impl Drop for PackedRaw {
-    fn drop(&mut self) {
-        if self.is_withdrawn() {
-            return;
-        }
-        // SAFETY: adopt consumed the sole Global String without freeing its
-        // pointer. All original len/capacity bits are retained. No alias can
-        // survive this drop, and no other path reconstructs the owner.
-        drop(unsafe { String::from_raw_parts(self.pointer.as_ptr(), self.len as usize, self.capacity()) });
-    }
-}
-
-// SAFETY: exactly the same exclusive Global allocation as String. Moving or
-// destroying it on a different thread is valid, and shared borrows expose only
-// immutable str bytes. There is no mutation through the stored pointer.
-unsafe impl Send for PackedRaw {}
-unsafe impl Sync for PackedRaw {}
-
-/// Sealed batch rows keep their actual raw allocation. The scalar word is
-/// exact scalar bits for numbers, or a one-based cooked-text slot otherwise.
+/// The exact same Global String allocation plus closed batch geometry.
 #[repr(C)]
 struct PackedBatchValue {
-    raw: PackedRaw,
-    scalar_or_text: u32,
-    kind: LiteralKind,
-    string_mode: OriginalStringMode,
-    value_in_raw: [u8; 2],
+    pointer: NonNull<u8>,
+    meta: u64,
 }
 #[cfg(target_pointer_width = "64")]
-const _: () = assert!(size_of::<PackedBatchValue>() == 24);
+const _: () = assert!(size_of::<PackedBatchValue>() == 16);
+
+// SAFETY: identical exclusive allocation ownership to String. Shared borrows
+// expose immutable UTF-8 only, and last-owner destruction is thread-safe.
+unsafe impl Send for PackedBatchValue {}
+unsafe impl Sync for PackedBatchValue {}
 
 struct BatchValues {
     rows: Vec<PackedBatchValue>,
@@ -128,32 +67,122 @@ struct LiteralValueView<'a> {
 }
 
 impl PackedBatchValue {
+    const LEN_SHIFT: u32 = 32;
+    const CAPACITY_SHIFT: u32 = 43;
+    const KIND_SHIFT: u32 = 54;
+    const MODE_SHIFT: u32 = 57;
+    const WITHDRAWN: u64 = 1 << 59;
+    const RAW_MASK: u64 = (1 << 11) - 1;
+
+    fn raw_geometry(len: usize, capacity: usize) -> Option<(u32, u32)> {
+        if len > capacity || capacity > MAX_ROW_TEXT_BYTES {
+            return None;
+        }
+        Some((len as u32, capacity as u32))
+    }
+
     fn adopt(value: LiteralValue, cooked: &mut Vec<Box<str>>) -> Self {
         let LiteralValue { kind, scalar_bits, string_mode, value_in_raw, raw, text } = value;
-        let scalar_or_text = if text.is_empty() {
+        let (len, capacity) = Self::raw_geometry(raw.len(), raw.capacity())
+            .expect("checked exact raw geometry before moving a batch row");
+        let word = if matches!(kind, LiteralKind::Int | LiteralKind::Float) {
+            debug_assert!(text.is_empty());
+            debug_assert_eq!(value_in_raw, [0, 0]);
             scalar_bits
         } else {
-            debug_assert!(!matches!(kind, LiteralKind::Int | LiteralKind::Float));
-            debug_assert_eq!(value_in_raw, [0, 0]);
-            assert!(cooked.len() < cooked.capacity(), "funded exact cooked-text roster");
-            cooked.push(text);
-            u32::try_from(cooked.len()).expect("cooked-text ordinals fit a literal batch page")
+            let slot = if text.is_empty() {
+                0
+            } else {
+                debug_assert_eq!(value_in_raw, [0, 0]);
+                assert!(cooked.len() < cooked.capacity(), "funded exact cooked-text roster");
+                cooked.push(text);
+                u8::try_from(cooked.len()).expect("closed cooked ordinal")
+            };
+            u32::from_le_bytes([value_in_raw[0], value_in_raw[1], slot, 0])
         };
-        Self { kind, scalar_or_text, string_mode, value_in_raw, raw: PackedRaw::adopt(raw) }
+        let meta = u64::from(word) | (u64::from(len) << Self::LEN_SHIFT)
+            | (u64::from(capacity) << Self::CAPACITY_SHIFT)
+            | ((kind as u64) << Self::KIND_SHIFT) | ((string_mode as u64) << Self::MODE_SHIFT);
+        let mut raw = ManuallyDrop::new(raw);
+        let pointer = NonNull::new(raw.as_mut_ptr()).expect("String backing is non-null");
+        Self { pointer, meta }
+    }
+
+    fn kind(&self) -> LiteralKind {
+        match (self.meta >> Self::KIND_SHIFT) & 7 {
+            0 => LiteralKind::Int,
+            1 => LiteralKind::Float,
+            2 => LiteralKind::String,
+            3 => LiteralKind::Resource,
+            4 => LiteralKind::InterpBegin,
+            5 => LiteralKind::InterpPart,
+            6 => LiteralKind::InterpEnd,
+            _ => unreachable!("issued literal kind"),
+        }
+    }
+
+    fn string_mode(&self) -> OriginalStringMode {
+        match (self.meta >> Self::MODE_SHIFT) & 3 {
+            0 => OriginalStringMode::Unknown,
+            1 => OriginalStringMode::Normal,
+            2 => OriginalStringMode::Raw,
+            3 => OriginalStringMode::Generated,
+            _ => unreachable!("issued literal string mode"),
+        }
+    }
+
+    fn scalar_or_text(&self) -> u32 {
+        let word = self.meta as u32;
+        if matches!(self.kind(), LiteralKind::Int | LiteralKind::Float) { word }
+        else { u32::from(word.to_le_bytes()[2]) }
+    }
+
+    fn value_in_raw(&self) -> [u8; 2] {
+        if matches!(self.kind(), LiteralKind::Int | LiteralKind::Float) {
+            return [0, 0];
+        }
+        let [prefix, suffix, _, _] = (self.meta as u32).to_le_bytes();
+        [prefix, suffix]
+    }
+
+    fn raw_len(&self) -> usize { ((self.meta >> Self::LEN_SHIFT) & Self::RAW_MASK) as usize }
+    fn raw_capacity(&self) -> usize { ((self.meta >> Self::CAPACITY_SHIFT) & Self::RAW_MASK) as usize }
+    fn is_withdrawn(&self) -> bool { self.meta & Self::WITHDRAWN != 0 }
+
+    fn raw_view(&self) -> LiteralRawStorage<'_> {
+        assert!(!self.is_withdrawn(), "withdrawn packed spelling has no full view");
+        // SAFETY: exclusive String ownership is still live. The exact
+        // initialized UTF-8 prefix and allocation geometry never change.
+        let bytes = unsafe { std::slice::from_raw_parts(self.pointer.as_ptr(), self.raw_len()) };
+        let text = unsafe { std::str::from_utf8_unchecked(bytes) };
+        LiteralRawStorage { text, capacity: self.raw_capacity() }
+    }
+
+    fn withdraw_raw(&mut self) {
+        if self.is_withdrawn() { return; }
+        self.meta |= Self::WITHDRAWN;
+        // SAFETY: the allocation is uniquely adopted. Mark withdrawn before
+        // rebuilding the one matching Global String, so no second free occurs.
+        drop(unsafe { String::from_raw_parts(self.pointer.as_ptr(), self.raw_len(), self.raw_capacity()) });
     }
 
     fn view<'a>(&'a self, cooked: &'a [Box<str>]) -> LiteralValueView<'a> {
-        let scalar = matches!(self.kind, LiteralKind::Int | LiteralKind::Float);
-        let text = if scalar || self.scalar_or_text == 0 {
+        let kind = self.kind();
+        let scalar_or_text = self.scalar_or_text();
+        let text = if matches!(kind, LiteralKind::Int | LiteralKind::Float) || scalar_or_text == 0 {
             ""
         } else {
-            cooked[self.scalar_or_text as usize - 1].as_ref()
+            cooked[scalar_or_text as usize - 1].as_ref()
         };
         LiteralValueView {
-            kind: self.kind, scalar_bits: self.scalar_or_text,
-            value_in_raw: self.value_in_raw, raw: self.raw.view(), text,
+            kind, scalar_bits: scalar_or_text,
+            value_in_raw: self.value_in_raw(), raw: self.raw_view(), text,
         }
     }
+}
+
+impl Drop for PackedBatchValue {
+    fn drop(&mut self) { self.withdraw_raw(); }
 }
 
 enum LiteralStorage {
@@ -190,7 +219,7 @@ impl OriginalLiteralOwner {
     pub(crate) fn at(&self, ordinal: usize) -> OriginalLiteralRef<'_> {
         let owner = self.0.as_ref().expect("live bank owner");
         if let LiteralStorage::Page(page) = &owner.storage {
-            assert!(!page.rows[ordinal].raw.is_withdrawn(), "packed bank code must point at live spelling");
+            assert!(!page.rows[ordinal].is_withdrawn(), "packed bank code must point at live spelling");
         }
         OriginalLiteralRef { owner: Some(owner), ordinal, projected: None }
     }
@@ -216,10 +245,10 @@ impl OriginalLiteralOwner {
                 continue;
             }
             let row = page.rows.get(ordinal).ok_or(io::ErrorKind::InvalidData)?;
-            if row.raw.is_withdrawn() {
+            if row.is_withdrawn() {
                 return Err(io::ErrorKind::InvalidData.into());
             }
-            raw_bytes += row.raw.capacity();
+            raw_bytes += row.raw_capacity();
         }
         if retire_owner {
             let complete = u32::MAX >> (PAGE_ROWS - page.rows.len());
@@ -234,7 +263,7 @@ impl OriginalLiteralOwner {
         let credit = a.split(&mut owner.credit, raw_bytes)?;
         for (ordinal, row) in page.rows.iter_mut().enumerate() {
             if mask & (1 << ordinal) != 0 {
-                drop(std::mem::replace(&mut row.raw, PackedRaw::withdrawn()));
+                row.withdraw_raw();
             }
         }
         drop(credit);
@@ -456,24 +485,24 @@ impl<'a> OriginalLiteralRef<'a> {
         }
         let LiteralStorage::Page(page) = &owner.storage else { return None };
         let row = page.rows.get(self.ordinal)?;
-        if row.raw.is_withdrawn() {
+        if row.is_withdrawn() {
             return None;
         }
-        let kind = match row.kind {
+        let kind = match row.kind() {
             LiteralKind::Int => 0,
             LiteralKind::Float => 1,
-            LiteralKind::String if row.value_in_raw[1] != 0 || row.scalar_or_text == 0 => 2,
-            LiteralKind::Resource if row.value_in_raw[1] != 0 || row.scalar_or_text == 0 => 3,
+            LiteralKind::String if row.value_in_raw()[1] != 0 || row.scalar_or_text() == 0 => 2,
+            LiteralKind::Resource if row.value_in_raw()[1] != 0 || row.scalar_or_text() == 0 => 3,
             _ => return None,
         };
         Some((
             crate::original_literal_projection::ProjectedLiteral {
-                bits: row.scalar_or_text,
+                bits: row.scalar_or_text(),
                 kind,
-                mode: row.string_mode,
-                alias: row.value_in_raw,
+                mode: row.string_mode(),
+                alias: row.value_in_raw(),
             },
-            row.raw.capacity(),
+            row.raw_capacity(),
             owner.credit.bytes(),
             u32::MAX >> (PAGE_ROWS - page.rows.len()),
         ))
@@ -493,7 +522,7 @@ impl<'a> OriginalLiteralRef<'a> {
         if let Some(data)=self.projection(){return data.descriptor.mode}
         match &self.full_owner().storage {
             LiteralStorage::Single(value) => value.string_mode,
-            LiteralStorage::Page(values) => values.rows[self.ordinal].string_mode,
+            LiteralStorage::Page(values) => values.rows[self.ordinal].string_mode(),
             LiteralStorage::Projected(_)=>unreachable!("projection handled before mode"),
         }
     }
@@ -505,7 +534,7 @@ impl<'a> OriginalLiteralRef<'a> {
     fn full_raw_storage(self)->LiteralRawStorage<'a> {
         match &self.full_owner().storage {
             LiteralStorage::Single(value) => LiteralRawStorage::from_string(&value.raw),
-            LiteralStorage::Page(values) => values.rows[self.ordinal].raw.view(),
+            LiteralStorage::Page(values) => values.rows[self.ordinal].raw_view(),
             LiteralStorage::Projected(_)=>unreachable!("projection handled before spelling"),
         }
     }
@@ -558,7 +587,7 @@ impl<'a> OriginalLiteralRef<'a> {
         if let Some(data)=self.projection(){return data.descriptor.kind()}
         let kind = match &self.full_owner().storage {
             LiteralStorage::Single(value) => value.kind,
-            LiteralStorage::Page(values) => values.rows[self.ordinal].kind,
+            LiteralStorage::Page(values) => values.rows[self.ordinal].kind(),
             LiteralStorage::Projected(_)=>unreachable!("projection handled before kind"),
         };
         match kind {
@@ -602,19 +631,25 @@ impl<'a> OriginalLiteralRef<'a> {
 
     /// Inspect the physical owner, including siblings not yet delivered.
     #[cfg(debug_assertions)]
+    pub(crate) fn trace_batch_physical_row_capacity(self) -> usize {
+        let LiteralStorage::Page(batch) = &self.full_owner().storage else { unreachable!("actual batch owner") };
+        batch.rows.capacity()
+    }
+
+    #[cfg(debug_assertions)]
     pub(crate) fn trace_batch_numeric_raw(self) -> (usize, usize, usize) {
         let LiteralStorage::Page(batch) = &self.full_owner().storage else { unreachable!("actual batch owner") };
         let mut rows = 0;
         let mut raw_bytes = 0usize;
         let mut live = 0;
         for row in &batch.rows {
-            if row.raw.is_withdrawn() {
+            if row.is_withdrawn() {
                 continue;
             }
             live += 1;
-            if matches!(row.kind, LiteralKind::Int | LiteralKind::Float) {
+            if matches!(row.kind(), LiteralKind::Int | LiteralKind::Float) {
                 rows += 1;
-                raw_bytes += row.raw.capacity();
+                raw_bytes += row.raw_capacity();
             }
         }
         (rows, live, raw_bytes)
@@ -656,8 +691,8 @@ impl<'a> OriginalLiteralRef<'a> {
                 visit(rows.as_ptr() as usize, rows.len() * size_of::<PackedBatchValue>(),
                     rows.capacity() * size_of::<PackedBatchValue>());
                 for row in rows {
-                    if !row.raw.is_withdrawn() {
-                        raw_storage(row.raw.view(), &mut visit);
+                    if !row.is_withdrawn() {
+                        raw_storage(row.raw_view(), &mut visit);
                     }
                 }
                 // A detached row owns the whole bounded page, including the
@@ -676,6 +711,8 @@ impl<'a> OriginalLiteralRef<'a> {
 const PAGE_ROWS: usize = 32;
 const PAGE_TEXT_BYTES: usize = 8 * 1024;
 const MAX_ROW_TEXT_BYTES: usize = 1024;
+const _: () = assert!(MAX_ROW_TEXT_BYTES as u64 <= PackedBatchValue::RAW_MASK
+    && PAGE_ROWS <= u8::MAX as usize);
 
 struct PendingPage {
     // Each staged row has already transferred its credit. On error these
@@ -725,7 +762,7 @@ impl OriginalLiteralData {
                 continue;
             }
             let owned = literal.owned_bytes().ok_or(io::ErrorKind::OutOfMemory)?;
-            if owned > MAX_ROW_TEXT_BYTES || PackedRaw::geometry(literal.raw.len(), literal.raw.capacity()).is_none() {
+            if owned > MAX_ROW_TEXT_BYTES || PackedBatchValue::raw_geometry(literal.raw.len(), literal.raw.capacity()).is_none() {
                 continue;
             }
             let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
@@ -764,7 +801,7 @@ impl OriginalLiteralData {
                 return Err(io::ErrorKind::InvalidData);
             };
             // Validate all raw geometry before the first occurrence is moved.
-            if PackedRaw::geometry(value.raw.len(), value.raw.capacity()).is_none() {
+            if PackedBatchValue::raw_geometry(value.raw.len(), value.raw.capacity()).is_none() {
                 return Err(io::ErrorKind::InvalidData);
             }
             Ok(count + usize::from(!value.text.is_empty()))
@@ -1393,9 +1430,13 @@ mod batch_page_controls {
     fn original_literal_batch_adopts_long_alias_without_cooked_side_storage() {
         let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
-        let issued = "Ã©".repeat(170);
+        let issued = "\u{00e9}".repeat(170);
+        let mut raw = String::with_capacity(issued.len() + 2);
+        raw.push('"');
+        raw.push_str(&issued);
+        raw.push('"');
         let long = OriginalLiteralData::from_value_using(
-            format!("\"{issued}\""), OriginalTokenValue::String(&issued), &a,
+            raw, OriginalTokenValue::String(&issued), &a,
         ).unwrap();
         let pointer = long.raw().as_ptr();
         let mut rows = [Some(long), Some(literal("1", 1, &a)),
@@ -1450,14 +1491,56 @@ mod batch_page_controls {
 
     #[test]
     fn packed_literal_raw_geometry_checks_both_wide_fields_without_allocating() {
-        assert_eq!(PackedRaw::geometry(2, 128), Some((2, 128)));
-        assert_eq!(PackedRaw::geometry(2, 1), None);
+        assert_eq!(PackedBatchValue::raw_geometry(2, 128), Some((2, 128)));
+        assert_eq!(PackedBatchValue::raw_geometry(2, 1), None);
+        assert_eq!(PackedBatchValue::raw_geometry(1024, 1024), Some((1024, 1024)));
+        assert_eq!(PackedBatchValue::raw_geometry(1, 1025), None);
         #[cfg(target_pointer_width = "64")]
         {
             let wide = u32::MAX as usize + 1;
-            assert_eq!(PackedRaw::geometry(0, wide), None);
-            assert_eq!(PackedRaw::geometry(wide, wide), None);
+            assert_eq!(PackedBatchValue::raw_geometry(0, wide), None);
+            assert_eq!(PackedBatchValue::raw_geometry(wide, wide), None);
         }
+    }
+
+    #[test]
+    fn packed_literal_metadata_preserves_maximal_alias_and_cooked_slot() {
+        let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+        let used = crate::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut raw = String::with_capacity(MAX_ROW_TEXT_BYTES);
+        raw.push_str(&"a".repeat(255));
+        raw.push_str("é");
+        raw.push_str(&"b".repeat(254));
+        let ptr = raw.as_ptr();
+        let make = |raw, value| OriginalLiteralData::from_value_using(raw,value,&a).unwrap();
+        let mut rows = [
+            Some(make(raw, OriginalTokenValue::String("é"))),
+            Some(make("n".into(), OriginalTokenValue::Float(f32::from_bits(0xffc01234)))),
+            Some(make("z".into(), OriginalTokenValue::Float(-0.0))),
+            Some(make("m".into(), OriginalTokenValue::Int(i32::MIN))),
+        ];
+        OriginalLiteralData::pack_delivery_batch_using(&mut rows,&a).unwrap();
+        let data = rows[0].as_ref().unwrap();
+        let LiteralStorage::Page(page) = &data.owner().storage else { panic!("actual compact batch"); };
+        let row = &page.rows[0];
+        assert_eq!(row.value_in_raw(),[255,255]);
+        assert_eq!(row.raw_view().as_ptr(),ptr);
+        assert_eq!(row.raw_capacity(),MAX_ROW_TEXT_BYTES);
+        assert_eq!(rows[1].as_ref().unwrap().payload().scalar_bits,0xffc01234);
+        assert_eq!(rows[2].as_ref().unwrap().payload().scalar_bits,(-0.0f32).to_bits());
+        assert_eq!(rows[3].as_ref().unwrap().payload().scalar_bits,i32::MIN as u32);
+        drop(rows);
+
+        let mut cooked: Vec<_> = (0..PAGE_ROWS).map(|i|
+            Some(make("raw".into(),OriginalTokenValue::String(if i+1==PAGE_ROWS{"last"}else{"cooked"})))).collect();
+        OriginalLiteralData::pack_delivery_batch_using(&mut cooked,&a).unwrap();
+        let last = cooked.last().unwrap().as_ref().unwrap();
+        let LiteralStorage::Page(page) = &last.owner().storage else { panic!("actual cooked batch"); };
+        assert_eq!(page.rows[PAGE_ROWS-1].scalar_or_text() as usize,PAGE_ROWS);
+        assert_eq!(last.payload().text,"last");
+        drop(cooked);
+        assert_eq!(used.load(Ordering::Acquire),fixed);
     }
 
     #[test]
@@ -1502,8 +1585,8 @@ mod batch_page_controls {
         #[allow(dead_code)]
         enum PreviousStorage { Single(LiteralValue), Page(Vec<LiteralValue>) }
         assert_eq!(size_of::<LiteralStorage>(), size_of::<PreviousStorage>());
-        assert_eq!(size_of::<LiteralValue>() - size_of::<PackedBatchValue>(),
-            size_of::<Box<str>>() + size_of::<String>() - size_of::<PackedRaw>());
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(size_of::<PackedBatchValue>(), 16);
 
         let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));

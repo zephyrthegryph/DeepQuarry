@@ -932,7 +932,7 @@ impl OriginalPrimaryLiteralFacts{
  #[cfg(debug_assertions)]
  pub(crate) fn trace_retention(&self)->impl std::fmt::Debug{
   #[derive(Default)]
-  struct Census{batch_payload_pages:usize,batch_payload_reserved:usize,exclusive_payload_rows:usize,exclusive_payload_reserved:usize,shared_payload_references:usize,shared_payload_reserved_per_reference_upper:usize}
+  struct Census{batch_payload_pages:usize,batch_payload_physical_rows:usize,batch_payload_reserved:usize,exclusive_payload_rows:usize,exclusive_payload_reserved:usize,shared_payload_references:usize,shared_payload_reserved_per_reference_upper:usize}
   #[derive(Default,Debug)]
   struct NumericCensus{
    delivered_rows:usize,
@@ -965,6 +965,7 @@ impl OriginalPrimaryLiteralFacts{
     if last_payload_page == Some(current) { continue; }
     last_payload_page = Some(current);
     census.batch_payload_pages += 1;
+    census.batch_payload_physical_rows += data.trace_batch_physical_row_capacity();
     let reserved = data.trace_payload().1;
     census.batch_payload_reserved += reserved;
     let (numeric_rows, total_rows, numeric_raw) = data.trace_batch_numeric_raw();
@@ -1004,6 +1005,7 @@ impl OriginalPrimaryLiteralFacts{
    f.debug_struct("PrimaryLiteralCensus").field("rows",&self.rows).field("colons",&self.colons)
     .field("fixed_reserved",&self.fixed).field("row_capacity",&self.row_capacity).field("colon_capacity",&self.colon_capacity)
     .field("batch_payload_pages",&self.census.batch_payload_pages)
+    .field("batch_payload_physical_rows",&self.census.batch_payload_physical_rows)
     .field("batch_payload_reserved",&self.census.batch_payload_reserved)
     .field("exclusive_payload_rows",&self.census.exclusive_payload_rows).field("exclusive_payload_reserved",&self.census.exclusive_payload_reserved)
     .field("shared_payload_references",&self.census.shared_payload_references).field("shared_payload_reserved_per_reference_upper",&self.census.shared_payload_reserved_per_reference_upper)
