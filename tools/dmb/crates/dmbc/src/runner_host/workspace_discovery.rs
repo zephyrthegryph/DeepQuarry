@@ -21,7 +21,39 @@ pub(crate) struct DiscoveryContract {
 /// No caller flag, include glob or exclusion list can construct this value.
 #[derive(Clone,Copy)]
 enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1}
+/// Obligations of the one physical traversal selected by the private issuer.
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+struct DiscoveryFacets {
+    map_root_no_follow: bool,
+    productive_docs: bool,
+    docs_share_complete_dm: bool,
+    visible_ui: bool,
+    ui_shares_complete_dm: bool,
+}
+
+impl DiscoveryFacets {
+    fn follows_requested_root(self, root: &Path) -> bool {
+        !(self.map_root_no_follow && root.file_name().is_some_and(|name| name == "maps"))
+    }
+
+    fn applies_doc_exemption(self, relative: &Path) -> bool {
+        self.productive_docs
+            && (!self.docs_share_complete_dm || relative.starts_with("doc/rewrite"))
+    }
+}
+
 impl DiscoverySelection{
+ fn facets(self) -> DiscoveryFacets {
+     use DiscoverySelection::*;
+     DiscoveryFacets {
+         map_root_no_follow: matches!(self, MapEditsJoinedDmNoLinksV1),
+         productive_docs: matches!(self, DocSnippetsDemandV2 | DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1),
+         docs_share_complete_dm: matches!(self, DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1),
+         visible_ui: matches!(self, UiActionsVisibleRootsV1 | UiActionsJoinedAllowV1 | DocUiJoinedAllowV1),
+         ui_shares_complete_dm: matches!(self, UiActionsJoinedAllowV1 | DocUiJoinedAllowV1),
+     }
+ }
+
  fn includes_file(self,path:&Path,root:&Path)->bool{match self{
   Self::DocUiJoinedAllowV1=>Self::UiActionsJoinedAllowV1.includes_file(path,root)
    ||path.strip_prefix(root).is_ok_and(|relative|
@@ -90,7 +122,7 @@ impl DiscoveryReceipt {
     /// A mixed MD receipt can certify only the actual doc purpose, never CODE authority.
     pub(crate) fn covers_doc_snippets(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
         if !matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1){return Ok(false)}
-        if matches!(self.selection,DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1){
+        if self.selection.facets().productive_docs{
           let config=self.doc_configuration.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"productive Doc discovery has no actual configuration owner"))?;
           for relative in ["code/","doc/rewrite/"]{crate::daemon::control::checkpoint()?;admit(1024)?;if config.excludes_subtree(relative){continue}if !self.facts.policy_directories().contains_key(&self.contract.root.join(relative.trim_end_matches('/'))){return Ok(false)}}return Ok(true)
         }
@@ -99,7 +131,7 @@ impl DiscoveryReceipt {
     /// Only this producer's actual visible mixed-root traversal can issue UI
     /// completion. It cannot grant generic CODE, generator or semantic coverage.
     pub(crate) fn covers_ui_actions(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
-        if  !matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1){return Ok(false)}
+        if !self.selection.facets().visible_ui{return Ok(false)}
         self.covers_selected_roots(&[("code","dm"),("tgui/packages/tgui/interfaces","tsx"),("tgui/packages/tgui/interfaces","ts"),("tgui/packages/tgui/interfaces","jsx"),("tgui/packages/tgui/interfaces","js")],true,false,admit)
     }
     fn covers_selected_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,doc:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
@@ -135,7 +167,7 @@ impl DiscoveryReceipt {
     }
 
     pub(crate) fn productive_ui_configuration(&self,path:&Path)->io::Result<Option<&dq_analyze::captured_raw_file::Config>>{
-     if !matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1){return Ok(None)}
+     if !self.selection.facets().visible_ui{return Ok(None)}
      match &self.doc_configuration{Some(config)if config.path==path=>Ok(Some(config.value.as_ref())),_=>Err(io::Error::new(io::ErrorKind::InvalidInput,"actual UI productive configuration absent or foreign"))}
     }
     pub(crate) fn productive_doc_configuration(&self,path:&Path)->io::Result<Option<&dq_analyze::captured_raw_file::Config>>{if matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1){return Ok(None)}match &self.doc_configuration{None=>Ok(None),Some(config)if config.path==path=>Ok(Some(config.value.as_ref())),Some(_)=>Err(io::Error::new(io::ErrorKind::InvalidInput,"Doc discovery configuration differs from actual capture"))}}
@@ -331,13 +363,13 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
     let mut fund_metadata=|bytes:usize|->io::Result<()>{if let Some(budget)=&metadata_budget{let extra=bytes.saturating_sub(funded_metadata);budget.charge(extra).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;}funded_metadata=funded_metadata.max(bytes);Ok(())};
     if let Some(config)=&doc_configuration{metadata=metadata.checked_add(config.value.budget_charge()).and_then(|n|n.checked_add(config.path.capacity()*8+4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc scope/traversal metadata overflow"))?;}
     fund_metadata(metadata)?;check(inputs, metadata)?;
+    let facets = selection.facets();
     let mut stack = contract
         .recursive_roots
         .iter()
         .cloned()
         .map(|p| {
-            let follow_root = !(matches!(selection, DiscoverySelection::MapEditsJoinedDmNoLinksV1)
-                && p.file_name().is_some_and(|name| name == "maps"));
+            let follow_root = facets.follows_requested_root(&p);
             (p, follow_root)
         })
         .collect::<Vec<_>>();
@@ -353,14 +385,14 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
     while let Some((folder, follow_root)) = stack.pop() {
         crate::daemon::control::checkpoint()?;
         if matches!(selection,DiscoverySelection::DocSnippetsDemandV2){let relative=folder.strip_prefix(&contract.root).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"Doc folder escapes actual root"))?.to_string_lossy().replace('\\',"/");let key=format!("{relative}/");if (relative.starts_with("doc/rewrite/")||relative.split('/').any(|part|part.starts_with('.')))||doc_configuration.as_ref().is_some_and(|config|config.excludes_subtree(&key)){continue}}
-        if matches!(selection,DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1) {
+        if facets.docs_share_complete_dm {
             let relative=folder.strip_prefix(&contract.root).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"Doc folder escapes actual root"))?;
             if relative.starts_with("doc/rewrite") {
                 let config=doc_configuration.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"joined Doc lacks its productive configuration"))?;
                 if relative!=Path::new("doc/rewrite")||config.excludes_subtree("doc/rewrite/"){continue}
             }
         }
-        if matches!(selection,DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1)
+        if facets.ui_shares_complete_dm
             && folder.strip_prefix(&contract.root).is_ok_and(|relative|
                 relative.starts_with("tgui/packages/tgui/interfaces")
                 && relative.components().any(|part|part.as_os_str().to_string_lossy().starts_with('.'))) {continue}
@@ -397,10 +429,7 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
                         Kind::File if selection.includes_file(&path,&contract.root)
                             && !doc_configuration.as_ref().is_some_and(|config|
                                 path.strip_prefix(&contract.root).is_ok_and(|relative| {
-                                    let doc_selected = !matches!(selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1)
-                                        && (!matches!(selection,DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1)
-                                            || relative.starts_with("doc/rewrite"));
-                                    doc_selected && config.excludes(&relative.to_string_lossy().replace('\\',"/"))
+                                    facets.applies_doc_exemption(relative) && config.excludes(&relative.to_string_lossy().replace('\\',"/"))
                                 })) =>
                         {
                             if !files.contains(&path) {
@@ -458,6 +487,45 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
         facts,
         files,check_grep,doc_configuration,
     })
+}
+
+#[cfg(test)]
+mod discovery_facet_tests {
+    use super::{DiscoveryFacets, DiscoverySelection, Path};
+
+    #[test]
+    fn original_selectors_keep_their_distinct_discovery_obligations() {
+        use DiscoverySelection::*;
+        let none = DiscoveryFacets::default();
+        let docs = DiscoveryFacets { productive_docs: true, ..none };
+        let ui = DiscoveryFacets { visible_ui: true, ..none };
+        for (selection, expected) in [
+            (RecursiveDmNoChildLinksV1, none),
+            (MapEditsJoinedDmNoLinksV1, DiscoveryFacets { map_root_no_follow: true, ..none }),
+            (CheckGrepDmAndRawNoChildLinksV1, none),
+            (DocSnippetsCodeAndMarkdownV1, none),
+            (DocSnippetsDemandV2, docs),
+            (DocSnippetsJoinedAllowV1, DiscoveryFacets { docs_share_complete_dm: true, ..docs }),
+            (OwnershipCodeDmV2, none),
+            (UiActionsVisibleRootsV1, ui),
+            (UiActionsJoinedAllowV1, DiscoveryFacets { ui_shares_complete_dm: true, ..ui }),
+            (DocUiJoinedAllowV1, DiscoveryFacets {
+                productive_docs: true,
+                docs_share_complete_dm: true,
+                ui_shares_complete_dm: true,
+                ..ui
+            }),
+        ] {
+            let facets = selection.facets();
+            assert_eq!(facets, expected);
+            assert!(facets.follows_requested_root(Path::new("root/code")));
+            assert_eq!(facets.follows_requested_root(Path::new("root/maps")), !expected.map_root_no_follow);
+            assert_eq!(facets.applies_doc_exemption(Path::new("code/exempt.dm")),
+                expected.productive_docs && !expected.docs_share_complete_dm);
+            assert_eq!(facets.applies_doc_exemption(Path::new("doc/rewrite/exempt.md")),
+                expected.productive_docs);
+        }
+    }
 }
 
 #[cfg(test)]mod doc_source_role_tests{

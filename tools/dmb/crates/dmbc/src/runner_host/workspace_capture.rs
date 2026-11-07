@@ -1140,6 +1140,78 @@ pub(crate) fn capture_raw_only_with_prior<P:SnapshotProvider>(inputs:&RecordingI
  queries.with_raw_source_capture_inputs(|budget,credits|capture_raw_only_funded(inputs,intent,queries,prior,None,budget,credits))
 }
 pub(crate) fn capture_engine_unselected<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest,queries:&Arc<crate::query_db::QueryDb>,proof:crate::runner_host::workspace_discovery::EngineNoModelProof)->io::Result<(Arc<WorkspaceCapture>,Arc<RawSourceIdentity>)>{if intent.workspace_auxiliary()!=[proof.preflight().question()]{return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine no-model proof cannot grant another producer purpose"))}proof.require(inputs)?;queries.with_raw_source_capture_inputs(|budget,credits|capture_raw_only_funded(inputs,intent,queries,None,Some(proof),budget,credits))}
+// Both workspace capture modes must feed the selected recorder's actual
+// original bytes here. This function does not acquire or authenticate files.
+fn prepare_captured_ui_dispatcher(
+    original: Option<&RecordedSourceOriginal<'_>>,
+    budget: &Arc<dq_analyze::captured_generator_budget::Budget>,
+) -> io::Result<dq_analyze::ui_actions_policy::PreparedDispatcher> {
+    let quota = |message| io::Error::new(io::ErrorKind::OutOfMemory, message);
+    // The old raw facade is lossy UTF-8 with universal newlines and preserves
+    // BOM bytes. Native compiler decoding is a distinct view, not UI source text.
+    let normalization=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(quota)?;
+    let text=if let Some(original)=original{
+     let mut backing=Some(0usize);
+     let raw=match original{
+      crate::input_snapshot::RecordedSourceOriginal::Utf8(text)=>{dq_analyze::captured_raw_file::visit_source_storage(text,|_,bytes|backing=backing.and_then(|n|n.checked_add(bytes)));text.as_bytes()},
+      crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=>{backing=bytes.capacity().checked_add(128);bytes.as_slice()},
+     };
+     let transform=if matches!(original,crate::input_snapshot::RecordedSourceOriginal::Utf8(text)if !text.as_bytes().contains(&b'\r')){Some(0)}else{dq_analyze::captured_raw_file::analyze_raw_len(raw).map_err(quota)?.checked_mul(4).and_then(|n|n.checked_add(8192))};
+     normalization.charge(backing.and_then(|n|n.checked_add(transform?)).ok_or(io::ErrorKind::OutOfMemory)?).map_err(quota)?;
+     Some(crate::input_snapshot::normalize_recorded_policy_original(original))
+    }else{None};
+    let prepared=dq_analyze::ui_actions_policy::prepare_dispatcher(text.as_ref().map(|text|text.as_str()),budget,&crate::daemon::control::checkpoint).map_err(|actual|match actual{
+     dq_analyze::captured_reactive_reads::Failure::Operational(error)=>error,
+     dq_analyze::captured_reactive_reads::Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message),
+    })?;
+    drop(text);
+    drop(normalization);
+    Ok(prepared)
+}
+
+// File selection is independent of how the actual file will be acquired. The
+// caller supplies independent roles proved by its own discovery receipt.
+fn keeps_discovered_ui_path(
+    relative: &Path,
+    aggregate_dm: bool,
+    productive_docs: bool,
+    dispatcher_needs_sources: bool,
+    ui_path_exempt: impl FnOnce(&str) -> io::Result<bool>,
+) -> io::Result<bool> {
+    if aggregate_dm
+        && (relative.starts_with("code") || relative.starts_with("maps"))
+        && relative.extension().is_some_and(|extension| extension == "dm")
+    {
+        return Ok(true);
+    }
+    if !dispatcher_needs_sources && !productive_docs {
+        return Ok(false);
+    }
+    let relative = relative.to_string_lossy().replace('\\', "/");
+    if productive_docs && dq_analyze::doc_snippets_policy::is_doc_path(&relative) {
+        return Ok(true);
+    }
+    if !dispatcher_needs_sources || relative.ends_with(".d.ts") {
+        return Ok(false);
+    }
+    Ok(!ui_path_exempt(&relative)?)
+}
+
+#[cfg(test)]
+#[test]
+fn ui_path_selection_keeps_independent_roles_after_dispatcher_refusal() {
+    fn unused(_: &str) -> io::Result<bool> { panic!("this path must not consult UI config") }
+    assert!(keeps_discovered_ui_path(Path::new("maps/hidden.dm"), true, true, false, unused).unwrap());
+    assert!(keeps_discovered_ui_path(Path::new("doc/rewrite/guide.md"), true, true, false, unused).unwrap());
+    assert!(!keeps_discovered_ui_path(Path::new("tgui/Other.tsx"), true, true, false, unused).unwrap());
+    assert!(!keeps_discovered_ui_path(Path::new("tgui/Other.d.ts"), true, true, true, unused).unwrap());
+    assert!(!keeps_discovered_ui_path(Path::new("tgui/Other.tsx"), true, true, true, |name| {
+        assert_eq!(name, "tgui/Other.tsx");
+        Ok(true)
+    }).unwrap());
+    assert!(keeps_discovered_ui_path(Path::new("tgui/Other.tsx"), true, true, true, |_| Ok(false)).unwrap());
+}
+
 fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest,queries:&Arc<crate::query_db::QueryDb>,prior:Option<&Arc<WorkspaceCapture>>,engine:Option<crate::runner_host::workspace_discovery::EngineNoModelProof>,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,credits:&mut crate::query_db::RawInputCredits<'_>)->io::Result<(Arc<WorkspaceCapture>,Arc<RawSourceIdentity>)>{
  let capture_started = std::time::Instant::now();
  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
@@ -1208,25 +1280,8 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
   Some(path)if discovery.files().contains(path)=>Some(acquire(path)?),_=>None,
  };
  let prepared_ui=if ui_purpose{
-  // The old raw facade is lossy UTF-8 with universal newlines and preserves
-  // BOM bytes. Native compiler decoding is a distinct view, not UI source text.
-  let normalization=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(quota)?;
   let original=ui_original.as_ref().map(crate::input_snapshot::recorded_source_original).transpose()?;
-  let text=if let Some(original)=&original{
-   let mut backing=Some(0usize);
-   let raw=match original{
-    crate::input_snapshot::RecordedSourceOriginal::Utf8(text)=>{dq_analyze::captured_raw_file::visit_source_storage(text,|_,bytes|backing=backing.and_then(|n|n.checked_add(bytes)));text.as_bytes()},
-    crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=>{backing=bytes.capacity().checked_add(128);bytes.as_slice()},
-   };
-   let transform=if matches!(original,crate::input_snapshot::RecordedSourceOriginal::Utf8(text)if !text.as_bytes().contains(&b'\r')){Some(0)}else{dq_analyze::captured_raw_file::analyze_raw_len(raw).map_err(quota)?.checked_mul(4).and_then(|n|n.checked_add(8192))};
-   normalization.charge(backing.and_then(|n|n.checked_add(transform?)).ok_or(io::ErrorKind::OutOfMemory)?).map_err(quota)?;
-   Some(crate::input_snapshot::normalize_recorded_policy_original(original))
-  }else{None};
-  let prepared=dq_analyze::ui_actions_policy::prepare_dispatcher(text.as_ref().map(|text|text.as_str()),budget,&crate::daemon::control::checkpoint).map_err(|actual|match actual{
-   dq_analyze::captured_reactive_reads::Failure::Operational(error)=>error,
-   dq_analyze::captured_reactive_reads::Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message),
-  })?;
-  drop(text);drop(normalization);Some(prepared)
+  Some(prepare_captured_ui_dispatcher(original.as_ref(),budget)?)
  }else{None};
  let ui_needs_sources=prepared_ui.as_ref().is_some_and(|value|value.needs_sources());
  let source_count=if engine.is_some(){0}else if !ui_joined&&prepared_ui.is_some()&&!ui_needs_sources{usize::from(ui_original.is_some())}else{discovery.files().len()};
@@ -1241,16 +1296,9 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
   if engine.is_some(){break}
   if prepared_ui.is_some()&&ui_dispatcher_path.as_ref()!=Some(path){
    let relative=path.strip_prefix(&workspace.root).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"UI selected source escapes actual root"))?;
-   let aggregate_dm=ui_joined&&(relative.starts_with("code")||relative.starts_with("maps"))
-    &&relative.extension().is_some_and(|extension|extension=="dm");
-   // Markdown came from the actual productive Docs half of this receipt.
-   // A malformed UI dispatcher must not suppress this independent role.
-   let relative=relative.to_string_lossy().replace('\\',"/");
-   let docs_source=purpose==RawSourcePurpose::DocUiFullAllow&&dq_analyze::doc_snippets_policy::is_doc_path(&relative);
-   if !aggregate_dm&&!docs_source{
-    if !ui_needs_sources{continue}
-    if relative.ends_with(".d.ts")||discovery.productive_ui_configuration(&workspace.configuration)?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"UI source selection lacks actual configuration"))?.policy_path_exempt("ui_actions",dq_analyze::ui_actions_policy::metadata().group,&relative){continue}
-   }
+   if !keeps_discovered_ui_path(relative,ui_joined,purpose==RawSourcePurpose::DocUiFullAllow,ui_needs_sources,|relative|{
+    Ok(discovery.productive_ui_configuration(&workspace.configuration)?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"UI source selection lacks actual configuration"))?.policy_path_exempt("ui_actions",dq_analyze::ui_actions_policy::metadata().group,relative))
+   })?{continue}
   }
 
   crate::daemon::control::checkpoint()?;
