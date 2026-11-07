@@ -233,11 +233,46 @@ impl dq_analyze::policy_finish::admitted::Work for SitesWork<'_> {
     }
 }
 
+/// Operation-local status indexed by the admitted section order. The caller
+/// retains the order and authority; status bits grant neither.
+struct SectionFailures {
+    bits: Vec<u8>,
+    sections: usize,
+}
+
+impl SectionFailures {
+    fn new(sections: usize, budget: &Budget) -> io::Result<Self> {
+        let bytes = sections.div_ceil(u8::BITS as usize);
+        let mut bits = Vec::new();
+        if bytes != 0 {
+            budget.charge(bytes).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+            bits.try_reserve_exact(bytes).map_err(|_| io::ErrorKind::OutOfMemory)?;
+            bits.resize(bytes, 0);
+        }
+        Ok(Self { bits, sections })
+    }
+
+    fn record(&mut self, ordinal: usize, failed: bool) -> io::Result<()> {
+        if ordinal >= self.sections {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "section status is outside the admitted order"));
+        }
+        if failed {
+            self.bits[ordinal / u8::BITS as usize] |= 1 << (ordinal % u8::BITS as usize);
+        }
+        Ok(())
+    }
+
+    fn failed(&self, ordinal: usize) -> bool {
+        assert!(ordinal < self.sections);
+        self.bits[ordinal / u8::BITS as usize] & (1 << (ordinal % u8::BITS as usize)) != 0
+    }
+}
+
 struct ReportStage<'a> {
     file: Stage,
     finished: usize,
     selected: &'static [&'static str],
-    failed: [bool; Roster::MAX_STAGED_POLICIES],
+    failed: SectionFailures,
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
@@ -265,7 +300,7 @@ impl ReportStage<'_> {
             }
             self.file.write_all(data.report.as_bytes())?;
             checkpoint()?;
-            self.failed[self.finished] = data.failed;
+            self.failed.record(self.finished, data.failed)?;
             self.finished += 1;
             return Ok(());
         }
@@ -668,7 +703,7 @@ impl ReportStage<'_> {
         if !raw { writeln!(self.file, "::group::{}", meta.name)?; }
         self.file.write_all(text.as_bytes())?;
         if !raw { self.file.write_all(b"::endgroup::\n")?; }
-        self.failed[self.finished] = failed;
+        self.failed.record(self.finished, failed)?;
         self.finished += 1;
         drop(text);
         drop(projection);
@@ -683,8 +718,8 @@ impl ReportStage<'_> {
         for problem in data.unused() { writeln!(self.file, "{problem}")?; }
         writeln!(self.file, "allow annotations: {} unused", data.unused().len())?;
         budget.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
-        let failed = self.selected.iter().copied().zip(self.failed)
-            .filter_map(|(name, failed)| failed.then_some(name))
+        let failed = data.selected().iter().enumerate()
+            .filter_map(|(ordinal, name)| self.failed.failed(ordinal).then_some(name.as_str()))
             .chain((!data.unused().is_empty()).then_some("allow_annotations --unused"));
         policy_finish::write_result_line(failed, &mut self.file)
     }
@@ -781,7 +816,7 @@ impl super::super::RawWorkspaceSnapshot {
         };
         let mut usage = UsageJoinData::new(&selection, frame);
         let mut stage = ReportStage {
-            file, finished: 0, selected: selected, failed: [false; Roster::MAX_STAGED_POLICIES],
+            file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
             judgment: JudgmentV2::Raw, library_baseline: None,
         };
         for &name in selected {
@@ -908,7 +943,7 @@ impl SourceSnapshot {
             Some(workspace.library_sites_baseline(&guard)?)
         } else { None };
         let stage = RefCell::new(ReportStage {
-            file, finished: 0, selected, failed: [false; Roster::MAX_STAGED_POLICIES],
+            file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
             judgment, library_baseline,
         });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
@@ -923,6 +958,31 @@ impl SourceSnapshot {
 
 #[cfg(test)]
 mod selected_plan_tests {
+    #[test]
+    fn section_status_funds_the_actual_order_and_checks_its_end() {
+        use super::{Budget, SectionFailures};
+        let sections = super::Roster::MAX_STAGED_POLICIES * 2 + 3;
+        let bytes = sections.div_ceil(u8::BITS as usize);
+        let budget = Budget::new(4096).unwrap();
+        let before = budget.used();
+        let mut status = SectionFailures::new(sections, &budget).unwrap();
+        assert_eq!(budget.used() - before, bytes);
+        assert_eq!(status.bits.capacity(), bytes);
+        for ordinal in [0, 7, 8, sections - 1] {
+            status.record(ordinal, true).unwrap();
+        }
+        assert_eq!(
+            (0..sections).filter(|&ordinal| status.failed(ordinal)).collect::<Vec<_>>(),
+            [0, 7, 8, sections - 1],
+        );
+        assert_eq!(status.record(sections, false).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
+
+        let tiny = Budget::new(before + bytes - 1).unwrap();
+        let error = SectionFailures::new(sections, &tiny).err().expect("bitmap must be prepaid");
+        assert_eq!(error.kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(tiny.used(), before);
+    }
+
     use super::*;
 
     #[test]
@@ -1003,7 +1063,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         file,
         finished: 0,
         selected: &["image_dir_after_build"],
-        failed: [false; Roster::MAX_STAGED_POLICIES],
+        failed: SectionFailures::new(1, budget)?,
         judgment: JudgmentV2::Raw,
         library_baseline: None,
     };
@@ -1011,7 +1071,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
     if stage.finished != 1 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "named ImageDir section did not complete"));
     }
-    let clean = !stage.failed[0];
+    let clean = !stage.failed.failed(0);
     let verified = checked_stage(stage.file)?;
     poll()?;
     budget.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
