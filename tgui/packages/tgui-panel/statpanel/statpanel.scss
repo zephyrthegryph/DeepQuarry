@@ -848,3 +848,79 @@ body {
   height: 3px;
   background: console.$console-green;
 }
+
+// The window dock (DockArea.tsx): docked tgui windows are placed over .dock-body.
+.dock-area {
+  flex: 0 1 auto;
+  max-height: 75vh;
+  overflow: hidden auto;
+  border-bottom: 1px solid var(--stat-line);
+}
+
+.dock-gap {
+  height: 3px;
+
+  .dock-area--dragging & {
+    height: 10px;
+  }
+
+  &--lit {
+    background: rgba(141, 192, 255, 0.6);
+  }
+}
+
+.dock-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 22px;
+  padding: 0 2px;
+  background: var(--stat-section);
+  cursor: grab;
+  user-select: none;
+
+  &--lit {
+    outline: 2px dashed #8dc0ff;
+  }
+}
+
+.dock-title,
+.dock-tabs {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dock-tabs {
+  margin: 0;
+}
+
+.dock-body {
+  position: relative;
+  background: var(--stat-base);
+}
+
+.dock-body__ghost {
+  padding: 8px;
+  color: var(--stat-muted);
+  border: 1px dashed var(--stat-line);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.dock-grip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 6px;
+  cursor: ns-resize;
+  z-index: 2;
+}
+
+.dock-tab {
+  display: inline-block;
+  padding: 0 4px;
+}

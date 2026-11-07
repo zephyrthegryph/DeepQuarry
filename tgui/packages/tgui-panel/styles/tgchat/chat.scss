@@ -1,10 +1,12 @@
 /**
  * Copyright (c) 2020 Aleksej Komarov
  * SPDX-License-Identifier: MIT
+ *
+ * The chat message styles, one sheet for every chat theme. A colour that
+ * differs between themes is a --chat-* token; each theme sets its tokens from
+ * chat-tokens.scss (dark in styles/main.scss, the others in styles/themes/).
+ * Add a colour here as a token and give it a value in every theme's mixin.
  */
-
-@use 'sass:map';
-@use 'sass:color';
 
 em {
   font-style: normal;
@@ -28,23 +30,21 @@ img.icon {
 
 a {
   cursor: var(--cursor-pointer);
-  color: var(--color-hyperlink);
+  color: var(--chat-a-color);
   transition: color var(--transition-time-medium);
   text-decoration: none;
 
   &:hover {
-    color: hsl(from var(--color-hyperlink) h s calc(l + var(--adjust-hover)));
+    color: var(--chat-a-hover-color);
   }
 }
 
 a.visited,
 a:visited {
-  color: var(--color-hyperlink-visited);
+  color: var(--chat-a-visited-color);
 
   &:hover {
-    color: hsl(
-      from var(--color-hyperlink-visited) h s calc(l + var(--adjust-hover))
-    );
+    color: var(--chat-a-visited-hover-color);
   }
 }
 
@@ -125,7 +125,7 @@ a:visited {
   display: block;
   text-decoration: none;
   padding: 3px;
-  color: hsl(0, 0%, 53%);
+  color: var(--chat-changefont-a-color);
 }
 
 .changeFont a:hover {
@@ -165,7 +165,7 @@ a:visited {
   display: block;
   padding: 2px 5px;
   text-decoration: none;
-  color: hsl(0, 0%, 53%);
+  color: var(--chat-changefont-a-color);
 }
 
 .contextMenu a:hover {
@@ -191,15 +191,15 @@ a:visited {
 }
 
 /*****************************************
- *
- * OUTPUT ACTUALLY RELATED TO MESSAGES
- *
- ******************************************/
+*
+* OUTPUT ACTUALLY RELATED TO MESSAGES
+*
+******************************************/
 
 /* MOTD */
 
 .motd {
-  color: hsl(214, 38%, 74%);
+  color: var(--chat-motd-color);
     white-space: normal;
 }
 
@@ -209,7 +209,7 @@ a:visited {
 .motd h4,
 .motd h5,
 .motd h6 {
-  color: hsl(214, 38%, 74%);
+  color: var(--chat-motd-color);
   margin: 0 0 var(--space-s);
   font-family: inherit;
 }
@@ -219,7 +219,7 @@ a:visited {
 .motd a:visited,
 .motd a:active,
 .motd a:hover {
-  color: hsl(214, 38%, 74%);
+  color: var(--chat-motd-color);
 }
 
 .underline {
@@ -259,13 +259,13 @@ h3,
 h4,
 h5,
 h6 {
-  color: hsl(214, 38%, 74%);
+  color: var(--chat-h1-color);
   font-family: Georgia, Verdana, sans-serif;
 }
 
 h1.alert,
 h2.alert {
-  color: hsl(214, 38%, 74%);
+  color: var(--chat-h1-alert-color);
 }
 
 em {
@@ -274,32 +274,32 @@ em {
 }
 
 .ooc {
-  color: hsl(48, 100%, 40%);
+  color: var(--chat-ooc-color);
   font-weight: bold;
 }
 
 .ooc .elevated {
-  color: hsl(214, 69%, 58%);
+  color: var(--chat-ooc-elevated-color);
 }
 
 .ooc .moderator {
-  color: hsl(212, 68%, 56%);
+  color: var(--chat-ooc-moderator-color);
 }
 
 .ooc .developer {
-  color: hsl(124, 50%, 41%);
+  color: var(--chat-ooc-developer-color);
 }
 
 .ooc .admin {
-  color: hsl(15, 100%, 50%);
+  color: var(--chat-ooc-admin-color);
 }
 
 .ooc .event_manager {
-  color: hsl(330, 100%, 56%);
+  color: var(--chat-ooc-event-manager-color);
 }
 
 .ooc .aooc {
-  color: hsl(350, 100%, 60%);
+  color: var(--chat-ooc-aooc-color);
 }
 
 img.text_tag {
@@ -333,7 +333,7 @@ img.icon.bigicon {
 }
 
 .adminooc {
-  color: hsl(227, 53%, 63%);
+  color: var(--chat-adminooc-color);
   font-weight: bold;
 }
 
@@ -343,27 +343,27 @@ img.icon.bigicon {
 }
 
 .admin {
-  color: hsl(227, 64%, 64%);
+  color: var(--chat-admin-color);
   font-weight: bold;
 }
 
 .mentor_channel {
-  color: hsl(60, 100%, 28%);
+  color: var(--chat-mentor-channel-color);
   font-weight: bold;
 }
 
 .mod_channel {
-  color: hsl(31, 35%, 49%);
+  color: var(--chat-mod-channel-color);
   font-weight: bold;
 }
 
 .admin_channel {
-  color: hsl(281, 85%, 64%);
+  color: var(--chat-admin-channel-color);
   font-weight: bold;
 }
 
 .event_channel {
-  color: hsl(320, 60%, 59%);
+  color: var(--chat-event-channel-color);
   font-weight: bold;
 }
 
@@ -381,26 +381,25 @@ img.icon.bigicon {
 
 .hivemind {
   font-style: italic;
-  color: hsl(0, 0%, 100%);
 }
 
 .psay {
-  color: hsl(300, 100%, 47%);
+  color: var(--chat-psay-color);
   font-style: italic;
 }
 
 .pemote {
-  color: hsl(300, 100%, 47%);
+  color: var(--chat-psay-color);
   font-style: italic;
 }
 
 .deadsay {
-  color: hsl(272, 100%, 88%);
+  color: var(--chat-deadsay-color);
 }
 
 .binarysay {
   font-style: italic;
-  color: hsl(0, 0%, 100%);
+  color: var(--chat-binarysay-color);
 }
 
 .binarysay a {
@@ -413,74 +412,74 @@ img.icon.bigicon {
 }
 
 /* RADIO COLORS */
-/* IF YOU CHANGE THIS KEEP IT IN SYNC WITH TGUI CONSTANTS */
+/* The table is tgui/styles/radio-colors.scss (shared with the say popup and the input row). */
 
 .radio {
-  color: hsl(120, 100%, 33%);
+  color: var(--chat-radio-color);
 }
 
 .sciradio {
-  color: hsl(272, 92%, 76%);
+  color: var(--chat-sciradio-color);
 }
 
 .comradio {
-  color: hsl(202, 84%, 64%);
+  color: var(--chat-comradio-color);
 }
 
 .secradio {
-  color: hsl(0, 71%, 62%);
+  color: var(--chat-secradio-color);
 }
 
 .medradio {
-  color: hsl(148, 84%, 64%);
+  color: var(--chat-medradio-color);
 }
 
 .engradio {
-  color: hsl(53, 98%, 50%);
+  color: var(--chat-engradio-color);
 }
 
 .supradio {
-  color: hsl(34, 45%, 50%);
+  color: var(--chat-supradio-color);
 }
 
 .srvradio {
-  color: hsl(89, 59%, 42%);
+  color: var(--chat-srvradio-color);
 }
 
 .expradio {
-  color: hsl(0, 0%, 54%);
+  color: var(--chat-expradio-color);
 }
 
 .syndradio {
-  color: hsl(359, 32%, 59%);
+  color: var(--chat-syndradio-color);
 }
 
 .gangradio {
-  color: hsl(305, 58%, 58%);
+  color: var(--chat-gangradio-color);
 }
 
 .centradio {
-  color: hsl(197, 63%, 45%);
+  color: var(--chat-centradio-color);
 }
 
 .airadio {
-  color: hsl(300, 100%, 50%);
+  color: var(--chat-airadio-color);
 }
 
 .redteamradio {
-  color: hsl(0, 100%, 63%) !important;
+  color: var(--chat-redteamradio-color);
 }
 
 .blueteamradio {
-  color: hsl(240, 98%, 73%) !important;
+  color: var(--chat-blueteamradio-color);
 }
 
 .greenteamradio {
-  color: hsl(120, 98%, 60%) !important;
+  color: var(--chat-greenteamradio-color);
 }
 
 .yellowteamradio {
-  color: hsl(60, 98%, 60%) !important;
+  color: var(--chat-yellowteamradio-color);
 }
 
 .yell {
@@ -488,98 +487,98 @@ img.icon.bigicon {
 }
 
 .alert {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
 }
 
 .valert {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
 }
 
 .userdanger {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
   font-weight: bold;
   font-size: 185%;
 }
 
 .bolddanger {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
   font-weight: bold;
 }
 
 .danger {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
 }
 
 .vdanger {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
 }
 
 .warning {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
   font-style: italic;
 }
 
 .vwarning {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
   font-style: italic;
 }
 
 .alertwarning {
-  color: hsl(0, 100%, 61%);
+  color: var(--chat-alertwarning-color);
   font-weight: bold;
 }
 
 .boldwarning {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
   font-style: italic;
   font-weight: bold;
 }
 
 .announce {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-announce-color);
   font-weight: bold;
 }
 
 .boldannounce {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
   font-weight: bold;
 }
 
 .minorannounce {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
   font-weight: bold;
   font-size: 185%;
 }
 
 .minoralert {
-  color: hsl(214, 38%, 74%);
+  color: var(--chat-h1-alert-color);
   font-size: 125%;
 }
 
 .priorityannounce {
-  color: hsl(214, 38%, 74%);
+  color: var(--chat-h1-alert-color);
   font-weight: bold;
   font-size: 225%;
 }
 
 .prioritytitle {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-prioritytitle-color);
   font-weight: bold;
   font-size: 185%;
 }
 
 .priorityalert {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
   font-size: 140%;
 }
 
 .greenannounce {
-  color: hsl(133, 93%, 32%);
+  color: var(--chat-greenannounce-color);
   font-weight: bold;
 }
 
 .brute {
-  color: hsl(0, 100%, 61%);
+  color: var(--chat-brute-color);
 }
 
 .burn {
@@ -591,7 +590,7 @@ img.icon.bigicon {
 }
 
 .oxy {
-  color: hsl(220, 100%, 63%);
+  color: var(--chat-oxy-color);
 }
 
 .clone {
@@ -603,35 +602,35 @@ img.icon.bigicon {
 }
 
 .info {
-  color: hsl(227, 100%, 80%);
+  color: var(--chat-info-color);
 }
 
 .notice {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-notice-color);
 }
 
 .vnotice {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-notice-color);
 }
 
 .tinynotice {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-notice-color);
   font-size: 85%;
 }
 
 .tinynoticeital {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-notice-color);
   font-style: italic;
   font-size: 85%;
 }
 
 .smallnotice {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-notice-color);
   font-size: 90%;
 }
 
 .smallnoticeital {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-notice-color);
   font-style: italic;
   font-size: 90%;
 }
@@ -642,31 +641,31 @@ img.icon.bigicon {
 }
 
 .boldnotice {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-notice-color);
   font-weight: bold;
 }
 
 .hear {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-notice-color);
   font-style: italic;
 }
 
 .adminnotice {
-  color: hsl(220, 72%, 72%);
+  color: var(--chat-prioritytitle-color);
 }
 
 .adminhelp {
-  color: hsl(0, 100%, 61%);
+  color: var(--chat-alertwarning-color);
   font-weight: bold;
 }
 
 .log_message {
-  color: hsl(225, 100%, 67%);
+  color: var(--chat-log-message-color);
   font-weight: bold;
 }
 
 .unconscious {
-  color: hsl(214, 38%, 74%);
+  color: var(--chat-h1-color);
   font-weight: bold;
 }
 
@@ -676,47 +675,47 @@ img.icon.bigicon {
 }
 
 .green {
-  color: hsl(120, 100%, 63%);
+  color: var(--chat-green-color);
 }
 
 .darkgreen {
-  color: hsl(120, 100%, 31%);
+  color: var(--chat-darkgreen-color);
 }
 
 .grey {
-  color: hsl(0, 0%, 66%);
+  color: var(--chat-grey-color);
 }
 
 .red {
-  color: hsl(0, 100%, 61%);
+  color: var(--chat-alertwarning-color);
 }
 
 .crimson {
-  color: hsl(348, 83%, 61%);
+  color: var(--chat-crimson-color);
 }
 
 .maroon {
-  color: hsl(0, 100%, 61%);
+  color: var(--chat-maroon-color);
 }
 
 .brown {
-  color: hsl(21, 69%, 55%);
+  color: var(--chat-brown-color);
 }
 
 .blue {
-  color: hsl(224, 98%, 66%);
+  color: var(--chat-blue-color);
 }
 
 .black {
-  color: hsl(0, 0%, 100%);
+  color: var(--chat-black-color);
 }
 
 .white {
-  color: hsl(0, 0%, 100%);
+  color: var(--chat-black-color);
 }
 
 .darkgray {
-  color: hsl(0, 0%, 53%);
+  color: var(--chat-darkgray-color);
 }
 
 .gray {
@@ -740,181 +739,181 @@ img.icon.bigicon {
 }
 
 .nicegreen {
-  color: hsl(133, 93%, 32%);
+  color: var(--chat-nicegreen-color);
 }
 
 .boldnicegreen {
-  color: hsl(133, 93%, 32%);
+  color: var(--chat-nicegreen-color);
   font-weight: bold;
 }
 
 .blob {
-  color: hsl(16, 100%, 49%);
+  color: var(--chat-blob-color);
 }
 
 .blobannounce {
-  color: hsl(82, 39%, 41%);
+  color: var(--chat-blobannounce-color);
   font-weight: bold;
   font-size: 185%;
 }
 
 .cult {
-  color: hsl(2, 44%, 60%);
+  color: var(--chat-cult-color);
 }
 
 .cultitalic {
-  color: hsl(2, 44%, 60%);
+  color: var(--chat-cult-color);
   font-style: italic;
 }
 
 .cultbold {
-  color: hsl(2, 44%, 60%);
+  color: var(--chat-cult-color);
   font-style: italic;
   font-weight: bold;
 }
 
 .cultboldtalic {
-  color: hsl(2, 44%, 60%);
+  color: var(--chat-cult-color);
   font-weight: bold;
   font-size: 185%;
 }
 
 .cultlarge {
-  color: hsl(2, 44%, 60%);
+  color: var(--chat-cult-color);
   font-weight: bold;
   font-size: 185%;
 }
 
 .narsie {
-  color: hsl(2, 44%, 60%);
+  color: var(--chat-cult-color);
   font-weight: bold;
   font-size: 925%;
 }
 
 .narsiesmall {
-  color: hsl(2, 44%, 60%);
+  color: var(--chat-cult-color);
   font-weight: bold;
   font-size: 370%;
 }
 
 .colossus {
-  color: hsl(359, 52%, 61%);
+  color: var(--chat-colossus-color);
   font-size: 310%;
 }
 
 .hierophant {
-  color: hsl(280, 84%, 65%);
+  color: var(--chat-hierophant-color);
   font-weight: bold;
   font-style: italic;
 }
 
 .hierophant_warning {
-  color: hsl(280, 83%, 68%);
+  color: var(--chat-hierophant-warning-color);
   font-style: italic;
 }
 
 .purple {
-  color: hsl(272, 59%, 64%);
+  color: var(--chat-purple-color);
 }
 
 .lightpurple {
-  color: hsl(300, 34%, 57%);
+  color: var(--chat-lightpurple-color);
 }
 
 .darkpink {
-  color: hsl(322, 78%, 59%);
+  color: var(--chat-darkpink-color);
 }
 
 .holoparasite {
-  color: hsl(257, 12%, 57%);
+  color: var(--chat-holoparasite-color);
 }
 
 .revennotice {
-  color: hsl(272, 56%, 74%);
+  color: var(--chat-revennotice-color);
 }
 
 .revenboldnotice {
-  color: hsl(272, 56%, 74%);
+  color: var(--chat-revennotice-color);
   font-weight: bold;
 }
 
 .revenbignotice {
-  color: hsl(272, 56%, 74%);
+  color: var(--chat-revennotice-color);
   font-weight: bold;
   font-size: 185%;
 }
 
 .revenminor {
-  color: hsl(273, 53%, 63%);
+  color: var(--chat-revenminor-color);
 }
 
 .revenwarning {
-  color: hsl(276, 85%, 66%);
+  color: var(--chat-revenwarning-color);
   font-style: italic;
 }
 
 .revendanger {
-  color: hsl(276, 85%, 66%);
+  color: var(--chat-revenwarning-color);
   font-weight: bold;
   font-size: 185%;
 }
 
 .deconversion_message {
-  color: hsl(272, 100%, 68%);
+  color: var(--chat-deconversion-message-color);
   font-size: 185%;
   font-style: italic;
 }
 
 .ghostalert {
-  color: hsl(264, 100%, 70%);
+  color: var(--chat-ghostalert-color);
   font-style: italic;
   font-weight: bold;
 }
 
 .alien {
-  color: hsl(300, 18%, 56%);
+  color: var(--chat-alien-color);
 }
 
 .noticealien {
-  color: hsl(133, 93%, 32%);
+  color: var(--chat-noticealien-color);
 }
 
 .alertalien {
-  color: hsl(133, 93%, 32%);
+  color: var(--chat-noticealien-color);
   font-weight: bold;
 }
 
 .changeling {
-  color: hsl(300, 100%, 47%);
+  color: var(--chat-psay-color);
   font-style: italic;
 }
 
 .alertsyndie {
-  color: hsl(0, 100%, 61%);
+  color: var(--chat-alertwarning-color);
   font-size: 185%;
   font-weight: bold;
 }
 
 .spiderbroodmother {
-  color: hsl(272, 100%, 68%);
+  color: var(--chat-spiderbroodmother-color);
   font-weight: bold;
   font-size: 185%;
 }
 
 .spiderbreacher {
-  color: hsl(35, 72%, 67%);
+  color: var(--chat-spiderbreacher-color);
   font-weight: bold;
   font-size: 140%;
 }
 
 .spiderscout {
-  color: hsl(243, 68%, 69%);
+  color: var(--chat-spiderscout-color);
   font-weight: bold;
   font-size: 120%;
 }
 
 .interface {
-  color: hsl(300, 80%, 53%);
+  color: var(--chat-interface-color);
 }
 
 .sans {
@@ -930,7 +929,7 @@ img.icon.bigicon {
 }
 
 .tape_recorder {
-  color: hsl(0, 100%, 61%);
+  color: var(--chat-maroon-color);
   font-family: 'Courier New', cursive, sans-serif;
 }
 
@@ -956,17 +955,17 @@ img.icon.bigicon {
 }
 
 .greentext {
-  color: hsl(133, 93%, 32%);
+  color: var(--chat-greenannounce-color);
   font-size: 185%;
 }
 
 .redtext {
-  color: hsl(0, 74%, 62%);
+  color: var(--chat-alert-color);
   font-size: 185%;
 }
 
 .clown {
-  color: hsl(326, 100%, 72%);
+  color: var(--chat-clown-color);
   font-size: 160%;
   font-family: 'Comic Sans MS', cursive, sans-serif;
   font-weight: bold;
@@ -984,22 +983,22 @@ img.icon.bigicon {
 }
 
 .phobia {
-  color: hsl(0, 100%, 61%);
+  color: var(--chat-phobia-color);
   font-weight: bold;
   animation: phobia 750ms infinite;
 }
 
 @keyframes phobia {
   0% {
-    color: hsl(0, 91%, 66%);
+    color: var(--chat-phobia-0);
   }
 
   50% {
-    color: hsl(0, 100%, 61%);
+    color: var(--chat-phobia-50);
   }
 
   100% {
-    color: hsl(0, 91%, 66%);
+    color: var(--chat-phobia-100);
   }
 }
 
@@ -1017,7 +1016,7 @@ img.icon.bigicon {
 }
 
 .memo {
-  color: hsl(75, 100%, 29%);
+  color: var(--chat-memo-color);
   text-align: center;
 }
 
@@ -1027,12 +1026,12 @@ img.icon.bigicon {
 }
 
 .abductor {
-  color: hsl(300, 96%, 48%);
+  color: var(--chat-abductor-color);
   font-style: italic;
 }
 
 .mind_control {
-  color: hsl(320, 72%, 59%);
+  color: var(--chat-mind-control-color);
   font-size: 100%;
   font-weight: bold;
   font-style: italic;
@@ -1043,19 +1042,19 @@ img.icon.bigicon {
 }
 
 .drone {
-  color: hsl(60, 1%, 53%);
+  color: var(--chat-drone-color);
 }
 
 .monkey {
-  color: hsl(18, 50%, 54%);
+  color: var(--chat-monkey-color);
 }
 
 .swarmer {
-  color: hsl(219, 100%, 63%);
+  color: var(--chat-swarmer-color);
 }
 
 .resonate {
-  color: hsl(174, 55%, 38%);
+  color: var(--chat-resonate-color);
 }
 
 .upside_down {
@@ -1078,7 +1077,7 @@ img.icon.bigicon {
 }
 
 .internal.boldnshit {
-  color: hsl(227, 53%, 63%);
+  color: var(--chat-internal-boldnshit-color);
   font-weight: bold;
 }
 
@@ -1107,9 +1106,9 @@ img.icon.bigicon {
 }
 
 .examine_block {
-  background: hsl(220, 10%, 10%);
-  border: var(--border-thickness-tiny) solid hsla(220, 40%, 75%, 0.25);
-  border-left: var(--border-thickness-large) solid hsla(220, 60%, 70%, 0.6);
+  background: var(--chat-examine-block-background);
+  border: var(--chat-examine-block-border);
+  border-left: var(--chat-examine-block-border-left);
   border-radius: var(--border-radius-medium);
   margin: var(--space-m) 0;
   padding: var(--space-m) var(--space-l);
@@ -1117,7 +1116,7 @@ img.icon.bigicon {
 
 .tooltip {
   font-style: italic;
-  border-bottom: 1px dashed hsl(0, 0%, 100%);
+  border-bottom: var(--chat-tooltip-border-bottom);
 }
 
 .fieldset_legend {
@@ -1142,32 +1141,32 @@ img.icon.bigicon {
 }
 
 .boxed_message {
-  background: hsl(220, 10%, 10%);
+  background: var(--chat-boxed-message-background);
   border: var(--border-thickness-tiny) solid;
   border-left: var(--border-thickness-large) solid;
-  border-color: hsla(220, 40%, 75%, 0.25);
+  border-color: var(--chat-boxed-message-border-color);
   margin: var(--space-m) 0;
   padding: var(--space-m) var(--space-l);
   border-radius: var(--border-radius-medium);
 
   &.red_box {
-    background: hsl(0, 20%, 10%);
+    background: var(--chat-boxed-message-red-box-background);
     border-color: hsla(0, 100%, 50%, 0.5);
   }
 
   &.green_box {
-    background: hsl(140, 20%, 10%);
-    border-color: hsla(120, 100%, 50%, 0.5);
+    background: var(--chat-boxed-message-green-box-background);
+    border-color: var(--chat-boxed-message-green-box-border-color);
   }
 
   &.blue_box {
-    background: hsl(220, 20%, 10%);
-    border-color: hsla(225, 90%, 65%, 0.5);
+    background: var(--chat-boxed-message-blue-box-background);
+    border-color: var(--chat-boxed-message-blue-box-border-color);
   }
 
   &.purple_box {
-    background: hsl(260, 25%, 12.5%);
-    border-color: hsla(260, 100%, 75%, 0.5);
+    background: var(--chat-boxed-message-purple-box-background);
+    border-color: var(--chat-boxed-message-purple-box-border-color);
   }
 
   hr {
@@ -1183,54 +1182,6 @@ img.icon.bigicon {
   align-items: center;
   text-align: center;
 }
-
-$alert-stripe-colors: (
-  'default': hsl(199, 100%, 11%),
-  'green': hsl(120, 100%, 12%),
-  'blue': hsl(199, 100%, 11%),
-  'pink': hsl(326, 100%, 9%),
-  'yellow': hsl(51, 100%, 17%),
-  'orange': hsl(35, 100%, 17%),
-  'red': hsl(0, 100%, 13%),
-  'purple': hsl(295, 100%, 9%),
-  'grey': hsl(0, 0%, 15%),
-);
-
-$alert-stripe-alternate-colors: (
-  'default': hsl(198, 100%, 14%),
-  'green': hsl(120, 100%, 14%),
-  'blue': hsl(198, 100%, 14%),
-  'pink': hsl(325, 100%, 13%),
-  'yellow': hsl(51, 100%, 15%),
-  'orange': hsl(37, 100%, 21%),
-  'red': hsl(0, 100%, 16%),
-  'purple': hsl(295, 100%, 12%),
-  'grey': hsl(0, 0%, 16%),
-);
-
-$alert-major-header-colors: (
-  'default': hsl(192, 100%, 60%),
-  'green': hsl(150, 100%, 50%),
-  'blue': hsl(192, 100%, 60%),
-  'pink': hsl(336, 100%, 66%),
-  'yellow': hsl(39, 100%, 94%),
-  'orange': hsl(21, 92%, 95%),
-  'red': hsl(336, 100%, 66%),
-  'purple': hsl(267, 84%, 80%),
-  'grey': hsl(336, 100%, 66%),
-);
-
-$alert-subheader-header-colors: (
-  'default': hsl(336, 100%, 66%),
-  'green': hsl(336, 100%, 76%),
-  'blue': hsl(336, 100%, 66%),
-  'pink': hsl(192, 100%, 60%),
-  'yellow': hsl(192, 100%, 60%),
-  'orange': hsl(192, 100%, 60%),
-  'red': hsl(192, 100%, 60%),
-  'purple': hsl(192, 100%, 60%),
-  'grey': hsl(192, 100%, 60%),
-);
 
 $border-width: 4;
 
@@ -1257,8 +1208,8 @@ $border-width-px: $border-width * 1px;
 }
 
 .major_announcement_text {
-  color: hsl(0, 0%, 92%);
-  background-color: hsl(0, 0%, 7%);
+  color: var(--chat-major-announcement-text-color);
+  background-color: var(--chat-major-announcement-text-background-color);
   font-weight: bold;
   font-size: 100%;
   text-align: left;
@@ -1279,8 +1230,8 @@ $border-width-px: $border-width * 1px;
 }
 
 .minor_announcement_text {
-  background-color: hsl(0, 0%, 13%);
-  color: hsl(0, 0%, 92%);
+  background-color: var(--chat-minor-announcement-text-background-color);
+  color: var(--chat-minor-announcement-text-color);
   padding: 0.5rem 0.5rem;
   text-align: left;
   font-size: 100%;
@@ -1293,24 +1244,27 @@ $border-width-px: $border-width * 1px;
 }
 
 .ooc_alert {
-  background: hsl(51, 100%, 15%);
-  border: 1px solid hsl(48, 100%, 40%);
+  background: var(--chat-ooc-alert-background);
+  border: var(--chat-ooc-alert-border);
   margin: 0.5em;
   padding: 0.5em 0.5em 0.5em 0.2em;
-  color: hsl(0, 0%, 100%);
+  color: var(--chat-ooc-alert-color);
   font-weight: bold;
   display: flex;
   flex-direction: column;
 }
 
 .ooc_announcement_text {
-  color: hsl(48, 100%, 40%);
+  color: var(--chat-ooc-color);
   padding: 0.5em 0 0 0.35em;
   display: flex;
   flex-direction: column;
 }
 
-@each $color-name, $color-value in $alert-stripe-colors {
+$alert-names: 'default', 'green', 'blue', 'pink', 'yellow', 'orange', 'red', 'purple', 'grey';
+
+// Colours per theme: chat-tokens.scss.
+@each $color-name in $alert-names {
   .chat_alert_#{$color-name} {
     color: hsl(0, 0%, 100%);
     padding: 0.5rem 0.5rem;
@@ -1322,10 +1276,10 @@ $border-width-px: $border-width * 1px;
     flex-direction: column;
     border-image: repeating-linear-gradient(
       -45deg,
-      map.get($alert-stripe-alternate-colors, $color-name),
-      map.get($alert-stripe-alternate-colors, $color-name) 10px,
-      $color-value 10px,
-      $color-value 20px
+      var(--chat-alert-#{$color-name}-stripe-alt),
+      var(--chat-alert-#{$color-name}-stripe-alt) 10px,
+      var(--chat-alert-#{$color-name}-stripe) 10px,
+      var(--chat-alert-#{$color-name}-stripe) 20px
     );
     border-image-slice: $border-width fill;
     border-width: $border-width-px;
@@ -1336,45 +1290,37 @@ $border-width-px: $border-width * 1px;
   }
 
   .chat_alert_#{$color-name} .major_announcement_title {
-    color: map.get($alert-major-header-colors, $color-name);
+    color: var(--chat-alert-#{$color-name}-header);
   }
 
   .chat_alert_#{$color-name} .minor_announcement_title {
-    color: map.get($alert-major-header-colors, $color-name);
+    color: var(--chat-alert-#{$color-name}-header);
   }
 
   .chat_alert_#{$color-name} .subheader_announcement_text {
-    color: map.get($alert-subheader-header-colors, $color-name);
+    color: var(--chat-alert-#{$color-name}-subheader);
   }
 
   .chat_alert_#{$color-name} .minor_announcement_text {
-    background-color: color.adjust(
-      map.get($alert-stripe-colors, $color-name),
-      $lightness: -5%,
-      $space: hsl
-    );
+    background-color: var(--chat-alert-#{$color-name}-text);
   }
 
   .chat_alert_#{$color-name} .major_announcement_text {
-    background-color: color.adjust(
-      map.get($alert-stripe-colors, $color-name),
-      $lightness: -5%,
-      $space: hsl
-    );
+    background-color: var(--chat-alert-#{$color-name}-text);
   }
 }
 
 // Extra Languages
 .tajaran {
-  color: hsl(337, 37%, 59%);
+  color: var(--chat-tajaran-color);
 }
 
 .tajaran_signlang {
-  color: hsl(0, 68%, 62%);
+  color: var(--chat-tajaran-signlang-color);
 }
 
 .akhani {
-  color: hsl(317, 50%, 59%);
+  color: var(--chat-akhani-color);
 }
 
 .skrell {
@@ -1390,11 +1336,11 @@ $border-width-px: $border-width * 1px;
 }
 
 .solcom {
-  color: hsl(214, 81%, 68%);
+  color: var(--chat-solcom-color);
 }
 
 .sergal {
-  color: hsl(212, 100%, 55%);
+  color: var(--chat-sergal-color);
 }
 
 .birdsongc {
@@ -1411,25 +1357,25 @@ $border-width-px: $border-width * 1px;
 }
 
 .echosong {
-  color: hsl(281, 12%, 56%);
+  color: var(--chat-echosong-color);
 }
 
 .enochian {
-  color: hsl(64, 46%, 38%);
+  color: var(--chat-enochian-color);
   letter-spacing: -1pt;
   word-spacing: 4pt;
   font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
 }
 
 .daemon {
-  color: hsl(264, 51%, 64%);
+  color: var(--chat-daemon-color);
   letter-spacing: -1pt;
   word-spacing: 0pt;
   font-family: 'Courier New', Courier, monospace;
 }
 
 .drudakar {
-  color: hsl(335, 68%, 61%);
+  color: var(--chat-drudakar-color);
   word-spacing: 0pt;
   font-family: 'High Tower Text', monospace;
 }
@@ -1439,16 +1385,16 @@ $border-width-px: $border-width * 1px;
 }
 
 .vox {
-  color: hsl(300, 100%, 47%);
+  color: var(--chat-vox-color);
 }
 
 .promethean {
-  color: hsl(0, 0%, 65%);
+  color: var(--chat-promethean-color);
   font-family: 'Comic Sans MS', 'Comic Sans', cursive;
 }
 
 .zaddat {
-  color: hsl(0, 68%, 62%);
+  color: var(--chat-tajaran-signlang-color);
 }
 
 .rough {
@@ -1469,21 +1415,21 @@ $border-width-px: $border-width * 1px;
 }
 
 .spacer {
-  color: hsl(38, 87%, 39%);
+  color: var(--chat-spacer-color);
 }
 
 .teppi {
-  color: hsl(34, 34%, 49%);
+  color: var(--chat-teppi-color);
   word-spacing: 4pt;
   font-family: 'Segoe Script Bold', 'Segoe Script', sans-serif, Verdana;
 }
 
 .marish {
-  color: hsl(297, 54%, 58%);
+  color: var(--chat-marish-color);
 }
 
 .shadekin {
-  color: hsl(297, 54%, 58%);
+  color: var(--chat-shadekin-color);
   font-size: 150%;
   font-weight: bold;
   font-family: 'Gabriola', cursive, sans-serif;
@@ -1491,16 +1437,16 @@ $border-width-px: $border-width * 1px;
 }
 
 .psionic {
-  color: hsl(300, 50%, 58%);
+  color: var(--chat-psionic-color);
 }
 
 .wingdings {
-  color: hsl(212, 100%, 55%);
+  color: var(--chat-sergal-color);
   font-family: Wingdings, Webdings;
 }
 
 .hypnophrase {
-  color: hsl(0, 0%, 53.5%);
+  color: var(--chat-hypnophrase-color);
   font-weight: bold;
   animation: hypnocolor 1500ms infinite;
   animation-direction: alternate;
@@ -1508,23 +1454,23 @@ $border-width-px: $border-width * 1px;
 
 @keyframes hypnocolor {
   0% {
-    color: hsl(0, 0%, 53.5%);
+    color: var(--chat-hypnocolor-0);
   }
 
   25% {
-    color: hsl(265.8, 97.7%, 69.1%);
+    color: var(--chat-hypnocolor-25);
   }
 
   50% {
-    color: hsl(272, 86.3%, 67%);
+    color: var(--chat-hypnocolor-50);
   }
 
   75% {
-    color: hsl(266.2, 69.6%, 66.1%);
+    color: var(--chat-hypnocolor-75);
   }
 
   100% {
-    color: hsl(191.9, 83.4%, 71.6%);
+    color: var(--chat-hypnocolor-100);
   }
 }
 
@@ -1569,21 +1515,26 @@ $border-width-px: $border-width * 1px;
   color: inherit;
 }
 
+.nif {
+  color: var(--chat-nif-color);
+}
+
 details {
   width: 80%;
-  background: hsl(220, 5%, 11%);
+  background: var(--chat-details-background);
   margin-bottom: 0.5rem;
   box-shadow: 0 0.1rem 1rem -0.5rem rgba(0, 0, 0, 0.4);
   border-radius: 5px;
   overflow: hidden;
   border-color: #343b3d;
-  border: 1px solid hsl(214, 38%, 74%);
+  border: var(--chat-details-border);
 }
 
 summary {
   padding: 1rem;
   display: block;
-  background: hsl(220, 5%, 11%);
+
+  background: var(--chat-details-background);
   padding-left: 2.2rem;
   position: relative;
   cursor: pointer;
@@ -1594,7 +1545,7 @@ summary:before {
   content: '';
   border-width: 0.4rem;
   border-style: solid;
-  border-color: transparent transparent transparent hsl(214, 38%, 74%);
+  border-color: var(--chat-summary-before-border-color);
   position: absolute;
   top: 1.3rem;
   left: 1rem;

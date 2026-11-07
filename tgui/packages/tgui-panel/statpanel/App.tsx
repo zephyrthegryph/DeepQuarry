@@ -11,6 +11,7 @@ import { Button, Input, Section } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { AbilitiesTab } from './AbilitiesTab';
+import { DockArea } from './DockArea';
 import { InspectTab } from './InspectTab';
 import { McTab } from './McTab';
 import { MenuPage } from './MenuPage';
@@ -294,6 +295,7 @@ export function App(props: {
   return (
     <div className="stat-root">
       <MapSplitHandle />
+      <DockArea />
       <ConsoleTabs
         layout={tabsLayout(tabsStyle)}
         tabs={[

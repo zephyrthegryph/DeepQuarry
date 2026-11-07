@@ -1,0 +1,902 @@
+// Per-theme values for the --chat-* tokens chat.scss reads: one mixin per
+// chat theme (dark, light, vchatdark, vchatlight), included on that theme's
+// root selector, plus `<theme>-rules` for the few rules only that theme has.
+// Generated once from the four old per-theme sheets (2026-11); edit by hand.
+
+@use 'sass:color';
+@use 'sass:map';
+@use '~tgui/styles/radio-colors' as radio;
+
+$dark-alert-stripe-colors: (
+  'default': hsl(199, 100%, 11%),
+  'green': hsl(120, 100%, 12%),
+  'blue': hsl(199, 100%, 11%),
+  'pink': hsl(326, 100%, 9%),
+  'yellow': hsl(51, 100%, 17%),
+  'orange': hsl(35, 100%, 17%),
+  'red': hsl(0, 100%, 13%),
+  'purple': hsl(295, 100%, 9%),
+  'grey': hsl(0, 0%, 15%),
+);
+
+$dark-alert-stripe-alternate-colors: (
+  'default': hsl(198, 100%, 14%),
+  'green': hsl(120, 100%, 14%),
+  'blue': hsl(198, 100%, 14%),
+  'pink': hsl(325, 100%, 13%),
+  'yellow': hsl(51, 100%, 15%),
+  'orange': hsl(37, 100%, 21%),
+  'red': hsl(0, 100%, 16%),
+  'purple': hsl(295, 100%, 12%),
+  'grey': hsl(0, 0%, 16%),
+);
+
+$dark-alert-major-header-colors: (
+  'default': hsl(192, 100%, 60%),
+  'green': hsl(150, 100%, 50%),
+  'blue': hsl(192, 100%, 60%),
+  'pink': hsl(336, 100%, 66%),
+  'yellow': hsl(39, 100%, 94%),
+  'orange': hsl(21, 92%, 95%),
+  'red': hsl(336, 100%, 66%),
+  'purple': hsl(267, 84%, 80%),
+  'grey': hsl(336, 100%, 66%),
+);
+
+$dark-alert-subheader-header-colors: (
+  'default': hsl(336, 100%, 66%),
+  'green': hsl(336, 100%, 76%),
+  'blue': hsl(336, 100%, 66%),
+  'pink': hsl(192, 100%, 60%),
+  'yellow': hsl(192, 100%, 60%),
+  'orange': hsl(192, 100%, 60%),
+  'red': hsl(192, 100%, 60%),
+  'purple': hsl(192, 100%, 60%),
+  'grey': hsl(192, 100%, 60%),
+);
+
+$light-alert-stripe-colors: (
+  'default': hsl(231, 100%, 85%),
+  'green': hsl(120, 100%, 84%),
+  'blue': hsl(231, 100%, 85%),
+  'pink': hsl(325, 100%, 85%),
+  'yellow': hsl(51, 100%, 85%),
+  'orange': hsl(37, 100%, 85%),
+  'red': hsl(0, 100%, 85%),
+  'purple': hsl(295, 100%, 88%),
+  'grey': hsl(0, 0%, 89%),
+);
+
+$light-alert-stripe-alternate-colors: (
+  'default': hsl(230, 100%, 87%),
+  'green': hsl(120, 100%, 87%),
+  'blue': hsl(230, 100%, 87%),
+  'pink': hsl(326, 100%, 88%),
+  'yellow': hsl(50, 100%, 88%),
+  'orange': hsl(37, 100%, 88%),
+  'red': hsl(0, 100%, 88%),
+  'purple': hsl(295, 100%, 91%),
+  'grey': hsl(0, 0%, 92%),
+);
+
+$light-alert-major-header-colors: (
+  'default': hsl(210, 100%, 19%),
+  'green': hsl(150, 100%, 16%),
+  'blue': hsl(210, 100%, 19%),
+  'pink': hsl(336, 100%, 25%),
+  'yellow': hsl(37, 100%, 23%),
+  'orange': hsl(21, 88%, 27%),
+  'red': hsl(341, 100%, 25%),
+  'purple': hsl(266, 83%, 30%),
+  'grey': hsl(336, 100%, 25%),
+);
+
+$light-alert-subheader-header-colors: (
+  'default': hsl(342, 100%, 21%),
+  'green': hsl(342, 100%, 21%),
+  'blue': hsl(342, 100%, 21%),
+  'pink': hsl(220, 100%, 26%),
+  'yellow': hsl(220, 100%, 26%),
+  'orange': hsl(220, 100%, 26%),
+  'red': hsl(220, 100%, 26%),
+  'purple': hsl(220, 100%, 26%),
+  'grey': hsl(220, 100%, 26%),
+);
+
+$vchatdark-alert-stripe-colors: (
+  'default': hsl(199, 100%, 11%),
+  'green': hsl(120, 100%, 12%),
+  'blue': hsl(199, 100%, 11%),
+  'pink': hsl(326, 100%, 9%),
+  'yellow': hsl(51, 100%, 17%),
+  'orange': hsl(35, 100%, 17%),
+  'red': hsl(0, 100%, 13%),
+  'purple': hsl(295, 100%, 9%),
+  'grey': hsl(0, 0%, 15%),
+);
+
+$vchatdark-alert-stripe-alternate-colors: (
+  'default': hsl(198, 100%, 14%),
+  'green': hsl(120, 100%, 14%),
+  'blue': hsl(198, 100%, 14%),
+  'pink': hsl(325, 100%, 13%),
+  'yellow': hsl(51, 100%, 15%),
+  'orange': hsl(37, 100%, 21%),
+  'red': hsl(0, 100%, 16%),
+  'purple': hsl(295, 100%, 12%),
+  'grey': hsl(0, 0%, 16%),
+);
+
+$vchatdark-alert-major-header-colors: (
+  'default': hsl(192, 100%, 60%),
+  'green': hsl(150, 100%, 50%),
+  'blue': hsl(192, 100%, 60%),
+  'pink': hsl(336, 100%, 66%),
+  'yellow': hsl(39, 100%, 94%),
+  'orange': hsl(21, 92%, 95%),
+  'red': hsl(336, 100%, 66%),
+  'purple': hsl(267, 84%, 80%),
+  'grey': hsl(336, 100%, 66%),
+);
+
+$vchatdark-alert-subheader-header-colors: (
+  'default': hsl(336, 100%, 66%),
+  'green': hsl(336, 100%, 76%),
+  'blue': hsl(336, 100%, 66%),
+  'pink': hsl(192, 100%, 60%),
+  'yellow': hsl(192, 100%, 60%),
+  'orange': hsl(192, 100%, 60%),
+  'red': hsl(192, 100%, 60%),
+  'purple': hsl(192, 100%, 60%),
+  'grey': hsl(192, 100%, 60%),
+);
+
+$vchatlight-alert-stripe-colors: (
+  'default': hsl(231, 100%, 85%),
+  'green': hsl(120, 100%, 84%),
+  'blue': hsl(231, 100%, 85%),
+  'pink': hsl(325, 100%, 85%),
+  'yellow': hsl(51, 100%, 85%),
+  'orange': hsl(37, 100%, 85%),
+  'red': hsl(0, 100%, 85%),
+  'purple': hsl(295, 100%, 88%),
+  'grey': hsl(0, 0%, 89%),
+);
+
+$vchatlight-alert-stripe-alternate-colors: (
+  'default': hsl(230, 100%, 87%),
+  'green': hsl(120, 100%, 87%),
+  'blue': hsl(230, 100%, 87%),
+  'pink': hsl(326, 100%, 88%),
+  'yellow': hsl(50, 100%, 88%),
+  'orange': hsl(37, 100%, 88%),
+  'red': hsl(0, 100%, 88%),
+  'purple': hsl(295, 100%, 91%),
+  'grey': hsl(0, 0%, 92%),
+);
+
+$vchatlight-alert-major-header-colors: (
+  'default': hsl(210, 100%, 19%),
+  'green': hsl(150, 100%, 16%),
+  'blue': hsl(210, 100%, 19%),
+  'pink': hsl(336, 100%, 25%),
+  'yellow': hsl(37, 100%, 23%),
+  'orange': hsl(21, 88%, 27%),
+  'red': hsl(341, 100%, 25%),
+  'purple': hsl(266, 83%, 30%),
+  'grey': hsl(336, 100%, 25%),
+);
+
+$vchatlight-alert-subheader-header-colors: (
+  'default': hsl(342, 100%, 21%),
+  'green': hsl(342, 100%, 21%),
+  'blue': hsl(342, 100%, 21%),
+  'pink': hsl(220, 100%, 26%),
+  'yellow': hsl(220, 100%, 26%),
+  'orange': hsl(220, 100%, 26%),
+  'red': hsl(220, 100%, 26%),
+  'purple': hsl(220, 100%, 26%),
+  'grey': hsl(220, 100%, 26%),
+);
+
+@mixin dark {
+  --chat-a-visited-hover-color: hsl(from var(--color-hyperlink-visited) h s calc(l + var(--adjust-hover)));
+  --chat-phobia-0: hsl(0, 91%, 66%);
+  --chat-phobia-50: hsl(0, 100%, 43%);
+  --chat-phobia-100: hsl(0, 91%, 66%);
+  --chat-hypnocolor-0: hsl(0, 0%, 12.5%);
+  --chat-hypnocolor-25: hsl(265.8, 97.7%, 34.1%);
+  --chat-hypnocolor-50: hsl(272, 86.3%, 60%);
+  --chat-hypnocolor-75: hsl(266.2, 69.6%, 36.1%);
+  --chat-hypnocolor-100: hsl(191.9, 83.4%, 71.6%);
+
+  @each $name, $stripe in $dark-alert-stripe-colors {
+    --chat-alert-#{$name}-stripe: #{$stripe};
+    --chat-alert-#{$name}-stripe-alt: #{map.get($dark-alert-stripe-alternate-colors, $name)};
+    --chat-alert-#{$name}-header: #{map.get($dark-alert-major-header-colors, $name)};
+    --chat-alert-#{$name}-subheader: #{map.get($dark-alert-subheader-header-colors, $name)};
+    --chat-alert-#{$name}-text: #{color.adjust($stripe, $lightness: -5%, $space: hsl)};
+  }
+
+  --chat-a-color: var(--color-hyperlink);
+  --chat-a-hover-color: hsl(from var(--color-hyperlink) h s calc(l + var(--adjust-hover)));
+  --chat-a-visited-color: var(--color-hyperlink-visited);
+  --chat-changefont-a-color: hsl(0, 0%, 20%);
+  --chat-motd-color: hsl(214, 38%, 74%);
+  --chat-h1-color: hsl(214, 38%, 74%);
+  --chat-h1-alert-color: hsl(214, 38%, 74%);
+  --chat-ooc-color: hsl(48, 100%, 40%);
+  --chat-ooc-elevated-color: hsl(214, 69%, 58%);
+  --chat-ooc-moderator-color: hsl(212, 68%, 56%);
+  --chat-ooc-developer-color: hsl(124, 50%, 41%);
+  --chat-ooc-admin-color: hsl(15, 100%, 50%);
+  --chat-ooc-event-manager-color: hsl(330, 100%, 56%);
+  --chat-ooc-aooc-color: hsl(350, 100%, 60%);
+  --chat-adminooc-color: hsl(227, 53%, 63%);
+  --chat-admin-color: hsl(227, 64%, 64%);
+  --chat-mentor-channel-color: hsl(60, 100%, 28%);
+  --chat-mod-channel-color: hsl(31, 35%, 49%);
+  --chat-admin-channel-color: hsl(281, 85%, 64%);
+  --chat-event-channel-color: hsl(320, 60%, 59%);
+  --chat-psay-color: hsl(300, 100%, 47%);
+  --chat-deadsay-color: hsl(272, 100%, 88%);
+  --chat-binarysay-color: hsl(210, 100%, 56%);
+  --chat-radio-color: #{map.get(radio.$radio-colors, 'common')};
+  --chat-sciradio-color: #{map.get(radio.$radio-colors, 'science')};
+  --chat-comradio-color: #{map.get(radio.$radio-colors, 'command')};
+  --chat-secradio-color: #{map.get(radio.$radio-colors, 'security')};
+  --chat-medradio-color: #{map.get(radio.$radio-colors, 'medical')};
+  --chat-engradio-color: #{map.get(radio.$radio-colors, 'engineering')};
+  --chat-supradio-color: #{map.get(radio.$radio-colors, 'supply')};
+  --chat-srvradio-color: #{map.get(radio.$radio-colors, 'service')};
+  --chat-expradio-color: #{map.get(radio.$radio-colors, 'exploration')};
+  --chat-syndradio-color: #{map.get(radio.$radio-colors, 'syndicate')};
+  --chat-gangradio-color: hsl(305, 58%, 58%);
+  --chat-centradio-color: #{map.get(radio.$radio-colors, 'centcom')};
+  --chat-airadio-color: #{map.get(radio.$radio-colors, 'ai')};
+  --chat-redteamradio-color: hsl(0, 100%, 63%) !important;
+  --chat-blueteamradio-color: hsl(240, 98%, 73%) !important;
+  --chat-greenteamradio-color: hsl(120, 98%, 60%) !important;
+  --chat-yellowteamradio-color: hsl(60, 98%, 60%) !important;
+  --chat-alert-color: hsl(0, 74%, 62%);
+  --chat-alertwarning-color: hsl(0, 100%, 61%);
+  --chat-announce-color: hsl(0, 74%, 62%);
+  --chat-prioritytitle-color: hsl(220, 72%, 72%);
+  --chat-greenannounce-color: hsl(133, 93%, 32%);
+  --chat-brute-color: hsl(0, 100%, 61%);
+  --chat-oxy-color: hsl(220, 100%, 63%);
+  --chat-info-color: hsl(227, 100%, 80%);
+  --chat-notice-color: hsl(220, 72%, 72%);
+  --chat-log-message-color: hsl(225, 100%, 67%);
+  --chat-green-color: hsl(133, 93%, 32%);
+  --chat-darkgreen-color: hsl(120, 100%, 31%);
+  --chat-grey-color: hsl(0, 0%, 53%);
+  --chat-crimson-color: hsl(348, 83%, 61%);
+  --chat-maroon-color: hsl(0, 100%, 61%);
+  --chat-brown-color: hsl(21, 69%, 55%);
+  --chat-blue-color: hsl(224, 98%, 66%);
+  --chat-black-color: hsl(0, 0%, 100%);
+  --chat-darkgray-color: hsl(0, 0%, 53%);
+  --chat-nicegreen-color: hsl(133, 93%, 32%);
+  --chat-blob-color: hsl(16, 100%, 49%);
+  --chat-blobannounce-color: hsl(82, 39%, 41%);
+  --chat-cult-color: hsl(2, 44%, 60%);
+  --chat-colossus-color: hsl(359, 52%, 61%);
+  --chat-hierophant-color: hsl(280, 84%, 65%);
+  --chat-hierophant-warning-color: hsl(280, 83%, 68%);
+  --chat-purple-color: hsl(272, 59%, 64%);
+  --chat-lightpurple-color: hsl(300, 34%, 57%);
+  --chat-darkpink-color: hsl(322, 78%, 59%);
+  --chat-holoparasite-color: hsl(257, 12%, 57%);
+  --chat-revennotice-color: hsl(272, 56%, 74%);
+  --chat-revenminor-color: hsl(273, 53%, 63%);
+  --chat-revenwarning-color: hsl(276, 85%, 66%);
+  --chat-deconversion-message-color: hsl(272, 100%, 68%);
+  --chat-ghostalert-color: hsl(264, 100%, 70%);
+  --chat-alien-color: hsl(300, 18%, 56%);
+  --chat-noticealien-color: hsl(133, 93%, 32%);
+  --chat-spiderbroodmother-color: hsl(272, 100%, 68%);
+  --chat-spiderbreacher-color: hsl(35, 72%, 67%);
+  --chat-spiderscout-color: hsl(243, 68%, 69%);
+  --chat-interface-color: hsl(300, 80%, 53%);
+  --chat-clown-color: hsl(326, 100%, 72%);
+  --chat-phobia-color: hsl(0, 100%, 61%);
+  --chat-memo-color: hsl(75, 100%, 29%);
+  --chat-abductor-color: hsl(300, 96%, 48%);
+  --chat-mind-control-color: hsl(320, 72%, 59%);
+  --chat-drone-color: hsl(60, 1%, 53%);
+  --chat-monkey-color: hsl(18, 50%, 54%);
+  --chat-swarmer-color: hsl(219, 100%, 63%);
+  --chat-resonate-color: hsl(174, 55%, 38%);
+  --chat-internal-boldnshit-color: hsl(227, 53%, 63%);
+  --chat-examine-block-background: hsl(220, 10%, 10%);
+  --chat-examine-block-border: var(--border-thickness-tiny) solid hsla(220, 40%, 75%, 0.25);
+  --chat-examine-block-border-left: var(--border-thickness-large) solid hsla(220, 60%, 70%, 0.6);
+  --chat-tooltip-border-bottom: 1px dashed hsl(0, 0%, 100%);
+  --chat-boxed-message-background: hsl(220, 10%, 10%);
+  --chat-boxed-message-border-color: hsla(220, 40%, 75%, 0.25);
+  --chat-boxed-message-red-box-background: hsl(0, 20%, 10%);
+  --chat-boxed-message-green-box-background: hsl(140, 20%, 10%);
+  --chat-boxed-message-green-box-border-color: hsla(120, 100%, 50%, 0.5);
+  --chat-boxed-message-blue-box-background: hsl(220, 20%, 10%);
+  --chat-boxed-message-blue-box-border-color: hsla(225, 90%, 65%, 0.5);
+  --chat-boxed-message-purple-box-background: hsl(260, 25%, 12.5%);
+  --chat-boxed-message-purple-box-border-color: hsla(260, 100%, 75%, 0.5);
+  --chat-major-announcement-text-color: hsl(0, 0%, 92%);
+  --chat-major-announcement-text-background-color: hsl(0, 0%, 7%);
+  --chat-minor-announcement-text-background-color: hsl(0, 0%, 13%);
+  --chat-minor-announcement-text-color: hsl(0, 0%, 92%);
+  --chat-ooc-alert-background: hsl(51, 100%, 15%);
+  --chat-ooc-alert-border: 1px solid hsl(48, 100%, 40%);
+  --chat-ooc-alert-color: hsl(0, 0%, 100%);
+  --chat-tajaran-color: hsl(337, 37%, 59%);
+  --chat-tajaran-signlang-color: hsl(0, 68%, 62%);
+  --chat-akhani-color: hsl(317, 50%, 59%);
+  --chat-solcom-color: hsl(214, 81%, 68%);
+  --chat-sergal-color: hsl(212, 100%, 55%);
+  --chat-echosong-color: hsl(281, 12%, 56%);
+  --chat-enochian-color: hsl(64, 46%, 38%);
+  --chat-daemon-color: hsl(264, 51%, 64%);
+  --chat-drudakar-color: hsl(335, 68%, 61%);
+  --chat-vox-color: hsl(300, 100%, 47%);
+  --chat-promethean-color: hsl(0, 0%, 65%);
+  --chat-spacer-color: hsl(38, 87%, 39%);
+  --chat-teppi-color: hsl(34, 34%, 49%);
+  --chat-marish-color: hsl(297, 54%, 58%);
+  --chat-shadekin-color: hsl(297, 54%, 58%);
+  --chat-psionic-color: hsl(300, 50%, 58%);
+  --chat-hypnophrase-color: hsl(0, 0%, 53.5%);
+  --chat-nif-color: hsla(180, 100%, 50%, 0.801);
+  --chat-details-background: hsl(220, 5%, 11%);
+  --chat-details-border: 1px solid hsl(214, 38%, 74%);
+  --chat-summary-before-border-color: transparent transparent transparent hsl(214, 38%, 74%);
+}
+
+@mixin light {
+  --chat-a-visited-hover-color: hsl(from var(--color-hyperlink-visited) h s calc(l - 20));
+  --chat-phobia-0: hsl(0, 0%, 5%);
+  --chat-phobia-50: hsl(0, 100%, 43%);
+  --chat-phobia-100: hsl(0, 0%, 5%);
+  --chat-hypnocolor-0: hsl(0, 0%, 5.1%);
+  --chat-hypnocolor-25: hsl(266.1, 98.7%, 29.2%);
+  --chat-hypnocolor-50: hsl(272.3, 80.8%, 46.9%);
+  --chat-hypnocolor-75: hsl(266.1, 98.7%, 29.2%);
+  --chat-hypnocolor-100: hsl(191.8, 63.3%, 52.9%);
+
+  @each $name, $stripe in $light-alert-stripe-colors {
+    --chat-alert-#{$name}-stripe: #{$stripe};
+    --chat-alert-#{$name}-stripe-alt: #{map.get($light-alert-stripe-alternate-colors, $name)};
+    --chat-alert-#{$name}-header: #{map.get($light-alert-major-header-colors, $name)};
+    --chat-alert-#{$name}-subheader: #{map.get($light-alert-subheader-header-colors, $name)};
+    --chat-alert-#{$name}-text: #{color.adjust(map.get($light-alert-stripe-alternate-colors, $name), $lightness: 5%, $space: hsl)};
+  }
+
+  --chat-a-color: hsl(from var(--color-hyperlink) h s calc(l - 40));
+  --chat-a-hover-color: hsl(from var(--color-hyperlink) h s calc(l - 20));
+  --chat-a-visited-color: hsl(from var(--color-hyperlink-visited) h s calc(l - 40));
+  --chat-changefont-a-color: hsl(0, 0%, 20%);
+  --chat-motd-color: hsl(75, 100%, 26%);
+  --chat-h1-color: hsl(240, 100%, 50%);
+  --chat-h1-alert-color: var(--color-black);
+  --chat-ooc-color: hsl(225, 100%, 36%);
+  --chat-ooc-elevated-color: hsl(214, 69%, 52%);
+  --chat-ooc-moderator-color: hsl(212, 68%, 30%);
+  --chat-ooc-developer-color: hsl(124, 50%, 21%);
+  --chat-ooc-admin-color: hsl(15, 100%, 36%);
+  --chat-ooc-event-manager-color: hsl(330, 100%, 20%);
+  --chat-ooc-aooc-color: hsl(350, 100%, 29%);
+  --chat-adminooc-color: hsl(330, 100%, 22%);
+  --chat-admin-color: hsl(225, 100%, 63%);
+  --chat-mentor-channel-color: hsl(60, 100%, 25%);
+  --chat-mod-channel-color: hsl(31, 35%, 34%);
+  --chat-admin-channel-color: hsl(281, 85%, 45%);
+  --chat-event-channel-color: hsl(320, 60%, 50%);
+  --chat-psay-color: hsl(300, 100%, 25%);
+  --chat-deadsay-color: hsl(264, 100%, 45%);
+  --chat-binarysay-color: hsl(114, 87%, 41%);
+  --chat-radio-color: hsl(120, 100%, 25%);
+  --chat-sciradio-color: hsl(300, 50%, 40%);
+  --chat-comradio-color: hsl(202, 49%, 39%);
+  --chat-secradio-color: hsl(0, 100%, 32%);
+  --chat-medradio-color: hsl(148, 49%, 39%);
+  --chat-engradio-color: hsl(58, 97%, 29%);
+  --chat-supradio-color: hsl(35, 59%, 41%);
+  --chat-srvradio-color: hsl(89, 59%, 42%);
+  --chat-expradio-color: hsl(0, 0%, 33%);
+  --chat-syndradio-color: hsl(359, 27%, 34%);
+  --chat-gangradio-color: hsl(305, 58%, 43%);
+  --chat-centradio-color: hsl(0, 0%, 41%);
+  --chat-airadio-color: hsl(300, 100%, 50%);
+  --chat-redteamradio-color: hsl(0, 100%, 50%) !important;
+  --chat-blueteamradio-color: hsl(240, 100%, 50%) !important;
+  --chat-greenteamradio-color: hsl(120, 100%, 50%) !important;
+  --chat-yellowteamradio-color: hsl(52, 72%, 48%) !important;
+  --chat-alert-color: hsl(0, 100%, 50%);
+  --chat-alertwarning-color: hsl(0, 100%, 50%);
+  --chat-announce-color: hsl(120, 61%, 34%);
+  --chat-prioritytitle-color: hsl(240, 100%, 50%);
+  --chat-greenannounce-color: hsl(120, 100%, 50%);
+  --chat-brute-color: hsl(0, 100%, 60%);
+  --chat-oxy-color: hsl(220, 100%, 49%);
+  --chat-info-color: hsl(240, 100%, 40%);
+  --chat-notice-color: hsl(240, 100%, 30%);
+  --chat-log-message-color: hsl(225, 100%, 61%);
+  --chat-green-color: hsl(133, 100%, 51%);
+  --chat-darkgreen-color: hsl(120, 100%, 25%);
+  --chat-grey-color: hsl(0, 0%, 51%);
+  --chat-crimson-color: hsl(348, 83%, 47%);
+  --chat-maroon-color: hsl(0, 100%, 25%);
+  --chat-brown-color: hsl(21, 58%, 35%);
+  --chat-blue-color: hsl(240, 100%, 50%);
+  --chat-black-color: hsl(0, 0%, 0%);
+  --chat-darkgray-color: hsl(0, 0%, 50%);
+  --chat-nicegreen-color: hsl(133, 79%, 37%);
+  --chat-blob-color: hsl(16, 100%, 47%);
+  --chat-blobannounce-color: hsl(82, 38%, 18%);
+  --chat-cult-color: hsl(2, 44%, 41%);
+  --chat-colossus-color: hsl(359, 52%, 33%);
+  --chat-hierophant-color: hsl(280, 100%, 30%);
+  --chat-hierophant-warning-color: hsl(280, 100%, 30%);
+  --chat-purple-color: hsl(279, 46%, 33%);
+  --chat-lightpurple-color: hsl(300, 34%, 52%);
+  --chat-darkpink-color: hsl(322, 78%, 51%);
+  --chat-holoparasite-color: hsl(257, 6%, 21%);
+  --chat-revennotice-color: hsl(227, 48%, 22%);
+  --chat-revenminor-color: hsl(273, 53%, 48%);
+  --chat-revenwarning-color: hsl(276, 85%, 40%);
+  --chat-deconversion-message-color: hsl(270, 100%, 31%);
+  --chat-ghostalert-color: hsl(264, 100%, 45%);
+  --chat-alien-color: hsl(300, 24%, 26%);
+  --chat-noticealien-color: hsl(120, 100%, 38%);
+  --chat-spiderbroodmother-color: hsl(300, 100%, 15%);
+  --chat-spiderbreacher-color: hsl(35, 97%, 25%);
+  --chat-spiderscout-color: hsl(243, 90%, 24%);
+  --chat-interface-color: hsl(300, 100%, 10%);
+  --chat-clown-color: hsl(326, 100%, 71%);
+  --chat-phobia-color: hsl(0, 100%, 43%);
+  --chat-memo-color: hsl(75, 100%, 26%);
+  --chat-abductor-color: hsl(300, 100%, 25%);
+  --chat-mind-control-color: hsl(320, 85%, 34%);
+  --chat-drone-color: hsl(60, 1%, 51%);
+  --chat-monkey-color: hsl(18, 50%, 39%);
+  --chat-swarmer-color: hsl(219, 100%, 59%);
+  --chat-resonate-color: hsl(174, 55%, 36%);
+  --chat-internal-boldnshit-color: blue;
+  --chat-examine-block-background: hsl(202, 44%, 96%);
+  --chat-examine-block-border: var(--border-thickness-tiny) solid hsla(215, 39%, 11%, 0.25);
+  --chat-examine-block-border-left: var(--border-thickness-large) solid hsla(215, 60%, 35%, 0.6);
+  --chat-tooltip-border-bottom: 1px dashed hsl(0, 0%, 0%);
+  --chat-boxed-message-background: hsl(220, 100%, 97.5%);
+  --chat-boxed-message-border-color: hsla(220, 75%, 25%, 0.5);
+  --chat-boxed-message-red-box-background: hsl(0, 100%, 97.5%);
+  --chat-boxed-message-green-box-background: hsl(140, 100%, 97.5%);
+  --chat-boxed-message-green-box-border-color: hsla(120, 100%, 33%, 0.5);
+  --chat-boxed-message-blue-box-background: hsl(220, 100%, 97.5%);
+  --chat-boxed-message-blue-box-border-color: hsla(225, 100%, 50%, 0.5);
+  --chat-boxed-message-purple-box-background: hsl(260, 100%, 97.5%);
+  --chat-boxed-message-purple-box-border-color: hsla(260, 100%, 50%, 0.5);
+  --chat-major-announcement-text-color: hsl(0, 0%, 7%);
+  --chat-major-announcement-text-background-color: hsl(0, 0%, 92%);
+  --chat-minor-announcement-text-background-color: hsl(0, 0%, 92%);
+  --chat-minor-announcement-text-color: hsl(0, 0%, 13%);
+  --chat-ooc-alert-background: hsl(230, 100%, 87%);
+  --chat-ooc-alert-border: 1px solid hsl(225, 100%, 36%);
+  --chat-ooc-alert-color: hsl(199, 100%, 11%);
+  --chat-tajaran-color: hsl(337, 37%, 37%);
+  --chat-tajaran-signlang-color: hsl(0, 68%, 35%);
+  --chat-akhani-color: hsl(317, 50%, 45%);
+  --chat-solcom-color: hsl(240, 61%, 50%);
+  --chat-sergal-color: hsl(212, 100%, 50%);
+  --chat-echosong-color: hsl(281, 12%, 49%);
+  --chat-enochian-color: hsl(64, 46%, 37%);
+  --chat-daemon-color: hsl(264, 51%, 41%);
+  --chat-drudakar-color: hsl(335, 68%, 44%);
+  --chat-vox-color: hsl(300, 100%, 33%);
+  --chat-promethean-color: hsl(0, 0%, 35%);
+  --chat-spacer-color: hsl(38, 87%, 33%);
+  --chat-teppi-color: hsl(34, 34%, 38%);
+  --chat-marish-color: hsl(297, 54%, 42%);
+  --chat-shadekin-color: hsl(297, 54%, 50%);
+  --chat-psionic-color: hsl(300, 50%, 40%);
+  --chat-hypnophrase-color: hsl(0, 0%, 5.1%);
+  --chat-nif-color: hsl(180, 100%, 27%);
+  --chat-details-background: hsl(202, 44%, 96%);
+  --chat-details-border: 1px solid hsl(215, 39%, 11%);
+  --chat-summary-before-border-color: transparent transparent transparent hsl(215, 39%, 11%);
+}
+
+/// Rules only the light theme has; include it inside the theme selector.
+@mixin light-rules {
+  html,
+  body {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    color: var(--color-black);
+  }
+
+  body {
+    background: hsl(0, 0%, 100%);
+    font-family: Verdana, sans-serif;
+    font-size: 13px;
+    line-height: 1.2;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    word-wrap: break-word;
+  }
+
+  .binarysay {
+    background-color: var(--color-black);
+    display: inline-block;
+  }
+
+  .tinydanger {
+    color: hsl(0, 100%, 50%);
+    font-size: 85%;
+  }
+
+  .smalldanger {
+    color: hsl(0, 100%, 50%);
+    font-size: 90%;
+  }
+
+  .fieldset_legend {
+    background: hsl(0, 0%, 100%);
+  }
+
+  .fieldset_legend:before {
+    background: hsl(0, 0%, 100%);
+  }
+}
+
+@mixin vchatdark {
+  --chat-a-visited-hover-color: hsl(from var(--color-hyperlink-visited) h s calc(l + var(--adjust-hover)));
+  --chat-phobia-0: hsl(0, 91%, 66%);
+  --chat-phobia-50: hsl(0, 100%, 61%);
+  --chat-phobia-100: hsl(0, 91%, 66%);
+  --chat-hypnocolor-0: hsl(0, 0%, 53.5%);
+  --chat-hypnocolor-25: hsl(265.8, 97.7%, 69.1%);
+  --chat-hypnocolor-50: hsl(272, 86.3%, 67%);
+  --chat-hypnocolor-75: hsl(266.2, 69.6%, 66.1%);
+  --chat-hypnocolor-100: hsl(191.9, 83.4%, 71.6%);
+
+  @each $name, $stripe in $vchatdark-alert-stripe-colors {
+    --chat-alert-#{$name}-stripe: #{$stripe};
+    --chat-alert-#{$name}-stripe-alt: #{map.get($vchatdark-alert-stripe-alternate-colors, $name)};
+    --chat-alert-#{$name}-header: #{map.get($vchatdark-alert-major-header-colors, $name)};
+    --chat-alert-#{$name}-subheader: #{map.get($vchatdark-alert-subheader-header-colors, $name)};
+    --chat-alert-#{$name}-text: #{color.adjust($stripe, $lightness: -5%, $space: hsl)};
+  }
+
+  --chat-a-color: var(--color-hyperlink);
+  --chat-a-hover-color: hsl(from var(--color-hyperlink) h s calc(l + var(--adjust-hover)));
+  --chat-a-visited-color: var(--color-hyperlink-visited);
+  --chat-changefont-a-color: hsl(0, 0%, 53%);
+  --chat-motd-color: hsl(214, 38%, 74%);
+  --chat-h1-color: hsl(214, 38%, 74%);
+  --chat-h1-alert-color: hsl(214, 38%, 74%);
+  --chat-ooc-color: hsl(48, 100%, 40%);
+  --chat-ooc-elevated-color: hsl(214, 69%, 58%);
+  --chat-ooc-moderator-color: hsl(212, 68%, 56%);
+  --chat-ooc-developer-color: hsl(124, 50%, 41%);
+  --chat-ooc-admin-color: hsl(15, 100%, 50%);
+  --chat-ooc-event-manager-color: hsl(330, 100%, 56%);
+  --chat-ooc-aooc-color: hsl(350, 100%, 60%);
+  --chat-adminooc-color: hsl(227, 53%, 63%);
+  --chat-admin-color: hsl(227, 64%, 64%);
+  --chat-mentor-channel-color: hsl(60, 100%, 28%);
+  --chat-mod-channel-color: hsl(31, 35%, 49%);
+  --chat-admin-channel-color: hsl(281, 85%, 64%);
+  --chat-event-channel-color: hsl(320, 60%, 59%);
+  --chat-psay-color: hsl(300, 100%, 47%);
+  --chat-deadsay-color: hsl(272, 100%, 88%);
+  --chat-binarysay-color: hsl(0, 0%, 100%);
+  --chat-radio-color: hsl(120, 100%, 33%);
+  --chat-sciradio-color: hsl(272, 92%, 76%);
+  --chat-comradio-color: hsl(202, 84%, 64%);
+  --chat-secradio-color: hsl(0, 71%, 62%);
+  --chat-medradio-color: hsl(148, 84%, 64%);
+  --chat-engradio-color: hsl(53, 98%, 50%);
+  --chat-supradio-color: hsl(34, 45%, 50%);
+  --chat-srvradio-color: hsl(89, 59%, 42%);
+  --chat-expradio-color: hsl(0, 0%, 54%);
+  --chat-syndradio-color: hsl(359, 32%, 59%);
+  --chat-gangradio-color: hsl(305, 58%, 58%);
+  --chat-centradio-color: hsl(197, 63%, 45%);
+  --chat-airadio-color: hsl(300, 100%, 50%);
+  --chat-redteamradio-color: hsl(0, 100%, 63%) !important;
+  --chat-blueteamradio-color: hsl(240, 98%, 73%) !important;
+  --chat-greenteamradio-color: hsl(120, 98%, 60%) !important;
+  --chat-yellowteamradio-color: hsl(60, 98%, 60%) !important;
+  --chat-alert-color: hsl(0, 74%, 62%);
+  --chat-alertwarning-color: hsl(0, 100%, 61%);
+  --chat-announce-color: hsl(0, 74%, 62%);
+  --chat-prioritytitle-color: hsl(220, 72%, 72%);
+  --chat-greenannounce-color: hsl(133, 93%, 32%);
+  --chat-brute-color: hsl(0, 100%, 61%);
+  --chat-oxy-color: hsl(220, 100%, 63%);
+  --chat-info-color: hsl(227, 100%, 80%);
+  --chat-notice-color: hsl(220, 72%, 72%);
+  --chat-log-message-color: hsl(225, 100%, 67%);
+  --chat-green-color: hsl(120, 100%, 63%);
+  --chat-darkgreen-color: hsl(120, 100%, 31%);
+  --chat-grey-color: hsl(0, 0%, 66%);
+  --chat-crimson-color: hsl(348, 83%, 61%);
+  --chat-maroon-color: hsl(0, 100%, 61%);
+  --chat-brown-color: hsl(21, 69%, 55%);
+  --chat-blue-color: hsl(224, 98%, 66%);
+  --chat-black-color: hsl(0, 0%, 100%);
+  --chat-darkgray-color: hsl(0, 0%, 53%);
+  --chat-nicegreen-color: hsl(133, 93%, 32%);
+  --chat-blob-color: hsl(16, 100%, 49%);
+  --chat-blobannounce-color: hsl(82, 39%, 41%);
+  --chat-cult-color: hsl(2, 44%, 60%);
+  --chat-colossus-color: hsl(359, 52%, 61%);
+  --chat-hierophant-color: hsl(280, 84%, 65%);
+  --chat-hierophant-warning-color: hsl(280, 83%, 68%);
+  --chat-purple-color: hsl(272, 59%, 64%);
+  --chat-lightpurple-color: hsl(300, 34%, 57%);
+  --chat-darkpink-color: hsl(322, 78%, 59%);
+  --chat-holoparasite-color: hsl(257, 12%, 57%);
+  --chat-revennotice-color: hsl(272, 56%, 74%);
+  --chat-revenminor-color: hsl(273, 53%, 63%);
+  --chat-revenwarning-color: hsl(276, 85%, 66%);
+  --chat-deconversion-message-color: hsl(272, 100%, 68%);
+  --chat-ghostalert-color: hsl(264, 100%, 70%);
+  --chat-alien-color: hsl(300, 18%, 56%);
+  --chat-noticealien-color: hsl(133, 93%, 32%);
+  --chat-spiderbroodmother-color: hsl(272, 100%, 68%);
+  --chat-spiderbreacher-color: hsl(35, 72%, 67%);
+  --chat-spiderscout-color: hsl(243, 68%, 69%);
+  --chat-interface-color: hsl(300, 80%, 53%);
+  --chat-clown-color: hsl(326, 100%, 72%);
+  --chat-phobia-color: hsl(0, 100%, 61%);
+  --chat-memo-color: hsl(75, 100%, 29%);
+  --chat-abductor-color: hsl(300, 96%, 48%);
+  --chat-mind-control-color: hsl(320, 72%, 59%);
+  --chat-drone-color: hsl(60, 1%, 53%);
+  --chat-monkey-color: hsl(18, 50%, 54%);
+  --chat-swarmer-color: hsl(219, 100%, 63%);
+  --chat-resonate-color: hsl(174, 55%, 38%);
+  --chat-internal-boldnshit-color: hsl(227, 53%, 63%);
+  --chat-examine-block-background: hsl(220, 10%, 10%);
+  --chat-examine-block-border: var(--border-thickness-tiny) solid hsla(220, 40%, 75%, 0.25);
+  --chat-examine-block-border-left: var(--border-thickness-large) solid hsla(220, 60%, 70%, 0.6);
+  --chat-tooltip-border-bottom: 1px dashed hsl(0, 0%, 100%);
+  --chat-boxed-message-background: hsl(220, 10%, 10%);
+  --chat-boxed-message-border-color: hsla(220, 40%, 75%, 0.25);
+  --chat-boxed-message-red-box-background: hsl(0, 20%, 10%);
+  --chat-boxed-message-green-box-background: hsl(140, 20%, 10%);
+  --chat-boxed-message-green-box-border-color: hsla(120, 100%, 50%, 0.5);
+  --chat-boxed-message-blue-box-background: hsl(220, 20%, 10%);
+  --chat-boxed-message-blue-box-border-color: hsla(225, 90%, 65%, 0.5);
+  --chat-boxed-message-purple-box-background: hsl(260, 25%, 12.5%);
+  --chat-boxed-message-purple-box-border-color: hsla(260, 100%, 75%, 0.5);
+  --chat-major-announcement-text-color: hsl(0, 0%, 92%);
+  --chat-major-announcement-text-background-color: hsl(0, 0%, 7%);
+  --chat-minor-announcement-text-background-color: hsl(0, 0%, 13%);
+  --chat-minor-announcement-text-color: hsl(0, 0%, 92%);
+  --chat-ooc-alert-background: hsl(51, 100%, 15%);
+  --chat-ooc-alert-border: 1px solid hsl(48, 100%, 40%);
+  --chat-ooc-alert-color: hsl(0, 0%, 100%);
+  --chat-tajaran-color: hsl(337, 37%, 59%);
+  --chat-tajaran-signlang-color: hsl(0, 68%, 62%);
+  --chat-akhani-color: hsl(317, 50%, 59%);
+  --chat-solcom-color: hsl(214, 81%, 68%);
+  --chat-sergal-color: hsl(212, 100%, 55%);
+  --chat-echosong-color: hsl(281, 12%, 56%);
+  --chat-enochian-color: hsl(64, 46%, 38%);
+  --chat-daemon-color: hsl(264, 51%, 64%);
+  --chat-drudakar-color: hsl(335, 68%, 61%);
+  --chat-vox-color: hsl(300, 100%, 47%);
+  --chat-promethean-color: hsl(0, 0%, 65%);
+  --chat-spacer-color: hsl(38, 87%, 39%);
+  --chat-teppi-color: hsl(34, 34%, 49%);
+  --chat-marish-color: hsl(297, 54%, 58%);
+  --chat-shadekin-color: hsl(297, 54%, 58%);
+  --chat-psionic-color: hsl(300, 50%, 58%);
+  --chat-hypnophrase-color: hsl(0, 0%, 53.5%);
+  --chat-nif-color: hsla(180, 100%, 50%, 0.801);
+  --chat-details-background: hsl(220, 5%, 11%);
+  --chat-details-border: 1px solid hsl(214, 38%, 74%);
+  --chat-summary-before-border-color: transparent transparent transparent hsl(214, 38%, 74%);
+}
+
+/// Rules only the vchatdark theme has; include it inside the theme selector.
+@mixin vchatdark-rules {
+  .hivemind {
+    color: hsl(0, 0%, 100%);
+  }
+}
+
+@mixin vchatlight {
+  --chat-a-visited-hover-color: hsl(from var(--color-hyperlink-visited) h s calc(l - 20));
+  --chat-phobia-0: hsl(0, 0%, 5%);
+  --chat-phobia-50: hsl(0, 100%, 43%);
+  --chat-phobia-100: hsl(0, 0%, 5%);
+  --chat-hypnocolor-0: hsl(0, 0%, 5.1%);
+  --chat-hypnocolor-25: hsl(266.1, 98.7%, 29.2%);
+  --chat-hypnocolor-50: hsl(272.3, 80.8%, 46.9%);
+  --chat-hypnocolor-75: hsl(266.1, 98.7%, 29.2%);
+  --chat-hypnocolor-100: hsl(191.8, 63.3%, 52.9%);
+
+  @each $name, $stripe in $vchatlight-alert-stripe-colors {
+    --chat-alert-#{$name}-stripe: #{$stripe};
+    --chat-alert-#{$name}-stripe-alt: #{map.get($vchatlight-alert-stripe-alternate-colors, $name)};
+    --chat-alert-#{$name}-header: #{map.get($vchatlight-alert-major-header-colors, $name)};
+    --chat-alert-#{$name}-subheader: #{map.get($vchatlight-alert-subheader-header-colors, $name)};
+    --chat-alert-#{$name}-text: #{color.adjust(map.get($vchatlight-alert-stripe-alternate-colors, $name), $lightness: 5%, $space: hsl)};
+  }
+
+  --chat-a-color: hsl(from var(--color-hyperlink) h s calc(l - 40));
+  --chat-a-hover-color: hsl(from var(--color-hyperlink) h s calc(l - 20));
+  --chat-a-visited-color: hsl(from var(--color-hyperlink-visited) h s calc(l - 40));
+  --chat-changefont-a-color: hsl(0, 0%, 20%);
+  --chat-motd-color: hsl(75, 100%, 26%);
+  --chat-h1-color: hsl(240, 100%, 50%);
+  --chat-h1-alert-color: hsl(0, 0%, 0%);
+  --chat-ooc-color: hsl(225, 100%, 36%);
+  --chat-ooc-elevated-color: hsl(214, 69%, 52%);
+  --chat-ooc-moderator-color: hsl(212, 68%, 30%);
+  --chat-ooc-developer-color: hsl(124, 50%, 21%);
+  --chat-ooc-admin-color: hsl(15, 100%, 36%);
+  --chat-ooc-event-manager-color: hsl(330, 100%, 20%);
+  --chat-ooc-aooc-color: hsl(350, 100%, 29%);
+  --chat-adminooc-color: hsl(330, 100%, 22%);
+  --chat-admin-color: hsl(225, 100%, 63%);
+  --chat-mentor-channel-color: hsl(60, 100%, 25%);
+  --chat-mod-channel-color: hsl(31, 35%, 34%);
+  --chat-admin-channel-color: hsl(281, 85%, 45%);
+  --chat-event-channel-color: hsl(320, 60%, 50%);
+  --chat-psay-color: hsl(300, 100%, 25%);
+  --chat-deadsay-color: hsl(266, 84%, 37%);
+  --chat-binarysay-color: hsl(0, 0%, 0%);
+  --chat-radio-color: hsl(120, 100%, 25%);
+  --chat-sciradio-color: hsl(300, 50%, 40%);
+  --chat-comradio-color: hsl(220, 66%, 29%);
+  --chat-secradio-color: hsl(0, 100%, 32%);
+  --chat-medradio-color: hsl(165, 100%, 25%);
+  --chat-engradio-color: hsl(36, 100%, 33%);
+  --chat-supradio-color: hsl(38, 58%, 24%);
+  --chat-srvradio-color: hsl(89, 59%, 42%);
+  --chat-expradio-color: hsl(0, 0%, 33%);
+  --chat-syndradio-color: hsl(359, 27%, 34%);
+  --chat-gangradio-color: hsl(305, 58%, 43%);
+  --chat-centradio-color: hsl(240, 20%, 45%);
+  --chat-airadio-color: hsl(300, 100%, 50%);
+  --chat-redteamradio-color: hsl(0, 100%, 50%) !important;
+  --chat-blueteamradio-color: hsl(240, 100%, 50%) !important;
+  --chat-greenteamradio-color: hsl(120, 100%, 50%) !important;
+  --chat-yellowteamradio-color: hsl(52, 72%, 48%) !important;
+  --chat-alert-color: hsl(0, 100%, 50%);
+  --chat-alertwarning-color: hsl(0, 100%, 50%);
+  --chat-announce-color: hsl(120, 61%, 34%);
+  --chat-prioritytitle-color: hsl(240, 100%, 50%);
+  --chat-greenannounce-color: hsl(120, 100%, 50%);
+  --chat-brute-color: hsl(0, 100%, 60%);
+  --chat-oxy-color: hsl(220, 100%, 49%);
+  --chat-info-color: hsl(240, 100%, 40%);
+  --chat-notice-color: hsl(240, 100%, 30%);
+  --chat-log-message-color: hsl(225, 100%, 61%);
+  --chat-green-color: hsl(133, 100%, 51%);
+  --chat-darkgreen-color: hsl(120, 100%, 25%);
+  --chat-grey-color: hsl(0, 0%, 51%);
+  --chat-crimson-color: hsl(348, 83%, 47%);
+  --chat-maroon-color: hsl(0, 100%, 25%);
+  --chat-brown-color: hsl(21, 58%, 35%);
+  --chat-blue-color: hsl(240, 100%, 50%);
+  --chat-black-color: hsl(0, 0%, 0%);
+  --chat-darkgray-color: hsl(0, 0%, 50%);
+  --chat-nicegreen-color: hsl(133, 79%, 37%);
+  --chat-blob-color: hsl(16, 100%, 47%);
+  --chat-blobannounce-color: hsl(82, 38%, 18%);
+  --chat-cult-color: hsl(2, 44%, 41%);
+  --chat-colossus-color: hsl(359, 52%, 33%);
+  --chat-hierophant-color: hsl(280, 100%, 30%);
+  --chat-hierophant-warning-color: hsl(280, 100%, 30%);
+  --chat-purple-color: hsl(279, 46%, 33%);
+  --chat-lightpurple-color: hsl(300, 34%, 52%);
+  --chat-darkpink-color: hsl(322, 78%, 51%);
+  --chat-holoparasite-color: hsl(257, 6%, 21%);
+  --chat-revennotice-color: hsl(227, 48%, 22%);
+  --chat-revenminor-color: hsl(273, 53%, 48%);
+  --chat-revenwarning-color: hsl(276, 85%, 40%);
+  --chat-deconversion-message-color: hsl(270, 100%, 31%);
+  --chat-ghostalert-color: hsl(264, 100%, 45%);
+  --chat-alien-color: hsl(300, 24%, 26%);
+  --chat-noticealien-color: hsl(120, 100%, 38%);
+  --chat-spiderbroodmother-color: hsl(300, 100%, 15%);
+  --chat-spiderbreacher-color: hsl(35, 97%, 25%);
+  --chat-spiderscout-color: hsl(243, 90%, 24%);
+  --chat-interface-color: hsl(300, 100%, 10%);
+  --chat-clown-color: hsl(326, 100%, 71%);
+  --chat-phobia-color: hsl(0, 100%, 43%);
+  --chat-memo-color: hsl(75, 100%, 26%);
+  --chat-abductor-color: hsl(300, 100%, 25%);
+  --chat-mind-control-color: hsl(320, 85%, 34%);
+  --chat-drone-color: hsl(60, 1%, 51%);
+  --chat-monkey-color: hsl(18, 50%, 39%);
+  --chat-swarmer-color: hsl(219, 100%, 59%);
+  --chat-resonate-color: hsl(174, 55%, 36%);
+  --chat-internal-boldnshit-color: blue;
+  --chat-examine-block-background: hsl(202, 44%, 96%);
+  --chat-examine-block-border: var(--border-thickness-tiny) solid hsla(215, 39%, 11%, 0.25);
+  --chat-examine-block-border-left: var(--border-thickness-large) solid hsla(215, 60%, 35%, 0.6);
+  --chat-tooltip-border-bottom: 1px dashed hsl(0, 0%, 0%);
+  --chat-boxed-message-background: hsl(220, 100%, 97.5%);
+  --chat-boxed-message-border-color: hsla(220, 75%, 25%, 0.5);
+  --chat-boxed-message-red-box-background: hsl(0, 100%, 97.5%);
+  --chat-boxed-message-green-box-background: hsl(140, 100%, 97.5%);
+  --chat-boxed-message-green-box-border-color: hsla(120, 100%, 33%, 0.5);
+  --chat-boxed-message-blue-box-background: hsl(220, 100%, 97.5%);
+  --chat-boxed-message-blue-box-border-color: hsla(225, 100%, 50%, 0.5);
+  --chat-boxed-message-purple-box-background: hsl(260, 100%, 97.5%);
+  --chat-boxed-message-purple-box-border-color: hsla(260, 100%, 50%, 0.5);
+  --chat-major-announcement-text-color: hsl(0, 0%, 7%);
+  --chat-major-announcement-text-background-color: hsl(0, 0%, 92%);
+  --chat-minor-announcement-text-background-color: hsl(0, 0%, 92%);
+  --chat-minor-announcement-text-color: hsl(0, 0%, 13%);
+  --chat-ooc-alert-background: hsl(230, 100%, 87%);
+  --chat-ooc-alert-border: 1px solid hsl(225, 100%, 36%);
+  --chat-ooc-alert-color: hsl(199, 100%, 11%);
+  --chat-tajaran-color: hsl(337, 37%, 37%);
+  --chat-tajaran-signlang-color: hsl(0, 68%, 35%);
+  --chat-akhani-color: hsl(317, 50%, 45%);
+  --chat-solcom-color: hsl(240, 61%, 50%);
+  --chat-sergal-color: hsl(212, 100%, 50%);
+  --chat-echosong-color: hsl(281, 12%, 49%);
+  --chat-enochian-color: hsl(64, 46%, 37%);
+  --chat-daemon-color: hsl(264, 51%, 41%);
+  --chat-drudakar-color: hsl(335, 68%, 44%);
+  --chat-vox-color: hsl(300, 100%, 33%);
+  --chat-promethean-color: hsl(0, 0%, 35%);
+  --chat-spacer-color: hsl(38, 87%, 33%);
+  --chat-teppi-color: hsl(34, 34%, 38%);
+  --chat-marish-color: hsl(297, 54%, 42%);
+  --chat-shadekin-color: hsl(297, 54%, 50%);
+  --chat-psionic-color: hsl(300, 50%, 40%);
+  --chat-hypnophrase-color: hsl(0, 0%, 5.1%);
+  --chat-nif-color: hsla(180, 100%, 50%, 0.801);
+  --chat-details-background: hsl(202, 44%, 96%);
+  --chat-details-border: 1px solid hsl(215, 39%, 11%);
+  --chat-summary-before-border-color: transparent transparent transparent hsl(215, 39%, 11%);
+}
+
+/// Rules only the vchatlight theme has; include it inside the theme selector.
+@mixin vchatlight-rules {
+  html,
+  body {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    color: hsl(0, 0%, 0%);
+  }
+
+  body {
+    background: hsl(0, 0%, 100%);
+    font-family: Verdana, sans-serif;
+    font-size: 13px;
+    line-height: 1.2;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    word-wrap: break-word;
+  }
+
+  .tinydanger {
+    color: hsl(0, 100%, 50%);
+    font-size: 85%;
+  }
+
+  .smalldanger {
+    color: hsl(0, 100%, 50%);
+    font-size: 90%;
+  }
+
+  .fieldset_legend {
+    background: hsl(0, 0%, 100%);
+  }
+
+  .fieldset_legend:before {
+    background: hsl(0, 0%, 100%);
+  }
+}

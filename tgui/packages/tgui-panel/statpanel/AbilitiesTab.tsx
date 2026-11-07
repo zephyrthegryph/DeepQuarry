@@ -119,67 +119,69 @@ const AbilityButton = (props: ButtonProps) => {
 };
 
 /** Memoized: a status or misc message does not re-render it. */
-export const AbilitiesTab = memo(({
-  data,
-  receivedAt,
-}: {
-  data: AbilitiesData | null;
-  receivedAt: number;
-}) => {
-  const [dragging, setDragging] = useState<string | null>(null);
-  const entries = data?.abilities ?? [];
-  const running = entries.some((entry) => entry.cooldown > 0);
-  const now = useNow(running);
-  if (!data) return <div className="stat-empty">No abilities.</div>;
-  const toggles = activeToggles(entries);
-  const reorder = (target: string) => {
-    if (!dragging) return;
-    const order = entries.map((entry) => entry.ref);
-    const next = moveBefore(order, dragging, target);
-    setDragging(null);
-    if (next !== order) act('reorder', { order: next });
-  };
-  return (
-    <div className="abilities">
-      {(data.resources.length > 0 || toggles.length > 0) && (
-        <div className="abilities__status">
-          {data.resources.map((resource) => (
-            <ResourceBar key={resource.name} resource={resource} />
-          ))}
-          {toggles.length > 0 && (
-            <div className="abilities__active">
-              <span className="abilities__resourceName">On</span>
-              {toggles.map((entry) => (
-                <span key={entry.ref} className="abilities__chip">
-                  {entry.name}
-                </span>
+export const AbilitiesTab = memo(
+  ({
+    data,
+    receivedAt,
+  }: {
+    data: AbilitiesData | null;
+    receivedAt: number;
+  }) => {
+    const [dragging, setDragging] = useState<string | null>(null);
+    const entries = data?.abilities ?? [];
+    const running = entries.some((entry) => entry.cooldown > 0);
+    const now = useNow(running);
+    if (!data) return <div className="stat-empty">No abilities.</div>;
+    const toggles = activeToggles(entries);
+    const reorder = (target: string) => {
+      if (!dragging) return;
+      const order = entries.map((entry) => entry.ref);
+      const next = moveBefore(order, dragging, target);
+      setDragging(null);
+      if (next !== order) act('reorder', { order: next });
+    };
+    return (
+      <div className="abilities">
+        {(data.resources.length > 0 || toggles.length > 0) && (
+          <div className="abilities__status">
+            {data.resources.map((resource) => (
+              <ResourceBar key={resource.name} resource={resource} />
+            ))}
+            {toggles.length > 0 && (
+              <div className="abilities__active">
+                <span className="abilities__resourceName">On</span>
+                {toggles.map((entry) => (
+                  <span key={entry.ref} className="abilities__chip">
+                    {entry.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {sectionsOf(entries).map((section, index) => (
+          <div
+            key={`${section.category}:${index}`}
+            className="abilities__section"
+          >
+            <div className="abilities__heading">{section.category}</div>
+            <div className="abilities__grid">
+              {section.entries.map((entry) => (
+                <AbilityButton
+                  key={entry.ref}
+                  entry={entry}
+                  receivedAt={receivedAt}
+                  now={now}
+                  dragging={dragging}
+                  onDragStart={setDragging}
+                  onDrop={reorder}
+                  onDragEnd={() => setDragging(null)}
+                />
               ))}
             </div>
-          )}
-        </div>
-      )}
-      {sectionsOf(entries).map((section, index) => (
-        <div
-          key={`${section.category}:${index}`}
-          className="abilities__section"
-        >
-          <div className="abilities__heading">{section.category}</div>
-          <div className="abilities__grid">
-            {section.entries.map((entry) => (
-              <AbilityButton
-                key={entry.ref}
-                entry={entry}
-                receivedAt={receivedAt}
-                now={now}
-                dragging={dragging}
-                onDragStart={setDragging}
-                onDrop={reorder}
-                onDragEnd={() => setDragging(null)}
-              />
-            ))}
           </div>
-        </div>
-      ))}
-    </div>
-  );
-});
+        ))}
+      </div>
+    );
+  },
+);
