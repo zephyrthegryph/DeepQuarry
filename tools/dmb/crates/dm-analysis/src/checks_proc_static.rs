@@ -5,6 +5,7 @@ use crate::{
     checker_expression_visit::{Event, Walk},
     checks::{Diagnostic, Severity},
 };
+use dm_syntax::Span;
 use dm_tree::frontend::{ArchivedBody, BodyArchive};
 pub fn archived(
     archive: &BodyArchive,
@@ -42,16 +43,27 @@ pub(crate) fn diagnostic<E: From<String> + for<'a> From<&'a str>>(
     event: Event<'_>,
     fund_note: impl FnOnce(usize) -> Result<(), E>,
 ) -> Result<Option<Diagnostic>, E> {
+    diagnostic_using(archive, severity, event, Ok, fund_note)
+}
+
+pub(crate) fn diagnostic_using<E: From<String> + for<'a> From<&'a str>>(
+    archive: &BodyArchive,
+    severity: Severity,
+    event: Event<'_>,
+    project: impl Fn(Span) -> Result<Span, String>,
+    fund_note: impl FnOnce(usize) -> Result<(), E>,
+) -> Result<Option<Diagnostic>, E> {
     let Event::UnknownReceiverCall { expression, at, name, hint } = event else {
         return Ok(None);
     };
     let hint = hint.map_err(str::to_owned)?;
-    let notes = crate::checker_static_type_notes::notes_using(archive, at, hint, fund_note)?;
+    let at = project(at)?;
+    let notes = crate::checker_static_type_notes::notes_using(archive, at, hint, &project, fund_note)?;
     Ok(Some(Diagnostic {
         family: "proc_call_static_type",
         severity,
         span: at,
-        expression_span: expression.span,
+        expression_span: project(expression.span)?,
         message: format!("proc call requires static type: {name:?}"),
         notes,
     }))

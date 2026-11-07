@@ -33,7 +33,27 @@ impl<W:EffectReportWork,R:Resolver+?Sized> StaticObserver<PolicyFailure> for Com
 impl<W:EffectReportWork,R:Resolver+?Sized> CatchObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn parameters(&mut self,count:usize,at:Span,expression:Span)->Result<(),PolicyFailure>{self.with_catch(|catch|catch.parameters(count,at,expression))}}
 impl<W:EffectReportWork,R:Resolver+?Sized> CaseObserver<PolicyFailure> for Combined<'_,'_,'_,'_,W,R>{fn switch_started(&mut self,selector:&Expr,cases:&[dm_syntax::SwitchCase],default_present:bool,at:Span)->Result<(),PolicyFailure>{let body=self.body;self.with_cases(|adapter|adapter.rand_range(body,selector,cases,default_present,at))}fn logical_or(&mut self,cursor:dm_syntax::OriginalCaseCursor,expression:Span)->Result<(),PolicyFailure>{self.with_cases(|cases|cases.logical_or(cursor,expression))}fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),PolicyFailure>{self.with_cases(|cases|cases.do_while_unreachable(at,condition))}}
 
-impl<W:EffectReportWork,R:Resolver+?Sized> Combined<'_,'_,'_,'_,W,R>{fn emit(&mut self,diagnostic:Diagnostic,tag:Option<&'static str>,level:crate::check_policy::DiagnosticSeverity)->Result<(),PolicyFailure>{let inner=self.inner();push(inner.work,&mut inner.rows,Row{registration:Some((tag,level)),diagnostic,synthetic:false,reported:None})}}
+impl<W:EffectReportWork,R:Resolver+?Sized> Combined<'_,'_,'_,'_,W,R>{
+ fn emit(&mut self,mut diagnostic:Diagnostic,tag:Option<&'static str>,level:crate::check_policy::DiagnosticSeverity)->Result<(),PolicyFailure>{
+  diagnostic.span=self.body.source_point(diagnostic.span)?;
+  diagnostic.expression_span=self.body.source_point(diagnostic.expression_span)?;
+  self.emit_expanded(diagnostic,tag,level)
+ }
+ fn emit_expanded(&mut self,diagnostic:Diagnostic,tag:Option<&'static str>,level:crate::check_policy::DiagnosticSeverity)->Result<(),PolicyFailure>{
+  let inner=self.inner();
+  push(inner.work,&mut inner.rows,Row{registration:Some((tag,level)),diagnostic,synthetic:false,reported:None})
+ }
+}
+fn project_case_cursor(cursor:dm_syntax::OriginalCaseCursor,project:impl Fn(Span)->Result<Span,String>)->Result<dm_syntax::OriginalCaseCursor,String>{
+ use dm_syntax::OriginalCaseCursor;
+ Ok(match cursor{
+  OriginalCaseCursor::Token(at)=>OriginalCaseCursor::Token(project(at)?),
+  OriginalCaseCursor::SourceEnd{offset,fallback}=>OriginalCaseCursor::SourceEnd{
+   offset:project(Span::new(offset,offset))?.start,
+   fallback:project(fallback)?,
+  },
+ })
+}
 impl<'a,W:EffectReportWork,R:Resolver+?Sized> OriginalObserver<'a> for Combined<'a,'_,'_,'_,W,R>{
  fn access_levels(&self)->[Severity;5]{[Severity::Error,Severity::Error,Severity::Error,Severity::Error,Severity::Warning]}
  fn immediate_row(&mut self,diagnostic:Diagnostic)->Result<(),PolicyFailure>{let level=match diagnostic.severity{Severity::Error=>crate::check_policy::DiagnosticSeverity::Error,Severity::Warning=>crate::check_policy::DiagnosticSeverity::Warning,Severity::Disabled=>return Err("actual fixed body diagnostic cannot be disabled".into())};self.emit(diagnostic,None,level)}
@@ -59,10 +79,12 @@ impl<'a,W:EffectReportWork,R:Resolver+?Sized> OriginalObserver<'a> for Combined<
     ("ambiguous_not_bitwise",message,notes.into_iter().map(|message|Note{message,source:None}).collect())
    }
   };
+  let body=self.body;
+  let expression_span=body.source_point(expression_span)?;
   let inner=self.inner();
   let (span,point)=match at.ok_or("Original binary warning has no authored evaluation anchor")? {
-   ExpressionOrigin::Source(span)=>(span,None),
-   ExpressionOrigin::Case(cursor)=>match cursor.map_err(PolicyFailure::from)?{
+   ExpressionOrigin::Source(span)=>(body.source_point(span)?,None),
+   ExpressionOrigin::Case(cursor)=>match project_case_cursor(cursor.map_err(PolicyFailure::from)?,|span|body.source_point(span))?{
     dm_syntax::OriginalCaseCursor::Token(span)=>{
      let point=if inner.archive.borrowed_source_note_point(span.start).is_ok(){None}else{
       inner.archive.source_mapping().borrowed_case_end_point_using(span.end,span,&mut||inner.poll())?
@@ -86,24 +108,25 @@ impl<'a,W:EffectReportWork,R:Resolver+?Sized> OriginalObserver<'a> for Combined<
  fn flow_event(&mut self,event:crate::checker_reachable::Event<'a>)->Result<(),PolicyFailure>{use crate::checks_control_policies::Family;use crate::checker_reachable::Event;let family=match event{Event::ControlCondition{..}=>Family::Static,Event::Unreachable{..}=>Family::Unreachable,Event::LoopCondition{..}=>Family::LoopDeterminate,Event::IfDeterminate{..}=>Family::IfDeterminate,Event::SettingOutsidePrefix{..}=>Family::SettingPlacement,Event::DoWhileUnreachable{..}=>return Ok(())};crate::checks_control_policies::visit_events(std::iter::once(event),&[(family,Severity::Error)],|diagnostic|self.emit(diagnostic,Some(family.name()),crate::check_policy::DiagnosticSeverity::Error))}
  fn expression_event(&mut self,event:visit::Event<'a>)->Result<(),PolicyFailure>{
   let archive=self.inner.as_ref().expect("combined sink").archive;
+  let body=self.body;
   match event{
    event@visit::Event::MissingVariable{..}|event@visit::Event::MissingField{..}=>crate::checks_undefined_variable::visit_events(archive.tree(),std::iter::once(event),|diagnostic|self.emit(diagnostic,None,crate::check_policy::DiagnosticSeverity::Error)),
    event@visit::Event::MissingCall{..}=>crate::checks_undefined_proc::visit_events(archive.tree(),std::iter::once(event),|diagnostic|self.emit(diagnostic,None,crate::check_policy::DiagnosticSeverity::Error)),
    event@visit::Event::FieldWithoutStaticType{..}=>{
-    if let Some(diagnostic) = crate::checks_field_static::diagnostic(archive, Severity::Warning, event, |n| self.fund_follow_note(n))? {
-     self.emit(diagnostic, Some("field_access_static_type"), crate::check_policy::DiagnosticSeverity::Warning)?;
+    if let Some(diagnostic) = crate::checks_field_static::diagnostic_using(archive, Severity::Warning, event, |span| body.source_point(span), |n| self.fund_follow_note(n))? {
+     self.emit_expanded(diagnostic, Some("field_access_static_type"), crate::check_policy::DiagnosticSeverity::Warning)?;
     }
     Ok(())
    },
    event@visit::Event::UnknownReceiverCall{..}=>{
-    if let Some(diagnostic) = crate::checks_proc_static::diagnostic(archive, Severity::Warning, event, |n| self.fund_follow_note(n))? {
-     self.emit(diagnostic, Some("proc_call_static_type"), crate::check_policy::DiagnosticSeverity::Warning)?;
+    if let Some(diagnostic) = crate::checks_proc_static::diagnostic_using(archive, Severity::Warning, event, |span| body.source_point(span), |n| self.fund_follow_note(n))? {
+     self.emit_expanded(diagnostic, Some("proc_call_static_type"), crate::check_policy::DiagnosticSeverity::Warning)?;
     }
     Ok(())
    },
    event@visit::Event::MissingImplicitNewHint{..}=>{if let Some(diagnostic)=crate::checks_implicit_new::diagnostic(event,Severity::Error){self.emit(diagnostic,Some(crate::checks_implicit_new::FAMILY),crate::check_policy::DiagnosticSeverity::Error)?;}Ok(())},
    visit::Event::MissingParent{expression,at,display}=>self.emit(crate::checks_parent_call::missing_parent_diagnostic(at,expression.span,&display,Severity::Error),Some("proc_has_no_parent"),crate::check_policy::DiagnosticSeverity::Error),
-   event@visit::Event::ResolvedField{..}=>{let body=self.body;let profile=self.inner.as_ref().expect("combined sink").profile;let checkpoint=self.inner.as_ref().expect("combined sink").checkpoint;crate::checks_variable_visibility::visit_field_events(archive,body,profile,std::iter::once(event),&crate::check_policy::CheckerPolicy::default(),&mut||checkpoint().map_err(PolicyFailure::Operational),|row|{let(diagnostic,tag,level)=row.into_original_parts();self.emit(diagnostic,tag,level)})},
+   event@visit::Event::ResolvedField{..}=>{let body=self.body;let profile=self.inner.as_ref().expect("combined sink").profile;let checkpoint=self.inner.as_ref().expect("combined sink").checkpoint;crate::checks_variable_visibility::visit_field_events(archive,body,profile,std::iter::once(event),&crate::check_policy::CheckerPolicy::default(),&mut||checkpoint().map_err(PolicyFailure::Operational),|row|{let(diagnostic,tag,level)=row.into_original_parts();self.emit_expanded(diagnostic,tag,level)})},
    visit::Event::ResolvedCall{..}|visit::Event::ResolvedImplicitListConstructor{..}|visit::Event::DynamicMemberCall{..}=>Ok(())
   }
  }
@@ -117,4 +140,24 @@ pub(crate) fn with_body_using<'a,W:EffectReportWork,R:Resolver+?Sized,D:crate::c
  let mut combined=Combined{inner:Some(Arguments{archive,profile,work,checkpoint,resolver,rows:Vec::new()}),body,keywords,evaluations:0};
  let pending=(||{visit::original_union_archived_using(archive,body,resolver,profile,loan,prefix_demand,checkpoint,&mut combined)?;if combined.evaluations!=1{return Err("original contribution did not evaluate its actual body exactly once".into())}let rows=std::mem::take(&mut combined.inner().rows);consume(Findings::from_rows(archive,rows),combined.evaluations)})();
  if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;pending
+}
+
+#[cfg(test)]
+mod projection_tests {
+ use super::*;
+ use dm_syntax::OriginalCaseCursor;
+
+ #[test]
+ fn original_case_source_end_projects_both_coordinates_and_refuses_stale_fallback() {
+  let projection=dm_syntax::SyntaxProjection::new(Span::new(0,12),Span::new(80,92)).unwrap();
+  let project=|span|projection.span(span).ok_or_else(||"outside current occurrence".to_owned());
+  let source_end=OriginalCaseCursor::SourceEnd{offset:12,fallback:Span::new(9,11)};
+  assert_eq!(project_case_cursor(source_end,project).unwrap(),OriginalCaseCursor::SourceEnd{
+   offset:92,fallback:Span::new(89,91),
+  });
+  assert_eq!(project_case_cursor(OriginalCaseCursor::Token(Span::new(3,4)),project).unwrap(),
+   OriginalCaseCursor::Token(Span::new(83,84)));
+  assert!(project_case_cursor(OriginalCaseCursor::SourceEnd{offset:12,fallback:Span::new(89,91)},project).is_err());
+  assert!(project_case_cursor(OriginalCaseCursor::SourceEnd{offset:13,fallback:Span::new(9,11)},project).is_err());
+ }
 }

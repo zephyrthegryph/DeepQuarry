@@ -18,13 +18,14 @@ pub fn notes(
     at: Span,
     hint: Option<FixHint>,
 ) -> Result<Vec<Note>, String> {
-    notes_using(archive, at, hint, |_| Ok(()))
+    notes_using(archive, at, hint, Ok, |_| Ok(()))
 }
 
 pub(crate) fn notes_using<E: From<String> + for<'a> From<&'a str>>(
     archive: &BodyArchive,
     at: Span,
     hint: Option<FixHint>,
+    project: impl Fn(Span) -> Result<Span, String>,
     fund_note: impl FnOnce(usize) -> Result<(), E>,
 ) -> Result<Vec<Note>, E> {
     let current = archive.borrowed_source_note_point(at.start)?;
@@ -45,7 +46,7 @@ pub(crate) fn notes_using<E: From<String> + for<'a> From<&'a str>>(
             )]);
         }
         FixHint::LocalVariable(anchor) => {
-            let source = archive.borrowed_source_note_point(anchor.start)?;
+            let source = archive.borrowed_source_note_point(project(anchor)?.start)?;
             fund_note(cross_file_bytes(source))?;
             return Ok(vec![crate::checks_directive_binding::original_note_message(
                 source, current, "add additional type info here",
@@ -69,7 +70,7 @@ pub(crate) fn notes_using<E: From<String> + for<'a> From<&'a str>>(
                 .ok_or("return note name unavailable")?,
         ),
         ReturnFixHint::EvaluatedNone => {
-            let source = archive.borrowed_source_note_point(call.start)?;
+            let source = archive.borrowed_source_note_point(project(call)?.start)?;
             fund_note(cross_file_bytes(source))?;
             return Ok(vec![crate::checks_directive_binding::original_note_message(
                 source, current, "return type evaluated to None",
