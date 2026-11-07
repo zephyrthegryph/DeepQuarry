@@ -5,7 +5,6 @@
  */
 
 import { useAtom, useAtomValue } from 'jotai';
-import { useState } from 'react';
 import { Pane } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
 import { visibleAtom } from './audio/atoms';
@@ -25,13 +24,8 @@ import {
   useChatDrag,
   useShareReport,
 } from './layout/ChatLayout';
-import { Notifications } from './Notifications';
 import { PingIndicator } from './ping/PingIndicator';
-import {
-  AutoReconnectNotice,
-  ReconnectButton,
-  useAutoReconnect,
-} from './reconnect';
+import { useAutoReconnect } from './reconnect';
 import { settingsVisibleAtom } from './settings/atoms';
 import { SettingsPanel } from './settings/SettingsPanel';
 import { useSettings } from './settings/use-settings';
@@ -41,11 +35,10 @@ export function Panel(props) {
   const game = useAtomValue(gameAtom);
   const { settings } = useSettings();
   const [settingsVisible, setSettingsVisible] = useAtom(settingsVisibleAtom);
-  const [dismissedWarning, setDismissedWarning] = useState(false);
   useChatPersistence();
   useAutoReconnect(!!game.connectionLostAt || !!game.roundRestartedAt);
   useChatScanlines();
-  useKeepAlive(setDismissedWarning);
+  useKeepAlive();
   useShareReport();
   const floating = useAtomValue(layoutModeAtom) === 'float';
   const drag = useChatDrag();
@@ -111,29 +104,6 @@ export function Panel(props) {
               <ChatPanel lineHeight={settings.lineHeight} />
             </Pane.Content>
             <ScrollToBottom />
-            <Notifications>
-              <AutoReconnectNotice />
-              {settings.showReconnectWarning &&
-                game.connectionLostAt &&
-                !dismissedWarning && (
-                  <Notifications.Item
-                    rightSlot={
-                      <ReconnectButton
-                        onDismissedWarning={setDismissedWarning}
-                      />
-                    }
-                  >
-                    You are either AFK, experiencing lag or the connection has
-                    closed.
-                  </Notifications.Item>
-                )}
-              {settings.showReconnectWarning && game.roundRestartedAt && (
-                <Notifications.Item>
-                  The connection has been closed because the server is
-                  restarting. Please wait while you automatically reconnect.
-                </Notifications.Item>
-              )}
-            </Notifications>
           </Section>
         </Stack.Item>
         <Stack.Item>

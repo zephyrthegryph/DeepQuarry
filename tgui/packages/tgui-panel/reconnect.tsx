@@ -1,7 +1,7 @@
 import { atom, useAtomValue } from 'jotai';
 import { useEffect, useState } from 'react';
 import { createLogger } from 'tgui/logging';
-import { Button, Stack } from 'tgui-core/components';
+import { Button } from 'tgui-core/components';
 import { store } from './events/store';
 import { Reconnector, type ReconnectState } from './reconnect-model';
 
@@ -15,52 +15,6 @@ setInterval(() => {
     }
   });
 }, 5000);
-
-export function ReconnectButton(props: {
-  onDismissedWarning: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
-  if (!url) {
-    return null;
-  }
-  const { onDismissedWarning } = props;
-
-  return (
-    <Stack>
-      <Stack.Item>
-        <Button
-          color="white"
-          onClick={() => {
-            Byond.command('.reconnect');
-          }}
-        >
-          Reconnect
-        </Button>
-      </Stack.Item>
-      <Stack.Item>
-        <Button
-          color="white"
-          icon="power-off"
-          tooltip="Relaunch game"
-          tooltipPosition="bottom-end"
-          onClick={() => {
-            location.href = `byond://${url}`;
-            Byond.command('.quit');
-          }}
-        />
-      </Stack.Item>
-      <Stack.Item>
-        <Button
-          color="white"
-          onClick={() => {
-            onDismissedWarning(true);
-          }}
-        >
-          Dismiss
-        </Button>
-      </Stack.Item>
-    </Stack>
-  );
-}
 
 const logger = createLogger('Reconnect');
 
@@ -82,32 +36,66 @@ export function useAutoReconnect(down: boolean) {
   }, [down]);
 }
 
-/** The "Reconnecting..." line with a cancel button. */
-export function AutoReconnectNotice() {
+/** Reconnect state shown inline in the ping indicator: attempt, countdown, buttons. */
+export function ReconnectStatus(props: { restarting: boolean }) {
   const state = useAtomValue(reconnectStateAtom);
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  if (!state.active) {
-    return null;
+  let text: string;
+  if (state.active) {
+    const secs =
+      state.nextAt === null
+        ? 0
+        : Math.max(0, Math.ceil((state.nextAt - Date.now()) / 1000));
+    text = `Reconnecting (attempt ${state.attempt + 1}${
+      state.nextAt !== null ? `, ${secs}s` : ''
+    })`;
+  } else if (state.cancelled) {
+    text = 'Disconnected';
+  } else {
+    text = props.restarting ? 'Server restarting' : 'Disconnected';
   }
-  const secs =
-    state.nextAt === null
-      ? 0
-      : Math.max(0, Math.ceil((state.nextAt - Date.now()) / 1000));
   return (
-    <Stack align="center">
-      <Stack.Item>
-        Reconnecting... (attempt {state.attempt + 1}
-        {state.nextAt !== null && `, in ${secs}s`})
-      </Stack.Item>
-      <Stack.Item>
-        <Button color="white" onClick={() => reconnector.cancel()}>
+    <>
+      <span className="Ping__status">{text}</span>
+      {state.active ? (
+        <Button
+          compact
+          color="white"
+          tooltip="Stop reconnecting automatically"
+          tooltipPosition="bottom"
+          onClick={() => reconnector.cancel()}
+        >
           Cancel
         </Button>
-      </Stack.Item>
-    </Stack>
+      ) : null}
+      <Button
+        compact
+        color="white"
+        tooltip="Reconnect now"
+        tooltipPosition="bottom"
+        onClick={() => {
+          Byond.command('.reconnect');
+        }}
+      >
+        Reconnect
+      </Button>
+      {url ? (
+        <Button
+          compact
+          color="white"
+          icon="power-off"
+          tooltip="Relaunch game"
+          tooltipPosition="bottom-end"
+          onClick={() => {
+            location.href = `byond://${url}`;
+            Byond.command('.quit');
+          }}
+        />
+      ) : null}
+    </>
   );
 }
