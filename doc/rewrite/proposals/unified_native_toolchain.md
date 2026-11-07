@@ -3695,3 +3695,17 @@ producer rows and then refused a 26,624-byte macro page under the unchanged
 syntax cap. A separate raw-only checkout completed all 45 stages at
 282.451 seconds. The final unused-ALLOW audit then refused the general
 code-view reservation. Neither run delivered a report.
+
+### Whole-checkout raw report parity
+
+The raw-only unused-ALLOW reader allowed the first complete checkout report
+for the 45-policy raw roster. It finished with findings, and the independent
+archived legacy scanner matched all 5,581 report bytes. The native terminal
+sealed those bytes and the client received them in full.
+
+Warm replay did not pass this checkout. The fresh capture completed, but the
+request restaged its first policy and then refused a source-view reservation.
+The retained report-body design has separate fixture proof, including replay
+after page-value eviction, a same-size source edit, and a report over its
+1 MiB retention threshold. The checkout still needs to prove a retained
+result slot is available and a fresh terminal returns the same report.
