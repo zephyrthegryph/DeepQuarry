@@ -139,7 +139,7 @@ pub fn with_source_file(views:crate::captured_raw_file::RawPolicyViews<'_>,visit
 pub use crate::check_grep_native_semantics::Positions;
 /// Actual archive/body values are required. The result remains unsealed DATA;
 /// the host must bind the current snapshot and exhaust all selected inputs.
-pub fn body_positions(archive:&dm_tree::frontend::BodyArchive,body:&dm_tree::frontend::ArchivedBody<'_>,root:&std::path::Path,file:&SourceFile,tracked_slot_owners:&std::collections::BTreeSet<String>,slots:bool,holders:bool,scratch:&Budget,output_budget:&Budget,poll:&dyn Fn()->io::Result<()>,out:&mut Positions)->Result<(),Failure>{crate::check_grep_native_semantics::positions_for_body(archive,body,root,file,tracked_slot_owners,slots,holders,scratch,output_budget,poll,out)}
+pub fn body_positions(archive:&dm_tree::frontend::BodyArchive,body:&dm_tree::frontend::CurrentArchivedBody<'_,'_>,admission:&dm_syntax::SettingAdmission<'_>,root:&std::path::Path,file:&SourceFile,tracked_slot_owners:&std::collections::BTreeSet<String>,slots:bool,holders:bool,scratch:&Budget,output_budget:&Budget,poll:&dyn Fn()->io::Result<()>,out:&mut Positions)->Result<(),Failure>{crate::check_grep_native_semantics::positions_for_body(archive,body,admission,root,file,tracked_slot_owners,slots,holders,scratch,output_budget,poll,out)}
 /// Exact old Decls CODE_DM tracked-line question, including generated tracking
 /// declarations and excluding hidden paths according to that original selector.
 pub fn observe_tracked_slot_owners(relative:&str,views:crate::captured_raw_file::RawPolicyViews<'_>,budget:&Budget,poll:&dyn Fn()->io::Result<()>,owners:&mut std::collections::BTreeSet<String>)->Result<(),Failure>{

@@ -20,6 +20,9 @@ pub(crate) struct SelectedHandlerFiles<'reader,'capture,'scope>{
  domain:SiliconActorDomain<'reader>,
 }
 impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
+ pub(super) fn with_setting_admission<T>(&self,run:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,dm_tree::frontend::BodySyntaxFailure>)->Result<T,dm_tree::frontend::BodySyntaxFailure>{
+  self.db.with_setting_admission(run)
+ }
  pub(crate) fn selected_handler_files<'reader>(
   &'reader self,inputs:&'reader dm_analysis::policy_inputs::PolicyInputs,
   plan:&'reader dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,

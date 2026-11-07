@@ -109,9 +109,9 @@ fn directory_charge(budget:&Budget,name:&str,width:usize)->Result<(),Failure>{
 fn add_local(bindings:&mut Bindings,budget:&Budget,name:&str,ty:Option<String>)->Result<(),Failure>{
  if let Some(existing)=bindings.types.get_mut(name){*existing=None;}else{directory_charge(budget,name,0)?;bindings.types.insert(name.to_owned(),ty);}Ok(())
 }
-pub(crate) fn bindings(body:&dm_tree::frontend::ArchivedBody<'_>,budget:&Budget,poll:&dyn Fn()->std::io::Result<()>)->Result<Bindings,Failure>{
+pub(crate) fn bindings(body:&dm_tree::frontend::CurrentArchivedBody<'_,'_>,admission:&dm_syntax::SettingAdmission<'_>,budget:&Budget,poll:&dyn Fn()->std::io::Result<()>)->Result<Bindings,Failure>{
  let mut bindings=Bindings{types:std::collections::BTreeMap::new(),slot_shadowed:false};
- let parameters=body.source_parameters()?;
+ let parameters=body.source_parameters(admission).map_err(crate::captured_untyped_pages::body_failure)?;
  for parameter in parameters.entries()?{
   budget.require().map_err(oom)?;poll()?;
   if parameter.variadic(){continue}
@@ -122,7 +122,7 @@ pub(crate) fn bindings(body:&dm_tree::frontend::ArchivedBody<'_>,budget:&Budget,
   let ty=parameters.type_path(parameter)?;bindings.types.insert(name.to_owned(),ty);
   bindings.slot_shadowed|=name=="slot_flags";
  }
- let locals=body.source_locals()?;
+ let locals=body.source_locals(admission).map_err(crate::captured_untyped_pages::body_failure)?;
  struct LocalWalk<'a,F>{locals:dm_tree::frontend::SourceLocalView<'a>,bindings:&'a mut Bindings,budget:&'a Budget,poll:F,error:Option<Failure>}
  impl<F:Fn()->std::io::Result<()>> LocalWalk<'_,F>{
   fn statement_facts(&mut self,node:&dm_syntax::Statement)->Result<(),Failure>{
@@ -160,7 +160,7 @@ pub(crate) fn bindings(body:&dm_tree::frontend::ArchivedBody<'_>,budget:&Budget,
   fn expression(&mut self,_:&Expr,_:&[dm_syntax::NodeStep])->VisitDecision{VisitDecision::Skip}
   fn statement(&mut self,node:&dm_syntax::Statement,_:&[dm_syntax::NodeStep])->VisitDecision{if self.error.is_some(){return VisitDecision::Stop}match self.statement_facts(node){Ok(())=>VisitDecision::Descend,Err(error)=>{self.error=Some(error);VisitDecision::Stop}}}
  }
- {let mut walk=LocalWalk{locals,bindings:&mut bindings,budget,poll,error:None};dm_syntax::visit_statement_view(body.statement_body().view(),&mut walk);if let Some(error)=walk.error{return Err(error)}}
+ {let mut walk=LocalWalk{locals,bindings:&mut bindings,budget,poll,error:None};dm_syntax::visit_statement_view(body.syntax().canonical_statement_storage().view(),&mut walk);if let Some(error)=walk.error{return Err(error)}}
  budget.require().map_err(oom)?;poll()?;budget.require().map_err(oom)?;Ok(bindings)
 }
 
@@ -206,14 +206,16 @@ pub(crate) fn is_effective_body(archive:&dm_tree::frontend::BodyArchive,ordinal:
 /// this body-local scratch alive until every temporary has physically dropped;
 /// returned position nodes are separately funded on the operation's root.
 pub(crate) fn positions_for_body(
- archive:&dm_tree::frontend::BodyArchive,body:&dm_tree::frontend::ArchivedBody<'_>,
+ archive:&dm_tree::frontend::BodyArchive,body:&dm_tree::frontend::CurrentArchivedBody<'_,'_>,admission:&dm_syntax::SettingAdmission<'_>,
  root:&std::path::Path,file:&crate::tree::SourceFile,tracked_slot_owners:&std::collections::BTreeSet<String>,
  want_slots:bool,want_holders:bool,scratch:&Budget,output_budget:&Budget,
  poll:&dyn Fn()->std::io::Result<()>,out:&mut Positions,
 )->Result<(),Failure>{
  use dm_ir::SymbolId;use dm_analysis::checker_call_facts::{callable_any,CallableFact};
  if !body.belongs_to(archive)||!file.is_captured_input(){return Err("check_grep semantic loan lacks its actual archive/captured file".into())}
- if !body.statement_body().original_literal_syntax_complete(){return Err("check_grep body primary syntax is not complete".into())}
+ let syntax=body.syntax();
+ let statements=syntax.canonical_statement_storage();
+ if !statements.original_literal_syntax_complete(){return Err("check_grep body primary syntax is not complete".into())}
  let tree=archive.tree();let profile=tree.checker_builtin_profile().ok_or("check_grep body checker profile absent")?;
  let proof=tree.validated_checker_profile(profile).map_err(|error|Failure::Unsupported(format!("check_grep checker profile: {error:?}")))?;
  let member=tree.member(body.occurrence().member).ok_or("check_grep original callable member absent")?;
@@ -233,14 +235,18 @@ pub(crate) fn positions_for_body(
   if slot_enabled{slot_enabled=matches!(callable_any(tree,tree,profile,SymbolId::of(owner),SymbolId::of("set_slot_flags"))?,CallableFact::Source{..});}
  }
  if !slot_enabled&&!want_holders{return Ok(())}
- let bindings=bindings(body,scratch,poll)?;
+ let bindings=bindings(body,admission,scratch,poll)?;
  let header=archive.callable_header_source().reported_point(body.occurrence().member)?;
  let(header_path,_,_)=header.reported_coordinates();
  let mut path_peak=header_path.as_os_str().len().checked_add(root.as_os_str().len()).and_then(|n|n.checked_mul(128)).and_then(|n|n.checked_add(4096)).ok_or_else(||{scratch.deny();oom("check_grep header path envelope overflow")})?;
  scratch.charge(path_peak).map_err(oom)?;
  if crate::util::rel_slash(header_path,root)!=file.rel{return Ok(())}
- candidates(body.statement_body().parsed(),scratch,poll,|candidate|{
-  let offset=match candidate{Candidate::Slot{offset,..}|Candidate::Holder{offset,..}=>offset};
+ // The existing visitor resolves nested setting projections into the canonical
+ // body's coordinates. Rebase only that checked point to the current occurrence.
+ candidates(statements.parsed(),scratch,poll,|candidate|{
+  let original=match candidate{Candidate::Slot{offset,..}|Candidate::Holder{offset,..}=>offset};
+  let offset=syntax.projection().span(dm_syntax::Span::new(original,original))
+   .ok_or("check_grep candidate escapes its actual current body projection")?.start;
   let point=archive.borrowed_source_note_point(offset)?;let(registration,line,column)=point.reported_coordinates();
   let peak=registration.as_os_str().len().checked_add(root.as_os_str().len()).and_then(|n|n.checked_mul(128)).and_then(|n|n.checked_add(4096)).ok_or_else(||{scratch.deny();oom("check_grep report path envelope overflow")})?;
   if peak>path_peak{scratch.charge(peak-path_peak).map_err(oom)?;path_peak=peak;}

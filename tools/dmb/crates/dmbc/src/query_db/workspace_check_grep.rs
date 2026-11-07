@@ -45,9 +45,22 @@ impl Source<'_,'_,'_>{
    policy::with_source_file(views,&mut|source|{
     while cursor<plans.len()&&plans[cursor].file==file{
      self.require()?;let plan=plans[cursor];let mut body_scratch=Scratch::new(root)?;
-     let body=self.archive.parse_checked(plan.ordinal).map_err(|failure|match failure{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>Failure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>Failure::Unsupported(error.message)})?;
-     policy::body_positions(self.archive,&body,self.reader.root(),source,&owners,requests[file].slot_mutation,requests[file].non_client_holder,&body_scratch.budget,root,&crate::daemon::control::checkpoint,&mut output[file].positions)?;
-     drop(body);body_scratch.complete=true;drop(body_scratch);cursor+=1;
+     use dm_tree::frontend::BodySyntaxFailure;
+     // Preserve the previous archive input bound before demanding syntax.
+     let span=self.archive.occurrences()[plan.ordinal].expanded_span;
+     if span.end.saturating_sub(span.start)>1024*1024{return Err("body archive query exceeds 1 MiB input limit".into())}
+     let mut unsupported=None;
+     self.reader.with_setting_admission(|admission|{
+      self.archive.with_current_body_checked(plan.ordinal,admission,|body|{
+       match policy::body_positions(self.archive,&body,admission,self.reader.root(),source,&owners,requests[file].slot_mutation,requests[file].non_client_holder,&body_scratch.budget,root,&crate::daemon::control::checkpoint,&mut output[file].positions){
+        Ok(())=>Ok(()),
+        Err(Failure::Operational(actual))=>Err(BodySyntaxFailure::Operational(actual)),
+        Err(Failure::Unsupported(message))=>{unsupported=Some(message);Ok(())},
+       }
+      })
+     }).map_err(dq_analyze::captured_untyped_pages::body_failure)?;
+     if let Some(message)=unsupported{return Err(Failure::Unsupported(message));}
+     body_scratch.complete=true;drop(body_scratch);cursor+=1;
     }
     Ok(())
    })?;Ok(true)
