@@ -12,6 +12,7 @@
 use crate::checker_evaluated_observer::{EvaluatedObserver, ScopeKind};
 use crate::{
     checker_call_facts::{self, CallableFact},
+    checker_static_type_notes::FixHint,
     checks::BodyView,
     checks_parent_call,
 };
@@ -35,6 +36,9 @@ pub enum TypeFact {
     /// Actual pinned /callee.proc static result, not a runtime type or value.
     Proc,
     ReturnHint(crate::checker_return_facts::ReturnFixHint, Span),
+    /// An untyped result with the selected authored declaration as a note.
+    /// This is diagnostic provenance, never a native receiver type.
+    AuthoredVariableHint(MemberId),
     Deferred(&'static str),
 }
 impl TypeFact {
@@ -49,7 +53,7 @@ impl TypeFact {
         match self {
             Self::Known(owner) => Ok(Some(owner)),
             Self::List(_) | Self::NestedList{..} => Ok(Some(SymbolId::of("/list"))),
-            Self::Unknown | Self::Unhinted | Self::Proc | Self::ReturnHint(..) => Ok(None),
+            Self::Unknown | Self::Unhinted | Self::Proc | Self::ReturnHint(..) | Self::AuthoredVariableHint(_) => Ok(None),
             Self::Deferred(reason) => Err(reason.into()),
         }
     }
@@ -67,7 +71,7 @@ pub enum Event<'a> {
         expression: &'a Expr,
         at: Span,
         name: &'a str,
-        hint: Option<(crate::checker_return_facts::ReturnFixHint, Span)>,
+        hint: Option<FixHint>,
     },
     MissingVariable {
         expression: &'a Expr,
@@ -109,7 +113,7 @@ pub enum Event<'a> {
         // Unknown variables/parameters may need a declaration fix note that
         // current primary metadata has not issued. Other families can still
         // consume the same evaluation walk without inventing that note.
-        hint: Result<Option<(crate::checker_return_facts::ReturnFixHint, Span)>, &'static str>,
+        hint: Result<Option<FixHint>, &'static str>,
     },
     DynamicMemberCall {
         expression: &'a Expr,
@@ -667,16 +671,16 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
     }
     /// Qualify one plain authored declaration against the ORIGINAL type
     /// roster. Keep existing projection for modifiers, lists, arrays and
-    /// builtins. The terminal-return guard prevents losing a definition hint
-    /// that a subsequent field/call follow could consume.
+    /// builtins. Only the Original union can retain a declaration hint for
+    /// subsequent follows; the isolated type check still needs a terminal read.
     fn missing_variable_type(
         &self,
         fact: &crate::checker_variable_facts::VariableFact,
         use_expr: &Expr,
-    ) -> Result<Option<&'a str>, D::Error> {
+    ) -> Result<Option<(&'a str, MemberId)>, D::Error> {
+        let Some(formal) = fact.formal else { return Ok(None); };
         if !self.original_values
             || self.type_errors.is_none()
-            || fact.formal.is_none()
             || fact.metadata.array.is_some()
             || fact.metadata.flags & !15 != 0
             || fact.metadata.list_element_type.is_some()
@@ -715,17 +719,25 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         if !missing {
             return Ok(None);
         }
-        if !self.terminal_return.is_some_and(|root| std::ptr::eq(root, use_expr)) {
+        if self.original_events.is_none()
+            && !self.terminal_return.is_some_and(|root| std::ptr::eq(root, use_expr))
+        {
             return Err("missing authored variable type needs original downstream definition-hint propagation".into());
         }
-        Ok(Some(path))
+        Ok(Some((path, formal)))
     }
 
-    fn emit_missing_variable_type(&mut self, path: &str, at: Span) -> Result<TypeFact, D::Error> {
+    fn emit_missing_variable_type(
+        &mut self, path: &str, formal: MemberId, at: Span,
+    ) -> Result<TypeFact, D::Error> {
         self.prefix_demand.checkpoint()?;
         self.type_errors.as_deref_mut().ok_or("authored variable type observer disappeared")?
             .undefined_type(path, at)?;
-        Ok(TypeFact::Unknown)
+        Ok(if self.original_events.is_some() {
+            TypeFact::AuthoredVariableHint(formal)
+        } else {
+            TypeFact::Unknown
+        })
     }
 
     fn variable_use_type(
@@ -734,8 +746,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         use_expr: &Expr,
         at: Span,
     ) -> Result<TypeFact, D::Error> {
-        if let Some(path) = self.missing_variable_type(fact, use_expr)? {
-            return self.emit_missing_variable_type(path, at);
+        if let Some((path, formal)) = self.missing_variable_type(fact, use_expr)? {
+            return self.emit_missing_variable_type(path, formal, at);
         }
         self.variable_type(fact)
     }
@@ -1798,7 +1810,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     let Some(receiver) = base.receiver()? else {
                         let hint = match base {
                             TypeFact::Unhinted => Ok(None),
-                            TypeFact::ReturnHint(hint, call) => Ok(Some((hint, call))),
+                            TypeFact::ReturnHint(hint, call) => Ok(Some(FixHint::Return(hint, call))),
+                            TypeFact::AuthoredVariableHint(formal) => Ok(Some(FixHint::AuthoredVariable(formal))),
                             _ => Err(
                                 "unknown-receiver call needs pinned fix-hint/declaration origins",
                             ),
@@ -1838,7 +1851,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 let Some(receiver) = base.receiver()? else {
                     let hint=match base {
                         TypeFact::Unhinted=>None,
-                        TypeFact::ReturnHint(hint,call)=>Some((hint,call)),
+                        TypeFact::ReturnHint(hint,call)=>Some(FixHint::Return(hint,call)),
+                        TypeFact::AuthoredVariableHint(formal)=>Some(FixHint::AuthoredVariable(formal)),
                         _=>return Err("unknown-receiver field access needs pinned fix-hint/declaration origins".into()),
                     };
                     let at = member_origin_source(self.source, expression, object, selector, false)?;
@@ -1874,7 +1888,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         // Pinned Follow::Field registers access before static_type.
                         match (ty, missing) {
                             (Some(ty), None) => Ok(ty),
-                            (None, Some(path)) => self.emit_missing_variable_type(path, at),
+                            (None, Some((path, formal))) => self.emit_missing_variable_type(path, formal, at),
                             _ => Err("invalid authored field type outcome".into()),
                         }
                     }
@@ -1935,7 +1949,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     }
                     self.last_impurity = None;
                     return match operand {
-                        TypeFact::Unknown | TypeFact::Unhinted | TypeFact::Proc | TypeFact::ReturnHint(..) => {
+                        TypeFact::Unknown | TypeFact::Unhinted | TypeFact::Proc | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) => {
                             Ok(TypeFact::Unhinted)
                         }
                         TypeFact::Known(owner) => {
@@ -1998,7 +2012,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     // Exact pinned check_operator_overload: StaticType::None
                     // returns Analysis::empty, clearing any return fix hint.
                     // A direct local target has no non-local impurity effect.
-                    TypeFact::Unknown | TypeFact::Unhinted | TypeFact::ReturnHint(..) => {
+                    TypeFact::Unknown | TypeFact::Unhinted | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) => {
                         Ok(TypeFact::Unhinted)
                     }
                     _ => Err(
