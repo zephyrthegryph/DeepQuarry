@@ -3361,8 +3361,7 @@ client. Its check also verified recovery after changing the scope.
 
 The bounded checkout probe at `78125f53f6` reached 6,044,707 producer
 rows and 6,037,504 adopted rows on 1,474 shared token pages before its
-300-second request deadline. It ended in `code/content/mining/drilling/
-drill.dm`, with zero report bytes. The 215,889 committed item rows occupied
+300-second request deadline. It ended in `code/content/mining/drilling/drill.dm`, with zero report bytes. The 215,889 committed item rows occupied
 6,908,448 bytes at 32 bytes each, saving 863,556 bytes at that frontier
 relative to the previous item layout. The last private-daemon sample was
 142.969 CPU seconds at 302.118 wall seconds. The daemon drained. This run
@@ -3376,3 +3375,47 @@ expanded-source owner during streaming. Live formal and rejected-head
 occurrences still need their original owner proofs. Such a projection must
 preserve exact spelling, typed values and order, admit the new descriptor
 before releasing its old owner, and refuse an equal-text foreign source.
+
+
+Packed literal pages now retain the original Global String allocation with
+checked 32-bit length and capacity fields. Their rows occupy 24 bytes on
+64-bit targets. Wide geometry keeps the singleton path. Six focused tests
+passed for spare capacity, empty allocations, cross-thread destruction,
+wide limits, exact raw pointers, cooked fallbacks and first-error cleanup.
+The selected Ordinary route can also prepare Lifeforms and PlayerLink in
+one request. Its combined scope and ALLOW audit test passed. Return-note
+transport controls passed for callee provenance, evaluated-None call-site
+provenance, warning suppression and subsequent errors.
+
+Strict and Original can now share the existing authored callable-owner
+artifacts. The recipient replays the exact current OwnerShape receipt;
+intrinsics, inheritance, member issuance and diagnostics use that recipient's
+own tree. A funded request-local covered-owner roster lets matching owners
+skip a repeated authored-anchor reduction. Missing and duplicate-bearing
+owners follow the existing ordered scan. Four core controls passed for
+quota fallback, current declaration changes, absent names and duplicate
+ordering.
+
+Selected warm Original preparation now borrows this memo directly from the
+same-project Strict variant already stashed by the host's engine switch.
+The guard checks exact engine payload identity, default target defines,
+remembered native frontend and its current tree binding. The BuildHost
+control compiled and published a genuine native fixture, added an
+Original-only declaration, then observed callable memo hits while retaining
+the exact diagnostic results. The three report revisions changed with the
+source edit. The first test attempt incorrectly compared those changing
+revision fields as part of a byte-identical report; the corrected test
+requires each revision to change and passed on its failure-only rerun.
+
+Callable return-note projection now uses the existing identity roster and
+retained primary header. Its test proved that projecting all three source
+occurrences, including an override and a verb, caused no body-query
+computation or green lookup. It matched the parsed-body coordinates
+exactly, including a Unicode comment. Existing source/body ownership,
+heap census and three public combined/compound transport controls passed
+in the same focused verification cohort.
+
+Warm authored-anchor sharing does not qualify a cold compound handoff.
+Strict compilation and Original still perform separate common frontend
+work. Whole-checkout completion, complete policy/Checker coverage,
+production cutover and the performance targets remain open.
