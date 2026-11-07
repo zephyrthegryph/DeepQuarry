@@ -492,6 +492,7 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 		/client/verb/ping, /client/verb/character_setup, /client/verb/game_options, /client/verb/hotkeys_help,
 		/client/verb/wiki, /client/verb/show_active_playtime, /client/verb/requesthelp,
 		/mob/verb/me_verb_subtle_custom, /mob/verb/psay, /mob/verb/pme, /mob/living/verb/player_narrate,
+		/client/verb/toggle_floating_chat, /client/verb/dock_chat, /client/verb/reset_chat_window, /client/verb/toggle_fullscreen, /client/verb/adminhelp,
 	)
 	for(var/path in hidden_by_cleanup)
 		TEST_ASSERT(!verb_panel_listed(path), "[path] must not be listed in the verb panel")

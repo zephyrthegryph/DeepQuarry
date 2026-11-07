@@ -1,29 +1,6 @@
 /mob/living
 	var/datum/language/default_language
 
-// 515 and tgui list
-/mob/living/verb/set_default_language()
-	set name = "Set Default Language"
-	set hidden = TRUE
-
-	if(!LAZYLEN(languages))
-		to_chat(src, span_warning("You can't speak any languages."))
-		return
-
-	open_request(src, /datum/prompt/choice, PROC_REF(default_language_chosen), answerer = src, title = "Available languages", question = "Select your default language", choices = languages, timeout = 0)
-
-/mob/living/proc/default_language_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	apply_default_language(A.answer.value)
-
-// Silicons can't neccessarily speak everything in their languages list
-/mob/living/silicon/set_default_language()
-	if(!LAZYLEN(speech_synthesizer_langs))
-		to_chat(src, span_warning("You can't speak any languages."))
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(default_language_chosen), answerer = src, title = "Available languages", question = "Select your default language", choices = speech_synthesizer_langs, timeout = 0)
-
 /mob/living/proc/apply_default_language(language)
 	if (only_species_language && language != GLOB.all_languages[species_language])
 		to_chat(src, span_notice("You can only speak your species language, [species_language]."))

@@ -135,7 +135,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	adminhelp(msg)
 
 /client/verb/adminhelp(msg as text)
-	set category = VERB_CAT_OOC_RESOURCES
+	set hidden = TRUE // Request help (F1, the Menu page) asks for it
 	set name = "Adminhelp"
 
 	//handle muting and automuting
