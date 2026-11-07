@@ -3260,3 +3260,26 @@ The run stopped at the 300-second request deadline. It recorded 239.703
 CPU seconds at the last sample, returned no report bytes, and its private
 daemon drained and exited. It establishes the later observed frontier,
 while whole-checkout completion and performance remain unqualified.
+
+
+The selected ordinary Analyze route can now stage the exact Derived Reads
+roster. It borrows the existing native six-rule judgment and records the
+actual used annotations and stale-generation failure. The preflight still
+discovers only code DM. The parent selected workspace separately captures
+maps. The focused test matches the exclusive Derived Reads section, verifies
+one preprocessing notice, checks a map-only unused annotation and unchanged
+warm output, and refuses an unsupported roster without publishing bytes.
+
+The pinned dynamic constructor skips its target and arguments, then checks
+ordinary outer follows as unhinted accesses. The real combined daemon
+fixture verified both warnings, the subsequent undefined variable and all
+three exact locations. The existing combined Untyped and compound compiler
+fixtures passed in the same build.
+
+An ordered Original open may now share an eligible already prepared UTF-8
+backing after its own admitted read yields byte-for-byte identical data.
+The open still issues a fresh acquisition and receipt, and the borrow
+does not replace the raw-read credit or encoding checks. Focused controls
+verify shared bytes with distinct receipts, same-stamp changed content,
+and refusal to substitute prepared data for BOM, Latin-1, suppression or
+missing-source outcomes. Whole-project reuse rates are not measured.
