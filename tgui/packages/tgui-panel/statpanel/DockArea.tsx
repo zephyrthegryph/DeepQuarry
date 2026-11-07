@@ -2,15 +2,17 @@
  * The window dock's frame in the stat panel (doc/rewrite/proposals/window_system.md):
  * one entry per group, its titlebar (or tabs for a stack), collapse, float and
  * close, a resize grip, and a placeholder the group's window is placed over
- * (dockHost.ts). Headers and tabs drag: onto another header to stack, onto a
- * gap to reorder, past the panel's left edge to float.
+ * (dockHost.ts). A header drags: onto another header to stack its window there,
+ * onto a gap to reorder (a stacked group's header splits its active tab out),
+ * past the panel's left edge to float. Tabs reorder by dragging (ConsoleTabs).
  */
 import {
   type PointerEvent as ReactPointerEvent,
   useState,
   useSyncExternalStore,
 } from 'react';
-import { Button, Tabs } from 'tgui-core/components';
+import { ConsoleTabs } from 'tgui/components';
+import { Button } from 'tgui-core/components';
 import { type DockHost, dockHost } from './dockHost';
 import type { DockGroup } from './windowDock';
 
@@ -202,7 +204,7 @@ function Group(props: {
           startDrag(
             event,
             host,
-            { group: group.id, window: group.active, whole: true },
+            { group: group.id, window: group.active, whole: !stacked },
             setHover,
           )
         }
@@ -216,30 +218,31 @@ function Group(props: {
           onClick={toggle}
         />
         {stacked ? (
-          <Tabs className="dock-tabs">
-            {group.windows.map((id, index) => (
-              <Tabs.Tab key={id} selected={id === group.active}>
-                <span
-                  className="dock-tab"
-                  data-dock-drop="head"
-                  data-group={group.id}
-                  data-index={index}
-                  onPointerDown={(event) => {
-                    event.stopPropagation();
-                    startDrag(
-                      event,
-                      host,
-                      { group: group.id, window: id, whole: false },
-                      setHover,
-                      () => host.dispatch({ type: 'activate', id }),
-                    );
-                  }}
-                >
-                  {windows[id]?.title || windows[id]?.iface}
-                </span>
-              </Tabs.Tab>
-            ))}
-          </Tabs>
+          <ConsoleTabs
+            className="dock-tabs"
+            layout="scrollable"
+            tabs={group.windows.map((id) => ({
+              id,
+              label: windows[id]?.title || windows[id]?.iface,
+              selected: id === group.active,
+            }))}
+            onSelect={(id) => host.dispatch({ type: 'activate', id })}
+            onReorder={(next) => {
+              const moved = next.find((id, i) => group.windows[i] !== id);
+              if (moved) {
+                host.dispatch({
+                  type: 'moveWindow',
+                  id: moved,
+                  group: group.id,
+                  index:
+                    next.indexOf(moved) +
+                    (next.indexOf(moved) > group.windows.indexOf(moved)
+                      ? 1
+                      : 0),
+                });
+              }
+            }}
+          />
         ) : (
           <span className="dock-title">{active?.title || active?.iface}</span>
         )}

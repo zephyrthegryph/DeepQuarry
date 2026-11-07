@@ -6,7 +6,7 @@ import {
   currentPageIdAtom,
   mainPage,
 } from './atoms';
-import { createPage } from './model';
+import { createPage, keepFirst } from './model';
 import { chatRenderer } from './renderer';
 import type { Page } from './types';
 
@@ -82,6 +82,12 @@ export function useChatPages() {
     setPages(draftPages);
   }
 
+  /** Takes a new tab order from a drag; the main page stays first. */
+  function reorderChatPages(order: string[]): void {
+    const next = keepFirst(pages, order);
+    if (next) setPages(next);
+  }
+
   function removeChatPage(): void {
     const nextPages = pages.filter((id) => id !== currentPageId);
 
@@ -139,6 +145,7 @@ export function useChatPages() {
     changeChatPage,
     moveChatLeft,
     moveChatRight,
+    reorderChatPages,
     removeChatPage,
     toggleAcceptedType,
     updateChatPage,

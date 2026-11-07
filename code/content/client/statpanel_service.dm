@@ -32,6 +32,8 @@ SYSTEM_DEF(statpanels)
 	resuming = FALSE
 	if (!resumed)
 		num_fires++
+	// The Status lines are only read by a status send (every status_wait fires; an immediate send reads the last ones).
+	if (!resumed && (num_fires % status_wait == 0 || !global_data))
 		global_data = list(
 			//"Map: [SSmapping.config?.map_name || "Loading..."]",
 			"Map: [using_map.name]",
@@ -58,6 +60,7 @@ SYSTEM_DEF(statpanels)
 		else if(ticker_ready_for_reboot())
 			global_data += "Reboot: DELAYED"
 
+	if (!resumed)
 		src.currentrun = GLOB.clients.Copy()
 		mc_data = null
 
@@ -126,20 +129,23 @@ SYSTEM_DEF(statpanels)
 		if(length(mob_tabs[tab]) == 0 && (tab in target.misc_tabs))
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
+			target.stat_panel.forget_sent("update_misc:[tab]")
 
 		if(length(mob_tabs[tab]) > 0)
 			if(!(tab in target.misc_tabs))
 				target.misc_tabs += tab
 				target.stat_panel.send_message("create_misc",tab)
+			// Rebuilt every misc_wait fires; the page gets it only when a line changed.
 			target.stat_panel.send_message("update_misc",list(
 				TN = tab, \
 				TC = mob_tabs[tab], \
-			))
+			), same_key = "update_misc:[tab]")
 
 	for(var/tab in target.misc_tabs)
 		if(!(tab in mob_tabs))
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
+			target.stat_panel.forget_sent("update_misc:[tab]")
 
 /datum/system/statpanels/proc/set_status_tab(client/target)
 	if(!global_data)//statbrowser hasnt fired yet and we were called from immediate_send_stat_data()
@@ -149,7 +155,7 @@ SYSTEM_DEF(statpanels)
 		global_data = global_data,
 		ping_str = "Ping: [round(target.lastping, 1)]ms (Average: [round(target.avgping, 1)]ms)",
 		other_str = target.mob?.get_status_tab_items(),
-	))
+	), same_key = "update_stat")
 
 /datum/system/statpanels/proc/set_MC_tab(client/target)
 	var/turf/eye_turf = get_turf(target.eye)
@@ -219,7 +225,7 @@ SYSTEM_DEF(statpanels)
 	var/list/tickets = list()
 	if(check_rights_for(target, R_ADMIN|R_SERVER|R_MOD|R_MENTOR)) //Prevents non-staff from opening the list of ahelp tickets
 		tickets = GLOB.tickets.stat_entry(target)
-	target.stat_panel.send_message("update_tickets", tickets)
+	target.stat_panel.send_message("update_tickets", tickets, same_key = "update_tickets")
 
 /datum/system/statpanels/proc/set_SDQL2_tab(client/target)
 	var/list/sdql2A = list()

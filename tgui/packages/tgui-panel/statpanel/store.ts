@@ -121,6 +121,13 @@ export function verbCommand(name: string): string {
   return name.replace(/\s/g, '-');
 }
 
+/** Two lists of status lines are the same lines in the same order. */
+export function sameLines(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 export class StatStore {
   state = initialState();
   private listeners = new Set<() => void>();
@@ -203,15 +210,17 @@ export class StatStore {
         });
         break;
       }
-      case 'update_stat':
-        this.changed({
-          statusParts: [
-            payload.ping_str,
-            ...payload.global_data,
-            ...(payload.other_str || []),
-          ].filter((part) => part !== null && part !== undefined),
-        });
+      case 'update_stat': {
+        const statusParts = [
+          payload.ping_str,
+          ...payload.global_data,
+          ...(payload.other_str || []),
+        ].filter((part) => part !== null && part !== undefined);
+        // Unchanged lines: no new state, so nothing re-renders.
+        if (sameLines(statusParts, state.statusParts)) break;
+        this.changed({ statusParts });
         break;
+      }
       case 'update_mc':
         this.changed({
           mcParts: [['Location:', payload.coord_entry], ...payload.mc_data],

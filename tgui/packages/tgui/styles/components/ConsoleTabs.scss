@@ -1,0 +1,96 @@
+// The console tab row (components/ConsoleTabs.tsx): the stat panel's and the
+// chat's. The tabs sit on the row's 2px bottom rule (the row aligns its items
+// to the end and has no bottom padding), so the selected tab's underline, the
+// tgui-core .Tab:before indicator, is drawn on that rule.
+
+@use '../console';
+
+.ConsoleTabs {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px 8px;
+  padding: 4px 6px 0;
+  background-color: console.$console-panel;
+  border-bottom: 2px solid console.$console-border;
+
+  .ConsoleTabs__list {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border-bottom: 0;
+    background-color: transparent;
+  }
+
+  .Tab {
+    min-width: 0;
+    min-height: 2em;
+    margin-right: 2px;
+    font-family: console.$console-font;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  .Tab .Tab__text {
+    margin: 0 var(--space-ml);
+    white-space: nowrap;
+  }
+
+  .ConsoleTabs__after {
+    flex: none;
+    align-self: center;
+    padding-bottom: 2px;
+  }
+
+  // Row-end content (buttons, a search box), centred on the tabs and clear
+  // of the bottom rule.
+  .ConsoleTabs__end {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+    align-self: center;
+    margin-left: auto;
+    padding-bottom: 2px;
+  }
+
+  .ConsoleTabs__tab--dragged {
+    opacity: 0.5;
+  }
+
+  .ConsoleTabs__tab--over {
+    box-shadow: inset 2px 0 0 console.$console-accent;
+  }
+
+  .Tab[draggable="true"] {
+    cursor: grab;
+  }
+
+  &--classic {
+    .Tab {
+      min-height: 1.6em;
+    }
+
+    .Tab .Tab__text {
+      margin: 0 var(--space-sm);
+    }
+  }
+
+  &--scrollable {
+    flex-wrap: nowrap;
+
+    .ConsoleTabs__list {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .Tab {
+      flex-shrink: 0;
+    }
+  }
+}
