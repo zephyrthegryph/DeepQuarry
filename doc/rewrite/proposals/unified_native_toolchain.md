@@ -3550,3 +3550,17 @@ refusing a 24,624-byte source allocation with 19,028 bytes of input headroom.
 It produced no report. The owned transfer adds two allocation-control layouts
 and is a lifetime-accounting change. These different frontiers do not support
 an equal-workload comparison. The private daemon drained and exited.
+
+
+The next cohort passed 16 focused tests. It transfers exact opened receipt
+credits through weak aliases and packs origin groups into ten-byte cells
+with page-local encounter ranks. The raw selected report adds cap_bits,
+declaration_block, and duplicate_input_key, for 27 of 106 recorded policies.
+The frozen cap_bits oracle was updated only for the diagnostic hint naming
+the relocated registry file. The three raw reports matched after that change.
+
+The checkout probe at `5a58a2342f` reached 11,330,495 producer rows. It kept
+1,822,043 groups inline and 972 in exact fallback storage. The measured group
+reservation was 30,434,752 bytes, including 584,960 bytes of rank tables.
+The unchanged source-input limit refused a 12,668-byte allocation with
+4,647 bytes of headroom. No report was emitted and the private daemon exited.
