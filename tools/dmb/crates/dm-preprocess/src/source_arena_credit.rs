@@ -78,12 +78,34 @@ impl Drop for SourceArenaCredit {
     }
 }
 
+/// One operation-local loan from the actual admitted read. Only the read
+/// driver constructs it. Providers can request storage, never substitute bytes.
+pub struct OriginalReadTextFunding<'a> {
+    split: &'a dyn Fn(usize) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>,
+}
+
+impl OriginalReadTextFunding<'_> {
+    pub(crate) fn split(&self, capacity: usize)
+        -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>
+    {
+        (self.split)(capacity)
+    }
+}
+
 /// Borrowed operation lender. Retained credits must not retain this lender,
 /// QueryDb, the source census, a source model or an independent budget manager.
 /// Reserve the complete new allocation while old storage is still live. Shrink
 /// only AFTER physical release. A failed allocation keeps its peak reservation
 /// until credit drop, so cleanup cannot replace the original operational error.
 pub trait SourceArenaWork:Send+Sync{
+ /// Partition an actual read grant into fresh String payload and backing credits.
+ /// Providers without an owned transfer retain their existing allocation path.
+ fn split_original_text(
+    &self, _donor: &mut SourceArenaCredit, _capacity: usize,
+ ) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
+    Ok(None)
+ }
+
  /// Maximum address range for the transformed source. Reserved addresses have
  /// no backing until the arena uses the existing reserve/grow methods to pay
  /// for each newly committed page. Hosts without this facility keep the String.
@@ -103,15 +125,28 @@ pub trait SourceArenaWork:Send+Sync{
 /// One operation-local read owner in the SAME existing input-family. No family
 /// gate spans provider IO, decoding, source-stack or parser callbacks. Its peak
 /// reservation disappears only after acquired() registers actual weak owners.
-struct ReadFunding{credit:SourceArenaCredit,raw:Option<usize>,planned:bool,new_source:bool,delivered:bool}
+struct ReadFunding{credit:SourceArenaCredit,raw:Option<usize>,planned:bool,new_source:bool,delivered:bool,text_factory_used:bool,owned_text_allowed:bool}
 struct OriginalReadFunding<'a>{work:&'a dyn SourceArenaWork,max:usize,state:std::cell::RefCell<ReadFunding>,first:std::cell::RefCell<Option<io::Error>>}
 impl<'a>OriginalReadFunding<'a>{
- fn new(work:&'a dyn SourceArenaWork,max:usize)->io::Result<Self>{let bookkeeping=work.original_read_bookkeeping_bytes()?;Ok(Self{work,max,state:std::cell::RefCell::new(ReadFunding{credit:work.reserve(bookkeeping)?,raw:None,planned:false,new_source:false,delivered:false}),first:std::cell::RefCell::new(None)})}
+ fn new(work:&'a dyn SourceArenaWork,max:usize)->io::Result<Self>{let bookkeeping=work.original_read_bookkeeping_bytes()?;Ok(Self{work,max,state:std::cell::RefCell::new(ReadFunding{credit:work.reserve(bookkeeping)?,raw:None,planned:false,new_source:false,delivered:false,text_factory_used:false,owned_text_allowed:false}),first:std::cell::RefCell::new(None)})}
  /// A provider cannot replace/swallow a host callback's first actual error or
  /// relabel resource NotFound as source absence. Placeholder never escapes.
  fn callback<T>(&self,run:impl FnOnce()->io::Result<T>)->io::Result<T>{if self.first.borrow().is_some(){return Err(io::ErrorKind::Other.into())}match run(){Ok(value)=>Ok(value),Err(actual)=>{*self.first.borrow_mut()=Some(actual);Err(io::ErrorKind::Other.into())}}}
  fn before_read(&self,capacity:usize)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.raw.is_some()||capacity>self.max{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated/exceeded actual preallocation"))}self.work.grow(&mut state.credit,capacity)?;state.raw=Some(capacity);Ok(())})}
- fn before_decode(&self,plan:crate::OriginalRawAllocationPlan<'_>)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.planned{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated decode allocation plan"))}if plan.needs_decode(){if state.raw!=Some(plan.capacity())||plan.original().len()>plan.capacity(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original decode plan differs from SAME admitted raw buffer"))}if !plan.exceptional()&&plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"UTF8 move plan claims a second decoded buffer"))}let bytes=plan.constructor_bytes().checked_add(plan.decoded_bytes()).ok_or(io::ErrorKind::OutOfMemory)?;self.work.grow(&mut state.credit,bytes)?;}else if state.raw.is_some()||plan.capacity()!=0||plan.constructor_bytes()!=0||plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepaid Original subject plan attempts new backing allocation"))}state.planned=true;state.new_source=plan.needs_decode();Ok(())})}
+ fn before_decode(&self,plan:crate::OriginalRawAllocationPlan<'_>)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.planned{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated decode allocation plan"))}if plan.needs_decode(){if state.raw!=Some(plan.capacity())||plan.original().len()>plan.capacity(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original decode plan differs from SAME admitted raw buffer"))}if !plan.exceptional()&&plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"UTF8 move plan claims a second decoded buffer"))}let bytes=plan.constructor_bytes().checked_add(plan.decoded_bytes()).ok_or(io::ErrorKind::OutOfMemory)?;self.work.grow(&mut state.credit,bytes)?;}else if state.raw.is_some()||plan.capacity()!=0||plan.constructor_bytes()!=0||plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepaid Original subject plan attempts new backing allocation"))}state.planned=true;state.new_source=plan.needs_decode();state.owned_text_allowed=plan.needs_decode()&&!plan.exceptional();Ok(())})}
+ fn split_text(&self, capacity: usize) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
+    self.callback(|| {
+        let mut state = self.state.borrow_mut();
+        if !state.planned || !state.owned_text_allowed || state.delivered
+            || state.text_factory_used || state.raw != Some(capacity)
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                "owned source backing differs from the admitted fresh read"));
+        }
+        state.text_factory_used = true;
+        self.work.split_original_text(&mut state.credit, capacity)
+    })
+ }
  fn acquired(&self,source:&crate::SourceAcquisitionLease)->io::Result<()>{
   if self.first.borrow().is_some(){
    // Exceptional provider publication must still be registered at the SAME
@@ -132,7 +167,8 @@ pub fn read_original_source_using(provider:&dyn crate::SourceProvider,path:&std:
 /// and cannot stand in for source absence, a source acquisition or raw EOF.
 pub fn read_original_source_open_using(provider:&dyn crate::SourceProvider,path:&std::path::Path,max_bytes:usize,work:&dyn SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<crate::OriginalRawOpenDecision>)->io::Result<crate::OriginalRawReadOutcome>{
  let funding=OriginalReadFunding::new(work,max_bytes)?;let decision=std::cell::Cell::new(None);
- let pending=provider.original_raw_source_open_admitted(path,max_bytes,work,&mut||funding.callback(||{if decision.get().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Original reader repeated after-open decision"))}let actual=after_open()?;decision.set(Some(actual));Ok(actual)}),&mut|size|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"payload allocation before actual read decision")))}funding.before_read(size)},&mut|plan|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"decode before actual read decision")))}funding.before_decode(plan)},&mut|source|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"acquisition before actual read decision")))}funding.acquired(source)});
+ let fund_text = OriginalReadTextFunding { split: &|capacity| funding.split_text(capacity) };
+ let pending=provider.original_raw_source_open_owned_admitted(path,max_bytes,work,&mut||funding.callback(||{if decision.get().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Original reader repeated after-open decision"))}let actual=after_open()?;decision.set(Some(actual));Ok(actual)}),&mut|size|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"payload allocation before actual read decision")))}funding.before_read(size)},&mut|plan|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"decode before actual read decision")))}funding.before_decode(plan)},&fund_text,&mut|source|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"acquisition before actual read decision")))}funding.acquired(source)});
  let result=funding.finish(pending)?;let valid=match &result{crate::OriginalRawReadOutcome::Acquired(_)=>decision.get()==Some(crate::OriginalRawOpenDecision::Read),crate::OriginalRawReadOutcome::Suppressed=>decision.get()==Some(crate::OriginalRawOpenDecision::Suppress),crate::OriginalRawReadOutcome::Absent|crate::OriginalRawReadOutcome::SourceOpenFailed(_)=>decision.get().is_none()};if !valid{return Err(io::Error::new(io::ErrorKind::InvalidData,"Original result does not belong to its actual reader decision"))}funding.require_delivery(matches!(&result,crate::OriginalRawReadOutcome::Acquired(_)))?;Ok(result)
 }
 

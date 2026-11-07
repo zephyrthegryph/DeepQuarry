@@ -162,7 +162,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     }
     /// Borrow the actual recorded original, never a decoded-text reencoding.
     /// This authenticates current byte input only, not logical/token EOF.
-    pub(super) fn finish_exact_original_read_admitted(&self,path:&Path,bytes:Vec<u8>,before_decode:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->io::Result<()>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->io::Result<()>)->io::Result<dm_preprocess::SourceAcquisitionLease>{
+    pub(super) fn finish_exact_original_read_admitted(&self,path:&Path,bytes:Vec<u8>,before_decode:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->io::Result<()>,fund_text:Option<&dm_preprocess::source_arena_credit::OriginalReadTextFunding<'_>>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->io::Result<()>)->io::Result<dm_preprocess::SourceAcquisitionLease>{
         let actual_path=path;
         let (digest,exact_loan_serial)={
             let mut current=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?;
@@ -203,9 +203,14 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             // been admitted. Borrow prepared bytes only as a candidate, after
             // all actual digest, encoding and before_decode checks.
             let candidate=self.prepared_text_for_exact_open(actual_path);
-            dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded_with_candidate(
-                decoded,encoding,receipt,candidate.as_ref(),
-            )
+            match fund_text {
+                Some(fund_text) => dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded_with_funding(
+                    decoded, encoding, receipt, candidate.as_ref(), fund_text,
+                )?,
+                None => dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded_with_candidate(
+                    decoded, encoding, receipt, candidate.as_ref(),
+                ),
+            }
         };
         acquired(&source)?;
         let actual_path=&source.receipt::<RecordedSourceReceipt>().expect("same private receipt").path;

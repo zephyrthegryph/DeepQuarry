@@ -103,15 +103,29 @@ impl Ledger{
  }
  pub(super) fn bind_source_arena(&mut self,owner:&Arc<super::super::Admission>)->io::Result<()>{let weak=Arc::downgrade(owner);if self.arena_domain.as_ref().is_some_and(|old|!Weak::ptr_eq(old,&weak)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw input resource domain changed"))}self.arena_domain=Some(weak);Ok(())}
  pub(super) fn register_source_arena(&mut self,owner:&Arc<super::source_arena::Allocation>)->io::Result<()>{let key=(6,Arc::as_ptr(owner)as usize);if self.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"arena allocation resource identity collision"))}let bytes=owner.retained_bytes()?;self.replace_row(key,Row{owner:Observation::Arena(Arc::downgrade(owner)),bytes});Ok(())}
+ /// Commit a prepaid partition. Validate the complete row set before mutation.
+ pub(super) fn partition_source_arena(
+     &mut self, donor: &super::source_arena::Allocation, remaining: usize,
+     children: [&Arc<super::source_arena::Allocation>; 2],
+ ) -> io::Result<()> {
+     let [first, second] = children;
+     let keys = [(6, Arc::as_ptr(first) as usize), (6, Arc::as_ptr(second) as usize)];
+     if keys[0] == keys[1] || keys.iter().any(|key| self.rows.contains_key(key)) {
+         return Err(io::Error::new(io::ErrorKind::InvalidInput, "source partition allocation collision"));
+     }
+     let amounts = [first.retained_bytes()?, second.retained_bytes()?];
+     self.resize_arena(donor, remaining)?;
+     for ((key, child), bytes) in keys.into_iter().zip(children).zip(amounts) {
+         self.replace_row(key, Row { owner: Observation::Arena(Arc::downgrade(child)), bytes });
+     }
+     Ok(())
+ }
  pub(super) fn has_source_arena(&self,owner:&super::source_arena::Allocation)->bool{let key=(6,std::ptr::from_ref(owner)as usize);self.rows.get(&key).is_some_and(|row|matches!(&row.owner,Observation::Arena(weak)if weak.strong_count()!=0&&weak.as_ptr()==std::ptr::from_ref(owner)))}
 
  /// Settlement is a cleanup/ownership transaction, not new source work. No
  /// cancellation checkpoint/refresh may interrupt registration after actual
  /// provider allocation or hide retained exceptional originals on error.
  pub(super) fn adopt_original_read(&mut self,lease:&SourceAcquisitionLease,reservation:usize)->io::Result<usize>{
-  // Six actual source/constructor resource rows must be paid before the bounded read begins.
-  let nodes=6usize.checked_mul(NODE).ok_or_else(oom)?;
-  if reservation<nodes{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw read bookkeeping was not funded before acquisition"))}
   lease.seal_input_fingerprint_storage();
   let text=lease.source_text();let mut backing=0;let mut original=None;
   text.visit_storage(|address,_,storage|{backing=address;if let SourceTextStorage::Original(payload)=storage{original=Some((Arc::as_ptr(payload)as*const u8 as usize,Arc::downgrade(payload)))}});
@@ -123,6 +137,10 @@ impl Ledger{
   let mut next=3;let mut object_error=None;
   lease.visit_weak_resource_objects(|weak|{if object_error.is_some(){return}let(kind,address)=weak.resource_key();let owner=Observation::Acquisition(weak);match owner.bytes(){Ok(Some(n))=>{staged[next]=Some(((7+kind,address),owner,n));next+=1},Ok(None)=>object_error=Some(io::Error::new(io::ErrorKind::InvalidInput,"actual acquisition constructor owner died")),Err(e)=>object_error=Some(e)}});
   if let Some(error)=object_error{return Err(error)}
+  let new_rows = staged.iter().flatten().filter(|(key,_,_)| !self.rows.contains_key(key)).count();
+  if new_rows.checked_mul(NODE).ok_or_else(oom)? > reservation {
+   return Err(io::Error::new(io::ErrorKind::InvalidInput, "raw read observation rows were not prepaid"));
+  }
   let mut delta=0usize;
   // All actual live bytes are staged before map mutation. These sums are
   // bounded by actual admitted files; an overflow is a protocol bug, never a

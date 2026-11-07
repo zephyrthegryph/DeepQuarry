@@ -189,6 +189,19 @@ pub trait SourceProvider {
     /// implement this by calling an unadmitted read and funding it afterward.
     fn original_raw_source_admitted(&self,_path:&Path,_max_bytes:usize,_before_read:&mut dyn FnMut(usize)->std::io::Result<()>,_before_decode:&mut dyn FnMut(OriginalRawAllocationPlan<'_>)->std::io::Result<()>,_acquired:&mut dyn FnMut(&SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<Option<SourceAcquisitionLease>>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue pre-allocation admitted Original raw source"))}
     fn original_raw_source_open_admitted(&self,_path:&Path,_max_bytes:usize,_work:&dyn source_arena_credit::SourceArenaWork,_after_open:&mut dyn FnMut()->std::io::Result<OriginalRawOpenDecision>,_before_read:&mut dyn FnMut(usize)->std::io::Result<()>,_before_decode:&mut dyn FnMut(OriginalRawAllocationPlan<'_>)->std::io::Result<()>,_acquired:&mut dyn FnMut(&SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<OriginalRawReadOutcome>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue actual open-before-payload Original source"))}
+    /// The optional owned backing constructor remains subordinate to the real
+    /// open, payload, and decode callbacks. Existing providers keep their path.
+    fn original_raw_source_open_owned_admitted(
+        &self, path: &Path, max_bytes: usize, work: &dyn source_arena_credit::SourceArenaWork,
+        after_open: &mut dyn FnMut() -> std::io::Result<OriginalRawOpenDecision>,
+        before_read: &mut dyn FnMut(usize) -> std::io::Result<()>,
+        before_decode: &mut dyn FnMut(OriginalRawAllocationPlan<'_>) -> std::io::Result<()>,
+        _fund_text: &source_arena_credit::OriginalReadTextFunding<'_>,
+        acquired: &mut dyn FnMut(&SourceAcquisitionLease) -> std::io::Result<()>,
+    ) -> std::io::Result<OriginalRawReadOutcome> {
+        self.original_raw_source_open_admitted(path,max_bytes,work,after_open,before_read,before_decode,acquired)
+    }
+
 
     /// Lend raw bytes from that SAME current acquisition. No reconstruction,
     /// filesystem reopen, parser or PreparedSource is permitted at this seam.

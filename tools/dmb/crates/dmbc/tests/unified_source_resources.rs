@@ -154,3 +154,63 @@ fn raw<P:SnapshotProvider>(input:&RecordingInputs<P>,path:&Path,work:&Work,decis
 }
 
 }
+
+#[test]
+fn real_opened_utf8_moves_buffer_into_independent_payload_and_control_credits() {
+    use dmbc::input_snapshot::{OriginalOpenedRead, RecordingInputs};
+    use dm_preprocess::{InitialEnvironment, OriginalRawOpenDecision, OriginalRawReadOutcome};
+    use dm_preprocess::source_arena_credit::read_original_source_open_using;
+    use std::cell::Cell;
+
+    struct ObserveRead<'a>(&'a Cell<usize>);
+    impl SnapshotProvider for ObserveRead<'_> {
+        fn stamp(&self, path: &Path) -> io::Result<Stamp> { FileSystemInputs.stamp(path) }
+        fn read(&self, _: &Path) -> io::Result<(Stamp, Vec<u8>)> { panic!("ordinary read") }
+        fn list(&self, _: &Path) -> io::Result<FolderListing> { panic!("directory listing") }
+        fn read_original_open_admitted(
+            &self, path: &Path, limit: usize, work: &dyn SourceArenaWork,
+            after: &mut dyn FnMut() -> io::Result<OriginalRawOpenDecision>,
+            before: &mut dyn FnMut(usize) -> io::Result<()>,
+        ) -> io::Result<OriginalOpenedRead> {
+            let result = FileSystemInputs.read_original_open_admitted(path, limit, work, after, before)?;
+            if let OriginalOpenedRead::Read(read) = &result {
+                assert_eq!(self.0.replace(read.bytes().as_ptr() as usize), 0);
+            }
+            Ok(result)
+        }
+    }
+    let root = test_scratch::dir("actual-owned-utf8");
+    let path = root.join("source.dm");
+    let bytes = b"/datum/actual_owned_utf8
+";
+    std::fs::write(&path, bytes).unwrap();
+    let pointer = Cell::new(0);
+    let recorder = RecordingInputs::new(ObserveRead(&pointer), 0)
+        .with_initial_environment(InitialEnvironment::OriginalChecker0290);
+    let db = Arc::new(dmbc::query_db::QueryDb::default());
+    let weak_db = Arc::downgrade(&db);
+    let mut opened = 0;
+    let result = read_original_source_open_using(&recorder, &path, 1024, db.as_ref(), &mut || {
+        opened += 1;
+        Ok(OriginalRawOpenDecision::Read)
+    }).unwrap();
+    let OriginalRawReadOutcome::Acquired(lease) = result else { panic!("actual opened source") };
+    let text = lease.source_text().clone();
+    assert_eq!(opened, 1);
+    assert_eq!(text.as_bytes(), bytes);
+    assert_eq!(text.as_bytes().as_ptr() as usize, pointer.get());
+    assert_eq!(text.source_arena_payload_credit().unwrap().reserved_bytes(), bytes.len());
+    assert_eq!(text.source_arena_control_credit().unwrap().reserved_bytes(), SourceText::source_arena_control_bytes().unwrap());
+    let weak_text = text.downgrade();
+    drop(lease);
+    drop(recorder);
+    drop(db);
+    assert!(weak_db.upgrade().is_none());
+    assert!(weak_text.upgrade().is_some());
+    drop(text);
+    assert!(weak_text.upgrade().is_none());
+    let mut retained_control = 0;
+    weak_text.visit_derived_resource_storage(|_, bytes| retained_control += bytes);
+    assert!(retained_control > 0);
+    drop(weak_text);
+}

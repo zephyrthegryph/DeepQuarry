@@ -105,6 +105,25 @@ impl SourceAcquisitionLease {
         };
         Self(Arc::new(Binding{original:Arc::new(Original{source,encoding}),receipt:Arc::new(receipt)}))
     }
+    /// Construct a fresh backing after the existing decoded-byte reuse check.
+    /// The funding loan grants storage only. This constructor owns the actual String.
+    #[doc(hidden)]
+    pub fn from_raw_original_decoded_with_funding<T: Any + Send + Sync>(
+        text: String, encoding: SourceEncoding, receipt: T, candidate: Option<&SourceText>,
+        fund_text: &crate::source_arena_credit::OriginalReadTextFunding<'_>,
+    ) -> std::io::Result<Self> {
+        let source = match candidate {
+            Some(prior) if encoding == SourceEncoding::Utf8 && prior.can_reuse_for_exact_raw_utf8(&text) => prior.clone(),
+            _ => match fund_text.split(text.capacity())? {
+                Some((payload, control)) => SourceText::from_source_arena(text, payload, control)?,
+                None => text.into(),
+            },
+        };
+        Ok(Self(Arc::new(Binding {
+            original: Arc::new(Original { source, encoding }),
+            receipt: Arc::new(receipt),
+        })))
+    }
     /// Issue resource-only weak views over the THREE actual constructor
     /// allocations. Sharing/reissuance preserves real Original addresses and
     /// never causes an aggregate Binding row to double-charge shared objects.

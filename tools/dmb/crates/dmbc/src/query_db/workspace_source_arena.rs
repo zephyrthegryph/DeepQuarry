@@ -22,6 +22,9 @@ impl AllocationHandle {
     pub(super) fn arc(&self) -> &Arc<Allocation> {
         self.0.as_ref().expect("live native allocation handle")
     }
+    fn into_credit(mut self) -> SourceArenaCredit {
+        SourceArenaCredit::from_resource_owner(self.0.take().expect("live native allocation"))
+    }
     fn register(mut self, ledger: &mut super::raw_input_credits::Ledger) -> io::Result<SourceArenaCredit> {
         ledger.register_source_arena(self.arc())?;
         Ok(SourceArenaCredit::from_resource_owner(self.0.take().expect("registered native allocation")))
@@ -46,6 +49,28 @@ impl SourceArenaCreditOwner for Allocation{
  fn reserved_bytes(&self)->usize{self.bytes.load(Ordering::Acquire)}
  fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){visit(std::ptr::from_ref(self)as usize,Self::metadata_bytes())}
 }
+fn split_owned_text(
+    ledger: &mut super::raw_input_credits::Ledger,
+    donor: &Allocation,
+    capacity: usize,
+    admit_extra: impl FnOnce(&mut super::raw_input_credits::Ledger, usize) -> io::Result<()>,
+) -> io::Result<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)> {
+    if !ledger.has_source_arena(donor) { return Err(wrong()); }
+    let control = SourceText::source_arena_control_bytes()?;
+    let transfer = capacity.checked_add(control)
+        .and_then(|n| n.checked_add(2 * raw_input_credits::NODE)).ok_or_else(oom)?;
+    let remaining = donor.reserved_bytes().checked_sub(transfer).ok_or_else(oom)?;
+    let extra = 2 * Allocation::metadata_bytes();
+    admit_extra(ledger, extra)?;
+    let create = |bytes| AllocationHandle::new(Arc::new(Allocation {
+        bytes: AtomicUsize::new(bytes), domain: donor.domain.clone(),
+    }));
+    let payload = create(capacity);
+    let backing = create(control);
+    ledger.partition_source_arena(donor, remaining, [payload.arc(), backing.arc()])?;
+    Ok((payload.into_credit(), backing.into_credit().into_control()))
+}
+
 fn oom()->io::Error{io::Error::new(io::ErrorKind::OutOfMemory,"native source arena exceeds existing shared input-family allowance")}
 fn no_source_room(_requested:usize,_ledger_live:usize,_remaining:Option<usize>)->io::Error{
  #[cfg(debug_assertions)]
@@ -99,6 +124,16 @@ impl QueryDb{
  }
 }
 impl SourceArenaWork for QueryDb{
+ fn split_original_text(&self, donor: &mut SourceArenaCredit, capacity: usize)
+     -> io::Result<Option<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
+     self.checkpoint()?;
+     let actual = allocation(self, donor)?;
+     let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
+     let mut ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e| e.into_inner());
+     split_owned_text(&mut ledger, actual, capacity,
+         |ledger, extra| self.admit_source_arena(ledger, extra)).map(Some)
+ }
+
  fn transformed_source_address_limit(&self)->Option<usize>{
   cfg!(all(target_pointer_width="64",any(windows,unix))).then_some(super::raw_policy::INPUT_BUDGET)
  }
@@ -219,6 +254,16 @@ impl<'a> HeldSourceWork<'a>{
  fn actual<'credit>(state:&HeldSourceState<'_>,credit:&'credit SourceArenaCredit)->io::Result<&'credit Allocation>{let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;if !actual.same_domain(&Arc::downgrade(state.domain))||!state.ledger.has_source_arena(actual){return Err(wrong())}Ok(actual)}
 }
 impl SourceArenaWork for HeldSourceWork<'_>{
+ fn split_original_text(&self, donor: &mut SourceArenaCredit, capacity: usize)
+     -> io::Result<Option<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
+     self.checkpoint()?;
+     let mut state = self.lock()?;
+     let actual = Self::actual(&state, donor)?;
+     let budget = state.budget;
+     split_owned_text(&mut *state.ledger, actual, capacity,
+         |_, extra| budget.charge(extra).map_err(|_| oom())).map(Some)
+ }
+
  fn original_read_bookkeeping_bytes(&self)->io::Result<usize>{6usize.checked_mul(raw_input_credits::NODE).ok_or_else(oom)}
  fn checkpoint(&self)->io::Result<()>{let state=self.lock()?;if state.budget.denied(){return Err(oom())}drop(state);crate::daemon::control::checkpoint()}
  fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.checkpoint()?;let mut state=self.lock()?;let needed=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(||{state.budget.deny();oom()})?;state.budget.charge(needed).map_err(|_|oom())?;let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(state.domain)});AllocationHandle::new(actual).register(state.ledger)}
@@ -252,3 +297,36 @@ impl QueryDb{
 impl QueryDb{pub(crate) fn source_input_admission_bytes(&self)->io::Result<usize>{let _gate=self.raw_policy.gate.try_lock().map_err(|_|io::Error::new(io::ErrorKind::WouldBlock,"input family is already borrowed"))?;self.raw_source_input_charge_locked()}}
 
 fn charge_allocation_growth(actual:&Allocation,budget:&dq_analyze::captured_generator_budget::Budget,extra:usize)->io::Result<usize>{let next=actual.reserved_bytes().checked_add(extra).ok_or_else(||{budget.deny();oom()})?;budget.charge(extra).map_err(|_|oom())?;Ok(next)}
+
+#[cfg(test)]
+mod owned_text_partition_tests {
+    use super::*;
+
+    #[test]
+    fn partition_moves_donor_funding_and_rejects_insufficient_or_foreign_grants() {
+        let db = QueryDb::default();
+        let foreign = QueryDb::default();
+        let capacity = 127;
+        let control = SourceText::source_arena_control_bytes().unwrap();
+        let transferred = capacity + control + 2 * raw_input_credits::NODE;
+        let remaining = 4 * raw_input_credits::NODE + 512;
+        let mut donor = SourceArenaWork::reserve(&db, transferred + remaining).unwrap();
+        let before = db.source_input_admission_bytes().unwrap();
+        let wrong = SourceArenaWork::split_original_text(&foreign, &mut donor, capacity).err().unwrap();
+        assert_eq!(wrong.kind(), io::ErrorKind::InvalidInput);
+        let short = SourceArenaWork::split_original_text(&db, &mut donor, transferred + remaining).err().unwrap();
+        assert_eq!(short.kind(), io::ErrorKind::OutOfMemory);
+        assert_eq!(donor.reserved_bytes(), transferred + remaining);
+        assert_eq!(db.source_input_admission_bytes().unwrap(), before);
+
+        let (payload, backing) = SourceArenaWork::split_original_text(&db, &mut donor, capacity).unwrap().unwrap();
+        assert_eq!(donor.reserved_bytes(), remaining);
+        assert_eq!(payload.reserved_bytes(), capacity);
+        assert_eq!(backing.reserved_bytes(), control);
+        assert_eq!(db.source_input_admission_bytes().unwrap(), before + 2 * Allocation::metadata_bytes());
+        drop(payload);
+        drop(backing);
+        let held = db.source_input_admission_bytes().unwrap();
+        assert_eq!(held, before - transferred);
+    }
+}
