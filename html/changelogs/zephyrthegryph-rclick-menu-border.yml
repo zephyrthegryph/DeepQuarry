@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The right-click menu's border is no longer cut off on the bottom and right edges"
