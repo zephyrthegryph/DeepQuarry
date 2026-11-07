@@ -588,6 +588,29 @@
 	am_set_air(T)
 	dq_atmos_test_restore_walls()
 
+/// The machine guard takes an alarm's thermostat state as the world's answer when it is the one its room calls for (the alarm's scan runs whenever a test lets time
+/// pass), and judges a state the room does not call for.
+/datum/unit_test/dq_atmos_m/guard_takes_the_thermostat_that_follows_its_room
+/datum/unit_test/dq_atmos_m/guard_takes_the_thermostat_that_follows_its_room/run_gate()
+	var/turf/T = tile(1, 1)
+	dq_atmos_test_isolate_pair(T, T)
+	var/obj/machinery/alarm/A = alarm()
+	A.set_target_temperature(T20C)
+	am_set_air(T, temperature = T20C - 10)
+	am_alarm_tick(A)
+	TEST_ASSERT_EQUAL(am_alarm_regulating(A), 2, "a cold room is heated")
+	var/datum/unit_test_guard/guard = unit_test_guard_session()
+	var/area/room = get_area(A)
+	var/was_drifted = guard.drifted_areas[room]
+	guard.drifted_areas -= room
+	TEST_ASSERT(guard.is_thermostat_answer(A, "regulating_temperature"), "heating the cold room is the thermostat's answer, in a room the guard saw no drift in")
+	A.set_regulating_temperature(GAS_HEATER_COOLING)
+	TEST_ASSERT(!guard.is_thermostat_answer(A, "regulating_temperature"), "cooling the cold room is not")
+	if(was_drifted)
+		guard.drifted_areas[room] = was_drifted
+	am_set_air(T)
+	dq_atmos_test_restore_walls()
+
 /// The Sif wilderness alarm judges oxygen by its own band: 18 kPa of oxygen (fine for Sif) reads safe.
 /datum/unit_test/dq_atmos_m/alarm_sif_oxygen_band
 /datum/unit_test/dq_atmos_m/alarm_sif_oxygen_band/run_gate()
