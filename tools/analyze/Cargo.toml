@@ -441,3 +441,7 @@ required-features = ["unified-oracle"]
 [[example]]
 name = "unified_selected_stored_and_tracked_original"
 required-features = ["unified-oracle"]
+
+[[example]]
+name = "unified_selected_order_ownership_original"
+required-features = ["legacy-sem", "unified-oracle"]
