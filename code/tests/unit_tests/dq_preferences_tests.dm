@@ -113,15 +113,19 @@
 	TEST_ASSERT_NOTNULL(pref, "flavor_texts pref not registered")
 	var/list/input = list(
 		"general" = "Hello, world!",
-		"head" = "A head.",
-		"legs" = "Two legs.",
+		"face" = "A face.",
+		"body" = "A body.",
 	)
 	var/list/serialized = pref.pref_serialize(input)
 	TEST_ASSERT_NOTNULL(serialized, "pref_serialize returned null")
 	var/list/deserialized = pref.pref_deserialize(serialized, null)
 	TEST_ASSERT_EQUAL(deserialized["general"], "Hello, world!", "general slot didn't survive round-trip")
-	TEST_ASSERT_EQUAL(deserialized["head"], "A head.", "head slot didn't survive round-trip")
-	TEST_ASSERT_EQUAL(deserialized["legs"], "Two legs.", "legs slot didn't survive round-trip")
+	TEST_ASSERT_EQUAL(deserialized["face"], "A face.", "face slot didn't survive round-trip")
+	TEST_ASSERT_EQUAL(deserialized["body"], "A body.", "body slot didn't survive round-trip")
+	// A save in the old nine-zone shape moves its text into the three entries.
+	var/list/old_shape = pref.pref_deserialize(list("head" = "A head.", "legs" = "Two legs."), null)
+	TEST_ASSERT_EQUAL(old_shape["face"], "A head.", "an old head slot moves to face")
+	TEST_ASSERT_EQUAL(old_shape["body"], "Two legs.", "an old legs slot moves to body")
 
 
 /datum/unit_test/dq_pref_widget_auto_resolves
@@ -215,11 +219,14 @@
 
 /datum/unit_test/dq_pref_palette_migration/Run()
 	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("color_palette" = list("#000001", "#000002", "#000003", "#000004", "#000005", "#000006", "#000007", "#000008")))
-	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/color/human/color_slot/primary), "#000001", "first colour is Primary")
+	// Skin is always Primary and eyes always Tertiary: the character's own skin and eye colours win over the old list's first and third.
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/primary)), "#4468af", "Primary keeps the skin colour")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/color/human/color_slot/secondary), "#000002", "second colour is Secondary")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/tertiary)), "#199b73", "Tertiary keeps the eye colour")
 	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/color/human/color_slot/extra2), "#000005", "fifth is Extra 2")
 	fdel(P.path)
 	P = dq_palette_test_prefs(list("color_palette" = list("#000001", "bad")))
-	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/color/human/color_slot/primary), "#000001", "a short palette fills what it has")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/primary)), "#4468af", "a short palette still leaves Primary on the skin colour")
 	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/secondary)), "#5c50e1", "and the rest seed from the character")
 	fdel(P.path)
 	P = dq_palette_test_prefs()
@@ -431,9 +438,9 @@
 	editor.handle_action(P, "set_external_status", list("limb" = BP_L_ARM, "status" = "cyborg"), null)
 	editor.handle_action(P, "set_limb_color", list("limb" = BP_L_ARM, "color" = "#111111"), null)
 	var/list/ui = editor.build_ui_data(P)
-	TEST_ASSERT_EQUAL(ui["externals"][BP_L_HAND]["via"], BP_L_ARM, "the hand shows it is robotic through the arm")
+	TEST_ASSERT_EQUAL(ui["externals"][BP_L_HAND]["forced_by"], BP_L_ARM, "the hand shows it is robotic through the arm")
 	TEST_ASSERT_EQUAL(lowertext(ui["externals"][BP_L_HAND]["color"]), "#111111", "and the arm's colour")
-	TEST_ASSERT(!ui["externals"][BP_R_HAND]["via"], "the other hand is not")
+	TEST_ASSERT(!ui["externals"][BP_R_HAND]["forced_by"], "the other hand is not")
 	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_limb_color", list("limb" = BP_L_HAND, "color" = "#222222"), null), PREF_UPDATE_ACCEPTED, "the hand takes its own")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	P.copy_to(H)
