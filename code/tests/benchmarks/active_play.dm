@@ -43,6 +43,9 @@
 	var/steps = param("steps", 40)
 	var/moved = 0
 	var/move_ms = 0
+	// Where the walkers' redraw marks come from (refresh_mark()'s probe: caller chains -> marks).
+	GLOB.refresh_mark_probe_type = /mob/living/carbon/human
+	GLOB.refresh_mark_probe_sources = list()
 	begin_window()
 	for(var/n in 1 to steps)
 		for(var/mob/living/carbon/human/H as anything in crew)
@@ -61,6 +64,11 @@
 				moved++
 		stoplag()
 	end_window("ap_walk")
+	GLOB.refresh_mark_probe_type = null
+	var/list/mark_sources = sortTim(GLOB.refresh_mark_probe_sources.Copy(), GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	if(length(mark_sources) > 25)
+		mark_sources.Cut(26)
+	detail("ap_walk_human_mark_sources", mark_sources)
 	count_metric("ap_walk_steps", moved, "steps", "none")
 	metric("ap_walk_us_per_step", moved ? move_ms * 1000 / moved : 0, "us")
 
