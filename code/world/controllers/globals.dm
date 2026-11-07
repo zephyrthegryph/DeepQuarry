@@ -11,6 +11,8 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 /// world.timeofday when global initialisation began and ended (boot timing: the bench reads them against the spawn stamp, launch_tod).
 GLOBAL_REAL_VAR(boot_globals_started_tod)
 GLOBAL_REAL_VAR(boot_globals_done_tod)
+/// Set by global initialization when the InitGlobal procs do not match the declared globals; the boot gate fails the run on it (the WARNING is logged before the gate's own counters exist).
+GLOBAL_REAL_VAR(globals_init_mismatch)
 
 /datum/controller/global_vars/New()
 	boot_globals_started_tod = world.timeofday
@@ -50,15 +52,26 @@ GLOBAL_REAL_VAR(boot_globals_done_tod)
 /datum/controller/global_vars/Initialize()
 	gvars_datum_init_order = list()
 	gvars_datum_protected_varlist = list(NAMEOF(src, gvars_datum_protected_varlist) = TRUE)
-	var/list/global_procs = typesof(/datum/controller/global_vars/proc)
+	// The proc namespace also holds other generated procs of the controller (a SCHEMA() on a global declares __schema_<var>), so only the
+	// InitGlobal<var> procs are the initializers to count and call.
+	var/list/global_procs = list()
+	for(var/I in typesof(/datum/controller/global_vars/proc))
+		if(findtext(replacetext("[I]", "/datum/controller/global_vars/proc/", ""), "InitGlobal") == 1)
+			global_procs += I
 	var/expected_len = vars.len - gvars_datum_in_built_vars.len
 	if(global_procs.len != expected_len)
-		WARNING("Unable to detect all global initialization procs! Expected [expected_len] got [global_procs.len]!")
-		if(global_procs.len)
-			var/list/expected_global_procs = vars - gvars_datum_in_built_vars
-			for(var/I in global_procs)
-				expected_global_procs -= replacetext("[I]", "InitGlobal", "")
-			log_world("Missing procs: [expected_global_procs.Join(", ")]")
+		globals_init_mismatch = "Expected [expected_len] got [global_procs.len]"
+		WARNING("Unable to detect all global initialization procs! [globals_init_mismatch]!")
+		var/list/missing_global_procs = vars - gvars_datum_in_built_vars
+		var/list/unmatched_global_procs = list()
+		for(var/I in global_procs)
+			var/global_name = replacetext(replacetext("[I]", "/datum/controller/global_vars/proc/", ""), "InitGlobal", "")
+			if(global_name in missing_global_procs)
+				missing_global_procs -= global_name
+			else
+				unmatched_global_procs += "[I]"
+		log_world("Globals without an InitGlobal proc: [missing_global_procs.Join(", ")]")
+		log_world("InitGlobal procs without a global: [unmatched_global_procs.Join(", ")]")
 
 	for(var/I in global_procs)
 		var/start_tick = world.time
