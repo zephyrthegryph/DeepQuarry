@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - server: "Faster boot: a spilled on_change drain no longer rebuilds its whole backlog on every drain point, and the stat drain sorts by rank in linear time."
