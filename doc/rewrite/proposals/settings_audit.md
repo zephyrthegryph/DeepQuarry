@@ -503,7 +503,7 @@ Admin verbs live in the admin verb browser and are out of scope. Panel is the ve
 
 | Area | Before | After |
 |---|---|---|
-| Character preferences | 162 | 105 |
+| Character preferences | 162 | 106 |
 | Game settings | 119 (the first count missed BELCH_NOISES) | 48 |
 | Verbs in the verb panel | 50 | 19 |
 
@@ -643,13 +643,12 @@ A per-sound toggle that was off in an old save sets its volume channel to 0 (`GL
 | `tail_alpha` | `/datum/preference/numeric/human/tail_alpha` | hardcoded `255` |
 | `ttone` | `/datum/preference/text/human/ringtone` | hardcoded `"beep"` |
 | `uplinklocation` | `/datum/preference/choiced/uplinklocation` | hardcoded `"PDA"` |
-| `vantag_preference` | `/datum/preference/choiced/human/vantag_preference` | hardcoded `VANTAG_NONE` |
 | `vore_egg_type` | `/datum/preference/text/human/vore_egg_type` | hardcoded `"Egg"` |
 | `weight_gain` | `/datum/preference/numeric/human/weight_gain` | hardcoded `100` |
 | `weight_loss` | `/datum/preference/numeric/human/weight_loss` | hardcoded `50` |
 | `wing_alpha` | `/datum/preference/numeric/human/wing_alpha` | hardcoded `255` |
 
-The event, gender and sexuality directory tags are kept for the round on the mind (set from the Character Directory) instead of saved. The shadekin flicker settings are set per round from the shadekin panel. The starting-kit editor is deleted.
+The gender and sexuality directory tags are kept for the round on the mind (set from the Character Directory) instead of saved. The shadekin flicker settings are set per round from the shadekin panel. The starting-kit editor is deleted.
 
 ### Verb panel
 
