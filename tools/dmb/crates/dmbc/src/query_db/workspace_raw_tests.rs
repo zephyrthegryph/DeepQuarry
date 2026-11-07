@@ -312,7 +312,15 @@ fn page_trim_and_age_remove_actual_db_values_not_only_bookkeeping() {
     let input = Key::new(PAGE_INPUT, 0);
     let result = Key::new(PAGE_RESULT, 0);
     q.workspace_admit_page(input, result, false).unwrap();
+    q.db.set_input(RAW_TERMINAL_KEY, RawTerminalBody {
+        witness: Mutex::new(Weak::new()),
+        bytes: vec![1],
+        hash: 0,
+        clean: true,
+    }, 1);
+    assert_eq!(q.bulk_raw_terminal_nodes_locked(), 1);
     q.workspace_trim_locked(0, RESULT_BOUND);
+    assert_eq!(q.bulk_raw_terminal_nodes_locked(), 0);
     assert_eq!(q.workspace_counts_locked(), (0, 0));
     assert!(q
         .db

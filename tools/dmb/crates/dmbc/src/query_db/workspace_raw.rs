@@ -19,6 +19,25 @@ use std::{
 };
 const PAGE_INPUT: Kind = Kind(13);
 const PAGE_RESULT: Kind = Kind(14);
+const RAW_TERMINAL: Kind = Kind(806);
+const RAW_TERMINAL_KEY: Key = Key { kind: RAW_TERMINAL, id: 0 };
+const MAX_CACHED_RAW_REPORT: usize = 1024 * 1024;
+
+struct RawTerminalBody {
+    witness: Mutex<Weak<WorkspaceCapture>>,
+    bytes: Vec<u8>,
+    hash: u128,
+    clean: bool,
+}
+impl RawTerminalBody {
+    fn retained_bytes(&self) -> usize {
+        Self::fixed_bytes() + self.bytes.capacity()
+    }
+    fn fixed_bytes() -> usize {
+        std::mem::size_of::<Self>() + std::mem::size_of::<WorkspaceCapture>()
+            + 4 * std::mem::size_of::<usize>()
+    }
+}
 const INPUT_BOUND: usize = 256 * 1024 * 1024;
 const RESULT_BOUND: usize = 64 * 1024 * 1024;
 const NODE_BOUND: usize = 4096;
@@ -274,6 +293,7 @@ pub(super) fn register(db: &Db) {
     register_with_admission(db, Arc::new(super::Admission::default()));
 }
 pub(super) fn register_with_admission(db: &Db, admission: Arc<super::Admission>) {
+    db.define_input(RAW_TERMINAL, "native-raw-selected-terminal-body");
     aggregate::register_with_admission(db, Arc::clone(&admission));
     db.define_input(PAGE_INPUT, "native-workspace-raw-page-input");
     db.define(
@@ -537,6 +557,7 @@ impl QueryDb {
     pub(crate) fn workspace_raw_report_reserve()->usize{aggregate::REPORT_RESERVE}
 
     pub(super) fn workspace_clear_locked(&self) {
+        self.db.remove(RAW_TERMINAL_KEY);
         self.workspace_roots_clear_locked();
         let mut pages = self
             .raw_policy
@@ -572,7 +593,7 @@ impl QueryDb {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .len()
-            .saturating_add(root_nodes);
+            .saturating_add(root_nodes).saturating_add(self.bulk_raw_terminal_nodes_locked());
         let expired = pages
             .iter()
             .filter(|(key, (_, t, _))| {
@@ -613,6 +634,10 @@ impl QueryDb {
     // only; retained payloads remain owned exclusively by the native Db.
     pub(super) fn workspace_prune_expired_locked(&self, now: std::time::Instant) {
         self.workspace_roots_prune_locked(now);
+        if let Some(body) = self.db.retained_value::<RawTerminalBody>(RAW_TERMINAL_KEY) {
+            let live = body.witness.lock().unwrap_or_else(|e| e.into_inner()).strong_count() != 0;
+            if !live { self.db.remove(RAW_TERMINAL_KEY); }
+        }
         let mut pages = self
             .raw_policy
             .workspace
@@ -678,6 +703,7 @@ impl QueryDb {
                 .unwrap_or_else(|e| e.into_inner())
                 .len()
                 * 2
+            + self.bulk_raw_terminal_nodes_locked()
     }
     pub(super) fn workspace_counts_locked(&self) -> (usize, usize) {
         (
@@ -687,6 +713,7 @@ impl QueryDb {
         )
     }
     pub(super) fn workspace_trim_locked(&self, max_nodes: usize, max_bytes: usize) {
+        self.db.remove(RAW_TERMINAL_KEY);
         // Root values retain page Arcs transitively. Drop root values first when
         // an unrelated raw cohort needs room; page-node trimming alone cannot free them.
         self.workspace_roots_clear_locked();
@@ -756,6 +783,95 @@ impl QueryDb {
     pub(super) fn workspace_result_charge_locked(&self) -> io::Result<usize> {
         Ok(self.workspace_owners_locked(&[])?.bytes)
     }
+    fn bulk_raw_terminal_nodes_locked(&self) -> usize {
+        usize::from(self.db.retained_value::<RawTerminalBody>(RAW_TERMINAL_KEY).is_some())
+    }
+
+    /// The caller has already checked the exact new frame and closed plan.
+    /// An old terminal is never reused, and no output callback runs here.
+    pub(crate) fn restore_bulk_raw_report(
+        &self, capture: &Arc<WorkspaceCapture>, scope: &NativeReadGuard<'_>,
+        prior: &Arc<WorkspaceCapture>, stage: &mut crate::selected_report_spool::Stage,
+    ) -> io::Result<Option<(bool, u128)>> {
+        use std::io::Write as _;
+        crate::daemon::control::checkpoint()?;
+        capture.require_scope(scope)?;
+        if !scope.uses_queries(self) || !capture.is_sealed_raw_file_capture() {
+            return Err(invalid("raw terminal replay requires its actual current capture"));
+        }
+        let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(body) = self.db.retained_value::<RawTerminalBody>(RAW_TERMINAL_KEY) else { return Ok(None); };
+        let mut witness = body.witness.lock().unwrap_or_else(|e| e.into_inner());
+        if !Weak::ptr_eq(&witness, &Arc::downgrade(prior)) || !capture.same_bulk_report_inputs(prior)? {
+            // An actual candidate miss may retire just this one report body.
+            drop(witness);
+            self.db.remove(RAW_TERMINAL_KEY);
+            return Ok(None);
+        }
+        stage.write_all(&body.bytes)?;
+        capture.require_scope(scope)?;
+        *witness = Arc::downgrade(capture);
+        Ok(Some((body.clean, body.hash)))
+    }
+
+    /// Collect the existing sealed validation stream into one optional,
+    /// exactly charged result owner. This does not add a second spool read.
+    pub(crate) fn finish_bulk_raw_report(
+        &self, capture: &Arc<WorkspaceCapture>, scope: &NativeReadGuard<'_>,
+        stage: crate::selected_report_spool::Stage, clean: bool,
+    ) -> io::Result<crate::selected_report_spool::Verified> {
+        crate::daemon::control::checkpoint()?;
+        capture.require_scope(scope)?;
+        if !scope.uses_queries(self) || !capture.is_sealed_raw_file_capture() {
+            return Err(invalid("raw terminal retention requires its actual current capture"));
+        }
+        let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
+        self.db.remove(RAW_TERMINAL_KEY);
+        let length = usize::try_from(stage.length()).ok().filter(|&len| len <= MAX_CACHED_RAW_REPORT);
+        let mut copy = if let Some(length) = length {
+            // Prior artifact has been dropped. Workspace result census and
+            // native raw charge count all other retained results under this gate.
+            let live = match self.workspace_result_charge_locked() {
+                Ok(bytes) => Some(bytes),
+                Err(error) if error.kind() == io::ErrorKind::InvalidInput => None,
+                Err(error) => return Err(error),
+            };
+            let raw_nodes = self.raw_policy.admission.leases.lock().unwrap_or_else(|e| e.into_inner()).len();
+            let available = live.and_then(|live| RESULT_BOUND.checked_sub(live))
+                .and_then(|n| n.checked_sub(self.raw_policy.charge.load(Ordering::Relaxed)))
+                .and_then(|n| n.checked_sub(aggregate::REPORT_RESERVE)).unwrap_or(0);
+            let fixed = RawTerminalBody::fixed_bytes();
+            let mut bytes = Vec::new();
+            if self.workspace_nodes_locked().saturating_add(raw_nodes) < NODE_BOUND
+                && length.checked_add(fixed).is_some_and(|total| total <= available)
+                && bytes.try_reserve_exact(length).is_ok() && bytes.capacity() <= length
+            {
+                bytes.resize(length, 0);
+                Some(bytes)
+            } else { None }
+        } else { None };
+        let length = stage.length();
+        let (verified, read) = stage.seal()?.validate(|reader| {
+            if let Some(bytes) = &mut copy {
+                reader.read_exact(bytes)?;
+                Ok(bytes.len() as u64)
+            } else {
+                io::copy(reader, &mut io::sink())
+            }
+        })?;
+        if read != length || verified.length() != length {
+            return Err(invalid("raw terminal validation omitted report bytes"));
+        }
+        crate::daemon::control::checkpoint()?;
+        capture.require_scope(scope)?;
+        if let Some(bytes) = copy.filter(|bytes| xxhash_rust::xxh3::xxh3_128(bytes) == verified.hash()) {
+            self.db.set_input(RAW_TERMINAL_KEY, RawTerminalBody {
+                witness: Mutex::new(Arc::downgrade(capture)), bytes, hash: verified.hash(), clean,
+            }, u128::from(capture.issuance()));
+        }
+        Ok(verified)
+    }
+
     fn workspace_remaining_results(&self, _current: Key) -> io::Result<usize> {
         let owners = self.workspace_owners_locked(&[])?;
         RESULT_BOUND

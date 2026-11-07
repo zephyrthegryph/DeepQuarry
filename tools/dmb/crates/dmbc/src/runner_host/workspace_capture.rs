@@ -1063,6 +1063,28 @@ impl RawSourcePurpose {pub(crate) fn layering_no_model(self)->bool{matches!(self
 pub(crate) struct RawSourceIdentity{revision:u128,queries:Weak<crate::query_db::QueryDb>,purpose:RawSourcePurpose}
 impl RawSourceIdentity{pub(crate) fn revision(&self)->u128{self.revision}pub(crate) fn purpose(&self)->RawSourcePurpose{self.purpose}pub(crate) fn uses_queries(&self,db:&crate::query_db::QueryDb)->bool{self.queries.upgrade().is_some_and(|held|std::ptr::eq(held.as_ref(),db))}}
 impl WorkspaceCapture{
+ /// Compare two already-issued raw captures. Physical Original identity
+ /// can survive reissuance only after the genuine reread compares exact
+ /// bytes; bindings and revision pins themselves are never reused here.
+ pub(crate) fn same_bulk_report_inputs(&self, prior: &Self) -> io::Result<bool> {
+    if !self.is_sealed_raw_file_capture() || !prior.is_sealed_raw_file_capture()
+        || self.root() != prior.root() || self.recursive_roots() != prior.recursive_roots()
+        || self.configuration() != prior.configuration()
+        || self.facts.policy_directories() != prior.facts.policy_directories()
+        || self.discovery.files() != prior.discovery.files()
+        || self.files.len() != prior.files.len()
+    { return Ok(false); }
+    for (current, old) in self.files.iter().zip(&prior.files) {
+        crate::daemon::control::checkpoint()?;
+        if current.path != old.path { return Ok(false); }
+        let (Original::RawInput(current), Original::RawInput(old)) = (&current.original, &old.original)
+            else { return Ok(false); };
+        if !current.original_identity().same_live_original(&old.original_identity()) {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+ }
  pub(crate) fn is_sealed_raw_file_capture(&self) -> bool {
     self.raw_source.is_some() && self.matches_auxiliary_questions(
         &[crate::policy_request::WorkspaceAuxiliaryQuestion::AllRawFilePolicies])

@@ -379,7 +379,8 @@ impl QueryDb {
             .roots
             .lock()
             .unwrap_or_else(|e| e.into_inner());
-        let mut entries = 0usize;
+        let terminal = self.db.retained_value::<RawTerminalBody>(RAW_TERMINAL_KEY);
+        let mut entries = usize::from(terminal.is_some());
         let page_entries = |p: &PageResult| {
             1 + p.scopes.len() + p.files.iter().map(|f| f.findings.len()).sum::<usize>()
         };
@@ -419,6 +420,9 @@ impl QueryDb {
             return Err(invalid("census metadata exceeds shared input headroom"));
         }
         let mut owners = Owners::default();
+        if let Some(terminal) = &terminal {
+            owners.add(7, Arc::as_ptr(terminal) as usize, terminal.retained_bytes());
+        }
         for key in pages.keys() {
             if let Some(value) = self
                 .db
@@ -615,6 +619,7 @@ impl QueryDb {
             .unwrap_or_else(|e| e.into_inner());
         while raw
             .saturating_add(pages)
+            .saturating_add(self.bulk_raw_terminal_nodes_locked())
             .saturating_add(roots.len() * 2)
             .saturating_add(if roots.contains_key(&result) { 0 } else { 2 })
             > NODE_BOUND

@@ -147,3 +147,50 @@ fn ui_raw_fixture(label:&str)->(crate::runner_host::BuildHost,BuildRequest,PathB
  let error=crate::runner_host::workspace_capture::capture_raw_only(&inputs,&intent,&db).err().expect("fixed dispatcher remains required despite source exemption");
  assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(provider.manifest_attempts.load(Ordering::SeqCst),0);
 }
+
+#[test]
+fn retained_raw_terminal_body_requires_actual_reread_and_declines_oversize() {
+    use std::io::Write as _;
+    use dq_analyze::selected_exclusions_wire::Roster;
+    let (_host,mut request,root)=fixture("sealed-raw-terminal-body",1);
+    let inputs=request.policy_inputs.as_mut().unwrap();
+    inputs.workspace_auxiliary=vec![Q::AllRawFilePolicies];
+    let workspace=inputs.workspace.as_mut().unwrap();
+    workspace.recursive_roots=Roster::AllRawFilePolicies.workspace_roots().iter().map(|name|root.join(name)).collect();
+    for path in &workspace.recursive_roots { std::fs::create_dir_all(path).unwrap(); }
+    let intent=request.policy_inputs.unwrap().admit().unwrap();
+    let db=Arc::new(crate::query_db::QueryDb::default());
+    let fresh=||RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+    let capture=|previous:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>|
+        crate::runner_host::workspace_capture::capture_raw_only_with_prior(&fresh(),&intent,&db,Some(previous)).unwrap();
+    let (prior,owner)=crate::runner_host::workspace_capture::capture_raw_only(&fresh(),&intent,&db).unwrap();
+    let guard=workspace_native_guard::NativeReadGuard::raw_owned(&prior,&owner,&db).unwrap();
+    let mut stage=crate::selected_report_spool::Stage::new(&root.join("cache")).unwrap();
+    let bytes=b"actual staged report test body";
+    stage.write_all(bytes).unwrap();
+    let cold=db.finish_bulk_raw_report(&prior,&guard,stage,false).unwrap();
+    assert_eq!(cold.hash(),xxhash_rust::xxh3::xxh3_128(bytes));
+    db.db().evict_values(&[dm_query::Kind(14)]);
+    let (current,owner)=capture(&prior);
+    let guard=workspace_native_guard::NativeReadGuard::raw_owned(&current,&owner,&db).unwrap();
+    let mut stage=crate::selected_report_spool::Stage::new(&root.join("cache")).unwrap();
+    let (clean,hash)=db.restore_bulk_raw_report(&current,&guard,&prior,&mut stage).unwrap().unwrap();
+    assert!(!clean);
+    assert_eq!(hash,cold.hash());
+    assert_eq!(stage.seal().unwrap().validate(|read|io::copy(read,&mut io::sink())).unwrap().1,bytes.len() as u64);
+
+    std::fs::write(root.join("code/a.dm"),"/proc/other()\n    return\n").unwrap();
+    let (changed,owner)=capture(&current);
+    let guard=workspace_native_guard::NativeReadGuard::raw_owned(&changed,&owner,&db).unwrap();
+    let mut stage=crate::selected_report_spool::Stage::new(&root.join("cache")).unwrap();
+    assert!(db.restore_bulk_raw_report(&changed,&guard,&current,&mut stage).unwrap().is_none());
+    assert_eq!(stage.length(),0);
+    for _ in 0..1025 { stage.write_all(&[b'x';1024]).unwrap(); }
+    let large=db.finish_bulk_raw_report(&changed,&guard,stage,true).unwrap();
+    assert_eq!(large.length(),1025*1024);
+    let (next,owner)=capture(&changed);
+    let guard=workspace_native_guard::NativeReadGuard::raw_owned(&next,&owner,&db).unwrap();
+    let mut stage=crate::selected_report_spool::Stage::new(&root.join("cache")).unwrap();
+    assert!(db.restore_bulk_raw_report(&next,&guard,&changed,&mut stage).unwrap().is_none());
+    assert_eq!(stage.length(),0);
+}

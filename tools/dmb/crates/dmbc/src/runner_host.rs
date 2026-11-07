@@ -1686,11 +1686,16 @@ impl BuildHost {
             vec![crate::policy_request::WorkspaceAuxiliaryQuestion::AllRawFilePolicies];
         let retained = Budget::new(SELECTED_REPORT_RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let stage = crate::selected_report_spool::Stage::new(&physical_cache)?;
+        let cache_report = !request.no_cache;
+        let prior = if cache_report {
+            let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected raw-file query state is borrowed"))?;
+            state.raw_snapshot.as_ref().and_then(|raw| raw.bulk_prior_capture())
+        } else { None };
         let prepared = crate::request_runner::run_build_with_host(request, self)?;
         let (clean, verified) = {
             let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected raw-file query state is borrowed"))?;
             let raw = state.raw_snapshot.as_ref().ok_or_else(|| io::Error::other("selected raw-file report has no current source-only snapshot"))?;
-            raw.stage_raw_file_report(&prepared, exclusions, &retained, &root, &plan, stage)?
+            raw.stage_raw_file_report(&prepared, exclusions, &retained, &root, &plan, stage, cache_report, prior)?
         };
         Ok(finish(&prepared, clean, verified, credit)?)
     }

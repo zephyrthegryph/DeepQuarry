@@ -9,6 +9,7 @@ impl RawWorkspaceSnapshot{
   super::workspace_native_guard::NativeReadGuard::raw_owned(&capture,&source,&queries)?;
   let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"raw-query-frame-not-semantic-tree-v1");hash.update(&source.revision().to_le_bytes());hash.update(&capture.policy_revision().to_le_bytes());hash.update(&capture.issuance().to_le_bytes());let revision=hash.digest128();Ok(Self{capture,source,queries,revision})
  }
+ pub(in crate::runner_host) fn bulk_prior_capture(&self)->Option<Arc<WorkspaceCapture>>{self.capture.is_sealed_raw_file_capture().then(||Arc::clone(&self.capture))}
  pub(crate) fn revision(&self)->u128{self.revision}
  pub(crate) fn source_revision(&self)->u128{self.source.revision()}
  pub(crate) fn policy_revision(&self)->u128{self.capture.policy_revision()}

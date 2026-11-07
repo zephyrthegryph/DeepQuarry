@@ -2363,6 +2363,7 @@ fn public_selected_all_raw_files_match_standalone_report_and_discovery() {
         "/proc/scheduled_probe()\n    sleep(1) // ALLOW(scheduler): this reports actual consumed scheduler usage\n");
     let mut build = request(&root, Q::DocSnippets);
     build.cache_root = Some(test_scratch::dir("public-selected-all-raw-cache"));
+    build.no_cache = false;
     let intent = build.policy_inputs.as_mut().unwrap();
     intent.workspace_auxiliary.clear();
     intent.workspace.as_mut().unwrap().recursive_roots = Roster::AllRawFilePolicies.workspace_roots()
@@ -2429,6 +2430,7 @@ fn public_selected_all_raw_files_match_standalone_report_and_discovery() {
             original_frame = Some(terminal.frame);
         } else if stage <= 2 {
             assert_eq!(report, initial.as_deref().unwrap());
+            assert_ne!(terminal.frame.query_revision, original_frame.unwrap().query_revision);
             assert_eq!(terminal.frame.source_revision, original_frame.unwrap().source_revision);
             assert_eq!(terminal.frame.policy_revision, original_frame.unwrap().policy_revision);
         } else if stage == 3 {

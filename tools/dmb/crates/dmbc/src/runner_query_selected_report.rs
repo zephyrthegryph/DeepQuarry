@@ -3,6 +3,7 @@ use super::{full_unused, operational, CompleteAllowRun, Producer, SourceSnapshot
 use crate::{
     daemon::selected_report_wire::Roster,
     policy_request::WorkspaceAuxiliaryQuestion as Q,
+    runner_host::workspace_capture::WorkspaceCapture,
     selected_report_spool::{Stage, Verified},
 };
 use dq_analyze::{
@@ -516,7 +517,8 @@ impl ReportStage<'_> {
 impl super::super::RawWorkspaceSnapshot {
     pub(in crate::runner_host) fn stage_raw_file_report(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
-        root: &Path, plan: &SelectedReportPlan, file: Stage,
+        root: &Path, plan: &SelectedReportPlan, mut file: Stage,
+        cache_report: bool, prior: Option<Arc<WorkspaceCapture>>,
     ) -> io::Result<(bool, Verified)> {
         use crate::{request::BuildOutcome, runner_host::workspace_capture::RawSourcePurpose};
         use dq_analyze::captured_allow_annotations::full_unused::{FrameData, FrameOwner, SelectedTreePlanData, UsageJoinData};
@@ -548,6 +550,18 @@ impl super::super::RawWorkspaceSnapshot {
         let selection = full_unused::registered_full_selection(exclusions, &mut work).map_err(operational)?;
         if !selection.names().iter().map(String::as_str).eq(roster.names().iter().copied()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "raw-file scope differs from the registered selected report"));
+        }
+        if let Some(prior) = prior {
+            let replay = queries.restore_bulk_raw_report(capture, &guard, &prior, &mut file)?;
+            drop(prior);
+            if let Some((clean, hash)) = replay {
+                let verified = checked_stage(file)?;
+                if verified.hash() != hash {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "raw terminal report digest differs on replay"));
+                }
+                poll()?;
+                return Ok((clean, verified));
+            }
         }
         let producer = |name| Producer::from_name(name).expect("selected raw roster already admitted");
         let selected_tree = SelectedTreePlanData::new(roster.names().iter().map(|&name| producer(name).metadata().select), &mut work)
@@ -601,7 +615,11 @@ impl super::super::RawWorkspaceSnapshot {
             poll()?;
             stage.finish(&CompleteAllowRun { selected: selection.names(), validation: None, unused }, budget)
         }).map_err(operational)?;
-        let output = checked_stage(stage.file)?;
+        let output = if cache_report {
+            queries.finish_bulk_raw_report(capture, &guard, stage.file, clean)?
+        } else {
+            checked_stage(stage.file)?
+        };
         poll()?;
         Ok((clean, output))
     }
