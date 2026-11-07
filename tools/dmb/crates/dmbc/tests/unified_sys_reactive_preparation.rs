@@ -166,6 +166,101 @@ fn selected_player_link_reports_actual_typed_and_map_body_writes() {
     assert!(diagnostics.is_empty() && analyze.is_empty());
 }
 
+#[test]
+fn selected_lifeforms_and_player_link_share_one_report_with_independent_scopes() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::Roster,
+    };
+
+    let root = fixture("public-selected-lifeforms-and-player-link");
+    put(&root, "deepquarry.dme", concat!(
+        "#include \"code/life.dm\"\n",
+        "#include \"code/probe.dm\"\n",
+        "#include \"maps/player.dm\"\n",
+    ));
+    put(&root, "code/life.dm", concat!(
+        "#define CAPABILITIES(...)\n#define nameof(V) #V\n",
+        "/obj/no_reader\n/obj/bad_position\n    var/value\n",
+        "CAPABILITIES(/obj/bad_position, param(nameof(value), pos = 3, overrides = TRUE))\n",
+        "/proc/life_probe(loc)\n    new /obj/no_reader(loc, 2)\n",
+    ));
+    put(&root, "code/probe.dm", "/mob/player_child\n/proc/player_probe(mob/P)\n    P.key = 1\n");
+    put(&root, "maps/player.dm", "/mob/player_child/proc/map_check()\n    key = 42\n");
+    put(&root, "code/schedule.dm", concat!(
+        "/proc/scheduled_probe()\n",
+        "    sleep(1) // ALLOW(scheduler): this report uses an actual scheduler annotation\n",
+    ));
+    let stale = "/proc/stale()\n    return // ALLOW(scheduler): this fixture observes an unused annotation\n";
+    put(&root, "maps/stale.dm", stale);
+
+    let mut selected = request(&root);
+    selected.cache_root = Some(scratch::dir("public-selected-lifeforms-player-cache"));
+    selected.policy_inputs.as_mut().unwrap().workspace_auxiliary.clear();
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithLifeformsAndPlayerLink;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}"))
+        .collect();
+
+    let mut host = BuildHost::default();
+    let mut run = || {
+        let mut output = Vec::new();
+        let clean = host.write_original_exclusions_report(
+            selected.clone(), &exclusions, &mut Vec::new(), &mut output,
+        ).unwrap();
+        (clean, String::from_utf8(output).unwrap())
+    };
+    let (clean, cold) = run();
+    assert!(!clean);
+    let ctor = cold.find("[lifeforms/ctor_dead_arg]").expect(&cold);
+    let player = cold.find("code/probe.dm:3: [player_link/raw_key]").expect(&cold);
+    assert!(ctor < player, "{cold}");
+    assert!(cold.contains("[lifeforms/param_overrides_nothing]"), "{cold}");
+    assert!(cold.contains("maps/player.dm:2: [player_link/raw_key]"), "{cold}");
+    assert_eq!(cold.matches(dq_analyze::player_link_policy::MESSAGE).count(), 2, "{cold}");
+    assert!(!cold.contains("code/schedule.dm:"), "{cold}");
+    assert!(cold.contains("maps/stale.dm:2: ALLOW(scheduler) is unused"), "{cold}");
+    assert!(cold.contains("allow annotations: 1 unused"), "{cold}");
+
+    let config = "tools/ci/lint_scopes.toml";
+    let life_scope = "[lint.lifeforms]\nexempt_files=[\"code/life.dm\"]\n";
+    let player_scope = "[lint.player_link]\nexempt_files=[\"code/probe.dm\",\"maps/player.dm\"]\n";
+    put(&root, config, report_configuration::with_overlay(life_scope));
+    let (clean, life_exempt) = run();
+    assert!(!clean);
+    assert!(!life_exempt.contains("[lifeforms/"));
+    assert_eq!(life_exempt.matches("[player_link/raw_key]").count(), 2, "{life_exempt}");
+    assert!(life_exempt.contains("allow annotations: 1 unused"), "{life_exempt}");
+
+    put(&root, config, report_configuration::with_overlay(player_scope));
+    let (clean, player_exempt) = run();
+    assert!(!clean);
+    assert!(player_exempt.contains("[lifeforms/ctor_dead_arg]"), "{player_exempt}");
+    assert!(!player_exempt.contains("[player_link/"));
+    assert!(player_exempt.contains("allow annotations: 1 unused"), "{player_exempt}");
+
+    put(&root, config, report_configuration::with_overlay(&format!("{life_scope}{player_scope}")));
+    put(&root, "maps/stale.dm", "/proc/stale()\n    return\n");
+    let (clean, exempt) = run();
+    assert!(clean, "{exempt}");
+    assert!(exempt.contains("allow annotations: 0 unused"), "{exempt}");
+    assert!(!root.join("deepquarry.dmb").exists());
+    assert!(!root.join("deepquarry.rsc").exists());
+
+    let mut diagnostics = Vec::new();
+    let mut checker = Vec::new();
+    let mut analyze = Vec::new();
+    assert!(host.write_combined_selected_original_reports(
+        selected, &exclusions, &mut diagnostics, &mut checker, &mut analyze,
+    ).is_err());
+    assert!(diagnostics.is_empty() && checker.is_empty() && analyze.is_empty());
+}
+
 fn policy_or_source_changed(a:&Pins,b:&Pins){assert!(a.source!=b.source||a.policy!=b.policy,"actual raw discovery/configuration change must reissue public source/policy pins: {a:?}");}
 #[test]fn actual_public_sys_role_prepares_real_model_and_refuses_missing_analysis_context(){let root=fixture("public-sys-original-model");let request=request(&root);let mut host=BuildHost::default();let first=prepare(&mut host,&request);assert_eq!(prepare(&mut host,&request),first);let mut missing=request.clone();missing.policy_inputs.as_mut().unwrap().analysis_context=None;assert!(dmbc::request_runner::run_build_with_host(missing,&mut host).is_err(),"semantic role cannot become a context-free raw-only grant");prepare(&mut host,&request);}
 #[test]fn actual_public_sys_uncompiled_auto_and_config_observations_reissue_same_host(){let root=fixture("public-sys-full-source-revisions");let request=request(&root);let mut host=BuildHost::default();let first=prepare(&mut host,&request);put(&root,"code/uncompiled.dm","/datum/uncompiled_raw\n");let added=prepare(&mut host,&request);policy_or_source_changed(&first,&added);put(&root,"code/engine/_generated/auto_tracked.dm","// actual AUTO exists without explicit TRACKED entries\n");let auto=prepare(&mut host,&request);policy_or_source_changed(&added,&auto);std::fs::remove_file(root.join("code/engine/_generated/auto_tracked.dm")).unwrap();let removed=prepare(&mut host,&request);policy_or_source_changed(&auto,&removed);put(&root,"tools/ci/lint_scopes.toml",report_configuration::with_overlay("[lint.\"sys/dx_reactive\"]\nexempt_files=[\"code/probe.dm\"]\n"));let configured=prepare(&mut host,&request);assert_ne!(configured.policy,removed.policy);}

@@ -30,6 +30,7 @@ impl SelectedReportPlan {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
             Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
+            Q::SELECTED_LIFEFORMS_PLAYER_LINK,
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
         let mut count = 0;
@@ -255,7 +256,8 @@ impl ReportStage<'_> {
                     Q::PlayerLink => (Roster::WithPlayerLink, dq_analyze::player_link_policy::metadata()),
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued message-only selected report role")),
                 };
-                if self.selected != roster.names() || !std::ptr::eq(meta, expected)
+                if (self.selected != roster.names() && self.selected != Roster::WithLifeformsAndPlayerLink.names())
+                    || !std::ptr::eq(meta, expected)
                     || !matches!(meta.policy, Policy::Hard) || !meta.allow.is_empty()
                     || !allows.is_empty() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData,
@@ -458,6 +460,7 @@ mod selected_plan_tests {
             (Roster::WithSysReactive, &[Q::SysReactive]),
             (Roster::WithLifeforms, &[Q::Lifeforms]),
             (Roster::WithPlayerLink, &[Q::PlayerLink]),
+            (Roster::WithLifeformsAndPlayerLink, Q::SELECTED_LIFEFORMS_PLAYER_LINK),
         ];
         for (roster, questions) in expected {
             let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))

@@ -68,6 +68,8 @@ pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemR
 impl WorkspaceAuxiliaryQuestion {
     pub(crate) const SELECTED_READS: &'static [Self] = &[Self::SemReads, Self::UntrackedInputs];
     pub(crate) const SELECTED_SETTER: &'static [Self] = &[Self::SetterPublishes];
+    pub(crate) const SELECTED_LIFEFORMS_PLAYER_LINK: &'static [Self] =
+        &[Self::PlayerLink, Self::Lifeforms];
     pub(crate) const SELECTED_REACTIVE: &'static [Self] =
         &[Self::SemReads, Self::UntrackedInputs, Self::SetterPublishes];
 
