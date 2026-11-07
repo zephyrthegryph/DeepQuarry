@@ -1,19 +1,22 @@
 import { describe, expect, it } from 'bun:test';
 import {
   clampShare,
+  clientRect,
+  columnRect,
+  dockTarget,
   dragPosition,
   fitRect,
   fitSize,
   isMode,
   MIN_WINDOW_SIZE,
-  pinRequest,
-  pointerSnap,
+  mainRects,
+  poppedOut,
   resizeSize,
   SHARE_DEFAULT,
   shareFromHeights,
   shareMoved,
-  snapTarget,
   splitterFor,
+  windowUnderPointer,
 } from './model';
 
 describe('pin layout math', () => {
@@ -53,14 +56,6 @@ describe('pin layout math', () => {
     expect(shareMoved(40, 35)).toBe(true);
     expect(shareMoved(40, null)).toBe(false);
   });
-
-  it('swaps the side and floats or re-pins', () => {
-    expect(pinRequest('bottom', 'side')).toBe('top');
-    expect(pinRequest('top', 'side')).toBe('bottom');
-    expect(pinRequest('bottom', 'float')).toBe('float');
-    expect(pinRequest('top', 'float')).toBe('float');
-    expect(pinRequest('float', 'float')).toBe('bottom');
-  });
 });
 
 describe('window drag math', () => {
@@ -89,81 +84,95 @@ describe('window drag math', () => {
   });
 });
 
-describe('snap to the right edge', () => {
-  const area = { x: 0, y: 0, w: 1600, h: 900 };
+describe('keeping the float window exactly inside the main window', () => {
+  const FLOAT = { w: 560, h: 420 };
+  const screen = { x: 0, y: 0, w: 2560, h: 1440 };
+  // The live report of a maximized main window: pos and size are the restored
+  // ones (the skin's 640x440 centred on the screen), outer-size is the real one.
+  const maximized = {
+    pos: { x: 960, y: 500 },
+    outerSize: { x: 2578, y: 1458 },
+    size: { x: 640, y: 440 },
+    innerSize: { x: 2560, y: 1408 },
+    maximized: true,
+  };
 
-  it('pins top right when the window ends near the right edge in the upper half', () => {
-    expect(snapTarget({ x: 1050, y: 40, w: 560, h: 300 }, area)).toBe('top');
+  it('places a maximized main window by its outer size, not by its restored pos', () => {
+    const main = mainRects(maximized, screen);
+    expect(main?.outer).toEqual({ x: -9, y: -9, w: 2578, h: 1458 });
+    expect(main?.visible).toEqual(screen);
+    // The old code took pos 960,500 as the origin: the drag stopped at the middle.
+    const stuck = fitRect(
+      { x: 0, y: 0, ...FLOAT },
+      { x: 960, y: 500, w: 2578, h: 1458 },
+    );
+    expect(stuck.x).toBe(960);
+    expect(stuck.y).toBe(500);
   });
 
-  it('pins bottom right in the lower half', () => {
-    expect(snapTarget({ x: 1050, y: 500, w: 560, h: 380 }, area)).toBe(
-      'bottom',
-    );
+  it('reaches the top left and bottom right corners of a maximized window', () => {
+    const area = mainRects(maximized, screen)?.visible ?? null;
+    expect(fitRect({ x: -4000, y: -4000, ...FLOAT }, area)).toEqual({
+      x: 0,
+      y: 0,
+      ...FLOAT,
+    });
+    expect(fitRect({ x: 9000, y: 9000, ...FLOAT }, area)).toEqual({
+      x: 2560 - FLOAT.w,
+      y: 1440 - FLOAT.h,
+      ...FLOAT,
+    });
   });
 
-  it('snaps at the threshold, not past it', () => {
-    expect(snapTarget({ x: 1000, y: 40, w: 600, h: 300 }, area, 72)).toBe(
-      'top',
+  it('uses the reported pos and outer size of a window that is not maximized', () => {
+    const main = mainRects(
+      {
+        pos: { x: 100, y: 50 },
+        outerSize: { x: 1936, y: 1047 },
+        size: { x: 1920, y: 1008 },
+        innerSize: null,
+        maximized: false,
+      },
+      screen,
     );
-    expect(snapTarget({ x: 1000, y: 40, w: 528, h: 300 }, area, 72)).toBe(
-      'top',
-    );
-    expect(snapTarget({ x: 1000, y: 40, w: 527, h: 300 }, area, 72)).toBeNull();
+    expect(main?.outer).toEqual({ x: 100, y: 50, w: 1936, h: 1047 });
+    expect(main?.visible).toEqual(main?.outer);
+    expect(main?.client).toEqual({ x: 108, y: 81, w: 1920, h: 1008 });
+    expect(fitRect({ x: 0, y: 0, ...FLOAT }, main?.visible ?? null)).toEqual({
+      x: 100,
+      y: 50,
+      ...FLOAT,
+    });
   });
 
-  it('does not snap in the middle of the screen or outside the area', () => {
-    expect(snapTarget({ x: 300, y: 40, w: 560, h: 300 }, area)).toBeNull();
-    expect(snapTarget({ x: 1050, y: -900, w: 560, h: 300 }, area)).toBeNull();
+  it('knows nothing of a window without a size or a place', () => {
+    const none = { pos: null, outerSize: null, size: null, innerSize: null };
+    expect(mainRects({ ...none, maximized: false }, screen)).toBeNull();
     expect(
-      snapTarget(
-        { x: 1050, y: 40, w: 560, h: 300 },
-        { x: 0, y: 0, w: 0, h: 0 },
+      mainRects(
+        { ...none, size: { x: 640, y: 440 }, maximized: false },
+        screen,
       ),
     ).toBeNull();
   });
 
-  it('splits the halves at the vertical middle of the area', () => {
-    expect(snapTarget({ x: 1050, y: 300, w: 560, h: 300 }, area)).toBe(
-      'bottom',
-    );
-    expect(snapTarget({ x: 1050, y: 290, w: 560, h: 300 }, area)).toBe('top');
-  });
-});
-
-describe('keeping the window inside the main window', () => {
-  const area = { x: 100, y: 50, w: 1600, h: 900 };
-
-  it('leaves a window that fits alone', () => {
-    const win = { x: 300, y: 200, w: 560, h: 420 };
-    expect(fitRect(win, area)).toEqual(win);
+  it('does not limit the drag without an area', () => {
+    const win = { x: -300, y: -20, ...FLOAT };
+    expect(fitRect(win, null)).toEqual(win);
   });
 
-  it('pulls a window back from every side', () => {
-    expect(fitRect({ x: 0, y: 0, w: 500, h: 400 }, area)).toEqual({
+  it('cuts a window larger than the area and raises a tiny one', () => {
+    const area = { x: 100, y: 50, w: 1600, h: 900 };
+    expect(fitRect({ x: 0, y: 0, w: 2000, h: 1200 }, area)).toEqual(area);
+    expect(fitRect({ x: 100, y: 50, w: 100, h: 100 }, area)).toEqual({
       x: 100,
       y: 50,
-      w: 500,
-      h: 400,
+      ...{ w: MIN_WINDOW_SIZE.x, h: MIN_WINDOW_SIZE.y },
     });
-    expect(fitRect({ x: 1500, y: 800, w: 500, h: 400 }, area)).toEqual({
-      x: 1200,
-      y: 550,
-      w: 500,
-      h: 400,
-    });
-  });
-
-  it('cuts a window larger than the area to the area', () => {
-    expect(fitRect({ x: 0, y: 0, w: 2000, h: 1200 }, area)).toEqual(area);
-  });
-
-  it('changes nothing without an area', () => {
-    const win = { x: -50, y: 9000, w: 500, h: 400 };
-    expect(fitRect(win, { x: 0, y: 0, w: 0, h: 0 })).toEqual(win);
   });
 
   it('stops a resize at the area edge and at the minimum', () => {
+    const area = { x: 100, y: 50, w: 1600, h: 900 };
     expect(fitSize({ x: 900, y: 900 }, { x: 1000, y: 500 }, area)).toEqual({
       x: 700,
       y: 450,
@@ -178,19 +187,41 @@ describe('keeping the window inside the main window', () => {
   });
 });
 
-describe('pin by pointer', () => {
-  const area = { x: 0, y: 0, w: 1600, h: 900 };
+describe('docking by dragging', () => {
+  const outer = { x: 0, y: 0, w: 1936, h: 1047 };
+  const client = clientRect(outer, { x: 1920, y: 1008 });
+  const column = columnRect(client, { x: 480, y: 1008 });
 
-  it('pins in the right strip by the vertical half', () => {
-    expect(pointerSnap({ x: 1550, y: 100 }, area)).toBe('top');
-    expect(pointerSnap({ x: 1550, y: 700 }, area)).toBe('bottom');
+  it('finds the client area inside the frame', () => {
+    expect(client).toEqual({ x: 8, y: 31, w: 1920, h: 1008 });
   });
 
-  it('does not pin elsewhere', () => {
-    expect(pointerSnap({ x: 800, y: 100 }, area)).toBeNull();
-    expect(pointerSnap({ x: 1550, y: -5 }, area)).toBeNull();
-    expect(
-      pointerSnap({ x: 1550, y: 100 }, { x: 0, y: 0, w: 0, h: 0 }),
-    ).toBeNull();
+  it('puts the column against the right edge of the client area', () => {
+    expect(column).toEqual({ x: 1448, y: 31, w: 480, h: 1008 });
+  });
+
+  it('docks by the half of the column the pointer is over', () => {
+    expect(dockTarget({ x: 1700, y: 200 }, column)).toBe('top');
+    expect(dockTarget({ x: 1700, y: 800 }, column)).toBe('bottom');
+  });
+
+  it('does not dock outside the column or without one', () => {
+    expect(dockTarget({ x: 900, y: 200 }, column)).toBeNull();
+    expect(dockTarget({ x: 1700, y: 5 }, column)).toBeNull();
+    expect(dockTarget({ x: 1700, y: 200 }, null)).toBeNull();
+  });
+
+  it('pops a docked chat out after a small drag only', () => {
+    expect(poppedOut({ x: 100, y: 100 }, { x: 104, y: 103 })).toBe(false);
+    expect(poppedOut({ x: 100, y: 100 }, { x: 80, y: 100 })).toBe(true);
+  });
+
+  it('puts the popped window under the pointer', () => {
+    expect(windowUnderPointer({ x: 1700, y: 300 }, { x: 560, y: 420 })).toEqual(
+      {
+        x: 1420,
+        y: 284,
+      },
+    );
   });
 });

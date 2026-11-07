@@ -2,7 +2,7 @@
 // bottom (the default, the skin's own layout) or its top with the stat panel (statwindow) taking the rest of the column, or
 // by the chat_float window's child control (floating). Moving the pane re-parents the same browser control, so the chat page
 // and its scrollback are the same page in every layout. The float window has no title bar: the chat page draws a header strip
-// that drags it, a grip that resizes it, and buttons that pin it (tgui-panel/layout); it reports the pin and the share of the
+// that drags it and a grip that resizes it; dropping it over the right-hand column docks it, and dragging a docked chat's tab row pops it out (tgui-panel/layout); it reports the pin and the share of the
 // column over the panel's messages (layout/pin, layout/share), and this file decides where the pane lives.
 // Typing goes through the chat page's input row (tgui-panel/input), whose messages the panel forwards to
 // tgui_say (see tgui_panel.dm), so the speech path is the popup's. The T/M/O hotkeys focus the row; with the
@@ -30,6 +30,8 @@
 /// The float window never gets smaller than this inside the main window, in pixels.
 #define CHAT_FLOAT_MIN_W 320
 #define CHAT_FLOAT_MIN_H 200
+/// How far below the float window's top edge a pop-out puts the pointer, in pixels: on the drag strip.
+#define CHAT_FLOAT_GRAB_Y 16
 
 /// Whether the chat is a floating window or pinned to the right-hand column (default).
 /datum/preference/toggle/chat_floating
@@ -196,18 +198,34 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 			chat_layout_share = share
 	tgui_panel?.window?.send_message("chat/layout", list("mode" = chat_layout_mode, "share" = chat_layout_share))
 
-/// The chat page pins or floats the chat (its buttons, or a drag that ended near the right edge).
-/client/proc/chat_pin(mode, via = "button")
+/// The float window's place that puts a pointer (screen pixels) on the middle of the window's top strip.
+/proc/chat_float_under_pointer(pointer_x, pointer_y, width)
+	return list(round(pointer_x - width / 2), round(pointer_y - CHAT_FLOAT_GRAB_Y))
+
+/// The chat page pins or floats the chat: a drop over the right-hand column docks it, a drag of the docked chat pops it out
+/// (`at` is then the pointer in screen pixels, list("x", "y")).
+/client/proc/chat_pin(mode, via = "drop", list/at = null)
 	if(mode != CHAT_MODE_TOP && mode != CHAT_MODE_BOTTOM && mode != CHAT_MODE_FLOAT)
 		log_tgui(src, "Chat pin refused: unknown mode [mode].", context = "chat_float")
 		return
-	log_tgui(src, "Chat pin asked: [mode] (via [via], from [chat_layout_mode]).", context = "chat_float")
+	log_tgui(src, "Chat pin asked: [mode] (via [via], from [chat_layout_mode], pointer [islist(at) ? "[at["x"]],[at["y"]]" : "none"]).", context = "chat_float")
+	if(mode == CHAT_MODE_FLOAT && islist(at) && isnum(at["x"]) && isnum(at["y"]) && chat_layout_mode != CHAT_MODE_FLOAT)
+		dx_winget(src, src, SKIN_CHAT_FLOAT_WINDOW, "size", PROC_REF(chat_pop_out_place), at["x"], at["y"])
+		return
 	if(mode == CHAT_MODE_FLOAT)
 		prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, TRUE)
 		return
 	// The side first, then the float flag: the flag's apply is the one that moves the pane to the side.
 	prefs?.update_preference_by_type(/datum/preference/choiced/chat_dock_side, (mode == CHAT_MODE_TOP) ? CHAT_DOCK_TOP_RIGHT : CHAT_DOCK_BOTTOM_RIGHT)
 	prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, FALSE)
+
+/// dx_winget() callback: seats the hidden float window under the pointer of a pop-out drag, then floats the chat.
+/client/proc/chat_pop_out_place(window_params, pointer_x, pointer_y)
+	var/list/extent = chat_float_pair(window_params, "x") || chat_float_pair(CHAT_FLOAT_DEFAULT_SIZE, "x")
+	var/list/placed = chat_float_under_pointer(pointer_x, pointer_y, extent[1])
+	log_tgui(src, "Chat pop-out: pointer [pointer_x],[pointer_y], window [extent[1]]x[extent[2]] placed at [placed[1]],[placed[2]].", context = "chat_float")
+	winset(src, SKIN_CHAT_FLOAT_WINDOW, "pos=[placed[1]],[placed[2]]")
+	chat_pin(CHAT_MODE_FLOAT, "popout-placed")
 
 /// The chat page measured its share of the right-hand column after the player moved the splitter.
 /client/proc/chat_report_share(share)
@@ -243,7 +261,7 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 /// dx_winget() callback: asks for the main window's place once the float window's place is known.
 /client/proc/chat_float_measured(window_params)
 	var/list/placed = params2list(window_params)
-	dx_winget(src, src, SKIN_MAINWINDOW, "pos;outer-size;size", PROC_REF(chat_float_clamp), placed["pos"], placed["size"])
+	dx_winget(src, src, SKIN_MAINWINDOW, "pos;outer-size;size;is-maximized", PROC_REF(chat_float_clamp), placed["pos"], placed["size"])
 
 /// dx_winget() callback: puts the float window back inside the main window when any of it is outside.
 /client/proc/chat_float_clamp(main_params, pos, size)

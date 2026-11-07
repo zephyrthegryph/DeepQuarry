@@ -23,9 +23,6 @@ export const SHARE_TOLERANCE = 3;
 /** The floating window never gets smaller than this, in screen pixels. */
 export const MIN_WINDOW_SIZE: Point = { x: 320, y: 200 };
 
-/** A drag that ends with the window's right edge this close to the column's right edge pins the chat. */
-export const SNAP_THRESHOLD = 72;
-
 export type Point = { x: number; y: number };
 
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -93,46 +90,6 @@ export function resizeSize(
   };
 }
 
-/**
- * Where a dropped window pins: near the right edge of the area (the main
- * window), the top half pins top right and the bottom half bottom right.
- * Null when the window is too far from the edge, or overlaps the area too little.
- */
-export function snapTarget(
-  win: Rect,
-  area: Rect,
-  threshold = SNAP_THRESHOLD,
-): 'top' | 'bottom' | null {
-  if (area.w <= 0 || area.h <= 0) {
-    return null;
-  }
-  const gap = Math.abs(win.x + win.w - (area.x + area.w));
-  if (gap > threshold) {
-    return null;
-  }
-  // The window has to be over the area vertically, not dropped above or below it.
-  const centre = win.y + win.h / 2;
-  if (centre < area.y || centre > area.y + area.h) {
-    return null;
-  }
-  return centre < area.y + area.h / 2 ? 'top' : 'bottom';
-}
-
-/** A window rect held fully inside the area: the size is cut to the area first, then the place. */
-export function fitRect(win: Rect, area: Rect): Rect {
-  if (area.w <= 0 || area.h <= 0) {
-    return win;
-  }
-  const w = Math.min(win.w, area.w);
-  const h = Math.min(win.h, area.h);
-  return {
-    x: Math.min(Math.max(win.x, area.x), area.x + area.w - w),
-    y: Math.min(Math.max(win.y, area.y), area.y + area.h - h),
-    w,
-    h,
-  };
-}
-
 /** The window size while resizing, held to the minimum and to what is left of the area at the window's place. */
 export function fitSize(
   size: Point,
@@ -151,33 +108,153 @@ export function fitSize(
   };
 }
 
-/**
- * Where a drop pins by the pointer: in the right strip of the area (the
- * wider of the threshold and an eighth of it) the upper half pins top right
- * and the lower half bottom right. Null anywhere else.
- */
-export function pointerSnap(
-  pointer: Point,
-  area: Rect,
-  threshold = SNAP_THRESHOLD,
-): 'top' | 'bottom' | null {
-  if (area.w <= 0 || area.h <= 0) {
-    return null;
-  }
-  const strip = Math.max(threshold, area.w / 8);
-  if (pointer.x < area.x + area.w - strip || pointer.x > area.x + area.w) {
-    return null;
-  }
-  if (pointer.y < area.y || pointer.y > area.y + area.h) {
-    return null;
-  }
-  return pointer.y < area.y + area.h / 2 ? 'top' : 'bottom';
+/** Whether a point lies in a rect. */
+export function contains(rect: Rect, point: Point): boolean {
+  return (
+    point.x >= rect.x &&
+    point.x <= rect.x + rect.w &&
+    point.y >= rect.y &&
+    point.y <= rect.y + rect.h
+  );
 }
 
-/** The next mode a layout button asks for. */
-export function pinRequest(mode: ChatMode, button: 'side' | 'float'): ChatMode {
-  if (button === 'float') {
-    return mode === 'float' ? 'bottom' : 'float';
+/**
+ * A window rect held fully inside the area: the size is cut to the area first
+ * (never under the minimum unless the area is smaller), then the place. The
+ * area's own edges are the limits, so the window reaches every side of it.
+ */
+export function fitRect(
+  win: Rect,
+  area: Rect | null,
+  min: Point = MIN_WINDOW_SIZE,
+): Rect {
+  if (!area || area.w <= 0 || area.h <= 0) {
+    return win;
   }
-  return mode === 'top' ? 'bottom' : 'top';
+  const w = Math.min(Math.max(win.w, Math.min(min.x, area.w)), area.w);
+  const h = Math.min(Math.max(win.h, Math.min(min.y, area.h)), area.h);
+  return {
+    x: Math.min(Math.max(win.x, area.x), area.x + area.w - w),
+    y: Math.min(Math.max(win.y, area.y), area.y + area.h - h),
+    w,
+    h,
+  };
+}
+
+/** What BYOND reports for the main window (winget), parsed. */
+export type MainReport = {
+  pos: Point | null;
+  outerSize: Point | null;
+  size: Point | null;
+  innerSize: Point | null;
+  maximized: boolean;
+};
+
+/**
+ * The main window's outer rect and client area in screen pixels, plus the part
+ * of it that is on the screen. `screen` is the monitor's work area in screen
+ * pixels.
+ *
+ * A maximized window reports the pos and size it has when NOT maximized (the
+ * skin's 640x440 centred on the screen), only outer-size and inner-size are
+ * live. Taking that pos as the origin put the "main window" at the middle of
+ * the screen, so the float window could not go above or left of it. A
+ * maximized window is as large as its outer size and centred on the work
+ * area (its borders hang over the edges evenly), so its origin follows from
+ * those.
+ */
+export function mainRects(
+  report: MainReport,
+  screen: Rect | null,
+): { outer: Rect; client: Rect; visible: Rect } | null {
+  const outerSize = report.outerSize ?? report.size;
+  if (!outerSize || outerSize.x <= 0 || outerSize.y <= 0) {
+    return null;
+  }
+  let origin: Point;
+  if (report.maximized) {
+    const work = screen ?? { x: 0, y: 0, w: outerSize.x, h: outerSize.y };
+    origin = {
+      x: Math.round(work.x + (work.w - outerSize.x) / 2),
+      y: Math.round(work.y + (work.h - outerSize.y) / 2),
+    };
+  } else if (report.pos) {
+    origin = report.pos;
+  } else {
+    return null;
+  }
+  const outer = { x: origin.x, y: origin.y, w: outerSize.x, h: outerSize.y };
+  const clientSize =
+    report.innerSize ??
+    (report.maximized
+      ? { x: screen?.w ?? outerSize.x, y: screen?.h ?? outerSize.y }
+      : (report.size ?? outerSize));
+  const client = clientRect(outer, clientSize);
+  const visible = report.maximized && screen ? intersect(outer, screen) : outer;
+  return { outer, client, visible };
+}
+
+/** The overlap of two rects (zero-sized when they do not meet). */
+export function intersect(a: Rect, b: Rect): Rect {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  return {
+    x,
+    y,
+    w: Math.max(0, Math.min(a.x + a.w, b.x + b.w) - x),
+    h: Math.max(0, Math.min(a.y + a.h, b.y + b.h) - y),
+  };
+}
+
+/**
+ * The main window's client area in screen pixels from its outer rect and the
+ * client size (borders are even on the sides and the bottom; the title bar and top border are what is left above).
+ */
+export function clientRect(outer: Rect, client: Point): Rect {
+  const border = Math.max(0, (outer.w - client.x) / 2);
+  const top = Math.max(0, outer.h - client.y - border);
+  return {
+    x: outer.x + border,
+    y: outer.y + top,
+    w: Math.min(client.x, outer.w),
+    h: Math.min(client.y, outer.h),
+  };
+}
+
+/** The right-hand column in screen pixels: as wide and tall as measured, against the right edge of the client area. */
+export function columnRect(client: Rect, column: Point): Rect {
+  const w = Math.min(Math.max(column.x, 0), client.w);
+  const h = Math.min(Math.max(column.y, 0), client.h);
+  return { x: client.x + client.w - w, y: client.y, w, h };
+}
+
+/** Where dropping with the pointer at `pointer` docks: over the column, the upper half is top right, the lower half bottom right. */
+export function dockTarget(
+  pointer: Point,
+  column: Rect | null,
+): 'top' | 'bottom' | null {
+  if (!column || column.w <= 0 || column.h <= 0 || !contains(column, pointer)) {
+    return null;
+  }
+  return pointer.y < column.y + column.h / 2 ? 'top' : 'bottom';
+}
+
+/** How far (screen pixels) a docked chat is dragged before it pops out into a window. */
+export const POP_OUT_DISTANCE = 14;
+
+/** Whether a drag from `start` to `now` has gone far enough to pop out. */
+export function poppedOut(
+  start: Point,
+  now: Point,
+  distance = POP_OUT_DISTANCE,
+): boolean {
+  return Math.hypot(now.x - start.x, now.y - start.y) >= distance;
+}
+
+/** The window place that puts the pointer on the middle of the window's top strip. */
+export function windowUnderPointer(pointer: Point, size: Point): Point {
+  return {
+    x: Math.round(pointer.x - size.x / 2),
+    y: Math.round(pointer.y - 16),
+  };
 }

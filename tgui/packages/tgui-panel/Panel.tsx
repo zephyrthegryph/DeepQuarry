@@ -21,7 +21,6 @@ import { layoutModeAtom } from './layout/atoms';
 import {
   ChatPinHint,
   ChatResizeGrip,
-  LayoutButtons,
   useChatDrag,
   useShareReport,
 } from './layout/ChatLayout';
@@ -54,19 +53,13 @@ export function Panel(props) {
       <Stack fill vertical>
         <Stack.Item>
           <Section fitted>
-            <div
-              className={floating ? 'ChatDragRow' : undefined}
-              onPointerDown={floating ? drag.onPointerDown : undefined}
-            >
+            <div className="ChatDragRow" onPointerDown={drag.onPointerDown}>
               <Stack mx={0.5} my={0.25} align="center">
                 <Stack.Item grow>
                   <ChatTabs />
                 </Stack.Item>
                 <Stack.Item>
                   <PingIndicator />
-                </Stack.Item>
-                <Stack.Item>
-                  <LayoutButtons />
                 </Stack.Item>
                 <Stack.Item>
                   <Button
