@@ -9,7 +9,11 @@
   position: relative;
   padding: var(--space-xs) var(--space-sm);
   // A read-only sibling of the Buttons beside it: same height, no outline.
-  line-height: 1.667em;
+  // The row sets the height (tgui/styles/dq/tabs.scss .DqTabs__end); centre the text in it.
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  line-height: 1;
   padding-block: 0;
   background-color: hsl(from var(--color-base) h s calc(l + 8));
   border-radius: var(--border-radius-small);
