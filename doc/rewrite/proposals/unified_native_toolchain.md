@@ -3709,3 +3709,14 @@ The retained report-body design has separate fixture proof, including replay
 after page-value eviction, a same-size source edit, and a report over its
 1 MiB retention threshold. The checkout still needs to prove a retained
 result slot is available and a fresh terminal returns the same report.
+
+The subsequent checkout verified both cold delivery and warm replay. The
+complete warm report arrived in 5.32 seconds after fresh capture and matched
+the cold report body and stderr. Its 5,581 report bytes also matched the
+earlier independently checked cold body exactly. The terminal still used
+the current request frame. The raw checkout evidence covers these 45
+policies, separate from the full semantic and Checker gates.
+
+MapEdits also passed its public transport fixture with the isolated native
+client and the archived standalone Analyze oracle. The fixture preserves
+the report and refuses incompatible map geometry.
