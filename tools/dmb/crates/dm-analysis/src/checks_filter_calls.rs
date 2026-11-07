@@ -2,14 +2,14 @@
 use super::*;
 use crate::checker_expression_visit::{ArgumentObserver,NamedArguments,OriginalArguments,OriginalValue};
 use crate::checker_original_expression_debug::{CallDebug,with_call_debug};
-pub(super) struct Filter<'archive,'body,'loan,'work,W,R:?Sized>{pub(super) inner:Arguments<'archive,'work,W,R>,pub(super) body:&'loan ArchivedBody<'body>}
+pub(super) struct Filter<'archive,'loan,'work,W,R:?Sized>{pub(super) inner:Arguments<'archive,'work,W,R>,pub(super) body:&'loan dyn dm_tree::frontend::InitialSettingSource}
 fn allowed(kind:&str)->Option<&'static [&'static str]>{Some(match kind{
  "alpha"=>&["x","y","icon","render_source","flags"],"angular_blur"=>&["x","y","size"],"bloom"=>&["threshold","size","offset","alpha"],"color"=>&["color","space"],"displace"=>&["x","y","size","icon","render_source"],"drop_shadow"=>&["x","y","size","offset","color"],"blur"=>&["size"],"layer"=>&["x","y","icon","render_source","flags","color","transform","blend_mode"],"motion_blur"=>&["x","y"],"outline"=>&["size","color","flags"],"radial_blur"=>&["x","y","size"],"rays"=>&["x","y","size","color","offset","density","threshold","factor","flags"],"ripple"=>&["x","y","size","repeat","radius","falloff","flags"],"wave"=>&["x","y","size","offset","flags"],_=>return None})}
 fn flags(kind:&str)->Option<(&'static str,bool,bool,&'static [&'static str])>{Some(match kind{
  "alpha"=>("flags",false,true,&["MASK_INVERSE","MASK_SWAP"]),"color"=>("space",true,false,&["FILTER_COLOR_RGB","FILTER_COLOR_HSV","FILTER_COLOR_HSL","FILTER_COLOR_HCY"]),"layer"=>("flags",true,true,&["FILTER_OVERLAY","FILTER_UNDERLAY"]),"rays"=>("flags",false,true,&["FILTER_OVERLAY","FILTER_UNDERLAY"]),"outline"=>("flags",false,true,&["OUTLINE_SHARP","OUTLINE_SQUARE"]),"ripple"=>("flags",false,true,&["WAVE_BOUNDED"]),"wave"=>("flags",false,true,&["WAVE_SIDEWAYS","WAVE_BOUNDED"]),_=>return None})}
 fn actual_filter(fact:&CallableFact,name:&str)->bool{name=="filter"&&fact.owner()==Some(SymbolId::of("/"))}
 fn follows(expr:&Expr)->bool{match &expr.kind{ExprKind::Unary{op,..}=>matches!(op.as_str(),"-"|"!"|"~"|"pre++"|"post++"|"pre--"|"post--"|"&"|"*"),ExprKind::Member{..}|ExprKind::SafeMember{..}|ExprKind::StaticMember{..}|ExprKind::Index{..}|ExprKind::SafeIndex{..}=>true,ExprKind::Call{callee,..}=>matches!(callee.kind,ExprKind::Member{..}|ExprKind::SafeMember{..}|ExprKind::StaticMember{..}),_=>false}}
-impl<W:EffectReportWork,R:Resolver+?Sized> Filter<'_,'_,'_,'_,W,R>{
+impl<W:EffectReportWork,R:Resolver+?Sized> Filter<'_,'_,'_,W,R>{
  fn emit(&mut self,at:Option<Span>,expression:Span,message:String,kind:Option<&str>)->Result<(),PolicyFailure>{let mut notes=Vec::new();if let Some(kind)=kind{let note=Note{message:text(self.inner.work,format_args!("See: http://www.byond.com/docs/ref/#/{{notes}}/filters/{kind} for the permitted arguments"))?,source:None};push(self.inner.work,&mut notes,note)?;}self.inner.emit("filter_call",at,expression,message,notes)}
  fn static_string(&mut self,value:Option<OriginalValue<'_>>)->Result<Option<String>,PolicyFailure>{let Some(OriginalValue::Literal(value))=value else{return Ok(None)};let width=value.as_str().len();reserve(self.inner.work,width.checked_mul(4).and_then(|n|n.checked_add(size_of::<String>()+128)).ok_or_else(oom)?)?;let mut output=String::new();output.try_reserve_exact(width).map_err(|e|PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,e)))?;if output.capacity()>width.checked_mul(4).ok_or_else(oom)?{return Err(oom())}let found=value.write_pinned_static_text(&mut Fixed(&mut output)).map_err(|e|format!("filter actual static value: {e:?}"))?;Ok(found.then_some(output))}
  fn flag(&mut self,expr:&Expr,kind:&str,field:&str,exclusive:bool,zero:bool,valid:&[&str],at:Option<Span>,expression:Span)->Result<(),PolicyFailure>{
@@ -23,7 +23,7 @@ impl<W:EffectReportWork,R:Resolver+?Sized> Filter<'_,'_,'_,'_,W,R>{
   }Ok(())
  }
 }
-impl<W:EffectReportWork,R:Resolver+?Sized> ArgumentObserver<PolicyFailure> for Filter<'_,'_,'_,'_,W,R>{
+impl<W:EffectReportWork,R:Resolver+?Sized> ArgumentObserver<PolicyFailure> for Filter<'_,'_,'_,W,R>{
  fn reserve(&mut self,bytes:usize)->Result<(),PolicyFailure>{reserve(self.inner.work,bytes)}
  fn original_values(&self)->bool{true}
  fn begin_call(&mut self,tree:&dm_tree::SemanticTree,fact:&CallableFact,name:&str)->Result<(),PolicyFailure>{self.inner.begin_call(tree,fact,name)}

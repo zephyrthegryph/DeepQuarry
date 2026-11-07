@@ -138,9 +138,9 @@ fn render_archived_setting_using(body:&dyn dm_tree::frontend::InitialSettingSour
 /// Private evaluated-call adapter. The expression/value is borrowed directly
 /// from the SAME archived visitor; this function grants no source/call receipt.
 pub(crate) enum CallDebug<'a>{Expression(&'a Expr),Term(&'a Expr),Value(Option<crate::checker_expression_visit::OriginalValue<'a>>),Display(crate::checker_expression_visit::OriginalValue<'a>)}
-pub(crate) fn with_call_debug<T>(body:&dm_tree::frontend::ArchivedBody<'_>,value:CallDebug<'_>,checkpoint:&dyn Fn()->std::io::Result<()>,consume:impl FnOnce(&str)->Result<T,PolicyFailure>)->Result<T,PolicyFailure>{
+pub(crate) fn with_call_debug<T>(body:&dyn dm_tree::frontend::InitialSettingSource,value:CallDebug<'_>,checkpoint:&dyn Fn()->std::io::Result<()>,consume:impl FnOnce(&str)->Result<T,PolicyFailure>)->Result<T,PolicyFailure>{
  checkpoint().map_err(PolicyFailure::Operational)?;
- let pending=body.with_original_syntax_admission(|a|{let pending=(||{
+ let pending=body.with_source_admission(|a|{let pending=(||{
   if !body.statement_body().is_native_literal_syntax_admitted_by(a){return Err("original call syntax belongs to another native admission".into())}
   let mapping=body.archive_owner().source_mapping();let registry=mapping.original_checker_source_registry(a).map_err(PolicyFailure::Operational)?;if !registry.matches_mapping(mapping){return Err("original call registry belongs to another mapping".into())}
   let source=ArchiveSource{body,admission:a,registry:&registry,tokens:dm_tree::frontend::InitialSettingSource::original_body_tokens(body).map_err(|actual|match actual{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>PolicyFailure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(actual)=>actual.message.into()})?,current_offset:0};
@@ -164,9 +164,9 @@ pub(crate) fn archived_setting_into_body_work<W:crate::checker_effects::EffectRe
 /// Original simple-evaluation phase: the canonical scalar interpreter borrows
 /// the same prepared expression and the same syntax admission as the body.
 /// This is separate from the later ordinary expression visit, as in the old checker.
-pub(crate) fn simple_number(body:&dm_tree::frontend::ArchivedBody<'_>,expression:&Expr,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Option<f32>,PolicyFailure>{
+pub(crate) fn simple_number(body:&dyn dm_tree::frontend::InitialSettingSource,expression:&Expr,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Option<f32>,PolicyFailure>{
  checkpoint().map_err(PolicyFailure::Operational)?;
- let pending=body.with_original_syntax_admission(|a|{let pending=(||{
+ let pending=body.with_source_admission(|a|{let pending=(||{
   if !body.statement_body().is_native_literal_syntax_admitted_by(a){return Err("original simple expression belongs to another syntax admission".into())}
   // Bare prefab/resource constants cannot produce a numeric range bound.
   // Pinned get_case_range/get_rand_range discard both nonnumeric values and

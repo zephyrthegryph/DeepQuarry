@@ -38,7 +38,7 @@ fn syntax_using_observed_recipes<E:From<String>+From<&'static str>>(syntax:&Stat
  if declaration.is_some_and(|(decl,flags)|decl.owner==identity.owner&&flags&dm_ir::PROC_FLAG_FINAL!=0){
   if identity.owner==dm_ir::SymbolId::of("/"){
    if emit&&(complete||matches!(family,Family::Incompatible)){if let Some(sink)=recipes.as_deref_mut(){sink(PrefixEmission::HeaderGlobalFinal)?;}else{let display=crate::checker_callable_display::original(tree,identity,|_|Ok::<(),E>(()),&mut *checkpoint)?;let span=headers.source.reported_span(headers.current)?;rows.push(Diagnostic{family:Family::Incompatible.name(),severity,span,expression_span:span,message:format!("{display} sets SpacemanDMM_should_not_override, which cannot be set on global procs"),notes:Vec::new()});}}
-  }else{first[0]=Some(FirstOrigin::Header(headers.current));if let Some(out)=accepted.as_deref_mut(){out[0]=Some(Accepted{enabled:true,at:headers.source.reported_span(headers.current)?});}}
+  }else{first[0]=Some(FirstOrigin::Header(headers.current));if let Some(out)=accepted.as_deref_mut(){out[0]=Some(Accepted{enabled:true,at:headers.source.reported_span(headers.current)?,body_span:false});}}
  }
  for (ordinal,statement) in syntax.parsed().statements.iter().enumerate(){checkpoint()?;let Some(setting)=statement.setting()else{break};let name=setting.attribute;if name=="SpacemanDMM_return_type"{if let Some(sink)=recipes.as_deref_mut(){sink(PrefixEmission::ReturnType{ordinal})?;}else if let Some(emit)=all.as_deref_mut(){if let Some(row)=emit(ordinal,true)?{rows.push(row)}}continue}let Some(index)=crate::checks_unknown_linter_setting::KNOWN.iter().position(|known|*known==name)else{if complete{if let Some(sink)=recipes.as_deref_mut(){if crate::checks_unknown_linter_setting::original_prefix_is_unknown(statement){sink(PrefixEmission::Unknown{ordinal})?;}}else if let Some(row)=crate::checks_unknown_linter_setting::original_prefix_diagnostic(statement){rows.push(row)}}continue};let(can_disable,at_definition,can_global)=FLAGS[index];
   if at_definition{let own=match initial{Some(own)=>own,None=>{let own=initial_is_own(tree,identity,headers,declaration,checkpoint)?;initial=Some(own);own}};if !own{if emit&&(complete||matches!(family,Family::AtDefinition)){if let Some(sink)=recipes.as_deref_mut(){sink(PrefixEmission::AtDefinition{ordinal})?;}else{rows.push(Diagnostic{family:Family::AtDefinition.name(),severity:Severity::Warning,span:statement.header_span,expression_span:setting.value.current_span(),message:format!("Can't define procs {name} outside their initial definition"),notes:Vec::new()});}}continue}}
@@ -48,7 +48,7 @@ fn syntax_using_observed_recipes<E:From<String>+From<&'static str>>(syntax:&Stat
    }
    continue
   };
-  let actual=if identity.owner==dm_ir::SymbolId::of("/")&&!can_global{Some((Family::Incompatible,"global"))}else if !enabled&&!can_disable{Some((Family::Disabled,"disabled"))}else if first[index].is_some(){Some((Family::Duplicate,"duplicate"))}else{first[index]=Some(FirstOrigin::Setting(statement.header_span));if let Some(out)=accepted.as_deref_mut(){out[index]=Some(Accepted{enabled,at:statement.header_span});}None};
+  let actual=if identity.owner==dm_ir::SymbolId::of("/")&&!can_global{Some((Family::Incompatible,"global"))}else if !enabled&&!can_disable{Some((Family::Disabled,"disabled"))}else if first[index].is_some(){Some((Family::Duplicate,"duplicate"))}else{first[index]=Some(FirstOrigin::Setting(statement.header_span));if let Some(out)=accepted.as_deref_mut(){out[index]=Some(Accepted{enabled,at:statement.header_span,body_span:true});}None};
   let Some((rejected,reason))=actual else{continue};if !emit||(!complete&&rejected.name()!=family.name()){continue}
   if let Some(sink)=recipes.as_deref_mut(){sink(PrefixEmission::Rejected{ordinal,family:rejected,first:first[index]})?;continue}
   let display=crate::checker_callable_display::original(tree,identity,|_|Ok::<(),E>(()),&mut *checkpoint)?;
@@ -96,11 +96,21 @@ pub fn archived_value_checked(body:&ArchivedBody<'_>,severity:Severity,checkpoin
 /// Borrow accepted owner-local directive coordinates from the SAME unique
 /// insertion policy, through the actual source prefix loan. No policy map or
 /// diagnostic formatting is rebuilt for a call-site query.
-#[derive(Clone,Copy)]pub(crate) struct Accepted{pub enabled:bool,pub at:Span}
+#[derive(Clone,Copy)]pub(crate) struct Accepted{pub enabled:bool,pub at:Span,body_span:bool}
 pub(crate) fn accepted_own_using<D:crate::checker_prefix_demand::Demand>(archive:&dm_tree::frontend::BodyArchive,identity:ProcedureIdentity,demand:&D)->Result<[Option<Accepted>;8],D::Error>{
  let roster=archive.callables();let current=source_member(archive.tree(),roster,identity,&mut||demand.checkpoint())?;
  let headers=OriginalHeaders{roster,current,source:archive.callable_header_source()};let mut accepted=[None;8];
- demand.prefix(archive,identity,|prefix|{let mut checkpoint=||demand.checkpoint();syntax_using_observed(prefix.statement_body(),archive.tree(),identity,&headers,Family::Duplicate,Severity::Error,&mut checkpoint,&mut|_|Ok(()),Some(&mut accepted),None).map(|_|())})??;
+ demand.prefix(archive,identity,|prefix| -> Result<(),D::Error>{
+  let mut checkpoint=||demand.checkpoint();
+  syntax_using_observed(prefix.statement_body(),archive.tree(),identity,&headers,Family::Duplicate,Severity::Error,&mut checkpoint,&mut|_|Ok(()),Some(&mut accepted),None)?;
+  for setting in accepted.iter_mut().flatten(){
+   if setting.body_span{
+    setting.at=prefix.source_body().source_point(setting.at)?;
+    setting.body_span=false;
+   }
+  }
+  Ok(())
+ })??;
  Ok(accepted)
 }
 

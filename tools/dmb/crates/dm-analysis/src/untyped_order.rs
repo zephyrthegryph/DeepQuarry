@@ -985,7 +985,7 @@ pub(crate) fn projected_body_host_for_test() -> std::sync::Arc<dyn dm_tree::fron
             }
         }
     }
-    std::sync::Arc::new(Host(std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0))))
+    std::sync::Arc::new(Host(dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap()))
 }
 #[cfg(test)]
 mod projected_event_parity_tests {

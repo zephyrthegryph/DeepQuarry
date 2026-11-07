@@ -283,6 +283,15 @@ impl<'a> CodeSource<'a>{
  fn issued(source:&'a str)->Self{Self{source,projection:None}}
  fn current(body:&'a dm_tree::frontend::CurrentArchivedBody<'_,'_>)->Self{Self{source:body.archive_owner().expanded_source(),projection:Some(body.syntax().projection())}}
  fn get(self,range:std::ops::Range<usize>)->Option<&'a str>{let span=Span::new(range.start,range.end);let span=match self.projection{Some(projection)=>projection.span(span)?,None=>span};self.source.get(span.range())}
+ /// The evaluator owns canonical coordinates. Original Access consumes
+ /// expanded coordinates because it compares authored call and callee notes
+ /// across files before publishing a row.
+ fn expanded_span(self,span:Span)->Result<Span,&'static str>{
+  match self.projection{
+   Some(projection)=>projection.span(span).ok_or("checker diagnostic span escapes actual current BODY projection"),
+   None=>Ok(span),
+  }
+ }
  fn canonical_parameter_cursor(self,current:Span)->Result<Span,String>{match self.projection{Some(projection)=>projection.inverse().span(current).ok_or_else(||"current parameter cursor escaped actual canonical body binding".into()),None=>Ok(current)}}
 }
 struct Walker<'a, 'r, R: ?Sized,D:PrefixDemand=PrefixCompatibility> {
@@ -1008,6 +1017,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         if let Some(access)=self.access.as_mut(){
             let expression=match site{EvaluationCallSite::Written(expression)=>expression.span,EvaluationCallSite::ImplicitList(_)=>at};
             let origin=match site{EvaluationCallSite::Written(_)=>Some(at),EvaluationCallSite::ImplicitList(_)=>None};
+            let expression=self.source.expanded_span(expression)?;
+            let origin=origin.map(|at|self.source.expanded_span(at)).transpose()?;
             let abort=access.call(&fact,receiver,member_follow,origin,expression,self.resolver,self.profile,&self.prefix_demand)?;
             self.flush_access_rows()?;if abort{return Ok(TypeFact::Unknown)}
         }
@@ -2789,4 +2800,22 @@ pub(crate) fn switch_cases_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,
  fn source_tree(extra:Option<&str>)->std::sync::Arc<SemanticTree>{let original=dm_tree::checker_builtins::original_analysis_seed().unwrap();let mut seed=original.frontend_seed().clone();if let Some(path)=extra{seed.symbols.intern(path).unwrap();seed.hierarchy.parents.push((SymbolId::of(path),Some(SymbolId::of("/datum"))));let mut identity=xxhash_rust::xxh3::Xxh3::new();identity.update(b"actual-declared-type-engine-hierarchy-control-v1");identity.update(&seed.identity.to_le_bytes());identity.update(path.as_bytes());seed.identity=identity.digest128();seed.hierarchy.schema=seed.identity;}let ast=dm_syntax::parse("/proc/probe()\n    return null\n");dm_tree::from_ast(&ast,seed.symbols.clone(),dm_ir::FileId(0),0,0).unwrap().finish_with_engine(Some(&seed)).unwrap().tree}
  struct Wrong<'a>{tree:&'a SemanticTree,query:Q}impl Resolver for Wrong<'_>{fn source_owner(&self)->Option<*const ()>{Some(std::ptr::from_ref(self.tree).cast())}fn resolve(&self,query:Q)->M{if query==self.query{M::Presence(false)}else{Resolver::resolve(self.tree,query)}}}
  #[test]fn actual_checker_absence_preserves_incomplete_and_engine_only_native_type_answers(){for(extra,path,present)in[(None,"/missing",false),(Some("/datum/runtime_only_declared"),"/datum/runtime_only_declared",true)]{let tree=source_tree(extra);let profile=tree.checker_builtin_profile().unwrap();assert!(!tree.checker_source_type_presence(profile,path).unwrap());let query=Q::Type(SymbolId::of(path));assert_eq!(tree.lookup_type(SymbolId::of(path)).is_some(),present);let expected=Resolver::resolve(tree.as_ref(),query);if present{assert_eq!(expected,M::Symbol(SymbolId::of(path)));}else{assert!(!tree.intrinsic_inventory_complete());assert_eq!(expected,M::Unsupported(query));}let mut emitted=Vec::new();let got=checked_parameter_type_using(tree.as_ref(),tree.as_ref(),profile,Some(path),&mut|name|{emitted.push(name.to_owned());Ok::<(),String>(())},&mut||Ok::<(),String>(())).unwrap();assert_eq!(got,TypeFact::Unknown);assert_eq!(emitted,[path]);assert_eq!(Resolver::resolve(tree.as_ref(),query),expected,"diagnostic projection cannot change runtime/native meaning");let strict=checked_parameter_type_using(tree.as_ref(),tree.as_ref(),profile,Some(path),&mut|_|Err::<(),String>("strict parameter still refuses absent checker type".into()),&mut||Ok::<(),String>(())).unwrap_err();assert!(strict.contains("strict parameter still refuses"));let mut called=false;let error=checked_parameter_type_using(tree.as_ref(),&Wrong{tree:tree.as_ref(),query},profile,Some(path),&mut|_|{called=true;Ok::<(),String>(())},&mut||Ok::<(),String>(())).unwrap_err();assert!(error.contains("contradicts actual current resolver"));assert!(!called);}}
+}
+
+#[cfg(test)]
+mod original_access_coordinate_tests{
+ use super::*;
+
+ #[test]
+ fn canonical_call_points_follow_reissued_occurrence_and_reject_foreign_spans(){
+  let canonical=Span::new(0,20);
+  let first=CodeSource{source:"",projection:Some(dm_syntax::SyntaxProjection::new(canonical,Span::new(100,120)).unwrap())};
+  let next=CodeSource{source:"",projection:Some(dm_syntax::SyntaxProjection::new(canonical,Span::new(220,240)).unwrap())};
+  assert_eq!(first.expanded_span(Span::new(8,9)).unwrap(),Span::new(108,109));
+  assert_eq!(next.expanded_span(Span::new(8,9)).unwrap(),Span::new(228,229));
+  assert_eq!(next.expanded_span(Span::new(0,20)).unwrap(),Span::new(220,240));
+  assert!(next.expanded_span(Span::new(108,109)).is_err());
+  assert!(next.expanded_span(Span::new(20,21)).is_err());
+  assert!(next.expanded_span(Span::new(9,8)).is_err());
+ }
 }

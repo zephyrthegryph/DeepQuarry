@@ -437,8 +437,8 @@ fn fields(
 ) -> Result<Vec<Produced>, String> {
     let mut out=Vec::new();visit_field_events(archive,body,profile,walk.events,policy,&mut||Ok::<(),String>(()),|row|{if out.len()>=MAX_FINDINGS{return Err("visibility exceeds existing finding admission".to_owned())}out.push(row);Ok(())})?;check_count(&out)?;Ok(out)
 }
-pub(crate) fn visit_field_events<'a,E:From<String>+for<'e>From<&'e str>>(archive:&BodyArchive,body:&ArchivedBody<'_>,profile:PackedU128,events:impl IntoIterator<Item=Event<'a>>,policy:&CheckerPolicy,checkpoint:&mut impl FnMut()->Result<(),E>,mut emit:impl FnMut(Produced)->Result<(),E>)->Result<(),E>{
-    if !body.belongs_to(archive) {
+pub(crate) fn visit_field_events<'a,E:From<String>+for<'e>From<&'e str>>(archive:&BodyArchive,body:&dyn dm_tree::frontend::InitialSettingSource,profile:PackedU128,events:impl IntoIterator<Item=Event<'a>>,policy:&CheckerPolicy,checkpoint:&mut impl FnMut()->Result<(),E>,mut emit:impl FnMut(Produced)->Result<(),E>)->Result<(),E>{
+    if !std::ptr::eq(body.archive_owner(), archive) {
         return Err("visibility field body belongs to another archive".into());
     }
     let tree = archive.tree();
@@ -476,11 +476,13 @@ pub(crate) fn visit_field_events<'a,E:From<String>+for<'e>From<&'e str>>(archive
         if !enabled(policy, site) {
             continue;
         }
+        let at = body.source_point(at)?;
+        let expression_span = body.source_point(expression.span)?;
         emit(produced(
             site,
             archive.source_note_point(at.start)?,
             at,
-            expression.span,
+            expression_span,
             format!(
                 "field {name:?} on {} is declared as {kind}",
                 text(tree, receiver)?
