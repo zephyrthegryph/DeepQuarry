@@ -440,17 +440,31 @@ struct GroupTracePage {
     before_page: usize,
     output_line_base: usize,
     encounter_base: usize,
+    first_raw_line_base: usize,
     encounters: RowGroupRank,
     bits: [u64; TRACE_WORDS],
     before_word: [u16; TRACE_WORDS],
 }
 
 impl GroupTracePage {
-    fn new(before_page: usize, output_line_base: usize, encounter_base: usize) -> Self {
+    fn new(before_page: usize, first: GroupGeometry) -> Self {
         Self {
-            before_page, output_line_base, encounter_base, encounters: RowGroupRank::new(),
+            before_page, output_line_base: first.output_line, encounter_base: first.encounter,
+            first_raw_line_base: Self::raw_line_base(first.line),
+            encounters: RowGroupRank::new(),
             bits: [0; TRACE_WORDS], before_word: [0; TRACE_WORDS],
         }
+    }
+
+    fn raw_line_base(line: usize) -> usize {
+        // Keep the existing absolute encoding on ordinary pages. A tall
+        // first encounter gets one exact source-line window on this page.
+        const SHORT_LINE_WINDOW: usize = 1 << 12;
+        if line <= usize::from(u16::MAX) { 0 } else { line & !(SHORT_LINE_WINDOW - 1) }
+    }
+
+    fn line_base_for(&self, encounter: usize) -> usize {
+        if encounter == self.encounter_base { self.first_raw_line_base } else { 0 }
     }
 
     fn encounter(&self, index: usize) -> Option<usize> {
@@ -491,23 +505,23 @@ impl GroupTracePage {
     }
 }
 impl GroupGeometry {
-    fn pack(self, output_line_base: usize) -> Option<OldPackedGroup> {
+    fn pack(self, output_line_base: usize, raw_line_base: usize) -> Option<OldPackedGroup> {
         if self.raw_base != self.decoded.start { return None; }
         let width = u16::try_from(self.decoded.end.checked_sub(self.decoded.start)?).ok()?;
         let start = u32::try_from(self.decoded.start).ok()?;
-        let line = u16::try_from(self.line).ok()?;
+        let line = u16::try_from(self.line.checked_sub(raw_line_base)?).ok()?;
         let output_delta = u16::try_from(self.output_line.checked_sub(output_line_base)?).ok()?;
         if output_delta == PackedGroup::FULL { return None; }
         Some(OldPackedGroup([start as u16, (start >> 16) as u16, width, line, output_delta]))
     }
 
-    fn unpack(packed: &OldPackedGroup, output_line_base: usize, encounter: usize) -> Option<GroupSourceGeometry> {
+    fn unpack(packed: &OldPackedGroup, output_line_base: usize, raw_line_base: usize, encounter: usize) -> Option<GroupSourceGeometry> {
         let [low, high, width, line, output_delta] = packed.0;
         if output_delta == PackedGroup::FULL { return None; }
         let start = usize::try_from(u32::from(low) | (u32::from(high) << 16)).ok()?;
         let end = start.checked_add(usize::from(width))?;
         Some(GroupSourceGeometry {
-            encounter, decoded: Span::new(start, end), line: usize::from(line),
+            encounter, decoded: Span::new(start, end), line: raw_line_base.checked_add(usize::from(line))?,
             output_line: output_line_base.checked_add(usize::from(output_delta))?, raw_base: start,
         })
     }
@@ -708,7 +722,8 @@ impl OriginGroups {
             packed.unpack()?
         };
         let page = self.trace_pages.get(ordinal / ROW_PAGE_LEN)?;
-        GroupGeometry::unpack(&old, page.output_line_base, page.encounter(ordinal % ROW_PAGE_LEN)?)
+        let encounter = page.encounter(ordinal % ROW_PAGE_LEN)?;
+        GroupGeometry::unpack(&old, page.output_line_base, page.line_base_for(encounter), encounter)
     }
 
     #[cfg(test)]
@@ -728,21 +743,21 @@ impl OriginGroups {
         let changed = self.traces.last().is_none_or(|prior| !prior.same_owner(&trace));
         let local = ordinal % ROW_PAGE_LEN;
         let new_page = local == 0;
-        let (output_line_base, encounter, encounter_count) = if new_page {
-            (geometry.output_line, geometry.encounter, 0)
+        let (output_line_base, raw_line_base, encounter, encounter_count) = if new_page {
+            (geometry.output_line, GroupTracePage::raw_line_base(geometry.line), geometry.encounter, 0)
         } else {
             let page = self.trace_pages.get(ordinal / ROW_PAGE_LEN)
                 .expect("issued group trace rank page");
             let count = page.encounters.through(local - 1);
             let encounter = page.encounter_base.checked_add(count).ok_or(io::ErrorKind::InvalidData)?;
-            (page.output_line_base, encounter, count)
+            (page.output_line_base, page.line_base_for(geometry.encounter), encounter, count)
         };
         // The real append path reuses its current encounter or creates its
         // immediate successor. Preserve any other exact geometry in the
         // existing full escape without letting it change the rank cursor.
         let encounter_changed = encounter.checked_add(1) == Some(geometry.encounter);
         let inline_encounter = encounter == geometry.encounter || encounter_changed;
-        let packed = if inline_encounter { geometry.pack(output_line_base) } else { None };
+        let packed = if inline_encounter { geometry.pack(output_line_base, raw_line_base) } else { None };
         let result = (|| {
             let cell = if let Some(cell) = packed.as_ref().and_then(PackedGroup::pack) {
                 cell
@@ -754,7 +769,7 @@ impl OriginGroups {
                 PackedGroup::full()
             };
             if new_page {
-                self.trace_pages.push(GroupTracePage::new(before, output_line_base, geometry.encounter), a, funding)?;
+                self.trace_pages.push(GroupTracePage::new(before, geometry), a, funding)?;
             }
             if changed {
                 self.traces.push(trace, a, funding)?;
@@ -1673,6 +1688,10 @@ pub(super) struct RawRowGeometryCensus {
     group_10_byte: [usize; 2],
     // [inline 8, exact old 10 on the side, full geometry].
     group_8_byte: [usize; 3],
+    // Rows on a tall first-encounter base, by actual 8/10/full encoding.
+    tall_first_encounter_groups: [usize;3],
+    tall_base_recovered_full: usize,
+    tall_base_regressed_full: usize,
     group_count: usize,
     group_output_line_base: usize,
     three_byte_models: [ProjectedThreeByteRows;4],
@@ -1686,6 +1705,7 @@ impl Default for RawRowGeometryCensus {
             five_page_cost: Default::default(), four_page_cost: Default::default(),
             four_width_side_base_cost: Default::default(), width_side: Default::default(),
             group_16_byte: [0;2], group_10_byte: [0;2], group_8_byte: [0;3],
+            tall_first_encounter_groups: [0;3], tall_base_recovered_full: 0, tall_base_regressed_full: 0,
             group_count: 0, group_output_line_base: 0,
             three_byte_models: [
                 ProjectedThreeByteRows::new([6,6,4]), ProjectedThreeByteRows::new([7,5,4]),
@@ -1697,9 +1717,17 @@ impl Default for RawRowGeometryCensus {
 
 #[cfg(debug_assertions)]
 impl RawRowGeometryCensus {
-    fn observe_group(&mut self, geometry: GroupGeometry, cell: &PackedGroup) {
+    fn observe_group(&mut self, geometry: GroupGeometry, cell: &PackedGroup, page: &GroupTracePage) {
         self.group_10_byte[usize::from(cell.is_full())] += 1;
-        self.group_8_byte[if cell.is_full() { 2 } else { usize::from(cell.is_old()) }] += 1;
+        let class = if cell.is_full() { 2 } else { usize::from(cell.is_old()) };
+        self.group_8_byte[class] += 1;
+        if page.line_base_for(geometry.encounter) != 0
+            && page.encounter(self.group_count % ROW_PAGE_LEN)==Some(geometry.encounter) {
+            self.tall_first_encounter_groups[class] += 1;
+            let old = geometry.pack(page.output_line_base, 0);
+            self.tall_base_recovered_full += usize::from(!cell.is_full() && old.is_none());
+            self.tall_base_regressed_full += usize::from(cell.is_full() && old.is_some());
+        }
         if self.group_count % ROW_PAGE_LEN == 0 {
             self.group_output_line_base = geometry.output_line;
         }
@@ -1838,7 +1866,8 @@ impl OriginalRawOrigins{
    if let Some(census)=&mut self.row_geometry_census {
     if !share_group {
     let cell = self.groups.packed.get(group).expect("issued group");
-    census.observe_group(geometry, cell);
+    let page = self.groups.trace_pages.get(group/ROW_PAGE_LEN).expect("issued group rank page");
+    census.observe_group(geometry, cell, page);
    }
     let ordinal=self.rows.len()-1;
     census.observe(row,geometry,self.rows.page(ordinal/ROW_PAGE_LEN).expect("issued origin row page").group_base,ordinal%ROW_PAGE_LEN);
@@ -2254,7 +2283,7 @@ impl OriginalRawOrigins{
   let normal=GroupGeometry{encounter:usize::MAX,
    decoded:Span::new(1,1+usize::from(u16::MAX)),line:27,
    output_line:base+usize::from(u16::MAX)-1,output_base:200_003,raw_base:1};
-  assert_eq!(GroupGeometry::unpack(&normal.pack(base).unwrap(),base,normal.encounter),Some(normal.source()));
+  assert_eq!(GroupGeometry::unpack(&normal.pack(base,0).unwrap(),base,0,normal.encounter),Some(normal.source()));
   for wide in [
    GroupGeometry{decoded:Span::new(1,normal.decoded.end+1),..normal},
    GroupGeometry{decoded:Span::new(1,0),..normal},
@@ -2262,8 +2291,8 @@ impl OriginalRawOrigins{
    GroupGeometry{line:usize::from(u16::MAX)+1,..normal},
    GroupGeometry{output_line:base-1,..normal},
    GroupGeometry{output_line:normal.output_line+1,..normal},
-  ]{assert!(wide.pack(base).is_none());}
-  assert!(PackedGroup::pack(&normal.pack(base).unwrap()).is_none());
+  ]{assert!(wide.pack(base,0).is_none());}
+  assert!(PackedGroup::pack(&normal.pack(base,0).unwrap()).is_none());
  }
  #[test]
  fn packed_groups_preserve_wide_coordinates_and_refund_only_retired_owners() {
@@ -2307,6 +2336,57 @@ impl OriginalRawOrigins{
   drop(credit);
   assert_eq!(source.load(Ordering::Acquire),0);
   assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn tall_group_page_uses_only_its_first_actual_encounter_line_base() {
+    let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a=SettingAdmission::new(&syntax,fixed,&||Ok(()));
+    let used=Arc::new(AtomicUsize::new(0));
+    let work=OutputWork(Arc::clone(&used));
+    let mut credit=work.reserve(0).unwrap();
+    let mut funding=PageFunding{work:&work,credit:&mut credit};
+    let trace=OriginalMacroTrace::empty();
+    let geometry=|at,line,encounter|GroupGeometry{
+        encounter,decoded:Span::new(5,6),line,output_line:100+at,output_base:at*2,raw_base:5,
+    };
+    let mut groups=OriginGroups::new();
+    for at in 0..ROW_PAGE_LEN {
+        let row=match at {
+            62=>geometry(at,65535,7), // same encounter moved behind its base
+            63=>geometry(at,69632,7), // exact delta 4096 uses old-width side
+            64=>geometry(at,37,8),    // next actual encounter stays absolute
+            65=>geometry(at,65536,8),
+            _ if at<64=>geometry(at,65536+at,7),
+            _=>geometry(at,39+at,8),
+        };
+        groups.push(row,trace.clone(),&a,&mut funding).unwrap();
+        assert_eq!(groups.source_geometry(at),Some(row.source()));
+        assert!(groups.get(at).unwrap().1.same_owner(&trace));
+    }
+    assert!(groups.packed.get(62).unwrap().is_full());
+    assert!(groups.packed.get(63).unwrap().is_old());
+    assert!(!groups.packed.get(64).unwrap().is_full());
+    assert!(groups.packed.get(65).unwrap().is_full());
+    let next=geometry(ROW_PAGE_LEN,99999,8);
+    groups.push(next,trace.clone(),&a,&mut funding).unwrap();
+    assert!(!groups.packed.get(ROW_PAGE_LEN).unwrap().is_old());
+    assert!(!groups.packed.get(ROW_PAGE_LEN).unwrap().is_full());
+    assert_eq!(groups.source_geometry(ROW_PAGE_LEN),Some(next.source()));
+
+    groups.truncate(64,&mut funding).unwrap();
+    let replacement=geometry(64,65599,7);
+    groups.push(replacement,trace.clone(),&a,&mut funding).unwrap();
+    assert!(!groups.packed.get(64).unwrap().is_full());
+    assert_eq!(groups.source_geometry(64),Some(replacement.source()));
+    groups.truncate(0,&mut funding).unwrap();
+    let fresh=geometry(0,11,99);
+    groups.push(fresh,trace,&a,&mut funding).unwrap();
+    assert_eq!(groups.source_geometry(0),Some(fresh.source()));
+    drop((groups,credit));
+    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(syntax.load(Ordering::Acquire),fixed);
  }
 
  #[test]
