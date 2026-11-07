@@ -28,7 +28,7 @@ fn arc_payload<T>(len: usize) -> Option<usize> {
 // adapter funds ProcedureMetadata, its settings and member wrappers before
 // allocation, when their actual row payloads are known. The producer identity
 // is an alias of the separately funded shared primary layout.
-fn retained_signature_bytes(signature: &CompletedSignature) -> std::io::Result<usize> {
+fn retained_signature_bytes(signature: &CompletedSignatureCore, tail: Option<&CompletedSignatureTail>) -> std::io::Result<usize> {
     use std::mem::size_of;
     let overflow = || std::io::Error::from(std::io::ErrorKind::OutOfMemory);
     fn vec_payload<T>(vec: &Vec<T>) -> Option<usize> {
@@ -39,10 +39,10 @@ fn retained_signature_bytes(signature: &CompletedSignature) -> std::io::Result<u
         bytes = bytes.checked_add(part.ok_or_else(overflow)?).ok_or_else(overflow)?;
         Ok(())
     };
-    add(vec_payload(&signature.declarations))?;
+    add(tail.map_or(Some(0), |tail| vec_payload(&tail.declarations)))?;
     add(Some(signature.original_clauses.allocated_bytes()))?;
-    add(arc_payload::<dm_ir::Parameter>(signature.signature.parameters.len()))?;
-    for parameter in signature.signature.parameters.iter() {
+    add(arc_payload::<dm_ir::Parameter>(signature.parameters.len()))?;
+    for parameter in signature.parameters.iter() {
         for expression in [&parameter.default, &parameter.input_annotation, &parameter.source_expression].into_iter().flatten() {
             add(arc_payload::<dm_ir::ExpressionToken>(expression.tokens.len()))?;
         }
@@ -54,7 +54,7 @@ fn retained_signature_bytes(signature: &CompletedSignature) -> std::io::Result<u
             }
         }
     }
-    if let Some(expression) = &signature.signature.return_annotation {
+    if let Some(expression) = tail.and_then(|tail| tail.return_annotation.as_ref()) {
         add(arc_payload::<dm_ir::ExpressionToken>(expression.tokens.len()))?;
     }
     Ok(bytes)
@@ -84,9 +84,47 @@ impl CompletedSignature {
         Self { signature, declarations, formal_notices_complete, original_clauses, original_clauses_complete }
     }
 
-    fn into_parsed(self) -> ParsedSignature {
+    fn into_core_and_tail(self) -> (CompletedSignatureCore, Option<CompletedSignatureTail>) {
+        let Self { signature, declarations, formal_notices_complete, original_clauses,
+            original_clauses_complete } = self;
+        let dm_ir::ProcedureSignature { parameters, variadic, return_annotation } = signature;
+        let core = CompletedSignatureCore {
+            parameters, variadic, formal_notices_complete, original_clauses, original_clauses_complete,
+        };
+        let tail = if declarations.capacity() != 0 || return_annotation.is_some() {
+            Some(CompletedSignatureTail { declarations, return_annotation })
+        } else {
+            None
+        };
+        (core, tail)
+    }
+}
+
+struct CompletedSignatureCore {
+    parameters: Arc<[dm_ir::Parameter]>,
+    original_clauses: super::FormalClauseRows,
+    variadic: bool,
+    formal_notices_complete: bool,
+    original_clauses_complete: bool,
+}
+#[derive(Default)]
+struct CompletedSignatureTail {
+    declarations: Vec<super::HeaderTypeDeclaration>,
+    return_annotation: Option<dm_ir::SymbolicExpression>,
+}
+struct SparseSignatureTail {
+    ordinal: usize,
+    tail: CompletedSignatureTail,
+}
+
+impl CompletedSignatureCore {
+    fn into_parsed(self, tail: CompletedSignatureTail) -> ParsedSignature {
         ParsedSignature {
-            signature: self.signature, declarations: self.declarations,
+            signature: dm_ir::ProcedureSignature {
+                parameters: self.parameters, variadic: self.variadic,
+                return_annotation: tail.return_annotation,
+            },
+            declarations: tail.declarations,
             formal_notices: Vec::new(), formal_notices_complete: self.formal_notices_complete,
             original_clauses: self.original_clauses, original_clauses_complete: self.original_clauses_complete,
         }
@@ -242,6 +280,59 @@ struct SignatureRetentionTrace {
     pending_input_buffer_bytes: usize,
     pending_input_root_bytes: usize,
     formal_notice_bytes: usize,
+    payload_shapes: CompletedPayloadShapeCensus,
+}
+
+#[cfg(debug_assertions)]
+#[derive(Clone, Copy, Debug, Default)]
+struct CompletedPayloadShapeCensus {
+    payload_rows: usize,
+    payload_capacity_bytes: usize,
+    return_annotations: usize,
+    nonempty_declaration_allocations: usize,
+    exact_parameter_arc_bytes: usize,
+    unique_parameter_arcs: usize,
+    eligible_plain_parameter_rows: usize,
+    all_plain_parameter_arcs: usize,
+    all_plain_parameter_arc_bytes: usize,
+    all_plain_projection_row_bytes: usize,
+}
+
+#[cfg(debug_assertions)]
+impl CompletedPayloadShapeCensus {
+    fn collect(rows: &CompletedSignatureRows) -> Self {
+        let mut census = Self {
+            payload_capacity_bytes: rows.payloads.buffer_bytes() + rows.payload_tails.buffer_bytes(),
+            return_annotations: rows.payload_tails.iter().filter(|row| row.tail.return_annotation.is_some()).count(),
+            nonempty_declaration_allocations: rows.payload_tails.iter().filter(|row| row.tail.declarations.capacity() != 0).count(),
+            ..Self::default()
+        };
+        for payload in rows.payloads.iter().flatten() {
+            census.payload_rows += 1;
+            let parameters = &payload.parameters;
+            let actual = arc_payload::<dm_ir::Parameter>(parameters.len()).expect("existing parameter Arc layout");
+            census.exact_parameter_arc_bytes += actual;
+            if Arc::strong_count(parameters) != 1 || Arc::weak_count(parameters) != 0 {
+                continue;
+            }
+            census.unique_parameter_arcs += 1;
+            let plain = parameters.iter().filter(|row| {
+                row.declared_type.is_none() && row.list_element_type.is_none() && row.flags == 0
+                    && row.array.is_none() && row.default.is_none() && row.input_annotation.is_none()
+                    && row.source_expression.is_none() && u16::try_from(row.relative_span.start).is_ok()
+                    && u16::try_from(row.relative_span.end).is_ok()
+            }).count();
+            census.eligible_plain_parameter_rows += plain;
+            if plain != 0 && plain == parameters.len() {
+                census.all_plain_parameter_arcs += 1;
+                census.all_plain_parameter_arc_bytes += actual;
+                // Projected rows would use an existing SymbolId plus two
+                // relative u16 coordinates. Container/side costs stay separate.
+                census.all_plain_projection_row_bytes += plain * std::mem::size_of::<(dm_ir::SymbolId, [u16; 2])>();
+            }
+        }
+        census
+    }
 }
 
 #[cfg(debug_assertions)]
@@ -267,6 +358,7 @@ impl OriginalSignatureObserver<'_, '_> {
                 n.saturating_add(i.input.retained_bytes_for_trace())
             }),
             formal_notice_bytes: self.notices.as_ref().map_or(0, |n| n.retained_bytes_for_trace()),
+            payload_shapes: CompletedPayloadShapeCensus::collect(&self.rows),
             ..self.rows.payload_trace
         };
         let controls = self.rows.payload_pages.len()
@@ -399,7 +491,8 @@ struct CompletedSignatureRows {
     // Order is important. Backing allocations precede header leases that
     // fund them. The first trivial header funds this one actual empty Arc.
     empty_parameters: Option<Arc<[dm_ir::Parameter]>>,
-    payloads: FundedRowPages<Option<CompletedSignature>, COMPLETED_SIGNATURE_PAGE_LEN>,
+    payloads: FundedRowPages<Option<CompletedSignatureCore>, COMPLETED_SIGNATURE_PAGE_LEN>,
+    payload_tails: FundedRowPages<SparseSignatureTail, 32>,
     rows: FundedRowPages<Row, COMPLETED_SIGNATURE_PAGE_LEN>,
     // Full-width exceptions keyed by exact row ordinal. No short index can
     // place an artificial limit on otherwise valid wide source geometry.
@@ -423,6 +516,7 @@ impl CompletedSignatureRows {
         Self {
             empty_parameters: None,
             payloads: FundedRowPages::new(),
+            payload_tails: FundedRowPages::new(),
             rows: FundedRowPages::new(),
             wide_headers: FundedRowPages::new(),
             producers: CompletedProducers::default(),
@@ -454,6 +548,7 @@ impl CompletedSignatureRows {
     #[cfg(any(debug_assertions, test))]
     fn buffer_bytes(&self) -> usize {
         self.rows.buffer_bytes().saturating_add(self.payloads.buffer_bytes())
+            .saturating_add(self.payload_tails.buffer_bytes())
             .saturating_add(self.wide_headers.buffer_bytes())
             .saturating_add(self.payload_directory.as_ref().map_or(0, |credit| credit.bytes()))
     }
@@ -536,20 +631,37 @@ impl CompletedSignatureRows {
             // backing drops before its retained allocation is reconciled.
             return Ok(SignatureSlot::trivial(flags, first));
         }
-        let slot = SignatureSlot::payload(self.payloads.len())?;
-        self.payloads.push(Some(signature), a)?;
+        let ordinal = self.payloads.len();
+        let slot = SignatureSlot::payload(ordinal)?;
+        let (core, tail) = signature.into_core_and_tail();
+        // The in-flight header still owns the actual IR allocations. Admit
+        // both row buffers before either payload entry is published.
+        self.payloads.ensure_slot(a)?;
+        if tail.is_some() { self.payload_tails.ensure_slot(a)?; }
+        if let Some(tail) = tail {
+            self.payload_tails.push_reserved(SparseSignatureTail { ordinal, tail });
+        }
+        self.payloads.push_reserved(Some(core));
         Ok(slot)
     }
 
-    fn payload(&self, ordinal: usize) -> Option<&CompletedSignature> {
+    fn payload(&self, ordinal: usize) -> Option<&CompletedSignatureCore> {
         self.payloads.get(ordinal)?.as_ref()
+    }
+
+    fn tail_index(&self, ordinal: usize) -> Option<usize> {
+        self.payload_tails.find(ordinal, |_, row| row.ordinal)
+    }
+
+    fn payload_tail(&self, ordinal: usize) -> Option<&CompletedSignatureTail> {
+        self.payload_tails.get(self.tail_index(ordinal)?).map(|row| &row.tail)
     }
 
     fn parameters(&self, row: &Row) -> Option<&[dm_ir::Parameter]> {
         match row.slot.value() {
             SlotValue::Taken => None,
             SlotValue::Trivial(..) => self.empty_parameters.as_deref(),
-            SlotValue::Payload(ordinal) => Some(&self.payload(ordinal)?.signature.parameters),
+            SlotValue::Payload(ordinal) => Some(&self.payload(ordinal)?.parameters),
         }
     }
 
@@ -558,7 +670,7 @@ impl CompletedSignatureRows {
         match slot.value() {
             SlotValue::Taken => Err(ErrorKind::InvalidData.into()),
             SlotValue::Payload(ordinal) => retained_signature_bytes(
-                self.payload(ordinal).ok_or(ErrorKind::InvalidData)?,
+                self.payload(ordinal).ok_or(ErrorKind::InvalidData)?, self.payload_tail(ordinal),
             ),
             SlotValue::Trivial(_, funds_parameters) => {
                 if funds_parameters {
@@ -574,14 +686,24 @@ impl CompletedSignatureRows {
         let row = self.rows.get(ordinal).ok_or("primary prepared signature row absent")?;
         let geometry = self.geometry(ordinal, row);
         if geometry.header != local { return Err("primary prepared signature header differs".into()); }
+        let tail_index = match row.slot.value() {
+            SlotValue::Payload(ordinal) => self.tail_index(ordinal),
+            _ => None,
+        };
         let row = self.rows.get_mut(ordinal).expect("located primary signature row");
         let taken = match row.slot.value() {
             SlotValue::Taken => return Err("primary prepared signature was already consumed".into()),
             SlotValue::Trivial(flags, _) => flags.into_parsed(Arc::clone(
                 self.empty_parameters.as_ref().ok_or("actual trivial signature backing is absent")?,
             )),
-            SlotValue::Payload(ordinal) => self.payloads.get_mut(ordinal)
-                .and_then(Option::take).ok_or("actual prepared signature payload is absent")?.into_parsed(),
+            SlotValue::Payload(ordinal) => {
+                let core = self.payloads.get_mut(ordinal).and_then(Option::take)
+                    .ok_or("actual prepared signature payload is absent")?;
+                let tail = tail_index.map_or_else(CompletedSignatureTail::default, |index| {
+                    std::mem::take(&mut self.payload_tails.get_mut(index).expect("located signature tail").tail)
+                });
+                core.into_parsed(tail)
+            },
         };
         row.slot = SignatureSlot::TAKEN;
         Ok((taken, geometry.argument_offset))
@@ -611,7 +733,7 @@ impl CompletedSignatureRows {
                     let signature = self.payloads.get_mut(ordinal).and_then(Option::as_mut)
                         .ok_or(ErrorKind::InvalidData)?;
                     require_complete(signature.original_clauses_complete)?;
-                    (&signature.signature.parameters[..], std::mem::take(&mut signature.original_clauses))
+                    (&signature.parameters[..], std::mem::take(&mut signature.original_clauses))
                 }
             };
             let lease = self.payload_pages.get(ordinal / COMPLETED_SIGNATURE_PAGE_LEN)
@@ -991,7 +1113,7 @@ impl PreparedOriginalSignatures{
  }
 
  pub(crate) fn visit_retained_failure_storage(&self, mut visit: impl FnMut(usize,usize,usize)) {
-  debug_assert!(self.rows.is_empty()&&self.rows.rows.pages.is_empty()&&self.rows.payloads.pages.is_empty());
+  debug_assert!(self.rows.is_empty()&&self.rows.rows.pages.is_empty()&&self.rows.payloads.pages.is_empty()&&self.rows.payload_tails.pages.is_empty());
   if let Some((_, message)) = &self.input_failure_message {
    if message.capacity() != 0 {
     visit(message.as_ptr() as usize, message.capacity(), 1);
@@ -1072,7 +1194,7 @@ mod signature_row_storage_tests {
         let SlotValue::Payload(ordinal) = input.prepared.rows.get(0).unwrap().slot.value()
             else { panic!("issued nonempty formal must retain its actual payload"); };
         let completed = input.prepared.rows.payload(ordinal).unwrap();
-        let parameters = Arc::clone(&completed.signature.parameters);
+        let parameters = Arc::clone(&completed.parameters);
         let notices_complete = completed.formal_notices_complete;
         let clauses_complete = completed.original_clauses_complete;
         let header = input.items.dense()[0].header_span;
@@ -1447,6 +1569,34 @@ mod signature_row_storage_tests {
         assert_eq!(full.signature.parameters.len(), 1);
         drop((first, second, full, owner, foreign, input));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
+    }
+
+    #[test]
+    fn sparse_signature_tails_preserve_authored_return_and_one_shot_order() {
+        let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let source = SourceText::from("/proc/plain(x)\n    return x\n/proc/annotated(y) as /datum/result\n    return y\n/proc/after(z)\n    return z\n");
+        let mut input = parse_original_signatures_using(source, &a).unwrap();
+        assert!(input.signature_failure.is_none());
+        assert_eq!(input.prepared.rows.payloads.len(), 3);
+        assert_eq!(input.prepared.rows.payload_tails.len(), 1);
+        assert!(std::mem::size_of::<Option<CompletedSignatureCore>>() < std::mem::size_of::<Option<CompletedSignature>>());
+        let tail = input.prepared.rows.payload_tail(1).unwrap();
+        let tokens = Arc::clone(&tail.return_annotation.as_ref().unwrap().tokens);
+        for ordinal in [2, 0, 1] {
+            let span = input.items.dense()[ordinal].header_span;
+            let (parsed, _) = input.prepared.take(span, 0, &input.headers).unwrap();
+            if ordinal == 1 {
+                assert!(Arc::ptr_eq(&tokens, &parsed.signature.return_annotation.unwrap().tokens));
+            } else {
+                assert!(parsed.signature.return_annotation.is_none());
+            }
+            assert_eq!(parsed.signature.parameters.len(), 1);
+            assert!(input.prepared.take(span, 0, &input.headers).is_err());
+        }
+        drop((input, tokens));
+        assert_eq!(used.load(Ordering::Acquire), fixed);
     }
 
     #[test]
@@ -1957,7 +2107,7 @@ impl OriginalSignatureObserver<'_,'_>{
 #[cfg(test)]mod original_absolute_primary_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn genuine_original_primary_selects_absolute_parameter_profile_once_and_prior_absolute_does_not_hide_later_fatal(){
-  for text in ["/datum/a\n/proc/p(/datum/a/value)\n    return value\n","/proc/p(/foo)\n    return foo\n"]{let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let signature=input.prepared.rows.iter().find_map(|row|match row.slot.value(){SlotValue::Payload(ordinal)=>input.prepared.rows.payload(ordinal).filter(|signature|signature.signature.parameters.len()==1),_=>None}).unwrap();assert!(signature.declarations.is_empty());drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
+  for text in ["/datum/a\n/proc/p(/datum/a/value)\n    return value\n","/proc/p(/foo)\n    return foo\n"]{let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let ordinal=input.prepared.rows.iter().find_map(|row|match row.slot.value(){SlotValue::Payload(ordinal)=>input.prepared.rows.payload(ordinal).filter(|signature|signature.parameters.len()==1).map(|_|ordinal),_=>None}).unwrap();assert!(input.prepared.rows.payload_tail(ordinal).is_none_or(|tail|tail.declarations.is_empty()));drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
   let text="/datum/a\n/proc/p(/datum/a/value, other=, BAD(1))\n    return value\n/proc/future()\n    return\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();let failure=input.signature_failure.as_ref().unwrap();assert_eq!(failure.original_fatal.unwrap().message(),"got ',', expected one of: operator, literal, variable, proc call");assert!(input.observer_stop.is_some());assert!(input.items.dense().iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
