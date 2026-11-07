@@ -695,17 +695,25 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		M_continue.Scale((endpoint - startpoint - stored_cap_width * 2) / 32, 1)
 		M_continue.Translate(startpoint + stored_cap_width + (endpoint - startpoint - stored_cap_width * 2) / 2 - 16, 0)
 		M_end.Translate(endpoint - stored_cap_width, 0)
-		stored_start.transform = M_start
-		stored_continue.transform = M_continue
-		stored_end.transform = M_end
+		// The catcher hangs off bar_start through vis_contents, so its screen_loc is ignored and it would sit on the first segment
+		// (the topmost catcher took every click there): stretch it over its own segment, and undo that on the bar images it draws.
+		var/matrix/M_catch = matrix()
+		M_catch.Scale(max(1, endpoint - startpoint) / 32, 1)
+		M_catch.Translate((startpoint + endpoint) / 2 - 16, 0)
+		var/matrix/M_undo = matrix(M_catch)
+		M_undo.Invert()
+		stored_start.transform = M_start * M_undo
+		stored_continue.transform = M_continue * M_undo
+		stored_end.transform = M_end * M_undo
 
-		// The icon is 32 wide and anchored at its left edge, the bars hang off bar_start (at 4:16) by startpoint..endpoint: centre it on the segment.
 		I.screen_loc = "4:[round((startpoint+endpoint)/2)],2:16"
 		I.maptext = ""
 		I.hud_layerise()
 		var/atom/movable/storage_slot/SS = add_catcher(I)
 		// The three bar images are shared and mutated per item, so each slot keeps a snapshot of how they look for it now.
 		SS.set_bars(list(new /mutable_appearance(stored_start), new /mutable_appearance(stored_continue), new /mutable_appearance(stored_end)))
+		SS.set_segment(M_catch)
+		log_world("storage_hud: [storage] bar slot for [I] spans [startpoint]..[endpoint] px from the bar start")
 		vis_add(bar_start, SS)
 
 	closer.screen_loc = "4:[storage_width+19],2:16"
@@ -746,8 +754,13 @@ CAPABILITIES(/atom/movable/storage_slot)
 /// The backdrop bar images (start, middle, end) behind the stored item, as they looked when the slot was laid out.
 /atom/movable/storage_slot/var/list/bars
 
+/// Where the catcher sits along the bar: stretched and moved over the item's segment, so a click on the segment reaches this item and not the catcher of another.
+/atom/movable/storage_slot/var/matrix/segment
+
 /atom/movable/storage_slot/draw(datum/look/look)
 	..()
+	if(segment)
+		look.set_transform(segment)
 	for(var/bar in bars)
 		look.overlay(bar)
 

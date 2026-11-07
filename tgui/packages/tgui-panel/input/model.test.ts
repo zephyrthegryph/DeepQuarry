@@ -9,7 +9,9 @@ import {
   keyAction,
   nextChannel,
   nextRadioOption,
+  parseCommonPrefix,
   parseRadioPrefix,
+  radioColorName,
   type RadioOption,
   TYPING_THROTTLE_MS,
 } from './model';
@@ -249,5 +251,21 @@ describe('chat input radio prefix', () => {
     model.setRadio(SEC);
     model.syncRadio([SEC]);
     expect(model.radio).toBe(SEC);
+  });
+});
+
+describe('common prefix and radio colours', () => {
+  it('strips a leading ; in Say and Radio only', () => {
+    expect(parseCommonPrefix(';hello', 'Say')).toBe('hello');
+    expect(parseCommonPrefix(';hello', 'Radio')).toBe('hello');
+    expect(parseCommonPrefix(';hello', 'Me')).toBeNull();
+    expect(parseCommonPrefix('hello;', 'Say')).toBeNull();
+  });
+
+  it('names a radio colour per department key, common otherwise', () => {
+    expect(radioColorName(':m')).toBe('medical');
+    expect(radioColorName(':e')).toBe('engineering');
+    expect(radioColorName('')).toBe('common');
+    expect(radioColorName(':zz')).toBe('common');
   });
 });

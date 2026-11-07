@@ -9,7 +9,7 @@ import { type BooleanLike, classes } from 'tgui-core/react';
 import { type Channel, ChannelIterator } from './ChannelIterator';
 import { ChatHistory } from './ChatHistory';
 import { LineLength, RADIO_PREFIXES, WindowSize } from './constants';
-import { getPrefix, windowClose, windowOpen, windowSet } from './helpers';
+import { resolvePrefix, windowClose, windowOpen, windowSet } from './helpers';
 import { LanguagePreview, previewHeight } from './LanguagePreview';
 import { buildPreview, type LanguageRules } from './parseLanguages';
 import {
@@ -206,13 +206,14 @@ export function TguiSay() {
     const iterator = channelIterator.current;
     let newValue = event.currentTarget.value;
 
-    const newPrefix = getPrefix(newValue) || currentPrefix;
+    const result = resolvePrefix(newValue, currentPrefix, iterator.current());
+    const newPrefix = result.prefix;
     // Handles switching prefixes
-    if (newPrefix && newPrefix !== currentPrefix) {
-      setButtonContent(RADIO_PREFIXES[newPrefix]);
+    if (result.switched && result.channel) {
+      newValue = result.value;
+      iterator.set(result.channel);
       setCurrentPrefix(newPrefix);
-      newValue = newValue.slice(3);
-      iterator.set('Say');
+      setButtonContent(newPrefix ? RADIO_PREFIXES[newPrefix] : iterator.current());
 
       if (newPrefix === ',b ') {
         Byond.sendMessage('thinking', { visible: false });
@@ -402,9 +403,7 @@ export function TguiSay() {
           height: extraHeight ? size + extraHeight : undefined,
         }}
         onMouseDown={dragStartHandler}
-      >
-        {!lightMode && <div className={`shine shine-${theme}`} />}
-      </div>
+      />
       <div
         className={classes(['content', lightMode && 'content-lightMode'])}
         style={{

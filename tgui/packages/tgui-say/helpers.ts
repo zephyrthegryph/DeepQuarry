@@ -88,3 +88,53 @@ export function getPrefix(
 
   return adjusted;
 }
+
+/** Typed first in Say or Radio, ';' speaks on the common channel. */
+export const COMMON_PREFIX = ';';
+
+/** What a change of the input text does to the channel selection. */
+export type PrefixResult = {
+  /** The text with the prefix removed (or untouched when nothing switched). */
+  value: string;
+  /** Whether a prefix was consumed. */
+  switched: boolean;
+  /** The radio prefix now selected (null for none). */
+  prefix: keyof typeof RADIO_PREFIXES | null;
+  /** The channel to select, when a prefix switches it. */
+  channel?: Channel;
+};
+
+/**
+ * A prefix typed at the start of the text is removed and becomes the selected
+ * channel, so the message sent is the one the prefix would have produced.
+ * `:x ` / `.x ` / `,b ` pick a radio prefix (sent ahead of the text in Say);
+ * ';' picks the Radio channel, which the server speaks as ";" + text.
+ */
+export function resolvePrefix(
+  raw: string,
+  currentPrefix: keyof typeof RADIO_PREFIXES | null,
+  channel: Channel,
+): PrefixResult {
+  const typed = getPrefix(raw);
+  if (typed && typed !== currentPrefix) {
+    return {
+      value: raw.slice(typed.length),
+      switched: true,
+      prefix: typed,
+      channel: 'Say',
+    };
+  }
+  if (
+    !typed &&
+    raw.startsWith(COMMON_PREFIX) &&
+    (channel === 'Say' || channel === 'Radio')
+  ) {
+    return {
+      value: raw.slice(COMMON_PREFIX.length),
+      switched: true,
+      prefix: null,
+      channel: 'Radio',
+    };
+  }
+  return { value: raw, switched: false, prefix: currentPrefix };
+}

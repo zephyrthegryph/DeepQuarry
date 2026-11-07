@@ -61,6 +61,37 @@ export function parseRadioPrefix(
   return { option, rest: value.slice(3) };
 }
 
+/** A ';' typed first in Say or Radio speaks on the common channel: the text after it. */
+export function parseCommonPrefix(
+  value: string,
+  channel: InputChannel,
+): string | null {
+  if ((channel === 'Say' || channel === 'Radio') && value.startsWith(';')) {
+    return value.slice(1);
+  }
+  return null;
+}
+
+/** The radio colour (tgui/styles/radio-colors.scss) of a department prefix key; Common and unknown keys are common. */
+export const RADIO_KEY_COLOR: Readonly<Record<string, string>> = {
+  ':c': 'command',
+  ':e': 'engineering',
+  ':m': 'medical',
+  ':n': 'science',
+  ':s': 'security',
+  ':u': 'supply',
+  ':v': 'service',
+  ':p': 'ai',
+  ':x': 'syndicate',
+  ':t': 'syndicate',
+  ':k': 'centcom',
+  ':y': 'exploration',
+};
+
+export function radioColorName(key: string): string {
+  return RADIO_KEY_COLOR[key] ?? 'common';
+}
+
 /** The option after this one in the list headed by Common, wrapping; backwards with -1. */
 export function nextRadioOption(
   current: RadioOption,

@@ -5,6 +5,7 @@
 
 @use 'sass:map';
 @use 'sass:color';
+@use '~tgui/styles/radio-colors' as radio;
 
 em {
   font-style: normal;
@@ -412,46 +413,46 @@ img.icon.bigicon {
 }
 
 /* RADIO COLORS */
-/* IF YOU CHANGE THIS KEEP IT IN SYNC WITH TGUI CONSTANTS */
+/* The table is tgui/styles/radio-colors.scss (shared with the say popup and the input row). */
 
 .radio {
-  color: hsl(133, 74%, 46%);
+  color: map.get(radio.$radio-colors, 'common');
 }
 
 .sciradio {
-  color: hsl(272, 92%, 76%);
+  color: map.get(radio.$radio-colors, 'science');
 }
 
 .comradio {
-  color: hsl(202, 84%, 64%);
+  color: map.get(radio.$radio-colors, 'command');
 }
 
 .secradio {
-  color: hsl(0, 71%, 62%);
+  color: map.get(radio.$radio-colors, 'security');
 }
 
 .medradio {
-  color: hsl(148, 84%, 64%);
+  color: map.get(radio.$radio-colors, 'medical');
 }
 
 .engradio {
-  color: hsl(53, 98%, 50%);
+  color: map.get(radio.$radio-colors, 'engineering');
 }
 
 .supradio {
-  color: hsl(34, 45%, 50%);
+  color: map.get(radio.$radio-colors, 'supply');
 }
 
 .srvradio {
-  color: hsl(88, 61%, 41%);
+  color: map.get(radio.$radio-colors, 'service');
 }
 
 .expradio {
-  color: hsl(0, 0%, 54%);
+  color: map.get(radio.$radio-colors, 'exploration');
 }
 
 .syndradio {
-  color: hsl(359, 32%, 59%);
+  color: map.get(radio.$radio-colors, 'syndicate');
 }
 
 .gangradio {
@@ -459,11 +460,11 @@ img.icon.bigicon {
 }
 
 .centradio {
-  color: hsl(197, 63%, 45%);
+  color: map.get(radio.$radio-colors, 'centcom');
 }
 
 .airadio {
-  color: hsl(332, 60%, 60%);
+  color: map.get(radio.$radio-colors, 'ai');
 }
 
 .redteamradio {

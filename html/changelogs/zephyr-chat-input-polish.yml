@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The say bar loses its animated border glow, centres its text and buttons vertically, and takes the chat's department radio colours"
+  - qol: "Typing ; in the say bar or chat input row switches to the Radio channel and strips the prefix"
+  - qol: "The chat panel's scanlines are much fainter and the input row no longer glows when focused"
+  - refactor: "The radio channel colours are one shared table (tgui/styles/radio-colors.scss) read by the chat, the say bar and the input row"
