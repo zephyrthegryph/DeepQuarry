@@ -409,7 +409,7 @@ window "statwindow"
 window "tgui_say"
 	elem "tgui_say"
 		type = MAIN
-		pos = 410,400
+		pos = 0,0	// placed by tgui-say on open (dock.ts): centred on the map above the hotbar
 		size = 360x30
 		anchor1 = 50,50
 		anchor2 = 50,50

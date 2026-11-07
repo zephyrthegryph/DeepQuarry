@@ -166,3 +166,24 @@ describe('buildPreview', () => {
     expect(buildPreview('hello ,h there', 'Say', rules)?.whole).toBe(true);
   });
 });
+
+describe('buildPreview for emotes', () => {
+  const marked: LanguageRules = { ...rules, markers: { '*': 'b', '/': 'i' } };
+
+  it('formats Me and Subtle text with the server markers', () => {
+    for (const channel of ['Me', 'Subtle']) {
+      const preview = buildPreview('waves *hard*', channel, marked);
+      expect(preview?.emote).toBe(true);
+      expect(preview?.pieces[0].segments).toEqual([
+        { text: 'waves ', tags: [] },
+        { text: 'hard', tags: ['b'] },
+      ]);
+    }
+  });
+
+  it('shows nothing for plain text and for channels the server does not format', () => {
+    expect(buildPreview('waves', 'Me', marked)).toBeNull();
+    expect(buildPreview('*hi*', 'OOC', marked)).toBeNull();
+    expect(buildPreview('*hi*', 'LOOC', marked)).toBeNull();
+  });
+});

@@ -9,6 +9,7 @@ import { type BooleanLike, classes } from 'tgui-core/react';
 import { type Channel, ChannelIterator } from './ChannelIterator';
 import { ChatHistory } from './ChatHistory';
 import { LineLength, RADIO_PREFIXES, WindowSize } from './constants';
+import { watchDock } from './dock';
 import { resolvePrefix, windowClose, windowOpen, windowSet } from './helpers';
 import { LanguagePreview, previewHeight } from './LanguagePreview';
 import { buildPreview, type LanguageRules } from './parseLanguages';
@@ -62,6 +63,8 @@ export function TguiSay() {
   const isDragging = useRef(false);
   const appliedExtra = useRef(0);
   const pendingSelection = useRef<[number, number] | null>(null);
+  const dockSize = useRef({ w: WindowSize.Width, h: WindowSize.Small });
+  const stopDock = useRef<(() => void) | null>(null);
   const [caret, setCaret] = useState(0);
 
   function handleArrowKeys(direction: KEY.PageUp | KEY.PageDown): void {
@@ -133,6 +136,8 @@ export function TguiSay() {
   }
 
   function handleClose(): void {
+    stopDock.current?.();
+    stopDock.current = null;
     innerRef.current?.blur();
     windowClose(minimumWidth.current, minimumHeight.current, scale.current);
 
@@ -213,7 +218,9 @@ export function TguiSay() {
       newValue = result.value;
       iterator.set(result.channel);
       setCurrentPrefix(newPrefix);
-      setButtonContent(newPrefix ? RADIO_PREFIXES[newPrefix] : iterator.current());
+      setButtonContent(
+        newPrefix ? RADIO_PREFIXES[newPrefix] : iterator.current(),
+      );
 
       if (newPrefix === ',b ') {
         Byond.sendMessage('thinking', { visible: false });
@@ -314,6 +321,8 @@ export function TguiSay() {
       scale.current,
     );
 
+    stopDock.current?.();
+    stopDock.current = watchDock(() => dockSize.current);
     innerRef.current?.focus();
   }
 
@@ -367,6 +376,11 @@ export function TguiSay() {
   const extraHeight = preview
     ? previewHeight(preview, minimumWidth.current)
     : 0;
+
+  dockSize.current = {
+    w: minimumWidth.current * (scale.current ? window.devicePixelRatio : 1),
+    h: (size + extraHeight) * (scale.current ? window.devicePixelRatio : 1),
+  };
 
   /** Value has changed, we need to check if the size of the window is ok */
   useEffect(() => {
