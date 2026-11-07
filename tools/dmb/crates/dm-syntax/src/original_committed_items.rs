@@ -116,8 +116,140 @@ impl NarrowItem {
     }
 }
 
+// Exact geometry. A short cell either contains every original datum or
+// names one exact 24B row owned by the same block.
+#[repr(C)]
+struct ShortItem {
+    start: u32,
+    span_len: u16,
+    cursor_delta: u16,
+    children: [u16; 2],
+    header_len: u8,
+    indent: u8,
+    flags: u8,
+    qualifiers: u8,
+}
+const _: () = assert!(size_of::<ShortItem>() == 16);
+
+impl ShortItem {
+    const ESCAPE: u8 = 1 << 7;
+    fn pack(row: &NarrowItem) -> Option<Self> {
+        let start = row.span[0];
+        let kind = match row.kind {
+            ItemKind::Type => 0, ItemKind::Proc => 1, ItemKind::Verb => 2,
+            ItemKind::Var => 3, ItemKind::Statement => 4, ItemKind::Unknown => 5,
+        };
+        let outer = match row.outer { None => 0, Some(false) => 1, Some(true) => 2 };
+        Some(Self {
+            start,
+            span_len: u16::try_from(row.span[1].checked_sub(start)?).ok()?,
+            cursor_delta: row.cursor_delta,
+            children: row.children,
+            header_len: u8::try_from(row.header_end.checked_sub(start)?).ok()?,
+            indent: u8::try_from(row.indent).ok()?,
+            flags: kind | (outer << 3) | (u8::from(row.empty_header) << 5),
+            qualifiers: row.qualifiers,
+        })
+    }
+    fn escape(ordinal: u16) -> Self {
+        Self { start: 0, span_len: ordinal, cursor_delta: 0, children: [0; 2],
+            header_len: 0, indent: 0, flags: Self::ESCAPE, qualifiers: 0 }
+    }
+    fn escaped(&self) -> Option<usize> {
+        (self.flags == Self::ESCAPE).then_some(usize::from(self.span_len))
+    }
+    fn unpack(&self) -> CompactItem {
+        debug_assert!(self.escaped().is_none());
+        let kind = match self.flags & 7 {
+            0 => ItemKind::Type, 1 => ItemKind::Proc, 2 => ItemKind::Verb, 3 => ItemKind::Var,
+            4 => ItemKind::Statement, 5 => ItemKind::Unknown, _ => unreachable!("issued short item kind"),
+        };
+        let outer = match (self.flags >> 3) & 3 {
+            0 => None, 1 => Some(false), 2 => Some(true), _ => unreachable!("issued short outer marker"),
+        };
+        NarrowItem {
+            span: [self.start, self.start + u32::from(self.span_len)],
+            header_end: self.start + u32::from(self.header_len),
+            cursor_delta: self.cursor_delta, indent: u16::from(self.indent), children: self.children,
+            kind, qualifiers: self.qualifiers, outer, empty_header: self.flags & (1 << 5) != 0,
+        }.unpack()
+    }
+}
+
+#[cfg(debug_assertions)]
+#[derive(Default, Debug)]
+pub(super) struct ShortItemCensus {
+    narrow_rows: usize,
+    fits_short: usize,
+    span_len_exceeds_u16: usize,
+    header_len_exceeds_u8: usize,
+    indent_exceeds_u8: usize,
+    all_short_blocks: usize,
+    mixed_short_blocks: usize,
+    mixed_escape_rows: usize,
+    original_narrow_bytes: usize,
+    whole_block_row_bytes: usize,
+    mixed_row_and_side_bytes: usize,
+    possible_directory_pointer_bytes: usize,
+    whole_block_row_savings: usize,
+    mixed_savings_after_directory: usize,
+}
+
+#[cfg(debug_assertions)]
+impl ShortItemCensus {
+    fn visit_narrow(&mut self, rows: &Vec<NarrowItem>) {
+        let old = rows.capacity() * size_of::<NarrowItem>();
+        self.narrow_rows += rows.len();
+        self.original_narrow_bytes += old;
+        let mut escapes = 0;
+        for row in rows {
+            let span_wide = row.span[1].checked_sub(row.span[0]).is_none_or(|len| u16::try_from(len).is_err());
+            let header_wide = row.header_end.checked_sub(row.span[0]).is_none_or(|len| u8::try_from(len).is_err());
+            let indent_wide = u8::try_from(row.indent).is_err();
+            self.span_len_exceeds_u16 += usize::from(span_wide);
+            self.header_len_exceeds_u8 += usize::from(header_wide);
+            self.indent_exceeds_u8 += usize::from(indent_wide);
+            escapes += usize::from(span_wide || header_wide || indent_wide);
+        }
+        self.fits_short += rows.len() - escapes;
+        let short = rows.len() * size_of::<ShortItem>();
+        // Each escaped cell can encode its side ordinal in its own u16
+        // geometry plus one spare flag bit. No rank or second index.
+        let whole = if escapes == 0 {
+            self.all_short_blocks += 1;
+            short
+        } else {
+            old
+        };
+        let mixed = if escapes != 0 {
+            let side = escapes * size_of::<NarrowItem>() + size_of::<Vec<NarrowItem>>();
+            if short + side < old {
+                self.mixed_short_blocks += 1;
+                self.mixed_escape_rows += escapes;
+                short + side
+            } else {
+                old
+            }
+        } else {
+            short
+        };
+        self.whole_block_row_bytes += whole;
+        self.mixed_row_and_side_bytes += mixed;
+    }
+
+    fn finish(&mut self, directory_capacity: usize) {
+        // The mixed model permits one optional side Vec box per new block.
+        // Budget a pointer-width directory expansion for every reserved cell.
+        self.possible_directory_pointer_bytes = directory_capacity * size_of::<usize>();
+        self.whole_block_row_savings = self.original_narrow_bytes - self.whole_block_row_bytes;
+        self.mixed_savings_after_directory = self.original_narrow_bytes
+            .saturating_sub(self.mixed_row_and_side_bytes + self.possible_directory_pointer_bytes);
+    }
+}
+
 enum Block {
     Narrow { rows: Vec<NarrowItem>, roots: usize },
+    Short { rows: Vec<ShortItem>, escapes: Vec<NarrowItem>, roots: usize },
     Compact { rows: Vec<CompactItem>, roots: usize },
     Wide(Vec<Item>),
 }
@@ -146,6 +278,8 @@ impl PendingCommittedItems {
         self.blocks.iter().try_fold(self.blocks.capacity().checked_mul(size_of::<Block>())?, |bytes, block| {
             let buffer = match block {
                 Block::Narrow { rows, .. } => rows.capacity().checked_mul(size_of::<NarrowItem>()),
+                Block::Short { rows, escapes, .. } => rows.capacity().checked_mul(size_of::<ShortItem>())
+                    .and_then(|bytes| bytes.checked_add(escapes.capacity().checked_mul(size_of::<NarrowItem>())?)),
                 Block::Compact { rows, .. } => rows.capacity().checked_mul(size_of::<CompactItem>()),
                 Block::Wide(items) => storage.item_bytes(items),
             }?;
@@ -158,17 +292,22 @@ impl PendingCommittedItems {
     }
 
     #[cfg(debug_assertions)]
-    pub(super) fn trace_compact(&self) -> (usize, usize, usize, usize, usize) {
+    pub(super) fn trace_compact(&self) -> ((usize, usize, usize, usize, usize), ShortItemCensus) {
         let mut blocks = 0usize;
         let mut rows = 0usize;
         let mut bytes = 0usize;
         let mut narrow_rows = 0usize;
+        let mut short = ShortItemCensus::default();
         for block in &self.blocks {
             let (len, capacity_bytes) = match block {
                 Block::Narrow { rows, .. } => {
                     narrow_rows = narrow_rows.saturating_add(rows.len());
+                    short.visit_narrow(rows);
                     (rows.len(), rows.capacity().saturating_mul(size_of::<NarrowItem>()))
                 }
+                Block::Short { rows, escapes, .. } =>
+                    (rows.len(), rows.capacity().saturating_mul(size_of::<ShortItem>())
+                        + escapes.capacity().saturating_mul(size_of::<NarrowItem>())),
                 Block::Compact { rows, .. } =>
                     (rows.len(), rows.capacity().saturating_mul(size_of::<CompactItem>())),
                 Block::Wide(_) => continue,
@@ -177,13 +316,14 @@ impl PendingCommittedItems {
             rows = rows.saturating_add(len);
             bytes = bytes.saturating_add(capacity_bytes);
         }
-        (blocks, rows, bytes, self.blocks.capacity().saturating_mul(size_of::<Block>()), narrow_rows)
+        short.finish(self.blocks.capacity());
+        ((blocks, rows, bytes, self.blocks.capacity().saturating_mul(size_of::<Block>()), narrow_rows), short)
     }
 }
 
 fn compact_block(items: Vec<Item>, source: &str, storage: &Storage<'_, '_>) -> io::Result<Block> {
     #[derive(Default)]
-    struct ExactShape { rows: usize, old_bytes: usize, header_bytes: usize, needs_full_compact: bool }
+    struct ExactShape { rows: usize, old_bytes: usize, header_bytes: usize, needs_full_compact: bool, short_escapes: usize }
     fn inspect(items: &Vec<Item>, source: &str, shape: &mut ExactShape) -> Option<()> {
         shape.rows = shape.rows.checked_add(items.len())?;
         if shape.rows > MAX_BLOCK_ROWS { return None; }
@@ -193,7 +333,10 @@ fn compact_block(items: Vec<Item>, source: &str, storage: &Storage<'_, '_>) -> i
             if shape.header_bytes > MAX_HEADER_BYTES { return None; }
             shape.old_bytes = shape.old_bytes.checked_add(item.header.capacity())?;
             let geometry = CompactItem::geometry(item, source)?;
-            shape.needs_full_compact |= NarrowItem::pack(geometry).is_none();
+            match NarrowItem::pack(geometry) {
+                Some(narrow) => shape.short_escapes += usize::from(ShortItem::pack(&narrow).is_none()),
+                None => shape.needs_full_compact = true,
+            }
             // Depth is bounded by the actual admitted primary frame machine.
             inspect(&item.children, source, shape)?;
         }
@@ -216,26 +359,82 @@ fn compact_block(items: Vec<Item>, source: &str, storage: &Storage<'_, '_>) -> i
         [start, end].map(|ordinal| u16::try_from(ordinal).expect("preflight bounds block ordinals"))
     }
 
+    fn append_short(items: &[Item], source: &str, rows: &mut Vec<ShortItem>, escapes: &mut Vec<NarrowItem>) -> [u16; 2] {
+        let start = rows.len();
+        for item in items {
+            let geometry = CompactItem::geometry(item, source).expect("checked original item geometry");
+            let narrow = NarrowItem::pack(geometry).expect("checked narrow geometry");
+            let row = ShortItem::pack(&narrow).unwrap_or_else(|| {
+                let ordinal = u16::try_from(escapes.len()).expect("preflight bounds exact escapes");
+                escapes.push(narrow);
+                ShortItem::escape(ordinal)
+            });
+            rows.push(row);
+        }
+        let end = rows.len();
+        for (i, item) in items.iter().enumerate() {
+            let children = append_short(&item.children, source, rows, escapes);
+            let row = &mut rows[start + i];
+            if let Some(at) = row.escaped() { escapes[at].children = children; }
+            else { row.children = children; }
+        }
+        [start, end].map(|ordinal| u16::try_from(ordinal).expect("preflight bounds block ordinals"))
+    }
+
+    fn short_block(items: &[Item], source: &str, shape: &ExactShape, storage: &Storage<'_, '_>)
+        -> io::Result<Option<(Block, SettingRootLease, Option<SettingRootLease>)>>
+    {
+        let Some((mut rows, credit)) = storage.try_item_block_vector::<ShortItem>(shape.rows)? else { return Ok(None); };
+        let (mut escapes, escape_credit) = if shape.short_escapes == 0 {
+            (Vec::new(), None)
+        } else {
+            match storage.try_item_block_vector::<NarrowItem>(shape.short_escapes) {
+                Ok(Some((escapes, credit))) => (escapes, Some(credit)),
+                result => {
+                    // The candidate rows physically die before their
+                    // grant on denial or any first typed error.
+                    drop(rows);
+                    drop(credit);
+                    return result.map(|_| None);
+                }
+            }
+        };
+        let [_, roots] = append_short(items, source, &mut rows, &mut escapes);
+        debug_assert_eq!((rows.len(), escapes.len()), (shape.rows, shape.short_escapes));
+        Ok(Some((Block::Short { rows, escapes, roots: usize::from(roots) }, credit, escape_credit)))
+    }
+
     let mut shape = ExactShape::default();
     if inspect(&items, source, &mut shape).is_none() {
         return Ok(Block::Wide(items));
     }
-    let (block, mut credit) = if shape.needs_full_compact {
+    let short = if !shape.needs_full_compact
+        && shape.rows * size_of::<ShortItem>() + shape.short_escapes * size_of::<NarrowItem>()
+            < shape.rows * size_of::<NarrowItem>()
+    {
+        short_block(&items, source, &shape, storage)?
+    } else { None };
+    let (block, mut credit, mut escape_credit) = if let Some(short) = short {
+        short
+    } else if shape.needs_full_compact {
         let Some((mut packed, credit)) = storage.try_item_block_vector::<CompactItem>(shape.rows)? else {
             return Ok(Block::Wide(items));
         };
         let [_, roots] = append(&items, source, &mut packed, |item| item, |item, children| item.children = children);
         debug_assert_eq!(packed.len(), shape.rows);
-        (Block::Compact { rows: packed, roots: usize::from(roots) }, credit)
+        (Block::Compact { rows: packed, roots: usize::from(roots) }, credit, None)
     } else {
         let Some((mut packed, credit)) = storage.try_item_block_vector::<NarrowItem>(shape.rows)? else {
             return Ok(Block::Wide(items));
         };
         let [_, roots] = append(&items, source, &mut packed, |item| NarrowItem::pack(item).expect("checked narrow geometry"), |item, children| item.children = children);
         debug_assert_eq!(packed.len(), shape.rows);
-        (Block::Narrow { rows: packed, roots: usize::from(roots) }, credit)
+        (Block::Narrow { rows: packed, roots: usize::from(roots) }, credit, None)
     };
-    if let Err(error) = storage.adopt_item_block_credit(&mut credit) {
+    let adopted = storage.adopt_item_block_credit(&mut credit).and_then(|()| {
+        escape_credit.as_mut().map_or(Ok(()), |credit| storage.adopt_item_block_credit(credit))
+    });
+    if let Err(error) = adopted {
         drop(block);
         return Err(error);
     }
@@ -258,6 +457,10 @@ impl OriginalCommittedItems {
             || self.data.blocks.iter().any(|block| match block {
                 Block::Narrow { rows, .. } => rows.iter().any(|row| !row.empty_header
                     && source.get(CompactItem::span_of([row.span[0], row.header_end]).range()).is_none()),
+                Block::Short { rows, escapes, .. } => rows.iter().any(|row| {
+                    let geometry = row.escaped().map_or_else(|| row.unpack(), |at| escapes[at].unpack());
+                    !geometry.empty_header && source.get(CompactItem::span_of(geometry.header).range()).is_none()
+                }),
                 Block::Compact { rows, .. } => rows.iter().any(|row| !row.empty_header
                     && source.get(CompactItem::span_of(row.header).range()).is_none()),
                 Block::Wide(_) => false,
@@ -300,6 +503,7 @@ impl OriginalCommittedItems {
         for block in &self.data.blocks {
             match block {
                 Block::Narrow { rows, .. } => buffer(rows, &mut visit),
+                Block::Short { rows, escapes, .. } => { buffer(rows, &mut visit); buffer(escapes, &mut visit); }
                 Block::Compact { rows, .. } => buffer(rows, &mut visit),
                 Block::Wide(rows) => wide(rows, &mut visit),
             }
@@ -325,6 +529,7 @@ impl std::fmt::Debug for OriginalCommittedItems {
 #[derive(Clone, Copy)]
 enum CompactSlice<'a> {
     Narrow(&'a [NarrowItem]),
+    Short(&'a [ShortItem], &'a [NarrowItem]),
     Full(&'a [CompactItem]),
 }
 
@@ -332,6 +537,13 @@ impl<'a> CompactSlice<'a> {
     fn get(self, index: usize) -> Option<CompactRow<'a>> {
         match self {
             Self::Narrow(rows) => rows.get(index).map(CompactRow::Narrow),
+            Self::Short(rows, escapes) => {
+                let row = rows.get(index)?;
+                match row.escaped() {
+                    Some(at) => escapes.get(at).map(CompactRow::Narrow),
+                    None => Some(CompactRow::Short(row)),
+                }
+            }
             Self::Full(rows) => rows.get(index).map(CompactRow::Full),
         }
     }
@@ -339,6 +551,7 @@ impl<'a> CompactSlice<'a> {
     fn same(self, other: Self) -> bool {
         match (self, other) {
             (Self::Narrow(a), Self::Narrow(b)) => std::ptr::eq(a, b),
+            (Self::Short(a, aw), Self::Short(b, bw)) => std::ptr::eq(a, b) && std::ptr::eq(aw, bw),
             (Self::Full(a), Self::Full(b)) => std::ptr::eq(a, b),
             _ => false,
         }
@@ -348,6 +561,7 @@ impl<'a> CompactSlice<'a> {
 #[derive(Clone, Copy)]
 enum CompactRow<'a> {
     Narrow(&'a NarrowItem),
+    Short(&'a ShortItem),
     Full(&'a CompactItem),
 }
 
@@ -355,6 +569,7 @@ impl CompactRow<'_> {
     fn geometry(self) -> CompactItem {
         match self {
             Self::Narrow(row) => row.unpack(),
+            Self::Short(row) => row.unpack(),
             Self::Full(row) => *row,
         }
     }
@@ -362,6 +577,7 @@ impl CompactRow<'_> {
     fn same(self, other: Self) -> bool {
         match (self, other) {
             (Self::Narrow(a), Self::Narrow(b)) => std::ptr::eq(a, b),
+            (Self::Short(a), Self::Short(b)) => std::ptr::eq(a, b),
             (Self::Full(a), Self::Full(b)) => std::ptr::eq(a, b),
             _ => false,
         }
@@ -419,6 +635,10 @@ impl<'a> OriginalItems<'a> {
                     Block::Wide(items) => Self::from_items(items).get(local),
                     Block::Narrow { rows, roots } => {
                         Self(Siblings::Compact { rows: CompactSlice::Narrow(rows), interval: [0, *roots as u32], source }).get(local)
+                    }
+                    Block::Short { rows, escapes, roots } => {
+                        Self(Siblings::Compact { rows: CompactSlice::Short(rows, escapes),
+                            interval: [0, *roots as u32], source }).get(local)
                     }
                     Block::Compact { rows, roots } => {
                         Self(Siblings::Compact { rows: CompactSlice::Full(rows), interval: [0, *roots as u32], source }).get(local)
@@ -570,7 +790,7 @@ mod tests {
             assert!(!items.get(ROOT_ITEM_BLOCK).unwrap().same_item(items.get(ROOT_ITEM_BLOCK+1).unwrap()));
             compare(items, &dense.syntax().items, actual);
             let (forest, tokens, diagnostics, _, _, diagnostic_lease) = compact.into_parts();
-            assert!(forest.data.blocks.iter().all(|block| matches!(block, Block::Narrow { .. })));
+            assert!(forest.data.blocks.iter().all(|block| matches!(block, Block::Short { .. })));
             assert!(forest.data.blocks.len() >= 3);
             assert!(compact_used.load(Ordering::Acquire) + 20_000 < dense_used.load(Ordering::Acquire));
             drop((tokens, diagnostics, diagnostic_lease));
@@ -622,6 +842,49 @@ mod tests {
             drop((block, storage));
             assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
         }
+    }
+
+    #[test]
+    fn short_committed_block_preserves_exact_escape_children_and_owner() {
+        let text = "é".repeat(160);
+        let span = Span::new(0, text.len());
+        let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+        let used = crate::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let storage = Storage::new(&a).unwrap();
+        let make = |len, indent, children| Item {
+            kind: ItemKind::Var, header: storage.text(&text[..len]).unwrap(),
+            span: Span::new(0, len), header_span: Span::new(0, len),
+            declaration_cursor: Some(len), checker_qualifiers: 0xff,
+            original_outer_terminator: Some(false), indent, children,
+        };
+        let mut children = Vec::new();
+        for _ in 0..5 {
+            assert!(storage.push(&mut children, make(2, 255, Vec::new())));
+        }
+        let mut items = Vec::new();
+        assert!(storage.push(&mut items, make(text.len(), 256, children)));
+        let block = compact_block(items, &text, &storage).unwrap();
+        let Block::Short { rows, escapes, roots } = &block else { panic!("profitable exact mixed block"); };
+        assert_eq!((*roots, rows.len(), escapes.len()), (1, 6, 1));
+        let view = OriginalItems(Siblings::Compact {
+            rows: CompactSlice::Short(rows, escapes), interval: [0, 1], source: &text,
+        });
+        let root = view.get(0).unwrap();
+        assert!(root.same_item(view.get(0).unwrap()));
+        assert_eq!(root.span(), span);
+        assert_eq!(root.header().as_ptr(), text.as_ptr());
+        assert_eq!((root.indent(), root.declaration_cursor()), (256, Some(text.len())));
+        let children = root.children();
+        assert_eq!(children.len(), 5);
+        for child in children.iter() {
+            assert_eq!((child.indent(), child.declaration_cursor()), (255, Some(2)));
+            assert_eq!(child.header(), "é");
+            assert_eq!(child.checker_qualifiers(), 0xff);
+            assert_eq!(child.original_outer_terminator(), Some(false));
+        }
+        drop((block, storage));
+        assert_eq!(used.load(Ordering::Acquire), fixed);
     }
 
     #[test]
@@ -677,7 +940,7 @@ mod tests {
             let source = "/datum/p";
             let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let retained = 4096 + 4*size_of::<Item>() + source.len();
-            let limit = if altered { 1<<20 } else { retained + size_of::<NarrowItem>() - 1 };
+            let limit = if altered { 1<<20 } else { retained + size_of::<ShortItem>() - 1 };
             let admission = SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes() + (limit), &|| Ok(()));
             let storage = Storage::new(&admission).unwrap();
             let mut rows = Vec::new();

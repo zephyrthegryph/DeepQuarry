@@ -77,6 +77,7 @@ pub(super) struct PrimaryItemCensus {
     settled: ItemBuffers,
     active: ItemBuffers,
     committed_compact: Option<(usize, usize, usize, usize, usize)>,
+    committed_short_projection: Option<super::committed_items::ShortItemCensus>,
 }
 
 #[cfg(debug_assertions)]
@@ -88,6 +89,7 @@ impl std::fmt::Debug for PrimaryItemCensus {
             .field("settled", &self.settled)
             .field("active", &self.active)
             .field("committed_compact_blocks_rows_bytes_directory_narrow_rows", &self.committed_compact)
+            .field("committed_short_projection", &self.committed_short_projection)
             .finish()
     }
 }
@@ -219,7 +221,10 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
  pub(super) fn trace_items(&self, source: &str) -> PrimaryItemCensus {
   let mut census=PrimaryItemCensus::default();
   census.visit_settled(&self.root_items, source);
-  census.committed_compact=self.committed.as_ref().map(PendingCommittedItems::trace_compact);
+  if let Some((current, short)) = self.committed.as_ref().map(PendingCommittedItems::trace_compact) {
+   census.committed_compact = Some(current);
+   census.committed_short_projection = Some(short);
+  }
   for (index, frame) in self.frames.iter().enumerate() {
    census.active.visit(&frame.items, source, index == 0);
   }
