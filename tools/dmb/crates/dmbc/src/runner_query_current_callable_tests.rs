@@ -408,3 +408,122 @@ fn current_original_simple_assignment_visits_lhs_then_rhs_and_matches_absolute_b
   assert_eq!(current, absolute.with_original_diagnostics(input, encode).unwrap());
  });
 }
+
+#[test]
+fn current_original_while_block_visits_condition_body_and_post_loop_in_pinned_order() {
+ use dm_analysis::checker_effects::{ExecutionAdmission, OriginalBodyDiagnostic, OriginalDiagnosticPhase};
+ fn encode(rows: &[OriginalBodyDiagnostic]) -> Vec<u8> {
+  format!("{:?}", rows.iter().map(|row| (row.phase(), row.location(), row.registration_tag(), row.diagnostic())).collect::<Vec<_>>()).into_bytes()
+ }
+ let source = concat!(
+  "/proc/probe()\n",
+  "    while(missing_condition)\n",
+  "        return missing_body\n",
+  "    return missing_after\n",
+ );
+ let (mut host, request, _) = fixture(source);
+ let db = host.query_db().clone();
+ run(&mut host, &request);
+ current(&host, |snapshot| {
+  let owner = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let input = owner.input();
+  let canonical = db.original_current_body_bytes_for_test(input, 0, |rows| {
+   assert_eq!(rows.len(), 3);
+   let expected = [("missing_condition", 2, 11), ("missing_body", 3, 16), ("missing_after", 4, 12)];
+   for (row, (name, line, column)) in rows.iter().zip(expected) {
+    assert_eq!(row.phase(), OriginalDiagnosticPhase::Body);
+    let diagnostic = row.diagnostic();
+    let point = input.archive().source_note_point(diagnostic.span.start).unwrap();
+    assert_eq!((point.line, point.byte_column), (line, column));
+    assert_eq!(diagnostic.family, "undefined_variable");
+    assert_eq!(diagnostic.message, format!("undefined var: {name:?}"));
+   }
+   encode(rows)
+  }).unwrap();
+  let absolute = input.compute_body_checked_controlled(0, snapshot.tree.as_ref(), &ExecutionAdmission::default(), &|| Ok(())).unwrap();
+  assert_eq!(canonical, absolute.with_original_diagnostics(input, encode).unwrap());
+ });
+}
+
+#[test]
+fn current_original_decimal_switch_reissues_case_cursors_and_matches_absolute_body() {
+ use dm_analysis::checker_effects::{ExecutionAdmission, OriginalBodyDiagnostic, OriginalDiagnosticPhase};
+ use dm_tree::frontend::SettingExpressionQueries;
+ fn encode(rows: &[OriginalBodyDiagnostic]) -> Vec<u8> {
+  format!("{:?}", rows.iter().map(|row| (row.phase(), row.location(), row.registration_tag(), row.diagnostic())).collect::<Vec<_>>()).into_bytes()
+ }
+ let source = concat!(
+  "/proc/probe()\n",
+  "    switch(missing_selector)\n",
+  "        if(1)\n            return missing_first\n",
+  "        if(2)\n            return missing_second\n",
+  "    return missing_after\n",
+ );
+ let (mut host, request, _) = fixture(source);
+ let db = host.query_db().clone();
+ run(&mut host, &request);
+ current(&host, |snapshot| {
+  let owner = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let input = owner.input();
+  let archive = input.archive();
+  let canonical = db.original_current_body_bytes_for_test(input, 0, |rows| {
+   assert_eq!(rows.len(), 4);
+   let expected = [("missing_selector", 2, 12), ("missing_first", 4, 20), ("missing_second", 6, 20), ("missing_after", 7, 12)];
+   for (row, (name, line, column)) in rows.iter().zip(expected) {
+    assert_eq!(row.phase(), OriginalDiagnosticPhase::Body);
+    let diagnostic = row.diagnostic();
+    let point = archive.source_note_point(diagnostic.span.start).unwrap();
+    assert_eq!((point.line, point.byte_column), (line, column));
+    assert_eq!(diagnostic.family, "undefined_variable");
+    assert_eq!(diagnostic.message, format!("undefined var: {name:?}"));
+   }
+   encode(rows)
+  }).unwrap();
+  let mut cursors = Vec::new();
+  SettingExpressionQueries::with_declaration_admission(db.as_ref(), &mut |admission| {
+   archive.with_current_body_checked(0, admission, |body| {
+    let statements = body.syntax().canonical_statement_storage();
+    let dm_syntax::StatementKind::Switch { cases, .. } = &statements.parsed().statements[0].kind else { panic!("actual current switch"); };
+    body.with_original_body_source(admission, |source| {
+     for case in cases {
+      cursors.push(source.original_switch_case_cursor(case.original_site)?.unwrap());
+     }
+     Ok(())
+    })?
+   })
+  }).unwrap();
+  let absolute_syntax = archive.parse_checked(0).unwrap();
+  let dm_syntax::StatementKind::Switch { cases, .. } = &absolute_syntax.statement_body().parsed().statements[0].kind else { panic!("actual absolute switch"); };
+  assert_eq!(cursors, cases.iter().map(|case| case.original_site.cursor.unwrap()).collect::<Vec<_>>());
+  let absolute = input.compute_body_checked_controlled(0, snapshot.tree.as_ref(), &ExecutionAdmission::default(), &|| Ok(())).unwrap();
+  assert_eq!(canonical, absolute.with_original_diagnostics(input, encode).unwrap());
+ });
+}
+
+#[test]
+fn current_original_blocks_do_not_borrow_an_opener_across_an_authored_semicolon() {
+ use dm_tree::frontend::BodySyntaxFailure;
+ let source = concat!(
+  "/proc/bad_while(argument)\n    while(argument) ;\n        return 0\n",
+  "/proc/bad_switch(argument)\n    switch(argument)\n        if(1) ;\n            return 0\n",
+ );
+ let (mut host, request, _) = fixture(source);
+ let db = host.query_db().clone();
+ run(&mut host, &request);
+ current(&host, |snapshot| {
+  let owner = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let archive = owner.input().archive();
+  for name in ["bad_while", "bad_switch"] {
+   let ordinal = (0..archive.len()).find(|&ordinal| {
+    archive.callables().identity(ordinal).is_some_and(|id| id.name == SymbolId::of(name))
+   }).expect("actual bad block callable");
+   let error = db.original_current_body_bytes_for_test(owner.input(), ordinal, |_| {
+    panic!("{name} published a report despite its authored semicolon")
+   }).unwrap_err();
+   match error {
+    BodySyntaxFailure::Syntax(_) => (),
+    BodySyntaxFailure::Operational(actual) => assert_eq!(actual.kind(), std::io::ErrorKind::Unsupported, "{name}: {actual}"),
+   }
+  }
+ });
+}

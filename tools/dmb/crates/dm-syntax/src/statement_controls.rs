@@ -400,16 +400,18 @@ fn split_for_clauses(clause: &str) -> Vec<&str> {
     parts
 }
 
-pub(super) fn parse_control_condition(
+pub(super) fn parse_control_condition_observed(
     item: &Item,
     keyword: &str,
     diagnostics: &mut BodyDiagnostics<'_>,
+    observe: &mut dyn FnMut(&crate::ParsedExpr),
 ) -> Option<Expr> {
     let clause = control_clause(item, keyword, diagnostics)?;
-    parse_expr(
+    parse_expr_observed(
         clause,
-        item.header_span.start + item.header.find(clause).unwrap_or(0),
+        item.header_span.start + (clause.as_ptr() as usize - item.header.as_ptr() as usize),
         diagnostics,
+        observe,
     )
 }
 

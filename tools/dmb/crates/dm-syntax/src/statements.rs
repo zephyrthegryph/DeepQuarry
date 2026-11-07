@@ -206,7 +206,7 @@ pub fn parse_proc_body(proc: &Item) -> ParsedBody {
 
 /// Parse a procedure body when its owning declaration is already known.
 pub fn parse_body_items(items: &[Item]) -> ParsedBody {
-    parse_body_items_using_settings(items, None, None,false)
+    parse_body_items_using_settings(items, None, None, None,false)
 }
 
 /// Storage supplied by an ORIGINAL owner; this interface itself grants no source
@@ -227,6 +227,10 @@ pub trait SettingSyntaxProvider {
     fn original_joined_return(&self, _header: Span) -> std::io::Result<bool> {
         Ok(false)
     }
+    /// Match the actual logical block opener between two committed items.
+    fn original_statement_block_open(&self, _gap: Span) -> std::io::Result<bool> {
+        Ok(false)
+    }
     fn switch_case_cursor(&self,_item:&Item)->Result<OriginalCaseCursor,&'static str>{Err("original switch block cursor was not issued")}
 }
 
@@ -234,6 +238,7 @@ fn parse_body_items_using_settings(
     items: &[Item],
     settings: Option<&dyn SettingSyntaxProvider>,
     admission: Option<&crate::SettingAdmission<'_>>,
+    source: Option<&str>,
     deferred_literal_purity:bool,
 ) -> ParsedBody {
     let mut result = ParsedBody::default();
@@ -243,6 +248,7 @@ fn parse_body_items_using_settings(
         settings,
         admission,
         deferred_literal_purity,
+        source,
         original_compound_complete:true,
         original_compound_seen_statement:false,
         original_terminal_header:items.last().filter(|item|item.children.is_empty()).map(|item|item.header_span),
@@ -270,7 +276,7 @@ pub fn parse_body_items_with_context(
     source: &str,
     context: &dyn Fn(usize) -> Option<ItemKind>,
 ) -> ParsedBody {
-    let mut parsed = parse_body_items(items);
+    let mut parsed = parse_body_items_using_settings(items, None, None, Some(source), false);
     parsed.pending_bodies =
         crate::pending_body::pending_bodies(&parsed.statements, source, context);
     parsed
@@ -286,7 +292,7 @@ pub fn parse_body_items_with_context_and_settings(
     settings: &dyn SettingSyntaxProvider,
     admission: &crate::SettingAdmission<'_>,
 ) -> ParsedBody {
-    let mut parsed = parse_body_items_using_settings(items, Some(settings), Some(admission),false);
+    let mut parsed = parse_body_items_using_settings(items, Some(settings), Some(admission), Some(source),false);
     if admission.is_stopped() {
         return parsed;
     }
@@ -302,6 +308,7 @@ impl std::ops::Deref for BodyDiagnostics<'_>{type Target=Vec<Diagnostic>;fn dere
 impl std::ops::DerefMut for BodyDiagnostics<'_>{fn deref_mut(&mut self)->&mut Self::Target{self.rows}}
 /// One existing native parser pass owns control AND local declaration origins.
 struct BodyOrigins<'a> {
+    source: Option<&'a str>,
     original_compound_complete:bool,
     original_compound_seen_statement:bool,
     original_terminal_header:Option<Span>,
@@ -452,7 +459,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             root_prefix = None;
         }
         // SAME primary consumption; unproved families/children never grant availability.
-        if starts_keyword(header,"if"){
+        if starts_keyword(header,"if") || starts_keyword(header,"while") || starts_keyword(header,"switch") {
             origins.original_compound_seen_statement=true;
         }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!original_simple_assignment_candidate(header)&&!local_statement&&!initial_setting){
             origins.original_compound_complete=false;
@@ -690,6 +697,27 @@ fn parse_if(
     }
 }
 
+// Item.header excludes structural delimiters. A same-line explicit
+// semicolon can disappear there before indentation attaches the next item.
+// Admit only the exact source gap of the indented block we can prove.
+fn original_indented_block_boundary(item: &Item, origins: &BodyOrigins<'_>) -> bool {
+    let Some(first) = item.children.first() else { return false; };
+    let gap = Span::new(item.header_span.end, first.header_span.start);
+    if let Some(provider) = origins.settings {
+        return match provider.original_statement_block_open(gap) {
+            Ok(value) => value,
+            Err(actual) => {
+                if let Some(admission) = origins.admission {
+                    admission.record_operational_error(actual);
+                }
+                false
+            }
+        };
+    }
+    let Some(gap) = origins.source.and_then(|source| source.get(gap.range())) else { return false; };
+    gap.contains('\n') && gap.bytes().all(|byte| matches!(byte, b' ' | b'\t' | b'\r' | b'\n'))
+}
+
 fn parse_one(
     item: &Item,
     diagnostics: &mut BodyDiagnostics<'_>,
@@ -723,9 +751,20 @@ fn parse_one(
         return unsupported(item);
     }
     let kind = if starts_keyword(header, "while") {
-        parse_control_condition(item, "while", diagnostics).map(|condition| StatementKind::While {
+        let inline = control_inline(item, "while");
+        // Only the actual parenthesized control and its nonempty indented
+        // block are witnessed. Inline/recovery tails cannot borrow the proof.
+        let mut witnessed = inline.is_none() && header.ends_with(')')
+            && original_indented_block_boundary(item, origins);
+        let condition = parse_control_condition_observed(item, "while", diagnostics, &mut |parsed| {
+            witnessed &= parsed.original_simple_expression.is_some_and(|value| {
+                value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+            });
+        });
+        origins.original_compound_complete &= witnessed && condition.is_some();
+        condition.map(|condition| StatementKind::While {
             condition,
-            body: control_body(item, "while", diagnostics, origins),
+            body: control_body_from_inline(item, inline, diagnostics, origins),
         })
     } else if starts_keyword(header, "for") {
         parse_for(item, diagnostics, origins).map(|control| StatementKind::For {
@@ -733,7 +772,9 @@ fn parse_one(
             body: control_body(item, "for", diagnostics, origins),
         })
     } else if starts_keyword(header, "switch") {
-        parse_switch(item, diagnostics, origins)
+        let parsed = parse_switch(item, diagnostics, origins);
+        origins.original_compound_complete &= parsed.is_some();
+        parsed
     } else if starts_keyword(header, "spawn") {
         parse_spawn(item, diagnostics, origins)
     } else if starts_keyword(header, "set") {
@@ -1159,7 +1200,14 @@ fn parse_switch(
     diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
 ) -> Option<StatementKind> {
-    let selector = parse_control_condition(item, "switch", diagnostics)?;
+    let header = item.header.trim();
+    let mut witnessed = header.ends_with(')') && control_inline(item, "switch").is_none()
+        && original_indented_block_boundary(item, origins);
+    let selector = parse_control_condition_observed(item, "switch", diagnostics, &mut |parsed| {
+        witnessed &= parsed.original_simple_expression.is_some_and(|value| {
+            value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+        }) && matches!(parsed.expr.as_ref().map(|value| &value.kind), Some(ExprKind::Ident(_)));
+    })?;
     let mut cases = Vec::new();
     let mut else_branch = Vec::new();
     let mut default_present=false;
@@ -1169,6 +1217,8 @@ fn parse_switch(
         let case=&item.children[index];
         let header = case.header.trim();
         if starts_keyword(header, "else") {
+            witnessed &= header == "else" && index + 1 == item.children.len()
+                && original_indented_block_boundary(case, origins);
             default_present=true;
             if index + 1 != item.children.len() {
                 diagnostics.push(Diagnostic {
@@ -1197,12 +1247,13 @@ fn parse_switch(
         let clause = control_clause(case, "if", diagnostics)?;
         let base = case.header_span.start + case.header.find(clause).unwrap_or(0);
         let mut alternatives = Vec::new();
-        for alternative in
-            split_case_alternatives(clause.trim_end().strip_suffix(',').unwrap_or(clause))
-        {
+        let alternatives_source = split_case_alternatives(clause.trim_end().strip_suffix(',').unwrap_or(clause));
+        witnessed &= alternatives_source.len() == 1 && !clause.trim_end().ends_with(',');
+        for alternative in alternatives_source {
             let alternative = alternative.trim();
             let offset = base + clause.find(alternative).unwrap_or(0);
             if let Some((lower, upper)) = split_top_level_keyword(alternative, "to") {
+                witnessed = false;
                 let lower = parse_expr(lower.trim(), offset, diagnostics)?;
                 let upper = parse_expr(
                     upper.trim(),
@@ -1211,10 +1262,16 @@ fn parse_switch(
                 )?;
                 alternatives.push(SwitchAlternative::Range(lower, upper));
             } else {
-                alternatives.push(SwitchAlternative::Exact(parse_expr(
+                alternatives.push(SwitchAlternative::Exact(parse_expr_observed(
                     alternative,
                     offset,
                     diagnostics,
+                    &mut |parsed| {
+                        witnessed &= parsed.original_simple_expression.is_some_and(|value| {
+                            value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+                        }) && matches!(parsed.expr.as_ref().map(|value| &value.kind),
+                            Some(ExprKind::Literal(value)) if crate::expression_parser::original_decimal(value.as_str()));
+                    },
                 )?));
             }
         }
@@ -1230,6 +1287,8 @@ fn parse_switch(
         // Borrow following else/catch/while rows rather than cloning a roster.
         let mut next=index+1;
         let inline=control_inline(case,"if");
+        witnessed &= header.ends_with(')') && inline.is_none()
+            && original_indented_block_boundary(case, origins);
         if let Some(inline)=inline{
             if starts_keyword(inline,"if"){while let Some(other)=item.children.get(next).filter(|next|starts_keyword(next.header.trim(),"else")){if origins.admission.is_some_and(|admission|admission.checkpoint().is_err()){return None}let continuation=other.header.trim().strip_prefix("else").unwrap_or("").trim_start();next+=1;if !starts_keyword(continuation,"if"){break}}}
             else if inline=="try"&&item.children.get(next).is_some_and(|next|starts_keyword(next.header.trim(),"catch")){next+=1;}
@@ -1246,6 +1305,9 @@ fn parse_switch(
         });
         index=next;
     }
+    // Decimal case terms have no case-positioned diagnostics. Current
+    // source reporting reissues a cursor from live tokens if it needs one.
+    origins.original_compound_complete &= witnessed && !cases.is_empty();
     Some(StatementKind::Switch {
         selector,
         cases,
@@ -1341,7 +1403,7 @@ pub fn parse_body_items_with_admitted_literals(
  items:&[Item],source:&str,context:&dyn Fn(usize)->Option<ItemKind>,settings:&dyn SettingSyntaxProvider,
  admission:&crate::SettingAdmission<'_>,cleanup:crate::SettingRootLease,
 )->std::io::Result<crate::PreparedBodyLiteralSyntax>{
- let mut parsed=parse_body_items_using_settings(items,Some(settings),Some(admission),true);
+ let mut parsed=parse_body_items_using_settings(items,Some(settings),Some(admission),Some(source),true);
  if !admission.is_stopped(){parsed.pending_bodies=crate::pending_body::pending_bodies(&parsed.statements,source,context);}
  crate::prepare_body_literal_syntax(parsed,cleanup,admission)
 }
@@ -1601,6 +1663,105 @@ mod original_simple_assignment_witness_tests {
             "    return (value = argument)\n",
             "    if(value = argument)\n        return value\n",
             "    break = 1\n    return value\n",
+        ] {
+            let parsed = body(code);
+            assert!(parsed.original_grammar.is_none(), "{code}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod original_while_block_witness_tests {
+    use super::*;
+
+    fn body(code: &str) -> ParsedBody {
+        let source = format!("/proc/probe(argument)\n{code}");
+        let parsed = crate::parse(&source);
+        parse_body_items_with_source(&parsed.items[0].children, &source)
+    }
+
+    #[test]
+    fn original_while_block_witness_consumes_condition_and_indented_children() {
+        for code in [
+            "    while(argument)\n        return 0\n    return argument\n",
+            "    while(1)\n        choose()\n    return argument\n",
+            "    if(argument)\n        while(argument.field)\n            return 0\n",
+        ] {
+            let parsed = body(code);
+            assert!(parsed.diagnostics.is_empty(), "{code}: {:?}", parsed.diagnostics);
+            let proof = parsed.original_grammar.expect("actual while block proof");
+            assert_eq!(proof.scope_roots(), Some(parsed.statements.len()), "{code}");
+        }
+    }
+
+    #[test]
+    fn original_while_block_witness_requires_source_gap_and_refuses_normalized_separator() {
+        let source = "/proc/probe(argument)\n    while(argument) ;\n        return 0\n";
+        let parsed = crate::parse(source);
+        let item = &parsed.items[0].children[0];
+        assert_eq!(item.header, "while(argument)");
+        assert_eq!(item.children.len(), 1);
+        assert!(source[item.header_span.end..item.children[0].header_span.start].contains(';'));
+        assert!(parse_body_items_with_source(&parsed.items[0].children, source).original_grammar.is_none());
+        let clean = crate::parse("/proc/probe(argument)\n    while(argument)\n        return 0\n");
+        assert!(parse_proc_body(&clean.items[0]).original_grammar.is_none());
+    }
+
+    #[test]
+    fn original_while_block_witness_refuses_unproved_condition_or_body() {
+        for code in [
+            "    while(argument) return 0\n    return argument\n",
+            "    while(argument)\n    return argument\n",
+            "    while(argument) ;\n        return 0\n",
+            "    while(choose(argument))\n        return 0\n",
+            "    while(argument)\n        continue\n",
+            "    while(argument)\n        return argument +\n",
+            "    while(argument))\n        return 0\n",
+        ] {
+            let parsed = body(code);
+            assert!(parsed.original_grammar.is_none(), "{code}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod original_decimal_switch_block_witness_tests {
+    use super::*;
+
+    fn body(code: &str) -> ParsedBody {
+        let source = format!("/proc/probe(argument)\n{code}");
+        let parsed = crate::parse(&source);
+        parse_body_items_with_source(&parsed.items[0].children, &source)
+    }
+
+    #[test]
+    fn original_decimal_switch_block_witness_consumes_cases_default_and_following_root() {
+        for code in [
+            "    switch(argument)\n        if(1)\n            return 1\n    return 0\n",
+            "    switch(argument)\n        if(1)\n            return 1\n        if(2)\n            return 2\n        else\n            return 0\n",
+        ] {
+            let parsed = body(code);
+            assert!(parsed.diagnostics.is_empty(), "{code}: {:?}", parsed.diagnostics);
+            let proof = parsed.original_grammar.expect("actual decimal switch scope");
+            assert_eq!(proof.scope_roots(), Some(parsed.statements.len()));
+        }
+    }
+
+    #[test]
+    fn original_decimal_switch_block_witness_refuses_unproved_selector_cases_or_tails() {
+        for code in [
+            "    switch(argument) ;\n        if(1)\n            return 0\n",
+            "    switch(argument)\n        if(1) ;\n            return 0\n",
+            "    switch(rand(1,2))\n        if(1)\n            return 0\n",
+            "    switch(argument)\n        if(1 || 2)\n            return 0\n",
+            "    switch(argument)\n        if(1,2)\n            return 0\n",
+            "    switch(argument)\n        if(1,)\n            return 0\n",
+            "    switch(argument)\n        if(1 to 2)\n            return 0\n",
+            "    switch(argument)\n        if(value)\n            return 0\n",
+            "    switch(argument)\n        if(1) return 0\n",
+            "    switch(argument)\n        if(1)\n            return 0\n        else return 1\n",
+            "    switch(argument)\n        else\n            return 0\n",
+            "    switch(argument))\n        if(1)\n            return 0\n",
         ] {
             let parsed = body(code);
             assert!(parsed.original_grammar.is_none(), "{code}");
