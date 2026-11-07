@@ -3584,3 +3584,25 @@ The probe after 42d5c45f59 omitted 289,035 repeated owners and measured
 with 134,192,780 bytes already reserved. It emitted no report. This is a
 different frontier from the preceding input-limited probe. It does not
 establish an equal-workload memory or throughput comparison.
+
+Three exact selected rosters now cover 81 of 106 recorded policy names
+across independent fixture comparisons. The 45-policy raw-file roster
+includes interface and modular_chomp as well as code and maps. The five
+additional raw-tree policies and nine workspace folds preserve their own
+discovery rules, scope and annotation usage. Reports match the independent
+legacy bytes on the initial, warm and configuration-edit cases. These
+counts describe qualified fixture reports, not a full checkout run.
+
+The compound native compile now borrows authenticated type-only declaration
+owners from the completed Original preparation. Each loan checks current
+encounter order and the issuing dictionaries. Strict still parses and
+resolves its own variant with the native target defines. The public daemon
+test observed positive pointer reuse, verified the native output and both
+reports, and verified a native-only failure followed by recovery. Member
+metadata remains local to its issuing mode. This is the first cold sharing
+path and does not make all cold declarations or body facts common.
+
+Output line bases now use exact page-local anchors and narrow deltas with
+an absolute escape. Three focused origin tests passed for boundaries,
+continuations, exact escape and source-refusal behavior. Checkout savings
+for the new layout are not yet measured.
