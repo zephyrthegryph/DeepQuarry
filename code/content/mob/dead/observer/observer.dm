@@ -63,7 +63,7 @@ CAPABILITIES(/mob/observer)
 	layer = BELOW_MOB_LAYER
 	plane = PLANE_GHOSTS
 	alpha = 127
-	sight = SEE_TURFS | SEE_MOBS | SEE_OBJS | SEE_SELF
+	sight = SEE_TURFS | SEE_MOBS | SEE_OBJS | SEE_SELF | SEE_BLACKNESS
 	see_invisible = SEE_INVISIBLE_OBSERVER
 
 // A ghost takes the body it leaves as a param, not as its loc or a positional argument: the body is only read from (its look, name, mind and

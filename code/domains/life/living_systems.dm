@@ -521,6 +521,7 @@ GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
 /// Variants set their sight, then call ..() last to send the vision signal.
 /mob/living/proc/life_vision()
 	SHOULD_CALL_PARENT(TRUE)
+	sight |= SEE_BLACKNESS // the unseen area is drawn black over the planes, so a large sprite's overhang onto a dark tile is darkened (as in /tg)
 	PUBLISH(src, mob_handle_vision)
 
 /// The root only notifies listeners (remote view); sight inputs wake it.

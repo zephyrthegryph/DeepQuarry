@@ -4781,7 +4781,6 @@
 #include "code\content\lighting\lighting_setup.dm"
 #include "code\content\lighting\lighting_source.dm"
 #include "code\content\lighting\lighting_turf.dm"
-#include "code\content\lighting\overhang_test.dm"
 #include "code\content\lighting\overlay_lighting.dm"
 #include "code\content\lighting\planet_sunlight.dm"
 #include "code\content\lighting\sunlight_handler.dm"

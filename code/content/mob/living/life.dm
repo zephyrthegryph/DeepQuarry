@@ -10,6 +10,6 @@
 		see_invisible = initial(see_invisible)
 
 	sight = initial(sight)
-	sight |= src.sight_flags
+	sight |= src.sight_flags|SEE_BLACKNESS
 
 	return

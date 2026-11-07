@@ -106,14 +106,10 @@ CAPABILITIES(/datum/overlay_lighting)
 	var/atom/movable/movable_parent = owner
 
 	rel_set(src, nameof(visible_mask), new /obj/effect/overlay/light_visible())
-	if(GLOB.lighting_overhang_keep_apart)
-		visible_mask.appearance_flags |= KEEP_APART // lighting overhang test (code/content/lighting/overhang_test.dm)
 	if(is_directional)
 		directional = TRUE
 		rel_set(src, nameof(directional_atom), new /obj/effect/abstract/directional_lighting())
 		rel_set(src, nameof(cone), new /obj/effect/overlay/light_cone())
-		if(GLOB.lighting_overhang_keep_apart)
-			cone.appearance_flags |= KEEP_APART
 		cone_hint_x = motion_of(movable_parent).cone_x
 		cone_hint_y = motion_of(movable_parent).cone_y
 		set_direction(movable_parent.dir)

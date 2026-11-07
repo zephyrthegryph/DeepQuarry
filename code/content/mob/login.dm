@@ -55,7 +55,7 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 
 	STATE_SET(src, cooldowns, next_move, 1)
 	STATE_SET(src, connection, disconnect_time, null) // ition: clear the disconnect time
-	sight |= SEE_SELF
+	sight |= SEE_SELF|SEE_BLACKNESS
 	..()
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/engine/grant_verbs.dm)
 	PUBLISH(src, mob_login)
