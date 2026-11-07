@@ -825,6 +825,29 @@ fn with_original_policy_file_prepared_demand(root:&Path,path:&Path,live_page_byt
 
 #[cfg(all(test,feature="native-policy"))]mod required_file_scope_tests{
  use super::*;use crate::{captured_generator_budget::Budget,captured_reactive_reads::Failure};
+ #[test]fn unused_allow_raw_view_keeps_page_live_funding_without_unused_transform_envelope(){
+  let root=std::env::current_dir().unwrap();
+  let path=root.join("code/allow-unused-large.dm");
+  let mut source=" ".repeat(256*1024);
+  source.push_str("// ALLOW(scheduler): test original raw annotation under a limited page budget
+");
+  let text=dm_preprocess::SourceText::from(source);
+  let live=512*1024;
+  let small=Budget::new(768*1024).unwrap();
+  let mut entered=0;
+  assert!(with_original_policy_file_clean(&root,&path,text.clone(),live,&small,&mut|relative,views|{
+   entered+=1;
+   assert_eq!(relative,"code/allow-unused-large.dm");
+   assert!(views.raw()?.ends_with("under a limited page budget
+"));
+   Ok(true)
+  }).unwrap());
+  assert_eq!(entered,1);
+  let general=Budget::new(768*1024).unwrap();
+  assert!(matches!(with_original_policy_file(&root,&path,text.clone(),live,&general,&mut|_,_|panic!("general view over-admitted")),Err(Failure::Operational(ref error))if error.kind()==std::io::ErrorKind::OutOfMemory));
+  let page_denied=Budget::new(live).unwrap();
+  assert!(matches!(with_original_policy_file_clean(&root,&path,text,live,&page_denied,&mut|_,_|panic!("raw-only view lost page charge")),Err(Failure::Operational(ref error))if error.kind()==std::io::ErrorKind::OutOfMemory));
+ }
  #[test]fn prepared_original_file_normalization_is_funded_before_allocation_and_released_after_physical_file(){
   let root=std::env::current_dir().unwrap();let path=root.join("code/required-reader.dm");let budget=Budget::new(4*1024*1024).unwrap();let before=budget.used();let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
   for page in 0..80{let raw=with_original_policy_file_prepared(&root,&path,0,&budget,|scratch|{scratch.charge(4096).map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;Ok(dm_preprocess::SourceText::from("/datum/probe/proc/reactions()\n    return \"required\"\n"))},&mut|relative,views|{assert_eq!(relative,"code/required-reader.dm");assert!(views.raw()?.contains("required"));Ok(true)}).unwrap();assert!(raw);assert_eq!(budget.used(),before+(page+1)*fixed,"only the known fixed scratch metadata survives each local File");}

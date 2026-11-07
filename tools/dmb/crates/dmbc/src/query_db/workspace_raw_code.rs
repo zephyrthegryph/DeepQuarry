@@ -175,7 +175,10 @@ impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
    for file in &files{
     self.checkpoint()?;
     let Some(text)=&file.text else{continue};
-    let pending=if matches!(domain,FileDomain::RawTree(_,dq_analyze::captured_raw_tree_pages::Policy::DocSnippets|dq_analyze::captured_raw_tree_pages::Policy::UiActions,_)|FileDomain::EngineMarker(..)){dq_analyze::captured_raw_file::with_original_policy_file_clean(self.capture.root(),&file.path,text.clone(),live,&self.budget,visit)}else{dq_analyze::captured_raw_file::with_original_policy_file(self.capture.root(),&file.path,text.clone(),live,&self.budget,visit)};
+    // The unused-ALLOW visitor reads only normalized raw text.
+    // Keep the actual page-live reservation, without granting code or
+    // marker transforms the visitor never uses.
+    let pending=if matches!(domain,FileDomain::AllowUnused(_)|FileDomain::RawTree(_,dq_analyze::captured_raw_tree_pages::Policy::DocSnippets|dq_analyze::captured_raw_tree_pages::Policy::UiActions,_)|FileDomain::EngineMarker(..)){dq_analyze::captured_raw_file::with_original_policy_file_clean(self.capture.root(),&file.path,text.clone(),live,&self.budget,visit)}else{dq_analyze::captured_raw_file::with_original_policy_file(self.capture.root(),&file.path,text.clone(),live,&self.budget,visit)};
     if matches!(&pending,Err(Failure::Operational(_))){return pending}
     self.checkpoint()?;if !pending?{return Ok(false)}
    }
