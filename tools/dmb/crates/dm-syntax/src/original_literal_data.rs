@@ -15,8 +15,8 @@ struct LiteralValue {
     kind: LiteralKind,
     scalar_bits: u32,
     string_mode:OriginalStringMode,
-    // A nonzero end means the issued typed text exactly equals these raw
-    // UTF-8 bytes. Empty text already needs no allocation; [0, 0] is owned.
+    // Exact UTF-8 subview: prefix bytes and (suffix bytes + 1).
+    // Zero in the second byte selects the owned (or empty) typed text.
     value_in_raw: [u8; 2],
     raw: String,
     text: Box<str>,
@@ -163,11 +163,23 @@ fn store_issued_value(s: &str, pending: &mut LiteralValue, credit: &mut SettingR
     // Bounded byte comparison only. The caller has already issued the VALUE
     // and the lossless spelling independently; no quote/escape rule is used.
     // Template segment kind, lexical mode, and occurrence remain separate.
-    if !s.is_empty() && pending.raw.len() <= usize::from(u8::MAX) && s.len() <= pending.raw.len() {
+    const MAX_PREFIX: usize = u8::MAX as usize;
+    const MAX_SUFFIX: usize = (u8::MAX - 1) as usize;
+    let slack = pending.raw.len().checked_sub(s.len())
+        .filter(|slack| *slack <= MAX_PREFIX + MAX_SUFFIX && !s.is_empty());
+    if let Some(slack) = slack {
         a.checkpoint()?;
-        if let Some(start) = pending.raw.find(s) {
-            let end = start + s.len(); // find proves this nonempty UTF-8 range is inside raw
-            pending.value_in_raw = [start as u8, end as u8];
+        let mut first = slack.saturating_sub(MAX_SUFFIX);
+        // An exact UTF-8 match cannot start inside a scalar. Find the first
+        // encodable boundary before running the one bounded-slack search.
+        while !pending.raw.is_char_boundary(first) {
+            first += 1;
+        }
+        if let Some(start) = pending.raw[first..].find(s).map(|start| first + start)
+            .filter(|start| *start <= MAX_PREFIX)
+        {
+            let suffix = slack - start;
+            pending.value_in_raw = [start as u8, (suffix + 1) as u8];
             return Ok(Box::default());
         }
     }
@@ -303,9 +315,10 @@ impl<'a> OriginalLiteralRef<'a> {
     }
     pub fn value(self)->OriginalTokenValue<&'a str> {
         let payload = self.payload();
-        let [start, end] = payload.value_in_raw;
-        let text: &str = if end != 0 {
-            &payload.raw[usize::from(start)..usize::from(end)]
+        let [start, tail] = payload.value_in_raw;
+        let text: &str = if tail != 0 {
+            let end = payload.raw.len() - usize::from(tail - 1);
+            &payload.raw[usize::from(start)..end]
         } else {
             payload.text
         };
@@ -1024,6 +1037,45 @@ mod interpolation_backing_tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
+    fn long_issued_literal_value_keeps_exact_utf8_slice_and_offset_limits() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let issued = "évalue".repeat(600);
+        let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
+        for (prefix, suffix, aliases) in [
+            ("\"".to_owned(), "\"".to_owned(), true),
+            ("x".repeat(255), "y".repeat(254), true),
+            ("€".to_owned(), "y".repeat(253), true),
+            ("x".repeat(256), String::new(), false),
+            (String::new(), "y".repeat(255), false),
+            ("x".repeat(256), "y".repeat(254), false),
+        ] {
+            let raw = format!("{prefix}{issued}{suffix}");
+            let pointer = raw.as_ptr();
+            let literal = OriginalLiteralData::from_value_with_mode_using(
+                raw, OriginalTokenValue::String(&issued), OriginalStringMode::Raw, &a,
+            ).unwrap();
+            let OriginalTokenValue::String(value) = literal.value() else { panic!("actual String") };
+            assert_eq!(literal.raw().as_ptr(), pointer);
+            assert_eq!(value, issued);
+            assert_eq!(value.as_ptr() == literal.raw()[prefix.len()..].as_ptr(), aliases);
+            assert_eq!(literal.string_mode(), OriginalStringMode::Raw);
+            assert_eq!(used.load(Ordering::Acquire),
+                fixed + literal.raw_storage().capacity() + if aliases { 0 } else { issued.len() });
+            drop(literal);
+            assert_eq!(used.load(Ordering::Acquire), 0);
+        }
+
+        let raw = format!("\"{}\\t\"", "a".repeat(400));
+        let issued = format!("{}\t", "a".repeat(400));
+        let literal = OriginalLiteralData::from_value_using(raw, OriginalTokenValue::String(&issued), &a).unwrap();
+        assert!(matches!(literal.value(), OriginalTokenValue::String(value) if value == issued));
+        assert_eq!(used.load(Ordering::Acquire), fixed + literal.raw_storage().capacity() + issued.len());
+        drop(literal);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
     fn original_interpolation_segments_reuse_only_the_identical_issued_text() {
         let used = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
@@ -1083,6 +1135,33 @@ mod batch_page_controls {
 
     fn literal(raw: &str, value: i32, a: &SettingAdmission<'_>) -> OriginalLiteralData {
         OriginalLiteralData::from_value_using(raw.to_owned(), OriginalTokenValue::Int(value), a).unwrap()
+    }
+
+    #[test]
+    fn original_literal_batch_adopts_long_alias_without_cooked_side_storage() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let issued = "é".repeat(170);
+        let long = OriginalLiteralData::from_value_using(
+            format!("\"{issued}\""), OriginalTokenValue::String(&issued), &a,
+        ).unwrap();
+        let pointer = long.raw().as_ptr();
+        let mut rows = [Some(long), Some(literal("1", 1, &a)),
+            Some(literal("2", 2, &a)), Some(literal("3", 3, &a))];
+        let raw_bytes = rows.iter().flatten().map(|row| row.raw_storage().capacity()).sum::<usize>();
+        OriginalLiteralData::pack_delivery_batch_using(&mut rows, &a).unwrap();
+        let long = rows[0].take().unwrap();
+        let LiteralStorage::Page(page) = &long.owner().storage else { panic!("actual batch page") };
+        assert!(page.cooked.is_empty());
+        let OriginalTokenValue::String(value) = long.value() else { panic!("actual String") };
+        assert_eq!(value, issued);
+        assert_eq!(long.raw().as_ptr(), pointer);
+        assert_eq!(value.as_ptr(), long.raw()[1..].as_ptr());
+        assert!(!long.same_owner(rows[1].as_ref().unwrap()));
+        assert_eq!(used.load(Ordering::Acquire),
+            size_of::<Payload>() + 2 * size_of::<usize>() + 4 * size_of::<PackedBatchValue>() + raw_bytes);
+        drop((rows,long));
+        assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
     #[test]
