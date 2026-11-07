@@ -3,6 +3,7 @@ import { EventBus } from 'tgui-core/eventbus';
 import { playMusic, stopMusic } from '../audio/handlers';
 import { chatMessage, exportChatlog } from '../chat/handlers';
 import { focusInput } from '../input/handlers';
+import { chatLayout } from '../layout/handlers';
 import { pingReply, pingSoft } from '../ping/handlers';
 import {
   handleTelemetryData,
@@ -19,6 +20,7 @@ const listeners = {
   'audio/playMusic': playMusic,
   'audio/stopMusic': stopMusic,
   'chat/focusInput': focusInput,
+  'chat/layout': chatLayout,
   'chat/message': chatMessage,
   connected,
   'ping/reply': pingReply,

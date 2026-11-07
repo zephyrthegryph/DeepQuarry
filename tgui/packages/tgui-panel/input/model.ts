@@ -23,6 +23,16 @@ export type Send = (type: string, payload: Record<string, unknown>) => void;
 
 export type KeyAction = 'send' | 'escape' | 'next' | 'prev' | null;
 
+/** The channel a click on the toggle (or Tab) switches to: the next one, wrapping; backwards with shift. */
+export function nextChannel(
+  channel: InputChannel,
+  direction: 1 | -1 = 1,
+): InputChannel {
+  const count = INPUT_CHANNELS.length;
+  const at = INPUT_CHANNELS.indexOf(channel);
+  return INPUT_CHANNELS[(at + direction + count) % count];
+}
+
 export function isChannel(value: unknown): value is InputChannel {
   return INPUT_CHANNELS.includes(value as InputChannel);
 }
@@ -84,9 +94,7 @@ export class ChatInputModel {
   }
 
   step(direction: 1 | -1): void {
-    const count = INPUT_CHANNELS.length;
-    const at = INPUT_CHANNELS.indexOf(this.channel);
-    this.setChannel(INPUT_CHANNELS[(at + direction + count) % count]);
+    this.setChannel(nextChannel(this.channel, direction));
   }
 
   /** The text changed: tell the server the player is typing, at most every few seconds. */

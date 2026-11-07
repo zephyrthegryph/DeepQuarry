@@ -272,7 +272,8 @@ window "rpane"
 		size = 640x480
 		anchor1 = 0,0
 		anchor2 = 100,100
-		saved-params = "splitter"
+		saved-params = ""	// not saved: the chat share is a preference (chat_layout_sync), and a share saved for the other end would flip
+		splitter = 60	// the stat panel above, the chat below with the default 40% share
 		left = "statwindow"
 		right = "outputwindow"
 		is-vert = false
@@ -292,7 +293,7 @@ window "chat_float"
 		background-color = #202020
 		text-color = #B3CCE6
 		pos = 60,60
-		size = 480x300
+		size = 560x420
 		anchor1 = -1,-1
 		anchor2 = -1,-1
 		is-visible = false
@@ -303,13 +304,13 @@ window "chat_float"
 		can-resize = false
 		titlebar = false
 		on-close = "dock-chat"
-	// Hosts the outputwindow pane while the chat floats (chat_apply_layout in code/content/tgui_panel/floating.dm).
+	// Hosts the outputwindow pane while the chat floats (chat_layout_sync in code/content/client/floating_chat.dm).
 	elem "chat_float_host"
 		type = CHILD
 		background-color = #202020
 		text-color = #B3CCE6
 		pos = 0,0
-		size = 480x300
+		size = 560x420
 		anchor1 = 0,0
 		anchor2 = 100,100
 		saved-params = ""

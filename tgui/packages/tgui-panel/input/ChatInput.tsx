@@ -5,16 +5,20 @@ import { classes } from 'tgui-core/react';
 import { inputFocusRequestAtom } from './atoms';
 import {
   ChatInputModel,
-  INPUT_CHANNELS,
   type InputChannel,
   keyAction,
   MAX_LENGTH,
+  nextChannel,
 } from './model';
 
 /** Marks the field for panelFocus.ts, which must not hand focus to the map while it is used. */
 export const CHAT_INPUT_ATTRIBUTE = 'data-chat-input';
 
-/** The persistent input row under the chat: a channel selector, the text and send. */
+/**
+ * The persistent input row under the chat, like the say popup: one channel
+ * button on the left (a click or Tab cycles Say, Radio, Me, OOC, LOOC; shift
+ * goes back), the text and send.
+ */
 export function ChatInput() {
   const model = useRef<ChatInputModel | null>(null);
   if (!model.current) {
@@ -80,25 +84,21 @@ export function ChatInput() {
 
   return (
     <div className="ChatInput">
-      <div className="ChatInput__channels">
-        {INPUT_CHANNELS.map((name) => (
-          <button
-            key={name}
-            type="button"
-            className={classes([
-              'ChatInput__channel',
-              name === channel && 'ChatInput__channel--selected',
-            ])}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              setChannel(name);
-              field.current?.focus();
-            }}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
+      <button
+        type="button"
+        title="Change channel (Tab)"
+        className={classes([
+          'ChatInput__channel',
+          `ChatInput__channel--${channel}`,
+        ])}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={(event) => {
+          setChannel(nextChannel(channel, event.shiftKey ? -1 : 1));
+          field.current?.focus();
+        }}
+      >
+        {channel}
+      </button>
       <input
         {...{ [CHAT_INPUT_ATTRIBUTE]: true }}
         ref={field}
