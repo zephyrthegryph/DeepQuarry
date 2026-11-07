@@ -1,32 +1,25 @@
 /**
- * The Inspect panel: examining something opens (or updates) one console-styled window at the top right of the
- * map instead of printing the examine text to chat. A player who prefers chat sets the "examine in chat"
+ * The Inspect panel: examining something fills the "Inspect" tab of the stat panel (the right side panel) and switches
+ * to it, instead of printing the examine text to chat. A player who prefers chat sets the "examine in chat"
  * preference (/datum/preference/toggle/examine_in_chat); nothing is lost either way.
  *
- * One panel per client (the client owns it). It lives in the map's own BROWSER element, like the interaction
- * menu (code/content/interactions/menu.dm), which InspectPanel.tsx places in the top right corner. The target's
+ * One panel per client (the client owns it). The data goes to the stat panel as an "update_inspect" message
+ * (tgui-panel/statpanel); its buttons come back as "Inspect-Act" messages (/client/on_stat_panel_message). The target's
  * examine() text is the description; types with structure add it through inspect_sections() (a human's worn
  * items and body status) and the portrait. The last few targets stay as tabs; a worn item in the list inspects
  * that item.
  */
-#define INSPECT_PANEL_CONTROL "mapwindow.inspect_panel"
 /// How many targets stay as tabs.
 #define INSPECT_PANEL_RECENT_MAX 5
+/// The way the portrait faces.
+#define INSPECT_PORTRAIT_DIR NORTH
 
 /datum/inspect_panel
 	/// The client using the panel: a one-sided back view (the client owns the panel).
 	var/client/owner
 	/// What the panel shows: a relation view.
 	var/atom/target
-	/// The map element the panel renders in (owned).
-	var/datum/tgui_window/panel_window
-	/// Is the panel showing?
-	var/visible = FALSE
-	/// Bumped on every examine, so the page re-places itself even on the same target.
-	var/revision = 0
-	/// The direction the portrait faces.
-	var/portrait_dir = SOUTH
-	/// The target's portrait as a base64 PNG (composited off-thread when it is examined or turned), or null while it renders.
+	/// The target's portrait as a base64 PNG (composited off-thread when it is examined), or null while it renders.
 	var/portrait
 	/// Bumped for every portrait request; only the newest request's result is applied.
 	var/portrait_generation = 0
@@ -43,25 +36,12 @@
 
 /datum/inspect_panel/New(client/owner)
 	rel_set(src, nameof(owner), owner)
-	// The element is made the first time this player examines something, not shipped in the skin: a skin element
-	// in the map pane is laid out with the lobby's title screen too.
-	winset(owner, "inspect_panel", list2params(list("parent" = "mapwindow", "type" = "browser", "pos" = "0,0", "size" = "8x8", "anchor1" = "none", "anchor2" = "none", "is-visible" = "false", "inner-background-color" = "#00000000")))
-	rel_set(src, nameof(panel_window), new /datum/tgui_window(owner, INSPECT_PANEL_CONTROL))
 
 /client/var/tmp/datum/inspect_panel/inspect_panel
 
 CAPABILITIES(/datum/inspect_panel)
 	ref_one(nameof(target))
-	owns_one(nameof(panel_window), /datum/tgui_window)
 	owns_many(nameof(portrait_jobs))
-	interface("InspectPanel", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
-	op("inspect", ui_act("inspect", arg("ref", schema_ref(/atom))), then(PROC_REF(ui_act_inspect)))
-	op("select", ui_act("select", arg("ref", schema_ref(/atom))), then(PROC_REF(ui_act_select)))
-	op("turn", ui_act("turn"), then(PROC_REF(ui_act_turn)))
-	op("flavor", ui_act("flavor"), then(PROC_REF(ui_act_flavor)))
-	op("ooc", ui_act("ooc"), then(PROC_REF(ui_act_ooc)))
-	op("primary", ui_act("primary", arg("id", schema_text(4096))), then(PROC_REF(ui_act_primary)))
-	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
 	ref_one(nameof(owner))
 
 /// The client using the panel.
@@ -71,131 +51,95 @@ CAPABILITIES(/datum/inspect_panel)
 /datum/inspect_panel/proc/target()
 	return QDELETED(target) ? null : target
 
-/// Renders in the map's panel element, not a pooled popup window.
-/datum/inspect_panel/ui_window(mob/user)
-	return panel_window
-
-// Our window (owned) is closed client-side whenever it leaves us.
-/datum/inspect_panel/on_owned_release(var_name, datum/child)
-	if(var_name == "panel_window")
-		var/datum/tgui_window/window = child
-		window.close()
-	return ..()
-
-/// Hides the panel (the page stays loaded for the next examine).
-/datum/inspect_panel/proc/hide()
-	set_visible(FALSE)
-	if(owner())
-		winset(owner(), null, list2params(list("[INSPECT_PANEL_CONTROL].is-visible" = "false", "mapwindow.map.focus" = "true")))
-	SStgui.update_uis(src)
-
-/// `new_target`, its text and its portrait, now shown (and put first in the tabs).
+/// `new_target`, its text and its portrait, now shown (and put first in the tabs), and the stat panel switched to the Inspect tab.
 /datum/inspect_panel/proc/show(mob/user, atom/new_target, list/new_description, list/new_notes)
 	if(new_target != target())
 		set_show_flavor(FALSE)
-		set_portrait_dir(SOUTH)
 		set_portrait(null)
 	rel_set(src, nameof(/datum/inspect_panel::target), new_target)
 	set_description(new_description)
 	set_notes(new_notes)
-	request_portrait(new_target, portrait_dir)
+	request_portrait(new_target, INSPECT_PORTRAIT_DIR)
 	var/list/handles = list(handle_of(new_target))
 	for(var/handle in recent)
 		if(handle != handles[1] && handle_get(handle))
 			handles += handle
 	set_recent(handles.Copy(1, min(length(handles), INSPECT_PANEL_RECENT_MAX) + 1))
-	set_visible(TRUE)
-	set_revision(revision + 1)
-	log_input("Input: [key_name(user)] inspected [new_target] ([new_target.type]) in the Inspect panel.")
-	tgui_interact(user)
+	log_input("Input: [key_name(user)] inspected [new_target] ([new_target.type]) in the Inspect tab.")
+	push(TRUE)
 
-/datum/inspect_panel/proc/ui_gate(datum/act/op/A)
-	return A.actor && target()
+/// Sends the panel's data to the client's stat panel; `switch_tab` also selects the Inspect tab there.
+/datum/inspect_panel/proc/push(switch_tab = FALSE)
+	var/client/player = owner()
+	if(!player?.stat_panel?.is_ready())
+		log_input("Input: Inspect tab data for [player ? key_name(player) : "nobody"] not sent (stat panel not ready).")
+		return
+	player.stat_panel.send_message("update_inspect", list("data" = payload(player.mob), "switch" = switch_tab ? TRUE : FALSE))
+
+/// The stat panel's message for this panel (a button in the Inspect tab): `action` and its arguments.
+/datum/inspect_panel/proc/act(action, list/params)
+	var/mob/user = owner()?.mob
+	if(!user || !target())
+		return FALSE
+	switch(action)
+		if("inspect")
+			return act_inspect(user, params["ref"])
+		if("select")
+			return act_select(user, params["ref"])
+		if("flavor")
+			set_show_flavor(!show_flavor)
+			push()
+			return TRUE
+		if("ooc")
+			return act_ooc(user)
+		if("primary")
+			return istext(params["id"]) && run_chosen_op(user, target(), params["id"])
+	log_input("Input: [key_name(user)] sent unknown Inspect tab action '[action]'.")
+	return FALSE
 
 /// A worn item of the target was clicked: inspect it. Only what the panel itself lists qualifies.
-/datum/inspect_panel/proc/ui_act_inspect(datum/act/op/A, ref)
-	if(!ui_gate(A))
-		return FALSE
-	var/atom/item = ref
+/datum/inspect_panel/proc/act_inspect(mob/user, ref)
+	var/atom/item = istext(ref) ? handle_get(ref) : null
 	if(!istype(item) || QDELETED(item))
 		return FALSE
 	var/listed = FALSE
-	for(var/list/row as anything in target().inspect_sections(A.actor)["worn"])
+	for(var/list/row as anything in target().inspect_sections(user)["worn"])
 		if(row["ref"] == handle_of(item))
 			listed = TRUE
 			break
 	if(!listed)
 		return FALSE
-	A.actor.examinate(item)
+	user.examinate(item)
 	return TRUE
 
 /// A tab was clicked: examine that target again.
-/datum/inspect_panel/proc/ui_act_select(datum/act/op/A, ref)
-	if(!A.actor)
-		return FALSE
-	var/atom/picked = ref
+/datum/inspect_panel/proc/act_select(mob/user, ref)
+	var/atom/picked = istext(ref) ? handle_get(ref) : null
 	if(!istype(picked) || QDELETED(picked) || !(handle_of(picked) in recent))
 		return FALSE
-	A.actor.examinate(picked)
+	user.examinate(picked)
 	return TRUE
 
-/datum/inspect_panel/proc/ui_act_turn(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
-	set_portrait_dir(turn(portrait_dir, -90))
-	request_portrait(target(), portrait_dir)
-	return TRUE
-
-/datum/inspect_panel/proc/ui_act_flavor(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
-	set_show_flavor(!show_flavor)
-	return TRUE
-
-/datum/inspect_panel/proc/ui_act_ooc(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
+/datum/inspect_panel/proc/act_ooc(mob/user)
 	var/atom/shown = target()
 	if(!isliving(shown))
 		return FALSE
 	var/mob/living/subject = shown
-	subject.do_examine_ooc(A.actor)
+	subject.do_examine_ooc(user)
 	return TRUE
 
-/datum/inspect_panel/proc/ui_act_primary(datum/act/op/A, id)
-	if(!ui_gate(A))
-		return FALSE
-	return run_chosen_op(A.actor, target(), id)
-
-/datum/inspect_panel/proc/ui_act_close(datum/act/op/A)
-	hide()
-	return TRUE
-
-/// The panel's window data.
-/datum/inspect_panel/ui_data(datum/act/eval/A)
-	var/mob/user = A.actor
+/// The panel's data for the stat panel.
+/datum/inspect_panel/proc/payload(mob/user)
 	var/atom/shown = target()
-	var/list/view_size = getviewsize(owner()?.view || world.view)
-	var/list/placement = list(
-		"visible" = visible && shown ? TRUE : FALSE,
-		"control" = INSPECT_PANEL_CONTROL,
-		"view_w" = view_size[1],
-		"view_h" = view_size[2],
-		"tile_size" = isnum(world.icon_size) ? world.icon_size : 32,
-		"revision" = revision,
-	)
 	if(!shown)
-		placement["target"] = null
-		return placement
+		return null
 	var/list/tabs = list()
 	for(var/handle in recent)
 		var/atom/tab_target = handle_get(handle)
 		if(tab_target && !QDELETED(tab_target))
 			tabs += list(list("ref" = handle, "name" = capitalize(tab_target.name), "active" = tab_target == shown))
-	placement["tabs"] = tabs
-	placement["portrait"] = portrait
-	placement["show_flavor"] = show_flavor
-	return inspect_panel_data(user, shown, description, notes) + placement
+	var/list/extra = list("tabs" = tabs, "portrait" = portrait, "show_flavor" = show_flavor)
+	return inspect_panel_data(user, shown, description, notes) + extra
 
 /// What the panel shows for `target` as seen by `user`: name, kind/role/distance for the subtitle, the description
 /// lines and notes it was given, the structured sections the target declares (worn, body), flavor, OOC and the
@@ -290,7 +234,7 @@ CAPABILITIES(/datum/inspect_portrait_job)
 	var/datum/inspect_panel/owner_panel = panel
 	if(owner_panel && png_path && generation == owner_panel.portrait_generation)
 		owner_panel.set_portrait(icon2base64(icon(file(png_path))))
-		SStgui.update_uis(owner_panel)
+		owner_panel.push()
 		log_input("Input: inspect portrait of [described] composited off-thread (server cost [queued_in] ds to describe).")
 	else if(owner_panel && generation == owner_panel.portrait_generation)
 		log_input("Input: inspect portrait of [described] failed or timed out ([output]).")
@@ -489,5 +433,5 @@ CAPABILITIES(/datum/inspect_portrait_job)
 	for(var/implant in get_visible_implants(0))
 		. += list(list("label" = uppertext("[implant]"), "state" = "EMBEDDED", "tone" = "danger"))
 
-#undef INSPECT_PANEL_CONTROL
+#undef INSPECT_PORTRAIT_DIR
 #undef INSPECT_PANEL_RECENT_MAX
