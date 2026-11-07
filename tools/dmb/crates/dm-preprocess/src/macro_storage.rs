@@ -157,6 +157,12 @@ impl<T> MacroTokenRows<T> {
     }
 
     /// Packed pages keep their actual ordinal. Only the tail may be short.
+    pub(crate) fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.first.as_mut_slice().iter_mut().chain(
+            self.later.as_mut_slice().iter_mut().flat_map(|page| page.as_mut_slice()),
+        )
+    }
+
     pub(crate) fn len(&self) -> usize {
         self.later.as_slice().last().map_or(self.first.len(), |last|
             self.first.len() + (self.later.len() - 1) * TOKEN_PAGE_ROWS + last.len())
