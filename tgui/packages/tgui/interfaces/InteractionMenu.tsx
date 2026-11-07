@@ -134,14 +134,14 @@ export const InteractionMenu = () => {
         const place = () => {
           if (cancelled) return;
           const box = boxRef.current;
+          // The border box (border included): scrollWidth/scrollHeight leave the border out, which cut it off.
+          const rect = box?.getBoundingClientRect();
           const w = Math.min(
-            Math.ceil(((box?.scrollWidth || 200) + 2) * pixelRatio),
+            Math.ceil((rect?.width || 200) * pixelRatio),
             mapW,
           );
           const h = Math.min(
-            Math.ceil(
-              Math.min(box?.scrollHeight || 120, MAX_HEIGHT) * pixelRatio,
-            ),
+            Math.ceil(Math.min(rect?.height || 120, MAX_HEIGHT) * pixelRatio),
             mapH,
           );
           const parsed = cursorInMap(data.cursor_params, {
