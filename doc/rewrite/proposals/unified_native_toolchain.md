@@ -3534,3 +3534,19 @@ frontier. It refused a 4,096-byte source allocation with 3,444 bytes of
 headroom in the unchanged input limit and produced no report. This probe
 stopped earlier than the previous syntax-limited probe and does not measure
 savings on equal workloads. The private daemon drained and exited.
+
+
+Fresh plain UTF-8 reads now move their actual decoded buffer into the source
+owner and partition the prepaid grant into its payload and backing credits.
+The provider can request credits but cannot substitute the source bytes.
+Six focused tests passed, including real filesystem pointer identity, alias
+lifetime, exact donor settlement and refusal with unchanged funding. Existing
+candidate and exceptional encoding paths are preserved. Binding, Original and
+receipt allocations still use the weak ledger observations, so this transfer
+does not establish a shared allocation budget across source and syntax.
+
+The checkout probe at `cadf3ebe4b` reached 11,213,308 producer rows before
+refusing a 24,624-byte source allocation with 19,028 bytes of input headroom.
+It produced no report. The owned transfer adds two allocation-control layouts
+and is a lifetime-accounting change. These different frontiers do not support
+an equal-workload comparison. The private daemon drained and exited.
