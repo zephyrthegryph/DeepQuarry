@@ -159,6 +159,20 @@ impl SourceArenaWork for QueryDb{
      Ok(Some(receipt.into_credit().into_control()))
  }
 
+ fn split_original_exceptional_bytes(&self, donor: &mut SourceArenaCredit, capacity: usize, control: usize)
+     -> io::Result<Option<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
+     self.checkpoint()?;
+     let actual = allocation(self, donor)?;
+     let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
+     let mut ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e| e.into_inner());
+     if control != dm_resources::SharedBytes::owner_allocation_bytes() {
+         return Err(wrong());
+     }
+     let [payload, control] = split_owned_allocations(&mut ledger, actual, [capacity, control],
+         |ledger, extra| self.admit_source_arena(ledger, extra))?;
+     Ok(Some((payload.into_credit(), control.into_credit().into_control())))
+ }
+
  fn split_original_text(&self, donor: &mut SourceArenaCredit, capacity: usize)
      -> io::Result<Option<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
      self.checkpoint()?;
@@ -311,6 +325,20 @@ impl SourceArenaWork for HeldSourceWork<'_>{
      let [receipt] = split_owned_allocations(&mut *state.ledger, actual, [bytes],
          |_, extra| budget.charge(extra).map_err(|_| oom()))?;
      Ok(Some(receipt.into_credit().into_control()))
+ }
+
+ fn split_original_exceptional_bytes(&self, donor: &mut SourceArenaCredit, capacity: usize, control: usize)
+     -> io::Result<Option<(SourceArenaCredit, dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
+     self.checkpoint()?;
+     let mut state = self.lock()?;
+     let actual = Self::actual(&state, donor)?;
+     let budget = state.budget;
+     if control != dm_resources::SharedBytes::owner_allocation_bytes() {
+         return Err(wrong());
+     }
+     let [payload, control] = split_owned_allocations(&mut *state.ledger, actual, [capacity, control],
+         |_, extra| budget.charge(extra).map_err(|_| oom()))?;
+     Ok(Some((payload.into_credit(), control.into_credit().into_control())))
  }
 
  fn split_original_text(&self, donor: &mut SourceArenaCredit, capacity: usize)

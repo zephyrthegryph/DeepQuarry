@@ -41,7 +41,7 @@ fn current(owners: &[SharedBytes], range: std::ops::Range<usize>) -> Vec<Current
             CurrentFile {
                 path: root().join(format!("code/{i:04}.dm")),
                 text: Some(text),
-                proof: SourceProof::Owned(Arc::downgrade(owners[i].shared_owner())),
+                proof: SourceProof::Owned(owners[i].downgrade()),
                 charge: storage.values().sum(),
             }
         })
@@ -343,7 +343,7 @@ fn excluded_workspace_sources_need_no_text_but_any_live_scope_requires_real_text
         files: vec![CurrentFile {
             path: root().join("code/0000.dm"),
             text: None,
-            proof: SourceProof::Owned(Arc::downgrade(bytes[0].shared_owner())),
+            proof: SourceProof::Owned(bytes[0].downgrade()),
             charge: 0,
         }],
         previous: Weak::new(),

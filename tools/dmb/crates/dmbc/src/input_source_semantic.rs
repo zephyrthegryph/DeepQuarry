@@ -57,9 +57,9 @@ impl SemanticSourceEvidence {
                         if seen.insert((1, address)) {
                             if let Some(original) = super::recorded_source_receipt_original(value) {
                                 let owner = original.shared_owner();
-                                if seen.insert((5, Arc::as_ptr(owner) as usize)) {
+                                if seen.insert((5, owner as *const dm_resources::SharedBytesOwner as usize)) {
                                     charge = charge
-                                        .saturating_add(std::mem::size_of_val(owner.as_ref()))
+                                        .saturating_add(std::mem::size_of_val(owner))
                                         .saturating_add(2 * std::mem::size_of::<usize>())
                                         .saturating_add(owner.bytes().capacity());
                                 }

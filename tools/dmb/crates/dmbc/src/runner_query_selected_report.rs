@@ -545,6 +545,7 @@ impl super::super::RawWorkspaceSnapshot {
             judgment: plan.judgment, library_baseline: None,
         };
         for &name in roster.names() {
+            let policy_started = std::time::Instant::now();
             poll()?;
             let producer = producer(name);
             let meta = producer.metadata();
@@ -575,6 +576,7 @@ impl super::super::RawWorkspaceSnapshot {
                 }
                 _ => return Err(io::Error::new(io::ErrorKind::Unsupported, "raw-file roster contains a model or foreign producer")),
             }
+            dm_profile::detail_mark(name, policy_started);
         }
         let completed = usage.finish_data(&mut work).map_err(operational)?;
         let clean = queries.with_workspace_full_allow_unused(capture, &guard, &selected_tree, &completed, |unused, _, budget| {

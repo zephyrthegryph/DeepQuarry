@@ -767,7 +767,7 @@ mod tests {
             scopes: vec![scope],
             files: vec![Contribution {
                 path: root.join("code/a.dm"),
-                proof: SourceProof::Owned(Weak::new()),
+                proof: SourceProof::Owned(dm_resources::WeakSharedBytes::default()),
                 findings: vec![findings],
             }],
             charge: 4096,

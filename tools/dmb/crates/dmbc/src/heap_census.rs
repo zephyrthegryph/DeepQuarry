@@ -345,6 +345,10 @@ impl HeapCensus {
             size_of::<T>(),
         )
     }
+    pub(crate) fn shared_bytes_owner(&mut self, owner: &str, value: &dm_resources::SharedBytes) -> bool {
+        let size = size_of::<dm_resources::SharedBytesOwner>();
+        self.buffer(owner, value.owner_address(), size, size)
+    }
     pub(crate) fn path(&mut self, owner: &str, value: &PathBuf) {
         self.buffer(
             owner,
@@ -1006,8 +1010,8 @@ impl HeapCensus {
             self.string("resource_records", &input.archive_name);
             self.path("resource_records", &input.disk_path);
             self.vec_payload("resource_records", &input.named.name);
-            let bytes = input.named.shared_data().shared_owner();
-            if self.arc_object("resource_payloads", bytes) {
+            let bytes = input.named.shared_data();
+            if self.shared_bytes_owner("resource_payloads", bytes) {
                 self.vec_payload("resource_payloads", bytes.bytes());
             }
         }

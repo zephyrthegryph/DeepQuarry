@@ -132,7 +132,7 @@ fn warm_preparation_reissues_original_receipt_and_pruning_releases_it() {
     let prepared = first.prepared_source(path).unwrap();
     first.finish_prepared().unwrap();
     let original = first.exceptional_source_bytes(path).unwrap().unwrap();
-    let weak = Arc::downgrade(original.shared_owner());
+    let weak = original.downgrade();
     drop(first);
     let second = RecordingInputs::new(source.clone(), 20_000_000_000)
         .with_prepared_sources(Some(owner.clone()));

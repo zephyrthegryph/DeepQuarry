@@ -12,7 +12,7 @@ impl HeapCensus {
         let result = inputs.visit_exceptional_source_originals(|path, bytes| {
             let owner = "source_originals.bytes";
             self.path(owner, path);
-            if self.arc_object(owner, bytes.shared_owner()) {
+            if self.shared_bytes_owner(owner, bytes) {
                 self.vec_payload(owner, bytes.shared_owner().bytes());
             }
         });

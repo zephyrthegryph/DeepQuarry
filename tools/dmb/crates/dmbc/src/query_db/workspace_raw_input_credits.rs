@@ -3,7 +3,7 @@
 use super::*;use dq_analyze::captured_generator_budget::Budget;use dm_preprocess::{SourceAcquisitionLease,SourceText,SourceTextStorage,WeakSourceText};use crate::runner_host::workspace_capture::RawSourceIdentity;
 pub(super) const NODE:usize=256;const FIXED:usize=4096;
 type ResourceKey=(u8,usize);
-enum Observation{Acquisition(dm_preprocess::source_acquisition::WeakAcquisitionObject),Text(WeakSourceText,Option<Weak<super::super::Admission>>),SealedText(WeakSourceText,Option<Weak<super::super::Admission>>),Arena(Weak<super::source_arena::Allocation>),Original(Weak<str>),Bytes(Weak<SharedBytesOwner>),Capture(Weak<WorkspaceCapture>,usize),Derived(Weak<crate::input_snapshot::DerivedPreflight>),RecorderMetadata(Weak<()>,usize),Handlers(Weak<crate::input_snapshot::HandlerStructuralSubject>)}
+enum Observation{Acquisition(dm_preprocess::source_acquisition::WeakAcquisitionObject),Text(WeakSourceText,Option<Weak<super::super::Admission>>),SealedText(WeakSourceText,Option<Weak<super::super::Admission>>),Arena(Weak<super::source_arena::Allocation>),Original(Weak<str>),Bytes(dm_resources::WeakSharedBytes),Capture(Weak<WorkspaceCapture>,usize),Derived(Weak<crate::input_snapshot::DerivedPreflight>),RecorderMetadata(Weak<()>,usize),Handlers(Weak<crate::input_snapshot::HandlerStructuralSubject>)}
 impl Observation{
  fn has_tracked_bytes(&self)->bool{!matches!(self,Self::Text(..)|Self::Derived(_)|Self::Handlers(_))}
  fn live(&self)->bool{match self{Self::Acquisition(w)=>w.is_alive(),Self::Text(w,_)|Self::SealedText(w,_)=>w.upgrade().is_some(),Self::Arena(w)=>w.strong_count()!=0,Self::Original(w)=>w.strong_count()!=0,Self::Bytes(w)=>w.strong_count()!=0,Self::Capture(w,_)=>w.strong_count()!=0,Self::Derived(w)=>w.strong_count()!=0,Self::Handlers(w)=>w.strong_count()!=0,Self::RecorderMetadata(w,_)=>w.strong_count()!=0}}
@@ -122,6 +122,13 @@ impl Ledger{
      }
      Ok(())
  }
+ fn funds_exceptional_bytes(&self, bytes: &dm_resources::SharedBytes) -> bool {
+  let payload = bytes.source_arena_payload_credit().map(|credit| credit.owner());
+  let control = bytes.source_arena_control_credit().map(|credit| credit.owner());
+  [payload, control].into_iter().all(|credit| credit
+      .and_then(|credit| credit.as_any().downcast_ref::<super::source_arena::Allocation>())
+      .is_some_and(|allocation| self.has_source_arena(allocation)))
+ }
  pub(super) fn has_source_arena(&self,owner:&super::source_arena::Allocation)->bool{let key=(6,std::ptr::from_ref(owner)as usize);self.rows.get(&key).is_some_and(|row|matches!(&row.owner,Observation::Arena(weak)if weak.strong_count()!=0&&weak.as_ptr()==std::ptr::from_ref(owner)))}
 
  /// Settlement is a cleanup/ownership transaction, not new source work. No
@@ -135,7 +142,7 @@ impl Ledger{
   let owner=Observation::SealedText(text.downgrade(),self.arena_domain.clone());
   let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost its backing"))?;staged[0]=Some(((0,backing),owner,n));
   if let Some((address,weak))=original{let owner=Observation::Original(weak);let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost original payload"))?;staged[1]=Some(((1,address),owner,n));}
-  if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{let owner=Observation::Bytes(Arc::downgrade(bytes.shared_owner()));let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost exceptional bytes"))?;staged[2]=Some(((2,Arc::as_ptr(bytes.shared_owner())as usize),owner,n));}
+  if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{if !self.funds_exceptional_bytes(bytes){let owner=Observation::Bytes(bytes.downgrade());let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost exceptional bytes"))?;staged[2]=Some(((2,bytes.owner_address()),owner,n));}}
   let mut next=3;let mut object_error=None;
   lease.visit_weak_resource_objects(|weak|{if object_error.is_some(){return}if weak.control_credit().and_then(|credit| credit.owner().as_any().downcast_ref::<super::source_arena::Allocation>())
       .is_some_and(|allocation| self.has_source_arena(allocation)) {
@@ -219,7 +226,15 @@ impl RawInputCredits<'_>{
   self.ledger.replace_row(key,Row{owner,bytes});
   Ok(bytes)
  }
- pub(crate) fn retain(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{if !self.prepared{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source retention requires pre-allocation preparation"))}self.prepared=false;let text=lease.source_text();let mut backing=0;let mut original=None;text.visit_storage(|address,_,storage|{backing=address;if let SourceTextStorage::Original(payload)=storage{original=Some((Arc::as_ptr(payload)as *const u8 as usize,Arc::downgrade(payload)));}});let mut delta=self.observe((0,backing),Observation::Text(text.downgrade(),self.ledger.arena_domain.clone()))?;if let Some((address,owner))=original{delta=delta.checked_add(self.observe((1,address),Observation::Original(owner))?).ok_or_else(oom)?;}if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{delta=delta.checked_add(self.observe((2,Arc::as_ptr(bytes.shared_owner())as usize),Observation::Bytes(Arc::downgrade(bytes.shared_owner())))?).ok_or_else(oom)?;}
+ pub(crate) fn retain(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{
+  self.retain_using(lease,false)
+ }
+ /// The actual raw-file-only frame never needs a growing span memo. Freezing
+ /// this real backing preserves all digest results for its other aliases too.
+ pub(crate) fn retain_sealed(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{
+  self.retain_using(lease,true)
+ }
+ fn retain_using(&mut self,lease:&SourceAcquisitionLease,sealed:bool)->io::Result<()>{if !self.prepared{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source retention requires pre-allocation preparation"))}self.prepared=false;if sealed{lease.seal_input_fingerprint_storage();}let text=lease.source_text();let mut backing=0;let mut original=None;text.visit_storage(|address,_,storage|{backing=address;if let SourceTextStorage::Original(payload)=storage{original=Some((Arc::as_ptr(payload)as *const u8 as usize,Arc::downgrade(payload)));}});let domain=self.ledger.arena_domain.clone();let owner=if sealed{Observation::SealedText(text.downgrade(),domain)}else{Observation::Text(text.downgrade(),domain)};let mut delta=self.observe((0,backing),owner)?;if let Some((address,owner))=original{delta=delta.checked_add(self.observe((1,address),Observation::Original(owner))?).ok_or_else(oom)?;}if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{if !self.ledger.funds_exceptional_bytes(bytes){delta=delta.checked_add(self.observe((2,bytes.owner_address()),Observation::Bytes(bytes.downgrade()))?).ok_or_else(oom)?;}}
  // Every actual backing is weakly registered BEFORE a payload denial, including
  // exceptional originals retained independently by RecordingInputs on failure.
  charge(self.budget,delta)}
@@ -231,6 +246,20 @@ impl QueryDb{
  /// Same family lock order as reserve/grow; no source content/cache is retained.
  pub(crate) fn raw_source_input_census(&self,c:&mut crate::heap_census::HeapCensus){let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner()).census(c);}
  pub(crate) fn raw_source_input_charge_locked(&self)->io::Result<usize>{self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner()).refresh()}
+ /// Only the existing family-gate holder uses this bounded upper. Unsealed
+ /// observations force an exact sweep. Dead allocations may make the upper
+ /// conservative, so it cannot cause a denial without an exact retry.
+ pub(super) fn workspace_input_headroom_with_source_upper_locked(&self,fixed:usize)->io::Result<usize>{
+  let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
+  let (sources,cached)=ledger.admission_charge()?;
+  let headroom=|sources:usize|self.workspace_input_base_headroom_locked(
+      fixed.checked_add(sources).ok_or_else(oom)?
+  );
+  match headroom(sources){
+   Err(_) if cached=>headroom(ledger.refresh_after_pressure()?),
+   result=>result,
+  }
+ }
  pub(super) fn refresh_raw_source_inputs_locked(&self)->io::Result<()>{let sources=self.raw_source_input_charge_locked()?;self.workspace_input_base_headroom_locked(sources)?;Ok(())}
  pub(super) fn raw_source_capture_fixed_credit_locked(&self,capture:&Arc<WorkspaceCapture>)->io::Result<Option<usize>>{Ok(self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner()).capture_metadata(capture))}
  pub(crate) fn with_semantic_workspace_capture_inputs(
@@ -264,7 +293,7 @@ impl QueryDb{
  #[test]fn raw_input_census_aliases_slices_and_equal_content_different_allocations_are_distinct(){let source:SourceText="abcdefgh".repeat(1024).into();let slice=source.checked_view(2..15).unwrap();let equal:SourceText=source.as_str().to_owned().into();let budget=Budget::new(1024*1024).unwrap();let mut ledger=Ledger::default();{let mut c=credits(&mut ledger,&budget);keep_text(&mut c,&source).unwrap();let first=c.ledger.refresh().unwrap();c.prepare_source().unwrap();let before=budget.used();c.prepared=false;let mut key=0;slice.visit_storage(|a,_,_|key=a);assert_eq!(c.observe((0,key),Observation::Text(slice.downgrade(),c.ledger.arena_domain.clone())).unwrap(),0);assert_eq!(budget.used(),before,"no backing funding for aliases");assert_eq!(c.ledger.refresh().unwrap(),first);keep_text(&mut c,&equal).unwrap();assert!(c.ledger.refresh().unwrap()>first+equal.len());}let held=ledger.refresh().unwrap();drop(source);assert_eq!(ledger.refresh().unwrap(),held,"overlapping detached view retains the whole first allocation");drop(slice);assert!(ledger.refresh().unwrap()<held);drop(equal);assert_eq!(ledger.refresh().unwrap(),FIXED);assert!(ledger.rows.is_empty());}
  #[test]fn raw_input_census_original_payload_outlives_backing_and_dedups_wrappers(){let payload:Arc<str>=Arc::from("large actual original".repeat(1000));let first:SourceText=payload.clone().into();let second:SourceText=payload.clone().into();let weak=first.downgrade();let strong=Arc::strong_count(&payload);let budget=Budget::new(1024*1024).unwrap();let mut ledger=Ledger::default();{let mut c=credits(&mut ledger,&budget);keep_text(&mut c,&first).unwrap();let one=c.ledger.refresh().unwrap();keep_text(&mut c,&second).unwrap();let two=c.ledger.refresh().unwrap();assert!(two>one);assert!(two-one<payload.len(),"same Arc payload is not charged again");assert_eq!(Arc::strong_count(&payload),strong,"census retains no strong payload owner");}drop(first);drop(second);assert!(weak.upgrade().is_none());let detached=ledger.refresh().unwrap();assert_eq!(ledger.rows.len(),1,"only original Arc payload survives frame/backing replacement");assert!(detached>=FIXED+payload.len());drop(payload);assert_eq!(ledger.refresh().unwrap(),FIXED);assert!(ledger.rows.is_empty());}
  #[test]fn raw_input_census_fingerprint_growth_is_refreshed_and_not_credited_as_freed(){let source:SourceText="x".repeat(8192).into();let budget=Budget::new(1024*1024).unwrap();let mut ledger=Ledger::default();keep_text(&mut credits(&mut ledger,&budget),&source).unwrap();let before=ledger.refresh().unwrap();for end in 1..128{source.span_fingerprint(0..end).unwrap();}let mut actual=0;source.visit_fingerprint_storage(|_,_,capacity|actual=capacity);assert!(actual>0);assert_eq!(ledger.refresh().unwrap()-before,actual);let alias=source.clone();drop(source);assert_eq!(ledger.refresh().unwrap(),before+actual);drop(alias);assert_eq!(ledger.refresh().unwrap(),FIXED);}
- #[test]fn raw_input_census_shared_bytes_aliases_and_failed_quota_keep_weak_observation_until_release(){let bytes=dm_resources::SharedBytes::from(vec![b'x';4096]);let alias=bytes.clone();let owner=Arc::as_ptr(bytes.shared_owner())as usize;let budget=Budget::new(1024*1024).unwrap();let mut ledger=Ledger::default();{let mut c=credits(&mut ledger,&budget);c.prepare_source().unwrap();c.prepared=false;let n=c.observe((2,owner),Observation::Bytes(Arc::downgrade(bytes.shared_owner()))).unwrap();charge(&budget,n).unwrap();assert_eq!(c.observe((2,owner),Observation::Bytes(Arc::downgrade(alias.shared_owner()))).unwrap(),0);}let held=ledger.refresh().unwrap();drop(bytes);assert_eq!(ledger.refresh().unwrap(),held);drop(alias);assert_eq!(ledger.refresh().unwrap(),FIXED);
+ #[test]fn raw_input_census_shared_bytes_aliases_and_failed_quota_keep_weak_observation_until_release(){let bytes=dm_resources::SharedBytes::from(vec![b'x';4096]);let alias=bytes.clone();let owner=bytes.owner_address();let budget=Budget::new(1024*1024).unwrap();let mut ledger=Ledger::default();{let mut c=credits(&mut ledger,&budget);c.prepare_source().unwrap();c.prepared=false;let n=c.observe((2,owner),Observation::Bytes(bytes.downgrade())).unwrap();charge(&budget,n).unwrap();assert_eq!(c.observe((2,owner),Observation::Bytes(alias.downgrade())).unwrap(),0);}let held=ledger.refresh().unwrap();drop(bytes);assert_eq!(ledger.refresh().unwrap(),held);drop(alias);assert_eq!(ledger.refresh().unwrap(),FIXED);
  let source:SourceText="y".repeat(4096).into();let denied=Budget::new(2048).unwrap();let error=keep_text(&mut credits(&mut ledger,&denied),&source).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert!(!ledger.rows.is_empty(),"allocated owner remains observed after payload funding refusal");assert!(ledger.refresh().unwrap()>source.len());drop(source);assert_eq!(ledger.refresh().unwrap(),FIXED);let retry:SourceText="retry".into();keep_text(&mut credits(&mut ledger,&budget),&retry).unwrap();assert!(ledger.refresh().unwrap()>FIXED);drop(retry);assert_eq!(ledger.refresh().unwrap(),FIXED);}
  #[test]fn raw_input_census_metadata_preflight_refuses_before_any_weak_node_growth(){let source:SourceText="x".into();let budget=Budget::new(128).unwrap();let mut ledger=Ledger::default();let error=credits(&mut ledger,&budget).prepare_source().unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert!(ledger.rows.is_empty());assert_eq!(ledger.refresh().unwrap(),FIXED);drop(source);}
  #[test]fn actual_bom_recorded_original_survives_failed_capture_and_credits_retire_only_after_input_owner_drops(){use crate::input_snapshot::{RecordingInputs,FileSystemInputs};let root=crate::test_scratch::dir("raw-census-bom-failure");let path=root.join("actual.dm");let mut bytes=vec![0xef,0xbb,0xbf];bytes.extend_from_slice("x".repeat(4096).as_bytes());std::fs::write(&path,&bytes).unwrap();let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);let lease=inputs.read_raw_source(&path,1024*1024,None,|_,_,_|Ok(())).unwrap().unwrap();let budget=Budget::new(2048).unwrap();let mut ledger=Ledger::default();{let mut c=credits(&mut ledger,&budget);c.prepare_source().unwrap();let error=c.retain(&lease).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);}drop(lease);assert!(ledger.refresh().unwrap()>=FIXED+bytes.len(),"RecordingInputs still owns the original exceptional bytes after failed capture");assert!(ledger.rows.values().any(|r|matches!(r.owner,Observation::Bytes(_))));drop(inputs);assert_eq!(ledger.refresh().unwrap(),FIXED);assert!(ledger.rows.is_empty());}
@@ -448,4 +477,98 @@ impl RawInputCredits<'_>{
  /// Other credit operations resume after this borrow ends. No SourceArenaWork
  /// call in this closure may be replaced by ordinary QueryDb's locking lender.
  pub(super) fn with_held_source_work<R>(&mut self,db:&QueryDb,consume:impl FnOnce(&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<R>)->io::Result<R>{super::source_arena::with_held_source_work(db,self.ledger,self.budget,consume)}
+}
+
+#[cfg(test)]
+mod exceptional_open_alias_accounting {
+    use super::*;
+    use crate::input_snapshot::{FileSystemInputs, RecordingInputs};
+    use dm_preprocess::source_arena_credit::read_original_source_open_using;
+    use dm_preprocess::{InitialEnvironment, OriginalRawOpenDecision, OriginalRawReadOutcome};
+
+    #[test]
+    fn same_native_arena_does_not_reobserve_exceptional_bytes_on_raw_capture_reissue() {
+        let root = crate::test_scratch::dir("raw-source-funded-reissue");
+        let path = root.join("source.dm");
+        std::fs::write(&path, b"\xef\xbb\xbf/datum/probe\n").unwrap();
+        let inputs = RecordingInputs::new(FileSystemInputs, 0)
+            .with_initial_environment(InitialEnvironment::OriginalChecker0290);
+        let db = QueryDb::default();
+        let OriginalRawReadOutcome::Acquired(first) = read_original_source_open_using(
+            &inputs, &path, 4096, &db, &mut || Ok(OriginalRawOpenDecision::Read),
+        ).unwrap() else {
+            panic!("actual opened source required");
+        };
+        let raw = RecordingInputs::new(FileSystemInputs, 0)
+            .with_initial_environment(InitialEnvironment::OriginalChecker0290);
+        let reissued = raw.read_raw_source(&path, 4096, Some(&first), |_, _, fresh| {
+            assert!(!fresh);
+            Ok(())
+        }).unwrap().unwrap();
+        let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes) =
+            crate::input_snapshot::recorded_source_original(&reissued).unwrap() else {
+                panic!("actual exceptional source required");
+            };
+        let budget = Budget::new(1 << 20).unwrap();
+        let _gate = db.raw_policy.gate.lock().unwrap();
+        let mut ledger = db.raw_policy.workspace.raw_sources.lock().unwrap();
+        assert!(ledger.funds_exceptional_bytes(bytes));
+        assert!(!ledger.rows.contains_key(&(2, bytes.owner_address())));
+        let mut credits = RawInputCredits {
+            ledger: &mut ledger, budget: &budget, source_nodes: 0,
+            capture_node: false, prepared: false,
+        };
+        credits.prepare_source().unwrap();
+        credits.retain(&reissued).unwrap();
+        assert!(credits.ledger.has_source(&reissued));
+        assert!(credits.ledger.funds_exceptional_bytes(bytes));
+        assert!(!credits.ledger.rows.contains_key(&(2, bytes.owner_address())));
+    }
+}
+
+#[cfg(test)]
+mod sealed_raw_page_admission_tests {
+    use super::*;
+    use crate::input_snapshot::{FileSystemInputs, RecordingInputs};
+
+    #[test]
+    fn actual_raw_capture_seal_keeps_aliased_digests_exact_and_retries_pressure() {
+        let root=crate::test_scratch::dir("sealed-raw-page-admission");
+        let path=root.join("actual.dm");
+        std::fs::write(&path,b"/datum/probe\n").unwrap();
+        let db=QueryDb::default();
+        let baseline=db.raw_source_input_charge_locked().unwrap();
+        let inputs=RecordingInputs::new(FileSystemInputs,0);
+        let source=inputs.read_raw_source(&path,4096,None,|_,_,_|Ok(())).unwrap().unwrap();
+        let alias=source.source_text().clone();
+        assert!(alias.span_fingerprint(0..1).is_some());
+        let mut memo_before=0;
+        alias.visit_fingerprint_storage(|_,_,capacity|memo_before=capacity);
+        assert!(memo_before>0);
+        let _gate=db.raw_policy.gate.lock().unwrap();
+        let budget=Budget::new(1<<20).unwrap();
+        let exact={
+            let mut ledger=db.raw_policy.workspace.raw_sources.lock().unwrap();
+            ledger.bind_source_arena(&db.raw_policy.admission).unwrap();
+            let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};
+            credits.prepare_source().unwrap();
+            credits.retain_sealed(&source).unwrap();
+            let exact=credits.ledger.refresh().unwrap();
+            assert_eq!(credits.ledger.admission_charge().unwrap(),(exact,true));
+            exact
+        };
+        for end in 1..=alias.len(){
+            assert_eq!(alias.span_fingerprint(0..end),Some(xxhash_rust::xxh3::xxh3_128(&alias.as_bytes()[..end])));
+        }
+        alias.visit_fingerprint_storage(|_,_,capacity|assert_eq!(capacity,memo_before));
+        assert!(exact>baseline);
+        let fixed=db.workspace_input_base_headroom_locked(exact).unwrap();
+        assert!(db.workspace_input_headroom_with_source_upper_locked(fixed).is_err(),
+            "the exact retry must still reject a truly full family");
+        drop(alias);
+        drop(source);
+        drop(inputs);
+        assert_eq!(db.workspace_input_headroom_with_source_upper_locked(fixed).unwrap(),exact-baseline,
+            "a dead weak row can only trigger a retry, never a false capacity denial");
+    }
 }

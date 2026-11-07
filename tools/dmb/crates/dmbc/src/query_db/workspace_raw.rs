@@ -177,7 +177,7 @@ impl Owners {
 #[derive(Clone)]
 pub(crate) enum SourceProof {
     Native(OriginalAcquisitionIdentity),
-    Owned(Weak<SharedBytesOwner>),
+    Owned(dm_resources::WeakSharedBytes),
 }
 impl SourceProof {
     fn metadata_charge(&self) -> usize {
@@ -204,7 +204,7 @@ impl SourceProof {
         match (self, b) {
             (Self::Native(a), Self::Native(b)) => a.same_live_original(b),
             (Self::Owned(a), Self::Owned(b)) => {
-                a.strong_count() != 0 && b.strong_count() != 0 && Weak::ptr_eq(a, b)
+                a.strong_count() != 0 && b.strong_count() != 0 && a.ptr_eq(b)
             }
             _ => false,
         }
@@ -618,6 +618,13 @@ impl QueryDb {
         }
     }
     pub(super) fn workspace_input_headroom_locked(&self,fixed:usize)->io::Result<usize>{let sources=self.raw_source_input_charge_locked()?;self.workspace_input_base_headroom_locked(fixed.checked_add(sources).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?)}
+    pub(super) fn workspace_raw_page_input_headroom_locked(&self,capture:&WorkspaceCapture,fixed:usize)->io::Result<usize>{
+        if capture.is_sealed_raw_file_capture(){
+            self.workspace_input_headroom_with_source_upper_locked(fixed)
+        }else{
+            self.workspace_input_headroom_locked(fixed)
+        }
+    }
     pub(super) fn workspace_input_base_headroom_locked(&self, fixed: usize) -> io::Result<usize> {
         let raw_inputs = self
             .raw_policy
@@ -796,7 +803,8 @@ impl QueryDb {
                 .capacity()
                 .saturating_add(1)
                 .saturating_mul(std::mem::size_of::<Arc<PageResult>>());
-            let current_budget = self.workspace_input_headroom_locked(
+            let current_budget = self.workspace_raw_page_input_headroom_locked(
+                capture,
                 fixed_inputs
                     .saturating_add(inventory.coordination_charge(growth)?)
                     .saturating_add(held_coordination),

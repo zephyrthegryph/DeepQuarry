@@ -201,14 +201,14 @@ impl WorkspaceCapture {
                 }
                 Original::RawInput(lease) => {census.source_acquisition(lease);}
                 Original::Owned(bytes) => {
-                    if census.arc_object(owner, bytes.shared_owner()) {
+                    if census.shared_bytes_owner(owner, bytes) {
                         census.vec_payload(owner, bytes.shared_owner().bytes());
                     }
                 }
             }
         }
         if let Some(bytes) = &self.config {
-            if census.arc_object(owner, bytes.shared_owner()) {
+            if census.shared_bytes_owner(owner, bytes) {
                 census.vec_payload(owner, bytes.shared_owner().bytes());
             }
         }
@@ -226,7 +226,7 @@ impl WorkspaceCapture {
         for (path, bytes) in self.deadline.iter().map(|(path, bytes)| (path, bytes.as_ref()))
             .chain(self.library_baseline.iter().map(|(path, baseline)| (path, baseline.bytes()))) {
             census.path(owner,path);
-            if let Some(bytes)=bytes{if census.arc_object(owner,bytes.shared_owner()){census.vec_payload(owner,bytes.shared_owner().bytes());}}
+            if let Some(bytes)=bytes{if census.shared_bytes_owner(owner, bytes){census.vec_payload(owner,bytes.shared_owner().bytes());}}
         }
         self.discovery.census(census);
         census.workspace_policy_facts(&self.facts);
@@ -395,7 +395,7 @@ impl WorkspaceCapture {
                     scope.original_identity(native.occurrence, &native.identity)?,
                 ),
                 Original::RawInput(lease)=>SourceProof::Native(lease.original_identity()),
-                Original::Owned(bytes) => SourceProof::Owned(Arc::downgrade(bytes.shared_owner())),
+                Original::Owned(bytes) => SourceProof::Owned(bytes.downgrade()),
             };
             let mut own = BTreeMap::new();
             let mut funded=std::collections::BTreeSet::new();
@@ -405,28 +405,31 @@ impl WorkspaceCapture {
                 None
             } else {
                 let original = self.original(index, scope)?;
-                let raw = match &original {
-                    RecordedSourceOriginal::Utf8(text) => text.as_bytes(),
-                    RecordedSourceOriginal::Bytes(bytes) => bytes.as_slice(),
+                let clean = match &original {
+                    RecordedSourceOriginal::Utf8(text) if !text.as_bytes().contains(&b'\r') => Some(text),
+                    _ => None,
                 };
-                let length = dq_analyze::captured_raw_file::analyze_raw_len(raw)
-                    .map_err(io::Error::other)?;
-                let peak = if matches!(&original,RecordedSourceOriginal::Utf8(text) if !text.as_bytes().contains(&b'\r'))
-                {
-                    if let RecordedSourceOriginal::Utf8(text) = &original {
-                        dq_analyze::captured_raw_file::visit_source_storage(text, |key, bytes| {
-                            if funded.contains(&key){return}
-                            own.entry(key)
-                                .and_modify(|old: &mut usize| *old = (*old).max(bytes))
-                                .or_insert(bytes);
-                        });
-                    }
+                let observe = |own: &mut BTreeMap<_, _>, text: &dm_preprocess::SourceText| {
+                    dq_analyze::captured_raw_file::visit_source_storage(text, |key, bytes| {
+                        if funded.contains(&key) { return; }
+                        own.entry(key)
+                            .and_modify(|old: &mut usize| *old = (*old).max(bytes))
+                            .or_insert(bytes);
+                    });
+                };
+                let peak = if let Some(text) = clean {
+                    observe(&mut own, text);
                     own.iter()
                         .filter(|(key, _)| !owners.contains_key(*key))
                         .try_fold(0usize, |n, (_, b)| n.checked_add(*b))
                         .ok_or_else(|| io::Error::other("workspace source capacity overflow"))?
                 } else {
-                    length
+                    let raw = match &original {
+                        RecordedSourceOriginal::Utf8(text) => text.as_bytes(),
+                        RecordedSourceOriginal::Bytes(bytes) => bytes.as_slice(),
+                    };
+                    dq_analyze::captured_raw_file::analyze_raw_len(raw)
+                        .map_err(io::Error::other)?
                         .checked_mul(4)
                         .and_then(|n| n.checked_add(8192))
                         .ok_or_else(|| io::Error::other("workspace normalization peak overflow"))?
@@ -443,14 +446,13 @@ impl WorkspaceCapture {
                     }
                     break;
                 }
-                let text = crate::input_snapshot::normalize_recorded_policy_original(&original);
-                own.clear();
-                dq_analyze::captured_raw_file::visit_source_storage(&text, |key, bytes| {
-                    if funded.contains(&key){return}
-                    own.entry(key)
-                        .and_modify(|old: &mut usize| *old = (*old).max(bytes))
-                        .or_insert(bytes);
-                });
+                let text = if let Some(text) = clean {
+                    dm_preprocess::SourceText::clone(text)
+                } else {
+                    let text = crate::input_snapshot::normalize_recorded_policy_original(&original);
+                    observe(&mut own, &text);
+                    text
+                };
                 Some(text)
             };
             let charge = own
@@ -588,8 +590,8 @@ impl WorkspaceCapture {
                 }
                 Original::Owned(bytes) => {
                     let owner = bytes.shared_owner();
-                    if seen.insert(Arc::as_ptr(owner) as usize) {
-                        add(std::mem::size_of_val(owner.as_ref())
+                    if seen.insert(owner as *const dm_resources::SharedBytesOwner as usize) {
+                        add(std::mem::size_of_val(owner)
                             + 2 * std::mem::size_of::<usize>())?;
                         add(owner.bytes().capacity())?;
                     }
@@ -598,8 +600,8 @@ impl WorkspaceCapture {
         }
         if let Some(bytes) = &self.config {
             let owner = bytes.shared_owner();
-            if seen.insert(Arc::as_ptr(owner) as usize) {
-                add(std::mem::size_of_val(owner.as_ref()) + 2 * std::mem::size_of::<usize>())?;
+            if seen.insert(owner as *const dm_resources::SharedBytesOwner as usize) {
+                add(std::mem::size_of_val(owner) + 2 * std::mem::size_of::<usize>())?;
                 add(owner.bytes().capacity())?;
             }
         }
@@ -607,7 +609,7 @@ impl WorkspaceCapture {
         for (path, bytes) in self.deadline.iter().map(|(path, bytes)| (path, bytes.as_ref()))
             .chain(self.library_baseline.iter().map(|(path, baseline)| (path, baseline.bytes()))) {
             add(path.capacity())?;
-            if let Some(bytes)=bytes{let owner=bytes.shared_owner();if seen.insert(Arc::as_ptr(owner)as usize){add(std::mem::size_of_val(owner.as_ref())+2*std::mem::size_of::<usize>())?;add(owner.bytes().capacity())?;}}
+            if let Some(bytes)=bytes{let owner=bytes.shared_owner();if seen.insert(bytes.owner_address()){add(std::mem::size_of_val(owner)+2*std::mem::size_of::<usize>())?;add(owner.bytes().capacity())?;}}
         }
         // Shared directory arrays are charged by actual retained ownership, with
         // PathBuf capacities and conservative map-node allowance exposed below.
@@ -1054,9 +1056,30 @@ impl RawSourcePurpose {pub(crate) fn layering_no_model(self)->bool{matches!(self
 pub(crate) struct RawSourceIdentity{revision:u128,queries:Weak<crate::query_db::QueryDb>,purpose:RawSourcePurpose}
 impl RawSourceIdentity{pub(crate) fn revision(&self)->u128{self.revision}pub(crate) fn purpose(&self)->RawSourcePurpose{self.purpose}pub(crate) fn uses_queries(&self,db:&crate::query_db::QueryDb)->bool{self.queries.upgrade().is_some_and(|held|std::ptr::eq(held.as_ref(),db))}}
 impl WorkspaceCapture{
+ pub(crate) fn is_sealed_raw_file_capture(&self) -> bool {
+    self.raw_source.is_some() && self.matches_auxiliary_questions(
+        &[crate::policy_request::WorkspaceAuxiliaryQuestion::AllRawFilePolicies])
+ }
  pub(crate) fn raw_input_files(&self)->impl Iterator<Item=&dm_preprocess::SourceAcquisitionLease>{self.files.iter().filter_map(|file|match &file.original{Original::RawInput(lease)=>Some(lease),_=>None})}
  pub(crate) fn visit_raw_input_storage(&self,mut visit:impl FnMut((u8,usize),usize)){for lease in self.raw_input_files(){crate::input_snapshot::visit_raw_source_backing(lease,&mut visit);}}
- fn prior_raw_input(&self,path:&Path)->Option<&dm_preprocess::SourceAcquisitionLease>{self.files.iter().find(|file|file.path==path).and_then(|file|match &file.original{Original::RawInput(lease)=>Some(lease),_=>None})}
+ fn prior_raw_input(&self, path: &Path, purpose: RawSourcePurpose) -> Option<&dm_preprocess::SourceAcquisitionLease> {
+    let file = if purpose == RawSourcePurpose::AllRawFilePolicies {
+        // This capture keeps the complete discovery order. It has no extra
+        // manifest or dispatcher row. Compare the same canonical display key
+        // as discovery, whose order differs from Path::Ord on Windows.
+        let key = |path: &Path| relative_filesystem_path(path, self.root())
+            .map(|relative| relative.to_string_lossy().replace('\\', "/"));
+        let sought = key(path)?;
+        let index = self.files.binary_search_by(|file| key(&file.path).as_ref().cmp(&Some(&sought))).ok()?;
+        self.files.get(index).filter(|file| file.path == path)?
+    } else {
+        self.files.iter().find(|file| file.path == path)?
+    };
+    match &file.original {
+        Original::RawInput(lease) => Some(lease),
+        _ => None,
+    }
+ }
  pub(crate) fn matches_raw_source(&self,owner:&Arc<RawSourceIdentity>,revision:u128)->bool{self.raw_source.as_ref().is_some_and(|held|Weak::ptr_eq(held,&Arc::downgrade(owner)))&&self.source_revision==revision&&owner.revision==revision}
 }
 /// The Doc producer never asks for Sem. Its source witness is issued before any
@@ -1067,10 +1090,16 @@ pub(crate) fn capture_raw_only_with_prior<P:SnapshotProvider>(inputs:&RecordingI
 }
 pub(crate) fn capture_engine_unselected<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest,queries:&Arc<crate::query_db::QueryDb>,proof:crate::runner_host::workspace_discovery::EngineNoModelProof)->io::Result<(Arc<WorkspaceCapture>,Arc<RawSourceIdentity>)>{if intent.workspace_auxiliary()!=[proof.preflight().question()]{return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine no-model proof cannot grant another producer purpose"))}proof.require(inputs)?;queries.with_raw_source_capture_inputs(|budget,credits|capture_raw_only_funded(inputs,intent,queries,None,Some(proof),budget,credits))}
 fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest,queries:&Arc<crate::query_db::QueryDb>,prior:Option<&Arc<WorkspaceCapture>>,engine:Option<crate::runner_host::workspace_discovery::EngineNoModelProof>,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,credits:&mut crate::query_db::RawInputCredits<'_>)->io::Result<(Arc<WorkspaceCapture>,Arc<RawSourceIdentity>)>{
+ let capture_started = std::time::Instant::now();
  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
  let purpose=match intent.workspace_auxiliary(){[Q::AllRawFilePolicies]=>RawSourcePurpose::AllRawFilePolicies,[Q::OpOrder]=>RawSourcePurpose::OpOrder,[Q::DocSnippets]=>RawSourcePurpose::DocSnippets,[Q::Ownership]=>RawSourcePurpose::Ownership,[Q::NoticePublisher]=>RawSourcePurpose::NoticePublisher,[Q::UiActions]=>RawSourcePurpose::UiActions,[Q::EngineLayering]if engine.as_ref().is_some_and(|p|p.preflight().question()==Q::EngineLayering)=>RawSourcePurpose::EngineNoModel,[Q::LibraryLayering]if engine.as_ref().is_some_and(|p|p.preflight().question()==Q::LibraryLayering)=>RawSourcePurpose::LibraryNoModel,_=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual exclusive raw source purpose required"))};
  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||dm_preprocess::SourceProvider::initial_environment(inputs)!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!intent.workspace_generators().is_empty()||!intent.files().is_empty()||!intent.search_folders().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source requires its exact admitted original purpose"))}
  let workspace=intent.workspace().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"raw Doc workspace intent absent"))?;
+ let prior = prior.and_then(|capture| {
+     let owner = capture.raw_source.as_ref().and_then(Weak::upgrade)?;
+     (owner.uses_queries(queries.as_ref()) && owner.purpose() == purpose
+         && capture.matches_request(workspace)).then_some((capture, owner))
+ });
  let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
  let quota=|message|io::Error::new(io::ErrorKind::OutOfMemory,message);
  let metadata_peak=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(quota)?;metadata_peak.charge(EXTRA_BUDGET).map_err(quota)?;
@@ -1083,6 +1112,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
    crate::runner_host::workspace_discovery::discover(inputs,contract)?
   },
   RawSourcePurpose::DocSnippets=>{let(discovery,config)=crate::runner_host::workspace_discovery::discover_doc_snippets_productive(inputs,contract,&workspace.configuration)?;doc_config=Some(config);discovery},RawSourcePurpose::Ownership|RawSourcePurpose::OpOrder|RawSourcePurpose::NoticePublisher=>{if workspace.recursive_roots.as_slice()!=[workspace.root.join("code")]{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source purpose requires exactly actual CODE_DM"))}crate::runner_host::workspace_discovery::discover_ownership_code(inputs,contract)?},RawSourcePurpose::UiActions=>{let(discovery,config)=crate::runner_host::workspace_discovery::discover_ui_actions_productive(inputs,contract,&workspace.configuration)?;doc_config=Some(config);discovery},RawSourcePurpose::EngineNoModel|RawSourcePurpose::LibraryNoModel=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine no-model capture requires authentic selection proof"))})};discovery.validate_recording(inputs)?;
+ dm_profile::detail_mark("raw_capture.discovery", capture_started);
  let mut used=discovery.retained_charge()?.checked_add(std::mem::size_of::<WorkspaceCapture>()+std::mem::size_of::<RawSourceIdentity>()+std::mem::size_of::<crate::query_db::QueryDb>()+512).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
  let mut admit=|bytes:usize|->io::Result<()>{used=used.checked_add(bytes).filter(|n|*n<=EXTRA_BUDGET).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"raw Doc source exceeds existing capture allowance"))?;Ok(())};
  let covered=match purpose{
@@ -1113,7 +1143,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
   let scratch=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(quota)?;
   let allowance=budget.remaining().saturating_sub(8192)/8;if allowance==0{return Err(quota("raw source read has no remaining actual input allowance".into()))}
   scratch.charge(allowance+8192).map_err(quota)?;
-  let old=prior.filter(|capture|capture.raw_source.as_ref().and_then(Weak::upgrade).is_some_and(|owner|owner.uses_queries(queries.as_ref())&&owner.purpose()==purpose)&&capture.matches_request(workspace)).and_then(|capture|capture.prior_raw_input(path));
+  let old=prior.as_ref().and_then(|(capture, _)| capture.prior_raw_input(path, purpose));
   credits.prepare_source()?;
   let lease=inputs.read_raw_source(path,allowance,old,|capacity,exceptional,needs_decode|scratch.charge(capacity.checked_mul(if !needs_decode{0}else if exceptional{13}else{5}).and_then(|n|n.checked_add(8192)).ok_or(io::ErrorKind::OutOfMemory)?).map_err(quota))?.ok_or_else(||io::Error::new(io::ErrorKind::Interrupted,"discovered raw source disappeared"))?;
   credits.retain(&lease)?;drop(scratch);Ok(lease)
@@ -1163,18 +1193,25 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
   let lease=if ui_dispatcher_path.as_ref()==Some(path){ui_dispatcher_index=Some(files.len());ui_original.take().ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"actual UI dispatcher acquisition missing"))?}else{
    let width=path.capacity().checked_mul(16).and_then(|n|n.checked_add(4096)).ok_or(io::ErrorKind::OutOfMemory)?;used=used.checked_add(width).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;
    let scratch=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(quota)?;let allowance=budget.remaining().saturating_sub(8192)/8;if allowance==0{return Err(quota("raw source read has no remaining actual input allowance".into()))}scratch.charge(allowance+8192).map_err(quota)?;
-   let old=prior.filter(|capture|capture.raw_source.as_ref().and_then(Weak::upgrade).is_some_and(|owner|owner.uses_queries(queries.as_ref())&&owner.purpose()==purpose)&&capture.matches_request(workspace)).and_then(|capture|capture.prior_raw_input(path));
+   let old=prior.as_ref().and_then(|(capture, _)| capture.prior_raw_input(path, purpose));
    credits.prepare_source()?;let lease=inputs.read_raw_source(path,allowance,old,|capacity,exceptional,needs_decode|scratch.charge(capacity.checked_mul(if !needs_decode{0}else if exceptional{13}else{5}).and_then(|n|n.checked_add(8192)).ok_or(io::ErrorKind::OutOfMemory)?).map_err(quota))?.ok_or_else(||io::Error::new(io::ErrorKind::Interrupted,"discovered raw source disappeared"))?;
-   credits.retain(&lease)?;drop(scratch);lease
+   if purpose == RawSourcePurpose::AllRawFilePolicies {
+      credits.retain_sealed(&lease)?;
+   } else {
+      credits.retain(&lease)?;
+   }
+   drop(scratch);
+   lease
   };
   files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(path)?,original:Original::RawInput(lease)});selected.push(path.clone());
  }
+ dm_profile::detail_mark("raw_capture.sources", capture_started);
  let mut op_order_manifest=None;
  if purpose==RawSourcePurpose::OpOrder{
   let path=workspace.root.join("deepquarry.dme");crate::daemon::control::checkpoint()?;
   let width=path.as_os_str().len().checked_mul(16).and_then(|n|n.checked_add(4096)).ok_or(io::ErrorKind::OutOfMemory)?;used=used.checked_add(width).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;
   let scratch=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(quota)?;let allowance=budget.remaining().saturating_sub(8192)/8;if allowance==0{return Err(quota("op_order fixed manifest has no actual input allowance".into()))}scratch.charge(allowance+8192).map_err(quota)?;
-  let old=prior.filter(|capture|capture.raw_source.as_ref().and_then(Weak::upgrade).is_some_and(|owner|owner.uses_queries(queries.as_ref())&&owner.purpose()==purpose)&&capture.matches_request(workspace)).and_then(|capture|capture.prior_raw_input(&path));
+  let old=prior.as_ref().and_then(|(capture, _)| capture.prior_raw_input(&path, purpose));
   credits.prepare_source()?;let lease=inputs.read_raw_source(&path,allowance,old,|capacity,exceptional,needs_decode|scratch.charge(capacity.checked_mul(if !needs_decode{0}else if exceptional{13}else{5}).and_then(|n|n.checked_add(8192)).ok_or(io::ErrorKind::OutOfMemory)?).map_err(quota))?;
   let index=if let Some(lease)=lease{credits.retain(&lease)?;let index=files.len();files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(&path)?,original:Original::RawInput(lease)});Some(index)}else{None};
   op_order_manifest=Some(index);selected.push(path);drop(scratch);
@@ -1183,7 +1220,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
  let config_width=workspace.configuration.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(1024)).ok_or(io::ErrorKind::OutOfMemory)?;used=used.checked_add(config_width).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;let configuration=canonical_path(&workspace.configuration);if discovery.files().contains(&configuration){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw configuration cannot also be selected source"))}let config=match &engine{Some(proof)=>{if configuration!=proof.preflight().configuration().0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine configuration path differs"))}proof.preflight().configuration_bytes().cloned()},None=>match doc_config{Some(bytes)=>bytes,None=>inputs.read_policy_candidate(&configuration,EXTRA_BUDGET-used)?}};used=used.checked_add(config.as_ref().map_or(0,SharedBytes::capacity)).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;selected.push(configuration.clone());
  let selected=selected.into_iter().collect::<std::collections::BTreeSet<_>>();let facts=inputs.policy_workspace_closure(&selected,discovery.directory_paths())?;let revision=crate::policy_request::workspace_revision(0,&facts,&workspace.root,&workspace.recursive_roots,&configuration)?;let owner=Arc::new(RawSourceIdentity{revision,queries:Arc::downgrade(queries),purpose});let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"original-source-only-not-semantic-v1");hash.update(purpose.name().as_bytes());hash.update(&revision.to_le_bytes());let policy_revision=hash.digest128();
  let capture=Arc::new(WorkspaceCapture{source:Weak::new(),raw_source:Some(Arc::downgrade(&owner)),engine_no_model:engine,ui_dispatcher,source_revision:revision,policy_revision,issuance:next_issuance()?,discovery,files:files.into_boxed_slice(),configuration,config,auxiliary:vec![purpose.question()],deadline:None,library_baseline:None,check_grep:None,keys_manifest:op_order_manifest,base_vars_configuration:None,map_edits:None,facts});
- if used>EXTRA_BUDGET||capture.retained_charge()?>EXTRA_BUDGET{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"raw Doc retained source exceeds existing capture allowance"))}capture.discovery.validate_recording(inputs)?;let metadata=capture.retained_charge()?;budget.charge(metadata).map_err(quota)?;credits.retain_capture_metadata(&capture,metadata)?;drop(metadata_peak);Ok((capture,owner))
+ if used>EXTRA_BUDGET||capture.retained_charge()?>EXTRA_BUDGET{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"raw Doc retained source exceeds existing capture allowance"))}capture.discovery.validate_recording(inputs)?;let metadata=capture.retained_charge()?;budget.charge(metadata).map_err(quota)?;credits.retain_capture_metadata(&capture,metadata)?;drop(metadata_peak);dm_profile::detail_mark("raw_capture.settled", capture_started);Ok((capture,owner))
 }
 
 impl WorkspaceCapture{

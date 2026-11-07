@@ -84,6 +84,7 @@ type AcquisitionControls = (SourceArenaControlCredit, SourceArenaControlCredit);
 /// driver constructs it. Providers can request storage, never substitute bytes.
 pub struct OriginalReadTextFunding<'a> {
     split: &'a dyn Fn(usize) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>,
+    exceptional: &'a dyn Fn(usize, usize) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>,
     acquisition: &'a dyn Fn([usize; 2]) -> io::Result<Option<AcquisitionControls>>,
     receipt: &'a dyn Fn(&(dyn Any + Send + Sync)) -> io::Result<Option<SourceArenaControlCredit>>,
 }
@@ -93,6 +94,11 @@ impl OriginalReadTextFunding<'_> {
         -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>
     {
         (self.split)(capacity)
+    }
+    #[doc(hidden)]
+    pub fn split_exceptional_bytes(&self, capacity: usize, control: usize)
+        -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
+        (self.exceptional)(capacity, control)
     }
     pub(crate) fn split_acquisition_controls(&self, sizes: [usize; 2])
         -> io::Result<Option<AcquisitionControls>>
@@ -117,6 +123,13 @@ pub trait SourceArenaWork:Send+Sync{
     &self, _donor: &mut SourceArenaCredit, _capacity: usize,
  ) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
     Ok(None)
+ }
+
+ /// Partition the fresh exceptional raw buffer and its immutable owner control.
+ fn split_original_exceptional_bytes(
+     &self, _donor: &mut SourceArenaCredit, _capacity: usize, _control: usize,
+ ) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
+     Ok(None)
  }
 
  /// Partition the exact opened-read constructor's two fixed object layouts.
@@ -152,15 +165,15 @@ pub trait SourceArenaWork:Send+Sync{
 /// One operation-local read owner in the SAME existing input-family. No family
 /// gate spans provider IO, decoding, source-stack or parser callbacks. Its peak
 /// reservation disappears only after acquired() registers actual weak owners.
-struct ReadFunding{credit:SourceArenaCredit,raw:Option<usize>,planned:bool,new_source:bool,delivered:bool,text_factory_used:bool,receipt_funding_used:bool,acquisition_funding_used:bool,owned_text_allowed:bool}
+struct ReadFunding{credit:SourceArenaCredit,raw:Option<usize>,planned:bool,new_source:bool,delivered:bool,text_factory_used:bool,receipt_funding_used:bool,acquisition_funding_used:bool,owned_text_allowed:bool,exceptional_allowed:bool}
 struct OriginalReadFunding<'a>{work:&'a dyn SourceArenaWork,max:usize,state:std::cell::RefCell<ReadFunding>,first:std::cell::RefCell<Option<io::Error>>}
 impl<'a>OriginalReadFunding<'a>{
- fn new(work:&'a dyn SourceArenaWork,max:usize)->io::Result<Self>{let bookkeeping=work.original_read_bookkeeping_bytes()?;Ok(Self{work,max,state:std::cell::RefCell::new(ReadFunding{credit:work.reserve(bookkeeping)?,raw:None,planned:false,new_source:false,delivered:false,text_factory_used:false,receipt_funding_used:false,acquisition_funding_used:false,owned_text_allowed:false}),first:std::cell::RefCell::new(None)})}
+ fn new(work:&'a dyn SourceArenaWork,max:usize)->io::Result<Self>{let bookkeeping=work.original_read_bookkeeping_bytes()?;Ok(Self{work,max,state:std::cell::RefCell::new(ReadFunding{credit:work.reserve(bookkeeping)?,raw:None,planned:false,new_source:false,delivered:false,text_factory_used:false,receipt_funding_used:false,acquisition_funding_used:false,owned_text_allowed:false,exceptional_allowed:false}),first:std::cell::RefCell::new(None)})}
  /// A provider cannot replace/swallow a host callback's first actual error or
  /// relabel resource NotFound as source absence. Placeholder never escapes.
  fn callback<T>(&self,run:impl FnOnce()->io::Result<T>)->io::Result<T>{if self.first.borrow().is_some(){return Err(io::ErrorKind::Other.into())}match run(){Ok(value)=>Ok(value),Err(actual)=>{*self.first.borrow_mut()=Some(actual);Err(io::ErrorKind::Other.into())}}}
  fn before_read(&self,capacity:usize)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.raw.is_some()||capacity>self.max{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated/exceeded actual preallocation"))}self.work.grow(&mut state.credit,capacity)?;state.raw=Some(capacity);Ok(())})}
- fn before_decode(&self,plan:crate::OriginalRawAllocationPlan<'_>)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.planned{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated decode allocation plan"))}if plan.needs_decode(){if state.raw!=Some(plan.capacity())||plan.original().len()>plan.capacity(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original decode plan differs from SAME admitted raw buffer"))}if !plan.exceptional()&&plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"UTF8 move plan claims a second decoded buffer"))}let bytes=plan.constructor_bytes().checked_add(plan.decoded_bytes()).ok_or(io::ErrorKind::OutOfMemory)?;self.work.grow(&mut state.credit,bytes)?;}else if state.raw.is_some()||plan.capacity()!=0||plan.constructor_bytes()!=0||plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepaid Original subject plan attempts new backing allocation"))}state.planned=true;state.new_source=plan.needs_decode();state.owned_text_allowed=plan.needs_decode()&&!plan.exceptional();Ok(())})}
+ fn before_decode(&self,plan:crate::OriginalRawAllocationPlan<'_>)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.planned{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated decode allocation plan"))}if plan.needs_decode(){if state.raw!=Some(plan.capacity())||plan.original().len()>plan.capacity(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original decode plan differs from SAME admitted raw buffer"))}if !plan.exceptional()&&plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"UTF8 move plan claims a second decoded buffer"))}let bytes=plan.constructor_bytes().checked_add(plan.decoded_bytes()).ok_or(io::ErrorKind::OutOfMemory)?;self.work.grow(&mut state.credit,bytes)?;}else if state.raw.is_some()||plan.capacity()!=0||plan.constructor_bytes()!=0||plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepaid Original subject plan attempts new backing allocation"))}state.planned=true;state.new_source=plan.needs_decode();state.owned_text_allowed=plan.needs_decode()&&!plan.exceptional();state.exceptional_allowed=plan.needs_decode()&&plan.exceptional();Ok(())})}
  fn split_text(&self, capacity: usize) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
     self.callback(|| {
         let mut state = self.state.borrow_mut();
@@ -173,6 +186,20 @@ impl<'a>OriginalReadFunding<'a>{
         state.text_factory_used = true;
         self.work.split_original_text(&mut state.credit, capacity)
     })
+ }
+ fn split_exceptional_bytes(&self, capacity: usize, control: usize)
+     -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
+     self.callback(|| {
+         let mut state = self.state.borrow_mut();
+         if !state.planned || !state.exceptional_allowed || state.delivered
+             || state.text_factory_used || state.raw != Some(capacity)
+         {
+             return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                 "exceptional raw backing differs from the admitted fresh read"));
+         }
+         state.text_factory_used = true;
+         self.work.split_original_exceptional_bytes(&mut state.credit, capacity, control)
+     })
  }
  fn split_acquisition_controls(&self, sizes: [usize; 2]) -> io::Result<Option<AcquisitionControls>> {
      self.callback(|| {
@@ -220,6 +247,7 @@ pub fn read_original_source_open_using(provider:&dyn crate::SourceProvider,path:
  let funding=OriginalReadFunding::new(work,max_bytes)?;let decision=std::cell::Cell::new(None);
  let fund_text = OriginalReadTextFunding {
      split: &|capacity| funding.split_text(capacity),
+     exceptional: &|capacity, control| funding.split_exceptional_bytes(capacity, control),
      acquisition: &|sizes| funding.split_acquisition_controls(sizes),
      receipt: &|receipt| funding.split_receipt(receipt),
  };

@@ -114,7 +114,7 @@ fn exceptional_original_survives_recorder_drop_without_prepared_owner_or_buffer_
         .exceptional_source_bytes(Path::new("x.dm"))
         .unwrap()
         .unwrap();
-    let owner = Arc::downgrade(original.shared_owner());
+    let owner = original.downgrade();
     match recorded_source_original(&lease).unwrap() {
         RecordedSourceOriginal::Bytes(value) => assert!(value.ptr_eq(&original)),
         _ => panic!("invalid original cannot be reconstructed from decoded text"),
@@ -164,4 +164,63 @@ fn warm_exceptional_original_reissues_same_acquired_byte_owner_without_read() {
 fn public_synthetic_lease_cannot_fabricate_recorded_original_view() {
     let fake = dm_preprocess::AcquiredSource::synthetic_utf8("/datum/fake_original\n".into(), ());
     assert!(recorded_source_original(fake.lease()).is_err());
+}
+
+#[test]
+fn actual_exceptional_open_donates_raw_capacity_and_control_through_reissue() {
+    use dm_preprocess::{InitialEnvironment, OriginalRawOpenDecision, OriginalRawReadOutcome};
+    use dm_preprocess::source_arena_credit::read_original_source_open_using;
+
+    for (fixture, raw) in [
+        ("owned-bom", b"\xef\xbb\xbf/datum/actual\n".as_slice()),
+        ("owned-legacy", b"// latin1 \xe9\n/datum/actual\n".as_slice()),
+    ] {
+        let root = crate::test_scratch::dir(fixture);
+        let path = root.join("source.dm");
+        std::fs::write(&path, raw).unwrap();
+        let db = crate::query_db::QueryDb::default();
+        let baseline = db.source_input_admission_bytes().unwrap();
+        let input = RecordingInputs::new(FileSystemInputs, 0)
+            .with_initial_environment(InitialEnvironment::OriginalChecker0290);
+        let outcome = read_original_source_open_using(
+            &input, &path, 4096, &db, &mut || Ok(OriginalRawOpenDecision::Read),
+        ).unwrap();
+        let OriginalRawReadOutcome::Acquired(first) = outcome else {
+            panic!("expected actual exceptional open");
+        };
+        let RecordedSourceOriginal::Bytes(original) = recorded_source_original(&first).unwrap() else {
+            panic!("exceptional source must keep raw bytes");
+        };
+        assert_eq!(original.as_slice(), raw);
+        let payload = original.source_arena_payload_credit().unwrap().reserved_bytes();
+        let control = original.source_arena_control_credit().unwrap().reserved_bytes();
+        assert_eq!(payload, original.capacity());
+        assert_eq!(control, dm_resources::SharedBytes::owner_allocation_bytes());
+        let weak = original.downgrade();
+
+        let second = RecordingInputs::new(FileSystemInputs, 0)
+            .with_initial_environment(InitialEnvironment::OriginalChecker0290);
+        let reissued = second.read_raw_source(&path, 4096, Some(&first), |_, _, new| {
+            assert!(!new);
+            Ok(())
+        }).unwrap().unwrap();
+        assert!(reissued.same_original_acquisition(&first));
+        let RecordedSourceOriginal::Bytes(alias) = recorded_source_original(&reissued).unwrap() else {
+            panic!("reissue must retain actual raw bytes");
+        };
+        assert!(original.ptr_eq(alias));
+        assert!(weak.ptr_eq(&alias.downgrade()));
+        drop(first);
+        drop(input);
+        assert!(weak.upgrade().is_some());
+
+        drop(reissued);
+        drop(second);
+        assert!(weak.upgrade().is_none());
+        assert_eq!(weak.source_arena_control_credit().unwrap().reserved_bytes(), control);
+        let only_control = db.source_input_admission_bytes().unwrap();
+        assert!(only_control >= baseline + control);
+        drop(weak);
+        assert_eq!(db.source_input_admission_bytes().unwrap(), baseline);
+    }
 }

@@ -191,13 +191,17 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         let path=actual_path.to_path_buf();let fact_path=actual_path.to_path_buf();if path.capacity().checked_add(fact_path.capacity()).is_none_or(|bytes|bytes>path_bound){return Err(io::ErrorKind::OutOfMemory.into())}let fact=FileInput{path:fact_path,stamp:digest.stamp,content:digest.content};
         let mut receipt=RecordedSourceReceipt{exact_open:true,exact_loan_serial,original_bytes:None,issuer:Arc::clone(&self.source_issuer),path,fact};
         let source=if exceptional{
-            let original=dm_resources::SharedBytes::from(bytes.take().unwrap());receipt.original_bytes=Some(original.clone());
-            let source=dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded(decoded,encoding,receipt);
-            let actual_path=&source.receipt::<RecordedSourceReceipt>().expect("same private receipt").path;
-            // All fallible decoding happened BEFORE publishing exceptional bytes.
-            // After successful publication acquired() is the first fallible step.
-            let _=actual_path; // raw bytes remain on this actual receipt; no legacy cache alias
-            source
+            let funding = fund_text.map(|fund| fund.split_exceptional_bytes(
+                capacity, dm_resources::SharedBytes::owner_allocation_bytes(),
+            )).transpose()?.flatten();
+            let bytes = bytes.take().expect("fresh exceptional read still owns raw bytes");
+            let original = match funding {
+                Some((payload, control)) => dm_resources::SharedBytes::from_source_arena(bytes, payload, control)?,
+                None => dm_resources::SharedBytes::from(bytes),
+            };
+            receipt.original_bytes = Some(original);
+            // The actual raw owner remains on this receipt, with no legacy cache alias.
+            dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded(decoded,encoding,receipt)
         }else{
             // The actual opened read and its full raw allocation have already
             // been admitted. Borrow prepared bytes only as a candidate, after
@@ -457,7 +461,7 @@ pub(crate) fn normalize_recorded_policy_original(original:&RecordedSourceOrigina
 pub(crate) fn visit_raw_source_backing(lease:&dm_preprocess::SourceAcquisitionLease,mut visit:impl FnMut((u8,usize),usize)){
  lease.source_text().visit_storage(|address,bytes,storage|{visit((0,address),bytes.saturating_add(2*std::mem::size_of::<usize>()));match storage{dm_preprocess::SourceTextStorage::Original(text)=>visit((1,Arc::as_ptr(text)as *const u8 as usize),text.len().saturating_add(2*std::mem::size_of::<usize>())),dm_preprocess::SourceTextStorage::Transformed(text)=>visit((1,text.as_ptr()as usize),text.capacity()),dm_preprocess::SourceTextStorage::Reserved{text,committed}=>visit((1,text.as_ptr()as usize),committed)}});
  lease.source_text().visit_fingerprint_storage(|address,_,bytes|{if bytes!=0{visit((4,address),bytes);}});
- if let Some(bytes)=lease.receipt::<RecordedSourceReceipt>().and_then(|r|r.original_bytes.as_ref()){visit((2,Arc::as_ptr(bytes.shared_owner())as usize),std::mem::size_of_val(bytes.shared_owner().as_ref())+2*std::mem::size_of::<usize>());visit((3,bytes.as_ptr()as usize),bytes.capacity());}
+ if let Some(bytes)=lease.receipt::<RecordedSourceReceipt>().and_then(|r|r.original_bytes.as_ref()){visit((2,bytes.owner_address()),std::mem::size_of_val(bytes.shared_owner())+2*std::mem::size_of::<usize>());visit((3,bytes.as_ptr()as usize),bytes.capacity());}
 }
 
 #[cfg(test)]mod raw_recorded_validation_tests{

@@ -91,10 +91,10 @@ impl Owners {
     }
     pub fn bytes(&mut self, bytes: &SharedBytes) -> io::Result<()> {
         let owner = bytes.shared_owner();
-        if self.seen.insert((4, Arc::as_ptr(owner) as usize)) {
+        if self.seen.insert((4, owner as *const dm_resources::SharedBytesOwner as usize)) {
             add(
                 &mut self.totals.owner_records,
-                std::mem::size_of_val(owner.as_ref()) + 2 * std::mem::size_of::<usize>(),
+                std::mem::size_of_val(owner) + 2 * std::mem::size_of::<usize>(),
             )?;
             add(&mut self.totals.payload_capacity, owner.bytes().capacity())?;
             self.totals.byte_backings += 1;

@@ -57,7 +57,7 @@ impl HeapCensus {
             let owner = "query_snapshot.policy_inputs.configuration_bytes";
             self.path(owner, path);
             if let Some(bytes) = bytes {
-                if self.arc_object(owner, bytes.shared_owner()) {
+                if self.shared_bytes_owner(owner, bytes) {
                     self.vec_payload(owner, bytes.shared_owner().bytes());
                 }
             }
@@ -70,7 +70,7 @@ impl HeapCensus {
             let owner = "query_snapshot.policy_inputs.manifest_originals";
             self.path(owner, path);
             if let Some(bytes) = bytes {
-                if self.arc_object(owner, bytes.shared_owner()) {
+                if self.shared_bytes_owner(owner, bytes) {
                     self.vec_payload(owner, bytes.shared_owner().bytes());
                 }
             }
