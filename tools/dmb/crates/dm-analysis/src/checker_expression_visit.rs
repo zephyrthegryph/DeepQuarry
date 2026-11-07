@@ -39,6 +39,7 @@ pub enum TypeFact {
     /// An untyped result with the selected authored declaration as a note.
     /// This is diagnostic provenance, never a native receiver type.
     AuthoredVariableHint(MemberId),
+    LocalVariableHint(Span),
     Deferred(&'static str),
 }
 impl TypeFact {
@@ -53,7 +54,7 @@ impl TypeFact {
         match self {
             Self::Known(owner) => Ok(Some(owner)),
             Self::List(_) | Self::NestedList{..} => Ok(Some(SymbolId::of("/list"))),
-            Self::Unknown | Self::Unhinted | Self::Proc | Self::ReturnHint(..) | Self::AuthoredVariableHint(_) => Ok(None),
+            Self::Unknown | Self::Unhinted | Self::Proc | Self::ReturnHint(..) | Self::AuthoredVariableHint(_) | Self::LocalVariableHint(_) => Ok(None),
             Self::Deferred(reason) => Err(reason.into()),
         }
     }
@@ -657,6 +658,10 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         } else {
             None
         };
+        let ty = match (self.original_events.is_some(), ty, fact.checker_statement_anchor()) {
+            (true, TypeFact::Unknown, Some(anchor)) => TypeFact::LocalVariableHint(anchor),
+            _ => ty,
+        };
         self.insert_local(
             SymbolId::of(name),
             LocalFact {
@@ -1233,7 +1238,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 // Original Analysis::from(static_ty) keeps the static shape
                 // but drops the argument's fix hint, value and impurity.
                 return Ok(match first.ty {
-                    TypeFact::Unknown | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) => TypeFact::Unhinted,
+                    TypeFact::Unknown | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) | TypeFact::LocalVariableHint(_) => TypeFact::Unhinted,
                     ty => ty,
                 });
             }
@@ -1852,6 +1857,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             TypeFact::Unhinted => Ok(None),
                             TypeFact::ReturnHint(hint, call) => Ok(Some(FixHint::Return(hint, call))),
                             TypeFact::AuthoredVariableHint(formal) => Ok(Some(FixHint::AuthoredVariable(formal))),
+                            TypeFact::LocalVariableHint(anchor) => Ok(Some(FixHint::LocalVariable(anchor))),
                             _ => Err(
                                 "unknown-receiver call needs pinned fix-hint/declaration origins",
                             ),
@@ -1893,6 +1899,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         TypeFact::Unhinted=>None,
                         TypeFact::ReturnHint(hint,call)=>Some(FixHint::Return(hint,call)),
                         TypeFact::AuthoredVariableHint(formal)=>Some(FixHint::AuthoredVariable(formal)),
+                        TypeFact::LocalVariableHint(anchor) => Some(FixHint::LocalVariable(anchor)),
                         _=>return Err("unknown-receiver field access needs pinned fix-hint/declaration origins".into()),
                     };
                     let at = member_origin_source(self.source, expression, object, selector, false)?;
@@ -1993,7 +2000,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     }
                     self.last_impurity = None;
                     return match operand {
-                        TypeFact::Unknown | TypeFact::Unhinted | TypeFact::Proc | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) => {
+                        TypeFact::Unknown | TypeFact::Unhinted | TypeFact::Proc | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) | TypeFact::LocalVariableHint(_) => {
                             Ok(TypeFact::Unhinted)
                         }
                         TypeFact::Known(owner) => {
@@ -2056,7 +2063,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     // Exact pinned check_operator_overload: StaticType::None
                     // returns Analysis::empty, clearing any return fix hint.
                     // A direct local target has no non-local impurity effect.
-                    TypeFact::Unknown | TypeFact::Unhinted | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) => {
+                    TypeFact::Unknown | TypeFact::Unhinted | TypeFact::ReturnHint(..) | TypeFact::AuthoredVariableHint(_) | TypeFact::LocalVariableHint(_) => {
                         Ok(TypeFact::Unhinted)
                     }
                     _ => Err(

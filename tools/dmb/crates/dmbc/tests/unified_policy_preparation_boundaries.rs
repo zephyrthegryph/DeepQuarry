@@ -917,6 +917,88 @@ fn public_original_missing_authored_type_continues_with_exact_definition_notes()
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_original_local_fix_note_uses_declaration_statement() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Roster},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    let root = test_scratch::dir("public-local-fix-note-follow");
+    let transport = test_scratch::dir("public-local-fix-note-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!(
+            "local-fix-note-follow-{}-{}",
+            std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+        ),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    put(&root, "code/probe.dm", concat!(
+        "/proc/probe()\n",
+        "    var/item = null\n",
+        "    return item.first.second\n",
+        "/proc/probe_comma()\n",
+        "    var/unused = null, item = null\n",
+        "    return item.third\n",
+    ));
+
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(test_scratch::dir("public-local-fix-note-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithSemanticReads;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}"))
+        .collect();
+    let request_path = transport.join("local-fix-note.json");
+    put(&transport, "local-fix-note.json", serde_json::to_vec(&serde_json::json!({
+        "build": build, "exclusions": exclusions,
+    })).unwrap());
+
+    let output = daemon.run(
+        &[OsStr::new("checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
+        Duration::from_secs(90),
+    ).unwrap();
+    assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+    let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+    let terminal: CombinedTerminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+    terminal.require().unwrap();
+    assert_eq!(terminal.roster, roster);
+    let (checker, _) = output.stdout[header_end + 1..].split_at(terminal.checker.length as usize);
+    let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+    let rows = checker["diagnostics"].as_array().unwrap();
+    let expected = [
+        (3, 16, "first", &["2:5: add additional type info here"][..]),
+        (3, 22, "second", &[][..]),
+        (6, 16, "third", &["5:5: add additional type info here"][..]),
+    ];
+    assert_eq!(rows.len(), expected.len(), "{checker}");
+    for (row, (line, column, field, notes)) in rows.iter().zip(expected) {
+        assert_eq!(row["phase"], "body");
+        assert_eq!(row["location_kind"], "source");
+        assert_eq!(Path::new(row["file"].as_str().unwrap()), Path::new("code/probe.dm"));
+        assert_eq!(row["family"], "field_access_static_type");
+        assert_eq!(row["registration_tag"], "field_access_static_type");
+        assert_eq!(row["severity"], "warning");
+        assert_eq!(row["line"], line);
+        assert_eq!(row["column"], column);
+        assert_eq!(row["message"], format!("field access requires static type: {field:?}"));
+        assert_eq!(row["notes"], serde_json::to_value(notes).unwrap());
+    }
+    assert!(!root.join("deepquarry.rsc").exists());
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
 fn public_original_return_notes_keep_callee_and_call_site_provenance() {
     use dq_analyze::{
         captured_allow_annotations::{full_unused, Operation},

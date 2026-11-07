@@ -10,6 +10,7 @@ pub enum FixHint {
     Return(ReturnFixHint, Span),
     /// The original evaluator selected this formal in the same archive.
     AuthoredVariable(MemberId),
+    LocalVariable(Span),
 }
 pub fn notes(
     archive: &BodyArchive,
@@ -33,6 +34,13 @@ pub(crate) fn notes_using<E: From<String> + for<'a> From<&'a str>>(
     };
     let (fix, call) = match hint {
         FixHint::Return(fix, call) => (fix, call),
+        FixHint::LocalVariable(anchor) => {
+            let source = archive.borrowed_source_note_point(anchor.start)?;
+            fund_note(cross_file_bytes(source))?;
+            return Ok(vec![crate::checks_directive_binding::original_note_message(
+                source, current, "add additional type info here",
+            )]);
+        }
         FixHint::AuthoredVariable(formal) => {
             let source = archive.borrowed_member_policy_point(formal)?;
             fund_note(cross_file_bytes(source))?;
