@@ -25,6 +25,9 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 	/obj/machinery/power/apc,
 	/obj/machinery/alarm,
 	/obj/item/storage/mre/random,
+	/obj/item/stack/cable_coil,
+	/obj/item/cell/emergency_light,
+	/obj/item/reagent_containers/pill/inaprovaline,
 ))
 
 /datum/benchmark/mapload_init
@@ -40,14 +43,20 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 		world.Profile(PROFILE_CLEAR)
 	var/total_atoms = 0
 	var/total_us = 0
-	// --arg=only=<text>: only the types whose path contains it, so a profile covers one type.
-	var/only = "[param("only", "")]"
+	// --arg=only=<text>[,<text>...]: only the types whose path contains one of them, so a profile covers the types a change touches.
+	var/list/only = splittext("[param("only", "")]", ",") - ""
 	// --arg=leak_check=0: the destroy postcondition off, as on a server (test builds run it on every qdel, which inflates deletions).
 	var/old_leak_check = GLOB.dq_lifecycle_leak_check
 	GLOB.dq_lifecycle_leak_check = param("leak_check", old_leak_check)
 	for(var/type in GLOB.mapload_init_bench_types)
-		if(length(only) && !findtext("[type]", only))
-			continue
+		if(length(only))
+			var/wanted = FALSE
+			for(var/part in only)
+				if(findtext("[type]", part))
+					wanted = TRUE
+					break
+			if(!wanted)
+				continue
 		var/list/atoms = list()
 		SSatoms.set_tracked_initalized(INITIALIZATION_INSSATOMS, "mapload_init bench")
 		for(var/i in 1 to count)
