@@ -1,5 +1,7 @@
 @use 'sass:color';
+@use 'sass:map';
 @use '~tgui/styles/console';
+@use '~tgui/styles/radio-colors' as radio;
 
 .ChatInput {
   display: flex;
@@ -19,7 +21,7 @@
 // The channel button, like the say popup's: one button on the left, coloured by channel.
 $channel-colors: (
   'Say': hsl(214, 38%, 74%),
-  'Radio': hsl(133, 74%, 46%),
+  'Radio': map.get(radio.$radio-colors, 'common'),
   'Me': hsl(230, 58%, 55%),
   'OOC': hsl(48, 100%, 40%),
   'LOOC': hsl(180, 44%, 41%),
@@ -36,6 +38,10 @@ $channel-colors: (
   border: 0;
   border-radius: 0;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 
   &:hover {
     background-color: console.$console-border;
@@ -58,8 +64,25 @@ $channel-colors: (
   text-overflow: ellipsis;
   white-space: nowrap;
   user-select: none;
-  color: hsl(133, 74%, 46%);
-  border: 2px solid hsl(133, 74%, 26%);
+  color: map.get(radio.$radio-colors, 'common');
+  border: 2px solid color.adjust(map.get(radio.$radio-colors, 'common'), $lightness: -20%, $space: hsl);
+}
+
+// The department picked on the radio button, in the chat's radio colour; the row's accent follows it.
+@each $name, $color in radio.$radio-colors {
+  .ChatInput__radio--#{$name} {
+    color: $color;
+    border-color: color.adjust($color, $lightness: -20%, $space: hsl);
+
+    &:hover {
+      color: color.adjust($color, $lightness: 8%, $space: hsl);
+      border-color: $color;
+    }
+  }
+
+  .ChatInput--radio-#{$name} {
+    --chat-accent: #{$color};
+  }
 }
 
 @each $name, $color in $channel-colors {
@@ -71,6 +94,10 @@ $channel-colors: (
       color: color.adjust($color, $lightness: 8%, $space: hsl);
       border-color: $color;
     }
+  }
+
+  .ChatInput--#{$name} {
+    --chat-accent: #{$color};
   }
 }
 
@@ -93,16 +120,17 @@ $channel-colors: (
   flex: 1 1 auto;
   min-width: 0;
   box-sizing: border-box;
-  padding: 3px 6px;
+  padding: 0 6px;
   font: inherit;
+  line-height: 1.2;
   color: console.$console-text;
   background-color: console.$console-background;
   border: 2px solid console.$console-border;
   border-radius: 0;
   outline: none;
 
+  // No glow: a flat border in the channel's colour.
   &:focus {
-    border-color: console.$console-accent;
-    box-shadow: 0 0 6px console.$console-accent;
+    border-color: var(--chat-accent, #{console.$console-accent});
   }
 }

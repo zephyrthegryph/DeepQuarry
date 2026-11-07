@@ -1,0 +1,22 @@
+/**
+ * The radio channel colours: the one table. The chat styles (`.sciradio`,
+ * `.medradio`, ...), the say popup's channel button and the chat input row all
+ * read it, so a department looks the same in a message and where it is typed.
+ * The class a radio message gets is chosen by get_radio_span()
+ * (code/content/items/devices/radio/radio_channels.dm).
+ */
+
+$radio-colors: (
+  'common': hsl(133, 74%, 46%),
+  'science': hsl(272, 92%, 76%),
+  'command': hsl(202, 84%, 64%),
+  'security': hsl(0, 71%, 62%),
+  'medical': hsl(148, 84%, 64%),
+  'engineering': hsl(53, 98%, 50%),
+  'supply': hsl(34, 45%, 50%),
+  'service': hsl(88, 61%, 41%),
+  'exploration': hsl(0, 0%, 54%),
+  'syndicate': hsl(359, 32%, 59%),
+  'centcom': hsl(197, 63%, 45%),
+  'ai': hsl(332, 60%, 60%),
+);
