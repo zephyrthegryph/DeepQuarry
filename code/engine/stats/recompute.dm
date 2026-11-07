@@ -1104,7 +1104,10 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 
 /// The batch in rank order (the entity's own type's rank of the stat), first marked first among equals.
 /proc/stat_sort_marked(list/batch)
-	var/list/keyed = list()
+	// Stable bucket sort: one bucket per rank, filled in batch order, emitted by ascending rank. The insertion sort it replaces was quadratic,
+	// and a spilled drain re-sorts its whole backlog at each drain point (2.5 k evaluations, ~300 spills at boot).
+	var/list/buckets = list() // "[rank]" -> rows in batch order
+	var/list/ranks = list()
 	for(var/list/row as anything in batch)
 		var/datum/E = slot_datum(row[1])
 		var/datum/stat_def/def = row[2]
@@ -1112,20 +1115,19 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		if(def && !QDELETED(E))
 			var/datum/stat_type_info/I = stat_type_of(E)
 			rank = I?.ranks?[def.skey] || 0
-		keyed += list(list(rank, row))
-	// stable insertion by rank
-	var/list/out = list()
-	for(var/list/pair as anything in keyed)
-		var/at = length(out) + 1
-		for(var/i in length(out) to 1 step -1)
-			var/list/other = out[i]
-			if(other[1] <= pair[1])
-				break
-			at = i
-		out.Insert(at, list(pair))
+		var/key = "[rank]"
+		var/list/bucket = buckets[key]
+		if(!bucket)
+			bucket = list()
+			buckets[key] = bucket
+			ranks += rank
+		bucket += list(row)
+	if(length(ranks) == 1)
+		return buckets[buckets[1]]
+	sortTim(ranks, GLOBAL_PROC_REF(cmp_numeric_asc))
 	var/list/rows = list()
-	for(var/list/pair as anything in out)
-		rows += list(pair[2])
+	for(var/rank in ranks)
+		rows += buckets["[rank]"]
 	return rows
 
 /// The kernel's drain point (the start of phases D, P and R): the marked stats recompute under the simulation lane's budget. Costs one list length

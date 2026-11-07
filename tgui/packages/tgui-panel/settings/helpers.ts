@@ -5,7 +5,6 @@
  */
 
 import { FONTS_DISABLED } from './constants';
-import { setClientTheme } from './themes';
 import type { SettingsState } from './types';
 
 let statFontTimer: NodeJS.Timeout;
@@ -69,12 +68,6 @@ function setStatTabsStyle(style: string): void {
 }
 
 export function generalSettingsHandler(update: SettingsState): void {
-  // Set client theme
-  const theme = update?.theme;
-  if (theme) {
-    setClientTheme(theme);
-  }
-
   // Update stat panel settings
   setStatTabsStyle(update.statTabsStyle);
 

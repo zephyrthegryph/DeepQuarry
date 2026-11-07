@@ -45,7 +45,6 @@ export function Panel(props) {
 
   return (
     <Pane
-      theme={settings.theme}
       canSuspend={false}
       className={floating ? 'ChatConsole ChatConsole--float' : 'ChatConsole'}
     >
