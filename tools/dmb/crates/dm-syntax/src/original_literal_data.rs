@@ -864,6 +864,50 @@ impl LiteralValue {
     }
 }
 
+/// One unpublished delivery slot. The owner field already has a vacant
+/// representation; keep that sentinel private so no invalid DATA can escape.
+#[repr(transparent)]
+pub struct OriginalLiteralDeliverySlot(OriginalLiteralData);
+
+impl OriginalLiteralDeliverySlot {
+    pub fn new(data: OriginalLiteralData) -> Self { Self(data) }
+
+    pub fn take(&mut self) -> Option<OriginalLiteralData> {
+        let owner = self.0.0.take()?;
+        Some(OriginalLiteralData(Some(owner), std::mem::take(&mut self.0.1)))
+    }
+
+    /// On error discard the complete unpublished batch, including any slots
+    /// already taken by the same packer used by the ordinary Option form.
+    pub fn pack_using(slots: &mut [Self], a: &SettingAdmission<'_>) -> io::Result<()> {
+        OriginalLiteralData::pack_delivery_batch_using_slots(slots, a)
+    }
+}
+
+trait LiteralDeliverySlot {
+    fn data(&self) -> Option<&OriginalLiteralData>;
+    fn take_data(&mut self) -> Option<OriginalLiteralData>;
+    fn fill(&mut self, data: OriginalLiteralData);
+}
+
+impl LiteralDeliverySlot for OriginalLiteralDeliverySlot {
+    fn data(&self) -> Option<&OriginalLiteralData> { self.0.0.as_ref().map(|_| &self.0) }
+    fn take_data(&mut self) -> Option<OriginalLiteralData> { self.take() }
+    fn fill(&mut self, data: OriginalLiteralData) {
+        debug_assert!(self.0.0.is_none());
+        self.0 = data;
+    }
+}
+
+impl LiteralDeliverySlot for Option<OriginalLiteralData> {
+    fn data(&self) -> Option<&OriginalLiteralData> { self.as_ref() }
+    fn take_data(&mut self) -> Option<OriginalLiteralData> { self.take() }
+    fn fill(&mut self, data: OriginalLiteralData) {
+        debug_assert!(self.is_none());
+        *self = Some(data);
+    }
+}
+
 impl OriginalLiteralData {
     /// Resource-only change at the real complete Analyze delivery-batch
     /// boundary. The caller lends its owned unpublished slots. Still-shared
@@ -876,11 +920,17 @@ impl OriginalLiteralData {
     pub fn pack_delivery_batch_using(
         slots: &mut [Option<Self>], a: &SettingAdmission<'_>,
     ) -> io::Result<()> {
+        Self::pack_delivery_batch_using_slots(slots, a)
+    }
+
+    fn pack_delivery_batch_using_slots(
+        slots: &mut [impl LiteralDeliverySlot], a: &SettingAdmission<'_>,
+    ) -> io::Result<()> {
         let result = Self::pack_delivery_batch_inner(slots, a);
         result.map_err(|status| a.take_operational_error().unwrap_or(status))
     }
 
-    fn pack_delivery_batch_inner(slots: &mut [Option<Self>], a: &SettingAdmission<'_>) -> io::Result<()> {
+    fn pack_delivery_batch_inner(slots: &mut [impl LiteralDeliverySlot], a: &SettingAdmission<'_>) -> io::Result<()> {
         // Fixed candidate-index array. Only one page and no input-row copy can
         // be in staging. No heap is allocated while selecting a page.
         let mut selection = None;
@@ -889,7 +939,7 @@ impl OriginalLiteralData {
         let mut total = 0usize;
         for index in 0..slots.len() {
             if index % 256 == 0 { a.checkpoint()?; }
-            let Some(value) = &slots[index] else { return Err(io::ErrorKind::InvalidInput.into()) };
+            let Some(value) = slots[index].data() else { return Err(io::ErrorKind::InvalidInput.into()) };
             let owner = value.0.as_ref().expect("live literal DATA");
             if !a.matches_lease_domain(&owner.credit) {
                 return Err(io::ErrorKind::InvalidInput.into());
@@ -925,7 +975,7 @@ impl OriginalLiteralData {
     }
 
     fn seal_page_using(
-        slots: &mut [Option<Self>], indices: &[usize], text_bytes: usize, a: &SettingAdmission<'_>,
+        slots: &mut [impl LiteralDeliverySlot], indices: &[usize], text_bytes: usize, a: &SettingAdmission<'_>,
     ) -> io::Result<()> {
         use std::{alloc::{alloc, Layout}, ptr::NonNull};
 
@@ -933,7 +983,7 @@ impl OriginalLiteralData {
             return Ok(());
         }
         let cooked_count = indices.iter().try_fold(0usize, |count, &index| {
-            let data = slots[index].as_ref().ok_or(io::ErrorKind::InvalidData)?;
+            let data = slots[index].data().ok_or(io::ErrorKind::InvalidData)?;
             let LiteralStorage::Single(value) = &data.owner().storage else {
                 return Err(io::ErrorKind::InvalidData);
             };
@@ -964,7 +1014,7 @@ impl OriginalLiteralData {
         };
         let mut pending = PendingPage { rows: std::array::from_fn(|_| None), credit: a.reserve(0)? };
         for (row, index) in pending.rows.iter_mut().zip(indices.iter().copied()) {
-            let mut occurrence = slots[index].take().ok_or(io::ErrorKind::InvalidData)?;
+            let mut occurrence = slots[index].take_data().ok_or(io::ErrorKind::InvalidData)?;
             let owner = occurrence.0.take().ok_or(io::ErrorKind::InvalidData)?;
             // The batch's private unpublished slot was the only strong/weak
             // owner. Arc::into_inner destroys that real allocation now.
@@ -1000,7 +1050,7 @@ impl OriginalLiteralData {
         a.shrink(&mut pending.credit, surplus)?;
         let owner = Arc::new(Payload { storage: LiteralStorage::Page(page), credit: pending.credit });
         for (row, index) in indices.iter().copied().enumerate() {
-            slots[index] = Some(Self(Some(Arc::clone(&owner)), row));
+            slots[index].fill(Self(Some(Arc::clone(&owner)), row));
         }
         Ok(())
     }

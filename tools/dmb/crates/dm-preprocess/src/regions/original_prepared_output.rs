@@ -247,7 +247,7 @@ pub(super) struct OriginalDeliveryBatch {
     rows: Rows<QueuedDeliveryToken>,
     spellings: BatchSpelling,
     punctuation: Rows<&'static str>,
-    literals: Rows<Option<dm_syntax::OriginalLiteralData>>,
+    literals: Rows<dm_syntax::OriginalLiteralDeliverySlot>,
     docs: Rows<QueuedDoc>,
     wide: Rows<usize>,
     first: Option<usize>,
@@ -310,7 +310,8 @@ impl OriginalDeliveryBatch {
                 PUNCTUATION | if close_colon { EXTRA } else { 0 }
             }
             Some(OriginalDeliveredValue::Literal) if row.literal.as_ref().is_some_and(|data| data.raw() == text) => {
-                self.literals.push(row.literal, a)?;
+                let data = row.literal.ok_or(io::ErrorKind::InvalidData)?;
+                self.literals.push(dm_syntax::OriginalLiteralDeliverySlot::new(data), a)?;
                 LITERAL
             }
             Some(OriginalDeliveredValue::DocComment { kind, content })
@@ -334,7 +335,7 @@ impl OriginalDeliveryBatch {
     }
 
     pub(super) fn seal_using(mut self, a: &SettingAdmission<'_>) -> io::Result<Self> {
-        dm_syntax::OriginalLiteralData::pack_delivery_batch_using(self.literals.as_mut_slice(), a)?;
+        dm_syntax::OriginalLiteralDeliverySlot::pack_using(self.literals.as_mut_slice(), a)?;
         Ok(self)
     }
 
@@ -406,7 +407,7 @@ impl OriginalDeliveryBatchCursor {
                 (DeliverySpelling::Static(spelling), Some(OriginalDeliveredValue::Punctuation { spelling, close_colon: extra }))
             }
             LITERAL => {
-                let data = self.batch.literals.as_mut_slice().get_mut(self.literal_at).and_then(Option::take).ok_or(io::ErrorKind::InvalidData)?;
+                let data = self.batch.literals.as_mut_slice().get_mut(self.literal_at).and_then(dm_syntax::OriginalLiteralDeliverySlot::take).ok_or(io::ErrorKind::InvalidData)?;
                 self.literal_at += 1;
                 literal = Some(data);
                 (DeliverySpelling::Literal, Some(OriginalDeliveredValue::Literal))
@@ -851,4 +852,61 @@ mod compact_queue_tests {
         drop(first);
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
+    #[test]
+    fn compact_batch_literal_slots_pack_take_once_and_preserve_actual_typed_failure() {
+        use dm_syntax::{OriginalLiteralData, OriginalLiteralDeliverySlot};
+        assert_eq!(std::mem::size_of::<OriginalLiteralDeliverySlot>(), std::mem::size_of::<OriginalLiteralData>());
+        #[cfg(target_pointer_width = "64")]
+        {
+            assert_eq!(std::mem::size_of::<OriginalLiteralDeliverySlot>(), 16);
+            assert_eq!(std::mem::size_of::<Option<OriginalLiteralData>>(), 24);
+        }
+        let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        for (vacant, fail_checkpoint) in [(false, false), (true, false), (true, true)] {
+            let mut output = OriginalOutputCursor::new(&a).unwrap();
+            let mut batch = OriginalDeliveryBatch::new(&output.identity(), &a).unwrap();
+            let mut pointers = Vec::new();
+            for value in 0..40 {
+                let at = value as usize;
+                let actual = Token {
+                    string_mode: OriginalStringMode::Unknown, punctuation_close: false,
+                    lexical_frame: None, lexical_span: None, raw_spelling: None, value: Value::Int(value),
+                    origin: Origin { physical: Span::new(at, at + 1), line: 1,
+                        byte_column: Some(at + 1), occurrence: 0, invocation: false },
+                };
+                let prepared = output.prepare(actual, &NoFiles, &a).unwrap();
+                pointers.push(prepared.literal.as_ref().unwrap().raw().as_ptr());
+                batch.push(prepared.into_delivery(), &a).unwrap();
+            }
+            assert_eq!(batch.literals.capacity(), 64);
+            if vacant {
+                let slot = &mut batch.literals.as_mut_slice()[0];
+                assert!(slot.take().is_some());
+                assert!(slot.take().is_none());
+                if fail_checkpoint {
+                    let fault = || Err(io::Error::from_raw_os_error(1450));
+                    let stopped = SettingAdmission::new(&used, 1 << 20, &fault);
+                    assert_eq!(batch.seal_using(&stopped).err().unwrap().raw_os_error(), Some(1450));
+                } else {
+                    assert_eq!(batch.seal_using(&a).err().unwrap().kind(), io::ErrorKind::InvalidInput);
+                }
+            } else {
+                let mut cursor = batch.seal_using(&a).unwrap().cursor();
+                for (value, pointer) in pointers.into_iter().enumerate() {
+                    let issued = cursor.next(&a).unwrap().unwrap().literal.unwrap();
+                    assert!(matches!(issued.value(), OriginalTokenValue::Int(n) if n == value as i32));
+                    assert_eq!(issued.raw().as_ptr(), pointer);
+                    assert!(cursor.batch.literals.as_mut_slice()[value].take().is_none());
+                }
+                assert!(cursor.next(&a).unwrap().is_none());
+                assert!(cursor.next(&a).unwrap().is_none());
+                assert_eq!(cursor.output_at, output.seal_actual_end(&a).unwrap().end());
+            }
+            drop(output);
+            assert_eq!(used.load(Ordering::Acquire), fixed);
+        }
+    }
+
 }
