@@ -3644,3 +3644,31 @@ old capacities totalled 2,184,832 bytes. Anchored output bases at that
 frontier used 4,215,200 bytes including escapes. The 128 MiB syntax cap
 still refused a 26,624-byte macro page with 134,191,463 bytes retained.
 It emitted no report. Both private probe daemons exited.
+
+### Whole-checkout raw report frontier
+
+The checkout reached all 45 raw policy stages after completed report pages
+became eligible for LRU eviction. The last policy completed at 299.873
+seconds and the 300-second request deadline expired before delivery. The
+client received no report and the private daemon retired. This is evidence
+that the prior result-family refusal was resolved for that request, with no
+increase to the 64 MiB result-family limit. Whole-checkout parity still
+requires a complete report.
+
+The next implementation reuses the live result inventory for the report-only
+render, retaining the same result reserve and fixed input accounting. All
+three selected raw/workspace report fixture comparisons passed against the
+independent Analyze oracles. CheckGrep now consumes canonical body syntax:
+its warm test observes unchanged report bytes and no additional body-syntax
+computations. Seven focused CheckGrep tests passed. The source arena returns
+the charge for an immutable path-fact node when its last snapshot releases
+it. The focused test verifies exact live ownership across rotations and
+concurrent snapshot drops.
+
+Native Checker fixtures also verified root positional inference for
+`astype()` and declaration notes for untyped locals, including comma-separated
+declarations. These are selected diagnostics. Full Checker parity remains
+open.
+The subsequent checkout run completed 44 policy stages before the same
+deadline. The inventory refactor has fixture parity evidence, but these
+checkout runs do not establish a speed improvement.
