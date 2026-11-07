@@ -169,10 +169,44 @@ impl SignatureSlot {
     }
 }
 
-struct Row {
-    producer: Option<dm_syntax::OriginalPrimaryProducerIdentity>,
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct HeaderGeometry {
     header: Span,
     argument_offset: usize,
+}
+
+struct PackedHeader([u32; 2]);
+impl PackedHeader {
+    const WIDE: Self = Self([u32::MAX, 0]);
+
+    fn pack(geometry: HeaderGeometry) -> Option<Self> {
+        let start = u32::try_from(geometry.header.start).ok()?;
+        if start == u32::MAX { return None; }
+        let length = u16::try_from(geometry.header.end.checked_sub(geometry.header.start)?).ok()?;
+        let arguments = u16::try_from(geometry.argument_offset).ok()?;
+        Some(Self([start, u32::from(length) | (u32::from(arguments) << 16)]))
+    }
+
+    fn unpack(&self) -> Option<HeaderGeometry> {
+        let [start, tail] = self.0;
+        if start == u32::MAX { return None; }
+        let start = start as usize;
+        let length = usize::from(tail as u16);
+        Some(HeaderGeometry {
+            header: Span::new(start, start + length),
+            argument_offset: usize::from((tail >> 16) as u16),
+        })
+    }
+}
+
+struct WideHeader {
+    ordinal: usize,
+    geometry: HeaderGeometry,
+}
+
+struct Row<Geometry = PackedHeader> {
+    producer: dm_syntax::OriginalPrimaryProducerIdentity,
+    geometry: Geometry,
     slot: SignatureSlot,
     #[cfg(test)]
     retained_bytes: usize,
@@ -190,6 +224,8 @@ struct SignatureRetentionTrace {
     rows: usize,
     row_capacity: usize,
     row_buffer_bytes: usize,
+    wide_header_rows: usize,
+    wide_header_buffer_bytes: usize,
     completed_header_bytes: usize,
     reconciliation_floor_bytes: usize,
     above_floor_rows: usize,
@@ -216,6 +252,8 @@ impl OriginalSignatureObserver<'_, '_> {
             rows: self.rows.len(),
             row_capacity: self.rows.capacity(),
             row_buffer_bytes: self.rows.buffer_bytes(),
+            wide_header_rows: self.rows.wide_headers.len(),
+            wide_header_buffer_bytes: self.rows.wide_headers.buffer_bytes(),
             active_header_bytes: bytes(self.early.as_ref().map(|e| &e.credit)),
             failure_header_bytes: bytes(self.failure_storage.as_ref()),
             pending_defaults: self.defaults.len(),
@@ -317,6 +355,9 @@ struct CompletedSignatureRows {
     empty_parameters: Option<Arc<[dm_ir::Parameter]>>,
     payloads: FundedRowPages<Option<CompletedSignature>, COMPLETED_SIGNATURE_PAGE_LEN>,
     rows: FundedRowPages<Row, COMPLETED_SIGNATURE_PAGE_LEN>,
+    // Full-width exceptions keyed by exact row ordinal. No short index can
+    // place an artificial limit on otherwise valid wide source geometry.
+    wide_headers: FundedRowPages<WideHeader, 16>,
     // Physical row storage above drops independently. These credits can
     // outlive it through actual clauses and detached IR alias groups.
     payload_pages: Vec<Arc<dm_syntax::SettingRootLease>>,
@@ -336,6 +377,7 @@ impl CompletedSignatureRows {
             empty_parameters: None,
             payloads: FundedRowPages::new(),
             rows: FundedRowPages::new(),
+            wide_headers: FundedRowPages::new(),
             payload_pages: Vec::new(),
             payload_directory: None,
             #[cfg(debug_assertions)]
@@ -348,8 +390,15 @@ impl CompletedSignatureRows {
     fn iter(&self) -> impl Iterator<Item = &Row> { self.rows.iter() }
     fn iter_mut(&mut self) -> impl Iterator<Item = &mut Row> { self.rows.iter_mut() }
     fn get(&self, ordinal: usize) -> Option<&Row> { self.rows.get(ordinal) }
+    fn geometry(&self, ordinal: usize, row: &Row) -> HeaderGeometry {
+        row.geometry.unpack().unwrap_or_else(|| {
+            let index = self.wide_headers.find(ordinal, |_, row| row.ordinal)
+                .expect("published wide signature geometry");
+            self.wide_headers.get(index).expect("located wide signature geometry").geometry
+        })
+    }
     fn find(&self, header_start: usize) -> Option<usize> {
-        self.rows.find(header_start, |row| row.header.start)
+        self.rows.find(header_start, |ordinal, row| self.geometry(ordinal, row).header.start)
     }
 
     #[cfg(any(debug_assertions, test))]
@@ -358,6 +407,7 @@ impl CompletedSignatureRows {
     #[cfg(any(debug_assertions, test))]
     fn buffer_bytes(&self) -> usize {
         self.rows.buffer_bytes().saturating_add(self.payloads.buffer_bytes())
+            .saturating_add(self.wide_headers.buffer_bytes())
             .saturating_add(self.payload_directory.as_ref().map_or(0, |credit| credit.bytes()))
     }
 
@@ -366,14 +416,19 @@ impl CompletedSignatureRows {
     }
 
     fn push_reserved(
-        &mut self, row: Row, credit: &mut dm_syntax::SettingRootLease,
+        &mut self, row: Row<HeaderGeometry>, credit: &mut dm_syntax::SettingRootLease,
         a: &SettingAdmission<'_>, _trace_floor: Option<usize>,
     ) -> std::io::Result<()> {
         // The observer still owns the in-flight credit on any failure, so
         // unpublished payload storage and symbol growth stay funded.
         #[cfg(debug_assertions)]
         let retained = credit.bytes();
-        let page = self.rows.len() / COMPLETED_SIGNATURE_PAGE_LEN;
+        let ordinal = self.rows.len();
+        let packed = PackedHeader::pack(row.geometry);
+        if packed.is_none() {
+            self.wide_headers.ensure_slot(a)?;
+        }
+        let page = ordinal / COMPLETED_SIGNATURE_PAGE_LEN;
         if self.rows.len() % COMPLETED_SIGNATURE_PAGE_LEN == 0 {
             debug_assert_eq!(page, self.payload_pages.len());
             if self.payload_pages.len() == self.payload_pages.capacity() {
@@ -395,7 +450,7 @@ impl CompletedSignatureRows {
             trace.completed_header_bytes = trace.completed_header_bytes.saturating_add(retained);
             if retained > trace.largest_header_bytes {
                 trace.largest_header_bytes = retained;
-                trace.largest_header_start = Some(row.header.start);
+                trace.largest_header_start = Some(row.geometry.header.start);
             }
             if let Some(floor) = _trace_floor {
                 trace.reconciliation_floor_bytes = trace.reconciliation_floor_bytes.saturating_add(floor);
@@ -407,7 +462,17 @@ impl CompletedSignatureRows {
                 trace.unavailable_floor_rows += 1;
             }
         }
-        self.rows.push_reserved(row);
+        // Publish wide geometry only after all fallible funding and transfer
+        // checks. The pending header retains its own funding on refusal.
+        let geometry = packed.unwrap_or_else(|| {
+            self.wide_headers.push_reserved(WideHeader { ordinal, geometry: row.geometry });
+            PackedHeader::WIDE
+        });
+        self.rows.push_reserved(Row {
+            producer: row.producer, geometry, slot: row.slot,
+            #[cfg(test)]
+            retained_bytes: row.retained_bytes,
+        });
         Ok(())
     }
 
@@ -458,8 +523,10 @@ impl CompletedSignatureRows {
     }
 
     fn take(&mut self, ordinal: usize, local: Span) -> Result<(ParsedSignature, usize), String> {
-        let row = self.rows.get_mut(ordinal).ok_or("primary prepared signature row absent")?;
-        if row.header != local { return Err("primary prepared signature header differs".into()); }
+        let row = self.rows.get(ordinal).ok_or("primary prepared signature row absent")?;
+        let geometry = self.geometry(ordinal, row);
+        if geometry.header != local { return Err("primary prepared signature header differs".into()); }
+        let row = self.rows.get_mut(ordinal).expect("located primary signature row");
         let taken = match row.slot.value() {
             SlotValue::Taken => return Err("primary prepared signature was already consumed".into()),
             SlotValue::Trivial(flags, _) => flags.into_parsed(Arc::clone(
@@ -469,7 +536,7 @@ impl CompletedSignatureRows {
                 .and_then(Option::take).ok_or("actual prepared signature payload is absent")?.into_parsed(),
         };
         row.slot = SignatureSlot::TAKEN;
-        Ok((taken, row.argument_offset))
+        Ok((taken, geometry.argument_offset))
     }
 
     fn publish_clauses(
@@ -483,6 +550,7 @@ impl CompletedSignatureRows {
         };
         for (ordinal, row) in self.rows.iter().enumerate() {
             checkpoint(a)?;
+            let geometry = self.geometry(ordinal, row);
             let (parameters, clauses) = match row.slot.value() {
                 SlotValue::Taken => return Err(Error::new(ErrorKind::InvalidData,
                     "actual formal metadata was consumed before clause publication")),
@@ -500,7 +568,7 @@ impl CompletedSignatureRows {
             };
             let lease = self.payload_pages.get(ordinal / COMPLETED_SIGNATURE_PAGE_LEN)
                 .ok_or_else(|| Error::new(ErrorKind::InvalidData, "actual clause payload page is absent"))?;
-            headers.add_produced_clauses(roots, row.header, row.argument_offset, parameters,
+            headers.add_produced_clauses(roots, geometry.header, geometry.argument_offset, parameters,
                 clauses, Arc::clone(lease), a)?;
         }
         Ok(())
@@ -551,11 +619,11 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         self.pages.get_mut(ordinal / PAGE_LEN)?.rows.get_mut(ordinal % PAGE_LEN)
     }
 
-    fn find(&self, key: usize, key_of: impl Fn(&T) -> usize) -> Option<usize> {
+    fn find(&self, key: usize, key_of: impl Fn(usize, &T) -> usize) -> Option<usize> {
         let (mut left, mut right) = (0, self.len);
         while left < right {
             let mid = left + (right - left) / 2;
-            match key_of(self.get(mid)?).cmp(&key) {
+            match key_of(mid, self.get(mid)?).cmp(&key) {
                 std::cmp::Ordering::Less => left = mid + 1,
                 std::cmp::Ordering::Greater => right = mid,
                 std::cmp::Ordering::Equal => return Some(mid),
@@ -658,8 +726,8 @@ impl OriginalSignatureObserver<'_,'_>{
   }
   let credit=self.failure_storage.as_mut().expect("actual successful header credit");
   let row=Row {
-   producer:completed_live.map(dm_syntax::OriginalPrimaryLiveHeader::into_producer_identity),
-   header:event.span(),argument_offset,slot,
+   producer:completed_live.map(dm_syntax::OriginalPrimaryLiveHeader::into_producer_identity).unwrap_or_default(),
+   geometry:HeaderGeometry{header:event.span(),argument_offset},slot,
    #[cfg(test)]
    retained_bytes:credit.bytes(),
   };
@@ -1127,9 +1195,8 @@ mod signature_row_storage_tests {
         let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
         let mut rows = CompletedSignatureRows::new();
         let make_row = || Row {
-            producer: None,
-            header: Span::new(0, 1),
-            argument_offset: 0,
+            producer: Default::default(),
+            geometry: HeaderGeometry { header: Span::new(0, 1), argument_offset: 0 },
             slot: SignatureSlot::TAKEN,
             retained_bytes: 0,
         };
@@ -1149,6 +1216,87 @@ mod signature_row_storage_tests {
         assert_eq!(in_flight.bytes(), 32);
         assert_eq!(used.load(Ordering::Acquire), before);
         drop((rows, first, in_flight));
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn completed_signature_geometry_uses_narrow_rows_and_keeps_exact_wide_fallback() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let narrow = HeaderGeometry { header: Span::new(0, 0), argument_offset: 0 };
+        assert_eq!(PackedHeader::pack(narrow).unwrap().unpack(), Some(narrow));
+        let last = usize::from(u16::MAX);
+        let narrow_edge = HeaderGeometry { header: Span::new(1, last + 1), argument_offset: last };
+        assert_eq!(PackedHeader::pack(narrow_edge).unwrap().unpack(), Some(narrow_edge));
+        let wide_length = HeaderGeometry { header: Span::new(2, last + 3), argument_offset: 1 };
+        let wide_offset = HeaderGeometry { header: Span::new(3, last + 5), argument_offset: last + 1 };
+        let wide_start = HeaderGeometry { header: Span::new(u32::MAX as usize, usize::MAX), argument_offset: 0 };
+        assert!(PackedHeader::pack(wide_length).is_none());
+        assert!(PackedHeader::pack(wide_offset).is_none());
+        assert!(PackedHeader::pack(wide_start).is_none());
+        assert_eq!(std::mem::size_of::<PackedHeader>(), 8);
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(std::mem::size_of::<Row>() - std::mem::size_of::<usize>(), 24);
+
+        let mut rows = CompletedSignatureRows::new();
+        for (ordinal, geometry) in [narrow, narrow_edge, wide_length, wide_offset, wide_start].into_iter().enumerate() {
+            let mut credit = a.reserve(0).unwrap();
+            rows.ensure_slot(&a).unwrap();
+            rows.push_reserved(Row { producer: Default::default(), geometry, slot: SignatureSlot::TAKEN, retained_bytes: 0 },
+                &mut credit, &a, None).unwrap();
+            let found = rows.find(geometry.header.start).unwrap();
+            assert_eq!(found, ordinal);
+            assert_eq!(rows.geometry(found, rows.get(found).unwrap()), geometry);
+            assert!(rows.take(found, Span::new(geometry.header.start, 0)).is_err());
+        }
+        assert_eq!(rows.wide_headers.len(), 3);
+        assert_eq!(rows.find(4), None);
+        drop(rows);
+        assert_eq!(used.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn genuine_wide_formal_header_preserves_exact_completed_lookup_and_argument_offset() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let source = SourceText::from(format!("/proc/wide({}value)\n    return\n", " ".repeat(1 << 16)));
+        let mut parsed = parse_original_signatures_using(source, &a).unwrap();
+        let header = parsed.items.dense()[0].header_span;
+        assert!(header.end - header.start > usize::from(u16::MAX));
+        assert_eq!(parsed.prepared.rows.wide_headers.len(), 1);
+        assert!(parsed.prepared.take(Span::new(header.start,header.end-1),0,&parsed.headers).is_err());
+        let (signature, offset) = parsed.prepared.take(header,0,&parsed.headers).unwrap();
+        assert_eq!(offset,"/proc/wide(".len());
+        assert_eq!(parsed.symbols.text(signature.signature.parameters[0].name),Some("value"));
+        assert!(parsed.prepared.take(header,0,&parsed.headers).is_err());
+        drop((parsed,signature));
+        assert_eq!(used.load(Ordering::Acquire),0);
+    }
+
+    #[test]
+    fn denied_wide_signature_geometry_does_not_publish_or_consume_pending_funding() {
+        let used = Arc::new(AtomicUsize::new(0));
+        let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let mut rows = CompletedSignatureRows::new();
+        let mut credit = a.reserve(24).unwrap();
+        rows.ensure_slot(&a).unwrap();
+        let before = used.load(Ordering::Acquire);
+        let make_row = || Row {
+            producer: Default::default(),
+            geometry: HeaderGeometry { header: Span::new(0, 1 << 16), argument_offset: 1 },
+            slot: SignatureSlot::TAKEN, retained_bytes: 0,
+        };
+        let limited = SettingAdmission::new(&used, before, &|| Ok(()));
+        assert_eq!(rows.push_reserved(make_row(), &mut credit, &limited, None).unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(rows.len(), 0);
+        assert_eq!(rows.wide_headers.len(), 0);
+        assert_eq!(credit.bytes(), 24);
+        assert_eq!(used.load(Ordering::Acquire), before);
+        rows.push_reserved(make_row(), &mut credit, &a, None).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows.wide_headers.len(), 1);
+        assert_eq!(credit.bytes(), 0);
+        drop((rows, credit));
         assert_eq!(used.load(Ordering::Acquire), 0);
     }
 
@@ -1227,8 +1375,8 @@ mod signature_row_storage_tests {
         let mut actual = parse_original_signatures_using(source.clone(), &a).unwrap();
         let foreign = parse_original_signatures_using(source, &a).unwrap();
         assert_eq!(actual.prepared.rows.len(), count);
-        assert!(actual.prepared.rows.iter().zip(actual.items.dense().iter())
-            .all(|(row, item)| row.header == item.header_span));
+        assert!(actual.prepared.rows.iter().zip(actual.items.dense().iter()).enumerate()
+            .all(|(ordinal, (row, item))| actual.prepared.rows.geometry(ordinal, row).header == item.header_span));
 
         let header = actual.items.dense()[COMPLETED_SIGNATURE_PAGE_LEN].header_span;
         assert!(actual.prepared.take(header, 0, &foreign.headers).is_err());
@@ -1336,13 +1484,15 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
 
   self.defaults.try_consume(|pending| {
    checkpoint(a)?;let found=self.rows.find(pending.live.start());
-   let row=match found{Some(index)=>self.rows.get(index).expect("located default signature"),None if observer_stop.is_some_and(|span|span.start==pending.live.start())=>return Ok(()),None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"demanded default has no actual completed header or genuine stop frontier")))};
+   let index=match found{Some(index)=>index,None if observer_stop.is_some_and(|span|span.start==pending.live.start())=>return Ok(()),None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"demanded default has no actual completed header or genuine stop frontier")))};
+   let row=self.rows.get(index).expect("located default signature");let geometry=self.rows.geometry(index,row);
    let parameters=self.rows.parameters(row).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual default metadata was consumed before primary publication")))?;let parameter=parameters.get(pending.root.parameter).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual demanded parameter slot is absent")))?;
-   headers.add_default_root(&mut roots,row.header,row.argument_offset,parameter,&self.symbols,pending.root,a).map_err(OriginalHeaderFailure::Operational)
+   headers.add_default_root(&mut roots,geometry.header,geometry.argument_offset,parameter,&self.symbols,pending.root,a).map_err(OriginalHeaderFailure::Operational)
   })?;
   for pending in self.inputs{
    checkpoint(a)?;let index=match self.rows.find(pending.live.start()){Some(index)=>index,None if observer_stop.is_some_and(|span|span.start==pending.live.start())=>continue,None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"input annotation has no actual completed header or genuine stop frontier")))};let row=self.rows.get(index).expect("located input signature");let parameter=self.rows.parameters(row).and_then(|parameters|parameters.get(pending.parameter)).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native input parameter metadata absent")))?;
-   headers.add_input_root(&mut roots,row.header,row.argument_offset,parameter,&self.symbols,pending.parameter,pending.marker,pending.input,a).map_err(OriginalHeaderFailure::Operational)?;
+   let geometry=self.rows.geometry(index,row);
+   headers.add_input_root(&mut roots,geometry.header,geometry.argument_offset,parameter,&self.symbols,pending.parameter,pending.marker,pending.input,a).map_err(OriginalHeaderFailure::Operational)?;
   }
   self.input_storage = None;
   headers.install_default_roots(roots,a).map_err(OriginalHeaderFailure::Operational)?;
@@ -1353,11 +1503,13 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  // against this exact primary before the token/source handoff above.
  headers.install_parameter_signatures(a, |header| {
     literal_source?;
-    let row = self.rows.get(self.rows.find(header.start)?)?;
-    if row.header != header { return None; }
+    let index = self.rows.find(header.start)?;
+    let row = self.rows.get(index)?;
+    let geometry = self.rows.geometry(index, row);
+    if geometry.header != header { return None; }
     let SlotValue::Trivial(flags, _) = row.slot.value() else { return None };
     if flags.variadic || !flags.notices_complete || !flags.clauses_complete { return None; }
-    header.start.checked_add(row.argument_offset)
+    header.start.checked_add(geometry.argument_offset)
  }).map_err(OriginalHeaderFailure::Operational)?;
  drop(self.input_storage);
  checkpoint(a)?;

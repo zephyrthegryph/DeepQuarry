@@ -16,8 +16,17 @@ use super::{demand_frames::NativeOriginalPrimaryFrames,demand_layout::NativeDema
 /// Minimal producer identity retained after a completed formal is checked.
 /// Active header coordinates remain on OriginalPrimaryLiveHeader only.
 pub struct OriginalPrimaryProducerIdentity(super::demand_layout::NativePrimaryLayoutIdentity);
+impl Default for OriginalPrimaryProducerIdentity {
+ fn default() -> Self {
+  // This sentinel cannot match a real primary or authorize a source fact.
+  Self(super::demand_layout::NativePrimaryLayoutIdentity::unbound_completed())
+ }
+}
 impl OriginalPrimaryProducerIdentity {
- pub(super) fn matches_owner(&self,owner:&super::demand_layout::NativePrimaryLayoutIdentity)->bool{self.0.same(owner)}
+ /// Move a bound owner out, leaving the compact unbound sentinel in place.
+ /// The existing LayoutOwner still frees the Arc before its final lease.
+ pub fn take(&mut self) -> Option<Self> { self.0.take_completed().map(Self) }
+ pub(super) fn matches_owner(&self,owner:&super::demand_layout::NativePrimaryLayoutIdentity)->bool{self.0.matches_completed(owner)}
 }
 impl OriginalPrimaryLiveHeader{
  pub fn into_producer_identity(self)->OriginalPrimaryProducerIdentity{OriginalPrimaryProducerIdentity(self.owner)}
@@ -436,10 +445,14 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   assert_eq!(primary.span_tokens().get(live.open_ordinal).unwrap().text(source),"(");
   assert!(primary.validate_live_header(&live).is_err(),"completed live header cannot resume formal input");primary.advance(source,true).unwrap();let actual=primary.finish(source,true).unwrap();assert!(actual.same_primary_header(&live));
   let mut foreign=OriginalPrimaryDemand::new(&a,None).unwrap();for token in lex_spans(source).tokens{foreign.token(token).unwrap()}foreign.advance(source,true).unwrap();let foreign=foreign.finish(source,true).unwrap();assert!(!foreign.same_primary_header(&live));
-  let owner=live.into_producer_identity();
+  let mut slot=live.into_producer_identity();
+  assert!(actual.same_primary_producer(&slot));
+  let owner=slot.take().expect("the exact live owner");
+  assert!(slot.take().is_none());
+  assert!(!actual.same_primary_producer(&slot));
   assert!(actual.same_primary_producer(&owner));
   assert!(!foreign.same_primary_producer(&owner));
-  assert!(std::mem::size_of::<Option<OriginalPrimaryProducerIdentity>>() < std::mem::size_of::<Option<OriginalPrimaryLiveHeader>>());
+  assert_eq!(std::mem::size_of::<OriginalPrimaryProducerIdentity>(),std::mem::size_of::<usize>());
   drop((actual,foreign));assert!(used.load(Ordering::Acquire)>0,"compact handle retains only its actual fixed producer metadata");drop(owner);assert_eq!(used.load(Ordering::Acquire),0);
  }
 

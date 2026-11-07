@@ -45,6 +45,16 @@ pub(super) struct NativeLayoutBatch {
 impl NativeLayoutBatch{pub(super) fn take_header_start(&mut self)->Option<NativePrimaryHeaderStart>{self.header_start.take()}}
 impl NativePrimaryLayoutIdentity{
  pub(super) fn same(&self,other:&Self)->bool{self.credit.same(&other.credit)}
+ // Only the completed-header wrapper may carry an unbound identity.
+ pub(super) fn unbound_completed() -> Self {
+  Self { credit: LayoutOwner(None) }
+ }
+ pub(super) fn take_completed(&mut self) -> Option<Self> {
+  self.credit.0.take().map(|owner| Self { credit: LayoutOwner(Some(owner)) })
+ }
+ pub(super) fn matches_completed(&self, other: &Self) -> bool {
+  self.credit.0.as_ref().zip(other.credit.0.as_ref()).is_some_and(|(left, right)| Arc::ptr_eq(left, right))
+ }
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){let owner=self.credit.0.as_ref().expect("live primary layout owner");let fixed=std::mem::size_of::<LayoutCredit>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.lease.visit_counter_storage(|p,n|visit(p,n,n));}
 }
 impl std::ops::Deref for NativeLayoutBatch{type Target=[Line];fn deref(&self)->&[Line]{&self.lines}}
