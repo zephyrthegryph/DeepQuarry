@@ -24,11 +24,12 @@ pub enum Roster {
     WithDerivedReads,
     WithSysReactive,
     WithLifeforms,
+    WithPlayerLink,
 }
 
 impl Roster {
     pub const MAX_POLICIES: usize = 7;
-    pub const ALL: [Self; 13] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms];
+    pub const ALL: [Self; 14] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink];
 
     /// Independently qualified Analyze-only capture plans.
     pub const GENERIC_V2: [Self; 4] = [
@@ -61,6 +62,7 @@ impl Roster {
             Self::WithSemanticReads => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/reads", "untracked_inputs"],
             Self::WithReactivePolicies => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sem/reads", "setter_publishes", "untracked_inputs"],
             Self::WithDerivedReads => &["allow_annotations", "derived_reads", "notice_publisher", "report_in_catch", "scheduler"],
+            Self::WithPlayerLink => &["allow_annotations", "notice_publisher", "player_link", "report_in_catch", "scheduler"],
             Self::WithLifeforms => &["allow_annotations", "lifeforms", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithSysReactive => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sys/dx_reactive"],
             Self::WithUntyped => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "untyped"],

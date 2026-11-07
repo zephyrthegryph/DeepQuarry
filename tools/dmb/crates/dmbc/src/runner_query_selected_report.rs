@@ -29,7 +29,7 @@ impl SelectedReportPlan {
     fn for_roster(roster: Roster, judgment: JudgmentV2, control: &mut Operation<'_>) -> io::Result<Self> {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
-            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms],
+            Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
         let mut count = 0;
@@ -249,18 +249,22 @@ impl ReportStage<'_> {
                 }
                 post_judge = data.post_judge_message();
             }
-            UnionRows::Lifeforms(data) => {
-                if self.selected != Roster::WithLifeforms.names()
-                    || !std::ptr::eq(meta, dq_analyze::lifeforms_policy::metadata())
+            UnionRows::MessageOnlyHard(question, sites, allows) => {
+                let (roster, expected) = match question {
+                    Q::Lifeforms => (Roster::WithLifeforms, dq_analyze::lifeforms_policy::metadata()),
+                    Q::PlayerLink => (Roster::WithPlayerLink, dq_analyze::player_link_policy::metadata()),
+                    _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued message-only selected report role")),
+                };
+                if self.selected != roster.names() || !std::ptr::eq(meta, expected)
                     || !matches!(meta.policy, Policy::Hard) || !meta.allow.is_empty()
-                    || !data.allow_used().is_empty() {
+                    || !allows.is_empty() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData,
-                        "selected Lifeforms findings differ from their actual Hard/no-ALLOW role"));
+                        "selected message-only findings differ from their actual Hard/no-ALLOW role"));
                 }
-                for site in data.sites() {
+                for site in sites {
                     if site.msg.is_empty() {
                         return Err(io::Error::new(io::ErrorKind::InvalidData,
-                            "selected Lifeforms finding lacks its actual message"));
+                            "selected Hard finding lacks its actual message"));
                     }
                     projection.row(site, None, &mut control)?;
                 }
@@ -453,6 +457,7 @@ mod selected_plan_tests {
             (Roster::WithDerivedReads, &[Q::DerivedReads]),
             (Roster::WithSysReactive, &[Q::SysReactive]),
             (Roster::WithLifeforms, &[Q::Lifeforms]),
+            (Roster::WithPlayerLink, &[Q::PlayerLink]),
         ];
         for (roster, questions) in expected {
             let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
