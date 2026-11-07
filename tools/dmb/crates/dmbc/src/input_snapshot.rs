@@ -382,12 +382,15 @@ mod recording_snapshot {
     pub(super) struct RecordingSnapshot {
         facts: InputSnapshot,
         next_exact_loan: Option<NonZeroUsize>,
-        last_exact_loan: Option<NonZeroUsize>,
+        // Inline positive proofs for a few current exact receipts. A macro
+        // commonly alternates between its invocation and definition file.
+        // No source, path, snapshot owner or receipt is retained here.
+        exact_loans: [Option<NonZeroUsize>; 4],
     }
 
     impl RecordingSnapshot {
         pub(super) fn new(facts: InputSnapshot) -> Self {
-            Self { facts, next_exact_loan: NonZeroUsize::new(1), last_exact_loan: None }
+            Self { facts, next_exact_loan: NonZeroUsize::new(1), exact_loans: [None; 4] }
         }
 
         pub(super) fn into_facts(self) -> InputSnapshot { self.facts }
@@ -400,11 +403,33 @@ mod recording_snapshot {
             Some(serial)
         }
 
-        pub(super) fn cached_exact_loan(&self) -> Option<NonZeroUsize> { self.last_exact_loan }
+        pub(super) fn reuse_exact_loan(&mut self, serial: NonZeroUsize) -> bool {
+            let serial = Some(serial);
+            if self.exact_loans[0] == serial {
+                return true;
+            }
+            if self.exact_loans[1] == serial {
+                self.exact_loans.swap(0, 1);
+            } else if self.exact_loans[2] == serial {
+                self.exact_loans[..3].rotate_right(1);
+            } else if self.exact_loans[3] == serial {
+                self.exact_loans.rotate_right(1);
+            } else {
+                return false;
+            }
+            true
+        }
 
         pub(super) fn remember_exact_loan(&mut self, serial: NonZeroUsize) {
-            self.last_exact_loan = Some(serial);
+            self.exact_loans.rotate_right(1);
+            self.exact_loans[0] = Some(serial);
         }
+
+        #[cfg(test)]
+        pub(super) fn cached_exact_loan(&self) -> Option<NonZeroUsize> { self.exact_loans[0] }
+
+        #[cfg(test)]
+        pub(super) fn cached_exact_loans(&self) -> [Option<NonZeroUsize>; 4] { self.exact_loans }
     }
 
     impl Deref for RecordingSnapshot {
@@ -414,7 +439,7 @@ mod recording_snapshot {
 
     impl DerefMut for RecordingSnapshot {
         fn deref_mut(&mut self) -> &mut Self::Target {
-            self.last_exact_loan = None;
+            self.exact_loans = [None; 4];
             &mut self.facts
         }
     }

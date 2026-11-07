@@ -311,7 +311,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     fn validate_exact_byte_loan(&self,receipt:&RecordedSourceReceipt,serial:NonZeroUsize)->bool{
         if !receipt.exact_open||!Arc::ptr_eq(&receipt.issuer,&self.source_issuer){return false}
         let Ok(mut current)=self.snapshot.lock() else{return false};
-        if current.cached_exact_loan()==Some(serial){return true}
+        if current.reuse_exact_loan(serial){return true}
         if !Self::exact_receipt_matches(&current,&receipt.path,receipt){return false}
         current.remember_exact_loan(serial);
         true

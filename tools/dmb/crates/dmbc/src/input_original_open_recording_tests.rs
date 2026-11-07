@@ -35,6 +35,83 @@ fn raw<P:SnapshotProvider>(input:&RecordingInputs<P>,path:&Path,work:&Work,decis
  assert!(keys.original_payloads.contains_key(&path));assert!(snapshot.files().next().is_none());assert!(snapshot.restat(&FileSystemInputs).unwrap().unchanged());std::fs::write(root.join("actual.dm"),b"/datum/changed\n").unwrap();assert!(!snapshot.restat(&FileSystemInputs).unwrap().unchanged());drop((snapshot,input,lease));assert_eq!(work.live.load(Ordering::Acquire),0);
 }
 #[test]
+fn exact_open_memo_reuses_alternating_live_receipts_and_invalidates_every_slot() {
+    use std::cell::RefCell;
+
+    let root=crate::test_scratch::dir("original-exact-loan-alternation");
+    let paths: Vec<_>=(0..5).map(|ordinal| root.join(format!("file-{ordinal}.dm"))).collect();
+    let texts: Vec<_>=(0..5).map(|ordinal| format!("/datum/exact_loan_{ordinal}\n")).collect();
+    let work=Work::new(4<<20);
+    let input=inputs(FileSystemInputs);
+    let events=RefCell::new(Vec::new());
+    let mut leases=Vec::new();
+
+    for (ordinal,(path,text)) in paths.iter().zip(&texts).enumerate() {
+        std::fs::write(path,text).unwrap();
+        let Outcome::Acquired(lease)=input.original_raw_source_open_admitted(
+            path,1<<20,&work,
+            &mut||{events.borrow_mut().push((ordinal,"open"));Ok(Decision::Read)},
+            &mut|_|{events.borrow_mut().push((ordinal,"before_read"));Ok(())},
+            &mut|_|{events.borrow_mut().push((ordinal,"before_decode"));Ok(())},
+            &mut|_|{events.borrow_mut().push((ordinal,"acquired"));Ok(())},
+        ).unwrap()else{panic!("genuine ordered reader must acquire")};
+        leases.push(lease);
+    }
+    let expected: Vec<_>=(0..5).flat_map(|ordinal| {
+        ["open","before_read","before_decode","acquired"].map(|event|(ordinal,event))
+    }).collect();
+    assert_eq!(*events.borrow(),expected);
+    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[None;4]);
+
+    let loan=|ordinal:usize|{
+        assert_eq!(input.original_source_bytes(&leases[ordinal]).unwrap().unwrap(),texts[ordinal].as_bytes());
+        input.snapshot.lock().unwrap().cached_exact_loan().unwrap()
+    };
+    let a=loan(0);
+    let b=loan(1);
+    assert_ne!(a,b);
+    assert_eq!(loan(0),a);
+    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[Some(a),Some(b),None,None]);
+    assert_eq!(loan(1),b);
+    let c=loan(2);
+    let d=loan(3);
+    let e=loan(4);
+    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[Some(e),Some(d),Some(c),Some(b)]);
+    assert_eq!(loan(1),b,"an older live definition remains admitted after other path loans");
+    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[Some(b),Some(e),Some(d),Some(c)]);
+
+    let other=inputs(FileSystemInputs);
+    let counts=std::array::from_fn(|_|Cell::new(0));
+    let Outcome::Acquired(foreign)=raw(&other,&paths[0],&work,Decision::Read,&counts).unwrap()else{panic!("genuine foreign read")};
+    assert_eq!(other.original_source_bytes(&foreign).unwrap().unwrap(),texts[0].as_bytes());
+    assert_eq!(other.snapshot.lock().unwrap().cached_exact_loan(),Some(a),"private serials can coincide across issuers");
+    assert!(other.original_source_bytes(&leases[0]).is_err());
+    assert!(input.original_source_bytes(&foreign).is_err());
+    assert!(input.original_source_bytes(&leases[1].reissued(())).is_err());
+
+    let removed=std::mem::take(&mut input.snapshot.lock().unwrap().original_payloads);
+    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[None;4]);
+    for lease in &leases {
+        assert!(input.original_source_bytes(lease).is_err());
+    }
+    input.snapshot.lock().unwrap().original_payloads=removed;
+    assert_eq!(loan(0),a);
+    assert_eq!(loan(1),b);
+
+    let error=input.original_raw_source_open_admitted(
+        &paths[0],1<<20,&work,
+        &mut||Err(io::Error::from_raw_os_error(1450)),
+        &mut|_|panic!("first actual open callback error must prevent payload"),
+        &mut|_|panic!("first actual open callback error must prevent decode"),
+        &mut|_|panic!("first actual open callback error must prevent acquisition"),
+    ).err().unwrap();
+    assert_eq!(error.raw_os_error(),Some(1450));
+    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[None;4]);
+    drop((foreign,other,leases,input));
+    assert_eq!(work.live.load(Ordering::Acquire),0);
+}
+
+#[test]
 fn exact_original_loan_requires_the_current_positive_facts_and_unpoisoned_recorder() {
     let root=crate::test_scratch::dir("original-exact-loan-current-facts");
     let path=root.join("actual.dm");
@@ -56,7 +133,7 @@ fn exact_original_loan_requires_the_current_positive_facts_and_unpoisoned_record
     assert_eq!(input.original_source_bytes(&later).unwrap().unwrap(),bytes);
     assert_ne!(input.snapshot.lock().unwrap().cached_exact_loan(),Some(first_serial),"equal facts do not reuse a serial");
     assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
-    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loan(),Some(first_serial),"the one-entry memo can refill from live facts");
+    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loan(),Some(first_serial),"the bounded memo can refill from live facts");
 
     let other=inputs(FileSystemInputs);
     let counts=std::array::from_fn(|_|Cell::new(0));
