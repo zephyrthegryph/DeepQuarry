@@ -3310,3 +3310,30 @@ reserved bytes together. Numeric spellings on mixed batches held
 214,387 capacity bytes, while those entire mixed owners held 11,451,915
 bytes and also contained still-live nonnumeric rows. These quantities
 rule out treating the whole mixed payload as a reclaimable numeric cost.
+
+
+The four-slot exact-open memo passed the direct recorder controls for
+alternating live files, current issuer, snapshot mutation and first
+operational failure. The compound final gate now digests an overlapping
+positive file once against both exact expected facts. Each role still
+checks its own metadata and opened-source evidence. The controls passed
+for conflicting and missing facts, stale-input publication refusal,
+recovery, and shared canonical Checker/Untyped body issuance.
+
+All eight focused macro controls and three daemon controls passed for
+diagnostic doc release, narrow singleton trace coordinates, and scoped
+Original map node grants. The checkout with these changes reached
+10,198,253 producer rows in 7,360 opened occurrences and adopted
+10,190,848 receiver rows on 2,488 shared pages. The map held 1,438,800
+steady bytes rather than 3,257,760 at the same live name count. The
+producer retained no diagnostic doc rows, and all 271,273 singleton
+projections used the narrower payload. The new cutoff was a 26,624-byte
+allocation at 134,194,539 retained syntax bytes. The client returned no
+report bytes in 140.53 seconds end to end, and its daemon drained. The
+last CPU sample was 175.953 seconds. This larger source prefix and a
+different host schedule are not a controlled timing comparison.
+
+The receiver's exclusive literal payload rose to 15,335,037 bytes from
+11,683,241 bytes as the request progressed through large quoted test
+sources. This is a separate live owner class. The numeric census does
+not account for that increase.
