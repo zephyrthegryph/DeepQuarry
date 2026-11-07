@@ -8,6 +8,7 @@ import {
 import { Button, Input, Section, Tabs } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
 import { MapSplitHandle } from '../layout/ChatLayout';
+import { InspectTab } from './InspectTab';
 import { McTab } from './McTab';
 import { MenuPage } from './MenuPage';
 import {
@@ -239,6 +240,7 @@ function Content({ state, store }: { state: State; store: StatStore }) {
       />
     );
   }
+  if (tab === 'Inspect') return <InspectTab data={state.inspect} />;
   if (tab === 'Examine') return <Examine lines={state.examine} />;
   if (tab === 'Debug Stat Panel') return <Debug state={state} store={store} />;
   if (tab === state.turfName) return <TurfList contents={state.turfContents} />;

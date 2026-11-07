@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Examining now fills an Inspect tab in the right side panel and switches to it, instead of a box popped out over the map"
+  - bugfix: "The inspect portrait has a plain dark background, keeps its proportions at whole-number scales and faces north; the turn button is gone"

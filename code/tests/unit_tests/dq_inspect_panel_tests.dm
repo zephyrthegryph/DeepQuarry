@@ -109,3 +109,20 @@
 	TEST_ASSERT(islist(bare_south), "a bare human has a portrait description")
 	TEST_ASSERT(json_encode(inspect_portrait_sprite(dressed, SOUTH)) != json_encode(bare_south), "the south portrait shows the uniform")
 	TEST_ASSERT(json_encode(inspect_portrait_sprite(dressed, EAST)) != json_encode(inspect_portrait_sprite(bare, EAST)), "a turned portrait shows the uniform")
+
+/// The panel's payload for the stat panel carries the target, its tabs and flavor state, and no placement or turn data.
+/datum/unit_test/dq_inspect_panel/stat_panel_payload
+
+/datum/unit_test/dq_inspect_panel/stat_panel_payload/run_gate()
+	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human, tile(1, 1))
+	var/mob/living/carbon/human/subject = allocate(/mob/living/carbon/human, tile(2, 1))
+	var/datum/inspect_panel/panel = allocate(/datum/inspect_panel)
+	TEST_ASSERT_EQUAL(panel.payload(viewer), null, "a panel with no target has nothing to send")
+	rel_set(panel, nameof(/datum/inspect_panel::target), subject)
+	panel.set_description(list("a line"))
+	panel.set_recent(list(handle_of(subject)))
+	var/list/data = panel.payload(viewer)
+	TEST_ASSERT_EQUAL(data["target"], capitalize(subject.name), "the payload is headed by the target")
+	TEST_ASSERT_EQUAL(length(data["tabs"]), 1, "the examined target is the one tab")
+	TEST_ASSERT(!("control" in data) && !("tile_size" in data), "no map placement data is sent any more")
+	TEST_ASSERT(!("portrait_dir" in data), "and no turn state")

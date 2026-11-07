@@ -109,6 +109,21 @@ describe('stat panel store', () => {
     expect(store.state.currentTab).toBe('Examine');
   });
 
+  it('inspect data adds the Inspect tab and switches to it', () => {
+    const { store, sent } = setup();
+    store.receive('update_inspect', { data: { target: 'Pen' }, switch: true });
+    expect(visibleTabs(store.state)).toContain('Inspect');
+    expect(store.state.currentTab).toBe('Inspect');
+    expect(store.state.inspect?.target).toBe('Pen');
+    expect(sent).toContainEqual(['Set-Tab', { tab: 'Inspect' }]);
+  });
+
+  it('an inspect refresh keeps the current tab', () => {
+    const { store } = setup();
+    store.receive('update_inspect', { data: { target: 'Pen' }, switch: false });
+    expect(store.state.currentTab).toBe('Status');
+  });
+
   it('misc tabs come and go', () => {
     const { store } = setup();
     store.receive('create_misc', 'Vore');
