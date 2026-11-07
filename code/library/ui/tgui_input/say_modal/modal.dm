@@ -73,7 +73,7 @@ CAPABILITIES(/datum/tgui_say)
 
 	var/minimum_width = client()?.prefs?.read_preference(/datum/preference/numeric/tgui_say_width) || 1
 	var/minimum_height = (client()?.prefs?.read_preference(/datum/preference/numeric/tgui_say_height) || 1) * 20 + 10
-	winset(client(), SKIN_TGUI_SAY, "pos=410,400;is-visible=0;")
+	winset(client(), SKIN_TGUI_SAY, "is-visible=0;") // the popup docks itself to the map (tgui-say dock.ts) each time it opens
 
 	window.send_message("props", list(
 		"lightMode" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_say_light),

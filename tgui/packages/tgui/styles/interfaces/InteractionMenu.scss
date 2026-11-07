@@ -46,13 +46,19 @@
 }
 
 .InteractionMenu__close {
-  border: 0;
-  background: transparent;
+  box-sizing: border-box;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid console.$console-border;
+  background: console.$console-button;
   color: console.$console-muted;
   font: inherit;
+  line-height: 1;
   cursor: pointer;
 
   &:hover {
+    background: #4a6d96;
     color: console.$console-text;
   }
 }
