@@ -3476,3 +3476,14 @@ that case and its body normally. The real IPC fixture passed for both shapes,
 retaining the uncovered-range warning followed by the two authored variable
 errors. Resource spelling alone cannot select this path, and modified prefabs
 keep their separate expression semantics.
+
+
+The actual ranked-width checkout sample at `067575c693` reached 11,048,203
+producer rows. Origin-page storage was 93,179,456 bytes at that later prefix,
+versus 100,823,808 at the preceding 11,010,048-row prefix. These prefixes
+are different, so their difference is not a fixed-workload savings measure.
+The source admission no longer stopped this sample. It instead refused a
+1,818,960-byte macro-environment mutation reservation with 133,829,630 bytes
+already retained under the unchanged 134,217,728-byte syntax limit. No report
+was emitted. The private daemon drained and exited after the failed request.
+This is another bounded preparation result, not completion or parity.
