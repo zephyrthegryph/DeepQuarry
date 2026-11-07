@@ -8,10 +8,58 @@ use std::{marker::PhantomData,ops::Deref};
 pub(crate) struct ReportSource<'a>{pub(crate) archive:&'a BodyArchive,pub(crate) profile:PackedU128}
 impl<'a> From<&'a EffectInput> for ReportSource<'a>{fn from(input:&'a EffectInput)->Self{Self{archive:&input.archive,profile:input.profile}}}
 
+pub(crate) struct ReportBodyView<'a> {
+    pub(crate) ordinal: usize,
+    pub(crate) procedure: ProcedureIdentity,
+    pub(crate) parent: Option<EffectTarget>,
+    pub(crate) pure: Option<Span>,
+    pub(crate) sleep: &'a SleepSettings,
+    pub(crate) direct: &'a [DirectEffect],
+    pub(crate) blocking: &'a [DirectEffect],
+    pub(crate) calls: &'a [CallEdge],
+    pub(crate) opening_parenthesis: Option<Span>,
+    pub(crate) callable_origin: &'a Result<SourceNoteOrigin, dm_tree::frontend::BorrowedCallableOriginError>,
+    pub(crate) immediate: &'a [Diagnostic],
+    pub(crate) original: &'a [OriginalBodyDiagnostic],
+}
+
+impl<'a> From<&'a BodyEffects> for ReportBodyView<'a> {
+    fn from(body: &'a BodyEffects) -> Self {
+        Self {
+            ordinal: body.ordinal,
+            procedure: body.procedure,
+            parent: body.parent,
+            pure: body.pure,
+            sleep: &body.sleep,
+            direct: &body.direct,
+            blocking: &body.blocking,
+            calls: &body.calls,
+            opening_parenthesis: body.opening_parenthesis,
+            callable_origin: &body.callable_origin,
+            immediate: &body.immediate,
+            original: &body.original,
+        }
+    }
+}
+
+impl ReportBodyView<'_> {
+    fn immediate_diagnostics(&self) -> impl Iterator<Item = &Diagnostic> {
+        self.immediate.iter().chain(self.original.iter().filter(|row| row.effect_immediate).map(|row| &row.diagnostic))
+    }
+}
+
+pub(crate) trait ReportBodyLoan {
+    fn view(&self) -> ReportBodyView<'_>;
+}
+
+impl ReportBodyLoan for &BodyEffects {
+    fn view(&self) -> ReportBodyView<'_> { ReportBodyView::from(*self) }
+}
+
 pub(crate) trait ReportAccess{
  type Error:From<String>+From<&'static str>;
  type Scope;
- type Body<'a>:Deref<Target=BodyEffects> where Self:'a;
+ type Body<'a>:ReportBodyLoan where Self:'a;
  type Overrides<'a>:Deref<Target=[usize]> where Self:'a;
  // Compatibility DATA access has no operation control. Native access lends its actual poll.
  fn checkpoint(&self)->Result<(),Self::Error>{Ok(())}
@@ -25,10 +73,10 @@ pub(crate) trait ReportAccess{
  fn target_range(&self)->std::ops::Range<usize>{0..self.len()}
  fn body(&self,node:usize,live:&ExecutionAdmission)->Result<Self::Body<'_>,Self::Error>;
  fn index(&self,id:ProcedureIdentity)->Result<usize,Self::Error>;
- fn source_parent(&self,id:ProcedureIdentity,live:&ExecutionAdmission)->Result<Option<EffectTarget>,Self::Error>{Ok(self.body(self.index(id)?,live)?.parent)}
+ fn source_parent(&self,id:ProcedureIdentity,live:&ExecutionAdmission)->Result<Option<EffectTarget>,Self::Error>{Ok(self.body(self.index(id)?,live)?.view().parent)}
  fn has_effect(&self,node:usize)->Result<bool,Self::Error>;
  fn override_children(&self,node:usize,budget:&output::ReportBudgetWith<'_,Self::Error>)->Result<Self::Overrides<'_>,Self::Error>;
- fn callable_point(&self,body:&BodyEffects,missing:&'static str,budget:&output::ReportBudgetWith<'_,Self::Error>)->Result<(SourceNoteOrigin,Span),Self::Error>;
+ fn callable_point(&self,body:&ReportBodyView<'_>,missing:&'static str,budget:&output::ReportBudgetWith<'_,Self::Error>)->Result<(SourceNoteOrigin,Span),Self::Error>;
 }
 
 pub(crate) struct LegacyReportAccess<'a,D:crate::policy_body_demand::Demand>{pub(crate) input:&'a Arc<EffectInput>,pub(crate) plan:&'a EffectPlan,pub(crate) summary:Option<&'a SccSummary>,pub(crate) checkpoint:&'a dyn Fn()->Result<(),D::Error>,pub(crate) demand:PhantomData<D>}
@@ -45,11 +93,11 @@ impl<D:crate::policy_body_demand::Demand> ReportAccess for LegacyReportAccess<'_
  fn index(&self,id:ProcedureIdentity)->Result<usize,Self::Error>{self.plan.index.get(&id).copied().ok_or_else(||"effect report identity absent".into())}
  fn has_effect(&self,node:usize)->Result<bool,Self::Error>{let summary=self.summary.ok_or("purity report summary absent")?;Ok(summary.has_effect.get(*self.plan.components.get(node).ok_or("purity report component absent")?).copied().unwrap_or(false))}
  fn override_children(&self,node:usize,_:&output::ReportBudgetWith<'_,Self::Error>)->Result<Self::Overrides<'_>,Self::Error>{self.plan.overrides.get(node).map(Vec::as_slice).ok_or_else(||"effect report override row absent".into())}
- fn callable_point(&self,body:&BodyEffects,missing:&'static str,_:&output::ReportBudgetWith<'_,Self::Error>)->Result<(SourceNoteOrigin,Span),Self::Error>{let origin=self.input.archive.callable_note_origin_with(body.procedure,D::parse)?;let header=D::parse(&self.input.archive,body.ordinal)?.signature_opening_parenthesis().ok_or(missing)?;Ok((origin,header))}
+ fn callable_point(&self,body:&ReportBodyView<'_>,missing:&'static str,_:&output::ReportBudgetWith<'_,Self::Error>)->Result<(SourceNoteOrigin,Span),Self::Error>{let origin=self.input.archive.callable_note_origin_with(body.procedure,D::parse)?;let header=D::parse(&self.input.archive,body.ordinal)?.signature_opening_parenthesis().ok_or(missing)?;Ok((origin,header))}
 }
 
 fn parent<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),target:EffectTarget,live:&ExecutionAdmission)->Result<Option<EffectTarget>,A::Error>{match target{EffectTarget::Source(id)=>access.source_parent(id,live),EffectTarget::Builtin(_)=>{let source=access.source();Ok(original_target_parent_using(source.archive,source.profile,resolver,target,&mut||access.checkpoint())?)}}}
-fn overrides<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),child:&BodyEffects,target:EffectTarget,budget:&output::ReportBudgetWith<'_,A::Error>)->Result<bool,A::Error>{let mut at=child.parent;let mut seen=BTreeSet::new();while let Some(p)=at{if !budget.insert(&mut seen,p)?{return Err("effect target predecessor cycle".into())}if p==target{return Ok(true)}at=parent(access,resolver,p,&budget.admission_view())?;}Ok(false)}
+fn overrides<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),child:&ReportBodyView<'_>,target:EffectTarget,budget:&output::ReportBudgetWith<'_,A::Error>)->Result<bool,A::Error>{let mut at=child.parent;let mut seen=BTreeSet::new();while let Some(p)=at{if !budget.insert(&mut seen,p)?{return Err("effect target predecessor cycle".into())}if p==target{return Ok(true)}at=parent(access,resolver,p,&budget.admission_view())?;}Ok(false)}
 
 pub(crate) fn purity<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),policy:&CheckerPolicy,admission:&ExecutionAdmission,mut checkpoint:impl FnMut()->Result<(),A::Error>)->Result<Vec<Produced>,A::Error>{let source=access.source();let input=&source;
 
@@ -60,7 +108,7 @@ pub(crate) fn purity<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),
 
         let mut output = Vec::new();
         let mut targets = Vec::new();
-        for rank in access.target_range(){let marker=access.group_mark()?;let marked_used=budget.used();let before=budget.output_bound(&output)?.checked_add(coordinate_charge::<_,A::Error>(&targets)?).ok_or("effect report retained coordinate overflow")?;let pending=(||->Result<(),A::Error>{let i=access.ordered_node(rank)?;let loan=access.body(i,&budget.admission_view())?;let body=&*loan;
+        for rank in access.target_range(){let marker=access.group_mark()?;let marked_used=budget.used();let before=budget.output_bound(&output)?.checked_add(coordinate_charge::<_,A::Error>(&targets)?).ok_or("effect report retained coordinate overflow")?;let pending=(||->Result<(),A::Error>{let i=access.ordered_node(rank)?;let loan=access.body(i,&budget.admission_view())?;let body=loan.view();
             checkpoint()?;
             for row in body.immediate_diagnostics() {
                 emit(
@@ -81,7 +129,7 @@ pub(crate) fn purity<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),
                 }
                 if let EffectTarget::Source(id) = target {
                     let j=access.index(id)?;
-                    if let Some(annotation) = access.body(j,&budget.admission_view())?.pure {
+                    if let Some(annotation) = access.body(j,&budget.admission_view())?.view().pure {
                         budget.push(&mut targets, (i, annotation))?;
                         break;
                     }
@@ -95,8 +143,8 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
         // deterministic authored target order here, never sort rows or notes.
         for (target, annotation) in targets {let marker=access.group_mark()?;let marked_used=budget.used();let before=budget.output_bound(&output)?;let pending=(||->Result<(),A::Error>{
             checkpoint()?;
-            let body_loan=access.body(target,&budget.admission_view())?;let body=&*body_loan;
-            let(origin,header)=access.callable_point(body,"purity primary callable point absent",&budget)?;
+            let body_loan=access.body(target,&budget.admission_view())?;let body=body_loan.view();
+            let(origin,header)=access.callable_point(&body,"purity primary callable point absent",&budget)?;
             let target_display = display(input,body.procedure,&budget,&mut||access.checkpoint())?;
             let annotation_note = Note {
                 message: budget.format(format_args!("SpacemanDMM_should_be_pure set here"))?,
@@ -104,7 +152,7 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
             };
             if !body.direct.is_empty() {
                 let mut notes = budget.annotation(&annotation_note)?;
-                effect_notes(input, &body.direct, false, &mut notes, &budget)?;
+                effect_notes(input, body.direct, false, &mut notes, &budget)?;
                 emit(
                     &mut output,
                     input,ProducedPhase::PurityGraph,
@@ -120,7 +168,7 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                 )?;
             }
             if !access.has_effect(target)?{return Ok(())}
-            let mut queue = output::initial_queue(&body.calls, &budget)?;
+            let mut queue = output::initial_queue(body.calls, &budget)?;
             let mut queued_edges = body.calls.len();
             let mut visited = BTreeSet::new();
             while let Some((id, path)) = queue.pop_front() {
@@ -133,11 +181,11 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                 if let EffectTarget::Builtin(_) = target {
                     let called = display_target(input,target,&budget,&mut||access.checkpoint())?;
                     let owner = target_owner(input, target)?;
-                    for child_rank in 0..access.len(){let child_index=access.ordered_node(child_rank)?;let child_loan=access.body(child_index,&budget.admission_view())?;let child=&*child_loan;
+                    for child_rank in 0..access.len(){let child_index=access.ordered_node(child_rank)?;let child_loan=access.body(child_index,&budget.admission_view())?;let child=child_loan.view();
                         checkpoint()?;
                         if child.direct.is_empty()
                             || child.procedure.name == SymbolId::of("New")
-                            || !overrides(access,resolver,child,target,&budget)?
+                            || !overrides(access,resolver,&child,target,&budget)?
                         {
                             continue;
                         }
@@ -152,7 +200,7 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                             source: annotation_note.source.clone(),
                         })?;
                         call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
-                        effect_notes(input, &child.direct, true, &mut notes, &budget)?;
+                        effect_notes(input, child.direct, true, &mut notes, &budget)?;
                         emit(&mut output,input,ProducedPhase::PurityGraph,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
                     }
                     continue;
@@ -161,15 +209,15 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                     unreachable!()
                 };
                 let index=access.index(id)?;
-                let callee_loan=access.body(index,&budget.admission_view())?;let callee=&*callee_loan;
+                let callee_loan=access.body(index,&budget.admission_view())?;let callee=callee_loan.view();
                 let called = display(input,id,&budget,&mut||access.checkpoint())?;
                 if !callee.direct.is_empty() {
                     let mut notes = budget.annotation(&annotation_note)?;
                     call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
-                    effect_notes(input, &callee.direct, false, &mut notes, &budget)?;
+                    effect_notes(input, callee.direct, false, &mut notes, &budget)?;
                     emit(&mut output,input,ProducedPhase::PurityGraph,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} sets SpacemanDMM_should_be_pure but calls a {called} that does impure operations"))?,notes),budget.point(&origin)?,policy, &budget)?;
                 } else {
-                    let override_children=access.override_children(index,&budget)?;for &child_index in override_children.iter(){let child_loan=access.body(child_index,&budget.admission_view())?;let child=&*child_loan;
+                    let override_children=access.override_children(index,&budget)?;for &child_index in override_children.iter(){let child_loan=access.body(child_index,&budget.admission_view())?;let child=child_loan.view();
                         if is_subtype(resolver, body.procedure.owner, id.owner)?
                             && !is_subtype(resolver, child.procedure.owner, body.procedure.owner)?
                         {
@@ -181,7 +229,7 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                             source: annotation_note.source.clone(),
                         })?;
                         call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
-                        effect_notes(input, &child.direct, true, &mut notes, &budget)?;
+                        effect_notes(input, child.direct, true, &mut notes, &budget)?;
                         emit(&mut output,input,ProducedPhase::PurityGraph,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
                     }
                 }
@@ -210,7 +258,7 @@ pub(crate) fn sleep<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),p
         }
         let observer=|bytes|access.reserve(bytes);let budget=if access.observes_allocations(){output::ReportBudgetWith::observed(admission,&observer)}else{output::ReportBudgetWith::for_operation(admission)};
         let mut targets = Vec::new();
-        for rank in access.target_range(){let marker=access.group_mark()?;let marked_used=budget.used();let before=0usize.checked_add(coordinate_charge::<_,A::Error>(&targets)?).ok_or("effect report retained coordinate overflow")?;let pending=(||->Result<(),A::Error>{let i=access.ordered_node(rank)?;let loan=access.body(i,&budget.admission_view())?;let body=&*loan;
+        for rank in access.target_range(){let marker=access.group_mark()?;let marked_used=budget.used();let before=0usize.checked_add(coordinate_charge::<_,A::Error>(&targets)?).ok_or("effect report retained coordinate overflow")?;let pending=(||->Result<(),A::Error>{let i=access.ordered_node(rank)?;let loan=access.body(i,&budget.admission_view())?;let body=loan.view();
             checkpoint()?;
             let mut at = Some(EffectTarget::Source(body.procedure));
             let mut visited = BTreeSet::new();
@@ -220,7 +268,7 @@ pub(crate) fn sleep<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),p
                 }
                 if let EffectTarget::Source(id) = target {
                     let j=access.index(id)?;
-                    if let Some(annotation) = access.body(j,&budget.admission_view())?.sleep.no_sleep {
+                    if let Some(annotation) = access.body(j,&budget.admission_view())?.view().sleep.no_sleep {
                         budget.push(&mut targets, (i, annotation))?;
                         break;
                     }
@@ -234,8 +282,8 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
         let mut output = Vec::new();
         for (target, annotation) in targets {let marker=access.group_mark()?;let marked_used=budget.used();let before=budget.output_bound(&output)?;let pending=(||->Result<(),A::Error>{
             checkpoint()?;
-            let body_loan=access.body(target,&budget.admission_view())?;let body=&*body_loan;
-            let(origin,header)=access.callable_point(body,"sleep callable point unavailable",&budget)?;
+            let body_loan=access.body(target,&budget.admission_view())?;let body=body_loan.view();
+            let(origin,header)=access.callable_point(&body,"sleep callable point unavailable",&budget)?;
             let name = display(input,body.procedure,&budget,&mut||access.checkpoint())?;
             let annotation_note = Note {
                 message: budget.format(format_args!("SpacemanDMM_should_not_sleep set here"))?,
@@ -244,11 +292,11 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
             // Pinned own direct violations do NOT skip waitfor/exempt flags.
             if !body.blocking.is_empty() {
                 let mut notes = budget.annotation(&annotation_note)?;
-                effect_notes(input, &body.blocking, true, &mut notes, &budget)?;
+                effect_notes(input, body.blocking, true, &mut notes, &budget)?;
                 emit(&mut output,input,ProducedPhase::SleepGraph,Some("must_not_sleep"),sleep::row(header,
                     budget.format(format_args!("{name} sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)"))?,notes),budget.point(&origin)?,policy, &budget)?;
             }
-            let mut queue = output::initial_queue(&body.calls, &budget)?;
+            let mut queue = output::initial_queue(body.calls, &budget)?;
             let mut queued = body.calls.len();
             let mut visited = BTreeSet::new();
             while let Some((id, path)) = queue.pop_front() {
@@ -266,11 +314,11 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
                     }
                     let called = display_target(input,target,&budget,&mut||access.checkpoint())?;
                     let owner = target_owner(input, target)?;
-                    for child_rank in 0..access.len(){let child_index=access.ordered_node(child_rank)?;let child_loan=access.body(child_index,&budget.admission_view())?;let child=&*child_loan;
+                    for child_rank in 0..access.len(){let child_index=access.ordered_node(child_rank)?;let child_loan=access.body(child_index,&budget.admission_view())?;let child=child_loan.view();
                         checkpoint()?;
                         if child.blocking.is_empty()
                             || child.procedure.name == SymbolId::of("New")
-                            || !overrides(access,resolver,child,target,&budget)?
+                            || !overrides(access,resolver,&child,target,&budget)?
                         {
                             continue;
                         }
@@ -281,7 +329,7 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
                         }
                         let mut notes = budget.annotation(&annotation_note)?;
                         call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
-                        effect_notes(input, &child.blocking, true, &mut notes, &budget)?;
+                        effect_notes(input, child.blocking, true, &mut notes, &budget)?;
                         emit(&mut output,input,ProducedPhase::SleepGraph,Some("must_not_sleep"),sleep::row(header,budget.format(format_args!("{name} calls {called} which has override child proc that sleeps {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
                     }
                     continue;
@@ -290,7 +338,7 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
                     unreachable!()
                 };
                 let i=access.index(id)?;
-                let callee_loan=access.body(i,&budget.admission_view())?;let callee=&*callee_loan;
+                let callee_loan=access.body(i,&budget.admission_view())?;let callee=callee_loan.view();
                 if callee.sleep.waitfor_disabled
                     || callee.sleep.exempt.is_some()
                     || path.last().is_some_and(|edge| edge.new_context)
@@ -301,19 +349,19 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
                 if !callee.blocking.is_empty() {
                     let mut notes = budget.annotation(&annotation_note)?;
                     call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
-                    effect_notes(input, &callee.blocking, true, &mut notes, &budget)?;
+                    effect_notes(input, callee.blocking, true, &mut notes, &budget)?;
                     emit(&mut output,input,ProducedPhase::SleepGraph,Some("must_not_sleep"),sleep::row(header,
                         budget.format(format_args!("{name} sets SpacemanDMM_should_not_sleep but calls blocking proc {called}"))?,notes),budget.point(&origin)?,policy, &budget)?;
                 } else {
                     // Derive the direct-only override relation by BORROWING the
                     // existing original parent chain. No retained adjacency copy.
-                    for child_rank in 0..access.len(){let child_index=access.ordered_node(child_rank)?;let child_loan=access.body(child_index,&budget.admission_view())?;let child=&*child_loan;
+                    for child_rank in 0..access.len(){let child_index=access.ordered_node(child_rank)?;let child_loan=access.body(child_index,&budget.admission_view())?;let child=child_loan.view();
                         checkpoint()?;
                         if child.blocking.is_empty() || child.procedure.name == SymbolId::of("New")
                         {
                             continue;
                         }
-                        if !overrides(access,resolver,child,EffectTarget::Source(id),&budget)? {
+                        if !overrides(access,resolver,&child,EffectTarget::Source(id),&budget)? {
                             continue;
                         }
                         if is_subtype(resolver, body.procedure.owner, id.owner)?
@@ -323,7 +371,7 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
                         }
                         let mut notes = budget.annotation(&annotation_note)?;
                         call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
-                        effect_notes(input, &child.blocking, true, &mut notes, &budget)?;
+                        effect_notes(input, child.blocking, true, &mut notes, &budget)?;
                         emit(&mut output,input,ProducedPhase::SleepGraph,Some("must_not_sleep"),sleep::row(header,
                             budget.format(format_args!("{name} calls {called} which has override child proc that sleeps {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
                     }

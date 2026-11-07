@@ -2,7 +2,7 @@
 //! This is operation-local data access; the actual query caller still joins
 //! the current summary/graph and retains the SAME family ledger.
 use super::*;
-use super::report_core::{ReportAccess,ReportSource};
+use super::report_core::{ReportAccess,ReportBodyLoan,ReportBodyView,ReportSource};
 use crate::policy_body_demand::PolicyFailure;
 use std::{cell::RefCell,io,ops::Deref};
 
@@ -27,6 +27,9 @@ impl<P,F,R:?Sized,C,W> NativeReportAccess<'_,'_,P,F,R,C,W> where R:Resolver,C:Fn
  fn parent(&self,target:EffectTarget)->Result<Option<EffectTarget>,PolicyFailure>{self.poll()?;match target{EffectTarget::Source(id)=>self.graph.parent(self.graph.node_for(id).ok_or("effect report source predecessor absent")?).ok_or_else(||"effect report source parent row absent".into()),EffectTarget::Builtin(_)=>Ok(original_target_parent_using(self.source.archive,self.source.profile,self.resolver,target,&mut||self.poll())?)}}
  fn is_override(&self,child:usize,target:EffectTarget)->Result<bool,PolicyFailure>{let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|PolicyFailure::from(format!("effect report original catalog: {e:?}")))?;if catalog.profile!=self.source.profile{return Err("effect report catalog profile differs".into())}let bound=self.graph.len().checked_add(catalog.declarations.len()).and_then(|n|n.checked_add(1)).ok_or_else(||PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"effect report predecessor coordinate overflow")))?;let mut at=self.graph.parent(child).ok_or("effect report child parent row absent")?;for _ in 0..bound{self.poll()?;let Some(parent)=at else{return Ok(false)};if parent==target{return Ok(true)}at=self.parent(parent)?;}Err("effect report predecessor cycle".into())}
 }
+impl<P> ReportBodyLoan for page_facts::SourceBodyLoan<'_, '_, P> {
+ fn view(&self)->ReportBodyView<'_>{ReportBodyView::from(&**self)}
+}
 impl<'view,'source,P,F,R:?Sized,C,W> ReportAccess for NativeReportAccess<'view,'source,P,F,R,C,W> where P:Deref+Clone,P::Target:EffectPageRead,F:Fn(usize,usize,&ExecutionAdmission)->Result<P,PolicyFailure>,R:Resolver,C:FnMut()->io::Result<()>,W:EffectReportWork{
  type Error=PolicyFailure;type Scope=W::Mark;type Body<'a>=page_facts::SourceBodyLoan<'a,'source,P> where Self:'a;type Overrides<'a>=Vec<usize> where Self:'a;
  fn checkpoint(&self)->Result<(),PolicyFailure>{self.poll()}
@@ -49,7 +52,7 @@ impl<'view,'source,P,F,R:?Sized,C,W> ReportAccess for NativeReportAccess<'view,'
   // bounded scalar row uses the actual checker-order rank, never source names.
   crate::checker_order::sort_report_projection(&mut children,&self.rank, &mut||{self.poll()})?;Ok(children)
  }
- fn callable_point(&self,body:&BodyEffects,missing:&'static str,budget:&output::ReportBudgetWith<'_,PolicyFailure>)->Result<(SourceNoteOrigin,Span),PolicyFailure>{self.poll()?;let origin=body.callable_origin.as_ref().map_err(|e|PolicyFailure::from(e.message()))?;let bytes=std::mem::size_of::<SourceNoteOrigin>().checked_add(std::mem::size_of::<std::path::PathBuf>()).and_then(|n|n.checked_add(origin.path.capacity())).and_then(|n|n.checked_add(128+2*std::mem::size_of::<usize>())).ok_or("effect report note capacity overflow")?;budget.charge(bytes)?;let header=body.opening_parenthesis.ok_or(missing)?;Ok((origin.clone(),header))}
+ fn callable_point(&self,body:&ReportBodyView<'_>,missing:&'static str,budget:&output::ReportBudgetWith<'_,PolicyFailure>)->Result<(SourceNoteOrigin,Span),PolicyFailure>{self.poll()?;let origin=body.callable_origin.as_ref().map_err(|e|PolicyFailure::from(e.message()))?;let bytes=std::mem::size_of::<SourceNoteOrigin>().checked_add(std::mem::size_of::<std::path::PathBuf>()).and_then(|n|n.checked_add(origin.path.capacity())).and_then(|n|n.checked_add(128+2*std::mem::size_of::<usize>())).ok_or("effect report note capacity overflow")?;budget.charge(bytes)?;let header=body.opening_parenthesis.ok_or(missing)?;Ok((origin.clone(),header))}
 }
 
 /// Select the established report family; whole-checker phase composition is a

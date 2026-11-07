@@ -168,3 +168,68 @@ fn original_chained_dispatch_refuses_native_shape_outside_external_target_arity(
     assert!(matches!(failure, dm_analysis::policy_body_demand::PolicyFailure::Unsupported(_)));
     assert!(failure.to_string().contains("external dispatch requires one or two target expressions"));
 }
+
+#[test]
+fn original_compact_graph_page_projects_actual_effects_with_bounded_capacity() {
+ use dm_analysis::checker_effects::{CompactGraphPageBuilder, EffectReportWork, ExecutionAdmission};
+ use std::io;
+ struct Work { used: usize, limit: usize }
+ impl EffectReportWork for Work {
+  type Mark = usize;
+  fn reserve(&mut self, bytes: usize) -> io::Result<()> {
+   self.used = self.used.checked_add(bytes).filter(|n| *n <= self.limit).ok_or(io::ErrorKind::OutOfMemory)?;
+   Ok(())
+  }
+  fn mark(&mut self) -> io::Result<usize> { Ok(self.used) }
+  fn reconcile(&mut self, mark: usize, retained: usize) -> io::Result<()> {
+   self.used = mark.checked_add(retained).filter(|n| *n <= self.used).ok_or(io::ErrorKind::InvalidData)?;
+   Ok(())
+  }
+ }
+ let source = concat!(
+  "var/shared_sink = 0\n/proc/leaf()\n    shared_sink = 1\n    return null\n",
+  "/proc/probe()\n    return leaf()\n",
+  "/proc/empty()\n    return null\n",
+  "/proc/another_empty()\n    return null\n",
+ );
+ let fixture = case("compact-graph-page", source);
+ let input = &fixture.input;
+ let order = input.archive().callables().source_order();
+ assert_eq!(order.len(), 4);
+ let mut work = Work { used: 0, limit: 16384 };
+ let mut builder = CompactGraphPageBuilder::new(input, 0, order.len(), &mut work).unwrap();
+ let mut originals = Vec::new();
+ let mut original_charge = 0;
+ let admission = ExecutionAdmission::default();
+ for &ordinal in order {
+  let body = input.compute_original_body_checked_using_admitted_controlled(
+   ordinal, input.archive().tree(), &admission, &|syntax, _| fixture.host.syntax_checked(syntax), &|| Ok(()),
+  ).unwrap();
+  assert_eq!(body.original_evaluation_count(), 1);
+  original_charge += body.charge();
+  let mut calls = Vec::new();
+  let contribution = body.source_contribution();
+  contribution.visit_source_calls(|id, exact, detached| calls.push((id, exact, detached)));
+  originals.push((ordinal, contribution.has_direct_effect(), calls));
+  builder.push(&body, &mut work).unwrap();
+ }
+ let page = builder.finish().unwrap();
+ assert_eq!(page.retained_charge(), Some(work.used));
+ assert!(work.used < original_charge, "typed compact page must release original body and diagnostic owners");
+ assert!(originals.iter().any(|(_, direct, _)| *direct));
+ assert!(originals.iter().any(|(_, _, calls)| !calls.is_empty()));
+ let loan = page.loan(input).unwrap();
+ for (index, (ordinal, direct, expected)) in originals.into_iter().enumerate() {
+  let row = loan.body(index).unwrap();
+  assert_eq!(row.ordinal(), ordinal);
+  assert_eq!(row.has_direct_effect(), direct);
+  let mut calls = Vec::new();
+  row.visit_source_calls(|id, exact, detached| calls.push((id, exact, detached)));
+  assert_eq!(calls, expected);
+ }
+ let foreign = case("compact-graph-page-foreign", source);
+ assert!(page.loan(&foreign.input).is_err());
+ let mut refused = Work { used: 0, limit: 1 };
+ let error = CompactGraphPageBuilder::new(input, 0, order.len(), &mut refused).err().unwrap();
+ assert!(matches!(error, dm_analysis::policy_body_demand::PolicyFailure::Operational(actual) if actual.kind() == io::ErrorKind::OutOfMemory));
+}

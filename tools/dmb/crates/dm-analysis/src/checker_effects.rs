@@ -1029,6 +1029,8 @@ pub use compact_source::{CompactEffectGraph,RetainedEffectGraph,CurrentEffectGra
 #[path="checker_effects_page_facts.rs"]
 mod page_facts;
 pub use page_facts::{EffectPageFacts,EffectPageRead};
+#[path="checker_effects_compact_page.rs"]mod compact_page;
+pub use compact_page::{CompactGraphPage,CompactGraphPageBuilder,CompactGraphPageLoan,CompactGraphBodyLoan};
 
 #[path="checker_effects_report.rs"]mod report_core;
 
