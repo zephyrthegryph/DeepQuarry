@@ -22,7 +22,6 @@
 	var/tod
 	var/touch_reaction_flags
 	var/trash_catching = FALSE
-	var/updating_cult_vision = 0
 	var/list/faction_affiliations
 	var/list/injury_trace
 	var/list/pipes_shown
