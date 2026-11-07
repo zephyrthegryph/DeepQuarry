@@ -26,6 +26,8 @@ impl OriginalPrimaryProducerIdentity {
  /// Move a bound owner out, leaving the compact unbound sentinel in place.
  /// The existing LayoutOwner still frees the Arc before its final lease.
  pub fn take(&mut self) -> Option<Self> { self.0.take_completed().map(Self) }
+ /// Exact producer identity only. Neither unbound sentinel matches.
+ pub fn same_producer(&self, other:&Self)->bool { self.0.matches_completed(&other.0) }
  pub(super) fn matches_owner(&self,owner:&super::demand_layout::NativePrimaryLayoutIdentity)->bool{self.0.matches_completed(owner)}
 }
 impl OriginalPrimaryLiveHeader{

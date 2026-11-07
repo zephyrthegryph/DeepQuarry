@@ -204,8 +204,8 @@ struct WideHeader {
     geometry: HeaderGeometry,
 }
 
-struct Row<Geometry = PackedHeader> {
-    producer: dm_syntax::OriginalPrimaryProducerIdentity,
+struct Row<Geometry = PackedHeader, Producer = ()> {
+    producer: Producer,
     geometry: Geometry,
     slot: SignatureSlot,
     #[cfg(test)]
@@ -349,6 +349,52 @@ pub(crate) fn allocate_funded_rows<T>(
 const PENDING_DEFAULT_PAGE_LEN: usize = 64;
 const COMPLETED_SIGNATURE_PAGE_LEN: usize = 128;
 type PendingDefaultPages<T> = FundedRowPages<T, PENDING_DEFAULT_PAGE_LEN>;
+/// The ordered validation needs only the first real producer, the first
+/// differing producer's ordinal and the first unissued ordinal. If the
+/// primary differs from the first producer, that first row is necessarily
+/// the earliest foreign row. Otherwise the first differing row decides.
+#[derive(Default)]
+struct CompletedProducers {
+    first: Option<(usize, dm_syntax::OriginalPrimaryProducerIdentity)>,
+    first_different: Option<usize>,
+    first_unbound: Option<usize>,
+}
+
+impl CompletedProducers {
+    fn record(&mut self, ordinal: usize, mut producer: dm_syntax::OriginalPrimaryProducerIdentity) {
+        let Some(producer) = producer.take() else {
+            self.first_unbound.get_or_insert(ordinal);
+            return;
+        };
+        if let Some((_, first)) = &self.first {
+            if self.first_different.is_none() && !first.same_producer(&producer) {
+                self.first_different = Some(ordinal);
+            }
+        } else {
+            self.first = Some((ordinal, producer));
+        }
+    }
+
+    fn require(
+        self,
+        require_bound: bool,
+        same_primary: impl FnOnce(&dm_syntax::OriginalPrimaryProducerIdentity) -> bool,
+    ) -> std::io::Result<()> {
+        let foreign = self.first.as_ref().and_then(|(ordinal, first)| {
+            if same_primary(first) { self.first_different } else { Some(*ordinal) }
+        });
+        if require_bound && self.first_unbound.is_some_and(|unbound| foreign.is_none_or(|at| unbound < at)) {
+            return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,
+                "streamed signature lacks its actual live primary owner"));
+        }
+        if foreign.is_some() {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,
+                "completed signature belongs to a foreign actual primary owner"));
+        }
+        Ok(())
+    }
+}
+
 struct CompletedSignatureRows {
     // Order is important. Backing allocations precede header leases that
     // fund them. The first trivial header funds this one actual empty Arc.
@@ -358,6 +404,7 @@ struct CompletedSignatureRows {
     // Full-width exceptions keyed by exact row ordinal. No short index can
     // place an artificial limit on otherwise valid wide source geometry.
     wide_headers: FundedRowPages<WideHeader, 16>,
+    producers: CompletedProducers,
     // Physical row storage above drops independently. These credits can
     // outlive it through actual clauses and detached IR alias groups.
     payload_pages: Vec<Arc<dm_syntax::SettingRootLease>>,
@@ -378,6 +425,7 @@ impl CompletedSignatureRows {
             payloads: FundedRowPages::new(),
             rows: FundedRowPages::new(),
             wide_headers: FundedRowPages::new(),
+            producers: CompletedProducers::default(),
             payload_pages: Vec::new(),
             payload_directory: None,
             #[cfg(debug_assertions)]
@@ -388,7 +436,6 @@ impl CompletedSignatureRows {
     fn len(&self) -> usize { self.rows.len() }
     fn is_empty(&self) -> bool { self.rows.is_empty() }
     fn iter(&self) -> impl Iterator<Item = &Row> { self.rows.iter() }
-    fn iter_mut(&mut self) -> impl Iterator<Item = &mut Row> { self.rows.iter_mut() }
     fn get(&self, ordinal: usize) -> Option<&Row> { self.rows.get(ordinal) }
     fn geometry(&self, ordinal: usize, row: &Row) -> HeaderGeometry {
         row.geometry.unpack().unwrap_or_else(|| {
@@ -416,7 +463,7 @@ impl CompletedSignatureRows {
     }
 
     fn push_reserved(
-        &mut self, row: Row<HeaderGeometry>, credit: &mut dm_syntax::SettingRootLease,
+        &mut self, row: Row<HeaderGeometry, dm_syntax::OriginalPrimaryProducerIdentity>, credit: &mut dm_syntax::SettingRootLease,
         a: &SettingAdmission<'_>, _trace_floor: Option<usize>,
     ) -> std::io::Result<()> {
         // The observer still owns the in-flight credit on any failure, so
@@ -468,8 +515,9 @@ impl CompletedSignatureRows {
             self.wide_headers.push_reserved(WideHeader { ordinal, geometry: row.geometry });
             PackedHeader::WIDE
         });
+        self.producers.record(ordinal, row.producer);
         self.rows.push_reserved(Row {
-            producer: row.producer, geometry, slot: row.slot,
+            producer: (), geometry, slot: row.slot,
             #[cfg(test)]
             retained_bytes: row.retained_bytes,
         });
@@ -607,9 +655,6 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         self.pages.iter().flat_map(|page| page.rows.iter())
     }
 
-    fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
-        self.pages.iter_mut().flat_map(|page| page.rows.iter_mut())
-    }
 
     fn get(&self, ordinal: usize) -> Option<&T> {
         self.pages.get(ordinal / PAGE_LEN)?.rows.get(ordinal % PAGE_LEN)
@@ -1190,6 +1235,50 @@ mod signature_row_storage_tests {
     }
 
     #[test]
+    fn completed_producer_summary_preserves_first_unbound_or_foreign_failure() {
+        use dm_syntax::{OriginalPrimaryDemand, OriginalPrimaryLiveHeader};
+        fn live(a: &SettingAdmission<'_>) -> OriginalPrimaryLiveHeader {
+            let source = "/proc/probe(";
+            let mut primary = OriginalPrimaryDemand::new(a,None).unwrap();
+            for token in dm_syntax::lex_spans(source).tokens {
+                primary.token(token).unwrap();
+                primary.advance(&source[..token.span.end],false).unwrap();
+            }
+            primary.live_callable_header(source).unwrap().unwrap()
+        }
+        let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&used, 1<<20, &|| Ok(()));
+        let actual = live(&a);
+        let foreign = live(&a);
+        let expected = actual.clone().into_producer_identity();
+        let another = foreign.clone().into_producer_identity();
+        for (rows, strict, matches, kind) in [
+            ([0,1,2], true, true, Some(std::io::ErrorKind::Unsupported)),
+            ([2,0,1], true, true, Some(std::io::ErrorKind::InvalidInput)),
+            ([1,0,2], true, true, Some(std::io::ErrorKind::Unsupported)),
+            ([1,0,2], true, false, Some(std::io::ErrorKind::InvalidInput)),
+            ([1,0,1], false, true, None),
+            ([1,0,1], true, true, Some(std::io::ErrorKind::Unsupported)),
+            ([1,1,1], true, true, None),
+        ] {
+            let mut producers = CompletedProducers::default();
+            for (ordinal, row) in rows.into_iter().enumerate() {
+                producers.record(ordinal, match row {
+                    1 => actual.clone().into_producer_identity(),
+                    2 => foreign.clone().into_producer_identity(),
+                    _ => Default::default(),
+                });
+            }
+            let result = producers.require(strict, |first|
+                first.same_producer(if matches { &expected } else { &another }));
+            assert_eq!(result.err().map(|e|e.kind()), kind);
+        }
+        drop((actual,foreign,expected,another));
+        assert_eq!(used.load(Ordering::Acquire),fixed);
+    }
+
+    #[test]
     fn completed_payload_page_keeps_in_flight_credit_and_first_io_on_failed_absorb() {
         let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
@@ -1236,7 +1325,7 @@ mod signature_row_storage_tests {
         assert!(PackedHeader::pack(wide_start).is_none());
         assert_eq!(std::mem::size_of::<PackedHeader>(), 8);
         #[cfg(target_pointer_width = "64")]
-        assert_eq!(std::mem::size_of::<Row>() - std::mem::size_of::<usize>(), 24);
+        assert_eq!(std::mem::size_of::<Row>() - std::mem::size_of::<usize>(), 16);
 
         let mut rows = CompletedSignatureRows::new();
         for (ordinal, geometry) in [narrow, narrow_edge, wide_length, wide_offset, wide_start].into_iter().enumerate() {
@@ -1447,9 +1536,9 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  let a=self.a;
  if self.stream_failed{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"failed actual formal stream cannot issue a primary model")))}
  let observer_stop=primary.observer_stop();
- for row in self.rows.iter_mut(){
-  match row.producer.take(){Some(producer)if primary.same_primary_producer(&producer)=>(),Some(_)=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"completed signature belongs to a foreign actual primary owner"))),None if literal_source.is_some()=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed signature lacks its actual live primary owner"))),None=>()}
- }
+ std::mem::take(&mut self.rows.producers)
+  .require(literal_source.is_some(), |producer| primary.same_primary_producer(producer))
+  .map_err(OriginalHeaderFailure::Operational)?;
  match self.failure_live.take(){Some(live)if primary.same_primary_header(&live)=>(),Some(_)=>return Err(OriginalHeaderFailure::Operational(std::io::ErrorKind::InvalidInput.into())),None if self.failure.is_some()&&literal_source.is_some()=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"streamed signature failure lacks actual primary ownership"))),None=>()}
  for pending in self.defaults.iter(){checkpoint(a)?;if !primary.same_primary_header(&pending.live){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"demanded default belongs to another actual primary producer")))}}
  for input in &self.inputs{checkpoint(a)?;if !primary.same_primary_header(&input.live){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"input annotation belongs to another actual primary owner")))}}
