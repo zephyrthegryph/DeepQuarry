@@ -65,12 +65,7 @@
 /mob/proc/sync_op_abilities()
 	var/list/wanted = list()
 	// Read from each index's interned button table: a capability change (every equip and drop) walks the activations, not every op of the mob.
-	var/datum/type_table/T = table_of(src)
-	var/list/indexes = list(op_index_of_table(T))
-	for(var/datum/activation/A as anything in rx?.activations)
-		if(!A.dead && A.runs && !T.caps[A.def.key])
-			indexes += op_index_of_def(T, A.def)
-	for(var/datum/op_index/index as anything in indexes)
+	for(var/datum/op_index/index as anything in op_indexes_of(src))
 		var/list/buttons = op_index_buttons(index)
 		for(var/key in buttons)
 			wanted[key] = buttons[key]

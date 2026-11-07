@@ -93,7 +93,8 @@
 	// Window data: what one tgui update of a station machine computes, for a viewer standing next to it.
 	var/list/obj/machinery/hosts = list()
 	for(var/obj/machinery/M in world)
-		if(isStationLevel(M.z) && length(table_of(M).items))
+		var/datum/type_table/table = table_of(M)
+		if(isStationLevel(M.z) && length(table.items))
 			hosts += M
 		CHECK_TICK
 	shuffle_inplace(hosts)

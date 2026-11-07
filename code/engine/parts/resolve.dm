@@ -93,6 +93,19 @@
 			S.activation = A // ALLOW(ownership): a transient record of one resolution: dropped with it
 			. += S
 
+/// The compiled op indexes an entity's ops come from: its table's, then each running granted definition's (the same set op_sources_of() walks,
+/// with no record per op).
+/proc/op_indexes_of(datum/D)
+	. = list()
+	if(!D || QDELETED(D))
+		return
+	var/datum/type_table/T = table_of(D)
+	. += op_index_of_table(T)
+	for(var/datum/activation/A as anything in D.rx?.activations)
+		if(A.dead || !A.runs || T.caps[A.def.key])
+			continue
+		. += op_index_of_def(T, A.def)
+
 /// The plan of `key` an entity has, or null; `activation` is set to the one that brought it.
 /proc/op_plan_for(datum/D, key, list/found_activation)
 	RETURN_TYPE(/datum/op_plan)
@@ -481,7 +494,7 @@
 		var/atom/aim = (C.side == CAND_ACTOR && B.bind_kind != BIND_CLICKS) ? R.actor : R.target
 		var/list/chosen = list()
 		if(isnull(R.providers))
-			R.providers = providers_for(R.actor, R.held) // ALLOW(ownership): a transient record of one resolution: dropped with it
+			R.providers = providers_for(R.actor, R.held)
 		var/why = reach_gate(R.actor, aim, R.held, P, B, R.authority, chosen, R.providers)
 		if(why)
 			C.dropped_by = (why == /datum/msg/op/no_hands) ? GATE_PROVIDER : GATE_REACH
