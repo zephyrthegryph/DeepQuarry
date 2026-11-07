@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "The Inspect panel portrait is composited off the main thread instead of flattening the mob on every examine and turn, so examining no longer freezes the server"

@@ -416,6 +416,12 @@ CAPABILITIES(/datum/dq_preview_poll)
 		return
 	dq_apply_preview_result(generation, result)
 
+/// Starts one off-thread iconforge composite of `sprite`; returns list(job id, sheet name). Read it back with dq_preview_job_png().
+/proc/dq_preview_start_job(list/sprite, label)
+	dq_preview_ensure_dirs()
+	var/sheet_name = "[label]_[next_serial(preview_sheet)]"
+	return list(rustg_iconforge_generate_async(DQ_PREVIEW_JOB_DIR, sheet_name, json_encode(list("preview" = sprite)), FALSE, FALSE, TRUE), sheet_name)
+
 /// Path of the PNG a finished iconforge job wrote, or null if the job failed.
 /proc/dq_preview_job_png(sheet_name, output)
 	if(output == RUSTG_JOB_ERROR || output == RUSTG_JOB_NO_SUCH_JOB || !findtext(output, "{", 1, 2))

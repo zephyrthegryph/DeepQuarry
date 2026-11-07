@@ -94,7 +94,7 @@
 	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human, tile(1, 1))
 	TEST_ASSERT(!viewer.examine_to_panel(), "a mob with no client keeps its examine text in chat")
 
-/// The portrait shows what the target wears: dressing a human changes the picture, in the cached south view and a turned one.
+/// The portrait shows what the target wears: dressing a human changes the described picture (what the compositor draws), south and turned.
 /datum/unit_test/dq_inspect_panel/portrait_shows_worn_clothing
 
 /datum/unit_test/dq_inspect_panel/portrait_shows_worn_clothing/run_gate()
@@ -105,7 +105,7 @@
 	// A draw waits for the next frame; the portrait reads the drawn look, as it does for a player who has been on screen.
 	draw_now(bare)
 	draw_now(dressed)
-	var/bare_south = inspect_portrait(bare, SOUTH)
-	TEST_ASSERT(istext(bare_south) && length(bare_south), "a bare human has a portrait")
-	TEST_ASSERT(inspect_portrait(dressed, SOUTH) != bare_south, "the south portrait shows the uniform")
-	TEST_ASSERT(inspect_portrait(dressed, EAST) != inspect_portrait(bare, EAST), "a turned portrait shows the uniform")
+	var/bare_south = inspect_portrait_sprite(bare, SOUTH)
+	TEST_ASSERT(islist(bare_south), "a bare human has a portrait description")
+	TEST_ASSERT(json_encode(inspect_portrait_sprite(dressed, SOUTH)) != json_encode(bare_south), "the south portrait shows the uniform")
+	TEST_ASSERT(json_encode(inspect_portrait_sprite(dressed, EAST)) != json_encode(inspect_portrait_sprite(bare, EAST)), "a turned portrait shows the uniform")

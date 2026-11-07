@@ -26,8 +26,12 @@
 	var/revision = 0
 	/// The direction the portrait faces.
 	var/portrait_dir = SOUTH
-	/// The target's portrait as a base64 PNG (drawn when it is examined or turned), or null.
+	/// The target's portrait as a base64 PNG (composited off-thread when it is examined or turned), or null while it renders.
 	var/portrait
+	/// Bumped for every portrait request; only the newest request's result is applied.
+	var/portrait_generation = 0
+	/// Portrait renders still in flight (owned /datum/inspect_portrait_job).
+	var/list/portrait_jobs
 	/// The examine text lines, as safe html (what examine() said when the target was last examined).
 	var/list/description
 	/// Extra labelled sections, each list(title, text): mechanics, fluff, antag, interaction notes.
@@ -49,6 +53,7 @@
 CAPABILITIES(/datum/inspect_panel)
 	ref_one(nameof(target))
 	owns_one(nameof(panel_window), /datum/tgui_window)
+	owns_many(nameof(portrait_jobs))
 	interface("InspectPanel", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
 	op("inspect", ui_act("inspect", arg("ref", schema_ref(/atom))), then(PROC_REF(ui_act_inspect)))
 	op("select", ui_act("select", arg("ref", schema_ref(/atom))), then(PROC_REF(ui_act_select)))
@@ -89,10 +94,11 @@ CAPABILITIES(/datum/inspect_panel)
 	if(new_target != target())
 		set_show_flavor(FALSE)
 		set_portrait_dir(SOUTH)
+		set_portrait(null)
 	rel_set(src, nameof(/datum/inspect_panel::target), new_target)
 	set_description(new_description)
 	set_notes(new_notes)
-	set_portrait(inspect_portrait(new_target, portrait_dir))
+	request_portrait(new_target, portrait_dir)
 	var/list/handles = list(handle_of(new_target))
 	for(var/handle in recent)
 		if(handle != handles[1] && handle_get(handle))
@@ -137,7 +143,7 @@ CAPABILITIES(/datum/inspect_panel)
 	if(!ui_gate(A))
 		return FALSE
 	set_portrait_dir(turn(portrait_dir, -90))
-	set_portrait(inspect_portrait(target(), portrait_dir))
+	request_portrait(target(), portrait_dir)
 	return TRUE
 
 /datum/inspect_panel/proc/ui_act_flavor(datum/act/op/A)
@@ -223,17 +229,91 @@ CAPABILITIES(/datum/inspect_panel)
 		break
 	return data
 
-/// The portrait of `shown` facing `facing` as a base64 PNG, worn clothing and overlays included: the full appearance
-/// is flattened, on the examine or the click that turned it. (examine_icon() is not used: its force_south flatten
-/// drops a human's worn overlays.)
-/proc/inspect_portrait(atom/shown, facing)
+/// Asks for the portrait of `shown` facing `facing`. The picture is composited by rust-g on a worker thread (the server never
+/// flattens), so the panel keeps its current picture (cleared when the target changed) until the new one lands.
+/datum/inspect_panel/proc/request_portrait(atom/shown, facing)
+	var/generation = portrait_generation + 1
+	set_portrait_generation(generation)
 	if(!shown)
+		set_portrait(null)
+		return
+	var/started = world.timeofday
+	var/list/sprite = inspect_portrait_sprite(shown, facing)
+	if(!sprite)
+		// Nothing the compositor can express exactly: the target's own icon, no worn overlays. Never a flatten.
+		set_portrait(inspect_portrait_plain(shown, facing))
+		log_input("Input: inspect portrait of [shown] ([shown.type]) used the plain icon (unsupported appearance).")
+		return
+	var/list/started_job = dq_preview_start_job(sprite, "inspect")
+	var/job_id = started_job[1]
+	var/sheet_name = started_job[2]
+	var/datum/inspect_portrait_job/job = new
+	job.job_id = job_id
+	job.sheet_name = sheet_name
+	job.generation = generation
+	job.queued_in = world.timeofday - started
+	job.described = "[shown] ([shown.type])"
+	COOLDOWN_START(job, timeout_at, 10 SECONDS)
+	rel_set(job, nameof(job.panel), src)
+	rel_add(src, nameof(/datum/inspect_panel::portrait_jobs), job)
+	job.set_polling(TRUE)
+
+/// An in-flight portrait render, owned by the panel that asked for it.
+/datum/inspect_portrait_job
+	/// The panel it is for (a relation view)
+	var/datum/inspect_panel/panel
+	var/job_id
+	var/sheet_name
+	var/generation
+	/// Deciseconds the server spent describing the appearance (the only cost it pays), for the trace.
+	var/queued_in
+	var/described
+	COOLDOWN_DECLARE(timeout_at)
+	var/polling = FALSE
+
+CAPABILITIES(/datum/inspect_portrait_job)
+	every(0.25 SECONDS, then(PROC_REF(poll_step)), when = nameof(polling))
+	ref_one(nameof(panel))
+
+/datum/inspect_portrait_job/New()
+	..()
+	lifecycle_decls_init(src) // a non-atom has no materialize
+
+/// One poll of the render: applies the picture when it landed, drops it when stale, gives up on the timeout.
+/datum/inspect_portrait_job/proc/poll_step(datum/act/timer/tick)
+	var/output = rustg_iconforge_check(job_id)
+	var/timed_out = ELAPSED(src, timeout_at, CLOCK_WORLD) > 0
+	if(output == RUSTG_JOB_NO_RESULTS_YET && !timed_out)
+		return
+	set_polling(FALSE)
+	var/png_path = output == RUSTG_JOB_NO_RESULTS_YET ? null : dq_preview_job_png(sheet_name, output)
+	var/datum/inspect_panel/owner_panel = panel
+	if(owner_panel && png_path && generation == owner_panel.portrait_generation)
+		owner_panel.set_portrait(icon2base64(icon(file(png_path))))
+		SStgui.update_uis(owner_panel)
+		log_input("Input: inspect portrait of [described] composited off-thread (server cost [queued_in] ds to describe).")
+	else if(owner_panel && generation == owner_panel.portrait_generation)
+		log_input("Input: inspect portrait of [described] failed or timed out ([output]).")
+	if(png_path)
+		fdel(png_path)
+	if(owner_panel)
+		own_remove(owner_panel, nameof(/datum/inspect_panel::portrait_jobs), src)
+
+/// The compositor description of `shown` facing `facing`, worn clothing and overlays included (the same tree getFlatIcon walks,
+/// described rather than drawn), or null when it can't be expressed exactly. (examine_icon() is not used: its force_south
+/// flatten drops a human's worn overlays.)
+/proc/inspect_portrait_sprite(atom/shown, facing)
+	var/datum/dq_preview_flattener/flattener = new
+	var/list/flat = flattener.flatten(shown, facing)
+	if(!flat || flattener.unsupported)
 		return null
-	var/icon/picture
-	if(ismob(shown) || length(shown.overlays) || length(shown.underlays))
-		picture = getFlatIcon(shown, defdir = facing, no_anim = TRUE)
-	else
-		picture = icon(shown.icon, shown.icon_state, facing)
+	return flat[1]
+
+/// The target's own icon facing `facing`, without overlays, as a base64 PNG, or null.
+/proc/inspect_portrait_plain(atom/shown, facing)
+	if(!shown?.icon)
+		return null
+	var/icon/picture = icon(shown.icon, shown.icon_state, facing)
 	if(!isicon(picture))
 		return null
 	return icon2base64(picture)
