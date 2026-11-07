@@ -93,7 +93,21 @@ impl ResourceInventory {
 }
 impl QueryDb {
     pub(super) fn workspace_resource_inventory_locked(&self) -> io::Result<ResourceInventory> {
-        self.refresh_raw_source_inputs_locked()?;
+        self.workspace_resource_inventory_using_locked(false)
+    }
+    /// Only the already-guarded sealed raw operation uses the upper for
+    /// fixed checks. The existing authoritative owner census stays exact.
+    pub(super) fn workspace_resource_inventory_using_locked(&self, sealed_raw: bool) -> io::Result<ResourceInventory> {
+        let admit = |fixed| if sealed_raw {
+            self.workspace_input_headroom_with_source_upper_locked(fixed)
+        } else {
+            self.workspace_input_headroom_locked(fixed)
+        };
+        if sealed_raw {
+            admit(0)?;
+        } else {
+            self.refresh_raw_source_inputs_locked()?;
+        }
         // Existing bounded census performs one original preflight and one walk.
         // No allocation/content address authorizes a source or a cache read.
         let owners = self.workspace_owners_with_fixed_locked(&[], 0)?;
@@ -109,7 +123,7 @@ impl QueryDb {
                 )
             })
             .ok_or_else(|| invalid("workspace initial inventory overflow"))?;
-        self.workspace_input_headroom_locked(extra)?;
+        admit(extra)?;
         let mut pins = Vec::<Erased>::new();
         pins.try_reserve_exact(NODE_BOUND).map_err(invalid)?;
         let inventory = ResourceInventory {
@@ -149,7 +163,7 @@ impl QueryDb {
         }
         drop(roots);
         drop(pages);
-        self.workspace_input_headroom_locked(inventory.coordination_charge(0)?)?;
+        admit(inventory.coordination_charge(0)?)?;
         Ok(inventory)
     }
 }

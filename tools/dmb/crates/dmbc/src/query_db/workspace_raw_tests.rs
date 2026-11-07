@@ -43,6 +43,7 @@ fn current(owners: &[SharedBytes], range: std::ops::Range<usize>) -> Vec<Current
                 text: Some(text),
                 proof: SourceProof::Owned(owners[i].downgrade()),
                 charge: storage.values().sum(),
+                raw_selection: None,
             }
         })
         .collect()
@@ -345,6 +346,7 @@ fn excluded_workspace_sources_need_no_text_but_any_live_scope_requires_real_text
             text: None,
             proof: SourceProof::Owned(bytes[0].downgrade()),
             charge: 0,
+                raw_selection: None,
         }],
         previous: Weak::new(),
         scans: scans.clone(),

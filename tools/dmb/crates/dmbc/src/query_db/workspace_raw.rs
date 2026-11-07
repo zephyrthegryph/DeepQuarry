@@ -216,6 +216,9 @@ pub(crate) struct CurrentFile {
     pub(crate) text: Option<SourceText>,
     pub(crate) proof: SourceProof,
     pub(crate) charge: usize,
+    /// Exact relative path and sole scope's exclusion result, recorded by
+    /// the current raw page before its source is acquired. Scoped DATA only.
+    pub(crate) raw_selection: Option<(String, bool)>,
 }
 /// Private producer/factory only. Current bytes are scoped page owners and
 /// evicted immediately after a result, including all error/cancellation paths.
@@ -334,6 +337,7 @@ fn compute_with_admission(
     for file in &p.files {
         path_bytes = path_bytes
             .checked_add(file.path.capacity())
+            .and_then(|n| n.checked_add(file.raw_selection.as_ref().map_or(0, |(rel,_)|rel.capacity())))
             .ok_or("page path accounting overflow")?;
         if let Some(text) = &file.text {
             captured_raw_file::visit_source_storage(text, |key, bytes| {
@@ -409,14 +413,24 @@ fn compute_with_admission(
                 continue;
             }
             admission.abort.scan_checkpoint()?;
-            let rel = dm_preprocess::regions::relative_filesystem_path(&current.path, &p.root)
-                .ok_or("workspace file escapes admitted root")?
-                .to_string_lossy()
-                .replace('\\', "/");
-            if scope.excludes_path(&rel)? && p.result_budget.saturating_sub(charge) < 1024 {
+            let fallback;
+            let (rel, excluded) = if let Some((rel, excluded)) = &current.raw_selection {
+                if p.scopes.len() != 1 || *excluded == current.text.is_some() {
+                    return Err("raw page selection contradicts current source/scope".into());
+                }
+                (rel.as_str(), *excluded)
+            } else {
+                fallback = dm_preprocess::regions::relative_filesystem_path(&current.path, &p.root)
+                    .ok_or("workspace file escapes admitted root")?
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                (fallback.as_str(), scope.excludes_path(&fallback)?)
+            };
+            if excluded && p.result_budget.saturating_sub(charge) < 1024 {
                 return Err("excluded finding metadata has no admitted headroom".into());
             }
-            if let Some(empty) = scope.empty_findings_if_excluded(&rel)? {
+            if excluded {
+                let empty = scope.empty_excluded_findings();
                 let cost = compact_charge(&empty);
                 charge = charge
                     .checked_add(cost)
@@ -439,12 +453,11 @@ fn compute_with_admission(
                     .input_budget
                     .checked_sub(others)
                     .ok_or("shared file view headroom exhausted")?;
-                file = Some(File::capture_budgeted(
-                    &p.root,
-                    &current.path,
-                    text.clone(),
-                    available,
-                )?);
+                file = Some(if current.raw_selection.is_some() {
+                    File::capture_budgeted_preselected(&p.root, &current.path, rel, text.clone(), available)?
+                } else {
+                    File::capture_budgeted(&p.root, &current.path, text.clone(), available)?
+                });
             }
             file.as_ref()
                 .expect("captured above")
@@ -454,11 +467,13 @@ fn compute_with_admission(
                 .result_budget
                 .checked_sub(charge)
                 .ok_or("result headroom exhausted")?;
-            let rows = file.as_ref().expect("file created above").scan_budgeted_checked(
-                scope,
-                p.remaining_sites - sites,
-                available,
-            ).map_err(|failure| match failure {
+            let file = file.as_ref().expect("file created above");
+            let scanned = if current.raw_selection.is_some() {
+                file.scan_preselected_budgeted_checked(scope, p.remaining_sites - sites, available)
+            } else {
+                file.scan_budgeted_checked(scope, p.remaining_sites - sites, available)
+            };
+            let rows = scanned.map_err(|failure| match failure {
                 captured_raw_file::ScanFailure::Policy(error) => error,
                 captured_raw_file::ScanFailure::Admission(error) => {
                     admission.denied.store(true,Ordering::Relaxed);
@@ -764,6 +779,11 @@ impl QueryDb {
         if !scope.uses_queries(self) {
             return Err(invalid("workspace query needs the SAME compiler QueryDb"));
         }
+        let admit_fixed = |fixed| if bulk_raw {
+            self.workspace_input_headroom_with_source_upper_locked(fixed)
+        } else {
+            self.workspace_input_headroom_locked(fixed)
+        };
         let ordered = captured_raw_file::ordered_names(names).map_err(invalid)?;
         self.raw_prune_locked(std::time::Instant::now());
         let (configuration, bytes) = capture.configuration();
@@ -773,7 +793,7 @@ impl QueryDb {
             .and_then(|n| n.checked_add(16 * 1024))
             .ok_or_else(|| invalid("configuration preflight overflow"))?;
         let capture_charge = capture.retained_charge()?;
-        self.workspace_input_headroom_locked(
+        admit_fixed(
             capture_charge
                 .checked_add(config_preflight)
                 .ok_or_else(|| invalid("configuration admission overflow"))?,
@@ -786,7 +806,7 @@ impl QueryDb {
         let mut scopes = Vec::with_capacity(ordered.len());
         let mut scope_charge = 0usize;
         for name in &ordered {
-            self.workspace_input_headroom_locked(
+            admit_fixed(
                 capture_charge
                     .saturating_add(config.budget_charge())
                     .saturating_add(scope_charge)
@@ -813,8 +833,8 @@ impl QueryDb {
                 )
             })
             .ok_or_else(|| invalid("workspace fixed input accounting overflow"))?;
-        let page_budget = self.workspace_input_headroom_locked(fixed_inputs)?;
-        self.workspace_input_headroom_locked(fixed_inputs.saturating_add(inventory.coordination_charge(scopes.len())?))?;
+        admit_fixed(fixed_inputs)?;
+        admit_fixed(fixed_inputs.saturating_add(inventory.coordination_charge(scopes.len())?))?;
         inventory.add_scopes(&scopes);
         let mut held = Vec::new();
         let mut start = 0;
@@ -1014,7 +1034,7 @@ impl QueryDb{
   // Cache retention target only. An active stage still uses the original
   // full 64 MiB result-family admission, with its unchanged report reserve.
   if bulk_raw { self.trim_bulk_raw_values_locked(16 * 1024 * 1024); }
-  let inventory=self.workspace_resource_inventory_locked()?;let(pages,scopes)=self.build_workspace_pages_locked(capture,scope,&names,Arc::new(AtomicUsize::new(0)),&inventory,bulk_raw)?;
+  let inventory=self.workspace_resource_inventory_using_locked(bulk_raw)?;let(pages,scopes)=self.build_workspace_pages_locked(capture,scope,&names,Arc::new(AtomicUsize::new(0)),&inventory,bulk_raw)?;
   crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
   if pages.iter().flat_map(|page|page.files.iter()).any(|file|file.findings.len()!=1){return Err(invalid("actual raw usage producer returned another finding cohort"))}
   let mut rows=pages.iter().flat_map(|page|page.files.iter()).map(|file|file.findings[0].as_ref());

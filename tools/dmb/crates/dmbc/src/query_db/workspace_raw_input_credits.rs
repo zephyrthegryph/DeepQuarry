@@ -250,14 +250,27 @@ impl QueryDb{
  /// observations force an exact sweep. Dead allocations may make the upper
  /// conservative, so it cannot cause a denial without an exact retry.
  pub(super) fn workspace_input_headroom_with_source_upper_locked(&self,fixed:usize)->io::Result<usize>{
+  self.workspace_input_headroom_with_source_upper_up_to_locked(fixed, 0)
+ }
+ /// A fixed reservation only needs positive headroom. A retained budget
+ /// passed to a consumer needs its exact effective size, so sweep when the
+ /// conservative result would lower that budget below the useful maximum.
+ pub(super) fn workspace_input_headroom_with_source_upper_up_to_locked(&self,fixed:usize,useful:usize)->io::Result<usize>{
   let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
+  // Report output grows its real arena grant under the raw-family gate but
+  // outside the ledger mutex. Honor its dirty bit before reading any upper.
+  if self.raw_policy.admission.source_arena_needs_census.swap(false,Ordering::AcqRel){
+   ledger.invalidate_upper();
+  }
   let (sources,cached)=ledger.admission_charge()?;
   let headroom=|sources:usize|self.workspace_input_base_headroom_locked(
       fixed.checked_add(sources).ok_or_else(oom)?
   );
-  match headroom(sources){
-   Err(_) if cached=>headroom(ledger.refresh_after_pressure()?),
-   result=>result,
+  let result=headroom(sources);
+  if cached && result.as_ref().map_or(true, |room| *room < useful){
+   headroom(ledger.refresh_after_pressure()?)
+  }else{
+   result
   }
  }
  pub(super) fn refresh_raw_source_inputs_locked(&self)->io::Result<()>{let sources=self.raw_source_input_charge_locked()?;self.workspace_input_base_headroom_locked(sources)?;Ok(())}
@@ -571,4 +584,23 @@ mod sealed_raw_page_admission_tests {
         assert_eq!(db.workspace_input_headroom_with_source_upper_locked(fixed).unwrap(),exact-baseline,
             "a dead weak row can only trigger a retry, never a false capacity denial");
     }
+    #[test]
+    fn usable_source_upper_checks_dirty_report_growth_and_positive_stale_headroom() {
+        use dm_preprocess::source_arena_credit::SourceArenaWork as _;
+        let db=QueryDb::default();
+        let donor=db.reserve(0).unwrap();
+        let control=donor.control();
+        let _gate=db.raw_policy.gate.lock().unwrap();
+        let before=db.raw_source_input_charge_locked().unwrap();
+        let fixed=db.workspace_input_base_headroom_locked(before).unwrap()-128;
+        assert_eq!(db.workspace_input_headroom_with_source_upper_up_to_locked(fixed,128).unwrap(),128);
+        let budget=Budget::new(4096).unwrap();
+        db.with_report_output_work_locked(&control,&budget,|work|work.reserve(64)).unwrap();
+        assert_eq!(db.workspace_input_headroom_with_source_upper_up_to_locked(fixed,128).unwrap(),64,
+            "a stale upper never ignores real report output growth");
+        drop((control,donor));
+        assert!(db.workspace_input_headroom_with_source_upper_up_to_locked(fixed,128).unwrap()>128,
+            "a positive but stale-lower headroom must not reduce the child budget");
+    }
+
 }

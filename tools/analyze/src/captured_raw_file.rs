@@ -154,7 +154,28 @@ impl File {
         let relative = dm_preprocess::regions::relative_filesystem_path(&path, &root)
             .ok_or("captured raw source lies outside policy root")?;
         let rel = relative.to_string_lossy().replace('\\', "/");
-        let file = SourceFile::from_shared_budgeted(&rel, path, text, available)?;
+        Self::capture_relative(root, path, &rel, text, available)
+    }
+
+    /// DATA from the caller's already-admitted canonical relative file path.
+    /// The caller is responsible for binding the path to its exact capture.
+    /// This constructor issues no source/discovery or report authority.
+    #[doc(hidden)]
+    pub fn capture_budgeted_preselected(
+        root: &Path, path: &Path, relative: &str,
+        text: dm_preprocess::SourceText, available: usize,
+    ) -> Result<Self, String> {
+        if !root.is_absolute() || !path.is_absolute() {
+            return Err("raw file/root must be absolute".into());
+        }
+        Self::capture_relative(dm_preprocess::regions::canonical_path(root), path.to_path_buf(), relative, text, available)
+    }
+
+    fn capture_relative(
+        root: std::path::PathBuf, path: std::path::PathBuf, relative: &str,
+        text: dm_preprocess::SourceText, available: usize,
+    ) -> Result<Self, String> {
+        let file = SourceFile::from_shared_budgeted(relative, path, text, available)?;
         let charge = file.captured_budget_charge();
         Ok(Self {
             tree: Tree::from_captured_files(root, vec![file]),
@@ -223,6 +244,18 @@ impl File {
         self.scan_budgeted_checked(scope,rows,bytes).map_err(ScanFailure::into_message)
     }
     pub fn scan_budgeted_checked(&self,scope:&Scope,rows:usize,bytes:usize)->Result<Findings,ScanFailure> {
+        self.scan_selected(scope, rows, bytes, false)
+    }
+
+    /// The genuine single-scope capture already performed the same
+    /// Select/Scope decision for this exact file. No source or policy proof
+    /// is issued by this DATA-only scanner.
+    #[doc(hidden)]
+    pub fn scan_preselected_budgeted_checked(&self,scope:&Scope,rows:usize,bytes:usize)->Result<Findings,ScanFailure> {
+        self.scan_selected(scope, rows, bytes, true)
+    }
+
+    fn scan_selected(&self,scope:&Scope,rows:usize,bytes:usize,selected:bool)->Result<Findings,ScanFailure> {
         self.require_view_budget().map_err(ScanFailure::Admission)?;
         let lint = captured_raw_policy::registry()
             .find(scope.name)
@@ -240,9 +273,15 @@ impl File {
             bytes.min(64 * 1024 * 1024),
         );
         let result = catch_unwind(AssertUnwindSafe(|| {
-            for file in cx.files() {
+            if selected {
+                let file = &self.tree.files[0];
                 sink.set_current(&file.rel);
                 lint.scan_file(&cx, file, &mut sink);
+            } else {
+                for file in cx.files() {
+                    sink.set_current(&file.rel);
+                    lint.scan_file(&cx, file, &mut sink);
+                }
             }
         }));
         // A denied lazy must never escape as an empty clean scan, including
@@ -289,6 +328,9 @@ impl File {
         Ok(findings)
     }
     fn report_source_text(&self, sites: &[crate::lint::Site], available: usize) -> Result<Vec<String>, ScanFailure> {
+        if sites.is_empty() {
+            return Ok(Vec::new());
+        }
         let file = &self.tree.files[0];
         let raw = file.raw();
         self.require_view_budget().map_err(ScanFailure::Admission)?;
@@ -420,13 +462,17 @@ impl Scope {
         Ok(!lint.meta().select.matches_path(rel) || self.scope.exempt(rel))
     }
     pub fn empty_findings_if_excluded(&self, rel: &str) -> Result<Option<Findings>, String> {
-        Ok(self.excludes_path(rel)?.then(|| Findings {
+        Ok(self.excludes_path(rel)?.then(|| self.empty_excluded_findings()))
+    }
+    #[doc(hidden)]
+    pub fn empty_excluded_findings(&self) -> Findings {
+        Findings {
             name: self.name.into(),
             run: Run::default(),
             allow_used: Vec::new(),
             source_text: Vec::new(),
             allow_source_digest: None,
-        }))
+        }
     }
     /// Exact interpreted policy, not its cache hash, authenticates reuse.
     pub fn equivalent_to(&self, other: &Self) -> bool {
@@ -580,6 +626,28 @@ mod workspace_budget_tests {
 #[cfg(test)]
 mod result_headroom_tests {
     use super::*;
+    #[test]
+    fn preselected_raw_file_preserves_findings_allow_text_and_admission() {
+        let root = std::env::current_dir().unwrap();
+        let relative = "code/preselected.dm";
+        let path = root.join(relative);
+        let text: dm_preprocess::SourceText =
+            "/proc/p()\n    sleep(1)\n    sleep(2) // ALLOW(scheduler): real blocking external operation\n".to_owned().into();
+        let scope = Config::capture(Configuration::ProvenMissing).unwrap().scope("scheduler").unwrap();
+        assert!(!scope.excludes_path(relative).unwrap());
+        let checked = File::capture_budgeted(&root,&path,text.clone(),1<<20).unwrap();
+        let preselected = File::capture_budgeted_preselected(&root,&path,relative,text,1<<20).unwrap();
+        assert_eq!(checked.fingerprint(),preselected.fingerprint());
+        let expected = checked.scan_budgeted_checked(&scope,8,1<<16).unwrap();
+        let actual = preselected.scan_preselected_budgeted_checked(&scope,8,1<<16).unwrap();
+        assert_eq!(actual.run.sites.len(),1);
+        assert_eq!(actual.allow_used.len(),1);
+        assert_eq!(actual.fingerprint(),expected.fingerprint());
+        assert_eq!(actual.source_text,expected.source_text);
+        assert_eq!(actual.allow_source_digest,expected.allow_source_digest);
+        assert!(matches!(preselected.scan_preselected_budgeted_checked(&scope,0,1<<16),Err(ScanFailure::Admission(_))));
+    }
+
     #[test]
     fn scan_refuses_exhausted_result_headroom_instead_of_using_the_fixture_limit() {
         let root = std::env::current_dir().unwrap();

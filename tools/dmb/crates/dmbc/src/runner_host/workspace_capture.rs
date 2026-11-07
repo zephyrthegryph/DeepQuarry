@@ -333,7 +333,7 @@ impl WorkspaceCapture {
         budget: usize,
         scopes: &[Arc<dq_analyze::captured_raw_file::Scope>],
     ) -> io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>, usize)> {
-        self.page_needed(scope,start,count,budget,|relative|{
+        self.page_needed_using(scope,start,count,budget,scopes.len()==1,|relative|{
             let mut excluded=true;for scope in scopes{excluded &= scope.excludes_path(relative).map_err(io::Error::other)?;}Ok(!excluded)
         })
     }
@@ -370,7 +370,10 @@ impl WorkspaceCapture {
     pub(crate) fn hygiene_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,configuration:&dq_analyze::captured_raw_file::Config,policy:&'static str,group:&'static str)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_sys_hygiene_pages::selects_path(relative)&&!configuration.policy_path_exempt(policy,group,relative)))}
     /// Exact tracked declaration/index domain; selected pass applies its own original policy exclusions before any original file loan.
     pub(crate) fn tracked_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,configuration:Option<(&dq_analyze::captured_raw_file::Config,bool)>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_sys_hygiene_pages::selects_path(relative)&&configuration.is_none_or(|(config,tests)|if tests{dq_analyze::tracked_policy::TEST_PREFIXES.iter().any(|prefix|relative.starts_with(prefix))}else{!config.policy_path_exempt("tracked","",relative)})))}
-    fn page_needed(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,mut needed:impl FnMut(&str)->io::Result<bool>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
+    fn page_needed(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,needed:impl FnMut(&str)->io::Result<bool>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
+        self.page_needed_using(scope,start,count,budget,false,needed)
+    }
+    fn page_needed_using(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,retain_raw_selection:bool,mut needed:impl FnMut(&str)->io::Result<bool>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
         if self.engine_no_model.is_some(){return Err(io::Error::new(io::ErrorKind::Unsupported,"engine metadata-only completion grants no source payload traversal"))}
         self.require_scope(scope)?;
         if count == 0 || count > 128 {
@@ -390,6 +393,9 @@ impl WorkspaceCapture {
                 .to_string_lossy()
                 .replace('\\', "/");
             let excluded = !needed(&rel)?;
+            let path_charge = file.path.capacity().checked_add(
+                if retain_raw_selection { rel.capacity() } else { 0 },
+            ).ok_or_else(|| io::Error::other("workspace path accounting overflow"))?;
             let proof = match &file.original {
                 Original::Native(native) => SourceProof::Native(
                     scope.original_identity(native.occurrence, &native.identity)?,
@@ -435,7 +441,7 @@ impl WorkspaceCapture {
                         .ok_or_else(|| io::Error::other("workspace normalization peak overflow"))?
                 };
                 if total
-                    .checked_add(file.path.capacity())
+                    .checked_add(path_charge)
                     .and_then(|n| n.checked_add(peak))
                     .is_none_or(|n| n > budget)
                 {
@@ -466,7 +472,7 @@ impl WorkspaceCapture {
                     .or_insert(bytes);
             }
             path_bytes = path_bytes
-                .checked_add(file.path.capacity())
+                .checked_add(path_charge)
                 .ok_or_else(|| io::Error::other("workspace path accounting overflow"))?;
             total = owners
                 .values()
@@ -482,6 +488,7 @@ impl WorkspaceCapture {
                 text,
                 proof,
                 charge,
+                raw_selection: retain_raw_selection.then_some((rel, excluded)),
             });
             end = index + 1;
         }

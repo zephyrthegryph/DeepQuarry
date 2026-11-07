@@ -229,15 +229,15 @@ impl QueryDb{
         .and_then(|n| n.checked_add(std::mem::size_of::<WorkspaceCodeReader<'_, '_>>()
             + PAGE_FILES * std::mem::size_of::<CurrentFile>() + 4096))
         .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "workspace code fixed accounting overflow"))?;
-    let input = self.workspace_input_headroom_locked(fixed)?;
     let result = RESULT_BOUND.checked_sub(self.raw_policy.charge.load(Ordering::Relaxed))
         .and_then(|n| n.checked_sub(inventory.bytes()))
-        .and_then(|n| n.checked_sub(aggregate::REPORT_RESERVE))
-        .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "workspace code result-family headroom exhausted"))?;
+        .and_then(|n| n.checked_sub(aggregate::REPORT_RESERVE));
+    let input = self.workspace_input_headroom_with_source_upper_up_to_locked(
+        fixed, result.unwrap_or(usize::MAX))?;
+    let result = result.ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "workspace code result-family headroom exhausted"))?;
     let budget = Budget::new(input.min(result)).map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory,message))?;
     let pending = render(&budget)?;
-    self.refresh_raw_source_inputs_locked()?;
-    self.workspace_input_headroom_locked(fixed)?;
+    self.workspace_input_headroom_with_source_upper_locked(fixed)?;
     crate::daemon::control::checkpoint()?;
     capture.require_scope(scope)?;
     budget.require().map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory,message))?;
