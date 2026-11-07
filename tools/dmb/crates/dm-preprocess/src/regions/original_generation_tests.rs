@@ -25,6 +25,81 @@ impl SourceArenaWork for Work{
  fn grow(&self,c:&mut crate::source_arena_credit::SourceArenaCredit,n:usize)->io::Result<()>{let own=c.owner().as_any().downcast_ref::<Credit>().ok_or(io::ErrorKind::InvalidInput)?;if !Arc::ptr_eq(&self.live,&own.live){return Err(io::ErrorKind::InvalidInput.into())}own.bytes.fetch_add(n,Ordering::AcqRel);self.live.fetch_add(n,Ordering::AcqRel);Ok(())}
  fn shrink(&self,c:&mut crate::source_arena_credit::SourceArenaCredit,n:usize)->io::Result<()>{let own=c.owner().as_any().downcast_ref::<Credit>().ok_or(io::ErrorKind::InvalidInput)?;if !Arc::ptr_eq(&self.live,&own.live){return Err(io::ErrorKind::InvalidInput.into())}own.bytes.fetch_update(Ordering::AcqRel,Ordering::Acquire,|old|old.checked_sub(n)).map_err(|_|io::ErrorKind::InvalidInput)?;self.live.fetch_sub(n,Ordering::AcqRel);Ok(())}
 }
+#[test]
+fn original_diagnostic_history_preserves_macro_origins_but_cannot_issue_generation() {
+    struct BatchHost(Arc<AtomicUsize>);
+    impl super::super::OriginalBatchSyntaxHost for BatchHost {
+        fn with_producer_admission(&self, run: &mut dyn FnMut(&SettingAdmission<'_>) -> io::Result<()>) -> io::Result<()> {
+            run(&SettingAdmission::new(&self.0, 64 << 20, &|| Ok(())))
+        }
+    }
+    let root = "E:/controller/diagnostic-history.dme";
+    let provider = Memory::new(&[(root, concat!(
+        "#define VALUE 3\n",
+        "#define VALUE 7\n",
+        "/datum/before\n    var/value = VALUE\n",
+        "#undef VALUE\n",
+        "/datum/after\n    var/value = VALUE\n",
+    ))]);
+    let work = Work { live: Arc::new(AtomicUsize::new(0)) };
+    let syntax = Arc::new(AtomicUsize::new(0));
+    let a = SettingAdmission::new(&syntax, 64 << 20, &|| Ok(()));
+    let host = BatchHost(Arc::clone(&syntax));
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let batch = OriginalBatchExecution::new(&provider, &host, &executor);
+    let run = |compact| {
+        let mut consumer = Consumer;
+        let definitions = BTreeMap::new();
+        if compact {
+            GenerationDirectivePlan::prepare_original_diagnostic_stream_using(
+                Path::new(root), &provider, &definitions, omissions(), 1 << 20, &work, &a,
+                Some(&batch), &mut consumer,
+            )
+        } else {
+            GenerationDirectivePlan::prepare_original_stream_using(
+                Path::new(root), &provider, &definitions, omissions(), 1 << 20, &work, &a,
+                Some(&batch), &mut consumer,
+            )
+        }.unwrap()
+    };
+    let full_generation = run(false);
+    assert!(full_generation.into_generation_parts().is_ok());
+    let restricted_generation = run(true);
+    assert_eq!(restricted_generation.delivery(), OriginalDemandDelivery::AnalyzeBatch8192x64);
+    assert_eq!(restricted_generation.into_generation_parts().err().unwrap().kind(), io::ErrorKind::InvalidInput);
+    assert_eq!(syntax.load(Ordering::Acquire), 0);
+
+    let full = run(false);
+    let retained_full = syntax.load(Ordering::Acquire);
+    let compact = run(true);
+    assert!(syntax.load(Ordering::Acquire) - retained_full < retained_full,
+        "same issued expansion retains fewer charged historical owners");
+    let (marks, live, authored) = compact.retention.history.diagnostic_marks();
+    let removed = marks.collect::<Vec<_>>();
+    assert_eq!(removed.len(), 1);
+    assert_eq!(removed[0].0, "VALUE");
+    assert_eq!(removed[0].1.unwrap().line, 2);
+    assert_eq!(removed[0].2.line, 5);
+    let full_current = full.retention.history.entries()
+        .filter(|entry| matches!(entry.end, super::super::original_define_history::OriginalDefineHistoryEnd::Final { .. }));
+    assert_eq!(full_current.count(), live);
+    assert_eq!(authored, 1);
+    drop(removed);
+
+    let (full_plan, full_expanded, full_primary, full_binding) = full.into_diagnostic_parts_using(&a).unwrap();
+    let (compact_plan, compact_expanded, compact_primary, compact_binding) = compact.into_diagnostic_parts_using(&a).unwrap();
+    assert_eq!(full_expanded.text.as_str(), compact_expanded.text.as_str());
+    assert!(full_expanded.origins.iter().map(|row| row.macro_expansions)
+        .eq(compact_expanded.origins.iter().map(|row| row.macro_expansions)));
+    let notices: Vec<_> = compact_plan.original_notices().iter().map(|notice| (notice.error_type, notice.message)).collect();
+    assert!(notices.iter().any(|(kind, _)| *kind == Some("macro_redefined")));
+    assert!(full_plan.original_notices().iter().map(|notice| (notice.error_type, notice.message))
+        .eq(notices));
+    drop((full_plan, full_expanded, full_primary, full_binding, compact_plan, compact_expanded, compact_primary, compact_binding));
+    assert_eq!(syntax.load(Ordering::Acquire), 0);
+    assert_eq!(work.live.load(Ordering::Acquire), 0);
+}
+
 struct Consumer;impl OriginalDeclarationHeaderObserver for Consumer{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}}
 impl OriginalPrimaryStreamConsumer for Consumer{fn callable(&mut self,_:OriginalPrimaryLiveHeader,_:&mut dyn super::super::OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{panic!("this raw traversal fixture has no callable declaration")}}
 fn omissions()->GenerationOmissions{GenerationOmissions::probe([], &mut |_|panic!("empty explicit output roster"),&mut |_|Ok(())).unwrap()}

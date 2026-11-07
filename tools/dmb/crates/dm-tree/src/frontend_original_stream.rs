@@ -62,7 +62,9 @@ pub(crate) fn prepare_original_stream_using(
  a:&dm_syntax::SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,
 )->io::Result<StreamedOriginalDeclarations>{
  let mut observer=actual(a,||crate::procedure::original_primary_signatures::OriginalSignatureObserver::new(a))?;
- let product=actual(a,||match batch{Some(batch)=>GenerationDirectivePlan::prepare_original_stream_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,Some(batch),&mut observer),None=>GenerationDirectivePlan::prepare_original_checker_stream_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,&mut observer)}).inspect_err(|_error|{
+ let product=actual(a,||GenerationDirectivePlan::prepare_original_diagnostic_stream_using(
+     project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,&mut observer,
+ )).inspect_err(|_error|{
   #[cfg(debug_assertions)]
   observer.trace_failed_stream_retention("raw_product");
   #[cfg(test)]

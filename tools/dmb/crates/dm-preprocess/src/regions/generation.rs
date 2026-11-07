@@ -148,7 +148,7 @@ impl GenerationDirectivePlan {
         }
         Ok(GenerationDeclareOmission { project, declare, other_omissions: GenerationOmissions { paths } })
     }
-    pub(super) fn from_original_product(product:super::OriginalGenerationProduct)->io::Result<(Self,ExpandedRegions,super::OriginalStreamPrimary,super::OriginalLiteralSourceBinding)>{if product.delivery()!=super::OriginalDemandDelivery::AnalyzeBatch8192x64{return Err(io::Error::new(io::ErrorKind::InvalidInput,"restricted Original generation requires actual Analyze delivery"))}let(plan,omissions,expanded,primary,literals,retention)=product.into_primary_parts();Ok((Self{plan,omissions,original_retention:Some(retention),declare_type_probe:false},expanded,primary,literals))}
+    pub(super) fn from_original_product(product:super::OriginalGenerationProduct)->io::Result<(Self,ExpandedRegions,super::OriginalStreamPrimary,super::OriginalLiteralSourceBinding)>{if product.delivery()!=super::OriginalDemandDelivery::AnalyzeBatch8192x64||!product.has_full_define_history(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"restricted Original generation requires actual Analyze delivery and full generation history"))}let(plan,omissions,expanded,primary,literals,retention)=product.into_primary_parts();Ok((Self{plan,omissions,original_retention:Some(retention),declare_type_probe:false},expanded,primary,literals))}
 
     pub fn prepare<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,read:&dyn Fn(&Path)->io::Result<Option<Arc<prepared_source::PreparedSource>>>)->io::Result<Self> {
         let plan=directives::plan_generation(project,provider,defines,&omissions.paths,read)?;
