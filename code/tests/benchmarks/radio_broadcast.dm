@@ -1,5 +1,7 @@
-// The cost of one radio broadcast on the mapped station, stage by stage: collecting the radios that receive the frequency, finding
-// the players who hear them, and the whole Broadcast_Message (categorising, formatting, delivery); then the arrival announcement.
+// The cost of one radio broadcast on the mapped station, stage by stage: asking every radio on Common whether it receives (what
+// collecting the radios cost before the listeners were placed first), finding the players who hear it (radio_hearers(), the
+// bodies standing in for players), and the whole Broadcast_Message (categorising, formatting, delivery); then the arrival
+// announcement. Headless, so nobody has a client: delivery is not in these numbers.
 //   tools/build/build.sh bench --scenario=radio_broadcast -DCITESTING_FULL_MAP [--arg=messages=20] [--arg=mobs=4]
 
 /datum/benchmark/radio_broadcast
@@ -40,10 +42,11 @@
 	metric("collect_ms", TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp) / messages, "ms")
 	count_metric("receiving_radios", length(radios), "radios")
 
+	// The bodies have no client, so a real broadcast leaves them out: this stage places them as listeners itself.
 	var/list/hearers
 	stamp = TICK_USAGE_REAL
 	for(var/i in 1 to messages)
-		hearers = get_mobs_in_radio_ranges(radios)
+		hearers = radio_hearers(devices, made, PUB_FREQ, levels)
 	metric("hearers_ms", TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp) / messages, "ms")
 	count_metric("hearers", length(hearers), "mobs")
 

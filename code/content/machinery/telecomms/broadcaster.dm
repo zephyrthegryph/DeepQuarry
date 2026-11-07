@@ -322,52 +322,42 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
 
 	var/display_freq = freq
 
-	var/list/obj/item/radio/radios = list()
+	// Who hears it: the players a receiving radio reaches. The listeners are placed first (a few players against ~900
+	// radios on Common), so only a radio someone stands in reach of is asked whether it receives.
+	var/list/receive = list()
+	var/list/listeners = radio_listeners(receive)
 
-	for(var/obj/item/radio/R in forced_radios)
-		//Cursory check to ensure they are 'on' and stuff
-		if(R.receive_range(display_freq, list(0)) > -1)
-			radios |= R
+	radio_reach(forced_radios, display_freq, list(0), listeners, receive)
 
 	// --- Broadcast only to intercom devices ---
 
 	if(data == DATA_INTERCOM)
-
-		for (var/obj/item/radio/intercom/R in connection.devices["[RADIO_CHAT]"])
-			if(R.receive_range(display_freq, level) > -1)
-				radios |= R
+		var/list/intercoms = list()
+		for(var/obj/item/radio/intercom/R in connection.devices["[RADIO_CHAT]"])
+			intercoms += R
+		radio_reach(intercoms, display_freq, level, listeners, receive)
 
 	// --- Broadcast only to intercoms and station-bounced radios ---
 
 	else if(data == DATA_LOCAL)
-
-		for (var/obj/item/radio/R in connection.devices["[RADIO_CHAT]"])
-
+		var/list/bounced = list()
+		for(var/obj/item/radio/R in connection.devices["[RADIO_CHAT]"])
 			if(istype(R, /obj/item/radio/headset) && !R.adhoc_fallback)
 				continue
-
-			if(R.receive_range(display_freq, level) > -1)
-				radios |= R
+			bounced += R
+		radio_reach(bounced, display_freq, level, listeners, receive)
 
 	// --- Broadcast to antag radios! ---
 
 	else if(data == DATA_ANTAG)
 		for(var/antag_freq in GLOB.antag_frequencies)
 			var/datum/radio_frequency/antag_connection = SSradio.return_frequency(antag_freq)
-			for (var/obj/item/radio/R in antag_connection.devices["[RADIO_CHAT]"])
-				if(R.receive_range(antag_freq, level) > -1)
-					radios |= R
+			radio_reach(antag_connection.devices["[RADIO_CHAT]"], antag_freq, level, listeners, receive)
 
 	// --- Broadcast to ALL radio devices ---
 
 	else
-
-		for (var/obj/item/radio/R in connection.devices["[RADIO_CHAT]"])
-			if(R.receive_range(display_freq, level) > -1)
-				radios |= R
-
-	// Get a list of mobs who can hear from the radios we collected.
-	var/list/receive = get_mobs_in_radio_ranges(radios)
+		radio_reach(connection.devices["[RADIO_CHAT]"], display_freq, level, listeners, receive)
 
 	/* ###### Organize the receivers into categories for displaying the message ###### */
 
@@ -775,42 +765,51 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/link)
 	GLOB.message_delay = 0
 	GLOB.recentmessages = list()
 
-/// The mobs who hear any of `radios`: every player with a client on a turf one of them reaches, and every observer.
-/proc/get_mobs_in_radio_ranges(list/obj/item/radio/radios)
-	var/list/candidates = list()
-	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(M.client || isobserver(M))
-			candidates += M
-	return radio_hearers(radios, candidates)
-
-/// Which of `candidates` hear any of `radios`. Observers hear everything; anyone else hears a radio that reaches their turf.
-/// Starts from the listeners, a few players, rather than from the radios' ranges: a broadcast reaches hundreds of intercoms,
-/// and walking the turfs round each of them cost most of a Common message.
-/proc/radio_hearers(list/obj/item/radio/radios, list/mob/candidates)
-	. = list()
-	var/list/turfs_by_z = list() // "z" -> mob -> turf, the listeners not yet placed in range of a radio
+/// The players who may hear a broadcast, by level ("z" -> mob -> turf). Observers hear every broadcast: they go straight into
+/// `heard`. A player in reach of a receiving radio is taken out once placed (radio_reach()).
+/proc/radio_listeners(list/heard, list/mob/candidates = null)
+	var/list/by_level = list()
+	if(isnull(candidates))
+		candidates = list()
+		for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+			if(M.client || isobserver(M))
+				candidates += M
 	for(var/mob/M as anything in candidates)
 		if(isobserver(M))
-			. |= M
+			heard |= M
 			continue
 		var/turf/T = get_turf(M)
 		if(!T)
 			continue
-		var/list/on_level = turfs_by_z["[T.z]"]
+		var/list/on_level = by_level["[T.z]"]
 		if(!on_level)
 			on_level = list()
-			turfs_by_z["[T.z]"] = on_level
+			by_level["[T.z]"] = on_level
 		on_level[M] = T
-	if(!length(turfs_by_z))
+	return by_level
+
+/// Adds to `heard` the listeners still unplaced in `by_level` whom one of `radios` reaches and who hear it: the radio must
+/// receive `freq` on `level` (receive_range()), asked only of a radio someone stands in reach of.
+/proc/radio_reach(list/obj/item/radio/radios, freq, list/level, list/by_level, list/heard)
+	if(!length(radios) || !length(by_level))
 		return
 	for(var/obj/item/radio/R as anything in radios)
 		var/turf/from = get_turf(R)
 		if(!from)
 			continue
-		var/list/on_level = turfs_by_z["[from.z]"]
+		var/list/on_level = by_level["[from.z]"]
 		if(!length(on_level))
 			continue
+		var/list/reached
 		for(var/mob/M as anything in on_level)
 			if(R.reaches(from, on_level[M]))
-				. |= M
-				on_level -= M
+				LAZYADD(reached, M)
+		if(!reached || R.receive_range(freq, level) <= -1)
+			continue
+		heard |= reached
+		on_level -= reached
+
+/// Which of `candidates` hear any of `radios` on `freq`: radio_listeners() and radio_reach() for one set of radios.
+/proc/radio_hearers(list/obj/item/radio/radios, list/mob/candidates, freq = PUB_FREQ, list/level = list(0))
+	. = list()
+	radio_reach(radios, freq, level, radio_listeners(., candidates), .)

@@ -1,12 +1,14 @@
 // Who hears a radio broadcast (radio_hearers()): a listener on a turf a receiving radio reaches, worked out from the listeners.
 
 /// An intercom reaches its canhear_range with the square's corners cut; a headset only its own turf; another level never;
-/// an observer always.
+/// an observer always; a radio that does not receive the frequency nobody.
 /datum/unit_test/dq_radio_hearers_by_reach
 
 /datum/unit_test/dq_radio_hearers_by_reach/Run()
 	var/turf/origin = test_floor()
 	var/obj/item/radio/intercom/I = allocate(/obj/item/radio/intercom, origin)
+	I.set_listening(TRUE)
+	I.set_frequency(PUB_FREQ)
 	var/range = I.canhear_range
 	var/turf/edge = locate(origin.x + range, origin.y, origin.z)
 	var/turf/beyond = locate(origin.x + range + 1, origin.y, origin.z)
@@ -22,11 +24,15 @@
 	TEST_ASSERT(!(in_corner in heard), "nor one in the corner of the square, outside the circle")
 	TEST_ASSERT(ghost in heard, "an observer hears every broadcast")
 
-	var/obj/item/radio/headset/worn = allocate(/obj/item/radio/headset, edge)
-	worn.forceMove(at_edge) // carried by its wearer
-	heard = radio_hearers(list(worn), list(at_edge, too_far))
-	TEST_ASSERT(at_edge in heard, "the wearer hears a headset")
-	TEST_ASSERT(!(too_far in heard), "the next turf does not")
+	var/obj/item/radio/headset/dropped = allocate(/obj/item/radio/headset, edge)
+	dropped.set_frequency(PUB_FREQ)
+	heard = radio_hearers(list(dropped), list(at_edge, too_far))
+	TEST_ASSERT(at_edge in heard, "a headset is heard on its own turf")
+	TEST_ASSERT(!(too_far in heard), "not on the next one")
+
+	I.set_listening(FALSE)
+	TEST_ASSERT(!(at_edge in radio_hearers(list(I), list(at_edge))), "an intercom that is not listening is not heard, in reach or not")
+	I.set_listening(TRUE)
 
 	var/turf/elsewhere = locate(origin.x, origin.y, origin.z == 1 ? 2 : 1)
 	if(elsewhere)
