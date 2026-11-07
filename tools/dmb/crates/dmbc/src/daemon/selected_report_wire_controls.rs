@@ -407,3 +407,36 @@ fn compound_terminal_gates_both_reports_on_the_actual_native_pair() {
     assert_eq!(&stdout[newline+1..], b"checker\nanalyze\n");
     assert_eq!(stderr, b"preparation\n");
 }
+
+#[test]
+fn source_only_selected_wire_refuses_semantic_terminals_and_foreign_channels() {
+    let cache = crate::test_scratch::dir("selected-raw-file-wire");
+    let text = b"exact source-only report\n";
+    let prepared = BuildOutcome::RawQueryPrepared {
+        query_revision: format!("{:032x}", 1), source_revision: format!("{:032x}", 2),
+        policy_revision: format!("{:032x}", 3), retained: true,
+    };
+    assert!(Frame::from_prepared(&prepared).is_err());
+    let mut wire = Vec::new();
+    protocol::send(&mut wire, &protocol::Reply::Accepted).unwrap();
+    send_raw_selected(&mut wire, RawFrame::from_prepared(&prepared).unwrap(), false,
+        verified(&cache, text), &Work { allow: true }).unwrap();
+    assert!(receive(&mut wire.as_slice(), &cache, Roster::AllRawFilePolicies).is_err());
+    let delivered = receive_raw_selected(&mut wire.as_slice(), &cache).unwrap();
+    assert_eq!(delivered.terminal.frame.query_revision, Hex128(1));
+    assert_eq!(delivered.terminal.report, seal(text));
+    assert!(!delivered.terminal.clean);
+
+    let mut semantic = Vec::new();
+    protocol::send(&mut semantic, &protocol::Reply::Accepted).unwrap();
+    send(&mut semantic, Roster::Base, frame(), false, None,
+        verified(&cache, text), &Work { allow: true }).unwrap();
+    assert!(receive_raw_selected(&mut semantic.as_slice(), &cache).is_err());
+
+    let mut foreign = Vec::new();
+    protocol::send(&mut foreign, &protocol::Reply::Accepted).unwrap();
+    protocol::send(&mut foreign, &SendReply::SelectedReportFragment {
+        channel: Channel::Diagnostics, sequence: 0, offset: 0, bytes: b"foreign diagnostics",
+    }).unwrap();
+    assert!(receive_raw_selected(&mut foreign.as_slice(), &cache).is_err());
+}

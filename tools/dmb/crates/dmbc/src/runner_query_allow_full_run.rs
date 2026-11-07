@@ -2,7 +2,7 @@
 //! No caller-supplied usage vectors, counts or revision hashes can complete it.
 use super::SourceSnapshot;
 use crate::policy_request::{WorkspaceAuxiliaryQuestion as Q,AnalysisContext};
-use dq_analyze::{captured_allow_annotations::{self as annotations,Operation,ValidationData},captured_allow_annotations::full_unused::{self,FrameData,UsageJoinData},captured_generator_budget::Budget,captured_raw_file::Config,captured_reactive_reads::Failure,key_policy_control::{self as kc,Control},lint::AllowUse};
+use dq_analyze::{captured_allow_annotations::{self as annotations,Operation,ValidationData},captured_allow_annotations::full_unused::{self,FrameData,FrameOwner,UsageJoinData},captured_generator_budget::Budget,captured_raw_file::Config,captured_reactive_reads::Failure,key_policy_control::{self as kc,Control},lint::AllowUse};
 use std::{io,sync::Arc};
 fn operational(error:Failure)->io::Error{match error{Failure::Operational(error)=>error,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)}}
 /// Borrowed only while this SAME execution's data and allocation budgets live.
@@ -81,7 +81,7 @@ impl SourceSnapshot{
   let mut producers=Vec::new();
   for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if matches!(producer,Producer::Special("silicon_entry"))&&stage.is_none(){return Err("silicon_entry usage requires the qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("library_layering"))&&stage.is_none(){return Err("library layering usage requires its qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("sem/handlers"))&&(stage.is_none()||handlers.is_none()){return Err("handlers usage requires its actual current demanded-full staged pair".into())}if stage.is_some()&&!producer.stages_report(){return Err("selected policy has no staged report adapter".into())}if let Some(question)=producer.question(){if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs_with_guard(question,&guard)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
   let selected_tree=full_unused::SelectedTreePlanData::new(producers.iter().map(|producer|producer.metadata().select),&mut c)?;
-  let frame=FrameData{semantic:tree.identity(),source:self.source_revision,configuration:capture.policy_revision()};let mut usage=UsageJoinData::new(&selection,frame);let mut validation=None;
+  let frame=FrameData{owner:FrameOwner::Semantic(tree.identity()),source:self.source_revision,configuration:capture.policy_revision()};let mut usage=UsageJoinData::new(&selection,frame);let mut validation=None;
   for producer in producers{poll()?;let name=producer.name();
    // Only these concrete callbacks reach record_fold. No public record method,
    // registry name count or externally supplied UsageData can certify this run.

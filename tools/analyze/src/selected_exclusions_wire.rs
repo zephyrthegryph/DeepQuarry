@@ -227,6 +227,39 @@ impl JudgmentV2 {
     pub fn is_raw(&self) -> bool { *self == Self::Raw }
 }
 
+/// Source-only coordinates from the actual retained raw-query preparation.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RawSelectedFrame {
+    pub query_revision: Hex128,
+    pub source_revision: Hex128,
+    pub policy_revision: Hex128,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub enum RawSelectedSchema {
+    #[serde(rename = "native-analyze-raw-selected-batch-v1")]
+    V1,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RawSelectedTerminal {
+    pub schema: RawSelectedSchema,
+    pub roster: Roster,
+    pub frame: RawSelectedFrame,
+    pub clean: bool,
+    pub report: Seal,
+}
+impl RawSelectedTerminal {
+    pub fn require(self, expected: Roster) -> io::Result<()> {
+        if expected != Roster::AllRawFilePolicies || self.roster != expected {
+            return Err(invalid("raw selected terminal differs from its closed roster"));
+        }
+        self.report.require_bound()
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum SchemaV2 {
     #[serde(rename = "native-analyze-exclusions-batch-v2")]

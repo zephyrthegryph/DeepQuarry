@@ -8,7 +8,7 @@ impl RawPolicyPages for Pages{
   Ok(!self.stop)
  }
 }
-fn frame()->FrameData{FrameData{semantic:11,source:22,configuration:33}}
+fn frame()->FrameData{FrameData{owner:FrameOwner::Semantic(11),source:22,configuration:33}}
 fn selected()->FullSelectionData{FullSelectionData{names:vec!["scheduler".into(),"allow_annotations".into()]}}
 fn op<'a>(b:&'a Budget)->Operation<'a>{Operation{budget:b,poll:&||Ok(())}}
 #[test]fn zero_usage_producers_still_complete_and_foreign_duplicate_missing_or_failed_folds_never_finish(){

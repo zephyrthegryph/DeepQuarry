@@ -64,7 +64,7 @@ pub enum PolicyInputRole {
 /// Explicit fixed auxiliary questions, independent of generator/source roles.
 #[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd,Serialize,Deserialize)]
 #[serde(rename_all="snake_case")]
-pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,LibraryLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms,DerivedReads,SemHandlers,NoticePublisher,SiliconEntry,LibraryLayeringFullAllow,SemHandlersFullAllow,MapEdits}
+pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,LibraryLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms,DerivedReads,SemHandlers,NoticePublisher,SiliconEntry,LibraryLayeringFullAllow,SemHandlersFullAllow,MapEdits,AllRawFilePolicies}
 impl WorkspaceAuxiliaryQuestion {
     pub(crate) const SELECTED_READS: &'static [Self] = &[Self::SemReads, Self::UntrackedInputs];
     pub(crate) const SELECTED_SETTER: &'static [Self] = &[Self::SetterPublishes];
@@ -90,7 +90,7 @@ impl WorkspaceAuxiliaryQuestion {
     }
 }
 
-impl WorkspaceAuxiliaryQuestion { pub(crate) const ALL:&'static[Self]=&[Self::DeadlinePollingAllowlist,Self::CheckGrep,Self::Keys,Self::SemReads,Self::UntrackedInputs,Self::Tracked,Self::TrackedTests,Self::CheckGrepBaseline,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::DocSnippets,Self::StoredRefs,Self::Ownership,Self::EngineLayering,Self::LibraryLayering,Self::UiActions,Self::SetterPublishes,Self::OpOrder,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::SemHandlers,Self::NoticePublisher,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow,Self::MapEdits]; pub(crate) const SEMANTIC:&'static[Self]=&[Self::SemReads,Self::UntrackedInputs,Self::SetterPublishes,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::Tracked,Self::TrackedTests,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::StoredRefs,Self::EngineLayering,Self::LibraryLayering,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow,Self::MapEdits]; pub(crate) fn is_semantic(self)->bool {Self::SEMANTIC.contains(&self)} }
+impl WorkspaceAuxiliaryQuestion { pub(crate) const ALL:&'static[Self]=&[Self::DeadlinePollingAllowlist,Self::CheckGrep,Self::Keys,Self::SemReads,Self::UntrackedInputs,Self::Tracked,Self::TrackedTests,Self::CheckGrepBaseline,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::DocSnippets,Self::StoredRefs,Self::Ownership,Self::EngineLayering,Self::LibraryLayering,Self::UiActions,Self::SetterPublishes,Self::OpOrder,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::SemHandlers,Self::NoticePublisher,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow,Self::MapEdits,Self::AllRawFilePolicies]; pub(crate) const SEMANTIC:&'static[Self]=&[Self::SemReads,Self::UntrackedInputs,Self::SetterPublishes,Self::SysReactive,Self::Lifeforms,Self::DerivedReads,Self::Tracked,Self::TrackedTests,Self::Decl,Self::Init,Self::BaseVars,Self::RequirementBool,Self::PlayerLink,Self::UntypedMember,Self::WeakRawRead,Self::RelWriteUndeclared,Self::Untyped,Self::StoredRefs,Self::EngineLayering,Self::LibraryLayering,Self::SiliconEntry,Self::LibraryLayeringFullAllow,Self::SemHandlersFullAllow,Self::MapEdits]; pub(crate) fn is_semantic(self)->bool {Self::SEMANTIC.contains(&self)} }
 
 impl WorkspaceAuxiliaryQuestion {
     pub(crate) fn layering(self) -> Option<dq_analyze::engine_layering_policy::Layer> {
@@ -148,6 +148,14 @@ impl PolicyInputRequest {
         if self.workspace_auxiliary.len()>WorkspaceAuxiliaryQuestion::ALL.len(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions exceed fixed registered set"))}
         let mut workspace_auxiliary=self.workspace_auxiliary;workspace_auxiliary.sort_unstable();if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::CheckGrep)&&workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::CheckGrepBaseline){return Err(io::Error::new(io::ErrorKind::InvalidInput,"CheckGrep check and baseline purposes are mutually exclusive"))}if workspace_auxiliary.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate auxiliary question"))}
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::PlayerLink)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"player-link requires its actual full Original Analyze subject"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::AllRawFilePolicies)
+            && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
+                || workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::AllRawFilePolicies]
+                || !workspace_generators.is_empty() || !self.files.is_empty()
+                || !self.search_folders.is_empty())
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "raw file roster requires its exclusive Original workspace purpose"));
+        }
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::MapEdits)
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
                 || workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::MapEdits]

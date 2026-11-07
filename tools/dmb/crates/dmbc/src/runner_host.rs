@@ -1636,6 +1636,14 @@ impl BuildHost {
         &mut self, request: crate::request::BuildRequest, exclusions: &[String],
         diagnostics: &mut impl std::io::Write, output: &mut impl std::io::Write,
     ) -> Result<bool, Box<dyn std::error::Error>> {
+        use dq_analyze::selected_exclusions_wire::Roster;
+        if Self::qualify_original_exclusions(exclusions, SelectedReportMode::Ordinary)? == Roster::AllRawFilePolicies {
+            return self.with_raw_file_exclusions_report(request, exclusions, |_, clean, report, _credit| {
+                crate::daemon::control::begin_publication()?;
+                report.publish(output)?;
+                Ok(clean)
+            });
+        }
         self.with_original_exclusions_report(request, exclusions, |_, _, clean, staged_diagnostics, report, _credit| {
             crate::daemon::control::begin_publication()?;
             if let Some(staged) = staged_diagnostics {
@@ -1644,6 +1652,46 @@ impl BuildHost {
             report.publish(output)?;
             Ok(clean)
         })
+    }
+
+    /// Closed Analyze-only raw-file roster. This prepares no compiler model and
+    /// issues a RawQueryPrepared outcome for the later distinct wire route.
+    pub(crate) fn with_raw_file_exclusions_report<T>(
+        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String],
+        finish: impl FnOnce(&crate::request::BuildOutcome, bool, crate::selected_report_spool::Verified,
+            dm_preprocess::source_arena_credit::SourceArenaCredit) -> std::io::Result<T>,
+    ) -> Result<T, Box<dyn std::error::Error>> {
+        use crate::daemon::{control, prepare_deadline};
+        use dq_analyze::{captured_generator_budget::Budget, selected_exclusions_wire::Roster};
+        use std::io;
+        if !self.retains_artifacts() { return Err(original_exclusions_invalid().into()); }
+        let plan = Self::plan_original_exclusions(exclusions, SelectedReportMode::Ordinary)?;
+        if plan.roster() != Roster::AllRawFilePolicies { return Err(original_exclusions_invalid().into()); }
+        let (workspace, cache) = original_exclusions_shape(&request, plan.roster())?;
+        let _deadline = if control::WorkerContext::capture().is_none() {
+            prepare_deadline::capture(request.command, request.timeout_seconds, std::time::Instant::now())?
+                .map(|deadline| control::bind_with_deadline(control::Cancellation::default(), deadline))
+        } else { None };
+        control::checkpoint()?;
+        let metadata = workspace.recursive_roots.iter().map(|path| path.as_os_str())
+            .chain([cache.as_os_str(), request.project.as_os_str(), workspace.root.as_os_str(), workspace.configuration.as_os_str()])
+            .try_fold(0usize, |total, value| total.checked_add(value.len()))
+            .and_then(|n| n.checked_mul(32)).and_then(|n| n.checked_add(32 * 1024))
+            .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
+        let total = SELECTED_REPORT_RETAINED.checked_add(metadata).ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
+        let credit = self.source_arena_work().reserve(total)?;
+        let (root, physical_cache) = Self::original_exclusions_paths(&request, plan.roster())?;
+        request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary =
+            vec![crate::policy_request::WorkspaceAuxiliaryQuestion::AllRawFilePolicies];
+        let retained = Budget::new(SELECTED_REPORT_RETAINED).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+        let stage = crate::selected_report_spool::Stage::new(&physical_cache)?;
+        let prepared = crate::request_runner::run_build_with_host(request, self)?;
+        let (clean, verified) = {
+            let state = self.query_state.try_lock().map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "selected raw-file query state is borrowed"))?;
+            let raw = state.raw_snapshot.as_ref().ok_or_else(|| io::Error::other("selected raw-file report has no current source-only snapshot"))?;
+            raw.stage_raw_file_report(&prepared, exclusions, &retained, &root, &plan, stage)?
+        };
+        Ok(finish(&prepared, clean, verified, credit)?)
     }
 
     /// One actual complete Original source preparation, with separately

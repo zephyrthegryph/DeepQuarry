@@ -73,10 +73,15 @@ mod tests {
     }
 }
 
+enum CompletedFrame {
+    Semantic(wire::Frame),
+    Raw(wire::RawFrame),
+}
+
 pub(super) struct Completed {
     roster: wire::Roster,
     mode: Mode,
-    frame: wire::Frame,
+    frame: CompletedFrame,
     clean: bool,
     diagnostics: Option<Verified>,
     checker: Option<(dq_analyze::selected_exclusions_wire::Frame, Verified)>,
@@ -86,22 +91,30 @@ pub(super) struct Completed {
 
 impl Completed {
     pub(super) fn stage(host: &mut BuildHost, build: BuildRequest, roster: wire::Roster, exclusions: &[String], mode: Mode) -> Result<Self, Box<dyn Error>> {
+        if roster == wire::Roster::AllRawFilePolicies && mode == Mode::Ordinary {
+            return host.with_raw_file_exclusions_report(build, exclusions, |prepared, clean, report, credit| {
+                let frame = CompletedFrame::Raw(wire::RawFrame::from_prepared(prepared)?);
+                Ok(Self { roster, mode, frame, clean, diagnostics: None, checker: None, report, _credit: credit })
+            });
+        }
         let combined = mode == Mode::Combined;
         host.with_selected_original_reports_using(build, exclusions, mode, |selected, prepared, clean, diagnostics, checker, report, credit| {
             if selected != roster || checker.is_some() != combined {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "staged exclusions differ from the admitted roster"));
             }
-            let frame = wire::Frame::from_prepared(prepared)?;
+            let frame = CompletedFrame::Semantic(wire::Frame::from_prepared(prepared)?);
             Ok(Self { roster, mode, frame, clean, diagnostics, checker, report, _credit: credit })
         })
     }
 
     pub(super) fn send(self, stream: &mut impl Write, work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork) -> Result<(), wire::SendFailure> {
         let Self { roster, mode, frame, clean, diagnostics, checker, report, _credit } = self;
-        match (mode, checker) {
-            (Mode::Combined, Some(checker)) => wire::send_combined(stream, roster, frame, clean, diagnostics, checker, report, work),
-            (Mode::Ordinary, None) => wire::send(stream, roster, frame, clean, diagnostics, report, work),
-            (Mode::GenericV2(judgment), None) => wire::send_v2(stream, roster, frame, clean, diagnostics, report, work, judgment),
+        match (mode, checker, frame) {
+            (Mode::Combined, Some(checker), CompletedFrame::Semantic(frame)) => wire::send_combined(stream, roster, frame, clean, diagnostics, checker, report, work),
+            (Mode::Ordinary, None, CompletedFrame::Raw(frame)) if roster == wire::Roster::AllRawFilePolicies && diagnostics.is_none() =>
+                wire::send_raw_selected(stream, frame, clean, report, work),
+            (Mode::Ordinary, None, CompletedFrame::Semantic(frame)) => wire::send(stream, roster, frame, clean, diagnostics, report, work),
+            (Mode::GenericV2(judgment), None, CompletedFrame::Semantic(frame)) => wire::send_v2(stream, roster, frame, clean, diagnostics, report, work, judgment),
             _ => Err(wire::SendFailure::BeforePublication(io::Error::other("selected report checker transcript differs from its mode"))),
         }
     }
@@ -147,8 +160,13 @@ fn run_request_mode(request: Request, mode: Mode) -> Result<bool, Box<dyn Error>
         }
         Mode::Ordinary => {
             protocol::send(&mut stream, &protocol::Request::SelectedExclusions(request))?;
-            let report = wire::receive(&mut stream, &cache, roster)?;
-            Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
+            if roster == wire::Roster::AllRawFilePolicies {
+                let report = wire::receive_raw_selected(&mut stream, &cache)?;
+                Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
+            } else {
+                let report = wire::receive(&mut stream, &cache, roster)?;
+                Ok(report.publish(&mut io::stderr().lock(), &mut io::stdout().lock())?)
+            }
         }
         Mode::GenericV2(judgment) => {
             let request = RequestV2 { build: request.build, exclusions: request.exclusions, judgment };

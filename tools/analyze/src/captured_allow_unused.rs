@@ -24,7 +24,8 @@ pub fn registered_full_selection(exclusions:&[String],c:&mut impl Control<Error=
 }
 /// Cross-fold run coordinates DATA. Equality is only a consistency check: hashes
 /// never issue authority. The actual native full-run owner must bind all three.
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct FrameData{pub semantic:u128,pub source:u128,pub configuration:u128}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum FrameOwner{Semantic(u128),RawQuery(u128)}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct FrameData{pub owner:FrameOwner,pub source:u128,pub configuration:u128}
 /// Operation-local aggregation of the actual policy folds' ALLOW outputs.
 /// No manager/cache/source text/model is retained. This DATA cannot authorize
 /// a partial/exclusive snapshot to masquerade as an all-selected-policy run.

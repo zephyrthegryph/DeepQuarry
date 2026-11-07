@@ -2067,7 +2067,7 @@ fn public_selected_all_raw_files_match_standalone_report_and_discovery() {
     use dq_analyze::{
         captured_allow_annotations::{full_unused, Operation},
         captured_generator_budget::Budget,
-        selected_exclusions_wire::{Terminal, Roster},
+        selected_exclusions_wire::{RawSelectedTerminal, Roster},
     };
     use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
     let oracle = PathBuf::from(std::env::var_os("DQ_SELECTED_ALL_RAW_ORACLE")
@@ -2080,7 +2080,6 @@ fn public_selected_all_raw_files_match_standalone_report_and_discovery() {
         namespace: format!("selected-all-raw-{}-{}", std::process::id(),
             SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
     };
-    put(&root, "deepquarry.dme", "#include \"code/compiled.dm\"\n");
     put(&root, "code/compiled.dm", "/proc/probe()\n    return\n");
     put(&root, "modular_chomp/.hidden/break.dm", "/obj/probe/proc/set_broken()\n    return\n");
     put(&root, "interface/verb.dm", "/mob/verb/probe()\n    set category = \"Raw\"\n");
@@ -2113,20 +2112,37 @@ fn public_selected_all_raw_files_match_standalone_report_and_discovery() {
     })).unwrap());
     let native = transport.join("native-report.txt");
     let mut initial = None;
-    for (stage, exempt) in [(0, false), (1, false), (2, true)] {
+    let mut original_frame = None;
+    let mut configured_frame = None;
+    for (stage, exempt) in [(0, false), (1, false), (2, false), (3, true), (4, true)] {
+        match stage {
+            0 | 3 => (),
+            1 => put(&root, "deepquarry.dme", "#include \"missing-compile-only.dm\"\n"),
+            2 => {
+                std::fs::remove_file(root.join("deepquarry.dme")).unwrap();
+                std::fs::create_dir(root.join("deepquarry.dme")).unwrap();
+            }
+            4 => put(&root, "code/edited-source.dm", "// new selected original source\n"),
+            _ => unreachable!(),
+        }
         let overlay = if exempt {
             "[lint.verb_category]\nexempt_files=['interface/verb.dm']\n"
         } else {
             "[lint.verb_category]\nexempt_files=[]\n"
         };
-        put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(overlay));
+        if matches!(stage, 0 | 3) {
+            put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(overlay));
+        }
         let output = daemon.run(
             &[OsStr::new("analyze-exclusions"), request_path.as_os_str(), OsStr::new("--report-batch")],
             Duration::from_secs(90),
         ).unwrap();
         assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
         let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
-        let terminal: Terminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+        let header = &output.stdout[..header_end];
+        assert!(serde_json::from_slice::<dq_analyze::selected_exclusions_wire::Terminal>(header).is_err());
+        let terminal: RawSelectedTerminal = serde_json::from_slice(header).unwrap();
+        assert!(output.stderr.is_empty());
         terminal.require(roster).unwrap();
         assert_eq!(terminal.roster, roster);
         assert!(!terminal.clean);
@@ -2140,8 +2156,20 @@ fn public_selected_all_raw_files_match_standalone_report_and_discovery() {
         assert_eq!(text.contains("interface/verb.dm:2: [verb_category/raw_category]"), !exempt, "{text}");
         assert!(text.contains("maps/unused.dm:2: ALLOW(scheduler) is unused"), "{text}");
         assert!(text.contains("allow annotations: 1 unused"), "{text}");
-        if stage == 0 { initial = Some(report.to_vec()); }
-        if stage == 1 { assert_eq!(report, initial.as_deref().unwrap()); }
+        if stage == 0 {
+            initial = Some(report.to_vec());
+            original_frame = Some(terminal.frame);
+        } else if stage <= 2 {
+            assert_eq!(report, initial.as_deref().unwrap());
+            assert_eq!(terminal.frame.source_revision, original_frame.unwrap().source_revision);
+            assert_eq!(terminal.frame.policy_revision, original_frame.unwrap().policy_revision);
+        } else if stage == 3 {
+            assert_ne!(terminal.frame.policy_revision, original_frame.unwrap().policy_revision);
+            configured_frame = Some(terminal.frame);
+        } else {
+            assert_ne!(terminal.frame.source_revision, configured_frame.unwrap().source_revision);
+            assert_ne!(terminal.frame.policy_revision, configured_frame.unwrap().policy_revision);
+        }
         std::fs::write(&native, report).unwrap();
         let reference = daemon.run_program(&oracle, &[root.as_os_str(), native.as_os_str()], Duration::from_secs(45)).unwrap();
         assert!(reference.status.success(), "{}", String::from_utf8_lossy(&reference.stderr));
@@ -2380,4 +2408,64 @@ fn public_selected_workspace_folds_match_standalone_report_with_nonempty_fixture
         assert!(reference.status.success(), "{policy}: {}", String::from_utf8_lossy(&reference.stderr));
         assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
     }
+}
+
+#[test]
+fn selected_raw_file_report_ignores_absent_malformed_and_directory_dme_without_model() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::Roster,
+    };
+    let root = test_scratch::dir("raw-file-report-no-model");
+    put(&root, "code/used.dm",
+        "/proc/used()\n    sleep(1) // ALLOW(scheduler): this source-only fixture consumes the actual annotation\n");
+    put(&root, "maps/unused.dm",
+        "/proc/stale()\n    return // ALLOW(scheduler): this authored annotation must stay unused\n");
+    put(&root, "interface/verb.dm", "/mob/verb/probe()\n    set category = \"Raw\"\n");
+    put(&root, "modular_chomp/.hidden/break.dm", "/obj/probe/proc/set_broken()\n    return\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let mut request = request(&root, Q::DocSnippets);
+    request.cache_root = Some(test_scratch::dir("raw-file-report-no-model-cache"));
+    let intent = request.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    let workspace = intent.workspace.as_mut().unwrap();
+    let roster = Roster::AllRawFilePolicies;
+    workspace.recursive_roots = roster.workspace_roots().iter().map(|name| root.join(name)).collect();
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let mut host = BuildHost::default();
+    let prepared_bytes = |host: &BuildHost| host.prepared_source_retention_census()
+        .map(|census| (census.unique_known_capacity_bytes, census.unknown_capacity_payload_bytes));
+    let initial_prepared_bytes = prepared_bytes(&host);
+    let mut initial = None;
+    for stage in 0..3 {
+        match stage {
+            0 => (),
+            1 => put(&root, "deepquarry.dme", "#include \"must-never-open.dm\"\n"),
+            2 => {
+                std::fs::remove_file(root.join("deepquarry.dme")).unwrap();
+                std::fs::create_dir(root.join("deepquarry.dme")).unwrap();
+            }
+            _ => unreachable!(),
+        }
+        let (mut diagnostics, mut report) = (Vec::new(), Vec::new());
+        assert!(!host.write_original_exclusions_report(request.clone(), &exclusions,
+            &mut diagnostics, &mut report).unwrap());
+        assert!(diagnostics.is_empty());
+        assert_eq!(host.declaration_retention_stats().map_or(0, |stats| stats.current_keys), 0);
+        assert_eq!(prepared_bytes(&host), initial_prepared_bytes);
+        assert!(host.symbolic_retention_stats().is_none());
+        let text = std::str::from_utf8(&report).unwrap();
+        assert!(text.contains("modular_chomp/.hidden/break.dm:1: [breakpoint/set_broken]"), "{text}");
+        assert!(text.contains("interface/verb.dm:2: [verb_category/raw_category]"), "{text}");
+        assert!(text.contains("maps/unused.dm:2: ALLOW(scheduler) is unused"), "{text}");
+        assert!(!text.contains("code/used.dm:"), "{text}");
+        if stage == 0 { initial = Some(report); }
+        else { assert_eq!(initial.as_deref(), Some(report.as_slice())); }
+    }
+    assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
 }

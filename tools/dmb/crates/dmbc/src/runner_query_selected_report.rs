@@ -477,6 +477,98 @@ impl ReportStage<'_> {
     }
 }
 
+impl super::super::RawWorkspaceSnapshot {
+    pub(in crate::runner_host) fn stage_raw_file_report(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, plan: &SelectedReportPlan, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        use crate::{request::BuildOutcome, runner_host::workspace_capture::RawSourcePurpose};
+        use dq_analyze::captured_allow_annotations::full_unused::{FrameData, FrameOwner, SelectedTreePlanData, UsageJoinData};
+        let BuildOutcome::RawQueryPrepared { query_revision, source_revision, policy_revision, retained: true } = prepared else {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "selected raw-file preparation did not issue a current source-only frame"));
+        };
+        let pin = |text: &str| u128::from_str_radix(text, 16).ok();
+        let capture = &self.capture;
+        let queries = &self.queries;
+        let roster = Roster::AllRawFilePolicies;
+        if plan.roster() != roster || !plan.judgment.is_raw()
+            || self.source.purpose() != RawSourcePurpose::AllRawFilePolicies
+            || capture.root() != root || capture.configuration().1.is_none()
+            || !capture.matches_auxiliary_questions(&[Q::AllRawFilePolicies])
+            || pin(query_revision) != Some(self.revision())
+            || pin(source_revision) != Some(self.source_revision())
+            || pin(policy_revision) != Some(self.policy_revision())
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "selected raw-file preparation differs from the actual workspace frame"));
+        }
+        let guard = super::super::workspace_native_guard::NativeReadGuard::raw_owned(capture, &self.source, queries)?;
+        let poll = || {
+            retained.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+            crate::daemon::control::checkpoint()?;
+            capture.require_scope(&guard)
+        };
+        queries.require_workspace_report_configuration(capture, &guard).map_err(operational)?;
+        let mut work = Operation { budget: retained, poll: &poll };
+        let selection = full_unused::registered_full_selection(exclusions, &mut work).map_err(operational)?;
+        if !selection.names().iter().map(String::as_str).eq(roster.names().iter().copied()) {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "raw-file scope differs from the registered selected report"));
+        }
+        let producer = |name| Producer::from_name(name).expect("selected raw roster already admitted");
+        let selected_tree = SelectedTreePlanData::new(roster.names().iter().map(|&name| producer(name).metadata().select), &mut work)
+            .map_err(operational)?;
+        let frame = FrameData {
+            owner: FrameOwner::RawQuery(self.revision()),
+            source: self.source_revision(),
+            configuration: self.policy_revision(),
+        };
+        let mut usage = UsageJoinData::new(&selection, frame);
+        let mut stage = ReportStage {
+            file, finished: 0, selected: roster.names(), failed: [false; Roster::MAX_STAGED_POLICIES],
+            judgment: plan.judgment, library_baseline: None,
+        };
+        for &name in roster.names() {
+            poll()?;
+            let producer = producer(name);
+            let meta = producer.metadata();
+            match producer {
+                Producer::Raw(_) if producer.question().is_none() => {
+                    queries.with_workspace_raw_union_rows(capture, &guard, name, retained, true, |rows, allows, report| {
+                        let (scope, child) = report.ok_or_else(|| io::Error::other("raw-file producer omitted its report scope"))?;
+                        stage.observe(root, meta, ReportRows::Union(UnionRows::Raw(rows)), scope, child)?;
+                        usage.record_fold_iter(name, frame, allows, &mut work).map_err(operational)
+                    })?;
+                }
+                Producer::Tree(policy @ (dq_analyze::captured_raw_tree_pages::Policy::NoticePublisher
+                    | dq_analyze::captured_raw_tree_pages::Policy::ReportInCatch)) => {
+                    queries.with_workspace_raw_tree(capture, &guard, policy, |data, config, child| {
+                        let empty = LintScope::default();
+                        let scope = config.borrowed_report_scope(meta.name, meta.group).unwrap_or(&empty);
+                        stage.observe(root, meta, ReportRows::Union(UnionRows::Tree(data)), scope, child)?;
+                        usage.record_fold(name, frame, data.allow_used(), &mut work).map_err(operational)
+                    }).map_err(operational)?;
+                }
+                Producer::Special("allow_annotations") => {
+                    queries.with_workspace_allow_annotations(capture, &guard, |data, config, child| {
+                        let empty = LintScope::default();
+                        let scope = config.borrowed_report_scope(meta.name, meta.group).unwrap_or(&empty);
+                        stage.observe(root, meta, ReportRows::Union(UnionRows::Validation(data)), scope, child)?;
+                        usage.record_fold(name, frame, &[], &mut work).map_err(operational)
+                    }).map_err(operational)?;
+                }
+                _ => return Err(io::Error::new(io::ErrorKind::Unsupported, "raw-file roster contains a model or foreign producer")),
+            }
+        }
+        let completed = usage.finish_data(&mut work).map_err(operational)?;
+        let clean = queries.with_workspace_full_allow_unused(capture, &guard, &selected_tree, &completed, |unused, _, budget| {
+            poll()?;
+            stage.finish(&CompleteAllowRun { selected: selection.names(), validation: None, unused }, budget)
+        }).map_err(operational)?;
+        let output = checked_stage(stage.file)?;
+        poll()?;
+        Ok((clean, output))
+    }
+}
+
 impl SourceSnapshot {
     pub(in crate::runner_host) fn stage_selected_report(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,

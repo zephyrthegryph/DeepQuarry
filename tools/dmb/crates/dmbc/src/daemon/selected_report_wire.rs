@@ -15,7 +15,7 @@ use std::{
 
 use super::{control, protocol, selected_exclusions::Mode};
 use dq_analyze::selected_exclusions_wire::{
-    CombinedSchema, CombinedTerminal, Frame as WireFrame, Hex128, NamedImageDirTerminal, JudgmentV2, Seal, Schema, SchemaV2, SelectedPoliciesV2, Terminal, TerminalV2, MAX_HEADER, MAX_STREAM,
+    CombinedSchema, CombinedTerminal, Frame as WireFrame, Hex128, NamedImageDirTerminal, JudgmentV2, RawSelectedFrame, RawSelectedSchema, RawSelectedTerminal, Seal, Schema, SchemaV2, SelectedPoliciesV2, Terminal, TerminalV2, MAX_HEADER, MAX_STREAM,
 };
 pub(crate) use dq_analyze::selected_exclusions_wire::Roster;
 
@@ -114,6 +114,22 @@ impl CompoundTerminal {
     }
 }
 
+/// Only an actual retained raw-query outcome can issue a source-only frame.
+pub(crate) struct RawFrame(RawSelectedFrame);
+impl RawFrame {
+    pub(crate) fn from_prepared(prepared: &BuildOutcome) -> io::Result<Self> {
+        let BuildOutcome::RawQueryPrepared { query_revision, source_revision, policy_revision, retained: true } = prepared else {
+            return Err(invalid("raw selected report requires actual retained raw preparation"));
+        };
+        let pin = |value: &str| Hex128::parse(value).ok_or_else(|| invalid("raw selected preparation has an invalid revision"));
+        Ok(Self(RawSelectedFrame {
+            query_revision: pin(query_revision)?,
+            source_revision: pin(source_revision)?,
+            policy_revision: pin(policy_revision)?,
+        }))
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum Channel {
@@ -130,6 +146,7 @@ fn seal_of(file: &Verified) -> Seal {
 enum SendReply<'a> {
     SelectedReportFragment { channel: Channel, sequence: u32, offset: u64, bytes: &'a [u8] },
     SelectedReportFinished(Terminal),
+    RawSelectedReportFinished(RawSelectedTerminal),
     SelectedReportV2Finished(TerminalV2),
     SelectedCombinedReportFinished(CombinedTerminal),
     SelectedCompilationFinished(CompoundTerminal),
@@ -180,6 +197,24 @@ pub(crate) fn send(
     diagnostics: Option<Verified>, report: Verified, work: &dyn SourceArenaWork,
 ) -> Result<(), SendFailure> {
     send_with_checker(stream, roster, frame, clean, diagnostics, None, report, work, None, None)
+}
+
+pub(crate) fn send_raw_selected(
+    stream: &mut impl Write, frame: RawFrame, clean: bool,
+    report: Verified, work: &dyn SourceArenaWork,
+) -> Result<(), SendFailure> {
+    let terminal = RawSelectedTerminal {
+        schema: RawSelectedSchema::V1, roster: Roster::AllRawFilePolicies,
+        frame: frame.0, clean, report: seal_of(&report),
+    };
+    terminal.require(Roster::AllRawFilePolicies).map_err(SendFailure::BeforePublication)?;
+    encode_header(&terminal).map_err(SendFailure::BeforePublication)?;
+    let _frame = work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
+    control::begin_publication().map_err(SendFailure::BeforePublication)?;
+    report.publish(&mut FragmentWriter { stream, channel: Channel::Report, sequence: 0, offset: 0 })
+        .map_err(SendFailure::AfterPublication)?;
+    protocol::send(stream, &SendReply::RawSelectedReportFinished(terminal))
+        .map_err(SendFailure::AfterPublication)
 }
 
 pub(crate) fn send_combined(
@@ -338,6 +373,7 @@ enum ReceiveReply {
     Rejected(Rejection),
     SelectedReportFragment(Fragment),
     SelectedReportFinished(Terminal),
+    RawSelectedReportFinished(RawSelectedTerminal),
     SelectedReportV2Finished(TerminalV2),
     SelectedCombinedReportFinished(CombinedTerminal),
     SelectedCompilationFinished(CompoundTerminal),
@@ -398,6 +434,13 @@ impl Delivered {
     }
 }
 impl Delivered<TerminalV2> {
+    pub(crate) fn publish(self, diagnostics: &mut impl Write, output: &mut impl Write) -> io::Result<bool> {
+        let clean = self.terminal.clean;
+        self.publish_analyze(diagnostics, output)?;
+        Ok(clean)
+    }
+}
+impl Delivered<RawSelectedTerminal> {
     pub(crate) fn publish(self, diagnostics: &mut impl Write, output: &mut impl Write) -> io::Result<bool> {
         let clean = self.terminal.clean;
         self.publish_analyze(diagnostics, output)?;
@@ -470,6 +513,30 @@ pub(crate) fn receive(stream: &mut impl Read, cache: &Path, expected: Roster) ->
     match receive_mode(stream, cache, expected, Mode::Ordinary, false)? {
         Received::Ordinary(delivered) => Ok(delivered),
         _ => Err(invalid("unexpected selected report terminal version").into()),
+    }
+}
+
+pub(crate) fn receive_raw_selected(
+    stream: &mut impl Read, cache: &Path,
+) -> Result<Delivered<RawSelectedTerminal>, Box<dyn Error>> {
+    let mut report = Collector::default();
+    let mut accepted = false;
+    loop {
+        control::checkpoint()?;
+        match protocol::receive_bounded::<ReceiveReply>(stream, protocol::MAX_FRAME)? {
+            ReceiveReply::Accepted if !accepted => accepted = true,
+            ReceiveReply::Rejected(error) if report.next == 0 =>
+                return Err(RequestFailure { kind: error.kind, message: error.message }.into()),
+            ReceiveReply::SelectedReportFragment(fragment) if accepted && fragment.channel == Channel::Report =>
+                report.push(cache, &fragment)?,
+            ReceiveReply::RawSelectedReportFinished(terminal) if accepted => {
+                terminal.require(Roster::AllRawFilePolicies)?;
+                require_end(stream)?;
+                let report = report.finish(Some(terminal.report))?.ok_or_else(|| invalid("raw selected report has no body"))?;
+                return Ok(Delivered { terminal, diagnostics: None, report });
+            }
+            _ => return Err(invalid("unexpected raw selected report response or channel").into()),
+        }
     }
 }
 

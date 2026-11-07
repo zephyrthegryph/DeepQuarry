@@ -1,7 +1,7 @@
 //! Bounded opt-in subprocess client for resident named and selected reports.
 //! The child owns request parsing, source capture and the actual policy run.
 use super::{capture_command, OUTER_WATCHDOG};
-use crate::selected_exclusions_wire::{Hex128, NamedImageDirTerminal, Roster, Seal, Terminal, MAX_HEADER, MAX_STREAM};
+use crate::selected_exclusions_wire::{Hex128, NamedImageDirTerminal, RawSelectedTerminal, Roster, Seal, Terminal, MAX_HEADER, MAX_STREAM};
 use std::{
     fs::{self, File, OpenOptions},
     io::{self, BufReader, Read, Seek, Write},
@@ -202,6 +202,13 @@ fn capture_stdout(input: impl Read, root: &Path, expected: Roster) -> io::Result
     capture_batch(input, root, |header: &Terminal| { header.require(expected)?; Ok(header.report) })
 }
 
+fn capture_raw_selected_stdout(input: impl Read, root: &Path) -> io::Result<Option<Stdout<RawSelectedTerminal>>> {
+    capture_batch(input, root, |header: &RawSelectedTerminal| {
+        header.require(Roster::AllRawFilePolicies)?;
+        Ok(header.report)
+    })
+}
+
 fn capture_image_dir_stdout(input: impl Read, root: &Path) -> io::Result<Option<Stdout<NamedImageDirTerminal>>> {
     capture_batch(input, root, |header: &NamedImageDirTerminal| { header.require()?; Ok(header.report) })
 }
@@ -227,6 +234,27 @@ fn deliver(
         (status, None) => {
             // A genuine operational refusal has no stdout envelope. Keep
             // its separate error diagnostic and the cancellation status.
+            stderr.publish(diagnostics)?;
+            Ok(if status == Some(75) { 75 } else { 2 })
+        }
+    }
+}
+
+fn deliver_raw_selected(
+    status: Option<i32>, stdout: Option<Stdout<RawSelectedTerminal>>, stderr: Captured,
+    output: &mut impl Write, diagnostics: &mut impl Write,
+) -> io::Result<u8> {
+    match (status, stdout) {
+        (Some(code @ (0 | 1)), Some(batch)) => {
+            if batch.header.clean != (code == 0) || stderr.seal.length != 0 {
+                return Err(invalid("source-only batch status differs or has unexpected diagnostics"));
+            }
+            output.write_all(&batch.bytes[..batch.length])?;
+            batch.report.publish(output)?;
+            Ok(code as u8)
+        }
+        (Some(0 | 1), None) | (_, Some(_)) => Err(invalid("source-only process status lacks its matching batch")),
+        (status, None) => {
             stderr.publish(diagnostics)?;
             Ok(if status == Some(75) { 75 } else { 2 })
         }
@@ -264,6 +292,11 @@ fn run_cli(args: &[String], role: Role, output: &mut impl Write, diagnostics: &m
     let stderr_root = scratch.clone();
     let read_stderr = move |mut stderr| Captured::read(&mut stderr, &stderr_root, MAX_STREAM);
     match selection {
+        Selection::Exclusions(Roster::AllRawFilePolicies) => {
+            let (status, stdout, stderr) = capture_command(command, OUTER_WATCHDOG,
+                move |stdout| capture_raw_selected_stdout(stdout, &scratch), read_stderr)?;
+            deliver_raw_selected(status.code(), stdout, stderr, output, diagnostics)
+        }
         Selection::Exclusions(roster) => {
             let (status, stdout, stderr) = capture_command(command, OUTER_WATCHDOG,
                 move |stdout| capture_stdout(stdout, &scratch, roster), read_stderr)?;
