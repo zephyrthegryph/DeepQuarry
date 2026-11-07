@@ -14,6 +14,7 @@ impl CompleteAllowRun<'_>{pub(crate) fn selected(&self)->&[String]{self.selected
 enum UnionRows<'a,'rows>{
  Raw(&'a mut dyn Iterator<Item=&'rows dq_analyze::captured_raw_file::Findings>),
  Tree(&'a dq_analyze::captured_raw_tree_pages::Data),
+ Fold(dq_analyze::workspace_fold_policy::Policy, &'a dq_analyze::workspace_fold_policy::Data<'rows>),
  Silicon(&'a dq_analyze::captured_silicon_entry::Data),
  LibraryLayering(&'a dq_analyze::captured_engine_layering_pages::LayeringData),
  Handlers(&'a dq_analyze::captured_sem_handlers::Data),
@@ -47,10 +48,12 @@ impl Producer{
  }}
  fn name(self)->&'static str{match self{Self::Raw(name)|Self::Special(name)=>name,Self::Tree(policy)=>policy.name(),Self::Fold(policy)=>policy.name()}}
  fn stages_report(self)->bool {
-  use dq_analyze::captured_raw_tree_pages::Policy;
+  use dq_analyze::{captured_raw_tree_pages::Policy, workspace_fold_policy::Policy as Fold};
   matches!(self,
-   Self::Raw(_) | Self::Tree(Policy::NoticePublisher | Policy::ReportInCatch | Policy::Cooldown
-      | Policy::CapBits | Policy::DeclarationBlock | Policy::DuplicateInputKey)
+   Self::Raw(_) | Self::Fold(Fold::StateSchema | Fold::Lifecycle | Fold::Loot | Fold::InstanceList | Fold::Cache | Fold::OwnershipForms | Fold::Api | Fold::Fields | Fold::Appearance)
+   | Self::Tree(Policy::NoticePublisher | Policy::ReportInCatch | Policy::Cooldown
+      | Policy::CapBits | Policy::DeclarationBlock | Policy::DuplicateInputKey
+      | Policy::Interactions | Policy::Latent | Policy::Pollers | Policy::Pool | Policy::ReadBack)
    | Self::Special("allow_annotations" | "silicon_entry" | "library_layering" | "sem/handlers"
       | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped" | "derived_reads" | "sys/dx_reactive" | "lifeforms" | "player_link" | "untyped_member" | "weak_raw_read" | "rel_write_undeclared" | "requirement_bool" | "base_vars" | "decl" | "init")
   )
@@ -94,7 +97,18 @@ impl SourceSnapshot{
      }
     },
     Producer::Tree(policy)=>{self.with_native_raw_tree(tree,policy,|data,config,child|{if let Some(stage)=stage.as_deref_mut(){let meta=producer.metadata();let default=dq_analyze::scopes::LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&default);stage(meta,UnionRows::Tree(data),scope,child)?}record(data.allow_used())})?;},
-    Producer::Fold(policy)=>{self.with_native_workspace_fold_report(tree,policy,|data,_,_|record(data.allow_used()))?;},
+    Producer::Fold(policy)=>{
+     self.with_native_workspace_fold_report(tree,policy,|data,config,child_budget|{
+      let allows=data.allow_used();
+      if let Some(stage)=stage.as_deref_mut(){
+       let meta=producer.metadata();
+       let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::Fold(policy,&data),scope,child_budget)?;
+      }
+      record(allows)
+     })?;
+    },
     Producer::Special("allow_annotations")=>{self.with_native_allow_annotations(tree,|data,config,child|{
      if let Some(stage)=stage.as_deref_mut(){let meta=producer.metadata();let default=dq_analyze::scopes::LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&default);stage(meta,UnionRows::Validation(data),scope,child)?}
      else{validation=Some(copy_validation(data,&mut c).map_err(operational)?);}

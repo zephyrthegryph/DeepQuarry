@@ -32,7 +32,7 @@ impl Destination {
         if !prepare.no_cache || prepare.warnings != crate::diagnostics::WarningPolicy::default() {
             return Err(invalid("compound request requires explicit no-cache and default warning settings"));
         }
-        let (workspace, cache) = BuildHost::original_exclusions_paths(prepare)?;
+        let (workspace, cache) = BuildHost::original_exclusions_paths(prepare, wire::Roster::Base)?;
         let workspace = fs::canonicalize(workspace)?;
         if workspace.starts_with(&cache) {
             return Err(invalid("compound cache must be disjoint from the workspace"));

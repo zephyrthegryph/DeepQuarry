@@ -27,6 +27,9 @@ pub(in crate::runner_host) struct SelectedReportPlan {
 
 impl SelectedReportPlan {
     fn for_roster(roster: Roster, judgment: JudgmentV2, control: &mut Operation<'_>) -> io::Result<Self> {
+        if roster.names().len() > Roster::MAX_STAGED_POLICIES {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report sections exceed the staged bound"));
+        }
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
             Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
@@ -177,7 +180,7 @@ struct ReportStage<'a> {
     file: Stage,
     finished: usize,
     selected: &'static [&'static str],
-    failed: [bool; Roster::MAX_POLICIES],
+    failed: [bool; Roster::MAX_STAGED_POLICIES],
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
@@ -214,6 +217,41 @@ impl ReportStage<'_> {
                 }
                 projection.notes(&file.run.notes, &mut control)?;
             },
+            UnionRows::Fold(policy, data) => {
+                use dq_analyze::workspace_fold_policy::{Data, Policy as Fold};
+                let compatible = matches!((policy, data),
+                    (Fold::StateSchema, Data::StateSchema(_)) |
+                    (Fold::Lifecycle, Data::Lifecycle(_)) |
+                    (Fold::Loot, Data::Loot(_)) |
+                    (Fold::InstanceList, Data::InstanceList(_)) |
+                    (Fold::Cache, Data::Cache(_)) |
+                    (Fold::OwnershipForms, Data::OwnershipForms(_)) |
+                    (Fold::Api, Data::Api(_)) |
+                    (Fold::Fields, Data::Fields(_)) |
+                    (Fold::Appearance, Data::Appearance(_)));
+                if self.selected != Roster::WithWorkspaceFoldPolicies.names()
+                    || !compatible || !std::ptr::eq(meta, policy.metadata())
+                    || !matches!(meta.policy, Policy::Hard)
+                {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData,
+                        "selected fold findings differ from their admitted Hard policy"));
+                }
+                match data.source_text() {
+                    None if policy.message_only() => {
+                        for site in data.sites() {
+                            projection.row(site, None, &mut control)?;
+                        }
+                    }
+                    Some(text) if !policy.message_only() && data.sites().len() == text.len() => {
+                        for (site, text) in data.sites().iter().zip(text) {
+                            projection.row(site, Some(text), &mut control)?;
+                        }
+                    }
+                    _ => return Err(io::Error::new(io::ErrorKind::InvalidData,
+                        "selected fold findings lack their actual source or message shape")),
+                }
+                projection.notes(data.notes(), &mut control)?;
+            }
             UnionRows::Tree(tree) => {
                 if tree.message_only() {
                     if !matches!(meta.policy, Policy::Hard) || !tree.source_text().is_empty() {
@@ -462,7 +500,7 @@ impl SourceSnapshot {
             Some(workspace.library_sites_baseline(&guard)?)
         } else { None };
         let stage = RefCell::new(ReportStage {
-            file, finished: 0, selected: plan.roster().names(), failed: [false; Roster::MAX_POLICIES],
+            file, finished: 0, selected: plan.roster().names(), failed: [false; Roster::MAX_STAGED_POLICIES],
             judgment: plan.judgment, library_baseline,
         });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
@@ -486,6 +524,9 @@ mod selected_plan_tests {
         let registry = full_unused::registered_full_selection(&[], &mut work).unwrap();
         let expected: [(Roster, &[Q]); Roster::ALL.len()] = [
             (Roster::Base, &[]),
+            (Roster::AllRawFilePolicies, &[]),
+            (Roster::WithWorkspaceFoldPolicies, &[]),
+            (Roster::WithRawRuntimePolicies, &[]),
             (Roster::WithRawDeclarationPolicies, &[]),
             (Roster::WithCooldown, &[]),
             (Roster::WithEngineInternal, &[]),
@@ -505,6 +546,13 @@ mod selected_plan_tests {
             (Roster::WithRequirementBool, &[Q::RequirementBool]),
             (Roster::WithDeclarationPolicies, Q::SELECTED_DECLARATION_POLICIES),
         ];
+        let all_raw = Roster::AllRawFilePolicies.names();
+        for name in dq_analyze::captured_raw_policy::RAW_FILE_LINTS {
+            assert_eq!(all_raw.contains(name), *name != "deadline_polling", "{name}");
+        }
+        assert_eq!(all_raw.len(), Roster::MAX_STAGED_POLICIES);
+        assert!(all_raw.iter().all(|name| Roster::Base.names().contains(name)
+            || dq_analyze::captured_raw_policy::RAW_FILE_LINTS.contains(name)));
         for (roster, questions) in expected {
             let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
                 .map(|name| format!("-{name}")).collect();
@@ -537,7 +585,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         file,
         finished: 0,
         selected: &["image_dir_after_build"],
-        failed: [false; Roster::MAX_POLICIES],
+        failed: [false; Roster::MAX_STAGED_POLICIES],
         judgment: JudgmentV2::Raw,
         library_baseline: None,
     };

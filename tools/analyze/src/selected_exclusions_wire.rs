@@ -30,11 +30,17 @@ pub enum Roster {
     WithRequirementBool,
     WithDeclarationPolicies,
     WithRawDeclarationPolicies,
+    AllRawFilePolicies,
+    WithWorkspaceFoldPolicies,
+    WithRawRuntimePolicies,
 }
 
 impl Roster {
     pub const MAX_POLICIES: usize = 7;
-    pub const ALL: [Self; 19] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies, Self::WithRequirementBool, Self::WithDeclarationPolicies, Self::WithRawDeclarationPolicies];
+    // A V1 alias is a single wire token. This bound is for internal staged
+    // sections only, independent of the V2 array decoder's seven-name cap.
+    pub const MAX_STAGED_POLICIES: usize = 45;
+    pub const ALL: [Self; 22] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies, Self::WithRequirementBool, Self::WithDeclarationPolicies, Self::WithRawDeclarationPolicies, Self::AllRawFilePolicies, Self::WithRawRuntimePolicies, Self::WithWorkspaceFoldPolicies];
 
     /// Independently qualified Analyze-only capture plans.
     pub const GENERIC_V2: [Self; 4] = [
@@ -49,6 +55,13 @@ impl Roster {
         match judgment {
             JudgmentV2::Raw | JudgmentV2::CiCeilings => &Self::GENERIC_V2,
             JudgmentV2::CiLibrarySites => &[Self::WithLibraryLayering],
+        }
+    }
+
+    pub fn workspace_roots(self) -> &'static [&'static str] {
+        match self {
+            Self::AllRawFilePolicies => &["code", "interface", "maps", "modular_chomp"],
+            _ => &["code", "maps"],
         }
     }
 
@@ -71,6 +84,31 @@ impl Roster {
             Self::WithLifeforms => &["allow_annotations", "lifeforms", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithLifeformsAndPlayerLink => &["allow_annotations", "lifeforms", "notice_publisher", "player_link", "report_in_catch", "scheduler"],
             Self::WithReferencePolicies => &["allow_annotations", "notice_publisher", "rel_write_undeclared", "report_in_catch", "scheduler", "untyped_member", "weak_raw_read"],
+            Self::WithRawRuntimePolicies => &[
+                "allow_annotations", "interactions", "latent", "notice_publisher", "pollers",
+                "pool", "read_back", "report_in_catch", "scheduler",
+            ],
+            Self::WithWorkspaceFoldPolicies => &[
+                "allow_annotations", "api", "cache", "instance_list",
+                "lifecycle", "notice_publisher", "report_in_catch", "scheduler",
+                "state_schema", "sys/appearance", "sys/dx_ownership_forms", "sys/fields",
+                "sys/loot",
+            ],
+            Self::AllRawFilePolicies => &[
+                // deadline_polling has its own configuration/allowlist subject.
+                "actor_forwarding", "allow_annotations", "breakpoint", "containment",
+                "dcs", "door_gates", "engine_internal", "entity_ids",
+                "entry_slots", "i7_handler", "in_precedence", "leftovers",
+                "legacy_forms", "lifecycle_counts", "lifeform_allows", "escape_hatches",
+                "mouse_override", "native_ref_write", "notice_publisher", "organ_slots",
+                "qdel_src", "reactions_table_proc", "ref_text", "registry",
+                "report_in_catch", "saved_handle", "scheduler", "silent_catch",
+                "spatial", "stance_examine", "subsystem_fire", "sys/contents",
+                "sys/damage_reactions", "sys/dx_manual_transfer", "sys/dx_raw_delay", "sys/dx_raw_overlays",
+                "sys/dx_review", "sys/emag", "sys/grants", "sys/messages",
+                "sys/presentation", "sys/sync_sql", "sys/topic", "sys/usr_use",
+                "verb_category",
+            ],
             Self::WithRawDeclarationPolicies => &["allow_annotations", "cap_bits", "declaration_block", "duplicate_input_key", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithDeclarationPolicies => &["allow_annotations", "base_vars", "decl", "init", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithRequirementBool => &["allow_annotations", "notice_publisher", "report_in_catch", "requirement_bool", "scheduler"],

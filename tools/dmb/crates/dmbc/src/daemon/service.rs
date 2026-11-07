@@ -1200,8 +1200,8 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 }
             };
             transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
-            if matches!(&report, Some(ReportDispatch::SelectedExclusions { .. })) {
-                if let Err(error) = crate::runner_host::BuildHost::original_exclusions_paths(&request) {
+            if let Some(ReportDispatch::SelectedExclusions { roster, .. }) = &report {
+                if let Err(error) = crate::runner_host::BuildHost::original_exclusions_paths(&request, *roster) {
                     return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)));
                 }
                 if preparation_deadline.is_some_and(|deadline| Instant::now() >= deadline) {

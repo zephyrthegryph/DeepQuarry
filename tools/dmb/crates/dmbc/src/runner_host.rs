@@ -1525,7 +1525,7 @@ fn original_exclusions_invalid() -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::InvalidInput, "selected report requires the exact authored Original workspace request")
 }
 
-fn original_exclusions_shape(request: &crate::request::BuildRequest)
+fn original_exclusions_shape(request: &crate::request::BuildRequest, roster: crate::daemon::selected_report_wire::Roster)
     -> std::io::Result<(&crate::policy_request::WorkspacePolicyRequest, &std::path::Path)>
 {
     use crate::{policy_request::AnalysisContext, request::BuildCommand};
@@ -1541,7 +1541,7 @@ fn original_exclusions_shape(request: &crate::request::BuildRequest)
     if wanted.analysis_context != Some(AnalysisContext::OriginalAnalyze0290) || !wanted.workspace_auxiliary.is_empty()
         || !wanted.workspace_generators.is_empty() || !wanted.files.is_empty() || !wanted.search_folders.is_empty()
         || !workspace.root.is_absolute() || !workspace.configuration.is_absolute()
-        || workspace.recursive_roots.len() != 2 || workspace.recursive_roots.iter().any(|path| !path.is_absolute()) {
+        || workspace.recursive_roots.len() != roster.workspace_roots().len() || workspace.recursive_roots.iter().any(|path| !path.is_absolute()) {
         return Err(original_exclusions_invalid());
     }
     let cache = request.cache_root.as_deref().filter(|path| path.is_absolute()).ok_or_else(original_exclusions_invalid)?;
@@ -1551,13 +1551,15 @@ fn original_exclusions_shape(request: &crate::request::BuildRequest)
 impl BuildHost {
     /// Preflight the wire request before it may supersede another caller. The
     /// producer repeats these path checks under its own resource admission.
-    pub(crate) fn original_exclusions_paths(request: &crate::request::BuildRequest)
+    pub(crate) fn original_exclusions_paths(
+        request: &crate::request::BuildRequest, roster: crate::daemon::selected_report_wire::Roster,
+    )
         -> std::io::Result<(std::path::PathBuf, std::path::PathBuf)>
     {
-        let (_, cache) = original_exclusions_shape(request)?;
+        let (_, cache) = original_exclusions_shape(request, roster)?;
         let intent = request.policy_inputs.as_ref().ok_or_else(original_exclusions_invalid)?.clone().admit()?;
         let workspace = intent.workspace().ok_or_else(original_exclusions_invalid)?;
-        if workspace.recursive_roots.as_slice() != [workspace.root.join("code"), workspace.root.join("maps")]
+        if workspace.recursive_roots.iter().zip(roster.workspace_roots()).any(|(actual, expected)| *actual != workspace.root.join(expected))
             || workspace.configuration != workspace.root.join("tools/ci/lint_scopes.toml")
             || dm_preprocess::regions::canonical_path(&request.project) != workspace.root.join("deepquarry.dme") {
             return Err(original_exclusions_invalid());
@@ -1681,7 +1683,7 @@ impl BuildHost {
     ) -> Result<T, Box<dyn std::error::Error>> {
         use crate::daemon::{control, prepare_deadline};
         use std::io;
-        original_exclusions_shape(&prepare)?;
+        original_exclusions_shape(&prepare, crate::daemon::selected_report_wire::Roster::Base)?;
         crate::request_runner::validate_joined_compile_request(&compile, self)?;
         if !compile.project.is_absolute()
             || dm_preprocess::regions::canonical_path(&compile.project)
@@ -1746,7 +1748,8 @@ impl BuildHost {
         if !self.retains_artifacts() {
             return Err(original_exclusions_invalid().into());
         }
-        let (requested_workspace, cache) = original_exclusions_shape(&request)?;
+        let plan = Self::plan_original_exclusions(exclusions, mode)?;
+        let (requested_workspace, cache) = original_exclusions_shape(&request, plan.roster())?;
         // Preparation inherits this deadline. Keep the binding through the
         // producer joins and final validation instead of restarting its clock.
         use crate::daemon::{control, prepare_deadline};
@@ -1771,8 +1774,7 @@ impl BuildHost {
         let total = SELECTED_REPORT_RETAINED.checked_add(spool_metadata).and_then(|n|n.checked_add(combined_metadata))
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
         let credit = self.source_arena_work().reserve(total)?;
-        let (workspace_root, physical_cache) = Self::original_exclusions_paths(&request)?;
-        let plan = Self::plan_original_exclusions(exclusions, mode)?;
+        let (workspace_root, physical_cache) = Self::original_exclusions_paths(&request, plan.roster())?;
         if combined && !plan.supports_combined() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"combined report requires a qualified semantic roster").into());
         }

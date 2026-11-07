@@ -136,7 +136,7 @@ fn read_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, Box<dyn E
 fn run_request_mode(request: Request, mode: Mode) -> Result<bool, Box<dyn Error>> {
     let roster = request.qualify(mode)?;
     super::build_admission::validate(&request.build)?;
-    let (_, cache) = BuildHost::original_exclusions_paths(&request.build)?;
+    let (_, cache) = BuildHost::original_exclusions_paths(&request.build, roster)?;
     let mut stream = super::connect_generation()?;
     transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
     match mode {
