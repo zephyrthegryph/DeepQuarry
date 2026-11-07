@@ -277,7 +277,11 @@ CAPABILITIES(/datum/preferences)
 	sanitize_preferences()
 
 	// This needs to happen before anything else becuase it sets some variables.
+	var/copy_started = TICK_USAGE_REAL
+	var/list/step_ms = list()
+	var/step_started = TICK_USAGE_REAL
 	character.set_species(read_preference(/datum/preference/choiced/species))
+	step_ms["set_species"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
 	// Special Case: This references variables owned by two different datums, so do it here.
 	if(read_preference(/datum/preference/toggle/human/name_is_always_random))
 		// write_ instead of update_ to avoid update_preference_by_type calling copy_to again.
@@ -290,21 +294,40 @@ CAPABILITIES(/datum/preferences)
 	//      markings overlay rebuild, NIF spawn, body backup, finalize).
 	//   Bay player_setup.copy_to_mob() is no longer called; all its logic has moved to
 	//   per-pref apply_to_human and /datum/preference_apply_hook subtypes.
+	var/prefs_started = TICK_USAGE_REAL
 	for(var/datum/preference/preference as anything in get_preferences_in_priority_order())
 		if(preference.savefile_identifier != PREFERENCE_CHARACTER)
 			continue
 
+		step_started = TICK_USAGE_REAL
 		preference.apply(character, read_preference(preference.type), src)
+		step_ms["pref [preference.type]"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	var/prefs_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - prefs_started)
 
+	var/hooks_started = TICK_USAGE_REAL
 	for(var/datum/preference_apply_hook/hook as anything in GLOB.preference_apply_hooks)
 		if(hook.skip_on_preview && ismannequin(character))
 			continue
+		step_started = TICK_USAGE_REAL
 		hook.apply(character, src)
+		step_ms["hook [hook.type]"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	var/hooks_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - hooks_started)
 
 	// Sync up all their organs one final time. force_update_limbs + regenerate_icons are
 	// already handled by /datum/preference_apply_hook/finalize; we still need the body /
 	// mutation / underwear / hair passes that aren't part of the hook.
+	step_started = TICK_USAGE_REAL
 	character.force_update_organs()
+	step_ms["force_update_organs"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+
+	// JOIN_TIMING: where a character's preference application goes; only the steps over 5 ms are listed.
+	var/total_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - copy_started)
+	if(total_ms >= 20)
+		var/slow = ""
+		for(var/step_name in step_ms)
+			if(step_ms[step_name] >= 5)
+				slow += ", [step_name] [round(step_ms[step_name], 0.1)] ms"
+		log_world("JOIN_TIMING_PREFS: copy_to [round(total_ms, 0.1)] ms (per-pref applies [round(prefs_ms, 0.1)] ms, hooks [round(hooks_ms, 0.1)] ms)[slow]")
 
 /datum/preferences/proc/open_load_dialog(mob/user)
 	return slot_dialog_stage(user, FALSE)

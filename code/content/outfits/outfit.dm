@@ -85,7 +85,10 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 		J.toggle_valve()
 
 /datum/decl/hierarchy/outfit/proc/equip(mob/living/carbon/human/H, rank, assignment)
+	var/started = TICK_USAGE_REAL
 	equip_base(H)
+	var/base_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	started = TICK_USAGE_REAL
 
 	rank = rank || id_pda_assignment
 	assignment = id_pda_assignment || assignment || rank
@@ -93,17 +96,24 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	if(W)
 		rank = W.rank
 		assignment = W.assignment
+	var/id_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	started = TICK_USAGE_REAL
 	equip_pda(H, rank, assignment)
+	var/pda_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	started = TICK_USAGE_REAL
 
 	for(var/path in backpack_contents)
 		var/number = LAZYACCESS(backpack_contents, path)
 		for(var/i=0,i<number,i++)
 			H.equip_to_slot_or_del(new path(H), SLOT_ID_IN_BACKPACK)
+	var/pack_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	started = TICK_USAGE_REAL
 
 	post_equip(H)
 
 	if(W) // We set ID info last to ensure the ID photo is as correct as possible.
 		H.set_id_info(W)
+	log_world("JOIN_TIMING_OUTFIT: [name]: worn items [round(base_ms, 0.1)] ms, ID [round(id_ms, 0.1)] ms, PDA [round(pda_ms, 0.1)] ms, backpack contents [round(pack_ms, 0.1)] ms, post equip and ID info [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.1)] ms")
 	return 1
 
 /datum/decl/hierarchy/outfit/proc/equip_base(mob/living/carbon/human/H)

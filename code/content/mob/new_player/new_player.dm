@@ -343,6 +343,8 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	close_spawn_windows()
 
 	var/mob/living/carbon/human/new_character
+	var/step_started = TICK_USAGE_REAL
+	var/list/step_ms = list()
 
 	var/use_species_name
 	var/datum/species/chosen_species
@@ -359,12 +361,16 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	if(!new_character)
 		new_character = new(T)
 
+	step_ms["new human"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 	if(CONFIG_GET(flag/force_random_names))
 		new_character.set_gender(pick(MALE, FEMALE))
 		client.prefs.update_preference_by_type(/datum/preference/name/real_name, random_name(new_character.gender))
 	else
 		client.prefs.copy_to(new_character, icon_updates = TRUE)
 
+	step_ms["prefs copy_to"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 	if(client && client.media)
 		client.media.stop_music() // MAD JAMS cant last forever yo
 
@@ -377,6 +383,8 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 
 	new_character.name = real_name
 	client.init_verbs()
+	step_ms["mind transfer, verbs"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 	new_character.dna.ready_dna(new_character)
 	new_character.dna.b_type = text_or_null(client.prefs.read_preference(/datum/preference/text/human/b_type)) // migrated pref
 	new_character.sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
@@ -384,6 +392,8 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	new_character.sync_addictions() // Handle round-start addictions
 	new_character.initialize_vessel()
 
+	step_ms["dna, traits, organ dna, vessel"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 	// migrated language prefs to /datum/preference
 	var/list/_alt_languages = client.prefs.read_preference(/datum/preference/alternate_languages)
 	for(var/lang in _alt_languages)
@@ -395,13 +405,26 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	// And uncomment this, too.
 	//new_character.dna.UpdateSE()
 
+	step_ms["languages"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
+
 	PUBLISH(new_character, human_dna_finalized)
+	step_ms["human_dna_finalized"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 
 	// Do the initial caching of the player's body icons.
 	new_character.force_update_limbs()
 	new_character.update_transform()
+	step_ms["force_update_limbs, transform"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 
 	bind_player(new_character, key)		//Manually transfer the key to log them in
+	step_ms["bind_player"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+
+	var/steps = ""
+	for(var/step_name in step_ms)
+		steps += ", [step_name] [round(step_ms[step_name], 0.1)] ms"
+	log_world("JOIN_TIMING_BODY: [key_name(new_character)]: [copytext(steps, 3)]")
 
 	return new_character
 
