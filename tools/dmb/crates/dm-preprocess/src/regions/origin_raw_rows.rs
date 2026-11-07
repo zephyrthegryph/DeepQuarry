@@ -1146,6 +1146,77 @@ struct RowOutputBases {
     compact: Vec<u16>,
     anchors: Vec<usize>,
     wide: Vec<WideOutputBase>,
+    packed: Option<Box<PackedOutputBases>>,
+}
+
+// This owner is issued only for an immutable completed physical row page.
+// A descriptor is two u32s: page-anchor delta, and 5-bit cell width,
+// 17-bit byte offset, 5-bit block length minus one. No row rank is moved.
+struct PackedOutputBases {
+    anchor: usize,
+    cells: Vec<u8>,
+    blocks: Vec<[u32;2]>,
+}
+
+impl PackedOutputBases {
+    const BLOCK:usize=32;
+    const MAX_BLOCKS:usize=ROW_PAGE_LEN/Self::BLOCK;
+    const OFFSET_MASK:u32=(1<<17)-1;
+    const LENGTH_SHIFT:u32=22;
+
+    fn descriptor(anchor:u32,offset:usize,width:usize,len:usize)->[u32;2]{
+        debug_assert!(offset<=Self::OFFSET_MASK as usize && width<=16 && (1..=Self::BLOCK).contains(&len));
+        [anchor, ((len-1) as u32)<<Self::LENGTH_SHIFT | (offset as u32)<<5 | width as u32]
+    }
+    fn block_len(word:u32)->usize{(word>>Self::LENGTH_SHIFT) as usize+1}
+    fn block_width(word:u32)->usize{(word&31) as usize}
+    fn block_offset(word:u32)->usize{((word>>5)&Self::OFFSET_MASK) as usize}
+
+    fn len(&self)->usize{
+        self.blocks.last().map_or(0,|block|(self.blocks.len()-1)*Self::BLOCK+Self::block_len(block[1]))
+    }
+    fn locate(word:u32,local:usize)->(usize,usize){
+        let bit=local*Self::block_width(word);
+        (Self::block_offset(word)+bit/8,bit%8)
+    }
+    fn cell(&self,rank:usize)->Option<(u32,u16)>{
+        let &[anchor,word]=self.blocks.get(rank/Self::BLOCK)?;
+        let local=rank%Self::BLOCK;
+        if local>=Self::block_len(word){return None;}
+        let width=Self::block_width(word);
+        if width==0{return Some((anchor,0));}
+        let (at,shift)=Self::locate(word,local);
+        let mut bits=u32::from(*self.cells.get(at)?);
+        if shift+width>8{bits|=u32::from(*self.cells.get(at+1)?)<<8;}
+        if shift+width>16{bits|=u32::from(*self.cells.get(at+2)?)<<16;}
+        Some((anchor,((bits>>shift)&((1<<width)-1)) as u16))
+    }
+    fn write(cells:&mut[u8],word:u32,local:usize,value:u16){
+        let width=Self::block_width(word);
+        if width==0{debug_assert_eq!(value,0);return;}
+        debug_assert!(u32::from(value)<1<<width);
+        let (at,shift)=Self::locate(word,local);
+        let bits=u32::from(value)<<shift;
+        cells[at]|=bits as u8;
+        if shift+width>8{cells[at+1]|=(bits>>8) as u8;}
+        if shift+width>16{cells[at+2]|=(bits>>16) as u8;}
+    }
+    fn bytes(&self)->usize{
+        std::mem::size_of::<Self>()+self.cells.capacity()+self.blocks.capacity()*std::mem::size_of::<[u32;2]>()
+    }
+    fn truncate(&mut self,keep:usize){
+        let keep=keep.min(self.len());
+        self.blocks.truncate(keep.div_ceil(Self::BLOCK));
+        if let Some([_,word])=self.blocks.last_mut(){
+            let len=(keep-1)%Self::BLOCK+1;
+            let width=Self::block_width(*word);
+            let offset=Self::block_offset(*word);
+            *word=(*word&((1<<Self::LENGTH_SHIFT)-1))|((len-1) as u32)<<Self::LENGTH_SHIFT;
+            self.cells.truncate(offset+(len*width).div_ceil(8));
+        }else{
+            self.cells.clear();
+        }
+    }
 }
 
 #[repr(transparent)]
@@ -1174,10 +1245,111 @@ impl RowOutputBases {
     const ESCAPE: u16 = u16::MAX;
 
     fn new() -> Self {
-        Self { compact: Vec::new(), anchors: Vec::new(), wide: Vec::new() }
+        Self { compact: Vec::new(), anchors: Vec::new(), wide: Vec::new(), packed:None }
+    }
+
+    fn len(&self)->usize{self.packed.as_ref().map_or(self.compact.len(),|packed|packed.len())}
+
+    // Count exact block geometry before requesting optional staging credit.
+    // The old u16 sentinel and its independent full record never change.
+    fn packed_plan(&self,blocks:&mut[[u32;2];PackedOutputBases::MAX_BLOCKS])->Option<(usize,usize)>{
+        let anchor=self.get(0)?;
+        let mut bytes=0;
+        for (block,first) in (0..self.compact.len()).step_by(PackedOutputBases::BLOCK).enumerate(){
+            let base=self.get(first)?;
+            let anchor_delta=u32::try_from(base.checked_sub(anchor)?).ok()?;
+            let end=(first+PackedOutputBases::BLOCK).min(self.compact.len());
+            let mut max=0usize;
+            for rank in first..end{
+                let delta=if self.compact[rank]==Self::ESCAPE{usize::from(Self::ESCAPE)}
+                    else{let delta=self.get(rank)?.checked_sub(base)?;if delta>=usize::from(Self::ESCAPE){return None;}delta};
+                max=max.max(delta);
+            }
+            let width=(usize::BITS-max.leading_zeros()) as usize;
+            let len=end-first;
+            blocks[block]=PackedOutputBases::descriptor(anchor_delta,bytes,width,len);
+            bytes+=(len*width).div_ceil(8);
+        }
+        Some((anchor,bytes))
+    }
+
+    fn settle_packed_using(&mut self,a:&SettingAdmission<'_>,funding:&mut PageFunding<'_>)->io::Result<()>{
+        if self.packed.is_some(){return Ok(());}
+        let mut plan=[[0;2];PackedOutputBases::MAX_BLOCKS];
+        let Some((anchor,cell_bytes))=self.packed_plan(&mut plan)else{return Ok(());};
+        let count=self.compact.len().div_ceil(PackedOutputBases::BLOCK);
+        let old=self.compact.capacity()*std::mem::size_of::<u16>()+self.anchors.capacity()*std::mem::size_of::<usize>();
+        let bytes=std::mem::size_of::<PackedOutputBases>()+cell_bytes+count*std::mem::size_of::<[u32;2]>();
+        if bytes>=old || !funding.work.try_grow_original_origin_storage(funding.credit,bytes)?{return Ok(());}
+        let stage=||->io::Result<Box<PackedOutputBases>>{
+            let mut cells=exact_rows(cell_bytes,a)?;
+            cells.resize(cell_bytes,0);
+            let mut blocks=exact_rows(count,a)?;
+            blocks.extend_from_slice(&plan[..count]);
+            for (block,&[base,word]) in blocks.iter().enumerate(){
+                let first=block*PackedOutputBases::BLOCK;
+                let base=anchor+base as usize;
+                for local in 0..PackedOutputBases::block_len(word){
+                    let rank=first+local;
+                    let cell=if self.compact[rank]==Self::ESCAPE{Self::ESCAPE}
+                        else{(self.get(rank).expect("issued output base")-base) as u16};
+                    PackedOutputBases::write(&mut cells,word,local,cell);
+                }
+            }
+            a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
+            let layout=std::alloc::Layout::new::<PackedOutputBases>();
+            let ptr=std::ptr::NonNull::new(unsafe{std::alloc::alloc(layout)}.cast::<PackedOutputBases>())
+                .ok_or(io::ErrorKind::OutOfMemory)?;
+            // SAFETY: one funded Global cell with the exact initialized Box layout.
+            Ok(unsafe{ptr.as_ptr().write(PackedOutputBases{anchor,cells,blocks});Box::from_raw(ptr.as_ptr())})
+        };
+        let packed=match stage(){
+            Ok(packed)=>packed,
+            Err(first)=>{let _=funding.work.shrink(funding.credit,bytes);return Err(first);}
+        };
+        self.packed=Some(packed);
+        drop(std::mem::take(&mut self.compact));
+        drop(std::mem::take(&mut self.anchors));
+        funding.work.shrink(funding.credit,old)
+    }
+
+    fn resume_dense_using(&mut self,a:&SettingAdmission<'_>,funding:&mut PageFunding<'_>)->io::Result<()>{
+        let Some(packed)=&self.packed else{return Ok(());};
+        let len=packed.len();
+        let blocks=len.div_ceil(Self::BLOCK);
+        let bytes=len*std::mem::size_of::<u16>()+blocks*std::mem::size_of::<usize>();
+        funding.work.grow(funding.credit,bytes)?;
+        let stage=||->io::Result<_>{
+            let mut compact=exact_rows(len,a)?;
+            let mut anchors=exact_rows(blocks,a)?;
+            for rank in 0..len{
+                let (_,cell)=packed.cell(rank).ok_or(io::ErrorKind::InvalidData)?;
+                if rank%Self::BLOCK==0{
+                    anchors.push(self.get(rank).ok_or(io::ErrorKind::InvalidData)?);
+                }
+                compact.push(if cell==Self::ESCAPE{Self::ESCAPE}else{
+                    let delta=self.get(rank).and_then(|base|base.checked_sub(anchors[rank/Self::BLOCK]))
+                        .and_then(|delta|u16::try_from(delta).ok()).filter(|&delta|delta!=Self::ESCAPE)
+                        .ok_or(io::ErrorKind::InvalidData)?;
+                    delta
+                });
+            }
+            Ok((compact,anchors))
+        };
+        let (compact,anchors)=match stage(){
+            Ok(next)=>next,
+            Err(first)=>{let _=funding.work.shrink(funding.credit,bytes);return Err(first);}
+        };
+        let old=self.packed.take().expect("retained packed output bases");
+        let released=old.bytes();
+        self.compact=compact;
+        self.anchors=anchors;
+        drop(old);
+        funding.work.shrink(funding.credit,released)
     }
 
     fn push(&mut self, value: usize, a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>) -> io::Result<()> {
+        self.resume_dense_using(a,funding)?;
         let rank = self.compact.len();
         let starts_block = rank % Self::BLOCK == 0;
         let delta = if starts_block {
@@ -1202,18 +1374,24 @@ impl RowOutputBases {
     }
 
     fn get(&self, rank: usize) -> Option<usize> {
-        let delta = *self.compact.get(rank)?;
-        if delta == Self::ESCAPE {
-            let index = self.wide.binary_search_by_key(&rank, WideOutputBase::rank).ok()?;
+        let (anchor,delta)=if let Some(packed)=&self.packed{
+            let (anchor,delta)=packed.cell(rank)?;
+            (packed.anchor.checked_add(anchor as usize)?,delta)
+        }else{
+            (*self.anchors.get(rank/Self::BLOCK)?,*self.compact.get(rank)?)
+        };
+        if delta==Self::ESCAPE{
+            let index=self.wide.binary_search_by_key(&rank,WideOutputBase::rank).ok()?;
             self.wide[index].value()
-        } else {
-            self.anchors.get(rank / Self::BLOCK)?.checked_add(usize::from(delta))
-        }
+        }else{anchor.checked_add(usize::from(delta))}
     }
 
     fn truncate(&mut self, keep: usize, funding: &mut PageFunding<'_>) -> io::Result<()> {
-        self.compact.truncate(keep);
-        self.anchors.truncate(keep.div_ceil(Self::BLOCK));
+        if let Some(packed)=&mut self.packed{packed.truncate(keep);}
+        else{
+            self.compact.truncate(keep);
+            self.anchors.truncate(keep.div_ceil(Self::BLOCK));
+        }
         let wide = self.wide.partition_point(|escape| escape.rank() < keep);
         if wide == 0 { funding.release(std::mem::take(&mut self.wide))?; }
         else { self.wide.truncate(wide); }
@@ -1227,9 +1405,16 @@ impl RowOutputBases {
                     rows.capacity() * std::mem::size_of::<T>());
             }
         }
-        rows(&self.compact, visit);
-        rows(&self.anchors, visit);
-        rows(&self.wide, visit);
+        if let Some(packed)=&self.packed{
+            let bytes=std::mem::size_of::<PackedOutputBases>();
+            visit(packed.as_ref() as *const _ as usize,bytes,bytes);
+            rows(&packed.cells,visit);
+            rows(&packed.blocks,visit);
+        }else{
+            rows(&self.compact,visit);
+            rows(&self.anchors,visit);
+        }
+        rows(&self.wide,visit);
     }
 }
 
@@ -1242,6 +1427,7 @@ pub(super) struct OutputBasePackingCensus {
     full_pages: usize,
     partial_pages: usize,
     profitable_pages: usize,
+    already_packed_pages: usize,
     geometry_declines: usize,
     original_bytes: usize,
     projected_bytes: usize,
@@ -1286,15 +1472,15 @@ impl OutputBasePackingCensus {
 
     fn observe(&mut self,page:&PhysicalOriginPage){
         let bases=&page.output_bases;
-        let old=bases.compact.capacity()*std::mem::size_of::<u16>()
-            +bases.anchors.capacity()*std::mem::size_of::<usize>();
+        let old=bases.packed.as_ref().map_or_else(||bases.compact.capacity()*std::mem::size_of::<u16>()
+            +bases.anchors.capacity()*std::mem::size_of::<usize>(),|packed|packed.bytes());
         self.original_bytes+=old;
         self.projected_bytes+=old;
         if page.len()!=ROW_PAGE_LEN{self.partial_pages+=1;return;}
         self.full_pages+=1;
+        if bases.packed.is_some(){self.already_packed_pages+=1;return;}
         let Some((bytes,widths))=self.projected_page(bases)else{self.geometry_declines+=1;return;};
-        // Old side storage is unmodified. All physical page controls would
-        // carry one additional optional box pointer, profitable or not.
+        // Old side storage and current physical page controls are unchanged.
         if bytes>=old{return;}
         self.profitable_pages+=1;
         self.projected_bytes-=old-bytes;
@@ -2292,7 +2478,11 @@ impl OriginalRawOrigins{
    let page_owner=self.rows.pages.get_mut(page).ok_or(io::ErrorKind::InvalidData)?;
    // A replay can reuse the same completed loan. An existing immutable
    // alias prevents relocation, but never prevents issuing that loan.
-   if let Ok(page)=page_owner.get_mut(){page.settle_full_columns(a,work)?;}
+   if let Ok(page)=page_owner.get_mut(){
+    page.settle_full_columns(a,work)?;
+    let mut funding=PageFunding{work,credit:&mut page.credit};
+    page.output_bases.settle_packed_using(a,&mut funding)?;
+   }
    let actual=page_owner.loan_full().ok_or(io::ErrorKind::InvalidData)?;
    pages[slot]=Some(OriginalBatchTokenPage{
     first:page*ROW_PAGE_LEN, within_batch:(page-first_page)*ROW_PAGE_LEN,
@@ -2336,9 +2526,10 @@ impl OriginalRawOrigins{
     self.rows.pages.iter().fold((0, 0, 0, 0, 0), |totals, page| {
         let bases = &page.get().output_bases;
         (
-            totals.0 + bases.compact.len(),
-            totals.1 + bases.compact.capacity() * std::mem::size_of::<u16>(),
-            totals.2 + bases.anchors.capacity() * std::mem::size_of::<usize>(),
+            totals.0 + bases.len(),
+            totals.1 + bases.packed.as_ref().map_or(bases.compact.capacity()*std::mem::size_of::<u16>(),|packed|packed.cells.capacity()),
+            totals.2 + bases.packed.as_ref().map_or(bases.anchors.capacity()*std::mem::size_of::<usize>(),
+                |packed|std::mem::size_of::<PackedOutputBases>()+packed.blocks.capacity()*std::mem::size_of::<[u32;2]>()),
             totals.3 + bases.wide.len(),
             totals.4 + bases.wide.capacity() * std::mem::size_of::<WideOutputBase>(),
         )
@@ -2349,9 +2540,6 @@ impl OriginalRawOrigins{
     let mut models=[16,32,64].map(OutputBasePackingCensus::with_block);
     for page in self.rows.pages.iter(){
         for model in &mut models{model.observe(page.get());}
-    }
-    for model in &mut models{
-        model.projected_bytes+=(model.full_pages+model.partial_pages)*std::mem::size_of::<usize>();
     }
     models
  }
@@ -3566,6 +3754,57 @@ impl OriginalRawOrigins{
   drop(loan);
   assert_eq!(live.load(Ordering::Acquire),0);
   assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn packed_output_bases_preserve_exact_bits_and_wide_owners_after_trim() {
+    let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a=SettingAdmission::new(&syntax,fixed,&||Ok(()));
+    let live=Arc::new(AtomicUsize::new(0));
+    let work=CappedWork::new(Arc::clone(&live),usize::MAX);
+    let mut credit=work.reserve(0).unwrap();
+    let mut funding=PageFunding{work:&work,credit:&mut credit};
+    let mut bases=RowOutputBases::new();
+    let expected:[usize;96]=std::array::from_fn(|rank|match rank{
+        0..32=>100+rank*37,
+        32..63=>1500+rank,
+        63=>100+usize::from(u16::MAX),
+        _=>2000,
+    });
+    for value in expected{bases.push(value,&a,&mut funding).unwrap();}
+    let wide=bases.wide.as_ptr();
+    let before=live.load(Ordering::Acquire);
+    let old=bases.compact.capacity()*std::mem::size_of::<u16>()
+        +bases.anchors.capacity()*std::mem::size_of::<usize>();
+    work.limit.store(before,Ordering::Release);
+    bases.settle_packed_using(&a,&mut funding).unwrap();
+    assert!(bases.packed.is_none());
+    assert_eq!(live.load(Ordering::Acquire),before);
+    work.limit.store(usize::MAX,Ordering::Release);
+    let fault=SettingAdmission::new(&syntax,fixed,&||Err(io::Error::from_raw_os_error(1450)));
+    assert_eq!(bases.settle_packed_using(&fault,&mut funding).unwrap_err().raw_os_error(),Some(1450));
+    assert!(bases.packed.is_none());
+    assert_eq!(live.load(Ordering::Acquire),before);
+
+    bases.settle_packed_using(&a,&mut funding).unwrap();
+    let packed=bases.packed.as_ref().unwrap();
+    assert_eq!(packed.blocks.iter().map(|b|PackedOutputBases::block_width(b[1])).collect::<Vec<_>>(),[11,16,0]);
+    assert_eq!(live.load(Ordering::Acquire),before-old+packed.bytes());
+    assert_eq!(bases.wide.as_ptr(),wide,"the original exact wide rows never move");
+    for (rank,value) in expected.into_iter().enumerate(){assert_eq!(bases.get(rank),Some(value));}
+    assert!(bases.get(expected.len()).is_none());
+    bases.truncate(33,&mut funding).unwrap();
+    assert_eq!(bases.len(),33);
+    assert!(bases.get(33).is_none());
+    assert!(bases.wide.is_empty());
+    bases.push(1700,&a,&mut funding).unwrap();
+    assert!(bases.packed.is_none());
+    for (rank,value) in expected.into_iter().take(33).enumerate(){assert_eq!(bases.get(rank),Some(value));}
+    assert_eq!(bases.get(33),Some(1700));
+    drop((bases,credit));
+    assert_eq!(live.load(Ordering::Acquire),0);
+    assert_eq!(syntax.load(Ordering::Acquire),fixed);
  }
 
  #[test]
