@@ -46,11 +46,6 @@
 	var/export_lock = FALSE
 	var/list/last_interop_response
 
-CAPABILITIES(/datum/tgs_api/v4)
-	owns_many(nameof(custom_commands))
-	owns_one(nameof(cached_revision), /datum/tgs_revision_information)
-	owns_many(nameof(cached_test_merges))
-
 /datum/tgs_api/v4/ApiVersion()
 	return new /datum/tgs_version("4.0.0.0")
 
@@ -89,11 +84,11 @@ CAPABILITIES(/datum/tgs_api/v4)
 
 	var/list/revisionData = cached_json["revision"]
 	if(revisionData)
-		rel_set(src, nameof(cached_revision), new /datum/tgs_revision_information)
+		cached_revision = new
 		cached_revision.commit = revisionData["commitSha"]
 		cached_revision.origin_commit = revisionData["originCommitSha"]
 
-	rel_take_all(src, nameof(cached_test_merges))
+	cached_test_merges = list()
 	var/list/json = cached_json["testMerges"]
 	for(var/entry in json)
 		var/datum/tgs_revision_information/test_merge/tm = new
@@ -112,7 +107,7 @@ CAPABILITIES(/datum/tgs_api/v4)
 		tm.head_commit = entry["pullRequestRevision"]
 		tm.comment = entry["comment"]
 
-		rel_add(src, nameof(cached_test_merges), tm)
+		cached_test_merges += tm
 
 	return TRUE
 
@@ -274,11 +269,11 @@ CAPABILITIES(/datum/tgs_api/v4)
 	if (!length(channels))
 		return
 
-	var/list/payload = list("message" = message.text, "channelIds" = ids)
+	message = list("message" = message.text, "channelIds" = ids)
 	if(intercepted_message_queue)
-		intercepted_message_queue += list(payload)
+		intercepted_message_queue += list(message)
 	else
-		Export(TGS4_COMM_CHAT, payload)
+		Export(TGS4_COMM_CHAT, message)
 
 /datum/tgs_api/v4/ChatTargetedBroadcast(datum/tgs_message_content/message, admin_only)
 	var/list/channels = list()
@@ -292,19 +287,19 @@ CAPABILITIES(/datum/tgs_api/v4)
 	if (!length(channels))
 		return
 
-	var/list/payload = list("message" = message.text, "channelIds" = channels)
+	message = list("message" = message.text, "channelIds" = channels)
 	if(intercepted_message_queue)
-		intercepted_message_queue += list(payload)
+		intercepted_message_queue += list(message)
 	else
-		Export(TGS4_COMM_CHAT, payload)
+		Export(TGS4_COMM_CHAT, message)
 
 /datum/tgs_api/v4/ChatPrivateMessage(datum/tgs_message_content/message, datum/tgs_chat_user/user)
 	message = UpgradeDeprecatedChatMessage(message)
-	var/list/payload = list("message" = message.text, "channelIds" = list(user.channel.id))
+	message = list("message" = message.text, "channelIds" = list(user.channel.id))
 	if(intercepted_message_queue)
-		intercepted_message_queue += list(payload)
+		intercepted_message_queue += list(message)
 	else
-		Export(TGS4_COMM_CHAT, payload)
+		Export(TGS4_COMM_CHAT, message)
 
 /datum/tgs_api/v4/ChatChannelInfo()
 	. = list()
@@ -325,5 +320,3 @@ CAPABILITIES(/datum/tgs_api/v4)
 
 /datum/tgs_api/v4/SecurityLevel()
 	return security_level
-
-
