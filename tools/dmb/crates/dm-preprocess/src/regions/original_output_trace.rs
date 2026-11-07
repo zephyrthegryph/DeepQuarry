@@ -37,6 +37,20 @@ impl OriginalOutputTrace{
         Ok(OriginalTraceProjectionKey { owner: Arc::downgrade(node), credit })
     }
  pub(super) fn depth(&self)->usize{self.0.as_deref().map_or(0,|node|node.depth)}
+ /// Bounded layout choice only. The actual visit still checks the admission,
+ /// lends the provider, and authenticates every author in the same order.
+ pub(super) fn supports_narrow_projection(&self)->bool{
+  const MAX_PROBE_DEPTH:usize=64;
+  if self.depth()>MAX_PROBE_DEPTH{return false}
+  let mut node=self.0.as_deref();
+  for _ in 0..self.depth(){
+   let Some(actual)=node else{return false};
+   let span=actual.origin.physical;
+   if u32::try_from(span.start).is_err()||u32::try_from(span.end).is_err(){return false}
+   node=actual.parent.0.as_deref();
+  }
+  node.is_none()
+ }
  fn check(&self,a:&SettingAdmission<'_>)->io::Result<()>{poll(a)?;if self.0.as_deref().is_some_and(|node|!a.matches_lease_domain(&node.credit)){return Err(io::ErrorKind::InvalidInput.into())}Ok(())}
  #[cfg(test)]
  pub(super) fn pushed_using(&self,name:&str,origin:Origin,depth:usize,definition:Option<Origin>,a:&SettingAdmission<'_>)->io::Result<Self>{

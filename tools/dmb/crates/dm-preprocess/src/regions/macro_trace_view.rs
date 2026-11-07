@@ -69,6 +69,19 @@ pub(super) struct NarrowOriginalMacroFrame {
     author: Arc<OriginalMacroAuthor>,
 }
 
+impl NarrowOriginalMacroFrame {
+    pub(super) fn checked(frame: OriginalMacroFrame) -> Option<Self> {
+        let invocation_span = [u32::try_from(frame.invocation_span.start).ok()?,
+                               u32::try_from(frame.invocation_span.end).ok()?];
+        Some(Self { invocation_span, author: frame.author })
+    }
+
+    fn view(&self) -> OriginalMacroFrameView<'_> {
+        let [start, end] = self.invocation_span;
+        OriginalMacroFrameView { invocation_span: Span::new(start as usize, end as usize), author: &self.author }
+    }
+}
+
 pub(super) struct OriginalMacroFrameView<'a> {
     pub(super) invocation_span: Span,
     pub(super) author: &'a Arc<OriginalMacroAuthor>,
@@ -110,6 +123,7 @@ pub(super) enum OriginalMacroTrace {
     Single(Arc<OriginalMacroFrame>),
     NarrowSingle(Arc<NarrowOriginalMacroFrame>),
     Shared(Arc<Box<[OriginalMacroFrame]>>),
+    NarrowShared(Arc<Box<[NarrowOriginalMacroFrame]>>),
 }
 impl OriginalMacroTrace {
     pub(super) fn empty() -> Self { Self::Shared(Arc::new(Box::new([]))) }
@@ -119,6 +133,7 @@ impl OriginalMacroTrace {
             (Self::Single(a), Self::Single(b)) => Arc::ptr_eq(a, b),
             (Self::NarrowSingle(a), Self::NarrowSingle(b)) => Arc::ptr_eq(a, b),
             (Self::Shared(a), Self::Shared(b)) => Arc::ptr_eq(a, b),
+            (Self::NarrowShared(a), Self::NarrowShared(b)) => Arc::ptr_eq(a, b),
             _ => false,
         }
     }
@@ -128,6 +143,7 @@ impl OriginalMacroTrace {
             Self::Single(rows) => Arc::as_ptr(rows) as usize,
             Self::NarrowSingle(rows) => Arc::as_ptr(rows) as usize,
             Self::Shared(rows) => Arc::as_ptr(rows) as usize,
+            Self::NarrowShared(rows) => Arc::as_ptr(rows) as usize,
         }
     }
 
@@ -139,6 +155,10 @@ impl OriginalMacroTrace {
                 (self.owner_address(), mem::size_of::<Box<[OriginalMacroFrame]>>()),
                 (rows.as_ptr() as usize, mem::size_of_val(rows.as_ref().as_ref())),
             ],
+            Self::NarrowShared(rows) => [
+                (self.owner_address(), mem::size_of::<Box<[NarrowOriginalMacroFrame]>>()),
+                (rows.as_ptr() as usize, mem::size_of_val(rows.as_ref().as_ref())),
+            ],
         }
     }
 
@@ -148,21 +168,22 @@ impl OriginalMacroTrace {
             Self::Single(rows) => Arc::strong_count(rows),
             Self::NarrowSingle(rows) => Arc::strong_count(rows),
             Self::Shared(rows) => Arc::strong_count(rows),
+            Self::NarrowShared(rows) => Arc::strong_count(rows),
         }
     }
     pub(super) fn len(&self) -> usize {
-        match self { Self::Shared(rows) => rows.len(), _ => 1 }
+        match self {
+            Self::Shared(rows) => rows.len(),
+            Self::NarrowShared(rows) => rows.len(),
+            _ => 1,
+        }
     }
 
     pub(super) fn frame(&self, at: usize) -> Option<OriginalMacroFrameView<'_>> {
         let row: &OriginalMacroFrame = match self {
             Self::Single(row) if at == 0 => row,
-            Self::NarrowSingle(row) if at == 0 => {
-                let [start, end] = row.invocation_span;
-                return Some(OriginalMacroFrameView {
-                    invocation_span: Span::new(start as usize, end as usize), author: &row.author,
-                });
-            }
+            Self::NarrowSingle(row) if at == 0 => return Some(row.view()),
+            Self::NarrowShared(rows) => return rows.get(at).map(NarrowOriginalMacroFrame::view),
             Self::Shared(rows) => rows.get(at)?,
             _ => return None,
         };
@@ -175,13 +196,15 @@ impl OriginalMacroTrace {
             Self::Single(_) => mem::size_of::<OriginalMacroFrame>(),
             Self::NarrowSingle(_) => mem::size_of::<NarrowOriginalMacroFrame>(),
             Self::Shared(rows) => mem::size_of_val(rows.as_ref().as_ref()),
+            Self::NarrowShared(rows) => mem::size_of_val(rows.as_ref().as_ref()),
         }
     }
 
-    fn parents(&self, at: usize) -> &[OriginalMacroFrame] {
+    fn parents(&self, at: usize) -> Parents<'_> {
         match self {
-            Self::Shared(rows) => &rows[..at],
-            _ => &[],
+            Self::Shared(rows) => Parents::Original(&rows[..at]),
+            Self::NarrowShared(rows) => Parents::NarrowOriginal(&rows[..at]),
+            _ => Parents::Original(&[]),
         }
     }
 }
@@ -210,6 +233,7 @@ pub struct MacroTraceView<'a>(Borrowed<'a>);
 enum Parents<'a> {
     Native(&'a Arc<[Arc<str>]>),
     Original(&'a [OriginalMacroFrame]),
+    NarrowOriginal(&'a [NarrowOriginalMacroFrame]),
 }
 
 #[derive(Clone, Copy)]
@@ -225,7 +249,11 @@ pub struct MacroExpansionView<'a> {
 
 impl<'a> MacroTraceParents<'a> {
     pub fn len(self) -> usize {
-        match self.0 { Parents::Native(rows) => rows.len(), Parents::Original(rows) => rows.len() }
+        match self.0 {
+            Parents::Native(rows) => rows.len(),
+            Parents::Original(rows) => rows.len(),
+            Parents::NarrowOriginal(rows) => rows.len(),
+        }
     }
 
     pub fn is_empty(self) -> bool { self.len() == 0 }
@@ -234,6 +262,7 @@ impl<'a> MacroTraceParents<'a> {
         match self.0 {
             Parents::Native(rows) => rows.get(ordinal).map(Arc::as_ref),
             Parents::Original(rows) => rows.get(ordinal).map(|row| row.author.name()),
+            Parents::NarrowOriginal(rows) => rows.get(ordinal).map(|row| row.author.name()),
         }
     }
 
@@ -244,7 +273,7 @@ impl<'a> MacroTraceParents<'a> {
     /// Physical independent slice only. Original prefixes borrow the
     /// already-accounted trace frame storage, and do not own any array.
     pub fn native_owner(self) -> Option<&'a Arc<[Arc<str>]>> {
-        match self.0 { Parents::Native(rows) => Some(rows), Parents::Original(_) => None }
+        match self.0 { Parents::Native(rows) => Some(rows), Parents::Original(_) | Parents::NarrowOriginal(_) => None }
     }
 }
 
@@ -329,7 +358,7 @@ impl<'a> MacroTraceView<'a> {
                 MacroExpansionView {
                     name: row.author.name(), invocation_span: row.invocation_span,
                     definition: row.author.origin(),
-                    replacement_chain: MacroTraceParents(Parents::Original(rows.parents(at))),
+                    replacement_chain: MacroTraceParents(rows.parents(at)),
                 }
             }
         })

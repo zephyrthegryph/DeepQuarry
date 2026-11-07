@@ -4,7 +4,7 @@
 //! before allocation and moves its SAME root to final product/Mapping owners.
 use super::{DirectivePlan,IncludeOccurrence,IncludeRegion,OrderedItem,MacroEffect,ExpansionSegment};
 use crate::{SourceAcquisitionLease,InitialEnvironment,macro_expansion::{OriginalMacroRows as Rows, empty_exact as exact_rows}};
-use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace, OriginalMacroAuthor, PendingOriginalSingleton}};
+use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace, OriginalMacroAuthor, NarrowOriginalMacroFrame, PendingOriginalSingleton}};
 use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention,Span};
 use std::{io,mem,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
@@ -314,7 +314,10 @@ impl OriginalPlanOwner{
   // Fund control before the first definition loan, and the actual frame
   // storage after it, as before. A singleton packs only its own span.
   let mut rows = Vec::new();
+  let mut narrow_rows = Vec::new();
   let mut singleton = None;
+  let narrow = depth > 1 && mem::size_of::<NarrowOriginalMacroFrame>() < mem::size_of::<OriginalMacroFrame>()
+      && actual.supports_narrow_projection();
   let control = if depth == 1 { TRACE_ARC_HEADER } else { TRACE_BOX_WRAPPER };
   grow(&mut self.credit, control, a)?;
   actual.visit_inner_to_outer_using(a, |entry| {
@@ -340,6 +343,13 @@ impl OriginalPlanOwner{
     let frame = PendingOriginalSingleton::from_frame(frame);
     grow(&mut self.credit, frame.bytes(), a)?;
     singleton = Some(frame);
+   } else if narrow {
+    if narrow_rows.is_empty() {
+     grow(&mut self.credit, scaled(depth, mem::size_of::<NarrowOriginalMacroFrame>())?, a)?;
+     narrow_rows = exact_rows(depth, a)?;
+    }
+    if narrow_rows.len() >= depth { return Err(io::ErrorKind::InvalidData.into()); }
+    narrow_rows.push(NarrowOriginalMacroFrame::checked(frame).ok_or(io::ErrorKind::InvalidData)?);
    } else {
     if rows.is_empty() {
      grow(&mut self.credit, scaled(depth, mem::size_of::<OriginalMacroFrame>())?, a)?;
@@ -352,6 +362,14 @@ impl OriginalPlanOwner{
   })?;
   let rows = if depth == 1 {
    singleton.ok_or(io::ErrorKind::InvalidData)?.finish()
+  } else if narrow {
+   if narrow_rows.len() != depth { return Err(io::ErrorKind::InvalidData.into()); }
+   narrow_rows.reverse();
+   debug_assert_eq!(narrow_rows.capacity(), narrow_rows.len());
+   let row_pointer = narrow_rows.as_ptr();
+   let boxed = narrow_rows.into_boxed_slice();
+   debug_assert_eq!(boxed.as_ptr(), row_pointer);
+   OriginalMacroTrace::NarrowShared(Arc::new(boxed))
   } else {
    if rows.len() != depth { return Err(io::ErrorKind::InvalidData.into()); }
    rows.reverse();
@@ -488,8 +506,24 @@ mod trace_storage_tests {
                 assert!(std::ptr::eq(alias, rows.frame(ordinal).unwrap().author.name()));
             }
         }
-        let expected = TRACE_BOX_WRAPPER + names.len() * mem::size_of::<OriginalMacroFrame>();
+        assert!(matches!(rows, OriginalMacroTrace::NarrowShared(_)));
+        let expected = TRACE_BOX_WRAPPER + names.len() * mem::size_of::<NarrowOriginalMacroFrame>();
         assert_eq!(plan.credit.bytes() - before, expected);
+        #[cfg(target_pointer_width = "64")]
+        {
+            let wide_origin = OriginalMacroOrigin {
+                physical: Span::new(u32::MAX as usize, u32::MAX as usize + 1), ..origin
+            };
+            let wide = actual.pushed_using("WIDE", wide_origin, names.len() + 1, None, &a).unwrap();
+            let prior = plan.credit.bytes();
+            let wide_rows = plan.trace_using(&wide, &mut driver, &NoSource, &a).unwrap();
+            assert!(matches!(wide_rows, OriginalMacroTrace::Shared(_)));
+            assert_eq!(plan.credit.bytes()-prior, TRACE_BOX_WRAPPER + wide_rows.len()*mem::size_of::<OriginalMacroFrame>());
+            let view = super::super::MacroTraceView::original(&wide_rows);
+            assert_eq!(view.get(names.len()).unwrap().invocation_span, wide_origin.physical);
+            assert!(view.get(names.len()).unwrap().replacement_chain.iter().eq(names));
+            assert!(!wide_rows.same_owner(&rows));
+        }
         let other = super::super::original_output_trace::OriginalOutputTrace::default()
             .pushed_using("OTHER", origin, 1, None, &a).unwrap();
         let previous = plan.credit.bytes();
