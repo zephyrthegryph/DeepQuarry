@@ -28,19 +28,65 @@ pub enum SourceEncoding {
     IncompatibleOriginal,
     SyntheticUtf8,
 }
+use crate::source_arena_credit::SourceArenaControlCredit;
+use std::sync::Weak;
+
+/// Every concrete strong handle, including temporary upgrades, releases the
+/// implicit Weak before dropping its payload's final control-credit alias.
+struct AcquisitionOwner<T>(Option<Arc<T>>);
+impl<T> AcquisitionOwner<T> {
+    fn new(value: T) -> Self { Self(Some(Arc::new(value))) }
+    fn arc(&self) -> &Arc<T> { self.0.as_ref().expect("live acquisition owner") }
+    fn downgrade(&self, credit: &Option<SourceArenaControlCredit>) -> AcquisitionWeak<T> {
+        AcquisitionWeak { weak: Arc::downgrade(self.arc()), credit: credit.clone() }
+    }
+}
+impl<T> Clone for AcquisitionOwner<T> {
+    fn clone(&self) -> Self { Self(Some(self.arc().clone())) }
+}
+impl<T> std::ops::Deref for AcquisitionOwner<T> {
+    type Target = T;
+    fn deref(&self) -> &T { self.arc().as_ref() }
+}
+impl<T> Drop for AcquisitionOwner<T> {
+    fn drop(&mut self) {
+        if let Some(owner) = self.0.take() {
+            drop(Arc::into_inner(owner));
+        }
+    }
+}
+struct AcquisitionWeak<T> {
+    weak: Weak<T>,
+    // Release the actual Weak before this alias can refund its Arc layout.
+    credit: Option<SourceArenaControlCredit>,
+}
+impl<T> Clone for AcquisitionWeak<T> {
+    fn clone(&self) -> Self { Self { weak: self.weak.clone(), credit: self.credit.clone() } }
+}
+impl<T> AcquisitionWeak<T> {
+    fn as_ptr(&self) -> *const T { self.weak.as_ptr() }
+    fn strong_count(&self) -> usize { self.weak.strong_count() }
+    fn same(&self, other: &Self) -> bool { Weak::ptr_eq(&self.weak, &other.weak) }
+    fn upgrade(&self) -> Option<AcquisitionOwner<T>> {
+        self.weak.upgrade().map(|owner| AcquisitionOwner(Some(owner)))
+    }
+}
+
 struct Original {
     source: SourceText,
     encoding: SourceEncoding,
+    control: Option<SourceArenaControlCredit>,
 }
 struct Binding {
-    original: Arc<Original>,
+    original: AcquisitionOwner<Original>,
     receipt: Arc<dyn Any + Send + Sync>,
     // The erased receipt Arc drops before its control reservation.
     receipt_credit: Option<crate::source_arena_credit::SourceArenaControlCredit>,
+    control: Option<SourceArenaControlCredit>,
 }
 /// Lightweight exact acquisition binding: no lexical PreparedSource owner.
 #[derive(Clone)]
-pub struct SourceAcquisitionLease(Arc<Binding>);
+pub struct SourceAcquisitionLease(AcquisitionOwner<Binding>);
 impl std::fmt::Debug for SourceAcquisitionLease {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SourceAcquisitionLease")
@@ -80,7 +126,7 @@ impl SourceAcquisitionLease {
     /// preparing logical lines, directives, a parser or a semantic graph.
     pub fn from_raw_original_bytes<T:Any+Send+Sync>(bytes:Vec<u8>,receipt:T)->Self{
         let(text,encoding)=decode_original_bytes(bytes);
-        Self(Arc::new(Binding{original:Arc::new(Original{source:text.into(),encoding}),receipt:Arc::new(receipt),receipt_credit:None}))
+        Self(AcquisitionOwner::new(Binding{original:AcquisitionOwner::new(Original{source:text.into(),encoding,control:None}),receipt:Arc::new(receipt),receipt_credit:None,control:None}))
     }
 
     /// Actual private constructor layout; resource geometry only, not a source
@@ -116,7 +162,7 @@ impl SourceAcquisitionLease {
             Some(prior) if encoding==SourceEncoding::Utf8&&prior.can_reuse_for_exact_raw_utf8(&text)=>prior.clone(),
             _=>text.into(),
         };
-        Self(Arc::new(Binding{original:Arc::new(Original{source,encoding}),receipt:Arc::new(receipt),receipt_credit:None}))
+        Self(AcquisitionOwner::new(Binding{original:AcquisitionOwner::new(Original{source,encoding,control:None}),receipt:Arc::new(receipt),receipt_credit:None,control:None}))
     }
     /// Construct a fresh backing after the existing decoded-byte reuse check.
     /// The funding loan grants storage only. This constructor owns the actual String.
@@ -132,29 +178,36 @@ impl SourceAcquisitionLease {
                 None => text.into(),
             },
         };
+        // Settle both fixed layouts before donating the still-local receipt's
+        // paths. After receipt donation no further constructor can refuse.
+        let (binding_control, original_control) = fund_text.split_acquisition_controls([
+            std::mem::size_of::<Binding>() + 2 * std::mem::size_of::<usize>(),
+            std::mem::size_of::<Original>() + 2 * std::mem::size_of::<usize>(),
+        ])?.map_or((None,None), |(binding, original)| (Some(binding), Some(original)));
         let receipt_credit = fund_text.split_receipt(&receipt)?;
-        Ok(Self(Arc::new(Binding {
-            original: Arc::new(Original { source, encoding }),
+        Ok(Self(AcquisitionOwner::new(Binding {
+            original: AcquisitionOwner::new(Original { source, encoding, control: original_control }),
             receipt: Arc::new(receipt),
             receipt_credit,
+            control: binding_control,
         })))
     }
     /// Issue resource-only weak views over the THREE actual constructor
     /// allocations. Sharing/reissuance preserves real Original addresses and
     /// never causes an aggregate Binding row to double-charge shared objects.
     pub fn visit_weak_resource_objects(&self,mut emit:impl FnMut(WeakAcquisitionObject)){
-        emit(WeakAcquisitionObject(WeakObject::Binding(Arc::downgrade(&self.0))));
-        emit(WeakAcquisitionObject(WeakObject::Original(Arc::downgrade(&self.0.original))));
+        emit(WeakAcquisitionObject(WeakObject::Binding(self.0.downgrade(&self.0.control))));
+        emit(WeakAcquisitionObject(WeakObject::Original(self.0.original.downgrade(&self.0.original.control))));
         emit(WeakAcquisitionObject(WeakObject::Receipt{owner:Arc::downgrade(&self.0.receipt),bytes:std::mem::size_of_val(self.0.receipt.as_ref()),credit:self.0.receipt_credit.clone()}));
     }
     pub fn visit_storage(&self, mut visit: impl FnMut(AcquisitionStorage<'_>)) {
         visit(AcquisitionStorage::Object {
-            address: Arc::as_ptr(&self.0) as usize,
-            bytes: std::mem::size_of_val(self.0.as_ref()),
+            address: Arc::as_ptr(self.0.arc()) as usize,
+            bytes: std::mem::size_of::<Binding>(),
         });
         visit(AcquisitionStorage::Object {
-            address: Arc::as_ptr(&self.0.original) as usize,
-            bytes: std::mem::size_of_val(self.0.original.as_ref()),
+            address: Arc::as_ptr(self.0.original.arc()) as usize,
+            bytes: std::mem::size_of::<Original>(),
         });
         visit(AcquisitionStorage::Receipt {
             address: Arc::as_ptr(&self.0.receipt) as *const () as usize,
@@ -179,16 +232,17 @@ impl SourceAcquisitionLease {
         self.0.receipt.downcast_ref()
     }
     pub fn same_binding(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.0, &other.0)
+        Arc::ptr_eq(self.0.arc(), other.0.arc())
     }
     pub fn same_original_acquisition(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.0.original, &other.0.original)
+        Arc::ptr_eq(self.0.original.arc(), other.0.original.arc())
     }
     pub fn reissued<T: Any + Send + Sync>(&self, receipt: T) -> Self {
-        Self(Arc::new(Binding {
-            original: Arc::clone(&self.0.original),
+        Self(AcquisitionOwner::new(Binding {
+            original: self.0.original.clone(),
             receipt: Arc::new(receipt),
             receipt_credit: None,
+            control: None,
         }))
     }
 }
@@ -248,16 +302,18 @@ impl AcquiredSource {
         encoding: SourceEncoding,
         receipt: T,
     ) -> Self {
-        let original = Arc::new(Original {
+        let original = AcquisitionOwner::new(Original {
             source: prepared.original().clone(),
             encoding,
+            control: None,
         });
         Self {
             prepared,
-            lease: SourceAcquisitionLease(Arc::new(Binding {
+            lease: SourceAcquisitionLease(AcquisitionOwner::new(Binding {
                 original,
                 receipt: Arc::new(receipt),
             receipt_credit: None,
+            control: None,
             })),
         }
     }
@@ -302,7 +358,7 @@ mod tests;
 /// Compare-only weak issuance identity. This does not retain original source,
 /// receipts or PreparedSource; it is never serialized, hashed or dereferenced.
 #[derive(Clone)]
-pub struct SourceAcquisitionIdentity(std::sync::Weak<Binding>);
+pub struct SourceAcquisitionIdentity(AcquisitionWeak<Binding>);
 impl std::fmt::Debug for SourceAcquisitionIdentity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SourceAcquisitionIdentity")
@@ -313,14 +369,14 @@ impl SourceAcquisitionIdentity {
     pub fn matches(&self, lease: &SourceAcquisitionLease) -> bool {
         // The weak token keeps this allocation address reserved, and the
         // lease keeps its own Binding live. Neither handle is dereferenced.
-        std::ptr::eq(self.0.as_ptr(), Arc::as_ptr(&lease.0))
+        std::ptr::eq(self.0.as_ptr(), Arc::as_ptr(lease.0.arc()))
     }
     /// Storage/lifetime observation only, never source or locator authority.
     pub fn is_alive(&self) -> bool {
         self.0.strong_count() != 0
     }
     pub(crate) fn same_identity(&self, other: &Self) -> bool {
-        std::sync::Weak::ptr_eq(&self.0, &other.0)
+        self.0.same(&other.0)
     }
     pub fn visit_storage(&self, mut visit: impl FnMut(AcquisitionStorage<'_>)) {
         // Weak keeps the Binding allocation reserved, even after its payload
@@ -333,7 +389,7 @@ impl SourceAcquisitionIdentity {
 }
 impl SourceAcquisitionLease {
     pub fn identity(&self) -> SourceAcquisitionIdentity {
-        SourceAcquisitionIdentity(Arc::downgrade(&self.0))
+        SourceAcquisitionIdentity(self.0.downgrade(&self.0.control))
     }
 }
 
@@ -342,12 +398,12 @@ impl SourceAcquisitionLease {
 /// read gets another identity even if its decoded storage was interned equal.
 /// This weak token is an optimization key, not a source/receipt authority.
 #[derive(Clone)]
-pub struct OriginalAcquisitionIdentity(std::sync::Weak<Original>);
+pub struct OriginalAcquisitionIdentity(AcquisitionWeak<Original>);
 impl OriginalAcquisitionIdentity {
     pub fn same_live_original(&self, other: &Self) -> bool {
         self.0.strong_count() != 0
             && other.0.strong_count() != 0
-            && std::sync::Weak::ptr_eq(&self.0, &other.0)
+            && self.0.same(&other.0)
     }
     pub fn visit_storage(&self, mut visit: impl FnMut(AcquisitionStorage<'_>)) {
         visit(AcquisitionStorage::Object {
@@ -358,7 +414,7 @@ impl OriginalAcquisitionIdentity {
 }
 impl SourceAcquisitionLease {
     pub fn original_identity(&self) -> OriginalAcquisitionIdentity {
-        OriginalAcquisitionIdentity(Arc::downgrade(&self.0.original))
+        OriginalAcquisitionIdentity(self.0.original.downgrade(&self.0.original.control))
     }
 }
 
@@ -379,8 +435,16 @@ fn decode_original_bytes(bytes:Vec<u8>)->(String,SourceEncoding){
 /// Opaque weak allocation observation. It never returns a lease/Original/model,
 /// and a live receipt loan is limited to metadata visitors on this call stack.
 #[derive(Clone)]pub struct WeakAcquisitionObject(WeakObject);
-#[derive(Clone)]enum WeakObject{Binding(std::sync::Weak<Binding>),Original(std::sync::Weak<Original>),Receipt{owner:std::sync::Weak<dyn Any+Send+Sync>,bytes:usize,credit:Option<crate::source_arena_credit::SourceArenaControlCredit>}}
+#[derive(Clone)]enum WeakObject{Binding(AcquisitionWeak<Binding>),Original(AcquisitionWeak<Original>),Receipt{owner:std::sync::Weak<dyn Any+Send+Sync>,bytes:usize,credit:Option<crate::source_arena_credit::SourceArenaControlCredit>}}
 impl WeakAcquisitionObject{
+ pub fn control_credit(&self) -> Option<&SourceArenaControlCredit> {
+     match &self.0 {
+         WeakObject::Binding(owner) => owner.credit.as_ref(),
+         WeakObject::Original(owner) => owner.credit.as_ref(),
+         WeakObject::Receipt { credit, .. } => credit.as_ref(),
+     }
+ }
+
  /// Resource loan accompanying the erased receipt weak control. The Weak
  /// field precedes this credit so its allocation can free before refund.
  pub fn receipt_control_credit(&self) -> Option<&crate::source_arena_credit::SourceArenaControlCredit> {
@@ -400,8 +464,8 @@ impl WeakAcquisitionObject{
  /// Object/Receipt facts cannot be used as a source/currentness/EOF proof.
  pub fn visit_live_storage(&self,mut visit:impl FnMut(AcquisitionStorage<'_>))->bool{
   match &self.0{
-   WeakObject::Binding(w)=>{let Some(owner)=w.upgrade()else{return false};visit(AcquisitionStorage::Object{address:Arc::as_ptr(&owner)as usize,bytes:std::mem::size_of::<Binding>()});true},
-   WeakObject::Original(w)=>{let Some(owner)=w.upgrade()else{return false};visit(AcquisitionStorage::Object{address:Arc::as_ptr(&owner)as usize,bytes:std::mem::size_of::<Original>()});true},
+   WeakObject::Binding(w)=>{let Some(owner)=w.upgrade()else{return false};visit(AcquisitionStorage::Object{address:Arc::as_ptr(owner.arc())as usize,bytes:std::mem::size_of::<Binding>()});true},
+   WeakObject::Original(w)=>{let Some(owner)=w.upgrade()else{return false};visit(AcquisitionStorage::Object{address:Arc::as_ptr(owner.arc())as usize,bytes:std::mem::size_of::<Original>()});true},
    WeakObject::Receipt{owner,bytes,..}=>{let Some(owner)=owner.upgrade()else{return false};visit(AcquisitionStorage::Receipt{address:Arc::as_ptr(&owner)as*const()as usize,bytes:*bytes,value:owner.as_ref()});true},
   }
  }

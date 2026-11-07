@@ -78,10 +78,13 @@ impl Drop for SourceArenaCredit {
     }
 }
 
+type AcquisitionControls = (SourceArenaControlCredit, SourceArenaControlCredit);
+
 /// One operation-local loan from the actual admitted read. Only the read
 /// driver constructs it. Providers can request storage, never substitute bytes.
 pub struct OriginalReadTextFunding<'a> {
     split: &'a dyn Fn(usize) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>,
+    acquisition: &'a dyn Fn([usize; 2]) -> io::Result<Option<AcquisitionControls>>,
     receipt: &'a dyn Fn(&(dyn Any + Send + Sync)) -> io::Result<Option<SourceArenaControlCredit>>,
 }
 
@@ -90,6 +93,11 @@ impl OriginalReadTextFunding<'_> {
         -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>
     {
         (self.split)(capacity)
+    }
+    pub(crate) fn split_acquisition_controls(&self, sizes: [usize; 2])
+        -> io::Result<Option<AcquisitionControls>>
+    {
+        (self.acquisition)(sizes)
     }
     pub(crate) fn split_receipt(&self, receipt: &(dyn Any + Send + Sync)) -> io::Result<Option<SourceArenaControlCredit>> {
         (self.receipt)(receipt)
@@ -109,6 +117,13 @@ pub trait SourceArenaWork:Send+Sync{
     &self, _donor: &mut SourceArenaCredit, _capacity: usize,
  ) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
     Ok(None)
+ }
+
+ /// Partition the exact opened-read constructor's two fixed object layouts.
+ fn split_original_acquisition_controls(
+     &self, _donor: &mut SourceArenaCredit, _sizes: [usize; 2],
+ ) -> io::Result<Option<(SourceArenaControlCredit, SourceArenaControlCredit)>> {
+     Ok(None)
  }
 
  /// Transfer the pregrant for an actual exact opened-read receipt.
@@ -137,10 +152,10 @@ pub trait SourceArenaWork:Send+Sync{
 /// One operation-local read owner in the SAME existing input-family. No family
 /// gate spans provider IO, decoding, source-stack or parser callbacks. Its peak
 /// reservation disappears only after acquired() registers actual weak owners.
-struct ReadFunding{credit:SourceArenaCredit,raw:Option<usize>,planned:bool,new_source:bool,delivered:bool,text_factory_used:bool,receipt_funding_used:bool,owned_text_allowed:bool}
+struct ReadFunding{credit:SourceArenaCredit,raw:Option<usize>,planned:bool,new_source:bool,delivered:bool,text_factory_used:bool,receipt_funding_used:bool,acquisition_funding_used:bool,owned_text_allowed:bool}
 struct OriginalReadFunding<'a>{work:&'a dyn SourceArenaWork,max:usize,state:std::cell::RefCell<ReadFunding>,first:std::cell::RefCell<Option<io::Error>>}
 impl<'a>OriginalReadFunding<'a>{
- fn new(work:&'a dyn SourceArenaWork,max:usize)->io::Result<Self>{let bookkeeping=work.original_read_bookkeeping_bytes()?;Ok(Self{work,max,state:std::cell::RefCell::new(ReadFunding{credit:work.reserve(bookkeeping)?,raw:None,planned:false,new_source:false,delivered:false,text_factory_used:false,receipt_funding_used:false,owned_text_allowed:false}),first:std::cell::RefCell::new(None)})}
+ fn new(work:&'a dyn SourceArenaWork,max:usize)->io::Result<Self>{let bookkeeping=work.original_read_bookkeeping_bytes()?;Ok(Self{work,max,state:std::cell::RefCell::new(ReadFunding{credit:work.reserve(bookkeeping)?,raw:None,planned:false,new_source:false,delivered:false,text_factory_used:false,receipt_funding_used:false,acquisition_funding_used:false,owned_text_allowed:false}),first:std::cell::RefCell::new(None)})}
  /// A provider cannot replace/swallow a host callback's first actual error or
  /// relabel resource NotFound as source absence. Placeholder never escapes.
  fn callback<T>(&self,run:impl FnOnce()->io::Result<T>)->io::Result<T>{if self.first.borrow().is_some(){return Err(io::ErrorKind::Other.into())}match run(){Ok(value)=>Ok(value),Err(actual)=>{*self.first.borrow_mut()=Some(actual);Err(io::ErrorKind::Other.into())}}}
@@ -158,6 +173,19 @@ impl<'a>OriginalReadFunding<'a>{
         state.text_factory_used = true;
         self.work.split_original_text(&mut state.credit, capacity)
     })
+ }
+ fn split_acquisition_controls(&self, sizes: [usize; 2]) -> io::Result<Option<AcquisitionControls>> {
+     self.callback(|| {
+         let mut state = self.state.borrow_mut();
+         if !state.planned || !state.owned_text_allowed || state.delivered
+             || state.acquisition_funding_used || state.receipt_funding_used
+         {
+             return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                 "acquisition funding requires the admitted exact plain UTF-8 read"));
+         }
+         state.acquisition_funding_used = true;
+         self.work.split_original_acquisition_controls(&mut state.credit, sizes)
+     })
  }
  fn split_receipt(&self, receipt: &(dyn Any + Send + Sync)) -> io::Result<Option<SourceArenaControlCredit>> {
      self.callback(|| {
@@ -192,6 +220,7 @@ pub fn read_original_source_open_using(provider:&dyn crate::SourceProvider,path:
  let funding=OriginalReadFunding::new(work,max_bytes)?;let decision=std::cell::Cell::new(None);
  let fund_text = OriginalReadTextFunding {
      split: &|capacity| funding.split_text(capacity),
+     acquisition: &|sizes| funding.split_acquisition_controls(sizes),
      receipt: &|receipt| funding.split_receipt(receipt),
  };
  let pending=provider.original_raw_source_open_owned_admitted(path,max_bytes,work,&mut||funding.callback(||{if decision.get().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Original reader repeated after-open decision"))}let actual=after_open()?;decision.set(Some(actual));Ok(actual)}),&mut|size|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"payload allocation before actual read decision")))}funding.before_read(size)},&mut|plan|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"decode before actual read decision")))}funding.before_decode(plan)},&fund_text,&mut|source|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"acquisition before actual read decision")))}funding.acquired(source)});

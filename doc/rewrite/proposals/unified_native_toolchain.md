@@ -3564,3 +3564,13 @@ The checkout probe at `5a58a2342f` reached 11,330,495 producer rows. It kept
 reservation was 30,434,752 bytes, including 584,960 bytes of rank tables.
 The unchanged source-input limit refused a 12,668-byte allocation with
 4,647 bytes of headroom. No report was emitted and the private daemon exited.
+
+
+Exact opened plain UTF-8 acquisitions now transfer separate prepaid control
+credits for the Binding and Original allocations. Their weak identity tokens
+hold the matching credits through final release, and reissue keeps the same
+Original and its credit. Seven focused source tests passed, including real
+open and reissue, independently retained weak identities and exact refunds.
+The work still leaves exceptional storage and other unfunded backing paths
+outside this ownership scope. The combined admission budget and production
+cutover remain open.

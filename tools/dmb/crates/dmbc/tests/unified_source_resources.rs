@@ -201,21 +201,23 @@ fn real_opened_utf8_moves_buffer_into_independent_payload_and_control_credits() 
     assert_eq!(text.as_bytes().as_ptr() as usize, pointer.get());
     assert_eq!(text.source_arena_payload_credit().unwrap().reserved_bytes(), bytes.len());
     assert_eq!(text.source_arena_control_credit().unwrap().reserved_bytes(), SourceText::source_arena_control_bytes().unwrap());
-    let mut receipt_weak = None;
+    let mut observed: [Option<dm_preprocess::source_acquisition::WeakAcquisitionObject>; 3] = [None,None,None];
     lease.visit_weak_resource_objects(|observation| {
-        if observation.receipt_control_credit().is_some() {
-            assert!(receipt_weak.replace(observation).is_none());
-        }
+        let kind = usize::from(observation.resource_key().0);
+        assert!(observation.control_credit().is_some());
+        assert!(observed[kind].replace(observation).is_none());
     });
-    let receipt_weak = receipt_weak.expect("actual receipt owns a transferred credit");
-    let receipt_bytes = receipt_weak.receipt_control_credit().unwrap().reserved_bytes();
+    let [binding_weak, original_weak, receipt_weak] = observed.map(Option::unwrap);
+    let receipt_bytes = receipt_weak.control_credit().unwrap().reserved_bytes();
     let binding = lease.identity();
     let original = lease.original_identity();
     let reissued = lease.reissued(());
     assert!(!binding.matches(&reissued));
     assert!(original.same_live_original(&reissued.original_identity()));
     reissued.visit_weak_resource_objects(|observation| {
-        assert!(observation.receipt_control_credit().is_none());
+        let is_original = observation.resource_key().0 == 1;
+        assert_eq!(observation.control_credit().is_some(), is_original);
+        if is_original { assert_eq!(observation.resource_key(), original_weak.resource_key()); }
     });
     let weak_text = text.downgrade();
     drop(lease);
@@ -226,7 +228,16 @@ fn real_opened_utf8_moves_buffer_into_independent_payload_and_control_credits() 
     assert_eq!(receipt_weak.receipt_control_credit().unwrap().reserved_bytes(), receipt_bytes);
     assert!(receipt_bytes > 0);
     drop(receipt_weak);
+    assert!(!binding_weak.is_alive());
+    assert!(binding_weak.control_credit().unwrap().reserved_bytes() > 0);
+    assert!(original_weak.is_alive());
     drop(reissued);
+    assert!(!original_weak.is_alive());
+    assert!(original_weak.control_credit().unwrap().reserved_bytes() > 0);
+    drop(binding_weak);
+    drop(original_weak);
+    drop(binding);
+    drop(original);
     assert!(weak_text.upgrade().is_some());
     drop(text);
     assert!(weak_text.upgrade().is_none());

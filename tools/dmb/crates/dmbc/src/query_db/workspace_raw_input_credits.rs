@@ -137,9 +137,9 @@ impl Ledger{
   if let Some((address,weak))=original{let owner=Observation::Original(weak);let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost original payload"))?;staged[1]=Some(((1,address),owner,n));}
   if let crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=crate::input_snapshot::recorded_source_original(lease)?{let owner=Observation::Bytes(Arc::downgrade(bytes.shared_owner()));let n=owner.bytes()?.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual acquired source lost exceptional bytes"))?;staged[2]=Some(((2,Arc::as_ptr(bytes.shared_owner())as usize),owner,n));}
   let mut next=3;let mut object_error=None;
-  lease.visit_weak_resource_objects(|weak|{if object_error.is_some(){return}if weak.receipt_control_credit().and_then(|credit| credit.owner().as_any().downcast_ref::<super::source_arena::Allocation>())
+  lease.visit_weak_resource_objects(|weak|{if object_error.is_some(){return}if weak.control_credit().and_then(|credit| credit.owner().as_any().downcast_ref::<super::source_arena::Allocation>())
       .is_some_and(|allocation| self.has_source_arena(allocation)) {
-     // The receipt's prepaid row moved to this actual Arena allocation.
+     // The constructor object's prepaid row moved to this actual Arena allocation.
      return;
   }
   let(kind,address)=weak.resource_key();let owner=Observation::Acquisition(weak);match owner.bytes(){Ok(Some(n))=>{staged[next]=Some(((7+kind,address),owner,n));next+=1},Ok(None)=>object_error=Some(io::Error::new(io::ErrorKind::InvalidInput,"actual acquisition constructor owner died")),Err(e)=>object_error=Some(e)}});

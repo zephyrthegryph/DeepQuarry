@@ -135,6 +135,18 @@ impl QueryDb{
  }
 }
 impl SourceArenaWork for QueryDb{
+ fn split_original_acquisition_controls(&self, donor: &mut SourceArenaCredit, sizes: [usize; 2])
+     -> io::Result<Option<(dm_preprocess::source_arena_credit::SourceArenaControlCredit,
+                          dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
+     self.checkpoint()?;
+     let actual = allocation(self, donor)?;
+     let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
+     let mut ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e| e.into_inner());
+     let [binding, original] = split_owned_allocations(&mut ledger, actual, sizes,
+         |ledger, extra| self.admit_source_arena(ledger, extra))?;
+     Ok(Some((binding.into_credit().into_control(), original.into_credit().into_control())))
+ }
+
  fn split_original_receipt(&self, donor: &mut SourceArenaCredit, receipt: &(dyn std::any::Any + Send + Sync))
      -> io::Result<Option<dm_preprocess::source_arena_credit::SourceArenaControlCredit>> {
      self.checkpoint()?;
@@ -277,6 +289,18 @@ impl<'a> HeldSourceWork<'a>{
  fn actual<'credit>(state:&HeldSourceState<'_>,credit:&'credit SourceArenaCredit)->io::Result<&'credit Allocation>{let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;if !actual.same_domain(&Arc::downgrade(state.domain))||!state.ledger.has_source_arena(actual){return Err(wrong())}Ok(actual)}
 }
 impl SourceArenaWork for HeldSourceWork<'_>{
+ fn split_original_acquisition_controls(&self, donor: &mut SourceArenaCredit, sizes: [usize; 2])
+     -> io::Result<Option<(dm_preprocess::source_arena_credit::SourceArenaControlCredit,
+                          dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
+     self.checkpoint()?;
+     let mut state = self.lock()?;
+     let actual = Self::actual(&state, donor)?;
+     let budget = state.budget;
+     let [binding, original] = split_owned_allocations(&mut *state.ledger, actual, sizes,
+         |_, extra| budget.charge(extra).map_err(|_| oom()))?;
+     Ok(Some((binding.into_credit().into_control(), original.into_credit().into_control())))
+ }
+
  fn split_original_receipt(&self, donor: &mut SourceArenaCredit, receipt: &(dyn std::any::Any + Send + Sync))
      -> io::Result<Option<dm_preprocess::source_arena_credit::SourceArenaControlCredit>> {
      self.checkpoint()?;
@@ -420,5 +444,46 @@ mod receipt_transfer_tests {
             }
         });
         assert_eq!(funded_receipts, 1);
+    }
+}
+
+#[cfg(test)]
+mod acquisition_control_identity_tests {
+    use super::*;
+    use crate::input_snapshot::{FileSystemInputs, RecordingInputs};
+    use dm_preprocess::source_arena_credit::read_original_source_open_using;
+    use dm_preprocess::{InitialEnvironment, OriginalRawOpenDecision, OriginalRawReadOutcome};
+
+    #[test]
+    fn actual_opened_weak_identities_hold_independent_constructor_credits() {
+        let db = QueryDb::default();
+        let baseline = db.source_input_admission_bytes().unwrap();
+        let root = crate::test_scratch::dir("native-owned-acquisition-identities");
+        let path = root.join("source.dm");
+        std::fs::write(&path, b"/datum/owned_weak_identities
+").unwrap();
+        let inputs = RecordingInputs::new(FileSystemInputs, 0)
+            .with_initial_environment(InitialEnvironment::OriginalChecker0290);
+        let OriginalRawReadOutcome::Acquired(lease) = read_original_source_open_using(
+            &inputs, &path, 1024, &db, &mut || Ok(OriginalRawOpenDecision::Read),
+        ).unwrap() else { panic!("actual exact opened source") };
+        let mut charge = [0; 3];
+        lease.visit_weak_resource_objects(|observation| {
+            charge[usize::from(observation.resource_key().0)] =
+                observation.control_credit().unwrap().reserved_bytes();
+        });
+        let binding = lease.identity();
+        let original = lease.original_identity();
+        drop(lease);
+        drop(inputs);
+        assert!(!binding.is_alive());
+
+        let fixed = Allocation::metadata_bytes() + raw_input_credits::NODE;
+        let held = db.source_input_admission_bytes().unwrap();
+        assert_eq!(held, baseline + charge[0] + charge[1] + 2 * fixed);
+        drop(binding);
+        assert_eq!(db.source_input_admission_bytes().unwrap(), baseline + charge[1] + fixed);
+        drop(original);
+        assert_eq!(db.source_input_admission_bytes().unwrap(), baseline);
     }
 }
