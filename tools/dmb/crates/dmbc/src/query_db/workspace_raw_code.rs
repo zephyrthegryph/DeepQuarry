@@ -205,6 +205,44 @@ impl QueryDb{
  /// parent-delta recharge occurs on this path. This is control, not authority.
  pub(in crate::query_db) fn with_workspace_code_pages_budget_locked<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,budget:&Arc<Budget>,visit:impl FnOnce(&WorkspaceCodeReader<'_,'_>)->Result<R,Failure>)->Result<R,Failure>{self.with_workspace_code_pages_using_locked(capture,scope,Some(budget),None,visit)}
  pub(in crate::query_db) fn with_workspace_code_pages_limit_locked<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,limit:Option<usize>,visit:impl FnOnce(&WorkspaceCodeReader<'_,'_>)->Result<R,Failure>)->Result<R,Failure>{self.with_workspace_code_pages_using_locked(capture,scope,None,limit,visit)}
+ /// The sealed raw bulk stage has already inventoried and pinned the exact
+ /// source-free page results it loans to this callback. This callback receives
+ /// no code reader, and cannot introduce a new page/query owner.
+ pub(super) fn with_bulk_raw_render_budget_locked<R>(
+    &self,
+    capture: &Arc<WorkspaceCapture>,
+    scope: &NativeReadGuard<'_>,
+    inventory: &ResourceInventory,
+    render: impl FnOnce(&Arc<Budget>) -> io::Result<R>,
+ ) -> io::Result<R> {
+    crate::daemon::control::checkpoint()?;
+    capture.require_scope(scope)?;
+    if !capture.is_sealed_raw_file_capture() || !scope.uses_queries(self) {
+        return Err(invalid("bulk raw rendering requires the current sealed capture"));
+    }
+    self.raw_prune_locked(std::time::Instant::now());
+    let capture_fixed = self.raw_source_capture_fixed_credit_locked(capture)?
+        .map_or_else(|| capture.retained_charge(), |_| Ok(0))?;
+    // Keep the original code-reader input envelope even though this
+    // report-only callback cannot borrow code.
+    let fixed = capture_fixed.checked_add(inventory.coordination_charge(0)?)
+        .and_then(|n| n.checked_add(std::mem::size_of::<WorkspaceCodeReader<'_, '_>>()
+            + PAGE_FILES * std::mem::size_of::<CurrentFile>() + 4096))
+        .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "workspace code fixed accounting overflow"))?;
+    let input = self.workspace_input_headroom_locked(fixed)?;
+    let result = RESULT_BOUND.checked_sub(self.raw_policy.charge.load(Ordering::Relaxed))
+        .and_then(|n| n.checked_sub(inventory.bytes()))
+        .and_then(|n| n.checked_sub(aggregate::REPORT_RESERVE))
+        .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "workspace code result-family headroom exhausted"))?;
+    let budget = Budget::new(input.min(result)).map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory,message))?;
+    let pending = render(&budget)?;
+    self.refresh_raw_source_inputs_locked()?;
+    self.workspace_input_headroom_locked(fixed)?;
+    crate::daemon::control::checkpoint()?;
+    capture.require_scope(scope)?;
+    budget.require().map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory,message))?;
+    Ok(pending)
+ }
  fn with_workspace_code_pages_using_locked<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,shared:Option<&Arc<Budget>>,limit:Option<usize>,visit:impl FnOnce(&WorkspaceCodeReader<'_,'_>)->Result<R,Failure>)->Result<R,Failure>{
   crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
   if !scope.uses_queries(self){return Err(Failure::Operational(invalid("original code pages need the current compiler QueryDb")))}

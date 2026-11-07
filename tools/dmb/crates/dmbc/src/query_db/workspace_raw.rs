@@ -1021,11 +1021,14 @@ impl QueryDb{
   let mut usage=rows.clone().flat_map(|file|file.allow_used.iter());
   let pending=if with_report{
    let actual=scopes.first().ok_or_else(||invalid("raw union report scope unavailable"))?;
-   // The same family gate stays held while output is produced. The new
-   // reader inventories these still-live raw pages before any render copy.
-   self.with_workspace_code_pages_locked(capture,scope,|reader|
-    consume(&mut rows,&mut usage,Some((actual.report_scope(),reader.budget()))).map_err(dq_analyze::captured_reactive_reads::Failure::Operational)
-   ).map_err(|failure|match failure{dq_analyze::captured_reactive_reads::Failure::Operational(e)=>e,dq_analyze::captured_reactive_reads::Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
+   if bulk_raw {
+    self.with_bulk_raw_render_budget_locked(capture,scope,&inventory,|child|
+     consume(&mut rows,&mut usage,Some((actual.report_scope(),child))))
+   } else {
+    self.with_workspace_code_pages_locked(capture,scope,|reader|
+     consume(&mut rows,&mut usage,Some((actual.report_scope(),reader.budget()))).map_err(dq_analyze::captured_reactive_reads::Failure::Operational)
+    ).map_err(|failure|match failure{dq_analyze::captured_reactive_reads::Failure::Operational(e)=>e,dq_analyze::captured_reactive_reads::Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
+   }
   }else{consume(&mut rows,&mut usage,None)};if pending.is_err(){return pending}crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;pending
  }
 }
