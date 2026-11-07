@@ -211,14 +211,6 @@ CAPABILITIES(/datum/global_hud)
 	var/list/miniobjs
 	var/list/atom/movable/screen/hotkeybuttons
 
-	var/atom/movable/screen/button_palette/toggle_palette
-	var/atom/movable/screen/palette_scroll/down/palette_down
-	var/atom/movable/screen/palette_scroll/up/palette_up
-
-	var/datum/action_group/palette/palette_actions
-	var/datum/action_group/listed/listed_actions
-	var/list/floating_actions
-
 	var/list/slot_info
 
 	var/icon/ui_style
@@ -258,18 +250,12 @@ CAPABILITIES(/datum/hud)
 	hud_element(nameof(xenochimera_danger_display), /atom/movable/screen/xenochimera/danger_level)
 	hud_element(nameof(plane_holder), /datum/plane_holder)
 	owns_one(nameof(control_vtec), /atom/movable/screen)
-	owns_one(nameof(listed_actions), /datum/action_group/listed)
-	owns_one(nameof(palette_actions), /datum/action_group/palette)
-	owns_one(nameof(palette_down), /atom/movable/screen/palette_scroll/down)
-	owns_one(nameof(palette_up), /atom/movable/screen/palette_scroll/up)
-	owns_one(nameof(toggle_palette), /atom/movable/screen/button_palette)
 	owns_many(nameof(adding))
 	owns_many(nameof(ammo_hud_list), /atom/movable/screen/ammo)
 	owns_many(nameof(extra_screens))
 	owns_many(nameof(hotkeybuttons), /atom/movable/screen)
 	owns_many(nameof(other))
 	owns_many(nameof(other_important))
-	ref_many(nameof(floating_actions))
 	ref_many(nameof(hud_elements))
 	ref_many(nameof(minihuds))
 
@@ -373,20 +359,12 @@ CAPABILITIES(/datum/hud)
 	if(!ismob(mymob()))
 		return 0
 
-	rel_set(src, nameof(toggle_palette), new /atom/movable/screen/button_palette())
-	rel_set(src, nameof(palette_down), new /atom/movable/screen/palette_scroll/down())
-	rel_set(src, nameof(palette_up), new /atom/movable/screen/palette_scroll/up())
 	mymob().create_mob_hud(src)
 
 	// Past this point, mymob.hud_used is set
 
-	toggle_palette.set_hud(src)
-	palette_down.set_hud(src)
-	palette_up.set_hud(src)
-
 	persistant_inventory_update()
 	mymob().reload_fullscreen() // Reload any fullscreen overlays this mob has.
-	mymob().update_action_buttons(TRUE)
 	reorganize_alerts()
 
 /mob/proc/create_mob_hud(datum/hud/HUD, apply_to_client = TRUE)
@@ -406,7 +384,6 @@ CAPABILITIES(/datum/hud)
 
 /mob/proc/set_hud_used(datum/hud/new_hud)
 	rel_set(src, nameof(hud_used), new_hud)
-	new_hud.build_action_groups()
 
 /mob/proc/update_ui_style(UI_style_new, UI_style_alpha_new, UI_style_color_new)
 	if(!hud_used)
@@ -512,11 +489,9 @@ CAPABILITIES(/datum/hud)
 		if(hud_used?.combat_mode_button)
 			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
 		client_screen_add(client, hud_used?.zone_sel)				//This one is a special snowflake
-		client_screen_add(client, hud_used.toggle_palette)
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()
-	update_action_buttons(TRUE)
 	hud_used.reorganize_alerts()
 	return TRUE
 
@@ -579,7 +554,6 @@ CAPABILITIES(/datum/hud)
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()
-	update_action_buttons(TRUE)
 
 /mob/proc/add_click_catcher()
 	client_screen_add(client, GLOB.click_catcher)

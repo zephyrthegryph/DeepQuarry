@@ -103,6 +103,8 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	if(client)
 		for(var/datum/action/A as anything in persistent_client.player_actions)
 			A.Grant(src)
+		sync_op_abilities()
+		abilities_changed()
 
 		for(var/datum/callback/CB as anything in persistent_client.post_login_callbacks)
 			CB.Invoke()

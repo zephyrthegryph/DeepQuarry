@@ -102,7 +102,7 @@ CAPABILITIES(/mob/living/simple_mob/construct)
 /// Declared setup: prepare construct spells, after the complete parent chain.
 /mob/living/simple_mob/construct/proc/prepare_construct_spells()
 	for(var/spell in construct_spells)
-		src.add_spell(new spell, "const_spell_ready")
+		src.add_spell(new spell)
 
 /mob/living/simple_mob/construct
 

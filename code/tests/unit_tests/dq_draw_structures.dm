@@ -267,28 +267,6 @@
 	TEST_ASSERT_EQUAL(gibs.color, "#654321", "and a new blood colour tints them")
 	TEST_ASSERT(gibs.rx?.look_key != before, "and redraws them")
 
-// ---- the ability buttons ----
-
-/// The ability master shows open or closed from its tracked flag, and hides while it has no abilities.
-/datum/unit_test/dq_draw_ability_master_follows_showing
-
-/datum/unit_test/dq_draw_ability_master_follows_showing/Run()
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_floor())
-	var/atom/movable/screen/movable/ability_master/master = allocate(/atom/movable/screen/movable/ability_master, user)
-	refresh_flush()
-	TEST_ASSERT(master.closed_state in dq_structure_overlays(master), "a closed master shows its closed state")
-	TEST_ASSERT_EQUAL(master.invisibility, INVISIBILITY_ABSTRACT, "and is hidden with nothing to show")
-	master.set_showing(TRUE)
-	refresh_flush()
-	TEST_ASSERT(master.open_state in dq_structure_overlays(master), "an opened one shows its open state with no update_icon() call")
-	var/atom/movable/screen/ability/button = allocate(/atom/movable/screen/ability, null)
-	button.set_ability_icon_state("ling_revive")
-	rel_add(master, nameof(master.ability_objects), button)
-	refresh_flush()
-	TEST_ASSERT_EQUAL(master.invisibility, INVISIBILITY_NONE, "an ability makes the master visible")
-	refresh_flush()
-	TEST_ASSERT(("ling_revive" in dq_structure_overlays(button)), "and the button draws its ability icon")
-
 // ---- one path for a relation write ----
 
 /// How many times `D` waits in the refresh queue.

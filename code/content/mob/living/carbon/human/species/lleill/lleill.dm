@@ -200,18 +200,10 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 		rel_add(src, nameof(lleill_ability_datums), LP)
 
 /datum/species/lleill/proc/add_lleill_abilities(mob/living/carbon/human/H)
-	if(!H.ability_master || !istype(H.ability_master, /atom/movable/screen/movable/ability_master/lleill))
-		rel_set(H, nameof(H.ability_master), new /atom/movable/screen/movable/ability_master/lleill(H)) // replaces (deletes) a non-lleill master
 	for(var/datum/power/lleill/P in lleill_ability_datums)
 		if(!(P.verbpath in H.verbs))
 			grant(H, granted_verb(P.verbpath), src)
-			H.ability_master.add_lleill_ability(
-					object_given = H,
-					verb_given = P.verbpath,
-					name_given = P.name,
-					ability_icon_given = P.ability_icon_state,
-					arguments = list()
-					)
+			grant_verb_ability(H, H, P.verbpath, P.name, P.ability_icon_state, arguments = list())
 	after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
 
 /mob/living/carbon/human/proc/show_lleill_display()

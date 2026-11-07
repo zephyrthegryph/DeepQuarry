@@ -2214,7 +2214,6 @@ external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simula
 external_dependency	code/library/helpers/turfs.dm	return (istype(T, /turf/simulated/floor) || istype(T, /turf/open/fixed/floor) || istype(T, /turf/simulated/shuttle/floor))
 external_dependency	code/library/helpers/turfs.dm	if(atom_rules_of(A).simulated)
 external_dependency	code/library/helpers/turfs.dm	var/datum/gas_mixture/environment = T ? T.return_air() : null
-external_dependency	code/library/helpers/turfs.dm	var/leave_turf = base_turf ? base_turf : get_base_turf_by_area(base_area ? base_area : source)
 external_dependency	code/library/helpers/turfs.dm	if(istype(T,/turf/space))
 external_dependency	code/library/helpers/turfs.dm	if(istype(T,/turf/simulated/shuttle))
 external_dependency	code/library/helpers/turfs.dm	var/turf/simulated/shuttle/SS = T

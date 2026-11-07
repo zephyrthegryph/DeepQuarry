@@ -62,7 +62,7 @@ CAPABILITIES(/datum/client_session)
 /// Deletes every connection-scoped datum the client holds, then drops the waiters.
 /datum/client_session/on_destroy(force)
 	if(client)
-		var/static/list/owned_vars = list("stat_panel", "tgui_say", "tgui_shocker", "tgui_panel", "loot_panel", "tooltips", "media", "interaction_menu", "inspect_panel", "keybind_editor", "volume_panel", "fakeConversations")
+		var/static/list/owned_vars = list("stat_panel", "tgui_say", "tgui_shocker", "tgui_panel", "loot_panel", "tooltips", "media", "interaction_menu", "inspect_panel", "ability_panel", "keybind_editor", "volume_panel", "fakeConversations")
 		for(var/var_name in owned_vars)
 			var/datum/owned = client.vars[var_name]
 			if(owned)

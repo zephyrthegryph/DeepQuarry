@@ -82,21 +82,6 @@
 	with_actor(ambient, GLOBAL_PROC, GLOBAL_PROC_REF(input_dispatch), S, actor, INPUT_CLICK_ON)
 	TEST_ASSERT_EQUAL(G.firemode_actor_id, REF(actor), "The actual ammo HUD forwards its explicit click actor to the gun")
 
-/atom/movable/screen/palette_scroll/dq_d6_palette_probe
-	var/check_actor_id
-
-/atom/movable/screen/palette_scroll/dq_d6_palette_probe/can_use(mob/user)
-	check_actor_id = REF(user)
-	return FALSE
-
-/datum/unit_test/dq_d6_actor_inputs/palette_gate/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())
-	var/mob/living/carbon/human/ambient = allocate(/mob/living/carbon/human, test_floor())
-	var/atom/movable/screen/palette_scroll/dq_d6_palette_probe/S = allocate(/atom/movable/screen/palette_scroll/dq_d6_palette_probe)
-	with_actor(ambient, GLOBAL_PROC, GLOBAL_PROC_REF(input_dispatch), S, actor, INPUT_CLICK_ON)
-	TEST_ASSERT_EQUAL(S.check_actor_id, REF(actor), "The actual palette's permission guard receives the explicit click actor")
-
 /datum/unit_test/dq_d6_actor_inputs/zone_hover/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())

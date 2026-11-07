@@ -19,6 +19,9 @@
 
 
 
+/obj/item/clothing/shoes/magboots/action_toggle_state(actiontype)
+	return magpulse ? TRUE : FALSE
+
 /obj/item/clothing/shoes/magboots/proc/set_slowdown()
 	set_worn_factor(STAT_ITEM_ENCUMBRANCE, shoes? max(SHOES_SLOWDOWN, shoes.worn_factor(STAT_ITEM_ENCUMBRANCE)): SHOES_SLOWDOWN)	//So you can't put on magboots to make you walk faster.
 	if (magpulse)

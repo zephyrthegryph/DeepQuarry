@@ -1,4 +1,8 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - qol: "The species, trait and mob-type abilities that filled the Abilities tabs (shapeshift, vore, alien, lleill, protean, promethean, synx, settings and the rest) are now one Abilities window, opened from the Abilities entry of your own right-click menu; it lists the abilities you have"
+  - rscadd: "An Abilities tab in the right side panel lists everything you can do: item toggles (flashlight, jetpack, magboots), mech controls, and species powers such as the shadekin's, grouped by category, with your energy and the toggles that are on at the top"
+  - rscadd: "Abilities show their cooldown, cost and on/off state; one you cannot use now is greyed and says why when you hover it"
+  - rscadd: "Drag abilities in the Abilities tab to reorder them; the order is saved with your preferences"
+  - rscadd: "The first nine abilities have hotkeys, ALT+1 to ALT+9 by default, rebindable in the keybinding editor under Abilities"
+  - rscdel: "The action buttons in the top left of the map are gone; the Abilities tab replaces them"

@@ -448,6 +448,11 @@ ACTION(mob_equipped_item, obj/item/equipped_item, slot, FIXED, notice = /datum/n
 /obj/item/proc/ui_action_click(mob/user, actiontype)
 	attack_self(user)
 
+/// Whether the item's ability `actiontype` is a toggle that is on now (TRUE or FALSE), or null when the ability is not a toggle: the Abilities
+/// tab shows the state on the button.
+/obj/item/proc/action_toggle_state(actiontype)
+	return null
+
 //RETURN VALUES
 //handle_shield should return a positive value to indicate that the attack is blocked and should be prevented.
 //If a negative value is returned, it should be treated as a special return value for bullet_act() and handled appropriately.

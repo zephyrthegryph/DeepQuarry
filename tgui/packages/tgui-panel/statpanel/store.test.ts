@@ -145,4 +145,53 @@ describe('stat panel store', () => {
     expect(searchVerbs(store.state, ' ')).toEqual([]);
     expect(verbCommand('Fix Stat Panel')).toBe('Fix-Stat-Panel');
   });
+
+  it('the Abilities tab comes with the first ability and goes with the last', () => {
+    const { sent, store } = setup();
+    store.receive('init_verbs', { verblist });
+    const entry = {
+      ref: 'r1',
+      id: 'Items/x',
+      name: 'Toggle Flashlight',
+      desc: '',
+      category: 'Items',
+      icon: null,
+      cost: null,
+      cooldown: 0,
+      toggled: null,
+      channel: null,
+      refusal: null,
+      slot: 1,
+    };
+    store.receive('update_abilities', {
+      abilities: [entry],
+      resources: [],
+      slots: 9,
+    });
+    expect(visibleTabs(store.state).slice(0, 2)).toEqual([
+      'Status',
+      'Abilities',
+    ]);
+    expect(store.state.abilities?.abilities[0].name).toBe('Toggle Flashlight');
+    store.setTab('Abilities');
+    store.receive('update_abilities', {
+      abilities: [],
+      resources: [],
+      slots: 9,
+    });
+    expect(visibleTabs(store.state)).not.toContain('Abilities');
+    expect(store.state.abilities).toBeNull();
+    expect(store.state.currentTab).toBe('Status');
+    expect(sent.at(-1)).toEqual(['Set-Tab', { tab: 'Status' }]);
+  });
+
+  it('a resource alone is enough for the tab', () => {
+    const { store } = setup();
+    store.receive('update_abilities', {
+      abilities: [],
+      resources: [{ name: 'Energy', value: 50, max: 100 }],
+      slots: 9,
+    });
+    expect(visibleTabs(store.state)).toContain('Abilities');
+  });
 });

@@ -4,6 +4,7 @@
  * derived from them instead of kept in the DOM.
  */
 
+import { type AbilitiesData, hasAbilities } from './abilities';
 import type { InspectData } from './inspect';
 
 export type Host = {
@@ -24,6 +25,9 @@ export type State = {
   spells: string[][];
   examine: string[];
   inspect: InspectData | null;
+  abilities: AbilitiesData | null;
+  /** Date.now() when the abilities arrived: the cooldowns count down from it. */
+  abilitiesAt: number;
   tickets: string[][];
   misc: Record<string, any[][]>;
   sdql2: string[][];
@@ -45,6 +49,8 @@ export function initialState(): State {
     spells: [],
     examine: [],
     inspect: null,
+    abilities: null,
+    abilitiesAt: 0,
     tickets: [],
     misc: {},
     sdql2: [],
@@ -62,7 +68,7 @@ export function tabOfCategory(category: string, split: boolean): string {
   return split && head === 'Admin' ? tail : head;
 }
 
-const PINNED = ['Status', 'MC', 'Tickets'];
+const PINNED = ['Status', 'Abilities', 'MC', 'Tickets'];
 
 function pinOrder(tab: string): number {
   const index = PINNED.indexOf(tab);
@@ -318,6 +324,17 @@ export class StatStore {
         });
         if (payload.switch) this.setTab('Inspect');
         break;
+      case 'update_abilities': {
+        const shown = hasAbilities(payload);
+        this.changed({
+          abilities: shown ? payload : null,
+          abilitiesAt: Date.now(),
+          permanentTabs: shown
+            ? this.withTab(tabs, 'Abilities')
+            : this.withoutTabs(tabs, ['Abilities']),
+        });
+        break;
+      }
       case 'update_split_admin_tabs':
         this.changed({ splitAdminTabs: payload === true });
         break;

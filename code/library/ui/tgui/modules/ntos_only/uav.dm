@@ -8,6 +8,7 @@
 	var/adhoc_range = 30 //How far we can operate on a UAV without NTnet
 
 CAPABILITIES(/datum/tgui_module/uav)
+	ref_many(nameof(viewers))
 	every(20 SECONDS, then(PROC_REF(signal_check)), when = nameof(current_uav))
 	interface("UAV")
 	op("switch_uav", ui_act("switch_uav", arg("switch_uav", schema_text(32))), then(PROC_REF(ui_act_switch_uav)))

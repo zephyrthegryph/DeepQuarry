@@ -417,6 +417,5 @@
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()
-	update_action_buttons()
 	hud_used.reorganize_alerts()
 	return TRUE

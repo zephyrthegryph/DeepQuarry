@@ -1,12 +1,12 @@
 //AEIOU
 //
-//THIS FILE CONTAINS THE CODE TO ADD THE HUD BUTTONS AND THE MECH ACTIONS THEMSELVES.
+// THIS FILE CONTAINS THE MECH ACTIONS: the abilities the pilot has in the Abilities tab while inside the mech.
 //
 //
 // I better get some free food for this..
 
 //
-/// Adding the buttons things to the player. The interactive, top left things, at least at time of writing.
+/// Adding the abilities to the pilot.
 /// If you want it to be only for a special mech, you have to go and make an override like in the durand mech.
 //
 
@@ -65,9 +65,8 @@
 
 /datum/action/innate/mecha
 	check_flags = AB_CHECK_RESTRAINED | AB_CHECK_STUNNED | AB_CHECK_CONSCIOUS
-	background_icon = 'icons/effects/actions_mecha.dmi'
 	button_icon = 'icons/effects/actions_mecha.dmi'
-	overlay_icon = 'icons/effects/actions_mecha.dmi'
+	ability_category = ABILITY_CATEGORY_ITEMS
 	var/obj/mecha/chassis
 
 CAPABILITIES(/datum/action/innate/mecha)
@@ -84,7 +83,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/mech_toggle_lights/Activate()
 	button_icon_state = "mech_lights_[chassis.lights ? "off" : "on"]"
-	build_all_button_icons()
+	ability_changed()
 	chassis.lights(action_owner())
 
 /datum/action/innate/mecha/mech_toggle_internals
@@ -93,7 +92,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/mech_toggle_internals/Activate()
 	button_icon_state = "mech_internals_[chassis.use_internal_tank ? "off" : "on"]"
-	build_all_button_icons()
+	ability_changed()
 	chassis.internal_tank(action_owner())
 
 /datum/action/innate/mecha/mech_view_stats
@@ -116,7 +115,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/strafe/Activate()
 	button_icon_state = "mech_strafe_[chassis.strafing ? "off" : "on"]"
-	build_all_button_icons()
+	ability_changed()
 	chassis.strafing(action_owner())
 
 /datum/action/innate/mecha/mech_defence_mode
@@ -125,7 +124,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/mech_defence_mode/Activate()
 	button_icon_state = "mech_defense_mode_[chassis.defence_mode ? "off" : "on"]"
-	build_all_button_icons()
+	ability_changed()
 	chassis.defence_mode(action_owner())
 
 /datum/action/innate/mecha/mech_overload_mode
@@ -134,7 +133,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/mech_overload_mode/Activate()
 	button_icon_state = "mech_overload_[chassis.overload ? "off" : "on"]"
-	build_all_button_icons()
+	ability_changed()
 	chassis.overload(action_owner())
 
 /datum/action/innate/mecha/mech_smoke
@@ -143,7 +142,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/mech_smoke/Activate()
 	//button_icon_state = "mech_smoke_[chassis.smoke ? "off" : "on"]"
-	//build_all_button_icons()	//Dual colors notneeded ATM
+	//ability_changed()	//Dual colors notneeded ATM
 	chassis.smoke(action_owner())
 
 /datum/action/innate/mecha/mech_zoom
@@ -152,7 +151,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/mech_zoom/Activate()
 	button_icon_state = "mech_zoom_[chassis.zoom ? "off" : "on"]"
-	build_all_button_icons()
+	ability_changed()
 	chassis.zoom(action_owner())
 
 /datum/action/innate/mecha/mech_toggle_thrusters
@@ -161,7 +160,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/mech_toggle_thrusters/Activate()
 	button_icon_state = "mech_thrusters_[chassis.thrusters ? "off" : "on"]"
-	build_all_button_icons()
+	ability_changed()
 	chassis.thrusters(action_owner())
 
 /datum/action/innate/mecha/mech_cycle_equip	//I'll be honest, i don't understand this part, buuuuuut it works!
@@ -184,7 +183,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 		chassis.occupant_message("You select [chassis.selected]")
 		SStgui.update_uis(chassis)
 		button_icon_state = "mech_cycle_equip_on"
-		build_all_button_icons()
+		ability_changed()
 		return
 	var/number = 0
 	for(var/A in available_equipment)
@@ -199,7 +198,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 				chassis.occupant_message("You switch to [chassis.selected]")
 				button_icon_state = "mech_cycle_equip_on"
 			SStgui.update_uis(chassis)
-			build_all_button_icons()
+			ability_changed()
 			return
 
 /datum/action/innate/mecha/mech_switch_damtype
@@ -209,7 +208,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 /datum/action/innate/mecha/mech_switch_damtype/Activate()
 	button_icon_state = "mech_damtype_[chassis.melee_damtype_icon()]"
 	play_sfx(src, SFX_MECHA_MECHMOVE01)
-	build_all_button_icons()
+	ability_changed()
 	chassis.query_damtype(action_owner())
 
 /datum/action/innate/mecha/mech_toggle_phasing
@@ -218,7 +217,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/mech_toggle_phasing/Activate()
 	button_icon_state = "mech_phasing_[chassis.phasing ? "off" : "on"]"
-	build_all_button_icons()
+	ability_changed()
 	chassis.phasing(action_owner())
 
 /datum/action/innate/mecha/mech_toggle_cloaking
@@ -227,7 +226,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 
 /datum/action/innate/mecha/mech_toggle_cloaking/Activate()
 	button_icon_state = "mech_phasing_[dq_get_cloaked(chassis) ? "off" : "on"]"
-	build_all_button_icons()
+	ability_changed()
 	chassis.toggle_cloaking(action_owner())
 
 /////
@@ -437,3 +436,35 @@ CAPABILITIES(/datum/action/innate/mecha)
 		src.occupant_message(span_red("Disabled weapons only cycling."))
 	return
 
+
+// ---- What each toggle shows in the Abilities tab: whether the mech has it on ----
+
+/datum/action/innate/mecha/mech_toggle_lights/ability_toggled()
+	return chassis.lights ? TRUE : FALSE
+
+/datum/action/innate/mecha/mech_toggle_internals/ability_toggled()
+	return chassis.use_internal_tank ? TRUE : FALSE
+
+/datum/action/innate/mecha/strafe/ability_toggled()
+	return chassis.strafing ? TRUE : FALSE
+
+/datum/action/innate/mecha/mech_defence_mode/ability_toggled()
+	return chassis.defence_mode ? TRUE : FALSE
+
+/datum/action/innate/mecha/mech_overload_mode/ability_toggled()
+	return chassis.overload ? TRUE : FALSE
+
+/datum/action/innate/mecha/mech_zoom/ability_toggled()
+	return chassis.zoom ? TRUE : FALSE
+
+/datum/action/innate/mecha/mech_toggle_thrusters/ability_toggled()
+	return chassis.thrusters ? TRUE : FALSE
+
+/datum/action/innate/mecha/mech_toggle_phasing/ability_toggled()
+	return chassis.phasing ? TRUE : FALSE
+
+/datum/action/innate/mecha/mech_toggle_cloaking/ability_toggled()
+	return dq_get_cloaked(chassis) ? TRUE : FALSE
+
+/datum/action/innate/mecha/mech_cycle_equip/ability_toggled()
+	return chassis.selected ? TRUE : FALSE

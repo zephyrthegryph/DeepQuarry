@@ -95,22 +95,6 @@
 	refresh_flush()
 	TEST_ASSERT_EQUAL(thing.invisibility, normal, "a draw that stops naming it gives the type default back")
 
-/// The ability master hides while it holds no abilities and shows as one is added; removing the last hides it again.
-/datum/unit_test/dq_draw_pocket_ability_master_visibility
-
-/datum/unit_test/dq_draw_pocket_ability_master_visibility/Run()
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_floor())
-	var/atom/movable/screen/movable/ability_master/master = allocate(/atom/movable/screen/movable/ability_master, user)
-	refresh_flush()
-	TEST_ASSERT_EQUAL(master.invisibility, INVISIBILITY_ABSTRACT, "an empty master is hidden")
-	master.add_ability("dq_pocket_ability")
-	refresh_flush()
-	TEST_ASSERT_EQUAL(master.invisibility, INVISIBILITY_NONE, "holding an ability shows it, with no sync call")
-	var/atom/movable/screen/ability/ability = master.ability_objects[1]
-	master.remove_ability(ability)
-	refresh_flush()
-	TEST_ASSERT_EQUAL(master.invisibility, INVISIBILITY_ABSTRACT, "removing the last ability hides it again")
-
 /// Handcuffs put on and taken off a mob redraw its hand HUD.
 /datum/unit_test/dq_draw_pocket_hand_hud_follows_handcuffs
 

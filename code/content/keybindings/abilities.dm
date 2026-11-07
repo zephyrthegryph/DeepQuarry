@@ -10,3 +10,12 @@
 	if(!isliving(mob))
 		return
 	perform_op(mob, mob, id, null, ORIGIN_HOTKEY)
+
+/// The hotkey of list slot `slot`: uses the ability that stands in that place of the Abilities tab (its refusal is told to the player). A key
+/// pressed for an empty slot does nothing.
+/client/verb/use_ability_slot(slot as num)
+	set name = ".use-ability-slot"
+	set hidden = TRUE
+	set instant = FALSE
+
+	mob?.use_ability_slot(slot)
