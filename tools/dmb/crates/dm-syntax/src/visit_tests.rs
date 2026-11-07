@@ -188,7 +188,7 @@ fn masked_authored_paths_and_scope_callbacks_remain_balanced_on_stop() {
 
 #[test]
 fn projected_settings_use_same_original_root_and_current_spans_with_balanced_callbacks() {
-    use std::sync::{atomic::AtomicUsize, Arc};
+
     struct Provider {
         root: crate::SettingExpression,
     }
@@ -235,7 +235,7 @@ fn projected_settings_use_same_original_root_and_current_spans_with_balanced_cal
     }
     let rhs = "\"[call()]\"";
     let lexical = crate::lex_spans(rhs);
-    let counter = Arc::new(AtomicUsize::new(0));
+    let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let checkpoint = || Ok(());
     let admission = crate::SettingAdmission::new(&counter, 8 * 1024 * 1024, &checkpoint);
     let canonical = crate::prepare_setting_expression(
@@ -297,7 +297,7 @@ fn native_setting_provider_refusal_never_retries_ordinary_set_text() {
     }
     let source = "/proc/p()\n    set name = 7\n    return 1\n";
     let full = crate::parse(source);
-    let counter = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let checkpoint = || Ok(());
     let a = crate::SettingAdmission::new(&counter, 8 * 1024 * 1024, &checkpoint);
     let native = crate::parse_body_items_with_context_and_settings(

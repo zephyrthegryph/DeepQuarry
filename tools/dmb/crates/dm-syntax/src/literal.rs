@@ -167,7 +167,7 @@ impl LiteralText {
         Self::from_original_view(data.as_view(), origin, a)
     }
     pub(crate) fn from_original_view(data: crate::OriginalLiteralRef<'_>, origin: usize, a: &crate::SettingAdmission<'_>) -> std::io::Result<Self> {
-        a.checkpoint()?;if matches!(data.value(),crate::OriginalTokenValue::InterpBegin(_)|crate::OriginalTokenValue::InterpPart(_)|crate::OriginalTokenValue::InterpEnd(_)){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"an interpolation part is not a complete literal"))}Ok(Self(Backing::Original{data:data.detach(),origin}))
+        a.checkpoint()?;if matches!(data.value()?,crate::OriginalTokenValue::InterpBegin(_)|crate::OriginalTokenValue::InterpPart(_)|crate::OriginalTokenValue::InterpEnd(_)){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"an interpolation part is not a complete literal"))}Ok(Self(Backing::Original{data:data.detach_using(a)?,origin}))
     }
     /// Non-retaining caller fallback. raw is adopted but explicitly funded by
     /// the actual immutable owner; Token.text scratch is not an escaping lease.
@@ -1362,25 +1362,19 @@ mod lexical_shape_tests;
 #[cfg(test)]
 mod admitted_interpolation_tests {
     use super::*;
-    use std::{
-        cell::Cell,
-        sync::{
-            atomic::{AtomicUsize, Ordering},
-            Arc,
-        },
-    };
+    use std::{cell::Cell, sync::{atomic::{Ordering}, Arc}};
     #[test]
     fn admitted_literal_parts_preserve_original_projection_anchors_and_warm_owner() {
         for raw in [
             "\"before [callee(2)] after\"",
             "\"prefix\r [outer(\\\r\n    \"[inner()]\")] end\"",
             "@\"raw [not_a_child()]\"",
-            "\"Ã© [callee(2)] \\the [name]\"",
+            "\"ÃƒÂ© [callee(2)] \\the [name]\"",
         ] {
             let native = LiteralText::at(raw.to_owned(), 123);
             let copy = native.clone();
             let old = LiteralText::at(raw.to_owned(), 123);
-            let counter = Arc::new(AtomicUsize::new(0));
+            let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let calls = Cell::new(0);
             let checkpoint = || {
                 calls.set(calls.get() + 1);
@@ -1403,19 +1397,19 @@ mod admitted_interpolation_tests {
                 2,
                 "warm literal checks operation but does not reparse children"
             );
-            assert!(counter.load(Ordering::Acquire) > 0);
+            assert!(counter.load(Ordering::Acquire) > crate::SettingChargeCounter::root_allocation_bytes());
             drop(native);
             drop(copy);
             drop(old);
             drop(lease);
-            assert_eq!(counter.load(Ordering::Acquire), 0);
+            assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
         }
     }
     #[test]
     fn admitted_literal_cancellation_leaves_failed_literal_cache_unset_and_retries() {
         let text = LiteralText::at("\"[callee(1)]\"".into(), 77);
         let alias = text.clone();
-        let counter = Arc::new(AtomicUsize::new(37));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap(); counter.add_soft_estimate(37);
         let calls = Cell::new(0);
         let interrupted = || {
             let n = calls.get() + 1;
@@ -1440,7 +1434,7 @@ mod admitted_interpolation_tests {
         assert_eq!(original.to_string(), "actual literal child cancellation");
         assert_eq!(
             counter.load(Ordering::Acquire),
-            37,
+            crate::SettingChargeCounter::root_allocation_bytes() + (37),
             "helper cannot reset shared root credit"
         );
         let healthy = || Ok(());
@@ -1454,7 +1448,7 @@ mod admitted_interpolation_tests {
         for raw in ["\"[1 +]\"", "\"\\undefined_escape\""] {
             let native = LiteralText::at(raw.into(), 0);
             let old = LiteralText::at(raw.into(), 0);
-            let counter = Arc::new(AtomicUsize::new(0));
+            let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let healthy = || Ok(());
             let admission = crate::SettingAdmission::new(&counter, 1024 * 1024, &healthy);
             native.prepare_parts_admitted(&admission).unwrap();
@@ -1463,7 +1457,7 @@ mod admitted_interpolation_tests {
             assert!(admission.take_operational_error().is_none());
         }
         let native = LiteralText::at("\"[outer(\"[inner()]\")]\"".into(), 0);
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let healthy = || Ok(());
         let admission = crate::SettingAdmission::new(&counter, 1024 * 1024, &healthy);
         native.prepare_parts_admitted(&admission).unwrap();
@@ -1484,15 +1478,15 @@ mod admitted_interpolation_tests {
 #[cfg(test)]
 mod setting_retention_owner_tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    fn anchor(counter: &Arc<AtomicUsize>, bytes: usize) -> crate::SharedSettingRetention {
+    use std::sync::atomic::{Ordering};
+    fn anchor(counter: &Arc<crate::SettingChargeCounter>, bytes: usize) -> crate::SharedSettingRetention {
         crate::SharedSettingRetention::new(
             crate::SettingRootLease::reserve(counter, 1024 * 1024, bytes).unwrap(),
         )
     }
     #[test]
     fn cloned_literal_keeps_same_credit_after_root_anchor_drops_until_last_alias() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let held = anchor(&counter, 4096);
         let text = LiteralText::at("\"[callee(1)]\"".into(), 0);
         let alias = text.clone();
@@ -1500,13 +1494,13 @@ mod setting_retention_owner_tests {
         assert_eq!(text.parts().unwrap().unwrap().expressions.len(), 1);
         drop(held);
         drop(text);
-        assert_eq!(counter.load(Ordering::Acquire), 4096);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (4096));
         drop(alias);
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]
     fn foreign_anchor_refuses_and_last_parts_move_keep_credit_until_iterative_cleanup() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let first = anchor(&counter, 2048);
         let foreign = anchor(&counter, 1024);
         let text = LiteralText::at("\"[callee(1)]\"".into(), 0);
@@ -1526,13 +1520,13 @@ mod setting_retention_owner_tests {
             pointer,
             "move existing children without clone/reparse"
         );
-        assert_eq!(counter.load(Ordering::Acquire), 2048);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (2048));
         crate::setting_drop::drop_literal_parts(parts, retention);
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]
     fn shifted_surviving_literal_alias_does_not_lose_original_retention() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let held = anchor(&counter, 1024);
         let text = LiteralText::at("\"[x]\"".into(), 0);
         text.attach_setting_retention(&held).unwrap();
@@ -1540,13 +1534,13 @@ mod setting_retention_owner_tests {
         drop(text);
         drop(held);
         alias.shift(10);
-        assert_eq!(counter.load(Ordering::Acquire), 1024);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (1024));
         drop(alias);
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]
     fn concurrent_literal_aliases_release_credit_exactly_once() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let held = anchor(&counter, 4096);
         let text = LiteralText::at("\"[x]\"".into(), 0);
         text.attach_setting_retention(&held).unwrap();
@@ -1559,7 +1553,7 @@ mod setting_retention_owner_tests {
             scope.spawn(move || drop(a));
             scope.spawn(move || drop(b));
         });
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 }
 
@@ -1577,7 +1571,7 @@ mod pinned_writer_tests{
  }
  #[test]
  fn static_text_writer_borrows_prepared_parts_and_preserves_lexical_escapes(){
-  for(source,expected)in[(r#""Ã©\n\[text]""#,r"Ã©\n\[text]"),("\"left\\\r\n \t right\"","leftright"),("\"left\\\n\n  right\"","leftright"),("{\"first\nsecond\"}","first\nsecond"),("@\"[raw]\\n\"","[raw]\\n"),("@{\"Ã©\r\n[raw]\"}","Ã©\r\n[raw]")]{
+  for(source,expected)in[(r#""ÃƒÂ©\n\[text]""#,r"ÃƒÂ©\n\[text]"),("\"left\\\r\n \t right\"","leftright"),("\"left\\\n\n  right\"","leftright"),("{\"first\nsecond\"}","first\nsecond"),("@\"[raw]\\n\"","[raw]\\n"),("@{\"ÃƒÂ©\r\n[raw]\"}","ÃƒÂ©\r\n[raw]")]{
    let value=literal(source);value.parts().unwrap();let before=literal_child_parses_for_test();let mut text=String::new();assert!(value.write_pinned_static_text(&mut text).unwrap());assert_eq!(text,expected,"{source:?}");assert_eq!(literal_child_parses_for_test(),before,"writer cannot lex/parse child expressions");
   }
  }
@@ -1636,9 +1630,9 @@ impl LiteralText{
   let plain=literal("\"plain\"");plain.parts().unwrap();assert!(plain.pinned_fragments().unwrap().is_none());let mut bytes=0;plain.visit_pinned_fragment_storage(|_,_,capacity|bytes+=capacity);assert_eq!(bytes,0);
  }
  #[test]fn native_fragment_rows_share_original_literal_lease_until_last_alias_and_survive_output_failure(){
-  use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,8*1024*1024,&poll);let source="\"a[][x]b\"";let tokens=crate::lex_spans(source);let root=crate::prepare_setting_expression(source,&tokens.tokens,Span::new(0,source.len()),&a).unwrap();let ExprKind::Literal(text)=&root.kind else{panic!("original literal")};let alias=text.clone();let retained=counter.load(Ordering::Acquire);assert!(retained>0);let mut bytes=0;alias.visit_pinned_fragment_storage(|_,_,capacity|bytes+=capacity);assert!(bytes>=3*std::mem::size_of::<LiteralFragment>());
-  struct Refused;impl fmt::Write for Refused{fn write_str(&mut self,_:&str)->fmt::Result{Err(fmt::Error)}}let fragment=alias.pinned_fragments().unwrap().unwrap().next().unwrap().unwrap();assert!(matches!(fragment.write_text(&mut Refused),Err(PinnedStaticTextError::Output(_))));drop(fragment);drop(root);assert_eq!(counter.load(Ordering::Acquire),retained);assert_eq!(alias.pinned_fragments().unwrap().unwrap().count(),3);drop(alias);assert_eq!(counter.load(Ordering::Acquire),0);
-  let tiny=crate::SettingAdmission::new(&counter,1,&poll);assert!(matches!(crate::prepare_setting_expression(source,&tokens.tokens,Span::new(0,source.len()),&tiny),Err(crate::SettingSyntaxFailure::Operational(ref error))if error.kind()==std::io::ErrorKind::OutOfMemory));assert_eq!(counter.load(Ordering::Acquire),0);
+  use std::sync::{Arc, atomic::{Ordering}};let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,8*1024*1024,&poll);let source="\"a[][x]b\"";let tokens=crate::lex_spans(source);let root=crate::prepare_setting_expression(source,&tokens.tokens,Span::new(0,source.len()),&a).unwrap();let ExprKind::Literal(text)=&root.kind else{panic!("original literal")};let alias=text.clone();let retained=counter.load(Ordering::Acquire);assert!(retained>0);let mut bytes=0;alias.visit_pinned_fragment_storage(|_,_,capacity|bytes+=capacity);assert!(bytes>=3*std::mem::size_of::<LiteralFragment>());
+  struct Refused;impl fmt::Write for Refused{fn write_str(&mut self,_:&str)->fmt::Result{Err(fmt::Error)}}let fragment=alias.pinned_fragments().unwrap().unwrap().next().unwrap().unwrap();assert!(matches!(fragment.write_text(&mut Refused),Err(PinnedStaticTextError::Output(_))));drop(fragment);drop(root);assert_eq!(counter.load(Ordering::Acquire),retained);assert_eq!(alias.pinned_fragments().unwrap().unwrap().count(),3);drop(alias);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let tiny=crate::SettingAdmission::new(&counter,crate::SettingChargeCounter::root_allocation_bytes() + (1),&poll);assert!(matches!(crate::prepare_setting_expression(source,&tokens.tokens,Span::new(0,source.len()),&tiny),Err(crate::SettingSyntaxFailure::Operational(ref error))if error.kind()==std::io::ErrorKind::OutOfMemory));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -1649,7 +1643,7 @@ impl LiteralText{
   let source="\"a[value \\\n . field]b\"";let expression=crate::parse_expression(source).expr.unwrap();let ExprKind::Literal(literal)=&expression.kind else{panic!("literal")};literal.parts().unwrap();let fragment=literal.pinned_fragments().unwrap().unwrap().nth(1).unwrap().unwrap();let before=literal_child_parses_for_test();assert!(fragment.tokens().map(Result::unwrap).any(|(_,span)|span.start==source.find(". field").unwrap()));assert_eq!(literal_child_parses_for_test(),before);
  }
  #[test]fn nested_literal_children_keep_their_own_primary_geometry_under_same_native_root_lease(){
-  use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};let source="\"a[\"b[x . field]\"]c\"";let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,8*1024*1024,&poll);let lexical=crate::lex_spans(source);let root=crate::prepare_setting_expression(source,&lexical.tokens,Span::new(0,source.len()),&a).unwrap();let ExprKind::Literal(outer)=&root.kind else{panic!("outer")};let first=outer.pinned_fragments().unwrap().unwrap().nth(1).unwrap().unwrap();let ExprKind::Literal(inner)=&first.expression().unwrap().kind else{panic!("inner")};let last=inner.pinned_fragments().unwrap().unwrap().nth(1).unwrap().unwrap();let before=literal_child_parses_for_test();let point=source.find(". field").unwrap();assert!(last.tokens().map(Result::unwrap).any(|(_,span)|span.start==point));assert_eq!(literal_child_parses_for_test(),before);drop(last);drop(first);drop(root);assert_eq!(counter.load(Ordering::Acquire),0);
+  use std::sync::{Arc, atomic::{Ordering}};let source="\"a[\"b[x . field]\"]c\"";let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,8*1024*1024,&poll);let lexical=crate::lex_spans(source);let root=crate::prepare_setting_expression(source,&lexical.tokens,Span::new(0,source.len()),&a).unwrap();let ExprKind::Literal(outer)=&root.kind else{panic!("outer")};let first=outer.pinned_fragments().unwrap().unwrap().nth(1).unwrap().unwrap();let ExprKind::Literal(inner)=&first.expression().unwrap().kind else{panic!("inner")};let last=inner.pinned_fragments().unwrap().unwrap().nth(1).unwrap().unwrap();let before=literal_child_parses_for_test();let point=source.find(". field").unwrap();assert!(last.tokens().map(Result::unwrap).any(|(_,span)|span.start==point));assert_eq!(literal_child_parses_for_test(),before);drop(last);drop(first);drop(root);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -1661,31 +1655,31 @@ impl LiteralText{
 }
 
 #[cfg(test)]mod lexical_runtime_separation_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{Arc, atomic::{Ordering}};
  #[test]fn runtime_escape_refusal_keeps_same_primary_fragment_children_and_no_display_reparse(){
   for raw in [r#""a\q""#,r#""a\q[value + 1]tail""#]{
-   let counter=Arc::new(AtomicUsize::new(0));let checkpoint=||Ok(());let a=crate::SettingAdmission::new(&counter,8*1024*1024,&checkpoint);let lexical=crate::lex_spans(raw);let root=crate::prepare_setting_expression(raw,&lexical.tokens,Span::new(0,raw.len()),&a).unwrap();let ExprKind::Literal(value)=&root.original_expression().kind else{panic!("primary literal")};let cached=value.prepared_syntax_parts().unwrap().unwrap().unwrap();assert!(cached.runtime_error_storage().is_some());let before=literal_child_parses_for_test();let refusal=value.parts().err().unwrap().to_owned();assert!(refusal.contains("undefined text macro or escape sequence"));assert!(matches!(value.retained_parts(),Some(Err(_))));
+   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let checkpoint=||Ok(());let a=crate::SettingAdmission::new(&counter,8*1024*1024,&checkpoint);let lexical=crate::lex_spans(raw);let root=crate::prepare_setting_expression(raw,&lexical.tokens,Span::new(0,raw.len()),&a).unwrap();let ExprKind::Literal(value)=&root.original_expression().kind else{panic!("primary literal")};let cached=value.prepared_syntax_parts().unwrap().unwrap().unwrap();assert!(cached.runtime_error_storage().is_some());let before=literal_child_parses_for_test();let refusal=value.parts().err().unwrap().to_owned();assert!(refusal.contains("undefined text macro or escape sequence"));assert!(matches!(value.retained_parts(),Some(Err(_))));
    if raw.contains('['){let mut observed=Vec::new();for fragment in value.pinned_fragments().unwrap().unwrap(){let fragment=fragment.unwrap();let mut text=String::new();fragment.write_text(&mut text).unwrap();observed.push((text,fragment.expression().map(|node|node as*const Expr)));}assert_eq!(cached.expressions.len(),1);assert_eq!(observed[0],(r#"a\q"#.to_owned(),None));assert_eq!(observed[1],("tail".to_owned(),Some(&cached.expressions[0]as*const Expr)));}else{let mut text=String::new();assert!(value.write_pinned_static_text(&mut text).unwrap());assert_eq!(text,r#"a\q"#);}
-   assert_eq!(literal_child_parses_for_test(),before,"pinned projection borrows existing child nodes");let alias=value.clone();drop(root);assert!(counter.load(Ordering::Acquire)>0);drop(alias);assert_eq!(counter.load(Ordering::Acquire),0,"all new syntax/error backing drops before same retained credit");assert_eq!(string_literal_parts(raw).unwrap_err(),refusal);
+   assert_eq!(literal_child_parses_for_test(),before,"pinned projection borrows existing child nodes");let alias=value.clone();drop(root);assert!(counter.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(alias);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes(),"all new syntax/error backing drops before same retained credit");assert_eq!(string_literal_parts(raw).unwrap_err(),refusal);
   }
  }
  #[test]fn runtime_tuple_decoder_stays_refused_and_later_valid_literal_recovers(){assert!(parse_interpolated_string(r#"a\q[value]tail"#).unwrap_err().contains("undefined text macro or escape sequence"));let valid=string_literal_parts(r#""hello\n[value]""#).unwrap().unwrap();assert_eq!(valid.1.len(),1);let early=string_literal_parts(r#""a\q""#).unwrap_err();assert_eq!(string_literal_parts(r#""a\q[1 +]""#).unwrap_err(),early,"later malformed lexical child cannot replace the original runtime refusal");}
 }
 
 #[cfg(test)]mod original_data_literal_tests{
- use super::*;use crate::{OriginalLiteralData,OriginalTokenValue,SettingAdmission};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use crate::{OriginalLiteralData,OriginalTokenValue,SettingAdmission};use std::sync::{Arc, atomic::{Ordering}};
  #[test]fn original_static_string_beginning_bracket_or_quote_never_becomes_template_syntax(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
   for value in ["[danger()]", "\"[x]\"", "plain\\n"]{
    let data=OriginalLiteralData::from_value_using("\"looks[like_template]\"".into(),OriginalTokenValue::String(value),&a).unwrap();let before=literal_child_parses_for_test();let text=LiteralText::from_original_data(&data,50,&a).unwrap();assert!(!text.owns_template_syntax());assert_eq!(text.syntax_parts().unwrap(),None);assert!(text.prepared_syntax_parts().is_none());assert_eq!(literal_child_parses_for_test(),before);let mut out=String::new();assert!(text.write_pinned_static_text(&mut out).unwrap());assert_eq!(out,value);assert!(text.parts().unwrap_err().contains("runtime decoder"));let rebound=text.rebind_original_using(200,&a).unwrap();assert!(rebound.original_data().unwrap().same_owner(&data));assert_eq!(rebound.original_origin(),Some(200));
-  }assert_eq!(counter.load(Ordering::Acquire),0);
+  }assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn original_value_fallback_is_funded_resource_is_not_redecoded_and_shift_does_not_clone_raw(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let mut text=LiteralText::from_original_value_data("'raw'".into(),10,OriginalTokenValue::Resource("already\\projected"),&a).unwrap();let pointer=text.raw_storage().as_ptr();let charged=counter.load(Ordering::Acquire);let mut output=String::new();assert!(text.write_pinned_resource_text(&mut output).unwrap());assert_eq!(output,"already\\projected");text.shift(20);assert_eq!(text.original_origin(),Some(30));assert_eq!(text.raw_storage().as_ptr(),pointer);assert_eq!(counter.load(Ordering::Acquire),charged);drop(text);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let mut text=LiteralText::from_original_value_data("'raw'".into(),10,OriginalTokenValue::Resource("already\\projected"),&a).unwrap();let pointer=text.raw_storage().as_ptr();let charged=counter.load(Ordering::Acquire);let mut output=String::new();assert!(text.write_pinned_resource_text(&mut output).unwrap());assert_eq!(output,"already\\projected");text.shift(20);assert_eq!(text.original_origin(),Some(30));assert_eq!(text.raw_storage().as_ptr(),pointer);assert_eq!(counter.load(Ordering::Acquire),charged);drop(text);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn immutable_header_data_never_retains_a_setting_body_anchor_or_lazy_parts(){
-  let data_counter=Arc::new(AtomicUsize::new(0));let body_counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&data_counter,1<<20,&poll);let data=OriginalLiteralData::from_value_using("\"static\"".into(),OriginalTokenValue::String("static"),&a).unwrap();
-  let text=LiteralText::from_original_data(&data,5,&a).unwrap();let body=crate::SharedSettingRetention::new(crate::SettingRootLease::reserve(&body_counter,4096,1024).unwrap());text.attach_setting_retention(&body).unwrap();drop(body);assert_eq!(body_counter.load(Ordering::Acquire),0,"scalar AST must not make header DATA hold a whole body lease");let mut retention=0;text.visit_setting_retention_storage(|_,n|retention+=n);assert_eq!(retention,0);drop(text);assert!(data_counter.load(Ordering::Acquire)>0);assert!(matches!(data.value(),OriginalTokenValue::String("static")));drop(data);assert_eq!(data_counter.load(Ordering::Acquire),0);
+  let data_counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let body_counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&data_counter,1<<20,&poll);let data=OriginalLiteralData::from_value_using("\"static\"".into(),OriginalTokenValue::String("static"),&a).unwrap();
+  let text=LiteralText::from_original_data(&data,5,&a).unwrap();let body=crate::SharedSettingRetention::new(crate::SettingRootLease::reserve(&body_counter,4096,1024).unwrap());text.attach_setting_retention(&body).unwrap();drop(body);assert_eq!(body_counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes(),"scalar AST must not make header DATA hold a whole body lease");let mut retention=0;text.visit_setting_retention_storage(|_,n|retention+=n);assert_eq!(retention,0);drop(text);assert!(data_counter.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());assert!(matches!(data.value(),OriginalTokenValue::String("static")));drop(data);assert_eq!(data_counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn ordinary_literal_parser_and_shift_keep_existing_template_cache_path(){let mut text=LiteralText::at("\"a[x]b\"".into(),0);assert!(text.owns_template_syntax());assert_eq!(text.parts().unwrap().unwrap().expressions.len(),1);text.shift(10);assert_eq!(text.parts().unwrap().unwrap().expressions[0].span.start,13);}
 }
@@ -1698,14 +1692,14 @@ pub(crate) fn visit_pinned_resource_bytes<E>(bytes:&[u8],recovering:bool,mut emi
 }
 
 #[cfg(test)]mod original_static_runtime_tests{
- use super::*;use crate::{OriginalTokenValue,OriginalStringMode,SettingAdmission};use std::sync::atomic::AtomicUsize;
+ use super::*;use crate::{OriginalTokenValue,OriginalStringMode,SettingAdmission};
  #[test]fn actual_normal_mode_uses_same_escape_kernel_without_parsing_static_brackets_or_displayed_quotes(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let before=literal_child_parses_for_test();
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let before=literal_child_parses_for_test();
   let value=LiteralText::from_original_value_with_mode_data("misleading displayed grammar".into(),0,OriginalTokenValue::String(r"line\n\[static\]"),OriginalStringMode::Normal,&a).unwrap();assert_eq!(value.decode_original_static_text().unwrap().unwrap(),b"line\n[static]");
   let value=LiteralText::from_original_value_with_mode_data("another grammar".into(),0,OriginalTokenValue::String("[not an expression]\""),OriginalStringMode::Normal,&a).unwrap();assert_eq!(value.decode_original_static_text().unwrap().unwrap(),b"[not an expression]\"");assert_eq!(literal_child_parses_for_test(),before);
  }
  #[test]fn actual_raw_and_generated_modes_keep_escape_bytes_literal_and_unknown_mode_never_guesses(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
   for mode in [OriginalStringMode::Raw,OriginalStringMode::Generated]{let value=LiteralText::from_original_value_with_mode_data("\"looks normal\"".into(),0,OriginalTokenValue::String(r"\n[static]"),mode,&a).unwrap();assert_eq!(value.decode_original_static_text().unwrap().unwrap(),br"\n[static]");}
   let unknown=LiteralText::from_original_value_data("@\"looks raw\"".into(),0,OriginalTokenValue::String(r"\n[static]"),&a).unwrap();assert!(unknown.decode_original_static_text().unwrap_err().contains("not yet issued"));
   let number=LiteralText::from_original_value_data("\"looks text\"".into(),0,OriginalTokenValue::Int(7),&a).unwrap();assert_eq!(number.decode_original_static_text().unwrap(),None);

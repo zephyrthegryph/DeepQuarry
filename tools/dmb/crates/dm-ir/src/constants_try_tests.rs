@@ -63,46 +63,46 @@ fn fallible_scalar_pure_calls_keep_none_arguments_and_distinct_policy_error(){
 
 #[test]
 fn controlled_scalar_stack_guard_denial_releases_every_frame_and_same_ast_retries(){
-    use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+    use std::sync::{atomic::{Ordering}};
     let parsed=parse_expression("((1+2)+3)");let expression=parsed.expr.as_ref().unwrap();
-    let counter=Arc::new(AtomicUsize::new(0));let healthy=||Ok(());
+    let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let healthy=||Ok(());
     let limited=dm_syntax::SettingAdmission::with_stack_allowance(&counter,1024*1024,32*1024,&healthy);
     let result=try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(expression,|_|Ok(None),|_|Ok(None),|_|Ok(None),|_|Ok(None),None,None,||limited.evaluation_frame());
     assert!(matches!(result,Err(ConstantEvaluationFailure::Callback(ref actual))if actual.kind()==std::io::ErrorKind::OutOfMemory));
-    assert_eq!(counter.load(Ordering::Acquire),0,"all actual held recursion guards unwind on refusal");
+    assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"all actual held recursion guards unwind on refusal");
     let retry=dm_syntax::SettingAdmission::with_stack_allowance(&counter,1024*1024,1024*1024,&healthy);
     let value=try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(expression,|_|Ok(None),|_|Ok(None),|_|Ok(None),|_|Ok(None),None,None,||retry.evaluation_frame()).unwrap();
-    assert_eq!(value,Some(Constant::Number(6.0)));assert_eq!(counter.load(Ordering::Acquire),0);
+    assert_eq!(value,Some(Constant::Number(6.0)));assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
 }
 #[test]
 fn controlled_scalar_guard_is_held_through_callback_and_released_on_unwind(){
-    use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
-    let parsed=parse_expression("seed");let counter=Arc::new(AtomicUsize::new(0));let healthy=||Ok(());
+    use std::sync::{atomic::{Ordering}};
+    let parsed=parse_expression("seed");let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let healthy=||Ok(());
     let admission=dm_syntax::SettingAdmission::with_stack_allowance(&counter,1024*1024,1024*1024,&healthy);
     let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{
-        let _=try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(parsed.expr.as_ref().unwrap(),|_|{assert_eq!(counter.load(Ordering::Acquire),16*1024);panic!("actual callback unwind")},|_|Ok(None),|_|Ok(None),|_|Ok(None),None,None,||admission.evaluation_frame());
+        let _=try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(parsed.expr.as_ref().unwrap(),|_|{assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (16*1024));panic!("actual callback unwind")},|_|Ok(None),|_|Ok(None),|_|Ok(None),None,None,||admission.evaluation_frame());
     }));
-    assert!(result.is_err());assert_eq!(counter.load(Ordering::Acquire),0);
+    assert!(result.is_err());assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
 }
 
 #[test]
 fn controlled_skipped_unknown_and_nameof_observer_descents_are_guarded_and_retry_original_order(){
-    use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+    use std::sync::{atomic::{Ordering}};
     let deep=format!("{}nameof(seed){}","(".repeat(48),")".repeat(48));
     let deep_argument=format!("{}seed{}","(".repeat(48),")".repeat(48));
     for source in [format!("1 || {deep}"),format!("unrecognized({deep})"),format!("nameof({deep_argument})")]{
         let parsed=parse_expression(&source);assert!(parsed.diagnostics.is_empty());let expr=parsed.expr.as_ref().unwrap();
-        let counter=Arc::new(AtomicUsize::new(0));let healthy=||Ok(());
+        let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let healthy=||Ok(());
         let denied=dm_syntax::SettingAdmission::with_stack_allowance(&counter,1024*1024,32*1024,&healthy);
         let observer=|_:&Expr|{};
         let result=try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(expr,|_|panic!("reference traversal must not evaluate identifiers"),|_|panic!("reference traversal must not decode"),|_|panic!("denial precedes nameof value callback"),|_|panic!("reference traversal must not resolve resources"),None,Some(&observer),||denied.evaluation_frame());
         assert!(matches!(result,Err(ConstantEvaluationFailure::Callback(ref actual))if actual.kind()==std::io::ErrorKind::OutOfMemory),"{source}");
-        assert_eq!(counter.load(Ordering::Acquire),0,"every skipped traversal guard releases on refusal");
+        assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"every skipped traversal guard releases on refusal");
         let old_reads=RefCell::new(Vec::new());let old_observer=|expr:&Expr|old_reads.borrow_mut().push(format!("observe:{:?}",expr.span));
         let old=original::evaluate_expr_with_resources_and_calls_and_nameof_observer(expr,|_|panic!("old identifier"),|_|None,|_|{old_reads.borrow_mut().push("nameof-value".into());Some("seed".into())},|_|None,None,Some(&old_observer)).unwrap();
         let new_reads=RefCell::new(Vec::new());let new_observer=|expr:&Expr|new_reads.borrow_mut().push(format!("observe:{:?}",expr.span));
         let fresh=dm_syntax::SettingAdmission::with_stack_allowance(&counter,4*1024*1024,2*1024*1024,&healthy);
         let new=try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(expr,|_|panic!("new identifier"),|_|Ok(None),|_|{new_reads.borrow_mut().push("nameof-value".into());Ok(Some("seed".into()))},|_|Ok(None),None,Some(&new_observer),||fresh.evaluation_frame()).unwrap();
-        assert_eq!(new.map(|c|c.canonical_bytes()),old.map(|c|c.canonical_bytes()));assert_eq!(new_reads.into_inner(),old_reads.into_inner());assert_eq!(counter.load(Ordering::Acquire),0);
+        assert_eq!(new.map(|c|c.canonical_bytes()),old.map(|c|c.canonical_bytes()));assert_eq!(new_reads.into_inner(),old_reads.into_inner());assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

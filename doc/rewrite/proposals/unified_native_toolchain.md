@@ -3487,3 +3487,19 @@ The source admission no longer stopped this sample. It instead refused a
 already retained under the unchanged 134,217,728-byte syntax limit. No report
 was emitted. The private daemon drained and exited after the failed request.
 This is another bounded preparation result, not completion or parity.
+
+
+The next focused cohort passed 18 tests across syntax, preprocessing, query
+ownership and public integration. Syntax accounting now distinguishes allocation
+leases from soft body cache estimates and prepays the counter root within the
+unchanged syntax limit. Macro mutations reserve space for the pinned B-tree
+path while retaining the existing live-tree charge. Completed diagnostic BODY
+pages can release unique standalone literals and borrow spelling from the same
+authenticated output. Detached literals retain their own funded spelling, and
+shared packed pages stay owned.
+
+The RequirementBool selected route matched the independent Analyze report in
+three source and scope states. Its call-site scan uses issued Original literal
+syntax, including static strings that have no runtime decoding entry. The
+verified selected roster now covers 21 of the recorded 106 policies. This
+cohort did not rerun the whole-checkout probe or change the default route.

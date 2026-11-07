@@ -7,7 +7,7 @@ use dm_tree::frontend::{
     DiagnosticStage,OriginalBodySyntaxProduct,BodyCodeIdentity,
 };
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
+    atomic::Ordering,
     Weak,
 };
 
@@ -43,7 +43,7 @@ impl std::fmt::Display for CanonicalBodyContractDiagnostic{fn fmt(&self,f:&mut s
 impl std::error::Error for CanonicalBodyContractDiagnostic{}
 
 
-pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
+pub(super) fn register(db: &Db, charged: Arc<dm_syntax::SettingChargeCounter>) {
     db.define(BODY_SYNTAX, "native-body-syntax", move |_, params| {
         let params = params
             .downcast_ref::<Params>()
@@ -69,7 +69,7 @@ pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
                     Err(error)
                 }
             };
-            let bytes=result.as_ref().map_or(1024,|product|product.budget_charge());charged.fetch_add(bytes,Ordering::Relaxed);
+            let bytes=result.as_ref().map_or(1024,|product|product.budget_charge());charged.add_soft_estimate(bytes);
             return Ok(Outcome::new(BodyQueryValue::Canonical(result),params.key.id,bytes))
         }
         // Existing Kind4 owns the in-scope permit. Setting leaves never call
@@ -89,7 +89,7 @@ pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
             .map_or(1024, |syntax| syntax.budget_charge());
         // Identity is valid only within this private parser issuance. A fresh
         // issuance has a different key even if all its bytes happen to match.
-        charged.fetch_add(bytes, Ordering::Relaxed);
+        charged.add_soft_estimate(bytes);
         Ok(Outcome::new(BodyQueryValue::Issued(result), params.key.id, bytes))
     });
 }
@@ -124,11 +124,7 @@ impl BodySyntaxQueries for QueryDb {
             } else {
                 let freed = self.db.value_bytes_at(*key);
                 self.db.remove(*key);
-                let _ =
-                    self.body_charge
-                        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |charge| {
-                            Some(charge.saturating_sub(freed))
-                        });
+                self.body_charge.release_soft_estimate(freed);
                 false
             }
         });
@@ -189,7 +185,7 @@ impl QueryDb {
             // Preserve the original over-budget soft-cache fallback. The new
             // pressure path below normally retires consumed values earlier.
             let freed=self.db.evict_values(&[BODY_SYNTAX]);
-            let _=self.body_charge.fetch_update(Ordering::AcqRel,Ordering::Acquire,|charge|Some(charge.saturating_sub(freed)));
+            self.body_charge.release_soft_estimate(freed);
         }
         let headroom=input.budget_charge().saturating_mul(8).saturating_add(dm_exec::COMPILER_STACK_BYTES/16);
         if self.body_charge.load(Ordering::Acquire).saturating_add(headroom)<=BUDGET{return Ok(())}
@@ -214,7 +210,7 @@ impl QueryDb {
             // estimate. Escaped children keep their own real leases alive.
             drop(value);
             #[cfg(test)]if freed!=0{self.record_pressure_trace_for_test(2,freed);}
-            if freed!=0{let _=self.body_charge.fetch_update(Ordering::AcqRel,Ordering::Acquire,|charge|Some(charge.saturating_sub(freed)));}
+            if freed!=0{self.body_charge.release_soft_estimate(freed);}
         }
         // No retry after a real parser IO/refusal, and no cap change: after
         // retiring available cache owners the SAME actual admission decides.
@@ -450,7 +446,7 @@ impl QueryDb {
   setting_syntax::with_setting_admission(&db.body_charge,|a|{
    let result=archive.with_current_body_checked_in(0,a,&mut(),|_,_|Ok(Arc::clone(&product)),|_,_|{called.set(true);Ok(())});assert!(result.is_err());assert!(!called.get());Ok::<(),BodySyntaxFailure>(())
   }).unwrap();
-  let foreign_counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&foreign_counter,BUDGET,&||Ok(()));assert!(archive.with_current_body_checked(0,&a,|_|{called.set(true);Ok(())}).is_err());assert!(!called.get());
+  let foreign_counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&foreign_counter,BUDGET,&||Ok(()));assert!(archive.with_current_body_checked(0,&a,|_|{called.set(true);Ok(())}).is_err());assert!(!called.get());
   let provider=Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));let no_host=dm_tree::frontend::build(std::path::Path::new("no-current-host.dme"),&provider,&Default::default(),1).unwrap().body_archive().unwrap();let Err(BodySyntaxFailure::Operational(error))=no_host.with_current_body_checked(0,&a,|_|{called.set(true);Ok(())})else{panic!("missing real native current host")};assert_eq!(error.kind(),std::io::ErrorKind::NotConnected);assert!(!called.get(),"missing canonical host never invokes a standalone parser/consumer");
  }
  #[test]fn actual_canonical_kind4_retirement_uses_existing_family_budget_and_preserves_escaped_roots(){

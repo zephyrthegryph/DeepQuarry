@@ -22,8 +22,9 @@ impl OriginalLiteralSourceBinding{
  /// Only finalization of the SAME actual driver invokes this after moving the
  /// original fact owner and the one sealed output arena. No external Vec/data
  /// constructor is exposed, and a numeric window is not source authorization.
- pub(in crate::regions) fn issue_actual(source:&SourceText,facts:OriginalPrimaryLiteralFacts,a:&SettingAdmission<'_>)->io::Result<Self>{
+ pub(in crate::regions) fn issue_actual(source:&SourceText,facts:OriginalPrimaryLiteralFacts,output:&super::original_prepared_output::OriginalOutputIdentity,a:&SettingAdmission<'_>)->io::Result<Self>{
   poll(a)?;if !facts.is_admitted_by(a)||facts.consumed_extent()!=Some(source.as_str().len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual source/fact frontier or resource owner differs"))}
+  if facts.projection_owner().is_some_and(|owner|!output.matches_projection_data(owner)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"projected spelling belongs to another actual output"))}
   facts.checked_data_window(Span::new(0,source.as_str().len()))?;
   let credit=a.reserve(std::mem::size_of::<Binding>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   Ok(Self(Some(Arc::new(Binding{source:source.downgrade(),facts,credit}))))
@@ -45,8 +46,8 @@ impl OriginalLiteralSourceView{
  pub fn same_producer(&self,actual_primary:&OriginalLiteralSourceBinding)->bool{self.binding.same_producer(actual_primary)}
  /// Actual current HeaderInput supplies its immutable source on every getter;
  /// geometry/backing failure stays Err, never a false None/unavailable model.
- pub fn checked_facts<'a>(&'a self,actual_source:&SourceText)->io::Result<OriginalLiteralFactsView<'a>>{
-  require_source_view(&self.binding.payload().source,actual_source,self.window)?;self.binding.payload().facts.checked_data_window(self.window)
+ pub fn checked_facts<'a>(&'a self,actual_source:&'a SourceText)->io::Result<OriginalLiteralFactsView<'a>>{
+  require_source_view(&self.binding.payload().source,actual_source,self.window)?;self.binding.payload().facts.checked_data_window(self.window)?.with_source_data(actual_source.as_str())
  }
  pub fn visit_storage(&self,visit:impl FnMut(usize,usize,usize)){self.binding.visit_storage(visit)}
 }

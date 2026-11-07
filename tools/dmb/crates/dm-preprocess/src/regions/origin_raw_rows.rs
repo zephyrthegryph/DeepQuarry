@@ -1549,12 +1549,12 @@ impl OriginalRawOrigins{
   loop{match source.next_logical_using(file,&mut Notices,host,a).unwrap(){DriverEvent::Token(LogicalToken::Actual(token))=>return Some(token),DriverEvent::Token(LogicalToken::Delimiter{spelling,location})=>return Some(Token{value:Value::Punct(spelling),origin:location.expect("actual fixture delimiter point"),string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None}),DriverEvent::ActualEnd=>return None,DriverEvent::NeedInput=>continue,_=>panic!("fixture has no directives or notices")}}
  }
  #[test]fn actual_raw_arena_retains_exact_point_eof_and_credit_until_last_alias(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"\xef\xbb\xbfvar/value=7\r\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"\xef\xbb\xbfvar/value=7\r\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();
   // One bounded fixture metadata grant, before path/trace/anchor allocations.
   let metadata_credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("actual-mapping.dm"));let trace=OriginalMacroTrace::empty();let mut offset=0;
   while let Some(actual)=next(&mut source,&file,&mut host,&a){rows.append_actual_using(&actual,Span::new(offset,offset+1),Span::new(offset,offset+1),1,0,path.clone(),trace.clone(),&file.lease,&file,&mut source,&a,&work).unwrap();offset+=1;}
   assert!(rows.len()>3);let mut saw_end=false;for index in 0..rows.len(){let(occurrence,point,span,_,eof)=rows.geometry(index).unwrap();assert_eq!(occurrence,0);assert_eq!(rows.point(index,0,&file.lease,span.start).unwrap(),point);if eof{saw_end=true;assert_eq!(rows.point(index,0,&file.lease,span.end).unwrap(),point)}else{assert!(rows.point(index,0,&file.lease,span.end).is_err())}}
-  assert!(saw_end,"only the actual finished raw input can mark terminal rows");let metadata=dm_syntax::SharedSettingRetention::new(metadata_credit);let arena=super::super::ExpandedOriginArena::from_actual_raw_rows_using(rows,metadata,&a).unwrap();let alias=arena.clone();assert!(arena.same_owner(&alias));assert_eq!(arena.len(),offset);let page_charge=work.0.load(Ordering::Acquire);drop((source,host,path,trace,arena));assert!(used.load(Ordering::Acquire)>0,"last mapping alias must still pay for retained rows and metadata");assert_eq!(work.0.load(Ordering::Acquire),page_charge);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
+  assert!(saw_end,"only the actual finished raw input can mark terminal rows");let metadata=dm_syntax::SharedSettingRetention::new(metadata_credit);let arena=super::super::ExpandedOriginArena::from_actual_raw_rows_using(rows,metadata,&a).unwrap();let alias=arena.clone();assert!(arena.same_owner(&alias));assert_eq!(arena.len(),offset);let page_charge=work.0.load(Ordering::Acquire);drop((source,host,path,trace,arena));assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes(),"last mapping alias must still pay for retained rows and metadata");assert_eq!(work.0.load(Ordering::Acquire),page_charge);drop(alias);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(work.0.load(Ordering::Acquire),0);
  }
  #[test]
  fn actual_non_ascii_source_uses_inline_utf8_and_exact_decoded_offset_escape() {
@@ -1562,7 +1562,7 @@ impl OriginalRawOrigins{
    (b"var/first=1; /*\xc3\xa9*/ var/after=7\n".as_slice(),0usize),
    (b"var/first=1; /*\x80*/ var/after=7\n".as_slice(),2usize),
   ] {
-   let used=Arc::new(AtomicUsize::new(0));
+   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
    let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
    let file=File::new(raw);
    let needle=b"var/after";
@@ -1595,7 +1595,7 @@ impl OriginalRawOrigins{
    }
    assert!(saw_after,"actual token after the non-ASCII comment was recorded");
    drop((rows,source,host,path,trace,metadata));
-   assert_eq!(used.load(Ordering::Acquire),0);
+   assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
    assert_eq!(work.0.load(Ordering::Acquire),0);
   }
  }
@@ -1607,8 +1607,8 @@ impl OriginalRawOrigins{
   let directory_bytes=4*std::mem::size_of::<Vec<NarrowRow>>();
   let cap=2*page_bytes+directory_bytes;
   for denied in [false,true] {
-   let syntax=Arc::new(AtomicUsize::new(0));
-   let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+   let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+   let a=SettingAdmission::new(&syntax,dm_syntax::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));
    let work=CappedWork::new(Arc::clone(&used),cap-usize::from(denied));
    let mut credit=work.reserve(0).unwrap();
    let mut funding=PageFunding{work:&work,credit:&mut credit};
@@ -1637,7 +1637,7 @@ impl OriginalRawOrigins{
    }
    assert_eq!(rows.get(0).unwrap() as *const NarrowRow,first);
    assert!(rows.get(ROW_PAGE_LEN).is_none());
-   drop(rows);drop(credit);assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(syntax.load(Ordering::Acquire),0);
+   drop(rows);drop(credit);assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   }
  }
  #[test]
@@ -1657,8 +1657,8 @@ impl OriginalRawOrigins{
    line,output_line:line,output_base:line,raw_base:line,
   };
   for denied in [false,true] {
-   let syntax=Arc::new(AtomicUsize::new(0));
-   let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+   let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+   let a=SettingAdmission::new(&syntax,dm_syntax::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));
    let work=CappedWork::new(Arc::clone(&used),cap-usize::from(denied));
    let mut credit=work.reserve(0).unwrap();
    let mut funding=PageFunding{work:&work,credit:&mut credit};
@@ -1695,7 +1695,7 @@ impl OriginalRawOrigins{
    drop(groups);
    drop(credit);
    assert_eq!(used.load(Ordering::Acquire),0);
-   assert_eq!(syntax.load(Ordering::Acquire),0);
+   assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   }
  }
  #[test]
@@ -1718,8 +1718,8 @@ impl OriginalRawOrigins{
  }
  #[test]
  fn packed_groups_preserve_wide_coordinates_and_refund_only_retired_owners() {
-  let syntax=Arc::new(AtomicUsize::new(0));
-  let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=SettingAdmission::new(&syntax,dm_syntax::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));
   let source=Arc::new(AtomicUsize::new(0));
   let work=CappedWork::new(Arc::clone(&source),usize::MAX);
   let mut credit=work.reserve(0).unwrap();
@@ -1757,13 +1757,13 @@ impl OriginalRawOrigins{
   drop(groups);
   drop(credit);
   assert_eq!(source.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn group_page_geometry_escapes_keep_the_same_ordinals_after_partial_trim() {
-  let syntax=Arc::new(AtomicUsize::new(0));
-  let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=SettingAdmission::new(&syntax,dm_syntax::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));
   let used=Arc::new(AtomicUsize::new(0));
   let work=OutputWork(Arc::clone(&used));
   let mut credit=work.reserve(0).unwrap();
@@ -1804,13 +1804,13 @@ impl OriginalRawOrigins{
   assert_eq!(groups.source_geometry(2),Some(GroupGeometry{raw_base:5,..ordinary(2)}.source()));
   drop((groups,credit));
   assert_eq!(used.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn group_trace_rank_preserves_exact_owners_across_words_pages_and_trim() {
-  let syntax=Arc::new(AtomicUsize::new(0));
-  let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=SettingAdmission::new(&syntax,dm_syntax::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));
   let used=Arc::new(AtomicUsize::new(0));
   let work=OutputWork(Arc::clone(&used));
   let mut credit=work.reserve(0).unwrap();
@@ -1864,7 +1864,7 @@ impl OriginalRawOrigins{
   drop(groups);
   drop(credit);
   assert_eq!(used.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
@@ -1896,8 +1896,8 @@ impl OriginalRawOrigins{
   let absent=std::env::current_exe().unwrap().join("not-a-directory/origin-provider");
   let expected=std::fs::File::open(&absent).unwrap_err();
   let raw=expected.raw_os_error().expect("real filesystem open error");
-  let syntax=Arc::new(AtomicUsize::new(0));
-  let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=SettingAdmission::new(&syntax,dm_syntax::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));
   let live=Arc::new(AtomicUsize::new(0));
   let work=DenySecondGeometry{backing:OutputWork(Arc::clone(&live)),absent,
    armed:AtomicBool::new(false),run_grows:AtomicUsize::new(0)};
@@ -1935,7 +1935,7 @@ impl OriginalRawOrigins{
   assert!(groups.get(ROW_PAGE_LEN).unwrap().1.same_owner(&owner_b));
   drop((groups,credit));
   assert_eq!(live.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[cfg(debug_assertions)]
@@ -1958,7 +1958,7 @@ impl OriginalRawOrigins{
 
  #[test]
  fn ranked_raw_width_cells_keep_page_edges_and_token_loans_without_side_reads() {
-  let syntax=Arc::new(AtomicUsize::new(0));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
   let work=OutputWork(Arc::new(AtomicUsize::new(0)));
   let mut credit=work.reserve(0).unwrap();
@@ -1994,7 +1994,7 @@ impl OriginalRawOrigins{
   assert_eq!(rows.get(64,&groups),Some(make(64)));
   drop((rows,groups,credit));
   assert_eq!(work.0.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
@@ -2012,7 +2012,7 @@ impl OriginalRawOrigins{
   }
   let absent=std::env::current_exe().unwrap().join("missing-width/input");
   let expected=std::fs::File::open(&absent).unwrap_err();
-  let syntax=Arc::new(AtomicUsize::new(0));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
   let work=FailingWidth{backing:OutputWork(Arc::new(AtomicUsize::new(0))),armed:AtomicBool::new(true),absent};
   let mut credit=work.reserve(0).unwrap();
@@ -2041,7 +2041,7 @@ impl OriginalRawOrigins{
   }
   drop((page,groups,credit));
   assert_eq!(work.backing.0.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  struct RankedWidthFailureWork {
@@ -2080,7 +2080,7 @@ impl OriginalRawOrigins{
  #[test]
  fn ranked_raw_width_staging_rolls_back_when_later_cell_or_output_base_allocation_fails(){
   for fail_bytes in [ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>(),128*std::mem::size_of::<u32>()]{
-   let syntax=Arc::new(AtomicUsize::new(0));
+   let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
    let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
    let work=RankedWidthFailureWork::new(fail_bytes);
    let expected=std::fs::File::open(&work.absent).unwrap_err();
@@ -2102,13 +2102,13 @@ impl OriginalRawOrigins{
    assert_eq!(page.output_bases.compact.len(),1);
    drop(page);
    assert_eq!(work.backing.0.load(Ordering::Acquire),0);
-   assert_eq!(syntax.load(Ordering::Acquire),0);
+   assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   }
  }
 
  #[test]
  fn ranked_raw_width_existing_vector_growth_failure_keeps_prior_rank_and_capacity(){
-  let syntax=Arc::new(AtomicUsize::new(0));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
   let work=RankedWidthFailureWork::new(0);
   let mut page=PhysicalOriginPage::new(0,&work).unwrap();
@@ -2132,12 +2132,12 @@ impl OriginalRawOrigins{
   assert_eq!(page.raw_widths.as_ref().unwrap().rank.through(16),17);
   drop(page);
   assert_eq!(work.backing.0.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn ranked_raw_width_trim_drops_last_side_and_recreates_at_nonword_boundary(){
-  let syntax=Arc::new(AtomicUsize::new(0));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&syntax,8<<20,&||Ok(()));
   let work=RankedWidthFailureWork::new(0);
   let mut credit=work.reserve(0).unwrap();
@@ -2162,12 +2162,12 @@ impl OriginalRawOrigins{
   assert_eq!(page.decode(12,&groups),Some(ranked_test_row(true)));
   drop((page,groups,credit));
   assert_eq!(work.backing.0.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn packed_raw_rows_roundtrip_all_widths_page_bases_and_retained_suffix() {
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,4<<20,&||Ok(()));
   let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut credit=work.reserve(0).unwrap();
   let mut funding=PageFunding{work:&work,credit:&mut credit};
@@ -2221,11 +2221,11 @@ impl OriginalRawOrigins{
   assert_eq!(rows.get(0,&groups),Some(narrow));
   drop((rows,groups,trace));
   drop(credit);assert_eq!(work.0.load(Ordering::Acquire),0);
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn completed_physical_page_loan_keeps_one_exact_credit_without_producer_or_groups() {
-  let syntax=Arc::new(AtomicUsize::new(0));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&syntax,4<<20,&||Ok(()));
   let live=Arc::new(AtomicUsize::new(0));
   let work=OutputWork(Arc::clone(&live));
@@ -2268,12 +2268,12 @@ impl OriginalRawOrigins{
   assert_eq!(live.load(Ordering::Acquire),payload);
   drop(loan);
   assert_eq!(live.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn physical_output_bases_keep_continued_groups_and_exact_wide_offsets() {
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,4<<20,&||Ok(()));
   let work=OutputWork(Arc::new(AtomicUsize::new(0)));
   let mut credit=work.reserve(0).unwrap();
@@ -2309,13 +2309,13 @@ impl OriginalRawOrigins{
   assert!(work.0.load(Ordering::Acquire)<before);
   assert_eq!(rows.pages.len(),1);
   drop((rows,groups,credit));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   assert_eq!(work.0.load(Ordering::Acquire),0);
  }
 
  #[test]
  fn failed_wide_output_base_keeps_preceding_row_and_rank() {
-  let syntax=Arc::new(AtomicUsize::new(0));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&syntax,4<<20,&||Ok(()));
   let live=Arc::new(AtomicUsize::new(0));
   let work=CappedWork::new(Arc::clone(&live),usize::MAX);
@@ -2344,12 +2344,12 @@ impl OriginalRawOrigins{
   assert_eq!(rows.get(1,&groups),Some(next));
   drop((rows,groups,credit));
   assert_eq!(live.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn row_group_rank_tracks_wide_transitions_and_reissues_trimmed_suffix() {
-  let syntax=Arc::new(AtomicUsize::new(0));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&syntax,4<<20,&||Ok(()));
   let live=Arc::new(AtomicUsize::new(0));
   let work=OutputWork(Arc::clone(&live));
@@ -2399,12 +2399,12 @@ impl OriginalRawOrigins{
   },"all real row/rank/escape pages and directories remain funded");
   drop((rows,groups,credit));
   assert_eq!(live.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn failed_cell_page_append_does_not_publish_escape_or_replace_prior_cells() {
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let initial=SettingAdmission::new(&used,4<<20,&||Ok(()));
   let source=Arc::new(AtomicUsize::new(0));let work=CappedWork::new(Arc::clone(&source),usize::MAX);
   let mut credit=work.reserve(0).unwrap();let mut funding=PageFunding{work:&work,credit:&mut credit};
@@ -2430,7 +2430,7 @@ impl OriginalRawOrigins{
   assert_eq!(used.load(Ordering::Acquire),before);
   assert_eq!(source.load(Ordering::Acquire),source_before);
   drop(rows);drop(credit);assert_eq!(source.load(Ordering::Acquire),0);
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn first_row_cell_failure_keeps_real_io_after_funding_rank_and_escape() {
@@ -2461,7 +2461,7 @@ impl OriginalRawOrigins{
   }
   let absent=std::env::current_exe().unwrap().join("not-a-directory/origin-row-provider");
   let expected=std::fs::File::open(&absent).unwrap_err();
-  let syntax=Arc::new(AtomicUsize::new(0));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&syntax,4<<20,&||Ok(()));
   let live=Arc::new(AtomicUsize::new(0));
   let work=DenyCell{backing:OutputWork(Arc::clone(&live)),absent,
@@ -2489,12 +2489,12 @@ impl OriginalRawOrigins{
   assert_eq!(rows.medium_len(),1);
   drop((rows,credit));
   assert_eq!(live.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn actual_append_frontier_keeps_last_published_geometry_on_row_refusal() {
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
   let file=File::new(b"var/value=7\n");
   let mut source=driver(&a);
@@ -2533,12 +2533,12 @@ impl OriginalRawOrigins{
   assert_eq!(rows.last_emitted.unwrap().cover_end,2);
   assert_eq!(rows.row(1).unwrap().output,Span::new(1,2));
   drop((rows,source,host,path,trace,first,second,metadata));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   assert_eq!(live.load(Ordering::Acquire),0);
  }
 
  #[test]fn actual_raw_arena_rejects_equal_bytes_foreign_acquisition_and_nonexact_offsets(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"var/value=7\n");let foreign=File::new(b"var/value=7\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let actual=next(&mut source,&file,&mut host,&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();let credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("same.dm"));let trace=OriginalMacroTrace::empty();rows.append_actual_using(&actual,Span::new(0,4),Span::new(0,5),1,0,path,trace,&file.lease,&file,&mut source,&a,&work).unwrap();assert!(rows.point(0,0,&foreign.lease,0).is_err());assert!(rows.point(0,1,&file.lease,0).is_err());assert!(rows.point(0,0,&file.lease,1).is_err());assert_eq!(rows.policy_line(0,0,&file.lease,3).unwrap(),1);assert!(rows.policy_line(0,0,&foreign.lease,3).is_err());drop((rows,source,host,credit));assert!(used.load(Ordering::Acquire)>0,"the still-owned emitted token must retain its own text credit");drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new(b"var/value=7\n");let foreign=File::new(b"var/value=7\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let actual=next(&mut source,&file,&mut host,&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();let credit=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("same.dm"));let trace=OriginalMacroTrace::empty();rows.append_actual_using(&actual,Span::new(0,4),Span::new(0,5),1,0,path,trace,&file.lease,&file,&mut source,&a,&work).unwrap();assert!(rows.point(0,0,&foreign.lease,0).is_err());assert!(rows.point(0,1,&file.lease,0).is_err());assert!(rows.point(0,0,&file.lease,1).is_err());assert_eq!(rows.policy_line(0,0,&file.lease,3).unwrap(),1);assert!(rows.policy_line(0,0,&foreign.lease,3).is_err());drop((rows,source,host,credit));assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes(),"the still-owned emitted token must retain its own text credit");drop(actual);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  struct OutputCredit{bytes:std::sync::atomic::AtomicUsize,live:Arc<std::sync::atomic::AtomicUsize>}
  impl Drop for OutputCredit{fn drop(&mut self){self.live.fetch_sub(self.bytes.load(std::sync::atomic::Ordering::Acquire),std::sync::atomic::Ordering::AcqRel);}}
@@ -2573,10 +2573,10 @@ impl OriginalRawOrigins{
  }
  #[test]
  fn page_directory_denial_drops_new_page_and_preserves_both_domains() {
-  let syntax=Arc::new(AtomicUsize::new(0));
+  let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let source=Arc::new(AtomicUsize::new(0));
   let work=CappedWork::new(Arc::clone(&source),ROW_PAGE_LEN*std::mem::size_of::<NarrowRow>());
-  let a=SettingAdmission::new(&syntax,0,&||Ok(()));
+  let a=SettingAdmission::new(&syntax,dm_syntax::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));
   let mut credit=work.reserve(0).unwrap();
   let mut funding=PageFunding{work:&work,credit:&mut credit};
   let mut rows=OriginPages::new();
@@ -2585,11 +2585,11 @@ impl OriginalRawOrigins{
   assert_eq!(rows.len(),0);
   assert_eq!(rows.pages.capacity(),0);
   assert_eq!(source.load(Ordering::Acquire),0);
-  assert_eq!(syntax.load(Ordering::Acquire),0);
+  assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_receiver_receipt_trims_raw_eof_lookahead_without_claiming_consumed_eof_and_rejects_foreign_same_end(){
   use super::super::{original_prepared_output::OriginalOutputCursor,original_source_arena::OriginalSourceArena};
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let mut text=format!("/datum/{}\n", "x".repeat(usize::from(u16::MAX)+1));text.push_str(&format!("/datum/{}\n","m".repeat(300)));text.push_str(&"var/x\n".repeat(ROW_PAGE_LEN));let file=File::new(text.as_bytes());let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=OriginalMacroTrace::empty();let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let mut text=format!("/datum/{}\n", "x".repeat(usize::from(u16::MAX)+1));text.push_str(&format!("/datum/{}\n","m".repeat(300)));text.push_str(&"var/x\n".repeat(ROW_PAGE_LEN));let file=File::new(text.as_bytes());let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host{ordinary:OriginalOrdinaryOutput::new(&a).unwrap()};let metadata=a.reserve(1024).unwrap();let path=Arc::new(PathBuf::from("delivery.dm"));let trace=OriginalMacroTrace::empty();let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();rows.bind_output_using(&initial,&a).unwrap();let mut prepared=Vec::new();
   while let Some(actual)=next(&mut source,&file,&mut host,&a){
    let item=cursor.prepare(actual,&file,&a).unwrap();
    let region=usize::from(prepared.len() > ROW_PAGE_LEN);
@@ -2621,12 +2621,12 @@ impl OriginalRawOrigins{
   // A different actual cursor/receiver produces the SAME first span. Matching
   // numbers do not authorize trimming this producer's retained mappings.
   let mut foreign=OriginalOutputCursor::new(&a).unwrap();let foreign_item=foreign.prepare(prepared[0].actual().unwrap().duplicate(&a).unwrap(),&file,&a).unwrap();let mut foreign_arena=OriginalSourceArena::new(&work).unwrap();let mut foreign_primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(foreign_token,foreign_receipt)=foreign_item.into_delivery().adopt(&mut foreign_arena,&mut foreign_primary,&foreign.identity(),&a).unwrap();assert!(rows.retain_delivered_using(&foreign_receipt,&a,&work).is_err());
-  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let full_charge=work.0.load(Ordering::Acquire);let keep=rows.retain_delivered_using(&receipt,&a,&work).unwrap();assert!(work.0.load(Ordering::Acquire)<full_charge,"actual unreceived page storage is refunded");assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.packed.pages.len(),1,"real receipt drops every undelivered group page");assert_eq!(rows.encounters.len(),1,"undelivered encounter drops with its rows");assert_eq!(rows.rows.page(0).unwrap().medium.pages.len(),0,"unreceived medium pages are released");assert_eq!(rows.rows.page(0).unwrap().full.pages.len(),0,"unreceived full pages are released");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.delivered_tokens(&foreign_receipt,&a).is_err());assert!(rows.delivered_tokens(&initial,&a).is_err());assert!(rows.delivered_tokens(&receipt,&a).unwrap().eq([Some(first.token)]));assert!(rows.retain_delivered_using(&receipt,&a,&work).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,&path,&trace,&file.lease,&file,&mut source,None,&a,&work).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(work.0.load(Ordering::Acquire),0);
+  let mut arena=OriginalSourceArena::new(&work).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let(first,receipt)=prepared.remove(0).into_delivery().adopt(&mut arena,&mut primary,&cursor.identity(),&a).unwrap();assert_eq!(receipt.end(),foreign_receipt.end());let full_charge=work.0.load(Ordering::Acquire);let keep=rows.retain_delivered_using(&receipt,&a,&work).unwrap();assert!(work.0.load(Ordering::Acquire)<full_charge,"actual unreceived page storage is refunded");assert_eq!(keep,1);assert_eq!(rows.len(),1);assert_eq!(rows.rows.pages.len(),1,"real receipt drops every undelivered packed page");assert_eq!(rows.groups.packed.pages.len(),1,"real receipt drops every undelivered group page");assert_eq!(rows.encounters.len(),1,"undelivered encounter drops with its rows");assert_eq!(rows.rows.page(0).unwrap().medium.pages.len(),0,"unreceived medium pages are released");assert_eq!(rows.rows.page(0).unwrap().full.pages.len(),0,"unreceived full pages are released");assert!(!rows.geometry(0).unwrap().4,"unreceived producer EOF cannot become received output EOF");assert!(rows.has_delivered_binding());assert!(rows.delivered_tokens(&foreign_receipt,&a).is_err());assert!(rows.delivered_tokens(&initial,&a).is_err());assert!(rows.delivered_tokens(&receipt,&a).unwrap().eq([Some(first.token)]));assert!(rows.retain_delivered_using(&receipt,&a,&work).is_err());let item=&prepared[0];assert!(rows.append_produced_using(item.actual().unwrap(),item.produced(),0,&path,&trace,&file.lease,&file,&mut source,None,&a,&work).is_err());drop((source,host,rows,cursor,initial,prepared,first,receipt,foreign_token,foreign_receipt,foreign,foreign_primary,primary,arena,foreign_arena,path,trace,metadata));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(work.0.load(Ordering::Acquire),0);
  }
  #[test]
  fn exact_issued_default_token_survives_without_a_physical_origin() {
   use super::super::{original_prepared_output::OriginalOutputCursor,original_source_arena::OriginalSourceArena};
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
   let work=OutputWork(Arc::new(AtomicUsize::new(0)));
   let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();
@@ -2646,12 +2646,12 @@ impl OriginalRawOrigins{
   assert_eq!(rows.len(),0);
   assert!(rows.geometry(0).is_none());
   drop((rows,cursor,initial,receipt,actual,arena,primary));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   assert_eq!(work.0.load(Ordering::Acquire),0);
  }
 
  #[test]fn same_actual_empty_delivery_discards_all_unreceived_rows_but_foreign_zero_cannot_bind(){
-  use super::super::original_prepared_output::OriginalOutputCursor;let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let cursor=OriginalOutputCursor::new(&a).unwrap();let actual=cursor.initial_delivery().unwrap();let foreign=OriginalOutputCursor::new(&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();rows.bind_output_using(&actual,&a).unwrap();assert!(rows.bind_output_using(&foreign.initial_delivery().unwrap(),&a).is_err());assert_eq!(rows.retain_delivered_using(&actual,&a,&work).unwrap(),0);assert!(rows.has_delivered_binding());drop((rows,actual,cursor,foreign));assert_eq!(used.load(Ordering::Acquire),0);
+  use super::super::original_prepared_output::OriginalOutputCursor;let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let cursor=OriginalOutputCursor::new(&a).unwrap();let actual=cursor.initial_delivery().unwrap();let foreign=OriginalOutputCursor::new(&a).unwrap();let work=OutputWork(Arc::new(AtomicUsize::new(0)));let mut rows=OriginalRawOrigins::new(&a,&work).unwrap();rows.bind_output_using(&actual,&a).unwrap();assert!(rows.bind_output_using(&foreign.initial_delivery().unwrap(),&a).is_err());assert_eq!(rows.retain_delivered_using(&actual,&a,&work).unwrap(),0);assert!(rows.has_delivered_binding());drop((rows,actual,cursor,foreign));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
 }

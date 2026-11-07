@@ -105,7 +105,7 @@ pub(super) fn substitute_using<'a,F:Tokens>(params:&[impl AsRef<str>],args:&[Mac
 }
 
 #[cfg(test)]mod tests{
- use super::*;use super::super::funded_storage::MacroText;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use super::super::funded_storage::MacroText;use std::sync::{atomic::{Ordering}};
  enum Text{Borrowed(&'static str),Owned(MacroText)}impl Text{fn get(&self)->&str{match self{Self::Borrowed(s)=>s,Self::Owned(s)=>s.as_str()}}}
  enum Kind{Ident(bool),Int(i32),Float(f32),Hash,Paste,Other,String}
  struct Token{kind:Kind,text:Text}
@@ -119,12 +119,12 @@ pub(super) fn substitute_using<'a,F:Tokens>(params:&[impl AsRef<str>],args:&[Mac
  }
  fn ident(text:&'static str)->Token{Token{kind:Kind::Ident(false),text:Text::Borrowed(text)}}fn other(text:&'static str)->Token{Token{kind:Kind::Other,text:Text::Borrowed(text)}}fn paste()->Token{Token{kind:Kind::Paste,text:Text::Borrowed("##")}}fn row(tokens:impl IntoIterator<Item=Token>,a:&SettingAdmission<'_>)->MacroTokenRows<Token>{let mut row=MacroTokenRows::new(a).unwrap();for t in tokens{row.push(t,a).unwrap();}row}
  fn spell(row:&MacroTokenRows<Token>)->Vec<&str>{row.iter().map(|t|t.text.get()).collect()}
- #[test]fn raw_forwarded_unused_argument_is_not_preexpanded_or_inspected_as_a_macro(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut f=Factory{joined:0,stringified:0};let args=[row([ident("TOO_FEW"),other("("),Token{kind:Kind::Int(1),text:Text::Borrowed("1")},other(")")],&a)];let replacement=[other(","),ident("x")];let params=["x".to_owned()];let out=substitute_using(&params,&args,&replacement,&mut f,&a).unwrap().ok().unwrap();assert_eq!(spell(&out),[",","TOO_FEW","(","1",")"]);assert_eq!((f.joined,f.stringified),(0,0));drop((out,args));assert_eq!(used.load(Ordering::Acquire),0);}
- #[test]fn paste_preserves_actual_ident_int_empty_and_nonident_tail_rules(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut f=Factory{joined:0,stringified:0};let params=["x".to_owned()];for(raw,wanted,joins)in[(vec![ident("tail"),other("(")],vec!["pretail","("],1),(vec![Token{kind:Kind::Int(2147483647),text:Text::Borrowed("2147483647")}],vec!["pre2147483647"],1),(vec![Token{kind:Kind::Float(1.0),text:Text::Borrowed("1")}],vec!["pre","1"],0),(vec![],vec![],0)]{let args=[row(raw,&a)];let replacement=[ident("pre"),paste(),ident("x")];let before=f.joined;let out=substitute_using(&params,&args,&replacement,&mut f,&a).unwrap().ok().unwrap();assert_eq!(spell(&out),wanted);assert_eq!(f.joined-before,joins);}assert_eq!(used.load(Ordering::Acquire),0);}
- #[test]fn stringify_consumes_raw_token_display_and_diagnostics_stay_borrowed_without_environment_lookups(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut f=Factory{joined:0,stringified:0};let params=["x".to_owned()];let args=[row([ident("F"),other("("),other(")")],&a)];let hash=||Token{kind:Kind::Hash,text:Text::Borrowed("#")};let replacement=[hash(),ident("x")];let out=substitute_using(&params,&args,&replacement,&mut f,&a).unwrap().ok().unwrap();assert_eq!(spell(&out),["F ( )"]);assert!(matches!(out.iter().next().unwrap().kind,Kind::String));let bad=[hash(),ident("absent")];assert!(matches!(substitute_using(&params,&args,&bad,&mut f,&a).unwrap(),Err(SubstitutionFailure::NonArgument("absent"))));let bad=[hash(),other("+")];assert!(matches!(substitute_using(&params,&args,&bad,&mut f,&a).unwrap(),Err(SubstitutionFailure::NonIdent(_))));let bad=[hash()];assert!(matches!(substitute_using(&params,&args,&bad,&mut f,&a).unwrap(),Err(SubstitutionFailure::Eof)));drop((out,args));assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn raw_forwarded_unused_argument_is_not_preexpanded_or_inspected_as_a_macro(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut f=Factory{joined:0,stringified:0};let args=[row([ident("TOO_FEW"),other("("),Token{kind:Kind::Int(1),text:Text::Borrowed("1")},other(")")],&a)];let replacement=[other(","),ident("x")];let params=["x".to_owned()];let out=substitute_using(&params,&args,&replacement,&mut f,&a).unwrap().ok().unwrap();assert_eq!(spell(&out),[",","TOO_FEW","(","1",")"]);assert_eq!((f.joined,f.stringified),(0,0));drop((out,args));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
+ #[test]fn paste_preserves_actual_ident_int_empty_and_nonident_tail_rules(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut f=Factory{joined:0,stringified:0};let params=["x".to_owned()];for(raw,wanted,joins)in[(vec![ident("tail"),other("(")],vec!["pretail","("],1),(vec![Token{kind:Kind::Int(2147483647),text:Text::Borrowed("2147483647")}],vec!["pre2147483647"],1),(vec![Token{kind:Kind::Float(1.0),text:Text::Borrowed("1")}],vec!["pre","1"],0),(vec![],vec![],0)]{let args=[row(raw,&a)];let replacement=[ident("pre"),paste(),ident("x")];let before=f.joined;let out=substitute_using(&params,&args,&replacement,&mut f,&a).unwrap().ok().unwrap();assert_eq!(spell(&out),wanted);assert_eq!(f.joined-before,joins);}assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
+ #[test]fn stringify_consumes_raw_token_display_and_diagnostics_stay_borrowed_without_environment_lookups(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut f=Factory{joined:0,stringified:0};let params=["x".to_owned()];let args=[row([ident("F"),other("("),other(")")],&a)];let hash=||Token{kind:Kind::Hash,text:Text::Borrowed("#")};let replacement=[hash(),ident("x")];let out=substitute_using(&params,&args,&replacement,&mut f,&a).unwrap().ok().unwrap();assert_eq!(spell(&out),["F ( )"]);assert!(matches!(out.iter().next().unwrap().kind,Kind::String));let bad=[hash(),ident("absent")];assert!(matches!(substitute_using(&params,&args,&bad,&mut f,&a).unwrap(),Err(SubstitutionFailure::NonArgument("absent"))));let bad=[hash(),other("+")];assert!(matches!(substitute_using(&params,&args,&bad,&mut f,&a).unwrap(),Err(SubstitutionFailure::NonIdent(_))));let bad=[hash()];assert!(matches!(substitute_using(&params,&args,&bad,&mut f,&a).unwrap(),Err(SubstitutionFailure::Eof)));drop((out,args));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
  #[test]
  fn variadic_and_paste_and_stringify_cross_page_edges_without_losing_order() {
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
     let mut f=Factory{joined:0,stringified:0};
     let params=["tail"];
@@ -147,10 +147,10 @@ pub(super) fn substitute_using<'a,F:Tokens>(params:&[impl AsRef<str>],args:&[Mac
     assert_eq!(out_tokens[259],packed_tokens.join(" "));
     assert_eq!((f.joined,f.stringified),(1,1));
     drop((out,packed));
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn original_variadic_join_and_missing_empty_tail_keep_parameter_order(){
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
     let mut f=Factory{joined:0,stringified:0};
     let params=["first","tail"];
@@ -166,6 +166,6 @@ pub(super) fn substitute_using<'a,F:Tokens>(params:&[impl AsRef<str>],args:&[Mac
     assert!(empty.as_slice()[1].iter().next().is_none());
     assert!(arguments_using(&params,args(&["a"]),false,&mut f,&a).unwrap().is_err());
     drop((normalized,empty));
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

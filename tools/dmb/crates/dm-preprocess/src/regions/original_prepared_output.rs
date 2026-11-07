@@ -11,7 +11,22 @@ struct Payload{credit:SettingRootLease}
 pub(super) struct OriginalOutputIdentity(Option<Arc<Payload>>);
 impl Clone for OriginalOutputIdentity{fn clone(&self)->Self{Self(Some(Arc::clone(self.0.as_ref().expect("live actual output cursor"))))}}
 impl Drop for OriginalOutputIdentity{fn drop(&mut self){if let Some(owner)=self.0.take(){if let Some(payload)=Arc::into_inner(owner){drop(payload)}}}}
+impl dm_syntax::OriginalLiteralOutputOwner for Payload{
+ fn as_any(&self)->&dyn std::any::Any{self}
+ fn release(self:Arc<Self>){if let Some(payload)=Arc::into_inner(self){drop(payload)}}
+ fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize,usize)){
+  let bytes=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();
+  visit(self as *const Payload as usize,bytes,bytes);
+  self.credit.visit_counter_storage(|p,n|{let n=n+2*std::mem::size_of::<usize>();visit(p,n,n)});
+ }
+}
 impl OriginalOutputIdentity{
+ pub(super) fn projection_data(&self)->dm_syntax::OriginalLiteralProjectionOwner{
+  dm_syntax::OriginalLiteralProjectionOwner::from_output_data(Arc::clone(self.0.as_ref().unwrap()) as Arc<dyn dm_syntax::OriginalLiteralOutputOwner>)
+ }
+ pub(super) fn matches_projection_data(&self,data:&dm_syntax::OriginalLiteralProjectionOwner)->bool{
+  data.output_data().downcast_ref::<Payload>().is_some_and(|actual|std::ptr::eq(actual,self.0.as_deref().unwrap()))
+ }
  /// Exact live cursor/control allocations only. The retained lease's size
  /// is a resource reservation and is deliberately never reported as storage.
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
@@ -556,7 +571,7 @@ mod compact_queue_tests {
     use super::*;
     use crate::macro_expansion::{OriginalMacroOrigin as Origin, OriginalMacroTextValue as MacroTextValue};
     use dm_syntax::{OriginalCommentKind, OriginalStringMode, OriginalTokenValue, TokenKind};
-    use std::{path::Path, sync::atomic::{AtomicUsize, Ordering}};
+    use std::{path::Path, sync::atomic::{Ordering}};
 
     struct NoFiles;
     impl SourceProvider for NoFiles {
@@ -568,7 +583,7 @@ mod compact_queue_tests {
 
     #[test]
     fn actual_output_cursor_alone_controls_future_frontier_and_failed_seal() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut output = OriginalOutputCursor::new(&a).unwrap();
         let initial = output.initial_delivery().unwrap();
@@ -589,7 +604,7 @@ mod compact_queue_tests {
         assert_eq!(output.seal_actual_end(&a).err().unwrap().kind(), io::ErrorKind::InvalidInput);
         assert_eq!(ended.end(), produced.cover().end, "earlier published receipt survives later producer failure");
         drop((output, initial, ended, produced, foreign));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     fn identifier(spelling: MacroTextValue<'static>) -> Token<'static> {
@@ -603,7 +618,7 @@ mod compact_queue_tests {
 
     #[test]
     fn identifier_moves_source_and_owned_spelling_under_tight_admission() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut output = OriginalOutputCursor::new(&a).unwrap();
         let baseline = used.load(Ordering::Acquire);
@@ -644,13 +659,13 @@ mod compact_queue_tests {
         drop(owned_row);
         assert_eq!(used.load(Ordering::Acquire), baseline);
         drop((row, output));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn foreign_owned_identifier_keeps_the_funded_copy_fallback() {
-        let used = Arc::new(AtomicUsize::new(0));
-        let foreign = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let foreign = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let other = SettingAdmission::new(&foreign, 1 << 20, &|| Ok(()));
         let mut owned = Text::new(&other).unwrap();
@@ -660,17 +675,17 @@ mod compact_queue_tests {
         let prepared = output.prepare(identifier(MacroTextValue::Owned(owned)), &NoFiles, &a).unwrap();
         assert!(matches!(&prepared.spelling, OutputSpelling::Owned(_)));
         let row = prepared.into_delivery();
-        assert_eq!(foreign.load(Ordering::Acquire), 0);
+        assert_eq!(foreign.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
         let text = row.spelling.text(None, &a).unwrap();
         assert_eq!(text, "foreign");
         assert_ne!(text.as_ptr(), ptr);
         drop((row, output));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn static_output_spelling_needs_no_scratch_grant() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut output = OriginalOutputCursor::new(&a).unwrap();
         let retained = used.load(Ordering::Acquire);
@@ -692,12 +707,12 @@ mod compact_queue_tests {
         assert_eq!(default.cover().end, 4);
         assert_eq!(used.load(Ordering::Acquire), retained);
         drop((row, default, output));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn complete_delivery_batch_seals_actual_generated_literal_rows_before_cursor() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut output = OriginalOutputCursor::new(&a).unwrap();
         let owner = output.identity();
@@ -708,7 +723,7 @@ mod compact_queue_tests {
             let actual = Token {
                 string_mode: OriginalStringMode::Normal, punctuation_close: false,
                 lexical_frame: None, lexical_span: None, raw_spelling: None,
-                value: Value::InterpPart(MacroTextValue::Borrowed("typed Ã©")),
+                value: Value::InterpPart(MacroTextValue::Borrowed("typed ÃƒÂ©")),
                 origin: Origin { physical: Span::new(at, at + 1), line: 1, byte_column: Some(at), occurrence: 0, invocation: false },
             };
             let prepared = output.prepare(actual, &NoFiles, &a).unwrap();
@@ -727,9 +742,9 @@ mod compact_queue_tests {
             let row = cursor.next(&a).unwrap().unwrap();
             assert_eq!(row.token.span, span);
             let literal = row.literal.unwrap();
-            assert_eq!(literal.raw(), "]typed Ã©[");
+            assert_eq!(literal.raw(), "]typed ÃƒÂ©[");
             assert_eq!(literal.raw().as_ptr(), backing[at]);
-            assert!(matches!(literal.value(), OriginalTokenValue::InterpPart("typed Ã©")));
+            assert!(matches!(literal.value(), OriginalTokenValue::InterpPart("typed ÃƒÂ©")));
             assert_eq!(literal.string_mode(), OriginalStringMode::Normal);
             if let Some(first) = &keep {
                 assert!(!first.same_owner(&literal));
@@ -742,12 +757,12 @@ mod compact_queue_tests {
         drop((cursor, owner, output));
         assert_ne!(used.load(Ordering::Acquire), 0);
         drop(keep);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn batch_reuses_one_text_arena_and_moves_exact_sparse_issued_values() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut output = OriginalOutputCursor::new(&a).unwrap();
         let owner = output.identity();
@@ -834,6 +849,6 @@ mod compact_queue_tests {
         assert_eq!(first.spelling.text(first.literal.as_ref(), &a).unwrap(), "alpha");
         assert_ne!(used.load(Ordering::Acquire), 0, "the surviving exact arena loan still owns its bytes");
         drop(first);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

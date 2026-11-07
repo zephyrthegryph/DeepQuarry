@@ -972,7 +972,7 @@ mod tests {
 mod borrowed_tests;
 
 #[cfg(test)]mod original_modified_rhs_typed_tests{
- use super::*;use dm_syntax::{Expr,ExprKind,LiteralText,OriginalTokenValue as V,SettingAdmission,Span};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
- #[test]fn actual_original_scalar_kind_precedes_resource_quote_template_and_null_looking_spelling(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));for raw in ["\"looks[interpolated]\"","@{raw}","null","1e3"]{for value in [V::Int(0),V::Float(1000.0),V::Resource("real/path")]{let expr=Expr{span:Span::new(0,raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap())};admit_modified_rhs(&expr).unwrap();}}assert_eq!(used.load(Ordering::Acquire),0);}
+ use super::*;use dm_syntax::{Expr,ExprKind,LiteralText,OriginalTokenValue as V,SettingAdmission,Span};use std::sync::{Arc, atomic::{Ordering}};
+ #[test]fn actual_original_scalar_kind_precedes_resource_quote_template_and_null_looking_spelling(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));for raw in ["\"looks[interpolated]\"","@{raw}","null","1e3"]{for value in [V::Int(0),V::Float(1000.0),V::Resource("real/path")]{let expr=Expr{span:Span::new(0,raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap())};admit_modified_rhs(&expr).unwrap();}}assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
  #[test]fn ordinary_modified_rhs_admission_and_unissued_original_string_runtime_contract_stay_explicit(){for raw in ["1","null","'a.dmi'"]{let expr=dm_syntax::parse_expression(raw).expr.unwrap();admit_modified_rhs(&expr).unwrap();}let expr=dm_syntax::parse_expression("\"x[foo()]\"").expr.unwrap();assert!(admit_modified_rhs(&expr).is_err());}
 }

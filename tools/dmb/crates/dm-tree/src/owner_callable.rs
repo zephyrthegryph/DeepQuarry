@@ -258,17 +258,17 @@ mod tests {
         let (declarations, _) = KeyedDeclarations::capture(None, &[
             member(owner, name, MemberKind::Proc, DefinitionMode::Declare),
         ]).unwrap();
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let exact = std::mem::size_of::<SymbolId>();
-        let limited = dm_syntax::SettingAdmission::new(&used, exact - 1, &|| Ok(()));
+        let limited = dm_syntax::SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (exact - 1), &|| Ok(()));
         assert!(AuthoredCallableLoan::try_new(&declarations, &prior, &limited).unwrap().is_none());
-        assert_eq!(used.load(Ordering::Acquire), 0);
-        let admitted = dm_syntax::SettingAdmission::new(&used, exact, &|| Ok(()));
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
+        let admitted = dm_syntax::SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (exact), &|| Ok(()));
         let loan = AuthoredCallableLoan::try_new(&declarations, &prior, &admitted).unwrap().unwrap();
         assert_eq!(loan.covered.capacity(), 1);
-        assert_eq!(used.load(Ordering::Acquire), exact);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (exact));
         drop(loan);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]

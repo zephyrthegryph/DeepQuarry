@@ -84,48 +84,48 @@ impl PartialEq for ProcedureParameters{fn eq(&self,other:&Self)->bool{self.deref
   let shared=SharedParameterSignature::retained_using(signature,lease,a).unwrap();(ast,shared)
  }
  #[test]fn primary_header_selection_precedes_bad_statement_body_and_adopts_same_signature(){
-  let source="/proc/p(datum/act/A)\n    return (1 + )\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let source="/proc/p(datum/act/A)\n    return (1 + )\n";let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
   let before=crate::parameter_syntax::PARAMETER_SIGNATURE_ISSUANCES.with(|counter|counter.get());let(ast,shared)=produce(source,&a);assert_eq!(crate::parameter_syntax::PARAMETER_SIGNATURE_ISSUANCES.with(|counter|counter.get()),before+1);let entry=&shared.entries().unwrap()[0];assert_eq!(entry.type_path(source).unwrap().as_deref(),Some("/datum/act"));let entry_ptr=entry as *const crate::ParameterSyntax;
   let issued=crate::parse_original_proc_with_shared_parameters_from_spans(source,ast.items[0].span,&ast.tokens,0,shared.clone()).unwrap();
   assert!(matches!(&issued.parameters,ProcedureParameters::Shared(actual)if actual.same_owner(&shared)));
   assert_eq!(crate::parameter_syntax::PARAMETER_SIGNATURE_ISSUANCES.with(|counter|counter.get()),before+1,"BODY must not reissue parameter signature DATA");
   assert_eq!(&issued.parameters.entries().unwrap()[0]as*const crate::ParameterSyntax,entry_ptr);
   let body=crate::parse_proc_body(&issued.item);assert!(!body.diagnostics.is_empty(),"the later demanded malformed BODY must fail");
-  drop((body,issued,ast));assert!(used.load(Ordering::Acquire)>0);drop(shared);assert_eq!(used.load(Ordering::Acquire),0);
+  drop((body,issued,ast));assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(shared);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn same_signature_aliases_keep_original_credit_until_last_payload_control_is_freed(){
-  for reverse in [false,true]{let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let(ast,shared)=produce("/proc/p(datum/act/A)\n    return A\n",&a);let alias=shared.clone();assert!(shared.same_owner(&alias));let held=used.load(Ordering::Acquire);assert!(held>0);drop((ast,a));let last=if reverse{drop(alias);shared}else{drop(shared);alias};assert_eq!(used.load(Ordering::Acquire),held);assert_eq!(last.entries().unwrap().len(),1);drop(last);assert_eq!(used.load(Ordering::Acquire),0);}
+  for reverse in [false,true]{let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let(ast,shared)=produce("/proc/p(datum/act/A)\n    return A\n",&a);let alias=shared.clone();assert!(shared.same_owner(&alias));let held=used.load(Ordering::Acquire);assert!(held>0);drop((ast,a));let last=if reverse{drop(alias);shared}else{drop(shared);alias};assert_eq!(used.load(Ordering::Acquire),held);assert_eq!(last.entries().unwrap().len(),1);drop(last);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
  }
  #[test]
  fn completed_signature_releases_construction_slack_before_admitting_the_next_header() {
   let source = "/proc/p(datum/act/A)\n    return A\n";
   let count = 16;
-  let used = Arc::new(AtomicUsize::new(0));
+  let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
   let (ast, first) = produce(source, &a);
   let header = ast.items[0].header_span;
   let envelope = (header.end - header.start) * 512 + 8192 + SharedParameterSignature::retention_envelope();
   let retained = SharedParameterSignature::retained_allocation_bytes(&first).unwrap();
-  assert_eq!(used.load(Ordering::Acquire), retained);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (retained));
   assert!(retained < envelope, "exercise real post-construction slack");
   drop((ast, first));
-  assert_eq!(used.load(Ordering::Acquire), 0);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
 
   let limit = envelope + (count - 1) * retained;
-  let a = SettingAdmission::new(&used, limit, &|| Ok(()));
+  let a = SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes() + (limit), &|| Ok(()));
   let mut cohort = Vec::new();
   for i in 1..=count {
    let (ast, next) = produce(source, &a);
    assert_eq!(next.entries().unwrap().len(), 1);
    drop(ast);
    cohort.push(next);
-   assert_eq!(used.load(Ordering::Acquire), i * retained);
+   assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (i * retained));
   }
   let alias = cohort[0].clone();
   drop(cohort);
-  assert_eq!(used.load(Ordering::Acquire), retained);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (retained));
   drop(alias);
-  assert_eq!(used.load(Ordering::Acquire), 0);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn actual_empty_header_uses_one_funded_allocation_until_its_last_alias() {
@@ -138,10 +138,10 @@ impl PartialEq for ProcedureParameters{fn eq(&self,other:&Self)->bool{self.deref
   let produce = || crate::parameter_signature_original_plain_empty(
       source, tokens, header, arg_start,
   ).unwrap();
-  let used = Arc::new(AtomicUsize::new(0));
+  let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let bytes = SharedParameterSignature::retention_envelope();
   assert_eq!(SharedParameterSignature::retained_allocation_bytes(&produce()), Some(bytes));
-  let a = SettingAdmission::new(&used, bytes, &|| Ok(()));
+  let a = SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes() + (bytes), &|| Ok(()));
   let signature = SharedParameterSignature::retained_using(produce(), a.reserve(bytes).unwrap(), &a)
       .unwrap();
   let original = &*signature as *const ParameterSignature;
@@ -156,16 +156,16 @@ impl PartialEq for ProcedureParameters{fn eq(&self,other:&Self)->bool{self.deref
   assert_eq!(&*alias as *const ParameterSignature, original);
   assert_eq!(alias.header(), header);
   assert!(alias.is_admitted_by(&a));
-  assert_eq!(used.load(Ordering::Acquire), bytes);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (bytes));
   drop(alias);
-  assert_eq!(used.load(Ordering::Acquire), 0);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]fn shared_metadata_rejects_foreign_credit_and_keeps_first_real_io(){
-  let used=Arc::new(AtomicUsize::new(0));let foreign=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let b=SettingAdmission::new(&foreign,1<<20,&||Ok(()));
-  let source="/proc/p(x)\n    return x\n";let ast=crate::parse_declaration_skeleton(source);let signature=crate::parameter_signature_original_with_default_roots(source,&ast.tokens,ast.items[0].header_span,0,&mut None);let lease=b.reserve(16384).unwrap();assert_eq!(SharedParameterSignature::retained_using(signature,lease,&a).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(foreign.load(Ordering::Acquire),0);
-  let signature=crate::parameter_signature_original_with_default_roots(source,&ast.tokens,ast.items[0].header_span,0,&mut None);let lease=a.reserve(16384).unwrap();let fault=||Err(std::io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,1<<20,&fault);assert_eq!(SharedParameterSignature::retained_using(signature,lease,&failed).err().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),0);
-  let fresh=SettingAdmission::new(&used,1<<20,&||Ok(()));let(_,recovered)=produce(source,&fresh);drop(recovered);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let b=SettingAdmission::new(&foreign,1<<20,&||Ok(()));
+  let source="/proc/p(x)\n    return x\n";let ast=crate::parse_declaration_skeleton(source);let signature=crate::parameter_signature_original_with_default_roots(source,&ast.tokens,ast.items[0].header_span,0,&mut None);let lease=b.reserve(16384).unwrap();assert_eq!(SharedParameterSignature::retained_using(signature,lease,&a).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(foreign.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let signature=crate::parameter_signature_original_with_default_roots(source,&ast.tokens,ast.items[0].header_span,0,&mut None);let lease=a.reserve(16384).unwrap();let fault=||Err(std::io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,1<<20,&fault);assert_eq!(SharedParameterSignature::retained_using(signature,lease,&failed).err().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let fresh=SettingAdmission::new(&used,1<<20,&||Ok(()));let(_,recovered)=produce(source,&fresh);drop(recovered);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn ordinary_syntax_keeps_owned_parameter_value_until_existing_body_publication(){
   let source="/proc/p(x)\n    return x\n";let ast=crate::parse_declaration_skeleton(source);let issued=crate::parse_proc_with_origins_from_spans(source,ast.items[0].span,&ast.tokens,0).unwrap();assert!(matches!(&issued.parameters,ProcedureParameters::Owned(_)));let shared=issued.parameters.into_shared();assert_eq!(shared.entries().unwrap().len(),1);let alias=shared.clone();assert!(shared.same_owner(&alias));

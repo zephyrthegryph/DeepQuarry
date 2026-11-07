@@ -229,10 +229,10 @@ impl ParameterSignature {
 fn signature_charges_only_children_without_same_domain_credit() {
     use crate::{ParameterInputCursor, SettingAdmission, SettingExpression, SharedParameterSignature};
     use crate::setting_expression::SharedSettingRetention;
-    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+    use std::sync::{atomic::{Ordering}};
 
-    let used = Arc::new(AtomicUsize::new(0));
-    let foreign = Arc::new(AtomicUsize::new(0));
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+    let foreign = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
     let b = SettingAdmission::new(&foreign, 1 << 20, &|| Ok(()));
     let source = "/proc/p(x = list(1, 2) as num)\n    return x\n";
@@ -273,7 +273,7 @@ fn signature_charges_only_children_without_same_domain_credit() {
     assert!(expressions.default_root().unwrap().is_retained_in(&a));
     assert!(expressions.annotation().is_some());
     drop(signature);
-    assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
 }
 pub(crate) fn trivia<T: ParameterToken>(t: &T) -> bool {
     matches!(

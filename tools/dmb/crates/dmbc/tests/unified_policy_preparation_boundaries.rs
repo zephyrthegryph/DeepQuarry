@@ -1729,3 +1729,98 @@ fn public_selected_v2_library_sites_match_legacy_fingerprints_and_ceilings() {
         assert_eq!(fs::read(&baseline_path).unwrap(), bytes(&[row, row]));
     }
 }
+
+#[test]
+#[ignore = "private dmbc transport and independent legacy oracle; run outside Cargo with the dm_compile machine slot"]
+fn public_selected_requirement_bool_matches_full_original_report_and_scopes() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{Terminal, Roster},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+    let oracle = PathBuf::from(std::env::var_os("DQ_SELECTED_REQUIREMENT_ORACLE")
+        .expect("build and provide the independent unified_selected_requirement_original"));
+    assert!(oracle.is_absolute());
+    let root = test_scratch::dir("public-selected-requirement");
+    let transport = test_scratch::dir("public-selected-requirement-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("selected-requirement-{}-{}", std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "code/probe.dm", concat!(
+        "#define OLD_CALLBACK req_bool\n",
+        "/proc/req_bool(value)\n    return value\n",
+        "/proc/probe()\n    OLD_CALLBACK(1)\n",
+        "    var/noise = \"req_bool(ignored)\"\n",
+        "    // req_bool(ignored)\n",
+    ));
+    put(&root, "code/declaration.dm", concat!(
+        "CAPABILITIES(/datum/probe, req_bool(PROC_REF(holds)))\n",
+        "REQ_FAKE(1)\n",
+    ));
+    put(&root, "code/.hidden/ignored.dm", "req_bool(ignored)\nREQ_FAKE(ignored)\n");
+    put(&root, "maps/unused.dm",
+        "/proc/stale()\n    return // ALLOW(scheduler): this fixture observes an unused annotation\n");
+    put(&root, "code/scheduler_usage.dm",
+        "/proc/scheduled_probe()\n    sleep(1) // ALLOW(scheduler): this reports actual consumed scheduler usage\n");
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(test_scratch::dir("public-selected-requirement-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithRequirementBool;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let request_path = transport.join("selected-requirement.json");
+    put(&transport, "selected-requirement.json", serde_json::to_vec(&serde_json::json!({
+        "build": build, "exclusions": exclusions,
+    })).unwrap());
+    let native = transport.join("native-report.txt");
+    let mut initial = None;
+    for (stage, exempt) in [(0, false), (1, false), (2, true)] {
+        let overlay = if exempt {
+            "[lint.requirement_bool]\nexempt_files=['code/declaration.dm']\n[lint.requirement_bool.lists]\nretired_macros=['REQ_FAKE']\n"
+        } else {
+            "[lint.requirement_bool.lists]\nretired_macros=['REQ_FAKE']\n"
+        };
+        put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(overlay));
+        let output = daemon.run(
+            &[OsStr::new("analyze-exclusions"), request_path.as_os_str(), OsStr::new("--report-batch")],
+            Duration::from_secs(90),
+        ).unwrap();
+        assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+        let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+        let terminal: Terminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+        terminal.require(roster).unwrap();
+        assert_eq!(terminal.roster, roster);
+        assert!(!terminal.clean);
+        let report = &output.stdout[header_end + 1..];
+        assert_eq!(report.len() as u64, terminal.report.length);
+        assert_eq!(xxhash_rust::xxh3::xxh3_128(report), terminal.report.hash.0);
+        let text = std::str::from_utf8(report).unwrap();
+        assert_eq!(text.matches("[requirement_bool/boolean_callback]").count(), if exempt { 2 } else { 3 }, "{text}");
+        assert_eq!(text.matches("[requirement_bool/legacy_macro]").count(), if exempt { 0 } else { 1 }, "{text}");
+        assert!(!text.contains("code/.hidden/") && !text.contains("code/scheduler_usage.dm:"), "{text}");
+        assert!(text.contains("maps/unused.dm:2: ALLOW(scheduler) is unused"), "{text}");
+        assert!(text.contains("allow annotations: 1 unused"), "{text}");
+        if stage == 0 { initial = Some(report.to_vec()); }
+        if stage == 1 { assert_eq!(report, initial.as_deref().unwrap()); }
+        std::fs::write(&native, report).unwrap();
+        let reference = daemon.run_program(&oracle, &[root.as_os_str(), native.as_os_str()], Duration::from_secs(45)).unwrap();
+        assert!(reference.status.success(), "{}", String::from_utf8_lossy(&reference.stderr));
+    }
+    assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
+    let rejected = daemon.run(
+        &[OsStr::new("checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
+        Duration::from_secs(30),
+    ).unwrap();
+    assert!(!rejected.status.success());
+    assert!(rejected.stdout.is_empty());
+}

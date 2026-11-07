@@ -169,7 +169,7 @@ fn funded_vector<T>(capacity:usize,layout:std::alloc::Layout)->Option<Vec<T>>{
 #[cfg(test)]
 mod exact_vector_funding_tests {
     use super::*;
-    use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+    use std::sync::{atomic::{AtomicUsize, Ordering}};
 
     fn token(at:usize)->SpanToken {
         SpanToken{kind:TokenKind::Ident,span:Span::new(at,at+1)}
@@ -178,24 +178,24 @@ mod exact_vector_funding_tests {
     #[test]
     fn primary_text_reserves_only_its_actual_utf8_capacity() {
         let text = "long header with a multibyte spelling: α";
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let limit = 4096 + text.len();
-        let a = crate::SettingAdmission::new(&used, limit, &|| Ok(()));
+        let a = crate::SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes() + (limit), &|| Ok(()));
         let storage = Storage::new(&a).unwrap();
         let retained = storage.text(text).unwrap();
         assert_eq!(retained, text);
         assert_eq!(retained.capacity(), text.len());
-        assert_eq!(used.load(Ordering::Acquire), limit);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (limit));
         drop(retained);
         drop(storage);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
 
-        let a = crate::SettingAdmission::new(&used, limit - 1, &|| Ok(()));
+        let a = crate::SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes() + (limit - 1), &|| Ok(()));
         let storage = Storage::new(&a).unwrap();
         assert!(storage.text(text).is_none());
         assert_eq!(storage.take_failure().unwrap().kind(), io::ErrorKind::OutOfMemory);
         drop(storage);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -204,9 +204,9 @@ mod exact_vector_funding_tests {
         let text="var/value";
         let retained=4096+text.len()+4*width;
         for allow_overlap in [false,true] {
-            let used=Arc::new(AtomicUsize::new(0));
+            let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let limit=retained+width-usize::from(!allow_overlap);
-            let a=crate::SettingAdmission::new(&used,limit,&||Ok(()));
+            let a=crate::SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (limit),&||Ok(()));
             let storage=Storage::new(&a).unwrap();
             let header=storage.text(text).unwrap();
             let original=header.as_ptr();
@@ -224,17 +224,17 @@ mod exact_vector_funding_tests {
             assert_eq!(rows[0].header_span,span);
             let expected=if allow_overlap{1}else{4};
             assert_eq!(rows.capacity(),expected);
-            assert_eq!(used.load(Ordering::Acquire),4096+text.len()+expected*width);
+            assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (4096+text.len()+expected*width));
             assert!(storage.take_failure().is_none());
             assert!(!a.is_stopped());
             drop((rows,storage));
-            assert_eq!(used.load(Ordering::Acquire),0);
+            assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
         }
     }
 
     #[test]
     fn settled_child_items_keeps_first_typed_checkpoint_and_refunds_candidate() {
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let calls=std::cell::Cell::new(None::<usize>);
         let poll=||{
             let Some(previous)=calls.get() else {return Ok(())};
@@ -257,32 +257,32 @@ mod exact_vector_funding_tests {
         assert_eq!(storage.take_failure().unwrap().raw_os_error(),Some(1450));
         assert_eq!(used.load(Ordering::Acquire),held,"candidate released separately from the failed primary root");
         drop(storage);
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn original_primary_vector_grows_at_actual_overlap_and_refuses_one_byte_less() {
         let width=std::mem::size_of::<SpanToken>();
         let overlap=4096+12*width; // Initial four plus replacement eight.
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let peak=AtomicUsize::new(0);
         let observe=||{
             peak.fetch_max(used.load(Ordering::Acquire),Ordering::AcqRel);
             Ok(())
         };
-        let a=crate::SettingAdmission::new(&used,overlap,&observe);
+        let a=crate::SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (overlap),&observe);
         let storage=Storage::new(&a).unwrap();
         let mut tokens=Vec::new();
         for at in 0..8 {
             assert!(storage.push(&mut tokens,token(at)));
         }
         assert_eq!(peak.load(Ordering::Acquire),overlap);
-        assert_eq!(used.load(Ordering::Acquire),4096+8*width);
+        assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (4096+8*width));
         assert_eq!(tokens,(0..8).map(token).collect::<Vec<_>>());
         drop((tokens,storage));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
 
-        let a=crate::SettingAdmission::new(&used,overlap-1,&||Ok(()));
+        let a=crate::SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (overlap-1),&||Ok(()));
         let storage=Storage::new(&a).unwrap();
         let mut tokens=Vec::new();
         for at in 0..4 {
@@ -294,7 +294,7 @@ mod exact_vector_funding_tests {
         assert_eq!(tokens.as_ptr(),first);
         assert_eq!(tokens,(0..4).map(token).collect::<Vec<_>>());
         drop((tokens,storage));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -306,7 +306,7 @@ mod exact_vector_funding_tests {
         let width=std::mem::size_of::<Item>();
         let directory=4*std::mem::size_of::<Vec<Item>>();
         let overlap=4096+16*width+directory;
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let peak=AtomicUsize::new(0);
         let stop=std::cell::Cell::new(false);
         let observe=||{
@@ -314,7 +314,7 @@ mod exact_vector_funding_tests {
             peak.fetch_max(live,Ordering::AcqRel);
             if stop.get()&&live==overlap{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}
         };
-        let a=crate::SettingAdmission::new(&used,overlap,&observe);
+        let a=crate::SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (overlap),&observe);
         for fail in [false,true] {
             let storage=Storage::new(&a).unwrap();
             let(mut blocks,mut first,mut active)=(Vec::new(),Vec::new(),Vec::new());
@@ -326,16 +326,16 @@ mod exact_vector_funding_tests {
             if fail {
                 assert!(result.is_none());
                 assert_eq!(storage.take_failure().unwrap().raw_os_error(),Some(1450));
-                assert_eq!(used.load(Ordering::Acquire),overlap,"failed checkpoint did not release credit early");
+                assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (overlap),"failed checkpoint did not release credit early");
             }else{
                 let result=result.unwrap();
                 assert_eq!(result.iter().map(|row|row.span.start).collect::<Vec<_>>(),(0..8).collect::<Vec<_>>());
-                assert_eq!(used.load(Ordering::Acquire),4096+8*width);
+                assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (4096+8*width));
                 assert_eq!(peak.load(Ordering::Acquire),overlap);
                 drop(result);
             }
             drop(storage);
-            assert_eq!(used.load(Ordering::Acquire),0);
+            assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
             stop.set(false);
         }
     }
@@ -344,13 +344,13 @@ mod exact_vector_funding_tests {
     fn original_primary_vector_refund_checkpoint_preserves_first_typed_error() {
         let width=std::mem::size_of::<SpanToken>();
         let overlap=4096+12*width;
-        let used=Arc::new(AtomicUsize::new(0));
-        let fail_at_overlap=||if used.load(Ordering::Acquire)==overlap{
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let fail_at_overlap=||if used.load(Ordering::Acquire)==crate::SettingChargeCounter::root_allocation_bytes() + (overlap){
             Err(io::Error::from_raw_os_error(1450))
         }else{
             Ok(())
         };
-        let a=crate::SettingAdmission::new(&used,overlap,&fail_at_overlap);
+        let a=crate::SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (overlap),&fail_at_overlap);
         let storage=Storage::new(&a).unwrap();
         let mut tokens=Vec::new();
         for at in 0..4 {
@@ -359,8 +359,8 @@ mod exact_vector_funding_tests {
         assert!(!storage.push(&mut tokens,token(4)));
         assert_eq!(storage.take_failure().unwrap().raw_os_error(),Some(1450));
         assert_eq!(tokens,(0..4).map(token).collect::<Vec<_>>());
-        assert_eq!(used.load(Ordering::Acquire),overlap);
+        assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (overlap));
         drop((tokens,storage));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
     }
 }

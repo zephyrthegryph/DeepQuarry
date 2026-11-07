@@ -201,9 +201,9 @@ pub use current_prefix_recipes::current_setting_prelude;
 #[cfg(test)]mod typed_literal_directive_tests{
  use super::*;
  #[test]fn typed_original_directive_truth_keeps_integer_class_and_recovery_value(){
-  use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
+  use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission};use std::sync::{Arc, atomic::{Ordering}};
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
   for(raw,value,expected)in[("1",V::Float(1.0),None),("garbage",V::Int(0),Some(false)),("0",V::Int(1),Some(true)),("1",V::String("1"),None)]{let root=Expr{span:Span::new(0,raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap())};assert_eq!(truth(&root).unwrap(),expected);}
-  assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

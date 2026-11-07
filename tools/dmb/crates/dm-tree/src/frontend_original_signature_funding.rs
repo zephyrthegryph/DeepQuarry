@@ -153,20 +153,20 @@ mod exact_capacity_controls {
  use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]
  fn exact_alias_coordination_denial_preserves_the_already_funded_slots(){
-  let counter=Arc::new(AtomicUsize::new(0));
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let fixed=group_bytes().unwrap();
   let rows=std::alloc::Layout::array::<Alias>(3).unwrap().size();
   let lease_row=std::mem::size_of::<Arc<dm_syntax::SettingRootLease>>();
-  let admission=dm_syntax::SettingAdmission::new(&counter,fixed+rows+lease_row-1,&||Ok(()));
+  let admission=dm_syntax::SettingAdmission::new(&counter,dm_syntax::SettingChargeCounter::root_allocation_bytes() + (fixed+rows+lease_row-1),&||Ok(()));
   let mut owner=admission.reserve(fixed).unwrap();
   let aliases=exact_rows::<Alias>(3,&mut owner,&admission).unwrap();
   assert_eq!(aliases.capacity(),3);
   assert_eq!(owner.bytes(),fixed+rows);
   let error=exact_rows::<Arc<dm_syntax::SettingRootLease>>(1,&mut owner,&admission).err().unwrap();
   assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
-  assert_eq!(counter.load(Ordering::Acquire),fixed+rows);
+  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (fixed+rows));
   drop(aliases);
   drop(owner);
-  assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

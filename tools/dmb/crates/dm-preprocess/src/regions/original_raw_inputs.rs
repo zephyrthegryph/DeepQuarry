@@ -147,7 +147,7 @@ impl OriginalRawInputs{
 #[cfg(test)]
 mod row_tests {
     use super::*;
-    use std::{cell::Cell, path::Path, sync::{Arc, atomic::{AtomicUsize, Ordering}}};
+    use std::{cell::Cell, path::Path, sync::{atomic::{Ordering}}};
 
     struct File {
         bytes: Vec<u8>,
@@ -176,7 +176,7 @@ mod row_tests {
         let make=||File{bytes:bytes.to_vec(),lease:SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(),()),failure:Cell::new(None)};
         let file=make();
         let foreign=make();
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let polls=Cell::new(0);
         let checkpoint=||{polls.set(polls.get()+1);Ok(())};
         let a=SettingAdmission::new(&used,1<<20,&checkpoint);
@@ -201,14 +201,14 @@ mod row_tests {
         assert_eq!(inputs.observe_physical_row_using(origin,&file.lease,&file,None,&a).err().unwrap().raw_os_error(),Some(1450),
             "the next actual row observation still requires the real provider");
         drop((inputs,other));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn warm_row_reuse_preserves_checkpoint_order_and_rejects_a_changed_loan_view() {
         let bytes=b"var/example\r\nnext";
         let file=File{bytes:bytes.to_vec(),lease:SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(),()),failure:Cell::new(None)};
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let polls=Cell::new(0);
         let fail_at=Cell::new(None);
         let checkpoint=||{
@@ -247,7 +247,7 @@ mod row_tests {
         assert_eq!(failed.raw_os_error(),Some(1451));
         assert_eq!(polls.get(),5,"the last decoded-point checkpoint still fails");
         drop((actual,inputs));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     struct NoNotices;
@@ -270,7 +270,7 @@ mod row_tests {
         };
         let parent = open(b"var/parent\nnext");
         let child = open(b"var/included_child\r\nnext");
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut inputs = OriginalRawInputs::new(&a).unwrap();
         inputs.push_opened(&parent, parent.lease.clone(), 2, 0, &a).unwrap();
@@ -286,7 +286,7 @@ mod row_tests {
             else { panic!("an active lease cannot authenticate an older row") };
         assert_eq!(wrong.kind(), io::ErrorKind::InvalidInput);
         drop((inputs, inner, outer));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -297,7 +297,7 @@ mod row_tests {
             lease:SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(),()),
             failure:Cell::new(None),
         };
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
         let mut inputs=OriginalRawInputs::new(&a).unwrap();
         inputs.push_opened(&file,file.lease.clone(),0,0,&a).unwrap();
@@ -313,6 +313,6 @@ mod row_tests {
             else { panic!("cached row geometry must not hide the real provider failure") };
         assert_eq!(error.raw_os_error(),Some(1450));
         drop((actual,inputs));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn loans_only_expose_adopted_ordinals_and_release_unread_final_page() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let releases = Arc::new(AtomicUsize::new(0));
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut tape = LoanedTokenPages::new(&a).unwrap();
@@ -205,6 +205,6 @@ mod tests {
         assert_eq!(alias.window().get(0), Some(row(0)));
         drop(alias);
         assert_eq!(releases.load(Ordering::Acquire), 3);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 }

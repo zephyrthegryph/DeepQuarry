@@ -27,11 +27,12 @@ pub enum Roster {
     WithPlayerLink,
     WithLifeformsAndPlayerLink,
     WithReferencePolicies,
+    WithRequirementBool,
 }
 
 impl Roster {
     pub const MAX_POLICIES: usize = 7;
-    pub const ALL: [Self; 16] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies];
+    pub const ALL: [Self; 17] = [Self::Base, Self::WithCooldown, Self::WithEngineInternal, Self::WithSilicon, Self::WithLibraryLayering, Self::WithHandlers, Self::WithSemanticReads, Self::WithSetterPublishes, Self::WithReactivePolicies, Self::WithUntyped, Self::WithDerivedReads, Self::WithSysReactive, Self::WithLifeforms, Self::WithPlayerLink, Self::WithLifeformsAndPlayerLink, Self::WithReferencePolicies, Self::WithRequirementBool];
 
     /// Independently qualified Analyze-only capture plans.
     pub const GENERIC_V2: [Self; 4] = [
@@ -68,6 +69,7 @@ impl Roster {
             Self::WithLifeforms => &["allow_annotations", "lifeforms", "notice_publisher", "report_in_catch", "scheduler"],
             Self::WithLifeformsAndPlayerLink => &["allow_annotations", "lifeforms", "notice_publisher", "player_link", "report_in_catch", "scheduler"],
             Self::WithReferencePolicies => &["allow_annotations", "notice_publisher", "rel_write_undeclared", "report_in_catch", "scheduler", "untyped_member", "weak_raw_read"],
+            Self::WithRequirementBool => &["allow_annotations", "notice_publisher", "report_in_catch", "requirement_bool", "scheduler"],
             Self::WithSysReactive => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "sys/dx_reactive"],
             Self::WithUntyped => &["allow_annotations", "notice_publisher", "report_in_catch", "scheduler", "untyped"],
             Self::WithHandlers => &["allow_annotations", "cooldown", "notice_publisher", "report_in_catch", "scheduler", "sem/handlers"],

@@ -78,7 +78,8 @@ impl BodyLiteralCandidates {
             self.next_row += 1;
             if !in_body || span.start < line.start { continue; }
             self.body_rows += 1;
-            if source.get(span.range()) != Some(data.raw()) { continue; }
+            if data.is_projected(){continue}
+            if source.get(span.range()) != Some(data.raw().expect("full candidate spelling")) { continue; }
             if let Some((raw, standalone)) = data.trace_source_projection() {
                 self.projectable_rows += 1;
                 self.raw_capacity_per_row_upper = self.raw_capacity_per_row_upper.saturating_add(raw);
@@ -189,6 +190,11 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
    body_literal_candidates: std::env::var_os("DMB_ORIGINAL_TRACE_BODY_LITERAL_CANDIDATES").map(|_| BodyLiteralCandidates::default()),
    original})
  }
+ /// Enable resource-only spelling projection before any actual token.
+ pub fn enable_body_spelling_projection(&mut self,owner:crate::OriginalLiteralProjectionOwner)->io::Result<()>{
+  if !self.tokens.window().is_empty(){return Err(io::ErrorKind::InvalidInput.into())}
+  self.literal_facts.enable_projection(owner)
+ }
  /// Enable immutable token DATA loans before the first actual adoption.
  /// The preprocessor must independently bind its real source/output receipts.
  pub fn enable_original_page_loans(&mut self) -> io::Result<()> {
@@ -251,10 +257,11 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   Ok((Some(live),Some(prefix)))
  }
  /// Neutral live DATA loan only. The demand-source session first validates
- /// its actual raw-pull ordinal→primary output-span association; this lookup
+ /// its actual raw-pull ordinalâ†’primary output-span association; this lookup
  /// cannot authenticate an external source/model or manufacture a missing row.
  pub fn original_literal_for_span(&self,span:Span)->io::Result<Option<crate::OriginalLiteralRef<'_>>>{
-  if self.failed||self.ended{return Err(io::ErrorKind::InvalidInput.into())}let rows=self.literal_facts.rows();let at=rows.partition_point(|(actual,_)|actual.start<span.start);Ok(rows.get(at).filter(|(actual,_)|*actual==span).map(|(_,data)|data))
+  if self.failed||self.ended{return Err(io::ErrorKind::InvalidInput.into())}let rows=self.literal_facts.rows();let at=rows.partition_point(|(actual,_)|actual.start<span.start);let data=rows.get(at).filter(|(actual,_)|*actual==span).map(|(_,data)|data);
+ if data.is_some_and(|data|data.is_projected()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"live formal cannot borrow projected BODY DATA"))}Ok(data)
  }
  pub fn validate_live_header(&self,header:&OriginalPrimaryLiveHeader)->io::Result<()>{
   if self.failed||self.ended||self.original.stopped()||!self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.matches_identity(&header.owner){return Err(io::Error::new(io::ErrorKind::InvalidInput,"foreign or completed actual primary header owner"))}
@@ -319,15 +326,16 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   for line in batch.iter(){
    // Line is scalar geometry; no header/source String is copied or reparsed.
    let line=Line{indent:line.indent,header_start:line.header_start,header_end:line.header_end,end:line.end,explicit_block_opener:line.explicit_block_opener,same_line_body:line.same_line_body};
-   #[cfg(debug_assertions)]
    let line_span = Span::new(line.header_start, line.end);
    let continuing=match observer.as_mut(){Some(actual)=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line_scoped(source,tokens,line,&self.original,&mut self.diagnostics,Some(&mut **actual))?,None=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line(source,tokens,line,&self.original,&mut self.diagnostics)?};
    if !continuing{break}
+   let in_body=self.frames.as_ref().is_some_and(|frames|frames.trace_current_body_line(line_span));
    #[cfg(debug_assertions)]
    if let Some(candidates) = &mut self.body_literal_candidates {
     let in_body = self.frames.as_ref().is_some_and(|frames| frames.trace_current_body_line(line_span));
     candidates.observe(line_span, in_body, source, self.literal_facts.rows());
    }
+   self.literal_facts.project_body_line(line_span,in_body,source,self.original.storage.a)?;
   }
   let continuing = if !self.original.stopped() {
    if let Some(start) = batch.take_header_start() {
@@ -390,12 +398,12 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
 }
 
 #[cfg(test)]mod tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  #[cfg(debug_assertions)]
  #[test]
  fn body_literal_candidates_use_actual_body_scope_and_exact_raw_ranges() {
   let source="/proc/p(formal = 7)\n    var/local = \"raw\"\n    return \"a\\t\"\n/obj/initializers\n    name = \"initial\"\n";
-  let counter=Arc::new(AtomicUsize::new(0));
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));
   let mut primary=OriginalPrimaryDemand::new_committed(&a,None).unwrap();
   primary.body_literal_candidates=Some(BodyLiteralCandidates::default());
@@ -425,33 +433,33 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   assert_eq!(foreign.body_rows,4);
   assert_eq!(foreign.projectable_rows,0,"equal geometry alone cannot project spelling");
   drop(primary);
-  assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]fn actual_primary_assembly_retains_one_traversal_across_physical_pauses_and_not_fake_eof(){
-  let source="/datum/a\n    var/value=1\n    proc/p()\n        return 2\n/datum/b\n";let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut cursor=crate::NativeTokenCursor::default();let mut end=0;
+  let source="/datum/a\n    var/value=1\n    proc/p()\n        return 2\n/datum/b\n";let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut cursor=crate::NativeTokenCursor::default();let mut end=0;
   for line in source.split_inclusive('\n'){end+=line.len();loop{match cursor.next_available_using(&source[..end],end==source.len(),&a,|_,_,_|true).unwrap(){crate::NativeTokenStep::Token(token)=>primary.token(token).unwrap(),crate::NativeTokenStep::NeedInput|crate::NativeTokenStep::End=>break,crate::NativeTokenStep::Stopped=>panic!("no diagnostic stop")}}assert!(primary.advance(&source[..end],end==source.len()).unwrap());}
-  let actual=primary.finish(source,true).unwrap();let expected=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(actual.syntax(),expected.syntax());drop(actual);drop(expected);assert_eq!(counter.load(Ordering::Acquire),0);
+  let actual=primary.finish(source,true).unwrap();let expected=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(actual.syntax(),expected.syntax());drop(actual);drop(expected);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_primary_assembly_refuses_pause_sealing_foreign_frontier_and_keeps_first_io(){
-  let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();assert!(primary.advance("",false).unwrap());assert_eq!(primary.finish("",false).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),0);
-  let fault=||Err(io::Error::from_raw_os_error(1450));let a=crate::SettingAdmission::new(&counter,4<<20,&fault);assert_eq!(OriginalPrimaryDemand::new(&a,None).err().unwrap().raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();assert!(primary.advance("",false).unwrap());assert_eq!(primary.finish("",false).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let fault=||Err(io::Error::from_raw_os_error(1450));let a=crate::SettingAdmission::new(&counter,4<<20,&fault);assert_eq!(OriginalPrimaryDemand::new(&a,None).err().unwrap().raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_primary_one_shot_observer_failure_poison_survives_error_drain_and_only_fresh_owner_recovers(){
   struct Once(bool);impl OriginalDeclarationHeaderObserver for Once{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{if !self.0{self.0=true;Err(io::Error::from_raw_os_error(1450))}else{Ok(OriginalHeaderFlow::Continue)}}}
-  let source="/proc/p()\n";let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let mut observer=Once(false);let mut primary=OriginalPrimaryDemand::new(&a,Some(&mut observer)).unwrap();for token in lex_spans(source).tokens{primary.token(token).unwrap();}
-  assert_eq!(primary.advance(source,true).err().unwrap().raw_os_error(),Some(1450));assert_eq!(primary.advance(source,true).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(primary.token(SpanToken{kind:TokenKind::Newline,span:Span::new(source.len(),source.len())}).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(primary.finish(source,true).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),0);
-  let mut fresh=OriginalPrimaryDemand::new(&a,Some(&mut observer)).unwrap();for token in lex_spans(source).tokens{fresh.token(token).unwrap()}assert!(fresh.advance(source,true).unwrap());let actual=fresh.finish(source,true).unwrap();assert_eq!(actual.syntax().items.len(),1);drop(actual);assert_eq!(counter.load(Ordering::Acquire),0);
+  let source="/proc/p()\n";let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let mut observer=Once(false);let mut primary=OriginalPrimaryDemand::new(&a,Some(&mut observer)).unwrap();for token in lex_spans(source).tokens{primary.token(token).unwrap();}
+  assert_eq!(primary.advance(source,true).err().unwrap().raw_os_error(),Some(1450));assert_eq!(primary.advance(source,true).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(primary.token(SpanToken{kind:TokenKind::Newline,span:Span::new(source.len(),source.len())}).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(primary.finish(source,true).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let mut fresh=OriginalPrimaryDemand::new(&a,Some(&mut observer)).unwrap();for token in lex_spans(source).tokens{fresh.token(token).unwrap()}assert!(fresh.advance(source,true).unwrap());let actual=fresh.finish(source,true).unwrap();assert_eq!(actual.syntax().items.len(),1);drop(actual);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 
 }
 
 #[cfg(test)]mod early_and_literal_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  #[test]fn actual_first_productive_token_establishes_same_primary_scope_before_newline_and_full_header_joins_once(){
-  let source="/datum/a\n    proc/p(value=1)\n";let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut saw_early=false;
+  let source="/datum/a\n    proc/p(value=1)\n";let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut saw_early=false;
   for token in lex_spans(source).tokens{let end=token.span.end;primary.token(token).unwrap();assert!(primary.advance(&source[..end],false).unwrap());if end>source.find("proc/p").unwrap()&&end<source.len(){let scope=primary.frames.as_ref().unwrap().live_header_scope(&primary.original).unwrap();if let Some((start,indent,in_body,prior))=scope{assert_eq!(start,source.find("proc/p").unwrap());assert_eq!(indent,4);assert!(!in_body);assert!(prior.is_none());saw_early=true;}}}
-  assert!(saw_early);assert!(primary.advance(source,true).unwrap());let actual=primary.finish(source,true).unwrap();let expected=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(actual.syntax(),expected.syntax());assert!(actual.original_literal_facts().is_none(),"untyped number insertion cannot issue a completed zero-literal roster");drop((actual,expected));assert_eq!(used.load(Ordering::Acquire),0);
+  assert!(saw_early);assert!(primary.advance(source,true).unwrap());let actual=primary.finish(source,true).unwrap();let expected=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(actual.syntax(),expected.syntax());assert!(actual.original_literal_facts().is_none(),"untyped number insertion cannot issue a completed zero-literal roster");drop((actual,expected));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn partial_next_header_reports_the_first_operational_error_from_committing_the_previous_frame() {
@@ -476,7 +484,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
 
   // Measure only the genuine transition. Its last checkpoint is the first
   // Item Vec allocation's credit handoff in the previous-frame commit.
-  let used = Arc::new(AtomicUsize::new(0));
+  let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let mut last_checkpoint = None;
   for inject in [false, true] {
    armed.set(false);
@@ -510,21 +518,21 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
     assert_eq!(product.syntax().items.len(), 2);
     assert_eq!(product.syntax().items[0].header, "/datum/first");
    }
-   assert_eq!(used.load(Ordering::Acquire), 0);
+   assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
   }
  }
 
  #[test]fn genuine_typed_primary_occurrence_retains_same_neutral_roster_and_untyped_literals_keep_none(){
-  let source="/datum/a\n    var/value=1\n";let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut span=None;
+  let source="/datum/a\n    var/value=1\n";let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut span=None;
   for token in lex_spans(source).tokens{if token.kind==TokenKind::Number{span=Some(token.span);let data=crate::OriginalLiteralData::from_value_using("1".to_owned(),crate::OriginalTokenValue::Int(1),&a).unwrap();primary.token_with_original_literal(token,data).unwrap();}else{primary.token(token).unwrap();}}
-  primary.advance(source,true).unwrap();let product=primary.finish(source,true).unwrap();let rows=product.original_literal_facts().unwrap();assert_eq!(rows.len(),1);assert_eq!(rows.get(0).unwrap().0,span.unwrap());assert!(matches!(rows.get(0).unwrap().1.value(),crate::OriginalTokenValue::Int(1)));let(_,_,_,lease,facts)=product.into_parts_with_literal_facts();let facts=facts.unwrap();assert!(facts.is_admitted_by(&a));drop(lease);assert_eq!(facts.rows().len(),1);assert!(used.load(Ordering::Acquire)>0);drop(facts);assert_eq!(used.load(Ordering::Acquire),0);
+  primary.advance(source,true).unwrap();let product=primary.finish(source,true).unwrap();let rows=product.original_literal_facts().unwrap();assert_eq!(rows.len(),1);assert_eq!(rows.get(0).unwrap().0,span.unwrap());assert!(matches!(rows.get(0).unwrap().1.value().unwrap(),crate::OriginalTokenValue::Int(1)));let(_,_,_,lease,facts)=product.into_parts_with_literal_facts();let facts=facts.unwrap();assert!(facts.is_admitted_by(&a));drop(lease);assert_eq!(facts.rows().len(),1);assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(facts);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod producer_identity_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  #[test]fn live_header_binds_actual_final_same_layout_owner_and_rejects_equal_source_foreign_primary(){
-  let source="/proc/p(value=1)\n";let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;
+  let source="/proc/p(value=1)\n";let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;
   for token in lex_spans(source).tokens{let end=token.span.end;primary.token(token).unwrap();primary.advance(&source[..end],false).unwrap();if &source[token.span.range()]=="("{let header=primary.live_callable_header(&source[..end]).unwrap().unwrap();primary.validate_live_header(&header).unwrap();assert_eq!(header.start(),0);assert_eq!(header.argument_start(),"/proc/p(".len());live=Some(header.clone());}}
   let live=live.unwrap();
   assert_eq!(primary.span_tokens().get(live.open_ordinal).unwrap().span,live.open_span());
@@ -539,14 +547,14 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   assert!(actual.same_primary_producer(&owner));
   assert!(!foreign.same_primary_producer(&owner));
   assert_eq!(std::mem::size_of::<OriginalPrimaryProducerIdentity>(),std::mem::size_of::<usize>());
-  drop((actual,foreign));assert!(used.load(Ordering::Acquire)>0,"compact handle retains only its actual fixed producer metadata");drop(owner);assert_eq!(used.load(Ordering::Acquire),0);
+  drop((actual,foreign));assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes(),"compact handle retains only its actual fixed producer metadata");drop(owner);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn resumed_live_probe_matches_fresh_scan_and_can_start_after_the_opening() {
   let source="/datum/parent\n    proc/child(datum/act/A)\n        return\n    proc/next()\n";
   let delayed=source.find("datum/act").unwrap()+"datum".len();
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
   let mut continuous=OriginalPrimaryDemand::new(&a,None).unwrap();
   let mut late=OriginalPrimaryDemand::new(&a,None).unwrap();
@@ -576,13 +584,13 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   }
   assert!(compared_delayed);
   drop((continuous,late));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn resumed_live_probe_checkpoints_even_after_a_no_open_prefix() {
   let source="/proc/probe(value)\n";
   let pause=source.find("probe").unwrap();
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let stop=std::cell::Cell::new(false);
   let poll=||if stop.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())};
   let a=crate::SettingAdmission::new(&used,8<<20,&poll);
@@ -599,7 +607,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
     assert_eq!(error.raw_os_error(),Some(1450));
     assert_eq!(primary.live_callable_prefix.unwrap().next,checked.next);
     drop(primary);
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
     return;
    }
    assert!(primary.resume_live_callable_header(text).unwrap().is_none());
@@ -612,7 +620,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   let source="/datum/outer\n    var/list/value = list(helper(), 2)\n    proc/next()\n";
   let initializer=source.find("list(helper").unwrap()+"list(".len();
   let following=source.find("next()").unwrap()+"next(".len();
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
   let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();
   let mut excluded=None;
@@ -639,40 +647,40 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   }
   assert!(excluded.is_some()&&seen_next);
   drop(primary);
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]fn actual_scoped_primary_observer_loan_ends_before_same_consumer_is_reused(){
   struct Observer(usize);impl OriginalDeclarationHeaderObserver for Observer{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{self.0+=1;Ok(OriginalHeaderFlow::Continue)}}
-  let source="/proc/p()\n";let count=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&count,4<<20,&||Ok(()));
+  let source="/proc/p()\n";let count=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&count,4<<20,&||Ok(()));
   let mut observer=Observer(0);let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();for token in lex_spans(source).tokens{primary.token(token).unwrap()}
   assert!(primary.advance_with_observer(source,true,&mut observer).unwrap());assert_eq!(observer.0,1);observer.0+=1;
-  let product=primary.finish(source,true).unwrap();assert_eq!(observer.0,2);assert_eq!(product.syntax().items.len(),1);drop(product);assert_eq!(count.load(Ordering::Acquire),0);
+  let product=primary.finish(source,true).unwrap();assert_eq!(observer.0,2);assert_eq!(product.syntax().items.len(),1);drop(product);assert_eq!(count.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_scoped_primary_observer_first_io_poison_refuses_retry_and_finish(){
   struct Observer(bool);impl OriginalDeclarationHeaderObserver for Observer{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{if !self.0{self.0=true;Err(io::Error::from_raw_os_error(1450))}else{Ok(OriginalHeaderFlow::Continue)}}}
-  let source="/proc/p()\n";let count=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&count,4<<20,&||Ok(()));let mut observer=Observer(false);let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();for token in lex_spans(source).tokens{primary.token(token).unwrap()}
-  assert_eq!(primary.advance_with_observer(source,true,&mut observer).unwrap_err().raw_os_error(),Some(1450));assert!(observer.0);assert!(primary.advance_with_observer(source,true,&mut observer).is_err());assert!(primary.finish(source,true).is_err());assert_eq!(count.load(Ordering::Acquire),0);
+  let source="/proc/p()\n";let count=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&count,4<<20,&||Ok(()));let mut observer=Observer(false);let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();for token in lex_spans(source).tokens{primary.token(token).unwrap()}
+  assert_eq!(primary.advance_with_observer(source,true,&mut observer).unwrap_err().raw_os_error(),Some(1450));assert!(observer.0);assert!(primary.advance_with_observer(source,true,&mut observer).is_err());assert!(primary.finish(source,true).is_err());assert_eq!(count.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]fn actual_scoped_header_keeps_its_registered_outer_probe_through_pending_child_resolution(){
   struct Observer(Vec<Option<usize>>);impl OriginalDeclarationHeaderObserver for Observer{fn header(&mut self,event:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{self.0.push(event.prior_outer_block);Ok(OriginalHeaderFlow::Continue)}}
-  let source="/proc/first()\n    return 1\n/proc/second()\n";let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut observer=Observer(Vec::new());let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();
+  let source="/proc/first()\n    return 1\n/proc/second()\n";let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut observer=Observer(Vec::new());let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();
   for token in lex_spans(source).tokens{primary.token(token).unwrap();assert!(primary.advance_with_observer(&source[..token.span.end],false,&mut observer).unwrap());}
-  assert!(primary.advance_with_observer(source,true,&mut observer).unwrap());let product=primary.finish(source,true).unwrap();assert_eq!(observer.0,vec![None,Some(source.find('\n').unwrap())]);assert_eq!(product.syntax().items.len(),2);drop(product);assert_eq!(used.load(Ordering::Acquire),0);
+  assert!(primary.advance_with_observer(source,true,&mut observer).unwrap());let product=primary.finish(source,true).unwrap();assert_eq!(observer.0,vec![None,Some(source.find('\n').unwrap())]);assert_eq!(product.syntax().items.len(),2);drop(product);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]fn actual_inline_type_brace_scope_is_already_bound_before_nested_callable_formals(){
   struct Observer;impl OriginalDeclarationHeaderObserver for Observer{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}}
-  let source="/datum/parent{\nproc/child(){\n}\n}\n";let open=source.find("child(").unwrap()+"child(".len();let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut observer=Observer;let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let tokens=lex_spans(source).tokens;for token in tokens.iter().filter(|token|token.span.end<=open){primary.token(*token).unwrap();assert!(primary.advance_with_observer(&source[..token.span.end],false,&mut observer).unwrap());}
+  let source="/datum/parent{\nproc/child(){\n}\n}\n";let open=source.find("child(").unwrap()+"child(".len();let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut observer=Observer;let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let tokens=lex_spans(source).tokens;for token in tokens.iter().filter(|token|token.span.end<=open){primary.token(*token).unwrap();assert!(primary.advance_with_observer(&source[..token.span.end],false,&mut observer).unwrap());}
   let live=primary.live_callable_header(&source[..open]).unwrap().expect("genuine nested callable at current open");assert_eq!(live.start(),source.find("proc/child").unwrap());assert_eq!(live.indent,4);primary.validate_live_header(&live).unwrap();
-  for token in tokens.iter().filter(|token|token.span.end>open){primary.token(*token).unwrap();assert!(primary.advance_with_observer(&source[..token.span.end],false,&mut observer).unwrap());}assert!(primary.advance_with_observer(source,true,&mut observer).unwrap());let product=primary.finish(source,true).unwrap();assert!(product.same_primary_header(&live));assert_eq!(product.syntax().items.len(),1);assert_eq!(product.syntax().items[0].children.len(),1);assert_eq!(product.syntax().items[0].children[0].kind,ItemKind::Proc);drop((product,live));assert_eq!(used.load(Ordering::Acquire),0);
+  for token in tokens.iter().filter(|token|token.span.end>open){primary.token(*token).unwrap();assert!(primary.advance_with_observer(&source[..token.span.end],false,&mut observer).unwrap());}assert!(primary.advance_with_observer(source,true,&mut observer).unwrap());let product=primary.finish(source,true).unwrap();assert!(product.same_primary_header(&live));assert_eq!(product.syntax().items.len(),1);assert_eq!(product.syntax().items[0].children.len(),1);assert_eq!(product.syntax().items[0].children[0].kind,ItemKind::Proc);drop((product,live));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]fn actual_live_formal_stop_seals_only_inserted_consumed_frontier_without_reentrant_observer_or_eof(){
   struct Observer;impl OriginalDeclarationHeaderObserver for Observer{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{panic!("unfinished fatal header must not reenter complete observer")}}
-  let source="/proc/bad(value=, BAD())\n";let open=source.find('(').unwrap()+1;let stop=source.find(',').unwrap()+1;let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut observer=Observer;let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let tokens=lex_spans(source).tokens;
+  let source="/proc/bad(value=, BAD())\n";let open=source.find('(').unwrap()+1;let stop=source.find(',').unwrap()+1;let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut observer=Observer;let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let tokens=lex_spans(source).tokens;
   for token in tokens.iter().filter(|token|token.span.end<=open){primary.token(*token).unwrap();primary.advance_with_observer(&source[..token.span.end],false,&mut observer).unwrap();}let live=primary.live_callable_header(&source[..open]).unwrap().unwrap();
-  for token in tokens.iter().filter(|token|token.span.start>=open&&token.span.end<=stop){primary.token(*token).unwrap();}assert_eq!(primary.consumed_frontier(),open);primary.observer_stop_live_header_at(&live,&source[..stop]).unwrap();assert_eq!(primary.consumed_frontier(),stop);let actual=primary.finish(&source[..stop],false).unwrap();assert!(actual.syntax().items.is_empty());assert_eq!(actual.observer_stop(),Some(Span::new(0,stop)));assert!(actual.fatal().is_none(),"observer control is not a fabricated authored fatal");drop((actual,live));assert_eq!(used.load(Ordering::Acquire),0);
+  for token in tokens.iter().filter(|token|token.span.start>=open&&token.span.end<=stop){primary.token(*token).unwrap();}assert_eq!(primary.consumed_frontier(),open);primary.observer_stop_live_header_at(&live,&source[..stop]).unwrap();assert_eq!(primary.consumed_frontier(),stop);let actual=primary.finish(&source[..stop],false).unwrap();assert!(actual.syntax().items.is_empty());assert_eq!(actual.observer_stop(),Some(Span::new(0,stop)));assert!(actual.fatal().is_none(),"observer control is not a fabricated authored fatal");drop((actual,live));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }

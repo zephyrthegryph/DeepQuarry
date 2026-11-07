@@ -250,11 +250,12 @@ impl NativeLayoutMaskCursor{
     let Some(finish)=origin.checked_add(token.span.end)else{return false};
     let at=facts.partition_point(|(span,_)|span.start<start);
     let Some((_,data))=facts.get(at).filter(|(span,_)|*span==Span::new(start,finish))else{return false};
-    if data.raw()!=token.text(source){return false}
+    if match data.raw(){Ok(raw)=>raw!=token.text(source),Err(error)=>{if let Some(state)=original{state.storage.a.record_operational_error(error);}return false}}{return false}
     let begin=token.span.start-range.start;let Some(end)=token.span.end.checked_sub(range.start+1)else{return false};if begin>end{return false}
     // Boundary positions are issued by the actual typed fragment product;
     // neither the literal payload nor its child spelling is scanned for '['.
-    match data.value(){crate::OriginalTokenValue::InterpBegin(_)=>self.delimiters[end]=b'[',crate::OriginalTokenValue::InterpPart(_)=>{self.delimiters[begin]=b']';self.delimiters[end]=b'[';},crate::OriginalTokenValue::InterpEnd(_)=>self.delimiters[begin]=b']',_=>return false}
+    let value=match data.value(){Ok(value)=>value,Err(error)=>{if let Some(state)=original{state.storage.a.record_operational_error(error);}return false}};
+    match value{crate::OriginalTokenValue::InterpBegin(_)=>self.delimiters[end]=b'[',crate::OriginalTokenValue::InterpPart(_)=>{self.delimiters[begin]=b']';self.delimiters[end]=b'[';},crate::OriginalTokenValue::InterpEnd(_)=>self.delimiters[begin]=b']',_=>return false}
    }
    if multiline&&!push_layout(&mut self.multiline_literals,Span::new(token.span.start-range.start,token.span.end-range.start),original){return false}
   }
@@ -1185,7 +1186,7 @@ mod shared_original_body_tests {
         for source in [
             "/datum/prefix\n/proc/p(obj/item/x = list(1,2))\n    var/y[6 / 2]\n    return x\n",
             "/datum/holder\n    proc/check(datum/x)\n        if(x) { return x; }\n",
-            "/proc/p(value=\"Ã©,()\")\r\n    // comment ([])\r\n    return \"text\"\r\n",
+            "/proc/p(value=\"ÃƒÂ©,()\")\r\n    // comment ([])\r\n    return \"text\"\r\n",
         ] {
             let cold = parse_declaration_skeleton(source);
             assert!(cold.diagnostics.is_empty(), "{:?}", cold.diagnostics);
@@ -1366,19 +1367,19 @@ pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&cr
 }
 
 #[cfg(test)]mod original_primary_comma_prefix_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{AtomicUsize, Ordering}};
  #[test]fn original_primary_class_comma_retains_only_real_first_field_and_stops_inside_enclosing_type(){
-  for source in ["/datum/holder\n    var/datum/loose\n    var/list/items\n    var/datum/first, second\n/proc/later()\n    return\n","// Ã©æ¼¢ actual original bytes\n/datum/holder\n    var/SpacemanDMM_private/datum/first, second\n/proc/later()\n    return\n","/datum/holder\n    var\n        SpacemanDMM_private\n            datum/first, second\n/proc/later()\n    return\n"]{
-   let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let before=WHOLE_LEX_CALLS.with(|n|n.get());let outcome=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1,"same single primary lexer");assert!(outcome.unavailable().is_none());let fatal=outcome.fatal().unwrap();assert!(fatal.first_declaration_registered());assert_eq!(fatal.token_span(),Span::new(source.find(',').unwrap(),source.find(',').unwrap()+1));assert_eq!(fatal.message(),"got ',', expected one of: '/', '[', '=', '(', '{', 'as', 'in', ';', '}'");assert_eq!(fatal.notes(),["fatal error: the parser cannot continue","constant evaluation will be skipped"]);assert!(outcome.syntax().diagnostics.is_empty());
+  for source in ["/datum/holder\n    var/datum/loose\n    var/list/items\n    var/datum/first, second\n/proc/later()\n    return\n","// ÃƒÂ©Ã¦Â¼Â¢ actual original bytes\n/datum/holder\n    var/SpacemanDMM_private/datum/first, second\n/proc/later()\n    return\n","/datum/holder\n    var\n        SpacemanDMM_private\n            datum/first, second\n/proc/later()\n    return\n"]{
+   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let before=WHOLE_LEX_CALLS.with(|n|n.get());let outcome=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1,"same single primary lexer");assert!(outcome.unavailable().is_none());let fatal=outcome.fatal().unwrap();assert!(fatal.first_declaration_registered());assert_eq!(fatal.token_span(),Span::new(source.find(',').unwrap(),source.find(',').unwrap()+1));assert_eq!(fatal.message(),"got ',', expected one of: '/', '[', '=', '(', '{', 'as', 'in', ';', '}'");assert_eq!(fatal.notes(),["fatal error: the parser cannot continue","constant evaluation will be skipped"]);assert!(outcome.syntax().diagnostics.is_empty());
    fn contains(items:&[Item],name:&str)->bool{items.iter().any(|item|item.header.contains(name)||contains(&item.children,name))}
    assert!(contains(&outcome.syntax().items,"first"));assert!(!contains(&outcome.syntax().items,"second"));assert!(!contains(&outcome.syntax().items,"later"));assert!(!outcome.syntax().items.is_empty(),"genuine prefix is retained, never an empty success");
    let rows=primary_header_facts(source,&[PrimaryHeaderInput{span:fatal.first_header(),parent:None,has_children:false}]).unwrap();assert_eq!(rows[0].1,Some(fatal.token_span().start),"portable primary reissue observes actual comma terminator");
    let native=parse_declaration_skeleton(source);assert!(contains(&native.items,"second"));assert!(contains(&native.items,"later"),"ordinary native producer remains unchanged");
-   assert!(counter.load(Ordering::Acquire)>0);drop(outcome);assert_eq!(counter.load(Ordering::Acquire),0);
+   assert!(counter.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(outcome);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   }
  }
  #[test]fn original_initialized_class_comma_stops_before_registering_first_variable(){
-  let counter = Arc::new(AtomicUsize::new(0));
+  let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a = crate::SettingAdmission::new(&counter, 1 << 24, &|| Ok(()));
   let source = "/datum/holder\n    var/kept=7\n    var/first=1, second=2\n/proc/later()\n    return\n";
   let outcome = parse_original_declaration_skeleton_using(source, &a).unwrap();
@@ -1405,59 +1406,59 @@ pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&cr
   }
  }
  #[test]fn original_primary_prefix_keeps_native_typed_cancellation_and_peak_quota_failure(){
-  let counter=Arc::new(AtomicUsize::new(0));let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=crate::SettingAdmission::new(&counter,1<<24,&fault);assert_eq!(parse_original_declaration_skeleton_using("var/first,second\n",&a).err().unwrap().raw_os_error(),Some(1450));let a=crate::SettingAdmission::new(&counter,0,&||Ok(()));assert_eq!(parse_original_declaration_skeleton_using("var/first,second\n",&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=crate::SettingAdmission::new(&counter,1<<24,&fault);assert_eq!(parse_original_declaration_skeleton_using("var/first,second\n",&a).err().unwrap().raw_os_error(),Some(1450));let a=crate::SettingAdmission::new(&counter,crate::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));assert_eq!(parse_original_declaration_skeleton_using("var/first,second\n",&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_primary_header_observer_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{AtomicUsize, Ordering}};
  #[test]fn actual_header_observer_stops_before_fatal_proc_descent_and_future_type_prescan(){
   struct Observe{seen:Vec<(Span,Option<usize>)>}
   impl OriginalDeclarationHeaderObserver for Observe{fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{assert_eq!(event.source().get(event.span().range()),Some(if self.seen.is_empty(){"/proc/earlier()"}else{"/proc/bad(value=)"}));assert!(event.token_window().iter().all(|token|token.span.start>=event.span().start&&token.span.end<=event.span().end));self.seen.push((event.span(),event.prior_outer_block()));Ok(if self.seen.len()==2{OriginalHeaderFlow::Stop}else{OriginalHeaderFlow::Continue})}}
-  let source="/proc/earlier(){}\n/proc/bad(value=)\n    return 1\n/datum/later\n    parent_type=/datum/missing\n";let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let mut observer=Observe{seen:Vec::new()};let before=WHOLE_LEX_CALLS.with(|n|n.get());let result=parse_original_declaration_skeleton_with_observer_using(source,&a,Some(&mut observer)).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1);assert_eq!(observer.seen.len(),2);assert!(observer.seen[0].1.is_none());assert_eq!(observer.seen[1].1,Some("/proc/earlier()".len()));assert_eq!(result.observer_stop(),Some(observer.seen[1].0));assert_eq!(result.syntax().items.len(),1);assert_eq!(result.syntax().items[0].header,"/proc/earlier()");assert!(result.fatal().is_none());assert!(result.unavailable().is_none());
+  let source="/proc/earlier(){}\n/proc/bad(value=)\n    return 1\n/datum/later\n    parent_type=/datum/missing\n";let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let mut observer=Observe{seen:Vec::new()};let before=WHOLE_LEX_CALLS.with(|n|n.get());let result=parse_original_declaration_skeleton_with_observer_using(source,&a,Some(&mut observer)).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1);assert_eq!(observer.seen.len(),2);assert!(observer.seen[0].1.is_none());assert_eq!(observer.seen[1].1,Some("/proc/earlier()".len()));assert_eq!(result.observer_stop(),Some(observer.seen[1].0));assert_eq!(result.syntax().items.len(),1);assert_eq!(result.syntax().items[0].header,"/proc/earlier()");assert!(result.fatal().is_none());assert!(result.unavailable().is_none());
   let ordinary=parse_declaration_skeleton(source);assert_eq!(ordinary.items.len(),3,"ordinary native primary acceptance unchanged");
  }
  #[test]fn actual_header_observer_operational_failure_is_not_a_source_stop_or_unavailable(){
   struct Fault;impl OriginalDeclarationHeaderObserver for Fault{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{Err(std::io::Error::from_raw_os_error(1450))}}
-  let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let actual=parse_original_declaration_skeleton_with_observer_using("/proc/p()\n    return\n",&a,Some(&mut Fault)).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let actual=parse_original_declaration_skeleton_with_observer_using("/proc/p()\n    return\n",&a,Some(&mut Fault)).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_primary_demanded_storage_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{AtomicUsize, Ordering}};
  #[test]fn actual_large_comment_primary_uses_one_native_lexer_and_demanded_layout_storage(){
-  let mut source=String::from("// ");source.extend(std::iter::repeat_n('x',9_600_000));source.push_str("\n/datum/actual\n    var/value=1\n");let counter=Arc::new(AtomicUsize::new(0));let peak=AtomicUsize::new(0);let poll=||{peak.fetch_max(counter.load(Ordering::Acquire),Ordering::AcqRel);Ok(())};let a=crate::SettingAdmission::new(&counter,32<<20,&poll);let before=WHOLE_LEX_CALLS.with(|n|n.get());let result=parse_original_declaration_skeleton_using(&source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1);assert!(result.fatal().is_none());assert!(result.unavailable().is_none());assert!(result.syntax().diagnostics.is_empty());assert_eq!(result.syntax().items.len(),1);assert_eq!(result.syntax().items[0].header,"/datum/actual");assert_eq!(result.syntax().items[0].children.len(),1);assert!(peak.load(Ordering::Acquire)>=source.len()*2,"two actual primary layout masks funded before allocation");assert!(peak.load(Ordering::Acquire)<=32<<20);assert!(result._lease.bytes()<64<<10,"dead layout masks/lines are not retained by primary output");assert_eq!(counter.load(Ordering::Acquire),result._lease.bytes());drop(result);assert_eq!(counter.load(Ordering::Acquire),0);
+  let mut source=String::from("// ");source.extend(std::iter::repeat_n('x',9_600_000));source.push_str("\n/datum/actual\n    var/value=1\n");let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let peak=AtomicUsize::new(0);let poll=||{peak.fetch_max(counter.load(Ordering::Acquire),Ordering::AcqRel);Ok(())};let a=crate::SettingAdmission::new(&counter,32<<20,&poll);let before=WHOLE_LEX_CALLS.with(|n|n.get());let result=parse_original_declaration_skeleton_using(&source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1);assert!(result.fatal().is_none());assert!(result.unavailable().is_none());assert!(result.syntax().diagnostics.is_empty());assert_eq!(result.syntax().items.len(),1);assert_eq!(result.syntax().items[0].header,"/datum/actual");assert_eq!(result.syntax().items[0].children.len(),1);assert!(peak.load(Ordering::Acquire)>=source.len()*2,"two actual primary layout masks funded before allocation");assert!(peak.load(Ordering::Acquire)<=32<<20);assert!(result._lease.bytes()<64<<10,"dead layout masks/lines are not retained by primary output");assert_eq!(counter.load(Ordering::Acquire),result._lease.bytes());drop(result);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_dense_primary_funds_real_native_token_lines_and_output_capacities(){
-  let mut source=String::new();for index in 0..2000{source.push_str(&format!("/datum/node_{index}\n    var/value={index}\n"));}let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,16<<20,&||Ok(()));let before=WHOLE_LEX_CALLS.with(|n|n.get());let result=parse_original_declaration_skeleton_using(&source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1);assert!(result.syntax().diagnostics.is_empty());assert_eq!(result.syntax().items.len(),2000);assert!(result.syntax().items.iter().all(|node|node.children.len()==1));assert_eq!(counter.load(Ordering::Acquire),result._lease.bytes());drop(result);assert_eq!(counter.load(Ordering::Acquire),0);
+  let mut source=String::new();for index in 0..2000{source.push_str(&format!("/datum/node_{index}\n    var/value={index}\n"));}let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,16<<20,&||Ok(()));let before=WHOLE_LEX_CALLS.with(|n|n.get());let result=parse_original_declaration_skeleton_using(&source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1);assert!(result.syntax().diagnostics.is_empty());assert_eq!(result.syntax().items.len(),2000);assert!(result.syntax().items.iter().all(|node|node.children.len()==1));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (result._lease.bytes()));drop(result);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn demanded_primary_token_funding_and_mid_cursor_failure_leave_no_partial_success(){
-  let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,4097,&||Ok(()));let actual=parse_original_declaration_skeleton_using("/datum/required\n    var/value=1\n",&a).err().unwrap();assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),0);
-  let calls=AtomicUsize::new(0);let fail=||if calls.fetch_add(1,Ordering::AcqRel)==7{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())};let a=crate::SettingAdmission::new(&counter,1<<20,&fail);let actual=parse_original_declaration_skeleton_using("/datum/required\n    var/value=1\n",&a).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,4097,&||Ok(()));let actual=parse_original_declaration_skeleton_using("/datum/required\n    var/value=1\n",&a).err().unwrap();assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let calls=AtomicUsize::new(0);let fail=||if calls.fetch_add(1,Ordering::AcqRel)==7{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())};let a=crate::SettingAdmission::new(&counter,1<<20,&fail);let actual=parse_original_declaration_skeleton_using("/datum/required\n    var/value=1\n",&a).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_primary_setting_compaction_storage_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{AtomicUsize, Ordering}};
  #[test]fn demanded_primary_compaction_keeps_actual_nested_setting_chains_and_drops_only_unowned_storage(){
-  let source="/proc/p()\n    if(1)\n        if(2)\n            set name=\"actual\"\n        else\n            return\n    else\n        return 2\n    if(3)\n        if(4)\n            return 4\n    return 5\n";let ordinary=parse_declaration_skeleton(source);let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let current=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(format!("{:?}",current.syntax().items),format!("{:?}",ordinary.items));assert_eq!(counter.load(Ordering::Acquire),current._lease.bytes());drop(current);assert_eq!(counter.load(Ordering::Acquire),0);
+  let source="/proc/p()\n    if(1)\n        if(2)\n            set name=\"actual\"\n        else\n            return\n    else\n        return 2\n    if(3)\n        if(4)\n            return 4\n    return 5\n";let ordinary=parse_declaration_skeleton(source);let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let current=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(format!("{:?}",current.syntax().items),format!("{:?}",ordinary.items));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (current._lease.bytes()));drop(current);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_primary_stack_resource_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{AtomicUsize, Ordering}};
  #[test]fn real_primary_deep_declaration_nesting_refuses_worker_stack_resource_without_source_diagnostic(){
-  let mut source=String::from("/datum\n");for depth in 1..300{source.push_str(&" ".repeat(depth*4));source.push_str(&format!("node_{depth}\n"));}let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::with_stack_allowance(&counter,4<<20,64<<10,&||Ok(()));let actual=parse_original_declaration_skeleton_using(&source,&a).err().unwrap();assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);assert!(actual.to_string().contains("stack-work"),"actual existing worker-stack refusal retained: {actual}");assert_eq!(counter.load(Ordering::Acquire),0);
+  let mut source=String::from("/datum\n");for depth in 1..300{source.push_str(&" ".repeat(depth*4));source.push_str(&format!("node_{depth}\n"));}let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::with_stack_allowance(&counter,4<<20,64<<10,&||Ok(()));let actual=parse_original_declaration_skeleton_using(&source,&a).err().unwrap();assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);assert!(actual.to_string().contains("stack-work"),"actual existing worker-stack refusal retained: {actual}");assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn lexical_diagnostic_string_is_admitted_before_construction_and_failure_never_yields_partial_rows(){
-  let counter=Arc::new(AtomicUsize::new(0));let calls=AtomicUsize::new(0);let fail=||if calls.fetch_add(1,Ordering::AcqRel)==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())};let a=crate::SettingAdmission::new(&counter,1<<20,&fail);let actual=parse_original_declaration_skeleton_using("var/a=\"unterminated",&a).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let calls=AtomicUsize::new(0);let fail=||if calls.fetch_add(1,Ordering::AcqRel)==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())};let a=crate::SettingAdmission::new(&counter,1<<20,&fail);let actual=parse_original_declaration_skeleton_using("var/a=\"unterminated",&a).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_primary_initial_operational_cause_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{AtomicUsize, Ordering}};
  #[test]fn each_real_initial_primary_phase_retains_first_os_failure_and_releases_owned_storage(){
-  for fail_at in 0..24{let counter=Arc::new(AtomicUsize::new(0));let calls=AtomicUsize::new(0);let fault=||if calls.fetch_add(1,Ordering::AcqRel)==fail_at{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())};let a=crate::SettingAdmission::new(&counter,1<<20,&fault);let actual=parse_original_declaration_skeleton_using("/datum/required\n    var/value=1\n",&a).err().expect("real initial native phase reached requested operational fault");assert_eq!(actual.raw_os_error(),Some(1450),"first native failure at callback {fail_at}: {actual}");assert_eq!(counter.load(Ordering::Acquire),0,"callback {fail_at}");}
+  for fail_at in 0..24{let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let calls=AtomicUsize::new(0);let fault=||if calls.fetch_add(1,Ordering::AcqRel)==fail_at{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())};let a=crate::SettingAdmission::new(&counter,1<<20,&fault);let actual=parse_original_declaration_skeleton_using("/datum/required\n    var/value=1\n",&a).err().expect("real initial native phase reached requested operational fault");assert_eq!(actual.raw_os_error(),Some(1450),"first native failure at callback {fail_at}: {actual}");assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes(),"callback {fail_at}");}
  }
 }
 
@@ -1613,8 +1614,8 @@ fn frozen_actual_original_declaration_lines_with_storage(source:&str,range:Span,
 }
 
  fn shape(rows:&[Line])->Vec<(usize,usize,usize,usize,bool,bool)>{rows.iter().map(|x|(x.indent,x.header_start,x.header_end,x.end,x.explicit_block_opener,x.same_line_body)).collect()}
- #[test]fn same_native_mask_kernel_matches_actual_old_utf8_comment_literal_and_resource_layout(){for source in ["/datum/Î±\n    var/value=\"text // not comment\"\n    /* multi\n      comment */ var/next=2\n", "/proc/p()\n    return {\"block\ntext\"}\n/datum/later\n", "/datum/Î±\n    var/icon='icons/a{b}.dmi'\n"]{let tokens=lex_spans(source).tokens;let old=frozen_actual_original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);let new=original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);assert_eq!(shape(&new),shape(&old));}}
- #[test]fn masks_resume_only_new_actual_tokens_without_recopying_or_rewriting_prior_prefix(){let source="/datum/Î±\n    var/a=\"literal\"\n    // comment\n    var/b=2\n";let tokens=lex_spans(source).tokens;let cut=source.find("    //").unwrap();let first=tokens.partition_point(|row|row.span.end<=cut);let mut masks=NativeLayoutMaskCursor::default();assert!(masks.advance(source,Span::new(0,cut),&tokens[..first],None));let prior=masks.visible.clone();assert!(masks.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(&masks.visible[..cut],prior.as_slice());let mut whole=NativeLayoutMaskCursor::default();assert!(whole.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(masks.visible,whole.visible);assert_eq!(masks.delimiters,whole.delimiters);assert_eq!(masks.multiline_literals,whole.multiline_literals);assert_eq!(masks.tokens,tokens.len());}
+ #[test]fn same_native_mask_kernel_matches_actual_old_utf8_comment_literal_and_resource_layout(){for source in ["/datum/ÃŽÂ±\n    var/value=\"text // not comment\"\n    /* multi\n      comment */ var/next=2\n", "/proc/p()\n    return {\"block\ntext\"}\n/datum/later\n", "/datum/ÃŽÂ±\n    var/icon='icons/a{b}.dmi'\n"]{let tokens=lex_spans(source).tokens;let old=frozen_actual_original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);let new=original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);assert_eq!(shape(&new),shape(&old));}}
+ #[test]fn masks_resume_only_new_actual_tokens_without_recopying_or_rewriting_prior_prefix(){let source="/datum/ÃŽÂ±\n    var/a=\"literal\"\n    // comment\n    var/b=2\n";let tokens=lex_spans(source).tokens;let cut=source.find("    //").unwrap();let first=tokens.partition_point(|row|row.span.end<=cut);let mut masks=NativeLayoutMaskCursor::default();assert!(masks.advance(source,Span::new(0,cut),&tokens[..first],None));let prior=masks.visible.clone();assert!(masks.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(&masks.visible[..cut],prior.as_slice());let mut whole=NativeLayoutMaskCursor::default();assert!(whole.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(masks.visible,whole.visible);assert_eq!(masks.delimiters,whole.delimiters);assert_eq!(masks.multiline_literals,whole.multiline_literals);assert_eq!(masks.tokens,tokens.len());}
 }
 
 #[cfg(test)]mod demanded_native_inline_tests{use super::*;
@@ -1709,18 +1710,18 @@ fn frozen_actual_split_inline_blocks(source:&str,lines:&[Line],delimiters:&[u8],
 }
 
 #[cfg(test)]mod actual_absolute_body_scope_tests{
- use super::*;use std::io;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::io;use std::sync::{atomic::{AtomicUsize, Ordering}};
  #[test]fn real_static_scope_body_call_does_not_enter_original_formal_declaration_observer(){
   let source="/datum/probe\n    var/charge\n/datum/probe/proc/set_charge(value, datum/probe/other)\n    charge = value\n    /datum/probe::probe(set_other())\n/proc/set_other()\n    return 1\n";
   struct Observe(usize);impl OriginalDeclarationHeaderObserver for Observe{fn header(&mut self,event:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{assert!(!event.source()[event.span().range()].contains("::"),"actual body static-scope expression escaped to formal observer");self.0+=1;Ok(OriginalHeaderFlow::Continue)}}
-  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut observer=Observe(0);let primary=parse_original_declaration_skeleton_with_observer_using(source,&a,Some(&mut observer)).unwrap();assert_eq!(observer.0,2);assert!(primary.unavailable().is_none());assert!(primary.fatal().is_none());assert!(primary.syntax().diagnostics.is_empty());drop(primary);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut observer=Observe(0);let primary=parse_original_declaration_skeleton_with_observer_using(source,&a,Some(&mut observer)).unwrap();assert_eq!(observer.0,2);assert!(primary.unavailable().is_none());assert!(primary.fatal().is_none());assert!(primary.syntax().diagnostics.is_empty());drop(primary);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   let ordinary=crate::parse(source);assert!(ordinary.diagnostics.is_empty());let setter=ordinary.items.iter().find(|item|item.header.contains("/set_charge(")).unwrap();assert!(setter.children.iter().any(|child|child.kind==ItemKind::Statement&&child.header.contains("::probe(set_other())")));assert!(ordinary.items.iter().any(|item|item.header.contains("/set_other()")));
  }
  #[test]fn real_physical_dedent_and_relative_proc_namespaces_keep_declaration_membership(){
   let source="/datum/a\n    proc/first()\n        /datum/a::other()\n    proc/second()\n        return\n/datum/b\n    var/value=1\n";let primary=crate::parse_declaration_skeleton(source);assert!(primary.diagnostics.is_empty());let a=&primary.items[0];assert_eq!(a.kind,ItemKind::Type);assert_eq!(a.children.iter().filter(|item|item.kind==ItemKind::Proc).count(),2);assert_eq!(primary.items[1].header,"/datum/b");
  }
  #[test]fn normalized_header_scope_does_not_invent_original_body_membership_for_absolute_sibling(){
-  let source="/datum/a\n    /proc/first()\n        return\n    /proc/second()\n        return\n";let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let primary=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(primary.unavailable(),Some("Original absolute-line body scope needs actual indentation provenance"));assert!(primary.fatal().is_none());drop(primary);assert_eq!(used.load(Ordering::Acquire),0);
+  let source="/datum/a\n    /proc/first()\n        return\n    /proc/second()\n        return\n";let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let primary=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(primary.unavailable(),Some("Original absolute-line body scope needs actual indentation provenance"));assert!(primary.fatal().is_none());drop(primary);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   // Ordinary Native keeps its existing absolute-header normalization until a
   // genuine original indent producer, rather than a source-text heuristic,
   // can select the complete Original scope for this expanded-text ambiguity.
@@ -1737,12 +1738,12 @@ fn frozen_actual_split_inline_blocks(source:&str,lines:&[Line],delimiters:&[u8],
 #[cfg(test)]
 mod initializer_token_window_tests {
     use super::*;
-    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+    use std::sync::{atomic::{AtomicUsize, Ordering}};
 
     #[test]
     fn actual_initializer_probe_uses_only_the_requested_absolute_token_range() {
         let source = "new /datum/first\n/datum/plain\nnew /datum/last\n";
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let admission = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
         let original = OriginalParseState {
             storage: original_storage::Storage::new(&admission).unwrap(),
@@ -1763,7 +1764,7 @@ mod initializer_token_window_tests {
             start += raw.len();
         }
         drop(original);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 }
 
@@ -1771,11 +1772,11 @@ mod initializer_token_window_tests {
 mod original_body_literal_layout_tests {
     use super::*;
     use crate::{OriginalLiteralData, OriginalStringMode, OriginalTokenValue};
-    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+    use std::sync::{atomic::{AtomicUsize, Ordering}};
 
     #[test]
     fn body_layout_uses_tu_literal_rows_at_exact_local_offsets() {
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
         let source="\"a[x]b\"";
         let origin=19;
@@ -1797,6 +1798,6 @@ mod original_body_literal_layout_tests {
         assert!(!NativeLayoutMaskCursor::default().advance_with_literal_facts("\"z[x]b\"",local,tokens,None,Some((rows,offset))));
         assert!(!NativeLayoutMaskCursor::default().advance_with_literal_facts(source,local,tokens,None,None));
         drop(facts);
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
     }
 }

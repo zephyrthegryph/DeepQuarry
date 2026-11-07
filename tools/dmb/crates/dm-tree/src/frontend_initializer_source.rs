@@ -672,7 +672,7 @@ mod tests {
         }
     }
     #[derive(Debug)]
-    struct OriginalHost(Arc<AtomicUsize>);
+    struct OriginalHost(Arc<dm_syntax::SettingChargeCounter>);
     impl SettingExpressionQueries for OriginalHost {
         fn statements(&self,input:&mut SettingStatementsInput<'_,'_>)->Result<Arc<StatementBody>,BodySyntaxFailure>{let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&self.0,128*1024*1024,&check);input.prepare(&a)}
         fn with_declaration_admission(&self,operation:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{
@@ -806,7 +806,7 @@ mod tests {
     fn original_initializer_real_slot_admission_refusal_retries_same_source_and_counter() {
         #[derive(Debug)]
         struct BudgetHost {
-            counter: Arc<AtomicUsize>,
+            counter: Arc<dm_syntax::SettingChargeCounter>,
             limit: AtomicUsize,
         }
         impl SettingExpressionQueries for BudgetHost {
@@ -829,7 +829,7 @@ mod tests {
                 input.prepare(&a)
             }
         }
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let native = Arc::new(BudgetHost {
             counter: Arc::clone(&counter),
             limit: AtomicUsize::new(0),
@@ -852,7 +852,7 @@ mod tests {
             );
             assert_eq!(
                 counter.load(std::sync::atomic::Ordering::Acquire),
-                0,
+                dm_syntax::SettingChargeCounter::root_allocation_bytes(),
                 "failed allocation never mints a root/lease"
             );
             native
@@ -860,11 +860,11 @@ mod tests {
                 .store(128 * 1024 * 1024, std::sync::atomic::Ordering::Release);
             let first = input.expression().unwrap();
             assert!(first.same_root(&input.expression().unwrap()));
-            assert!(counter.load(std::sync::atomic::Ordering::Acquire) > 0);
+            assert!(counter.load(std::sync::atomic::Ordering::Acquire) > dm_syntax::SettingChargeCounter::root_allocation_bytes());
         }
         assert_eq!(
             counter.load(std::sync::atomic::Ordering::Acquire),
-            0,
+            dm_syntax::SettingChargeCounter::root_allocation_bytes(),
             "original syntax and all leased roots physically released"
         );
     }
@@ -988,7 +988,7 @@ mod tests {
     }
     #[test]
     fn initializer_original_lookup_descends_existing_nested_arena_without_root_admission_or_cap() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let host =
             Arc::new(OriginalHost(Arc::clone(&counter))) as Arc<dyn SettingExpressionQueries>;
         let mut source = String::from("/datum/deep\n");
@@ -1004,7 +1004,7 @@ mod tests {
         let input = front.original_initializer_input(&plan, 0).unwrap();
         assert_eq!(
             counter.load(std::sync::atomic::Ordering::Acquire),
-            0,
+            dm_syntax::SettingChargeCounter::root_allocation_bytes(),
             "source lookup itself allocates no root/slot work"
         );
         let root = input.expression().unwrap();
@@ -1041,7 +1041,7 @@ mod tests {
     }
     #[test]
     fn initializer_recipe_outlives_source_without_retaining_source_and_declines_equal_text_owner() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let host =
             Arc::new(OriginalHost(Arc::clone(&counter))) as Arc<dyn SettingExpressionQueries>;
         let (recipe, pointer) = {
@@ -1088,7 +1088,7 @@ mod tests {
         drop(recipe);
         assert_eq!(alias.ast() as *const dm_syntax::Expr, pointer);
         drop(alias);
-        assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire), 0);
+        assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]
     fn initializer_recipe_reborrows_same_root_at_current_offset_and_preserves_foreign_domain_error()
@@ -1225,7 +1225,7 @@ mod tests {
     }
     #[test]
     fn complete_static_source_shares_actual_var_rhs_and_projects_same_parent_across_prefix_rebind(){
-      let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;
+      let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;
       let mut state=RetainedSemanticTree::default();
       let front=static_front(&mut state,q_chunk("",1),&host);let arena=BodyArena::new_typed(&front,|_|true);
       let body=front.bodies.iter().find(|body|front.snapshot.tree.member(body.member).unwrap().name==dm_ir::SymbolId::of("p")).unwrap();
@@ -1257,7 +1257,7 @@ mod tests {
       let warm_dimension=dimension_recipe.reborrow_dimension(&current_context.dimension_input(2,0).unwrap()).unwrap().unwrap();assert_eq!(warm_dimension.ast() as *const dm_syntax::Expr,dimension_pointer);assert_eq!(warm_dimension.source_text(warm_dimension.ast().span),Some("2+1"));assert_eq!(&padded.expanded.text[warm_dimension.current_span().range()],"2+1");
       let current_declarations=current_input.declaration_context();let mut selected_current=None;current_declarations.with_admission(&mut|a|{selected_current=Some(current_declarations.selected_static_admitted(&rebound,data.identity,data,a)?);Ok(())}).unwrap();let selected_current=selected_current.unwrap();current_declarations.with_admission(&mut|a|{assert!(provenance.matches_declaration(&selected_current,a)?);Ok(())}).unwrap();let selected_warm=recipe.reborrow_declaration(&selected_current).unwrap().unwrap();assert!(std::ptr::eq(selected_warm.ast(),original));assert_eq!(selected_warm.current_span(),warm.current_span());
       assert!(padded.original_issued_initializer_context(&issued).is_err(),"body source frame cannot be supplied by old complete plan");
-      let check=||Ok(());let other=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&other,128*1024*1024,&check);
+      let check=||Ok(());let other=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&other,128*1024*1024,&check);
       assert!(matches!(current_input.prepare(&a),Err(BodySyntaxFailure::Operational(ref e)) if e.kind()==std::io::ErrorKind::InvalidInput));
       assert!(std::ptr::eq(current_input.expression().unwrap().ast(),original),"foreign counter refusal cannot replace original parent");
     }
@@ -1273,7 +1273,7 @@ mod tests {
       let second=context.dimension_input(0,2).unwrap().expression().unwrap();assert_eq!(second.source_text(second.ast().span),Some("3 / 2"));assert!(!root.same_root(&second));
       let recipe=root.into_recipe();let warm=recipe.reborrow_dimension(&first).unwrap().unwrap();assert!(std::ptr::eq(warm.ast(),first.expression().unwrap().ast()));
       assert!(recipe.reborrow(&context.input(0).unwrap()).unwrap().is_none(),"dimension source cannot masquerade as the write RHS");
-      let check=||Ok(());let other=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&other,128*1024*1024,&check);
+      let check=||Ok(());let other=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&other,128*1024*1024,&check);
       assert!(matches!(first.prepare(&a),Err(BodySyntaxFailure::Operational(ref e)) if e.kind()==std::io::ErrorKind::InvalidInput));
       assert_eq!(first.expression().unwrap().source_text(warm.ast().span),Some("1 + 2"));
     }
@@ -1326,23 +1326,23 @@ mod tests {
     }
     #[test]
     fn original_root_provenance_keeps_no_ast_and_foreign_equal_owner_declines_before_prepare(){
-      let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;
+      let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;
       let provenance={let current=front("var/const/value=unknown+1\n",&host);let input=provenance_selected(&current);let root=input.expression().unwrap();let backing=root.provenance_weak_backing_charge();let provenance=root.provenance();assert_eq!(provenance.weak_backing_charge(),backing);let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&check);assert!(provenance.matches_declaration(&input,&a).unwrap());assert!(provenance.weak_backing_charge()>0);let mut buffers=Vec::new();provenance.visit_storage(|address,bytes|buffers.push((address,bytes)));assert_eq!(buffers.len(),1);assert_eq!(buffers[0].1,provenance.weak_backing_charge());provenance};
-      assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),0,"weak provenance does not retain original AST/slot lease after actual source owner drops");
+      assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"weak provenance does not retain original AST/slot lease after actual source owner drops");
       let foreign=front("var/const/value=unknown+1\n",&host);let input=provenance_selected(&foreign);let before=counter.load(std::sync::atomic::Ordering::Acquire);let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&check);assert!(!provenance.matches_declaration(&input,&a).unwrap());assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),before,"equal-text foreign owner decline cannot parse/allocate a replacement root");
       let current=input.prepare(&a).unwrap();let current=current.provenance();assert!(current.matches_declaration(&input,&a).unwrap());
-      let other=Arc::new(AtomicUsize::new(0));let foreign_counter=dm_syntax::SettingAdmission::new(&other,128*1024*1024,&check);assert!(matches!(current.matches_declaration(&input,&foreign_counter),Err(BodySyntaxFailure::Operational(ref error))if error.kind()==std::io::ErrorKind::InvalidInput));
+      let other=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign_counter=dm_syntax::SettingAdmission::new(&other,128*1024*1024,&check);assert!(matches!(current.matches_declaration(&input,&foreign_counter),Err(BodySyntaxFailure::Operational(ref error))if error.kind()==std::io::ErrorKind::InvalidInput));
       let stop=||Err(std::io::Error::from_raw_os_error(1450));let stopped=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&stop);assert!(matches!(current.matches_declaration(&input,&stopped),Err(BodySyntaxFailure::Operational(ref error))if error.raw_os_error()==Some(1450)));assert!(current.matches_declaration(&input,&a).unwrap());
     }
     #[test]
     fn original_root_provenance_reissues_same_header_slot_across_current_prefix_mapping(){
-      let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;let mut state=RetainedSemanticTree::default();let old=included(&mut state,&host,q_chunk("",1));let first=provenance_selected(&old).expression().unwrap();let pointer=first.ast() as *const dm_syntax::Expr;let span=first.current_span();let provenance=first.provenance();drop(first);
+      let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;let mut state=RetainedSemanticTree::default();let old=included(&mut state,&host,q_chunk("",1));let first=provenance_selected(&old).expression().unwrap();let pointer=first.ast() as *const dm_syntax::Expr;let span=first.current_span();let provenance=first.provenance();drop(first);
       let current=included(&mut state,&host,q_chunk("// changed earlier include\n\n",333));let input=provenance_selected(&current);let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&check);assert!(provenance.matches_declaration(&input,&a).unwrap());let warm=input.prepare(&a).unwrap();assert_eq!(warm.ast() as *const dm_syntax::Expr,pointer);assert_ne!(warm.current_span(),span);assert_eq!(&current.expanded.text[warm.current_span().range()],"1+2");
     }
 
     #[test]
     fn original_root_provenance_reissues_actual_private_rhs_and_distinct_dimension_inputs(){
-      let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;let current=front("var/static/list/value[1+2][][3+4]=null\n",&host);let plan=crate::initializers::capture_declaration_plan(&current.snapshot,&current.emission_order).unwrap();let context=current.original_initializer_context(&plan).unwrap();let rhs=context.input(0).unwrap();let dimension=context.dimension_input(0,0).unwrap();let other=context.dimension_input(0,2).unwrap();let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&check);
+      let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;let current=front("var/static/list/value[1+2][][3+4]=null\n",&host);let plan=crate::initializers::capture_declaration_plan(&current.snapshot,&current.emission_order).unwrap();let context=current.original_initializer_context(&plan).unwrap();let rhs=context.input(0).unwrap();let dimension=context.dimension_input(0,0).unwrap();let other=context.dimension_input(0,2).unwrap();let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&check);
       let rhs_root=rhs.prepare(&a).unwrap().provenance();let dimension_root=dimension.prepare(&a).unwrap().provenance();assert!(rhs_root.matches_initializer(&rhs,&a).unwrap());assert!(dimension_root.matches_dimension(&dimension,&a).unwrap());let before=counter.load(std::sync::atomic::Ordering::Acquire);assert!(!rhs_root.matches_dimension(&dimension,&a).unwrap());assert!(!dimension_root.matches_initializer(&rhs,&a).unwrap());assert!(!dimension_root.matches_dimension(&other,&a).unwrap());assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),before,"wrong role/suffix declines before preparing a different original root");
     }
 
@@ -1350,7 +1350,7 @@ mod tests {
     #[test]
     fn original_scalar_selector_reuses_authored_versions_and_preserves_declared_effective_outcomes(){
         use crate::constant_resolution::{self as scalar,ScalarQuery};
-        let counter=Arc::new(AtomicUsize::new(0));
+        let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let host=Arc::new(OriginalHost(Arc::clone(&counter))) as Arc<dyn SettingExpressionQueries>;
         let text="/datum/scalar_base\n    var/const/value=1+2\n/datum/scalar_child\n    parent_type=/datum/scalar_base\n    value=4+5\n/datum/scalar_leaf\n    parent_type=/datum/scalar_child\n/proc/no_body()\n    return 0\n";
         let provider=Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));
@@ -1382,7 +1382,7 @@ mod tests {
     fn original_scalar_source_prefers_equal_authored_override_and_only_follows_genuine_no_rhs(){
         use crate::constant_resolution::{self as scalar,ScalarQuery};
         for authored in [true,false]{
-            let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter)) as Arc<dyn SettingExpressionQueries>;
+            let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let host=Arc::new(OriginalHost(counter)) as Arc<dyn SettingExpressionQueries>;
             let text=if authored{"/datum/scalar_origin\n    var/static/value=1+2\n/datum/scalar_origin\n    value=1+2\n/proc/no_body()\n    return 0\n"}else{"/datum/scalar_origin\n    value=1+2\n/datum/scalar_origin\n    var/static/value\n/proc/no_body()\n    return 0\n"};
             let provider=Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));let executor=dm_exec::BuildExecutor::new(1).unwrap();
             let frontend=build_with_executor_and_semantic_state_for_policy_checked(Path::new("scalar-authored-origin.dme"),&provider,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None},None,&executor,None,true,&host).unwrap().with_body_queries(Arc::new(NoBody));
@@ -1404,7 +1404,7 @@ mod tests {
 #[cfg(test)]mod original_admission_completion_tests{
  use super::*;use std::sync::{Arc,atomic::{AtomicUsize,AtomicBool,Ordering}};
  #[derive(Debug,Clone,Copy)]enum Mode{Once,Omit,Repeat,Swallow,LaterIo}
- #[derive(Debug)]struct Provider{mode:Mode,counter:Arc<AtomicUsize>,cancel:AtomicBool}
+ #[derive(Debug)]struct Provider{mode:Mode,counter:Arc<dm_syntax::SettingChargeCounter>,cancel:AtomicBool}
  impl SettingExpressionQueries for Provider{
   fn expression(&self,_:&super::super::SettingExpressionInput<'_>)->Result<dm_syntax::SettingExpression,BodySyntaxFailure>{panic!("resource loan must never demand a new expression")}
   fn with_declaration_admission(&self,callback:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{
@@ -1422,6 +1422,6 @@ mod tests {
   let(_owner,weak)=provider(Mode::LaterIo);let result=original_admission_using(Some(&weak),|_|Ok(17));assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.raw_os_error()==Some(1450)));
  }
  #[test]fn original_admission_final_poll_preserves_actual_cancel_and_drops_returned_storage(){
-  let(owner,weak)=provider(Mode::Once);let result=original_admission_using(Some(&weak),|a|{let lease=a.reserve(256).map_err(BodySyntaxFailure::Operational)?;owner.cancel.store(true,Ordering::Release);Ok(lease)});assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::Interrupted));assert_eq!(owner.counter.load(Ordering::Acquire),0);owner.cancel.store(false,Ordering::Release);assert_eq!(original_admission_using(Some(&weak),|_|Ok(17)).unwrap(),17);
+  let(owner,weak)=provider(Mode::Once);let result=original_admission_using(Some(&weak),|a|{let lease=a.reserve(256).map_err(BodySyntaxFailure::Operational)?;owner.cancel.store(true,Ordering::Release);Ok(lease)});assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::Interrupted));assert_eq!(owner.counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());owner.cancel.store(false,Ordering::Release);assert_eq!(original_admission_using(Some(&weak),|_|Ok(17)).unwrap(),17);
  }
 }

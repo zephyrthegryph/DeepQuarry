@@ -985,7 +985,7 @@ mod signature_row_storage_tests {
         }
 
         let source = "/proc/first(value=1)\n    return\n/proc/reused(value=1)\n    return\n/proc/last()\n    return\n";
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         let mut consumer = FailThird { observer: OriginalSignatureObserver::new(&a).unwrap(), seen: 0 };
         let result = dm_syntax::parse_original_declaration_skeleton_with_observer_using(
@@ -1010,7 +1010,7 @@ mod signature_row_storage_tests {
         assert_eq!(a.retained_bytes_for_trace(), before);
         assert_eq!(before, observed.row_buffer_bytes + observed.completed_header_bytes);
         drop(consumer);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -1019,7 +1019,7 @@ mod signature_row_storage_tests {
             + std::mem::size_of::<Vec<super::super::OriginalFormalNotice>>()
             <= std::mem::size_of::<Option<ParsedSignature>>());
 
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let source: SourceText = "/proc/p(var/static/x;)\n    return\n".into();
         let mut input = parse_original_signatures_using(source, &a).unwrap();
@@ -1039,7 +1039,7 @@ mod signature_row_storage_tests {
         assert_eq!(input.headers.all_formal_notices().unwrap().count(), 3);
         assert!(input.prepared.take(header, 0, &input.headers).is_err());
         drop((taken, parameters, input));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -1052,7 +1052,7 @@ mod signature_row_storage_tests {
             }
         }
 
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let dropped = Arc::new(AtomicUsize::new(0));
         let item = std::mem::size_of::<Payload>();
         let healthy = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
@@ -1067,36 +1067,36 @@ mod signature_row_storage_tests {
         let fault = || {
             at.set(at.get() + 1);
             if at.get() == 2 {
-                assert_eq!(used.load(Ordering::Acquire), (4 + 8) * item);
+                assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + ((4 + 8) * item));
                 return Err(std::io::Error::from_raw_os_error(1450));
             }
             Ok(())
         };
-        let failed = SettingAdmission::new(&used, 12 * item, &fault);
+        let failed = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (12 * item), &fault);
         assert_eq!(grow_funded_rows(&mut rows, &mut storage, &failed)
             .unwrap_err().raw_os_error(), Some(1450));
         assert_eq!(rows.as_ptr(), old);
         assert_eq!(rows.len(), 4);
-        assert_eq!(used.load(Ordering::Acquire), 4 * item);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (4 * item));
         assert_eq!(dropped.load(Ordering::Relaxed), 0);
 
-        let too_small = SettingAdmission::new(&used, 12 * item - 1, &|| Ok(()));
+        let too_small = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (12 * item - 1), &|| Ok(()));
         assert_eq!(grow_funded_rows(&mut rows, &mut storage, &too_small)
             .unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
         assert_eq!(rows.as_ptr(), old);
-        assert_eq!(used.load(Ordering::Acquire), 4 * item);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (4 * item));
 
-        let exact = SettingAdmission::new(&used, 12 * item, &|| Ok(()));
+        let exact = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (12 * item), &|| Ok(()));
         grow_funded_rows(&mut rows, &mut storage, &exact).unwrap();
         assert_ne!(rows.as_ptr(), old);
         assert_eq!((rows.len(), rows.capacity()), (4, 8));
         assert_eq!(storage.as_ref().unwrap().bytes(), 8 * item);
-        assert_eq!(used.load(Ordering::Acquire), 8 * item);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (8 * item));
         assert_eq!(dropped.load(Ordering::Relaxed), 0);
         drop(rows);
         drop(storage);
         assert_eq!(dropped.load(Ordering::Relaxed), 4);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -1109,7 +1109,7 @@ mod signature_row_storage_tests {
     #[test]
     fn pending_default_pages_cross_real_growth_boundary_with_only_page_and_directory_peak() {
         const OLD_ROWS: usize = 2048;
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let healthy = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let mut rows = PendingDefaultPages::<[usize; 55]>::new();
         for ordinal in 0..OLD_ROWS {
@@ -1145,7 +1145,7 @@ mod signature_row_storage_tests {
             Ok::<(), ()>(())
         }).unwrap();
         assert_eq!(ordinal, OLD_ROWS + 1);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -1159,7 +1159,7 @@ mod signature_row_storage_tests {
             }
         }
 
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let dropped = Arc::new(AtomicUsize::new(0));
         let healthy = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut rows = PendingDefaultPages::new();
@@ -1186,12 +1186,12 @@ mod signature_row_storage_tests {
         let result = rows.try_consume(|row| if row.0 == 2 { Err("first visit error") } else { Ok(()) });
         assert_eq!(result, Err("first visit error"));
         assert_eq!(dropped.load(Ordering::Relaxed), PENDING_DEFAULT_PAGE_LEN + 2);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn completed_payload_page_keeps_in_flight_credit_and_first_io_on_failed_absorb() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
         let mut rows = CompletedSignatureRows::new();
         let make_row = || Row {
@@ -1216,12 +1216,12 @@ mod signature_row_storage_tests {
         assert_eq!(in_flight.bytes(), 32);
         assert_eq!(used.load(Ordering::Acquire), before);
         drop((rows, first, in_flight));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn completed_signature_geometry_uses_narrow_rows_and_keeps_exact_wide_fallback() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let narrow = HeaderGeometry { header: Span::new(0, 0), argument_offset: 0 };
         assert_eq!(PackedHeader::pack(narrow).unwrap().unpack(), Some(narrow));
@@ -1252,12 +1252,12 @@ mod signature_row_storage_tests {
         assert_eq!(rows.wide_headers.len(), 3);
         assert_eq!(rows.find(4), None);
         drop(rows);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn genuine_wide_formal_header_preserves_exact_completed_lookup_and_argument_offset() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let source = SourceText::from(format!("/proc/wide({}value)\n    return\n", " ".repeat(1 << 16)));
         let mut parsed = parse_original_signatures_using(source, &a).unwrap();
@@ -1270,12 +1270,12 @@ mod signature_row_storage_tests {
         assert_eq!(parsed.symbols.text(signature.signature.parameters[0].name),Some("value"));
         assert!(parsed.prepared.take(header,0,&parsed.headers).is_err());
         drop((parsed,signature));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn denied_wide_signature_geometry_does_not_publish_or_consume_pending_funding() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let mut rows = CompletedSignatureRows::new();
         let mut credit = a.reserve(24).unwrap();
@@ -1297,13 +1297,13 @@ mod signature_row_storage_tests {
         assert_eq!(rows.wide_headers.len(), 1);
         assert_eq!(credit.bytes(), 0);
         drop((rows, credit));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn completed_signature_pages_admit_exact_next_page_without_moving_old_rows() {
         use std::fmt::Write as _;
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         let mut source = String::new();
         for ordinal in 0..COMPLETED_SIGNATURE_PAGE_LEN {
@@ -1334,12 +1334,12 @@ mod signature_row_storage_tests {
         assert_eq!(observer.rows.buffer_bytes(), 2 * page_bytes + directory_bytes);
         assert_eq!(used.load(Ordering::Acquire), retained + page_bytes);
         drop((observer, primary));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn trivial_signature_slots_share_only_the_primary_empty_backing_and_keep_issued_flags() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let source = SourceText::from("/proc/first()\n    return\n/proc/second(...)\n    return\n/proc/full(value)\n    return value\n");
         let mut input = parse_original_signatures_using(source.clone(), &a).unwrap();
@@ -1357,13 +1357,13 @@ mod signature_row_storage_tests {
         let (full, _) = input.prepared.take(input.items.dense()[2].header_span, 0, &input.headers).unwrap();
         assert_eq!(full.signature.parameters.len(), 1);
         drop((first, second, full, owner, foreign, input));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn completed_signature_pages_keep_source_order_and_exact_one_shot_lookup() {
         use std::fmt::Write as _;
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         let mut source = String::new();
         let count = 2 * COMPLETED_SIGNATURE_PAGE_LEN + 1;
@@ -1400,7 +1400,7 @@ mod signature_row_storage_tests {
         actual.prepared.release_consumed_rows();
         assert_eq!(used.load(Ordering::Acquire), before - bytes);
         drop((actual, foreign, reservations));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }
 /// Deliberately not ColdFrontend/Tree/compiled input. The partial-model owner
@@ -1533,23 +1533,23 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
  fn prepared(source:SourceText,a:&SettingAdmission<'_>)->OriginalSignatureInput{match parse_original_signatures_using(source,a){Ok(actual)=>actual,Err(OriginalHeaderFailure::Source(actual))=>panic!("unexpected native signature source preparation refusal: {actual}"),Err(OriginalHeaderFailure::Operational(actual))=>panic!("unexpected native signature operational preparation refusal: {actual}")}}
 
  #[test]fn genuine_primary_signature_fatal_precedes_future_type_parent_prescan_and_keeps_actual_prefix(){
-  let source:SourceText="/datum/kept\n    var/value=1\n/proc/good(obj/value)\n    return value\n/proc/bad(value=)\n    return 1\n/datum/later\n    parent_type=/datum/missing\n".into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<26,&||Ok(()));
+  let source:SourceText="/datum/kept\n    var/value=1\n/proc/good(obj/value)\n    return value\n/proc/bad(value=)\n    return 1\n/datum/later\n    parent_type=/datum/missing\n".into();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,1<<26,&||Ok(()));
   let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let mut input=prepared(source.clone(),&a);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before+2,"same genuine signature producer runs once per encountered formal header");
   assert_eq!(input.items.dense().len(),2);assert_eq!(input.items.dense()[0].header,"/datum/kept");assert_eq!(input.items.dense()[1].header,"/proc/good(obj/value)");assert!(input.comma_fatal.is_none());assert!(input.unavailable.is_none());assert!(input.signature_unsupported.is_none());let error=input.signature_failure.as_ref().unwrap();assert_eq!(error.message,"missing expression");let fatal=error.original_fatal.as_ref().unwrap();let at=source.find("value=)").unwrap()+"value=".len();assert_eq!(fatal.at,Span::new(at,at+1));assert_eq!(fatal.following,super::super::OriginalParameterFollowing::MissingDefault(')'));assert!(input.observer_stop.is_some());
   let header=input.items.dense()[1].header_span;let(parsed,argument_offset)=input.prepared.take(header,0,&input.headers).unwrap();assert_eq!(argument_offset,"/proc/good(".len());assert_eq!(input.symbols.text(parsed.signature.parameters[0].name),Some("value"));assert_eq!(input.prepared.remaining(),0);assert!(input.prepared.take(header,0,&input.headers).is_err(),"prepared formal metadata cannot be replayed");assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before+2);
  }
  #[test]fn no_callable_headers_allocate_no_signature_product_or_row_geometry(){
-  let source:SourceText=format!("// {}\n/datum/value\n    var/item=1\n","unrelated declaration comment ".repeat(2048)).into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<27,&||Ok(()));let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let input=prepared(source,&a);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before);assert!(input.prepared.rows.is_empty());assert_eq!(input.prepared.rows.capacity(),0);assert_eq!(input.prepared.rows.buffer_bytes(),0);assert!(input.prepared.failure_storage.is_none());assert!(input.headers.checker_body_profile());
+  let source:SourceText=format!("// {}\n/datum/value\n    var/item=1\n","unrelated declaration comment ".repeat(2048)).into();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,1<<27,&||Ok(()));let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let input=prepared(source,&a);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before);assert!(input.prepared.rows.is_empty());assert_eq!(input.prepared.rows.capacity(),0);assert_eq!(input.prepared.rows.buffer_bytes(),0);assert!(input.prepared.failure_storage.is_none());assert!(input.headers.checker_body_profile());
  }
  #[test]fn demanded_header_admission_refuses_before_signature_interpretation_and_releases_primary(){
   struct Block<'a,'b>{inner:OriginalSignatureObserver<'a,'b>,entered:bool,held:Option<dm_syntax::SettingRootLease>}
   impl OriginalDeclarationHeaderObserver for Block<'_,'_>{fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{self.entered=true;self.held=Some(self.inner.a.reserve(96<<10)?);self.inner.header(event)}}
-  let source="/proc/required(value=1)\n    return value\n";let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,128<<10,&||Ok(()));let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let inner=OriginalSignatureObserver::new(&a).unwrap();let mut block=Block{inner,entered:false,held:None};
-  let actual=dm_syntax::parse_original_declaration_skeleton_with_observer_using(source,&a,Some(&mut block)).err().unwrap();assert!(block.entered,"genuine primary parser reached the actual formal header");assert!(block.held.is_some(),"fault reservation itself succeeded; demanded signature funding is the rejected allocation");assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before);assert!(block.inner.rows.is_empty());assert!(block.inner.failure.is_none());assert_eq!(counter.load(Ordering::Acquire),block.held.as_ref().unwrap().bytes(),"failed primary dropped every own allocation reservation");drop(block);assert_eq!(counter.load(Ordering::Acquire),0);
+  let source="/proc/required(value=1)\n    return value\n";let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,128<<10,&||Ok(()));let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let inner=OriginalSignatureObserver::new(&a).unwrap();let mut block=Block{inner,entered:false,held:None};
+  let actual=dm_syntax::parse_original_declaration_skeleton_with_observer_using(source,&a,Some(&mut block)).err().unwrap();assert!(block.entered,"genuine primary parser reached the actual formal header");assert!(block.held.is_some(),"fault reservation itself succeeded; demanded signature funding is the rejected allocation");assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),before);assert!(block.inner.rows.is_empty());assert!(block.inner.failure.is_none());assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (block.held.as_ref().unwrap().bytes()),"failed primary dropped every own allocation reservation");drop(block);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn direct_adapter_spelling_observes_the_same_actual_allocation(){
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,4<<20,&||Ok(()));
   let mut input=prepared("/datum/probe
 ".into(),&a);
@@ -1567,15 +1567,15 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   let credit=input.prepared.take_adapter_storage().unwrap();
   drop(input);
   assert!(observed.live());
-  assert_eq!(used.load(Ordering::Acquire),bytes+observed.storage.as_ref().unwrap().bytes());
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (bytes+observed.storage.as_ref().unwrap().bytes()));
   drop(alias);
   assert!(!observed.live());
   drop((observed,credit,weak));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn primary_signature_prepared_metadata_rejects_foreign_header_owner_and_typed_fault(){
-  let source:SourceText="/proc/good(value=1)\n    return value\n".into();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<26,&||Ok(()));let mut first=prepared(source.clone(),&a);let second=prepared(source,&a);assert!(first.prepared.take(first.items.dense()[0].header_span,0,&second.headers).is_err());assert_eq!(first.prepared.remaining(),1);
-  drop(first);drop(second);assert_eq!(counter.load(Ordering::Acquire),0);let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=SettingAdmission::new(&counter,1<<26,&fault);let Err(OriginalHeaderFailure::Operational(actual))=parse_original_signatures_using("/proc/p()\n    return\n".into(),&a)else{panic!("exact typed native signature preparation failure")};assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
+  let source:SourceText="/proc/good(value=1)\n    return value\n".into();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,1<<26,&||Ok(()));let mut first=prepared(source.clone(),&a);let second=prepared(source,&a);assert!(first.prepared.take(first.items.dense()[0].header_span,0,&second.headers).is_err());assert_eq!(first.prepared.remaining(),1);
+  drop(first);drop(second);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=SettingAdmission::new(&counter,1<<26,&fault);let Err(OriginalHeaderFailure::Operational(actual))=parse_original_signatures_using("/proc/p()\n    return\n".into(),&a)else{panic!("exact typed native signature preparation failure")};assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -1584,7 +1584,7 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
  #[test]
  fn successful_unchanged_symbol_headers_keep_only_live_signature_allocations() {
   let source:SourceText="/proc/empty()\n    return\n/proc/first(value[2]=1 as num)\n    return\n/proc/reused(value[2]=1 as num)\n    return\n".into();
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,1<<24,&||Ok(()));
   let actual=parse_original_signatures_using(source,&a).unwrap();
   assert!(actual.signature_failure.is_none());
@@ -1597,7 +1597,7 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   assert_eq!(rows.get(2).unwrap().retained_bytes,retained(rows.get(2).unwrap()));
   assert!(rows.get(2).unwrap().retained_bytes>rows.get(0).unwrap().retained_bytes,"arrays, defaults and input tokens remain funded");
   drop(actual);
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn empty_and_reused_plain_formals_charge_only_their_actual_shared_allocations() {
@@ -1607,7 +1607,7 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
    "/proc/reused(value)\n    return value\n",
    "/proc/last()\n    return\n",
   ).into();
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,1<<24,&||Ok(()));
   let actual=parse_original_signatures_using(source,&a).unwrap();
   assert!(actual.signature_failure.is_none()&&actual.signature_unsupported.is_none());
@@ -1621,9 +1621,9 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   assert_eq!(rows.get(2).unwrap().retained_bytes,simple);
   assert_eq!(rows.get(3).unwrap().retained_bytes,0);
   drop(actual);
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
- #[test]fn same_primary_signature_observer_moves_actual_products_without_second_formal_parse(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/first(value=1)\n    return value\n/proc/second(other=2)\n    return other\n".into();let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let mut observer=OriginalSignatureObserver::new(&a).unwrap();let primary=dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source,&a,Some(&mut observer)).unwrap();let parsed=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());assert_eq!(parsed,before+2);let mut actual=observer.finish_primary(source.clone(),primary,None).unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);assert!(actual.source.same_view(&source));for header in actual.items.dense().iter().map(|item|item.header_span){actual.prepared.take(header,0,&actual.headers).unwrap();}actual.prepared.require_consumed().unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);drop(actual);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn same_primary_signature_observer_moves_actual_products_without_second_formal_parse(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/first(value=1)\n    return value\n/proc/second(other=2)\n    return other\n".into();let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let mut observer=OriginalSignatureObserver::new(&a).unwrap();let primary=dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source,&a,Some(&mut observer)).unwrap();let parsed=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());assert_eq!(parsed,before+2);let mut actual=observer.finish_primary(source.clone(),primary,None).unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);assert!(actual.source.same_view(&source));for header in actual.items.dense().iter().map(|item|item.header_span){actual.prepared.take(header,0,&actual.headers).unwrap();}actual.prepared.require_consumed().unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);drop(actual);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
 }
 
 impl OriginalSignatureObserver<'_,'_>{
@@ -1655,8 +1655,8 @@ impl OriginalSignatureObserver<'_,'_>{
   if tokens.last().is_none_or(|actual|*actual!=token){return Err(std::io::ErrorKind::InvalidInput.into())}
   let spelling=source.get(token.span.range()).ok_or(std::io::ErrorKind::InvalidInput)?;
   let following=if spelling=="="&&matches!(token.kind,dm_syntax::TokenKind::Punctuation|dm_syntax::TokenKind::Operator){if data.is_some(){return Err(std::io::ErrorKind::InvalidInput.into())}Following::Assignment}else if token.kind==dm_syntax::TokenKind::Number{
-   let data=data.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"first numeric formal token has no actual typed value"))?;if data.raw()!=spelling{return Err(std::io::ErrorKind::InvalidInput.into())}
-   match data.value(){dm_syntax::OriginalTokenValue::Int(n)=>Following::Integer(n),dm_syntax::OriginalTokenValue::Float(n)=>Following::Float(n.to_bits()),_=>return Err(std::io::ErrorKind::InvalidInput.into())}
+   let data=data.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"first numeric formal token has no actual typed value"))?;if data.raw()?!=spelling{return Err(std::io::ErrorKind::InvalidInput.into())}
+   match data.value()?{dm_syntax::OriginalTokenValue::Int(n)=>Following::Integer(n),dm_syntax::OriginalTokenValue::Float(n)=>Following::Float(n.to_bits()),_=>return Err(std::io::ErrorKind::InvalidInput.into())}
   }else{return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"first formal token's original grammar rejection is not issued"))};
   let start=token.span.start.checked_sub(early.live.argument_start()).ok_or(std::io::ErrorKind::InvalidInput)?;let end=token.span.end.checked_sub(early.live.argument_start()).ok_or(std::io::ErrorKind::InvalidInput)?;
   let view=HeaderView::original(source,tokens,token.span).map_err(|_|std::io::ErrorKind::InvalidInput)?;
@@ -1664,7 +1664,7 @@ impl OriginalSignatureObserver<'_,'_>{
   let mut failure=match early.accumulator.prepare_head(view,start,&mut self.symbols){Err(actual)=>actual,Ok(())=>return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native formal grammar accepted the purported required-head failure"))};
   let receipt=super::OriginalParameterFatal{at:token.span,following:super::OriginalParameterFollowing::Head(following),prior_outer_block:early.live.prior_outer_block().is_some_and(|at|at<token.span.start)};
   failure.message=receipt.message();failure.source_span=Some(Span::new(start,end));failure.original_fatal=Some(receipt);failure.after_header=false;
-  self.failure=Some(failure);self.failure_live=Some(early.live.clone());self.failure_head_data=data.map(|actual|(token.span,actual.detach()));
+  self.failure=Some(failure);self.failure_live=Some(early.live.clone());self.failure_head_data=data.map(|actual|actual.detach_using(self.a).map(|data|(token.span,data))).transpose()?;
   let early=self.early.take().expect("actual failed head owner");self.failure_storage=Some(early.credit);Ok(OriginalHeaderFlow::Stop)
  }
  pub(crate) fn formal_default_using(&self,source:&mut dyn dm_syntax::NativeExpressionTokenDemand,clauses:&mut dm_syntax::ParameterClauseCursor)->std::io::Result<super::DemandedFormalDefault>{
@@ -1810,15 +1810,15 @@ impl OriginalSignatureObserver<'_,'_>{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  fn push(primary:&mut dm_syntax::OriginalPrimaryDemand<'_,'_,'_>,source:&str,token:&dm_syntax::Token){primary.token(dm_syntax::SpanToken{kind:token.kind,span:token.span}).unwrap();primary.advance(&source[..token.span.end],false).unwrap();}
  #[test]fn genuine_empty_default_stops_at_actual_comma_before_requesting_future_tokens_and_keeps_same_primary_fatal(){
-  let source="/proc/p(value=, BAD(1))\n    return\n";let used=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut tokens=dm_syntax::lex(source).tokens.into_iter();let mut live=None;let mut clauses=None;
+  let source="/proc/p(value=, BAD(1))\n    return\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut tokens=dm_syntax::lex(source).tokens.into_iter();let mut live=None;let mut clauses=None;
   loop{let token=tokens.next().unwrap();push(&mut primary,source,&token);if token.text=="("{let found=primary.live_callable_header(&source[..token.span.end]).unwrap().unwrap();observer.begin_formals(found.clone()).unwrap();clauses=Some(dm_syntax::ParameterClauseCursor::new(found.argument_start()));live=Some(found);}else if let Some(cursor)=&mut clauses{cursor.push(token.kind,token.span,&token.text);if token.text=="="{let live=live.as_ref().unwrap();let span=Span::new(live.argument_start(),token.span.start);let current=primary.span_tokens();let begin=current.partition_point(|t|t.span.end<=span.start);let end=current.partition_point(|t|t.span.start<span.end);assert!(matches!(observer.admit_formal_head(&source[..token.span.end],&current.range(begin,end).unwrap().iter().collect::<Vec<_>>(),span,dm_syntax::SpanToken{kind:token.kind,span:token.span}).unwrap(),OriginalHeaderFlow::Continue));break;}}}
   let mut feed=||{let token=tokens.next();if let Some(token)=&token{assert_ne!(token.text,"BAD","actual native default asked for future token after genuine empty RHS");push(&mut primary,source,token);}Ok(token)};
-  let default=observer.formal_default_using(&mut feed,clauses.as_mut().unwrap()).unwrap();drop(feed);let boundary=match &default{super::super::DemandedFormalDefault::ExpectedTerm(failure)=>failure.boundary.as_ref().unwrap(),_=>panic!("actual expected native term")};let following=dm_syntax::SpanToken{kind:boundary.kind,span:boundary.span};let prefix=&source[..following.span.end];let live=live.unwrap();let span=Span::new(live.argument_start(),following.span.start);let current=primary.span_tokens();let begin=current.partition_point(|t|t.span.end<=span.start);let end=current.partition_point(|t|t.span.start<span.end);assert!(matches!(observer.complete_formal(prefix,&current.range(begin,end).unwrap().iter().collect::<Vec<_>>(),span,following,Some(default)).unwrap(),OriginalHeaderFlow::Stop));primary.observer_stop_live_header(&live).unwrap();let actual=primary.finish(prefix,false).unwrap();assert!(actual.same_primary_header(&live));let input=observer.finish_primary(SourceText::from(prefix),actual,None).unwrap();let fatal=input.signature_failure.as_ref().unwrap().original_fatal.unwrap();assert_eq!(fatal.token_span(),following.span);assert_eq!(fatal.message(),"got ',', expected one of: operator, literal, variable, proc call");assert!(input.items.dense().is_empty());drop(input);drop(live);assert_eq!(used.load(Ordering::Acquire),0);
+  let default=observer.formal_default_using(&mut feed,clauses.as_mut().unwrap()).unwrap();drop(feed);let boundary=match &default{super::super::DemandedFormalDefault::ExpectedTerm(failure)=>failure.boundary.as_ref().unwrap(),_=>panic!("actual expected native term")};let following=dm_syntax::SpanToken{kind:boundary.kind,span:boundary.span};let prefix=&source[..following.span.end];let live=live.unwrap();let span=Span::new(live.argument_start(),following.span.start);let current=primary.span_tokens();let begin=current.partition_point(|t|t.span.end<=span.start);let end=current.partition_point(|t|t.span.start<span.end);assert!(matches!(observer.complete_formal(prefix,&current.range(begin,end).unwrap().iter().collect::<Vec<_>>(),span,following,Some(default)).unwrap(),OriginalHeaderFlow::Stop));primary.observer_stop_live_header(&live).unwrap();let actual=primary.finish(prefix,false).unwrap();assert!(actual.same_primary_header(&live));let input=observer.finish_primary(SourceText::from(prefix),actual,None).unwrap();let fatal=input.signature_failure.as_ref().unwrap().original_fatal.unwrap();assert_eq!(fatal.token_span(),following.span);assert_eq!(fatal.message(),"got ',', expected one of: operator, literal, variable, proc call");assert!(input.items.dense().is_empty());drop(input);drop(live);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]fn genuine_empty_default_joins_trimmed_spacing_to_actual_close_or_comma_and_refuses_unissued_boundaries(){
   for source in["/proc/p(value=)\n","/proc/p(value= \t )\n","/proc/p(var/static/value= \t , BAD(1))\n"]{for mode in["actual","foreign_primary","zero","hypothetical_eof"]{
-   let used=Arc::new(AtomicUsize::new(0));{
+   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();{
     let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut tokens=dm_syntax::lex(source).tokens.into_iter();let mut live=None;let mut clauses=None;
     loop{let token=tokens.next().unwrap();push(&mut primary,source,&token);if token.text=="("{let found=primary.live_callable_header(&source[..token.span.end]).unwrap().unwrap();observer.begin_formals(found.clone()).unwrap();clauses=Some(dm_syntax::ParameterClauseCursor::new(found.argument_start()));live=Some(found);}else if let Some(cursor)=&mut clauses{cursor.push(token.kind,token.span,&token.text);if token.text=="="{let live=live.as_ref().unwrap();let span=Span::new(live.argument_start(),token.span.start);let current=primary.span_tokens();let begin=current.partition_point(|t|t.span.end<=span.start);let end=current.partition_point(|t|t.span.start<span.end);observer.admit_formal_head(&source[..token.span.end],&current.range(begin,end).unwrap().iter().collect::<Vec<_>>(),span,dm_syntax::SpanToken{kind:token.kind,span:token.span}).unwrap();break;}}}
     let mut feed=||{let token=tokens.next();if let Some(token)=&token{assert_ne!(token.text,"BAD","real empty default must stop before following parameter tokens");push(&mut primary,source,token);}Ok(token)};
@@ -1830,56 +1830,56 @@ impl OriginalSignatureObserver<'_,'_>{
      if mode=="foreign_primary"{let mut foreign=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();for token in dm_syntax::lex_spans(prefix).tokens{foreign.token(token).unwrap()}foreign.advance(prefix,false).unwrap();let foreign_live=foreign.live_callable_header(prefix).unwrap().expect("actual foreign callable header");foreign.observer_stop_live_header(&foreign_live).unwrap();let foreign=foreign.finish(prefix,false).unwrap();assert!(matches!(observer.finish_primary(SourceText::from(prefix),foreign,None),Err(OriginalHeaderFailure::Operational(ref error))if error.kind()==std::io::ErrorKind::InvalidInput));drop(real);}
      else{let input=observer.finish_primary(SourceText::from(prefix),real,None).unwrap();assert_eq!(input.signature_failure.as_ref().unwrap().original_fatal.unwrap().token_span(),following.span);drop(input);}
     }
-   }assert_eq!(used.load(Ordering::Acquire),0,"all actual scope/parse/output resources drop for {mode} in {source:?}");
+   }assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"all actual scope/parse/output resources drop for {mode} in {source:?}");
   }}
  }
  #[test]fn completed_formal_rows_reject_equal_source_foreign_primary_even_without_defaults(){
-  let source="/proc/p(x)\n";let used=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;
+  let source="/proc/p(x)\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;
   for token in dm_syntax::lex(source).tokens{if token.kind==dm_syntax::TokenKind::Newline{primary.token(dm_syntax::SpanToken{kind:token.kind,span:token.span}).unwrap();primary.advance_with_observer(&source[..token.span.end],false,&mut observer).unwrap();}else{push(&mut primary,source,&token);}if token.text=="("{let found=primary.live_callable_header(&source[..token.span.end]).unwrap().unwrap();observer.begin_formals(found.clone()).unwrap();live=Some(found);}if token.text==")"{let span=Span::new(live.as_ref().unwrap().argument_start(),token.span.start);let current=primary.span_tokens();let begin=current.partition_point(|t|t.span.end<=span.start);let end=current.partition_point(|t|t.span.start<span.end);observer.complete_formal(&source[..token.span.end],&current.range(begin,end).unwrap().iter().collect::<Vec<_>>(),span,dm_syntax::SpanToken{kind:token.kind,span:token.span},None).unwrap();}}
   // The SAME observer was lent only while the completed physical header
   // committed; the live formal methods had no competing long-lived loan.
-  primary.advance_with_observer(source,true,&mut observer).unwrap();let actual=primary.finish(source,true).unwrap();let mut foreign=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();for token in dm_syntax::lex_spans(source).tokens{foreign.token(token).unwrap()}foreign.advance(source,true).unwrap();let foreign=foreign.finish(source,true).unwrap();assert!(matches!(observer.finish_primary(SourceText::from(source),foreign,None),Err(OriginalHeaderFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::InvalidInput));drop(actual);drop(live);assert_eq!(used.load(Ordering::Acquire),0);
+  primary.advance_with_observer(source,true,&mut observer).unwrap();let actual=primary.finish(source,true).unwrap();let mut foreign=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();for token in dm_syntax::lex_spans(source).tokens{foreign.token(token).unwrap()}foreign.advance(source,true).unwrap();let foreign=foreign.finish(source,true).unwrap();assert!(matches!(observer.finish_primary(SourceText::from(source),foreign,None),Err(OriginalHeaderFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::InvalidInput));drop(actual);drop(live);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod early_required_head_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn actual_first_assignment_head_stops_before_default_token_and_keeps_real_prefix_fatal(){
-  let source="/proc/p(=BAD(1))\n    return\n";let used=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;let mut stop=None;
+  let source="/proc/p(=BAD(1))\n    return\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;let mut stop=None;
   for token in dm_syntax::lex(source).tokens{
    assert_ne!(token.text,"BAD","native head failure requested future token");let actual=dm_syntax::SpanToken{kind:token.kind,span:token.span};primary.token(actual).unwrap();primary.advance(&source[..token.span.end],false).unwrap();
    if token.text=="("{let header=primary.live_callable_header(&source[..token.span.end]).unwrap().unwrap();observer.begin_formals(header.clone()).unwrap();live=Some(header)}
    if token.text=="="{let live=live.as_ref().unwrap();let all=primary.span_tokens();let first=all.partition_point(|t|t.span.end<=live.argument_start());let before=super::super::PARAMETER_HEAD_INTERPRETATIONS.with(|n|n.get());assert_eq!(observer.reject_first_formal_head(&source[..token.span.end],&all.range(first,all.len()).unwrap().iter().collect::<Vec<_>>(),actual,None).unwrap(),OriginalHeaderFlow::Stop);assert_eq!(super::super::PARAMETER_HEAD_INTERPRETATIONS.with(|n|n.get()),before+1);stop=Some(actual);break}
   }
-  let token=stop.unwrap();let live=live.unwrap();primary.observer_stop_live_header(&live).unwrap();let prefix=&source[..token.span.end];let actual=primary.finish(prefix,false).unwrap();let input=observer.finish_primary(SourceText::from(prefix),actual,None).unwrap();let receipt=input.signature_failure.as_ref().unwrap().original_fatal.unwrap();assert_eq!(receipt.token_span(),token.span);assert_eq!(receipt.message(),"got '=', expected one of: ')', ',', '...', '/'");assert_eq!(input.signature_failure.as_ref().unwrap().message,receipt.message());assert!(input.items.dense().is_empty());drop(input);drop(live);assert_eq!(used.load(Ordering::Acquire),0);
+  let token=stop.unwrap();let live=live.unwrap();primary.observer_stop_live_header(&live).unwrap();let prefix=&source[..token.span.end];let actual=primary.finish(prefix,false).unwrap();let input=observer.finish_primary(SourceText::from(prefix),actual,None).unwrap();let receipt=input.signature_failure.as_ref().unwrap().original_fatal.unwrap();assert_eq!(receipt.token_span(),token.span);assert_eq!(receipt.message(),"got '=', expected one of: ')', ',', '...', '/'");assert_eq!(input.signature_failure.as_ref().unwrap().message,receipt.message());assert!(input.items.dense().is_empty());drop(input);drop(live);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_numeric_head_uses_same_typed_value_and_cannot_publish_without_final_source_binding(){
-  let source="/proc/p(1=BAD(1))\n";let used=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;let mut stop=None;
+  let source="/proc/p(1=BAD(1))\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&used,8<<20,&poll);let mut observer=OriginalSignatureObserver::new(&a).unwrap();let mut primary=dm_syntax::OriginalPrimaryDemand::new(&a,None).unwrap();let mut live=None;let mut stop=None;
   for token in dm_syntax::lex(source).tokens{
    assert_ne!(token.text,"=","numeric required-head error requested a later token");let actual=dm_syntax::SpanToken{kind:token.kind,span:token.span};
    if token.kind==dm_syntax::TokenKind::Number{let data=dm_syntax::OriginalLiteralData::from_value_using(token.text.clone(),dm_syntax::OriginalTokenValue::Int(1),&a).unwrap();primary.token_with_original_literal(actual,data).unwrap()}else{primary.token(actual).unwrap()};primary.advance(&source[..token.span.end],false).unwrap();
    if token.text=="("{let header=primary.live_callable_header(&source[..token.span.end]).unwrap().unwrap();observer.begin_formals(header.clone()).unwrap();live=Some(header)}
    if token.kind==dm_syntax::TokenKind::Number{let live=live.as_ref().unwrap();let all=primary.span_tokens();let first=all.partition_point(|t|t.span.end<=live.argument_start());let data=primary.original_literal_for_span(token.span).unwrap().unwrap();assert_eq!(observer.reject_first_formal_head(&source[..token.span.end],&all.range(first,all.len()).unwrap().iter().collect::<Vec<_>>(),actual,Some(data)).unwrap(),OriginalHeaderFlow::Stop);assert_eq!(observer.failure.as_ref().unwrap().original_fatal.unwrap().message(),"got '1', expected one of: ')', ',', '...', '/'");stop=Some(actual);break}
   }
-  let live=live.unwrap();let prefix=&source[..stop.unwrap().span.end];primary.observer_stop_live_header(&live).unwrap();let actual=primary.finish(prefix,false).unwrap();assert!(matches!(observer.finish_primary(SourceText::from(prefix),actual,None),Err(OriginalHeaderFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::Unsupported));drop(live);assert_eq!(used.load(Ordering::Acquire),0);
+  let live=live.unwrap();let prefix=&source[..stop.unwrap().span.end];primary.observer_stop_live_header(&live).unwrap();let actual=primary.finish(prefix,false).unwrap();assert!(matches!(observer.finish_primary(SourceText::from(prefix),actual,None),Err(OriginalHeaderFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::Unsupported));drop(live);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_absolute_primary_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn genuine_original_primary_selects_absolute_parameter_profile_once_and_prior_absolute_does_not_hide_later_fatal(){
-  for text in ["/datum/a\n/proc/p(/datum/a/value)\n    return value\n","/proc/p(/foo)\n    return foo\n"]{let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let signature=input.prepared.rows.iter().find_map(|row|match row.slot.value(){SlotValue::Payload(ordinal)=>input.prepared.rows.payload(ordinal).filter(|signature|signature.signature.parameters.len()==1),_=>None}).unwrap();assert!(signature.declarations.is_empty());drop(input);assert_eq!(used.load(Ordering::Acquire),0);}
-  let text="/datum/a\n/proc/p(/datum/a/value, other=, BAD(1))\n    return value\n/proc/future()\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();let failure=input.signature_failure.as_ref().unwrap();assert_eq!(failure.original_fatal.unwrap().message(),"got ',', expected one of: operator, literal, variable, proc call");assert!(input.observer_stop.is_some());assert!(input.items.dense().iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),0);
+  for text in ["/datum/a\n/proc/p(/datum/a/value)\n    return value\n","/proc/p(/foo)\n    return foo\n"]{let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let signature=input.prepared.rows.iter().find_map(|row|match row.slot.value(){SlotValue::Payload(ordinal)=>input.prepared.rows.payload(ordinal).filter(|signature|signature.signature.parameters.len()==1),_=>None}).unwrap();assert!(signature.declarations.is_empty());drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
+  let text="/datum/a\n/proc/p(/datum/a/value, other=, BAD(1))\n    return value\n/proc/future()\n    return\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();let failure=input.signature_failure.as_ref().unwrap();assert_eq!(failure.original_fatal.unwrap().message(),"got ',', expected one of: operator, literal, variable, proc call");assert!(input.observer_stop.is_some());assert!(input.items.dense().iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod formal_notice_producer_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn same_original_head_producer_retains_var_static_and_semicolon_registrations_once(){
-  let text="/proc/p(var/static/x;)\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),3);assert_eq!(rows.iter().map(|row|row.registration().0).collect::<Vec<_>>(),[Some("var_in_proc_parameter"),Some("static_in_proc_parameter"),Some("semicolon_in_proc_parameter")]);assert_eq!(rows.iter().map(|row|row.span().start).collect::<Vec<_>>(),[8,8,text.find(';').unwrap()]);assert_eq!(rows[0].static_message(),Some("'var/' is unnecessary here"));assert_eq!(rows[1].registration().1,super::super::OriginalFormalNoticeLevel::Warning);assert!(input.prepared.rows.parameters(input.prepared.rows.get(0).unwrap()).unwrap()[0].input_annotation.is_none());drop(input);assert_eq!(used.load(Ordering::Acquire),0);
+  let text="/proc/p(var/static/x;)\n    return\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),3);assert_eq!(rows.iter().map(|row|row.registration().0).collect::<Vec<_>>(),[Some("var_in_proc_parameter"),Some("static_in_proc_parameter"),Some("semicolon_in_proc_parameter")]);assert_eq!(rows.iter().map(|row|row.span().start).collect::<Vec<_>>(),[8,8,text.find(';').unwrap()]);assert_eq!(rows[0].static_message(),Some("'var/' is unnecessary here"));assert_eq!(rows[1].registration().1,super::super::OriginalFormalNoticeLevel::Warning);assert!(input.prepared.rows.parameters(input.prepared.rows.get(0).unwrap()).unwrap()[0].input_annotation.is_none());drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_prior_head_notices_survive_later_same_header_fatal_without_future_proc(){
-  let text="/proc/p(var/static/value=)\n    return\n/proc/future()\n    return\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.as_ref().unwrap().original_fatal.is_some());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),2);assert_eq!(rows[0].registration().0,Some("var_in_proc_parameter"));assert_eq!(rows[1].registration().0,Some("static_in_proc_parameter"));assert!(input.items.dense().iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),0);
+  let text="/proc/p(var/static/value=)\n    return\n/proc/future()\n    return\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.as_ref().unwrap().original_fatal.is_some());let rows=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(rows.len(),2);assert_eq!(rows[0].registration().0,Some("var_in_proc_parameter"));assert_eq!(rows[1].registration().0,Some("static_in_proc_parameter"));assert!(input.items.dense().iter().all(|item|!item.header.contains("future")));drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -1890,7 +1890,7 @@ mod body_static_scope_primary_regression {
  #[test]
  fn actual_static_scope_call_inside_body_never_issues_a_second_callable_signature(){
   let source:SourceText="/datum/probe\n    var/charge\n/datum/probe/proc/set_charge(value, datum/probe/other)\n    charge = value\n    /datum/probe::probe(set_other())\n".into();
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,16<<20,&||Ok(()));
   let input=parse_original_signatures_using(source,&a).unwrap();
   assert!(input.signature_failure.is_none(),"body call became a signature failure: {:?}",input.signature_failure);
@@ -1908,20 +1908,20 @@ mod body_static_scope_primary_regression {
   panic!("fixture must fail through actual consuming input cursor")
  }
  #[test]fn same_input_failure_writer_uses_actual_cursor_expectation_and_typed_value(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
   for(text,value,wanted)in[("1",dm_syntax::OriginalTokenValue::Int(i32::MAX),"got '2.14748e+009', expected one of: '(', identifier"),("(mob)",dm_syntax::OriginalTokenValue::Ident{spelling:"mob",whitespace:false},"got 'mob', expected one of: ')'"),("mob|1",dm_syntax::OriginalTokenValue::String("a\"b"),"got '{\"a\"b\"}', expected one of: identifier")]{
    let failure=actual_failure(&a,text);let mut credit=a.reserve(0).unwrap();let message=dm_syntax::admitted_message_using(&a,&mut credit,|out|write_input_failure(out,value,failure.expected())).unwrap();assert_eq!(message,wanted);assert!(credit.bytes()>=message.capacity());drop(message);drop(credit);
-  }assert_eq!(used.load(Ordering::Acquire),0);
+  }assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn prepared_owner_keeps_actual_input_failure_message_until_report_borrow_ends(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
   let mut input=parse_original_signatures_using(SourceText::from("/datum/kept\n"),&a).unwrap();let failure=actual_failure(&a,"1");let reason=super::super::OriginalInputParameterFatal{native:failure,at:failure.token_span().unwrap(),prior_outer_block:false};
   let mut credit=a.reserve(0).unwrap();let message=dm_syntax::admitted_message_using(&a,&mut credit,|out|write_input_failure(out,dm_syntax::OriginalTokenValue::Int(i32::MAX),failure.expected())).unwrap();let address=message.as_ptr();input.prepared.failure_storage=Some(Arc::new(credit));input.prepared.retain_input_failure_message(reason,message).unwrap();
-  assert_eq!(input.prepared.input_failure_message(reason).unwrap().as_ptr(),address,"retain the actual produced allocation, never regenerate display");let wrong=super::super::OriginalInputParameterFatal{at:Span::new(1,2),..reason};assert!(input.prepared.input_failure_message(wrong).is_none());assert!(used.load(Ordering::Acquire)>0);drop(input);assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(input.prepared.input_failure_message(reason).unwrap().as_ptr(),address,"retain the actual produced allocation, never regenerate display");let wrong=super::super::OriginalInputParameterFatal{at:Span::new(1,2),..reason};assert!(input.prepared.input_failure_message(wrong).is_none());assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn input_failure_message_writer_preserves_first_io_and_quota_without_hidden_buffer(){
-  let used=Arc::new(AtomicUsize::new(0));let tiny=SettingAdmission::new(&used,1,&||Ok(()));let mut credit=tiny.reserve(0).unwrap();assert_eq!(dm_syntax::admitted_message_using(&tiny,&mut credit,|out|write_input_failure(out,dm_syntax::OriginalTokenValue::String("large"),dm_syntax::OriginalInputExpected::Identifier)).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);drop(credit);assert_eq!(used.load(Ordering::Acquire),0);
-  let fail=||Err(std::io::Error::from_raw_os_error(1450));let a=SettingAdmission::new(&used,8<<20,&fail);let mut credit=dm_syntax::SettingRootLease::reserve(&used,8<<20,0).unwrap();assert_eq!(dm_syntax::admitted_message_using(&a,&mut credit,|out|write_input_failure(out,dm_syntax::OriginalTokenValue::Int(1),dm_syntax::OriginalInputExpected::Identifier)).unwrap_err().raw_os_error(),Some(1450));drop(credit);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let tiny=SettingAdmission::new(&used,dm_syntax::SettingChargeCounter::root_allocation_bytes() + (1),&||Ok(()));let mut credit=tiny.reserve(0).unwrap();assert_eq!(dm_syntax::admitted_message_using(&tiny,&mut credit,|out|write_input_failure(out,dm_syntax::OriginalTokenValue::String("large"),dm_syntax::OriginalInputExpected::Identifier)).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);drop(credit);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  let fail=||Err(std::io::Error::from_raw_os_error(1450));let a=SettingAdmission::new(&used,8<<20,&fail);let mut credit=dm_syntax::SettingRootLease::reserve(&used,8<<20,0).unwrap();assert_eq!(dm_syntax::admitted_message_using(&a,&mut credit,|out|write_input_failure(out,dm_syntax::OriginalTokenValue::Int(1),dm_syntax::OriginalInputExpected::Identifier)).unwrap_err().raw_os_error(),Some(1450));drop(credit);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -1933,7 +1933,7 @@ mod procedure_canonical_allocation_tests {
     #[test]
     fn funded_canonical_header_preserves_the_existing_wire_frame() {
         use dm_syntax::TokenKind::{Ident, Punctuation};
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         for (text, closing) in [("/proc/p()", 1), ("/proc/p(/* gap */)", 2)] {
             let mut expected = b"dm-declaration-tokens-v1\0".to_vec();
@@ -1947,18 +1947,18 @@ mod procedure_canonical_allocation_tests {
             }
             let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
             assert_eq!(header.bytes, expected);
-            assert_eq!(used.load(Ordering::Acquire), header.bytes.capacity());
+            assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (header.bytes.capacity()));
             drop(header);
-            assert_eq!(used.load(Ordering::Acquire), 0);
+            assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
         }
     }
 
     #[test]
     fn malformed_funded_lexical_header_and_first_io_release_the_buffer() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         assert!(FundedCanonicalHeader::encode("/proc/p(\"unterminated", &a).unwrap().is_none());
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
 
         let calls = Cell::new(0);
         let fault = || {
@@ -1968,7 +1968,7 @@ mod procedure_canonical_allocation_tests {
         let failed = SettingAdmission::new(&used, 32 << 20, &fault);
         let error = FundedCanonicalHeader::encode("/proc/p(a=1)", &failed).err().unwrap();
         assert_eq!(error.raw_os_error(), Some(1450));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -1981,17 +1981,17 @@ mod procedure_canonical_allocation_tests {
             },
             settings: Arc::from([]),
         };
-        let text = r#"/datum/é/proc/probe(a = list(1, "a\n b"), b = (5+-2 /* spacing */ ))"#;
+        let text = r#"/datum/Ã©/proc/probe(a = list(1, "a\n b"), b = (5+-2 /* spacing */ ))"#;
         let mut expected = crate::adapter::canonical(text).unwrap().to_vec();
         expected.extend_from_slice(&proc.canonical_bytes());
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         let mut held = None;
         let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
         let first = append_procedure_canonical(header, &proc, &mut held, &a).unwrap();
         assert_eq!(first.as_ref(), expected.as_slice());
         let retained = held.as_ref().unwrap().bytes();
-        assert_eq!(used.load(Ordering::Acquire), retained);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
         assert_eq!(retained, (2 * std::mem::size_of::<AtomicUsize>() + expected.len())
             .next_multiple_of(std::mem::align_of::<AtomicUsize>()));
 
@@ -2007,18 +2007,18 @@ mod procedure_canonical_allocation_tests {
         let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
         assert_eq!(append_procedure_canonical(header, &proc, &mut held, &failed)
             .unwrap_err().raw_os_error(), Some(1450));
-        assert_eq!(used.load(Ordering::Acquire), retained);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
         assert_eq!(held.as_ref().unwrap().bytes(), retained);
 
-        let too_small = SettingAdmission::new(&used, retained, &|| Ok(()));
+        let too_small = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained), &|| Ok(()));
         assert_eq!(FundedCanonicalHeader::encode(text, &too_small).err().unwrap().kind(),
             std::io::ErrorKind::OutOfMemory);
-        assert_eq!(used.load(Ordering::Acquire), retained);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
         let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
         let second = append_procedure_canonical(header, &proc, &mut held, &a).unwrap();
         assert_eq!(second, first);
-        assert_eq!(used.load(Ordering::Acquire), retained * 2);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained * 2));
         drop((first, second, held));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

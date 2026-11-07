@@ -746,13 +746,13 @@ mod try_tests;
 #[cfg(test)]mod typed_original_scalar_tests{
  use super::*;
  #[test]fn typed_original_constants_preserve_exact_number_and_static_data_without_runtime_promotion(){
-  use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission,Span};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
+  use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission,Span};use std::sync::{Arc, atomic::{Ordering}};
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
   for(raw,value,expected)in[("rounded",V::Float(f32::from_bits(0x3f9e0651)),Constant::Number(f32::from_bits(0x3f9e0651))),("invalid",V::Int(0),Constant::Number(0.0)),("\"[x]\"",V::String("[x]"),Constant::Text("[x]".into()))]{
    let root=Expr{span:Span::new(0,raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap())};
    let decodes=std::cell::Cell::new(0);let result=try_evaluate_original_simple_controlled(&root,|_|Ok::<_,String>(None),|literal|{decodes.set(decodes.get()+1);match literal.original_value(){Some(V::String(text))=>Ok(Some(text.as_bytes().to_vec())),_=>panic!("numeric VALUE must not invoke text decoding")}},|_|Ok(None),|_|Ok(None),None,|_|Ok(())).unwrap();assert_eq!(decodes.get(),usize::from(matches!(expected,Constant::Text(_))));assert_eq!(result,Some(expected));
   }
   let root=Expr{span:Span::new(0,5),kind:ExprKind::Literal(LiteralText::from_original_value_data("\"[x]\"".into(),0,V::String("[x]"),&a).unwrap())};
-  let calls=std::cell::Cell::new(0);let result=try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(&root,|_|Ok::<_,String>(None),|_|{calls.set(calls.get()+1);Ok(None)},|_|Ok(None),|_|Ok(None),None,None,||Ok(())).unwrap();assert_eq!(calls.get(),1);assert_eq!(result,None);drop(root);assert_eq!(counter.load(Ordering::Acquire),0);
+  let calls=std::cell::Cell::new(0);let result=try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(&root,|_|Ok::<_,String>(None),|_|{calls.set(calls.get()+1);Ok(None)},|_|Ok(None),|_|Ok(None),None,None,||Ok(())).unwrap();assert_eq!(calls.get(),1);assert_eq!(result,None);drop(root);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

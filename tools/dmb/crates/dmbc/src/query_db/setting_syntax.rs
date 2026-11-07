@@ -3,12 +3,12 @@
 use super::*;
 use dm_tree::frontend::{BodySyntaxFailure, SettingExpressionInput, SettingExpressionQueries};
 pub(super) fn with_setting_admission<T>(
-    charged: &Arc<std::sync::atomic::AtomicUsize>,
+    charged: &Arc<dm_syntax::SettingChargeCounter>,
     operation: impl FnOnce(&dm_syntax::SettingAdmission<'_>) -> Result<T, BodySyntaxFailure>,
 ) -> Result<T, BodySyntaxFailure> {
     with_admission_stack(charged,dm_exec::COMPILER_STACK_BYTES/16,operation)
 }
-fn with_admission_stack<T>(charged:&Arc<std::sync::atomic::AtomicUsize>,stack_allowance:usize,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
+fn with_admission_stack<T>(charged:&Arc<dm_syntax::SettingChargeCounter>,stack_allowance:usize,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
     let checkpoint = || setting_checkpoint();
     // Explicit worker-work allowance; not syntax meaning or a qualified
     // SourceScope allocation role. BodySyntax postparse charge stays SOFT.
@@ -35,7 +35,7 @@ fn with_admission_stack<T>(charged:&Arc<std::sync::atomic::AtomicUsize>,stack_al
     final_status.map_err(BodySyntaxFailure::Operational)?;
     result
 }
-fn with_primary_admission<T>(charged:&Arc<std::sync::atomic::AtomicUsize>,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
+fn with_primary_admission<T>(charged:&Arc<dm_syntax::SettingChargeCounter>,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
  dm_exec::with_current_compiler_worker_stack(|scope|match scope{
   Some(scope)=>scope.with_primary_allowance(|allowance|with_admission_stack(charged,allowance,operation)).map_err(BodySyntaxFailure::Operational)?,
   None=>with_setting_admission(charged,operation), // existing conservative non-worker fallback; never called worker proof
@@ -406,7 +406,7 @@ mod declaration_admission_tests {
             1024
         );
         drop(lease.take());
-        assert_eq!(db.body_charge.load(std::sync::atomic::Ordering::Acquire), 0);
+        assert_eq!(db.body_charge.load(std::sync::atomic::Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
         let token = crate::daemon::control::Cancellation::default();
         let binding = crate::daemon::control::bind_with_deadline(
             token.clone(),
@@ -774,7 +774,7 @@ mod early_initializer_actual_caller_tests {
   let db=Arc::new(QueryDb::default());let executor=dm_exec::BuildExecutor::new(1).unwrap();executor.install(move||{
    let mut source=String::from("/proc/deep()\n");for depth in 1..80{source.push_str(&" ".repeat(depth*4));source.push_str("if(1)\n");}source.push_str(&" ".repeat(80*4));source.push_str("set name=\"actual\"\n");
    SettingExpressionQueries::with_declaration_admission(&*db,&mut|a|{let result=dm_syntax::parse_original_declaration_skeleton_using(&source,a).map_err(BodySyntaxFailure::Operational)?;assert!(result.fatal().is_none());assert!(result.syntax().diagnostics.is_empty());let mut children=&result.syntax().items[0].children;let mut depth=0;while let Some(item)=children.first(){depth+=1;children=&item.children;}assert_eq!(depth,80,"real accepted native primary chain retained, not flattened or skipped");Ok(())}).unwrap();
-   assert_eq!(db.body_charge.load(std::sync::atomic::Ordering::Acquire),0);
+   assert_eq!(db.body_charge.load(std::sync::atomic::Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   });
  }
 }

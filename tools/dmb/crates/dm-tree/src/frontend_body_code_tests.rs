@@ -190,7 +190,7 @@ fn archive_borrows_original_code_and_callable_roster_after_frontend_drops() {
 
 #[test]
 fn original_setting_root_survives_warm_include_offset_with_same_root_and_current_projection() {
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{Ordering};
     fn selected(
         front: &ColdFrontend,
     ) -> (
@@ -217,7 +217,7 @@ fn original_setting_root_survives_warm_include_offset_with_same_root_and_current
     let mut state = RetainedSemanticTree::default();
     let before = chunks(&mut state, p, q_chunk("", 2));
     let (body, metadata, value) = selected(&before);
-    let counter = Arc::new(AtomicUsize::new(0));
+    let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let checkpoint = || Ok(());
     let a = dm_syntax::SettingAdmission::with_stack_allowance(
         &counter,
@@ -263,7 +263,7 @@ fn original_setting_root_survives_warm_include_offset_with_same_root_and_current
     assert!(shifted
         .original_setting_source(&copied, current_metadata, current_value)
         .is_err());
-    let other = Arc::new(AtomicUsize::new(0));
+    let other = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let foreign = dm_syntax::SettingAdmission::new(&other, 8 * 1024 * 1024, &checkpoint);
     assert!(
         matches!(shifted.original_setting_source(current_body,current_metadata,current_value).unwrap().expression(&foreign),
@@ -273,10 +273,10 @@ fn original_setting_root_survives_warm_include_offset_with_same_root_and_current
     drop(shifted);
     drop(state);
     assert!(
-        counter.load(Ordering::Acquire) > 0,
+        counter.load(Ordering::Acquire) > dm_syntax::SettingChargeCounter::root_allocation_bytes(),
         "borrowed aliases retain actual physical owner credit"
     );
     drop(old);
     drop(new);
-    assert_eq!(counter.load(Ordering::Acquire), 0);
+    assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
 }

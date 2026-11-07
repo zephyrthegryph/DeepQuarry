@@ -209,7 +209,6 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   // private comma producer and SAME tree-owned formal observer are called once.
   let scoped_observer=observer.is_some();if !original_header_before_child_lookahead_scoped(source,&line,frame.scope.context(tokens,original),&mut frame.items,observer){return Ok(false)}frame.pending=Some(PendingPrimary{line,scoped_observer});Ok(true)
  }
- #[cfg(debug_assertions)]
  pub(super) fn trace_current_body_line(&self, span: Span) -> bool {
   self.frames.last().is_some_and(|frame| frame.scope.in_body && frame.pending.as_ref().is_some_and(|pending| {
    let line = &pending.line;
@@ -255,11 +254,11 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
 }
 
 #[cfg(test)]mod tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  fn state<'a,'budget>(a:&'a crate::SettingAdmission<'budget>)->OriginalParseState<'a,'static,'budget>{OriginalParseState{storage:original_storage::Storage::new(a).unwrap(),fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:None,observer_stop:Default::default(),first_outer_block:Default::default()}}
  #[test]fn actual_retained_primary_frames_match_existing_whole_traversal_without_reparsing_prior_headers(){
   for source in["/datum/a\n    var/value=1\n    proc/p()\n        return 2\n/datum/b\n", "/proc/p()\n    if(1)\n        set name=\"actual\"\n    else\n        return\n    return 2\n", "/datum/a\n    proc/p() { return 1; }\n    var/next=2\n"]{
-   let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let original=state(&a);let tokens=lex_spans(source).tokens;let lines=original_declaration_lines(source,Span::new(0,source.len()),&tokens);let mut frames=NativeOriginalPrimaryFrames::new(&a).unwrap();let mut diagnostics=Vec::new();for line in lines{assert!(frames.line(source,TokenWindow::from_vec(&tokens),line,&original,&mut diagnostics).unwrap());}let actual=frames.finish(source,TokenWindow::from_vec(&tokens),&original,&mut diagnostics,true).unwrap();let expected=parse_declaration_skeleton(source);assert_eq!(format!("{actual:?}"),format!("{:?}",expected.items));assert_eq!(diagnostics,expected.diagnostics);drop(actual);drop(original);assert_eq!(counter.load(Ordering::Acquire),0);
+   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let original=state(&a);let tokens=lex_spans(source).tokens;let lines=original_declaration_lines(source,Span::new(0,source.len()),&tokens);let mut frames=NativeOriginalPrimaryFrames::new(&a).unwrap();let mut diagnostics=Vec::new();for line in lines{assert!(frames.line(source,TokenWindow::from_vec(&tokens),line,&original,&mut diagnostics).unwrap());}let actual=frames.finish(source,TokenWindow::from_vec(&tokens),&original,&mut diagnostics,true).unwrap();let expected=parse_declaration_skeleton(source);assert_eq!(format!("{actual:?}"),format!("{:?}",expected.items));assert_eq!(diagnostics,expected.diagnostics);drop(actual);drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   }
  }
  #[test]
@@ -268,7 +267,7 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   let mut source=String::new();
   for ordinal in 0..ROOT_ITEM_BLOCK*2 {writeln!(&mut source,"/datum/root_{ordinal}\n    var/value={ordinal}").unwrap();}
   source.push_str("/datum/prefix\n    var/first,second\n/proc/later()\n    return 2\n");
-  let counter=Arc::new(AtomicUsize::new(0));
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=crate::SettingAdmission::new(&counter,8<<20,&||Ok(()));
   let original=state(&a);
   let tokens=lex_spans(&source).tokens;
@@ -309,9 +308,9 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   assert_eq!(prefix.children.len(),1);
   assert!(prefix.children[0].header.ends_with("first"));
   drop((actual,original));
-  assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_comma_primary_stop_never_requests_a_future_line_and_retains_real_prefix_only(){
-  let source="/datum/a\n    var/first,second\n/proc/later()\n    return 2\n";let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let original=state(&a);let tokens=lex_spans(source).tokens;let lines=original_declaration_lines(source,Span::new(0,source.len()),&tokens);let mut frames=NativeOriginalPrimaryFrames::new(&a).unwrap();let mut diagnostics=Vec::new();let mut consumed=0;for line in lines{consumed+=1;if !frames.line(source,TokenWindow::from_vec(&tokens),line,&original,&mut diagnostics).unwrap(){break}}assert_eq!(consumed,2);let fatal=original.fatal.borrow().unwrap();assert_eq!(fatal.token_span().start,source.find(',').unwrap());let items=frames.finish(source,TokenWindow::from_vec(&tokens),&original,&mut diagnostics,false).unwrap();assert_eq!(items.len(),1);assert_eq!(items[0].children.len(),1);assert!(items[0].children[0].header.ends_with("first"));assert!(diagnostics.is_empty());drop(items);drop(original);assert_eq!(counter.load(Ordering::Acquire),0);
+  let source="/datum/a\n    var/first,second\n/proc/later()\n    return 2\n";let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let original=state(&a);let tokens=lex_spans(source).tokens;let lines=original_declaration_lines(source,Span::new(0,source.len()),&tokens);let mut frames=NativeOriginalPrimaryFrames::new(&a).unwrap();let mut diagnostics=Vec::new();let mut consumed=0;for line in lines{consumed+=1;if !frames.line(source,TokenWindow::from_vec(&tokens),line,&original,&mut diagnostics).unwrap(){break}}assert_eq!(consumed,2);let fatal=original.fatal.borrow().unwrap();assert_eq!(fatal.token_span().start,source.find(',').unwrap());let items=frames.finish(source,TokenWindow::from_vec(&tokens),&original,&mut diagnostics,false).unwrap();assert_eq!(items.len(),1);assert_eq!(items[0].children.len(),1);assert!(items[0].children[0].header.ends_with("first"));assert!(diagnostics.is_empty());drop(items);drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }

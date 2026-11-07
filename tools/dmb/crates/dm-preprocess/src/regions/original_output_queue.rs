@@ -45,26 +45,26 @@ impl<'s>OriginalOutputQueue<'s>{
 }
 #[cfg(test)]mod tests{
  use super::*;use crate::macro_expansion::{OriginalMacroTextValue as Text,OriginalMacroOrigin as Origin};
- use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use std::sync::{Arc, atomic::{Ordering}};
  fn token(value:Value<'static>)->Token<'static>{Token{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,origin:Origin{physical:dm_syntax::Span::default(),line:0,byte_column:None,occurrence:0,invocation:false},value}}
  fn ident(name:&'static str)->Token<'static>{token(Value::Ident{spelling:Text::Borrowed(name),whitespace:false})}
  #[test]fn defined_guard_uses_only_actual_undrained_queue_and_compaction_keeps_exact_token_order(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut q=OriginalOutputQueue::new(&a).unwrap();
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut q=OriginalOutputQueue::new(&a).unwrap();
   q.push(ident("before"),&a).unwrap();q.push(ident("defined"),&a).unwrap();q.push(token(Value::Punct("(")),&a).unwrap();assert!(q.preserves_defined_operand());
   assert!(matches!(q.pop().unwrap(),Some(Token{value:Value::Ident{spelling,..},..})if spelling.get()=="before"));assert!(q.preserves_defined_operand());
   assert!(matches!(q.pop().unwrap(),Some(Token{value:Value::Ident{spelling,..},..})if spelling.get()=="defined"));assert!(!q.preserves_defined_operand());
   q.push(ident("after"),&a).unwrap();assert!(matches!(q.pop().unwrap(),Some(Token{value:Value::Punct("("),..})));assert!(matches!(q.pop().unwrap(),Some(Token{value:Value::Ident{spelling,..},..})if spelling.get()=="after"));assert!(q.pop().unwrap().is_none());
   for _ in 0..64{q.push(ident("defined"),&a).unwrap();q.push(token(Value::Punct("(")),&a).unwrap();assert!(q.preserves_defined_operand());q.pop().unwrap();assert!(!q.preserves_defined_operand());q.pop().unwrap();}
-  assert!(q.rows.capacity()<=4);drop(q);assert_eq!(used.load(Ordering::Acquire),0);
+  assert!(q.rows.capacity()<=4);drop(q);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn queue_retains_first_real_io_and_cannot_be_resumed_after_failed_append(){
-  let used=Arc::new(AtomicUsize::new(0));let fail=std::cell::Cell::new(false);let checkpoint=||if fail.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())};let a=SettingAdmission::new(&used,1<<20,&checkpoint);let mut q=OriginalOutputQueue::new(&a).unwrap();
-  q.push(ident("defined"),&a).unwrap();fail.set(true);assert_eq!(q.push(token(Value::Punct("(")),&a).unwrap_err().raw_os_error(),Some(1450));fail.set(false);assert!(q.push(ident("retry"),&a).is_err());assert!(q.pop().is_err());assert!(!q.preserves_defined_operand());drop(q);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let fail=std::cell::Cell::new(false);let checkpoint=||if fail.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())};let a=SettingAdmission::new(&used,1<<20,&checkpoint);let mut q=OriginalOutputQueue::new(&a).unwrap();
+  q.push(ident("defined"),&a).unwrap();fail.set(true);assert_eq!(q.push(token(Value::Punct("(")),&a).unwrap_err().raw_os_error(),Some(1450));fail.set(false);assert!(q.push(ident("retry"),&a).is_err());assert!(q.pop().is_err());assert!(!q.preserves_defined_operand());drop(q);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]fn actual_delayed_queue_drain_retains_each_tokens_lineage_after_all_live_frames_pop(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut q=OriginalOutputQueue::new(&a).unwrap();let origin=Origin{physical:dm_syntax::Span::new(0,1),line:1,byte_column:Some(1),occurrence:0,invocation:true};q.trace_pushed_using("OUTER",origin,1,None,None,&a).unwrap();q.push(ident("first"),&a).unwrap();q.trace_pushed_using("INNER",origin,2,Some(origin),None,&a).unwrap();q.push(ident("second"),&a).unwrap();q.trace_popped_using(1,&a).unwrap();q.trace_popped_using(0,&a).unwrap();assert_eq!(q.trace.depth(),0);
-  let(first,outer)=q.pop_with_trace().unwrap().unwrap();let(second,inner)=q.pop_with_trace().unwrap().unwrap();assert!(matches!(first.value,Value::Ident{spelling,..}if spelling.get()=="first"));assert!(matches!(second.value,Value::Ident{spelling,..}if spelling.get()=="second"));let mut names=Vec::new();outer.visit_inner_to_outer_using(&a,|row|{names.push(row.name.to_owned());Ok(())}).unwrap();assert_eq!(names,["OUTER"]);names.clear();inner.visit_inner_to_outer_using(&a,|row|{names.push(row.name.to_owned());Ok(())}).unwrap();assert_eq!(names,["INNER","OUTER"]);drop((q,outer));assert!(used.load(Ordering::Acquire)>0,"delayed snapshot owns its actual lineage storage");drop(inner);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut q=OriginalOutputQueue::new(&a).unwrap();let origin=Origin{physical:dm_syntax::Span::new(0,1),line:1,byte_column:Some(1),occurrence:0,invocation:true};q.trace_pushed_using("OUTER",origin,1,None,None,&a).unwrap();q.push(ident("first"),&a).unwrap();q.trace_pushed_using("INNER",origin,2,Some(origin),None,&a).unwrap();q.push(ident("second"),&a).unwrap();q.trace_popped_using(1,&a).unwrap();q.trace_popped_using(0,&a).unwrap();assert_eq!(q.trace.depth(),0);
+  let(first,outer)=q.pop_with_trace().unwrap().unwrap();let(second,inner)=q.pop_with_trace().unwrap().unwrap();assert!(matches!(first.value,Value::Ident{spelling,..}if spelling.get()=="first"));assert!(matches!(second.value,Value::Ident{spelling,..}if spelling.get()=="second"));let mut names=Vec::new();outer.visit_inner_to_outer_using(&a,|row|{names.push(row.name.to_owned());Ok(())}).unwrap();assert_eq!(names,["OUTER"]);names.clear();inner.visit_inner_to_outer_using(&a,|row|{names.push(row.name.to_owned());Ok(())}).unwrap();assert_eq!(names,["INNER","OUTER"]);drop((q,outer));assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes(),"delayed snapshot owns its actual lineage storage");drop(inner);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
 }

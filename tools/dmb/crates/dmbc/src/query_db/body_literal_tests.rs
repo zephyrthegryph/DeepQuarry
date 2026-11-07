@@ -54,11 +54,11 @@ fn actual_one_shot_zero_set_static_body_uses_same_counter_after_demand_without_k
  let front=one_shot_frontend(source,&db);let body=&front.bodies[0];
  assert!(front.procedure_settings(body).unwrap().is_some(),"actual original metadata receipt exists without a body parse");
  assert!(front.snapshot.tree.member(body.member).unwrap().metadata.procedure.as_ref().unwrap().settings.is_empty());
- assert_eq!(db.body_charge.load(Ordering::Acquire),0);
+ assert_eq!(db.body_charge.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  let archive=front.body_archive().unwrap();archive.callable_header_policy_origin(body.member).unwrap();
  let raw=front.files.iter().find(|f|f.captured).expect("original captured compiler source");assert!(raw.text.contains("var/static/value"));
  assert_eq!(db.db().stats(BODY_SYNTAX).computed,0,"raw/header handling never demands a body query");
- assert_eq!(db.body_charge.load(Ordering::Acquire),0,"header handling does not prepare ordinary literal children");
+ assert_eq!(db.body_charge.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"header handling does not prepare ordinary literal children");
  let arena=dm_tree::frontend::BodyArena::new_typed(&front,|_|true);
  let owner=arena.with_parsed_checked(body,|parsed|parsed.shared_statement_body().expect("actual checked one-shot statement owner")).unwrap();
  assert!(owner.has_native_literal_syntax());
@@ -67,23 +67,23 @@ fn actual_one_shot_zero_set_static_body_uses_same_counter_after_demand_without_k
  assert!(Arc::ptr_eq(&owner,&warm));assert_eq!(static_literal(&warm).parts().unwrap().unwrap().expressions.as_ptr(),child);
  let mut retained=0;arena.visit_retained(|_,_|retained+=1);assert_eq!(retained,1,"unused second body stays unparsed");
  assert_eq!(db.db().stats(BODY_SYNTAX).computed,0,"one-shot reuses direct provider permit; it does not attach/query Kind4");
- let alias=static_literal(&owner).clone();let charged=db.body_charge.load(Ordering::Acquire);assert!(charged>0,"same actual QueryDb counter owns canonical body storage");
+ let alias=static_literal(&owner).clone();let charged=db.body_charge.load(Ordering::Acquire);assert!(charged>dm_syntax::SettingChargeCounter::root_allocation_bytes(),"same actual QueryDb counter owns canonical body storage");
  drop(warm);drop(owner);drop(arena);assert_eq!(db.body_charge.load(Ordering::Acquire),charged,"literal alias keeps its original physical-free credit");
- drop(alias);assert_eq!(db.body_charge.load(Ordering::Acquire),0);
+ drop(alias);assert_eq!(db.body_charge.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
 }
 #[test]
 fn actual_one_shot_zero_set_body_quota_refuses_atomically_then_same_source_retries(){
  let db=Arc::new(QueryDb::default());let front=one_shot_frontend("/proc/p()\n    var/static/value = \"value [1 + 2]\"\n    return value\n",&db);
  let body=&front.bodies[0];let arena=dm_tree::frontend::BodyArena::new_typed(&front,|_|true);
  let healthy=||Ok(());let permit=dm_syntax::SettingAdmission::new(&db.body_charge,BUDGET,&healthy);
- let held=permit.reserve(BUDGET).unwrap();
+ let held=permit.reserve(BUDGET - dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
  let failure=arena.with_parsed_checked(body,|_|panic!("failed preparation must not expose a body")).unwrap_err();
  assert!(matches!(failure,BodySyntaxFailure::Operational(ref actual)if actual.kind()==io::ErrorKind::OutOfMemory));
  let mut retained=0;arena.visit_retained(|_,_|retained+=1);assert_eq!(retained,0,"actual quota refusal does not cache syntax/error");
- assert_eq!(db.body_charge.load(Ordering::Acquire),BUDGET);drop(held);drop(permit);assert_eq!(db.body_charge.load(Ordering::Acquire),0);
+ assert_eq!(db.body_charge.load(Ordering::Acquire),BUDGET);drop(held);drop(permit);assert_eq!(db.body_charge.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  let owner=arena.with_parsed_checked(body,|parsed|parsed.shared_statement_body().unwrap()).unwrap();
  assert!(owner.has_native_literal_syntax());assert_eq!(static_literal(&owner).retained_parts().unwrap().unwrap().unwrap().expressions.len(),1);
- assert_eq!(db.db().stats(BODY_SYNTAX).computed,0);drop(owner);drop(arena);assert_eq!(db.body_charge.load(Ordering::Acquire),0);
+ assert_eq!(db.db().stats(BODY_SYNTAX).computed,0);drop(owner);drop(arena);assert_eq!(db.body_charge.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
 }
 #[test]
 fn unattached_compatibility_zero_set_body_keeps_owned_lazy_literal_behavior(){

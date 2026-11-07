@@ -99,10 +99,10 @@ impl<'a> SourceTexts<'a>{
 #[cfg(test)]
 mod tests{
     use super::*;
-    use std::sync::atomic::{AtomicUsize,Ordering};
+    use std::sync::atomic::{Ordering};
     #[test]
     fn exact_original_path_index_preserves_legacy_order_and_distinct_first_spellings(){
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
         let mut paths=OriginalPlanPaths::new(&a).unwrap();
         let first=Arc::new(PathBuf::from("parent/./file.dm"));
@@ -126,10 +126,10 @@ mod tests{
         assert!(paths.note(opened.clone(),Some("changed".into()),&a).is_err());
         assert_eq!(used.load(Ordering::Acquire),old);
         assert!(paths.sources().get(&first).unwrap().same_view(&text));
-        let other=Arc::new(AtomicUsize::new(0));
+        let other=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let foreign=SettingAdmission::new(&other,1<<20,&||Ok(()));
         assert_eq!(paths.note(opened,None,&foreign).unwrap_err().kind(),io::ErrorKind::InvalidInput);
         drop(paths);
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

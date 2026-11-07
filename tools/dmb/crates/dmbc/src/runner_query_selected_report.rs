@@ -30,7 +30,7 @@ impl SelectedReportPlan {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
             Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
-            Q::SELECTED_LIFEFORMS_PLAYER_LINK, Q::SELECTED_REFERENCE_POLICIES,
+            Q::SELECTED_LIFEFORMS_PLAYER_LINK, Q::SELECTED_REFERENCE_POLICIES, &[Q::RequirementBool],
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
         let mut count = 0;
@@ -274,6 +274,22 @@ impl ReportStage<'_> {
                     projection.row(site, None, &mut control)?;
                 }
             }
+            UnionRows::RequirementBool(data) => {
+                if self.selected != Roster::WithRequirementBool.names()
+                    || !std::ptr::eq(meta, data.metadata())
+                    || !std::ptr::eq(meta, dq_analyze::captured_requirement_bool_pages::metadata())
+                    || !matches!(meta.policy, Policy::Hard) || !meta.allow.is_empty()
+                    || !data.allow_used().is_empty()
+                    || data.sites().len() != data.source_text().len()
+                {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData,
+                        "selected requirement_bool findings differ from their actual Hard/no-ALLOW source shape"));
+                }
+                for (site, text) in data.sites().iter().zip(data.source_text()) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
+                projection.notes(data.notes(), &mut control)?;
+            }
             UnionRows::SysReactive(data) => {
                 if self.selected != Roster::WithSysReactive.names()
                     || !std::ptr::eq(meta, dq_analyze::sys_reactive_policy::metadata())
@@ -465,6 +481,7 @@ mod selected_plan_tests {
             (Roster::WithPlayerLink, &[Q::PlayerLink]),
             (Roster::WithLifeformsAndPlayerLink, Q::SELECTED_LIFEFORMS_PLAYER_LINK),
             (Roster::WithReferencePolicies, Q::SELECTED_REFERENCE_POLICIES),
+            (Roster::WithRequirementBool, &[Q::RequirementBool]),
         ];
         for (roster, questions) in expected {
             let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))

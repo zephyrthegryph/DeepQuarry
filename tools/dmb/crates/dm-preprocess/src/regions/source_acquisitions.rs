@@ -130,11 +130,11 @@ impl SourceAcquisitions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{Ordering};
 
     #[test]
     fn dense_source_rows_keep_real_acquisition_identity_under_low_cap() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 64 << 10, &|| Ok(()));
         let first = crate::AcquiredSource::from_original_bytes(b"/datum/a\n".to_vec(), 1);
         let second = crate::AcquiredSource::from_original_bytes(b"/datum/a\n".to_vec(), 2);
@@ -157,13 +157,13 @@ mod tests {
         drop(rows);
         assert_eq!(used.load(Ordering::Acquire), reserved);
         drop(alias);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn failed_original_growth_keeps_the_prior_actual_occurrence() {
-        let used = Arc::new(AtomicUsize::new(0));
-        let a = SettingAdmission::new(&used, 256, &|| Ok(()));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let a = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (256), &|| Ok(()));
         let source = crate::AcquiredSource::from_original_bytes(b"/datum/a\n".to_vec(), 1);
         let mut rows = SourceAcquisitions::original(&a).unwrap();
         rows.append_original(0, source.lease().clone(), &a).unwrap();
@@ -174,6 +174,6 @@ mod tests {
         assert!(rows.get(&1024).is_none());
         assert_eq!(used.load(Ordering::Acquire), before);
         drop(rows);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

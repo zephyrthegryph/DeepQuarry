@@ -61,7 +61,7 @@ mod static_pool_io_tests {
     use super::*;
     use crate::{SourceAcquisitionLease, macro_expansion::{OriginalMacroOrigin as Origin, OriginalMacroTextValue}};
     use dm_syntax::{OriginalStringMode, Span};
-    use std::{cell::Cell, path::Path, sync::{Arc, atomic::{AtomicUsize, Ordering}}};
+    use std::{cell::Cell, path::Path, sync::{atomic::{Ordering}}};
 
     struct Source {
         lease: SourceAcquisitionLease,
@@ -80,7 +80,7 @@ mod static_pool_io_tests {
 
     #[test]
     fn warm_static_pool_still_requires_the_next_actual_raw_provider_loan() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let source = Source {
             lease: SourceAcquisitionLease::from_raw_original_bytes(b"\"same\" \"same\" \"same\"".to_vec(), 17u64),
@@ -105,6 +105,6 @@ mod static_pool_io_tests {
         assert_eq!(source.reads.get(), 4);
         assert_eq!(used.load(Ordering::Acquire), paid);
         drop((one, two, pool, frame));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

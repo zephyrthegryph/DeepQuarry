@@ -54,6 +54,7 @@ impl Recipe<'_>{
   let result = {
    let mut source=OriginalLogicalProducer::new(&mut driver,self.provider,&mut notices,&mut host,&mut control,a)?;
    if self.loan_batch_geometry{source.enable_batch_geometry();}
+   if self.history==HistoryPurpose::Diagnostic{source.enable_body_spelling_projection();}
    shared.borrow_mut().bind(&source.initial_delivery(),a)?;
    run(&mut source)
   };

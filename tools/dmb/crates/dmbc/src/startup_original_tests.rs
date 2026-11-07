@@ -41,7 +41,7 @@ fn original_startup_replaces_foreign_counter_cached_parent_then_same_input_reuse
  let first=Arc::new(crate::query_db::QueryDb::default());let executor=dm_exec::BuildExecutor::new(1).unwrap();let mut state=dm_tree::frontend::RetainedSemanticTree::default();let frontend=version(&first,&executor,&mut state);let artifacts=StartupArtifacts::default();
  {let startup=capture(&frontend,&executor,Some(&artifacts)).unwrap();assert!(receipt(&startup).retained_statement_body().is_some());}
  let old=artifacts.lookup(&key(&frontend)).unwrap();let old_parent=Arc::clone(old.retained_statement_body().unwrap());
- assert!(crate::query_db::body_syntax_counter_for_test(&first).load(Ordering::Acquire)>0);
+ assert!(crate::query_db::body_syntax_counter_for_test(&first).load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());
  let second=Arc::new(crate::query_db::QueryDb::default());
  let current_frontend=version(&second,&executor,&mut state);
  let rebound=old.bind(&current_frontend,&current_frontend.bodies[0]).unwrap();
@@ -52,7 +52,7 @@ fn original_startup_replaces_foreign_counter_cached_parent_then_same_input_reuse
  let current=capture(&frontend,&executor,Some(&artifacts)).unwrap();let current_parent=Arc::clone(receipt(&current).retained_statement_body().unwrap());
  assert!(!Arc::ptr_eq(&old_parent,&current_parent),"foreign counter cache is not source admission");
  assert_eq!(artifacts.recomputed.load(Ordering::Relaxed),before+1);
- let charged=crate::query_db::body_syntax_counter_for_test(&second).load(Ordering::Acquire);assert!(charged>0);
+ let charged=crate::query_db::body_syntax_counter_for_test(&second).load(Ordering::Acquire);assert!(charged>dm_syntax::SettingChargeCounter::root_allocation_bytes());
  let before_hit=artifacts.hits.load(Ordering::Relaxed);let warm=capture(&frontend,&executor,Some(&artifacts)).unwrap();
  assert!(Arc::ptr_eq(receipt(&warm).retained_statement_body().unwrap(),&current_parent));
  assert_eq!(artifacts.hits.load(Ordering::Relaxed),before_hit+1);assert_eq!(crate::query_db::body_syntax_counter_for_test(&second).load(Ordering::Acquire),charged);
@@ -64,14 +64,14 @@ fn original_startup_quota_failure_publishes_no_plan_or_bad_syntax_and_same_input
  let legacy_arena=dm_tree::frontend::BodyArena::new_typed(&front,dm_codegen_byond::typed_statements_supported_for_capture);
  let legacy=capture_facts_with_executor_and_bodies_and_artifacts(&front,&[],&executor,&legacy_arena,Some(&artifacts),None).unwrap();
  let old=artifacts.lookup(&key(&front)).unwrap();assert!(!old.retained_statement_body().is_some_and(|body|body.has_native_literal_syntax()));drop(legacy);drop(legacy_arena);
- assert_eq!(crate::query_db::body_syntax_counter_for_test(&db).load(Ordering::Acquire),0);
+ assert_eq!(crate::query_db::body_syntax_counter_for_test(&db).load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  let host=db.clone() as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let front=front.with_setting_expression_queries(&host).unwrap();
- let healthy=||Ok(());let budget=crate::query_db::body_syntax_budget_for_test();let admission=dm_syntax::SettingAdmission::new(crate::query_db::body_syntax_counter_for_test(&db),budget,&healthy);let held=admission.reserve(budget).unwrap();
+ let healthy=||Ok(());let budget=crate::query_db::body_syntax_budget_for_test();let admission=dm_syntax::SettingAdmission::new(crate::query_db::body_syntax_counter_for_test(&db),budget,&healthy);let held=admission.reserve(budget - crate::query_db::body_syntax_counter_for_test(&db).load(Ordering::Acquire)).unwrap();
  let arena=dm_tree::frontend::BodyArena::new_typed(&front,dm_codegen_byond::typed_statements_supported_for_capture);let before=artifacts.recomputed.load(Ordering::Relaxed);
  let failure=capture_original_with_artifacts_checked(&front,&[],&executor,&arena,&artifacts).err().expect("actual current body quota");
  assert!(matches!(failure,StartupFailure::Operational(ref actual)if actual.kind()==std::io::ErrorKind::OutOfMemory));
  assert_eq!(artifacts.recomputed.load(Ordering::Relaxed),before);assert!(Arc::ptr_eq(&old,&artifacts.lookup(&key(&front)).unwrap()));
- drop(held);drop(admission);assert_eq!(crate::query_db::body_syntax_counter_for_test(&db).load(Ordering::Acquire),0);
+ drop(held);drop(admission);assert_eq!(crate::query_db::body_syntax_counter_for_test(&db).load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  let current=capture_original_with_artifacts_checked(&front,&[],&executor,&arena,&artifacts).unwrap();
  assert!(receipt(&current).retained_statement_body().unwrap().has_native_literal_syntax());assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0);
 }

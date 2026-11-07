@@ -55,28 +55,28 @@ impl<T> AdapterRows<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{Ordering};
 
     #[test]
     fn denied_adapter_growth_keeps_existing_rows_and_refunds_at_last_owner() {
-        let used = Arc::new(AtomicUsize::new(0));
-        let a = SettingAdmission::new(&used, 95, &|| Ok(()));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let a = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (95), &|| Ok(()));
         let mut rows = AdapterRows::default();
         for value in 0..4u64 {
             rows.reserve_checked(&a).unwrap();
             rows.push_reserved(value);
         }
-        assert_eq!(used.load(Ordering::Acquire), 32);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (32));
         assert_eq!(rows.reserve_checked(&a).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
         assert_eq!(&*rows, [0,1,2,3]);
-        assert_eq!(used.load(Ordering::Acquire), 32);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (32));
         drop(rows);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn actual_stage_to_shared_keeps_overlap_and_releases_only_source_buffer() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 4096, &|| Ok(()));
         let mut rows = AdapterRows::default();
         rows.reserve_checked(&a).unwrap();
@@ -87,6 +87,6 @@ mod tests {
         assert_eq!(shared[0].as_ref(), "same existing payload");
         assert_eq!(before - used.load(Ordering::Acquire), 4*std::mem::size_of::<Arc<str>>());
         drop((shared,retained));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

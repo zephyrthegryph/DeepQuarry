@@ -133,7 +133,7 @@ mod tests;
 #[cfg(test)]
 mod projected_tests {
     use super::*;
-    use std::sync::{atomic::AtomicUsize, Arc};
+
     struct Provider {
         root: dm_syntax::SettingExpression,
     }
@@ -153,7 +153,7 @@ mod projected_tests {
     fn invalid_setting_diagnostics_keep_current_header_and_expression_spans_after_warm_padding() {
         let rhs = "9";
         let input = dm_syntax::lex_spans(rhs);
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
         let a = dm_syntax::SettingAdmission::new(&counter, 8 * 1024 * 1024, &checkpoint);
         let original = dm_syntax::prepare_setting_expression(

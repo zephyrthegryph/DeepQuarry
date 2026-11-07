@@ -238,64 +238,64 @@ impl FundedMacroOutput{
 #[cfg(test)]mod tests{
     use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
     #[test]fn real_text_points_move_keeps_exact_allocations_funded_until_final_payload_drop(){
-        let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
         let mut text=MacroText::new(&a).unwrap();text.push_str("α漢\r\n",&a).unwrap();let mut points=MacroRows::new(&a).unwrap();points.push(MacroBytePoint{output:dm_syntax::Span::new(0,text.len()),source_start:7,invocation:true},&a).unwrap();
-        let expected=text.bytes.capacity()+points.capacity()*std::mem::size_of::<MacroBytePoint>();assert_eq!(used.load(Ordering::Acquire),expected);
-        let output=FundedMacroOutput::from_buffers(text,Some(points),&a).unwrap();assert_eq!(output.text(),"α漢\r\n");drop(a);assert_eq!(used.load(Ordering::Acquire),expected);
-        let(text,points,root)=output.into_parts();assert_eq!(root.bytes(),text.capacity()+points.as_ref().unwrap().capacity()*std::mem::size_of::<MacroBytePoint>());drop(text);drop(points);assert_eq!(used.load(Ordering::Acquire),expected,"credit cannot disappear before its actual final owner");drop(root);assert_eq!(used.load(Ordering::Acquire),0);
+        let expected=text.bytes.capacity()+points.capacity()*std::mem::size_of::<MacroBytePoint>();assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (expected));
+        let output=FundedMacroOutput::from_buffers(text,Some(points),&a).unwrap();assert_eq!(output.text(),"α漢\r\n");drop(a);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (expected));
+        let(text,points,root)=output.into_parts();assert_eq!(root.bytes(),text.capacity()+points.as_ref().unwrap().capacity()*std::mem::size_of::<MacroBytePoint>());drop(text);drop(points);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (expected),"credit cannot disappear before its actual final owner");drop(root);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]
     fn paged_macro_rows_cross_boundary_without_a_second_full_buffer() {
         use std::mem::size_of;
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let directory = 4 * size_of::<MacroRows<u64>>();
         let page = TOKEN_PAGE_ROWS * size_of::<u64>();
-        let full = SettingAdmission::new(&used, 3 * page, &|| Ok(()));
+        let full = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (3 * page), &|| Ok(()));
         let mut rows = MacroTokenRows::new(&full).unwrap();
         for index in 0..TOKEN_PAGE_ROWS {
             rows.push(index as u64, &full).unwrap();
         }
-        assert_eq!(used.load(Ordering::Acquire), page);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (page));
 
         // The directory can be retained but no unfunded data page may publish.
-        let tight = SettingAdmission::new(&used, 2 * page + directory - 1, &|| Ok(()));
+        let tight = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (2 * page + directory - 1), &|| Ok(()));
         assert_eq!(rows.push(TOKEN_PAGE_ROWS as u64, &tight).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
-        assert_eq!(used.load(Ordering::Acquire), page + directory);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (page + directory));
         assert!(rows.iter().copied().eq(0..TOKEN_PAGE_ROWS as u64));
 
-        let exact = SettingAdmission::new(&used, 2 * page + directory, &|| Ok(()));
+        let exact = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (2 * page + directory), &|| Ok(()));
         rows.push(TOKEN_PAGE_ROWS as u64, &exact).unwrap();
-        assert_eq!(used.load(Ordering::Acquire), 2 * page + directory);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (2 * page + directory));
         assert!(rows.iter().copied().eq(0..=TOKEN_PAGE_ROWS as u64));
         drop(rows);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]fn denied_growth_keeps_existing_data_and_credit_and_same_root_recovers_after_drop(){
-        let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,12,&||Ok(()));let mut text=MacroText::new(&a).unwrap();text.push_str("abcd",&a).unwrap();let before=used.load(Ordering::Acquire);let err=text.push_str("012345678901",&a).unwrap_err();assert_eq!(err.kind(),io::ErrorKind::OutOfMemory);assert_eq!(text.as_str(),"abcd");assert_eq!(used.load(Ordering::Acquire),before);drop(text);assert_eq!(used.load(Ordering::Acquire),0);let retry=SettingAdmission::new(&used,12,&||Ok(()));let mut text=MacroText::new(&retry).unwrap();text.push_str("again",&retry).unwrap();drop(text);assert_eq!(used.load(Ordering::Acquire),0);
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,dm_syntax::SettingChargeCounter::root_allocation_bytes() + (12),&||Ok(()));let mut text=MacroText::new(&a).unwrap();text.push_str("abcd",&a).unwrap();let before=used.load(Ordering::Acquire);let err=text.push_str("012345678901",&a).unwrap_err();assert_eq!(err.kind(),io::ErrorKind::OutOfMemory);assert_eq!(text.as_str(),"abcd");assert_eq!(used.load(Ordering::Acquire),before);drop(text);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());let retry=SettingAdmission::new(&used,dm_syntax::SettingChargeCounter::root_allocation_bytes() + (12),&||Ok(()));let mut text=MacroText::new(&retry).unwrap();text.push_str("again",&retry).unwrap();drop(text);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]fn first_actual_1450_during_overlap_drops_new_credit_without_mutating_existing_payload(){
-        use std::cell::Cell;let used=Arc::new(AtomicUsize::new(0));let calls=Cell::new(0);let deny=Cell::new(usize::MAX);let checkpoint=||{let n=calls.get()+1;calls.set(n);if n==deny.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=SettingAdmission::new(&used,4096,&checkpoint);let mut text=MacroText::new(&a).unwrap();text.push_str("abcd",&a).unwrap();let before=used.load(Ordering::Acquire);deny.set(calls.get()+3);let error=text.push_str("e",&a).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(text.as_str(),"abcd");assert_eq!(used.load(Ordering::Acquire),before);drop(text);assert_eq!(used.load(Ordering::Acquire),0);
+        use std::cell::Cell;let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let calls=Cell::new(0);let deny=Cell::new(usize::MAX);let checkpoint=||{let n=calls.get()+1;calls.set(n);if n==deny.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=SettingAdmission::new(&used,4096,&checkpoint);let mut text=MacroText::new(&a).unwrap();text.push_str("abcd",&a).unwrap();let before=used.load(Ordering::Acquire);deny.set(calls.get()+3);let error=text.push_str("e",&a).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(text.as_str(),"abcd");assert_eq!(used.load(Ordering::Acquire),before);drop(text);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
-    #[test]fn foreign_operation_cannot_reuse_or_steal_actual_macro_allocation_credit(){let x=Arc::new(AtomicUsize::new(0));let y=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&x,4096,&||Ok(()));let b=SettingAdmission::new(&y,4096,&||Ok(()));let mut text=MacroText::new(&a).unwrap();text.push_str("held",&a).unwrap();assert_eq!(text.push_str("!",&b).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(text.as_str(),"held");assert_eq!(y.load(Ordering::Acquire),0);drop(text);assert_eq!(x.load(Ordering::Acquire),0);}
+    #[test]fn foreign_operation_cannot_reuse_or_steal_actual_macro_allocation_credit(){let x=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let y=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&x,4096,&||Ok(()));let b=SettingAdmission::new(&y,4096,&||Ok(()));let mut text=MacroText::new(&a).unwrap();text.push_str("held",&a).unwrap();assert_eq!(text.push_str("!",&b).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(text.as_str(),"held");assert_eq!(y.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());drop(text);assert_eq!(x.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
     #[test]fn actual_element_drop_and_panic_unwind_keep_credit_until_payload_destructors_finish(){
         use std::cell::Cell;use std::panic::{catch_unwind,AssertUnwindSafe};
-        struct Probe{used:Arc<AtomicUsize>,expected:Arc<AtomicUsize>,seen:Arc<AtomicUsize>}
+        struct Probe{used:Arc<dm_syntax::SettingChargeCounter>,expected:Arc<AtomicUsize>,seen:Arc<AtomicUsize>}
         impl Drop for Probe{fn drop(&mut self){assert!(self.used.load(Ordering::Acquire)>=self.expected.load(Ordering::Acquire),"actual element destructor lost its allocation credit");self.seen.fetch_add(1,Ordering::AcqRel);}}
-        let used=Arc::new(AtomicUsize::new(0));let expected=Arc::new(AtomicUsize::new(0));let seen=Arc::new(AtomicUsize::new(0));let entered=Cell::new(false);
-        let result=catch_unwind(AssertUnwindSafe(||{let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut rows=MacroRows::new(&a).unwrap();for _ in 0..3{rows.push(Probe{used:used.clone(),expected:expected.clone(),seen:seen.clone()},&a).unwrap();}expected.store(rows.capacity()*std::mem::size_of::<Probe>(),Ordering::Release);assert_eq!(used.load(Ordering::Acquire),expected.load(Ordering::Acquire));entered.set(true);panic!("deliberate actual macro-owner unwind");}));
-        assert!(result.is_err());assert!(entered.get());assert_eq!(seen.load(Ordering::Acquire),3);assert_eq!(used.load(Ordering::Acquire),0,"all credit released only after complete real unwind");
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let expected=Arc::new(AtomicUsize::new(0));let seen=Arc::new(AtomicUsize::new(0));let entered=Cell::new(false);
+        let result=catch_unwind(AssertUnwindSafe(||{let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut rows=MacroRows::new(&a).unwrap();for _ in 0..3{rows.push(Probe{used:used.clone(),expected:expected.clone(),seen:seen.clone()},&a).unwrap();}expected.store(rows.capacity()*std::mem::size_of::<Probe>(),Ordering::Release);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (expected.load(Ordering::Acquire)));entered.set(true);panic!("deliberate actual macro-owner unwind");}));
+        assert!(result.is_err());assert!(entered.get());assert_eq!(seen.load(Ordering::Acquire),3);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"all credit released only after complete real unwind");
     }
     #[test]fn actual_layout_overflow_precedes_global_allocation_and_same_domain_retry_recovers(){
-        let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4096,&||Ok(()));
-        let error=empty_exact::<u64>(usize::MAX,&a).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert!(error.to_string().contains("layout overflow"));assert_eq!(used.load(Ordering::Acquire),0);
-        let retry=SettingAdmission::new(&used,4096,&||Ok(()));let mut rows=MacroRows::new(&retry).unwrap();rows.push(7u64,&retry).unwrap();assert_eq!(rows.as_slice(),[7]);assert_eq!(used.load(Ordering::Acquire),rows.capacity()*std::mem::size_of::<u64>());drop(rows);assert_eq!(used.load(Ordering::Acquire),0);
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4096,&||Ok(()));
+        let error=empty_exact::<u64>(usize::MAX,&a).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert!(error.to_string().contains("layout overflow"));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+        let retry=SettingAdmission::new(&used,4096,&||Ok(()));let mut rows=MacroRows::new(&retry).unwrap();rows.push(7u64,&retry).unwrap();assert_eq!(rows.as_slice(),[7]);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (rows.capacity()*std::mem::size_of::<u64>()));drop(rows);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
 }
 
 impl AsRef<str> for MacroText{fn as_ref(&self)->&str{self.as_str()}}
 
-#[cfg(test)]mod cursor_owner_tests{use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};#[test]fn drained_and_partial_standard_iterator_retain_real_allocation_credit_until_iterator_drop(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4096,&||Ok(()));let mut rows=MacroRows::new(&a).unwrap();for n in 0..3{rows.push(n,&a).unwrap();}let held=used.load(Ordering::Acquire);let mut cursor=rows.into_cursor();assert_eq!(cursor.next(),Some(0));assert_eq!(cursor.remaining(),2);assert_eq!(used.load(Ordering::Acquire),held);assert_eq!(cursor.next(),Some(1));assert_eq!(cursor.next(),Some(2));assert_eq!(cursor.next(),None);assert_eq!(used.load(Ordering::Acquire),held,"empty IntoIter still owns actual capacity");drop(cursor);assert_eq!(used.load(Ordering::Acquire),0);}}
+#[cfg(test)]mod cursor_owner_tests{use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};#[test]fn drained_and_partial_standard_iterator_retain_real_allocation_credit_until_iterator_drop(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4096,&||Ok(()));let mut rows=MacroRows::new(&a).unwrap();for n in 0..3{rows.push(n,&a).unwrap();}let held=used.load(Ordering::Acquire);let mut cursor=rows.into_cursor();assert_eq!(cursor.next(),Some(0));assert_eq!(cursor.remaining(),2);assert_eq!(used.load(Ordering::Acquire),held);assert_eq!(cursor.next(),Some(1));assert_eq!(cursor.next(),Some(2));assert_eq!(cursor.next(),None);assert_eq!(used.load(Ordering::Acquire),held,"empty IntoIter still owns actual capacity");drop(cursor);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}}
 
 // Shared typed formatter sink used by token Display and source-number notices.
 pub(crate) struct Writer<'a,'op>{out:&'a mut MacroText,a:&'a SettingAdmission<'op>,first:Option<io::Error>}

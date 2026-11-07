@@ -103,11 +103,11 @@ impl Replacement{
 #[cfg(test)]
 mod punctuation_storage_tests {
     use super::*;
-    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+    use std::sync::{atomic::{Ordering}};
 
     #[test]
     fn original_replacement_copy_reserves_only_its_complete_output_buffer() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let admission = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let count = 73;
         let mut rows = Rows::with_capacity(count, &admission).unwrap();
@@ -137,7 +137,7 @@ mod punctuation_storage_tests {
             assert_eq!(copy.origin, original.origin);
         }
         drop((duplicate, replacement, credit));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -151,7 +151,7 @@ mod punctuation_storage_tests {
             struct PriorToken { start:u32,end:u32,line:u32,column:u32,value:PriorValue,flags:u8 }
             assert!(size_of::<PhysicalToken>() < size_of::<PriorToken>());
         }
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let healthy = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let lease = crate::SourceAcquisitionLease::from_raw_original_bytes(b"NAME : :::".to_vec(), 19u64);
         let frame = crate::regions::OriginalLexicalFrameIdentity::issue(lease.clone(), &healthy).unwrap();
@@ -213,6 +213,6 @@ mod punctuation_storage_tests {
         assert!(matches!(wide.wide()[0].value, Value::Punct(":")));
         assert!(matches!(wide.wide()[1].value, Value::Punct(":::")));
         drop((wide, credit, name, frame, lease));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

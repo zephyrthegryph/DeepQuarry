@@ -1196,7 +1196,7 @@ impl Compiler<'_> {
 }
 
 #[cfg(test)]mod original_typed_emit_tests{
- use super::*;use dm_syntax::{Span,LiteralText,OriginalTokenValue,SettingAdmission};use std::sync::atomic::AtomicUsize;
+ use super::*;use dm_syntax::{Span,LiteralText,OriginalTokenValue,SettingAdmission};
  struct NoQueries;impl dm_ir::Resolver for NoQueries{fn resolve(&self,q:dm_ir::ResolveQuery)->dm_ir::ResolvedMeaning{panic!("scalar literal queried {q:?}")}}
  fn emit(value:LiteralText,resolver:&impl dm_ir::Resolver)->Result<crate::lower_resolver::ResolverProc,Vec<LowerError>>{emit_expression(Expr{span:Span::new(7,8),kind:ExprKind::Literal(value)},resolver)}
  fn emit_expression(expression:Expr,resolver:&impl dm_ir::Resolver)->Result<crate::lower_resolver::ResolverProc,Vec<LowerError>>{
@@ -1204,7 +1204,7 @@ impl Compiler<'_> {
   compile_typed_statements_with_resolver(&[statement],&crate::ProcedureInputs::default(),&dm_ir::SymbolTable::default(),resolver,None)
  }
  #[test]fn actual_numeric_bytecode_uses_value_bits_not_misleading_grammar_spelling(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
   for(raw,value,authored)in[("FALSE",OriginalTokenValue::Int(7),"7"),("0",OriginalTokenValue::Float(1.25),"1.25"),("0",OriginalTokenValue::Float(-0.0),"-0.0")]{
    let actual=emit(LiteralText::from_original_value_data(raw.into(),7,value,&a).unwrap(),&NoQueries).ok().unwrap();
    let parsed=dm_syntax::parse_expression(authored);assert!(parsed.diagnostics.is_empty());
@@ -1217,9 +1217,9 @@ impl Compiler<'_> {
  }
  #[test]fn actual_resource_bytecode_resolves_the_issued_path_without_raw_string_inference(){
   struct Resource;impl dm_ir::Resolver for Resource{fn resolve(&self,q:dm_ir::ResolveQuery)->dm_ir::ResolvedMeaning{let path=match q{dm_ir::ResolveQuery::Resource(path)|dm_ir::ResolveQuery::ResourceIn{path,..}=>path,other=>panic!("unexpected {other:?}")};assert_eq!(path,SymbolId::of("actual.bin"));dm_ir::ResolvedMeaning::Resource{path,content:99u128.into()}}}
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let literal=LiteralText::from_original_value_data("\"not the resource\"".into(),7,OriginalTokenValue::Resource("actual.bin"),&a).unwrap();let actual=emit(literal,&Resource).ok().unwrap();assert!(actual.procedure.code.items.iter().any(|item|matches!(item,CodeItem::Instruction(i)if i.operands.iter().any(|word|matches!(word,Word::Value(ValueWord::Resource(99)))))));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let literal=LiteralText::from_original_value_data("\"not the resource\"".into(),7,OriginalTokenValue::Resource("actual.bin"),&a).unwrap();let actual=emit(literal,&Resource).ok().unwrap();assert!(actual.procedure.code.items.iter().any(|item|matches!(item,CodeItem::Instruction(i)if i.operands.iter().any(|word|matches!(word,Word::Value(ValueWord::Resource(99)))))));
  }
  #[test]fn unissued_string_runtime_never_falls_through_to_raw_number_emission(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let value=LiteralText::from_original_value_data("0".into(),7,OriginalTokenValue::String("[static]"),&a).unwrap();let errors=emit(value,&NoQueries).err().unwrap();assert!(errors.iter().any(|e|e.reason.contains("not yet issued")));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let value=LiteralText::from_original_value_data("0".into(),7,OriginalTokenValue::String("[static]"),&a).unwrap();let errors=emit(value,&NoQueries).err().unwrap();assert!(errors.iter().any(|e|e.reason.contains("not yet issued")));
  }
 }

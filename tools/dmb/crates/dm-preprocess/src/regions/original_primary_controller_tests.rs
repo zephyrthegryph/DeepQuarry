@@ -58,12 +58,12 @@ impl SourceArenaWork for Work{
 }
 fn driver(file:&File,a:&SettingAdmission<'_>)->RawSourceDriver{let mut driver=RawSourceDriver::new(InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),a,&mut|input,a|->io::Result<OriginalMacroDefinition<'static>>{original_token_factory::initial_definition_using(input,a,&mut|_|panic!("fixed defaults have no lexical notice"),&mut|_,_|panic!("fixed defaults have no numeric notice"))}).unwrap();driver.push_opened(file,file.lease.clone(),0,a).unwrap();driver}
 #[test]fn actual_raw_primary_seals_same_typed_literals_and_shared_tokens_into_real_binding(){
- let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("var/a=2147483647\nvar/s=\"stable\"\n");let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=Consumer{callables:0,stop:false};
- let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert!(output.consumed_eof);assert_eq!(consumer.callables,0);assert!(control.emitted>0);let(source,primary,tokens,binding,ended)=output.into_bound_parts_using(&a).unwrap();assert!(ended);assert!(dense_primary(&primary).original_literal_fact_owner().is_none());assert!(dense_primary(&primary).syntax().tokens.window().same_interval(tokens.window()));assert!(tokens.window().as_dense_slice().is_none());let view=binding.checked_view(&source,Span::new(0,source.len()),&binding,&a).unwrap();let facts=view.checked_facts(&source).unwrap();let(rows,_)=facts.raw_parts();assert_eq!(rows.len(),2);assert!(matches!(rows.get(0).unwrap().1.value(),dm_syntax::OriginalTokenValue::Int(i32::MAX)));assert!(matches!(rows.get(1).unwrap().1.value(),dm_syntax::OriginalTokenValue::String("stable")));drop(facts);drop(view);drop((binding,tokens,primary,source,driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);
+ let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("var/a=2147483647\nvar/s=\"stable\"\n");let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=Consumer{callables:0,stop:false};
+ let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert!(output.consumed_eof);assert_eq!(consumer.callables,0);assert!(control.emitted>0);let(source,primary,tokens,binding,ended)=output.into_bound_parts_using(&a).unwrap();assert!(ended);assert!(dense_primary(&primary).original_literal_fact_owner().is_none());assert!(dense_primary(&primary).syntax().tokens.window().same_interval(tokens.window()));assert!(tokens.window().as_dense_slice().is_none());let view=binding.checked_view(&source,Span::new(0,source.len()),&binding,&a).unwrap();let facts=view.checked_facts(&source).unwrap();let(rows,_)=facts.raw_parts();assert_eq!(rows.len(),2);assert!(matches!(rows.get(0).unwrap().1.value().unwrap(),dm_syntax::OriginalTokenValue::Int(i32::MAX)));assert!(matches!(rows.get(1).unwrap().1.value().unwrap(),dm_syntax::OriginalTokenValue::String("stable")));drop(facts);drop(view);drop((binding,tokens,primary,source,driver,host));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_used.load(Ordering::Acquire),0);
 }
 #[test]fn genuine_callable_dispatch_lends_current_typed_value_and_stops_before_bad_later_quote(){
- let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("/proc/probe(datum/act/A)\n    return \"unterminated\n");let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=Consumer{callables:0,stop:true};
- let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert!(!output.consumed_eof);assert!(output.primary.observer_stop().is_some());assert_eq!(consumer.callables,1);assert_eq!(notices.lexical,0,"lazy real stop must not demand the later quote");drop((output,driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);
+ let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("/proc/probe(datum/act/A)\n    return \"unterminated\n");let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=Consumer{callables:0,stop:true};
+ let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert!(!output.consumed_eof);assert!(output.primary.observer_stop().is_some());assert_eq!(consumer.callables,1);assert_eq!(notices.lexical,0,"lazy real stop must not demand the later quote");drop((output,driver,host));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_used.load(Ordering::Acquire),0);
 }
 struct TypedFormalValues;
 impl dm_syntax::OriginalDeclarationHeaderObserver for TypedFormalValues {
@@ -102,7 +102,7 @@ impl OriginalPrimaryStreamConsumer for TypedFormalValues {
         let Value::String(value) = source.current_header_value(literal)? else {
             panic!("actual static String became another value variant")
         };
-        let Value::String(owned) = source.current_header_literal(literal)?.unwrap().value() else {
+        let Value::String(owned) = source.current_header_literal(literal)?.unwrap().value()? else {
             panic!("actual primary literal owner is missing")
         };
         assert_eq!(value, "stable");
@@ -116,7 +116,7 @@ impl OriginalPrimaryStreamConsumer for TypedFormalValues {
 
 #[test]
 fn compact_delivery_loans_exact_identifiers_and_typed_literals_from_the_adopted_owners() {
-    let used = Arc::new(AtomicUsize::new(0));
+    let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let source_used = Arc::new(AtomicUsize::new(0));
     let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
     let work = Work(source_used.clone());
@@ -132,12 +132,12 @@ fn compact_delivery_loans_exact_identifiers_and_typed_literals_from_the_adopted_
     assert!(!output.consumed_eof);
     assert_eq!(notices.lexical, 0);
     drop((output, driver, host));
-    assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     assert_eq!(source_used.load(Ordering::Acquire), 0);
 }
 #[test]fn actual_emission_io_failure_never_returns_prefix_success_and_fresh_driver_recovers(){
- let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("var/a=1\n");
- for fail in [true,false]{let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail};let mut consumer=Consumer{callables:0,stop:false};let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer);if fail{assert_eq!(output.err().unwrap().raw_os_error(),Some(1450));}else{assert!(output.unwrap().consumed_eof);}drop((driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);}
+ let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());let file=File::new("var/a=1\n");
+ for fail in [true,false]{let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail};let mut consumer=Consumer{callables:0,stop:false};let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer);if fail{assert_eq!(output.err().unwrap().raw_os_error(),Some(1450));}else{assert!(output.unwrap().consumed_eof);}drop((driver,host));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_used.load(Ordering::Acquire),0);}
 }
 struct ColonConsumer<'a,'budget>{a:&'a SettingAdmission<'budget>,allowed:Option<bool>}
 impl dm_syntax::OriginalDeclarationHeaderObserver for ColonConsumer<'_,'_>{fn header(&mut self,_:dm_syntax::OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}}
@@ -150,10 +150,10 @@ impl OriginalPrimaryStreamConsumer for ColonConsumer<'_,'_>{
  }
 }
 #[test]fn genuine_raw_colon_kinds_reach_same_parameter_pratt_without_demanding_later_bad_body(){
- let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());
+ let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());
  for (text,allowed) in [("/proc/probe(arg=value:key)\n    return \"unterminated\n",true),("/proc/probe(arg=value : key)\n    return \"unterminated\n",false),("/proc/probe(arg=a ? f():b)\n    return \"unterminated\n",true)]{
   let file=File::new(text);let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=ColonConsumer{a:&a,allowed:None};
-  let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert_eq!(consumer.allowed,Some(allowed));assert!(!output.consumed_eof);assert_eq!(notices.lexical,0,"header failure/stop never requests later body quote");drop((output,driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);
+  let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert_eq!(consumer.allowed,Some(allowed));assert!(!output.consumed_eof);assert_eq!(notices.lexical,0,"header failure/stop never requests later body quote");drop((output,driver,host));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_used.load(Ordering::Acquire),0);
  }
 }
 struct TemplateConsumer<'a,'budget>{a:&'a SettingAdmission<'budget>,allowed:Option<bool>,alias:Option<dm_syntax::LiteralText>}
@@ -162,15 +162,15 @@ impl OriginalPrimaryStreamConsumer for TemplateConsumer<'_,'_>{fn callable(&mut 
  assert_eq!(source.next_header_token()?.unwrap().text,"arg");assert_eq!(source.next_header_token()?.unwrap().text,"=");let mut clauses=dm_syntax::ParameterClauseCursor::new(0);let mut input=dm_syntax::ParameterExpressionDemand::new(source,&mut clauses).original();let output=dm_syntax::parse_original_expression_demanded(&mut input,self.a)?;self.allowed=Some(output.parsed().diagnostics.is_empty());if self.allowed==Some(true){let dm_syntax::ExprKind::Literal(value)=&output.parsed().expr.as_ref().unwrap().kind else{panic!("actual typed template")};self.alias=Some(value.clone());}drop(output);Ok(OriginalHeaderFlow::Stop)
 }}
 #[test]fn actual_raw_interpolation_parts_loan_same_pratt_children_empty_slots_and_lazy_bad_body_frontier(){
- let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());
+ let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());
  let file=File::new("/proc/probe(arg=\"head[a.b]middle[]tail\")\n    return \"unterminated\n");let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=TemplateConsumer{a:&a,allowed:None,alias:None};
- let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert_eq!(consumer.allowed,Some(true));assert!(!output.consumed_eof);assert_eq!(notices.lexical,0);let literal=consumer.alias.take().unwrap();assert_eq!(literal.syntax_parts().unwrap().unwrap().expressions.len(),1);let pointer=literal.syntax_parts().unwrap().unwrap().expressions.as_ptr();let mut fragments=Vec::new();for part in literal.pinned_fragments().unwrap().unwrap(){let mut text=String::new();part.unwrap().write_text(&mut text).unwrap();fragments.push(text)}assert_eq!(fragments,["head","middle","tail"]);assert!(literal.parts().unwrap().is_some());drop((output,driver,host));assert_eq!(source_used.load(Ordering::Acquire),0);assert!(used.load(Ordering::Acquire)>0);assert_eq!(literal.syntax_parts().unwrap().unwrap().expressions.as_ptr(),pointer);drop(literal);assert_eq!(used.load(Ordering::Acquire),0);
+ let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert_eq!(consumer.allowed,Some(true));assert!(!output.consumed_eof);assert_eq!(notices.lexical,0);let literal=consumer.alias.take().unwrap();assert_eq!(literal.syntax_parts().unwrap().unwrap().expressions.len(),1);let pointer=literal.syntax_parts().unwrap().unwrap().expressions.as_ptr();let mut fragments=Vec::new();for part in literal.pinned_fragments().unwrap().unwrap(){let mut text=String::new();part.unwrap().write_text(&mut text).unwrap();fragments.push(text)}assert_eq!(fragments,["head","middle","tail"]);assert!(literal.parts().unwrap().is_some());drop((output,driver,host));assert_eq!(source_used.load(Ordering::Acquire),0);assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(literal.syntax_parts().unwrap().unwrap().expressions.as_ptr(),pointer);drop(literal);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
 }
 #[test]fn genuine_raw_close_bit_reaches_separate_primary_rows_and_the_later_same_token_body_parser(){
- let used=Arc::new(AtomicUsize::new(0));let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());
+ let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());
  for(text,closed)in[("var/result=target:key\n",true),("var/result=target : key\n",false)]{
   let file=File::new(text);let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut consumer=Consumer{callables:0,stop:false};let output=consume_lazy_primary_using(&mut driver,&file,&work,&mut notices,&mut host,&mut control,&a,&mut consumer).unwrap();assert!(output.consumed_eof);
-  let(source,primary,tokens,binding,ended)=output.into_bound_parts_using(&a).unwrap();assert!(ended);let view=binding.checked_view(&source,Span::new(0,source.len()),&binding,&a).unwrap();let foreign:crate::SourceText=source.as_str().to_owned().into();assert_eq!(binding.checked_view(&foreign,Span::new(0,source.len()),&binding,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(view.checked_facts(&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop(foreign);let facts=view.checked_facts(&source).unwrap();let(colons,_)=facts.raw_colons();assert_eq!(colons.len(),1);assert_eq!(colons[0].1,closed);assert!(facts.raw_parts().0.is_empty(),"punctuation must not masquerade as literal DATA");let start=source.as_str().find("target").unwrap();let end=source.as_str().find("key").unwrap()+3;let window=tokens.window();let first=window.partition_point(|t|t.span.end<=start);let last=window.partition_point(|t|t.span.start<end);let parsed=window.range(first,last).unwrap().with_dense_using(&a,|dense|Ok(dm_syntax::parse_expression_original_token_view(source.as_str(),dense,start,&a,Some(facts)))).unwrap();assert_eq!(parsed.diagnostics.is_empty(),closed,"actual raw CloseColon decision survives source projection and later parser loan");drop(parsed);drop(view);drop((source,primary,tokens,binding,driver,host));assert_eq!(used.load(Ordering::Acquire),0);assert_eq!(source_used.load(Ordering::Acquire),0);
+  let(source,primary,tokens,binding,ended)=output.into_bound_parts_using(&a).unwrap();assert!(ended);let view=binding.checked_view(&source,Span::new(0,source.len()),&binding,&a).unwrap();let foreign:crate::SourceText=source.as_str().to_owned().into();assert_eq!(binding.checked_view(&foreign,Span::new(0,source.len()),&binding,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(view.checked_facts(&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop(foreign);let facts=view.checked_facts(&source).unwrap();let(colons,_)=facts.raw_colons();assert_eq!(colons.len(),1);assert_eq!(colons[0].1,closed);assert!(facts.raw_parts().0.is_empty(),"punctuation must not masquerade as literal DATA");let start=source.as_str().find("target").unwrap();let end=source.as_str().find("key").unwrap()+3;let window=tokens.window();let first=window.partition_point(|t|t.span.end<=start);let last=window.partition_point(|t|t.span.start<end);let parsed=window.range(first,last).unwrap().with_dense_using(&a,|dense|Ok(dm_syntax::parse_expression_original_token_view(source.as_str(),dense,start,&a,Some(facts)))).unwrap();assert_eq!(parsed.diagnostics.is_empty(),closed,"actual raw CloseColon decision survives source projection and later parser loan");drop(parsed);drop(view);drop((source,primary,tokens,binding,driver,host));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_used.load(Ordering::Acquire),0);
  }
 }
 
@@ -197,7 +197,7 @@ impl OriginalPrimaryStreamConsumer for EndConsumer {
 }
 #[test]
 fn actual_consumed_end_is_available_to_failed_formal_without_completing_primary() {
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let source_used=Arc::new(AtomicUsize::new(0));
     let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
     let work=Work(source_used.clone());
@@ -211,12 +211,12 @@ fn actual_consumed_end_is_available_to_failed_formal_without_completing_primary(
     assert!(output.primary.observer_stop().is_some());
     assert!(dense_primary(&output.primary).syntax().items.is_empty());
     drop((output,driver,host));
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     assert_eq!(source_used.load(Ordering::Acquire),0);
 }
 #[test]
 fn genuine_logical_end_refuses_undelivered_and_foreign_frontiers() {
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
     let file=File::new("/datum/a");
     let work=Work(Arc::new(AtomicUsize::new(0)));
@@ -244,14 +244,14 @@ fn genuine_logical_end_refuses_undelivered_and_foreign_frontiers() {
     assert_eq!(end.validate(&early,&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);
     assert_eq!(end.validate(&foreign_delivered,&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);
     drop((end,early,delivered,foreign_end,foreign_delivered));
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     assert_eq!(work.0.load(Ordering::Acquire),0);
 }
 
 
 #[test]
 fn ordinary_adoption_issues_scalar_geometry_without_retaining_the_token_spelling_credit() {
-    let used = Arc::new(AtomicUsize::new(0));
+    let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
     let source_used = Arc::new(AtomicUsize::new(0));
     let work = Work(source_used.clone());
@@ -269,7 +269,7 @@ fn ordinary_adoption_issues_scalar_geometry_without_retaining_the_token_spelling
     drop(adopted);
     assert_eq!(used.load(Ordering::Acquire), before, "issued scalar data owns no spelling credit");
     drop((cursor,receiver,primary));
-    assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     assert_eq!(source_used.load(Ordering::Acquire), 0);
 }
 

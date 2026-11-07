@@ -167,7 +167,7 @@ mod tests;
 #[cfg(test)]
 mod projected_returns_tests {
     use super::*;
-    use std::sync::{atomic::AtomicUsize, Arc};
+
     struct ScalarOnly;
     impl ValueHost<()> for ScalarOnly {
         type Error = &'static str;
@@ -182,7 +182,7 @@ mod projected_returns_tests {
     }
     #[test]
     fn projected_setting_result_writes_have_exact_owned_return_equations_after_offset_change() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
         let a = dm_syntax::SettingAdmission::new(&counter, 16 * 1024 * 1024, &checkpoint);
         for (rhs, expected) in [("(. = 1)", true), ("(. = new /datum)", false)] {

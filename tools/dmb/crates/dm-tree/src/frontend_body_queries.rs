@@ -593,7 +593,7 @@ mod current_original_body_product_binding_tests {
   fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(self.0.get(path).cloned())}
   fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.0.get(path).filter(|s|s.lease().source_text().same_view(text)).cloned()}
  }
- #[derive(Debug)]struct NativeHost{counter:Arc<AtomicUsize>,parses:AtomicUsize}
+ #[derive(Debug)]struct NativeHost{counter:Arc<dm_syntax::SettingChargeCounter>,parses:AtomicUsize}
  impl NativeHost{fn new()->Self{Self{counter:Arc::new(AtomicUsize::new(0)),parses:AtomicUsize::new(0)}}}
  impl BodySyntaxQueries for NativeHost{
   fn syntax(&self,_:&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,Diagnostic>{panic!("checked native admission only")}
@@ -663,7 +663,7 @@ mod current_original_body_product_binding_tests {
  }
  #[test]fn actual_body_binding_preserves_typed_operational_failures_and_native_resource_identity(){
   let mut state=RetainedSemanticTree::new();let host=Arc::new(NativeHost::new());let first=front(&mut state,acquired(P),q(""),&host);let old=input(&first);let product=host.syntax_checked(&old).unwrap();let next=front(&mut state,acquired(P),q("// shifted\n"),&host);let current=input(&next);
-  let foreign=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&foreign,1<<26,&||Ok(()));assert!(current.bind_original_product_checked(&product,&a).is_err());
+  let foreign=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&foreign,1<<26,&||Ok(()));assert!(current.bind_original_product_checked(&product,&a).is_err());
   let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&fault);let Err(BodySyntaxFailure::Operational(error))=current.bind_original_product_checked(&product,&a)else{panic!("real typed operational failure")};assert_eq!(error.raw_os_error(),Some(1450));
   let used=host.counter.load(Ordering::Acquire);let a=dm_syntax::SettingAdmission::new(&host.counter,used,&||Ok(()));let Err(BodySyntaxFailure::Operational(error))=current.bind_original_product_checked(&product,&a)else{panic!("actual temporary-work admission denied")};assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(host.counter.load(Ordering::Acquire),used);
   let a=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&||Ok(()));assert!(current.bind_original_product_checked(&product,&a).is_ok());assert_eq!(host.parses.load(Ordering::Relaxed),1);

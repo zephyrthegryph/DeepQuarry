@@ -400,8 +400,8 @@ mod tests {
 
     #[test]
     fn escaped_original_singleton_owns_only_the_same_inline_frame() {
-        use std::sync::atomic::{AtomicUsize, Ordering};
-        let used = Arc::new(AtomicUsize::new(0));
+        use std::sync::atomic::{Ordering};
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let make = || Arc::new(OriginalMacroFrame {
             invocation_span: Span::new(2, 7),
@@ -427,16 +427,16 @@ mod tests {
         assert_eq!(escaped.iter().next().unwrap().definition.unwrap().source_line, 9);
         let [(_, bytes), (_, name_bytes)] = escaped.view().author_buffers(0).unwrap();
         assert_eq!(name_bytes, "POINT".len());
-        assert_eq!(used.load(Ordering::Acquire), bytes + name_bytes);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (bytes + name_bytes));
         drop(escaped);
         assert!(first.upgrade().is_none());
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn narrow_singleton_exposes_its_own_stable_allocation_and_exact_wide_fallback() {
-        use std::sync::atomic::{AtomicUsize, Ordering};
-        let used = Arc::new(AtomicUsize::new(0));
+        use std::sync::atomic::{Ordering};
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let author = OriginalMacroAuthor::new_using("POINT", Some(DefinitionOrigin {
             path: Arc::new("narrow-actual.dm".into()), source_span: Span::new(8, 10), source_line: 9,
@@ -483,16 +483,16 @@ mod tests {
         drop((trace, duplicate, author));
         assert_eq!(escaped.view().owner_address(), pointer);
         assert_eq!(escaped.view().get(0).unwrap().invocation_span, span);
-        assert_eq!(used.load(Ordering::Acquire), OriginalMacroAuthor::BYTES + "POINT".len());
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (OriginalMacroAuthor::BYTES + "POINT".len()));
         drop(escaped);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn original_prefix_projection_matches_native_content_without_copying_the_owner() {
         let outer: Arc<str> = Arc::from("OUTER");
         let inner: Arc<str> = Arc::from("INNER");
-        let used = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let original = OriginalMacroTrace::Shared(Arc::new(Box::new([
             OriginalMacroFrame { invocation_span: Span::new(0, 5), author: OriginalMacroAuthor::new_using(&outer, None, &a).unwrap() },

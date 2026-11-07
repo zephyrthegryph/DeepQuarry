@@ -350,6 +350,8 @@ pub use syntax_ledger_views::ProjectedSettingExpression;
 pub use statements::{OriginalBodyGrammarOutcome,OriginalBodyGrammarKind};
 
 mod original_literal_data;
+mod original_literal_projection;
+pub use original_literal_projection::{OriginalLiteralOutputOwner,OriginalLiteralProjectionOwner};
 pub use original_literal_data::{LiteralRawStorage,OriginalLiteralData,OriginalLiteralPool,OriginalLiteralRef,OriginalStringMode};
 
 pub use lexer_items::{NativeLexicalPurpose,OriginalPunctuationFacts,OriginalIdentFacts,OriginalWhitespaceFacts,OriginalResourceFacts,OriginalCommentFacts,OriginalNumberFacts,NativeTokenCursor,OriginalPreparedBoundary,NativeTokenProgress,NativeTokenStep};
@@ -378,3 +380,6 @@ pub use admitted_message::message_using as admitted_message_using;
 
 mod original_failure_format;
 pub use original_failure_format::{write_original_input_failure,write_original_term_failure,write_original_delimiter_failure};
+
+mod setting_charge_counter;
+pub use setting_charge_counter::SettingChargeCounter;

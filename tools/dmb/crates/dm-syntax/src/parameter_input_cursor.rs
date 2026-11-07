@@ -60,20 +60,20 @@ impl<'a,'budget> ParameterInputCursor<'a,'budget>{
 }
 
 #[cfg(test)]mod tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]fn same_native_annotation_cursor_keeps_union_or_empty_metadata_once_until_last_alias(){
-  for(text,wanted)in[("mob|obj|null, BAD(1)",3usize),("() in BAD(1)",0)]{let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut cursor=ParameterInputCursor::new(&a,false).unwrap();let mut found=None;
+  for(text,wanted)in[("mob|obj|null, BAD(1)",3usize),("() in BAD(1)",0)]{let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut cursor=ParameterInputCursor::new(&a,false).unwrap();let mut found=None;
    for token in crate::lex(text).tokens{assert_ne!(token.text,"BAD","annotation producer requested a token after its actual boundary");match cursor.feed(token.kind,token.span,&token.text).unwrap(){ParameterInputFlow::Boundary=>{found=Some(token);break},_=>()}}
-   assert!(found.is_some());let input=cursor.finish().unwrap();assert!(input.is_admitted_by(&a));let count=match &*input{ParameterInputSyntax::Union{identifiers,..}=>identifiers.len(),ParameterInputSyntax::EmptyParens{..}=>0};assert_eq!(count,wanted);let alias=input.clone();assert!(input.same_owner(&alias));drop(input);assert!(used.load(Ordering::Acquire)>0);drop(alias);assert_eq!(used.load(Ordering::Acquire),0);
+   assert!(found.is_some());let input=cursor.finish().unwrap();assert!(input.is_admitted_by(&a));let count=match &*input{ParameterInputSyntax::Union{identifiers,..}=>identifiers.len(),ParameterInputSyntax::EmptyParens{..}=>0};assert_eq!(count,wanted);let alias=input.clone();assert!(input.same_owner(&alias));drop(input);assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(alias);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   }
  }
  #[test]fn same_native_annotation_rejects_malformed_group_before_any_following_union_macro(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut cursor=ParameterInputCursor::new(&a,false).unwrap();let mut refused=false;
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut cursor=ParameterInputCursor::new(&a,false).unwrap();let mut refused=false;
   for token in crate::lex("(mob|BAD(1))").tokens{assert_ne!(token.text,"BAD");if let Err(ParameterInputFailure::Syntax{at,expected,..})=cursor.feed(token.kind,token.span,&token.text){assert_eq!(at,Span::new(1,4));assert_eq!(expected,"')'");refused=true;break}}
-  assert!(refused);assert!(matches!(cursor.feed(TokenKind::Ident,Span::new(5,8),"BAD"),Err(ParameterInputFailure::Operational(ref error))if error.kind()==io::ErrorKind::InvalidInput));assert!(cursor.finish().is_err());assert_eq!(used.load(Ordering::Acquire),0);
+  assert!(refused);assert!(matches!(cursor.feed(TokenKind::Ident,Span::new(5,8),"BAD"),Err(ParameterInputFailure::Operational(ref error))if error.kind()==io::ErrorKind::InvalidInput));assert!(cursor.finish().is_err());assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn same_native_annotation_quota_and_actual_io_fail_before_growth_and_poison_retries(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1,&||Ok(()));assert_eq!(ParameterInputCursor::new(&a,false).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);
-  let calls=std::cell::Cell::new(0);let poll=||{let call=calls.get()+1;calls.set(call);if call==2{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=SettingAdmission::new(&used,1<<20,&poll);let mut cursor=ParameterInputCursor::new(&a,false).unwrap();assert!(matches!(cursor.feed(TokenKind::Ident,Span::new(0,3),"mob"),Err(ParameterInputFailure::Operational(ref error))if error.raw_os_error()==Some(1450)));let count=calls.get();assert!(cursor.feed(TokenKind::Ident,Span::new(4,7),"obj").is_err());assert_eq!(calls.get(),count);drop(cursor);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (1),&||Ok(()));assert_eq!(ParameterInputCursor::new(&a,false).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let calls=std::cell::Cell::new(0);let poll=||{let call=calls.get()+1;calls.set(call);if call==2{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=SettingAdmission::new(&used,1<<20,&poll);let mut cursor=ParameterInputCursor::new(&a,false).unwrap();assert!(matches!(cursor.feed(TokenKind::Ident,Span::new(0,3),"mob"),Err(ParameterInputFailure::Operational(ref error))if error.raw_os_error()==Some(1450)));let count=calls.get();assert!(cursor.feed(TokenKind::Ident,Span::new(4,7),"obj").is_err());assert_eq!(calls.get(),count);drop(cursor);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }

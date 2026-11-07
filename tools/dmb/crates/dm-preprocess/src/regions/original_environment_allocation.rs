@@ -22,14 +22,30 @@ fn map_live(names:usize)->io::Result<usize>{
  // 31 keys after split, steal, or merge. The empty root also allocates.
  (names/31+1).checked_mul(node_bytes()?).ok_or(io::ErrorKind::OutOfMemory.into())
 }
+fn map_height_bound(names: usize) -> usize {
+ // A nonempty root has at least two children; every lower internal node
+ // has >=31 keys and >=32 children in pinned im15.1.0. Minimum key counts
+ // by height are 1, 63, 2047, 65535. Ceil(names/2) avoids names+1 overflow.
+ let mut branches = names / 2 + names % 2;
+ let mut height = 1;
+ while branches >= 32 {
+  height += 1;
+  branches /= 32;
+ }
+ height
+}
 fn map_peak(names:usize)->io::Result<usize>{
- // Every completed nonroot node contains >=31 keys. A mutation can hold the
- // old and new trees and <=8 node-sized temporaries per level (the pinned
- // insert/split/remove/rotate paths); root replacement adds <=16 nodes.
- // Binary height is a conservative upper bound on the actual B-tree height.
- let live=names/31+1;let height=(usize::BITS-names.leading_zeros())as usize+1;
- live.checked_mul(2).and_then(|n|n.checked_add(height.checked_mul(8)?))
-  .and_then(|n|n.checked_add(16)).and_then(|n|n.checked_mul(node_bytes().ok()?))
+ // The private OriginalEnvironment never exports/clones its map root.
+ // Its already-funded live tree remains present during mutation. Pinned
+ // im15.1.0 insert copies only the visited path; remove may also copy its
+ // adjacent/successor paths. Node::clone copies child Arc handles, never
+ // descendant allocations. Eight node temporaries per actual B-tree level
+ // plus sixteen for root replacement bound those paths without reserving
+ // an unrelated second complete tree. See nodes/btree.rs:570-917.
+ let live = names / 31 + 1;
+ live.checked_add(map_height_bound(names).checked_mul(8).ok_or(io::ErrorKind::OutOfMemory)?)
+  .and_then(|n| n.checked_add(16))
+  .and_then(|n| n.checked_mul(node_bytes().ok()?))
   .ok_or(io::ErrorKind::OutOfMemory.into())
 }
 fn add(total:&mut usize,n:usize)->io::Result<()>{*total=total.checked_add(n).ok_or(io::ErrorKind::OutOfMemory)?;Ok(())}
@@ -334,18 +350,18 @@ impl OriginalEnvironment{
 }
 
 #[cfg(test)]mod tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]fn initial_coordination_is_admitted_before_the_actual_empty_map_and_foreign_or_first_io_cannot_mutate(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();assert!(used.load(Ordering::Acquire)>0);assert_eq!(env.len(),0);
-  let other=Arc::new(AtomicUsize::new(0));let foreign=SettingAdmission::new(&other,4<<20,&||Ok(()));assert_eq!(env.remove_stacked_using("missing",&foreign).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(env.len(),0);
-  let fault=||Err(io::Error::from_raw_os_error(1450));let stopped=SettingAdmission::new(&used,4<<20,&fault);assert_eq!(env.remove_stacked_using("missing",&stopped).unwrap_err().raw_os_error(),Some(1450));drop(env);assert_eq!(used.load(Ordering::Acquire),0);
-  let tiny=SettingAdmission::new(&used,1,&||Ok(()));assert_eq!(OriginalEnvironment::new(&tiny).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(env.len(),0);
+  let other=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign=SettingAdmission::new(&other,4<<20,&||Ok(()));assert_eq!(env.remove_stacked_using("missing",&foreign).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(env.len(),0);
+  let fault=||Err(io::Error::from_raw_os_error(1450));let stopped=SettingAdmission::new(&used,4<<20,&fault);assert_eq!(env.remove_stacked_using("missing",&stopped).unwrap_err().raw_os_error(),Some(1450));drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  let tiny=SettingAdmission::new(&used,dm_syntax::SettingChargeCounter::root_allocation_bytes() + (1),&||Ok(()));assert_eq!(OriginalEnvironment::new(&tiny).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  fn empty_product(a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{OriginalDefinitionProduct::from_actual_product_using(crate::macro_expansion::OriginalMacroDefinition{parameters:None,variadic:false,replacement:crate::macro_expansion::OriginalMacroRows::new(a).unwrap()},a).unwrap()}
 
  #[test]
  fn original_map_mutations_release_only_scoped_node_headroom() {
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let good=SettingAdmission::new(&used,8<<20,&||Ok(()));
   let mut env=OriginalEnvironment::new(&good).unwrap();
   let row=Macro{parameters:None,variadic:false,replacement:"first".into()};
@@ -399,15 +415,15 @@ impl OriginalEnvironment{
   assert_eq!(env.len(),65);
   assert_eq!(env.allowance.bytes(),env.metadata+map_live(65).unwrap());
   drop((env,removed_product));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn actual_metadata_settles_exact_binding_macro_and_key_layouts_for_each_epoch() {
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
   let mut env=OriginalEnvironment::new(&a).unwrap();
-  let key="A_long_exact_name_with_multibyte_α";
+  let key="A_long_exact_name_with_multibyte_ÃŽÂ±";
   for replacement in ["alpha", "second"] {
    let metadata=Macro{parameters:None,variadic:false,replacement:replacement.into()};
    let before=env.metadata;
@@ -430,9 +446,9 @@ impl OriginalEnvironment{
   let output=env.into_final_macros_using(&a).unwrap();
   assert_eq!(output.get(key).unwrap().replacement,"alpha");
   drop(output);
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
- #[test]fn actual_metadata_quota_precedes_first_clone_and_keeps_same_map_epoch(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,128*1024,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let source=Macro{parameters:None,variadic:false,replacement:"x".repeat(128*1024)};let before=METADATA_COPIES.with(|n|n.get());let fingerprint=env.environment().fingerprint();assert_eq!(env.insert_borrowed_using("X",&source,None,empty_product(&a),&a).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(METADATA_COPIES.with(|n|n.get()),before,"real clone helper must not run before quota");assert_eq!(env.len(),0);assert_eq!(env.environment().fingerprint(),fingerprint);drop(env);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn actual_metadata_quota_precedes_first_clone_and_keeps_same_map_epoch(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,128*1024,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let source=Macro{parameters:None,variadic:false,replacement:"x".repeat(128*1024)};let before=METADATA_COPIES.with(|n|n.get());let fingerprint=env.environment().fingerprint();assert_eq!(env.insert_borrowed_using("X",&source,None,empty_product(&a),&a).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(METADATA_COPIES.with(|n|n.get()),before,"real clone helper must not run before quota");assert_eq!(env.len(),0);assert_eq!(env.environment().fingerprint(),fingerprint);drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
  #[test]
  fn macro_epoch_funds_actual_parameter_and_replacement_capacity_through_redefine_and_undef(){
   fn function_product(a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{
@@ -454,7 +470,7 @@ impl OriginalEnvironment{
     +parameters.capacity()*mem::size_of::<String>()
     +parameters.iter().map(String::capacity).sum::<usize>()
   }
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,4<<20,&||Ok(()));
   let mut env=OriginalEnvironment::new(&a).unwrap();
   let original=Macro{
@@ -483,13 +499,13 @@ impl OriginalEnvironment{
   assert_eq!(first.replacement,original.replacement);
   assert_eq!(env.metadata,stacked+2*text_bound("A".len()).unwrap(),
     "undef never refunds the actual epoch or opaque key allocation");
-  assert!(used.load(Ordering::Acquire)>=env.allowance.bytes());
+  assert!(used.load(Ordering::Acquire)>=dm_syntax::SettingChargeCounter::root_allocation_bytes() + (env.allowance.bytes()));
   drop((first,second,env));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn actual_final_macros_keep_existing_allocations_and_drop_history_credit() {
-  let used = Arc::new(AtomicUsize::new(0));
+  let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
   let mut env = OriginalEnvironment::new(&a).unwrap();
   for _ in 0..1000 {
@@ -509,46 +525,60 @@ impl OriginalEnvironment{
   assert_eq!(values.get("Z").unwrap().replacement, "final payload");
   assert!(values.get("missing").is_none());
   assert!(used.load(Ordering::Acquire) < before);
-  assert_eq!(used.load(Ordering::Acquire), values.credit.bytes() + values.rows.capacity() * mem::size_of::<(Arc<str>, Arc<Macro>)>());
+  assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (values.credit.bytes() + values.rows.capacity() * mem::size_of::<(Arc<str>, Arc<Macro>)>()));
   drop(values);
-  assert_eq!(used.load(Ordering::Acquire), 0);
+  assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
+ #[test]
+ fn pinned_map_height_and_path_reservation_cover_root_exceptions_without_full_copy() {
+  for (names, height) in [(0,1),(1,1),(62,1),(63,2),(2046,2),(2047,3),(65534,3),(65535,4)] {
+   assert_eq!(map_height_bound(names), height, "{names}");
+   assert_eq!(map_peak(names).unwrap(),
+    map_live(names).unwrap() + (8 * height + 16) * node_bytes().unwrap());
+  }
+  // The existing live-tree envelope already pays for every unchanged
+  // descendant. Mutation headroom grows with height, not with live nodes.
+  assert_eq!(map_peak(10_000).unwrap()-map_live(10_000).unwrap(),
+   map_peak(60_000).unwrap()-map_live(60_000).unwrap());
+  assert!(map_height_bound(usize::MAX) < usize::BITS as usize);
+  assert!(map_peak(usize::MAX).is_err());
+ }
  #[test]fn pinned_node_geometry_bound_scales_by_actual_btree_capacity_not_one_large_node_per_name(){assert!(map_peak(10_000).unwrap()<4<<20);assert!(map_peak(10_000).unwrap()>map_peak(100).unwrap());assert!(map_peak(usize::MAX).is_err());}
 }
 
 #[cfg(test)]mod direct_initial_tests{
- use super::*;use std::collections::BTreeMap;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::collections::BTreeMap;use std::sync::atomic::{Ordering};
  fn empty(a:&SettingAdmission<'_>)->io::Result<crate::macro_expansion::OriginalMacroDefinition<'static>>{Ok(crate::macro_expansion::OriginalMacroDefinition{parameters:None,variadic:false,replacement:crate::macro_expansion::OriginalMacroRows::new(a)?})}
  #[test]fn direct_initial_recipe_preserves_all_final_names_overrides_provenance_and_single_factory_order(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let caller:BTreeMap<String,String>=BTreeMap::from([("TRUE".into(),"7".into()),("ASSERT".into(),"8".into()),("EXTRA".into(),"9".into())]);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let caller:BTreeMap<String,String>=BTreeMap::from([("TRUE".into(),"7".into()),("ASSERT".into(),"8".into()),("EXTRA".into(),"9".into())]);
   let mut expected=BTreeMap::new();crate::initial_environment::install(crate::InitialEnvironment::OriginalChecker0290,&mut expected);for(name,value)in &caller{expected.insert(name.clone(),Macro{parameters:None,variadic:false,replacement:value.clone()});}
   let mut seen=Vec::new();env.install_initial_definitions_using(crate::InitialEnvironment::OriginalChecker0290,&caller,&a,&mut|input,a|{let key=input.name();assert_eq!(input.metadata(),&expected[key]);assert_eq!(input.provenance(),if caller.contains_key(key){crate::initial_environment::OriginalInitialProvenance::CallerDefinition}else{crate::initial_environment::OriginalInitialProvenance::FixedDefault});seen.push(key.to_owned());let mut definition=empty(a)?;if let Some(names)=&input.metadata().parameters{let mut actual=crate::macro_expansion::OriginalMacroRows::new(a)?;for name in names{let mut text=crate::macro_expansion::OriginalMacroText::new(a)?;text.push_str(name,a)?;actual.push(text,a)?;}definition.parameters=Some(actual);}Ok(definition)}).unwrap();
-  assert_eq!(seen,expected.keys().cloned().collect::<Vec<_>>());assert_eq!(env.len(),expected.len());for(name,value)in &expected{assert_eq!(crate::MacroLookup::get_key_value(env.environment(),name).unwrap().1,value);}drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(seen,expected.keys().cloned().collect::<Vec<_>>());assert_eq!(env.len(),expected.len());for(name,value)in &expected{assert_eq!(crate::MacroLookup::get_key_value(env.environment(),name).unwrap().1,value);}drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn direct_initial_quota_precedes_temporary_metadata_and_first_factory_io_rolls_back_same_empty_map(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let caller=BTreeMap::from([("AAAA".into(),"x".repeat(4*1024*1024))]);let before=METADATA_COPIES.with(|n|n.get());let mut calls=0;
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let caller=BTreeMap::from([("AAAA".into(),"x".repeat(4*1024*1024))]);let before=METADATA_COPIES.with(|n|n.get());let mut calls=0;
   assert_eq!(env.install_initial_definitions_using(crate::InitialEnvironment::OriginalChecker0290,&caller,&a,&mut|_,a|{calls+=1;empty(a)}).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(calls,0);assert_eq!(METADATA_COPIES.with(|n|n.get()),before);assert_eq!(env.len(),0);
   // A quota-refused operation is permanently stopped: recovery is a genuine
   // fresh request over the same counter, never resetting the failed domain.
-  assert!(a.is_stopped());drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+  assert!(a.is_stopped());drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let mut reached=0;
-  assert_eq!(env.install_initial_definitions_using(crate::InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),&a,&mut|_,_|{reached+=1;Err(io::Error::from_raw_os_error(1450))}).unwrap_err().raw_os_error(),Some(1450));assert_eq!(reached,1);assert_eq!(env.len(),0);drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(env.install_initial_definitions_using(crate::InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),&a,&mut|_,_|{reached+=1;Err(io::Error::from_raw_os_error(1450))}).unwrap_err().raw_os_error(),Some(1450));assert_eq!(reached,1);assert_eq!(env.len(),0);drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod ordinary_directive_tests{
- use super::*;use crate::macro_expansion::{OriginalMacroRows as Rows,OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroOrigin as Origin,OriginalMacroDefinition as Definition};use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use crate::macro_expansion::{OriginalMacroRows as Rows,OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroOrigin as Origin,OriginalMacroDefinition as Definition};use std::sync::atomic::{Ordering};
  fn product(value:i32,a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{let mut replacement=Rows::new(a).unwrap();replacement.push(Token{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:Value::Int(value),origin:Origin{physical:dm_syntax::Span::default(),line:1,byte_column:None,occurrence:0,invocation:false}},a).unwrap();OriginalDefinitionProduct::from_actual_product_using(Definition{parameters:None,variadic:false,replacement},a).unwrap()}
  #[test]fn original_redefinition_and_undef_restore_each_prior_file_dir_and_ordinary_binding(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();for name in ["FILE_DIR","A"]{
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();for name in ["FILE_DIR","A"]{
    env.insert_product_using(name,"1",None,product(1,&a),&a).unwrap();env.insert_product_using(name,"2",None,product(2,&a),&a).unwrap();let current=env.environment.actual_original_product(name).unwrap().unwrap();assert!(matches!(current.cloned_definition_using(&a).unwrap().replacement.as_slice()[0].value,Value::Int(2)));let mut versions=0;env.environment.visit_original_products_while(|key,_,_,_|{if key.as_ref()==name{versions+=1}true});assert_eq!(versions,2,"pinned DefineMap retains both actual epochs");env.remove_using(name,&a).unwrap();assert!(matches!(env.environment.actual_original_product(name).unwrap().unwrap().cloned_definition_using(&a).unwrap().replacement.as_slice()[0].value,Value::Int(1)));env.remove_using(name,&a).unwrap();assert!(env.environment.actual_original_product(name).unwrap().is_none());assert!(crate::MacroLookup::get_key_value(&env.environment,name).is_none());
-  }assert_eq!(env.len(),0);drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+  }assert_eq!(env.len(),0);drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn ordinary_removal_preserves_first_real_io_and_does_not_mutate_the_current_binding(){
-  let used=Arc::new(AtomicUsize::new(0));let good=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&good).unwrap();env.insert_product_using("A","7",None,product(7,&good),&good).unwrap();let fingerprint=env.environment.fingerprint();let io=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,4<<20,&io);assert_eq!(env.remove_using("A",&failed).unwrap_err().raw_os_error(),Some(1450));assert_eq!(env.environment.fingerprint(),fingerprint);assert!(env.environment.actual_original_product("A").unwrap().is_some());env.remove_using("A",&good).unwrap();assert_eq!(env.len(),0);drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let good=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&good).unwrap();env.insert_product_using("A","7",None,product(7,&good),&good).unwrap();let fingerprint=env.environment.fingerprint();let io=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,4<<20,&io);assert_eq!(env.remove_using("A",&failed).unwrap_err().raw_os_error(),Some(1450));assert_eq!(env.environment.fingerprint(),fingerprint);assert!(env.environment.actual_original_product("A").unwrap().is_some());env.remove_using("A",&good).unwrap();assert_eq!(env.len(),0);drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn native_stack_still_restores_its_prior_actual_product(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let metadata=Macro{parameters:None,variadic:false,replacement:"1".into()};env.insert_borrowed_using("FILE_DIR",&metadata,None,product(1,&a),&a).unwrap();let mut next=metadata.clone();next.replacement="2".into();env.insert_borrowed_using("FILE_DIR",&next,None,product(2,&a),&a).unwrap();env.remove_stacked_using("FILE_DIR",&a).unwrap();assert!(matches!(env.environment.actual_original_product("FILE_DIR").unwrap().unwrap().cloned_definition_using(&a).unwrap().replacement.as_slice()[0].value,Value::Int(1)));drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let metadata=Macro{parameters:None,variadic:false,replacement:"1".into()};env.insert_borrowed_using("FILE_DIR",&metadata,None,product(1,&a),&a).unwrap();let mut next=metadata.clone();next.replacement="2".into();env.insert_borrowed_using("FILE_DIR",&next,None,product(2,&a),&a).unwrap();env.remove_stacked_using("FILE_DIR",&a).unwrap();assert!(matches!(env.environment.actual_original_product("FILE_DIR").unwrap().unwrap().cloned_definition_using(&a).unwrap().replacement.as_slice()[0].value,Value::Int(1)));drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

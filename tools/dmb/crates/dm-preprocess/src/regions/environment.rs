@@ -730,14 +730,14 @@ mod tests {
 }
 
 #[cfg(test)]mod original_product_tests{
- use super::*;use crate::macro_expansion::{OriginalMacroToken,OriginalMacroOrigin};use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use crate::macro_expansion::{OriginalMacroToken,OriginalMacroOrigin};use std::sync::atomic::{Ordering};
  fn test_initial_shape(input:crate::initial_environment::OriginalInitialDefinition<'_>,a:&SettingAdmission<'_>)->io::Result<OriginalMacroDefinition<'static>>{let parameters=match &input.metadata().parameters{None=>None,Some(names)=>{let mut rows=OriginalMacroRows::new(a)?;for name in names{let mut text=OriginalMacroText::new(a)?;text.push_str(name,a)?;rows.push(text,a)?;}Some(rows)}};Ok(OriginalMacroDefinition{parameters,variadic:input.metadata().variadic,replacement:OriginalMacroRows::new(a)?})}
  fn native(value:&str)->Macro{Macro{parameters:None,variadic:false,replacement:value.into()}}
  fn product(n:i32,a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{let mut replacement=OriginalMacroRows::new(a).unwrap();replacement.push(OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,value:OriginalMacroValue::Int(n),raw_spelling:None,origin:OriginalMacroOrigin{physical:dm_syntax::Span::new(7,8),line:2,byte_column:None,occurrence:0,invocation:false}},a).unwrap();OriginalDefinitionProduct::from_actual_product_using(OriginalMacroDefinition{parameters:None,variadic:false,replacement},a).unwrap()}
  #[cfg(debug_assertions)]
  #[test]
  fn failed_macro_census_separates_direct_unique_storage_from_shared_product_references(){
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
   let mut env=MacroEnvironment::default();
   let one=product(1,&a);
@@ -758,13 +758,13 @@ mod tests {
   let census=env.trace_original_products();
   assert_eq!(census.exclusive_products,2);
   assert_eq!(census.shared_product_references,0);
-  drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+  drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
- #[test]fn same_binding_original_epochs_stack_and_undef_restore_exact_native_fingerprint_without_parallel_dictionary(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_stacked("A",native("1"),None);let native_hash=env.fingerprint();assert!(env.actual_original_product("missing").unwrap().is_none());assert_eq!(env.actual_original_product("A").unwrap_err().kind(),io::ErrorKind::Unsupported);env.insert_original_stacked_using("A",native("2"),None,product(2,&a),&a).unwrap();assert_ne!(env.fingerprint(),native_hash);let snapshot=env.clone();let address=snapshot.actual_original_product("A").unwrap().unwrap()as *const _ as usize;env.insert_original_stacked_using("A",native("3"),None,product(3,&a),&a).unwrap();env.remove_stacked("A");assert_eq!(env.fingerprint(),snapshot.fingerprint());assert_eq!(env.actual_original_product("A").unwrap().unwrap()as *const _ as usize,address);env.remove_stacked("A");assert_eq!(env.fingerprint(),native_hash);assert!(env.actual_original_product("A").is_err());assert!(snapshot.actual_original_product("A").unwrap().is_some());drop((env,snapshot));assert_eq!(used.load(Ordering::Acquire),0);}
- #[test]fn actual_first_io_before_original_binding_install_keeps_previous_map_epoch_and_credit_recovers(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_stacked("A",native("1"),None);let snapshot=env.clone();let original=product(2,&a);let fault=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,1<<20,&fault);let error=env.insert_original_stacked_using("A",native("2"),None,original,&failed).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert!(env.shares_storage_with(&snapshot));assert_eq!(env.fingerprint(),snapshot.fingerprint());assert!(env.actual_original_product("A").is_err());assert_eq!(used.load(Ordering::Acquire),0);env.insert_original_stacked_using("A",native("2"),None,product(2,&a),&a).unwrap();drop((env,snapshot));assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn same_binding_original_epochs_stack_and_undef_restore_exact_native_fingerprint_without_parallel_dictionary(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_stacked("A",native("1"),None);let native_hash=env.fingerprint();assert!(env.actual_original_product("missing").unwrap().is_none());assert_eq!(env.actual_original_product("A").unwrap_err().kind(),io::ErrorKind::Unsupported);env.insert_original_stacked_using("A",native("2"),None,product(2,&a),&a).unwrap();assert_ne!(env.fingerprint(),native_hash);let snapshot=env.clone();let address=snapshot.actual_original_product("A").unwrap().unwrap()as *const _ as usize;env.insert_original_stacked_using("A",native("3"),None,product(3,&a),&a).unwrap();env.remove_stacked("A");assert_eq!(env.fingerprint(),snapshot.fingerprint());assert_eq!(env.actual_original_product("A").unwrap().unwrap()as *const _ as usize,address);env.remove_stacked("A");assert_eq!(env.fingerprint(),native_hash);assert!(env.actual_original_product("A").is_err());assert!(snapshot.actual_original_product("A").unwrap().is_some());drop((env,snapshot));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
+ #[test]fn actual_first_io_before_original_binding_install_keeps_previous_map_epoch_and_credit_recovers(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_stacked("A",native("1"),None);let snapshot=env.clone();let original=product(2,&a);let fault=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,1<<20,&fault);let error=env.insert_original_stacked_using("A",native("2"),None,original,&failed).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert!(env.shares_storage_with(&snapshot));assert_eq!(env.fingerprint(),snapshot.fingerprint());assert!(env.actual_original_product("A").is_err());assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());env.insert_original_stacked_using("A",native("2"),None,product(2,&a),&a).unwrap();drop((env,snapshot));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
  #[test]
  fn fallible_metadata_reconciliation_cannot_replace_an_existing_macro_epoch(){
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
   let mut env=MacroEnvironment::default();
   env.insert_original_stacked_using("A",native("1"),None,product(1,&a),&a).unwrap();
@@ -775,12 +775,12 @@ mod tests {
   assert!(env.shares_storage_with(&old));
   assert_eq!(env.fingerprint(),old.fingerprint());
   drop((env,old));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn diagnostic_macro_docs_release_physical_rows_after_the_same_digest() {
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
   let make=|text:&str,purpose|{
    let mut bytes=OriginalMacroText::new(&a).unwrap();
@@ -805,12 +805,12 @@ mod tests {
   let changed=make("other doc",HistoryPurpose::Diagnostic);
   assert_ne!(changed.digest,compact.digest);
   drop((full,compact,changed));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn completed_macro_product_moves_funded_rows_without_cloning_or_double_census() {
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
   let mut parameters=OriginalMacroRows::new(&a).unwrap();
   let mut text=OriginalMacroText::new(&a).unwrap();
@@ -852,12 +852,12 @@ mod tests {
   drop(product);
   assert_eq!(used.load(Ordering::Acquire),before+OriginalDefinitionProduct::wrapper_bytes());
   drop(alias);
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn transferring_macro_product_rows_keeps_first_io_and_foreign_counter_funded() {
-  let counter=Arc::new(AtomicUsize::new(0));
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));
   let mut credit=a.reserve(0).unwrap();
   let make=||{
@@ -867,35 +867,35 @@ mod tests {
   };
   let stopped=SettingAdmission::new(&counter,1<<20,&||Err(io::Error::from_raw_os_error(1450)));
   assert_eq!(retain_product_rows(make(),&mut credit,&stopped).unwrap_err().raw_os_error(),Some(1450));
-  assert_eq!(counter.load(Ordering::Acquire),0);
-  let foreign_counter=Arc::new(AtomicUsize::new(0));
+  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  let foreign_counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let foreign=SettingAdmission::new(&foreign_counter,1<<20,&||Ok(()));
   assert_eq!(retain_product_rows(make(),&mut credit,&foreign).unwrap_err().kind(),io::ErrorKind::InvalidInput);
-  assert_eq!(counter.load(Ordering::Acquire),0);
-  assert_eq!(foreign_counter.load(Ordering::Acquire),0);
+  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  assert_eq!(foreign_counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
- #[test]fn definition_copy_before_argument_demand_keeps_its_real_owned_credit_after_environment_drop(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_original_stacked_using("A",native("7"),None,product(7,&a),&a).unwrap();let copied=env.actual_original_product("A").unwrap().unwrap().cloned_definition_using(&a).unwrap();drop(env);assert!(used.load(Ordering::Acquire)>0);assert!(matches!(copied.replacement.as_slice()[0].value,OriginalMacroValue::Int(7)));drop(copied);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn definition_copy_before_argument_demand_keeps_its_real_owned_credit_after_environment_drop(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_original_stacked_using("A",native("7"),None,product(7,&a),&a).unwrap();let copied=env.actual_original_product("A").unwrap().unwrap().cloned_definition_using(&a).unwrap();drop(env);assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());assert!(matches!(copied.replacement.as_slice()[0].value,OriginalMacroValue::Int(7)));drop(copied);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
  #[test]fn actual_definition_docs_share_same_binding_epoch_and_clones_retain_funded_values(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut docs=OriginalMacroRows::new(&a).unwrap();let mut text=OriginalMacroText::new(&a).unwrap();text.push_str("actual prior documentation",&a).unwrap();docs.push(OriginalMacroDoc{kind:dm_syntax::OriginalCommentKind::LineFollowing,text:OriginalMacroTextValue::Owned(text),origin:OriginalMacroOrigin{physical:dm_syntax::Span::new(2,9),line:1,byte_column:None,occurrence:4,invocation:false},lexical_frame:None,lexical_span:None},&a).unwrap();let definition=OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};let product=OriginalDefinitionProduct::from_actual_product_with_docs_using(definition,docs,&a).unwrap();let mut env=MacroEnvironment::default();env.insert_original_stacked_using("DOC",native(""),None,product,&a).unwrap();let snapshot=env.clone();let cloned=env.actual_original_product("DOC").unwrap().unwrap().cloned_docs_using(&a).unwrap();env.remove_stacked("DOC");assert!(env.actual_original_product("DOC").unwrap().is_none());assert_eq!(snapshot.actual_original_product("DOC").unwrap().unwrap().docs()[0].text.get(),"actual prior documentation");drop((env,snapshot));assert!(used.load(Ordering::Acquire)>0);assert_eq!(cloned.as_slice()[0].origin.occurrence,4);drop(cloned);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut docs=OriginalMacroRows::new(&a).unwrap();let mut text=OriginalMacroText::new(&a).unwrap();text.push_str("actual prior documentation",&a).unwrap();docs.push(OriginalMacroDoc{kind:dm_syntax::OriginalCommentKind::LineFollowing,text:OriginalMacroTextValue::Owned(text),origin:OriginalMacroOrigin{physical:dm_syntax::Span::new(2,9),line:1,byte_column:None,occurrence:4,invocation:false},lexical_frame:None,lexical_span:None},&a).unwrap();let definition=OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};let product=OriginalDefinitionProduct::from_actual_product_with_docs_using(definition,docs,&a).unwrap();let mut env=MacroEnvironment::default();env.insert_original_stacked_using("DOC",native(""),None,product,&a).unwrap();let snapshot=env.clone();let cloned=env.actual_original_product("DOC").unwrap().unwrap().cloned_docs_using(&a).unwrap();env.remove_stacked("DOC");assert!(env.actual_original_product("DOC").unwrap().is_none());assert_eq!(snapshot.actual_original_product("DOC").unwrap().unwrap().docs()[0].text.get(),"actual prior documentation");drop((env,snapshot));assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(cloned.as_slice()[0].origin.occurrence,4);drop(cloned);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_initial_table_walk_issues_each_final_default_and_caller_binding_once_with_no_hidden_shadow_epoch(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut finals=std::collections::BTreeMap::new();crate::initial_environment::install(crate::InitialEnvironment::OriginalChecker0290,&mut finals);finals.insert("TRUE".into(),native("7"));finals.insert("CALLER".into(),native("99"));let caller=std::collections::BTreeMap::from([("TRUE".to_owned(),"7".to_owned()),("CALLER".to_owned(),"99".to_owned())]);let mut seen=std::collections::BTreeMap::new();let mut env=MacroEnvironment::default();
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut finals=std::collections::BTreeMap::new();crate::initial_environment::install(crate::InitialEnvironment::OriginalChecker0290,&mut finals);finals.insert("TRUE".into(),native("7"));finals.insert("CALLER".into(),native("99"));let caller=std::collections::BTreeMap::from([("TRUE".to_owned(),"7".to_owned()),("CALLER".to_owned(),"99".to_owned())]);let mut seen=std::collections::BTreeMap::new();let mut env=MacroEnvironment::default();
   env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|input,a|{*seen.entry(input.name().to_owned()).or_insert(0usize)+=1;assert_eq!(input.replacement_text(),finals[input.name()].replacement);let parameters=match &input.metadata().parameters{None=>None,Some(names)=>{let mut rows=OriginalMacroRows::new(a)?;for name in names{let mut text=OriginalMacroText::new(a)?;text.push_str(name,a)?;rows.push(text,a)?;}Some(rows)}};Ok(OriginalMacroDefinition{parameters,variadic:input.metadata().variadic,replacement:OriginalMacroRows::new(a)?})}).unwrap();
-  assert_eq!(seen.len(),105);assert!(seen.values().all(|n|*n==1));assert_eq!(env.get("TRUE").unwrap().replacement,"7");assert!(env.actual_original_product("TRUE").unwrap().is_some());let mut count=0;env.visit_storage(|_,_,_,_,_|count+=1);assert_eq!(count,105);env.remove_stacked("TRUE");assert!(env.get("TRUE").is_none(),"bootstrap must not invent a second hidden default epoch");assert!(env.actual_original_product("missing").unwrap().is_none());drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(seen.len(),105);assert!(seen.values().all(|n|*n==1));assert_eq!(env.get("TRUE").unwrap().replacement,"7");assert!(env.actual_original_product("TRUE").unwrap().is_some());let mut count=0;env.visit_storage(|_,_,_,_,_|count+=1);assert_eq!(count,105);env.remove_stacked("TRUE");assert!(env.get("TRUE").is_none(),"bootstrap must not invent a second hidden default epoch");assert!(env.actual_original_product("missing").unwrap().is_none());drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn initial_factory_io_or_forged_physical_product_preserves_empty_environment_and_fresh_issuance_recovers(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut finals=std::collections::BTreeMap::new();crate::initial_environment::install(crate::InitialEnvironment::OriginalChecker0290,&mut finals);finals.insert("FIRST".into(),native("1"));finals.insert("SECOND".into(),native("2"));let caller=std::collections::BTreeMap::from([("FIRST".to_owned(),"1".to_owned()),("SECOND".to_owned(),"2".to_owned())]);let mut env=MacroEnvironment::default();let mut calls=0;
-  assert_eq!(env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|_,a|{calls+=1;if calls==2{return Err(io::Error::from_raw_os_error(1450))}Ok(OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(a)?})}).unwrap_err().raw_os_error(),Some(1450));assert!(env.is_empty());assert_eq!(used.load(Ordering::Acquire),0);
-  assert_eq!(env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|_,a|{let mut replacement=OriginalMacroRows::new(a)?;replacement.push(OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:Some(dm_syntax::Span::new(0,1)),value:OriginalMacroValue::Int(1),raw_spelling:None,origin:OriginalMacroOrigin{physical:dm_syntax::Span::default(),line:0,byte_column:None,occurrence:0,invocation:false}},a)?;Ok(OriginalMacroDefinition{parameters:None,variadic:false,replacement})}).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert!(env.is_empty());assert_eq!(used.load(Ordering::Acquire),0);
-  env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|input,a|test_initial_shape(input,a)).unwrap();assert!(env.actual_original_product("SECOND").unwrap().is_some());let before=env.fingerprint();assert_eq!(env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|_,_|panic!("nonempty environment must not demand factory")).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(env.fingerprint(),before);drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut finals=std::collections::BTreeMap::new();crate::initial_environment::install(crate::InitialEnvironment::OriginalChecker0290,&mut finals);finals.insert("FIRST".into(),native("1"));finals.insert("SECOND".into(),native("2"));let caller=std::collections::BTreeMap::from([("FIRST".to_owned(),"1".to_owned()),("SECOND".to_owned(),"2".to_owned())]);let mut env=MacroEnvironment::default();let mut calls=0;
+  assert_eq!(env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|_,a|{calls+=1;if calls==2{return Err(io::Error::from_raw_os_error(1450))}Ok(OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(a)?})}).unwrap_err().raw_os_error(),Some(1450));assert!(env.is_empty());assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  assert_eq!(env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|_,a|{let mut replacement=OriginalMacroRows::new(a)?;replacement.push(OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:Some(dm_syntax::Span::new(0,1)),value:OriginalMacroValue::Int(1),raw_spelling:None,origin:OriginalMacroOrigin{physical:dm_syntax::Span::default(),line:0,byte_column:None,occurrence:0,invocation:false}},a)?;Ok(OriginalMacroDefinition{parameters:None,variadic:false,replacement})}).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert!(env.is_empty());assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|input,a|test_initial_shape(input,a)).unwrap();assert!(env.actual_original_product("SECOND").unwrap().is_some());let before=env.fingerprint();assert_eq!(env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|_,_|panic!("nonempty environment must not demand factory")).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(env.fingerprint(),before);drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_name_point_data_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]
  fn compact_definition_name_retains_same_physical_spelling_and_frame(){
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
   let lease=crate::SourceAcquisitionLease::from_raw_original_bytes(b"#define ORIGINAL 1\n".to_vec(),17u64);
   let frame=crate::regions::OriginalLexicalFrameIdentity::issue(lease.clone(),&a).unwrap();
@@ -919,11 +919,11 @@ mod tests {
   product.visit_lexical_frames(|actual|{assert!(actual.same_frame(&frame));frames+=1});
   assert_eq!((views,frames),(0,1));
   drop((product,frame,lease,spelling));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn foreign_equal_spelling_keeps_the_exact_funded_wide_name_and_current_frame() {
-  let used=Arc::new(AtomicUsize::new(0));
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
   let lease=crate::SourceAcquisitionLease::from_raw_original_bytes(b"NAME".to_vec(),17u64);
   let separate=crate::SourceAcquisitionLease::from_raw_original_bytes(b"NAME".to_vec(),18u64);
@@ -957,10 +957,10 @@ mod tests {
   product.visit_owned_storage(|_,n|owned+=n);
   assert_eq!(owned,std::mem::size_of::<WideDefinitionName>());
   drop((product,spelling,frame,lease,separate));
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn named_product_location_data_is_independent_of_replacement_and_initial_absence(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let make=||OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let make=||OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};
   let initial=OriginalDefinitionProduct::from_actual_product_using(make(),&a).unwrap();assert!(initial.definition_name().is_none());
   let origin=OriginalMacroOrigin{physical:dm_syntax::Span::new(31,35),line:7,byte_column:Some(9),occurrence:2,invocation:true};let name=OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:OriginalMacroValue::Ident{spelling:OriginalMacroTextValue::Borrowed("NAME"),whitespace:false},origin};
   let product=OriginalDefinitionProduct::from_named_actual_product_using(name,make(),OriginalMacroRows::new(&a).unwrap(),None,HistoryPurpose::Full,&a).unwrap();assert_eq!(product.definition_name().unwrap().origin(),origin);
@@ -968,7 +968,7 @@ mod tests {
   assert!(std::mem::size_of::<Option<OriginalDefinitionName>>()<std::mem::size_of::<Option<OriginalMacroToken<'static>>>());
   assert!(!product.definition_name().unwrap().uses_physical_storage());
   assert_eq!(product._credit.bytes(),OriginalDefinitionProduct::wrapper_bytes()+std::mem::size_of::<WideDefinitionName>());
-  assert_eq!(product.definition.replacement.len(),0);let mut env=MacroEnvironment::default();let metadata=Macro{parameters:None,variadic:false,replacement:String::new()};assert_eq!(env.insert_original_stacked_using("OTHER",metadata,None,product.clone(),&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(env.len(),0);drop((env,product,initial));assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(product.definition.replacement.len(),0);let mut env=MacroEnvironment::default();let metadata=Macro{parameters:None,variadic:false,replacement:String::new()};assert_eq!(env.insert_original_stacked_using("OTHER",metadata,None,product.clone(),&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(env.len(),0);drop((env,product,initial));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 

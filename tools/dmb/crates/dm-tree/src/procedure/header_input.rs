@@ -1214,7 +1214,7 @@ mod initializer_coordinate_tests {
     ) {
         let ast = parsed();
         assert!(ast.diagnostics.is_empty());
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
         let a = dm_syntax::SettingAdmission::new(&counter, 1024 * 1024, &checkpoint);
         let owner = OriginalProcedureHeaders::from_primary_admitted(
@@ -1244,14 +1244,14 @@ mod initializer_coordinate_tests {
                 Some((i, coordinates.spans.len()))
             );
         }
-        let foreign = Arc::new(AtomicUsize::new(0));
+        let foreign = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let other = dm_syntax::SettingAdmission::new(&foreign, 1024 * 1024, &checkpoint);
         assert!(
             matches!(owner.initializer_coordinate(coordinates.spans[0],0,&other),Err(OriginalHeaderFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::InvalidInput)
         );
-        assert!(counter.load(Ordering::Acquire) > 0);
+        assert!(counter.load(Ordering::Acquire) > dm_syntax::SettingChargeCounter::root_allocation_bytes());
         drop(owner);
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
         let ast = parsed();
         let old =
             OriginalProcedureHeaders::from_primary(TEXT.into(), &ast.items, 0, ast.tokens).unwrap();
@@ -1263,7 +1263,7 @@ mod initializer_coordinate_tests {
     #[test]
     fn initializer_coordinate_growth_funds_overlap_and_settles_exact_buffer() {
         use std::mem::size_of;
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let peak = AtomicUsize::new(0);
         let poll = || {
             peak.fetch_max(used.load(Ordering::Acquire), Ordering::AcqRel);
@@ -1279,20 +1279,20 @@ mod initializer_coordinate_tests {
             coordinates.push(Span::new(index, index + 1), &a).unwrap();
             let new = coordinates.spans.capacity();
             assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), new * size_of::<Span>());
-            assert_eq!(used.load(Ordering::Acquire), fixed + new * size_of::<Span>());
+            assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (fixed + new * size_of::<Span>()));
             if old != new {
                 assert_eq!(peak.load(Ordering::Acquire), fixed + (old + new) * size_of::<Span>());
             }
         }
         assert!(coordinates.spans.iter().copied().enumerate().all(|(index, span)| span == Span::new(index, index + 1)));
         drop(coordinates);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn initializer_coordinate_growth_failure_preserves_rows_and_old_credit() {
         use std::mem::size_of;
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = dm_syntax::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut coordinates = OriginalInitializerCoordinates::new(&a).unwrap();
         coordinates.push(Span::new(0, 1), &a).unwrap();
@@ -1328,13 +1328,13 @@ mod initializer_coordinate_tests {
         coordinates.push(next, &a).unwrap();
         assert_eq!(coordinates.spans.last(), Some(&next));
         drop(coordinates);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn original_header_initial_admission_restores_actual_checkpoint_cause_before_slot_work() {
         let ast = parsed();
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let stop = || Err(std::io::Error::from_raw_os_error(1450));
         let admission = dm_syntax::SettingAdmission::new(&counter, 1024 * 1024, &stop);
         let error = OriginalProcedureHeaders::from_primary_admitted(
@@ -1349,15 +1349,15 @@ mod initializer_coordinate_tests {
         assert!(
             matches!(error,OriginalHeaderFailure::Operational(ref actual)if actual.raw_os_error()==Some(1450))
         );
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]
     fn original_header_coordinate_quota_and_checkpoint_are_typed_retryable_before_owner_publication(
     ) {
         let ast = parsed();
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
-        let a = dm_syntax::SettingAdmission::new(&counter, 0, &checkpoint);
+        let a = dm_syntax::SettingAdmission::new(&counter, dm_syntax::SettingChargeCounter::root_allocation_bytes(), &checkpoint);
         let error = OriginalProcedureHeaders::from_primary_admitted(
             TEXT.into(),
             &ast.items,
@@ -1370,7 +1370,7 @@ mod initializer_coordinate_tests {
         assert!(
             matches!(error,OriginalHeaderFailure::Operational(ref e)if e.kind()==std::io::ErrorKind::OutOfMemory)
         );
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
         let ast = parsed();
         let calls = std::cell::Cell::new(0);
         let stop = || {
@@ -1394,7 +1394,7 @@ mod initializer_coordinate_tests {
         assert!(
             matches!(error,OriginalHeaderFailure::Operational(ref e)if e.raw_os_error()==Some(1450))
         );
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
         let ast = parsed();
         let a = dm_syntax::SettingAdmission::new(&counter, 1024 * 1024, &checkpoint);
         let owner = OriginalProcedureHeaders::from_primary_admitted(
@@ -1407,7 +1407,7 @@ mod initializer_coordinate_tests {
         .ok()
         .expect("fresh operation retries same source/counter");
         drop(owner);
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }
 
@@ -1432,7 +1432,7 @@ mod initializer_first_root_tests {
             assert!(parsed.diagnostics.is_empty());
             let normalized = crate::normalize::declarations_in_scope(&parsed.items, "/");
             let item = &normalized[0];
-            let counter = Arc::new(AtomicUsize::new(0));
+            let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let checkpoint = || Ok(());
             let a = dm_syntax::SettingAdmission::new(&counter, 4 * 1024 * 1024, &checkpoint);
             let owner = OriginalProcedureHeaders::from_primary_admitted(
@@ -1496,7 +1496,7 @@ mod initializer_first_root_tests {
             }
             drop(parts);
             drop(owner);
-            assert_eq!(counter.load(Ordering::Acquire), 0);
+            assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
         }
     }
     #[test]
@@ -1506,7 +1506,7 @@ mod initializer_first_root_tests {
             let parsed = dm_syntax::parse_declaration_skeleton(source);
             let normalized = crate::normalize::declarations_in_scope(&parsed.items, "/");
             let item = &normalized[0];
-            let counter = Arc::new(AtomicUsize::new(0));
+            let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let checkpoint = || Ok(());
             let a = dm_syntax::SettingAdmission::new(&counter, 1024 * 1024, &checkpoint);
             let owner = OriginalProcedureHeaders::from_primary_admitted(
@@ -1690,7 +1690,7 @@ impl OriginalBodyTokens<'_>{
   }
  }
  #[test]fn actual_portable_outer_geometry_reserves_peak_before_reissue_and_keeps_oom_identity(){
-  let source="/proc/early(){}\n/proc/later(value=)\n    return 2\n";let mut parsed=dm_syntax::parse_declaration_skeleton(source);fn unissue(items:&mut[Item]){for item in items{item.original_outer_terminator=None;unissue(&mut item.children)}}unissue(&mut parsed.items);let counter=std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,16384,&||Ok(()));let failure=OriginalProcedureHeaders::from_primary_admitted(source.into(),&parsed.items,0,parsed.tokens,&a).unwrap_err();assert!(matches!(failure,OriginalHeaderFailure::Operational(ref actual)if actual.kind()==std::io::ErrorKind::OutOfMemory));assert_eq!(counter.load(std::sync::atomic::Ordering::Relaxed),0,"real failed geometry leaves no root admission outstanding");
+  let source="/proc/early(){}\n/proc/later(value=)\n    return 2\n";let mut parsed=dm_syntax::parse_declaration_skeleton(source);fn unissue(items:&mut[Item]){for item in items{item.original_outer_terminator=None;unissue(&mut item.children)}}unissue(&mut parsed.items);let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&counter,16384,&||Ok(()));let failure=OriginalProcedureHeaders::from_primary_admitted(source.into(),&parsed.items,0,parsed.tokens,&a).unwrap_err();assert!(matches!(failure,OriginalHeaderFailure::Operational(ref actual)if actual.kind()==std::io::ErrorKind::OutOfMemory));assert_eq!(counter.load(std::sync::atomic::Ordering::Relaxed),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"real failed geometry leaves no root admission outstanding");
  }
 
  #[test]fn real_outer_primary_event_reissue_keeps_typed_operational_error(){
@@ -1742,19 +1742,19 @@ impl OriginalProcedureHeaders{
 #[cfg(test)]mod original_literal_header_state_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn header_literal_fact_unissued_state_is_not_a_completed_empty_roster_or_late_mutable_publication(){
-  let source:SourceText="/proc/probe()\n    return 1\n".to_owned().into();let ast=dm_syntax::parse_declaration_skeleton(&source);let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<24,&||Ok(()));let headers=OriginalProcedureHeaders::from_primary_admitted(source,&ast.items,0,ast.tokens,&a).ok().unwrap();assert!(headers.original_literal_facts().unwrap().is_none(),"old/portable unissued parse never fabricates typed empty facts");headers.retain_original_literal_facts(None,None,&a).ok().unwrap();assert!(headers.original_literal_facts().unwrap().is_none());let error=headers.retain_original_literal_facts(None,None,&a).err().unwrap();assert!(matches!(error,OriginalHeaderFailure::Operational(actual)if actual.kind()==std::io::ErrorKind::InvalidInput));drop(headers);assert_eq!(used.load(Ordering::Acquire),0);
+  let source:SourceText="/proc/probe()\n    return 1\n".to_owned().into();let ast=dm_syntax::parse_declaration_skeleton(&source);let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<24,&||Ok(()));let headers=OriginalProcedureHeaders::from_primary_admitted(source,&ast.items,0,ast.tokens,&a).ok().unwrap();assert!(headers.original_literal_facts().unwrap().is_none(),"old/portable unissued parse never fabricates typed empty facts");headers.retain_original_literal_facts(None,None,&a).ok().unwrap();assert!(headers.original_literal_facts().unwrap().is_none());let error=headers.retain_original_literal_facts(None,None,&a).err().unwrap();assert!(matches!(error,OriginalHeaderFailure::Operational(actual)if actual.kind()==std::io::ErrorKind::InvalidInput));drop(headers);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod actual_shared_primary_header_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
- #[test]fn genuine_final_primary_expanded_and_header_alias_the_same_immutable_token_allocation_and_lease(){let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/probe()\n    return 1\n".into();let primary=dm_syntax::parse_original_declaration_skeleton_using(&source,&a).unwrap();let ptr=primary.syntax().tokens.window().as_dense_slice().unwrap().as_ptr();let(primary,shared)=primary.into_shared_tokens_using(&a).unwrap();let mut expanded=dm_preprocess::regions::ExpandedRegions::with_text(source.clone());expanded.tokens=shared.clone().into();let headers=OriginalProcedureHeaders::for_declaration_profile_tokens(source.clone(),&primary.syntax().items,0,shared.clone().into(),&a,true).unwrap();assert_eq!(primary.syntax().tokens.window().as_dense_slice().unwrap().as_ptr(),ptr);assert_eq!(expanded.tokens.window().as_dense_slice().unwrap().as_ptr(),ptr);assert_eq!(headers.tokens.window().as_dense_slice().unwrap().as_ptr(),ptr);assert!(headers.shared_span_tokens().unwrap().same_owner(expanded.tokens.shared().unwrap()));drop((shared,primary,source));assert!(used.load(Ordering::Acquire)>0);assert_eq!(headers.tokens.window().len(),expanded.tokens.window().len());drop(expanded);assert!(used.load(Ordering::Acquire)>0);drop(headers);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn genuine_final_primary_expanded_and_header_alias_the_same_immutable_token_allocation_and_lease(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/probe()\n    return 1\n".into();let primary=dm_syntax::parse_original_declaration_skeleton_using(&source,&a).unwrap();let ptr=primary.syntax().tokens.window().as_dense_slice().unwrap().as_ptr();let(primary,shared)=primary.into_shared_tokens_using(&a).unwrap();let mut expanded=dm_preprocess::regions::ExpandedRegions::with_text(source.clone());expanded.tokens=shared.clone().into();let headers=OriginalProcedureHeaders::for_declaration_profile_tokens(source.clone(),&primary.syntax().items,0,shared.clone().into(),&a,true).unwrap();assert_eq!(primary.syntax().tokens.window().as_dense_slice().unwrap().as_ptr(),ptr);assert_eq!(expanded.tokens.window().as_dense_slice().unwrap().as_ptr(),ptr);assert_eq!(headers.tokens.window().as_dense_slice().unwrap().as_ptr(),ptr);assert!(headers.shared_span_tokens().unwrap().same_owner(expanded.tokens.shared().unwrap()));drop((shared,primary,source));assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(headers.tokens.window().len(),expanded.tokens.window().len());drop(expanded);assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());drop(headers);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
 }
 
 #[cfg(test)]mod unissued_header_parameter_tests{
  use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
  #[test]fn unissued_final_literal_default_owner_cannot_fabricate_valid_header_metadata(){
-  let text:SourceText="/proc/p(datum/act/A)\n    return (1 + )\n".into();let ast=dm_syntax::parse_declaration_skeleton(&text);assert!(ast.diagnostics.is_empty());let header=ast.items[0].span;let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let owner=OriginalProcedureHeaders::for_declaration_profile_tokens(text,&ast.items,0,ast.tokens.into(),&a,true).unwrap();owner.install_parameter_signatures(&a, |_| None).unwrap();assert_eq!(owner.parameter_signature(header).err(),Some("actual original parameter metadata is unissued"));drop(owner);assert_eq!(used.load(Ordering::Acquire),0);
+  let text:SourceText="/proc/p(datum/act/A)\n    return (1 + )\n".into();let ast=dm_syntax::parse_declaration_skeleton(&text);assert!(ast.diagnostics.is_empty());let header=ast.items[0].span;let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let owner=OriginalProcedureHeaders::for_declaration_profile_tokens(text,&ast.items,0,ast.tokens.into(),&a,true).unwrap();owner.install_parameter_signatures(&a, |_| None).unwrap();assert_eq!(owner.parameter_signature(header).err(),Some("actual original parameter metadata is unissued"));drop(owner);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 

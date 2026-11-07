@@ -266,22 +266,22 @@ mod tests {
     }
     #[test]
     fn native_target_grouping_quota_retry_domain_and_physical_owner_release(){
-        use std::sync::atomic::{AtomicUsize,Ordering};
-        let tree=tree();let table=OccurrenceTable::build(&tree,origins(&tree,0)).unwrap();let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());
-        let denied=dm_syntax::SettingAdmission::new(&counter,0,&poll);let error=table.for_target_admitted(Target::Type(TypeId(0)),&denied).err().unwrap();assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),0);assert!(table.index.groups.get().is_none());
+        use std::sync::atomic::{Ordering};
+        let tree=tree();let table=OccurrenceTable::build(&tree,origins(&tree,0)).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());
+        let denied=dm_syntax::SettingAdmission::new(&counter,dm_syntax::SettingChargeCounter::root_allocation_bytes(),&poll);let error=table.for_target_admitted(Target::Type(TypeId(0)),&denied).err().unwrap();assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert!(table.index.groups.get().is_none());
         let admitted=dm_syntax::SettingAdmission::new(&counter,1024*1024,&poll);
         for target in tree.declarations(){assert_eq!(table.for_target_admitted(*target,&admitted).unwrap(),table.for_target(*target));}
         let retained=counter.load(Ordering::Acquire);assert_eq!(retained,tree.declarations().len()*256+8192);
         assert!(table.for_target_admitted(Target::Type(TypeId(0)),&admitted).is_ok());assert_eq!(counter.load(Ordering::Acquire),retained);
-        let foreign_counter=Arc::new(AtomicUsize::new(0));let foreign=dm_syntax::SettingAdmission::new(&foreign_counter,1024*1024,&poll);assert_eq!(table.for_target_admitted(Target::Type(TypeId(0)),&foreign).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(foreign_counter.load(Ordering::Acquire),0);
-        drop(table);assert_eq!(counter.load(Ordering::Acquire),0,"index buffers physically drop before native lease credit");
+        let foreign_counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign=dm_syntax::SettingAdmission::new(&foreign_counter,1024*1024,&poll);assert_eq!(table.for_target_admitted(Target::Type(TypeId(0)),&foreign).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(foreign_counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+        drop(table);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"index buffers physically drop before native lease credit");
     }
     #[test]
     fn native_target_grouping_midwork_actual_io_leaves_no_index_or_lease_and_retries(){
-        use std::sync::atomic::{AtomicUsize,Ordering};
-        let tree=tree();let table=OccurrenceTable::build(&tree,origins(&tree,0)).unwrap();let counter=Arc::new(AtomicUsize::new(0));let calls=std::cell::Cell::new(0);
+        use std::sync::atomic::{Ordering};
+        let tree=tree();let table=OccurrenceTable::build(&tree,origins(&tree,0)).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let calls=std::cell::Cell::new(0);
         let failure=||{calls.set(calls.get()+1);if calls.get()==4{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};
-        let failed=dm_syntax::SettingAdmission::new(&counter,1024*1024,&failure);let actual=table.for_target_admitted(Target::Type(TypeId(0)),&failed).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);assert!(table.index.groups.get().is_none());assert!(table.index.native_admission.lock().unwrap().is_none());
+        let failed=dm_syntax::SettingAdmission::new(&counter,1024*1024,&failure);let actual=table.for_target_admitted(Target::Type(TypeId(0)),&failed).err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert!(table.index.groups.get().is_none());assert!(table.index.native_admission.lock().unwrap().is_none());
         let poll=||Ok(());let fresh=dm_syntax::SettingAdmission::new(&counter,1024*1024,&poll);assert!(table.for_target_admitted(Target::Type(TypeId(0)),&fresh).is_ok());
     }
 

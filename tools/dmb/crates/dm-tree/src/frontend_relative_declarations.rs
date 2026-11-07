@@ -1297,7 +1297,7 @@ mod tests {
     }
     #[test]
     fn bindings_reject_overflow_foreign_lengths_and_non_utf8_span_boundaries() {
-        let source = "/datum/ÃƒÆ’Ã‚Â©\n";
+        let source = "/datum/ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©\n";
         let mut items = dm_syntax::parse_declaration_skeleton(source).items;
         let relative = Arc::new(RelativeSyntax::capture(items.clone(), source).unwrap());
         assert!(matches!(
@@ -1704,8 +1704,8 @@ fn code_literal_hash(rows:Option<CodeLiteralFacts<'_>>,body:dm_syntax::Span,a:&d
  let Some((rows,base))=rows else{hash.write_u8(0);return Ok(hash.finish())};hash.write_u8(1);hash.write_usize(rows.len());
  for(span,value)in rows.iter(){code_checkpoint(a)?;hash.write_usize(span.start-base);hash.write_usize(span.end-base);
   fn text(hash:&mut impl Hasher,value:&str,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{hash.write_usize(value.len());for bytes in value.as_bytes().chunks(4096){code_checkpoint(a)?;hash.write(bytes);}Ok(())}
-  text(&mut hash,value.raw(),a)?;hash.write_u8(value.string_mode() as u8);
-  match value.value(){
+  text(&mut hash,value.raw()?,a)?;hash.write_u8(value.string_mode() as u8);
+  match value.value()?{
    dm_syntax::OriginalTokenValue::Int(value)=>{hash.write_u8(0);hash.write_i32(value)},
    dm_syntax::OriginalTokenValue::Float(value)=>{hash.write_u8(1);hash.write_u32(value.to_bits())},
    dm_syntax::OriginalTokenValue::String(value)=>{hash.write_u8(2);text(&mut hash,value,a)?},
@@ -1719,8 +1719,8 @@ fn code_literal_equal(left:Option<CodeLiteralFacts<'_>>,left_body:dm_syntax::Spa
  let((left,left_base),(right,right_base))=match(left,right){(None,None)=>return Ok(true),(Some(left),Some(right))=>(left,right),_=>return Ok(false)};
  if left.len()!=right.len(){return Ok(false)}
  for((ls,lv),(rs,rv))in left.iter().zip(right.iter()){
-  code_checkpoint(a)?;if(ls.start-left_base,ls.end-left_base)!=(rs.start-right_base,rs.end-right_base)||!code_equal(lv.raw().as_bytes(),rv.raw().as_bytes(),a)?||lv.string_mode()!=rv.string_mode(){return Ok(false)}
-  let equal=match(lv.value(),rv.value()){
+  code_checkpoint(a)?;if(ls.start-left_base,ls.end-left_base)!=(rs.start-right_base,rs.end-right_base)||!code_equal(lv.raw()?.as_bytes(),rv.raw()?.as_bytes(),a)?||lv.string_mode()!=rv.string_mode(){return Ok(false)}
+  let equal=match(lv.value()?,rv.value()?){
    (dm_syntax::OriginalTokenValue::Int(l),dm_syntax::OriginalTokenValue::Int(r))=>l==r,
    (dm_syntax::OriginalTokenValue::Float(l),dm_syntax::OriginalTokenValue::Float(r))=>l.to_bits()==r.to_bits(),
    (dm_syntax::OriginalTokenValue::String(l),dm_syntax::OriginalTokenValue::String(r))|(dm_syntax::OriginalTokenValue::Resource(l),dm_syntax::OriginalTokenValue::Resource(r))=>code_equal(l.as_bytes(),r.as_bytes(),a)?,
@@ -1842,7 +1842,7 @@ impl BodyCodeCandidates{
   let row=syntax.bodies.iter().find(|body|syntax.code_item(&body.path).unwrap().header().starts_with(&format!("/proc/{name}("))).unwrap();Arc::clone(&row.code)
  }
  #[test]fn actual_published_primary_capture_converges_both_unchanged_siblings_after_length_changing_same_chunk_edit(){
-  let counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,1<<26,&||Ok(()));let store=RetainedDeclarations::default();
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&counter,1<<26,&||Ok(()));let store=RetainedDeclarations::default();
   let old="/proc/p(value=1)\n    return value\n/proc/q()\n    return 2\n/proc/r()\n    return 3\n";
   let request=store.begin_request(true);let first=actual_current(&store,old,&a).unwrap();let p=code(&first.syntax.shared_relative(),"p");let q=code(&first.syntax.shared_relative(),"q");let r=code(&first.syntax.shared_relative(),"r");assert!(request.publish_successful());
   let new="/proc/p(value=1)\n    return value\n/proc/q()\n    return list(222,333,444)\n/proc/r()\n    return 3\n";
@@ -1850,7 +1850,7 @@ impl BodyCodeCandidates{
   let request=store.begin_request(true);let shifted=actual_current(&store,&format!("// earlier header offset shifts every same-chunk body\n{new}"),&a).unwrap();assert!(Arc::ptr_eq(&p,&code(&shifted.syntax.shared_relative(),"p")));assert!(Arc::ptr_eq(&r,&code(&shifted.syntax.shared_relative(),"r")));assert!(request.publish_successful());
  }
  #[test]fn failed_current_capture_does_not_publish_or_erase_the_previous_body_code_candidates(){
-  let counter=Arc::new(AtomicUsize::new(0));let store=RetainedDeclarations::default();let a=dm_syntax::SettingAdmission::new(&counter,1<<26,&||Ok(()));
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let store=RetainedDeclarations::default();let a=dm_syntax::SettingAdmission::new(&counter,1<<26,&||Ok(()));
   let old="/proc/p()\n    return 1\n/proc/q()\n    return 2\n";let first_request=store.begin_request(true);let original=actual_current(&store,old,&a).unwrap();let p=code(&original.syntax.shared_relative(),"p");assert!(first_request.publish_successful());
   let failure=||Err(std::io::Error::from_raw_os_error(1450));let denied=dm_syntax::SettingAdmission::new(&counter,1<<26,&failure);let failed_request=store.begin_request(true);let error=actual_current(&store,old,&denied).err().expect("real operational capture failure");assert_eq!(error.raw_os_error(),Some(1450));drop(failed_request);
   let request=store.begin_request(true);let next=actual_current(&store,"/proc/p()\n    return 1\n/proc/q()\n    return 222222\n",&a).unwrap();assert!(Arc::ptr_eq(&p,&code(&next.syntax.shared_relative(),"p")));assert!(request.publish_successful());
@@ -1859,22 +1859,22 @@ impl BodyCodeCandidates{
   let request=store.begin_request(true);let readded=actual_current(&store,old,&a).unwrap();assert!(!Arc::ptr_eq(&p,&code(&readded.syntax.shared_relative(),"p")),"deleted code is not revived from unclaimed global core variants");assert!(request.publish_successful());
  }
  #[test]fn native_body_candidate_index_quota_and_checkpoint_failures_keep_exact_operational_identity(){
-  let counter=Arc::new(AtomicUsize::new(0));let failure=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1<<24,&failure);assert_eq!(BodyCodeCandidates::new(&a).err().unwrap().raw_os_error(),Some(1450));
-  let a=dm_syntax::SettingAdmission::new(&counter,0,&||Ok(()));assert_eq!(BodyCodeCandidates::new(&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let failure=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1<<24,&failure);assert_eq!(BodyCodeCandidates::new(&a).err().unwrap().raw_os_error(),Some(1450));
+  let a=dm_syntax::SettingAdmission::new(&counter,dm_syntax::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));assert_eq!(BodyCodeCandidates::new(&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod sparse_original_literal_recipe_data_tests{
  use super::*;use dm_syntax::{OriginalLiteralData,OriginalTokenValue,Span};use std::sync::atomic::AtomicUsize;
  #[test]fn same_rendered_numeric_spelling_never_converges_distinct_actual_literal_variants_or_float_bits(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
   let make=|value|vec![(Span::new(2,3),OriginalLiteralData::from_value_using("0".into(),value,&a).unwrap())];
   let int=make(OriginalTokenValue::Int(0));let float=make(OriginalTokenValue::Float(0.0));let negative=make(OriginalTokenValue::Float(-0.0));let body=Span::new(0,4);
   for other in [&float,&negative]{assert!(!code_literal_equal(Some((dm_syntax::OriginalLiteralRows::from_slice(&int),0)),body,Some((dm_syntax::OriginalLiteralRows::from_slice(other),0)),body,&a).unwrap());assert_ne!(code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&int),0)),body,&a).unwrap(),code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(other),0)),body,&a).unwrap());}
   assert!(!code_literal_equal(Some((dm_syntax::OriginalLiteralRows::from_slice(&float),0)),body,Some((dm_syntax::OriginalLiteralRows::from_slice(&negative),0)),body,&a).unwrap());
  }
  #[test]fn body_move_keeps_relative_facts_but_unissued_stream_and_changed_static_value_cannot_alias(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
   let data=OriginalLiteralData::from_value_using("same displayed token".into(),OriginalTokenValue::String("[static]"),&a).unwrap();
   let left=vec![(Span::new(2,3),data.clone())];let moved=vec![(Span::new(102,103),data.clone())];let before=Span::new(0,10);let after=Span::new(100,110);
   assert!(code_literal_equal(Some((dm_syntax::OriginalLiteralRows::from_slice(&left),0)),before,Some((dm_syntax::OriginalLiteralRows::from_slice(&moved),0)),after,&a).unwrap());
@@ -1883,7 +1883,7 @@ impl BodyCodeCandidates{
   assert!(!code_literal_equal(None,before,Some((dm_syntax::OriginalLiteralRows::from_slice(&[]),0)),before,&a).unwrap());assert_ne!(code_literal_hash(None,before,&a).unwrap(),code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&[]),0)),before,&a).unwrap());
  }
  #[test]fn sparse_literal_comparison_preserves_exact_operational_error(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
   assert_eq!(code_literal_hash(None,Span::new(0,1),&a).unwrap_err().raw_os_error(),Some(1450));
   // A stopped operation does not poll again or manufacture a second owned OS
   // error. Each independent demand starts with its genuine fresh admission.
@@ -1895,7 +1895,7 @@ impl BodyCodeCandidates{
 #[cfg(test)]mod sparse_original_literal_poll_controls{
  use super::*;
  #[test]fn cancellation_during_selected_row_validation_stops_before_value_hashing_and_fresh_operation_recovers(){
-  let counter=Arc::new(std::sync::atomic::AtomicUsize::new(0));let success=||Ok(());let seed=dm_syntax::SettingAdmission::new(&counter,1<<20,&success);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let success=||Ok(());let seed=dm_syntax::SettingAdmission::new(&counter,1<<20,&success);
   let data=dm_syntax::OriginalLiteralData::from_value_using("0".into(),dm_syntax::OriginalTokenValue::Int(0),&seed).unwrap();let rows=vec![(dm_syntax::Span::new(1,2),data.clone()),(dm_syntax::Span::new(3,4),data)];let calls=std::cell::Cell::new(0);let poll=||{calls.set(calls.get()+1);if calls.get()==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let stopped=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
   assert_eq!(code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&rows),0)),dm_syntax::Span::new(0,5),&stopped).unwrap_err().raw_os_error(),Some(1450));assert_eq!(calls.get(),3);
   let fresh=dm_syntax::SettingAdmission::new(&counter,1<<20,&success);assert!(code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&rows),0)),dm_syntax::Span::new(0,5),&fresh).is_ok());

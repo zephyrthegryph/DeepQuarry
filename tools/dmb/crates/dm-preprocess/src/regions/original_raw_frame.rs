@@ -128,7 +128,7 @@ impl OriginalRawLexer{
 }
 
 #[cfg(test)]mod tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicBool,AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{AtomicBool, Ordering}};
  struct Provider{source:SourceAcquisitionLease,fail:AtomicBool,negative:bool}
  impl Provider{fn actual_utf8()->Self{Self{source:SourceAcquisitionLease::from_raw_original_bytes(b"actual".to_vec(),()),fail:AtomicBool::new(false),negative:false}}}
  impl SourceProvider for Provider{
@@ -137,16 +137,16 @@ impl OriginalRawLexer{
   fn original_source_bytes<'a>(&'a self,lease:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{if self.fail.swap(false,Ordering::AcqRel){return Err(io::Error::from_raw_os_error(1450))}if !self.source.same_binding(lease){return Err(io::ErrorKind::InvalidInput.into())}Ok(Some(lease.source_text().as_bytes()))}
  }
  #[test]fn raw_frame_contract_keeps_same_acquisition_and_last_frame_alias_resource_owner_without_preparation(){
-  let provider=Provider::actual_utf8();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut before_calls=0;let mut before=|_,_,_|{before_calls+=1;Ok(())};let frame=OriginalRawFrame::open(&provider,Path::new("actual.dm"),64,&mut before,&a).unwrap().unwrap();assert_eq!(before_calls,1);assert!(frame.acquisition().same_binding(&provider.source));let alias=frame.identity().clone();let next=OriginalRawFrame::open(&provider,Path::new("actual.dm"),64,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();assert!(!frame.identity().same_frame(next.identity()),"new open is another real lexical frame despite same acquisition");drop(frame);drop(next);assert!(counter.load(Ordering::Acquire)>0);drop(alias);assert_eq!(counter.load(Ordering::Acquire),0);
+  let provider=Provider::actual_utf8();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut before_calls=0;let mut before=|_,_,_|{before_calls+=1;Ok(())};let frame=OriginalRawFrame::open(&provider,Path::new("actual.dm"),64,&mut before,&a).unwrap().unwrap();assert_eq!(before_calls,1);assert!(frame.acquisition().same_binding(&provider.source));let alias=frame.identity().clone();let next=OriginalRawFrame::open(&provider,Path::new("actual.dm"),64,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();assert!(!frame.identity().same_frame(next.identity()),"new open is another real lexical frame despite same acquisition");drop(frame);drop(next);assert!(counter.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());drop(alias);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn raw_frame_contract_preserves_first_provider_error_and_poison_forbids_retry_or_false_eof(){
-  let provider=Provider::actual_utf8();let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut frame=OriginalRawFrame::open(&provider,Path::new("actual.dm"),64,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();provider.fail.store(true,Ordering::Release);assert_eq!(frame.with_current_cursor(&provider,&a,|_,_,_|Ok(())).err().unwrap().raw_os_error(),Some(1450));assert_eq!(frame.with_current_cursor(&provider,&a,|_,_,_|Ok(())).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(frame.finish_actual_end(&provider,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop(frame);
-  let mut fresh=OriginalRawFrame::open(&provider,Path::new("actual.dm"),64,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();while fresh.next_physical_using(&provider,&a,|_,_,_|Ok(()),|_,_,_|Ok(())).unwrap().is_some(){}fresh.finish_actual_end(&provider,&a).unwrap();assert_eq!(fresh.with_current_cursor(&provider,&a,|_,_,_|Ok(())).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop(fresh);assert_eq!(counter.load(Ordering::Acquire),0);
+  let provider=Provider::actual_utf8();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut frame=OriginalRawFrame::open(&provider,Path::new("actual.dm"),64,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();provider.fail.store(true,Ordering::Release);assert_eq!(frame.with_current_cursor(&provider,&a,|_,_,_|Ok(())).err().unwrap().raw_os_error(),Some(1450));assert_eq!(frame.with_current_cursor(&provider,&a,|_,_,_|Ok(())).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(frame.finish_actual_end(&provider,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop(frame);
+  let mut fresh=OriginalRawFrame::open(&provider,Path::new("actual.dm"),64,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();while fresh.next_physical_using(&provider,&a,|_,_,_|Ok(()),|_,_,_|Ok(())).unwrap().is_some(){}fresh.finish_actual_end(&provider,&a).unwrap();assert_eq!(fresh.with_current_cursor(&provider,&a,|_,_,_|Ok(())).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop(fresh);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_raw_quote_observation_precedes_rescan_and_nested_string_bracket_never_closes_parent(){
-  let provider=Provider{source:SourceAcquisitionLease::from_raw_original_bytes(br#""a[ "]" ]tail""#.to_vec(),()),fail:AtomicBool::new(false),negative:false};let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut frame=OriginalRawFrame::open(&provider,Path::new("quote.dm"),256,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();let mut kinds=Vec::new();
+  let provider=Provider{source:SourceAcquisitionLease::from_raw_original_bytes(br#""a[ "]" ]tail""#.to_vec(),()),fail:AtomicBool::new(false),negative:false};let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut frame=OriginalRawFrame::open(&provider,Path::new("quote.dm"),256,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();let mut kinds=Vec::new();
   while let Some(kind)=frame.next_physical_using(&provider,&a,|_,_,_|panic!("no speculative or actual lexical errors"),|event,bytes,tag|{assert!(tag.acquisition().same_binding(&provider.source));Ok(match event{OriginalPhysicalLexeme::Quote(part)=>match part.kind(){dm_syntax::OriginalQuotedPartKind::Begin=>"begin",dm_syntax::OriginalQuotedPartKind::String=>"string",dm_syntax::OriginalQuotedPartKind::Part=>"part",dm_syntax::OriginalQuotedPartKind::End=>"end"},OriginalPhysicalLexeme::FinalNewline{..}=>"final-newline",OriginalPhysicalLexeme::Scalar{token,..}=>{assert_ne!(&bytes[token.span.range()],b"]","closing interpolation is an actual End/Part event");"scalar"},OriginalPhysicalLexeme::QuoteFailure{..}=>panic!("no recovery expected")})}).unwrap(){kinds.push(kind);}
-  assert_eq!(kinds,["begin","string","end","final-newline"]);frame.finish_actual_end(&provider,&a).unwrap();drop(frame);assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(kinds,["begin","string","end","final-newline"]);frame.finish_actual_end(&provider,&a).unwrap();drop(frame);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn lexical_notice_and_recovery_borrow_the_live_frame_identity_in_order() {
@@ -155,7 +155,7 @@ impl OriginalRawLexer{
    fail: AtomicBool::new(false),
    negative: false,
   };
-  let counter = Arc::new(AtomicUsize::new(0));
+  let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a = SettingAdmission::new(&counter, 1<<20, &|| Ok(()));
   let mut frame = OriginalRawFrame::open(&provider, Path::new("quote.dm"), 256, &mut |_,_,_| Ok(()), &a).unwrap().unwrap();
   let expected = std::ptr::from_ref(frame.identity());
@@ -188,25 +188,25 @@ impl OriginalRawLexer{
    io::ErrorKind::InvalidInput,
   );
   drop(frame);
-  assert_eq!(counter.load(Ordering::Acquire), 0);
+  assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_raw_first_quote_part_does_not_lex_or_diagnose_the_later_source_tail(){
-  let provider=Provider{source:SourceAcquisitionLease::from_raw_original_bytes(br#""head[1]tail" @"unterminated"#.to_vec(),()),fail:AtomicBool::new(false),negative:false};let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut frame=OriginalRawFrame::open(&provider,Path::new("quote.dm"),256,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();let token=frame.next_physical_using(&provider,&a,|_,_,_|panic!("future lexical diagnostic demanded before actual first token"),|event,_,_|{let OriginalPhysicalLexeme::Quote(part)=event else{panic!("first actual quoted part")};assert_eq!(part.kind(),dm_syntax::OriginalQuotedPartKind::Begin);Ok(part.token_span())}).unwrap().unwrap();assert_eq!(token,dm_syntax::Span::new(0,6));drop(frame);assert_eq!(counter.load(Ordering::Acquire),0);
+  let provider=Provider{source:SourceAcquisitionLease::from_raw_original_bytes(br#""head[1]tail" @"unterminated"#.to_vec(),()),fail:AtomicBool::new(false),negative:false};let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut frame=OriginalRawFrame::open(&provider,Path::new("quote.dm"),256,&mut|_,_,_|Ok(()),&a).unwrap().unwrap();let token=frame.next_physical_using(&provider,&a,|_,_,_|panic!("future lexical diagnostic demanded before actual first token"),|event,_,_|{let OriginalPhysicalLexeme::Quote(part)=event else{panic!("first actual quoted part")};assert_eq!(part.kind(),dm_syntax::OriginalQuotedPartKind::Begin);Ok(part.token_span())}).unwrap().unwrap();assert_eq!(token,dm_syntax::Span::new(0,6));drop(frame);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
 }
 
 #[cfg(test)]mod directive_lexical_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  fn step(lexer:&mut OriginalRawLexer,bytes:&[u8],a:&dm_syntax::SettingAdmission<'_>)->Option<(String,String)>{lexer.next_using(bytes,a,|_|Ok(()),|event,bytes|{match event{
   OriginalPhysicalLexeme::Scalar{token,..}=>Ok((format!("{:?}",token.kind),std::str::from_utf8(&bytes[token.span.range()]).unwrap().to_owned())),
   OriginalPhysicalLexeme::Quote(part)=>{let mut text=Vec::new();part.visit_value_bytes(|p|{text.extend_from_slice(p);Ok::<_,io::Error>(())})?.map_err(|_|io::ErrorKind::InvalidData)?;Ok((format!("{:?}",part.kind()),String::from_utf8(text).unwrap()))},
   OriginalPhysicalLexeme::FinalNewline{..}=>Ok(("final".into(),"\n".into())),_=>Err(io::ErrorKind::InvalidData.into()),
  }}).unwrap()}
  #[test]fn actual_physical_warn_consumes_line_as_same_string_and_resets_before_next_physical_file_tokens(){
-  let bytes=b"#warn hello \"text\"\n/proc/p()\n";let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut lexer=OriginalRawLexer::new(NativeTokenCursor::for_original_source_bytes(bytes),true,&a).unwrap();assert_eq!(step(&mut lexer,bytes,&a).unwrap().1,"#");assert_eq!(step(&mut lexer,bytes,&a).unwrap().1,"warn");assert_eq!(step(&mut lexer,bytes,&a).unwrap(),("String".into(),"hello \"text\"".into()));assert_eq!(step(&mut lexer,bytes,&a).unwrap().1,"/");drop(lexer);assert_eq!(used.load(Ordering::Acquire),0);
+  let bytes=b"#warn hello \"text\"\n/proc/p()\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut lexer=OriginalRawLexer::new(NativeTokenCursor::for_original_source_bytes(bytes),true,&a).unwrap();assert_eq!(step(&mut lexer,bytes,&a).unwrap().1,"#");assert_eq!(step(&mut lexer,bytes,&a).unwrap().1,"warn");assert_eq!(step(&mut lexer,bytes,&a).unwrap(),("String".into(),"hello \"text\"".into()));assert_eq!(step(&mut lexer,bytes,&a).unwrap().1,"/");drop(lexer);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_ident_lookahead_newline_cancels_stringy_and_initial_definition_has_no_file_directive_state(){
-  let bytes=b"#warn\nword\n";let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut physical=OriginalRawLexer::new(NativeTokenCursor::for_original_source_bytes(bytes),true,&a).unwrap();step(&mut physical,bytes,&a);step(&mut physical,bytes,&a);assert_eq!(step(&mut physical,bytes,&a).unwrap().1,"\n");assert_eq!(step(&mut physical,bytes,&a).unwrap().0,"Ident");let mut initial=OriginalRawLexer::for_initial_definition(&a).unwrap();step(&mut initial,b"#warn word",&a);step(&mut initial,b"#warn word",&a);assert_eq!(step(&mut initial,b"#warn word",&a).unwrap(),("Ident".into(),"word".into()));drop((physical,initial));assert_eq!(used.load(Ordering::Acquire),0);
+  let bytes=b"#warn\nword\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut physical=OriginalRawLexer::new(NativeTokenCursor::for_original_source_bytes(bytes),true,&a).unwrap();step(&mut physical,bytes,&a);step(&mut physical,bytes,&a);assert_eq!(step(&mut physical,bytes,&a).unwrap().1,"\n");assert_eq!(step(&mut physical,bytes,&a).unwrap().0,"Ident");let mut initial=OriginalRawLexer::for_initial_definition(&a).unwrap();step(&mut initial,b"#warn word",&a);step(&mut initial,b"#warn word",&a);assert_eq!(step(&mut initial,b"#warn word",&a).unwrap(),("Ident".into(),"word".into()));drop((physical,initial));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

@@ -132,27 +132,27 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
 }
 
 #[cfg(test)]mod tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  fn state<'a,'budget>(a:&'a crate::SettingAdmission<'budget>)->OriginalParseState<'a,'static,'budget>{OriginalParseState{storage:original_storage::Storage::new(a).unwrap(),fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:None,observer_stop:Default::default(),first_outer_block:Default::default()}}
  #[test]fn actual_demand_layout_batch_keeps_its_same_resource_root_after_cursor_drop(){
-  let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let source="/datum/a\n    var/value=1\n";let tokens=lex_spans(source).tokens;let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let batch=cursor.advance(source,&tokens,&original,true).unwrap();assert_eq!(batch.len(),2);let owned=counter.load(Ordering::Acquire);assert!(owned>source.len()*2);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),original.storage.bytes()+batch._credit.bytes());assert!(counter.load(Ordering::Acquire)<owned);assert_eq!(batch[1].header_start,source.find("var/value").unwrap());drop(batch);assert_eq!(counter.load(Ordering::Acquire),original.storage.bytes());drop(original);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let source="/datum/a\n    var/value=1\n";let tokens=lex_spans(source).tokens;let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let batch=cursor.advance(source,&tokens,&original,true).unwrap();assert_eq!(batch.len(),2);let owned=counter.load(Ordering::Acquire);assert!(owned>source.len()*2);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()+batch._credit.bytes()));assert!(counter.load(Ordering::Acquire)<owned);assert_eq!(batch[1].header_start,source.find("var/value").unwrap());drop(batch);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()));drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_demand_layout_quota_and_operational_fault_refuse_before_mask_growth_and_keep_io_identity(){
-  let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,5000,&||Ok(()));let source="/datum/a\n";let tokens=lex_spans(source).tokens;let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let error=cursor.advance(source,&tokens,&original,true).err().unwrap();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert!(cursor.masks.visible.is_empty());drop(cursor);drop(original);assert_eq!(counter.load(Ordering::Acquire),0);
-  let fault=||Err(io::Error::from_raw_os_error(1450));let b=crate::SettingAdmission::new(&counter,1<<20,&fault);let error=NativeDemandLayoutCursor::new(&b).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,5000,&||Ok(()));let source="/datum/a\n";let tokens=lex_spans(source).tokens;let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let error=cursor.advance(source,&tokens,&original,true).err().unwrap();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert!(cursor.masks.visible.is_empty());drop(cursor);drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let fault=||Err(io::Error::from_raw_os_error(1450));let b=crate::SettingAdmission::new(&counter,1<<20,&fault);let error=NativeDemandLayoutCursor::new(&b).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_demand_layout_resumes_same_mask_group_inline_state_with_funded_batches(){
-  let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let source="/datum/a\n    var/list/value=list(\n        1,\n        2)\n/proc/p() return 3\n";let tokens=lex_spans(source).tokens;let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let mut batches=Vec::new();let mut end=0;
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let source="/datum/a\n    var/list/value=list(\n        1,\n        2)\n/proc/p() return 3\n";let tokens=lex_spans(source).tokens;let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let mut batches=Vec::new();let mut end=0;
   for raw in source.split_inclusive('\n'){end+=raw.len();let n=tokens.partition_point(|t|t.span.end<=end);batches.push(cursor.advance(&source[..end],&tokens[..n],&original,end==source.len()).unwrap());}
-  let old=original_declaration_lines(source,Span::new(0,source.len()),&tokens);let rows:Vec<_>=batches.iter().flat_map(|batch|batch.iter()).collect();assert_eq!(rows.len(),old.len());for(a,b)in rows.into_iter().zip(old){assert_eq!((a.indent,a.header_start,a.header_end,a.same_line_body),(b.indent,b.header_start,b.header_end,b.same_line_body));}drop(cursor);assert!(counter.load(Ordering::Acquire)>0);drop(batches);assert_eq!(counter.load(Ordering::Acquire),original.storage.bytes());drop(original);assert_eq!(counter.load(Ordering::Acquire),0);
+  let old=original_declaration_lines(source,Span::new(0,source.len()),&tokens);let rows:Vec<_>=batches.iter().flat_map(|batch|batch.iter()).collect();assert_eq!(rows.len(),old.len());for(a,b)in rows.into_iter().zip(old){assert_eq!((a.indent,a.header_start,a.header_end,a.same_line_body),(b.indent,b.header_start,b.header_end,b.same_line_body));}drop(cursor);assert!(counter.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(batches);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()));drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_sparse_large_native_demand_layout_pays_real_two_masks_and_growth_peak_without_source_multiplier(){
   let mut source=String::from("/*");source.push_str(&"x".repeat(1_550_000));source.push_str("*/\n");let tokens=lex_spans(&source).tokens;
-  let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,6<<20,&||Ok(()));let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let batch=cursor.advance(&source,&tokens,&original,true).unwrap();assert!(batch.is_empty());assert!(counter.load(Ordering::Acquire)>=source.len()*2);assert!(counter.load(Ordering::Acquire)<6<<20);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),original.storage.bytes()+batch._credit.bytes());drop(batch);assert_eq!(counter.load(Ordering::Acquire),original.storage.bytes());drop(original);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,6<<20,&||Ok(()));let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let batch=cursor.advance(&source,&tokens,&original,true).unwrap();assert!(batch.is_empty());assert!(counter.load(Ordering::Acquire)>=crate::SettingChargeCounter::root_allocation_bytes() + (source.len()*2));assert!(counter.load(Ordering::Acquire)<6<<20);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()+batch._credit.bytes()));drop(batch);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()));drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn cloned_formal_identities_do_not_pin_two_independently_funded_layout_batches() {
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let fail=std::cell::Cell::new(false);
     let poll=||if fail.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())};
     let a=crate::SettingAdmission::new(&used,1<<20,&poll);
@@ -174,7 +174,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
     // A new admission starts a new operation; this one has a latched I/O
     // failure. Rebuild only this tiny fixture to test both live batches.
     drop((first,cursor,identity,another,original));
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
 
     let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
     let original=state(&a);
@@ -188,19 +188,19 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
     assert!(final_identity.same(&another));
     let fixed=final_identity.credit.lease.bytes();
     let base=original.storage.bytes();
-    assert_eq!(used.load(Ordering::Acquire),base+fixed+first._credit.bytes()+second._credit.bytes());
+    assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (base+fixed+first._credit.bytes()+second._credit.bytes()));
     assert_eq!((first[0].header_start,second[0].header_start),(0,first_end));
     let second_bytes=second._credit.bytes();
     drop(first);
-    assert_eq!(used.load(Ordering::Acquire),base+fixed+second_bytes);
+    assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (base+fixed+second_bytes));
     drop((final_identity,identity,another));
-    assert_eq!(used.load(Ordering::Acquire),base+second_bytes);
+    assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (base+second_bytes));
     drop((second,original));
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_long_source_keeps_only_live_header_mask_window_and_dropped_batch_rows_do_not_accumulate_debt(){
-  let source="/datum/a\n".repeat(2048);let tokens=lex_spans(&source).tokens;let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,64<<10,&||Ok(()));let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let mut end=0;
+  let source="/datum/a\n".repeat(2048);let tokens=lex_spans(&source).tokens;let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,64<<10,&||Ok(()));let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let mut end=0;
   for raw in source.split_inclusive('\n'){end+=raw.len();let n=tokens.partition_point(|token|token.span.end<=end);let batch=cursor.advance(&source[..end],&tokens[..n],&original,end==source.len()).unwrap();assert_eq!(batch.len(),1);assert_eq!(batch[0].header_start,end-raw.len());assert!(cursor.masks.visible.is_empty());assert!(cursor.masks.visible.capacity()<128);assert!(counter.load(Ordering::Acquire)<64<<10);drop(batch);}
-  assert_eq!(cursor.source_base,source.len());drop(cursor);drop(original);assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(cursor.source_base,source.len());drop(cursor);drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }

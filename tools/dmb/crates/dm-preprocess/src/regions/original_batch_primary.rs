@@ -56,7 +56,7 @@ impl Signals{
  fn failure_kind(&self)->Option<io::ErrorKind>{self.first.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_ref().map(io::Error::kind)}
  fn take(&self)->Option<io::Error>{self.first.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()}
 }
-enum Message{Start(OriginalDeliveryFrontier),Batch(Batch),End(Option<OriginalProducedEnd>)}
+enum Message{Start(OriginalDeliveryFrontier,bool),Batch(Batch),End(Option<OriginalProducedEnd>)}
 fn fill(source:&mut dyn OriginalPreparedTokenSource,owner:&OriginalOutputIdentity,a:&SettingAdmission<'_>,cancel:Option<&Signals>)->io::Result<Option<Batch>>{
  let mut batch=Batch::new(owner,a)?;
  while batch.len()<UNITS{
@@ -73,12 +73,12 @@ fn fill(source:&mut dyn OriginalPreparedTokenSource,owner:&OriginalOutputIdentit
 fn send_batches(source:&mut dyn OriginalPreparedTokenSource,a:&SettingAdmission<'_>,tx:&SyncSender<Message>,signals:&Signals,trace_enabled:bool)->io::Result<()>{
  let mut trace=ProducerTrace{enabled:trace_enabled,fill:BatchTrace::default(),send:BatchTrace::default()};
  let initial=source.initial_delivery();
- if tx.send(Message::Start(initial.clone())).is_err(){source.stop();return Ok(())}
+ if tx.send(Message::Start(initial.clone(),source.projects_body_spelling())).is_err(){source.stop();return Ok(())}
  loop{let next=trace.fill.measure(trace_enabled,||fill(source,initial.owner(),a,Some(signals)))?;if signals.cancelled.load(Ordering::Acquire){source.stop();return Ok(())}match next{Some(batch)=>if trace.send.measure(trace_enabled,||tx.send(Message::Batch(batch))).is_err(){source.stop();return Ok(())},None if source.reached_eof()=>{let _=tx.send(Message::End(source.actual_end()));return Ok(())},None=>{source.stop();return Ok(())}}}
 }
-struct AsyncSource<'a,'budget>{rx:Option<Receiver<Message>>,current:Option<Cursor>,initial:OriginalDeliveryFrontier,signals:&'a Signals,a:&'a SettingAdmission<'budget>,trace_enabled:bool,receive:BatchTrace,actual_end:Option<OriginalProducedEnd>,ended:bool,stopped:bool}
+struct AsyncSource<'a,'budget>{rx:Option<Receiver<Message>>,current:Option<Cursor>,initial:OriginalDeliveryFrontier,signals:&'a Signals,a:&'a SettingAdmission<'budget>,trace_enabled:bool,receive:BatchTrace,actual_end:Option<OriginalProducedEnd>,ended:bool,stopped:bool,project_body_spelling:bool}
 impl<'a,'budget> AsyncSource<'a,'budget>{
- fn new(rx:Receiver<Message>,signals:&'a Signals,a:&'a SettingAdmission<'budget>,trace_enabled:bool)->io::Result<Self>{let initial=match rx.recv(){Ok(Message::Start(start))if start.end()==0&&start.owner().admitted_by(a)=>start,Ok(_)=>return Err(io::ErrorKind::InvalidData.into()),Err(_)=>return Err(io::Error::new(io::ErrorKind::UnexpectedEof,"actual producer ended before its batch start"))};Ok(Self{rx:Some(rx),current:None,initial,signals,a,trace_enabled,receive:BatchTrace::default(),actual_end:None,ended:false,stopped:false})}
+ fn new(rx:Receiver<Message>,signals:&'a Signals,a:&'a SettingAdmission<'budget>,trace_enabled:bool)->io::Result<Self>{let(initial,project_body_spelling)=match rx.recv(){Ok(Message::Start(start,project))if start.end()==0&&start.owner().admitted_by(a)=>(start,project),Ok(_)=>return Err(io::ErrorKind::InvalidData.into()),Err(_)=>return Err(io::Error::new(io::ErrorKind::UnexpectedEof,"actual producer ended before its batch start"))};Ok(Self{rx:Some(rx),current:None,initial,signals,a,trace_enabled,receive:BatchTrace::default(),actual_end:None,ended:false,stopped:false,project_body_spelling})}
 }
 impl Drop for AsyncSource<'_,'_>{fn drop(&mut self){self.signals.cancelled.store(true,Ordering::Release);self.rx.take();
  if self.trace_enabled {
@@ -86,10 +86,11 @@ impl Drop for AsyncSource<'_,'_>{fn drop(&mut self){self.signals.cancelled.store
  }
 }}
 impl OriginalPreparedTokenSource for AsyncSource<'_,'_>{
+ fn projects_body_spelling(&self)->bool{self.project_body_spelling}
  fn initial_delivery(&self)->OriginalDeliveryFrontier{self.initial.clone()}
  fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{
   if self.stopped{return Err(io::ErrorKind::InvalidInput.into())}if self.ended{return Ok(None)}
-  loop{if let Some(cursor)=&mut self.current{if let Some(token)=cursor.next(self.a)?{return Ok(Some(token))}}self.current.take();let rx=self.rx.as_ref().ok_or(io::ErrorKind::InvalidInput)?;match self.receive.measure(self.trace_enabled,||rx.recv()){Ok(Message::Batch(batch))=>{if batch.len()==0||batch.len()>UNITS{return Err(io::ErrorKind::InvalidData.into())}self.current=Some(batch.cursor())},Ok(Message::End(actual))=>{self.actual_end=actual;self.ended=true;return Ok(None)},Ok(Message::Start(_))=>return Err(io::ErrorKind::InvalidData.into()),Err(_)=>return Err(io::Error::new(io::ErrorKind::UnexpectedEof,"actual batch producer disconnected before EOF"))}}
+  loop{if let Some(cursor)=&mut self.current{if let Some(token)=cursor.next(self.a)?{return Ok(Some(token))}}self.current.take();let rx=self.rx.as_ref().ok_or(io::ErrorKind::InvalidInput)?;match self.receive.measure(self.trace_enabled,||rx.recv()){Ok(Message::Batch(batch))=>{if batch.len()==0||batch.len()>UNITS{return Err(io::ErrorKind::InvalidData.into())}self.current=Some(batch.cursor())},Ok(Message::End(actual))=>{self.actual_end=actual;self.ended=true;return Ok(None)},Ok(Message::Start(..))=>return Err(io::ErrorKind::InvalidData.into()),Err(_)=>return Err(io::Error::new(io::ErrorKind::UnexpectedEof,"actual batch producer disconnected before EOF"))}}
  }
  fn reached_eof(&self)->bool{self.ended}
  fn actual_end(&self)->Option<OriginalProducedEnd>{if self.ended&&!self.stopped{self.actual_end.clone()}else{None}}
@@ -116,6 +117,7 @@ impl<'source,'admission,'budget> Cooperative<'source,'admission,'budget>{
 }
 impl Drop for Cooperative<'_,'_,'_>{fn drop(&mut self){if !self.ended{self.source.stop()}}}
 impl OriginalPreparedTokenSource for Cooperative<'_,'_,'_>{
+ fn projects_body_spelling(&self)->bool{self.source.projects_body_spelling()}
  fn initial_delivery(&self)->OriginalDeliveryFrontier{self.initial.clone()}
  fn next_prepared(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{if self.stopped{return Err(io::ErrorKind::InvalidInput.into())}if self.ended{return Ok(None)}loop{if let Some(cursor)=&mut self.current{if let Some(token)=cursor.next(self.a)?{return Ok(Some(token))}}self.current.take();match self.receive()?{Some(batch)=>self.current=Some(batch.cursor()),None if self.eof&&self.pending.is_none()&&self.len==0=>{self.ended=true;return Ok(None)},None=>return Err(io::ErrorKind::InvalidData.into())}}}
  fn reached_eof(&self)->bool{self.ended}

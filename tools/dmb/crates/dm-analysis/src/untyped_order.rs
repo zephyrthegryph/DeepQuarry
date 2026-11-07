@@ -869,7 +869,7 @@ mod projected_policy_tests {
     }
     #[test]
     fn projected_policy_matches_owned_proc_reference_and_new_observation_without_cloning_nodes() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
         let a = dm_syntax::SettingAdmission::new(&counter, 16 * 1024 * 1024, &checkpoint);
         for rhs in ["target::handler(hidden = 1)", "new /datum/example(shown = 2)",
@@ -907,7 +907,7 @@ mod projected_policy_tests {
     }
     #[test]
     fn projected_assignment_reports_current_lhs_separately_from_old_statement_anchor_after_rebase() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
         let a = dm_syntax::SettingAdmission::new(&counter, 16 * 1024 * 1024, &checkpoint);
         let rhs = "(outer = (inner = 3))";
@@ -943,7 +943,7 @@ mod projected_policy_tests {
     }
     #[test]
     fn projected_statement_assignment_boundary_matches_owned_and_excludes_nested_writes() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
         let a = dm_syntax::SettingAdmission::new(&counter, 16 * 1024 * 1024, &checkpoint);
         for (rhs, expected) in [("key = (ckey = 1)", vec!["key"]),
@@ -973,7 +973,7 @@ mod projected_policy_tests {
 #[cfg(test)]
 pub(crate) fn projected_body_host_for_test() -> std::sync::Arc<dyn dm_tree::frontend::BodySyntaxQueries> {
     #[derive(Debug)]
-    struct Host(std::sync::Arc<std::sync::atomic::AtomicUsize>);
+    struct Host(std::sync::Arc<dm_syntax::SettingChargeCounter>);
     impl dm_tree::frontend::BodySyntaxQueries for Host {
         fn syntax(&self, input: &std::sync::Arc<dm_tree::frontend::BodySyntaxInput>) -> Result<std::sync::Arc<dm_tree::frontend::BodySyntax>, dm_tree::frontend::Diagnostic> {
             let checkpoint = || Ok(());
@@ -999,7 +999,7 @@ mod projected_event_parity_tests {
     }
     #[test]
     fn projected_expression_and_stored_write_streams_match_old_order_and_current_statement_anchors() {
-        let counter = Arc::new(AtomicUsize::new(0)); let checkpoint = || Ok(());
+        let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap(); let checkpoint = || Ok(());
         let admission = dm_syntax::SettingAdmission::new(&counter, 16 * 1024 * 1024, &checkpoint);
         for rhs in ["items += new /datum", "items = list(D = null)", "items.Add(D)",
             "target::handler(ignored = 1)", "new /datum/probe(visible = 2)", "nameof(holder.target)"] {

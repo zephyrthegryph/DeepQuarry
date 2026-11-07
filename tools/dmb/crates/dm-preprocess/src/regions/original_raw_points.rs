@@ -111,9 +111,9 @@ impl OriginalRawPointIndex{
  }
 }
 #[cfg(test)]mod tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  #[test]fn actual_raw_point_roster_preserves_byte_columns_bom_crlf_backward_spans_and_eof_zero_column(){
-  let bytes=b"\xef\xbb\xbf\xc3\xa9\r\nx\n";let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut index=OriginalRawPointIndex::new(bytes,&a).unwrap();assert_eq!(index.at(bytes,3,&a).unwrap(),OriginalRawPoint{line:1,column:1});assert_eq!(index.at(bytes,4,&a).unwrap(),OriginalRawPoint{line:1,column:2});assert_eq!(index.at(bytes,7,&a).unwrap(),OriginalRawPoint{line:2,column:1});assert_eq!(index.at(bytes,5,&a).unwrap(),OriginalRawPoint{line:1,column:3});assert_eq!(index.notice(bytes,OriginalLexicalNoticePoint::eof(bytes.len()),&a).unwrap(),OriginalRawPoint{line:3,column:0});drop(index);assert_eq!(used.load(Ordering::Acquire),0);
+  let bytes=b"\xef\xbb\xbf\xc3\xa9\r\nx\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut index=OriginalRawPointIndex::new(bytes,&a).unwrap();assert_eq!(index.at(bytes,3,&a).unwrap(),OriginalRawPoint{line:1,column:1});assert_eq!(index.at(bytes,4,&a).unwrap(),OriginalRawPoint{line:1,column:2});assert_eq!(index.at(bytes,7,&a).unwrap(),OriginalRawPoint{line:2,column:1});assert_eq!(index.at(bytes,5,&a).unwrap(),OriginalRawPoint{line:1,column:3});assert_eq!(index.notice(bytes,OriginalLexicalNoticePoint::eof(bytes.len()),&a).unwrap(),OriginalRawPoint{line:3,column:0});drop(index);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
@@ -141,7 +141,7 @@ impl OriginalRawPointIndex{
 
      let source=format!("{}\r\nnext\nend","a".repeat(16_384));
      let bytes=source.as_bytes();
-     let used=Arc::new(AtomicUsize::new(0));
+     let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
      let calls=Cell::new(0);
      let count=||{calls.set(calls.get()+1);Ok(())};
      let a=SettingAdmission::new(&used,1<<20,&count);
@@ -175,13 +175,13 @@ impl OriginalRawPointIndex{
      let eof=index.at(bytes,bytes.len(),&a).unwrap();
      assert_eq!(index.line_end_using(bytes,eof.line,&a).unwrap(),bytes.len());
      drop(index);
-     assert_eq!(used.load(Ordering::Acquire),0);
+     assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn actual_source_line_starts_stay_exact_under_compact_allocation_cap() {
      let bytes = b"x\n".repeat(2048);
-     let used = Arc::new(AtomicUsize::new(0));
+     let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
      // The largest exact overlap is 2,048 old + 4,096 new four-byte starts.
      // This cap cannot admit the former eight-byte growth on 64-bit.
      let a = SettingAdmission::new(&used, 32 << 10, &|| Ok(()));
@@ -192,16 +192,16 @@ impl OriginalRawPointIndex{
      assert_eq!(index.line_start(1), Some(0));
      assert_eq!(index.line_start(2049), Some(bytes.len()));
      assert_eq!(index.line_start(2050), None);
-     assert_eq!(used.load(Ordering::Acquire), 4096 * std::mem::size_of::<u32>());
+     assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (4096 * std::mem::size_of::<u32>()));
      drop(index);
-     assert_eq!(used.load(Ordering::Acquire), 0);
+     assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[cfg(target_pointer_width = "64")]
  #[test]
  fn declared_raw_width_uses_exact_wide_fallback_beyond_u32_without_allocating_source() {
-     let used = Arc::new(AtomicUsize::new(0));
-     let a = SettingAdmission::new(&used, 1024, &|| Ok(()));
+     let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let a = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (1024), &|| Ok(()));
      let boundary = u32::MAX as usize;
      let mut compact = LineStarts::new(boundary, &a).unwrap();
      assert!(matches!(compact, LineStarts::Compact(_)));
@@ -216,6 +216,6 @@ impl OriginalRawPointIndex{
      assert_eq!(wide.at_or_before(boundary + 1), Some((3, boundary + 1)));
      assert_eq!(wide.get(3), Some(boundary + 2));
      drop((compact, wide));
-     assert_eq!(used.load(Ordering::Acquire), 0);
+     assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

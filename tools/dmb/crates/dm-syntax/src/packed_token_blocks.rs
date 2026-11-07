@@ -581,12 +581,12 @@ impl PackedTokenBlocks {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+    use std::sync::{atomic::{Ordering}};
 
     #[test]
     fn packed_windows_preserve_page_boundaries_and_wide_actual_values() {
         assert_eq!(mem::size_of::<PackedToken>(), 4);
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut tape = PackedTokenBlocks::new(&a).unwrap();
         for at in 0..PAGE_ROWS + 3 {
@@ -625,12 +625,12 @@ mod tests {
         drop(shared);
         assert_eq!(used.load(Ordering::Acquire), retained);
         drop(alias);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn page_local_token_bits_preserve_zero_endpoints_and_every_full_width_escape() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut tape = PackedTokenBlocks::new(&a).unwrap();
         let token = |kind, start, end| SpanToken { kind, span: Span::new(start, end) };
@@ -669,12 +669,12 @@ mod tests {
         assert_eq!(tape.get(PAGE_ROWS + 1), Some(token(TokenKind::Punctuation, 0, 1)));
         assert_eq!(tape.get(PAGE_ROWS + 2), None);
         drop(tape);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn completed_page_seal_exactly_accounts_overlap_and_keeps_existing_wide_ordinals() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut tape = PackedTokenBlocks::new(&a).unwrap();
         let expected = |at: usize| {
@@ -729,12 +729,12 @@ mod tests {
         assert_eq!(tape.window().get(GROUP_ROWS - 1), Some(expected(GROUP_ROWS - 1)));
         assert_eq!(tape.window().get(GROUP_ROWS), Some(expected(GROUP_ROWS)));
         drop(tape);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn narrow_completed_pages_keep_width_geometry_and_original_wide_sides_exact() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut tape = PackedTokenBlocks::new(&a).unwrap();
         let expected = |at: usize| {
@@ -763,14 +763,14 @@ mod tests {
         assert!(tape.window().iter().eq((0..=PAGE_ROWS).map(expected)));
         let mut storage = 0;
         tape.visit_storage(|_, _, cap| storage += cap);
-        assert_eq!(storage, used.load(Ordering::Acquire) + 2 * mem::size_of::<usize>() + mem::size_of::<AtomicUsize>());
+        assert_eq!(storage, used.load(Ordering::Acquire));
         drop(tape);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn narrow_unprofitable_pages_keep_the_exact_three_byte_fallback() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut tape = PackedTokenBlocks::new(&a).unwrap();
         let expected = |at: usize| {
@@ -784,7 +784,7 @@ mod tests {
         assert!(matches!(&tape.pages[0].rows, TokenPageRows::Compact(_)));
         assert!(tape.window().iter().eq((0..=PAGE_ROWS).map(expected)));
         drop(tape);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[cfg(debug_assertions)]
@@ -811,21 +811,21 @@ mod tests {
 
     #[test]
     fn packed_page_growth_fails_closed_one_byte_short_and_refunds_every_owner() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let exact = 4 * mem::size_of::<TokenPage>() + PAGE_ROWS * mem::size_of::<PackedToken>();
-        let a = SettingAdmission::new(&used, exact - 1, &|| Ok(()));
+        let a = SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes() + (exact - 1), &|| Ok(()));
         let mut tape = PackedTokenBlocks::new(&a).unwrap();
         let token = SpanToken { kind: TokenKind::Punctuation, span: Span::new(0, 1) };
         assert_eq!(tape.push(token, &a).unwrap_err().kind(), io::ErrorKind::OutOfMemory);
         assert!(tape.window().is_empty());
         assert_eq!(tape.push(token, &a).unwrap_err().kind(), io::ErrorKind::InvalidInput);
         drop(tape);
-        assert_eq!(used.load(Ordering::Acquire), 0);
-        let a = SettingAdmission::new(&used, exact, &|| Ok(()));
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+        let a = SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes() + (exact), &|| Ok(()));
         let mut tape = PackedTokenBlocks::new(&a).unwrap();
         tape.push(token, &a).unwrap();
-        assert_eq!(used.load(Ordering::Acquire), exact);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (exact));
         drop(tape);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 }

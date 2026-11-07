@@ -148,6 +148,7 @@ impl PackedBatchValue {
 enum LiteralStorage {
     Single(LiteralValue),
     Page(BatchValues),
+    Projected(Box<crate::original_literal_projection::DetachedProjectedLiteral>),
 }
 
 struct Payload {
@@ -166,8 +167,9 @@ pub struct OriginalLiteralData(Option<Arc<Payload>>, usize);
 /// neither storage nor source authority, and has no independent constructor.
 #[derive(Clone, Copy)]
 pub struct OriginalLiteralRef<'a> {
-    owner: &'a Arc<Payload>,
+    owner: Option<&'a Arc<Payload>>,
     ordinal: usize,
+    projected: Option<crate::original_literal_projection::ProjectedLiteralRef<'a>>,
 }
 
 /// One actual owner retained by a compact fact page. The credit follows the
@@ -175,7 +177,7 @@ pub struct OriginalLiteralRef<'a> {
 pub(crate) struct OriginalLiteralOwner(Option<Arc<Payload>>);
 impl OriginalLiteralOwner {
     pub(crate) fn at(&self, ordinal: usize) -> OriginalLiteralRef<'_> {
-        OriginalLiteralRef { owner: self.0.as_ref().expect("live bank owner"), ordinal }
+        OriginalLiteralRef { owner: Some(self.0.as_ref().expect("live bank owner")), ordinal, projected: None }
     }
 }
 fn drop_owner(owner: &mut Option<Arc<Payload>>) {
@@ -263,7 +265,7 @@ impl OriginalLiteralData {
     fn payload(&self) -> LiteralValueView<'_> { self.as_view().payload() }
 
     pub fn as_view(&self) -> OriginalLiteralRef<'_> {
-        OriginalLiteralRef { owner: self.0.as_ref().expect("live literal DATA"), ordinal: self.1 }
+        OriginalLiteralRef { owner: Some(self.0.as_ref().expect("live literal DATA")), ordinal: self.1, projected: None }
     }
     pub(crate) fn into_bank_owner(mut self) -> OriginalLiteralOwner {
         OriginalLiteralOwner(self.0.take())
@@ -343,9 +345,9 @@ impl OriginalLiteralData {
         Ok(Self(Some(Arc::new(Payload { storage: LiteralStorage::Single(value), credit })), 0))
     }
     pub fn string_mode(&self) -> OriginalStringMode { self.as_view().string_mode() }
-    pub fn raw(&self) -> &str { self.as_view().raw() }
-    pub fn raw_storage(&self) -> LiteralRawStorage<'_> { self.as_view().raw_storage() }
-    pub fn value(&self) -> OriginalTokenValue<&str> { self.as_view().value() }
+    pub fn raw(&self) -> &str { self.as_view().raw().expect("owned literal spelling") }
+    pub fn raw_storage(&self) -> LiteralRawStorage<'_> { self.as_view().raw_storage().expect("owned literal spelling") }
+    pub fn value(&self) -> OriginalTokenValue<&str> { self.as_view().value().expect("owned literal VALUE") }
     pub fn same_owner<'b>(&self, other: impl Into<OriginalLiteralRef<'b>>) -> bool {
         self.as_view().same_owner(other)
     }
@@ -362,29 +364,61 @@ impl fmt::Debug for OriginalLiteralRef<'_> {
     }
 }
 impl<'a> OriginalLiteralRef<'a> {
+    fn full_owner(self)->&'a Arc<Payload>{self.owner.expect("full physical literal owner")}
+    fn projection(self)->Option<crate::original_literal_projection::ProjectedLiteralRef<'a>>{
+     self.projected.or_else(||match &self.owner?.storage{LiteralStorage::Projected(data)=>Some(data.view()),_=>None})
+    }
+    pub fn is_projected(self)->bool{self.projection().is_some()}
+    pub(crate) fn from_projection(data:crate::original_literal_projection::ProjectedLiteralRef<'a>)->Self{
+     Self{owner:None,ordinal:data.ordinal,projected:Some(data)}
+    }
+    pub(crate) fn projection_candidate(self)->Option<(crate::original_literal_projection::ProjectedLiteral,usize)>{
+     let owner=self.full_owner();
+     if self.ordinal!=0||Arc::strong_count(owner)!=1||Arc::weak_count(owner)!=0{return None}
+     let LiteralStorage::Single(data)=&owner.storage else{return None};
+     let kind=match data.kind{
+      LiteralKind::Int=>0,LiteralKind::Float=>1,
+      LiteralKind::String if data.value_in_raw[1]!=0||data.text.is_empty()=>2,
+      LiteralKind::Resource if data.value_in_raw[1]!=0||data.text.is_empty()=>3,
+      _=>return None,
+     };
+     Some((crate::original_literal_projection::ProjectedLiteral{bits:data.scalar_bits,kind,mode:data.string_mode,alias:data.value_in_raw},owner.credit.bytes()))
+    }
     fn payload(self) -> LiteralValueView<'a> {
-        match &self.owner.storage {
+        match &self.full_owner().storage {
             LiteralStorage::Single(value) => LiteralValueView {
                 kind: value.kind, scalar_bits: value.scalar_bits,
                 value_in_raw: value.value_in_raw, raw: LiteralRawStorage::from_string(&value.raw), text: &value.text,
             },
             LiteralStorage::Page(values) => values.rows[self.ordinal].view(&values.cooked),
+            LiteralStorage::Projected(_)=>unreachable!("projection handled before payload view"),
         }
     }
     pub fn string_mode(self)->OriginalStringMode {
-        match &self.owner.storage {
+        if let Some(data)=self.projection(){return data.descriptor.mode}
+        match &self.full_owner().storage {
             LiteralStorage::Single(value) => value.string_mode,
             LiteralStorage::Page(values) => values.rows[self.ordinal].string_mode,
+            LiteralStorage::Projected(_)=>unreachable!("projection handled before mode"),
         }
     }
-    pub fn raw(self)->&'a str { self.raw_storage().as_str() }
-    pub fn raw_storage(self)->LiteralRawStorage<'a> {
-        match &self.owner.storage {
+    pub fn raw(self)->io::Result<&'a str> { Ok(self.raw_storage()?.as_str()) }
+    pub fn raw_storage(self)->io::Result<LiteralRawStorage<'a>> {
+        if let Some(data)=self.projection(){return Ok(LiteralRawStorage{text:data.raw()?,capacity:data.raw_capacity})}
+        Ok(self.full_raw_storage())
+    }
+    fn full_raw_storage(self)->LiteralRawStorage<'a> {
+        match &self.full_owner().storage {
             LiteralStorage::Single(value) => LiteralRawStorage::from_string(&value.raw),
             LiteralStorage::Page(values) => values.rows[self.ordinal].raw.view(),
+            LiteralStorage::Projected(_)=>unreachable!("projection handled before spelling"),
         }
     }
-    pub fn value(self)->OriginalTokenValue<&'a str> {
+    pub fn value(self)->io::Result<OriginalTokenValue<&'a str>> {
+        if let Some(data)=self.projection(){return data.descriptor.value(data.raw()?)}
+        Ok(self.full_value())
+    }
+    fn full_value(self)->OriginalTokenValue<&'a str> {
         let payload = self.payload();
         let [start, tail] = payload.value_in_raw;
         let text: &str = if tail != 0 {
@@ -407,17 +441,30 @@ impl<'a> OriginalLiteralRef<'a> {
     /// Issued literal occurrence identity, independent of storage reuse.
     pub fn same_owner<'b>(self, other: impl Into<OriginalLiteralRef<'b>>) -> bool {
         let other = other.into();
-        self.ordinal == other.ordinal && Arc::ptr_eq(self.owner, other.owner)
+        match(self.projection(),other.projection()){
+         (Some(left),Some(right))=>left.same(right),
+         (None,None)=>self.ordinal == other.ordinal && Arc::ptr_eq(self.full_owner(), other.full_owner()),
+         _=>false,
+        }
     }
-    pub fn detach(self) -> OriginalLiteralData {
-        OriginalLiteralData(Some(Arc::clone(self.owner)), self.ordinal)
+    pub fn detach_using(self,a:&SettingAdmission<'_>) -> io::Result<OriginalLiteralData> {
+        if let Some(data)=self.projected{
+         let (projected,mut credit)=crate::original_literal_projection::DetachedProjectedLiteral::new(data,a)?;
+         if let Err(error)=a.grow(&mut credit,size_of::<Payload>()+2*size_of::<usize>()){
+          let error=a.take_operational_error().unwrap_or(error);drop(projected);drop(credit);return Err(error)
+         }
+         return Ok(OriginalLiteralData(Some(Arc::new(Payload{storage:LiteralStorage::Projected(projected),credit})),0));
+        }
+        Ok(OriginalLiteralData(Some(Arc::clone(self.full_owner())), self.ordinal))
     }
-    pub(crate) fn owner_key(self) -> usize { Arc::as_ptr(self.owner) as usize }
+    pub(crate) fn owner_key(self) -> usize { Arc::as_ptr(self.full_owner()) as usize }
     pub(crate) fn ordinal(self) -> usize { self.ordinal }
     pub fn kind(self)->&'static str {
-        let kind = match &self.owner.storage {
+        if let Some(data)=self.projection(){return data.descriptor.kind()}
+        let kind = match &self.full_owner().storage {
             LiteralStorage::Single(value) => value.kind,
             LiteralStorage::Page(values) => values.rows[self.ordinal].kind,
+            LiteralStorage::Projected(_)=>unreachable!("projection handled before kind"),
         };
         match kind {
             LiteralKind::Int => "Int",
@@ -433,7 +480,7 @@ impl<'a> OriginalLiteralRef<'a> {
     // Do not count shared admission-counter Arcs in this payload family.
     #[cfg(debug_assertions)]
     pub(crate) fn trace_payload(self)->(bool,usize){
-        let owner=self.owner;
+        let owner=self.full_owner();
         (Arc::strong_count(owner)==1,owner.credit.bytes())
     }
     /// Estimates the potential spelling-only projection on this issued row.
@@ -448,7 +495,7 @@ impl<'a> OriginalLiteralRef<'a> {
             LiteralKind::InterpBegin | LiteralKind::InterpPart | LiteralKind::InterpEnd => false,
         };
         let standalone = (self.ordinal == 0 && self.page_storage_identity().is_none()
-            && Arc::strong_count(self.owner) == 1).then_some(self.owner.credit.bytes());
+            && Arc::strong_count(self.full_owner()) == 1).then_some(self.full_owner().credit.bytes());
         eligible.then_some((row.raw.capacity(), standalone))
     }
     #[cfg(debug_assertions)]
@@ -461,7 +508,7 @@ impl<'a> OriginalLiteralRef<'a> {
     /// Inspect the physical owner, including siblings not yet delivered.
     #[cfg(debug_assertions)]
     pub(crate) fn trace_batch_numeric_raw(self) -> (usize, usize, usize) {
-        let LiteralStorage::Page(batch) = &self.owner.storage else { unreachable!("actual batch owner") };
+        let LiteralStorage::Page(batch) = &self.full_owner().storage else { unreachable!("actual batch owner") };
         let mut rows = 0;
         let mut raw_bytes = 0usize;
         for row in &batch.rows {
@@ -474,16 +521,20 @@ impl<'a> OriginalLiteralRef<'a> {
     }
 
     pub(crate) fn page_storage_identity(self) -> Option<usize> {
-        let owner = self.owner.as_ref();
+        let owner = self.full_owner().as_ref();
         matches!(&owner.storage, LiteralStorage::Page(_)).then_some(owner as *const Payload as usize)
     }
 
     /// Exact known live allocations only, not reservations, parser caches or
     /// source authority. Caller performs address dedup across all aliases.
     pub fn visit_storage(self,mut visit:impl FnMut(usize,usize,usize)) {
-        let owner = self.owner.as_ref();
+        if self.owner.is_none(){
+         if let Some(data)=self.projection(){data.owner.visit_storage(visit)}
+         return
+        }
+        let owner = self.full_owner().as_ref();
         let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
-        visit(Arc::as_ptr(self.owner) as usize, fixed, fixed);
+        visit(Arc::as_ptr(self.full_owner()) as usize, fixed, fixed);
         fn raw_storage(raw: LiteralRawStorage<'_>, visit: &mut impl FnMut(usize,usize,usize)) {
             if raw.capacity() != 0 { visit(raw.as_ptr() as usize, raw.as_str().len(), raw.capacity()); }
         }
@@ -491,6 +542,11 @@ impl<'a> OriginalLiteralRef<'a> {
             if !text.is_empty() { visit(text.as_ptr() as usize, text.len(), text.len()); }
         }
         match &owner.storage {
+            LiteralStorage::Projected(data)=>{
+             visit(data.as_ref() as *const _ as usize,size_of::<crate::original_literal_projection::DetachedProjectedLiteral>(),size_of::<crate::original_literal_projection::DetachedProjectedLiteral>());
+             raw_storage(LiteralRawStorage{text:&data.raw,capacity:data.raw.len()},&mut visit);
+             data.owner.visit_storage(&mut visit);
+            }
             LiteralStorage::Single(value) => {
                 raw_storage(LiteralRawStorage::from_string(&value.raw), &mut visit);
                 cooked_storage(&value.text, &mut visit);
@@ -812,24 +868,23 @@ impl OriginalLiteralPool {
 }
 
 impl PartialEq for OriginalLiteralData {
-    fn eq(&self, other: &Self) -> bool { self.as_view() == other.as_view() }
+    fn eq(&self, other: &Self) -> bool { self.as_view().equal_data(other.as_view()).expect("owned literal DATA") }
 }
 impl Eq for OriginalLiteralData {}
-impl PartialEq for OriginalLiteralRef<'_> {
-    fn eq(&self,other:&Self)->bool {
-        if self.raw()!=other.raw()||self.string_mode()!=other.string_mode(){return false}
-        match(self.value(),other.value()) {
-            (OriginalTokenValue::Int(a),OriginalTokenValue::Int(b))=>a==b,
-            (OriginalTokenValue::Float(a),OriginalTokenValue::Float(b))=>a.to_bits()==b.to_bits(),
-            (OriginalTokenValue::String(a),OriginalTokenValue::String(b))|(OriginalTokenValue::Resource(a),OriginalTokenValue::Resource(b))|(OriginalTokenValue::InterpBegin(a),OriginalTokenValue::InterpBegin(b))|(OriginalTokenValue::InterpPart(a),OriginalTokenValue::InterpPart(b))|(OriginalTokenValue::InterpEnd(a),OriginalTokenValue::InterpEnd(b))=>a==b,
-            _=>false,
-        }
-    }
+impl OriginalLiteralRef<'_>{
+ pub fn equal_data(self,other:OriginalLiteralRef<'_>)->io::Result<bool>{
+  if self.raw()?!=other.raw()?||self.string_mode()!=other.string_mode(){return Ok(false)}
+  Ok(match(self.value()?,other.value()?){
+   (OriginalTokenValue::Int(a),OriginalTokenValue::Int(b))=>a==b,
+   (OriginalTokenValue::Float(a),OriginalTokenValue::Float(b))=>a.to_bits()==b.to_bits(),
+   (OriginalTokenValue::String(a),OriginalTokenValue::String(b))|(OriginalTokenValue::Resource(a),OriginalTokenValue::Resource(b))|(OriginalTokenValue::InterpBegin(a),OriginalTokenValue::InterpBegin(b))|(OriginalTokenValue::InterpPart(a),OriginalTokenValue::InterpPart(b))|(OriginalTokenValue::InterpEnd(a),OriginalTokenValue::InterpEnd(b))=>a==b,
+   _=>false,
+  })
+ }
 }
-impl Eq for OriginalLiteralRef<'_> {}
 
 #[cfg(test)]mod tests {
- use super::*; use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*; use std::sync::atomic::{Ordering};
  #[test]
  fn compact_literal_payload_preserves_typed_bits_text_and_exact_admitted_storage() {
     #[cfg(target_pointer_width = "64")]
@@ -847,71 +902,71 @@ impl Eq for OriginalLiteralRef<'_> {}
         assert!(size_of::<Payload>() <= size_of::<PreviousShape>());
         assert!(size_of::<Payload>() <= 72, "bounded standalone owner overhead");
     }
-    let counter = Arc::new(AtomicUsize::new(0));
+    let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let healthy = SettingAdmission::new(&counter, 1 << 20, &|| Ok(()));
     let raw = String::from("raw spelling");
     let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
-    let total = fixed + raw.capacity() + "typed é".len();
-    let tight = SettingAdmission::new(&counter, total - 1, &|| Ok(()));
+    let total = fixed + raw.capacity() + "typed Ã©".len();
+    let tight = SettingAdmission::new(&counter, crate::SettingChargeCounter::root_allocation_bytes() + (total - 1), &|| Ok(()));
     assert_eq!(
-        OriginalLiteralData::from_value_using(raw.clone(), OriginalTokenValue::InterpPart("typed é"), &tight).unwrap_err().kind(),
+        OriginalLiteralData::from_value_using(raw.clone(), OriginalTokenValue::InterpPart("typed Ã©"), &tight).unwrap_err().kind(),
         io::ErrorKind::OutOfMemory,
     );
-    assert_eq!(counter.load(Ordering::Acquire), 0);
-    let part = OriginalLiteralData::from_value_using(raw, OriginalTokenValue::InterpPart("typed é"), &healthy).unwrap();
-    assert!(matches!(part.value(), OriginalTokenValue::InterpPart("typed é")));
-    assert_eq!(counter.load(Ordering::Acquire), total);
+    assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+    let part = OriginalLiteralData::from_value_using(raw, OriginalTokenValue::InterpPart("typed Ã©"), &healthy).unwrap();
+    assert!(matches!(part.value(), OriginalTokenValue::InterpPart("typed Ã©")));
+    assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (total));
     let mut visited = false;
     let typed = part.payload().text.as_ptr() as usize;
     part.visit_storage(|ptr, used, capacity| {
         if ptr == typed {
             visited = true;
-            assert_eq!(used, "typed é".len());
+            assert_eq!(used, "typed Ã©".len());
             assert_eq!(capacity, used);
         }
     });
     assert!(visited);
     let alias = part.clone();
     drop(part);
-    assert_eq!(counter.load(Ordering::Acquire), total);
+    assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (total));
     drop(alias);
-    assert_eq!(counter.load(Ordering::Acquire), 0);
+    assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
 
     let n = OriginalLiteralData::from_value_using("raw".into(), OriginalTokenValue::Int(i32::MIN), &healthy).unwrap();
     let f = OriginalLiteralData::from_value_using("raw".into(), OriginalTokenValue::Float(f32::from_bits(0xffc00001)), &healthy).unwrap();
     assert!(matches!(n.value(), OriginalTokenValue::Int(i32::MIN)));
     assert!(matches!(f.value(), OriginalTokenValue::Float(value) if value.to_bits() == 0xffc00001));
     drop((n, f));
-    assert_eq!(counter.load(Ordering::Acquire), 0);
+    assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn short_static_value_can_borrow_exact_utf8_bytes_from_its_own_raw_owner() {
-  let used = Arc::new(AtomicUsize::new(0));
+  let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
-  let raw = r#""é\n""#;
-  let same = OriginalLiteralData::from_value_with_mode_using(raw.into(), OriginalTokenValue::String(r"é\n"), OriginalStringMode::Raw, &a).unwrap();
+  let raw = r#""Ã©\n""#;
+  let same = OriginalLiteralData::from_value_with_mode_using(raw.into(), OriginalTokenValue::String(r"Ã©\n"), OriginalStringMode::Raw, &a).unwrap();
   let OriginalTokenValue::String(value) = same.value() else { panic!("same issued String variant") };
-  assert_eq!(value, r"é\n");
+  assert_eq!(value, r"Ã©\n");
   assert_eq!(value.as_ptr(), same.raw()[1..].as_ptr());
   let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
-  assert_eq!(used.load(Ordering::Acquire), fixed + same.raw_storage().capacity());
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (fixed + same.raw_storage().capacity()));
   assert_eq!(same.string_mode(), OriginalStringMode::Raw);
   let alias = same.clone();
   drop(same);
-  assert!(matches!(alias.value(), OriginalTokenValue::String(r"é\n")));
+  assert!(matches!(alias.value(), OriginalTokenValue::String(r"Ã©\n")));
   drop(alias);
-  assert_eq!(used.load(Ordering::Acquire), 0);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
 
-  let changed = OriginalLiteralData::from_value_using(raw.into(), OriginalTokenValue::String("é\n"), &a).unwrap();
+  let changed = OriginalLiteralData::from_value_using(raw.into(), OriginalTokenValue::String("Ã©\n"), &a).unwrap();
   let OriginalTokenValue::String(value) = changed.value() else { panic!("same issued String variant") };
-  assert_eq!(value, "é\n");
-  assert_eq!(used.load(Ordering::Acquire), fixed + changed.raw_storage().capacity() + value.len());
+  assert_eq!(value, "Ã©\n");
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (fixed + changed.raw_storage().capacity() + value.len()));
   let resource = OriginalLiteralData::from_value_using("'icons/a.dmi'".into(), OriginalTokenValue::Resource("icons/a.dmi"), &a).unwrap();
   let OriginalTokenValue::Resource(value) = resource.value() else { panic!("same issued Resource variant") };
   assert_eq!(value.as_ptr(), resource.raw()[1..].as_ptr());
   drop((resource, changed));
-  assert_eq!(used.load(Ordering::Acquire), 0);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
 
   let long = format!("'{}'", "x".repeat(256));
   let wide = OriginalLiteralData::from_value_using(long.clone(), OriginalTokenValue::Resource(&long[1..long.len()-1]), &a).unwrap();
@@ -919,47 +974,47 @@ impl Eq for OriginalLiteralRef<'_> {}
   assert_ne!(value.as_ptr(), wide.raw()[1..].as_ptr(), "wide spans keep the full-width owned path");
   assert_eq!(value.len(), 256);
   drop(wide);
-  assert_eq!(used.load(Ordering::Acquire), 0);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn exact_values_and_float_bits_are_data_not_raw_reparse(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
   let values=[OriginalTokenValue::Int(0),OriginalTokenValue::Float(-0.0),OriginalTokenValue::Float(f32::from_bits(0x7fc00111)),OriginalTokenValue::String("[not interpolation]"),OriginalTokenValue::Resource("a\\b")];
   for value in values {let data=OriginalLiteralData::from_value_using("same spelling".into(),value,&a).unwrap();let copy=data.clone();assert_eq!(data,copy);assert!(data.same_owner(&copy));let mut capacity=0;data.visit_storage(|_,_,n|capacity+=n);assert!(capacity>data.raw().len());}
-  let positive=OriginalLiteralData::from_value_using("0".into(),OriginalTokenValue::Float(0.0),&a).unwrap();let negative=OriginalLiteralData::from_value_using("0".into(),OriginalTokenValue::Float(-0.0),&a).unwrap();assert_ne!(positive,negative);drop((positive,negative));assert_eq!(counter.load(Ordering::Acquire),0);
+  let positive=OriginalLiteralData::from_value_using("0".into(),OriginalTokenValue::Float(0.0),&a).unwrap();let negative=OriginalLiteralData::from_value_using("0".into(),OriginalTokenValue::Float(-0.0),&a).unwrap();assert_ne!(positive,negative);drop((positive,negative));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_alias_lifetime_keeps_credit_until_last_data_and_ast_drop(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
-  let data=OriginalLiteralData::from_value_using("\"raw\"".into(),OriginalTokenValue::String("[static]"),&a).unwrap();let charged=counter.load(Ordering::Acquire);let literal=crate::LiteralText::from_original_data(&data,40,&a).unwrap();assert!(literal.original_data().unwrap().same_owner(&data));drop(data);assert_eq!(counter.load(Ordering::Acquire),charged);assert_eq!(literal.syntax_parts().unwrap(),None);drop(literal);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
+  let data=OriginalLiteralData::from_value_using("\"raw\"".into(),OriginalTokenValue::String("[static]"),&a).unwrap();let charged=counter.load(Ordering::Acquire);let literal=crate::LiteralText::from_original_data(&data,40,&a).unwrap();assert!(literal.original_data().unwrap().same_owner(&data));drop(data);assert_eq!(counter.load(Ordering::Acquire),charged);assert_eq!(literal.syntax_parts().unwrap(),None);drop(literal);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_quota_and_first_1450_leave_no_retained_data_and_fresh_admission_recovers(){
-  let counter=Arc::new(AtomicUsize::new(0));let no=||Ok(());let small=SettingAdmission::new(&counter,0,&no);assert!(OriginalLiteralData::from_value_using("x".into(),OriginalTokenValue::String("value"),&small).is_err());assert_eq!(counter.load(Ordering::Acquire),0);
-  let calls=std::cell::Cell::new(0);let stop=||{calls.set(calls.get()+1);if calls.get()==4{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=SettingAdmission::new(&counter,1<<20,&stop);assert!(OriginalLiteralData::from_value_using("raw".into(),OriginalTokenValue::String("value"),&a).is_err());assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
-  let fresh=SettingAdmission::new(&counter,1<<20,&no);drop(OriginalLiteralData::from_value_using("x".into(),OriginalTokenValue::Int(1),&fresh).unwrap());assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let no=||Ok(());let small=SettingAdmission::new(&counter,crate::SettingChargeCounter::root_allocation_bytes(),&no);assert!(OriginalLiteralData::from_value_using("x".into(),OriginalTokenValue::String("value"),&small).is_err());assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let calls=std::cell::Cell::new(0);let stop=||{calls.set(calls.get()+1);if calls.get()==4{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=SettingAdmission::new(&counter,1<<20,&stop);assert!(OriginalLiteralData::from_value_using("raw".into(),OriginalTokenValue::String("value"),&a).is_err());assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let fresh=SettingAdmission::new(&counter,1<<20,&no);drop(OriginalLiteralData::from_value_using("x".into(),OriginalTokenValue::Int(1),&fresh).unwrap());assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
- #[test]fn interpolation_part_is_actual_typed_data_not_static_or_reconstructed(){let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));for value in[OriginalTokenValue::InterpBegin("[not a child]"),OriginalTokenValue::InterpPart("middle"),OriginalTokenValue::InterpEnd("last")]{let data=OriginalLiteralData::from_value_with_mode_using("unrelated raw spelling".into(),value,OriginalStringMode::Normal,&a).unwrap();let alias=data.clone();assert!(matches!(data.value(),OriginalTokenValue::InterpBegin("[not a child]")|OriginalTokenValue::InterpPart("middle")|OriginalTokenValue::InterpEnd("last")));assert!(data.same_owner(&alias));drop(data);assert!(counter.load(Ordering::Acquire)>0);drop(alias);assert_eq!(counter.load(Ordering::Acquire),0);}}
+ #[test]fn interpolation_part_is_actual_typed_data_not_static_or_reconstructed(){let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));for value in[OriginalTokenValue::InterpBegin("[not a child]"),OriginalTokenValue::InterpPart("middle"),OriginalTokenValue::InterpEnd("last")]{let data=OriginalLiteralData::from_value_with_mode_using("unrelated raw spelling".into(),value,OriginalStringMode::Normal,&a).unwrap();let alias=data.clone();assert!(matches!(data.value(),OriginalTokenValue::InterpBegin("[not a child]")|OriginalTokenValue::InterpPart("middle")|OriginalTokenValue::InterpEnd("last")));assert!(data.same_owner(&alias));drop(data);assert!(counter.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(alias);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}}
 }
 
 #[cfg(test)]mod admitted_raw_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]fn raw_spelling_moves_same_allocation_and_credit_without_a_second_capacity_charge(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let mut raw=String::with_capacity(4096);raw.push_str("\"[static]\"");let ptr=raw.as_ptr();let capacity=raw.capacity();let credit=a.reserve(capacity).unwrap();let data=OriginalLiteralData::from_admitted_raw_using(raw,credit,OriginalTokenValue::Int(3),&a).unwrap();assert_eq!(data.raw_storage().as_ptr(),ptr);assert_eq!(counter.load(Ordering::Acquire),capacity+size_of::<Payload>()+2*size_of::<usize>());drop(data);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let mut raw=String::with_capacity(4096);raw.push_str("\"[static]\"");let ptr=raw.as_ptr();let capacity=raw.capacity();let credit=a.reserve(capacity).unwrap();let data=OriginalLiteralData::from_admitted_raw_using(raw,credit,OriginalTokenValue::Int(3),&a).unwrap();assert_eq!(data.raw_storage().as_ptr(),ptr);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (capacity+size_of::<Payload>()+2*size_of::<usize>()));drop(data);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn foreign_or_short_admitted_raw_credit_is_rejected_without_moving_domains_or_leaking_raw(){
-  let own=Arc::new(AtomicUsize::new(0));let other=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&own,1<<20,&poll);let foreign=SettingAdmission::new(&other,1<<20,&poll);let raw=String::from("raw");let credit=foreign.reserve(raw.capacity()).unwrap();assert!(OriginalLiteralData::from_admitted_raw_using(raw,credit,OriginalTokenValue::Int(1),&a).is_err());assert_eq!(own.load(Ordering::Acquire),0);assert_eq!(other.load(Ordering::Acquire),0);let fresh=SettingAdmission::new(&own,1<<20,&poll);let raw=String::from("raw");let short=fresh.reserve(raw.capacity()-1).unwrap();assert!(OriginalLiteralData::from_admitted_raw_using(raw,short,OriginalTokenValue::Int(1),&fresh).is_err());assert_eq!(own.load(Ordering::Acquire),0);
+  let own=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let other=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&own,1<<20,&poll);let foreign=SettingAdmission::new(&other,1<<20,&poll);let raw=String::from("raw");let credit=foreign.reserve(raw.capacity()).unwrap();assert!(OriginalLiteralData::from_admitted_raw_using(raw,credit,OriginalTokenValue::Int(1),&a).is_err());assert_eq!(own.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());assert_eq!(other.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());let fresh=SettingAdmission::new(&own,1<<20,&poll);let raw=String::from("raw");let short=fresh.reserve(raw.capacity()-1).unwrap();assert!(OriginalLiteralData::from_admitted_raw_using(raw,short,OriginalTokenValue::Int(1),&fresh).is_err());assert_eq!(own.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod string_mode_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
- #[test]fn actual_modes_are_distinct_immutable_facts_without_spelling_inference_or_ast_cache(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let raw="\"same\\n[static]\"";let mut values=Vec::new();for mode in [OriginalStringMode::Unknown,OriginalStringMode::Normal,OriginalStringMode::Raw,OriginalStringMode::Generated]{let data=OriginalLiteralData::from_value_with_mode_using(raw.into(),OriginalTokenValue::String("same\\n[static]"),mode,&a).unwrap();assert_eq!(data.string_mode(),mode);let text=crate::LiteralText::from_original_data(&data,70,&a).unwrap();assert_eq!(text.original_string_mode(),Some(mode));assert_eq!(text.rebind_original_using(90,&a).unwrap().original_string_mode(),Some(mode));assert!(text.syntax_parts().unwrap().is_none());for old in &values{assert_ne!(&data,old);}values.push(data);}drop(values);assert_eq!(used.load(Ordering::Acquire),0);}
- #[test]fn existing_ctor_does_not_guess_mode_and_admitted_raw_keeps_pointer_credit_and_real_mode(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let old=OriginalLiteralData::from_value_using("@{raw}".into(),OriginalTokenValue::String("raw"),&a).unwrap();assert_eq!(old.string_mode(),OriginalStringMode::Unknown);drop(old);let raw=String::from("raw grammar");let ptr=raw.as_ptr();let credit=a.reserve(raw.capacity()).unwrap();let data=OriginalLiteralData::from_admitted_raw_with_mode_using(raw,credit,OriginalTokenValue::String("typed"),OriginalStringMode::Raw,&a).unwrap();assert_eq!(data.raw_storage().as_ptr(),ptr);assert_eq!(data.string_mode(),OriginalStringMode::Raw);drop(data);assert_eq!(used.load(Ordering::Acquire),0);}
+ use super::*;use std::sync::atomic::{Ordering};
+ #[test]fn actual_modes_are_distinct_immutable_facts_without_spelling_inference_or_ast_cache(){let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let raw="\"same\\n[static]\"";let mut values=Vec::new();for mode in [OriginalStringMode::Unknown,OriginalStringMode::Normal,OriginalStringMode::Raw,OriginalStringMode::Generated]{let data=OriginalLiteralData::from_value_with_mode_using(raw.into(),OriginalTokenValue::String("same\\n[static]"),mode,&a).unwrap();assert_eq!(data.string_mode(),mode);let text=crate::LiteralText::from_original_data(&data,70,&a).unwrap();assert_eq!(text.original_string_mode(),Some(mode));assert_eq!(text.rebind_original_using(90,&a).unwrap().original_string_mode(),Some(mode));assert!(text.syntax_parts().unwrap().is_none());for old in &values{assert_ne!(&data,old);}values.push(data);}drop(values);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
+ #[test]fn existing_ctor_does_not_guess_mode_and_admitted_raw_keeps_pointer_credit_and_real_mode(){let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let old=OriginalLiteralData::from_value_using("@{raw}".into(),OriginalTokenValue::String("raw"),&a).unwrap();assert_eq!(old.string_mode(),OriginalStringMode::Unknown);drop(old);let raw=String::from("raw grammar");let ptr=raw.as_ptr();let credit=a.reserve(raw.capacity()).unwrap();let data=OriginalLiteralData::from_admitted_raw_with_mode_using(raw,credit,OriginalTokenValue::String("typed"),OriginalStringMode::Raw,&a).unwrap();assert_eq!(data.raw_storage().as_ptr(),ptr);assert_eq!(data.string_mode(),OriginalStringMode::Raw);drop(data);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
 }
 
 
 #[cfg(test)]
 mod numeric_reuse_tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{Ordering};
 
     fn issue(pool:&mut OriginalLiteralPool, raw:&str, value:OriginalTokenValue<&str>, a:&SettingAdmission<'_>)->io::Result<OriginalLiteralData>{
         let raw=raw.to_owned();
@@ -969,7 +1024,7 @@ mod numeric_reuse_tests {
 
     #[test]
     fn repeated_numeric_occurrences_share_payload_and_keep_their_own_identity(){
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
         let mut pool=OriginalLiteralPool::new(&a).unwrap();
         let first=issue(&mut pool,"7",OriginalTokenValue::Int(7),&a).unwrap();
@@ -988,12 +1043,12 @@ mod numeric_reuse_tests {
         drop(first);
         assert_eq!(used.load(Ordering::Acquire),first_bytes);
         drop(many);
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn numeric_reuse_keeps_raw_spelling_float_bits_and_pool_domains_exact(){
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
         let mut pool=OriginalLiteralPool::new(&a).unwrap();
         let zero=issue(&mut pool,"0",OriginalTokenValue::Int(0),&a).unwrap();
@@ -1020,14 +1075,14 @@ mod numeric_reuse_tests {
         assert_eq!(next.raw_storage().as_ptr(),first.raw_storage().as_ptr());
         assert!(!next.same_owner(&first));
         drop((next,first,zero,hex,positive,negative,other,foreign,pool));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
     }
 }
 
 #[cfg(test)]
 mod static_reuse_tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{Ordering};
 
     fn issue(pool: &mut OriginalLiteralPool, raw: &str, value: OriginalTokenValue<&str>,
         mode: OriginalStringMode, a: &SettingAdmission<'_>) -> OriginalLiteralData {
@@ -1040,7 +1095,7 @@ mod static_reuse_tests {
     fn short_static_values_share_only_exact_raw_typed_value_mode_and_producer() {
         use OriginalStringMode::{Generated, Normal, Raw, Unknown};
         use OriginalTokenValue::{InterpBegin, Resource, String};
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut pool = OriginalLiteralPool::new(&a).unwrap();
         let first = issue(&mut pool, r#""[static]""#, String("[static]"), Generated, &a);
@@ -1085,12 +1140,12 @@ mod static_reuse_tests {
         assert_ne!(wide.raw().as_ptr(), wide_again.raw().as_ptr());
         drop((first, aliases, normal, raw, other_spelling, other_value, resource, resource_repeat,
             unknown, foreign, begin, begin_again, wide, wide_again, other, pool));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn static_pool_keeps_colliding_values_in_the_same_funded_bank() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut pool = OriginalLiteralPool::new(&a).unwrap();
         assert_eq!(size_of_val(&pool.static_text), size_of::<[Option<OriginalLiteralData>; STATIC_SLOTS]>());
@@ -1119,7 +1174,7 @@ mod static_reuse_tests {
         assert_ne!(evicted.raw().as_ptr(), issued[1].raw().as_ptr());
         assert_eq!(evicted, issued[1]);
         drop((issued, recent, extra, still_recent, evicted, pool));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
 }
@@ -1127,18 +1182,18 @@ mod static_reuse_tests {
 #[cfg(test)]
 mod interpolation_backing_tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{Ordering};
 
     #[test]
     fn long_issued_literal_value_keeps_exact_utf8_slice_and_offset_limits() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
-        let issued = "évalue".repeat(600);
+        let issued = "Ã©value".repeat(600);
         let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
         for (prefix, suffix, aliases) in [
             ("\"".to_owned(), "\"".to_owned(), true),
             ("x".repeat(255), "y".repeat(254), true),
-            ("€".to_owned(), "y".repeat(253), true),
+            ("â‚¬".to_owned(), "y".repeat(253), true),
             ("x".repeat(256), String::new(), false),
             (String::new(), "y".repeat(255), false),
             ("x".repeat(256), "y".repeat(254), false),
@@ -1154,23 +1209,23 @@ mod interpolation_backing_tests {
             assert_eq!(value.as_ptr() == literal.raw()[prefix.len()..].as_ptr(), aliases);
             assert_eq!(literal.string_mode(), OriginalStringMode::Raw);
             assert_eq!(used.load(Ordering::Acquire),
-                fixed + literal.raw_storage().capacity() + if aliases { 0 } else { issued.len() });
+                crate::SettingChargeCounter::root_allocation_bytes() + (fixed + literal.raw_storage().capacity() + if aliases { 0 } else { issued.len() }));
             drop(literal);
-            assert_eq!(used.load(Ordering::Acquire), 0);
+            assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
         }
 
         let raw = format!("\"{}\\t\"", "a".repeat(400));
         let issued = format!("{}\t", "a".repeat(400));
         let literal = OriginalLiteralData::from_value_using(raw, OriginalTokenValue::String(&issued), &a).unwrap();
         assert!(matches!(literal.value(), OriginalTokenValue::String(value) if value == issued));
-        assert_eq!(used.load(Ordering::Acquire), fixed + literal.raw_storage().capacity() + issued.len());
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (fixed + literal.raw_storage().capacity() + issued.len()));
         drop(literal);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn original_interpolation_segments_reuse_only_the_identical_issued_text() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
         let cases = [
@@ -1194,11 +1249,11 @@ mod interpolation_backing_tests {
             };
             assert_eq!(text, expected);
             assert_eq!(text.as_ptr(), original.raw()[1..].as_ptr());
-            assert_eq!(used.load(Ordering::Acquire), fixed + original.raw_storage().capacity());
+            assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (fixed + original.raw_storage().capacity()));
             drop(original);
-            assert!(used.load(Ordering::Acquire) > 0, "last occurrence alias retains the shared raw text");
+            assert!(used.load(Ordering::Acquire) > crate::SettingChargeCounter::root_allocation_bytes(), "last occurrence alias retains the shared raw text");
             drop(clone);
-            assert_eq!(used.load(Ordering::Acquire), 0);
+            assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
         }
 
         // A value supplied by the real lexer is independent of spelling:
@@ -1207,7 +1262,7 @@ mod interpolation_backing_tests {
             "\"a\\tb[".to_owned(), OriginalTokenValue::InterpBegin("a\tb"), OriginalStringMode::Normal, &a,
         ).unwrap();
         assert!(matches!(escaped.value(), OriginalTokenValue::InterpBegin("a\tb")));
-        assert_eq!(used.load(Ordering::Acquire), fixed + escaped.raw_storage().capacity() + "a\tb".len());
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (fixed + escaped.raw_storage().capacity() + "a\tb".len()));
         drop(escaped);
         let wide_raw = format!("]{}tail\"", "w".repeat(256));
         let wide = OriginalLiteralData::from_value_with_mode_using(
@@ -1215,16 +1270,16 @@ mod interpolation_backing_tests {
         ).unwrap();
         assert!(matches!(wide.value(), OriginalTokenValue::InterpEnd("tail")));
         assert_eq!(wide.string_mode(), OriginalStringMode::Raw);
-        assert_eq!(used.load(Ordering::Acquire), fixed + wide.raw_storage().capacity() + 4);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (fixed + wide.raw_storage().capacity() + 4));
         drop(wide);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 }
 
 #[cfg(test)]
 mod batch_page_controls {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{Ordering};
 
     fn literal(raw: &str, value: i32, a: &SettingAdmission<'_>) -> OriginalLiteralData {
         OriginalLiteralData::from_value_using(raw.to_owned(), OriginalTokenValue::Int(value), a).unwrap()
@@ -1232,9 +1287,9 @@ mod batch_page_controls {
 
     #[test]
     fn original_literal_batch_adopts_long_alias_without_cooked_side_storage() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
-        let issued = "é".repeat(170);
+        let issued = "Ã©".repeat(170);
         let long = OriginalLiteralData::from_value_using(
             format!("\"{issued}\""), OriginalTokenValue::String(&issued), &a,
         ).unwrap();
@@ -1252,21 +1307,21 @@ mod batch_page_controls {
         assert_eq!(value.as_ptr(), long.raw()[1..].as_ptr());
         assert!(!long.same_owner(rows[1].as_ref().unwrap()));
         assert_eq!(used.load(Ordering::Acquire),
-            size_of::<Payload>() + 2 * size_of::<usize>() + 4 * size_of::<PackedBatchValue>() + raw_bytes);
+            crate::SettingChargeCounter::root_allocation_bytes() + (size_of::<Payload>() + 2 * size_of::<usize>() + 4 * size_of::<PackedBatchValue>() + raw_bytes));
         drop((rows,long));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn packed_literal_raw_owner_keeps_spare_capacity_and_zero_length_allocations() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let make = |text: &str, capacity| {
             let mut raw = String::with_capacity(capacity);
             raw.push_str(text);
             Some(OriginalLiteralData::from_value_using(raw, OriginalTokenValue::Int(1), &a).unwrap())
         };
-        let mut rows = [make("é", 128), make("", 64), make("", 0), make("0", 9)];
+        let mut rows = [make("Ã©", 128), make("", 64), make("", 0), make("0", 9)];
         let before = rows.each_ref().map(|row| {
             let raw = row.as_ref().unwrap().raw_storage();
             (raw.as_ptr(), raw.capacity())
@@ -1283,10 +1338,10 @@ mod batch_page_controls {
         drop(rows);
         let expected = size_of::<Payload>() + 2 * size_of::<usize>()
             + 4 * size_of::<PackedBatchValue>() + before.iter().map(|&(_, capacity)| capacity).sum::<usize>();
-        assert_eq!(used.load(Ordering::Acquire), expected);
-        std::thread::scope(|scope| scope.spawn(|| assert_eq!(keep.raw(), "é")).join().unwrap());
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (expected));
+        std::thread::scope(|scope| scope.spawn(|| assert_eq!(keep.raw(), "Ã©")).join().unwrap());
         std::thread::scope(|scope| scope.spawn(move || drop(keep)).join().unwrap());
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -1303,7 +1358,7 @@ mod batch_page_controls {
 
     #[test]
     fn original_literal_batch_page_moves_existing_text_and_funds_one_escaped_page() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut rows: Vec<_> = (0..PAGE_ROWS).map(|_| Some(literal("7", 7, &a))).collect();
         let first = rows[0].as_ref().unwrap().raw().as_ptr();
@@ -1327,15 +1382,15 @@ mod batch_page_controls {
         assert!(keep.same_owner(&keep.clone()));
         let expected = size_of::<Payload>() + 2 * size_of::<usize>()
             + PAGE_ROWS * size_of::<PackedBatchValue>() + raw_capacity;
-        assert_eq!(used.load(Ordering::Acquire), expected);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (expected));
         assert!(expected < before);
         drop(rows);
-        assert_eq!(used.load(Ordering::Acquire), expected);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (expected));
         let mut payload = 0;
         keep.visit_storage(|_, _, capacity| payload += capacity);
         assert!(payload >= expected, "a detached row reports all retained page storage");
         drop(keep);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -1346,11 +1401,11 @@ mod batch_page_controls {
         assert_eq!(size_of::<LiteralValue>() - size_of::<PackedBatchValue>(),
             size_of::<Box<str>>() + size_of::<String>() - size_of::<PackedRaw>());
 
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut rows = [
             OriginalLiteralData::from_value_using("-0".into(), OriginalTokenValue::Float(-0.0), &a),
-            OriginalLiteralData::from_value_using("\"aé\"".into(), OriginalTokenValue::String("aé"), &a),
+            OriginalLiteralData::from_value_using("\"aÃ©\"".into(), OriginalTokenValue::String("aÃ©"), &a),
             OriginalLiteralData::from_value_with_mode_using("raw".into(), OriginalTokenValue::InterpPart("changed"), OriginalStringMode::Raw, &a),
             OriginalLiteralData::from_value_using("''".into(), OriginalTokenValue::Resource(""), &a),
         ].map(|value| Some(value.unwrap()));
@@ -1361,7 +1416,7 @@ mod batch_page_controls {
         OriginalLiteralData::pack_delivery_batch_using(&mut rows, &a).unwrap();
         let [scalar, string, part, empty] = rows.each_ref().map(|row| row.as_ref().unwrap());
         assert!(matches!(scalar.value(), OriginalTokenValue::Float(value) if value.to_bits()==(-0.0f32).to_bits()));
-        assert!(matches!(string.value(), OriginalTokenValue::String("aé")));
+        assert!(matches!(string.value(), OriginalTokenValue::String("aÃ©")));
         assert!(matches!(part.value(), OriginalTokenValue::InterpPart("changed")));
         assert_eq!(part.string_mode(), OriginalStringMode::Raw);
         assert_eq!(part.payload().text.as_ptr(), cooked);
@@ -1370,7 +1425,7 @@ mod batch_page_controls {
         assert_eq!(scalar.page_storage_identity(), part.page_storage_identity());
         let expected = size_of::<Payload>() + 2 * size_of::<usize>() + 4 * size_of::<PackedBatchValue>()
             + size_of::<Box<str>>() + raw_bytes + "changed".len();
-        assert_eq!(used.load(Ordering::Acquire), expected);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (expected));
 
         let detached = rows[0].take().unwrap();
         drop(rows);
@@ -1382,14 +1437,14 @@ mod batch_page_controls {
             }
         });
         assert!(saw_cooked, "a detached row still funds a sibling's exact box");
-        assert_eq!(used.load(Ordering::Acquire), expected);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (expected));
         drop(detached);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn original_literal_batch_page_text_bound_keeps_separate_escaped_owners() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut rows: Vec<_> = (0..16).map(|_| {
             let raw = String::from_utf8(vec![b'6'; MAX_ROW_TEXT_BYTES]).unwrap();
@@ -1405,17 +1460,17 @@ mod batch_page_controls {
         let first_bytes = first.owner().credit.bytes();
         let next_bytes = next.owner().credit.bytes();
         drop(rows);
-        assert_eq!(used.load(Ordering::Acquire), first_bytes + next_bytes);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (first_bytes + next_bytes));
         drop(next);
-        assert_eq!(used.load(Ordering::Acquire), first_bytes);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (first_bytes));
         drop(first);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn original_literal_batch_page_preserves_shared_wide_and_foreign_rows() {
-        let used = Arc::new(AtomicUsize::new(0));
-        let foreign = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let foreign = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let b = SettingAdmission::new(&foreign, 1 << 20, &|| Ok(()));
         let retained = literal("4", 4, &a);
@@ -1431,14 +1486,14 @@ mod batch_page_controls {
         assert_eq!(rows[1].as_ref().unwrap().raw().as_ptr(), wide_raw);
         assert!(matches!(&rows[2].as_ref().unwrap().owner().storage, LiteralStorage::Page(_)));
         drop((rows, retained));
-        assert_eq!(used.load(Ordering::Acquire), 0);
-        assert_eq!(foreign.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+        assert_eq!(foreign.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn original_literal_batch_page_failure_releases_partial_stage_and_preserves_first_io() {
         use std::cell::Cell;
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut rows: Vec<_> = (0..PAGE_ROWS).map(|_| Some(literal("6", 6, &a))).collect();
         let calls = Cell::new(0);
@@ -1452,6 +1507,6 @@ mod batch_page_controls {
         assert_eq!(failure.raw_os_error(), Some(1450));
         assert!(rows.iter().any(Option::is_none), "a real transfer was in progress");
         drop(rows);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 }

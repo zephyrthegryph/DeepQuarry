@@ -314,11 +314,11 @@ impl crate::MacroLookup for ContextLookup<'_> {
 }
 
 #[cfg(test)]mod original_bootstrap_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  #[test]fn actual_final_table_recipe_authenticates_all_defaults_and_caller_provenance_before_factory_demand(){
-  let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut finals=BTreeMap::new();install(InitialEnvironment::OriginalChecker0290,&mut finals);let caller=BTreeMap::from([("TRUE".to_owned(),"7".to_owned()),("FROM_CALLER".to_owned(),"1e3".to_owned())]);for(name,replacement)in &caller{finals.insert(name.clone(),Macro{parameters:None,variadic:false,replacement:replacement.clone()});}
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut finals=BTreeMap::new();install(InitialEnvironment::OriginalChecker0290,&mut finals);let caller=BTreeMap::from([("TRUE".to_owned(),"7".to_owned()),("FROM_CALLER".to_owned(),"1e3".to_owned())]);for(name,replacement)in &caller{finals.insert(name.clone(),Macro{parameters:None,variadic:false,replacement:replacement.clone()});}
   let mut count=0;visit_original_bootstrap_using(InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|input|{count+=1;assert_eq!(input.provenance(),if caller.contains_key(input.name()){OriginalInitialProvenance::CallerDefinition}else{OriginalInitialProvenance::FixedDefault});Ok(())}).unwrap();assert_eq!(count,105);
   for mode in 0..4{let mut bad=finals.clone();match mode{0=>{bad.remove("FALSE");},1=>{bad.get_mut("FALSE").unwrap().replacement="2".into();},2=>{bad.get_mut("TRUE").unwrap().replacement="1".into();},_=>{bad.insert("FOREIGN".into(),Macro{parameters:None,variadic:false,replacement:"1".into()});}}let mut demanded=0;assert_eq!(visit_original_bootstrap_using(InitialEnvironment::OriginalChecker0290,&bad,&caller,&a,&mut|_|{demanded+=1;Ok(())}).unwrap_err().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(demanded,0,"invalid actual recipe must not begin lexical issuance");}
-  assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

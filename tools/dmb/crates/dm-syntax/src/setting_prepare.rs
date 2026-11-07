@@ -455,10 +455,7 @@ pub fn prepare_setting_expression_with_original_literal_facts(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    };
+    use std::sync::{atomic::{Ordering}};
     fn original(
         text: &str,
         a: &SettingAdmission<'_>,
@@ -469,7 +466,7 @@ mod tests {
     }
     #[test]
     fn admitted_setting_preparation_preserves_original_syntax_and_literal_alias_credit() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let healthy = || Ok(());
         let a = SettingAdmission::with_stack_allowance(
             &counter,
@@ -491,11 +488,11 @@ mod tests {
         drop(root);
         assert_eq!(counter.load(Ordering::Acquire), retained);
         drop(alias);
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]
     fn native_setting_stack_work_refusal_is_operational_uncached_and_retryable() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let healthy = || Ok(());
         let text = format!("{}1", "-".repeat(100));
         let low =
@@ -510,7 +507,7 @@ mod tests {
         );
         assert_eq!(
             counter.load(Ordering::Acquire),
-            0,
+            crate::SettingChargeCounter::root_allocation_bytes(),
             "partial primary root/scratch must be gone"
         );
         let retry = SettingAdmission::with_stack_allowance(
@@ -525,11 +522,11 @@ mod tests {
             &crate::parse_expression(&text).expr.unwrap()
         );
         drop(root);
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]
     fn native_setting_flat_ast_cleanup_refusal_cannot_be_cached_as_syntax() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let healthy = || Ok(());
         let text = std::iter::repeat_n("1", 80).collect::<Vec<_>>().join("+");
         let a =
@@ -538,7 +535,7 @@ mod tests {
             original(&text, &a),
             Err(SettingSyntaxFailure::Operational(_))
         ));
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
         let retry = SettingAdmission::with_stack_allowance(
             &counter,
             8 * 1024 * 1024,
@@ -547,7 +544,7 @@ mod tests {
         );
         let root = original(&text, &retry).unwrap();
         drop(root);
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
 }
 

@@ -716,7 +716,7 @@ mod tests {
     fn checked_settings_roster_funds_actual_storage_and_denial_publishes_nothing() {
         use std::sync::atomic::{AtomicUsize, Ordering};
         let source = "/proc/check()\n    set waitfor = 0\n    return 1\n";
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
         let parsed = dm_syntax::parse_declaration_skeleton(source);
         assert!(parsed.diagnostics.is_empty());
@@ -738,16 +738,16 @@ mod tests {
             body: ast.items[0].span, settings_owner: Some(row.owner.clone()),
             settings_footprints: AdapterRows::compatibility(row.footprints.to_vec()),
         }];
-        let denied_used = Arc::new(AtomicUsize::new(0));
-        let low = SettingAdmission::new(&denied_used, 1, &|| Ok(()));
+        let denied_used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let low = SettingAdmission::new(&denied_used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (1), &|| Ok(()));
         assert!(matches!(other.install_settings_checked(&mut denied, 0, &low),
             Err(super::super::OriginalHeaderFailure::Operational(e)) if e.kind() == std::io::ErrorKind::OutOfMemory));
         assert!(other.settings.get().is_none());
-        assert_eq!(denied_used.load(Ordering::Acquire), 0);
+        assert_eq!(denied_used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
         drop((denied, facts, receipt));
-        assert!(used.load(Ordering::Acquire) >= bytes);
+        assert!(used.load(Ordering::Acquire) >= dm_syntax::SettingChargeCounter::root_allocation_bytes() + (bytes));
         drop(input);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]

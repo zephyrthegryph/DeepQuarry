@@ -234,13 +234,7 @@ impl SettingExpressionSlots {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        cell::Cell,
-        sync::{
-            atomic::{AtomicUsize, Ordering},
-            Arc,
-        },
-    };
+    use std::{cell::Cell, sync::{atomic::{Ordering}}};
     fn prepare(
         a: &SettingAdmission<'_>,
         text: &str,
@@ -251,7 +245,7 @@ mod tests {
     }
     #[test]
     fn warm_original_setting_slot_projects_offsets_without_second_parse_or_ast_shift() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
         let a = SettingAdmission::with_stack_allowance(
             &counter,
@@ -284,16 +278,16 @@ mod tests {
         );
         assert_eq!(current.current_span().end, first.current_span().end + 400);
         drop(slots);
-        assert!(counter.load(Ordering::Acquire) > 0);
+        assert!(counter.load(Ordering::Acquire) > crate::SettingChargeCounter::root_allocation_bytes());
         drop(first);
-        assert!(counter.load(Ordering::Acquire) > 0);
+        assert!(counter.load(Ordering::Acquire) > crate::SettingChargeCounter::root_allocation_bytes());
         drop(current);
-        assert_eq!(counter.load(Ordering::Acquire), 0);
+        assert_eq!(counter.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
     #[test]
     fn original_slot_refuses_foreign_budget_before_warm_lookup_and_compat_storage() {
-        let counter = Arc::new(AtomicUsize::new(0));
-        let other = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let other = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
         let a = SettingAdmission::new(&counter, 8 * 1024 * 1024, &checkpoint);
         let slots = SettingExpressionSlots::default();
@@ -316,7 +310,7 @@ mod tests {
     }
     #[test]
     fn aborted_original_slot_has_no_error_outcome_and_same_input_retry_succeeds() {
-        let counter = Arc::new(AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let checkpoint = || Ok(());
         let slots = SettingExpressionSlots::default();
         let a = SettingAdmission::new(&counter, 8 * 1024 * 1024, &checkpoint);
@@ -340,18 +334,18 @@ mod tests {
     }
     #[test]
     fn dimension_rows_share_original_family_retry_and_counter_without_aliasing_rhs(){
-      let counter=Arc::new(AtomicUsize::new(0));let healthy=||Ok(());let a=SettingAdmission::new(&counter,8*1024*1024,&healthy);let slots=SettingExpressionSlots::default();
+      let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let healthy=||Ok(());let a=SettingAdmission::new(&counter,8*1024*1024,&healthy);let slots=SettingExpressionSlots::default();
       let rhs=slots.obtain(0,2,&a,||prepare(&a,"null")).unwrap();let span=crate::Span::new(10,13);
       let dimension=slots.obtain_dimension(0,2,0,2,span,&a,||prepare(&a,"1+2")).unwrap();
       assert!(!rhs.same_root(&dimension));assert!(slots.contains_original(0,&rhs));assert!(slots.contains_dimension(0,0,span,&dimension));
       let warm=slots.obtain_dimension(0,2,0,2,span,&a,||panic!("same dimension cannot parse twice")).unwrap();assert!(dimension.same_root(&warm));
-      let other=Arc::new(AtomicUsize::new(0));let foreign=SettingAdmission::new(&other,8*1024*1024,&healthy);
+      let other=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign=SettingAdmission::new(&other,8*1024*1024,&healthy);
       assert!(matches!(slots.obtain_dimension(0,2,0,2,span,&foreign,||panic!("foreign warm domain cannot produce")),Err(SettingSyntaxFailure::Operational(_))));
       let stop=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&counter,8*1024*1024,&stop);
       let next=crate::Span::new(20,23);assert!(slots.obtain_dimension(0,2,1,2,next,&failed,||panic!("actual entry stop precedes parser")).is_err());
       assert_eq!(failed.take_operational_error().unwrap().raw_os_error(),Some(1450));
       let recovered=slots.obtain_dimension(0,2,1,2,next,&a,||prepare(&a,"3+4")).unwrap();assert!(!dimension.same_root(&recovered));
-      drop(rhs);drop(dimension);drop(warm);drop(recovered);drop(slots);assert_eq!(counter.load(Ordering::Acquire),0,"dimension aliases/metadata physically release original credit");
+      drop(rhs);drop(dimension);drop(warm);drop(recovered);drop(slots);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes(),"dimension aliases/metadata physically release original credit");
     }
 
 }

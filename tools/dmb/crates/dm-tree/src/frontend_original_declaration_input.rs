@@ -84,12 +84,12 @@ impl CurrentOriginalDeclarations{
 
 }
 #[cfg(test)]mod tests{
- use super::*;use std::sync::atomic::AtomicUsize;
+ use super::*;
  fn member<'a>(facts:&'a crate::AdaptedDeclarations,name:&str)->Option<&'a crate::MemberMetadata>{facts.skeletons.iter().find_map(|s|match s{crate::Skeleton::Member{name:n,metadata,..}if facts.symbols.text(*n)==Some(name)=>Some(metadata.as_ref()),_=>None})}
  #[test]fn real_original_primary_prefix_keeps_first_field_not_future_parent_symbols_or_source_constants(){
-  let text="/datum/prior\n    var/const/value = 1 + 2\n/datum/prefix\n    var/datum/first, second\n    parent_type = /datum/future\n/proc/later()\n    return\n";let source:dm_preprocess::SourceText=text.into();let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,8*1024*1024,&poll);let mut input=CurrentOriginalDeclarations::parse(source.clone(),0,&a).unwrap();assert!(input.source().same_view(&source));assert!(input.fatal().is_some());let progress=input.adapt_before_constant_stage(text,&a).unwrap();assert!(progress.errors().is_empty());let facts=progress.facts();assert!(member(facts,"first").is_some());assert!(member(facts,"second").is_none());assert!(member(facts,"later").is_none());assert_eq!(facts.symbols.text(dm_ir::SymbolId::of("/datum/future")),None);let value=member(facts,"value").unwrap();assert!(value.initializer.is_some()||value.declared_initializer.is_some(),"retain actual original initializer, not a fake default");assert!(value.resolved_constant.is_none(),"general source constant evaluation is skipped, not eagerly folded then erased");assert!(facts.skeletons.iter().any(|s|matches!(s,crate::Skeleton::Type{path,explicit_parent:None}if facts.symbols.text(*path)==Some("/datum/prefix"))));
+  let text="/datum/prior\n    var/const/value = 1 + 2\n/datum/prefix\n    var/datum/first, second\n    parent_type = /datum/future\n/proc/later()\n    return\n";let source:dm_preprocess::SourceText=text.into();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,8*1024*1024,&poll);let mut input=CurrentOriginalDeclarations::parse(source.clone(),0,&a).unwrap();assert!(input.source().same_view(&source));assert!(input.fatal().is_some());let progress=input.adapt_before_constant_stage(text,&a).unwrap();assert!(progress.errors().is_empty());let facts=progress.facts();assert!(member(facts,"first").is_some());assert!(member(facts,"second").is_none());assert!(member(facts,"later").is_none());assert_eq!(facts.symbols.text(dm_ir::SymbolId::of("/datum/future")),None);let value=member(facts,"value").unwrap();assert!(value.initializer.is_some()||value.declared_initializer.is_some(),"retain actual original initializer, not a fake default");assert!(value.resolved_constant.is_none(),"general source constant evaluation is skipped, not eagerly folded then erased");assert!(facts.skeletons.iter().any(|s|matches!(s,crate::Skeleton::Type{path,explicit_parent:None}if facts.symbols.text(*path)==Some("/datum/prefix"))));
  }
- #[test]fn original_primary_progress_rejects_foreign_counter_expansion_and_unissued_state_without_model_none(){let text="/datum/prefix\n    var/datum/first, second\n";let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,8*1024*1024,&poll);let mut input=CurrentOriginalDeclarations::parse(text.into(),0,&a).unwrap();let other=Arc::new(AtomicUsize::new(0));let foreign=dm_syntax::SettingAdmission::new(&other,8*1024*1024,&poll);assert_eq!(input.adapt_before_constant_stage(text,&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(input.adapt_before_constant_stage("foreign source bytes",&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);let unissued=CurrentOriginalDeclarations::parse("/datum/prefix\n    var/first = 1, second = 2\n".into(),0,&a).err().unwrap();assert_eq!(unissued.kind(),io::ErrorKind::Unsupported);}
+ #[test]fn original_primary_progress_rejects_foreign_counter_expansion_and_unissued_state_without_model_none(){let text="/datum/prefix\n    var/datum/first, second\n";let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,8*1024*1024,&poll);let mut input=CurrentOriginalDeclarations::parse(text.into(),0,&a).unwrap();let other=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign=dm_syntax::SettingAdmission::new(&other,8*1024*1024,&poll);assert_eq!(input.adapt_before_constant_stage(text,&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(input.adapt_before_constant_stage("foreign source bytes",&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);let unissued=CurrentOriginalDeclarations::parse("/datum/prefix\n    var/first = 1, second = 2\n".into(),0,&a).err().unwrap();assert_eq!(unissued.kind(),io::ErrorKind::Unsupported);}
 }
 
 fn unissued_signature(source: &str, stop: Option<dm_syntax::Span>, reason: &str) -> io::Error {
@@ -183,22 +183,22 @@ impl OriginalDeclarationProducts{
  pub(super) fn into_parts(self)->(OrderedOriginalDeclarations,Vec<crate::adapter::DeclarationAdapterProgress>,dm_syntax::SettingRootLease){(self.primary,self.rows,self._lease)}
 }
 #[cfg(test)]mod ordered_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]fn late_actual_fatal_prevents_early_chunk_constants_and_all_later_chunk_parses(){
   let text="/datum/early\n    parent_type = /datum\n    var/const/early_constant = 1 + 2\n/datum/prefix\n    var/datum/first, second\n/datum/future\n    var/third\n";
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,16*1024*1024,&poll);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,16*1024*1024,&poll);
   let input=OrderedOriginalDeclarations::parse_grouped(text.into(),1,&a).unwrap();assert!(input.frontier().is_some());assert_eq!(input.inputs().len(),2,"future root not parsed or adapted");
   let products=input.adapt_before_constant_stage(&a).unwrap();assert_eq!(products.rows().len(),2);assert!(products.primary().frontier().is_some());
   let early=products.rows()[0].facts();assert!(early.skeletons.iter().any(|s|matches!(s,crate::Skeleton::Type{path,explicit_parent:Some(parent)}if early.symbols.text(*path)==Some("/datum/early")&&early.symbols.text(*parent)==Some("/datum"))),"earlier structural parent is retained even though general constants skip");
   let value=early.skeletons.iter().find_map(|s|match s{crate::Skeleton::Member{name,metadata,..}if early.symbols.text(*name)==Some("early_constant")=>Some(metadata),_=>None}).unwrap();assert!(value.resolved_constant.is_none());assert!(value.initializer.is_some()||value.declared_initializer.is_some());
   for row in products.rows(){assert!(row.facts().symbols.text(dm_ir::SymbolId::of("/datum/future")).is_none())}
-  drop(products);assert_eq!(counter.load(Ordering::Acquire),0,"same native parser/header/batch leases drain with actual owner");
+  drop(products);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"same native parser/header/batch leases drain with actual owner");
  }
  #[test]fn operational_failure_is_not_partial_success_or_model_absence_and_retained_products_drain(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Err(io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1024*1024,&poll);
-  let failure=OrderedOriginalDeclarations::parse("/datum/a\n".into(),&a).err().unwrap();assert_eq!(failure.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Err(io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1024*1024,&poll);
+  let failure=OrderedOriginalDeclarations::parse("/datum/a\n".into(),&a).err().unwrap();assert_eq!(failure.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   let good_poll=||Ok(());let good=dm_syntax::SettingAdmission::new(&counter,1024*1024,&good_poll);let input=OrderedOriginalDeclarations::parse("/datum/a\n    var/b\n".into(),&good).unwrap();assert!(input.frontier().is_none());
-  let other=Arc::new(AtomicUsize::new(0));let foreign=dm_syntax::SettingAdmission::new(&other,1024*1024,&good_poll);assert_eq!(input.adapt_before_constant_stage(&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),0);
+  let other=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign=dm_syntax::SettingAdmission::new(&other,1024*1024,&good_poll);assert_eq!(input.adapt_before_constant_stage(&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -252,14 +252,14 @@ impl OriginalCurrentDeclarations{
  pub(super) fn expanded(&self)->&dm_preprocess::SourceText{&self.expanded}
 }
 #[cfg(test)]mod current_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]fn actual_original_prefix_transfers_through_existing_native_current_leaves_with_same_counter_and_no_future_bodies(){
   let text="/datum/prior\n    var/const/first_constant=1+2\n/proc/prior_body()\n    return 1\n/datum/prefix\n    var/datum/first, second\n/proc/future_body()\n    return 2\n";
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32*1024*1024,&poll);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32*1024*1024,&poll);
   let primary=OrderedOriginalDeclarations::parse_grouped(text.into(),1,&a).unwrap();let native=primary.adapt_before_constant_stage(&a).unwrap().into_current(&a).unwrap();assert!(native.frontier().is_some());assert_eq!(native.expanded().as_str(),text);
   assert!(native.current().iter().any(|leaf|leaf.symbols().text(dm_ir::SymbolId::of("prior_body")).is_some()));assert!(native.current().iter().all(|leaf|leaf.symbols().text(dm_ir::SymbolId::of("future_body")).is_none()));
   for leaf in native.current(){assert!(leaf.syntax.shared_relative().initializer_admission_matches(&a).unwrap());assert!(leaf.syntax.items().all(|item|item.header_span().start<text.find("/proc/future_body").unwrap()))}
-  assert!(counter.load(Ordering::Acquire)>0);drop(native);assert_eq!(counter.load(Ordering::Acquire),0);
+  assert!(counter.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());drop(native);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -311,31 +311,31 @@ impl OriginalCurrentDeclarations{
  }
 }
 #[cfg(test)]mod assembly_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]fn actual_original_partial_union_reuses_existing_native_tree_builder_and_skips_global_source_constants(){
   let text="/datum/parent\n    var/before\n/datum/child\n    parent_type = /datum/parent\n    var/const/value = 1+2\n    var/datum/first, second\n/datum/future\n    var/after\n";
-  let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,64*1024*1024,&poll);
+  let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,64*1024*1024,&poll);
   let current=OrderedOriginalDeclarations::parse_grouped(text.into(),1,&a).unwrap().adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();let prepared=current.into_prepared(Some(seed.frontend_seed()),&a).unwrap();assert!(prepared.retention.frontier().is_some());assert!(prepared.parsed.syntax.chunks().iter().all(|chunk|chunk.shared_relative().initializer_admission_matches(&a).unwrap()));
   let variables=crate::checker_builtins::OriginalVariableDeclarations::for_seed(Some(seed.frontend_seed()));let declarations=prepared.parsed.adapted.finish_checker_diagnostic_with_variables(Some(seed.frontend_seed()),|error,_,_|panic!("real original prefix graph must use existing diagnostic builder: {error:?}"),&executor,variables).unwrap();let(snapshot,_receipt)=declarations.into_parts();
   assert!(snapshot.tree.symbols().text(dm_ir::SymbolId::of("/datum/child")).is_some());assert!(snapshot.tree.symbols().text(dm_ir::SymbolId::of("/datum/future")).is_none());assert_eq!(prepared.retention.source().as_str(),text);
-  drop(snapshot);drop(prepared.parsed.syntax);drop(prepared.parsed.allocation_ledger);drop(prepared.retention);assert_eq!(counter.load(Ordering::Acquire),0);
+  drop(snapshot);drop(prepared.parsed.syntax);drop(prepared.parsed.allocation_ledger);drop(prepared.retention);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
- #[test]fn complete_actual_original_primary_runs_existing_constant_producer_only_after_no_fatal_is_known(){let text="/datum/complete\n    var/const/value = 1 + 2\n";let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,16*1024*1024,&poll);let result=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap();assert!(result.primary().frontier().is_none());let facts=result.rows()[0].facts();let value=facts.skeletons.iter().find_map(|row|match row{crate::Skeleton::Member{name,metadata,..}if facts.symbols.text(*name)==Some("value")=>Some(metadata),_=>None}).unwrap();assert!(value.resolved_constant.is_some(),"same unique existing constant producer remains used for complete inputs");drop(result);assert_eq!(counter.load(Ordering::Acquire),0);}
+ #[test]fn complete_actual_original_primary_runs_existing_constant_producer_only_after_no_fatal_is_known(){let text="/datum/complete\n    var/const/value = 1 + 2\n";let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,16*1024*1024,&poll);let result=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap();assert!(result.primary().frontier().is_none());let facts=result.rows()[0].facts();let value=facts.skeletons.iter().find_map(|row|match row{crate::Skeleton::Member{name,metadata,..}if facts.symbols.text(*name)==Some("value")=>Some(metadata),_=>None}).unwrap();assert!(value.resolved_constant.is_some(),"same unique existing constant producer remains used for complete inputs");drop(result);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
 }
 
 #[cfg(test)]mod primary_signature_consumer_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]fn real_formal_fatal_stops_before_proc_and_future_parent_prescan_and_same_prepared_signature_is_not_parsed_again(){
   let text="/datum/early\n    var/const/value=1+2\n/proc/good(obj/argument)\n    return argument\n/proc/bad(value=)\n    return 7\n/datum/future\n    parent_type=/datum/missing\n";
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,64*1024*1024,&poll);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,64*1024*1024,&poll);
   let before=crate::procedure::signature_interpretations();let primary=OrderedOriginalDeclarations::parse_grouped(text.into(),1,&a).unwrap();assert!(matches!(primary.frontier(),Some((_,OriginalPrimaryFatal::Parameter(_)))));assert_eq!(crate::procedure::signature_interpretations(),before+2);
   let products=primary.adapt_for_original_outcome(&a).unwrap();assert_eq!(crate::procedure::signature_interpretations(),before+2,"adapter consumes exact native primary signature/SymbolTable rather than reparsing a formal");
   assert!(products.rows().iter().any(|row|row.facts().symbols.text(dm_ir::SymbolId::of("good")).is_some()));assert!(products.rows().iter().all(|row|row.facts().symbols.text(dm_ir::SymbolId::of("bad")).is_none()&&row.facts().symbols.text(dm_ir::SymbolId::of("/datum/future")).is_none()));
-  let native=products.into_current(&a).unwrap();assert!(native.current().iter().all(|current|current.syntax.items().all(|item|item.header_span().start<text.find("/proc/bad").unwrap())));drop(native);assert_eq!(counter.load(Ordering::Acquire),0);
+  let native=products.into_current(&a).unwrap();assert!(native.current().iter().all(|current|current.syntax.items().all(|item|item.header_span().start<text.find("/proc/bad").unwrap())));drop(native);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn prepared_primary_input_is_once_consumed_and_foreign_admission_cannot_consume_real_signature(){
-  let text="/proc/good(argument=1)\n    return argument\n";let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,64*1024*1024,&poll);let mut input=CurrentOriginalDeclarations::parse(text.into(),0,&a).unwrap();let other=Arc::new(AtomicUsize::new(0));let foreign=dm_syntax::SettingAdmission::new(&other,64*1024*1024,&poll);
-  assert_eq!(input.adapt_before_constant_stage(text,&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);let first=input.adapt_before_constant_stage(text,&a).unwrap();assert!(first.errors().is_empty());assert_eq!(input.adapt_before_constant_stage(text,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop(first);drop(input);assert_eq!(counter.load(Ordering::Acquire),0);
+  let text="/proc/good(argument=1)\n    return argument\n";let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,64*1024*1024,&poll);let mut input=CurrentOriginalDeclarations::parse(text.into(),0,&a).unwrap();let other=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign=dm_syntax::SettingAdmission::new(&other,64*1024*1024,&poll);
+  assert_eq!(input.adapt_before_constant_stage(text,&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);let first=input.adapt_before_constant_stage(text,&a).unwrap();assert!(first.errors().is_empty());assert_eq!(input.adapt_before_constant_stage(text,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);drop(first);drop(input);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -350,9 +350,9 @@ impl OriginalPrimaryRetention{
 }
 
 #[cfg(test)]mod actual_future_lexical_tests{
- use super::*;use std::sync::atomic::AtomicUsize;
+ use super::*;
  #[test]fn future_lexical_records_in_same_expanded_arena_cannot_prevent_real_original_fatal_prefix(){
-  let text="/datum/prefix\n    var/datum/first, second\n/proc/later()\n    return \"unterminated\n";let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32*1024*1024,&poll);
+  let text="/datum/prefix\n    var/datum/first, second\n/proc/later()\n    return \"unterminated\n";let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32*1024*1024,&poll);
   let primary=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap();assert!(primary.frontier().is_some());let products=primary.adapt_for_original_outcome(&a).unwrap();assert!(products.rows().iter().all(|row|row.errors().is_empty()));assert!(products.rows().iter().any(|row|row.facts().symbols.text(dm_ir::SymbolId::of("first")).is_some()));assert!(products.rows().iter().all(|row|row.facts().symbols.text(dm_ir::SymbolId::of("later")).is_none()));
  }
 }
@@ -373,22 +373,22 @@ impl OriginalCurrentDeclarations{
 impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,host:&dyn SettingExpressionQueries,a:&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>{for roots in &self.primary_leases{host.retain_original_signature_aliases(Arc::clone(&roots.aliases),a)?;}Ok(())}}
 
 #[cfg(test)]mod detached_original_signature_resource_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  enum Detached{Metadata(Arc<dm_ir::ProcedureMetadata>),Parameters(Arc<[dm_ir::Parameter]>),Tokens(Arc<[dm_ir::ExpressionToken]>),Array(Arc<dm_ir::ArrayDeclaration>),Dimensions(Arc<[Option<dm_ir::SymbolicExpression>]>)}
  #[test]fn actual_original_signature_metadata_parameter_array_and_token_aliases_keep_same_counter_after_all_graph_roots_drop(){
   for choice in 0..6{
-   let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let source="/proc/probe(argument[2]=1)\n    return argument\n";
+   let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let source="/proc/probe(argument[2]=1)\n    return argument\n";
    let native=OrderedOriginalDeclarations::parse(source.into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
    let skeletons=native.current[0].skeletons();let metadata=skeletons.iter().find_map(|row|match row{crate::Skeleton::Member{metadata,..}=>metadata.procedure.clone(),_=>None}).unwrap();
    let detached=match choice{0=>Detached::Metadata(Arc::clone(&metadata)),1=>Detached::Parameters(Arc::clone(&metadata.signature.parameters)),2=>Detached::Tokens(Arc::clone(&metadata.signature.parameters[0].default.as_ref().unwrap().tokens)),3=>Detached::Array(Arc::clone(metadata.signature.parameters[0].array.as_ref().unwrap())),4=>Detached::Dimensions(Arc::clone(&metadata.signature.parameters[0].array.as_ref().unwrap().dimensions)),_=>Detached::Tokens(Arc::clone(&metadata.signature.parameters[0].array.as_ref().unwrap().dimensions[0].as_ref().unwrap().tokens))};
    let mut census=OriginalSignatureAliasCensus::default();let group=Arc::clone(&native.primary_leases[0].aliases);
    let (charged,physical)=group.coordination_storage_for_test();assert_eq!(charged,physical,"charge exactly the actual alias slots, lease slots and Arc allocation");
-   census.retain(Arc::clone(&group),&a).unwrap();census.retain(group,&a).unwrap();assert_eq!(census.live_groups(),1,"same reservation resource group is not registered twice");drop(metadata);drop(skeletons);drop(native);census.prune(&a).unwrap();assert_eq!(census.live_groups(),1,"detached IR allocation remains physically live choice={choice}");assert!(counter.load(Ordering::Acquire)>0,"detached alias retains SAME producer reservation");drop(detached);census.prune(&a).unwrap();assert_eq!(census.live_groups(),0);assert_eq!(counter.load(Ordering::Acquire),0,"actual last alias releases signature+observer/census credit after resource prune");
+   census.retain(Arc::clone(&group),&a).unwrap();census.retain(group,&a).unwrap();assert_eq!(census.live_groups(),1,"same reservation resource group is not registered twice");drop(metadata);drop(skeletons);drop(native);census.prune(&a).unwrap();assert_eq!(census.live_groups(),1,"detached IR allocation remains physically live choice={choice}");assert!(counter.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes(),"detached alias retains SAME producer reservation");drop(detached);census.prune(&a).unwrap();assert_eq!(census.live_groups(),0);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"actual last alias releases signature+observer/census credit after resource prune");
   }
  }
  #[test]
  fn actual_shared_empty_parameter_backing_releases_its_group_after_the_last_detached_alias() {
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
     let native=OrderedOriginalDeclarations::parse(
         "/proc/first()\n    return\n/proc/second()\n    return\n".into(),&a).unwrap()
@@ -410,15 +410,15 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
     drop(first);
     census.prune(&a).unwrap();
     assert_eq!(census.live_groups(),1);
-    assert!(used.load(Ordering::Acquire)>0);
+    assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());
     drop(second);
     census.prune(&a).unwrap();
     assert_eq!(census.live_groups(),0);
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn actual_detached_procedure_member_wrapper_keeps_same_producer_credit() {
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
     let text="/proc/probe(argument=1)\n    set waitfor = FALSE\n    return argument\n";
     let native=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap()
@@ -433,14 +433,14 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
     drop(native);
     census.prune(&a).unwrap();
     assert_eq!(census.live_groups(),1);
-    assert!(used.load(Ordering::Acquire)>=std::mem::size_of::<dm_ir::ProcedureSettingNode>());
+    assert!(used.load(Ordering::Acquire)>=dm_syntax::SettingChargeCounter::root_allocation_bytes() + (std::mem::size_of::<dm_ir::ProcedureSettingNode>()));
     drop(member);
     census.prune(&a).unwrap();
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn actual_detached_procedure_settings_slice_keeps_same_producer_credit() {
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
     let text="/proc/probe(argument=1)\n    set waitfor = FALSE\n    return argument\n";
     let native=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap()
@@ -455,14 +455,14 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
     drop(native);
     census.prune(&a).unwrap();
     assert_eq!(census.live_groups(),1);
-    assert!(used.load(Ordering::Acquire)>=std::mem::size_of::<dm_ir::ProcedureSettingNode>());
+    assert!(used.load(Ordering::Acquire)>=dm_syntax::SettingChargeCounter::root_allocation_bytes() + (std::mem::size_of::<dm_ir::ProcedureSettingNode>()));
     drop(settings);
     census.prune(&a).unwrap();
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn actual_detached_setting_tokens_keep_same_producer_credit() {
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
     let text="/proc/probe(argument=1)\n    set waitfor = FALSE\n    return argument\n";
     let parses=crate::procedure::original_setting_metadata_parses();
@@ -482,14 +482,14 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
     drop(native);
     census.prune(&a).unwrap();
     assert_eq!(census.live_groups(),1);
-    assert!(used.load(Ordering::Acquire)>=std::mem::size_of::<dm_ir::ExpressionToken>());
+    assert!(used.load(Ordering::Acquire)>=dm_syntax::SettingChargeCounter::root_allocation_bytes() + (std::mem::size_of::<dm_ir::ExpressionToken>()));
     drop(tokens);
     census.prune(&a).unwrap();
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn actual_detached_procedure_canonical_keeps_same_producer_credit() {
-    let used=Arc::new(AtomicUsize::new(0));
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
     let text="/proc/probe(argument=1)\n    set waitfor = FALSE\n    return argument\n";
     let native=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap()
@@ -510,21 +510,21 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
     drop(native);
     census.prune(&a).unwrap();
     assert_eq!(census.live_groups(),1);
-    assert!(used.load(Ordering::Acquire)>=canonical.len());
+    assert!(used.load(Ordering::Acquire)>=dm_syntax::SettingChargeCounter::root_allocation_bytes() + (canonical.len()));
     drop(canonical);
     census.prune(&a).unwrap();
-    assert_eq!(used.load(Ordering::Acquire),0);
+    assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_original_signature_alias_census_rejects_foreign_counter_and_never_retains_semantic_payload(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let native=OrderedOriginalDeclarations::parse("/proc/probe(argument=1)\n    return argument\n".into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();let group=Arc::clone(&native.primary_leases[0].aliases);let foreign=Arc::new(AtomicUsize::new(0));let other=dm_syntax::SettingAdmission::new(&foreign,32<<20,&poll);let mut census=OriginalSignatureAliasCensus::default();assert_eq!(census.retain(Arc::clone(&group),&other).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(census.live_groups(),0);assert_eq!(foreign.load(Ordering::Acquire),0);drop(group);drop(native);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let native=OrderedOriginalDeclarations::parse("/proc/probe(argument=1)\n    return argument\n".into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();let group=Arc::clone(&native.primary_leases[0].aliases);let foreign=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let other=dm_syntax::SettingAdmission::new(&foreign,32<<20,&poll);let mut census=OriginalSignatureAliasCensus::default();assert_eq!(census.retain(Arc::clone(&group),&other).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(census.live_groups(),0);assert_eq!(foreign.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());drop(group);drop(native);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_primary_detached_syntax_resource_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]
  fn alias_capture_releases_consumed_signature_rows_and_keeps_procedure_data() {
-  let counter = Arc::new(AtomicUsize::new(0));
+  let counter = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a = dm_syntax::SettingAdmission::new(&counter, 32 << 20, &|| Ok(()));
   let text = "/proc/probe(argument=1)\n    return argument\n";
   let native = OrderedOriginalDeclarations::parse(text.into(), &a).unwrap()
@@ -548,11 +548,11 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
   assert!(parameters[0].default.is_some());
   drop(parameters);
   census.prune(&a).unwrap();
-  assert_eq!(counter.load(Ordering::Acquire), 0);
+  assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn actual_detached_formal_spelling_keeps_its_original_header_credit_until_last_alias() {
-  let counter=Arc::new(AtomicUsize::new(0));
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
   let text="/proc/first(first_parameter)\n    return\n/proc/second(only_formal_spelling)\n    return\n";
   let primary=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap();
@@ -566,34 +566,34 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
   drop(native);
   census.prune(&a).unwrap();
   assert_eq!(census.live_groups(),1,"the detached original spelling alone retains the observer reservation");
-  assert!(counter.load(Ordering::Acquire)>=spelling.len());
+  assert!(counter.load(Ordering::Acquire)>=dm_syntax::SettingChargeCounter::root_allocation_bytes() + (spelling.len()));
   drop(spelling);
   census.prune(&a).unwrap();
   assert_eq!(census.live_groups(),0);
-  assert_eq!(counter.load(Ordering::Acquire),0);
+  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_detached_relative_syntax_and_header_owner_keep_same_primary_parser_credit_until_last_owner(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let native=OrderedOriginalDeclarations::parse("/datum/kept\n    var/value=1\n".into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
-  let original=Arc::downgrade(&native.primary_leases[0].parser);let relative=Arc::clone(native.current[0].syntax.shared_relative());assert!(relative.wide_relative_items().is_none());let primary_bytes=original.upgrade().unwrap().bytes();drop(native);assert!(original.upgrade().is_some(),"public detached RelativeSyntax keeps the actual header/parser resource root");assert!(counter.load(Ordering::Acquire)>=primary_bytes);drop(relative);assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let native=OrderedOriginalDeclarations::parse("/datum/kept\n    var/value=1\n".into(),&a).unwrap().adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+  let original=Arc::downgrade(&native.primary_leases[0].parser);let relative=Arc::clone(native.current[0].syntax.shared_relative());assert!(relative.wide_relative_items().is_none());let primary_bytes=original.upgrade().unwrap().bytes();drop(native);assert!(original.upgrade().is_some(),"public detached RelativeSyntax keeps the actual header/parser resource root");assert!(counter.load(Ordering::Acquire)>=dm_syntax::SettingChargeCounter::root_allocation_bytes() + (primary_bytes));drop(relative);assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_resource_wide_fallback_alias_is_observed_without_minting_a_semantic_or_source_grant(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let mut primary=CurrentOriginalDeclarations::parse("/datum/kept\n    var/value=1\n".into(),0,&a).unwrap();let progress=primary.adapt_before_constant_stage("/datum/kept\n    var/value=1\n",&a).unwrap();
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let mut primary=CurrentOriginalDeclarations::parse("/datum/kept\n    var/value=1\n".into(),0,&a).unwrap();let progress=primary.adapt_before_constant_stage("/datum/kept\n    var/value=1\n",&a).unwrap();
   // Existing Arena wide fallback is otherwise unreachable inside admitted
   // Original u32 source geometry. Alter only this RESOURCE-test indentation
   // scalar, moving SAME native Item allocations; never issue a model/view.
   let OriginalSignatureItems::Dense(items)=&mut primary.items else{panic!("explicit compatibility fixture must stay dense")};
-  items[0].indent=usize::MAX;let(current,roots)=primary.into_current(progress,&a).unwrap();let wide=Arc::clone(current.syntax.shared_relative().wide_relative_items().expect("actual existing wide storage fallback"));let original=Arc::downgrade(&roots.parser);let mut census=OriginalSignatureAliasCensus::default();census.retain(Arc::clone(&roots.aliases),&a).unwrap();drop(current);drop(roots);census.prune(&a).unwrap();assert!(original.upgrade().is_some());assert_eq!(census.live_groups(),1);drop(wide);census.prune(&a).unwrap();assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),0);
+  items[0].indent=usize::MAX;let(current,roots)=primary.into_current(progress,&a).unwrap();let wide=Arc::clone(current.syntax.shared_relative().wide_relative_items().expect("actual existing wide storage fallback"));let original=Arc::downgrade(&roots.parser);let mut census=OriginalSignatureAliasCensus::default();census.retain(Arc::clone(&roots.aliases),&a).unwrap();drop(current);drop(roots);census.prune(&a).unwrap();assert!(original.upgrade().is_some());assert_eq!(census.live_groups(),1);drop(wide);census.prune(&a).unwrap();assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_header_resource_root_cannot_rebind_foreign_reservation_or_replace_current_owner(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let primary=CurrentOriginalDeclarations::parse("/datum/kept\n".into(),0,&a).unwrap();let foreign=Arc::new(AtomicUsize::new(0));let b=dm_syntax::SettingAdmission::new(&foreign,32<<20,&poll);let root=Arc::new(b.reserve(64).unwrap());assert!(matches!(primary.headers.retain_original_primary_resource(root,&b),Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(ref error))if error.kind()==io::ErrorKind::InvalidInput));assert_eq!(foreign.load(Ordering::Acquire),0);let other=Arc::new(a.reserve(64).unwrap());assert!(primary.headers.retain_original_primary_resource(other,&a).is_err());drop(primary);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let primary=CurrentOriginalDeclarations::parse("/datum/kept\n".into(),0,&a).unwrap();let foreign=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let b=dm_syntax::SettingAdmission::new(&foreign,32<<20,&poll);let root=Arc::new(b.reserve(64).unwrap());assert!(matches!(primary.headers.retain_original_primary_resource(root,&b),Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(ref error))if error.kind()==io::ErrorKind::InvalidInput));assert_eq!(foreign.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());let other=Arc::new(a.reserve(64).unwrap());assert!(primary.headers.retain_original_primary_resource(other,&a).is_err());drop(primary);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod streamed_actual_input_tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]fn actual_primary_handoff_retains_source_owner_fatal_notices_and_consumes_signatures_once(){
   for text in ["/proc/p(var/static/A)\n    return A\n", "/proc/p(var/A=)\n/proc/unreached()\n    return\n"]{
-   let counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,16<<20,&||Ok(()));let source:dm_preprocess::SourceText=text.into();
+   let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&counter,16<<20,&||Ok(()));let source:dm_preprocess::SourceText=text.into();
    let actual=crate::procedure::original_primary_signatures::parse_original_signatures_using(source.clone(),&a).unwrap();
    let fatal=actual.signature_failure.is_some();let headers=Arc::clone(&actual.headers);
    let input=OrderedOriginalDeclarations::from_actual_signature_input(actual,&a).unwrap();
@@ -601,13 +601,13 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
    let products=input.adapt_for_original_outcome(&a).unwrap();assert_eq!(products.rows().len(),1);
    assert!(products.primary().inputs()[0].prepared.require_consumed().is_ok());
    assert!(products.rows().iter().all(|row|row.facts().symbols.text(dm_ir::SymbolId::of("unreached")).is_none()));
-   drop(products);drop(headers);drop(source);assert_eq!(counter.load(Ordering::Acquire),0);
+   drop(products);drop(headers);drop(source);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   }
  }
  #[test]fn actual_primary_handoff_rejects_foreign_admission_without_reparsing(){
-  let counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,16<<20,&||Ok(()));
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&counter,16<<20,&||Ok(()));
   let actual=crate::procedure::original_primary_signatures::parse_original_signatures_using("/proc/p(A)\n    return A\n".into(),&a).unwrap();
-  let foreign=Arc::new(AtomicUsize::new(0));let b=dm_syntax::SettingAdmission::new(&foreign,16<<20,&||Ok(()));
-  assert_eq!(OrderedOriginalDeclarations::from_actual_signature_input(actual,&b).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),0);
+  let foreign=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let b=dm_syntax::SettingAdmission::new(&foreign,16<<20,&||Ok(()));
+  assert_eq!(OrderedOriginalDeclarations::from_actual_signature_input(actual,&b).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

@@ -134,7 +134,7 @@ fn untyped_locals_use_original_root_proc_lookup_but_not_root_field_lookup() {
 }
 
 #[derive(Debug)]
-struct ProjectedBodyHost(Arc<std::sync::atomic::AtomicUsize>);
+struct ProjectedBodyHost(Arc<dm_syntax::SettingChargeCounter>);
 impl dm_tree::frontend::BodySyntaxQueries for ProjectedBodyHost {
     fn syntax(&self, input: &Arc<dm_tree::frontend::BodySyntaxInput>) -> Result<Arc<dm_tree::frontend::BodySyntax>, dm_tree::frontend::Diagnostic> {
         let checkpoint = || Ok(());

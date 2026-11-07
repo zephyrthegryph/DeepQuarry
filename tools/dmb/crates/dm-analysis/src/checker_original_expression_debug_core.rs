@@ -261,12 +261,12 @@ fn typed_constant_display<S:Source>(source:&S,value:&dm_syntax::LiteralText,out:
  }
  fn output(run:impl FnOnce(&mut DebugSink<'_>)->Result<(),String>)->String{let mut text=String::with_capacity(256);let mut out=DebugSink::fixed(&mut text,256);run(&mut out).unwrap();assert!(!out.denied());text}
  #[test]fn typed_original_literal_debug_and_display_never_reparse_rounded_or_generated_text(){
-  use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let source=ScalarSource;
+  use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission};use std::sync::{atomic::{Ordering}};
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let source=ScalarSource;
   for(raw,value,term,constant,display)in[("garbage",V::Int(0),"Int(0)","Some(Float(0.0))","0"),("1",V::Float(-0.0),"Float(-0.0)","Some(Float(-0.0))","0"),("\"[missing.field]\"",V::String("[missing.field]"),"String(\"[missing.field]\")","Some(String(\"[missing.field]\"))","\"[missing.field]\"")]{
    let text=LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap();assert_eq!(output(|out|literal_debug(&source,&text,out)),term);assert_eq!(output(|out|constant_debug(&source,Some(ConstantView::Literal(&text)),out)),constant);assert_eq!(output(|out|constant_display(&source,ConstantView::Literal(&text),out)),display);
   }
-  let text=LiteralText::from_original_value_data("1.23457".into(),0,V::Float(f32::from_bits(0x3f9e0651)),&a).unwrap();let exact=f32::from_bits(0x3f9e0651);assert_eq!(output(|out|literal_debug(&source,&text,out)),format!("Float({exact:?})"));drop(text);assert_eq!(counter.load(Ordering::Acquire),0);
+  let text=LiteralText::from_original_value_data("1.23457".into(),0,V::Float(f32::from_bits(0x3f9e0651)),&a).unwrap();let exact=f32::from_bits(0x3f9e0651);assert_eq!(output(|out|literal_debug(&source,&text,out)),format!("Float({exact:?})"));drop(text);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }
 

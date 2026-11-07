@@ -72,8 +72,8 @@ impl OriginalOutputTrace{
 }
 
 #[cfg(test)]mod tests{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ use super::*;use std::sync::atomic::{Ordering};
  #[test]fn last_alias_reclaims_long_parent_chain_iteratively_without_refunding_live_middle_alias(){
-  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let origin=Origin{physical:dm_syntax::Span::new(0,1),line:1,byte_column:Some(1),occurrence:0,invocation:true};let mut current=OriginalOutputTrace::default();let mut middle=None;for depth in 1..=4096{current=current.pushed_using("m",origin,depth,None,&a).unwrap();if depth==2048{middle=Some(current.clone())}}drop(current);assert!(used.load(Ordering::Acquire)>0);assert_eq!(middle.as_ref().unwrap().depth(),2048);drop(middle);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let origin=Origin{physical:dm_syntax::Span::new(0,1),line:1,byte_column:Some(1),occurrence:0,invocation:true};let mut current=OriginalOutputTrace::default();let mut middle=None;for depth in 1..=4096{current=current.pushed_using("m",origin,depth,None,&a).unwrap();if depth==2048{middle=Some(current.clone())}}drop(current);assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(middle.as_ref().unwrap().depth(),2048);drop(middle);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

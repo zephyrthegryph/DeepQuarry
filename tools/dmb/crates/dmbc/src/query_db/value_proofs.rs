@@ -95,7 +95,7 @@ fn diagnostic_storage_bound(e: &dm_tree::frontend::Diagnostic) -> usize {
 struct CanonicalBodies<'a, 'db> {
     context: std::cell::RefCell<&'a mut dm_query::Ctx<'db>>,
     archive: &'a dm_tree::frontend::BodyArchive,
-    body_charge: &'a Arc<AtomicUsize>,
+    body_charge: &'a Arc<dm_syntax::SettingChargeCounter>,
 }
 impl CanonicalValueBodies for CanonicalBodies<'_, '_> {
     fn with_current_body<T>(
@@ -118,7 +118,7 @@ impl CanonicalValueBodies for CanonicalBodies<'_, '_> {
     }
 }
 
-pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>, body_charge: Arc<AtomicUsize>) {
+pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>, body_charge: Arc<dm_syntax::SettingChargeCounter>) {
     db.define(VALUE_PROOFS, "native-value-proofs", move |ctx, params| {
         let params = params
             .downcast_ref::<Params>()

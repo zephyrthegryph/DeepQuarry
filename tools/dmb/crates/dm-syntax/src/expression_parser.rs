@@ -950,13 +950,13 @@ impl ExprParser<'_,'_> {
           let actual=Span::new(relative.start.checked_add(source_origin).and_then(|n|n.checked_add(origin)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?,relative.end.checked_add(source_origin).and_then(|n|n.checked_add(origin)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?);
           let at=rows.partition_point(|(candidate,_)|candidate.start<actual.start);
           let(_,data)=rows.get(at).filter(|(candidate,_)|*candidate==actual).ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual Original full-slice literal occurrence is unissued"))?;
-          let kind=matches!((token.kind,data.value()),(TokenKind::Number,crate::OriginalTokenValue::Int(_)|crate::OriginalTokenValue::Float(_))|(TokenKind::String,crate::OriginalTokenValue::String(_))|(TokenKind::Resource,crate::OriginalTokenValue::Resource(_)));
-          if !kind||data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"Original full-slice literal DATA differs from its exact primary occurrence"))}
+          let kind=matches!((token.kind,data.value()?),(TokenKind::Number,crate::OriginalTokenValue::Int(_)|crate::OriginalTokenValue::Float(_))|(TokenKind::String,crate::OriginalTokenValue::String(_))|(TokenKind::Resource,crate::OriginalTokenValue::Resource(_)));
+          if !kind||data.raw()?!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"Original full-slice literal DATA differs from its exact primary occurrence"))}
           let a=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original full-slice literal lacks its actual native operation admission"))?;
           return crate::LiteralText::from_original_view(data,span.start,a)
          }
          if let Some(input)=self.demand.as_ref(){let occurrence=input.occurrences.get(index).copied().ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"native literal lacks actual pull occurrence"))?;
-          if let Some(data)=input.cursor.source.original_literal_data(occurrence)?{let admission=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original literal DATA lacks SAME native expression admission"))?;if data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"borrowed original literal DATA differs from actual token spelling occurrence"))}return crate::LiteralText::from_original_view(data,span.start,admission)}
+          if let Some(data)=input.cursor.source.original_literal_data(occurrence)?{let admission=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original literal DATA lacks SAME native expression admission"))?;if data.raw()?!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"borrowed original literal DATA differs from actual token spelling occurrence"))}return crate::LiteralText::from_original_view(data,span.start,admission)}
          }
          match self.original_value_for(index)?{
             Some(value)=>{let admission=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original literal data lacks SAME native expression admission"))?;crate::LiteralText::from_original_value_data(token.text,span.start,value,admission)},
@@ -971,13 +971,13 @@ impl ExprParser<'_,'_> {
             let actual=Span::new(token.span.start.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?,token.span.end.checked_sub(current_offset).and_then(|n|n.checked_add(source_origin)).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput)?);
             let at=rows.partition_point(|(candidate,_)|candidate.start<actual.start);
             let(_,data)=rows.get(at).filter(|(candidate,_)|*candidate==actual).ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual archived interpolation part lacks its issued exact occurrence"))?;
-            if token.kind!=TokenKind::Interpolation||data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"archived interpolation DATA differs from the exact parser input"))}return Ok(data.detach())
+            if token.kind!=TokenKind::Interpolation||data.raw()?!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"archived interpolation DATA differs from the exact parser input"))}return data.detach_using(self.admission.ok_or(std::io::ErrorKind::InvalidInput)?)
         }
         let input=self.demand.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual whole-token interpolation facts are not issued"))?;
         let occurrence=input.occurrences.get(index).copied().ok_or(std::io::ErrorKind::InvalidData)?;
         let data=input.cursor.source.original_literal_data(occurrence)?.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual interpolation part lacks its SAME produced literal DATA"))?;
         let token=self.tokens.get(index).ok_or(std::io::ErrorKind::InvalidData)?;
-        if token.kind!=TokenKind::Interpolation||data.raw()!=token.text{return Err(std::io::ErrorKind::InvalidData.into())}Ok(data.detach())
+        if token.kind!=TokenKind::Interpolation||data.raw()?!=token.text{return Err(std::io::ErrorKind::InvalidData.into())}data.detach_using(self.admission.ok_or(std::io::ErrorKind::InvalidInput)?)
     }
     fn original_interpolation(&mut self,begin:Token)->Option<Expr>{
         let a=self.admission?;let result=(||{
@@ -1503,7 +1503,7 @@ mod setting_admission_parser_tests {
         let source = "call(1+2,3+4)";
         let lexical = crate::lex_spans(source);
         assert!(lexical.diagnostics.is_empty());
-        let counter = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let polls = std::cell::Cell::new(0);
         let stop_at = lexical.tokens.len() + 3;
         let stopped = || {
@@ -1625,11 +1625,11 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
 #[cfg(test)]
 mod original_super_provenance {
     use super::*;
-    use std::sync::{Arc, atomic::AtomicUsize};
+
 
     #[test]
     fn original_zero_parent_call_requires_the_single_super_occurrence() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let admission = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let source = "..().field";
         let punctuation = |start, end| SpanToken {
@@ -1661,14 +1661,14 @@ mod original_super_provenance {
 }
 
 #[cfg(test)]mod demanded_expression_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  struct Feed{tokens:std::vec::IntoIter<Token>,pulls:usize,forbid:Option<&'static str>,fail:Option<usize>}
  impl NativeExpressionTokenDemand for Feed{fn next_token(&mut self)->std::io::Result<Option<Token>>{self.pulls+=1;if self.fail==Some(self.pulls){return Err(std::io::Error::from_raw_os_error(1450))}let token=self.tokens.next();if let Some(token)=&token{assert_ne!(Some(token.text.as_str()),self.forbid,"parser requested a token beyond its first genuine native syntax failure");}Ok(token)}}
  fn feed(text:&str)->Feed{Feed{tokens:lex(text).tokens.into_iter(),pulls:0,forbid:None,fail:None}}
 
  #[test]
  fn demanded_completed_syntax_settles_only_dead_pratt_work_and_keeps_token_owner() {
-    let used = Arc::new(AtomicUsize::new(0));
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
     for (text, settles) in [("owner", true), ("42", true), ("owner.value", true), ("list(1, owner.value)", true), ("(owner+)", false), (r#"list("a[x]b")"#, false)] {
         let mut input = feed(text);
@@ -1707,13 +1707,13 @@ mod original_super_provenance {
         } else {
             drop(produced);
         }
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
     }
  }
 
  #[test]
  fn demanded_completed_syntax_retains_original_envelope_above_walk_limit() {
-    let used = Arc::new(AtomicUsize::new(0));
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
     let text = format!("list({})", ["1"; 32].join(","));
     let mut input = feed(&text);
@@ -1724,12 +1724,12 @@ mod original_super_provenance {
     produced.settle_completed_syntax(&admission).unwrap();
     assert_eq!(used.load(Ordering::Acquire), before);
     drop(produced);
-    assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn completed_demanded_expression_seals_the_exact_root_and_tokens_after_live_notices() {
-    let used = Arc::new(AtomicUsize::new(0));
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
     let mut input = feed("()");
     let produced = parse_original_expression_demanded(&mut input, &admission).unwrap();
@@ -1751,14 +1751,14 @@ mod original_super_provenance {
     assert_eq!(literal.raw_storage().as_ptr(), literal_storage);
     assert_eq!(input.pulls, pulls);
     drop(retained);
-    assert_eq!(used.load(Ordering::Acquire), 0);
+    assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn completed_demanded_expression_rejects_syntax_failure_foreign_owner_and_first_io() {
     use std::io::ErrorKind;
-    let used = Arc::new(AtomicUsize::new(0));
-    let foreign_used = Arc::new(AtomicUsize::new(0));
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+    let foreign_used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
     let foreign = crate::SettingAdmission::new(&foreign_used, 8 << 20, &|| Ok(()));
     let invalid = parse_original_expression_demanded(&mut feed("(1+)"), &a).unwrap();
@@ -1768,13 +1768,13 @@ mod original_super_provenance {
     let valid = parse_original_expression_demanded(&mut feed("owner.field"), &a).unwrap();
     let fail = crate::SettingAdmission::new(&used, 8 << 20, &|| Err(std::io::Error::from_raw_os_error(1450)));
     assert_eq!(valid.into_completed_syntax(&fail).err().unwrap().raw_os_error(), Some(1450));
-    assert_eq!(used.load(Ordering::Acquire), 0);
-    assert_eq!(foreign_used.load(Ordering::Acquire), 0);
+    assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+    assert_eq!(foreign_used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
 
  #[test]
  fn original_pick_empty_arms_stop_at_the_reported_post_comma_token() {
-  let used = Arc::new(AtomicUsize::new(0));
+  let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let admission = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
   for (text, value, span) in [
    ("pick(,1)", 1, Span::new(6, 7)),
@@ -1793,13 +1793,13 @@ mod original_super_provenance {
    crate::write_original_input_failure(&mut message, Some(crate::OriginalTokenValue::Int(value)), failure.expected()).unwrap();
    assert_eq!(message, format!("got '{value}', expected one of: "));
    drop(actual);
-   assert_eq!(used.load(Ordering::Acquire), 0);
+   assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
   }
  }
 
  #[test]
  fn original_pick_keeps_empty_and_weighted_lists_and_ordinary_calls_keep_omissions() {
-  let used = Arc::new(AtomicUsize::new(0));
+  let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let admission = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
   for (text, count, weighted) in [("pick()", 0, 0), ("pick(1,)", 1, 0), ("pick(2;1, 4;3,)", 2, 2)] {
    let actual = parse_original_expression_demanded(&mut feed(text), &admission).unwrap();
@@ -1818,24 +1818,24 @@ mod original_super_provenance {
     assert_eq!(args[index].span.start, args[index].span.end);
    }
   }
-  assert_eq!(used.load(Ordering::Acquire), 0);
+  assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn same_native_pratt_demand_matches_complete_native_grammar_without_prefix_replay(){
-  for text in["1+2*3","a=b in c","a?b:c","a::member","::global_proc(1,2)","new /datum/item(1).field","as(())","a?.field","a?[1]","(a+b)**2","list(1,key=2)","\"ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â± literal\""]{
-   let old=parse_expression(text);let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed(text);let actual=parse_expression_demanded(&mut input,&a).unwrap();assert_eq!(format!("{:?}",actual.parsed()),format!("{old:?}"),"{text}");assert!(used.load(Ordering::Acquire)>0||actual.tokens().is_empty());drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
+  for text in["1+2*3","a=b in c","a?b:c","a::member","::global_proc(1,2)","new /datum/item(1).field","as(())","a?.field","a?[1]","(a+b)**2","list(1,key=2)","\"ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â± literal\""]{
+   let old=parse_expression(text);let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed(text);let actual=parse_expression_demanded(&mut input,&a).unwrap();assert_eq!(format!("{:?}",actual.parsed()),format!("{old:?}"),"{text}");assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes()||actual.tokens().is_empty());drop(actual);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   }
  }
  #[test]fn actual_native_pratt_stops_demand_at_first_unexpected_term_without_requesting_later_tokens(){
-  for text in["; BAD(1)","1 bad BAD(1)","(1+) BAD(1)"]{let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed(text);input.forbid=Some("BAD");let actual=parse_expression_demanded(&mut input,&a).unwrap();assert!(!actual.parsed().diagnostics.is_empty(),"{text}");if text.starts_with(';'){assert_eq!(actual.expected_term().unwrap().token_span(),Some(Span::new(0,1)));}drop(actual);assert_eq!(used.load(Ordering::Acquire),0);}
+  for text in["; BAD(1)","1 bad BAD(1)","(1+) BAD(1)"]{let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed(text);input.forbid=Some("BAD");let actual=parse_expression_demanded(&mut input,&a).unwrap();assert!(!actual.parsed().diagnostics.is_empty(),"{text}");if text.starts_with(';'){assert_eq!(actual.expected_term().unwrap().token_span(),Some(Span::new(0,1)));}drop(actual);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
  }
  #[test]fn actual_native_pratt_demand_keeps_first_source_io_and_same_budget_oom_without_partial_success(){
-  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed("1+2");input.fail=Some(2);let error=parse_expression_demanded(&mut input,&a).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(input.pulls,2);assert_eq!(used.load(Ordering::Acquire),0);
-  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1,&||Ok(()));let mut input=feed("1+2");assert_eq!(parse_expression_demanded(&mut input,&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed("1+2");input.fail=Some(2);let error=parse_expression_demanded(&mut input,&a).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(input.pulls,2);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (1),&||Ok(()));let mut input=feed("1+2");assert_eq!(parse_expression_demanded(&mut input,&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod demanded_token_credit_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  struct Feed{token:Option<Token>,credit:Option<crate::SettingRootLease>,fault:bool}
  impl NativeExpressionTokenDemand for Feed{
   fn next_token(&mut self)->std::io::Result<Option<Token>>{Ok(self.token.take())}
@@ -1847,14 +1847,14 @@ mod original_super_provenance {
   Feed{token:Some(Token{kind:TokenKind::Number,span:Span::new(0,1),text}),credit:credit.then_some(root),fault:false}
  }
  #[test]fn actual_native_demand_adopts_one_spelling_credit_without_duplicate_charge_and_retains_it_with_result(){
-  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,1<<20,&poll);
-  let mut prepaid=feed(&a,true);let parsed=parse_expression_demanded(&mut prepaid,&a).unwrap();let adopted=counter.load(Ordering::Acquire);assert!(adopted>0);assert!(prepaid.credit.is_none());assert!(parsed.parsed().diagnostics.is_empty());drop(parsed);assert_eq!(counter.load(Ordering::Acquire),0);
-  let mut ordinary=feed(&a,false);let parsed=parse_expression_demanded(&mut ordinary,&a).unwrap();assert_eq!(counter.load(Ordering::Acquire),adopted);drop(parsed);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,1<<20,&poll);
+  let mut prepaid=feed(&a,true);let parsed=parse_expression_demanded(&mut prepaid,&a).unwrap();let adopted=counter.load(Ordering::Acquire);assert!(adopted>0);assert!(prepaid.credit.is_none());assert!(parsed.parsed().diagnostics.is_empty());drop(parsed);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let mut ordinary=feed(&a,false);let parsed=parse_expression_demanded(&mut ordinary,&a).unwrap();assert_eq!(counter.load(Ordering::Acquire),adopted);drop(parsed);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_native_demand_credit_foreign_root_and_first_io_never_issue_partial_success(){
-  let one=Arc::new(AtomicUsize::new(0));let two=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&one,1<<20,&poll);let b=crate::SettingAdmission::new(&two,1<<20,&poll);
-  let mut foreign=feed(&b,true);let error=parse_expression_demanded(&mut foreign,&a).err().expect("foreign token must refuse");assert_eq!(error.kind(),std::io::ErrorKind::InvalidInput);drop(foreign);assert_eq!(one.load(Ordering::Acquire),0);assert_eq!(two.load(Ordering::Acquire),0);
-  let mut fault=feed(&a,true);fault.fault=true;let error=parse_expression_demanded(&mut fault,&a).err().expect("genuine source IO must refuse");assert_eq!(error.raw_os_error(),Some(1450));drop(fault);assert_eq!(one.load(Ordering::Acquire),0);
+  let one=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let two=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=crate::SettingAdmission::new(&one,1<<20,&poll);let b=crate::SettingAdmission::new(&two,1<<20,&poll);
+  let mut foreign=feed(&b,true);let error=parse_expression_demanded(&mut foreign,&a).err().expect("foreign token must refuse");assert_eq!(error.kind(),std::io::ErrorKind::InvalidInput);drop(foreign);assert_eq!(one.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());assert_eq!(two.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let mut fault=feed(&a,true);fault.fault=true;let error=parse_expression_demanded(&mut fault,&a).err().expect("genuine source IO must refuse");assert_eq!(error.raw_os_error(),Some(1450));drop(fault);assert_eq!(one.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
@@ -1874,7 +1874,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
 }
 
 #[cfg(test)]mod original_close_colon_transport_controls{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  // These are final producer values, deliberately independent of authored colon whitespace.
  // The source never lexes or reparses authored strings to recreate closeness.
  struct Feed{rows:Vec<(Token,Option<bool>)>,at:usize,fail_close:bool}
@@ -1887,7 +1887,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
  }
  #[test]fn actual_close_colon_controls_keep_original_scoped_and_ternary_decisions_without_spelling_inference(){
   use TokenKind::{Ident as I,Punctuation as P};
-  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
   for (rows,allowed) in [
    (vec![(I,"value",None),(P,":",Some(true)),(I,"key",None)],true),
    (vec![(I,"value",None),(P,":",Some(false)),(I,"key",None)],false),
@@ -1898,15 +1898,15 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
    (vec![(I,"a",None),(P,"?",None),(I,"f",None),(P,"(",None),(P,")",None),(P,":",Some(true)),(I,"c",None)],true),
    (vec![(P,":",Some(true)),(I,"child",None)],true),
    (vec![(P,":",Some(false)),(I,"child",None)],false),
-  ]{let mut source=Feed::new(&rows);let output=parse_original_expression_demanded(&mut source,&a).unwrap();assert_eq!(output.parsed().diagnostics.is_empty(),allowed,"rows: {rows:?}");drop(output);assert_eq!(used.load(Ordering::Acquire),0);}
+  ]{let mut source=Feed::new(&rows);let output=parse_original_expression_demanded(&mut source,&a).unwrap();assert_eq!(output.parsed().diagnostics.is_empty(),allowed,"rows: {rows:?}");drop(output);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
  }
  #[test]fn actual_close_colon_query_preserves_first_io_and_fresh_parser_recovery(){
-  use TokenKind::{Ident as I,Punctuation as P};let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
-  let rows=[(I,"value",None),(P,":",Some(true)),(I,"key",None)];let mut source=Feed::new(&rows);source.fail_close=true;assert_eq!(parse_original_expression_demanded(&mut source,&a).err().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),0);let mut source=Feed::new(&rows);drop(parse_original_expression_demanded(&mut source,&a).unwrap());assert_eq!(used.load(Ordering::Acquire),0);
+  use TokenKind::{Ident as I,Punctuation as P};let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let rows=[(I,"value",None),(P,":",Some(true)),(I,"key",None)];let mut source=Feed::new(&rows);source.fail_close=true;assert_eq!(parse_original_expression_demanded(&mut source,&a).err().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());let mut source=Feed::new(&rows);drop(parse_original_expression_demanded(&mut source,&a).unwrap());assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 }
 
 #[cfg(test)]mod original_empty_group_event_controls{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
- #[test]fn same_native_empty_group_issues_null_and_one_actual_closing_warning(){let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut tokens=crate::lex("()) BAD").tokens.into_iter();let mut source=||{let next=tokens.next();assert!(next.as_ref().is_none_or(|token|token.text!="BAD"));Ok(next)};let mut clauses=crate::ParameterClauseCursor::new(0);let mut source=crate::ParameterExpressionDemand::new(&mut source,&mut clauses).original();let root=crate::parse_original_expression_demanded(&mut source,&a).unwrap();assert!(root.parsed().diagnostics.is_empty());assert!(matches!(&root.parsed().expr.as_ref().unwrap().kind,ExprKind::Literal(value)if value.as_str()=="null"));let events=root.parsed().original_input_notices().unwrap().as_slice();assert_eq!(events.len(),1);assert_eq!(events[0].kind(),crate::OriginalInputNoticeKind::EmptyParentheses);assert_eq!(events[0].span(),Span::new(1,2));assert_eq!(source.take_boundary().unwrap().span,Span::new(2,3));drop(root);drop(source);assert_eq!(used.load(Ordering::Acquire),0);}
+ use super::*;use std::sync::{atomic::{Ordering}};
+ #[test]fn same_native_empty_group_issues_null_and_one_actual_closing_warning(){let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut tokens=crate::lex("()) BAD").tokens.into_iter();let mut source=||{let next=tokens.next();assert!(next.as_ref().is_none_or(|token|token.text!="BAD"));Ok(next)};let mut clauses=crate::ParameterClauseCursor::new(0);let mut source=crate::ParameterExpressionDemand::new(&mut source,&mut clauses).original();let root=crate::parse_original_expression_demanded(&mut source,&a).unwrap();assert!(root.parsed().diagnostics.is_empty());assert!(matches!(&root.parsed().expr.as_ref().unwrap().kind,ExprKind::Literal(value)if value.as_str()=="null"));let events=root.parsed().original_input_notices().unwrap().as_slice();assert_eq!(events.len(),1);assert_eq!(events[0].kind(),crate::OriginalInputNoticeKind::EmptyParentheses);assert_eq!(events[0].span(),Span::new(1,2));assert_eq!(source.take_boundary().unwrap().span,Span::new(2,3));drop(root);drop(source);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
 }

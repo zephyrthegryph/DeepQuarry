@@ -80,7 +80,7 @@ pub struct QueryDb {
     /// database, or from before a restart, is not one this log can answer for.
     id: u64,
     db: Db,
-    body_charge: Arc<std::sync::atomic::AtomicUsize>,
+    body_charge: Arc<dm_syntax::SettingChargeCounter>,
     original_signature_aliases:Mutex<dm_tree::frontend::OriginalSignatureAliasCensus>,
     value_charge: Arc<std::sync::atomic::AtomicUsize>,
     raw_policy: raw_policy::State,
@@ -112,7 +112,7 @@ const CHANGE_LOG: usize = 64;
 impl Default for QueryDb {
     fn default() -> Self {
         let db = Db::new();
-        let body_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let body_charge = dm_syntax::SettingChargeCounter::try_new(body_syntax::BUDGET).expect("fixed syntax root fits existing128MiB allowance");
         body_syntax::register(&db, Arc::clone(&body_charge));
         let value_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         value_proofs::register(&db, Arc::clone(&value_charge), Arc::clone(&body_charge));
@@ -1907,7 +1907,7 @@ mod source_runtime_answer_tests;
 pub(crate) fn body_syntax_budget_for_test()->usize{body_syntax::BUDGET}
 
 #[cfg(test)]
-pub(crate) fn body_syntax_counter_for_test(db:&QueryDb)->&std::sync::Arc<std::sync::atomic::AtomicUsize>{&db.body_charge}
+pub(crate) fn body_syntax_counter_for_test(db:&QueryDb)->&std::sync::Arc<dm_syntax::SettingChargeCounter>{&db.body_charge}
 
 pub(crate) use purity::global_graph::NativeEffectGraph;
 
@@ -1925,8 +1925,8 @@ mod generation_question_tests;
 
 /// Sealed identity loan of the actual existing syntax admission owner.
 /// No new counter, caller nonce/ID or strong/weak whole-Db alias is created.
-pub(crate) struct NativeQueryOwnerIdentity{counter:Arc<std::sync::atomic::AtomicUsize>}
-impl NativeQueryOwnerIdentity{pub(crate) fn matches(&self,queries:&QueryDb)->bool{Arc::ptr_eq(&self.counter,&queries.body_charge)}pub(crate) const fn retained_charge()->usize{std::mem::size_of::<std::sync::atomic::AtomicUsize>()+2*std::mem::size_of::<usize>()}pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){let size=Self::retained_charge();visit(Arc::as_ptr(&self.counter)as usize,size,size);}}
+pub(crate) struct NativeQueryOwnerIdentity{counter:Arc<dm_syntax::SettingChargeCounter>}
+impl NativeQueryOwnerIdentity{pub(crate) fn matches(&self,queries:&QueryDb)->bool{Arc::ptr_eq(&self.counter,&queries.body_charge)}pub(crate) const fn retained_charge()->usize{dm_syntax::SettingChargeCounter::root_allocation_bytes()}pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){let size=Self::retained_charge();visit(Arc::as_ptr(&self.counter)as usize,size,size);}}
 impl QueryDb{pub(crate) fn native_query_owner_identity(&self)->NativeQueryOwnerIdentity{NativeQueryOwnerIdentity{counter:Arc::clone(&self.body_charge)}}}
 
 impl NativeQueryOwnerIdentity{pub(crate) fn matches_admission(&self,a:&dm_syntax::SettingAdmission<'_>)->bool{a.uses_counter(&self.counter)}}

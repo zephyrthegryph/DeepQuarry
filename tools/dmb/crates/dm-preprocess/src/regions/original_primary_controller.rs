@@ -55,7 +55,7 @@ impl OriginalPrimaryOutput{
       OriginalStreamPrimary::Dense(primary) => primary.take_original_literal_fact_owner_using(a)?,
       OriginalStreamPrimary::Committed(primary) => primary.take_original_literal_fact_owner_using(a)?,
   }.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual logical primary has no issued neutral literal roster"))?;
-  let binding=super::original_literal_source::OriginalLiteralSourceBinding::issue_actual(&self.source,facts,a)?;
+  let binding=super::original_literal_source::OriginalLiteralSourceBinding::issue_actual(&self.source,facts,self.delivery.owner(),a)?;
   let (primary, tokens) = match self.primary {
       OriginalStreamPrimary::Dense(primary) => {
           let (primary, tokens) = primary.into_shared_tokens_using(a)?;
@@ -72,6 +72,10 @@ impl OriginalPrimaryOutput{
 /// Private pull side. Its real implementation owns raw traversal, directive
 /// effects, output cursor and actual end; adapters cannot turn a pause into EOF.
 pub(super) trait OriginalPreparedTokenSource{
+ /// DATA storage choice, issued only by the real diagnostic source recipe.
+ /// It adds no grant and is carried through the existing batch start event.
+ fn projects_body_spelling(&self)->bool{false}
+
  fn batch_token_pages(&self,_owner:&OriginalOutputIdentity,_end:usize,_count:usize,_a:&SettingAdmission<'_>)
   ->io::Result<[Option<OriginalBatchTokenPage>;2]>{Ok([None,None])}
  fn initial_delivery(&self)->OriginalDeliveryFrontier;
@@ -80,9 +84,10 @@ pub(super) trait OriginalPreparedTokenSource{
  fn actual_end(&self)->Option<OriginalProducedEnd>{None}
  fn stop(&mut self);
 }
-pub(super) struct OriginalLogicalProducer<'source,'loan,'budget>{driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>,cursor:OriginalOutputCursor,initial:OriginalDeliveryFrontier,actual_end:Option<OriginalProducedEnd>,ended:bool,failed:bool,stopped:bool,loan_batch_geometry:bool}
+pub(super) struct OriginalLogicalProducer<'source,'loan,'budget>{driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>,cursor:OriginalOutputCursor,initial:OriginalDeliveryFrontier,actual_end:Option<OriginalProducedEnd>,ended:bool,failed:bool,stopped:bool,loan_batch_geometry:bool,project_body_spelling:bool}
 impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
- pub(super) fn new(driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>)->io::Result<Self>{let cursor=OriginalOutputCursor::new(a)?;let initial=cursor.initial_delivery()?;Ok(Self{driver,provider,notices,host,control,a,cursor,initial,actual_end:None,ended:false,failed:false,stopped:false,loan_batch_geometry:false})}
+ pub(super) fn new(driver:&'loan mut RawSourceDriver,provider:&'source dyn SourceProvider,notices:&'loan mut dyn OriginalRawNoticeSink,host:&'loan mut dyn OriginalMacroHost,control:&'loan mut dyn OriginalStreamControl,a:&'loan SettingAdmission<'budget>)->io::Result<Self>{let cursor=OriginalOutputCursor::new(a)?;let initial=cursor.initial_delivery()?;Ok(Self{driver,provider,notices,host,control,a,cursor,initial,actual_end:None,ended:false,failed:false,stopped:false,loan_batch_geometry:false,project_body_spelling:false})}
+ pub(super) fn enable_body_spelling_projection(&mut self){self.project_body_spelling=true;}
  pub(super) fn enable_batch_geometry(&mut self){self.loan_batch_geometry=true;}
  fn pull_inner(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{
   loop{self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
@@ -104,6 +109,7 @@ impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
  }
 }
 impl OriginalPreparedTokenSource for OriginalLogicalProducer<'_,'_,'_>{
+ fn projects_body_spelling(&self)->bool{self.project_body_spelling}
  fn batch_token_pages(&self,owner:&OriginalOutputIdentity,end:usize,count:usize,a:&SettingAdmission<'_>)
   ->io::Result<[Option<OriginalBatchTokenPage>;2]>{
    if self.loan_batch_geometry {self.control.batch_token_pages(owner,end,count,a)}
@@ -123,7 +129,7 @@ impl OriginalFormalProducer for PrimaryReceiver<'_,'_,'_,'_>{fn pull_formal_toke
 pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTokenSource,work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,consumer:&mut dyn OriginalPrimaryStreamConsumer)->io::Result<OriginalPrimaryOutput>{
  let initial=source.initial_delivery();if initial.end()!=0||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
  let committed=consumer.retains_committed_items();
- let mut primary=if committed{OriginalPrimaryDemand::new_committed(a,None)?}else{OriginalPrimaryDemand::new(a,None)?};let mut receiver=PrimaryReceiver{source,output:OriginalFinalOutput::receiver(work,initial)?,a,actual_end:None};let mut stopped_after_formals=false;let mut entered:Option<OriginalPrimaryLiveHeader>=None;
+ let mut primary=if committed{OriginalPrimaryDemand::new_committed(a,None)?}else{OriginalPrimaryDemand::new(a,None)?};if committed&&source.projects_body_spelling(){primary.enable_body_spelling_projection(initial.owner().projection_data())?;}let mut receiver=PrimaryReceiver{source,output:OriginalFinalOutput::receiver(work,initial)?,a,actual_end:None};let mut stopped_after_formals=false;let mut entered:Option<OriginalPrimaryLiveHeader>=None;
  let progress=(||->io::Result<()>{loop{
   if receiver.pull(&mut primary).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_pull {error:?}");}})?.is_none(){primary.advance_with_observer(receiver.output.source(),true,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_eof {error:?}");}})?;break}
   if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}

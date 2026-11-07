@@ -58,7 +58,7 @@ impl<'a,'primary,'observer,'budget,P:OriginalFormalProducer> OriginalLiveFormalS
    }
    OriginalDeliveredValue::Punctuation { spelling, .. } => Ok(Value::Punct(spelling)),
    OriginalDeliveredValue::Literal => self.primary.original_literal_for_span(pull.span)?
-    .map(|data| data.value())
+    .map(|data| data.value()).transpose()?
     .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "delivered formal literal lacks its original value owner")),
    OriginalDeliveredValue::DocComment { kind, content } => {
     let text = source.get(content.range()).ok_or(io::ErrorKind::InvalidData)?;

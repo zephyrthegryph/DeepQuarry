@@ -155,36 +155,36 @@ impl dm_syntax::ParameterDefaultSyntaxProvider for DefaultLoans<'_>{
 #[cfg(test)]
 mod default_directory_storage_tests {
     use super::*;
-    use std::sync::{atomic::{AtomicUsize, Ordering}, Arc};
+    use std::sync::{atomic::{Ordering}, Arc};
 
     #[test]
     fn final_default_directory_admits_exact_rows_while_pending_storage_is_live() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let healthy = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let pending = healthy.reserve(2048 * 440).unwrap();
         let count = 2048;
         let exact = count * std::mem::size_of::<Row>() + std::mem::size_of::<OriginalDefaultRoots>();
         let live = pending.bytes();
-        let low = SettingAdmission::new(&used, live + exact - 1, &|| Ok(()));
+        let low = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (live + exact - 1), &|| Ok(()));
         assert_eq!(allocate_default_directory(count, &low).err().unwrap().kind(),
             io::ErrorKind::OutOfMemory);
-        assert_eq!(used.load(Ordering::Acquire), live);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (live));
 
-        let exact_admission = SettingAdmission::new(&used, live + exact, &|| Ok(()));
+        let exact_admission = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (live + exact), &|| Ok(()));
         let (rows, credit) = allocate_default_directory(count, &exact_admission).unwrap();
         assert_eq!(rows.capacity(), count);
         assert_eq!(rows.len(), 0);
         assert_eq!(credit.bytes(), exact);
-        assert_eq!(used.load(Ordering::Acquire), live + exact);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (live + exact));
         drop(rows);
         drop(credit);
         drop(pending);
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn final_default_directory_keeps_wrapper_only_when_empty_and_propagates_native_io() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let healthy = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let (rows, credit) = allocate_default_directory(0, &healthy).unwrap();
         assert_eq!(rows.capacity(), 0);
@@ -195,6 +195,6 @@ mod default_directory_storage_tests {
         let fault = || Err(io::Error::from_raw_os_error(1450));
         let failed = SettingAdmission::new(&used, 1 << 20, &fault);
         assert_eq!(allocate_default_directory(1, &failed).err().unwrap().raw_os_error(), Some(1450));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

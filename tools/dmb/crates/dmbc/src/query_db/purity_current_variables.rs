@@ -10,7 +10,7 @@ pub(super) const CURRENT_VARIABLES:Kind=Kind(28);
 pub(super) const CURRENT_LOOKUP:Kind=Kind(29);
 const CURRENT_MODEL:Kind=Kind(30);
 struct Driver{input:Weak<EffectInput>}
-struct CurrentParams{key:Key,driver:Key,input:Weak<EffectInput>,code:Weak<BodyCodeIdentity>,caller:dm_ir::ProcedureIdentity,syntax_charge:Arc<std::sync::atomic::AtomicUsize>,old_edges:usize,dependencies:std::sync::atomic::AtomicUsize}
+struct CurrentParams{key:Key,driver:Key,input:Weak<EffectInput>,code:Weak<BodyCodeIdentity>,caller:dm_ir::ProcedureIdentity,syntax_charge:Arc<dm_syntax::SettingChargeCounter>,old_edges:usize,dependencies:std::sync::atomic::AtomicUsize}
 struct LookupParams{key:Key,driver:Key,caller:dm_ir::ProcedureIdentity,code:Weak<BodyCodeIdentity>,query:ResolveQuery}
 fn invalid(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::InvalidData,message)}
 fn unsupported(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::Unsupported,message)}

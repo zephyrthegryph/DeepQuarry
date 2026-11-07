@@ -348,7 +348,7 @@ impl<'a> OriginalItem<'a> {
 mod tests {
     use super::*;
     use crate::{NativeTokenCursor, NativeTokenStep, OriginalPrimaryDemand, SettingAdmission};
-    use std::{fmt::Write, sync::{Arc, atomic::{AtomicUsize, Ordering}}};
+    use std::{fmt::Write, sync::{atomic::{Ordering}}};
 
     fn feed<'s>(primary: &mut OriginalPrimaryDemand<'_, '_, '_>, source: &'s str,
                 admission: &SettingAdmission<'_>) -> (&'s str, bool) {
@@ -400,8 +400,8 @@ mod tests {
             if fatal {
                 source.push_str("/datum/stop\n    var/first,second\n/proc/future()\n    return 2\n");
             }
-            let dense_used = Arc::new(AtomicUsize::new(0));
-            let compact_used = Arc::new(AtomicUsize::new(0));
+            let dense_used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+            let compact_used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let old = SettingAdmission::new(&dense_used, 8<<20, &|| Ok(()));
             let new = SettingAdmission::new(&compact_used, 8<<20, &|| Ok(()));
             let mut dense = OriginalPrimaryDemand::new(&old, None).unwrap();
@@ -428,10 +428,10 @@ mod tests {
             assert!(forest.data.blocks.len() >= 3);
             assert!(compact_used.load(Ordering::Acquire) + 20_000 < dense_used.load(Ordering::Acquire));
             drop((tokens, diagnostics, diagnostic_lease));
-            assert_eq!(compact_used.load(Ordering::Acquire), forest._lease.bytes());
+            assert_eq!(compact_used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (forest._lease.bytes()));
             drop((forest, dense));
-            assert_eq!(compact_used.load(Ordering::Acquire), 0);
-            assert_eq!(dense_used.load(Ordering::Acquire), 0);
+            assert_eq!(compact_used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+            assert_eq!(dense_used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
         }
     }
 
@@ -440,7 +440,7 @@ mod tests {
         let source = "/datum/p";
         let span = Span::new(0, source.len());
         for count in [MAX_BLOCK_ROWS, MAX_BLOCK_ROWS + 1] {
-            let used = Arc::new(AtomicUsize::new(0));
+            let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let admission = SettingAdmission::new(&used, 8<<20, &|| Ok(()));
             let storage = Storage::new(&admission).unwrap();
             let make = |children| Item {
@@ -474,7 +474,7 @@ mod tests {
                 _ => panic!("block bound must select its original exact representation"),
             }
             drop((block, storage));
-            assert_eq!(used.load(Ordering::Acquire), 0);
+            assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
         }
     }
 
@@ -482,10 +482,10 @@ mod tests {
     fn committed_block_falls_back_for_distinct_spelling_and_unavailable_overlap() {
         for altered in [false, true] {
             let source = "/datum/p";
-            let used = Arc::new(AtomicUsize::new(0));
+            let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
             let retained = 4096 + 4*size_of::<Item>() + source.len();
             let limit = if altered { 1<<20 } else { retained + size_of::<CompactItem>() - 1 };
-            let admission = SettingAdmission::new(&used, limit, &|| Ok(()));
+            let admission = SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes() + (limit), &|| Ok(()));
             let storage = Storage::new(&admission).unwrap();
             let mut rows = Vec::new();
             let header = storage.text(if altered { "/datum/q" } else { source }).unwrap();
@@ -499,10 +499,10 @@ mod tests {
             let block = compact_block(rows, source, &storage).unwrap();
             let Block::Wide(rows) = block else { panic!("must keep exact wide representation") };
             assert_eq!(rows[0].header.as_ptr(), backing);
-            assert_eq!(used.load(Ordering::Acquire), retained);
+            assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes() + (retained));
             assert!(!admission.is_stopped());
             drop((rows, storage));
-            assert_eq!(used.load(Ordering::Acquire), 0);
+            assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
         }
     }
 }

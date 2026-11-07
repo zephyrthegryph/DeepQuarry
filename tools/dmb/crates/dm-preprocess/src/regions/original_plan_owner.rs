@@ -410,7 +410,7 @@ impl OriginalPlanOwner{
 mod trace_storage_tests {
     use super::*;
     use crate::macro_expansion::OriginalMacroOrigin;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{Ordering};
 
     struct NoSource;
     impl crate::SourceProvider for NoSource {
@@ -421,7 +421,7 @@ mod trace_storage_tests {
 
     #[test]
     fn ordinary_tokens_share_one_funded_empty_projection_across_an_actual_macro_trace() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let defines = BTreeMap::new();
         let mut plan = OriginalPlanOwner::new(
@@ -466,12 +466,12 @@ mod trace_storage_tests {
             assert_eq!(used.load(Ordering::Acquire), before);
         }
         drop((first, nonempty, actual, empty, driver, plan));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn projected_trace_charges_exact_depth_and_borrows_ancestry_from_the_same_frames() {
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let defines = BTreeMap::new();
         let mut plan = OriginalPlanOwner::new(
@@ -532,13 +532,13 @@ mod trace_storage_tests {
         assert_eq!(plan.credit.bytes() - previous,
             TRACE_ARC_HEADER + super::super::MacroTraceView::original(&next).buffers()[0].1);
         drop((rows, next, other, actual, driver, plan));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
 
     #[test]
     fn projected_name_reuse_funds_spelling_once_and_collisions_keep_distinct_occurrences() {
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
         let defines=BTreeMap::new();
         let mut plan=OriginalPlanOwner::new(Path::new("trace-names.dme"),InitialEnvironment::OriginalChecker0290,&defines,None,&a).unwrap();
@@ -568,7 +568,7 @@ mod trace_storage_tests {
         assert_eq!(replayed,first_rows);
         assert!(!Arc::ptr_eq(replayed.frame(0).unwrap().author,first_rows.frame(0).unwrap().author),"collision only evicts the pool alias");
         drop((first_rows,repeated_rows,collided_rows,replayed,first,repeated,collision,driver,plan));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
@@ -597,7 +597,7 @@ mod trace_storage_tests {
             }
         }
 
-        let used = Arc::new(AtomicUsize::new(0));
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let defines = BTreeMap::new();
         let mut plan = OriginalPlanOwner::new(
@@ -699,18 +699,18 @@ mod trace_storage_tests {
         assert_eq!(*sources.calls.borrow(), [1, 0], "hit must neither skip nor replay real IO");
 
         drop((first_parent, resumed, returned, wrong_spelling, wrong_name, different_issuer, foreign, trace, equal_but_distinct, outer, driver, plan, first, repeat, other));
-        assert_eq!(used.load(Ordering::Acquire), 0);
+        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }
 
 #[cfg(test)]
 mod opened_path_storage_tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{Ordering};
 
     #[test]
     fn actual_open_registration_charges_each_retained_path_capacity_once() {
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
         let root=Path::new("root.dme");
         let semantic=Path::new("child.dm");
@@ -731,7 +731,7 @@ mod opened_path_storage_tests {
             let path_bytes=row.path.capacity();
             let charge=plan.credit.bytes()-prior;
             drop(plan);
-            assert_eq!(used.load(Ordering::Acquire),0);
+            assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
             (charge,path_bytes)
         };
         let(short,short_path)=measure(Path::new("E:/root/child.dm"));
@@ -742,7 +742,7 @@ mod opened_path_storage_tests {
 
     #[test]
     fn actual_empty_region_rows_share_one_funded_pair_without_merging_geometry() {
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
         let root=Path::new("root.dme");
         let child=Path::new("child.dm");
@@ -770,14 +770,14 @@ mod opened_path_storage_tests {
         assert!(Arc::ptr_eq(&plan.regions[0].effects,&plan.regions[1].effects));
         assert_eq!(plan.regions[0].segments.capacity(),0);
         assert_eq!(plan.regions[0].effects.capacity(),0);
-        assert!(used.load(Ordering::Acquire)>0);
+        assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());
         drop((plan,paths,retention));
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
     #[test]
     fn actual_path_index_fits_a_small_admission_with_distinct_occurrence_receipts() {
-        let used=Arc::new(AtomicUsize::new(0));
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a=SettingAdmission::new(&used,768<<10,&||Ok(()));
         let root=Path::new("root.dme");
         let mut plan=OriginalPlanOwner::new(root,InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),None,&a).unwrap();
@@ -801,6 +801,6 @@ mod opened_path_storage_tests {
         assert!(value.same_view(first.source_text()));
         assert_eq!(plan.paths.dependencies().count(),513);
         drop(plan);
-        assert_eq!(used.load(Ordering::Acquire),0);
+        assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

@@ -510,16 +510,16 @@ fn declaration_policy_cursor_uses_issued_include_eof_without_fabricating_byte_po
  let first=make(&project);let mapping=first.source_export_mapping().unwrap();
  for(actual,issued)in mapping.includes.iter().zip(first.plan.occurrences()){assert_eq!(actual.non_text_kind,issued.non_text_kind());assert_eq!(actual.logical_eof,issued.logical_eof_cursor().map(|cursor|(cursor.line(),cursor.encounter())));}
  for(name,kind)in [("world.dmm",dm_preprocess::regions::NonTextKind::Map),("skin.dmf",dm_preprocess::regions::NonTextKind::Skin)]{let row=mapping.includes.iter().find(|row|row.path.file_name().unwrap()==name).unwrap();assert_eq!(row.non_text_kind,Some(kind));assert!(row.logical_eof.is_none(),"typed nontext must not acquire a completed DM reader");}
-let counter=Arc::new(std::sync::atomic::AtomicUsize::new(0));let poll=||Ok(());let admission=dm_syntax::SettingAdmission::new(&counter,4*1024*1024,&poll);
+let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let admission=dm_syntax::SettingAdmission::new(&counter,4*1024*1024,&poll);
  let registry=mapping.original_checker_source_registry(&admission).unwrap();
- assert!(registry.matches_mapping(mapping));assert!(counter.load(std::sync::atomic::Ordering::Acquire)>0);
+ assert!(registry.matches_mapping(mapping));assert!(counter.load(std::sync::atomic::Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());
  assert_eq!(registry.files[0],1);
  for (name,id) in [("first.dm",2),("second.dm",3),("nested.dme",4),("third.dm",5)]{let ordinal=mapping.includes.iter().position(|row|row.path.file_name().unwrap()==name).unwrap();assert_eq!(registry.files[ordinal],id,"non-DM includes must not consume original FileId slots");}
  for origin in mapping.origins.iter(){let point=mapping.borrowed_source_note_point(origin.output_span.start).unwrap();let located=registry.location(origin.output_span.start).unwrap();assert_eq!((located.line as usize,located.byte_column as usize),(point.line,point.byte_column));}
  let same_bytes=make(&project);assert!(!registry.matches_mapping(same_bytes.source_export_mapping().unwrap()));
- drop(registry);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),0);
- let tiny=dm_syntax::SettingAdmission::new(&counter,1,&poll);assert_eq!(mapping.original_checker_source_registry(&tiny).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),0);
- let stopped=||Err(std::io::Error::from_raw_os_error(1450));let admission=dm_syntax::SettingAdmission::new(&counter,4*1024*1024,&stopped);assert_eq!(mapping.original_checker_source_registry(&admission).err().unwrap().raw_os_error(),Some(1450));assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),0);
+ drop(registry);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ let tiny=dm_syntax::SettingAdmission::new(&counter,dm_syntax::SettingChargeCounter::root_allocation_bytes() + (1),&poll);assert_eq!(mapping.original_checker_source_registry(&tiny).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ let stopped=||Err(std::io::Error::from_raw_os_error(1450));let admission=dm_syntax::SettingAdmission::new(&counter,4*1024*1024,&stopped);assert_eq!(mapping.original_checker_source_registry(&admission).err().unwrap().raw_os_error(),Some(1450));assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  let relative=PathBuf::from("original-file-numbering/project.dme");let other=make(&relative);let map=other.source_export_mapping().unwrap();assert_eq!(map.registered_checker_path(0).unwrap(),relative);let absolute_row=map.includes.iter().position(|row|row.path.file_name().unwrap()=="second.dm").unwrap();assert_eq!(map.registered_checker_path(absolute_row).unwrap(),absolute);
 }
 

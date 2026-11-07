@@ -17,6 +17,7 @@ struct Role {
 struct Calls<'a,'work,W:crate::policy_body_demand::WorkspaceWork> {
     work:&'work mut W,
     names: &'a [&'a str],
+    original_literals: bool,
     spans: Vec<(Span, String)>,
     roles: Vec<Role>,
     error: Option<W::Error>,
@@ -53,7 +54,19 @@ impl<W:crate::policy_body_demand::WorkspaceWork> Calls<'_,'_,W> {
             self.roles.last_mut().unwrap().constructor_operand = true;
         }
         if let ExprKind::Literal(text) = &node.kind {
-            match text.parts() {
+            // Original call facts observe literal syntax, not runtime string decoding.
+            // Typed Original static strings have no children. Templates must already
+            // have issued syntax, which the normal visitor walks in source order.
+            let parts = if self.original_literals {
+                match text.prepared_syntax_parts() {
+                    Some(parts) => parts.map_err(String::as_str),
+                    None if !text.owns_template_syntax() => Ok(None),
+                    None => Err("Original literal syntax was not prepared"),
+                }
+            } else {
+                text.parts()
+            };
+            match parts {
                 Err(error) => {
                     self.error = Some(error.into());
                     return VisitDecision::Stop;
@@ -145,19 +158,27 @@ pub fn named_with<D: crate::policy_body_demand::Demand>(
 pub fn named_workspace_using<W:crate::policy_body_demand::WorkspaceWork>(inputs:&PolicyInputs,root:&Path,names:&[&str],work:&mut W)->Result<Vec<(String,u32,String)>,W::Error>{
     let mut sites = BTreeSet::new();
     let archive = inputs.archive();
+    let original_literals = archive.source_mapping().initial_environment()
+        == dm_preprocess::InitialEnvironment::OriginalChecker0290;
     for ordinal in 0..archive.len() {
         work.checkpoint()?;
         let body = work.body(archive, ordinal)?;
         let expected=archive.occurrences().get(ordinal).ok_or("call-site actual body ordinal absent")?;if !body.belongs_to(archive)||!std::ptr::eq(body.occurrence(),expected){return Err("call-site operation returned a foreign original body loan".into())}
         if W::CHECKED{let span=body.occurrence().expanded_span;let width=span.end.checked_sub(span.start).and_then(|n|n.checked_mul(128)).and_then(|n|n.checked_add(16384)).ok_or_else(||work.overflow())?;work.temporary(width)?;}
         let syntax = body.statement_body();
-        if !syntax.syntax_complete() {
+        let complete = if original_literals {
+            syntax.original_literal_syntax_complete()
+        } else {
+            syntax.syntax_complete()
+        };
+        if !complete {
             return Err(
                 Unsupported("call sites need complete native statement syntax".into()).into(),
             );
         }
         let mut visitor = Calls {
             names,
+            original_literals,
             work:&mut *work,
             spans: Vec::new(),
             roles: Vec::new(),

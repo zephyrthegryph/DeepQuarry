@@ -93,32 +93,32 @@ fn render_archived_setting_using(body:&dyn dm_tree::frontend::InitialSettingSour
 }
 
 #[cfg(test)]mod diagnostic_storage_tests{
- use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ use super::*;use std::sync::{atomic::{Ordering}};
  fn stored(a:&dm_syntax::SettingAdmission<'_>)->Result<StoredDiagnostic,PolicyFailure>{
   let lease=admitted(a,a.reserve(1024))?;let mut message=String::new();message.try_reserve_exact(32).map_err(|_|output_oom())?;assert!(message.capacity()<=1024);message.push_str("invalid value for set Int(2)");
   Ok(StoredDiagnostic{value:crate::checks::Diagnostic{family:"invalid_lint_directive_value",severity:crate::checks::Severity::Warning,span:Span::new(0,1),expression_span:Span::new(0,1),message,notes:Vec::new()},_lease:lease})
  }
  #[test]fn diagnostic_rows_keep_same_counter_funded_until_strings_and_vector_physically_drop(){
-  let counter=Arc::new(AtomicUsize::new(0));let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&checkpoint);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&checkpoint);
   let mut rows=OriginalDiagnosticRows::new(&a).unwrap();for _ in 0..17{rows.push_with(&a,||stored(&a)).unwrap()}
-  let live=counter.load(Ordering::Acquire);assert!(live>=17*1024+rows.rows.capacity()*std::mem::size_of::<StoredDiagnostic>());assert_eq!(rows.iter().len(),17);assert!(rows.iter().all(|row|row.message=="invalid value for set Int(2)"));drop(rows);assert_eq!(counter.load(Ordering::Acquire),0);
+  let live=counter.load(Ordering::Acquire);assert!(live>=17*1024+rows.rows.capacity()*std::mem::size_of::<StoredDiagnostic>());assert_eq!(rows.iter().len(),17);assert!(rows.iter().all(|row|row.message=="invalid value for set Int(2)"));drop(rows);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn diagnostic_row_growth_denial_precedes_constructor_and_foreign_domain_cannot_spend(){
-  let counter=Arc::new(AtomicUsize::new(0));let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,4096,&checkpoint);let mut rows=OriginalDiagnosticRows::new(&a).unwrap();let before=counter.load(Ordering::Acquire);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,4096,&checkpoint);let mut rows=OriginalDiagnosticRows::new(&a).unwrap();let before=counter.load(Ordering::Acquire);
   let tiny=dm_syntax::SettingAdmission::new(&counter,before,&checkpoint);let result=rows.push_with(&tiny,||panic!("denial must precede constructor"));assert!(matches!(result,Err(PolicyFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::OutOfMemory));assert_eq!(counter.load(Ordering::Acquire),before);
-  let other=Arc::new(AtomicUsize::new(0));let foreign=dm_syntax::SettingAdmission::new(&other,1<<20,&checkpoint);let result=rows.push_with(&foreign,||panic!("foreign constructor must not run"));assert!(matches!(result,Err(PolicyFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::InvalidInput));assert_eq!(counter.load(Ordering::Acquire),before);drop(rows);assert_eq!(counter.load(Ordering::Acquire),0);assert_eq!(other.load(Ordering::Acquire),0);
+  let other=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let foreign=dm_syntax::SettingAdmission::new(&other,1<<20,&checkpoint);let result=rows.push_with(&foreign,||panic!("foreign constructor must not run"));assert!(matches!(result,Err(PolicyFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::InvalidInput));assert_eq!(counter.load(Ordering::Acquire),before);drop(rows);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(other.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn diagnostic_row_make_actual_io_and_unwind_drop_work_without_publication(){
-  let counter=Arc::new(AtomicUsize::new(0));let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&checkpoint);
-  {let mut rows=OriginalDiagnosticRows::new(&a).unwrap();let result=rows.push_with(&a,||Err(PolicyFailure::Operational(std::io::Error::from_raw_os_error(1450))));assert!(matches!(result,Err(PolicyFailure::Operational(ref e))if e.raw_os_error()==Some(1450)));assert_eq!(rows.iter().len(),0);}assert_eq!(counter.load(Ordering::Acquire),0);
-  let unwind=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{let mut rows=OriginalDiagnosticRows::new(&a).unwrap();rows.push_with(&a,||stored(&a)).unwrap();let _=rows.push_with(&a,||{let _held=admitted(&a,a.reserve(512))?;panic!("actual unwind after owned reservation")});}));assert!(unwind.is_err());assert_eq!(counter.load(Ordering::Acquire),0);
-  let mut healthy=OriginalDiagnosticRows::new(&a).unwrap();healthy.push_with(&a,||stored(&a)).unwrap();drop(healthy);assert_eq!(counter.load(Ordering::Acquire),0);
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&checkpoint);
+  {let mut rows=OriginalDiagnosticRows::new(&a).unwrap();let result=rows.push_with(&a,||Err(PolicyFailure::Operational(std::io::Error::from_raw_os_error(1450))));assert!(matches!(result,Err(PolicyFailure::Operational(ref e))if e.raw_os_error()==Some(1450)));assert_eq!(rows.iter().len(),0);}assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  let unwind=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{let mut rows=OriginalDiagnosticRows::new(&a).unwrap();rows.push_with(&a,||stored(&a)).unwrap();let _=rows.push_with(&a,||{let _held=admitted(&a,a.reserve(512))?;panic!("actual unwind after owned reservation")});}));assert!(unwind.is_err());assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  let mut healthy=OriginalDiagnosticRows::new(&a).unwrap();healthy.push_with(&a,||stored(&a)).unwrap();drop(healthy);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn counting_overflow_and_fixed_refusal_never_grow_or_expose_partial_completion(){let mut count=DebugSink::count();count.used=usize::MAX;count.push('x');assert!(count.denied());let mut bytes=String::with_capacity(4);let original=bytes.capacity();let mut fixed=DebugSink::fixed(&mut bytes,4);fixed.push_str("abcd");fixed.push_str("overflow");assert!(fixed.denied());assert_eq!(fixed.len(),4);drop(fixed);assert_eq!(bytes,"abcd");assert_eq!(bytes.capacity(),original);}
 }
 
 #[cfg(test)]mod streamed_literal_io_tests{
- use super::*;use std::sync::{Arc,atomic::AtomicUsize};
+ use super::*;
  struct Poll<'a,'op>{a:&'a dm_syntax::SettingAdmission<'op>}
  impl Source for Poll<'_,'_>{
   type Error=PolicyFailure;type Frame<'a>=()where Self:'a;type Scratch<'a>=dm_syntax::SettingRootLease where Self:'a;
@@ -131,7 +131,7 @@ fn render_archived_setting_using(body:&dyn dm_tree::frontend::InitialSettingSour
   fn fragment_expression(&self,_:&dm_syntax::literal::PinnedLiteralFragment<'_>,_:&mut DebugSink<'_>)->Result<(),Self::Error>{panic!("static literal has no child")}
  }
  #[test]fn streamed_literal_fmt_boundary_keeps_first_actual_checkpoint_io_for_outer_restoration(){
-  let counter=Arc::new(AtomicUsize::new(0));let raw=format!("\"{}\"","x".repeat(2048));let tokens=dm_syntax::lex_spans(&raw);let healthy=||Ok(());let before=dm_syntax::SettingAdmission::new(&counter,1<<20,&healthy);let root=dm_syntax::prepare_setting_expression(&raw,&tokens.tokens,Span::new(0,raw.len()),&before).unwrap();let ExprKind::Literal(value)=&root.original_expression().kind else{panic!("actual prepared literal root")};let checkpoint=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&checkpoint);let source=Poll{a:&a};let mut sink=DebugSink::count();assert!(source.literal(value,&mut sink).is_err());let actual=a.take_operational_error().expect("fmt proxy must not consume actual checkpoint IO");assert_eq!(actual.raw_os_error(),Some(1450));
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let raw=format!("\"{}\"","x".repeat(2048));let tokens=dm_syntax::lex_spans(&raw);let healthy=||Ok(());let before=dm_syntax::SettingAdmission::new(&counter,1<<20,&healthy);let root=dm_syntax::prepare_setting_expression(&raw,&tokens.tokens,Span::new(0,raw.len()),&before).unwrap();let ExprKind::Literal(value)=&root.original_expression().kind else{panic!("actual prepared literal root")};let checkpoint=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&checkpoint);let source=Poll{a:&a};let mut sink=DebugSink::count();assert!(source.literal(value,&mut sink).is_err());let actual=a.take_operational_error().expect("fmt proxy must not consume actual checkpoint IO");assert_eq!(actual.raw_os_error(),Some(1450));
  }
 }
 

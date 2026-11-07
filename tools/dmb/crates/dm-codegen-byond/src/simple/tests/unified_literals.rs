@@ -158,9 +158,9 @@ fn unified_literals_malformed_interpolation_cannot_emit_as_a_constant() {
 
 #[test]
 fn admitted_original_body_literals_share_children_with_registration_decoder_and_emission(){
-    use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+    use std::sync::{atomic::{Ordering}};
     let source="/proc/probe()\n    return \"value [outer(1)]\"\n";
-    let counter=Arc::new(AtomicUsize::new(0));let healthy=||Ok(());
+    let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let healthy=||Ok(());
     let admission=dm_syntax::SettingAdmission::with_stack_allowance(&counter,32*1024*1024,1024*1024,&healthy);
     let cleanup=admission.reserve(source.len()*512+8192).unwrap();
     let ast=dm_syntax::parse(source);assert!(ast.diagnostics.is_empty());
@@ -176,13 +176,13 @@ fn admitted_original_body_literals_share_children_with_registration_decoder_and_
     let expected=compile_with_lookup(&[],Some(TypedInput::Statements(dm_syntax::StatementView::from_parsed(&old))),&bindings(&["outer"]),None,None).unwrap();
     assert_eq!(current,expected,"whole emitted artifact and ordered payloads match owned source parser");
     assert_eq!(literal.parts().unwrap().unwrap().expressions.as_ptr(),children,"all real compiler consumers retain the original syntax");
-    drop(old);dm_syntax::drop_body_literal_syntax(parsed,Some(storage));assert_eq!(counter.load(Ordering::Acquire),0);
+    drop(old);dm_syntax::drop_body_literal_syntax(parsed,Some(storage));assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
 }
 #[test]
 fn admitted_body_literal_child_error_is_deferred_to_same_emission_diagnostic(){
-    use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+    use std::sync::{atomic::{Ordering}};
     let source="/proc/probe()\n    return \"bad [1 +]\"\n";
-    let counter=Arc::new(AtomicUsize::new(0));let healthy=||Ok(());
+    let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let healthy=||Ok(());
     let admission=dm_syntax::SettingAdmission::new(&counter,16*1024*1024,&healthy);
     let cleanup=admission.reserve(source.len()*512+8192).unwrap();
     let ast=dm_syntax::parse(source);let parsed=dm_syntax::parse_body_items_with_context(&ast.items[0].children,source,&|_|None);
@@ -191,5 +191,5 @@ fn admitted_body_literal_child_error_is_deferred_to_same_emission_diagnostic(){
     let current=compile_with_lookup(&[],Some(TypedInput::Statements(dm_syntax::StatementView::from_parsed(&parsed))),&bindings(&[]),None,None).unwrap_err();
     let expected=compile_with_lookup(&[],Some(TypedInput::Statements(dm_syntax::StatementView::from_parsed(&old))),&bindings(&[]),None,None).unwrap_err();
     assert_eq!(format!("{current:?}"),format!("{expected:?}"),"complete actual compiler error is unchanged; no eager source diagnostic");
-    drop(old);dm_syntax::drop_body_literal_syntax(parsed,Some(storage));assert_eq!(counter.load(Ordering::Acquire),0);
+    drop(old);dm_syntax::drop_body_literal_syntax(parsed,Some(storage));assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
 }
