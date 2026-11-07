@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "Late-joining no longer hitches for most of a second: spawning a character stopped redrawing the preference preview once for every list preference"
+  - code_imp: "JOIN_TIMING_PREFS, JOIN_TIMING_BODY, JOIN_TIMING_EQUIP and JOIN_TIMING_OUTFIT log where the time of a join goes"

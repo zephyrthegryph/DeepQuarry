@@ -261,17 +261,19 @@
 	//
 	// Sanitizers commonly mutate list values in place and return the same reference, so
 	// `sanitized != current` would be a same-ref comparison → always FALSE → the cleanup
-	// would silently drop. For list values we unconditionally write; the cost is one
-	// batched flush on load (dwarfed by the load itself), and the correctness gain is
-	// that stale data actually leaves the savefile.
+	// would silently drop. For list values we compare their encoded form from before and after the
+	// sanitizer, so stale data leaves the savefile while a clean list costs no write: every write of
+	// a character pref redraws the preview (copy_to runs this on every spawn: about 7 redraws a join).
 	begin_update_batch()
 	for(var/pref_type in GLOB.preference_entries)
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
 		if(pref.savefile_identifier != PREFERENCE_CHARACTER)
 			continue
 		var/current = read_preference_raw(pref_type) // the stored form: a palette link is not a stale value
+		// A sanitizer that cleans a list in place leaves `current` the same reference as `sanitized`, so compare what the list held before with what it holds now.
+		var/before = islist(current) ? json_encode(current) : null
 		var/sanitized = pref.sanitize(current, src)
-		if(islist(sanitized) || sanitized != current)
+		if(islist(sanitized) ? json_encode(sanitized) != before : sanitized != current)
 			update_preference_by_type(pref_type, sanitized)
 	end_update_batch()
 	return TRUE

@@ -950,9 +950,10 @@
 
 // ---- metadata ----
 
-/// label("Text"): the op's menu name.
-/proc/label(text)
-	return part_make(/datum/entry/part/label, list("text" = text))
+/// label("Text"): the op's menu name. label("Lock", state = LOCK_LOCKED, state_text = "Unlock") reads `state_text` instead while that state key is set on the
+/// holder (a toggle names what it will do now).
+/proc/label(text, state = null, state_text = null)
+	return part_make(/datum/entry/part/label, list("text" = text, "state" = state, "state_text" = state_text))
 
 /datum/entry/part/label
 	part_name = "label"

@@ -494,6 +494,9 @@ CAPABILITIES(/datum/system/job)
 			human_mob_buckled.forceMove(human_mob.loc)
 			human_mob_buckled.set_dir(human_mob.dir)
 
+	var/equip_started = TICK_USAGE_REAL
+	var/list/step_ms = list()
+	var/step_started = TICK_USAGE_REAL
 	if(job)
 
 		//Equip custom gear loadout.
@@ -553,19 +556,29 @@ CAPABILITIES(/datum/system/job)
 				else
 					spawn_in_storage += thing
 
+		step_ms["loadout"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		step_started = TICK_USAGE_REAL
 		// Set up their account
 		job.setup_account(human_mob)
+		step_ms["account"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		step_started = TICK_USAGE_REAL
 
 		// Equip job items.
 		job.equip(human_mob, human_mob.mind ? human_mob.mind.role_alt_title : "")
+		step_ms["job outfit"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		step_started = TICK_USAGE_REAL
 
 		// Stick their fingerprints on literally everything
 		job.apply_fingerprints(human_mob)
+		step_ms["fingerprints"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		step_started = TICK_USAGE_REAL
 
 		// Only non-silicons get post-job-equip equipment and dormant diseases
 		if(!(job.mob_type & JOB_SILICON))
 			human_mob.equip_post_job()
 			human_mob.give_random_dormant_disease(guaranteed_symptoms = job.symptoms)
+			step_ms["post equip, dormant disease"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+			step_started = TICK_USAGE_REAL
 
 		// If some custom items could not be equipped before, try again now.
 		for(var/thing in custom_equip_leftovers)
@@ -590,6 +603,8 @@ CAPABILITIES(/datum/system/job)
 		to_chat(human_mob, span_filter_notice("Your job is [rank] and the game just can't handle it! Please report this bug to an administrator."))
 		return human_mob
 
+	step_ms["leftover loadout"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 	human_mob.set_job(rank)
 	log_game("JOINED [key_name(human_mob)] as \"[rank]\"")
 	log_game("SPECIES [key_name(human_mob)] is a: \"[human_mob.species.name]\"")
@@ -704,6 +719,11 @@ CAPABILITIES(/datum/system/job)
 	human_mob.flag_hud_update(ID_HUD)
 	human_mob.flag_hud_update(IMPLOYAL_HUD)
 	human_mob.flag_hud_update(SPECIALROLE_HUD)
+	step_ms["records, wheelchair, email, huds"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	var/steps = ""
+	for(var/step_name in step_ms)
+		steps += ", [step_name] [round(step_ms[step_name], 0.1)] ms"
+	log_world("JOIN_TIMING_EQUIP: [key_name(human_mob)] as [rank]: whole [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - equip_started), 0.1)] ms[steps]")
 	return human_mob
 
 /datum/system/job/proc/handle_feedback_gathering()
