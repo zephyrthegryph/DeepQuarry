@@ -64,6 +64,14 @@
 	/// providers_for(actor, held), read once by the first candidate that needs a provider: pass 1 runs no effects, so every candidate sees the same set.
 	var/list/providers
 
+/// The resolver's work, counted for benches and tests (code/tests/benchmarks/active_play.dm): candidate records made, reach gates asked, candidates whose
+/// when() conditions were tested, requirement checks (run.dm) and full resolutions.
+GLOBAL_VAR_INIT(op_count_cands, 0)
+GLOBAL_VAR_INIT(op_count_reach, 0)
+GLOBAL_VAR_INIT(op_count_whens, 0)
+GLOBAL_VAR_INIT(op_count_requires, 0)
+GLOBAL_VAR_INIT(op_count_resolves, 0)
+
 // ---- the ops an entity has ----
 
 /// An op an entity has now: the plan, and the activation that brought it (null for a type-level op).
@@ -355,6 +363,7 @@
 /proc/op_add_cand(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, gesture, keep_dropped, seq)
 	if(!keep_dropped && !R.gate_reason && op_silently_dropped(R, P, B, holder, side, gesture))
 		return seq
+	GLOB.op_count_cands++
 	var/datum/op_cand/C = new
 	C.oplan = P // ALLOW(ownership): a transient record of one resolution: dropped with it
 	C.binding = B // ALLOW(ownership): a transient record of one resolution: dropped with it
@@ -379,6 +388,7 @@
 	// A resolution that names a key, or explains itself, keeps every candidate and the filter that dropped it; the rest never allocate a
 	// candidate for one the binding's own input or the intent drops silently.
 	keep_dropped ||= !isnull(key)
+	GLOB.op_count_resolves++
 	var/datum/op_resolution/R = new
 	R.actor = actor // ALLOW(ownership): a transient record of one resolution: dropped with it
 	R.target = target // ALLOW(ownership): a transient record of one resolution: dropped with it
@@ -495,6 +505,7 @@
 		var/list/chosen = list()
 		if(isnull(R.providers))
 			R.providers = providers_for(R.actor, R.held)
+		GLOB.op_count_reach++
 		var/why = reach_gate(R.actor, aim, R.held, P, B, R.authority, chosen, R.providers)
 		if(why)
 			C.dropped_by = (why == /datum/msg/op/no_hands) ? GATE_PROVIDER : GATE_REACH
@@ -507,6 +518,7 @@
 /proc/op_cand_when(datum/op_resolution/R, datum/op_cand/C)
 	if(!length(C.oplan.conds))
 		return TRUE
+	GLOB.op_count_whens++
 	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
 	var/ok = TRUE
 	try

@@ -64,12 +64,18 @@
 	count_metric("ap_walk_steps", moved, "steps", "none")
 	metric("ap_walk_us_per_step", moved ? move_ms * 1000 / moved : 0, "us")
 
-	// Item use: pick up a flashlight, toggle it twice, drop it.
+	// Item use: pick up a flashlight, toggle it twice, drop it. Each step is timed on its own (pickup, the two toggles, the drop), and the
+	// toggles' outcomes are counted (a toggle the light refuses or declines costs the same resolution but runs no effect).
 	var/item_ops = 0
 	var/item_ms = 0
+	var/pickup_ms = 0
+	var/toggle_ms = 0
+	var/drop_ms = 0
+	var/toggled = 0
 	var/list/obj/item/flashlight/lights = list()
 	for(var/mob/living/carbon/human/H as anything in crew)
 		lights += new /obj/item/flashlight(H.loc)
+	var/list/op_counts = active_play_op_counts()
 	begin_window()
 	for(var/n in 1 to param("item_rounds", 10))
 		for(var/i in 1 to length(crew))
@@ -79,14 +85,31 @@
 				F.forceMove(H.loc)
 			var/stamp = TICK_USAGE_REAL
 			H.put_in_hands(F)
+			var/picked = TICK_USAGE_REAL
+			var/was_on = F.on
 			F.attack_self(H)
+			if(F.on != was_on)
+				toggled++
+			was_on = F.on
 			F.attack_self(H)
+			if(F.on != was_on)
+				toggled++
+			var/switched = TICK_USAGE_REAL
 			H.drop_from_inventory(F, H.loc)
-			item_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+			var/dropped = TICK_USAGE_REAL
+			item_ms += TICK_DELTA_TO_MS(dropped - stamp)
+			pickup_ms += TICK_DELTA_TO_MS(picked - stamp)
+			toggle_ms += TICK_DELTA_TO_MS(switched - picked)
+			drop_ms += TICK_DELTA_TO_MS(dropped - switched)
 			item_ops++
 		stoplag()
 	end_window("ap_items")
 	metric("ap_item_us_per_use", item_ops ? item_ms * 1000 / item_ops : 0, "us")
+	metric("ap_item_pickup_us", item_ops ? pickup_ms * 1000 / item_ops : 0, "us")
+	metric("ap_item_toggle_us", item_ops ? toggle_ms * 1000 / (2 * item_ops) : 0, "us")
+	metric("ap_item_drop_us", item_ops ? drop_ms * 1000 / item_ops : 0, "us")
+	count_metric("ap_item_toggles_switched", toggled, "toggles", "none")
+	active_play_op_count_metrics("ap_items", op_counts, item_ops)
 	for(var/obj/item/flashlight/F as anything in lights)
 		qdel(F)
 
@@ -139,6 +162,8 @@
 	var/hits = 0
 	var/landed = 0
 	var/hit_ms = 0
+	var/list/outcomes = list()
+	op_counts = active_play_op_counts()
 	begin_window()
 	for(var/n in 1 to param("hit_rounds", 6))
 		for(var/i in 1 to length(crew) step 2)
@@ -154,10 +179,48 @@
 			hits++
 			if(result)
 				landed++
+				outcomes["[result.outcome]: [reason_text(result.reason) || "-"]"]++
+			else
+				outcomes["none"]++
 		stoplag()
 	end_window("ap_melee")
 	count_metric("ap_melee_resolved", landed, "hits", "none")
 	metric("ap_melee_us_per_hit", hits ? hit_ms * 1000 / hits : 0, "us")
+	detail("ap_melee_outcomes", outcomes)
+	active_play_op_count_metrics("ap_melee", op_counts, hits)
+
+	// Menu read: the right-click menu of a crewmate (what the interaction menu's window data computes), with the menu cache cold (a state
+	// change of the target since the last read) and warm (read again at once).
+	var/menu_reads = 0
+	var/menu_cold_ms = 0
+	var/menu_warm_ms = 0
+	var/menu_rows = 0
+	var/builds_before = GLOB.op_menu_builds
+	op_counts = active_play_op_counts()
+	begin_window()
+	for(var/n in 1 to param("menu_rounds", 5))
+		for(var/i in 1 to length(crew) step 2)
+			var/mob/living/carbon/human/A = crew[i]
+			var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+			if(A == B)
+				continue
+			op_changed(B)
+			var/stamp = TICK_USAGE_REAL
+			var/list/data = interaction_menu_data(A, B)
+			var/cold_done = TICK_USAGE_REAL
+			interaction_menu_data(A, B)
+			var/warm_done = TICK_USAGE_REAL
+			menu_cold_ms += TICK_DELTA_TO_MS(cold_done - stamp)
+			menu_warm_ms += TICK_DELTA_TO_MS(warm_done - cold_done)
+			menu_rows += length(data["available"]) + length(data["blocked"])
+			menu_reads++
+		stoplag()
+	end_window("ap_menu")
+	metric("ap_menu_cold_us", menu_reads ? menu_cold_ms * 1000 / menu_reads : 0, "us")
+	metric("ap_menu_warm_us", menu_reads ? menu_warm_ms * 1000 / menu_reads : 0, "us")
+	count_metric("ap_menu_rows", menu_reads ? menu_rows / menu_reads : 0, "rows", "none")
+	count_metric("ap_menu_builds", GLOB.op_menu_builds - builds_before, "builds")
+	active_play_op_count_metrics("ap_menu", op_counts, menu_reads)
 	for(var/obj/item/T as anything in boxes)
 		qdel(T)
 
@@ -219,3 +282,19 @@
 				break
 		if(length(.) >= count)
 			return
+
+/// The resolver's work counters now (resolve.dm): candidates made, reach gates, when() tests, requirement checks, full and compiled resolutions.
+/proc/active_play_op_counts()
+	return list(
+		"cands" = GLOB.op_count_cands,
+		"reach" = GLOB.op_count_reach,
+		"whens" = GLOB.op_count_whens,
+		"requires" = GLOB.op_count_requires,
+		"resolves" = GLOB.op_count_resolves,
+	)
+
+/// The resolver's work since `before`, per input (`per` inputs), as count metrics under `prefix`.
+/datum/benchmark/proc/active_play_op_count_metrics(prefix, list/before, per)
+	var/list/now = active_play_op_counts()
+	for(var/name in now)
+		count_metric("[prefix]_op_[name]_per", per ? (now[name] - before[name]) / per : 0, name)
