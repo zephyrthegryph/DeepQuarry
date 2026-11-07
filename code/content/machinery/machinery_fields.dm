@@ -84,7 +84,7 @@
 /obj/machinery/door/unpowered/var/locked = FALSE
 
 /// Machine conditions are stats held by sources (code/contracts/ids/stats.dm):
-///   has_power      false while the area's channel is dark (area_gives_power(): the grid's reading) or SRC_GRID holds it (set_grid_power(), a shim)
+///   has_power      false while the area's channel is dark (area_gives_equip() and its siblings: the grid's reading) or SRC_GRID holds it (set_grid_power(), a shim)
 ///   intact         false while SRC_DAMAGE holds it (atom_break() until atom_fix())
 ///   in_maintenance true while SRC_MAINTENANCE holds it (an open service hatch: set_maintenance())
 ///   switched_on    false while SRC_SWITCH holds it (the machine's own switch: set_switched_on())
@@ -143,7 +143,7 @@ READS_AS(/obj/machinery/proc/has_condition, MACHINE_KEY_STAT)
 	state_changed(src)
 
 /// COMPATIBILITY SHIM (tests, the benchmark's old path): forces a machine's power by hand. The grid does not write has_power: it is the area's channel
-/// read (area_gives_power(), machinery_power.dm). Forcing it dark is a SRC_GRID hold; forcing it on a machine whose area is dark is a SRC_GRID override of the stat.
+/// read (area_gives_equip() and its siblings, machinery_power.dm). Forcing it dark is a SRC_GRID hold; forcing it on a machine whose area is dark is a SRC_GRID override of the stat.
 /// TRUE when the machine's power changed.
 /obj/machinery/proc/set_grid_power(powered)
 	var/was = power_lost()

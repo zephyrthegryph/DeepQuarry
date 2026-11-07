@@ -105,7 +105,7 @@ Class Procs:
 	/// The area the machine draws its power through, as a relation (the other end of the area's power_machines): the machine contributes
 	/// its draw to that area's demand stats and reads that area's channels for its power. Written only by the base machine's own area
 	/// handling (rel_set() in Initialize and area_changed()).
-	var/tmp/area/power_area // ALLOW(base_vars): the machine-to-area relation (links() in this block) that area_gives_power() and the three demand contributions read; every powered machine has one, set by machinery_power.dm on move, so no subset of types could hold it
+	var/tmp/area/power_area // ALLOW(base_vars): the machine-to-area relation (links() in this block) that area_gives_equip() and its siblings and the three demand contributions read; every powered machine has one, set by machinery_power.dm on move, so no subset of types could hold it
 	/// The has_power reading power_change() last acted on: a flip is a difference from it (power_change()'s result).
 	var/tmp/power_seen = TRUE // ALLOW(base_vars): the has_power reading power_change() last acted on; about 144 hand calls of power_change() across types reach it besides the on_change hook, so it dedups on every machine type, not one capability
 	/// The part objects adopt_parts() found in CONTAINER_SLOT_INTERNALS:
@@ -137,7 +137,11 @@ CAPABILITIES(/obj/machinery)
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
 	// The area's channel flip reaches every machine through this read (its generated deps invalidate it). A type that runs on its own supply, or
 	// delays its loss, drops this entry by its key and says its own.
-	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list(USES_POWER_KEY, "power_area.requires_power", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
+	// One contribution per channel, active while the machine draws on that channel and reading only that channel's var: a flip of one channel
+	// marks and re-evaluates the machines on it, not every machine in the area (an APC stepping a channel down is a common event).
+	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_equip), key = "area_power_equip", reason = MSG(power/unpowered), reads = list(USES_POWER_KEY, "power_area.requires_power", "power_area.power_equip")), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_light), key = "area_power_light", reason = MSG(power/unpowered), reads = list(USES_POWER_KEY, "power_area.requires_power", "power_area.power_light")), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_environ), key = "area_power_environ", reason = MSG(power/unpowered), reads = list(USES_POWER_KEY, "power_area.requires_power", "power_area.power_environ")), reads = list(USES_POWER_KEY))
 	contributes(STAT_OPERABLE, STAT_HAS_POWER, key = "power_operable")
 	// A flip of has_power, whatever wrote it (the area's channel, an override's contribution, a hold): the machine acts on it. The stat reads the
 	// area's tracked channel vars, so a channel write reaches every machine on it through this hook at the next drain; nothing walks the area.

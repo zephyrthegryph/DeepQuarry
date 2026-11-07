@@ -1,8 +1,22 @@
+import { storage } from 'common/storage';
 import { createLogger } from 'tgui/logging';
+
+import {
+  isReachable,
+  minNativeSize,
+  type Point,
+  parseStoredPosition,
+  type Rect,
+  type Size,
+  sizeToRestore,
+  VIRTUAL_DESKTOP,
+} from './placement';
+
+export type { Rect } from './placement';
 
 const logger = createLogger('say-dock');
 
-export type Rect = { x: number; y: number; w: number; h: number };
+const STORAGE_KEY = 'say-position';
 
 /**
  * Native pixels kept clear along the bottom of the map for the hotbar rows
@@ -24,8 +38,6 @@ export function dockPosition(
     y: Math.max(map.y, y),
   };
 }
-
-type Point = { x: number; y: number };
 
 const isPoint = (value: unknown): value is Point =>
   !!value &&
@@ -77,15 +89,122 @@ export function cachedMap(): Rect | null {
   return lastMap;
 }
 
+/** The position the player dragged the popup to (native screen pixels), or null while it follows the dock. */
+let userPos: Point | null = null;
+let placementLoaded: Promise<void> | null = null;
+
+/** The player's saved position, read once from storage. */
+export function loadPlacement(): Promise<void> {
+  if (!placementLoaded) {
+    placementLoaded = (async () => {
+      try {
+        userPos = parseStoredPosition(await storage.get(STORAGE_KEY));
+        if (userPos) logger.log('restored player-placed position', userPos);
+      } catch (error) {
+        logger.error('failed to read saved position', error);
+      }
+    })();
+  }
+  return placementLoaded;
+}
+
+/** The saved position, null while docked. */
+export function placedPosition(): Point | null {
+  return userPos;
+}
+
+type ScreenDetails = {
+  screens: { left: number; top: number; width: number; height: number }[];
+};
+
+let screensCache: Rect[] | null = null;
+
+/** The monitors in native pixels when the client can list them, else the whole virtual desktop. */
+async function screenRects(): Promise<Rect[]> {
+  if (screensCache) return screensCache;
+  try {
+    const getDetails = (
+      window as unknown as { getScreenDetails?: () => Promise<ScreenDetails> }
+    ).getScreenDetails;
+    if (getDetails) {
+      const timeout = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), 500),
+      );
+      const details = await Promise.race([getDetails.call(window), timeout]);
+      const ratio = window.devicePixelRatio || 1;
+      if (details?.screens?.length) {
+        const rects = details.screens.map((s) => ({
+          x: s.left * ratio,
+          y: s.top * ratio,
+          w: s.width * ratio,
+          h: s.height * ratio,
+        }));
+        screensCache = rects;
+        return rects;
+      }
+    }
+  } catch (error) {
+    logger.warn('monitor list unavailable', error);
+  }
+  return [VIRTUAL_DESKTOP];
+}
+
+/** The player's position if still reachable; an unreachable one is dropped (and logged) so the popup docks. */
+async function usablePlacement(size: Size): Promise<Point | null> {
+  await loadPlacement();
+  if (!userPos) return null;
+  if (isReachable(userPos, size, await screenRects())) return userPos;
+  logger.warn('saved position is off every screen; re-docking', {
+    pos: userPos,
+    size,
+  });
+  userPos = null;
+  storage.remove(STORAGE_KEY);
+  return null;
+}
+
+/** Remembers where the player left the popup, reading the position from the client. */
+export async function rememberPlacement(): Promise<void> {
+  try {
+    const pos = await Byond.winget('tgui_say', 'pos');
+    if (!isPoint(pos)) {
+      logger.warn('could not read the dragged position', pos);
+      return;
+    }
+    userPos = { x: Math.round(pos.x), y: Math.round(pos.y) };
+    storage.set(STORAGE_KEY, userPos);
+    logger.log('player placed the popup; auto-dock off', userPos);
+  } catch (error) {
+    logger.error('failed to save the dragged position', error);
+  }
+}
+
+/** Back to the docked position: forgets the saved one and docks at the given native size. */
+export async function resetPlacement(
+  width: number,
+  height: number,
+): Promise<void> {
+  const was = userPos;
+  userPos = null;
+  storage.remove(STORAGE_KEY);
+  logger.log('player reset the popup to docked', { was });
+  await dockWindow(width, height);
+}
+
 /**
- * Moves the popup to its dock for a window of the given native size; the
- * result is logged. Returns the position, or null when the map is unknown
- * (the window then stays where it was).
+ * Moves the popup to its place for a window of the given native size: where
+ * the player left it, else the dock. Returns the position, or null when the
+ * window stays where it was.
  */
 export async function dockWindow(
   width: number,
   height: number,
 ): Promise<{ x: number; y: number } | null> {
+  const placed = await usablePlacement({ w: width, h: height });
+  if (placed) {
+    Byond.winset(null, { 'tgui_say.pos': `${placed.x},${placed.y}` });
+    return placed;
+  }
   const map = await measureMap();
   if (!map) return null;
   const changed = !sameRect(map, lastMap);
@@ -98,9 +217,33 @@ export async function dockWindow(
   return pos;
 }
 
-/** Re-docks while the popup is open, so a resized or moved game window takes it along. Returns the stop function. */
-export function watchDock(size: () => { w: number; h: number }): () => void {
+/**
+ * While the popup is open: keeps it at least the minimum size (a manual resize
+ * below it is undone) and, until the player places it, re-docks it when the
+ * game window moved or resized. Returns the stop function.
+ */
+export function watchDock(size: () => Size, factor: () => number): () => void {
   const timer = setInterval(async () => {
+    try {
+      const actual = await Byond.winget('tgui_say', 'size');
+      if (isPoint(actual)) {
+        const fix = sizeToRestore(
+          { w: actual.x, h: actual.y },
+          minNativeSize(factor()),
+        );
+        if (fix) {
+          const sizeStr = `${fix.w}x${fix.h}`;
+          Byond.winset(null, {
+            'tgui_say.size': sizeStr,
+            'tgui_say.browser.size': sizeStr,
+          });
+          logger.log('restored minimum size', { actual, fix });
+        }
+      }
+    } catch (error) {
+      logger.error('size check failed', error);
+    }
+    if (userPos) return;
     const map = await measureMap();
     if (!map || sameRect(map, lastMap)) return;
     lastMap = map;

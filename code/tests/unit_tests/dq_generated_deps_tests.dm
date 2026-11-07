@@ -55,14 +55,15 @@ CAPABILITIES(/obj/gdeps_probe)
 	var/list/drawn = plan_keys(/obj/gdeps_lamp, PLAN_DRAW) // the change graph plan holds what a draw reads
 	TEST_ASSERT(islist(drawn) && ("glow_level" in drawn), "the lamp's draw reads glow_level: [json_encode(drawn)]")
 	// A real stat input: the machine's area power read follows its area's channel vars through power_area, all of them published.
-	var/list/area_power = GLOB.generated_reads_table["/obj/machinery::area_gives_power"]
+	var/list/area_power = GLOB.generated_reads_table["/obj/machinery::area_gives_equip"]
 	var/list/hops = list()
 	for(var/i in 2 to length(area_power))
 		var/list/read = area_power[i]
 		if(length(read) > 3)
 			hops += "[GLOB.generated_read_names[read[4]]].[GLOB.generated_read_names[read[3]]]"
-	TEST_ASSERT(("power_area.power_equip" in hops) && ("power_area.requires_power" in hops), "area_gives_power reads the area's channels: [json_encode(hops)]")
-	TEST_ASSERT(!GLOB.generated_untracked_reads["/obj/machinery::area_gives_power"], "area_gives_power reads only tracked state")
+	TEST_ASSERT(("power_area.power_equip" in hops) && ("power_area.requires_power" in hops), "area_gives_equip reads the area's equipment channel: [json_encode(hops)]")
+	TEST_ASSERT(!("power_area.power_light" in hops) && !("power_area.power_environ" in hops), "area_gives_equip reads no other channel: [json_encode(hops)]")
+	TEST_ASSERT(!GLOB.generated_untracked_reads["/obj/machinery::area_gives_equip"], "area_gives_equip reads only tracked state")
 
 /// A stat whose inputs are tracked is composed once, then read from its cache until an input publishes.
 /datum/unit_test/dq_generated_deps_cache

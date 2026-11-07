@@ -618,13 +618,16 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	set_equipment(new_equipment)
 	set_lighting(new_lighting)
 	set_environ(new_environ)
+	var/channel_setters_ms = TICK_USAGE_TO_MS(setters_start)
 	var/charging_start = TICK_USAGE
 	set_charging(new_charging)
 	var/charging_ms = TICK_USAGE_TO_MS(charging_start)
 	var/status_start = TICK_USAGE
 	set_main_status(new_status)
 	var/status_ms = TICK_USAGE_TO_MS(status_start)
+	var/note_start = TICK_USAGE
 	apc_report_cost_note(shown_changed, cell_ms, TICK_USAGE_TO_MS(setters_start))
+	var/note_ms = TICK_USAGE_TO_MS(note_start)
 	power_event_count++ // reports heard (tests: a settled APC hears nothing)
 	alarm = !!alarm
 	var/alarm_start = TICK_USAGE
@@ -635,6 +638,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		else
 			GLOB.power_alarm.clearAlarm(loc, src)
 	var/alarm_ms = TICK_USAGE_TO_MS(alarm_start)
+	var/log_start = TICK_USAGE
 	if(shown_changed)
 		// A channel, status or alarm change is always logged. The charging lamp flips back and forth on a settled station (about 18 reports a second over
 		// 310 APCs), so a charging-only report is logged once per APC_REPORT_LOG_INTERVAL and the line says how many it stands for.
@@ -644,13 +648,14 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 			COOLDOWN_START(src, report_log_cooldown, APC_REPORT_LOG_INTERVAL)
 		else
 			report_log_skipped++
+	var/log_ms = TICK_USAGE_TO_MS(log_start)
 	var/apply_start = TICK_USAGE
 	if(channels_changed)
 		apply_area_power()
 	var/apply_ms = TICK_USAGE_TO_MS(apply_start)
 	var/report_ms = TICK_USAGE_TO_MS(cost_start)
 	if(report_ms >= 50)
-		log_world("APC_REPORT_SLOW: [src] ([area]) took [round(report_ms, 0.1)] ms: charge write [round(cell_ms, 0.1)], charging setter [round(charging_ms, 0.1)], status setter [round(status_ms, 0.1)], alarm [round(alarm_ms, 0.1)], channel apply [round(apply_ms, 0.1)] (channels changed [channels_changed], structural [structural_changed], alarm raised [power_alarm_raised]) at charge [charge]")
+		log_world("APC_REPORT_SLOW: [src] ([area]) took [round(report_ms, 0.1)] ms: charge write [round(cell_ms, 0.1)], charging setter [round(charging_ms, 0.1)], status setter [round(status_ms, 0.1)], alarm [round(alarm_ms, 0.1)], channel apply [round(apply_ms, 0.1)], channel setters [round(channel_setters_ms, 0.1)], cost note [round(note_ms, 0.1)], report log [round(log_ms, 0.1)], unaccounted [round(report_ms - cell_ms - channel_setters_ms - charging_ms - status_ms - note_ms - alarm_ms - log_ms - apply_ms, 0.1)] (channels changed [channels_changed], structural [structural_changed], alarm raised [power_alarm_raised]) at charge [charge]")
 
 /// A report that moved only the charge (null: the cell is not the one Rust charges) and the charging lamp, applied: the cell's charge, the lamp and, when the
 /// lamp changed, the folded APC_REPORT line (a charging-only report is logged once per APC_REPORT_LOG_INTERVAL and says how many it stands for).
