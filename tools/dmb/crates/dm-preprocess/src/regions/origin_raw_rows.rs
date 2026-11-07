@@ -585,9 +585,11 @@ impl TraceRunRank {
 const STORED_TRACE_PAGE_ROWS:usize=128;
 const TRACE_FALLBACK:u16=1<<15;
 const TRACE_POOL_ROW_BITS:u32=6;
+const TRACE_POOL_ROW_MASK:u16=(1<<TRACE_POOL_ROW_BITS)-1;
 
 #[derive(Clone,Copy)]
 struct StoredTraceView<'a>(MacroTraceView<'a>);
+#[cfg(test)]
 impl StoredTraceView<'_>{
     fn same_owner(self,other:&OriginalMacroTrace)->bool{self.0.same_owner(MacroTraceView::original(other))}
 }
@@ -613,7 +615,7 @@ impl PackedStoredTraces{
             return self.fallback.get(usize::from(code&!TRACE_FALLBACK)).map(MacroTraceView::original);
         }
         let page=self.bank.get(usize::from(code>>TRACE_POOL_ROW_BITS))?;
-        Some(MacroTraceView::pooled(page,code&((1<<TRACE_POOL_ROW_BITS)-1)))
+        Some(MacroTraceView::pooled(page,code&TRACE_POOL_ROW_MASK))
     }
 
     fn truncate(&mut self,keep:usize){
@@ -748,6 +750,23 @@ impl StoredTracePages{
         if at>=self.len{return None;}
         self.pages.get(at/STORED_TRACE_PAGE_ROWS)?.view(at%STORED_TRACE_PAGE_ROWS).map(StoredTraceView)
     }
+    fn same_owner_at(&self,at:usize,other:&OriginalMacroTrace)->bool{
+        if at>=self.len{return false;}
+        let local=at%STORED_TRACE_PAGE_ROWS;
+        match &self.pages[at/STORED_TRACE_PAGE_ROWS] {
+            StoredTracePage::Dense(rows)=>rows[local].same_owner(other),
+            StoredTracePage::Packed(rows)=>{
+                let code=rows.codes[local];
+                if code&TRACE_FALLBACK!=0 {
+                    return rows.fallback[usize::from(code&!TRACE_FALLBACK)].same_owner(other);
+                }
+                let OriginalMacroTrace::PooledSingleton{ordinal,page}=other else{return false;};
+                *ordinal==code&TRACE_POOL_ROW_MASK
+                    && rows.bank[usize::from(code>>TRACE_POOL_ROW_BITS)].same_page(page)
+            }
+        }
+    }
+
     fn push(&mut self,row:OriginalMacroTrace,a:&SettingAdmission<'_>,funding:&mut PageFunding<'_>)->io::Result<()>{
         a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
         let len=self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
@@ -832,8 +851,13 @@ impl TraceRuns {
         self.stored.get(self.physical_slot(run)?)
     }
 
-    // The producer consults last on every token. Cache only the exact
-    // physical index, with no new Arc alias or repeated rank lookup.
+    // The producer consults last on every token. Compare the stored owner
+    // directly at its exact physical index, without constructing a view.
+    fn last_matches(&self,other:&OriginalMacroTrace)->bool{
+        self.last_slot.is_some_and(|slot|self.stored.same_owner_at(slot,other))
+    }
+
+    #[cfg(test)]
     fn last(&self) -> Option<StoredTraceView<'_>> { self.stored.get(self.last_slot?) }
 
     fn push(
@@ -845,8 +869,7 @@ impl TraceRuns {
         let len = self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
         let old_rank = self.rank.len();
         let old_stored = self.stored.len();
-        let repeated = self.canonical.and_then(|slot| self.stored.get(slot))
-            .is_some_and(|empty| empty.same_owner(&trace));
+        let repeated = self.canonical.is_some_and(|slot|self.stored.same_owner_at(slot,&trace));
         let first_empty = self.canonical.is_none() && trace.len() == 0;
         let mapped_from = self.mapped_from.or_else(|| repeated.then_some(self.len));
         let mapped = mapped_from.map(|start| self.len - start);
@@ -974,7 +997,7 @@ impl OriginGroups {
         let previous_full = self.full.len();
         let previous_pages = self.trace_pages.len();
         let before = self.traces.len();
-        let changed = self.traces.last().is_none_or(|prior| !prior.same_owner(&trace));
+        let changed = !self.traces.last_matches(&trace);
         let local = ordinal % ROW_PAGE_LEN;
         let new_page = local == 0;
         let (output_line_base, raw_line_base, encounter, encounter_count) = if new_page {
@@ -2143,7 +2166,7 @@ impl OriginalRawOrigins{
   }).flatten().filter(|last| {
    last.decoded == source.decoded && last.raw_base == source.raw.start
     && last.line == source.point.line && last.output_line == output_line
-    && self.groups.traces.last().is_some_and(|prior_trace|prior_trace.same_owner(trace))
+    && self.groups.traces.last_matches(trace)
   });
   let share_group = prior_group.is_some();
   if !share_encounter {
@@ -2962,6 +2985,10 @@ impl OriginalRawOrigins{
         exact.push(MacroTraceView::original(&trace).to_owned());
         pages.push(trace,&a,&mut funding).unwrap();
     }
+    for (index,prior) in exact.iter().enumerate(){
+        let owner=prior.view().clone_original().unwrap();
+        assert!(pages.same_owner_at(index,&owner));
+    }
     let before=live.load(Ordering::Acquire);
     work.limit.store(before,Ordering::Release);
     pages.pages[0].settle_using(&a,&mut funding).unwrap();
@@ -2981,15 +3008,21 @@ impl OriginalRawOrigins{
     assert_eq!((packed.bank.len(),packed.fallback.len()),(2,2));
     assert_eq!(live.load(Ordering::Acquire),before+packed.storage_bytes());
     for (index,prior) in exact.iter().enumerate(){
+        let owner=prior.view().clone_original().unwrap();
+        assert!(pages.same_owner_at(index,&owner));
+        let other=exact[(index+1)%exact.len()].view().clone_original().unwrap();
+        assert!(!pages.same_owner_at(index,&other));
         let view=pages.get(index).unwrap().0;
         assert!(view.same_owner(prior.view()));
         assert_eq!(view.owner_address(),prior.view().owner_address());
         assert_eq!(view.pooled_backing(),prior.view().pooled_backing());
         assert_eq!(view.get(0),prior.view().get(0));
     }
+    assert!(!pages.same_owner_at(1,&OriginalMacroTrace::empty()));
     let detached=pages.get(80).unwrap().0.to_owned();
     let detached_address=detached.view().owner_address();
     pages.truncate(64,&mut funding).unwrap();
+    assert!(!pages.same_owner_at(80,&detached.view().clone_original().unwrap()));
     let StoredTracePage::Packed(packed)=&pages.pages[0] else{panic!("retained partial bank")};
     assert_eq!((packed.bank.len(),packed.fallback.len()),(1,1));
     pages.push(fallback.clone(),&a,&mut funding).unwrap();
