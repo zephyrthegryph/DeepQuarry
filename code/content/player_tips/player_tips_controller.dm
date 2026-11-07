@@ -33,8 +33,6 @@ Controlled by the player_tips subsystem under code/controllers/subsystems/player
 	last_tip = tip
 
 /datum/player_tips/proc/send_tip(mob/target_mob)
-	if(!(target_mob.client?.prefs?.read_preference(/datum/preference/toggle/player_tips)))
-		return
 	if(target_mob.key && !(target_mob.key in HasReceived))
 		to_chat(target_mob, span_warning("You have periodic player tips enabled. You may turn them off at any time with the Toggle Receiving Player Tips verb in Preferences, or in character set up under the OOC tab!\nPlayer tips appear every 45-75 minutes."))
 		LAZYADD(HasReceived, target_mob.key)

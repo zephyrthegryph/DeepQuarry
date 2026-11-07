@@ -8,6 +8,7 @@ import {
   iconSizeCommand,
   LINK_ITEMS,
   type MenuItem,
+  ROUND_ITEMS,
   textModeCommand,
   ZOOM_MODES,
   zoomModeCommand,
@@ -70,6 +71,9 @@ export function MenuPage() {
             Fullscreen (no title bar)
           </Button>
         </div>
+      </Section>
+      <Section title="Round">
+        <Items items={ROUND_ITEMS} />
       </Section>
       <Section title="Chat window">
         <Items items={CHAT_ITEMS} />

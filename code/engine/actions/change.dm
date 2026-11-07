@@ -75,13 +75,33 @@ PROC_SUMMARY(/proc/change_read_keys) // vars[] / call() dispatcher: the walk can
 		return
 	if(findtext(cond, "."))
 		return list(copytext(cond, 1, findtext(cond, ".")))
-	if(cond in E.vars)
+	// What the holder's type alone decides (a var of that name, a tracked setter, the build's read table) is worked out once per (type, name):
+	// a menu asks it for every condition of every candidate, and `in vars` walks the holder's whole var list.
+	var/list/typed = CACHED_KEY(change_text_read_keys, "[E.type]|[cond]", E, cond)
+	if(typed[1])
 		return list(cond)
-	if(hascall(E, "__setter_[cond]"))
-		. |= list(cond)
-	for(var/read in stat_generated_reads(E, cond, A, scope))
-		if(!findtext(read, ".") && (!findtext(read, ":") || findtext(read, "capkey:") == 1))
+	. |= typed[2]
+	for(var/read in lookup_reads_for(E, cond, A, scope))
+		if(change_read_key_kept(read))
 			. |= read
+
+/// The type half of change_read_keys() for a text condition: list(it is a var of the type, the keys its setter and its generated reads give).
+DECLARE_SHARED_CACHE(change_text_read_keys, GLOBAL_PROC_REF(build_change_text_read_keys), SC_NEVER)
+
+/proc/build_change_text_read_keys(datum/E, cond)
+	if(cond in E.vars)
+		return list(TRUE, list())
+	var/list/keys = list()
+	if(hascall(E, "__setter_[cond]"))
+		keys |= list(cond)
+	for(var/read in stat_generated_table_reads(E.type, cond))
+		if(change_read_key_kept(read))
+			keys |= read
+	return list(FALSE, keys)
+
+/// Whether a generated read is a key of the holder itself (not a hop through another entity, not a namespaced key other than a capability key).
+/proc/change_read_key_kept(read)
+	return !findtext(read, ".") && (!findtext(read, ":") || findtext(read, "capkey:") == 1)
 
 /// The value the hook's condition or key has on E now: a boolean for an edge hook, the raw value for ANY.
 /proc/change_value(datum/E, datum/hook/H)

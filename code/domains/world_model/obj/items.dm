@@ -331,7 +331,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		else
 			play_sfx(hit_atom, SFX_WEAPONS_THROWTAP, vary = volume)
 	else
-		playsound(src, sounds_of(src).drop, 30, preference = /datum/preference/toggle/drop_sounds)
+		playsound(src, sounds_of(src).drop, 30)
 
 // apparently called whenever an item is removed from a slot, container, or anything else.
 // TO NOTE:
@@ -402,12 +402,12 @@ ACTION(mob_equipped_item, obj/item/equipped_item, slot, FIXED, notice = /datum/n
 	if(user?.pulling_target() == src) user.stop_pulling()
 	if(dq_item_fits_slot_flags(src, slot))
 		if(sounds_of(src).equip && !muffled_by_belly(user))
-			playsound(src, sounds_of(src).equip, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).equip, 20)
 		else if(!muffled_by_belly(user))
-			playsound(src, sounds_of(src).drop, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).drop, 20)
 	else if(slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R)
 		if(!muffled_by_belly(user))
-			playsound(src, sounds_of(src).pickup, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).pickup, 20)
 	PUBLISH(src, item_equipped, equipper = user, slot = slot)
 	PUBLISH(user, mob_equipped_item, equipped_item = src, slot = slot)
 	user.on_equipment_changed()
@@ -836,7 +836,7 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 		user?.client?.note_hover(src)
 		if(QDELETED(src))
 			return
-		if(user?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in user) || isstorage(loc)))
+		if(((src in user) || isstorage(loc)))
 			after(src, 0.5 SECONDS, PROC_REF(openTip), key = "tip_timer", with = list(A.native?["location"], A.native?["control"], A.params, user))
 	else
 		cancel_after(src, "tip_timer")

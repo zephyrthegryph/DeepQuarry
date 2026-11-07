@@ -1,5 +1,5 @@
 /client/verb/vote()
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE // the Menu page
 	set name = "Vote"
 
 	var/datum/vote/running = SSvote.get_active_vote()

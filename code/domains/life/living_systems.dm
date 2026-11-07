@@ -169,7 +169,7 @@
 	if(!C)
 		return
 	var/idle_limit = 10 MINUTES
-	if(C.inactivity >= idle_limit && !STATE_GET(src, connection, away_from_keyboard) && C.prefs?.read_preference(/datum/preference/toggle/auto_afk))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
+	if(C.inactivity >= idle_limit && !STATE_GET(src, connection, away_from_keyboard))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
 		src.add_status_indicator("afk")
 		to_chat(src, span_notice("You have been idle for too long, and automatically marked as AFK."))
 		STATE_SET(src, connection, away_from_keyboard, TRUE)
@@ -226,7 +226,7 @@
 	if(!src.client)
 		return
 	// If you're in an ambient area and have not moved out of it for x time as configured per-client, and do not have it disabled, we're going to play ambience again to you, to help break up the silence.
-	var/pref = src.read_preference(/datum/preference/numeric/ambience_freq)
+	var/pref = 5
 	if(!pref)
 		return
 
@@ -241,7 +241,7 @@
 /mob/living/proc/life_ambience_rewake()
 	if(!src.client)
 		return 0
-	var/pref = src.read_preference(/datum/preference/numeric/ambience_freq)
+	var/pref = 5
 	if(!pref)
 		return 0
 	return max(1 SECONDS, STATE_GET(src, mob_misc, lastareachange) + pref MINUTES - world.time)

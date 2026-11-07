@@ -357,11 +357,15 @@ GLOBAL_LIST_INIT(stat_input_keys, stat_input_names_build())
 /// The reads E5's generator recorded for holder proc `proc_name` of E's type (or an ancestor), as input keys: "var", "rel.var", "a.b.var",
 /// "sys:system.var". A read through an actor, held item or target is not an input of the holder and is left out.
 /proc/stat_generated_reads(datum/E, proc_name, datum/act/A = null, datum/lookup_read_scope/scope = null)
-	var/list/keys = lookup_reads_for(E, proc_name, A, scope)
+	return lookup_reads_for(E, proc_name, A, scope) + stat_generated_table_reads(E.type, proc_name)
+
+/// The keys the build's read table (code/_generated/reads.dm) lists for proc `proc_name` of type `path` or the nearest parent that has it:
+/// what the type alone decides, without the lookup reads of an instance.
+/proc/stat_generated_table_reads(path, proc_name)
+	var/list/keys = list()
 	var/list/table = GLOB.generated_reads_table
 	if(!length(table))
 		return keys
-	var/path = E.type
 	var/row
 	while(path)
 		row = table["[path]::[proc_name]"]

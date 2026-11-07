@@ -86,8 +86,8 @@
 				"ref" = handle_of(ghost),
 				"name" = pref.read_preference(/datum/preference/text/pai_name),
 				"gender" = pref.read_preference(/datum/preference/choiced/gender/biological), // Cannot use identifying yet due to byond limits
-				"role" = TextPreview(pref.read_preference(/datum/preference/text/pai_role), 152),
-				"ad" = TextPreview(pref.read_preference(/datum/preference/text/pai_ad), 244),
+				"role" = TextPreview((PAI_UNSET), 152),
+				"ad" = TextPreview((PAI_UNSET), 244),
 				"eyecolor" = pref.read_preference(/datum/preference/color/pai_eye_color),
 				"chassis" = chassis,
 				"emotion" = pref.read_preference(/datum/preference/text/pai_emotion),
@@ -114,10 +114,10 @@
 			"name" = pref.read_preference(/datum/preference/text/pai_name),
 			"gender" = pref.read_preference(/datum/preference/choiced/gender/biological), // Cannot use identifying yet due to byond limits
 			// Description
-			"role" = pref.read_preference(/datum/preference/text/pai_role),
-			"description" = pref.read_preference(/datum/preference/text/pai_description),
-			"ad" = pref.read_preference(/datum/preference/text/pai_ad),
-			"comments" = pref.read_preference(/datum/preference/text/pai_comments),
+			"role" = PAI_UNSET,
+			"description" = PAI_UNSET,
+			"ad" = PAI_UNSET,
+			"comments" = PAI_UNSET,
 			// Appearance
 			"eyecolor" = pref.read_preference(/datum/preference/color/pai_eye_color),
 			"chassis" = chassis,

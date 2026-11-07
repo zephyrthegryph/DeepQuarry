@@ -12,7 +12,6 @@ export const CHAT_ATTACKLOGS: FeatureToggle = {
   component: CheckboxInput,
 };
 
-
 export const CHAT_PRAYER: FeatureToggle = {
   name: 'Chat Prayers',
   category: 'ADMIN',
@@ -47,8 +46,6 @@ export const CHAT_ADSAY: FeatureToggle = {
   description: 'Enables seeing deadchat when not observing.',
   component: CheckboxInput,
 };
-
-
 
 export const ooccolor: Feature<string> = {
   name: 'OOC Color',

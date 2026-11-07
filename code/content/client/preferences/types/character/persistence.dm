@@ -16,16 +16,6 @@
 	return
 
 
-/datum/preference/toggle/human/resleeve_lock
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "resleeve_lock"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/resleeve_lock/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
 
 /datum/preference/toggle/human/resleeve_scan
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL

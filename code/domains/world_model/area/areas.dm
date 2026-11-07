@@ -393,9 +393,6 @@ ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
 
 /area/proc/play_ambience(mob/living/L, initial = TRUE)
 	// Ambience goes down here -- make sure to list each area seperately for ease of adding things in later, thanks! Note: areas adjacent to each other should have the same sounds to prevent cutoff when possible.- LastyScratch
-	if(!L?.read_preference(/datum/preference/toggle/play_ambience))
-		return
-
 	var/volume_mod = L.get_preference_volume_channel(VOLUME_CHANNEL_AMBIENCE)
 
 	// If we previously were in an area with force-played ambiance, stop it.
@@ -416,7 +413,7 @@ ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
 		else
 			L << sound(null, channel = CHANNEL_AMBIENCE_FORCED)
 	else if(src.ambience && length(src.ambience))
-		var/ambience_odds = L.read_preference(/datum/preference/numeric/ambience_chance)
+		var/ambience_odds = 35
 		if(prob(ambience_odds) && (COOLDOWN_FINISHED(L.client, ambience_cooldown)))
 			var/sound = DEFAULTPICK(ambience, null)
 			L << sound(sound, repeat = 0, wait = 0, volume = 50 * volume_mod, channel = CHANNEL_AMBIENCE)

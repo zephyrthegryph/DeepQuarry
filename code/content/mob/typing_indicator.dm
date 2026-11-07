@@ -18,12 +18,8 @@
 	if(client?.chat_focus_input(SAY_CHANNEL))
 		return
 
-	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
-		winset(src, null, "command=[client.tgui_say_create_open_command(SAY_CHANNEL)]")
-		winset(src, SKIN_SAY_BROWSER, "focus=true")
-		return
-
-	say_verb_old()
+	winset(src, null, "command=[client.tgui_say_create_open_command(SAY_CHANNEL)]")
+	winset(src, SKIN_SAY_BROWSER, "focus=true")
 
 /mob/verb/me_wrapper()
 	set name = "Me verb"
@@ -32,32 +28,20 @@
 	if(client?.chat_focus_input(ME_CHANNEL))
 		return
 
-	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say) && client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_emotes))
-		winset(src, null, "command=[client.tgui_say_create_open_command(ME_CHANNEL)]")
-		winset(src, SKIN_SAY_BROWSER, "focus=true")
-		return
-
-	me_verb_old()
+	winset(src, null, "command=[client.tgui_say_create_open_command(ME_CHANNEL)]")
+	winset(src, SKIN_SAY_BROWSER, "focus=true")
 
 /mob/verb/whisper_wrapper()
 	set name = "Whisper verb"
 	set hidden = TRUE
 
-	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
-		winset(src, null, "command=[client.tgui_say_create_open_command(WHIS_CHANNEL)]")
-		winset(src, SKIN_SAY_BROWSER, "focus=true")
-		return
-
-	whisper_old()
+	winset(src, null, "command=[client.tgui_say_create_open_command(WHIS_CHANNEL)]")
+	winset(src, SKIN_SAY_BROWSER, "focus=true")
 
 /mob/verb/subtle_wrapper()
 	set name = "Subtle verb"
 	set hidden = TRUE
 	set desc = "Emote to nearby people (and your pred/prey)"
 
-	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say) && client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_emotes))
-		winset(src, null, "command=[client.tgui_say_create_open_command(SUBTLE_CHANNEL)]")
-		winset(src, SKIN_SAY_BROWSER, "focus=true")
-		return
-
-	me_verb_subtle_old()
+	winset(src, null, "command=[client.tgui_say_create_open_command(SUBTLE_CHANNEL)]")
+	winset(src, SKIN_SAY_BROWSER, "focus=true")

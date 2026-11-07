@@ -218,12 +218,30 @@ export async function dockWindow(
 }
 
 /**
+ * The skin's resize message (interface/skin.dmf: `on-size` of the tgui_say window and of the map control run
+ * `.output tgui_say.browser:update` with this type, client side, after a resize or splitter drag ends).
+ */
+export const DOCK_RESIZED = 'dock/resized';
+
+/** The check of the open popup, or null while it is closed: what the resize message runs. */
+let activeCheck: (() => Promise<void>) | null = null;
+let subscribed = false;
+
+/** Runs the open popup's check (the skin's resize message). Exported for the tests. */
+export function onDockResized(): Promise<void> | undefined {
+  return activeCheck?.();
+}
+
+/**
  * While the popup is open: keeps it at least the minimum size (a manual resize
  * below it is undone) and, until the player places it, re-docks it when the
- * game window moved or resized. Returns the stop function.
+ * map was resized (the game window or a splitter). Driven by the skin's on-size
+ * events, not a timer. BYOND has no event for a window being moved (no
+ * on-move), so moving the game window while the popup is open leaves it where
+ * it is; the next open docks it again. Returns the stop function.
  */
 export function watchDock(size: () => Size, factor: () => number): () => void {
-  const timer = setInterval(async () => {
+  const check = async () => {
     try {
       const actual = await Byond.winget('tgui_say', 'size');
       if (isPoint(actual)) {
@@ -251,6 +269,15 @@ export function watchDock(size: () => Size, factor: () => number): () => void {
     const pos = dockPosition(map, { w, h });
     Byond.winset(null, { 'tgui_say.pos': `${pos.x},${pos.y}` });
     logger.log('re-docked after map change', { map, window: { w, h }, pos });
-  }, 500);
-  return () => clearInterval(timer);
+  };
+  activeCheck = check;
+  if (!subscribed) {
+    subscribed = true;
+    Byond.subscribeTo(DOCK_RESIZED, () => {
+      onDockResized();
+    });
+  }
+  return () => {
+    if (activeCheck === check) activeCheck = null;
+  };
 }

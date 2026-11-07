@@ -118,7 +118,7 @@ CAPABILITIES(/datum/media_manager)
 /datum/media_manager/ui_data(datum/act/eval/A)
 	var/should_play = TRUE
 	if(owner()?.prefs)
-		should_play = owner().prefs.read_preference(/datum/preference/toggle/play_jukebox) || url == ""
+		should_play = TRUE || url == ""
 	return list(
 		"url" = should_play ? url : "",
 		"start_time" = (world.time - start_time) / 10,

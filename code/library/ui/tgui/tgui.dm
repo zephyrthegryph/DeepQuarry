@@ -131,7 +131,7 @@
 	if(!window().is_ready() && !preinitialized)
 		window().initialize(
 			strict_mode = TRUE,
-			fancy = user.read_preference(/datum/preference/toggle/tgui_fancy),
+			fancy = TRUE,
 			assets = list(
 				SStgui.get_current_asset_generation().shell_assets(),
 				))
@@ -411,8 +411,8 @@
 		"window" = list(
 			"key" = window_key,
 			"size" = window_size,
-			"fancy" = user.read_preference(/datum/preference/toggle/tgui_fancy),
-			"locked" = user.read_preference(/datum/preference/toggle/tgui_lock),
+			"fancy" = TRUE,
+			"locked" = FALSE,
 			"scale" = user.read_preference(/datum/preference/toggle/ui_scale),
 			"prewarmed" = window()?.prewarmed ? TRUE : FALSE,
 			"generation" = window()?.generation || 0,

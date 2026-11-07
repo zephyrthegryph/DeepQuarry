@@ -276,10 +276,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	var/text = A.answer ? A.answer.value : ""
 	pose = text ? strip_html_simple(text) : null
 
-/mob/living/silicon/verb/set_flavor()
+/mob/living/silicon/proc/set_flavor()
 	set name = "Set Flavour Text"
 	set desc = "Sets an extended description of your character's features."
-	set category = VERB_CAT_IC_SETTINGS
 
 	open_request(src, /datum/prompt/text, PROC_REF(silicon_flavor_entered), answerer = src, title = "Flavour text", question = "Please enter your new flavour text.", default = bio.flavor_text, multiline = TRUE, timeout = 0)
 

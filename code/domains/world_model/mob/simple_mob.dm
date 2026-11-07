@@ -900,10 +900,9 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		Spit(A)
 	. = ..()
 
-/mob/living/simple_mob/verb/toggle_speech_sounds()
+/mob/living/simple_mob/proc/toggle_speech_sounds()
 	set name = "Toggle Species Speech Sounds"
 	set desc = "Toggle if your species defined speech sound has a chance of playing on a Say"
-	set category = VERB_CAT_IC_MOB
 
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))

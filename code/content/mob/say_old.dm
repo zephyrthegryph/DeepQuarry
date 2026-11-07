@@ -24,22 +24,6 @@
 	if(A.answer.value)
 		call(src, prompt.action)(A.answer.value)
 
-/mob/proc/say_verb_old()
-
-	ask_chat_line("Speak to people in sight.\nType your message:", "Say", /mob/verb/say_verb)
-
-/mob/proc/me_verb_old()
-
-	ask_chat_line("Emote to people in sight (and your pred/prey).\nType your message:", "Emote", /mob/verb/me_verb, TRUE)
-
-/mob/proc/whisper_old()
-
-	ask_chat_line("Speak to nearby people.\nType your message:", "Whisper", /mob/verb/whisper, FALSE, client?.prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
-
-/mob/proc/me_verb_subtle_old()
-
-	ask_chat_line("Emote to nearby people (and your pred/prey).\nType your message:", "Subtle", /mob/verb/me_verb_subtle, TRUE, client?.prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
-
 /mob/proc/me_verb_subtle_custom_old()
 
 	ask_chat_line("Emote to nearby people, with ability to choose which specific portion of people you wish to target.\nType your message:", "Subtle (Custom)", /mob/verb/me_verb_subtle_custom, TRUE, FALSE)
