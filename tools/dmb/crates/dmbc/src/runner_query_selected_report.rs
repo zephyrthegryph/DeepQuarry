@@ -30,7 +30,7 @@ impl SelectedReportPlan {
         const PROFILES: &[&[Q]] = &[
             &[], &[Q::SiliconEntry], &[Q::LibraryLayeringFullAllow], &[Q::SemHandlersFullAllow],
             Q::SELECTED_SETTER, Q::SELECTED_READS, Q::SELECTED_REACTIVE, &[Q::Untyped], &[Q::DerivedReads], &[Q::SysReactive], &[Q::Lifeforms], &[Q::PlayerLink],
-            Q::SELECTED_LIFEFORMS_PLAYER_LINK, Q::SELECTED_REFERENCE_POLICIES, &[Q::RequirementBool],
+            Q::SELECTED_LIFEFORMS_PLAYER_LINK, Q::SELECTED_REFERENCE_POLICIES, &[Q::RequirementBool], Q::SELECTED_DECLARATION_POLICIES,
         ];
         let mut requested = [None; Roster::MAX_POLICIES];
         let mut count = 0;
@@ -274,6 +274,26 @@ impl ReportStage<'_> {
                     projection.row(site, None, &mut control)?;
                 }
             }
+            UnionRows::DeclarationHard(question, sites, source_text, notes) => {
+                let expected = match question {
+                    Q::Decl => dq_analyze::captured_decl_pages::metadata(),
+                    Q::Init => dq_analyze::captured_init_pages::metadata(),
+                    Q::BaseVars => dq_analyze::captured_base_vars_pages::metadata(),
+                    _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued selected declaration report role")),
+                };
+                if self.selected != Roster::WithDeclarationPolicies.names()
+                    || !std::ptr::eq(meta, expected)
+                    || !matches!(meta.policy, Policy::Hard)
+                    || sites.len() != source_text.len()
+                {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData,
+                        "selected declaration findings differ from their actual Hard source shape"));
+                }
+                for (site, text) in sites.iter().zip(source_text) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
+                projection.notes(notes, &mut control)?;
+            }
             UnionRows::RequirementBool(data) => {
                 if self.selected != Roster::WithRequirementBool.names()
                     || !std::ptr::eq(meta, data.metadata())
@@ -482,6 +502,7 @@ mod selected_plan_tests {
             (Roster::WithLifeformsAndPlayerLink, Q::SELECTED_LIFEFORMS_PLAYER_LINK),
             (Roster::WithReferencePolicies, Q::SELECTED_REFERENCE_POLICIES),
             (Roster::WithRequirementBool, &[Q::RequirementBool]),
+            (Roster::WithDeclarationPolicies, Q::SELECTED_DECLARATION_POLICIES),
         ];
         for (roster, questions) in expected {
             let exclusions: Vec<_> = registry.names().iter().filter(|name| !roster.names().contains(&name.as_str()))

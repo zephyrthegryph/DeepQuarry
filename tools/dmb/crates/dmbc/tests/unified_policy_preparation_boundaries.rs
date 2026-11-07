@@ -1824,3 +1824,120 @@ fn public_selected_requirement_bool_matches_full_original_report_and_scopes() {
     assert!(!rejected.status.success());
     assert!(rejected.stdout.is_empty());
 }
+
+#[test]
+#[ignore = "requires the independent legacy Analyze oracle and private daemon"]
+fn public_selected_declaration_policies_match_full_original_report_and_scopes() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{Roster, Terminal},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    let oracle = PathBuf::from(std::env::var_os("DQ_SELECTED_DECLARATION_ORACLE")
+        .expect("build and provide the independent unified_selected_declaration_original"));
+    assert!(oracle.is_absolute());
+    let root = test_scratch::dir("public-selected-declarations");
+    let transport = test_scratch::dir("public-selected-declarations-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("selected-declarations-{}-{}", std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    put(&root, "deepquarry.dme", concat!(
+        "#include \"code/init.dm\"\n",
+        "#include \"code/decl.dm\"\n",
+        "#include \"code/base_vars.dm\"\n",
+        "#include \"maps/record.dm\"\n",
+    ));
+    put(&root, "code/init.dm", concat!(
+        "/atom/proc/Initialize()\n    return\n",
+        "/obj/init_workspace/Initialize()\n",
+        "    . = ..()\n    var/state = 1\n    GLOB.value = range(1)\n    return\n",
+        "/turf/proc/on_materialize()\n    return\n",
+        "/obj/other_allowed_workspace/Initialize()\n",
+        "    after(src, 1, null) // ALLOW(decl): this separately scoped initializer exercises consumed annotations\n",
+    ));
+    put(&root, "code/decl.dm", concat!(
+        "/obj/decl_workspace/Initialize()\n    after(src, 1, null)\n",
+        "/obj/allowed_workspace/Initialize()\n",
+        "    after(src, 1, null) // ALLOW(decl): retained fixture intentionally models legacy lifecycle construction\n",
+    ));
+    put(&root, "code/base_vars.dm", concat!(
+        "#define SCHEMA(T,V,S)\n",
+        "/atom\n",
+        "    var/tmp/bv_plain = 0\n",
+        "    var/tmp/bv_allowed = 0 // ALLOW(base_vars): this base variable intentionally stores real instance fixture state\n",
+        "    var/tmp/bv_schema = 0\n",
+        "    var/static/bv_shared = 0\n",
+        "/obj/bv_fixture\n    var/list/bv_items = list()\n",
+        "/datum/record\n",
+        "/datum/record/proc/do_work()\n    return\n",
+        "SCHEMA(/atom, bv_schema, schema_path(/datum))\n",
+    ));
+    put(&root, "maps/record.dm", concat!(
+        "/datum/record/map/proc/non_code_work() // ALLOW(base_vars): original record methods deliberately never ask this annotation\n",
+        "    return\n",
+    ));
+    let mut build = request(&root, Q::Decl);
+    build.cache_root = Some(test_scratch::dir("public-selected-declarations-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithDeclarationPolicies;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let request_path = transport.join("selected-declarations.json");
+    put(&transport, "selected-declarations.json", serde_json::to_vec(&serde_json::json!({
+        "build": build, "exclusions": exclusions,
+    })).unwrap());
+
+    let native = transport.join("native-report.txt");
+    let mut initial = None;
+    for (stage, exempt) in [(0, false), (1, false), (2, true)] {
+        let mut overlay = String::from(concat!(
+            "[lint.base_vars.lists]\n",
+            "list_init_exempt_prefixes=[]\nlist_init_exempt_files=[]\n",
+            "base_var_home_macros=['TRACKED']\nbase_var_home_relations=[]\n",
+            "base_var_home_types=[]\nrecord_accessor_prefixes=['get_','set_']\n",
+            "hot_ceiling=['2']\n",
+            "[lint.init.lists]\ninit_roots=[]\n",
+        ));
+        if exempt {
+            overlay.push_str("[lint.decl]\nexempt_files=['code/decl.dm']\n");
+        }
+        put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(&overlay));
+        let output = daemon.run(
+            &[OsStr::new("analyze-exclusions"), request_path.as_os_str(), OsStr::new("--report-batch")],
+            Duration::from_secs(90),
+        ).unwrap();
+        assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+        let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+        let terminal: Terminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+        terminal.require(roster).unwrap();
+        assert_eq!(terminal.roster, roster);
+        assert!(!terminal.clean);
+        let report = &output.stdout[header_end + 1..];
+        assert_eq!(report.len() as u64, terminal.report.length);
+        assert_eq!(xxhash_rust::xxh3::xxh3_128(report), terminal.report.hash.0);
+        let text = std::str::from_utf8(report).unwrap();
+        assert!(text.contains("[base_vars/base_var]"), "{text}");
+        assert!(text.contains("[init/turf_on_materialize]"), "{text}");
+        assert_eq!(text.lines().filter(|line| line.contains("code/decl.dm:") && line.contains("[decl/")).count(),
+            if exempt { 0 } else { 1 }, "{text}");
+        assert_eq!(text.contains("code/decl.dm:4: ALLOW(decl) is unused"), exempt, "{text}");
+        assert!(text.contains("maps/record.dm:1: ALLOW(base_vars) is unused"), "{text}");
+        if stage == 0 { initial = Some(report.to_vec()); }
+        if stage == 1 { assert_eq!(report, initial.as_deref().unwrap()); }
+        std::fs::write(&native, report).unwrap();
+        let reference = daemon.run_program(&oracle, &[root.as_os_str(), native.as_os_str()], Duration::from_secs(45)).unwrap();
+        assert!(reference.status.success(), "{}", String::from_utf8_lossy(&reference.stderr));
+    }
+    assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
+}

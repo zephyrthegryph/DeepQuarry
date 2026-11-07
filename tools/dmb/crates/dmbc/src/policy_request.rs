@@ -72,6 +72,8 @@ impl WorkspaceAuxiliaryQuestion {
         &[Self::PlayerLink, Self::Lifeforms];
     pub(crate) const SELECTED_REFERENCE_POLICIES: &'static [Self] =
         &[Self::UntypedMember, Self::WeakRawRead, Self::RelWriteUndeclared];
+    pub(crate) const SELECTED_DECLARATION_POLICIES: &'static [Self] =
+        &[Self::Decl, Self::Init, Self::BaseVars];
     pub(crate) const SELECTED_REACTIVE: &'static [Self] =
         &[Self::SemReads, Self::UntrackedInputs, Self::SetterPublishes];
 

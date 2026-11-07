@@ -20,6 +20,7 @@ enum UnionRows<'a,'rows>{
  Untyped(&'a dq_analyze::captured_untyped_pages::UntypedData),
  DerivedReads(&'a dq_analyze::captured_derived_reads::DerivedReadData),
  SysReactive(&'a dq_analyze::captured_sys_reactive::Data),
+ DeclarationHard(Q, &'a [dq_analyze::lint::Site], &'a [String], &'a [String]),
  RequirementBool(&'a dq_analyze::captured_requirement_bool_pages::RequirementData),
  MessageOnlyHard(Q, &'a [dq_analyze::lint::Site], &'a [AllowUse]),
  Semantic(Q,&'a dq_analyze::captured_sem_reads::SemanticPolicyData),
@@ -50,7 +51,7 @@ impl Producer{
   matches!(self,
    Self::Raw(_) | Self::Tree(Policy::NoticePublisher | Policy::ReportInCatch | Policy::Cooldown)
    | Self::Special("allow_annotations" | "silicon_entry" | "library_layering" | "sem/handlers"
-      | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped" | "derived_reads" | "sys/dx_reactive" | "lifeforms" | "player_link" | "untyped_member" | "weak_raw_read" | "rel_write_undeclared" | "requirement_bool")
+      | "sem/reads" | "untracked_inputs" | "setter_publishes" | "untyped" | "derived_reads" | "sys/dx_reactive" | "lifeforms" | "player_link" | "untyped_member" | "weak_raw_read" | "rel_write_undeclared" | "requirement_bool" | "base_vars" | "decl" | "init")
   )
  }
  fn question(self)->Option<Q>{Some(match self.name(){"silicon_entry"=>Q::SiliconEntry,"sem/keys"=>Q::Keys,"check_grep"=>Q::CheckGrep,"deadline_polling"=>Q::DeadlinePollingAllowlist,"op_order"=>Q::OpOrder,"ui_actions"=>Q::UiActions,"doc_snippets"=>Q::DocSnippets,"ownership"=>Q::Ownership,"derived_reads"=>Q::DerivedReads,"sem/handlers"=>Q::SemHandlersFullAllow,"sem/reads"=>Q::SemReads,"untracked_inputs"=>Q::UntrackedInputs,"setter_publishes"=>Q::SetterPublishes,"tracked"=>Q::Tracked,"tracked_tests"=>Q::TrackedTests,"decl"=>Q::Decl,"init"=>Q::Init,"base_vars"=>Q::BaseVars,"requirement_bool"=>Q::RequirementBool,"player_link"=>Q::PlayerLink,"untyped_member"=>Q::UntypedMember,"weak_raw_read"=>Q::WeakRawRead,"rel_write_undeclared"=>Q::RelWriteUndeclared,"untyped"=>Q::Untyped,"stored_refs"=>Q::StoredRefs,"engine_layering"=>Q::EngineLayering,"library_layering"=>Q::LibraryLayeringFullAllow,"sys/dx_reactive"=>Q::SysReactive,"lifeforms"=>Q::Lifeforms,_=>return None})}
@@ -152,9 +153,42 @@ impl SourceSnapshot{
       self.with_original_semantic_policy_report(Q::SetterPublishes,|data,_,_|record(data.allow_used()))?;
      }
     },
-    Producer::Special("decl")=>{self.with_original_decl_policy(|data,_,_|record(data.allow_used()))?;},
-    Producer::Special("init")=>{self.with_original_init_policy(|data,_,_|record(data.allow_used()))?;},
-    Producer::Special("base_vars")=>{self.with_original_base_vars_policy(|data,_,_|record(data.allow_used()))?;},
+    Producer::Special("decl")=>{
+     self.with_original_decl_policy(|data,config,child_budget|{
+      if let Some(stage)=stage.as_deref_mut(){
+       let meta=producer.metadata();
+       if !std::ptr::eq(meta,data.metadata()){return Err(io::Error::new(io::ErrorKind::InvalidData,"selected declaration producer metadata differs"));}
+       let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::DeclarationHard(Q::Decl,data.sites(),data.source_text(),data.notes()),scope,child_budget)?;
+      }
+      record(data.allow_used())
+     })?;
+    },
+    Producer::Special("init")=>{
+     self.with_original_init_policy(|data,config,child_budget|{
+      if let Some(stage)=stage.as_deref_mut(){
+       let meta=producer.metadata();
+       if !std::ptr::eq(meta,data.metadata()){return Err(io::Error::new(io::ErrorKind::InvalidData,"selected declaration producer metadata differs"));}
+       let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::DeclarationHard(Q::Init,data.sites(),data.source_text(),data.notes()),scope,child_budget)?;
+      }
+      record(data.allow_used())
+     })?;
+    },
+    Producer::Special("base_vars")=>{
+     self.with_original_base_vars_policy(|data,config,child_budget|{
+      if let Some(stage)=stage.as_deref_mut(){
+       let meta=producer.metadata();
+       if !std::ptr::eq(meta,data.metadata()){return Err(io::Error::new(io::ErrorKind::InvalidData,"selected declaration producer metadata differs"));}
+       let empty=dq_analyze::scopes::LintScope::default();
+       let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+       stage(meta,UnionRows::DeclarationHard(Q::BaseVars,data.sites(),data.source_text(),data.notes()),scope,child_budget)?;
+      }
+      record(data.allow_used())
+     })?;
+    },
     Producer::Special("requirement_bool")=>{
      self.with_original_requirement_bool_policy(|data,config,child_budget|{
       if let Some(stage)=stage.as_deref_mut(){

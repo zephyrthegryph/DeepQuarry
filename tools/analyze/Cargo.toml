@@ -415,3 +415,7 @@ required-features = ["unified-oracle"]
 [[example]]
 name = "unified_selected_requirement_original"
 required-features = ["unified-oracle"]
+
+[[example]]
+name = "unified_selected_declaration_original"
+required-features = ["unified-oracle"]
