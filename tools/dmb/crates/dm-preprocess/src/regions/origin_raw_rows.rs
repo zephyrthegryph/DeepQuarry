@@ -1003,7 +1003,7 @@ impl PhysicalOriginPage {
     }
 
     fn new(group_base: usize, work: &dyn SourceArenaWork) -> io::Result<Self> {
-        let credit = work.reserve(Self::control_bytes())?;
+        let credit = work.reserve_original_origin_storage(Self::control_bytes())?;
         Ok(Self {
             narrow: Vec::new(), rank: RowGroupRank::new(),
             output_bases: RowOutputBases::new(), raw_widths: None,
@@ -1555,7 +1555,7 @@ impl OriginalRawOrigins{
   last_emitted:None,
   #[cfg(debug_assertions)]
   row_geometry_census:std::env::var_os("DMB_ORIGINAL_TRACE_ROW_GEOMETRY").map(|_|RawRowGeometryCensus::default()),
-  rows:RawTokenRows::new(a)?,groups:OriginGroups::new(),encounters:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivered_end:None,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?,page_credit:work.reserve(0)?})}
+  rows:RawTokenRows::new(a)?,groups:OriginGroups::new(),encounters:Rows::new(a)?,nonphysical:Rows::new(a)?,output:None,delivered_end:None,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?,page_credit:work.reserve_original_origin_storage(0)?})}
  /// The actual controller records once beside its final arena append. The
  /// private actual raw stack authenticates current occurrence/binding/point;
  /// the supplied source path and region come from that SAME DirectivePlan.

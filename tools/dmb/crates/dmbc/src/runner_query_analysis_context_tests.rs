@@ -16,6 +16,34 @@ pub(super) fn run(host:&mut crate::runner_host::BuildHost,request:&BuildRequest)
 pub(super) fn current<R>(host:&crate::runner_host::BuildHost,consume:impl FnOnce(&SourceSnapshot)->R)->R{
  let state=host.query_state();let guard=state.lock().unwrap();consume(guard.snapshot.as_ref().unwrap())
 }
+#[test]
+fn actual_origin_mapping_alias_holds_parent_past_native_db_drop() {
+    let (mut host, mut request, _) = fixture("/proc/origin_parent_test()\n    return 7\n");
+    request.policy_inputs.as_mut().unwrap().analysis_context=Some(AnalysisContext::OriginalAnalyze0290);
+    let counter=Arc::clone(crate::query_db::body_syntax_counter_for_test(host.query_db()));
+    let parent=Arc::clone(counter.shared_reservation().unwrap());
+    let baseline=parent.reserved_bytes();
+    let syntax_base=counter.allocation_lease_reserved();
+    let db=Arc::downgrade(host.query_db());
+
+    run(&mut host,&request);
+    // A published archive also owns its BodySyntaxQueries. Escape its actual
+    // mapping instead, which retains the same physical pages without the Db.
+    let mapping=current(&host,|snapshot|{
+        let mapping=snapshot.source_mapping.as_ref().unwrap();
+        assert!(Arc::ptr_eq(mapping,snapshot.body_archive.as_ref().unwrap().source_mapping()));
+        Arc::clone(mapping)
+    });
+    let charged_origins=||parent.reserved_bytes()-baseline-(counter.allocation_lease_reserved()-syntax_base);
+    assert!(charged_origins()>0,"actual prepare must debit source pages separately from syntax");
+    drop(host);
+    assert!(db.upgrade().is_none(),"only origin storage, not the native host, escapes");
+    assert!(charged_origins()>0,"escaped actual mapping keeps the real source-page debit");
+    drop(mapping);
+    assert_eq!(counter.allocation_lease_reserved(),syntax_base);
+    assert_eq!(parent.reserved_bytes(),baseline);
+}
+
 #[test]fn actual_original_analysis_context_has_guarded_declarations_warm_bodies_and_isolated_native_variant(){
  let source="#if DM_BUILD == 1666 && DM_VERSION == 516 && SPACEMAN_DMM\n/datum/original_only\n#else\n/datum/native_only\n#endif\n/proc/probe()\n    return 1\n";
  let(mut host,request,_)=fixture(source);let queries=Arc::clone(host.query_db());run(&mut host,&request);

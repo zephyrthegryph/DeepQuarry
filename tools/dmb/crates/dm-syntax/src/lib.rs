@@ -382,4 +382,4 @@ mod original_failure_format;
 pub use original_failure_format::{write_original_input_failure,write_original_term_failure,write_original_delimiter_failure};
 
 mod setting_charge_counter;
-pub use setting_charge_counter::SettingChargeCounter;
+pub use setting_charge_counter::{SettingChargeCounter, SharedNativeReservation};

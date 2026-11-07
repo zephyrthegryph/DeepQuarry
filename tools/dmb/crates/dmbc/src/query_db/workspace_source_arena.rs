@@ -5,7 +5,20 @@ use dm_preprocess::source_arena_credit::{SourceArenaControlCredit,SourceArenaCre
 use std::sync::atomic::{AtomicUsize,Ordering};
 /// Only actual reservation size and a WEAK identity of the existing Admission.
 /// No QueryDb, ledger or source/model owner is retained by an escaped SourceText.
-pub(super) struct Allocation{bytes:AtomicUsize,domain:Weak<crate::query_db::raw_policy::Admission>}
+pub(super) struct Allocation{
+    bytes:AtomicUsize,
+    domain:Weak<crate::query_db::raw_policy::Admission>,
+    // Only actual origin payload/page-control bytes. This Allocation's Arc
+    // and its Weak ledger row stay under existing source-family admission.
+    origin_parent:Option<Arc<dm_syntax::SharedNativeReservation>>,
+}
+impl Drop for Allocation {
+    fn drop(&mut self) {
+        if let Some(parent)=&self.origin_parent { parent.release(self.reserved_bytes()); }
+    }
+}
+fn parent_denied(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::OutOfMemory,message)}
+
 // Every native allocation is admitted under the existing raw input-family
 // limit, well below this flag even on 32-bit hosts. A settled path-fact
 // insertion is immutable except for exact last-owner refunds.
@@ -37,6 +50,7 @@ impl Allocation {
 /// enter this mode; nonnative fixture lenders keep their conservative grants.
 pub(crate) fn seal_path_fact_control(credit: SourceArenaCredit) {
     if let Some(actual) = credit.owner().as_any().downcast_ref::<Allocation>() {
+        assert!(actual.origin_parent.is_none(),"only ordinary path-fact credits can enter immutable node retirement");
         let previous = actual.bytes.fetch_or(RETIRABLE_PATH_FACTS, Ordering::AcqRel);
         debug_assert_eq!(previous & RETIRABLE_PATH_FACTS, 0);
     }
@@ -99,7 +113,7 @@ fn split_owned_allocations<const N: usize>(
     sizes: [usize; N],
     admit_extra: impl FnOnce(&mut super::raw_input_credits::Ledger, usize) -> io::Result<()>,
 ) -> io::Result<[AllocationHandle; N]> {
-    if !ledger.has_source_arena(donor) { return Err(wrong()); }
+    if donor.origin_parent.is_some() || !ledger.has_source_arena(donor) { return Err(wrong()); }
     let bookkeeping = N.checked_mul(raw_input_credits::NODE).ok_or_else(oom)?;
     let transfer = sizes.iter().try_fold(bookkeeping, |total, bytes| {
         total.checked_add(*bytes).ok_or_else(oom)
@@ -108,7 +122,7 @@ fn split_owned_allocations<const N: usize>(
     let extra = N.checked_mul(Allocation::metadata_bytes()).ok_or_else(oom)?;
     admit_extra(ledger, extra)?;
     let children = sizes.map(|bytes| AllocationHandle::new(Arc::new(Allocation {
-        bytes: AtomicUsize::new(bytes), domain: donor.domain.clone(),
+        bytes: AtomicUsize::new(bytes), domain: donor.domain.clone(), origin_parent:None,
     })));
     ledger.partition_source_arena(donor, remaining, children.each_ref().map(AllocationHandle::arc))?;
     Ok(children)
@@ -154,7 +168,7 @@ impl QueryDb{
   let actual=allocation(self,credit)?;
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
   let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
-  if !ledger.has_source_arena(actual){return Err(wrong())}
+  if actual.origin_parent.is_some() || !ledger.has_source_arena(actual){return Err(wrong())}
   let reserved=actual.reserved_bytes();
   // Commit must not poll: actual exceptional bytes may already have escaped
   // into RecordingInputs. On an unexpected quota failure the ledger still
@@ -178,7 +192,28 @@ impl QueryDb{
   Ok(())
  }
 }
+impl QueryDb {
+ fn reserve_source_arena(&self,bytes:usize,origin:bool)->io::Result<SourceArenaCredit>{
+  self.checkpoint()?;let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
+  let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
+  ledger.bind_source_arena(&self.raw_policy.admission)?;
+  crate::daemon::control::checkpoint()?;
+  let need=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(oom)?;
+  self.admit_source_arena(&mut ledger,need)?;
+  let parent=origin.then(||self.body_charge.shared_reservation().expect("production syntax parent"));
+  let grant=parent.map(|parent|parent.provisional(bytes)).transpose().map_err(parent_denied)?;
+  let actual=AllocationHandle::new(Arc::new(Allocation{
+   bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(&self.raw_policy.admission),
+   origin_parent:parent.map(Arc::clone),
+  }));
+  // The concrete owner now refunds these bytes, even if registration refuses.
+  if let Some(grant)=grant{grant.commit();}
+  actual.register(&mut ledger)
+ }
+}
 impl SourceArenaWork for QueryDb{
+ fn reserve_original_origin_storage(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.reserve_source_arena(bytes,true)}
+
  fn split_original_acquisition_controls(&self, donor: &mut SourceArenaCredit, sizes: [usize; 2])
      -> io::Result<Option<(dm_preprocess::source_arena_credit::SourceArenaControlCredit,
                           dm_preprocess::source_arena_credit::SourceArenaControlCredit)>> {
@@ -233,17 +268,7 @@ impl SourceArenaWork for QueryDb{
  fn original_read_bookkeeping_bytes(&self)->io::Result<usize>{6usize.checked_mul(raw_input_credits::NODE).ok_or_else(oom)}
  fn adopt_original_read(&self,credit:&mut SourceArenaCredit,source:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{self.adopt_original_raw_read(credit,source)}
  fn checkpoint(&self)->io::Result<()>{crate::daemon::control::checkpoint()}
- fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{
-  self.checkpoint()?;let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
-  let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
-  ledger.bind_source_arena(&self.raw_policy.admission)?;
-  crate::daemon::control::checkpoint()?;
-  let need=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(oom)?;
-  self.admit_source_arena(&mut ledger,need)?;
-  // Both Arc metadata and the existing weak map row were admitted BEFORE growth.
-  let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(&self.raw_policy.admission)});
-  AllocationHandle::new(actual).register(&mut ledger)
- }
+ fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.reserve_source_arena(bytes,false)}
  fn grow(&self,credit:&mut SourceArenaCredit,extra:usize)->io::Result<()>{
   self.checkpoint()?;let actual=allocation(self,credit)?;
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
@@ -251,13 +276,19 @@ impl SourceArenaWork for QueryDb{
   crate::daemon::control::checkpoint()?;
   let next=actual.reserved_bytes().checked_add(extra).ok_or_else(oom)?;
   self.admit_source_arena(&mut ledger,extra)?;
-  ledger.resize_arena(actual,next)
+  let grant=actual.origin_parent.as_ref().map(|parent|parent.provisional(extra)).transpose().map_err(parent_denied)?;
+  ledger.resize_arena(actual,next)?;
+  if let Some(grant)=grant{grant.commit();}
+  Ok(())
  }
  fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{
   // Releasing known freed storage never polls a new cancellation/error over the
   // first allocation failure. It still verifies the SAME private issuer/row.
   let actual=allocation(self,credit)?;let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
-  let next=actual.reserved_bytes().checked_sub(bytes).ok_or_else(wrong)?;ledger.resize_arena(actual,next)
+  let next=actual.reserved_bytes().checked_sub(bytes).ok_or_else(wrong)?;
+  ledger.resize_arena(actual,next)?;
+  if let Some(parent)=&actual.origin_parent{parent.release(bytes);}
+  Ok(())
  }
 }
 
@@ -344,7 +375,7 @@ struct HeldSourceState<'a>{ledger:&'a mut super::raw_input_credits::Ledger,domai
 struct HeldSourceWork<'a>{state:std::sync::Mutex<HeldSourceState<'a>>}
 impl<'a> HeldSourceWork<'a>{
  fn lock<'s>(&'s self)->io::Result<std::sync::MutexGuard<'s,HeldSourceState<'a>>>{self.state.lock().map_err(|_|io::Error::new(io::ErrorKind::InvalidData,"held source resource loan poisoned"))}
- fn actual<'credit>(state:&HeldSourceState<'_>,credit:&'credit SourceArenaCredit)->io::Result<&'credit Allocation>{let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;if actual.is_retirable_path_fact() || !actual.same_domain(&Arc::downgrade(state.domain))||!state.ledger.has_source_arena(actual){return Err(wrong())}Ok(actual)}
+ fn actual<'credit>(state:&HeldSourceState<'_>,credit:&'credit SourceArenaCredit)->io::Result<&'credit Allocation>{let actual=credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;if actual.origin_parent.is_some() || actual.is_retirable_path_fact() || !actual.same_domain(&Arc::downgrade(state.domain))||!state.ledger.has_source_arena(actual){return Err(wrong())}Ok(actual)}
 }
 impl SourceArenaWork for HeldSourceWork<'_>{
  fn split_original_acquisition_controls(&self, donor: &mut SourceArenaCredit, sizes: [usize; 2])
@@ -397,7 +428,7 @@ impl SourceArenaWork for HeldSourceWork<'_>{
 
  fn original_read_bookkeeping_bytes(&self)->io::Result<usize>{6usize.checked_mul(raw_input_credits::NODE).ok_or_else(oom)}
  fn checkpoint(&self)->io::Result<()>{let state=self.lock()?;if state.budget.denied(){return Err(oom())}drop(state);crate::daemon::control::checkpoint()}
- fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.checkpoint()?;let mut state=self.lock()?;let needed=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(||{state.budget.deny();oom()})?;state.budget.charge(needed).map_err(|_|oom())?;let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(state.domain)});AllocationHandle::new(actual).register(state.ledger)}
+ fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.checkpoint()?;let mut state=self.lock()?;let needed=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(||{state.budget.deny();oom()})?;state.budget.charge(needed).map_err(|_|oom())?;let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(state.domain),origin_parent:None});AllocationHandle::new(actual).register(state.ledger)}
  fn grow(&self,credit:&mut SourceArenaCredit,extra:usize)->io::Result<()>{self.checkpoint()?;let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let next=charge_allocation_growth(actual,state.budget,extra)?;state.ledger.resize_arena(actual,next)}
  fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let next=actual.reserved_bytes().checked_sub(bytes).ok_or_else(wrong)?;state.ledger.resize_arena(actual,next)}
  fn adopt_original_read(&self,credit:&mut SourceArenaCredit,source:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let reserved=actual.reserved_bytes();state.ledger.adopt_original_read(source,reserved)?;state.ledger.resize_arena(actual,0)}
@@ -557,5 +588,36 @@ mod acquisition_control_identity_tests {
         assert_eq!(db.source_input_admission_bytes().unwrap(), baseline + charge[1] + fixed);
         drop(original);
         assert_eq!(db.source_input_admission_bytes().unwrap(), baseline);
+    }
+}
+
+#[cfg(test)]
+mod native_origin_parent_tests {
+    use super::*;
+    #[test]
+    fn actual_parent_admission_counts_syntax_and_origin_in_both_directions() {
+        let db=QueryDb::with_shared_native_limit(4096);
+        let parent=db.body_charge.shared_reservation().unwrap();
+        let baseline=parent.reserved_bytes();
+        let remaining=4096-baseline;
+        let reserve_syntax=|bytes|dm_syntax::SettingRootLease::reserve(&db.body_charge,super::super::body_syntax::BUDGET,bytes);
+        let syntax=reserve_syntax(remaining-128).unwrap();
+        let mut source=SourceArenaWork::reserve_original_origin_storage(&db,128).unwrap();
+        assert_eq!(parent.reserved_bytes(),4096);
+        assert!(SourceArenaWork::grow(&db,&mut source,1).is_err());
+        assert!(reserve_syntax(1).is_err());
+        assert_eq!(source.reserved_bytes(),128);
+        let ordinary=SourceArenaWork::reserve(&db,128).unwrap();
+        db.body_charge.add_soft_estimate(1024);
+        assert_eq!(parent.reserved_bytes(),4096);
+        db.body_charge.release_soft_estimate(1024);
+        drop(ordinary);
+        drop(syntax);
+        SourceArenaWork::grow(&db,&mut source,remaining-128).unwrap();
+        assert!(reserve_syntax(1).is_err(),"origin occupancy must deny real syntax while its local cap has room");
+        SourceArenaWork::shrink(&db,&mut source,64).unwrap();
+        let recovered=reserve_syntax(64).unwrap();
+        drop((source,recovered));
+        assert_eq!(parent.reserved_bytes(),baseline);
     }
 }

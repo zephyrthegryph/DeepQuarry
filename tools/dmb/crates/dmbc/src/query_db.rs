@@ -111,8 +111,16 @@ struct RevisionChange {
 const CHANGE_LOG: usize = 64;
 impl Default for QueryDb {
     fn default() -> Self {
+        Self::with_shared_native_limit(raw_policy::INPUT_BUDGET + body_syntax::BUDGET)
+    }
+}
+impl QueryDb {
+    fn with_shared_native_limit(limit: usize) -> Self {
         let db = Db::new();
-        let body_charge = dm_syntax::SettingChargeCounter::try_new(body_syntax::BUDGET).expect("fixed syntax root fits existing128MiB allowance");
+        let parent = dm_syntax::SharedNativeReservation::try_new(limit)
+            .expect("fixed shared root fits the combined native allowance");
+        let body_charge = dm_syntax::SettingChargeCounter::try_new_with_parent(body_syntax::BUDGET, Some(parent))
+            .expect("fixed syntax root fits existing native allowances");
         body_syntax::register(&db, Arc::clone(&body_charge));
         let value_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         value_proofs::register(&db, Arc::clone(&value_charge), Arc::clone(&body_charge));

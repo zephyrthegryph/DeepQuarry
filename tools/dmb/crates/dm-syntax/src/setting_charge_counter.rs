@@ -4,10 +4,70 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
+/// Covered actual grants from native syntax leases and source-arena payload
+/// owners. This is a resource-only subset: weak ledger controls and source
+/// observations without transferred credits remain under existing admission.
+#[derive(Debug)]
+pub struct SharedNativeReservation {
+    used: AtomicUsize,
+    limit: usize,
+}
+impl SharedNativeReservation {
+    const fn fixed() -> usize {
+        std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>()
+    }
+    pub fn try_new(limit: usize) -> Result<Arc<Self>, &'static str> {
+        if Self::fixed() > limit {
+            return Err("shared native reservation root allocation denied");
+        }
+        Ok(Arc::new(Self { used: AtomicUsize::new(Self::fixed()), limit }))
+    }
+    /// A tentative grant is refunded on every early return or unwind. Commit
+    /// only once the caller's existing durable owner has accepted the bytes.
+    pub fn provisional(&self, bytes: usize) -> Result<ProvisionalNativeGrant<'_>, &'static str> {
+        self.reserve(bytes)?;
+        Ok(ProvisionalNativeGrant { owner: self, bytes })
+    }
+    fn reserve(&self, bytes: usize) -> Result<(), &'static str> {
+        if bytes == 0 { return Ok(()); }
+        self.used.fetch_update(Ordering::AcqRel, Ordering::Acquire,
+            |used| used.checked_add(bytes).filter(|next| *next <= self.limit))
+            .map(|_| ()).map_err(|_| "shared native allocation reservation denied")
+    }
+    pub fn release(&self, bytes: usize) {
+        if bytes == 0 { return; }
+        self.used.fetch_update(Ordering::AcqRel, Ordering::Acquire,
+            |used| used.checked_sub(bytes).filter(|next| *next >= Self::fixed()))
+            .expect("release of an owned shared native reservation");
+    }
+    pub fn reserved_bytes(&self) -> usize { self.used.load(Ordering::Acquire) }
+
+    // Parent initialization owns exactly one syntax-root charge. It stays
+    // resident until the parent retires; no second syntax root may consume it.
+    fn initialize_syntax_root(&self, bytes: usize) -> Result<(), &'static str> {
+        let next = Self::fixed().checked_add(bytes).filter(|next| *next <= self.limit)
+            .ok_or("shared native syntax root allocation denied")?;
+        self.used.compare_exchange(Self::fixed(), next, Ordering::AcqRel, Ordering::Acquire)
+            .map(|_| ()).map_err(|_| "shared native syntax root already initialized or in use")
+    }
+}
+
+pub struct ProvisionalNativeGrant<'a> {
+    owner: &'a SharedNativeReservation,
+    bytes: usize,
+}
+impl ProvisionalNativeGrant<'_> {
+    pub fn commit(mut self) { self.bytes = 0; }
+}
+impl Drop for ProvisionalNativeGrant<'_> {
+    fn drop(&mut self) { self.owner.release(self.bytes); }
+}
+
 #[derive(Debug)]
 pub struct SettingChargeCounter {
     aggregate: AtomicUsize,
     leased: AtomicUsize,
+    parent: Option<Arc<SharedNativeReservation>>,
 }
 impl SettingChargeCounter {
     /// Fixed payload plus the existing two-word Arc-control allocation bound.
@@ -17,14 +77,28 @@ impl SettingChargeCounter {
     /// Establish funding on the stack BEFORE allocating this root's Arc.
     /// The root itself remains charged until its last lease/admission alias dies.
     pub fn try_new(limit: usize) -> Result<Arc<Self>, &'static str> {
+        Self::try_new_with_parent(limit, None)
+    }
+    pub fn try_new_with_parent(
+        limit: usize, parent: Option<Arc<SharedNativeReservation>>,
+    ) -> Result<Arc<Self>, &'static str> {
         let fixed = Self::root_allocation_bytes();
         if fixed > limit {
             return Err("setting counter root allocation denied before Arc construction");
         }
+        if let Some(parent) = &parent {
+            // One fixed syntax root per native domain. Keep the root charge
+            // until the parent retires, including if other grants escape it.
+            parent.initialize_syntax_root(fixed)?;
+        }
         Ok(Arc::new(Self {
             aggregate: AtomicUsize::new(fixed),
             leased: AtomicUsize::new(fixed),
+            parent,
         }))
+    }
+    pub fn shared_reservation(&self) -> Option<&Arc<SharedNativeReservation>> {
+        self.parent.as_ref()
     }
     /// Existing authoritative aggregate, including fixed root storage.
     pub fn load(&self, ordering: Ordering) -> usize {
@@ -51,13 +125,13 @@ impl SettingChargeCounter {
             });
     }
     pub(crate) fn reserve_lease(&self, limit: usize, bytes: usize) -> Result<(), &'static str> {
-        self.aggregate
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |old| {
-                old.checked_add(bytes).filter(|next| *next <= limit)
-            })
-            .map_err(|_| "setting root retained syntax admission denied")?;
+        let grant = self.parent.as_ref().map(|parent| parent.provisional(bytes)).transpose()?;
+        self.aggregate.fetch_update(Ordering::AcqRel, Ordering::Acquire, |old| {
+            old.checked_add(bytes).filter(|next| *next <= limit)
+        }).map_err(|_| "setting root retained syntax admission denied")?;
         // Permission cannot escape before classification; no physical allocation here.
         self.leased.fetch_add(bytes, Ordering::AcqRel);
+        if let Some(grant) = grant { grant.commit(); }
         Ok(())
     }
     pub(crate) fn release_lease(&self, bytes: usize) -> Result<(), &'static str> {
@@ -69,6 +143,7 @@ impl SettingChargeCounter {
             .map_err(|_| "setting allocation counter is below owned release")?;
         let old = self.aggregate.fetch_sub(bytes, Ordering::AcqRel);
         debug_assert!(old >= bytes + fixed);
+        if let Some(parent) = &self.parent { parent.release(bytes); }
         Ok(())
     }
 }

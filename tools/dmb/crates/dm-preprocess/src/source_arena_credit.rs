@@ -117,6 +117,10 @@ impl OriginalReadTextFunding<'_> {
 /// only AFTER physical release. A failed allocation keeps its peak reservation
 /// until credit drop, so cleanup cannot replace the original operational error.
 pub trait SourceArenaWork:Send+Sync{
+ /// Reserve actual physical-origin page/directory storage. The resulting
+ /// credit grows or shrinks in place and never enters raw-read adoption.
+ fn reserve_original_origin_storage(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.reserve(bytes)}
+
  /// Partition an actual read grant into fresh String payload and backing credits.
  /// Providers without an owned transfer retain their existing allocation path.
  fn split_original_text(
