@@ -139,6 +139,13 @@ CAPABILITIES(/obj/item/pen/crayon)
 	configure(item_combat(attack_verbs = list("attacked", "coloured")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("draw", ai(), takes("surface", "drawtype", "click_parameters"), wait(PROC_REF(draw_wait)), then(PROC_REF(draw_done)))
+	// The Menu line for drawing on a floor (a click does it through afterattack): asks what to draw.
+	op("draw_on_floor", at_target(/turf/simulated/floor), origin(ORIGIN_MENU), label("Draw graffiti"), then(PROC_REF(draw_on_floor_chosen)))
+
+/// Chosen from the Menu on a floor: the same question a click on it asks.
+/obj/item/pen/crayon/proc/draw_on_floor_chosen(datum/act/op/A)
+	open_request(src, /datum/prompt/choice/crayon_kind, PROC_REF(ask_drawing), answerer = A.actor, subject = A.target, click_parameters = dq_interaction_click_params(A.actor))
+	return OP_OK
 
 /// How long the drawing takes: nothing for an instant crayon.
 /obj/item/pen/crayon/proc/draw_wait(datum/act/op/A)

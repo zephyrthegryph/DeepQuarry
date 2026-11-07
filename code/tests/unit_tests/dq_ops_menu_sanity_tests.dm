@@ -144,3 +144,24 @@
 	var/datum/op_result/pressed = hc_ui(H, simple, "cycle_ext")
 	TEST_ASSERT(istype(pressed) && pressed.outcome != ACT_REFUSED, "cycle_ext runs ([istype(pressed) ? pressed.outcome : pressed])")
 	TEST_ASSERT(simple.target_state != simple.cycle_state, "cycle_ext starts the cycle ([simple.cycle_state] -> [simple.target_state])")
+
+/// The Menu on a floor lists a held item's lines only when the item fits them: an analyzer is not offered graffiti, a crayon is, a sharp thing
+/// is offered the engraving.
+/datum/unit_test/dq_ops_menu_floor_graffiti_needs_fitting_item
+
+/datum/unit_test/dq_ops_menu_floor_graffiti_needs_fitting_item/Run()
+	var/turf/simulated/floor/plating = test_floor() // whichever deck tile the test room has; the lines depend on the held item, not the tile
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, plating)
+	var/list/held_labels = list(
+		/obj/item/analyzer = list("Draw graffiti" = FALSE, "Engrave graffiti" = FALSE),
+		/obj/item/pen/crayon = list("Draw graffiti" = TRUE, "Engrave graffiti" = FALSE),
+		/obj/item/material/knife = list("Draw graffiti" = FALSE, "Engrave graffiti" = TRUE),
+	)
+	for(var/held_type in held_labels)
+		if(H.get_active_hand())
+			qdel(H.get_active_hand())
+		H.put_in_active_hand(allocate(held_type, plating))
+		var/list/labels = dq_menu_sanity_labels(H, plating)
+		var/list/expect = held_labels[held_type]
+		for(var/label in expect)
+			TEST_ASSERT_EQUAL(!!(label in labels), expect[label], "[held_type] on plating: \"[label]\" listed = [expect[label]]: [json_encode(labels)]")
