@@ -1,8 +1,14 @@
 import { store } from '../events/store';
-import { inputFocusRequestAtom, radioOptionsAtom } from './atoms';
+import type { LanguageRules } from 'tgui/dq';
+import {
+  inputFocusRequestAtom,
+  languageRulesAtom,
+  previewEnabledAtom,
+  radioOptionsAtom,
+} from './atoms';
 import { isChannel, type RadioOption } from './model';
 
-/** The T/M hotkeys while the chat floats: focus the input row instead of opening the popup. */
+/** A speech hotkey (T, 5, 6, Y, F2, ...): focus the input row in that channel. */
 export function focusInput(payload: { channel?: unknown } | undefined) {
   const channel = isChannel(payload?.channel) ? payload.channel : null;
   const previous = store.get(inputFocusRequestAtom);
@@ -29,4 +35,12 @@ export function radioChannels(payload: { channels?: unknown } | undefined) {
     }
   }
   store.set(radioOptionsAtom, options);
+}
+
+/** The speaker's rules for the live preview, and whether the preview is on. */
+export function languageRules(
+  payload: { rules?: LanguageRules; preview?: unknown } | undefined,
+) {
+  store.set(languageRulesAtom, payload?.rules ?? null);
+  store.set(previewEnabledAtom, payload?.preview !== false && payload?.preview !== 0);
 }

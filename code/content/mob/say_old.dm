@@ -1,4 +1,4 @@
-// Old style chat inputs, the fallback when TG Say is off. Procs, not verbs: the hidden say wrappers (typing_indicator.dm) call them.
+// Plain chat line prompts: the speech hotkeys' fallback while the chat page has not loaded (typing_indicator.dm). Procs, not verbs.
 
 /// Asks for a chat line and hands it to `action` (a proc on the mob taking the message).
 /// `typing` shows the typing indicator while the window is open.

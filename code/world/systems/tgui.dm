@@ -401,7 +401,7 @@ CAPABILITIES(/datum/system/tgui)
 	var/client/client = user?.client
 	if(!client)
 		return
-	// Only the pooled slots are torn down. Dedicated windows (tgui_say, tgui_shock,
+	// Only the pooled slots are torn down. Dedicated windows (tgui_shock,
 	// browseroutput, mapwindow.tooltip, rpane.mediapanel, lobby_browser, ...) share
 	// this registry and must stay registered, exactly as reconcile_client_windows does.
 	for(var/i in 1 to TGUI_WINDOW_HARD_LIMIT)
@@ -427,7 +427,7 @@ CAPABILITIES(/datum/system/tgui)
 	client.tgui_chunk_warm_started = FALSE
 	for(var/index in 1 to TGUI_WINDOW_HARD_LIMIT)
 		var/window_id = TGUI_WINDOW_ID(index)
-		// Dedicated windows (statbrowser, browseroutput, tgui_say, etc.) share
+		// Dedicated windows (statbrowser, browseroutput, etc.) share
 		// this registry but do not use TGUI_WINDOW_ID and must remain registered.
 		var/datum/tgui_window/stale_window = client.tgui_window_of(window_id)
 		if(stale_window)

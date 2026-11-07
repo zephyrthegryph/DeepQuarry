@@ -1,29 +1,46 @@
 import { useAtomValue } from 'jotai';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  activeAt,
+  buildPreview,
+  LanguagePreview,
+  SHORTCUT_MARKERS,
+  type TextEdit,
+  toggleLanguage,
+  toggleMarker,
+} from 'tgui/dq';
 import { focusMap } from 'tgui/focus';
 import { classes } from 'tgui-core/react';
-import { inputFocusRequestAtom, radioOptionsAtom } from './atoms';
 import {
+  inputFocusRequestAtom,
+  languageRulesAtom,
+  previewEnabledAtom,
+  radioOptionsAtom,
+} from './atoms';
+import {
+  COMMON_OPTION,
   ChatInputModel,
   type InputChannel,
   keyAction,
   MAX_LENGTH,
-  COMMON_OPTION,
   nextChannel,
-  parseCommonPrefix,
-  radioColorName,
   nextRadioOption,
+  parseCommonPrefix,
   parseRadioPrefix,
+  previewEntry,
   type RadioOption,
+  radioColorName,
 } from './model';
 
 /** Marks the field for panelFocus.ts, which must not hand focus to the map while it is used. */
 export const CHAT_INPUT_ATTRIBUTE = 'data-chat-input';
 
 /**
- * The persistent input row under the chat, like the say popup: one channel
- * button on the left (a click or Tab cycles Say, Radio, Me, OOC, LOOC; shift
- * goes back), the text and send.
+ * The input row under the chat, where every speech hotkey lands: one channel
+ * button on the left (a click or Tab cycles Say, Radio, Me, Whis, Subtle, OOC,
+ * LOOC; shift goes back), the radio department in Radio, the text and send.
+ * Ctrl+B/I/U and Ctrl+1..9 format and switch language; a live preview shows
+ * how a message with languages or formatting will read.
  */
 export function ChatInput() {
   const model = useRef<ChatInputModel | null>(null);
@@ -36,8 +53,12 @@ export function ChatInput() {
   const field = useRef<HTMLInputElement>(null);
   const [channel, setChannelState] = useState<InputChannel>('Say');
   const [value, setValue] = useState('');
+  const [caret, setCaret] = useState(0);
+  const pendingSelection = useRef<[number, number] | null>(null);
   const request = useAtomValue(inputFocusRequestAtom);
   const options = useAtomValue(radioOptionsAtom);
+  const rules = useAtomValue(languageRulesAtom);
+  const previewEnabled = useAtomValue(previewEnabledAtom);
   const [radio, setRadioState] = useState<RadioOption>(input.radio);
 
   useEffect(() => {
@@ -53,6 +74,11 @@ export function ChatInput() {
   function setChannel(next: InputChannel) {
     input.setChannel(next);
     setChannelState(next);
+  }
+
+  function setText(text: string) {
+    setValue(text);
+    input.type(text);
   }
 
   function returnToMap() {
@@ -78,7 +104,57 @@ export function ChatInput() {
     field.current?.focus();
   }, [request]);
 
+  useLayoutEffect(() => {
+    const selection = pendingSelection.current;
+    if (selection && field.current) {
+      field.current.setSelectionRange(selection[0], selection[1]);
+      pendingSelection.current = null;
+    }
+  }, [value]);
+
+  function applyEdit(edit: TextEdit | null) {
+    if (!edit || edit.value.length > MAX_LENGTH) {
+      return;
+    }
+    pendingSelection.current = [edit.start, edit.end];
+    setCaret(edit.start);
+    setText(edit.value);
+  }
+
+  /** Ctrl+B/I/U and Ctrl+1..9, read by physical digit so layouts without number-row digits work. */
+  function handleShortcut(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) {
+      return false;
+    }
+    const { selectionStart, selectionEnd } = event.currentTarget;
+    const start = selectionStart ?? value.length;
+    const end = selectionEnd ?? start;
+    const marker = SHORTCUT_MARKERS[event.key.toLowerCase()];
+    if (marker) {
+      event.preventDefault();
+      event.stopPropagation();
+      applyEdit(toggleMarker(value, start, end, marker));
+      return true;
+    }
+    const digit = /^(?:Digit|Numpad)([1-9])$/.exec(event.code);
+    if (digit) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (rules) {
+        applyEdit(toggleLanguage(value, start, end, Number(digit[1]), rules));
+      }
+      return true;
+    }
+    return false;
+  }
+
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.getModifierState('AltGraph')) {
+      return;
+    }
+    if (handleShortcut(event)) {
+      return;
+    }
     const action = keyAction(event.key, event.shiftKey);
     if (!action) {
       return;
@@ -108,90 +184,112 @@ export function ChatInput() {
     }
   }
 
+  const active = useMemo(
+    () => activeAt(value, caret, rules),
+    [value, caret, rules],
+  );
+
+  // Parsed on the client from the server's rule data: no round trip per keystroke.
+  const preview = useMemo(() => {
+    if (!rules || !previewEnabled || !value) {
+      return null;
+    }
+    return buildPreview(previewEntry(channel, radio, value), channel, rules);
+  }, [rules, previewEnabled, value, channel, radio]);
+
   return (
-    <div
-      className={classes([
-        'ChatInput',
-        channel === 'Radio'
-          ? `ChatInput--radio-${radioColorName(radio.key)}`
-          : `ChatInput--${channel}`,
-      ])}
-    >
-      <button
-        type="button"
-        title="Change channel (Tab)"
+    <div className="ChatInputBox">
+      {preview && <LanguagePreview preview={preview} />}
+      <div
         className={classes([
-          'ChatInput__channel',
-          `ChatInput__channel--${channel}`,
+          'ChatInput',
+          channel === 'Radio'
+            ? `ChatInput--radio-${radioColorName(radio.key)}`
+            : `ChatInput--${channel}`,
         ])}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={(event) => {
-          setChannel(nextChannel(channel, event.shiftKey ? -1 : 1));
-          field.current?.focus();
-        }}
       >
-        {channel}
-      </button>
-      {channel === 'Radio' && options.length > 0 && (
         <button
           type="button"
-          title="Change radio channel"
+          title="Change channel (Tab)"
           className={classes([
-            'ChatInput__radio',
-            `ChatInput__radio--${radioColorName(radio.key)}`,
+            'ChatInput__channel',
+            `ChatInput__channel--${channel}`,
           ])}
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => {
-            setRadio(nextRadioOption(radio, options, event.shiftKey ? -1 : 1));
+            setChannel(nextChannel(channel, event.shiftKey ? -1 : 1));
             field.current?.focus();
           }}
         >
-          {radio.label}
+          {channel}
         </button>
-      )}
-      <input
-        {...{ [CHAT_INPUT_ATTRIBUTE]: true }}
-        ref={field}
-        className="ChatInput__field"
-        type="text"
-        autoComplete="off"
-        spellCheck
-        maxLength={MAX_LENGTH}
-        placeholder={`${channel}...`}
-        value={value}
-        onFocus={() => input.open(channel)}
-        onBlur={() => input.close()}
-        onChange={(event) => {
-          let text = event.target.value;
-          // A typed ":m " switches to that radio channel, like the say popup.
-          const prefix =
-            channel === 'Say' || channel === 'Radio'
-              ? parseRadioPrefix(text, options)
-              : null;
-          const common = parseCommonPrefix(text, channel);
-          if (prefix) {
-            text = prefix.rest;
-            setChannel('Radio');
-            setRadio(prefix.option);
-          } else if (common !== null) {
-            // A leading ";" is the common channel.
-            text = common;
-            setChannel('Radio');
-            setRadio(COMMON_OPTION);
+        {channel === 'Radio' && options.length > 0 && (
+          <button
+            type="button"
+            title="Change radio channel"
+            className={classes([
+              'ChatInput__radio',
+              `ChatInput__radio--${radioColorName(radio.key)}`,
+            ])}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={(event) => {
+              setRadio(
+                nextRadioOption(radio, options, event.shiftKey ? -1 : 1),
+              );
+              field.current?.focus();
+            }}
+          >
+            {radio.label}
+          </button>
+        )}
+        <input
+          {...{ [CHAT_INPUT_ATTRIBUTE]: true }}
+          ref={field}
+          className="ChatInput__field"
+          type="text"
+          autoComplete="off"
+          spellCheck
+          maxLength={MAX_LENGTH}
+          placeholder={`${channel}...`}
+          value={value}
+          onFocus={() => input.open(channel)}
+          onBlur={() => input.close()}
+          onSelect={(event) =>
+            setCaret(event.currentTarget.selectionStart ?? 0)
           }
-          setValue(text);
-          input.type(text);
-        }}
-        onKeyDown={onKeyDown}
-      />
-      <button
-        type="button"
-        className="ChatInput__send"
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={send}
-      >
-        Send
-      </button>
+          onChange={(event) => {
+            let text = event.target.value;
+            // A typed ":m " switches to that radio channel.
+            const prefix =
+              channel === 'Say' || channel === 'Radio'
+                ? parseRadioPrefix(text, options)
+                : null;
+            const common = parseCommonPrefix(text, channel);
+            if (prefix) {
+              text = prefix.rest;
+              setChannel('Radio');
+              setRadio(prefix.option);
+            } else if (common !== null) {
+              // A leading ";" is the common channel.
+              text = common;
+              setChannel('Radio');
+              setRadio(COMMON_OPTION);
+            }
+            setCaret(event.target.selectionStart ?? text.length);
+            setText(text);
+          }}
+          onKeyDown={onKeyDown}
+        />
+        {active && <span className="SpeechIndicator">{active}</span>}
+        <button
+          type="button"
+          className="ChatInput__send"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={send}
+        >
+          Send
+        </button>
+      </div>
     </div>
   );
 }

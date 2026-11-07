@@ -4,7 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import { FormattedText } from 'tgui-say/LanguagePreview';
+import { FormattedText } from 'tgui/dq';
 import { EmptyState } from './common/EmptyState';
 
 type Data = {

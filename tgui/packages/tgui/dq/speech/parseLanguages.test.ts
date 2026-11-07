@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import table from '../../../code/tests/unit_tests/data/language_parse_cases.json';
+import table from '../../../../../code/tests/unit_tests/data/language_parse_cases.json';
 import {
   applyHiss,
   buildPreview,

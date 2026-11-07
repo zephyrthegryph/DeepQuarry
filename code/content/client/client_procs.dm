@@ -240,7 +240,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
-	rel_set(src, nameof(tgui_say), new /datum/tgui_say(src, SKIN_TGUI_SAY))
 	rel_set(src, nameof(tgui_shocker), new /datum/tgui_shock(src, SKIN_TGUI_SHOCK))
 	initialize_commandbar_spy()
 	rel_set(src, nameof(tgui_panel), new /datum/tgui_panel(src, SKIN_CHAT_BROWSER))
@@ -323,8 +322,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	tgui_panel.initialize()
 
-	// Initialize tgui panel
-	tgui_say.initialize()
 	tgui_shocker.initialize()
 
 	rel_set(src, nameof(loot_panel), new /datum/lootpanel(src))

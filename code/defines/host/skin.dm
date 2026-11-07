@@ -4,7 +4,6 @@
 
 // Windows
 #define SKIN_MAINWINDOW "mainwindow"
-#define SKIN_TGUI_SAY "tgui_say"
 #define SKIN_TGUI_SHOCK "tgui_shock"
 #define SKIN_ASSET_CACHE_BROWSER "asset_cache_browser"
 #define SKIN_CHAT_FLOAT_WINDOW "chat_float"
@@ -21,7 +20,6 @@
 #define SKIN_LEGACY_OUTPUT_SELECTOR "outputwindow.legacy_output_selector"
 #define SKIN_CHAT_BROWSER "browseroutput"
 #define SKIN_STAT_BROWSER "statbrowser"
-#define SKIN_SAY_BROWSER "tgui_say.browser"
 #define SKIN_COMMANDBAR_SPY "commandbar_spy"
 
 // Viewport fit (client/verb/fit_viewport): the chat/stat side keeps the larger of these pixels and this share of

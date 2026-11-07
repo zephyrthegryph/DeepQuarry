@@ -3625,8 +3625,6 @@ const TGUI_ENTRY_BUNDLES = [
   'tgui/public/tgui.bundle.css',
   'tgui/public/tgui-panel.bundle.js',
   'tgui/public/tgui-panel.bundle.css',
-  'tgui/public/tgui-say.bundle.js',
-  'tgui/public/tgui-say.bundle.css',
   'tgui/public/tgui-statpanel.bundle.js',
   'tgui/public/tgui-statpanel.bundle.css',
 ];
@@ -3693,8 +3691,6 @@ export const TguiTarget = new Juke.Target({
     'tgui/public/tgui.bundle.js',
     'tgui/public/tgui-panel.bundle.css',
     'tgui/public/tgui-panel.bundle.js',
-    'tgui/public/tgui-say.bundle.css',
-    'tgui/public/tgui-say.bundle.js',
     'tgui/public/tgui-statpanel.bundle.css',
     'tgui/public/tgui-statpanel.bundle.js',
     // Code-split interface chunks are emitted alongside the entry bundles; the
