@@ -455,6 +455,7 @@
 #include "dq_relation_entries_tests.dm"
 #include "dq_tail_animation.dm"
 #include "dq_character_setup_batch.dm"
+#include "dq_settings_audit_tests.dm"
 #include "dq_profile_records.dm"
 #include "dq_amputated_limb_tests.dm"
 #include "dq_limb_variant_tests.dm"

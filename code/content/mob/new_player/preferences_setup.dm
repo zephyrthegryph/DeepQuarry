@@ -169,7 +169,7 @@
 		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	copy_to(mannequin, TRUE)
 
-	// equip_preview_mob bitfield replaced by two toggles. Keep the same
+	// The two preview toggles. Keep the same
 	// boolean shape so the rest of this proc is untouched.
 	var/_preview_loadout = show_outfit || read_preference(/datum/preference/toggle/human/preview_loadout)
 	var/_preview_job     = show_outfit || read_preference(/datum/preference/toggle/human/preview_job)

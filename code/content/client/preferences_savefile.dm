@@ -75,6 +75,8 @@
 			to_chat(client(), span_warning("Your savefile is from an incompatible upstream version and could not be loaded. A backup was saved to your data directory; please re-create your characters. If you believe this is an error, contact server staff."))
 		return FALSE
 
+	drop_retired_player_keys(savefile.get_entry())
+
 	if(!skip_client)
 		apply_all_client_preferences()
 
@@ -171,6 +173,7 @@
 		return FALSE
 
 	var/palette_new_character = !length(save_data)
+	migrate_retired_character_keys(save_data)
 	// Read everything into cache (pre-migrations, as migrations should have access to deserialized data)
 	// Uses priority order as some values may rely on others for creating default values
 	for(var/datum/preference/preference as anything in get_preferences_in_priority_order())
@@ -184,11 +187,6 @@
 	migrate_limb_colors()
 	link_skin_and_eyes()
 	migrate_robotic_parts()
-	// Markings always draw on robotic limbs now: the old Synth Markings toggle has no reader.
-	var/list/retired_keys = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
-	if(islist(retired_keys))
-		retired_keys -= "synth_markings"
-		retired_keys -= "Private_Notes" // private notes are gone; the save drops them
 
 	// Bay player_setup.load_character chain deleted; pre-cache loop above already
 	// loaded every PREFERENCE_CHARACTER pref from save_data via read_preference().
@@ -279,3 +277,38 @@
 	return TRUE
 
 #undef SAVEFILE_VERSION_MAX
+
+/// Account settings that were deleted (doc/rewrite/proposals/settings_audit.md). A save that still holds one drops it on load.
+GLOBAL_LIST_INIT(retired_player_pref_keys, list(
+	"CHAT_DEBUGLOGS", // no reader
+	"vvdark", // no reader
+	"vvgfi", // no reader
+	"NEWS_POPUP", // no reader; the lore news popup is gone
+	"HUD_HOTKEYS", // no reader
+	"SHOW_PROGRESS", // no reader; progress bars always show
+	"SOUND_INSTRUMENT", // no reader; the Instruments volume (sound_instruments) is the setting
+	"BROWSER_STYLED", // no reader
+))
+
+/// Character settings that were deleted. A slot that still holds one drops it on load.
+GLOBAL_LIST_INIT(retired_character_pref_keys, list(
+	"synth_markings", // markings always draw on robotic limbs
+	"Private_Notes", // private notes are gone
+	"vantag_volunteer", // no reader; vantag_preference is the setting
+	"equip_preview_mob", // replaced by preview_loadout and preview_job (migrated below)
+))
+
+/datum/preferences/proc/drop_retired_player_keys(list/save_data)
+	if(!islist(save_data))
+		return
+	save_data -= GLOB.retired_player_pref_keys
+
+/// Carries a retired character key over to the setting that replaced it, then drops every retired key from the slot.
+/datum/preferences/proc/migrate_retired_character_keys(list/save_data)
+	if(!islist(save_data))
+		return
+	if(!isnull(save_data["equip_preview_mob"]) && isnull(save_data["preview_loadout"]))
+		var/bits = text2num("[save_data["equip_preview_mob"]]")
+		save_data["preview_loadout"] = (bits & EQUIP_PREVIEW_LOADOUT) ? TRUE : FALSE
+		save_data["preview_job"] = (bits & EQUIP_PREVIEW_JOB) ? TRUE : FALSE
+	save_data -= GLOB.retired_character_pref_keys
