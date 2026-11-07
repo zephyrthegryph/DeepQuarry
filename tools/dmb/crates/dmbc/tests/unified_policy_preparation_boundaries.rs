@@ -617,6 +617,84 @@ fn public_original_dynamic_constructor_skips_target_and_args_but_checks_outer_fo
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_original_rand_switch_nonnumeric_cases_keep_warnings_and_body_errors() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Roster},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+    let root = test_scratch::dir("public-rand-nonnumeric-case");
+    let transport = test_scratch::dir("public-rand-nonnumeric-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!(
+            "rand-nonnumeric-case-{}-{}",
+            std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+        ),
+    };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "sample.txt", "resource fixture\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(test_scratch::dir("public-rand-nonnumeric-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithSemanticReads;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}"))
+        .collect();
+    let request_path = transport.join("rand-nonnumeric.json");
+    put(&transport, "rand-nonnumeric.json", serde_json::to_vec(&serde_json::json!({
+        "build": build, "exclusions": exclusions,
+    })).unwrap());
+
+    for case in ["/datum", "'sample.txt'"] {
+        put(&root, "code/probe.dm", format!(
+            "/proc/probe()\n    switch(rand(1, 2))\n        if({case})\n            var/inside = missing_inside\n    return missing_after\n",
+        ));
+        let output = daemon.run(
+            &[OsStr::new("checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
+            Duration::from_secs(90),
+        ).unwrap();
+        assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+        let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+        let terminal: CombinedTerminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+        terminal.require().unwrap();
+        assert_eq!(terminal.roster, roster);
+        let (checker, _) = output.stdout[header_end + 1..].split_at(terminal.checker.length as usize);
+        let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+        let rows = checker["diagnostics"].as_array().unwrap();
+        let expected = [
+            ("switch_rand_range", "warning", 2, 5,
+                "Switch branches on rand() with range 1 to 2 but no case branch triggers for 1"),
+            ("undefined_variable", "error", 4, 26, "undefined var: \"missing_inside\""),
+            ("undefined_variable", "error", 5, 12, "undefined var: \"missing_after\""),
+        ];
+        assert_eq!(rows.len(), expected.len(), "{case}: {checker}");
+        for (row, (family, severity, line, column, message)) in rows.iter().zip(expected) {
+            assert_eq!(row["phase"], "body");
+            assert_eq!(row["location_kind"], "source");
+            assert_eq!(Path::new(row["file"].as_str().unwrap()), Path::new("code/probe.dm"));
+            assert_eq!(row["family"], family);
+            assert!(row["registration_tag"].is_null());
+            assert_eq!(row["severity"], severity);
+            assert_eq!(row["line"], line);
+            assert_eq!(row["column"], column);
+            assert_eq!(row["message"], message);
+            assert_eq!(row["notes"], serde_json::json!([]));
+        }
+    }
+}
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
 fn public_original_missing_authored_type_continues_with_exact_definition_notes() {
     use dq_analyze::{
         captured_allow_annotations::{full_unused, Operation},

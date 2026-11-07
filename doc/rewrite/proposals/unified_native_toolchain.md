@@ -3468,3 +3468,11 @@ filesystem failures. Two public combined/compound controls also passed.
 The three new failure controls cover an error after width staging, growth of
 an existing width vector and trim/recreation at a non-word boundary. The
 whole-checkout saving remains a projection until the next actual source run.
+
+
+Numeric switch coverage now treats an authenticated bare type path or resource
+case as nonnumeric, matching the pinned checker projection. It still evaluates
+that case and its body normally. The real IPC fixture passed for both shapes,
+retaining the uncovered-range warning followed by the two authored variable
+errors. Resource spelling alone cannot select this path, and modified prefabs
+keep their separate expression semantics.

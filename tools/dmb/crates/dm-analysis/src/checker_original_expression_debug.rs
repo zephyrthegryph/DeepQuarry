@@ -168,6 +168,17 @@ pub(crate) fn simple_number(body:&dm_tree::frontend::ArchivedBody<'_>,expression
  checkpoint().map_err(PolicyFailure::Operational)?;
  let pending=body.with_original_syntax_admission(|a|{let pending=(||{
   if !body.statement_body().is_native_literal_syntax_admitted_by(a){return Err("original simple expression belongs to another syntax admission".into())}
+  // Bare prefab/resource constants cannot produce a numeric range bound.
+  // Pinned get_case_range/get_rand_range discard both nonnumeric values and
+  // simple-evaluation errors; ordinary expression evaluation still runs later.
+  let nonnumeric_root = match &expression.kind {
+   ExprKind::TypePath(_) => true,
+   ExprKind::Literal(raw) => matches!(
+    raw.original_value(), Some(dm_syntax::OriginalTokenValue::Resource(_)),
+   ),
+   _ => false,
+  };
+  if nonnumeric_root { return Ok(None); }
   let width=expression.span.end.checked_sub(expression.span.start).ok_or("original simple expression span is inverted")?;
   let bound=width.checked_mul(width.max(1)).and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(4096)).ok_or_else(output_oom)?;
   let scratch=admitted(a,a.reserve(bound))?;
