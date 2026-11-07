@@ -26,7 +26,14 @@ fn actual_original_selected_union_observes_same_completed_folds_and_real_unused_
     ("scheduler",UnionRows::Raw(rows))=>{let mut sites=0;let mut allows=0;for file in rows{sites+=file.run.sites.len();allows+=file.allow_used.len();for index in 0..file.run.sites.len(){assert_eq!(file.site_text(index),Some("sleep(2)"));}}assert_eq!((sites,allows),(1,1));},
     ("notice_publisher",UnionRows::Tree(data))=>{assert_eq!(data.sites().len(),1);assert!(data.sites()[0].msg.contains("/datum/notice/unpublished"));assert_eq!(data.allow_used().len(),1);},
     ("report_in_catch",UnionRows::Tree(data))=>{assert!(data.sites().is_empty()&&data.allow_used().is_empty());},
-    ("allow_annotations",UnionRows::Validation(data))=>assert!(data.sites.is_empty()),
+    ("allow_annotations",UnionRows::Validation(data))=>{
+     // The notice scanner consumes its direct spelling, but the original
+     // registered ALLOW inventory does not advertise that name.
+     let [site]=data.sites.as_slice() else {panic!("expected one actual notice annotation validation finding")};
+     assert_eq!((site.rel.as_str(),site.line,site.rule.as_str()),("code/notices.dm",2,"unknown_lint"));
+     assert!(site.msg.starts_with("ALLOW(notice_publisher): unknown lint; known: "));
+     assert_eq!(data.source_text.as_slice(),["on_notice(/datum/notice/covered) // ALLOW(notice_publisher): test actual subscriber annotation consumption"]);
+    },
     _=>panic!("foreign actual producer evidence"),
    }
    Ok(())
@@ -37,6 +44,31 @@ fn actual_original_selected_union_observes_same_completed_folds_and_real_unused_
    Ok(())
   }).unwrap();
   assert_eq!(observed.len(),retained.len());
+  // A non-alias subset runs the same genuine producer and unused-ALLOW fold.
+  let subset=["allow_annotations","notice_publisher","scheduler"];
+  let omit:Vec<_>=all.names().iter().filter(|name|!subset.contains(&name.as_str()))
+   .map(|name|format!("-{name}")).collect();
+  assert_eq!(selected_report::preflight_no_aux_raw_subset(&omit,&mut control).unwrap().as_ref(),subset);
+  assert!(selected_report::validate_selection_v2(&omit,&budget,dq_analyze::selected_exclusions_wire::JudgmentV2::Raw).is_err());
+  let mut completed=Vec::new();
+  snapshot.with_native_allow_full_run_using(&snapshot.tree,&omit,None,None,Some(&mut|meta,_,_,_|{
+   completed.push(meta.name);
+   Ok(())
+  }),|data,_,_|{
+   assert!(data.selected().iter().map(String::as_str).eq(subset));
+   assert_eq!(data.unused().len(),1);
+   assert!(data.unused()[0].starts_with("maps/stale.dm:2: ALLOW(scheduler) is unused"));
+   Ok(())
+  }).unwrap();
+  assert_eq!(completed,subset);
+  let mut wrong=omit.clone();wrong.swap(0,1);
+  assert!(selected_report::preflight_no_aux_raw_subset(&wrong,&mut control).is_err());
+  let mut wrong=omit.clone();wrong.push("-not_a_registered_policy".into());
+  assert!(selected_report::preflight_no_aux_raw_subset(&wrong,&mut control).is_err());
+  let mut wrong=omit.clone();wrong.push(omit[0].clone());
+  assert!(selected_report::preflight_no_aux_raw_subset(&wrong,&mut control).is_err());
+  let empty:Vec<_>=all.names().iter().map(|name|format!("-{name}")).collect();
+  assert!(selected_report::preflight_no_aux_raw_subset(&empty,&mut control).is_err());
   // Unported ImageDir cannot be inferred from its registry registration.
   let unsupported:Vec<_>=exclusions.iter().filter(|name|name.as_str()!="-image_dir_after_build").cloned().collect();
   let error=snapshot.with_native_allow_full_run_using(&snapshot.tree,&unsupported,None,None,Some(&mut|_,_,_,_|panic!("preflight cannot stage a partial selection")),|_,_,_|->io::Result<()>{panic!("unsupported producer cannot finish a union")}).unwrap_err();

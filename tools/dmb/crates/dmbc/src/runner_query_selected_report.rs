@@ -91,8 +91,53 @@ pub(in crate::runner_host) fn validate_selection(exclusions: &[String], budget: 
     SelectedReportPlan::for_roster(roster, JudgmentV2::Raw, &mut control)
 }
 
+/// Private selection data only. The current report still owes its fixed
+/// capture and the existing coordinator's completed usage fold.
+pub(super) fn preflight_no_aux_raw_subset(
+    exclusions: &[String], control: &mut Operation<'_>,
+) -> io::Result<impl AsRef<[&'static str]>> {
+    struct Names { rows: [&'static str; Roster::MAX_POLICIES], count: usize }
+    impl AsRef<[&'static str]> for Names {
+        fn as_ref(&self) -> &[&'static str] { &self.rows[..self.count] }
+    }
+    let registered = full_unused::registered_full_selection(&[], control).map_err(operational)?;
+    let qualified = Roster::WithCooldownAndEngineInternal.names();
+    let mut selected = Names { rows: [""; Roster::MAX_POLICIES], count: 0 };
+    let mut omitted = exclusions.iter().peekable();
+    for name in registered.names() {
+        control.checkpoint().map_err(operational)?;
+        if omitted.peek().and_then(|next| next.strip_prefix('-')) == Some(name.as_str()) {
+            omitted.next();
+            continue;
+        }
+        let producer = Producer::from_name(name).filter(|producer| {
+            qualified.contains(&producer.name()) && producer.stages_report()
+                && producer.question().is_none() && matches!(producer.metadata().policy, Policy::Hard)
+        }).ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported,
+            "selection exceeds the qualified no-aux raw report profile"))?;
+        let slot = selected.rows.get_mut(selected.count)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "no-aux selection exceeds its fixed bound"))?;
+        *slot = producer.name();
+        selected.count += 1;
+    }
+    if omitted.next().is_some() || selected.count == 0 {
+        return Err(io::Error::new(io::ErrorKind::Unsupported,
+            "selection is not a nonempty canonical registry complement"));
+    }
+    Ok(selected)
+}
+
 pub(in crate::runner_host) fn validate_selection_v2(exclusions: &[String], budget: &Budget, judgment: JudgmentV2) -> io::Result<SelectedReportPlan> {
     let mut control = Operation { budget, poll: &|| crate::daemon::control::checkpoint() };
+    if judgment != JudgmentV2::CiLibrarySites {
+        let subset = preflight_no_aux_raw_subset(exclusions, &mut control)?;
+        // A private subset does not acquire an existing wire identity.
+        let roster = Roster::v2_for(judgment).iter().copied()
+            .find(|roster| roster.names() == subset.as_ref())
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported,
+                "selection differs from the canonical Analyze-only v2 plans"))?;
+        return SelectedReportPlan::for_roster(roster, judgment, &mut control);
+    }
     let registered = full_unused::registered_full_selection(&[], &mut control).map_err(operational)?;
     // Exactly the registry-order complement, using individual full names.
     // Aliases, duplicate/unknown names and caller-defined unions have no v2 plan.
