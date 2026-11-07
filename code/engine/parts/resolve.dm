@@ -707,7 +707,12 @@
 /proc/op_menu_label(datum/op_resolution/R, datum/op_cand/C)
 	if(!C.oplan.label && R.held && C.binding && (C.binding.bind_kind in list(BIND_ITEM, BIND_STACK)) && op_cand_catch_all(C))
 		return "Use [R.held.name]"
-	return op_label(C.oplan)
+	var/datum/op_plan/P = C.oplan
+	if(P.label_state_text && !isnull(P.label_state))
+		var/datum/holder = (C.side == CAND_TARGET) ? R.target : C.holder
+		if(holder && cap_key_get(holder, P.label_state, null))
+			return P.label_state_text
+	return op_label(P)
 
 /// The menus read so far: key -> list(rows, time stamp or null). The key is (actor, target, held, the act generation of each of the three, the actor's
 /// provider set generation), the ids never reused (a ref would be). An entity's act generation bumps when a published key, a relation, a stat, its place or

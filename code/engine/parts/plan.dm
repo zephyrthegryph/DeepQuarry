@@ -83,6 +83,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 	/// on_interrupt(): the handler that runs when the wait is broken.
 	var/interrupted
 	var/label
+	/// label(state =, state_text =): the state key whose being set swaps the label for `label_state_text`, or null.
+	var/label_state
+	var/label_state_text
 	/// An explicit OP_PRIORITY_X, or null.
 	var/priority_tier
 	/// list("above"|"below", key), or null.
@@ -619,6 +622,8 @@ GLOBAL_VAR_INIT(op_plans_built, 0)
 
 /datum/entry/part/label/compile(datum/op_plan/P, level)
 	P.label = src.args["text"]
+	P.label_state = src.args["state"]
+	P.label_state_text = src.args["state_text"]
 
 /datum/entry/part/priority/compile(datum/op_plan/P, level)
 	var/value = src.args["value"]

@@ -718,10 +718,10 @@
 	touch(H, A, small)
 	TEST_ASSERT_NULL(A.cell, "a device cell does not fit")
 
-/// With an ID worn, an empty hand on the closed APC toggles the lock by the wearer's own access.
-/datum/unit_test/dq_p2_apc/empty_hand_with_a_worn_id_toggles_the_lock
+/// With an ID worn, an empty hand's plain click opens the window and leaves the lock alone; the lock is the alt-click's or the Menu's, named for what it does.
+/datum/unit_test/dq_p2_apc/empty_hand_click_does_not_toggle_the_lock
 
-/datum/unit_test/dq_p2_apc/empty_hand_with_a_worn_id_toggles_the_lock/run_gate()
+/datum/unit_test/dq_p2_apc/empty_hand_click_does_not_toggle_the_lock/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/card/id/card = id_card()
@@ -729,9 +729,25 @@
 	H.equip_to_slot_or_del(card, SLOT_ID_ID)
 	TEST_ASSERT_EQUAL(H.get_equipped_item(SLOT_ID_ID), card, "the ID is worn")
 	touch(H, A, null)
-	TEST_ASSERT(!p2_apc_locked(A), "the wearer's access unlocked it")
+	TEST_ASSERT(p2_apc_locked(A), "an empty hand's click did not unlock it")
+	var/list/menu = op_menu(H, A, null)
+	var/list/row_locked
+	for(var/list/R in menu)
+		if(R["key"] == "lock.toggle_worn")
+			row_locked = R
+	TEST_ASSERT(row_locked, "the Menu lists the lock while it is locked")
+	TEST_ASSERT_EQUAL(row_locked["label"], "Unlock", "a locked APC's line reads Unlock")
+	test_click(H, A, null, GESTURE_ALT)
+	p2_settle()
+	TEST_ASSERT(!p2_apc_locked(A), "the alt-click unlocked it by the wearer's access")
+	var/list/row_open
+	for(var/list/R in op_menu(H, A, null))
+		if(R["key"] == "lock.toggle_worn")
+			row_open = R
+	TEST_ASSERT(row_open, "the Menu lists the lock while it is open")
+	TEST_ASSERT_EQUAL(row_open["label"], "Lock", "an unlocked APC's line reads Lock")
 	touch(H, A, null)
-	TEST_ASSERT(p2_apc_locked(A), "and locked it again")
+	TEST_ASSERT(!p2_apc_locked(A), "and a plain click still leaves it unlocked")
 
 /// The touch of a hand or a silicon opens the window; a person at an APC with its wire panel open sees the wires instead.
 /datum/unit_test/dq_p2_apc/touch_opens_the_interface_window
