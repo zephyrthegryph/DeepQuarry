@@ -174,9 +174,9 @@ TYPE_TABLE(/datum/form/dq_grant_test, get_form_verbs, list(/mob/living/proc/dq_s
 	var/mob/living/carbon/alien/A = allocate(/mob/living/carbon/alien, test_floor())
 	TEST_ASSERT_EQUAL(A.stat, CONSCIOUS, "the real base alien is conscious")
 	TEST_ASSERT(isnull(A.adult_form), "the actual base alien has no adult form")
-	TEST_ASSERT(/mob/living/carbon/alien/verb/evolve in A.verbs, "the inherited public evolve verb starts present")
+	TEST_ASSERT(/mob/living/carbon/alien/proc/evolve in A.verbs, "the inherited public evolve verb starts present")
 	A.evolve()
-	TEST_ASSERT(!(/mob/living/carbon/alien/verb/evolve in A.verbs), "the actual no-adult branch hides evolve")
+	TEST_ASSERT(!(/mob/living/carbon/alien/proc/evolve in A.verbs), "the actual no-adult branch hides evolve")
 	TEST_ASSERT(!QDELETED(A), "refusing evolution preserves the real larval body")
 	TEST_ASSERT(isnull(A.adult_form), "the branch does not fabricate a grown body type")
 

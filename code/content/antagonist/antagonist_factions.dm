@@ -1,6 +1,5 @@
-/mob/living/proc/convert_to_rev(mob/M as mob in oview(src))
+/mob/living/proc/convert_to_rev(mob/M)
 	set name = "Convert Bourgeoise"
-	set category = VERB_CAT_ABILITIES_ANTAG
 	if(!M.mind)
 		return
 	convert_to_faction(M.mind, antag_revs())
@@ -77,9 +76,8 @@ CAPABILITIES(/datum/prompt/choice/faction_join)
 		to_chat(player, span_danger("You reject this traitorous cause!"))
 	to_chat(src, span_danger("\The [player.current] does not support the [faction.faction_descriptor]!"))
 
-/mob/living/proc/convert_to_loyalist(mob/M as mob in oview(src))
+/mob/living/proc/convert_to_loyalist(mob/M)
 	set name = "Convert Recidivist"
-	set category = VERB_CAT_ABILITIES_ANTAG
 	if(!M.mind)
 		return
 	convert_to_faction(M.mind, antag_loyalists())

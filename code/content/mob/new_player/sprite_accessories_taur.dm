@@ -120,9 +120,8 @@
 		riding_datum.rider_size = M.size_multiplier
 		src?.buckled_mob_list()[M] = "riding"
 
-/mob/living/carbon/human/proc/taur_mount(mob/living/M in living_mobs(1))
+/mob/living/carbon/human/proc/taur_mount(mob/living/M)
 	set name = "Taur Mount/Dismount"
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Let people ride on you."
 
 	if(LAZYLEN(src?.buckled_mob_list()) && riding_datum)

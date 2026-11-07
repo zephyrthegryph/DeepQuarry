@@ -53,10 +53,9 @@
 	return 1
 
 // Free abilities.
-/mob/living/carbon/human/proc/transfer_plasma(mob/living/carbon/human/M as mob in oview())
+/mob/living/carbon/human/proc/transfer_plasma(mob/living/carbon/human/M)
 	set name = "Transfer Plasma"
 	set desc = "Transfer Plasma to another alien"
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if (get_dist(src,M) <= 1)
 		to_chat(src, span_alium("You need to be closer."))
@@ -175,10 +174,9 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 		P.fire()
 		play_sfx(src, SFX_WEAPONS_ALIEN_SPITACID)
 
-/mob/living/carbon/human/proc/corrosive_acid(O as obj|turf in oview(1)) //If they right click to corrode, an error will flash if its an invalid target./N
+/mob/living/carbon/human/proc/corrosive_acid(atom/O)
 	set name = "Corrosive Acid (200)"
 	set desc = "Drench an object in acid, destroying it over time."
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if(!(O in oview(1)))
 		to_chat(src, span_alium("[O] is too far away."))

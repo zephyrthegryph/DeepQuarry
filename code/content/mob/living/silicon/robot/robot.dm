@@ -517,13 +517,11 @@
 	if (!rbPDA)
 		rel_set(src, nameof(rbPDA), new/obj/item/pda/ai(src))
 	rbPDA.set_name_and_job(name,"[modtype] [braintype]")
-	grant(src, granted_verb(/obj/item/pda/ai/verb/cmd_pda_open_ui), src)
 
 /mob/living/silicon/robot/proc/setup_communicator()
 	if (!communicator)
 		rel_set(src, nameof(communicator), new/obj/item/communicator/integrated(src))
 	communicator.register_device(name, "[modtype] [braintype]")
-	grant(src, granted_verb(/obj/item/communicator/integrated/verb/activate), src)
 
 /mob/living/silicon/robot/drop_from_inventory(obj/item/W, atom/target = null)
 	if(module_active && istype(module_active,/obj/item/gripper))

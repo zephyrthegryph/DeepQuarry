@@ -140,10 +140,9 @@
 		to_chat(H, span_filter_notice("[span_red("Your nose begins to bleed...")]"))
 		H.drip(1)
 
-/mob/living/carbon/human/proc/psychic_whisper(mob/M as mob in oview())
+/mob/living/carbon/human/proc/psychic_whisper(mob/M)
 	set name = "Psychic Whisper"
 	set desc = "Whisper silently to someone over a distance."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	open_request(src, /datum/prompt/text/telepathy, PROC_REF(psychic_whisper_entered), answerer = src, title = "Psychic Whisper", recipient = M, recipient_expected = !isnull(M))
 

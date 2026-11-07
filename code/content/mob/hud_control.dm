@@ -92,7 +92,7 @@
 			return TRUE
 		if("PDA - Messenger")
 			ai_user.aiPDA.start_program(ai_user.aiPDA.find_program(/datum/data/pda/app/messenger))
-			ai_user.aiPDA.cmd_pda_open_ui(user)
+			ai_user.aiPDA.open_for(user)
 			return TRUE
 		if("Take Image")
 			ai_user.take_image()

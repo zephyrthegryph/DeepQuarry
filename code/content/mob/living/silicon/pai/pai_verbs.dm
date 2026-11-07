@@ -11,8 +11,6 @@
 	return 1
 
 /mob/living/silicon/pai/cancel_camera()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set name = "Cancel Camera View"
 	reset_perspective()
 
 /mob/living/silicon/pai/reset_perspective(atom/new_eye)
@@ -130,9 +128,8 @@
 			G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle))
 				to_chat(G, span_filter_say(span_cult("[src.name]'s screen prints, \"[message]\"")))
 
-/mob/living/silicon/pai/proc/pai_nom(mob/living/T in oview(1))
+/mob/living/silicon/pai/proc/pai_nom(mob/living/T)
 	set name = "pAI Nom"
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set desc = "Allows you to eat someone while unfolded. Can't be used while in card form."
 
 	if (stat != CONSCIOUS)

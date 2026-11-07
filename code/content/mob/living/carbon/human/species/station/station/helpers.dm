@@ -12,11 +12,10 @@
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 	return
 
-/mob/living/carbon/human/proc/check_plasma_amount(mob/living/carbon/human/M as mob)
+/mob/living/carbon/human/proc/check_plasma_amount()
 	set name = "Check Plasma Reserves"
-	set category = VERB_CAT_ABILITIES_ALIEN
 
-	var/obj/item/organ/internal/xenos/plasmavessel/I = M.organ_in(O_PLASMA)
+	var/obj/item/organ/internal/xenos/plasmavessel/I = organ_in(O_PLASMA)
 	if(!istype(I))
 		to_chat(src, span_alium("Our plasma vessel is missing!"))
 		return

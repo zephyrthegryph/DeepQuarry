@@ -1,14 +1,13 @@
-/mob/living/carbon/alien/verb/evolve()
+/mob/living/carbon/alien/proc/evolve()
 
 	set name = "Evolve"
 	set desc = "Evolve into your adult form."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(stat != CONSCIOUS)
 		return
 
 	if(!adult_form)
-		grant(src, granted_verb(/mob/living/carbon/alien/verb/evolve, hidden = TRUE), src) // nothing to evolve into
+		grant(src, granted_verb(/mob/living/carbon/alien/proc/evolve, hidden = TRUE), src) // nothing to evolve into
 		return
 
 	if(get_equipped_item(SLOT_ID_HANDCUFFED) || get_equipped_item(SLOT_ID_LEGCUFFED))

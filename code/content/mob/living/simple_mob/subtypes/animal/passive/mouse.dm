@@ -44,6 +44,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	verb_entry(/mob/living/simple_mob/animal/passive/mouse/proc/set_mouse_colour)
 	configure(mob_rules(faction = FACTION_MOUSE))
 	configure(living_rules(species_sounds = "Mouse"))
 	configure(living_rules(say_list_type = /datum/say_list/mouse))
@@ -203,9 +204,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	emote_hear = list("squeeks","squeaks","squiks")
 	emote_see = list("runs in a circle", "shakes", "scritches at something")
 
-/mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour()
+/mob/living/simple_mob/animal/passive/mouse/proc/set_mouse_colour()
 	set name = "Set Mouse Colour"
-	set category = VERB_CAT_ABILITIES_MOUSE
 	set desc = "Set the colour of your mouse."
 	open_request(src, /datum/prompt/choice, PROC_REF(mouse_colour_chosen), answerer = src, title = "Pick a colour", question = "Set Mouse Colour", choices = list("brown","gray","white","black"), timeout = 0)
 
@@ -221,7 +221,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	desc = "A small [new_mouse_colour] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
 	set_holder_type(text2path("/obj/item/holder/mouse/[new_mouse_colour]"))
 	to_chat(src, span_notice("You are now a [new_mouse_colour] mouse!"))
-	grant(src, granted_verb(/mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour, hidden = TRUE), src) // one colour change only
+	grant(src, granted_verb(/mob/living/simple_mob/animal/passive/mouse/proc/set_mouse_colour, hidden = TRUE), src) // one colour change only
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology
 	name = "Fleming"

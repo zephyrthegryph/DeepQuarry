@@ -18,20 +18,13 @@
 		V.set_universal_speak(1)
 		V.set_universal_understand(1)
 
-// Verb: activate()
-// Parameters: None
-// Description: Lets synths use their communicators without hands.
-/obj/item/communicator/integrated/verb/activate()
-	set category = VERB_CAT_ABILITIES_AI
-	set name = "Use Communicator"
-	set desc = "Utilizes your built-in communicator."
-	set src in usr
-
-	if(usr.stat == 2)
-		to_chat(usr, "You can't do that because you are dead!")
+/// Lets synths use their communicators without hands (the Use Communicator command of their panels).
+/obj/item/communicator/integrated/proc/use_by(mob/user)
+	if(user.stat == DEAD)
+		to_chat(user, "You can't do that because you are dead!")
 		return
 
-	src.attack_self(usr)
+	attack_self(user)
 
 /obj/item/communicator/integrated/tgui_static_data(mob/user)
 	. = ..()

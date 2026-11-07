@@ -41,9 +41,8 @@
 	W.disinfect()
 	play_sfx(src, SFX_EFFECTS_OINTMENT, 0.5, vary = FALSE)
 
-/mob/living/carbon/human/proc/lick_wounds(mob/living/carbon/M as mob in view(1)) // Allows the user to lick themselves. Given how rarely this trait is used, I don't see an issue with a slight buff.
+/mob/living/carbon/human/proc/lick_wounds(mob/living/carbon/M) // Allows the user to lick themselves. Given how rarely this trait is used, there is no issue with a slight buff.
 	set name = "Lick Wounds"
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Disinfect and heal small wounds with your saliva."
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED))

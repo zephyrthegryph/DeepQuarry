@@ -9,9 +9,8 @@
 	..()
 
 // Simple nom proc for if you get ckey'd into a simple_mob mob! Avoids grabs.
-/mob/living/simple_mob/proc/animal_nom(mob/living/T in living_mobs_in_view(1))
+/mob/living/simple_mob/proc/animal_nom(mob/living/T)
 	set name = "Animal Nom"
-	set category = VERB_CAT_ABILITIES_VORE // Moving this to abilities from IC as it's more fitting there
 	set desc = "Since you can't grab, you get a verb!"
 
 	if(vore_active && !voremob_loaded) // On-demand belly loading.

@@ -23,10 +23,10 @@
 			p.radio.tgui_interact(p)
 
 		if("pda")
-			p.pda.cmd_pda_open_ui()
+			p.pda.open_for(p)
 
 		if("communicator")
-			p.communicator.activate()
+			p.communicator.use_by(p)
 
 		if("known languages")
 			p.check_languages()

@@ -173,9 +173,118 @@ GLOBAL_LIST_INIT(ability_panel_commands, list(
 	panel_command("mob.living.proc.weaver_control_panel", "Weaver Control Panel", "Allows you to adjust the settings of various weaver settings!", "Weaver", null, PANEL_IF_GRANTED),
 	panel_command("mob.living.carbon.human.proc.hatch", "Hatch", "Hatch", "Xenochimera", null, PANEL_IF_GRANTED),
 	panel_command("mob.living.carbon.human.proc.reconstitute_form", "Reconstitute Form", "Reconstitute Form", "Xenochimera", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.proc.convert_to_rev", "Convert Bourgeoise", "Ask someone nearby to join the revolution.", "Antag", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_oview_mobs)),
+	panel_command("mob.living.proc.convert_to_loyalist", "Convert Recidivist", "Ask someone nearby to side with the station again.", "Antag", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_oview_mobs)),
+	panel_command("mob.living.carbon.human.proc.psychic_whisper", "Psychic Whisper", "Whisper silently to someone over a distance.", "General", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_oview_mobs)),
+	panel_command("mob.living.carbon.human.proc.telepathy", "Project Mind", "Talk telepathically to someone over a distance.", "General", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_oview_mobs)),
+	panel_command("mob.living.carbon.human.proc.lick_wounds", "Lick Wounds", "Disinfect and heal small wounds with your saliva.", "General", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_touchable_carbon)),
+	panel_command("mob.living.carbon.human.proc.taur_mount", "Taur Mount/Dismount", "Let people ride on you.", "General", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_mountable)),
+	panel_command("mob.living.carbon.human.proc.check_plasma_amount", "Check Plasma Reserves", "See how much plasma you have stored.", "Alien", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.carbon.human.proc.transfer_plasma", "Transfer Plasma", "Transfer plasma to another alien.", "Alien", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_oview_humans)),
+	panel_command("mob.living.carbon.human.proc.corrosive_acid", "Corrosive Acid (200)", "Drench an object in acid, destroying it over time.", "Alien", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_acid)),
+	panel_command("mob.living.simple_mob.proc.corrosive_acid", "Corrosive Acid", "Drench an object in acid, destroying it over time.", "Mob", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_acid)),
+	panel_command("mob.living.simple_mob.proc.speen", "Spin Attack", "Spins to strike enemies away from you.", "Mob", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.simple_mob.proc.animal_mount", "Animal Mount/Dismount", "Let people ride on you.", "Mob", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_mountable)),
+	panel_command("mob.living.simple_mob.proc.animal_nom", "Animal Nom", "Eat someone next to you.", "Vore", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_nearby_living)),
+	panel_command("mob.living.silicon.pai.proc.pai_nom", "pAI Nom", "Allows you to eat someone while unfolded. Can't be used while in card form.", "pAI Commands", null, PANEL_IF_GRANTED, TYPE_PROC_REF(/mob/living, panel_targets_nearby_living)),
+	panel_command("mob.living.simple_mob.vore.blaidd.proc.blaidd_invis", "Invisibility", "Change your appearance to match your surroundings, becoming somewhat invisible to the naked eye.", "Glamour", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.proc.glamour_invisibility", "Invisibility", "Change your appearance to match your surroundings, becoming completely invisible to the naked eye.", "Glamour", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.proc.polymorph", "Polymorph", "Take the form of a non-humanoid creature.", "Glamour", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.carbon.alien.proc.evolve", "Evolve", "Evolve into your adult form.", "General", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.simple_mob.animal.passive.mouse.proc.set_mouse_colour", "Set Mouse Colour", "Set the colour of your mouse.", "Mouse", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.simple_mob.animal.synx.ai.pet.debug.proc.rename", "Rename", "Renames the synx.", "Synx", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.simple_mob.animal.synx.ai.pet.debug.proc.redesc", "Redescribe", "Redescribes the synx.", "Synx", null, PANEL_IF_GRANTED),
+	panel_command("mob.living.simple_mob.animal.synx.ai.pet.debug.proc.resprite", "Resprite", "Resprites the synx.", "Synx", null, PANEL_IF_GRANTED),
+	panel_command("integrated_communicator", "Use Communicator", "Utilizes your built-in communicator.", "Silicon", TYPE_PROC_REF(/mob/living, use_integrated_communicator), TYPE_PROC_REF(/mob/living, has_integrated_communicator)),
+	panel_command("integrated_pda", "Use PDA", "Utilizes your built-in PDA.", "Silicon", TYPE_PROC_REF(/mob/living, use_integrated_pda), TYPE_PROC_REF(/mob/living, has_integrated_pda)),
 ))
 
 /// The Abilities menu entry: opens the abilities panel of the mob.
 /mob/living/proc/abilities_panel_chosen(datum/act/op/A)
 	command_panel_open(src, "abilities", "Abilities", GLOB.ability_panel_commands)
 	return OP_OK
+
+// What the ability commands that took an `M as mob in oview()` argument can be used on: the panel asks the owner to pick one of these.
+
+/// Every mob in view of the owner, but not the owner.
+/mob/living/proc/panel_targets_oview_mobs()
+	. = list()
+	for(var/mob/M in oview(src))
+		. += M
+
+/// Every human in view of the owner, but not the owner.
+/mob/living/proc/panel_targets_oview_humans()
+	. = list()
+	for(var/mob/living/carbon/human/H in oview(src))
+		. += H
+
+/// The living carbon mobs within one tile (the owner included, who may lick their own wounds).
+/mob/living/proc/panel_targets_touchable_carbon()
+	. = list()
+	for(var/mob/living/carbon/C in view(1, src))
+		. += C
+
+/// Who can climb on: the living mobs next to the owner; with riders already up, the owner itself, since the command then sends the riders off.
+/mob/living/proc/panel_targets_mountable()
+	if(LAZYLEN(buckled_mob_list()))
+		return list(src)
+	return living_mobs(1)
+
+/// The living mobs within one tile that can be eaten.
+/mob/living/proc/panel_targets_nearby_living()
+	return living_mobs_in_view(1)
+
+/// The objects and turfs within one tile that acid can be spat on.
+/mob/living/proc/panel_targets_acid()
+	. = list()
+	for(var/atom/A in oview(1, src))
+		if(isobj(A) || isturf(A))
+			. += A
+
+/// Does this mob carry an integrated communicator? (A silicon's own; the abilities panel lists the command for those only.)
+/mob/living/proc/has_integrated_communicator(id)
+	return !!integrated_communicator_item()
+
+/// Does this mob carry an integrated PDA?
+/mob/living/proc/has_integrated_pda(id)
+	return !!integrated_pda_item()
+
+/// The integrated communicator of this mob, or null: a silicon names its own.
+/mob/living/proc/integrated_communicator_item()
+	return null
+
+/// The integrated PDA of this mob, or null.
+/mob/living/proc/integrated_pda_item()
+	return null
+
+/mob/living/silicon/ai/integrated_communicator_item()
+	return aiCommunicator
+
+/mob/living/silicon/ai/integrated_pda_item()
+	return aiPDA
+
+/mob/living/silicon/robot/integrated_communicator_item()
+	return communicator
+
+/mob/living/silicon/robot/integrated_pda_item()
+	return rbPDA
+
+/mob/living/silicon/pai/integrated_communicator_item()
+	return communicator
+
+/mob/living/silicon/pai/integrated_pda_item()
+	return pda
+
+/// Opens the integrated communicator.
+/mob/living/proc/use_integrated_communicator()
+	var/obj/item/communicator/integrated/communicator_item = integrated_communicator_item()
+	if(!communicator_item)
+		return
+	communicator_item.use_by(src)
+
+/// Opens the integrated PDA.
+/mob/living/proc/use_integrated_pda()
+	var/obj/item/pda/ai/pda_item = integrated_pda_item()
+	if(!pda_item)
+		return
+	pda_item.open_for(src)

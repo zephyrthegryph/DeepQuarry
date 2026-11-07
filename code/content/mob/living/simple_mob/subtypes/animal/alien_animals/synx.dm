@@ -698,15 +698,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet)
 /mob/living/simple_mob/animal/synx/ai/pet
 	speak_chance = 2.0666
 
-//HONKMOTHER Code.
-/*/mob/living/simple_mob/animal/synx/proc/honk()
-	set name = "HONK"
-	set desc = "TAAA RAINBOW"
-	set category = VERB_CAT_ABILITIES_SYNX
-	icon_state = "synx_pet_rainbow"
-	icon_living = "synx_pet_rainbow"
-	play_sfx(src.loc, SFX_ITEMS_BIKEHORN)
-*/
 /mob/living/simple_mob/animal/synx/proc/bikehorn()
 	play_sfx(src.loc, SFX_ITEMS_BIKEHORN)
 
@@ -881,23 +872,20 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/clown)
 /mob/living/simple_mob/animal/synx/ai/pet/debug/roll_realname(datum/roller/R)
 	return null
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename()
 	set name = "rename"
 	set desc = "Renames the synx"
-	set category = VERB_CAT_ABILITIES_SYNX
-	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Renaming", question = "What would you like to change name to?", var_name = "name")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = src, title = "Renaming", question = "What would you like to change name to?", var_name = "name")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc()
 	set name = "redesc"
 	set desc = "Redescribes the synx"
-	set category = VERB_CAT_ABILITIES_SYNX
-	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Redescribing", question = "What would you like to change desc to?", var_name = "desc")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = src, title = "Redescribing", question = "What would you like to change desc to?", var_name = "desc")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite()
 	set name = "resprite"
 	set desc = "Resprite the synx"
-	set category = VERB_CAT_ABILITIES_SYNX
-	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Respriting", question = "What would you like to change icon_state to?", var_name = "icon_state")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = src, title = "Respriting", question = "What would you like to change icon_state to?", var_name = "icon_state")
 
 /// A debug synx var edit. `var_name` is the var set.
 /datum/prompt/text/synx_debug_var
@@ -926,9 +914,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/disguise, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style, hidden = TRUE)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
 
 
 ////////////////////////////////////////

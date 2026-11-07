@@ -22,15 +22,11 @@
 		ownrank = ownjob
 	name = newname + " (" + ownjob + ")"
 
-//AI verb and proc for sending PDA messages.
-/obj/item/pda/ai/verb/cmd_pda_open_ui()
-	set category = VERB_CAT_ABILITIES_AI
-	set name = "Use PDA"
-	set src in usr
-
-	if(!can_use(usr))
+/// Opens the PDA for the silicon that carries it (the Use PDA command of their panels).
+/obj/item/pda/ai/proc/open_for(mob/user)
+	if(!can_use(user))
 		return
-	tgui_interact(usr)
+	tgui_interact(user)
 
 /obj/item/pda/ai/can_use()
 	return 1

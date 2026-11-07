@@ -787,9 +787,8 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	else
 		. = ..()
 
-/mob/living/simple_mob/proc/animal_mount(mob/living/M in living_mobs(1))
+/mob/living/simple_mob/proc/animal_mount(mob/living/M)
 	set name = "Animal Mount/Dismount"
-	set category = VERB_CAT_ABILITIES_MOB
 	set desc = "Let people ride on you."
 
 	if(LAZYLEN(src?.buckled_mob_list()))

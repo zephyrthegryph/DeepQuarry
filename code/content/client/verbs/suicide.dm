@@ -86,23 +86,6 @@
 		to_chat(viewers(src),span_danger("[src] is powering down. It looks like they're trying to commit suicide."))
 		death(0)
 
-/*
-/mob/living/silicon/pai/verb/suicide()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set desc = "Kill yourself and become a ghost (You will receive a confirmation prompt)"
-	set name = "pAI Suicide"
-	var/answer = tgui_alert(src, "REALLY kill yourself? This action can't be undone.", "Suicide", list("Yes","No"))
-	if(answer == "Yes")
-		var/obj/item/paicard/card = loc
-		card.removePersonality()
-		var/turf/T = get_turf_or_move(card.loc)
-		for (var/mob/M in viewers(T))
-			M.show_message(span_notice("[src] flashes a message across its screen, \"Wiping core files. Please acquire a new personality to continue using pAI device functions.\""), 3, span_notice("[src] bleeps electronically."), 2)
-		death(0)
-	else
-		to_chat(src, "Aborting suicide attempt.")
-*/
-
 /mob/living/carbon/brain/proc/brain_suicide_ends()
 	death(0)
 	STATE_SET(src, mob_misc, suiciding, 0)

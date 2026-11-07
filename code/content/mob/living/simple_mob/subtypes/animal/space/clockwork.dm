@@ -55,34 +55,6 @@ CAPABILITIES(/mob/living/simple_mob/clockwork)
 
 
 
-//Basic friend AI
-/*/mob/living/simple_animal/clockwork/fluff
-	var/mob/living/carbon/human/friend
-	var/befriend_job = null
-
-/mob/living/simple_animal/cat/fluff/verb/become_friends()
-	set name = "Become Friends"
-	set category = VERB_CAT_ABILITIES_GENERAL
-	set src in view(1)
-
-	if(!friend)
-		var/mob/living/carbon/human/H = usr
-		if(istype(H) && (!befriend_job || H.job == befriend_job))
-			friend = usr
-			. = 1
-	else if(usr == friend)
-		. = 1 //already friends, but show success anyways
-
-	if(.)
-		set_dir(get_dir(src, friend))
-		visible_emote(pick("nuzzles [friend].",
-							"brushes against [friend].",
-							"rubs against [friend].",
-							"purrs."))
-	else
-		usr << span_notice("[src] ignores you.")
-	return */
-
 /mob/living/simple_mob/clockwork/fluff/Ignis
 	name = "Ignis"
 	desc = "The stalwart apparition of a clockwork flame guardian. This one appears to be  to be have been somehow modified to be 'docile', it's living fire turned blue."

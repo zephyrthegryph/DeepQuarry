@@ -76,3 +76,65 @@
 	TEST_ASSERT(!verb_panel_listed(/mob/living/carbon/human/proc/shapeshifter_select_hair), "the ability has no tab of its own")
 	TEST_ASSERT(dq_vmo_row(H, H, "abilities_panel"), "every living mob has the Abilities entry in its own menu")
 	qdel(panel)
+
+/// An ability that needs a target asks for it in the panel, then runs on the one picked.
+/datum/unit_test/dq_command_panel_target_ability_asks_for_its_target
+
+/datum/unit_test/dq_command_panel_target_ability_asks_for_its_target/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, test_floor())
+	grant(H, granted_verb(/mob/living/carbon/human/proc/psychic_whisper), H)
+	var/datum/command_panel/panel = new(H, "abilities", "Abilities", GLOB.ability_panel_commands)
+	TEST_ASSERT(panel.run_command(H, "mob.living.carbon.human.proc.psychic_whisper"), "the granted ability can be pressed")
+	var/datum/prompt/choice/panel_target/pick = SSrequests.open_for(H)
+	TEST_ASSERT(istype(pick), "pressing it asks who to use it on")
+	TEST_ASSERT(("[other.name]" in pick.choices), "the other mob in view is offered by name")
+	TEST_ASSERT(!(H.name in pick.choices) || H.name == other.name, "and the owner is not")
+	request_answer(H, "[other.name]")
+	var/datum/prompt/text/telepathy/whisper = SSrequests.open_for(H)
+	TEST_ASSERT(istype(whisper), "the answer runs the ability, which asks what to whisper")
+	TEST_ASSERT_EQUAL(whisper.recipient, other, "to the one picked")
+	request_answer(H, null, REQ_CANCELLED)
+	qdel(panel)
+
+/// The abilities that took a target argument, and the verbs that had a tab of their own, are no tab entries now.
+/datum/unit_test/dq_command_panel_target_abilities_have_no_tab
+
+/datum/unit_test/dq_command_panel_target_abilities_have_no_tab/Run()
+	var/list/paths = list(
+		/mob/living/proc/convert_to_rev, /mob/living/proc/convert_to_loyalist, /mob/living/carbon/human/proc/psychic_whisper,
+		/mob/living/carbon/human/proc/telepathy, /mob/living/carbon/human/proc/check_plasma_amount, /mob/living/carbon/human/proc/transfer_plasma,
+		/mob/living/carbon/human/proc/corrosive_acid, /mob/living/carbon/human/proc/lick_wounds, /mob/living/carbon/human/proc/taur_mount,
+		/mob/living/simple_mob/proc/corrosive_acid, /mob/living/simple_mob/proc/speen, /mob/living/simple_mob/proc/animal_nom,
+		/mob/living/simple_mob/proc/animal_mount, /mob/living/silicon/pai/proc/pai_nom, /mob/living/carbon/alien/proc/evolve,
+		/mob/living/simple_mob/animal/passive/mouse/proc/set_mouse_colour, /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis,
+		/mob/living/proc/polymorph, /mob/living/proc/glamour_invisibility)
+	for(var/path in paths)
+		TEST_ASSERT(!verb_panel_listed(path), "[path] has no tab of its own")
+	var/list/ids = list()
+	for(var/list/row as anything in GLOB.ability_panel_commands)
+		ids += row["id"]
+	for(var/path in paths)
+		TEST_ASSERT(("[path]" in dotted_ability_ids(ids)), "[path] is a command of the abilities panel")
+
+/// The ids of the panel rows as the paths they name.
+/datum/unit_test/proc/dotted_ability_ids(list/ids)
+	var/list/paths = list()
+	for(var/id in ids)
+		paths += "/[replacetext(id, ".", "/")]"
+	return paths
+
+/// A silicon lists its integrated communicator and PDA in its panel and uses them from there.
+/datum/unit_test/dq_command_panel_silicon_lists_its_communicator_and_pda
+
+/datum/unit_test/dq_command_panel_silicon_lists_its_communicator_and_pda/Run()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/datum/command_panel/panel = new(R, "robot", "Silicon Panel", GLOB.robot_panel_commands, TYPE_PROC_REF(/mob/living/silicon/robot, robot_panel_blocked))
+	var/list/ids = dq_panel_ids(panel)
+	TEST_ASSERT(ids["integrated_communicator"] && ids["integrated_pda"], "a cyborg lists its communicator and PDA")
+	qdel(panel)
+	var/datum/command_panel/human_panel = new(H, "abilities", "Abilities", GLOB.ability_panel_commands)
+	var/list/human_ids = dq_panel_ids(human_panel)
+	TEST_ASSERT(!human_ids["integrated_communicator"] && !human_ids["integrated_pda"], "a human has neither")
+	qdel(human_panel)

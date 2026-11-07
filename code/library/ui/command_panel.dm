@@ -13,8 +13,10 @@
 /// One row of a mob type's command list: the id the window sends back, the button label, its hover text, the group it sits under and
 /// the proc of the owner it calls.
 /// `shown` is an optional proc of the owner called with the command id: the command is listed only while it returns true.
-/proc/panel_command(id, label, desc, group, command_proc, shown = null)
-	return list("id" = id, "label" = label, "desc" = desc, "group" = group, "proc" = command_proc, "shown" = shown)
+/// `targets` is an optional proc of the owner returning the list of things the command can be used on (the old `M as mob in oview()` argument): pressing
+/// the command asks the owner to pick one and calls the command's proc with it.
+/proc/panel_command(id, label, desc, group, command_proc, shown = null, targets = null)
+	return list("id" = id, "label" = label, "desc" = desc, "group" = group, "proc" = command_proc, "shown" = shown, "targets" = targets)
 
 /// Open panels: "<owner handle>/<key>" -> the panel's handle_of (a deleted panel stops resolving).
 GLOBAL_ALIST_EMPTY(command_panels)
@@ -110,13 +112,64 @@ CAPABILITIES(/datum/command_panel)
 		return FALSE
 	for(var/list/entry as anything in commands)
 		if(entry["id"] == id && entry_shown(entry))
-			if(entry["shown"] == PANEL_IF_GRANTED)
-				call(owner, granted_command_proc_name(entry))()
+			if(entry["targets"])
+				ask_target(entry)
 			else
-				call(owner, entry["proc"])()
+				invoke_command(entry)
 			SStgui.update_uis(src)
 			return TRUE
 	return FALSE
+
+/// Calls the command's proc on the owner, with the target a picker chose (none for a command without a picker).
+/datum/command_panel/proc/invoke_command(list/entry, atom/target = null)
+	var/proc_ref = entry["shown"] == PANEL_IF_GRANTED ? granted_command_proc_name(entry) : entry["proc"]
+	if(target)
+		call(owner, proc_ref)(target)
+	else
+		call(owner, proc_ref)()
+
+/// The things the command can be used on, by the names the picker lists them under (a second one of the same name gets a number).
+/datum/command_panel/proc/target_choices(list/entry)
+	var/list/choices = list()
+	for(var/atom/candidate as anything in call(owner, entry["targets"])())
+		if(QDELETED(candidate))
+			continue
+		var/name = "[candidate]"
+		var/number = 1
+		while(choices[name])
+			number++
+			name = "[candidate] ([number])"
+		choices[name] = candidate
+	return choices
+
+/// Asks the owner what to use the command on.
+/datum/command_panel/proc/ask_target(list/entry)
+	var/list/choices = target_choices(entry)
+	if(!length(choices))
+		to_chat(owner, span_warning("There is nothing in reach to use that on."))
+		return
+	open_request(src, /datum/prompt/choice/panel_target, PROC_REF(target_chosen), answerer = owner, title = entry["label"], question = entry["desc"], choices = assoc_to_keys(choices), command_id = entry["id"])
+
+/// The picker's answer: the command runs on the thing picked, if it is still there.
+/datum/command_panel/proc/target_chosen(datum/act/request/A)
+	if(!A.answer || !owner || blocked_reason())
+		return
+	var/datum/prompt/choice/panel_target/ask = A.request
+	for(var/list/entry as anything in commands)
+		if(entry["id"] != ask.command_id || !entry_shown(entry))
+			continue
+		var/atom/target = target_choices(entry)[A.answer.value]
+		if(!target)
+			to_chat(owner, span_warning("That is no longer in reach."))
+			return
+		invoke_command(entry, target)
+		SStgui.update_uis(src)
+		return
+
+/// Which thing to use a panel command on; carries the command it was asked for.
+/datum/prompt/choice/panel_target
+	timeout = 0
+	var/command_id
 
 /// Opens (making it on the first call) the panel of `user` kept under `key`: `commands` are its panel_command() rows and `gate` the
 /// optional proc of the user that says why they cannot be used.

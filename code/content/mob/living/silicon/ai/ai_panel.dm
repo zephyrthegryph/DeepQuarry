@@ -14,6 +14,8 @@ GLOBAL_LIST_INIT(ai_panel_commands, list(
 	panel_command("multicam", "Toggle Multicam", "Look through several cameras at once.", "Camera Control", TYPE_PROC_REF(/mob/living/silicon/ai, toggle_multicam_verb)),
 	panel_command("multicam_add", "Add Multicam Viewport", "Add one more viewport to the multicam.", "Camera Control", TYPE_PROC_REF(/mob/living/silicon/ai, add_multicam_verb)),
 	panel_command("deploy_shell", "Deploy to Shell", "Take control of an AI shell.", "Commands", TYPE_PROC_REF(/mob/living/silicon/ai, deploy_to_shell_act)),
+	panel_command("integrated_communicator", "Use Communicator", "Utilizes your built-in communicator.", "Commands", TYPE_PROC_REF(/mob/living, use_integrated_communicator), TYPE_PROC_REF(/mob/living, has_integrated_communicator)),
+	panel_command("integrated_pda", "Use PDA", "Utilizes your built-in PDA.", "Commands", TYPE_PROC_REF(/mob/living, use_integrated_pda), TYPE_PROC_REF(/mob/living, has_integrated_pda)),
 	panel_command("show_laws", "Show Laws", "Read your laws.", "Commands", TYPE_PROC_REF(/mob/living/silicon/ai, show_laws_verb)),
 	panel_command("state_laws", "State Laws", "Choose which laws to state aloud.", "Commands", TYPE_PROC_REF(/mob/living/silicon/ai, ai_checklaws)),
 	panel_command("take_image", "Take Image", "Use your camera.", "Commands", TYPE_PROC_REF(/mob/living/silicon/ai, take_image)),
