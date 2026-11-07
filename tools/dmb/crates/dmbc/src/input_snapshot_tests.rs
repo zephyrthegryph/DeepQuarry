@@ -39,6 +39,69 @@ impl SnapshotProvider for Host {
     }
 }
 #[test]
+fn compound_exact_positive_observes_each_canonical_file_once_and_keeps_role_order() {
+    use std::cell::RefCell;
+
+    struct Counting {
+        stamp: Stamp,
+        seen: RefCell<Vec<String>>,
+        failing: Cell<Option<(&'static str, Option<i32>)>>,
+    }
+    impl SnapshotProvider for Counting {
+        fn stamp(&self, _: &Path) -> io::Result<Stamp> { panic!("exact phase requests digest evidence") }
+        fn read(&self, _: &Path) -> io::Result<(Stamp, Vec<u8>)> { panic!("no payload copies in this phase") }
+        fn list(&self, _: &Path) -> io::Result<FolderListing> { panic!("separate role admission checks directories") }
+        fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
+            let name = path.file_name().unwrap().to_str().unwrap();
+            self.seen.borrow_mut().push(name.to_owned());
+            if let Some((target, error)) = self.failing.get() {
+                if target == name {
+                    return Err(error.map_or_else(|| io::ErrorKind::NotFound.into(), io::Error::from_raw_os_error));
+                }
+            }
+            Ok((self.stamp.clone(), xxhash_rust::xxh3::xxh3_128(b"x")))
+        }
+    }
+    let root = std::env::temp_dir().join("compound-exact-positive-counting");
+    let shared = root.join("b-shared.dm");
+    let native_only = root.join("a-native.dm");
+    let report_only = root.join("0-report.dm");
+    let stamp = Stamp { size: 1, modified_ns: 4, file_id: Some(8) };
+    let source = Counting { stamp: stamp.clone(), seen: RefCell::new(Vec::new()), failing: Cell::new(None) };
+    let mut native = InputSnapshot::new(1);
+    native.record_file(&native_only, stamp.clone(), b"x").unwrap();
+    native.record_file(&shared, stamp.clone(), b"x").unwrap();
+    let mut report = InputSnapshot::new(1);
+    report.record_file(&root.join(".").join("b-shared.dm"), stamp.clone(), b"x").unwrap();
+    report.record_file(&report_only, stamp.clone(), b"x").unwrap();
+    report.require_shared_native_files(&native).unwrap();
+    assert!(native.exact_positive_contents_match_pair(&report, &source).unwrap());
+    assert_eq!(source.seen.take(), ["a-native.dm", "b-shared.dm", "0-report.dm"]);
+
+    let mut wrong = InputSnapshot::new(1);
+    wrong.record_file(&shared, Stamp { modified_ns: 5, ..stamp.clone() }, b"x").unwrap();
+    assert!(!native.exact_positive_contents_match_pair(&wrong, &source).unwrap());
+    assert_eq!(source.seen.take(), ["a-native.dm", "b-shared.dm"]);
+    let mut mismatch = InputSnapshot::new(1);
+    mismatch.record_file(&shared, stamp, b"y").unwrap();
+    assert_eq!(mismatch.require_shared_native_files(&native).unwrap_err().kind(), io::ErrorKind::Interrupted);
+    assert!(source.seen.borrow().is_empty(), "conflicting capture facts never reach the live exact phase");
+    let mut negative = InputSnapshot::new(1);
+    negative.record_negative(&shared).unwrap();
+    assert_eq!(negative.require_shared_native_files(&native).unwrap_err().kind(), io::ErrorKind::Interrupted);
+
+    source.failing.set(Some(("a-native.dm", Some(1450))));
+    assert_eq!(native.exact_positive_contents_match_pair(&report, &source).unwrap_err().raw_os_error(), Some(1450));
+    assert_eq!(source.seen.take(), ["a-native.dm"]);
+    source.failing.set(Some(("b-shared.dm", None)));
+    assert!(!native.exact_positive_contents_match_pair(&report, &source).unwrap());
+    assert_eq!(source.seen.take(), ["a-native.dm", "b-shared.dm"]);
+    source.failing.set(Some(("0-report.dm", Some(1451))));
+    assert_eq!(native.exact_positive_contents_match_pair(&report, &source).unwrap_err().raw_os_error(), Some(1451));
+    assert_eq!(source.seen.take(), ["a-native.dm", "b-shared.dm", "0-report.dm"]);
+}
+
+#[test]
 fn exact_and_racy_inputs_rehash_and_negative_folders_invalidate() {
     let mut host = Host {
         bytes: b"old".to_vec(),

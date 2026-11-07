@@ -566,16 +566,26 @@ impl JoinedSelectedInputs {
         crate::daemon::control::checkpoint()?;
         self.inputs.require_shared_native_files(native)?;
         let proofs = crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot_pair(native, &self.inputs)?;
-        for inputs in [native, &self.inputs] {
+        let admit_role = |inputs: &InputSnapshot| -> Result<(), Box<dyn Error>> {
             let provider = GeneratedOutputInputs::new(&proofs, inputs.generated_outputs().iter().cloned());
-            if let Err(error) = admit(inputs, &provider) {
-                if !error.is::<InputsMoved>() { return Err(error); }
+            admit(inputs, &provider).map_err(|error| {
+                if !error.is::<InputsMoved>() { return error; }
                 // A native-only retry cannot refresh the staged reports.
-                return Err(io::Error::new(io::ErrorKind::Interrupted, "compound inputs changed; prepare both phases again").into());
-            }
-            if !inputs.exact_positive_contents_match(&provider)? {
-                return Err(io::Error::new(io::ErrorKind::Interrupted, "compound file content changed; prepare both phases again").into());
-            }
+                io::Error::new(io::ErrorKind::Interrupted, "compound inputs changed; prepare both phases again").into()
+            })
+        };
+        let changed = || io::Error::new(io::ErrorKind::Interrupted, "compound file content changed; prepare both phases again");
+        admit_role(native)?;
+        let report_admission = admit_role(&self.inputs);
+        // Keep the Native exact outcome ahead of any report admission error.
+        // On success, the shared exact observations start after both roles'
+        // metadata and Original open/payload observations have completed.
+        if let Err(error) = report_admission {
+            if !native.exact_positive_contents_match(&proofs)? { return Err(changed().into()); }
+            return Err(error);
+        }
+        if !native.exact_positive_contents_match_pair(&self.inputs, &proofs)? {
+            return Err(changed().into());
         }
         Ok(())
     }

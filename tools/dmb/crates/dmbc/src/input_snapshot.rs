@@ -1612,8 +1612,30 @@ impl InputSnapshot {
 
     /// Additional exact content check for the private compound operation.
     pub(crate) fn exact_positive_contents_match(&self, provider: &impl SnapshotProvider) -> io::Result<bool> {
+        self.exact_positive_contents_match_after(provider, None)
+    }
+
+    /// Run one live exact observation per canonical positive path after both
+    /// separate metadata/open-role admissions. Preserve Native-first order:
+    /// the report can use an observation only if its entire expected fact is
+    /// equal to the already checked Native fact. No bytes, path copies, digest
+    /// cache or report-purpose permissions cross the boundary.
+    pub(crate) fn exact_positive_contents_match_pair(&self, report: &Self, provider: &impl SnapshotProvider) -> io::Result<bool> {
+        if !self.exact_positive_contents_match(provider)? {
+            return Ok(false);
+        }
+        report.exact_positive_contents_match_after(provider, Some(self))
+    }
+
+    fn exact_positive_contents_match_after(&self, provider: &impl SnapshotProvider, checked: Option<&Self>) -> io::Result<bool> {
         for (path, expected) in &self.files {
             crate::daemon::control::checkpoint()?;
+            if let Some(previous) = checked.and_then(|inputs| inputs.files.get(path)) {
+                if previous != expected {
+                    return Ok(false);
+                }
+                continue;
+            }
             match provider.digest(path) {
                 Ok((stamp, content)) if stamp == expected.stamp && content == expected.content => {}
                 Ok(_) => return Ok(false),
