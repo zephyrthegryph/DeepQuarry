@@ -25,7 +25,15 @@ fn owned_text(text:&str)->io::Result<String>{let mut out=String::new();out.try_r
 fn push<T>(rows:&mut Vec<T>,value:T,root:&mut SettingRootLease,a:&SettingAdmission<'_>)->io::Result<()>{
  poll(a)?;
  if rows.len()==rows.capacity(){
-  let target=rows.len().checked_add(1).and_then(usize::checked_next_power_of_two).ok_or(io::ErrorKind::OutOfMemory)?;
+  let capacity = rows.capacity();
+  // Keep short vectors geometric. Large contiguous plans also grow
+  // geometrically, but their replacement must coexist with the old buffer.
+  let step = if capacity < 256 {
+   capacity.max(1)
+  } else {
+   (capacity / 32).max(256)
+  };
+  let target = add(capacity, step)?;
   let unit=mem::size_of::<T>();
   let old=scaled(rows.capacity(),unit)?;
   // Both actual buffers remain funded until the old one is freed.
@@ -707,6 +715,31 @@ mod trace_storage_tests {
 mod opened_path_storage_tests {
     use super::*;
     use std::sync::atomic::{Ordering};
+
+    #[test]
+    fn large_plan_growth_funds_both_buffers_and_keeps_rows_on_refusal() {
+        let floor = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(floor).unwrap();
+        let healthy = || Ok(());
+        let sufficient = SettingAdmission::new(&used, floor + 1024 + 1280, &healthy);
+        let mut credit = sufficient.reserve(1024).unwrap();
+        let mut rows = exact_rows::<u8>(1024, &sufficient).unwrap();
+        rows.resize(1024, 7);
+        let tight = SettingAdmission::new(&used, floor + 1024 + 1279, &healthy);
+        assert_eq!(push(&mut rows, 9, &mut credit, &tight).unwrap_err().kind(),
+            io::ErrorKind::OutOfMemory);
+        assert_eq!(rows.len(), 1024);
+        assert_eq!(rows.capacity(), 1024);
+        assert!(rows.iter().all(|row| *row == 7));
+        assert_eq!(used.load(Ordering::Acquire), floor + 1024);
+        push(&mut rows, 9, &mut credit, &sufficient).unwrap();
+        assert_eq!(rows.capacity(), 1280);
+        assert_eq!(rows.last(), Some(&9));
+        assert_eq!(used.load(Ordering::Acquire), floor + 1280);
+        drop(rows);
+        drop(credit);
+        assert_eq!(used.load(Ordering::Acquire), floor);
+    }
 
     #[test]
     fn actual_open_registration_charges_each_retained_path_capacity_once() {
