@@ -109,6 +109,9 @@ CAPABILITIES(/datum/tgui_panel)
 		return TRUE
 	// The chat input row speaks through the say modal: same messages, same entry handling and typing bubbles.
 	if(type == "entry" || type == "typing" || type == "thinking" || type == "open" || type == "close" || type == "lenwarn")
+		// The row was focused: refresh the radio prefixes the speaker has now.
+		if(type == "open")
+			client()?.chat_send_radio_options()
 		return client()?.tgui_say?.on_message(type, payload, href_list)
 	// The chat page pins, floats or resizes the chat pane.
 	if(type == "layout/pin")

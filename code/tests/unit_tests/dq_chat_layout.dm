@@ -87,3 +87,14 @@
 	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(-400, -300, 560, 420, 0, 0, 1920, 1040)), json_encode(list(0, 0, 560, 420)), "corner at 0,0")
 	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(40, 20, 560, 420, 100, 50, 1920, 1040)), json_encode(list(100, 50, 560, 420)), "corner at 100,50")
 	TEST_ASSERT_EQUAL(json_encode(chat_float_fit(110, 60, 560, 420, 100, 50, 1920, 1040)), json_encode(list(110, 60, 560, 420)), "near the corner is left alone")
+
+/datum/unit_test/dq_chat_radio_rows
+/datum/unit_test/dq_chat_radio_rows/Run()
+	TEST_ASSERT_EQUAL(length(chat_radio_rows(list())), 0, "no channels, no selector rows")
+	var/list/rows = chat_radio_rows(list(CHANNEL_MEDICAL, CHANNEL_COMMAND))
+	TEST_ASSERT_EQUAL(length(rows), 3, "department plus one row per channel")
+	TEST_ASSERT_EQUAL(rows[1]["key"], ":h", "the department key is first")
+	TEST_ASSERT_EQUAL(rows[2]["key"], ":m", "medical has :m")
+	TEST_ASSERT_EQUAL(rows[2]["label"], CHANNEL_MEDICAL, "the label is the channel name")
+	TEST_ASSERT_EQUAL(rows[3]["key"], ":c", "command has :c")
+	TEST_ASSERT_EQUAL(length(chat_radio_rows(list(CHANNEL_MEDICAL, CHANNEL_MEDICAL))), 2, "a repeated channel is listed once")

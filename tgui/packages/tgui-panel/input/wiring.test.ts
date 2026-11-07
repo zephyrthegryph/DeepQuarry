@@ -23,6 +23,12 @@ describe('chat input wiring', () => {
     expect(read('input/ChatInput.tsx')).toContain('data-chat-input');
   });
 
+  it('listens for the radio channels and recalls history', () => {
+    expect(read('events/listeners.ts')).toContain("'chat/radioChannels'");
+    expect(read('input/ChatInput.tsx')).toContain('parseRadioPrefix');
+    expect(read('input/ChatInput.tsx')).toContain('input.recall');
+  });
+
   it('listens for the server focus request', () => {
     expect(read('events/listeners.ts')).toContain("'chat/focusInput'");
   });

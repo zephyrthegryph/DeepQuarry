@@ -22,6 +22,7 @@ $channel-colors: (
 );
 
 .ChatInput__channel,
+.ChatInput__radio,
 .ChatInput__send {
   padding: 2px 8px;
   font: inherit;
@@ -43,6 +44,17 @@ $channel-colors: (
   text-align: center;
   user-select: none;
   border: 2px solid console.$console-border;
+}
+
+.ChatInput__radio {
+  flex: 0 0 auto;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+  color: hsl(133, 74%, 46%);
+  border: 2px solid hsl(133, 74%, 26%);
 }
 
 @each $name, $color in $channel-colors {
