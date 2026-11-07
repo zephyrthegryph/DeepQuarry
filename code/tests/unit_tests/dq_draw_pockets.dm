@@ -131,3 +131,38 @@
 	H.remove_from_mob(cuffs)
 	refresh_flush()
 	TEST_ASSERT(!("l_hand_hud_handcuffs" in dq_overlay_states(left)), "taking them off clears it")
+
+/// A hand that cannot be used (its arm gone) is drawn grey and faint with a reason; reattaching it restores the slot.
+/datum/unit_test/dq_draw_hand_hud_greys_unusable_hand
+
+/datum/unit_test/dq_draw_hand_hud_greys_unusable_hand/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	if(!H.hud_used)
+		H.set_hud_used(new /datum/hud(H))
+		H.hud_used.instantiate()
+	var/atom/movable/screen/inventory/hand/right = H.hud_used.r_hand_hud_object
+	var/atom/movable/screen/inventory/hand/left = H.hud_used.l_hand_hud_object
+	TEST_ASSERT(istype(right) && istype(left), "the human HUD has both hand slots")
+	refresh_flush()
+	TEST_ASSERT(!islist(right.color), "a working hand is not greyed")
+	TEST_ASSERT_NULL(right.unusable_reason(), "a working hand has no reason")
+	var/obj/item/organ/external/arm = H.get_organ(BP_R_ARM)
+	arm.droplimb(TRUE, DROPLIMB_EDGE)
+	refresh_flush()
+	TEST_ASSERT(islist(right.color), "the right hand is greyed once its arm is gone, with no polling")
+	TEST_ASSERT_NOTNULL(right.unusable_reason(), "and says why")
+	TEST_ASSERT(!islist(left.color), "the left hand is not greyed")
+	TEST_ASSERT(arm.replaced(H), "the arm goes back on")
+	refresh_flush()
+	// A severed hand comes back still injured: the slot stays grey, but for the injury and no longer for a missing hand.
+	var/reattached_reason = right.unusable_reason()
+	TEST_ASSERT(!findtext(reattached_reason, "no right"), "reattached, the right hand is no longer reported missing ([reattached_reason])")
+	// A dislocated arm greys the slot and putting it back restores it.
+	var/obj/item/organ/external/left_arm = H.get_organ(BP_L_ARM)
+	left_arm.dislocate()
+	refresh_flush()
+	TEST_ASSERT(islist(left.color), "a dislocated left arm greys the left hand")
+	left_arm.relocate()
+	refresh_flush()
+	TEST_ASSERT(!islist(left.color), "relocated, the left hand is normal again")
+	TEST_ASSERT_NULL(left.unusable_reason(), "with no reason")
