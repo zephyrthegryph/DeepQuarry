@@ -784,3 +784,31 @@ fn bulk_raw_trim_retains_pinned_and_unrelated_results_and_keeps_query_coordinate
     drop(page(&q.db, 0, &originals, scope, scans.clone(), q.id, 2));
     assert_eq!(scans.load(Ordering::Relaxed) - prior_scans, PAGE_FILES);
 }
+
+#[test]
+fn terminal_coordinate_retirement_prefers_empty_bulk_page_and_respects_pins() {
+    let q = QueryDb::default();
+    let originals = originals(PAGE_FILES * 3 + 1);
+    let scope = policy(None);
+    let scans = Arc::new(AtomicUsize::new(0));
+    let now = std::time::Instant::now();
+    let mut pinned = None;
+    for n in 0..4 {
+        let input = Key::new(PAGE_INPUT,n);
+        let key = Key::new(PAGE_RESULT,n);
+        q.raw_policy.workspace.pages.lock().unwrap().insert(
+            key,(input,now + std::time::Duration::from_millis(n as u64),n!=3));
+        let value = page(&q.db,n as usize,&originals,scope.clone(),scans.clone(),q.id,1);
+        if n==0 { pinned=Some(value); }
+    }
+    let key = |n| Key::new(PAGE_RESULT,n);
+    q.db.evict_value_at(key(2));
+    assert!(q.retire_bulk_page_coordinate_locked());
+    assert!(!q.raw_policy.workspace.pages.lock().unwrap().contains_key(&key(2)));
+    assert!(q.db.value_bytes_at(key(1))>0);
+    assert!(q.retire_bulk_page_coordinate_locked());
+    assert!(!q.raw_policy.workspace.pages.lock().unwrap().contains_key(&key(1)));
+    assert!(!q.retire_bulk_page_coordinate_locked());
+    assert!(q.db.value_bytes_at(key(0))>0 && q.db.value_bytes_at(key(3))>0);
+    drop(pinned);
+}

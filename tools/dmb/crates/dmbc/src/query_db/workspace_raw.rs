@@ -787,6 +787,35 @@ impl QueryDb {
         usize::from(self.db.retained_value::<RawTerminalBody>(RAW_TERMINAL_KEY).is_some())
     }
 
+    fn bulk_terminal_node_room_locked(&self) -> bool {
+        let raw = self.raw_policy.admission.leases.lock().unwrap_or_else(|e| e.into_inner()).len();
+        self.workspace_nodes_locked().saturating_add(raw) < NODE_BOUND
+    }
+
+    /// Called only after the bulk report completed and its transient result
+    /// owners dropped, while the same raw-family gate remains held. Prefer
+    /// an already payload-free coordinate. Otherwise retire at most the
+    /// oldest selected bulk page whose value and page are both unborrowed.
+    fn retire_bulk_page_coordinate_locked(&self) -> bool {
+        let mut pages = self.raw_policy.workspace.pages.lock().unwrap_or_else(|e| e.into_inner());
+        let best = pages.iter().filter_map(|(key, (_, time, bulk))| {
+            if !*bulk { return None; }
+            let value = self.db.retained_value::<Result<Arc<PageResult>, String>>(*key);
+            if value.as_ref().is_some_and(|value|
+                Arc::strong_count(value) != 2
+                    || value.as_ref().as_ref().is_ok_and(|page| Arc::strong_count(page) != 1))
+            {
+                return None;
+            }
+            Some((value.is_some(), *time, *key))
+        }).min();
+        let Some((_, _, key)) = best else { return false; };
+        let (input, _, _) = pages.remove(&key).expect("still held bulk page coordinate");
+        self.db.remove(input);
+        self.db.remove(key);
+        true
+    }
+
     /// The caller has already checked the exact new frame and closed plan.
     /// An old terminal is never reused, and no output callback runs here.
     pub(crate) fn restore_bulk_raw_report(
@@ -836,14 +865,12 @@ impl QueryDb {
                 Err(error) if error.kind() == io::ErrorKind::InvalidInput => None,
                 Err(error) => return Err(error),
             };
-            let raw_nodes = self.raw_policy.admission.leases.lock().unwrap_or_else(|e| e.into_inner()).len();
             let available = live.and_then(|live| RESULT_BOUND.checked_sub(live))
                 .and_then(|n| n.checked_sub(self.raw_policy.charge.load(Ordering::Relaxed)))
                 .and_then(|n| n.checked_sub(aggregate::REPORT_RESERVE)).unwrap_or(0);
             let fixed = RawTerminalBody::fixed_bytes();
             let mut bytes = Vec::new();
-            if self.workspace_nodes_locked().saturating_add(raw_nodes) < NODE_BOUND
-                && length.checked_add(fixed).is_some_and(|total| total <= available)
+            if length.checked_add(fixed).is_some_and(|total| total <= available)
                 && bytes.try_reserve_exact(length).is_ok() && bytes.capacity() <= length
             {
                 bytes.resize(length, 0);
@@ -865,6 +892,11 @@ impl QueryDb {
         crate::daemon::control::checkpoint()?;
         capture.require_scope(scope)?;
         if let Some(bytes) = copy.filter(|bytes| xxhash_rust::xxh3::xxh3_128(bytes) == verified.hash()) {
+            if !self.bulk_terminal_node_room_locked()
+                && (!self.retire_bulk_page_coordinate_locked() || !self.bulk_terminal_node_room_locked())
+            {
+                return Ok(verified);
+            }
             self.db.set_input(RAW_TERMINAL_KEY, RawTerminalBody {
                 witness: Mutex::new(Arc::downgrade(capture)), bytes, hash: verified.hash(), clean,
             }, u128::from(capture.issuance()));
