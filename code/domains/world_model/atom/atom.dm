@@ -76,14 +76,14 @@
 		rel_clear(src, nameof(managed_vis_overlays))
 	return ..()
 
-/// An atom's surface germ count: a lazy field (atom_misc), GERM_LEVEL_AMBIENT while unset.
+/// An atom's surface germ count: a lazy field (germs), GERM_LEVEL_AMBIENT while unset.
 /// Organs keep their own infection var and override germs() and set_germs().
 /atom/proc/germs()
-	var/held = STATE_PEEK(src, atom_misc, surface_germs)
+	var/held = STATE_PEEK(src, germs, surface_germs)
 	return isnull(held) ? GERM_LEVEL_AMBIENT : held
 
 /atom/proc/set_germs(value)
-	STATE_SET(src, atom_misc, surface_germs, value == GERM_LEVEL_AMBIENT ? null : value)
+	STATE_SET(src, germs, surface_germs, value == GERM_LEVEL_AMBIENT ? null : value)
 
 /// Shift this atom's surface germ count (never below 0). Organs override it
 /// with their infection clamp. The one writer for reagents and cleaning (P2-K5).
@@ -799,8 +799,9 @@ SETTER(/atom, icon)
 	set_color(new_color)
 
 CAPABILITIES(/atom)
-	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): atom_misc, chat_tint, cooldowns, tf_xform")
+	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): atom_misc, chat_tint, cooldowns, germs, tf_xform")
 	lazy_state(atom_misc, /datum/atom_misc_state)
+	lazy_state(germs, /datum/germs_state)
 	lazy_state(chat_tint, /datum/chat_tint_state)
 	lazy_state(tf_xform, /datum/tf_xform_state)
 	lazy_state(cooldowns, /datum/cooldowns_state)

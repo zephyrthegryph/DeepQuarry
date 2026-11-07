@@ -12,8 +12,6 @@
 	var/map_json_data
 	/// Integrity while the atom is below max_integrity; null while it is intact (get_integrity()).
 	var/atom_integrity
-	/// Surface germs; null while the type's default (germs() / set_germs()).
-	var/surface_germs
 	var/list/atom_colours
 	var/list/observer_listeners
 	var/list/z_update_images

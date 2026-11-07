@@ -277,7 +277,7 @@ Notes: a field is an end time or a start point on a clock, 0 while never set. A 
 #### `lazy_state(feature, /datum/feature_state)` and `owns_one(nameof(v), /datum/v_state, lazy = TRUE)` with `STATE_GET`, `STATE_PEEK`, `STATE_SET`, `STATE_REF`
 Need: a rare per-instance value without a var on a base type.
 Defined: `STATE_SET` at `code/defines/engine/capabilities.dm:53`; the engine in `code/engine/declare/lazy_state.dm`
-Example: `lazy_state(atom_misc, /datum/atom_misc_state)` at `code/domains/world_model/atom/atom.dm:807`; `STATE_SET(src, atom_misc, surface_germs, value)`
+Example: `lazy_state(atom_misc, /datum/atom_misc_state)` at `code/domains/world_model/atom/atom.dm:807`; `STATE_SET(src, germs, surface_germs, value)`
 Replaces / bans: base-type vars (the `base_vars` ratchet) and the old `sparse()` slots (deleted).
 Notes: the fields are the vars of a small state datum. A table-form holder (`lazy_state`) keeps it in an engine table keyed by slot and adds no var; a mob holder (`owns_one(lazy = TRUE)`) owns it in a var. A write of a default value makes nothing. A weak reference field is `ref_one(nameof(f), /type, weak = TRUE)` on the state type, read with `STATE_REF` and written with `STATE_REF_SET`.
 
