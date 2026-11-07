@@ -926,6 +926,7 @@ impl AdaptedDeclarations {
             None,
             None,
             None,
+            None,
         )
     }
 }
@@ -944,10 +945,10 @@ impl SharedAdaptedDeclarations {
         executor:&dm_exec::BuildExecutor,
         variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,
     )->Result<crate::DiagnosticDeclarations,SnapshotError>{
-        self.finish_diagnostic_with_primary(seed,on_error,executor,variables,None,[None;4],false)
+        self.finish_diagnostic_with_primary(seed,on_error,executor,variables,None,[None;4],false,None)
     }
-    pub(crate) fn finish_original_diagnostic_with_variables(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>,sealed:crate::diagnostic_declarations::OriginalSealedParents,image_dir_mixed_callables:bool)->Result<crate::DiagnosticDeclarations,SnapshotError>{self.finish_diagnostic_with_primary(seed,on_error,executor,variables,Some(primary),sealed,image_dir_mixed_callables)}
-    fn finish_diagnostic_with_primary(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,sealed:crate::diagnostic_declarations::OriginalSealedParents,image_dir_mixed_callables:bool)->Result<crate::DiagnosticDeclarations,SnapshotError>{
+    pub(crate) fn finish_original_diagnostic_with_variables(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>,sealed:crate::diagnostic_declarations::OriginalSealedParents,image_dir_mixed_callables:bool,authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>)->Result<crate::DiagnosticDeclarations,SnapshotError>{self.finish_diagnostic_with_primary(seed,on_error,executor,variables,Some(primary),sealed,image_dir_mixed_callables,authored_callables)}
+    fn finish_diagnostic_with_primary(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,sealed:crate::diagnostic_declarations::OriginalSealedParents,image_dir_mixed_callables:bool,authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>)->Result<crate::DiagnosticDeclarations,SnapshotError>{
         let mut receipt = crate::diagnostic_declarations::DiagnosticDeclarationReceipt::new();
         receipt.image_dir_mixed_callables=image_dir_mixed_callables && variables.is_some() && primary.is_some();
         receipt.original_variables=variables;
@@ -960,6 +961,7 @@ impl SharedAdaptedDeclarations {
             None,
             Some(&mut receipt),
             primary,
+            authored_callables,
         )?;
         Ok(crate::DiagnosticDeclarations::bind(snapshot, receipt))
     }
@@ -970,7 +972,7 @@ impl SharedAdaptedDeclarations {
         on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_execution(seed, on_error, Some(executor), None, None, None, None)
+        self.finish_execution(seed, on_error, Some(executor), None, None, None, None, None)
     }
     pub(crate) fn finish_with_engine_normalization(
         self,
@@ -991,6 +993,7 @@ impl SharedAdaptedDeclarations {
             structural,
             None,
             None,
+            None,
         )
     }
     fn finish_execution(
@@ -1005,6 +1008,7 @@ impl SharedAdaptedDeclarations {
         structural: Option<crate::metadata_update::StructuralMetadata<'_>>,
         diagnostics: Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>,
         primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,
+        authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let origins = self.origins.into_owned();
         let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
@@ -1040,6 +1044,7 @@ impl SharedAdaptedDeclarations {
                 intrinsics,
                 seed.is_none(),
                 receipt,
+                authored_callables,
             ),
             None => crate::build_with_intrinsic_members_structural(
                 self.symbols,

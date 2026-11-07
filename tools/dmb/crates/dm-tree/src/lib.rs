@@ -511,10 +511,11 @@ pub(crate) fn build_with_intrinsic_members_structural(
         normalization,
         structural,
         None,
+        None,
     )
 }
-/// Same builder, no retained/runtime normalization cache is admitted in this
-/// initial diagnostic-only domain. Declarations are not retried or reparsed.
+/// Diagnostic construction can borrow only source-neutral authored callable
+/// anchors. Member binding, intrinsic anchors and diagnostics stay local.
 pub(crate) fn build_checker_diagnostic_members(
     symbols: SymbolTable,
     skeletons: skeleton_roster::SkeletonView<'_>,
@@ -522,6 +523,7 @@ pub(crate) fn build_checker_diagnostic_members(
     intrinsics: &[IntrinsicMember],
     rebuild_inventory: bool,
     diagnostics: &mut diagnostic_declarations::DiagnosticDeclarationReceipt,
+    authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>,
 ) -> Result<SemanticTree, TreeError> {
     build_with_intrinsic_members_structural_mode(
         symbols,
@@ -532,6 +534,7 @@ pub(crate) fn build_checker_diagnostic_members(
         None,
         None,
         Some(diagnostics),
+        authored_callables,
     )
 }
 fn build_with_intrinsic_members_structural_mode(
@@ -546,6 +549,7 @@ fn build_with_intrinsic_members_structural_mode(
     )>,
     structural: Option<metadata_update::StructuralMetadata<'_>>,
     mut diagnostics: Option<&mut diagnostic_declarations::DiagnosticDeclarationReceipt>,
+    authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -746,7 +750,7 @@ fn build_with_intrinsic_members_structural_mode(
             .callables
             .collect(&tree, declarations, intrinsics)?
     } else {
-        if let Some(receipt)=diagnostics.as_deref_mut(){callable_namespace::collect_checker_diagnostic(skeletons,intrinsics,receipt)?}else{callable_namespace::collect_view(skeletons, intrinsics)?}
+        if let Some(receipt)=diagnostics.as_deref_mut(){callable_namespace::collect_checker_diagnostic(skeletons,intrinsics,receipt,authored_callables.map(|loan| (&tree, loan)))?}else{callable_namespace::collect_view(skeletons, intrinsics)?}
     };
     let local_owners = normalization.map(|(declarations, retained)| {
         retained.local.prepare(&tree, declarations, &callable_kinds)

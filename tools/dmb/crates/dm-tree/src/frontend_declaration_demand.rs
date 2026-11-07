@@ -30,6 +30,10 @@ pub(super) trait Permit {
     fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>,plan:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>;
     fn original_analysis_declarations(&self,expanded:&ExpandedRegions,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>;
     fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>;
+    fn borrow_authored_callables<'a>(
+        &self, _: &'a crate::declaration_contributions::KeyedDeclarations,
+        _: &'a crate::owner_callable::RetainedCallableOwners,
+    ) -> Result<Option<crate::owner_callable::AuthoredCallableLoan<'a>>, Self::Failure> { Ok(None) }
     fn retain_generation_metadata(&self,bytes:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>;
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>;
     fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>;
@@ -157,6 +161,13 @@ impl Permit for CheckedPermit<'_,'_>{
       let current=primary.adapt_for_original_outcome(self.admission).and_then(|products|products.into_current(self.admission)).map_err(FrontendBuildFailure::Operational)?;
       current.retain_signature_aliases(self.host,self.admission).map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>FrontendBuildFailure::Operational(actual),BodySyntaxFailure::Syntax(actual)=>FrontendBuildFailure::Diagnostics(vec![actual].into())})?;
       current.converge_previous_code(previous,self.admission).and_then(|current|current.into_prepared(engine,self.admission)).map_err(FrontendBuildFailure::Operational)
+    }
+    fn borrow_authored_callables<'a>(
+        &self, declarations: &'a crate::declaration_contributions::KeyedDeclarations,
+        prior: &'a crate::owner_callable::RetainedCallableOwners,
+    ) -> Result<Option<crate::owner_callable::AuthoredCallableLoan<'a>>, Self::Failure> {
+        crate::owner_callable::AuthoredCallableLoan::try_new(declarations, prior, self.admission)
+            .map_err(FrontendBuildFailure::Operational)
     }
     fn retain_generation_metadata(&self,bytes:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>{
         let result=self.admission.reserve(bytes);

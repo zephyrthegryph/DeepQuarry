@@ -17,6 +17,10 @@ impl DiagnosticRetainedRecords {
         if let Some(engine)=&self.engine{visit(V::Engine(engine));}
     }
 
+    pub(in crate::frontend) fn authored_declarations(&self) -> &crate::declaration_contributions::KeyedDeclarations {
+        &self.index
+    }
+
     pub(crate) fn engine_matches(&self,engine:Option<&EngineSeed>)->bool { same_engine(self.engine.as_ref(),engine) }
     pub(crate) fn capture(
         adapted: &crate::SharedAdaptedDeclarations,

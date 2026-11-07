@@ -464,3 +464,113 @@ pub const ORIGINAL_ANALYZE_PREPARATION_VERSION:u32=1;
   let full=super::super::build_for_original_analysis_with_state_checked(path,&provider,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None,&host).unwrap();assert_eq!(full.original_analysis_completeness(),Some(OriginalAnalysisCompleteness::Complete));assert!(full.handlers_structural_source().is_err());full.checker_source_view().unwrap();
  }
 }
+
+#[cfg(test)]
+mod authored_callable_anchor_loan_tests {
+    use super::*;
+    use crate::{MemberKind, TreeError};
+    use dm_ir::SymbolId;
+    use dm_preprocess::InitialEnvironment::{Native5161687, OriginalChecker0290};
+    use super::original_builtin_variables_tests::source;
+
+    const COMMON: &str = concat!(
+        "/datum/stable/verb/select()\n    return 1\n",
+        "/datum/conditional/proc/probe()\n    return 2\n",
+    );
+
+    #[test]
+    fn original_borrows_strict_callable_anchors_and_rechecks_absent_authored_names() {
+        let host = crate::frontend::declaration_checked_tests::original_test_host();
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let project = std::path::Path::new("actual-authored-anchor-modes.dme");
+        let defines = Default::default();
+        let text = format!("{COMMON}#ifdef SPACEMAN_DMM\n/datum/conditional/proc/only_original()\n    return 3\n#endif\n");
+        let strict_source = source(&text, Native5161687);
+        let mut strict = RetainedSemanticTree::new();
+        let native = crate::frontend::build_with_executor_and_semantic_state_for_policy_checked(
+            project, &strict_source, &defines, FrontendConfig { workers: 1, engine: None, observer: None },
+            None, &executor, Some(&mut strict), false, &host,
+        ).unwrap();
+        let seed = crate::checker_builtins::original_analysis_seed().unwrap();
+        let build = |input: &str, lender| {
+            let actual = source(input, OriginalChecker0290);
+            let mut analysis = RetainedSemanticTree::new();
+            crate::frontend::build_for_original_analysis_with_callable_anchors_checked(
+                project, &actual, &defines,
+                FrontendConfig { workers: 1, engine: Some(seed.frontend_seed()), observer: None },
+                None, &executor, Some(&mut analysis), &host, lender,
+            ).unwrap()
+        };
+        let before = strict.callable_owner_hits();
+        let same = build(COMMON, Some(&strict));
+        let same_hits = strict.callable_owner_hits() - before;
+        assert!(same_hits >= 2, "both exactly overlapping authored owners should hit");
+        let before = strict.callable_owner_hits();
+        let changed = build(&text, Some(&strict));
+        let changed_hits = strict.callable_owner_hits() - before;
+        assert!(changed_hits > 0, "the stable authored owner should still hit");
+        assert_eq!(same_hits, changed_hits + 1, "conditional owner must miss after adding its previously absent selector");
+
+        let without_loan = build(&text, None);
+        let changed_view = changed.source_view().unwrap();
+        let plain_view = without_loan.source_view().unwrap();
+        assert_eq!(changed_view.receipt().errors(), plain_view.receipt().errors());
+        assert_eq!(changed_view.tree().identity(), plain_view.tree().identity());
+        assert!(!Arc::ptr_eq(changed_view.tree(), &native.snapshot.tree));
+        let declaration = |tree: &crate::SemanticTree| {
+            tree.lookup_type(SymbolId::of("/datum/conditional"))
+                .and_then(|owner| tree.resolve(owner, SymbolId::of("only_original"), MemberKind::Proc))
+        };
+        assert!(declaration(&native.snapshot.tree).is_none());
+        assert!(declaration(same.source_view().unwrap().tree()).is_none());
+        assert!(declaration(changed_view.tree()).is_some());
+    }
+
+    #[test]
+    fn original_anchor_loan_keeps_duplicate_diagnostics_in_current_encounter_order() {
+        let host = crate::frontend::declaration_checked_tests::original_test_host();
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let project = std::path::Path::new("actual-authored-anchor-duplicates.dme");
+        let defines = Default::default();
+        let text = format!(concat!(
+            "{}",
+            "/datum/conditional/proc/probe()\n    return 3\n",
+            "/datum/conditional/proc/other()\n    return 4\n",
+            "/datum/conditional/proc/other()\n    return 5\n",
+        ), COMMON);
+        let mut strict = RetainedSemanticTree::new();
+        let ordinary = FrontendConfig { workers: 1, engine: None, observer: None };
+        crate::frontend::build_with_executor_and_semantic_state_for_policy_checked(
+            project, &source(COMMON, Native5161687), &defines, ordinary,
+            None, &executor, Some(&mut strict), false, &host,
+        ).unwrap();
+        let seed = crate::checker_builtins::original_analysis_seed().unwrap();
+        let build = |lender| {
+            let actual = source(&text, OriginalChecker0290);
+            let mut analysis = RetainedSemanticTree::new();
+            crate::frontend::build_for_original_analysis_with_callable_anchors_checked(
+                project, &actual, &defines,
+                FrontendConfig { workers: 1, engine: Some(seed.frontend_seed()), observer: None },
+                None, &executor, Some(&mut analysis), &host, lender,
+            ).unwrap()
+        };
+        let reference = build(None);
+        let before = strict.callable_owner_hits();
+        let borrowed = build(Some(&strict));
+        assert!(strict.callable_owner_hits() > before);
+        let source = borrowed.source_view().unwrap();
+        assert_eq!(source.receipt().errors(), reference.source_view().unwrap().receipt().errors());
+        let names: Vec<_> = source.receipt().errors().iter().filter_map(|error| match error {
+            TreeError::Duplicate { name, kind: MemberKind::Proc, .. } => Some(*name),
+            _ => None,
+        }).collect();
+        assert_eq!(names, [SymbolId::of("probe"), SymbolId::of("other")]);
+        assert!(borrowed.try_into_compilable().is_err());
+        let mut strict_duplicate = RetainedSemanticTree::new();
+        assert!(crate::frontend::build_with_executor_and_semantic_state_for_policy_checked(
+            project, &self::source(&text, Native5161687), &defines,
+            FrontendConfig { workers: 1, engine: None, observer: None },
+            None, &executor, Some(&mut strict_duplicate), false, &host,
+        ).is_err());
+    }
+}

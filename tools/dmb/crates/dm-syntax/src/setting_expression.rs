@@ -189,7 +189,7 @@ impl<'op> SettingAdmission<'op> {
     /// optimization. The identical live representation remains valid when
     /// this quota grant is unavailable. An actual operation checkpoint
     /// failure still propagates and is never turned into a missed grant.
-    pub(crate) fn try_reserve_optimization(&self, bytes: usize) -> std::io::Result<Option<SettingRootLease>> {
+    pub fn try_reserve_optimization(&self, bytes: usize) -> std::io::Result<Option<SettingRootLease>> {
         self.checkpoint()?;
         Ok(SettingRootLease::reserve(self.counter, self.limit, bytes).ok())
     }

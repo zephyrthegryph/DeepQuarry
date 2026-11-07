@@ -199,6 +199,10 @@ impl RetainedSemanticTree {
     ) {
         self.normalization.storage.visit_storage(visit);
     }
+    pub(in crate::frontend) fn authored_callable_owners(&self) -> &crate::owner_callable::RetainedCallableOwners {
+        &self.normalization.callables
+    }
+
     pub fn callable_owner_hits(&self) -> usize {
         self.normalization.callables.hits()
     }
