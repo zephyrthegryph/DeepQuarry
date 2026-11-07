@@ -117,6 +117,31 @@ pub(crate) struct Verified(Sealed);
 impl Verified {
     pub(crate) fn length(&self) -> u64 { self.0.length }
     pub(crate) fn hash(&self) -> u128 { self.0.hash }
+    /// Append one previously verified, producer-owned JSON array as part of
+    /// the enclosing private ordered report. This never decodes row semantics.
+    #[cfg(test)]
+    pub(crate) fn append_array_rows(mut self, output: &mut impl Write, first: &mut bool) -> io::Result<()> {
+        let inner = self.0.length.checked_sub(2).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "short staged array"))?;
+        let mut opening = [0u8;1];
+        self.0.file.read_exact(&mut opening)?;
+        if opening != [b'['] { return Err(io::Error::new(io::ErrorKind::InvalidData, "staged array lacks opening")); }
+        if inner != 0 {
+            if !*first { output.write_all(b",")?; }
+            let mut reader = (&mut self.0.file).take(inner);
+            let mut block = [0u8; BLOCK];
+            while reader.limit() != 0 {
+                crate::daemon::control::checkpoint()?;
+                let count = reader.limit().min(BLOCK as u64) as usize;
+                reader.read_exact(&mut block[..count])?;
+                output.write_all(&block[..count])?;
+            }
+            *first = false;
+        }
+        let mut closing = [0u8;1];
+        self.0.file.read_exact(&mut closing)?;
+        if closing != [b']'] { return Err(io::Error::new(io::ErrorKind::InvalidData, "staged array lacks closing")); }
+        Ok(())
+    }
     /// Call only after the authoritative source and terminal checks. Failed
     /// output IO is returned as-is and cannot retry or publish a new prefix.
     pub(crate) fn publish(self, output: &mut impl Write) -> io::Result<()> {

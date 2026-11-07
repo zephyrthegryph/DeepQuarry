@@ -613,6 +613,28 @@ impl Resolver for Observed<'_, '_> {
         }
     }
 }
+fn compute_current_body_using(
+    input: &Arc<EffectInput>,
+    ordinal: usize,
+    resolver: &impl Resolver,
+    admission: &ExecutionAdmission,
+    body_charge: &Arc<dm_syntax::SettingChargeCounter>,
+    obtain: &dm_analysis::checker_effects::CanonicalOriginalBodyLoan<'_>,
+) -> Result<Arc<BodyEffects>, dm_analysis::policy_body_demand::PolicyFailure> {
+    super::setting_syntax::with_setting_admission(body_charge,|syntax|{
+        input.archive().with_current_body_checked_in(ordinal,syntax,&mut(),|_,requested|obtain(requested),|_,body|{
+            match input.compute_current_original_body_using(&body,syntax,resolver,admission,&||crate::daemon::control::checkpoint(),Some(obtain)){
+                Ok(body)=>Ok(Ok(body)),
+                Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual)),
+                Err(actual)=>Ok(Err(actual)),
+            }
+        })
+    }).map_err(|actual|match actual{
+        dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>dm_analysis::policy_body_demand::PolicyFailure::Operational(actual),
+        dm_tree::frontend::BodySyntaxFailure::Syntax(actual)=>actual.message.into(),
+    }).and_then(|value|value)
+}
+
 // Compute one real body inside the caller's active query context. Syntax,
 // resolver and program dependencies attach to that query. Publication (a
 // standalone BODY outcome or future bounded chunk) is owned by the caller.
@@ -664,18 +686,7 @@ fn compute_body_in_query(
         };
         // QueryContext is locked only inside obtain. Neither the evaluator
         // nor its callee prefix or resolver callbacks run under that lock.
-        super::setting_syntax::with_setting_admission(body_charge,|syntax|{
-            input.archive().with_current_body_checked_in(ordinal,syntax,&mut(),|_,requested|obtain(requested),|_,body|{
-                match input.compute_current_original_body_using(&body,syntax,&resolver,&admission,&||crate::daemon::control::checkpoint(),Some(&obtain)){
-                    Ok(body)=>Ok(Ok(body)),
-                    Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual)),
-                    Err(actual)=>Ok(Err(actual)),
-                }
-            })
-        }).map_err(|actual|match actual{
-            dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>dm_analysis::policy_body_demand::PolicyFailure::Operational(actual),
-            dm_tree::frontend::BodySyntaxFailure::Syntax(actual)=>actual.message.into(),
-        }).and_then(|value|value)
+        compute_current_body_using(&input, ordinal, &resolver, &admission, body_charge, &obtain)
     } else if let Some(primary) = original_primary {
         let host = input.archive().body_query_host()
             .ok_or(QueryError::Missing(p.key))?;
@@ -704,6 +715,8 @@ fn compute_body_in_query(
 
 pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegistry,body_charge:Arc<dm_syntax::SettingChargeCounter>) {
     current_variables::register(db,Arc::clone(&ledger));
+    #[cfg(test)]
+    compact_chunk::register(db, Arc::clone(&ledger), Arc::clone(&body_charge));
     pages::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     global_graph::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     global_summary::register(db,Arc::clone(&ledger),Arc::clone(&registry));
@@ -1331,3 +1344,6 @@ pub(super) mod pages;
 #[path="purity_report_wire.rs"]pub(super) mod report_wire;
 
 #[path="purity_current_variables.rs"]pub(super) mod current_variables;
+
+#[cfg(test)]
+#[path="purity_compact_chunk.rs"]mod compact_chunk;

@@ -122,8 +122,48 @@ Ok(())}
 /// Whole kwargs judge over the same sealed BODY uses. No AST/call evaluation.
 /// Caller supplies only existing BODY outcomes, authenticated before any use.
 pub fn with_cached_body_uses<W:EffectReportWork>(input:&Arc<crate::checker_effects::EffectInput>,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,work:&mut W,checkpoint:&dyn Fn()->io::Result<()>,mut obtain:impl FnMut(usize,&mut dyn FnMut(&crate::checker_effects::BodyEffects)->Result<(),PolicyFailure>)->Result<(),PolicyFailure>,consume:impl FnOnce(&Findings<'_>)->Result<(),PolicyFailure>)->Result<(),PolicyFailure>{
+ with_original_uses(input,resolver,admission,work,checkpoint,|ordinal,record|{
+  let mut delivered=false;
+  obtain(ordinal,&mut|body|{
+   if delivered{return Err("cached keyword body was not delivered exactly once at admitted ordinal".into())}
+   delivered=true;
+   body.with_original_keyword_uses(input,ordinal,|uses|uses.iter().copied().try_for_each(&mut *record))??;
+   Ok(())
+  })?;
+  if !delivered{return Err("cached keyword body contribution missing".into())}
+  Ok(())
+ },consume)
+}
+
+/// Whole kwargs judge over typed, authenticated compact body facts.
+pub fn with_compact_body_uses<'page,W:EffectReportWork>(
+ input:&Arc<crate::checker_effects::EffectInput>,
+ resolver:&(impl Resolver+?Sized),
+ admission:&ExecutionAdmission,
+ work:&mut W,
+ checkpoint:&dyn Fn()->io::Result<()>,
+ mut obtain:impl FnMut(usize)->Result<crate::checker_effects::CompactGraphBodyLoan<'page>,PolicyFailure>,
+ consume:impl FnOnce(&Findings<'_>)->Result<(),PolicyFailure>,
+)->Result<(),PolicyFailure>{
+ with_original_uses(input,resolver,admission,work,checkpoint,|ordinal,record|{
+  let body=obtain(ordinal)?;
+  body.keyword_uses(input,ordinal)?.iter().copied().try_for_each(record)
+ },consume)
+}
+
+fn with_original_uses<W:EffectReportWork>(
+ input:&Arc<crate::checker_effects::EffectInput>,
+ resolver:&(impl Resolver+?Sized),
+ admission:&ExecutionAdmission,
+ work:&mut W,
+ checkpoint:&dyn Fn()->io::Result<()>,
+ mut obtain:impl FnMut(usize,&mut dyn FnMut(crate::checker_effects::AcceptedKeywordUse)->Result<(),PolicyFailure>)->Result<(),PolicyFailure>,
+ consume:impl FnOnce(&Findings<'_>)->Result<(),PolicyFailure>,
+)->Result<(),PolicyFailure>{
  checkpoint().map_err(PolicyFailure::Operational)?;input.require_original_checker_source()?;let archive=input.archive().as_ref();let profile=input.profile();if resolver.source_owner()!=Some(std::ptr::from_ref(archive.tree()).cast()){return Err("cached keyword resolver belongs to another archive".into())}
  let order=crate::checker_order::ArchivedOrder::build(archive,admission,&mut||checkpoint(),&mut|bytes|work.reserve(bytes))?;let mut fold=Fold{archive,profile,work,poll:checkpoint,used:BTreeMap::new(),names:BTreeSet::new()};
- let pending=(||{for rank in 0..order.len(){checkpoint().map_err(PolicyFailure::Operational)?;let ordinal=order.ordinal(rank).ok_or("cached keyword original order absent")?;let mut delivered=false;obtain(ordinal,&mut|body|{if delivered{return Err("cached keyword body was not delivered exactly once at admitted ordinal".into())}delivered=true;body.with_original_keyword_uses(input,ordinal,|uses|{for usage in uses{checkpoint().map_err(PolicyFailure::Operational)?;fold.record_use(*usage)?;}Ok::<(),PolicyFailure>(())})??;Ok(())})?;if !delivered{return Err("cached keyword body contribution missing".into())}}
+ let pending=(||{for rank in 0..order.len(){checkpoint().map_err(PolicyFailure::Operational)?;let ordinal=order.ordinal(rank).ok_or("cached keyword original order absent")?;
+  obtain(ordinal,&mut|usage|{checkpoint().map_err(PolicyFailure::Operational)?;fold.record_use(usage)})?;
+ }
  complete_original_overrides(&mut fold,&order,resolver,checkpoint)?;let findings=Findings{archive,rows:fold.finish()?};checkpoint().map_err(PolicyFailure::Operational)?;consume(&findings)?;checkpoint().map_err(PolicyFailure::Operational)?;Ok(())})();if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;pending
 }

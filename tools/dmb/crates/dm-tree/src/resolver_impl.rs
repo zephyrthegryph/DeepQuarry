@@ -505,6 +505,7 @@ impl SemanticTree {
         work.poll()?;
         match query {
             Q::SourceVarDeclaration{owner,name}=>self.source_var_declaration_using(owner,name,query,&mut|data|Ok(xxhash_rust::xxh3::xxh3_128(&data.canonical_bytes_using(work)?).into())),
+            Q::CheckerIntrinsicCallable{profile,owner,name,verb}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,if verb{MemberKind::Verb}else{MemberKind::Proc},true,work),
             Q::CheckerBuiltinVar{profile,owner,name}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,MemberKind::Var,false,work),
             Q::CheckerBuiltinProc{profile,owner,name,verb}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,if verb{MemberKind::Verb}else{MemberKind::Proc},false,work),
             Q::SourceDeclarationChain{owner,name,verb}=>self.source_declaration_chain_using(owner,name,verb,query,Some(work)),

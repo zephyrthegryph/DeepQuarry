@@ -233,3 +233,90 @@ fn original_compact_graph_page_projects_actual_effects_with_bounded_capacity() {
  let error = CompactGraphPageBuilder::new(input, 0, order.len(), &mut refused).err().unwrap();
  assert!(matches!(error, dm_analysis::policy_body_demand::PolicyFailure::Operational(actual) if actual.kind() == io::ErrorKind::OutOfMemory));
 }
+
+#[test]
+fn original_compact_graph_and_keyword_replay_use_the_same_evaluated_products() {
+ use dm_analysis::{checker_effects::*, checks_keyword_overrides::{self as kwargs, Findings}, policy_body_demand::PolicyFailure};
+ use std::io;
+ #[derive(Default)] struct Work(usize);
+ impl EffectReportWork for Work {
+  type Mark = usize;
+  fn reserve(&mut self,n:usize)->io::Result<()> { self.0=self.0.checked_add(n).filter(|n| *n<=4*1024*1024).ok_or(io::ErrorKind::OutOfMemory)?; Ok(()) }
+  fn mark(&mut self)->io::Result<usize>{Ok(self.0)}
+  fn reconcile(&mut self,mark:usize,n:usize)->io::Result<()> {self.0=mark.checked_add(n).filter(|n| *n<=self.0).ok_or(io::ErrorKind::InvalidData)?;Ok(())}
+ }
+ fn keyword_rows(findings:&Findings<'_>)->Vec<(String,Vec<String>)> {
+  findings.rows().iter().map(|row|(row.message.clone(),row.notes.iter().map(|note|findings.legacy_note(row.point,note).unwrap().to_string()).collect())).collect()
+ }
+ let source=concat!(
+  "var/shared_sink=0\n",
+  "/datum/base/proc/work(alpha)\n    return alpha\n",
+  "/datum/base/child/work(beta)\n    return beta\n",
+  "/proc/leaf()\n    sleep(1)\n    shared_sink=1\n    return 0\n",
+  "/proc/caller(datum/base/target)\n",
+  "    set SpacemanDMM_should_be_pure=TRUE\n",
+  "    set SpacemanDMM_should_not_sleep=TRUE\n",
+  "    target.work(alpha=1)\n    return leaf()\n",
+ );
+ let fixture=case("compact-typed-replay",source);
+ let input=&fixture.input;
+ let tree=input.archive().tree();
+ let source=EffectSource::new(input.archive(),input.profile()).unwrap();
+ let a=ExecutionAdmission::default();
+ let order=input.archive().callables().source_order();
+ let mut bodies=vec![None;order.len()];
+ let mut page_work=Work::default();
+ let mut pages=Vec::new();
+ for start in (0..order.len()).step_by(2) {
+  let end=(start+2).min(order.len());
+  let mut page=CompactGraphPageBuilder::new(input,start,end-start,&mut page_work).unwrap();
+  for &ordinal in &order[start..end] {
+   let body=input.compute_original_body_checked_using_admitted_controlled(
+    ordinal,tree,&a,&|syntax,_|fixture.host.syntax_checked(syntax),&||Ok(()),
+   ).unwrap();
+   assert_eq!(body.original_evaluation_count(),1);
+   page.push(&body,&mut page_work).unwrap();
+   bodies[ordinal]=Some(body);
+  }
+  pages.push(page.finish().unwrap());
+ }
+ let borrowed:Vec<_>=pages.iter().collect();
+ let replay=CompactGraphReplay::new(input,&borrowed,&mut page_work,&||Ok(())).unwrap();
+ let mut keywords=None;
+ kwargs::with_compact_body_uses(input,tree,&a,&mut Work::default(),&||Ok(()),|ordinal|replay.body(ordinal),|rows|{keywords=Some(keyword_rows(rows));Ok(())}).unwrap();
+ let mut expected_keywords=None;
+ kwargs::with_cached_body_uses(input,tree,&a,&mut Work::default(),&||Ok(()),|ordinal,visit|visit(bodies[ordinal].as_ref().unwrap()),|rows|{expected_keywords=Some(keyword_rows(rows));Ok(())}).unwrap();
+ assert_eq!(keywords,expected_keywords);
+ let keywords=keywords.unwrap();
+ assert_eq!(keywords.len(),1);
+ assert!(keywords[0].0.contains("missing keyword args"));
+ assert!(keywords[0].1.iter().any(|note|note.contains("called with")));
+
+ let legacy_page=|start,width,admission:&ExecutionAdmission|->Result<Arc<EffectPageFacts>,PolicyFailure>{
+  EffectPageFacts::compute_from_original_bodies(&source,input,start,width,admission,&mut||Ok(()),&mut|ordinal,_|Ok::<_,PolicyFailure>(bodies[ordinal].as_ref().unwrap().clone()))
+   .map(Arc::new).map_err(|actual|match actual{OriginalBodyReadFailure::Policy(actual)|OriginalBodyReadFailure::Body(actual)=>actual})
+ };
+ let graph=CompactEffectGraph::build_replay_reserved_checked(&source,2,&replay,tree,&a,&mut||Ok(()),&mut|_|Ok(())).unwrap()
+  .into_retained_checked(&mut||Ok(()),&mut|_|Ok(())).unwrap();
+ let expected_graph=CompactEffectGraph::build_pages_checked(&source,2,tree,&a,&mut||Ok(()),&mut|start,width,a,_|legacy_page(start,width,a)).unwrap()
+  .into_retained_checked(&mut||Ok(()),&mut|_|Ok(())).unwrap();
+ assert_eq!(graph.report_fingerprint(),expected_graph.report_fingerprint());
+ let current=graph.current(&source).unwrap();
+ let scc=current.compute_scc_checked(&a,&mut||Ok(())).unwrap();
+ let summary=scc.into_summary_checked(&a,|node,_|Ok(current.direct_effect(node).unwrap()),|node,next,_|current.successor(node,next),&mut||Ok(())).unwrap();
+ let policy=dm_analysis::check_policy::CheckerPolicy::default();
+ let mut order_work=Work::default();
+ let order=source.report_order_checked(&graph,&a,&mut||Ok(()),&mut order_work).unwrap();
+ for phase in [EffectReportPhase::Purity,EffectReportPhase::Sleep] {
+  let actual=source.report_replay_window_checked(&graph,&summary,0,source.len(),phase,tree,&policy,&a,&mut||Ok(()),&replay,&mut Work::default()).unwrap();
+  let reused=(0..source.len()).flat_map(|start|source.report_replay_window_using_order_checked(&order,&summary,start,1,phase,tree,&policy,&a,&mut||Ok(()),&replay,&mut Work::default()).unwrap()).collect::<Vec<_>>();
+  let expected=source.report_pages_window_checked(&expected_graph,&summary,0,source.len(),phase,tree,&policy,&a,&mut||Ok(()),legacy_page,&mut Work::default()).unwrap();
+  let graph_only=|rows:&[Produced]|rows.iter().filter(|row|row.phase()!=ProducedPhase::BodyImmediate).map(|row|(
+   format!("{:?}",row.phase()), row.registration_tag, row.diagnostic.span, row.diagnostic.message.clone(),
+   row.diagnostic.notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>(),
+  )).collect::<Vec<_>>();
+  assert!(!actual.is_empty());
+  assert_eq!(graph_only(&actual),graph_only(&expected));
+  assert_eq!(graph_only(&reused),graph_only(&expected));
+ }
+}

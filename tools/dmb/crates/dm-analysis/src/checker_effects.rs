@@ -1031,6 +1031,8 @@ mod page_facts;
 pub use page_facts::{EffectPageFacts,EffectPageRead};
 #[path="checker_effects_compact_page.rs"]mod compact_page;
 pub use compact_page::{CompactGraphPage,CompactGraphPageBuilder,CompactGraphPageLoan,CompactGraphBodyLoan};
+#[path="checker_effects_compact_replay.rs"]mod compact_replay;
+pub use compact_replay::CompactGraphReplay;
 
 #[path="checker_effects_report.rs"]mod report_core;
 
@@ -1038,7 +1040,7 @@ pub use compact_page::{CompactGraphPage,CompactGraphPageBuilder,CompactGraphPage
 
 fn report_source_note<E:From<String>+From<&'static str>>(input:&report_core::ReportSource<'_>,offset:usize,budget:&output::ReportBudgetWith<'_,E>)->Result<SourceNoteOrigin,E>{let borrowed=input.archive.borrowed_source_note_point(offset)?;let bytes=borrowed.retained_charge().and_then(|n|n.checked_add(128)).ok_or("effect report note capacity overflow")?;budget.charge(bytes)?;Ok(borrowed.into_owned())}
 
-pub use report_pages::{EffectReportPhase,EffectReportWork};
+pub use report_pages::{EffectReportOrder,EffectReportPhase,EffectReportWork};
 
 #[path="checker_effects_fingerprint.rs"]mod fingerprint;
 pub use fingerprint::report_fingerprint;

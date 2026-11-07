@@ -527,3 +527,349 @@ fn current_original_blocks_do_not_borrow_an_opener_across_an_authored_semicolon(
   }
  });
 }
+
+#[test]
+fn current_original_compact_chunk_records_real_kind4_and_negative_model_reads() {
+ use dm_analysis::checker_effects::EffectInput;
+ const SOURCE: &str = concat!(
+  "/datum/result\n",
+  "/proc/leaf()\n    set SpacemanDMM_return_type = /datum/result\n    return null\n",
+  "/proc/probe()\n    return leaf().field\n",
+  "/proc/negative()\n    return missing_value\n",
+ );
+ let (mut host, request, root) = fixture(SOURCE);
+ let db = host.query_db().clone();
+ let observe = |host: &crate::runner_host::BuildHost| current(host, |snapshot| {
+  let absolute = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let input = EffectInput::original_checker_source_with_current_bodies(
+   Arc::clone(absolute.input().archive()), absolute.input().profile(),
+   snapshot.diagnostic_declarations.as_ref().unwrap(), db.as_ref(),
+  ).unwrap();
+  let roster = input.archive().callables();
+  let order = roster.source_order();
+  assert_eq!(order.len(), 3);
+  for (&ordinal, expected) in order.iter().zip(["leaf", "probe", "negative"]) {
+   assert_eq!(roster.identity(ordinal).unwrap().name, SymbolId::of(expected));
+  }
+  let body_runs = db.db().stats(Kind(17)).computed;
+  let lookup_runs = db.db().stats(Kind(21)).computed;
+  let (chunk, model, rows) = db.compact_original_chunk_proof_for_test(&input, 1, 2).unwrap();
+  assert!(db.db().dependants(&[model]).contains(&chunk));
+  for &ordinal in order {
+   let key = crate::query_db::QueryDb::compact_original_chunk_body_key_for_test(&input, ordinal);
+   assert!(db.db().dependants(&[key]).contains(&chunk), "missing real canonical syntax edge for {ordinal}");
+  }
+  assert_eq!(db.db().stats(Kind(17)).computed, body_runs);
+  assert_eq!(db.db().stats(Kind(21)).computed, lookup_runs);
+  let ran = db.db().stats(Kind(32)).computed;
+  let (_, _, warm) = db.compact_original_chunk_proof_for_test(&input, 1, 2).unwrap();
+  assert_eq!(warm, rows);
+  assert_eq!(db.db().stats(Kind(32)).computed, ran);
+  let field = ResolveQuery::SourceVarDeclaration { owner: SymbolId::of("/datum/result"), name: SymbolId::of("field") };
+  let negative = ResolveQuery::SourceVarDeclaration { owner: SymbolId::of("/"), name: SymbolId::of("missing_value") };
+  assert!(rows.contains(&(negative, true)));
+  (model, rows.into_iter().find(|(query, _)| *query == field).expect("actual field lookup").1)
+ });
+ run(&mut host, &request);
+ let (first_model, missing) = observe(&host);
+ assert!(missing);
+ std::fs::write(root.join("code/probe.dm"), SOURCE.replacen("/datum/result\n", "/datum/result\n    var/field\n", 1)).unwrap();
+ run(&mut host, &request);
+ let (next_model, missing) = observe(&host);
+ assert_ne!(first_model, next_model, "new immutable native model reissues the chunk");
+ assert!(!missing);
+}
+
+
+fn admit_compact_original_report_inputs(
+    request: &mut crate::request::BuildRequest,
+    environment: &std::path::Path,
+) {
+    use crate::policy_request::{PolicyInputFile, PolicyInputRole};
+    let selected = dm_analysis::check_configuration::select(environment, None);
+    request.policy_inputs.as_mut().unwrap().files.extend([
+        PolicyInputFile {
+            path: environment.to_path_buf(), role: PolicyInputRole::DmSource, required: true,
+        },
+        // The real configuration capture must prove optional autodetect absence.
+        PolicyInputFile {
+            path: selected.path, role: PolicyInputRole::Configuration, required: false,
+        },
+    ]);
+}
+
+#[test]
+fn current_original_compact_chunk_stages_both_phases_once_and_keeps_failed_prefix_private() {
+ use dm_analysis::{check_policy::DiagnosticSeverity, checker_effects::{EffectInput, OriginalBodyDiagnostic}};
+ use std::io::{self, Write};
+ const SOURCE: &str = "/proc/probe()\n    set SpacemanDMM_made_up = 1\n    return missing_value\n";
+ fn fail_render(_: &EffectInput, _: &OriginalBodyDiagnostic, _: DiagnosticSeverity, out: &mut dyn Write) -> io::Result<()> {
+  out.write_all(b"unpublishable prefix")?;
+  Err(io::Error::from_raw_os_error(1450))
+ }
+ let (mut host, mut request, root) = fixture(SOURCE);
+ let environment = root.join("code/probe.dm");
+ admit_compact_original_report_inputs(&mut request, &environment);
+ let cache = request.cache_root.as_ref().unwrap().clone();
+ std::fs::create_dir_all(&cache).unwrap();
+ let db = host.query_db().clone();
+ run(&mut host, &request);
+ current(&host, |snapshot| {
+  let absolute = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let input = EffectInput::original_checker_source_with_current_bodies(
+   Arc::clone(absolute.input().archive()), absolute.input().profile(),
+   snapshot.diagnostic_declarations.as_ref().unwrap(), db.as_ref(),
+  ).unwrap();
+  snapshot.with_effect_scope(&input, &environment, None, &snapshot.tree, |db, scope| {
+   let mut prelude = Vec::new();
+   let mut body = Vec::new();
+   let before = db.db().stats(Kind(32)).computed;
+   let standalone = db.db().stats(Kind(17)).computed;
+   db.stage_compact_original_chunk_for_test(&input, scope, 0, 1, &cache,
+    super::original_ordered_wire::write_body_diagnostic_row, &mut prelude, &mut body)?;
+   assert_eq!(db.db().stats(Kind(32)).computed, before + 1);
+   assert_eq!(db.db().stats(Kind(17)).computed, standalone);
+   let actual_prelude: serde_json::Value = serde_json::from_slice(&prelude)?;
+   let actual_body: serde_json::Value = serde_json::from_slice(&body)?;
+   let mut expected = [Vec::new(), Vec::new()];
+   snapshot.visit_original_body_diagnostics(&environment, None, &snapshot.tree, |_, row| {
+    let Some(severity) = scope.policy().register(row.registration_tag(), row.default_level())
+     .filter(|severity| *severity <= DiagnosticSeverity::Info) else { return Ok(()); };
+    let mut bytes = Vec::new();
+    super::original_ordered_wire::write_body_diagnostic_row(absolute.input(), row, severity, &mut bytes)?;
+    let index = if row.phase() == dm_analysis::checker_effects::OriginalDiagnosticPhase::Prelude { 0 } else { 1 };
+    expected[index].push(serde_json::from_slice::<serde_json::Value>(&bytes)?);
+    Ok(())
+   })?;
+   assert_eq!(actual_prelude, serde_json::json!(expected[0]));
+   assert_eq!(actual_body, serde_json::json!(expected[1]));
+   assert_eq!(expected[0].len(), 1);
+   assert_eq!(expected[1].len(), 1);
+
+   prelude.clear();
+   body.clear();
+   let error = db.stage_compact_original_chunk_for_test(&input, scope, 0, 1, &cache,
+    fail_render, &mut prelude, &mut body).unwrap_err();
+   assert_eq!(error.raw_os_error(), Some(1450));
+   assert!(prelude.is_empty() && body.is_empty());
+   assert_eq!(db.effect_graph_work_for_test(), 0);
+   Ok(())
+  }).unwrap();
+ });
+}
+
+#[test]
+fn current_original_archived_body_windows_keep_global_phase_order_and_atomic_staging() {
+ use dm_analysis::{check_policy::DiagnosticSeverity, checker_effects::{EffectInput, OriginalBodyDiagnostic}};
+ use std::io::{self, Write};
+ const SOURCE: &str = concat!(
+  "/datum/z/proc/z()\n    set SpacemanDMM_z_unknown = 1\n    return missing_z\n",
+  "/datum/a/proc/a()\n    set SpacemanDMM_a_unknown = 1\n    return missing_a\n",
+ );
+ fn fail_last(input: &EffectInput, row: &OriginalBodyDiagnostic, level: DiagnosticSeverity, out: &mut dyn Write) -> io::Result<()> {
+  super::original_ordered_wire::write_body_diagnostic_row(input, row, level, out)?;
+  if row.diagnostic().message.contains("missing_z") { return Err(io::Error::from_raw_os_error(1450)); }
+  Ok(())
+ }
+ let (mut host, mut request, root) = fixture(SOURCE);
+ let environment = root.join("code/probe.dm");
+ admit_compact_original_report_inputs(&mut request, &environment);
+ let cache = request.cache_root.as_ref().unwrap().clone();
+ std::fs::create_dir_all(&cache).unwrap();
+ let db = host.query_db().clone();
+ run(&mut host, &request);
+ current(&host, |snapshot| {
+  let absolute = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let input = EffectInput::original_checker_source_with_current_bodies(
+   Arc::clone(absolute.input().archive()), absolute.input().profile(),
+   snapshot.diagnostic_declarations.as_ref().unwrap(), db.as_ref(),
+  ).unwrap();
+  let roster = input.archive().callables();
+  assert_eq!(roster.identity(roster.source_order()[0]).unwrap().name, SymbolId::of("z"));
+  snapshot.with_effect_scope(&input, &environment, None, &snapshot.tree, |db, scope| {
+   let mut prelude = Vec::new();
+   let mut body = Vec::new();
+   let before = db.db().stats(Kind(32)).computed;
+   let standalone = db.db().stats(Kind(17)).computed;
+   db.stage_archived_original_body_windows_for_test(&input, scope, 1, &cache,
+    super::original_ordered_wire::write_body_diagnostic_row, &mut prelude, &mut body)?;
+   assert_eq!(db.db().stats(Kind(32)).computed, before + 2);
+   assert_eq!(db.db().stats(Kind(17)).computed, standalone);
+   let actual = [serde_json::from_slice::<serde_json::Value>(&prelude)?, serde_json::from_slice(&body)?];
+   let mut expected = [Vec::new(), Vec::new()];
+   snapshot.visit_original_body_diagnostics(&environment, None, &snapshot.tree, |_, row| {
+    let Some(severity) = scope.policy().register(row.registration_tag(), row.default_level())
+     .filter(|severity| *severity <= DiagnosticSeverity::Info) else { return Ok(()); };
+    let mut bytes = Vec::new();
+    super::original_ordered_wire::write_body_diagnostic_row(absolute.input(), row, severity, &mut bytes)?;
+    let index = if row.phase() == dm_analysis::checker_effects::OriginalDiagnosticPhase::Prelude { 0 } else { 1 };
+    expected[index].push(serde_json::from_slice::<serde_json::Value>(&bytes)?);
+    Ok(())
+   })?;
+   assert_eq!(actual, [serde_json::json!(expected[0]), serde_json::json!(expected[1])]);
+   assert!(actual[0][0]["message"].as_str().unwrap().contains("SpacemanDMM_a_unknown"));
+   assert!(actual[1][0]["message"].as_str().unwrap().contains("missing_a"));
+   prelude.clear();
+   body.clear();
+   let before = db.db().stats(Kind(32)).computed;
+   let error = db.stage_archived_original_body_windows_for_test(&input, scope, 1, &cache,
+    fail_last, &mut prelude, &mut body).unwrap_err();
+   assert_eq!(error.raw_os_error(), Some(1450));
+   assert_eq!(db.db().stats(Kind(32)).computed, before + 1, "first window staged before second refused");
+   assert!(prelude.is_empty() && body.is_empty());
+   assert_eq!(db.effect_graph_work_for_test(), 0);
+   Ok(())
+  }).unwrap();
+ });
+}
+
+#[test]
+fn current_original_compact_whole_ordered_report_matches_real_absolute_wire() {
+ use dm_analysis::checker_effects::EffectInput;
+ let source=concat!(
+  "var/shared_sink=0\n",
+  "/proc/leaf()\n    return sleep()\n",
+  "/proc/probe()\n",
+  "    set SpacemanDMM_should_not_sleep = 1\n",
+  "    set SpacemanDMM_made_up = 1\n",
+  "    return leaf()\n",
+  "/proc/negative()\n    return missing_value\n",
+ );
+ let(mut host,mut request,root)=fixture(source);
+ let env=root.join("code/probe.dm");
+ admit_compact_original_report_inputs(&mut request, &env);
+ let cache=request.cache_root.as_ref().unwrap().clone();
+ std::fs::create_dir_all(&cache).unwrap();
+ let db=host.query_db().clone();
+ run(&mut host,&request);
+ current(&host,|snapshot|{
+  let absolute=snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let input=EffectInput::original_checker_source_with_current_bodies(
+   Arc::clone(absolute.input().archive()),absolute.input().profile(),
+   snapshot.diagnostic_declarations.as_ref().unwrap(),db.as_ref(),
+  ).unwrap();
+  let body_before=db.db().stats(Kind(17)).computed;
+  let parsed_before=db.db().stats(Kind(4)).computed;
+  let mut actual=Vec::new();
+  let clean=snapshot.write_compact_original_ordered_checker_for_test(
+   &input,&env,None,&snapshot.tree,&cache,1,&mut actual,
+  ).unwrap();
+  assert_eq!(db.db().stats(Kind(17)).computed,body_before);
+  assert_eq!(db.db().stats(Kind(4)).computed,parsed_before+3);
+  let json:serde_json::Value=serde_json::from_slice(&actual).unwrap();
+  let rows=json["diagnostics"].as_array().unwrap();
+  for family in ["unknown_linter_setting","undefined_variable","must_not_sleep"] {
+   assert!(rows.iter().any(|row|row["family"]==family),"{family}: {rows:?}");
+  }
+  let mut expected=Vec::new();
+  let expected_clean=snapshot.write_original_ordered_checker_using(
+   absolute.input(),&env,None,&snapshot.tree,&mut expected,
+  ).unwrap();
+  assert_eq!(actual,expected);
+  assert_eq!(clean,expected_clean);
+  let mut denied=Vec::new();
+  assert!(snapshot.write_compact_original_ordered_checker_for_test(
+   &input,&root.join("deepquarry.dme"),None,&snapshot.tree,&cache,1,&mut denied,
+  ).is_err());
+  assert!(denied.is_empty());
+ });
+}
+
+#[test]
+#[ignore = "explicit 10,001-body Original checker scale control"]
+fn current_original_compact_whole_ordered_scales_past_per_body_node_cap() {
+    use dm_analysis::{
+        checker_effects::EffectInput,
+        checker_order::ARCHIVED_CHUNK_WIDTH,
+    };
+    use std::{fmt::Write as _, time::{Duration, Instant}};
+
+    const BODIES: usize = 10_001;
+    let mut source = String::from(concat!(
+        "/datum/scale_negative/proc/negative()\n",
+        "    return missing_scale_value\n",
+        "/proc/aa_scale_leaf()\n",
+        "    return sleep()\n",
+    ));
+    for index in 0..BODIES - 3 {
+        // Distinct body code makes the parse/evaluator assertions meaningful.
+        writeln!(source, "/proc/scale_fill_{index:05}()\n    return {index}").unwrap();
+    }
+    source.push_str(concat!(
+        "/proc/zz_scale_probe()\n",
+        "    set SpacemanDMM_should_not_sleep = 1\n",
+        "    set SpacemanDMM_made_up = 1\n",
+        "    return aa_scale_leaf()\n",
+    ));
+
+    let (mut host, mut request, root) = fixture(&source);
+    let environment = root.join("code/probe.dm");
+    admit_compact_original_report_inputs(&mut request, &environment);
+    let cache = request.cache_root.as_ref().unwrap().clone();
+    std::fs::create_dir_all(&cache).unwrap();
+    let db = host.query_db().clone();
+    run(&mut host, &request);
+
+    let _deadline = crate::daemon::control::bind_with_deadline(
+        crate::daemon::control::Cancellation::default(),
+        Instant::now() + Duration::from_secs(300),
+    );
+    current(&host, |snapshot| {
+        let absolute = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+        let input = EffectInput::original_checker_source_with_current_bodies(
+            Arc::clone(absolute.input().archive()),
+            absolute.input().profile(),
+            snapshot.diagnostic_declarations.as_ref().unwrap(),
+            db.as_ref(),
+        ).unwrap();
+        assert_eq!(input.archive().len(), BODIES);
+        assert_eq!(input.archive().callables().source_order().len(), BODIES);
+
+        let computed = |kind| db.db().stats(Kind(kind)).computed;
+        let parsed_before = computed(4);
+        let legacy_body_before = computed(17);
+        let legacy_lookup_before = computed(21);
+        let chunks_before = computed(32);
+        #[cfg(debug_assertions)]
+        let evaluated_before =
+            dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread();
+
+        let mut wire = Vec::new();
+        let clean = snapshot.write_compact_original_ordered_checker_for_test(
+            &input, &environment, None, &snapshot.tree, &cache, ARCHIVED_CHUNK_WIDTH, &mut wire,
+        ).unwrap_or_else(|error| {
+            assert!(wire.is_empty(), "failed scale run published a partial report");
+            panic!("compact report failed at {BODIES} real bodies: {error}");
+        });
+        assert!(!clean);
+        assert_eq!(computed(4) - parsed_before, BODIES as u64);
+        assert_eq!(computed(17), legacy_body_before);
+        assert_eq!(computed(21), legacy_lookup_before);
+        assert_eq!(computed(32) - chunks_before, BODIES.div_ceil(ARCHIVED_CHUNK_WIDTH) as u64);
+        #[cfg(debug_assertions)]
+        assert_eq!(
+            dm_analysis::checker_expression_visit::actual_evaluator_entries_on_current_thread()
+                - evaluated_before,
+            BODIES as u64,
+        );
+        assert_eq!(db.effect_graph_work_for_test(), 0);
+
+        let report: serde_json::Value = serde_json::from_slice(&wire).unwrap();
+        let rows = report["diagnostics"].as_array().unwrap();
+        let phases_and_families = rows.iter().map(|row| (
+            row["phase"].as_str().unwrap(),
+            row["family"].as_str().unwrap(),
+        )).collect::<Vec<_>>();
+        assert_eq!(phases_and_families, [
+            ("settings_prelude", "unknown_linter_setting"),
+            ("body", "undefined_variable"),
+            ("sleep_graph", "must_not_sleep"),
+        ], "{rows:?}");
+        assert_eq!(rows[0]["message"], "unknown linter setting \"SpacemanDMM_made_up\"");
+        assert_eq!(rows[1]["message"], "undefined var: \"missing_scale_value\"");
+        let graph_message = rows[2]["message"].as_str().unwrap();
+        assert!(graph_message.contains("zz_scale_probe"), "{graph_message}");
+        assert!(graph_message.contains("aa_scale_leaf"), "{graph_message}");
+        assert!(!rows[2]["notes"].as_array().unwrap().is_empty());
+    });
+}

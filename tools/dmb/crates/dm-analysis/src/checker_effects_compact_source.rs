@@ -52,6 +52,31 @@ pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,ad
  /// Actual query callers reserve each allocation in the SAME family ledger
  /// before it occurs. The observer grants resources only, never source proof.
  pub fn build_pages_reserved_checked<C:FnMut()->io::Result<()>,P:std::ops::Deref>(source:&'view EffectSource<'source>,width:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,checkpoint:&mut C,read:&mut impl FnMut(usize,usize,&ExecutionAdmission,&mut C)->Result<P,PolicyFailure>,work:&mut impl FnMut(usize)->io::Result<()>)->Result<Self,PolicyFailure> where P::Target:EffectPageRead{
+  Self::build_rows_reserved_checked(source,width,resolver,admission,checkpoint,&mut|start,width,child,checkpoint| {
+   let owner=read(start,width,child,checkpoint)?;
+   owner.effect_page().validate(source)?;
+   require_window(owner.effect_page(),start,width,source.len())?;
+   Ok(GraphRows::Page(owner))
+  },work)
+ }
+
+ pub fn build_replay_reserved_checked<C:FnMut()->io::Result<()>>(
+  source:&'view EffectSource<'source>,width:usize,replay:&CompactGraphReplay<'_>,resolver:&(impl Resolver+?Sized),
+  admission:&ExecutionAdmission,checkpoint:&mut C,work:&mut impl FnMut(usize)->io::Result<()>,
+ )->Result<Self,PolicyFailure>{
+  if !std::sync::Arc::ptr_eq(source.archive,replay.input().archive()) || source.profile!=replay.input().profile(){
+   return Err("compact graph replay belongs to another source".into())
+  }
+  Self::build_rows_reserved_checked(source,width,resolver,admission,checkpoint,&mut|start,width,_,_| {
+   Ok(GraphRows::<std::sync::Arc<EffectPageFacts>>::Replay { source, replay, start, count: width.min(source.len()-start) })
+  },work)
+ }
+
+ fn build_rows_reserved_checked<'rows,C:FnMut()->io::Result<()>,P:std::ops::Deref>(
+  source:&'view EffectSource<'source>,width:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,
+  checkpoint:&mut C,read:&mut impl FnMut(usize,usize,&ExecutionAdmission,&mut C)->Result<GraphRows<'rows,P>,PolicyFailure>,
+  work:&mut impl FnMut(usize)->io::Result<()>,
+ )->Result<Self,PolicyFailure> where P::Target:EffectPageRead {
   checkpoint().map_err(PolicyFailure::Operational)?;
   let pending=(||{
    let budget=ReportBudget::for_operation(admission);let n=source.len();if n>=u32::MAX as usize{return Err(resource(&budget,"effect source dense coordinates exceed scalar storage"))}
@@ -67,12 +92,11 @@ pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,ad
    let mut start=0usize;
    while start<n{
     checkpoint().map_err(PolicyFailure::Operational)?;
-    let child=admission.restricted(budget.remaining());let page_owner=read(start,width,&child,checkpoint)?;let page=page_owner.effect_page();
-    page.validate(source)?;require_window(&page,start,width,n)?;
-    for local in 0..page.len(){let node=start+local;let id=page.procedure(local).ok_or("effect source page identity missing")?;
-     if source.original_ordinal(node)!=page.ordinal(local)||find(id)? as usize!=node{return Err("effect source page order changed".into())}
-     rows[node]=Row{page_start:u32::try_from(page.start()).map_err(|_|resource(&budget,"effect original window coordinate overflow"))?,parent:page.parent(local).ok_or("effect source parent missing")?,direct:page.has_direct_effect(local).ok_or("effect source direct row missing")?,builtin:page.has_builtin_effect_call(local).ok_or("effect source builtin row missing")?};
-     for &id in page.source_calls(local).ok_or("effect source calls missing")?{find(id)?;degree[node]=degree[node].checked_add(1).ok_or_else(||resource(&budget,"effect source row degree overflow"))?;}
+    let child=admission.restricted(budget.remaining());let page=read(start,width,&child,checkpoint)?;
+    for local in 0..page.len(){let node=start+local;let body=page.body(local)?;let(id,ordinal,parent,direct,builtin)=body.facts()?;
+     if source.original_ordinal(node)!=Some(ordinal)||find(id)? as usize!=node{return Err("effect source page order changed".into())}
+     rows[node]=Row{page_start:u32::try_from(start).map_err(|_|resource(&budget,"effect original window coordinate overflow"))?,parent,direct,builtin};
+     body.visit_calls(|id|{find(id)?;degree[node]=degree[node].checked_add(1).ok_or_else(||resource(&budget,"effect source row degree overflow"))?;Ok(())})?;
     }
     start=start.checked_add(page.len()).ok_or_else(||resource(&budget,"effect page source cursor overflow"))?;
    }
@@ -86,11 +110,10 @@ pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,ad
    let mut start=0usize;
    while start<n{
     checkpoint().map_err(PolicyFailure::Operational)?;
-    let child=admission.restricted(budget.remaining());let page_owner=read(start,width,&child,checkpoint)?;let page=page_owner.effect_page();
-    page.validate(source)?;require_window(&page,start,width,n)?;
-    for local in 0..page.len(){let node=start+local;let old=&rows[node];let id=page.procedure(local).ok_or("effect source second-pass identity missing")?;
-     if source.original_ordinal(node)!=page.ordinal(local)||find(id)? as usize!=node||old.page_start as usize!=page.start()||Some(old.parent)!=page.parent(local)||Some(old.direct)!=page.has_direct_effect(local)||Some(old.builtin)!=page.has_builtin_effect_call(local){return Err("effect source changed between adjacency passes".into())}
-     for &id in page.source_calls(local).ok_or("effect source second-pass calls missing")?{insert_edge(node,find(id)?,&mut offsets,&mut degree,&mut edges)?;}
+    let child=admission.restricted(budget.remaining());let page=read(start,width,&child,checkpoint)?;
+    for local in 0..page.len(){let node=start+local;let old=&rows[node];let body=page.body(local)?;let(id,ordinal,parent,direct,builtin)=body.facts()?;
+     if source.original_ordinal(node)!=Some(ordinal)||find(id)? as usize!=node||old.page_start as usize!=start||old.parent!=parent||old.direct!=direct||old.builtin!=builtin{return Err("effect source changed between adjacency passes".into())}
+     body.visit_calls(|id|insert_edge(node,find(id)?,&mut offsets,&mut degree,&mut edges))?;
     }
     start=start.checked_add(page.len()).ok_or_else(||resource(&budget,"effect page second-pass cursor overflow"))?;
    }
@@ -105,6 +128,42 @@ pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,ad
    Ok(Self{source,index,rows,width,offsets,edges,seed})
   })();
   if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;if admission.is_denied(){return Err(PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"effect graph operation denied")))}pending
+ }
+}
+// Both producers lend the same exact metadata to the CSR builder. No
+// projection constructs EffectPageFacts or reconstructs a BodyEffects.
+enum GraphRows<'a,P>{
+ Page(P),
+ Replay{source:&'a EffectSource<'a>,replay:&'a CompactGraphReplay<'a>,start:usize,count:usize},
+}
+impl<P:std::ops::Deref> GraphRows<'_,P> where P::Target:EffectPageRead {
+ fn len(&self)->usize{match self{Self::Page(page)=>page.effect_page().len(),Self::Replay{count,..}=>*count}}
+ fn body(&self,local:usize)->Result<GraphRow<'_>,PolicyFailure>{
+  match self{
+   Self::Page(page)=>Ok(GraphRow::Page(page.effect_page(),local)),
+   Self::Replay{source,replay,start,..}=>Ok(GraphRow::Replay(replay.graph_row(source.original_ordinal(start+local).ok_or("compact graph rank absent")?)?)),
+  }
+ }
+}
+enum GraphRow<'a>{Page(&'a EffectPageFacts,usize),Replay(CompactGraphBodyLoan<'a>)}
+impl GraphRow<'_>{
+ fn facts(&self)->Result<(ProcedureIdentity,usize,Option<EffectTarget>,bool,bool),PolicyFailure>{
+  use super::report_core::ReportBodyLoan;
+  match self{
+   Self::Page(page,i)=>Ok((
+    page.procedure(*i).ok_or("effect source page identity missing")?,page.ordinal(*i).ok_or("effect source page ordinal missing")?,
+    page.parent(*i).ok_or("effect source parent missing")?,page.has_direct_effect(*i).ok_or("effect source direct row missing")?,
+    page.has_builtin_effect_call(*i).ok_or("effect source builtin row missing")?,
+   )),
+   Self::Replay(body)=>{let row=body.view();Ok((row.procedure,row.ordinal,row.parent,!row.direct.is_empty(),row.calls.iter().any(|edge|matches!(edge.callee,EffectTarget::Builtin(_)))))}
+  }
+ }
+ fn visit_calls(&self,mut visit:impl FnMut(ProcedureIdentity)->Result<(),PolicyFailure>)->Result<(),PolicyFailure>{
+  use super::report_core::ReportBodyLoan;
+  match self{
+   Self::Page(page,i)=>page.source_calls(*i).ok_or("effect source calls missing")?.iter().copied().try_for_each(visit),
+   Self::Replay(body)=>{for edge in body.view().calls{if let EffectTarget::Source(id)=edge.callee{visit(id)?;}}Ok(())}
+  }
  }
 }
 fn resource(b:&ReportBudget,message:&'static str)->PolicyFailure{b.deny();PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message))}

@@ -19,11 +19,12 @@ struct Sparse {
     calls: Range<u32>,
     direct: Range<u32>,
     blocking: Range<u32>,
+    keywords: Range<u32>,
     origin_error: Option<OriginError>,
 }
 
 /// Memory-only graph projection. Does not retain source, AST, diagnostic
-/// rows, keyword uses, or a BodyEffects owner. Input keys are never reused.
+/// rows or a BodyEffects owner. Accepted keyword uses stay typed. Input keys are never reused.
 pub struct CompactGraphPage {
     input: u64,
     start: usize,
@@ -32,6 +33,7 @@ pub struct CompactGraphPage {
     calls: Vec<CallEdge>,
     direct: Vec<DirectEffect>,
     blocking: Vec<DirectEffect>,
+    keywords: Vec<AcceptedKeywordUse>,
 }
 
 pub struct CompactGraphPageBuilder<'a> {
@@ -39,6 +41,7 @@ pub struct CompactGraphPageBuilder<'a> {
     page: CompactGraphPage,
     count: usize,
     failed: bool,
+    order: Option<&'a crate::checker_order::ArchivedChunkOrdinals>,
 }
 
 fn oom(message: &'static str) -> PolicyFailure {
@@ -76,10 +79,23 @@ impl<'a> CompactGraphPageBuilder<'a> {
         work.reserve(size_of::<CompactGraphPage>()).map_err(PolicyFailure::Operational)?;
         let mut page = CompactGraphPage {
             input: input.key(), start, rows: Vec::new(), sparse: Vec::new(),
-            calls: Vec::new(), direct: Vec::new(), blocking: Vec::new(),
+            calls: Vec::new(), direct: Vec::new(), blocking: Vec::new(), keywords: Vec::new(),
         };
         reserve(&mut page.rows, count, work)?;
-        Ok(Self { input, page, count, failed: false })
+        Ok(Self { input, page, count, failed: false, order: None })
+    }
+
+    pub fn in_archived_order(
+        input: &'a Arc<EffectInput>,
+        order: &'a crate::checker_order::ArchivedChunkOrdinals,
+        work: &mut impl EffectReportWork,
+    ) -> Result<Self, PolicyFailure> {
+        if !order.belongs_to(input.archive()) {
+            return Err("compact graph chunk roster belongs to another archive".into());
+        }
+        let mut builder = Self::new(input, order.start(), order.ordinals().len(), work)?;
+        builder.order = Some(order);
+        Ok(builder)
     }
 
     pub fn push(&mut self, body: &BodyEffects, work: &mut impl EffectReportWork) -> Result<(), PolicyFailure> {
@@ -89,7 +105,10 @@ impl<'a> CompactGraphPageBuilder<'a> {
         let page = &mut self.page;
         let roster = self.input.archive.callables();
         if page.rows.len() >= self.count
-            || roster.source_order().get(page.start + page.rows.len()) != Some(&body.ordinal)
+            || self.order.map_or_else(
+                || roster.source_order().get(page.start + page.rows.len()),
+                |order| order.ordinals().get(page.rows.len()),
+            ) != Some(&body.ordinal)
             || roster.identity(body.ordinal) != Some(body.procedure)
             || body.original_evaluations != 1
         {
@@ -109,21 +128,24 @@ impl<'a> CompactGraphPageBuilder<'a> {
         };
         let nonempty = body.parent.is_some() || body.pure.is_some() || body.sleep.no_sleep.is_some()
             || body.sleep.exempt.is_some() || body.sleep.waitfor_disabled || !body.calls.is_empty()
-            || !body.direct.is_empty() || !body.blocking.is_empty() || origin_error.is_some();
+            || !body.direct.is_empty() || !body.blocking.is_empty() || !body.keywords.is_empty() || origin_error.is_some();
         let sparse = if nonempty {
             let index = page.sparse.len().checked_add(1).and_then(|n| u32::try_from(n).ok()).and_then(NonZeroU32::new)
                 .ok_or_else(|| oom("compact graph sparse index overflow"))?;
             let calls = range(page.calls.len(), body.calls.len())?;
             let direct = range(page.direct.len(), body.direct.len())?;
             let blocking = range(page.blocking.len(), body.blocking.len())?;
+            let keywords = range(page.keywords.len(), body.keywords.len())?;
             reserve(&mut page.sparse, 1, work)?;
             reserve(&mut page.calls, body.calls.len(), work)?;
             reserve(&mut page.direct, body.direct.len(), work)?;
             reserve(&mut page.blocking, body.blocking.len(), work)?;
+            reserve(&mut page.keywords, body.keywords.len(), work)?;
             page.calls.extend_from_slice(&body.calls);
             page.direct.extend_from_slice(&body.direct);
             page.blocking.extend_from_slice(&body.blocking);
-            page.sparse.push(Sparse { parent: body.parent, pure: body.pure, sleep: body.sleep, calls, direct, blocking, origin_error });
+            page.keywords.extend_from_slice(&body.keywords);
+            page.sparse.push(Sparse { parent: body.parent, pure: body.pure, sleep: body.sleep, calls, direct, blocking, keywords, origin_error });
             Some(index)
         } else { None };
         page.rows.push(Dense { ordinal, opening: body.opening_parenthesis, sparse });
@@ -140,11 +162,15 @@ impl<'a> CompactGraphPageBuilder<'a> {
 }
 
 impl CompactGraphPage {
+    pub fn start(&self) -> usize { self.start }
+    pub fn len(&self) -> usize { self.rows.len() }
+    pub fn is_empty(&self) -> bool { self.rows.is_empty() }
+    pub fn ordinal(&self, index: usize) -> Option<usize> { Some(self.rows.get(index)?.ordinal as usize) }
     pub fn retained_charge(&self) -> Option<usize> {
         fn bytes<T>(rows: &Vec<T>) -> Option<usize> { rows.capacity().checked_mul(size_of::<T>()) }
         size_of::<Self>().checked_add(bytes(&self.rows)?)?
             .checked_add(bytes(&self.sparse)?)?.checked_add(bytes(&self.calls)?)?
-            .checked_add(bytes(&self.direct)?)?.checked_add(bytes(&self.blocking)?)
+            .checked_add(bytes(&self.direct)?)?.checked_add(bytes(&self.blocking)?)?.checked_add(bytes(&self.keywords)?)
     }
 
     pub fn loan<'a>(&'a self, input: &'a Arc<EffectInput>) -> Result<CompactGraphPageLoan<'a>, PolicyFailure> {
@@ -159,8 +185,8 @@ pub struct CompactGraphPageLoan<'a> {
     input: &'a Arc<EffectInput>,
 }
 
-impl CompactGraphPageLoan<'_> {
-    pub fn body(&self, index: usize) -> Result<CompactGraphBodyLoan<'_>, PolicyFailure> {
+impl<'a> CompactGraphPageLoan<'a> {
+    pub fn body(&self, index: usize) -> Result<CompactGraphBodyLoan<'a>, PolicyFailure> {
         let row = self.page.rows.get(index).ok_or("compact graph body index absent")?;
         let ordinal = row.ordinal as usize;
         let procedure = self.input.archive.callables().identity(ordinal).ok_or("compact graph callable absent")?;
@@ -185,6 +211,14 @@ pub struct CompactGraphBodyLoan<'a> {
 
 impl CompactGraphBodyLoan<'_> {
     pub fn ordinal(&self) -> usize { self.row.ordinal as usize }
+    pub(crate) fn keyword_uses(&self, input: &EffectInput, ordinal: usize) -> Result<&[AcceptedKeywordUse], PolicyFailure> {
+        if self.page.input != input.key() || self.ordinal() != ordinal {
+            return Err("compact keyword use belongs to another source or ordinal".into());
+        }
+        Ok(self.sparse.map_or(&[][..], |row| {
+            &self.page.keywords[row.keywords.start as usize..row.keywords.end as usize]
+        }))
+    }
     pub fn has_direct_effect(&self) -> bool { !self.view().direct.is_empty() }
     pub fn visit_source_calls(&self, mut visit: impl FnMut(ProcedureIdentity, bool, bool)) {
         for edge in self.view().calls {

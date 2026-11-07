@@ -375,3 +375,31 @@ fn original_builtin_type_probe_is_roster_complete_and_cannot_be_widened_by_sourc
  assert!(tree.checker_source_type_presence_validated(profile,"/datum/content_only",&proof).unwrap());assert!(!tree.checker_builtin_type_presence_validated(profile,"/datum/content_only",&proof).unwrap());assert!(!tree.checker_builtin_type_presence_validated(profile,"/not_declared_anywhere",&proof).unwrap());
  let foreign=seeded("/datum/content_only\n");assert!(foreign.checker_builtin_type_presence_validated(profile,"/datum",&proof).is_err());assert!(tree.checker_builtin_type_presence_validated(PackedU128::new(profile.get()^1),"/datum",&proof).is_err());
 }
+
+#[test]
+fn admitted_checker_intrinsic_callable_preserves_presence_and_first_io() {
+    use std::io;
+    struct Work { polls: usize, fail: Option<usize> }
+    impl dm_ir::CanonicalWork for Work {
+        fn poll(&mut self) -> io::Result<()> {
+            self.polls += 1;
+            if self.fail == Some(self.polls) { return Err(io::Error::from_raw_os_error(1450)); }
+            Ok(())
+        }
+        fn reserve(&mut self, _: usize) -> io::Result<()> {
+            panic!("a scalar intrinsic presence answer must not allocate canonical metadata")
+        }
+    }
+    let tree = seeded("/datum/example\n");
+    let profile = tree.checker_builtin_profile().unwrap();
+    let present = callable(profile, "/datum/example", "New");
+    let absent = callable(profile, "/datum/example", "not_in_fixed_dsl");
+    let foreign = callable((profile.get() ^ 1).into(), "/datum/example", "New");
+    for (query, expected) in [(present, M::Presence(true)), (absent, M::Presence(false)), (foreign, M::Unsupported(foreign))] {
+        let mut work = Work { polls: 0, fail: None };
+        assert_eq!(tree.resolve_with_canonical_work(query, &mut work).unwrap(), expected);
+        assert_eq!(Resolver::resolve(&tree, query), expected);
+    }
+    let mut work = Work { polls: 0, fail: Some(2) };
+    assert_eq!(tree.resolve_with_canonical_work(present, &mut work).unwrap_err().raw_os_error(), Some(1450));
+}

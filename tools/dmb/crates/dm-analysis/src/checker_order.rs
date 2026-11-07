@@ -87,10 +87,35 @@ pub(crate) use checked::{ArchivedOrder,sort_report_projection};
 
 /// Borrowed DATA view of the EXISTING checked order, with no source role.
 /// The private backing projection dies before its caller's operation credit.
-pub struct ArchivedOrderView<'view,'source>{order:&'view ArchivedOrder<'source>}
+pub struct ArchivedOrderView<'view,'source>{order:&'view ArchivedOrder<'source>, archive:&'source dm_tree::frontend::BodyArchive}
 impl ArchivedOrderView<'_,'_>{pub fn len(&self)->usize{self.order.len()}pub fn ordinal(&self,index:usize)->Option<usize>{self.order.ordinal(index)}}
+/// Bounded ordinal roster issued only by the actual checked checker order.
+pub const ARCHIVED_CHUNK_WIDTH: usize = 32;
+pub struct ArchivedChunkOrdinals {
+    owner: dm_tree::frontend::OriginalArchiveOwner,
+    start: usize,
+    count: usize,
+    ordinals: [usize; ARCHIVED_CHUNK_WIDTH],
+}
+impl ArchivedChunkOrdinals {
+    pub fn belongs_to(&self, archive: &dm_tree::frontend::BodyArchive) -> bool { self.owner.matches(archive) }
+    pub fn start(&self) -> usize { self.start }
+    pub fn ordinals(&self) -> &[usize] { &self.ordinals[..self.count] }
+}
+impl ArchivedOrderView<'_, '_> {
+    pub fn chunk(&self, start: usize, count: usize) -> Result<ArchivedChunkOrdinals, crate::policy_body_demand::PolicyFailure> {
+        if count == 0 || count > ARCHIVED_CHUNK_WIDTH || start.checked_add(count).is_none_or(|end| end > self.len()) {
+            return Err("checker order chunk escapes the actual ordered body roster".into());
+        }
+        let mut ordinals = [0; ARCHIVED_CHUNK_WIDTH];
+        for (offset, ordinal) in ordinals[..count].iter_mut().enumerate() {
+            *ordinal = self.ordinal(start + offset).ok_or("checker order chunk ordinal absent")?;
+        }
+        Ok(ArchivedChunkOrdinals { owner: self.archive.original_owner_witness(), start, count, ordinals })
+    }
+}
 pub fn with_archived_order_using<W:crate::checker_effects::EffectReportWork,T>(archive:&dm_tree::frontend::BodyArchive,admission:&crate::checker_effects::ExecutionAdmission,work:&mut W,checkpoint:&dyn Fn()->std::io::Result<()>,consume:impl FnOnce(ArchivedOrderView<'_,'_>,&mut W)->Result<T,crate::policy_body_demand::PolicyFailure>)->Result<T,crate::policy_body_demand::PolicyFailure>{
- use crate::policy_body_demand::PolicyFailure;let order=ArchivedOrder::build(archive,admission,&mut||checkpoint(),&mut|bytes|work.reserve(bytes))?;let pending=consume(ArchivedOrderView{order:&order},work);drop(order);if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;admission.reserve_external(0).map_err(PolicyFailure::Operational)?;pending
+ use crate::policy_body_demand::PolicyFailure;let order=ArchivedOrder::build(archive,admission,&mut||checkpoint(),&mut|bytes|work.reserve(bytes))?;let pending=consume(ArchivedOrderView{order:&order,archive},work);drop(order);if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;admission.reserve_external(0).map_err(PolicyFailure::Operational)?;pending
 }
 
 pub(crate) use checked::heapsort as sort_source_order;

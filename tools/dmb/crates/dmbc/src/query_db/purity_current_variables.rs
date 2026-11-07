@@ -58,7 +58,7 @@ impl graph_work::RetainedHandle for NativeCurrentVariables{type Data=CurrentCont
 // Scalar answer hashes stream directly; declaration chains use one funded
 // SAME native canonical byte buffer, with no nested child Vecs or copied AST.
 // Member fingerprint is issued by the actual native resolver from all metadata.
-fn meaning_hash(answer:&ResolvedMeaning,work:&mut dyn dm_ir::CanonicalWork)->io::Result<u128>{work.poll()?;use dm_ir::ResolvedMeaning as M;let mut hash=xxhash_rust::xxh3::Xxh3::new();match answer{M::Members(rows)=>{for row in rows.iter(){crate::daemon::control::checkpoint()?;if !matches!(row,M::Declaration{..}){return Err(unsupported("current callable actual chain contains an unqualified answer"))}}return Ok(dm_query::hash_bytes(&answer.canonical_bytes_using(work)?))},M::Unsupported(query)if matches!(query,ResolveQuery::Type(_))=>{hash.update(&[4]);hash.update(&query_id(query).to_le_bytes())},M::Missing=>hash.update(&[0]),M::Symbol(symbol)=>{hash.update(&[1]);hash.update(&symbol.bits().to_le_bytes())},M::Symbols(rows)=>{hash.update(&[2]);hash.update(&(rows.len()as u64).to_le_bytes());for row in rows.iter(){crate::daemon::control::checkpoint()?;hash.update(&row.bits().to_le_bytes())}},M::Member{owner,name,fingerprint,..}=>{hash.update(&[3]);hash.update(&owner.bits().to_le_bytes());hash.update(&name.bits().to_le_bytes());hash.update(&fingerprint.to_le_bytes())},_=>return Err(unsupported("actual native current variable answer is not a qualified structural shape"))}Ok(hash.digest128())}
+fn meaning_hash(answer:&ResolvedMeaning,work:&mut dyn dm_ir::CanonicalWork)->io::Result<u128>{work.poll()?;use dm_ir::ResolvedMeaning as M;let mut hash=xxhash_rust::xxh3::Xxh3::new();match answer{M::Members(rows)=>{for row in rows.iter(){crate::daemon::control::checkpoint()?;if !matches!(row,M::Declaration{..}){return Err(unsupported("current callable actual chain contains an unqualified answer"))}}return Ok(dm_query::hash_bytes(&answer.canonical_bytes_using(work)?))},M::Unsupported(query)if matches!(query,ResolveQuery::Type(_))=>{hash.update(&[4]);hash.update(&query_id(query).to_le_bytes())},M::Missing=>hash.update(&[0]),M::Presence(present)=>hash.update(&[5, u8::from(*present)]),M::Symbol(symbol)=>{hash.update(&[1]);hash.update(&symbol.bits().to_le_bytes())},M::Symbols(rows)=>{hash.update(&[2]);hash.update(&(rows.len()as u64).to_le_bytes());for row in rows.iter(){crate::daemon::control::checkpoint()?;hash.update(&row.bits().to_le_bytes())}},M::Member{owner,name,fingerprint,..}=>{hash.update(&[3]);hash.update(&owner.bits().to_le_bytes());hash.update(&name.bits().to_le_bytes());hash.update(&fingerprint.to_le_bytes())},_=>return Err(unsupported("actual native current variable answer is not a qualified structural shape"))}Ok(hash.digest128())}
 // Source-free CodeID owners guard pointer ABA only. Actual current roster
 // membership below remains authoritative, even if an old source archive lives.
 pub(super) struct CurrentLookupData{hash:u128,codes:Vec<Arc<BodyCodeIdentity>>}
@@ -79,7 +79,7 @@ fn retain_actual_code(codes:&mut Vec<Arc<BodyCodeIdentity>>,code:&Arc<BodyCodeId
 // This EXISTING SourceVarDeclaration leaf owns both its native metadata answer
 // and the exact selected formal's actual Original property byte. The byte is
 // read from the archive producer, never inferred from its header or native flags.
-fn current_answer_hash(input:&EffectInput,query:ResolveQuery,answer:&ResolvedMeaning,work:&mut dyn dm_ir::CanonicalWork,mut retain:Option<&mut Vec<Arc<BodyCodeIdentity>>>)->io::Result<u128>{
+pub(super) fn current_answer_hash(input:&EffectInput,query:ResolveQuery,answer:&ResolvedMeaning,work:&mut dyn dm_ir::CanonicalWork,mut retain:Option<&mut Vec<Arc<BodyCodeIdentity>>>)->io::Result<u128>{
  let native=meaning_hash(answer,work)?;
  if matches!(query,ResolveQuery::SourceDeclarationChain{..}){
   let ResolvedMeaning::Members(rows)=answer else{return Ok(native)};let archive=input.archive();let inputs=archive.syntax_inputs().ok_or_else(||unsupported("actual current source callable inputs are unissued"))?;
@@ -156,4 +156,36 @@ impl QueryDb{
 
 #[cfg(test)]impl QueryDb{
  pub(crate) fn current_variable_actual_property_for_test(&self,input:&EffectInput,owner:dm_ir::SymbolId,name:dm_ir::SymbolId)->io::Result<u8>{let archive=input.archive();let formal=archive.tree().source_formal_variable_member(owner,name).map_err(unsupported)?.ok_or_else(||invalid("test actual property formal absent"))?;archive.checker_variable_qualifiers_admitted(formal,input.profile())}
+}
+
+
+#[cfg(test)]
+#[test]
+fn current_structural_fingerprint_distinguishes_presence_from_missing_and_unissued() {
+    struct Scalars;
+    impl dm_ir::CanonicalWork for Scalars {
+        fn poll(&mut self) -> io::Result<()> { Ok(()) }
+        fn reserve(&mut self, _: usize) -> io::Result<()> {
+            panic!("scalar presence hashing should not reserve storage")
+        }
+    }
+    let mut work = Scalars;
+    let missing = meaning_hash(&ResolvedMeaning::Missing, &mut work).unwrap();
+    let absent = meaning_hash(&ResolvedMeaning::Presence(false), &mut work).unwrap();
+    let present = meaning_hash(&ResolvedMeaning::Presence(true), &mut work).unwrap();
+    assert_ne!(missing, absent);
+    assert_ne!(missing, present);
+    assert_ne!(absent, present);
+
+    let foreign_intrinsic = ResolveQuery::CheckerIntrinsicCallable {
+        profile: 0u128.into(),
+        owner: dm_ir::SymbolId::of("/datum"),
+        name: dm_ir::SymbolId::of("New"),
+        verb: false,
+    };
+    assert_eq!(
+        meaning_hash(&ResolvedMeaning::Unsupported(foreign_intrinsic), &mut work)
+            .unwrap_err().kind(),
+        io::ErrorKind::Unsupported,
+    );
 }
