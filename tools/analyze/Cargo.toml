@@ -435,3 +435,7 @@ required-features = ["unified-oracle"]
 [[example]]
 name = "unified_selected_workspace_folds_original"
 required-features = ["unified-oracle"]
+
+[[example]]
+name = "unified_selected_sys_source_original"
+required-features = ["unified-oracle"]

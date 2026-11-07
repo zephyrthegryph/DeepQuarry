@@ -332,6 +332,24 @@ impl ReportStage<'_> {
                 }
                 projection.notes(notes, &mut control)?;
             }
+            UnionRows::SysSource(name, sites, source_text) => {
+                let expected = match name {
+                    "sys/hygiene" => dq_analyze::captured_sys_hygiene_pages::metadata(),
+                    "sys/resolvers" => dq_analyze::captured_sys_resolvers_pages::metadata(),
+                    "sys/tables" => dq_analyze::captured_sys_tables_pages::metadata(),
+                    "system_boundary" => dq_analyze::captured_system_boundary_pages::metadata(),
+                    _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued Sys source policy")),
+                };
+                if self.selected != Roster::WithSysSourcePolicies.names()
+                    || !std::ptr::eq(meta, expected) || !matches!(meta.policy, Policy::Hard)
+                    || sites.len() != source_text.len()
+                {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Sys source findings differ from their issued Hard shape"));
+                }
+                for (site, text) in sites.iter().zip(source_text) {
+                    projection.row(site, Some(text), &mut control)?;
+                }
+            }
             UnionRows::RequirementBool(data) => {
                 if self.selected != Roster::WithRequirementBool.names()
                     || !std::ptr::eq(meta, data.metadata())
@@ -618,6 +636,7 @@ mod selected_plan_tests {
             (Roster::Base, &[]),
             (Roster::AllRawFilePolicies, &[]),
             (Roster::WithWorkspaceFoldPolicies, &[]),
+            (Roster::WithSysSourcePolicies, &[]),
             (Roster::WithRawRuntimePolicies, &[]),
             (Roster::WithRawDeclarationPolicies, &[]),
             (Roster::WithCooldown, &[]),

@@ -2469,3 +2469,152 @@ fn selected_raw_file_report_ignores_absent_malformed_and_directory_dme_without_m
     }
     assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
 }
+
+#[path = "../../../../analyze/fixtures/native-manual-log/fixture.rs"]
+mod selected_sys_manual;
+#[path = "../../../../analyze/fixtures/native-expiry-workspace/fixture.rs"]
+mod selected_sys_expiry;
+#[path = "../../../../analyze/fixtures/native-cross-sys/fixture.rs"]
+mod selected_sys_cross;
+#[path = "../../../../analyze/fixtures/native-shadow-look/fixture.rs"]
+mod selected_sys_shadow;
+#[path = "../../../../analyze/fixtures/native-sfx/fixture.rs"]
+mod selected_sys_sfx;
+#[path = "../../../../analyze/fixtures/native-sys-ui-workspace/fixture.rs"]
+mod selected_sys_ui;
+
+#[test]
+#[ignore = "private dmbc transport and independent standalone Analyze; run outside Cargo with the dm_compile machine slot"]
+fn public_selected_sys_source_policies_match_standalone_report_with_nonempty_fixtures() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{Roster, Terminal},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    fn seed<P: AsRef<str>, B: AsRef<[u8]>>(root: &Path, rows: Vec<(P, B)>) {
+        for (path, bytes) in rows {
+            let path = path.as_ref();
+            if !matches!(path, "p.dme" | "deepquarry.dme") {
+                put(root, path, bytes);
+            }
+        }
+    }
+
+    let oracle = PathBuf::from(std::env::var_os("DQ_SELECTED_SYS_SOURCE_ORACLE")
+        .expect("build and provide the independent unified_selected_sys_source_original"));
+    assert!(oracle.is_absolute());
+    let transport = test_scratch::dir("public-selected-sys-source-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("selected-sys-source-{}-{}", std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithSysSourcePolicies;
+    let exclusions: Vec<_> = all.names().iter()
+        .filter(|name| !roster.names().contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+
+    let cache = test_scratch::dir("public-selected-sys-source-cache");
+    for (policy, kind) in [
+        ("sys/dx_constructor_shadow", "dx_constructor_shadow"),
+        ("sys/dx_look_side_effects", "dx_look_side_effects"),
+        ("sys/dx_manual_fingerprint_log", "manual"),
+        ("sys/dx_string_names", "dx_string_names"),
+        ("sys/expiry", "expiry"),
+        ("sys/requirements", "requirements"),
+        ("sys/sfx", "sfx"),
+        ("sys/ui", "ui"),
+        ("folds", "folds"),
+    ] {
+        let label = policy.replace('/', "-");
+        let root = test_scratch::dir(&format!("public-selected-sys-{label}"));
+        let overlay = match kind {
+            "dx_constructor_shadow" | "dx_look_side_effects" => {
+                seed(&root, selected_sys_shadow::files(kind, 0));
+                selected_sys_shadow::configuration(kind, 0)
+            }
+            "dx_string_names" | "requirements" => {
+                seed(&root, selected_sys_cross::files(kind, 0));
+                selected_sys_cross::configuration(kind, 0)
+            }
+            "manual" => {
+                seed(&root, selected_sys_manual::FILES.to_vec());
+                selected_sys_manual::configuration(0)
+            }
+            "expiry" => {
+                seed(&root, selected_sys_expiry::files(kind, 0));
+                selected_sys_expiry::configuration(kind, 0)
+            }
+            "sfx" => {
+                seed(&root, selected_sys_sfx::files(0));
+                selected_sys_sfx::configuration(0)
+            }
+            "ui" => {
+                seed(&root, selected_sys_ui::files(kind, 0));
+                selected_sys_ui::configuration(kind, 0)
+            }
+            "folds" => {
+                put(&root, "code/owner/model.dm", "/datum/system/alpha\n");
+                put(&root, "code/special-folds.dm", concat!(
+                    "/obj/resolved/child\n\tvar/cached_charge\n",
+                    "/obj/resolved/child/Initialize()\n\tif(condition)\n\t\treturn INITIALIZE_HINT_QDEL\n",
+                    "/obj/resolved/child/values()\n\treturn GLOB.shared\n",
+                    "/proc/read_private()\n\treturn system(/datum/system/alpha).hidden\n",
+                ));
+                put(&root, "maps/special-fold-input.dm", concat!(
+                    "CAPABILITIES(/obj/resolved)\n\tmap_resolver(GLOBAL_PROC_REF(resolve))\n",
+                    "GLOBAL_LIST_INIT(shared, list(1,2))\n",
+                ));
+                String::new()
+            }
+            _ => unreachable!(),
+        };
+        // Legacy lexical source remains uncompiled while the semantic wrapper
+        // authenticates the actual fixed project independently.
+        put(&root, "deepquarry.dme", "#include \"code/selected-fold-compiled.dm\"\n");
+        put(&root, "code/selected-fold-compiled.dm", "/proc/fold_probe()\n    return\n");
+        put(&root, "maps/unused.dm",
+            "/proc/stale()\n    return // ALLOW(scheduler): this fixture observes an unused annotation\n");
+        put(&root, "code/selected-fold-allow.dm",
+            "/proc/scheduled_probe()\n    sleep(1) // ALLOW(scheduler): this reports actual consumed scheduler usage\n");
+        put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(&overlay));
+        let mut build = request(&root, Q::DocSnippets);
+        build.cache_root = Some(cache.clone());
+        let intent = build.policy_inputs.as_mut().unwrap();
+        intent.workspace_auxiliary.clear();
+        intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+        let request_path = transport.join(format!("{label}.json"));
+        put(&transport, &format!("{label}.json"), serde_json::to_vec(&serde_json::json!({
+            "build": build, "exclusions": exclusions,
+        })).unwrap());
+
+        let output = daemon.run(
+            &[OsStr::new("analyze-exclusions"), request_path.as_os_str(), OsStr::new("--report-batch")],
+            Duration::from_secs(90),
+        ).unwrap();
+        assert_eq!(output.status.code(), Some(1), "{policy}: {}", String::from_utf8_lossy(&output.stderr));
+        let header_end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+        let terminal: Terminal = serde_json::from_slice(&output.stdout[..header_end]).unwrap();
+        terminal.require(roster).unwrap();
+        assert_eq!(terminal.roster, roster);
+        assert!(!terminal.clean);
+        let report = &output.stdout[header_end + 1..];
+        assert_eq!(report.len() as u64, terminal.report.length);
+        assert_eq!(xxhash_rust::xxh3::xxh3_128(report), terminal.report.hash.0);
+        let text = std::str::from_utf8(report).unwrap();
+        assert!(text.contains("maps/unused.dm:2: ALLOW(scheduler) is unused"), "{text}");
+        assert!(!text.contains("code/selected-fold-allow.dm:"), "{text}");
+
+        let native = transport.join(format!("{label}-report.txt"));
+        std::fs::write(&native, report).unwrap();
+        let reference = daemon.run_program(&oracle,
+            &[root.as_os_str(), native.as_os_str(), OsStr::new(policy)], Duration::from_secs(45)).unwrap();
+        assert!(reference.status.success(), "{policy}: {}", String::from_utf8_lossy(&reference.stderr));
+        assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
+    }
+}

@@ -38,7 +38,7 @@ struct Options {
 
 fn options(args: &[String], role: Role) -> io::Result<Options> {
     let usage = || io::Error::new(io::ErrorKind::InvalidInput, match role {
-        Role::Exclusions => "usage: analyze native-exclusions --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR --roster base|with-cooldown|with-engine-internal|with-silicon|with-library-layering|with-handlers|with-semantic-reads|with-setter-publishes|with-reactive-policies|with-derived-reads|with-sys-reactive|with-lifeforms|with-player-link|with-lifeforms-and-player-link|with-reference-policies|with-requirement-bool|with-declaration-policies|with-raw-declaration-policies|all-raw-file-policies|with-raw-runtime-policies|with-workspace-fold-policies REQUEST.json",
+        Role::Exclusions => "usage: analyze native-exclusions --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR --roster base|with-cooldown|with-engine-internal|with-silicon|with-library-layering|with-handlers|with-semantic-reads|with-setter-publishes|with-reactive-policies|with-derived-reads|with-sys-reactive|with-lifeforms|with-player-link|with-lifeforms-and-player-link|with-reference-policies|with-requirement-bool|with-declaration-policies|with-raw-declaration-policies|all-raw-file-policies|with-raw-runtime-policies|with-workspace-fold-policies|with-sys-source-policies REQUEST.json",
         Role::ImageDir => "usage: analyze-native native-image-dir --dmbc ABSOLUTE_EXE --scratch ABSOLUTE_DIR REQUEST.json",
     });
     let mut program = None;
@@ -67,6 +67,7 @@ fn options(args: &[String], role: Role) -> io::Result<Options> {
                 Some("with-lifeforms-and-player-link") => Roster::WithLifeformsAndPlayerLink,
                 Some("with-reference-policies") => Roster::WithReferencePolicies,
                 Some("with-raw-runtime-policies") => Roster::WithRawRuntimePolicies,
+                Some("with-sys-source-policies") => Roster::WithSysSourcePolicies,
                 Some("with-workspace-fold-policies") => Roster::WithWorkspaceFoldPolicies,
                 Some("all-raw-file-policies") => Roster::AllRawFilePolicies,
                 Some("with-raw-declaration-policies") => Roster::WithRawDeclarationPolicies,
