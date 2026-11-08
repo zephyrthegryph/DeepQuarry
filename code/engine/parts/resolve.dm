@@ -66,6 +66,8 @@
 	/// A Menu read's when() answers by (condition, holder, target): the many rows that ask one condition of one holder (a body's surgery
 	/// steps all asking surgery_offered()) ask it once. Conditions are pure, so within one read an answer cannot move.
 	var/list/menu_cond_answers
+	/// op_menu_cond_row_key()'s numbers for the objects a read's rows name
+	var/list/menu_cond_ids
 	var/menu_timed = FALSE
 	/// Whether the caller wants the near miss (a click's refusal reason): when it does not (a Menu read), a candidate the origin or authority refuses
 	/// is never made, the same as one its binding's input drops.
@@ -308,10 +310,18 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 			plain = list(own_rows, no_grants, null)
 			LAZYSET(index.op_side_rows, signature, plain)
 		return plain
-	// Kept with the count of the holder's activations as well: a grant being attached is in the list before its restack moves the generation.
+	// Kept for the running grants that bring ops, in order: a hit that adds or ends a status (a grant with no ops) moves the capability generation
+	// and leaves these rows, and their compiled tables, as they were. A grant being attached is in the list before its restack moves the generation.
+	var/list/op_acts = list()
+	for(var/datum/activation/A as anything in state.activations)
+		if(A.dead || !A.runs || T.caps[A.def.key])
+			continue
+		var/datum/op_index/def_index = op_index_of_def(T, A.def)
+		if(length(def_index.ordered))
+			op_acts += A
 	var/list/memo = state.op_dispatch_memo
-	if(isnull(memo) || memo[1] != count)
-		memo = list(count, list())
+	if(isnull(memo) || !op_same_items(memo[1], op_acts))
+		memo = list(op_acts, list())
 		state.op_dispatch_memo = memo
 	var/list/by_shape = memo[2]
 	var/list/made = by_shape[signature]
@@ -322,15 +332,23 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 	for(var/datum/op_row/row as anything in op_rows_for(index, side, origin, authority, gesture, intents, held_type, signature, near_misses))
 		rows += row
 		acts += list(null)
-	for(var/datum/activation/A as anything in state.activations)
-		if(A.dead || !A.runs || T.caps[A.def.key])
-			continue
+	for(var/datum/activation/A as anything in op_acts)
 		for(var/datum/op_row/row as anything in op_rows_for(op_index_of_def(T, A.def), side, origin, authority, gesture, intents, held_type, signature, near_misses))
 			rows += row
 			acts += A
 	made = list(rows, acts, null)
 	by_shape[signature] = made
 	return made
+
+/// Do lists `a` and `b` hold the same items in the same order?
+/proc/op_same_items(list/a, list/b)
+	var/n = length(a)
+	if(n != length(b))
+		return FALSE
+	for(var/i in 1 to n)
+		if(a[i] != b[i])
+			return FALSE
+	return TRUE
 
 /datum/op_index
 	/// signature -> list(rows, a null per row, compiled tables): op_side_rows() of a holder with no grants.
@@ -1158,10 +1176,10 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 
 /// op_cond() for a Menu row, answered once per (condition, holder, target) in a read. Only a var, a stat or a proc condition is kept: a tree or a
 /// requirement datum may read the row's own binding.
-/proc/op_menu_cond(datum/op_resolution/R, datum/act/op/A, cond)
+/proc/op_menu_cond(datum/op_resolution/R, datum/act/op/A, cond, row_key = null)
 	if(!R.menu_scratch || !(istext(cond) || isnum(cond)))
 		return op_cond(A, cond)
-	var/answer_key = "[cond]|[REF(A.holder)]|[REF(A.target)]|[A.cap ? REF(A.cap) : "-"]|[A.activation ? REF(A.activation) : "-"]"
+	var/answer_key = "[row_key || op_menu_cond_row_key(R, A)]|[cond]" // numbers first: a kept "prefix + number" string family stalls BYOND (doc/rewrite/byond_string_stall.md)
 	var/list/answers = R.menu_cond_answers
 	if(isnull(answers))
 		answers = list()
@@ -1173,11 +1191,41 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	answers[answer_key] = known
 	return known
 
+/// What a row's when() answers depend on (holder, target, capability, activation), as the read's small numbers for them: a row asks it once for all
+/// its conditions, and the numbers are list lookups by the object, not REF() text.
+/proc/op_menu_cond_row_key(datum/op_resolution/R, datum/act/op/A)
+	var/list/ids = R.menu_cond_ids
+	if(isnull(ids))
+		ids = list()
+		R.menu_cond_ids = ids
+	var/datum/D = A.holder
+	var/h = D ? ids[D] : 0
+	if(isnull(h))
+		h = length(ids) + 1
+		ids[D] = h
+	D = A.target
+	var/t = D ? ids[D] : 0
+	if(isnull(t))
+		t = length(ids) + 1
+		ids[D] = t
+	D = A.cap
+	var/c = D ? ids[D] : 0
+	if(isnull(c))
+		c = length(ids) + 1
+		ids[D] = c
+	D = A.activation
+	var/a = D ? ids[D] : 0
+	if(isnull(a))
+		a = length(ids) + 1
+		ids[D] = a
+	return "[h]|[t]|[c]|[a]"
+
 /proc/op_menu_decide_in(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/act/op/A)
 	if(length(P.conds))
 		GLOB.op_count_whens++
+	var/row_key = (R.menu_scratch && length(P.conds)) ? op_menu_cond_row_key(R, A) : null
 	for(var/cond in op_conds_cheapest_first(P))
-		if(!op_menu_cond(R, A, cond))
+		if(!op_menu_cond(R, A, cond, row_key))
 			return list("when", FALSE, FALSE, null, null)
 	if(op_path_reason(R, P, side, holder))
 		return list("path", TRUE, TRUE, null, null)

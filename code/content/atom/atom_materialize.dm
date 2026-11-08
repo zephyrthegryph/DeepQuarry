@@ -85,6 +85,9 @@
 	if(own_table_of(src).materialize_work)
 		rel_keyed_materialize(src)
 	BOOT_PHASE_END(bp_keyed, "materialize: rel_keyed_materialize" + BOOT_KIND(src), src)
+	// A draw that reads its area's vars (hops.dm, area_hop_readers): an area's var change marks it without walking the area.
+	if(ismovable(src))
+		hop_area_reader_join(src)
 
 /// The exact inverse of on_materialize(). See the top of this file.
 /atom/proc/on_dematerialize()
@@ -93,6 +96,8 @@
 	var/table = atom_type_table(src)
 	if(own_table_of(src).materialize_work)
 		rel_keyed_dematerialize(src)
+	if(ismovable(src))
+		hop_area_reader_leave(src)
 	if(table & TYPE_TABLE_HAS_DECLS)
 		lifecycle_decls_dematerialize(src, lifecycle_decls_of(src))
 	if(table & TYPE_TABLE_HAS_REGISTRIES)

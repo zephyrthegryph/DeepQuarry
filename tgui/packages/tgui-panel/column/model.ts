@@ -444,3 +444,43 @@ export function serializeSaved(saved: Record<string, Placement>): string {
   }
   return '{}';
 }
+
+/** The column's spacing (Column.scss): a header, the gap between entries, the padding round the list. */
+export const COLUMN_HEAD = 24;
+export const COLUMN_GAP = 3;
+export const COLUMN_PAD = 6;
+/** The least an expanded entry shows, and the least the filling entry (the chat) keeps. */
+export const FIT_MIN = DOCK_HEIGHT_MIN;
+export const FILL_MIN = 160;
+
+/**
+ * The heights the column draws its entries at, for a column `available`
+ * pixels tall: the saved heights while they fit, else each expanded entry
+ * cut in proportion (never under FIT_MIN), so the filling entry keeps at
+ * least FILL_MIN and nothing is pushed out of reach. When even the least
+ * heights do not fit (many windows on a short column), the list scrolls.
+ * The saved heights are not changed: a taller column gets them back.
+ */
+export function fitHeights(
+  groups: DockGroup[],
+  fillAt: number,
+  available: number,
+): number[] {
+  const heights = groups.map((g) => g.height);
+  const expanded = groups
+    .map((g, i) => i)
+    .filter((i) => i !== fillAt && !groups[i].collapsed);
+  const reserved =
+    COLUMN_PAD +
+    COLUMN_GAP * Math.max(0, groups.length - 1) +
+    COLUMN_HEAD * groups.filter((g, i) => g.collapsed || i === fillAt).length +
+    (fillAt >= 0 ? FILL_MIN : 0);
+  const budget = Math.max(0, available - reserved);
+  const wanted = expanded.reduce((sum, i) => sum + heights[i], 0);
+  if (wanted <= budget || wanted === 0) return heights;
+  const scale = budget / wanted;
+  for (const i of expanded) {
+    heights[i] = Math.max(FIT_MIN, Math.floor(heights[i] * scale));
+  }
+  return heights;
+}

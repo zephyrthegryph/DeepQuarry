@@ -373,11 +373,16 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 			return // the attach restacked
 	var/datum/activation/first_activation = set_of[1]
 	var/list/stacks = cap_stacks(first_activation.def)
+	// Which hooks run follows `runs`: the hooks generation moves only when a restack changed one (a hook added or removed moves it itself, in
+	// hooks_attach() and hooks_detach()), so a grant that stacks alone, an observe() say, publishes no hooks change of its own.
+	var/runs_changed = FALSE
 	switch(stacks[1])
 		if(STACKS_UNIQUE)
 			var/first = TRUE
 			for(var/datum/activation/A as anything in set_of)
-				A.runs = first
+				if(A.runs != first)
+					runs_changed = TRUE
+					A.runs = first
 				first = FALSE
 		if(STACKS_BEST)
 			var/param = stacks[2]
@@ -389,11 +394,16 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 					best = A
 					best_value = value
 			for(var/datum/activation/A as anything in set_of)
-				A.runs = (A == best)
+				var/should_run = (A == best)
+				if(A.runs != should_run)
+					runs_changed = TRUE
+					A.runs = should_run
 		else
 			for(var/datum/activation/A as anything in set_of)
-				A.runs = TRUE
-	if(holder.rx?.hooks)
+				if(!A.runs)
+					runs_changed = TRUE
+					A.runs = TRUE
+	if(runs_changed && holder.rx?.hooks)
 		holder.rx.set_hooks_generation(holder.rx.hooks_generation + 1)
 
 /// The activations of `cap_id` (and selector) on holder whose behaviour runs, in attach order. One for UNIQUE and BEST.
@@ -621,8 +631,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(TRACKED_UNCHANGED(capability_generation, value))
 		return FALSE
 	capability_generation = value
-	// What the resolver merged over the holder's grants (its candidate rows per input shape, its providers) is made again on the next read.
-	op_dispatch_memo = null
+	// The providers the resolver merged over the holder's grants are made again on the next read; its candidate rows per input shape are kept for
+	// the grants that bring ops (op_side_rows() compares them on each read).
 	op_provider_memo = null
 	tracked_changed(src, nameof(capability_generation))
 	return TRUE
