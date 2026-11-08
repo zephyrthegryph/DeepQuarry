@@ -78,6 +78,8 @@ export type McHealthData = {
   };
   churn: Record<string, [string, number][]>;
   rust: Record<string, any> | null;
+  /** The callbacks and redraws behind each busy system: list(source, kind, count, total ms, max ms), heaviest first. */
+  attribution?: Record<string, [string, string, number, number, number][]>;
   runtime: Record<string, number>;
 };
 

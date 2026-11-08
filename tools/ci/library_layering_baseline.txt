@@ -3148,16 +3148,6 @@ external_dependency	code/library/ui/asset_cache/assets/preferences.dm	var/datum/
 external_dependency	code/library/ui/asset_cache/assets/preferences.dm	var/data = middleware.get_constant_data()
 external_dependency	code/library/ui/asset_cache/assets/preferences.dm	var/datum/preference/preference_entry = GLOB.preference_entries[preference_type]
 external_dependency	code/library/ui/asset_cache/assets/preferences.dm	var/data = preference_entry.compile_constant_data()
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	for (var/datum/design_techweb/path as anything in subtypesof(/datum/design_techweb))
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	if (ispath(item, /obj/item/circuitboard))
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	var/obj/item/circuitboard/C = item
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	if (ispath(item, /obj/machinery/computer) || ispath(item, /obj/machinery/power/solar_control))
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	if (ispath(item, /obj/machinery/computer) || ispath(item, /obj/machinery/power/solar_control))
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	var/obj/machinery/computer/C = item
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	if(ispath(item, /obj/item/stack/material))
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	var/obj/item/stack/material/mat = item
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	var/datum/material/material = GET_MATERIAL_REF(mat::default_type)
-external_dependency	code/library/ui/asset_cache/assets/research_designs.dm	var/datum/material/material = GET_MATERIAL_REF(mat::default_type)
 external_dependency	code/library/ui/asset_cache/assets/spritesheets/pai_icons.dm	for(var/name, current_sprite in SSpai.get_chassis_list())
 external_dependency	code/library/ui/asset_cache/assets/spritesheets/pai_icons.dm	var/datum/pai_sprite/sprite = current_sprite
 external_dependency	code/library/ui/asset_cache/assets/spritesheets/robot_icons.dm	for(var/datum/robot_sprite/S as anything in robot_sprites_cyborg_sprites_by_module()[module_type])
@@ -3169,9 +3159,6 @@ external_dependency	code/library/ui/asset_cache/assets/spritesheets/vending.dm	i
 external_dependency	code/library/ui/asset_cache/assets/spritesheets/vending.dm	var/obj/item/reagent_containers/food/drinks/glass2/G = item
 external_dependency	code/library/ui/asset_cache/assets/spritesheets/vending.dm	if(ispath(item, /obj/item/reagent_containers/hypospray/autoinjector))
 external_dependency	code/library/ui/asset_cache/assets/spritesheets/vending.dm	if(ispath(item, /obj/item/melee/shock_maul))
-external_dependency	code/library/ui/asset_cache/assets/spritesheets/vending.dm	for(var/path in subtypesof(/obj/machinery/vending))
-external_dependency	code/library/ui/asset_cache/assets/spritesheets/vending.dm	var/obj/machinery/vending/x = new path(null)
-external_dependency	code/library/ui/asset_cache/assets/spritesheets/vending.dm	x.build_inventory()
 external_dependency	code/library/ui/asset_cache/transports/asset_transport.dm	if(!client || QDELETED(client) || !client.session)
 external_dependency	code/library/ui/asset_cache/transports/asset_transport.dm	client.session.flush_assets(src, PROC_REF(send_assets_slow), client, files, filerate, i + 1)
 external_dependency	code/library/ui/asset_cache/transports/asset_transport.dm	client.session.flush_assets(src, PROC_REF(send_assets_slow), client, files, filerate, i + 1)

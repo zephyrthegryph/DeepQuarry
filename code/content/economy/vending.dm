@@ -195,7 +195,15 @@ CAPABILITIES(/obj/machinery/vending)
 	if(length(slogan_list))
 		COOLDOWN_START(src, slogan_cooldown, slogan_delay + rand(0, slogan_delay))
 
-GLOBAL_LIST_EMPTY(vending_products)
+/// The vending sheet's products (the library's asset asks, code/library/ui/asset_cache/assets/spritesheets/vending.dm): every
+/// type any vendor type stocks, read from the catalog (VENDING_CATALOG_FILE holds every vendor type's stock), so no vendor
+/// is made for a sheet.
+/datum/asset/spritesheet_batched/vending/product_types()
+	. = list()
+	for(var/vendor_type in subtypesof(/obj/machinery/vending))
+		for(var/section in list("products", "contraband", "premium"))
+			for(var/entry in vending_catalog_section(vendor_type, section))
+				.[entry] = TRUE
 
 #define VENDING_CATALOG_FILE "strings/vending/catalog.json"
 
@@ -277,7 +285,6 @@ PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: n
 			product.set_category(category)
 
 			rel_add(src, nameof(product_records), product)
-			GLOB.vending_products[entry] = 1
 
 	if(LAZYLEN(prices))
 		set_has_prices(TRUE)

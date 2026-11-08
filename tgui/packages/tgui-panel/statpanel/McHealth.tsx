@@ -4,7 +4,7 @@
  * (code/content/client/mc_health.dm) only while this page is open, at most once a second. Sections remember open/closed per admin.
  */
 
-import { type ReactNode, useState } from 'react';
+import { Fragment, type ReactNode, useState } from 'react';
 import {
   bytes,
   count,
@@ -149,7 +149,6 @@ function Ticks({ data }: { data: McHealthData }) {
         />
         {ticks.map((t, i) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: ticks are positions in a ring
             key={i}
             className={`mch-bar${t[0] > 100 ? ' mch-bar--over' : ''}${i === pinned ? ' mch-bar--pinned' : ''}`}
             style={{ height: `${(t[0] / top) * 100}%` }}
@@ -188,6 +187,7 @@ function Ticks({ data }: { data: McHealthData }) {
 
 function Uses({ data }: { data: McHealthData }) {
   const [all, setAll] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const systems = systemsByCost(data.kernel?.systems);
   const total = systems.reduce((sum, s) => sum + s.ms_per_s, 0);
   const rows = all ? systems : systems.slice(0, 8);
@@ -216,14 +216,36 @@ function Uses({ data }: { data: McHealthData }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((s) => (
-            <tr key={s.key} title={s.kind ? `${s.key} (${s.kind})` : s.key}>
-              <td>{s.key}</td>
-              <td>{s.ms_per_s.toFixed(2)}</td>
-              <td>{s.p95_ms.toFixed(2)} ms</td>
-              <td>{pct(Number(s.overrun_share) * 100)}</td>
-            </tr>
-          ))}
+          {rows.map((s) => {
+            const behind = data.attribution?.[s.key];
+            const isOpen = expanded === s.key;
+            return (
+              <Fragment key={s.key}>
+                <tr
+                  className={behind ? 'mch-row--expandable' : undefined}
+                  title={s.kind ? `${s.key} (${s.kind})` : s.key}
+                  onClick={() => behind && setExpanded(isOpen ? null : s.key)}
+                >
+                  <td>
+                    {behind ? (isOpen ? '▾ ' : '▸ ') : ''}
+                    {s.key}
+                  </td>
+                  <td>{s.ms_per_s.toFixed(2)}</td>
+                  <td>{s.p95_ms.toFixed(2)} ms</td>
+                  <td>{pct(Number(s.overrun_share) * 100)}</td>
+                </tr>
+                {isOpen &&
+                  behind?.map(([source, kind, n, totalMs, maxMs]) => (
+                    <tr key={`${s.key}:${source}`} className="mch-row--behind">
+                      <td title={kind}>{source}</td>
+                      <td>{count(n)}×</td>
+                      <td>{totalMs.toFixed(1)} ms</td>
+                      <td>max {maxMs.toFixed(1)} ms</td>
+                    </tr>
+                  ))}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
       {systems.length > 8 && (
@@ -464,6 +486,7 @@ function Native({ data }: { data: McHealthData }) {
 
 function Advanced(props: {
   data: McHealthData;
+  token: string | null;
   location?: string;
 }) {
   const { data } = props;
@@ -477,6 +500,14 @@ function Advanced(props: {
     >
       <div className="mch-links">
         <a href="byond://winset?command=Tick-Report">Tick Report</a>
+        {(['kernel', 'globals', 'config'] as const).map((name) => (
+          <a
+            key={name}
+            href={`byond://?_src_=holder;admin_token=${props.token};mc_vv=${name}`}
+          >
+            View {name[0].toUpperCase() + name.slice(1)} vars
+          </a>
+        ))}
       </div>
       <table className="mch-table">
         <tbody>
@@ -530,7 +561,7 @@ export function McHealthPanel(props: {
       <Memory data={data} />
       <Entities data={data} />
       <Native data={data} />
-      <Advanced data={data} location={props.location} />
+      <Advanced data={data} token={props.token} location={props.location} />
     </div>
   );
 }
