@@ -120,6 +120,11 @@ fn classify_primary_header(source:&str,tokens:TokenWindow<'_>,span:Span,has_chil
     if (h.starts_with('/') && assignment.is_none())
         || (has_children && assignment.is_none())
         || (!h.is_empty() && h.chars().all(ident_continue))
+        || (h.contains('/') && h.split('/').all(|part| {
+            let mut chars = part.chars();
+            chars.next().is_some_and(|first| first.is_ascii_alphabetic() || first == '_')
+                && chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        }))
     {
         return ItemKind::Type;
     }

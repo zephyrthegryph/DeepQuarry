@@ -1929,6 +1929,7 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
     for (path, source) in [
         ("deepquarry.dme", concat!(
             "#include \"code/__defines/context.dm\"\n",
+            "#include \"code/__fixture_decl_macros.dm\"\n",
             "#include \"code/control.dm\"\n",
             "#include \"code/handler.dm\"\n",
             "#include \"code/engine/present/protocols.dm\"\n",
@@ -1937,7 +1938,10 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
             "#include \"code/_generated/reads.dm\"\n#endif\n",
         )),
         ("code/__defines/context.dm", "/datum/act\n/datum/act/eval\n"),
-        ("code/handler.dm", "/proc/leak(datum/act/A)\n    return list(A)\n"),
+        ("code/__fixture_decl_macros.dm", "#define PRIVATE_FIELD var\n"),
+        // The full project expands PRIVATE_FIELD. The deliberately smaller
+        // Handler recipe instead sees an ordinary relative type path.
+        ("code/handler.dm", "/datum/partial_holder\n    PRIVATE_FIELD/list/client/clients\n/proc/leak(datum/act/A)\n    return list(A)\n"),
         ("code/engine/present/protocols.dm", "/datum/look\n/atom/proc/draw(datum/look/look)\n    return\n"),
         ("interface/visible.dm", "/datum/full_registry_interface\n"),
         ("modular_chomp/visible.dm", "/datum/full_registry_modular\n"),
