@@ -63,6 +63,12 @@
 				keep[i] = "[num2text(i + 8000000, 8)]:seq:rewake"
 				if(i > 1000)
 					keep[i - 1000] = null
+			if("busy")
+				// no allocation at all: if this stalls too, the stall is the process being descheduled, not BYOND's tables
+				var/acc = 0
+				for(var/j in 1 to 50)
+					acc += j * i
+				keep[i] = acc
 			if("same_string")
 				// the same text every time (BYOND prints 7000001 as "7e+06"): no new string at all
 				keep[i] = "seq:[7000000 + i]:rewake"
