@@ -185,6 +185,16 @@ fn actual_original_origins_share_empty_trace_across_includes_without_losing_macr
     let ordinary = ExpandedRegions { dense_emission_regions: expected.clone(), ..Default::default() };
     assert!(expanded.same_emission_regions(&ordinary));
     assert!(ordinary.same_emission_regions(&expanded));
+    let mut expected_ranks = vec![usize::MAX; regions.len() + 1];
+    for (rank, &region) in expected.iter().enumerate() {
+        expected_ranks[region] = rank;
+    }
+    let mut actual_ranks = vec![usize::MAX; regions.len() + 1];
+    expanded.write_last_emission_ranks(&mut actual_ranks);
+    assert_eq!(actual_ranks, expected_ranks);
+    actual_ranks.fill(usize::MAX);
+    ordinary.write_last_emission_ranks(&mut actual_ranks);
+    assert_eq!(actual_ranks, expected_ranks);
     let changed = ExpandedRegions { dense_emission_regions: expected[1..].to_vec(), ..Default::default() };
     assert!(!expanded.same_emission_regions(&changed));
     let mut ordinals = expanded.emission_regions();

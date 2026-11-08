@@ -2561,6 +2561,30 @@ impl OriginalRawOrigins{
  }
  pub(super) fn equivalent(&self,other:&Self)->bool{self.len()==other.len()&&self.nonphysical.as_slice().iter().map(|row|row.cover).eq(other.nonphysical.as_slice().iter().map(|row|row.cover))&&(0..self.len()).all(|index|self.geometry(index)==other.geometry(index))}
  pub(super) fn len(&self)->usize{self.rows.len()}
+ /// Region ranks need only the last delivered token in each physical
+ /// encounter, not full decoded origin/trace data for every token.
+ pub(super) fn write_last_emission_ranks(&self, ranks: &mut [usize]) {
+  let mut start = 0;
+  for (ordinal, encounter) in self.encounters.as_slice().iter().enumerate() {
+   // Groups are appended with a nondecreasing encounter ordinal, and
+   // rows with a nondecreasing group ordinal. Delivery can only trim
+   // a suffix of those same rows, groups and encounters.
+   let mut left = start;
+   let mut right = self.rows.len();
+   while left < right {
+    let mid = left + (right - left) / 2;
+    let group = self.rows.group_at(mid).expect("delivered origin row");
+    let geometry = self.groups.source_geometry(group).expect("delivered origin group");
+    if geometry.encounter <= ordinal { left = mid + 1; } else { right = mid; }
+   }
+   if left != start {
+    ranks[encounter.region] = left - 1;
+   }
+   start = left;
+  }
+  debug_assert_eq!(start,self.rows.len());
+ }
+
  pub(super) fn get(&self,index:usize)->Option<ExpandedOriginView<'_>>{
   let row = self.row(index)?;
   let (group, trace) = self.groups.get(row.group)?;

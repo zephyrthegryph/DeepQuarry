@@ -174,6 +174,12 @@ impl ExpandedOriginArena {
     pub(super) fn has_original_emission_ordinals(&self) -> bool {
         matches!(&self.0.records, Records::Raw(rows) if rows.has_delivered_binding())
     }
+    pub(super) fn write_original_emission_ranks(&self, ranks: &mut [usize]) -> bool {
+        let Records::Raw(rows) = &self.0.records else { return false };
+        if !rows.has_delivered_binding() { return false; }
+        rows.write_last_emission_ranks(ranks);
+        true
+    }
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }

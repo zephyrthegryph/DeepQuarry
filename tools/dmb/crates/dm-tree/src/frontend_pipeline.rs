@@ -807,6 +807,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
         snapshot
     };
     timings.tree_resolution = resolution_start.elapsed();
+    dm_profile::request_mark("frontend.tree_resolution_done");
     observe(
         config,
         FrontendStage::TreeResolution,
@@ -839,11 +840,13 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
         &mut issued_settings,
         &mut body_codes,
     )?;
+    dm_profile::request_mark("frontend.body_collection_done");
     let callable_roster = match semantic_state {
         Some(state) => state.bind_callable_roster(&snapshot.tree, &bodies),
         None => CallableRoster::issue(&snapshot.tree, &bodies),
     }
     .map_err(|message| vec![internal(&message)])?;
+    dm_profile::request_mark("frontend.callable_roster_done");
 
     // Ineligible/custom metadata preserves the ordinary downstream ABI error path.
     let abi_settings_complete = callable_roster.abi().is_some_and(|abi| {
@@ -858,9 +861,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
                 })
     });
     let mut ranks = vec![0; plan.regions().len()];
-    for (rank, region) in expanded.emission_regions().enumerate() {
-        ranks[region] = rank;
-    }
+    expanded.write_last_emission_ranks(&mut ranks);
     let emission_order = emission_order::ordered_occurrences(&declaration_regions, &ranks);
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     observe(
@@ -886,6 +887,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
             ),
         })
         .collect();
+    dm_profile::request_mark("frontend.body_termination_done");
     let files: Arc<[SourceFile]> = files.into();
     let source_by_path = by_path;
     let declaration_qualifiers = expanded_spans
@@ -943,6 +945,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
         declaration_qualifiers,
         original_primary.clone(),
     ));
+    dm_profile::request_mark("frontend.source_export_done");
     let mut frontend = ColdFrontend {
         original_primary:original_primary.clone(),
         body_queries: None,
@@ -982,9 +985,12 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
         bodies,
         emission_order: emission_order.into(),
     };
-    if require_primary_headers {
+    // The structural Handler reader cannot issue declaration diagnostics.
+    // Its findings use the bound callable and body locations above.
+    if require_primary_headers && role != crate::diagnostic_declarations::DeclarationRole::HandlersStructural {
         frontend.issue_declaration_compatibility();
     }
+    dm_profile::request_mark("frontend.declaration_compatibility_done");
     let frontend=demand.attach(frontend)?;
     demand.run(|permit|permit.checkpoint())?;
     if let Some(request)=&declaration_request{request.publish_successful();}

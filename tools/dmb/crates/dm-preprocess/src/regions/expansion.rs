@@ -42,6 +42,16 @@ impl ExpandedRegions {
         })
     }
 
+    /// Assign each region its last issued emission ordinal. Regions without
+    /// an emission leave the caller's existing rank unchanged.
+    pub fn write_last_emission_ranks(&self, ranks: &mut [usize]) {
+        if !self.origins.write_original_emission_ranks(ranks) {
+            for (rank, &region) in self.dense_emission_regions.iter().enumerate() {
+                ranks[region] = rank;
+            }
+        }
+    }
+
     pub fn same_emission_regions(&self, other: &Self) -> bool {
         if !self.origins.has_original_emission_ordinals() && !other.origins.has_original_emission_ordinals() {
             self.dense_emission_regions == other.dense_emission_regions
