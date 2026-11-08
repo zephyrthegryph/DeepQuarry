@@ -11,13 +11,16 @@
 /// The busiest keys of each churn kind the panel lists.
 #define MC_HEALTH_CHURN_TOP 5
 
-/// The Rust metric families the panel reads (verdigris_metrics_family()), not the whole registry. The sampled gauges among them (alloc.*, jobs,
-/// world.*) are as fresh as the last full snapshot (the server metrics source takes one every 10 s); the heap total is read live below.
+/// The Rust metric families the panel reads, in one call that refreshes the sampled gauges first (verdigris_metrics_panel(), about once a
+/// second while the panel is open; it does not wait for the server metrics source, which may be off).
 GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_total", "ffi.errors_total", "jobs.pending", "alloc.", "process.", "world.awake.", "world.stepped."))
 
 /// The whole payload of the panel.
 /proc/mc_health_data()
 	var/list/history = Kernel.perf_tick_usage
+	var/list/kernel_data = km_panel_data()
+	var/list/systems = kernel_data["systems"]
+	var/list/shown_systems = systems.Copy(1, min(length(systems), 8) + 1) // the panel's top 8 expand
 	return list(
 		"tick_budget_ms" = world.tick_lag * 100,
 		"target_tps" = world.fps,
@@ -33,7 +36,8 @@ GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_tota
 		"ticks" = mc_health_recent_ticks(),
 		"outliers" = Kernel.perf_outliers.Copy(),
 		"subsystems" = mc_health_subsystems(),
-		"kernel" = km_panel_data(),
+		"kernel" = kernel_data,
+		"attribution" = mc_health_attribution(shown_systems),
 		"gc" = mc_health_gc(),
 		"entities" = mc_health_entities(),
 		"churn" = mc_health_churn(),
@@ -144,16 +148,51 @@ GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_tota
 
 /// The Rust metrics of the families the panel reads, flat (name -> number; a histogram as its list), or null when the library did not answer.
 /proc/mc_health_rust()
-	var/list/out = list()
-	for(var/prefix in GLOB.mc_health_rust_families)
-		var/list/family = verdigris_metrics_family(prefix)
-		for(var/name in family)
-			out[name] = family[name]
-	var/list/heap = native_allocator_diagnostics()
-	if(length(heap) >= 2)
-		out["alloc.heap.current_bytes"] = heap[1]
-		out["alloc.heap.peak_bytes"] = heap[2]
+	var/list/out = verdigris_metrics_panel(GLOB.mc_health_rust_families)
 	return length(out) ? out : null
+
+/// The callbacks and redraws behind each of the busiest systems (the attribution table, code/world/kernel/measure/attribution.dm): system key ->
+/// list of list(source, kind, count, total ms, max ms), heaviest first. What a row of the panel's system table expands into.
+/proc/mc_health_attribution(list/systems, per_system = 5)
+	. = list()
+	var/datum/km_attr/attr = km_meter().attr
+	var/datum/km_systems/registry = km_systems()
+	if(!attr)
+		return
+	for(var/list/S as anything in systems)
+		var/sys = registry.index_by_key?[S["key"]]
+		if(!sys)
+			continue
+		var/list/rows = list()
+		for(var/list/row as anything in attr.select_top(per_system, KA_BY_TOTAL, sys))
+			var/list/data = attr.row_data(row)
+			rows += list(list(data["source"], data["kind"], data["count"], data["total_ms"], data["max_ms"]))
+		if(length(rows))
+			.[S["key"]] = rows
+
+// ---- the Advanced section's links: View Variables of a controller named by the link, not by a ref (the server resolves the name) ----
+
+CAPABILITIES_PART(/datum/admins, mc_health)
+	op("mc_vv", topic("mc_vv", arg("mc_vv", schema_text(16))), needs(req_rights(R_DEBUG)), then(PROC_REF(topic_mc_vv)))
+
+/// The datum a MC Health link names: "kernel", "globals" or "config"; null for any other name.
+/proc/mc_health_vv_target(name)
+	switch(name)
+		if("kernel")
+			return Kernel
+		if("globals")
+			return GLOB
+		if("config")
+			return config
+	return null
+
+/// "View Kernel vars" and its siblings: View Variables of the named controller for the admin who clicked.
+/datum/admins/proc/topic_mc_vv(datum/act/op/A, href_mc_vv)
+	var/datum/target = mc_health_vv_target(href_mc_vv)
+	if(!target)
+		log_admin("[key_name(A.actor)] asked the MC Health panel for View Variables of an unknown name '[href_mc_vv]'.")
+		return
+	owner()?.debug_variables(target)
 
 #undef MC_HEALTH_CENSUS_EVERY
 #undef MC_HEALTH_TICKS

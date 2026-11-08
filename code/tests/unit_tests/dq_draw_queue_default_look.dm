@@ -273,10 +273,33 @@ CAPABILITIES(/obj/dq_setup_marks_probe)
 	TEST_ASSERT(written in GLOB.refresh_queue, "a real mark on a held atom queues it at once")
 	refresh_settle_created()
 	TEST_ASSERT(GLOB.type_look_stamp[type], "the sample records an empty default look")
-	TEST_ASSERT(!held.refresh_queued, "the held atom of an empty default look owes nothing after the settle")
+	TEST_ASSERT_EQUAL(held.refresh_queued, DEP_PARKED, "the held atom of an empty default look is released with its type, untouched")
+	TEST_ASSERT(!(held in GLOB.refresh_queue), "and never enters the queue")
 	TEST_ASSERT(written.refresh_queued, "the written one keeps its refresh")
 	TEST_ASSERT(GLOB.boot_created_settled, "the boot settle closes the hold: a later map load queues as before")
 	refresh_flush()
 	qdel(sample)
 	qdel(held)
 	qdel(written)
+
+/// The look verdicts written for the next boot of this world are the verdicts sampling found: every cached type's stamp and lazy verdict equal the tables
+/// now, and a cache keyed by another world is not read.
+/datum/unit_test/dq_look_verdict_cache_agrees
+
+/datum/unit_test/dq_look_verdict_cache_agrees/Run()
+	look_verdicts_save()
+	var/list/data = json_decode(file2text(LOOK_VERDICTS_FILE))
+	TEST_ASSERT_EQUAL(data["key"], look_verdicts_key(), "the cache is keyed by this world")
+	var/list/stamp = data["stamp"]
+	var/list/lazy = data["lazy"]
+	TEST_ASSERT(length(stamp) > 50, "the boot's verdicts were written ([length(stamp)])")
+	var/mismatches = 0
+	for(var/name in stamp)
+		var/path = text2path(name)
+		if(!path || !!stamp[name] != !!GLOB.type_look_stamp[path])
+			mismatches++
+	for(var/name in lazy)
+		var/path = text2path(name)
+		if(!path || !!lazy[name] != !!GLOB.type_look_lazy[path])
+			mismatches++
+	TEST_ASSERT_EQUAL(mismatches, 0, "every cached verdict equals the sampled one")

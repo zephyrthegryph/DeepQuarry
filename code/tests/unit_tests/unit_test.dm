@@ -1599,7 +1599,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 
 /// The settings of a map atmospherics machine or air alarm a test can leave changed (and a later test then reads): a machine on or off, a pump's target, an alarm's mode.
 /proc/unit_test_machine_vars()
-	var/static/list/names = list("use_power", "on", "mode", "target_pressure", "set_temperature", "power_setting", "target_temperature", "pumping", "pressure_checks", "rcon_setting", "danger_level", "regulating_temperature", "thermostat_mode", "shorted", "aidisabled", "locked", "panel_open", "stat")
+	var/static/list/names = list("use_power", "on", "mode", "target_pressure", "set_temperature", "power_setting", "target_temperature", "pumping", "pressure_checks", "rcon_setting", "danger_level", "regulating_temperature", "shorted", "aidisabled", "locked", "panel_open", "stat")
 	return names
 
 /// The atmospherics machines and air alarms on the map when the first test starts (built once), the set the machine guard watches.

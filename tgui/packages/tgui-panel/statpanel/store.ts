@@ -105,25 +105,6 @@ export function visibleTabs(state: State): string[] {
   );
 }
 
-/** Verbs of one tab: top level first, then one group per subcategory. */
-export function verbsOfTab(
-  state: State,
-  tab: string,
-): { group: string | null; verbs: Verb[] }[] {
-  const groups = new Map<string | null, Verb[]>([[null, []]]);
-  for (const verb of state.verbs) {
-    if (tabOfCategory(verb[0], state.splitAdminTabs) !== tab) continue;
-    const group = verb[0].includes('.') ? verb[0].split('.')[1] : null;
-    if (!groups.has(group)) groups.set(group, []);
-    groups.get(group)!.push(verb);
-  }
-  const byName = (a: Verb, b: Verb) => a[1].localeCompare(b[1]);
-  return [...groups]
-    .filter(([, verbs]) => verbs.length)
-    .sort(([a], [b]) => (a ?? '').localeCompare(b ?? ''))
-    .map(([group, verbs]) => ({ group, verbs: verbs.sort(byName) }));
-}
-
 /** The views this client gets: admins (a Staff or Server verb, or the MC or Tickets tab) get all five. */
 export function viewsOf(state: State): PanelView[] {
   const admin =

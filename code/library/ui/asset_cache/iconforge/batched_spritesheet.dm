@@ -50,6 +50,9 @@
 	/// Used to prevent async cache refresh jobs from looping on failure.
 	var/cache_result = null
 	var/getting_genned = FALSE
+	/// The entry_sources() still being built (build_entries()), and the next one to build.
+	var/list/pending_sources
+	var/next_source = 1
 
 /datum/asset/spritesheet_batched/proc/should_load_immediately()
 #ifdef DO_NOT_DEFER_ASSETS
@@ -142,8 +145,7 @@
 	// The input data is made when the sheet is realized (realize_spritesheets()): a deferred sheet builds it in the asset loading service after boot,
 	// not in the Assets system's init (the vending sheet makes and deletes every vending machine type to list their products, ~3 s of boot).
 	if(should_load_immediately())
-		entries_created = TRUE
-		create_spritesheets()
+		build_entries(budgeted = FALSE)
 		realize_spritesheets(yield = FALSE)
 	else
 		SSasset_loading.queue_asset(src)
@@ -154,6 +156,34 @@
 /// Call insert_icon or insert_all_icons here, building a spritesheet!
 /datum/asset/spritesheet_batched/proc/create_spritesheets()
 	CRASH("create_spritesheets() not implemented for [type]!")
+
+/// The inputs a large sheet builds its entries from, one at a time (add_entry_for()), so the asset loader spreads the work over
+/// ticks instead of stalling the round start. Null (the default): the sheet builds every entry at once in create_spritesheets().
+/datum/asset/spritesheet_batched/proc/entry_sources()
+	return null
+
+/// Inserts the entries for one of entry_sources().
+/datum/asset/spritesheet_batched/proc/add_entry_for(source)
+	return
+
+/// Builds the sheet's entries; `budgeted` stops when the tick is over budget and picks up where it left off on the next call.
+/// TRUE once every entry is in.
+/datum/asset/spritesheet_batched/proc/build_entries(budgeted)
+	if(entries_created)
+		return TRUE
+	if(isnull(pending_sources))
+		pending_sources = entry_sources()
+		if(isnull(pending_sources))
+			entries_created = TRUE
+			create_spritesheets()
+			return TRUE
+	while(next_source <= length(pending_sources))
+		add_entry_for(pending_sources[next_source++])
+		if(budgeted && KERNEL_OVER_BUDGET)
+			return FALSE
+	entries_created = TRUE
+	pending_sources = null
+	return TRUE
 
 /datum/asset/spritesheet_batched/proc/insert_all_icons(prefix, icon/I, list/directions, prefix_with_dirs = TRUE)
 	if (length(prefix))
@@ -172,15 +202,14 @@
 		finish_queued_generation()
 		return
 	if(!entries_created)
-		entries_created = TRUE
 		// The input data, compared with the cache below. A deferred sheet makes it inside the asset loading service's generation: a fault here
 		// (a runtime, or a stack_trace() inside the service's try) must still end this sheet's generation, or the service's count of sheets in
 		// flight stays up and deferred assets never settle.
 		try
-			create_spritesheets()
+			build_entries(budgeted = FALSE) // the rest of it, when the asset loader built part a step at a time
 		catch(var/exception/fault)
 			realize_failed()
-			dq_report_caught(fault, "spritesheet [name] ([type]): create_spritesheets()")
+			dq_report_caught(fault, "spritesheet [name] ([type]): build_entries()")
 			return
 	if(!length(entries))
 		realize_failed()
@@ -269,6 +298,8 @@
 /datum/asset/spritesheet_batched/proc/realize_failed()
 	entries_created = FALSE
 	entries = null
+	pending_sources = null
+	next_source = 1
 	finish_queued_generation()
 	SSasset_loading.dequeue_asset(src)
 

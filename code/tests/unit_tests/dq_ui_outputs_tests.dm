@@ -211,8 +211,22 @@
 /// through the generated setter pushes the open window once, and ui_data() shows the new value.
 /datum/unit_test/dq_ui_outputs_swept_host_refreshes_after_write
 
+/// A window host whose ui_data() reads a plain var: the sweep makes it tracked, so a write through its setter pushes the window.
+/datum/dq_ui_swept_host
+	var/selected_window
+
+CAPABILITIES(/datum/dq_ui_swept_host)
+	interface("DqSweptHostTest", state = nameof(GLOB.tgui_always_state))
+	op("pick_window", ui_act("pick_window", arg("win", schema_text(64))), then(PROC_REF(ui_act_pick_window)))
+
+/datum/dq_ui_swept_host/ui_data(datum/act/eval/A)
+	return list("selected_window" = selected_window)
+
+/datum/dq_ui_swept_host/proc/ui_act_pick_window(datum/act/op/A, win)
+	set_selected_window(win)
+
 /datum/unit_test/dq_ui_outputs_swept_host_refreshes_after_write/Run()
-	var/datum/tgui_feedback/host = new
+	var/datum/dq_ui_swept_host/host = new
 	var/datum/tgui/dq_ui_probe/probe = allocate(/datum/tgui/dq_ui_probe)
 	host.add_open_tguis(probe)
 	dq_ui_frame()

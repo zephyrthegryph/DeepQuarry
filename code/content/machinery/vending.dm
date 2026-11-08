@@ -2,18 +2,6 @@
 	name = "Prison Nutriment Vendor"
 	desc = "Delicious, probably not."
 	icon_state = "fridge_dark"
-	products = list(/obj/item/tray = 6,
-					/obj/item/material/kitchen/utensil/fork = 6,
-					/obj/item/material/knife/plastic = 6,
-					/obj/item/material/kitchen/utensil/spoon = 6,
-					/obj/item/reagent_containers/food/snacks/bugball = 10,
-					/obj/item/reagent_containers/food/snacks/candy_corn = 30,
-					/obj/item/reagent_containers/food/snacks/tofu = 10,
-					/obj/item/reagent_containers/food/snacks/wishsoup = 10,
-					/obj/item/reagent_containers/food/snacks/candy/proteinbar = 2,
-					/obj/item/reagent_containers/food/snacks/liquidfood = 10,
-					)
-	contraband = list(/obj/item/reagent_containers/food/snacks/tofupie = 3)
 	vend_delay = 15
 
 /obj/machinery/vending/security/yw
@@ -22,9 +10,6 @@
 	product_ads = "Crack capitalist skulls!;Beat some heads in!;Don't forget - harm is good!;Your weapons are right here.;Handcuffs!;Freeze, scumbag!;Don't tase me bro!;Tase them, bro.;Why not have a donut?"
 	icon_state = "sec"
 	req_access = list(ACCESS_SECURITY)
-	products = list(/obj/item/handcuffs = 8,/obj/item/grenade/flashbang = 4,/obj/item/flash = 5,
-					/obj/item/reagent_containers/food/snacks/donut/plain = 12,/obj/item/storage/box/evidence = 6)
-	contraband = list(/obj/item/clothing/glasses/sunglasses = 2,/obj/item/storage/box/donut = 2)
 	req_log_access = ACCESS_ARMORY
 	has_logs = 1
 
@@ -39,29 +24,6 @@
 	vend_delay = 1
 	icon_state = "sec" // Placeholder
 	req_one_access = list(ACCESS_EXPLORER,ACCESS_PILOT,ACCESS_MEDICAL_EQUIP)
-	products = list(
-				// Clothing
-					/obj/item/clothing/under/explorer = 10,
-					/obj/item/clothing/shoes/boots/winter/explorer = 10,
-					/obj/item/clothing/gloves/black = 10,
-					/obj/item/storage/belt/explorer = 10,
-				// Armor
-					/obj/item/clothing/suit/armor/pcarrier/explorer/light = 10,
-					/obj/item/clothing/suit/storage/hooded/explorer = 10,
-					/obj/item/clothing/head/helmet/explorer = 10,
-				// Pouches
-					/obj/item/storage/pouch = 10,
-					/obj/item/storage/pouch/ammo = 10,
-					/obj/item/storage/pouch/flares/full_flare = 10,
-					/obj/item/storage/pouch/holster = 5,
-				// Misc
-					/obj/item/radio/headset/explorer = 10,
-					/obj/item/radio/headset/alt/explorer = 10,
-					/obj/item/clothing/mask/gas/explorer = 10,
-					/obj/item/storage/backpack/satchel/explorer = 10,
-					/obj/item/storage/backpack/dufflebag/explorer = 10,
-					/obj/item/storage/backpack/explorer = 10
-					)
 
 /obj/machinery/vending/exploration_weapons
 	name = "Exploration Weapon Vendor"
@@ -69,23 +31,6 @@
 	vend_delay = 1
 	icon_state = "sec" // Placeholder
 	req_one_access = list(ACCESS_EXPLORER,ACCESS_PILOT,ACCESS_MEDICAL_EQUIP)
-	products = list(
-				// Phase
-					/obj/item/gun/energy/locked/phasegun/pistol = 10,
-					/obj/item/gun/energy/locked/phasegun = 10,
-					/obj/item/gun/energy/locked/phasegun/rifle = 5,
-				// Ammo
-					/obj/item/cell/device/weapon = 25,
-				// Melee
-					/obj/item/material/knife/tacknife/survival = 10,
-					/obj/item/material/knife/machete = 10,
-				// Holsters
-					/obj/item/clothing/accessory/holster/machete = 10,
-					/obj/item/clothing/accessory/holster/leg = 5,
-					/obj/item/clothing/accessory/holster/hip = 5,
-					/obj/item/clothing/accessory/holster/waist = 5,
-					/obj/item/clothing/accessory/holster/armpit = 5
-					)
 
 /obj/machinery/vending/exploration_misc
 	name = "Exploration Misc Vendor"
@@ -93,17 +38,6 @@
 	vend_delay = 1
 	icon_state = "sec" // Placeholder
 	req_one_access = list(ACCESS_EXPLORER,ACCESS_PILOT,ACCESS_MEDICAL_EQUIP)
-	products = list(
-				/obj/item/cataloguer = 10,
-				/obj/item/cell/device = 10,
-				/obj/item/geiger = 10,
-				/obj/item/gps/explorer = 10,
-				/obj/item/flashlight = 10,
-				/obj/item/storage/backpack/parachute = 5,
-				/obj/item/storage/box/flare = 5,
-				/obj/item/storage/box/cdeathalarm_kit = 1,
-				/obj/item/storage/box/backup_kit = 1
-				)
 
 /obj/machinery/vending/exploration_pilot
 	name = "Pilot Equipment Vendor"
@@ -111,18 +45,6 @@
 	vend_delay = 1
 	icon_state = "sec" // Placeholder
 	req_access = list(ACCESS_PILOT)
-	products = list(
-				// Clothing
-					/obj/item/clothing/under/rank/pilot1 = 5,
-					/obj/item/clothing/suit/storage/toggle/bomber/pilot = 5,
-					/obj/item/clothing/head/pilot = 5,
-					/obj/item/clothing/gloves/fingerless = 5,
-					/obj/item/clothing/shoes/boots/winter/explorer = 5,
-				// Pouches
-					/obj/item/storage/pouch/eng_tool = 5,
-					/obj/item/storage/pouch/eng_supply = 5,
-					/obj/item/storage/pouch/eng_parts = 5
-				)
 
 /obj/machinery/vending/exploration_fieldmedic
 	name = "Field Medic Equipment Vendor"
@@ -130,26 +52,6 @@
 	vend_delay = 1
 	icon_state = "sec" // Placeholder
 	req_access = list(ACCESS_MEDICAL_EQUIP)
-	products = list(
-				// Clothing
-					/obj/item/clothing/under/explorer = 5,
-					/obj/item/clothing/shoes/boots/winter/explorer = 5,
-					/obj/item/clothing/gloves/black = 5,
-					/obj/item/storage/belt/medical/emt = 5,
-					/obj/item/radio/headset/sar = 5,
-				// Pouches
-					/obj/item/storage/pouch/medical = 5,
-				// Medical Equipment
-					/obj/item/storage/pill_bottle/bicaridine = 3,
-					/obj/item/storage/pill_bottle/kelotane = 3,
-					/obj/item/storage/pill_bottle/tramadol = 3,
-					/obj/item/storage/pill_bottle/dylovene = 3,
-					/obj/item/healthanalyzer = 5,
-					/obj/item/bodybag/cryobag = 4,
-					/obj/item/roller/adv = 2,
-					/obj/item/extraction_pack = 1,
-					/obj/item/fulton_core = 1
-				)
 
 /obj/machinery/vending/security_armor
 	name = "Security Plate Carrier Vendor"
@@ -157,18 +59,6 @@
 	vend_delay = 1
 	icon_state = "sec"
 	req_access = list(ACCESS_SECURITY)
-	products = list(
-				// The vests. Just in black and red, to maintain the security appearance.
-					/obj/item/clothing/suit/armor/pcarrier = 8,
-					/obj/item/clothing/head/helmet = 8,
-				// Accessories
-					/obj/item/clothing/accessory/armor/tag/nt = 8,
-					/obj/item/clothing/accessory/storage/pouches = 8,
-				// Armor fittings
-					/obj/item/clothing/accessory/armor/armguards/security = 8,
-					/obj/item/clothing/accessory/armor/legguards/security = 8,
-					/obj/item/clothing/accessory/armor/armorplate/medium = 8
-				)
 
 /obj/machinery/vending/security_armory_armor
 	name = "Security Armory Plate Carrier Vendor"
@@ -176,20 +66,6 @@
 	vend_delay = 1
 	icon_state = "sec"
 	req_access = list(ACCESS_SECURITY)
-	products = list(
-				// The vests. Now in black, red and white to highlight the 'combat' aspect of the armor
-					/obj/item/clothing/suit/armor/pcarrier = 6,
-					/obj/item/clothing/head/helmet = 6,
-				// Accessories
-					/obj/item/clothing/accessory/armor/tag/ntwhite = 6,
-					/obj/item/clothing/accessory/storage/pouches/large = 6,
-					/obj/item/clothing/accessory/armor/helmcover/ntblack = 6,
-					/obj/item/clothing/accessory/armor/helmcover/nt = 6,
-				// Armor fittings
-					/obj/item/clothing/accessory/armor/armguards/security/white = 6,
-					/obj/item/clothing/accessory/armor/legguards/security/white = 6,
-					/obj/item/clothing/accessory/armor/armorplate/merc = 6
-				)
 
 //Temp Starhunter Fix
 /obj/machinery/vending/starhunter_farmer
