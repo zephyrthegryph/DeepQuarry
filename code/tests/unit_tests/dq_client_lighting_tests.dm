@@ -132,3 +132,31 @@
 	TEST_ASSERT(probes[1].get_lumcount() > 0.3, "the fixture's own floor is lit under client lighting")
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
+
+/// A lum band watched on a floor under client lighting moves when a light comes on beside it and when it goes again (the
+/// shadow mask rebuild reports the watched turfs it covers).
+/datum/unit_test/dq_client_lighting_lum_watch
+
+/datum/unit_test/dq_client_lighting_lum_watch/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	var/turf/T = run_loc_floor_bottom_left
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/list/levels = list(0.6)
+	var/dark_band = watched(T, WATCH_LUM, levels)
+	SSwatched.arm_pending(0)
+	TEST_ASSERT(watched_armed(T, WATCH_LUM, levels), "the read armed a lum band under client lighting")
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	SSwatched.arm_pending(0)
+	var/list/rows = SSwatched.lum_rows(T)
+	var/list/row = rows[jointext(levels, ",")]
+	TEST_ASSERT(T.get_lumcount() > 0.6, "the fixture lights its floor ([T.get_lumcount()])")
+	TEST_ASSERT(row[2] != dark_band, "the band moved when the light came on (band [row[2]], dark [dark_band])")
+	qdel(L)
+	SSlighting.light_step(0, TRUE)
+	SSwatched.arm_pending(0)
+	row = SSwatched.lum_rows(T)[jointext(levels, ",")]
+	TEST_ASSERT_EQUAL(row[2], watched_band(T.get_lumcount(), levels), "the band follows the level once the light is gone")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
