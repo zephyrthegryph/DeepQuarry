@@ -151,6 +151,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 	var/list/value_initials
 	/// The POOL_RESET_LIST vars of `plan`.
 	var/list/list_names
+	/// Releases whose compiled reset (pool_reset_direct()) was checked against the generic one (test builds).
+	var/direct_checked = 0
 	var/max_free = POOL_DEFAULT_MAX_FREE
 	var/dropped = 0
 	var/created = 0
@@ -225,7 +227,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 		if(pool)
 			pool.double_releases++
 		CRASH("pool_release: [D.type] released while not taken (state [isnull(D.pool_state) ? "unpooled" : D.pool_state]).")
-	if(pool.plan)
+	var/datum/pooled/direct = D
+	if(pool.plan && direct.pool_reset_direct())
+		// The type's compiled reset (direct var writes, no lookups by name). Test builds prove it leaves what the generic reset would, on each type's
+		// first releases: a field added to the type and missed by its compiled reset fails there.
+		#if defined(UNIT_TESTS)
+		if(pool.direct_checked < 3)
+			pool.direct_checked++
+			pool_direct_reset_check(D, pool)
+		#endif
+		direct.reset()
+	else if(pool.plan)
 		// One vars list for the whole release: D.vars builds a fresh list object per evaluation.
 		var/list/fields = D.vars
 		var/list/names = pool.value_names
@@ -299,3 +311,21 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 			"use_after_release" = pool.use_after_release,
 			"refused_qdels" = pool.refused_qdels,
 		)
+
+/// A pooled type's compiled reset: put every field its reset plan lists back to its initial value with direct writes and return TRUE. FALSE (the
+/// default) leaves the release to the generic reset by name. An override covers every field of its type and its ancestors below /datum/pooled; test
+/// builds check each type's first releases against the generic reset (pool_direct_reset_check()).
+/datum/pooled/proc/pool_reset_direct()
+	return FALSE
+
+/// Test builds: after a compiled reset, every field of the reset plan holds what the generic reset would have written. CRASH names the first that does not.
+/proc/pool_direct_reset_check(datum/D, datum/object_pool/pool)
+	var/list/fields = D.vars
+	for(var/i in 1 to length(pool.value_names))
+		var/name = pool.value_names[i]
+		if(fields[name] != pool.value_initials[i])
+			CRASH("pool_reset_direct() of [D.type] left [name] = [fields[name]]: the compiled reset misses a field")
+	for(var/name in pool.list_names)
+		var/list/kept = fields[name]
+		if(length(kept) != length(pool.templates[name]))
+			CRASH("pool_reset_direct() of [D.type] left list [name] with [length(kept)] entries")
