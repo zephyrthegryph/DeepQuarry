@@ -77,6 +77,7 @@ import { prependDefines } from './lib/tgs';
 import { compilerMode, nativeDefaultCompiler, nativeWorkers } from './lib/compiler_selection';
 import { enterDaemonScope } from './lib/dmbc_daemons';
 import { nativeGenerationRequest, nativeGenerationWrittenCount } from './lib/native_generation';
+import { runFullCiCompound } from './lib/native_compound_ci';
 import { createNativeRequestDirectory, currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
 import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
@@ -1280,6 +1281,29 @@ export const DmTarget = new Juke.Target({
       throw results[0].reason;
     }
     if (results[1].status === 'rejected') throw results[1].reason;
+  },
+});
+
+/** Explicit full CI qualification through the published resident compiler. */
+export const DmCompoundCiTarget = new Juke.Target({
+  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisBindingsCheckTarget, GenTarget, MapBoundsTarget],
+  executes: async () => {
+    if (compilerMode() !== 'native' || process.env.DQ_NATIVE_NO_DAEMON === '1'
+        || process.env.DQ_COMPILER_FALLBACK === '1' || process.env.DQ_COMPILER_STRICT === '0'
+        || process.env.DQ_NATIVE_COMPILER || dmbcBinOverride()) {
+      Juke.logger.error('dm-compound-ci requires strict native mode and the shared published compiler.');
+      throw new Juke.ExitCode(2);
+    }
+    let code: number;
+    try {
+      code = await withSlot('dm_compile', 'native full CI compound',
+        () => runFullCiCompound(process.cwd(), Number(nativeWorkers())),
+        (message) => Juke.logger.info(message));
+    } catch (error) {
+      Juke.logger.error(String(error));
+      throw new Juke.ExitCode(2);
+    }
+    if (code !== 0) throw new Juke.ExitCode(code);
   },
 });
 
