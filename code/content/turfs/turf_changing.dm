@@ -226,6 +226,10 @@ GLOBAL_VAR_INIT(turf_move_new_ms, 0)
 			for(var/turf/space/space_tile in RANGE_TURFS(1, src))
 				space_tile.update_starlight()
 
+	// The Rust opacity layer still holds the old turf's mask (the new turf only marks itself when it starts opaque).
+	if(directional_opacity != old_directional_opacity)
+		sight_opacity_changed(src)
+
 	var/turf/simulated/sim_self = src
 	if(lighting_object && istype(sim_self) && sim_self.shandler) //sanity check, but this should never be null for either of the switch cases (lighting_object will be null during initializations sometimes)
 		switch(lighting_object.sunlight_only)

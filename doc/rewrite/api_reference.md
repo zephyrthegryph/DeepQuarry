@@ -971,6 +971,7 @@ Macros are in `code/defines/host/` and `code/defines/engine/`; procs in `code/ho
 | A holder's contents | `contents_of(atom, type)`, `locate_within()`, `contents_count()` | `code/engine/refs/containment/spatial.dm:78` |
 | What is on a tile or in an area | `turf_contents_of_type()`, `locate_on()`, `area_contents_of_type()` | `code/engine/refs/containment/spatial.dm:19` |
 | Line-of-sight and range lists | `dview()`, `urange()` | `code/host/helpers/view_range.dm:12` |
+| Turfs a viewer sees through the world opacity layer (symmetric shadowcasting in Rust; light uses it) | `sight_view_turfs(center, range)`; a turf whose opacity changes calls `sight_opacity_changed(T)` | `code/domains/verdigris/sight/api.dm:9` |
 | A server config entry | `CONFIG_GET(X)` | `code/defines/host/configuration.dm:2` |
 
 #### `GLOBAL_LIST_INIT(X, v)`, `GLOBAL_DATUM_INIT(X, T, v)`

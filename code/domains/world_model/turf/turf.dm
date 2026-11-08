@@ -128,6 +128,7 @@
 
 	if(opacity)
 		directional_opacity = ALL_CARDINALS
+		sight_opacity_changed(src)
 
 	//Pathfinding related
 	if(movement_cost && path_weight == 1) // This updates pathweight automatically. //
