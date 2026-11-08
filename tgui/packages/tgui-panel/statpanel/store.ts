@@ -6,6 +6,15 @@
 
 import { type AbilitiesData, hasAbilities } from './abilities';
 import type { InspectData } from './inspect';
+import {
+  ADMIN_VIEWS,
+  dataTabOf,
+  groupRank,
+  type PanelView,
+  PLAYER_VIEWS,
+  placeOf,
+  type ServerPage,
+} from './layout';
 
 export type Host = {
   sendMessage: (type: string, payload?: object) => void;
@@ -35,6 +44,9 @@ export type State = {
   turfName: string;
   turfContents: string[][];
   splitAdminTabs: boolean;
+  /** Which of the five views is shown (layout.ts); currentTab is the server tab whose data it needs, or a card over it. */
+  view: PanelView;
+  serverPage: ServerPage;
 };
 
 export function initialState(): State {
@@ -58,6 +70,8 @@ export function initialState(): State {
     turfName: '',
     turfContents: [],
     splitAdminTabs: false,
+    view: 'Status',
+    serverPage: 'Health',
   };
 }
 
@@ -108,6 +122,81 @@ export function verbsOfTab(
     .map(([group, verbs]) => ({ group, verbs: verbs.sort(byName) }));
 }
 
+/** The views this client gets: admins (a Staff or Server verb, or the MC or Tickets tab) get all five. */
+export function viewsOf(state: State): PanelView[] {
+  const admin =
+    state.permanentTabs.includes('MC') ||
+    state.permanentTabs.includes('Tickets') ||
+    state.verbs.some((verb) => {
+      const view = placeOf(verb[0]).view;
+      return view === 'Staff' || view === 'Server';
+    });
+  return admin ? ADMIN_VIEWS : PLAYER_VIEWS;
+}
+
+/** The verbs a view shows, grouped (layout.ts places each category), groups in layout order, verbs by name. */
+export function verbGroupsOf(
+  state: State,
+  view: PanelView,
+): { group: string; verbs: Verb[] }[] {
+  const groups = new Map<string, Verb[]>();
+  for (const verb of state.verbs) {
+    const place = placeOf(verb[0]);
+    if (place.view !== view) continue;
+    if (!groups.has(place.group)) groups.set(place.group, []);
+    groups.get(place.group)!.push(verb);
+  }
+  const byName = (a: Verb, b: Verb) => a[1].localeCompare(b[1]);
+  return [...groups]
+    .sort(([a], [b]) => groupRank(a) - groupRank(b) || a.localeCompare(b))
+    .map(([group, verbs]) => ({ group, verbs: verbs.sort(byName) }));
+}
+
+/** A search result: what to show, where it lives, the command it runs. */
+export type Found = { label: string; path: string; command: string };
+
+/** Menu page sections searched with the verbs (menu.ts). */
+export type MenuSection = { name: string; items: { label: string; command: string }[] };
+
+/**
+ * One search over everything the panel offers: the verbs of every view this client has (with the view and group they
+ * sit in) and the Menu page's items. Names that start with the query come first, then the rest by name.
+ */
+export function searchAll(
+  state: State,
+  query: string,
+  menu: MenuSection[],
+): Found[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+  const views = viewsOf(state);
+  const found: Found[] = [];
+  for (const verb of state.verbs) {
+    if (!verb[1].toLowerCase().includes(needle)) continue;
+    const place = placeOf(verb[0]);
+    if (!views.includes(place.view)) continue;
+    found.push({
+      label: verb[1],
+      path: `${place.view} › ${place.group}`,
+      command: verbCommand(verb[1]),
+    });
+  }
+  for (const section of menu) {
+    for (const item of section.items) {
+      if (!item.label.toLowerCase().includes(needle)) continue;
+      found.push({
+        label: item.label,
+        path: `Game › ${section.name}`,
+        command: item.command,
+      });
+    }
+  }
+  const starts = (f: Found) => (f.label.toLowerCase().startsWith(needle) ? 0 : 1);
+  return found.sort(
+    (a, b) => starts(a) - starts(b) || a.label.localeCompare(b.label),
+  );
+}
+
 export function searchVerbs(state: State, query: string): Verb[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
@@ -148,12 +237,27 @@ export class StatStore {
 
   private changed(patch: Partial<State>) {
     const next = { ...this.state, ...patch, version: this.state.version + 1 };
-    // A tab that went away takes the view back to Status.
-    const leaving = !visibleTabs(next).includes(next.currentTab);
-    if (leaving) next.currentTab = 'Status';
+    // A tab that went away (a card's subject, a queries list) takes the panel back to the data its view needs.
+    const home = dataTabOf(next.view, next.serverPage);
+    const leaving =
+      next.currentTab !== home && !visibleTabs(next).includes(next.currentTab);
+    if (leaving) next.currentTab = home;
     this.state = next;
-    if (leaving) this.host.sendMessage('Set-Tab', { tab: 'Status' });
+    if (leaving) this.host.sendMessage('Set-Tab', { tab: home });
     for (const listener of this.listeners) listener();
+  }
+
+  /** Shows a view (and, for Server, a page): the server is told which tab's data to send. */
+  setView(view: PanelView, serverPage: ServerPage = this.state.serverPage) {
+    const tab = dataTabOf(view, serverPage);
+    if (tab !== this.state.currentTab)
+      this.host.sendMessage('Set-Tab', { tab });
+    this.changed({ view, serverPage, currentTab: tab });
+  }
+
+  /** Closes the card over the view (examine, inspect, the turf list). */
+  closeCard() {
+    this.setTab(dataTabOf(this.state.view, this.state.serverPage));
   }
 
   setTab(tab: string) {

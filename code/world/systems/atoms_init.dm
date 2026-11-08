@@ -148,7 +148,7 @@
 			// Type-table fast path (atom_type_table.dm): turfs have no on_materialize() of their
 			// own (tools/ci/init_lint.py keeps it so), so a turf whose type needs no registries,
 			// rules or the scheduler is live once flagged. Most of the ~390 k map turfs take this path.
-			if(isturf(A) && !A.containment_ledger() && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
+			if(isturf(A) && !A.rx?.containment_ledger && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
 				A.flags |= ATOM_MATERIALIZED
 			else
 				BOOT_PHASE_BEGIN(bp_mat)
@@ -159,8 +159,8 @@
 			/// Emits that the new atom `src`, has been created at `loc`
 			PUBLISH(location, atom_after_successful_initialized_on, created = A, mapload = arguments[1])
 			RANGE_WATCH(location, RANGE_INITIALIZED, A, arguments[1])
-			// Created straight into a holder with a ledger: record it now (containment C1).
-			location.containment_ledger()?.note_enter(A)
+			// Created straight into a holder with a ledger: nothing is noted here. The ledger is made on first use and its sync() adopts whatever
+			// arrived without a move (code/engine/refs/containment/ledger.dm), so a holder whose ledger is never asked for costs nothing at init.
 		if(created_atoms && from_template && ispath(the_type, /atom/movable))//we only want to populate the list with movables
 			created_atoms += A.get_all_contents()
 

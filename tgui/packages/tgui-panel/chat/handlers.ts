@@ -59,6 +59,4 @@ export function chatMessage(payload: string): void {
   pushMessage(message);
 }
 
-export function exportChatlog() {
-  chatRenderer.saveToDisk();
-}
+
