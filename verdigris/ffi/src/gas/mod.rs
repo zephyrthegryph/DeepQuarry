@@ -876,6 +876,33 @@ fn hook_register_level_turfs(z: ByondValue, max_x: ByondValue, max_y: ByondValue
     register_turf_ids(level * (z.max(1) - 1)..level * z.max(1))
 }
 
+/// One turf made after the map loaded, as [`register_turf_ids`] does a level's: its air cell, air-block mask (the z rule from
+/// `air_z_open`) and solid-heat cell, read and registered in one call instead of the DM chain (`update_air_ref()`,
+/// `air_block_mask()`, `zAirOut()`/`zAirIn()`, `update_heat_cell()`, `thermal_properties()`). Returns 1 when registered, 0 when
+/// an object on it decides air passage in a proc (DM registers it the long way), -1 when it carries no air.
+#[auxmacros::bind("/proc/_air_register_one_turf")]
+fn hook_register_one_turf(turf: ByondValue) -> Result<ByondValue> {
+    let mut asks = false;
+    let Some(row) = boot_turf(turf, &mut asks) else {
+        return Ok((-1.0f32).into());
+    };
+    if asks && row.mask != AIR_BLOCK_ALL {
+        return Ok(0.0f32.into());
+    }
+    register_turf(row.turf, i32::from(DM_SIMULATION_ANY), Some(row.mask))?;
+    crate::heat::set_turf(
+        crate::heat::field()?,
+        row.cell,
+        row.heat_kind,
+        row.capacity,
+        row.conductivity,
+        vg_heat::consts::DEFAULT_EMISSIVITY,
+        row.temperature,
+        row.has_air,
+    )?;
+    Ok(1.0f32.into())
+}
+
 /// Registers the turfs with these ref ids (air cell, mask, solid-heat cell) and returns the ones DM must ask for air passage.
 fn register_turf_ids(ids: std::ops::Range<u32>) -> Result<ByondValue> {
     let mut rows = Vec::new();

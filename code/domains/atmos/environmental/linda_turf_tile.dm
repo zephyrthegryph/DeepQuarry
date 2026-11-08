@@ -129,6 +129,10 @@ GLOBAL_VAR_INIT(air_turfs_registered_alone, 0)
 	// turf, so Rust builds its adjacency.
 	if(SSair.initialized && GLOB.air_level_registering != z) // a level being made registers whole after (SSair.register_level_turfs())
 		GLOB.air_turfs_registered_alone++
+		// Immutable air (space, transit): the atmos core reads the cell, mask and heat values off the turf in one call; a turf
+		// holding an object that decides air passage in a proc, or with init_air off, takes the DM path.
+		if(immutable_atmos && vg_hook_register_one_turf(src) == 1)
+			return
 		update_air_ref(0, air_block_mask())
 
 /// Phase 1 (unbind): its fire goes out first (it cools the air it sits in),
