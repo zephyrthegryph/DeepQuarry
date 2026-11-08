@@ -113,6 +113,9 @@ Class Procs:
 	var/list/component_parts = null
 	var/tmp/uid
 	var/obj/item/circuitboard/circuit = null
+	/// A mapped machine's board while it is still data: the path or VARIANT() its type names. board() makes the real one the first time
+	/// something needs the item (the panel's part exchange, a dismantle, salvage); null once it is real or when there is none.
+	var/tmp/stock_circuit = null // ALLOW(base_vars): the board slot every board machine has, deferred (T9); one var beside `circuit`, not a feature subset
 
 
 SETTER(/obj/machinery, use_power)
@@ -179,20 +182,40 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /// A machine's board and default parts are made with it (owns_one(circuit, starts =)): `current` is the board the type names (a path or a VARIANT()
 /// reference; an instance a map put there is kept). The board is made inside the machine, then the parts default_parts() lists.
+/// A machine the map makes keeps its board as data (stock_circuit) until board() is asked for it; its default parts are still made.
 /obj/machinery/proc/start_circuit(current, mapload)
 	if(isnull(current) || isdatum(current))
 		return current
+	if(mapload)
+		stock_circuit = current
+		create_spawn_contents(default_parts(current))
+		return null
 	var/obj/item/circuitboard/board = variant_new(current, src)
 	if(!istype(board))
 		return null
 	create_spawn_contents(default_parts(board))
 	return board
 
+/// The machine's board, made from stock_circuit the first time it is needed (a mapped machine's board is data until then).
+/obj/machinery/proc/board()
+	if(!circuit && stock_circuit)
+		var/obj/item/circuitboard/B = variant_new(stock_circuit, src)
+		stock_circuit = null
+		if(istype(B))
+			rel_set(src, nameof(circuit), B)
+	return circuit
+
+/// Whether the machine has a board, real or still data.
+/obj/machinery/proc/holds_board()
+	return !!(circuit || stock_circuit)
+
 /// What a machine is made with besides its board, as a spawn list: the board's req_components. A type whose board declares none lists its parts itself.
-/obj/machinery/proc/default_parts(obj/item/circuitboard/board)
+/// `board` is the board or the path / VARIANT() it is made from.
+/obj/machinery/proc/default_parts(board)
 	var/list/parts = list()
-	for(var/comp_path in board.req_components)
-		var/comp_amt = board.req_components[comp_path]
+	var/list/req = dq_type_var(board, "req_components")
+	for(var/comp_path in req)
+		var/comp_amt = req[comp_path]
 		if(comp_amt)
 			parts[comp_path] = (parts[comp_path] || 0) + comp_amt
 	return parts
@@ -542,7 +565,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	var/parts_replaced = FALSE
 	if(!istype(R))
 		return 0
-	if(!circuit)
+	if(!board())
 		return 0
 	adopt_parts()
 	to_chat(user, span_notice("Following parts detected in [src]:"))
@@ -588,7 +611,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 		needs(req(TYPE_PROC_REF(/obj/machinery, has_board), silent = TRUE)), begins(MSG(machine/display_disconnecting)), then(TYPE_PROC_REF(/obj/machinery, display_disconnected)))
 
 /obj/machinery/proc/has_board(datum/act/op/A)
-	return (!!circuit) ? null : /datum/msg/req_silent
+	return holds_board() ? null : /datum/msg/req_silent
 
 /obj/machinery/proc/display_disconnected(datum/act/op/A)
 	if(broken_now())
@@ -608,7 +631,7 @@ ACTION(obj_deconstruct, disassembled, FIXED, notice = /datum/notice/obj_deconstr
 		if(istype(I,/obj/item/card/id))
 			I.forceMove(src.loc)
 
-	if(!circuit)
+	if(!board())
 		return 0
 	adopt_parts()
 	var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
@@ -661,6 +684,7 @@ ACTION(obj_deconstruct, disassembled, FIXED, notice = /datum/notice/obj_deconstr
  * nor reports them as stale component_parts.
  */
 /obj/machinery/atom_deconstruct(disassembled = TRUE)
+	board() // a board still data is salvage too
 	adopt_parts()
 	rel_take_all(src, nameof(component_parts))
 	rel_take(src, nameof(circuit))

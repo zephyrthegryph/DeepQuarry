@@ -36,7 +36,7 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 	var/mob/user = A.actor
 	to_chat(user, "You remove the faceplate from the [src]")
 	var/obj/structure/frame/frame = new /obj/structure/frame(loc)
-	var/obj/item/circuitboard/board = circuit
+	var/obj/item/circuitboard/board = board()
 	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
 	board.forceMove(frame)
 	own_move(board, frame, nameof(frame.circuit)) // the board goes from this machine to the frame

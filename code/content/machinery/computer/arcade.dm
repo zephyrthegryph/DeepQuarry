@@ -22,7 +22,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	return R.choose(subtypesof(/obj/item/circuitboard/arcade) - /obj/item/circuitboard/arcade/clawmachine)
 
 /obj/machinery/computer/arcade/proc/become_rolled_board(datum/act/A)
-	if(!rolled_board || circuit)
+	if(!rolled_board || holds_board())
 		return
 	replace_with(src, dq_type_var(rolled_board, "build_path")) // the board stays a type: the machine it builds carries its own
 
