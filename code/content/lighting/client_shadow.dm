@@ -48,7 +48,12 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_shadow)
 	var/list/parts = splittext(key, "|")
 	var/margin = text2num(parts[1])
 	var/list/offsets = length(parts) > 1 && length(parts[2]) ? splittext(parts[2], ",") : list()
-	. = list()
+	// The first child fixes the render target's size: the glow sprite, zeroed by its own colour. The colour must stay on this
+	// child: the mask is KEEP_TOGETHER, so a colour on the mask itself applies to the whole group after it is drawn, whatever
+	// RESET_COLOR the tiles carry, and a zero matrix there empties the mask and cuts every glow to nothing.
+	var/mutable_appearance/sizer = mutable_appearance(client_glow_icon(margin * 2 + WORLD_ICON_SIZE), "light")
+	sizer.color = list(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+	. = list(sizer)
 	for(var/i = 1, i < length(offsets), i += 2)
 		var/mutable_appearance/tile = mutable_appearance(LIGHTING_ICON, "transparent")
 		tile.appearance_flags = RESET_COLOR | RESET_ALPHA
@@ -63,12 +68,12 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 	if(!glow || !glow_mask || !source_turf)
 		return
 	var/obj/effect/overlay/client_glow/G = glow
-	if(client_glow_mask_apply(glow_mask_range, G.icon, glow_mask_margin))
+	if(client_glow_mask_apply(glow_mask_range, glow_mask_margin))
 		client_glow_holders_consider(src) // the held copies take the new mask
 
-/// Rebuilds this light's mask from its reach (client_glow_apply()). `glow_icon` and `margin` are the glow sprite's: the mask
-/// is the same size (its base is that icon made fully transparent), so the alpha filter lines the two up. TRUE when it rebuilt.
-/datum/light_source/proc/client_glow_mask_apply(range, glow_icon, margin)
+/// Rebuilds this light's mask from its reach (client_glow_apply()). `margin` is the glow sprite's: the mask
+/// is the same size (client_glow_mask_build() gives it a transparent copy of that icon), so the alpha filter lines the two up. TRUE when it rebuilt.
+/datum/light_source/proc/client_glow_mask_apply(range, margin)
 	glow_mask_range = range
 	glow_mask_margin = margin
 	var/obj/effect/overlay/client_glow/G = glow
@@ -101,7 +106,6 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 		rel_set(src, nameof(glow_mask), new /obj/effect/overlay/client_glow_mask(null))
 		var/obj/effect/overlay/client_glow_mask/M = glow_mask
 		M.render_target = "*client_glow_mask_[handle_text(handle_of(src))]" // whole number: "[h]" rounds past 1e6 and lights would share a mask
-		M.set_color(list(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)) // the base only fixes the size
 		// Soft shadow edges: the tile grid is blurred before it cuts the glow, so a shadow fades over a few pixels instead of
 		// stair-stepping. A reached wall tile stays in the mask whole, so its face is lit; only its outer rim softens.
 		M.add_filter("client_shadow_soft", 1, list(type = "blur", size = CLIENT_GLOW_MASK_BLUR))
@@ -109,8 +113,6 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 		G.add_filter("client_shadow", 1, list(type = "alpha", render_source = M.render_target))
 	glow_mask_key = key
 	var/obj/effect/overlay/client_glow_mask/M = glow_mask
-	M.set_icon(glow_icon)
-	M.set_icon_state(G.icon_state) // the glow's own state: a state the icon lacks draws nothing, and the mask would be only as big as its tiles
 	M.overlays = CACHED_FAST(client_glow_masks, key)
 	client_glow_index(TRUE)
 	return TRUE

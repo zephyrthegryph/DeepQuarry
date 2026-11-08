@@ -72,6 +72,11 @@
 	TEST_ASSERT_NOTNULL(S.glow.get_filter("client_shadow"), "the glow is cut by an alpha filter")
 	TEST_ASSERT_NOTNULL(S.glow_mask.get_filter("client_shadow_soft"), "the mask is blurred before it cuts the glow")
 	TEST_ASSERT(findtext(S.glow_mask.render_target, "*") == 1, "the mask is a hidden render target")
+	// The mask is KEEP_TOGETHER: a colour on it applies to the whole drawn group, so a zero matrix there would erase every tile and every glow.
+	TEST_ASSERT(S.glow_mask.appearance_flags & KEEP_TOGETHER, "the mask draws as one group")
+	TEST_ASSERT_NULL(S.glow_mask.color, "no colour on the group: it would erase the tiles")
+	TEST_ASSERT_NULL(S.glow_mask.icon, "the mask itself draws nothing opaque")
+	TEST_ASSERT_EQUAL(length(S.glow_mask.overlays), length(S.glow_reach) + 1, "the transparent sizer and one tile per reached turf")
 	TEST_ASSERT(S.glow_reach["2,0"], "the open floor two tiles east is lit")
 	var/builds = GLOB.client_glow_mask_builds
 	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
@@ -253,7 +258,7 @@
 	var/turf/LT = get_turf(F)
 	var/turf/east1 = locate(LT.x + 1, LT.y, LT.z)
 	var/image/mask_image = H.entry_of(S)[2]
-	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach), "one mask tile per reached turf")
+	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach) + 1, "the transparent sizer and one mask tile per reached turf")
 	TEST_ASSERT(S.glow_reach["2,0"], "the floor two east is lit before the blocker")
 	var/before = length(mask_image.overlays)
 	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
@@ -262,7 +267,7 @@
 	TEST_ASSERT_NOTNULL(mask_image, "still held")
 	TEST_ASSERT(!S.glow_reach["2,0"], "the floor behind the blocker is in shadow")
 	TEST_ASSERT(length(mask_image.overlays) < before, "the copy's mask lost the shadowed tiles ([length(mask_image.overlays)] < [before])")
-	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach), "the copy's mask matches the reach")
+	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach) + 1, "the copy's mask matches the reach")
 	qdel(B)
 	SSlighting.light_step(0, TRUE)
 	spent(H)

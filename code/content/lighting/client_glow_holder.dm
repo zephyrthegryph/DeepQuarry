@@ -178,11 +178,10 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/image/mask_image
 	if(!entry)
 		var/mask_name = "*cglow_mask_[handle_text(handle_of(L))]_[handle_text(handle_of(src))]"
-		mask_image = image(G.icon, null, G.icon_state) // the glow's own state, so the mask is the glow's size and the alpha filter lines them up
+		mask_image = image(null) // its overlays carry the transparent sizer and the tiles (client_glow_mask_build())
 		mask_image.plane = PLANE_LIGHTING
 		mask_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_TOGETHER
 		mask_image.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		mask_image.color = list(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0) // the base only fixes the size
 		mask_image.render_target = mask_name
 		mask_image.filters = filter(type = "blur", size = CLIENT_GLOW_MASK_BLUR)
 		glow_image = image(G.icon, null, G.icon_state)
@@ -218,7 +217,6 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	glow_image.alpha = G.alpha
 	glow_image.pixel_x = px
 	glow_image.pixel_y = py
-	mask_image.icon = G.icon
 	mask_image.pixel_x = px
 	mask_image.pixel_y = py
 	mask_image.overlays = CACHED_FAST(client_glow_masks, L.glow_mask_key)

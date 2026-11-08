@@ -30,13 +30,8 @@ GLOBAL_VAR_INIT(client_glow_bounds, FALSE)
 CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	owns_one(nameof(glow), /obj/effect/overlay/client_glow)
 
-/// Places, sizes and tints this light's glow (client lighting): the work update_corners() does in this mode.
-/datum/light_source/proc/client_glow_apply()
-	if(!glow)
-		rel_set(src, nameof(glow), new /obj/effect/overlay/client_glow(null))
-	var/obj/effect/overlay/client_glow/G = glow
-	var/range = clamp(CEILING(light_range, 0.5), 1, 6)
-	var/pixel_bounds = ((range - 1) * 64) + 32
+/// The glow sprite that is `pixel_bounds` pixels across.
+/proc/client_glow_icon(pixel_bounds)
 	var/static/list/glow_icons = list(
 		"32" = 'icons/effects/light_overlays/light_32.dmi',
 		"96" = 'icons/effects/light_overlays/light_96.dmi',
@@ -50,7 +45,16 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 		"256" = 'icons/effects/light_overlays/light_256.dmi',
 		"320" = 'icons/effects/light_overlays/light_320.dmi',
 	)
-	G.set_icon(glow_icons["[pixel_bounds]"])
+	return glow_icons["[pixel_bounds]"]
+
+/// Places, sizes and tints this light's glow (client lighting): the work update_corners() does in this mode.
+/datum/light_source/proc/client_glow_apply()
+	if(!glow)
+		rel_set(src, nameof(glow), new /obj/effect/overlay/client_glow(null))
+	var/obj/effect/overlay/client_glow/G = glow
+	var/range = clamp(CEILING(light_range, 0.5), 1, 6)
+	var/pixel_bounds = ((range - 1) * 64) + 32
+	G.set_icon(client_glow_icon(pixel_bounds))
 	var/offset = (pixel_bounds - 32) * 0.5
 	G.set_pixel_x(-offset + (pixel_turf ? (pixel_turf.x - source_turf.x) * WORLD_ICON_SIZE : 0))
 	G.set_pixel_y(-offset + (pixel_turf ? (pixel_turf.y - source_turf.y) * WORLD_ICON_SIZE : 0))
@@ -67,7 +71,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 		G.bound_height = 2 * reach_px + WORLD_ICON_SIZE
 	if(G.loc != source_turf)
 		G.abstract_move(source_turf)
-	client_glow_mask_apply(CEILING(range, 1), G.icon, offset) // the shadow mask (client_shadow.dm)
+	client_glow_mask_apply(CEILING(range, 1), offset) // the shadow mask (client_shadow.dm)
 	applied = TRUE
 	client_glow_holders_consider(src) // viewers holding an off-screen copy follow (client_glow_holder.dm)
 
