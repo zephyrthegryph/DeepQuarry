@@ -10,7 +10,9 @@
   gap: 3px;
   padding: 3px;
   box-sizing: border-box;
-  overflow: hidden;
+  // Many entries on a short column (fitHeights() cannot cut them under their least): the list scrolls instead of hiding the rest.
+  overflow-x: hidden;
+  overflow-y: auto;
   background-color: console.$console-background;
 }
 
@@ -26,6 +28,8 @@
 
   &--fill {
     flex: 1 1 0;
+    // The chat keeps room to read and type (FILL_MIN in model.ts).
+    min-height: 160px;
   }
 
   &--collapsed {

@@ -58,8 +58,7 @@ afterEach(() => {
   sent = [];
 });
 
-const raw = (type: string, payload: unknown) =>
-  encodeURIComponent(JSON.stringify({ type, payload }));
+const msg = (type: string, payload: unknown) => ({ type, payload });
 
 /** The server opens the stat panel as a docked tgui window (stat_panel_window.dm): a column window whose first update names it. */
 function openStatPanel() {
@@ -67,7 +66,7 @@ function openStatPanel() {
   columnHost.receive('col/open', { wid: 'col-stat', kind: 'tgui' });
   columnHost.receive('col/msg', {
     wid: 'col-stat',
-    raw: raw('update', {
+    ...msg('update', {
       config: {
         interface: { name: 'StatPanel' },
         title: 'Status',
@@ -85,7 +84,7 @@ function openChat(draft = '') {
   columnHost.receive('col/open', { wid: 'col-chat', kind: 'tgui' });
   columnHost.receive('col/msg', {
     wid: 'col-chat',
-    raw: raw('update', {
+    ...msg('update', {
       config: {
         interface: { name: 'Chat' },
         title: 'Chat',
@@ -115,7 +114,7 @@ describe('the column page', () => {
     act(() => {
       columnHost.receive('col/msg', {
         wid: 'col-stat',
-        raw: raw('init_verbs', { verblist: [['IC', 'Say', 'say']] }),
+        ...msg('init_verbs', { verblist: [['IC', 'Say', 'say']] }),
       });
     });
     const groups = () =>
@@ -165,7 +164,7 @@ describe('the column page', () => {
       columnHost.receive('col/open', { wid: 'col-7', kind: 'tgui' });
       columnHost.receive('col/msg', {
         wid: 'col-7',
-        raw: raw('update', {
+        ...msg('update', {
           config: { interface: { name: 'Pda' }, title: 'PDA', status: 2 },
           data: {
             owner: 'Nick Price',

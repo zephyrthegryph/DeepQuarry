@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Many docked windows on a short column shrink to fit and the column scrolls, instead of pushing the chat and the last windows out of sight."
+  - bugfix: "Dragging a docked window that closes mid-drag no longer floats a window that is gone."
