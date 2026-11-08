@@ -130,20 +130,23 @@ impl OriginalRawInputs{
   if let Some((issuer,flag))=recorder {
    if let Some(saved)=self.definition_geometry[slot].as_ref().filter(|saved|
     saved.origin==origin&&Arc::ptr_eq(issuer,&saved.issuer)) {
-    if let Some(geometry)=self.geometries.get(saved.geometry_at).filter(|geometry|
+    if self.geometries.get(saved.geometry_at).is_some_and(|geometry|
      geometry.occurrence==origin.occurrence&&geometry.geometry.matches_context(lease,a)
       &&geometry.points.contains_issued_row(saved.raw_len,origin.physical.start,origin.line,saved.row.raw)) {
      // This is the old byte-lender position. An intervening acquisition or
      // mutable/poisoned recorder revokes the certificate before any use.
      if flag.load(Ordering::SeqCst)==saved.epoch.get() {
       poll(a).inspect_err(&mut observe_error)?; // known physical line end
-      for offset in [saved.row.raw.start,saved.row.raw.end,origin.physical.start] {
-       geometry.geometry.check_point_using(lease,offset,a).inspect_err(&mut observe_error)?;
+      // Minting decoded both row boundaries and both token points with
+      // this geometry. Its domain, binding and extents cannot change, and
+      // the exact origin/line envelope above matches all four offsets.
+      for _ in 0..3 {
+       poll(a).inspect_err(&mut observe_error)?;
       }
       self.last_decoded_row=Some(DecodedRowBoundary{
        geometry_at:saved.geometry_at,raw:saved.row.raw,decoded:saved.row.decoded,
       });
-      geometry.geometry.check_point_using(lease,origin.physical.end,a)?;
+      poll(a)?; // token end keeps its separate, non-observation failure
       #[cfg(debug_assertions)]
       if let Some((_, hits)) = &mut self.definition_geometry_census {
        *hits += 1;
@@ -432,6 +435,7 @@ mod row_tests {
         struct EpochFile<'a> {
             inner: &'a File,
             epoch: &'a std::sync::atomic::AtomicUsize,
+            issuer: Arc<()>,
             calls: Cell<usize>,
         }
         impl SourceProvider for EpochFile<'_> {
@@ -439,6 +443,9 @@ mod row_tests {
             fn original_source_bytes<'a>(&'a self, lease: &'a SourceAcquisitionLease) -> io::Result<Option<&'a [u8]>> {
                 self.calls.set(self.calls.get() + 1);
                 self.inner.original_source_bytes(lease)
+            }
+            fn original_geometry_recorder(&self) -> Option<(&Arc<()>, &std::sync::atomic::AtomicUsize)> {
+                Some((&self.issuer, self.epoch))
             }
             fn original_geometry_byte_loan<'a>(&'a self, lease: &'a SourceAcquisitionLease) -> io::Result<Option<crate::OriginalGeometryByteLoan<'a>>> {
                 let expected = std::num::NonZeroUsize::new(self.epoch.load(Ordering::SeqCst)).unwrap();
@@ -450,8 +457,8 @@ mod row_tests {
         let bytes = b"actual\n";
         let file = File { bytes: bytes.to_vec(), lease: SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(), ()), failure: Cell::new(None) };
         let epoch = std::sync::atomic::AtomicUsize::new(1);
-        let provider = EpochFile { inner: &file, epoch: &epoch, calls: Cell::new(0) };
-        let foreign = EpochFile { inner: &file, epoch: &epoch, calls: Cell::new(0) };
+        let provider = EpochFile { inner: &file, epoch: &epoch, issuer: Arc::new(()), calls: Cell::new(0) };
+        let foreign = EpochFile { inner: &file, epoch: &epoch, issuer: Arc::new(()), calls: Cell::new(0) };
         let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let polls = Cell::new(0);
         let fail_at = Cell::new(None);
@@ -488,6 +495,53 @@ mod row_tests {
         assert_eq!(error.raw_os_error(), Some(1451));
         assert_eq!(provider.calls.get(), 0);
         assert_eq!(polls.get(), 5);
+
+        // Exercise the retained definition cache, independent of a prior
+        // emission observation, at every old checkpoint on a real hit.
+        fail_at.set(None);
+        let a = SettingAdmission::new(&used, 1 << 20, &checkpoint);
+        let mut observation_failed = false;
+        let minted = inputs.definition_geometry_using(
+            actual.origin, &file.lease, &provider, None, &a, &mut observation_failed,
+        ).unwrap();
+        assert!(!observation_failed);
+        for stop in 1..=6 {
+            let attempt = SettingAdmission::new(&used, 1 << 20, &checkpoint);
+            polls.set(0);
+            provider.calls.set(0);
+            fail_at.set(Some(stop));
+            observation_failed = false;
+            let error = inputs.definition_geometry_using(
+                actual.origin, &file.lease, &provider, None, &attempt, &mut observation_failed,
+            ).unwrap_err();
+            assert_eq!(error.raw_os_error(), Some(1451));
+            assert_eq!(polls.get(), stop);
+            assert_eq!(provider.calls.get(), 0);
+            assert_eq!(observation_failed, stop < 6);
+        }
+        fail_at.set(None);
+        polls.set(0);
+        assert_eq!(inputs.definition_geometry_using(
+            actual.origin, &file.lease, &provider, None, &a, &mut observation_failed,
+        ).unwrap(), minted);
+        assert_eq!(polls.get(), 6);
+        assert_eq!(provider.calls.get(), 0);
+
+        file.failure.set(Some(1450));
+        observation_failed = false;
+        let error = inputs.definition_geometry_using(
+            actual.origin, &file.lease, &foreign, None, &a, &mut observation_failed,
+        ).unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert!(observation_failed);
+        epoch.store(3, Ordering::SeqCst);
+        observation_failed = false;
+        let error = inputs.definition_geometry_using(
+            actual.origin, &file.lease, &provider, None, &a, &mut observation_failed,
+        ).unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert!(observation_failed);
+        assert_eq!(provider.calls.get(), 1);
     }
 
     struct NoNotices;
