@@ -116,38 +116,73 @@ fn original_checkpoint(a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<(
     a.checkpoint()
         .map_err(|proxy| a.take_operational_error().unwrap_or(proxy))
 }
+// Keep the full start and an exact width in a six-byte cell. Only widths
+// that cannot fit without consuming the sentinel need a full end in the side.
+#[derive(Clone, Copy)]
+struct ShortInitializerCoordinate([u16; 3]);
+
+impl ShortInitializerCoordinate {
+    const ESCAPED: u16 = u16::MAX;
+
+    fn new(start: u32, end: u32) -> Option<Self> {
+        let width = end.checked_sub(start)?;
+        let width = u16::try_from(width).unwrap_or(Self::ESCAPED);
+        Some(Self([start as u16, (start >> 16) as u16, width]))
+    }
+
+    fn start(self) -> u32 {
+        u32::from(self.0[0]) | (u32::from(self.0[1]) << 16)
+    }
+
+    fn end(self, wide_ends: &[[u32; 2]]) -> Option<u32> {
+        if self.0[2] == Self::ESCAPED {
+            let at = wide_ends.binary_search_by_key(&self.start(), |row| row[0]).ok()?;
+            Some(wide_ends[at][1])
+        } else {
+            self.start().checked_add(u32::from(self.0[2]))
+        }
+    }
+}
+
 enum InitializerCoordinateSpans {
-    Narrow(Vec<[u32; 2]>),
+    Narrow { rows: Vec<ShortInitializerCoordinate>, wide_ends: Vec<[u32; 2]> },
     Wide(Vec<Span>),
 }
 
 impl InitializerCoordinateSpans {
     fn len(&self) -> usize {
         match self {
-            Self::Narrow(rows) => rows.len(),
+            Self::Narrow { rows, .. } => rows.len(),
             Self::Wide(rows) => rows.len(),
         }
     }
 
     fn get(&self, index: usize) -> Option<Span> {
         match self {
-            Self::Narrow(rows) => rows.get(index).map(|&[start, end]| Span::new(start as usize, end as usize)),
+            Self::Narrow { rows, wide_ends } => {
+                let row = *rows.get(index)?;
+                Some(Span::new(row.start() as usize, row.end(wide_ends)? as usize))
+            }
             Self::Wide(rows) => rows.get(index).copied(),
         }
     }
 
     fn find_start(&self, start: usize) -> Option<usize> {
         match self {
-            Self::Narrow(rows) => rows.binary_search_by_key(&u32::try_from(start).ok()?, |row| row[0]),
+            Self::Narrow { rows, .. } => rows.binary_search_by_key(&u32::try_from(start).ok()?, |row| row.start()),
             Self::Wide(rows) => rows.binary_search_by_key(&start, |row| row.start),
         }.ok()
     }
 
     fn sort_and_check(&mut self) -> bool {
         match self {
-            Self::Narrow(rows) => {
-                rows.sort_unstable_by_key(|row| row[0]);
-                rows.windows(2).all(|pair| pair[0][1] <= pair[1][0])
+            Self::Narrow { rows, wide_ends } => {
+                rows.sort_unstable_by_key(|row| row.start());
+                wide_ends.sort_unstable_by_key(|row| row[0]);
+                wide_ends.windows(2).all(|pair| pair[0][0] != pair[1][0])
+                    && rows.windows(2).all(|pair| {
+                        pair[0].end(wide_ends).is_some_and(|end| end <= pair[1].start())
+                    })
             }
             Self::Wide(rows) => {
                 rows.sort_unstable_by_key(|row| row.start);
@@ -162,9 +197,17 @@ impl InitializerCoordinateSpans {
             (rows.as_ptr() as usize, rows.len() * bytes, rows.capacity() * bytes)
         }
         match self {
-            Self::Narrow(rows) => layout(rows),
+            Self::Narrow { rows, .. } => layout(rows),
             Self::Wide(rows) => layout(rows),
         }
+    }
+
+    fn wide_end_storage(&self) -> Option<(usize, usize, usize)> {
+        let Self::Narrow { wide_ends, .. } = self else { return None };
+        let width = std::mem::size_of::<[u32; 2]>();
+        (wide_ends.capacity() != 0).then(|| (
+            wide_ends.as_ptr() as usize, wide_ends.len() * width, wide_ends.capacity() * width,
+        ))
     }
 
     #[cfg(test)]
@@ -178,6 +221,7 @@ struct OriginalInitializerCoordinates {
     // Physical buffer release precedes quota credit.
     spans: InitializerCoordinateSpans,
     buffer_credit: Option<dm_syntax::SettingRootLease>,
+    wide_end_credit: Option<dm_syntax::SettingRootLease>,
     lease: dm_syntax::SettingRootLease,
 }
 impl std::fmt::Debug for OriginalInitializerCoordinates {
@@ -192,13 +236,14 @@ impl OriginalInitializerCoordinates {
         // The primary walk checks every relative span against this source.
         // Choose wide storage up front when needed, with no conversion peak.
         let spans = if u32::try_from(source_len).is_ok() {
-            InitializerCoordinateSpans::Narrow(Vec::new())
+            InitializerCoordinateSpans::Narrow { rows: Vec::new(), wide_ends: Vec::new() }
         } else {
             InitializerCoordinateSpans::Wide(Vec::new())
         };
         Ok(Self {
             spans,
             buffer_credit: None,
+            wide_end_credit: None,
             lease: a.reserve(
                 std::mem::size_of::<Self>()
                     + std::mem::size_of::<OnceLock<OriginalInitializerFactsAdmission>>()
@@ -227,10 +272,20 @@ impl OriginalInitializerCoordinates {
             Ok(())
         }
         match &mut self.spans {
-            InitializerCoordinateSpans::Narrow(rows) => {
+            InitializerCoordinateSpans::Narrow { rows, wide_ends } => {
                 let start = u32::try_from(span.start).map_err(|_| std::io::ErrorKind::InvalidData)?;
                 let end = u32::try_from(span.end).map_err(|_| std::io::ErrorKind::InvalidData)?;
-                push_row(rows, [start, end], &mut self.buffer_credit, a)
+                let row = ShortInitializerCoordinate::new(start, end).ok_or(std::io::ErrorKind::InvalidData)?;
+                let escaped = row.0[2] == ShortInitializerCoordinate::ESCAPED;
+                if escaped && wide_ends.len() == wide_ends.capacity() {
+                    super::original_primary_signatures::grow_funded_rows(
+                        wide_ends, &mut self.wide_end_credit, a,
+                    )?;
+                }
+                // Both columns are funded before publishing either row.
+                push_row(rows, row, &mut self.buffer_credit, a)?;
+                if escaped { wide_ends.push([start, end]); }
+                Ok(())
             }
             InitializerCoordinateSpans::Wide(rows) => push_row(rows, span, &mut self.buffer_credit, a),
         }
@@ -461,6 +516,12 @@ impl OriginalProcedureHeaders {
         if let Some(coordinates) = coordinates.as_mut() {
             if !coordinates.spans.sort_and_check() {
                 return Err("original declaration header coordinates overlap".into());
+            }
+            #[cfg(debug_assertions)]
+            if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+                let (_, logical, physical) = coordinates.spans.storage();
+                let (_, side_logical, side_physical) = coordinates.spans.wide_end_storage().unwrap_or_default();
+                eprintln!("ORIGINAL_INITIALIZER_COORDINATES rows={} logical={logical} physical={physical} side_logical={side_logical} side_physical={side_physical}", coordinates.spans.len());
             }
         }
         if !events_known{
@@ -1062,6 +1123,10 @@ impl OriginalProcedureHeaders {
         if let Some(row) = &self.initializer_coordinates {
             let (address, len, capacity) = row.spans.storage();
             visit(address, len, capacity);
+            if let Some((address, len, capacity)) = row.spans.wide_end_storage() {
+                visit(address, len, capacity);
+                debug_assert_eq!(row.wide_end_credit.as_ref().map(|credit| credit.bytes()), Some(capacity));
+            }
             row.lease.visit_counter_storage(|p, n| visit(p, n, n));
             if let Some(buffer_credit) = &row.buffer_credit {
                 buffer_credit.visit_counter_storage(|p, n| visit(p, n, n));
@@ -1753,7 +1818,7 @@ mod initializer_coordinate_tests {
         assert!(narrow.spans.sort_and_check());
         assert_eq!(narrow.spans.find_start(near_end.start), Some(1));
         assert_eq!(narrow.spans.get(1), Some(near_end));
-        assert_eq!(narrow.spans.storage().1, 16);
+        assert_eq!(narrow.spans.storage().1, 12);
         if let Some(first_wide) = last_narrow.checked_add(1) {
             let overflow = Span::new(last_narrow, first_wide);
             let before = used.load(Ordering::Acquire);
@@ -1774,6 +1839,39 @@ mod initializer_coordinate_tests {
     }
 
     #[test]
+    fn short_initializer_coordinates_keep_exact_widths_and_side_order() {
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a = dm_syntax::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut coordinates = OriginalInitializerCoordinates::new(1 << 20, &a).unwrap();
+        let direct = Span::new(0, 65_534);
+        let escaped = Span::new(65_536, 131_071);
+        let larger = Span::new(196_608, 300_000);
+        assert_eq!(std::mem::size_of::<ShortInitializerCoordinate>(), 6);
+        coordinates.push(direct, &a).unwrap();
+        let before = used.load(Ordering::Acquire);
+        let denied = dm_syntax::SettingAdmission::new(&used, before, &|| Ok(()));
+        assert_eq!(coordinates.push(larger, &denied).unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(coordinates.spans.len(), 1);
+        assert!(coordinates.spans.wide_end_storage().is_none());
+        assert_eq!(used.load(Ordering::Acquire), before);
+        coordinates.push(larger, &a).unwrap();
+        coordinates.push(escaped, &a).unwrap();
+        assert!(coordinates.spans.sort_and_check());
+        assert!(coordinates.spans.iter().eq([direct, escaped, larger]));
+        assert_eq!(coordinates.spans.find_start(escaped.start), Some(1));
+        let (_, logical, physical) = coordinates.spans.wide_end_storage().unwrap();
+        assert_eq!(logical, 16);
+        assert_eq!(coordinates.wide_end_credit.as_ref().unwrap().bytes(), physical);
+        let expected = root + coordinates.lease.bytes() + coordinates.spans.storage().2 + physical;
+        assert_eq!(used.load(Ordering::Acquire), expected);
+        coordinates.push(Span::new(escaped.end - 1, escaped.end), &a).unwrap();
+        assert!(!coordinates.spans.sort_and_check());
+        drop(coordinates);
+        assert_eq!(used.load(Ordering::Acquire), root);
+    }
+
+    #[test]
     fn initializer_coordinate_growth_funds_overlap_and_settles_exact_buffer() {
         use std::mem::size_of;
         let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
@@ -1788,14 +1886,14 @@ mod initializer_coordinate_tests {
         let fixed = coordinates.lease.bytes();
         assert!(coordinates.buffer_credit.is_none());
         for index in 0..1025 {
-            let old = coordinates.spans.storage().2 / size_of::<[u32; 2]>();
+            let old = coordinates.spans.storage().2 / size_of::<ShortInitializerCoordinate>();
             peak.store(0, Ordering::Release);
             coordinates.push(Span::new(index, index + 1), &a).unwrap();
-            let new = coordinates.spans.storage().2 / size_of::<[u32; 2]>();
-            assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), new * size_of::<[u32; 2]>());
-            assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (fixed + new * size_of::<[u32; 2]>()));
+            let new = coordinates.spans.storage().2 / size_of::<ShortInitializerCoordinate>();
+            assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), new * size_of::<ShortInitializerCoordinate>());
+            assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (fixed + new * size_of::<ShortInitializerCoordinate>()));
             if old != new {
-                assert_eq!(peak.load(Ordering::Acquire), root + fixed + (old + new) * size_of::<[u32; 2]>());
+                assert_eq!(peak.load(Ordering::Acquire), root + fixed + (old + new) * size_of::<ShortInitializerCoordinate>());
             }
         }
         assert!(coordinates.spans.iter().enumerate().all(|(index, span)| span == Span::new(index, index + 1)));
@@ -1810,7 +1908,7 @@ mod initializer_coordinate_tests {
         let a = dm_syntax::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
         let mut coordinates = OriginalInitializerCoordinates::new(1 << 20, &a).unwrap();
         coordinates.push(Span::new(0, 1), &a).unwrap();
-        let old = coordinates.spans.storage().2 / size_of::<[u32; 2]>();
+        let old = coordinates.spans.storage().2 / size_of::<ShortInitializerCoordinate>();
         for index in 1..old {
             coordinates.push(Span::new(index, index + 1), &a).unwrap();
         }
@@ -1818,7 +1916,7 @@ mod initializer_coordinate_tests {
         let pointer = coordinates.spans.storage().0;
         let next = Span::new(old, old + 1);
 
-        let limit = before + old * 2 * size_of::<[u32; 2]>() - 1;
+        let limit = before + old * 2 * size_of::<ShortInitializerCoordinate>() - 1;
         let low = dm_syntax::SettingAdmission::new(&used, limit, &|| Ok(()));
         assert_eq!(coordinates.push(next, &low).unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
         assert_eq!(coordinates.spans.storage().0, pointer);
@@ -1836,7 +1934,7 @@ mod initializer_coordinate_tests {
         assert_eq!(coordinates.push(next, &stopped).unwrap_err().raw_os_error(), Some(1450));
         assert_eq!(coordinates.spans.storage().0, pointer);
         assert_eq!(coordinates.spans.len(), old);
-        assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), old * size_of::<[u32; 2]>());
+        assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), old * size_of::<ShortInitializerCoordinate>());
         assert_eq!(used.load(Ordering::Acquire), before);
 
         coordinates.push(next, &a).unwrap();

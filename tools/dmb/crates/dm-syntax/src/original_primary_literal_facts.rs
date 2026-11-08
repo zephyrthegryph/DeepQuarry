@@ -1149,7 +1149,7 @@ impl LiteralPages {
         })
     }
 
-    fn visit_storage(&self, visit: &mut impl FnMut(usize,usize,usize)) {
+    fn visit_storage(&self, owner: Option<&crate::OriginalLiteralProjectionOwner>, visit: &mut impl FnMut(usize,usize,usize)) {
         if self.chunks.capacity() != 0 {
             let width = mem::size_of::<LiteralDirectoryChunk>();
             visit(self.chunks.as_ptr() as usize, self.chunks.len() * width,
@@ -1196,7 +1196,9 @@ impl LiteralPages {
                 {
                     continue;
                 }
-                let data = page.get_data(index,0,None,None).expect("issued literal row").1;
+                // Observe the allocation without a raw source loan. Compact
+                // source-backed spellings still require their issued owner.
+                let data = page.get_data(index,0,None,owner).expect("issued literal row").1;
                 if let Some(current) = data.page_storage_identity() {
                     if last_payload_page == Some(current) {
                         continue;
@@ -1812,7 +1814,7 @@ impl OriginalPrimaryLiteralFacts{
   Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections,first_attempts:owner.first_projection_attempts,short_spans,settled_span_pages}
  }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
-  let owner=self.0.as_ref().expect("live primary facts");if let Some(projection)=&owner.projection{projection.visit_storage(&mut visit)}let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(&mut visit);owner.colons.visit_storage(&mut visit);owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
+  let owner=self.0.as_ref().expect("live primary facts");if let Some(projection)=&owner.projection{projection.visit_storage(&mut visit)}let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(owner.projection.as_ref(), &mut visit);owner.colons.visit_storage(&mut visit);owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
  }
 }
 #[cfg(test)]mod tests{
@@ -2658,7 +2660,8 @@ mod literal_page_controls {
         let used = crate::SettingChargeCounter::try_new(fixed).unwrap();
         let a = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
         let output = crate::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output));
-        let mut page = LiteralPage::new(0, &a).unwrap();
+        let mut facts = OriginalPrimaryLiteralFacts::new(&a).unwrap();
+        facts.enable_projection(output.clone()).unwrap();
         let mut source = String::new();
         let mut issued: Vec<_> = (0..4).map(|index| {
             let raw = format!("\"{}-{index}\"", "body".repeat(24));
@@ -2682,7 +2685,7 @@ mod literal_page_controls {
         let total_owner_bytes = slots[0].as_ref().unwrap().as_view().trace_payload().1;
         let raw_bytes: usize = slots[1..].iter().map(|data| data.as_ref().unwrap().raw_storage().capacity()).sum();
         for ((span, _), data) in issued.into_iter().zip(slots) {
-            page.push((span, data.unwrap()), &a).unwrap();
+            facts.append_actual(span, data.unwrap(), &a).unwrap();
         }
         let start = source.len();
         let first_projected = "123456";
@@ -2691,15 +2694,16 @@ mod literal_page_controls {
         let data = crate::OriginalLiteralData::from_value_using(
             first_projected.to_owned(), crate::OriginalTokenValue::Int(123456), &a,
         ).unwrap();
-        page.push((Span::new(start, start + first_projected.len()), data), &a).unwrap();
+        facts.append_actual(Span::new(start, start + first_projected.len()), data, &a).unwrap();
         let filler = crate::OriginalLiteralData::from_value_using(
             "0".to_owned(), crate::OriginalTokenValue::Int(0), &a,
         ).unwrap();
         for _ in 5..LITERAL_PAGE_LEN {
             let start = source.len();
             source.push_str("0\n");
-            page.push((Span::new(start, start+1), filler.clone()), &a).unwrap();
+            facts.append_actual(Span::new(start, start+1), filler.clone(), &a).unwrap();
         }
+        let page = &mut Arc::get_mut(facts.0.as_mut().unwrap()).unwrap().rows.chunks[0].pages[0];
         page.body[0] = 0b1_1111;
         page.data.settle_full_using(&a).unwrap();
 
@@ -2788,8 +2792,15 @@ mod literal_page_controls {
             assert_eq!((cooked, cooked.as_ptr()), ("different cooked", cooked_pointer));
             assert_eq!(page.withdraw_compact_source_raw(&source, &a).unwrap(), 0);
             drop(detached);
+            facts.seal_actual_frontier(source.len(), &a).unwrap();
+            let mut cooked_allocations = 0;
+            facts.visit_storage(|address, _, _| {
+                assert_ne!(address, source.as_ptr() as usize);
+                cooked_allocations += usize::from(address == cooked_pointer as usize);
+            });
+            assert_eq!(cooked_allocations, 1);
         }
-        drop((page, first, filler, output));
+        drop((facts, first, filler, output));
         assert_eq!(used.load(Ordering::Acquire), fixed);
     }
  }
