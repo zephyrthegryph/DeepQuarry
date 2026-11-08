@@ -53,7 +53,8 @@
 	A.set_use_power(USE_POWER_IDLE)
 	guard.judge_machines("dq_guard_seed", null, list(), TRUE, TRUE)
 
-/// A floor replaced during a test (taken to space and back, a breach repaired) is judged through the air standing there now: unchanged, it is no leak.
+/// A floor replaced during a test is judged through the air standing there now: a floor swapped for another floor type and back carries its air
+/// across (ChangeTurf copies it), so it is no leak. (A breach to space is a real change: the floor's air is lost, and the guard reports it.)
 /datum/unit_test/dq_air_guard_judges_a_replaced_turf_by_its_current_air
 
 /datum/unit_test/dq_air_guard_judges_a_replaced_turf_by_its_current_air/Run()
@@ -61,8 +62,8 @@
 	var/original = T.type
 	var/list/before = unit_test_air_snapshot()
 	var/moles_before = T.turf_air().total_moles()
-	var/turf/S = T.ChangeTurf(/turf/space)
-	var/turf/open/back = S.ChangeTurf(original)
+	var/turf/open/plating = T.ChangeTurf(original == /turf/simulated/floor/plating ? /turf/simulated/floor/tiled/steel : /turf/simulated/floor/plating)
+	var/turf/open/back = plating.ChangeTurf(original)
 	var/list/only = list()
 	only[back] = TRUE
 	var/list/diff = unit_test_air_diff(before, only = only)

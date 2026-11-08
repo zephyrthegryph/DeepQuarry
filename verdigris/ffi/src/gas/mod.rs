@@ -716,8 +716,17 @@ fn register_from_template(src: ByondValue, cell: u32, key: FieldKey<TurfGas>, ma
 fn hook_bind_turf_air(turf: ByondValue, datum: ByondValue) -> Result<ByondValue> {
     let cell = turf.get_ref()?;
     let key = turf_key()?;
-    let registered = with_world(|w| Ok(turf_read(w, key, cell).is_some_and(|(_, g)| g.is_node())))?;
-    if !registered {
+    let geom = with_world(|w| Ok(turf_read(w, key, cell).map(|(_, g)| g)))?;
+    let Some(geom) = geom.filter(Geom::is_node) else {
+        return Ok(false.into());
+    };
+    // A reservoir cell (space, immutable or planetary air) under a turf that holds its own air belongs to the turf this one replaced: a map
+    // load puts its turfs over a level's registered space without unregistering it (load_new_z() onto a level increment_max_z() registered
+    // whole). Bound to it, the turf's new datum would lose its gas and every write to it would be dropped as to vacuum. Refused here, the datum
+    // keeps its own gas and the turf's registration (update_air_ref()) moves it into the cell with the turf's own kind.
+    let own_reservoir = is_set(turf.read_number_id(byond_string!("immutable_atmos")))
+        || is_set(turf.read_number_id(byond_string!("planetary_atmos")));
+    if geom.reservoir && !own_reservoir {
         return Ok(false.into());
     }
     let mut datum = datum;
@@ -1041,7 +1050,7 @@ fn atmos_open_dirs(turf: ByondValue) -> Result<ByondValue> {
     Ok(f32::from(bits).into())
 }
 
-/// Diagnostic: list(registered, mask, z-level links, zero-based z).
+/// Diagnostic: list(registered, mask, z-level links, zero-based z, reservoir: the cell holds immutable or planetary air).
 #[auxmacros::bind("/proc/atmos_cell_info")]
 fn atmos_cell_info(turf: ByondValue) -> Result<ByondValue> {
     let cell = turf.get_ref()?;
@@ -1058,6 +1067,7 @@ fn atmos_cell_info(turf: ByondValue) -> Result<ByondValue> {
             f32::from(grid.blocked(BlockKind::Air, cell).0),
             f32::from(links),
             (cell / grid.dims().layer_len()) as f32,
+            f32::from(u8::from(geom_of(w, key, cell).reservoir)),
         ])
     })?;
     crate::world::list(info)
