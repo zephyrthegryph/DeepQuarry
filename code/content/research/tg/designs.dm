@@ -285,3 +285,74 @@ SCHEMA(/datum/design_techweb, material_template, schema_path(/datum/material_tem
 	if(istext(build_path) && ispath(saved_type_path(build_path), /obj/item/circuitboard))
 		return variant_initial(build_path, "build_path")
 	return build_path
+
+/// The research designs sheet's inputs: every design type.
+/datum/asset/spritesheet_batched/research_designs/entry_sources()
+	return subtypesof(/datum/design_techweb)
+
+/// One design's icon.
+/datum/asset/spritesheet_batched/research_designs/add_entry_for(datum/design_techweb/path)
+	if(initial(path.id) == DESIGN_ID_IGNORE)
+		return
+
+	var/icon_file
+	var/icon_state
+	var/datum/icon_transformer/transform = null
+
+	if(initial(path.research_icon) && initial(path.research_icon_state)) //If the design has an icon replacement skip the rest
+		icon_file = path::research_icon
+		icon_state = path::research_icon_state
+	else
+		// construct the icon and slap it into the resource cache
+		var/atom/item = product_of(initial(path.build_path))
+		if (!ispath(item, /atom))
+			return  // shouldn't happen, but just in case
+
+		// circuit boards become their resulting machines or computers
+		if (ispath(item, /obj/item/circuitboard))
+			var/obj/item/circuitboard/C = item
+			var/machine = initial(C.build_path)
+			if (machine)
+				item = machine
+
+		// GAGS icon short-circuit the rest of the checks
+		// if (item::greyscale_config && item::greyscale_colors)
+		// 	insert_icon(path::id, gags_to_universal_icon(item))
+		// 	continue
+		// else
+		icon_file = item::icon
+
+		icon_state = item::icon_state
+		if(item::color)
+			transform = color_transform(item::color)
+
+		// computers (and snowflakes) get their screen and keyboard sprites
+		if (ispath(item, /obj/machinery/computer) || ispath(item, /obj/machinery/power/solar_control))
+			if(!transform)
+				transform = new()
+			var/obj/machinery/computer/C = item
+			var/screen = initial(C.icon_screen)
+			var/keyboard = initial(C.icon_keyboard)
+			var/all_states = icon_states_fast(icon_file)
+			if (screen && (screen in all_states))
+				transform.blend_icon(uni_icon(icon_file, screen), ICON_OVERLAY)
+			if (keyboard && (keyboard in all_states))
+				transform.blend_icon(uni_icon(icon_file, keyboard), ICON_OVERLAY)
+
+		// Materials are snowflakes that use blended colors for some stacks
+		if(ispath(item, /obj/item/stack/material))
+			var/obj/item/stack/material/mat = item
+			if(mat::apply_colour && !mat::exotic_no_autolathe_reprint)
+				var/datum/material/material = GET_MATERIAL_REF(mat::default_type)
+				transform = color_transform(material::icon_colour)
+
+	// A design whose build_path has no resolvable icon/state would make the
+	// batched spritesheet generator hard-fail the entire batch ("Could not
+	// find associated icon state for N/A"). Skip the bad entry rather than
+	// taking down RND's whole design spritesheet. log_world (not stack_trace)
+	// so the offending design is findable in dd.log without adding a runtime.
+	if(!icon_file || !icon_state || !icon_exists("[icon_file]", icon_state))
+		log_world("research_designs spritesheet: design [path] (id '[initial(path.id)]') has no resolvable icon (file='[icon_file]', state='[icon_state]'); skipping entry")
+		return
+
+	insert_icon(sanitize_css_class_name(initial(path.id)), uni_icon(icon_file, icon_state, transform=transform))
