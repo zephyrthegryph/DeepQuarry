@@ -53,11 +53,29 @@
 	for(var/datum/activation/act as anything in holder.rx?.activations)
 		if(act.dead || !act.runs || T.caps[act.def.key])
 			continue
-		for(var/datum/centry/C as anything in activation_plan(act.def))
+		var/list/rows = act.def.look_layer_rows // read in place: the call is made only the first time a definition is seen
+		if(isnull(rows))
+			rows = def_look_layer_rows(act.def)
+		for(var/datum/centry/C as anything in rows)
+			glow = look_layer_row_read(holder, C.item, act.def, act, C.whens, names, glow)
+	return list(names, glow)
+
+/// The look_layer() rows of a definition's plan (most have none: an observe() hook, a stat contribution), kept on the interned definition so a
+/// draw walks only the rows, not every entry of every grant its holder carries.
+/proc/def_look_layer_rows(datum/capability/def)
+	var/list/rows = def.look_layer_rows
+	if(isnull(rows))
+		rows = list()
+		for(var/datum/centry/C as anything in activation_plan(def))
 			var/datum/entry/E = C.item
 			if(istype(E) && E.kind == ENTRY_LOOK_LAYER)
-				glow = look_layer_row_read(holder, E, act.def, act, C.whens, names, glow)
-	return list(names, glow)
+				rows += C
+		def.look_layer_rows = rows
+	return rows
+
+/datum/capability
+	/// def_look_layer_rows(): the plan's look_layer() rows, made on first use (a definition and its plan never change once interned).
+	var/list/look_layer_rows
 
 /// Reads one look_layer() row into `names` and returns the glow so far (this row's when it holds and gives one).
 /proc/look_layer_row_read(datum/holder, datum/entry/E, datum/capability/def, datum/activation/act, list/whens, list/names, list/glow)

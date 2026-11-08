@@ -634,6 +634,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	// The providers the resolver merged over the holder's grants are made again on the next read; its candidate rows per input shape are kept for
 	// the grants that bring ops (op_side_rows() compares them on each read).
 	op_provider_memo = null
+	if(rx_counter_unread(src, nameof(capability_generation)))
+		return TRUE // nothing watches it (rx_counter_unread())
 	tracked_changed(src, nameof(capability_generation))
 	return TRUE
 SETTER(/datum/rx_state, capability_generation)

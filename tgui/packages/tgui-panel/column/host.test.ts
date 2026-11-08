@@ -231,3 +231,54 @@ describe('a column window message', () => {
     ]);
   });
 });
+
+describe('what the column keeps', () => {
+  const open = (
+    host: ColumnHost,
+    wid: string,
+    iface: string,
+    floatable = true,
+  ) => {
+    host.receive('col/open', { wid, kind: 'tgui' });
+    host.receive('col/msg', {
+      wid,
+      type: 'update',
+      payload: {
+        config: {
+          interface: { name: iface },
+          title: iface,
+          window: { floatable },
+        },
+        data: {},
+      },
+    });
+  };
+  const floats = () => sent.filter((m) => m.payload?.type === 'wm/float');
+  const closes = () => sent.filter((m) => m.payload?.type === 'close');
+
+  it('never floats or closes the stat panel', () => {
+    const host = new ColumnHost();
+    open(host, 'col-stat', 'StatPanel', false);
+    open(host, 'col-chat', 'Chat');
+    expect(host.mayLeave('col-stat')).toBe(false);
+    host.float('col-stat', { x: 5, y: 5 });
+    host.close('col-stat');
+    expect(floats()).toEqual([]);
+    expect(closes()).toEqual([]);
+    expect(host.mayLeave('col-chat')).toBe(true);
+  });
+
+  it('never floats or closes its last window', () => {
+    const host = new ColumnHost();
+    open(host, 'col-pda', 'Pda');
+    expect(host.mayLeave('col-pda')).toBe(false);
+    host.float('col-pda');
+    host.close('col-pda');
+    expect(floats()).toEqual([]);
+    expect(closes()).toEqual([]);
+    open(host, 'col-chat', 'Chat');
+    expect(host.mayLeave('col-pda')).toBe(true);
+    host.float('col-pda');
+    expect(floats()).toHaveLength(1);
+  });
+});

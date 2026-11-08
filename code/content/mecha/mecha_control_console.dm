@@ -20,9 +20,11 @@
 
 /// The beacons the window lists: every tracking beacon that sits in an exosuit.
 /obj/machinery/computer/mecha/proc/listed_beacons()
+	// A beacon in an exosuit sits in its contents: the exosuits are a registry, so the console no longer walks every object in the world
+	// (about 3 ms a build).
 	var/list/listed = list()
-	for(var/obj/item/mecha_parts/mecha_tracking/TR in world)
-		if(TR.in_mecha())
+	for(var/obj/mecha/M as anything in REGISTRY_MEMBERS(REGISTRY_MECHAS))
+		for(var/obj/item/mecha_parts/mecha_tracking/TR as anything in contents_of(M, /obj/item/mecha_parts/mecha_tracking))
 			listed += TR
 	return listed
 

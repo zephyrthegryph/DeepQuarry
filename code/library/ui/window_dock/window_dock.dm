@@ -20,6 +20,12 @@ GLOBAL_LIST_INIT(window_dock_default_docked, list(
 	"StatPanel" = TRUE,
 ))
 
+/// Interfaces that never float: they stay docked in the right-hand column whatever the saved layout says, and the column offers
+/// no float for them (the column is never without the stat panel).
+GLOBAL_LIST_INIT(window_dock_always_docked, list(
+	"StatPanel" = TRUE,
+))
+
 /datum/tgui
 	/// In the right-hand column's page (a column part, column_part.dm) rather than its own native window.
 	var/docked = FALSE
@@ -29,12 +35,19 @@ GLOBAL_LIST_INIT(window_dock_default_docked, list(
 	var/view_stale = FALSE
 	/// Floated out of the column: the screen point ("x,y", physical pixels) its native window opens under, for the update that opens it.
 	var/float_at
+	/// Opened by a float out of the column: its native window is watched until it shows (float_shown_check()).
+	var/floated = FALSE
 
 SCHEMA(/datum/tgui, float_at, schema_text())
 
 /// Whether this interface may live in the column at all: not a modal prompt, not a child of another UI.
 /datum/tgui/proc/dockable_interface()
 	return !GLOB.window_dock_modal_interfaces[interface] && !parent_ui()
+
+/// Whether this docked UI may leave the column (float, or close): never one that is always docked, never the column's last window
+/// (the column is never empty). Content answers (window_dock.dm).
+/datum/tgui/proc/may_leave_column(closing)
+	return TRUE
 
 /// Whether this UI may dock or float: a pooled native window or a column part, of a dockable interface.
 /datum/tgui/proc/dockable()

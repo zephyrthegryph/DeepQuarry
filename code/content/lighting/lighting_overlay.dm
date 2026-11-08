@@ -32,7 +32,7 @@
 		stack_trace("a lighting object was assigned to a turf that already had a lighting object!")
 
 	rel_set(affected_turf, nameof(affected_turf.lighting_object), src)
-	affected_turf.set_luminosity(0)
+	affected_turf.set_luminosity(GLOB.client_lighting ? 1 : 0) // compare mode: the glows need every turf shown
 
 	if(CONFIG_GET(number/starlight))
 		for(var/turf/space/space_tile in RANGE_TURFS(1, affected_turf))
@@ -110,7 +110,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 	// Of note. Most of the cost in this proc is here, I think because color matrix'd underlays DO NOT cache well, which is what adding to underlays does
 	// We use underlays because objects on each tile would fuck with maptick. if that ever changes, use an object for this instead
 	affected_turf.underlays += current_underlay
-	affected_turf.set_luminosity(set_luminosity)
+	affected_turf.set_luminosity(GLOB.client_lighting || set_luminosity) // compare mode: the glows need every turf shown
 
 /datum/lighting_object/proc/removefromturf()
 	affected_turf.underlays -= current_underlay

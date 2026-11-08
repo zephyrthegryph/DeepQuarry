@@ -59,8 +59,8 @@
 	var/datum/window_dock/dock = new(null)
 	TEST_ASSERT(dock.wants("StatPanel"), "the stat panel opens docked by default")
 	TEST_ASSERT(!dock.wants("Vending"), "an interface with no saved word floats")
-	dock.wants_cache = list("StatPanel" = FALSE)
-	TEST_ASSERT(!dock.wants("StatPanel"), "a stat panel the player floated stays floating")
+	dock.wants_cache = list("Chat" = FALSE)
+	TEST_ASSERT(!dock.wants("Chat"), "a chat the player floated stays floating")
 	qdel(dock)
 
 /datum/unit_test/dq_window_dock_routing
@@ -166,3 +166,29 @@
 	TEST_ASSERT(other.session != chat.session, "and another connection has another name")
 	qdel(other)
 	qdel(chat)
+
+/// The stat panel never floats, and the column never gives up its last window (window_dock.dm may_leave()).
+/datum/unit_test/dq_window_dock_column_keeps
+/datum/unit_test/dq_window_dock_column_keeps/Run()
+	var/datum/window_dock/dock = new(null)
+	dock.wants_cache = list("StatPanel" = FALSE)
+	TEST_ASSERT(dock.wants("StatPanel"), "the stat panel opens docked even when a saved layout floated it")
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/host = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/datum/tgui/dq_dock_probe/stat = new(user, host, "StatPanel")
+	stat.docked = TRUE
+	TEST_ASSERT(!dock.may_leave(stat), "the stat panel may not leave the column")
+	TEST_ASSERT(!dock.undock(stat), "a float of the stat panel is refused")
+	TEST_ASSERT(stat.docked, "and it stays docked")
+	var/datum/tgui/dq_dock_probe/pda = new(user, host, "Pda")
+	pda.docked = TRUE
+	// No other window is docked (the dock counts the client's open column windows; this one has none): the last stays.
+	TEST_ASSERT_EQUAL(dock.docked_count(), 0, "a dock with no client counts no docked windows")
+	TEST_ASSERT(!dock.may_leave(pda), "the column's last window may not leave it")
+	TEST_ASSERT(!dock.undock(pda), "its float is refused")
+	var/datum/tgui/dq_dock_probe/floating = new(user, host, "Pda")
+	TEST_ASSERT(dock.may_leave(floating), "a window that is not docked is not the column's to keep")
+	qdel(floating)
+	qdel(pda)
+	qdel(stat)
+	qdel(dock)
