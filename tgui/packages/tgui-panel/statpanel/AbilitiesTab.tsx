@@ -1,8 +1,9 @@
 // The Abilities tab of the stat panel: the mob's ability list as buttons, grouped by category, with its resources and the toggles that are
-// on at the top (code/content/abilities/ability_panel.dm). A click uses the ability, a drag onto another button moves it there; both go back
+// on at the top (code/content/abilities/ability_panel.dm). A click uses the ability, a drag moves it live (the others reflow, the shared DQ gesture of tgui/dq useLiveGrid); both go back
 // as "Abilities-Act" messages. The logic is in abilities.ts.
 
 import { memo, useEffect, useState } from 'react';
+import { useLiveGrid } from 'tgui/dq';
 import {
   type AbilitiesData,
   type AbilityEntry,
@@ -10,7 +11,6 @@ import {
   cooldownMs,
   cooldownText,
   hoverText,
-  moveBefore,
   type Resource,
   refusalAt,
   resourceFill,
@@ -59,14 +59,13 @@ type ButtonProps = {
   receivedAt: number;
   now: number;
   dragging: string | null;
-  onDragStart: (ref: string) => void;
-  onDrop: (ref: string) => void;
-  onDragEnd: () => void;
+  /** The shared live-grid gesture's props for this button (tgui/dq useLiveGrid). */
+  drag: ReturnType<ReturnType<typeof useLiveGrid>['itemProps']>;
+  consumeClick: () => boolean;
 };
 
 const AbilityButton = (props: ButtonProps) => {
-  const { entry, receivedAt, now, dragging, onDragStart, onDrop, onDragEnd } =
-    props;
+  const { entry, receivedAt, now, dragging, drag, consumeClick } = props;
   const refusal = refusalAt(entry, receivedAt, now);
   const left = cooldownMs(entry, receivedAt, now);
   const classes = ['abilities__button'];
@@ -78,21 +77,10 @@ const AbilityButton = (props: ButtonProps) => {
       type="button"
       className={classes.join(' ')}
       title={hoverText(entry, refusal)}
-      draggable
-      onClick={() => act('use', { ref: entry.ref })}
-      onDragStart={(event) => {
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/plain', entry.ref);
-        onDragStart(entry.ref);
+      {...drag}
+      onClick={() => {
+        if (!consumeClick()) act('use', { ref: entry.ref });
       }}
-      onDragOver={(event) => {
-        if (dragging && dragging !== entry.ref) event.preventDefault();
-      }}
-      onDrop={(event) => {
-        event.preventDefault();
-        onDrop(entry.ref);
-      }}
-      onDragEnd={onDragEnd}
     >
       {!!entry.slot && <span className="abilities__slot">{entry.slot}</span>}
       {entry.icon_class ? (
@@ -131,21 +119,21 @@ export const AbilitiesTab = memo(
     data: AbilitiesData | null;
     receivedAt: number;
   }) => {
-    const [dragging, setDragging] = useState<string | null>(null);
-    const entries = data?.abilities ?? [];
+    const all = data?.abilities ?? [];
+    const order = all.map((entry) => entry.ref);
+    // The tab strips' gesture on a grid: the others reflow live, the order commits on release.
+    const grid = useLiveGrid(order, (next) => act('reorder', { order: next }));
+    const byRef = new Map(all.map((entry) => [entry.ref, entry]));
+    const entries = grid.shown
+      .map((ref) => byRef.get(ref))
+      .filter((entry): entry is AbilityEntry => !!entry);
+    const { dragging } = grid;
     const running = entries.some((entry) => entry.cooldown > 0);
     const now = useNow(running);
     if (!data) return <div className="stat-empty">No abilities.</div>;
     const toggles = activeToggles(entries);
-    const reorder = (target: string) => {
-      if (!dragging) return;
-      const order = entries.map((entry) => entry.ref);
-      const next = moveBefore(order, dragging, target);
-      setDragging(null);
-      if (next !== order) act('reorder', { order: next });
-    };
     return (
-      <div className="abilities">
+      <div className="abilities" data-live-grid>
         {(data.resources.length > 0 || toggles.length > 0) && (
           <div className="abilities__status">
             {data.resources.map((resource) => (
@@ -177,9 +165,8 @@ export const AbilitiesTab = memo(
                   receivedAt={receivedAt}
                   now={now}
                   dragging={dragging}
-                  onDragStart={setDragging}
-                  onDrop={reorder}
-                  onDragEnd={() => setDragging(null)}
+                  drag={grid.itemProps(entry.ref)}
+                  consumeClick={grid.consumeClick}
                 />
               ))}
             </div>

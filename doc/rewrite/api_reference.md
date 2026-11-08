@@ -208,7 +208,7 @@ Notes: `hold_until` (`code/engine/stats/store.dm:112`) and `hold_override` (`cod
 #### `hold_table(E, source, table, scale =, stacks =, part =)`
 Need: place a source's whole table of stat values at once.
 Defined: `code/engine/stats/tables.dm:66`
-Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:824`.
+Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:837`.
 Replaces / bans: `BF_*`, `factor(`.
 Notes: normally reached through `factors()` rather than called.
 
@@ -466,7 +466,7 @@ Notes: the destroy transaction (`code/library/lifecycle/transaction.dm:25`) runs
 #### `/datum/notice/borrow_ended` (the borrower hears its target was deleted)
 Need: react when a datum you borrow through a relation is deleted, before you are cleared or deleted with it.
 Defined: `code/engine/change/lifecycle_notices.dm:14`
-Example: `on_notice(/datum/notice/borrow_ended, then(PROC_REF(borrow_ended)))`, `code/engine/parts/run.dm:485` (the waiting op runs its `on_interrupt()`, K8).
+Example: `on_notice(/datum/notice/borrow_ended, then(PROC_REF(borrow_ended)))`, `code/engine/parts/run.dm:502` (the waiting op runs its `on_interrupt()`, K8).
 Replaces / bans: nothing; `on_unlink = PROC_REF(x)` on the relation still runs for every unlink, this one is only the target's deletion.
 Notes: published from relation teardown (phase 4 of the target's destroy transaction) after the borrower's var was cleared; the payload is the borrower's var name (`relation`) and the deleted target's type (`other_type`), never the target. A handler must not touch the target.
 

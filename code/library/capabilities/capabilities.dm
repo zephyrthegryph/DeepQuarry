@@ -93,7 +93,10 @@
 		refresh_granted_verbs(holder) // capability verbs are there from init, not a frame later
 	if(flags & TYPE_DERIVES_DEPS)
 		derived_attach(holder)
-	if(rx_type_enrols(holder))
+	var/enrols = GLOB?.rx_enrol_cache?[holder.type] // rx_type_enrols()'s per-type cache read inline: every atom passes here
+	if(isnull(enrols))
+		enrols = rx_type_enrols(holder)
+	if(enrols)
 		rx_enrol(holder) // per-instance every() work (reactions/work.dm)
 	if(flags || holder.periodic_cadence || holder.periodic_interval)
 		if(!holder.refresh_queued && !(flags & TYPE_DERIVES_PENDING) && type_look_stamped(holder))

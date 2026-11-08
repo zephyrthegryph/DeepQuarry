@@ -305,10 +305,10 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 			if((mask & DEP_PUSH) && mask != DEP_ALL && refresh_pushes(D))
 				GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
 			// A real mark: no longer the type's default state. Not one the atom's own construction makes: its setup() hooks and a map-loaded atom's
-			// after_init() entries run in an init frame (init_open, interest.dm) and write the state its first draw reads, as Initialize() does. That first
+			// after_init() entries run in an init frame (DF_INIT_OPEN, interest.dm) and write the state its first draw reads, as Initialize() does. That first
 			// draw is already queued (DEP_CREATED), so such a write is part of it, and the type can still be sampled and stamped at boot (look_stamp.dm): a wall
 			// or floor marked by its setup() would lose the creation mark and wait, unsampled, for the post-boot drain (35 k turfs, ~3.5 minutes).
-			var/construction = (D.refresh_queued & DEP_CREATED) && init_open && D.handle_slot && init_open[D.handle_slot]
+			var/construction = (D.refresh_queued & DEP_CREATED) && (D.datum_flags & DF_INIT_OPEN)
 			D.refresh_queued = (D.refresh_queued & ~(construction ? DEP_PARKED : (DEP_CREATED | DEP_PARKED))) | mask | (owed ? DEP_ALL : 0)
 			if(owed)
 				GLOB.refresh_parked_woken++

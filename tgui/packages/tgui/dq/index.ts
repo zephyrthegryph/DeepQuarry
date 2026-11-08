@@ -7,6 +7,7 @@
  */
 
 export { ListRow, ListRows } from './ListRow';
+export { type GridRect, gridDropIndex, useLiveGrid } from './liveGrid';
 export {
   DRAG_THRESHOLD,
   liveClamp,
