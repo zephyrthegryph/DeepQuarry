@@ -52,7 +52,8 @@
   // weight, 1.5 line height (the chrome above is the bold monospace). A size
   // from the player's settings is an inline style and wins over this.
   .Chat {
-    padding: 8px;
+    // A little more on the right: the text stays clear of the scrollbar.
+    padding: 8px 14px 8px 8px;
     font-family: Verdana, Geneva, sans-serif;
     font-size: 12px;
     font-weight: 400;
