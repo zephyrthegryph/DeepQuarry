@@ -24,7 +24,10 @@
 	set_global(nameof(GLOB.refresh_near_drawn), GLOB.refresh_near_drawn)
 	set_global(nameof(GLOB.interest_chunks_entered), GLOB.interest_chunks_entered)
 	set_global(nameof(GLOB.interest_drawn_now), GLOB.interest_drawn_now)
-	set_global(nameof(GLOB.interest_arrivals), list())
+	set_global(nameof(GLOB.interest_covered), alist())
+	set_global(nameof(GLOB.interest_prefetched), list())
+	set_global(nameof(GLOB.interest_test_coverable), list())
+	set_global(nameof(GLOB.interest_covers_raised), GLOB.interest_covers_raised)
 	var/list/lazy = GLOB.type_look_lazy.Copy()
 	lazy[/obj/dq_interest_probe] = TRUE
 	set_global(nameof(GLOB.type_look_lazy), lazy)
@@ -432,32 +435,27 @@
 	TEST_ASSERT(findtext(GLOB.refresh_drift[length(GLOB.refresh_drift)], "REFRESH PARKED IN VIEW"), "and reported it")
 	interest_clean(probes)
 
-/// An arrival owing more draws than a tick has room for: the nearest are drawn first, the rest over the next passes, and nothing is left owing.
-/datum/unit_test/dq_interest_arrival_spreads_nearest_first
+/// A view jump owing more than one pass draws: the viewer is covered while its draws run nearest first over the passes, and the cover lifts with nothing
+/// left owing in view. Nothing in a viewer's view owes a draw while it can see (interest_view_owing()).
+/datum/unit_test/dq_interest_arrival_covers_until_drawn
 
-/datum/unit_test/dq_interest_arrival_spreads_nearest_first/Run()
+/datum/unit_test/dq_interest_arrival_covers_until_drawn/Run()
 	interest_isolate()
 	var/turf/centre = test_floor()
 	var/list/probes = list()
 	for(var/step in 0 to 5)
 		var/turf/T = locate(centre.x + step, centre.y, centre.z)
 		if(T)
-			probes += interest_probes(T, 1)
-	TEST_ASSERT(length(probes) >= 4, "the test floor has room for a row of probes")
+			probes += interest_probes(T, 8)
+	TEST_ASSERT(length(probes) > INTEREST_ARRIVAL_MIN_STEP, "more probes than one pass always draws")
 	set_global(nameof(GLOB.interest_defer_marks), TRUE)
 	for(var/obj/dq_interest_probe/probe as anything in probes)
 		refresh_mark(probe, DEP_ALL)
-		TEST_ASSERT_EQUAL(probe.refresh_queued, DEP_PARKED, "an unobserved probe owes its draw")
-	set_global(nameof(GLOB.interest_arrival_step_max), 2)
+	GLOB.interest_test_coverable += "dq-test-viewer"
+	set_global(nameof(GLOB.interest_arrival_step_max), 10)
 	interest_view_set("dq-test-viewer", centre, null, world.view)
+	TEST_ASSERT(!isnull(GLOB.interest_covered["dq-test-viewer"]), "the view jump covers the viewer while its draws are owed")
 	var/drawn = 0
-	for(var/obj/dq_interest_probe/probe as anything in probes)
-		if(!probe.refresh_queued)
-			drawn++
-	TEST_ASSERT_EQUAL(drawn, 2, "the arrival draws only what one pass has room for")
-	var/list/order = list()
-	for(var/obj/dq_interest_probe/probe as anything in probes)
-		order += get_dist(probe, centre)
 	var/nearest_owed = 1000
 	var/farthest_drawn = -1
 	for(var/obj/dq_interest_probe/probe as anything in probes)
@@ -465,11 +463,30 @@
 		if(probe.refresh_queued)
 			nearest_owed = min(nearest_owed, d)
 		else
+			drawn++
 			farthest_drawn = max(farthest_drawn, d)
-	TEST_ASSERT(farthest_drawn <= nearest_owed, "the drawn ones are no farther from the view than any still owed (distances [jointext(order, ",")])")
+	TEST_ASSERT_EQUAL(drawn, 10, "the first pass draws one pass's worth")
+	TEST_ASSERT(farthest_drawn <= nearest_owed, "nearest the eye first")
 	for(var/pass in 1 to length(probes))
+		if(isnull(GLOB.interest_covered["dq-test-viewer"]))
+			break
 		interest_arrival_drain()
+	TEST_ASSERT(isnull(GLOB.interest_covered["dq-test-viewer"]), "the cover lifts once nothing is owed")
+	TEST_ASSERT(!length(interest_view_owing("dq-test-viewer")), "and nothing in view owes a draw while the viewer can see")
+	interest_clean(probes)
+
+/// A viewer that cannot be covered (no client: a camera screen) gets everything in view drawn at once: it never sees an owed draw.
+/datum/unit_test/dq_interest_uncoverable_view_draws_at_once
+
+/datum/unit_test/dq_interest_uncoverable_view_draws_at_once/Run()
+	interest_isolate()
+	var/turf/centre = test_floor()
+	var/list/probes = interest_probes(centre, 50)
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
 	for(var/obj/dq_interest_probe/probe as anything in probes)
-		TEST_ASSERT_EQUAL(probe.refresh_queued, 0, "every owed draw has run after the following passes")
-	TEST_ASSERT(!length(GLOB.interest_arrivals), "and the arrival queue is empty")
+		refresh_mark(probe, DEP_ALL)
+	set_global(nameof(GLOB.interest_arrival_step_max), 10)
+	interest_view_set("dq-test-camera", centre, null, world.view)
+	TEST_ASSERT(isnull(GLOB.interest_covered["dq-test-camera"]), "no client: no cover")
+	TEST_ASSERT(!length(interest_view_owing("dq-test-camera")), "and nothing in its view owes a draw")
 	interest_clean(probes)

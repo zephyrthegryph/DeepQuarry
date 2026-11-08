@@ -1,8 +1,8 @@
 /proc/generated_station_seed_air(turf/open/T)
 	if(!turf_buildable(T) || T.density)
 		return FALSE
-	if(!T.air)
-		rel_set(T, nameof(T.air), T.create_gas_mixture())
+	if(!T.turf_air())
+		rel_set(T, nameof(T._air), T.create_gas_mixture())
 		if(SSair?.initialized)
 			T.update_air_ref(0)
 	var/datum/gas_mixture/air = T.return_air()

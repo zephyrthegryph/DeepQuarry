@@ -182,8 +182,10 @@ CAPABILITIES(/datum/light_source)
 	APPLY_CORNER(corner)
 	effect_str[corner] = . // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
 
+/// The turfs this light reaches: the world opacity layer's sight from its turf (symmetric shadowcasting in Rust,
+/// code/domains/verdigris/sight/), so darkness plays no part and no luminosity trick is needed.
 /datum/light_source/proc/get_turfs_in_range()
-	return view(CEILING(light_range, 1), source_turf)
+	return sight_view_turfs(source_turf, CEILING(light_range, 1))
 
 /datum/light_source/proc/update_corners()
 	var/update = FALSE
@@ -253,9 +255,7 @@ CAPABILITIES(/datum/light_source)
 	var/list/datum/lighting_corner/corners = list()
 
 	if (source_turf)
-		var/oldlum = source_turf.luminosity
-		source_turf.luminosity = CEILING(light_range, 1)
-		for(var/turf/T in get_turfs_in_range())
+		for(var/turf/T as anything in get_turfs_in_range())
 			if(IS_OPAQUE_TURF(T))
 				continue
 			if (!T.lighting_corners_initialised)
@@ -265,7 +265,6 @@ CAPABILITIES(/datum/light_source)
 			corners[T.lighting_corner_SE] = 0
 			corners[T.lighting_corner_SW] = 0
 			corners[T.lighting_corner_NW] = 0
-		source_turf.luminosity = oldlum
 
 	SETUP_CORNERS_CACHE(src)
 

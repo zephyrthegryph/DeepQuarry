@@ -81,12 +81,12 @@ Thus, the two variables affect pump operation are set in New():
 	// into the local turf (the Rust edge already merged it into air2).
 	if(overclocked && isturf(loc))
 		var/turf/open/T = loc
-		if(istype(T) && T.air)
+		if(istype(T) && T.turf_air())
 			var/air2_total = air2.total_moles()
 			if(air2_total > 0)
 				var/leak_fraction = min(VOLUME_PUMP_LEAK_AMOUNT * moles / air2_total, 1)
 				var/datum/gas_mixture/leaked = air2.remove_ratio(leak_fraction)
-				T.air.merge(leaked)
+				T.turf_air().merge(leaked)
 				spent(leaked)
 				T.update_visuals()
 				T.air_update_turf(FALSE, FALSE)

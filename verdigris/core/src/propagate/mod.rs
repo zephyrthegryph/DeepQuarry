@@ -11,6 +11,7 @@
 pub mod emp;
 pub mod radiation;
 pub mod ray;
+pub mod view;
 pub mod wavefront;
 
 pub use radiation::RadiationField;

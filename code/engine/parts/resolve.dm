@@ -63,6 +63,9 @@
 	var/gate_reason
 	/// A Menu read's shared op context (list(act)) while its rows are decided, and whether a row it listed shows a cooldown.
 	var/list/menu_scratch
+	/// A Menu read's when() answers by (condition, holder, target): the many rows that ask one condition of one holder (a body's surgery
+	/// steps all asking surgery_offered()) ask it once. Conditions are pure, so within one read an answer cannot move.
+	var/list/menu_cond_answers
 	var/menu_timed = FALSE
 	/// Whether the caller wants the near miss (a click's refusal reason): when it does not (a Menu read), a candidate the origin or authority refuses
 	/// is never made, the same as one its binding's input drops.
@@ -1151,11 +1154,28 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		throw fault
 	A.release()
 
+/// op_cond() for a Menu row, answered once per (condition, holder, target) in a read. Only a var, a stat or a proc condition is kept: a tree or a
+/// requirement datum may read the row's own binding.
+/proc/op_menu_cond(datum/op_resolution/R, datum/act/op/A, cond)
+	if(!R.menu_scratch || !(istext(cond) || isnum(cond)))
+		return op_cond(A, cond)
+	var/answer_key = "[cond]|[REF(A.holder)]|[REF(A.target)]|[A.cap ? REF(A.cap) : "-"]|[A.activation ? REF(A.activation) : "-"]"
+	var/list/answers = R.menu_cond_answers
+	if(isnull(answers))
+		answers = list()
+		R.menu_cond_answers = answers
+	var/known = answers[answer_key]
+	if(!isnull(known))
+		return known
+	known = op_cond(A, cond) ? TRUE : FALSE
+	answers[answer_key] = known
+	return known
+
 /proc/op_menu_decide_in(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/act/op/A)
 	if(length(P.conds))
 		GLOB.op_count_whens++
 	for(var/cond in op_conds_cheapest_first(P))
-		if(!op_cond(A, cond))
+		if(!op_menu_cond(R, A, cond))
 			return list("when", FALSE, FALSE, null, null)
 	if(op_path_reason(R, P, side, holder))
 		return list("path", TRUE, TRUE, null, null)

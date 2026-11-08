@@ -55,7 +55,7 @@
 					atom_count++
 			if(istype(T, /turf/simulated/floor) && istype(get_area(T), /area/generated_station))
 				breathable_floor_count++
-				TEST_ASSERT(abs(T.air.return_pressure() - ONE_ATMOSPHERE) < 5, "Seed [seed] contains an unpressurized generated floor")
+				TEST_ASSERT(abs(T.turf_air().return_pressure() - ONE_ATMOSPHERE) < 5, "Seed [seed] contains an unpressurized generated floor")
 		TEST_ASSERT(breathable_floor_count > 100, "Seed [seed] produced too little habitable station floor")
 		TEST_ASSERT(atom_count < 2500, "Seed [seed] exceeded the generated-station atom budget ([atom_count])")
 		var/list/owned_atoms = materialized.owned_furnishing_atoms.Copy()

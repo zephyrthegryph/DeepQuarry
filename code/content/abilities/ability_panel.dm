@@ -218,6 +218,9 @@ CAPABILITIES(/datum/ability_panel)
 	if(!player?.stat_panel?.is_ready())
 		log_input("Input: Abilities tab data for [player ? key_name(player) : "nobody"] not sent (stat panel not ready).")
 		return
+	// The sheet goes with the first push that has a picture from it (not on join).
+	if(ability_sheet_wanted(player.mob))
+		ability_sheet_send(player)
 	// A push whose data is what the tab shows (a resource moved less than its shown rounding) is dropped by the window.
 	player.stat_panel.send_message("update_abilities", payload(player.mob, player), same_key = "update_abilities")
 

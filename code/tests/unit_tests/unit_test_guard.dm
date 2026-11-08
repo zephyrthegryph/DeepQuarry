@@ -216,7 +216,7 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 		var/list/fresh = list()
 		for(var/i in changed)
 			var/turf/open/T = turfs[i]
-			var/datum/gas_mixture/air = QDELETED(T) ? null : T.air
+			var/datum/gas_mixture/air = QDELETED(T) ? null : T.turf_air()
 			airs[i] = air
 			fresh += air
 		vg_air_watch_rebind(snapshot["watch"], changed, fresh)
