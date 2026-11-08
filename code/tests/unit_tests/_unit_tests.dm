@@ -1329,6 +1329,7 @@
 #include "../benchmarks/op_resolve.dm"
 #include "../benchmarks/apc_flip.dm"
 #include "../benchmarks/machine_power_join.dm"
+#include "../benchmarks/machinery_steady.dm"
 #include "../benchmarks/station_explosion.dm"
 #include "../benchmarks/server_phases.dm"
 #include "../benchmarks/memory_report.dm"
