@@ -399,7 +399,6 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 				else
 					spent(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
 	dq_destroy_collect_end()
-	var/list/radios = list()
 	// If there was a zlevel above our origin and we own the ceiling, erase our ceiling now we're leaving (one load for all of it)
 	var/list/ceiling_erase = list()
 	if(ceiling_type && HasAbove(current_location().z))
@@ -428,8 +427,6 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 						M.status_at_least(STAT_WEAKENED, 3)
 						if(move_direction)
 							throw_a_mob(M,move_direction)
-		for(var/obj/item/radio/intercom/I in contents_of(A))
-			radios |= I
 
 	// Update our base turfs before we move, so that transparent turfs look good.
 	var/new_base = destination.base_turf || /turf/space
@@ -463,9 +460,6 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 	var/power_start = TICK_USAGE_REAL
 	SSmachines.power_reregister(moved_turfs)
 	log_world("SHUTTLE_MOVE_PROFILE: [src] to [destination]: translate_turfs [round(translate_ms, 0.1)] ms, power re-register of [length(moved_turfs)] turf(s) [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - power_start), 0.1)] ms")
-	for(var/obj/item/radio/intercom/I in radios)
-		if(istype(I))
-			I.update_broadcast_tiles()
 	// Adjust areas of mothershuttle so it doesn't try and bring us with it if it jumps while we aren't on it.
 	if(mothershuttle)
 		var/datum/shuttle/MS = shuttles_shuttles()[mothershuttle]

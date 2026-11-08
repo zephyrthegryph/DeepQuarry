@@ -193,3 +193,87 @@
 			return "dependency [D ? D.type : "deleted"] moved from generation [record[2]] to [D ? rx_of(D).act_gen : "-"]"
 	return "stored and valid: the key moved (actor [actor_state?.act_gen], target [target_state?.act_gen])"
 
+
+/// The Abilities tab's sprite sheet (code/content/abilities/ability_icons.dm): what building it costs, how big the download is, that every
+/// ability type's button picture is in it, and the per-push icon cost with it (a sprite name) against the single cached images.
+/datum/unit_test/dq_ui_push_cost_ability_sheet
+/datum/unit_test/dq_ui_push_cost_ability_sheet/Run()
+	var/built_at_boot = !!ability_sheet()
+	var/started = TICK_USAGE_REAL
+	var/datum/asset/spritesheet_batched/ability_icons/sheet = get_asset_datum(/datum/asset/spritesheet_batched/ability_icons)
+	var/ready_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	TEST_ASSERT(sheet?.fully_generated, "the abilities sheet is built")
+	if(!sheet?.fully_generated)
+		return
+	var/png_bytes = 0
+	for(var/size_id in sheet.sizes)
+		png_bytes += length(file("[SPRITESHEET_DIR][sheet.name]_[size_id].png"))
+	var/css_bytes = length(file("[SPRITESHEET_DIR]spritesheet_[sheet.name].css"))
+	var/missing = list()
+	var/checked = 0
+	for(var/datum/action/type as anything in typesof(/datum/action))
+		var/icon_file = initial(type.button_icon)
+		var/state = initial(type.button_icon_state)
+		if(!isfile(icon_file) || isnull(state))
+			continue
+		checked++
+		if(!sheet.icon_class_name(ability_sprite_id(ability_sheet_file_key(icon_file), state)))
+			missing += "[type] ([icon_file]:[state])"
+	TEST_NOTICE(src, "UI_PUSH_COST ability sheet: [built_at_boot ? "built at boot" : "built on first use in [round(ready_ms, 0.1)] ms"], [length(sheet.sprites)] sprites from [length(ability_sheet_files())] files, download [png_bytes] bytes png + [css_bytes] bytes css, [checked - length(missing)]/[checked] ability types' pictures in it")
+	if(length(missing))
+		TEST_NOTICE(src, "UI_PUSH_COST ability sheet: pictures not in their file: [jointext(missing, ", ")]")
+	// Per-push icon cost for the button pictures of a shadekin's abilities: the cached single image (key lookup and per-client send) before, the
+	// sprite name after.
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	H.add_shadekin(/datum/shadekin/full)
+	var/list/buttons = list()
+	for(var/datum/action/entry as anything in ordered_abilities(H))
+		if(entry.button_icon && !entry.ability_icon_source())
+			buttons += entry
+	TEST_ASSERT(length(buttons), "the shadekin has button pictures")
+	var/n = 50
+	started = TICK_USAGE_REAL
+	for(var/i in 1 to n)
+		for(var/datum/action/entry as anything in buttons)
+			CACHED3(icon_file_asset, entry.button_icon, isnull(entry.button_icon_state) ? "" : entry.button_icon_state, SOUTH)
+	var/before_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / n
+	started = TICK_USAGE_REAL
+	for(var/i in 1 to n)
+		for(var/datum/action/entry as anything in buttons)
+			sheet.icon_class_name(ability_sprite_id(ability_sheet_file_key(entry.button_icon), entry.button_icon_state))
+	var/after_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / n
+	TEST_NOTICE(src, "UI_PUSH_COST ability sheet: [length(buttons)] button pictures per push, single cached images [round(before_ms, 0.001)] ms (+ one asset send per picture per client), sheet sprites [round(after_ms, 0.001)] ms (the sheet sent once per client)")
+
+/// The inventory (strip) window of a dressed human: per push, every slot's picture as a base64 copy (before) against the cached icon state asset
+/// (after: its address, the picture sent to a client once). Measured without a client, so the after side is the cache lookup.
+/datum/unit_test/dq_ui_push_cost_inventory_icons
+/datum/unit_test/dq_ui_push_cost_inventory_icons/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
+	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/black(H), SLOT_ID_SHOES)
+	H.equip_to_slot_or_del(new /obj/item/clothing/gloves/black(H), SLOT_ID_GLOVES)
+	H.put_in_r_hand(new /obj/item/flashlight(H))
+	var/list/items = list()
+	for(var/obj/item/I in H.get_equipped_items())
+		items += I
+	TEST_ASSERT(length(items) >= 3, "the human wears what the window shows")
+	var/n = 10
+	var/bytes_before = 0
+	var/started = TICK_USAGE_REAL
+	for(var/i in 1 to n)
+		bytes_before = 0
+		for(var/obj/item/I as anything in items)
+			bytes_before += length(icon2base64(icon(I.icon, I.icon_state, frame = 1)))
+	var/before_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / n
+	for(var/obj/item/I as anything in items)
+		CACHED3(icon_file_asset, I.icon, isnull(I.icon_state) ? "" : I.icon_state, SOUTH)
+	var/bytes_after = 0
+	started = TICK_USAGE_REAL
+	for(var/i in 1 to n)
+		bytes_after = 0
+		for(var/obj/item/I as anything in items)
+			var/key = CACHED3(icon_file_asset, I.icon, isnull(I.icon_state) ? "" : I.icon_state, SOUTH)
+			bytes_after += length(SSassets.get_asset_url(key))
+	var/after_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / n
+	TEST_NOTICE(src, "UI_PUSH_COST inventory window: [length(items)] item pictures per push, base64 [round(before_ms, 0.001)] ms and [bytes_before] bytes, cached asset [round(after_ms, 0.001)] ms and [bytes_after] bytes")
+	TEST_ASSERT(after_ms < before_ms, "the cached pictures cost less per push than base64 copies")

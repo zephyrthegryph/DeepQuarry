@@ -169,10 +169,29 @@ export class InputHistory {
 export function nextChannel(
   channel: InputChannel,
   direction: 1 | -1 = 1,
+  available: readonly InputChannel[] = INPUT_CHANNELS,
 ): InputChannel {
-  const count = INPUT_CHANNELS.length;
-  const at = INPUT_CHANNELS.indexOf(channel);
-  return INPUT_CHANNELS[(at + direction + count) % count];
+  // Only what the server says the speaker can use now, in the row's order.
+  const usable = INPUT_CHANNELS.filter((c) => available.includes(c));
+  if (!usable.length) return channel;
+  const at = usable.indexOf(channel);
+  if (at < 0) return usable[direction === 1 ? 0 : usable.length - 1];
+  return usable[(at + direction + usable.length) % usable.length];
+}
+
+/** The server's channel list, kept to the ones the row knows; OOC when none is left. */
+export function parseAvailableChannels(value: unknown): InputChannel[] {
+  const rows = Array.isArray(value) ? value : [];
+  const known = INPUT_CHANNELS.filter((c) => rows.includes(c));
+  return known.length ? known : ['OOC'];
+}
+
+/** The channel to show when the available set changes: the current one if still usable, else the first usable. */
+export function settleChannel(
+  channel: InputChannel,
+  available: readonly InputChannel[],
+): InputChannel {
+  return available.includes(channel) ? channel : (available[0] ?? 'OOC');
 }
 
 export function isChannel(value: unknown): value is InputChannel {
@@ -279,8 +298,8 @@ export class ChatInputModel {
     return text;
   }
 
-  step(direction: 1 | -1): void {
-    this.setChannel(nextChannel(this.channel, direction));
+  step(direction: 1 | -1, available?: readonly InputChannel[]): void {
+    this.setChannel(nextChannel(this.channel, direction, available));
   }
 
   /** The text changed: tell the server the player is typing, at most every few seconds. */

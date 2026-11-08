@@ -4,6 +4,7 @@
  */
 import './statpanel.scss';
 
+import { loadMappings, loadStyleSheet } from 'common/assets';
 import { createRoot } from 'react-dom/client';
 import { App, PanelBoundary } from './App';
 import { dockHost } from './dockHost';
@@ -68,7 +69,18 @@ function restoreFocus(event: Event) {
 document.addEventListener('mouseup', restoreFocus);
 document.addEventListener('keyup', restoreFocus);
 
+// Sprite sheets the server sends this page (the abilities sheet: code/content/abilities/ability_icons.dm).
+const assetMap: Record<string, string> = {};
+
 Byond.subscribe((type: string, payload: any) => {
+  if (type === 'asset/stylesheet') {
+    loadStyleSheet(payload);
+    return;
+  }
+  if (type === 'asset/mappings') {
+    loadMappings(payload, assetMap);
+    return;
+  }
   if (type === 'dock/preview') {
     applyDockPreview(payload);
     return;

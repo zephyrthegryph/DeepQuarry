@@ -16,3 +16,6 @@ export const languageRulesAtom = atom<LanguageRules | null>(null);
 
 /** Whether the live preview shows (sent with the rules; always on today). */
 export const previewEnabledAtom = atom(true);
+
+/** The channels the speaker can use now (chat/channels): the lobby has OOC only. OOC until the server says. */
+export const availableChannelsAtom = atom<InputChannel[]>(['OOC']);

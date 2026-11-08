@@ -998,6 +998,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	switch(type)
 		if("Update-Verbs")
 			init_verbs()
+			ability_sheet_send(src) // the button pictures, once per panel (code/content/abilities/ability_icons.dm)
 			mob?.abilities_changed() // the panel is ready to show the Abilities tab
 		if("Remove-Tabs")
 			panel_tabs -= payload["tab"]
