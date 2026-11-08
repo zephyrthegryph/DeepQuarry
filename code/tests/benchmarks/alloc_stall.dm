@@ -21,6 +21,9 @@
 	probe("datums", param("datums", 400000), stall_ms, base_datums)
 	probe("strings", param("strings", 1000000), stall_ms, 0)
 	probe("lists", param("lists", 400000), stall_ms, 0)
+	probe("contract_context", param("events", 8000), stall_ms, 0)
+	probe("contract_events", param("events", 8000), stall_ms, 0)
+	probe("plain_events", param("events", 8000), stall_ms, 0)
 
 /datum/benchmark/alloc_stall/proc/probe(kind, count, stall_ms, base)
 	var/list/keep = new /list(count)
@@ -36,6 +39,12 @@
 				keep[i] = "alloc-stall-[i]-[world.time]"
 			if("lists")
 				keep[i] = list(i)
+			if("contract_context")
+				keep[i] = list("department" = DEPARTMENT_ENGINEERING, "atom_id" = i, "fact_id" = "probe:[i]", "metrics" = list("damage_amount" = i))
+			if("contract_events")
+				keep[i] = new /datum/contract_event(CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, null, null, null, list("department" = DEPARTMENT_ENGINEERING, "atom_id" = i, "fact_id" = "probe:[i]", "metrics" = list("damage_amount" = i)), "probe:[i]:1")
+			if("plain_events")
+				keep[i] = new /datum/contract_event
 		var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - before)
 		if(ms > worst)
 			worst = ms
