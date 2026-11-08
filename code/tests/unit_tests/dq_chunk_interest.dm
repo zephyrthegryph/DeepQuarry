@@ -6,8 +6,19 @@
 	name = "interest probe"
 	var/shown = 0
 
-/// A probe in the utility band of the plating plane: what an intact floor covers (a pipe, a cable), with nothing of its own saying so.
+/// A probe in the utility band of the plating plane that hides under intact tiles the way a pipe does (hide_under_floor()): what a floor covers.
 /obj/dq_interest_probe/underfloor
+	plane = PLATING_PLANE
+	layer = PIPES_LAYER
+
+/obj/dq_interest_probe/underfloor/hides_under_flooring()
+	return TRUE
+
+/obj/dq_interest_probe/underfloor/hide(i)
+	hide_under_floor(src, i)
+
+/// A probe drawn in the same band that stays visible on intact tiles (an atmos device, a connector): nothing covers it.
+/obj/dq_interest_probe/band_visible
 	plane = PLATING_PLANE
 	layer = PIPES_LAYER
 
@@ -511,7 +522,9 @@
 	var/obj/structure/closet/locker = allocate(/obj/structure/closet, floor)
 	var/obj/dq_interest_probe/boxed = allocate(/obj/dq_interest_probe, locker)
 	var/obj/dq_interest_probe/unseen = allocate(/obj/dq_interest_probe, floor)
+	floor.levelupdate() // the tiles hide the piped probe, as they hide a pipe laid under them
 	refresh_flush()
+	TEST_ASSERT(piped.invisibility >= INVISIBILITY_ABSTRACT, "the piped probe is hidden under the tiles")
 	unseen.set_invisibility(INVISIBILITY_ABSTRACT)
 	set_global(nameof(GLOB.interest_defer_marks), TRUE)
 	for(var/obj/dq_interest_probe/probe as anything in list(piped, boxed, unseen))
@@ -525,6 +538,7 @@
 	TEST_ASSERT(GLOB.interest_unperceivable_skipped > skipped, "and the skips are counted")
 	TEST_ASSERT(!length(interest_view_owing("dq-test-viewer")), "nothing a viewer could perceive is left owing")
 	// The reveals: the tiles come up, the probe leaves its locker, its invisibility drops.
+	var/datum/decl/flooring/tiles = floor.flooring
 	floor.make_plating()
 	boxed.forceMove(floor)
 	unseen.set_invisibility(0)
@@ -532,3 +546,39 @@
 	for(var/obj/dq_interest_probe/probe as anything in list(piped, boxed, unseen))
 		TEST_ASSERT(!probe.refresh_queued, "[probe] ([probe.type]) draws when it is revealed")
 		TEST_ASSERT(!isnull(probe.rx?.look_key), "and has a look")
+	floor.install_flooring(tiles) // the shared test floor gets its tiles back
+
+/// The floor covers only what it hides today: a thing drawn in the utility band that stays visible on intact tiles (an atmos device, a connector) is drawn
+/// when its chunk is seen, like anything else in view.
+/datum/unit_test/dq_interest_cover_spares_visible_band
+
+/datum/unit_test/dq_interest_cover_spares_visible_band/Run()
+	interest_isolate()
+	var/turf/simulated/floor/floor = test_floor()
+	TEST_ASSERT(istype(floor) && !floor.is_plating(), "the test floor has tiles on")
+	var/obj/dq_interest_probe/band = allocate(/obj/dq_interest_probe/band_visible, floor)
+	refresh_flush()
+	TEST_ASSERT(!floor.cover_hides(band), "a visible thing in the band is not covered")
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	rx_of(band).look_key = null
+	band.refresh_queued = DEP_PARKED
+	interest_view_set("dq-test-viewer", floor, null, world.view)
+	refresh_flush()
+	TEST_ASSERT(!band.refresh_queued, "it draws when its chunk is seen")
+	TEST_ASSERT(!isnull(band.rx?.look_key), "and has a look")
+
+/// Over the whole map, no atom visible today (below abstract invisibility) is reported covered by its turf. Run with --full-map for the station.
+/datum/unit_test/dq_interest_cover_hides_nothing_visible
+
+/datum/unit_test/dq_interest_cover_hides_nothing_visible/Run()
+	var/checked = 0
+	var/list/wrong = list()
+	for(var/turf/T in world)
+		for(var/atom/movable/A as anything in T.contents)
+			if(A.invisibility >= INVISIBILITY_ABSTRACT)
+				continue
+			checked++
+			if(T.cover_hides(A) && length(wrong) < 20)
+				wrong += "[A.type] at [T.x],[T.y],[T.z]"
+	log_world("dq_interest_cover_hides_nothing_visible: [checked] visible atoms checked, [length(wrong)] covered")
+	TEST_ASSERT(!length(wrong), "visible atoms reported covered: [jointext(wrong, "; ")]")
