@@ -402,3 +402,56 @@
 	if(fixed)
 		var/area/FA2 = fixed.loc
 		TEST_ASSERT(!(white in fixed.underlays) && !client_glow_area_white(FA2), "DM lighting again: the white tile is gone")
+
+/// Planet sunlight under client lighting: an outdoor turf shows its level's overhead sun tile (under the glows), a turf near the
+/// outdoors the shade tile, a turf the sun cannot reach none; the gameplay light level follows; switching back to DM lighting
+/// takes the tiles away.
+/datum/unit_test/dq_client_lighting_sunlight
+
+/datum/unit_test/dq_client_lighting_sunlight/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	var/turf/simulated/T = run_loc_floor_bottom_left
+	TEST_ASSERT(istype(T), "the test floor is simulated")
+	var/datum/simple_sun/sun = new
+	sun.set_brightness(1)
+	sun.color = "#FFFFFF"
+	var/datum/planet_sunlight_handler/P = new(sun)
+	P.update_sun()
+	var/list/zmap = SSlighting.z_to_pshandler
+	var/had = length(zmap) >= T.z ? zmap[T.z] : null
+	SSlighting.register_sunlight_z(T.z, P)
+	var/datum/sunlight_handler/S = T.shandler
+	var/made = FALSE
+	if(!S)
+		rel_set(T, nameof(T.shandler), new /datum/sunlight_handler(T))
+		S = T.shandler
+		made = TRUE
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	S.sunlight = SUNLIGHT_OVERHEAD
+	S.client_sun_apply()
+	TEST_ASSERT(P.vis_overhead in T.vis_contents, "an outdoor turf shows the overhead sun tile")
+	TEST_ASSERT(P.vis_overhead.layer < (BACKGROUND_LAYER + 22), "the sun tile lies under the glows")
+	TEST_ASSERT(P.vis_overhead.plane == PLANE_LIGHTING, "the sun tile is on the lighting plane, over its black base")
+	var/lit = T.get_lumcount()
+	TEST_ASSERT(lit > 0.5, "an outdoor turf in full sun is bright for gameplay ([lit])")
+	S.sunlight = TRUE
+	S.client_sun_apply()
+	TEST_ASSERT(!(P.vis_overhead in T.vis_contents) && (P.vis_shade in T.vis_contents), "a turf near the outdoors shows the shade tile instead")
+	var/shaded = T.get_lumcount()
+	TEST_ASSERT(shaded > 0 && shaded < lit, "the shade is dimmer than full sun ([shaded] < [lit])")
+	S.sunlight = FALSE
+	S.client_sun_apply()
+	TEST_ASSERT(!(P.vis_shade in T.vis_contents) && !(P.vis_overhead in T.vis_contents), "a turf the sun cannot reach shows no sun tile")
+	S.sunlight = SUNLIGHT_OVERHEAD
+	S.client_sun_apply()
+	log_test("CLIENT SUNLIGHT: overhead [lit], shade [shaded], [client_sun_switched()] sunlit turf(s) on the switch pass")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT(!(P.vis_overhead in T.vis_contents), "DM lighting: the client sun tile is gone")
+	S.sunlight = FALSE
+	zmap[T.z] = had
+	if(made)
+		var/datum/sunlight_handler/gone = T.shandler
+		rel_clear(T, nameof(T.shandler))
+		qdel(gone)

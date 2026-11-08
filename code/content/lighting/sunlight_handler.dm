@@ -231,6 +231,8 @@ CAPABILITIES(/datum/sunlight_handler)
 			member_leave(SUNLIGHT_AWAKE_KEY, src, all = TRUE)
 		else
 			member_join(SUNLIGHT_AWAKE_KEY, src)
+	if(GLOB.client_lighting || client_sun)
+		client_sun_apply() // client lighting shows the sun tile itself (client_sunlight.dm)
 
 /datum/sunlight_handler/proc/sunlight_update()
 	var/list/corners = list(holder.lighting_corner_NE,holder.lighting_corner_NW,holder.lighting_corner_SE,holder.lighting_corner_SW)

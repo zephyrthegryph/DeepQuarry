@@ -97,7 +97,7 @@
 /turf/proc/get_lumcount(minlum = 0, maxlum = 1)
 	// Client lighting: no corners; the level is worked out from the glowing lights in reach (client_light_level.dm).
 	if(GLOB.client_lighting && SSlighting.is_initialized() && has_dynamic_lighting())
-		return CLAMP01((client_light_level(src) - minlum) / (maxlum - minlum) + dynamic_lumcount)
+		return CLAMP01((client_light_level(src) + client_sun_lum() - minlum) / (maxlum - minlum) + dynamic_lumcount)
 	if (!lighting_object && (!SSlighting.is_initialized() || !has_dynamic_lighting()))
 		return 1
 
@@ -197,3 +197,10 @@
 
 
 
+
+/// The light the sun gives this turf under client lighting (client_sunlight.dm); only a simulated turf carries a sunlight handler.
+/turf/proc/client_sun_lum()
+	return 0
+
+/turf/simulated/client_sun_lum()
+	return shandler ? shandler.client_sun_level() : 0

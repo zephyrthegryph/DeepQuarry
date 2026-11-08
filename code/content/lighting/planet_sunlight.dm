@@ -113,6 +113,7 @@ CAPABILITIES(/datum/planet_sunlight_handler)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "white"
 	plane = PLANE_LIGHTING
+	layer = BACKGROUND_LAYER + 21.5 // over client lighting's black base, under its glows (client_sunlight.dm)
 	mouse_opacity = 0
 	alpha = 255
 	color = "#FFFFFF"

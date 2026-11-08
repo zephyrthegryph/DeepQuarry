@@ -95,6 +95,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	if(!SSlighting.is_initialized())
 		return
 	client_glow_whites_set(on) // turfs outside dynamic lighting stay bright over the base
+	client_sun_switched() // sunlit turfs show their level's sun tile (client_sunlight.dm)
 	var/list/all_turfs = block(locate(1, 1, 1), locate(world.maxx, world.maxy, world.maxz))
 	if(on)
 		for(var/turf/T as anything in all_turfs)
