@@ -186,9 +186,6 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	if(istype(T) && !T.is_plating())
 		hide(1)
 
-/obj/structure/safe/floor/hide(intact)
-	hide_under_floor(src, intact)
-
 /obj/structure/safe/floor/hides_under_flooring()
 	return 1
 

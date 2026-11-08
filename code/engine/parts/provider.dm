@@ -145,12 +145,26 @@
 	var/list/provs = memo[2]
 	var/list/conds = memo[3]
 	var/list/acts = memo[4]
+	// The same when() block guards several providers (a species' hands() reached through more than one grant): each block is asked once.
+	var/list/answered = null
 	for(var/i in 1 to length(provs))
 		var/datum/activation/granted_by = acts[i]
 		if(granted_by && (granted_by.dead || !granted_by.runs))
 			continue
 		var/list/whens = conds[i]
-		if(!length(whens) || op_whens_hold(D, whens))
+		if(!length(whens))
+			into += provs[i]
+			continue
+		var/whens_key = ""
+		for(var/datum/entry/W as anything in whens)
+			whens_key += "[REF(W)],"
+		if(isnull(answered))
+			answered = list()
+		var/known = answered[whens_key]
+		if(isnull(known))
+			known = op_whens_hold(D, whens) ? TRUE : FALSE
+			answered[whens_key] = known
+		if(known)
 			into += provs[i]
 
 /// Every provider `D` could give, its when() blocks and the activation that brought it (null for the table's own), in collection order: interned on
@@ -303,7 +317,26 @@
 /// Whether an op of `plan` can reach `target`: the provider that does it (a /datum/prov), null when it reaches with no provider, else the reason
 /// it cannot (a /datum/msg type or text). Providers are the actor's and the held item's now; nothing is allocated.
 /// `provs`, when given, is providers_for(actor, held) already read (a resolution reads it once for all its candidates).
-/proc/reach_gate(mob/actor, atom/target, obj/held, datum/op_plan/P, datum/entry/part/bind/B, authority, list/provs = null)
+/// The providers in `provs` that fit a (need, authority, policy), and the one that would perform it, as list(fitting providers, best). A resolution
+/// asks the gate for every candidate and the fit depends only on these, so with a `memo` (the resolution's own list) it is worked out once each.
+/proc/reach_gate_fitting(list/provs, need, authority, policy, obj/held, obj/carrier, list/memo)
+	var/key = memo ? "[need]|[authority]|[policy]" : null
+	var/list/known = key ? memo[key] : null
+	if(known)
+		return known
+	var/list/fitting = list()
+	var/datum/prov/best = null
+	for(var/datum/prov/V as anything in provs)
+		if(!reach_gate_fits(V, need, authority, policy, held))
+			continue
+		fitting += V
+		best = reach_better_provider(best, V, held, carrier)
+	known = list(fitting, best)
+	if(key)
+		memo[key] = known
+	return known
+
+/proc/reach_gate(mob/actor, atom/target, obj/held, datum/op_plan/P, datum/entry/part/bind/B, authority, list/provs = null, list/fit_memo = null)
 	var/policy = op_reach_policy(P, B)
 	var/need = op_affordance(P, B, held)
 	if(isnull(provs))
@@ -315,13 +348,10 @@
 		authority &= isnull(chosen_authority) ? B.authority_mask() : chosen_authority
 	// The providers that fit (the affordance, the authority, what they carry), and the one of them that would perform it.
 	var/obj/carrier = length(provs) ? actor?.held_carrier() : null
-	var/fits = 0
-	var/datum/prov/best = null
-	for(var/datum/prov/V as anything in provs)
-		if(!reach_gate_fits(V, need, authority, policy, held))
-			continue
-		fits++
-		best = reach_better_provider(best, V, held, carrier)
+	var/list/known = reach_gate_fitting(provs, need, authority, policy, held, carrier, fit_memo)
+	var/list/fitting = known[1]
+	var/fits = length(fitting)
+	var/datum/prov/best = known[2]
 	if(need && !fits)
 		return /datum/msg/op/no_hands
 	// Distance (REACH_ADJACENT only), then exposure (every spatial policy), then each op's own provider.
@@ -342,9 +372,7 @@
 					return /datum/msg/op/unreachable
 			else
 				var/datum/prov/best_able = null
-				for(var/datum/prov/V as anything in provs)
-					if(!reach_gate_fits(V, need, authority, policy, held))
-						continue
+				for(var/datum/prov/V as anything in fitting)
 					var/range = V.reach()
 					if(isnull(range) || range < dist)
 						continue

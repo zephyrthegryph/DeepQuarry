@@ -4,21 +4,17 @@
 // path, is it a map resolver. Those are facts of the type. The plan is their CTOR_* bits (code/defines/engine/ctor_plan.dm), one number per type,
 // built once; InitAtom() fetches it once and the steps below it read it from ctor_plan_current, so an atom answers the questions from one lookup
 // and skips every step it has nothing for. A plan is built only once the declaration globals exist (init_plan_of() answers); before that every
-// step takes its old path, and so it does with ctor_plan_off set (a debug toggle; dq_init_plan_parity proves both leave an instance alike).
+// step takes its old path. dq_init_plan_parity compares the plan path against a recorded state of the path before plans (E7).
 
 /// type -> its CTOR_* bits (CTOR_PLANNED always set). A real global: atoms initialize while the globals are still being made.
 GLOBAL_REAL_VAR(list/ctor_plans)
 /// The CTOR_* bits of the atom whose Initialize() chain InitAtom() runs (GLOB.atom_initializing's), or 0. Saved and restored around a nested init.
 GLOBAL_REAL_VAR(ctor_plan_current) = 0
-/// TRUE runs every step's old per-type lookups (parity tests, debugging).
-GLOBAL_REAL_VAR(ctor_plan_off) = FALSE
 /// Plans built (the bench reads it).
 GLOBAL_REAL_VAR(ctor_plans_built) = 0
 
 /// The CTOR_* bits of A's type, or 0 while they cannot be worked out yet (the steps take their old path then).
 /proc/ctor_plan_of(atom/A)
-	if(ctor_plan_off)
-		return 0
 	var/bits = ctor_plans?[A.type]
 	if(bits)
 		return bits

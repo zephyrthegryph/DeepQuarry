@@ -55,3 +55,43 @@
 	TEST_ASSERT(vg_topology_matches(T), "the turf's datum names its field cell")
 	TEST_ASSERT(abs(air.return_pressure() - before) < 0.5, "the new datum reads the cell's gas ([air.return_pressure()] kPa, was [before])")
 	TEST_ASSERT(T.turf_air() == air, "a second read returns the same datum")
+
+/// A z-level made while the round runs registers its turfs in one call from the turf grid: its space is in the arena as
+/// immutable vacuum, cold, sharing air with its neighbours, without each turf registering itself.
+/datum/unit_test/dq_new_level_registers_in_bulk
+
+/datum/unit_test/dq_new_level_registers_in_bulk/Run()
+	var/z = world.increment_max_z()
+	var/turf/T = locate(round(world.maxx / 2), round(world.maxy / 2), z)
+	TEST_ASSERT(istype(T, /turf/space), "the new level is space")
+	TEST_ASSERT(vg_topology_matches(T), "the new level's space is in the air arena")
+	TEST_ASSERT(vg_atmos_open_dirs(T) & EAST, "space shares air with the space beside it")
+	TEST_ASSERT(T.return_air().return_pressure() < 1, "the new level's space is vacuum")
+	TEST_ASSERT(T.get_temperature() < 10, "the new level's space is cold ([T.get_temperature()] K)")
+
+/// A level a map load makes (MAP_LOAD_NEW_Z) ends with its space in the arena and its loaded turfs registered.
+/datum/unit_test/dq_new_level_load_registers_space
+
+/datum/unit_test/dq_new_level_load_registers_space/Run()
+	test_driver_begin()
+	var/datum/map_template/expedition_site/template = new
+	var/datum/map_load/M = new(template, MAP_LOAD_NEW_Z, FALSE)
+	var/t0 = REALTIMEOFDAY
+	var/alone_before = GLOB.air_turfs_registered_alone
+	while(M.advance(TRUE) == JOB_MORE)
+		continue
+	var/z = M.new_z
+	TEST_ASSERT(M.result && z, "the load made its level")
+	var/alone = GLOB.air_turfs_registered_alone - alone_before
+	log_test("AIR_NEW_LEVEL: load_new_z took [(REALTIMEOFDAY - t0) / 10]s; [alone] turf(s) of [world.maxx * world.maxy] registered one at a time")
+	TEST_ASSERT(alone < world.maxx * world.maxy / 4, "[alone] turfs of the new level registered one at a time: its space should register with the level")
+	var/checked = 0
+	for(var/turf/T in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
+		if(!(T.flags & ATOM_INITIALIZED))
+			continue
+		if(istype(T, /turf/space) || (istype(T, /turf/open) && !T.blocks_air))
+			TEST_ASSERT(vg_topology_matches(T), "[T.type] at [T.x],[T.y],[T.z] is not in the air arena after the level loaded")
+			if(++checked >= 400)
+				break
+	TEST_ASSERT(checked > 0, "nothing on the new level to check")
+	test_driver_end()

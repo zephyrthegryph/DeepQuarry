@@ -7,7 +7,7 @@
 /// Called from the lifecycle's init step for a type whose table has any (own_table.engine_init).
 /proc/engine_holder_init(datum/holder, mapload)
 	var/datum/type_table/T = table_of(holder)
-	var/datum/init_plan/P = GLOB.init_plan_off ? null : init_plan_of(holder, T)
+	var/datum/init_plan/P = init_plan_of(holder, T) // null only while the declaration globals are still being made: the discovery below runs then
 	if(P)
 		engine_holder_init_planned(holder, mapload, T, P)
 		return
@@ -40,7 +40,7 @@
 	var/datum/type_table/T = table_of(holder)
 	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
 		lifeform_preinit(holder, mapload) // params, per_type tables, rolls: before the parent's init code reads them
-	var/datum/init_plan/P = GLOB?.init_plan_off ? null : init_plan_of(holder, T)
+	var/datum/init_plan/P = init_plan_of(holder, T)
 	if(P)
 		for(var/datum/capability/def as anything in P.preinit_caps)
 			def.run_holder_hook(holder, mapload, HOLDER_HOOK_PREINIT)

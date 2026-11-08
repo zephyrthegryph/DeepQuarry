@@ -249,12 +249,14 @@ ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
 /// and `notify` publishes the area's own observer_apc notice. Returns TRUE when a channel flipped.
 /area/proc/set_channels(equip_on, light_on, environ_on, notify = TRUE)
 	var/flipped = FALSE
+	draw_hop_batch_begin() // the draws that read the channels through the area hop: one walk of the area for all three
 	if(set_power_equip(!!equip_on))
 		flipped = TRUE
 	if(set_power_light(!!light_on))
 		flipped = TRUE
 	if(set_power_environ(!!environ_on))
 		flipped = TRUE
+	draw_hop_batch_end()
 	if(flipped && notify)
 		PUBLISH(src, observer_apc)
 	return flipped

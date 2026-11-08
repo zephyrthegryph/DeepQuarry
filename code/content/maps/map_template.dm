@@ -67,8 +67,8 @@ CAPABILITIES(/datum/map_template)
 	if(!istext(path))
 		return null
 	var/list/entry = bounds_by_path[replacetext(path, "\\", "/")]
-	// The size from the file's metadata (vg_file_size()): length(file(path)) read every map whole, ~1 ms each for 189 templates at boot.
-	if(length(entry) != 7 || vg_file_size(path) != entry[7])
+	// The size from the file's metadata (file_size_on_disk()): length(file(path)) read every map whole, ~1 ms each for 189 templates at boot.
+	if(length(entry) != 7 || file_size_on_disk(path) != entry[7])
 		return null
 	return entry.Copy(1, 7)
 

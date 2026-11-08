@@ -5,6 +5,7 @@
 /datum/unit_test/dq_client_lighting_toggle
 
 /datum/unit_test/dq_client_lighting_toggle/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
 	SSlighting.light_step(0, TRUE)
@@ -44,6 +45,7 @@
 /datum/unit_test/dq_client_lighting_shadows
 
 /datum/unit_test/dq_client_lighting_shadows/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
 	var/turf/T = run_loc_floor_bottom_left
 	var/turf/east1 = locate(T.x + 1, T.y, T.z)
 	var/turf/east2 = locate(T.x + 2, T.y, T.z)
@@ -95,3 +97,66 @@
 	SSlighting.queue_source(S)
 	SSlighting.light_step(0, TRUE) // must return
 	TEST_ASSERT(!(S in SSlighting.sources_queue), "the deleted source left the queue")
+
+/// The gameplay light level under client lighting tracks the corner engine's: next to a fixture both are bright and close,
+/// far away and behind a wall both are dark.
+/datum/unit_test/dq_client_light_level_parity
+
+/datum/unit_test/dq_client_light_level_parity/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	var/list/probes = list()
+	for(var/dx in 0 to 3)
+		var/turf/P = locate(T.x + dx, T.y, T.z)
+		if(P && !P.directional_opacity)
+			probes += P
+	TEST_ASSERT(length(probes) >= 2, "the test room has open floor east of the fixture")
+	// A floor out of the fixture's reach: whatever else lights it, both engines agree.
+	var/turf/far = locate(min(world.maxx, T.x + 12), T.y, T.z)
+	if(far && !far.directional_opacity)
+		probes += far
+	var/list/old_levels = list()
+	for(var/turf/P as anything in probes)
+		old_levels += P.get_lumcount()
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/list/report = list()
+	for(var/i in 1 to length(probes))
+		var/turf/P = probes[i]
+		var/now = P.get_lumcount()
+		report += "+[P.x - T.x]: corners [round(old_levels[i], 0.01)] / client [round(now, 0.01)]"
+		TEST_ASSERT(abs(now - old_levels[i]) <= 0.2, "light level at +[P.x - T.x] differs too much: corner engine [old_levels[i]], client [now]")
+	log_test("CLIENT LIGHT LEVEL: [jointext(report, "; ")]")
+	TEST_ASSERT(probes[1].get_lumcount() > 0.3, "the fixture's own floor is lit under client lighting")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// A lum band watched on a floor under client lighting moves when a light comes on beside it and when it goes again (the
+/// shadow mask rebuild reports the watched turfs it covers).
+/datum/unit_test/dq_client_lighting_lum_watch
+
+/datum/unit_test/dq_client_lighting_lum_watch/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	var/turf/T = run_loc_floor_bottom_left
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/list/levels = list(0.6)
+	var/dark_band = watched(T, WATCH_LUM, levels)
+	SSwatched.arm_pending(0)
+	TEST_ASSERT(watched_armed(T, WATCH_LUM, levels), "the read armed a lum band under client lighting")
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	SSwatched.arm_pending(0)
+	var/list/rows = SSwatched.lum_rows(T)
+	var/list/row = rows[jointext(levels, ",")]
+	TEST_ASSERT(T.get_lumcount() > 0.6, "the fixture lights its floor ([T.get_lumcount()])")
+	TEST_ASSERT(row[2] != dark_band, "the band moved when the light came on (band [row[2]], dark [dark_band])")
+	qdel(L)
+	SSlighting.light_step(0, TRUE)
+	SSwatched.arm_pending(0)
+	row = SSwatched.lum_rows(T)[jointext(levels, ",")]
+	TEST_ASSERT_EQUAL(row[2], watched_band(T.get_lumcount(), levels), "the band follows the level once the light is gone")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
