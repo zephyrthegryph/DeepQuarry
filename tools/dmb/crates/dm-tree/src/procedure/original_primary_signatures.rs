@@ -41,7 +41,9 @@ fn retained_signature_bytes(signature: &CompletedSignatureCore, tail: Option<&Co
     };
     add(tail.map_or(Some(0), |tail| vec_payload(&tail.declarations)))?;
     add(Some(signature.original_clauses.allocated_bytes()))?;
-    add(arc_payload::<dm_ir::Parameter>(signature.parameters.len()))?;
+    if !signature.shared_parameters {
+        add(arc_payload::<dm_ir::Parameter>(signature.parameters.len()))?;
+    }
     for parameter in signature.parameters.iter() {
         for expression in [&parameter.default, &parameter.input_annotation, &parameter.source_expression].into_iter().flatten() {
             add(arc_payload::<dm_ir::ExpressionToken>(expression.tokens.len()))?;
@@ -89,7 +91,7 @@ impl CompletedSignature {
             original_clauses_complete } = self;
         let dm_ir::ProcedureSignature { parameters, variadic, return_annotation } = signature;
         let core = CompletedSignatureCore {
-            parameters, variadic, formal_notices_complete, original_clauses, original_clauses_complete,
+            parameters, variadic, formal_notices_complete, original_clauses, original_clauses_complete, shared_parameters:false,
         };
         let tail = if declarations.capacity() != 0 || return_annotation.is_some() {
             Some(CompletedSignatureTail { declarations, return_annotation })
@@ -106,6 +108,7 @@ struct CompletedSignatureCore {
     variadic: bool,
     formal_notices_complete: bool,
     original_clauses_complete: bool,
+    shared_parameters: bool,
 }
 #[derive(Default)]
 struct CompletedSignatureTail {
@@ -266,6 +269,8 @@ struct SignatureRetentionTrace {
     wide_header_buffer_bytes: usize,
     completed_header_bytes: usize,
     reconciliation_floor_bytes: usize,
+    pooled_plain_parameter_hits:usize,
+    pooled_plain_parameter_bytes:usize,
     above_floor_rows: usize,
     above_floor_bytes: usize,
     unavailable_floor_rows: usize,
@@ -500,10 +505,57 @@ impl CompletedProducers {
     }
 }
 
+const PLAIN_PARAMETER_BANK_SLOTS: usize = 128;
+struct PlainParameterBank {
+    entries: Vec<Option<Arc<[dm_ir::Parameter]>>>,
+    _credit: dm_syntax::SettingRootLease,
+}
+impl PlainParameterBank {
+    fn try_new(a: &SettingAdmission<'_>) -> std::io::Result<Option<Self>> {
+        let bytes=PLAIN_PARAMETER_BANK_SLOTS * std::mem::size_of::<Option<Arc<[dm_ir::Parameter]>>>();
+        let Some(credit)=a.try_reserve_optimization(bytes)
+            .map_err(|proxy|a.take_operational_error().unwrap_or(proxy))? else { return Ok(None); };
+        let mut entries=Vec::new();
+        entries.try_reserve_exact(PLAIN_PARAMETER_BANK_SLOTS)
+            .map_err(|error|std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))?;
+        if entries.capacity()!=PLAIN_PARAMETER_BANK_SLOTS { return Err(std::io::ErrorKind::OutOfMemory.into()); }
+        entries.resize_with(PLAIN_PARAMETER_BANK_SLOTS,||None);
+        Ok(Some(Self {entries,_credit:credit}))
+    }
+
+    fn key(parameters:&[dm_ir::Parameter]) -> Option<usize> {
+        if parameters.is_empty() || parameters.len()>8 { return None; }
+        let mut hash=0xcbf29ce484222325u64;
+        for row in parameters {
+            if row.declared_type.is_some() || row.list_element_type.is_some() || row.flags!=0
+                || row.array.is_some() || row.default.is_some() || row.input_annotation.is_some()
+                || row.source_expression.is_some()
+            { return None; }
+            for value in [row.name.bits(),row.relative_span.start as u64,row.relative_span.end as u64] {
+                hash=(hash^value).wrapping_mul(0x100000001b3);
+            }
+        }
+        Some(hash as usize % PLAIN_PARAMETER_BANK_SLOTS)
+    }
+
+    fn share(&mut self, key:usize, parameters:&mut Arc<[dm_ir::Parameter]>) -> bool {
+        let entry=&mut self.entries[key];
+        if let Some(owner)=entry.as_ref().filter(|old|old.as_ref()==parameters.as_ref()) {
+            drop(std::mem::replace(parameters,Arc::clone(owner)));
+            true
+        } else {
+            *entry=Some(Arc::clone(parameters));
+            false
+        }
+    }
+}
+
 struct CompletedSignatureRows {
     // Order is important. Backing allocations precede header leases that
     // fund them. The first trivial header funds this one actual empty Arc.
     empty_parameters: Option<Arc<[dm_ir::Parameter]>>,
+    plain_parameter_bank: Option<PlainParameterBank>,
+    plain_parameter_bank_attempted: bool,
     payloads: FundedRowPages<Option<CompletedSignatureCore>, COMPLETED_SIGNATURE_PAGE_LEN>,
     payload_tails: FundedRowPages<SparseSignatureTail, 32>,
     rows: FundedRowPages<Row, COMPLETED_SIGNATURE_PAGE_LEN>,
@@ -528,6 +580,8 @@ impl CompletedSignatureRows {
     fn new() -> Self {
         Self {
             empty_parameters: None,
+            plain_parameter_bank:None,
+            plain_parameter_bank_attempted:false,
             payloads: FundedRowPages::new(),
             payload_tails: FundedRowPages::new(),
             rows: FundedRowPages::new(),
@@ -646,11 +700,28 @@ impl CompletedSignatureRows {
         }
         let ordinal = self.payloads.len();
         let slot = SignatureSlot::payload(ordinal)?;
-        let (core, tail) = signature.into_core_and_tail();
+        let (mut core, tail) = signature.into_core_and_tail();
         // The in-flight header still owns the actual IR allocations. Admit
         // both row buffers before either payload entry is published.
         self.payloads.ensure_slot(a)?;
         if tail.is_some() { self.payload_tails.ensure_slot(a)?; }
+        if let Some(key)=PlainParameterBank::key(&core.parameters) {
+            if !self.plain_parameter_bank_attempted {
+                self.plain_parameter_bank=PlainParameterBank::try_new(a)?;
+                self.plain_parameter_bank_attempted=true;
+            }
+            if let Some(bank)=&mut self.plain_parameter_bank {
+                // The first issued backing stays funded by its original
+                // header's aggregate lease, even after bank eviction.
+                core.shared_parameters=bank.share(key,&mut core.parameters);
+                #[cfg(debug_assertions)]
+                if core.shared_parameters {
+                    self.payload_trace.pooled_plain_parameter_hits+=1;
+                    self.payload_trace.pooled_plain_parameter_bytes+=arc_payload::<dm_ir::Parameter>(core.parameters.len())
+                        .expect("existing plain parameter Arc geometry");
+                }
+            }
+        }
         if let Some(tail) = tail {
             self.payload_tails.push_reserved_keyed(SparseSignatureTail { ordinal, tail }, ordinal);
         }
@@ -1876,6 +1947,9 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  pub(crate) fn finish_primary(mut self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
  use dm_preprocess::regions::OriginalStreamPrimary;
  let primary=primary.into();
+ // Every retained reference has moved to an actual completed core. The
+ // optional lookup bank no longer participates in the current header proof.
+ drop(self.rows.plain_parameter_bank.take());
  let a=self.a;
  if self.stream_failed{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"failed actual formal stream cannot issue a primary model")))}
  let observer_stop=primary.observer_stop();
@@ -2113,7 +2187,13 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   assert!(empty<ACTIVE_HEADER_FIXED&&simple<ACTIVE_HEADER_FIXED);
   assert_eq!(rows.get(0).unwrap().retained_bytes,empty);
   assert!(rows.get(1).unwrap().retained_bytes>simple,"actual growth of the symbol buckets keeps its conservative envelope");
-  assert_eq!(rows.get(2).unwrap().retained_bytes,simple);
+  assert_eq!(rows.get(2).unwrap().retained_bytes,0);
+  let SlotValue::Payload(first)=rows.get(1).unwrap().slot.value()else{panic!("first actual plain signature")};
+  let SlotValue::Payload(second)=rows.get(2).unwrap().slot.value()else{panic!("second actual plain signature")};
+  assert!(Arc::ptr_eq(&rows.payload(first).unwrap().parameters,&rows.payload(second).unwrap().parameters));
+  assert!(!rows.payload(first).unwrap().shared_parameters);
+  assert!(rows.payload(second).unwrap().shared_parameters);
+  assert!(rows.plain_parameter_bank.is_none());
   assert_eq!(rows.get(3).unwrap().retained_bytes,0);
   drop(actual);
   assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
