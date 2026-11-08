@@ -144,7 +144,7 @@ STAT(/obj/machinery/alarm, shorted, ANY)
 
 
 CAPABILITIES(/obj/machinery/alarm)
-	configure(movable_motion(blocks_emissive = NONE, unacidable = TRUE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE, unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 30))
 	rolls(nameof(name), PROC_REF(roll_alarm_name))
 	setup(PROC_REF(register_initial_alarm))

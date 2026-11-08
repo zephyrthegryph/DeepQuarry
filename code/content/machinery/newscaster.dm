@@ -158,7 +158,7 @@ CAPABILITIES(/datum/feed_network)
 
 CAPABILITIES(/obj/machinery/newscaster)
 	configure(atom_rules(integrity_failure = 0.5))
-	configure(movable_motion(blocks_emissive = NONE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(allocate_unit_number))
 	after_init(0, then(PROC_REF(connect_exonet)))
 	after_init(0, then(PROC_REF(follow_wanted)))
