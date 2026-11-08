@@ -15,6 +15,12 @@ pub fn registry() -> &'static Arc<MetricsRegistry> {
 /// Refreshes the sampled gauges (allocator, jobs) and returns every metric
 /// as one JSON object.
 pub fn snapshot_json() -> String {
+    refresh_sampled();
+    registry().to_json()
+}
+
+/// Brings the sampled gauges up to date: the allocator, jobs, per-bind FFI counts and the world's scheduler, frame pool, laws, fields and stores.
+pub fn refresh_sampled() {
     let metrics = registry();
     metrics.record_alloc_tags(crate::allocator::tag_counters());
     let (current, peak) = crate::allocator::diagnostics();
@@ -156,7 +162,26 @@ pub fn snapshot_json() -> String {
         }
         Ok(())
     });
-    metrics.to_json()
+}
+
+/// The metrics whose names start with any of `prefixes` (comma-separated), after refreshing the sampled gauges: what the MC Health panel reads
+/// about once a second while it is open, whether or not the server metrics source takes its own snapshots.
+pub fn panel_json(prefixes: &str) -> String {
+    refresh_sampled();
+    let mut out = String::from("{");
+    for prefix in prefixes.split(',').map(str::trim).filter(|p| !p.is_empty()) {
+        let family = registry().to_json_prefixed(prefix);
+        let body = &family[1..family.len().saturating_sub(1)];
+        if body.is_empty() {
+            continue;
+        }
+        if out.len() > 1 {
+            out.push(',');
+        }
+        out.push_str(body);
+    }
+    out.push('}');
+    out
 }
 
 /// Every Rust metric in one call: a JSON object mapping each name to a
@@ -168,9 +193,31 @@ fn verdigris_metrics() -> Result<ByondValue> {
     Ok(ByondValue::new_str(snapshot_json())?)
 }
 
+/// The MC Health panel's read: the families named in `prefixes` (comma-separated), with the sampled gauges refreshed first.
+#[auxmacros::bind("/proc/verdigris_metrics_panel")]
+fn verdigris_metrics_panel(prefixes: ByondValue) -> Result<ByondValue> {
+    Ok(ByondValue::new_str(panel_json(&prefixes.get_string()?))?)
+}
+
 /// The metrics whose names start with `prefix`, as one JSON object, without refreshing the sampled gauges: a cheap read of one family
 /// (the slow-frame report reads `frame.` on every slow frame, when a full snapshot would stall the tick it reports on).
 #[auxmacros::bind("/proc/verdigris_metrics_prefixed")]
 fn verdigris_metrics_prefixed(prefix: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::new_str(registry().to_json_prefixed(&prefix.get_string()?))?)
+}
+
+#[cfg(test)]
+mod panel_tests {
+    use super::*;
+
+    #[test]
+    fn the_panel_read_joins_its_families_into_one_object() {
+        registry().gauge("process.panel_test_bytes").set(7.0);
+        registry().counter("ffi.calls_total").set(3);
+        let json = panel_json("process.panel_test, ffi.calls_total, nothing.here");
+        assert!(json.starts_with('{') && json.ends_with('}'), "{json}");
+        assert!(json.contains("\"process.panel_test_bytes\":7"), "{json}");
+        assert!(json.contains("\"ffi.calls_total\":"), "{json}");
+        assert!(!json.contains(",,") && !json.contains("{,"), "{json}");
+    }
 }

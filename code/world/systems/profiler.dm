@@ -234,6 +234,14 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 		return null
 	return decoded
 
+/// The Rust metrics of every family in `prefixes`, after refreshing the sampled gauges (allocator, jobs, FFI counts, the world's laws and fields),
+/// decoded, or null: the MC Health panel's read, about once a second while it is open.
+/proc/verdigris_metrics_panel(list/prefixes)
+	var/text = vg_verdigris_metrics_panel(jointext(prefixes, ","))
+	if(!istext(text) || !length(text))
+		return null
+	return safe_json_decode(text)
+
 /proc/verdigris_metrics_list()
 	var/text = vg_verdigris_metrics()
 	if(!istext(text) || !length(text))
