@@ -46,7 +46,14 @@ pub(crate) fn visit_archive_own_values_using<W:WorkspaceWork>(archive:&dm_tree::
  use dm_ir::SymbolId;
  work.checkpoint()?;let tree=archive.tree();let profile=tree.checker_builtin_profile().ok_or("setter publication needs actual Original checker profile")?;
  if !tree.checker_source_type_presence(profile,owner).map_err(|_|"setter own group type presence is unissued")?{return Ok(false)}
- let controlled=std::cell::RefCell::new(work);let group=crate::checker_original_group::Group::issue_using(tree,profile,SymbolId::of(owner),SymbolId::of(name),&mut||controlled.borrow_mut().checkpoint())?;group.observe_using(tree,&mut||controlled.borrow_mut().checkpoint())?;let mut any=false;
+ visit_admitted_own_values_using(archive,profile,SymbolId::of(owner),SymbolId::of(name),work,emit)
+}
+
+/// The whole-workspace roster already has the same tree's profile and a real
+/// authored member for this owner/name. Read directly from that immutable tree.
+pub(crate) fn visit_admitted_own_values_using<W:WorkspaceWork>(archive:&dm_tree::frontend::BodyArchive,profile:dm_ir::PackedU128,owner:dm_ir::SymbolId,name:dm_ir::SymbolId,work:&mut W,emit:&mut impl FnMut(usize,bool,&mut W)->Result<(),W::Error>)->Result<bool,W::Error>{
+ let tree=archive.tree();
+ let controlled=std::cell::RefCell::new(work);let group=crate::checker_original_group::Group::issue_using(tree,profile,owner,name,&mut||controlled.borrow_mut().checkpoint())?;let mut any=false;
  group.visit_source_values_using(&mut||controlled.borrow_mut().checkpoint(),&mut|identity,verb|{
   any=true;
   let mut work=controlled.borrow_mut();
