@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { Button } from 'tgui-core/components';
 import {
@@ -12,6 +12,7 @@ import {
   currentPageIdAtom,
   scrollTrackingAtom,
 } from './atoms';
+import { store } from '../events/store';
 import { chatRenderer } from './renderer';
 import type { Page } from './types';
 
@@ -25,7 +26,6 @@ export function ChatPanel(props: Props) {
   const scrollTracking = useAtomValue(scrollTrackingAtom);
   // Page stuff
   const currentPageId = useAtomValue(currentPageIdAtom);
-  const [pagesRecord, setPagesRecord] = useAtom(chatPagesRecordAtom);
 
   /** Mounts the renderer */
   useEffect(() => {
@@ -63,13 +63,15 @@ export function ChatPanel(props: Props) {
   /** Resets unread count when scroll tracking is enabled */
   useEffect(() => {
     if (scrollTracking) {
+      // From the record as it is now, not this render's copy.
+      const record = store.get(chatPagesRecordAtom);
       const draft: Page = {
-        ...pagesRecord[currentPageId],
+        ...record[currentPageId],
         unreadCount: 0,
       };
 
-      setPagesRecord({
-        ...pagesRecord,
+      store.set(chatPagesRecordAtom, {
+        ...record,
         [currentPageId]: draft,
       });
     }

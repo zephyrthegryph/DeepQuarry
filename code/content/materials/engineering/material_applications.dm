@@ -2,8 +2,44 @@
 // tool bonuses, effective density and resistance, the gun deltas) are the item's /datum/material_build
 // (material_state.dm). New fabrication records every functional part in the object's material blueprint.
 
+// A pristine item (its type's own template and total, every role at the template's default, nothing customised: what apply_blueprint_effects() builds
+// on a fresh item) has the same materials as every other fresh item of its type, so they are resolved once per type (pristine_blueprint_build()) and
+// read from that table; the effects written are the same.
+
+/// Role -> its default material, role -> units, and the primary material of a pristine `item_type`, as a list ("materials", "amounts", "primary").
+DECLARE_SHARED_CACHE(pristine_blueprint, GLOBAL_PROC_REF(pristine_blueprint_build), SC_NEVER)
+
+/proc/pristine_blueprint_build(item_type)
+	var/obj/item/proto = item_type
+	var/datum/material_template/template = material_template_singleton(initial(proto.material_template))
+	var/list/materials = list()
+	for(var/role in template?.roles)
+		var/material_id = template.default_material(role)
+		materials[role] = material_id ? get_material_by_name(material_id) : null
+	var/datum/material/primary = null
+	for(var/role in GLOB.primary_construction_roles)
+		if(materials[role])
+			primary = materials[role]
+			break
+	return list("materials" = materials, "amounts" = template ? template.role_amounts(initial(proto.material_total)) : list(), "primary" = primary)
+
+/// Whether this item is built as its type declares: its own template and total, no part changed and nothing customised.
+/obj/item/proc/blueprint_pristine()
+	if(material_template != initial(material_template) || material_total != initial(material_total) || material_template == /datum/material_template/mix)
+		return FALSE
+	return !length(material_build_of(src)?.overrides) && !material_assembly_view(src).custom
+
+/// The material of `role`: from the type's table for a pristine item (`pristine`, CACHED(pristine_blueprint)), else resolved (material_for_role()).
+/obj/item/proc/blueprint_material(list/pristine, role)
+	if(pristine)
+		var/list/materials = pristine["materials"]
+		return materials[role]
+	return material_for_role(role)
+
 /obj/item/proc/apply_material_role_effects(application_profile)
-	var/datum/material/primary = primary_construction_material()
+	// A fresh item of its type's own blueprint reads its materials from its type's table (resolved once); anything else resolves them one by one.
+	var/list/pristine = blueprint_pristine() ? CACHED(pristine_blueprint, type) : null
+	var/datum/material/primary = pristine ? pristine["primary"] : primary_construction_material()
 	if(!primary)
 		return FALSE
 	var/datum/material_build/build = material_build(src)
@@ -13,9 +49,9 @@
 	var/weighted_density = 0
 	var/weighted_dielectric = 0
 	var/datum/material_template/template = get_material_template()
-	var/list/amounts = template?.role_amounts(get_material_total())
+	var/list/amounts = pristine ? pristine["amounts"] : template?.role_amounts(get_material_total())
 	for(var/role in amounts)
-		var/datum/material/part_material = material_for_role(role)
+		var/datum/material/part_material = blueprint_material(pristine, role)
 		var/part_amount = amounts[role]
 		if(!part_material || part_amount <= 0)
 			continue
@@ -31,7 +67,7 @@
 		set_throw_range(max(1, round(motion_of_type(type).throw_range * clamp(100 / max(build.effective_density, 10), 0.5, 1.5))))
 		set_siemens_coefficient(clamp(protection_of_type(type).siemens * (1.25 - build.effective_electrical_resistance / 125), 0.05, 2))
 		worn_protection_changed()
-	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || material_for_role(MATERIAL_ROLE_FRAME) || material_for_role(MATERIAL_ROLE_BODY) || primary
+	var/datum/material/structure = blueprint_material(pristine, MATERIAL_ROLE_STRUCTURE) || blueprint_material(pristine, MATERIAL_ROLE_FRAME) || blueprint_material(pristine, MATERIAL_ROLE_BODY) || primary
 	if(max_integrity > 0 && total_amount > 0)
 		var/condition = atom_rules_of(src).uses_integrity ? get_integrity() / max_integrity : 1
 		var/datum/material_template/reference_template = material_template_for_application(application_profile)
@@ -49,14 +85,14 @@
 	primary.dq_apply_material_behaviors(src)
 	switch(application_profile)
 		if(MATERIAL_APPLICATION_TOOL)
-			var/datum/material/working = material_for_role(MATERIAL_ROLE_WORKING) || primary
-			var/datum/material/grip = material_for_role(MATERIAL_ROLE_GRIP) || primary
+			var/datum/material/working = blueprint_material(pristine, MATERIAL_ROLE_WORKING) || primary
+			var/datum/material/grip = blueprint_material(pristine, MATERIAL_ROLE_GRIP) || primary
 			set_force(max(combat_of_type(type).force, round((working.hardness + working.density) / 18)))
 			set_throwforce(max(thrown_of_type(type).force, round((working.integrity + working.density) / 28)))
 			set_toolspeed(clamp(1.25 - (working.hardness + working.elasticity + grip.elasticity * 0.25) / 245, 0.35, 1.25))
 		if(MATERIAL_APPLICATION_SURGICAL)
-			var/datum/material/working = material_for_role(MATERIAL_ROLE_WORKING) || primary
-			var/datum/material/grip = material_for_role(MATERIAL_ROLE_GRIP) || primary
+			var/datum/material/working = blueprint_material(pristine, MATERIAL_ROLE_WORKING) || primary
+			var/datum/material/grip = blueprint_material(pristine, MATERIAL_ROLE_GRIP) || primary
 			set_force(max(combat_of_type(type).force, round(working.hardness / 8)))
 			set_toolspeed(clamp(1.15 - (working.hardness + working.elasticity + working.corrosion_resistance + grip.elasticity * 0.4 + grip.dielectric_strength * 0.2) / 390, 0.3, 1.15))
 			build.surgery_cleanliness_bonus = clamp(round((working.corrosion_resistance + working.heat_resistance + working.reactivity * -0.5) / 3), 0, 35)
@@ -64,11 +100,11 @@
 		if(MATERIAL_APPLICATION_CELL)
 			if(istype(src, /obj/item/cell))
 				var/obj/item/cell/cell = src
-				var/datum/material/electrode = material_for_role(MATERIAL_ROLE_ELECTRODE) || primary
-				var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR) || primary
-				var/datum/material/insulation = material_for_role(MATERIAL_ROLE_INSULATION)
-				var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || conductor
-				var/datum/material/casing = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary
+				var/datum/material/electrode = blueprint_material(pristine, MATERIAL_ROLE_ELECTRODE) || primary
+				var/datum/material/conductor = blueprint_material(pristine, MATERIAL_ROLE_CONDUCTOR) || primary
+				var/datum/material/insulation = blueprint_material(pristine, MATERIAL_ROLE_INSULATION)
+				var/datum/material/thermal = blueprint_material(pristine, MATERIAL_ROLE_THERMAL) || conductor
+				var/datum/material/casing = blueprint_material(pristine, MATERIAL_ROLE_STRUCTURE) || primary
 				var/datum/material/reference_electrode = get_material_by_name(MAT_COPPER)
 				var/reference_capacity = 0.65 + reference_electrode.conductivity / 140 + reference_electrode.heat_resistance / 350
 				var/capacity_factor = clamp((0.65 + electrode.conductivity / 140 + electrode.heat_resistance / 350) / reference_capacity, 0.5, 2)
@@ -86,8 +122,8 @@
 				clothing.set_material(structure.name)
 				// The outer layer remains the exposed material for reactions and appearance;
 				// the load-bearing layer supplies the actual armor calculation.
-				set_color(material_for_role(MATERIAL_ROLE_JACKET)?.icon_colour || structure.icon_colour)
-				var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER) || structure
+				set_color(blueprint_material(pristine, MATERIAL_ROLE_JACKET)?.icon_colour || structure.icon_colour)
+				var/datum/material/liner = blueprint_material(pristine, MATERIAL_ROLE_LINER) || structure
 				clothing.set_siemens_coefficient(clamp(protection_of_type(clothing.type).siemens * (1.2 - liner.dielectric_strength / 125), 0.05, 2))
 				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.2 - liner.corrosion_resistance / 125), 0.05, 2))
 				clothing.worn_protection_changed()
@@ -99,9 +135,9 @@
 		if(MATERIAL_APPLICATION_FIREARM)
 			if(istype(src, /obj/item/gun))
 				var/obj/item/gun/gun = src
-				var/datum/material/barrel = material_for_role(MATERIAL_ROLE_BARREL) || primary
-				var/datum/material/receiver = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary
-				var/datum/material/grip = material_for_role(MATERIAL_ROLE_GRIP) || receiver
+				var/datum/material/barrel = blueprint_material(pristine, MATERIAL_ROLE_BARREL) || primary
+				var/datum/material/receiver = blueprint_material(pristine, MATERIAL_ROLE_STRUCTURE) || primary
+				var/datum/material/grip = blueprint_material(pristine, MATERIAL_ROLE_GRIP) || receiver
 				gun.accuracy -= build.accuracy_delta
 				gun.recoil -= build.recoil_delta
 				build.accuracy_delta = clamp(round((barrel.hardness + barrel.heat_resistance + barrel.fracture_toughness - barrel.brittleness) / 35) - 4, -8, 8)
@@ -109,48 +145,48 @@
 				gun.accuracy += build.accuracy_delta
 				gun.recoil = max(0, gun.recoil + build.recoil_delta)
 		if(MATERIAL_APPLICATION_PROJECTILE)
-			var/datum/material/projectile_material = material_for_role(MATERIAL_ROLE_WORKING) || primary
+			var/datum/material/projectile_material = blueprint_material(pristine, MATERIAL_ROLE_WORKING) || primary
 			if(istype(src, /obj/item/ammo_magazine))
 				var/obj/item/ammo_magazine/magazine = src
-				magazine.set_forged_materials(projectile_material, material_for_role(MATERIAL_ROLE_JACKET), material_for_role(MATERIAL_ROLE_CASING), material_for_role(MATERIAL_ROLE_PRIMER))
+				magazine.set_forged_materials(projectile_material, blueprint_material(pristine, MATERIAL_ROLE_JACKET), blueprint_material(pristine, MATERIAL_ROLE_CASING), blueprint_material(pristine, MATERIAL_ROLE_PRIMER))
 			else if(istype(src, /obj/item/ammo_casing))
 				var/obj/item/ammo_casing/casing = src
-				casing.set_forged_materials(projectile_material, material_for_role(MATERIAL_ROLE_JACKET), material_for_role(MATERIAL_ROLE_CASING), material_for_role(MATERIAL_ROLE_PRIMER))
+				casing.set_forged_materials(projectile_material, blueprint_material(pristine, MATERIAL_ROLE_JACKET), blueprint_material(pristine, MATERIAL_ROLE_CASING), blueprint_material(pristine, MATERIAL_ROLE_PRIMER))
 		if(MATERIAL_APPLICATION_MAGAZINE)
 			if(istype(src, /obj/item/ammo_magazine))
 				var/obj/item/ammo_magazine/magazine = src
-				var/datum/material/projectile_material = material_for_role(MATERIAL_ROLE_WORKING) || primary
-				magazine.set_forged_materials(projectile_material, material_for_role(MATERIAL_ROLE_JACKET), material_for_role(MATERIAL_ROLE_CASING), material_for_role(MATERIAL_ROLE_PRIMER))
+				var/datum/material/projectile_material = blueprint_material(pristine, MATERIAL_ROLE_WORKING) || primary
+				magazine.set_forged_materials(projectile_material, blueprint_material(pristine, MATERIAL_ROLE_JACKET), blueprint_material(pristine, MATERIAL_ROLE_CASING), blueprint_material(pristine, MATERIAL_ROLE_PRIMER))
 		if(MATERIAL_APPLICATION_ENERGY_DEVICE)
 			if(istype(src, /obj/item/gun))
 				var/obj/item/gun/gun = src
-				var/datum/material/emitter = material_for_role(MATERIAL_ROLE_EMITTER) || primary
-				var/datum/material/optics = material_for_role(MATERIAL_ROLE_OPTICAL) || emitter
+				var/datum/material/emitter = blueprint_material(pristine, MATERIAL_ROLE_EMITTER) || primary
+				var/datum/material/optics = blueprint_material(pristine, MATERIAL_ROLE_OPTICAL) || emitter
 				gun.accuracy -= build.accuracy_delta
 				build.accuracy_delta = clamp(round((emitter.heat_resistance + optics.purity_equivalent() + optics.hardness - optics.brittleness) / 45) - 4, -8, 8)
 				gun.accuracy += build.accuracy_delta
 				if(istype(gun, /obj/item/gun/energy))
 					var/obj/item/gun/energy/energy_gun = gun
-					var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR) || primary
-					var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || conductor
+					var/datum/material/conductor = blueprint_material(pristine, MATERIAL_ROLE_CONDUCTOR) || primary
+					var/datum/material/thermal = blueprint_material(pristine, MATERIAL_ROLE_THERMAL) || conductor
 					energy_gun.set_charge_cost(max(1, round(initial(energy_gun.charge_cost) * clamp(1.35 - conductor.conductivity / 200 - thermal.conductivity * (1 - thermal.thermal_insulation / 125) / 500, 0.55, 1.5))))
 		if(MATERIAL_APPLICATION_SOFT_GOODS)
 			if(istype(src, /obj/item/clothing))
 				var/obj/item/clothing/clothing = src
-				var/datum/material/fabric = material_for_role(MATERIAL_ROLE_FABRIC) || primary
+				var/datum/material/fabric = blueprint_material(pristine, MATERIAL_ROLE_FABRIC) || primary
 				clothing.set_material(fabric.name)
 				set_color(fabric.icon_colour)
-				var/datum/material/reinforcement = material_for_role(MATERIAL_ROLE_STRUCTURE) || fabric
+				var/datum/material/reinforcement = blueprint_material(pristine, MATERIAL_ROLE_STRUCTURE) || fabric
 				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.15 - reinforcement.corrosion_resistance / 150), 0.05, 2))
 		if(MATERIAL_APPLICATION_CABLE)
-			var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR) || primary
+			var/datum/material/conductor = blueprint_material(pristine, MATERIAL_ROLE_CONDUCTOR) || primary
 			build.engineered_id = conductor.name
 		if(MATERIAL_APPLICATION_LIGHT)
 			if(istype(src, /obj/item/light))
 				var/obj/item/light/light = src
-				var/datum/material/emitter = material_for_role(MATERIAL_ROLE_EMITTER) || primary
-				var/datum/material/optics = material_for_role(MATERIAL_ROLE_OPTICAL) || emitter
-				var/datum/material/contacts = material_for_role(MATERIAL_ROLE_CONTACTS) || primary
+				var/datum/material/emitter = blueprint_material(pristine, MATERIAL_ROLE_EMITTER) || primary
+				var/datum/material/optics = blueprint_material(pristine, MATERIAL_ROLE_OPTICAL) || emitter
+				var/datum/material/contacts = blueprint_material(pristine, MATERIAL_ROLE_CONTACTS) || primary
 				// Glass emitter + glass optics + copper contacts are the ordinary
 				// station-light baseline. Material selection modifies that authored
 				// output; it must not replace it with an arbitrary absolute scale.

@@ -117,7 +117,8 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		var/atom/parent = remote.owner
 		data["machines"] += list(
 			list(
-				"icon" = icon2base64(icon(initial(parent.icon), initial(parent.icon_state), frame = 1)),
+				"icon" = initial(parent.icon), // the window draws it with DmIcon from the icon file and state
+				"icon_state" = initial(parent.icon_state),
 				"name" = parent.name,
 				"onHold" = (remote in holds),
 				"location" = get_area_name(parent, TRUE),

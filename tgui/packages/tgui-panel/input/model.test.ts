@@ -9,7 +9,9 @@ import {
   keyAction,
   nextChannel,
   nextRadioOption,
+  parseAvailableChannels,
   parseCommonPrefix,
+  settleChannel,
   parseRadioPrefix,
   previewEntry,
   radioColorName,
@@ -294,5 +296,21 @@ describe('every say popup channel', () => {
     expect(previewEntry('Me', { key: ':m', label: 'Medical' }, 'waves')).toBe(
       'waves',
     );
+  });
+});
+
+describe('channel availability', () => {
+  it('cycles only what the server says is usable', () => {
+    expect(nextChannel('OOC', 1, ['OOC'])).toBe('OOC');
+    expect(nextChannel('Say', 1, ['Say', 'Me', 'OOC', 'LOOC'])).toBe('Me');
+    expect(nextChannel('LOOC', 1, ['Say', 'Me', 'OOC', 'LOOC'])).toBe('Say');
+  });
+
+  it('keeps the lobby to OOC and settles a channel that went away', () => {
+    expect(parseAvailableChannels(['OOC'])).toEqual(['OOC']);
+    expect(parseAvailableChannels(['Bogus'])).toEqual(['OOC']);
+    expect(parseAvailableChannels(['OOC', 'Say'])).toEqual(['Say', 'OOC']);
+    expect(settleChannel('Say', ['OOC'])).toBe('OOC');
+    expect(settleChannel('Me', ['Say', 'Me', 'OOC'])).toBe('Me');
   });
 });

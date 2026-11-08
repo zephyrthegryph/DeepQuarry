@@ -113,6 +113,7 @@ CAPABILITIES(/datum/tgui_panel)
 		))
 		// The page is up, so the chat pane can move to where the preference wants it without interrupting the load.
 		client()?.chat_layout_sync()
+		client()?.chat_send_input_state()
 		return TRUE
 	// The chat input row: speech, typing bubbles and the live preview's rules (code/content/client/chat_speech.dm).
 	if(client()?.chat_speech_message(type, payload, href_list))

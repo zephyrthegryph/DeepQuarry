@@ -5,7 +5,9 @@
 
 .ChatInput {
   display: flex;
-  align-items: stretch;
+  // One height and one centre line for the channel and radio buttons, the
+  // field and Send.
+  align-items: center;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -135,4 +137,16 @@ $channel-colors: radio.$mode-colors;
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+// The row's controls share one box: the same height, no margins, centred.
+.ChatInput__channel,
+.ChatInput__radio,
+.ChatInput__field,
+.ChatInput__send {
+  box-sizing: border-box;
+  height: 24px;
+  margin: 0;
+  align-self: center;
+  vertical-align: middle;
 }

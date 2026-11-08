@@ -60,10 +60,20 @@ docked UI the client owns, or it is dropped.
 - **Derived**: `hiddenIds()` (windows in a collapsed group or not the active tab) and `snapshot()` (saved placements). Every action
   re-snapshots, so `saved` always describes what the player last saw.
 
-Drag (slice b) lives in the panel page: a header or tab is dragged with pointer capture; during the drag the panel hides every
-docked window so its own drop targets (group headers and the gaps between groups) are visible, then: over a header joins that
-group as a tab, over a gap reorders, past the panel's left edge floats (the window keeps its last floating geometry). A floating
-window docks with the dock button in its titlebar or by dropping its titlebar drag over the column (`tgui/drag.ts`).
+Drag lives in the panel page and is the one DQ model the chat's tab strip uses (`tgui/dq/liveOrder.ts`: drop index,
+slide-aside and clamp along one axis, shared by `tgui/dq/Tabs.tsx` along x and `DockArea.tsx` along y). There is no other
+drag-to-reorder code for windows:
+
+- **A header's free space** (never a tab or button) drags the whole entry along the list, live: the others slide aside and the
+  order commits on release. Dropped on another entry's header it stacks there (`joinGroup`); dragged out of the panel by the chat's
+  pop-out distance (`POP_OUT_DISTANCE`, any side) it floats, the shown window under the pointer (`WM-Float {id, at}` ->
+  `config.window.float_at`, sent once).
+- **A stack's tabs** are the DQ tab strip: a click selects, a drag along the strip re-arranges them live (`orderTabs`), and pulling
+  one off the strip (`Tabs` `onDragOut`, `DRAG_OUT_DISTANCE`) hands the drag to the dock: dropped in the list it becomes its own
+  entry there (`splitWindow`), on a header it joins that stack, out of the panel it floats under the pointer.
+- **A floating window** docks with the dock button in its titlebar or by dropping its titlebar drag over the panel
+  (`tgui/drag.ts`, `wm/dock {at}`); a drop goes in the list where it was dropped (`wm/open {at}`), the button at the saved place.
+- Collapse to the titlebar is the header's chevron or a double-click on its free space.
 
 ## 5. Persistence
 

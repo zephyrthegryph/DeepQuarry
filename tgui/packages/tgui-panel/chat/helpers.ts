@@ -7,14 +7,14 @@ import {
   chatLoadedAtom,
   chatPagesAtom,
   chatPagesRecordAtom,
-  currentPageAtom,
+  currentPageIdAtom,
   exportEndAtom,
   exportStartAtom,
   lastRoundIDAtom,
   scrollTrackingAtom,
   storedRoundsAtom,
 } from './atoms';
-import { canPageAcceptType, serializeMessage } from './model';
+import { serializeMessage, unreadAfterBatch } from './model';
 import { chatRenderer } from './renderer';
 import type { SerializedMessage, StoredChatSettings } from './types';
 
@@ -32,40 +32,23 @@ chatRenderer.events.on(
 
 function updateMessageCount(countByType: Record<string, number>): void {
   const pagesRecord = store.get(chatPagesRecordAtom);
-  const pages = store.get(chatPagesAtom);
-  const currentPage = store.get(currentPageAtom);
-  const scrollTracking = store.get(scrollTrackingAtom);
-
-  const draftpagesRecord = { ...pagesRecord };
-
-  for (const pageId of pages) {
-    const page = pagesRecord[pageId];
-    let unreadCount = 0;
-
-    for (const type in countByType) {
-      /// Message does not belong here
-      if (!canPageAcceptType(page, type)) continue;
-
-      // Current page scroll tracked
-      if (page === currentPage && scrollTracking) continue;
-
-      // This page received the same message which we can read on the current
-      // page
-      if (page !== currentPage && canPageAcceptType(currentPage, type)) {
-        continue;
-      }
-      unreadCount += countByType[type];
-    }
-
-    if (unreadCount > 0) {
-      draftpagesRecord[page.id] = {
-        ...page,
-        unreadCount: page.unreadCount + unreadCount,
-      };
-    }
+  const added = unreadAfterBatch(
+    store.get(chatPagesAtom),
+    pagesRecord,
+    store.get(currentPageIdAtom),
+    store.get(scrollTrackingAtom),
+    countByType,
+    store.get(settingsAtom).hideImportantInAdminTab,
+  );
+  if (!Object.keys(added).length) return;
+  const draft = { ...pagesRecord };
+  for (const pageId in added) {
+    draft[pageId] = {
+      ...draft[pageId],
+      unreadCount: draft[pageId].unreadCount + added[pageId],
+    };
   }
-
-  store.set(chatPagesRecordAtom, draftpagesRecord);
+  store.set(chatPagesRecordAtom, draft);
 }
 
 export function saveChatToStorage(): void {

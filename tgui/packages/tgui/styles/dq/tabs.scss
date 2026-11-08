@@ -56,18 +56,52 @@
     align-self: center;
     margin-left: auto;
     padding-bottom: 2px;
+
+    // Every control here (the chat's ping indicator, music and settings
+    // buttons) is one height on one centre line, whatever its content.
+    > * {
+      box-sizing: border-box;
+      height: var(--dq-row-control-height, 22px);
+      margin: 0;
+      align-self: center;
+      vertical-align: middle;
+    }
+
+    > .Button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
   }
 
-  .DqTabs__tab--dragged {
-    opacity: 0.5;
+  // The tab strip: the area a dragged tab is held inside (dq/Tabs.tsx clamps it).
+  .DqTabs__strip {
+    position: relative;
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
   }
 
-  .DqTabs__tab--over {
-    box-shadow: inset 2px 0 0 console.$console-accent;
-  }
-
-  .Tab[draggable="true"] {
+  // A movable tab takes the pointer itself (no text selection, no native drag ghost).
+  .DqTabs__tab--movable {
     cursor: grab;
+    user-select: none;
+    touch-action: none;
+  }
+
+  // While a tab is dragged the others slide aside to make room.
+  &--dragging .Tab {
+    transition: transform 120ms ease-out;
+  }
+
+  &--dragging .DqTabs__tab--dragged {
+    position: relative;
+    z-index: 1;
+    cursor: grabbing;
+    transition: none;
+    background-color: console.$console-panel;
+    box-shadow: 0 0 0 1px console.$console-accent;
   }
 
   &--classic {
