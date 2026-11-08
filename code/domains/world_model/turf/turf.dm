@@ -124,7 +124,7 @@
 			Entered(AM)
 
 	//Lighting related
-	set_luminosity(!(dynamic_lighting))
+	set_luminosity(GLOB.client_lighting || !(dynamic_lighting)) // client lighting: BYOND shows every turf, the lighting plane darkens
 
 	if(opacity)
 		directional_opacity = ALL_CARDINALS
