@@ -13,31 +13,14 @@
 	wait_for_assets()
 	wait_seconds(10)
 	var/stall_ms = param("stall_ms", 20)
-	var/base_datums = 0
-	for(var/datum/D)
-		base_datums++
-	count_metric("base_datums", base_datums, "datums", "none")
 	count_metric("base_atoms", length(world.contents), "atoms", "none")
-	probe("datums", param("datums", 400000), stall_ms, base_datums)
-	probe("strings", param("strings", 1000000), stall_ms, 0)
-	probe("lists", param("lists", 400000), stall_ms, 0)
-	probe("slots", param("slots", 600000), stall_ms, length(handle_gens))
-	probe("num8_kept", param("facts", 20000), stall_ms, 0)
-	if(param("pregrow", 0))
-		probe("pregrow_strings", param("pregrow", 0), stall_ms, 0)
-	probe("num8_kept_b", param("facts", 20000), stall_ms, 0)
-	probe("num16_kept", param("facts", 20000), stall_ms, 0)
-	probe("num8_kept", param("facts", 20000), stall_ms, 0)
-	probe("num16_churn_low", param("facts", 20000), stall_ms, 0)
-	probe("fact_strings", param("facts", 20000), stall_ms, 0)
-	probe("fact_strings_churn", param("facts", 20000), stall_ms, 0)
-	probe("string_churn", param("churn", 300000), stall_ms, 0)
-	probe("datum_churn", param("churn", 300000), stall_ms, 0)
-	probe("list_churn", param("churn", 300000), stall_ms, 0)
-	drain_probe(param("drain", 3000))
-	probe("contract_context", param("events", 8000), stall_ms, 0)
-	probe("contract_events", param("events", 8000), stall_ms, 0)
-	probe("plain_events", param("events", 8000), stall_ms, 0)
+	var/n = param("facts", 3000)
+	probe("fact_strings", n, stall_ms, 0)
+	probe("fact_suffix", n, stall_ms, 0)
+	probe("fact_short_prefix", n, stall_ms, 0)
+	probe("handle_only", n, stall_ms, 0)
+	probe("fact_strings_again", n, stall_ms, 0)
+	drain_probe(param("drain", 0))
 
 /datum/benchmark/alloc_stall/proc/probe(kind, count, stall_ms, base)
 	var/list/keep = new /list(count)
@@ -64,6 +47,18 @@
 			if("num16_churn_low")
 				var/t = num2text(1048576 + i * 7919 + 3, 16)
 				t = null
+			if("fact_suffix")
+				var/hs = 1048577 + i * 7919
+				keep[i] = list("[handle_text(hs)]:infrastructure-damage", "[handle_text(hs)]:1:infrastructure-damage")
+			if("fact_short_prefix")
+				var/hp = 1048578 + i * 7919
+				keep[i] = list("i:[handle_text(hp)]", "i:[handle_text(hp)]:1")
+			if("handle_only")
+				var/ho = 1048579 + i * 7919
+				keep[i] = list(handle_text(ho), "[handle_text(ho)]:1")
+			if("fact_strings_again")
+				var/ha = 1048580 + i * 7919
+				keep[i] = list("infrastructure-damage:[handle_text(ha)]", "infrastructure-damage:[handle_text(ha)]:1")
 			if("fact_strings")
 				var/h = 1048576 + i * 7919
 				keep[i] = list("infrastructure-damage:[handle_text(h)]", "infrastructure-damage:[handle_text(h)]:1")
