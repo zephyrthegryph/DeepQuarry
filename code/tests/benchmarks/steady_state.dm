@@ -11,7 +11,8 @@
 	wait_fires(SSair, 10)
 	var/list/floors = list()
 	for(var/turf/simulated/floor/F in world)
-		if(F.z <= 3 && !F.density)
+		// Breathable floors only: a human dropped on an airless floor spends the window taking pressure injuries, which is not a quiet round.
+		if(F.z <= 3 && !F.density && F.turf_air()?.return_pressure() > 80)
 			floors += F
 		CHECK_TICK
 	for(var/i in 1 to param("humans", 20))
