@@ -94,7 +94,6 @@
 #define VERB_CAT_MAPPING "Mapping"
 #define VERB_CAT_MAPPING_ATMOS "Mapping.Atmos"
 #define VERB_CAT_MAPPING_TESTSERVER_ONLY "Mapping.Testserver Only"
-#define VERB_CAT_OBJECT "Object"
 #define VERB_CAT_OOC_CHAT "OOC.Chat"
 #define VERB_CAT_OOC_CHAT_SETTINGS "OOC.Chat Settings"
 #define VERB_CAT_OOC_DEBUG "OOC.Debug"

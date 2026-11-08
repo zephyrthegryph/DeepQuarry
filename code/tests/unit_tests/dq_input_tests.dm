@@ -489,10 +489,10 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 	TEST_ASSERT(!verb_panel_listed(/datum/proc/dq_test_hidden_verb), "a hidden verb is not listed")
 	// Verbs earlier cleanups hid; the Menu page and hotkeys run them by name.
 	var/list/hidden_by_cleanup = list(
-		/client/verb/ping, /client/verb/character_setup, /client/verb/game_options, /client/verb/hotkeys_help,
-		/client/verb/wiki, /client/verb/show_active_playtime, /client/verb/requesthelp,
+		/client/verb/character_setup, /client/verb/game_options, /client/verb/hotkeys_help,
+		/client/verb/show_active_playtime, /client/verb/requesthelp,
 		/mob/verb/me_verb_subtle_custom, /mob/verb/psay, /mob/verb/pme, /mob/living/verb/player_narrate,
-		/client/verb/toggle_floating_chat, /client/verb/dock_chat, /client/verb/reset_chat_window, /client/verb/toggle_fullscreen, /client/verb/adminhelp,
+		/client/verb/dock_chat, /client/verb/reset_chat_window, /client/verb/toggle_fullscreen, /client/verb/adminhelp,
 		/client/verb/who, /client/verb/vote, /mob/verb/check_round_info, /mob/verb/abandon_mob, /mob/verb/observe, /mob/verb/cancel_camera,
 		/client/verb/set_incorporeal_speed, /client/verb/ooc, /client/verb/looc,
 	)

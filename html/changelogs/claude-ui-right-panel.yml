@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscdel: "Removed menu entries and verbs that other controls already cover: Reconnect and Check ping (the chat box shows both), Quit (the window's close button), Float / dock chat (drag the chat to float or dock it), Export chat log (chat settings, Export: Save chat log), Submit TGUI feedback, and the Wiki/Forum/Rules/Map/GitHub/Discord/Patreon links."
+  - admin: "Removed Enable/Disable Mapping Verbs (they only hid Set Server FPS, which is now always listed under dangerous debug tools); Possess Obj and Release Object moved from their own Object tab to Admin.Game."

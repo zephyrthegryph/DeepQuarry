@@ -1,20 +1,18 @@
 /**
- * The Menu page: everything skin.dmf's native menu bar and link strip did, now
- * that the skin has neither. menu.test.ts holds this list to the old bar.
+ * The Menu page: what skin.dmf's native menu bar did that nothing else does.
+ * Reconnect and ping are in the chat box, quitting is the window's close
+ * button, floating or docking the chat is a drag, the chat log export is in
+ * the chat settings (Export), and the web links are gone.
  */
 export type MenuItem = { label: string; command: string };
 
 export const GAME_ITEMS: MenuItem[] = [
   { label: 'Quick screenshot (F2)', command: '.screenshot auto' },
   { label: 'Save screenshot as... (Shift+F2)', command: '.screenshot' },
-  { label: 'Reconnect', command: '.reconnect' },
-  { label: 'Check ping', command: 'ping' },
   { label: 'Fit viewport', command: 'fit-viewport' },
   { label: 'Active playtime', command: 'active-playtime' },
   { label: 'Server revision', command: 'show-server-revision' },
   { label: 'Changelog', command: 'changelog' },
-  { label: 'Submit TGUI feedback', command: 'submit-tgui-feedback' },
-  { label: 'Quit', command: '.quit' },
 ];
 
 /** Round commands that left the verb panel. */
@@ -29,9 +27,7 @@ export const ROUND_ITEMS: MenuItem[] = [
 ];
 
 export const CHAT_ITEMS: MenuItem[] = [
-  { label: 'Float / dock chat', command: 'toggle-floating-chat' },
   { label: 'Reset chat window', command: 'reset-chat-window' },
-  { label: 'Export chat log', command: 'export-chatlog' },
 ];
 
 const mapSet = (param: string, value: string | number) =>
@@ -65,15 +61,13 @@ export const HELP_ITEMS: MenuItem[] = [
   { label: 'Request Automated Advice', command: 'request-automated-advice' },
 ];
 
-export const LINK_ITEMS: MenuItem[] = [
-  { label: 'Wiki', command: 'wiki' },
-  { label: 'Forum', command: 'forum' },
-  { label: 'Rules', command: 'rules' },
-  { label: 'Map', command: 'map' },
-  { label: 'GitHub', command: 'github' },
-  { label: 'Discord', command: 'discord' },
-  { label: 'Patreon', command: 'patreon' },
-];
+/** The Status view's quick row: what a player reaches for most. */
+export const QUICK_ITEMS: MenuItem[] = HELP_ITEMS.slice(0, 4);
+
+/** Runs a client command after our own focus handling. */
+export function run(command: string) {
+  setTimeout(() => Byond.command(command), 0);
+}
 
 /** Every command the page can send, for the test. */
 export function allCommands(): string[] {
