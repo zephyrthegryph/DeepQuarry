@@ -441,6 +441,7 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
     assert!(Arc::ptr_eq(&first,&second));
     drop(rows);
     drop(skeletons);
+    assert_eq!(native.primary_leases[0].aliases.procedure_alias_counts_for_test(),(1,1));
     let mut census=OriginalSignatureAliasCensus::default();
     census.retain(Arc::clone(&native.primary_leases[0].aliases),&a).unwrap();
     drop(native);

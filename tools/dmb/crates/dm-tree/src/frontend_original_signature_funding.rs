@@ -108,6 +108,10 @@ impl OriginalSignatureAliasGroup{
   checkpoint(a)
  }
  #[cfg(test)]
+ pub(super) fn procedure_alias_counts_for_test(&self)->(usize,usize) {
+  (self.aliases.metadata.len(),self.aliases.parameters.len())
+ }
+ #[cfg(test)]
  pub(super) fn coordination_storage_for_test(&self)->(usize,usize){
   let mut physical=group_bytes().unwrap();
   self.aliases.visit_storage(|_,bytes,_|physical+=bytes);
@@ -151,8 +155,29 @@ fn reserve_one<T>(rows:&mut Vec<T>,coordination:&mut dm_syntax::SettingRootLease
  if old_bytes!=0{a.shrink(coordination,old_bytes).map_err(|error|a.take_operational_error().unwrap_or(error))?;}
  Ok(())
 }
+// Exact recent keys scoped to one immutable traversal. A collision forgets
+// the old key and may repeat a Weak, but can never omit a distinct owner.
+struct RecentAliases<const N: usize> {
+ keys: [(usize, usize); N],
+}
+impl<const N: usize> RecentAliases<N> {
+ fn new() -> Self { Self { keys: [(0, 0); N] } }
+ fn seen(&mut self, address: usize, extent: usize) -> bool {
+  debug_assert_ne!(address, 0);
+  let key = (address, extent);
+  let hint = (address >> 4) ^ (address >> 13) ^ extent.rotate_left(5);
+  std::mem::replace(&mut self.keys[hint % N], key) == key
+ }
+}
+const RECENT_ALIAS_SLOTS: usize = 128;
+
 fn visit_aliases(facts:&crate::AdaptedDeclarations,prepared:&PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>,f:&mut impl FnMut(Alias<'_>)->io::Result<()>)->io::Result<()>{
  let mut seen=[false;4];
+ // Both count and fill start from empty stack tables and traverse the SAME
+ // immutable strong owners. An earlier matching key always had a Weak emitted
+ // in this pass; no graph owner can be freed and reused between these visits.
+ let mut recent_metadata=RecentAliases::<RECENT_ALIAS_SLOTS>::new();
+ let mut recent_parameters=RecentAliases::<RECENT_ALIAS_SLOTS>::new();
  for skeleton in &facts.skeletons{let crate::Skeleton::Member{metadata,..}=skeleton else{continue};let Some(procedure)=&metadata.procedure else{continue};
   f(Alias::Member(metadata))?;
   f(Alias::Canonical(metadata.canonical.storage_arc()))?;
@@ -162,7 +187,15 @@ fn visit_aliases(facts:&crate::AdaptedDeclarations,prepared:&PreparedOriginalSig
    (settings_shared.then_some(2),Alias::Settings(&procedure.settings)),
    (parameters_shared.then_some(3),Alias::Parameters(&procedure.signature.parameters)),
   ]{
-   if slot.is_some_and(|slot|std::mem::replace(&mut seen[slot],true)){
+   let duplicate=match slot {
+    Some(slot)=>std::mem::replace(&mut seen[slot],true),
+    None=>match &actual {
+     Alias::Metadata(owner)=>recent_metadata.seen(Arc::as_ptr(*owner) as usize,0),
+     Alias::Parameters(owner)=>recent_parameters.seen(owner.as_ptr() as usize,owner.len()),
+     _=>false,
+    },
+   };
+   if duplicate {
     // Preserve the original cancellation/error check for every observed field.
     checkpoint(a)?;
    }else{f(actual)?;}
@@ -209,6 +242,18 @@ impl std::fmt::Debug for OriginalSignatureAliasCensus{fn fmt(&self,f:&mut std::f
 mod exact_capacity_controls {
  use super::*;
  use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]
+ fn recent_aliases_distinguish_pointer_and_extent_and_only_forget_on_collision() {
+  let mut recent=RecentAliases::<1>::new();
+  assert!(!recent.seen(0x1234,2));
+  assert!(recent.seen(0x1234,2));
+  assert!(!recent.seen(0x1234,3));
+  assert!(recent.seen(0x1234,3));
+  assert!(!recent.seen(0x5678,3));
+  assert!(!recent.seen(0x1234,3));
+  assert!(recent.seen(0x1234,3));
+ }
+
  #[test]
  fn exact_alias_coordination_denial_preserves_the_already_funded_slots(){
   let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();

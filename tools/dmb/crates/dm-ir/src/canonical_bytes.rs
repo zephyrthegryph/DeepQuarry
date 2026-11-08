@@ -7,6 +7,20 @@ const PACKED: u8 = 1;
 const BITMAP: u8 = 2;
 const PREFIXED: u8 = 4;
 const GROUP: usize = 8;
+const TRAILER: u8 = 8;
+const VARIADIC_TRAILER: u8 = 16;
+const FLAGS: u8 = PREFIXED | TRAILER | VARIADIC_TRAILER;
+
+// Metadata tag, framed signature, and empty settings. The canonical encoder
+// remains the byte authority, independently exercised by the test below.
+const TRIVIAL_PROCEDURE: &[u8] = b"dm-procedure-metadata-v2\0$\0\0\0\0\0\0\0dm-procedure-signature-v2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+const TRIVIAL_VARIADIC_PROCEDURE: &[u8] = b"dm-procedure-metadata-v2\0$\0\0\0\0\0\0\0dm-procedure-signature-v2\0\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+
+fn trailer_bytes(flags: u8) -> &'static [u8] {
+    if flags & TRAILER != 0 { TRIVIAL_PROCEDURE }
+    else if flags & VARIADIC_TRAILER != 0 { TRIVIAL_VARIADIC_PROCEDURE }
+    else { &[] }
+}
 
 /// Exact shared lexical token framing prefix.
 pub static CANONICAL_HEADER_PREFIX: &[u8] = b"dm-declaration-tokens-v1\0";
@@ -25,6 +39,7 @@ pub struct CanonicalBytesPlan<'a> {
     storage_len: usize,
     layout: Layout,
     prefix: bool,
+    trailer: u8,
 }
 
 #[derive(Clone, Copy)]
@@ -39,7 +54,17 @@ impl CanonicalBytes {
     pub fn plan(bytes: &[u8]) -> CanonicalBytesPlan<'_> {
         let prefixed = bytes.strip_prefix(CANONICAL_HEADER_PREFIX);
         let prefix = prefixed.is_some();
-        let bytes = prefixed.unwrap_or(bytes);
+        let (bytes, trailer) = if let Some(prefixed) = prefixed {
+            if let Some(body) = prefixed.strip_suffix(TRIVIAL_PROCEDURE) {
+                (body, TRAILER)
+            } else if let Some(body) = prefixed.strip_suffix(TRIVIAL_VARIADIC_PROCEDURE) {
+                (body, VARIADIC_TRAILER)
+            } else {
+                (prefixed, 0)
+            }
+        } else {
+            (bytes, 0)
+        };
         let (mut layout, mut storage_len) = if prefix || bytes.first() == Some(&ESCAPE) {
             (Layout::Escaped, bytes.len() + 2)
         } else {
@@ -72,7 +97,7 @@ impl CanonicalBytes {
                 storage_len = bitmap_len;
             }
         }
-        CanonicalBytesPlan { bytes, storage_len, layout, prefix }
+        CanonicalBytesPlan { bytes, storage_len, layout, prefix, trailer }
     }
 
     pub fn len(&self) -> usize {
@@ -81,12 +106,12 @@ impl CanonicalBytes {
         }
         let flags = self.0[1];
         let prefix_len = if flags & PREFIXED == 0 { 0 } else { CANONICAL_HEADER_PREFIX.len() };
-        let body_len = if flags & !PREFIXED == RAW {
+        let body_len = if flags & !FLAGS == RAW {
             self.0.len() - 2
         } else {
             self.packed_len()
         };
-        prefix_len + body_len
+        prefix_len + body_len + trailer_bytes(flags).len()
     }
 
     fn packed_len(&self) -> usize {
@@ -105,8 +130,9 @@ impl CanonicalBytes {
     }
 
     pub fn xxh3_128(&self) -> u128 {
-        if let Chunks { prefix: false, body: BodyChunks::Raw(raw) } = self.chunks() {
-            return xxhash_rust::xxh3::xxh3_128(raw);
+        let chunks = self.chunks();
+        if let Chunks { prefix: false, body: BodyChunks::Raw(raw), trailer } = &chunks {
+            if trailer.is_empty() { return xxhash_rust::xxh3::xxh3_128(raw); }
         }
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
         self.for_each_chunk(|chunk| hash.update(chunk));
@@ -140,9 +166,9 @@ impl CanonicalBytes {
     }
 
     fn chunks(&self) -> Chunks<'_> {
-        let (prefix, body) = match self.0.as_ref() {
+        let (prefix, body, trailer) = match self.0.as_ref() {
             [ESCAPE, flags, rest @ ..] => {
-                let body = match *flags & !PREFIXED {
+                let body = match *flags & !FLAGS {
                     RAW => BodyChunks::Raw(rest),
                     PACKED => BodyChunks::Packed(&self.0[PACKED_HEADER..]),
                     BITMAP => BodyChunks::Bitmap {
@@ -150,11 +176,11 @@ impl CanonicalBytes {
                     },
                     _ => unreachable!("issued canonical storage tag"),
                 };
-                (*flags & PREFIXED != 0, body)
+                (*flags & PREFIXED != 0, body, trailer_bytes(*flags))
             }
-            raw => (false, BodyChunks::Raw(raw)),
+            raw => (false, BodyChunks::Raw(raw), &[][..]),
         };
-        Chunks { prefix, body }
+        Chunks { prefix, body, trailer }
     }
 }
 
@@ -182,7 +208,7 @@ impl CanonicalBytesPlan<'_> {
             Layout::Bitmap => BITMAP,
             Layout::Plain => unreachable!("plain storage handled above"),
         };
-        let flags = encoding | if self.prefix { PREFIXED } else { 0 };
+        let flags = encoding | self.trailer | if self.prefix { PREFIXED } else { 0 };
         write(&mut output, &[ESCAPE, flags]);
         if encoding != RAW {
             write(&mut output, &(self.bytes.len() as u64).to_le_bytes());
@@ -248,6 +274,7 @@ impl<'a> Iterator for Runs<'a> {
 struct Chunks<'a> {
     prefix: bool,
     body: BodyChunks<'a>,
+    trailer: &'static [u8],
 }
 
 enum BodyChunks<'a> {
@@ -263,7 +290,17 @@ impl<'a> Iterator for Chunks<'a> {
         if std::mem::take(&mut self.prefix) {
             return Some(CANONICAL_HEADER_PREFIX);
         }
-        match &mut self.body {
+        self.body.next().or_else(|| {
+            (!self.trailer.is_empty()).then(|| std::mem::take(&mut self.trailer))
+        })
+    }
+}
+
+impl<'a> Iterator for BodyChunks<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
             BodyChunks::Raw(raw) if !raw.is_empty() => Some(std::mem::take(raw)),
             BodyChunks::Raw(_) => None,
             BodyChunks::Packed(raw) => {
@@ -409,6 +446,41 @@ mod tests {
         let raw = CanonicalBytes::plan(almost).seal();
         assert_eq!(raw.storage_arc().as_ref(), almost);
         assert_eq!(raw.len(), almost.len());
+    }
+
+    #[test]
+    fn procedure_trailers_match_real_canonical_encoding_and_near_misses_keep_bytes() {
+        use crate::{ProcedureMetadata, ProcedureSignature};
+
+        for (variadic, flag) in [(false, TRAILER), (true, VARIADIC_TRAILER)] {
+            let procedure = ProcedureMetadata {
+                signature: ProcedureSignature {
+                    parameters: Arc::from([]),
+                    variadic,
+                    return_annotation: None,
+                },
+                settings: Arc::from([]),
+            };
+            let trailer = procedure.canonical_bytes();
+            assert_eq!(trailer_bytes(flag), trailer);
+            for body in [vec![], vec![7, 8, 9], vec![0; 128], (0..128).map(|at| (at % 2) as u8).collect()] {
+                let mut bytes = CANONICAL_HEADER_PREFIX.to_vec();
+                bytes.extend_from_slice(&body);
+                bytes.extend_from_slice(&trailer);
+                let packed = CanonicalBytes::plan(&bytes).seal();
+                assert_eq!(packed.storage_arc()[1] & (TRAILER | VARIADIC_TRAILER), flag);
+                assert_eq!(packed.len(), bytes.len());
+                assert_eq!(packed.to_vec(), bytes);
+                assert_eq!(packed, CanonicalBytes::from(bytes.clone()));
+                assert_eq!(packed.xxh3_128(), xxhash_rust::xxh3::xxh3_128(&bytes));
+                assert!(std::ptr::eq(packed.chunks().last().unwrap(), trailer_bytes(flag)));
+                *bytes.last_mut().unwrap() = 1;
+                let mismatch = CanonicalBytes::plan(&bytes).seal();
+                assert_eq!(mismatch.storage_arc()[1] & (TRAILER | VARIADIC_TRAILER), 0);
+                assert_eq!(mismatch.to_vec(), bytes);
+                assert_ne!(mismatch, packed);
+            }
+        }
     }
 
     #[test]
