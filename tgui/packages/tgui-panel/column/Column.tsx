@@ -4,7 +4,7 @@
  * panel's views and docked tgui interfaces, is an entry of the same list,
  * framed the same way and moved by the same code:
  * - an entry's header shows its title, or its tabs when windows are stacked;
- *   its chevron (or a double click) collapses it to the header;
+ *   its chevron, a click on its name or a double click collapses it to the header;
  * - the free space of a header drags the whole entry along the list while the
  *   others slide aside (live, tgui/dq liveOrder), onto another header to stack
  *   there, or out of the page to float (docked interfaces become native
@@ -42,6 +42,9 @@ import { type DockGroup, type DockWindow, fitHeights } from './model';
 
 /** Presses here keep their own meaning (buttons click, tabs select and re-arrange). */
 const NO_DRAG = 'button, input, .Button, .Tab, [data-dq-tab]';
+
+/** The entry's name: a click on it folds the entry. */
+const NAME = '.column-title';
 
 /** A drag in progress, as the list should show it now. */
 export type GroupDrag = {
@@ -235,6 +238,7 @@ function pressHead(
   host: ColumnHost,
   group: DockGroup,
   setDrag: (drag: GroupDrag | null) => void,
+  clickName: () => void,
 ) {
   if (event.button !== 0 || (event.target as HTMLElement).closest?.(NO_DRAG)) {
     return;
@@ -242,10 +246,17 @@ function pressHead(
   const target = event.currentTarget;
   const pointer = event.pointerId;
   const start = { x: event.clientX, y: event.clientY };
+  // A press that never became a drag, on the name, is a click on the name.
+  const onName = !!(event.target as HTMLElement).closest?.(NAME);
   const stop = () => {
     document.removeEventListener('pointermove', wait);
-    document.removeEventListener('pointerup', stop);
+    document.removeEventListener('pointerup', up);
     document.removeEventListener('pointercancel', stop);
+  };
+  const up = (e: PointerEvent) => {
+    if (e.pointerId !== pointer) return;
+    stop();
+    if (onName) clickName();
   };
   const wait = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;
@@ -255,7 +266,7 @@ function pressHead(
     runDrag(target, pointer, start, host, group.id, null, setDrag, e);
   };
   document.addEventListener('pointermove', wait);
-  document.addEventListener('pointerup', stop);
+  document.addEventListener('pointerup', up);
   document.addEventListener('pointercancel', stop);
 }
 
@@ -403,9 +414,12 @@ function Group(props: {
       <div
         className={`column-head${lit ? ' column-head--lit' : ''}`}
         data-column-head={group.id}
-        onPointerDown={(event) => pressHead(event, host, group, setDrag)}
+        onPointerDown={(event) =>
+          pressHead(event, host, group, setDrag, toggle)
+        }
         onDoubleClick={(event) => {
-          if (!(event.target as HTMLElement).closest(NO_DRAG)) toggle();
+          const on = event.target as HTMLElement;
+          if (!on.closest(NO_DRAG) && !on.closest(NAME)) toggle();
         }}
       >
         {foldable && (
@@ -446,7 +460,7 @@ function Group(props: {
         ) : (
           <span className="column-title">{title}</span>
         )}
-        {canFloat(host, group.active) && (
+        {host.hasWindowButtons(group.active) && (
           <>
             <Button
               compact

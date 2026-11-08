@@ -49,6 +49,9 @@ export function sendFor(
 /** Windows the column never folds (the server's window_dock_always_docked). */
 const ALWAYS_OPEN = new Set(['StatPanel']);
 
+/** Windows with no float or close button (the server keeps them open: window_dock_always_open, _always_docked). */
+const PERMANENT = new Set(['Chat', 'StatPanel']);
+
 export class ColumnHost {
   state: DockState = emptyDock();
   /** Docked tgui interfaces by window id: their own stores and channels. */
@@ -285,6 +288,13 @@ export class ColumnHost {
   /** Whether an entry is folded now (a saved fold of an always-docked window does not count). */
   collapsed(group: { collapsed: boolean; windows: string[] }): boolean {
     return group.collapsed && this.mayCollapse(group);
+  }
+
+  /** Whether a window's header offers float and close. */
+  hasWindowButtons(wid: string): boolean {
+    return (
+      !PERMANENT.has(this.state.windows[wid]?.iface ?? '') && this.mayLeave(wid)
+    );
   }
 
   mayLeave(wid: string): boolean {
