@@ -4,7 +4,7 @@
  * (code/content/client/mc_health.dm) only while this page is open, at most once a second. Sections remember open/closed per admin.
  */
 
-import { Fragment, type ReactNode, useState } from 'react';
+import { Fragment, memo, type ReactNode, useMemo, useState } from 'react';
 import {
   bytes,
   count,
@@ -217,7 +217,8 @@ function Uses({ data }: { data: McHealthData }) {
         </thead>
         <tbody>
           {rows.map((s) => {
-            const behind = data.attribution?.[s.key];
+            const behind =
+              data.attribution?.[s.key] ?? data.attribution_rest?.[s.key];
             const isOpen = expanded === s.key;
             return (
               <Fragment key={s.key}>
@@ -542,13 +543,51 @@ function Advanced(props: {
   );
 }
 
+/**
+ * The data a section reads, as one object that keeps its identity while those slices do: the server sends only the sections that changed and
+ * the store keeps the others' objects, so a memoized section whose slices are unchanged does not render again (renderCost.test.tsx).
+ */
+function useSlices(
+  data: McHealthData | null,
+  keys: (keyof McHealthData)[],
+): McHealthData | null {
+  const deps = keys.map((key) => data?.[key]);
+  return useMemo(() => {
+    if (!data) return null;
+    const out: Record<string, unknown> = {};
+    for (const key of keys) out[key] = data[key];
+    return out as McHealthData;
+  }, deps);
+}
+
+const UsesMemo = memo(Uses);
+const OverrunsMemo = memo(Overruns);
+const MemoryMemo = memo(Memory);
+const EntitiesMemo = memo(Entities);
+const NativeMemo = memo(Native);
+const AdvancedMemo = memo(Advanced);
+
 export function McHealthPanel(props: {
   data: McHealthData | null;
   token: string | null;
   location?: string;
 }) {
   const { data } = props;
-  if (!data)
+  const uses = useSlices(data, ['kernel', 'attribution', 'attribution_rest']);
+  const overruns = useSlices(data, ['outliers', 'window_5m']);
+  const memory = useSlices(data, ['rust', 'gc']);
+  const entities = useSlices(data, ['entities', 'churn']);
+  const native = useSlices(data, ['rust']);
+  const advanced = useSlices(data, ['runtime', 'kernel', 'maptick']);
+  if (
+    !data ||
+    !uses ||
+    !overruns ||
+    !memory ||
+    !entities ||
+    !native ||
+    !advanced
+  )
     return (
       <div className="stat-empty">Waiting for the server's numbers...</div>
     );
@@ -556,12 +595,16 @@ export function McHealthPanel(props: {
     <div className="mch">
       <Health data={data} />
       <Ticks data={data} />
-      <Uses data={data} />
-      <Overruns data={data} />
-      <Memory data={data} />
-      <Entities data={data} />
-      <Native data={data} />
-      <Advanced data={data} token={props.token} location={props.location} />
+      <UsesMemo data={uses} />
+      <OverrunsMemo data={overruns} />
+      <MemoryMemo data={memory} />
+      <EntitiesMemo data={entities} />
+      <NativeMemo data={native} />
+      <AdvancedMemo
+        data={advanced}
+        token={props.token}
+        location={props.location}
+      />
     </div>
   );
 }
