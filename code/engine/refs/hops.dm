@@ -245,6 +245,37 @@ GLOBAL_VAR_INIT(draw_hop_vars_built, FALSE)
 	draw_hop_publish_vars(E, list(var_name))
 
 GLOBAL_VAR_INIT(draw_hop_batch_depth, 0)
+
+/// The handles of the materialized movables whose type's draw reads a var one area hop away ("area.<var>": a vendor drawing its area's power):
+/// what an area's var change marks, instead of a walk of the area. Kept by hop_area_reader_join()/leave() on materialize and dematerialize.
+GLOBAL_LIST_EMPTY(area_hop_readers)
+/// type -> TRUE or FALSE: whether the type's draw reads a var one area hop away.
+GLOBAL_LIST_EMPTY(area_hop_reader_types)
+
+/// Whether `type`'s draw reads a var through the area hop alone ("area.<var>"), from the change plan; cached per type.
+/proc/draws_through_area_hop(type)
+	var/cached = GLOB.area_hop_reader_types[type]
+	if(!isnull(cached))
+		return cached
+	. = FALSE
+	for(var/read in plan_keys(type, PLAN_DRAW_HOP))
+		var/list/segments = splittext(read, ".")
+		if(length(segments) == 2 && segments[1] == HOP_AREA)
+			. = TRUE
+			break
+	GLOB.area_hop_reader_types[type] = .
+
+/// A movable entered the world: if its draw reads its area's vars, an area change finds it in area_hop_readers.
+/proc/hop_area_reader_join(atom/movable/AM)
+	if(draws_through_area_hop(AM.type))
+		GLOB.area_hop_readers[handle_text(handle_of(AM))] = TRUE
+
+/// A movable left the world: it is no area's reader any more.
+/proc/hop_area_reader_leave(atom/movable/AM)
+	// Dematerialize runs inside the destroy, where handle_of() answers null: the handle is read off the slot it still holds.
+	var/id = AM.handle_slot
+	if(id && GLOB.area_hop_reader_types[AM.type])
+		GLOB.area_hop_readers -= handle_text(id + SLOT_SPAN * handle_gens[id])
 /// E -> its changed var names (assoc), while a hop batch is open.
 GLOBAL_LIST_EMPTY(draw_hop_batch_pending)
 
@@ -290,6 +321,21 @@ GLOBAL_LIST_EMPTY(draw_hop_batch_pending)
 	for(var/key in chains)
 		var/list/chain = chains[key]
 		var/list/group = reads_of_chain[key]
+		// One area hop (a draw reading its own area's var): its readers are the few materialized things whose type draws through the area hop
+		// (area_hop_readers), asked where they stand now, not the area's whole nested contents.
+		if(isarea(E) && length(chain) == 1 && chain[1] == HOP_AREA)
+			for(var/handle in GLOB.area_hop_readers)
+				var/atom/movable/reader = handle_get(handle)
+				if(!reader || QDELING(reader) || hop_step(reader, HOP_AREA) != E)
+					continue
+				var/list/reads = draw_hop_reads_of(reader)
+				if(!reads)
+					continue
+				for(var/read in group)
+					if(read in reads)
+						refresh_mark(reader, DEP_DRAW)
+						break
+			continue
 		var/list/frontier = list(E)
 		for(var/i = length(chain), i >= 1, i--)
 			var/list/next = list()

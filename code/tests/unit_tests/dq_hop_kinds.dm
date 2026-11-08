@@ -95,3 +95,42 @@ CAPABILITIES(/obj/dq_hop_crate)
 	rel_set(C, nameof(C.gauge), second)
 	refresh_flush()
 	TEST_ASSERT(("level-5" in R.rx?.look_overlays), "a link of the chain changed and the draw redrew: [json_encode(R.rx?.look_overlays)]")
+
+/// A draw that reads its own area's light channel through the area hop (a vendor drawing its area's power does this).
+/obj/dq_hop_area_lamp
+	name = "hop area lamp"
+	icon = 'icons/obj/stock_parts.dmi'
+	icon_state = "fix"
+
+/obj/dq_hop_area_lamp/draw(datum/look/look)
+	..()
+	var/area/A = get_area(src)
+	look.overlay("lit-[A ? A.power_light : -1]")
+
+/// An area's channel flip redraws the things whose draw reads it through the area hop, found in area_hop_readers (no walk of the area): on the floor
+/// and nested in a box. Deleted, a reader leaves the set.
+/datum/unit_test/dq_hop_area_readers_hear_a_channel_flip
+
+/datum/unit_test/dq_hop_area_readers_hear_a_channel_flip/Run()
+	var/turf/T = test_floor()
+	var/area/A = get_area(T)
+	var/obj/dq_hop_area_lamp/floor_lamp = allocate(/obj/dq_hop_area_lamp, T)
+	var/obj/dq_hop_box/B = allocate(/obj/dq_hop_box, T)
+	var/obj/dq_hop_area_lamp/boxed_lamp = allocate(/obj/dq_hop_area_lamp, B)
+	TEST_ASSERT(("area.power_light" in draw_hop_reads_of(floor_lamp)), "the build generated the area hop read: [json_encode(draw_hop_reads_of(floor_lamp))]")
+	TEST_ASSERT(GLOB.area_hop_readers[handle_text(handle_of(floor_lamp))] && GLOB.area_hop_readers[handle_text(handle_of(boxed_lamp))], "both lamps are area hop readers")
+	var/was_light = A.power_light
+	A.set_channels(A.power_equip, TRUE, A.power_environ)
+	state_changed(floor_lamp)
+	state_changed(boxed_lamp)
+	refresh_flush()
+	TEST_ASSERT(("lit-1" in floor_lamp.rx?.look_overlays), "lit to begin with: [json_encode(floor_lamp.rx?.look_overlays)]")
+	A.set_channels(A.power_equip, FALSE, A.power_environ)
+	refresh_flush()
+	TEST_ASSERT(("lit-0" in floor_lamp.rx?.look_overlays), "the flip redraws the lamp on the floor: [json_encode(floor_lamp.rx?.look_overlays)]")
+	TEST_ASSERT(("lit-0" in boxed_lamp.rx?.look_overlays), "and the lamp in the box: [json_encode(boxed_lamp.rx?.look_overlays)]")
+	A.set_channels(A.power_equip, was_light, A.power_environ)
+	refresh_flush()
+	var/lamp_handle = handle_text(handle_of(floor_lamp))
+	qdel(floor_lamp)
+	TEST_ASSERT(!GLOB.area_hop_readers[lamp_handle], "a deleted lamp is no reader")
