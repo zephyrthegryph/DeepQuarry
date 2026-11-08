@@ -5117,6 +5117,7 @@
 #include "code\content\mob\living\carbon\human\human_defense.dm"
 #include "code\content\mob\living\carbon\human\human_helpers.dm"
 #include "code\content\mob\living\carbon\human\human_look.dm"
+#include "code\content\mob\living\carbon\human\human_look_layered.dm"
 #include "code\content\mob\living\carbon\human\human_modular_limbs.dm"
 #include "code\content\mob\living\carbon\human\human_movement.dm"
 #include "code\content\mob\living\carbon\human\human_organs.dm"
