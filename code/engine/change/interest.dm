@@ -282,7 +282,9 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		return TRUE
 	var/client/C = handle_get(owner)
 	if(!istype(C) || !C.mob || !C.mob.view_cover_set(TRUE))
+		log_world("INTEREST: no cover raised for [owner] (client [C ? "present" : "gone"], mob [C?.mob || "none"])")
 		return FALSE
+	log_world("INTEREST: cover raised for [owner] on [C.mob]")
 	GLOB.interest_covers_raised++
 	return TRUE
 
@@ -294,6 +296,9 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	var/client/C = handle_get(owner)
 	if(istype(C) && C.mob)
 		C.mob.view_cover_set(FALSE)
+		log_world("INTEREST: cover lifted for [owner] on [C.mob]")
+	else
+		log_world("INTEREST: cover dropped for [owner]: no client or mob to lift it from")
 
 /// Covers (`covered`) or uncovers this mob's view of the map while what it is about to see is drawn. TRUE when it could. The engine's default has no
 /// cover to show; the HUD implements it (code/content/hud/fullscreen.dm).

@@ -46,6 +46,8 @@
 		overlay_fullscreen("interest_cover", /atom/movable/screen/fullscreen/blind)
 	else
 		clear_fullscreen("interest_cover", 2)
+	var/turf/seen = get_turf(client?.eye)
+	log_world("VIEW_COVER: [covered ? "raise" : "lift"] on [src] ([type]): client [client ? "yes" : "no"], eye [client?.eye] at [seen ? "[seen.x],[seen.y],[seen.z]" : "nowhere"], sight [sight], stat [stat], fullscreens [english_list(screens ? screens.Copy() : list(), nothing_text = "none")]")
 	return TRUE
 
 /mob/proc/clear_fullscreens()
