@@ -36,6 +36,22 @@ const asEntry = (value: any): DockWindow | null =>
       }
     : null;
 
+/**
+ * The list index a window dropped on the panel goes to: `y` is the drop's y
+ * in the panel page (CSS px), against the entries' middles. Undefined when the
+ * drop gave no point (a dock button, a reload).
+ */
+function dropIndexAt(y: number): number {
+  const entries = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-dock-group]'),
+  );
+  const index = entries.findIndex((node) => {
+    const rect = node.getBoundingClientRect();
+    return y < rect.top + rect.height / 2;
+  });
+  return index < 0 ? entries.length : index;
+}
+
 /** Where the stat panel page's top left is on the screen, in physical pixels. */
 async function pageOrigin(): Promise<Point | null> {
   try {
@@ -129,6 +145,10 @@ export class DockHost {
       case 'wm/open': {
         const entry = asEntry(payload);
         if (entry) {
+          const at = this.pageY(payload?.at);
+          if (at !== null) {
+            entry.at = dropIndexAt(at);
+          }
           this.placed.delete(entry.id);
           this.dispatch({ type: 'open', window: entry });
           this.refreshOrigin();
@@ -151,10 +171,47 @@ export class DockHost {
     Byond.sendMessage('WM-Ready');
   }
 
-  float(id: string) {
+  /** Floats window `id`; with `at` (screen pixels) it opens under that point, as a popped-out chat does. */
+  float(id: string, at?: Point | null) {
     this.placed.delete(id);
     this.dispatch({ type: 'float', id });
-    Byond.sendMessage('WM-Float', { id });
+    Byond.sendMessage('WM-Float', at ? { id, at } : { id });
+  }
+
+  /** Floats every window of a group: the shown one under `at`, the others where they last floated. */
+  floatGroup(group: string, at: Point | null) {
+    const found = this.state.groups.find((g) => g.id === group);
+    if (!found) {
+      return;
+    }
+    for (const id of found.windows) {
+      this.float(id, id === found.active ? at : null);
+    }
+  }
+
+  /** A point of this page (CSS px) on the screen (physical px), or null before the page's place is known. */
+  screenPoint(x: number, y: number): Point | null {
+    if (!this.origin) {
+      return null;
+    }
+    const ratio = window.devicePixelRatio || 1;
+    return {
+      x: Math.round(this.origin.x + x * ratio),
+      y: Math.round(this.origin.y + y * ratio),
+    };
+  }
+
+  /** A screen point's (physical px, `{x, y}`) y in this page (CSS px), or null. */
+  private pageY(at: unknown): number | null {
+    if (!this.origin || !isPoint(at)) {
+      return null;
+    }
+    return (at.y - this.origin.y) / (window.devicePixelRatio || 1);
+  }
+
+  /** The dock area's node (the list drags measure it). */
+  get areaNode(): HTMLElement | null {
+    return this.area;
   }
 
   close(id: string) {

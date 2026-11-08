@@ -11,6 +11,14 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { Tabs as CoreTabs } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
+import {
+  DRAG_THRESHOLD,
+  liveClamp,
+  liveDropIndex,
+  liveSlide,
+  moveTo,
+  type OrderBox,
+} from './liveOrder';
 
 export type Tab = {
   id: string;
@@ -34,39 +42,36 @@ type Props = {
   /** `small` for a sub-tab row inside a page (Inspect, MC). */
   size?: 'normal' | 'small';
   className?: string;
+  /**
+   * Pulling a tab off the strip (across it, past DRAG_OUT_DISTANCE) hands the
+   * drag to the caller with the live pointer event: the strip drops its
+   * re-arranging and the caller carries on (the window dock pulls a docked
+   * window out of a stack this way). Omit to keep tabs locked to the strip.
+   */
+  onDragOut?: (id: string, event: PointerEvent) => void;
   /** Right after the last tab (an add-tab button). */
   afterTabs?: ReactNode;
   /** At the row's end (buttons, a search box). */
   children?: ReactNode;
 };
 
-/** Pixels the pointer must travel before a press on a tab becomes a drag (less is a click). */
-export const DRAG_THRESHOLD = 4;
+export { DRAG_THRESHOLD, moveTo } from './liveOrder';
+
+/** How far (CSS px) a tab is pulled off its strip, across it, before `onDragOut` takes the drag. */
+export const DRAG_OUT_DISTANCE = 14;
 
 export type TabBox = { id: string; left: number; width: number; top: number };
 
-/** Where the dragged tab lands: its centre against the centres of the other tabs in its row. */
-export function dropIndex(boxes: TabBox[], id: string, dx: number): number {
-  const from = boxes.findIndex((box) => box.id === id);
-  if (from < 0) return -1;
-  const dragged = boxes[from];
-  const centre = dragged.left + dx + dragged.width / 2;
-  let to = from;
-  for (let i = 0; i < boxes.length; i++) {
-    const box = boxes[i];
-    if (i === from || box.top !== dragged.top) continue;
-    const mid = box.left + box.width / 2;
-    if (i > from && centre > mid) to = Math.max(to, i);
-    if (i < from && centre < mid) to = Math.min(to, i);
-  }
-  return to;
-}
+const asOrder = (box: TabBox): OrderBox => ({
+  id: box.id,
+  start: box.left,
+  size: box.width,
+  line: box.top,
+});
 
-/** The order with `id` moved to index `to`. */
-export function moveTo(order: string[], id: string, to: number): string[] {
-  const next = order.filter((item) => item !== id);
-  next.splice(to, 0, id);
-  return next;
+/** Where the dragged tab lands (the shared live-order model, tgui/dq/liveOrder.ts, along x). */
+export function dropIndex(boxes: TabBox[], id: string, dx: number): number {
+  return liveDropIndex(boxes.map(asOrder), id, dx);
 }
 
 /** How far the tab at `at` slides aside while the tab at `from` is dragged to `to`. */
@@ -76,36 +81,24 @@ export function slideFor(
   to: number,
   at: number,
 ): number {
-  if (at === from || from < 0) return 0;
-  const next = boxes[from + 1] ?? boxes[from - 1];
-  const gap = next
-    ? Math.max(
-        0,
-        next.left > boxes[from].left
-          ? next.left - (boxes[from].left + boxes[from].width)
-          : boxes[from].left - (next.left + next.width),
-      )
-    : 0;
-  const room = boxes[from].width + gap;
-  if (from < at && at <= to) return -room;
-  if (from > at && at >= to) return room;
-  return 0;
+  return liveSlide(boxes.map(asOrder), from, to, at);
 }
 
-/** The dragged tab's offset held inside the strip: it slides along the row, never past its ends. */
+/** The dragged tab's offset held inside the strip. */
 export function clampDrag(
   box: TabBox,
   dx: number,
   minX: number,
   maxX: number,
 ): number {
-  return Math.min(maxX - (box.left + box.width), Math.max(minX - box.left, dx));
+  return liveClamp(asOrder(box), dx, minX, maxX);
 }
 
 type Drag = {
   id: string;
   pointerId: number;
   startX: number;
+  startY: number;
   boxes: TabBox[];
   minX: number;
   maxX: number;
@@ -117,6 +110,7 @@ export function Tabs(props: Props) {
     tabs,
     onSelect,
     onReorder,
+    onDragOut,
     layout = 'wrap',
     size = 'normal',
     className,
@@ -126,9 +120,11 @@ export function Tabs(props: Props) {
   const strip = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
   const suppressClick = useRef(false);
-  const [live, setLive] = useState<{ id: string; dx: number; to: number } | null>(
-    null,
-  );
+  const [live, setLive] = useState<{
+    id: string;
+    dx: number;
+    to: number;
+  } | null>(null);
   const ids = tabs.map((tab) => tab.id);
 
   function begin(event: React.PointerEvent, id: string) {
@@ -149,6 +145,7 @@ export function Tabs(props: Props) {
       id,
       pointerId: event.pointerId,
       startX: event.clientX,
+      startY: event.clientY,
       boxes,
       minX: bounds.left,
       maxX: bounds.right,
@@ -161,7 +158,14 @@ export function Tabs(props: Props) {
     if (!current || event.pointerId !== current.pointerId) return;
     const raw = event.clientX - current.startX;
     if (!current.active) {
-      if (Math.abs(raw) < DRAG_THRESHOLD) return;
+      if (
+        Math.abs(raw) < DRAG_THRESHOLD &&
+        !(
+          onDragOut &&
+          Math.abs(event.clientY - current.startY) >= DRAG_THRESHOLD
+        )
+      )
+        return;
       current.active = true;
       try {
         // Keep the drag while the pointer leaves the tab; the strip clamp keeps the tab in place.
@@ -170,9 +174,24 @@ export function Tabs(props: Props) {
         // A pointer the browser no longer tracks: the drag still follows the moves it gets.
       }
     }
+    if (
+      onDragOut &&
+      Math.abs(event.clientY - current.startY) >= DRAG_OUT_DISTANCE
+    ) {
+      // Off the strip: the caller owns the drag from here.
+      drag.current = null;
+      suppressClick.current = true;
+      setLive(null);
+      onDragOut(current.id, event.nativeEvent);
+      return;
+    }
     const box = current.boxes.find((b) => b.id === current.id);
     const dx = box ? clampDrag(box, raw, current.minX, current.maxX) : raw;
-    setLive({ id: current.id, dx, to: dropIndex(current.boxes, current.id, dx) });
+    setLive({
+      id: current.id,
+      dx,
+      to: dropIndex(current.boxes, current.id, dx),
+    });
   }
 
   function finish(event: React.PointerEvent, commit: boolean) {

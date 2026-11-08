@@ -73,3 +73,26 @@
 	TEST_ASSERT(!ui.closing, "a panel message for a window that is not the client's docked one does nothing")
 	qdel(dock)
 	qdel(ui)
+
+/datum/unit_test/dq_window_dock_points
+/datum/unit_test/dq_window_dock_points/Run()
+	TEST_ASSERT_EQUAL(dock_point_text(list("x" = 120.4, "y" = -30)), "120,-30", "a page point becomes screen text")
+	TEST_ASSERT_NULL(dock_point_text(list("x" = "1", "y" = 2)), "a point that is not two numbers is dropped")
+	TEST_ASSERT_NULL(dock_point_text("5,5"), "so is anything that is not a point")
+	var/list/point = dock_point("120,-30")
+	TEST_ASSERT_EQUAL(point?["x"], 120, "the panel reads x back")
+	TEST_ASSERT_EQUAL(point?["y"], -30, "and y")
+	TEST_ASSERT_NULL(dock_point("1,2,3"), "junk text gives no point")
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/host = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/datum/tgui/dq_dock_probe/ui = new(user, host, "Probe")
+	TEST_ASSERT_NULL(ui.dock_entry()["at"], "a window docked by its button has no drop point")
+	ui.dock_at = "10,20"
+	TEST_ASSERT_EQUAL(ui.dock_entry()["at"]?["y"], 20, "a dropped window tells the panel where it was dropped")
+	ui.docked = TRUE
+	var/datum/window_dock/dock = new(null)
+	TEST_ASSERT(dock.undock(ui, "300,40"), "a docked window floats")
+	TEST_ASSERT_NULL(ui.float_at, "the pointer place goes out with the one update that floats it, then is forgotten")
+	TEST_ASSERT_EQUAL(ui.probe_full, 1, "floating sends one full update")
+	qdel(dock)
+	qdel(ui)
