@@ -36,8 +36,6 @@ import { Button } from 'tgui-core/components';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { POP_OUT_DISTANCE } from '../layout/model';
 import { Panel } from '../Panel';
-import { StatWindow } from '../statpanel/App';
-import type { PanelView } from '../statpanel/layout';
 import { type ColumnHost, columnHost } from './host';
 import type { DockGroup, DockWindow } from './model';
 
@@ -320,13 +318,6 @@ function WindowBody(props: { host: ColumnHost; win: DockWindow }) {
   let content: ReactNode = null;
   if (win.kind === 'chat') {
     content = <Panel />;
-  } else if (win.kind === 'stat') {
-    content = (
-      <StatWindow
-        store={host.stat.store}
-        view={win.iface.slice(5) as PanelView}
-      />
-    );
   } else {
     const backend = host.backends.get(win.id);
     content = backend ? <EmbeddedInterface backend={backend} /> : null;

@@ -303,4 +303,6 @@
 	set name = "Fix Stat Panel"
 	set hidden = TRUE
 
+	stat_panel_open(src)
+
 	init_verbs()

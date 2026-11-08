@@ -26,6 +26,8 @@ export type EmbeddedBackend = {
   store: Store;
   /** Sends a message for this window (`act/<name>`, `setSharedState`, ...). */
   send: (type: string, payload?: Record<string, unknown>) => void;
+  /** Every message the server sends this window, for interfaces with a protocol of their own (useWindowMessages). */
+  listeners: Set<(type: string, payload: unknown) => void>;
 };
 
 /** Set inside an embedded window; null in a native tgui window. */
@@ -53,7 +55,7 @@ export function createEmbeddedBackend(
 ): EmbeddedBackend {
   const store = createStore();
   store.set(suspendedAtom, false);
-  return { id, store, send };
+  return { id, store, send, listeners: new Set() };
 }
 
 type UpdatePayload = {
@@ -73,6 +75,9 @@ export function applyEmbeddedMessage(
   type: string,
   payload: unknown,
 ): void {
+  for (const listener of backend.listeners) {
+    listener(type, payload);
+  }
   if (type !== 'update' || !payload || typeof payload !== 'object') {
     return;
   }

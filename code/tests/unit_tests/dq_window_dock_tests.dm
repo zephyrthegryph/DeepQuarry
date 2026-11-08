@@ -54,6 +54,14 @@
 	TEST_ASSERT(!wanted["Junk"], "a malformed entry is ignored")
 	TEST_ASSERT_EQUAL(length(window_dock_wanted("not json")), 0, "junk text docks nothing")
 	TEST_ASSERT_EQUAL(length(window_dock_wanted(null)), 0, "an unset layout docks nothing")
+	TEST_ASSERT(("Vending" in wanted) && !wanted["Vending"], "a floated interface is remembered as floating, not forgotten")
+	TEST_ASSERT(!("Junk" in wanted), "a malformed entry says nothing")
+	var/datum/window_dock/dock = new(null)
+	TEST_ASSERT(dock.wants("StatPanel"), "the stat panel opens docked by default")
+	TEST_ASSERT(!dock.wants("Vending"), "an interface with no saved word floats")
+	dock.wants_cache = list("StatPanel" = FALSE)
+	TEST_ASSERT(!dock.wants("StatPanel"), "a stat panel the player floated stays floating")
+	qdel(dock)
 
 /datum/unit_test/dq_window_dock_routing
 /datum/unit_test/dq_window_dock_routing/Run()
@@ -107,3 +115,14 @@
 	TEST_ASSERT(!ui.view_hidden, "shown again")
 	TEST_ASSERT_EQUAL(ui.probe_full, 1, "it gets one fresh update")
 	qdel(ui)
+
+/datum/unit_test/dq_stat_panel_raw_messages
+/datum/unit_test/dq_stat_panel_raw_messages/Run()
+	var/datum/stat_panel_ui/panel = new(null)
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	TEST_ASSERT(!panel.ui_raw_message(user, "Set-Tab", list("tab" = "Status")), "a panel with no client handles nothing")
+	TEST_ASSERT(!panel.ui_prepare(user, null), "and opens for no one")
+	var/datum/stat_panel_ui/host = new(null)
+	TEST_ASSERT(!host.ui_raw_message(null, "Update-Verbs", null), "a message with no user goes nowhere")
+	qdel(host)
+	qdel(panel)

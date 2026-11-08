@@ -65,15 +65,23 @@ CAPABILITIES(/obj/item/card/id)
 	set_front(null)
 	rel_set(src, nameof(photo_subject), M)
 
-/// The photo for the card's window: taken now, of its subject as they are, the first time it is asked for, then kept.
+/// The photo for the card's window: of its subject as they are the first time it is asked for, then kept. It comes from the shared portrait
+/// cache (code/content/appearance/portrait_cache.dm), rendered off the tick; until it lands the window shows no photo, then the photo.
 /obj/item/card/id/proc/id_photo()
 	var/mob/M = photo_subject()
 	if(isnull(front) && M && !QDELETED(M))
 		M.ImmediateOverlayUpdate()
-		var/icon/F = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
-		set_front("'data:image/png;base64,[icon2base64(F)]'")
-		rel_set(src, nameof(photo_subject), null)
+		var/datum/portrait/P = portrait_request(M, SOUTH, src, PROC_REF(id_photo_ready))
+		if(P)
+			id_photo_ready(P)
 	return front
+
+/// The subject's portrait landed: it is the card's photo from now on.
+/obj/item/card/id/proc/id_photo_ready(datum/portrait/P)
+	if(!isnull(front) || !P?.b64)
+		return
+	set_front("'data:image/png;base64,[P.b64]'")
+	rel_set(src, nameof(photo_subject), null)
 
 /mob/proc/set_id_info(obj/item/card/id/id_card)
 	id_card.set_age(0)
