@@ -37,7 +37,8 @@
 	op_fast_materialize(compiled)
 	TEST_ASSERT_EQUAL(op_cand_keys(compiled.ordered), op_cand_keys(full.ordered), "[what]: the order of the survivors")
 
-/// A holder's merged rows and providers are dropped when its capability generation moves (a grant attached, ended or restacked).
+/// A holder's providers are dropped when its capability generation moves (a grant attached, ended or restacked); its merged rows are kept while
+/// the running grants that bring ops are the same, and made again when one of those changes.
 /datum/unit_test/dq_op_compiled_tables_follow_grants
 
 /datum/unit_test/dq_op_compiled_tables_follow_grants/Run()
@@ -50,9 +51,18 @@
 	TEST_ASSERT(length(state?.activations), "a human holds grants (its body, its species)")
 	TEST_ASSERT(state.op_dispatch_memo, "the actor's merged rows are kept after a click")
 	TEST_ASSERT(state.op_provider_memo, "the actor's providers are kept after a click")
+	var/list/kept = state.op_dispatch_memo
 	state.set_capability_generation(state.capability_generation + 1)
-	TEST_ASSERT_NULL(state.op_dispatch_memo, "a moved capability generation drops the merged rows")
 	TEST_ASSERT_NULL(state.op_provider_memo, "a moved capability generation drops the providers")
+	op_click_resolution(A, B, null, ORIGIN_CLICK, actor_authority(A), GESTURE_CLICK)
+	TEST_ASSERT(state.op_dispatch_memo == kept, "the same op-bearing grants keep the merged rows past a moved generation")
+	var/list/op_acts = kept[1]
+	TEST_ASSERT(length(op_acts), "a human's grants bring ops (its body's, its species')")
+	var/datum/activation/first = op_acts[1]
+	first.runs = FALSE
+	op_click_resolution(A, B, null, ORIGIN_CLICK, actor_authority(A), GESTURE_CLICK)
+	TEST_ASSERT(state.op_dispatch_memo != kept, "a grant that brings ops stopping makes the merged rows again")
+	first.runs = TRUE
 
 /// A crewmate's menu is served from the cache on the next read (its rows that sample state are asked again on their own), and a change of what
 /// the actor carries inside it (an implant) is seen at once.

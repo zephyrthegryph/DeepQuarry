@@ -310,10 +310,18 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 			plain = list(own_rows, no_grants, null)
 			LAZYSET(index.op_side_rows, signature, plain)
 		return plain
-	// Kept with the count of the holder's activations as well: a grant being attached is in the list before its restack moves the generation.
+	// Kept for the running grants that bring ops, in order: a hit that adds or ends a status (a grant with no ops) moves the capability generation
+	// and leaves these rows, and their compiled tables, as they were. A grant being attached is in the list before its restack moves the generation.
+	var/list/op_acts = list()
+	for(var/datum/activation/A as anything in state.activations)
+		if(A.dead || !A.runs || T.caps[A.def.key])
+			continue
+		var/datum/op_index/def_index = op_index_of_def(T, A.def)
+		if(length(def_index.ordered))
+			op_acts += A
 	var/list/memo = state.op_dispatch_memo
-	if(isnull(memo) || memo[1] != count)
-		memo = list(count, list())
+	if(isnull(memo) || !op_same_items(memo[1], op_acts))
+		memo = list(op_acts, list())
 		state.op_dispatch_memo = memo
 	var/list/by_shape = memo[2]
 	var/list/made = by_shape[signature]
@@ -324,15 +332,23 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 	for(var/datum/op_row/row as anything in op_rows_for(index, side, origin, authority, gesture, intents, held_type, signature, near_misses))
 		rows += row
 		acts += list(null)
-	for(var/datum/activation/A as anything in state.activations)
-		if(A.dead || !A.runs || T.caps[A.def.key])
-			continue
+	for(var/datum/activation/A as anything in op_acts)
 		for(var/datum/op_row/row as anything in op_rows_for(op_index_of_def(T, A.def), side, origin, authority, gesture, intents, held_type, signature, near_misses))
 			rows += row
 			acts += A
 	made = list(rows, acts, null)
 	by_shape[signature] = made
 	return made
+
+/// Do lists `a` and `b` hold the same items in the same order?
+/proc/op_same_items(list/a, list/b)
+	var/n = length(a)
+	if(n != length(b))
+		return FALSE
+	for(var/i in 1 to n)
+		if(a[i] != b[i])
+			return FALSE
+	return TRUE
 
 /datum/op_index
 	/// signature -> list(rows, a null per row, compiled tables): op_side_rows() of a holder with no grants.
