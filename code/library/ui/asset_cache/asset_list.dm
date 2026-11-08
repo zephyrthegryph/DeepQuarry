@@ -115,14 +115,15 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/get_url_mappings()
 	return list()
 
-/// The serialized URL mappings of an asset type for one transport type (a tgui message): regenerating an asset drops them all.
+/// The URL mappings of an asset type for one transport type, as the url-encoded JSON payload of an `asset/mappings` message (each window
+/// wraps it in its own envelope, tgui_window.dm wrap_message()): regenerating an asset drops them all.
 DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mappings), SC_EXPLICIT)
 
 /proc/build_asset_url_mappings(datum/asset/asset)
-	return TGUI_CREATE_MESSAGE("asset/mappings", asset.get_url_mappings())
+	return url_encode(json_encode(asset.get_url_mappings()))
 
-/// Returns a cached tgui message of URL mappings
-/datum/asset/proc/get_serialized_url_mappings()
+/// The cached, encoded payload of this asset's `asset/mappings` message.
+/datum/asset/proc/get_encoded_url_mappings()
 	return CACHED_KEY(asset_url_mappings, "[type]|[SSassets.transport_type()]", src)
 
 /datum/asset/proc/register()

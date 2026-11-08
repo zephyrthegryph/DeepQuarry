@@ -631,8 +631,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(TRACKED_UNCHANGED(capability_generation, value))
 		return FALSE
 	capability_generation = value
-	// What the resolver merged over the holder's grants (its candidate rows per input shape, its providers) is made again on the next read.
-	op_dispatch_memo = null
+	// The providers the resolver merged over the holder's grants are made again on the next read; its candidate rows per input shape are kept for
+	// the grants that bring ops (op_side_rows() compares them on each read).
 	op_provider_memo = null
 	tracked_changed(src, nameof(capability_generation))
 	return TRUE

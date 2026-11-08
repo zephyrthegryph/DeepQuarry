@@ -7,13 +7,24 @@ import { Reconnector, type ReconnectState } from './reconnect-model';
 
 let url: string | null = null;
 
+/** Keeps the server address for a reconnect: only a real address (BYOND sometimes reports a :0 port, or nothing a string). */
+export function noteServerUrl(currentUrl: unknown): void {
+  if (typeof currentUrl === 'string' && currentUrl && !/:0$/.test(currentUrl)) {
+    url = currentUrl;
+  }
+}
+
+/** The address a reconnect would use (tests). */
+export function serverUrl(): string | null {
+  return url;
+}
+
+// A poll whose answer is not a string, or that fails, keeps the last address: it never throws out of the timer, where it surfaced
+// as an error of whatever ran at that moment (the PDA test's 1-in-5 failure).
 setInterval(() => {
-  Byond.winget('', 'url').then((currentUrl) => {
-    // Sometimes, for whatever reason, BYOND will give an IP with a :0 port.
-    if (currentUrl && !currentUrl.match(/:0$/)) {
-      url = currentUrl;
-    }
-  });
+  Byond.winget('', 'url')
+    .then(noteServerUrl)
+    .catch(() => undefined);
 }, 5000);
 
 const logger = createLogger('Reconnect');

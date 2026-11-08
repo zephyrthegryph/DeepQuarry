@@ -498,7 +498,16 @@
 
 /// The message string a page gets for `type` with its JSON payload, url-encoded once (TGUI_CREATE_MESSAGE's format).
 /datum/tgui_window/proc/encode_message(type, payload_json)
-	return "%7b%22type%22%3a%22[type]%22%2c%22payload%22%3a[url_encode(payload_json)]%7d"
+	return wrap_message(type, url_encode(payload_json))
+
+/// The message string for `type` around a payload already JSON- and url-encoded (a cached one: asset mappings).
+/datum/tgui_window/proc/wrap_message(type, encoded_payload)
+	return "%7b%22type%22%3a%22[type]%22%2c%22payload%22%3a[encoded_payload]%7d"
+
+/// Sends `type` with a payload already encoded (wrap_message()): no JSON or url encoding, no admin-link scan (the payload is the server's
+/// own, never ui_data text).
+/datum/tgui_window/proc/send_encoded(type, encoded_payload, force)
+	send_raw_message(wrap_message(type, encoded_payload), force)
 
 /// Forgets what was last sent under `same_key`: the page dropped that state (a tab it removed), so the next message under it goes out.
 /datum/tgui_window/proc/forget_sent(same_key)
@@ -544,7 +553,7 @@
 	else if(istype(asset, /datum/asset/spritesheet_batched))
 		var/datum/asset/spritesheet_batched/spritesheet = asset
 		send_message("asset/stylesheet", spritesheet.css_filename())
-	send_raw_message(asset.get_serialized_url_mappings())
+	send_encoded("asset/mappings", asset.get_encoded_url_mappings())
 
 /**
  * private

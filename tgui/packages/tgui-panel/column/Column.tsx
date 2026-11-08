@@ -19,6 +19,7 @@ import {
   type ErrorInfo,
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
+  useEffect,
   useState,
   useSyncExternalStore,
 } from 'react';
@@ -37,7 +38,7 @@ import { MapSplitHandle } from '../layout/ChatLayout';
 import { POP_OUT_DISTANCE } from '../layout/model';
 import { Panel } from '../Panel';
 import { type ColumnHost, columnHost } from './host';
-import type { DockGroup, DockWindow } from './model';
+import { type DockGroup, type DockWindow, fitHeights } from './model';
 
 /** Presses here keep their own meaning (buttons click, tabs select and re-arrange). */
 const NO_DRAG = 'button, input, .Button, .Tab, [data-dq-tab]';
@@ -197,9 +198,14 @@ function runDrag(
       }
       return;
     }
+    // The entry as it is now: windows may have closed, or the page reloaded, while the pointer was down.
+    const now = host.state.groups.find((g) => g.id === group);
+    if (!now) {
+      return;
+    }
     if (done.float) {
-      for (const id of groupOf?.windows ?? []) {
-        host.float(id, id === groupOf?.active ? screenPoint(e) : null);
+      for (const id of now.windows) {
+        host.float(id, id === now.active ? screenPoint(e) : null);
       }
     } else if (done.join) {
       host.dispatch({ type: 'joinGroup', group, into: done.join });
@@ -346,11 +352,13 @@ function Group(props: {
   group: DockGroup;
   index: number;
   fill: boolean;
+  /** The height it is drawn at (fitHeights()): its own, or less on a column too short for every entry. */
+  height: number;
   host: ColumnHost;
   drag: GroupDrag | null;
   setDrag: (drag: GroupDrag | null) => void;
 }) {
-  const { group, index, fill, host, drag, setDrag } = props;
+  const { group, index, fill, height, host, drag, setDrag } = props;
   const { windows } = host.state;
   const active = windows[group.active];
   const title = active?.title || active?.iface || '';
@@ -382,7 +390,7 @@ function Group(props: {
       data-column-group={group.id}
       style={{
         transform: offset ? `translateY(${offset}px)` : undefined,
-        height: group.collapsed || fill ? undefined : `${group.height}px`,
+        height: group.collapsed || fill ? undefined : `${height}px`,
       }}
     >
       <div
@@ -489,6 +497,14 @@ export function Column() {
   });
   const insertEnd =
     !!drag?.window && !drag.float && !drag.join && drag.to >= groups.length;
+  // The page's height: a resize of the column (or of the client) fits the entries again.
+  const [pageHeight, setPageHeight] = useState(() => window.innerHeight);
+  useEffect(() => {
+    const resized = () => setPageHeight(window.innerHeight);
+    window.addEventListener('resize', resized);
+    return () => window.removeEventListener('resize', resized);
+  }, []);
+  const heights = fitHeights(groups, fillAt, pageHeight);
   return (
     <div className={`column${drag ? ' column--dragging' : ''}`}>
       <MapSplitHandle />
@@ -498,6 +514,7 @@ export function Column() {
           group={group}
           index={index}
           fill={index === fillAt}
+          height={heights[index]}
           host={host}
           drag={drag}
           setDrag={setDrag}
