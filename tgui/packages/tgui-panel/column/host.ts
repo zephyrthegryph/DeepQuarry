@@ -70,6 +70,8 @@ export class ColumnHost {
   private listeners = new Set<() => void>();
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
   private lastSaved = '';
+  /** What each docked interface was last told about being on screen (wm/view). */
+  private viewHidden = new Map<string, boolean>();
   private statViews = '';
 
   constructor() {
@@ -103,7 +105,28 @@ export class ColumnHost {
     this.state = next;
     this.changed();
     this.scheduleSave();
+    this.reportViews();
   };
+
+  /**
+   * Tells the server which docked interfaces are off screen (their entry
+   * collapsed, or a background tab of a stack): those get no data pushes
+   * until shown again, when they get one fresh update (dock_hide()).
+   */
+  private reportViews() {
+    for (const group of this.state.groups) {
+      for (const id of group.windows) {
+        if (this.state.windows[id]?.kind !== 'tgui') continue;
+        const hidden = group.collapsed || id !== group.active;
+        if (this.viewHidden.get(id) === hidden) continue;
+        this.viewHidden.set(id, hidden);
+        sendFor(id, 'wm/view', { hidden });
+      }
+    }
+    for (const id of this.viewHidden.keys()) {
+      if (!this.state.windows[id]) this.viewHidden.delete(id);
+    }
+  }
 
   /** The stat panel's views as stacked column windows, kept in step with the panel's own list. */
   private syncStatViews() {

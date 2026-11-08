@@ -90,3 +90,20 @@
 	TEST_ASSERT(ui.closing, "the column copy closes")
 	qdel(dock)
 	qdel(ui)
+
+/datum/unit_test/dq_window_dock_view_from_column
+/datum/unit_test/dq_window_dock_view_from_column/Run()
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/host = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/datum/tgui/dq_dock_probe/ui = new(user, host, "Probe")
+	ui.dock_message("wm/view", list("hidden" = TRUE))
+	TEST_ASSERT(!ui.view_hidden, "a floating window ignores the column's view report")
+	ui.docked = TRUE
+	ui.dock_message("wm/view", list("hidden" = TRUE))
+	TEST_ASSERT(ui.view_hidden, "a collapsed or background docked window stops getting data")
+	ui.send_full_update()
+	TEST_ASSERT_EQUAL(ui.probe_full, 0, "its updates wait")
+	ui.dock_message("wm/view", list("hidden" = FALSE))
+	TEST_ASSERT(!ui.view_hidden, "shown again")
+	TEST_ASSERT_EQUAL(ui.probe_full, 1, "it gets one fresh update")
+	qdel(ui)

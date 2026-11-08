@@ -78,6 +78,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	var/sampled_at = REALTIMEOFDAY
 	var/list/kept = list()
 	var/skipped = 0
+	var/unperceived = 0
 	for(var/datum/D as anything in Q)
 		if(isnull(D) || !D.refresh_queued)
 			continue
@@ -86,11 +87,23 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 			D.refresh_bits = 0
 			skipped++
 			continue
+		// Nothing is drawn that no viewer could perceive (draw_perceivable(), interest.dm): an atom of a type whose first draw is only a picture, covered
+		// by its floor, contained or abstractly invisible, waits parked, owing everything, until a reveal marks it (a tile lifted, a move out, a write).
+		if(isatom(D) && GLOB.type_look_lazy[D.type] && look_lazy_ok(D) && !draw_perceivable(D))
+			var/atom/held = D
+			if(isturf(held.loc) && held.invisibility < INVISIBILITY_ABSTRACT)
+				stack_trace("refresh settle: [held.type] at [held.x],[held.y],[held.z] is visible today (invisibility [held.invisibility], on its turf) but was taken for unperceivable")
+			D.refresh_queued = DEP_PARKED
+			D.refresh_bits = 0
+			GLOB.interest_unperceivable_skipped++
+			unperceived++
+			continue
 		kept += D
 	refresh_queue_replace(kept)
 	var/walked_at = REALTIMEOFDAY
 	skipped += boot_created_release() // the atoms held by type while the map loaded: an empty default look owes nothing, the rest are queued now
 	look_verdicts_save()
+	log_world("refresh settle: [unperceived] first draw(s) of atoms no viewer could perceive left parked")
 	log_world("refresh settle phases (ms): sample [(sampled_at - start) * 100], queue walk [(walked_at - sampled_at) * 100], held release [(REALTIMEOFDAY - walked_at) * 100]")
 	GLOB.type_look_stamp_skipped += skipped
 	log_world("refresh queue by kind after the settle: [refresh_kind_census(Q)]")

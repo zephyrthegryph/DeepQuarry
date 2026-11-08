@@ -6,6 +6,11 @@
 	name = "interest probe"
 	var/shown = 0
 
+/// A probe in the utility band of the plating plane: what an intact floor covers (a pipe, a cable), with nothing of its own saying so.
+/obj/dq_interest_probe/underfloor
+	plane = PLATING_PLANE
+	layer = PIPES_LAYER
+
 /obj/dq_interest_probe/draw(datum/look/look)
 	. = ..()
 	look.state("probe")
@@ -30,6 +35,8 @@
 	set_global(nameof(GLOB.interest_covers_raised), GLOB.interest_covers_raised)
 	var/list/lazy = GLOB.type_look_lazy.Copy()
 	lazy[/obj/dq_interest_probe] = TRUE
+	lazy[/obj/dq_interest_probe/underfloor] = TRUE
+	set_global(nameof(GLOB.interest_unperceivable_skipped), GLOB.interest_unperceivable_skipped)
 	set_global(nameof(GLOB.type_look_lazy), lazy)
 
 /// The test runs on a refresh queue of its own: the world's queue, the places recorded for it and its base (which boot or a budgeted drain may have left
@@ -490,3 +497,38 @@
 	TEST_ASSERT(isnull(GLOB.interest_covered["dq-test-camera"]), "no client: no cover")
 	TEST_ASSERT(!length(interest_view_owing("dq-test-camera")), "and nothing in its view owes a draw")
 	interest_clean(probes)
+
+/// Nothing is drawn that no viewer could perceive, and a reveal draws it: three kinds of cover. A probe under an intact floor (the floor's cover hides
+/// its layer band), one in a closed locker (contained), and one past every viewer's sight stay owing while the viewer looks; prying the tiles up, taking
+/// the probe out, and dropping its invisibility each draw it.
+/datum/unit_test/dq_interest_unperceivable_waits_for_reveal
+
+/datum/unit_test/dq_interest_unperceivable_waits_for_reveal/Run()
+	interest_isolate()
+	var/turf/simulated/floor/floor = test_floor()
+	TEST_ASSERT(istype(floor) && !floor.is_plating(), "the test floor has tiles on")
+	var/obj/dq_interest_probe/underfloor/piped = allocate(/obj/dq_interest_probe/underfloor, floor)
+	var/obj/structure/closet/locker = allocate(/obj/structure/closet, floor)
+	var/obj/dq_interest_probe/boxed = allocate(/obj/dq_interest_probe, locker)
+	var/obj/dq_interest_probe/unseen = allocate(/obj/dq_interest_probe, floor)
+	refresh_flush()
+	unseen.set_invisibility(INVISIBILITY_ABSTRACT)
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	for(var/obj/dq_interest_probe/probe as anything in list(piped, boxed, unseen))
+		rx_of(probe).look_key = null
+		probe.refresh_queued = DEP_PARKED // owes its first draw, parked as the boot leaves it
+	var/skipped = GLOB.interest_unperceivable_skipped
+	interest_view_set("dq-test-viewer", floor, null, world.view)
+	refresh_flush()
+	for(var/obj/dq_interest_probe/probe as anything in list(piped, boxed, unseen))
+		TEST_ASSERT(probe.refresh_queued & DEP_PARKED, "[probe] ([probe.type]) nobody could perceive is not drawn when its chunk is seen")
+	TEST_ASSERT(GLOB.interest_unperceivable_skipped > skipped, "and the skips are counted")
+	TEST_ASSERT(!length(interest_view_owing("dq-test-viewer")), "nothing a viewer could perceive is left owing")
+	// The reveals: the tiles come up, the probe leaves its locker, its invisibility drops.
+	floor.make_plating()
+	boxed.forceMove(floor)
+	unseen.set_invisibility(0)
+	refresh_flush()
+	for(var/obj/dq_interest_probe/probe as anything in list(piped, boxed, unseen))
+		TEST_ASSERT(!probe.refresh_queued, "[probe] ([probe.type]) draws when it is revealed")
+		TEST_ASSERT(!isnull(probe.rx?.look_key), "and has a look")

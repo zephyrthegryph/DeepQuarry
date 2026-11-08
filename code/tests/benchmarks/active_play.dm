@@ -310,11 +310,37 @@
 			continue
 		op_menu_cache_clear()
 		GLOB.op_menu_pass1_rows.Cut()
+		if(i == 1)
+			GLOB.op_menu_pass1_classes.Cut() // the very first pair of its class: the later pairs read the class's rows
 		var/stamp = TICK_USAGE_REAL
 		interaction_menu_data(A, B)
 		first_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 		first_reads++
 	metric("ap_menu_first_us", first_reads ? first_ms * 1000 / first_reads : 0, "us")
+	// The same first reads with no class to share (every pair's class cleared first): the A/B of the class rows, in one world.
+	var/noclass_ms = 0
+	var/resolve_ms = 0
+	var/noclass_reads = 0
+	var/hits_before = GLOB.op_count_menu_class_hits
+	for(var/i in 1 to length(crew) step 2)
+		var/mob/living/carbon/human/A = crew[i]
+		var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+		if(A == B)
+			continue
+		op_menu_cache_clear()
+		GLOB.op_menu_pass1_rows.Cut()
+		GLOB.op_menu_pass1_classes.Cut()
+		var/stamp = TICK_USAGE_REAL
+		interaction_menu_data(A, B)
+		var/mid = TICK_USAGE_REAL
+		op_resolve(A, B, A.get_active_hand(), ORIGIN_MENU, actor_authority(A), null, null, near_misses = FALSE)
+		var/done = TICK_USAGE_REAL
+		noclass_ms += TICK_DELTA_TO_MS(mid - stamp)
+		resolve_ms += TICK_DELTA_TO_MS(done - mid)
+		noclass_reads++
+	metric("ap_menu_first_noclass_us", noclass_reads ? noclass_ms * 1000 / noclass_reads : 0, "us")
+	metric("ap_menu_first_resolve_us", noclass_reads ? resolve_ms * 1000 / noclass_reads : 0, "us")
+	count_metric("ap_menu_first_class_hits_seen", hits_before, "reads", "none")
 	// How many first reads a pass-1 cache per class (types, grants by key, stance, relation) would answer: the pairs whose class an earlier
 	// pair already had. A judge for that idea; nothing reads these classes.
 	var/list/classes = list()
