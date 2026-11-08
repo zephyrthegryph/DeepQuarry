@@ -111,15 +111,14 @@
 
 /datum/unit_test/dq_preview_frames_follow_wings/Run()
 	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
-	// Animated: the preview flaps wings that can (the live setting most players have on), so pick wings that animate.
-	P.update_preference(GLOB.preference_entries_by_key["animations_toggle"], TRUE)
+	// The preview no longer animates (the Animate preference was cut in Settings audit 2), so any two coloured wings will do.
 	var/list/animated = list()
 	var/list/available = P.get_available_styles(GLOB.wing_styles_list)
 	for(var/name in available)
 		var/datum/sprite_accessory/wing/W = available[name]
-		if(istype(W) && W.do_colouration && W.ani_state)
+		if(istype(W) && W.do_colouration)
 			animated += name
-	log_world("dq_preview_frames_follow_wings: animated coloured wings: [jointext(animated, ", ")]")
+	log_world("dq_preview_frames_follow_wings: coloured wings: [jointext(animated, ", ")]")
 	var/first = length(animated) ? animated[1] : dq_test_wearable_style(P, GLOB.wing_styles_list)
 	var/second = length(animated) >= 2 ? animated[2] : dq_test_wearable_style(P, GLOB.wing_styles_list, first)
 	TEST_ASSERT_NOTNULL(second, "two coloured wing styles to choose between")

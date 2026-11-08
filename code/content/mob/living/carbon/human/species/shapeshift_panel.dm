@@ -150,8 +150,18 @@ GLOBAL_LIST_INIT(shapeshift_panel_commands, list(
 	if(preview_settle > 0 || isnull(preview_image))
 		if(preview_settle > 0)
 			set_preview_settle(preview_settle - 1)
-		set_preview_image(icon2base64(get_flat_icon(shifter, dir = SOUTH, no_anim = TRUE)))
+		// The shared portrait cache renders it off the tick; the last picture stays up until the new one lands (preview_landed).
+		var/datum/portrait/P = portrait_request(shifter, SOUTH, src, PROC_REF(preview_landed))
+		if(P?.b64)
+			set_preview_image(P.b64)
 	return preview_image
+
+/// The mob's new portrait landed: the open window shows it in place.
+/datum/shapeshift_panel/proc/preview_landed(datum/portrait/P)
+	if(!shifter || !(shifter.appearance in P.appearances))
+		return
+	set_preview_image(P.b64)
+	SStgui.update_uis(src)
 
 /// /datum/shapeshift_panel's window data.
 /datum/shapeshift_panel/ui_data(datum/act/eval/A)
