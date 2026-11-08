@@ -285,7 +285,7 @@ impl SectionFailures {
 struct ReportStage<'a> {
     file: Stage,
     finished: usize,
-    selected: &'static [&'static str],
+    selected: &'a [&'a str],
     failed: SectionFailures,
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
@@ -973,9 +973,48 @@ impl SourceSnapshot {
             PRIVATE_REACTIVE_RAW_UNION, questions, JudgmentV2::Raw, false, false, None, file)
     }
 
+    #[cfg(test)]
+    pub(super) fn stage_private_extended_reactive_raw_union(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
+        let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
+        let raw = Roster::AllRawFilePolicies.names();
+        let selected = selection.names();
+        if selected.iter().any(|name| !raw.contains(&name.as_str()) && !PRIVATE_REACTIVE_RAW_UNION.contains(&name.as_str()))
+            || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).any(|&name| !selected.iter().any(|actual| actual == name))
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "extended reactive/raw report needs its exact registered union"));
+        }
+
+        let workspace = self.native_workspace.as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "extended reactive/raw report needs an authored capture"))?;
+        let child = self.workspace_semantic_inputs(Q::SemReads)?;
+        let subject = child.original_analysis_subject().filter(|subject| !subject.synthetic())
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "extended reactive/raw report needs an authored subject"))?;
+        workspace.require_analysis_subject(subject)?;
+        subject.require_bound_mapping(child.policy().mapping())?;
+        let guard = self.workspace_native_read()?;
+        workspace.require_scope(&guard)?;
+        if workspace.root() != root || !workspace.covers_extended_reactive_raw_domains(&mut |bytes| {
+            retained.charge(bytes).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))
+        })? {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "extended reactive/raw report lacks its observed source roots"));
+        }
+
+        let mut order = Vec::new();
+        for name in selected {
+            kc::row(&mut control, &mut order).map_err(operational)?;
+            order.push(name.as_str());
+        }
+        self.stage_selected_report_using(prepared, exclusions, retained, root,
+            &order, Q::SELECTED_REACTIVE, JudgmentV2::Raw, false, false, None, file)
+    }
+
     fn stage_selected_report_using(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
-        root: &Path, selected: &'static [&'static str], questions: &[Q], judgment: JudgmentV2,
+        root: &Path, selected: &[&str], questions: &[Q], judgment: JudgmentV2,
         needs_library_sites_baseline: bool, requires_handlers: bool,
         handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage,
     ) -> io::Result<(bool, Verified)> {

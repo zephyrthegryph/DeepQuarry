@@ -474,12 +474,75 @@ fn private_reactive_raw_union_uses_one_authored_capture_and_allow_fold() {
     assert!(!report.contains("[engine_internal/internal] _om_kept"), "{report}");
     assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
 
+    require_private_reactive_raw_legacy(&root, &exclusions, clean, report);
+
+    request.policy_inputs.as_mut().unwrap().workspace_auxiliary = Q::SELECTED_READS.to_vec();
+    let foreign = crate::request_runner::run_build_with_host(request, &mut host).unwrap();
+    assert!(render(&host, &foreign).is_err());
+}
+
+#[test]
+fn private_extended_reactive_raw_report_reaches_the_two_extra_discovery_roots() {
+    let (mut host, mut request, root) = fixture(concat!(
+        "#define CAPABILITIES(...)\n",
+        "#define PROC_REF(P) #P\n",
+        "/datum/act\n/datum/act/eval\n/obj/probe\n",
+        "/obj/probe/proc/dynamic(datum/act/eval/A)\n",
+        "    return vars[\"probe\"]\n",
+        "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+    ));
+    std::fs::write(root.join("tools/ci/lint_scopes.toml"), report_config::with_overlay("")).unwrap();
+    for (relative, content) in [
+        ("interface/verb.dm", "/obj/probe/verb/legacy()\n    set category = \"Raw\"\n"),
+        ("modular_chomp/.legacy.dm", "/obj/probe/proc/set_broken()\n    return\n"),
+    ] {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+    let intent = request.policy_inputs.as_mut().unwrap();
+    intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
+    intent.workspace_auxiliary = Q::SELECTED_REACTIVE.to_vec();
+    let budget = Budget::new(8 << 20).unwrap();
+    let mut control = Operation { budget: &budget, poll: &|| Ok(()) };
+    let registry = full_unused::registered_full_selection(&[], &mut control).unwrap();
+    let raw = dq_analyze::selected_exclusions_wire::Roster::AllRawFilePolicies.names();
+    let prior = super::selected_report::PRIVATE_REACTIVE_RAW_UNION;
+    let exclusions: Vec<_> = registry.names().iter()
+        .filter(|name| !raw.contains(&name.as_str()) && !prior.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    assert!(registry.names().len() - exclusions.len() > dq_analyze::selected_exclusions_wire::Roster::MAX_STAGED_POLICIES);
+    let cache = crate::test_scratch::dir("private-extended-reactive-raw");
+    let stage = |host: &crate::runner_host::BuildHost, prepared: &crate::request::BuildOutcome| current(host, |snapshot| {
+        snapshot.stage_private_extended_reactive_raw_union(prepared, &exclusions, &budget, &root,
+            crate::selected_report_spool::Stage::new(&cache).unwrap())
+    });
+    let incomplete = crate::request_runner::run_build_with_host(request.clone(), &mut host).unwrap();
+    assert!(stage(&host, &incomplete).err().expect("CODE+MAPS alone is incomplete").to_string().contains("observed source roots"));
+
+    let workspace = request.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap();
+    workspace.recursive_roots = dq_analyze::selected_exclusions_wire::Roster::AllRawFilePolicies.workspace_roots()
+        .iter().map(|name| root.join(name)).collect();
+    let prepared = crate::request_runner::run_build_with_host(request, &mut host).unwrap();
+    let (clean, verified) = stage(&host, &prepared).unwrap();
+    assert!(!clean);
+    let mut output = Vec::new();
+    verified.publish(&mut output).unwrap();
+    let report = std::str::from_utf8(&output).unwrap();
+    assert!(report.contains("modular_chomp/.legacy.dm:1: [breakpoint/set_broken]"), "{report}");
+    assert!(report.contains("interface/verb.dm:2: [verb_category/raw_category]"), "{report}");
+    assert!(report.contains("[reads/dynamic_read]"), "{report}");
+    assert_eq!(report.matches("allow annotations: 0 unused").count(), 1, "{report}");
+    require_private_reactive_raw_legacy(&root, &exclusions, clean, report);
+}
+
+fn require_private_reactive_raw_legacy(root: &std::path::Path, exclusions: &[String], clean: bool, report: &str) {
     if let Some(path) = std::env::var_os("DQ_PRIVATE_REACTIVE_RAW_LEGACY_ANALYZE") {
         let legacy = std::path::PathBuf::from(path);
         assert!(legacy.is_absolute() && legacy.is_file(), "provide an independent legacy Analyze executable");
         let mut command = std::process::Command::new(legacy);
         command.args(["check", "--raw", "--no-cache", "--no-selftest", "--unused", "--root"])
-            .arg(&root).arg("--lint").args(&exclusions)
+            .arg(root).arg("--lint").args(exclusions)
             .env_remove("DQ_ALLOW_USAGE")
             .env("DQ_ANALYZE_SHARED_CACHE", "off")
             .env("DQ_GEN_STORE", "off");
@@ -491,8 +554,4 @@ fn private_reactive_raw_union_uses_one_authored_capture_and_allow_fold() {
         assert_eq!(expected.status.code(), Some(i32::from(!clean)), "{}", String::from_utf8_lossy(&expected.stderr));
         assert_eq!(report, std::str::from_utf8(&expected.stdout).unwrap());
     }
-
-    request.policy_inputs.as_mut().unwrap().workspace_auxiliary = Q::SELECTED_READS.to_vec();
-    let foreign = crate::request_runner::run_build_with_host(request, &mut host).unwrap();
-    assert!(render(&host, &foreign).is_err());
 }

@@ -49,7 +49,7 @@ impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
   plan:&'reader dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,
  )->Result<SelectedHandlerFiles<'reader,'capture,'scope>,Failure>{
   self.require_policy_inputs(inputs)?;
-  self.require_hidden_selected_tree(plan)?;
+  self.require_hidden_selected_tree(plan,true)?;
   Ok(SelectedHandlerFiles{reader:self,inputs,domain:SiliconActorDomain::SelectedCodeMaps(plan)})
  }
 }
@@ -859,17 +859,23 @@ pub(crate) use derived_reads::WorkspaceDerivedWitness;
 impl WorkspaceCodeReader<'_,'_>{
  fn require_silicon_discovery(&self,domain:SiliconActorDomain<'_>)->Result<(),Failure>{
   self.require_full_code_discovery()?;
-  if let SiliconActorDomain::SelectedCodeMaps(plan)=domain { self.require_hidden_selected_tree(plan)?; }
+  if let SiliconActorDomain::SelectedCodeMaps(plan)=domain { self.require_hidden_selected_tree(plan,false)?; }
   self.checkpoint()
  }
 
- fn require_hidden_selected_tree(&self,plan:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData)->Result<(),Failure>{
+ fn require_hidden_selected_tree(&self,plan:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,allow_reactive_superset:bool)->Result<(),Failure>{
   self.checkpoint()?;
   let root=self.capture.root();
   let roots=self.capture.recursive_roots();
   let exact_roots=roots.len()==2&&roots.iter().zip(["code","maps"]).all(|(path,expected)|
    path.strip_prefix(root).ok()==Some(std::path::Path::new(expected)));
-  if plan.roots()!=["code","maps"]||!exact_roots{return Err("report differs from its qualified selected tree".into())}
+  if plan.roots()!=["code","maps"]{return Err("report differs from its qualified selected tree".into())}
+  // Reactive reports still borrow only the same hidden CODE/MAPS domain.
+  // Additional raw roots can coexist only on their exact authenticated capture.
+  if !exact_roots && !(allow_reactive_superset && self.capture.covers_extended_reactive_raw_domains(&mut |bytes|
+   self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?){
+   return Err("report differs from its qualified selected tree".into());
+  }
   if !self.capture.covers_allow_unused(plan,&mut|bytes|self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?{
    return Err("report lacks complete original selected tree discovery".into());
   }

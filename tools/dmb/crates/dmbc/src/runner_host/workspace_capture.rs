@@ -331,6 +331,26 @@ impl WorkspaceCapture {
             .all(|(p, f)| complete.policy_directories().get(p) == Some(f))
     }
 
+    pub(crate) fn covers_extended_reactive_raw_domains(
+        &self, admit: &mut dyn FnMut(usize) -> io::Result<()>,
+    ) -> io::Result<bool> {
+        use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+        use dq_analyze::selected_exclusions_wire::Roster;
+
+        let expected = Roster::AllRawFilePolicies.workspace_roots();
+        let actual = self.recursive_roots();
+        if self.raw_source.is_some() || !self.matches_auxiliary_questions(Q::SELECTED_REACTIVE)
+            || actual.len() != expected.len()
+            || actual.iter().zip(expected).any(|(path, name)| path.strip_prefix(self.root()).ok() != Some(Path::new(name)))
+        {
+            return Ok(false);
+        }
+        // Observe both extra roots under this capture's real recorder. Their
+        // genuine absence is permitted for the policies that select them.
+        Ok(self.discovery.covers_dm_roots(dq_analyze::tree::CODE_MAPS_DM.roots, false, admit)?
+            && self.discovery.covers_dm_roots(&[("interface", "dm"), ("modular_chomp", "dm")], true, admit)?)
+    }
+
     pub(crate) fn covers_selected_raw_policies(&self,names:&[String],admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
      if names.is_empty(){return Ok(false)}
      for name in names{let Some(meta)=dq_analyze::captured_raw_policy::metadata(name)else{return Ok(false)};if !dq_analyze::captured_raw_policy::RAW_FILE_LINTS.contains(&name.as_str())||!self.discovery.covers_dm_roots(meta.select.roots,true,admit)?{return Ok(false)}}Ok(true)
