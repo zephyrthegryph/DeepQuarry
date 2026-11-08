@@ -66,6 +66,7 @@ CAPABILITIES(/datum/light_source)
 	if(needs_update != LIGHTING_NO_UPDATE)
 		SSlighting.unqueue_source(src)
 	remove_lum()
+	client_glow_clear()
 	..()
 
 // Yes this doesn't align correctly on anything other than 4 width tabs.
@@ -251,6 +252,11 @@ CAPABILITIES(/datum/light_source)
 		applied = TRUE
 	else if (needs_update == LIGHTING_CHECK_UPDATE)
 		return //nothing's changed
+
+	// Client lighting: the light is one glow sprite; no corner is touched (client_glow.dm).
+	if(GLOB.client_lighting)
+		client_glow_apply()
+		return
 
 	var/list/datum/lighting_corner/corners = list()
 

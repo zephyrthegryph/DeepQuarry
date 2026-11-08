@@ -28,6 +28,8 @@
 @include meta.load-css('./components/ChatConsole.scss');
 @include meta.load-css('./components/ChatInput.scss');
 @include meta.load-css('./components/ChatLayout.scss');
+@include meta.load-css('./components/Column.scss');
+@include meta.load-css('../statpanel/statpanel.scss');
 
 // Layouts
 @include meta.load-css('~tgui/styles/layouts/Layout.scss');

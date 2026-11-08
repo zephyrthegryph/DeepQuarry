@@ -235,6 +235,43 @@
 	GLOB.op_resolver_legacy = FALSE
 	metric("ap_melee_legacy_us_per_hit", legacy_hits ? legacy_hit_ms * 1000 / legacy_hits : 0, "us")
 
+	// Clicks of play, end to end through op_resolve_click() (what the inbox runs for a player's click): an examine (shift-click), the held toolbox
+	// used on a crewmate in help stance, the toolbox on the floor, and an empty-handed help click on the crewmate.
+	var/list/click_ms = list("examine" = 0, "item_on_mob" = 0, "item_on_floor" = 0, "hand_on_mob" = 0)
+	var/click_rounds = 0
+	begin_window()
+	for(var/n in 1 to param("click_rounds", 5))
+		for(var/i in 1 to length(crew) step 2)
+			var/mob/living/carbon/human/A = crew[i]
+			var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+			var/obj/item/T = A.get_active_hand()
+			if(!T || A == B)
+				continue
+			A.set_use_stance(I_HELP)
+			STATE_SET(A, cooldowns, next_click, 0)
+			var/stamp = TICK_USAGE_REAL
+			op_resolve_click(A, B, T, GESTURE_SHIFT, ORIGIN_CLICK, TRUE, TRUE)
+			var/t1 = TICK_USAGE_REAL
+			STATE_SET(A, cooldowns, next_click, 0)
+			op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+			var/t2 = TICK_USAGE_REAL
+			STATE_SET(A, cooldowns, next_click, 0)
+			op_resolve_click(A, get_turf(A), T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+			var/t3 = TICK_USAGE_REAL
+			STATE_SET(A, cooldowns, next_click, 0)
+			op_resolve_click(B, A, null, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+			var/t4 = TICK_USAGE_REAL
+			click_ms["examine"] += TICK_DELTA_TO_MS(t1 - stamp)
+			click_ms["item_on_mob"] += TICK_DELTA_TO_MS(t2 - t1)
+			click_ms["item_on_floor"] += TICK_DELTA_TO_MS(t3 - t2)
+			click_ms["hand_on_mob"] += TICK_DELTA_TO_MS(t4 - t3)
+			click_rounds++
+			A.set_use_stance(I_HURT)
+		stoplag()
+	end_window("ap_clicks")
+	for(var/kind in click_ms)
+		metric("ap_click_[kind]_us", click_rounds ? click_ms[kind] * 1000 / click_rounds : 0, "us")
+
 	// Menu read: the right-click menu of a crewmate (what the interaction menu's window data computes), with the menu cache cold (a state
 	// change of the target since the last read) and warm (read again at once).
 	var/menu_reads = 0
@@ -273,11 +310,55 @@
 			continue
 		op_menu_cache_clear()
 		GLOB.op_menu_pass1_rows.Cut()
+		if(i == 1)
+			GLOB.op_menu_pass1_classes.Cut() // the very first pair of its class: the later pairs read the class's rows
 		var/stamp = TICK_USAGE_REAL
 		interaction_menu_data(A, B)
 		first_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 		first_reads++
 	metric("ap_menu_first_us", first_reads ? first_ms * 1000 / first_reads : 0, "us")
+	// The same first reads with no class to share (every pair's class cleared first): the A/B of the class rows, in one world.
+	var/noclass_ms = 0
+	var/resolve_ms = 0
+	var/noclass_reads = 0
+	var/hits_before = GLOB.op_count_menu_class_hits
+	for(var/i in 1 to length(crew) step 2)
+		var/mob/living/carbon/human/A = crew[i]
+		var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+		if(A == B)
+			continue
+		op_menu_cache_clear()
+		GLOB.op_menu_pass1_rows.Cut()
+		GLOB.op_menu_pass1_classes.Cut()
+		var/stamp = TICK_USAGE_REAL
+		interaction_menu_data(A, B)
+		var/mid = TICK_USAGE_REAL
+		op_resolve(A, B, A.get_active_hand(), ORIGIN_MENU, actor_authority(A), null, null, near_misses = FALSE)
+		var/done = TICK_USAGE_REAL
+		noclass_ms += TICK_DELTA_TO_MS(mid - stamp)
+		resolve_ms += TICK_DELTA_TO_MS(done - mid)
+		noclass_reads++
+	metric("ap_menu_first_noclass_us", noclass_reads ? noclass_ms * 1000 / noclass_reads : 0, "us")
+	metric("ap_menu_first_resolve_us", noclass_reads ? resolve_ms * 1000 / noclass_reads : 0, "us")
+	count_metric("ap_menu_first_class_hits_seen", hits_before, "reads", "none")
+	// How many first reads a pass-1 cache per class (types, grants by key, stance, relation) would answer: the pairs whose class an earlier
+	// pair already had. A judge for that idea; nothing reads these classes.
+	var/list/classes = list()
+	var/class_hits = 0
+	var/class_pairs = 0
+	for(var/i in 1 to length(crew) step 2)
+		var/mob/living/carbon/human/A = crew[i]
+		var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+		if(A == B)
+			continue
+		var/class_key = active_play_menu_class(A, B, A.get_active_hand())
+		if(classes[class_key])
+			class_hits++
+		classes[class_key] = TRUE
+		class_pairs++
+	count_metric("ap_menu_class_hits", class_hits, "pairs", "none")
+	count_metric("ap_menu_class_pairs", class_pairs, "pairs", "none")
+	count_metric("ap_menu_classes", length(classes), "classes", "none")
 	// After an unrelated change of the crewmate (its act generation moves, none of the keys the menu read): is the menu still cached?
 	var/unrelated_builds = 0
 	var/unrelated_reads = 0
@@ -415,3 +496,20 @@
 	var/list/now = active_play_op_counts()
 	for(var/name in now)
 		count_metric("[prefix]_op_[name]_per", per ? (now[name] - before[name]) / per : 0, name)
+
+/// The class a pass-1 cache per class would key a pair on: the three types, their running grants by definition key, the stance and the
+/// relation (carried, the distance up to 7 tiles or far, on a turf or in what kind of container).
+/proc/active_play_menu_class(mob/actor, atom/target, obj/held)
+	var/relation = "far"
+	var/turf/here = get_turf(actor)
+	var/turf/there = get_turf(target)
+	if(here && there && here.z == there.z && get_dist(here, there) <= 7)
+		relation = "[get_dist(here, there)]|[isturf(target.loc) ? "turf" : "[target.loc?.type]"]"
+	return "[actor.type]|[target.type]|[held?.type]|[relation]|[actor.op_input_stance()]|[active_play_grant_keys(actor)]|[active_play_grant_keys(target)]|[active_play_grant_keys(held)]"
+
+/proc/active_play_grant_keys(datum/D)
+	var/list/keys = list()
+	for(var/datum/activation/A as anything in D?.rx?.activations)
+		if(!A.dead && A.runs)
+			keys += "[A.def.key]"
+	return jointext(keys, ",")

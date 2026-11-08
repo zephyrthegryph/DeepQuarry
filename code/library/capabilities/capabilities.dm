@@ -90,7 +90,9 @@
 			BOOT_PHASE_BEGIN(bp_engine)
 			engine_holder_init(holder, mapload)
 			BOOT_PHASE_END(bp_engine, "caps_init: engine_holder_init" + BOOT_KIND(holder), holder)
-	var/flags = type_derive_flags(holder)
+	var/flags = GLOB.type_derives_cache[holder.type] // type_derive_flags()'s per-type memo read inline: every atom passes here
+	if(isnull(flags))
+		flags = type_derive_flags(holder)
 	if(flags & TYPE_DERIVES_TYPE_VERBS)
 		verb_store_refresh(holder, type_verbs_always(holder)) // login entries wait for Login (type_verbs.dm)
 	if(flags & TYPE_DERIVES_CAPS)
@@ -108,7 +110,7 @@
 	if(flags || holder.periodic_cadence || holder.periodic_interval)
 		// A stamped type derives nothing: its stamp was recorded by a refresh that left nothing, this boot or a previous boot of this world
 		// (look_verdicts_load()), so a pending derive verdict does not make its fresh atom owe a first refresh.
-		if(!holder.refresh_queued && type_look_stamped(holder))
+		if(!holder.refresh_queued && GLOB.type_look_stamp[holder.type] && !holder.periodic_cadence && !holder.periodic_interval && !LAZYLEN(holder.open_tguis))
 			return // the type's default look is empty: the stamp is the mapped appearance it already has (look_stamp.dm)
 		// Draw on first view (look_stamp.dm, boot_created_hold()): during a map load, a type whose look verdict is not known yet queues its first
 		// instance as the sample and holds the rest out of the queue, parked by type, until the settle has the sample's verdict.

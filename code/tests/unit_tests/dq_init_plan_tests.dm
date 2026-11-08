@@ -77,6 +77,8 @@
 	var/list/had = at.contents.Copy()
 	var/was = GLOB.init_plan_off
 	var/was_ctor = ctor_plan_off
+	var/was_silent = GLOB.silent_construction
+	GLOB.silent_construction = !off // with the plans on, construction is silent; off, every write publishes as before
 	GLOB.init_plan_off = off
 	ctor_plan_off = off // the construction plan (ctor_plan.dm) goes with it: on, both plans; off, every table asked as before them
 	var/atom/A
@@ -86,9 +88,11 @@
 	catch(var/exception/e)
 		GLOB.init_plan_off = was
 		ctor_plan_off = was_ctor
+		GLOB.silent_construction = was_silent
 		throw e
 	GLOB.init_plan_off = was
 	ctor_plan_off = was_ctor
+	GLOB.silent_construction = was_silent
 	. = list()
 	var/static/list/skip = list("x", "y", "z", "loc", "vars", "type", "parent_type", "tag", "contents", "gc_destroyed", "serial", "weak_reference", "datum_id", "rx", "refresh_queued", "refresh_bits", "handle_slot", "own_holder_ref")
 	for(var/V in A.vars)
@@ -106,6 +110,7 @@
 	.["setup_pending"] = !!setup_pending?[A]
 	var/datum/rx_state/rx = A.rx
 	.["change_last"] = rx ? LAZYLEN(rx.change_last) : 0
+	.["change_values"] = rx?.change_last ? json_encode(rx.change_last) : "" // the on_change baselines themselves, not only how many
 	.["every_parked"] = rx ? LAZYLEN(rx.every_parked) : 0
 	.["activations"] = rx ? LAZYLEN(rx.activations) : 0
 	.["verbs"] = length(A.verbs)

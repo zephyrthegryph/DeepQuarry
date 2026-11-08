@@ -1265,7 +1265,16 @@ GLOBAL_LIST_EMPTY(op_menu_pass1_rows)
 		var/datum/op_resolution/again = op_menu_resolution_from(kept, actor, target, held, authority)
 		if(again)
 			return again
+	// A pair read for the first time: another pair of the same kinds, the same grants and the same relation answered the same pass 1.
+	var/class_key = op_menu_class_key(actor, target, held, authority)
+	var/list/shared = class_key ? GLOB.op_menu_pass1_classes[class_key] : null
+	if(shared)
+		var/datum/op_resolution/like = op_menu_resolution_from_class(shared, actor, target, held, authority)
+		if(like)
+			return like
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, authority, null, null, near_misses = FALSE)
+	if(class_key)
+		op_menu_keep_class(class_key, R)
 	if(length(GLOB.op_menu_pass1_rows) >= OP_MENU_PASS1_MAX)
 		GLOB.op_menu_pass1_rows.Cut()
 	var/list/ordered_rows = list()
@@ -1277,6 +1286,154 @@ GLOBAL_LIST_EMPTY(op_menu_pass1_rows)
 			hint_rows += list(op_menu_pass1_row(C))
 	GLOB.op_menu_pass1_rows[shape] = list(ordered_rows, hint_rows)
 	return R
+
+/// pass-1 rows shared by every pair of one class (op_menu_class_key()): grants by definition key, providers by role, never an entity.
+GLOBAL_LIST_EMPTY(op_menu_pass1_classes)
+
+/// How `target` stands to `actor` for reach: carried (in its contents), the exact distance up to 7 tiles (a provider's reach is a number of
+/// tiles), or far; and whether the target is on a turf or in what kind of container (the exposure walk). null: not classed.
+/proc/op_menu_relation_class(mob/actor, atom/target)
+	// Only an actor and a target that both stand on turfs: a target in a container has an exposure walk through that container's doors and
+	// spaces, and an actor inside something reaches out through its own; neither is in the key, so neither is shared.
+	if(!actor || !isatom(target) || !isturf(actor.loc) || !isturf(target.loc))
+		return null
+	var/turf/here = actor.loc
+	var/turf/there = target.loc
+	if(here.z != there.z)
+		return "far"
+	var/dist = get_dist(here, there)
+	return dist > 7 ? "far" : "[dist]"
+
+/// The running grants of `D` by definition key, in order: two holders with the same set answer pass 1 alike.
+/proc/op_menu_grant_signature(datum/D)
+	if(!D?.rx || !length(D.rx.activations))
+		return ""
+	var/list/keys = list()
+	for(var/datum/activation/A as anything in D.rx.activations)
+		if(!A.dead && A.runs)
+			keys += "[A.def.key]"
+	return jointext(keys, ",")
+
+/proc/op_menu_class_key(mob/actor, atom/target, obj/held, authority)
+	var/relation = op_menu_relation_class(actor, target)
+	if(isnull(relation) || actor == target)
+		return null
+	return "[actor.type]|[target.type]|[held?.type]|[relation]|[actor.op_input_stance()]|[authority]|[op_menu_grant_signature(actor)]|[op_menu_grant_signature(target)]|[op_menu_grant_signature(held)]"
+
+/// Keeps a resolution's pass-1 rows for its class, unless a row's provider is one a class cannot name (a line-of-sight provider, a source that
+/// is not the actor, the held item or its carrier).
+/proc/op_menu_keep_class(class_key, datum/op_resolution/R)
+	var/list/ordered_rows = list()
+	for(var/datum/op_cand/C as anything in R.ordered)
+		var/list/row = op_menu_class_row(R, C)
+		if(!row)
+			return
+		ordered_rows += list(row)
+	var/list/hint_rows = list()
+	for(var/datum/op_cand/C as anything in R.all)
+		if(C.dropped_by == GATE_MATCH && C.binding.bind_kind == BIND_TOOL && C.side == CAND_TARGET)
+			var/list/hint = op_menu_class_row(R, C)
+			if(!hint)
+				return
+			hint_rows += list(hint)
+	if(length(GLOB.op_menu_pass1_classes) >= OP_MENU_PASS1_MAX)
+		GLOB.op_menu_pass1_classes.Cut()
+	GLOB.op_menu_pass1_classes[class_key] = list(ordered_rows, hint_rows)
+
+/proc/op_menu_class_row(datum/op_resolution/R, datum/op_cand/C)
+	var/role = null
+	// A row whose reach depends on more than the distance is never shared: a view (REACH_VIEW: walls, darkness, cameras) or a line of sight.
+	if(op_reach_policy(C.oplan, C.binding) == REACH_VIEW)
+		return null
+	if(C.provider)
+		if(C.provider.entry.args["los"])
+			return null
+		var/datum/source = C.provider.source
+		if(source == R.actor)
+			role = "actor"
+		else if(source == R.held)
+			role = "held"
+		else if(source == R.actor?.held_carrier())
+			role = "carrier"
+		else
+			return null
+	return list(C.oplan, C.binding, C.side, C.activation ? "[C.activation.def.key]" : null, C.provider?.entry, role, C.rank, C.seq)
+
+/// A Menu resolution made from a class's rows on this pair, or null when this pair lacks a grant or a provider a row names.
+/proc/op_menu_resolution_from_class(list/shared, mob/actor, atom/target, obj/held, authority)
+	RETURN_TYPE(/datum/op_resolution)
+	var/datum/op_resolution/R = op_resolution_new(actor, target, held, ORIGIN_MENU, authority, null)
+	R.near_misses = FALSE
+	var/list/made = list()
+	for(var/list/row as anything in shared[1])
+		var/datum/op_cand/C = op_menu_class_cand(R, row)
+		if(!C)
+			return null
+		made += C
+	R.ordered = made
+	var/list/hints = list()
+	for(var/list/row as anything in shared[2])
+		var/datum/op_cand/C = op_menu_class_cand(R, row)
+		if(!C)
+			return null
+		C.dropped_by = GATE_MATCH
+		hints += C
+	R.all = hints
+	GLOB.op_count_menu_class_hits++
+	if(GLOB.op_click_parity)
+		op_menu_class_parity(R)
+	return R
+
+/// Menu reads made from class rows, counted for the bench.
+GLOBAL_VAR_INIT(op_count_menu_class_hits, 0)
+
+/// The unit-test check of a class-made Menu resolution: op_resolve() of the same read orders the same candidates the same way.
+/proc/op_menu_class_parity(datum/op_resolution/R)
+	var/datum/op_resolution/full = op_resolve(R.actor, R.target, R.held, ORIGIN_MENU, R.authority, null, null, near_misses = FALSE)
+	var/list/mine = R.ordered
+	var/list/theirs = full.ordered
+	var/bad = length(mine) != length(theirs)
+	for(var/i in 1 to min(length(mine), length(theirs)))
+		if(bad)
+			break
+		bad = !op_cands_same(mine[i], theirs[i])
+	if(bad)
+		stack_trace("op_menu_class_parity: class rows and op_resolve() differ for [R.actor?.type] on [R.target?.type] holding [R.held?.type]: class [op_cand_keys(mine)], full [op_cand_keys(theirs)]")
+
+/proc/op_menu_class_cand(datum/op_resolution/R, list/row)
+	RETURN_TYPE(/datum/op_cand)
+	var/datum/holder = op_fast_holder(R, row[3])
+	var/datum/activation/granted_by = null
+	if(row[4])
+		for(var/datum/activation/A as anything in holder?.rx?.activations)
+			if(!A.dead && A.runs && "[A.def.key]" == row[4])
+				granted_by = A
+				break
+		if(!granted_by)
+			return null
+	var/datum/op_cand/C = op_cand_make(row[1], row[2], holder, row[3], granted_by, row[8])
+	C.rank = row[7]
+	if(row[5])
+		var/datum/source = null
+		switch(row[6])
+			if("actor")
+				source = R.actor
+			if("held")
+				source = R.held
+			if("carrier")
+				source = R.actor?.held_carrier()
+		if(!source)
+			return null
+		if(isnull(R.providers))
+			R.providers = providers_for(R.actor, R.held)
+		for(var/datum/prov/V as anything in R.providers)
+			if(V.entry == row[5] && V.source == source)
+				op_cand_set_provider(C, V)
+				break
+		if(!C.provider)
+			return null
+	return C
+
 
 /proc/op_menu_pass1_row(datum/op_cand/C)
 	return list(C.oplan, C.binding, C.side, C.activation ? handle_of(C.activation) : null, C.provider?.entry, C.provider ? handle_of(C.provider.source) : null, C.rank, C.seq)

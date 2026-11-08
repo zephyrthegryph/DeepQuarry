@@ -91,7 +91,7 @@ opened as `"Ntos" + name` (`code/library/ui/tgui/modules/_base.dm`), so a plain 
   `editors/SpeciesPicker.tsx` (15), `RIGSuit/animated_logos/Commonwealth.tsx` (15, SVG positions: legitimate), `DQMedicalBook.tsx` (13),
   `editors/OccupationEditor.tsx` (12), `editors/TraitPicker.tsx` (11), `editors/RobotChassisPicker.tsx` (11). The most common
   properties are `borderRadius`, `color`, `fontSize`, `border` and margins: rule 3 applies when a file is next touched.
-- **The window dock frame** (`tgui-panel/statpanel/DockArea.tsx`) draws its own group header; it should wear `TitleBar` once the
+- **The window dock frame** (`tgui-panel/column/Column.tsx`, the right-hand column's window manager) draws its own group header; it should wear `TitleBar` once the
   docking work settles (owned by the window-system lane, `window_system.md`).
 - **The settings panel** uses tgui-core vertical `Tabs` directly; `dq/Tabs` is horizontal only. Add a vertical variant when a second
   vertical strip appears.

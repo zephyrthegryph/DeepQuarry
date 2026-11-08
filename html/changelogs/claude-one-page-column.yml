@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "The right-hand column is one page of windows: chat, the stat panel's views and docked windows (PDA, machines, APC, ...) all stack, collapse to their header, resize and re-order the same way. Drag a window's title bar onto the column to dock it; drag its header out of the column (or press Float) to pop it back out."
+  - rscdel: "The floating chat window and the chat position and size preferences are gone: the chat is a window of the column like the rest."

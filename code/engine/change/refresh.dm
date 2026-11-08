@@ -84,6 +84,17 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 				draw_hop_published(E, var_name)
 			GLOB.state_changed_preinit_skipped++
 			return
+	// Silent construction (E3): an atom between its Initialize() and its birth (its setup() rows, its starting occupants writing it) keeps the stat layer
+	// and the draw hop live, makes sure its first refresh is queued, and notes the var for its birth (construction_birth()), which publishes it once.
+	if(isatom(E) && (E.datum_flags & DF_CONSTRUCTING) && GLOB.silent_construction)
+		if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
+			stat_inputs_changed(E, var_name)
+		if(var_name && draw_hop_reads_var(var_name))
+			draw_hop_published(E, var_name)
+		construction_note(E, var_name)
+		return
+	if(GLOB.construction_census && var_name && isatom(E) && (E.datum_flags & DF_CONSTRUCTING))
+		construction_census_write(E, var_name)
 	op_changed(E) // a cached menu or reach read of the op engine is stale now
 	if(var_name)
 		var/datum/rx_state/menu_state = E.rx
@@ -1169,3 +1180,91 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 		at++
 	var/from = max(1, at - 40)
 	return "(drawn: ...[copytext(was, from, at + 60)]... now: ...[copytext(now, from, at + 60)]...)"
+
+// ---- silent construction (doc/rewrite/proposals/init_plan.md, E3) ----
+
+/// TRUE: an atom's writes between its Initialize() and its birth are noted, not published (state_changed()). The parity test runs both ways.
+GLOBAL_VAR_INIT(silent_construction, TRUE)
+/// atom handle -> the var names it wrote under construction that something may read (an alist; a handle may be a number). Published at its birth.
+GLOBAL_ALIST_EMPTY(construction_writes)
+/// Writes noted under construction, and the vars their births published (the boot bench reads both).
+GLOBAL_VAR_INIT(construction_writes_noted, 0)
+GLOBAL_VAR_INIT(construction_writes_published, 0)
+
+/// state_changed() of an atom under construction: its first refresh is queued if it is not (a held or parked atom owes everything again), and a var
+/// some reader may follow is noted once for the birth.
+/proc/construction_note(atom/A, var_name)
+	GLOB.construction_writes_noted++
+	if(!A.refresh_queued || A.refresh_queued == DEP_PARKED)
+		refresh_mark(A, DEP_ALL)
+	if(!var_name || !plan_reader_bits(var_name, A.type))
+		return
+	var/handle = handle_of(A)
+	A.datum_flags |= DF_CONSTRUCT_NOTED
+	var/list/vars_of = GLOB.construction_writes[handle]
+	if(!vars_of)
+		vars_of = list()
+		GLOB.construction_writes[handle] = vars_of
+	vars_of[var_name] = TRUE
+
+/// InitAtom(), after the setup() rows: the atom is born. Each var it wrote under construction that a reader follows is published once (reactions,
+/// lifecycle forms, operations waiting on it, and the on_change hooks that read it, against the baseline taken at init: the hook census found 31
+/// (type, hook) pairs whose content relies on firing for what setup wrote (an alarm's election, a meter's needle, lights, SMES levels, grass edges).
+/proc/construction_birth(atom/A)
+	if(!(A.datum_flags & DF_CONSTRUCT_NOTED))
+		A.datum_flags &= ~DF_CONSTRUCTING
+		if(A.refresh_queued & DEP_PARKED)
+			interest_settle(A) // a draw it owed while under construction, in a chunk someone sees now, happens now (as an init frame's end does)
+		return
+	A.datum_flags &= ~(DF_CONSTRUCTING | DF_CONSTRUCT_NOTED)
+	if(A.refresh_queued & DEP_PARKED)
+		interest_settle(A)
+	var/handle = handle_of(A)
+	var/list/vars_of = GLOB.construction_writes[handle]
+	if(!vars_of)
+		return
+	GLOB.construction_writes -= handle
+	if(QDELETED(A))
+		return
+	for(var/var_name in vars_of)
+		var/bits = plan_reader_bits(var_name, A.type)
+		if(rx_readers(A, var_name, bits))
+			publish_change(A, var_name, bits) // pends the on_change hooks that read it: they fire at the drain as before (census: 31 rely on it)
+			GLOB.construction_writes_published++
+
+// ---- the hook-firing census of construction writes (debug tracing; -params bench_construction_census=1 with silent_construction off) ----
+
+/// TRUE records which on_change hooks fire for a value an atom's own construction wrote (construction_census_fire()). Off unless the world asks.
+GLOBAL_VAR_INIT(construction_census, FALSE)
+/// atom handle -> var names its construction wrote (published, silent construction off).
+GLOBAL_ALIST_EMPTY(construction_census_writes)
+/// "type hook-signature" -> how many times it fired for such a value.
+GLOBAL_LIST_EMPTY(construction_census_fires)
+
+/proc/construction_census_write(atom/A, var_name)
+	var/handle = handle_of(A)
+	var/list/vars_of = GLOB.construction_census_writes[handle]
+	if(!vars_of)
+		vars_of = list()
+		GLOB.construction_census_writes[handle] = vars_of
+	vars_of[var_name] = TRUE
+
+/// A hook fires on E: when it reads a var E's construction wrote, it is counted (once per atom and hook) and the var is forgotten for that hook.
+/proc/construction_census_fire(datum/E, datum/hook/H)
+	var/handle = handle_of(E)
+	var/list/vars_of = GLOB.construction_census_writes[handle]
+	if(!vars_of)
+		return
+	for(var/key in H.reads)
+		if(vars_of[key])
+			var/row = "[E.type] [H.entry ? copytext(H.entry.sig, 1, 120) : H.type] (via [key])"
+			GLOB.construction_census_fires[row] = (GLOB.construction_census_fires[row] || 0) + 1
+			return
+
+/// Logs the census, busiest first (the boot calls it after the first drains; a test or admin may call it any time).
+/proc/construction_census_report()
+	var/list/rows = GLOB.construction_census_fires
+	log_world("CONSTRUCTION CENSUS: [length(rows)] (type, hook) pair(s) fired for a value the atom's own construction wrote")
+	var/list/sorted = sortTim(rows.Copy(), GLOBAL_PROC_REF(cmp_numeric_dsc), TRUE)
+	for(var/row in sorted)
+		log_world("CONSTRUCTION CENSUS: [sorted[row]]x [row]")

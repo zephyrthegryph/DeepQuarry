@@ -124,7 +124,7 @@
 			Entered(AM)
 
 	//Lighting related
-	set_luminosity(!(dynamic_lighting))
+	set_luminosity(GLOB.client_lighting || !(dynamic_lighting)) // client lighting: BYOND shows every turf, the lighting plane darkens
 
 	if(opacity)
 		directional_opacity = ALL_CARDINALS
@@ -379,6 +379,7 @@ CAPABILITIES(/turf)
 /turf/proc/levelupdate()
 	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(O.hides_under_flooring() && !is_plating())
+	interest_turf_revealed(src) // the cover changed: what it no longer hides draws what it owed
 
 /turf/proc/AdjacentTurfs(check_blockage = TRUE)
 	. = list()

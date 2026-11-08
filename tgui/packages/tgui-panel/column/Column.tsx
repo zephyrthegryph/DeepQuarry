@@ -1,18 +1,23 @@
 /**
- * The window dock's frame in the stat panel (doc/rewrite/proposals/window_system.md):
- * one entry per group, its titlebar (or tabs for a stack), collapse, float and
- * close, a resize grip, and a placeholder the group's window is placed over
- * (dockHost.ts). It moves the way the chat does, on the shared DQ model
- * (tgui/dq liveOrder.ts, the one the tab strips use):
+ * The right-hand column (doc/rewrite/proposals/window_system.md section 12):
+ * one page, one window manager. Every window in it, the chat, the stat
+ * panel's views and docked tgui interfaces, is an entry of the same list,
+ * framed the same way and moved by the same code:
+ * - an entry's header shows its title, or its tabs when windows are stacked;
+ *   its chevron (or a double click) collapses it to the header;
  * - the free space of a header drags the whole entry along the list while the
- *   others slide aside, onto another entry's header to stack there, or out of
- *   the panel (the chat's pop-out distance) to float under the pointer;
- * - a stack's tabs are the DQ tab strip: a click selects, a drag along the
- *   strip re-arranges them live, and pulling one off the strip takes that
- *   window out: to its own entry where it is dropped, onto another header, or
- *   out of the panel to float.
+ *   others slide aside (live, tgui/dq liveOrder), onto another header to stack
+ *   there, or out of the page to float (docked interfaces become native
+ *   windows under the pointer);
+ * - stack tabs are the DQ tab strip: a click selects, a drag along the strip
+ *   re-arranges, pulling one off the strip takes that window out;
+ * - the grip under an expanded entry resizes it; the last expanded entry
+ *   fills what is left.
  */
 import {
+  Component,
+  type ErrorInfo,
+  type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useState,
   useSyncExternalStore,
@@ -25,10 +30,16 @@ import {
   type OrderBox,
   Tabs,
 } from 'tgui/dq';
+import 'tgui/embeddedStyles';
+import { EmbeddedInterface } from 'tgui/routes';
 import { Button } from 'tgui-core/components';
+import { MapSplitHandle } from '../layout/ChatLayout';
 import { POP_OUT_DISTANCE } from '../layout/model';
-import { type DockHost, dockHost } from './dockHost';
-import type { DockGroup } from './windowDock';
+import { Panel } from '../Panel';
+import { StatWindow } from '../statpanel/App';
+import type { PanelView } from '../statpanel/layout';
+import { type ColumnHost, columnHost } from './host';
+import type { DockGroup, DockWindow } from './model';
 
 /** Presses here keep their own meaning (buttons click, tabs select and re-arrange). */
 const NO_DRAG = 'button, input, .Button, .Tab, [data-dq-tab]';
@@ -36,7 +47,7 @@ const NO_DRAG = 'button, input, .Button, .Tab, [data-dq-tab]';
 /** A drag in progress, as the list should show it now. */
 export type GroupDrag = {
   group: string;
-  /** A single tab pulled out of the stack (null: the whole entry moves). */
+  /** A single tab pulled out of its stack (null: the whole entry moves). */
   window: string | null;
   /** The dragged entry's offset along the list, held inside it. */
   dy: number;
@@ -44,13 +55,13 @@ export type GroupDrag = {
   to: number;
   /** The group whose header it is over (stacks into it), or null. */
   join: string | null;
-  /** Out of the panel far enough to float. */
+  /** Out of the page far enough to float. */
   float: boolean;
   boxes: OrderBox[];
 };
 
-/** Whether a page point is out of the panel by at least the chat's pop-out distance. */
-export function outOfPanel(x: number, y: number, w: number, h: number) {
+/** Whether a page point is out of the page by at least the chat's pop-out distance. */
+export function outOfPage(x: number, y: number, w: number, h: number) {
   const d = POP_OUT_DISTANCE;
   return x < -d || y < -d || x > w + d || y > h + d;
 }
@@ -77,13 +88,16 @@ export function groupOffset(drag: GroupDrag | null, group: string): number {
   return liveSlide(drag.boxes, from, drag.to, at);
 }
 
-function measure(area: HTMLElement): OrderBox[] {
+/** Whether a window can leave the page as a native window (only docked tgui interfaces have one to go to). */
+export const canFloat = (win?: DockWindow) => win?.kind === 'tgui';
+
+function measure(): OrderBox[] {
   return Array.from(
-    area.querySelectorAll<HTMLElement>('[data-dock-group]'),
+    document.querySelectorAll<HTMLElement>('[data-column-group]'),
   ).map((node) => {
     const rect = node.getBoundingClientRect();
     return {
-      id: node.dataset.dockGroup ?? '',
+      id: node.dataset.columnGroup ?? '',
       start: rect.top,
       size: rect.height,
     };
@@ -92,15 +106,24 @@ function measure(area: HTMLElement): OrderBox[] {
 
 function headUnder(x: number, y: number, skip: string): string | null {
   for (const node of Array.from(
-    document.querySelectorAll<HTMLElement>('[data-dock-head]'),
+    document.querySelectorAll<HTMLElement>('[data-column-head]'),
   )) {
-    if (node.dataset.dockHead === skip) continue;
+    if (node.dataset.columnHead === skip) continue;
     const r = node.getBoundingClientRect();
     if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
-      return node.dataset.dockHead ?? null;
+      return node.dataset.columnHead ?? null;
     }
   }
   return null;
+}
+
+/** The screen point (physical pixels) of a page point, for a window floated under the pointer. */
+function screenPoint(e: PointerEvent) {
+  const ratio = window.devicePixelRatio || 1;
+  return {
+    x: Math.round(e.screenX * ratio),
+    y: Math.round(e.screenY * ratio),
+  };
 }
 
 /** A live drag of an entry (`pulled` null) or of one tab pulled out of its stack. */
@@ -108,39 +131,33 @@ function runDrag(
   target: Element,
   pointer: number,
   start: { x: number; y: number },
-  host: DockHost,
+  host: ColumnHost,
   group: string,
   pulled: string | null,
   setDrag: (drag: GroupDrag | null) => void,
   first?: PointerEvent,
 ) {
-  const areaNode = host.areaNode;
-  if (!areaNode) {
-    return;
-  }
   try {
     target.setPointerCapture(pointer);
   } catch {
     // Not tracked any more: the drag follows the moves it gets.
   }
-  const boxes = measure(areaNode);
-  const area = areaNode.getBoundingClientRect();
-  const min = area.top;
-  const max = Math.max(area.bottom, boxes.at(-1)?.start ?? 0);
-  host.setDragging(true);
+  const boxes = measure();
+  const min = 0;
+  const max = Math.max(window.innerHeight, boxes.at(-1)?.start ?? 0);
+  const groupOf = host.state.groups.find((g) => g.id === group);
+  const floatable = pulled
+    ? canFloat(host.windowOf(pulled))
+    : !!groupOf?.windows.every((id) => canFloat(host.windowOf(id)));
   let live: GroupDrag | null = null;
   const move = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;
     const box = boxes.find((b) => b.id === group);
     const dy =
       !pulled && box ? liveClamp(box, e.clientY - start.y, min, max) : 0;
-    const float = outOfPanel(
-      e.clientX,
-      e.clientY,
-      window.innerWidth,
-      window.innerHeight,
-    );
-    // A pulled tab dropped back on its own header goes back where it was.
+    const float =
+      floatable &&
+      outOfPage(e.clientX, e.clientY, window.innerWidth, window.innerHeight);
     const join = float ? null : headUnder(e.clientX, e.clientY, group);
     live = {
       group,
@@ -152,8 +169,6 @@ function runDrag(
       boxes,
     };
     setDrag(live);
-    // The docked windows follow their entries' live offsets on the next frame.
-    host.schedule();
   };
   const end = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;
@@ -165,14 +180,12 @@ function runDrag(
     }
     const done = live;
     setDrag(null);
-    host.setDragging(false);
     if (!done || e.type !== 'pointerup') {
       return;
     }
-    const at = host.screenPoint(e.clientX, e.clientY);
     if (pulled) {
       if (done.float) {
-        host.float(pulled, at);
+        host.float(pulled, screenPoint(e));
       } else if (done.join) {
         const into = host.state.groups.find((g) => g.id === done.join);
         host.dispatch({
@@ -187,7 +200,9 @@ function runDrag(
       return;
     }
     if (done.float) {
-      host.floatGroup(group, at);
+      for (const id of groupOf?.windows ?? []) {
+        host.float(id, id === groupOf?.active ? screenPoint(e) : null);
+      }
     } else if (done.join) {
       host.dispatch({ type: 'joinGroup', group, into: done.join });
     } else {
@@ -210,15 +225,11 @@ function runDrag(
 /** A press on a header's free space: past the drag threshold it moves the whole entry. */
 function pressHead(
   event: ReactPointerEvent<HTMLElement>,
-  host: DockHost,
+  host: ColumnHost,
   group: DockGroup,
   setDrag: (drag: GroupDrag | null) => void,
 ) {
-  if (
-    event.button !== 0 ||
-    (event.target as HTMLElement).closest?.(NO_DRAG) ||
-    !host.areaNode
-  ) {
+  if (event.button !== 0 || (event.target as HTMLElement).closest?.(NO_DRAG)) {
     return;
   }
   const target = event.currentTarget;
@@ -243,7 +254,7 @@ function pressHead(
 
 function startResize(
   event: ReactPointerEvent<HTMLElement>,
-  host: DockHost,
+  host: ColumnHost,
   group: DockGroup,
 ) {
   if (event.button !== 0) {
@@ -253,7 +264,8 @@ function startResize(
   const target = event.currentTarget;
   const pointer = event.pointerId;
   const startY = event.clientY;
-  const startHeight = group.height;
+  const body = target.parentElement?.getBoundingClientRect();
+  const startHeight = body ? Math.round(body.height) : group.height;
   target.setPointerCapture(pointer);
   const move = (e: PointerEvent) =>
     host.dispatch({
@@ -274,24 +286,75 @@ function startResize(
   target.addEventListener('pointercancel', end);
 }
 
-function ghostText(drag: GroupDrag | null, group: string, title: string) {
+/** One window's content failing to draw shows a short error in its place; the rest of the column keeps working. */
+class WindowBoundary extends Component<
+  { name: string; children: ReactNode },
+  { error: boolean }
+> {
+  state = { error: false };
+
+  static getDerivedStateFromError() {
+    return { error: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`column window "${this.props.name}" failed`, error, info);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="column-window__error">
+          {this.props.name} failed to draw.{' '}
+          <Button onClick={() => this.setState({ error: false })}>Retry</Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/** What one window shows. */
+function WindowBody(props: { host: ColumnHost; win: DockWindow }) {
+  const { host, win } = props;
+  let content: ReactNode = null;
+  if (win.kind === 'chat') {
+    content = <Panel />;
+  } else if (win.kind === 'stat') {
+    content = (
+      <StatWindow
+        store={host.stat.store}
+        view={win.iface.slice(5) as PanelView}
+      />
+    );
+  } else {
+    const backend = host.backends.get(win.id);
+    content = backend ? <EmbeddedInterface backend={backend} /> : null;
+  }
+  return (
+    <WindowBoundary name={win.title || win.iface}>{content}</WindowBoundary>
+  );
+}
+
+function ghostText(drag: GroupDrag | null, group: string) {
   if (drag?.join === group) {
     return 'Release to stack here';
   }
   if (drag?.group === group && drag.float && !drag.window) {
     return 'Release to float';
   }
-  return title;
+  return null;
 }
 
 function Group(props: {
   group: DockGroup;
   index: number;
-  host: DockHost;
+  fill: boolean;
+  host: ColumnHost;
   drag: GroupDrag | null;
   setDrag: (drag: GroupDrag | null) => void;
 }) {
-  const { group, index, host, drag, setDrag } = props;
+  const { group, index, fill, host, drag, setDrag } = props;
   const { windows } = host.state;
   const active = windows[group.active];
   const title = active?.title || active?.iface || '';
@@ -301,6 +364,7 @@ function Group(props: {
   const insert =
     !!drag?.window && !drag.float && !drag.join && drag.to === index;
   const offset = groupOffset(drag, group.id);
+  const ghost = ghostText(drag, group.id);
   const toggle = () =>
     host.dispatch({
       type: 'collapse',
@@ -310,19 +374,24 @@ function Group(props: {
   return (
     <div
       className={[
-        'dock-group',
-        dragged && 'dock-group--dragged',
-        dragged && drag?.float && 'dock-group--floating',
-        insert && 'dock-group--insert',
+        'column-group',
+        group.collapsed && 'column-group--collapsed',
+        fill && 'column-group--fill',
+        dragged && 'column-group--dragged',
+        dragged && drag?.float && 'column-group--floating',
+        insert && 'column-group--insert',
       ]
         .filter(Boolean)
         .join(' ')}
-      data-dock-group={group.id}
-      style={offset ? { transform: `translateY(${offset}px)` } : undefined}
+      data-column-group={group.id}
+      style={{
+        transform: offset ? `translateY(${offset}px)` : undefined,
+        height: group.collapsed || fill ? undefined : `${group.height}px`,
+      }}
     >
       <div
-        className={`dock-head${lit ? ' dock-head--lit' : ''}`}
-        data-dock-head={group.id}
+        className={`column-head${lit ? ' column-head--lit' : ''}`}
+        data-column-head={group.id}
         onPointerDown={(event) => pressHead(event, host, group, setDrag)}
         onDoubleClick={(event) => {
           if (!(event.target as HTMLElement).closest(NO_DRAG)) toggle();
@@ -337,14 +406,14 @@ function Group(props: {
         />
         {stacked ? (
           <Tabs
-            className="dock-tabs"
+            className="column-tabs"
             layout="scrollable"
             tabs={group.windows.map((id) => ({
               id,
               label: windows[id]?.title || windows[id]?.iface,
               selected: id === group.active,
             }))}
-            onSelect={(id) => host.dispatch({ type: 'activate', id })}
+            onSelect={(id) => host.activate(id)}
             onReorder={(order) =>
               host.dispatch({ type: 'orderTabs', group: group.id, order })
             }
@@ -362,71 +431,83 @@ function Group(props: {
             }
           />
         ) : (
-          <span className="dock-title">{title}</span>
+          <span className="column-title">{title}</span>
         )}
-        <Button
-          compact
-          color="transparent"
-          icon="up-right-from-square"
-          tooltip="Float"
-          onClick={() => host.float(group.active)}
-        />
-        <Button
-          compact
-          color="transparent"
-          icon="times"
-          tooltip="Close"
-          onClick={() => host.close(group.active)}
-        />
+        {canFloat(active) && (
+          <>
+            <Button
+              compact
+              color="transparent"
+              icon="up-right-from-square"
+              tooltip="Float"
+              onClick={() => host.float(group.active)}
+            />
+            <Button
+              compact
+              color="transparent"
+              icon="times"
+              tooltip="Close"
+              onClick={() => host.close(group.active)}
+            />
+          </>
+        )}
       </div>
       {!group.collapsed && (
-        <div
-          className="dock-body"
-          style={{ height: `${group.height}px` }}
-          ref={(node) => host.setBody(group.active, node)}
-        >
-          {host.dragging && (
-            <div className="dock-body__ghost">
-              {ghostText(drag, group.id, title)}
-            </div>
+        <div className="column-body">
+          {group.windows.map((id) => {
+            const win = windows[id];
+            if (!win) return null;
+            // Every window of a stack stays mounted (its state survives a tab switch); only the active one shows.
+            return (
+              <div
+                key={id}
+                className="column-window"
+                style={id === group.active ? undefined : { display: 'none' }}
+              >
+                <WindowBody host={host} win={win} />
+              </div>
+            );
+          })}
+          {ghost && <div className="column-body__ghost">{ghost}</div>}
+          {!fill && (
+            <div
+              className="column-grip"
+              onPointerDown={(event) => startResize(event, host, group)}
+            />
           )}
-          <div
-            className="dock-grip"
-            onPointerDown={(event) => startResize(event, host, group)}
-          />
         </div>
       )}
     </div>
   );
 }
 
-export function DockArea() {
-  const host = dockHost;
+export function Column() {
+  const host = columnHost;
   useSyncExternalStore(host.subscribe, host.getVersion);
   const [drag, setDrag] = useState<GroupDrag | null>(null);
   const { groups } = host.state;
-  if (!groups.length) {
-    return null;
-  }
+  // The last expanded entry fills what the others leave.
+  let fillAt = -1;
+  groups.forEach((group, index) => {
+    if (!group.collapsed) fillAt = index;
+  });
   const insertEnd =
     !!drag?.window && !drag.float && !drag.join && drag.to >= groups.length;
   return (
-    <div
-      className={`dock-area${host.dragging ? ' dock-area--dragging' : ''}`}
-      ref={(node) => host.setArea(node)}
-      onScroll={host.schedule}
-    >
+    <div className={`column${drag ? ' column--dragging' : ''}`}>
+      <MapSplitHandle />
       {groups.map((group, index) => (
         <Group
           key={group.id}
           group={group}
           index={index}
+          fill={index === fillAt}
           host={host}
           drag={drag}
           setDrag={setDrag}
         />
       ))}
-      {insertEnd && <div className="dock-insert-end" />}
+      {insertEnd && <div className="column-insert-end" />}
     </div>
   );
 }

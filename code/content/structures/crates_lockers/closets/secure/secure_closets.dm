@@ -140,9 +140,15 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 	if(owner_ref())
 		name = "Owned by [owner_ref().name]"
 		if(owner_ref().current)
-			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
-			set_owner_picture(image(I, pixel_x = (32 - I.Width())))
-			spent(I)
+			var/datum/portrait/P = portrait_request(owner_ref().current, SOUTH, src, PROC_REF(owner_portrait_ready))
+			if(P)
+				owner_portrait_ready(P)
+
+/// The owner's portrait (the shared portrait cache) landed: it is the closet's picture.
+/obj/structure/closet/secure_closet/mind/proc/owner_portrait_ready(datum/portrait/P)
+	if(!P?.picture)
+		return
+	set_owner_picture(image(P.picture, pixel_x = (32 - P.picture.Width())))
 
 /obj/structure/closet/secure_closet/mind/closet_look(datum/look/look)
 	..()

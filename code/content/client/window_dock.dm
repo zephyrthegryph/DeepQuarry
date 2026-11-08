@@ -1,14 +1,12 @@
-// The window dock (doc/rewrite/proposals/window_system.md): any pooled tgui window can be docked into the right-hand column. A docked
-// UI keeps its own BYOND window, page and /datum/tgui (routing is unchanged); it only loses its OS chrome, and the stat panel page frames
-// it (titlebar, tabs, collapse, float, close) and places it over a placeholder (tgui-panel/statpanel/windowDock.ts is the layout).
-//
-// The server's part: which UIs are docked (config.window.docked), which are hidden (collapsed or behind a tab: no data pushes while
-// hidden, one full update when shown again), the messages between the UI pages, the stat panel and the UIs, and the saved layout.
+// The window dock (doc/rewrite/proposals/window_system.md section 12): the right-hand column is one page, the chat's, and every docked tgui
+// interface is a window inside it (a column part, code/library/ui/tgui/column_part.dm), framed, stacked, collapsed and moved by the page's
+// own window manager exactly like the chat and the stat panel. A floating interface is a pooled native window. Docking or floating a UI
+// reopens it on the other side (the server keeps no second copy); the saved layout says which interfaces open docked.
 
-/// The saved layout's limit in characters (the stat panel trims to this, windowDock.ts DOCK_SAVE_MAX).
+/// The saved layout's limit in characters.
 #define WINDOW_DOCK_LAYOUT_MAX 8000
 
-/// The player's dock layout: interface name -> placement, as the stat panel saves it (JSON). The server reads only each entry's `dock`.
+/// The player's dock layout: interface name -> placement (JSON). The server writes `dock`; the column page keeps its arrangement too.
 /datum/preference/text/window_layout
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "WINDOW_LAYOUT"
@@ -33,6 +31,12 @@
 	var/client/owner
 	/// Interface name -> TRUE for the interfaces the saved layout docks, or null before it was read.
 	var/list/wants_cache
+	/// Column window ids handed out so far (col-1, col-2, ...).
+	var/parts_made = 0
+	/// Interface name -> the column list index a drop asked for, used by the next column window of that interface.
+	var/list/drop_index
+	/// Interface name -> the screen point ("x,y") a drag out of the column ended at: its next native window opens under it.
+	var/list/float_points
 
 /datum/window_dock/New(client/owner)
 	rel_set(src, nameof(owner), owner)
@@ -43,27 +47,6 @@ CAPABILITIES(/datum/window_dock)
 /// The client using the dock.
 /datum/window_dock/proc/owner() as /client
 	return owner
-
-/// The docked UIs of this client that are open now.
-/datum/window_dock/proc/docked_uis()
-	. = list()
-	var/client/player = owner()
-	for(var/window_id in player?.session?.tgui_windows)
-		var/datum/tgui_window/window = player.session.tgui_windows[window_id]
-		var/datum/tgui/ui = window?.locked_by()
-		if(ui?.docked && !ui.closing)
-			. += ui
-
-/// The docked UI in window `window_id` of this client, or null (the panel's ids are never trusted further than this).
-/datum/window_dock/proc/docked_ui(window_id)
-	var/client/player = owner()
-	if(!istext(window_id) || !player?.session)
-		return null
-	var/datum/tgui_window/window = player.session.tgui_windows[window_id]
-	var/datum/tgui/ui = window?.locked_by()
-	if(!ui?.docked || ui.closing || ui.user?.client != player)
-		return null
-	return ui
 
 /// Whether the saved layout docks `interface` when it opens.
 /datum/window_dock/proc/wants(interface)
@@ -84,49 +67,17 @@ CAPABILITIES(/datum/window_dock)
 		if(istext(interface) && islist(place) && place["dock"])
 			.[interface] = TRUE
 
-/// The stat panel's message for the dock.
+/// The column page's messages for the dock (they come through the stat panel's routing).
 /datum/window_dock/proc/panel_message(type, list/payload)
 	switch(type)
-		if("WM-Ready")
-			send_init()
-		if("WM-View")
-			set_hidden(islist(payload) ? payload["hidden"] : null)
-		if("WM-Float")
-			var/datum/tgui/ui = docked_ui(payload?["id"])
-			if(ui)
-				undock(ui, dock_point_text(payload?["at"]))
-		if("WM-Close")
-			var/datum/tgui/ui = docked_ui(payload?["id"])
-			ui?.close()
-		if("WM-Save")
-			save(payload?["layout"])
 		if("WM-Log")
-			// The panel's own account of a placement: what it sent and what the client reads back (hard to see any other way).
-			log_tgui(owner(), "Window dock (panel): [copytext(json_encode(payload), 1, 2000)]", context = "window_dock")
+			log_tgui(owner(), "Window dock (column): [copytext(json_encode(payload), 1, 2000)]", context = "window_dock")
+		if("WM-Drop")
+			drop_answer(payload)
+		if("WM-Save")
+			arrange(payload?["layout"])
 
-/// Tells a (re)loaded panel the saved layout and the windows docked now.
-/datum/window_dock/proc/send_init()
-	var/client/player = owner()
-	if(!player?.stat_panel?.is_ready())
-		return
-	var/list/windows = list()
-	for(var/datum/tgui/ui as anything in docked_uis())
-		windows += list(ui.dock_entry())
-	player.stat_panel.send_message("wm/init", list(
-		"saved" = player.prefs?.read_preference(/datum/preference/text/window_layout) || "",
-		"windows" = windows,
-	))
-
-/// The panel reports which docked windows are off screen: they stop getting data until shown again.
-/datum/window_dock/proc/set_hidden(list/hidden)
-	var/list/hidden_set = list()
-	for(var/window_id in hidden)
-		if(istext(window_id))
-			hidden_set[window_id] = TRUE
-	for(var/datum/tgui/ui as anything in docked_uis())
-		ui.dock_hide(!!hidden_set[ui.window()?.id])
-
-/// Keeps the layout the panel saved.
+/// Keeps the saved layout.
 /datum/window_dock/proc/save(text)
 	var/client/player = owner()
 	if(!istext(text) || length(text) > WINDOW_DOCK_LAYOUT_MAX || !player?.prefs)
@@ -136,75 +87,163 @@ CAPABILITIES(/datum/window_dock)
 		return
 	player.prefs.update_preference_by_type(/datum/preference/text/window_layout, text)
 
-/// Docks `ui` (its page asked: the dock button or a drop on the column).
-/datum/window_dock/proc/dock(datum/tgui/ui)
+/// Keeps the column page's arrangement (groups, order, tabs, collapse, heights), with the server's own word on what opens docked: an
+/// interface the server floated stays floating whatever the page last saw.
+/datum/window_dock/proc/arrange(text)
+	var/client/player = owner()
+	if(!istext(text) || length(text) > WINDOW_DOCK_LAYOUT_MAX || !player?.prefs)
+		return
+	var/list/page = safe_json_decode(text)
+	if(!islist(page))
+		return
+	var/list/stored = safe_json_decode(player.prefs.read_preference(/datum/preference/text/window_layout) || "{}")
+	if(!islist(stored))
+		stored = list()
+	for(var/interface in page)
+		var/list/place = page[interface]
+		if(!istext(interface) || !islist(place))
+			continue
+		var/list/before = stored[interface]
+		place["dock"] = islist(before) ? !!before["dock"] : !!place["dock"]
+		stored[interface] = place
+	save(json_encode(stored))
+
+/// Remembers in the saved layout whether `interface` opens docked.
+/datum/window_dock/proc/remember(interface, docked)
+	var/client/player = owner()
+	if(!player?.prefs)
+		return
+	var/list/layout = safe_json_decode(player.prefs.read_preference(/datum/preference/text/window_layout) || "{}")
+	if(!islist(layout))
+		layout = list()
+	var/list/place = islist(layout[interface]) ? layout[interface] : list()
+	place["dock"] = docked ? TRUE : FALSE
+	layout[interface] = place
+	save(json_encode(layout))
+
+/// A fresh column window for a docked UI (its id is new each time, so a closed one's late messages reach nothing).
+/datum/window_dock/proc/new_part(interface)
+	var/client/player = owner()
+	if(!player)
+		return null
+	parts_made++
+	var/datum/tgui_window/column_part/part = new(player, "col-[parts_made]", COLUMN_PART_TGUI)
+	var/at = LAZYACCESS(drop_index, interface)
+	if(isnum(at))
+		part.at = at
+		LAZYREMOVE(drop_index, interface)
+	return part
+
+/// Reopens `ui` on the other side: closed here, opened again by its host, which picks the column or a native window by wants().
+/datum/window_dock/proc/reopen(datum/tgui/ui)
+	var/datum/host = ui.src_object()
+	var/mob/user = ui.user
+	ui.close()
+	if(host && !QDELETED(host) && user)
+		return host.tgui_interact(user)
+	return null
+
+/// Docks `ui` into the column (its dock button, or a drop on the column), at list index `at` when a drop gave one.
+/datum/window_dock/proc/dock(datum/tgui/ui, at)
 	if(!ui.dockable() || ui.docked)
 		return FALSE
-	ui.docked = TRUE
-	if(wants_cache)
-		wants_cache[ui.interface] = TRUE
-	ui.apply_dock_chrome()
-	log_tgui(owner(), "Window dock: [ui.interface] docked.", window = ui.window())
-	ui.send_full_update()
+	remember(ui.interface, TRUE)
+	if(isnum(at))
+		LAZYSET(drop_index, ui.interface, at)
+	log_tgui(owner(), "Window dock: [ui.interface] docked[isnum(at) ? " at [at]" : ""].", window = ui.window())
+	reopen(ui)
 	return TRUE
 
-/// Floats a docked `ui`: its chrome comes back and its page places itself where it last floated.
+/// Floats a docked `ui` out of the column into a native window (under the point `at`, "x,y", when the drag gave one).
 /datum/window_dock/proc/undock(datum/tgui/ui, at)
 	if(!ui.docked)
 		return FALSE
-	ui.docked = FALSE
-	if(wants_cache)
-		wants_cache -= ui.interface
-	ui.apply_dock_chrome()
-	ui.dock_hide(FALSE)
-	owner()?.stat_panel?.send_message("wm/close", list("id" = ui.window()?.id))
-	log_tgui(owner(), "Window dock: [ui.interface] floated[at ? " under the pointer at [at]" : ""].", window = ui.window())
-	ui.float_at = at
-	ui.send_full_update()
-	ui.float_at = null
+	remember(ui.interface, FALSE)
+	log_tgui(owner(), "Window dock: [ui.interface] floated[at ? " under [at]" : ""].", window = ui.window())
+	if(at)
+		LAZYSET(float_points, ui.interface, at)
+	reopen(ui)
 	return TRUE
 
-/// A docked UI's page is up: the panel frames it.
-/datum/window_dock/proc/window_ready(datum/tgui/ui)
-	if(!ui.docked)
+/// A native window was dropped (its titlebar drag ended at screen point `point`): the column page judges whether that is over it.
+/datum/window_dock/proc/dropped(datum/tgui/ui, list/point)
+	var/client/player = owner()
+	if(!ui.dockable() || ui.docked || !player?.tgui_panel?.window || isnull(dock_point_text(point)))
 		return
-	owner()?.stat_panel?.send_message("wm/open", ui.dock_entry())
-	ui.dock_at = null
+	player.tgui_panel.window.send_message("col/drop-check", list("wid" = ui.window()?.id, "x" = point["x"], "y" = point["y"]))
 
-/// A docked UI closed: the panel drops it and the pooled window gets its chrome back for its next owner.
-/datum/window_dock/proc/window_closed(datum/tgui/ui)
-	ui.docked = FALSE
-	ui.view_hidden = FALSE
-	ui.apply_dock_chrome()
-	owner()?.stat_panel?.send_message("wm/close", list("id" = ui.window()?.id))
-
-/// The pooled window's OS chrome: none while docked (the panel frames it), the player's own while floating.
-/datum/tgui/proc/apply_dock_chrome()
-	var/client/player = user?.client
-	if(!player || !window())
+/// The column page's answer to a drop check: window `wid` was dropped over it, at list index `index`.
+/datum/window_dock/proc/drop_answer(list/payload)
+	var/client/player = owner()
+	var/wid = payload?["wid"]
+	if(!istext(wid) || !player?.session)
 		return
-	var/framed = !docked && FALSE
-	winset(player, window().id, "titlebar=[framed ? "true" : "false"];can-resize=[framed ? "true" : "false"]")
+	var/datum/tgui_window/window = player.session.tgui_windows[wid]
+	var/datum/tgui/ui = window?.locked_by()
+	if(!ui || ui.closing || ui.docked || ui.user?.client != player)
+		return
+	var/index = payload?["index"]
+	dock(ui, isnum(index) ? max(0, round(index)) : null)
 
-/datum/tgui/dock_on_open()
-	docked = dockable() && window_dock_of(user?.client)?.wants(interface)
-	if(docked)
-		apply_dock_chrome()
+/datum/tgui_panel/column_message(list/payload)
+	return column_route(client(), payload)
 
-/datum/tgui/dock_on_close()
-	window_dock_of(user?.client)?.window_closed(src)
+/datum/tgui_panel/column_page_loaded()
+	var/client/player = client()
+	window.send_message("col/init", list("saved" = player?.prefs?.read_preference(/datum/preference/text/window_layout) || ""))
+	// Every column window opens in the page again; its UI gets a full update when the page reports it ready.
+	for(var/window_id in player?.session?.tgui_windows)
+		var/datum/tgui_window/column_part/part = player.session.tgui_windows[window_id]
+		if(istype(part) && part.status != TGUI_WINDOW_CLOSED)
+			part.reinitialize()
+
+/// The column page's message for one of its windows (`col/msg`): handed to that window as if its own page sent it. Only a column part of
+/// this client is ever reached; anything else is dropped.
+/proc/column_route(client/player, list/payload)
+	if(!player?.session || !islist(payload))
+		return FALSE
+	var/wid = payload["wid"]
+	var/type = payload["type"]
+	if(!istext(wid) || !istext(type))
+		return FALSE
+	var/datum/tgui_window/column_part/part = player.session.tgui_windows[wid]
+	if(!istype(part))
+		return FALSE
+	part.on_message(type, payload["payload"], list())
+	return TRUE
+
+/datum/tgui/dock_window()
+	if(!dockable_interface())
+		return null
+	var/datum/window_dock/dock = window_dock_of(user?.client)
+	if(!dock)
+		return null
+	if(!dock.wants(interface))
+		// Floating: a drag out of the column left a point for it, so its window opens under the pointer (one update carries it).
+		var/at = LAZYACCESS(dock.float_points, interface)
+		if(at)
+			float_at = at
+			LAZYREMOVE(dock.float_points, interface)
+		return null
+	return dock.new_part(interface)
 
 /datum/tgui/dock_message(type, list/payload)
 	var/datum/window_dock/dock = window_dock_of(user?.client)
 	switch(type)
 		if("wm/dock")
-			dock_at = dock_point_text(payload?["at"])
-			if(!dock?.dock(src))
-				dock_at = null
-		if("wm/ready")
-			dock?.window_ready(src)
+			// The dock button in a native window's title bar.
+			dock?.dock(src)
+		if("wm/float")
+			// The float button (or a drag out) on a docked window in the column; `at` is the screen point it was dragged to.
+			dock?.undock(src, dock_point_text(payload?["at"]))
+		if("wm/dropped")
+			// A native window's titlebar drag ended at screen point `pointer`: maybe over the column.
+			dock?.dropped(src, payload?["pointer"])
+		if("wm/view")
+			// The column page: this docked window's entry is collapsed or behind another tab (no data pushes), or shown again (one update).
+			if(docked)
+				dock_hide(!!payload?["hidden"])
 		if("wm/log")
-			// The window page's account of a dock decision (a drop over the panel or not, and why).
 			log_tgui(user, "Window dock (page): [copytext(json_encode(payload), 1, 2000)]", context = "window_dock", window = window())
 
 /client/var/tmp/datum/window_dock/window_dock

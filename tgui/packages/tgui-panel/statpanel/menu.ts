@@ -1,7 +1,7 @@
 /**
  * The Menu page: what skin.dmf's native menu bar did that nothing else does.
  * Reconnect and ping are in the chat box, quitting is the window's close
- * button, floating or docking the chat is a drag, the chat log export is in
+ * button, the chat is a window of the right-hand column, the chat log export is in
  * the chat settings (Export), and the web links are gone.
  */
 export type MenuItem = { label: string; command: string };
@@ -27,7 +27,6 @@ export const ROUND_ITEMS: MenuItem[] = [
 ];
 
 export const CHAT_ITEMS: MenuItem[] = [
-  { label: 'Reset chat window', command: 'reset-chat-window' },
 ];
 
 const mapSet = (param: string, value: string | number) =>

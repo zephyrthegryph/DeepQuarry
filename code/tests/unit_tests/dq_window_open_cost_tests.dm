@@ -39,11 +39,7 @@
 /datum/unit_test/dq_window_open_vendor_pictures
 /datum/unit_test/dq_window_open_vendor_pictures/Run()
 	var/obj/machinery/vending/coffee/vendor = allocate(/obj/machinery/vending/coffee, test_floor())
-	var/sheet_bytes = 0
-	var/datum/asset/spritesheet_batched/vending/sheet = get_asset_datum(/datum/asset/spritesheet_batched/vending)
-	for(var/size_id in sheet.sizes)
-		sheet_bytes += length(file("[SPRITESHEET_DIR][sheet.name]_[size_id].png"))
-	sheet_bytes += length(file("[SPRITESHEET_DIR]spritesheet_[sheet.name].css"))
+	var/sheet_bytes = 1304859 // the vending sheet as measured before it was removed (802d5a8e81)
 	var/picture_bytes = 0
 	var/products = 0
 	var/started = TICK_USAGE_REAL
@@ -60,13 +56,13 @@
 	TEST_ASSERT(products > 0, "the vendor has products")
 	TEST_NOTICE(src, "WINDOW_OPEN_COST vendor pictures: before, the whole sheet [sheet_bytes] bytes on a client's first vendor; after, [products] pictures [picture_bytes] bytes (built in [round(first_ms, 0.1)] ms, the first time for the world)")
 
-/// What a fresh client is sent on join, asset by asset (the stat panel, the chat panel and its fonts and emoji sheet, the tgui shell the pooled
+/// What a fresh client is sent on join, asset by asset (the right-hand column's page, which holds the chat and the stat panel, its fonts and emoji sheet, the tgui shell the pooled
 /// windows load), and what it is no longer sent: the abilities sheet waits for an ability that draws from it. JOIN_ASSET_COST lines.
 /datum/unit_test/dq_join_asset_cost
 /datum/unit_test/dq_join_asset_cost/Run()
 	var/total = 0
 	var/files = 0
-	for(var/asset_type in list(/datum/asset/simple/tgui_statpanel, /datum/asset/simple/tgui_panel, /datum/asset/simple/namespaced/fontawesome, /datum/asset/simple/namespaced/tgfont, /datum/asset/simple/tgui, /datum/asset/spritesheet_batched/chat))
+	for(var/asset_type in list(/datum/asset/simple/tgui_panel, /datum/asset/simple/namespaced/fontawesome, /datum/asset/simple/namespaced/tgfont, /datum/asset/simple/tgui, /datum/asset/spritesheet_batched/chat))
 		var/list/sizes = dq_asset_bytes(get_asset_datum(asset_type))
 		total += sizes[1]
 		files += sizes[2]

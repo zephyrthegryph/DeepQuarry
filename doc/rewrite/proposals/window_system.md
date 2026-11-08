@@ -183,3 +183,43 @@ already tgui. Two stay out on purpose:
 - the in-game admin viewer: it navigates a browser to an external web app (cross-origin, its own auth), which a tgui page cannot
   host; "Admin Viewer (Browser)" opens the same thing in the player's own browser.
 The modal prompts (section 8) stay separate by design.
+
+## 12. The right-hand column is one page (2026-11-08; supersedes the overlay and the native-pane plan)
+
+The column is one browser control, the chat's (`outputwindow`, filling `rpane.rpanewindow`), hosting one window manager. The chat,
+the stat panel's views and every docked tgui interface are windows in that page: listed, stacked as tabs, collapsed to their header,
+resized, re-ordered and dragged by the same code (`tgui-panel/column/Column.tsx`, model `column/model.ts`, host `column/host.ts`), with
+no per-window special case. Native BYOND keeps the map, the map/column split (still dragged live from the column's left edge) and the
+native windows of interfaces floating over the map.
+
+- **Server windows in the page: column parts.** `/datum/tgui_window/column_part` (`code/library/ui/tgui/column_part.dm`) is a window
+  with an id in the client's session and no browser: what it sends goes through the panel's window as `col/msg {wid, raw}`, it opens
+  with `col/open {wid, kind}` and closes with `col/close {wid}`; the page answers for it with `col/msg {wid, type, payload}`, which
+  `tgui_panel/on_message` hands to that window's `on_message()` as if from its own page (`column_route()`). The stat panel is the column
+  part `statbrowser` (its senders are unchanged); each docked tgui UI gets a fresh one (`col-N`). A UI in a column part is routed,
+  updated, pinged and closed exactly as in a native window.
+- **Several interfaces in one page.** `tgui/embedded.ts`: each docked interface has its own jotai store and its own channel;
+  `useBackend`, `useLocalState`, `useSharedState` and `act` read them from `EmbeddedContext`, so interfaces need no change.
+  `EmbeddedInterface` (`routes.tsx`) renders one with its own error boundary (a crash shows the error window in that window only);
+  `Window` embedded is content only (the column draws the frame). Styles: `tgui/embeddedStyles.ts` (interface sheets scoped under
+  `.EmbeddedInterface`, themes by their own class), so the chat keeps its exact look.
+- **Dock and float.** A docked interface opens in a column part (`/datum/tgui/dock_window()`), any other in a pooled native window.
+  Docking or floating reopens the UI on the other side (`window_dock.dm` `dock()`/`undock()`); the saved layout says which interfaces
+  open docked. A native window's titlebar drag ends with `wm/dropped {pointer}`; the server asks the page (`col/drop-check`), which
+  judges the point against the column's own rect and answers with the list index (`WM-Drop`). A window dragged out of the page past the
+  pop-out distance floats under the pointer. The `statwindow` `screen-pos` check and the overlay are gone.
+- **Layout memory.** The page keeps its arrangement (groups, order, tabs, collapse, heights) in the `window_layout` preference
+  (`WM-Save`, merged by `arrange()` with the server's own dock flags); the server sends it back with `col/init` when the page loads.
+- **Focus.** The page hands keys back to the map (`panelFocus.ts`) unless a text field has them (the chat input, the stat search, an
+  input in a docked interface).
+
+- **Deleted with it.** The stat panel's own page and pane use (`tgui-statpanel` entry, `DockArea.tsx`, `dockHost.ts`), the overlay
+  positioning, the `screen-pos` drop check, and the chat's native layout: pinning top or bottom, the column share, the floating chat
+  window (`chat_float` in the skin, the `chat_floating`/`chat_dock_side`/`chat_share` preferences, the pin/preview/share messages and the
+  page's float drag and resize). The chat is a column window like the rest; `code/content/client/chat_column.dm` only seats its pane
+  as the whole column, once per connection.
+
+- **Off-screen windows get no data.** The page reports each docked interface's visibility (`wm/view {hidden}`: its entry collapsed, or
+  a background tab of a stack); the server's `dock_hide()` gate stops its pushes and sends one fresh update when it is shown again.
+
+Not done: the chat and the stat panel cannot leave the column (they have no native window to go to).

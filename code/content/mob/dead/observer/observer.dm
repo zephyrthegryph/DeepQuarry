@@ -154,12 +154,12 @@ CAPABILITIES(/mob/observer)
 	if(new_stat != DEAD)
 		CRASH("It is best if observers stay dead, thank you.")
 
+/// The examine portrait: the shared portrait cache's picture (rendered off the tick; until it lands the examine shows the plain icon).
 /mob/observer/dead/examine_icon()
-	var/icon/I = get_cached_examine_icon(src)
-	if(!I)
-		I = getFlatIcon(src, defdir = SOUTH, no_anim = TRUE)
-		set_cached_examine_icon(src, I, 200 SECONDS)
-	return I
+	var/datum/portrait/P = portrait_request(src, SOUTH)
+	if(P?.picture)
+		set_cached_examine_icon(src, P.picture, 200 SECONDS) // the stat panel's Examine tab reads it
+	return P?.picture
 
 /mob/observer/dead/examine(mob/user)
 	. = ..()
