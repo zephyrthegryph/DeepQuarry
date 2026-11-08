@@ -276,6 +276,20 @@
 		op_changed(A)
 		interaction_menu_data(A, B)
 		unrelated_reads++
+	// What the cached menus depend on: per-key reads by key, whole-entity records by the entity's type (the ones an unrelated change still breaks).
+	var/list/dep_kinds = list()
+	for(var/cache_key in GLOB.op_menu_cache)
+		var/list/entry = GLOB.op_menu_cache[cache_key]
+		for(var/id in entry[3])
+			var/list/record = entry[3][id]
+			if(length(record) >= 3)
+				dep_kinds["key [record[3]]"]++
+			else
+				var/datum/D = handle_get(record[1])
+				dep_kinds["entity [D?.type]"]++
+		if(length(entry) >= 6 && entry[6])
+			dep_kinds["sampled rows"] += length(entry[6])
+	detail("ap_menu_dep_kinds", dep_kinds)
 	count_metric("ap_menu_rebuilds_after_unrelated_change", unrelated_reads ? (GLOB.op_menu_builds - unrelated_before) / unrelated_reads : 0, "builds")
 	metric("ap_menu_warm_us", menu_reads ? menu_warm_ms * 1000 / menu_reads : 0, "us")
 	count_metric("ap_menu_rows", menu_reads ? menu_rows / menu_reads : 0, "rows", "none")
