@@ -456,8 +456,10 @@ export function App(props: {
   // "/" anywhere in the panel puts the cursor in the search box.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== '/' || document.activeElement?.tagName === 'INPUT') return;
-      const box = document.querySelector<HTMLInputElement>('.stat-search input');
+      if (event.key !== '/' || document.activeElement?.tagName === 'INPUT')
+        return;
+      const box =
+        document.querySelector<HTMLInputElement>('.stat-search input');
       if (!box) return;
       event.preventDefault();
       box.focus();

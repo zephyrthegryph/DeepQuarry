@@ -156,7 +156,10 @@ export function verbGroupsOf(
 export type Found = { label: string; path: string; command: string };
 
 /** Menu page sections searched with the verbs (menu.ts). */
-export type MenuSection = { name: string; items: { label: string; command: string }[] };
+export type MenuSection = {
+  name: string;
+  items: { label: string; command: string }[];
+};
 
 /**
  * One search over everything the panel offers: the verbs of every view this client has (with the view and group they
@@ -191,7 +194,8 @@ export function searchAll(
       });
     }
   }
-  const starts = (f: Found) => (f.label.toLowerCase().startsWith(needle) ? 0 : 1);
+  const starts = (f: Found) =>
+    f.label.toLowerCase().startsWith(needle) ? 0 : 1;
   return found.sort(
     (a, b) => starts(a) - starts(b) || a.label.localeCompare(b.label),
   );

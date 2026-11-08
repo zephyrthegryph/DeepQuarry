@@ -594,7 +594,7 @@
 				send_full_update()
 			initialized = TRUE
 			cancel_after(src, "ping")
-		if("wm/dock", "wm/ready")
+		if("wm/dock", "wm/ready", "wm/log")
 			dock_message(type, payload)
 		if("ping/reply")
 			initialized = TRUE

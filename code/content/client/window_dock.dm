@@ -100,6 +100,9 @@ CAPABILITIES(/datum/window_dock)
 			ui?.close()
 		if("WM-Save")
 			save(payload?["layout"])
+		if("WM-Log")
+			// The panel's own account of a placement: what it sent and what the client reads back (hard to see any other way).
+			log_tgui(owner(), "Window dock (panel): [copytext(json_encode(payload), 1, 2000)]", context = "window_dock")
 
 /// Tells a (re)loaded panel the saved layout and the windows docked now.
 /datum/window_dock/proc/send_init()
@@ -200,6 +203,9 @@ CAPABILITIES(/datum/window_dock)
 				dock_at = null
 		if("wm/ready")
 			dock?.window_ready(src)
+		if("wm/log")
+			// The window page's account of a dock decision (a drop over the panel or not, and why).
+			log_tgui(user, "Window dock (page): [copytext(json_encode(payload), 1, 2000)]", context = "window_dock", window = window())
 
 /client/var/tmp/datum/window_dock/window_dock
 
