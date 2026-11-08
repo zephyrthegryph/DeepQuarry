@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "Docked windows (PDA, machines, APC, vendors, every window) are now real panes in the right column, laid out by the game client exactly like the chat. They keep their own title bar with a Float button; the stat panel no longer draws boxes for them."

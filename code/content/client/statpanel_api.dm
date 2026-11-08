@@ -37,6 +37,7 @@
 		return FALSE
 
 	if(target.stat_tab == "MC")
+		mc_health_forget(target) // the panel was just opened: send it everything
 		set_MC_tab(target)
 		return TRUE
 

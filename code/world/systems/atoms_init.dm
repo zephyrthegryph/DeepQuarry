@@ -148,7 +148,7 @@
 			// Type-table fast path (atom_type_table.dm): turfs have no on_materialize() of their
 			// own (tools/ci/init_lint.py keeps it so), so a turf whose type needs no registries,
 			// rules or the scheduler is live once flagged. Most of the ~390 k map turfs take this path.
-			if(isturf(A) && !A.rx?.containment_ledger && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
+			if(isturf(A) && !A.rx?.containment_ledger && !ctor_materialize_work(A, plan))
 				A.flags |= ATOM_MATERIALIZED
 			else
 				BOOT_PHASE_BEGIN(bp_mat)
@@ -194,3 +194,16 @@
 		if(QDELETED(A))
 			return
 		setup_early(A)
+
+/// Whether A's type has materialize work, from its construction plan: worked out once per type (atom_type_table()) and kept in the plan's bits,
+/// so the ~390 k map turfs read one bit. `plan`: A's plan bits as InitAtom() fetched them (0 without a plan: the table is asked).
+/proc/ctor_materialize_work(atom/A, plan)
+	if(!plan)
+		return atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK
+	if(plan & CTOR_MATERIALIZE_KNOWN)
+		return plan & CTOR_MATERIALIZE_WORK
+	var/bits = plan | CTOR_MATERIALIZE_KNOWN
+	if(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK)
+		bits |= CTOR_MATERIALIZE_WORK
+	ctor_plans[A.type] = bits
+	return bits & CTOR_MATERIALIZE_WORK

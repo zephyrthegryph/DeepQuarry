@@ -281,3 +281,48 @@ CAPABILITIES(/obj/dq_setup_marks_probe)
 	qdel(sample)
 	qdel(held)
 	qdel(written)
+
+/// The look verdicts written for the next boot of this world are the verdicts sampling found: every cached type's stamp and lazy verdict equal the tables
+/// now, and a cache keyed by another world is not read.
+/datum/unit_test/dq_look_verdict_cache_agrees
+
+/datum/unit_test/dq_look_verdict_cache_agrees/Run()
+	look_verdicts_save()
+	var/list/data = json_decode(file2text(LOOK_VERDICTS_FILE))
+	TEST_ASSERT_EQUAL(data["key"], look_verdicts_key(), "the cache is keyed by this world")
+	var/list/stamp = data["stamp"]
+	var/list/lazy = data["lazy"]
+	TEST_ASSERT(length(stamp) > 50, "the boot's verdicts were written ([length(stamp)])")
+	var/mismatches = 0
+	for(var/name in stamp)
+		var/path = text2path(name)
+		if(!path || !!stamp[name] != !!GLOB.type_look_stamp[path])
+			mismatches++
+	for(var/name in lazy)
+		var/path = text2path(name)
+		if(!path || !!lazy[name] != !!GLOB.type_look_lazy[path])
+			mismatches++
+	TEST_ASSERT_EQUAL(mismatches, 0, "every cached verdict equals the sampled one")
+
+/// A verdict cache written by another world (another build or map) is never read: its verdicts would draw this world's atoms wrong. The same
+/// document keyed by this world is read.
+/datum/unit_test/dq_look_verdict_cache_ignores_another_world
+
+/datum/unit_test/dq_look_verdict_cache_ignores_another_world/Run()
+	var/type = /obj/dq_stamp_plain
+	var/was_stamp = GLOB.type_look_stamp[type]
+	var/was_lazy = GLOB.type_look_lazy[type]
+	GLOB.type_look_stamp -= type
+	GLOB.type_look_lazy -= type
+	var/list/doc = list("key" = "another world|[look_verdicts_key()]", "stamp" = list("[type]" = 1), "lazy" = list("[type]" = 1))
+	TEST_ASSERT(!look_verdicts_apply(doc), "a document of another world is refused")
+	TEST_ASSERT(isnull(GLOB.type_look_stamp[type]) && isnull(GLOB.type_look_lazy[type]), "and none of its verdicts are read")
+	doc["key"] = look_verdicts_key()
+	TEST_ASSERT(look_verdicts_apply(doc), "the same document keyed by this world is read")
+	TEST_ASSERT(GLOB.type_look_stamp[type] && GLOB.type_look_lazy[type], "with its verdicts")
+	GLOB.type_look_stamp[type] = was_stamp
+	GLOB.type_look_lazy[type] = was_lazy
+	if(isnull(was_stamp))
+		GLOB.type_look_stamp -= type
+	if(isnull(was_lazy))
+		GLOB.type_look_lazy -= type

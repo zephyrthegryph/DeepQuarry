@@ -84,6 +84,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	refresh_queue_replace(kept)
 	var/walked_at = REALTIMEOFDAY
 	skipped += boot_created_release() // the atoms held by type while the map loaded: an empty default look owes nothing, the rest are queued now
+	look_verdicts_save()
 	log_world("refresh settle phases (ms): sample [(sampled_at - start) * 100], queue walk [(walked_at - sampled_at) * 100], held release [(REALTIMEOFDAY - walked_at) * 100]")
 	GLOB.type_look_stamp_skipped += skipped
 	log_world("refresh queue by kind after the settle: [refresh_kind_census(Q)]")
@@ -305,7 +306,16 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 /// caps_init(), for a fresh `A` not yet queued: TRUE when it is held in its type's bucket instead of queued (a map load, a type with no verdict, its
 /// sample already queued). FALSE queues it as before; the first such instance of a type is recorded as the sample.
 /proc/boot_created_hold(atom/A)
-	if(GLOB.boot_created_settled || !materialization_host().frame_running() || !isnull(GLOB.type_look_stamp[A.type]) || ismob(A) || A.periodic_cadence || A.periodic_interval)
+	look_verdicts_load() // the verdicts a previous boot of this world learned: a known type is neither held nor sampled
+	if(GLOB.boot_created_settled || !materialization_host().frame_running() || ismob(A) || A.periodic_cadence || A.periodic_interval)
+		return FALSE
+	if(!isnull(GLOB.type_look_stamp[A.type]))
+		// A known verdict (a previous boot of this world): a lazy type's fresh atom is parked at once when the boot leaves first draws to the clients,
+		// as the park would make of it, without a queue entry; any other is queued as before.
+		if(GLOB.type_look_lazy[A.type] && look_lazy_ok(A) && boot_drain_deferred())
+			A.refresh_queued = DEP_PARKED
+			GLOB.refresh_parked++
+			return TRUE
 		return FALSE
 	if(!GLOB.boot_created_sampled[A.type])
 		GLOB.boot_created_sampled[A.type] = TRUE
@@ -346,3 +356,72 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 			refresh_mark(A, DEP_ALL)
 			A.refresh_queued |= DEP_CREATED
 	GLOB.boot_created_dropped += .
+
+// ---- the look verdicts across boots ----
+//
+// A type's look verdicts (type_look_stamp: its default look is empty; type_look_lazy: its first draw is a picture only) are facts of the compiled world
+// and the map. The boot that learns them by sampling writes them to data/look_verdicts.json keyed by that world (look_verdicts_key()); the next boot of
+// the same world reads them before the map loads, so a fresh atom of a known type is never queued or sampled and the boot settle has almost nothing
+// to do. A world compiled or mapped differently has another key and samples again. dq_look_verdict_cache_agrees proves the cache equals the sampling.
+// Deriving the verdicts from the declarations at build time is the analyzer's follow-up (doc/rewrite/proposals/init_plan.md).
+
+#define LOOK_VERDICTS_FILE "data/look_verdicts.json"
+
+/// The identity the cache is valid for: the compiler, the map and a hash of every compiled .dmb and .rsc in the working directory.
+/proc/look_verdicts_key()
+	var/static/key
+	if(!isnull(key))
+		return key
+	var/list/parts = list("[DM_VERSION].[DM_BUILD]", "[world.maxx]x[world.maxy]x[world.maxz]") // the maps are compiled into the .dmb and .rsc hashed below
+	for(var/file in sortList(flist("./")))
+		var/extension = lowertext(copytext(file, -4))
+		if((extension == ".dmb" || extension == ".rsc") && !findtext(file, ".dyn.rsc"))
+			parts += "[file]=[rustg_hash_file(RUSTG_HASH_XXH64, file)]"
+	key = jointext(parts, "|")
+	return key
+
+/// Verdicts loaded from the cache this boot (the bench and the test read it).
+GLOBAL_VAR_INIT(look_verdicts_loaded, 0)
+
+/// Reads the cached verdicts into the verdict tables when the cache was written by this world. Once per boot, before the map's atoms initialize.
+/proc/look_verdicts_load()
+	var/static/done = FALSE
+	if(done)
+		return
+	done = TRUE
+	if(!fexists(LOOK_VERDICTS_FILE))
+		return
+	if(!look_verdicts_apply(json_decode(file2text(LOOK_VERDICTS_FILE))))
+		log_world("LOOK VERDICTS: the cache was written by another world; sampling at boot")
+		return
+	log_world("LOOK VERDICTS: [GLOB.look_verdicts_loaded] type verdict(s) read from the cache")
+
+/// Puts the verdicts of a cache document into the verdict tables when the document was written by this world (its key). FALSE, reading nothing,
+/// for a document of another world: its verdicts would draw this world's atoms wrong.
+/proc/look_verdicts_apply(list/data)
+	if(!islist(data) || data["key"] != look_verdicts_key())
+		return FALSE
+	var/list/stamp = data["stamp"]
+	var/list/lazy = data["lazy"]
+	for(var/name in stamp)
+		var/path = text2path(name)
+		if(path && isnull(GLOB.type_look_stamp[path]))
+			GLOB.type_look_stamp[path] = !!stamp[name]
+			GLOB.look_verdicts_loaded++
+	for(var/name in lazy)
+		var/path = text2path(name)
+		if(path && isnull(GLOB.type_look_lazy[path]))
+			GLOB.type_look_lazy[path] = !!lazy[name]
+	return TRUE
+
+/// Writes every verdict known now (the boot settle has sampled what was new), for the next boot of this world.
+/proc/look_verdicts_save()
+	var/list/stamp = list()
+	var/list/lazy = list()
+	for(var/path in GLOB.type_look_stamp)
+		stamp["[path]"] = GLOB.type_look_stamp[path] ? 1 : 0
+	for(var/path in GLOB.type_look_lazy)
+		lazy["[path]"] = GLOB.type_look_lazy[path] ? 1 : 0
+	fdel(LOOK_VERDICTS_FILE)
+	text2file(json_encode(list("key" = look_verdicts_key(), "stamp" = stamp, "lazy" = lazy)), LOOK_VERDICTS_FILE)
+	log_world("LOOK VERDICTS: [length(stamp)] type verdict(s) written for the next boot")

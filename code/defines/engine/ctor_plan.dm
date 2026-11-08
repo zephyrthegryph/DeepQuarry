@@ -22,6 +22,11 @@
 /// engine_holder_init()'s only work is noting the setup() rows (the init plan's one step is the lifecycle forms, and their only init form is plain
 /// setup rows): caps_init() skips the engine init and InitAtom() runs the rows itself, without setup_pending.
 #define CTOR_SETUP_ONLY (1<<11)
+/// The type's materialize work (atom_type_table() & TYPE_TABLE_MATERIALIZE_WORK) is worked out: CTOR_MATERIALIZE_WORK holds the answer. Filled by
+/// InitAtom() (code/world/systems/atoms_init.dm, ctor_materialize_work()), which may read the world model's table; the engine may not.
+#define CTOR_MATERIALIZE_KNOWN (1<<12)
+/// The type has on_materialize() work: registries, rules, the scheduler or materialize declarations.
+#define CTOR_MATERIALIZE_WORK (1<<13)
 /// Set on every built plan, so a plan with no other fact is still told from "not built".
 #define CTOR_PLANNED (1<<10)
 /// The CTOR_* bits of `D` when it is the atom whose Initialize() chain InitAtom() is running, else 0 (the caller takes its old path).
