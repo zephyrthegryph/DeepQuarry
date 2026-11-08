@@ -1159,7 +1159,7 @@ fn append_procedure_canonical(
     held: &mut Option<dm_syntax::SettingRootLease>,
     cache: Option<&mut Option<TrivialCanonicalSuffix>>,
     a: &SettingAdmission<'_>,
-) -> std::io::Result<dm_ir::CanonicalBytes> {
+) -> std::io::Result<(dm_ir::CanonicalBytes, u128)> {
     use std::io::{Error, ErrorKind};
     checkpoint(a)?;
     if header.storage.as_ref().is_none_or(|lease| !a.matches_lease_domain(lease)) {
@@ -1182,6 +1182,7 @@ fn append_procedure_canonical(
         drop(work);
     }
 
+    let content = xxhash_rust::xxh3::xxh3_128(&header.bytes);
     let plan = dm_ir::CanonicalBytes::plan(&header.bytes);
     let mut retained = reserve(arc_payload::<u8>(plan.storage_len()).ok_or(ErrorKind::OutOfMemory)?)?;
     let result = plan.seal();
@@ -1192,7 +1193,7 @@ fn append_procedure_canonical(
         *held = Some(retained);
     }
     if let (Some(cache), Some(suffix)) = (cache, pending_suffix) { *cache = Some(suffix); }
-    Ok(result)
+    Ok((result, content))
 }
 
 /// Weak observations of the actual observer's local spelling allocations.
@@ -1244,7 +1245,7 @@ impl OriginalSignatureSpellings {
 /// Coordinate/source equality cannot substitute another header owner.
 pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],trivial_suffixes:[Option<TrivialCanonicalSuffix>;2],adapter_storage:Option<dm_syntax::SettingRootLease>}
 impl PreparedOriginalSignatures{
- pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<dm_ir::CanonicalBytes>{
+ pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<(dm_ir::CanonicalBytes, u128)>{
   let slot=usize::from(procedure.signature.variadic);
   let cache=self.trivial_metadata[slot].as_deref().is_some_and(|owner|std::ptr::eq(owner,procedure))
    .then(||&mut self.trivial_suffixes[slot]);
@@ -1962,9 +1963,9 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  /// and neutral literal binding are authenticated together; no parse/expand or
  /// alternate SymbolTable is introduced at this handoff.
  pub(crate) fn finish_primary(self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
-  self.finish_primary_with_lazy_parameter_mode(source,primary,literal_source,false)
+  self.finish_primary_with_lazy_parameter_mode(source,primary,literal_source,false,None)
  }
- pub(crate) fn finish_primary_with_lazy_parameter_mode(mut self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
+ pub(crate) fn finish_primary_with_lazy_parameter_mode(mut self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool,geometry:Option<&dm_preprocess::regions::OriginalHeaderTokenGeometry>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
  use dm_preprocess::regions::OriginalStreamPrimary;
  let primary=primary.into();
  // Every retained reference has moved to an actual completed core. The
@@ -2000,7 +2001,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  };
  if !a.matches_lease_domain(&primary_lease){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"streamed primary belongs to another actual resource owner")))}
  let item_view=items.view(&source).map_err(OriginalHeaderFailure::Operational)?;
- let headers=OriginalProcedureHeaders::for_declaration_profile_item_view(source.clone(),item_view,0,tokens,a,true)?;
+ let headers=OriginalProcedureHeaders::for_declaration_profile_item_view_with_geometry(source.clone(),item_view,0,tokens,a,true,geometry)?;
  if let Some(binding)=literal_source{
   headers.retain_original_literal_facts(literal_view,Some(binding),a)?;
   if let Some((span,data))=self.failure_head_data.take(){let facts=headers.original_literal_facts()?.ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual rejected head has no final neutral-value binding")))?;let(rows,origin)=facts.raw_parts();let span=Span::new(span.start.checked_add(origin).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?,span.end.checked_add(origin).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?);let at=rows.partition_point(|(p,_)|p.start<span.start);if rows.get(at).filter(|(p,_)|*p==span).is_none_or(|(_,actual)|!data.same_owner(actual)){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"rejected formal VALUE belongs to another actual primary occurrence")))}}
@@ -2183,10 +2184,11 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   assert!(counter.load(Ordering::Acquire)<=root+2*metadata_bytes+settings_bytes);
   for (text, owner) in [("/proc/first()", &plain), ("/proc/second(...)", &variadic), ("/proc/third()", &plain_again)] {
    let header=FundedCanonicalHeader::encode(text,&admission).unwrap().unwrap();
-   let canonical=actual.prepared.append_procedure_canonical(header,owner,&admission).unwrap();
+   let (canonical, content)=actual.prepared.append_procedure_canonical(header,owner,&admission).unwrap();
    let mut expected=crate::adapter::canonical(text).unwrap().to_vec();
    expected.extend(owner.canonical_bytes());
    assert_eq!(canonical.to_vec(),expected);
+   assert_eq!(canonical.xxh3_128(),content);
   }
   assert!(actual.prepared.trivial_suffixes.iter().all(Option::is_some));
   drop((plain,variadic,plain_again,actual));
@@ -2615,8 +2617,9 @@ mod procedure_canonical_allocation_tests {
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         let mut held = None;
         let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
-        let first = append_procedure_canonical(header, &proc, &mut held, None, &a).unwrap();
+        let (first, fingerprint) = append_procedure_canonical(header, &proc, &mut held, None, &a).unwrap();
         assert_eq!(first.to_vec(), expected);
+        assert_eq!(first.xxh3_128(), fingerprint);
         let retained = held.as_ref().unwrap().bytes();
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
         assert_eq!(retained, (2 * std::mem::size_of::<AtomicUsize>() + first.storage_arc().len())
@@ -2642,7 +2645,8 @@ mod procedure_canonical_allocation_tests {
             std::io::ErrorKind::OutOfMemory);
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
         let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
-        let second = append_procedure_canonical(header, &proc, &mut held, None, &a).unwrap();
+        let (second, second_fingerprint) = append_procedure_canonical(header, &proc, &mut held, None, &a).unwrap();
+        assert_eq!(second_fingerprint, fingerprint);
         assert_eq!(second, first);
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained * 2));
         drop((first, second, held));

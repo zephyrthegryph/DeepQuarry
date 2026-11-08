@@ -297,7 +297,7 @@ pub(crate) fn absolute(owner: &str, path: &str) -> Result<String, String> {
     TypePath::parse(&full).map_err(str::to_owned)?;
     Ok(full)
 }
-pub(crate) const CANONICAL_HEADER_PREFIX: &[u8] = b"dm-declaration-tokens-v1\0";
+pub(crate) use dm_ir::CANONICAL_HEADER_PREFIX;
 
 /// One canonical token record. The default lexer supplies both the spelling
 /// and the span used to distinguish adjacent operators and punctuation.
@@ -651,7 +651,7 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     let procedure = Some(context.demand.procedure_metadata(
                         parsed_signature.signature, typed_settings, context.prepared_signatures.as_deref_mut(),
                     ).map_err(WalkFailure::Operational)?);
-                    let semantic_header = context.demand.procedure_canonical(
+                    let (semantic_header, content) = context.demand.procedure_canonical(
                         lexical_header, procedure.as_ref().unwrap(), context.prepared_signatures.as_deref_mut(),
                     ).inspect_err(|_| {
                         #[cfg(debug_assertions)]
@@ -682,7 +682,6 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     } else {
                         MemberKind::Proc
                     };
-                    let content = metadata.canonical.xxh3_128();
                     Ok(Some(Skeleton::Member {
                         owner: owner_id,
                         name: name_id,

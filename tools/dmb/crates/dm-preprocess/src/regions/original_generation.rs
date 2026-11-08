@@ -6,14 +6,35 @@ use dm_syntax::{SettingAdmission,SharedSpanTokens};
 use super::{OriginalStreamPrimary,original_define_history::HistoryPurpose};
 use std::{collections::BTreeMap,path::Path,io,rc::Rc,sync::Arc};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
-pub struct OriginalGenerationProduct{delivery:OriginalDemandDelivery,plan:DirectivePlan,omissions:GenerationOmissions,expanded:ExpandedRegions,primary:OriginalStreamPrimary,literals:OriginalLiteralSourceBinding,retention:OriginalPlanRetention,
+pub struct OriginalGenerationProduct{delivery:OriginalDemandDelivery,consumed_eof:bool,plan:DirectivePlan,omissions:GenerationOmissions,expanded:ExpandedRegions,primary:OriginalStreamPrimary,literals:OriginalLiteralSourceBinding,retention:OriginalPlanRetention,
  #[cfg(test)]
  token_projection:Result<ProjectionCheck, ProjectionMismatch>,
+}
+/// Exact complete source and token pair issued by the actual batch receiver.
+/// No raw constructor; a cheap pair of temporary aliases protects identity.
+pub struct OriginalHeaderTokenGeometry {
+ source: SourceText,
+ tokens: SharedSpanTokens,
+}
+impl OriginalHeaderTokenGeometry {
+ pub fn matches(&self,source:&SourceText,tokens:&SharedSpanTokens,a:&SettingAdmission<'_>)->bool{
+  self.source.matches_retained_subview(0..self.source.len(),source)&&self.tokens.same_owner(tokens)&&tokens.admitted_by(a)
+ }
 }
 impl OriginalGenerationProduct{
  pub fn delivery(&self)->OriginalDemandDelivery{self.delivery}
  pub fn expanded(&self)->&ExpandedRegions{&self.expanded}
  pub fn primary(&self)->&OriginalStreamPrimary{&self.primary}
+ /// Only complete committed batch delivery can skip the generic token walk.
+ /// Each adopted token was appended as UTF-8 at exactly its span, and the
+ /// receiver checked its order and the actual immutable loan before adoption.
+ pub fn header_token_geometry(&self)->Option<OriginalHeaderTokenGeometry>{
+  if !self.consumed_eof || self.delivery!=OriginalDemandDelivery::AnalyzeBatch8192x64{return None}
+  let OriginalStreamPrimary::Committed(primary)=&self.primary else{return None};
+  let tokens=self.expanded.tokens.shared()?;
+  if primary.observer_stop().is_some() || !tokens.same_owner(primary.tokens()){return None}
+  Some(OriginalHeaderTokenGeometry{source:self.expanded.text.clone(),tokens:tokens.clone()})
+ }
  pub(super) fn has_full_define_history(&self)->bool{self.retention.history.is_full()}
  pub fn literal_source(&self)->&OriginalLiteralSourceBinding{&self.literals}
  pub(super) fn into_primary_parts(self)->(DirectivePlan,GenerationOmissions,ExpandedRegions,OriginalStreamPrimary,OriginalLiteralSourceBinding,OriginalPlanRetention){(self.plan,self.omissions,self.expanded,self.primary,self.literals,self.retention)}
@@ -175,7 +196,7 @@ fn finalize(delivery:OriginalDemandDelivery,mut metadata:Metadata,output:Origina
  let origins=super::ExpandedOriginArena::from_actual_raw_rows_using(metadata.state.origins,credit.clone(),a)?;
  let expanded=ExpandedRegions{input_keys:Arc::new(Vec::new()),text:source,tokens:tokens.into(),origins,dense_emission_regions:Vec::new(),diagnostics:Vec::new(),receipts:Vec::new(),lexical_diagnostics:Vec::new()};
  let retention=OriginalPlanRetention{paths,notices:metadata.state.notices,history:metadata.state.history,conditionals:metadata.state.conditionals,scripts:metadata.state.scripts,metadata:credit,final_macros:metadata.final_macros};
- Ok(OriginalGenerationProduct{delivery,plan,omissions,expanded,primary,literals,retention,
+ Ok(OriginalGenerationProduct{delivery,consumed_eof:_actual_consumed_eof,plan,omissions,expanded,primary,literals,retention,
   #[cfg(test)]
   token_projection,
  })

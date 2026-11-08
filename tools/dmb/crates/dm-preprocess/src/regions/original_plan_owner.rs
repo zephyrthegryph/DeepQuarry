@@ -196,14 +196,14 @@ impl OriginalPlanOwner{
  pub(super) fn occurrence(&self,index:usize)->io::Result<&IncludeOccurrence>{self.plan.occurrences.get(index).ok_or_else(||io::ErrorKind::InvalidInput.into())}
  pub(super) fn lease(&self,index:usize)->io::Result<SourceAcquisitionLease>{self.plan.source_acquisitions.get(&index).cloned().ok_or_else(||io::ErrorKind::InvalidInput.into())}
  pub(super) fn charge_using(&mut self,bytes:usize,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;grow(&mut self.credit,bytes,a)}
- fn borrowed_definition_using(&self,origin:crate::macro_expansion::OriginalMacroOrigin,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<BorrowedDefinition<'_>>{
+ fn borrowed_definition_using(&self,origin:crate::macro_expansion::OriginalMacroOrigin,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,emission:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>)->io::Result<BorrowedDefinition<'_>>{
   let occurrence=self.occurrence(origin.occurrence)?;
   let lease=self.plan.source_acquisitions.get(&origin.occurrence).ok_or(io::ErrorKind::InvalidInput)?;
-  let (point,end)=driver.definition_geometry_using(origin,lease,provider,a)?;
+  let (point,end)=driver.definition_geometry_using(origin,lease,provider,emission,a)?;
   Ok(BorrowedDefinition{path:&occurrence.path,source_span:Span::new(point.source_offset,end),source_line:point.line})
  }
  pub(super) fn definition_using(&self,origin:crate::macro_expansion::OriginalMacroOrigin,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<super::DefinitionOrigin>{
-  let actual=self.borrowed_definition_using(origin,driver,provider,a)?;
+  let actual=self.borrowed_definition_using(origin,driver,provider,None,a)?;
   Ok(super::DefinitionOrigin{path:Arc::clone(actual.path),source_span:actual.source_span,source_line:actual.source_line})
  }
  pub(super) fn add_dependency_using(&mut self,path:&Path,a:&SettingAdmission<'_>)->io::Result<()>{
@@ -238,10 +238,11 @@ impl OriginalPlanOwner{
  /// Neither clone is needed until a new group or encounter retains the owner.
  pub(super) fn emission_owners_using(
   &mut self, occurrence:usize,actual:&super::original_output_trace::OriginalOutputTrace,
-  driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>,
+  driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,
+  emission:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>,
  )->io::Result<(&Arc<PathBuf>,&OriginalMacroTrace)>{
   self.occurrence(occurrence)?;
-  self.project_trace_using(actual,driver,provider,a)?;
+  self.project_trace_using(actual,driver,provider,emission,a)?;
   Ok((&self.plan.occurrences[occurrence].path,self.projected_trace(actual)))
  }
 
@@ -255,11 +256,11 @@ impl OriginalPlanOwner{
 
  #[cfg(test)]
  fn trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalMacroTrace>{
-  self.project_trace_using(actual,driver,provider,a)?;
+  self.project_trace_using(actual,driver,provider,None,a)?;
   Ok(self.projected_trace(actual).clone())
  }
 
- fn project_trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,a:&SettingAdmission<'_>)->io::Result<()>{
+ fn project_trace_using(&mut self,actual:&super::original_output_trace::OriginalOutputTrace,driver:&mut super::original_driver::RawSourceDriver,provider:&dyn crate::SourceProvider,emission:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>)->io::Result<()>{
   self.check(a)?;
   if actual.depth()==0{
    // An empty trace carries no locations or authority. Reuse one funded
@@ -279,9 +280,9 @@ impl OriginalPlanOwner{
   if let Some((last,parent_hit)) = hit {
    let mut matches = true;
    actual.visit_inner_to_outer_using(a, |entry| {
-    // Geometry still borrows real provider bytes, in exactly the old order.
-    // Never skip or replay that call on a hit, including its first IO error.
-    let definition = entry.definition.map(|origin| self.borrowed_definition_using(origin, driver, provider, a)).transpose()?;
+    // Independently verify each authored coordinate. Only the current
+    // emission's exact recorder byte loan may be reused, in the same order.
+    let definition = entry.definition.map(|origin| self.borrowed_definition_using(origin, driver, provider, emission, a)).transpose()?;
     let prior = last.rows.frame(entry.depth - 1).ok_or(io::ErrorKind::InvalidData)?.author.origin();
     matches &= match (&definition, prior) {
      (None, None) => true,
@@ -467,7 +468,7 @@ mod trace_storage_tests {
         let path = Arc::clone(&plan.occurrence(occurrence).unwrap().path);
         let path_owners = Arc::strong_count(&path);
         let trace_owners = first.strong_count();
-        let (emitted_path,emitted_trace)=plan.emission_owners_using(occurrence,&empty,&mut driver,&NoSource,&a).unwrap();
+        let (emitted_path,emitted_trace)=plan.emission_owners_using(occurrence,&empty,&mut driver,&NoSource,None,&a).unwrap();
         assert!(Arc::ptr_eq(emitted_path,&path));
         assert!(emitted_trace.same_owner(&first));
         assert_eq!(Arc::strong_count(&path),path_owners);
@@ -604,6 +605,8 @@ mod trace_storage_tests {
             definitions: [SourceAcquisitionLease; 2],
             calls: RefCell<Vec<usize>>,
             fail_at: Cell<Option<usize>>,
+            epoch: std::sync::atomic::AtomicUsize,
+            flip_epoch_at: Cell<Option<usize>>,
         }
         impl crate::SourceProvider for Sources {
             fn read(&self, _: &Path) -> Result<String, String> {
@@ -614,10 +617,23 @@ mod trace_storage_tests {
                     .ok_or(io::ErrorKind::InvalidInput)?;
                 let mut calls = self.calls.borrow_mut();
                 calls.push(source);
+                if self.flip_epoch_at.get() == Some(calls.len()) {
+                    self.epoch.fetch_add(1, Ordering::SeqCst);
+                }
                 if self.fail_at.get() == Some(calls.len()) {
                     return Err(io::Error::from_raw_os_error(1450));
                 }
                 Ok(Some(lease.source_text().as_bytes()))
+            }
+            fn original_geometry_byte_loan<'a>(&'a self, lease: &'a SourceAcquisitionLease)
+                -> io::Result<Option<crate::OriginalGeometryByteLoan<'a>>>
+            {
+                self.original_source_bytes(lease).map(|bytes| bytes.map(|bytes| {
+                    match std::num::NonZeroUsize::new(self.epoch.load(Ordering::SeqCst)) {
+                        Some(epoch) => crate::OriginalGeometryByteLoan::for_recorder_epoch(bytes, &self.epoch, epoch),
+                        None => crate::OriginalGeometryByteLoan::ordinary(bytes),
+                    }
+                }))
             }
         }
 
@@ -642,6 +658,8 @@ mod trace_storage_tests {
             ],
             calls: RefCell::new(Vec::new()),
             fail_at: Cell::new(None),
+            epoch: std::sync::atomic::AtomicUsize::new(0),
+            flip_epoch_at: Cell::new(None),
         };
         for (ordinal, (name, lease)) in ["outer.dme", "inner.dm"].iter().zip(&sources.definitions).enumerate() {
             let path = Path::new(name);
@@ -715,6 +733,36 @@ mod trace_storage_tests {
         let error = plan.trace_using(&wrong_spelling, &mut driver, &sources, &a).unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::InvalidData);
         assert_eq!(*sources.calls.borrow(), [1]);
+
+        // A prior rejected miss may have removed the last trace cache.
+        sources.calls.borrow_mut().clear();
+        let current = plan.trace_using(&equal_but_distinct, &mut driver, &sources, &a).unwrap();
+        // A generic observation cannot suppress a byte lend. The identical
+        // trace and identical source lengths are insufficient.
+        let emission = driver.observe_physical_row_using(
+            invocation, &sources.definitions[0], &sources, None, &a,
+        ).unwrap();
+        sources.calls.borrow_mut().clear();
+        plan.project_trace_using(&equal_but_distinct, &mut driver, &sources, Some(&emission), &a).unwrap();
+        assert_eq!(*sources.calls.borrow(), [1, 0]);
+
+        // The stack proof covers only source 0, not equal-length source 1.
+        sources.epoch.store(1, Ordering::SeqCst);
+        let emission = driver.observe_physical_row_using(
+            invocation, &sources.definitions[0], &sources, None, &a,
+        ).unwrap();
+        sources.calls.borrow_mut().clear();
+        plan.project_trace_using(&equal_but_distinct, &mut driver, &sources, Some(&emission), &a).unwrap();
+        assert_eq!(*sources.calls.borrow(), [1]);
+        assert!(plan.projected_trace(&equal_but_distinct).same_owner(&current));
+
+        // Revoking the proof between authored frames restores the real lender.
+        sources.calls.borrow_mut().clear();
+        sources.flip_epoch_at.set(Some(1));
+        plan.project_trace_using(&equal_but_distinct, &mut driver, &sources, Some(&emission), &a).unwrap();
+        assert_eq!(*sources.calls.borrow(), [1, 0]);
+        sources.flip_epoch_at.set(None);
+        drop(current);
 
         sources.calls.borrow_mut().clear();
         sources.fail_at.set(Some(2));

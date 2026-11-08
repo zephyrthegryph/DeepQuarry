@@ -165,6 +165,6 @@ impl OriginalStreamControl for Control<'_>{
  let lease=plan.lease(occurrence)?;
  let row=driver.observe_physical_row_using(actual.origin,&lease,provider,None,a)?;
  let region=plan.region_for_emission_using(occurrence,row.row().decoded,a)?;
- let (path,trace)=original_fill_bucket!(Macro,plan.emission_owners_using(occurrence,&saved,driver,provider,a))?;
+ let (path,trace)=original_fill_bucket!(Macro,plan.emission_owners_using(occurrence,&saved,driver,provider,Some(&row),a))?;
  origins.append_produced_using(actual,produced,region,path,trace,&lease,provider,driver,Some(&row),a,self.work)}
 }

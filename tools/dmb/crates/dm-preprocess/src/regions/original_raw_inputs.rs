@@ -33,6 +33,9 @@ pub(super) struct OriginalPhysicalRowObservation<'source>{
  row:OriginalPhysicalRow,
 }
 impl OriginalPhysicalRowObservation<'_>{
+ pub(super) fn same_current_byte_loan(&self, lease:&SourceAcquisitionLease, provider:&dyn SourceProvider)->bool{
+  std::ptr::eq(self.provider,provider)&&self.lease.same_binding(lease)&&self.loan.same_current_epoch()
+ }
  pub(super) fn row(&self)->&OriginalPhysicalRow{&self.row}
  pub(super) fn into_row(self)->OriginalPhysicalRow{self.row}
 }
@@ -87,6 +90,12 @@ impl OriginalRawInputs{
   self.observe_physical_row_using(origin,lease,provider,None,a).map(OriginalPhysicalRowObservation::into_row)
  }
  pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
+  self.observe_row_with_loan_using(origin,lease,provider,prior,false,a)
+ }
+ pub(super) fn observe_definition_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
+  self.observe_row_with_loan_using(origin,lease,provider,prior,true,a)
+ }
+ fn observe_row_with_loan_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'source>>,definition:bool,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
   #[cfg(feature="original-fill-sample")]
   let _sample=super::original_fill_sample::scope(super::original_fill_sample::Bucket::Coordinate);
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}poll(a)?;
@@ -118,14 +127,13 @@ impl OriginalRawInputs{
   };
   let geometry=&mut self.geometries.get_mut(at).expect("located source geometry");
   let loan=original_fill_bucket!(Provider,match prior{
-   Some(first) if std::ptr::eq(first.provider,provider)&&first.lease.same_binding(lease)
-      &&first.loan.same_current_epoch()=>Some(crate::OriginalGeometryByteLoan::ordinary(first.loan.bytes())),
-   Some(_)=>provider.original_source_bytes(lease)?.map(crate::OriginalGeometryByteLoan::ordinary),
-   None=>provider.original_geometry_byte_loan(lease)?,
+   Some(first) if first.same_current_byte_loan(lease,provider)=>Some(crate::OriginalGeometryByteLoan::ordinary(first.loan.bytes())),
+   Some(_) if !definition=>provider.original_source_bytes(lease)?.map(crate::OriginalGeometryByteLoan::ordinary),
+   _=>provider.original_geometry_byte_loan(lease)?,
   }).ok_or(io::ErrorKind::NotConnected)?;
   let raw=loan.bytes();
   let offset=origin.physical.start;let eof_token=!origin.invocation&&origin.physical.start==origin.physical.end&&offset==raw.len()&&geometry.actual_eof;
-  if let Some(prior)=prior.filter(|prior|prior.origin==origin&&prior.lease.same_binding(lease)
+  if let Some(prior)=prior.filter(|prior|(!definition||prior.same_current_byte_loan(lease,provider))&&prior.origin==origin&&prior.lease.same_binding(lease)
    &&std::ptr::eq(prior.loan.bytes(),raw)&&prior.row.actual_eof==eof_token
    &&geometry.geometry.matches_context(lease,a)
    &&geometry.points.contains_issued_row(raw.len(),offset,origin.line,prior.row.raw)){

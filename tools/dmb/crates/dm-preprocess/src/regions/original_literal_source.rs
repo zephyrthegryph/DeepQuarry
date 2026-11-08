@@ -27,10 +27,10 @@ impl OriginalLiteralSourceBinding{
   if facts.projection_owner().is_some_and(|owner|!output.matches_projection_data(owner)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"projected spelling belongs to another actual output"))}
   facts.checked_data_window(Span::new(0,source.as_str().len()))?;
   if actual_eof {
-   let _released = facts.settle_delivered_body_singletons(source.as_str(),a)?;
+   let _released = facts.settle_delivered_body_payloads(source.as_str(),a)?;
    #[cfg(debug_assertions)]
    if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
-    eprintln!("ORIGINAL_DELIVERED_SINGLETON_RECONCILIATION released_bytes={_released}");
+    eprintln!("ORIGINAL_DELIVERED_LITERAL_RECONCILIATION released_bytes={_released}");
    }
   }
   let credit=a.reserve(std::mem::size_of::<Binding>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;

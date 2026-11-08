@@ -96,6 +96,7 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
   #[cfg(test)]
   eprintln!("ORIGINAL_STREAM_STAGE=raw_product {_error:?}");
  })?;
+ let geometry=if lazy_parameters{product.header_token_geometry()}else{None};
  let(plan,expanded,primary,binding)=actual(a,||product.into_diagnostic_parts_using(a)).inspect_err(|_error|{
   #[cfg(debug_assertions)]
   observer.trace_failed_stream_retention("diagnostic_handoff");
@@ -108,7 +109,8 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
    dm_preprocess::regions::OriginalStreamPrimary::Committed(primary)=>eprintln!("actual Original produced arena: {:?}; primary items: {:#?}",expanded.text.as_str(),primary.items(&expanded.text)?.iter().collect::<Vec<_>>()),
   }
  }
- let input=actual(a,||observer.finish_primary_with_lazy_parameter_mode(expanded.text.clone(),primary,Some(&binding),lazy_parameters).map_err(header_failure)).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=actual_header_finish {_error:?}")})?;
+ let input=actual(a,||observer.finish_primary_with_lazy_parameter_mode(expanded.text.clone(),primary,Some(&binding),lazy_parameters,geometry.as_ref()).map_err(header_failure)).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=actual_header_finish {_error:?}")})?;
+ drop(geometry);
  // Clauses, typed values and default roots have moved into the genuine header
  // owner; dropping the neutral binding now cannot detach those borrowed facts.
  let primary=super::original_declaration_input::OrderedOriginalDeclarations::from_actual_signature_input(input,a).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=current_signature_input {_error:?}")})?;
@@ -178,6 +180,48 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
    drop(streamed);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_live.load(Ordering::Acquire),0);
   }
  }
+ #[test]
+ fn issued_header_geometry_requires_the_complete_exact_batch_source_and_tape() {
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let counter=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+  let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
+  let live=Arc::new(AtomicUsize::new(0));
+  let work=Work{live:live.clone(),fail:false};
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let host=StreamHost{counter:counter.clone()};
+  let adapter=TreeOriginalBatchHost(&host);
+  for (text,complete) in [("/proc/probe()\n    return \"é\"\n",true),("/proc/probe(value=)\n",false)] {
+   let source=Source::new(text);
+   let batch=OriginalBatchExecution::new(&source,&adapter,&executor);
+   let mut observer=crate::procedure::original_primary_signatures::OriginalSignatureObserver::new(&a).unwrap();
+   let product=GenerationDirectivePlan::prepare_original_compound_diagnostic_stream_using(
+    Path::new("actual-header-geometry.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,&batch,&mut observer,
+   ).unwrap();
+   let geometry=product.header_token_geometry();
+   assert_eq!(geometry.is_some(),complete);
+   if let Some(geometry)=geometry {
+    let expanded=product.expanded();
+    let tokens=expanded.tokens.shared().unwrap();
+    let exact=&expanded.text;
+    assert!(geometry.matches(exact,tokens,&a));
+    let foreign=dm_preprocess::SourceText::from(exact.as_str().to_owned());
+    assert!(!geometry.matches(&foreign,tokens,&a));
+    assert!(!geometry.matches(&exact.checked_view(0..1).unwrap(),tokens,&a));
+    let rows:Vec<_>=tokens.window().iter().collect();
+    let credit=a.reserve(rows.capacity()*std::mem::size_of::<dm_syntax::SpanToken>()).unwrap();
+    let copied=dm_syntax::SharedSpanTokens::from_admitted_using(rows,credit,&a).unwrap();
+    assert!(!geometry.matches(exact,&copied,&a));
+    let foreign_counter=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+    let foreign_admission=dm_syntax::SettingAdmission::new(&foreign_counter,32<<20,&||Ok(()));
+    assert!(!geometry.matches(exact,tokens,&foreign_admission));
+   }
+   drop(product);
+   drop(observer);
+   assert_eq!(counter.load(Ordering::Acquire),root);
+   assert_eq!(live.load(Ordering::Acquire),0);
+  }
+ }
+
  #[test]
  fn actual_lazy_body_realizes_only_its_parameter_owner_and_preserves_first_io() {
   let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();

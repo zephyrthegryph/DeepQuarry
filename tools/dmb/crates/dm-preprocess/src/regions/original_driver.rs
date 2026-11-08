@@ -186,8 +186,14 @@ impl RawSourceDriver{
  pub(super) fn capture_final_define_history_using(&mut self,history:&mut super::original_define_history::OriginalDefineHistory,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let result=if history.is_full()!=(self.history_purpose==super::original_define_history::HistoryPurpose::Full){
   Err(io::Error::new(io::ErrorKind::InvalidInput,"macro product and define history have different purposes"))
  }else{self.environment.read().capture_history_using(history,a)};if result.is_err(){self.failed=true}result}
- pub(super) fn definition_geometry_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<(super::OriginalByteCursor,usize)>{
-  let observed=self.observe_physical_row_using(origin,lease,provider,None,a)?;
+ pub(super) fn definition_geometry_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,emission:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>)->io::Result<(super::OriginalByteCursor,usize)>{
+  // Only a live, exact emission loan can avoid a fresh provider lend. A
+  // different author acquisition or an ordinary provider takes the same
+  // full route as before.
+  self.check(a)?;
+  let result=self.inputs.observe_definition_row_using(origin,lease,provider,emission,a);
+  if result.is_err(){self.failed=true}
+  let observed=result?;
   let end=self.inputs.decoded_observed_end_using(&observed,a)?;
   Ok((observed.row().point,end))
  }

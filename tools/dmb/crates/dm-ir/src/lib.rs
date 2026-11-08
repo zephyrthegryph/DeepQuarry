@@ -25,7 +25,7 @@ pub use string_roster::{StringPayload, StringRoster, StringRosterError};
 /// Other member kinds retain their existing contextual flag masks.
 pub const PROC_FLAG_FINAL:u32=1<<16;
 mod canonical_bytes;
-pub use canonical_bytes::{CanonicalBytes, CanonicalBytesPlan};
+pub use canonical_bytes::{CanonicalBytes, CanonicalBytesPlan, CANONICAL_HEADER_PREFIX};
 mod canonical_encoding;
 pub use canonical_encoding::{CanonicalByteSink, CanonicalWork};
 mod declarations;

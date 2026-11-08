@@ -472,7 +472,7 @@ mod original_plan_owner;
 mod original_source_controller;
 mod original_generation;
 pub use original_primary_controller::OriginalStreamPrimary;
-pub use original_generation::{OriginalGenerationProduct,OriginalRootOpenObserver,OriginalRootOpenFailureLoan};
+pub use original_generation::{OriginalGenerationProduct,OriginalHeaderTokenGeometry,OriginalRootOpenObserver,OriginalRootOpenFailureLoan};
 
 mod original_conditional_history;
 pub use original_conditional_history::OriginalConditionalRange;
