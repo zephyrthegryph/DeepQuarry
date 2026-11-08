@@ -17,8 +17,11 @@
 	flush_damage_reports()
 	flush_opportunity_windows()
 
-/// One chunk of a large batch's reports, published and disposed of. More while reports wait (those of batches that began and ended meanwhile too).
+/// One chunk of a large batch's reports, published and disposed of, in first-hit order. More while reports wait (those of batches that
+/// began and ended meanwhile too). A chunk stops early once it has used the job's budget: a report costs about a millisecond, so a fixed
+/// chunk of CONTRACT_DAMAGE_FLUSH_CHUNK took a whole tick (100-120 % ticks for the minute after a station blast, station_explosion bench).
 /datum/system/contracts/proc/flush_damage_chunk(datum/act/timer/A)
+	var/started = TICK_USAGE
 	var/list/keys = list()
 	for(var/key in pending_damage_reports)
 		keys += key
@@ -30,6 +33,8 @@
 			continue
 		publish_damage_report(report)
 		spent(report)
+		if(TICK_USAGE - started >= CONTRACT_DAMAGE_FLUSH_BUDGET)
+			break
 	return length(pending_damage_reports) ? JOB_MORE : JOB_DONE
 
 /// The drain's last chunk is out: close the batch it held open, which publishes whatever was queued since and evaluates the windows.
