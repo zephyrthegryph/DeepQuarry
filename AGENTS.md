@@ -316,7 +316,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   refuses to start with a REFUSED message instead of filling the disk. Never delete under `E:/dq-cache` by hand.
   `tools/ci/test_disk_budget.sh` (part of `check_ratchets.sh`) proves eviction, protection, unknown-dir removal and the floor.
 - **Stuck lanes and waiting.** `bash tools/dq_lane_pool.sh stuck` lists leases with no live process and no activity for 30 min (exit 1 if any; `status` flags them, with
-  idle time and machine-slot waits). A dirty or unpushed one is only reported, never wiped; a clean pushed one is reclaimed. `... cancel <branch>` withdraws a queued
+  idle time and machine-slot waits). The next lease reclaims one: uncommitted work is committed to the lane's own branch (local) and the slot freed, so a dead agent never holds a slot; only a tree mid-merge stays. `... cancel <branch>` withdraws a queued
   `lease --wait`. A full suite takes at most `DQ_SLOTS_SUITE_MAX_WORLDS` test worlds (default 1 while others wait) so focused runs are not starved.
 - **Everything important lives in the repo; `E:/dq-cache` holds only disposable caches.** Never install a script, wrapper or config under
   `E:/dq-cache` (the old `E:/dq-cache/bin/dq_lane_pool` is gone for this reason): call `bash tools/dq_lane_pool.sh` from your worktree. It

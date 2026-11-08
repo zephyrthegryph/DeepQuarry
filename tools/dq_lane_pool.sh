@@ -42,11 +42,9 @@
 # path, and no machine slot held or queued for it) and nothing has changed in it for DQ_LANE_POOL_STUCK_MIN minutes (default 30): the
 # lease file, HEAD, index, reflog, any modified or untracked file, the data/logs and data/runs trees, or a *.log at its root. A stuck lease
 # is only REPORTED, with how long it has been idle, whether its tree is dirty and whether commits are unpushed; a notice is written under
-# $STATE_DIR/notices/pool-N.stuck (removed when the lease is active again or gone). Nothing is ever wiped: a dirty tree, or a branch with
-# commits that are neither in origin/master nor in origin/<branch>, keeps its slot until its owner (or a human) releases it. A stuck lease
-# that is clean and whose commits are all pushed or merged is reclaimed by the next lease, once idle for the reclaim limit below. Why the
-# old reclaim never fired for a dead lane with uncommitted work: it skips every dirty tree (`wt_clean || continue`) and reclaims only a
-# lane whose branch is merged and whose tip moved off its start, so a stopped dirty lane was invisible to it for ever. `status` also shows,
+# $STATE_DIR/notices/pool-N.stuck (removed when the lease is active again or gone). The next lease or waiter reclaims a stuck lease: whatever is
+# uncommitted is committed to the lane's own branch (local, `WIP: saved when an abandoned lease was reclaimed`), the slot is released and the
+# branch kept, so an agent that dies never holds a slot and nothing is lost. Only a tree in the middle of a merge or rebase stays. `status` also shows,
 # per leased slot, a machine-slot wait (dm_compile / test_world queue entries of that worktree, from tools/dq_machine_slots.sh waiting).
 #
 # State: DQ_LANE_POOL_STATE (default E:/dq-cache/lane-pool): one <slot>.lease file per held slot and a lock directory. Override
@@ -495,6 +493,15 @@ stuck_notice() { # <slot>: write or remove $STATE_DIR/notices/pool-N.stuck from 
 	return 0
 }
 
+save_abandoned() { # <wt>: commits whatever a dead lane left, on its own branch (local only). Fails, keeping the slot, in the middle of a merge or when the commit fails
+	local wt="$1"
+	gitdir_of "$wt"
+	if [ -e "$GD/MERGE_HEAD" ] || [ -e "$GD/CHERRY_PICK_HEAD" ] || [ -e "$GD/REVERT_HEAD" ] || [ -d "$GD/rebase-merge" ] || [ -d "$GD/rebase-apply" ]; then
+		say "$wt: abandoned, but a merge or rebase is in progress; left for a human"; return 1
+	fi
+	_wt_clean_full "$wt" && return 0
+	git -C "$wt" add -A && git -C "$wt" commit -q -m "WIP: saved when an abandoned lease was reclaimed" -m "The lane's agent stopped with this uncommitted. Unreviewed; not landed." || { say "$wt: could not save the abandoned work; slot kept"; return 1; }
+}
 reclaim_finished() { # called under the lock: drop leases whose lane is done
 	local i wt branch idle_limit start tip held=0
 	for i in "${ALL_SLOTS[@]}"; do [ -f "$STATE_DIR/pool-$i.lease" ] && held=1; done
@@ -512,6 +519,13 @@ reclaim_finished() { # called under the lock: drop leases whose lane is done
 		idle_limit="$RECLAIM_IDLE_MIN"; [ "$i" = light ] && idle_limit="${DQ_LANE_POOL_LIGHT_IDLE_MIN:-30}"   # a light lane lasts minutes
 		slot_idle_set "$i" "$wt"
 		tip="${heads[$branch]:-}"
+		# The lane's agent is gone: nothing uses the slot and nothing changed in it for the stuck limit. Its work is committed to its own branch, then the slot is freed.
+		if [ -n "$tip" ] && [ "$IDLE_V" -ge "$STUCK_MIN" ] && ! slot_live "$i" "$wt" && ! bash "$REPO/tools/dq_live_world.sh" worktree "$wt" 2>/dev/null; then
+			if save_abandoned "$wt"; then
+				RECLAIMED=1; release_slot "$i" 0 0; say "reclaimed pool-$i (agent gone: no live process, idle $(fmt_min "$IDLE_V"); its work is on branch $branch)"
+			fi
+			continue
+		fi
 		if [ -n "$tip" ] && [ "$IDLE_V" -lt "$idle_limit" ]; then
 			continue   # a recently touched lease whose branch exists is active: no git status of a worktree that could be 15 GB
 		fi

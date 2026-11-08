@@ -203,12 +203,15 @@ sec_stuck() {
 	check "a notice file is written for a stuck lease" '[ -f "$DQ_LANE_POOL_STATE/notices/pool-1.stuck" ] && [[ "$notice" == *dirty=1* ]]'
 	pool status >"$b/status.out" 2>&1; st="$(<"$b/status.out")"
 	check "status flags STUCK with the idle time" '[[ "$st" =~ pool-1\ \ LEASED.*STUCK:\ no\ live\ process,\ idle\ 2h.*DIRTY ]] || { echo "$st" >&2; false; }'
-	pool lease stuck/c >"$b/c.out" 2>"$b/c.err"; crc=$?
-	cout="$(<"$b/c.out")"; cerr="$(<"$b/c.err")"; unsaved="$(<"$sa/a.txt")"; pa="$(pool path stuck/a)"
-	check "the clean stuck lease is reclaimed, the dirty one is never wiped" '[ "$crc" -eq 0 ] && [[ "$cerr" == *"reclaimed pool-2 (stuck"* ]] && [ "$cout" = "$sb" ] && [[ "$unsaved" == *unsaved* ]] && [ "$pa" = "$sa" ]'
-	DQ_LANE_POOL_PROCS_CMD="echo node run $sa/x" pool stuck >/dev/null 2>&1; lrc=$?
+	DQ_LANE_POOL_PROCS_CMD="echo node run $sa/x $sb/x" pool stuck >/dev/null 2>&1; lrc=$?
 	check "a live process using the worktree makes it not stuck" '[ "$lrc" -eq 0 ]'
 	check "the notice goes away once the lease is not stuck" '[ ! -f "$DQ_LANE_POOL_STATE/notices/pool-1.stuck" ]'
+	DQ_LANE_POOL_PROCS_CMD="echo node run $sa/x $sb/x" pool lease stuck/k >"$b/k.out" 2>"$b/k.err"; krc=$?; kerr="$(<"$b/k.err")"
+	check "a lease with a live process is not reclaimed" '[[ "$kerr" != *"reclaimed pool-1"* ]] && [ -f "$DQ_LANE_POOL_STATE/pool-1.lease" ]'
+	old "$sa" 1; old "$sb" 2
+	pool lease stuck/c >"$b/c.out" 2>"$b/c.err"; crc=$?
+	cerr="$(<"$b/c.err")"; saved="$(g show stuck/a:a.txt)"; subj="$(g log -1 --format=%s stuck/a)"
+	check "dead lanes are reclaimed, the dirty one's work saved on its branch" '[ "$crc" -eq 0 ] && [[ "$cerr" == *"reclaimed pool-1 (agent gone"* ]] && [[ "$cerr" == *"reclaimed pool-2 (agent gone"* ]] && [[ "$saved" == *unsaved* ]] && [[ "$subj" == WIP:* ]]'
 }
 
 # ---- section 7: queued lease and cancel -----------------------------------------------------------------------------------------------
