@@ -873,7 +873,7 @@ Notes: reactions are `/transformation/...` rules settled by `handle_reactions()`
 #### Material science
 Need: engineered materials that change assembly behaviour.
 Defined: `code/content/materials/engineering/material_service.dm:1`
-Example: `damaged_object.material_service_event(MATERIAL_EVENT_DAMAGE, ...)`, `code/domains/damage/atom_defense.dm:45`
+Example: `material_service_event(MATERIAL_EVENT_WORK, rated > 0 ? input_energy / rated : 0)`, `code/content/materials/engineering/material_equipment.dm:61`
 Replaces / bans: none.
 Notes: `material_service_of(O)` is null until the object is admitted to continuous exposure. See `doc/material_engineering_implementation.md`.
 

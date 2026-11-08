@@ -110,9 +110,6 @@ Class Procs:
 	var/list/component_parts = null
 	var/tmp/uid
 	var/obj/item/circuitboard/circuit = null
-	/// A mapped machine's board while it is still data: the path or VARIANT() its type names. board() makes the real one the first time
-	/// something needs the item (the panel's part exchange, a dismantle, salvage); null once it is real or when there is none.
-	var/tmp/stock_circuit = null // ALLOW(base_vars): the board slot every board machine has, deferred (T9); one var beside `circuit`, not a feature subset
 
 
 SETTER(/obj/machinery, use_power)
@@ -179,12 +176,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /// A machine's board and default parts are made with it (owns_one(circuit, starts =)): `current` is the board the type names (a path or a VARIANT()
 /// reference; an instance a map put there is kept). The board is made inside the machine, then the parts default_parts() lists.
-/// A machine the map makes keeps its board as data (stock_circuit) until board() is asked for it; its default parts are still made.
+/// A machine the map makes keeps its board as data (the machinery_misc stock_circuit field) until board() is asked for it; its default parts are still made.
 /obj/machinery/proc/start_circuit(current, mapload)
 	if(isnull(current) || isdatum(current))
 		return current
 	if(mapload)
-		stock_circuit = current
+		STATE_SET(src, machinery_misc, stock_circuit, current)
 		create_spawn_contents(default_parts(current))
 		return null
 	var/obj/item/circuitboard/board = variant_new(current, src)
@@ -195,16 +192,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /// The machine's board, made from stock_circuit the first time it is needed (a mapped machine's board is data until then).
 /obj/machinery/proc/board()
-	if(!circuit && stock_circuit)
-		var/obj/item/circuitboard/B = variant_new(stock_circuit, src)
-		stock_circuit = null
+	var/stock = circuit ? null : STATE_PEEK(src, machinery_misc, stock_circuit)
+	if(stock)
+		STATE_SET(src, machinery_misc, stock_circuit, null)
+		var/obj/item/circuitboard/B = variant_new(stock, src)
 		if(istype(B))
 			rel_set(src, nameof(circuit), B)
 	return circuit
 
 /// Whether the machine has a board, real or still data.
-/obj/machinery/proc/holds_board()
-	return !!(circuit || stock_circuit)
+/obj/machinery/proc/holds_board(datum/act/A)
+	return !!(circuit || STATE_PEEK(src, machinery_misc, stock_circuit))
 
 /// What a machine is made with besides its board, as a spawn list: the board's req_components. A type whose board declares none lists its parts itself.
 /// `board` is the board or the path / VARIANT() it is made from.

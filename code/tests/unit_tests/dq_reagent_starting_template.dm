@@ -29,7 +29,8 @@ CAPABILITIES(/obj/item/dq_reagent_template_probe)
 		TEST_ASSERT_EQUAL(length(fresh.reagents.reagent_list), length(manual.reagents.reagent_list), "[path]: same reagents")
 		for(var/datum/reagent/R as anything in manual.reagents.reagent_list)
 			TEST_ASSERT_EQUAL(fresh.reagents.get_reagent_amount(R.id), R.volume, "[path]: same amount of [R.id]")
-			TEST_ASSERT_EQUAL(fresh.reagents.get_reagent(R.id)?.holder, fresh.reagents, "[path]: [R.id] belongs to its own holder")
+			var/datum/reagent/reagent = fresh.reagents.get_reagent(R.id)
+			TEST_ASSERT_EQUAL(reagent?.holder, fresh.reagents, "[path]: [R.id] belongs to its own holder")
 
 /datum/unit_test/dq_reagent_starting_template_holders_independent
 

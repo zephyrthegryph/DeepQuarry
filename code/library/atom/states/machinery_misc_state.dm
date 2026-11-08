@@ -9,5 +9,7 @@
 	/// Whole-machine EMP rejection supplied by insulating component materials: lazy state field material_emp_resistance (default 0).
 	var/material_emp_resistance = 0
 	var/rebuilding
+	/// A mapped machine's board while it is still data: the path or VARIANT() its type names, until board() makes the item (null once real).
+	var/stock_circuit
 	var/recursive_set = FALSE
 	var/list/material_component_manifest
