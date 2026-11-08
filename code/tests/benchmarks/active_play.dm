@@ -273,6 +273,8 @@
 			continue
 		op_menu_cache_clear()
 		GLOB.op_menu_pass1_rows.Cut()
+		if(i == 1)
+			GLOB.op_menu_pass1_classes.Cut() // the very first pair of its class: the later pairs read the class's rows
 		var/stamp = TICK_USAGE_REAL
 		interaction_menu_data(A, B)
 		first_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
