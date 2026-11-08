@@ -1236,12 +1236,12 @@ fn append_procedure_canonical(
     }
     let reserve = |bytes| a.reserve(bytes)
         .map_err(|proxy| a.take_operational_error().unwrap_or(proxy));
+    let suffix_start = header.bytes().len();
     let mut pending_suffix = None;
     if let Some(encoded) = cache.as_ref().and_then(|cache|cache.as_ref()) {
         header.write(encoded.bytes(), a)?;
     } else {
         let mut work = ProcedureCanonicalWork { admission: a, scratch: reserve(0)? };
-        let suffix_start = header.bytes().len();
         procedure.append_canonical_using(
             &mut FundedCanonicalOutput { header: &mut header, admission: a }, &mut work,
         )?;
@@ -1252,7 +1252,7 @@ fn append_procedure_canonical(
     }
 
     let content = xxhash_rust::xxh3::xxh3_128(header.bytes());
-    let plan = dm_ir::CanonicalBytes::plan(header.bytes());
+    let plan = dm_ir::CanonicalBytes::plan_procedure(header.bytes(), suffix_start);
     let mut retained = reserve(arc_payload::<u8>(plan.storage_len()).ok_or(ErrorKind::OutOfMemory)?)?;
     let result = plan.seal();
     drop(header);

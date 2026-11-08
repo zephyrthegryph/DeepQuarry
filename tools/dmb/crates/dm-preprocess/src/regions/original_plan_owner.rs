@@ -95,6 +95,13 @@ struct TraceProjectionReservations {
  total_plan_grants:usize,
  pooled_singletons:usize,
  pooled_ranges:usize,
+ short_span_fits_traces:usize,
+ short_span_fits_frames:usize,
+ short_span_overflow_traces:usize,
+ short_span_overflow_frames:usize,
+ short_span_overflow_currently_pooled:usize,
+ short_span_overflow_currently_pooled_frames:usize,
+ short_span_fits_actually_pooled:usize,
 }
 pub(super) struct OriginalPlanOwner{
  plan:DirectivePlan,paths:OriginalPlanPaths,current_region:Option<usize>,failed:bool,
@@ -431,6 +438,33 @@ impl OriginalPlanOwner{
    trace.projections=trace.projections.saturating_add(1);
    trace.pooled_singletons+=usize::from(pooled);
    trace.pooled_ranges+=usize::from(pooled_range);
+   // Count the closed six-byte geometry cohort, including actual short
+   // candidates that fell back for reasons other than span geometry.
+   if depth <= POOLED_TRACE_MAX_DEPTH && (pooled || pooled_range
+       || matches!(&self.last_trace.as_ref().expect("published trace").rows,
+                   OriginalMacroTrace::NarrowSingle(_) | OriginalMacroTrace::NarrowShared(_))) {
+    let trace_rows=&self.last_trace.as_ref().expect("published trace").rows;
+    let mut medium=true;
+    let mut short=true;
+    for at in 0..depth {
+     let span=trace_rows.frame(at).expect("exact narrow trace frame").invocation_span;
+     let width=span.end.checked_sub(span.start);
+     medium &= width.is_some_and(|width| width <= u16::MAX as usize);
+     short &= span.start <= 0x00ff_ffff && width.is_some_and(|width| width <= u8::MAX as usize);
+    }
+    if medium {
+     if short {
+      trace.short_span_fits_traces+=1;
+      trace.short_span_fits_frames+=depth;
+      trace.short_span_fits_actually_pooled+=usize::from(pooled || pooled_range);
+     } else {
+      trace.short_span_overflow_traces+=1;
+      trace.short_span_overflow_frames+=depth;
+      trace.short_span_overflow_currently_pooled+=usize::from(pooled || pooled_range);
+      trace.short_span_overflow_currently_pooled_frames+=depth * usize::from(pooled || pooled_range);
+     }
+    }
+   }
    trace.singleton_projections=trace.singleton_projections.saturating_add(usize::from(depth==1));
    trace.rows=trace.rows.saturating_add(row_count);
    trace.wide_singleton_projections=trace.wide_singleton_projections.saturating_add(usize::from(wide_singleton));

@@ -9,6 +9,9 @@ const PREFIXED: u8 = 4;
 const GROUP: usize = 8;
 const TRAILER: u8 = 8;
 const VARIADIC_TRAILER: u8 = 16;
+static PROCEDURE_TAG: &[u8] = b"dm-procedure-metadata-v2\0";
+static SIGNATURE_TAG: &[u8] = b"dm-procedure-signature-v2\0";
+
 const FLAGS: u8 = PREFIXED | TRAILER | VARIADIC_TRAILER;
 
 // Metadata tag, framed signature, and empty settings. The canonical encoder
@@ -40,6 +43,7 @@ pub struct CanonicalBytesPlan<'a> {
     layout: Layout,
     prefix: bool,
     trailer: u8,
+    procedure_tags: Option<usize>,
 }
 
 #[derive(Clone, Copy)]
@@ -52,6 +56,16 @@ enum Layout {
 
 impl CanonicalBytes {
     pub fn plan(bytes: &[u8]) -> CanonicalBytesPlan<'_> {
+        Self::plan_inner(bytes, None)
+    }
+
+    /// The adapter supplies the exact byte at which its procedure encoder
+    /// began. Both versioned tags must match before using the packed markers.
+    pub fn plan_procedure(bytes: &[u8], suffix_start: usize) -> CanonicalBytesPlan<'_> {
+        Self::plan_inner(bytes, Some(suffix_start))
+    }
+
+    fn plan_inner(bytes: &[u8], suffix_start: Option<usize>) -> CanonicalBytesPlan<'_> {
         let prefixed = bytes.strip_prefix(CANONICAL_HEADER_PREFIX);
         let prefix = prefixed.is_some();
         let (bytes, trailer) = if let Some(prefixed) = prefixed {
@@ -65,6 +79,14 @@ impl CanonicalBytes {
         } else {
             (bytes, 0)
         };
+        let procedure_tags = suffix_start
+            .filter(|_| prefix && trailer == 0)
+            .and_then(|start| start.checked_sub(CANONICAL_HEADER_PREFIX.len()))
+            .filter(|&start| {
+                let Some(suffix) = bytes.get(start..) else { return false };
+                let Some(frame) = suffix.strip_prefix(PROCEDURE_TAG) else { return false };
+                frame.get(size_of::<u64>()..).is_some_and(|body| body.starts_with(SIGNATURE_TAG))
+            });
         let (mut layout, mut storage_len) = if prefix || bytes.first() == Some(&ESCAPE) {
             (Layout::Escaped, bytes.len() + 2)
         } else {
@@ -76,13 +98,17 @@ impl CanonicalBytes {
         if bytes.len() > PACKED_HEADER {
             let mut packed_len = PACKED_HEADER;
             let mut bitmap_len = PACKED_HEADER + bytes.len().div_ceil(GROUP);
-            for run in Runs(bytes) {
+            for run in Runs::new(bytes, procedure_tags) {
                 match run {
                     Run::Literal(bytes) => {
                         packed_len = packed_len.saturating_add(bytes.len());
                         bitmap_len += bytes.len();
                     }
                     Run::Zero(_) => packed_len = packed_len.saturating_add(2),
+                    Run::Tag(tag) => {
+                        packed_len = packed_len.saturating_add(3);
+                        bitmap_len += tag.bytes().len() - 1;
+                    }
                 }
                 if packed_len >= storage_len && bitmap_len >= storage_len {
                     break;
@@ -97,7 +123,7 @@ impl CanonicalBytes {
                 storage_len = bitmap_len;
             }
         }
-        CanonicalBytesPlan { bytes, storage_len, layout, prefix, trailer }
+        CanonicalBytesPlan { bytes, storage_len, layout, prefix, trailer, procedure_tags }
     }
 
     pub fn len(&self) -> usize {
@@ -216,10 +242,11 @@ impl CanonicalBytesPlan<'_> {
         match self.layout {
             Layout::Escaped => write(&mut output, self.bytes),
             Layout::Packed => {
-                for chunk in Runs(self.bytes) {
+                for chunk in Runs::new(self.bytes, self.procedure_tags) {
                     match chunk {
                         Run::Literal(bytes) => write(&mut output, bytes),
                         Run::Zero(count) => write(&mut output, &[ESCAPE, count]),
+                        Run::Tag(tag) => write(&mut output, &[ESCAPE, 0, tag as u8]),
                     }
                 }
             }
@@ -250,24 +277,63 @@ impl CanonicalBytesPlan<'_> {
 enum Run<'a> {
     Literal(&'a [u8]),
     Zero(u8),
+    Tag(Tag),
 }
 
-struct Runs<'a>(&'a [u8]);
+#[derive(Clone, Copy)]
+#[repr(u8)]
+enum Tag {
+    Procedure = 1,
+    Signature = 2,
+}
+impl Tag {
+    fn bytes(self) -> &'static [u8] {
+        match self {
+            Self::Procedure => PROCEDURE_TAG,
+            Self::Signature => SIGNATURE_TAG,
+        }
+    }
+}
+
+struct Runs<'a> {
+    rest: &'a [u8],
+    next_tag: Option<(usize, Tag)>,
+}
+
+impl<'a> Runs<'a> {
+    fn new(bytes: &'a [u8], procedure_tags: Option<usize>) -> Self {
+        Self { rest: bytes, next_tag: procedure_tags.map(|at| (at, Tag::Procedure)) }
+    }
+}
 
 impl<'a> Iterator for Runs<'a> {
     type Item = Run<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if *self.0.first()? == ESCAPE {
-            let n = self.0.iter().take(ZEROES.len()).take_while(|&&b| b == ESCAPE).count();
-            self.0 = &self.0[n..];
-            Some(Run::Zero(n as u8))
+        let limit = match self.next_tag {
+            Some((0, tag)) => {
+                self.rest = &self.rest[tag.bytes().len()..];
+                self.next_tag = match tag {
+                    Tag::Procedure => Some((size_of::<u64>(), Tag::Signature)),
+                    Tag::Signature => None,
+                };
+                return Some(Run::Tag(tag));
+            }
+            Some((at, _)) => at,
+            None => self.rest.len(),
+        };
+        let before_tag = &self.rest[..limit];
+        let (width, is_zero) = if *before_tag.first()? == ESCAPE {
+            (before_tag.iter().take(ZEROES.len()).take_while(|&&b| b == ESCAPE).count(), true)
         } else {
-            let n = self.0.iter().position(|&b| b == ESCAPE).unwrap_or(self.0.len());
-            let (chunk, tail) = self.0.split_at(n);
-            self.0 = tail;
-            Some(Run::Literal(chunk))
+            (before_tag.iter().position(|&b| b == ESCAPE).unwrap_or(limit), false)
+        };
+        let (chunk, tail) = self.rest.split_at(width);
+        self.rest = tail;
+        if let Some((at, _)) = &mut self.next_tag {
+            *at -= width;
         }
+        Some(if is_zero { Run::Zero(width as u8) } else { Run::Literal(chunk) })
     }
 }
 
@@ -307,8 +373,17 @@ impl<'a> Iterator for BodyChunks<'a> {
                 let bytes = *raw;
                 if *bytes.first()? == ESCAPE {
                     let n = usize::from(bytes[1]);
-                    *raw = &bytes[2..];
-                    Some(&ZEROES[..n])
+                    if n != 0 {
+                        *raw = &bytes[2..];
+                        Some(&ZEROES[..n])
+                    } else {
+                        *raw = &bytes[3..];
+                        Some(match bytes[2] {
+                            1 => Tag::Procedure.bytes(),
+                            2 => Tag::Signature.bytes(),
+                            _ => unreachable!("issued packed dictionary marker"),
+                        })
+                    }
                 } else {
                     let n = bytes.iter().position(|&b| b == ESCAPE).unwrap_or(bytes.len());
                     let (chunk, tail) = bytes.split_at(n);
@@ -481,6 +556,49 @@ mod tests {
                 assert_ne!(mismatch, packed);
             }
         }
+    }
+
+    #[test]
+    fn dynamic_procedure_markers_match_real_encoder_and_require_both_exact_tags() {
+        use crate::{Parameter, ProcedureMetadata, ProcedureSignature, SymbolId};
+        let procedure = ProcedureMetadata {
+            signature: ProcedureSignature {
+                parameters: Arc::from([Parameter::new(
+                    SymbolId::of("parameter"), Some(SymbolId::of("/datum")), None, 0,
+                    dm_syntax::Span::new(0, 1),
+                )]),
+                variadic: true,
+                return_annotation: None,
+            },
+            settings: Arc::from([]),
+        };
+        let mut bytes = CANONICAL_HEADER_PREFIX.to_vec();
+        bytes.extend_from_slice(&[7, 0, 0, 9, 0]);
+        let suffix_start = bytes.len();
+        bytes.extend_from_slice(&procedure.canonical_bytes());
+        let ordinary = CanonicalBytes::plan(&bytes).seal();
+        let plan = CanonicalBytes::plan_procedure(&bytes, suffix_start);
+        let storage_len = plan.storage_len();
+        let packed = plan.seal();
+        assert_eq!(packed.storage_arc().len(), storage_len);
+        assert!(storage_len + 32 < ordinary.storage_arc().len());
+        assert_eq!(packed.len(), bytes.len());
+        assert_eq!(packed.to_vec(), bytes);
+        assert_eq!(packed, ordinary);
+        assert_eq!(packed, CanonicalBytes::from(bytes.clone()));
+        assert_eq!(packed.xxh3_128(), xxhash_rust::xxh3::xxh3_128(&bytes));
+        assert!(packed.chunks().any(|chunk| std::ptr::eq(chunk, SIGNATURE_TAG)));
+
+        let signature_start = suffix_start + PROCEDURE_TAG.len() + size_of::<u64>();
+        for at in [suffix_start, signature_start] {
+            let mut mismatch = bytes.clone();
+            mismatch[at] ^= 1;
+            let packed = CanonicalBytes::plan_procedure(&mismatch, suffix_start).seal();
+            assert_eq!(packed.to_vec(), mismatch);
+            assert_eq!(packed.storage_arc(), CanonicalBytes::plan(&mismatch).seal().storage_arc());
+        }
+        let wrong_offset = CanonicalBytes::plan_procedure(&bytes, suffix_start + 1).seal();
+        assert_eq!(wrong_offset.storage_arc(), ordinary.storage_arc());
     }
 
     #[test]

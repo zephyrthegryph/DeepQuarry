@@ -132,21 +132,20 @@ type AuthorCell = UnsafeCell<MaybeUninit<Arc<OriginalMacroAuthor>>>;
 
 #[derive(Clone, Copy)]
 #[repr(transparent)]
-struct PooledTraceSpan([u8; 6]);
+struct PooledTraceSpan([u8; 4]);
 
 impl PooledTraceSpan {
     fn checked([start, end]: [u32; 2]) -> Option<Self> {
-        let width = u16::try_from(end.checked_sub(start)?).ok()?;
-        let [a, b, c, d] = start.to_le_bytes();
-        let [e, f] = width.to_le_bytes();
-        Some(Self([a, b, c, d, e, f]))
+        let width = u8::try_from(end.checked_sub(start)?).ok()?;
+        let [a, b, c, high] = start.to_le_bytes();
+        (high == 0).then_some(Self([a, b, c, width]))
     }
 
     fn span(self) -> Span {
-        let [a, b, c, d, e, f] = self.0;
-        let start = u32::from_le_bytes([a, b, c, d]);
-        let width = u16::from_le_bytes([e, f]);
-        // The only constructor already proved the native u32 endpoint.
+        let [a, b, c, width] = self.0;
+        let start = u32::from_le_bytes([a, b, c, 0]);
+        // Both operands are bounded by the cell, including when the end
+        // extends beyond the largest representable start.
         Span::new(start as usize, (start + u32::from(width)) as usize)
     }
 }
@@ -814,7 +813,7 @@ mod tests {
 
     #[test]
     fn pooled_spans_keep_native_endpoints_and_decline_the_whole_overflow_range() {
-        assert_eq!(mem::size_of::<PooledTraceSpan>(), 6);
+        assert_eq!(mem::size_of::<PooledTraceSpan>(), 4);
         let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
         let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
         let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
@@ -823,23 +822,25 @@ mod tests {
             invocation_span: [start, end], author: Arc::clone(&author),
         };
         let mut pool = SingletonTracePool::default();
-        let max = u32::MAX;
-        let width = u32::from(u16::MAX);
+        let max = 0x00ff_ffff;
+        let width = u32::from(u8::MAX);
         let before = used.load(Ordering::Acquire);
         assert!(pool.prepare_using(&make(max - width - 1, max), &a).unwrap().is_none());
+        assert!(pool.prepare_using(&make(max + 1, max + 1), &a).unwrap().is_none());
         assert!(pool.prepare_range_using(&[make(max, max), make(2, 1)], &a).unwrap().is_none());
         assert!(pool.current.is_none());
         assert_eq!(used.load(Ordering::Acquire), before);
 
-        let frames = [make(max, max), make(max - width, max)];
+        let frames = [make(max, max), make(max, max + width)];
         let slots = pool.prepare_range_using(&frames, &a).unwrap().unwrap();
         let trace = pool.append_range(frames.into_iter(), slots);
         let view = MacroTraceView::original(&trace);
         assert_eq!(view.get(0).unwrap().invocation_span, Span::new(max as usize, max as usize));
-        assert_eq!(view.get(1).unwrap().invocation_span, Span::new((max - width) as usize, max as usize));
-        assert_eq!(view.buffers()[0].1, 6);
+        assert_eq!(view.get(1).unwrap().invocation_span, Span::new(max as usize, (max + width) as usize));
+        assert_eq!(view.buffers()[0].1, 4);
         let before = used.load(Ordering::Acquire);
         assert!(pool.prepare_range_using(&[make(0, 1), make(0, width + 1)], &a).unwrap().is_none());
+        assert!(pool.prepare_range_using(&[make(0, 1), make(max + 1, max + 1)], &a).unwrap().is_none());
         assert_eq!(pool.current.as_ref().unwrap().issued(), 2);
         assert_eq!(used.load(Ordering::Acquire), before);
 
