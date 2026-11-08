@@ -1510,9 +1510,9 @@ impl RankedRawWidths {
     }
 }
 
-// Same NarrowRow tags and exact [6,6,4] payload geometry. Only the
-// unchanged medium/full escape cells and non-fitting original cells use
-// the independent 4B column.
+// Preserve the ordinary [6,6,4] geometry. The four unused kind codes also
+// carry [7,7,2] for short spellings at wider offsets. Both forms reconstruct
+// the exact NarrowRow before decoding its coordinates or independent width.
 #[repr(transparent)]
 struct ShortOriginCell([u8;3]);
 impl ShortOriginCell {
@@ -1524,14 +1524,29 @@ impl ShortOriginCell {
             if token >= 4 || raw >= 4 { return None; }
             (token << 2) | raw
         } else { width };
-        if out >= 64 || raw >= 64 || width >= 16 { return None; }
-        let payload = u16::from(out) | (u16::from(raw) << 6) | (u16::from(width) << 12);
+        let (tag, payload) = if out < 64 && raw < 64 && width < 16 {
+            (row.tag, u16::from(out) | (u16::from(raw) << 6) | (u16::from(width) << 12))
+        } else {
+            let kind = match row.tag >> 4 { 0 => 12, 1 => 13, 6 => 14, 7 => 15, _ => return None };
+            if out >= 128 || raw >= 128 || !(1..=4).contains(&width)
+                || row.tag & NarrowRow::MODE == NarrowRow::DUAL_WIDTH
+            {
+                return None;
+            }
+            ((row.tag & 15) | (kind << 4),
+             u16::from(out) | (u16::from(raw) << 7) | (u16::from(width - 1) << 14))
+        };
         let [lo, hi] = payload.to_le_bytes();
-        Some(Self([row.tag, lo, hi]))
+        Some(Self([tag, lo, hi]))
     }
     fn unpack(&self) -> NarrowRow {
         let [tag, lo, hi] = self.0;
         let payload = u16::from_le_bytes([lo, hi]);
+        if tag >> 4 >= 12 {
+            let kind = [0, 1, 6, 7][usize::from((tag >> 4) - 12)];
+            return NarrowRow { tag: (tag & 15) | (kind << 4),
+                fields: [(payload & 127) as u8, ((payload >> 7) & 127) as u8, (payload >> 14) as u8 + 1] };
+        }
         let mut width = (payload >> 12) as u8;
         if tag & NarrowRow::MODE == NarrowRow::DUAL_WIDTH {
             width = ((width >> 2) << 4) | (width & 3);
@@ -3665,6 +3680,33 @@ impl OriginalRawOrigins{
   drop(credit);assert_eq!(work.0.load(Ordering::Acquire),0);
   assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
+ #[test]
+ fn short_origin_cells_preserve_wider_offsets_for_short_spellings() {
+    for kind in 0..=11 {
+        for mode in [0, NarrowRow::DUAL_WIDTH, NarrowRow::SIDE_WIDTH, NarrowRow::ESCAPE] {
+            for flags in 0..=3 {
+                for out in [0, 63, 64, 127, 128, 255] {
+                    for raw in [0, 63, 64, 127, 128, 255] {
+                        for width in 0..=u8::MAX {
+                            let tag = (kind << 4) | mode | flags;
+                            let row = NarrowRow { tag, fields: [out, raw, width] };
+                            if let Some(cell) = ShortOriginCell::pack(row) {
+                                let exact = cell.unpack();
+                                assert_eq!((exact.tag, exact.fields), (tag, row.fields));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let wide = NarrowRow { tag: (7 << 4) | NarrowRow::SIDE_WIDTH | NarrowRow::TRAILING,
+        fields: [127, 100, 4] };
+    let exact = ShortOriginCell::pack(wide).expect("wider short punctuation").unpack();
+    assert_eq!(exact.offsets(|| Some(241)), Some([127, 5, 4, 100, 100, 241]));
+    assert!(ShortOriginCell::pack(NarrowRow { tag: 2 << 4, fields: [64, 64, 1] }).is_none());
+ }
+
  #[test]
  fn mixed_origin_columns_preserve_page_ordinals_credit_and_trim_reappend() {
   use dm_syntax::TokenKind::{Ident,Number,Resource};
