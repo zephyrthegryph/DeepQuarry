@@ -1,7 +1,9 @@
 // Client lighting, piece 2: shadow masks. Each glow is cut by an alpha mask of the turfs its light reaches (the world opacity
 // layer's sight from the light's turf, code/domains/verdigris/sight/), so a glow no longer shines through walls. The mask is
-// a hidden render target in the glow's vis_contents: one white tile per reached turf, its overlay list cached by shape, so
-// lights with the same reach share one appearance. A mask is rebuilt only when its light is redrawn (it moved or changed) or
+// a baked icon, the size of the glow sprite: one opaque tile per reached turf with a few faded pixels around it, drawn off-thread by
+// iconforge and shared by every light with the same reach. It is a plain icon on the filter, so it does not depend on another
+// object being drawn for the client (a render target did, and playtesting showed black tile blocks). A viewer's glow stays uncut until
+// its shape is first baked; after a change it keeps its previous cut until the new one lands. A reach is recomputed only when its light is redrawn (it moved or changed) or
 // when opacity changes inside its reach (a door, a wall built), found through a per-chunk index of glowing lights.
 
 
@@ -13,19 +15,8 @@ GLOBAL_VAR_INIT(client_glow_masks_off, FALSE)
 /// "z,cx,cy" -> lights glowing from that chunk (client lighting only).
 GLOBAL_LIST_EMPTY(client_glow_chunks)
 
-/// A light's shadow mask: drawn only as its glow's alpha filter source.
-/obj/effect/overlay/client_glow_mask
-	name = ""
-	icon = null
-	plane = PLANE_LIGHTING
-	appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_TOGETHER
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	anchored = TRUE
-	vis_flags = VIS_INHERIT_ID
-
 /datum/light_source
-	/// The mask cutting this light's glow; the reach key it last drew ("range|offsets").
-	var/obj/effect/overlay/client_glow_mask/glow_mask
+	/// The reach key it last computed ("margin|offsets"): names the baked mask its viewers cut its glow with.
 	var/glow_mask_key
 	/// The reach range and glow margin the mask was last built for (client_glow_mask_refresh()).
 	var/glow_mask_range = 0
@@ -37,57 +28,161 @@ GLOBAL_LIST_EMPTY(client_glow_chunks)
 	/// The chunk key this light is indexed under while it glows.
 	var/glow_chunk
 
-CAPABILITIES_PART(/datum/light_source, light_source_client_shadow)
-	owns_one(nameof(glow_mask), /obj/effect/overlay/client_glow_mask)
-
 /proc/client_glow_chunk_key(z, x, y)
 	return "[z],[round((x - 1) / CLIENT_GLOW_CHUNK)],[round((y - 1) / CLIENT_GLOW_CHUNK)]"
 
-/// The overlays of a mask of this shape (key "margin|dx,dy,dx,dy,..."): one opaque white tile (the lighting icon's
-/// "transparent" state) per reached offset, placed in the glow sprite's own frame (`margin` = how far the glow reaches past
-/// the light's tile). Built once per shape (client_glow_masks).
-/proc/client_glow_mask_build(key)
+/// The baked shadow masks and their counters.
+GLOBAL_DATUM_INIT(client_glow_baker, /datum/client_glow_baker, new)
+
+CAPABILITIES_PART(/datum/controller/global_vars, client_glow_baker)
+	owns_one(nameof(client_glow_baker), /datum/client_glow_baker)
+
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
+
+/// The mask bakes' state: one per world, and running bakes outlive whatever asked for them.
+/datum/client_glow_baker
+	/// Shape key -> icon resource (bounded, oldest out first: a filter already using one keeps it).
+	var/list/icons = list()
+	/// Shape keys queued or baking -> TRUE, so one shape bakes once.
+	var/list/pending = list()
+	/// Shape keys waiting for a free bake.
+	var/list/queue = list()
+	/// Shape key -> REALTIMEOFDAY it was asked for.
+	var/list/asked_at = list()
+	var/inflight = 0
+	var/hits = 0
+	var/misses = 0
+	var/baked = 0
+	var/failed = 0
+	var/refused = 0
+	var/evicted = 0
+	/// Sum of the time from request to baked, deciseconds (real time).
+	var/wait_ds = 0
+
+/// The iconforge sprite of a mask of this shape (key "margin|dx,dy,dx,dy,..."): the glow sprite wiped clear, then the reached tiles.
+/// Rings go widest and faintest first over every tile, so a tile's fade can never overwrite a neighbour's solid body.
+/proc/client_glow_mask_sprite(key)
 	var/list/parts = splittext(key, "|")
 	var/margin = text2num(parts[1])
 	var/list/offsets = length(parts) > 1 && length(parts[2]) ? splittext(parts[2], ",") : list()
-	// The first child fixes the render target's size: the glow sprite, zeroed by its own colour. The colour must stay on this
-	// child: the mask is KEEP_TOGETHER, so a colour on the mask itself applies to the whole group after it is drawn, whatever
-	// RESET_COLOR the tiles carry, and a zero matrix there empties the mask and cuts every glow to nothing.
-	var/mutable_appearance/sizer = mutable_appearance(client_glow_icon(margin * 2 + WORLD_ICON_SIZE), "light")
-	sizer.color = list(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
-	. = list(sizer)
-	// Two more zeroed tiles at opposite corners of the widest reach. A reach runs a tile past the sprite on some sides, and BYOND
-	// centres an alpha filter's mask on the glow: without a symmetric frame a reach blocked on one side shifts the whole mask.
-	var/frame = CEILING(margin / WORLD_ICON_SIZE + 1, 1)
-	for(var/corner in list(-frame, frame))
-		var/mutable_appearance/frame_tile = mutable_appearance(LIGHTING_ICON, "transparent")
-		frame_tile.color = sizer.color
-		frame_tile.pixel_x = corner * WORLD_ICON_SIZE + margin
-		frame_tile.pixel_y = corner * WORLD_ICON_SIZE + margin
-		. += frame_tile
-	for(var/i = 1, i < length(offsets), i += 2)
-		var/mutable_appearance/tile = mutable_appearance(LIGHTING_ICON, "transparent")
-		tile.appearance_flags = RESET_COLOR | RESET_ALPHA
-		tile.pixel_x = text2num(offsets[i]) * WORLD_ICON_SIZE + margin
-		tile.pixel_y = text2num(offsets[i + 1]) * WORLD_ICON_SIZE + margin
-		. += tile
+	var/size = margin * 2 + WORLD_ICON_SIZE
+	var/list/steps = list(list("type" = RUSTG_ICONFORGE_DRAW_BOX, "x1" = 1, "y1" = 1, "x2" = size, "y2" = size))
+	var/static/list/ring_colors = list("#FFFFFF33", "#FFFFFF66", "#FFFFFF99", "#FFFFFFCC", "#FFFFFFFF")
+	for(var/ring in 1 to length(ring_colors))
+		var/grow = length(ring_colors) - ring
+		for(var/i = 1, i < length(offsets), i += 2)
+			var/x0 = text2num(offsets[i]) * WORLD_ICON_SIZE + margin
+			var/y0 = text2num(offsets[i + 1]) * WORLD_ICON_SIZE + margin
+			var/x1 = max(x0 + 1 - grow, 1)
+			var/y1 = max(y0 + 1 - grow, 1)
+			var/x2 = min(x0 + WORLD_ICON_SIZE + grow, size)
+			var/y2 = min(y0 + WORLD_ICON_SIZE + grow, size)
+			if(x1 > x2 || y1 > y2)
+				continue
+			steps += list(list("type" = RUSTG_ICONFORGE_DRAW_BOX, "color" = ring_colors[ring], "x1" = x1, "y1" = y1, "x2" = x2, "y2" = y2))
+	return list("icon_file" = resolve_icon_dmi_path(get_icon_dmi_path(client_glow_icon(size))), "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = steps)
 
-DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build), SC_NEVER)
+/// The baked mask of this shape, or null while it is not ready (asks for it).
+/proc/client_glow_mask_icon(key)
+	var/found = GLOB.client_glow_baker.icons[key]
+	if(found)
+		GLOB.client_glow_baker.hits++
+		return found
+	GLOB.client_glow_baker.misses++
+	client_glow_mask_request(key)
+	return null
+
+/proc/client_glow_mask_request(key)
+	if(GLOB.client_glow_baker.pending[key])
+		return
+	if(length(GLOB.client_glow_baker.pending) >= CLIENT_GLOW_MASK_QUEUE_MAX)
+		GLOB.client_glow_baker.refused++ // asked again the next time a viewer considers the light
+		return
+	GLOB.client_glow_baker.pending[key] = TRUE
+	GLOB.client_glow_baker.asked_at[key] = REALTIMEOFDAY
+	GLOB.client_glow_baker.queue += key
+	client_glow_mask_pump()
+
+/proc/client_glow_mask_dir_ready()
+	var/static/made = FALSE
+	if(!made)
+		rustg_file_write("", "[CLIENT_GLOW_MASK_DIR].keep")
+		made = TRUE
+
+/proc/client_glow_mask_pump()
+	while(GLOB.client_glow_baker.inflight < CLIENT_GLOW_MASK_BAKES_MAX && length(GLOB.client_glow_baker.queue))
+		var/key = GLOB.client_glow_baker.queue[1]
+		GLOB.client_glow_baker.queue.Cut(1, 2)
+		client_glow_mask_dir_ready()
+		var/sheet = "cglow_[md5(key)]"
+		var/job_id = rustg_iconforge_generate_async(CLIENT_GLOW_MASK_DIR, sheet, json_encode(list("mask" = client_glow_mask_sprite(key))), FALSE, FALSE, TRUE)
+		GLOB.client_glow_baker.inflight++
+		io_job(null, /datum/io_backend/rustg_job, job_id, GLOBAL_PROC_REF(client_glow_mask_job_done), key, sheet)
+
+/// The PNG a bake's output names, or null.
+/proc/client_glow_mask_png(sheet, output)
+	if(!output || !findtext(output, "{", 1, 2))
+		log_world("client glow mask: iconforge gave no result for [sheet]: [output]")
+		return null
+	var/list/data = json_decode(output)
+	var/list/sprite_data = data["sprites"]?["mask"]
+	if(length(data["error"]) || !sprite_data)
+		log_world("client glow mask: iconforge reported [json_encode(data["error"])] for [sheet]: [output]")
+		return null
+	var/path = "[CLIENT_GLOW_MASK_DIR][sheet]_[sprite_data["size_id"]].png"
+	return rustg_file_exists(path) ? path : null
+
+/// io_job() callback: a mask bake finished.
+/proc/client_glow_mask_job_done(result, error, key, sheet)
+	GLOB.client_glow_baker.inflight--
+	GLOB.client_glow_baker.pending -= key
+	var/asked = GLOB.client_glow_baker.asked_at[key]
+	GLOB.client_glow_baker.asked_at -= key
+	var/path = error ? null : client_glow_mask_png(sheet, result)
+	if(!path)
+		GLOB.client_glow_baker.failed++
+		log_world("client glow mask: bake failed for [sheet] ([error || result]); its lights stay uncut until asked again")
+	else
+		GLOB.client_glow_baker.wait_ds += REALTIMEOFDAY - asked
+		client_glow_mask_store(key, path)
+	client_glow_mask_pump()
+
+/// Takes a baked PNG into the resource cache and gives it to every viewer waiting on the shape.
+/proc/client_glow_mask_store(key, path)
+	var/res = fcopy_rsc(file(path))
+	fdel(path)
+	GLOB.client_glow_baker.icons[key] = res
+	if(length(GLOB.client_glow_baker.icons) > CLIENT_GLOW_MASK_CACHE_MAX)
+		GLOB.client_glow_baker.icons.Cut(1, 2)
+		GLOB.client_glow_baker.evicted++
+	GLOB.client_glow_baker.baked++
+	if(!(GLOB.client_glow_baker.baked % 64))
+		log_world(client_glow_mask_stats())
+	for(var/datum/client_glow_holder/H as anything in REGISTRY_MEMBERS(REGISTRY_CLIENT_GLOW_HOLDERS))
+		H.shape_ready(key, res)
+
+/// (Tests, nothing else: it blocks.) Bakes a shape on the spot and returns the PNG's path; the caller deletes it.
+/proc/client_glow_mask_bake_blocking(key)
+	client_glow_mask_dir_ready()
+	var/sheet = "cglow_test_[md5(key)]"
+	return client_glow_mask_png(sheet, rustg_iconforge_generate(CLIENT_GLOW_MASK_DIR, sheet, json_encode(list("mask" = client_glow_mask_sprite(key))), FALSE, FALSE, TRUE))
+
+/proc/client_glow_mask_stats()
+	var/baked = GLOB.client_glow_baker.baked
+	return "client glow masks: [length(GLOB.client_glow_baker.icons)] cached, [baked] baked, [GLOB.client_glow_baker.hits] hits, [GLOB.client_glow_baker.misses] misses, [GLOB.client_glow_baker.failed] failed, [GLOB.client_glow_baker.refused] refused, [GLOB.client_glow_baker.evicted] evicted, [length(GLOB.client_glow_baker.pending)] waiting, mean wait [baked ? round(GLOB.client_glow_baker.wait_ds / baked, 0.1) : 0] ds"
 
 /// Recomputes this light's reach after an opacity change and rebuilds the mask only if the reach changed.
 /datum/light_source/proc/client_glow_mask_refresh()
-	if(!glow || !glow_mask || !source_turf)
+	if(!glow || !glow_mask_key || !source_turf)
 		return
-	var/obj/effect/overlay/client_glow/G = glow
 	if(client_glow_mask_apply(glow_mask_range, glow_mask_margin))
 		client_glow_holders_consider(src) // the held copies take the new mask
 
-/// Rebuilds this light's mask from its reach (client_glow_apply()). `margin` is the glow sprite's: the mask
-/// is the same size (client_glow_mask_build() gives it a transparent copy of that icon), so the alpha filter lines the two up. TRUE when it rebuilt.
+/// Recomputes this light's reach and mask shape (client_glow_apply()). `margin` is the glow sprite's: the baked mask is the same size,
+/// so the alpha filter lines the two up with no offset. TRUE when the shape changed.
 /datum/light_source/proc/client_glow_mask_apply(range, margin)
 	glow_mask_range = range
 	glow_mask_margin = margin
-	var/obj/effect/overlay/client_glow/G = glow
 	// The reach first, as a shape key: an opacity change that leaves this light's reach as it was (most of them) stops here.
 	var/list/seen = sight_view_turfs(source_turf, range)
 	var/list/offsets = new /list(length(seen) * 2)
@@ -98,7 +193,7 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 		offsets[++i] = T.x - sx
 		offsets[++i] = T.y - sy
 	var/key = "[margin]|[jointext(offsets, ",")]"
-	if(key == glow_mask_key && glow_mask && glow_reach_origin == source_turf)
+	if(key == glow_mask_key && glow_reach_origin == source_turf)
 		return
 	// Lum watches (watched(T, WATCH_LUM)) on turfs this light lit or now lights hear about it.
 	var/watching = SSwatched.client_lum_watching()
@@ -113,19 +208,7 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 	for(var/turf/W as anything in watched_turfs)
 		SSwatched.lum_changed(W)
 	GLOB.client_glow_mask_builds++
-	if(!glow_mask)
-		rel_set(src, nameof(glow_mask), new /obj/effect/overlay/client_glow_mask(null))
-		var/obj/effect/overlay/client_glow_mask/M = glow_mask
-		M.render_target = "*client_glow_mask_[handle_text(handle_of(src))]" // whole number: "[h]" rounds past 1e6 and lights would share a mask
-		// Soft shadow edges: the tile grid is blurred before it cuts the glow, so a shadow fades over a few pixels instead of
-		// stair-stepping. A reached wall tile stays in the mask whole, so its face is lit; only its outer rim softens.
-		M.add_filter("client_shadow_soft", 1, list(type = "blur", size = CLIENT_GLOW_MASK_BLUR))
-		vis_add(G, M)
-		if(!GLOB.client_glow_masks_off)
-			G.add_filter("client_shadow", 1, list(type = "alpha", render_source = M.render_target))
 	glow_mask_key = key
-	var/obj/effect/overlay/client_glow_mask/M = glow_mask
-	M.overlays = CACHED_FAST(client_glow_masks, key)
 	client_glow_index(TRUE)
 	return TRUE
 
@@ -166,10 +249,6 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 	glow_mask_key = null
 	glow_reach = null
 	glow_reach_origin = null // ALLOW(ownership): lighting engine turf cache cleared with the mask, like source_turf
-	if(glow_mask)
-		var/obj/effect/overlay/client_glow_mask/M = glow_mask
-		rel_clear(src, nameof(glow_mask))
-		spent(M)
 
 /// Opacity changed on `T` (reconsider_lights()): every glowing light whose reach covers it redraws its mask.
 /proc/client_glow_reconsider(turf/T)
@@ -207,20 +286,11 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 		var/obj/effect/overlay/client_glow/G = L.glow
 		if(G.alpha < 128)
 			faint++
-	return "client glows: [glows] glow(s), masks open on [possible ? round(100 * tiles / possible) : 0]% of their squares ([tiles]/[possible] tiles), [one_tile] with one tile or none, [faint] under half strength, masks [GLOB.client_glow_masks_off ? "OFF" : "on"]"
+	return "client glows: [glows] glow(s), masks open on [possible ? round(100 * tiles / possible) : 0]% of their squares ([tiles]/[possible] tiles), [one_tile] with one tile or none, [faint] under half strength, masks [GLOB.client_glow_masks_off ? "OFF" : "on"]; [client_glow_mask_stats()]"
 
 // Separates "the shadow masks cut the light away" from "the glows do not light the world": with the masks off, a dark room lit up is the mask.
 ADMIN_VERB(toggle_client_glow_masks, R_DEBUG|R_SERVER, "Toggle Client Glow Masks", "Draw every client glow without its shadow mask, live, and report what the glows are.", ADMIN_CATEGORY_DEBUG_GAME)
 	GLOB.client_glow_masks_off = !GLOB.client_glow_masks_off
-	for(var/datum/light_source/L)
-		if(QDELETED(L) || !L.glow || !L.glow_mask)
-			continue
-		var/obj/effect/overlay/client_glow/G = L.glow
-		var/obj/effect/overlay/client_glow_mask/M = L.glow_mask
-		if(GLOB.client_glow_masks_off)
-			G.remove_filter("client_shadow")
-		else
-			G.add_filter("client_shadow", 1, list(type = "alpha", render_source = M.render_target))
 	client_glow_holders_switched(TRUE)
 	var/census = client_glow_census()
 	log_world(census)

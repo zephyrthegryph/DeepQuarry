@@ -8,11 +8,10 @@
 //     locs is seen, and the eye's own turf always is, so images on it show whatever walls stand between the eye and any one turf.
 //   - the reach box: the turfs seen from some eye position in the chunk (the views' union). Every light whose reach overlaps it
 //     is held, on screen or not: a light whose own turf is hidden behind a wall still lights the turfs this viewer does see. A held
-//     light is a glow image on the anchor, offset to the light's true place, a mask image of its own (below), and an override
+//     light is a glow image, cut by its shape's baked mask (below), and an override
 //     image that hides the real glow from this client, so it is never drawn twice.
-// The mask: the glow's alpha filter reads its shadow mask as a render target, and a render target renders only when its object
-// is drawn for that client. The real mask stands on the light's turf, which this client may not see, so each held light gets a
-// mask image of its own, with a render target unique to this holder and light, which the glow image's filter names.
+// The mask: an alpha filter on the glow image naming a baked icon of the light's reach shape (client_shadow.dm). Nothing else has to be
+// drawn for it. Until a shape is baked the image is uncut; when a shape changes it keeps the old cut until the new one arrives.
 //
 // Events only: the eye crossing a chunk or changing view (interest_eye_update()), a light glowing, moving or changing
 // (client_glow_apply()), its mask rebuilding (client_glow_mask_apply()), going out (client_glow_clear()), client lighting
@@ -42,8 +41,12 @@ GLOBAL_VAR_INIT(client_glow_on_light_turf, TRUE)
 	var/unmasked = FALSE
 	/// TRUE: this viewer does not see darkness (a ghost with darkness off, darkvision): lights draw nothing for it, so each is only hidden.
 	var/unlit = FALSE
-	/// light source glow_holder_key -> list(glow image, mask image, hide image), or list(hide image) while unlit. Lazy.
+	/// light source glow_holder_key -> list(glow image, hide image), or list(hide image) while unlit. Lazy.
 	var/list/held
+	/// light source glow_holder_key -> the mask shape its glow image wants. Lazy.
+	var/list/held_shape
+	/// light source glow_holder_key -> the mask shape its glow image is cut by now. Lazy.
+	var/list/cut_shape
 
 /// A viewer's image holder: drawn as nothing, its bounds put it on every turf of the eye's chunk, one of which the viewer always sees.
 /obj/effect/overlay/client_glow_anchor
@@ -196,51 +199,53 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/h = L.glow_holder_key()
 	var/list/entry = LAZYACCESS(held, h)
 	var/image/glow_image
-	var/image/mask_image
 	if(!entry)
-		var/mask_name = "*cglow_mask_[handle_text(handle_of(L))]_[handle_text(handle_of(src))]"
-		mask_image = image(null) // its overlays carry the transparent sizer and the tiles (client_glow_mask_build())
-		mask_image.plane = PLANE_LIGHTING
-		mask_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_TOGETHER
-		mask_image.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		mask_image.render_target = mask_name
-		mask_image.filters = filter(type = "blur", size = CLIENT_GLOW_MASK_BLUR)
 		glow_image = image(G.icon, null, G.icon_state)
 		glow_image.layer = G.layer
 		glow_image.blend_mode = BLEND_ADD
 		glow_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 		glow_image.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		if(!GLOB.client_glow_masks_off && !unmasked)
-			glow_image.filters = filter(type = "alpha", render_source = mask_name)
 		var/image/hide_image = image(null) // overrides the real glow for this viewer: never drawn twice
 		hide_image.override = TRUE
 		image_anchor(hide_image, G)
-		entry = list(glow_image, mask_image, hide_image)
+		entry = list(glow_image, hide_image)
 		LAZYSET(held, h, entry)
 		client_images_add(client, entry)
 		GLOB.client_glow_holder_made++
 	else
 		glow_image = entry[1]
-		mask_image = entry[2]
 		GLOB.client_glow_holder_updated++
 	var/atom/stand_on = GLOB.client_glow_on_light_turf ? S : A
 	if(glow_image.loc != stand_on)
 		image_anchor(glow_image, stand_on)
-		image_anchor(mask_image, stand_on)
 	var/px = (S.x - stand_on.x) * WORLD_ICON_SIZE + G.pixel_x
 	var/py = (S.y - stand_on.y) * WORLD_ICON_SIZE + G.pixel_y
 	glow_image.icon = G.icon
 	glow_image.plane = G.plane
-	mask_image.plane = G.plane
 	glow_image.color = G.color
 	glow_image.alpha = G.alpha
 	glow_image.pixel_x = px
 	glow_image.pixel_y = py
-	mask_image.pixel_x = px
-	mask_image.pixel_y = py
-	if(!unmasked) // nothing names an unmasked viewer's mask image, so it stays empty and undrawn
-		mask_image.overlays = CACHED_FAST(client_glow_masks, L.glow_mask_key)
+	if(!unmasked && !GLOB.client_glow_masks_off && LAZYACCESS(held_shape, h) != L.glow_mask_key)
+		LAZYSET(held_shape, h, L.glow_mask_key)
+		var/mask = client_glow_mask_icon(L.glow_mask_key)
+		if(mask)
+			cut_with(h, glow_image, L.glow_mask_key, mask)
 	return TRUE
+
+/// Cuts a held glow image with the baked mask of `shape`.
+/datum/client_glow_holder/proc/cut_with(h, image/glow_image, shape, mask)
+	glow_image.filters = filter(type = "alpha", icon = mask)
+	LAZYSET(cut_shape, h, shape)
+
+/// A mask shape finished baking: every held glow waiting on it is cut.
+/datum/client_glow_holder/proc/shape_ready(shape, mask)
+	for(var/h in held_shape)
+		if(held_shape[h] != shape || LAZYACCESS(cut_shape, h) == shape)
+			continue
+		var/list/entry = LAZYACCESS(held, h)
+		if(length(entry) == 2)
+			cut_with(h, entry[1], shape, mask)
 
 /// A viewer that sees no darkness: every light its view can reach is hidden from it with a plain override image, so its client
 /// never draws the glows and their filtered masks (a ghost sees through walls, so otherwise all of them, for no visible light).
@@ -271,6 +276,8 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(!entry)
 		return
 	LAZYREMOVE(held, h)
+	LAZYREMOVE(held_shape, h)
+	LAZYREMOVE(cut_shape, h)
 	client_images_remove(client, entry)
 	GLOB.client_glow_holder_dropped++
 
@@ -278,7 +285,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	for(var/h in LAZYCOPY(held))
 		drop_handle(h)
 
-/// This viewer's copy of light `L` (tests): list(glow image, mask image, hide image), or null.
+/// This viewer's copy of light `L` (tests): list(glow image, hide image), or null.
 /datum/client_glow_holder/proc/entry_of(datum/light_source/L)
 	return L.glow_holder_key && LAZYACCESS(held, L.glow_holder_key)
 

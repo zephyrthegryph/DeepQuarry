@@ -160,5 +160,9 @@ do { \
 #define CLIENT_GLOW_CHUNK 8
 /// The longest reach a glow is drawn and indexed for, in turfs.
 #define CLIENT_GLOW_MAX_RANGE 6
-/// Blur on a shadow mask, in pixels.
-#define CLIENT_GLOW_MASK_BLUR 3
+/// Where iconforge writes baked shadow masks before they enter the resource cache.
+#define CLIENT_GLOW_MASK_DIR "data/client_glow_masks/"
+/// Baked shadow masks kept; shapes asked for at once; bakes running at once.
+#define CLIENT_GLOW_MASK_CACHE_MAX 8192
+#define CLIENT_GLOW_MASK_QUEUE_MAX 512
+#define CLIENT_GLOW_MASK_BAKES_MAX 16

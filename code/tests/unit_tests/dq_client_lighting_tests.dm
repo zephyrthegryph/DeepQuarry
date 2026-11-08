@@ -68,15 +68,22 @@
 	client_lighting_set(TRUE)
 	SSlighting.light_step(0, TRUE)
 	var/datum/light_source/S = L.light
-	TEST_ASSERT_NOTNULL(S?.glow_mask, "the glow has a shadow mask")
-	TEST_ASSERT_NOTNULL(S.glow.get_filter("client_shadow"), "the glow is cut by an alpha filter")
-	TEST_ASSERT_NOTNULL(S.glow_mask.get_filter("client_shadow_soft"), "the mask is blurred before it cuts the glow")
-	TEST_ASSERT(findtext(S.glow_mask.render_target, "*") == 1, "the mask is a hidden render target")
-	// The mask is KEEP_TOGETHER: a colour on it applies to the whole drawn group, so a zero matrix there would erase every tile and every glow.
-	TEST_ASSERT(S.glow_mask.appearance_flags & KEEP_TOGETHER, "the mask draws as one group")
-	TEST_ASSERT_NULL(S.glow_mask.color, "no colour on the group: it would erase the tiles")
-	TEST_ASSERT_NULL(S.glow_mask.icon, "the mask itself draws nothing opaque")
-	TEST_ASSERT_EQUAL(length(S.glow_mask.overlays), length(S.glow_reach) + 3, "the transparent sizer, the two frame corners and one tile per reached turf")
+	TEST_ASSERT(S?.glow_mask_key, "the glow has a shadow mask shape")
+	// The bake itself: real pixels, orientation included. The glow's margin is the shape's; a reached tile is solid, an unreached one clear.
+	var/list/shape_parts = splittext(S.glow_mask_key, "|")
+	var/margin = text2num(shape_parts[1])
+	var/north_margin_key = "[margin]|0,0,0,1"
+	var/png = client_glow_mask_bake_blocking(north_margin_key)
+	TEST_ASSERT_NOTNULL(png, "iconforge baked the mask")
+	var/icon/baked = icon(file(png))
+	var/size = margin * 2 + WORLD_ICON_SIZE
+	TEST_ASSERT_EQUAL(baked.Width(), size, "the mask is the glow sprite's size")
+	TEST_ASSERT_NOTNULL(baked.GetPixel(margin + 16, margin + 16), "the light's own tile is open")
+	TEST_ASSERT_NOTNULL(baked.GetPixel(margin + 16, margin + 48), "the tile north of the light is open: north is up in the mask")
+	TEST_ASSERT_NULL(baked.GetPixel(margin + 16, margin - 16), "the tile south, not reached, is clear")
+	TEST_ASSERT_NULL(baked.GetPixel(margin + 48, margin + 16), "the tile east, not reached, is clear")
+	TEST_ASSERT_NOTNULL(baked.GetPixel(margin + 34, margin + 16), "the reached tile's edge fades outward")
+	fdel(png)
 	TEST_ASSERT(S.glow_reach["2,0"], "the open floor two tiles east is lit")
 	var/builds = GLOB.client_glow_mask_builds
 	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
@@ -98,7 +105,7 @@
 	log_test("CLIENT SHADOWS: [GLOB.client_glow_mask_builds] mask builds, [GLOB.client_glow_reconsiders] opacity-triggered redraws")
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
-	TEST_ASSERT_NULL(S?.glow_mask, "client lighting off: the mask is gone")
+	TEST_ASSERT_NULL(S?.glow_mask_key, "client lighting off: the mask shape is gone")
 
 /// The lighting step drops a deleted light source left in its queue instead of spinning on it (a caller once re-queued
 /// spent sources, and light_step() stepped back over the same entry forever).
@@ -210,8 +217,7 @@
 	var/list/entry = H.entry_of(S)
 	TEST_ASSERT_NOTNULL(entry, "the viewer holds the off-screen light's glow")
 	var/image/glow_image = entry[1]
-	var/image/mask_image = entry[2]
-	var/image/hide_image = entry[3]
+	var/image/hide_image = entry[2]
 	var/obj/effect/overlay/client_glow_anchor/A = glow_image.loc
 	TEST_ASSERT_EQUAL(A, H.anchor, "the glow image stands on the viewer's anchor")
 	TEST_ASSERT(client_glow_test_eye(LT) in H.anchor.locs, "the anchor covers the eye's turf, which the viewer always sees")
@@ -219,11 +225,9 @@
 	TEST_ASSERT_EQUAL(A.y + (glow_image.pixel_y - S.glow.pixel_y) / WORLD_ICON_SIZE, LT.y, "its y offset puts it on the light")
 	TEST_ASSERT_EQUAL(glow_image.blend_mode, BLEND_ADD, "the copy adds like the glow")
 	TEST_ASSERT_EQUAL(glow_image.plane, PLANE_LIGHTING, "the copy is on the lighting plane")
-	TEST_ASSERT(findtext(mask_image.render_target, "*") == 1, "the mask image is a hidden render target")
-	TEST_ASSERT(mask_image.render_target != S.glow_mask.render_target, "the mask image has a render target of its own")
+	H.shape_ready(S.glow_mask_key, 'icons/effects/light_overlays/light_32.dmi')
 	var/list/filters = glow_image.filters
-	TEST_ASSERT(length(filters) && filters[1]:render_source == mask_image.render_target, "the glow image's alpha filter reads its own mask image")
-	TEST_ASSERT_EQUAL(mask_image.loc, A, "the mask image stands on the same anchor")
+	TEST_ASSERT(length(filters), "a baked shape cuts the waiting glow image")
 	TEST_ASSERT(hide_image.override && hide_image.loc == S.glow, "the real glow is overridden for this viewer: never drawn twice")
 	spent(H)
 	client_lighting_set(FALSE)
@@ -266,9 +270,7 @@
 	var/list/entry = H.entry_of(S)
 	TEST_ASSERT_NOTNULL(entry, "the viewer holds the light")
 	var/image/glow_image = entry[1]
-	var/image/mask_image = entry[2]
 	TEST_ASSERT_EQUAL(glow_image.loc, LT, "the glow image stands on its light's turf")
-	TEST_ASSERT_EQUAL(mask_image.loc, LT, "the mask image stands with it")
 	TEST_ASSERT_EQUAL(glow_image.pixel_x, S.glow.pixel_x, "only the glow's own offset remains")
 	spent(H)
 	client_lighting_set(FALSE)
@@ -285,17 +287,15 @@
 	var/datum/light_source/S = F.light
 	var/turf/LT = get_turf(F)
 	var/turf/east1 = locate(LT.x + 1, LT.y, LT.z)
-	var/image/mask_image = H.entry_of(S)[2]
-	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach) + 3, "the transparent sizer, the two frame corners and one mask tile per reached turf")
 	TEST_ASSERT(S.glow_reach["2,0"], "the floor two east is lit before the blocker")
-	var/before = length(mask_image.overlays)
+	var/before = S.glow_mask_key
+	TEST_ASSERT_EQUAL(H.held_shape[S.glow_holder_key], before, "the copy wants the light's mask shape")
 	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
 	SSlighting.light_step(0, TRUE)
-	mask_image = H.entry_of(S)?[2]
-	TEST_ASSERT_NOTNULL(mask_image, "still held")
+	TEST_ASSERT_NOTNULL(H.entry_of(S), "still held")
 	TEST_ASSERT(!S.glow_reach["2,0"], "the floor behind the blocker is in shadow")
-	TEST_ASSERT(length(mask_image.overlays) < before, "the copy's mask lost the shadowed tiles ([length(mask_image.overlays)] < [before])")
-	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach) + 3, "the copy's mask matches the reach")
+	TEST_ASSERT(S.glow_mask_key != before, "the shape changed")
+	TEST_ASSERT_EQUAL(H.held_shape[S.glow_holder_key], S.glow_mask_key, "the copy wants the new shape")
 	qdel(B)
 	SSlighting.light_step(0, TRUE)
 	spent(H)
