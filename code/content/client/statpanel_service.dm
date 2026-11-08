@@ -179,6 +179,8 @@ SYSTEM_DEF(statpanels)
 		if(sent[section] != value)
 			changed[section] = value
 			sent[section] = value
+	if(length(changed) == length(mc_metrics))
+		log_tgui(target, "Server health: whole send of [length(changed)] section(s), window [target.stat_panel.id], ready=[target.stat_panel.is_ready() ? 1 : 0].", context = "stat_panel")
 	target.stat_panel.send_message("update_mc", list(
 		"mc_metrics" = changed,
 		"partial" = length(changed) != length(mc_metrics),

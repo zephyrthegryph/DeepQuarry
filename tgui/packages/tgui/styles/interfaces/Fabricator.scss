@@ -1,4 +1,44 @@
-@use '~tgui-core/styles/components/Button' as button;
+// tgui-core's button-color() and button-color-transparent(), written here: a @use of its Button sheet also emits the whole sheet, and
+// embedded.scss loads this file under .EmbeddedInterface, where that copy overrode the hosting page's own button rules.
+@mixin fabricator-button-color() {
+  --button-background: hsl(from var(--button-color) h s l / 0.1);
+  --button-color: var(--button-color-transparent);
+  cursor: var(--cursor-pointer);
+  background-color: transparent;
+  color: var(--button-color);
+  transition-property: background-color, color, opacity;
+  transition-duration: var(--button-transition);
+  transition-timing-function: var(--button-transition-timing);
+  user-select: none;
+
+  &:hover {
+    --button-color: hsl(from var(--button-color-transparent) h s l / 1);
+    background-color: hsl(
+      from var(--button-background) h s calc(l + var(--adjust-hover))
+    );
+    color: var(--button-color);
+  }
+
+  &:active {
+    opacity: 0.75;
+    background-color: hsl(
+      from var(--button-background) h s calc(l - var(--adjust-active))
+    );
+    color: var(--button-color);
+    transition: none;
+  }
+
+  &.Button--selected {
+    --button-color: hsl(from var(--color) h s calc(l + var(--adjust-color)));
+  }
+
+  &.Button--disabled {
+    --button-background: hsl(from var(--button-color) h s l / 0.2);
+    --button-color: var(--color-bad);
+    opacity: 1;
+    color: var(--button-color) !important;
+  }
+}
 
 .Fabricator__Recipe {
   padding: var(--space-s) 0;
@@ -110,8 +150,7 @@
     padding: var(--space-s) var(--space-m);
     border-radius: 0;
 
-    @include button.button-color();
-    @include button.button-color-transparent();
+    @include fabricator-button-color();
 
     &:first-child {
       border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
