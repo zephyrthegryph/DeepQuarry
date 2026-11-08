@@ -165,9 +165,18 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	igniter.set_on(FALSE)
 	TEST_ASSERT(!test_work_allowed(igniter), "a switched-off igniter may still step")
 	work_stop(igniter)
+	// It steps only while on and the air on its tile could catch (air_burnable): in plain air, on, it still sleeps.
 	test_op_handler(igniter, "interaction_toggle", null)
 	kernel_drain_now() // the switch's change reaches its work at the drain
-	TEST_ASSERT(igniter.on && test_work_allowed(igniter), "switching an igniter on did not wake it")
+	TEST_ASSERT(igniter.on && !test_work_allowed(igniter), "an igniter switched on in air that cannot burn may still step")
+	var/turf/open/fuel_turf = T
+	TEST_ASSERT(istype(fuel_turf) && fuel_turf.air, "the test floor holds air")
+	fuel_turf.air.set_moles(/datum/gas/plasma, 10)
+	igniter.settle_air() // what its gas watch does when the tile's gas changes
+	kernel_drain_now()
+	TEST_ASSERT(test_work_allowed(igniter), "switched on in burnable air, an igniter did not wake")
+	fuel_turf.air.set_moles(/datum/gas/plasma, 0)
+	igniter.settle_air()
 	igniter.set_on(FALSE)
 
 	var/obj/machinery/feeder/feeder = allocate(/obj/machinery/feeder, T)
