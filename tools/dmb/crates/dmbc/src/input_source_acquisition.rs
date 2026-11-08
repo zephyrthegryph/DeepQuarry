@@ -237,14 +237,16 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     /// This authenticates current byte input only, not logical/token EOF.
     pub(super) fn original_bytes_checked<'a>(&'a self,lease:&'a dm_preprocess::SourceAcquisitionLease)->io::Result<&'a[u8]>{
         if self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(invalid("Original bytes require its actual Original pipeline context"))}
-        if let Some(subject)=self.analysis_subject.as_ref(){
-            if subject.authenticates_header(subject.project(),lease){
-                // Only the existing PRIVATE header receipt grants this loan;
-                // no arbitrary synthetic UTF8 or matching text can substitute.
+        let Some(receipt)=lease.receipt::<RecordedSourceReceipt>() else {
+            // A lease has one concrete receipt. Only a non-recorded receipt
+            // can be the subject's private synthetic header.
+            if self.analysis_subject.as_ref().is_some_and(|subject|
+                subject.authenticates_header(subject.project(),lease))
+            {
                 return Ok(lease.source_text().as_bytes());
             }
-        }
-        let receipt=lease.receipt::<RecordedSourceReceipt>().ok_or_else(||invalid("Original bytes lack a genuine recorded read receipt"))?;
+            return Err(invalid("Original bytes lack a genuine recorded read receipt"));
+        };
         let current=if let Some(serial)=receipt.exact_loan_serial{
             self.validate_exact_byte_loan(receipt,serial)
         }else{

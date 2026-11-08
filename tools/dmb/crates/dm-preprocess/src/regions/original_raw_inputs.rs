@@ -35,10 +35,13 @@ impl OriginalPhysicalRowObservation<'_>{
  pub(super) fn row(&self)->&OriginalPhysicalRow{&self.row}
  pub(super) fn into_row(self)->OriginalPhysicalRow{self.row}
 }
-pub(super) struct OriginalRawInputs{frames:Rows<OpenFrame>,geometries:PagedRows<SourceGeometry>,failed:bool,stack_changed:bool,last_input:Option<Origin>}
+/// One actual producer-local boundary pair, never a byte/source grant.
+#[derive(Clone,Copy)]
+struct DecodedRowBoundary{geometry_at:usize,raw:Span,decoded:Span}
+pub(super) struct OriginalRawInputs{frames:Rows<OpenFrame>,geometries:PagedRows<SourceGeometry>,failed:bool,stack_changed:bool,last_input:Option<Origin>,last_decoded_row:Option<DecodedRowBoundary>}
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 impl OriginalRawInputs{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{frames:Rows::new(a)?,geometries:PagedRows::new(a)?,failed:false,stack_changed:false,last_input:None})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{frames:Rows::new(a)?,geometries:PagedRows::new(a)?,failed:false,stack_changed:false,last_input:None,last_decoded_row:None})}
  #[cfg(debug_assertions)]
  pub(super) fn trace_line_starts(&self) -> super::original_raw_points::PhysicalLineStartCensus {
   let mut census = super::original_raw_points::PhysicalLineStartCensus::default();
@@ -131,8 +134,22 @@ impl OriginalRawInputs{
   if point.line!=origin.line||Some(point.column)!=origin.byte_column{return Err(io::Error::new(io::ErrorKind::InvalidInput,"source-map origin differs from the actual raw point roster"))}
   let start=geometry.points.line_start(point.line).ok_or(io::ErrorKind::InvalidData)?;
   let end=geometry.points.line_end_using(raw,point.line,a)?;
-  let decoded_start=geometry.geometry.decoded_point_using(lease,start,a)?;let decoded_end=geometry.geometry.decoded_point_using(lease,end,a)?;let decoded_point=geometry.geometry.decoded_point_using(lease,offset,a)?;
-  let row=OriginalPhysicalRow{raw:Span::new(start,end),decoded:Span::new(decoded_start,decoded_end),point:super::OriginalByteCursor{line:point.line,byte_column:point.column,source_offset:decoded_point},actual_eof:eof_token};
+  let raw_span=Span::new(start,end);
+  let decoded=if let Some(prior)=self.last_decoded_row.filter(|prior|prior.geometry_at==at&&prior.raw==raw_span){
+   // The append-only geometry roster owns the same immutable decoder at
+   // this ordinal. The actual provider and both old checkpoints/identity
+   // checks still run before either cached endpoint is used.
+   geometry.geometry.check_point_using(lease,start,a)?;
+   geometry.geometry.check_point_using(lease,end,a)?;
+   prior.decoded
+  }else{
+   let decoded_start=geometry.geometry.decoded_point_using(lease,start,a)?;
+   let decoded_end=geometry.geometry.decoded_point_using(lease,end,a)?;
+   Span::new(decoded_start,decoded_end)
+  };
+  let decoded_point=geometry.geometry.decoded_point_using(lease,offset,a)?;
+  self.last_decoded_row=Some(DecodedRowBoundary{geometry_at:at,raw:raw_span,decoded});
+  let row=OriginalPhysicalRow{raw:raw_span,decoded,point:super::OriginalByteCursor{line:point.line,byte_column:point.column,source_offset:decoded_point},actual_eof:eof_token};
   Ok(OriginalPhysicalRowObservation{origin,geometry_at:at,lease,bytes:raw,row})
  }
  pub(super) fn frame_precedes_expansion(&self,depth:usize)->bool{self.frames.as_slice().last().is_some_and(|open|depth<=open.expansion_floor)}
@@ -341,6 +358,36 @@ mod row_tests {
             assert_eq!(inputs.physical_row_using(missing,&file.lease,file,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);
         }
         drop(inputs);
+        assert_eq!(used.load(Ordering::Acquire),fixed);
+    }
+
+    #[test]
+    fn cached_row_boundaries_keep_exact_same_file_and_first_io() {
+        let bytes=b"var/example\r\nnext";
+        let file=File{bytes:bytes.to_vec(),lease:SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(),()),failure:Cell::new(None)};
+        let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let mut inputs=OriginalRawInputs::new(&a).unwrap();
+        inputs.push_opened(&file,file.lease.clone(),0,0,&a).unwrap();
+        let RawStep::Token(actual)=inputs.next_using(&file,&a,&mut NoNotices).unwrap()
+            else{panic!("actual opened source token")};
+        let cold=inputs.physical_row_using(actual.origin,&file.lease,&file,&a).unwrap();
+        let second=Origin{physical:Span::new(1,2),byte_column:Some(2),..actual.origin};
+        let warm=inputs.physical_row_using(second,&file.lease,&file,&a).unwrap();
+        assert_eq!((warm.raw,warm.decoded),(cold.raw,cold.decoded));
+        assert_eq!(warm.point.source_offset,1);
+        let visits=Cell::new(0);
+        let failing=||{
+            visits.set(visits.get()+1);
+            if visits.get()==4{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}
+        };
+        let fault=SettingAdmission::new(&used,1<<20,&failing);
+        assert_eq!(inputs.physical_row_using(second,&file.lease,&file,&fault).err().unwrap().raw_os_error(),Some(1450));
+        assert_eq!(visits.get(),4,"same second endpoint checkpoint still wins");
+        file.failure.set(Some(32));
+        assert_eq!(inputs.physical_row_using(second,&file.lease,&file,&a).err().unwrap().raw_os_error(),Some(32));
+        drop((actual, inputs));
         assert_eq!(used.load(Ordering::Acquire),fixed);
     }
 

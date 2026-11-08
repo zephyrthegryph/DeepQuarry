@@ -19,9 +19,15 @@ impl OriginalRawGeometry{
  /// Raw byte_column stays with the raw point. Only source_offset is translated
  /// into the actual decoded backing; UTF8/BOM interior bytes fail closed.
  pub(super) fn decoded_point_using(&self,lease:&SourceAcquisitionLease,raw_point:usize,a:&SettingAdmission<'_>)->io::Result<usize>{
+  self.check_point_using(lease,raw_point,a)?;
+  self.shape.decoded_point(lease.source_text().as_str(),self.exceptions.as_slice(),raw_point).ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual raw point is not representable at a decoded source boundary"))
+ }
+ /// Keep the exact old checkpoint and source-domain/extent guard before
+ /// reusing an already translated point from this same immutable geometry.
+ pub(super) fn check_point_using(&self,lease:&SourceAcquisitionLease,raw_point:usize,a:&SettingAdmission<'_>)->io::Result<()>{
   poll(a)?;if !self.matches_context(lease,a){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw point geometry belongs to another actual source binding or admission"))}
   if raw_point>self.shape.original_len()||lease.source_text().len()!=self.shape.decoded_len(){return Err(io::ErrorKind::InvalidInput.into())}
-  self.shape.decoded_point(lease.source_text().as_str(),self.exceptions.as_slice(),raw_point).ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual raw point is not representable at a decoded source boundary"))
+  Ok(())
  }
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   self.exceptions.visit_allocation(|p,n|visit(p,n,n));self.domain.visit_counter_storage(|p,n|visit(p,n,n));
