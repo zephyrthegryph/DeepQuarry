@@ -427,3 +427,72 @@ fn private_authored_doc_ui_dispatcher_precedes_productive_interface_reads() {
         error.kind() == std::io::ErrorKind::InvalidData && error.to_string().contains("policy original exceeds remaining capture budget")
     ), "{error}");
 }
+
+#[test]
+fn private_reactive_raw_union_uses_one_authored_capture_and_allow_fold() {
+    let (mut host, mut request, root) = fixture(concat!(
+        "#define CAPABILITIES(...)\n",
+        "#define PROC_REF(P) #P\n",
+        "/datum/act\n/datum/act/eval\n/obj/probe\n",
+        "/obj/probe/proc/dynamic(datum/act/eval/A)\n",
+        "    return vars[\"probe\"]\n",
+        "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+    ));
+    std::fs::write(root.join("tools/ci/lint_scopes.toml"), report_config::with_overlay("")).unwrap();
+    std::fs::write(root.join("code/internal.dm"), concat!(
+        "var/raw = _om_code\n",
+        "var/kept = _om_kept // ALLOW(engine_internal): this fixture consumes a real raw annotation\n",
+    )).unwrap();
+    std::fs::write(root.join("maps/unused.dm"),
+        "var/unused // ALLOW(scheduler): this fixture has one actual unused annotation\n").unwrap();
+    let intent = request.policy_inputs.as_mut().unwrap();
+    intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
+    intent.workspace_auxiliary = Q::SELECTED_REACTIVE.to_vec();
+    let prepared = crate::request_runner::run_build_with_host(request.clone(), &mut host).unwrap();
+    let budget = Budget::new(8 << 20).unwrap();
+    let mut control = Operation { budget: &budget, poll: &|| Ok(()) };
+    let registered = full_unused::registered_full_selection(&[], &mut control).unwrap();
+    let selected = super::selected_report::PRIVATE_REACTIVE_RAW_UNION;
+    let exclusions: Vec<_> = registered.names().iter().filter(|name| !selected.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let cache = crate::test_scratch::dir("private-reactive-raw-union");
+    let render = |host: &crate::runner_host::BuildHost, prepared: &crate::request::BuildOutcome| {
+        current(host, |snapshot| {
+            snapshot.stage_private_reactive_raw_union(
+                prepared, &exclusions, &budget, &root, crate::selected_report_spool::Stage::new(&cache).unwrap(),
+            )
+        })
+    };
+    let (clean, verified) = render(&host, &prepared).unwrap();
+    assert!(!clean);
+    let mut output = Vec::new();
+    verified.publish(&mut output).unwrap();
+    let report = std::str::from_utf8(&output).unwrap();
+    let raw = report.find("code/internal.dm:1: [engine_internal/internal]").unwrap_or_else(|| panic!("{report}"));
+    let semantic = report.find("[reads/dynamic_read]").unwrap_or_else(|| panic!("{report}"));
+    assert!(raw < semantic, "{report}");
+    assert!(!report.contains("[engine_internal/internal] _om_kept"), "{report}");
+    assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
+
+    if let Some(path) = std::env::var_os("DQ_PRIVATE_REACTIVE_RAW_LEGACY_ANALYZE") {
+        let legacy = std::path::PathBuf::from(path);
+        assert!(legacy.is_absolute() && legacy.is_file(), "provide an independent legacy Analyze executable");
+        let mut command = std::process::Command::new(legacy);
+        command.args(["check", "--raw", "--no-cache", "--no-selftest", "--unused", "--root"])
+            .arg(&root).arg("--lint").args(&exclusions)
+            .env_remove("DQ_ALLOW_USAGE")
+            .env("DQ_ANALYZE_SHARED_CACHE", "off")
+            .env("DQ_GEN_STORE", "off");
+        #[cfg(windows)] {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x08000000 | 0x00004000);
+        }
+        let expected = command.output().expect("run independent legacy Analyze for the same authored fixture");
+        assert_eq!(expected.status.code(), Some(i32::from(!clean)), "{}", String::from_utf8_lossy(&expected.stderr));
+        assert_eq!(report, std::str::from_utf8(&expected.stdout).unwrap());
+    }
+
+    request.policy_inputs.as_mut().unwrap().workspace_auxiliary = Q::SELECTED_READS.to_vec();
+    let foreign = crate::request_runner::run_build_with_host(request, &mut host).unwrap();
+    assert!(render(&host, &foreign).is_err());
+}

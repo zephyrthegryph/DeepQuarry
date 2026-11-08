@@ -28,6 +28,15 @@ pub(super) const PRIVATE_AUTHORED_DOC_UI: &[&str] = &[
     "notice_publisher", "report_in_catch", "scheduler", "ui_actions",
 ];
 
+/// Exact CODE+MAPS union of the existing reactive, raw declaration, raw runtime,
+/// cooldown and engine-internal report sections. No new source role.
+#[cfg(test)]
+pub(super) const PRIVATE_REACTIVE_RAW_UNION: &[&str] = &[
+    "allow_annotations", "cap_bits", "cooldown", "declaration_block", "duplicate_input_key",
+    "engine_internal", "interactions", "latent", "notice_publisher", "pollers", "pool",
+    "read_back", "report_in_catch", "scheduler", "sem/reads", "setter_publishes", "untracked_inputs",
+];
+
 pub(super) const PRIVATE_MAP_AND_LAYERING: &[&str] = &[
     "allow_annotations", "engine_layering", "library_layering", "map_edits",
     "notice_publisher", "report_in_catch", "scheduler",
@@ -939,6 +948,29 @@ impl SourceSnapshot {
         self.stage_selected_report_using(prepared, exclusions, retained, root,
             PRIVATE_AUTHORED_DOC_UI, Q::PRIVATE_AUTHORED_DOC_UI,
             JudgmentV2::Raw, false, false, None, file)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_reactive_raw_union(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
+        let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
+        if !selection.names().iter().map(String::as_str).eq(PRIVATE_REACTIVE_RAW_UNION.iter().copied()) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "reactive/raw report requires its exact private selection"));
+        }
+        let capture = self.native_workspace.as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "reactive/raw report needs its actual authored capture"))?;
+        let questions = Q::SELECTED_REACTIVE;
+        if !capture.matches_auxiliary_questions(questions)
+            || !crate::policy_request::exact_code_maps_roots(root, capture.recursive_roots())
+            || self.workspace_semantic_inputs(Q::SemReads)?.original_analysis_subject().is_none_or(|subject| subject.synthetic())
+        {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "reactive/raw report capture differs"));
+        }
+        self.stage_selected_report_using(prepared, exclusions, retained, root,
+            PRIVATE_REACTIVE_RAW_UNION, questions, JudgmentV2::Raw, false, false, None, file)
     }
 
     fn stage_selected_report_using(
