@@ -465,6 +465,8 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 /proc/op_add_cand(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, gesture, keep_dropped, seq)
 	if(!keep_dropped && !R.gate_reason && op_silently_dropped(R, P, B, holder, side, gesture))
 		return seq
+	if(!R.near_misses && op_menu_never_lists(R, P, holder))
+		return seq // a Menu read: a row it could never list costs no gate
 	var/datum/op_cand/C = op_cand_make(P, B, holder, side, granted_by, seq)
 	R.all += C // ALLOW(ownership): a transient record of one resolution: dropped with it
 	op_cand_pass1(R, C, gesture)
@@ -515,6 +517,26 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 				if(!R.near_miss || op_cand_better(C, R.near_miss))
 					R.near_miss = C // ALLOW(ownership): a transient record of one resolution: dropped with it
 	return R
+
+/// Could a Menu read never list (op, holder) for this actor, whatever the state? An op only a drag reaches, one that only swallows a click, or
+/// one whose requirements hide it from anyone but the holder itself (req_self(), FAILS_HIDDEN) on another holder. Decided per plan once.
+/proc/op_menu_never_lists(datum/op_resolution/R, datum/op_plan/P, datum/holder)
+	if(isnull(P.menu_static))
+		var/static_kind = 0
+		if(LAZYACCESS(P.selects, "gesture") == GESTURE_DRAG || (P.passes && !length(P.effects) && !length(P.steps)))
+			static_kind = 1
+		else
+			for(var/datum/entry/part/req/self/self_only in P.needs)
+				if(self_only.fails_as() == FAILS_HIDDEN)
+					static_kind = 2
+					break
+		P.menu_static = static_kind
+	switch(P.menu_static)
+		if(1)
+			return TRUE
+		if(2)
+			return R.actor && holder != R.actor
+	return FALSE
 
 /// An empty resolution of an input: who, on what, holding what, through which origin and authority, and the intents the gesture means.
 /proc/op_resolution_new(mob/actor, atom/target, obj/held, origin, authority, gesture)
