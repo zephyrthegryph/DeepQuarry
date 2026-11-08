@@ -3,9 +3,17 @@
 use super::*;use dq_analyze::captured_generator_budget::Budget;use dm_preprocess::{SourceAcquisitionLease,SourceText,SourceTextStorage,WeakSourceText};use crate::runner_host::workspace_capture::RawSourceIdentity;
 pub(super) const NODE:usize=256;const FIXED:usize=4096;
 type ResourceKey=(u8,usize);
+const DERIVED_KEY:u8=250;
+const HANDLERS_KEY:u8=252;
 enum Observation{Acquisition(dm_preprocess::source_acquisition::WeakAcquisitionObject),Text(WeakSourceText,Option<Weak<super::super::Admission>>),SealedText(WeakSourceText,Option<Weak<super::super::Admission>>),Arena(Weak<super::source_arena::Allocation>),ReadGroup(Weak<super::source_arena::OriginalReadGroup>),Original(Weak<str>),Bytes(dm_resources::WeakSharedBytes),Capture(Weak<WorkspaceCapture>,usize),Derived(Weak<crate::input_snapshot::DerivedPreflight>),RecorderMetadata(Weak<()>,usize),Handlers(Weak<crate::input_snapshot::HandlerStructuralSubject>)}
 impl Observation{
- fn has_tracked_bytes(&self)->bool{!matches!(self,Self::Text(..)|Self::Derived(_)|Self::Handlers(_))}
+ // The cached base may include dynamic rows only under their dedicated key
+ // kinds, where every admission reobserves them independently of this base.
+ fn eligible_for_upper(&self,kind:u8)->bool{match (kind,self){
+  (DERIVED_KEY,Self::Derived(_))|(HANDLERS_KEY,Self::Handlers(_))=>true,
+  (DERIVED_KEY|HANDLERS_KEY,_)|(_,Self::Text(..)|Self::Derived(_)|Self::Handlers(_))=>false,
+  _=>true,
+ }}
  fn live(&self)->bool{match self{Self::Acquisition(w)=>w.is_alive(),Self::Text(w,_)|Self::SealedText(w,_)=>w.upgrade().is_some(),Self::Arena(w)=>w.strong_count()!=0,Self::ReadGroup(w)=>w.strong_count()!=0,Self::Original(w)=>w.strong_count()!=0,Self::Bytes(w)=>w.strong_count()!=0,Self::Capture(w,_)=>w.strong_count()!=0,Self::Derived(w)=>w.strong_count()!=0,Self::Handlers(w)=>w.strong_count()!=0,Self::RecorderMetadata(w,_)=>w.strong_count()!=0}}
  fn bytes(&self)->io::Result<Option<usize>>{let add=|a:usize,b:usize|a.checked_add(b).ok_or_else(oom);match self{
  Self::Acquisition(w)=>{let mut n=0usize;let mut failed=false;let live=w.visit_live_storage(|storage|{use dm_preprocess::source_acquisition::AcquisitionStorage as S;let add=match storage{S::Object{bytes,..}=>bytes.checked_add(2*std::mem::size_of::<usize>()),S::Receipt{bytes,value,..}=>{let base=bytes.checked_add(2*std::mem::size_of::<usize>());if let Some((path,fact,_))=crate::input_snapshot::recorded_source_receipt_storage(value){base.and_then(|n|n.checked_add(path.capacity())).and_then(|n|n.checked_add(if std::ptr::eq(path,fact){0}else{fact.capacity()}))}else{None}},S::Source(_)=>None};match add{Some(bytes)=>n=bytes,None=>failed=true}});if failed{Err(oom())}else{Ok(live.then_some(n))}},
@@ -37,7 +45,7 @@ pub(super) struct Ledger {
 impl Ledger{
  pub(super) fn invalidate_upper(&mut self){self.upper=None;}
  fn replace_row(&mut self,key:ResourceKey,row:Row){
-  let tracked=row.owner.has_tracked_bytes();
+  let tracked=row.owner.eligible_for_upper(key.0);
   let bytes=row.bytes;
   let old=self.rows.insert(key,row);
   self.upper=self.upper.and_then(|sum| {
@@ -49,13 +57,30 @@ impl Ledger{
   let result=if let Some(upper)=self.upper.filter(|_|self.admissions_before_sweep!=0){
    crate::daemon::control::checkpoint()?;
    self.admissions_before_sweep-=1;
-   Ok((upper,true))
+   match self.dynamic_upper(upper){
+    Ok(Some(current))=>Ok((current,true)),
+    Ok(None)=>self.refresh().map(|exact|(exact,false)),
+    Err(actual)=>{self.invalidate_upper();Err(actual)},
+   }
   }else{
    self.refresh().map(|exact|(exact,false))
   };
   #[cfg(debug_assertions)]
   self.trace_admission(matches!(result,Ok((_,true))));
   result
+ }
+ fn dynamic_upper(&self,mut total:usize)->io::Result<Option<usize>>{
+  for kind in [DERIVED_KEY,HANDLERS_KEY]{
+   for (key,row) in self.rows.range((kind,0)..=(kind,usize::MAX)){
+    if !row.owner.eligible_for_upper(key.0){return Ok(None)}
+    crate::daemon::control::checkpoint()?;
+    if let Some(bytes)=row.owner.bytes()?{
+     total=total.checked_add(bytes.saturating_sub(row.bytes)).ok_or_else(oom)?;
+    }
+    // Preserve dead/downsized rows' old charge and map node until exact sweep.
+   }
+  }
+  Ok(Some(total))
  }
  pub(super) fn refresh_after_pressure(&mut self)->io::Result<usize>{
   #[cfg(debug_assertions)]
@@ -296,7 +321,7 @@ impl Ledger{
   let mut tracked=true;
   #[cfg(debug_assertions)]
   let mut visited=0usize;
-  self.rows.retain(|_,row|{
+  self.rows.retain(|key,row|{
    if first.is_some(){return true}
    #[cfg(debug_assertions)]
    {visited=visited.saturating_add(1);}
@@ -304,7 +329,7 @@ impl Ledger{
     crate::daemon::control::checkpoint()?;
     let Some(bytes)=row.owner.bytes()?else{return Ok(false)};
     row.bytes=bytes;
-    tracked&=row.owner.has_tracked_bytes();
+    tracked&=row.owner.eligible_for_upper(key.0);
     total=total.checked_add(bytes).and_then(|n|n.checked_add(NODE)).ok_or_else(oom)?;
     Ok(true)
    })();
@@ -389,6 +414,11 @@ impl QueryDb{
   }else{
    result
   }
+ }
+ #[cfg(test)]
+ pub(crate) fn raw_source_upper_for_test(&self)->io::Result<(usize,bool)>{
+  let _gate=self.raw_policy.gate.lock().unwrap();
+  self.raw_policy.workspace.raw_sources.lock().unwrap().admission_charge()
  }
  pub(super) fn refresh_raw_source_inputs_locked(&self)->io::Result<()>{let sources=self.raw_source_input_charge_locked()?;self.workspace_input_base_headroom_locked(sources)?;Ok(())}
  pub(super) fn raw_source_capture_fixed_credit_locked(&self,capture:&Arc<WorkspaceCapture>)->io::Result<Option<usize>>{Ok(self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner()).capture_metadata(capture))}
@@ -580,7 +610,7 @@ impl QueryDb {
   // exceptional originals; no late checkpoint can replace that error or hide it.
   let owner=inputs.issue_derived_preflight_using(intent,self,&budget,&mut credits)?;
   let bytes=owner.input_retained_charge()?;
-  let key=(250,Arc::as_ptr(&owner)as usize);
+  let key=(DERIVED_KEY,Arc::as_ptr(&owner)as usize);
   if credits.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Derived preflight resource identity collision"))}
   credits.ledger.replace_row(key,Row{owner:Observation::Derived(Arc::downgrade(&owner)),bytes});
   budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
@@ -659,7 +689,7 @@ impl QueryDb{
   // No cleanup work replaces a preparation error. acquired() has already
   // settled any exceptional source payload retained by the real recorder.
   let subject=Arc::new(inputs.issue_handlers_structural_subject_using(intent,selected,&budget,&mut credits,self,derived)?);
-  let bytes=subject.input_retained_charge()?;let key=(252,Arc::as_ptr(&subject)as usize);
+  let bytes=subject.input_retained_charge()?;let key=(HANDLERS_KEY,Arc::as_ptr(&subject)as usize);
   if credits.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers preflight resource identity collision"))}
   credits.ledger.replace_row(key,Row{owner:Observation::Handlers(Arc::downgrade(&subject)),bytes});
   budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;let actual=credits.ledger.refresh()?;self.workspace_input_base_headroom_locked(actual)?;crate::daemon::control::checkpoint()?;Ok(subject)

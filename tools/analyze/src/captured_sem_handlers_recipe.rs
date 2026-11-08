@@ -14,7 +14,9 @@ pub fn select_with_demand_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<St
  select_scoped_from_pages(pages,order,extra,None,None,budget,poll)
 }
 pub fn select_scoped_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,extra:&[String],scope:Option<&crate::scopes::LintScope>,manifest:Option<&str>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<SelectionPlan,Failure>{
- let mut control=Native{budget,poll};control.checkpoint()?;let mut selection=Selection::default();let mut previous=String::new();
+ let mut control=Native{budget,poll};control.checkpoint()?;
+ let recipe_funding=Budget::scoped_temporaries(budget).map_err(|message|oom(budget,message))?;
+ let mut control=Native{budget:&recipe_funding,poll};let mut selection=Selection::default();let mut previous=String::new();
  let marker_funding = Budget::scoped_temporaries(budget).map_err(|message| oom(budget,message))?;
  // One real source acquisition per selected page. Candidate classification and
  // the SAME original all-declarations marker scanner consume the SAME loan.
@@ -23,14 +25,19 @@ pub fn select_scoped_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,
   if !crate::captured_raw_file::is_code_dm(relative){return Err("handlers structural selector requires exact CODE_DM pages".into())}
   if previous.as_str() >= relative{return Err("handlers structural CODE_DM pages are not unique slash-string ordered".into())}
   previous.clear();
-  if !budget.string(&mut previous,relative){return Err(oom(budget,"handler source order allocation denied"));}
+  if !recipe_funding.string(&mut previous,relative){return Err(oom(&recipe_funding,"handler source order allocation denied"));}
   let original=views.raw()?;let hash=blake3::hash(original.as_bytes());let fingerprint=u128::from_le_bytes(hash.as_bytes()[..16].try_into().expect("fixed digest width"));let code=if scope.is_some_and(|scope|scope.exempt(relative)){None}else{Some(views.code()?.text.as_str())};selection.push_selected(relative,fingerprint,code,&mut control)?;visit(relative,views)
  }),order,&marker_funding,crate::sem_handlers_partial_recipe::DECLARATION_MARKERS,true,true,true,poll)?;
  let declared=demand_from_rows(&rows,budget,poll)?;
  let mut generated=Vec::new();for marker in &rows.markers{control.checkpoint()?;if marker.name!="ACTION"||marker.args.iter().any(|arg|arg=="FIXED"){continue}let Some(name)=marker.args.first()else{continue};kc::row(&mut control,&mut generated)?;kc::reserve(&mut control,||name.len().checked_add(64))?;let name=name.replace('/',"_");generated.push(kc::format(&mut control,format_args!("act_{name}"))?);}
  drop(rows);
  drop(marker_funding);
- let recipe=selection.finish_with_manifest(extra,generated,manifest,&mut control)?;let requires_full=recipe.has_output_base||declared;control.checkpoint()?;Ok(SelectionPlan{recipe,requires_full})
+ let recipe=selection.finish_with_manifest(extra,generated,manifest,&mut control)?;let requires_full=recipe.has_output_base||declared;control.checkpoint()?;
+ let retained=recipe.retained_backing().ok_or_else(||oom(budget,"handler recipe retained storage overflow"))?;
+ budget.charge(retained).map_err(|message|oom(budget,message))?;
+ drop(previous);
+ drop(recipe_funding);
+ Ok(SelectionPlan{recipe,requires_full})
 }
 fn demand_from_rows(rows:&crate::captured_marker_rows::Rows<'_>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<bool,Failure>{
  for row in &rows.markers {
@@ -59,6 +66,17 @@ fn demand_from_rows(rows:&crate::captured_marker_rows::Rows<'_>,budget:&Arc<Budg
  impl RawPolicyPages for Pages{fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{if self.fail.get(){return Err(Failure::Operational(io::Error::from_raw_os_error(1450)))}if self.stop.get(){return Ok(false)}for file in &self.files{if !file.with_policy_views(visit)?{return Ok(false)}}Ok(true)}}
  fn fixture()->Pages{let root=std::env::current_dir().unwrap().join("handlers-native-recipe");let files=[("code/__defines/a.dm","#define A 1\n"),("code/a.dm","ACTION(a/b, mob/user)\n/proc/a(datum/act/A)\n    return\n"),("code/ordinary.dm","#define START ACT_ATTEMPT\nACTION(skipped, FIXED)\n"),("code/z.dm","ACTION(z)\n")].into_iter().map(|(rel,text)|File::capture(&root,&root.join(rel),text.to_owned().into()).unwrap()).collect();Pages{files,stop:Cell::new(false),fail:Cell::new(false)}}
  #[test]fn actual_pages_keep_partial_includes_and_all_action_vocabulary(){let pages=fixture();let recipe=select_from_pages(&pages,&HashMap::from([("code/z.dm".to_owned(),0)]),&["custom_try".to_owned()],&Budget::new(8*1024*1024).unwrap(),&||Ok(())).unwrap();assert_eq!(recipe.includes.iter().map(|i|i.relative.as_str()).collect::<Vec<_>>(),["code/__defines/a.dm","code/a.dm"]);assert_eq!(&recipe.try_calls[4..],["custom_try","act_z","act_a_b"]);assert!(!recipe.has_output_base);}
+ #[test]fn successful_recipe_retains_only_transferred_payload_and_fixed_child_controls(){
+  let root=std::env::current_dir().unwrap().join("handlers-recipe-retained");
+  let file=File::capture(&root,&root.join("code/a.dm"),"READS_AS(/datum/probe, value)\nACTION(example)\n/proc/candidate(datum/act/A)\n    return\n".into()).unwrap();
+  let pages=Pages{files:vec![file],stop:Cell::new(false),fail:Cell::new(false)};
+  let budget=Budget::new(8*1024*1024).unwrap();let before=budget.used();
+  let plan=select_with_demand_from_pages(&pages,&HashMap::new(),&[],&budget,&||Ok(())).unwrap();
+  assert!(plan.requires_full);assert_eq!(plan.recipe.candidates[0].relative,"code/a.dm");
+  assert_eq!(plan.recipe.try_calls.last().map(String::as_str),Some("act_example"));
+  let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
+  assert_eq!(budget.used(),before+2*fixed+plan.recipe.retained_backing().unwrap());
+ }
  #[test]fn stopped_and_operational_pages_never_become_available_empty_tu(){let pages=fixture();pages.stop.set(true);assert!(matches!(select_from_pages(&pages,&HashMap::new(),&[],&Budget::new(8*1024*1024).unwrap(),&||Ok(())),Err(Failure::Unsupported(_))));pages.stop.set(false);pages.fail.set(true);assert!(matches!(select_from_pages(&pages,&HashMap::new(),&[],&Budget::new(8*1024*1024).unwrap(),&||Ok(())),Err(Failure::Operational(e))if e.raw_os_error()==Some(1450)));pages.fail.set(false);assert!(!select_from_pages(&pages,&HashMap::new(),&[],&Budget::new(8*1024*1024).unwrap(),&||Ok(())).unwrap().candidates.is_empty());}
 }
 

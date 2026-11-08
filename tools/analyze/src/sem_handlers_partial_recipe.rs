@@ -83,6 +83,17 @@ impl Selection{
  }
 }
 impl Recipe{
+ /// Heap payload moved out of the temporary recipe producer. Inline fields
+ /// are covered by the receiving subject's own allocation grant.
+ pub(crate) fn retained_backing(&self)->Option<usize>{
+  let mut bytes=self.try_calls.capacity().checked_mul(std::mem::size_of::<String>())?;
+  for rows in [&self.candidates,&self.includes]{
+   bytes=bytes.checked_add(rows.capacity().checked_mul(std::mem::size_of::<Input>())?)?;
+   for row in rows{bytes=bytes.checked_add(row.relative.capacity())?;}
+  }
+  for name in &self.try_calls{bytes=bytes.checked_add(name.capacity())?;}
+  Some(bytes)
+ }
  /// Render exactly the old synthetic include text. This does not touch the
  /// filesystem or manufacture a physical synth.dme source/EOF observation.
  pub fn render<C:Control>(&self,root:&std::path::Path,c:&mut C)->Result<String,C::Error>{
