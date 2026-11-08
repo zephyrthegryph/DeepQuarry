@@ -49,6 +49,8 @@
 	var/list/at_most_last
 	/// on_change(at_most =): reaction sig -> the keys held until its window ends.
 	var/list/at_most_held
+	/// The slot of the datum this state belongs to (weak: slot_datum() resolves it; no reference cycle with the holder).
+	var/rx_holder_slot = 0
 
 /datum
 	/// The reaction layer's per-datum state, or null (see /datum/rx_state).
@@ -60,6 +62,7 @@
 	if(!D.rx)
 		// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 		D.rx = new
+		D.rx.rx_holder_slot = SLOT(D) // weak: the state names its datum by slot (construction_owner(), silent construction of what an atom holds)
 	return D.rx
 
 /// The relation key a ledger kind publishes on its holder (and "<key>_of" on the partner it names).
