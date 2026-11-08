@@ -375,6 +375,7 @@ impl<T, const PAGE_LEN: usize> FixedPages<T, PAGE_LEN> {
 
 // Group geometry shares encounter and output-line bases from the rank
 // page. The two reserved output words select ordered exact side storage.
+#[derive(Clone, Copy)]
 #[repr(transparent)]
 struct PackedGroup([u16; 4]);
 const _: () = assert!(std::mem::size_of::<PackedGroup>() == 8);
@@ -448,6 +449,7 @@ struct GroupTracePage {
     first_raw_line_base: usize,
     first_raw_start: usize,
     encounters: RowGroupRank,
+    repeated_geometry: Vec<RepeatedGroupGeometry>,
     bits: [u64; TRACE_WORDS],
     before_word: [u16; TRACE_WORDS],
 }
@@ -459,6 +461,7 @@ impl GroupTracePage {
             first_raw_line_base: Self::raw_line_base(first),
             first_raw_start: first.raw_base,
             encounters: RowGroupRank::new(),
+            repeated_geometry: Vec::new(),
             bits: [0; TRACE_WORDS], before_word: [0; TRACE_WORDS],
         }
     }
@@ -939,6 +942,80 @@ impl TraceRuns {
     }
 }
 
+// A completed group page can retain one central cell per run of equal raw
+// fields, plus the exact output word of each repeated cell. Encounter rank,
+// trace identity and either escape roster remain independent.
+struct RepeatedGroupGeometry {
+    anchors: Vec<PackedGroup>,
+    outputs: Vec<u16>,
+    rank: RowGroupRank,
+}
+impl RepeatedGroupGeometry {
+    fn repeats(previous: PackedGroup, next: PackedGroup) -> bool {
+        previous.0[3] < PackedGroup::OLD && next.0[3] < PackedGroup::OLD
+            && previous.0[..3] == next.0[..3]
+    }
+
+    fn stage(
+        dense: &[PackedGroup], a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>,
+    ) -> io::Result<Vec<Self>> {
+        debug_assert_eq!(dense.len(), ROW_PAGE_LEN);
+        let repeats = dense.windows(2).filter(|pair| Self::repeats(pair[0], pair[1])).count();
+        let anchors = dense.len() - repeats;
+        let bytes = std::mem::size_of::<Self>() + anchors * std::mem::size_of::<PackedGroup>()
+            + repeats * std::mem::size_of::<u16>();
+        if bytes >= std::mem::size_of_val(dense)
+            || !funding.work.try_grow_original_origin_storage(funding.credit, bytes)? {
+            return Ok(Vec::new());
+        }
+        let result = (|| {
+            let mut page = Self {
+                anchors: exact_rows(anchors, a)?,
+                outputs: exact_rows(repeats, a)?,
+                rank: RowGroupRank::new(),
+            };
+            for (index, &cell) in dense.iter().enumerate() {
+                let anchor = index == 0 || !Self::repeats(dense[index - 1], cell);
+                page.rank.append(index, page.anchors.len(), anchor);
+                if anchor { page.anchors.push(cell); } else { page.outputs.push(cell.0[3]); }
+            }
+            let mut owner = exact_rows(1, a)?;
+            owner.push(page);
+            Ok(owner)
+        })();
+        if result.is_err() { let _ = funding.work.shrink(funding.credit, bytes); }
+        result
+    }
+
+    fn get(&self, index: usize) -> PackedGroup {
+        let rank = self.rank.through(index);
+        let mut cell = self.anchors[rank - 1];
+        if self.rank.bits[index / TRACE_WORD_BITS] & (1 << (index % TRACE_WORD_BITS)) == 0 {
+            cell.0[3] = self.outputs[index - rank];
+        }
+        cell
+    }
+
+    fn release(mut owner: Vec<Self>, funding: &mut PageFunding<'_>) -> io::Result<()> {
+        let page = owner.pop().expect("issued compact group geometry");
+        let bytes = owner.capacity() * std::mem::size_of::<Self>()
+            + page.anchors.capacity() * std::mem::size_of::<PackedGroup>()
+            + page.outputs.capacity() * std::mem::size_of::<u16>();
+        drop(page);
+        drop(owner);
+        funding.work.shrink(funding.credit, bytes)
+    }
+
+    fn visit(owner: &[Self], mut visit: impl FnMut(usize, usize, usize)) {
+        let Some(page) = owner.first() else { return; };
+        visit(owner.as_ptr() as usize, 1, std::mem::size_of::<Self>());
+        visit(page.anchors.as_ptr() as usize, page.anchors.len(),
+            page.anchors.capacity() * std::mem::size_of::<PackedGroup>());
+        visit(page.outputs.as_ptr() as usize, page.outputs.len(),
+            page.outputs.capacity() * std::mem::size_of::<u16>());
+    }
+}
+
 struct OriginGroups {
     packed: OriginPages<PackedGroup>,
     old: EscapePages<OldGroupSide>,
@@ -966,8 +1043,39 @@ impl OriginGroups {
         Some((self.source_geometry(ordinal)?, self.traces.get(self.trace_run(ordinal)?)?))
     }
 
+    fn packed_cell(&self, ordinal: usize) -> Option<PackedGroup> {
+        if ordinal >= self.len() { return None; }
+        self.packed.get(ordinal).copied().or_else(|| {
+            let page = self.trace_pages.get(ordinal / ROW_PAGE_LEN)?.repeated_geometry.first()?;
+            Some(page.get(ordinal % ROW_PAGE_LEN))
+        })
+    }
+
+    fn prepare_geometry_append(&mut self, a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>) -> io::Result<()> {
+        let len = self.len();
+        let local = len % ROW_PAGE_LEN;
+        if len == 0 { return Ok(()); }
+        let index = (len - 1) / ROW_PAGE_LEN;
+        let page = self.trace_pages.get_mut(index).expect("issued group trace rank page");
+        let dense = &mut self.packed.pages[index];
+        if local == 0 {
+            if dense.is_empty() { return Ok(()); }
+            let compact = RepeatedGroupGeometry::stage(dense, a, funding)?;
+            if compact.is_empty() { return Ok(()); }
+            page.repeated_geometry = compact;
+            return funding.release(std::mem::take(dense));
+        }
+        if let Some(compact) = page.repeated_geometry.first() {
+            let mut resumed = funding.allocate(ROW_PAGE_LEN, a)?;
+            resumed.extend((0..local).map(|row| compact.get(row)));
+            *dense = resumed;
+            RepeatedGroupGeometry::release(std::mem::take(&mut page.repeated_geometry), funding)?;
+        }
+        Ok(())
+    }
+
     fn source_geometry(&self, ordinal: usize) -> Option<GroupSourceGeometry> {
-        let packed = self.packed.get(ordinal)?;
+        let packed = self.packed_cell(ordinal)?;
         if packed.is_full() {
             let at = self.full.partition_point(|_, (at, _)| *at < ordinal);
             return self.full.get(at).filter(|(at, _)| *at == ordinal).map(|(_, geometry)| geometry.source());
@@ -992,6 +1100,7 @@ impl OriginGroups {
         &mut self, geometry: GroupGeometry, trace: OriginalMacroTrace,
         a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>,
     ) -> io::Result<()> {
+        self.prepare_geometry_append(a, funding)?;
         let ordinal = self.len();
         let previous_old = self.old.len();
         let previous_full = self.full.len();
@@ -1058,6 +1167,12 @@ impl OriginGroups {
         };
         let pages = len.div_ceil(ROW_PAGE_LEN);
         self.packed.truncate(len, funding)?;
+        for index in pages..self.trace_pages.len() {
+            let page = self.trace_pages.get_mut(index).expect("issued group trace rank page");
+            if !page.repeated_geometry.is_empty() {
+                RepeatedGroupGeometry::release(std::mem::take(&mut page.repeated_geometry), funding)?;
+            }
+        }
         self.old.truncate(old, funding)?;
         self.full.truncate(full, funding)?;
         self.traces.truncate(traces, funding)?;
@@ -1070,12 +1185,17 @@ impl OriginGroups {
     }
 
     #[cfg(test)]
-    fn iter(&self) -> impl Iterator<Item = &PackedGroup> {
-        self.packed.iter()
+    fn iter(&self) -> impl Iterator<Item = PackedGroup> + '_ {
+        (0..self.len()).map(|at| self.packed_cell(at).expect("issued group"))
     }
 
     fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
-        self.packed.visit_storage(&mut visit);
+        self.packed.visit_storage(|ptr, len, capacity| {
+            if capacity != 0 { visit(ptr, len, capacity); }
+        });
+        for page in self.trace_pages.iter() {
+            RepeatedGroupGeometry::visit(&page.repeated_geometry, &mut visit);
+        }
         self.old.visit_storage(&mut visit);
         self.full.visit_storage(&mut visit);
         self.trace_pages.visit_storage(&mut visit);
@@ -1091,7 +1211,17 @@ impl OriginGroups {
             self.packed.visit_storage(|_, _, n| central = central.saturating_add(n));
             self.old.visit_storage(|_, _, n| old = old.saturating_add(n));
             self.full.visit_storage(|_, _, n| full = full.saturating_add(n));
-            eprintln!("ORIGINAL_ORIGIN_GROUP_GEOMETRY central_bytes={central} old_side_bytes={old} full_side_bytes={full}");
+            let mut repeat_bytes = 0usize;
+            let mut repeated_rows = 0usize;
+            let mut repeat_pages = 0usize;
+            for page in self.trace_pages.iter() {
+                if let Some(geometry) = page.repeated_geometry.first() {
+                    repeat_pages += 1;
+                    repeated_rows += geometry.outputs.len();
+                    RepeatedGroupGeometry::visit(&page.repeated_geometry, |_, _, n| repeat_bytes += n);
+                }
+            }
+            eprintln!("ORIGINAL_ORIGIN_GROUP_GEOMETRY central_bytes={central} old_side_bytes={old} full_side_bytes={full} repeat_bytes={repeat_bytes} repeat_pages={repeat_pages} repeated_rows={repeated_rows}");
         }
         let mut rank_bytes = 0usize;
         self.trace_pages.visit_storage(|_, _, bytes| rank_bytes = rank_bytes.saturating_add(bytes));
@@ -2402,9 +2532,9 @@ impl OriginalRawOrigins{
   if result.is_ok() {
    if let Some(census)=&mut self.row_geometry_census {
     if !share_group {
-    let cell = self.groups.packed.get(group).expect("issued group");
+    let cell = self.groups.packed_cell(group).expect("issued group");
     let page = self.groups.trace_pages.get(group/ROW_PAGE_LEN).expect("issued group rank page");
-    census.observe_group(geometry, cell, page);
+    census.observe_group(geometry, &cell, page);
    }
     let ordinal=self.rows.len()-1;
     census.observe(row,geometry,self.rows.page(ordinal/ROW_PAGE_LEN).expect("issued origin row page").group_base,ordinal%ROW_PAGE_LEN);
@@ -2806,6 +2936,67 @@ impl OriginalRawOrigins{
    assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
   }
  }
+ #[test]
+ fn repeated_group_geometry_retains_exact_ordinals_and_funded_trim_reappend() {
+    let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+    let a = SettingAdmission::new(&syntax, root, &|| Ok(()));
+    let live = Arc::new(AtomicUsize::new(0));
+    let work = CappedWork::new(live.clone(), usize::MAX);
+    let mut credit = work.reserve(0).unwrap();
+    let mut funding = PageFunding { work: &work, credit: &mut credit };
+    let trace = OriginalMacroTrace::empty();
+    let group = |output_line| {
+        let (encounter, width) = match output_line {
+            63 => (7, 4096), // old side
+            64 => (12, 1),   // full side, cannot advance encounter rank
+            _ => (7, 1),
+        };
+        GroupGeometry { encounter, decoded: Span::new(0, width), line: 1,
+            output_line, output_base: output_line, raw_base: 0 }
+    };
+    let mut groups = OriginGroups::new();
+    for at in 0..ROW_PAGE_LEN {
+        groups.push(group(at), trace.clone(), &a, &mut funding).unwrap();
+    }
+    let expected: Vec<_> = groups.iter().map(|cell| cell.0).collect();
+    let before = live.load(Ordering::Acquire);
+    work.limit.store(before, Ordering::Release);
+    assert!(groups.push(group(ROW_PAGE_LEN), trace.clone(), &a, &mut funding).is_err());
+    assert_eq!(live.load(Ordering::Acquire), before);
+    assert!(groups.trace_pages.get(0).unwrap().repeated_geometry.is_empty());
+
+    work.limit.store(usize::MAX, Ordering::Release);
+    groups.push(group(ROW_PAGE_LEN), trace.clone(), &a, &mut funding).unwrap();
+    let page = groups.trace_pages.get(0).unwrap().repeated_geometry.first().unwrap();
+    assert_eq!(page.outputs.len(), ROW_PAGE_LEN - 4);
+    assert!(groups.packed.pages[0].is_empty());
+    for (index, cell) in expected.iter().enumerate() {
+        assert_eq!(&groups.packed_cell(index).unwrap().0, cell);
+        assert!(groups.get(index).unwrap().1.same_owner(&trace));
+    }
+    assert!(groups.packed_cell(63).unwrap().is_old());
+    assert!(groups.packed_cell(64).unwrap().is_full());
+    groups.truncate(63, &mut funding).unwrap();
+    assert!(groups.packed_cell(63).is_none());
+    let after_trim = live.load(Ordering::Acquire);
+    work.limit.store(after_trim, Ordering::Release);
+    assert!(groups.push(group(63), trace.clone(), &a, &mut funding).is_err());
+    assert_eq!(groups.len(), 63);
+    assert_eq!(live.load(Ordering::Acquire), after_trim);
+    assert_eq!(groups.packed_cell(62).unwrap().0, expected[62]);
+
+    work.limit.store(usize::MAX, Ordering::Release);
+    groups.push(group(63), trace.clone(), &a, &mut funding).unwrap();
+    assert_eq!(groups.packed_cell(63).unwrap().0, expected[63]);
+    assert!(groups.trace_pages.get(0).unwrap().repeated_geometry.is_empty());
+    groups.truncate(0, &mut funding).unwrap();
+    assert!(groups.packed_cell(0).is_none());
+    drop(groups);
+    drop(credit);
+    assert_eq!(live.load(Ordering::Acquire), 0);
+ }
+
  #[test]
  fn eight_byte_groups_keep_exact_edges_and_both_escape_rosters() {
     let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
