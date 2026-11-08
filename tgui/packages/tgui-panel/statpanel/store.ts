@@ -281,8 +281,16 @@ export class StatStore {
     return verbs;
   }
 
-  /** One server message. */
+  /** One server message; one it cannot read is logged and dropped, so the panel keeps taking the next. */
   receive(type: string, payload: any) {
+    try {
+      this.receiveUnsafe(type, payload);
+    } catch (error) {
+      console.error(`stat panel: dropped ${type}`, error);
+    }
+  }
+
+  private receiveUnsafe(type: string, payload: any) {
     const { state } = this;
     const tabs = state.permanentTabs;
     switch (type) {

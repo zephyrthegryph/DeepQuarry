@@ -97,11 +97,17 @@ function showFallback() {
 }
 
 function mount() {
-  createRoot(document.getElementById('react-root')!).render(
-    <PanelBoundary onError={showFallback}>
-      <App store={store} displayStore={displayStore} />
-    </PanelBoundary>,
-  );
+  try {
+    createRoot(document.getElementById('react-root')!).render(
+      <PanelBoundary onError={showFallback}>
+        <App store={store} displayStore={displayStore} />
+      </PanelBoundary>,
+    );
+  } catch (error) {
+    console.error('stat panel: first render failed', error);
+    showFallback();
+  }
+  // Whatever the render did: the window is shown and the server is asked for the panel's data.
   win.__statpanelMounted = true;
   Byond.winset(Byond.windowId, { 'is-visible': true });
   Byond.sendMessage('Set-Tab', { tab: 'Status' });
