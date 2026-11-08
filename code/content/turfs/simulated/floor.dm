@@ -38,6 +38,10 @@
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)
 
+/// Intact tiles cover the plating plane's utility band (pipes, cables, disposals, floor atmos devices: everything drawn under ABOVE_UTILITY).
+/turf/simulated/floor/cover_hides(atom/movable/A)
+	return !is_plating() && A.plane == PLATING_PLANE && A.layer < ABOVE_UTILITY
+
 /// The flooring a floor is made with (its constructor param), or its initial one.
 /turf/simulated/floor/var/floortype_at_make // ALLOW(base_vars): the param() var (floor_acts.dm, pos = 1) naming the flooring a floor is made with; read in this type's init as floortype_at_make || initial_flooring
 
@@ -121,6 +125,7 @@
 	var/floored_over = !is_plating()
 	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(O.hides_under_flooring() && floored_over)
+	interest_turf_revealed(src) // the tiles came or went: what they no longer cover draws what it owed
 
 /turf/simulated/floor/can_engrave()
 	return (!flooring || flooring.can_engrave)

@@ -157,6 +157,39 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 	if(length(arriving))
 		interest_arrive(owner, arriving, visible, eye)
 
+// ---- perceivability: nothing is drawn that no viewer could perceive ----
+//
+// A draw owed by an atom nobody could perceive waits, whoever looks at its chunk: covered (a cover on its turf hides its layer band: an intact floor
+// over what lies under its tiles), contained (inside something, unless a look composes it: a worn or held item), or past every viewer's sight
+// (invisibility at INVISIBILITY_ABSTRACT or above). Nothing here names a type: pipes, cables and disposals are covered by their layer band. The
+// reveal is an event: a turf whose cover changed (interest_turf_revealed()), a move out of a container (interest_parked_moved()), an invisibility
+// that dropped (its tracked write marks it).
+
+/// First draws the perceivability rule held back (boot drains, arrivals, prefetch).
+GLOBAL_VAR_INIT(interest_unperceivable_skipped, 0)
+
+/// Could some viewer perceive `A` if it looked at A's chunk?
+/proc/draw_perceivable(atom/A)
+	if(A.invisibility >= INVISIBILITY_ABSTRACT)
+		return FALSE
+	if(!ismovable(A))
+		return TRUE
+	var/atom/movable/M = A
+	if(!isturf(M.loc))
+		return !!M.rx?.worn_watched // contained: perceived only through a look that composes it (worn or held)
+	var/turf/T = M.loc
+	return !T.cover_hides(M)
+
+/// Does a cover on this turf hide `A` (A's layer band lies under it)? The engine's turf hides nothing; a floor hides what lies under its tiles.
+/turf/proc/cover_hides(atom/movable/A)
+	return FALSE
+
+/// `T`'s cover changed (a floor tile went or came): what on it still owes a draw and can now be perceived is marked, so it is drawn as anything else is.
+/proc/interest_turf_revealed(turf/T)
+	FOR_CONTENTS(var/atom/movable/A as anything, T)
+		if(A.refresh_queued && draw_perceivable(A))
+			refresh_mark(A, DEP_ALL)
+
 // ---- arrival: what a newly visible area owes, drawn before it is seen ----
 
 /// Owed draws one drain pass always runs while ticks are tight: a covered arrival and the prefetch keep moving on a busy server.
@@ -371,15 +404,18 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		if(z < 1 || z > world.maxz || x0 > world.maxx || y0 > world.maxy)
 			continue
 		for(var/turf/T as anything in block(locate(x0, y0, z), locate(min(world.maxx, x0 + INTEREST_CHUNK - 1), min(world.maxy, y0 + INTEREST_CHUNK - 1), z)))
-			if(T.refresh_queued & DEP_PARKED)
+			if((T.refresh_queued & DEP_PARKED) && draw_perceivable(T))
 				. += T
 			FOR_CONTENTS(var/atom/movable/A as anything, T)
-				if(A.refresh_queued & DEP_PARKED)
+				if((A.refresh_queued & DEP_PARKED) && draw_perceivable(A))
 					. += A
 
 /// A parked `A` owes a draw and something can see its chunk coming: it joins the presentation queue with everything it owed. Returns 1 when it did.
 /proc/interest_wake(atom/A)
 	if(!(A.refresh_queued & DEP_PARKED) || QDELETED(A) || !interest_ready(A))
+		return 0
+	if(!draw_perceivable(A))
+		GLOB.interest_unperceivable_skipped++
 		return 0
 	A.refresh_queued = DEP_ALL
 	A.refresh_bits = 0
@@ -394,6 +430,9 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	var/pending = A.refresh_queued
 	if(!pending || QDELETED(A) || !interest_ready(A))
 		return 0
+	if(!draw_perceivable(A))
+		GLOB.interest_unperceivable_skipped++
+		return 0 // it keeps owing its draw: the reveal (interest_turf_revealed(), a move out of its container, its invisibility dropping) marks it
 	var/parked = pending & DEP_PARKED
 	if(parked)
 		pending = DEP_ALL // parked is alone in refresh_queued: it owes its whole refresh

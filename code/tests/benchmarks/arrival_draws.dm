@@ -26,6 +26,7 @@
 	var/total_frames = 0
 	var/total_owed = 0
 	var/total_owing = 0
+	var/skipped_before = GLOB.interest_unperceivable_skipped
 	var/total_parked_left = 0
 	begin_window()
 	for(var/n in 1 to viewers)
@@ -68,6 +69,7 @@
 	metric("arrival_frames_mean", total_frames / viewers, "frames", "none")
 	count_metric("arrival_owed_drawn_after", total_owed, "draws", "none")
 	count_metric("arrival_owing_in_view_after", total_owing, "atoms")
+	count_metric("arrival_unperceivable_skipped", GLOB.interest_unperceivable_skipped - skipped_before, "draws", "none")
 	count_metric("arrival_parked_in_range_after", total_parked_left, "atoms")
 	for(var/n in 1 to viewers)
 		interest_hold_set("bench-arrival-[n]", null)
