@@ -1084,10 +1084,13 @@ fn append_procedure_canonical(
 }
 
 /// Weak observations of the actual observer's local spelling allocations.
-#[derive(Default)]
+const SPELLING_PAGE_LEN: usize = 128;
 pub(crate) struct OriginalSignatureSpellings {
-    rows: Vec<std::sync::Weak<str>>,
-    storage: Option<dm_syntax::SettingRootLease>,
+    rows: FundedRowPages<std::sync::Weak<str>, SPELLING_PAGE_LEN>,
+}
+
+impl Default for OriginalSignatureSpellings {
+    fn default() -> Self { Self { rows: FundedRowPages::new() } }
 }
 
 impl OriginalSignatureSpellings {
@@ -1095,10 +1098,8 @@ impl OriginalSignatureSpellings {
         let mut result = Self::default();
         symbols.try_visit_local_spellings(|spelling| {
             checkpoint(a)?;
-            if result.rows.len() == result.rows.capacity() {
-                grow_funded_rows(&mut result.rows, &mut result.storage, a)?;
-            }
-            result.rows.push(Arc::downgrade(spelling));
+            result.rows.ensure_slot(a)?;
+            result.rows.push_reserved(Arc::downgrade(spelling));
             Ok::<_, std::io::Error>(())
         })?;
         Ok(result)
@@ -1109,13 +1110,20 @@ impl OriginalSignatureSpellings {
     }
 
     pub(crate) fn admitted_by(&self, a: &SettingAdmission<'_>) -> bool {
-        self.storage.as_ref().is_none_or(|credit| a.matches_lease_domain(credit))
+        self.rows.directory.as_ref().is_none_or(|credit| a.matches_lease_domain(credit))
+            && self.rows.pages.iter().all(|page|page.credit.as_ref().is_some_and(|credit|a.matches_lease_domain(credit)))
     }
 
     pub(crate) fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
-        if self.rows.capacity() != 0 {
-            visit(self.rows.as_ptr() as usize, self.rows.capacity() * std::mem::size_of::<std::sync::Weak<str>>(),
-                std::mem::align_of::<std::sync::Weak<str>>());
+        use std::{mem::{align_of, size_of}, sync::Weak};
+        let pages = &self.rows.pages;
+        if pages.capacity() != 0 {
+            visit(pages.as_ptr() as usize, pages.capacity() * size_of::<FundedRowPage<Weak<str>>>(),
+                align_of::<FundedRowPage<Weak<str>>>());
+        }
+        for page in pages {
+            visit(page.rows.as_ptr() as usize, page.rows.capacity() * size_of::<Weak<str>>(),
+                align_of::<Weak<str>>());
         }
     }
 }
@@ -1195,13 +1203,11 @@ impl PreparedOriginalSignatures{
   &mut self,symbols:&mut SymbolTable,text:&str,a:&SettingAdmission<'_>,
  )->std::io::Result<Result<dm_ir::SymbolId,dm_ir::SymbolCollision>>{
   let result=symbols.intern_funding_spare_spelling(text,|bytes|{
-   if self.spellings.rows.len()==self.spellings.rows.capacity(){
-    grow_funded_rows(&mut self.spellings.rows,&mut self.spellings.storage,a)?;
-   }
+   self.spellings.rows.ensure_slot(a)?;
    self.admit_adapter_storage(bytes,a)
   })?;
   Ok(result.map(|(id,backing)|{
-   if let Some(backing)=backing{self.spellings.rows.push(Arc::downgrade(backing));}
+   if let Some(backing)=backing{self.spellings.rows.push_reserved(Arc::downgrade(backing));}
    id
   }))
  }
@@ -1968,11 +1974,39 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   let credit=input.prepared.take_adapter_storage().unwrap();
   drop(input);
   assert!(observed.live());
-  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (bytes+observed.storage.as_ref().unwrap().bytes()));
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes() + (bytes+observed.rows.buffer_bytes()));
   drop(alias);
   assert!(!observed.live());
   drop((observed,credit,weak));
   assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn actual_spelling_pages_keep_old_weak_owner_when_next_page_is_denied() {
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let good=SettingAdmission::new(&counter,4<<20,&||Ok(()));
+  let mut symbols=SymbolTable::default();
+  for index in 0..SPELLING_PAGE_LEN {
+   symbols.intern(&format!("real_owner_{index}")).unwrap();
+  }
+  let id=dm_ir::SymbolId::of("real_owner_0");
+  let detached=Arc::clone(symbols.shared_text(id).unwrap());
+  let mut observed=OriginalSignatureSpellings::capture(&symbols,&good).unwrap();
+  assert_eq!(observed.rows.len(),SPELLING_PAGE_LEN);
+  assert_eq!(observed.rows.pages.len(),1);
+  let before=counter.load(Ordering::Acquire);
+  let page=SPELLING_PAGE_LEN*std::mem::size_of::<std::sync::Weak<str>>();
+  let low=SettingAdmission::new(&counter,before+page-1,&||Ok(()));
+  assert_eq!(observed.rows.ensure_slot(&low).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);
+  assert_eq!(counter.load(Ordering::Acquire),before);
+  assert_eq!(observed.rows.len(),SPELLING_PAGE_LEN);
+  observed.rows.ensure_slot(&good).unwrap();
+  assert_eq!(counter.load(Ordering::Acquire),before+page);
+  drop(symbols);
+  assert!(observed.live());
+  drop(detached);
+  assert!(!observed.live());
+  drop(observed);
+  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn primary_signature_prepared_metadata_rejects_foreign_header_owner_and_typed_fault(){
   let source:SourceText="/proc/good(value=1)\n    return value\n".into();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&counter,1<<26,&||Ok(()));let mut first=prepared(source.clone(),&a);let second=prepared(source,&a);assert!(first.prepared.take(first.items.dense()[0].header_span,0,&second.headers).is_err());assert_eq!(first.prepared.remaining(),1);
