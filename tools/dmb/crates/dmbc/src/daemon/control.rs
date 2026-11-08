@@ -57,6 +57,26 @@ impl WorkerContext {
                 })
         })
     }
+    /// Capture once inside an actual prepublication worker scope. Keep the
+    /// generic TLS route when that scope is absent or publishing.
+    pub(crate) fn capture_for_checkpoints() -> Option<Self> {
+        ACTIVE.with(|active| match active.borrow().as_ref() {
+            Some((token, false, deadline)) => Some(Self {
+                token: token.clone(),
+                deadline: *deadline,
+            }),
+            _ => None,
+        })
+    }
+
+    pub(crate) fn checkpoint(&self) -> std::io::Result<()> {
+        self.checkpoint_with_clock(Instant::now)
+    }
+
+    fn checkpoint_with_clock(&self, now: impl FnOnce() -> Instant) -> std::io::Result<()> {
+        check_running(&self.token, self.deadline.is_some_and(|deadline| now() >= deadline))
+    }
+
     pub(crate) fn enter(&self) -> Binding {
         bind_inner(self.token.clone(), self.deadline)
     }
@@ -81,24 +101,29 @@ fn checkpoint_at(now: Instant) -> std::io::Result<()> {
     ACTIVE.with(|active| {
         if let Some((token, publishing, deadline)) = active.borrow().as_ref() {
             if !publishing {
-                if deadline.is_some_and(|deadline| now >= deadline) {
-                    token.cancel();
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Interrupted,
-                        "daemon request deadline expired",
-                    ));
-                }
-                if token.is_cancelled() {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Interrupted,
-                        "build superseded before publication",
-                    ));
-                }
+                check_running(token, deadline.is_some_and(|deadline| now >= deadline))?;
             }
         }
         Ok(())
     })
 }
+fn check_running(token: &Cancellation, deadline_expired: bool) -> std::io::Result<()> {
+    if deadline_expired {
+        token.cancel();
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Interrupted,
+            "daemon request deadline expired",
+        ));
+    }
+    if token.is_cancelled() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Interrupted,
+            "build superseded before publication",
+        ));
+    }
+    Ok(())
+}
+
 /// Check cancellation once, then permanently make this request non-cancellable.
 pub fn begin_publication() -> std::io::Result<()> {
     checkpoint()?;
@@ -148,6 +173,31 @@ mod tests {
         drop(binding);
         checkpoint().unwrap();
     }
+    #[test]
+    fn captured_worker_checkpoint_matches_deadline_and_cancellation_order() {
+        assert!(WorkerContext::capture_for_checkpoints().is_none());
+        let token = Cancellation::default();
+        let now = Instant::now();
+        let deadline = now + std::time::Duration::from_secs(2);
+        let binding = bind_with_deadline(token.clone(), deadline);
+        let worker = WorkerContext::capture_for_checkpoints().unwrap();
+        worker.checkpoint_with_clock(|| now).unwrap();
+        token.cancel();
+        assert_eq!(worker.checkpoint_with_clock(|| now).unwrap_err().to_string(),
+            checkpoint_at(now).unwrap_err().to_string());
+        assert_eq!(worker.checkpoint_with_clock(|| deadline).unwrap_err().to_string(),
+            checkpoint_at(deadline).unwrap_err().to_string());
+        drop(binding);
+        let binding = bind(Cancellation::default());
+        let worker = WorkerContext::capture_for_checkpoints().unwrap();
+        worker.checkpoint_with_clock(|| panic!("no deadline must not sample the clock")).unwrap();
+        begin_publication().unwrap();
+        assert!(WorkerContext::capture_for_checkpoints().is_none());
+        checkpoint().unwrap();
+        drop(binding);
+        assert!(WorkerContext::capture_for_checkpoints().is_none());
+    }
+
     #[test]
     fn query_deadline_is_cooperative_and_binding_is_request_local() {
         let now = Instant::now();

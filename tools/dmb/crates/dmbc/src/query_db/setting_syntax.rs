@@ -9,14 +9,21 @@ pub(super) fn with_setting_admission<T>(
     with_admission_stack(charged,dm_exec::COMPILER_STACK_BYTES/16,operation)
 }
 fn with_admission_stack<T>(charged:&Arc<dm_syntax::SettingChargeCounter>,stack_allowance:usize,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
-    let checkpoint = || setting_checkpoint();
+    with_admission_checkpoint(charged,stack_allowance,&setting_checkpoint,operation)
+}
+fn with_admission_checkpoint<T>(
+    charged:&Arc<dm_syntax::SettingChargeCounter>,
+    stack_allowance:usize,
+    checkpoint:&dyn Fn()->std::io::Result<()>,
+    operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>,
+)->Result<T,BodySyntaxFailure>{
     // Explicit worker-work allowance; not syntax meaning or a qualified
     // SourceScope allocation role. BodySyntax postparse charge stays SOFT.
     let admission = dm_syntax::SettingAdmission::with_stack_allowance(
         charged,
         body_syntax::BUDGET,
         stack_allowance,
-        &checkpoint,
+        checkpoint,
     );
     let result = operation(&admission);
     // A prior actual operational failure wins over any later checkpoint.
@@ -67,6 +74,31 @@ impl SettingExpressionQueries for QueryDb {
                 .checkpoint()
                 .map_err(BodySyntaxFailure::Operational)?;
             operation(admission)
+        })
+    }
+
+    fn with_original_batch_producer_admission(
+        &self,
+        operation: &mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>,
+    )->Result<(),BodySyntaxFailure>{
+        dm_exec::with_current_compiler_worker_stack(|scope| {
+            let Some((scope, context)) = scope.zip(crate::daemon::control::WorkerContext::capture_for_checkpoints()) else {
+                return self.with_declaration_admission(operation);
+            };
+            // The synchronous producer cannot begin request publication.
+            // Retain the real worker stack, counter, first failure and all polls.
+            let checkpoint = || {
+                #[cfg(test)]
+                setting_test_checkpoint();
+                context.checkpoint()
+            };
+            scope.with_primary_allowance(|allowance| {
+                with_admission_checkpoint(&self.body_charge,allowance,&checkpoint,|admission| {
+                    self.original_signature_aliases.lock().map_err(|_|BodySyntaxFailure::Operational(std::io::Error::other("original signature resource census poisoned")))?.prune(admission).map_err(BodySyntaxFailure::Operational)?;
+                    admission.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+                    operation(admission)
+                })
+            }).map_err(BodySyntaxFailure::Operational)?
         })
     }
 
@@ -297,6 +329,11 @@ mod tests {
 
 fn setting_checkpoint() -> std::io::Result<()> {
     #[cfg(test)]
+    setting_test_checkpoint();
+    crate::daemon::control::checkpoint()
+}
+#[cfg(test)]
+fn setting_test_checkpoint(){
     SETTING_CANCEL.with(|pending| {
         let mut pending = pending.borrow_mut();
         if let Some((left, token)) = pending.as_mut() {
@@ -307,7 +344,6 @@ fn setting_checkpoint() -> std::io::Result<()> {
             }
         }
     });
-    crate::daemon::control::checkpoint()
 }
 #[cfg(test)]
 thread_local! {static SETTING_CANCEL:std::cell::RefCell<Option<(usize,crate::daemon::control::Cancellation)>>=const{std::cell::RefCell::new(None)};}

@@ -15,7 +15,7 @@ impl std::error::Error for BatchAdmissionDiagnostic{}
 impl OriginalBatchSyntaxHost for TreeOriginalBatchHost<'_>{
  fn with_producer_admission(&self,run:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->io::Result<()>)->io::Result<()>{
   let mut called=false;let mut first=None;
-  let pending=self.0.with_declaration_admission(&mut|a|{
+  let pending=self.0.with_original_batch_producer_admission(&mut|a|{
    if called{return Err(BodySyntaxFailure::Operational(io::Error::new(io::ErrorKind::InvalidData,"batch declaration admission callback repeated")))}called=true;
    match run(a){Ok(())=>Ok(()),Err(actual)=>{first=Some(actual);Err(BodySyntaxFailure::Operational(io::Error::new(io::ErrorKind::Interrupted,"actual batch producer stopped")))}}
   });
