@@ -67,13 +67,25 @@
 	contract_batch_depth--
 
 /datum/system/contracts/proc/publish_damage_report(datum/contract_damage_report/report)
+	var/__p0 = TICK_USAGE_REAL
+	var/__pl = __p0
 	if(report.total_amount < CONTRACT_INFRASTRUCTURE_DAMAGE_MINIMUM)
 		return
 	var/key = report.source_ref
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 1 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	var/revision = (infrastructure_fact_revisions[key] || 0) + 1
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 2 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	infrastructure_fact_revisions[key] = revision
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 3 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	var/current_damage = max(0, report.max_integrity - report.integrity)
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 4 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	var/asset_label = "[report.name] in [report.area_name]"
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 5 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	if(report.location_ref)
 		asset_label += " ([report.x], [report.y], [report.z])"
 	var/datum/contract_event/event = new(CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, null, null, null, list(
@@ -92,14 +104,32 @@
 		),
 		"detail" = "[report.name] sustained [round(report.total_amount, 0.1)] integrity damage in [report.area_name].",
 	), "infrastructure-damage:[handle_text(key)]:[revision]")
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 6 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	event.source_ref = key
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 7 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	event.source_type = report.source_type
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 8 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	event.location_ref = report.location_ref
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 9 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	event.x = report.x
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 10 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	event.y = report.y
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 11 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	event.z = report.z
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 12 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	event.area_name = report.area_name
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 13 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 	publish_event(event)
+	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 14 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
+	__pl = TICK_USAGE_REAL
 
 /// Evaluates every opportunity window the batch revised, once each.
 /datum/system/contracts/proc/flush_opportunity_windows()
