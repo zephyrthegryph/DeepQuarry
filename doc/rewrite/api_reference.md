@@ -425,7 +425,7 @@ Need: the one write verb set for declared relations; each dispatches on the decl
 Defined: `code/engine/declare/relations.dm:360`, `rel_add` at `code/engine/declare/relations.dm:390`
 Example: `rel_set(src, nameof(focused_obj), req_thing)`, `code/content/admin/access_viewer.dm:81`
 Replaces / bans: `own_set` accessors.
-Notes: a raw write to a declared relation var skips the reverse index and the teardown.
+Notes: a raw write to a declared relation var skips the reverse index and the teardown. Many holders onto one target (a pipeline taking its pipes) is `rel_set_many(holders, var_name, target)` (`code/engine/refs/views.dm:314`): what one `rel_set()` per holder leaves, with the partner list's membership read once, one append and one announcement of the partner var.
 
 #### `slot_of(D)`, `handle_of(D)` and `handle_get(h)`: slots and numeric handles
 Need: name a datum by a whole number (a table key) or hold a weak handle to it in a var, list, timer or payload.
