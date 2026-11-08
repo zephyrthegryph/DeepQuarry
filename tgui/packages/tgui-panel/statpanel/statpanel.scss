@@ -431,6 +431,15 @@ body {
   // The frame over the edge and the scanlines (styles/console.scss).
   @include console.console-frame;
 
+  // One gap between the panels: the chat's frame is the line on the side it shares with this page (dockHost markChatSide).
+  html[data-chat-side='bottom'] &::before {
+    border-bottom-width: 0;
+  }
+
+  html[data-chat-side='top'] &::before {
+    border-top-width: 0;
+  }
+
   a {
     color: console.$console-accent;
   }
@@ -790,6 +799,8 @@ body {
 // The window dock (DockArea.tsx): docked tgui windows are placed over .dock-body.
 .dock-area {
   flex: 0 1 auto;
+  // Inside the frame, the same 3px gap as the tab row and the content (.stat-root below): docked windows sat over the frame edge.
+  margin: 3px 3px 0;
   max-height: 75vh;
   overflow: hidden auto;
   border-bottom: 1px solid var(--stat-line);

@@ -340,7 +340,15 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 	var/list/placed = params2list(window_params)
 	dx_winget(src, src, SKIN_MAINWINDOW, "pos;outer-size;inner-size;size;is-maximized", PROC_REF(chat_float_clamp), placed["pos"], placed["size"])
 
-/// dx_winget() callback: puts the float window back inside the main window when any of it is outside.
+/// Past this far (screen pixels) from the origin a window is on no monitor (Windows parks minimized windows at -32000).
+#define CHAT_FLOAT_LOST_COORD 30000
+
+/// Whether a float window at (x, y) of w x h is lost (on no monitor, or with no size). A second monitor is fine: winset pos may be
+/// negative or past the primary screen's width.
+/proc/chat_float_lost(x, y, w, h)
+	return w <= 0 || h <= 0 || abs(x) >= CHAT_FLOAT_LOST_COORD || abs(y) >= CHAT_FLOAT_LOST_COORD
+
+/// dx_winget() callback: brings a lost float window back into the main window; anywhere else (any monitor) it stays where the player put it.
 /client/proc/chat_float_clamp(main_params, pos, size)
 	var/list/main = params2list(main_params)
 	var/list/area_at = chat_float_pair(main["pos"], ",")
@@ -351,6 +359,9 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 	// A maximized window reports the place it has when not maximized: the chat page measures that one (tgui-panel/layout/geometry.ts).
 	if(main["is-maximized"] == "true" || !area_at || !outer_size || !inner_size || !at || !extent || inner_size[1] <= 0 || inner_size[2] <= 0)
 		log_tgui(src, "Chat float clamp skipped: main=[main_params] pos=[pos] size=[size].", context = "chat_float")
+		return
+	if(!chat_float_lost(at[1], at[2], extent[1], extent[2]))
+		log_tgui(src, "Chat float kept where it is (pos [pos], size [size], main [main_params]).", context = "chat_float")
 		return
 	var/list/client_area = chat_float_client_area(area_at[1], area_at[2], outer_size[1], outer_size[2], inner_size[1], inner_size[2])
 	var/list/fitted = chat_float_fit(at[1], at[2], extent[1], extent[2], client_area[1], client_area[2], client_area[3], client_area[4])
@@ -443,3 +454,5 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 	var/list/rows = chat_radio_options()
 	tgui_panel.window.send_message("chat/radioChannels", list("channels" = rows))
 	log_tgui(src, "Chat radio prefixes sent: [length(rows)].", context = "chat_float")
+
+#undef CHAT_FLOAT_LOST_COORD

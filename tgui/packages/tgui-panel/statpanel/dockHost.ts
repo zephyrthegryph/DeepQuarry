@@ -85,6 +85,24 @@ async function pageOrigin(): Promise<Point | null> {
   }
 }
 
+/**
+ * Tells the page which side of it the chat is on (`html[data-chat-side]`), so
+ * the panel leaves out its own frame edge there: the chat's frame is the one
+ * line between them, the same 3px gap as every other edge, not two frames.
+ */
+async function markChatSide(): Promise<void> {
+  try {
+    const got = await Byond.winget('rpane.rpanewindow', 'left');
+    const side = got === 'outputwindow' ? 'top' : 'bottom';
+    if (document.documentElement.dataset.chatSide !== side) {
+      document.documentElement.dataset.chatSide = side;
+      console.log('statpanel: chat side', side);
+    }
+  } catch {
+    // An older client: both frames stay.
+  }
+}
+
 export class DockHost {
   state: DockState = emptyDock();
   private version = 0;
@@ -101,7 +119,11 @@ export class DockHost {
   private frame = 0;
 
   constructor() {
-    window.addEventListener('resize', () => this.refreshOrigin());
+    window.addEventListener('resize', () => {
+      this.refreshOrigin();
+      markChatSide();
+    });
+    markChatSide();
     setInterval(() => {
       if (this.state.groups.length) {
         this.refreshOrigin();
