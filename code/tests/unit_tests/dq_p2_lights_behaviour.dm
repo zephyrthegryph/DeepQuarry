@@ -359,6 +359,35 @@
 	TEST_ASSERT_EQUAL(glow_of(L).power, L.bulb_emergency_pow_mul, "the first level of emergency output")
 	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_IDLE, "it draws idle power")
 
+/// Going on emergency power reads the stock cell's charge as it is: the cell item is made only when charge is taken from it, and the full charge
+/// still holds the first emergency level.
+/datum/unit_test/dq_p2_lights/emergency_light_keeps_its_stock_cell_as_data
+
+/datum/unit_test/dq_p2_lights/emergency_light_keeps_its_stock_cell_as_data/run_gate()
+	var/obj/machinery/light/L = light()
+	TEST_ASSERT(isnull(L.cell) && !isnull(L.stock_cell_charge), "a placed fixture's cell is a stock charge")
+	set_area_power(FALSE)
+	TEST_ASSERT(p2l_emergency(L), "on emergency power")
+	TEST_ASSERT(isnull(L.cell), "with no cell item made")
+	TEST_ASSERT_EQUAL(glow_of(L).power, L.bulb_emergency_pow_mul, "at the first level of emergency output")
+	TEST_ASSERT_EQUAL(L.emergency_charge(), initial(/obj/item/cell/emergency_light::charge), "its charge untouched")
+	TEST_ASSERT(L.emergency_discharge_wait() > 2 SECONDS, "and its discharge waits on that charge")
+
+/// A fixture going dark leaves its active draw alone (it is idle, which is what it draws); back on, it draws for its glow as before.
+/datum/unit_test/dq_p2_lights/a_dark_fixture_keeps_its_active_draw
+
+/datum/unit_test/dq_p2_lights/a_dark_fixture_keeps_its_active_draw/run_gate()
+	var/obj/machinery/light/L = light()
+	var/lit_draw = power_of(L).active
+	TEST_ASSERT_EQUAL(lit_draw, 12, "a lit tube draws for its glow")
+	set_area_power(FALSE)
+	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_IDLE, "dark, it draws idle power")
+	TEST_ASSERT_EQUAL(L.get_power_usage(), power_of(L).idle, "and its usage is the idle draw")
+	TEST_ASSERT_EQUAL(power_of(L).active, lit_draw, "its active draw is left as it was")
+	set_area_power(TRUE)
+	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_ACTIVE, "back on, active")
+	TEST_ASSERT_EQUAL(L.get_power_usage(), lit_draw, "drawing for its glow")
+
 /// A fixture with no cell goes dark when the area loses power.
 /datum/unit_test/dq_p2_lights/area_power_loss_darkens_a_fixture_without_a_cell
 

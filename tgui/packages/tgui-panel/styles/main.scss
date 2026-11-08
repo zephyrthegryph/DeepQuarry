@@ -21,12 +21,9 @@
 @include meta.load-css('~tgui/styles/atomic/text.scss');
 
 // Components specific to tgui-panel
-@include meta.load-css('./components/Chat.scss');
-@include meta.load-css('./components/Ping.scss');
-@include meta.load-css('./components/UnreadCount.scss');
 @include meta.load-css('~tgui/styles/dq/index.scss');
-@include meta.load-css('./components/ChatConsole.scss');
-@include meta.load-css('./components/ChatInput.scss');
+// The chat's own sheet and theme, the one a floating chat window loads too (chat-theme.scss).
+@include meta.load-css('./chat-theme.scss');
 @include meta.load-css('./components/ChatLayout.scss');
 @include meta.load-css('./components/Column.scss');
 @include meta.load-css('../statpanel/statpanel.scss');

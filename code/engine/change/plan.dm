@@ -197,6 +197,10 @@ DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_
 
 DECLARE_SHARED_CACHE(change_plan_presented, GLOBAL_PROC_REF(plan_presented_build), SC_NEVER)
 
+/datum/rx_state
+	/// plan_spares_draw()'s key part for the holder's running activations ("" for none), null until asked again after they change.
+	var/spares_defs_key
+
 /// TRUE when a write of `var_name` on E needs no redraw (look and verbs, DEP_DRAW): E is an atom with no activations, and neither its type's generated plans (its draw, its verb outputs) nor its look layers and capability draws
 /// read the var. Asked by state_changed() for a type that
 /// declares no dependencies (one that does is narrowed by its derived table already).
@@ -211,14 +215,19 @@ DECLARE_SHARED_CACHE(change_plan_presented, GLOBAL_PROC_REF(plan_presented_build
 		return FALSE
 	// The answer depends on the type and on the activations the holder carries (they bring look layers): both are in the key.
 	var/base_key = "[E.type]"
-	var/list/activations = E.rx?.activations
-	if(length(activations))
-		var/list/defs = list()
-		for(var/datum/activation/A as anything in activations)
-			if(!A.dead && A.runs)
-				defs |= "[A.def.key]"
-		if(length(defs))
-			base_key += "||[jointext(sortList(defs), ",")]"
+	var/datum/rx_state/S = E.rx
+	if(length(S?.activations))
+		// The running definitions' part of the key is kept on the holder until its activations change (activation_attach(), activation_end(),
+		// the only writers of `runs` and `dead`, clear it): the sort is per change, not per write.
+		var/defs_key = S.spares_defs_key
+		if(isnull(defs_key))
+			var/list/defs = list()
+			for(var/datum/activation/A as anything in S.activations)
+				if(!A.dead && A.runs)
+					defs |= "[A.def.key]"
+			defs_key = length(defs) ? "||[jointext(sortList(defs), ",")]" : ""
+			S.spares_defs_key = defs_key
+		base_key += defs_key
 	return CACHED_KEY(change_plan_spares, "[base_key]|[var_name]", E, var_name, base_key) == PLAN_SPARE
 
 #undef PLAN_SPARE

@@ -135,8 +135,11 @@
 /mob/proc/update_mob_action_buttons()
 	abilities_changed()
 
-/// The capabilities the mob carries changed (a grant came or went): the abilities they bring are looked at again (op_ability.dm).
-/mob/capabilities_changed()
+/// The capabilities the mob carries changed (`def`, a grant, came or went): the abilities they bring are looked at again (op_ability.dm). A
+/// definition whose ops have no button (an observe() hook, a contribution) changes no entry of the list, so the list is not walked for it.
+/mob/capabilities_changed(datum/capability/def)
+	if(def && !length(op_index_buttons(op_index_of_def(table_of(src), def))))
+		return
 	sync_op_abilities()
 
 /// Uses `entry` for this mob as from the tab (`via` = "tab") or a hotkey ("slot 3"): the entry's refusal is told to the player, the use is logged.
