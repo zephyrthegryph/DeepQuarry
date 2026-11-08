@@ -43,7 +43,7 @@ describe('chat tabs', () => {
       'chat/ChatTabs.tsx',
       'statpanel/App.tsx',
       'statpanel/InspectTab.tsx',
-      'statpanel/McTab.tsx',
+      'statpanel/McHealth.tsx',
     ]) {
       expect(read(path)).not.toContain('Tabs.Tab');
       expect(read(path)).not.toMatch(

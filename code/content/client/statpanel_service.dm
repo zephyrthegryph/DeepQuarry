@@ -7,7 +7,6 @@ SYSTEM_DEF(statpanels)
 	VAR_PRIVATE/resuming = FALSE
 	var/list/currentrun = list()
 	var/list/global_data
-	var/list/mc_data
 	var/list/mc_metrics
 	var/mc_metrics_generated_at = 0
 	mc_metrics_generated_at = -INFINITY
@@ -18,8 +17,8 @@ SYSTEM_DEF(statpanels)
 	var/misc_wait = 3
 	///how many subsystem fires between updates of the status tab
 	var/status_wait = 2
-	///how many subsystem fires between updates of the MC tab
-	var/mc_wait = 5
+	///how many subsystem fires (0.4 s each) between updates of the MC tab: about once a second
+	var/mc_wait = 3
 	///how many full runs this subsystem has completed. used for variable rate refreshes.
 	var/num_fires = 0
 
@@ -62,7 +61,6 @@ SYSTEM_DEF(statpanels)
 
 	if (!resumed)
 		src.currentrun = GLOB.clients.Copy()
-		mc_data = null
 
 	var/list/currentrun = src.currentrun
 	while(length(currentrun))
@@ -157,69 +155,16 @@ SYSTEM_DEF(statpanels)
 		other_str = target.mob?.get_status_tab_items(),
 	), same_key = "update_stat")
 
+/// The MC Health panel's data (mc_health.dm), sent only to a client on the panel (stat_tab "MC") and rebuilt at most once a second.
 /datum/system/statpanels/proc/set_MC_tab(client/target)
 	var/turf/eye_turf = get_turf(target.eye)
-	var/coord_entry = COORD(eye_turf)
-	if(!mc_data)
-		generate_mc_data()
-	if(!mc_metrics || ELAPSED(src, mc_metrics_generated_at, CLOCK_WORLD) >= 5 SECONDS)
-		mc_metrics = generate_mc_metrics()
+	if(!mc_metrics || ELAPSED(src, mc_metrics_generated_at, CLOCK_WORLD) >= 1 SECONDS)
+		mc_metrics = mc_health_data()
 		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
 	target.stat_panel.send_message("update_mc", list(
-		"mc_data" = mc_data,
 		"mc_metrics" = mc_metrics,
-		"coord_entry" = coord_entry,
+		"coord_entry" = COORD(eye_turf),
 	))
-
-/datum/system/statpanels/proc/generate_mc_metrics()
-	var/list/history = Kernel.perf_tick_usage
-	var/list/rust_allocator = native_allocator_diagnostics()
-	var/history_start = max(1, history.len - 119)
-	var/list/graph = history.len ? history.Copy(history_start) : list()
-	var/list/subsystems = list()
-	// Systems with periodic work (air, lighting, ticker, tgui, garbage ...).
-	for(var/datum/system/S as anything in kernel_pure_systems())
-		if(!S.times_fired && !S.fire_cost)
-			continue
-		subsystems += list(list(
-			"name" = S.name,
-			"state" = "  ",
-			"usage" = 0,
-			"overrun" = S.tick_overrun,
-			"cost" = S.fire_cost,
-			"fires" = S.times_fired,
-			"ref" = handle_of(S),
-		))
-	return list(
-		"tick_budget_ms" = world.tick_lag * 100,
-		"target_tps" = world.fps,
-		"current_usage" = history.len ? history[history.len] : 0,
-		"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
-		"tidi" = time_track_time_dilation_current(),
-		"tidi_fast" = time_track_time_dilation_avg_fast(),
-		"tidi_medium" = time_track_time_dilation_avg(),
-		"tidi_slow" = time_track_time_dilation_avg_slow(),
-		"window_5s" = Kernel.performance_window(5),
-		"window_30s" = Kernel.performance_window(30),
-		"window_5m" = Kernel.performance_window(300),
-		"graph" = graph,
-		"outliers" = Kernel.perf_outliers.Copy(),
-		"subsystems" = subsystems,
-		"kernel" = km_panel_data(),
-		"runtime" = list(
-			"cpu" = world.cpu,
-			"instances" = length(world.contents),
-			"clients" = length(GLOB.clients),
-			"tick_drift" = Kernel.tickdrift,
-			"sleep_delta" = Kernel.sleep_delta,
-			"queue_priority" = 0,
-			"queue_priority_background" = 0,
-			"kernel_ticks" = kernel().ticks,
-			"kernel_last_tick_ms" = kernel().last_tick_ms,
-			"rust_current_bytes" = rust_allocator?.len >= 1 ? rust_allocator[1] : 0,
-			"rust_peak_bytes" = rust_allocator?.len >= 2 ? rust_allocator[2] : 0,
-		),
-	)
 
 /datum/system/statpanels/proc/set_tickets_tab(client/target)
 	var/list/tickets = list()
@@ -240,42 +185,6 @@ SYSTEM_DEF(statpanels)
 /// Set up the various action tabs.
 /datum/system/statpanels/proc/set_action_tabs(client/target, mob/target_mob)
 	return
-
-
-
-/datum/system/statpanels/proc/generate_mc_data()
-	mc_data = list(
-		list("CPU:", world.cpu),
-		list("Instances:", "[num2text(length(world.contents), 10)]"),
-		list("World Time:", "[world.time]"),
-		list("Globals:", GLOB.stat_entry(), text_ref(GLOB)),
-		list("[config]:", config.stat_entry(), text_ref(config)),
-		list("Byond:", "(FPS:[world.fps]) (TickCount:[world.time/world.tick_lag]) (TickDrift:[round(Kernel.tickdrift,1)]([round((Kernel.tickdrift/(world.time/world.tick_lag))*100,0.1)]%)) (Internal Tick Usage: [round(MAPTICK_LAST_INTERNAL_TICK_USAGE,0.1)]%)"),
-		list("Kernel Controller:", Kernel.stat_entry(), text_ref(Kernel)),
-		list("Watchdog:", Kernel.watchdog.stat_entry(), text_ref(Kernel.watchdog)),
-		list("","")
-	)
-#if defined(MC_TAB_TRACY_INFO) || defined(SPACEMAN_DMM)
-	var/static/tracy_dll
-	var/static/tracy_present
-	if(isnull(tracy_dll))
-		tracy_dll = TRACY_DLL_PATH
-		tracy_present = fexists(tracy_dll)
-	if(tracy_present)
-		if(Tracy.enabled)
-			mc_data.Insert(2, list(list("byond-tracy:", "Active (reason: [Tracy.init_reason || "N/A"])")))
-		else if(Tracy.error)
-			mc_data.Insert(2, list(list("byond-tracy:", "Errored ([Tracy.error])")))
-		else if(fexists(TRACY_ENABLE_PATH))
-			mc_data.Insert(2, list(list("byond-tracy:", "Queued for next round")))
-		else
-			mc_data.Insert(2, list(list("byond-tracy:", "Inactive")))
-	else
-		mc_data.Insert(2, list(list("byond-tracy:", "[tracy_dll] not present")))
-#endif
-	for(var/datum/system/system as anything in kernel_pure_systems())
-		mc_data[++mc_data.len] = list("(system) [system.name]", system.stat_entry(""), REF(system))
-	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", REF(GLOB.cameranet))
 
 /// Stat panel window declaration
 /client/var/datum/tgui_window/stat_panel

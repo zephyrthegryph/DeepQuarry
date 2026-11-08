@@ -6,6 +6,7 @@
 
 import { type AbilitiesData, hasAbilities } from './abilities';
 import type { InspectData } from './inspect';
+import type { McHealthData } from './mcHealthData';
 import {
   ADMIN_VIEWS,
   dataTabOf,
@@ -27,8 +28,9 @@ export type State = {
   version: number;
   currentTab: string;
   statusParts: string[];
-  mcParts: (string | number)[][];
-  mcMetrics: any;
+  /** Where the admin's eye is, for the MC Health panel's Advanced section. */
+  mcLocation: string;
+  mcMetrics: McHealthData | null;
   hrefToken: string | null;
   verbs: Verb[];
   spells: string[][];
@@ -54,7 +56,7 @@ export function initialState(): State {
     version: 0,
     currentTab: 'Status',
     statusParts: ['Loading...'],
-    mcParts: [['Loading...', '']],
+    mcLocation: '',
     mcMetrics: null,
     hrefToken: null,
     verbs: [],
@@ -331,7 +333,7 @@ export class StatStore {
       }
       case 'update_mc':
         this.changed({
-          mcParts: [['Location:', payload.coord_entry], ...payload.mc_data],
+          mcLocation: payload.coord_entry || '',
           mcMetrics: payload.mc_metrics,
           permanentTabs: this.withTab(tabs, 'MC'),
         });
