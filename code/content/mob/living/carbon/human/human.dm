@@ -1927,12 +1927,12 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		else
 			set_layer(HIDING_LAYER)
 
+/// The examine portrait: the shared portrait cache's picture (rendered off the tick; until it lands the examine shows the plain icon).
 /mob/living/carbon/human/examine_icon()
-	var/icon/I = get_cached_examine_icon(src)
-	if(!I)
-		I = getFlatIcon(src, defdir = SOUTH, no_anim = TRUE, force_south = TRUE)
-		set_cached_examine_icon(src, I, 50 SECONDS)
-	return I
+	var/datum/portrait/P = portrait_request(src, SOUTH)
+	if(P?.picture)
+		set_cached_examine_icon(src, P.picture, 50 SECONDS) // the stat panel's Examine tab reads it
+	return P?.picture
 
 /mob/living/carbon/human/proc/get_display_species()
 	//Shows species in tooltip

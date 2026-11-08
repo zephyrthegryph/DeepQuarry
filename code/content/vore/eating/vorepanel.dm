@@ -220,8 +220,11 @@ CAPABILITIES(/datum/vore_look)
 	if(nom_icons[key])
 		. = nom_icons[key]
 	else
-		. = icon2base64(getFlatIcon(target,defdir=SOUTH,no_anim=TRUE))
-		nom_icons[key] = .
+		// The shared portrait cache: rendered off the tick; until it lands the panel shows no picture for it (and asks again next push).
+		var/datum/portrait/P = portrait_request(target, SOUTH)
+		. = P?.b64
+		if(.)
+			nom_icons[key] = .
 
 /datum/vore_look/tgui_static_data(mob/user)
 	var/list/data = ..()

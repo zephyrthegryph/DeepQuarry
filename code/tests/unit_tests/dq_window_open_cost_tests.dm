@@ -62,7 +62,7 @@
 /datum/unit_test/dq_join_asset_cost/Run()
 	var/total = 0
 	var/files = 0
-	for(var/asset_type in list(/datum/asset/simple/tgui_statpanel, /datum/asset/simple/tgui_panel, /datum/asset/simple/namespaced/fontawesome, /datum/asset/simple/namespaced/tgfont, /datum/asset/simple/tgui, /datum/asset/spritesheet_batched/chat))
+	for(var/asset_type in list(/datum/asset/simple/tgui_panel, /datum/asset/simple/namespaced/fontawesome, /datum/asset/simple/namespaced/tgfont, /datum/asset/simple/tgui, /datum/asset/spritesheet_batched/chat))
 		var/list/sizes = dq_asset_bytes(get_asset_datum(asset_type))
 		total += sizes[1]
 		files += sizes[2]

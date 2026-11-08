@@ -48,6 +48,9 @@
 	rustg_file_write("", "[DQ_PREVIEW_RUNTIME_ICON_DIR].keep")
 	done = TRUE
 
+/// Runtime icon -> the path of its on-disk DMI copy, for every render (bounded: the oldest half is dropped past 1024).
+GLOBAL_LIST_EMPTY(dq_preview_runtime_icon_paths)
+
 /// Translates an appearance tree into an iconforge sprite, following getFlatIcon exactly.
 /datum/dq_preview_flattener
 	/// Set to a reason string when the appearance can't be expressed exactly.
@@ -74,9 +77,15 @@
 			unsupported = "non-DMI icon file [icon_string]"
 			return null
 		return icon_string
-	// Runtime-generated icon (a dyn.rsc cache reference). Copy it to disk under its hash.
+	// Runtime-generated icon (a dyn.rsc cache reference). Copy it to disk under its hash, once for the world: a human's body icons are runtime
+	// icons, and copying them again for every render cost about 100 ms of a portrait request (dq_portrait_cache).
 	if(LAZYACCESS(runtime_paths, icon_ref))
 		return LAZYACCESS(runtime_paths, icon_ref)
+	var/list/copied = GLOB.dq_preview_runtime_icon_paths
+	var/known = copied[icon_ref]
+	if(known)
+		LAZYSET(runtime_paths, icon_ref, known)
+		return known
 	dq_preview_ensure_dirs()
 	var/staging = "[DQ_PREVIEW_RUNTIME_ICON_DIR]staging-[rand(1, 999999)].dmi"
 	if(!fcopy(icon_ref, staging))
@@ -88,6 +97,9 @@
 		fcopy(staging, path)
 	fdel(staging)
 	LAZYSET(runtime_paths, icon_ref, path)
+	if(length(copied) >= 1024)
+		copied.Cut(1, 513) // the oldest half: a copy dropped is only made again
+	copied[icon_ref] = path
 	return path
 
 /// Number of dirs an icon state has, from rust-g metadata. Null (and unsupported) if unknown.

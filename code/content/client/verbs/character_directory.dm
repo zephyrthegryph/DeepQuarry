@@ -61,15 +61,14 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 	if(key)
 		GLOB.chardirectory_photos[key] = base64
 
+/// The mob's card picture: a picture set by hand, else its portrait from the shared portrait cache (rendered off the tick; null until it lands,
+/// the directory shows its placeholder and has it the next time it is opened).
 /mob/proc/get_chardirectory_photo()
 	var/cached = ALAZYACCESS(GLOB.chardirectory_photos, handle_of(src))
 	if(cached)
 		return cached
-
-	var/icon/F = getFlatIcon(src, defdir = SOUTH, no_anim = TRUE)
-	var/new_base64 = "'data:image/png;base64,[icon2base64(F)]'"
-	set_chardirectory_photo(new_base64)
-	return new_base64
+	var/datum/portrait/P = portrait_request(src, SOUTH)
+	return P?.b64 ? "'data:image/png;base64,[P.b64]'" : null
 
 /datum/character_directory/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
