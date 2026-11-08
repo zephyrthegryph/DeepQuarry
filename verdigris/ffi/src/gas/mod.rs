@@ -863,9 +863,24 @@ fn hook_register_world_turfs(
     let count = (max_x.get_number()? as u32)
         * (max_y.get_number()? as u32)
         * (max_z.get_number()? as u32);
+    register_turf_ids(0..count)
+}
+
+/// Registers one z-level's turfs in one call, as `hook_register_world_turfs` does for the map: a level made after the
+/// atmos core started (`/world/proc/increment_max_z()`), whose turfs skip their own registration while it is made. Args:
+/// (z, max_x, max_y). Returns the turfs DM must ask for air passage.
+#[auxmacros::bind("/proc/_air_register_level_turfs")]
+fn hook_register_level_turfs(z: ByondValue, max_x: ByondValue, max_y: ByondValue) -> Result<ByondValue> {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let (z, level) = (z.get_number()? as u32, (max_x.get_number()? as u32) * (max_y.get_number()? as u32));
+    register_turf_ids(level * (z.max(1) - 1)..level * z.max(1))
+}
+
+/// Registers the turfs with these ref ids (air cell, mask, solid-heat cell) and returns the ones DM must ask for air passage.
+fn register_turf_ids(ids: std::ops::Range<u32>) -> Result<ByondValue> {
     let mut rows = Vec::new();
     let mut asking = Vec::new();
-    for id in 0..count {
+    for id in ids {
         let turf = ByondValue::new_ref(ValueType::Turf, id);
         let mut asks = false;
         if let Some(row) = boot_turf(turf, &mut asks) {

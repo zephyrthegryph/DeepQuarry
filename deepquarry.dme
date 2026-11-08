@@ -440,6 +440,7 @@
 #include "code\content\logging\log_lists.dm"
 #include "code\host\helpers\direction_lists.dm"
 #include "code\host\helpers\fancy_lists.dm"
+#include "code\host\helpers\files.dm"
 #include "code\host\helpers\frequency.dm"
 #include "code\content\mob\speech_toppings.dm"
 #include "code\content\names\name_lists.dm"
