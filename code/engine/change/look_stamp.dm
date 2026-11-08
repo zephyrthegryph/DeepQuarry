@@ -69,6 +69,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		type_look_stamp_record(D)
 		if(!isnull(gameplay_before))
 			look_lazy_record(D, gameplay_before)
+	var/sampled_at = REALTIMEOFDAY
 	var/list/kept = list()
 	var/skipped = 0
 	for(var/datum/D as anything in Q)
@@ -81,7 +82,9 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 			continue
 		kept += D
 	refresh_queue_replace(kept)
+	var/walked_at = REALTIMEOFDAY
 	skipped += boot_created_release() // the atoms held by type while the map loaded: an empty default look owes nothing, the rest are queued now
+	log_world("refresh settle phases (ms): sample [(sampled_at - start) * 100], queue walk [(walked_at - sampled_at) * 100], held release [(REALTIMEOFDAY - walked_at) * 100]")
 	GLOB.type_look_stamp_skipped += skipped
 	log_world("refresh queue by kind after the settle: [refresh_kind_census(Q)]")
 	log_world("refresh settle: [before] queued at boot, [length(sampled)] type(s) sampled, [skipped] fresh atom(s) dropped (empty default look), [length(Q)] left, [(REALTIMEOFDAY - start) * 100] ms")
@@ -302,7 +305,7 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 /// caps_init(), for a fresh `A` not yet queued: TRUE when it is held in its type's bucket instead of queued (a map load, a type with no verdict, its
 /// sample already queued). FALSE queues it as before; the first such instance of a type is recorded as the sample.
 /proc/boot_created_hold(atom/A)
-	if(GLOB.boot_created_settled || !materialization_host().frame_running() || !isnull(GLOB.type_look_stamp[A.type]) || ismob(A))
+	if(GLOB.boot_created_settled || !materialization_host().frame_running() || !isnull(GLOB.type_look_stamp[A.type]) || ismob(A) || A.periodic_cadence || A.periodic_interval)
 		return FALSE
 	if(!GLOB.boot_created_sampled[A.type])
 		GLOB.boot_created_sampled[A.type] = TRUE
@@ -331,13 +334,15 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 	for(var/type in buckets)
 		var/list/bucket = buckets[type]
 		var/empty = GLOB.type_look_stamp[type]
+		if(empty)
+			. += length(bucket) // released in one step: a parked atom of an empty default look owes nothing (interest_audit_atom(), interest_draw_now())
+			continue
+		if(GLOB.type_look_lazy[type] && boot_drain_deferred())
+			continue // a lazy type's held atoms are parked already, which is what the park would make of them: they draw when a client comes near
 		for(var/atom/A as anything in bucket)
 			if(QDELETED(A) || A.refresh_queued != DEP_PARKED)
 				continue // deleted, or a real mark queued it already with what it owed
 			A.refresh_queued = 0
-			if(empty)
-				.++
-				continue
 			refresh_mark(A, DEP_ALL)
 			A.refresh_queued |= DEP_CREATED
 	GLOB.boot_created_dropped += .
