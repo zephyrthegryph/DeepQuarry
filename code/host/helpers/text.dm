@@ -472,44 +472,6 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 #define gender2text(gender) capitalize(gender)
 
-/**
- * Used to get a properly sanitized input. Returns null if cancel is pressed.
- *
- * Arguments
- ** user - Target of the input prompt.
- ** message - The text inside of the prompt.
- ** title - The window title of the prompt.
- ** max_length - If you intend to impose a length limit - default is 1024.
- ** no_trim - Prevents the input from being trimmed if you intend to parse newlines or whitespace.
-*/
-/proc/stripped_input(mob/user, message = "", title = "", default = "", max_length=MAX_MESSAGE_LEN, no_trim=FALSE)
-	var/user_input = input(user, message, title, default) as text|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
-	if(isnull(user_input)) // User pressed cancel
-		return
-	if(no_trim)
-		return copytext_char(html_encode(user_input), 1, max_length)
-	else
-		return trim(html_encode(user_input), max_length) //trim is "outside" because html_encode can expand single symbols into multiple symbols (such as turning < into &lt;)
-
-/**
- * Used to get a properly sanitized input in a larger box. Works very similarly to stripped_input.
- *
- * Arguments
- ** user - Target of the input prompt.
- ** message - The text inside of the prompt.
- ** title - The window title of the prompt.
- ** max_length - If you intend to impose a length limit - default is 1024.
- ** no_trim - Prevents the input from being trimmed if you intend to parse newlines or whitespace.
-*/
-/proc/stripped_multiline_input(mob/user, message = "", title = "", default = "", max_length=MAX_MESSAGE_LEN, no_trim=FALSE)
-	var/user_input = input(user, message, title, default) as message|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
-	if(isnull(user_input)) // User pressed cancel
-		return
-	if(no_trim)
-		return copytext_char(html_encode(user_input), 1, max_length)
-	else
-		return trim(html_encode(user_input), max_length)
-
 #define NO_CHARS_DETECTED 0
 #define SPACES_DETECTED 1
 #define SYMBOLS_DETECTED 2

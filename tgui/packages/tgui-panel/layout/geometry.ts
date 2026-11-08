@@ -7,6 +7,7 @@ import {
   dragPosition,
   fitBrowserSize,
   fitRect,
+  lostRect,
   MAP_SPLIT_MAX,
   MAP_SPLIT_MIN,
   type MainReport,
@@ -191,8 +192,9 @@ type DragSession = {
 
 /**
  * Drags the float window with the mouse, with no OS title bar: the window
- * position follows the mouse deltas in physical pixels (winset pos), held in
- * the main window's client area and snapped to its edges and to the border
+ * position follows the mouse deltas in physical pixels (winset pos), free to
+ * go anywhere, onto any monitor (a winset pos may be negative or past the
+ * primary screen), and snapped to the main window's edges and to the border
  * between the map and the right-hand column. Dropping with the pointer over
  * that column docks the chat there, the upper half to the top and the lower
  * half to the bottom; the hint shows that target while dragging.
@@ -218,12 +220,9 @@ function runWindowDrag(session: DragSession, handlers: DragHandlers): void {
       return null;
     }
     const pos = dragPosition(start.pos, startMouse, latest, ratio);
-    const fitted = fitRect(
-      { x: pos.x, y: pos.y, w: start.size.x, h: start.size.y },
-      area,
-    );
+    // Never held inside the main window: a second monitor is as good a place as any.
     return snapRect(
-      fitted,
+      { x: pos.x, y: pos.y, w: start.size.x, h: start.size.y },
       area,
       SNAP_DISTANCE * ratio,
       borderX === null ? {} : { x: [borderX] },
@@ -476,8 +475,8 @@ export function startDockedDrag(
 /**
  * Resizes the float window from one of its edges or corners (page-drawn
  * handles: the window has no OS frame). Position and size go in one winset, so
- * a left or top edge moves the window as it grows; the rect stays inside the
- * main window's client area and above the minimum size. If BYOND ignores the
+ * a left or top edge moves the window as it grows; the rect stays above the
+ * minimum size and may reach onto any monitor. If BYOND ignores the
  * size of a window that cannot resize, the window is allowed to resize for the
  * duration of the drag.
  */
@@ -514,7 +513,7 @@ export function startWindowResize(
     if (!startRect) {
       return;
     }
-    const rect = resizeRect(startRect, edges, startMouse, latest, ratio, area);
+    const rect = resizeRect(startRect, edges, startMouse, latest, ratio, null);
     if (
       applied &&
       applied.x === rect.x &&
@@ -713,9 +712,9 @@ export function startSplitDrag(
 }
 
 /**
- * Puts the float window back inside the main window when any of it is outside
- * (the server places it at a default spot, and a maximized main window is
- * measured here, where the screen is known).
+ * Brings back a float window that is lost: at Windows' minimized place
+ * (-32000) or otherwise far past any monitor (lostRect). A window on a second
+ * monitor, or partly off the main window, is the player's choice and stays.
  */
 export async function clampFloatToMain(): Promise<void> {
   const [geometry, main] = await Promise.all([floatGeometry(), mainBounds()]);
@@ -723,15 +722,13 @@ export async function clampFloatToMain(): Promise<void> {
     console.log('chat layout: float clamp skipped', { geometry, main });
     return;
   }
-  const rect = fitRect(
-    {
-      x: geometry.pos.x,
-      y: geometry.pos.y,
-      w: geometry.size.x,
-      h: geometry.size.y,
-    },
-    main.visible,
-  );
+  const placed = {
+    x: geometry.pos.x,
+    y: geometry.pos.y,
+    w: geometry.size.x,
+    h: geometry.size.y,
+  };
+  const rect = lostRect(placed) ? fitRect(placed, main.visible) : placed;
   const moved =
     rect.x !== geometry.pos.x ||
     rect.y !== geometry.pos.y ||

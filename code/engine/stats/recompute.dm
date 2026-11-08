@@ -454,11 +454,15 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 	if(!I || !I.init_needed)
 		return
 	var/datum/stat_record/rec = stat_ensure_inited(E, I)
-	var/list/todo = list()
-	for(var/datum/stat_def/def as anything in I.defs)
-		if(length(I.contribs[def.skey]) || def.rule == STAT_RULE_FORMULA || rec.constants?[def.skey])
-			todo += def
-	todo = stat_sort_by_rank(I, todo)
+	// The stats every instance computes (a contribution or a formula), in rank order, are a fact of the type: built once (stat_type_init_todo()). Only
+	// an instance whose map edits made a stat var a constant computes that stat too, and builds its own list.
+	var/list/todo = I.init_todo || stat_type_init_todo(I)
+	if(rec.constants)
+		todo = list()
+		for(var/datum/stat_def/def as anything in I.defs)
+			if(length(I.contribs[def.skey]) || def.rule == STAT_RULE_FORMULA || rec.constants[def.skey])
+				todo += def
+		todo = stat_sort_by_rank(I, todo)
 	for(var/datum/stat_def/def as anything in todo)
 		stat_recompute(E, def, TRUE)
 	for(var/datum/stat_hop/sys as anything in I.hops["sys"])
@@ -474,6 +478,15 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 		stat_ct_update(E, ct)
 	for(var/rel_var in I.hop_rels)
 		stat_hop_attach(E, rel_var)
+
+/// The stats of type I that every instance computes at init (a contribution or a formula), in rank order: built once and kept on I (read-only after).
+/proc/stat_type_init_todo(datum/stat_type_info/I)
+	var/list/todo = list()
+	for(var/datum/stat_def/def as anything in I.defs)
+		if(length(I.contribs[def.skey]) || def.rule == STAT_RULE_FORMULA)
+			todo += def
+	I.init_todo = stat_sort_by_rank(I, todo)
+	return I.init_todo
 
 /// The defs sorted by rank, lowest first (a stable insertion sort: a handful of stats per type).
 /proc/stat_sort_by_rank(datum/stat_type_info/I, list/defs)

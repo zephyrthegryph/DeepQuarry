@@ -11,6 +11,7 @@ import {
   fitRect,
   fitSize,
   isMode,
+  lostRect,
   MIN_WINDOW_SIZE,
   mainRects,
   mapSplitFromX,
@@ -446,5 +447,14 @@ describe('chat browser fit', () => {
       x: 640,
       y: 480,
     });
+  });
+});
+
+describe('second monitors', () => {
+  it('keeps a window on any monitor and brings back only a lost one', () => {
+    expect(lostRect({ x: -1600, y: 200, w: 560, h: 420 })).toBe(false);
+    expect(lostRect({ x: 3000, y: -400, w: 560, h: 420 })).toBe(false);
+    expect(lostRect({ x: -32000, y: -32000, w: 560, h: 420 })).toBe(true);
+    expect(lostRect({ x: 0, y: 0, w: 0, h: 420 })).toBe(true);
   });
 });

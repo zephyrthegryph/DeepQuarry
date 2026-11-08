@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const read = (path: string) =>
@@ -51,7 +51,14 @@ describe('chat input wiring', () => {
     expect(read('events/listeners.ts')).toContain("'chat/languageRules'");
   });
 
+  // The package is gone from git; a checkout that had it keeps an ignored node_modules folder there, so look for sources.
   it('has no say popup left', () => {
-    expect(existsSync(join(import.meta.dir, '../../tgui-say'))).toBe(false);
+    const dir = join(import.meta.dir, '../../tgui-say');
+    const left = existsSync(dir)
+      ? readdirSync(dir, { recursive: true })
+          .map(String)
+          .filter((f) => !f.startsWith('node_modules'))
+      : [];
+    expect(left).toEqual([]);
   });
 });

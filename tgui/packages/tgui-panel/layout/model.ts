@@ -465,3 +465,16 @@ export function fitBrowserSize(reported: Point, expected: Point | null): Point {
     y: Math.min(reported.y, expected.y),
   };
 }
+
+/** Past this far (screen pixels) from the origin a window is on no monitor (Windows parks minimized windows at -32000). */
+export const LOST_COORD = 30000;
+
+/** Whether a window rect is lost: on no monitor at all, or with no size. Anywhere else, any monitor, is fine. */
+export function lostRect(rect: Rect): boolean {
+  return (
+    !(rect.w > 0) ||
+    !(rect.h > 0) ||
+    Math.abs(rect.x) >= LOST_COORD ||
+    Math.abs(rect.y) >= LOST_COORD
+  );
+}
