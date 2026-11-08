@@ -1,10 +1,16 @@
 // T8: a holder whose starting reagents are a per-type constant is filled from its declaration's shared template in one pass. These check the
 // result is what adding them one by one gives, and that two fresh holders share nothing a write could reach.
 
+/// Three inert starting reagents: one pass from the template (a single reagent goes add by add, no cheaper in one pass).
+/obj/item/dq_reagent_template_probe
+
+CAPABILITIES(/obj/item/dq_reagent_template_probe)
+	reagents(40, add = list(REAGENT_ID_COLA = 10, REAGENT_ID_SPACEUP = 10, REAGENT_ID_DRGIBB = 10))
+
 /datum/unit_test/dq_reagent_starting_template_matches_adds
 
 /datum/unit_test/dq_reagent_starting_template_matches_adds/Run()
-	for(var/path in list(/obj/item/reagent_containers/food/drinks/cans/cola, /obj/item/reagent_containers/pill/inaprovaline, /obj/item/reagent_containers/food/drinks/bottle/cola))
+	for(var/path in list(/obj/item/dq_reagent_template_probe))
 		var/obj/item/fresh = allocate(path)
 		var/datum/capability/lib/reagents/C = null
 		var/datum/type_table/T = type_table_store[path]
@@ -12,7 +18,7 @@
 			if(istype(E.item, /datum/capability/lib/reagents))
 				C = E.item
 		TEST_ASSERT_NOTNULL(C, "[path] declares reagents()")
-		TEST_ASSERT(length(C.template_cache), "[path]'s starting reagents are a shared template")
+		TEST_ASSERT_EQUAL(length(C.template_cache), 3, "[path]'s starting reagents are a shared template")
 		var/obj/item/manual = allocate(/obj/item)
 		manual.create_reagents(fresh.reagents.maximum_volume)
 		for(var/id in C.template_cache)

@@ -150,7 +150,10 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 	var/regime = holder.reagents.xform_regime()
 	if(template_regime != regime || isnull(template_cache))
 		build_template(regime)
-	return (template_cache && template_total <= max_volume) ? template_cache : null
+	// One reagent is no cheaper in one pass (making the reagent datum is the cost; bench tmp A/B: 424 us add vs 527 us filled): it goes add by add.
+	if(!template_cache || length(template_cache) == 1 || template_total > max_volume)
+		return null
+	return template_cache
 
 /datum/capability/lib/reagents/proc/build_template(regime)
 	var/list/built = list()
