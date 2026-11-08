@@ -170,7 +170,7 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 
 /// Owed arrival draws one pass always runs, whatever the tick has spent: the nearest of an arrival (what stands around the viewer) are on screen at once.
 #define INTEREST_ARRIVAL_MIN_STEP 32
-/// Atoms that owe a draw in chunks that just became visible, nearest to their viewer first (several viewers' arrivals append in turn).
+/// Handles (handle_of()) of the atoms that owe a draw in chunks that just became visible, nearest to their viewer first (several viewers' arrivals append in turn).
 GLOBAL_LIST_EMPTY(interest_arrivals)
 /// Owed draws run from the arrival queue, and the frames the queue took more than one of.
 GLOBAL_VAR_INIT(interest_arrival_drawn, 0)
@@ -239,11 +239,11 @@ GLOBAL_VAR_INIT(interest_arrival_step_max, 0)
 	owed = sortTim(owed, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
 	for(var/turf/T as anything in owed)
 		if(T.refresh_queued)
-			GLOB.interest_arrivals += T
+			GLOB.interest_arrivals += handle_of(T)
 			.++
 		FOR_CONTENTS(var/atom/movable/A as anything, T)
 			if(A.refresh_queued)
-				GLOB.interest_arrivals += A
+				GLOB.interest_arrivals += handle_of(A)
 				.++
 
 /// Draws from the arrival queue until the tick's budget is spent; what is left is drawn on the next frame (a keyed timer that exists only while the
@@ -254,8 +254,8 @@ GLOBAL_VAR_INIT(interest_arrival_step_max, 0)
 	var/i = 0
 	while(i < length(Q))
 		i++
-		var/atom/A = Q[i]
-		if(A && !QDELETED(A))
+		var/atom/A = handle_get(Q[i])
+		if(isatom(A) && !QDELETED(A))
 			var/drawn = interest_draw_now(A)
 			. += drawn
 			GLOB.interest_arrival_drawn += drawn
