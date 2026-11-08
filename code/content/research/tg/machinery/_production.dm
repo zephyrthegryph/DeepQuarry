@@ -225,7 +225,7 @@ CAPABILITIES(/obj/machinery/rnd/production)
 		"materialMaximum" = materials.local_size,
 		"queue" = list(),
 	)
-	var/list/material_data = materials.mat_container()?.material_list_data(A.actor)
+	var/list/material_data = materials.mat_container()?.material_list_data(A.actor, TRUE) // the loaded ones: every view of them skips the empty
 	if(material_data)
 		data["materials"] = material_data
 	return data

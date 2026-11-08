@@ -154,7 +154,7 @@ CAPABILITIES(/obj/machinery/autolathe)
 		"materialtotal" = materials.total_amount(),
 		"materialsmax" = materials.max_amount,
 		"active" = !!fabricator_printing(src),
-		"materials" = materials.material_list_data(),
+		"materials" = materials.material_list_data(null, TRUE), // the loaded ones: every view of them skips the empty
 		"materialChoices" = lathe_material_choice_list(materials),
 	)
 

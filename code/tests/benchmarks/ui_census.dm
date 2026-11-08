@@ -65,24 +65,39 @@
 	var/rank = 0
 	for(var/list/row as anything in rows)
 		rank++
-		log_world("UI_CENSUS #[rank] [row["window"]] ([row["type"]]): ui_data [row["data_ms"]] ms [row["data_bytes"]] B [row["stable"] ? "stable" : "CHANGES EVERY BUILD"]; static [row["static_ms"]] ms [row["static_bytes"]] B")
+		log_world("UI_CENSUS #[rank] [row["window"]] ([row["type"]]): ui_data warm [row["data_ms"]] ms (own [row["own_ms"]] ms, first [row["first_ms"]] ms) [row["data_bytes"]] B [row["stable"] ? "stable" : "CHANGES EVERY BUILD"]; static [row["static_ms"]] ms [row["static_bytes"]] B")
 	detail("ui_census", rows)
 
-/// One window's numbers: a row, or null when its data could not be built.
+/// One window's numbers: a row, or null when its data could not be built. The first build (cold caches, first portrait requests) is timed on
+/// its own; the warm builds after it are what every later push of an open window pays. own_ms is the type's own ui_data() alone, the rest
+/// being the window machinery's (capability data, modal, lookups).
 /datum/benchmark/ui_census/proc/measure(window, datum/holder, mob/user)
 	var/list/first
 	var/list/data
+	var/first_ms
 	var/started = TICK_USAGE_REAL
 	try
+		first = list()
+		present_tgui_data(holder, user, first)
+		first_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+		started = TICK_USAGE_REAL
 		for(var/i in 1 to UI_CENSUS_BUILDS)
 			data = list()
 			present_tgui_data(holder, user, data)
-			if(!first)
-				first = data
 	catch(var/exception/e)
 		log_world("UI_CENSUS [window] ([holder.type]): ui_data failed ([e])")
 		return null
 	var/data_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / UI_CENSUS_BUILDS
+	var/own_ms = 0
+	try
+		var/datum/act/eval/A = present_eval_context(holder, user, FALSE)
+		started = TICK_USAGE_REAL
+		for(var/i in 1 to UI_CENSUS_BUILDS)
+			holder.ui_data(A)
+		own_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / UI_CENSUS_BUILDS
+		A.release()
+	catch
+		own_ms = -1
 	var/list/static_data
 	started = TICK_USAGE_REAL
 	try
@@ -94,7 +109,9 @@
 	return list(
 		"window" = window,
 		"type" = "[holder.type]",
+		"first_ms" = round(first_ms, 0.001),
 		"data_ms" = round(data_ms, 0.001),
+		"own_ms" = round(own_ms, 0.001),
 		"data_bytes" = length(data_json),
 		"stable" = json_encode(first) == data_json,
 		"static_ms" = round(static_ms, 0.001),

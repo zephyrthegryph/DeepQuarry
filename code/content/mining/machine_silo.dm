@@ -110,7 +110,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 	var/mob/user = A.actor
 	var/list/data = list()
 
-	data["materials"] = materials.material_list_data(user)
+	data["materials"] = materials.material_list_data(user, TRUE) // the loaded ones: every view of them skips the empty
 
 	data["machines"] = list()
 	for(var/datum/remote_materials/remote as anything in ore_connected_machines)

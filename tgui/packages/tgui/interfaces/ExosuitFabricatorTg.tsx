@@ -321,7 +321,7 @@ const QueueList = (props: QueueListProps) => {
             accumulatedCosts[material] =
               (accumulatedCosts[material] || 0) + amount;
 
-            if (accumulatedCosts[material] > availableMaterials[material]) {
+            if (accumulatedCosts[material] > (availableMaterials[material] ?? 0)) {
               canPrint = false;
             }
           }

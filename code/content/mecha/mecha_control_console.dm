@@ -12,7 +12,7 @@
 /// The window data.
 /obj/machinery/computer/mecha/ui_data(datum/act/eval/A)
 	var/list/data = ..()
-	data["stored_data"] = stored_data
+	data["stored_data"] = stored_data || list() // the same before and after its first use: an unchanged push is dropped
 	var/list/computed = ui_data_obj_machinery_computer_mecha(A.actor, null, null)
 	for(var/key in computed)
 		data[key] = computed[key]

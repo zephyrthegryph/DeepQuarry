@@ -417,7 +417,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 /obj/machinery/mecha_part_fabricator_tg/ui_data(datum/act/eval/A)
 	var/list/data = list("processing" = process_queue)
 
-	var/list/material_data = rmat.mat_container()?.material_list_data(A.actor)
+	var/list/material_data = rmat.mat_container()?.material_list_data(A.actor, TRUE) // the loaded ones: every view of them skips the empty
 	if(material_data)
 		data["materials"] = material_data
 	data["queue"] = list()
