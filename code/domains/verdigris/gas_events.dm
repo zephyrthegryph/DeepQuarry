@@ -8,8 +8,8 @@
 		return
 	SSair.count_gas_reaction()
 	native_fired(NATIVE_SRC_GAS_EVENT)
-	if(T.air)
-		T.air.react(T)
+	if(T.turf_air())
+		T.turf_air().react(T)
 
 /// A turf's visible gas changed (`GasEvent::CellVisualChange`): the same
 /// `set_visuals()` the old `GAS_EVENT_VISUAL` dispatched.

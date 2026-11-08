@@ -271,11 +271,6 @@
 			consume(cashmoney, user)
 	return 1
 
-/obj/machinery/casino_prize_dispenser/ui_assets(mob/user)
-	return list(
-		get_asset_datum(/datum/asset/spritesheet_batched/vending),
-	)
-
 /// /obj/machinery/casino_prize_dispenser's window data.
 /obj/machinery/casino_prize_dispenser/ui_data(datum/act/eval/A)
 	var/list/data = list()

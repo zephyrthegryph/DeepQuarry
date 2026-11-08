@@ -13,10 +13,10 @@
 		return null
 	dq_atmos_test_isolate_pair(pair[1], pair[2])
 	for(var/turf/open/T as anything in pair)
-		T.air.clear()
-		T.air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
-		T.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
-		heat_set(T.air, kelvin)
+		T.turf_air().clear()
+		T.turf_air().set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
+		T.turf_air().set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+		heat_set(T.turf_air(), kelvin)
 	SSair.run_gas_frames(1)
 	return pair
 

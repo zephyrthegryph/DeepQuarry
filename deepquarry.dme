@@ -2696,6 +2696,8 @@
 #include "code\domains\verdigris\native_api.dm"
 #include "code\domains\verdigris\sense.dm"
 #include "code\domains\verdigris\system.dm"
+#include "code\domains\verdigris\sight\api.dm"
+#include "code\domains\verdigris\sight\sight.dm"
 #include "code\engine\change\batch.dm"
 #include "code\engine\change\delivery.dm"
 #include "code\engine\change\derived.dm"

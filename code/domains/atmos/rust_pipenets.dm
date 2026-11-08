@@ -214,12 +214,12 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		var/port_id = rust_pipe_port_ids[index]
 		var/port_volume = rust_pipe_port_volume(index)
 		var/turf/open/release_turf = get_turf(src)
-		var/release_to = port_volume > 0 && release_turf?.air ? release_turf.air : 0
+		var/release_to = port_volume > 0 && release_turf?.turf_air() ? release_turf.turf_air() : 0
 		// Batched destroy: one removal call for the whole doomed set (init_and_turfs.md §4.4).
 		if(dq_pipe_port_remove(src, port_id, release_to))
 			continue
 		if(release_to)
-			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE_TO_MIXTURE, port_id, release_to, release_turf.air.return_volume())
+			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE_TO_MIXTURE, port_id, release_to, release_turf.turf_air().return_volume())
 		else
 			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE, port_id)
 		rust_free_pipe_port(port_id)

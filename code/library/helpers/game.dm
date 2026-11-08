@@ -531,7 +531,7 @@
 		// fallback for walls and other airless turfs. Sensors must inspect the
 		// actual turf-owned mixture or walls become fake 0 K / 0 kPa samples.
 		turfs[index] = T
-		mixtures[index] = open_turf?.air
+		mixtures[index] = open_turf?.turf_air()
 	// One batched arena read for all four neighbours.
 	var/list/readings = read_gas_mixtures(mixtures)
 	var/minp = 16777216
@@ -571,7 +571,7 @@
 		var/turf/T = get_turf(get_step(loc, directions[index]))
 		var/turf/open/open_turf = istype(T, /turf/open) ? T : null
 		turfs[index] = T
-		mixtures[index] = open_turf?.air
+		mixtures[index] = open_turf?.turf_air()
 	// One batched arena read for all four neighbours.
 	var/list/readings = read_gas_mixtures(mixtures)
 	var/list/temps = new/list(4)

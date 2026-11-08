@@ -330,7 +330,7 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 		set_hot(FALSE)
 		return
 	var/turf/open/turf = get_turf(src)
-	var/datum/gas_mixture/air = istype(turf) ? turf.air : null
+	var/datum/gas_mixture/air = istype(turf) ? turf.turf_air() : null
 	var/ambient_temperature = air ? air.return_temperature() : T20C
 	if(abs(batch.temperature() - ambient_temperature) < 5)
 		batch.settle_heat(air ? turf : null)

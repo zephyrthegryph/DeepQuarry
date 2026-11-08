@@ -179,7 +179,7 @@
 		floor.extinguish()
 		if(floor.active_hotspot)
 			qdel(floor.active_hotspot)
-		heat_set(floor.air, T20C, HEAT_SOURCE_OTHER)
+		heat_set(floor.turf_air(), T20C, HEAT_SOURCE_OTHER)
 		thing = allocate(root, floor)
 	else
 		thing = allocate(root)
@@ -386,9 +386,9 @@
 	var/turf/open/T = test_floor()
 	// A fire needs oxygen to keep burning; the test map's floor has little.
 	var/datum/gas_mixture/saved = new
-	saved.copy_from(T.air)
-	T.air.set_moles(GAS_O2, 20)
-	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
+	saved.copy_from(T.turf_air())
+	T.turf_air().set_moles(GAS_O2, 20)
+	heat_set(T.turf_air(), T20C, HEAT_SOURCE_OTHER)
 	var/obj/item/paper/hot = allocate(/obj/item/paper, T)
 	var/ignition = PROPERTY(hot, PROP_IGNITION_POINT)
 	TEST_ASSERT(ignition > T20C, "paper has an ignition point")
@@ -413,7 +413,7 @@
 	dq_rx_flush()
 	TEST_ASSERT(!(proofed.resistance_flags & ON_FIRE), "fireproof paper still does not burn")
 	hot.extinguish()
-	T.air.copy_from(saved)
+	T.turf_air().copy_from(saved)
 
 // ---- Melting ----
 

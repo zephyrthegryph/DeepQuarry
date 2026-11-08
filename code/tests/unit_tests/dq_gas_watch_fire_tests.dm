@@ -87,14 +87,14 @@
 	// A turf's air: one that holds gas (a heat write to an empty mixture changes nothing, so the first clear floor of a map that opens with an airless one tests nothing).
 	var/turf/simulated/floor/T
 	for(var/turf/simulated/floor/candidate in world)
-		if(candidate.air && !candidate.blocks_air && !candidate.immutable_atmos && candidate.air.total_moles() > 1)
+		if(candidate.turf_air() && !candidate.blocks_air && !candidate.immutable_atmos && candidate.turf_air().total_moles() > 1)
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor holds gas to watch")
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
-	TEST_ASSERT(length(gas_watch_heard(T.air, GAS_DEPENDENCY_TEMPERATURE, PROC_REF(gas_watch_heat_up))), "heat_set() on a turf's air fired no temperature watch")
-	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
+	TEST_ASSERT(length(gas_watch_heard(T.turf_air(), GAS_DEPENDENCY_TEMPERATURE, PROC_REF(gas_watch_heat_up))), "heat_set() on a turf's air fired no temperature watch")
+	heat_set(T.turf_air(), T20C, HEAT_SOURCE_OTHER)
 
 /// A machine's gas_watch() on its own mixture (a canister's contents) hears a change of it: the canister's gauge follows an emptied canister
 /// with nobody calling its handler.
@@ -186,15 +186,15 @@
 /datum/unit_test/dq_early_air_reads_and_watches_survive_registration/Run()
 	var/turf/open/T
 	for(var/turf/simulated/floor/candidate in world)
-		if(!candidate.blocks_air && !candidate.immutable_atmos && !candidate.planetary_atmos && candidate.air && candidate.z <= 3)
+		if(!candidate.blocks_air && !candidate.immutable_atmos && !candidate.planetary_atmos && candidate.turf_air() && candidate.z <= 3)
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no mapped open floor with its own air")
 	dq_atmos_test_snapshot_air(T)
 	var/was_registered = SSair.turfs_registered
 	T.update_air_ref(-1)
-	rel_set(T, nameof(T.air), T.create_gas_mixture())
-	TEST_ASSERT(T.air.arena_id() < GAS_HANDLE_PIPE_BASE, "the turf's air is a main-owned mixture before it registers ([T.air.arena_id()])")
+	rel_set(T, nameof(T._air), T.create_gas_mixture())
+	TEST_ASSERT(T.turf_air().arena_id() < GAS_HANDLE_PIPE_BASE, "the turf's air is a main-owned mixture before it registers ([T.turf_air().arena_id()])")
 	var/was_initialized = SSair.initialized
 	SSair.initialized = FALSE
 	SSair.turfs_registered = FALSE
@@ -212,41 +212,37 @@
 	T.update_air_ref(0, T.air_block_mask())
 	SSair.gas_turfs_registered()
 	SSair.turfs_registered = was_registered
-	TEST_ASSERT(T.air.arena_id() >= GAS_HANDLE_TURF_BASE, "registration moved the turf's air into its field cell ([T.air.arena_id()])")
+	TEST_ASSERT(T.turf_air().arena_id() >= GAS_HANDLE_TURF_BASE, "registration moved the turf's air into its field cell ([T.turf_air().arena_id()])")
 	TEST_ASSERT_EQUAL(round(T.return_air().return_pressure(), 0.1), round(early_pressure, 0.1), "the reading is the same either side of registration")
 	dq_gas_watch_test_deliver()
 	ear.masks.Cut()
-	T.air.adjust_gas(/datum/gas/oxygen, 50)
+	T.turf_air().adjust_gas(/datum/gas/oxygen, 50)
 	dq_gas_watch_test_deliver()
 	TEST_ASSERT(length(ear.masks), "a watch armed before the turf registered heard nothing after it did")
 	qdel(W)
 
-/// What initializes on a turf before the turf's own Initialize() finds the turf's real air already made (settle_air(), from InitAtom()), and the turf's own
-/// setup keeps that one mixture instead of making a second.
+/// A turf's air is made by its first read, whether that comes before the turf is in the Rust arena (a copy of its template
+/// with the real gas) or after; registration keeps that one mixture, and later reads return it.
 /datum/unit_test/dq_settled_turf_air_is_the_one_the_turfs_setup_keeps
 
 /datum/unit_test/dq_settled_turf_air_is_the_one_the_turfs_setup_keeps/Run()
 	var/turf/open/T
 	for(var/turf/simulated/floor/candidate in world)
-		if(!candidate.blocks_air && !candidate.immutable_atmos && !candidate.planetary_atmos && candidate.air && candidate.z <= 3)
+		if(!candidate.blocks_air && !candidate.immutable_atmos && !candidate.planetary_atmos && candidate.turf_air() && candidate.z <= 3)
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no mapped open floor with its own air")
 	dq_atmos_test_snapshot_air(T)
 	T.update_air_ref(-1)
-	rel_clear(T, nameof(T.air))
-	T.flags &= ~ATOM_INITIALIZED
-	TEST_ASSERT_NULL(T.air, "the turf is back before its own Initialize()")
-	T.settle_air()
-	var/datum/gas_mixture/made = T.air
-	TEST_ASSERT_NOTNULL(made, "settle_air() made the turf's air")
+	rel_clear(T, nameof(T._air))
+	TEST_ASSERT_NULL(T._air, "the turf holds no air datum")
+	var/datum/gas_mixture/made = T.turf_air()
+	TEST_ASSERT_NOTNULL(made, "the first read made the turf's air")
 	var/pressure = made.return_pressure()
-	T.settle_air() // a second thing initializing on it
-	T.flags |= ATOM_INITIALIZED
-	T.setup_open_air() // the turf's own Initialize() setup, which finds the air made
-	TEST_ASSERT(pressure > 50, "the air made before the turf's own Initialize() is its real air, not vacuum ([pressure])")
-	TEST_ASSERT(T.air == made, "the turf's own setup kept the one mixture")
+	TEST_ASSERT(pressure > 50, "the air made before the turf is in the arena is its real air, not vacuum ([pressure])")
 	T.update_air_ref(0, T.air_block_mask())
+	TEST_ASSERT(T.turf_air() == made, "registration kept the one mixture")
+	TEST_ASSERT_EQUAL(round(T.turf_air().return_pressure(), 0.1), round(pressure, 0.1), "the reading is the same either side of registration")
 
 /// A gas watch still fires, with all its wakes delivered, after the test clock has run and been handed back: the driver leaves no per-lane delivery
 /// count or queued wake behind (kernel_test_end()).

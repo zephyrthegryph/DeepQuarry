@@ -396,3 +396,33 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 
 /datum/relation_definition/slot/proc/is_worn_provider_slot()
 	return FALSE
+
+// ---- compiled pool resets of the hot evaluation contexts (code/engine/state/pool.dm, pool_reset_direct()) ----
+// Every capability hook, condition and notice takes and releases one of these (387 k at a full-map boot); the generic reset wrote each field through
+// D.vars by name. /datum/act's own fields are in code/host/acts/context.dm; a field added there and not here fails the test build's check.
+
+/datum/act/eval/pool_reset_direct()
+	if(type != /datum/act/eval)
+		return FALSE // a subtype (every /datum/notice) adds fields of its own: the generic reset covers them
+	holder = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	cap = null
+	activation = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	source = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	dt = initial(dt)
+	actor = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	observer = FALSE
+	authority = initial(authority)
+	mapload = FALSE
+	return TRUE
+
+/datum/act/notice/pool_reset_direct()
+	if(type != /datum/act/notice)
+		return FALSE // a subtype (every /datum/notice) adds fields of its own: the generic reset covers them
+	holder = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	cap = null
+	activation = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	source = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	target = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	outcome = initial(outcome)
+	refusal = initial(refusal)
+	return TRUE

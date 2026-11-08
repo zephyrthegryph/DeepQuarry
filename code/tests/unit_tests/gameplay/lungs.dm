@@ -87,7 +87,7 @@
 	if(!H)
 		return
 	TEST_ASSERT(!suffocating(H), "breathing normally in standard air")
-	room.air.set_moles(/datum/gas/oxygen, 0)
+	room.turf_air().set_moles(/datum/gas/oxygen, 0)
 	TEST_ASSERT(within(H, PROC_REF(suffocating)), "a player in air with no oxygen did not fail a breath within [GAMEPLAY_BREATH_LIMIT] s")
 
 #undef GAMEPLAY_BREATH_LIMIT

@@ -568,7 +568,7 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         // turf's own datum is re-stamped, so the turf can register again; a turf
         // whose datum names this cell with an old stamp (a replaced turf's
         // leftover) may not unregister the new owner's cell.
-        let air = src.read_var_id(byond_string!("air")).ok().filter(|a| !a.is_null());
+        let air = src.read_var_id(byond_string!("_air")).ok().filter(|a| !a.is_null());
         let named = air
             .as_ref()
             .and_then(|a| MixRef::of_unchecked(a).ok())
@@ -588,11 +588,12 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
     if flag < 0 || is_set(src.read_number_id(byond_string!("blocks_air"))) {
         return unregister();
     }
-    let Ok(mut air) = src.read_var_id(byond_string!("air")) else {
+    let Ok(mut air) = src.read_var_id(byond_string!("_air")) else {
         return Ok(());
     };
     if air.is_null() {
-        return unregister();
+        // No datum yet (made on first read, turf_air()): the cell starts from the turf's air template, which stays DM's.
+        return register_from_template(src, cell, key, mask);
     }
     let planet = is_set(src.read_number_id(byond_string!("planetary_atmos")));
     let planet_key = || {
@@ -647,6 +648,86 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
     Ok(())
 }
 
+thread_local! {
+    /// The air templates already asked for, by (turf type, initial_gas_mix string id, initial_temperature bits): a lazily
+    /// aired turf costs one DM call per distinct template, not one per turf.
+    static AIR_TEMPLATES: std::cell::RefCell<std::collections::HashMap<(u32, u32, u32), ByondValue>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
+}
+
+/// The mixture a turf without an air datum starts its cell from: `turf.air_template()`, cached per template key.
+fn air_template(src: &ByondValue) -> Result<ByondValue> {
+    let type_id = src
+        .read_var_id(byond_string!("type"))
+        .map(|t| unsafe { t.0.data.ref_ })
+        .unwrap_or(0);
+    let gas = src
+        .read_var_id(byond_string!("initial_gas_mix"))
+        .and_then(|g| g.get_strid())
+        .unwrap_or(0);
+    let temperature = src
+        .read_number_id(byond_string!("initial_temperature"))
+        .unwrap_or(0.0)
+        .to_bits();
+    let k = (type_id, gas, temperature);
+    if let Some(t) = AIR_TEMPLATES.with_borrow(|m| m.get(&k).cloned()) {
+        return Ok(t);
+    }
+    let template = src.call_id(byond_string!("air_template"), &[])?;
+    if !template.is_null() {
+        AIR_TEMPLATES.with_borrow_mut(|m| m.insert(k, template.clone()));
+    }
+    Ok(template)
+}
+
+/// Registers a turf that has no air datum: its cell takes the template's gas. The template is DM's (shared by every
+/// turf of its kind), so nothing is moved or stamped; the turf's own datum, when something reads it, is bound to the
+/// cell then (`hook_bind_turf_air`).
+fn register_from_template(src: ByondValue, cell: u32, key: FieldKey<TurfGas>, mask: Option<u8>) -> Result<()> {
+    let template = air_template(&src)?;
+    if template.is_null() {
+        return Ok(());
+    }
+    let r = MixRef::of(&template)?;
+    let Some(mix) = mix::load(r) else {
+        bail!("turf air template has no gas mixture ({r:?})");
+    };
+    mix::bump_turf_generation(cell);
+    let mut value = mix::cell_of_mixture(&mix);
+    let immutable = mix.is_immutable() || is_set(src.read_number_id(byond_string!("immutable_atmos")));
+    let planet = is_set(src.read_number_id(byond_string!("planetary_atmos")));
+    if planet && !immutable {
+        let gas = src
+            .read_string_id(byond_string!("initial_gas_mix"))
+            .unwrap_or_default();
+        value.planet = vg_gas::planet::planet_id(&gas, value);
+    }
+    with_world(|w| {
+        register_cell(w, key, cell, value, mix.volume, immutable || planet, mask);
+        Ok(())
+    })
+}
+
+/// Binds a turf's newly made air datum to the turf's field cell (DM's turf_air(), on the first read after the turf
+/// registered): the datum's own arena slot is freed and the datum becomes a handle to the cell. Args: (turf, datum).
+/// Returns: TRUE when bound, FALSE when the turf has no cell (not registered yet: the datum keeps its own gas, and
+/// registration moves it into the cell as before).
+#[auxmacros::bind("/proc/_air_bind_turf_air")]
+fn hook_bind_turf_air(turf: ByondValue, datum: ByondValue) -> Result<ByondValue> {
+    let cell = turf.get_ref()?;
+    let key = turf_key()?;
+    let registered = with_world(|w| Ok(turf_read(w, key, cell).is_some_and(|(_, g)| g.is_node())))?;
+    if !registered {
+        return Ok(false.into());
+    }
+    let mut datum = datum;
+    if let Ok(MixRef::Main(slot)) = MixRef::of(&datum) {
+        mix::free(slot);
+    }
+    MixRef::Turf(cell).store(&mut datum)?;
+    Ok(true.into())
+}
+
 /// Args: (flag, mask). Registers (flag >= 0) or removes (flag < 0) this
 /// turf's gas and publishes its air-block mask (`AIR_BLOCK_KEEP` keeps the
 /// current one). Reads blocks_air, air, immutable_atmos, planetary_atmos and
@@ -698,11 +779,9 @@ fn boot_turf(turf: ByondValue, asks: &mut bool) -> Option<BootTurf> {
     if !is_set(turf.read_number_id(byond_string!("init_air"))) {
         return None;
     }
-    let air = turf.read_var_id(byond_string!("air")).ok()?; // only open turfs carry `air`
+    let air = turf.read_var_id(byond_string!("_air")).ok()?; // only open turfs carry `_air`
     let blocks = is_set(turf.read_number_id(byond_string!("blocks_air")));
-    if !blocks && air.is_null() {
-        return None;
-    }
+    let _ = air; // a turf with no datum yet registers from its air template (register_from_template)
     let mut mask = 0u8;
     if blocks {
         mask = AIR_BLOCK_ALL;
@@ -765,7 +844,7 @@ fn boot_turf(turf: ByondValue, asks: &mut bool) -> Option<BootTurf> {
         temperature: turf
             .read_number_id(byond_string!("initial_temperature"))
             .unwrap_or(293.15),
-        has_air: !blocks && !air.is_null(),
+        has_air: !blocks,
     })
 }
 
@@ -958,12 +1037,16 @@ fn atmos_turfs_share(first: ByondValue, second: ByondValue) -> Result<ByondValue
 #[auxmacros::bind("/proc/_auxmos_topology_matches")]
 fn topology_matches(src: ByondValue) -> Result<ByondValue> {
     let cell = src.get_ref()?;
-    let r = MixRef::of(&src.read_var_id(byond_string!("air"))?).ok();
+    let r = src
+        .read_var_id(byond_string!("_air"))
+        .ok()
+        .filter(|a| !a.is_null())
+        .and_then(|a| MixRef::of(&a).ok());
     let matches = with_world(|w| {
         let Some((value, geom)) = turf_read(w, turf_key()?, cell) else {
             return Ok(false);
         };
-        Ok((r == Some(MixRef::Turf(cell)) || value.immutable_in(&geom)) && geom.is_node())
+        Ok((r.is_none() || r == Some(MixRef::Turf(cell)) || value.immutable_in(&geom)) && geom.is_node())
     })?;
     Ok(matches.into())
 }
