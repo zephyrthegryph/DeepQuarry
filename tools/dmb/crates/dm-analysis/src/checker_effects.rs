@@ -361,7 +361,11 @@ pub fn compute_body_checked_using_admitted_controlled(
             &mut||prefix_demand.checkpoint(),
         )?;
         let new_box_bytes=draft.original.len().checked_mul(std::mem::size_of::<OriginalBodyDiagnostic>()).and_then(|n|n.checked_add(draft.keywords.len().checked_mul(std::mem::size_of::<AcceptedKeywordUse>())?)).ok_or_else(||prefix_demand.resource("original BODY boxed backing overflow"))?;draft.transient.charge(new_box_bytes).map_err(|_|prefix_demand.resource("original BODY boxed backing admission exhausted"))?;
-        if self.is_original_checker_source(){self.require_original_checker_source()?;}
+        if self.is_original_checker_source() {
+            self.check_original_source_owner()?;
+            prefix_demand.validate_profile(self.archive.tree(), self.profile)
+                .map_err(|error| format!("original checker input profile: {error:?}"))?;
+        }
         Ok(Arc::new(BodyEffects {
             input: Arc::downgrade(self),
             ordinal,

@@ -56,6 +56,8 @@ pub(super) struct Ledger {
     context_bytes: u128,
     live_bytes_upper: u128,
     live_completion_bytes: u128,
+    live_weak_owners: usize,
+    completion_dirty: Arc<std::sync::atomic::AtomicBool>,
     active_policy: usize,
     active_graph_work: usize,
     fixed_request_inputs: usize,
@@ -98,24 +100,44 @@ impl Ledger {
     fn push_live(&mut self, entry: Live) {
         self.live_bytes_upper += entry.bytes as u128;
         self.live_completion_bytes += Self::completion_charge(&entry);
+        self.live_weak_owners += usize::from(entry.completion.is_none());
         self.live.push(entry);
     }
     fn completion_charge(entry: &Live) -> u128 {
         if entry.completion.is_some() { std::mem::size_of::<std::sync::atomic::AtomicBool>() as u128 } else { 0 }
     }
     fn live_bytes(&mut self) -> usize {
-        self.live.retain(|entry| entry.completion.as_ref().map_or_else(
-            || entry.owner.strong_count() > 0, |done| !done.load(Ordering::Acquire),
-        ));
+        self.refresh_live_bytes(|| {})
+    }
+    fn refresh_live_bytes(&mut self, mut after_sample: impl FnMut()) -> usize {
+        // Clear before observing entries. A completion after its entry was
+        // sampled must remain dirty for the next reader.
+        self.completion_dirty.swap(false, Ordering::AcqRel);
+        self.live.retain(|entry| {
+            let alive = entry.completion.as_ref().map_or_else(
+                || entry.owner.strong_count() > 0, |done| !done.load(Ordering::Acquire),
+            );
+            after_sample();
+            alive
+        });
         self.live_bytes_upper = self.live.iter().map(|entry| entry.bytes as u128).sum();
         self.live_completion_bytes = self.live.iter().map(Self::completion_charge).sum();
+        self.live_weak_owners = self.live.iter().filter(|entry| entry.completion.is_none()).count();
         usize::try_from(self.live_bytes_upper).unwrap_or(usize::MAX)
+    }
+    fn live_bytes_for_headroom(&mut self) -> usize {
+        if self.live_weak_owners != 0 || self.completion_dirty.load(Ordering::Acquire) {
+            self.live_bytes()
+        } else {
+            usize::try_from(self.live_bytes_upper).unwrap_or(usize::MAX)
+        }
     }
     fn metadata(&self) -> usize {
         let bytes = self.context_bytes + self.node_bytes + self.live_completion_bytes
             + self.live.capacity() as u128 * std::mem::size_of::<Live>() as u128
             + self.active_policy as u128 + self.active_graph_work as u128
-            + self.fixed_request_inputs as u128;
+            + self.fixed_request_inputs as u128
+            + std::mem::size_of::<std::sync::atomic::AtomicBool>() as u128;
         usize::try_from(bytes).unwrap_or(usize::MAX)
     }
     fn admit(&mut self, extra: usize) -> Result<(), String> {
@@ -1400,4 +1422,31 @@ fn purity_admission_reaps_weak_and_completed_owners_before_pressure_refusal() {
     assert!(ledger.live.is_empty());
     assert_eq!(ledger.live_bytes_upper, 0);
     assert_eq!(ledger.live_completion_bytes, 0);
+}
+
+
+#[cfg(test)]
+#[test]
+fn purity_headroom_observes_completion_after_a_live_entry_was_sampled() {
+    let ledger = Arc::new(Mutex::new(Ledger::default()));
+    let done = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let mut lease = Some(graph_work::GraphLease::new(Arc::clone(&ledger), done.clone()));
+    let owner: Value = Arc::new(1u32);
+    let mut state = ledger.lock().unwrap();
+    state.push_live(Live {
+        owner: Arc::downgrade(&owner), completion: Some(done), bytes: 4096,
+        kind: BODY, error: false,
+    });
+    assert_eq!(state.live_bytes_for_headroom(), 4096);
+    assert_eq!(state.refresh_live_bytes(|| drop(lease.take())), 4096,
+        "completion after the sample cannot refund the already observed snapshot");
+    assert_eq!(state.live_bytes_for_headroom(), 0,
+        "refresh must not erase a completion published during the scan");
+    state.push_live(Live {
+        owner: Arc::downgrade(&owner), completion: None, bytes: 4096,
+        kind: BODY, error: false,
+    });
+    assert_eq!(state.live_bytes_for_headroom(), 4096);
+    drop(owner);
+    assert_eq!(state.live_bytes_for_headroom(), 0, "weak-only ownership still forces a scan");
 }

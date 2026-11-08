@@ -40,7 +40,7 @@ struct Chunk {
 impl graph_work::RetainedHandle for Chunk {
     type Data = Data;
     fn issue(data: Data, ledger: Arc<Mutex<Ledger>>, completion: Arc<std::sync::atomic::AtomicBool>) -> Arc<Self> {
-        Arc::new(Self { data, _lease: graph_work::GraphLease { ledger, completion } })
+        Arc::new(Self { data, _lease: graph_work::GraphLease::new(ledger, completion) })
     }
     fn coordination_charge() -> usize {
         std::mem::size_of::<Self>() - std::mem::size_of::<CompactGraphPage>()

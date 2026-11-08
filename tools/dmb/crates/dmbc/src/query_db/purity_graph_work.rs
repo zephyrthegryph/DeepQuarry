@@ -1,7 +1,22 @@
 //! Allocation escrow in the SAME purity ledger; not another counter/store.
 use super::*;
-pub(super) struct GraphLease{pub(super) ledger:Arc<Mutex<Ledger>>,pub(super) completion:Arc<std::sync::atomic::AtomicBool>}
-impl Drop for GraphLease{fn drop(&mut self){self.completion.store(true,Ordering::Release);}}
+pub(super) struct GraphLease{
+ pub(super) ledger:Arc<Mutex<Ledger>>,
+ pub(super) completion:Arc<std::sync::atomic::AtomicBool>,
+ dirty:Arc<std::sync::atomic::AtomicBool>,
+}
+impl GraphLease{
+ pub(super) fn new(ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Self{
+  let dirty=Arc::clone(&ledger.lock().unwrap_or_else(|e|e.into_inner()).completion_dirty);
+  Self{ledger,completion,dirty}
+ }
+}
+impl Drop for GraphLease{
+ fn drop(&mut self){
+  self.completion.store(true,Ordering::Release);
+  self.dirty.store(true,Ordering::Release);
+ }
+}
 pub(super) struct GraphWork{ledger:Arc<Mutex<Ledger>>,key:Key,bytes:usize,issuance:Option<std::num::NonZeroU64>,#[cfg(test)]report_peak:usize,#[cfg(test)]report_total:usize,#[cfg(test)]report_retired:usize}
 impl GraphWork{
  #[cfg(test)]pub(super) fn charged_bytes_for_chunk(&self)->usize{self.bytes}
@@ -57,7 +72,7 @@ impl dm_analysis::checker_effects::EffectReportWork for GraphWork{
 }
 
 #[cfg(test)]mod post_hash_tests{use super::*;struct HashWork{bytes:Vec<u8>,token:crate::daemon::control::Cancellation,cancel:bool,lease:GraphLease}
- impl RetainedHandle for HashWork{type Data=(Vec<u8>,crate::daemon::control::Cancellation,bool);fn fingerprint(&self,_:Key)->u128{if self.cancel{self.token.cancel()}7}fn coordination_charge()->usize{std::mem::size_of::<Self>()-std::mem::size_of::<Vec<u8>>()}fn issue((bytes,token,cancel):Self::Data,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Arc::new(Self{bytes,token,cancel,lease:GraphLease{ledger,completion}})}fn retained_charge(&self)->Option<usize>{self.bytes.capacity().checked_add(std::mem::size_of::<Self>())}}
+ impl RetainedHandle for HashWork{type Data=(Vec<u8>,crate::daemon::control::Cancellation,bool);fn fingerprint(&self,_:Key)->u128{if self.cancel{self.token.cancel()}7}fn coordination_charge()->usize{std::mem::size_of::<Self>()-std::mem::size_of::<Vec<u8>>()}fn issue((bytes,token,cancel):Self::Data,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Arc::new(Self{bytes,token,cancel,lease:GraphLease::new(ledger,completion)})}fn retained_charge(&self)->Option<usize>{self.bytes.capacity().checked_add(std::mem::size_of::<Self>())}}
  #[test]fn actual_cancellation_during_retained_value_fingerprint_precedes_outcome_and_same_key_recovers(){let ledger=Arc::new(Mutex::new(Ledger::default()));let key=Key::new(Kind(23),17);let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));let mut work=GraphWork::new(ledger.clone(),key);work.reserve(4096).unwrap();let error=work.publish_data::<HashWork>((vec![0u8;1024],token.clone(),true)).err().unwrap();assert!(token.is_cancelled(),"actual successful fingerprint hook cancelled the real coordinator token");let actual=error.into_operational().expect("post-hash actual control failure").into_io();assert_eq!(actual.kind(),std::io::ErrorKind::Interrupted);assert_eq!(ledger.lock().unwrap().active_graph_work,0);assert!(ledger.lock().unwrap().live.is_empty(),"no retained owner/outcome is claimed after hashing is interrupted");drop(binding);let healthy=crate::daemon::control::Cancellation::default();let _binding=crate::daemon::control::bind_with_deadline(healthy.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));let mut retry=GraphWork::new(ledger.clone(),key);retry.reserve(4096).unwrap();let outcome=retry.publish_data::<HashWork>((vec![0u8;1024],healthy,false)).unwrap();assert_eq!(ledger.lock().unwrap().active_graph_work,0);assert_eq!(ledger.lock().unwrap().live.len(),1);drop(outcome);assert_eq!(ledger.lock().unwrap().live_bytes(),0);}
 }
 

@@ -20,7 +20,7 @@ impl NativeEffectPage{
  pub(crate) fn visit_storage(&self,mut visit:impl FnMut(Storage)){let p=self.payload();p.facts.visit_storage(&mut visit);visit(Storage::Buffer{owner:"purity.page_private_payload",address:p as *const PagePayload as usize,logical:std::mem::size_of::<PagePayload>(),capacity:std::mem::size_of::<PagePayload>()});visit(Storage::Buffer{owner:"purity.page_completion",address:Arc::as_ptr(&p.lease.completion) as usize,logical:std::mem::size_of::<std::sync::atomic::AtomicBool>(),capacity:std::mem::size_of::<std::sync::atomic::AtomicBool>()});}
  #[cfg(test)]pub(crate) fn pause_drop_for_test(&self,entered:Arc<std::sync::Barrier>,release:Arc<std::sync::Barrier>){*self.payload().drop_pause.lock().unwrap_or_else(|e|e.into_inner())=Some((entered,release));}
 }
-impl graph_work::RetainedHandle for NativeEffectPage{fn fingerprint(&self,_:Key)->u128{self.payload().facts.report_fingerprint()}type Data=EffectPageFacts;fn coordination_charge()->usize{Self::coordination_charge()}fn issue(facts:EffectPageFacts,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Arc::new(Self{payload:Some(Arc::new(PagePayload{facts,lease:graph_work::GraphLease{ledger,completion},#[cfg(test)]drop_pause:Mutex::new(None)}))})}fn retained_charge(&self)->Option<usize>{Self::retained_charge(self)}}
+impl graph_work::RetainedHandle for NativeEffectPage{fn fingerprint(&self,_:Key)->u128{self.payload().facts.report_fingerprint()}type Data=EffectPageFacts;fn coordination_charge()->usize{Self::coordination_charge()}fn issue(facts:EffectPageFacts,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Arc::new(Self{payload:Some(Arc::new(PagePayload{facts,lease:graph_work::GraphLease::new(ledger, completion),#[cfg(test)]drop_pause:Mutex::new(None)}))})}fn retained_charge(&self)->Option<usize>{Self::retained_charge(self)}}
 
 struct PageParams{base:Params,start:usize,width:usize,old_edges:usize,dependencies:std::sync::atomic::AtomicUsize}
 pub(super) fn page_key(input:&EffectInput,start:usize,width:usize)->Key{key(PAGE,input,((start as u128)<<64)|(width as u128))}
@@ -47,7 +47,10 @@ pub(super) fn reserve_actual_dependency(ledger:&Arc<Mutex<Ledger>>,key:Key,old:u
  l.admit(delta).map_err(|_|std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect page dynamic edge admission exhausted"))?;l.update_node(&key,|node|node.observed_edges=current.max(requested)).unwrap();Ok(())
 }
 pub(super) fn page_execution_headroom(ledger:&Arc<Mutex<Ledger>>)->Result<usize,String>{
- let mut l=ledger.lock().unwrap_or_else(|e|e.into_inner());let occupied=l.live_bytes().checked_add(l.metadata()).ok_or("effect page live family capacity overflow")?;let headroom=BUDGET.checked_sub(occupied).ok_or_else(||{l.denied=true;"effect page family admission exhausted".to_string()})?;
+ let mut l=ledger.lock().unwrap_or_else(|e|e.into_inner());let mut occupied=l.live_bytes_for_headroom().checked_add(l.metadata());
+ if occupied.is_none_or(|bytes|bytes>=BUDGET){occupied=l.live_bytes().checked_add(l.metadata());}
+ let occupied=occupied.ok_or("effect page live family capacity overflow")?;
+ let headroom=BUDGET.checked_sub(occupied).ok_or_else(||{l.denied=true;"effect page family admission exhausted".to_string()})?;
  #[cfg(test)]let headroom=headroom.min(l.storage_test_limit.unwrap_or(BUDGET));
  Ok(headroom)
 }

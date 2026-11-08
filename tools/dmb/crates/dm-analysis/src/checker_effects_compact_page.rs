@@ -174,7 +174,15 @@ impl CompactGraphPage {
     }
 
     pub fn loan<'a>(&'a self, input: &'a Arc<EffectInput>) -> Result<CompactGraphPageLoan<'a>, PolicyFailure> {
-        input.require_original_checker_source()?;
+        self.loan_with_proof(input, &input.original_source_proof()?)
+    }
+
+    pub(crate) fn loan_with_proof<'a>(
+        &'a self,
+        input: &'a Arc<EffectInput>,
+        proof: &OriginalEffectSourceProof<'_>,
+    ) -> Result<CompactGraphPageLoan<'a>, PolicyFailure> {
+        proof.require(input)?;
         if input.key() != self.input { return Err("compact graph page belongs to another input".into()); }
         Ok(CompactGraphPageLoan { page: self, input })
     }

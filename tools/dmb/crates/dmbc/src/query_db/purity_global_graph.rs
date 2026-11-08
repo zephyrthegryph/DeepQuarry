@@ -15,7 +15,7 @@ impl NativeEffectGraph{
 
  #[cfg(test)]pub(crate) fn pause_drop_for_test(&self,entered:Arc<std::sync::Barrier>,release:Arc<std::sync::Barrier>){*self.payload().drop_pause.lock().unwrap_or_else(|e|e.into_inner())=Some((entered,release));}
  fn payload(&self)->&GraphPayload{self.payload.as_deref().expect("sealed native effect graph payload")}
- pub(super) fn issue(graph:RetainedEffectGraph,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Arc::new(Self{payload:Some(Arc::new(GraphPayload{graph,lease:graph_work::GraphLease{ledger,completion},#[cfg(test)]drop_pause:Mutex::new(None)}))})}
+ pub(super) fn issue(graph:RetainedEffectGraph,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Arc::new(Self{payload:Some(Arc::new(GraphPayload{graph,lease:graph_work::GraphLease::new(ledger, completion),#[cfg(test)]drop_pause:Mutex::new(None)}))})}
  pub(super) fn coordination_charge()->usize{std::mem::size_of::<GraphPayload>().saturating_sub(std::mem::size_of::<RetainedEffectGraph>())}
  pub(crate) fn current<'view,'source>(&'view self,source:&'view EffectSource<'source>)->Result<dm_analysis::checker_effects::CurrentEffectGraph<'view,'source>,dm_analysis::policy_body_demand::PolicyFailure>{self.payload().graph.current(source)}
  pub(crate) fn retained_charge(&self)->Option<usize>{self.payload().graph.retained_charge()?.checked_add(Self::coordination_charge())}

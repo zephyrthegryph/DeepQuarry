@@ -9,13 +9,14 @@ struct Coordinate { page: u32, local: u32 }
 /// Neither the source, nor an owned page, nor a second semantic model is held.
 pub struct CompactGraphReplay<'a> {
     input: &'a Arc<EffectInput>,
+    proof: OriginalEffectSourceProof<'a>,
     pages: &'a [&'a CompactGraphPage],
     coordinates: Vec<Coordinate>,
 }
 impl<'a> CompactGraphReplay<'a> {
     pub fn new(input: &'a Arc<EffectInput>, pages: &'a [&'a CompactGraphPage],
         work: &mut impl EffectReportWork, checkpoint: &dyn Fn() -> io::Result<()>) -> Result<Self, PolicyFailure> {
-        input.require_original_checker_source()?;
+        let proof = input.original_source_proof()?;
         let count = input.archive().len();
         if count >= u32::MAX as usize || pages.len() >= u32::MAX as usize {
             return Err(oom("compact graph replay coordinates overflow"));
@@ -30,7 +31,7 @@ impl<'a> CompactGraphReplay<'a> {
         let mut rank = 0;
         for (index, page) in pages.iter().enumerate() {
             checkpoint().map_err(PolicyFailure::Operational)?;
-            page.loan(input)?;
+            page.loan_with_proof(input, &proof)?;
             if page.start() != rank || page.is_empty() { return Err("compact graph page order or coverage differs".into()); }
             for local in 0..page.len() {
                 checkpoint().map_err(PolicyFailure::Operational)?;
@@ -43,12 +44,12 @@ impl<'a> CompactGraphReplay<'a> {
         }
         if rank != count { return Err("compact graph replay does not cover every actual body".into()); }
         work.reconcile(mark, coordinates.capacity() * size_of::<Coordinate>()).map_err(PolicyFailure::Operational)?;
-        Ok(Self { input, pages, coordinates })
+        Ok(Self { input, proof, pages, coordinates })
     }
 
     pub fn body(&self, ordinal: usize) -> Result<CompactGraphBodyLoan<'a>, PolicyFailure> {
         let (page, local) = self.coordinate(ordinal)?;
-        page.loan(self.input)?.body(local)
+        page.loan_with_proof(self.input, &self.proof)?.body(local)
     }
     pub(crate) fn graph_row(&self, ordinal: usize) -> Result<CompactGraphBodyLoan<'a>, PolicyFailure> {
         self.body(ordinal)
