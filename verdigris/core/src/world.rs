@@ -606,7 +606,17 @@ fn submit_row<C: Component>(
         return Err(ComponentError::Missing { kind: C::NAME }.into());
     }
     match domain {
-        Some(key) => Ok(sim.port(key).submit(e.index(), cmd.clone())?),
+        Some(key) => {
+            // The row's value lives in the domain's port, not in the main store: stamp it here when the write moved it, or a cache keyed
+            // on the kind's stamps (row_stamp(), kind_clock(): the pipe device staging) would never see a DM write such as a pump's
+            // `operable` or `on`.
+            let before = sim.port_ref(key).read(e.index());
+            let applied = sim.port(key).submit(e.index(), cmd.clone())?;
+            if sim.port_ref(key).read(e.index()) != before {
+                main.get_mut(main_res).note_changed(e.index());
+            }
+            Ok(applied)
+        }
         None => main
             .get_mut(main_res)
             .apply(e.index(), cmd)
@@ -2282,6 +2292,19 @@ impl World {
             .downcast_ref::<KindEntry<C>>()?;
         let mk = self.main.get(entry.main);
         (mk.rows.holds(entity) && mk.is_stamping()).then(|| mk.stamp(entity.index()))
+    }
+
+    /// The stamp clock of component `C`'s rows (`None`: not registered with [`WorldBuilder::add_stamped_component`]). It moves on every
+    /// change to any row of `C` (a write through the main store or the kind's domain port, a bind, an unbind), so a value computed from
+    /// all of them stays valid while the clock does not move.
+    #[must_use]
+    pub fn kind_clock<C: Component>(&self) -> Option<u64> {
+        let k = self.kind_of::<C>()?;
+        let entry = self.kinds[usize::from(k)]
+            .as_any()
+            .downcast_ref::<KindEntry<C>>()?;
+        let mk = self.main.get(entry.main);
+        mk.is_stamping().then(|| mk.clock())
     }
 
     /// Every entity currently holding component `C`, ascending by index. A

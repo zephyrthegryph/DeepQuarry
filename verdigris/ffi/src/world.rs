@@ -210,6 +210,8 @@ fn build() -> Result<World> {
 /// If a registered law is inconsistent (a build error is a code bug).
 pub fn reset() -> Result<()> {
     let world = build()?;
+    // Caches keyed on the old world's stamp clocks: a new world's clocks start again and could repeat their values.
+    crate::pipes::forget_world_caches();
     WORLD.with_borrow_mut(|w| *w = Some(world));
     Ok(())
 }

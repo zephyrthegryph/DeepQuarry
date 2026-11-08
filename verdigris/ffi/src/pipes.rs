@@ -522,6 +522,49 @@ impl Sig {
 /// Every budget leg of the world, by group: `(device entity index, row)`.
 type BudgetGroups = FxHashMap<u32, Vec<(u32, DeviceFlow)>>;
 
+/// The law index of the last step, kept while none of the kinds it reads changed ([`device_law_index_key`]).
+type LawIndex = std::rc::Rc<(FxHashMap<u32, DeviceLaws>, BudgetGroups)>;
+
+thread_local! {
+    static LAW_INDEX: RefCell<Option<(Vec<u64>, LawIndex)>> = const { RefCell::new(None) };
+}
+
+/// Drops what was cached over the world's stamp clocks (the world was rebuilt: [`crate::world::reset`]).
+pub(crate) fn forget_world_caches() {
+    LAW_INDEX.with_borrow_mut(|c| *c = None);
+}
+
+/// The stamp clocks of every kind [`device_law_index`] reads, or `None` when one is not stamped (then nothing is cached).
+fn device_law_index_key(w: &World) -> Option<Vec<u64>> {
+    Some(vec![
+        w.kind_clock::<DeviceFlow>()?,
+        w.kind_clock::<DeviceValve>()?,
+        w.kind_clock::<Pump>()?,
+        w.kind_clock::<VolumePump>()?,
+        w.kind_clock::<PassiveGate>()?,
+        w.kind_clock::<DpVentPump>()?,
+        w.kind_clock::<VentPump>()?,
+        w.kind_clock::<Scrubber>()?,
+        w.kind_clock::<OutletInjector>()?,
+    ])
+}
+
+/// [`device_law_index`], rebuilt only when a row of a kind it reads changed since the last step: on a quiet station most steps change no
+/// device setting, and the rebuild walked every flow, valve and device row (0.75 ms a step on Southern Cross, steady_state profile).
+fn device_law_index_cached(w: &World) -> LawIndex {
+    let key = device_law_index_key(w);
+    if let Some(key) = &key {
+        let hit = LAW_INDEX.with_borrow(|c| c.as_ref().filter(|(k, _)| k == key).map(|(_, v)| v.clone()));
+        if let Some(index) = hit {
+            crate::metrics::registry().counter("stage.law_index_reused").inc();
+            return index;
+        }
+    }
+    let index: LawIndex = std::rc::Rc::new(device_law_index(w));
+    LAW_INDEX.with_borrow_mut(|c| *c = key.map(|k| (k, index.clone())));
+    index
+}
+
 fn device_law_index(w: &World) -> (FxHashMap<u32, DeviceLaws>, BudgetGroups) {
     let mut index: FxHashMap<u32, DeviceLaws> = FxHashMap::default();
     let mut groups = BudgetGroups::default();
@@ -710,7 +753,8 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
         .map(|h| h.devices().map(|(_, e)| e).collect())
         .unwrap_or_default();
     lap.lap("stage_devices_list");
-    let (laws, groups) = device_law_index(w);
+    let index = device_law_index_cached(w);
+    let (laws, groups) = (&index.0, &index.1);
     lap.lap("stage_law_index");
     crate::metrics::registry().counter("stage.devices").add(devices.len() as u64);
     // A budget leg's device: its entity and the regions across its edge.

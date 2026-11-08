@@ -214,10 +214,23 @@ impl<C: Component> MainKind<C> {
         self.stamps.on = true;
     }
 
+    /// Stamps row `index` as changed by a write that bypassed this store: a domain-backed kind's fields live in the domain's port, so
+    /// [`crate::world::World::set`] writes them there and stamps the row here when its value moved (the same rule [`Self::apply`] keeps).
+    pub fn note_changed(&mut self, index: u32) {
+        self.stamps.touch(index);
+    }
+
     /// Whether this kind stamps its rows.
     #[must_use]
     pub const fn is_stamping(&self) -> bool {
         self.stamps.on
+    }
+
+    /// This kind's stamp clock: it moves on every stamped change to any of its rows, so an unchanged clock means no row of the kind
+    /// changed (a cache over the whole kind keys on it). 0 while not stamping.
+    #[must_use]
+    pub const fn clock(&self) -> u64 {
+        self.stamps.clock
     }
 
     /// The clock value at row `index`'s last change (0: never changed while stamping). Every write through this type
