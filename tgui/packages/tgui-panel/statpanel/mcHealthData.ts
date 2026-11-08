@@ -29,7 +29,8 @@ export type Outlier = {
   cause?: string;
   maptick?: number;
   top_systems?: { key: string; ms: number }[];
-  breakdown?: [string, number][];
+  /** Where the tick went, in percent of a tick (Kernel.performance_tick_breakdown()). */
+  breakdown?: { name: string; usage: number }[];
 };
 
 /** One recent tick: usage (% of the budget), its top system keys and their ms. */
@@ -265,4 +266,69 @@ export function nativeWork(
     .filter(([, [a, s]]) => a || s)
     .map(([k, [a, s]]): [string, number, number] => [k, a, s])
     .sort((x, y) => y[2] - x[2] || y[1] - x[1]);
+}
+
+/** One consumer of a tick: its name and ms, `unknown` when nothing could be charged with it. */
+export type TickPart = { name: string; ms: number; unknown?: boolean };
+
+const byMs = (a: TickPart, b: TickPart) => b.ms - a.ms;
+
+/** What an overrun's time went to, biggest first: the kernel's whole breakdown, with the engine's share split into its systems and the map send added. */
+export function overrunParts(o: Outlier, budgetMs: number): TickPart[] {
+  const toMs = (usage: number) => (usage / 100) * budgetMs;
+  const parts: TickPart[] = [];
+  const named = new Set((o.breakdown || []).map((b) => b.name));
+  for (const { name, usage } of o.breakdown || []) {
+    const ms = toMs(usage);
+    if (name === 'Outside MC') {
+      parts.push({ name: 'Before the kernel (verbs, input, BYOND)', ms });
+    } else if (name === 'MC other') {
+      parts.push({ name: 'Not attributed (kernel loop)', ms, unknown: true });
+    } else if (name === 'engine') {
+      let left = ms;
+      for (const top of o.top_systems || []) {
+        if (named.has(top.key) || left <= 0) continue;
+        const taken = Math.min(top.ms, left);
+        parts.push({ name: top.key, ms: taken });
+        left -= taken;
+      }
+      if (left >= 0.05)
+        parts.push({ name: 'Other engine work', ms: left, unknown: true });
+    } else {
+      parts.push({ name, ms });
+    }
+  }
+  if (o.maptick) parts.push({ name: 'Map send (BYOND)', ms: toMs(o.maptick) });
+  return parts.filter((part) => part.ms > 0).sort(byMs);
+}
+
+/** A recent tick's consumers, biggest first; the time its top systems do not explain is shown, not dropped. */
+export function tickParts(tick: RecentTick, budgetMs: number): TickPart[] {
+  const parts: TickPart[] = tick[1].map((name, i) => ({
+    name,
+    ms: tick[2][i] || 0,
+  }));
+  const rest = (tick[0] / 100) * budgetMs - parts.reduce((n, p) => n + p.ms, 0);
+  if (rest >= 0.05)
+    parts.push({ name: 'Everything else', ms: rest, unknown: true });
+  return parts.sort(byMs);
+}
+
+/** The average tick by consumer, in ms per tick: the systems, and what the tick spent that no system was charged with. */
+export function averageTickParts(
+  systems: { key: string; ms_per_s: number }[],
+  usagePercent: number,
+  budgetMs: number,
+  tps: number,
+): TickPart[] {
+  const perTick = tps > 0 ? tps : 1;
+  const parts: TickPart[] = systems.map((s) => ({
+    name: s.key,
+    ms: s.ms_per_s / perTick,
+  }));
+  const rest =
+    (usagePercent / 100) * budgetMs - parts.reduce((n, p) => n + p.ms, 0);
+  if (rest >= 0.05)
+    parts.push({ name: 'Not attributed', ms: rest, unknown: true });
+  return parts.sort(byMs);
 }

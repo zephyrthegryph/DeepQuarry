@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - qol: "The Server tab now leads with what is using the tick; overruns name their biggest cost, worst first."
+  - bugfix: "The recent ticks graph holds still while hovered, and the Server tools page lists the server's admin verbs."
