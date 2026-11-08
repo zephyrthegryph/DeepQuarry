@@ -1881,7 +1881,7 @@
 	TEST_ASSERT_NOTNULL(window, "real first event created its window")
 	var/datum/contract_opportunity_signal/first_signal = rule.signals[1]
 	var/list/first_lane = window.facts_by_signal[first_signal.id]
-	var/datum/contract_opportunity_observation/first_record = first_lane["dq_opportunity_test|guardrail-a"]
+	var/datum/contract_opportunity_observation/first_record = first_lane["guardrail-a|dq_opportunity_test"]
 	TEST_ASSERT_NOTNULL(first_record, "first authoritative fact has its original record")
 	TEST_ASSERT_EQUAL(owner_of(first_record), window, "the real window owns its first observation")
 	TEST_ASSERT(!emit_contract_event("dq_opportunity_test", fact_a, "guardrail-a:1"), "global occurrence deduplication accepted the same broker event twice")
@@ -1891,7 +1891,7 @@
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-a", "fact_revision" = 1, "actor_account" = 910001, "entity" = "A", "category" = "alpha", "metrics" = list("value" = 100)), "guardrail-a:stale"), "stale revision did not reach the broker for its own rejection")
 	TEST_ASSERT_EQUAL(SScontracts.opportunity_windows[window_key], window, "revision kept the original window")
 	TEST_ASSERT(QDELETED(first_record), "real replacement retired the exact prior record")
-	var/datum/contract_opportunity_observation/current_record = first_lane["dq_opportunity_test|guardrail-a"]
+	var/datum/contract_opportunity_observation/current_record = first_lane["guardrail-a|dq_opportunity_test"]
 	TEST_ASSERT_NOTNULL(current_record, "replacement leaves a current authoritative record")
 	TEST_ASSERT(current_record != first_record, "replacement created a distinct record")
 	TEST_ASSERT_EQUAL(owner_of(current_record), window, "replacement remains owned after the stale-revision control")
@@ -1926,7 +1926,7 @@
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-e", "fact_revision" = 2, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-e:2"), "fifth inactive fact revision was rejected")
 	TEST_ASSERT(!SScontracts.find_live_offer(offer_key) && !SScontracts.find_candidate(offer_key), "resolved trigger remained available for acceptance")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-f", "fact_revision" = 1, "metrics" = list("value" = 10)), "guardrail-f:1"), "final real teardown control event was accepted")
-	var/datum/contract_opportunity_observation/teardown_record = first_lane["dq_opportunity_test|guardrail-f"]
+	var/datum/contract_opportunity_observation/teardown_record = first_lane["guardrail-f|dq_opportunity_test"]
 	TEST_ASSERT_NOTNULL(teardown_record, "final event leaves an actual record for window teardown")
 	TEST_ASSERT(!QDELETED(teardown_record), "teardown control is still alive before its window goes")
 	TEST_ASSERT_EQUAL(owner_of(teardown_record), window, "original window owns the live teardown control")

@@ -737,10 +737,15 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /proc/pooled_op_context(datum/holder, target = null, mob/actor = null)
 	RETURN_TYPE(/datum/act/op)
 	var/datum/act/op/A = take(/datum/act/op)
+	op_context_point(A, holder, target, actor)
+	return A
+
+/// Points an op context at `holder`, `target` and `actor` (null, null, null clears it): a pooled one at its take, the one condition_holds() reuses at
+/// each evaluation.
+/proc/op_context_point(datum/act/op/A, datum/holder, target = null, mob/actor = null)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
 	A.target = target
 	A.actor = actor
-	return A
 
 /// requirement_reason(R, holder, candidate, actor): why requirement R refuses `candidate` for `holder` now, or null (admission.md D2g). The candidate may
 /// be anything a slot or an install takes: an atom, a datum (NIF software, a matter synth) or a type path (a shop asking "would this install" before it

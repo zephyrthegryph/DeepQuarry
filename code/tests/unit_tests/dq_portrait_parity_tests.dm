@@ -81,7 +81,6 @@
 /datum/unit_test/dq_species_thumbnail_lands
 
 /datum/unit_test/dq_species_thumbnail_lands/Run()
-	test_driver_begin()
 	var/datum/species/S = GLOB.all_species[SPECIES_HUMAN]
 	TEST_ASSERT(S && !icon_exists(S.icobase, "preview"), "humans have no preview state (the slow path)")
 	GLOB.dq_species_preview_cache -= S.name
@@ -89,14 +88,11 @@
 	var/started = TICK_USAGE_REAL
 	var/first = dq_species_preview_b64(S)
 	var/ask_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
-	for(var/i in 1 to 60)
-		if(GLOB.dq_species_preview_cache[S.name])
-			break
-		test_time(0.25 SECONDS)
+	var/deadline = world.time + 20 SECONDS
+	UNTIL(GLOB.dq_species_preview_cache[S.name] || world.time > deadline)
 	TEST_ASSERT(first || GLOB.dq_species_preview_cache[S.name], "the human thumbnail was filed")
 	TEST_ASSERT_NULL(GLOB.dq_species_preview_waits[S.name], "the waiter was dropped once it landed")
 	TEST_NOTICE(src, "SPECIES_THUMB the slow path on the tick: [round(ask_ms, 0.01)] ms (was a synchronous getFlatIcon)")
-	test_driver_end()
 
 /// Coloured vendor product pictures through iconforge: the same pixels as the BYOND Blend path, and what each costs on the tick (VENDPROD_BENCH).
 /datum/unit_test/dq_vending_product_forge_matches
@@ -132,3 +128,78 @@
 			log_world("VENDPROD_BENCH [spec[1]] [spec[2]] [spec[3]]: [mismatches] pixels differ ([json_encode(report)])")
 	TEST_ASSERT_EQUAL(differing, 0, "[differing] of [length(coloured)] forged pictures differ from the BYOND ones")
 	TEST_NOTICE(src, "VENDPROD_BENCH [length(coloured)] coloured product pictures, cold: BYOND cut+Blend+hash [round(byond_ms, 0.01)] ms, iconforge [round(forge_ms, 0.01)] ms")
+
+/// The background species thumbnail warm-up runs (built one at a time after init), and waits while a client is joining.
+/datum/unit_test/dq_species_warmup_runs
+
+/datum/unit_test/dq_species_warmup_runs/Run()
+	var/datum/species/S = GLOB.all_species[SPECIES_HUMAN]
+	GLOB.dq_species_preview_cache -= S.name
+	GLOB.dq_species_preview_waits -= S.name
+	set_global(nameof(GLOB.dq_species_preview_warmed), FALSE) // teardown restores it
+	dq_species_preview_warm_next(list(S.name))
+	var/deadline = world.time + 30 SECONDS
+	UNTIL((GLOB.dq_species_preview_warmed && GLOB.dq_species_preview_cache[S.name]) || world.time > deadline)
+	TEST_ASSERT(GLOB.dq_species_preview_warmed, "the warm-up finished")
+	TEST_ASSERT(GLOB.dq_species_preview_cache[S.name], "and filed the human thumbnail")
+	TEST_ASSERT(!dq_species_preview_someone_joining() || length(GLOB.clients), "nobody is joining a clientless test world")
+
+/// The photo picture as the camera drew it before the portrait cache (getFlatIcon of every atom, on the tick): the reference.
+/proc/dq_test_photo_reference(obj/item/camera/camera, list/turfs, turf/center)
+	var/icon/res = icon('icons/effects/96x96.dmi', "")
+	res.Scale(camera.size * 32, camera.size * 32)
+	res.Blend("#000", ICON_OVERLAY)
+	var/list/atoms = list()
+	for(var/turf/the_turf in turfs)
+		atoms.Add(the_turf)
+		for(var/atom/A in the_turf)
+			if(A.invisibility)
+				continue
+			if(A.plane > 0 && !(A.plane in camera.picture_planes))
+				continue
+			atoms.Add(A)
+	var/list/sorted = sort_atoms_by_layer(atoms)
+	var/center_offset = (camera.size - 1) / 2 * 32 + 1
+	for(var/atom/A as anything in sorted)
+		var/icon/img = getFlatIcon(A, no_anim = TRUE)
+		if(!istype(img, /icon))
+			continue
+		if(isliving(A) && A:lying)
+			img.BecomeLying()
+		var/xoff = (A.x - center.x) * 32 + center_offset
+		var/yoff = (A.y - center.y) * 32 + center_offset
+		if(ismovable(A))
+			xoff += A.pixel_x
+			yoff += A.pixel_y
+		res.Blend(img, blendMode2iconMode(A.blend_mode), A.pixel_x + xoff, A.pixel_y + yoff)
+	for(var/turf/the_turf in turfs)
+		var/xoff = (the_turf.x - center.x) * 32 + center_offset
+		var/yoff = (the_turf.y - center.y) * 32 + center_offset
+		res.Blend(getFlatIcon(the_turf.loc, no_anim = TRUE), blendMode2iconMode(the_turf.blend_mode), xoff, yoff)
+	return res
+
+/// A photo of a dressed human: printed at once (a black frame), then filled in place with the same picture the camera drew before.
+/datum/unit_test/dq_photo_portraits_match
+
+/datum/unit_test/dq_photo_portraits_match/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
+	draw_now(H)
+	var/obj/item/camera/camera = allocate(/obj/item/camera, T)
+	var/list/turfs = list(T)
+	var/started = TICK_USAGE_REAL
+	var/icon/expected = dq_test_photo_reference(camera, turfs, T)
+	var/old_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	started = TICK_USAGE_REAL
+	var/obj/item/photo/photo = camera.createpicture(T, null, turfs, "", FALSE)
+	var/shot_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	TEST_ASSERT(photo.img && photo.tiny, "the photo has pictures at once")
+	var/deadline = world.time + 20 SECONDS
+	UNTIL(!photo.rendering || world.time > deadline)
+	TEST_ASSERT_NULL(photo.rendering, "the photo's picture was finished")
+	var/list/report = list()
+	var/mismatches = dq_test_portrait_mismatches(expected, photo.img, report)
+	TEST_ASSERT_EQUAL(mismatches, 0, "the photo differs from the old camera picture ([json_encode(report)])")
+	TEST_NOTICE(src, "PHOTO_COST the shot on the tick: before [round(old_ms, 0.01)] ms, now [round(shot_ms, 0.01)] ms (the atoms' pictures drawn off the tick)")
+	qdel(photo)

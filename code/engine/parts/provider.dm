@@ -346,7 +346,20 @@
 	if(!(authority & AUTH_ADMIN))
 		var/chosen_authority = LAZYACCESS(P.selects, "authority")
 		authority &= isnull(chosen_authority) ? B.authority_mask() : chosen_authority
-	// The providers that fit (the affordance, the authority, what they carry), and the one of them that would perform it.
+	// Past here the answer depends only on (target, need, authority, policy) and the resolution's providers: a resolution's candidates share a few
+	// of these, so with a memo each is worked out once.
+	if(isnull(fit_memo))
+		return reach_gate_answer(actor, target, held, policy, need, authority, provs, null)
+	var/gate_key = "g|[need]|[authority]|[policy]|[isdatum(target) ? REF(target) : target]"
+	var/list/kept = fit_memo[gate_key]
+	if(kept)
+		return kept[1]
+	. = reach_gate_answer(actor, target, held, policy, need, authority, provs, fit_memo)
+	fit_memo[gate_key] = list(.)
+
+/// reach_gate() past its per-op inputs: the providers that fit (the affordance, the authority, what they carry) and the one that performs it, the
+/// distance, the policy's own test and the exposure.
+/proc/reach_gate_answer(mob/actor, atom/target, obj/held, policy, need, authority, list/provs, list/fit_memo)
 	var/obj/carrier = length(provs) ? actor?.held_carrier() : null
 	var/list/known = reach_gate_fitting(provs, need, authority, policy, held, carrier, fit_memo)
 	var/list/fitting = known[1]

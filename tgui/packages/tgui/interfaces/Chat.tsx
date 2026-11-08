@@ -5,25 +5,29 @@
  * same dock model. The chat itself is the tgui-panel chat (Panel): docked, it
  * is part of the column page, whose own bus has every chat message all along;
  * floating, this window's messages feed a fresh copy of that bus. Either way
- * it asks the server for what it has not shown (chat/ready, answered from the
- * server's history ring) and keeps the input draft on the server (chat/draft),
- * so a move loses neither.
+ * it loads and saves the stored chat log, asks the server for what follows
+ * the log (chat/ready, answered from the server's history ring; chat/log.ts)
+ * and keeps the input draft on the server (chat/draft), so a move loses
+ * nothing. Both pages draw it with the one chat sheet (chat-theme.scss).
  */
-import 'tgui-panel/styles/chat-window.scss';
+import 'tgui-panel/styles/chat-theme.scss';
 
 import { Provider } from 'jotai';
 import { useContext, useEffect, useRef } from 'react';
 import { useBackend, useWindowMessages, useWindowSend } from 'tgui/backend';
 import { EmbeddedContext } from 'tgui/embedded';
 import { Window } from 'tgui/layouts';
-import { setChatGuest } from 'tgui-panel/chat/guest';
-import { lastShownSequence } from 'tgui-panel/chat/handlers';
+import { chatLoadedAtom } from 'tgui-panel/chat/atoms';
+import { saveChatToStorage } from 'tgui-panel/chat/helpers';
+import { chatResumeAfter, setChatSession } from 'tgui-panel/chat/log';
+import { chatRenderer } from 'tgui-panel/chat/renderer';
 import { bus } from 'tgui-panel/events/listeners';
 import { store } from 'tgui-panel/events/store';
+import { databaseBackendEnabledAtom } from 'tgui-panel/game/atoms';
 import { chatDraftAtom } from 'tgui-panel/input/atoms';
 import { Panel } from 'tgui-panel/Panel';
 
-type Data = { draft: string };
+type Data = { draft: string; session: string };
 
 /** The page messages a floating chat passes to the chat's bus: the column page gets the rest itself. */
 const CHAT_TYPES = new Set([
@@ -58,8 +62,8 @@ export function Chat() {
   const started = useRef(false);
   if (!started.current) {
     started.current = true;
-    // A floating chat shows the server's history, not the stored log the column page keeps and saves.
-    setChatGuest(!embedded);
+    // The connection the stored log's mark must be from (chat/log.ts).
+    if (data?.session) setChatSession(data.session);
     if (data?.draft && !store.get(chatDraftAtom)) {
       store.set(chatDraftAtom, data.draft);
     }
@@ -70,7 +74,18 @@ export function Chat() {
     if (message) bus.dispatch(message);
   });
   useEffect(() => {
-    send('chat/ready', { after: lastShownSequence() ?? -1 });
+    let live = true;
+    // Once the stored log is in: ask for what follows it (or what this page last showed).
+    chatResumeAfter(() => chatRenderer.clearChat()).then((after) => {
+      if (live) send('chat/ready', { after });
+    });
+    return () => {
+      live = false;
+      // Leaving this page (floated out, docked back): the next window starts from the log as it is now.
+      if (store.get(chatLoadedAtom) && !store.get(databaseBackendEnabledAtom)) {
+        saveChatToStorage();
+      }
+    };
   }, []);
   useEffect(() => {
     let last = store.get(chatDraftAtom);
@@ -93,7 +108,9 @@ export function Chat() {
     <Window title="Chat" width={520} height={640}>
       <Window.Content fitted>
         <Provider store={store}>
-          <Panel />
+          <div className="chat-theme">
+            <Panel />
+          </div>
         </Provider>
       </Window.Content>
     </Window>
