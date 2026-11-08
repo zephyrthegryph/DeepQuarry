@@ -92,6 +92,10 @@ impl Recipe<'_>{
    let (occurrences, regions, retained) = state.plan.trace_reservations();
    eprintln!("ORIGINAL_LIVE_DIRECTIVE_OWNER occurrences={occurrences} regions={regions} retained={retained}");
   }
+  #[cfg(debug_assertions)]
+  if result.is_ok() && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+   shared.borrow().plan.log_failure_reservations();
+  }
   result.inspect_err(|_error| {
    #[cfg(debug_assertions)]
    if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {

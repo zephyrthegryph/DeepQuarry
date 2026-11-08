@@ -1470,7 +1470,8 @@ impl<'a> HeaderAllocationReceipt<'a> {
     ) -> Result<Self, OriginalHeaderFailure> {
         rows.sort_checked(a)?;
         Self::from_rows_using(items, inputs, offset, rows, |inputs, rows, offset| {
-            inputs.install_settings_checked(rows.iter_mut(), offset, a)
+            let settings_count = rows.iter().filter(|row| row.settings.is_some()).count();
+            inputs.install_settings_checked(rows.iter_mut(), settings_count, offset, a)
         })
     }
     fn from_rows_using<E: From<String>>(

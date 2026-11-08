@@ -124,7 +124,8 @@ impl PendingOriginalSingleton {
     }
 }
 
-const SINGLETON_PAGE_ROWS: usize = 64;
+pub(super) const POOLED_TRACE_ROW_BITS: u32 = 7;
+const SINGLETON_PAGE_ROWS: usize = 1 << POOLED_TRACE_ROW_BITS;
 pub(super) const POOLED_TRACE_MAX_DEPTH: usize = 8;
 const SINGLETON_PAGE_AUTHORS: usize = 15;
 const SINGLETON_OVERFLOW_AUTHORS: usize = SINGLETON_PAGE_ROWS - SINGLETON_PAGE_AUTHORS;
@@ -289,6 +290,10 @@ pub(super) struct SingletonTracePool {
     pages_granted: usize,
     #[cfg(debug_assertions)]
     overflows_granted: usize,
+    #[cfg(debug_assertions)]
+    rows_issued: usize,
+    #[cfg(debug_assertions)]
+    authors_issued: usize,
 }
 impl SingletonTracePool {
     /// Called after actual definition validation. Pressure declines this
@@ -373,6 +378,8 @@ impl SingletonTracePool {
         let len = frames.len();
         assert!((2..=POOLED_TRACE_MAX_DEPTH).contains(&len) && start + len <= SINGLETON_PAGE_ROWS);
         let mut author_len = page.authors_issued.load(Ordering::Relaxed);
+        #[cfg(debug_assertions)]
+        let initial_author_len = author_len;
         for (at, frame) in frames.enumerate() {
             let slot = usize::from(slots[at]);
             let span = PooledTraceSpan::checked(frame.invocation_span).expect("prepared pooled span");
@@ -392,6 +399,8 @@ impl SingletonTracePool {
         }
         page.authors_issued.store(author_len, Ordering::Release);
         page.issued.store(start + len, Ordering::Release);
+        #[cfg(debug_assertions)]
+        { self.rows_issued += len; self.authors_issued += author_len - initial_author_len; }
         OriginalMacroTrace::PooledRange { start: start as u8, len: len as u8, page: page.clone() }
     }
 
@@ -399,6 +408,15 @@ impl SingletonTracePool {
     pub(super) fn bytes_granted(&self) -> usize {
         self.pages_granted.saturating_mul(SingletonTracePage::BYTES)
             .saturating_add(self.overflows_granted.saturating_mul(SingletonAuthorOverflow::BYTES))
+    }
+
+    #[cfg(debug_assertions)]
+    pub(super) fn reservations(&self) -> [usize; 7] {
+        [
+            SINGLETON_PAGE_ROWS, self.pages_granted, self.overflows_granted,
+            self.rows_issued, self.authors_issued, SingletonTracePage::BYTES,
+            SingletonAuthorOverflow::BYTES,
+        ]
     }
 
     pub(super) fn append(&mut self, frame: NarrowOriginalMacroFrame, slot: usize) -> OriginalMacroTrace {
@@ -421,6 +439,8 @@ impl SingletonTracePool {
             (*page.slots[at].get()).write(slot as u8);
         }
         page.issued.store(at + 1, Ordering::Release);
+        #[cfg(debug_assertions)]
+        { self.rows_issued += 1; self.authors_issued += usize::from(slot == len); }
         OriginalMacroTrace::PooledSingleton { ordinal: at as u16, page: page.clone() }
     }
 }
@@ -995,7 +1015,7 @@ mod tests {
         assert!(!first.same_owner(&reused));
         assert_ne!(first.owner_address(), reused.owner_address());
         #[cfg(target_pointer_width = "64")]
-        assert_eq!(SingletonTracePage::BYTES, 760, "304B less than a prior 1064B page");
+        assert_eq!(SingletonTracePage::BYTES, 824, "128 funded rows plus fixed page ownership");
         // A long distinct-author tail continues to fill and then roll over
         // the page. No further optional allocation is needed until rollover.
         for at in SINGLETON_PAGE_AUTHORS + 2..SINGLETON_PAGE_ROWS {
@@ -1009,7 +1029,7 @@ mod tests {
             assert_eq!(MacroTraceView::original(&row).pooled_backing(), trace.pooled_backing());
         }
         let frame = NarrowOriginalMacroFrame {
-            invocation_span: [64, 65],
+            invocation_span: [SINGLETON_PAGE_ROWS as u32, SINGLETON_PAGE_ROWS as u32 + 1],
             author: OriginalMacroAuthor::new_using("SAME", None, &a).unwrap(),
         };
         let slot = pool.prepare_using(&frame, &a).unwrap().unwrap();

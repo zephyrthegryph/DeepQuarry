@@ -587,7 +587,8 @@ impl TraceRunRank {
 
 const STORED_TRACE_PAGE_ROWS:usize=128;
 const TRACE_FALLBACK:u16=1<<15;
-const TRACE_POOL_ROW_BITS:u32=6;
+const TRACE_POOL_ROW_BITS:u32=super::macro_trace_view::POOLED_TRACE_ROW_BITS;
+const _: () = assert!(STORED_TRACE_PAGE_ROWS <= (TRACE_FALLBACK >> TRACE_POOL_ROW_BITS) as usize);
 const TRACE_POOL_ROW_MASK:u16=(1<<TRACE_POOL_ROW_BITS)-1;
 
 #[derive(Clone,Copy)]
@@ -3392,6 +3393,15 @@ impl OriginalRawOrigins{
     let mut pool=SingletonTracePool::default();
     let author=OriginalMacroAuthor::new_using("ACTUAL",None,&a).unwrap();
     let fallback=OriginalMacroTrace::empty();
+    // Start this independent bank three rows into its producer page so the
+    // fixture still tests multiple page aliases and high ordinals.
+    for _ in 0..3 {
+        let frame=NarrowOriginalMacroFrame::checked(OriginalMacroFrame{
+            invocation_span:Span::new(0,1),author:Arc::clone(&author),
+        }).unwrap();
+        let slot=pool.prepare_using(&frame,&a).unwrap().unwrap();
+        drop(pool.append(frame,slot));
+    }
     let mut exact=Vec::new();
     for index in 0..STORED_TRACE_PAGE_ROWS {
         let trace=if index==1||index==67{fallback.clone()}else{
@@ -3425,6 +3435,7 @@ impl OriginalRawOrigins{
     pages.push(fallback.clone(),&a,&mut funding).unwrap();
     let StoredTracePage::Packed(packed)=&pages.pages[0] else{panic!("actual pooled trace bank")};
     assert_eq!((packed.bank.len(),packed.fallback.len()),(2,2));
+    assert!(packed.codes[80] & TRACE_POOL_ROW_MASK >= 64);
     assert_eq!(live.load(Ordering::Acquire),before+packed.storage_bytes());
     for (index,prior) in exact.iter().enumerate(){
         let owner=prior.view().clone_original().unwrap();

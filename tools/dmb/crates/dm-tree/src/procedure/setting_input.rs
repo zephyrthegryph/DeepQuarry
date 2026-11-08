@@ -136,45 +136,25 @@ fn push_using<E>(
     out.push(row);
     Ok(())
 }
-#[derive(Debug)]
-struct OriginalSettingAllocationFailure(std::collections::TryReserveError);
-impl std::fmt::Display for OriginalSettingAllocationFailure {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("original setting row allocation refused")
-    }
-}
-impl std::error::Error for OriginalSettingAllocationFailure {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.0)
-    }
-}
-fn setting_allocation(actual: std::collections::TryReserveError) -> super::OriginalHeaderFailure {
-    super::OriginalHeaderFailure::Operational(std::io::Error::new(
-        std::io::ErrorKind::OutOfMemory,
-        OriginalSettingAllocationFailure(actual),
-    ))
-}
 fn push_checked(
     roster: &mut SettingsRoster,
     row: OriginalSettingsBody,
+    expected_rows: usize,
     a: &SettingAdmission<'_>,
 ) -> Result<(), super::OriginalHeaderFailure> {
-    use std::{io::ErrorKind, mem::size_of};
-    let overflow = || std::io::Error::from(ErrorKind::OutOfMemory);
-    if roster.rows.len() == roster.rows.capacity() {
-        let old = roster.rows.capacity();
-        let desired = old.max(1).checked_mul(2).ok_or_else(overflow)?;
-        let bound = desired.checked_mul(4).ok_or_else(overflow)?;
-        let peak = bound.checked_mul(size_of::<OriginalSettingsBody>()).ok_or_else(overflow)?;
-        roster.fund(peak, a)?;
-        roster.rows.try_reserve_exact(desired - old).map_err(setting_allocation)?;
-        if roster.rows.capacity() > bound {
-            return Err(overflow().into());
-        }
-        let release = (bound - roster.rows.capacity() + old)
-            .checked_mul(size_of::<OriginalSettingsBody>()).ok_or_else(overflow)?;
-        let credit = roster.credit.as_mut().expect("setting roster growth is funded");
-        a.shrink(credit, release).map_err(|e| a.take_operational_error().unwrap_or(e))?;
+    use std::io::ErrorKind;
+    if roster.rows.len() >= expected_rows {
+        return Err(std::io::Error::new(ErrorKind::InvalidData, "setting roster exceeds its checked row count").into());
+    }
+    if roster.rows.capacity() == 0 {
+        // The actual adapter roster has already issued all setting tails.
+        // Allocate exactly once after validating the first row, without
+        // speculative capacity or a second live backing allocation.
+        let (rows, mut storage) =
+            crate::procedure::original_primary_signatures::allocate_funded_rows(expected_rows, a)?;
+        let credit = roster.credit.as_mut().expect("checked footprint is funded before its row");
+        a.absorb(credit, &mut storage)?;
+        roster.rows = rows;
     }
     roster.rows.push(row);
     Ok(())
@@ -260,6 +240,7 @@ impl OriginalProcedureHeaders {
     pub(super) fn install_settings_checked<'rows>(
         &self,
         rows: impl Iterator<Item = &'rows mut HeaderAllocationRow>,
+        expected_rows: usize,
         offset: usize,
         a: &SettingAdmission<'_>,
     ) -> Result<(), super::OriginalHeaderFailure> {
@@ -267,7 +248,7 @@ impl OriginalProcedureHeaders {
             let row = checked_row(body, owner, footprints, &self.source, |bytes| {
                 roster.fund(bytes, a).map_err(super::OriginalHeaderFailure::Operational)
             })?;
-            push_checked(roster, row, a)
+            push_checked(roster, row, expected_rows, a)
         })
     }
     fn install_settings_using<'rows, E: From<String> + From<&'static str>>(
@@ -767,7 +748,7 @@ mod tests {
         }];
         let denied_used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let low = SettingAdmission::new(&denied_used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (1), &|| Ok(()));
-        assert!(matches!(other.install_settings_checked(denied.iter_mut(), 0, &low),
+        assert!(matches!(other.install_settings_checked(denied.iter_mut(), 1, 0, &low),
             Err(super::super::OriginalHeaderFailure::Operational(e)) if e.kind() == std::io::ErrorKind::OutOfMemory));
         assert!(other.settings.get().is_none());
         assert_eq!(denied_used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
@@ -933,22 +914,37 @@ mod tests {
 
 #[cfg(test)]
 mod checked_metadata_allocation_tests {
+    use super::*;
+    use std::{mem::size_of, sync::atomic::Ordering};
+
     #[test]
-    fn actual_setting_metadata_tryreserve_error_keeps_io_kind_cause_and_legacy_text() {
-        let actual = Vec::<u8>::new()
-            .try_reserve_exact(usize::MAX)
-            .err()
-            .expect("actual standard capacity refusal");
-        let super::super::OriginalHeaderFailure::Operational(error) =
-            super::setting_allocation(actual)
-        else {
-            panic!("allocator error is not declaration syntax")
-        };
-        assert_eq!(error.kind(), std::io::ErrorKind::OutOfMemory);
-        assert_eq!(error.to_string(), "original setting row allocation refused");
-        assert!(
-            std::error::Error::source(error.get_ref().unwrap()).is_some(),
-            "original TryReserveError cause retained"
-        );
+    fn checked_settings_roster_admits_only_the_actual_sparse_row_count() {
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let total = 5 * size_of::<OriginalSettingsBody>();
+        let admission = SettingAdmission::new(&used, root + total, &|| Ok(()));
+        let mut roster = SettingsRoster::default();
+        roster.fund(0, &admission).unwrap();
+        let metadata = Arc::new(ProcedureMetadata {
+            signature: dm_ir::ProcedureSignature {
+                parameters: Arc::from([]),
+                variadic: false,
+                return_annotation: None,
+            },
+            settings: Arc::from([]),
+        });
+        for start in 0..5 {
+            push_checked(&mut roster, OriginalSettingsBody {
+                body: Span::new(start, start + 1),
+                owner: Arc::clone(&metadata),
+                footprints: Arc::from([]),
+                roots: Default::default(),
+                return_roots: Default::default(),
+            }, 5, &admission).unwrap();
+            assert_eq!(used.load(Ordering::Acquire), root + total);
+        }
+        assert_eq!(roster.rows.capacity(), 5);
+        drop(roster);
+        assert_eq!(used.load(Ordering::Acquire), root);
     }
 }
