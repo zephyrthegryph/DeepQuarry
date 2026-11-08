@@ -233,7 +233,6 @@ impl CurrentOriginalDeclarations{
  fn into_current(mut self,progress:crate::adapter::DeclarationAdapterProgress,a:&dm_syntax::SettingAdmission<'_>)->io::Result<(super::declaration_state::CurrentContribution,OriginalPrimaryRoots)>{
   if !a.matches_lease_domain(&self._lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original current contribution belongs to another native resource domain"))}
   let(mut facts,rows,errors)=progress.into_parts();
-  self.prepared.drop_canonical_bank();
   if let Some(error)=errors.first(){return Err(io::Error::new(io::ErrorKind::Unsupported,format!("unissued original declaration adapter state: {}",error.message)))}
   let items=self.items.view(&self.source)?;
   let receipt=crate::procedure::HeaderAllocationReceipt::from_original_rows_checked(items,&self.headers,self.offset,rows,a).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})?;

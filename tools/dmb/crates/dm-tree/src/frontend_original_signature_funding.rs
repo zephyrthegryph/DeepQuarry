@@ -9,7 +9,7 @@ use crate::procedure::original_primary_signatures::{allocate_funded_rows,Prepare
 macro_rules! typed_aliases {
  ($($variant:ident($field:ident, $target:ty)),+ $(,)?) => {
   enum Alias<'a> { $($variant(&'a Arc<$target>)),+ }
-  #[derive(Default, Eq, PartialEq)]
+  #[derive(Debug, Default, Eq, PartialEq)]
   struct AliasCounts { $($field:usize),+ }
   impl AliasCounts {
    fn note(&mut self, alias: Alias<'_>) -> io::Result<()> {
@@ -70,7 +70,6 @@ impl OriginalSignatureAliasGroup{
  fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||!self.spellings.admitted_by(a)||self.reservations.iter().any(|row|!a.matches_lease_domain(row))||self._adapter.as_ref().is_some_and(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
  pub(super) fn capture(facts:&crate::AdaptedDeclarations,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Arc<Self>>{
   prepared.require_consumed().map_err(|reason|io::Error::new(io::ErrorKind::InvalidData,reason))?;
-  prepared.drop_canonical_bank();
   let mut alias_count=AliasCounts::default();
   let mut lease_count=0usize;
   // Both traversals borrow the same immutable facts and signature products.
@@ -78,6 +77,10 @@ impl OriginalSignatureAliasGroup{
   visit_aliases(facts,prepared,a,&mut |actual|{checkpoint(a)?;alias_count.note(actual)})?;
   prepared.visit_signature_reservations(|_|lease_count=lease_count.saturating_add(1));
   if lease_count==usize::MAX{return Err(oom())}
+  #[cfg(debug_assertions)]
+  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+   eprintln!("ORIGINAL_SIGNATURE_ALIAS_COUNTS retained={} counts={alias_count:?} reservations={lease_count}", a.retained_bytes_for_trace());
+  }
   let mut coordination=a.reserve(group_bytes()?).map_err(|error|a.take_operational_error().unwrap_or(error))?;
   let mut aliases=TypedAliases::allocate(&alias_count,&mut coordination,a)?;
   let mut reservations=exact_rows(lease_count,&mut coordination,a)?;
