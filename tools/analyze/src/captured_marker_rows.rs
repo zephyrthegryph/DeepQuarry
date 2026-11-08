@@ -308,7 +308,9 @@ fn collect_file_using<E>(relative:&str,marker:&str,budget:&Budget,names:&[&str],
             })?;
         }
 
-        if include_runtime{
+        // The funded scanner can skip the byte-wise identifier walk when no
+        // literal `observe` can possibly form a runtime marker.
+        if include_runtime && (temporary.is_none() || marker.contains("observe")) {
             struct RuntimeControl<'b,E,F>{budget:&'b Budget,temporary:Option<&'b Budget>,peaks:[usize;2],poll:&'b mut F,_error:std::marker::PhantomData<E>}
             impl<E,F> crate::key_policy_control::Control for RuntimeControl<'_,E,F> where E:From<String>+for<'e>From<&'e str>,F:FnMut()->Result<(),E>{
                 type Error=E;const CHECKED:bool=true;

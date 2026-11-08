@@ -88,7 +88,12 @@ impl Budget {
         self.used.load(Ordering::Acquire)
     }
     pub fn require(&self) -> Result<(), String> {
-        self.charge(0)
+        // Positive reservations enforce the limit before mutating the count.
+        // A checkpoint only observes the sticky denial, including its parent.
+        if self.denied() {
+            return Err("captured generator allocation denied".into());
+        }
+        Ok(())
     }
     pub fn deny(&self) {
         self.denied.store(true, Ordering::Release);
@@ -355,6 +360,18 @@ impl Drop for ReservedWindow {
 }
 #[cfg(test)]mod reserved_window_controls {
  use super::*;
+ #[test]fn checkpoints_preserve_credit_and_observe_parent_denial(){
+  let root=Budget::new(4096).unwrap();
+  let child=Budget::scoped_temporaries(&root).unwrap();
+  child.charge(256).unwrap();
+  let funded=(root.used(),child.used());
+  for _ in 0..1024{child.require().unwrap();root.require().unwrap();}
+  assert_eq!((root.used(),child.used()),funded);
+  assert!(root.charge(4096).is_err());
+  assert!(child.require().is_err());
+  assert!(root.require().is_err());
+  assert_eq!((root.used(),child.used()),funded);
+ }
  #[test]fn actual_operation_window_uses_remaining_counter_and_refunds_only_unused_credit(){
   let budget=Budget::new(4096).unwrap();let fixed=budget.used();budget.charge(800).unwrap();let before=budget.used();let window=Budget::reserve_window(&budget,64*1024*1024).unwrap();assert_eq!(window.capacity(),4096-before);assert_eq!(budget.remaining(),0);window.settle(300).unwrap();assert_eq!(budget.used(),before+300);let window=Budget::reserve_window(&budget,500).unwrap();assert_eq!(window.capacity(),500);drop(window);assert_eq!(budget.used(),before+300);assert_eq!(before,fixed+800);
  }

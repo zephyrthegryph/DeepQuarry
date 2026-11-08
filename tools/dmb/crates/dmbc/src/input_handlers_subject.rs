@@ -183,7 +183,17 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   // The old algorithm does not even create/compile synth.dme without a
   // candidate. A selected READS_AS/output-base may still demand the distinct
   // full source, but it cannot manufacture a structural root or witness.
-  let directory=if recipe.candidates.is_empty(){None}else{let directory=canonical_root.join("__dmb_original_handlers_structural__");if !matches!(self.capture_policy_directory_lent(&directory,false,budget.used(),budget,lender)?,PolicyDirectoryListing::Missing){return Err(fail("private handlers synthetic namespace already has a physical entry"))}Some(directory)};
+  let directory = if recipe.candidates.is_empty() {
+   None
+  } else {
+   let directory = canonical_root.join("__dmb_original_handlers_structural__");
+   // This is a single typed directory probe with no traversal metadata.
+   // Recipe and source bytes already occupy the separate live input budget.
+   if !matches!(self.capture_policy_directory_lent(&directory,false,0,budget,lender)?,PolicyDirectoryListing::Missing) {
+    return Err(fail("private handlers synthetic namespace already has a physical entry"));
+   }
+   Some(directory)
+  };
   let metadata={let current=self.snapshot.lock().map_err(|_|fail("handlers metadata ledger poisoned"))?;kc::reserve(&mut control,||current.policy_directories.len().checked_mul(1024)?.checked_add(4096))?;current.policy_closure_charge()?};kc::reserve(&mut control,||metadata.checked_mul(2)?.checked_add(4096))?;
   let selection_facts=self.policy_workspace_closure(&selection_files,discovery.directory_paths().chain(directory.iter()))?;let retained_facts=selection_facts.policy_closure_charge_with(&mut BTreeSet::new())?;kc::reserve(&mut control,||retained_facts.checked_add(4096))?;
   mark("closure");
