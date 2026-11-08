@@ -264,17 +264,19 @@
 	end_window("ap_menu")
 	metric("ap_menu_cold_us", menu_reads ? menu_cold_ms * 1000 / menu_reads : 0, "us")
 	// After an unrelated change of the crewmate (its act generation moves, none of the keys the menu read): is the menu still cached?
-	var/unrelated_before = GLOB.op_menu_builds
+	var/unrelated_builds = 0
 	var/unrelated_reads = 0
 	for(var/i in 1 to length(crew) step 2)
 		var/mob/living/carbon/human/A = crew[i]
 		var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
 		if(A == B)
 			continue
-		interaction_menu_data(A, B)
+		interaction_menu_data(A, B) // primes the cache for this pair
+		var/before = GLOB.op_menu_builds
 		op_changed(B)
 		op_changed(A)
 		interaction_menu_data(A, B)
+		unrelated_builds += GLOB.op_menu_builds - before
 		unrelated_reads++
 	// What the cached menus depend on: per-key reads by key, whole-entity records by the entity's type (the ones an unrelated change still breaks).
 	var/list/dep_kinds = list()
@@ -290,7 +292,7 @@
 		if(length(entry) >= 6 && entry[6])
 			dep_kinds["sampled rows"] += length(entry[6])
 	detail("ap_menu_dep_kinds", dep_kinds)
-	count_metric("ap_menu_rebuilds_after_unrelated_change", unrelated_reads ? (GLOB.op_menu_builds - unrelated_before) / unrelated_reads : 0, "builds")
+	count_metric("ap_menu_rebuilds_after_unrelated_change", unrelated_reads ? unrelated_builds / unrelated_reads : 0, "builds")
 	metric("ap_menu_warm_us", menu_reads ? menu_warm_ms * 1000 / menu_reads : 0, "us")
 	count_metric("ap_menu_rows", menu_reads ? menu_rows / menu_reads : 0, "rows", "none")
 	count_metric("ap_menu_builds", GLOB.op_menu_builds - builds_before, "builds")
