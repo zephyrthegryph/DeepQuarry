@@ -35,6 +35,8 @@
 	var/parts_made = 0
 	/// Interface name -> the column list index a drop asked for, used by the next column window of that interface.
 	var/list/drop_index
+	/// Interface name -> the screen point ("x,y") a drag out of the column ended at: its next native window opens under it.
+	var/list/float_points
 
 /datum/window_dock/New(client/owner)
 	rel_set(src, nameof(owner), owner)
@@ -158,9 +160,9 @@ CAPABILITIES(/datum/window_dock)
 		return FALSE
 	remember(ui.interface, FALSE)
 	log_tgui(owner(), "Window dock: [ui.interface] floated[at ? " under [at]" : ""].", window = ui.window())
-	var/datum/tgui/opened = reopen(ui)
-	if(at && istype(opened))
-		opened.float_at = at
+	if(at)
+		LAZYSET(float_points, ui.interface, at)
+	reopen(ui)
 	return TRUE
 
 /// A native window was dropped (its titlebar drag ended at screen point `point`): the column page judges whether that is over it.
@@ -183,11 +185,45 @@ CAPABILITIES(/datum/window_dock)
 	var/index = payload?["index"]
 	dock(ui, isnum(index) ? max(0, round(index)) : null)
 
+/datum/tgui_panel/column_message(list/payload)
+	return column_route(client(), payload)
+
+/datum/tgui_panel/column_page_loaded()
+	var/client/player = client()
+	window.send_message("col/init", list("saved" = player?.prefs?.read_preference(/datum/preference/text/window_layout) || ""))
+	// Every column window opens in the page again; its UI gets a full update when the page reports it ready.
+	for(var/window_id in player?.session?.tgui_windows)
+		var/datum/tgui_window/column_part/part = player.session.tgui_windows[window_id]
+		if(istype(part) && part.status != TGUI_WINDOW_CLOSED)
+			part.reinitialize()
+
+/// The column page's message for one of its windows (`col/msg`): handed to that window as if its own page sent it. Only a column part of
+/// this client is ever reached; anything else is dropped.
+/proc/column_route(client/player, list/payload)
+	if(!player?.session || !islist(payload))
+		return FALSE
+	var/wid = payload["wid"]
+	var/type = payload["type"]
+	if(!istext(wid) || !istext(type))
+		return FALSE
+	var/datum/tgui_window/column_part/part = player.session.tgui_windows[wid]
+	if(!istype(part))
+		return FALSE
+	part.on_message(type, payload["payload"], list())
+	return TRUE
+
 /datum/tgui/dock_window()
 	if(!dockable_interface())
 		return null
 	var/datum/window_dock/dock = window_dock_of(user?.client)
-	if(!dock?.wants(interface))
+	if(!dock)
+		return null
+	if(!dock.wants(interface))
+		// Floating: a drag out of the column left a point for it, so its window opens under the pointer (one update carries it).
+		var/at = LAZYACCESS(dock.float_points, interface)
+		if(at)
+			float_at = at
+			LAZYREMOVE(dock.float_points, interface)
 		return null
 	return dock.new_part(interface)
 

@@ -1,5 +1,5 @@
 // Speech from the chat input row (tgui/packages/tgui-panel/input): the one place a player types what they say. Every speech hotkey
-// (Say, Me, Whisper, Subtle, OOC, LOOC, Radio) focuses the row in its channel (chat_focus_input(), floating_chat.dm); the chat panel
+// (Say, Me, Whisper, Subtle, OOC, LOOC, Radio) focuses the row in its channel (chat_focus_input(), chat_column.dm); the chat panel
 // forwards the row's messages here. `open`/`close` bracket the typing, `thinking`/`typing` drive the bubble over the head, `entry`
 // speaks. The say popup (tgui-say) is gone.
 

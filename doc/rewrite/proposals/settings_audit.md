@@ -194,10 +194,10 @@ NICHE items are listed in the tables with a proposed action; none were changed.
 | `ability_order` | `/datum/preference/ability_order` | `code/content/abilities/ability_panel.dm:11` | KEEP | keep |
 | `ADMIN_VERB_PINS` | `/datum/preference/text/admin_verb_pins` | `code/content/admin/admin_verb_browser.dm:134` | KEEP | keep |
 | `ADMIN_VERB_RECENT` | `/datum/preference/text/admin_verb_recent` | `code/content/admin/admin_verb_browser.dm:188` | KEEP | keep |
-| `CHAT_FLOATING` | `/datum/preference/toggle/chat_floating` | `code/content/client/floating_chat.dm:217` | KEEP | keep |
-| `CHAT_DOCK_SIDE` | `/datum/preference/choiced/chat_dock_side` | `code/content/client/floating_chat.dm:55` | KEEP | keep |
-| `CHAT_SHARE` | `/datum/preference/numeric/chat_share` | `code/content/client/floating_chat.dm:218` | KEEP | keep |
-| `CHAT_INLINE_INPUT` | `/datum/preference/toggle/chat_inline_input` | `code/content/client/floating_chat.dm:92` | KEEP | keep |
+| `CHAT_FLOATING` | `/datum/preference/toggle/chat_floating` | `code/content/client/floating_chat.dm (deleted):217` | DELETED | the chat is a window of the one-page column (window_system.md section 12) |
+| `CHAT_DOCK_SIDE` | `/datum/preference/choiced/chat_dock_side` | `code/content/client/floating_chat.dm (deleted):55` | DELETED | the chat is a window of the one-page column (window_system.md section 12) |
+| `CHAT_SHARE` | `/datum/preference/numeric/chat_share` | `code/content/client/floating_chat.dm (deleted):218` | DELETED | the chat is a window of the one-page column (window_system.md section 12) |
+| `CHAT_INLINE_INPUT` | `/datum/preference/toggle/chat_inline_input` | `code/content/client/chat_column.dm` | KEEP | keep |
 | `CHAT_ATTACKLOGS` | `/datum/preference/toggle/show_attack_logs` | `code/content/admin/admin.dm:20` | KEEP | keep |
 | `CHAT_DEBUGLOGS` | `/datum/preference/toggle/show_debug_logs` | `apply proc in admin.dm` | DEAD | deleted (no reader) |
 | `CHAT_PRAYER` | `/datum/preference/toggle/show_chat_prayers` | `code/content/admin/verbs/pray.dm:26` | KEEP | keep |
@@ -331,10 +331,10 @@ Admin verbs live in the admin verb browser and are out of scope. Panel is the ve
 | `/client/verb/character_setup` | Character Setup | no | `code/content/client/client_procs.dm:916` | KEEP | keep |
 | `/client/verb/game_options` | Game Options | no | `code/content/client/client_procs.dm:924` | KEEP | keep |
 | `/client/verb/show_active_playtime` | Active Playtime | no | `code/content/client/client_procs.dm:952` | KEEP | keep |
-| `/client/verb/ooc_input` | .dq-ooc-input | no | `code/content/client/floating_chat.dm:102` | KEEP | keep |
-| `/client/verb/toggle_floating_chat` | toggle-floating-chat | VERB_CAT_OOC_CLIENT_SETTINGS | `code/content/client/floating_chat.dm:360` | DUPLICATE | hidden; Menu: Float / dock chat |
-| `/client/verb/dock_chat` | dock-chat | VERB_CAT_OOC_CLIENT_SETTINGS | `code/content/client/floating_chat.dm:366` | DUPLICATE | hidden; the float window on-close runs it |
-| `/client/verb/reset_chat_window` | reset-chat-window | VERB_CAT_OOC_CLIENT_SETTINGS | `code/content/client/floating_chat.dm:373` | DUPLICATE | hidden; Menu: Reset chat window |
+| `/client/verb/ooc_input` | .dq-ooc-input | no | `code/content/client/chat_column.dm` | KEEP | keep |
+| `/client/verb/toggle_floating_chat` | toggle-floating-chat | VERB_CAT_OOC_CLIENT_SETTINGS | `code/content/client/floating_chat.dm` (deleted) | DELETED | the floating chat window is gone (window_system.md section 12) |
+| `/client/verb/dock_chat` | dock-chat | VERB_CAT_OOC_CLIENT_SETTINGS | `code/content/client/floating_chat.dm` (deleted) | DELETED | the floating chat window is gone (window_system.md section 12) |
+| `/client/verb/reset_chat_window` | reset-chat-window | VERB_CAT_OOC_CLIENT_SETTINGS | `code/content/client/floating_chat.dm` (deleted) | DELETED | the floating chat window is gone (window_system.md section 12) |
 | `/client/verb/spinleft` | Spin View CCW | no | `code/content/client/movement.dm:6` | KEEP | keep |
 | `/client/verb/spinright` | Spin View CW | no | `code/content/client/movement.dm:11` | KEEP | keep |
 | `/client/verb/toggle_fullscreen` | toggle-fullscreen | VERB_CAT_OOC_CLIENT_SETTINGS | `code/content/client/preferences/types/game/fullscreen.dm:41` | DUPLICATE | hidden; Menu and the Borderless fullscreen setting |

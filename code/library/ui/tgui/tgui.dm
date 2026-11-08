@@ -194,6 +194,8 @@
 	window().send_message("update", get_payload(
 		with_data = TRUE,
 		with_static_data = TRUE))
+	// A window floated out of the column opens under the pointer once (window_dock.dm); later updates leave it where it is.
+	float_at = null
 
 /// Queues this UI's assets. Returns TRUE when the caller must wait for the client's ack.
 /datum/tgui/proc/send_assets(list/startup_profile, startup_timer)

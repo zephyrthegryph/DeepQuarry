@@ -51,17 +51,15 @@ test('two embedded windows in one page each read their own data and act on their
   });
   applyEmbeddedMessage(apc, 'update', { data: { name: 'APC' } });
   render(
-    <>
-      {[pda, apc].map((backend) => (
-        <Provider key={backend.id} store={backend.store}>
-          <EmbeddedContext.Provider value={backend}>
-            <div onPointerDownCapture={() => {}}>
-              <Probe />
-            </div>
-          </EmbeddedContext.Provider>
-        </Provider>
-      ))}
-    </>,
+    [pda, apc].map((backend) => (
+      <Provider key={backend.id} store={backend.store}>
+        <EmbeddedContext.Provider value={backend}>
+          <div onPointerDownCapture={() => {}}>
+            <Probe />
+          </div>
+        </EmbeddedContext.Provider>
+      </Provider>
+    )),
   );
   fireEvent.click(screen.getByText('APC 0'));
   expect(sent).toEqual([['w-apc', 'act/press', { who: 'APC' }]]);

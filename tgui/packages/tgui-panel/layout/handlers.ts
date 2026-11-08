@@ -1,31 +1,11 @@
-import { store } from '../events/store';
-import { dragHandlers } from './actions';
-import { layoutModeAtom, layoutShareAtom } from './atoms';
-import { clampFloatToMain, fitChatBrowser, resumePopoutDrag } from './geometry';
-import { clampShare, isMode } from './model';
+import { fitChatBrowser } from './geometry';
 
-/** The server moved the chat pane, or told which layout it is in (chat/layout). */
-export function chatLayout(
-  payload: { mode?: unknown; share?: unknown } | undefined,
-) {
-  if (isMode(payload?.mode)) {
-    const was = store.get(layoutModeAtom);
-    store.set(layoutModeAtom, payload.mode);
-    // The pane has just been moved: size the page to its new place, again once it settles.
-    fitChatBrowser(payload.mode, 'layout');
-    setTimeout(
-      () => fitChatBrowser(store.get(layoutModeAtom), 'layout-settled'),
-      600,
-    );
-    if (payload.mode === 'float') {
-      clampFloatToMain();
-      if (was !== 'float') {
-        // A pop-out drag carries on in the window the pane just moved to.
-        resumePopoutDrag(dragHandlers);
-      }
-    }
-  }
-  if (typeof payload?.share === 'number') {
-    store.set(layoutShareAtom, clampShare(payload.share));
-  }
+/**
+ * The server seated the column page's pane, or reports where it is
+ * (chat/layout): the page sizes its browser to the pane, again once it
+ * settles.
+ */
+export function chatLayout(_payload: unknown) {
+  fitChatBrowser('layout');
+  setTimeout(() => fitChatBrowser('layout-settled'), 600);
 }

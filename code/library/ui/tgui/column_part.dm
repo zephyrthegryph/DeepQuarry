@@ -59,17 +59,10 @@
 		host().send_message("col/close", list("wid" = id))
 	log_tgui(client(), "Column window closed.", window = src)
 
-/// The column page's message for one of its windows (`col/msg`): handed to that window as if its own page sent it. Only a column part of
-/// this client is ever reached; anything else is dropped.
-/proc/column_route(client/player, list/payload)
-	if(!player?.session || !islist(payload))
-		return FALSE
-	var/wid = payload["wid"]
-	var/type = payload["type"]
-	if(!istext(wid) || !istext(type))
-		return FALSE
-	var/datum/tgui_window/column_part/part = player.session.tgui_windows[wid]
-	if(!istype(part))
-		return FALSE
-	part.on_message(type, payload["payload"], list())
-	return TRUE
+/// Hook: a message from one of the column page's windows (`col/msg {wid, type, payload}`): to that window (content: window_dock.dm).
+/datum/tgui_panel/proc/column_message(list/payload)
+	return FALSE
+
+/// Hook: the column page (re)loaded and holds no windows: its saved arrangement and every open column window go to it again.
+/datum/tgui_panel/proc/column_page_loaded()
+	return

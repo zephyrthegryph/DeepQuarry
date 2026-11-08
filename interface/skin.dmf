@@ -291,35 +291,6 @@ window "rpane"
 		is-visible = false
 		saved-params = ""
 
-window "chat_float"
-	elem "chat_float"
-		type = MAIN
-		background-color = #202020
-		text-color = #B3CCE6
-		pos = 60,60
-		size = 560x420
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		is-visible = false
-		saved-params = "pos;size"
-		title = "Chat"
-		statusbar = false
-		can-minimize = false
-		can-resize = false
-		titlebar = false
-		can-close = false
-		on-close = "dock-chat"
-	// Hosts the outputwindow pane while the chat floats (chat_layout_sync in code/content/client/floating_chat.dm).
-	elem "chat_float_host"
-		type = CHILD
-		background-color = #202020
-		text-color = #B3CCE6
-		pos = 0,0
-		size = 560x420
-		anchor1 = 0,0
-		anchor2 = 100,100
-		saved-params = ""
-
 window "ooc_notes"
 	elem "ooc_notes"
 		type = MAIN

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { moveBefore } from 'tgui/dq';
-import { NO_DRAG } from '../layout/ChatLayout';
 import { reorderedPages } from './model';
 
 const read = (path: string) =>
@@ -10,8 +9,8 @@ const read = (path: string) =>
 
 describe('chat tabs', () => {
   it('keep a press on a tab out of the window drag', () => {
-    // tgui-core renders a tab as .Tab.Tabs__Tab; the old '.Tabs__tab' matched nothing.
-    expect(NO_DRAG.split(',').map((part) => part.trim())).toContain('.Tab');
+    // tgui-core renders a tab as .Tab.Tabs__Tab; the column's header drag leaves presses on tabs alone (column/Column.tsx NO_DRAG).
+    expect(read('column/Column.tsx')).toMatch(/const NO_DRAG = '[^']*\.Tab\b/);
   });
 
   it('reorder by drag, the main tab included', () => {
