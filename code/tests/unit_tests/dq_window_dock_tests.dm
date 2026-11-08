@@ -54,6 +54,7 @@
 	TEST_ASSERT(!wanted["Junk"], "a malformed entry is ignored")
 	TEST_ASSERT_EQUAL(length(window_dock_wanted("not json")), 0, "junk text docks nothing")
 	TEST_ASSERT_EQUAL(length(window_dock_wanted(null)), 0, "an unset layout docks nothing")
+	TEST_ASSERT(!("Chat" in window_dock_wanted("{\"Chat\":{\"dock\":false}}")), "a saved float of the chat says nothing: it starts docked")
 	TEST_ASSERT(("Vending" in wanted) && !wanted["Vending"], "a floated interface is remembered as floating, not forgotten")
 	TEST_ASSERT(!("Junk" in wanted), "a malformed entry says nothing")
 	var/datum/window_dock/dock = new(null)
