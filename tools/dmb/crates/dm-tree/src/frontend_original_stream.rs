@@ -42,8 +42,17 @@ impl StreamedOriginalDeclarations{
  /// General constants run iff that frontier really is complete.
  pub(crate) fn into_prepared(self,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,host:&dyn SettingExpressionQueries,a:&dm_syntax::SettingAdmission<'_>)->Result<(OriginalDiagnosticPlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),FrontendBuildFailure>{
   if !self.primary.expanded().same_view(&self.expanded.text){return Err(FrontendBuildFailure::Operational(io::Error::new(io::ErrorKind::InvalidData,"streamed declaration primary detached from actual output arena")))}
-  let current=self.primary.adapt_for_original_outcome(a).and_then(|products|products.into_current(a)).map_err(FrontendBuildFailure::Operational)?;
+  #[cfg(debug_assertions)]
+  let trace = std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some();
+  #[cfg(debug_assertions)]
+  if trace { eprintln!("ORIGINAL_ADAPTER_CREDIT stage=before_adapt retained={}", a.retained_bytes_for_trace()); }
+  let adapted=self.primary.adapt_for_original_outcome(a).map_err(FrontendBuildFailure::Operational)?;
+  #[cfg(debug_assertions)]
+  if trace { eprintln!("ORIGINAL_ADAPTER_CREDIT stage=after_adapt retained={}", a.retained_bytes_for_trace()); }
+  let current=adapted.into_current(a).map_err(FrontendBuildFailure::Operational)?;
   current.retain_signature_aliases(host,a).map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>FrontendBuildFailure::Operational(actual),BodySyntaxFailure::Syntax(actual)=>FrontendBuildFailure::Diagnostics(vec![actual].into())})?;
+  #[cfg(debug_assertions)]
+  if trace { eprintln!("ORIGINAL_ADAPTER_CREDIT stage=aliases retained={}", a.retained_bytes_for_trace()); }
   let prepared=current.converge_previous_code(previous,a).and_then(|current|current.into_prepared(engine,a)).map_err(FrontendBuildFailure::Operational)?;
   actual(a,||a.checkpoint()).map_err(FrontendBuildFailure::Operational)?;Ok((self.plan,self.expanded,prepared))
  }

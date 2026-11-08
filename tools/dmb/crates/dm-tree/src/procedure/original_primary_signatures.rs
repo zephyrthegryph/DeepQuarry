@@ -385,6 +385,24 @@ impl OriginalSignatureObserver<'_, '_> {
     }
 }
 
+impl<T, const PAGE_LEN: usize> FundedRowPages<Option<T>, PAGE_LEN> {
+    /// Consume one physically owned payload slot. When the last actual row
+    /// moves out, the page's Vec has no aliases. Keep its directory position
+    /// and ordinals, but free the empty allocation before releasing its lease.
+    /// Only completed signature payloads use this during the adapter phase.
+    fn take_retiring_page(&mut self, ordinal: usize) -> Option<T> {
+        let page = self.pages.get_mut(ordinal / PAGE_LEN)?;
+        let value = page.rows.get_mut(ordinal % PAGE_LEN)?.take()?;
+        page.consumed += 1;
+        if page.consumed == page.rows.len() {
+            debug_assert!(page.rows.iter().all(Option::is_none));
+            drop(std::mem::take(&mut page.rows));
+            drop(page.credit.take());
+        }
+        Some(value)
+    }
+}
+
 impl OriginalDeclarationHeaderObserver for OriginalSignatureObserver<'_,'_>{
  fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{let result=self.header_using(event);if result.is_err(){self.stream_failed=true}result}
 }
@@ -697,7 +715,7 @@ impl CompletedSignatureRows {
                 self.empty_parameters.as_ref().ok_or("actual trivial signature backing is absent")?,
             )),
             SlotValue::Payload(ordinal) => {
-                let core = self.payloads.get_mut(ordinal).and_then(Option::take)
+                let core = self.payloads.take_retiring_page(ordinal)
                     .ok_or("actual prepared signature payload is absent")?;
                 let tail = tail_index.map_or_else(CompletedSignatureTail::default, |index| {
                     std::mem::take(&mut self.payload_tails.get_mut(index).expect("located signature tail").tail)
@@ -747,7 +765,8 @@ impl CompletedSignatureRows {
 
 struct FundedRowPage<T> {
     rows: Vec<T>,
-    credit: dm_syntax::SettingRootLease,
+    credit: Option<dm_syntax::SettingRootLease>,
+    consumed: usize,
 }
 
 struct FundedRowPages<T, const PAGE_LEN: usize> {
@@ -817,7 +836,7 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         }
         if self.pages.last().is_none_or(|page| page.rows.len() == PAGE_LEN) {
             let (rows, credit) = allocate_funded_rows(PAGE_LEN, a)?;
-            let page = FundedRowPage { rows, credit };
+            let page = FundedRowPage { rows, credit: Some(credit), consumed: 0 };
             grow_funded_rows(&mut self.pages, &mut self.directory, a)?;
             self.pages.push(page);
         }
@@ -833,7 +852,7 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
 
     fn try_consume<E>(self, mut visit: impl FnMut(T) -> Result<(), E>) -> Result<(), E> {
         let Self { pages, directory: _directory, .. } = self;
-        for FundedRowPage { rows, credit: _credit } in pages {
+        for FundedRowPage { rows, credit: _credit, .. } in pages {
             // The inner IntoIter destroys the actual row buffer before its
             // page credit drops. The directory likewise outlives its iterator.
             for row in rows {
@@ -846,7 +865,7 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
     #[cfg(any(debug_assertions, test))]
     fn buffer_bytes(&self) -> usize {
         self.pages.iter().fold(self.directory.as_ref().map_or(0, |credit| credit.bytes()),
-            |bytes, page| bytes.saturating_add(page.credit.bytes()))
+            |bytes, page| bytes.saturating_add(page.credit.as_ref().map_or(0, |credit| credit.bytes())))
     }
 }
 
@@ -922,6 +941,9 @@ impl dm_ir::CanonicalWork for ProcedureCanonicalWork<'_, '_> {
     fn reserve(&mut self, bytes: usize) -> std::io::Result<()> {
         self.admission.grow(&mut self.scratch, bytes)
             .map_err(|proxy| self.admission.take_operational_error().unwrap_or(proxy))
+    }
+    fn release_retired(&mut self,bytes:usize)->std::io::Result<()>{
+        self.scratch.release_retired_bytes(bytes)
     }
 }
 
@@ -1621,11 +1643,17 @@ mod signature_row_storage_tests {
         assert!(actual.prepared.take(header, 0, &foreign.headers).is_err());
         assert!(actual.prepared.take(Span::new(header.start, header.end + 1), 0, &actual.headers).is_err());
         assert_eq!(actual.prepared.remaining(), count);
+        let page_bytes=COMPLETED_SIGNATURE_PAGE_LEN*std::mem::size_of::<Option<CompletedSignatureCore>>();
+        let mut held_signature=None;
         for ordinal in (0..count).rev() {
+            let before=used.load(Ordering::Acquire);
             let header = actual.items.dense()[ordinal].header_span;
             let (signature, offset) = actual.prepared.take(header, 0, &actual.headers).unwrap();
             assert!(offset > 0);
             assert_eq!(actual.symbols.text(signature.signature.parameters[0].name), Some("value"));
+            let retired=ordinal%COMPLETED_SIGNATURE_PAGE_LEN==0;
+            assert_eq!(used.load(Ordering::Acquire),before-if retired{page_bytes}else{0});
+            if ordinal==count-1{held_signature=Some(signature);}
             assert!(actual.prepared.take(header, 0, &actual.headers).is_err());
         }
         actual.prepared.require_consumed().unwrap();
@@ -1638,7 +1666,8 @@ mod signature_row_storage_tests {
         assert!(reservations.windows(2).all(|pair| !Arc::ptr_eq(&pair[0], &pair[1])));
         actual.prepared.release_consumed_rows();
         assert_eq!(used.load(Ordering::Acquire), before - bytes);
-        drop((actual, foreign, reservations));
+        assert_eq!(actual.symbols.text(held_signature.as_ref().unwrap().signature.parameters[0].name),Some("value"));
+        drop((actual, foreign, held_signature, reservations));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 }

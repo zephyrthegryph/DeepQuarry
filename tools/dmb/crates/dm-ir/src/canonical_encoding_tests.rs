@@ -47,6 +47,35 @@ fn declaration()->DeclarationMeaning{
  drop(value);while let Some(value)=owners.pop(){drop(value)}
  let healthy=SemanticValue::Null.canonical_bytes_using(&mut Work::default()).unwrap();assert_eq!(healthy,vec![0]);
 }
+#[test]
+fn canonical_encoder_retires_actual_task_and_replaced_output_storage() {
+ struct Exact { base: Work, peak: usize }
+ impl CanonicalWork for Exact {
+  fn poll(&mut self)->io::Result<()>{self.base.poll()}
+  fn reserve(&mut self,bytes:usize)->io::Result<()>{
+   self.base.reserve(bytes)?;
+   self.peak=self.peak.max(self.base.bytes);
+   Ok(())
+  }
+  fn release_retired(&mut self,bytes:usize)->io::Result<()>{
+   self.base.bytes=self.base.bytes.checked_sub(bytes).expect("release only real live or prepaid bytes");
+   Ok(())
+  }
+ }
+ let procedure=declaration().procedure.unwrap();
+ let mut previous=Work::default();
+ let expected=procedure.canonical_bytes_using(&mut previous).unwrap();
+ let mut exact=Exact{base:Work::default(),peak:0};
+ let actual=procedure.canonical_bytes_using(&mut exact).unwrap();
+ assert_eq!(actual,expected);
+ assert_eq!(exact.base.polls,previous.polls);
+ assert_eq!(exact.base.bytes,actual.capacity()+128,"actual task storage has already dropped");
+ assert!(exact.peak<previous.bytes);
+ let mut tight=Exact{base:Work{limit:Some(exact.peak),..Work::default()},peak:0};
+ assert_eq!(procedure.canonical_bytes_using(&mut tight).unwrap(),expected);
+ assert!(procedure.canonical_bytes_using(&mut Work{limit:Some(exact.peak),..Work::default()}).is_err());
+}
+
 impl FrozenOldBytes for SymbolicExpression{fn old_bytes(&self)->Vec<u8>{
         let mut bytes = Vec::new();
         self.write_canonical(|chunk| bytes.extend_from_slice(chunk));

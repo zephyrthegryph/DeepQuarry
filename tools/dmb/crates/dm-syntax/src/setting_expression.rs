@@ -20,6 +20,18 @@ impl SettingRootLease {
             bytes,
         })
     }
+    /// Retire this lease's bytes after their actual allocation has been
+    /// destroyed, or after a staged allocator bound settles. Like Drop,
+    /// cleanup cannot poll or replace an earlier operational failure.
+    pub fn release_retired_bytes(&mut self,bytes:usize)->std::io::Result<()>{
+        let remaining=self.bytes.checked_sub(bytes).ok_or_else(||std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,"setting owner release exceeds owned storage"))?;
+        self.counter.release_lease(bytes).map_err(|_|std::io::Error::new(
+            std::io::ErrorKind::InvalidData,"setting resource counter is below owned release"))?;
+        self.bytes=remaining;
+        Ok(())
+    }
+
     pub fn bytes(&self) -> usize {
         self.bytes
     }

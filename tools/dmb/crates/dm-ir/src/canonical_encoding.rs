@@ -9,6 +9,9 @@ use std::{io, mem::size_of};
 pub trait CanonicalWork {
     fn poll(&mut self) -> io::Result<()>;
     fn reserve(&mut self, bytes: usize) -> io::Result<()>;
+    /// Resource settlement after allocator growth or actual destruction.
+    /// Other encoders may keep their existing operation-lifetime envelope.
+    fn release_retired(&mut self,_bytes:usize)->io::Result<()>{Ok(())}
 }
 pub(crate) struct Unmetered;
 impl CanonicalWork for Unmetered {
@@ -23,10 +26,18 @@ fn grow<T>(value: &mut Vec<T>, additional: usize, work: &mut dyn CanonicalWork) 
     let target = needed.checked_next_power_of_two().ok_or_else(|| oom("canonical capacity overflow"))?;
     let bound = target.checked_mul(4).ok_or_else(|| oom("canonical allocator bound overflow"))?;
     // Admit the whole new allocation while the old buffer may still be live.
-    work.reserve(bound.checked_mul(size_of::<T>()).and_then(|n| n.checked_add(128)).ok_or_else(|| oom("canonical allocation geometry overflow"))?)?;
+    let grant=bound.checked_mul(size_of::<T>()).and_then(|n| n.checked_add(128)).ok_or_else(|| oom("canonical allocation geometry overflow"))?;
+    let old_capacity=value.capacity();
+    work.reserve(grant)?;
     value.try_reserve_exact(target - value.len()).map_err(|e| io::Error::new(io::ErrorKind::OutOfMemory,e))?;
     if value.capacity() > bound { return Err(oom("canonical allocator exposed excess capacity")) }
-    Ok(())
+    let refund=(bound-value.capacity()).checked_add(old_capacity)
+        .and_then(|n|n.checked_mul(size_of::<T>()))
+        .and_then(|n|n.checked_add(if old_capacity!=0{128}else{0}))
+        .ok_or_else(||oom("canonical allocation settlement overflow"))?;
+    // The old allocation no longer exists. Preserve only the current Vec's
+    // actual capacity. Failed resize leaves its whole pregrant until unwind.
+    work.release_retired(refund)
 }
 pub(crate) enum Root<'a> {
     Expression(&'a SymbolicExpression), Signature(&'a ProcedureSignature),
@@ -183,6 +194,10 @@ impl<'a> Encoder<'a,'_> {
 pub(crate) fn encode(root:Root<'_>,work:&mut dyn CanonicalWork)->io::Result<Vec<u8>> {
     let mut encoder=Encoder{out:Vec::new(),tasks:Vec::new(),work};encoder.root(root)?;
     while let Some(task)=encoder.tasks.pop(){encoder.work.poll()?;encoder.step(task)?}
+    let scratch=encoder.tasks.capacity().checked_mul(size_of::<Task<'_>>()).and_then(|n|n.checked_add(128))
+        .ok_or_else(||oom("canonical task storage geometry overflow"))?;
+    drop(encoder.tasks);
+    encoder.work.release_retired(scratch)?;
     Ok(encoder.out)
 }
 
