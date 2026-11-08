@@ -17,11 +17,11 @@
 /datum/unit_test/dq_sys_hygiene_asset_shared_cache/Run()
 	var/datum/asset/A = get_asset_datum(/datum/asset/simple/generic)
 	TEST_ASSERT(istype(A), "no generic asset datum")
-	var/message = A.get_serialized_url_mappings()
+	var/message = A.get_encoded_url_mappings()
 	TEST_ASSERT(!isnull(message), "serialized mappings were not built")
-	TEST_ASSERT(message == A.get_serialized_url_mappings(), "serialized mappings were rebuilt instead of read from the shared cache")
+	TEST_ASSERT(message == A.get_encoded_url_mappings(), "serialized mappings were rebuilt instead of read from the shared cache")
 	INVALIDATE_SHARED_CACHE(asset_url_mappings)
-	TEST_ASSERT(!isnull(A.get_serialized_url_mappings()), "serialized mappings were not rebuilt after clearing")
+	TEST_ASSERT(!isnull(A.get_encoded_url_mappings()), "serialized mappings were not rebuilt after clearing")
 
 /// The anomaly device's run ends on its after() timer, not a world.time check in its step.
 /datum/unit_test/dq_sys_hygiene_anodevice_timer

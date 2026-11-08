@@ -1,7 +1,7 @@
 // A window inside the right-hand column's page (doc/rewrite/proposals/window_system.md section 12). The column is one browser, the
 // chat's (tgui_panel); the stat panel and every docked tgui interface are windows in that page, each a column part: a /datum/tgui_window
 // with its own id in the client's session, but no browser of its own. What it sends goes through the panel's window wrapped as
-// `col/msg {wid, type, payload}`, one envelope encoded once (a raw native string, an asset mapping, as `col/msg {wid, raw}`); what the page sends for it comes back as `col/msg {wid, type, payload}` (tgui_panel on_message) and is handed to
+// `col/msg {wid, type, payload}`, one envelope encoded once (wrap_message(), asset mappings too); what the page sends for it comes back as `col/msg {wid, type, payload}` (tgui_panel on_message) and is handed to
 // on_message() as if from its own page. A UI in a column part is routed, updated and closed exactly as in a native window.
 
 /datum/tgui_window/column_part
@@ -48,18 +48,12 @@
 /// Everything this window sends leaves through the column page, tagged with its id.
 /// A column window's message is the panel page's `col/msg {wid, type, payload}`: the payload JSON nested in one envelope, url-encoded
 /// once and scanned for admin links once (send_message()), not a native message wrapped and encoded again.
-/datum/tgui_window/column_part/encode_message(type, payload_json)
-	return "[COLUMN_ENVELOPE_HEAD][id]%22%2c%22type%22%3a%22[type]%22%2c%22payload%22%3a[url_encode(payload_json)]%7d%7d"
+/datum/tgui_window/column_part/wrap_message(type, encoded_payload)
+	return "[COLUMN_ENVELOPE_HEAD][id]%22%2c%22type%22%3a%22[type]%22%2c%22payload%22%3a[encoded_payload]%7d%7d"
 
-/// An envelope goes to the panel page as it is; a raw native string (send_raw_message()) is wrapped as `col/msg {wid, raw}`.
+/// Every message of a column window is an envelope (wrap_message()): it goes to the panel page as it is.
 /datum/tgui_window/column_part/deliver(message)
-	var/datum/tgui_window/page = host()
-	if(!page)
-		return
-	if(findtext(message, COLUMN_ENVELOPE_HEAD, 1, COLUMN_ENVELOPE_HEAD_LENGTH + 1))
-		page.send_raw_message(message)
-		return
-	page.send_message("col/msg", list("wid" = id, "raw" = message))
+	host()?.send_raw_message(message)
 
 /datum/tgui_window/column_part/close(can_be_suspended = TRUE)
 	last_sent = null
