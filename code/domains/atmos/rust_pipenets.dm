@@ -78,7 +78,7 @@ CAPABILITIES(/datum/pipe_port)
 
 CAPABILITIES(/obj/machinery/atmospherics)
 	configure(movable_motion(unacidable = TRUE))
-	setup(PROC_REF(settle_pipe_color))
+	setup(PROC_REF(settle_pipe_color), early = TRUE) // before the chain: the root then sees no mapper colour to apply and take off again
 	configure(uses_power(idle = 0, active = 0, channel = ENVIRON))
 	blast_contents() // a ventcrawler in the pipes takes the full blast
 	ref_one(nameof(node1))

@@ -10,7 +10,7 @@
  * * default - If an option is already preselected on the UI. Current values, etc.
  * * timeout - The timeout of the input box, after which the menu will close and qdel itself. Set to zero for no timeout.
  */
-/proc/tgui_input_list(mob/user, message, title = "Select", list/items, default, timeout = 0, strict_modern = FALSE, ui_state = GLOB.tgui_always_state)
+/proc/tgui_input_list(mob/user, message, title = "Select", list/items, default, timeout = 0, ui_state = GLOB.tgui_always_state)
 	if(!length(items))
 		return null
 	if (!istype(user))
@@ -23,9 +23,6 @@
 	if(isnull(user.client))
 		return null
 
-	/// Client does NOT have tgui_input on: Returns regular input
-	if(FALSE && !strict_modern)
-		return input(user, message, title, default) as null|anything in items // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
 	var/datum/tgui_list_input/input = new(user, message, title, items, default, timeout, ui_state)
 	if(input.invalid)
 		spent(input, user)

@@ -20,7 +20,8 @@ import {
 } from './windowDock';
 
 const SAVE_DELAY_MS = 1000;
-const ORIGIN_POLL_MS = 1000;
+/** A slow fallback only: the origin is measured on load, resize, dock changes and drag starts (window_system.md 10.4). */
+const ORIGIN_POLL_MS = 5000;
 
 const isPoint = (value: unknown): value is Point =>
   !!value &&
@@ -85,6 +86,24 @@ async function pageOrigin(): Promise<Point | null> {
   }
 }
 
+/**
+ * Tells the page which side of it the chat is on (`html[data-chat-side]`), so
+ * the panel leaves out its own frame edge there: the chat's frame is the one
+ * line between them, the same 3px gap as every other edge, not two frames.
+ */
+async function markChatSide(): Promise<void> {
+  try {
+    const got = await Byond.winget('rpane.rpanewindow', 'left');
+    const side = got === 'outputwindow' ? 'top' : 'bottom';
+    if (document.documentElement.dataset.chatSide !== side) {
+      document.documentElement.dataset.chatSide = side;
+      console.log('statpanel: chat side', side);
+    }
+  } catch {
+    // An older client: both frames stay.
+  }
+}
+
 export class DockHost {
   state: DockState = emptyDock();
   private version = 0;
@@ -101,7 +120,11 @@ export class DockHost {
   private frame = 0;
 
   constructor() {
-    window.addEventListener('resize', () => this.refreshOrigin());
+    window.addEventListener('resize', () => {
+      this.refreshOrigin();
+      markChatSide();
+    });
+    markChatSide();
     setInterval(() => {
       if (this.state.groups.length) {
         this.refreshOrigin();
@@ -234,6 +257,9 @@ export class DockHost {
 
   setDragging(dragging: boolean) {
     this.dragging = dragging;
+    if (dragging) {
+      this.refreshOrigin();
+    }
     this.version++;
     for (const listener of this.listeners) listener();
     this.schedule();
@@ -279,9 +305,13 @@ export class DockHost {
   };
 
   private place() {
-    const shown = this.dragging ? [] : shownIds(this.state);
+    // Windows are never hidden for a drag: they ride along with their entry (its live transform is in the rect).
+    const shown = shownIds(this.state);
     const ratio = window.devicePixelRatio || 1;
     const clip = this.area?.getBoundingClientRect();
+    // Every window that moved goes in one bulk winset ("id.prop" keys), so they move together in one native call.
+    const batch: Record<string, string | number | boolean> = {};
+    let moved = 0;
     for (const id of Object.keys(this.state.windows)) {
       const body = this.bodies.get(id);
       let params: Record<string, string | number | boolean> | null = null;
@@ -307,7 +337,15 @@ export class DockHost {
         continue;
       }
       this.placed.set(id, next);
-      Byond.winset(id, params ?? { 'is-visible': false });
+      for (const [key, value] of Object.entries(
+        params ?? { 'is-visible': false },
+      )) {
+        batch[`${id}.${key}`] = value;
+      }
+      moved++;
+    }
+    if (moved) {
+      Byond.winset(batch);
     }
   }
 }

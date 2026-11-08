@@ -815,7 +815,7 @@ KD80 :: fixed :: gap :: attached_overlays :: code/content/assembly :: the hand-k
 KD82 :: fixed :: fix :: postmark_roll :: code/content/mail/mail.dm :: the postmark offset is rolled once and stored; the draw rolls nothing
 KD87 :: fixed :: gap :: \bupdate_icons\(\) :: code/content/mob/living/bot code/content/mob/living/carbon/alien code/content/blob2 code/content/mob/living/simple_mob/subtypes/blob :: no update_icons( is left: bots, diona, alien and blob draw their state
 R1 :: kept :: gap :: LAZYREMOVE\(corner\.affecting, src\) // ALLOW\(ownership\) :: code/content/lighting/lighting_source.dm :: reviewed: the corner and source pair stays a hand-kept hot reverse index (lint_scopes.toml stored_refs, /datum/lighting_corner::affecting)
-R2 :: open :: gap :: rel_add\(A, nameof\(A\.all_doors\), src\) :: code/content/machinery/doors/firedoor.dm :: a door still joins its area list from its own init; sectors_to_initialize is a reviewed one-shot boot queue
+R2 :: open :: gap :: rel_add\(src, nameof\(areas_added\), A\) :: code/content/machinery/doors/firedoor.dm :: a door still joins its areas (one links() pair, areas_added <-> all_doors) from its own setup; sectors_to_initialize is a reviewed one-shot boot queue
 R3 :: open :: gap :: LAZYACCESS\(step_answers, name\) :: code/engine/parts/run.dm :: the pooled op act still holds the answered prompt in step_answers
 R4 :: fixed :: fix :: ref_many\(nameof\(adminfaxes\)\) :: code/world/controllers/globals.dm :: GLOB owns adminfaxes as a declared ref_many
 R5 :: fixed :: gap :: rx_notice_queue :: code :: the rx_notice_queue var is gone from code

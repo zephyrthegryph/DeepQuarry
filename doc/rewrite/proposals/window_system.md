@@ -108,3 +108,77 @@ interfaces), and child UIs (`parent_ui`), which follow their parent.
 - (b) drag: reorder groups, drag out to float, drag a floating window in to dock.
 - (c) groups: tabs, drag a window onto another's header to stack, drag a tab out to its own entry, resize grip.
 - (d) persistence: the preference, `WM-Save`/`WM-Ready`/`wm/init`, restore on open.
+
+## 10. How it works in BYOND, what flickers, and the design we keep (2026-11-08)
+
+### 10.1 How a tgui window is made
+
+- The skin (`interface/skin.dmf`) has one hidden window, `tgui_window_template`, holding a single browser control. BYOND cannot
+  create a window hidden with `browse()`, so the server **clones** the template (`winclone(client, "tgui_window_template",
+  "tgui-window-N")`), makes it invisible (`alpha=0`), and only then `browse()`s the tgui page into it (`tgui_window.dm` `initialize`).
+- Those windows are **pooled**: a closed UI keeps its window (suspended, hidden) and the next UI takes it with `acquire_lock()`.
+  Opening a machine reuses a window whose page is already loaded, so it is a data message, not a new browser.
+- The page sizes and places itself: `Window.tsx` recalls the saved geometry for the interface (`drag.ts`), and `reveal.ts` sends
+  size, position and `is-visible`/`alpha` together in one `winset`, so the window never paints at a default size first.
+- Every move or resize is a `winset(id, "pos=x,y;size=WxH")` from the page. It goes to the BYOND client, not the server, but it is
+  still a native round trip per call. `winget` (asking where something is) is a round trip that waits for an answer.
+
+### 10.2 How docking ("flowing into the right panel") works
+
+Docked windows are **not** drawn inside the stat panel. Each one is still its own BYOND window, with its own browser, page and
+`/datum/tgui`. The stat panel page (`statwindow.statbrowser`) draws the frame (header, tabs, collapse, float, close, grip) and an
+empty placeholder box per entry. `dockHost.ts` measures each box with `getBoundingClientRect()`, adds the panel's screen origin
+(`winget statwindow screen-pos`), and `winset`s the docked window's `pos`/`size` to cover the box exactly. The window has no OS
+chrome while docked (`titlebar=false;can-resize=false`). Hidden entries (collapsed, a background tab) get `is-visible=false` and no
+data pushes.
+
+The chat is different again: its browser is a real pane (`outputwindow` in the `rpanewindow` child), so BYOND lays it out natively;
+floating, it is reparented into its own window (`chat_float_host`).
+
+### 10.3 What causes relayout and flicker
+
+1. **Hide and show.** Until 2026-11-08 every header drag hid every docked window (so the page's drop targets showed) and
+   showed them again on release: one `is-visible` flip per window at each end, and the panel repainted under them.
+2. **One `winset` per window per change.** Each window that moved was its own `winset`, so a scroll or a resize of the panel moved
+   the windows one after another (a visible ripple), each a native round trip.
+3. **Polling the origin.** The panel asked BYOND where it is once a second (`winget`) while anything was docked, and re-placed on
+   every answer.
+4. **Geometry recall on dock/undock.** Floating a window re-runs its geometry recall and reveal (another size+pos+visible winset), and
+   the full update re-renders its page.
+5. **Re-renders.** Every dock action re-rendered the whole dock area, and every drag frame did too.
+6. **Window create/destroy** is already avoided by the pool: dock and undock never destroy or re-create the window, and docking
+   changes only the chrome.
+
+### 10.4 The options
+
+- **A. Render docked UIs inside the one panel browser.** No positioning at all and no flicker, but every interface would have to
+  run in one page: a multi-store tgui backend, one asset and theme scope per interface, every message re-routed by a sub-id, and one
+  crash blanks every docked window. That means rewriting the frontend's core and risking every existing interface. Rejected again.
+- **B. Native BYOND panes.** Make each docked window a pane of a child control, so BYOND lays them out. A child control holds only two
+  panes. A list means nesting a child per entry, created at runtime with `winset(... "type=child;parent=...")`. That list cannot
+  scroll, its splitters only apply on release, and our tabs, collapse and drag would all have to be native controls. Rejected.
+- **C. Separate pooled windows, placed by the panel, with the costs removed (chosen).** Keep the window model (it isolates every
+  interface and reuses pooled windows), and remove each cause above:
+  - windows are **never hidden for a drag**: they ride along with their entry. The live drag moves entries with a CSS transform,
+    `getBoundingClientRect()` includes it, and the panel re-places every frame. Drop targets are headers, which windows never cover;
+  - **one batched `winset` per frame** for all the windows that moved (`Byond.winset(null, {"id.pos": ..., "id.size": ...})`),
+    so they all move in the same native call, and only the ones whose rect changed;
+  - the origin is measured **on events** (load, resize, dock change, the start of a drag), with only a slow fallback poll. A docked
+    window moves only when its box does;
+  - dock and undock **keep the window** (pooled, never destroyed), and a float goes straight to the pointer in the same reveal.
+
+Also part of the one system: floating windows (tgui and the chat) may sit on any monitor; only a lost window (Windows'
+-32000 park, or no size) is brought back (`lostRect`, `chat_float_lost`). The right column has one 3px gap between pages: the
+stat panel leaves out its frame edge on the chat's side (`html[data-chat-side]`).
+
+What stays: one `winset` per frame while something moves, and a docked window's page re-renders only when its own data changes.
+
+### 10.5 Windows that still open their own way
+
+Every admin report that was a raw `browse()` window (contract inspector and board, generated-station architecture, tick report) is
+now a pooled tgui window (`dq_admin_report_html`, `AdminReport`), so it docks, stacks and floats like the rest. Admin paper was
+already tgui. Two stay out on purpose:
+- the lobby screen (`lobby_browser`): a dedicated full-size skin element behind the lobby menu, never a window to dock;
+- the in-game admin viewer: it navigates a browser to an external web app (cross-origin, its own auth), which a tgui page cannot
+  host; "Admin Viewer (Browser)" opens the same thing in the player's own browser.
+The modal prompts (section 8) stay separate by design.
