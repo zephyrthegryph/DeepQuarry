@@ -204,6 +204,15 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	var/list/owed = interest_owed_ordered(keys, interest_view_middle(visible, eye))
 	if(!length(owed))
 		return
+	// Each joins the presentation queue as it always did (the lane draws it if nothing else does first), and the prefetch draws them nearest first,
+	// ahead of whatever backlog that queue holds.
+	var/queued = 0
+	for(var/handle in owed)
+		var/atom/A = handle_get(handle)
+		if(isatom(A))
+			queued += interest_wake(A)
+	if(queued)
+		log_world("INTEREST: [length(keys)] chunk(s) in the ring, [queued] parked draw(s) queued, [length(owed)] prefetched nearest first")
 	GLOB.interest_prefetched += owed
 	interest_drain_soon()
 

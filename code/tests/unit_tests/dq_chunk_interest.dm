@@ -27,6 +27,7 @@
 	set_global(nameof(GLOB.interest_covered), alist())
 	set_global(nameof(GLOB.interest_prefetched), list())
 	set_global(nameof(GLOB.interest_test_coverable), list())
+	set_global(nameof(GLOB.interest_covers_raised), GLOB.interest_covers_raised)
 	var/list/lazy = GLOB.type_look_lazy.Copy()
 	lazy[/obj/dq_interest_probe] = TRUE
 	set_global(nameof(GLOB.type_look_lazy), lazy)
