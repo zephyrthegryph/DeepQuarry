@@ -20,7 +20,7 @@
 	/// The photo (a base64 PNG for the window), made the first time it is shown (id_photo()), not when the card is issued.
 	var/front
 	/// Who the photo is of until it is taken (set_id_photo()); the photo is taken of them as they are when it is first shown.
-	var/mob/photo_subject
+	var/photo_subject // weak handle: read with photo_subject()
 
 	var/primary_color = rgb(0,0,0) // Obtained by eyedroppering the stripe in the middle of the card
 	var/secondary_color = rgb(0,0,0) // Likewise for the oval in the top-left corner
@@ -67,8 +67,8 @@ CAPABILITIES(/obj/item/card/id)
 
 /// The photo for the card's window: taken now, of its subject as they are, the first time it is asked for, then kept.
 /obj/item/card/id/proc/id_photo()
-	if(isnull(front) && photo_subject && !QDELETED(photo_subject))
-		var/mob/M = photo_subject
+	var/mob/M = photo_subject()
+	if(isnull(front) && M && !QDELETED(M))
 		M.ImmediateOverlayUpdate()
 		var/icon/F = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
 		set_front("'data:image/png;base64,[icon2base64(F)]'")
