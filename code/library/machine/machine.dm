@@ -135,11 +135,12 @@ CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT, /datum/capability/lib/wall_mount, ke
 		without("area_power_environ"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 		without("power_operable")) // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 
-/// A machine that never draws power (a pipe): it carries no has_power at all, so an APC flip does not touch it.
+/// A machine that never draws power (a pipe): it carries no has_power at all, so an APC flip does not touch it, and no draw, so it never joins its area's
+/// power (no power_area relation, no demand rows, not among the area's power_machines: machine_power_start() skips it).
 CAPABILITY_DEF(unpowered_machine, CAP_UNPOWERED_MACHINE, key = NONE)
 
 /datum/capability/def/unpowered_machine/entries()
-	return machine_without_area_power()
+	return machine_without_area_power() + list(without(MACHINE_DEMAND_EQUIP_KEY), without(MACHINE_DEMAND_LIGHT_KEY), without(MACHINE_DEMAND_ENVIRON_KEY))
 
 CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE, area_power = TRUE)
 

@@ -148,9 +148,10 @@ CAPABILITIES(/obj/machinery)
 	on_change(STAT_HAS_POWER, ANY, then(PROC_REF(has_power_changed)))
 	// The machine's draw is a contribution to its area's demand on the channel it is on (doc/rewrite/power_grid.md): no tally to keep.
 	links(/obj/machinery::power_area, /area::power_machines, b_many = TRUE)
-	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
-	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes_to(nameof(power_area), STAT_DEMAND_LIGHT, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
-	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes_to(nameof(power_area), STAT_DEMAND_ENVIRON, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
+	// Keyed so that a machine that never draws (unpowered_machine(), a pipe) drops them and never joins its area's power at all.
+	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), key = MACHINE_DEMAND_EQUIP_KEY, reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes_to(nameof(power_area), STAT_DEMAND_LIGHT, TYPE_PROC_REF(/obj/machinery, power_demand), key = MACHINE_DEMAND_LIGHT_KEY, reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes_to(nameof(power_area), STAT_DEMAND_ENVIRON, TYPE_PROC_REF(/obj/machinery, power_demand), key = MACHINE_DEMAND_ENVIRON_KEY, reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
 	owns_one(nameof(circuit), /obj/item/circuitboard, starts = PROC_REF(start_circuit))
 	owns_many(nameof(component_parts))
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)
