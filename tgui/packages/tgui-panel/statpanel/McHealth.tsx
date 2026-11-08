@@ -1,11 +1,12 @@
 /**
- * The MC Health panel: the Health page of the stat panel's Server view. One scrolling page, top to bottom: health at a glance, recent
- * ticks, what uses the tick, overruns, memory, entities, native (Rust) and a closed Advanced section. The server sends its data
+ * The MC Health panel: the Health page of the stat panel's Server view. One page built around what is using the tick: the
+ * tick now, its consumers, the overruns ranked by size and the recent ticks; everything else is in closed sections. The server sends its data
  * (code/content/client/mc_health.dm) only while this page is open, at most once a second. Sections remember open/closed per admin.
  */
 
-import { Fragment, memo, type ReactNode, useMemo, useState } from 'react';
+import { memo, type ReactNode, useMemo, useState } from 'react';
 import {
+  averageTickParts,
   bytes,
   count,
   framePhases,
@@ -13,10 +14,13 @@ import {
   type McHealthData,
   nativeMemoryByArea,
   nativeWork,
+  overrunParts,
   overrunSummary,
   perMinute,
   type RecentTick,
   systemsByCost,
+  type TickPart,
+  tickParts,
   verdictOf,
 } from './mcHealthData';
 
@@ -68,36 +72,51 @@ function Health({ data }: { data: McHealthData }) {
   const verdict = verdictOf(data);
   const w = data.window_5s;
   const use = Math.min(100, Math.max(0, w.avg));
-  const memory = data.rust?.['process.working_set_bytes'];
   return (
     <div className="mch-health">
-      <div className="mch-verdict">
-        <span className={`mch-pill mch-pill--${verdict.level}`}>
-          {verdict.label}
-        </span>
-        <span className="mch-why">{verdict.why}</span>
+      <div className="mch-headline">
+        <b className={`mch-big mch-big--${verdict.level}`}>{pct(w.avg)}</b>
+        <div>
+          <div>of each tick in use</div>
+          <span className={`mch-pill mch-pill--${verdict.level}`}>
+            {verdict.label}
+          </span>
+        </div>
       </div>
-      <div
-        className="mch-gauge"
-        title="Average tick use over the last 5 seconds"
-      >
+      <div className="mch-gauge" title={verdict.why}>
         <div
           className={`mch-gauge__fill mch-gauge__fill--${verdict.level}`}
           style={{ width: `${use}%` }}
         />
-        <span>{pct(w.avg)} of each tick</span>
       </div>
-      <div className="mch-kpis">
-        <Kpi
-          label="Speed"
-          value={`${w.tps.toFixed(1)}/${data.target_tps} tps`}
-        />
-        <Kpi label="Slowdown" value={pct(data.tidi, 1)} />
-        <Kpi label="Worst 1%" value={pct(w.p99)} />
-        <Kpi label="Overruns 5m" value={count(data.window_5m.overruns)} />
-        <Kpi label="Players" value={count(data.entities.players)} />
-        <Kpi label="Memory" value={memory ? bytes(memory) : '-'} />
+      <div className="mch-facts">
+        {w.tps.toFixed(1)}/{data.target_tps} tps · slowdown {pct(data.tidi, 1)}{' '}
+        · {count(data.window_5m.overruns)} overruns in 5 min
       </div>
+    </div>
+  );
+}
+
+/** Consumers as ranked bars, each as long as its share of the largest total; the first is the answer to "what is using the tick?". */
+function PartBars(props: { parts: TickPart[]; total?: number }) {
+  const total =
+    props.total ?? props.parts.reduce((sum, part) => sum + part.ms, 0);
+  return (
+    <div className="mch-parts">
+      {props.parts.map((part) => (
+        <div
+          key={part.name}
+          className={`mch-part${part.unknown ? ' mch-part--unknown' : ''}`}
+          title={part.name}
+        >
+          <div
+            className="mch-part__fill"
+            style={{ width: `${total > 0 ? (part.ms / total) * 100 : 0}%` }}
+          />
+          <span className="mch-part__name">{part.name}</span>
+          <span className="mch-part__ms">{part.ms.toFixed(1)} ms</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -110,25 +129,70 @@ const Kpi = (props: { label: string; value: string }) => (
 );
 
 function Ticks({ data }: { data: McHealthData }) {
-  const [win, setWin] = useState<'5s' | '30s' | '5m'>('5s');
-  const [pinned, setPinned] = useState<number | null>(null);
-  const [hover, setHover] = useState<number | null>(null);
-  const ticks = data.ticks || [];
+  // The bars hold still under the mouse: the page keeps drawing the ticks it had when the mouse came in, until it leaves.
+  const [frozen, setFrozen] = useState<RecentTick[] | null>(null);
+  const [pinned, setPinned] = useState<RecentTick | null>(null);
+  const [hover, setHover] = useState<RecentTick | null>(null);
+  const ticks = frozen ?? (data.ticks || []);
   const top = Math.max(120, ...ticks.map((t) => t[0]));
-  const shown = hover ?? pinned;
-  const tick: RecentTick | undefined =
-    shown === null ? undefined : ticks[shown];
+  const tick = hover ?? pinned;
+  return (
+    <Card
+      id="ticks"
+      title="Recent ticks"
+      summary={frozen ? 'held while you read' : `last ${ticks.length}`}
+    >
+      <div
+        className="mch-timeline"
+        onMouseEnter={() => setFrozen(data.ticks || [])}
+        onMouseLeave={() => {
+          setFrozen(null);
+          setHover(null);
+        }}
+      >
+        <div
+          className="mch-budget"
+          style={{ bottom: `${(100 / top) * 100}%` }}
+          title={`budget ${data.tick_budget_ms} ms`}
+        />
+        {ticks.map((t, i) => (
+          <div
+            key={i}
+            className={`mch-bar${t[0] > 100 ? ' mch-bar--over' : ''}${t === pinned ? ' mch-bar--pinned' : ''}`}
+            style={{ height: `${(t[0] / top) * 100}%` }}
+            onMouseEnter={() => setHover(t)}
+            onClick={() => setPinned(t === pinned ? null : t)}
+          />
+        ))}
+      </div>
+      <div className="mch-tickdetail">
+        {tick ? (
+          <>
+            <div className="mch-tickuse">
+              {pct(tick[0], 1)} of the tick
+              {tick === pinned && !hover ? ' (pinned)' : ''}
+            </div>
+            <PartBars parts={tickParts(tick, data.tick_budget_ms)} />
+          </>
+        ) : (
+          <span className="mch-muted">
+            Hover a bar to see that tick; click to pin it.
+          </span>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function Distribution({ data }: { data: McHealthData }) {
+  const [win, setWin] = useState<'5s' | '30s' | '5m'>('5s');
   const w = {
     '5s': data.window_5s,
     '30s': data.window_30s,
     '5m': data.window_5m,
   }[win];
   return (
-    <Card
-      id="ticks"
-      title="Recent ticks"
-      summary={`last ${ticks.length} ticks`}
-    >
+    <Card id="dist" title="Tick distribution" closed>
       <div className="mch-winsel">
         {(['5s', '30s', '5m'] as const).map((k) => (
           <button
@@ -140,39 +204,6 @@ function Ticks({ data }: { data: McHealthData }) {
             {k === '5m' ? '5 min' : k.replace('s', ' s')}
           </button>
         ))}
-      </div>
-      <div className="mch-timeline" onMouseLeave={() => setHover(null)}>
-        <div
-          className="mch-budget"
-          style={{ bottom: `${(100 / top) * 100}%` }}
-          title={`budget ${data.tick_budget_ms} ms`}
-        />
-        {ticks.map((t, i) => (
-          <div
-            key={i}
-            className={`mch-bar${t[0] > 100 ? ' mch-bar--over' : ''}${i === pinned ? ' mch-bar--pinned' : ''}`}
-            style={{ height: `${(t[0] / top) * 100}%` }}
-            onMouseEnter={() => setHover(i)}
-            onClick={() => setPinned(i === pinned ? null : i)}
-          />
-        ))}
-      </div>
-      <div className="mch-tickdetail">
-        {tick ? (
-          <>
-            <b>{pct(tick[0], 1)}</b>
-            {tick[1].map((key, k) => (
-              <span key={key}>
-                {' '}
-                · {key} {tick[2][k]?.toFixed(1)} ms
-              </span>
-            ))}
-          </>
-        ) : (
-          <span className="mch-muted">
-            Hover a tick to see what it was spent on; click to pin it.
-          </span>
-        )}
       </div>
       <div className="mch-dist">
         <Kpi label="Average" value={pct(w.avg)} />
@@ -189,69 +220,48 @@ function Uses({ data }: { data: McHealthData }) {
   const [all, setAll] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const systems = systemsByCost(data.kernel?.systems);
-  const total = systems.reduce((sum, s) => sum + s.ms_per_s, 0);
-  const rows = all ? systems : systems.slice(0, 8);
+  const parts = averageTickParts(
+    systems,
+    data.window_30s.avg,
+    data.tick_budget_ms,
+    data.window_30s.tps || data.target_tps,
+  );
+  const total = parts.reduce((sum, part) => sum + part.ms, 0);
+  const rows = all ? parts : parts.slice(0, 6);
+  const biggest = parts[0];
   return (
     <Card
       id="where"
       title="What uses the tick"
-      summary={`${total.toFixed(0)} ms of each second`}
+      summary={biggest ? `${biggest.name} first` : undefined}
     >
-      <div className="mch-stack">
-        {systems.slice(0, 8).map((s) => (
+      {rows.map((part) => {
+        const behind =
+          data.attribution?.[part.name] ?? data.attribution_rest?.[part.name];
+        const isOpen = expanded === part.name;
+        return (
           <div
-            key={s.key}
-            style={{ width: `${s.share * 100}%` }}
-            title={`${s.key}: ${s.ms_per_s.toFixed(1)} ms/s`}
-          />
-        ))}
-      </div>
-      <table className="mch-table">
-        <thead>
-          <tr>
-            <th>System</th>
-            <th>ms/s</th>
-            <th>slow 5%</th>
-            <th>in overruns</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((s) => {
-            const behind =
-              data.attribution?.[s.key] ?? data.attribution_rest?.[s.key];
-            const isOpen = expanded === s.key;
-            return (
-              <Fragment key={s.key}>
-                <tr
-                  className={behind ? 'mch-row--expandable' : undefined}
-                  title={s.kind ? `${s.key} (${s.kind})` : s.key}
-                  onClick={() => behind && setExpanded(isOpen ? null : s.key)}
-                >
-                  <td>
-                    {behind ? (isOpen ? '▾ ' : '▸ ') : ''}
-                    {s.key}
-                  </td>
-                  <td>{s.ms_per_s.toFixed(2)}</td>
-                  <td>{s.p95_ms.toFixed(2)} ms</td>
-                  <td>{pct(Number(s.overrun_share) * 100)}</td>
-                </tr>
-                {isOpen &&
-                  behind?.map(([source, kind, n, totalMs, maxMs]) => (
-                    <tr key={`${s.key}:${source}`} className="mch-row--behind">
-                      <td title={kind}>{source}</td>
-                      <td>{count(n)}×</td>
-                      <td>{totalMs.toFixed(1)} ms</td>
-                      <td>max {maxMs.toFixed(1)} ms</td>
-                    </tr>
-                  ))}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-      {systems.length > 8 && (
+            key={part.name}
+            className={behind ? 'mch-row--expandable' : undefined}
+            onClick={() => behind && setExpanded(isOpen ? null : part.name)}
+          >
+            <PartBars parts={[part]} total={total} />
+            {isOpen &&
+              behind?.map(([source, kind, n, totalMs, maxMs]) => (
+                <div key={source} className="mch-behind" title={kind}>
+                  <span>{source}</span>
+                  <span>
+                    {count(n)}× · {totalMs.toFixed(1)} ms · max{' '}
+                    {maxMs.toFixed(1)} ms
+                  </span>
+                </div>
+              ))}
+          </div>
+        );
+      })}
+      {parts.length > 6 && (
         <button type="button" className="mch-link" onClick={() => setAll(!all)}>
-          {all ? 'Show the top 8' : `Show all ${systems.length}`}
+          {all ? 'Show the top 6' : `Show all ${parts.length}`}
         </button>
       )}
     </Card>
@@ -261,41 +271,47 @@ function Uses({ data }: { data: McHealthData }) {
 function Overruns({ data }: { data: McHealthData }) {
   const [open, setOpen] = useState<number | null>(null);
   const outliers = (data.outliers || [])
-    .slice()
-    .reverse()
-    .filter((o) => o.usage > 100);
+    .filter((o) => o.usage > 100)
+    .sort((a, b) => b.overrun - a.overrun);
   return (
     <Card
       id="ovr"
       title="Overruns"
-      summary={`${data.window_5m.overruns} in 5 min`}
+      summary={`${data.window_5m.overruns} in 5 min, worst first`}
     >
-      <div className="mch-line">{overrunSummary(outliers, data.window_5m)}</div>
-      {outliers.map((o, i) => (
-        <div
-          key={i}
-          className="mch-overrun"
-          onClick={() => setOpen(open === i ? null : i)}
-        >
-          <span>{(o.world_time / 10).toFixed(0)} s</span>{' '}
-          <b>+{o.overrun.toFixed(0)}%</b>{' '}
-          {(o.top_systems || [])
-            .slice(0, 3)
-            .map((s) => `${s.key} ${s.ms.toFixed(1)} ms`)
-            .join(' · ')}
-          {open === i && (
-            <div className="mch-muted">
-              {o.cause && <div>{o.cause}</div>}
-              <div>Map send {pct(o.maptick, 1)}</div>
-              {(o.breakdown || []).map(([name, usage]) => (
-                <div key={name}>
-                  {name}: {pct(usage, 1)}
-                </div>
-              ))}
-            </div>
-          )}
+      {outliers.length === 0 && (
+        <div className="mch-muted">
+          {overrunSummary(outliers, data.window_5m)}
         </div>
-      ))}
+      )}
+      {outliers.map((o) => {
+        const parts = overrunParts(o, data.tick_budget_ms);
+        const isOpen = open === o.world_time;
+        return (
+          <div
+            key={`${o.world_time}:${o.usage}`}
+            className="mch-overrun"
+            onClick={() => setOpen(isOpen ? null : o.world_time)}
+          >
+            <div className="mch-overrun__head">
+              <b>+{o.overrun.toFixed(0)}%</b>
+              <span className="mch-overrun__top">
+                {parts[0]?.name ?? o.cause ?? 'Unknown'}
+              </span>
+              <span className="mch-muted">
+                {(o.world_time / 10).toFixed(0)} s
+              </span>
+            </div>
+            {isOpen && <PartBars parts={parts} />}
+            {!isOpen && parts[0] && (
+              <PartBars
+                parts={parts.slice(0, 1)}
+                total={parts.reduce((sum, part) => sum + part.ms, 0)}
+              />
+            )}
+          </div>
+        );
+      })}
     </Card>
   );
 }
@@ -306,7 +322,12 @@ function Memory({ data }: { data: McHealthData }) {
   const native = rust['alloc.heap.current_bytes'];
   const gc = data.gc;
   return (
-    <Card id="mem" title="Memory" summary={total ? bytes(total) : undefined}>
+    <Card
+      id="mem"
+      title="Memory"
+      summary={total ? bytes(total) : undefined}
+      closed
+    >
       <div className="mch-kpis">
         <Kpi label="Server process" value={bytes(total)} />
         <Kpi
@@ -360,6 +381,7 @@ function Entities({ data }: { data: McHealthData }) {
     <Card
       id="ent"
       title="Entities"
+      closed
       summary={`${count(e.mobs)} mobs · ${count(c?.objects)} objects`}
     >
       <div className="mch-kpis">
@@ -391,7 +413,7 @@ function Native({ data }: { data: McHealthData }) {
   const rust = data.rust;
   if (!rust) {
     return (
-      <Card id="rust" title="Native (Rust)">
+      <Card id="rust" title="Native (Rust)" closed>
         <div className="mch-muted">The native library did not answer.</div>
       </Card>
     );
@@ -411,7 +433,12 @@ function Native({ data }: { data: McHealthData }) {
         ? `${(n / 1000).toFixed(1)} ms`
         : `${Math.round(n)} µs`;
   return (
-    <Card id="rust" title="Native (Rust)" summary={`frame ${us(avg)} avg`}>
+    <Card
+      id="rust"
+      title="Native (Rust)"
+      summary={`frame ${us(avg)} avg`}
+      closed
+    >
       <div className="mch-kpis">
         <Kpi label="Frame avg" value={us(avg)} />
         <Kpi label="Slow 1%" value={us(slow1)} />
@@ -573,8 +600,15 @@ export function McHealthPanel(props: {
   location?: string;
 }) {
   const { data } = props;
-  const uses = useSlices(data, ['kernel', 'attribution', 'attribution_rest']);
-  const overruns = useSlices(data, ['outliers', 'window_5m']);
+  const uses = useSlices(data, [
+    'kernel',
+    'attribution',
+    'attribution_rest',
+    'window_30s',
+    'tick_budget_ms',
+    'target_tps',
+  ]);
+  const overruns = useSlices(data, ['outliers', 'window_5m', 'tick_budget_ms']);
   const memory = useSlices(data, ['rust', 'gc']);
   const entities = useSlices(data, ['entities', 'churn']);
   const native = useSlices(data, ['rust']);
@@ -594,9 +628,10 @@ export function McHealthPanel(props: {
   return (
     <div className="mch">
       <Health data={data} />
-      <Ticks data={data} />
       <UsesMemo data={uses} />
       <OverrunsMemo data={overruns} />
+      <Ticks data={data} />
+      <Distribution data={data} />
       <MemoryMemo data={memory} />
       <EntitiesMemo data={entities} />
       <NativeMemo data={native} />

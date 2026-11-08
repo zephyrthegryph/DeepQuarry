@@ -9,6 +9,9 @@ import {
   perMinute,
   systemsByCost,
   verdictOf,
+  averageTickParts,
+  overrunParts,
+  tickParts,
 } from './mcHealthData';
 
 const win = (avg: number, p99: number, overruns = 0) => ({
@@ -20,6 +23,46 @@ const win = (avg: number, p99: number, overruns = 0) => ({
   max: p99,
   overruns,
   tps: 40,
+});
+
+describe('what used the tick', () => {
+  it('ranks an overrun by its whole breakdown, unattributed time included', () => {
+    const parts = overrunParts(
+      {
+        world_time: 1,
+        usage: 200,
+        overrun: 100,
+        maptick: 10,
+        top_systems: [{ key: 'air', ms: 2 }],
+        breakdown: [
+          { name: 'engine', usage: 20 },
+          { name: 'Outside MC', usage: 150 },
+          { name: 'MC other', usage: 30 },
+        ],
+      },
+      25,
+    );
+    expect(parts[0].name).toContain('Before the kernel');
+    expect(parts[0].ms).toBeCloseTo(37.5);
+    expect(parts.map((p) => p.name)).toContain('air');
+    expect(
+      parts.find((p) => p.name.startsWith('Not attributed'))?.unknown,
+    ).toBe(true);
+  });
+
+  it('shows the time the top systems of a recent tick do not explain', () => {
+    const parts = tickParts([100, ['air'], [5]], 25);
+    expect(parts[0]).toEqual({
+      name: 'Everything else',
+      ms: 20,
+      unknown: true,
+    });
+  });
+
+  it('adds the unattributed time to the average tick', () => {
+    const parts = averageTickParts([{ key: 'air', ms_per_s: 100 }], 50, 25, 40);
+    expect(parts.map((p) => p.name)).toEqual(['Not attributed', 'air']);
+  });
 });
 
 describe('MC Health logic', () => {

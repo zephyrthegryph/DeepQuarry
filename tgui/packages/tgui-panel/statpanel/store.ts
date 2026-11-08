@@ -128,7 +128,16 @@ export function verbGroupsOf(
   view: PanelView,
 ): { group: string; verbs: Verb[] }[] {
   const groups = new Map<string, Verb[]>();
-  for (const verb of state.verbs) {
+  // An admin's panel holds only the pinned admin verbs; the Server view is where the rest of the server's tools are reached.
+  const listed = new Set(state.verbs.map((verb) => verb[1]));
+  const shown =
+    view === 'Server'
+      ? [
+          ...state.verbs,
+          ...state.searchable.filter((verb) => !listed.has(verb[1])),
+        ]
+      : state.verbs;
+  for (const verb of shown) {
     const place = placeOf(verb[0]);
     if (place.view !== view) continue;
     if (!groups.has(place.group)) groups.set(place.group, []);
