@@ -1,0 +1,19 @@
+// The chat's own sheets, for a chat window outside the column page (tgui/interfaces/Chat.tsx): the column page loads them in
+// main.scss with everything else. Only chat-named classes and --chat-* tokens, so a pooled tgui window that later shows another
+// interface is unchanged by them.
+
+@use 'sass:meta';
+@use './tgchat/chat-tokens' as chat-tokens;
+
+@include meta.load-css('./components/Chat.scss');
+@include meta.load-css('./components/Ping.scss');
+@include meta.load-css('./components/UnreadCount.scss');
+@include meta.load-css('./components/ChatConsole.scss');
+@include meta.load-css('./components/ChatInput.scss');
+@include meta.load-css('./tgchat/chat.scss');
+
+:root {
+  @include chat-tokens.dark;
+
+  --chat-text-color: hsl(210, 50%, 80%);
+}

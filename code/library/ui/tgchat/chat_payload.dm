@@ -6,6 +6,10 @@
 	var/list/content
 	/// Resend count
 	var/resends = 0
+	/// The encoded message (into_message()), made once when the payload is made: sent, kept for resends and replays.
+	var/encoded
+
+SCHEMA(/datum/chat_payload, encoded, schema_text())
 
 /// Converts the chat payload into a JSON string
 /datum/chat_payload/proc/into_message()

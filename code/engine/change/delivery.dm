@@ -57,6 +57,7 @@ PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter
 				S.observed[key] = n
 			else
 				S.observed -= key
+			hop_readers_changed(key)
 		if(!length(S.observed))
 			S.observed = null
 	else if(R.kind == RXN_NOTICE)

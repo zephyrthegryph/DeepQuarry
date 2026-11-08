@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-/// How many chat payloads to keep in history
-#define CHAT_RELIABILITY_HISTORY_SIZE 5
+/// How many of a client's recent chat messages the server keeps (chat_history.dm): resends come from it, and a chat window that moves between
+/// the right-hand column and a floating window replays it.
+#define CHAT_HISTORY_SIZE 500
 /// How many resends to allow before giving up
 #define CHAT_RELIABILITY_MAX_RESENDS 3
 

@@ -693,11 +693,71 @@ CAPABILITIES(/datum/tgui)
 		lookup_reads_prepare(unit, A, lookup_scope)
 	A.release()
 
-/// Counts the windows opened per interface this round and logs each open with its running count (the tgui log, "TGUI OPEN <interface> <n>"):
-/// the asset prefetch ranks interfaces by how often players open them.
+/// Where the open counts of every interface are kept across rounds (the chunk prefetch ranks by them).
+#define TGUI_OPEN_COUNTS_FILE "data/tgui_open_counts.json"
+/// How many of the most opened interfaces have their chunks prefetched first.
+#define TGUI_PREFETCH_TOP 30
+/// The counts are written back to disk every this many opens (and lost at most that many on a crash).
+#define TGUI_OPEN_COUNTS_FLUSH_EVERY 20
+
+/// Interface name -> how many times players opened it, over every round so far (read once from TGUI_OPEN_COUNTS_FILE).
+/proc/tgui_open_counts()
+	var/static/alist/counts
+	if(!counts)
+		counts = alist()
+		var/raw = rustg_file_exists(TGUI_OPEN_COUNTS_FILE) ? rustg_file_read(TGUI_OPEN_COUNTS_FILE) : null
+		var/list/saved = raw ? json_decode(raw) : null
+		for(var/interface in saved)
+			if(isnum(saved[interface]))
+				counts[interface] = saved[interface]
+	return counts
+
+/// Counts a window open of `interface` (kept across rounds) and logs it with this round's running count (the tgui log, "TGUI OPEN <interface> <n>").
 /proc/tgui_count_open(interface)
-	var/static/alist/open_counts = alist()
-	var/count = (open_counts[interface] || 0) + 1
-	open_counts[interface] = count
+	var/static/alist/round_counts = alist()
+	var/static/unsaved = 0
+	var/count = (round_counts[interface] || 0) + 1
+	round_counts[interface] = count
+	var/alist/counts = tgui_open_counts()
+	counts[interface] = (counts[interface] || 0) + 1
 	logger.Log(LOG_CATEGORY_HREF_TGUI, "TGUI OPEN [interface] [count]")
+	if(++unsaved >= TGUI_OPEN_COUNTS_FLUSH_EVERY)
+		unsaved = 0
+		var/list/plain = list()
+		for(var/name in counts)
+			plain[name] = counts[name]
+		rustg_file_write(json_encode(plain), TGUI_OPEN_COUNTS_FILE)
 	return count
+
+/// The chunk files of `generation` in prefetch order: the TGUI_PREFETCH_TOP most opened interfaces' chunks first (most opened first), then every
+/// other chunk in manifest order. list(files, how many of them are the top interfaces').
+/proc/tgui_ranked_chunk_files(datum/tgui_asset_generation/generation)
+	var/list/manifest = generation?.chunk_manifest
+	var/list/all_files = generation?.chunk_files || list()
+	if(!islist(manifest))
+		return list(all_files, 0)
+	var/alist/counts = tgui_open_counts()
+	var/list/ranked_names = list()
+	for(var/interface in manifest)
+		if(counts[interface])
+			ranked_names[interface] = counts[interface]
+	ranked_names = sortTim(ranked_names, GLOBAL_PROC_REF(cmp_numeric_dsc), associative = TRUE)
+	var/list/files = list()
+	var/list/seen = list()
+	var/taken = 0
+	for(var/interface in ranked_names)
+		if(++taken > TGUI_PREFETCH_TOP)
+			break
+		for(var/filename in manifest[interface])
+			if(!seen[filename])
+				seen[filename] = TRUE
+				files += filename
+	var/priority = length(files)
+	for(var/filename in all_files)
+		if(!seen[filename])
+			files += filename
+	return list(files, priority)
+
+#undef TGUI_OPEN_COUNTS_FILE
+#undef TGUI_PREFETCH_TOP
+#undef TGUI_OPEN_COUNTS_FLUSH_EVERY

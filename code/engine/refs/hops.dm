@@ -100,17 +100,91 @@ GLOBAL_VAR_INIT(hop_segments_built, FALSE)
 	var/area_changed = area_read && (old_turf?.loc != new_turf?.loc)
 	if(!turf_changed && !area_changed)
 		return
-	var/list/moved = list(mover)
-	if(length(mover.contents))
-		moved += hop_nested_contents(mover)
+	if(!length(mover.contents))
+		if(turf_changed && hop_reads(mover, HOP_TURF))
+			own_field_changed(mover, HOP_TURF)
+		if(area_changed && hop_reads(mover, HOP_AREA))
+			own_field_changed(mover, HOP_AREA)
+		return
+	var/list/moved = list(mover) + hop_nested_contents(mover)
+	// Which of them read the hops is kept on the mover: it changes only with what it carries (the handles of `moved`, in order: a thing put in,
+	// taken out, deleted or reordered changes them) or with a reader of a hop coming or going anywhere (hop_reader_epoch). So a step asks each
+	// thing nothing; the answers are rebuilt when either changes. The handles are numbers, so the cache holds no reference to what it describes.
+	var/datum/rx_state/S = rx_of(mover)
+	var/list/gens = handle_gens
+	var/list/handles = list()
 	for(var/atom/movable/AM as anything in moved)
-		if(QDELETED(AM))
-			continue
-		// Per thing, not per world: a stat somewhere reading the turf hop does not make each organ of a walking human a reader of it.
-		if(turf_changed && (GLOB.derived_read_vars?[HOP_TURF] || stat_type_reads_key(AM, HOP_TURF) || READERS(AM, HOP_TURF)))
-			own_field_changed(AM, HOP_TURF)
-		if(area_changed && (GLOB.derived_read_vars?[HOP_AREA] || stat_type_reads_key(AM, HOP_AREA) || READERS(AM, HOP_AREA)))
-			own_field_changed(AM, HOP_AREA)
+		var/id = AM.handle_slot
+		handles += id ? id + SLOT_SPAN * gens[id] : 0
+	if(S.hop_cache_epoch != GLOB.hop_reader_epoch || !(S.hop_cache_handles ~= handles))
+		hop_cache_build(S, moved, handles)
+	else
+		GLOB.hop_cache_hits++
+		if(GLOB.hop_cache_verify)
+			hop_cache_verify(moved, S)
+	if(turf_changed)
+		for(var/i in S.hop_cache_turf)
+			var/atom/movable/AM = moved[i]
+			if(!QDELETED(AM))
+				own_field_changed(AM, HOP_TURF)
+	if(area_changed)
+		for(var/i in S.hop_cache_area)
+			var/atom/movable/AM = moved[i]
+			if(!QDELETED(AM))
+				own_field_changed(AM, HOP_AREA)
+
+/// Does a change of the hop `segment` (turf or area) on AM reach a reader? Per thing, not per world: a stat somewhere reading the turf hop does not
+/// make each organ of a walking human a reader of it.
+/proc/hop_reads(atom/movable/AM, segment)
+	return GLOB.derived_read_vars?[segment] || stat_type_reads_key(AM, segment) || READERS(AM, segment)
+
+/// The positions in `moved` of the things that read `segment`: what hop_moved() publishes it on.
+/proc/hop_reader_positions(list/moved, segment)
+	. = list()
+	for(var/i in 1 to length(moved))
+		var/atom/movable/AM = moved[i]
+		if(!QDELETED(AM) && hop_reads(AM, segment))
+			. += i
+
+/// Asks each of `moved` again and keeps the answers on the mover's state S. Kept only once the tables that decide them are built (before that a
+/// reader probe answers TRUE without caching) and every thing has a handle (a thing given one now changes its handle from 0, so the next step rebuilds).
+/proc/hop_cache_build(datum/rx_state/S, list/moved, list/handles)
+	GLOB.hop_cache_builds++
+	S.hop_cache_turf = hop_reader_positions(moved, HOP_TURF)
+	S.hop_cache_area = hop_reader_positions(moved, HOP_AREA)
+	var/ready = islist(GLOB.stat_type_index) && islist(GLOB.change_index_by_type) && islist(GLOB.rx_tables) && GLOB.plan_reader_keys
+	for(var/atom/movable/AM as anything in moved)
+		if(!AM.handle_slot)
+			handle_of(AM)
+			ready = FALSE
+	S.hop_cache_handles = ready ? handles : null
+	S.hop_cache_epoch = ready ? GLOB.hop_reader_epoch : 0
+
+/// Test builds (GLOB.hop_cache_verify, set by dq_hop_cache_parity): the kept answers against the full walk, so a cache that misses a change shows.
+/proc/hop_cache_verify(list/moved, datum/rx_state/S)
+	var/list/turf_full = hop_reader_positions(moved, HOP_TURF)
+	var/list/area_full = hop_reader_positions(moved, HOP_AREA)
+	if(!(turf_full ~= S.hop_cache_turf) || !(area_full ~= S.hop_cache_area))
+		GLOB.hop_cache_mismatches++
+
+/// Something that decides whether a thing reads a hop changed (an observer of the turf or area key came or went, an on_change() hop path
+/// registered): every mover's kept answers are rebuilt on its next step. A null key: it may be any.
+/proc/hop_readers_changed(key)
+	if(isnull(key) || key == HOP_TURF || key == HOP_AREA)
+		GLOB.hop_reader_epoch++
+
+/datum/rx_state
+	/// hop_moved()'s cache on a mover: the handles of what it moved with, in order, and the positions among them that read the turf and the area.
+	var/list/hop_cache_handles
+	var/list/hop_cache_turf
+	var/list/hop_cache_area
+	var/hop_cache_epoch = 0
+
+GLOBAL_VAR_INIT(hop_reader_epoch, 1)
+GLOBAL_VAR_INIT(hop_cache_hits, 0)
+GLOBAL_VAR_INIT(hop_cache_builds, 0)
+GLOBAL_VAR_INIT(hop_cache_verify, FALSE)
+GLOBAL_VAR_INIT(hop_cache_mismatches, 0)
 
 /// TRUE when `segment` is a hop E's reads can start with: a var of E, or (on an atom) a pseudo segment.
 /proc/hop_segment_known(datum/E, segment)

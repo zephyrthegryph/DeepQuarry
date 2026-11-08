@@ -19,6 +19,11 @@ export function markSeen(sequence: number): void {
   lastSequence = sequence;
 }
 
+/** The sequence number of the last message shown, or null before any: a moved chat window asks the server for what follows (chat/ready). */
+export function lastShownSequence(): number | null {
+  return lastSequence;
+}
+
 /** How many sequence numbers the duplicate check holds (tests). */
 export function seenCount(): number {
   return seen.size;
@@ -77,5 +82,3 @@ export function chatMessage(payload: string): void {
 
   pushMessage(message);
 }
-
-

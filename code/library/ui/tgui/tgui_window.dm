@@ -627,9 +627,11 @@ ACTION(tgui_window_visible, client, FIXED, notice = /datum/notice/tgui_window_vi
 		var/chunk_base_url = asset_generation()?.get_chunk_base_url()
 		if((findtext(chunk_base_url, "http://") == 1 || findtext(chunk_base_url, "https://") == 1) && length(asset_generation()?.chunk_files))
 			client().tgui_chunk_warm_started = TRUE
+			var/list/ranked = tgui_ranked_chunk_files(asset_generation())
 			send_message("chunk/warm", list(
 				"url" = chunk_base_url,
-				"files" = asset_generation().chunk_files,
+				"files" = ranked[1],
+				"priority" = ranked[2], // the first this many are the most opened interfaces' chunks: fetched first, the rest at low priority
 			))
 	if(type == "ready" && prewarmed && !locked)
 		audit_prewarmed_hidden()

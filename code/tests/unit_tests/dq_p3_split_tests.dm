@@ -189,4 +189,5 @@ GLOBAL_VAR_INIT(p3_pump_draws, 0)
 		for(var/section in row)
 			TEST_ASSERT(section in list("products", "contraband", "premium", "prices"), "[type_text] has a known list [section]")
 			for(var/path in row[section])
-				TEST_ASSERT(ispath(path), "[type_text] [section] names a type")
+				// A collapsed type (the seed packets) is named by its VARIANT() reference: its row's base type is what stocks.
+				TEST_ASSERT(ispath(path) || ispath(saved_type_path(path)), "[type_text] [section] names a type ([path])")

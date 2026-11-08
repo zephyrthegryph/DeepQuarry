@@ -1035,7 +1035,19 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/proc/play_motion_sound(opening)
 	var/powered = power_systems_on()
 	var/turf/here = get_turf(src)
-	for(var/mob/M in hearers(world.view * 2, here))
+	if(!here)
+		return
+	// Only a client hears it, so the view hearers() works out (a 29x29 square of turfs) is asked only when a client stands within its range.
+	var/range = world.view * 2
+	var/client_near = FALSE
+	for(var/client/C as anything in GLOB.clients)
+		var/turf/T = get_turf(C.mob)
+		if(T && T.z == here.z && get_dist(T, here) <= range)
+			client_near = TRUE
+			break
+	if(!client_near)
+		return
+	for(var/mob/M in hearers(range, here))
 		if(!M.client)
 			continue
 		var/sound

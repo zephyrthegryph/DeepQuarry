@@ -108,6 +108,11 @@ CAPABILITIES(/datum/portrait)
 	P.set_polling(TRUE)
 	return null
 
+/// The key of the picture `A`'s current look renders to (or has), once it was asked for; null before.
+/proc/portrait_key_of(atom/A, dir = SOUTH)
+	var/appearance_key = "[dir]:[ref(A.appearance)]"
+	return GLOB.portrait_cache.by_appearance?[appearance_key]
+
 /// `P` from the cache: ready (returned), or still rendering (the asker waits for it; null).
 /proc/portrait_serve(datum/portrait_cache/cache, datum/portrait/P, datum/asker, callback)
 	cache.use_order -= P.key
