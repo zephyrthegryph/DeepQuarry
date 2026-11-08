@@ -69,7 +69,7 @@ impl OriginalSignatureAliasGroup{
  fn live(&self)->bool{self.aliases.live()||self.spellings.live()}
  fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||!self.spellings.admitted_by(a)||self.reservations.iter().any(|row|!a.matches_lease_domain(row))||self._adapter.as_ref().is_some_and(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
  pub(super) fn capture(facts:&crate::AdaptedDeclarations,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Arc<Self>>{
-  prepared.require_consumed().map_err(|reason|io::Error::new(io::ErrorKind::InvalidData,reason))?;
+  prepared.release_consumed_row_storage().map_err(|reason|io::Error::new(io::ErrorKind::InvalidData,reason))?;
   let mut alias_count=AliasCounts::default();
   let mut lease_count=0usize;
   // Both traversals borrow the same immutable facts and signature products.
@@ -173,7 +173,7 @@ impl<const N: usize> RecentAliases<N> {
   std::mem::replace(&mut self.keys[hint % N], key) == key
  }
 }
-const RECENT_ALIAS_SLOTS: usize = 128;
+const RECENT_ALIAS_SLOTS: usize = 512;
 
 fn visit_aliases(facts:&crate::AdaptedDeclarations,prepared:&PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>,f:&mut impl FnMut(Alias<'_>)->io::Result<()>)->io::Result<()>{
  let mut seen=[false;4];

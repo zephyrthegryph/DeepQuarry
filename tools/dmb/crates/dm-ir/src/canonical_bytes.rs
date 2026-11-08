@@ -40,7 +40,24 @@ fn trailer_bytes(flags: u8) -> &'static [u8] {
 
 /// Exact shared lexical token framing prefix.
 pub static CANONICAL_HEADER_PREFIX: &[u8] = b"dm-declaration-tokens-v1\0";
-static ZEROES: [u8; u8::MAX as usize] = [0; u8::MAX as usize];
+const FRAME_MARKER_START: u8 = 244;
+static ZEROES: [u8; FRAME_MARKER_START as usize - 1] = [0; FRAME_MARKER_START as usize - 1];
+const FRAME_HEADER: usize = 10;
+const FRAME_PUNCTUATION: [u8; 4] = *b"()/,";
+
+const fn punctuation_frames() -> [[u8; 11]; 12] {
+    let mut rows = [[0; 11]; 12];
+    let mut index = 0;
+    while index < rows.len() {
+        rows[index][0] = (index % 3) as u8;
+        rows[index][1] = dm_syntax::TokenKind::Punctuation as u8;
+        rows[index][2] = 1;
+        rows[index][10] = FRAME_PUNCTUATION[index / 3];
+        index += 1;
+    }
+    rows
+}
+static PUNCTUATION_FRAMES: [[u8; 11]; 12] = punctuation_frames();
 
 /// Logical canonical bytes. The physical Arc is private because it may contain
 /// an escaped raw value or a packed representation.
@@ -64,6 +81,7 @@ enum Layout {
     Escaped,
     Packed,
     Bitmap,
+    PackedDictionary { lexical_len: usize },
 }
 
 impl CanonicalBytes {
@@ -118,6 +136,7 @@ impl CanonicalBytes {
                         bitmap_len += bytes.len();
                     }
                     Run::Zero(_) => packed_len = packed_len.saturating_add(2),
+                    Run::Frame(_) => unreachable!("ordinary runs do not have lexical frames"),
                     Run::Tag(tag) => {
                         packed_len = packed_len.saturating_add(3);
                         bitmap_len += tag.bytes().len() - 1;
@@ -134,6 +153,29 @@ impl CanonicalBytes {
             if allocation(bitmap_len) < allocation(storage_len) {
                 layout = Layout::Bitmap;
                 storage_len = bitmap_len;
+            }
+        }
+        let lexical_len = suffix_start.and_then(|start| start.checked_sub(CANONICAL_HEADER_PREFIX.len()));
+        if let Some(lexical_len) = lexical_len.filter(|&len| prefix && (
+            procedure_tags == Some(len) || (trailer != 0 && bytes.len() == len)
+        )) {
+            let mut runs = DictionaryRuns::new(bytes, lexical_len, procedure_tags.is_some());
+            let mut dictionary_len = packed_header;
+            let mut frames = 0;
+            for run in runs.by_ref() {
+                dictionary_len = dictionary_len.saturating_add(match run {
+                    Run::Literal(bytes) => bytes.len(),
+                    Run::Zero(_) => 2,
+                    Run::Tag(_) => 3,
+                    Run::Frame(_) => { frames += 1; 2 },
+                });
+                if allocation(dictionary_len) >= allocation(storage_len) {
+                    break;
+                }
+            }
+            if runs.valid && frames != 0 && allocation(dictionary_len) < allocation(storage_len) {
+                layout = Layout::PackedDictionary { lexical_len };
+                storage_len = dictionary_len;
             }
         }
         CanonicalBytesPlan { bytes, storage_len, layout, prefix, trailer, procedure_tags }
@@ -249,7 +291,7 @@ impl CanonicalBytesPlan<'_> {
         }
         let encoding = match self.layout {
             Layout::Escaped => RAW,
-            Layout::Packed => PACKED,
+            Layout::Packed | Layout::PackedDictionary { .. } => PACKED,
             Layout::Bitmap => BITMAP,
             Layout::Plain => unreachable!("plain storage handled above"),
         };
@@ -262,13 +304,17 @@ impl CanonicalBytesPlan<'_> {
         }
         match self.layout {
             Layout::Escaped => write(&mut output, self.bytes),
-            Layout::Packed => {
-                for chunk in Runs::new(self.bytes, self.procedure_tags) {
-                    match chunk {
-                        Run::Literal(bytes) => write(&mut output, bytes),
-                        Run::Zero(count) => write(&mut output, &[ESCAPE, count]),
-                        Run::Tag(tag) => write(&mut output, &[ESCAPE, 0, tag as u8]),
-                    }
+            Layout::Packed | Layout::PackedDictionary { .. } => {
+                let mut emit = |chunk| match chunk {
+                    Run::Literal(bytes) => write(&mut output, bytes),
+                    Run::Zero(count) => write(&mut output, &[ESCAPE, count]),
+                    Run::Tag(tag) => write(&mut output, &[ESCAPE, 0, tag as u8]),
+                    Run::Frame(index) => write(&mut output, &[ESCAPE, FRAME_MARKER_START + index]),
+                };
+                if let Layout::PackedDictionary { lexical_len } = self.layout {
+                    DictionaryRuns::new(self.bytes, lexical_len, self.procedure_tags.is_some()).for_each(emit);
+                } else {
+                    Runs::new(self.bytes, self.procedure_tags).for_each(&mut emit);
                 }
             }
             Layout::Bitmap => {
@@ -299,6 +345,7 @@ enum Run<'a> {
     Literal(&'a [u8]),
     Zero(u8),
     Tag(Tag),
+    Frame(u8),
 }
 
 #[derive(Clone, Copy)]
@@ -358,6 +405,54 @@ impl<'a> Iterator for Runs<'a> {
     }
 }
 
+/// The lexical bound comes from the real procedure encoder. Only complete
+/// length-framed rows can issue static tokens. Invalid framing disqualifies
+/// this optional layout without changing any ordinary plan.
+struct DictionaryRuns<'a> {
+    lexical: &'a [u8],
+    frame: Runs<'a>,
+    suffix: Runs<'a>,
+    valid: bool,
+}
+impl<'a> DictionaryRuns<'a> {
+    fn new(bytes: &'a [u8], lexical_len: usize, dynamic_tags: bool) -> Self {
+        let (lexical, suffix) = bytes.split_at(lexical_len);
+        Self {
+            lexical,
+            frame: Runs::new(&[], None),
+            suffix: Runs::new(suffix, dynamic_tags.then_some(0)),
+            valid: true,
+        }
+    }
+}
+impl<'a> Iterator for DictionaryRuns<'a> {
+    type Item = Run<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.valid { return None; }
+        if let Some(run) = self.frame.next() { return Some(run); }
+        if self.lexical.is_empty() { return self.suffix.next(); }
+        let Some((frame, rest)) = self.lexical.get(2..FRAME_HEADER)
+            .and_then(|len| len.try_into().ok())
+            .and_then(|len| usize::try_from(u64::from_le_bytes(len)).ok())
+            .and_then(|len| FRAME_HEADER.checked_add(len))
+            .and_then(|width| self.lexical.split_at_checked(width))
+        else {
+            self.valid = false;
+            return None;
+        };
+        self.lexical = rest;
+        if frame.len() == 11 && frame[0] < 3 {
+            if let Some(index) = FRAME_PUNCTUATION.iter().position(|&value| value == frame[10]) {
+                let index = index * 3 + usize::from(frame[0]);
+                if frame == PUNCTUATION_FRAMES[index] { return Some(Run::Frame(index as u8)); }
+            }
+        }
+        self.frame = Runs::new(frame, None);
+        self.frame.next()
+    }
+}
+
 struct Chunks<'a> {
     prefix: bool,
     body: BodyChunks<'a>,
@@ -394,7 +489,10 @@ impl<'a> Iterator for BodyChunks<'a> {
                 let bytes = *raw;
                 if *bytes.first()? == ESCAPE {
                     let n = usize::from(bytes[1]);
-                    if n != 0 {
+                    if n >= usize::from(FRAME_MARKER_START) {
+                        *raw = &bytes[2..];
+                        Some(&PUNCTUATION_FRAMES[n - usize::from(FRAME_MARKER_START)])
+                    } else if n != 0 {
                         *raw = &bytes[2..];
                         Some(&ZEROES[..n])
                     } else {

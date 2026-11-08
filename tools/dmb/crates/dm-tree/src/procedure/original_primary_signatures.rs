@@ -1477,6 +1477,19 @@ impl PreparedOriginalSignatures{
   }
  }
  pub(crate) fn require_consumed(&self)->Result<(),&'static str>{if self.rows.iter().any(|row|!matches!(row.slot.value(),SlotValue::Taken)){Err("actual primary formal metadata was not consumed by native adapter")}else{Ok(())}}
+ /// The native adapter has taken the last signature. Physical row directories
+ /// and lookup banks can retire before allocating detached-alias observations.
+ /// The per-page payload leases and shared identity witnesses remain live.
+ pub(crate) fn release_consumed_row_storage(&mut self) -> Result<(), &'static str> {
+  self.require_consumed()?;
+  drop(self.plain_metadata.take());
+  drop(self.rows.plain_parameter_bank.take());
+  drop(std::mem::replace(&mut self.rows.rows,FundedRowPages::new()));
+  drop(std::mem::replace(&mut self.rows.payloads,FundedRowPages::new()));
+  drop(std::mem::replace(&mut self.rows.payload_tails,FundedRowPages::new()));
+  drop(std::mem::replace(&mut self.rows.wide_headers,FundedRowPages::new()));
+  Ok(())
+ }
  /// Alias capture now owns the per-header reservations. The consumed
  /// allocation itself has no aliases and can be dropped before graph use.
  pub(crate) fn release_consumed_rows(&mut self) {

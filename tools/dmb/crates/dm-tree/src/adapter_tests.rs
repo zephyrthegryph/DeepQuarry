@@ -865,3 +865,46 @@ fn diagnostic_declaration_domain_refuses_every_non_var_or_non_inherited_error() 
             .is_err());
     }
 }
+
+#[test]
+fn canonical_dictionary_uses_actual_punctuation_frames_only_when_funded_layout_wins() {
+    use dm_ir::{CanonicalBytes, Parameter, ProcedureMetadata, ProcedureSignature};
+    let procedure = ProcedureMetadata {
+        signature: ProcedureSignature {
+            parameters: Arc::from([Parameter::new(
+                SymbolId::of("one"), Some(SymbolId::of("/datum")), None, 0,
+                dm_syntax::Span::new(0, 3),
+            )]),
+            variadic: false,
+            return_annotation: None,
+        },
+        settings: Arc::from([]),
+    };
+    let header = super::canonical("/datum/probe/proc/value(datum/one,datum/two)").unwrap();
+    let mut raw = header.to_vec();
+    let suffix_start = raw.len();
+    raw.extend(procedure.canonical_bytes());
+    let baseline = CanonicalBytes::plan(&raw).seal();
+    let plan = CanonicalBytes::plan_procedure(&raw, suffix_start);
+    let capacity = plan.storage_len();
+    let compact = plan.seal();
+    assert_eq!(compact.storage_arc().len(), capacity);
+    let alignment = std::mem::align_of::<usize>();
+    assert!(capacity.next_multiple_of(alignment) < baseline.storage_arc().len().next_multiple_of(alignment));
+    let mut saw_static_frame = false;
+    compact.try_for_each_chunk(|chunk| {
+        saw_static_frame |= chunk.len() == 11 && chunk[1] == dm_syntax::TokenKind::Punctuation as u8
+            && chunk[2..10] == 1u64.to_le_bytes() && b"()/,".contains(&chunk[10]);
+        Ok::<_, ()>(())
+    }).unwrap();
+    assert!(saw_static_frame);
+    assert_eq!(compact, baseline);
+    assert_eq!(compact.xxh3_128(), xxhash_rust::xxh3::xxh3_128(&raw));
+    assert_eq!(compact.to_vec(), raw);
+
+    let mut changed = raw.clone();
+    let width = dm_ir::CANONICAL_HEADER_PREFIX.len() + 2;
+    changed[width..width + 8].fill(255);
+    let fallback = CanonicalBytes::plan_procedure(&changed, suffix_start).seal();
+    assert_eq!(fallback.to_vec(), changed);
+}
