@@ -439,27 +439,16 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 /datum/system/air/proc/setup_allturfs()
 	set_times_fired(times_fired + 1)
 
-	// Round-start turf init: register every eligible turf's air in the Rust arena
-	// together with its air-block mask. Rust builds the whole adjacency graph
-	// from the masks and discovers active turfs itself; there is no DM adjacency
-	// pass. Chunked so a single FFI call can't hold the tick hostage.
+	// Round-start turf init: the Rust atmos core walks every turf itself (vg_hook_register_world_turfs(): air cell, air-block
+	// mask with the z rule from air_z_open, solid-heat cell), one call. DM is asked only for the objects that decide air
+	// passage in a proc (windows, doors, firedoors): their turfs' masks are recomputed here and republished.
+	var/list/asking = vg_hook_register_world_turfs(world.maxx, world.maxy, world.maxz)
 	var/list/turf_masks = list()
-	for(var/turf/setup as anything in ALL_TURFS())
-		if(!setup.init_air)
-			continue
-		var/turf/open/open_setup = setup
-		// Same eligibility rule as /turf/open/update_air_ref: a non-blocking
-		// tile with no air mixture must not reach the Rust register (it reads
-		// air unconditionally when blocks_air == 0).
-		if(istype(open_setup) && (open_setup.blocks_air || !isnull(open_setup.air)))
-			turf_masks[open_setup] = open_setup.air_block_mask()
-			if(length(turf_masks) >= 8192)
-				auxmos_register_turfs_bulk(turf_masks)
-				heat_register_turfs(turf_masks)
-				turf_masks = list()
+	for(var/turf/open/open_setup as anything in asking)
+		turf_masks[open_setup] = open_setup.air_block_mask()
 	if(length(turf_masks))
 		auxmos_register_turfs_bulk(turf_masks)
-		heat_register_turfs(turf_masks)
+	log_world("AIR_INIT: turfs registered by the Rust core; [length(turf_masks)] turf(s) asked their objects for air passage")
 
 // log_active_turfs / resolve_active_graph removed — they existed only to service
 // the DM roundstart active-turf diffing pass, which is gone (auxmos discovers

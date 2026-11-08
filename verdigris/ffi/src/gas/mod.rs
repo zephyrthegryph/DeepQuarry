@@ -672,6 +672,157 @@ fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondV
     Ok(ByondValue::null())
 }
 
+/// The `can_atmos_pass` values (`ATMOS_PASS_*`, code/defines/content/atmospherics_linda/atmos_core.dm).
+const ATMOS_PASS_NO: f32 = 0.0;
+const ATMOS_PASS_PROC: f32 = -1.0;
+const ATMOS_PASS_DENSITY: f32 = -2.0;
+/// The DOWN face bit of an air-block mask (BYOND's DOWN direction).
+const FACE_DOWN: u8 = 32;
+
+/// One turf's round-start row: its air cell, its air-block mask, its solid-heat cell.
+struct BootTurf {
+    turf: ByondValue,
+    cell: u32,
+    mask: u8,
+    heat_kind: i32,
+    capacity: f32,
+    conductivity: f32,
+    temperature: f32,
+    has_air: bool,
+}
+
+/// Reads one turf's round-start row, or `None` when it carries no air (`init_air` off, not an open turf, or an airless
+/// non-blocking tile). The air-block mask is what `/turf/open/air_block_mask()` computes, except for the faces that an
+/// object asking its own `can_atmos_pass()` blocks: `asks` is set and DM adds those.
+fn boot_turf(turf: ByondValue, asks: &mut bool) -> Option<BootTurf> {
+    if !is_set(turf.read_number_id(byond_string!("init_air"))) {
+        return None;
+    }
+    let air = turf.read_var_id(byond_string!("air")).ok()?; // only open turfs carry `air`
+    let blocks = is_set(turf.read_number_id(byond_string!("blocks_air")));
+    if !blocks && air.is_null() {
+        return None;
+    }
+    let mut mask = 0u8;
+    if blocks {
+        mask = AIR_BLOCK_ALL;
+    } else {
+        // Air crosses a z-boundary only through a hole: a turf's floor (its DOWN face) is open only when the turf is
+        // openspace (`air_z_open`); its UP face is the floor of the turf above, which that turf blocks.
+        if !is_set(turf.read_number_id(byond_string!("air_z_open"))) {
+            mask |= FACE_DOWN;
+        }
+        if let Ok(contents) = turf
+            .read_var_id(byond_string!("contents"))
+            .and_then(|c| c.get_list_values())
+        {
+            for thing in contents {
+                if thing.get_type() != ValueType::Obj as u8 {
+                    continue;
+                }
+                // Destroyed but not yet collected: it no longer seals anything.
+                if thing
+                    .read_var_id(byond_string!("gc_destroyed"))
+                    .is_ok_and(|g| !g.is_null())
+                {
+                    continue;
+                }
+                let pass = thing
+                    .read_number_id(byond_string!("can_atmos_pass"))
+                    .unwrap_or(1.0);
+                if pass == ATMOS_PASS_NO
+                    || (pass == ATMOS_PASS_DENSITY
+                        && is_set(thing.read_number_id(byond_string!("density"))))
+                {
+                    mask = AIR_BLOCK_ALL;
+                    break;
+                }
+                if pass == ATMOS_PASS_PROC {
+                    *asks = true;
+                }
+            }
+        }
+    }
+    let immutable = is_set(turf.read_number_id(byond_string!("immutable_atmos")));
+    let heat_kind = if is_set(turf.read_number_id(byond_string!("heat_space_cell"))) {
+        crate::heat::HEAT_CELL_SPACE
+    } else if immutable {
+        crate::heat::HEAT_CELL_PLANET
+    } else {
+        crate::heat::HEAT_CELL_SOLID
+    };
+    Some(BootTurf {
+        cell: turf.get_ref().ok()?,
+        turf,
+        mask,
+        heat_kind,
+        capacity: turf
+            .read_number_id(byond_string!("heat_capacity"))
+            .unwrap_or(1.0),
+        conductivity: turf
+            .read_number_id(byond_string!("thermal_conductivity"))
+            .unwrap_or(0.05),
+        temperature: turf
+            .read_number_id(byond_string!("initial_temperature"))
+            .unwrap_or(293.15),
+        has_air: !blocks && !air.is_null(),
+    })
+}
+
+/// Round-start turf air and heat for the whole map in one call: every turf's air cell, air-block mask (with the z rule)
+/// and solid-heat cell, read and registered here instead of a DM loop calling three procs per turf. Args: (max_x,
+/// max_y, max_z). Returns the turfs holding an object that decides air passage in a proc (`ATMOS_PASS_PROC`: windows,
+/// doors, firedoors): DM asks those objects and republishes their masks. byondapi reads are main-thread only, so the
+/// reads are serial; each field's cells are written in one bulk pass.
+#[auxmacros::bind("/proc/_air_register_world_turfs")]
+fn hook_register_world_turfs(
+    max_x: ByondValue,
+    max_y: ByondValue,
+    max_z: ByondValue,
+) -> Result<ByondValue> {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let count = (max_x.get_number()? as u32)
+        * (max_y.get_number()? as u32)
+        * (max_z.get_number()? as u32);
+    let mut rows = Vec::new();
+    let mut asking = Vec::new();
+    for id in 0..count {
+        let turf = ByondValue::new_ref(ValueType::Turf, id);
+        let mut asks = false;
+        if let Some(row) = boot_turf(turf, &mut asks) {
+            if asks && row.mask != AIR_BLOCK_ALL {
+                asking.push(row.turf);
+            }
+            rows.push(row);
+        }
+    }
+    with_bulk(|| {
+        for row in &rows {
+            register_turf(row.turf, i32::from(DM_SIMULATION_ANY), Some(row.mask))?;
+        }
+        Ok(())
+    })?;
+    let field = crate::heat::field()?;
+    crate::heat::with_bulk(field, || {
+        for row in &rows {
+            crate::heat::set_turf(
+                field,
+                row.cell,
+                row.heat_kind,
+                row.capacity,
+                row.conductivity,
+                vg_heat::consts::DEFAULT_EMISSIVITY,
+                row.temperature,
+                row.has_air,
+            )?;
+        }
+        Ok(())
+    })?;
+    let list = ByondValue::new_list()?;
+    list.write_list(&asking)?;
+    Ok(list)
+}
+
 /// Turf gas rows buffered by a bulk bind ([`with_bulk`]).
 pub(crate) struct Bulk {
     cells: crate::bulk::Direct<TurfGas>,
