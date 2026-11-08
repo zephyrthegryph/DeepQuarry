@@ -51,7 +51,7 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	var/datum/announcement/announcement
 
 CAPABILITIES(/obj/machinery/requests_console)
-	configure(movable_motion(blocks_emissive = NONE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(register_department_requests))
 	op("toggleSilent", ui_act("toggleSilent"), then(PROC_REF(ui_act_togglesilent)))
 	owns_one(nameof(announcement), /datum/announcement, starts = /datum/announcement, starts_args = NO_LOC)
