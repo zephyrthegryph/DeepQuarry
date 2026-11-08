@@ -168,6 +168,8 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 
 // ---- arrival: what a newly visible area owes, drawn nearest first ----
 
+/// Owed arrival draws one pass always runs, whatever the tick has spent: the nearest of an arrival (what stands around the viewer) are on screen at once.
+#define INTEREST_ARRIVAL_MIN_STEP 32
 /// Atoms that owe a draw in chunks that just became visible, nearest to their viewer first (several viewers' arrivals append in turn).
 GLOBAL_LIST_EMPTY(interest_arrivals)
 /// Owed draws run from the arrival queue, and the frames the queue took more than one of.
@@ -257,7 +259,9 @@ GLOBAL_VAR_INIT(interest_arrival_step_max, 0)
 			var/drawn = interest_draw_now(A)
 			. += drawn
 			GLOB.interest_arrival_drawn += drawn
-		if(i < length(Q) && (KERNEL_OVER_BUDGET || (GLOB.interest_arrival_step_max && . >= GLOB.interest_arrival_step_max)))
+		if(i >= length(Q))
+			break
+		if(GLOB.interest_arrival_step_max ? (. >= GLOB.interest_arrival_step_max) : (. >= INTEREST_ARRIVAL_MIN_STEP && KERNEL_OVER_BUDGET))
 			break
 	Q.Cut(1, i + 1)
 	if(length(Q))
