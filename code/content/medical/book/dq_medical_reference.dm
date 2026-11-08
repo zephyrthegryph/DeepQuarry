@@ -36,12 +36,22 @@ CAPABILITIES(/obj/item/book/dq_medical_reference)
 	without("ui_open")
 	ui_shape(conditions = any, symptoms = any, reagents = any, causes = any, surgeries = any)
 
-/// /obj/item/book/dq_medical_reference's window data.
+/// /obj/item/book/dq_medical_reference's window data: none that changes. The book's text is the same for every reader and every copy for the
+/// life of the world (it is built from the condition prototypes), so it is sent once per open as static data, built once per world.
 /obj/item/book/dq_medical_reference/ui_data(datum/act/eval/A)
+	return list()
+
+/obj/item/book/dq_medical_reference/tgui_static_data(mob/user)
+	return CACHED_KEY(dq_medical_book_data, "book", src)
+
+/// The whole book (about 550 KB of text, 235 ms to build): every tab's entries.
+DECLARE_SHARED_CACHE(dq_medical_book_data, GLOBAL_PROC_REF(build_dq_medical_book_data), SC_NEVER)
+
+/proc/build_dq_medical_book_data(obj/item/book/dq_medical_reference/book)
 	var/list/data = list()
-	data["conditions"] = _dq_book_conditions()
-	data["symptoms"]   = _dq_book_symptoms()
-	data["reagents"]   = _dq_book_reagents()
-	data["causes"]     = _dq_book_causes()
-	data["surgeries"]  = _dq_book_surgeries()
+	data["conditions"] = book._dq_book_conditions()
+	data["symptoms"]   = book._dq_book_symptoms()
+	data["reagents"]   = book._dq_book_reagents()
+	data["causes"]     = book._dq_book_causes()
+	data["surgeries"]  = book._dq_book_surgeries()
 	return data
