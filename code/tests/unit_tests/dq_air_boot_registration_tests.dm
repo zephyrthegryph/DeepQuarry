@@ -116,3 +116,21 @@
 	// The floor put back reads as vacuum (ChangeTurf carries the space's air) in DM and in the arena, yet the air guard reports +82.1 mol on it
 	// after the test: a known leak that master shows on the old registration path too (doc/atmos/breach_air_guard_leak.md).
 	S.ChangeTurf(original)
+
+/// A map loaded onto a level made in play (load_new_z(): the test blocks, expedition sites) puts its turfs over the level's registered space. Its
+/// floors must take cells of their own: not the replaced space's vacuum reservoir, which drops every write (the test room read 0 mol at 2.7 K and
+/// assume_air() on it read back 0).
+/datum/unit_test/dq_map_loaded_floor_on_new_level_holds_air
+
+/datum/unit_test/dq_map_loaded_floor_on_new_level_holds_air/Run()
+	var/turf/open/T = run_loc_floor_bottom_left
+	var/list/info = vg_atmos_cell_info(T)
+	TEST_ASSERT_EQUAL(info[5], 0, "the block floor's cell is not a reservoir (cell info [json_encode(info)])")
+	dq_atmos_test_snapshot_air_around(T)
+	var/list/before = read_gas_mixtures(list(T.turf_air()))
+	var/datum/gas_mixture/donor = new(CELL_VOLUME)
+	donor.adjust_gas(/datum/gas/nitrogen, 50)
+	heat_set(donor, T20C, HEAT_SOURCE_OTHER)
+	T.assume_air(donor)
+	var/list/after = read_gas_mixtures(list(T.turf_air()))
+	TEST_ASSERT(after[GAS_READ_TOTAL_MOLES] - before[GAS_READ_TOTAL_MOLES] > 40, "50 mol written to the block floor landed ([before[GAS_READ_TOTAL_MOLES]] -> [after[GAS_READ_TOTAL_MOLES]] mol)")

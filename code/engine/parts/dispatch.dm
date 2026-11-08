@@ -333,11 +333,24 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 	var/at = R.fast_row_providers[k]
 	var/datum/prov/V = at ? R.providers[at] : null
 	if(R.menu_scratch)
-		// The walk's one context, refilled per row (op_fast_walk()); each condition is answered once per holder and target in the walk.
+		// The walk's one context, refilled per row (op_fast_walk()); each condition is answered once per holder and target in the walk, and a row
+		// whose conditions were all answered before is decided from those answers without filling the context.
 		var/datum/act/op/shared = R.menu_scratch[1]
-		op_act_set(shared, P, entry[FAST_BINDING], op_fast_holder(R, side), side, granted_by, granted_by ? granted_by.def : P.owner_def, V, R.actor, R.target, R.held, R.origin, R.authority)
-		var/row_key = op_menu_cond_row_key(R, shared)
+		var/datum/holder = op_fast_holder(R, side)
+		var/datum/capability/cap = granted_by ? granted_by.def : P.owner_def
+		var/row_key = op_menu_cond_key_of(R, holder, op_act_target(P, entry[FAST_BINDING], holder, side, R.actor, R.target), cap, granted_by)
+		var/filled = FALSE
+		var/list/answers = R.menu_cond_answers
 		for(var/cond in op_conds_cheapest_first(P))
+			if(answers && (istext(cond) || isnum(cond)))
+				var/known = answers["[row_key]|[cond]"]
+				if(!isnull(known))
+					if(!known)
+						return FALSE
+					continue
+			if(!filled)
+				op_act_set(shared, P, entry[FAST_BINDING], holder, side, granted_by, cap, V, R.actor, R.target, R.held, R.origin, R.authority)
+				filled = TRUE
 			if(!op_menu_cond(R, shared, cond, row_key))
 				return FALSE
 		return TRUE

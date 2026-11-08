@@ -87,8 +87,9 @@ export function groupOffset(drag: GroupDrag | null, group: string): number {
   return liveSlide(drag.boxes, from, drag.to, at);
 }
 
-/** Whether a window can leave the page as a native window (only docked tgui interfaces have one to go to). */
-export const canFloat = (win?: DockWindow) => win?.kind === 'tgui';
+/** Whether a window can leave the page as a native window (host.mayLeave(): not the stat panel, never the last window). */
+export const canFloat = (host: ColumnHost, id?: string) =>
+  !!id && host.mayLeave(id);
 
 function measure(): OrderBox[] {
   return Array.from(
@@ -146,8 +147,10 @@ function runDrag(
   const max = Math.max(window.innerHeight, boxes.at(-1)?.start ?? 0);
   const groupOf = host.state.groups.find((g) => g.id === group);
   const floatable = pulled
-    ? canFloat(host.windowOf(pulled))
-    : !!groupOf?.windows.every((id) => canFloat(host.windowOf(id)));
+    ? canFloat(host, pulled)
+    : !!groupOf?.windows.every((id) => canFloat(host, id)) &&
+      // A whole entry floats only when another entry stays: the column is never empty.
+      host.state.groups.length > 1;
   let live: GroupDrag | null = null;
   const move = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;
@@ -437,7 +440,7 @@ function Group(props: {
         ) : (
           <span className="column-title">{title}</span>
         )}
-        {canFloat(active) && (
+        {canFloat(host, group.active) && (
           <>
             <Button
               compact

@@ -41,7 +41,8 @@
 		"base_color" = fabric_color,
 		"name" = name,
 		"icon" = icon,
-		"preview" = icon2base64(get_flat_icon(src)),
+		// From the shared portrait cache (drawn off the tick; null until it lands, then the window draws again: preview_landed).
+		"preview" = portrait_request(src, dir, src, PROC_REF(preview_landed))?.b64,
 		"possible_overlays" = possible_overlay_data,
 		"overlays" = our_overlays
 	)
@@ -235,3 +236,7 @@ CAPABILITIES(/obj/item/toy/plushie/customizable)
 		"thick_h_1" = "Horns, Thick, L",
 		"thick_h_2" = "Horns, Thick, R"
 	)
+
+/// The plushie's new picture landed: the editor shows it.
+/obj/item/toy/plushie/customizable/proc/preview_landed(datum/portrait/P)
+	SStgui.update_uis(src)

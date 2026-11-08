@@ -327,7 +327,6 @@
 /datum/unit_test/dq_client_lighting_compare
 
 /datum/unit_test/dq_client_lighting_compare/Run()
-	set_global(nameof(GLOB.client_glow_whites), GLOB.client_glow_whites)
 	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay)))
 		set_global(screen_var, GLOB.vars[screen_var]) // the shared screen objects are made on first use; teardown restores
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the modes off for the next test
@@ -376,7 +375,6 @@
 	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay)))
 		set_global(screen_var, GLOB.vars[screen_var]) // the shared screen objects are made on first use; teardown restores
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
-	set_global(nameof(GLOB.client_glow_whites), GLOB.client_glow_whites)
 	TEST_ASSERT_EQUAL(length(client_glow_screen(client_glow_screen_state(null))), 0, "DM lighting: no base on the screen")
 	var/turf/fixed
 	for(var/turf/T as anything in block(locate(1, 1, 1), locate(world.maxx, world.maxy, world.maxz)))
@@ -397,7 +395,7 @@
 	if(fixed)
 		var/area/FA = fixed.loc
 		TEST_ASSERT((white in fixed.underlays) || client_glow_area_white(FA) == white, "a turf outside dynamic lighting ([fixed.type] in [FA.type]) carries a white tile, its own or its area's")
-	log_test("CLIENT DARK BASE: [GLOB.client_glow_whites] area(s) and turf(s) outside dynamic lighting carry a white tile")
+	log_test("CLIENT DARK BASE: [client_glow_whites_set(TRUE)] area(s) and turf(s) outside dynamic lighting carry a white tile")
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
 	TEST_ASSERT_EQUAL(length(client_glow_screen(client_glow_screen_state(null))), 0, "DM lighting again: no base")

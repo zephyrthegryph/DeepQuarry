@@ -37,6 +37,8 @@
 	var/list/drop_index
 	/// Interface name -> the screen point ("x,y") a drag out of the column ended at: its next native window opens under it.
 	var/list/float_points
+	/// Interface name -> TRUE while it is on its way out of the column: its native window is watched until it shows (tgui.dm).
+	var/list/floating
 
 /datum/window_dock/New(client/owner)
 	rel_set(src, nameof(owner), owner)
@@ -50,6 +52,8 @@ CAPABILITIES(/datum/window_dock)
 
 /// Whether `interface` opens docked: what the saved layout says, else its default (window_dock_default_docked).
 /datum/window_dock/proc/wants(interface)
+	if(GLOB.window_dock_always_docked[interface])
+		return TRUE
 	if(isnull(wants_cache))
 		wants_cache = window_dock_wanted(owner()?.prefs?.read_preference(/datum/preference/text/window_layout))
 	if(interface in wants_cache)
@@ -156,14 +160,42 @@ CAPABILITIES(/datum/window_dock)
 	reopen(ui)
 	return TRUE
 
+/// The client's windows docked in the column now (open, not closing).
+/datum/window_dock/proc/docked_count()
+	var/client/player = owner()
+	. = 0
+	for(var/window_id in player?.session?.tgui_windows)
+		var/datum/tgui_window/column_part/part = player.session.tgui_windows[window_id]
+		if(!istype(part) || part.status == TGUI_WINDOW_CLOSED)
+			continue
+		var/datum/tgui/held = part.locked_by()
+		if(held && !held.closing)
+			.++
+
+/// Whether docked `ui` may leave the column: an always-docked interface never floats or closes, and the last docked window stays.
+/datum/window_dock/proc/may_leave(datum/tgui/ui)
+	if(!ui?.docked)
+		return TRUE
+	if(GLOB.window_dock_always_docked[ui.interface])
+		return FALSE
+	return docked_count() > 1
+
+/datum/tgui/may_leave_column(closing)
+	var/datum/window_dock/dock = window_dock_of(user?.client)
+	return dock ? dock.may_leave(src) : TRUE
+
 /// Floats a docked `ui` out of the column into a native window (under the point `at`, "x,y", when the drag gave one).
 /datum/window_dock/proc/undock(datum/tgui/ui, at)
 	if(!ui.docked)
+		return FALSE
+	if(!may_leave(ui))
+		log_tgui(owner(), "Window dock: refused to float [ui.interface] ([GLOB.window_dock_always_docked[ui.interface] ? "always docked" : "the column's last window"]).", window = ui.window())
 		return FALSE
 	remember(ui.interface, FALSE)
 	log_tgui(owner(), "Window dock: [ui.interface] floated[at ? " under [at]" : ""].", window = ui.window())
 	if(at)
 		LAZYSET(float_points, ui.interface, at)
+	LAZYSET(floating, ui.interface, TRUE)
 	reopen(ui)
 	return TRUE
 
@@ -228,6 +260,9 @@ CAPABILITIES(/datum/window_dock)
 		return null
 	if(!dock.wants(interface))
 		// Floating: a drag out of the column left a point for it, so its window opens under the pointer (one update carries it).
+		if(LAZYACCESS(dock.floating, interface))
+			floated = TRUE
+			LAZYREMOVE(dock.floating, interface)
 		var/at = LAZYACCESS(dock.float_points, interface)
 		if(at)
 			float_at = at
