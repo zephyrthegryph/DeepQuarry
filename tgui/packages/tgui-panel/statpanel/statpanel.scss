@@ -888,3 +888,151 @@ body {
   display: inline-block;
   padding: 0 4px;
 }
+
+// ---- The five views (layout.ts): collapsible groups, the card over a view, the Server sub-pages. ----
+
+.stat-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.stat-group {
+  flex: none;
+  background-color: console.$console-panel;
+  border: 2px solid console.$console-border;
+
+  &--danger {
+    border-color: console.$console-danger;
+
+    .stat-group__name {
+      color: #ff9a9a;
+    }
+
+    .Button {
+      background-color: console.$console-danger;
+    }
+  }
+}
+
+.stat-group__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  width: 100%;
+  padding: 0.25em 0.5em;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+
+  &:hover .stat-group__name {
+    color: console.$console-accent;
+  }
+}
+
+.stat-group__chev {
+  width: 0.8em;
+  color: console.$console-accent;
+}
+
+.stat-group__name {
+  flex: 1;
+  color: console.$console-text;
+}
+
+.stat-group__count {
+  color: console.$console-dim;
+  font-weight: 400;
+}
+
+.stat-group__body {
+  padding: 0 0.35em 0.35em;
+}
+
+.stat-badge {
+  display: inline-block;
+  padding: 0 0.3em;
+  margin-left: 0.2em;
+  font-size: 0.8em;
+  color: #fff;
+  background-color: console.$console-danger;
+}
+
+.stat-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+
+  .Button {
+    margin: 0;
+  }
+}
+
+.stat-subnav {
+  display: flex;
+  gap: 2px;
+
+  button {
+    flex: 1;
+    padding: 0.2em;
+    font: inherit;
+    color: console.$console-muted;
+    background-color: console.$console-panel;
+    border: 2px solid console.$console-border;
+    cursor: pointer;
+  }
+
+  .stat-subnav--on {
+    color: console.$console-text;
+    background-color: console.$console-button;
+  }
+}
+
+// Examine, inspect and the turf list: a card over the view, not a tab of their own.
+.stat-card {
+  position: sticky;
+  top: 0;
+  order: -1;
+  z-index: 2;
+  max-height: 70%;
+  display: flex;
+  flex-direction: column;
+  background-color: console.$console-background;
+  border: 2px solid console.$console-accent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.stat-card__head {
+  display: flex;
+  align-items: center;
+  padding: 0.2em 0.5em;
+  border-bottom: 1px solid var(--stat-line);
+}
+
+.stat-card__title {
+  flex: 1;
+  color: console.$console-text;
+}
+
+.stat-card__close {
+  font: inherit;
+  font-size: 1.2em;
+  line-height: 1;
+  color: console.$console-muted;
+  background: none;
+  border: 0;
+  cursor: pointer;
+
+  &:hover {
+    color: console.$console-text;
+  }
+}
+
+.stat-card__body {
+  overflow: hidden auto;
+  padding: 0.35em 0.5em;
+}

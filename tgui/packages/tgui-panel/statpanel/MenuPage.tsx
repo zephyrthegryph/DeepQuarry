@@ -8,9 +8,9 @@ import {
   iconSizeCommand,
   type MenuItem,
   ROUND_ITEMS,
+  run,
   textModeCommand,
   ZOOM_MODES,
-  run,
   zoomModeCommand,
 } from './menu';
 
