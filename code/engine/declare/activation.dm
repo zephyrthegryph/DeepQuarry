@@ -224,6 +224,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(lasts)
 		after(holder, lasts, GLOBAL_PROC_REF(activation_expire), key = "activation:[A.serial]", with = list(A))
 	activation_restack(holder, def.key)
+	rx.spares_defs_key = null
 	holder.capabilities_changed(def)
 	return A
 
@@ -446,6 +447,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(A.lasts && holder && !QDELETED(holder))
 		cancel_after(holder, "activation:[A.serial]")
 	TEST_REC_ACTIVATION(TEST_EVENT_DETACH, def, A.source, holder)
+	if(holder?.rx)
+		holder.rx.spares_defs_key = null
 	if(holder && !QDELETED(holder))
 		activation_restack(holder, def.key)
 		holder.capabilities_changed(def)

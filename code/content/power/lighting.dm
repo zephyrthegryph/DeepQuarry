@@ -368,7 +368,11 @@ CAPABILITIES(/obj/machinery/light)
 	else
 		set_use_power(USE_POWER_IDLE)
 		set_glow(src, GLOW(0, null, null))
-	update_active_power_usage((glow_of(src).range * glow_of(src).power) * LIGHTING_POWER_FACTOR)
+	// The active draw counts only while the lamp is on (use_power ACTIVE); a dark or emergency lamp is idle and draws its idle power. It follows the
+	// lamp's glow while on and is left alone otherwise: a write republishes the power trait and re-settles every power-gated stat of the fixture
+	// (about 1.2 ms a fixture when an area's lights go dark together), and turning back on finds the same draw and writes nothing.
+	if(on)
+		update_active_power_usage((glow_of(src).range * glow_of(src).power) * LIGHTING_POWER_FACTOR)
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/machinery/light/proc/smashed_by(datum/act/hit/generic/A)
@@ -665,6 +669,13 @@ CAPABILITIES(/obj/machinery/light)
 		return FALSE
 	if(!has_emergency_power(pwr))
 		return FALSE
+	// A zero draw (the first emergency look) reads the stock charge as it is: the cell is made only when charge is really taken.
+	if(pwr <= 0 && !cell)
+		if(stock_cell_charge > 750)
+			emergency_cell() // the overcharged cell's short below works on the real one
+		else
+			set_glow(src, GLOW(brightness_range * bulb_emergency_brightness_mul, emergency_level_for(stock_cell_charge, emergency_capacity()), bulb_emergency_colour))
+			return TRUE
 	var/obj/item/cell/C = emergency_cell()
 	if(C.charge > 750) //it's meant to handle 120 W, ya doofus. Not Anymore!!
 		visible_message(span_warning("[src] short-circuits from too powerful of a power cell!"))
@@ -680,13 +691,27 @@ CAPABILITIES(/obj/machinery/light)
 /// (bulb_emergency_pow_min of bulb_emergency_pow_mul), then at that dimmed level until the cell runs out. Two levels, not a ramp: every station
 /// light that loses power at the same moment changes level at the same moment, and each level change is a lighting update of every fixture in the dark.
 /obj/machinery/light/proc/emergency_light_power(obj/item/cell/C)
-	if(!C?.maxcharge || bulb_emergency_pow_mul <= bulb_emergency_pow_min)
+	return emergency_level_for(C?.charge, C?.maxcharge)
+
+/// The emergency output for a cell holding `charge` of `maxcharge` (a real cell's numbers or the stock charge's).
+/obj/machinery/light/proc/emergency_level_for(charge, maxcharge)
+	if(!maxcharge || bulb_emergency_pow_mul <= bulb_emergency_pow_min)
 		return bulb_emergency_pow_min
-	return C.charge > emergency_dim_charge(C) ? bulb_emergency_pow_mul : bulb_emergency_pow_min
+	return charge > emergency_dim_for(maxcharge) ? bulb_emergency_pow_mul : bulb_emergency_pow_min
 
 /// The cell charge below which the emergency output drops to its dimmed level.
 /obj/machinery/light/proc/emergency_dim_charge(obj/item/cell/C)
-	return bulb_emergency_pow_mul > 0 ? bulb_emergency_pow_min / bulb_emergency_pow_mul * C.maxcharge : 0
+	return emergency_dim_for(C.maxcharge)
+
+/obj/machinery/light/proc/emergency_dim_for(maxcharge)
+	return bulb_emergency_pow_mul > 0 ? bulb_emergency_pow_min / bulb_emergency_pow_mul * maxcharge : 0
+
+/// The emergency cell's charge and capacity, from the real cell or the stock charge (no cell is made).
+/obj/machinery/light/proc/emergency_charge()
+	return cell ? cell.charge : (stock_cell_charge || 0)
+
+/obj/machinery/light/proc/emergency_capacity()
+	return cell ? cell.maxcharge : initial(/obj/item/cell/emergency_light::maxcharge)
 
 // ---- flicker ----
 
@@ -826,16 +851,17 @@ CAPABILITIES(/obj/machinery/light)
 /// cell runs out. The drain is settled in one batch then: a fixture in an unpowered area wakes twice over its cell's half hour, not every few
 /// seconds (each wake is a timer, a redraw and a lighting update, and a station has a thousand such fixtures that all lose power together).
 /obj/machinery/light/proc/emergency_discharge_wait()
-	var/obj/item/cell/C = emergency_cell()
-	if(!C?.maxcharge)
+	var/maxcharge = has_cell() ? emergency_capacity() : 0
+	if(!maxcharge)
 		return 2 SECONDS
+	var/charge = emergency_charge()
 	// The charge at which it runs out, or drops to the dimmed level if that comes first.
 	var/target = LIGHT_EMERGENCY_POWER_USE
-	var/dim = emergency_dim_charge(C)
-	if(C.charge > dim && bulb_emergency_pow_mul > bulb_emergency_pow_min)
+	var/dim = emergency_dim_for(maxcharge)
+	if(charge > dim && bulb_emergency_pow_mul > bulb_emergency_pow_min)
 		target = max(target, dim)
 	// LIGHT_EMERGENCY_POWER_USE every two seconds; one decisecond past the crossing, and never sooner than one drain step.
-	return max((C.charge - target) / LIGHT_EMERGENCY_POWER_USE * (2 SECONDS) + 1, 2 SECONDS)
+	return max((charge - target) / LIGHT_EMERGENCY_POWER_USE * (2 SECONDS) + 1, 2 SECONDS)
 
 /obj/machinery/light/proc/schedule_emergency_recharge()
 	if(!emergency_charge_short() || !has_power() || after_pending(src, "recharge"))

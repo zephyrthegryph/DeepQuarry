@@ -6,7 +6,6 @@ import { act, cleanup, render, waitFor } from '@testing-library/react';
 
 const { Chat, chatBusMessage } = await import('tgui/interfaces/Chat');
 const { lastShownSequence } = await import('../chat/handlers');
-const { isChatGuest } = await import('../chat/guest');
 const { store } = await import('../events/store');
 const { chatDraftAtom } = await import('../input/atoms');
 
@@ -57,9 +56,19 @@ describe('a floating chat window', () => {
     // It asks for everything after the last message this page showed (none in a fresh window).
     const after = lastShownSequence() ?? -1;
     render(<Chat />);
-    // A floating chat is a guest: the server's history, not the column page's stored log.
-    expect(isChatGuest()).toBe(true);
-    expect(sent).toContainEqual({ type: 'chat/ready', payload: { after } });
+    // Its window gets the panel's config (chat_ui.dm): with it the stored log loads, and only then does it ask the server.
+    expect(sent.some((m) => m.type === 'chat/ready')).toBe(false);
+    deliver('chat/config', {
+      config: { client: { ckey: 'nick', chatlog_token: '' } },
+    });
+    await waitFor(
+      () =>
+        expect(sent).toContainEqual({
+          type: 'chat/ready',
+          payload: { after },
+        }),
+      { timeout: 6000 },
+    );
     deliver('chat/message', chatLine(after + 41, 'the replayed history'));
     deliver('chat/message', chatLine(after + 42, 'a new line'));
     expect(lastShownSequence()).toBe(after + 42);

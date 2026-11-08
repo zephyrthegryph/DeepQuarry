@@ -35,6 +35,7 @@ import { EmbeddedInterface } from 'tgui/routes';
 import { Button } from 'tgui-core/components';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { POP_OUT_DISTANCE } from '../layout/model';
+import { Panel } from '../Panel';
 import { type ColumnHost, columnHost } from './host';
 import type { DockGroup, DockWindow } from './model';
 
@@ -315,8 +316,17 @@ class WindowBoundary extends Component<
 function WindowBody(props: { host: ColumnHost; win: DockWindow }) {
   const { host, win } = props;
   let content: ReactNode = null;
-  const backend = host.backends.get(win.id);
-  content = backend ? <EmbeddedInterface backend={backend} /> : null;
+  if (win.kind === 'pending') {
+    // The chat's stand-in: the page's own chat, as the Chat window draws it.
+    content = (
+      <div className="chat-theme">
+        <Panel />
+      </div>
+    );
+  } else {
+    const backend = host.backends.get(win.id);
+    content = backend ? <EmbeddedInterface backend={backend} /> : null;
+  }
   return (
     <WindowBoundary name={win.title || win.iface}>{content}</WindowBoundary>
   );
