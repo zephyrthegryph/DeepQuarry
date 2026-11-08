@@ -642,9 +642,28 @@ PROC_SUMMARY(/proc/hook_gate) // vars[] / call() dispatcher: the walk cannot ent
 	if(TRACKED_UNCHANGED(hooks_generation, value))
 		return FALSE
 	hooks_generation = value
+	if(rx_counter_unread(src, nameof(hooks_generation)))
+		return TRUE // nothing watches it: no pending operation, observer or static reader (the memo keys read the number itself)
 	tracked_changed(src, nameof(hooks_generation))
 	return TRUE
 SETTER(/datum/rx_state, hooks_generation)
+
+/// TRUE when a write of counter `key` of rx state S has nobody to tell: no reader rx_readers() knows (a reaction of the type, a lifecycle form, an
+/// on_change hook; S has no rx of its own, so no operation waits on it and nothing observes it), no stat takes it as an input and no draw hops
+/// over it. The memo keys that read the number itself need no publish. Spares the full state_changed() of every grant (4 per observe/unobserve).
+/proc/rx_counter_unread(datum/rx_state/S, key)
+	if(S.rx || GLOB.state_batch_depth || GLOB.census_on || GLOB.published_write_census || IS_LOOKUP_READ_KEY(key) || !GLOB.draw_hop_vars_built)
+		return FALSE // the draw-hop table is built on its first ask (state_changed()): until then the full path decides
+	if(GLOB.draw_hop_vars[key] || rx_readers(S, key))
+		return FALSE
+	// A stat that takes the counter as an input still recomputes (stat_inputs_changed(), as state_changed() would); nothing else is told.
+	if(GLOB.stat_input_keys && GLOB.stat_input_keys[key] && key != GLOB.stat_writing)
+		stat_inputs_changed(S, key)
+	GLOB.rx_counter_writes_spared++
+	return TRUE
+
+/// Counter writes rx_counter_unread() spared a publish.
+GLOBAL_VAR_INIT(rx_counter_writes_spared, 0)
 
 /datum/rx_state
 	var/hooks_generation = 0

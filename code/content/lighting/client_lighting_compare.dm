@@ -19,8 +19,6 @@
 
 /// TRUE while both engines run and each client picks one (client_lighting_compare_set()). Implies GLOB.client_lighting.
 GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
-/// Turfs given a white tile by the last pass (tests, logs).
-GLOBAL_VAR_INIT(client_glow_whites, 0)
 
 /// What a client's screen shows of client lighting (client.lighting_screen).
 #define CLIENT_GLOW_SCREEN_NONE 0
@@ -160,7 +158,7 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 	var/client_glow_white_plane = 0
 
 /// Everything outside dynamic lighting gets its white tile (on) or loses it, in one pass: an area outside dynamic lighting as
-/// its overlay; inside a dynamic area, a turf outside dynamic lighting as its underlay. GLOB.client_glow_whites counts both.
+/// its overlay; inside a dynamic area, a turf outside dynamic lighting as its underlay. Returns how many carry one.
 /proc/client_glow_whites_set(on)
 	var/n = 0
 	var/start = REALTIMEOFDAY
@@ -172,8 +170,8 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 		for(var/turf/T as anything in contents_of(A, /turf))
 			if(!IS_DYNAMIC_LIGHTING(T) && T.client_glow_white(on))
 				n++
-	GLOB.client_glow_whites = n
 	log_world("client lighting: [n] area(s) and turf(s) outside dynamic lighting [on ? "carry" : "dropped"] a white tile ([(REALTIMEOFDAY - start) * 100] ms)")
+	return n
 
 /// Switches compare mode on or off live, in one pass with no yield (as client_lighting_set()). On turns client lighting on
 /// first, then gives every dynamic turf its lighting object and redraws every light with both engines; off clears the

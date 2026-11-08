@@ -86,7 +86,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/photo)
-	owns_one(nameof(rendering))
+	ref_one(nameof(rendering)) // the original and every early copy name it (the portrait cache owns it until it finishes)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	after_init(0, then(PROC_REF(assign_photo_id)))
 	op("photo_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -278,9 +278,11 @@ CAPABILITIES(/datum/photo_render)
 	ref_one(nameof(photo))
 	ref_many(nameof(copies))
 
-/// `copy` was copied from the photo before its picture was finished: it is filled too when it is.
+/// `copy` was copied from the photo before its picture was finished: it holds this drawing too and is filled when it is, even if the
+/// original is gone by then.
 /datum/photo_render/proc/add_copy(obj/item/photo/copy)
 	rel_add(src, nameof(copies), copy)
+	rel_set(copy, nameof(copy.rendering), src)
 
 /datum/photo_render/proc/start(obj/item/camera/camera, obj/item/photo/photo, list/turfs, turf/center)
 	rel_set(src, nameof(src.photo), photo)
@@ -316,8 +318,9 @@ CAPABILITIES(/datum/photo_render)
 	if(!pending)
 		finish()
 		return
-	rel_set(photo, nameof(photo.rendering), src) // the photo holds it until it finishes (the portrait cache calls back by handle)
-	after(src, PHOTO_RENDER_TIMEOUT, PROC_REF(finish))
+	rel_add(GLOB.portrait_cache, nameof(/datum/portrait_cache::photo_renders), src) // owned there until it finishes
+	rel_set(photo, nameof(photo.rendering), src)
+	after(src, PHOTO_RENDER_TIMEOUT, PROC_REF(finish), key = "photo_render_timeout")
 
 /// The entry for `A` drawn at (x, y): list(picture or null while it is drawn, its portrait key, lying, x, y, blend).
 /datum/photo_render/proc/ask(atom/A, lying, x, y, blend)
@@ -340,15 +343,15 @@ CAPABILITIES(/datum/photo_render)
 	if(done)
 		return
 	done = TRUE
-	var/obj/item/photo/photo = src.photo
-	if(photo && !QDELETED(photo))
-		var/icon/finished = compose(TRUE)
-		photo.fill_from(finished)
-		for(var/obj/item/photo/copy as anything in copies)
-			if(!QDELETED(copy))
-				copy.fill_from(icon(finished))
-		if(photo.rendering == src)
-			rel_clear(photo, nameof(photo.rendering))
+	cancel_after(src, "photo_render_timeout") // nothing holds a finished drawing
+	var/icon/finished = compose(TRUE)
+	for(var/obj/item/photo/holder as anything in list(src.photo) + copies)
+		if(!holder || QDELETED(holder))
+			continue
+		holder.fill_from(holder == src.photo ? finished : icon(finished))
+		if(holder.rendering == src)
+			rel_clear(holder, nameof(holder.rendering))
+	own_remove(GLOB.portrait_cache, nameof(/datum/portrait_cache::photo_renders), src) // done: the drawing goes
 
 /// The photo's picture: the black frame, then (with `pictures`) every landed atom in layer order and the areas on top.
 /datum/photo_render/proc/compose(pictures)

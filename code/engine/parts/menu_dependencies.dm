@@ -15,17 +15,22 @@
 			if(!D || QDELETED(D))
 				frame[2] = TRUE
 				continue
-			var/datum/rx_state/S = rx_of(D)
 			var/key = pair[2]
+			// A read's rows share most of what they read: one already recorded in this read is not recorded again (its generation is the one it
+			// had at the read's first row, which is what the cached rows were made under).
+			var/id = istext(key) ? "[SHARED_CACHE_UID(D)]|[key]" : "[SHARED_CACHE_UID(D)]"
+			if(deps[id])
+				continue
+			var/datum/rx_state/S = rx_of(D)
 			if(istext(key))
 				// Per key: the row is stale only when this key of D is published again (state_changed() bumps a watched key).
 				if(!S.menu_keys)
 					S.menu_keys = list()
 				if(isnull(S.menu_keys[key]))
 					S.menu_keys[key] = 0
-				deps["[SHARED_CACHE_UID(D)]|[key]"] = list(handle_of(D), S.menu_keys[key], key)
+				deps[id] = list(handle_of(D), S.menu_keys[key], key)
 			else
-				deps["[SHARED_CACHE_UID(D)]"] = list(handle_of(D), S.act_gen)
+				deps[id] = list(handle_of(D), S.act_gen)
 		frame = frame[1]
 /proc/op_menu_dependencies_valid(list/dependencies)
 	for(var/id in dependencies)

@@ -305,3 +305,92 @@
 	food.cook()
 	TEST_ASSERT(food.coating_look && food.coating_look != raw, "cooking replaced it with the cooked look")
 	TEST_ASSERT_NULL(food.coating_stages, "nothing is left waiting")
+
+/// A photo deleted before its picture is finished: the copy made from it still gets the finished picture.
+/datum/unit_test/dq_photo_copy_outlives_original
+
+/datum/unit_test/dq_photo_copy_outlives_original/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/clothing/under/color/grey/suit = new(H)
+	suit.add_atom_colour(rgb(rand(0, 255), rand(0, 255), rand(0, 255)), FIXED_COLOUR_PRIORITY) // a look the cache has not drawn yet
+	H.equip_to_slot_or_del(suit, SLOT_ID_UNIFORM)
+	draw_now(H)
+	var/obj/item/camera/camera = allocate(/obj/item/camera, T)
+	var/icon/expected = dq_test_photo_reference(camera, list(T), T)
+	var/obj/item/photo/photo = camera.createpicture(T, null, list(T), "", FALSE)
+	TEST_ASSERT(photo.rendering, "the picture is still being drawn")
+	var/obj/item/photo/copy = photo.copy()
+	qdel(photo)
+	var/deadline = world.time + 20 SECONDS
+	UNTIL(!copy.rendering || world.time > deadline)
+	TEST_ASSERT_NULL(copy.rendering, "the copy's picture was finished")
+	var/list/report = list()
+	TEST_ASSERT_EQUAL(dq_test_portrait_mismatches(expected, copy.img, report), 0, "the copy has the finished picture ([json_encode(report)])")
+	qdel(copy)
+
+/// An animated object for the hologram tests: the first looping animation of singularity.dmi, with an overlay.
+/proc/dq_test_animated_object(turf/T)
+	var/obj/effect/A = new(T)
+	for(var/list/state as anything in icon_metadata('icons/obj/singularity.dmi')["states"])
+		if(length(state["delay"]) > 1 && !state["loop_count"] && !state["rewind"] && state["dirs"] == 1)
+			A.set_icon('icons/obj/singularity.dmi')
+			A.set_icon_state(state["name"])
+			break
+	A.add_overlay(image('icons/obj/singularity.dmi', "ptank"))
+	return A
+
+/// Differing pixels over every frame of two animated pictures of one state (`frames` frames, `dirs` directions).
+/proc/dq_test_frame_mismatches(icon/expected, icon/actual, frames, list/dirs)
+	. = 0
+	for(var/dir in dirs)
+		for(var/frame in 1 to frames)
+			for(var/x in 1 to 32)
+				for(var/y in 1 to 32)
+					if(dq_test_pixel_difference(expected.GetPixel(x, y, "", dir, frame), actual.GetPixel(x, y, "", dir, frame)) > 3)
+						.++
+
+/// The AI's hologram of an animated object: drawn off the tick, every direction and frame as getHologramIcon(getCompoundIcon()) drew it.
+/datum/unit_test/dq_ai_hologram_animated
+
+/datum/unit_test/dq_ai_hologram_animated/Run()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
+	var/obj/effect/A = dq_test_animated_object(T)
+	own(A)
+	var/icon/expected = getHologramIcon(getCompoundIcon(A))
+	var/icon/before = AI.holo_icon
+	AI.request_holo_compound(A)
+	var/deadline = world.time + 20 SECONDS
+	UNTIL(AI.holo_icon != before || world.time > deadline)
+	TEST_ASSERT(AI.holo_icon != before, "the hologram landed")
+	TEST_ASSERT_NULL(AI.holo_compound, "nothing is left drawing")
+	TEST_ASSERT_EQUAL(dq_test_frame_mismatches(expected, AI.holo_icon, 2, list(NORTH, SOUTH, EAST, WEST)), 0, "every direction matches the old hologram")
+
+/// The circuit projector's hologram of an animated object: blank, then (when its picture lands) every frame as the old projector drew it.
+/datum/unit_test/dq_circuit_hologram_animated
+
+/datum/unit_test/dq_circuit_hologram_animated/Run()
+	var/turf/T = test_floor()
+	var/obj/item/electronic_assembly/large/assembly = allocate(/obj/item/electronic_assembly/large, T)
+	set_var(assembly, nameof(assembly.opened), TRUE)
+	var/obj/item/integrated_circuit/output/holographic_projector/projector = new(T)
+	own(projector)
+	TEST_ASSERT(assembly.add_circuit(projector, null), "the projector is in the assembly")
+	TEST_ASSERT(projector.assembly(), "and knows it")
+	var/obj/effect/A = dq_test_animated_object(T)
+	own(A)
+	set_var(A, "luminosity", 1) // view() needs it lit: the test room has no lights
+	projector.set_pin_data("input", 2, A) // IC_INPUT
+	projector.set_pin_data("input", 3, "#40c0ff")
+	var/icon/expected = getHologramIcon(getFlatIcon(A), no_color = TRUE)
+	expected.ColorTone("#40c0ff")
+	TEST_ASSERT(projector.create_hologram(), "the projector made a hologram")
+	if(!projector.hologram)
+		return
+	var/deadline = world.time + 20 SECONDS
+	UNTIL(projector.hologram?.icon || world.time > deadline)
+	TEST_ASSERT(projector.hologram?.icon, "the hologram's picture landed")
+	var/icon/actual = icon(projector.hologram.icon)
+	TEST_ASSERT_EQUAL(dq_test_frame_mismatches(expected, actual, 2, list(null)), 0, "its frames match the old projector's hologram")
+	projector.destroy_hologram()
