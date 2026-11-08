@@ -106,7 +106,9 @@
 	if(enrols)
 		rx_enrol(holder) // per-instance every() work (reactions/work.dm)
 	if(flags || holder.periodic_cadence || holder.periodic_interval)
-		if(!holder.refresh_queued && !(flags & TYPE_DERIVES_PENDING) && type_look_stamped(holder))
+		// A stamped type derives nothing: its stamp was recorded by a refresh that left nothing, this boot or a previous boot of this world
+		// (look_verdicts_load()), so a pending derive verdict does not make its fresh atom owe a first refresh.
+		if(!holder.refresh_queued && type_look_stamped(holder))
 			return // the type's default look is empty: the stamp is the mapped appearance it already has (look_stamp.dm)
 		// Draw on first view (look_stamp.dm, boot_created_hold()): during a map load, a type whose look verdict is not known yet queues its first
 		// instance as the sample and holds the rest out of the queue, parked by type, until the settle has the sample's verdict.
