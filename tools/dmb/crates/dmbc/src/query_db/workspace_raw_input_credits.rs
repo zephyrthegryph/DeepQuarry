@@ -593,6 +593,19 @@ impl crate::input_snapshot::RecordedPolicySourceLender for RawInputCredits<'_>{
  fn directory_metadata_settled(&mut self,issuer:&Arc<()>,actual:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);if !self.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory resource window absent"))}self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),actual),bytes:actual});Ok(())}
  fn prepare_source(&mut self)->io::Result<()>{RawInputCredits::prepare_source(self)}
  fn acquired(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{self.retain(lease)}
+ fn acquired_preflight_file(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{
+  // finish_raw_source_read_admitted moved the admitted Vec into this UTF8
+  // backing and stores no ordinary lease. Only the already-funded file view
+  // holds the loan, so no weak row needs to outlive that file.
+  if lease.encoding()==dm_preprocess::SourceEncoding::Utf8{
+   if !self.prepared{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw preflight file lacks allocation preparation"))}
+   self.prepared=false;
+   return Ok(())
+  }
+  // Incompatible/BOM originals can be retained by the recorder, including
+  // on a later admission failure. Publish those owners before denial as before.
+  self.retain(lease)
+ }
 }
 impl QueryDb {
  /// Genuine cold owner: SAME input-family gate, live census and headroom.
@@ -639,6 +652,30 @@ impl QueryDb {
   fn read(&self,path:&Path)->io::Result<(Stamp,Vec<u8>)>{FileSystemInputs.read(path)}
   fn list(&self,path:&Path)->io::Result<FolderListing>{FileSystemInputs.list(path)}
   fn policy_directory(&self,path:&Path,follow:bool,maximum:usize)->io::Result<Option<PolicyDirectoryListing>>{self.maximum.store(maximum,Ordering::Release);if self.fail{return Err(io::Error::from_raw_os_error(1450))}FileSystemInputs.policy_directory(path,follow,maximum)}
+ }
+ #[test]
+ fn preflight_plain_raw_pages_leave_no_text_rows_but_exceptional_bytes_stay_funded(){
+  let root=crate::test_scratch::dir("preflight-no-transient-raw-rows");
+  std::fs::create_dir_all(root.join("code")).unwrap();
+  let plain=dm_preprocess::regions::canonical_path(&root.join("code/plain.dm"));
+  let bom=root.join("code/bom.dm");
+  std::fs::write(&plain,format!("/datum/probe\n{}", " ".repeat(32*1024))).unwrap();
+  std::fs::write(&bom,b"\xef\xbb\xbf/datum/probe\r\n").unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let budget=Budget::new(16*1024*1024).unwrap();
+  let mut ledger=Ledger::default();
+  let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};
+  for _ in 0..4{
+   assert!(inputs.with_recorded_policy_file_using(&root,&plain,&budget,&mut credits,&mut|_,views|{assert!(views.raw()?.contains("/datum/probe"));Ok(true)}).unwrap());
+   assert!(credits.ledger.rows.is_empty());
+   assert!(!credits.prepared);
+  }
+  let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
+  let meta=32*plain.as_os_str().len()+8192;
+  assert_eq!(budget.used(),5*fixed+meta+3*NODE);
+  assert!(inputs.with_recorded_policy_file_using(&root,&bom,&budget,&mut credits,&mut|_,views|{assert!(views.raw()?.starts_with('\u{feff}'));Ok(true)}).unwrap());
+  assert!(credits.ledger.rows.values().any(|row|matches!(&row.owner,Observation::Bytes(_))));
+  assert!(credits.ledger.refresh().unwrap()>FIXED);
  }
  #[test]fn actual_bounded_directory_provider_receives_small_reserved_window_and_unused_credit_returns(){
   let root=crate::test_scratch::dir("actual-small-directory-window");std::fs::write(root.join("a.dm"),"/datum/a\n").unwrap();let provider=Observe{maximum:0.into(),fail:false};let inputs=RecordingInputs::new(&provider,0);let budget=Budget::new(16*1024).unwrap();let mut ledger=Ledger::default();let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};

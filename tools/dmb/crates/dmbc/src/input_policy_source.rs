@@ -14,6 +14,9 @@ pub(crate) trait RecordedPolicySourceLender {
 
  fn prepare_source(&mut self)->io::Result<()>;
  fn acquired(&mut self,lease:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>;
+ /// Raw text borrowed only until the prepaid physical file scope drops.
+ /// Exceptional original bytes may still escape into RecordingInputs.
+ fn acquired_preflight_file(&mut self,lease:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{self.acquired(lease)}
  fn prepare_directory_metadata(&mut self,issuer:&Arc<()>,bytes:usize)->io::Result<()>;
  fn directory_window_started(&mut self,issuer:&Arc<()>,upper:usize)->io::Result<()>;
  fn directory_metadata_settled(&mut self,issuer:&Arc<()>,actual:usize)->io::Result<()>;
@@ -64,7 +67,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
    let lease=self.finish_raw_source_read_admitted(path,bytes,&mut|plan|{
     let needed=plan.constructor_bytes().checked_add(plan.decoded_bytes()).ok_or(io::ErrorKind::OutOfMemory)?;scratch.charge(needed).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
     Ok(())
-   },&mut|actual|lender.acquired(actual))?;
+   },&mut|actual|lender.acquired_preflight_file(actual))?;
    if !self.validate_recorded_source_lease(path,&lease){return Err(Failure::Operational(invalid("raw preflight actual issuer/path/file facts differ")))}
    let original=super::recorded_source_original(&lease)?;let raw=match &original{super::RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),super::RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()};
    let transform=if matches!(&original,super::RecordedSourceOriginal::Utf8(text)if !text.as_bytes().contains(&b'\r')){Some(0)}else{dq_analyze::captured_raw_file::analyze_raw_len(raw).map_err(|m|quota(scratch,m))?.checked_mul(4).and_then(|n|n.checked_add(8192))};pay(scratch,transform)?;

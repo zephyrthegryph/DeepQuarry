@@ -350,7 +350,10 @@ fn discover_productive_ui_domains<P:SnapshotProvider>(inputs:&RecordingInputs<P>
 }
 fn discover_selected<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,selection:DiscoverySelection)->io::Result<DiscoveryReceipt>{discover_selected_using(inputs,contract,selection,None)}
 fn discover_selected_using<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>)->io::Result<DiscoveryReceipt>{discover_selected_lent(inputs,contract,selection,doc_configuration,None)}
-fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,mut lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>)->io::Result<DiscoveryReceipt>{
+fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>)->io::Result<DiscoveryReceipt>{
+    discover_selected_lent_scoped(inputs,contract,selection,doc_configuration,lender,None)
+}
+fn discover_selected_lent_scoped<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,mut lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,scratch:Option<&Arc<dq_analyze::captured_generator_budget::Budget>>)->io::Result<DiscoveryReceipt>{
     if !contract.root.is_absolute() || contract.recursive_roots.iter().any(|p| !p.is_absolute()) {
         return Err(io::Error::other(
             "workspace discovery paths must be caller absolute",
@@ -400,7 +403,7 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
         }
         Ok(())
     }
-    let metadata_budget=lender.as_ref().map(|(budget,_)|Arc::clone(budget));
+    let metadata_budget=scratch.cloned().or_else(||lender.as_ref().map(|(budget,_)|Arc::clone(budget)));
     let mut funded_metadata=0usize;
     let mut fund_metadata=|bytes:usize|->io::Result<()>{if let Some(budget)=&metadata_budget{let extra=bytes.saturating_sub(funded_metadata);budget.charge(extra).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;}funded_metadata=funded_metadata.max(bytes);Ok(())};
     if let Some(config)=&doc_configuration{metadata=metadata.checked_add(config.value.budget_charge()).and_then(|n|n.checked_add(config.path.capacity()*8+4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc scope/traversal metadata overflow"))?;}
@@ -690,6 +693,19 @@ pub(crate) fn discover_engine_preflight<P:SnapshotProvider>(inputs:&RecordingInp
 pub(crate) fn discover_ownership_code_admitted<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,lender:&mut dyn crate::input_snapshot::RecordedPolicySourceLender)->io::Result<DiscoveryReceipt>{
  if contract.recursive_roots.as_slice()!=[contract.root.join("code")]{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Ownership source purpose requires exact CODE_DM"))}
  discover_selected_lent(inputs,contract,DiscoverySelection::OwnershipCodeDmV2,None,Some((budget,lender)))
+}
+
+/// Handler's discovery stages private traversal and sort allocations in a
+/// refundable child. Real recorder directory funding still uses the root
+/// lender, whose reservation window cannot be opened from a child.
+pub(crate) fn discover_handlers_code_admitted<P:SnapshotProvider>(
+ inputs:&RecordingInputs<P>,contract:DiscoveryContract,
+ budget:&Arc<dq_analyze::captured_generator_budget::Budget>,
+ scratch:&Arc<dq_analyze::captured_generator_budget::Budget>,
+ lender:&mut dyn crate::input_snapshot::RecordedPolicySourceLender,
+)->io::Result<DiscoveryReceipt>{
+ if contract.recursive_roots.as_slice()!=[contract.root.join("code")]{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Handler source purpose requires exact CODE_DM"))}
+ discover_selected_lent_scoped(inputs,contract,DiscoverySelection::OwnershipCodeDmV2,None,Some((budget,lender)),Some(scratch))
 }
 
 #[cfg(test)]
