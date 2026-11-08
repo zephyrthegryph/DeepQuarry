@@ -202,13 +202,18 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 	GLOB.refresh_near_drawn++
 	return 1
 
-/// slot of an atom -> how many of its init frames are open past Initialize(): its setup() hooks running (setup_run()), and a map-loaded atom's after_init()
-/// entries waiting for the load frame to close and then running (after_init_flush()). Keyed by slot, so it holds no atom: one deleted inside its
-/// own frame leaves nothing behind, because slot_free() drops the slot's entry. A real global: atoms initialize while the globals are still being made.
+//// An atom's init frame past Initialize() is one bit of its own datum_flags (DF_INIT_OPEN): its setup() hooks running (setup_run()), or a map-loaded
+/// atom's after_init() entries waiting for the load frame to close and then running (after_init_flush()). On the atom itself, so it holds nothing and
+/// needs no slot: one deleted inside its own frame takes the bit with it (interest_forget() clears it as well). The engine never opens a second frame
+/// inside the first; one that does (a test, a hook that re-enters) is counted here by slot until the outer frame ends. A real global: atoms
+/// initialize while the globals are still being made.
 GLOBAL_REAL(init_open, /alist)
 
 /// `A` enters an init frame that runs its own code after Initialize() returned: it is not drawn from here until the frame ends.
 /proc/init_open_begin(atom/A)
+	if(!(A.datum_flags & DF_INIT_OPEN))
+		A.datum_flags |= DF_INIT_OPEN
+		return
 	var/slot = slot_of(A)
 	if(!slot)
 		return
@@ -217,31 +222,35 @@ GLOBAL_REAL(init_open, /alist)
 	init_open[slot] = (init_open[slot] || 0) + 1
 
 /// The frame ends. The last one out lets a draw it was owed (parked while its init ran, in a chunk someone sees now) happen. An atom deleted inside its
-/// frame has lost its slot, and the entry went with it.
+/// frame has lost the bit already.
 /proc/init_open_end(atom/A)
+	if(!(A.datum_flags & DF_INIT_OPEN))
+		return
 	var/slot = A.handle_slot
-	if(!slot || isnull(init_open?[slot]))
+	var/nested = slot && init_open?[slot]
+	if(nested)
+		if(nested > 1)
+			init_open[slot] = nested - 1
+		else
+			init_open -= slot
 		return
-	var/left = init_open[slot] - 1
-	if(left > 0)
-		init_open[slot] = left
-		return
-	init_open -= slot // the table stays made when it empties: an alist's length() is linear in its keys, so emptiness is never tested here
+	A.datum_flags &= ~DF_INIT_OPEN
 	if(!QDELETED(A))
 		interest_settle(A)
 
-/// engine_forget(): a datum is being destroyed, its slot still valid. Its open init frame (an atom deleted inside its own setup) is dropped, so the slot's next
-/// holder is not taken for one still setting up. Idempotent: a second call finds nothing.
+/// engine_forget(): a datum is being destroyed, its slot still valid. Its open init frame (an atom deleted inside its own setup) is dropped, so it is not
+/// taken for one still setting up, and neither is the slot's next holder. Idempotent: a second call finds nothing.
 /proc/interest_forget(datum/D)
+	D.datum_flags &= ~DF_INIT_OPEN
 	if(init_open && D.handle_slot)
 		init_open -= D.handle_slot
 
 /// Whether `A` can be drawn from here: it has finished Initialize() and no init frame of its own is open. This is per atom: a map load running elsewhere
 /// (an expedition z-level takes seconds) holds back only the atoms it is still setting up, never the parked ones a player walks up to.
 /proc/interest_ready(atom/A)
-	return (A.flags & ATOM_INITIALIZED) && A != GLOB.atom_initializing && !(length(GLOB.atoms_init_outer) && (A in GLOB.atoms_init_outer)) && !(A.handle_slot && init_open?[A.handle_slot])
+	return (A.flags & ATOM_INITIALIZED) && A != GLOB.atom_initializing && !(length(GLOB.atoms_init_outer) && (A in GLOB.atoms_init_outer)) && !(A.datum_flags & DF_INIT_OPEN)
 
-/// A parked atom moved (atom/movable Moved()): into a chunk someone holds it is queued, into one someone sees it draws.
+// A parked atom moved (atom/movable Moved()): into a chunk someone holds it is queued, into one someone sees it draws.
 /proc/interest_parked_moved(atom/movable/M)
 	interest_settle(M)
 

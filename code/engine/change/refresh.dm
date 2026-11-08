@@ -278,7 +278,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
 /proc/refresh_mark(datum/E, mask, channel = 0)
 	if(GLOB.refresh_mark_probe_type && istype(E, GLOB.refresh_mark_probe_type))
-		refresh_mark_probe_note()
+		refresh_mark_probe_note(mask)
 	var/datum/D = E
 	for(var/depth in 1 to 8)
 		// A parked atom (DEP_PARKED) is out of the queue and owes its whole first refresh: the real mark queues it and the owed draw rides with it.
@@ -305,10 +305,10 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 			if((mask & DEP_PUSH) && mask != DEP_ALL && refresh_pushes(D))
 				GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
 			// A real mark: no longer the type's default state. Not one the atom's own construction makes: its setup() hooks and a map-loaded atom's
-			// after_init() entries run in an init frame (init_open, interest.dm) and write the state its first draw reads, as Initialize() does. That first
+			// after_init() entries run in an init frame (DF_INIT_OPEN, interest.dm) and write the state its first draw reads, as Initialize() does. That first
 			// draw is already queued (DEP_CREATED), so such a write is part of it, and the type can still be sampled and stamped at boot (look_stamp.dm): a wall
 			// or floor marked by its setup() would lose the creation mark and wait, unsampled, for the post-boot drain (35 k turfs, ~3.5 minutes).
-			var/construction = (D.refresh_queued & DEP_CREATED) && init_open && D.handle_slot && init_open[D.handle_slot]
+			var/construction = (D.refresh_queued & DEP_CREATED) && (D.datum_flags & DF_INIT_OPEN)
 			D.refresh_queued = (D.refresh_queued & ~(construction ? DEP_PARKED : (DEP_CREATED | DEP_PARKED))) | mask | (owed ? DEP_ALL : 0)
 			if(owed)
 				GLOB.refresh_parked_woken++
@@ -429,8 +429,8 @@ GLOBAL_VAR_INIT(refresh_mark_probe_type, null)
 /// "caller <- caller's caller" -> marks.
 GLOBAL_LIST_EMPTY(refresh_mark_probe_sources)
 
-/proc/refresh_mark_probe_note()
-	var/chain = ""
+/proc/refresh_mark_probe_note(mask)
+	var/chain = (mask & DEP_DRAW) ? "DRAW: " : ""
 	var/n = 0
 	for(var/callee/frame = caller?.caller; frame && n < 4; frame = frame.caller)
 		chain += "[n ? " <- " : ""][frame.proc]"

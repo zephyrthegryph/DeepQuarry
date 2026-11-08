@@ -233,11 +233,15 @@ impl<K: NetworkKind> NetworkHost<K> {
         )?;
         self.nodes.insert(entity, node);
         self.by_index.insert(entity.index(), node);
-        self.occupants.entry(cell).or_default().push(entity);
+        if K::GEOMETRIC {
+            self.occupants.entry(cell).or_default().push(entity);
+        }
         if let Some(g) = group {
             self.groups.entry(g).or_default().push(entity);
         }
-        self.connect_new_node(entity, node, cell);
+        if K::GEOMETRIC || group.is_some() {
+            self.connect_new_node(entity, node, cell);
+        }
         Ok(node)
     }
 
@@ -757,6 +761,59 @@ mod tests {
 
     fn entity(i: u32) -> Entity {
         EntityId::from_bits(i).unwrap()
+    }
+
+    /// A kind whose topology is only explicit edges (pipes): every node binds on one cell, as pipe ports do.
+    #[derive(Clone, Copy, Debug, Default, PartialEq)]
+    struct Explicit;
+
+    impl NetworkKind for Explicit {
+        const NAME: &'static str = "explicit";
+        const GEOMETRIC: bool = false;
+        type Node = ();
+        type Summary = f64;
+        type Payload = f64;
+        type Device = ();
+        type Command = f64;
+
+        fn summarize((): &()) -> f64 {
+            1.0
+        }
+        fn split(payload: &mut f64, whole: &f64, part: &f64) -> f64 {
+            if *whole <= 0.0 {
+                return 0.0;
+            }
+            let share = *payload * (*part / *whole);
+            *payload -= share;
+            share
+        }
+        fn merge(into: &mut f64, other: f64) {
+            *into += other;
+        }
+        fn apply(payload: &mut f64, _: &f64, cmd: &f64) {
+            *payload += *cmd;
+        }
+    }
+
+    #[test]
+    fn a_non_geometric_kind_connects_only_by_explicit_edges() {
+        let mut host: NetworkHost<Explicit> = NetworkHost::new();
+        let a = entity(0);
+        let b = entity(1);
+        let c = entity(2);
+        for e in [a, b, c] {
+            host.bind_node(e, 0, 0, ()).unwrap();
+        }
+        assert!(host.occupants.is_empty(), "no occupancy rows for a kind that never connects by cell");
+        host.commit();
+        assert_ne!(host.region_of(a), host.region_of(b), "same cell, no edge: separate regions");
+        host.connect_entities(a, b).unwrap();
+        host.commit();
+        assert_eq!(host.region_of(a), host.region_of(b), "an explicit edge joins them");
+        assert_ne!(host.region_of(a), host.region_of(c));
+        host.unbind_node(c);
+        host.commit();
+        assert!(host.region_of(c).is_none());
     }
 
     #[test]

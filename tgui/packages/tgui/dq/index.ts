@@ -7,9 +7,16 @@
  */
 
 export { ListRow, ListRows } from './ListRow';
+export { type GridRect, gridDropIndex, useLiveGrid } from './liveGrid';
+export {
+  DRAG_THRESHOLD,
+  liveClamp,
+  liveDropIndex,
+  liveSlide,
+  moveTo,
+  type OrderBox,
+} from './liveOrder';
 export { moveBefore } from './reorder';
-export { type Tab, Tabs, type TabsLayout } from './Tabs';
-export { CloseButton, TitleBar } from './TitleBar';
 export {
   FormattedBackdrop,
   FormattedText,
@@ -27,3 +34,5 @@ export {
   toggleLanguage,
   toggleMarker,
 } from './speech/shortcuts';
+export { DRAG_OUT_DISTANCE, type Tab, Tabs, type TabsLayout } from './Tabs';
+export { CloseButton, TitleBar } from './TitleBar';

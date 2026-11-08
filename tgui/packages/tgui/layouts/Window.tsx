@@ -163,8 +163,18 @@ export function Window(props: Props) {
         if (cancelled) {
           return;
         }
+        const under = underPointer(config.window?.float_at, geometry?.size);
+        if (under) {
+          // Pulled out of the dock: it opens under the pointer, as a popped-out chat does.
+          geometry = { ...geometry, pos: under };
+          logger.log('floated from the dock under the pointer', under);
+        }
         profileStartup('geometry_finished', config.interface?.name);
         await revealWindow(config.window?.generation, geometry);
+        if (under) {
+          // Remembered, so the next geometry recall (float_at is sent once) keeps it there.
+          storeWindowGeometry();
+        }
         logger.log('set to visible');
       };
 
@@ -186,6 +196,7 @@ export function Window(props: Props) {
     config.window?.key,
     config.window?.locked,
     config.window?.docked,
+    config.window?.float_at,
     fitted,
     height,
     isReadyToRender,
@@ -341,3 +352,19 @@ function WindowContent(props: ContentProps) {
 }
 
 Window.Content = WindowContent;
+
+/**
+ * The window place that puts a screen point ("x,y", physical px) on the
+ * middle of the window's titlebar, or null when there is no point.
+ */
+export function underPointer(
+  at: string | null | undefined,
+  size: [number, number] | undefined,
+): [number, number] | null {
+  const parts = typeof at === 'string' ? at.split(',').map(Number) : [];
+  if (parts.length !== 2 || !parts.every(Number.isFinite)) {
+    return null;
+  }
+  const width = size?.[0] ?? 0;
+  return [Math.round(parts[0] - width / 2), Math.round(parts[1] - 16)];
+}

@@ -2,3 +2,4 @@ author: "claude"
 delete-after: true
 changes:
   - server: "Faster boot: a spilled on_change drain no longer rebuilds its whole backlog on every drain point, and the stat drain sorts by rank in linear time."
+  - server: "Faster boot: pipe ports no longer search every other port when they bind, empty pipes make no throwaway gas mixtures, and deferred spritesheets build after boot."

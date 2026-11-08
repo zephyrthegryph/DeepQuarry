@@ -32,6 +32,8 @@ type TguiWindow = {
   docked?: BinaryIO;
   /** May dock (a pooled window that is not a modal prompt). */
   dockable?: BinaryIO;
+  /** Floated by a drag out of the dock: the screen point ("x,y", physical px) to open under, once. */
+  float_at?: string | null;
 };
 
 type User = {

@@ -124,3 +124,17 @@
 #define MOVE_SHAPE_MANY 2
 /// An associative owns_many: put under the call's key.
 #define MOVE_SHAPE_KEYED 3
+
+// ---- own_field_changed()'s memo (code/engine/refs/table.dm): which of its parts a static reader of the holder's type gives work ----
+/// stat_relation_changed(): a contribution of the type is carried by the var, or a stat hop of the type crosses it.
+#define OFW_STAT_REL (1<<0)
+/// stat_inputs_changed(): a stat of the type takes the var as an input.
+#define OFW_STAT_IN (1<<1)
+/// READERS(): a reaction, a lifecycle form or an on_change hook of the type follows the var.
+#define OFW_READ (1<<2)
+/// draw_hop_published(): a draw one container, turf or area hop away reads the var.
+#define OFW_HOP (1<<3)
+/// state_changed(holder, channel): the var is a declared field with a channel.
+#define OFW_CHANNEL (1<<4)
+/// Every part: the memo is not built yet, or own_field_memo_off is set.
+#define OFW_ALL (OFW_STAT_REL | OFW_STAT_IN | OFW_READ | OFW_HOP | OFW_CHANNEL)
