@@ -931,3 +931,46 @@ fn current_original_primary_prefix_reuses_loan_and_callee_reads_real_syntax() {
         assert!(called.get() > 0, "callee prefix must still borrow its real syntax");
     });
 }
+
+#[test]
+fn current_original_for_each_uses_pinned_iteration_type_and_matches_absolute_bytes() {
+    use dm_analysis::checker_effects::{ExecutionAdmission, OriginalBodyDiagnostic, OriginalDiagnosticPhase};
+    fn encode(rows: &[OriginalBodyDiagnostic]) -> Vec<u8> {
+        format!("{:?}", rows.iter().map(|row| (row.phase(), row.location(), row.registration_tag(), row.diagnostic()))
+            .collect::<Vec<_>>()).into_bytes()
+    }
+    let source = concat!(
+        "/datum/not_iterable\n",
+        "/proc/probe(datum/not_iterable/value, list/items)\n",
+        "    for(var/item in value)\n",
+        "        return 0\n",
+        "    for(var/item in items)\n",
+        "        return 1\n",
+        "    return 2\n",
+    );
+    let (mut host, request, _) = fixture(source);
+    let db = host.query_db().clone();
+    run(&mut host, &request);
+    current(&host, |snapshot| {
+        let owner = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+        let input = owner.input();
+        let canonical = db.original_current_body_bytes_for_test(input, 0, |rows| {
+            assert_eq!(rows.len(), 1);
+            let row = &rows[0];
+            assert_eq!(row.phase(), OriginalDiagnosticPhase::Body);
+            assert_eq!(row.registration_tag(), None);
+            let diagnostic = row.diagnostic();
+            let point = input.archive().source_note_point(diagnostic.span.start).unwrap();
+            assert_eq!((point.line, point.byte_column), (3, 5));
+            assert_eq!(diagnostic.family, "iteration_noniterable_type");
+            assert_eq!(diagnostic.message, "iterating over a /datum/not_iterable which cannot be iterated");
+            encode(rows)
+        }).unwrap();
+        let absolute = input.compute_body_checked_controlled(0, snapshot.tree.as_ref(),
+            &ExecutionAdmission::default(), &|| Ok(())).unwrap();
+        assert_eq!(canonical, absolute.with_original_diagnostics(input, encode).unwrap());
+        let parsed = db.db().stats(Kind(4)).computed;
+        assert_eq!(canonical, db.original_current_body_bytes_for_test(input, 0, encode).unwrap());
+        assert_eq!(db.db().stats(Kind(4)).computed, parsed);
+    });
+}

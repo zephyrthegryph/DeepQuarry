@@ -459,7 +459,8 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             root_prefix = None;
         }
         // SAME primary consumption; unproved families/children never grant availability.
-        if starts_keyword(header,"if") || starts_keyword(header,"while") || starts_keyword(header,"switch") {
+        if starts_keyword(header,"if") || starts_keyword(header,"while") || starts_keyword(header,"switch")
+            || starts_keyword(header,"for") {
             origins.original_compound_seen_statement=true;
         }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!original_simple_assignment_candidate(header)&&!local_statement&&!initial_setting){
             origins.original_compound_complete=false;
@@ -767,7 +768,12 @@ fn parse_one(
             body: control_body_from_inline(item, inline, diagnostics, origins),
         })
     } else if starts_keyword(header, "for") {
-        parse_for(item, diagnostics, origins).map(|control| StatementKind::For {
+        let boundary = control_inline(item, "for").is_none() && header.ends_with(')')
+            && original_indented_block_boundary(item, origins);
+        let mut original_each = false;
+        let control = parse_for(item, diagnostics, origins, &mut original_each);
+        origins.original_compound_complete &= boundary && original_each;
+        control.map(|control| StatementKind::For {
             control,
             body: control_body(item, "for", diagnostics, origins),
         })
@@ -1780,6 +1786,53 @@ mod original_decimal_switch_block_witness_tests {
             "    switch(argument))\n        if(1)\n            return 0\n",
         ] {
             let parsed = body(code);
+            assert!(parsed.original_grammar.is_none(), "{code}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod original_for_each_witness_tests {
+    use super::*;
+
+    fn body(code: &str) -> (String, ParsedBody) {
+        let source = format!("/proc/probe(items)\n{code}");
+        let parsed = crate::parse(&source);
+        let body = parse_body_items_with_source(&parsed.items[0].children, &source);
+        (source, body)
+    }
+
+    #[test]
+    fn original_for_each_proof_consumes_declared_binding_and_actual_iterable_occurrence() {
+        for (control, iterable_name) in [("var/datum/item in items", "items"), ("var/items in items", "items")] {
+            let (source, parsed) = body(&format!("    for({control})\n        return 0\n    return items\n"));
+            assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+            let StatementKind::For { control: ForControl::Each { iterable, .. }, .. } = &parsed.statements[0].kind
+                else { panic!("actual ForList body"); };
+            assert_eq!(&source[iterable.span.range()], iterable_name);
+            assert_eq!(iterable.span.start, source.find(" in ").unwrap() + " in ".len());
+            let grammar = parsed.original_grammar.expect("genuine complete Original ForList witness");
+            assert_eq!(grammar.scope_roots(), Some(2));
+        }
+    }
+
+    #[test]
+    fn original_for_each_proof_refuses_unissued_control_and_authored_separator() {
+        for code in [
+            "    for(var/item in items) return 0\n",
+            "    for(var/item in items) ;\n        return 0\n",
+            "    for(var/item in items)\n    return 0\n",
+            "    for(var/item in items)\n        continue\n",
+            "    for(item in items)\n        return 0\n",
+            "    for(var/item[] in items)\n        return 0\n",
+            "    for(var/item = 1 in items)\n        return 0\n",
+            "    for(var/key, value in items)\n        return 0\n",
+            "    for(var/item in 1 to 4)\n        return 0\n",
+            "    for(var/item = 1; item < 4; item++)\n        return 0\n",
+            "    for(var/item in choose(items))\n        return 0\n",
+            "    for(var/item in items.field)\n        return 0\n",
+        ] {
+            let (_, parsed) = body(code);
             assert!(parsed.original_grammar.is_none(), "{code}");
         }
     }

@@ -43,10 +43,32 @@ pub(super) fn split_case_alternatives_with_tokens(
     (parts, lexical)
 }
 
+// Exact lexical subset of the existing ForList arm. The selected split
+// tells us which token is the actual top-level separator.
+fn original_for_each_clause(clause: &str, lexical: &crate::SpannedLexed, separator: usize) -> bool {
+    use crate::TokenKind;
+    if !lexical.diagnostics.is_empty() { return false; }
+    let mut tokens = lexical.tokens.iter()
+        .filter(|token| !matches!(token.kind, TokenKind::Whitespace | TokenKind::Newline));
+    let identifier = |token: &crate::SpanToken| token.kind == TokenKind::Ident
+        && token.text(clause).bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_');
+    if !tokens.next().is_some_and(|token| token.text(clause) == "var") { return false; }
+    loop {
+        if !tokens.next().is_some_and(|token| token.text(clause) == "/")
+            || !tokens.next().is_some_and(identifier) { return false; }
+        let Some(next) = tokens.clone().next() else { return false; };
+        if next.text(clause) != "/" { break; }
+    }
+    tokens.next().is_some_and(|token| token.span.start == separator && token.text(clause) == "in")
+        && tokens.next().is_some_and(identifier)
+        && tokens.next().is_none()
+}
+
 pub(super) fn parse_for(
     item: &Item,
     diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
+    original_each: &mut bool,
 ) -> Option<ForControl> {
     let (clause, _, lexical, clause_base) = control_clause_origin_tokens(item, "for", diagnostics)?;
     let base = item.header_span.start + item.header.find(clause).unwrap_or(0);
@@ -136,16 +158,17 @@ pub(super) fn parse_for(
                 diagnostics,
             );
         }
-        return parse_expr(
-            iterable,
-            base + clause.find(iterable).unwrap_or(at + 4),
-            diagnostics,
-        )
-        .map(|iterable| ForControl::Each {
-            source_binding:origins.for_list_binding(clause,&lexical,clause_base,binding),
-            binding: binding.into(),
-            iterable,
-        });
+        let offset = clause_base + (iterable.as_ptr() as usize - clause.as_ptr() as usize);
+        let mut expression_complete = false;
+        let iterable = parse_expr_observed(iterable, offset, diagnostics, &mut |parsed| {
+            expression_complete = parsed.original_simple_expression.is_some_and(|value| {
+                value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+            });
+        })?;
+        let source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
+        *original_each = expression_complete && source_binding.is_some()
+            && original_for_each_clause(clause, &lexical, at);
+        return Some(ForControl::Each { source_binding, binding: binding.into(), iterable });
     }
     if let Some((begin, remainder)) = split_top_level_keyword(clause, "to") {
         if crate::local_variable_syntax::top_level_local_assignment(begin).is_none()
