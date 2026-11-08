@@ -85,6 +85,11 @@
 		container_state.act_gen++
 		if(container_state.observed?[OP_KEEP_HAND])
 			publish_change(container, OP_KEEP_HAND)
+	// What a container holds inside its contents changed what it carries too (an implant put into an organ of a body): every holder up the
+	// chain, to its turf, has changed for a menu or a wait cached on it.
+	for(var/atom/up = container.loc; up && !isturf(up); up = up.loc)
+		if(up.rx)
+			up.rx.act_gen++
 
 /// A keep of a waiting op on `D` state_changed (the actor swapped hands): published when something watches it.
 /proc/op_keep_poke(datum/D, key)

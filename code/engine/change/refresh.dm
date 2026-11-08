@@ -266,7 +266,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 	if(E.rel_watchers && REFRESH_IDLE(E))
 		rel_notify_watchers(E)
 	var/mask = DEP_ALL
-	if(spare_draw && isatom(E) && !ismob(E))
+	if(spare_draw && isatom(E))
 		mask = DEP_ALL & ~DEP_DRAW
 		GLOB.refresh_dispatched_draws_spared++
 	if(!refresh_wanted(E))

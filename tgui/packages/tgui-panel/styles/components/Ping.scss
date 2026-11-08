@@ -45,8 +45,18 @@
   padding-left: calc(var(--space-m) + 1em);
   white-space: nowrap;
   text-align: left;
+  justify-content: center;
   color: #fff;
   background-color: hsl(0, 60%, 32%);
+
+  // The library's buttons (tgui-core Button), each centred on the banner's line.
+  .Button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    line-height: 1.4;
+  }
 
   .Ping__indicator {
     background-color: hsl(0, 80%, 60%);
