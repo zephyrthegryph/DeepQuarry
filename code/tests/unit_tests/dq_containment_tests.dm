@@ -86,7 +86,7 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 			var/turf/east = get_step(T, EAST)
 			if(T.density || !istype(east, /turf/simulated/floor) || east.density)
 				continue
-			if(!T.air || T.return_air().return_pressure() < ONE_ATMOSPHERE * 0.8)
+			if(!T.turf_air() || T.return_air().return_pressure() < ONE_ATMOSPHERE * 0.8)
 				continue // a body set down here breathes: an airless floor starves its organs
 			if(pass == 1 && unit_test_regulated_room(T))
 				continue

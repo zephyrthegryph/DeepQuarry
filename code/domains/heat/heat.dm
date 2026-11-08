@@ -217,7 +217,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	return FALSE
 
 /turf/open/heat_has_air()
-	return !blocks_air && !isnull(air)
+	return !blocks_air // an open turf holds air (its cell in Rust), made into a datum only when read
 
 /// Pushes this turf's thermal values into the heat field. A new cell starts at
 /// the turf's seed (initial_temperature); an existing one keeps its temperature.

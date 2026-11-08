@@ -257,6 +257,12 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	var/list/air_phases = air_init_phase_ms()
 	for(var/phase in air_phases)
 		metric("air_init_ms_[phase]", air_phases[phase], "ms")
+	// Turf air datums alive after boot: a turf makes its datum on its first read (turf_air()), so this counts what boot read.
+	var/air_datums = 0
+	for(var/turf/open/T in world)
+		if(T._air)
+			air_datums++
+	count_metric("turf_air_datums", air_datums, "datums")
 	benchmark_rust_mark("booted")
 	detail("rust_memory_marks", GLOB.benchmark_rust_marks)
 	detail("early_notes", benchmark_early_notes)
