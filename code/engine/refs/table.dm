@@ -425,6 +425,22 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	if(!bits && !derived && !hop_key && !dynamic && !stat_global)
 		GLOB.own_field_memo_spared++
 		return
+	// A batch of relation writes is open (rel_write_batch_begin()): the write is noted once per (holder, var) and published when the batch commits.
+	if(GLOB.rel_write_batch_depth)
+		var/handle = handle_of(holder) // by handle: the batch names its holders, it does not hold them
+		var/list/vars_of = GLOB.rel_write_batch[handle]
+		if(!vars_of)
+			vars_of = list()
+			GLOB.rel_write_batch[handle] = vars_of
+		vars_of[var_name] = TRUE
+		GLOB.rel_writes_batched++
+		return
+	// The atom whose Initialize() chain is running has not had its stats initialized yet: stat_holder_init() computes every contribution and hop of
+	// its type from the final relation values, so the stat layer's per-write work for it would be thrown away (E3, silent construction).
+	if(holder == GLOB.atom_initializing && (bits & (OFW_STAT_REL | OFW_STAT_IN)) && !holder.rx?.stats?.inited)
+		bits &= ~(OFW_STAT_REL | OFW_STAT_IN)
+		stat_global = FALSE
+		GLOB.rel_writes_construction_spared++
 	GLOB.own_field_full_paths++
 	BOOT_PHASE_COUNT("ofc full path: [var_name]")
 	BOOT_PHASE_BEGIN(bp_all)
@@ -657,3 +673,34 @@ GLOBAL_VAR_INIT(own_field_full_paths, 0)
 		else
 			OWN_REPORT("[D.type].[var_name]: starts_after = '[first]', which has no starting occupant")
 	ordered[var_name] = starts[var_name]
+
+/// The open batch of relation writes: holder handle -> var name -> TRUE, or null when none is open (rel_write_batch_begin()).
+GLOBAL_LIST(rel_write_batch)
+/// The open batch's nesting depth.
+GLOBAL_VAR_INIT(rel_write_batch_depth, 0)
+/// Writes a batch coalesced, and writes to an atom under construction whose stat work was spared (the boot bench reads both).
+GLOBAL_VAR_INIT(rel_writes_batched, 0)
+GLOBAL_VAR_INIT(rel_writes_construction_spared, 0)
+
+/// Opens a batch of relation writes: until the matching rel_write_batch_commit(), what each write would publish (own_field_changed()) is noted once per
+/// (holder, var) instead, and published once at the commit. For a map-load step that links many things to the same holders (pipe nodes to a pipeline,
+/// ports to a machine): the views and the reverse index are written at once as always, only their publishing waits. Nests; the outermost commit publishes.
+/proc/rel_write_batch_begin()
+	if(!GLOB.rel_write_batch_depth++)
+		GLOB.rel_write_batch = alist() // an alist: a handle is a number, which would index a plain list
+
+/// Closes the batch rel_write_batch_begin() opened: the outermost one publishes every noted (holder, var) once, in the order first written.
+/proc/rel_write_batch_commit()
+	if(GLOB.rel_write_batch_depth <= 0)
+		stack_trace("rel_write_batch_commit() without rel_write_batch_begin()")
+		return
+	if(--GLOB.rel_write_batch_depth)
+		return
+	var/list/batch = GLOB.rel_write_batch
+	GLOB.rel_write_batch = null
+	for(var/handle in batch)
+		var/datum/holder = handle_get(handle)
+		if(QDELETED(holder))
+			continue
+		for(var/var_name in batch[handle])
+			own_field_changed(holder, var_name)

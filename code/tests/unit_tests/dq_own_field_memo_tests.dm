@@ -48,3 +48,27 @@
 			break
 	TEST_ASSERT(pairs > 100, "relation vars checked ([pairs])")
 	log_world("dq_own_field_memo_parity: [length(seen)] types, [pairs] relation vars, [skips] the fast path skips, [parts_skipped] parts not entered; [GLOB.own_field_memo_spared] writes spared so far")
+
+/// A batch of relation writes publishes each (holder, var) once, at its commit, and nothing before it; outside a batch every write publishes at once.
+/datum/unit_test/dq_rel_write_batch_publishes_once_at_commit
+
+/datum/unit_test/dq_rel_write_batch_publishes_once_at_commit/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/A = allocate(/obj/item/tool/wrench, T)
+	var/before = GLOB.own_field_full_paths
+	var/batched = GLOB.rel_writes_batched
+	set_global(nameof(GLOB.own_field_memo_off), TRUE) // every write enters the full path, so the count shows each publish
+	rel_write_batch_begin()
+	rel_write_batch_begin() // nested: only the outermost commit publishes
+	own_field_changed(A, "name")
+	own_field_changed(A, "name")
+	own_field_changed(A, "desc")
+	rel_write_batch_commit()
+	TEST_ASSERT_EQUAL(GLOB.own_field_full_paths, before, "nothing is published while the batch is open")
+	TEST_ASSERT_EQUAL(GLOB.rel_writes_batched - batched, 3, "every write was noted")
+	rel_write_batch_commit()
+	TEST_ASSERT_EQUAL(GLOB.own_field_full_paths - before, 2, "the commit publishes each (holder, var) once")
+	TEST_ASSERT_NULL(GLOB.rel_write_batch, "and closes the batch")
+	own_field_changed(A, "name")
+	TEST_ASSERT_EQUAL(GLOB.own_field_full_paths - before, 3, "outside a batch a write publishes at once")
+	set_global(nameof(GLOB.own_field_memo_off), FALSE)
