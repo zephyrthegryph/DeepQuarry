@@ -23,6 +23,9 @@ GLOBAL_VAR_INIT(client_glow_holder_made, 0)
 GLOBAL_VAR_INIT(client_glow_holder_updated, 0)
 GLOBAL_VAR_INIT(client_glow_holder_dropped, 0)
 GLOBAL_VAR_INIT(client_glow_holder_recomputes, 0)
+/// TRUE: a held glow stands on its light's own turf. FALSE: on the viewer's chunk anchor, offset to the light (Cycle Client Glow Anchor).
+/// Every image shares that one anchor, yet playtesting saw single lights lose their glow by viewer position, so a far offset from it is suspect.
+GLOBAL_VAR_INIT(client_glow_on_light_turf, TRUE)
 
 /// One viewer's held glows. A client owns one (client.glow_holder); tests and benchmarks make one with no client.
 /datum/client_glow_holder
@@ -212,8 +215,6 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		var/image/hide_image = image(null) // overrides the real glow for this viewer: never drawn twice
 		hide_image.override = TRUE
 		image_anchor(hide_image, G)
-		image_anchor(glow_image, A)
-		image_anchor(mask_image, A)
 		entry = list(glow_image, mask_image, hide_image)
 		LAZYSET(held, h, entry)
 		client_images_add(client, entry)
@@ -222,8 +223,12 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		glow_image = entry[1]
 		mask_image = entry[2]
 		GLOB.client_glow_holder_updated++
-	var/px = (S.x - A.x) * WORLD_ICON_SIZE + G.pixel_x
-	var/py = (S.y - A.y) * WORLD_ICON_SIZE + G.pixel_y
+	var/atom/stand_on = GLOB.client_glow_on_light_turf ? S : A
+	if(glow_image.loc != stand_on)
+		image_anchor(glow_image, stand_on)
+		image_anchor(mask_image, stand_on)
+	var/px = (S.x - stand_on.x) * WORLD_ICON_SIZE + G.pixel_x
+	var/py = (S.y - stand_on.y) * WORLD_ICON_SIZE + G.pixel_y
 	glow_image.icon = G.icon
 	glow_image.plane = G.plane
 	mask_image.plane = G.plane
@@ -306,3 +311,10 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 /proc/client_glow_test_eye(turf/L)
 	var/x = L.x > 20 ? L.x - 10 : L.x + 10
 	return locate(x, L.y, L.z)
+
+ADMIN_VERB(cycle_client_glow_anchor, R_DEBUG|R_SERVER, "Cycle Client Glow Anchor", "Stand held client glows on their own light's turf, or on the viewer's chunk anchor, live.", ADMIN_CATEGORY_DEBUG_GAME)
+	GLOB.client_glow_on_light_turf = !GLOB.client_glow_on_light_turf
+	client_glow_holders_switched(TRUE)
+	var/report = "client glow anchor: held glows stand on [GLOB.client_glow_on_light_turf ? "their light's turf" : "the viewer's chunk anchor"]"
+	log_world(report)
+	message_admins("[key_name_admin(user)]: [report]")

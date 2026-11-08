@@ -183,6 +183,7 @@
 
 /// A lit fixture with client lighting on, and a holder (no client) seeing from just off the light's screen.
 /datum/unit_test/proc/client_glow_holder_setup(list/out)
+	set_global(nameof(GLOB.client_glow_on_light_turf), FALSE) // these tests pin the chunk anchor; dq_client_glow_holder_light_turf covers the other
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
 	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes)))
 		set_global(counter, GLOB.vars[counter]) // teardown restores the counters
@@ -246,6 +247,29 @@
 	TEST_ASSERT_EQUAL(glow_image.loc, H.anchor, "on the moved anchor")
 	TEST_ASSERT(LT in H.anchor.locs, "the anchor followed the eye's chunk")
 	TEST_ASSERT_EQUAL(H.anchor.x + (glow_image.pixel_x - S.glow.pixel_x) / WORLD_ICON_SIZE, LT.x, "the copy's offset still puts it on the light")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// Standing on the light's own turf: a held glow and its mask sit there with only the glow's own centring offset.
+/datum/unit_test/dq_client_glow_holder_light_turf
+
+/datum/unit_test/dq_client_glow_holder_light_turf/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	var/turf/LT = get_turf(F)
+	set_global(nameof(GLOB.client_glow_on_light_turf), TRUE)
+	H.consider(S)
+	var/list/entry = H.entry_of(S)
+	TEST_ASSERT_NOTNULL(entry, "the viewer holds the light")
+	var/image/glow_image = entry[1]
+	var/image/mask_image = entry[2]
+	TEST_ASSERT_EQUAL(glow_image.loc, LT, "the glow image stands on its light's turf")
+	TEST_ASSERT_EQUAL(mask_image.loc, LT, "the mask image stands with it")
+	TEST_ASSERT_EQUAL(glow_image.pixel_x, S.glow.pixel_x, "only the glow's own offset remains")
 	spent(H)
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
