@@ -1,7 +1,7 @@
 //! Existing adapter policy with a typed, operation-local original-RHS demand.
 //! This does not issue namespace/type semantics or own a parallel declaration model.
 use super::*;
-use crate::procedure::adapter_rows::AdapterRows;
+use crate::procedure::{adapter_rows::AdapterRows, header_input::{HeaderSettingsPayload, HeaderSettingsTail}};
 mod sealed{pub trait Sealed{}}
 pub(super) enum WalkFailure<E>{Source(String),Operational(E)}
 impl<E> From<String> for WalkFailure<E>{fn from(message:String)->Self{Self::Source(message)}}
@@ -33,6 +33,8 @@ pub(super) trait AdapterDemand:sealed::Sealed{
     )->Result<Arc<dm_ir::ProcedureMetadata>,Self::Operational>;
     fn reserve_header_row(&self, rows:&mut AdapterRows<crate::procedure::header_input::HeaderAllocationRow>)
         -> Result<bool, Self::Operational>;
+    fn header_settings_tail(&self, payload: HeaderSettingsPayload)
+        -> Result<HeaderSettingsTail, Self::Operational>;
     fn member_metadata(&self, metadata:MemberMetadata,
         prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
     ) -> Result<Arc<MemberMetadata>,Self::Operational>;
@@ -82,6 +84,9 @@ impl AdapterDemand for Compatibility{
     }
     fn reserve_header_row(&self, rows:&mut AdapterRows<crate::procedure::header_input::HeaderAllocationRow>)->Result<bool,Self::Operational>{
         Ok(rows.reserve_compatibility().is_ok())
+    }
+    fn header_settings_tail(&self, payload: HeaderSettingsPayload) -> Result<HeaderSettingsTail, Self::Operational> {
+        Ok(HeaderSettingsTail::compatibility(payload))
     }
     fn member_metadata(&self, metadata:MemberMetadata,_:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<MemberMetadata>,Self::Operational>{
         Ok(Arc::new(metadata))
@@ -136,6 +141,9 @@ impl AdapterDemand for Checked<'_,'_>{
     fn reserve_header_row(&self, rows:&mut AdapterRows<crate::procedure::header_input::HeaderAllocationRow>)->Result<bool,Self::Operational>{
         rows.reserve_checked(self.admission)?;
         Ok(true)
+    }
+    fn header_settings_tail(&self, payload: HeaderSettingsPayload) -> Result<HeaderSettingsTail, Self::Operational> {
+        HeaderSettingsTail::checked(payload, self.admission)
     }
     fn member_metadata(&self, metadata:MemberMetadata,prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<MemberMetadata>,Self::Operational>{
         match prepared {

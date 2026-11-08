@@ -1030,10 +1030,26 @@ impl FundedCanonicalHeader {
     }
 }
 
+// The actual encoder output, with no alternate format or dynamic allocation.
+struct TrivialCanonicalSuffix {
+    bytes: [u8; 96],
+    len: usize,
+}
+impl TrivialCanonicalSuffix {
+    fn capture(encoded: &[u8]) -> Option<Self> {
+        let mut bytes = [0; 96];
+        bytes.get_mut(..encoded.len())?.copy_from_slice(encoded);
+        Some(Self { bytes, len: encoded.len() })
+    }
+
+    fn bytes(&self) -> &[u8] { &self.bytes[..self.len] }
+}
+
 fn append_procedure_canonical(
     mut header: FundedCanonicalHeader,
     procedure: &dm_ir::ProcedureMetadata,
     held: &mut Option<dm_syntax::SettingRootLease>,
+    cache: Option<&mut Option<TrivialCanonicalSuffix>>,
     a: &SettingAdmission<'_>,
 ) -> std::io::Result<Arc<[u8]>> {
     use std::io::{Error, ErrorKind};
@@ -1043,14 +1059,19 @@ fn append_procedure_canonical(
     }
     let reserve = |bytes| a.reserve(bytes)
         .map_err(|proxy| a.take_operational_error().unwrap_or(proxy));
-    let mut work = ProcedureCanonicalWork { admission: a, scratch: reserve(0)? };
-    let encoded = procedure.canonical_bytes_using(&mut work)?;
-    let len = header.bytes.len().checked_add(encoded.len()).ok_or(ErrorKind::OutOfMemory)?;
-    header.write(&encoded, a)?;
-    drop(encoded);
-    drop(work);
+    let mut pending_suffix = None;
+    if let Some(encoded) = cache.as_ref().and_then(|cache|cache.as_ref()) {
+        header.write(encoded.bytes(), a)?;
+    } else {
+        let mut work = ProcedureCanonicalWork { admission: a, scratch: reserve(0)? };
+        let encoded = procedure.canonical_bytes_using(&mut work)?;
+        header.write(&encoded, a)?;
+        if cache.is_some() { pending_suffix = TrivialCanonicalSuffix::capture(&encoded); }
+        drop(encoded);
+        drop(work);
+    }
 
-    let mut retained = reserve(arc_payload::<u8>(len).ok_or(ErrorKind::OutOfMemory)?)?;
+    let mut retained = reserve(arc_payload::<u8>(header.bytes.len()).ok_or(ErrorKind::OutOfMemory)?)?;
     let result: Arc<[u8]> = std::mem::take(&mut header.bytes).into();
     drop(header);
     if let Some(owner) = held {
@@ -1058,6 +1079,7 @@ fn append_procedure_canonical(
     } else {
         *held = Some(retained);
     }
+    if let (Some(cache), Some(suffix)) = (cache, pending_suffix) { *cache = Some(suffix); }
     Ok(result)
 }
 
@@ -1100,10 +1122,13 @@ impl OriginalSignatureSpellings {
 
 /// Unique once-consumed metadata results, bound to the exact native header owner.
 /// Coordinate/source equality cannot substitute another header owner.
-pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],adapter_storage:Option<dm_syntax::SettingRootLease>}
+pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],trivial_suffixes:[Option<TrivialCanonicalSuffix>;2],adapter_storage:Option<dm_syntax::SettingRootLease>}
 impl PreparedOriginalSignatures{
  pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<Arc<[u8]>>{
-  append_procedure_canonical(header,procedure,&mut self.adapter_storage,a)
+  let slot=usize::from(procedure.signature.variadic);
+  let cache=self.trivial_metadata[slot].as_deref().is_some_and(|owner|std::ptr::eq(owner,procedure))
+   .then(||&mut self.trivial_suffixes[slot]);
+  append_procedure_canonical(header,procedure,&mut self.adapter_storage,cache,a)
  }
  pub(crate) fn admit_adapter_storage(&mut self,bytes:usize,a:&SettingAdmission<'_>)->std::io::Result<()>{
   if let Some(lease)=&mut self.adapter_storage{
@@ -1201,6 +1226,7 @@ impl PreparedOriginalSignatures{
  pub(crate) fn release_consumed_rows(&mut self) {
   debug_assert!(self.require_consumed().is_ok());
   self.trivial_metadata=[None,None];
+  self.trivial_suffixes=[None,None];
   self.empty_settings=None;
   drop(std::mem::replace(&mut self.rows,CompletedSignatureRows::new()));
  }
@@ -1894,7 +1920,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
     if changed { Some(Arc::new(early.credit)) } else { None }
  });
  let prepared=PreparedOriginalSignatures{headers:Arc::clone(&headers),rows:self.rows,spellings,
-   failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,empty_settings:None,trivial_metadata:[None,None],adapter_storage:None};
+   failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,empty_settings:None,trivial_metadata:[None,None],trivial_suffixes:[None,None],adapter_storage:None};
  Ok(OriginalSignatureInput{items,diagnostics,comma_fatal,unavailable,observer_stop,signature_failure:self.failure,signature_unsupported:self.unsupported,source,headers,symbols:self.symbols,prepared,primary_lease})
  }
 }
@@ -1998,6 +2024,14 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   let settings_bytes=arc_payload::<dm_ir::ProcedureSettingNode>(0).unwrap();
   assert_eq!(actual.prepared.adapter_storage.as_ref().unwrap().bytes(),2*metadata_bytes+settings_bytes);
   assert!(counter.load(Ordering::Acquire)<=root+2*metadata_bytes+settings_bytes);
+  for (text, owner) in [("/proc/first()", &plain), ("/proc/second(...)", &variadic), ("/proc/third()", &plain_again)] {
+   let header=FundedCanonicalHeader::encode(text,&admission).unwrap().unwrap();
+   let canonical=actual.prepared.append_procedure_canonical(header,owner,&admission).unwrap();
+   let mut expected=crate::adapter::canonical(text).unwrap().to_vec();
+   expected.extend(owner.canonical_bytes());
+   assert_eq!(&*canonical,expected.as_slice());
+  }
+  assert!(actual.prepared.trivial_suffixes.iter().all(Option::is_some));
   drop((plain,variadic,plain_again,actual));
   assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
@@ -2390,7 +2424,7 @@ mod procedure_canonical_allocation_tests {
         let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         let mut held = None;
         let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
-        let first = append_procedure_canonical(header, &proc, &mut held, &a).unwrap();
+        let first = append_procedure_canonical(header, &proc, &mut held, None, &a).unwrap();
         assert_eq!(first.as_ref(), expected.as_slice());
         let retained = held.as_ref().unwrap().bytes();
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
@@ -2407,7 +2441,7 @@ mod procedure_canonical_allocation_tests {
         };
         let failed = SettingAdmission::new(&used, 32 << 20, &error);
         let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
-        assert_eq!(append_procedure_canonical(header, &proc, &mut held, &failed)
+        assert_eq!(append_procedure_canonical(header, &proc, &mut held, None, &failed)
             .unwrap_err().raw_os_error(), Some(1450));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
         assert_eq!(held.as_ref().unwrap().bytes(), retained);
@@ -2417,7 +2451,7 @@ mod procedure_canonical_allocation_tests {
             std::io::ErrorKind::OutOfMemory);
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
         let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
-        let second = append_procedure_canonical(header, &proc, &mut held, &a).unwrap();
+        let second = append_procedure_canonical(header, &proc, &mut held, None, &a).unwrap();
         assert_eq!(second, first);
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained * 2));
         drop((first, second, held));

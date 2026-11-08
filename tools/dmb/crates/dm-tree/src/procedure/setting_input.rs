@@ -283,21 +283,12 @@ impl OriginalProcedureHeaders {
     ) -> Result<(), E> {
         let mut settings = SettingsRoster::default();
         for row in rows {
-            let owner = row
-                .settings_owner
-                .as_ref()
-                .ok_or("original proc metadata owner is missing")?;
-            if owner.settings.is_empty() && owner.signature.return_annotation.is_none() {
-                if !row.settings_footprints.is_empty() {
-                    return Err("empty original settings have footprints".into());
-                }
-                continue;
-            }
+            let Some(mut tail) = row.settings.take() else { continue };
             push_row(
                 &mut settings,
-                relative(row.body, offset)?,
-                Arc::clone(owner),
-                std::mem::take(&mut row.settings_footprints),
+                relative(tail.payload.body, offset)?,
+                Arc::clone(&tail.payload.owner),
+                std::mem::take(&mut tail.payload.footprints),
             )?;
         }
         self.finish_settings(settings).map_err(Into::into)
@@ -733,10 +724,25 @@ mod tests {
         assert_eq!(roster.credit.as_ref().unwrap().bytes(), bytes);
         let row = &roster[0];
         let other = OriginalProcedureHeaders::reissue(input.source.clone(), &ast.items, 0).unwrap();
+        let payload = super::super::HeaderSettingsPayload {
+            body: ast.items[0].span, owner: Arc::clone(&row.owner),
+            footprints: AdapterRows::default(),
+        };
+        let before_tail = used.load(Ordering::Acquire);
+        let tail = super::super::HeaderSettingsTail::checked(payload, &a).unwrap();
+        assert_eq!(used.load(Ordering::Acquire) - before_tail,
+            std::mem::size_of::<super::super::HeaderSettingsPayload>());
+        assert!(Arc::ptr_eq(&tail.payload.owner, &row.owner));
+        drop(tail);
+        assert_eq!(used.load(Ordering::Acquire), before_tail);
         let mut denied = [HeaderAllocationRow {
             header: ast.items[0].header_span, argument_offset: 0, declarations: Vec::new(),
-            body: ast.items[0].span, settings_owner: Some(row.owner.clone()),
-            settings_footprints: AdapterRows::compatibility(row.footprints.to_vec()),
+            settings: Some(super::super::HeaderSettingsTail::compatibility(
+                super::super::HeaderSettingsPayload {
+                    body: ast.items[0].span, owner: row.owner.clone(),
+                    footprints: AdapterRows::compatibility(row.footprints.to_vec()),
+                },
+            )),
         }];
         let denied_used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let low = SettingAdmission::new(&denied_used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (1), &|| Ok(()));

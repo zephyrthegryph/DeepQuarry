@@ -1074,9 +1074,32 @@ pub(crate) struct HeaderAllocationRow {
     pub(crate) header: Span,
     pub(crate) argument_offset: usize,
     pub(crate) declarations: Vec<super::HeaderTypeDeclaration>,
+    pub(crate) settings: Option<HeaderSettingsTail>,
+}
+
+/// Only a real settings or return-expression row requires a body binding.
+pub(crate) struct HeaderSettingsTail {
+    pub(crate) payload: Box<HeaderSettingsPayload>,
+    // The physical Box and all owned children drop before its reservation.
+    _storage: Option<dm_syntax::SettingRootLease>,
+}
+
+pub(crate) struct HeaderSettingsPayload {
     pub(crate) body: Span,
-    pub(crate) settings_owner: Option<Arc<dm_ir::ProcedureMetadata>>,
-    pub(crate) settings_footprints: AdapterRows<SettingFootprint>,
+    pub(crate) owner: Arc<dm_ir::ProcedureMetadata>,
+    pub(crate) footprints: AdapterRows<SettingFootprint>,
+}
+
+impl HeaderSettingsTail {
+    pub(crate) fn compatibility(payload: HeaderSettingsPayload) -> Self {
+        Self { payload: Box::new(payload), _storage: None }
+    }
+
+    pub(crate) fn checked(payload: HeaderSettingsPayload, a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<Self> {
+        let storage = a.reserve(std::mem::size_of::<HeaderSettingsPayload>())
+            .map_err(|proxy| a.take_operational_error().unwrap_or(proxy))?;
+        Ok(Self { payload: Box::new(payload), _storage: Some(storage) })
+    }
 }
 impl<'a> HeaderAllocationReceipt<'a> {
     pub(crate) fn from_rows(

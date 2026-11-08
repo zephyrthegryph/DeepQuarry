@@ -374,7 +374,7 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
         let header = item.header.trim();
         let mut header_declarations = Vec::new();
         let mut settings_footprints = crate::procedure::adapter_rows::AdapterRows::default();
-        let mut original_settings_owner = None;
+        let mut original_settings_payload = None;
         let mut header_argument_offset = None;
         let mut source_argument_span = None;
         let mut original_parameter_fatal = None;
@@ -648,10 +648,24 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     let procedure = Some(context.demand.procedure_metadata(
                         parsed_signature.signature, typed_settings, context.prepared_signatures.as_deref_mut(),
                     ).map_err(WalkFailure::Operational)?);
-                    original_settings_owner = procedure.clone();
                     let semantic_header = context.demand.procedure_canonical(
                         lexical_header, procedure.as_ref().unwrap(), context.prepared_signatures.as_deref_mut(),
                     ).map_err(WalkFailure::Operational)?;
+
+                    if context.headers.is_some() {
+                        let owner = procedure.as_ref().ok_or("original proc metadata owner is missing")?;
+                        if owner.settings.is_empty() && owner.signature.return_annotation.is_none() {
+                            if !settings_footprints.is_empty() {
+                                return Err("empty original settings have footprints".into());
+                            }
+                        } else {
+                            original_settings_payload = Some(crate::procedure::header_input::HeaderSettingsPayload {
+                                body: item.raw.span(),
+                                owner: Arc::clone(owner),
+                                footprints: std::mem::take(&mut settings_footprints),
+                            });
+                        }
+                    }
 
                     let metadata = MemberMetadata {
                         inherited_opaque: None,
@@ -757,15 +771,15 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         });
                         continue;
                     }
+                    let settings = original_settings_payload
+                        .map(|payload|context.demand.header_settings_tail(payload)).transpose()?;
                     context
                         .header_rows
                         .push_reserved(crate::procedure::header_input::HeaderAllocationRow {
                             header: item.raw.header_span(),
                             argument_offset: header_argument_offset.expect("issued signature"),
                             declarations: header_declarations,
-                            body: item.raw.span(),
-                            settings_owner: original_settings_owner,
-                            settings_footprints,
+                            settings,
                         });
                 }
                 context.result.skeletons.push(skeleton);
