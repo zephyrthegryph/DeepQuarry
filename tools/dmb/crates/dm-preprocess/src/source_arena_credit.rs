@@ -82,18 +82,31 @@ type AcquisitionControls = (SourceArenaControlCredit, SourceArenaControlCredit);
 
 /// One operation-local loan from the actual admitted read. Only the read
 /// driver constructs it. Providers can request storage, never substitute bytes.
+#[doc(hidden)]
+pub type OriginalReadGroupSlot = std::sync::Mutex<Option<SourceArenaControlCredit>>;
+
 pub struct OriginalReadTextFunding<'a> {
-    split: &'a dyn Fn(usize) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>,
+    group: Option<&'a OriginalReadGroupSlot>,
+    split: &'a dyn Fn(usize, Option<&OriginalReadGroupSlot>) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>,
     exceptional: &'a dyn Fn(usize, usize) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>,
-    acquisition: &'a dyn Fn([usize; 2]) -> io::Result<Option<AcquisitionControls>>,
-    receipt: &'a dyn Fn(&(dyn Any + Send + Sync)) -> io::Result<Option<SourceArenaControlCredit>>,
+    acquisition: &'a dyn Fn([usize; 2], Option<&OriginalReadGroupSlot>) -> io::Result<Option<AcquisitionControls>>,
+    receipt: &'a dyn Fn(&(dyn Any + Send + Sync), Option<&OriginalReadGroupSlot>) -> io::Result<Option<SourceArenaControlCredit>>,
 }
 
 impl OriginalReadTextFunding<'_> {
+    /// Select resource sharing within the current recorder only.
+    #[doc(hidden)]
+    pub fn for_recorder<'a>(&'a self, group: &'a OriginalReadGroupSlot) -> OriginalReadTextFunding<'a> {
+        OriginalReadTextFunding {
+            group: Some(group), split: self.split, exceptional: self.exceptional,
+            acquisition: self.acquisition, receipt: self.receipt,
+        }
+    }
+
     pub(crate) fn split(&self, capacity: usize)
         -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>>
     {
-        (self.split)(capacity)
+        (self.split)(capacity, self.group)
     }
     #[doc(hidden)]
     pub fn split_exceptional_bytes(&self, capacity: usize, control: usize)
@@ -103,10 +116,10 @@ impl OriginalReadTextFunding<'_> {
     pub(crate) fn split_acquisition_controls(&self, sizes: [usize; 2])
         -> io::Result<Option<AcquisitionControls>>
     {
-        (self.acquisition)(sizes)
+        (self.acquisition)(sizes, self.group)
     }
     pub(crate) fn split_receipt(&self, receipt: &(dyn Any + Send + Sync)) -> io::Result<Option<SourceArenaControlCredit>> {
-        (self.receipt)(receipt)
+        (self.receipt)(receipt, self.group)
     }
 
 }
@@ -129,7 +142,7 @@ pub trait SourceArenaWork:Send+Sync{
  /// Partition an actual read grant into fresh String payload and backing credits.
  /// Providers without an owned transfer retain their existing allocation path.
  fn split_original_text(
-    &self, _donor: &mut SourceArenaCredit, _capacity: usize,
+    &self, _donor: &mut SourceArenaCredit, _capacity: usize, _group: Option<&OriginalReadGroupSlot>,
  ) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
     Ok(None)
  }
@@ -143,14 +156,14 @@ pub trait SourceArenaWork:Send+Sync{
 
  /// Partition the exact opened-read constructor's two fixed object layouts.
  fn split_original_acquisition_controls(
-     &self, _donor: &mut SourceArenaCredit, _sizes: [usize; 2],
+     &self, _donor: &mut SourceArenaCredit, _sizes: [usize; 2], _group: Option<&OriginalReadGroupSlot>,
  ) -> io::Result<Option<(SourceArenaControlCredit, SourceArenaControlCredit)>> {
      Ok(None)
  }
 
  /// Transfer the pregrant for an actual exact opened-read receipt.
  fn split_original_receipt(
-     &self, _donor: &mut SourceArenaCredit, _receipt: &(dyn Any + Send + Sync),
+     &self, _donor: &mut SourceArenaCredit, _receipt: &(dyn Any + Send + Sync), _group: Option<&OriginalReadGroupSlot>,
  ) -> io::Result<Option<SourceArenaControlCredit>> {
      Ok(None)
  }
@@ -186,7 +199,7 @@ impl<'a>OriginalReadFunding<'a>{
  fn callback<T>(&self,run:impl FnOnce()->io::Result<T>)->io::Result<T>{if self.first.borrow().is_some(){return Err(io::ErrorKind::Other.into())}match run(){Ok(value)=>Ok(value),Err(actual)=>{*self.first.borrow_mut()=Some(actual);Err(io::ErrorKind::Other.into())}}}
  fn before_read(&self,capacity:usize)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.raw.is_some()||capacity>self.max{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated/exceeded actual preallocation"))}self.work.grow(&mut state.credit,capacity)?;state.raw=Some(capacity);Ok(())})}
  fn before_decode(&self,plan:crate::OriginalRawAllocationPlan<'_>)->io::Result<()>{self.callback(||{let mut state=self.state.borrow_mut();if state.planned{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original raw provider repeated decode allocation plan"))}if plan.needs_decode(){if state.raw!=Some(plan.capacity())||plan.original().len()>plan.capacity(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original decode plan differs from SAME admitted raw buffer"))}if !plan.exceptional()&&plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"UTF8 move plan claims a second decoded buffer"))}let bytes=plan.constructor_bytes().checked_add(plan.decoded_bytes()).ok_or(io::ErrorKind::OutOfMemory)?;self.work.grow(&mut state.credit,bytes)?;}else if state.raw.is_some()||plan.capacity()!=0||plan.constructor_bytes()!=0||plan.decoded_bytes()!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"prepaid Original subject plan attempts new backing allocation"))}state.planned=true;state.new_source=plan.needs_decode();state.owned_text_allowed=plan.needs_decode()&&!plan.exceptional();state.exceptional_allowed=plan.needs_decode()&&plan.exceptional();Ok(())})}
- fn split_text(&self, capacity: usize) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
+ fn split_text(&self, capacity: usize, group: Option<&OriginalReadGroupSlot>) -> io::Result<Option<(SourceArenaCredit, SourceArenaControlCredit)>> {
     self.callback(|| {
         let mut state = self.state.borrow_mut();
         if !state.planned || !state.owned_text_allowed || state.delivered
@@ -196,7 +209,7 @@ impl<'a>OriginalReadFunding<'a>{
                 "owned source backing differs from the admitted fresh read"));
         }
         state.text_factory_used = true;
-        self.work.split_original_text(&mut state.credit, capacity)
+        self.work.split_original_text(&mut state.credit, capacity, group)
     })
  }
  fn split_exceptional_bytes(&self, capacity: usize, control: usize)
@@ -213,7 +226,7 @@ impl<'a>OriginalReadFunding<'a>{
          self.work.split_original_exceptional_bytes(&mut state.credit, capacity, control)
      })
  }
- fn split_acquisition_controls(&self, sizes: [usize; 2]) -> io::Result<Option<AcquisitionControls>> {
+ fn split_acquisition_controls(&self, sizes: [usize; 2], group: Option<&OriginalReadGroupSlot>) -> io::Result<Option<AcquisitionControls>> {
      self.callback(|| {
          let mut state = self.state.borrow_mut();
          if !state.planned || !state.owned_text_allowed || state.delivered
@@ -223,10 +236,10 @@ impl<'a>OriginalReadFunding<'a>{
                  "acquisition funding requires the admitted exact plain UTF-8 read"));
          }
          state.acquisition_funding_used = true;
-         self.work.split_original_acquisition_controls(&mut state.credit, sizes)
+         self.work.split_original_acquisition_controls(&mut state.credit, sizes, group)
      })
  }
- fn split_receipt(&self, receipt: &(dyn Any + Send + Sync)) -> io::Result<Option<SourceArenaControlCredit>> {
+ fn split_receipt(&self, receipt: &(dyn Any + Send + Sync), group: Option<&OriginalReadGroupSlot>) -> io::Result<Option<SourceArenaControlCredit>> {
      self.callback(|| {
          let mut state = self.state.borrow_mut();
          if !state.planned || !state.owned_text_allowed || state.delivered || state.receipt_funding_used {
@@ -234,7 +247,7 @@ impl<'a>OriginalReadFunding<'a>{
                  "receipt funding requires the admitted exact plain UTF-8 read"));
          }
          state.receipt_funding_used = true;
-         self.work.split_original_receipt(&mut state.credit, receipt)
+         self.work.split_original_receipt(&mut state.credit, receipt, group)
      })
  }
  fn acquired(&self,source:&crate::SourceAcquisitionLease)->io::Result<()>{
@@ -258,10 +271,11 @@ pub fn read_original_source_using(provider:&dyn crate::SourceProvider,path:&std:
 pub fn read_original_source_open_using(provider:&dyn crate::SourceProvider,path:&std::path::Path,max_bytes:usize,work:&dyn SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<crate::OriginalRawOpenDecision>)->io::Result<crate::OriginalRawReadOutcome>{
  let funding=OriginalReadFunding::new(work,max_bytes)?;let decision=std::cell::Cell::new(None);
  let fund_text = OriginalReadTextFunding {
-     split: &|capacity| funding.split_text(capacity),
+     group: None,
+     split: &|capacity, group| funding.split_text(capacity, group),
      exceptional: &|capacity, control| funding.split_exceptional_bytes(capacity, control),
-     acquisition: &|sizes| funding.split_acquisition_controls(sizes),
-     receipt: &|receipt| funding.split_receipt(receipt),
+     acquisition: &|sizes, group| funding.split_acquisition_controls(sizes, group),
+     receipt: &|receipt, group| funding.split_receipt(receipt, group),
  };
  let pending=provider.original_raw_source_open_owned_admitted(path,max_bytes,work,&mut||funding.callback(||{if decision.get().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Original reader repeated after-open decision"))}let actual=after_open()?;decision.set(Some(actual));Ok(actual)}),&mut|size|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"payload allocation before actual read decision")))}funding.before_read(size)},&mut|plan|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"decode before actual read decision")))}funding.before_decode(plan)},&fund_text,&mut|source|{if decision.get()!=Some(crate::OriginalRawOpenDecision::Read){return funding.callback(||Err(io::Error::new(io::ErrorKind::InvalidData,"acquisition before actual read decision")))}funding.acquired(source)});
  let result=funding.finish(pending)?;let valid=match &result{crate::OriginalRawReadOutcome::Acquired(_)=>decision.get()==Some(crate::OriginalRawOpenDecision::Read),crate::OriginalRawReadOutcome::Suppressed=>decision.get()==Some(crate::OriginalRawOpenDecision::Suppress),crate::OriginalRawReadOutcome::Absent|crate::OriginalRawReadOutcome::SourceOpenFailed(_)=>decision.get().is_none()};if !valid{return Err(io::Error::new(io::ErrorKind::InvalidData,"Original result does not belong to its actual reader decision"))}funding.require_delivery(matches!(&result,crate::OriginalRawReadOutcome::Acquired(_)))?;Ok(result)

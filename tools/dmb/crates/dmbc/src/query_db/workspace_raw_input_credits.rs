@@ -206,6 +206,14 @@ impl Ledger{
   self.replace_row(key,Row{owner:Observation::ReadGroup(Arc::downgrade(group)),bytes});
   Ok(())
  }
+ pub(super) fn loan_original_read_group(&self,group:&super::source_arena::OriginalReadGroup)->io::Result<Arc<super::source_arena::OriginalReadGroup>>{
+  let key=(16,std::ptr::from_ref(group) as usize);
+  match self.rows.get(&key).map(|row|&row.owner){
+   Some(Observation::ReadGroup(weak)) if weak.as_ptr()==std::ptr::from_ref(group)=>
+    weak.upgrade().ok_or_else(||io::ErrorKind::InvalidInput.into()),
+   _=>Err(io::ErrorKind::InvalidInput.into()),
+  }
+ }
  // Separate role from acquisition groups. The recorder's erased handle
  // must identify this exact family's registered immutable aggregate.
  pub(super) fn loan_original_path_bank(&self,owner:&super::source_arena::OriginalReadGroup)->io::Result<Arc<super::source_arena::OriginalReadGroup>>{

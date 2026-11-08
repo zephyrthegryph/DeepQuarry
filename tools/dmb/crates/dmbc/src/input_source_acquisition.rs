@@ -213,7 +213,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             let candidate=self.prepared_text_for_exact_open(actual_path);
             match fund_text {
                 Some(fund_text) => dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded_with_funding(
-                    decoded, encoding, receipt, candidate.as_ref(), fund_text,
+                    decoded, encoding, receipt, candidate.as_ref(), &fund_text.for_recorder(&self.original_read_group),
                 )?,
                 None => dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded_with_candidate(
                     decoded, encoding, receipt, candidate.as_ref(),

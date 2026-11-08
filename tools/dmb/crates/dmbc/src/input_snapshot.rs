@@ -459,6 +459,7 @@ mod recording_snapshot {
 use recording_snapshot::RecorderSnapshotCell;
 
 pub struct RecordingInputs<P = FileSystemInputs> {
+    original_read_group: dm_preprocess::source_arena_credit::OriginalReadGroupSlot,
     original_path_bank: Mutex<Option<dm_preprocess::source_arena_credit::SourceArenaControlCredit>>,
     root_failure_capture:original_root_failure::RootFailureCapture,
     analysis_subject:Option<std::sync::Arc<OriginalAnalysisSubject>>,
@@ -483,6 +484,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         // Merged retained parts narrow this (`InputSnapshot::merge`).
         snapshot.watch.replace(created);
         Self {
+            original_read_group: Default::default(),
             original_path_bank: Default::default(),
             root_failure_capture:Default::default(),
             analysis_subject:None,
