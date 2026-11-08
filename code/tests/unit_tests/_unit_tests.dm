@@ -562,6 +562,7 @@
 #include "dq_hide_base_tests.dm"
 #include "dq_flashlight_rounds_tests.dm"
 #include "dq_hop_cache_tests.dm"
+#include "dq_spares_defs_key_tests.dm"
 #include "dq_draw_queue_default_look.dm"
 #include "dq_change_plan_parity.dm"
 #include "dq_stat_index_oracle.dm"
