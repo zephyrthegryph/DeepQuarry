@@ -447,6 +447,8 @@ GLOBAL_LIST_EMPTY(drain_spill_state)
 		fire = !now && (!had || last)
 	if(!fire)
 		return
+	if(GLOB.construction_census)
+		construction_census_fire(E, H)
 	var/datum/act/notice/A = take(/datum/act/notice)
 	A.holder = E // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.target = E // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
