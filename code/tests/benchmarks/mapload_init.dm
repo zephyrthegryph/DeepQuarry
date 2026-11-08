@@ -1,3 +1,6 @@
+/// The calls-per-atom ratchet of a space-turf run (E7, init_plan.md): 28 measured 2026-11-08; lower it as the engine sheds calls.
+#define MAPLOAD_SPACE_CALLS_CEILING 29
+
 // mapload_init: what Initialize() costs per atom on the map-load path, per representative type, without booting the full map.
 //
 // Each type is created with the atoms system in its queueing state (INITIALIZATION_INSSATOMS, what map load runs in), then initialized
@@ -100,8 +103,19 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 	detail("mapload_init_by_type", table)
 	if(profiling)
 		// Procs of the whole run: the shared per-instance framework shows by count (calls / atoms) next to the type-specific ones.
-		detail("mapload_init_proc_profile", benchmark_profile_summary(benchmark_proc_profile(), 120))
+		var/list/profile = benchmark_proc_profile()
+		detail("mapload_init_proc_profile", benchmark_profile_summary(profile, 120))
 		detail("mapload_init_atoms", total_atoms)
+		// The calls-per-atom ratchet (E7): every proc called at least once per atom counts, the calls summed per atom. A run of space turfs alone
+		// (--arg=only=space) fails above MAPLOAD_SPACE_CALLS_CEILING; lower the ceiling as the engine sheds calls, never raise it.
+		var/per_atom = 0
+		for(var/list/row as anything in profile)
+			var/calls = row["calls"]
+			if(calls >= total_atoms && total_atoms && !findtext(row["name"], "benchmark") && !findtext(row["name"], "Profile"))
+				per_atom += calls / total_atoms
+		count_metric("mapload_init_calls_per_atom", round(per_atom, 0.01), "calls")
+		if(param("only", null) == "space" && per_atom > MAPLOAD_SPACE_CALLS_CEILING)
+			fail("calls per space turf [round(per_atom, 0.01)] are above the ratchet's ceiling of [MAPLOAD_SPACE_CALLS_CEILING] (code/tests/benchmarks/mapload_init.dm)")
 	metric("mapload_init_total_ms", total_us / 1000, "ms")
 	metric("mapload_init_ms_per_atom", total_us / 1000 / max(total_atoms, 1), "ms")
 
