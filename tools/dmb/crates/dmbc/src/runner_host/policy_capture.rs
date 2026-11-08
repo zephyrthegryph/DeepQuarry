@@ -32,7 +32,7 @@ pub(crate) struct CapturedPolicyInputs {
     semantic_sources: Arc<crate::input_snapshot::SemanticSourceEvidence>,
     source_aliases: BTreeMap<PathBuf, Arc<crate::input_snapshot::AcquiredSourceAlias>>,
     policy: PolicyInputs,
-    joined_header_charge: Option<Arc<Vec<usize>>>,
+    joined_header_charge: Option<Arc<JoinedStorageCharge>>,
     facts: InputSnapshot,
     missing: Vec<PathBuf>,
     explicit_search_folders: Vec<PathBuf>,
@@ -48,10 +48,34 @@ pub(crate) struct CapturedPolicyInputs {
 /// storage payload charge deduplicates immutable owners by identity, never by
 /// equal bytes. Metadata remains a conservative admission estimate.
 pub(crate) const MAX_POLICY_CAPTURE_CHARGE: usize = 64 * 1024 * 1024;
-/// Exact immutable-header subtotal, issued for the joined archive only.
+/// Resource witnesses issued only for the exact joined archive and mapping.
 pub(crate) struct JoinedHeaderCharge {
     archive: Arc<dm_tree::frontend::BodyArchive>,
-    loans: Arc<Vec<usize>>,
+    mapping: Arc<dm_tree::frontend::SourceExportMapping>,
+    storage: Arc<JoinedStorageCharge>,
+}
+
+struct JoinedStorageCharge {
+    loans: Vec<usize>,
+    // The mapping retains the actual acquisitions; these addresses remain live.
+    source_texts: Vec<(usize, bool, bool)>,
+    syntax_counter: Arc<dm_syntax::SettingChargeCounter>,
+}
+
+impl JoinedStorageCharge {
+    fn charge(&self) -> usize {
+        (std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>())
+            .saturating_add(self.loans.capacity().saturating_mul(std::mem::size_of::<usize>()))
+            .saturating_add(self.source_texts.capacity().saturating_mul(std::mem::size_of::<(usize, bool, bool)>()))
+    }
+
+    fn source_text_funding(&self, address: usize) -> (bool, bool) {
+        self.source_texts.binary_search_by_key(&address, |row| row.0)
+            .ok().map_or((false, false), |index| {
+                let (_, control, payload) = self.source_texts[index];
+                (control, payload)
+            })
+    }
 }
 impl JoinedHeaderCharge {
     pub(crate) fn capture(
@@ -99,15 +123,40 @@ impl JoinedHeaderCharge {
             let excluded = excluded_result.and_then(|_| excluded.totals().charge());
             eprintln!("ORIGINAL_POLICY_HEADER_BACKINGS excluded_source_ledger={excluded:?} loans={}", loans.len());
         }
-        let loans = Arc::new(loans);
-        Ok(Self { archive: Arc::clone(archive), loans })
+        let mapping = frontend.mapping();
+        let mut source_texts = queries.with_funded_policy_source_text(|funded| {
+            let mut rows = Vec::new();
+            for (index, (_, acquisition)) in mapping.source_acquisitions().enumerate() {
+                if index % 64 == 0 { crate::daemon::control::checkpoint()?; }
+                let Some(acquisition) = acquisition else { continue };
+                let source = acquisition.source_text();
+                let (control, payload) = funded(source);
+                if control || payload {
+                    rows.try_reserve(1).map_err(io::Error::other)?;
+                    source.visit_storage(|address, _, _| rows.push((address, control, payload)));
+                }
+            }
+            Ok(rows)
+        })?;
+        source_texts.sort_unstable_by_key(|row| row.0);
+        source_texts.dedup_by(|next, kept| {
+            if next.0 != kept.0 { return false; }
+            kept.1 |= next.1;
+            kept.2 |= next.2;
+            true
+        });
+        Ok(Self {
+            archive: Arc::clone(archive),
+            mapping: Arc::clone(mapping),
+            storage: Arc::new(JoinedStorageCharge { loans, source_texts, syntax_counter: queries.policy_syntax_counter() }),
+        })
     }
 
-    fn require(&self, policy: &PolicyInputs) -> io::Result<Arc<Vec<usize>>> {
-        if !Arc::ptr_eq(&self.archive, policy.archive()) {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined header charge belongs to another archive"));
+    fn require(&self, policy: &PolicyInputs) -> io::Result<Arc<JoinedStorageCharge>> {
+        if !Arc::ptr_eq(&self.archive, policy.archive()) || !Arc::ptr_eq(&self.mapping, policy.mapping()) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined storage charge belongs to another archive or source mapping"));
         }
-        Ok(Arc::clone(&self.loans))
+        Ok(Arc::clone(&self.storage))
     }
 }
 
@@ -504,20 +553,31 @@ impl CapturedPolicyInputs {
         let subject = self.analysis_subject.as_ref().map_or(0, |subject| subject.charge());
         let mut header_owners = owner_charge::Owners::default();
         let mut header_result = Ok(());
-        self.policy.archive().visit_original_header_storage_with_backing_filter(
-            |address, _, capacity| {
-                if header_result.is_ok() {
-                    header_result = header_owners.original_header_storage(address, capacity);
-                }
-            },
-            &mut |owner| self.joined_header_charge.as_ref()
-                .is_some_and(|loans| loans.binary_search(&origin_loan_address(owner)).is_ok()),
-        );
+        #[cfg(debug_assertions)]
+        let trace = std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some();
+        #[cfg(debug_assertions)]
+        let (mut funded_literals, mut funded_result) = (owner_charge::Owners::default(), Ok(()));
+        let mut visit_header = |address, _, capacity, funded: bool| {
+            if !funded && header_result.is_ok() {
+                header_result = header_owners.original_header_storage(address, capacity);
+            }
+            #[cfg(debug_assertions)]
+            if funded && trace && funded_result.is_ok() {
+                funded_result = funded_literals.original_header_storage(address, capacity);
+            }
+        };
+        let archive = self.policy.archive();
+        if let Some(storage) = &self.joined_header_charge {
+            // Read-only identity check against the existing native counter.
+            // This view grants no new allocation or stack work allowance.
+            let domain = dm_syntax::SettingAdmission::with_stack_allowance(&storage.syntax_counter, 0, 0, &|| Ok(()));
+            archive.visit_original_header_storage_classified(&domain, &mut visit_header,
+                &mut |owner| storage.loans.binary_search(&origin_loan_address(owner)).is_ok());
+        } else {
+            archive.visit_original_header_storage(|address, logical, capacity| visit_header(address, logical, capacity, false));
+        }
         let header = header_result.and_then(|_| header_owners.totals().charge()).unwrap_or(usize::MAX);
-        let roster = self.joined_header_charge.as_ref().map_or(0, |loans| {
-            loans.capacity().saturating_mul(std::mem::size_of::<usize>())
-                .saturating_add(std::mem::size_of::<Vec<usize>>() + 2 * std::mem::size_of::<usize>())
-        });
+        let roster = self.joined_header_charge.as_ref().map_or(0, |storage| storage.charge());
         let mut charge = 4096usize.saturating_add(subject).saturating_add(header).saturating_add(roster);
         charge = charge.saturating_add(
             self.explicit_search_folders
@@ -533,7 +593,11 @@ impl CapturedPolicyInputs {
                 .saturating_add(file.path().as_os_str().as_encoded_bytes().len());
             for (_, text) in file.views() {
                 charge = charge.saturating_add(64);
-                if owners.text(text).is_err() {
+                let text_charge = match &self.joined_header_charge {
+                    Some(storage) => owners.text_with_funding(text, |address| storage.source_text_funding(address)),
+                    None => owners.text(text),
+                };
+                if text_charge.is_err() {
                     return usize::MAX;
                 }
             }
@@ -601,8 +665,10 @@ impl CapturedPolicyInputs {
         let total = charge.saturating_add(evidence).saturating_add(directories)
             .saturating_add(owned.charge().unwrap_or(usize::MAX));
         #[cfg(debug_assertions)]
-        if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
-            eprintln!("ORIGINAL_POLICY_CAPTURE_STORAGE total={total} header={header} backing_roster={roster} capture_local={_capture_local} facts={_facts} aliases={_aliases} evidence={evidence} directories={directories} subject={subject} owned={owned:?}");
+        if trace {
+            let funded_literals = funded_result.and_then(|_| funded_literals.totals().charge());
+            let funded_texts = self.joined_header_charge.as_ref().map_or(0, |storage| storage.source_texts.len());
+            eprintln!("ORIGINAL_POLICY_CAPTURE_STORAGE total={total} header={header} funded_literals={funded_literals:?} funded_texts={funded_texts} backing_roster={roster} capture_local={_capture_local} facts={_facts} aliases={_aliases} evidence={evidence} directories={directories} subject={subject} owned={owned:?}");
         }
         total
     }
@@ -635,13 +701,39 @@ pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
     requested: &[RequestedPolicyFile],
     search_folders: &[PathBuf],
 ) -> io::Result<CapturedPolicyInputs> {
-    capture_diagnostic_with_joined_headers(frontend, inputs, requested, search_folders, None)
+    capture_diagnostic_using(frontend, inputs, requested, search_folders, CompiledViews::AllRaw, None)
 }
-pub(crate) fn capture_diagnostic_with_joined_headers<P: SnapshotProvider>(
+
+/// The ephemeral Checker sibling issues only original compiled source and
+/// its selected configuration. Analyze raw policy uses the separate workspace
+/// capture; this owner is never exposed as a general named-policy snapshot.
+pub(crate) fn capture_joined_checker<P: SnapshotProvider>(
     frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
     inputs: &RecordingInputs<P>,
     requested: &[RequestedPolicyFile],
     search_folders: &[PathBuf],
+    joined: Option<&JoinedHeaderCharge>,
+) -> io::Result<CapturedPolicyInputs> {
+    use dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete;
+    if frontend.preparation_purpose() != OriginalSharedComplete
+        || requested.len() != 1
+        || requested[0].role != PolicyRole::Configuration
+        || !search_folders.is_empty()
+    {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput,
+            "joined Checker requires its complete Original source and exact configuration-only scope"));
+    }
+    capture_diagnostic_using(
+        frontend, inputs, requested, search_folders, CompiledViews::CheckerDecoded, joined,
+    )
+}
+
+fn capture_diagnostic_using<P: SnapshotProvider>(
+    frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+    inputs: &RecordingInputs<P>,
+    requested: &[RequestedPolicyFile],
+    search_folders: &[PathBuf],
+    compiled_views: CompiledViews,
     joined: Option<&JoinedHeaderCharge>,
 ) -> io::Result<CapturedPolicyInputs> {
     if frontend.preparation_purpose().is_structural(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers structural source cannot occupy the checker policy capture"))}
@@ -655,7 +747,7 @@ pub(crate) fn capture_diagnostic_with_joined_headers<P: SnapshotProvider>(
         inputs,
         requested,
         search_folders,
-        CompiledViews::AllRaw, joined,
+        compiled_views, joined,
     )
 }
 /// Configuration-only child for the genuine workspace generator endpoint.
@@ -709,7 +801,7 @@ fn capture_workspace_child<P:SnapshotProvider>(source:CaptureSource<'_,'_>,input
         .bind_request(&intent)
 }
 #[derive(Clone, Copy)]
-enum CompiledViews { AllRaw, GeneratorManifest }
+enum CompiledViews { AllRaw, GeneratorManifest, CheckerDecoded }
 // Only original issued handles are dispatched; the capture loop remains ONE.
 enum CaptureSource<'a, 'b> {
     Compiled(&'a ColdFrontend),
@@ -881,6 +973,14 @@ fn capture_source<P: SnapshotProvider>(
             if matches!(compiled_views, CompiledViews::GeneratorManifest)
                 && !primary.file_name().is_some_and(|name| name == "deepquarry.dme")
             {
+                continue;
+            }
+            if matches!(compiled_views, CompiledViews::CheckerDecoded) {
+                // Keep the existing input closure, including the parent
+                // listing. The compiled file is installed by PolicyInputs
+                // from the exact frontend view, not the recorder's raw bytes.
+                let parent = path.parent().ok_or_else(|| io::Error::other("compiled policy source has no parent"))?;
+                inputs.record_search_folder(parent)?;
                 continue;
             }
             let raw = if let Some(source) = original {

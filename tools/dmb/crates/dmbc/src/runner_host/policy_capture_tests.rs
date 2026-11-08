@@ -965,7 +965,15 @@ fn joined_header_charge_excludes_only_actual_current_native_origin_loan_pages() 
     assert!(JoinedHeaderCharge::capture(&view, &foreign).is_err());
     let (joined, actual_skipped) = full(&queries);
     assert!(actual_skipped > 0 && joined > 0 && joined < ordinary);
-    assert_eq!(JoinedHeaderCharge::capture(&view, &queries).unwrap().loans.len(), actual_skipped);
+    let proof = JoinedHeaderCharge::capture(&view, &queries).unwrap();
+    assert_eq!(proof.storage.loans.len(), actual_skipped);
+    assert!(!proof.storage.source_texts.is_empty(), "exact mapped text has live source funding");
+    let text = view.mapping().source_acquisitions().find_map(|(_, row)| row)
+        .expect("actual source acquisition").source_text();
+    let equal_text = SourceText::from(text.as_str().to_owned());
+    assert_eq!(queries.with_funded_policy_source_text(|funded| Ok(funded(text))).unwrap(), (true, true));
+    assert_eq!(queries.with_funded_policy_source_text(|funded| Ok(funded(&equal_text))).unwrap(), (false, false));
+    assert_eq!(foreign.with_funded_policy_source_text(|funded| Ok(funded(text))).unwrap(), (false, false));
 
     let mut owners = owner_charge::Owners::default();
     archive.visit_original_header_storage(|address, _, capacity| {

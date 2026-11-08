@@ -250,7 +250,7 @@ impl Ledger{
   part.role()==super::source_arena::ReadPartRole::Acquisition
    && self.has_read_group(part.group())
  }
- fn has_read_group(&self,group:&Arc<super::source_arena::OriginalReadGroup>)->bool{
+ pub(super) fn has_read_group(&self,group:&Arc<super::source_arena::OriginalReadGroup>)->bool{
   self.rows.get(&(16,Arc::as_ptr(group)as usize))
    .is_some_and(|row|matches!(&row.owner,Observation::ReadGroup(weak)if weak.as_ptr()==Arc::as_ptr(group)))
  }
@@ -267,6 +267,23 @@ impl Ledger{
   [payload, control].into_iter().all(|credit| credit
       .and_then(|credit| credit.as_any().downcast_ref::<super::source_arena::Allocation>())
       .is_some_and(|allocation| self.has_source_arena(allocation)))
+ }
+ /// Existing adopted immutable text record, independent of the view range.
+ pub(super) fn has_sealed_text_backing(&self, address: usize) -> bool {
+  self.rows.get(&(0,address)).is_some_and(|row| {
+   let Observation::SealedText(weak, _) = &row.owner else { return false; };
+   let mut same_live_backing = false;
+   weak.visit_backing_storage(|actual, logical, _| {
+    same_live_backing = actual == address && logical != 0;
+   });
+   same_live_backing
+  })
+ }
+ pub(super) fn has_original_text_payload(&self, owner: &Arc<str>) -> bool {
+  self.rows.get(&(1,owner.as_ptr() as usize)).is_some_and(|row| {
+   matches!(&row.owner, Observation::Original(weak)
+    if weak.strong_count() != 0 && std::ptr::eq(weak.as_ptr(), Arc::as_ptr(owner)))
+  })
  }
  pub(super) fn has_source_arena(&self,owner:&super::source_arena::Allocation)->bool{let key=(6,std::ptr::from_ref(owner)as usize);self.rows.get(&key).is_some_and(|row|matches!(&row.owner,Observation::Arena(weak)if weak.strong_count()!=0&&weak.as_ptr()==std::ptr::from_ref(owner)))}
 
@@ -500,6 +517,19 @@ impl QueryDb{
   let text=lease.source_text();
   assert_eq!(funded_parts(text,Some(&Arc::downgrade(&db.raw_policy.admission))),(true,true));
   assert_eq!(funded_parts(text,Some(&Arc::downgrade(&foreign.raw_policy.admission))),(false,false));
+  let borrowed = text.checked_view(1..text.len()).unwrap();
+  let copied = SourceText::from(text.as_str().to_owned());
+  db.with_funded_policy_source_text(|funded| {
+   assert_eq!(funded(text), (true, true));
+   assert_eq!(funded(&borrowed), (true, true));
+   assert_eq!(funded(&copied), (false, false));
+   Ok(())
+  }).unwrap();
+  foreign.with_funded_policy_source_text(|funded| {
+   assert_eq!(funded(text), (false, false));
+   Ok(())
+  }).unwrap();
+  drop((borrowed, copied));
   let payload=text.source_arena_payload_credit().unwrap();
   let control=text.source_arena_control_credit().unwrap();
   let payload_bytes=payload.reserved_bytes();

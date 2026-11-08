@@ -272,27 +272,27 @@ impl LiteralPageData {
         }
     }
 
-    fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
-        fn buffer<T>(rows: &Vec<T>, visit: &mut impl FnMut(usize, usize, usize)) {
+    fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize, Option<&crate::SettingRootLease>)) {
+        fn buffer<T>(rows: &Vec<T>, lease:&crate::SettingRootLease, visit: &mut impl FnMut(usize, usize, usize, Option<&crate::SettingRootLease>)) {
             if rows.capacity() != 0 {
                 visit(rows.as_ptr() as usize, rows.len() * mem::size_of::<T>(),
-                    rows.capacity() * mem::size_of::<T>());
+                    rows.capacity() * mem::size_of::<T>(), Some(lease));
             }
         }
         match self {
-            Self::Dense(data) => buffer(&data.rows, visit),
-            Self::Projected(data)=>{buffer(&data.codes,visit);buffer(&data.full,visit);buffer(&data.descriptors,visit)},
+            Self::Dense(data) => buffer(&data.rows, &data.credit, visit),
+            Self::Projected(data)=>{buffer(&data.codes, &data.credit,visit);buffer(&data.full, &data.credit,visit);buffer(&data.descriptors, &data.credit,visit)},
             Self::Compact(data) => {
                 match &data.codes {
-                    CompactLiteralCodes::Narrow { cells, .. } => buffer(cells, visit),
-                    CompactLiteralCodes::Wide(codes) => buffer(codes, visit),
+                    CompactLiteralCodes::Narrow { cells, .. } => buffer(cells, &data.credit, visit),
+                    CompactLiteralCodes::Wide(codes) => buffer(codes, &data.credit, visit),
                 }
-                buffer(&data.owners, visit);
-                buffer(&data.wide, visit);
+                buffer(&data.owners, &data.credit, visit);
+                buffer(&data.wide, &data.credit, visit);
                 if let Some(projections) = &data.projections {
                     let control = mem::size_of::<Vec<ProjectedLiteral>>();
-                    visit(projections.as_ref() as *const _ as usize, control, control);
-                    buffer(projections, visit);
+                    visit(projections.as_ref() as *const _ as usize, control, control, Some(&data.credit));
+                    buffer(projections, &data.credit, visit);
                 }
             }
         }
@@ -1149,16 +1149,16 @@ impl LiteralPages {
         })
     }
 
-    fn visit_storage(&self, owner: Option<&crate::OriginalLiteralProjectionOwner>, visit: &mut impl FnMut(usize,usize,usize)) {
+    fn visit_storage(&self, owner: Option<&crate::OriginalLiteralProjectionOwner>, visit: &mut impl FnMut(usize,usize,usize,Option<&crate::SettingRootLease>)) {
         if self.chunks.capacity() != 0 {
             let width = mem::size_of::<LiteralDirectoryChunk>();
             visit(self.chunks.as_ptr() as usize, self.chunks.len() * width,
-                self.chunks.capacity() * width);
+                self.chunks.capacity() * width, Some(&self.directory_credit));
         }
         for chunk in &self.chunks {
             let width = mem::size_of::<LiteralPage>();
             debug_assert_eq!(chunk.credit.bytes(), chunk.pages.capacity() * width);
-            visit(chunk.pages.as_ptr() as usize, chunk.pages.len() * width, chunk.credit.bytes());
+            visit(chunk.pages.as_ptr() as usize, chunk.pages.len() * width, chunk.credit.bytes(), Some(&chunk.credit));
         }
         let mut last_payload_page = None;
         for page in self.chunks.iter().flat_map(|chunk| &chunk.pages) {
@@ -1168,27 +1168,27 @@ impl LiteralPages {
                 let wide = page.wide.capacity() * mem::size_of::<Span>();
                 debug_assert!(page.wide_credit.is_none());
                 debug_assert_eq!(page.span_credit.bytes(), boxed + words + wide);
-                visit(short.as_ref() as *const _ as usize, boxed, boxed);
+                visit(short.as_ref() as *const _ as usize, boxed, boxed, Some(&page.span_credit));
                 if words != 0 {
-                    visit(short.words.as_ptr() as usize, short.words.len()*mem::size_of::<u32>(), words);
+                    visit(short.words.as_ptr() as usize, short.words.len()*mem::size_of::<u32>(), words, Some(&page.span_credit));
                 }
                 if wide != 0 {
-                    visit(page.wide.as_ptr() as usize, page.wide.len()*mem::size_of::<Span>(), wide);
+                    visit(page.wide.as_ptr() as usize, page.wide.len()*mem::size_of::<Span>(), wide, Some(&page.span_credit));
                 }
             } else {
                 let span_width = mem::size_of::<u32>();
                 let span_bytes = page.spans.capacity() * span_width;
                 debug_assert_eq!(page.span_credit.bytes(), span_bytes);
-                visit(page.spans.as_ptr() as usize, page.spans.len() * span_width, span_bytes);
+                visit(page.spans.as_ptr() as usize, page.spans.len() * span_width, span_bytes, Some(&page.span_credit));
                 if page.wide.capacity() != 0 {
                     let bytes = page.wide.capacity() * mem::size_of::<Span>();
                     debug_assert_eq!(page.wide_credit.as_ref().map_or(0, |credit| credit.bytes()), bytes);
-                    visit(page.wide.as_ptr() as usize, page.wide.len() * mem::size_of::<Span>(), bytes);
+                    visit(page.wide.as_ptr() as usize, page.wide.len() * mem::size_of::<Span>(), bytes, page.wide_credit.as_ref());
                 }
             }
             page.data.visit_storage(visit);
             if let LiteralPageData::Projected(data)=&page.data{
-                for value in &data.full{value.visit_storage(&mut *visit);}continue
+                for value in &data.full{value.visit_storage_funding(&mut *visit);}continue
             }
             for index in 0..page.len() {
                 if matches!(&page.data, LiteralPageData::Compact(data)
@@ -1207,10 +1207,10 @@ impl LiteralPages {
                     // Individual payloads between page rows are independent.
                     last_payload_page = Some(current);
                 }
-                data.visit_storage(&mut *visit);
+                data.visit_storage_funding(&mut *visit);
             }
         }
-        self.directory_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
+        self.directory_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes,None));
     }
 }
 
@@ -1490,14 +1490,14 @@ impl<T> ColonPages<T> {
             + self.first.iter().chain(&self.pages).map(|page| page.credit.bytes()).sum::<usize>()
     }
 
-    fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
+    fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize, Option<&crate::SettingRootLease>)) {
         if self.pages.capacity() != 0 {
             let bytes = self.pages.capacity() * mem::size_of::<ColonPage<T>>();
-            visit(self.pages.as_ptr() as usize, bytes, bytes);
+            visit(self.pages.as_ptr() as usize, bytes, bytes, self.directory_credit.as_ref());
         }
         for page in self.first.iter().chain(&self.pages) {
             let bytes = page.rows.capacity() * mem::size_of::<T>();
-            visit(page.rows.as_ptr() as usize, bytes, bytes);
+            visit(page.rows.as_ptr() as usize, bytes, bytes, Some(&page.credit));
         }
     }
 }
@@ -1535,7 +1535,7 @@ impl ColonStorage {
     #[cfg(any(test, debug_assertions))]
     fn reservation_bytes(&self) -> usize { self.compact.reservation_bytes() + self.wide.reservation_bytes() }
 
-    fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
+    fn visit_storage(&self, visit: &mut impl FnMut(usize, usize, usize, Option<&crate::SettingRootLease>)) {
         self.compact.visit_storage(visit);
         self.wide.visit_storage(visit);
     }
@@ -1814,7 +1814,25 @@ impl OriginalPrimaryLiteralFacts{
   Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections,first_attempts:owner.first_projection_attempts,short_spans,settled_span_pages}
  }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
-  let owner=self.0.as_ref().expect("live primary facts");if let Some(projection)=&owner.projection{projection.visit_storage(&mut visit)}let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);owner.rows.visit_storage(owner.projection.as_ref(), &mut visit);owner.colons.visit_storage(&mut visit);owner.colon_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));owner.fixed_credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));
+  self.visit_storage_classified(None, |p,n,c,_| visit(p,n,c));
+ }
+
+ /// Physical DATA storage with the actual live syntax-lease owner classified.
+ /// External projection owners and the shared counter remain unclassified.
+ #[doc(hidden)]
+ pub fn visit_storage_classified(&self, a:Option<&crate::SettingAdmission<'_>>, mut visit:impl FnMut(usize,usize,usize,bool)){
+  let owner=self.0.as_ref().expect("live primary facts");
+  if let Some(projection)=&owner.projection{projection.visit_storage(|p,n,c|visit(p,n,c,false))}
+  let mut classify=|p,n,c,lease:Option<&crate::SettingRootLease>|{
+   let funded=a.zip(lease).is_some_and(|(a,lease)|a.matches_lease_domain(lease));
+   visit(p,n,c,funded);
+  };
+  let fixed=std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>();
+  classify(Arc::as_ptr(owner)as usize,fixed,fixed,Some(&owner.fixed_credit));
+  owner.rows.visit_storage(owner.projection.as_ref(), &mut classify);
+  owner.colons.visit_storage(&mut classify);
+  owner.colon_credit.visit_counter_storage(|p,n|classify(p,n,n,None));
+  owner.fixed_credit.visit_counter_storage(|p,n|classify(p,n,n,None));
  }
 }
 #[cfg(test)]mod tests{
@@ -2804,4 +2822,43 @@ mod literal_page_controls {
         assert_eq!(used.load(Ordering::Acquire), fixed);
     }
  }
+}
+
+
+#[cfg(test)]
+#[test]
+fn literal_storage_classifies_each_actual_lease_without_changing_full_census() {
+    use std::sync::atomic::Ordering;
+    let floor=crate::SettingChargeCounter::root_allocation_bytes();
+    let own=crate::SettingChargeCounter::try_new(floor).unwrap();
+    let foreign=crate::SettingChargeCounter::try_new(floor).unwrap();
+    let own_admission=crate::SettingAdmission::new(&own,1<<20,&||Ok(()));
+    let foreign_admission=crate::SettingAdmission::new(&foreign,1<<20,&||Ok(()));
+    let own_data=crate::OriginalLiteralData::from_value_using("111".into(),crate::OriginalTokenValue::Int(111),&own_admission).unwrap();
+    let foreign_data=crate::OriginalLiteralData::from_value_using("222".into(),crate::OriginalTokenValue::Int(222),&foreign_admission).unwrap();
+    let own_pointer=own_data.raw().as_ptr() as usize;
+    let foreign_pointer=foreign_data.raw().as_ptr() as usize;
+    let mut facts=OriginalPrimaryLiteralFacts::new(&own_admission).unwrap();
+    facts.append_actual(Span::new(0,3),own_data,&own_admission).unwrap();
+    facts.append_actual(Span::new(4,7),foreign_data,&own_admission).unwrap();
+    facts.seal_actual_frontier(7,&own_admission).unwrap();
+    let mut full=Vec::new();
+    facts.visit_storage(|p,n,c|full.push((p,n,c)));
+    for (admission, funded, unfunded) in [
+        (&own_admission,own_pointer,foreign_pointer),
+        (&foreign_admission,foreign_pointer,own_pointer),
+    ] {
+        let mut all=Vec::new();
+        let mut classes=std::collections::BTreeMap::new();
+        facts.visit_storage_classified(Some(admission),|p,n,c,paid| {
+            all.push((p,n,c));
+            classes.insert(p,paid);
+        });
+        assert_eq!(all,full);
+        assert_eq!(classes.get(&funded),Some(&true));
+        assert_eq!(classes.get(&unfunded),Some(&false));
+    }
+    drop(facts);
+    assert_eq!(own.load(Ordering::Acquire),floor);
+    assert_eq!(foreign.load(Ordering::Acquire),floor);
 }

@@ -55,6 +55,10 @@ fn with_primary_admission<T>(charged:&Arc<dm_syntax::SettingChargeCounter>,opera
  })
 }
 impl QueryDb {
+    pub(crate) fn policy_syntax_counter(&self) -> Arc<dm_syntax::SettingChargeCounter> {
+        Arc::clone(&self.body_charge)
+    }
+
     pub(super) fn with_setting_admission<T>(
         &self,
         operation: impl FnOnce(&dm_syntax::SettingAdmission<'_>) -> Result<T, BodySyntaxFailure>,

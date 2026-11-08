@@ -57,6 +57,18 @@ impl OriginalLiteralSourceView{
   require_source_view(&self.binding.payload().source,actual_source,self.window)?;self.binding.payload().facts.checked_data_window(self.window)?.with_source_data(actual_source.as_str())
  }
  pub fn visit_storage(&self,visit:impl FnMut(usize,usize,usize)){self.binding.visit_storage(visit)}
+ /// Keep the private binding and external source controls charged. Only the
+ /// actual nested syntax products may borrow their current native lease.
+ #[doc(hidden)]
+ pub fn visit_storage_classified(&self,a:&SettingAdmission<'_>,mut visit:impl FnMut(usize,usize,usize,bool)){
+  let owner=self.binding.0.as_ref().expect("live source binding");
+  let fixed=std::mem::size_of::<Binding>()+2*std::mem::size_of::<usize>();
+  visit(Arc::as_ptr(owner)as usize,fixed,fixed,false);
+  owner.credit.visit_counter_storage(|p,n|visit(p,n,n,false));
+  owner.facts.visit_storage_classified(Some(a),&mut visit);
+  owner.source.visit_backing_storage(|p,n,c|visit(p,n,c,false));
+  owner.source.visit_derived_resource_storage(|p,n|visit(p,n,n,false));
+ }
 }
 
 #[cfg(test)]mod tests{

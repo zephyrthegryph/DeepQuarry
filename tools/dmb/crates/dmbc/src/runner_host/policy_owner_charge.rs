@@ -44,12 +44,17 @@ pub(super) struct Owners {
 }
 impl Owners {
     pub fn text(&mut self, text: &SourceText) -> io::Result<()> {
+        self.text_with_funding(text, |_| (false, false))
+    }
+
+    pub fn text_with_funding(&mut self, text: &SourceText, funding: impl Fn(usize) -> (bool, bool)) -> io::Result<()> {
         let mut result: io::Result<()> = Ok(());
         let mut backing = 0;
         text.visit_storage(|pointer, size, storage| {
             backing = pointer;
             result = (|| {
-                if self.seen.insert((0, pointer)) {
+                let (control_funded, payload_funded) = funding(pointer);
+                if !control_funded && self.seen.insert((0, pointer)) {
                     add(
                         &mut self.totals.owner_records,
                         size + 2 * std::mem::size_of::<usize>(),
@@ -70,7 +75,7 @@ impl Owners {
                         (2, text.as_ptr() as usize, committed, 0)
                     }
                 };
-                if (capacity > 0 || header > 0) && self.seen.insert((class, pointer)) {
+                if !payload_funded && (capacity > 0 || header > 0) && self.seen.insert((class, pointer)) {
                     add(&mut self.totals.payload_capacity, capacity)?;
                     add(&mut self.totals.owner_records, header)?;
                     self.totals.text_payloads += 1;

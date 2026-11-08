@@ -1112,7 +1112,16 @@ impl OriginalProcedureHeaders {
         self.visit_storage_with_backing_filter(visit, &mut |_| false);
     }
     pub(crate) fn visit_storage_with_backing_filter(&self, mut visit: impl FnMut(usize, usize, usize), skip:&mut dyn FnMut(&dyn std::any::Any)->bool) {
-        if let Some(HeaderLiteralSourceHold(Some(facts)))=self.original_literal_source.get(){facts.visit_storage(&mut visit);}
+        self.visit_storage_classified(None, |p,n,c,_|visit(p,n,c), skip);
+    }
+    pub(crate) fn visit_storage_classified(&self, a:Option<&dm_syntax::SettingAdmission<'_>>, mut classified:impl FnMut(usize,usize,usize,bool), skip:&mut dyn FnMut(&dyn std::any::Any)->bool) {
+        if let Some(HeaderLiteralSourceHold(Some(facts)))=self.original_literal_source.get(){
+            match a {
+                Some(a)=>facts.visit_storage_classified(a,&mut classified),
+                None=>facts.visit_storage(|p,n,c|classified(p,n,c,false)),
+            }
+        }
+        let mut visit=|p,n,c|classified(p,n,c,false);
         if let Some(roots)=self.demanded_defaults.get(){roots.visit_storage(&mut visit);}
         if let Some((notices,_))=self.formal_notices.get(){notices.visit_storage(&mut visit);}
         if let Some(root)=self.original_primary_resource.get(){let bytes=std::mem::size_of::<dm_syntax::SettingRootLease>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(&root.0)as usize,bytes,bytes);root.0.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));}

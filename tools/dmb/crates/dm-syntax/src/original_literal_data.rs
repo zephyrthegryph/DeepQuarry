@@ -519,17 +519,21 @@ impl OriginalLiteralData {
     #[cfg(test)]
     fn page_storage_identity(&self) -> Option<usize> { self.as_view().page_storage_identity() }
     pub fn visit_storage(&self, mut visit: impl FnMut(usize,usize,usize)) {
+        self.visit_storage_funding(&mut |p,n,c,_| visit(p,n,c));
+    }
+
+    pub(crate) fn visit_storage_funding(&self, visit: &mut impl FnMut(usize,usize,usize,Option<&SettingRootLease>)) {
         let owner = self.0.as_ref().expect("live literal DATA");
         if let LiteralStorage::RawDetached(detached) = &owner.storage {
             let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
-            visit(Arc::as_ptr(owner) as usize, fixed, fixed);
+            visit(Arc::as_ptr(owner) as usize, fixed, fixed, Some(&owner.credit));
             let bytes = size_of::<DetachedRaw>();
-            visit(detached.as_ref() as *const _ as usize, bytes, bytes);
+            visit(detached.as_ref() as *const _ as usize, bytes, bytes, Some(&owner.credit));
             if !detached.raw.is_empty() {
-                visit(detached.raw.as_ptr() as usize, detached.raw.len(), detached.raw.len());
+                visit(detached.raw.as_ptr() as usize, detached.raw.len(), detached.raw.len(), Some(&owner.credit));
             }
         }
-        self.as_view().visit_storage(visit)
+        self.as_view().visit_storage_funding(visit)
     }
 }
 impl fmt::Debug for OriginalLiteralRef<'_> {
@@ -808,49 +812,53 @@ impl<'a> OriginalLiteralRef<'a> {
     /// Exact known live allocations only, not reservations, parser caches or
     /// source authority. Caller performs address dedup across all aliases.
     pub fn visit_storage(self,mut visit:impl FnMut(usize,usize,usize)) {
+        self.visit_storage_funding(&mut |p,n,c,_| visit(p,n,c));
+    }
+
+    pub(crate) fn visit_storage_funding(self,visit:&mut impl FnMut(usize,usize,usize,Option<&SettingRootLease>)) {
         if self.owner.is_none(){
-         if let Some(data)=self.projection(){data.owner.visit_storage(visit)}
+         if let Some(data)=self.projection(){data.owner.visit_storage(|p,n,c|visit(p,n,c,None))}
          return
         }
         let owner = self.full_owner().as_ref();
         let fixed = size_of::<Payload>() + 2 * size_of::<usize>();
-        visit(Arc::as_ptr(self.full_owner()) as usize, fixed, fixed);
-        fn raw_storage(raw: LiteralRawStorage<'_>, visit: &mut impl FnMut(usize,usize,usize)) {
-            if raw.capacity() != 0 { visit(raw.as_ptr() as usize, raw.as_str().len(), raw.capacity()); }
+        visit(Arc::as_ptr(self.full_owner()) as usize, fixed, fixed, Some(&owner.credit));
+        fn raw_storage(raw: LiteralRawStorage<'_>, lease:&SettingRootLease, visit: &mut impl FnMut(usize,usize,usize,Option<&SettingRootLease>)) {
+            if raw.capacity() != 0 { visit(raw.as_ptr() as usize, raw.as_str().len(), raw.capacity(), Some(lease)); }
         }
-        fn cooked_storage(text: &str, visit: &mut impl FnMut(usize,usize,usize)) {
-            if !text.is_empty() { visit(text.as_ptr() as usize, text.len(), text.len()); }
+        fn cooked_storage(text: &str, lease:&SettingRootLease, visit: &mut impl FnMut(usize,usize,usize,Option<&SettingRootLease>)) {
+            if !text.is_empty() { visit(text.as_ptr() as usize, text.len(), text.len(), Some(lease)); }
         }
         match &owner.storage {
             LiteralStorage::Projected(data)=>{
-             visit(data.as_ref() as *const _ as usize,size_of::<crate::original_literal_projection::DetachedProjectedLiteral>(),size_of::<crate::original_literal_projection::DetachedProjectedLiteral>());
-             raw_storage(LiteralRawStorage{text:&data.raw,capacity:data.raw.len()},&mut visit);
-             data.owner.visit_storage(&mut visit);
+             visit(data.as_ref() as *const _ as usize,size_of::<crate::original_literal_projection::DetachedProjectedLiteral>(),size_of::<crate::original_literal_projection::DetachedProjectedLiteral>(),Some(&owner.credit));
+             raw_storage(LiteralRawStorage{text:&data.raw,capacity:data.raw.len()}, &owner.credit, visit);
+             data.owner.visit_storage(|p,n,c|visit(p,n,c,None));
             }
             LiteralStorage::RawDetached(_) => unreachable!("detached raw view resolves original packed owner"),
             LiteralStorage::Single(value) => {
-                raw_storage(LiteralRawStorage::from_string(&value.raw), &mut visit);
-                cooked_storage(&value.text, &mut visit);
+                raw_storage(LiteralRawStorage::from_string(&value.raw), &owner.credit, visit);
+                cooked_storage(&value.text, &owner.credit, visit);
             }
             LiteralStorage::Page(page) => {
                 let rows = &page.rows;
                 visit(rows.as_ptr() as usize, rows.len() * size_of::<PackedBatchValue>(),
-                    rows.capacity() * size_of::<PackedBatchValue>());
+                    rows.capacity() * size_of::<PackedBatchValue>(), Some(&owner.credit));
                 for row in rows {
                     if !row.raw_is_gone() {
-                        raw_storage(row.raw_view(), &mut visit);
+                        raw_storage(row.raw_view(), &owner.credit, visit);
                     }
                 }
                 // A detached row owns the whole bounded page, including the
                 // exact roster of any cooked strings belonging to its siblings.
                 if !page.cooked.is_empty() {
                     visit(page.cooked.as_ptr() as usize, page.cooked.len() * size_of::<Box<str>>(),
-                        page.cooked.len() * size_of::<Box<str>>());
-                    for text in page.cooked.iter() { cooked_storage(text, &mut visit); }
+                        page.cooked.len() * size_of::<Box<str>>(), Some(&owner.credit));
+                    for text in page.cooked.iter() { cooked_storage(text, &owner.credit, visit); }
                 }
             }
         }
-        owner.credit.visit_counter_storage(|ptr,n|{let bytes=n+2*size_of::<usize>();visit(ptr,bytes,bytes)});
+        owner.credit.visit_counter_storage(|ptr,n|{let bytes=n+2*size_of::<usize>();visit(ptr,bytes,bytes,None)});
     }
 }
 

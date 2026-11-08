@@ -1067,6 +1067,14 @@ impl BodyArchive {
         }
         Ok(())
     }
+    /// Policy accounting only. Actual syntax leases are checked against the
+    /// provided native domain on every walk; unknown header storage is charged.
+    #[doc(hidden)]
+    pub fn visit_original_header_storage_classified(&self, a:&dm_syntax::SettingAdmission<'_>, mut visit:impl FnMut(usize,usize,usize,bool), skip:&mut dyn FnMut(&dyn std::any::Any)->bool) {
+        for chunk in self.syntax.chunks().iter() {
+            chunk.shared_relative().visit_original_header_storage_classified(a,&mut visit,skip);
+        }
+    }
     pub fn binding_storage(&self) -> (&Arc<CallableRoster>, &Arc<HashMap<OccurrenceId, usize>>) {
         (&self.callables, &self.body_indices)
     }

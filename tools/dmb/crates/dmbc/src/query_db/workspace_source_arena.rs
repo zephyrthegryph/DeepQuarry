@@ -366,6 +366,59 @@ impl QueryDb{
  }
 }
 impl QueryDb {
+ /// Resource-only coverage for each exact live text backing in this input
+ /// family. This does not approve a source view or cover fingerprint memory.
+ /// The callback must only walk immutable storage and must not reenter the
+ /// source family. The admitted text or clone must outlive the accounting use.
+ pub(crate) fn with_funded_policy_source_text<T>(
+  &self,
+  walk: impl FnOnce(&mut dyn FnMut(&SourceText) -> (bool, bool)) -> io::Result<T>,
+ ) -> io::Result<T> {
+  self.checkpoint()?;
+  let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
+  let ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e| e.into_inner());
+  let domain = Arc::downgrade(&self.raw_policy.admission);
+  walk(&mut |text| {
+   let credit_live = |credit: &dyn SourceArenaCreditOwner, role, bytes| {
+    if credit.reserved_bytes() < bytes { return false; }
+    if let Some(actual) = credit.as_any().downcast_ref::<Allocation>() {
+     return actual.same_domain(&domain) && !actual.is_retirable_path_fact()
+      && ledger.has_source_arena(actual);
+    }
+    credit.as_any().downcast_ref::<OriginalReadPart>().is_some_and(|part| {
+     part.role() == role && part.group.same_domain(&domain) && ledger.has_read_group(&part.group)
+    })
+   };
+   // These flags reproduce the ledger's subtraction rule. If a nominally
+   // funded part has no live owner, the backing observation cannot cover it.
+   let (nominal_control, nominal_payload) = funded_parts(text, Some(&domain));
+   let mut result = (false, false);
+   text.visit_storage(|address, size, storage| {
+    let observed = ledger.has_sealed_text_backing(address);
+    let control_size = size.saturating_add(2 * std::mem::size_of::<usize>());
+    let control = (observed && !nominal_control)
+     || text.source_arena_control_credit().is_some_and(|credit| {
+      credit_live(credit.owner(), ReadPartRole::TextControl, control_size)
+     });
+    let payload = match storage {
+     dm_preprocess::SourceTextStorage::Original(owner) => ledger.has_original_text_payload(owner),
+     dm_preprocess::SourceTextStorage::Transformed(value) => (observed && !nominal_payload)
+      || text.source_arena_payload_credit().is_some_and(|credit| {
+       credit_live(credit.owner(), ReadPartRole::TextPayload, value.capacity())
+      }),
+     dm_preprocess::SourceTextStorage::Reserved { committed, .. } => (observed && !nominal_payload)
+      || text.source_arena_payload_credit().is_some_and(|credit| {
+       credit_live(credit.owner(), ReadPartRole::TextPayload, committed)
+      }),
+    };
+    result = (control, payload);
+   });
+   result
+  })
+ }
+}
+
+impl QueryDb {
  /// Compute an accounting subtotal while the same source family is held.
  /// The callback is a storage walk only. No provider or query reentrancy.
  pub(crate) fn with_funded_origin_policy_pages<T>(&self, walk: impl FnOnce(&mut dyn FnMut(&dyn std::any::Any) -> bool) -> io::Result<T>) -> io::Result<T> {

@@ -404,6 +404,11 @@ impl RelativeSyntax {
     pub(super) fn original_shared_span_tokens(&self) -> Option<&dm_syntax::SharedSpanTokens> {
         self.original_headers.as_ref()?.shared_span_tokens()
     }
+    pub(super) fn visit_original_header_storage_classified(&self, a:&dm_syntax::SettingAdmission<'_>, visit:impl FnMut(usize,usize,usize,bool), skip:&mut dyn FnMut(&dyn std::any::Any)->bool) {
+        if let Some(headers)=&self.original_headers {
+            headers.visit_storage_classified(Some(a),visit,skip);
+        }
+    }
     /// Wide arena fallback can have no shared_source; this still exposes the
     /// SAME original recipe source to the existing pointer-deduplicated census.
     pub fn visit_original_header_source(&self, mut visit: impl FnMut(&dm_preprocess::SourceText)) {

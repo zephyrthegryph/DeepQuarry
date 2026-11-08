@@ -939,7 +939,7 @@ fn run_build_attempt(
                         let checker_intent=PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalChecker0290),
                             files:vec![PolicyInputFile{path:checker_config.path,role:PolicyInputRole::Configuration,required:false}],
                             ..Default::default()}.admit()?;
-                        Ok(Arc::new(crate::runner_host::policy_capture::capture_diagnostic_with_joined_headers(&view,&inputs_capture,&checker_intent.capture_files(),checker_intent.search_folders(),joined_header_charge.as_ref())?.bind_request(&checker_intent)?.bind_diagnostic_profile()?))
+                        Ok(Arc::new(crate::runner_host::policy_capture::capture_joined_checker(&view,&inputs_capture,&checker_intent.capture_files(),checker_intent.search_folders(),joined_header_charge.as_ref())?.bind_request(&checker_intent)?.bind_diagnostic_profile()?))
                     };
                     // Full CI baseline observations belong to Analyze. Bind the
                     // Checker policy to the actual shared Original source
