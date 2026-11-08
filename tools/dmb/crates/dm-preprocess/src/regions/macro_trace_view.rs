@@ -39,6 +39,7 @@ impl OriginalMacroAuthor {
     }
 
     pub(super) fn name(&self) -> &str { &self.name }
+    pub(super) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.credit)}
     pub(super) fn origin(&self) -> Option<&DefinitionOrigin> { self.origin.as_ref() }
     pub(super) fn retained_bytes(&self) -> usize { self.credit.bytes() }
     fn buffers(&self) -> [(usize, usize); 2] {
