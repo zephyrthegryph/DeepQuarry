@@ -26,6 +26,11 @@ GLOBAL_LIST_INIT(window_dock_always_docked, list(
 	"StatPanel" = TRUE,
 ))
 
+/// Interfaces always open: each connection starts them docked whatever was saved, a float lasts that connection only, and they never close.
+GLOBAL_LIST_INIT(window_dock_always_open, list(
+	"Chat" = TRUE,
+))
+
 /datum/tgui
 	/// In the right-hand column's page (a column part, column_part.dm) rather than its own native window.
 	var/docked = FALSE

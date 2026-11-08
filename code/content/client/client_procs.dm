@@ -1006,7 +1006,8 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			panel_tabs = list()
 		if("Set-Tab")
 			stat_tab = payload["tab"]
-			SSstatpanels.immediate_send_stat_data(src)
+			var/sent_now = SSstatpanels.immediate_send_stat_data(src)
+			log_tgui(src, "Stat panel tab set to [stat_tab]: ready=[stat_panel?.is_ready() ? 1 : 0] holder=[holder ? 1 : 0] sent_now=[sent_now ? 1 : 0].", context = "stat_panel")
 		if("Inspect-Act")
 			// A button in the Inspect tab (code/content/examine/inspect_panel.dm).
 			if(islist(payload) && istext(payload["act"]))

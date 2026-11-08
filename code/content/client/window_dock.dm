@@ -68,7 +68,7 @@ CAPABILITIES(/datum/window_dock)
 		return
 	for(var/interface in layout)
 		var/list/place = layout[interface]
-		if(istext(interface) && islist(place) && !isnull(place["dock"]))
+		if(istext(interface) && islist(place) && !isnull(place["dock"]) && !GLOB.window_dock_always_open[interface])
 			.[interface] = place["dock"] ? TRUE : FALSE
 
 /// The column page's messages for the dock (they come through the stat panel's routing).
@@ -86,7 +86,12 @@ CAPABILITIES(/datum/window_dock)
 	var/client/player = owner()
 	if(!istext(text) || length(text) > WINDOW_DOCK_LAYOUT_MAX || !player?.prefs)
 		return
-	wants_cache = window_dock_wanted(text)
+	var/list/wanted = window_dock_wanted(text)
+	// A float of an always-open interface is this connection's alone: the saved text never carries it.
+	for(var/interface in GLOB.window_dock_always_open)
+		if(interface in wants_cache)
+			wanted[interface] = wants_cache[interface]
+	wants_cache = wanted
 	if(text == player.prefs.read_preference(/datum/preference/text/window_layout))
 		return
 	player.prefs.update_preference_by_type(/datum/preference/text/window_layout, text)
@@ -114,6 +119,10 @@ CAPABILITIES(/datum/window_dock)
 
 /// Remembers in the saved layout whether `interface` opens docked.
 /datum/window_dock/proc/remember(interface, docked)
+	if(GLOB.window_dock_always_open[interface])
+		wants(interface) // reads the saved layout into wants_cache first
+		wants_cache[interface] = docked ? TRUE : FALSE
+		return
 	var/client/player = owner()
 	if(!player?.prefs)
 		return
@@ -179,6 +188,8 @@ CAPABILITIES(/datum/window_dock)
 	return docked_count() > 1
 
 /datum/tgui/may_leave_column(closing)
+	if(closing && GLOB.window_dock_always_open[interface])
+		return FALSE
 	var/datum/window_dock/dock = window_dock_of(user?.client)
 	return dock ? dock.may_leave(src) : TRUE
 

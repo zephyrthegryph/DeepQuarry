@@ -282,7 +282,7 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		return TRUE
 	var/client/C = handle_get(owner)
 	if(!istype(C) || !C.mob || !C.mob.view_cover_set(TRUE))
-		log_world("INTEREST: no cover raised for [owner] (client [C ? "present" : "gone"], mob [C?.mob || "none"])")
+		log_world("INTEREST: no cover raised for [owner] (client [istype(C) ? "present" : "gone"], mob [istype(C) ? C.mob : "none"])")
 		return FALSE
 	log_world("INTEREST: cover raised for [owner] on [C.mob]")
 	GLOB.interest_covers_raised++
