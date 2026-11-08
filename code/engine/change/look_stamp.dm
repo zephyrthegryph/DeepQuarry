@@ -51,7 +51,12 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	var/list/sampled = list()
 	for(var/i in 1 to length(Q))
 		var/datum/D = Q[i]
-		if(isnull(D) || !(D.refresh_queued & DEP_CREATED) || sampled[D.type] || !isnull(GLOB.type_look_stamp[D.type]) || QDELETED(D))
+		if(isnull(D) || sampled[D.type] || QDELETED(D) || !D.refresh_queued)
+			continue
+		// A fresh instance samples both verdicts. A type every instance of which was written during init (windows, pipes, lattices) has none left on its
+		// creation mark: one written instance samples the lazy verdict alone (its draw is not the type's default look, so it says nothing of the stamp).
+		var/fresh_sample = (D.refresh_queued & DEP_CREATED) && isnull(GLOB.type_look_stamp[D.type])
+		if(!fresh_sample && (!isatom(D) || !isnull(GLOB.type_look_lazy[D.type])))
 			continue
 		sampled[D.type] = TRUE
 		var/pending = D.refresh_queued & ~DEP_CREATED
@@ -66,7 +71,8 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		catch(var/exception/e)
 			dq_report_caught(e, "refresh of [D.type]")
 			continue
-		type_look_stamp_record(D)
+		if(fresh_sample)
+			type_look_stamp_record(D)
 		if(!isnull(gameplay_before))
 			look_lazy_record(D, gameplay_before)
 	var/sampled_at = REALTIMEOFDAY

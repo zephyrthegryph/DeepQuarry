@@ -2,7 +2,8 @@
  * The Abilities tab's button pictures as one sprite sheet: every state of the icon files ability buttons draw from (each /datum/action
  * type's button_icon; the states an entry picks at runtime, a spell's or a changeling power's, are states of those files too). The sheet is
  * built at boot by the asset system (rust-g iconforge, kept across rounds by the smart cache) and sent to a client once, with its stat panel;
- * an entry then names its sprite ("icon_class" in ability_entry_data()) instead of an image of its own. An entry whose picture is a target's
+ * an entry then names its sprite ("icon_class" in ability_entry_data()) instead of an image of its own. A client gets the sheet with the
+ * first Abilities push that has a picture from it (ability_panel.dm), not on join: a player with no such ability never downloads it. An entry whose picture is a target's
  * own (an item's) is not in the sheet and is sent on its own (icon_file_asset_url()), as is any entry while the client has not got the sheet.
  * Nothing waits for the sheet: a client that connected before it was built gets it when it is (realize_spritesheets()).
  */
@@ -71,13 +72,21 @@
 	log_asset("Abilities sheet sent to [key_name(player)] ([length(sheet.sprites)] sprites).")
 	return TRUE
 
-/// The sheet was built: every stat panel that is up gets it, and its Abilities tab is sent again with the sheet's sprites.
+/// The sheet was built: every stat panel that is up and has an ability that draws from it gets it, and its Abilities tab is sent again.
 /proc/ability_sheet_ready(datum/asset/spritesheet_batched/ability_icons/sheet)
 	for(var/client/player as anything in GLOB.clients)
-		if(!player?.stat_panel?.is_ready() || (sheet in player.stat_panel.sent_assets))
+		if(!player?.stat_panel?.is_ready() || (sheet in player.stat_panel.sent_assets) || !ability_sheet_wanted(player.mob))
 			continue
 		if(ability_sheet_send(player))
 			player.mob?.abilities_changed()
+
+/// Whether `user` has an ability whose button picture is in the sheet: only then is the sheet worth a client's download (a player with no
+/// abilities, or only items' own pictures, never gets it).
+/proc/ability_sheet_wanted(mob/user)
+	for(var/datum/action/entry as anything in user?.actions)
+		if(entry.button_icon && !entry.ability_icon_source())
+			return TRUE
+	return FALSE
 
 /// The sheet sprite of `entry`'s button picture for `viewer` (its CSS classes), or null: the picture is a target's own (an item's), or the viewer's
 /// stat panel has not got the sheet.

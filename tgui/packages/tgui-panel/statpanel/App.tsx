@@ -12,6 +12,7 @@ import { Button, Input } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { AbilitiesTab } from './AbilitiesTab';
+import { DockArea } from './DockArea';
 import { InspectTab } from './InspectTab';
 import {
   CLOSED_BY_DEFAULT,
@@ -220,7 +221,8 @@ class ViewBoundary extends Component<
     if (this.state.error === null) return this.props.children;
     return (
       <div className="stat-empty">
-        This part of the panel failed to draw ({this.state.error}). Other tabs still work; Fix UI reloads it.
+        This part of the panel failed to draw ({this.state.error}). Other tabs
+        still work; Fix UI reloads it.
       </div>
     );
   }
@@ -497,6 +499,7 @@ export function App(props: {
   return (
     <div className="stat-root">
       <MapSplitHandle />
+      <DockArea />
       <Tabs
         layout={tabsLayout(tabsStyle)}
         className="stat-views"
@@ -548,9 +551,7 @@ export function App(props: {
             <div className="stat-empty">Nothing matches.</div>
           )
         ) : (
-          <ViewBoundary
-            resetKey={`${state.view}/${state.serverPage}`}
-          >
+          <ViewBoundary resetKey={`${state.view}/${state.serverPage}`}>
             <ViewContent state={state} store={store} />
           </ViewBoundary>
         )}

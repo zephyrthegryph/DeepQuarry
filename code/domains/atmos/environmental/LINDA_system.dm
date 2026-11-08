@@ -131,11 +131,11 @@
 	local_turf.atmos_spawn_air(text)
 
 /turf/open/atmos_spawn_air(text)
-	if(!text || !air)
+	if(!text || !turf_air())
 		return
 
 	var/datum/gas_mixture/turf_mixture = SSair.parse_gas_string(text, /datum/gas_mixture/turf)
 
-	air.merge(turf_mixture)
+	turf_air().merge(turf_mixture)
 	// archive() removed — turf FDM archiving is Rust-side now.
 	SSair.add_to_active(src)

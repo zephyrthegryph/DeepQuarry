@@ -65,10 +65,10 @@ CAPABILITIES(/datum/tgui_module/crew_monitor)
 	for(var/zlevel in map_levels)
 		crewmembers += GLOB.crew_repository.health_data(zlevel)
 
-	// This is apparently necessary, because the above loop produces an emergent behavior
-	// of telling you what coordinates someone is at even without sensors on,
-	// because it strictly sorts by zlevel from bottom to top, and by coordinates from top left to bottom right.
-	shuffle_inplace(crewmembers)
+	// Sorted by name across every level: the loop's order (level by level) would tell where someone is without tracking sensors. A sort, not
+	// the shuffle this replaced, so that a rebuild while the sensors' data is unchanged (the repository keeps it 5 s; the window rebuilds every
+	// 0.9 s) is the same payload, which the window does not send again (tgui_window.dm, same_key).
+	crewmembers = sortByKey(crewmembers, "name")
 	data["crewmembers"] = crewmembers
 
 	return data

@@ -6,7 +6,7 @@
 	var/started = TICK_USAGE_REAL
 	var/list/data = mc_health_data()
 	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
-	for(var/key in list("window_5s", "window_30s", "window_5m", "ticks", "outliers", "subsystems", "kernel", "gc", "entities", "churn", "runtime", "attribution"))
+	for(var/key in list("window_5s", "window_30s", "window_5m", "ticks", "outliers", "subsystems", "kernel", "gc", "entities", "churn", "runtime", "attribution", "attribution_rest"))
 		TEST_ASSERT(!isnull(data[key]), "the panel data has [key]")
 	TEST_ASSERT(length(data["ticks"]) <= 120, "at most 120 recent ticks")
 	var/list/census = data["entities"]["census"]
@@ -49,6 +49,11 @@
 	TEST_ASSERT(islist(frames) && frames["count"] > 0, "the frame-time histogram reaches the payload")
 	TEST_ASSERT(islist(frames) && length(frames["buckets"]) == length(frames["bounds"]) + 1, "with its buckets and bounds")
 	TEST_ASSERT(!isnull(rust["alloc.heap.current_bytes"]), "the refreshed native heap total is there")
+	var/fields = 0
+	for(var/name in rust)
+		if(findtext(name, "world.awake.field_") == 1)
+			fields++
+	TEST_ASSERT(fields > 0, "the fields' awake counts reach the payload, kept by the fields as they step")
 	test_driver_end()
 
 /// The Advanced links name a controller; the server resolves the name, and nothing else.

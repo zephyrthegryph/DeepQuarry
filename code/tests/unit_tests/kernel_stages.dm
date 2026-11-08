@@ -21,7 +21,7 @@
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	var/turf/simulated/T
 	for(var/turf/simulated/sim_turf in world)
-		if(sim_turf.air)
+		if(sim_turf.turf_air())
 			T = sim_turf
 			break
 	TEST_ASSERT_NOTNULL(T, "no simulated turf for the hotspot test")

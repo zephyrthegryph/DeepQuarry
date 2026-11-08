@@ -31,16 +31,16 @@
 	if(fire_protection && (ELAPSED(src, fire_protection, CLOCK_WORLD) < FIRE_PROTECTION_DURATION))
 		return
 	//If the air doesn't exist we just return false
-	if(!air)
+	if(!turf_air())
 		return
 
-	var/oxy = air.get_moles(/datum/gas/oxygen)
+	var/oxy = turf_air().get_moles(/datum/gas/oxygen)
 	if (oxy < 0.5)
 		return
-	var/plas = air.get_moles(/datum/gas/plasma)
-	var/trit = air.get_moles(/datum/gas/tritium)
-	var/h2 = air.get_moles(/datum/gas/hydrogen)
-	var/freon = air.get_moles(/datum/gas/freon)
+	var/plas = turf_air().get_moles(/datum/gas/plasma)
+	var/trit = turf_air().get_moles(/datum/gas/tritium)
+	var/h2 = turf_air().get_moles(/datum/gas/hydrogen)
+	var/freon = turf_air().get_moles(/datum/gas/freon)
 	if(active_hotspot)
 		if(soh)
 			if(plas > 0.5 || trit > 0.5 || h2 > 0.5)
@@ -182,7 +182,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 /obj/effect/hotspot/proc/perform_exposure()
 	var/turf/open/location = loc
 	var/datum/gas_mixture/reference
-	if(!istype(location) || !location.air)
+	if(!istype(location) || !location.turf_air())
 		return FALSE
 
 	if(location.active_hotspot && location.active_hotspot != src)
@@ -198,10 +198,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 
 	//Passive mode
 	if(bypassing || cold_fire)
-		reference = location.air // Our color and volume will depend on the turf's gasmix
+		reference = location.turf_air() // Our color and volume will depend on the turf's gasmix
 	//Active mode
 	else
-		var/datum/gas_mixture/affected = location.air.remove_ratio(volume/location.air.return_volume())
+		var/datum/gas_mixture/affected = location.turf_air().remove_ratio(volume/location.turf_air().return_volume())
 		if(affected) //in case volume is 0
 			reference = affected // Our color and volume will depend on this small sparked gasmix
 			heat_set(affected, temperature, HEAT_SOURCE_FIRE)
@@ -313,10 +313,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 		return
 
 	//Not enough / nothing to burn. One batched read covers every fuel and oxidiser check.
-	if(!location.air)
+	if(!location.turf_air())
 		destroyed(src)
 		return
-	var/list/readings = read_gas_mixtures(list(location.air))
+	var/list/readings = read_gas_mixtures(list(location.turf_air()))
 	if((INSUFFICIENT(GAS_ID_PLASMA) && INSUFFICIENT(GAS_ID_TRITIUM) && INSUFFICIENT(GAS_ID_HYDROGEN) && INSUFFICIENT(GAS_ID_FREON)) || INSUFFICIENT(GAS_ID_OXYGEN))
 		destroyed(src)
 		return
@@ -331,7 +331,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 			sim_loc.burn_tile()
 
 		//Possible spread due to radiated heat.
-		var/air_temperature = location.air.return_temperature()
+		var/air_temperature = location.turf_air().return_temperature()
 		if(air_temperature > FIRE_MINIMUM_TEMPERATURE_TO_SPREAD || cold_fire)
 			var/radiated_temperature = air_temperature*FIRE_SPREAD_RADIOSITY_SCALE
 			if(cold_fire)

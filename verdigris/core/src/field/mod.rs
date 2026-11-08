@@ -1388,6 +1388,43 @@ impl<K: FieldKind> fmt::Debug for FieldKey<K> {
     }
 }
 
+/// Each field's counts after its last step, by field name: (active chunks, live edges, touched chunks). Written by the field's own frame task
+/// as it steps (a few relaxed stores), read by a metrics reader (the MC Health panel) without walking or locking the world.
+static FIELD_COUNTS: std::sync::RwLock<Vec<(&'static str, [std::sync::Arc<std::sync::atomic::AtomicU32>; 3])>> = std::sync::RwLock::new(Vec::new());
+
+fn publish_field_counts(name: &'static str, stats: &FieldStats) {
+    use std::sync::atomic::Ordering;
+    let values = [stats.active_chunks, stats.live_edges, stats.touched_chunks];
+    if let Some((_, slots)) = FIELD_COUNTS
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .iter()
+        .find(|(n, _)| *n == name)
+    {
+        for (slot, v) in slots.iter().zip(values) {
+            slot.store(v, Ordering::Relaxed);
+        }
+        return;
+    }
+    let slots = values.map(|v| std::sync::Arc::new(std::sync::atomic::AtomicU32::new(v)));
+    FIELD_COUNTS
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .push((name, slots));
+}
+
+/// Every field's counts after its last step: (name, active chunks, live edges, touched chunks).
+#[must_use]
+pub fn field_counts() -> Vec<(&'static str, u32, u32, u32)> {
+    use std::sync::atomic::Ordering;
+    FIELD_COUNTS
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .iter()
+        .map(|(n, s)| (*n, s[0].load(Ordering::Relaxed), s[1].load(Ordering::Relaxed), s[2].load(Ordering::Relaxed)))
+        .collect()
+}
+
 /// Registers field `K` over `dims`: the geometry and cells domains (spatial
 /// chunks), the field state, and its `field:<name>` frame task, reading its
 /// blocked faces from `grid` (the world's grid resource; `None` for a field
@@ -1411,8 +1448,9 @@ pub fn add_field<K: FieldKind>(
         let geom = ctx.read(g);
         let mut dom = ctx.write(c);
         let grid = grid.map(|r| ctx.read(r));
-        ctx.write(state)
-            .step(&mut dom.store, &geom.store, grid.as_deref());
+        let mut field = ctx.write(state);
+        field.step(&mut dom.store, &geom.store, grid.as_deref());
+        publish_field_counts(K::NAME, &field.stats());
     })
     .reads(g.id())
     .writes(c.id())
@@ -1435,4 +1473,19 @@ const IMPLICIT_TOLERANCE: f32 = 1.0e-5;
 
 const fn prev_power_of_two(n: u32) -> u32 {
     1 << (31 - n.leading_zeros())
+}
+
+#[cfg(test)]
+mod field_count_tests {
+    use super::*;
+
+    #[test]
+    fn a_step_publishes_its_counts_for_the_metrics_reader() {
+        let stats = FieldStats { active_chunks: 4, live_edges: 9, touched_chunks: 2, ..FieldStats::default() };
+        publish_field_counts("test_field_counts", &stats);
+        let stats = FieldStats { active_chunks: 5, ..stats };
+        publish_field_counts("test_field_counts", &stats);
+        let row = field_counts().into_iter().find(|r| r.0 == "test_field_counts");
+        assert_eq!(row, Some(("test_field_counts", 5, 9, 2)));
+    }
 }

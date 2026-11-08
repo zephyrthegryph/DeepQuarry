@@ -89,7 +89,7 @@
 			var/local_x = room_turf.x - materialized.origin_x + 1
 			var/local_y = room_turf.y - materialized.origin_y + 1
 			var/datum/generated_station_tile_intent/air_intent = materialized.tile_plan.tile(local_x, local_y)
-			TEST_ASSERT(room_turf.air?.return_pressure() >= 0.9 * ONE_ATMOSPHERE, "Generated room [module.id] has an airless starting [room_turf.type] at [generated_station_coordinate(room_turf)]; intent=[air_intent?.owner_id]/[air_intent?.zone_id]/[air_intent?.structure_kind], pressure=[room_turf.air?.return_pressure()]")
+			TEST_ASSERT(room_turf.turf_air()?.return_pressure() >= 0.9 * ONE_ATMOSPHERE, "Generated room [module.id] has an airless starting [room_turf.type] at [generated_station_coordinate(room_turf)]; intent=[air_intent?.owner_id]/[air_intent?.zone_id]/[air_intent?.structure_kind], pressure=[room_turf.turf_air()?.return_pressure()]")
 			TEST_ASSERT(!locate_within(room_turf, /obj/effect/floor_decal/corner), "Generated room [module.id] has a random center-floor color decal")
 			TEST_ASSERT(!(locate_within(room_turf, /obj/structure/table)) || !(locate_within(room_turf, /obj/structure/bed/chair)), "Generated room [module.id] has a chair stacked on a table at [generated_station_coordinate(room_turf)]")
 	// Immediate pressure assertions can pass before Rust publishes rebuilt turf
@@ -100,7 +100,7 @@
 	for(var/module_id in materialized.module_areas)
 		var/area/generated_station/stable_room_area = materialized.module_areas[module_id]
 		for(var/turf/open/stable_turf in area_contents_of_type(stable_room_area, /turf/open))
-			TEST_ASSERT(stable_turf.air?.return_pressure() >= 0.85 * ONE_ATMOSPHERE, "Generated room [module_id] lost pressure after atmos publication at [generated_station_coordinate(stable_turf)]")
+			TEST_ASSERT(stable_turf.turf_air()?.return_pressure() >= 0.85 * ONE_ATMOSPHERE, "Generated room [module_id] lost pressure after atmos publication at [generated_station_coordinate(stable_turf)]")
 	qdel(topology)
 	qdel(builder)
 	qdel(materialized)

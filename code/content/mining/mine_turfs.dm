@@ -127,14 +127,7 @@ CAPABILITIES(/turf/simulated/mineral)
 	set_opacity(0)
 	set_blocks_air(0)
 	can_build_into_floor = TRUE
-	// under LINDA, a turf with blocks_air=0 but air=null trips
-	// process_cell guards on every neighbor share. Mineral walls start with
-	// air=null (because /turf/open/Initialize skips create_gas_mixture when
-	// blocks_air=1); when we carve them into a floor here we have to give
-	// them a real gas_mixture or any floor that sees this turf in its
-	// adjacency will null-deref during share.
-	if(isnull(air))
-		air = create_gas_mixture()
+	// The carved floor's air is made when something first reads it (turf_air()); Rust gives the cell its gas when the turf re-registers.
 	clear_ore_effects()
 	update_general()
 	return TRUE
@@ -149,8 +142,8 @@ CAPABILITIES(/turf/simulated/mineral)
 	// re-walling a carved mineral: drop the air mixture so we don't
 	// leave a stale gas pocket inside a solid wall. air_update_turf below
 	// will then rebuild adjacency excluding this turf.
-	if(air)
-		QDEL_NULL(air)
+	if(turf_air())
+		QDEL_NULL(_air)
 	update_general()
 	return TRUE
 

@@ -7,7 +7,7 @@ import './statpanel.scss';
 import { loadMappings, loadStyleSheet } from 'common/assets';
 import { createRoot } from 'react-dom/client';
 import { App, PanelBoundary } from './App';
-import { watchChatSide } from './chatSide';
+import { dockHost } from './dockHost';
 import { applyDockPreview } from './dockPreview';
 import { StatStore } from './store';
 
@@ -85,6 +85,9 @@ Byond.subscribe((type: string, payload: any) => {
     applyDockPreview(payload);
     return;
   }
+  if (dockHost.receive(type, payload)) {
+    return;
+  }
   store.receive(type, payload);
 });
 
@@ -109,9 +112,7 @@ function mount() {
   Byond.winset(Byond.windowId, { 'is-visible': true });
   Byond.sendMessage('Set-Tab', { tab: 'Status' });
   Byond.sendMessage('Update-Verbs');
-  watchChatSide();
-  // A reloaded panel: the server re-seats the docked windows' pane chain.
-  Byond.sendMessage('WM-Ready');
+  dockHost.ready();
   // The server can miss the first request while the client is still logging in.
   setTimeout(() => {
     if (!store.state.verbs.length) Byond.sendMessage('Update-Verbs');
