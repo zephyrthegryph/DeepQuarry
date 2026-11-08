@@ -22,6 +22,8 @@
 	probe("strings", param("strings", 1000000), stall_ms, 0)
 	probe("lists", param("lists", 400000), stall_ms, 0)
 	probe("slots", param("slots", 600000), stall_ms, length(handle_gens))
+	probe("fact_strings", param("facts", 20000), stall_ms, 0)
+	probe("fact_strings_churn", param("facts", 20000), stall_ms, 0)
 	probe("string_churn", param("churn", 300000), stall_ms, 0)
 	probe("datum_churn", param("churn", 300000), stall_ms, 0)
 	probe("list_churn", param("churn", 300000), stall_ms, 0)
@@ -44,6 +46,13 @@
 				keep[i] = "alloc-stall-[i]-[world.time]"
 			if("lists")
 				keep[i] = list(i)
+			if("fact_strings")
+				var/h = 1048576 + i * 7919
+				keep[i] = list("infrastructure-damage:[handle_text(h)]", "infrastructure-damage:[handle_text(h)]:1")
+			if("fact_strings_churn")
+				var/h2 = 9048576 + i * 7919
+				var/list/pair = list("infrastructure-damage:[handle_text(h2)]", "infrastructure-damage:[handle_text(h2)]:1")
+				pair = null
 			if("string_churn")
 				var/churned = "churn-[i]-[world.time]"
 				churned = null
