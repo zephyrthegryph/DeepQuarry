@@ -13,17 +13,16 @@
 	supervisors = "absolutely everyone"
 	selection_color = "#515151"
 	economic_modifier = 1
-	access = list()			//See /// Maintenance access for assistants and interns under the assistant_maint config (copied per card).
-GLOBAL_LIST_INIT(assistant_maint_access, list(ACCESS_MAINT_TUNNELS))
-
-/datum/job/assistant/get_access()
-
+	access = list()			//See /datum/job/assistant/get_access()
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant
 	job_description = "An Assistant does whatever is requested of them. Though they are part of the crew, they have no real authority."
 /*	alt_titles = list(JOB_ALT_TECHNICAL_ASSISTANT = /datum/alt_title/tech_assist,
 						JOB_ALT_MEDICAL_INTERN= /datum/alt_title/med_intern, JOB_ALT_RESEARCH_ASSISTANT = /datum/alt_title/research_assist,
 						JOB_ALT_VISITOR = /datum/alt_title/visitor)
 	)	*/ // Removal: no alt-titles for visitors
+
+/// Maintenance access for assistants and interns under the assistant_maint config (copied per card).
+GLOBAL_LIST_INIT(assistant_maint_access, list(ACCESS_MAINT_TUNNELS))
 
 /datum/job/assistant/get_access()
 	if(CONFIG_GET(flag/assistant_maint))

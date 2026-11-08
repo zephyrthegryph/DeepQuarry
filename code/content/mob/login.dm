@@ -37,6 +37,10 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	if(!client)
 		return FALSE
 
+	// JOIN_TIMING_LOGIN: what each step of a login costs (playtest 2026-11-08: bind_player, which is this, took 6 s of a round-start join).
+	var/list/login_ms = list()
+	var/login_started = TICK_USAGE_REAL
+	var/login_step = TICK_USAGE_REAL
 	mob_state_set_played(TRUE)
 	client.persistent_client.set_mob(src)
 
@@ -46,19 +50,29 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	log_access("Mob Login: [key_name(src)] was assigned to a [type] ([tag])")
 	update_Login_details(src)
 	world.update_status()
+	login_ms["access, registry, status"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 
 	client_images_clear(client)				//remove the images such as AIs being unable to see runes
 	client_screen_clear(client)				//remove hud items just in case
 	if(hud_used)
 		rel_clear(src, nameof(hud_used)) // remove the owned HUD objects
 	new /datum/hud(src)
+	login_ms["hud"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 
 	STATE_SET(src, cooldowns, next_move, 1)
 	STATE_SET(src, connection, disconnect_time, null) // ition: clear the disconnect time
 	sight |= SEE_SELF|SEE_BLACKNESS
 	..()
+	login_ms["native login"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/engine/grant_verbs.dm)
+	login_ms["login verbs"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 	PUBLISH(src, mob_login)
+	login_ms["mob_login notice"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 	ckey_changed()
 
 	client.perspective = MOB_PERSPECTIVE
@@ -76,6 +90,8 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	if(GLOB.global_vantag_hud)
 		STATE_SET(src, mob_misc, vantag_hud, TRUE)
 	recalculate_vis()
+	login_ms["eye, click catcher, colour, planes, vis"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 
 	// AO support
 	var/ao_enabled = client.prefs?.read_preference(/datum/preference/toggle/ambient_occlusion)
@@ -88,6 +104,8 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 
 	// Write this mob's keybinding profile (default or cyborg) into the skin's macro set.
 	client.apply_keybindings()
+	login_ms["ao, status, keybindings"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 
 	if(!client.tooltips)
 		rel_set(client, nameof(client.tooltips), new /datum/tooltip(client))
@@ -108,10 +126,16 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 
 		for(var/datum/callback/CB as anything in persistent_client.post_login_callbacks)
 			CB.Invoke()
+	login_ms["tooltips, z, proximity, actions, abilities, callbacks"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 
 	log_mob_tag(src, "TAG: [tag] NEW OWNER: [key_name(src)]")
 	PUBLISH(src, mob_client_login, client = client)
+	login_ms["mob_client_login notice"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 	client.init_verbs()
+	login_ms["client verbs"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 
 	set_recursive_listening(LISTENING_PLAYER)
 	GLOB.tickets.ClientLogin(client, TRUE)
@@ -129,3 +153,8 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 
 	var/atom/movable/screen/plane_master/augmented/aug = plane_holder.plane_masters[VIS_AUGMENTED]
 	aug.apply()
+	login_ms["listening, tickets, event, alt appearances, augmented"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	var/list/login_steps = list()
+	for(var/step_name in login_ms)
+		login_steps += "[step_name] [round(login_ms[step_name], 0.1)] ms"
+	log_world("JOIN_TIMING_LOGIN: [key_name(src)] ([type]): whole [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_started), 0.1)] ms, [jointext(login_steps, ", ")]")

@@ -356,6 +356,15 @@ fn os_reading() -> OsReading {
         memory.cb = cb;
         if K32GetProcessMemoryInfo(process, &mut memory, cb) != 0 {
             reading.page_faults = u64::from(memory.page_fault_count);
+            // PROCESS_MEMORY_COUNTERS after cb and PageFaultCount: PeakWorkingSetSize, WorkingSetSize, four pool sizes, PagefileUsage (private
+            // bytes), PeakPagefileUsage. The MC Health panel reads them as the server's memory (refreshed with the reading, at most every 10 s).
+            #[allow(clippy::cast_precision_loss)]
+            {
+                let registry = crate::metrics::registry();
+                registry.gauge("process.working_set_bytes").set(memory.sizes[1] as f64);
+                registry.gauge("process.peak_working_set_bytes").set(memory.sizes[0] as f64);
+                registry.gauge("process.private_bytes").set(memory.sizes[6] as f64);
+            }
         }
         let mut io = IoCounters::default();
         if GetProcessIoCounters(process, &mut io) != 0 {
@@ -367,6 +376,13 @@ fn os_reading() -> OsReading {
 
 #[cfg(not(windows))]
 fn os_reading() -> OsReading {
+    // The resident set (second field of /proc/self/statm, in pages) as the process memory the MC Health panel shows.
+    if let Ok(text) = std::fs::read_to_string("/proc/self/statm") {
+        if let Some(pages) = text.split_whitespace().nth(1).and_then(|f| f.parse::<u64>().ok()) {
+            #[allow(clippy::cast_precision_loss)]
+            crate::metrics::registry().gauge("process.working_set_bytes").set((pages * 4096) as f64);
+        }
+    }
     OsReading::default()
 }
 
@@ -392,6 +408,12 @@ fn thread_cpu_us() -> u64 {
 fn thread_cpu_us() -> u64 {
     0
 }
+
+/// The buckets of `frame.total_us` (microseconds): fine below a millisecond, where most frames are, then up to a stall.
+const FRAME_US_BOUNDS: &[f64] = &[
+    100.0, 200.0, 300.0, 500.0, 750.0, 1_000.0, 1_500.0, 2_000.0, 3_000.0, 5_000.0, 7_500.0, 10_000.0, 15_000.0, 20_000.0, 30_000.0, 50_000.0,
+    100_000.0, 250_000.0,
+];
 
 /// A frame at least this long (microseconds) adds its own per-phase times to the `frame.slow_us.<phase>` counters, so the
 /// slow frame is named by its phase and not hidden in the cumulative `frame.us.*` totals of the quick ones.
@@ -458,6 +480,9 @@ impl PhaseTimer {
 
     /// Ends the frame: a slow one files its trace under `frame.slow_us.*` in the process registry.
     fn finish(&self) {
+        // Every frame's wall time, so the slow 1% can be read from the buckets (the MC Health panel).
+        #[allow(clippy::cast_precision_loss)]
+        crate::metrics::registry().histogram("frame.total_us", FRAME_US_BOUNDS).observe(self.total_us as f64);
         let cpu_us = thread_cpu_us().saturating_sub(self.cpu_start_us);
         // The machine is read only for a frame that turned out slow (the start reading is the cheap half).
         let os = if self.total_us < SLOW_FRAME_US {
