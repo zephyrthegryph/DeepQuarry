@@ -487,7 +487,7 @@
 		last_sent[same_key] = payload_json
 	else if(last_sent && (type in last_sent))
 		last_sent -= type
-	var/message = "%7b%22type%22%3a%22[type]%22%2c%22payload%22%3a[url_encode(payload_json)]%7d" // TGUI_CREATE_MESSAGE's format
+	var/message = encode_message(type, payload_json)
 	// Place into queue if window is still loading
 	if(!force && (status != TGUI_WINDOW_READY || opening))
 		if(!message_queue)
@@ -495,6 +495,10 @@
 		message_queue += list(message)
 		return
 	deliver(message)
+
+/// The message string a page gets for `type` with its JSON payload, url-encoded once (TGUI_CREATE_MESSAGE's format).
+/datum/tgui_window/proc/encode_message(type, payload_json)
+	return "%7b%22type%22%3a%22[type]%22%2c%22payload%22%3a[url_encode(payload_json)]%7d"
 
 /// Forgets what was last sent under `same_key`: the page dropped that state (a tab it removed), so the next message under it goes out.
 /datum/tgui_window/proc/forget_sent(same_key)

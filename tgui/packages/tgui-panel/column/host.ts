@@ -6,7 +6,7 @@
  *
  * Server windows in the column (the stat panel, docked interfaces) are
  * "column parts": the server opens one with `col/open {wid}`, sends it
- * messages as `col/msg {wid, raw}` and closes it with `col/close {wid}`; the
+ * messages as `col/msg {wid, type, payload}` (a raw string as `{wid, raw}`) and closes it with `col/close {wid}`; the
  * page answers for it with `col/msg {wid, type, payload}`.
  */
 import {
@@ -159,7 +159,11 @@ export class ColumnHost {
 
   private message(payload: any) {
     const wid = payload?.wid;
-    const message = decodeRaw(payload?.raw);
+    // One envelope, decoded once with the page's message: {wid, type, payload}; a raw native string (an asset mapping) as {wid, raw}.
+    const message =
+      typeof payload?.type === 'string'
+        ? { type: payload.type as string, payload: payload.payload }
+        : decodeRaw(payload?.raw);
     if (typeof wid !== 'string' || !message) return;
     const backend = this.backends.get(wid);
     if (!backend) return;
