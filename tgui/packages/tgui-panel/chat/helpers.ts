@@ -14,6 +14,7 @@ import {
   scrollTrackingAtom,
   storedRoundsAtom,
 } from './atoms';
+import { saveLogMark } from './log';
 import { serializeMessage, unreadAfterBatch } from './model';
 import { chatRenderer } from './renderer';
 import type { SerializedMessage, StoredChatSettings } from './types';
@@ -74,6 +75,8 @@ function saveChatMessages(): void {
       .map((message) => serializeMessage(message));
 
     storage.set('chat-messages', messages);
+    // With the log, the last message it holds: the next chat window asks the server for what follows (chat/log.ts).
+    saveLogMark();
     storage.set(
       'chat-messages-archive',
       chatRenderer.archivedMessages.map((message) => serializeMessage(message)),

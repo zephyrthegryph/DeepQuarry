@@ -25,6 +25,9 @@ GLOBAL_LIST_EMPTY(client_glow_chunks)
 	/// The mask cutting this light's glow; the reach key it last drew ("range|offsets").
 	var/obj/effect/overlay/client_glow_mask/glow_mask
 	var/glow_mask_key
+	/// The reach range and glow margin the mask was last built for (client_glow_mask_refresh()).
+	var/glow_mask_range = 0
+	var/glow_mask_margin = 0
 	/// "dx,dy" -> TRUE for every turf the mask lets the glow onto (tests, debugging).
 	var/list/glow_reach
 	/// The turf glow_reach is measured from.
@@ -55,27 +58,44 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_shadow)
 
 DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build), SC_NEVER)
 
-/// Rebuilds this light's mask from its reach (client_glow_apply()). `glow_icon` and `margin` are the glow sprite's: the mask
-/// is the same size (its base is that icon made fully transparent), so the alpha filter lines the two up.
-/datum/light_source/proc/client_glow_mask_apply(range, glow_icon, margin)
+/// Recomputes this light's reach after an opacity change and rebuilds the mask only if the reach changed.
+/datum/light_source/proc/client_glow_mask_refresh()
+	if(!glow || !glow_mask || !source_turf)
+		return
 	var/obj/effect/overlay/client_glow/G = glow
+	if(client_glow_mask_apply(glow_mask_range, G.icon, glow_mask_margin))
+		client_glow_holders_consider(src) // the held copies take the new mask
+
+/// Rebuilds this light's mask from its reach (client_glow_apply()). `glow_icon` and `margin` are the glow sprite's: the mask
+/// is the same size (its base is that icon made fully transparent), so the alpha filter lines the two up. TRUE when it rebuilt.
+/datum/light_source/proc/client_glow_mask_apply(range, glow_icon, margin)
+	glow_mask_range = range
+	glow_mask_margin = margin
+	var/obj/effect/overlay/client_glow/G = glow
+	// The reach first, as a shape key: an opacity change that leaves this light's reach as it was (most of them) stops here.
+	var/list/seen = sight_view_turfs(source_turf, range)
+	var/list/offsets = new /list(length(seen) * 2)
+	var/i = 0
+	var/sx = source_turf.x
+	var/sy = source_turf.y
+	for(var/turf/T as anything in seen)
+		offsets[++i] = T.x - sx
+		offsets[++i] = T.y - sy
+	var/key = "[margin]|[jointext(offsets, ",")]"
+	if(key == glow_mask_key && glow_mask && glow_reach_origin == source_turf)
+		return
 	// Lum watches (watched(T, WATCH_LUM)) on turfs this light lit or now lights hear about it.
-	var/list/watched_turfs = client_glow_watched_reach()
-	var/list/offsets = list()
+	var/watching = SSwatched.client_lum_watching()
+	var/list/watched_turfs = watching ? client_glow_watched_reach() : list()
 	var/list/reach = list()
-	for(var/turf/T as anything in sight_view_turfs(source_turf, range))
-		offsets += T.x - source_turf.x
-		offsets += T.y - source_turf.y
-		reach["[T.x - source_turf.x],[T.y - source_turf.y]"] = TRUE
-		if(SSwatched.client_lum_watched(T))
+	for(var/turf/T as anything in seen)
+		reach["[T.x - sx],[T.y - sy]"] = TRUE
+		if(watching && SSwatched.client_lum_watched(T))
 			watched_turfs |= T
 	glow_reach = reach
 	glow_reach_origin = source_turf // ALLOW(ownership): lighting engine turf cache, rewritten on every mask rebuild like source_turf; a turf relation index entry per rebuild would grow without bound
 	for(var/turf/W as anything in watched_turfs)
 		SSwatched.lum_changed(W)
-	var/key = "[margin]|[jointext(offsets, ",")]"
-	if(key == glow_mask_key && glow_mask)
-		return
 	GLOB.client_glow_mask_builds++
 	if(!glow_mask)
 		rel_set(src, nameof(glow_mask), new /obj/effect/overlay/client_glow_mask(null))
@@ -92,6 +112,7 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 	M.set_icon(glow_icon)
 	M.overlays = CACHED_FAST(client_glow_masks, key)
 	client_glow_index(TRUE)
+	return TRUE
 
 /// The watched turfs (lum bands) in this light's last reach.
 /datum/light_source/proc/client_glow_watched_reach()
@@ -149,5 +170,4 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 				if(!S || max(abs(S.x - T.x), abs(S.y - T.y)) > CEILING(L.light_range, 1))
 					continue
 				GLOB.client_glow_reconsiders++
-				L.glow_mask_key = null
-				L.force_update()
+				L.client_glow_mask_refresh() // only the mask: the glow's place, size and tint did not change

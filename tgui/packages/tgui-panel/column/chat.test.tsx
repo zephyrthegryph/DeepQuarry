@@ -6,7 +6,6 @@ import { act, cleanup, render, waitFor } from '@testing-library/react';
 
 const { Chat, chatBusMessage } = await import('tgui/interfaces/Chat');
 const { lastShownSequence } = await import('../chat/handlers');
-const { isChatGuest } = await import('../chat/guest');
 const { store } = await import('../events/store');
 const { chatDraftAtom } = await import('../input/atoms');
 
@@ -57,9 +56,19 @@ describe('a floating chat window', () => {
     // It asks for everything after the last message this page showed (none in a fresh window).
     const after = lastShownSequence() ?? -1;
     render(<Chat />);
-    // A floating chat is a guest: the server's history, not the column page's stored log.
-    expect(isChatGuest()).toBe(true);
-    expect(sent).toContainEqual({ type: 'chat/ready', payload: { after } });
+    // Its window gets the panel's config (chat_ui.dm): with it the stored log loads, and only then does it ask the server.
+    expect(sent.some((m) => m.type === 'chat/ready')).toBe(false);
+    deliver('chat/config', {
+      config: { client: { ckey: 'nick', chatlog_token: '' } },
+    });
+    await waitFor(
+      () =>
+        expect(sent).toContainEqual({
+          type: 'chat/ready',
+          payload: { after },
+        }),
+      { timeout: 6000 },
+    );
     deliver('chat/message', chatLine(after + 41, 'the replayed history'));
     deliver('chat/message', chatLine(after + 42, 'a new line'));
     expect(lastShownSequence()).toBe(after + 42);
@@ -76,5 +85,36 @@ describe('a floating chat window', () => {
         ]),
       { timeout: 2000 },
     );
+  });
+});
+
+describe('moving the chat: docked, floating, docked again', () => {
+  it("the column page catches up from the server's history with no gap, no copy and no resend", async () => {
+    const { chatMessage } = await import('../chat/handlers');
+    // The server's ring (chat_history.dm): every message the client was sent, by sequence; since(after) is what replay() sends.
+    const ring: number[] = [];
+    const since = (after: number) => ring.filter((s) => s > after);
+    const base = lastShownSequence() ?? -1;
+    const send = (seq: number) => {
+      ring.push(seq);
+      return chatLine(seq, `line ${seq}`);
+    };
+    sent.length = 0;
+    // Docked: the column page shows three lines.
+    for (const n of [1, 2, 3]) chatMessage(send(base + n));
+    const left = lastShownSequence()!;
+    expect(left).toBe(base + 3);
+    // Floating: two more lines go to the floating window, not to the page.
+    send(base + 4);
+    send(base + 5);
+    // Docked again: the page asks for what follows the last line it showed, and the server replays exactly those.
+    const replay = since(left);
+    expect(replay).toEqual([base + 4, base + 5]);
+    for (const seq of replay) chatMessage(chatLine(seq, `line ${seq}`));
+    expect(lastShownSequence()).toBe(base + 5);
+    // A replay that overlaps what the page already showed adds nothing, and nothing was missing, so nothing is asked again.
+    for (const seq of since(base)) chatMessage(chatLine(seq, `line ${seq}`));
+    expect(lastShownSequence()).toBe(base + 5);
+    expect(sent.filter((m) => m.type === 'chat/resend')).toEqual([]);
   });
 });

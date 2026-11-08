@@ -66,6 +66,8 @@
 	/// A Menu read's when() answers by (condition, holder, target): the many rows that ask one condition of one holder (a body's surgery
 	/// steps all asking surgery_offered()) ask it once. Conditions are pure, so within one read an answer cannot move.
 	var/list/menu_cond_answers
+	/// op_menu_cond_row_key()'s numbers for the objects a read's rows name
+	var/list/menu_cond_ids
 	var/menu_timed = FALSE
 	/// Whether the caller wants the near miss (a click's refusal reason): when it does not (a Menu read), a candidate the origin or authority refuses
 	/// is never made, the same as one its binding's input drops.
@@ -1158,10 +1160,10 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 
 /// op_cond() for a Menu row, answered once per (condition, holder, target) in a read. Only a var, a stat or a proc condition is kept: a tree or a
 /// requirement datum may read the row's own binding.
-/proc/op_menu_cond(datum/op_resolution/R, datum/act/op/A, cond)
+/proc/op_menu_cond(datum/op_resolution/R, datum/act/op/A, cond, row_key = null)
 	if(!R.menu_scratch || !(istext(cond) || isnum(cond)))
 		return op_cond(A, cond)
-	var/answer_key = "[cond]|[REF(A.holder)]|[REF(A.target)]|[A.cap ? REF(A.cap) : "-"]|[A.activation ? REF(A.activation) : "-"]"
+	var/answer_key = "[row_key || op_menu_cond_row_key(R, A)]|[cond]" // numbers first: a kept "prefix + number" string family stalls BYOND (doc/rewrite/byond_string_stall.md)
 	var/list/answers = R.menu_cond_answers
 	if(isnull(answers))
 		answers = list()
@@ -1173,11 +1175,41 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	answers[answer_key] = known
 	return known
 
+/// What a row's when() answers depend on (holder, target, capability, activation), as the read's small numbers for them: a row asks it once for all
+/// its conditions, and the numbers are list lookups by the object, not REF() text.
+/proc/op_menu_cond_row_key(datum/op_resolution/R, datum/act/op/A)
+	var/list/ids = R.menu_cond_ids
+	if(isnull(ids))
+		ids = list()
+		R.menu_cond_ids = ids
+	var/datum/D = A.holder
+	var/h = D ? ids[D] : 0
+	if(isnull(h))
+		h = length(ids) + 1
+		ids[D] = h
+	D = A.target
+	var/t = D ? ids[D] : 0
+	if(isnull(t))
+		t = length(ids) + 1
+		ids[D] = t
+	D = A.cap
+	var/c = D ? ids[D] : 0
+	if(isnull(c))
+		c = length(ids) + 1
+		ids[D] = c
+	D = A.activation
+	var/a = D ? ids[D] : 0
+	if(isnull(a))
+		a = length(ids) + 1
+		ids[D] = a
+	return "[h]|[t]|[c]|[a]"
+
 /proc/op_menu_decide_in(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/act/op/A)
 	if(length(P.conds))
 		GLOB.op_count_whens++
+	var/row_key = (R.menu_scratch && length(P.conds)) ? op_menu_cond_row_key(R, A) : null
 	for(var/cond in op_conds_cheapest_first(P))
-		if(!op_menu_cond(R, A, cond))
+		if(!op_menu_cond(R, A, cond, row_key))
 			return list("when", FALSE, FALSE, null, null)
 	if(op_path_reason(R, P, side, holder))
 		return list("path", TRUE, TRUE, null, null)

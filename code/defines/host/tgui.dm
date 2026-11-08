@@ -86,3 +86,7 @@
 
 /// What a column part (code/library/ui/tgui/column_part.dm) is in the right-hand column's page.
 #define COLUMN_PART_TGUI "tgui"
+/// The head of a column window's message (column_part.dm encode_message()): `{"type":"col/msg","payload":{"wid":"` url-encoded.
+#define COLUMN_ENVELOPE_HEAD "%7b%22type%22%3a%22col/msg%22%2c%22payload%22%3a%7b%22wid%22%3a%22"
+#define COLUMN_ENVELOPE_HEAD_LENGTH 66
+

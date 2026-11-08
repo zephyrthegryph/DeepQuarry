@@ -36,6 +36,8 @@ GLOBAL_VAR_INIT(photo_count, 0)
 
 	var/photo_size = 3
 	resistance_flags = FLAMMABLE
+	/// The drawing of this photo's picture while its atoms' pictures are being drawn (photo_render); null once it is filled.
+	var/datum/photo_render/rendering
 
 
 /obj/item/photo/proc/assign_photo_id(datum/act/timer/A)
@@ -84,6 +86,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/photo)
+	owns_one(nameof(rendering))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	after_init(0, then(PROC_REF(assign_photo_id)))
 	op("photo_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -253,55 +256,120 @@ CAPABILITIES(/obj/item/camera)
 	return OP_DECLINE
 
 
-/obj/item/camera/proc/get_icon(list/turfs, turf/center)
+/// One photo being drawn: every atom's picture from the shared portrait cache (its look and place read when the shot was taken), composited
+/// onto the black frame once the last lands (or after PHOTO_RENDER_TIMEOUT with what landed). The photo is filled in place.
+#define PHOTO_RENDER_TIMEOUT (6 SECONDS)
 
-	//Bigger icon base to capture those icons that were shifted to the next tile
-	//i.e. pretty much all wall-mounted machinery
-	var/icon/res = icon('icons/effects/96x96.dmi', "")
-	res.Scale(size*32, size*32)
-	// Initialize the photograph to black.
-	res.Blend("#000", ICON_OVERLAY)
+/datum/photo_render
+	/// The photo being drawn (it owns this drawing).
+	var/obj/item/photo/photo
+	/// Copies made of it before the picture was finished: filled with it too.
+	var/list/copies
+	var/size = 3
+	/// list(list(picture or null, portrait key, lying, x, y, blend)) in layer order.
+	var/list/entries
+	/// The areas, drawn last: entries as above.
+	var/list/tops
+	var/pending = 0
+	var/done = FALSE
 
-	var/atoms[] = list()
+
+CAPABILITIES(/datum/photo_render)
+	ref_one(nameof(photo))
+	ref_many(nameof(copies))
+
+/// `copy` was copied from the photo before its picture was finished: it is filled too when it is.
+/datum/photo_render/proc/add_copy(obj/item/photo/copy)
+	rel_add(src, nameof(copies), copy)
+
+/datum/photo_render/proc/start(obj/item/camera/camera, obj/item/photo/photo, list/turfs, turf/center)
+	rel_set(src, nameof(src.photo), photo)
+	size = camera.size
+	var/list/atoms = list()
 	for(var/turf/the_turf in turfs)
-		// Add outselves to the list of stuff to draw
-		atoms.Add(the_turf);
-		// As well as anything that isn't invisible.
+		atoms.Add(the_turf)
 		for(var/atom/A in the_turf)
-			if(A.invisibility) continue
-			if(A.plane > 0 && !(A.plane in picture_planes)) continue
+			if(A.invisibility)
+				continue
+			if(A.plane > 0 && !(A.plane in camera.picture_planes))
+				continue
 			atoms.Add(A)
-
-	// Sort the atoms into their layers
 	var/list/sorted = sort_atoms_by_layer(atoms)
-	var/center_offset = (size-1)/2 * 32 + 1
-	for(var/i = 1; i <= sorted.len; i++)
-		var/atom/A = sorted[i]
-		if(A)
-			var/icon/img = getFlatIcon(A, no_anim = TRUE) // picture_planes = picture_planes)//build_composite_icon(A) //
-
-			// If what we got back is actually a picture, draw it.
-			if(istype(img, /icon))
-				// Check if we're looking at a mob that's lying down
-				if(isliving(A) && A:lying)
-					// If they are, apply that effect to their picture.
-					img.BecomeLying()
-				// Calculate where we are relative to the center of the photo
-				var/xoff = (A.x - center.x) * 32 + center_offset
-				var/yoff = (A.y - center.y) * 32 + center_offset
-				if (istype(A,/atom/movable))
-					xoff+=A:pixel_x
-					yoff+=A:pixel_y
-				res.Blend(img, blendMode2iconMode(A.blend_mode),  A.pixel_x + xoff, A.pixel_y + yoff)
-
-	// Lastly, render any contained effects on top.
+	var/center_offset = (size - 1) / 2 * 32 + 1
+	entries = list()
+	for(var/atom/A as anything in sorted)
+		if(!A)
+			continue
+		var/xoff = (A.x - center.x) * 32 + center_offset
+		var/yoff = (A.y - center.y) * 32 + center_offset
+		if(ismovable(A))
+			xoff += A.pixel_x
+			yoff += A.pixel_y
+		var/lying = isliving(A) && A:lying
+		entries += list(ask(A, lying, A.pixel_x + xoff, A.pixel_y + yoff, blendMode2iconMode(A.blend_mode)))
+	tops = list()
 	for(var/turf/the_turf in turfs)
-		// Calculate where we are relative to the center of the photo
 		var/xoff = (the_turf.x - center.x) * 32 + center_offset
 		var/yoff = (the_turf.y - center.y) * 32 + center_offset
-		res.Blend(getFlatIcon(the_turf.loc, no_anim = TRUE), blendMode2iconMode(the_turf.blend_mode),xoff,yoff)
+		tops += list(ask(the_turf.loc, FALSE, xoff, yoff, blendMode2iconMode(the_turf.blend_mode)))
+	photo.fill_from(compose(FALSE)) // the black frame (what the photo shows while its pictures are drawn)
+	if(!pending)
+		finish()
+		return
+	rel_set(photo, nameof(photo.rendering), src) // the photo holds it until it finishes (the portrait cache calls back by handle)
+	after(src, PHOTO_RENDER_TIMEOUT, PROC_REF(finish))
+
+/// The entry for `A` drawn at (x, y): list(picture or null while it is drawn, its portrait key, lying, x, y, blend).
+/datum/photo_render/proc/ask(atom/A, lying, x, y, blend)
+	var/datum/portrait/P = portrait_request(A, A.dir, src, PROC_REF(landed))
+	var/key = P ? null : portrait_key_of(A, A.dir)
+	if(!P && key)
+		pending++
+	return list(P?.picture, key, lying, x, y, blend)
+
+/// An atom's picture landed.
+/datum/photo_render/proc/landed(datum/portrait/P)
+	for(var/list/entry as anything in entries + tops)
+		if(entry[2] == P.key && !entry[1])
+			entry[1] = P.picture
+			pending--
+	if(pending <= 0)
+		finish()
+
+/datum/photo_render/proc/finish()
+	if(done)
+		return
+	done = TRUE
+	var/obj/item/photo/photo = src.photo
+	if(photo && !QDELETED(photo))
+		var/icon/finished = compose(TRUE)
+		photo.fill_from(finished)
+		for(var/obj/item/photo/copy as anything in copies)
+			if(!QDELETED(copy))
+				copy.fill_from(icon(finished))
+		if(photo.rendering == src)
+			rel_clear(photo, nameof(photo.rendering))
+
+/// The photo's picture: the black frame, then (with `pictures`) every landed atom in layer order and the areas on top.
+/datum/photo_render/proc/compose(pictures)
+	var/icon/res = icon('icons/effects/96x96.dmi', "")
+	res.Scale(size * 32, size * 32)
+	res.Blend("#000", ICON_OVERLAY)
+	if(!pictures)
+		return res
+	for(var/list/entry as anything in entries)
+		if(!entry[1])
+			continue
+		var/icon/img = icon(entry[1]) // a copy: the cached picture is shared
+		if(entry[3])
+			img.BecomeLying()
+		res.Blend(img, entry[6], entry[4], entry[5])
+	for(var/list/top as anything in tops)
+		if(top[1])
+			res.Blend(top[1], top[6], top[4], top[5])
 	return res
 
+#undef PHOTO_RENDER_TIMEOUT
 
 /obj/item/camera/proc/get_mobs(turf/the_turf as turf)
 	var/mob_detail
@@ -365,8 +433,20 @@ CAPABILITIES(/obj/item/camera)
 	printpicture(user, p)
 
 /obj/item/camera/proc/createpicture(atom/target, mob/user, list/turfs, mobs, flag)
-	var/icon/photoimage = get_icon(turfs, target)
+	var/obj/item/photo/p = new()
+	p.name = "photo"
+	p.desc = mobs
+	p.set_pixel_x(rand(-10, 10))
+	p.set_pixel_y(rand(-10, 10))
+	p.set_photo_size(size)
+	// The atoms' pictures come from the shared portrait cache (each one's look read now, drawn off the tick): the photo shows a black frame
+	// until the last one lands, then the whole picture (photo_render).
+	var/datum/photo_render/render = new
+	render.start(src, p, turfs, target)
+	return p
 
+/// The photo's pictures from the finished picture `photoimage`: the big image, the item icon and the tiny thumbnail.
+/obj/item/photo/proc/fill_from(icon/photoimage)
 	var/icon/small_img = icon(photoimage)
 	var/icon/tiny_img = icon(photoimage)
 	var/icon/ic = icon('icons/obj/items.dmi',"photo")
@@ -376,16 +456,9 @@ CAPABILITIES(/obj/item/camera)
 	ic.Blend(small_img,ICON_OVERLAY, 10, 13)
 	pc.Blend(tiny_img,ICON_OVERLAY, 12, 19)
 
-	var/obj/item/photo/p = new()
-	p.name = "photo"
-	p.set_icon(ic)
-	p.set_tiny(pc)
-	p.set_img(photoimage)
-	p.desc = mobs
-	p.set_pixel_x(rand(-10, 10))
-	p.set_pixel_y(rand(-10, 10))
-	p.set_photo_size(size)
-	return p
+	set_icon(ic)
+	set_tiny(pc)
+	set_img(photoimage)
 
 /obj/item/camera/proc/printpicture(mob/user, obj/item/photo/p)
 	p.forceMove(user.loc)
@@ -407,6 +480,8 @@ CAPABILITIES(/obj/item/camera)
 
 	if(copy_id)
 		p.id = id
+	// Copied before its picture was finished: the copy is filled when it is (photo_render), not left with the black frame.
+	rendering?.add_copy(p)
 
 	return p
 

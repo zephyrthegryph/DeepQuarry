@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test';
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { store } from '../events/store';
+import { userDataAtom } from '../game/atoms';
 
 const { Column } = await import('./Column');
 const { columnHost } = await import('./host');
@@ -28,6 +29,10 @@ async function winget(id: string, props: unknown) {
       'inner-size': { x: 2000, y: 1000 },
       'is-maximized': false,
     };
+  }
+  // The page's address (reconnect.tsx polls it): none in a test.
+  if (props === 'url') {
+    return '';
   }
   if (id === 'rpane.rpanewindow' && props === 'size') {
     return { x: 600, y: 1000 };
@@ -144,11 +149,17 @@ describe('the column page', () => {
     expect(groups()[1].className).toContain('column-group--fill');
     // It starts with the draft the server kept, and asks for what it has not shown.
     expect(input!.value).toBe('half a sente');
-    expect(
-      sent
-        .filter((m) => m.payload?.wid === 'col-chat')
-        .map((m) => m.payload.type),
-    ).toContain('chat/ready');
+    // The page's own config (its `update` sets who the player is) loads the stored log; then it asks for what follows.
+    act(() => store.set(userDataAtom, { ckey: 'nick', token: '' }));
+    await waitFor(
+      () =>
+        expect(
+          sent
+            .filter((m) => m.payload?.wid === 'col-chat')
+            .map((m) => m.payload.type),
+        ).toContain('chat/ready'),
+      { timeout: 6000 },
+    );
     // A docked PDA: opened by the server, named and drawn from its own update.
     act(() => {
       columnHost.receive('col/open', { wid: 'col-7', kind: 'tgui' });

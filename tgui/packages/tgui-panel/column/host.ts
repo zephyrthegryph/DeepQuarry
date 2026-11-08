@@ -6,7 +6,7 @@
  *
  * Server windows in the column (the stat panel, docked interfaces) are
  * "column parts": the server opens one with `col/open {wid}`, sends it
- * messages as `col/msg {wid, raw}` and closes it with `col/close {wid}`; the
+ * messages as `col/msg {wid, type, payload}` (a raw string as `{wid, raw}`) and closes it with `col/close {wid}`; the
  * page answers for it with `col/msg {wid, type, payload}`.
  */
 import {
@@ -15,6 +15,7 @@ import {
   type EmbeddedBackend,
 } from 'tgui/embedded';
 import { configAtom } from 'tgui/events/store';
+import { prepareRequestedInterface } from 'tgui/interfacePreparation';
 import { mainBounds, measureColumn } from '../layout/geometry';
 import {
   type DockAction,
@@ -27,6 +28,9 @@ import {
 } from './model';
 
 const SAVE_DELAY_MS = 1000;
+/** The chat's stand-in until its window arrives (the page's own chat, drawn where the Chat window will be). */
+export const CHAT_PENDING = 'chat-pending';
+const CHAT_INTERFACE = 'Chat';
 
 /** Sends a message of the column page itself (its layout saves, drop answers, logs): the server's window dock (window_dock.dm). */
 export function sendPage(type: string, payload: Record<string, unknown> = {}) {
@@ -131,6 +135,7 @@ export class ColumnHost {
         this.lastSaved =
           typeof payload?.saved === 'string' ? payload.saved : '';
         this.dispatch({ type: 'load', saved: parseSaved(payload?.saved) });
+        this.awaitChat();
         return true;
     }
     return false;
@@ -154,7 +159,11 @@ export class ColumnHost {
 
   private message(payload: any) {
     const wid = payload?.wid;
-    const message = decodeRaw(payload?.raw);
+    // One envelope, decoded once with the page's message: {wid, type, payload}; a raw native string (an asset mapping) as {wid, raw}.
+    const message =
+      typeof payload?.type === 'string'
+        ? { type: payload.type as string, payload: payload.payload }
+        : decodeRaw(payload?.raw);
     if (typeof wid !== 'string' || !message) return;
     const backend = this.backends.get(wid);
     if (!backend) return;
@@ -174,10 +183,63 @@ export class ColumnHost {
     }
   }
 
+  /**
+   * Until the server's Chat window arrives, the chat docks at once as a
+   * stand-in (the page's own chat, the same component and store the Chat
+   * window draws), so the column never shows a blank moment at login; the
+   * Chat window takes the stand-in's place. A chat the player floated has
+   * no stand-in.
+   */
+  private awaitChat() {
+    const docked = this.state.saved[CHAT_INTERFACE]?.dock ?? true;
+    const open = Object.values(this.state.windows).some(
+      (win) => win.iface === CHAT_INTERFACE,
+    );
+    if (!docked || open) return;
+    // Its chunk loads now, so the real window draws the moment it is named.
+    prepareRequestedInterface(CHAT_INTERFACE)?.catch(() => undefined);
+    this.dispatch({
+      type: 'open',
+      window: {
+        id: CHAT_PENDING,
+        iface: CHAT_INTERFACE,
+        title: 'Chat',
+        kind: 'pending',
+      },
+    });
+  }
+
+  /** The Chat window `wid` takes the stand-in's place once its interface can draw. */
+  private replacePending(wid: string, title: string) {
+    const swap = () => {
+      // Its list index once the window's own provisional entry is gone.
+      const groups = this.state.groups.filter((g) => !g.windows.includes(wid));
+      const at = groups.findIndex((g) => g.windows.includes(CHAT_PENDING));
+      if (at < 0 || !this.state.windows[wid]) return;
+      this.dispatch({ type: 'close', id: CHAT_PENDING });
+      this.dispatch({ type: 'close', id: wid });
+      this.dispatch({
+        type: 'open',
+        window: { id: wid, iface: CHAT_INTERFACE, title, kind: 'tgui', at },
+      });
+    };
+    const loading = prepareRequestedInterface(CHAT_INTERFACE);
+    if (loading) loading.then(swap, swap);
+    else swap();
+  }
+
   /** A docked window's interface became known: it takes its name (for the saved layout) and title. */
   private retitle(wid: string, iface: string, title: string) {
     const win = this.state.windows[wid];
     if (!win) return;
+    if (
+      win.iface !== iface &&
+      iface === CHAT_INTERFACE &&
+      this.state.windows[CHAT_PENDING]
+    ) {
+      this.replacePending(wid, title);
+      return;
+    }
     if (win.iface !== iface) {
       // Placed again under its interface's saved place, unless a drop put it somewhere.
       const placed = this.state.saved[iface];

@@ -1,5 +1,5 @@
-// Steady-state op cost: twenty crew on the station act every tick for a few minutes of mixed play (melee, an item used on a crewmate and on the
-// floor, a light switched in hand, a right-click menu, an examine), each act through the path a player's input takes (op_resolve_click(),
+// Steady-state op cost: twenty crew on the station act every few ticks for minutes of mixed play (melee, an item used on a crewmate and on the
+// floor, a light switched in hand, a right-click menu, an examine, a scalpel on a crewmate (surgery), a wrench on a girder (construction)), each act through the path a player's input takes (op_resolve_click(),
 // interaction_menu_data()). Reports the op system's milliseconds per tick and per act; a --profile run dumps the window's proc profile.
 //   tools/build/build.sh bench --scenario=op_steady [--arg=seconds=300] [--profile]
 
@@ -20,6 +20,9 @@
 		CHECK_TICK
 	// pairs share a tile; each holds a toolbox and carries a light
 	var/list/obj/item/flashlight/lights = list()
+	var/list/obj/item/surgical/scalpel/scalpels = list()
+	var/list/obj/item/tool/wrench/wrenches = list()
+	var/list/obj/structure/girder/girders = list()
 	for(var/i in 1 to length(crew) step 2)
 		var/mob/living/carbon/human/A = crew[i]
 		var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
@@ -27,46 +30,93 @@
 	for(var/mob/living/carbon/human/H as anything in crew)
 		H.put_in_hands(new /obj/item/storage/toolbox/mechanical(H.loc))
 		lights += new /obj/item/flashlight(H.loc)
+		scalpels += new /obj/item/surgical/scalpel(H.loc)
+		wrenches += new /obj/item/tool/wrench(H.loc)
+		girders += new /obj/structure/girder(H.loc)
 	wait_seconds(3)
-	var/list/kinds = list("melee", "item_on_mob", "item_on_floor", "toggle", "menu", "examine")
+	var/list/kinds = list("melee", "item_on_mob", "item_on_floor", "toggle", "menu", "examine", "surgery", "construction")
 	var/list/kind_ms = list()
 	var/list/kind_n = list()
+	var/list/outcomes = list()
+	var/asleep = 0
+	var/dead_skips = 0
+	var/healed = 0
 	var/op_ms = 0
 	var/ticks = 0
 	var/stop_at = world.time + param("seconds", 300) SECONDS
+	// each crew member acts once every act_every ticks, staggered (one act a tick each is past what a person clicks, and stretches the run)
+	var/act_every = max(1, param("act_every", 5))
 	begin_window()
 	while(world.time < stop_at)
 		for(var/i in 1 to length(crew))
 			var/mob/living/carbon/human/A = crew[i]
 			var/mob/living/carbon/human/B = crew[(i % 2) ? min(i + 1, length(crew)) : i - 1]
-			if(QDELETED(A) || QDELETED(B) || A == B)
+			if(QDELETED(A) || QDELETED(B) || A == B || (ticks + i) % act_every)
 				continue
-			var/kind = kinds[((ticks + i) % length(kinds)) + 1]
+			if(A.stat == DEAD || B.stat == DEAD)
+				dead_skips++
+				continue
+			// the melee knocks crew down: one who is not up and able is healed before acting (outside the timed span), so each act is a capable one
+			for(var/mob/living/carbon/human/H as anything in list(A, B))
+				if(H.stat != CONSCIOUS || H.incapacitated() || !H.operation_actor_capable())
+					H.rejuvenate()
+					healed++
+			var/kind = kinds[(round((ticks + i) / act_every) % length(kinds)) + 1]
 			var/obj/item/T = A.get_active_hand()
+			// surgery and construction hold their own tool for the act: the toolbox goes down and comes back outside the timed span
+			var/obj/item/swap = null
+			if(kind == "surgery" || kind == "construction")
+				swap = kind == "surgery" ? scalpels[i] : wrenches[i]
+				if(T)
+					A.drop_from_inventory(T, A.loc)
+				if(swap.loc != A.loc && swap.loc != A)
+					swap.forceMove(A.loc)
+				A.put_in_hands(swap)
+				T = A.get_active_hand()
+			var/obj/structure/girder/G = girders[i]
+			if(kind == "construction" && (QDELETED(G) || G.loc != A.loc))
+				G = new /obj/structure/girder(A.loc)
+				girders[i] = G
 			STATE_SET(A, cooldowns, next_click, 0)
+			// no client and no AI brain is the SSD rule: life puts the crew to sleep every cycle, and a sleeper's acts refuse or go cheap
+			active_play_wake(list(A, B))
+			var/datum/op_result/result = null
 			var/stamp = TICK_USAGE_REAL
 			switch(kind)
 				if("melee")
 					A.set_use_stance(I_HURT)
-					op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
 				if("item_on_mob")
 					A.set_use_stance(I_HELP)
-					op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
 				if("item_on_floor")
-					op_resolve_click(A, get_turf(A), T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, get_turf(A), T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
 				if("toggle")
 					var/obj/item/flashlight/F = lights[i]
 					if(F.loc != A.loc)
 						F.forceMove(A.loc)
-					op_resolve_click(A, F, F, GESTURE_SELF, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, F, F, GESTURE_SELF, ORIGIN_CLICK, TRUE, TRUE)
 				if("menu")
 					interaction_menu_data(A, B)
 				if("examine")
-					op_resolve_click(A, B, T, GESTURE_SHIFT, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, B, T, GESTURE_SHIFT, ORIGIN_CLICK, TRUE, TRUE)
+				if("surgery")
+					A.set_use_stance(I_HELP)
+					result = op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+				if("construction")
+					result = op_resolve_click(A, G, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
 			var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 			op_ms += ms
 			kind_ms[kind] += ms
 			kind_n[kind]++
+			if(kind != "menu")
+				var/outcome_key = "[kind]: [result ? "[result.key] [result.outcome] [result.reason]" : "none"]"
+				outcomes[outcome_key]++
+			if(A.stat || A.has_status(STAT_SLEEPING))
+				asleep++
+			if(swap)
+				if(swap.loc == A)
+					A.drop_from_inventory(swap, A.loc)
 			// a toolbox that left the hand (set down, dropped) is taken back, so the next acts are the same kinds
 			if(!A.get_active_hand())
 				var/obj/item/storage/toolbox/mechanical/box = locate() in A.loc
@@ -77,6 +127,12 @@
 	end_window("op_steady")
 	metric("op_steady_ms_per_tick", ticks ? op_ms / ticks : 0, "ms")
 	count_metric("op_steady_ticks", ticks, "ticks", "none")
+	count_metric("op_steady_actor_asleep_acts", asleep, "acts", "none")
+	count_metric("op_steady_dead_skips", dead_skips, "acts", "none")
+	count_metric("op_steady_healed", healed, "heals", "none")
+	detail("op_steady_outcomes", outcomes)
+	for(var/key in outcomes)
+		log_world("op_steady outcome [key] x[outcomes[key]]")
 	for(var/kind in kind_ms)
 		metric("op_steady_[kind]_us", kind_n[kind] ? kind_ms[kind] * 1000 / kind_n[kind] : 0, "us")
 	for(var/mob/living/carbon/human/H as anything in crew)

@@ -23,6 +23,8 @@
 	/// The icon_state of the filling layer a cooking machine made this from, drawn in `filling_color`; null for a food that has none.
 	var/filling_layer
 	var/icon/flat_icon = null //Used to cache a flat icon generated from dipping in batter. This is used again to make the cooked-batter-overlay
+	/// Batter looks waiting for flat_icon to land from the portrait cache, in order ("raw", "cooked").
+	var/list/coating_stages
 	var/do_coating_prefix = 1 //If 0, we wont do "battered thing" or similar prefixes. Mainly for recipes that include batter but have a special name
 
 	/// Used for foods that are "cooked" without being made into a specific recipe or combination.
@@ -3430,16 +3432,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/macncheese)
 	//Now we have to do the witchcraft with masking images
 	//var/icon/I = new /icon(icon, icon_state)
 
-	if (!flat_icon)
-		flat_icon = getFlatIcon(src)
-	var/icon/I = flat_icon
+	coating_stage("raw")
 	set_color("#FFFFFF") //Some fruits use the color var. Reset this so it doesnt tint the batter
-	I.Blend(new /icon('icons/obj/food_custom.dmi', rgb(255,255,255)),ICON_ADD)
-	I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_raw),ICON_MULTIPLY)
-	var/image/J = image(I)
-	J.alpha = 200
-	J.blend_mode = BLEND_OVERLAY
-	set_coating_look(J)
 
 	if (user)
 		act_message(user, src, MSG_SELF(span_notice("You dip %T% into \the [coating().name]")), \
@@ -3447,18 +3441,46 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/macncheese)
 
 	return 1
 
+/// The batter look for `stage` ("raw" when dipped, "cooked" when cooked): drawn on the food's flat picture (flat_icon, kept and blended in
+/// place, as before). The picture comes from the shared portrait cache (its look read now, with its own colour, drawn off the tick): until it
+/// lands the stages wait in order (coating_stages) and are drawn when it does (coating_picture_landed).
+/obj/item/reagent_containers/food/snacks/proc/coating_stage(stage)
+	if(flat_icon)
+		draw_coating_stage(stage)
+		return
+	LAZYADD(coating_stages, stage)
+	if(length(coating_stages) > 1)
+		return // the picture is already being drawn
+	var/datum/portrait/P = portrait_request(src, dir, src, PROC_REF(coating_picture_landed), animated = TRUE)
+	if(P)
+		coating_picture_landed(P)
+
+/obj/item/reagent_containers/food/snacks/proc/coating_picture_landed(datum/portrait/P)
+	if(flat_icon || !P?.picture)
+		return
+	flat_icon = icon(P.picture) // a copy: the cached picture is shared, and this one is blended in place
+	var/list/stages = coating_stages
+	coating_stages = null
+	for(var/stage in stages)
+		draw_coating_stage(stage)
+
+/obj/item/reagent_containers/food/snacks/proc/draw_coating_stage(stage)
+	if(!coating())
+		return
+	var/icon/I = flat_icon
+	I.Blend(new /icon('icons/obj/food_custom.dmi', rgb(255,255,255)),ICON_ADD)
+	I.Blend(new /icon('icons/obj/food_custom.dmi', stage == "cooked" ? coating().icon_cooked : coating().icon_raw),ICON_MULTIPLY)
+	var/image/J = image(I)
+	J.alpha = 200
+	if(stage == "raw")
+		J.blend_mode = BLEND_OVERLAY
+	set_coating_look(J)
+
 //Called by cooking machines. This is mainly intended to set properties on the food that differ between raw/cooked
 /obj/item/reagent_containers/food/snacks/proc/cook()
 	if (coating())
-		if (!flat_icon)
-			flat_icon = getFlatIcon(src)
-		var/icon/I = flat_icon
+		coating_stage("cooked") //replaces the raw-batter look
 		set_color("#FFFFFF") //Some fruits use the color var
-		I.Blend(new /icon('icons/obj/food_custom.dmi', rgb(255,255,255)),ICON_ADD)
-		I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_cooked),ICON_MULTIPLY)
-		var/image/J = image(I)
-		J.alpha = 200
-		set_coating_look(J) //replaces the raw-batter look
 
 		if (do_coating_prefix == 1)
 			name = "[coating().coated_adj] [name]"

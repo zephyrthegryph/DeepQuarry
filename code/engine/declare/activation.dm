@@ -224,11 +224,12 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(lasts)
 		after(holder, lasts, GLOBAL_PROC_REF(activation_expire), key = "activation:[A.serial]", with = list(A))
 	activation_restack(holder, def.key)
-	holder.capabilities_changed()
+	rx.spares_defs_key = null
+	holder.capabilities_changed(def)
 	return A
 
-/// A holder's capabilities changed (one was attached or ended). A virtual: a holder that shows what it has (a mob's ability list) overrides it.
-/datum/proc/capabilities_changed()
+/// A holder's capabilities changed: `def` was attached or ended. A virtual: a holder that shows what it has (a mob's ability list) overrides it.
+/datum/proc/capabilities_changed(datum/capability/def)
 	return
 
 /// The contribution list of a definition: the entries its expansion brings (the definition itself is not in it), nested capabilities
@@ -372,11 +373,16 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 			return // the attach restacked
 	var/datum/activation/first_activation = set_of[1]
 	var/list/stacks = cap_stacks(first_activation.def)
+	// Which hooks run follows `runs`: the hooks generation moves only when a restack changed one (a hook added or removed moves it itself, in
+	// hooks_attach() and hooks_detach()), so a grant that stacks alone, an observe() say, publishes no hooks change of its own.
+	var/runs_changed = FALSE
 	switch(stacks[1])
 		if(STACKS_UNIQUE)
 			var/first = TRUE
 			for(var/datum/activation/A as anything in set_of)
-				A.runs = first
+				if(A.runs != first)
+					runs_changed = TRUE
+					A.runs = first
 				first = FALSE
 		if(STACKS_BEST)
 			var/param = stacks[2]
@@ -388,11 +394,16 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 					best = A
 					best_value = value
 			for(var/datum/activation/A as anything in set_of)
-				A.runs = (A == best)
+				var/should_run = (A == best)
+				if(A.runs != should_run)
+					runs_changed = TRUE
+					A.runs = should_run
 		else
 			for(var/datum/activation/A as anything in set_of)
-				A.runs = TRUE
-	if(holder.rx?.hooks)
+				if(!A.runs)
+					runs_changed = TRUE
+					A.runs = TRUE
+	if(runs_changed && holder.rx?.hooks)
 		holder.rx.set_hooks_generation(holder.rx.hooks_generation + 1)
 
 /// The activations of `cap_id` (and selector) on holder whose behaviour runs, in attach order. One for UNIQUE and BEST.
@@ -446,9 +457,11 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(A.lasts && holder && !QDELETED(holder))
 		cancel_after(holder, "activation:[A.serial]")
 	TEST_REC_ACTIVATION(TEST_EVENT_DETACH, def, A.source, holder)
+	if(holder?.rx)
+		holder.rx.spares_defs_key = null
 	if(holder && !QDELETED(holder))
 		activation_restack(holder, def.key)
-		holder.capabilities_changed()
+		holder.capabilities_changed(def)
 	// The typed record is the activation's own: it goes with it (a record with relations holds a slot, which only its teardown frees).
 	rel_clear(A, nameof(A.data))
 	// The record is dead and nothing names it any more: a slot it took (a hold or a timer keyed by it) goes with it, or the slot table would keep it alive.
