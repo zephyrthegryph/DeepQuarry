@@ -41,7 +41,7 @@ GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_tota
 
 /// The slow sections, in the groups that are rebuilt together. After the first send, at most one group is rebuilt per send (the stalest one past
 /// MC_HEALTH_SLOW_EVERY), so their cost is spread over the seconds instead of landing in one.
-GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution", "counts", "rust"))
+GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution_top", "counts", "attribution_rest", "rust"))
 
 /// The sections kept for MC_HEALTH_SLOW_EVERY: the same list objects until their group is built again.
 /proc/mc_health_slow()
@@ -86,9 +86,13 @@ GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution", "count
 					"kernel_last_tick_ms" = kernel().last_tick_ms,
 				),
 			)
-		if("attribution")
-			var/list/systems = km_panel_data(8)["systems"] // the panel's top 8 expand
+		// The callbacks behind the panel's top 8 systems, as two groups of four: the costliest group, split over two sends.
+		if("attribution_top")
+			var/list/systems = km_panel_data(4)["systems"]
 			return list("attribution" = mc_health_attribution(systems))
+		if("attribution_rest")
+			var/list/systems = km_panel_data(8)["systems"]
+			return list("attribution_rest" = mc_health_attribution(systems.Copy(min(length(systems), 4) + 1)))
 		if("counts")
 			return list("gc" = mc_health_gc(), "entities" = mc_health_entities(), "churn" = mc_health_churn())
 		if("rust")

@@ -221,7 +221,8 @@ class ViewBoundary extends Component<
     if (this.state.error === null) return this.props.children;
     return (
       <div className="stat-empty">
-        This part of the panel failed to draw ({this.state.error}). Other tabs still work; Fix UI reloads it.
+        This part of the panel failed to draw ({this.state.error}). Other tabs
+        still work; Fix UI reloads it.
       </div>
     );
   }
@@ -550,9 +551,7 @@ export function App(props: {
             <div className="stat-empty">Nothing matches.</div>
           )
         ) : (
-          <ViewBoundary
-            resetKey={`${state.view}/${state.serverPage}`}
-          >
+          <ViewBoundary resetKey={`${state.view}/${state.serverPage}`}>
             <ViewContent state={state} store={store} />
           </ViewBoundary>
         )}

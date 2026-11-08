@@ -80,6 +80,8 @@ export type McHealthData = {
   rust: Record<string, any> | null;
   /** The callbacks and redraws behind each busy system: list(source, kind, count, total ms, max ms), heaviest first. */
   attribution?: Record<string, [string, string, number, number, number][]>;
+  /** The same for the systems ranked 5 to 8 (built on another send). */
+  attribution_rest?: Record<string, [string, string, number, number, number][]>;
   runtime: Record<string, number>;
 };
 
