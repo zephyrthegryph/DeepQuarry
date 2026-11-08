@@ -67,7 +67,7 @@ SYSTEM_DEF(radio)
 	name = "Radio"
 	needs = list(/datum/system/atoms)
 	var/list/datum/radio_frequency/frequencies = list()
-	/// device -> the frequency texts it listens on. The system owns the memberships: it watches each listening device once (not
+	/// slot_of(device) (its identity, still readable while it is deleted) -> the frequency texts it listens on. The system owns the memberships: it watches each listening device once (not
 	/// once per frequency: a headset is on several) and a destroyed one leaves all of them, so no device unregisters in Destroy().
 	var/list/listening = list()
 
