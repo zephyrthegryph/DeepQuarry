@@ -138,7 +138,7 @@ impl<'facts,'ast> CompletedInitializerAdapter<'facts,'ast>{
     pub(crate) fn facts(&self)->&AdaptedDeclarations{self.facts}
 }
 pub(crate) fn from_ast_with_source_headers_checked<'a>(ast:&'a AstFile,symbols:SymbolTable,file:FileId,include_occurrence:u32,region:u128,source:&str,headers:&'a crate::procedure::OriginalProcedureHeaders,offset:usize,admission:&dm_syntax::SettingAdmission<'_>)->Result<Result<(AdaptedDeclarations,crate::procedure::HeaderAllocationReceipt<'a>),Vec<AdapterError>>,std::io::Error>{
-    let demand=initializer_demand::Checked{admission};
+    let demand=initializer_demand::Checked::new(admission);
     demand.checkpoint()?;
     let result=from_ast_with_cursor_issued_using(ast,symbols,file,include_occurrence,region,"/",Some(source),Some((headers,offset)),&demand)?;
     let result=match result {
@@ -641,7 +641,8 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         error.message
                     })?};
                     header_declarations = parsed_signature.declarations;
-                    let lexical_header = context.demand.lexical_procedure_header(
+                    let demand = context.demand;
+                    let lexical_header = demand.lexical_procedure_header(
                         header, context.prepared_signatures.is_some(),
                     )?;
                     let path = format!("{}/{}{name}", owner.trim_end_matches('/'), marker);
@@ -1260,7 +1261,7 @@ impl DeclarationAdapterProgress{
 /// before type-child prescans) and its SAME header/admission owners. A blanket
 /// full AST plus a failure span is not accepted by the frontend input issuer.
 pub(crate) fn from_original_primary_progress_checked(items:OriginalItems<'_>,diagnostics:&[dm_syntax::Diagnostic],symbols:SymbolTable,file:FileId,include_occurrence:u32,region:u128,expanded:&str,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,admission:&dm_syntax::SettingAdmission<'_>,skip_general_constants:bool,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures)->Result<DeclarationAdapterProgress,std::io::Error>{
- let demand=initializer_demand::Checked{admission};demand.checkpoint()?;
+ let demand=initializer_demand::Checked::new(admission);demand.checkpoint()?;
  let progress=from_items_with_cursor_progress_using(items,diagnostics,symbols,file,include_occurrence,region,"/",Some(expanded),Some((headers,offset)),&demand,skip_general_constants,Some(prepared))?;
  if progress.errors.is_empty(){let completed=CompletedInitializerAdapter{facts:&progress.facts,header:headers};headers.complete_initializer_admission(completed,admission).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>std::io::Error::new(std::io::ErrorKind::Unsupported,message)})?;}
  demand.checkpoint()?;Ok(progress)
