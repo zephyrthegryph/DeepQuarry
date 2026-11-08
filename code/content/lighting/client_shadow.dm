@@ -100,7 +100,7 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 	if(!glow_mask)
 		rel_set(src, nameof(glow_mask), new /obj/effect/overlay/client_glow_mask(null))
 		var/obj/effect/overlay/client_glow_mask/M = glow_mask
-		M.render_target = "*client_glow_mask_[handle_of(src)]"
+		M.render_target = "*client_glow_mask_[handle_text(handle_of(src))]" // whole number: "[h]" rounds past 1e6 and lights would share a mask
 		M.set_color(list(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)) // the base only fixes the size
 		// Soft shadow edges: the tile grid is blurred before it cuts the glow, so a shadow fades over a few pixels instead of
 		// stair-stepping. A reached wall tile stays in the mask whole, so its face is lit; only its outer rim softens.

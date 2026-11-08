@@ -383,6 +383,18 @@
 			break
 	client_lighting_set(TRUE)
 	SSlighting.light_step(0, TRUE)
+	// Boot path: the map's turfs initialize before the config turns the mode on, at the DM engine's luminosity 0.
+	var/turf/dynamic
+	for(var/turf/T as anything in block(locate(1, 1, 1), locate(world.maxx, world.maxy, world.maxz)))
+		if(T.has_dynamic_lighting())
+			dynamic = T
+			break
+	TEST_ASSERT(dynamic, "the map has a dynamic turf")
+	var/old_luminosity = dynamic.luminosity
+	dynamic.luminosity = 0
+	create_all_lighting_objects()
+	TEST_ASSERT_EQUAL(dynamic.luminosity, 1, "boot in client mode shows a dynamic turf that initialized dark")
+	dynamic.luminosity = old_luminosity
 	var/list/screen = client_glow_screen(client_glow_screen_state(null))
 	TEST_ASSERT(GLOB.client_glow_base in screen, "client lighting: the screen holds the black base")
 	var/atom/movable/screen/client_glow_base/B = GLOB.client_glow_base
