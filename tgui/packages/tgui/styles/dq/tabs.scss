@@ -4,6 +4,7 @@
 // tgui-core .Tab:before indicator, is drawn on that rule.
 
 @use '../console';
+@use './row-control';
 
 .DqTabs {
   display: flex;
@@ -68,22 +69,7 @@
     }
 
     > .Button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-    }
-
-    // The button's content box (tgui-core: a stretched block) centres the icon on the row, not at its top.
-    > .Button .Button__content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      align-self: stretch;
-    }
-
-    > .Button .Button--icon {
-      line-height: 1;
+      @include row-control.button(var(--dq-row-control-height, 22px));
     }
   }
 
