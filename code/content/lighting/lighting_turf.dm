@@ -23,6 +23,8 @@
 
 // Causes any affecting light sources to be queued for a visibility update, for example a door got opened.
 /turf/proc/reconsider_lights()
+	if(GLOB.client_lighting)
+		client_glow_reconsider(src) // client lighting: glowing lights in reach redraw their shadow masks
 	lighting_corner_NE?.vis_update()
 	lighting_corner_SE?.vis_update()
 	lighting_corner_SW?.vis_update()
