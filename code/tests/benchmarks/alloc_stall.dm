@@ -15,11 +15,9 @@
 	var/stall_ms = param("stall_ms", 20)
 	count_metric("base_atoms", length(world.contents), "atoms", "none")
 	var/n = param("facts", 3000)
-	probe("fact_strings", n, stall_ms, 0)
-	probe("fact_suffix", n, stall_ms, 0)
-	probe("fact_short_prefix", n, stall_ms, 0)
-	probe("handle_only", n, stall_ms, 0)
-	probe("fact_strings_again", n, stall_ms, 0)
+	var/list/kinds = splittext(param("kinds", "fact_strings,fact_suffix,fact_short_prefix,handle_only,ref_kept,ref_prefixed_kept,ref_suffixed_kept,window_prefix,window_suffix"), ",")
+	for(var/kind in kinds)
+		probe(kind, n, stall_ms, 0)
 	drain_probe(param("drain", 0))
 
 /datum/benchmark/alloc_stall/proc/probe(kind, count, stall_ms, base)
@@ -47,6 +45,24 @@
 			if("num16_churn_low")
 				var/t = num2text(1048576 + i * 7919 + 3, 16)
 				t = null
+			if("ref_kept")
+				var/datum/alloc_stall_probe/R1 = new
+				keep[i] = list(R1, REF(R1))
+			if("ref_prefixed_kept")
+				var/datum/alloc_stall_probe/R2 = new
+				keep[i] = list(R2, "click:[REF(R2)]")
+			if("ref_suffixed_kept")
+				var/datum/alloc_stall_probe/R3 = new
+				keep[i] = list(R3, "[REF(R3)]:click")
+			if("window_prefix")
+				// a timer-style key held while pending: about 1000 live at once, the oldest dropped
+				keep[i] = "seq:[i + 7000000]:rewake"
+				if(i > 1000)
+					keep[i - 1000] = null
+			if("window_suffix")
+				keep[i] = "[i + 8000000]:seq:rewake"
+				if(i > 1000)
+					keep[i - 1000] = null
 			if("fact_suffix")
 				var/hs = 1048577 + i * 7919
 				keep[i] = list("[handle_text(hs)]:infrastructure-damage", "[handle_text(hs)]:1:infrastructure-damage")
