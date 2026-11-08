@@ -61,12 +61,17 @@ pub(super) enum OriginalDeliveredValue {
     DocComment { kind: dm_syntax::OriginalCommentKind, content: Span },
 }
 impl OriginalDeliveredValue {
-    fn from_projection(actual: &Token<'static>, projected: &str, span: Span, has_literal: bool) -> io::Result<Self> {
+    fn from_projection(actual: &Token<'static>, projection: &OutputSpelling, projected: &str, span: Span, has_literal: bool) -> io::Result<Self> {
         match &actual.value {
-            Value::Ident { spelling, whitespace } if spelling.get() == projected && !has_literal => {
+            Value::Ident { spelling, whitespace } if !has_literal &&
+                (matches!(projection, OutputSpelling::Identifier) || spelling.get() == projected) =>
+            {
+                // Identifier marker resolves directly from this exact token
+                // in prepared_text. Only a separately owned spelling needs
+                // another byte comparison.
                 Ok(Self::Ident { whitespace: *whitespace })
             }
-            Value::Punct(spelling) if *spelling == projected && !has_literal => {
+            Value::Punct(spelling) if !has_literal && (matches!(projection, OutputSpelling::Static(_)) || *spelling == projected) => {
                 Ok(Self::Punctuation { spelling: *spelling, close_colon: actual.punctuation_close })
             }
             Value::DocComment { kind, text } if !has_literal => {
@@ -510,13 +515,23 @@ impl OriginalOutputCursor{
   let leading=needs_separator(state.last,adjacency);
   let start=state.offset.checked_add(usize::from(leading)).ok_or(io::ErrorKind::OutOfMemory)?;let end=start.checked_add(text.len()).ok_or(io::ErrorKind::OutOfMemory)?;
   let frontier=end.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
-  let mut line=state.line;for(at,byte)in text.bytes().enumerate(){if at%1024==0{a.checkpoint()?;}if byte==b'\n'{line=line.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}line=line.checked_add(usize::from(trailing)).ok_or(io::ErrorKind::OutOfMemory)?;
+  let line=advance_output_line_using(state.line,text,trailing,a)?;
   let span=Span::new(start,end);
-  let delivered_value=actual.as_ref().map(|actual|OriginalDeliveredValue::from_projection(actual,text,span,literal.is_some())).transpose()?;
+  let delivered_value=actual.as_ref().map(|actual|OriginalDeliveredValue::from_projection(actual,&spelling,text,span,literal.is_some())).transpose()?;
   a.checkpoint()?;
   self.state=CursorState{last:Some(if trailing{Adjacency::Whitespace}else{adjacency}),offset:frontier,line,failed:false};
   Ok(OriginalPreparedOutputToken{token:SpanToken{kind,span},literal,actual,delivered_value,leading,trailing,cover:Span::new(start,frontier),line:state.line,owner:self.owner.clone(),spelling})
  }
+}
+fn advance_output_line_using(mut line:usize,text:&str,trailing:bool,a:&SettingAdmission<'_>)->io::Result<usize>{
+ // The old checkpoint ran before byte 0, 1024, ... of nonempty spelling.
+ // Keep each boundary, and allow a contiguous scan within that same chunk.
+ for chunk in text.as_bytes().chunks(1024){
+  a.checkpoint()?;
+  let newlines=chunk.iter().filter(|&&byte|byte==b'\n').count();
+  line=line.checked_add(newlines).ok_or(io::ErrorKind::OutOfMemory)?;
+ }
+ line.checked_add(usize::from(trailing)).ok_or_else(||io::ErrorKind::OutOfMemory.into())
 }
 impl OriginalPreparedOutputToken{
  pub(super) fn produced(&self)->OriginalProducedSpan<'_>{OriginalProducedSpan{token:self}}
@@ -581,6 +596,40 @@ mod compact_queue_tests {
         }
     }
 
+
+    #[test]
+    fn output_line_chunks_match_byte_scan_for_checkpoints_empty_and_overflow() {
+        fn run(text:&str,line:usize,trailing:bool,fail_at:Option<usize>,chunked:bool)->(io::Result<usize>,usize){
+            let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+            let count=std::cell::Cell::new(0usize);
+            let check=||{
+                count.set(count.get()+1);
+                if fail_at==Some(count.get()){return Err(io::Error::from_raw_os_error(1450))}
+                Ok(())
+            };
+            let a=SettingAdmission::new(&used,1<<20,&check);
+            let result=if chunked {
+                advance_output_line_using(line,text,trailing,&a)
+            }else{
+                (||{
+                    let mut line=line;
+                    for(at,byte)in text.bytes().enumerate(){
+                        if at%1024==0{a.checkpoint()?;}
+                        if byte==b'\n'{line=line.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}
+                    }
+                    line.checked_add(usize::from(trailing)).ok_or_else(||io::ErrorKind::OutOfMemory.into())
+                })()
+            };
+            (result.map_err(|error|a.take_operational_error().unwrap_or(error)),count.get())
+        }
+        let text=format!("{}\n\n{}", "x".repeat(1023),"x".repeat(1025));
+        for (spelling,line,trailing) in [(text.as_str(),1,false),(text.as_str(),usize::MAX,true),("",1,true)]{
+            for fail in [None,Some(1),Some(2),Some(3)]{
+                let pack=|(result,count):(io::Result<usize>,usize)| (result.map_err(|e|(e.kind(),e.raw_os_error())),count);
+                assert_eq!(pack(run(spelling,line,trailing,fail,false)),pack(run(spelling,line,trailing,fail,true)));
+            }
+        }
+    }
 
     #[test]
     fn actual_output_cursor_alone_controls_future_frontier_and_failed_seal() {
