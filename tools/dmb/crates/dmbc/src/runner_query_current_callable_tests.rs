@@ -888,3 +888,46 @@ fn current_original_compact_whole_ordered_scales_past_per_body_node_cap() {
         assert!(!rows[2]["notes"].as_array().unwrap().is_empty());
     });
 }
+
+
+#[test]
+fn current_original_primary_prefix_reuses_loan_and_callee_reads_real_syntax() {
+    use dm_analysis::checker_effects::{EffectInput, ExecutionAdmission};
+    use dm_tree::frontend::{BodySyntaxQueries, SettingExpressionQueries};
+    let (mut host, request, _) = fixture(PRESENT_TYPE);
+    let db = host.query_db().clone();
+    run(&mut host, &request);
+    current(&host, |snapshot| {
+        let absolute = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+        let input = EffectInput::original_checker_source_with_current_bodies(
+            Arc::clone(absolute.input().archive()), absolute.input().profile(),
+            snapshot.diagnostic_declarations.as_ref().unwrap(), db.as_ref(),
+        ).unwrap();
+        let archive = input.archive();
+        let find = |name| (0..archive.len()).find(|&ordinal| {
+            archive.callables().identity(ordinal).unwrap().name == SymbolId::of(name)
+        }).unwrap();
+        let probe = find("probe");
+        let choose = find("choose");
+        let inputs = archive.syntax_inputs().unwrap();
+        let called = std::cell::Cell::new(0);
+        let obtain = |requested: &Arc<_>| {
+            assert!(!Arc::ptr_eq(requested, &inputs[probe]), "redundant primary Kind4 demand");
+            assert!(Arc::ptr_eq(requested, &inputs[choose]), "unexpected callee demand");
+            called.set(called.get() + 1);
+            BodySyntaxQueries::syntax_product_checked(db.as_ref(), requested)
+        };
+        let proof = input.original_source_proof().unwrap();
+        SettingExpressionQueries::with_declaration_admission(db.as_ref(), &mut |admission| {
+            archive.with_current_body_checked(probe, admission, |body| {
+                let result = input.compute_current_original_body_with_proof(
+                    &body, admission, snapshot.tree.as_ref(), &ExecutionAdmission::default(),
+                    &|| Ok(()), Some(&obtain), &proof,
+                ).unwrap();
+                assert_eq!(result.original_evaluation_count(), 1);
+                Ok(())
+            })
+        }).unwrap();
+        assert!(called.get() > 0, "callee prefix must still borrow its real syntax");
+    });
+}

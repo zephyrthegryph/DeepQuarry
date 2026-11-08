@@ -31,6 +31,16 @@ impl<'a,'p> CurrentArchivedBody<'a,'p>{
  pub fn source_locals(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<super::body_archive::SourceLocalView<'_>,BodySyntaxFailure>{
   current_checkpoint(a)?;super::body_archive::checked_source_locals_projected(self.tree(),self.occurrence,self.current.canonical_statement_storage(),&self.archive.source,Some(self.current.projection()),&||current_checkpoint(a),&|actual|BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,actual)))
  }
+ /// Use an already-bound primary body with the same admission finish as
+ /// a newly borrowed canonical body. The prefix still validates its identity.
+ pub fn with_reused_initial_setting_prefix<T>(
+  &self,identity:dm_ir::ProcedureIdentity,admission:&dm_syntax::SettingAdmission<'_>,
+  consume:impl FnOnce(super::InitialSettingPrefix<'_>)->T,
+ )->Result<T,BodySyntaxFailure>{
+  current_checkpoint(admission)?;
+  let pending=self.with_initial_setting_prefix(identity,admission,consume);
+  finish_current_body(admission,pending)
+ }
  pub fn native_current_tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,BodySyntaxFailure>{
   let ordinal=*self.archive.body_indices.get(&self.occurrence.declaration).ok_or_else(||current_error("actual current body declaration index absent"))?;
   let code=self.archive.body_codes.get(ordinal).ok_or_else(||current_error("actual current original code absent"))?;
@@ -38,6 +48,15 @@ impl<'a,'p> CurrentArchivedBody<'a,'p>{
  }
 }
 fn current_checkpoint(a:&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>{let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}status.map_err(BodySyntaxFailure::Operational)}
+fn finish_current_body<T>(
+ a:&dm_syntax::SettingAdmission<'_>,result:Result<T,BodySyntaxFailure>,
+)->Result<T,BodySyntaxFailure>{
+ if matches!(&result,Err(BodySyntaxFailure::Operational(_))){
+  return match a.take_operational_error(){Some(actual)=>Err(BodySyntaxFailure::Operational(actual)),None=>result}
+ }
+ current_checkpoint(a)?;
+ result
+}
 fn current_unavailable(message:&'static str)->BodySyntaxFailure{BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,message))}
 fn current_error(message:&'static str)->BodySyntaxFailure{BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,message))}
 impl BodyArchive{
@@ -66,7 +85,6 @@ impl BodyArchive{
   let syntax=product.parsed().ok_or_else(||current_error("native product emitted no parse or actual source failure"))?;
   let current=input.bind_original_product_checked(syntax,a)?;
   let result=consume(context,CurrentArchivedBody{archive:self,occurrence,current});
-  if matches!(&result,Err(BodySyntaxFailure::Operational(_))){return match a.take_operational_error(){Some(actual)=>Err(BodySyntaxFailure::Operational(actual)),None=>result}}
-  let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}status.map_err(BodySyntaxFailure::Operational)?;result
+  finish_current_body(a,result)
  }
 }

@@ -487,8 +487,8 @@ impl SemanticTree {
         kind: MemberKind,
         presence: bool,
     ) -> M {self.resolve_checker_builtin_using(query,profile,owner,name,kind,presence,||self.validate_checker_builtin_profile(profile),None).expect("ordinary native builtin declaration encoding failed")}
-    pub(crate) fn resolve_checker_builtin_admitted(&self,query:Q,profile:PackedU128,owner:SymbolId,name:SymbolId,kind:MemberKind,presence:bool,work:&mut dyn dm_ir::CanonicalWork)->std::io::Result<M>{
-        self.resolve_checker_builtin_using(query,profile,owner,name,kind,presence,||self.validate_checker_builtin_profile(profile),Some(work))
+    pub(crate) fn resolve_checker_builtin_admitted(&self,query:Q,profile:PackedU128,owner:SymbolId,name:SymbolId,kind:MemberKind,presence:bool,validate:impl FnOnce()->Result<(),CheckerBuiltinError>,work:&mut dyn dm_ir::CanonicalWork)->std::io::Result<M>{
+        self.resolve_checker_builtin_using(query,profile,owner,name,kind,presence,validate,Some(work))
     }
     fn resolve_checker_builtin_using(
         &self,

@@ -6,6 +6,10 @@ impl SemanticTree{pub fn validated_checker_profile(&self,profile:PackedU128)->Re
 impl ValidatedCheckerProfile<'_>{
  pub fn require(&self,tree:&SemanticTree,profile:PackedU128)->Result<(),CheckerBuiltinError>{if !std::ptr::eq(self.tree,tree)||self.profile!=profile{return Err(CheckerBuiltinError::Shape("validated checker profile belongs to another immutable tree/profile"))}Ok(())}
  pub fn reborrow<'tree>(&self,tree:&'tree SemanticTree,profile:PackedU128)->Result<ValidatedCheckerProfile<'tree>,CheckerBuiltinError>{self.require(tree,profile)?;Ok(ValidatedCheckerProfile{tree,profile})}
+ /// Use the same native admitted resolver with the exact immutable tree proof.
+ pub fn resolve_with_canonical_work(&self,query:Q,work:&mut dyn dm_ir::CanonicalWork)->std::io::Result<M>{
+  self.tree.resolve_with_canonical_work_using(query,work,|profile|self.require(self.tree,profile))
+ }
  fn builtin(&self,query:Q,profile:PackedU128,owner:SymbolId,name:SymbolId,kind:MemberKind,presence:bool)->M{self.tree.resolve_checker_builtin_using(query,profile,owner,name,kind,presence,||self.require(self.tree,profile),None).expect("ordinary validated native builtin declaration encoding failed")}
 }
 impl dm_ir::Resolver for ValidatedCheckerProfile<'_>{

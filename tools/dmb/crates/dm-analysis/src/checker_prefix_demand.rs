@@ -68,14 +68,15 @@ impl<D:Demand> Demand for Original<D>{type Error=D::Error;fn source_checkpoint(&
 
 /// Opt-in direct canonical transport. The existing archive's retained BODY
 /// query owns every callee loan. This adapter never asks for absolute syntax.
-pub(crate) struct Current<'a,'op>{
+pub(crate) struct Current<'a,'op,'archive,'syntax>{
  pub(crate) archive:&'a BodyArchive,
+ pub(crate) primary:&'a dm_tree::frontend::CurrentArchivedBody<'archive,'syntax>,
  pub(crate) profile:dm_tree::checker_builtins::ValidatedCheckerProfile<'a>,
  pub(crate) admission:&'a dm_syntax::SettingAdmission<'op>,
  pub(crate) checkpoint:&'a dyn Fn()->std::io::Result<()>,
  pub(crate) obtain:Option<&'a crate::checker_effects::CanonicalOriginalBodyLoan<'a>>,
 }
-impl Demand for Current<'_,'_>{
+impl Demand for Current<'_,'_,'_,'_>{
  type Error=crate::policy_body_demand::PolicyFailure;
  fn profile(&self)->Option<dm_tree::checker_builtins::ValidatedCheckerProfile<'_>>{Some(self.profile)}
  fn source_checkpoint(&self)->Option<&dyn Fn()->std::io::Result<()>>{Some(self.checkpoint)}
@@ -85,10 +86,15 @@ impl Demand for Current<'_,'_>{
  fn prefix_with_budget<T>(&self,archive:&BodyArchive,identity:dm_ir::ProcedureIdentity,_:Option<&ReportBudget>,consume:impl FnOnce(InitialSettingPrefix<'_>)->T)->Result<T,Self::Error>{
   self.checkpoint()?;
   if !std::ptr::eq(self.archive,archive){return Err("current Original callee archive differs".into())}
-  let ordinal=archive.callables().ordinal_for_identity_using(identity,&mut||self.checkpoint())?.ok_or("current Original callee occurrence absent")?;
-  let pending=match self.obtain{
-   Some(obtain)=>archive.with_current_body_checked_in(ordinal,self.admission,&mut(),|_,input|obtain(input),|_,body|body.with_initial_setting_prefix(identity,self.admission,consume)),
-   None=>archive.with_current_body_checked(ordinal,self.admission,|body|body.with_initial_setting_prefix(identity,self.admission,consume)),
+  let pending=if self.primary.belongs_to(archive)
+   && archive.callables().identity_for_member(self.primary.occurrence().member)==Some(identity){
+   self.primary.with_reused_initial_setting_prefix(identity,self.admission,consume)
+  }else{
+   let ordinal=archive.callables().ordinal_for_identity_using(identity,&mut||self.checkpoint())?.ok_or("current Original callee occurrence absent")?;
+   match self.obtain{
+    Some(obtain)=>archive.with_current_body_checked_in(ordinal,self.admission,&mut(),|_,input|obtain(input),|_,body|body.with_initial_setting_prefix(identity,self.admission,consume)),
+    None=>archive.with_current_body_checked(ordinal,self.admission,|body|body.with_initial_setting_prefix(identity,self.admission,consume)),
+   }
   };
   pending.map_err(|actual|match actual{
    BodySyntaxFailure::Operational(actual)=>Self::Error::Operational(actual),

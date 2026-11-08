@@ -80,6 +80,7 @@ impl dm_ir::CanonicalWork for Scratch<'_> {
 
 struct LookupRecorder<'a> {
     input: &'a EffectInput,
+    proof: &'a dm_analysis::checker_effects::OriginalEffectSourceProof<'a>,
     key: Key,
     scratch: Mutex<&'a mut graph_work::GraphWork>,
     admission: &'a ExecutionAdmission,
@@ -95,7 +96,7 @@ impl Resolver for LookupRecorder<'_> {
             crate::daemon::control::checkpoint()?;
             let mut work = self.scratch.lock().unwrap_or_else(|error| error.into_inner());
             let mut scratch = Scratch { work: &mut work, admission: self.admission };
-            let answer = self.input.archive().tree().resolve_with_canonical_work(query, &mut scratch)?;
+            let answer = self.proof.resolve_with_canonical_work(query, &mut scratch)?;
             let fingerprint = current_variables::current_answer_hash(self.input, query, &answer, &mut scratch, None)?;
             let disposition = match &answer {
                 ResolvedMeaning::Missing => Disposition::Missing,
@@ -284,7 +285,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, body_charge: Arc<dm_
             let before = work.charged_bytes_for_chunk();
             let mut scratch = graph_work::GraphWork::new(Arc::clone(&ledger), p.key);
             let recorder = LookupRecorder {
-                input: &input, key: p.key, scratch: Mutex::new(&mut scratch), admission: &admission,
+                input: &input, proof: &source_proof, key: p.key, scratch: Mutex::new(&mut scratch), admission: &admission,
                 output: Mutex::new((&mut work, &mut lookups)), error: Mutex::new(None),
             };
             let pending = compute_current_body_using(&input, ordinal, &recorder, &admission, &body_charge, &obtain, Some(&source_proof));

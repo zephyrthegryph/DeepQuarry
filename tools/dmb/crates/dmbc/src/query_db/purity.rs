@@ -52,6 +52,10 @@ pub(super) struct Ledger {
     contexts: BTreeMap<u64, SourceContext>,
     nodes: BTreeMap<Key, NodeLease>,
     live: Vec<Live>,
+    node_bytes: u128,
+    context_bytes: u128,
+    live_bytes_upper: u128,
+    live_completion_bytes: u128,
     active_policy: usize,
     active_graph_work: usize,
     fixed_request_inputs: usize,
@@ -64,41 +68,63 @@ pub(super) struct Ledger {
     storage_test_limit: Option<usize>,
 }
 impl Ledger {
+    fn node_charge(node: &NodeLease) -> u128 {
+        NODE_BOUND as u128 + node.param_size as u128 + node.param_reserved as u128
+            + node.observed_edges as u128 * EDGE_BOUND as u128
+    }
+    fn context_charge(context: &SourceContext) -> u128 {
+        (CONTEXT_BOUND + std::mem::size_of::<Vec<Key>>()) as u128
+            + context.keys.capacity() as u128 * std::mem::size_of::<Key>() as u128
+    }
+    fn insert_node(&mut self, key: Key, node: NodeLease) {
+        self.node_bytes += Self::node_charge(&node);
+        if let Some(old) = self.nodes.insert(key, node) {
+            self.node_bytes -= Self::node_charge(&old);
+        }
+    }
+    fn update_node<T>(&mut self, key: &Key, update: impl FnOnce(&mut NodeLease) -> T) -> Option<T> {
+        let node = self.nodes.get_mut(key)?;
+        let old = Self::node_charge(node);
+        let result = update(node);
+        self.node_bytes = self.node_bytes - old + Self::node_charge(node);
+        Some(result)
+    }
+    fn insert_context(&mut self, key: u64, context: SourceContext) {
+        self.context_bytes += Self::context_charge(&context);
+        if let Some(old) = self.contexts.insert(key, context) {
+            self.context_bytes -= Self::context_charge(&old);
+        }
+    }
+    fn push_live(&mut self, entry: Live) {
+        self.live_bytes_upper += entry.bytes as u128;
+        self.live_completion_bytes += Self::completion_charge(&entry);
+        self.live.push(entry);
+    }
+    fn completion_charge(entry: &Live) -> u128 {
+        if entry.completion.is_some() { std::mem::size_of::<std::sync::atomic::AtomicBool>() as u128 } else { 0 }
+    }
     fn live_bytes(&mut self) -> usize {
-        self.live.retain(|v| v.completion.as_ref().map_or_else(||v.owner.strong_count()>0,|done|!done.load(Ordering::Acquire)));
-        self.live
-            .iter()
-            .fold(0usize, |n, x| n.saturating_add(x.bytes))
+        self.live.retain(|entry| entry.completion.as_ref().map_or_else(
+            || entry.owner.strong_count() > 0, |done| !done.load(Ordering::Acquire),
+        ));
+        self.live_bytes_upper = self.live.iter().map(|entry| entry.bytes as u128).sum();
+        self.live_completion_bytes = self.live.iter().map(Self::completion_charge).sum();
+        usize::try_from(self.live_bytes_upper).unwrap_or(usize::MAX)
     }
     fn metadata(&self) -> usize {
-        self.contexts
-            .values()
-            .fold(self.contexts.len().saturating_mul(CONTEXT_BOUND), |n, c| {
-                n.saturating_add(std::mem::size_of::<Vec<Key>>())
-                    .saturating_add(c.keys.capacity().saturating_mul(std::mem::size_of::<Key>()))
-            })
-            .saturating_add(self.nodes.values().fold(0usize, |n, p| {
-                n.saturating_add(NODE_BOUND)
-                    .saturating_add(p.param_size)
-                    .saturating_add(p.param_reserved)
-                    .saturating_add(p.observed_edges.saturating_mul(EDGE_BOUND))
-            }))
-            .saturating_add(
-                self.live
-                    .capacity()
-                    .saturating_mul(std::mem::size_of::<Live>()),
-            )
-            .saturating_add(self.active_policy)
-            .saturating_add(self.active_graph_work)
-            .saturating_add(self.fixed_request_inputs)
-            .saturating_add(self.live.iter().filter(|entry|entry.completion.is_some()).count().saturating_mul(std::mem::size_of::<std::sync::atomic::AtomicBool>()))
+        let bytes = self.context_bytes + self.node_bytes + self.live_completion_bytes
+            + self.live.capacity() as u128 * std::mem::size_of::<Live>() as u128
+            + self.active_policy as u128 + self.active_graph_work as u128
+            + self.fixed_request_inputs as u128;
+        usize::try_from(bytes).unwrap_or(usize::MAX)
     }
     fn admit(&mut self, extra: usize) -> Result<(), String> {
-        let fits = self
-            .live_bytes()
-            .checked_add(self.metadata())
-            .and_then(|n| n.checked_add(extra))
-            .is_some_and(|n| n <= BUDGET);
+        let fits = |ledger: &Self| {
+            ledger.live_bytes_upper + ledger.metadata() as u128 + extra as u128 <= BUDGET as u128
+        };
+        // Weak owners and completion flags only decrease retained use. Reap
+        // them before a refusal so the fast upper bound cannot deny a grant.
+        let fits = fits(self) || { self.live_bytes(); fits(self) };
         if fits {
             Ok(())
         } else {
@@ -149,9 +175,9 @@ impl Drop for ParamReservation {
     fn drop(&mut self) {
         if self.bytes > 0 {
             let mut l = self.ledger.lock().unwrap_or_else(|e| e.into_inner());
-            if let Some(node) = l.nodes.get_mut(&self.key) {
+            l.update_node(&self.key, |node| {
                 node.param_reserved = node.param_reserved.saturating_sub(self.bytes);
-            }
+            });
         }
     }
 }
@@ -167,11 +193,11 @@ fn node_admission(
             return Err("purity query key belongs to another issuance".into());
         }
         l.admit(bytes)?;
-        let node = l.nodes.get_mut(&key).unwrap();
-        node.param_reserved = node
-            .param_reserved
-            .checked_add(bytes)
-            .ok_or("purity parameter reservation overflow")?;
+        l.update_node(&key, |node| {
+            node.param_reserved = node.param_reserved.checked_add(bytes)
+                .ok_or("purity parameter reservation overflow")?;
+            Ok::<(), &str>(())
+        }).unwrap()?;
         bytes
     } else {
         if l.nodes.len() >= MAX_NODES {
@@ -181,7 +207,7 @@ fn node_admission(
         l.admit(NODE_BOUND.saturating_add(bytes))?;
         // Reserve immutable node/Params metadata before the parent edge or Arc
         // allocation. The placeholder survives failures until ordinary pruning.
-        l.nodes.insert(
+        l.insert_node(
             key,
             NodeLease {
                 input: Arc::downgrade(input),
@@ -216,26 +242,19 @@ fn remember_params_with_backing<T: Any + Send + Sync>(
 ) {
     let erased: Value = params.clone();
     let mut l = ledger.lock().unwrap_or_else(|e| e.into_inner());
-    let node = l
-        .nodes
-        .get_mut(&key)
-        .expect("Params node was reserved before allocation");
-    debug_assert!(node.input.ptr_eq(&Arc::downgrade(input)));
-    node.params = Some(Arc::downgrade(&erased));
-    node.param_size = std::mem::size_of::<T>().saturating_add(extra);
+    l.update_node(&key, |node| {
+        debug_assert!(node.input.ptr_eq(&Arc::downgrade(input)));
+        node.params = Some(Arc::downgrade(&erased));
+        node.param_size = std::mem::size_of::<T>().saturating_add(extra);
+    }).expect("Params node was reserved before allocation");
 }
 fn edge(ledger: &Arc<Mutex<Ledger>>, from: Key) -> Result<(), String> {
     let mut l = ledger.lock().unwrap_or_else(|e| e.into_inner());
     l.admit(EDGE_BOUND)?;
-    let n = l
-        .nodes
-        .get_mut(&from)
-        .ok_or("purity dependency node was not preadmitted")?;
-    n.observed_edges = n
-        .observed_edges
-        .checked_add(1)
-        .ok_or("purity edge metadata overflow")?;
-    Ok(())
+    l.update_node(&from, |node| {
+        node.observed_edges = node.observed_edges.checked_add(1).ok_or("purity edge metadata overflow")?;
+        Ok(())
+    }).ok_or("purity dependency node was not preadmitted")?
 }
 fn checked_sources(input:&EffectInput,keys:&[Key],sources:&SourceRegistry)->Result<(),String>{checked_sources_using(input,keys,sources,||crate::daemon::control::checkpoint().map_err(|error|error.to_string()))}
 fn checked_sources_using<E:From<String>+for<'a>From<&'a str>>(
@@ -356,6 +375,7 @@ fn keep_using(
     if l.denied || l.aborted.is_some() {
         return Err(QueryError::Missing(key));
     }
+    l.live_bytes();
     let growth = if l.live.len() == l.live.capacity() {
         std::mem::size_of::<Live>()
     } else {
@@ -367,7 +387,7 @@ fn keep_using(
         l.denied = true;
         return Err(allocation(key,actual));
     }
-    l.live.push(Live {
+    l.push_live(Live {
         owner: Arc::downgrade(&owner),
         completion:None,
         bytes,
@@ -881,6 +901,8 @@ impl QueryDb {
             }
         });
         l.contexts.retain(|_, c| c.input.strong_count() > 0);
+        l.node_bytes = l.nodes.values().map(Ledger::node_charge).sum();
+        l.context_bytes = l.contexts.values().map(Ledger::context_charge).sum();
         l.live_bytes();
     }
     fn purity_sources(&self,input:&Arc<EffectInput>)->Result<Arc<Vec<Key>>,String>{self.purity_sources_using(input,|keys|checked_sources(input,keys,&self.sources),|_|"purity source key allocation refused".to_string())}
@@ -909,7 +931,7 @@ impl QueryDb {
         drop(current);
         let keys = Arc::new(keys);
         check(&keys)?;
-        l.contexts.insert(
+        l.insert_context(
             input.key(),
             SourceContext {
                 input: Arc::downgrade(input),
@@ -1191,7 +1213,7 @@ mod reservation_tests {
     fn replacement_parameter_reservation_counts_peak_overlap_and_releases_on_error_exit() {
         let ledger = Arc::new(Mutex::new(Ledger::default()));
         let k = Key::new(BODY, 99);
-        ledger.lock().unwrap().nodes.insert(
+        ledger.lock().unwrap().insert_node(
             k,
             NodeLease {
                 input: Weak::new(),
@@ -1353,3 +1375,29 @@ pub(super) mod pages;
 
 #[cfg(test)]
 #[path="purity_compact_chunk.rs"]mod compact_chunk;
+
+
+#[cfg(test)]
+#[test]
+fn purity_admission_reaps_weak_and_completed_owners_before_pressure_refusal() {
+    let mut ledger = Ledger::default();
+    let weak_owner: Value = Arc::new(1u32);
+    let completed_owner: Value = Arc::new(2u32);
+    let completion = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    for (owner, completion) in [
+        (&weak_owner, None), (&completed_owner, Some(completion.clone())),
+    ] {
+        ledger.push_live(Live { owner: Arc::downgrade(owner), completion, bytes: 4096, kind: BODY, error: false });
+    }
+    let extra = BUDGET - ledger.metadata();
+    assert!(ledger.admit(extra).is_err());
+    assert_eq!(ledger.live.len(), 2);
+    ledger.denied = false;
+    drop(weak_owner);
+    completion.store(true, Ordering::Release);
+    ledger.admit(extra).unwrap();
+    assert!(!ledger.denied);
+    assert!(ledger.live.is_empty());
+    assert_eq!(ledger.live_bytes_upper, 0);
+    assert_eq!(ledger.live_completion_bytes, 0);
+}

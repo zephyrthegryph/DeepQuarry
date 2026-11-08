@@ -501,13 +501,19 @@ impl SemanticTree {
     /// Same native resolver selection, with demand-owned canonical allocation.
     /// This changes neither source provenance nor unsupported-query semantics.
     pub fn resolve_with_canonical_work(&self,query:dm_ir::ResolveQuery,work:&mut dyn dm_ir::CanonicalWork)->std::io::Result<dm_ir::ResolvedMeaning> {
+        self.resolve_with_canonical_work_using(query, work, |profile| self.validate_checker_builtin_profile(profile))
+    }
+    pub(super) fn resolve_with_canonical_work_using(
+        &self, query: dm_ir::ResolveQuery, work: &mut dyn dm_ir::CanonicalWork,
+        validate: impl FnOnce(dm_ir::PackedU128) -> Result<(), crate::checker_builtins::CheckerBuiltinError>,
+    ) -> std::io::Result<dm_ir::ResolvedMeaning> {
         use dm_ir::ResolveQuery as Q;
         work.poll()?;
         match query {
             Q::SourceVarDeclaration{owner,name}=>self.source_var_declaration_using(owner,name,query,&mut|data|Ok(xxhash_rust::xxh3::xxh3_128(&data.canonical_bytes_using(work)?).into())),
-            Q::CheckerIntrinsicCallable{profile,owner,name,verb}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,if verb{MemberKind::Verb}else{MemberKind::Proc},true,work),
-            Q::CheckerBuiltinVar{profile,owner,name}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,MemberKind::Var,false,work),
-            Q::CheckerBuiltinProc{profile,owner,name,verb}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,if verb{MemberKind::Verb}else{MemberKind::Proc},false,work),
+            Q::CheckerIntrinsicCallable{profile,owner,name,verb}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,if verb{MemberKind::Verb}else{MemberKind::Proc},true,||validate(profile),work),
+            Q::CheckerBuiltinVar{profile,owner,name}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,MemberKind::Var,false,||validate(profile),work),
+            Q::CheckerBuiltinProc{profile,owner,name,verb}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,if verb{MemberKind::Verb}else{MemberKind::Proc},false,||validate(profile),work),
             Q::SourceDeclarationChain{owner,name,verb}=>self.source_declaration_chain_using(owner,name,verb,query,Some(work)),
             Q::Type(_)=>Ok(dm_ir::Resolver::resolve(self,query)),
             Q::Ancestry(path)=>{

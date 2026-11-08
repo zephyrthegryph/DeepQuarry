@@ -403,3 +403,42 @@ fn admitted_checker_intrinsic_callable_preserves_presence_and_first_io() {
     let mut work = Work { polls: 0, fail: Some(2) };
     assert_eq!(tree.resolve_with_canonical_work(present, &mut work).unwrap_err().raw_os_error(), Some(1450));
 }
+
+
+#[test]
+fn funded_borrowed_checker_profile_preserves_native_answers_quota_and_first_io() {
+    use std::io;
+    #[derive(Default)]
+    struct Work { charged: usize, failure: Option<i32> }
+    impl dm_ir::CanonicalWork for Work {
+        fn poll(&mut self) -> io::Result<()> { Ok(()) }
+        fn reserve(&mut self, bytes: usize) -> io::Result<()> {
+            if let Some(code) = self.failure { return Err(io::Error::from_raw_os_error(code)); }
+            self.charged += bytes;
+            Ok(())
+        }
+    }
+    let tree = seeded("/datum/example\n");
+    let profile = tree.checker_builtin_profile().unwrap();
+    let builtin = Q::CheckerBuiltinProc {
+        profile, owner: SymbolId::of("/"), name: SymbolId::of("sleep"), verb: false,
+    };
+    let mut ordinary = Work::default();
+    let expected = tree.resolve_with_canonical_work(builtin, &mut ordinary).unwrap();
+    assert!(matches!(expected, M::Member { .. }));
+    assert!(ordinary.charged > 0);
+
+    PROFILE_VALIDATIONS.with(|count| count.set(0));
+    let proof = tree.validated_checker_profile(profile).unwrap();
+    let mut proven = Work::default();
+    assert_eq!(proof.resolve_with_canonical_work(builtin, &mut proven).unwrap(), expected);
+    assert_eq!(ordinary.charged, proven.charged);
+    let foreign = Q::CheckerBuiltinProc {
+        profile: PackedU128::new(profile.get() ^ 1), owner: SymbolId::of("/"),
+        name: SymbolId::of("sleep"), verb: false,
+    };
+    assert_eq!(proof.resolve_with_canonical_work(foreign, &mut proven).unwrap(), M::Unsupported(foreign));
+    proven.failure = Some(1450);
+    assert_eq!(proof.resolve_with_canonical_work(builtin, &mut proven).unwrap_err().raw_os_error(), Some(1450));
+    assert_eq!(PROFILE_VALIDATIONS.with(|count| count.get()), 1);
+}

@@ -102,6 +102,12 @@ pub struct OriginalEffectSourceProof<'a> {
     profile: dm_tree::checker_builtins::ValidatedCheckerProfile<'a>,
 }
 impl OriginalEffectSourceProof<'_> {
+    pub fn resolve_with_canonical_work(
+        &self, query: dm_ir::ResolveQuery, work: &mut dyn dm_ir::CanonicalWork,
+    ) -> std::io::Result<dm_ir::ResolvedMeaning> {
+        self.profile.resolve_with_canonical_work(query, work)
+    }
+
     fn require(&self, input: &EffectInput) -> Result<(), String> {
         if !std::ptr::eq(self.input, input) {
             return Err("original checker proof belongs to another input".into());
@@ -443,7 +449,7 @@ pub fn compute_body_checked_using_admitted_controlled(
         }
         let mut draft=Draft{transient:ReportBudget::for_operation(admission),..Default::default()};
         let demand=crate::checker_prefix_demand::Original(crate::checker_prefix_demand::Current{
-            archive:&self.archive,admission:syntax,checkpoint,obtain,profile:proof.profile,
+            archive:&self.archive,primary:body,admission:syntax,checkpoint,obtain,profile:proof.profile,
         });
         let settings=crate::checker_return_facts::PuritySettingsPermit::issue_using(
             &self.archive,self.profile,procedure,&demand,

@@ -26,13 +26,14 @@ impl GraphWork{
   let owner:Value=value.clone();let fingerprint=value.fingerprint(self.key);crate::daemon::control::checkpoint().map_err(|actual|QueryError::operational(self.key,actual))?;let outcome=Outcome::new(Ok::<Arc<T>,String>(value),fingerprint,bytes);
   let mut ledger=self.ledger.lock().unwrap_or_else(|e|e.into_inner());
   if ledger.denied||ledger.aborted.is_some(){return Err(QueryError::Missing(self.key))}
+  ledger.live_bytes();
   let exposed_bound=if ledger.live.len()==ledger.live.capacity(){ledger.live.len().checked_add(1).and_then(|n|n.checked_mul(4)).ok_or(QueryError::Missing(self.key))?}else{ledger.live.capacity()};
   let growth=exposed_bound.saturating_sub(ledger.live.capacity()).checked_mul(std::mem::size_of::<Live>()).ok_or(QueryError::Missing(self.key))?;
   ledger.admit(bytes.saturating_add(growth).saturating_add(std::mem::size_of::<std::sync::atomic::AtomicBool>()).saturating_sub(self.bytes)).map_err(|_|QueryError::Missing(self.key))?;
   if let Err(actual)=ledger.live.try_reserve_exact(1){ledger.denied=true;return Err(QueryError::operational(self.key,std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual)))}
   if ledger.live.capacity()>exposed_bound{ledger.denied=true;return Err(QueryError::operational(self.key,std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect graph retained-owner directory exposed excess capacity")))}
   ledger.active_graph_work=ledger.active_graph_work.checked_sub(self.bytes).expect("same owned graph escrow");self.bytes=0;
-  ledger.live.push(Live{owner:Arc::downgrade(&owner),completion:Some(completion),bytes,kind:self.key.kind,error:false});Ok(outcome)
+  ledger.push_live(Live{owner:Arc::downgrade(&owner),completion:Some(completion),bytes,kind:self.key.kind,error:false});Ok(outcome)
  }
 }
 impl Drop for GraphWork{fn drop(&mut self){if self.bytes!=0{let mut ledger=self.ledger.lock().unwrap_or_else(|e|e.into_inner());ledger.active_graph_work=ledger.active_graph_work.checked_sub(self.bytes).expect("same owned graph escrow drop");}}}

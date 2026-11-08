@@ -35,7 +35,7 @@ fn dependency_peak(ledger:&Arc<Mutex<Ledger>>,key:Key)->Result<(),String>{
  // Every child page is an existing purity node, under unchanged MAX_NODES.
  // Include project/program and old/new Ctx overlap before the first read.
  let bound=MAX_NODES.checked_add(2).and_then(|n|n.checked_mul(2)).ok_or("effect graph dependency envelope overflow")?;let mut ledger=ledger.lock().unwrap_or_else(|e|e.into_inner());let old=ledger.nodes.get(&key).ok_or("effect graph node unreserved")?.observed_edges;
- ledger.admit(bound.saturating_sub(old).checked_mul(EDGE_BOUND).ok_or("effect graph edge admission overflow")?)?;ledger.nodes.get_mut(&key).unwrap().observed_edges=old.max(bound);Ok(())
+ ledger.admit(bound.saturating_sub(old).checked_mul(EDGE_BOUND).ok_or("effect graph edge admission overflow")?)?;ledger.update_node(&key,|node|node.observed_edges=old.max(bound)).unwrap();Ok(())
 }
 fn failure(ledger:&Arc<Mutex<Ledger>>,error:ReadFailure)->dm_analysis::policy_body_demand::PolicyFailure{match error{ReadFailure::Semantic(message)=>message.into(),ReadFailure::Query(error)=>dm_analysis::policy_body_demand::PolicyFailure::Operational(pages::restore_graph_error(ledger,error))}}
 pub(super) fn register(db:&Db,ledger:Arc<Mutex<Ledger>>,registry:SourceRegistry){

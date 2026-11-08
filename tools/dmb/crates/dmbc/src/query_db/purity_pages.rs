@@ -31,10 +31,10 @@ pub(super) fn page_key(input:&EffectInput,start:usize,width:usize)->Key{key(PAGE
 /// only one bounded immutable dependency set remains. No cumulative retry leak.
 pub(super) struct PageDependencyPeak{ledger:Arc<Mutex<Ledger>>,key:Key,pub(super) old:usize,actual:usize,committed:bool}
 impl PageDependencyPeak{pub(super) fn commit(&mut self,actual:usize){self.actual=actual;self.committed=true}}
-impl Drop for PageDependencyPeak{fn drop(&mut self){let actual=self.actual;if let Some(node)=self.ledger.lock().unwrap_or_else(|e|e.into_inner()).nodes.get_mut(&self.key){node.observed_edges=if self.committed&&actual!=0{actual}else{self.old};}}}
+impl Drop for PageDependencyPeak{fn drop(&mut self){let actual=self.actual;self.ledger.lock().unwrap_or_else(|e|e.into_inner()).update_node(&self.key,|node|node.observed_edges=if self.committed&&actual!=0{actual}else{self.old});}}
 pub(super) fn reserve_dependencies(ledger:&Arc<Mutex<Ledger>>,key:Key,count:usize)->Result<PageDependencyPeak,String>{
  let minimum=count.checked_add(2).ok_or("effect page dependency count overflow")?;let mut l=ledger.lock().unwrap_or_else(|e|e.into_inner());let old=l.nodes.get(&key).ok_or("effect page node was not reserved")?.observed_edges;let peak=old.checked_add(minimum.checked_mul(2).ok_or("effect page dependency peak overflow")?).ok_or("effect page dependency overlap overflow")?;
- l.admit(peak.saturating_sub(old).checked_mul(EDGE_BOUND).ok_or("effect page dependency admission overflow")?)?;l.nodes.get_mut(&key).unwrap().observed_edges=peak;Ok(PageDependencyPeak{ledger:Arc::clone(ledger),key,old,actual:0,committed:false})
+ l.admit(peak.saturating_sub(old).checked_mul(EDGE_BOUND).ok_or("effect page dependency admission overflow")?)?;l.update_node(&key,|node|node.observed_edges=peak).unwrap();Ok(PageDependencyPeak{ledger:Arc::clone(ledger),key,old,actual:0,committed:false})
 }
 /// Callee settings/return proofs can demand additional ORIGINAL Kind4 inputs.
 /// Reserve actual old/new Ctx overlap BEFORE the next unique dynamic read.
@@ -44,7 +44,7 @@ pub(super) fn reserve_actual_dependency(ledger:&Arc<Mutex<Ledger>>,key:Key,old:u
  let delta=requested.saturating_sub(current).checked_mul(EDGE_BOUND).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect page dynamic edge admission overflow"))?;
  #[cfg(test)]if delta!=0{PAGE_EXTRA_EDGE_TRACE.with(|trace|if trace.get().is_none(){trace.set(Some((initial,live.available(),delta)))});}
  live.reserve_external(delta)?;
- l.admit(delta).map_err(|_|std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect page dynamic edge admission exhausted"))?;l.nodes.get_mut(&key).unwrap().observed_edges=current.max(requested);Ok(())
+ l.admit(delta).map_err(|_|std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect page dynamic edge admission exhausted"))?;l.update_node(&key,|node|node.observed_edges=current.max(requested)).unwrap();Ok(())
 }
 pub(super) fn page_execution_headroom(ledger:&Arc<Mutex<Ledger>>)->Result<usize,String>{
  let mut l=ledger.lock().unwrap_or_else(|e|e.into_inner());let occupied=l.live_bytes().checked_add(l.metadata()).ok_or("effect page live family capacity overflow")?;let headroom=BUDGET.checked_sub(occupied).ok_or_else(||{l.denied=true;"effect page family admission exhausted".to_string()})?;
