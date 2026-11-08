@@ -213,6 +213,7 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 	if(!dot)
 		return
 	var/last = copytext(cond, findlasttext(cond, ".") + 1)
+	hop_readers_changed(null) // hooks_watching() answers for `last` on every type now
 	var/list/paths = GLOB.change_hop_keys[last]
 	if(!paths)
 		if(delta < 0)

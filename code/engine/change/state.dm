@@ -84,8 +84,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 			return TRUE
 	if(E.rx?.observed?[key])
 		return TRUE
-	if(E.rx?.worn_watched)
-		return TRUE // a human's draw shows E worn or held (look.watch_worn()): it composes whatever E shows, so every write of E reaches it
+	if(E.rx?.worn_watched && key != HOP_TURF && key != HOP_AREA)
+		return TRUE // a human's draw shows E worn or held (look.watch_worn()): it composes whatever E shows, so every write of E reaches it; not
+		// where E is (the turf and area hops are no part of what it shows: its own reads of them are its type's, above)
 	if((bits & PLAN_READ_LIFEFORM) && lifeform_watching(E, key))
 		return TRUE // a lifecycle form follows the var: a registry key, a radio frequency, a derives() input (code/engine/lifeforms/forms.dm)
 	if(bits & PLAN_READ_HOOK)
@@ -117,6 +118,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		S.observed -= key
 	if(!length(S.observed))
 		S.observed = null
+	hop_readers_changed(key)
 
 /**
  * `key` of `E` changed. Delivers to the type's on_change / on_cross reactions and to observe()rs of the key
