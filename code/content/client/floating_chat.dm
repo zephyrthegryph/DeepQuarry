@@ -75,10 +75,6 @@ TYPE_TABLE(/datum/preference/choiced/chat_dock_side, pref_choices, list(CHAT_DOC
 
 /// Where the chat pane is on this client, and the share it has: unknown until the first sync has looked at the skin.
 /client/var/chat_layout_mode = CHAT_MODE_UNKNOWN
-
-/// Whether the chat is pinned at the top of the right-hand column (the stat panel's place, which the window dock fills, is then its lower half).
-/client/proc/chat_on_top()
-	return chat_layout_mode == CHAT_MODE_TOP
 /client/var/chat_layout_share = CHAT_SHARE_DEFAULT
 
 /// The channels a speech hotkey can focus the chat input row in (tgui-panel/input/model.ts INPUT_CHANNELS).
@@ -151,7 +147,7 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 /// The winset text that takes the chat pane from the layout `from` to the layout `mode`, one call, in order. The stat panel is the
 /// right-column pane that is not the chat: it keeps its place when only the chat pane comes or goes (bottom and float), and is
 /// re-seated when the chat takes or leaves the top.
-/proc/chat_layout_params(mode, share, from = CHAT_MODE_BOTTOM, stat_pane = SKIN_STAT_PANE)
+/proc/chat_layout_params(mode, share, from = CHAT_MODE_BOTTOM)
 	var/list/steps = list()
 	if(from == CHAT_MODE_FLOAT)
 		steps += "[SKIN_CHAT_FLOAT_WINDOW].is-visible=false"
@@ -162,16 +158,16 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 	switch(mode)
 		if(CHAT_MODE_TOP)
 			steps += "[SKIN_RPANE_SPLIT].left=[SKIN_OUTPUT_PANE]"
-			steps += "[SKIN_RPANE_SPLIT].right=[stat_pane]"
+			steps += "[SKIN_RPANE_SPLIT].right=[SKIN_STAT_PANE]"
 			steps += "[SKIN_RPANE_SPLIT].splitter=[chat_splitter_for(mode, share)]"
 		if(CHAT_MODE_BOTTOM)
 			if(from == CHAT_MODE_TOP)
-				steps += "[SKIN_RPANE_SPLIT].left=[stat_pane]"
+				steps += "[SKIN_RPANE_SPLIT].left=[SKIN_STAT_PANE]"
 			steps += "[SKIN_RPANE_SPLIT].right=[SKIN_OUTPUT_PANE]"
 			steps += "[SKIN_RPANE_SPLIT].splitter=[chat_splitter_for(mode, share)]"
 		if(CHAT_MODE_FLOAT)
 			if(from == CHAT_MODE_TOP)
-				steps += "[SKIN_RPANE_SPLIT].left=[stat_pane]"
+				steps += "[SKIN_RPANE_SPLIT].left=[SKIN_STAT_PANE]"
 			else
 				steps += "[SKIN_RPANE_SPLIT].right="
 			// The stat panel is alone in the column: the split gives it all of it, whatever the splitter was.
@@ -194,7 +190,7 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 		return list(CHAT_MODE_BOTTOM, isnum(splitter) ? chat_share_for_splitter(CHAT_MODE_BOTTOM, splitter) : CHAT_SHARE_DEFAULT)
 	if(left == SKIN_OUTPUT_PANE)
 		return list(CHAT_MODE_TOP, isnum(splitter) ? chat_share_for_splitter(CHAT_MODE_TOP, splitter) : CHAT_SHARE_DEFAULT)
-	if(length(read) && (left == SKIN_STAT_PANE || left == dock_column_slot(1)))
+	if(length(read) && left == SKIN_STAT_PANE)
 		return list(CHAT_MODE_FLOAT, CHAT_SHARE_DEFAULT)
 	return list(CHAT_MODE_BOTTOM, CHAT_SHARE_DEFAULT)
 
@@ -238,7 +234,7 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 	var/share = chat_share_clamped(prefs.read_preference(/datum/preference/numeric/chat_share))
 	switch(chat_layout_change(mode, share, chat_layout_mode, chat_layout_share))
 		if(CHAT_CHANGE_LAYOUT)
-			var/params = chat_layout_params(mode, share, chat_layout_mode, window_dock?.column_slot() || SKIN_STAT_PANE)
+			var/params = chat_layout_params(mode, share, chat_layout_mode)
 			winset(src, null, params)
 			log_tgui(src, "Chat layout: [chat_layout_mode] -> [mode], share [share]. winset: [params]", context = "chat_float")
 			chat_layout_mode = mode
