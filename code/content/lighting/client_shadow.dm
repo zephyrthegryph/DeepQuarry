@@ -63,10 +63,11 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 	if(!glow || !glow_mask || !source_turf)
 		return
 	var/obj/effect/overlay/client_glow/G = glow
-	client_glow_mask_apply(glow_mask_range, G.icon, glow_mask_margin)
+	if(client_glow_mask_apply(glow_mask_range, G.icon, glow_mask_margin))
+		client_glow_holders_consider(src) // the held copies take the new mask
 
 /// Rebuilds this light's mask from its reach (client_glow_apply()). `glow_icon` and `margin` are the glow sprite's: the mask
-/// is the same size (its base is that icon made fully transparent), so the alpha filter lines the two up.
+/// is the same size (its base is that icon made fully transparent), so the alpha filter lines the two up. TRUE when it rebuilt.
 /datum/light_source/proc/client_glow_mask_apply(range, glow_icon, margin)
 	glow_mask_range = range
 	glow_mask_margin = margin
@@ -111,6 +112,7 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 	M.set_icon(glow_icon)
 	M.overlays = CACHED_FAST(client_glow_masks, key)
 	client_glow_index(TRUE)
+	return TRUE
 
 /// The watched turfs (lum bands) in this light's last reach.
 /datum/light_source/proc/client_glow_watched_reach()
