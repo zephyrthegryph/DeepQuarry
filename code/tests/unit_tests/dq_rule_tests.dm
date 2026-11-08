@@ -1,4 +1,4 @@
-// Rules (doc/rewrite/rules.md Â�4, roadmap P4): compilation to reactor
+// Rules (doc/rewrite/rules.md §4, roadmap P4): compilation to reactor
 // triggers, the generated threshold tests, and parity for the rules that
 // replace old code.
 
