@@ -15,8 +15,31 @@ impl DerivedReadData{
 pub fn metadata()->&'static crate::lint::Meta{&crate::derived_reads_metadata::META}
 #[derive(Default)]pub(crate) struct Index{schema:Schema,entries:BTreeMap<String,Vec<Entry>>,entry_order:Vec<String>,set_calls:BTreeSet<String>}
 fn strip(owner:&str)->&str{owner.strip_prefix('/').unwrap_or(owner)}
-fn merge_one<C:Control>(into:&mut SchemaTable,owner:String,names:BTreeSet<String>,c:&mut C)->Result<(),C::Error>{let mut owner=owner;if owner.starts_with('/'){owner.remove(0);}if let Some(set)=into.get_mut(&owner){for name in names{c.checkpoint()?;if !set.contains(&name){kc::reserve(c,||Some(512))?;set.insert(name);}}}else{kc::reserve(c,||Some(2048))?;into.insert(owner,names);}Ok(())}
-fn merge<C:Control>(into:&mut Schema,from:Schema,c:&mut C)->Result<(),C::Error>{for(owner,names)in from.vars{merge_one(&mut into.vars,owner,names,c)?}for(owner,names)in from.typed{merge_one(&mut into.typed,owner,names,c)?}for(owner,names)in from.tracked{merge_one(&mut into.tracked,owner,names,c)?}for(owner,names)in from.relations{merge_one(&mut into.relations,owner,names,c)?}for row in from.published{kc::row(c,&mut into.published)?;into.published.push(row)}Ok(())}
+fn merge_one<C:Control>(into:&mut SchemaTable,mut owner:String,names:BTreeSet<String>,c:&mut C,transfer:bool)->Result<(),C::Error>{
+ if owner.starts_with('/'){owner.remove(0);}
+ if let Some(set)=into.get_mut(&owner){
+  for name in names{c.checkpoint()?;if !set.contains(&name){
+   kc::reserve(c,||512usize.checked_add(if transfer{name.capacity()}else{0}))?;
+   set.insert(name);
+  }}
+ }else{
+  kc::reserve(c,||if transfer{
+   names.len().checked_mul(512)?.checked_add(2048)?.checked_add(owner.capacity())?
+    .checked_add(names.iter().try_fold(0usize,|bytes,name|bytes.checked_add(name.capacity()))?)
+  }else{Some(2048)})?;
+  into.insert(owner,names);
+ }Ok(())
+}
+fn merge<C:Control>(into:&mut Schema,from:Schema,c:&mut C,transfer:bool)->Result<(),C::Error>{
+ for(owner,names)in from.vars{merge_one(&mut into.vars,owner,names,c,transfer)?}
+ for(owner,names)in from.typed{merge_one(&mut into.typed,owner,names,c,transfer)?}
+ for(owner,names)in from.tracked{merge_one(&mut into.tracked,owner,names,c,transfer)?}
+ for(owner,names)in from.relations{merge_one(&mut into.relations,owner,names,c,transfer)?}
+ for row in from.published{
+  if transfer{kc::reserve(c,||row.0.capacity().checked_add(row.1.capacity())?.checked_add(row.2.capacity()))?;}
+  kc::row(c,&mut into.published)?;into.published.push(row);
+ }Ok(())
+}
 fn has(table:&SchemaTable,owner:&str,name:&str)->bool{let mut yes=false;schema::chain(owner,|_,a|yes|=table.get(a).is_some_and(|v|v.contains(name)));yes}
 fn visit_entries(index:&Index,owner:&str,mut visit:impl FnMut(&Entry)){schema::chain(owner,|_,a|{if let Some(entries)=index.entries.get(a){for e in entries{visit(e)}}})}
 struct Known<'a>{index:&'a Index,owner:&'a str}impl Membership for Known<'_>{type Error=Failure;fn contains(&self,name:&str)->Result<bool,Failure>{Ok(has(&self.index.schema.vars,self.owner,name))}}
@@ -77,11 +100,45 @@ fn files(source:&dyn DerivedPages,mut visit:impl FnMut(&SourceFile)->Result<bool
 fn find_file<T>(source:&dyn DerivedPages,relative:&str,run:impl FnOnce(&SourceFile)->Result<T,Failure>)->Result<T,Failure>{let mut run=Some(run);let mut out=None;source.for_each(&mut|rel,views|{if rel!=relative{return Ok(true)}if out.is_some(){return Err("derived original raw file repeated".into())}out=Some(run.take().unwrap()(views.source_file()?)?);Ok(false)})?;out.ok_or_else(||Failure::Unsupported("derived finding original raw file absent".into()))}
 /// Whole DATA only. Public registry/complete ALLOW roles remain unissued until
 /// the actual host admits this consumer and its complete original acquisition.
-fn index_file(index:&mut Index,file:&SourceFile,c:&mut Operation<'_>)->Result<(),Failure>{
-let mut own=if file.rel==reaction::GENERATED_REL{Schema::default()}else{schema::file(file.code(),c)?};procedures(file,c,|header,proc,c|{schema::relations(&mut own,Procedure{owner:proc.owner,name:proc.name,relative:proc.relative,args:proc.args,lines:proc.lines},c)?;if proc.name=="derived"&&proc.owner!="/"{let owner=kc::own(c,proc.owner)?;let key=strip(&owner);if !index.entries.contains_key(key){kc::reserve(c,||Some(2048))?;index.entries.insert(kc::own(c,key)?,Vec::new());kc::row(c,&mut index.entry_order)?;index.entry_order.push(kc::own(c,proc.owner)?);}let rows=crate::derived_entry_policy::entries(proc,header,c)?;let target=index.entries.get_mut(key).unwrap();for e in rows{kc::row(c,target)?;target.push(e);}}Ok(())})?;merge(&mut index.schema,own,c)?;Ok(())
+fn entry_backing(entry:&Entry)->Option<usize>{
+ let mut bytes=entry.rel.capacity().checked_add(entry.name.as_ref().map_or(0,String::capacity))?
+  .checked_add(entry.local.len().checked_mul(512)?)?
+  .checked_add(entry.remote.capacity().checked_mul(std::mem::size_of::<(Option<String>,String)>())?)?
+  .checked_add(entry.hops.capacity().checked_mul(std::mem::size_of::<String>())?)?;
+ for name in &entry.local{bytes=bytes.checked_add(name.capacity())?;}
+ for (owner,name) in &entry.remote{bytes=bytes.checked_add(owner.as_ref().map_or(0,String::capacity))?.checked_add(name.capacity())?;}
+ for hop in &entry.hops{bytes=bytes.checked_add(hop.capacity())?;}
+ Some(bytes)
 }
+
+fn index_file(index:&mut Index,file:&SourceFile,scratch:&mut Operation<'_>,retained:&mut Operation<'_>,transfer:bool)->Result<(),Failure>{
+ let mut own=if file.rel==reaction::GENERATED_REL{Schema::default()}else{schema::file(file.code(),scratch)?};
+ procedures(file,scratch,|header,proc,scratch|{
+  schema::relations(&mut own,Procedure{owner:proc.owner,name:proc.name,relative:proc.relative,args:proc.args,lines:proc.lines},scratch)?;
+  if proc.name=="derived"&&proc.owner!="/"{
+   let owner=proc.owner;
+   let key=strip(owner);
+   if !index.entries.contains_key(key){
+    kc::reserve(retained,||Some(2048))?;
+    index.entries.insert(kc::own(retained,key)?,Vec::new());
+    kc::row(retained,&mut index.entry_order)?;
+    index.entry_order.push(kc::own(retained,owner)?);
+   }
+   let rows=crate::derived_entry_policy::entries(proc,header,scratch)?;
+   let target=index.entries.get_mut(key).unwrap();
+   for entry in rows{
+    if transfer{kc::reserve(retained,||entry_backing(&entry))?;}
+    kc::row(retained,target)?;
+    target.push(entry);
+   }
+  }Ok(())
+ })?;
+ merge(&mut index.schema,own,retained,transfer)
+}
+
 pub(crate) fn prepare(source:&ReadSource<'_>,poll:&dyn Fn()->io::Result<()>)->Result<Index,Failure>{
- let b=source.budget();check(b,poll)?;let mut c=Operation{budget:b,poll};let mut index=Index::default();files(&SemanticPages(source),|file|{index_file(&mut index,file,&mut c)?;Ok(true)})?;Ok(index)
+ let b=source.budget();check(b,poll)?;let mut scratch=Operation{budget:b,poll};let mut retained=Operation{budget:b,poll};let mut index=Index::default();
+ files(&SemanticPages(source),|file|{index_file(&mut index,file,&mut scratch,&mut retained,false)?;Ok(true)})?;Ok(index)
 }
 /// Body-free selected raw DATA, not a source/model/preparation witness. There
 /// is no public constructor, Clone, caller-hash binding or unchecked consume.
@@ -108,7 +165,29 @@ struct PreflightPhase{funding:Arc<Budget>,complete:bool}impl Drop for PreflightP
 /// scope before any use with a semantic subject; DATA equality grants nothing.
 pub fn prepare_selected_pages(pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<UnsealedDerivedIndexData,Failure>{
  check(budget,poll)?;let funding=Budget::scoped_temporaries(budget).map_err(|m|oom(budget,m))?;let mut phase=PreflightPhase{funding:Arc::clone(&funding),complete:false};
- let pending=(||{let mut index=Index::default();let mut c=Operation{budget:&funding,poll};let all=pages.for_each(&mut|relative,views|{check(&funding,poll)?;if !relative.starts_with("code/")||!relative.ends_with(".dm"){return Err("derived preflight escaped its actual selected CODE phase".into())}index_file(&mut index,views.source_file()?,&mut c)?;Ok(true)})?;if !all{return Err("derived preflight stopped before actual selected raw EOF".into())}check(&funding,poll)?;Ok(index)})();
+ let pending=(||{
+  let mut index=Index::default();
+  let mut retained=Operation{budget:&funding,poll};
+  let all=pages.for_each(&mut|relative,views|{
+   check(&funding,poll)?;
+   if !relative.starts_with("code/")||!relative.ends_with(".dm"){return Err("derived preflight escaped its actual selected CODE phase".into())}
+   // The recorder already issued a scratch owner for this exact raw view.
+   // Source-neutral test/fixture lenders can lack it. Their local fallback
+   // is also a child of the same operation, never of the retained index.
+   let actual=views.allocation_budget(budget);
+   let fallback=if std::ptr::eq(actual,budget.as_ref()){
+    Some(Budget::scoped_temporaries(budget).map_err(|m|oom(budget,m))?)
+   }else{None};
+   let local=fallback.as_deref().unwrap_or(actual);
+   let mut guard=PreflightPhase{funding:fallback.as_ref().map_or_else(||Arc::clone(&funding),Arc::clone),complete:fallback.is_none()};
+   let mut scratch=Operation{budget:local,poll};
+   index_file(&mut index,views.source_file()?,&mut scratch,&mut retained,true)?;
+   guard.complete=true;
+   Ok(true)
+  })?;
+  if !all{return Err("derived preflight stopped before actual selected raw EOF".into())}
+  check(&funding,poll)?;Ok(index)
+ })();
  let pending=finish(pending,&funding,poll);match pending{Ok(index)=>{let data=UnsealedDerivedIndexData{index,funding};phase.complete=true;drop(phase);Ok(data)},Err(actual)=>{drop(phase);drop(funding);Err(actual)}}
 }
 pub(crate) fn collect(source:&ReadSource<'_>,all_source:&ReadSource<'_>,mut index:Index,globals:&GlobalResult,test_types:&BTreeSet<String>,poll:&dyn Fn()->io::Result<()>)->Result<DerivedReadData,Failure>{
@@ -140,7 +219,35 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
  struct Pages{file:crate::captured_raw_file::File,fail:Cell<bool>,stop:Cell<bool>,passes:Cell<usize>}
  impl crate::reactive_raw_policy_pages::RawPolicyPages for Pages{fn for_each(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{if self.fail.get(){return Err(Failure::Operational(io::Error::from_raw_os_error(1450)))}self.passes.set(self.passes.get()+1);let all=self.file.with_policy_views(visit)?;Ok(all&&!self.stop.get())}}
  fn pages()->Pages{let root=std::env::current_dir().unwrap().join("derived-treefree-preflight");let text="/datum/probe\n    var/value\n/datum/probe/derived()\n    return list(drawn_from(nameof(value)))\n";Pages{file:crate::captured_raw_file::File::capture(&root,&root.join("code/probe.dm"),text.into()).unwrap(),fail:Cell::new(false),stop:Cell::new(false),passes:Cell::new(0)}}
- #[test]fn treefree_preflight_uses_same_identifier_index_without_semantic_source_and_keeps_credit_live(){let pages=pages();let budget=Budget::new(8*1024*1024).unwrap();let before=budget.used();let data=prepare_selected_pages(&pages,&budget,&||Ok(())).unwrap();assert_eq!(pages.passes.get(),1);assert!(data.index.schema.vars["datum/probe"].contains("value"));assert_eq!(data.index.entry_order,["/datum/probe"]);assert_eq!(data.index.entries["datum/probe"][0].kind,"drawn");assert!(data.index.set_calls.is_empty(),"setter names belong after actual semantic preparation");assert!(data.retained_charge().unwrap()>std::mem::size_of::<UnsealedDerivedIndexData>());assert!(budget.used()>before);let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();let held=budget.used();let payload=data.funding.used().checked_sub(fixed).unwrap();assert!(payload>0);drop(data);assert_eq!(budget.used(),held-payload);assert_eq!(budget.used(),before+fixed,"existing Budget contract conservatively retains child Arc/control metadata");}
+ #[test]fn treefree_preflight_uses_same_identifier_index_without_semantic_source_and_keeps_credit_live(){let pages=pages();let budget=Budget::new(8*1024*1024).unwrap();let before=budget.used();let data=prepare_selected_pages(&pages,&budget,&||Ok(())).unwrap();assert_eq!(pages.passes.get(),1);assert!(data.index.schema.vars["datum/probe"].contains("value"));assert_eq!(data.index.entry_order,["/datum/probe"]);assert_eq!(data.index.entries["datum/probe"][0].kind,"drawn");assert!(data.index.set_calls.is_empty(),"setter names belong after actual semantic preparation");assert!(data.retained_charge().unwrap()>std::mem::size_of::<UnsealedDerivedIndexData>());assert!(budget.used()>before);let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();let held=budget.used();let payload=data.funding.used().checked_sub(fixed).unwrap();assert!(payload>0);drop(data);assert_eq!(budget.used(),held-payload);assert_eq!(budget.used(),before+2*fixed,"existing Budget contract conservatively retains both child Arc/control grants");}
+ #[test]
+ fn many_actual_file_scopes_reuse_scratch_without_refunding_retained_schema(){
+  struct Repeated<'a>{root:&'a std::path::Path,budget:&'a Arc<Budget>,text:dm_preprocess::SourceText}
+  impl crate::reactive_raw_policy_pages::RawPolicyPages for Repeated<'_>{
+   fn for_each(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+    for number in 0..64{
+     let path=self.root.join(format!("code/file_{number}.dm"));
+     if !crate::captured_raw_file::with_original_policy_file_prepared(self.root,&path,0,self.budget,|_|Ok(self.text.clone()),visit)?{return Ok(false)}
+    }Ok(true)
+   }
+  }
+  let root=std::env::current_dir().unwrap().join("derived-file-scratch");
+  let mut text=String::from("/datum/probe\n    var/value\n/datum/probe/derived()\n    return list(drawn_from(nameof(value)))\n");
+  text.push_str(&"    return null\n".repeat(60));
+  let budget=Budget::new(1024*1024).unwrap();
+  let source=Repeated{root:&root,budget:&budget,text:text.into()};
+  let data=prepare_selected_pages(&source,&budget,&||Ok(())).unwrap();
+  assert!(data.index.schema.vars["datum/probe"].contains("value"));
+  let rows=&data.index.entries["datum/probe"];
+  assert_eq!(rows.len(),64);
+  assert_eq!(rows[0].rel,"code/file_0.dm");
+  assert_eq!(rows[63].rel,"code/file_63.dm");
+  assert!(rows.iter().all(|entry|entry.local.contains("value")));
+  assert!(data.funding.used()>=rows.iter().map(|entry|entry_backing(entry).unwrap()).sum::<usize>());
+  let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
+  drop(data);
+  assert_eq!(budget.used(),66*fixed,"one root, one retained child and exactly one file child per page leave only fixed grants");
+ }
  #[test]fn treefree_preflight_refuses_actual_io_early_stop_and_quota_then_recovers(){let pages=pages();let budget=Budget::new(8*1024*1024).unwrap();pages.fail.set(true);assert!(matches!(prepare_selected_pages(&pages,&budget,&||Ok(())),Err(Failure::Operational(ref error))if error.raw_os_error()==Some(1450)));assert_eq!(pages.passes.get(),0);pages.fail.set(false);pages.stop.set(true);assert!(matches!(prepare_selected_pages(&pages,&budget,&||Ok(())),Err(Failure::Unsupported(_))));pages.stop.set(false);let tiny=Budget::new(256).unwrap();assert!(matches!(prepare_selected_pages(&pages,&tiny,&||Ok(())),Err(Failure::Operational(ref error))if error.kind()==io::ErrorKind::OutOfMemory));let fresh=Budget::new(8*1024*1024).unwrap();let data=prepare_selected_pages(&pages,&fresh,&||Ok(())).unwrap();assert_eq!(data.index.entry_order.len(),1);}
 }
 
