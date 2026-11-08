@@ -224,11 +224,11 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	if(lasts)
 		after(holder, lasts, GLOBAL_PROC_REF(activation_expire), key = "activation:[A.serial]", with = list(A))
 	activation_restack(holder, def.key)
-	holder.capabilities_changed()
+	holder.capabilities_changed(def)
 	return A
 
-/// A holder's capabilities changed (one was attached or ended). A virtual: a holder that shows what it has (a mob's ability list) overrides it.
-/datum/proc/capabilities_changed()
+/// A holder's capabilities changed: `def` was attached or ended. A virtual: a holder that shows what it has (a mob's ability list) overrides it.
+/datum/proc/capabilities_changed(datum/capability/def)
 	return
 
 /// The contribution list of a definition: the entries its expansion brings (the definition itself is not in it), nested capabilities
@@ -448,7 +448,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	TEST_REC_ACTIVATION(TEST_EVENT_DETACH, def, A.source, holder)
 	if(holder && !QDELETED(holder))
 		activation_restack(holder, def.key)
-		holder.capabilities_changed()
+		holder.capabilities_changed(def)
 	// The typed record is the activation's own: it goes with it (a record with relations holds a slot, which only its teardown frees).
 	rel_clear(A, nameof(A.data))
 	// The record is dead and nothing names it any more: a slot it took (a hold or a timer keyed by it) goes with it, or the slot table would keep it alive.

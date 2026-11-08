@@ -472,7 +472,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		spent(event)
 		return FALSE
 	if(event.occurrence_id)
-		var/dedup_key = "[event.event_type]|[event.occurrence_id]"
+		var/dedup_key = "[event.occurrence_id]|[event.event_type]" // varying part first: see contract_infrastructure_fact_id()
 		if(seen_event_occurrences[dedup_key])
 			events_deduplicated++
 			spent(event)

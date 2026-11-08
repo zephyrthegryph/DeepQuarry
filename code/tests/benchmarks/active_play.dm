@@ -80,12 +80,14 @@
 	var/toggle_ms = 0
 	var/drop_ms = 0
 	var/toggled = 0
+	var/list/unswitched = list() // why a use left the light as it was: the refusal flashlight_switch_refusal() gives, or "no refusal"
 	var/list/obj/item/flashlight/lights = list()
 	for(var/mob/living/carbon/human/H as anything in crew)
 		lights += new /obj/item/flashlight(H.loc)
 	var/list/op_counts = active_play_op_counts()
 	begin_window()
 	for(var/n in 1 to param("item_rounds", 10))
+		active_play_wake(crew)
 		for(var/i in 1 to length(crew))
 			var/mob/living/carbon/human/H = crew[i]
 			var/obj/item/flashlight/F = lights[i]
@@ -95,13 +97,19 @@
 			H.put_in_hands(F)
 			var/picked = TICK_USAGE_REAL
 			var/was_on = F.on
+			var/why = flashlight_switch_refusal(F, H) || (H.checkClickCooldown() ? "no refusal, stat [H.stat]" : "click cooldown")
 			F.attack_self(H)
 			if(F.on != was_on)
 				toggled++
+			else
+				unswitched[why] = (unswitched[why] || 0) + 1
 			was_on = F.on
+			why = flashlight_switch_refusal(F, H) || (H.checkClickCooldown() ? "no refusal, stat [H.stat]" : "click cooldown")
 			F.attack_self(H)
 			if(F.on != was_on)
 				toggled++
+			else
+				unswitched[why] = (unswitched[why] || 0) + 1
 			var/switched = TICK_USAGE_REAL
 			H.drop_from_inventory(F, H.loc)
 			var/dropped = TICK_USAGE_REAL
@@ -117,12 +125,14 @@
 	metric("ap_item_toggle_us", item_ops ? toggle_ms * 1000 / (2 * item_ops) : 0, "us")
 	metric("ap_item_drop_us", item_ops ? drop_ms * 1000 / item_ops : 0, "us")
 	count_metric("ap_item_toggles_switched", toggled, "toggles", "none")
+	detail("ap_item_toggles_unswitched", unswitched)
 	active_play_op_count_metrics("ap_items", op_counts, item_ops)
 	// The same toggles through the collection as it was before the compiled dispatch (GLOB.op_resolver_legacy), in the same world: the A/B.
 	var/legacy_ms = 0
 	var/legacy_ops = 0
 	GLOB.op_resolver_legacy = TRUE
 	for(var/n in 1 to param("item_rounds", 10))
+		active_play_wake(crew)
 		for(var/i in 1 to length(crew))
 			var/mob/living/carbon/human/H = crew[i]
 			var/obj/item/flashlight/F = lights[i]
@@ -513,3 +523,10 @@
 		if(!A.dead && A.runs)
 			keys += "[A.def.key]"
 	return jointext(keys, ",")
+
+/// The crew have no clients, so each Life step puts them to sleep as SSD (life_status_update_status()); a player's client keeps them awake.
+/// Woken before each round of item use, so a use in hand is a conscious one (asleep, it does nothing and times nothing real).
+/proc/active_play_wake(list/crew)
+	for(var/mob/living/carbon/human/H as anything in crew)
+		H.status_set(STAT_SLEEPING, 0)
+		H.set_stat(CONSCIOUS)

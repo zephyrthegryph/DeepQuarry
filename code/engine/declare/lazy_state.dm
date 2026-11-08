@@ -202,12 +202,10 @@ GLOBAL_LIST_EMPTY(lazy_state_weak_fields_by_type)
 	GLOB.lazy_state_defaults_by_type["[state_type]"] = defaults
 	return defaults
 
-/// Whether every field of state `S` is at its type's default (the state can go).
+/// Whether every field of state `S` is at its type's default (the state can go). Walks the type's own fields (lazy_state_defaults(), cached),
+/// never the datum vars every state shares.
 /proc/lazy_state_all_default(datum/S)
-	var/list/base_names = lazy_state_base_names()
-	for(var/name in S.vars)
-		if(base_names[name])
-			continue
+	for(var/name in lazy_state_defaults(S.type))
 		var/value = S.vars[name]
 		var/default = initial(S.vars[name])
 		if(value != default || isnull(value) != isnull(default))
