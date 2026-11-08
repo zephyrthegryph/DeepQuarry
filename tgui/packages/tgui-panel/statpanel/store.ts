@@ -152,6 +152,51 @@ export function verbGroupsOf(
     .map(([group, verbs]) => ({ group, verbs: verbs.sort(byName) }));
 }
 
+/** A search result: what to show, where it lives, the command it runs. */
+export type Found = { label: string; path: string; command: string };
+
+/** Menu page sections searched with the verbs (menu.ts). */
+export type MenuSection = { name: string; items: { label: string; command: string }[] };
+
+/**
+ * One search over everything the panel offers: the verbs of every view this client has (with the view and group they
+ * sit in) and the Menu page's items. Names that start with the query come first, then the rest by name.
+ */
+export function searchAll(
+  state: State,
+  query: string,
+  menu: MenuSection[],
+): Found[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+  const views = viewsOf(state);
+  const found: Found[] = [];
+  for (const verb of state.verbs) {
+    if (!verb[1].toLowerCase().includes(needle)) continue;
+    const place = placeOf(verb[0]);
+    if (!views.includes(place.view)) continue;
+    found.push({
+      label: verb[1],
+      path: `${place.view} › ${place.group}`,
+      command: verbCommand(verb[1]),
+    });
+  }
+  for (const section of menu) {
+    for (const item of section.items) {
+      if (!item.label.toLowerCase().includes(needle)) continue;
+      found.push({
+        label: item.label,
+        path: `Game › ${section.name}`,
+        command: item.command,
+      });
+    }
+  }
+  const starts = (f: Found) => (f.label.toLowerCase().startsWith(needle) ? 0 : 1);
+  return found.sort(
+    (a, b) => starts(a) - starts(b) || a.label.localeCompare(b.label),
+  );
+}
+
 export function searchVerbs(state: State, query: string): Verb[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];

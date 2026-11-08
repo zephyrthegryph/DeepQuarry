@@ -69,3 +69,30 @@ describe('right panel layout', () => {
     );
   });
 });
+
+describe('panel search', () => {
+  it('finds verbs and Menu items, says where each lives, prefix first', async () => {
+    const { searchAll, initialState } = await import('./store');
+    const { MENU_SECTIONS } = await import('./menu');
+    const state = {
+      ...initialState(),
+      verbs: [
+        ['OOC.Game', 'Ghost'],
+        ['Admin.Logs', 'Get Server Logs'],
+        ['IC.Game', 'Pray'],
+      ] as [string, string][],
+    };
+    const found = searchAll(state, 'log', MENU_SECTIONS);
+    // A player (no admin verbs other than this one) still finds it only because the admin view is shown.
+    expect(found.map((f) => f.path)).toContain('Staff › Investigate');
+    const lobby = searchAll(state, 'return', MENU_SECTIONS);
+    expect(lobby[0]).toEqual({
+      label: 'Return to lobby',
+      path: 'Game › Round',
+      command: 'return-to-menu',
+    });
+    expect(searchAll(state, 'pray', MENU_SECTIONS)[0].path).toBe(
+      'Actions › Round',
+    );
+  });
+});

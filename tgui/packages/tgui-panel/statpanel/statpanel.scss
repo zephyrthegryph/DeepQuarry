@@ -1036,3 +1036,22 @@ body {
   overflow: hidden auto;
   padding: 0.35em 0.5em;
 }
+
+// Search results: one per row, with where the item lives.
+.stat-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12em, 1fr));
+  gap: var(--space-s);
+
+  .Button {
+    margin: 0;
+    white-space: normal;
+  }
+}
+
+.stat-results__path {
+  display: block;
+  font-size: 0.8em;
+  font-weight: 400;
+  color: console.$console-dim;
+}

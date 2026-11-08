@@ -2,6 +2,7 @@ import {
   Component,
   type MouseEvent,
   type ReactNode,
+  useEffect,
   useMemo,
   useState,
   useSyncExternalStore,
@@ -21,11 +22,11 @@ import {
 } from './layout';
 import { McTab } from './McTab';
 import { MenuPage } from './MenuPage';
-import { QUICK_ITEMS, run } from './menu';
+import { MENU_SECTIONS, QUICK_ITEMS, run } from './menu';
 import {
   type State,
   type StatStore,
-  searchVerbs,
+  searchAll,
   type Verb,
   verbCommand,
   verbGroupsOf,
@@ -451,7 +452,19 @@ export function App(props: {
   useChatScanlines();
   const [query, setQuery] = useState('');
   const { state } = store;
-  const found = searchVerbs(state, query);
+  const found = searchAll(state, query, MENU_SECTIONS);
+  // "/" anywhere in the panel puts the cursor in the search box.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== '/' || document.activeElement?.tagName === 'INPUT') return;
+      const box = document.querySelector<HTMLInputElement>('.stat-search input');
+      if (!box) return;
+      event.preventDefault();
+      box.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
   // The view bar reads the verbs and tabs only: rebuilt when those change, not on every status line.
   const views = useMemo(
     () => viewsOf(state),
@@ -484,17 +497,33 @@ export function App(props: {
       >
         <Input
           className="stat-search"
-          placeholder="Search..."
+          placeholder="Search (/)"
           value={query}
           onChange={setQuery}
+          onEnter={() => {
+            if (found.length) run(found[0].command);
+            setQuery('');
+          }}
+          onEscape={() => setQuery('')}
         />
       </Tabs>
       <div className="stat-content">
         {query.trim() ? (
           found.length ? (
-            <VerbGrid verbs={found} />
+            <div className="stat-results">
+              {found.slice(0, 60).map((item) => (
+                <Button
+                  key={`${item.path}/${item.label}`}
+                  fluid
+                  onClick={() => run(item.command)}
+                >
+                  {item.label}
+                  <span className="stat-results__path">{item.path}</span>
+                </Button>
+              ))}
+            </div>
           ) : (
-            <div className="stat-empty">No verb matches.</div>
+            <div className="stat-empty">Nothing matches.</div>
           )
         ) : (
           <ViewContent state={state} store={store} />

@@ -61,6 +61,14 @@ export const HELP_ITEMS: MenuItem[] = [
   { label: 'Request Automated Advice', command: 'request-automated-advice' },
 ];
 
+/** The Menu page's sections the panel search reaches (the display controls are not commands one types). */
+export const MENU_SECTIONS: { name: string; items: MenuItem[] }[] = [
+  { name: 'Game', items: GAME_ITEMS },
+  { name: 'Round', items: ROUND_ITEMS },
+  { name: 'Chat', items: CHAT_ITEMS },
+  { name: 'Help', items: HELP_ITEMS },
+];
+
 /** The Status view's quick row: what a player reaches for most. */
 export const QUICK_ITEMS: MenuItem[] = HELP_ITEMS.slice(0, 4);
 
