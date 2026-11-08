@@ -83,9 +83,9 @@ impl SourceSnapshot{
  /// Execute original full/exclusions-only selection through its real producers.
  /// A missing producer or child role refuses before any completed-union output.
  pub(crate) fn with_native_allow_full_run<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
-  self.with_native_allow_full_run_using(tree,exclusions,None,None,None,consume)
+  self.with_native_allow_full_run_using(tree,exclusions,None,None,false,None,consume)
  }
- fn with_native_allow_full_run_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,handlers:Option<&super::HandlerWorkspaceSnapshot>,mut stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+ fn with_native_allow_full_run_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,handlers:Option<&super::HandlerWorkspaceSnapshot>,private_checker_body:bool,mut stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
   crate::daemon::control::checkpoint()?;if !self.matches_tree(tree){return Err("full ALLOW actual tree differs".into())}self.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;self.require_original_fixed_report_subject(tree)?;
   let capture=self.native_workspace.as_ref().ok_or("full ALLOW actual workspace absent")?;let queries=self.native_raw_queries.as_ref().ok_or("full ALLOW actual QueryDb absent")?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;queries.require_workspace_report_configuration(capture,&guard)?;
   let owned_budget;
@@ -101,6 +101,10 @@ impl SourceSnapshot{
    let child=self.workspace_semantic_inputs_with_guard(Q::ImageDir,&guard)?;
    self.image_dir_proof.as_ref().ok_or("image_dir_after_build clean Original proof is missing")?
     .bind(child.policy().archive())?;
+  }
+  if capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER)
+      && (!private_checker_body || stage.is_none()) {
+   return Err("private full ALLOW requires the verified staged Checker body domain".into());
   }
   let mut producers=Vec::new();
   for name in selection.names(){c.checkpoint()?;let Some(producer)=Producer::from_name(name)else{let message=kc::format(&mut c,format_args!("full ALLOW selected producer is not yet admitted: {name}"))?;return Err(Failure::Unsupported(message))};if matches!(producer,Producer::Special("silicon_entry"))&&stage.is_none(){return Err("silicon_entry usage requires the qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("library_layering"))&&stage.is_none(){return Err("library layering usage requires its qualified staged selected-tree domain".into())}if matches!(producer,Producer::Special("sem/handlers"))&&(stage.is_none()||handlers.is_none()){return Err("handlers usage requires its actual current demanded-full staged pair".into())}if stage.is_some()&&!producer.stages_report(){return Err("selected policy has no staged report adapter".into())}if let Some(question)=producer.question(){let question=if name=="engine_layering"&&stage.is_none(){Q::EngineLayering}else if capture.has_authored_doc_ui_capture() && matches!(question,Q::DocSnippetsFullAllow|Q::UiActionsFullAllow){Q::DocUiFullAllow}else{question};if !capture.has_auxiliary_question(question){return Err("full ALLOW selected producer lacks its actual prepared auxiliary question".into())}if question.is_semantic(){self.workspace_semantic_inputs_with_guard(question,&guard)?;}}kc::row(&mut c,&mut producers)?;producers.push(producer);}
@@ -129,7 +133,8 @@ impl SourceSnapshot{
     Producer::Fold(policy) if policy.tracked().is_some()=>{
      let tests=policy.tracked().expect("selected tracked policy");
      let question=if tests{Q::TrackedTests}else{Q::Tracked};
-     if !capture.matches_auxiliary_questions(Q::SELECTED_STORED_AND_TRACKED){
+     if !capture.matches_auxiliary_questions(Q::SELECTED_STORED_AND_TRACKED)
+       && !(private_checker_body && capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER)){
       return Err("tracked union needs its complete selected stored/track profile".into());
      }
      let child=self.workspace_semantic_inputs_with_guard(question,&guard)?;

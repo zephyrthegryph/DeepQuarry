@@ -87,9 +87,19 @@ impl WorkspaceAuxiliaryQuestion {
         Self::LibraryLayeringFullAllow, Self::MapEdits, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
     ];
 
+    pub(crate) const PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER: &'static [Self] = &[
+        Self::DeadlinePollingAllowlist, Self::Keys, Self::SemReads, Self::UntrackedInputs,
+        Self::Tracked, Self::TrackedTests, Self::Decl, Self::Init, Self::BaseVars,
+        Self::RequirementBool, Self::PlayerLink, Self::UntypedMember, Self::WeakRawRead,
+        Self::RelWriteUndeclared, Self::Untyped, Self::StoredRefs, Self::Ownership,
+        Self::SetterPublishes, Self::OpOrder, Self::SysReactive, Self::Lifeforms,
+        Self::LibraryLayeringFullAllow, Self::MapEdits, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
+    ];
+
     pub(crate) fn is_extended_authored_doc_ui(questions: &[Self]) -> bool {
         questions == Self::PRIVATE_EXTENDED_AUTHORED_DOC_UI
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER
     }
 
     pub(crate) const AUTHORED_DOC_UI_ROOTS: &'static [&'static str] =

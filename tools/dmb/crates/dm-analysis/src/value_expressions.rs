@@ -79,8 +79,20 @@ pub fn returns<K: Ord, H: ValueHost<K>>(
     }
     returns_in(body.view(), host)
 }
-// Private shared policy over the already-admitted logical statement view.
-// Production authority remains the StatementBody check above.
+/// Value-policy queries use the exact source-local receipt from the same
+/// archive and body. It already certifies the grammar in its actual mode.
+pub(crate) fn returns_with_source_locals<K: Ord, H: ValueHost<K>>(
+    tree: &dm_tree::SemanticTree,
+    occurrence: &dm_tree::frontend::BodyOccurrence,
+    body: &dm_tree::frontend::StatementBody,
+    locals: dm_tree::frontend::SourceLocalView<'_>,
+    host: &H,
+) -> Result<Equation<K>, ProofError<H::Error>> {
+    locals.require_for(tree, occurrence, body).map_err(|_| ProofError::UnsupportedSyntax)?;
+    returns_in(body.view(), host)
+}
+
+// Shared policy over the already-admitted logical statement view.
 fn returns_in<K: Ord, H: ValueHost<K>>(
     view: dm_syntax::StatementView<'_>,
     host: &H,

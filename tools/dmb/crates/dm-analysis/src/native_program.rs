@@ -84,11 +84,6 @@ impl<'a> Origin<'a> {
                 let body = archive
                     .parse(ordinal)
                     .map_err(|error| Unsupported(error.message))?;
-                if !body.statement_body().syntax_complete() {
-                    return Err(Unsupported(
-                        "archive has unsupported or malformed native syntax".into(),
-                    ));
-                }
                 let locals = body.source_locals().map_err(Unsupported)?;
                 crate::untyped::require_local_source_projection(locals)?;
                 consume(
@@ -193,9 +188,6 @@ impl<P: crate::value_query::CanonicalValueBodies> BodyDemand for CurrentValueBod
                 return Ok(Err(Unsupported("canonical value body loan has foreign ownership".into())));
             }
             let syntax = body.syntax().canonical_statement_storage();
-            if !syntax.syntax_complete() {
-                return Ok(Err(Unsupported("canonical value body has unsupported or malformed native syntax".into())));
-            }
             let locals = body.source_locals(admission)?;
             if let Err(error) = crate::untyped::require_local_source_projection(locals) {
                 return Ok(Err(error));
@@ -255,12 +247,6 @@ impl BodyDemand for CheckedBodyDemand {
             }
             Origin::Archive(archive) => {
                 let body = archive.parse_checked(ordinal)?;
-                if !body.statement_body().syntax_complete() {
-                    return Err(Unsupported(
-                        "archive has unsupported or malformed native syntax".into(),
-                    )
-                    .into());
-                }
                 let locals = body.source_locals().map_err(Unsupported)?;
                 crate::untyped::require_local_source_projection(locals)?;
                 consume(

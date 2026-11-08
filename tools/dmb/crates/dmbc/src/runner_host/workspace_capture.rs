@@ -158,7 +158,7 @@ impl WorkspaceCapture {
      self.require_scope(scope)?;
      let questions=self.auxiliary.as_slice();
      if questions != [Q::OpOrder] && questions != Q::SELECTED_ORDER_AND_OWNERSHIP
-          && !(questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC && self.has_extended_authored_doc_ui_capture()) {
+          && !((questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC || questions == Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER) && self.has_extended_authored_doc_ui_capture()) {
       return Err("actual op_order fixed manifest purpose absent".into());
      }
      self.with_order_manifest(scope,visit)
@@ -792,7 +792,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
     // The larger private roster is closed. Keep the generic bound and require
     // the same strict ordering for every capture.
-    if (questions.len() > 12 && questions != Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC)
+    if (questions.len() > 12 && !Q::is_extended_authored_doc_ui(questions))
         || questions.windows(2).any(|pair| pair[0] >= pair[1]) {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "actual canonical auxiliary questions required"));
     }

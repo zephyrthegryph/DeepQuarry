@@ -297,6 +297,7 @@ struct ReportStage<'a> {
     authored_doc_ui: bool,
     ordinary_fold_sys: bool,
     ordinary_semantic_and_fixed: bool,
+    private_checker_body: bool,
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
@@ -573,7 +574,7 @@ impl ReportStage<'_> {
                     Q::TrackedTests => dq_analyze::tracked_policy::metadata(true),
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued stored or tracked role")),
                 };
-                if self.selected != Roster::WithStoredAndTracked.names()
+                if (self.selected != Roster::WithStoredAndTracked.names() && !self.private_checker_body)
                     || !std::ptr::eq(meta, expected) || !matches!(meta.policy, Policy::Hard)
                     || sites.len() != source_text.len()
                 {
@@ -632,7 +633,7 @@ impl ReportStage<'_> {
                 }
             }
             UnionRows::Untyped(data) => {
-                if self.selected != Roster::WithUntyped.names() || !std::ptr::eq(meta, data.metadata())
+                if (self.selected != Roster::WithUntyped.names() && !self.private_checker_body) || !std::ptr::eq(meta, data.metadata())
                     || !std::ptr::eq(meta, dq_analyze::untyped_policy_metadata::metadata())
                     || !matches!(meta.policy, Policy::Hard) || !meta.allow.is_empty()
                     || !data.allow_used().is_empty() || data.sites().len() != data.source_text().len() {
@@ -843,7 +844,7 @@ impl super::super::RawWorkspaceSnapshot {
         let mut usage = UsageJoinData::new(&selection, frame);
         let mut stage = ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, judgment: JudgmentV2::Raw, library_baseline: None,
+            authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, judgment: JudgmentV2::Raw, library_baseline: None,
         };
         for &name in selected {
             let policy_started = std::time::Instant::now();
@@ -917,7 +918,7 @@ impl SourceSnapshot {
     ) -> io::Result<(bool, Verified)> {
         self.stage_selected_report_using(prepared, exclusions, retained, root,
             plan.roster().names(), plan.questions(), plan.judgment,
-            plan.needs_library_sites_baseline(), plan.requires_handlers(), handlers, file, false)
+            plan.needs_library_sites_baseline(), plan.requires_handlers(), handlers, file, false, None)
     }
 
     /// Private until the exact report cohort has an independently qualified wire identity.
@@ -927,7 +928,7 @@ impl SourceSnapshot {
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
         self.stage_selected_report_using(prepared, exclusions, retained, root,
-            PRIVATE_IMAGE_DIR_ROSTER, &[Q::ImageDir], JudgmentV2::Raw, false, false, None, file, false)
+            PRIVATE_IMAGE_DIR_ROSTER, &[Q::ImageDir], JudgmentV2::Raw, false, false, None, file, false, None)
     }
 
     #[cfg(test)]
@@ -942,7 +943,7 @@ impl SourceSnapshot {
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
             PRIVATE_MAP_AND_LAYERING, Q::SELECTED_MAP_AND_LAYERING,
-            JudgmentV2::Raw, false, false, None, file, false)
+            JudgmentV2::Raw, false, false, None, file, false, None)
     }
 
     #[cfg(test)]
@@ -959,7 +960,7 @@ impl SourceSnapshot {
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
             PRIVATE_AUTHORED_DOC_UI, Q::PRIVATE_AUTHORED_DOC_UI,
-            JudgmentV2::Raw, false, false, None, file, false)
+            JudgmentV2::Raw, false, false, None, file, false, None)
     }
 
     #[cfg(test)]
@@ -982,7 +983,7 @@ impl SourceSnapshot {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "reactive/raw report capture differs"));
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
-            PRIVATE_REACTIVE_RAW_UNION, questions, JudgmentV2::Raw, false, false, None, file, false)
+            PRIVATE_REACTIVE_RAW_UNION, questions, JudgmentV2::Raw, false, false, None, file, false, None)
     }
 
     #[cfg(test)]
@@ -990,7 +991,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false, false, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false, false, false, None)
     }
 
     #[cfg(test)]
@@ -998,7 +999,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, false, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, false, false, None)
     }
 
     #[cfg(test)]
@@ -1006,7 +1007,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, false, None)
     }
 
     #[cfg(test)]
@@ -1014,13 +1015,22 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, None)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_extended_authored_with_checker(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker))
     }
 
     #[cfg(test)]
     fn stage_private_extended_union(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage, mixed: bool, ordinary_fold_sys: bool, ordinary_semantics: bool,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>,
     ) -> io::Result<(bool, Verified)> {
         let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
         let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
@@ -1029,7 +1039,8 @@ impl SourceSnapshot {
         let fold = if ordinary_fold_sys { Roster::WithWorkspaceFoldPolicies.names() } else { &[] };
         let sys = if ordinary_fold_sys { Roster::WithSysSourcePolicies.names() } else { &[] };
         let semantic = if ordinary_semantics { PRIVATE_ORDINARY_SEMANTIC_AND_FIXED } else { &[] };
-        let qualified = || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).chain(fold).chain(sys).chain(semantic);
+        let bodies = if checker.is_some() { &["stored_refs", "tracked", "tracked_tests", "untyped"][..] } else { &[] };
+        let qualified = || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).chain(fold).chain(sys).chain(semantic).chain(bodies);
         let selected = selection.names();
         if selected.iter().any(|name| !qualified().any(|&actual| name == actual))
             || qualified().any(|&name| !selected.iter().any(|actual| actual == name))
@@ -1046,7 +1057,8 @@ impl SourceSnapshot {
         subject.require_bound_mapping(child.policy().mapping())?;
         let guard = self.workspace_native_read()?;
         workspace.require_scope(&guard)?;
-        let questions = if ordinary_semantics { Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC }
+        let questions = if checker.is_some() { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER }
+            else if ordinary_semantics { Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC }
             else if mixed { Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI } else { Q::SELECTED_REACTIVE };
         let has_domains = if mixed {
             workspace.has_extended_authored_doc_ui_capture()
@@ -1065,7 +1077,7 @@ impl SourceSnapshot {
             order.push(name.as_str());
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
-            &order, questions, JudgmentV2::Raw, false, false, None, file, ordinary_fold_sys)
+            &order, questions, JudgmentV2::Raw, false, false, None, file, ordinary_fold_sys, checker)
     }
 
     fn stage_selected_report_using(
@@ -1073,6 +1085,7 @@ impl SourceSnapshot {
         root: &Path, selected: &[&str], questions: &[Q], judgment: JudgmentV2,
         needs_library_sites_baseline: bool, requires_handlers: bool,
         handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>,
     ) -> io::Result<(bool, Verified)> {
         use crate::request::BuildOutcome;
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
@@ -1088,6 +1101,16 @@ impl SourceSnapshot {
             || pin(policy_revision) != Some(workspace.policy_revision()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation differs from its current workspace"));
         }
+        let private_checker_body = questions == Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER;
+        match checker {
+            Some(checker) if private_checker_body => {
+                self.require_staged_checker_body_domain(checker)?;
+                crate::daemon::selected_report_wire::Frame::from_prepared(prepared)?
+                    .require_checker_frame(checker.frame)?;
+            }
+            None if !private_checker_body => {}
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "private Checker transcript purpose differs")),
+        }
         let library_baseline = if needs_library_sites_baseline {
             let guard = self.workspace_native_read()?;
             Some(workspace.library_sites_baseline(&guard)?)
@@ -1095,10 +1118,11 @@ impl SourceSnapshot {
         let stage = RefCell::new(ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
             authored_doc_ui: workspace.has_authored_doc_ui_capture(), ordinary_fold_sys,
-            ordinary_semantic_and_fixed: ordinary_fold_sys && questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC,
+            ordinary_semantic_and_fixed: ordinary_fold_sys && (private_checker_body || questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC),
+            private_checker_body,
             judgment, library_baseline,
         });
-        let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
+        let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, private_checker_body, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
         }), |data, _, budget| stage.borrow_mut().finish(data,budget)).map_err(operational)?;
         let stage = stage.into_inner();
@@ -1219,6 +1243,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         authored_doc_ui: false,
         ordinary_fold_sys: false,
         ordinary_semantic_and_fixed: false,
+        private_checker_body: false,
         judgment: JudgmentV2::Raw,
         library_baseline: None,
     };

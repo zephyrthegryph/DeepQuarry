@@ -903,7 +903,9 @@ fn run_build_attempt(
                     };
                     let checker=if preparation_output.needs_combined_checker(){
                         use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
-                        if !Q::admits_combined_reports(intent.workspace_auxiliary()) ||
+                        let private_combined = private_authored_doc_ui
+                            && intent.workspace_auxiliary() == Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER;
+                        if (!private_combined && !Q::admits_combined_reports(intent.workspace_auxiliary())) ||
                            analysis_subject.as_ref().is_none_or(|subject|subject.synthetic()) ||
                            view.preparation_purpose()!=dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete {
                             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"combined report requires the fixed authored complete Original source and qualified semantic roster").into());
@@ -1979,6 +1981,38 @@ pub(crate) fn prepare_selected_report(
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
     joined: Option<&mut Option<JoinedSelectedInputs>>, library_sites: bool, compact_cache:Option<&Path>,
 )->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
+    prepare_selected_report_using(request, host, stage, checker, joined, library_sites, compact_cache, false)
+}
+
+#[cfg(test)]
+pub(crate) fn prepare_private_authored_with_checker(
+    request: BuildRequest, host: &mut crate::runner_host::BuildHost,
+    stage: &mut crate::selected_report_spool::Stage, checker: &mut crate::selected_report_spool::Stage,
+)->Result<(PreparationDiagnosticResult, PreparedCheckerTranscript), Box<dyn std::error::Error>> {
+    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    if !host.retains_artifacts() || request.record_inputs.is_some() || request.replay_inputs.is_some()
+        || request.policy_inputs.as_ref().is_none_or(|intent|
+            intent.workspace_auxiliary.as_slice() != Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER)
+    {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "private combined report requires its exact live authored intent").into());
+    }
+    let (result, checker) = prepare_selected_report_using(request, host, stage, Some(checker), None, false, None, true)?;
+    match checker {
+        Some(checker) => Ok((result, checker)),
+        None => {
+            result.preparation?;
+            result.diagnostics?;
+            Err(io::Error::other("private combined report has no staged Checker transcript").into())
+        }
+    }
+}
+
+fn prepare_selected_report_using(
+    request:BuildRequest, host:&mut crate::runner_host::BuildHost,
+    stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
+    joined: Option<&mut Option<JoinedSelectedInputs>>, library_sites: bool, compact_cache:Option<&Path>,
+    private_authored_doc_ui: bool,
+)->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
     if request.command != BuildCommand::PrepareQuery {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
     }
@@ -1989,7 +2023,7 @@ pub(crate) fn prepare_selected_report(
     if let Some(joined) = joined { output.retain_joined_inputs(joined); }
     if library_sites { output.require_library_sites_baseline()?; }
     if let Some(cache)=compact_cache{output.use_compact_checker(cache)?;}
-    let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);
+    let preparation=run_build_with_selected_publication(request,host,None,None,&mut output,None,None,private_authored_doc_ui);
     let diagnostics=output.take_error().map_or(Ok(()),Err);
     Ok((PreparationDiagnosticResult{preparation,diagnostics}, output.take_checker_frame()))
 }

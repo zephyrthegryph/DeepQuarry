@@ -1411,7 +1411,7 @@ impl<'a> Values<'a> {
                         let entry = equations.entry(key).or_insert_with(|| yes(true));
                         entry.admissible &= !shadow;
                     }
-                    let proof = value_expressions::returns(syntax, &host).map_err(|error| {
+                    let proof = value_expressions::returns_with_source_locals(tree, occurrence, syntax, local_source, &host).map_err(|error| {
                         Unsupported(format!("native return proof incomplete: {error:?}"))
                     })?;
                     if !index.procedures[&id].scalar_return {
@@ -1591,7 +1591,11 @@ impl<'a> Values<'a> {
                 "value summaries belong to another archive issuance".into(),
             ));
         }
-        if !body.statement_body().syntax_complete() {
+        let syntax = body.statement_body();
+        let original = body.archive_owner().source_mapping().initial_environment()
+            == dm_preprocess::InitialEnvironment::OriginalChecker0290;
+        let complete = if original { syntax.original_literal_syntax_complete() } else { syntax.syntax_complete() };
+        if !complete {
             return Err(Unsupported(
                 "archive has unsupported or malformed native syntax".into(),
             ));
@@ -1604,13 +1608,14 @@ impl<'a> Values<'a> {
         self.index.origin.roster()?.identity_for_member(occurrence.member)
             .ok_or_else(|| Unsupported("missing archived callable identity".into()))
     }
-    pub(crate) fn current_body_identity(&self, body: &dm_tree::frontend::CurrentArchivedBody<'_, '_>)
-        -> Result<ProcedureIdentity, Unsupported>
-    {
+    pub(crate) fn current_body_identity(
+        &self,
+        body: &dm_tree::frontend::CurrentArchivedBody<'_, '_>,
+        locals: dm_tree::frontend::SourceLocalView<'_>,
+    ) -> Result<ProcedureIdentity, Unsupported> {
         self.validate_archive(body.archive_owner())?;
-        if !body.syntax().canonical_statement_storage().syntax_complete() {
-            return Err("archive has unsupported or malformed native syntax".into());
-        }
+        locals.require_for(body.tree(), body.occurrence(), body.syntax().canonical_statement_storage())
+            .map_err(Unsupported)?;
         self.archived_occurrence_identity(body.occurrence())
     }
     pub(crate) fn archive_local_holds_call(

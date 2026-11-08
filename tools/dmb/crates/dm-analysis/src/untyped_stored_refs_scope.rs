@@ -161,7 +161,9 @@ pub(crate) fn archived_stored_scope_using<'a,W:crate::policy_body_demand::Worksp
     work.checkpoint()?;
     let archive = body.archive_owner();
     let tree = archive.tree();
-    if !body.belongs_to(archive) || !body.statement_body().syntax_complete() {
+    // The exact local view below already checked syntax completeness in the
+    // archive's own language mode. Stored scope needs no runtime text decoding.
+    if !body.belongs_to(archive) {
         return Err(Unsupported(
             "stored-reference body is not a complete original primary body".into(),
         ).into());

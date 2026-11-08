@@ -524,8 +524,8 @@ pub fn current_findings_workspace_using<'a, W: CurrentFindingWork>(
                 if !body.belongs_to(archive) || !std::ptr::eq(body.occurrence(), occurrence) {
                     return Err("untyped host returned foreign canonical original body loan".into());
                 }
-                let current = values.current_body_identity(&body)?;
                 let locals = body.source_locals(admission).map_err(|error| work.syntax_failure(error))?;
+                let current = values.current_body_identity(&body, locals)?;
                 if W::CHECKED {
                     charge_body(occurrence, width, max_path, locals.scope_admission().map_err(Unsupported)?, work)?;
                 }

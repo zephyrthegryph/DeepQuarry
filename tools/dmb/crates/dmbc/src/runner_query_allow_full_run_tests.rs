@@ -19,7 +19,7 @@ fn actual_original_selected_union_observes_same_completed_folds_and_real_unused_
  let exclusions:Vec<_>=all.names().iter().filter(|name|!retained.contains(&name.as_str())).map(|name|format!("-{name}")).collect();
  current(&host,|snapshot|{
   let mut observed=std::collections::BTreeSet::new();
-  snapshot.with_native_allow_full_run_using(&snapshot.tree,&exclusions,None,None,Some(&mut|meta,rows,_,_|{
+  snapshot.with_native_allow_full_run_using(&snapshot.tree,&exclusions,None,None,false,Some(&mut|meta,rows,_,_|{
    let name=meta.name;
    assert!(observed.insert(name.to_owned()),"actual producer must be observed once");
    match (name,rows){
@@ -51,7 +51,7 @@ fn actual_original_selected_union_observes_same_completed_folds_and_real_unused_
   assert_eq!(selected_report::preflight_no_aux_raw_subset(&omit,&mut control).unwrap().as_ref(),subset);
   assert!(selected_report::validate_selection_v2(&omit,&budget,dq_analyze::selected_exclusions_wire::JudgmentV2::Raw).is_err());
   let mut completed=Vec::new();
-  snapshot.with_native_allow_full_run_using(&snapshot.tree,&omit,None,None,Some(&mut|meta,_,_,_|{
+  snapshot.with_native_allow_full_run_using(&snapshot.tree,&omit,None,None,false,Some(&mut|meta,_,_,_|{
    completed.push(meta.name);
    Ok(())
   }),|data,_,_|{
@@ -71,7 +71,7 @@ fn actual_original_selected_union_observes_same_completed_folds_and_real_unused_
   assert!(selected_report::preflight_no_aux_raw_subset(&empty,&mut control).is_err());
   // Unported ImageDir cannot be inferred from its registry registration.
   let unsupported:Vec<_>=exclusions.iter().filter(|name|name.as_str()!="-image_dir_after_build").cloned().collect();
-  let error=snapshot.with_native_allow_full_run_using(&snapshot.tree,&unsupported,None,None,Some(&mut|_,_,_,_|panic!("preflight cannot stage a partial selection")),|_,_,_|->io::Result<()>{panic!("unsupported producer cannot finish a union")}).unwrap_err();
+  let error=snapshot.with_native_allow_full_run_using(&snapshot.tree,&unsupported,None,None,false,Some(&mut|_,_,_,_|panic!("preflight cannot stage a partial selection")),|_,_,_|->io::Result<()>{panic!("unsupported producer cannot finish a union")}).unwrap_err();
   assert!(matches!(error,Failure::Unsupported(message)if message.contains("image_dir_after_build")));
  });
 }
@@ -807,4 +807,135 @@ fn private_97_policies_share_authored_mixed_semantic_and_fixed_discovery() {
     }
     assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
     require_private_reactive_raw_legacy(&root, &joined_exclusions, clean, &report);
+}
+
+#[test]
+fn private_101_policies_share_the_actual_staged_checker_body_domain() {
+    let (mut host, mut request, root) = fixture(concat!(
+        "#define CAPABILITIES(...)\n",
+        "#define PROC_REF(P) #P\n",
+        "/datum/act\n/datum/act/eval\n/obj/probe\n",
+        "    var/known\n",
+        "/obj/probe/proc/dynamic(datum/act/eval/A)\n",
+        "    return vars[\"probe\"]\n",
+        "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+        "/obj/unread\n/proc/ctor_probe(loc)\n    new /obj/unread(loc, 2)\n",
+    ));
+    let dispatcher = dq_analyze::ui_actions_policy::DISPATCHER;
+    for (relative, content) in [
+        ("deepquarry.dme", concat!(
+            "#include \"code/probe.dm\"\n",
+            "#include \"code/engine/probe.dm\"\n",
+            "#include \"code/library/probe.dm\"\n",
+            "#include \"code/content/probe.dm\"\n",
+            "#include \"code/body_probe.dm\"\n",
+            "#include \"code/tests/unit_tests/tracked.dm\"\n",
+        )),
+        ("code/engine/probe.dm", "/proc/engine_probe()\n    library_probe()\n"),
+        ("code/library/probe.dm", "/proc/library_probe()\n    downstream_probe()\n"),
+        ("code/content/probe.dm", "/proc/downstream_probe()\n    return\n"),
+        ("code/ordinary-policies.dm", concat!(
+            "/proc/fold_probe()\n    om_set_var(src,x,1)\n",
+            "/obj/ordinary_probe\n\tvar/cached_charge\n",
+        )),
+        ("code/main.dm", "/obj/machine\n    tgui_id = \"Machine\"\n/obj/machine/proc/act_go(mob/user, value)\n    return value\n"),
+        ("interface/verb.dm", "/obj/probe/verb/legacy()\n    set category = \"Raw\"\n"),
+        ("modular_chomp/.legacy.dm", "/obj/probe/proc/set_broken()\n    return\n"),
+        ("maps/edit.dmm", "/obj/probe{known = 1; lost = 2}\n"),
+        ("maps/stale.dm", "/proc/stale()\n    return // ALLOW(scheduler): exact mixed capture unused annotation\n"),
+        ("doc/rewrite/live.md", "\x60\x60\x60dm\nmissing_doc()\n\x60\x60\x60\n"),
+        ("tgui/packages/tgui/interfaces/Machine.tsx", "act('bogus', {});"),
+        ("code/deadline.dm", "/obj/deadline_probe/process()\n\tif(world.time > expires)\n\t\treturn\n"),
+        ("code/body_probe.dm", concat!(
+            "#define TRACKED(T,V)\n",
+            "/datum/holder\n    var/plain = 0\n    var/list/items\n    var/link\n",
+            "TRACKED(/datum/holder, plain)\n",
+            "/datum/holder/proc/update(datum/D)\n    plain = 2\n    items += D\n    link = D\n",
+            "/proc/checker_control()\n    set mystery = 1\n    return\n",
+        )),
+        ("code/tests/unit_tests/tracked.dm", "/datum/holder/proc/test_update()\n    plain = 3\n"),
+        (dispatcher, ui_fixture::DISPATCHER),
+    ] {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+    std::fs::write(root.join("tools/ci/lint_scopes.toml"), report_config::with_overlay("")).unwrap();
+    let intent = request.policy_inputs.as_mut().unwrap();
+    intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
+    intent.workspace_auxiliary = Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER.to_vec();
+    intent.workspace.as_mut().unwrap().recursive_roots =
+        Q::EXTENDED_AUTHORED_DOC_UI_ROOTS.iter().map(|name| root.join(name)).collect();
+    assert!(intent.clone().admit().is_err());
+    assert!(!Q::admits_combined_reports(Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER));
+    let mut incomplete = request.clone();
+    incomplete.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots
+        .retain(|path| !path.ends_with("interface"));
+    assert!(crate::request_runner::prepare_private_authored_doc_ui(incomplete, &mut host).is_err());
+
+    let budget = Budget::new(8 << 20).unwrap();
+    let mut control = Operation { budget: &budget, poll: &|| Ok(()) };
+    let registry = full_unused::registered_full_selection(&[], &mut control).unwrap();
+    let raw = dq_analyze::selected_exclusions_wire::Roster::AllRawFilePolicies.names();
+    let reactive = super::selected_report::PRIVATE_REACTIVE_RAW_UNION;
+    let mixed = super::selected_report::PRIVATE_AUTHORED_DOC_UI;
+    let exclusions: Vec<_> = registry.names().iter()
+        .filter(|name| !raw.contains(&name.as_str()) && !reactive.contains(&name.as_str()) && !mixed.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    assert_eq!(registry.names().len() - exclusions.len(), 62);
+    let fold = dq_analyze::selected_exclusions_wire::Roster::WithWorkspaceFoldPolicies.names();
+    let sys = dq_analyze::selected_exclusions_wire::Roster::WithSysSourcePolicies.names();
+    let ordinary_exclusions: Vec<_> = registry.names().iter()
+        .filter(|name| exclusions.iter().any(|excluded| excluded.strip_prefix('-') == Some(name.as_str()))
+            && !fold.contains(&name.as_str()) && !sys.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    assert_eq!(registry.names().len() - ordinary_exclusions.len(), 83);
+    let cache = crate::test_scratch::dir("private-101-authored-checker");
+    let joined = super::selected_report::PRIVATE_ORDINARY_SEMANTIC_AND_FIXED;
+    let joined_exclusions: Vec<_> = ordinary_exclusions.iter()
+        .filter(|name| !joined.contains(&name.strip_prefix('-').unwrap()))
+        .cloned().collect();
+    assert_eq!(registry.names().len() - joined_exclusions.len(), 97);
+    let bodies = ["stored_refs", "tracked", "tracked_tests", "untyped"];
+    let checker_exclusions: Vec<_> = joined_exclusions.iter()
+        .filter(|name| !bodies.contains(&name.strip_prefix('-').unwrap())).cloned().collect();
+    assert_eq!(registry.names().len() - checker_exclusions.len(), 101);
+
+    let stage = || crate::selected_report_spool::Stage::new(&cache).unwrap();
+    let prepare = |host: &mut crate::runner_host::BuildHost, mut diagnostics, mut checker| {
+        let (result, transcript) = crate::request_runner::prepare_private_authored_with_checker(
+            request.clone(), host, &mut diagnostics, &mut checker,
+        ).unwrap();
+        let prepared = result.preparation.unwrap();
+        result.diagnostics.unwrap();
+        (prepared, transcript, checker)
+    };
+    let (prepared, transcript, checker) = prepare(&mut host, stage(), stage());
+    let mut foreign_host = crate::runner_host::BuildHost::default();
+    let (_, foreign, _) = prepare(&mut foreign_host, stage(), stage());
+    let (clean, report) = current(&host, |snapshot| {
+        let error = snapshot.stage_private_extended_authored_with_checker(
+            &prepared, &checker_exclusions, &budget, &root, stage(), &foreign,
+        ).err().expect("a separate host's real Checker transcript cannot authorize this body domain");
+        assert!(error.to_string().contains("Checker source owners differ"), "{error}");
+        assert!(snapshot.stage_private_extended_authored_with_checker(
+            &prepared, &joined_exclusions, &budget, &root, stage(), &transcript,
+        ).is_err(), "97 exclusions cannot authorize 101");
+        let (clean, verified) = snapshot.stage_private_extended_authored_with_checker(
+            &prepared, &checker_exclusions, &budget, &root, stage(), &transcript,
+        ).unwrap();
+        let mut output = Vec::new();
+        verified.publish(&mut output).unwrap();
+        (clean, String::from_utf8(output).unwrap())
+    });
+    assert!(!clean);
+    assert!(!transcript.clean);
+    let mut checker_bytes = Vec::new();
+    checked_stage(checker).unwrap().publish(&mut checker_bytes).unwrap();
+    assert!(String::from_utf8(checker_bytes).unwrap().contains("unknown_setting"));
+    for marker in ["[stored_refs/", "[tracked/", "[tracked_tests/", "[untyped/", "[map_edits/unknown_var]"] {
+        assert!(report.contains(marker), "missing {marker}: {report}");
+    }
+    assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
+    require_private_reactive_raw_legacy(&root, &checker_exclusions, clean, &report);
 }
