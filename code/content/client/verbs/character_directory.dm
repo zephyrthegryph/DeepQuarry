@@ -61,13 +61,13 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 	if(key)
 		GLOB.chardirectory_photos[key] = base64
 
-/// The mob's card picture: a picture set by hand, else its portrait from the shared portrait cache (rendered off the tick; null until it lands,
-/// the directory shows its placeholder and has it the next time it is opened).
+/// The mob's card picture: a picture set by hand, else its portrait from the shared portrait cache (rendered off the tick; null until it lands:
+/// the directory shows its placeholder, and the open windows get the picture in place when it does, portrait_landed).
 /mob/proc/get_chardirectory_photo()
 	var/cached = ALAZYACCESS(GLOB.chardirectory_photos, handle_of(src))
 	if(cached)
 		return cached
-	var/datum/portrait/P = portrait_request(src, SOUTH)
+	var/datum/portrait/P = portrait_request(src, SOUTH, GLOB.character_directory, GLOB.character_directory ? TYPE_PROC_REF(/datum/character_directory, portrait_landed) : null)
 	return P?.b64 ? "'data:image/png;base64,[P.b64]'" : null
 
 /datum/character_directory/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -472,3 +472,7 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 	if(QDELETED(answerer))
 		return "gone"
 	return null
+
+/// A card's portrait landed: open directory windows get it in place (one static push per window, however many landed at once).
+/datum/character_directory/proc/portrait_landed(datum/portrait/P)
+	update_static_data_for_all_viewers()

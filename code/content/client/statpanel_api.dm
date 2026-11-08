@@ -51,7 +51,7 @@
 	else if(REGISTRY_COUNT(REGISTRY_SDQL2_QUERIES) && target.stat_tab == "SDQL2")
 		set_SDQL2_tab(target)
 
-/datum/system/statpanels/proc/set_examine_tab(client/target)
+/datum/system/statpanels/proc/set_examine_tab(client/target, refresh_only = FALSE)
 	var/description_holders = target.description_holders
 	var/list/examine_update = list()
 
@@ -64,6 +64,10 @@
 			// composite when one exists; otherwise the base mob appearance is a
 			// deliberately cheap portrait fallback.
 			var/icon/cached_mob_icon = get_cached_examine_icon(atom_icon)
+			if(!cached_mob_icon && target.mob)
+				// The portrait cache renders it off the tick; the plain icon is the placeholder until it lands (examine_portrait_landed).
+				var/datum/portrait/P = portrait_request(atom_icon, SOUTH, target.mob, TYPE_PROC_REF(/mob, examine_portrait_landed))
+				cached_mob_icon = P?.picture
 			shown_icon = cached_mob_icon \
 				? icon2html(cached_mob_icon, target, sourceonly = TRUE) \
 				: icon2html(atom_icon, target, sourceonly = TRUE)
@@ -88,7 +92,18 @@
 		examine_update += span_red(span_bold("[description_holders["antag"]]")) + "<br />" //Red, malicious antag-related text
 
 	var/update_panel = FALSE
-	if(target.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_SWITCH_TO_PANEL)
+	if(!refresh_only && target.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_SWITCH_TO_PANEL)
 		update_panel = TRUE
 
 	target.stat_panel.send_message("update_examine", list("EX" = examine_update, "UPD" = update_panel))
+
+/// The portrait of what this mob's client is examining landed: the Examine tab swaps the placeholder for it in place (when it is still that atom).
+/mob/proc/examine_portrait_landed(datum/portrait/P)
+	if(!client || !P?.picture)
+		return
+	var/atom/shown = handle_get(client.description_holders["icon"])
+	if(!shown || !(shown.appearance in P.appearances))
+		return
+	set_cached_examine_icon(shown, P.picture, 50 SECONDS)
+	client.examine_icon = null
+	SSstatpanels.set_examine_tab(client, refresh_only = TRUE)
