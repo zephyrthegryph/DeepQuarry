@@ -67,6 +67,9 @@ SYSTEM_DEF(radio)
 	name = "Radio"
 	needs = list(/datum/system/atoms)
 	var/list/datum/radio_frequency/frequencies = list()
+	/// device -> the frequency texts it listens on. The system owns the memberships: it watches each listening device once (not
+	/// once per frequency: a headset is on several) and a destroyed one leaves all of them, so no device unregisters in Destroy().
+	var/list/listening = list()
 
 CAPABILITIES(/datum/system/radio)
 	owns_many(nameof(frequencies), /datum/radio_frequency)
@@ -130,17 +133,8 @@ CAPABILITIES(/datum/system/radio)
 		devices_line = new
 		devices[radio_filter] = devices_line
 	devices_line |= device // idempotent: on_materialize() may rejoin what Initialize() already joined
-	// The frequency owns the membership: a listener that is destroyed leaves by
-	// itself, so no device unregisters its radio in Destroy().
-	observe(device, /datum/notice/qdeleting, src, then(PROC_REF(on_listener_deleted)))
-
-/datum/radio_frequency/proc/on_listener_deleted(datum/act/notice/A)
-	SHOULD_NOT_SLEEP(TRUE)
-	var/obj/device = A.target
-	SSradio.remove_object(device, frequency)
 
 /datum/radio_frequency/proc/remove_listener(obj/device)
-	unobserve(device, /datum/notice/qdeleting, src)
 	for (var/devices_filter in devices)
 		var/list/devices_line = devices[devices_filter]
 		devices_line-=device
