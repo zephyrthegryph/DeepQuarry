@@ -6507,6 +6507,7 @@
 #include "code\content\tension\tension.dm"
 #include "code\library\ui\tgchat\_legacy.dm"
 #include "code\library\ui\tgchat\api.dm"
+#include "code\library\ui\tgchat\chat_history.dm"
 #include "code\library\ui\tgchat\chat_service.dm"
 #include "code\library\ui\tgchat\message.dm"
 #include "code\library\ui\tgchat\to_chat.dm"
