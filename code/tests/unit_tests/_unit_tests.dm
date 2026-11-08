@@ -1337,6 +1337,7 @@
 #include "../benchmarks/machinery_steady.dm"
 #include "../benchmarks/station_explosion.dm"
 #include "../benchmarks/alloc_stall.dm"
+#include "../benchmarks/steady_state.dm"
 #include "../benchmarks/server_phases.dm"
 #include "../benchmarks/memory_report.dm"
 #include "../benchmarks/move_integrity.dm"
