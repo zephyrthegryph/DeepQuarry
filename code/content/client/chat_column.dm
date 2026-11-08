@@ -21,7 +21,7 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 		return TRUE
 	if(!tgui_panel?.is_ready())
 		return FALSE
-	tgui_panel.window.send_message("chat/focusInput", list("channel" = channel))
+	chat_window().send_message("chat/focusInput", list("channel" = channel))
 	winset(src, SKIN_CHAT_BROWSER, "focus=true")
 	log_tgui(src, "Chat input focused in [channel].", context = "chat_float")
 	return TRUE
@@ -141,5 +141,5 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 	if(!tgui_panel?.is_ready())
 		return
 	var/list/rows = chat_radio_options()
-	tgui_panel.window.send_message("chat/radioChannels", list("channels" = rows))
+	chat_window()?.send_message("chat/radioChannels", list("channels" = rows))
 	log_tgui(src, "Chat radio prefixes sent: [length(rows)].", context = "chat_float")
