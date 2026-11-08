@@ -81,6 +81,9 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 	var/max_volume = reagents_volume_of(holder)
 	var/holder_type = (istext(src.holder) && (src.holder in holder.vars)) ? holder.vars[src.holder] : src.holder // nameof(var): the holder's own type var
 	holder.create_reagents(max_volume, ispath(holder_type, /datum/reagents) ? holder_type : /datum/reagents)
+	// A starting set no transformation can take (every rule needs a reagent or catalyst it lacks) settles to nothing: each add skips its settle.
+	var/list/ids = declared_ids(holder)
+	var/inert = !isnull(ids) && reagents_set_inert(holder.reagents.xform_regime(), ids)
 	var/total = 0
 	for(var/id_var in starts_from)
 		var/id = holder.vars[id_var]
@@ -89,7 +92,7 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 			continue
 		total += amount
 		// The data of a reagent named by a var is keyed by that var's name (data = list(nameof(id var) = ...)), or by the id itself.
-		holder.reagents.add_reagent(id, amount, (data && !isnull(data[id_var])) ? reagents_data_of(holder, id_var) : reagents_data_of(holder, id))
+		holder.reagents.add_reagent(id, amount, (data && !isnull(data[id_var])) ? reagents_data_of(holder, id_var) : reagents_data_of(holder, id), inert)
 	var/declared = FALSE
 	for(var/id in starts)
 		var/amount = reagents_amount_of(holder, starts[id])
@@ -97,14 +100,14 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 			continue
 		total += amount
 		declared = TRUE
-		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
+		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id), inert)
 	for(var/id in add)
 		var/amount = reagents_amount_of(holder, add[id])
 		if(amount <= 0)
 			continue
 		total += amount
 		declared = TRUE
-		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
+		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id), inert)
 	if(contents_from)
 		var/list/rolled = istext(contents_from) && (contents_from in holder.vars) ? holder.vars[contents_from] : holder_call(holder, contents_from)
 		for(var/id in rolled)
@@ -113,18 +116,34 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 				continue
 			total += amount
 			declared = TRUE
-			holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
+			holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id), inert)
 	for(var/id in last)
 		var/amount = reagents_amount_of(holder, last[id])
 		if(amount <= 0)
 			continue
 		total += amount
 		declared = TRUE
-		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
+		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id), inert)
 	if(tint && declared)
 		holder.set_color(holder.reagents.get_color())
 	if(total > max_volume)
 		WARNING("[holder]([holder.type]) declares more reagents ([total]) than its volume ([max_volume])")
+
+/// The ids this declaration puts in `holder`, or null when it takes a computed contents_from list.
+/datum/capability/lib/reagents/proc/declared_ids(atom/holder)
+	. = list()
+	for(var/id_var in starts_from)
+		var/id = holder.vars[id_var]
+		if(id)
+			. |= id
+	for(var/id in starts)
+		. |= id
+	for(var/id in add)
+		. |= id
+	if(contents_from)
+		return null // a recipe answered at init is read once, by the add: such a holder settles after every add as it always did
+	for(var/id in last)
+		. |= id
 
 /// The volume the declaration gives this holder: a number, a holder var named by nameof(), or a holder proc's answer.
 /datum/capability/lib/reagents/proc/reagents_volume_of(atom/holder)
@@ -165,3 +184,36 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 /// Whether this mob refuses a holder whose contents came from a belly. Nothing is a belly's before the content layer says so.
 /mob/proc/refuses_belly_liquid(atom/holder)
 	return FALSE
+
+/// Whether no transformation of `regime` can fire on a holder holding only `ids`: every rule indexed under one of them needs a reagent or a catalyst
+/// outside the set (xform_matches() asks for all of them), so the settle after each add would find nothing. Cached per regime and set.
+/proc/reagents_set_inert(regime, list/ids)
+	if(!length(ids))
+		return TRUE
+	var/list/sorted = sortList(ids.Copy())
+	return CACHED(reagents_set_inert, "[regime]|[jointext(sorted, ",")]")
+
+DECLARE_SHARED_CACHE(reagents_set_inert, GLOBAL_PROC_REF(reagents_set_inert_build), SC_NEVER)
+
+/proc/reagents_set_inert_build(key)
+	var/bar = findtext(key, "|")
+	var/regime = copytext(key, 1, bar)
+	if(isnum(text2num(regime)))
+		regime = text2num(regime)
+	var/list/ids = splittext(copytext(key, bar + 1), ",")
+	var/list/lookup = xform_bucket_table(MEDIUM_REAGENTS, regime)
+	for(var/id in ids)
+		for(var/datum/xform/X as anything in lookup[id])
+			var/possible = TRUE
+			for(var/need in X.reagent_takes)
+				if(!(need in ids))
+					possible = FALSE
+					break
+			if(possible)
+				for(var/need in X.reagent_catalysts)
+					if(!(need in ids))
+						possible = FALSE
+						break
+			if(possible)
+				return FALSE
+	return TRUE
