@@ -8,7 +8,6 @@
 	var/heat_output_now = 0
 	/// Whole-machine EMP rejection supplied by insulating component materials: lazy state field material_emp_resistance (default 0).
 	var/material_emp_resistance = 0
-	var/power_init_complete = FALSE
 	var/rebuilding
 	var/recursive_set = FALSE
 	var/list/material_component_manifest

@@ -10,9 +10,6 @@ Overview:
 
 Class Variables:
 
-	power_init_complete (boolean)
-		Indicates that we have have registered our static power usage with the area.
-
 	use_power (num)
 		current state of auto power use.
 		Possible Values:
