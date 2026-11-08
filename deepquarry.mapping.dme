@@ -6519,7 +6519,6 @@
 #include "code\library\ui\tgui\modules\communications.dm"
 #include "code\library\ui\tgui\modules\crew_manifest.dm"
 #include "code\library\ui\tgui\modules\crew_monitor.dm"
-#include "code\library\ui\tgui\modules\feedback.dm"
 #include "code\library\ui\tgui\modules\gyrotron_control.dm"
 #include "code\library\ui\tgui\modules\late_choices.dm"
 #include "code\library\ui\tgui\modules\law_manager.dm"
