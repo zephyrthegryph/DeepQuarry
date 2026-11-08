@@ -191,18 +191,19 @@ CAPABILITIES(/datum/unit_test/dq_stock_sheets)
 	TEST_ASSERT(S && S.get_amount() == 25, "vended one stack of 25")
 	TEST_ASSERT_EQUAL(R.get_amount(), 15, "15 left")
 
-/// The vending sheet's product types come from the catalog without building a vendor: a catalog vendor's products and the
-/// prison nutriment vendor's tray (its stock moved from code into the catalog) are both there.
+/// The catalog lists every vendor's products without building a vendor (a catalog vendor's products and the prison nutriment vendor's tray,
+/// whose stock moved from code into the catalog), and each has a picture of its own for the vendor window.
 /datum/unit_test/dq_vending_sheet_product_types
 
 /datum/unit_test/dq_vending_sheet_product_types/Run()
-	var/datum/asset/spritesheet_batched/vending/sheet = get_asset_datum(/datum/asset/spritesheet_batched/vending)
-	var/list/types = sheet.product_types()
-	TEST_ASSERT(/obj/item/tray in types, "the prison nutriment vendor's tray is on the sheet")
+	var/list/types = vending_catalog_product_types()
+	TEST_ASSERT(/obj/item/tray in types, "the prison nutriment vendor's tray is in the catalog")
 	var/list/catalog_products = vending_catalog_section(/obj/machinery/vending/coffee, "products")
 	TEST_ASSERT(length(catalog_products), "the coffee vendor has catalog products")
 	for(var/product in catalog_products)
-		TEST_ASSERT(product in types, "catalog product [product] is on the sheet")
+		TEST_ASSERT(product in types, "catalog product [product] is listed")
+		var/key = CACHED_KEY(vending_product_asset, "[product]", product)
+		TEST_ASSERT(SSassets.cached_asset(key), "catalog product [product] has a picture of its own")
 
 /// A large sheet builds its entries a step at a time, and the research designs sheet lists its designs from content.
 /datum/unit_test/dq_sheet_entries_build_in_steps

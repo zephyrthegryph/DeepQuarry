@@ -39,11 +39,7 @@
 /datum/unit_test/dq_window_open_vendor_pictures
 /datum/unit_test/dq_window_open_vendor_pictures/Run()
 	var/obj/machinery/vending/coffee/vendor = allocate(/obj/machinery/vending/coffee, test_floor())
-	var/sheet_bytes = 0
-	var/datum/asset/spritesheet_batched/vending/sheet = get_asset_datum(/datum/asset/spritesheet_batched/vending)
-	for(var/size_id in sheet.sizes)
-		sheet_bytes += length(file("[SPRITESHEET_DIR][sheet.name]_[size_id].png"))
-	sheet_bytes += length(file("[SPRITESHEET_DIR]spritesheet_[sheet.name].css"))
+	var/sheet_bytes = 1304859 // the vending sheet as measured before it was removed (802d5a8e81)
 	var/picture_bytes = 0
 	var/products = 0
 	var/started = TICK_USAGE_REAL
