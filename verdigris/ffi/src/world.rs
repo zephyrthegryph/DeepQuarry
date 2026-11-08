@@ -833,3 +833,12 @@ mod tests {
         .expect("a revived world (soft reboot) runs again");
     }
 }
+
+/// The size in bytes of a file, from its metadata: no read. Null when the file does not exist. The build-time map template
+/// bounds (`build_time_template_bounds()`) check by size that a map is the one the build measured, without loading it.
+#[auxmacros::bind("/proc/vg_file_size")]
+fn file_size(path: ByondValue) -> Result<ByondValue> {
+    let path = path.get_string()?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok(std::fs::metadata(&path).map_or_else(|_| ByondValue::null(), |m| ByondValue::from(m.len() as f32)))
+}

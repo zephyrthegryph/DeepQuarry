@@ -102,3 +102,26 @@
 	TEST_ASSERT_NULL(after.burnt, "the floor is no longer burnt")
 	TEST_ASSERT_EQUAL(after.name, pristine_name, "the floor has the map's name again")
 	test_driver_end()
+
+/// A template's size comes from the build's bounds file when its map is unchanged (vg_file_size() against the recorded
+/// size, no read), and matches what parsing the map says.
+/datum/unit_test/dq_template_bounds_from_build_match_parse
+
+/datum/unit_test/dq_template_bounds_from_build_match_parse/Run()
+	var/checked = 0
+	for(var/datum/map_template/shelter/T as anything in subtypesof(/datum/map_template/shelter))
+		var/path = initial(T.mappath)
+		if(!path || !fexists(path))
+			continue
+		TEST_ASSERT_EQUAL(vg_file_size(path), length(file(path)), "vg_file_size() of [path] is its length")
+		// The bounds file is the build's (data/, beside the server's .dmb): a test world run from another directory has none.
+		var/list/cached = build_time_template_bounds(path)
+		if(cached)
+			var/datum/parsed_map/parsed = new /datum/parsed_map/working(file(path))
+			TEST_ASSERT_EQUAL(cached[MAP_MAXX], parsed.bounds[MAP_MAXX], "[path] width")
+			TEST_ASSERT_EQUAL(cached[MAP_MAXY], parsed.bounds[MAP_MAXY], "[path] height")
+			qdel(parsed)
+		if(++checked >= 5)
+			break
+	TEST_ASSERT(checked > 0, "no shelter map to check")
+	TEST_ASSERT_NULL(vg_file_size("maps/does_not_exist.dmm"), "a missing file has no size")

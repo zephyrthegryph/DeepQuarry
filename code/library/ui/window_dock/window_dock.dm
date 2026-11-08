@@ -14,6 +14,11 @@ GLOBAL_LIST_INIT(window_dock_modal_interfaces, list(
 	"TextInputModal" = TRUE,
 ))
 
+/// Interfaces that open docked in the right-hand column until the player floats them (the saved layout then says).
+GLOBAL_LIST_INIT(window_dock_default_docked, list(
+	"StatPanel" = TRUE,
+))
+
 /datum/tgui
 	/// In the right-hand column's page (a column part, column_part.dm) rather than its own native window.
 	var/docked = FALSE

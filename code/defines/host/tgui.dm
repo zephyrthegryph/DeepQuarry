@@ -85,5 +85,4 @@
 #define UI_PUSH_STATUS (1<<2)
 
 /// What a column part (code/library/ui/tgui/column_part.dm) is in the right-hand column's page.
-#define COLUMN_PART_STAT "stat"
 #define COLUMN_PART_TGUI "tgui"
