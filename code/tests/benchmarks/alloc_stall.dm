@@ -21,6 +21,7 @@
 	probe("datums", param("datums", 400000), stall_ms, base_datums)
 	probe("strings", param("strings", 1000000), stall_ms, 0)
 	probe("lists", param("lists", 400000), stall_ms, 0)
+	probe("slots", param("slots", 600000), stall_ms, length(handle_gens))
 	probe("contract_context", param("events", 8000), stall_ms, 0)
 	probe("contract_events", param("events", 8000), stall_ms, 0)
 	probe("plain_events", param("events", 8000), stall_ms, 0)
@@ -39,6 +40,10 @@
 				keep[i] = "alloc-stall-[i]-[world.time]"
 			if("lists")
 				keep[i] = list(i)
+			if("slots")
+				var/datum/alloc_stall_probe/P = new
+				slot_of(P)
+				keep[i] = P
 			if("contract_context")
 				keep[i] = list("department" = DEPARTMENT_ENGINEERING, "atom_id" = i, "fact_id" = "probe:[i]", "metrics" = list("damage_amount" = i))
 			if("contract_events")
