@@ -219,5 +219,7 @@ native windows of interfaces floating over the map.
   page's float drag and resize). The chat is a column window like the rest; `code/content/client/chat_column.dm` only seats its pane
   as the whole column, once per connection.
 
-Not done: the chat and the stat panel cannot leave the column (they have no native window to go to); a collapsed or background docked
-interface still gets its data pushes (the `view_hidden` gate is not fed by the page yet).
+- **Off-screen windows get no data.** The page reports each docked interface's visibility (`wm/view {hidden}`: its entry collapsed, or
+  a background tab of a stack); the server's `dock_hide()` gate stops its pushes and sends one fresh update when it is shown again.
+
+Not done: the chat and the stat panel cannot leave the column (they have no native window to go to).

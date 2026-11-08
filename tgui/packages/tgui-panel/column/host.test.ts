@@ -32,12 +32,10 @@ describe('the column page', () => {
   it('opens a docked interface, routes its messages to its own store, and names it from its first update', () => {
     const host = new ColumnHost();
     host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
-    expect(forWindow('col-1')).toEqual([
-      {
-        type: 'col/msg',
-        payload: { wid: 'col-1', type: 'ready', payload: {} },
-      },
-    ]);
+    expect(forWindow('col-1')).toContainEqual({
+      type: 'col/msg',
+      payload: { wid: 'col-1', type: 'ready', payload: {} },
+    });
     host.receive('col/msg', {
       wid: 'col-1',
       raw: raw('update', {
@@ -101,6 +99,41 @@ describe('the column page', () => {
     expect(
       stack && host.state.groups.find((g) => g.id === stack.id)?.active,
     ).toBe(statWindowId('Actions'));
+  });
+
+  it('tells the server which docked windows are off screen: a background tab, a collapsed entry', () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
+    host.receive('col/open', { wid: 'col-2', kind: 'tgui' });
+    const views = (wid: string) =>
+      forWindow(wid)
+        .filter((m) => m.payload.type === 'wm/view')
+        .map((m) => m.payload.payload.hidden);
+    // Each alone in its entry: both shown.
+    expect(views('col-1')).toEqual([false]);
+    expect(views('col-2')).toEqual([false]);
+    const of = (wid: string) =>
+      host.state.groups.find((g) => g.windows.includes(wid))!;
+    // Stacked: the stack shows col-1 (the dropped one is active), col-2 behind it... whichever is not active is hidden.
+    host.dispatch({
+      type: 'joinGroup',
+      group: of('col-2').id,
+      into: of('col-1').id,
+    });
+    const stack = of('col-1');
+    const behind = stack.windows.find((w) => w !== stack.active)!;
+    expect(views(behind).at(-1)).toBe(true);
+    expect(views(stack.active).at(-1)).toBe(false);
+    // Collapsed: both hidden; expanded again: the active one is shown, once.
+    host.dispatch({ type: 'collapse', group: stack.id, collapsed: true });
+    expect(views(stack.active).at(-1)).toBe(true);
+    const before = views(behind).length;
+    host.dispatch({ type: 'collapse', group: stack.id, collapsed: false });
+    expect(views(stack.active).at(-1)).toBe(false);
+    expect(views(behind).length).toBe(before);
+    // Switching tabs swaps which one is fed.
+    host.activate(behind);
+    expect(views(behind).at(-1)).toBe(false);
   });
 
   it('decodes only well-formed window messages', () => {
