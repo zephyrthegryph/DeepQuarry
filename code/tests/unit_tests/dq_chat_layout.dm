@@ -129,3 +129,10 @@
 	seen = chat_layout_observe(null)
 	TEST_ASSERT_EQUAL(seen[1], CHAT_MODE_BOTTOM, "an unreadable report is the skin's own layout")
 	TEST_ASSERT_EQUAL(seen[2], CHAT_SHARE_DEFAULT, "with the default share")
+
+/datum/unit_test/dq_chat_float_second_monitor_kept
+/datum/unit_test/dq_chat_float_second_monitor_kept/Run()
+	TEST_ASSERT(!chat_float_lost(-1600, 200, 560, 420), "a float window on a monitor left of the primary is kept")
+	TEST_ASSERT(!chat_float_lost(2600, -300, 560, 420), "so is one right of or above it")
+	TEST_ASSERT(chat_float_lost(-32000, -32000, 560, 420), "Windows' minimized place is lost and brought back")
+	TEST_ASSERT(chat_float_lost(100, 100, 0, 420), "a window with no size is lost")

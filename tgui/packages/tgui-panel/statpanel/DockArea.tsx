@@ -152,6 +152,8 @@ function runDrag(
       boxes,
     };
     setDrag(live);
+    // The docked windows follow their entries' live offsets on the next frame.
+    host.schedule();
   };
   const end = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;

@@ -72,6 +72,9 @@ const ALLOWED_BLOCK = new Set([
   'tr',
   'td',
   'th',
+  // Collapsible sections of admin reports (the generated-station architecture map).
+  'details',
+  'summary',
 ]);
 
 export const isSafeHtmlImageSrc = (src: string): boolean =>
@@ -236,6 +239,14 @@ const renderNode = (node: ChildNode, key: number, props: Props): ReactNode => {
       >
         {children}
       </span>
+    );
+  }
+
+  if (tag === 'details') {
+    return (
+      <details key={key} open={el.hasAttribute('open')}>
+        {children}
+      </details>
     );
   }
 

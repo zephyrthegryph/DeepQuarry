@@ -119,15 +119,10 @@
 
 	// savefile key -> list(record var, field)
 	var/list/map = list(
-		"hair_color" = list("looks", "hair_color"), "grad_color" = list("looks", "grad_color"), "facial_color" = list("looks", "facial_color"),
-		"eyes_color" = list("looks", "eyes_color"), "skin_color" = list("looks", "skin_color"), 
+		"hair_color" = list("looks", "hair_color"), "facial_color" = list("looks", "facial_color"),
+		"eyes_color" = list("looks", "eyes_color"), "skin_color" = list("looks", "skin_color"),
 		"hair_style_name" = list("looks", "hair_style"), "facial_style_name" = list("looks", "facial_style"),
-		"grad_style_name" = list("looks", "grad_style"), "digitigrade" = list("looks", "digitigrade"), 
-		"age" = list("bio", "age"), "home_system" = list("bio", "home_system"), "birthplace" = list("bio", "birthplace"),
-		"citizenship" = list("bio", "citizenship"), "religion" = list("bio", "religion"), "med_record" = list("bio", "med_record"),
-		"sec_record" = list("bio", "sec_record"), "gen_record" = list("bio", "gen_record"), "custom_say" = list("bio", "custom_say"),
-		"custom_whisper" = list("bio", "custom_whisper"), "custom_ask" = list("bio", "custom_ask"), "custom_exclaim" = list("bio", "custom_exclaim"),
-		"nickname" = list("bio", "nickname"), "custom_speech_bubble" = list("bio", "custom_speech_bubble"),
+		"digitigrade" = list("looks", "digitigrade"), "age" = list("bio", "age"),
 	)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/list/applied = list()

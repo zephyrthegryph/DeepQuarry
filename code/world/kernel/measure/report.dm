@@ -197,7 +197,7 @@
 	return html
 
 ADMIN_VERB(tick_report, R_DEBUG, "Tick Report", "Shows the flight recorder: the last minute of ticks with usage, maptick, input cost and the top systems of each.", ADMIN_CATEGORY_DEBUG_INVESTIGATE, mode as null|anything in list("Overruns only", "All ticks"))
-	user.mob << browse(km_tick_report_html(mode != "All ticks"), "window=tick_report;size=900x700")
+	dq_admin_report_html(user.mob, "Tick Report", km_tick_report_html(mode != "All ticks"))
 	feedback_add_details("admin_verb", "TICKREP")
 
 #undef KM_ROLL_BEHAVIOURS

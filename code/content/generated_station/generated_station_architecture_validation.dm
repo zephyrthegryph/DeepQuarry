@@ -843,7 +843,7 @@ ADMIN_VERB(show_generated_station_architecture, R_DEBUG, "Show Generated Station
 		return
 	var/datum/generated_station_validation_result/validation = found_site.station_materialization.validate_architecture(found_site.station_spec)
 	var/html = found_site.station_materialization.diagnostic_minimap_html(validation)
-	user << browse(html, "window=generated_station_architecture;size=1000x800")
+	dq_admin_report_html(user.mob, "Generated Station Architecture", html)
 	spent(validation)
 
 #undef GENERATED_STATION_COMPACTNESS_LIMIT
