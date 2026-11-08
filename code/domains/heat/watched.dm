@@ -133,6 +133,10 @@ SYSTEM_DEF(watched)
 /datum/system/watched/proc/lum_rows(turf/T)
 	return T.lighting_object?.lum_watch || client_lum_watch[handle_of(T)]
 
+/// TRUE when any turf's lum is watched under client lighting (a mask rebuild skips the per-turf checks otherwise).
+/datum/system/watched/proc/client_lum_watching()
+	return length(client_lum_watch) > 0
+
 /// TRUE when a reader watches `T`'s lum under client lighting (the shadow masks report such turfs).
 /datum/system/watched/proc/client_lum_watched(turf/T)
 	return !!client_lum_watch[handle_of(T)]
