@@ -52,3 +52,37 @@
 	// The baseline followed the change: put the alarm back and let the guard take it as the new baseline, so the runner's own compare of this test finds nothing.
 	A.set_use_power(USE_POWER_IDLE)
 	guard.judge_machines("dq_guard_seed", null, list(), TRUE, TRUE)
+
+/// A floor replaced during a test (taken to space and back, a breach repaired) is judged through the air standing there now: unchanged, it is no leak.
+/datum/unit_test/dq_air_guard_judges_a_replaced_turf_by_its_current_air
+
+/datum/unit_test/dq_air_guard_judges_a_replaced_turf_by_its_current_air/Run()
+	var/turf/open/T = run_loc_floor_bottom_left
+	var/original = T.type
+	var/list/before = unit_test_air_snapshot()
+	var/moles_before = T.turf_air().total_moles()
+	var/turf/S = T.ChangeTurf(/turf/space)
+	var/turf/open/back = S.ChangeTurf(original)
+	var/list/only = list()
+	only[back] = TRUE
+	var/list/diff = unit_test_air_diff(before, only = only)
+	log_test("AIR GUARD REPLACED: ([back.x],[back.y],[back.z]) [round(moles_before, 0.1)] -> [round(back.turf_air().total_moles(), 0.1)] mol; guard says [diff["leaked"]] leak(s) [jointext(diff["examples"], "; ")]")
+	TEST_ASSERT_EQUAL(diff["leaked"], 0, "the guard called a floor put back as it was a leak: [jointext(diff["examples"], "; ")]")
+
+/// The guard stays strict on a replaced floor: gas added to the floor that stands there after the change is still a leak, and is put back.
+/datum/unit_test/dq_air_guard_catches_gas_on_a_replaced_turf
+
+/datum/unit_test/dq_air_guard_catches_gas_on_a_replaced_turf/Run()
+	var/turf/open/T = run_loc_floor_bottom_left
+	var/original = T.type
+	var/list/before = unit_test_air_snapshot()
+	var/nitrogen_before = T.turf_air().get_moles(/datum/gas/nitrogen)
+	var/turf/S = T.ChangeTurf(/turf/space)
+	var/turf/open/back = S.ChangeTurf(original)
+	back.turf_air().adjust_gas(/datum/gas/nitrogen, 200)
+	var/list/only = list()
+	only[back] = TRUE
+	var/list/diff = unit_test_air_diff(before, TRUE, only = only)
+	TEST_ASSERT(diff["leaked"] >= 1, "the guard missed 200 mol of nitrogen added to a replaced floor")
+	TEST_ASSERT(abs(back.turf_air().get_moles(/datum/gas/nitrogen) - nitrogen_before) < 1, "the guard did not put the replaced floor's nitrogen back ([back.turf_air().get_moles(/datum/gas/nitrogen)] vs [nitrogen_before])")
+
