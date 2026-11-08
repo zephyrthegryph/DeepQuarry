@@ -3,14 +3,15 @@
 use super::*;use dm_syntax::{OriginalDeclarationHeaderObserver,OriginalPrimaryHeader,OriginalHeaderFlow,OriginalPrimaryLiveHeader};
 use crate::{SourceAcquisitionLease,OriginalRawOpenDecision,OriginalRawReadOutcome,OriginalRawAllocationPlan};
 use std::{path::PathBuf,sync::{Mutex,atomic::{AtomicUsize,Ordering}},any::Any};
-struct Memory{files:BTreeMap<PathBuf,SourceAcquisitionLease>,opened:Mutex<Vec<PathBuf>>,probed:Mutex<Vec<PathBuf>>}
-impl Memory{fn new(files:&[(&str,&str)])->Self{Self{files:files.iter().map(|(path,text)|(PathBuf::from(path),SourceAcquisitionLease::from_raw_original_bytes(text.as_bytes().to_vec(),17u64))).collect(),opened:Mutex::new(Vec::new()),probed:Mutex::new(Vec::new())}}}
+struct Memory{files:BTreeMap<PathBuf,SourceAcquisitionLease>,opened:Mutex<Vec<PathBuf>>,probed:Mutex<Vec<PathBuf>>,fail_open:Option<usize>}
+impl Memory{fn new(files:&[(&str,&str)])->Self{Self{files:files.iter().map(|(path,text)|(PathBuf::from(path),SourceAcquisitionLease::from_raw_original_bytes(text.as_bytes().to_vec(),17u64))).collect(),opened:Mutex::new(Vec::new()),probed:Mutex::new(Vec::new()),fail_open:None}}}
 impl SourceProvider for Memory{
  fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::OriginalChecker0290}
  fn read(&self,_:&Path)->Result<String,String>{panic!("actual Original never requests ordinary preparation")}
  fn path_presence_admitted(&self,path:&Path,_:&dyn SourceArenaWork)->io::Result<bool>{self.probed.lock().unwrap().push(path.to_path_buf());Ok(self.files.contains_key(path))}
  fn original_raw_source_open_admitted(&self,path:&Path,_:usize,_:&dyn SourceArenaWork,after:&mut dyn FnMut()->io::Result<OriginalRawOpenDecision>,_:&mut dyn FnMut(usize)->io::Result<()>,decode:&mut dyn FnMut(OriginalRawAllocationPlan<'_>)->io::Result<()>,acquired:&mut dyn FnMut(&SourceAcquisitionLease)->io::Result<()>)->io::Result<OriginalRawReadOutcome>{
-  self.opened.lock().unwrap().push(path.to_path_buf());let Some(source)=self.files.get(path)else{return Ok(OriginalRawReadOutcome::SourceOpenFailed(io::ErrorKind::NotFound.into()))};if after()?==OriginalRawOpenDecision::Suppress{return Ok(OriginalRawReadOutcome::Suppressed)}decode(OriginalRawAllocationPlan::new(&[],0,0,0,false,false))?;acquired(source)?;Ok(OriginalRawReadOutcome::Acquired(source.clone()))
+  {let mut opened=self.opened.lock().unwrap();opened.push(path.to_path_buf());if self.fail_open==Some(opened.len()){return Err(io::Error::from_raw_os_error(1450))}}
+  let Some(source)=self.files.get(path)else{return Ok(OriginalRawReadOutcome::SourceOpenFailed(io::ErrorKind::NotFound.into()))};if after()?==OriginalRawOpenDecision::Suppress{return Ok(OriginalRawReadOutcome::Suppressed)}decode(OriginalRawAllocationPlan::new(&[],0,0,0,false,false))?;acquired(source)?;Ok(OriginalRawReadOutcome::Acquired(source.clone()))
  }
  fn original_source_bytes<'a>(&'a self,lease:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{if !self.files.values().any(|actual|actual.same_original_acquisition(lease)){return Err(io::ErrorKind::InvalidInput.into())}Ok(Some(lease.source_text().as_bytes()))}
 }
@@ -733,4 +734,22 @@ fn actual_body_projection_releases_only_diagnostic_standalones_and_detaches_with
   assert!(literal.as_str().ends_with("-0\""));
   drop((literal,detached,weak));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(work.live.load(Ordering::Acquire),0);
  }
+}
+
+#[test]
+fn actual_repeated_open_failure_precedes_include_index_suppression(){
+ let project="E:/controller/index-open-error.dme";
+ let mut provider=Memory::new(&[(project,"#include \"z.dm\"\n#include \"a.dm\"\n#include \"z.dm\"\n"),
+  ("E:/controller/z.dm","/datum/z\n"),("E:/controller/a.dm","/datum/a\n")]);
+ provider.fail_open=Some(4);
+ let work=Work{live:Arc::new(AtomicUsize::new(0))};
+ let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+ let a=SettingAdmission::new(&used,64<<20,&||Ok(()));
+ let error=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new(project),&provider,
+  &BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).err().expect("actual open fails before suppression");
+ assert_eq!(error.raw_os_error(),Some(1450));
+ assert_eq!(provider.opened.lock().unwrap().iter().map(|path|path.file_name().unwrap().to_str().unwrap()).collect::<Vec<_>>(),
+  ["index-open-error.dme","z.dm","a.dm","z.dm"]);
+ assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ assert_eq!(work.live.load(Ordering::Acquire),0);
 }
