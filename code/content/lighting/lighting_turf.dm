@@ -23,6 +23,8 @@
 
 // Causes any affecting light sources to be queued for a visibility update, for example a door got opened.
 /turf/proc/reconsider_lights()
+	if(GLOB.client_lighting)
+		client_glow_reconsider(src) // client lighting: glowing lights in reach redraw their shadow masks
 	lighting_corner_NE?.vis_update()
 	lighting_corner_SE?.vis_update()
 	lighting_corner_SW?.vis_update()
@@ -55,7 +57,7 @@
 // (lighting_ensure_object): an unlit turf without one looks the same as one showing "dark" (luminosity 0 over the black
 // lighting backdrop), so a map of mostly dark turfs costs no object, underlay or update for them.
 /turf/proc/lighting_build_overlay()
-	if(!has_dynamic_lighting())
+	if(!has_dynamic_lighting() || GLOB.client_lighting)
 		return
 
 	lighting_clear_overlay()
@@ -87,7 +89,7 @@
 
 /// This turf's lighting object, made now if the turf is dynamic and has none yet (a light reached it, or a reader needs its lum).
 /turf/proc/lighting_ensure_object() as /datum/lighting_object
-	if(!lighting_object && SSlighting.is_initialized() && has_dynamic_lighting())
+	if(!lighting_object && !GLOB.client_lighting && SSlighting.is_initialized() && has_dynamic_lighting())
 		new/datum/lighting_object(src)
 	return lighting_object
 

@@ -122,9 +122,29 @@ GLOBAL_LIST_EMPTY(notice_unheard)
 	if(!E)
 		return FALSE
 	var/datum/rx_state/S = E.rx
-	if((!S || (!S.hooks && !S.notice_types)) && notice_type_unheard(E, notice_type))
+	if((!S || (!S.notice_types && (!S.hooks || !notice_hooks_live_hear(S, notice_type)))) && notice_type_unheard(E, notice_type))
 		return FALSE
 	return notice_wanted_native(E, notice_type, outcome)
+
+/// Whether any of the activation hooks on `S` is a notice hook that hears `notice_type`. An area carries dozens of activation hooks and hears a notice
+/// from every atom created in it: the notice targets of its hooks are kept per hooks generation (set_hooks_generation()), so asking is one walk of them.
+/proc/notice_hooks_live_hear(datum/rx_state/S, notice_type)
+	if(S.notice_targets_gen != S.hooks_generation || isnull(S.notice_targets))
+		var/list/targets = list()
+		for(var/datum/hook/H as anything in S.hooks)
+			if(H.kind == HOOK_NOTICE)
+				targets |= H.target
+		S.notice_targets = targets
+		S.notice_targets_gen = S.hooks_generation
+	for(var/target in S.notice_targets)
+		if(ispath(notice_type, target))
+			return TRUE
+	return FALSE
+
+/datum/rx_state
+	/// The notice types the activation hooks on this state hear, as of notice_targets_gen (notice_hooks_live_hear()).
+	var/list/notice_targets
+	var/notice_targets_gen = -1
 
 /// notice_wanted()'s body.
 /proc/notice_wanted_native(datum/E, notice_type, outcome = ACT_COMMITTED)

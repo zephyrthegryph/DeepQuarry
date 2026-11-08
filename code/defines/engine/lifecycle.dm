@@ -94,3 +94,8 @@ GLOBAL_VAR_INIT(lifecycle_keep_expected, FALSE)
 /// datum_flags bit (bits 0 to 3 are code/defines/base/flags.dm's): the atom's own init frame past Initialize() is open (its setup() hooks, or a map-loaded
 /// atom's after_init() entries waiting for the load frame): init_open_begin()/init_open_end(), code/engine/change/interest.dm.
 #define DF_INIT_OPEN (1<<4)
+/// datum_flags bit: the atom is under construction, from InitAtom()'s start to its birth after its setup() rows (code/world/systems/atoms_init.dm).
+/// Its own writes are silent then (state_changed(), construction_note()); the birth publishes each var it wrote once.
+#define DF_CONSTRUCTING (1<<5)
+/// datum_flags bit: the atom under construction noted a var for its birth (construction_note()), so its birth looks its notes up.
+#define DF_CONSTRUCT_NOTED (1<<6)

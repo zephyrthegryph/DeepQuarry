@@ -56,7 +56,7 @@
 	TEST_ASSERT(products > 0, "the vendor has products")
 	TEST_NOTICE(src, "WINDOW_OPEN_COST vendor pictures: before, the whole sheet [sheet_bytes] bytes on a client's first vendor; after, [products] pictures [picture_bytes] bytes (built in [round(first_ms, 0.1)] ms, the first time for the world)")
 
-/// What a fresh client is sent on join, asset by asset (the stat panel, the chat panel and its fonts and emoji sheet, the tgui shell the pooled
+/// What a fresh client is sent on join, asset by asset (the right-hand column's page, which holds the chat and the stat panel, its fonts and emoji sheet, the tgui shell the pooled
 /// windows load), and what it is no longer sent: the abilities sheet waits for an ability that draws from it. JOIN_ASSET_COST lines.
 /datum/unit_test/dq_join_asset_cost
 /datum/unit_test/dq_join_asset_cost/Run()
