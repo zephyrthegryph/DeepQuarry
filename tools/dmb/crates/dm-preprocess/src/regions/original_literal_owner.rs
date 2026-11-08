@@ -4,17 +4,30 @@
 use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroText as Text,original_format_using,original_quote_delimiters}};
 use dm_syntax::{OriginalLiteralData,OriginalLiteralPool,SettingAdmission};use std::io;
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
-pub(super) fn static_literal_using(token:&Token<'_>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>,pool:Option<&mut OriginalLiteralPool>)->io::Result<Option<OriginalLiteralData>>{
+pub(super) fn static_literal_using(token:&Token<'_>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>,mut pool:Option<&mut OriginalLiteralPool>)->io::Result<Option<OriginalLiteralData>>{
  poll(a)?;match &token.value{
   Value::Int(_)|Value::Float(_)|Value::String(_)|Value::Resource(_)|Value::InterpBegin(_)|Value::InterpPart(_)|Value::InterpEnd(_)=>(),
   _=>return Ok(None),
  }
- let raw=actual_grammar_spelling_using(token,provider,a)?;
+ let value=token.value.map_text(|text|text.get());
+ let raw=match (pool.as_deref_mut(),&token.lexical_frame,token.lexical_span){
+  (Some(bank),Some(frame),Some(span))=>{
+   poll(a)?;
+   // Keep the old zero-byte admission before the real provider loan.
+   let mut raw=Text::new(a)?;
+   let spelling=physical_spelling_using(frame,span,provider,a)?;
+   if let Some(hit)=bank.try_issue_borrowed_utf8_using(spelling,&value,token.string_mode,a)?{
+    return Ok(Some(hit))
+   }
+   encode_physical_spelling_using(spelling,&mut raw,a)?;
+   raw
+  },
+  _=>actual_grammar_spelling_using(token,provider,a)?,
+ };
  let(raw,credit)=raw.into_parts();
  // This moves the SAME String and existing allocation credit. Fixed metadata
  // and actual value-copy allocations are then funded by that SAME root, not a
  // second capacity reservation for bytes already live in the raw spelling.
- let value=token.value.map_text(|text|text.get());
  if matches!(&value,dm_syntax::OriginalTokenValue::Int(_)|dm_syntax::OriginalTokenValue::Float(_)|dm_syntax::OriginalTokenValue::String(_)|dm_syntax::OriginalTokenValue::Resource(_)){
   if let Some(pool)=pool{return pool.issue_using(raw,credit,value,token.string_mode,a).map(Some)}
  }
@@ -29,12 +42,8 @@ pub(super) fn actual_grammar_spelling_using(token:&Token<'_>,provider:&dyn Sourc
  let mut raw=Text::new(a)?;
  match(&token.lexical_frame,token.lexical_span){
   (Some(frame),Some(span))=>{
-   if !frame.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
-   let bytes=original_fill_bucket!(Provider,provider.original_source_bytes(frame.acquisition()))?.ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual lexical spelling issuer is unavailable"))?;let spelling=bytes.get(span.range()).ok_or(io::ErrorKind::InvalidInput)?;
-   // Whole original token spelling is converted ONCE with the shared codec;
-   // all physical coordinates remain in the original raw frame, not this UTF8
-   // grammar DATA. Any invalid byte makes the WHOLE spelling Latin1.
-   dm_syntax::original_token_value::visit_original_token_value_using(spelling,&mut||poll(a),&mut|part|raw.push_str(part,a))?;
+   let spelling=physical_spelling_using(frame,span,provider,a)?;
+   encode_physical_spelling_using(spelling,&mut raw,a)?;
   },
   (None,None)=>{
    if let Some(spelling)=token.raw_spelling(){raw.push_str(spelling,a)?;}else{match &token.value{
@@ -54,6 +63,21 @@ pub(super) fn actual_grammar_spelling_using(token:&Token<'_>,provider:&dyn Sourc
   _=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual lexical frame and spelling extent must travel together")),
  }
  Ok(raw)
+}
+
+fn physical_spelling_using<'a>(frame:&'a super::OriginalLexicalFrameIdentity,span:dm_syntax::Span,
+ provider:&'a dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<&'a[u8]>{
+ if !frame.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
+ let bytes=original_fill_bucket!(Provider,provider.original_source_bytes(frame.acquisition()))?
+  .ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual lexical spelling issuer is unavailable"))?;
+ bytes.get(span.range()).ok_or_else(||io::ErrorKind::InvalidInput.into())
+}
+
+fn encode_physical_spelling_using(spelling:&[u8],raw:&mut Text,a:&SettingAdmission<'_>)->io::Result<()>{
+ // Valid UTF8 stays whole. Any invalid byte selects Latin1 for the whole
+ // token, without altering physical coordinates in the same raw frame.
+ dm_syntax::original_token_value::visit_original_token_value_using(
+  spelling,&mut||poll(a),&mut|part|raw.push_str(part,a)).map(|_|())
 }
 
 #[cfg(test)]
@@ -95,15 +119,24 @@ mod static_pool_io_tests {
         };
         let mut pool = OriginalLiteralPool::new(&a).unwrap();
         let one = static_literal_using(&token(0), &source, &a, Some(&mut pool)).unwrap().unwrap();
-        let two = static_literal_using(&token(7), &source, &a, Some(&mut pool)).unwrap().unwrap();
+        let paid = used.load(Ordering::Acquire);
+        let tight = SettingAdmission::new(&used, paid, &|| Ok(())).with_bounded_static_lookup_checkpoints();
+        let two = static_literal_using(&token(7), &source, &tight, Some(&mut pool)).unwrap().unwrap();
         assert_eq!(one.raw().as_ptr(), two.raw().as_ptr());
         assert_eq!(source.reads.get(), 3, "frame currentness plus two real spelling loans");
-        let paid = used.load(Ordering::Acquire);
+        assert_eq!(used.load(Ordering::Acquire), paid);
+
         source.fail.set(true);
-        let failure = static_literal_using(&token(14), &source, &a, Some(&mut pool)).unwrap_err();
+        let failure = static_literal_using(&token(14), &source, &tight, Some(&mut pool)).unwrap_err();
         assert_eq!(failure.raw_os_error(), Some(1450));
         assert_eq!(source.reads.get(), 4);
         assert_eq!(used.load(Ordering::Acquire), paid);
+
+        source.fail.set(false);
+        let generic = SettingAdmission::new(&used, paid, &|| Ok(()));
+        assert_eq!(static_literal_using(&token(14), &source, &generic, Some(&mut pool))
+            .unwrap_err().kind(),io::ErrorKind::OutOfMemory,"generic path still needs actual temporary spelling");
+        assert_eq!(source.reads.get(), 5);
         drop((one, two, pool, frame));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }

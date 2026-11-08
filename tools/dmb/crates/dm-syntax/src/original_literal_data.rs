@@ -1121,6 +1121,35 @@ impl<'a> StaticKey<'a> {
     }
 }
 
+#[derive(Clone, Copy)]
+enum ReuseKey<'a> { Numeric(NumericKey), Static(StaticKey<'a>) }
+
+impl<'a> ReuseKey<'a> {
+    fn new(value: &OriginalTokenValue<&'a str>, mode: OriginalStringMode, raw_len: usize) -> Option<Self> {
+        if mode == OriginalStringMode::Unknown && raw_len <= SHORT_NUMERIC_BYTES {
+            if let Some(key) = NumericKey::from_value(value) {
+                return Some(Self::Numeric(key));
+            }
+        }
+        StaticKey::from_value(value, mode)
+            .filter(|key| raw_len <= SHORT_STATIC_BYTES && key.text().len() <= SHORT_STATIC_BYTES)
+            .map(Self::Static)
+    }
+
+    fn matching(self, candidates: &[Option<OriginalLiteralData>], raw: &str, mode: OriginalStringMode) -> Option<usize> {
+        candidates.iter().position(|candidate| candidate.as_ref().is_some_and(|cached| {
+            if cached.raw() != raw || cached.string_mode() != mode {
+                return false;
+            }
+            let current = cached.value();
+            match self {
+                Self::Numeric(key) => NumericKey::from_value(&current) == Some(key),
+                Self::Static(key) => StaticKey::from_value(&current, mode) == Some(key),
+            }
+        }))
+    }
+}
+
 /// Bounded producer-local reuse of short immutable VALUE storage. Numeric
 /// slots keep their original geometry. The separate static bank is inline in
 /// the output cursor and cannot issue spans, raw frames or parser authority.
@@ -1146,6 +1175,36 @@ impl OriginalLiteralPool {
         })
     }
 
+    fn candidates(&mut self, key: ReuseKey<'_>, raw: &str, mode: OriginalStringMode) -> &mut [Option<OriginalLiteralData>] {
+        match key {
+            ReuseKey::Numeric(key) => std::slice::from_mut(&mut self.numeric[key.slot(raw)]),
+            ReuseKey::Static(key) => &mut self.static_text[key.slot(raw, mode) / STATIC_WAYS],
+        }
+    }
+
+    /// Optional DATA-only hit over exact physical spelling already loaned by
+    /// the caller. Generic callback schedules keep the existing encode path.
+    /// A miss publishes nothing and leaves the same bytes for normal encoding.
+    #[doc(hidden)]
+    pub fn try_issue_borrowed_utf8_using(&mut self, bytes: &[u8], value: &OriginalTokenValue<&str>,
+        mode: OriginalStringMode, a: &SettingAdmission<'_>) -> io::Result<Option<OriginalLiteralData>>
+    {
+        if !a.uses_bounded_static_lookup_checkpoints() || !a.matches_lease_domain(&self.domain) {
+            return Ok(None);
+        }
+        let Some(ordinal) = self.issued.checked_add(1) else { return Ok(None) };
+        let Some(key) = ReuseKey::new(value, mode, bytes.len()) else { return Ok(None) };
+        let Ok(raw) = std::str::from_utf8(bytes) else { return Ok(None) };
+        let candidates = self.candidates(key, raw, mode);
+        let Some(index) = key.matching(candidates, raw, mode) else { return Ok(None) };
+        a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        let mut occurrence = candidates[index].as_ref().expect("matched occupied slot").clone();
+        occurrence.1 = ordinal;
+        candidates[..=index].rotate_right(1);
+        self.issued = ordinal;
+        Ok(Some(occurrence))
+    }
+
     pub fn issue_using(&mut self,raw:String,credit:SettingRootLease,value:OriginalTokenValue<&str>,mode:OriginalStringMode,a:&SettingAdmission<'_>)->io::Result<OriginalLiteralData> {
         // Actual borrowed raw bytes have already been copied by the caller
         // in its existing source IO order. Even a cache hit must authenticate
@@ -1159,31 +1218,11 @@ impl OriginalLiteralPool {
         let Some(ordinal) = self.issued.checked_add(1) else {
             return OriginalLiteralData::from_admitted_raw_with_mode_using(pending.raw,pending.credit,value,mode,a);
         };
-        let numeric = NumericKey::from_value(&value)
-            .filter(|_| mode == OriginalStringMode::Unknown && pending.raw.len() <= SHORT_NUMERIC_BYTES);
-        let static_key = StaticKey::from_value(&value, mode)
-            .filter(|key| pending.raw.len() <= SHORT_STATIC_BYTES && key.text().len() <= SHORT_STATIC_BYTES);
-        let candidates: &mut [Option<OriginalLiteralData>] = if let Some(key) = numeric {
-            std::slice::from_mut(&mut self.numeric[key.slot(&pending.raw)])
-        } else if let Some(key) = static_key {
-            // Same fixed bank size. A spelling collision can displace only
-            // the least recently used value after the whole set fills.
-            &mut self.static_text[key.slot(&pending.raw, mode) / STATIC_WAYS]
-        } else {
+        let Some(key) = ReuseKey::new(&value, mode, pending.raw.len()) else {
             return OriginalLiteralData::from_admitted_raw_with_mode_using(pending.raw,pending.credit,value,mode,a);
         };
-        let matching = candidates.iter().position(|candidate| {
-            candidate.as_ref().is_some_and(|cached| {
-                if cached.raw() != pending.raw || cached.string_mode() != mode {
-                    return false;
-                }
-                let current = cached.value();
-                if let Some(key) = numeric {
-                    return NumericKey::from_value(&current) == Some(key);
-                }
-                StaticKey::from_value(&current, mode) == static_key
-            })
-        });
+        let candidates = self.candidates(key, &pending.raw, mode);
+        let matching = key.matching(candidates, &pending.raw, mode);
         if let Some(index) = matching {
             // Only this pool sees this backing. One serial covers both banks,
             // preserving each occurrence even after eviction and reinsertion.
