@@ -101,11 +101,11 @@ condition grammar, the pooled act, the two-pass split itself, and Require/Do/End
    tested. What a click still allocates is constant: the resolution and its few lists, the winner's record, the `op_result`. Gate: `datum/New`
    per click in a `--profile` run at most one (the `op_result`).
 4. Menu: no candidate made only for a near miss (`op_resolve(near_misses = FALSE)`: the origin-refused rows, most of a human's ~290),
-   one act per row for `when()` and Require (`op_menu_decide()`), `settle_for_reads` once per entity per read, and a row whose decision
-   sampled state (`read_once()`: a human's `vr_logout_granted` reading `verbs`) no longer makes the whole menu uncacheable: it is kept as a
-   sampled row and asked again on the next read (`op_menu_sampled_rows_same()`), the rest of the menu served from the cache. The cache is
-   still keyed by the act generations; a finer key (the state keys each row read) is the next step if live play still misses.
-   Gate: `ap_menu_warm_us` near zero, `ap_menu_cold_us` down, `dq_read_once_menu_*`, `dx_menu_order*`, `dq_ops_menu_*` green.
+   one act per row for `when()` and Require (`op_menu_decide()`), `settle_for_reads` once per entity per read. Still open: a human's
+   menu is never cached, because one row (`vr_logout_granted`, `vr_procs.dm`) reads `verbs` through `read_once()`. Re-asking only such
+   sampled rows was tried and is wrong today: other rows' requirements read state no act generation covers (an implant put into the
+   actor: `dq_verb_menu_ops_reagent_implants`), and the uncacheable menu was hiding that. The cache needs per-key dependencies (the
+   (entity, key) reads `op_watch_reads()` already lists) before rows can be reused. Gate: `ap_menu_warm_us` near zero, `ap_menu_cold_us` down, `dq_read_once_menu_*`, `dx_menu_order*`, `dq_ops_menu_*` green.
 
 ## What the Rust side could own
 

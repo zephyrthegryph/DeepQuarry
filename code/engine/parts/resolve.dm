@@ -1046,7 +1046,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	var/datum/rx_state/held_state = held ? rx_of(held) : null
 	var/cache_key = "[actor ? SHARED_CACHE_UID(actor) : "-"]|[target ? SHARED_CACHE_UID(target) : "-"]|[held ? SHARED_CACHE_UID(held) : "-"]|[actor_state?.act_gen]|[target_state?.act_gen]|[held_state?.act_gen]|[actor_state?.provider_gen]"
 	var/list/cached = GLOB.op_menu_cache[cache_key]
-	if(cached && (isnull(cached[2]) || cached[2] == stamp) && op_menu_dependencies_valid(cached[3]) && op_menu_sampled_rows_same(cached, actor, target, held))
+	if(cached && (isnull(cached[2]) || cached[2] == stamp) && op_menu_dependencies_valid(cached[3]))
 		var/list/cached_rows = cached[1]
 		var/list/parent_frame = frame[1]
 		while(parent_frame)
@@ -1065,7 +1065,6 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	GLOB.op_menu_builds++
 	// A Menu shows no near miss: the candidates the menu origin refuses are never made.
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null, near_misses = FALSE)
-	var/list/sampled_rows = list() // the rows whose decision sampled state (read_once()): asked again on a later read, not the whole menu
 	var/list/rows = list()
 	var/list/hidden = list() // the rows left out, with the requirement that hid each (the admin "Show hidden" view)
 	var/list/seen = list()
@@ -1082,14 +1081,8 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			continue
 		if(op_cand_swallows_only(C))
 			continue
-		// The row's own decision (when, path, requirements) in one act. A decision that sampled state with read_once() leaves the rest of the
-		// menu cacheable: the row is kept as a sampled row, and a later read asks it again and rebuilds only when its answer moved.
-		var/sampled_before = frame[2]
-		frame[2] = FALSE
+		// The row's own decision (when, path, requirements) in one act.
 		var/list/decision = op_menu_decide(R, C)
-		if(frame[2])
-			sampled_rows += list(op_menu_sampled_row(C, decision[1]))
-		frame[2] = sampled_before
 		if(!decision[2])
 			hidden += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "hidden_by" = "when()"))
 			continue
@@ -1136,12 +1129,12 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		var/datum/lookup_read_scope/old_scope = length(replaced) >= 4 ? replaced[4] : null
 		if(old_scope && !QDELETED(old_scope))
 			lifeform_end(old_scope, END_SCOPE)
-		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4], hidden, length(sampled_rows) ? sampled_rows : null)
+		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4], hidden)
 		frame[5] = TRUE
 	return rows.Copy()
 
 /// A Menu row's decision, in the order the Menu asks: list(signature, when() holds, the path is shut, the requirements' refusal, the FAILS_HIDDEN
-/// requirements that hide it). The signature is the decision as text, what a sampled row is compared by. One pooled act serves the row's when()
+/// requirements that hide it). One pooled act serves the row's when()
 /// and its requirements (they read the same fields).
 /proc/op_menu_decide(datum/op_resolution/R, datum/op_cand/C)
 	return op_menu_decide_fields(R, C.oplan, C.binding, C.holder, C.side, C.activation, C.cap, C.provider)
@@ -1169,43 +1162,6 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		var/datum/entry/part/req/hider = hid_by[1]
 		return list("hidden|[hider.type]", TRUE, FALSE, why, hid_by)
 	return list("open|[why ? reason_text(why) : ""]", TRUE, FALSE, why, hid_by)
-
-/// What a cached menu keeps of a row whose decision sampled state: enough to ask it again (the plan, binding and capability are compiled, shared
-/// parts; the entities are handles, never held; the provider is found again among the actor's by its entry and its source), and the answer.
-/proc/op_menu_sampled_row(datum/op_cand/C, signature)
-	return list(C.oplan, C.binding, handle_of(C.holder), C.side, C.activation ? handle_of(C.activation) : null, C.cap, C.provider?.entry, C.provider ? handle_of(C.provider.source) : null, signature)
-
-/// TRUE when every sampled row of the cached menu decides as it did when the menu was built, so the rows it shows are still right. A sampled row
-/// whose entities are gone counts as moved.
-/proc/op_menu_sampled_rows_same(list/cached, mob/actor, atom/target, obj/held)
-	var/list/sampled = length(cached) >= 6 ? cached[6] : null
-	if(!length(sampled))
-		return TRUE
-	var/datum/op_resolution/R = op_resolution_new(actor, target, held, ORIGIN_MENU, actor_authority(actor), null)
-	for(var/list/row as anything in sampled)
-		var/datum/holder = handle_get(row[3])
-		if(!holder || QDELETED(holder))
-			return FALSE
-		var/datum/activation/granted_by = row[5] ? handle_get(row[5]) : null
-		if(row[5] && (!granted_by || granted_by.dead))
-			return FALSE
-		var/datum/prov/V = null
-		if(row[7])
-			var/datum/source = handle_get(row[8])
-			if(!source)
-				return FALSE
-			if(isnull(R.providers))
-				R.providers = providers_for(actor, held)
-			for(var/datum/prov/candidate as anything in R.providers)
-				if(candidate.entry == row[7] && candidate.source == source)
-					V = candidate
-					break
-			if(!V)
-				return FALSE
-		var/list/decision = op_menu_decide_fields(R, row[1], row[2], holder, row[4], granted_by, row[6], V)
-		if(decision[1] != row[9])
-			return FALSE
-	return TRUE
 
 /// The ops that asked (menu(hint_tool = TRUE)) to be listed while the actor holds no tool that fits: a greyed row "needs a <tool>", unless the op is
 /// closed by its when() or its path. Adds to `rows`; `seen` keeps the keys already listed.
