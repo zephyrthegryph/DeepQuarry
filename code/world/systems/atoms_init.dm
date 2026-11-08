@@ -11,7 +11,10 @@
 
 	// Map-time resolver (map_resolvers.dm): the atom's work happens here and it is detached,
 	// never initialized nor qdel'd.
-	if(GLOB.map_resolvers[the_type] && map_resolve_instance(A))
+	// The type's construction plan (code/engine/declare/ctor_plan.dm): one lookup for the per-type facts every step below asks. Null while it cannot be
+	// built yet, and then each step asks its own table as before.
+	var/plan = ctor_plan_of(A)
+	if((plan ? (plan & CTOR_RESOLVER) : GLOB.map_resolvers[the_type]) && map_resolve_instance(A))
 		return TRUE
 
 	// An atom initializes with the air under it already made: whatever it reads of it in Initialize() or in a condition (a sensor, a generator's
@@ -31,21 +34,21 @@
 
 	BOOT_PHASE_BEGIN(bp_early)
 	// Phase 0 of the init contract: the starting occupants a type's code before `..()` reads (owns_*(early = TRUE)), before the chain runs.
-	var/datum/own_table/early_table = _CACHED_KEY_FAST(own_table, A.type, A) // own_table_of() inlined: every atom passes here
-	if(early_table.early_vars)
-		own_init_starts(A, early_table, length(arguments) ? arguments[1] : FALSE, TRUE)
-		if(QDELETED(A))
-			return TRUE
-	// Then the early params: a setter whose output the chain reads (param(apply =, early = TRUE), code/engine/lifeforms/params.dm).
-	var/datum/type_table/lifeform_table = type_table_store?[A.type]
-	if(!lifeform_table)
-		lifeform_table = table_of(A)
-	if(lifeform_table.hook_flags & ENGINE_HOOK_LIFEFORMS)
-		params_early(A, length(arguments) ? arguments[1] : FALSE)
-		if(QDELETED(A))
-			return TRUE
-		// And the head of the type's Initialize(): setup(PROC_REF(x), early = TRUE) (code/engine/lifeforms/setup.dm).
-		setup_early(A)
+	if(plan)
+		if(plan & CTOR_EARLY_STARTS)
+			own_init_starts(A, null, length(arguments) ? arguments[1] : FALSE, TRUE)
+			if(QDELETED(A))
+				return TRUE
+		if(plan & CTOR_PARAM_EARLY)
+			params_early(A, length(arguments) ? arguments[1] : FALSE)
+			if(QDELETED(A))
+				return TRUE
+		if(plan & CTOR_SETUP_EARLY)
+			setup_early(A)
+			if(QDELETED(A))
+				return TRUE
+	else
+		ctor_early_unplanned(A, arguments)
 		if(QDELETED(A))
 			return TRUE
 
@@ -56,15 +59,18 @@
 	var/result
 	// Its own writes inside Initialize() publish nothing: nothing has seen it yet, and caps_init() queues its first full refresh (state_changed()).
 	var/atom/outer_initializing = GLOB.atom_initializing
+	var/outer_plan = ctor_plan_current
 	GLOB.atom_initializing = A
+	ctor_plan_current = plan
 	if(outer_initializing)
 		GLOB.atoms_init_outer += outer_initializing // still partway through its own Initialize() while this one's runs
-	if(GLOB.init_from_table_types[A.type] && length(arguments) == 1 && !A.color)
+	if((plan ? (plan & CTOR_FROM_TABLE) : GLOB.init_from_table_types[A.type]) && length(arguments) == 1 && !A.color)
 		A.table_initialize()
 		result = INITIALIZE_HINT_NORMAL
 	else
 		result = A.Initialize(arglist(arguments))
 	GLOB.atom_initializing = outer_initializing
+	ctor_plan_current = outer_plan
 	if(outer_initializing)
 		GLOB.atoms_init_outer.len--
 	BOOT_PHASE_END(bp_init, "InitAtom: Initialize (includes decls, caps_init, nested inits)" + BOOT_KIND(A), A)
@@ -85,7 +91,11 @@
 		result = INITIALIZE_HINT_QDEL
 	// setup() and name_prefix() (code/engine/lifeforms/setup.dm): the type's own setup, once its Initialize() chain has returned.
 	BOOT_PHASE_BEGIN(bp_setup)
-	if(length(setup_pending) && setup_pending[A])
+	if((plan & CTOR_SETUP_ONLY) && result == INITIALIZE_HINT_NORMAL && !QDELETED(A))
+		// The plan says the type's only engine init is its setup rows (ctor_plan.dm): no setup_pending note was made, they run here.
+		if(setup_run(A, FALSE, length(arguments) ? arguments[1] : FALSE) == INITIALIZE_HINT_QDEL)
+			result = INITIALIZE_HINT_QDEL
+	else if(length(setup_pending) && setup_pending[A])
 		if(result == INITIALIZE_HINT_NORMAL)
 			// A setup(PROC_REF(x), mapload = TRUE) hook may return INITIALIZE_HINT_QDEL: handled below as an Initialize() return.
 			if(setup_run(A, FALSE, length(arguments) ? arguments[1] : FALSE) == INITIALIZE_HINT_QDEL)
@@ -138,7 +148,7 @@
 			// Type-table fast path (atom_type_table.dm): turfs have no on_materialize() of their
 			// own (tools/ci/init_lint.py keeps it so), so a turf whose type needs no registries,
 			// rules or the scheduler is live once flagged. Most of the ~390 k map turfs take this path.
-			if(isturf(A) && !A.containment_ledger() && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
+			if(isturf(A) && !A.rx?.containment_ledger && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
 				A.flags |= ATOM_MATERIALIZED
 			else
 				BOOT_PHASE_BEGIN(bp_mat)
@@ -149,8 +159,8 @@
 			/// Emits that the new atom `src`, has been created at `loc`
 			PUBLISH(location, atom_after_successful_initialized_on, created = A, mapload = arguments[1])
 			RANGE_WATCH(location, RANGE_INITIALIZED, A, arguments[1])
-			// Created straight into a holder with a ledger: record it now (containment C1).
-			location.containment_ledger()?.note_enter(A)
+			// Created straight into a holder with a ledger: nothing is noted here. The ledger is made on first use and its sync() adopts whatever
+			// arrived without a move (code/engine/refs/containment/ledger.dm), so a holder whose ledger is never asked for costs nothing at init.
 		if(created_atoms && from_template && ispath(the_type, /atom/movable))//we only want to populate the list with movables
 			created_atoms += A.get_all_contents()
 
@@ -168,3 +178,19 @@
 		var/list/atoms = queued[path]
 		if(length(atoms))
 			decl_binder(path).bind_list(atoms)
+
+/// InitAtom()'s phase 0 for a type with no construction plan yet (the globals are still being made): each fact from its own table, as before plans.
+/proc/ctor_early_unplanned(atom/A, list/arguments)
+	var/datum/own_table/early_table = _CACHED_KEY_FAST(own_table, A.type, A)
+	if(early_table.early_vars)
+		own_init_starts(A, early_table, length(arguments) ? arguments[1] : FALSE, TRUE)
+		if(QDELETED(A))
+			return
+	var/datum/type_table/lifeform_table = type_table_store?[A.type]
+	if(!lifeform_table)
+		lifeform_table = table_of(A)
+	if(lifeform_table.hook_flags & ENGINE_HOOK_LIFEFORMS)
+		params_early(A, length(arguments) ? arguments[1] : FALSE)
+		if(QDELETED(A))
+			return
+		setup_early(A)

@@ -1,7 +1,7 @@
 import { loadStyleSheet } from 'common/assets';
 import { EventBus } from 'tgui-core/eventbus';
 import { playMusic, stopMusic } from '../audio/handlers';
-import { chatMessage, exportChatlog } from '../chat/handlers';
+import { chatMessage } from '../chat/handlers';
 import {
   availableChannels,
   focusInput,
@@ -37,7 +37,6 @@ const listeners = {
   'telemetry/request': telemetryRequest,
   testTelemetryCommand,
   update: handleTelemetryData,
-  saveToDiskCommand: exportChatlog,
 } as const;
 
 export const bus = new EventBus(listeners);

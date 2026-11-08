@@ -539,6 +539,8 @@
 		"writes_published" = GLOB.plan_reader_probes,
 		"writes_preinit" = GLOB.state_changed_preinit_skipped,
 		"relation_writes_spared" = GLOB.own_field_memo_spared,
+		"relation_writes_full_path" = GLOB.own_field_full_paths,
+		"ctor_plans_built" = ctor_plans_built,
 		"stat_evals" = GLOB.stat_evals,
 		"stat_read_computes" = GLOB.stat_read_computes,
 		"rel_index_writes" = GLOB.rel_index_writes,

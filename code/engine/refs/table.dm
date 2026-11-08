@@ -425,6 +425,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	if(!bits && !derived && !hop_key && !dynamic && !stat_global)
 		GLOB.own_field_memo_spared++
 		return
+	GLOB.own_field_full_paths++
 	BOOT_PHASE_COUNT("ofc full path: [var_name]")
 	BOOT_PHASE_BEGIN(bp_all)
 	// A type that declares reading this var (or hopping over it) re-derives what reads it (derived.dm).
@@ -480,6 +481,8 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 GLOBAL_VAR_INIT(own_field_memo_off, FALSE)
 /// Writes own_field_changed() answered from the memo without entering any part (the boot bench reads it).
 GLOBAL_VAR_INIT(own_field_memo_spared, 0)
+/// Writes that entered at least one part of own_field_changed() (the boot bench reads it: with own_field_memo_spared, the full-path share).
+GLOBAL_VAR_INIT(own_field_full_paths, 0)
 
 /// type -> var name -> OFW_* bits: which parts of own_field_changed() a static reader of the type gives work. A static, not a GLOB list: relation
 /// writes run while the globals are still being made.
