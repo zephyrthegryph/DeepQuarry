@@ -158,6 +158,8 @@ CAPABILITIES(/datum/input_stats)
 	var/list/fr_time
 	var/list/fr_usage
 	var/list/fr_maptick
+	/// Percent of each tick spent before the kernel started (verbs, input, BYOND).
+	var/list/fr_pre
 	var/list/fr_input
 	var/list/fr_streak
 	var/list/fr_top_sys
@@ -202,6 +204,7 @@ CAPABILITIES(/datum/tick_meter)
 	fr_time = new /list(ring_len)
 	fr_usage = new /list(ring_len)
 	fr_maptick = new /list(ring_len)
+	fr_pre = new /list(ring_len)
 	fr_input = new /list(ring_len)
 	fr_streak = new /list(ring_len)
 	fr_top_sys = new /list(ring_len * KM_TOP_N)
@@ -301,34 +304,27 @@ CAPABILITIES(/datum/tick_meter)
 // ---------------------------------------------------------------- the tick
 
 /// Closes the tick: `usage` is its percent of a tick at the end of the MC's run, `maptick` is world.map_cpu.
-/datum/tick_meter/proc/end_tick(usage, maptick)
+/datum/tick_meter/proc/end_tick(usage, maptick, pre_usage = 0)
 	var/overrun = usage > KM_OVERRUN_USAGE
 	total_ticks++
-	var/top1 = 0
-	var/top2 = 0
-	var/top3 = 0
-	var/ms1 = 0
-	var/ms2 = 0
-	var/ms3 = 0
+	// The tick's costliest systems, largest first, built straight into its flight recorder entry.
+	ring_pos = ring_pos % ring_len + 1
+	var/base = (ring_pos - 1) * KM_TOP_N
+	for(var/k in 1 to KM_TOP_N)
+		fr_top_sys[base + k] = 0
+		fr_top_ms[base + k] = 0
 	for(var/i in 1 to n_touched)
 		var/idx = touched[i]
 		var/ms = tick_ms[idx]
 		var/late = tick_late[idx]
-		if(ms > ms3)
-			if(ms > ms2)
-				top3 = top2
-				ms3 = ms2
-				if(ms > ms1)
-					top2 = top1
-					ms2 = ms1
-					top1 = idx
-					ms1 = ms
-				else
-					top2 = idx
-					ms2 = ms
-			else
-				top3 = idx
-				ms3 = ms
+		if(ms > fr_top_ms[base + KM_TOP_N])
+			var/slot = KM_TOP_N
+			while(slot > 1 && ms > fr_top_ms[base + slot - 1])
+				fr_top_sys[base + slot] = fr_top_sys[base + slot - 1]
+				fr_top_ms[base + slot] = fr_top_ms[base + slot - 1]
+				slot--
+			fr_top_sys[base + slot] = idx
+			fr_top_ms[base + slot] = ms
 		// system_stats.record() and km_hist.add() inlined: this runs per touched system per open set every tick.
 		var/bin = KM_HIST_BIN(ms)
 		for(var/datum/km_stats_set/S as anything in sets)
@@ -349,6 +345,12 @@ CAPABILITIES(/datum/tick_meter)
 				stats.overrun_ms += ms
 			if(late > stats.late_max)
 				stats.late_max = late
+	var/top1 = fr_top_sys[base + 1]
+	var/top2 = fr_top_sys[base + 2]
+	var/top3 = fr_top_sys[base + 3]
+	var/ms1 = fr_top_ms[base + 1]
+	var/ms2 = fr_top_ms[base + 2]
+	var/ms3 = fr_top_ms[base + 3]
 	for(var/datum/km_stats_set/S as anything in sets)
 		if(isnull(S.started_real))
 			S.mark_start()
@@ -371,7 +373,6 @@ CAPABILITIES(/datum/tick_meter)
 		streak = 0
 
 	// The flight recorder entry.
-	ring_pos = ring_pos % ring_len + 1
 	if(ring_count < ring_len)
 		ring_count++
 	fr_tick[ring_pos] = round(world.time / world.tick_lag)
@@ -380,13 +381,7 @@ CAPABILITIES(/datum/tick_meter)
 	fr_maptick[ring_pos] = maptick
 	fr_input[ring_pos] = input_ms
 	fr_streak[ring_pos] = streak
-	var/base = (ring_pos - 1) * KM_TOP_N
-	fr_top_sys[base + 1] = top1
-	fr_top_ms[base + 1] = ms1
-	fr_top_sys[base + 2] = top2
-	fr_top_ms[base + 2] = ms2
-	fr_top_sys[base + 3] = top3
-	fr_top_ms[base + 3] = ms3
+	fr_pre[ring_pos] = pre_usage
 
 	map_peak = max(maptick, map_peak * KM_MAP_PEAK_DECAY)
 
