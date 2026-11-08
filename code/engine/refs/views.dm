@@ -306,6 +306,88 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 		own_field_changed(source, var_name)
 	return target
 
+/// rel_set(holder, var_name, target) for every holder of `holders`, one target: a pipeline taking its pipes, each pipe's `parent`. What it writes and
+/// announces is what the per-holder calls would (each holder's var, its reverse-index row and watch, the partner list and its rows, the relation
+/// hooks), with the partner side done once: its membership read once as a set instead of a scan or an index lookup per holder, the new members
+/// appended in one step and the partner var announced once. A holder this fast form does not cover (an owned or weak var, a list view, a
+/// links(conflict = REFUSE) end, a partner that is not a plain list, an undeclared view) takes rel_set() itself. Returns how many holders now name `target`.
+/proc/rel_set_many(list/holders, var_name, datum/target)
+	. = 0
+	if(!isdatum(target) || QDELETED(target))
+		for(var/datum/H as anything in holders)
+			rel_set(H, var_name, target)
+		return
+	var/list/fast = list() // the holders the fast form takes, in order
+	var/list/entries = list() // parallel: each one's declaration
+	var/list/pentry
+	var/partner_var
+	for(var/datum/H as anything in holders)
+		if(!isdatum(H) || QDELETED(H))
+			continue
+		if(H.vars[var_name] == target)
+			.++
+			continue
+		var/list/entry = (rel_kind(H, var_name) == OWNK_REL && !list_state_of(H, var_name)) ? _rel_entry(H, var_name) : null
+		var/ok = entry && !entry[OWNE_LIST] && !(length(entry) >= OWNE_CONFLICT && entry[OWNE_CONFLICT]) && entry[OWNE_PARTNER] && entry[OWNE_ARG] != RELS_PLAIN
+		if(ok)
+			if(isnull(partner_var))
+				partner_var = entry[OWNE_PARTNER]
+				pentry = (partner_var in target.vars) ? own_table_of(target).entries[partner_var] : null
+			ok = entry[OWNE_PARTNER] == partner_var && pentry && pentry[OWNE_KIND] == OWNK_REL && pentry[OWNE_LIST] && !istype(target.vars[partner_var], /alist) && own_type_ok(H, var_name, entry, target) && own_guard(H, target, "rel_set_many([var_name])")
+		if(!ok)
+			if(rel_set(H, var_name, target) == target)
+				.++
+			continue
+		fast += H
+		entries += list(entry)
+	if(!length(fast))
+		return
+	GLOB.rel_set_many_holders += length(fast)
+	var/list/TL = target.vars[partner_var]
+	var/first = 1
+	if(!REL_LISTLIKE(TL))
+		// The partner has no list yet: the first holder links the ordinary way, which makes it.
+		var/datum/H1 = fast[1]
+		var/datum/old1 = H1.vars[var_name]
+		if(old1)
+			_rel_detach(H1, var_name, old1, entries[1], notify_source = TRUE)
+		_rel_attach(H1, var_name, target, entries[1])
+		TL = target.vars[partner_var]
+		first = 2
+	// 1. Each holder leaves its old target and names the new one (its write announced, its reverse row and watch), as rel_view_set() does; the
+	// partner side waits for the batch.
+	for(var/i in first to length(fast))
+		var/datum/H = fast[i]
+		var/datum/old = H.vars[var_name]
+		if(old)
+			_rel_detach(H, var_name, old, entries[i], notify_source = TRUE)
+		_rel_attach(H, var_name, target, entries[i], with_partner = FALSE)
+	// 2. The partner list takes the holders it does not hold yet, in one append (its membership read once as a set), each with its reverse row.
+	if(first <= length(fast))
+		var/alist/present = alist()
+		for(var/member in TL)
+			present[member] = TRUE
+		var/list/joining = list()
+		for(var/i in first to length(fast))
+			var/datum/H = fast[i]
+			if(!present[H])
+				present[H] = TRUE
+				joining += H
+		TL += joining // absent (checked above)
+		for(var/datum/H as anything in joining)
+			_rel_index(H, target, partner_var)
+			if(pentry[OWNE_WATCH])
+				_rel_watch(H, target)
+		// 3. The partner var announced once for the batch (its readers run once per drain either way).
+		if(length(joining))
+			own_field_changed(target, partner_var)
+	for(var/datum/H as anything in fast)
+		activations_relation_changed(H, var_name)
+	. += length(fast)
+
+/// Holders rel_set_many() took on its fast form (the rest went through rel_set()).
+GLOBAL_VAR_INIT(rel_set_many_holders, 0)
+
 /// Adds `target` to source.var_name (a list REF view). A symmetric or pair view adds the other side.
 /proc/rel_view_add(datum/source, var_name, datum/target, key = null, refusable = FALSE)
 	var/list/entry = _rel_entry(source, var_name, TRUE)
@@ -433,7 +515,7 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 		_rel_detach(source, var_name, value, entry)
 
 /// Links source.var_name -> target: writes the view, indexes it, and sets the partner side.
-/proc/_rel_attach(datum/source, var_name, datum/target, list/entry)
+/proc/_rel_attach(datum/source, var_name, datum/target, list/entry, with_partner = TRUE)
 	BOOT_PHASE_COUNT("rel_attach: [source.type].[var_name]")
 	if(entry[OWNE_LIST])
 		var/list/L = source.vars[var_name]
@@ -462,6 +544,8 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 	BOOT_PHASE_END(bp_idx, "rel_attach: _rel_index(target) [target.type]/[var_name]", null)
 	if(entry[OWNE_WATCH])
 		_rel_watch(target, source)
+	if(!with_partner)
+		return // rel_set_many(): the partner side is written once for the batch
 	var/partner_var = entry[OWNE_PARTNER]
 	if(!partner_var || entry[OWNE_ARG] == RELS_PLAIN || !isdatum(target))
 		return

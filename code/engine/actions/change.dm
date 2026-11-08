@@ -104,15 +104,15 @@ DECLARE_SHARED_CACHE(change_text_read_keys, GLOBAL_PROC_REF(build_change_text_re
 	return !findtext(read, ".") && (!findtext(read, ":") || findtext(read, "capkey:") == 1)
 
 /// The value the hook's condition or key has on E now: a boolean for an edge hook, the raw value for ANY.
-/proc/change_value(datum/E, datum/hook/H)
+/proc/change_value(datum/E, datum/hook/H, datum/act/eval/shared = null)
 	var/cond = H.entry.args["cond"]
 	var/edge = H.entry.args["edge"]
 	if(change_is_published(cond))
 		return TRUE // an event has no value: every drain that reaches it runs it (hook_change_eval)
 	if(edge != ANY)
-		return !!change_condition(E, cond)
+		return !!change_condition(E, cond, shared)
 	if(islist(cond))
-		return !!change_condition(E, cond)
+		return !!change_condition(E, cond, shared)
 	if(isnum(cond))
 		return stat_def_of(cond) ? stat_value(E, cond) : cap_key_get(E, cond)
 	if(istext(cond))
@@ -120,14 +120,22 @@ DECLARE_SHARED_CACHE(change_text_read_keys, GLOBAL_PROC_REF(build_change_text_re
 			return change_walk(E, cond)
 		if(cond in E.vars)
 			return E.vars[cond]
-	return change_condition(E, cond)
+	return change_condition(E, cond, shared)
+
+/// A pooled eval context on holder E for a change condition's proc (the caller releases it).
+/proc/change_eval_context(datum/E)
+	RETURN_TYPE(/datum/act/eval)
+	var/datum/act/eval/A = take(/datum/act/eval)
+	A.holder = E // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	return A
 
 /// A condition (a var, an id, a tree, a proc of the holder) evaluated now. A proc gets a pooled eval context.
 PROC_SUMMARY(/proc/change_condition) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
-/proc/change_condition(datum/E, cond)
+/proc/change_condition(datum/E, cond, datum/act/eval/shared = null)
 	if(istext(cond) && !(cond in E.vars) && !findtext(cond, "."))
-		var/datum/act/eval/A = take(/datum/act/eval)
-		A.holder = E // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		if(shared) // the caller's context for this holder (a baseline of every hook it has): one take and release for the run
+			return op_pure_call(E, cond, shared)
+		var/datum/act/eval/A = change_eval_context(E)
 		. = op_pure_call(E, cond, A)
 		A.release()
 		return
@@ -295,9 +303,20 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 	var/index = change_index_of(E)
 	if(!index)
 		return
-	for(var/key in index)
-		for(var/datum/hook/H as anything in index[key])
-			LAZYSET(rx_of(E).change_last, "[H.serial]", change_value(E, H))
+	var/datum/rx_state/S = rx_of(E)
+	if(!S.change_last)
+		S.change_last = list()
+	var/list/last = S.change_last
+	// One eval context for every proc condition of the holder's hooks (a pooled take and release per hook was most of the baseline's cost).
+	var/datum/act/eval/shared = change_eval_context(E)
+	try
+		for(var/key in index)
+			for(var/datum/hook/H as anything in index[key])
+				last["[H.serial]"] = change_value(E, H, shared)
+	catch(var/exception/fault)
+		shared.release()
+		throw fault
+	shared.release()
 	// What the init's own writes marked is moot: the baseline is the value now, so nothing is owed a first run.
 	if(GLOB.hook_change_pending)
 		GLOB.hook_change_pending -= handle_of(E)

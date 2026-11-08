@@ -481,6 +481,37 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 				todo += def
 		todo = stat_sort_by_rank(I, todo)
 	var/census_start = GLOB.stat_template_census ? TICK_USAGE_REAL : 0
+	// A per-type template (stat_templates.md): an instance whose computes read only its own vars, all at the type's defaults, ends with the values the
+	// type's first such instance computed. Test builds compute the first instances of each type both ways and compare.
+	var/list/template = (!rec.constants && stat_template_instance_ok(E, I, rec, todo)) ? GLOB.stat_templates[E.type] : null
+	#if defined(UNIT_TESTS)
+	if(template && GLOB.stat_template_checked[E.type] < 3)
+		GLOB.stat_template_checked[E.type]++
+		template = null
+		for(var/datum/stat_def/def as anything in todo)
+			stat_recompute(E, def, TRUE)
+		var/list/computed = stat_template_values(E, I, todo)
+		var/list/held = GLOB.stat_templates[E.type]
+		if(!(computed ~= held)) // in order: each value against the same stat's
+			stack_trace("STAT TEMPLATE MISMATCH: [E.type] computes [json_encode(computed)], its template holds [json_encode(GLOB.stat_templates[E.type])]")
+		todo = list()
+	#endif
+	if(template)
+		GLOB.stat_templates_served++
+		for(var/i in 1 to length(todo))
+			var/datum/stat_def/def = todo[i]
+			var/value = template[i]
+			if(I.has_var[def.skey])
+				if(E.vars[def.name] != value)
+					stat_store(E, def, value, I)
+			else if(value != STAT_TEMPLATE_UNSTORED)
+				stat_store(E, def, value, I) // a virtual stat the full compute stored (stat_recompute() keeps one that equals its base once its inputs are tracked)
+		todo = list()
+	else if(!rec.constants && isnull(GLOB.stat_templates[E.type]) && stat_template_instance_ok(E, I, rec, todo))
+		for(var/datum/stat_def/def as anything in todo)
+			stat_recompute(E, def, TRUE)
+		GLOB.stat_templates[E.type] = stat_template_values(E, I, todo)
+		todo = list()
 	for(var/datum/stat_def/def as anything in todo)
 		stat_recompute(E, def, TRUE)
 	if(GLOB.stat_template_census)
@@ -1102,8 +1133,9 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 	var/passes = 0
 	while(length(GLOB.stat_marked) && passes < DRAIN_MAX_PASSES)
 		passes++
-		var/list/batch = stat_sort_marked(GLOB.stat_marked)
+		var/list/batch = stat_sort_marked(GLOB.stat_marked, min(GLOB.stat_marked_sorted, length(GLOB.stat_marked)))
 		GLOB.stat_marked = list()
+		GLOB.stat_marked_sorted = 0
 		for(var/i in 1 to length(batch))
 			var/list/row = batch[i]
 			var/datum/E = slot_datum(row[1])
@@ -1115,6 +1147,7 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 			if(spent && spent + STAT_EVAL_CHARGE > budget)
 				var/list/rest = batch.Copy(i)
 				GLOB.stat_marked = rest + GLOB.stat_marked
+				GLOB.stat_marked_sorted = length(rest) // already in rank order: the next drain sorts only what was marked after it and merges
 				GLOB.stat_spills++
 				TEST_REC_SPILL("[lane]:[def ? def.name : "ct"] x[length(rest)] at pass [passes]")
 				drain_spill_log("stats lane [lane]", "STATS: marked drain on lane [lane] spent its budget of [budget]us; [length(rest)] evaluation\s resume at the next drain (first: [E.type] [def ? def.name : "contributes_to"])")
@@ -1137,19 +1170,35 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		TEST_REC_SPILL("[lane]: [length(GLOB.stat_marked)] marked evaluations past [DRAIN_MAX_PASSES] passes")
 		log_world("STATS: marked drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.stat_marked)] still marked; the rest spills to the next drain point")
 
-/// The batch in rank order (the entity's own type's rank of the stat), first marked first among equals.
-/proc/stat_sort_marked(list/batch)
-	// Stable bucket sort: one bucket per rank, filled in batch order, emitted by ascending rank. The insertion sort it replaces was quadratic,
-	// and a spilled drain re-sorts its whole backlog at each drain point (2.5 k evaluations, ~300 spills at boot).
-	var/list/buckets = list() // "[rank]" -> rows in batch order
-	var/list/ranks = list()
-	for(var/list/row as anything in batch)
+/// How many rows at the head of GLOB.stat_marked are a spilled drain's rest, already in rank order (stat_drain_marked()).
+GLOBAL_VAR_INIT(stat_marked_sorted, 0)
+
+/// The rank a marked row recomputes at (the entity's own type's rank of the stat; 0 for a contribution or a gone entity), kept on the row as its
+/// 4th element once asked.
+/proc/stat_marked_rank(list/row)
+	if(length(row) >= 4)
+		return row[4]
+	var/rank = 0
+	var/datum/stat_def/def = row[2]
+	if(def)
 		var/datum/E = slot_datum(row[1])
-		var/datum/stat_def/def = row[2]
-		var/rank = 0
-		if(def && !QDELETED(E))
+		if(!QDELETED(E))
 			var/datum/stat_type_info/I = stat_type_of(E)
 			rank = I?.ranks?[def.skey] || 0
+	row += rank
+	return rank
+
+/// The batch in rank order (the entity's own type's rank of the stat), first marked first among equals. Its first `sorted` rows are already in that
+/// order (a spilled drain's rest): only the rows after them are sorted, and the two runs merged, so a backlog is not sorted again at every drain point.
+/proc/stat_sort_marked(list/batch, sorted = 0)
+	if(sorted >= length(batch))
+		return batch
+	var/list/tail = sorted ? batch.Copy(sorted + 1) : batch
+	// Stable bucket sort of the tail: one bucket per rank, filled in batch order, emitted by ascending rank.
+	var/list/buckets = list() // "[rank]" -> rows in batch order
+	var/list/ranks = list()
+	for(var/list/row as anything in tail)
+		var/rank = stat_marked_rank(row)
 		var/key = "[rank]"
 		var/list/bucket = buckets[key]
 		if(!bucket)
@@ -1157,13 +1206,31 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 			buckets[key] = bucket
 			ranks += rank
 		bucket += list(row)
+	var/list/rows
 	if(length(ranks) == 1)
-		return buckets[buckets[1]]
-	sortTim(ranks, GLOBAL_PROC_REF(cmp_numeric_asc))
-	var/list/rows = list()
-	for(var/rank in ranks)
-		rows += buckets["[rank]"]
-	return rows
+		rows = buckets[buckets[1]]
+	else
+		sortTim(ranks, GLOBAL_PROC_REF(cmp_numeric_asc))
+		rows = list()
+		for(var/rank in ranks)
+			rows += buckets["[rank]"]
+	if(!sorted)
+		return rows
+	// Merge: the backlog's rows come first among equal ranks (they were marked first).
+	var/list/merged = list()
+	var/i = 1
+	var/j = 1
+	var/n_tail = length(rows)
+	while(i <= sorted && j <= n_tail)
+		if(stat_marked_rank(rows[j]) < stat_marked_rank(batch[i]))
+			merged += list(rows[j++])
+		else
+			merged += list(batch[i++])
+	while(i <= sorted)
+		merged += list(batch[i++])
+	while(j <= n_tail)
+		merged += list(rows[j++])
+	return merged
 
 /// The kernel's drain point (the start of phases D, P and R): the marked stats recompute under the simulation lane's budget. Costs one list length
 /// when nothing is marked. While a map loads (a load frame is open, even one suspended between chunks) it does nothing: initial evaluation is
@@ -1333,3 +1400,55 @@ GLOBAL_LIST_EMPTY(stat_template_census_rows)
 		log_world("STAT TEMPLATE CENSUS: [key]: [type_row[1]] instance(s), [round(type_row[2], 0.1)]%")
 		if(++shown >= 25)
 			break
+
+// ---- per-type templates of the init computes (stat_templates.md) ----
+
+/// type -> the values its template-eligible instances end their init computes with, parallel to the type's init_todo.
+GLOBAL_LIST_EMPTY(stat_templates)
+/// Instances whose init computes a template served.
+GLOBAL_VAR_INIT(stat_templates_served, 0)
+#if defined(UNIT_TESTS)
+/// type -> how many of its instances computed both ways (the parity check).
+GLOBAL_LIST_EMPTY(stat_template_checked)
+#endif
+
+/// TRUE when E's init computes may be served by its type's template: the type reads nothing outside the instance, every stat it computes is a plain
+/// var of a fast rule, the instance holds nothing yet and every input var is at the type's default.
+/proc/stat_template_instance_ok(datum/E, datum/stat_type_info/I, datum/stat_record/rec, list/todo)
+	if(rec.holds || rec.by_stat || rec.virtual || !stat_template_type_eligible(I) || !stat_template_defs_ok(I, todo))
+		return FALSE
+	for(var/key in I.inputs)
+		if(!istext(key) || !(key in E.vars))
+			return FALSE
+		var/value = E.vars[key]
+		if(value != initial(E.vars[key]) || islist(value))
+			return FALSE
+	return TRUE
+
+/// TRUE when every stat of `todo` is computed by a fast rule (no formula, no keyed stat, no status), so the template is the values it ends with.
+/proc/stat_template_defs_ok(datum/stat_type_info/I, list/todo)
+	var/static/list/verdicts = list()
+	var/known = verdicts[I.owner_type]
+	if(!isnull(known))
+		return known
+	. = length(todo) > 0
+	for(var/datum/stat_def/def as anything in todo)
+		if(!def.fast || def.is_formula || def.keyed || def.units || def.id == STAT_RELEVANCE || def.id == STAT_SUSPENDED || def.id == STAT_CLOCK_RATE_BIO)
+			. = FALSE
+			break
+	verdicts[I.owner_type] = .
+
+/// The values E's stats of `todo` hold now, in order: a var's value, or a virtual stat's stored value (STAT_TEMPLATE_UNSTORED when none was stored).
+/// Null when one is a list (the type is not templated).
+/proc/stat_template_values(datum/E, datum/stat_type_info/I, list/todo)
+	. = list()
+	var/list/virtual = E.rx?.stats?.virtual
+	for(var/datum/stat_def/def as anything in todo)
+		var/value
+		if(I.has_var[def.skey])
+			value = E.vars[def.name]
+		else
+			value = (virtual && (def.skey in virtual)) ? virtual[def.skey] : STAT_TEMPLATE_UNSTORED
+		if(islist(value))
+			return null
+		. += value

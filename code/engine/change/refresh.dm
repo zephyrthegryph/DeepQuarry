@@ -1198,8 +1198,6 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 
 /// TRUE: an atom's writes between its Initialize() and its birth are noted, not published (state_changed()). The parity test runs both ways.
 GLOBAL_VAR_INIT(silent_construction, TRUE)
-/// atom handle -> the var names it wrote under construction that something may read (an alist; a handle may be a number). Published at its birth.
-GLOBAL_ALIST_EMPTY(construction_writes)
 /// Writes noted under construction, and the vars their births published (the boot bench reads both).
 GLOBAL_VAR_INIT(construction_writes_noted, 0)
 GLOBAL_VAR_INIT(construction_writes_published, 0)
@@ -1212,67 +1210,76 @@ GLOBAL_VAR_INIT(construction_writes_published, 0)
 		refresh_mark(A, DEP_ALL)
 	if(!var_name || !plan_reader_bits(var_name, A.type))
 		return
-	var/handle = handle_of(A)
 	A.datum_flags |= DF_CONSTRUCT_NOTED
-	var/list/vars_of = GLOB.construction_writes[handle]
+	// On the atom's own rx state (key "self"): nothing is keyed by a handle, so construction gives the atom no slot.
+	var/datum/rx_state/S = rx_of(A)
+	if(!S.construction_held)
+		S.construction_held = list()
+	var/list/vars_of = S.construction_held["self"]
 	if(!vars_of)
 		vars_of = list()
-		GLOB.construction_writes[handle] = vars_of
+		S.construction_held["self"] = vars_of
 	vars_of[var_name] = TRUE
 
-/// The atom under construction that holds E (through its owner chain, or the datum an rx state belongs to), or null.
+/// The atom under construction that holds E, or null: the atom whose Initialize() is running (or one an inner init interrupted) for its rx state; the
+/// owner its stamp names for a record it owns directly in a var of its own. Nothing here makes a slot: a record a holder drops without a qdel must
+/// not be kept alive by the slot table, and a fresh holder keeps no slot until something names it.
 /proc/construction_owner(datum/E)
-	var/datum/D = E
-	for(var/depth in 1 to 4)
-		var/up
-		if(istype(D, /datum/rx_state))
-			var/datum/rx_state/S = D
-			up = S.rx_holder_slot
-		else
-			up = D.own_holder_ref
-		if(!up)
-			return null
-		D = slot_datum(up)
-		if(!D)
-			return null
-		if(isatom(D))
-			var/atom/A = D
-			return (A.datum_flags & DF_CONSTRUCTING) ? A : null
-	return null
+	if(istype(E, /datum/rx_state))
+		var/atom/A = GLOB.atom_initializing
+		if(A?.rx == E && (A.datum_flags & DF_CONSTRUCTING))
+			return A
+		for(var/atom/outer as anything in GLOB.atoms_init_outer)
+			if(outer.rx == E && (outer.datum_flags & DF_CONSTRUCTING))
+				return outer
+		return null
+	var/datum/H = slot_datum(E.own_holder_ref) // the owner already has its slot: the stamp is one
+	if(!isatom(H))
+		return null
+	var/atom/holder = H
+	if(!(holder.datum_flags & DF_CONSTRUCTING) || !(E.own_slot in holder.vars) || holder.vars[E.own_slot] != E)
+		return null // a member of an owned list, or a stale stamp: published as any write is
+	return holder
 
-/// atom handle -> held datum handle -> var names written under the atom's construction (construction_birth() publishes them).
-GLOBAL_ALIST_EMPTY(construction_held_writes)
+/// The key of E among the records atom A holds: "rx" for its rx state, else the var of A that holds it.
+#define CONSTRUCTION_HELD_KEY(E) (istype(E, /datum/rx_state) ? "rx" : E.own_slot)
 
-/// Notes var_name of E, a record atom A holds, for A's birth.
+/// Notes var_name of E, a record atom A holds, for A's birth: on A's own rx state (held key -> var names), so nothing is keyed by a handle.
 /proc/construction_note_held(atom/A, datum/E, var_name)
 	GLOB.construction_writes_noted++
 	if(!var_name || !plan_reader_bits(var_name, E.type))
 		return
 	A.datum_flags |= DF_CONSTRUCT_NOTED
-	var/handle = handle_of(A)
-	var/alist/held = GLOB.construction_held_writes[handle]
-	if(!held)
-		held = alist()
-		GLOB.construction_held_writes[handle] = held
-	var/list/vars_of = held[handle_of(E)]
+	var/datum/rx_state/S = rx_of(A)
+	if(!S.construction_held)
+		S.construction_held = list()
+	var/key = CONSTRUCTION_HELD_KEY(E)
+	var/list/vars_of = S.construction_held[key]
 	if(!vars_of)
 		vars_of = list()
-		held[handle_of(E)] = vars_of
+		S.construction_held[key] = vars_of
 	vars_of[var_name] = TRUE
 
 /// Publishes once each var of a record A holds that was written under A's construction and that a reader follows.
-/proc/construction_birth_held(atom/A, handle)
-	var/alist/held = GLOB.construction_held_writes[handle]
+/proc/construction_birth_held(atom/A)
+	var/datum/rx_state/S = A.rx
+	var/list/held = S?.construction_held
 	if(!held)
 		return
-	GLOB.construction_held_writes -= handle
+	S.construction_held = null
 	if(QDELETED(A))
 		return
-	for(var/held_handle, vars_of in held)
-		var/datum/E = handle_get(held_handle)
-		if(!E || QDELETED(E))
+	for(var/key in held)
+		var/datum/E
+		if(key == "self")
+			E = A
+		else if(key == "rx")
+			E = A.rx
+		else if(key in A.vars)
+			E = A.vars[key]
+		if(!isdatum(E) || QDELETED(E))
 			continue
-		var/list/names = vars_of
+		var/list/names = held[key]
 		for(var/var_name in names)
 			var/bits = plan_reader_bits(var_name, E.type)
 			if(rx_readers(E, var_name, bits))
@@ -1291,20 +1298,7 @@ GLOBAL_ALIST_EMPTY(construction_held_writes)
 	A.datum_flags &= ~(DF_CONSTRUCTING | DF_CONSTRUCT_NOTED)
 	if(A.refresh_queued & DEP_PARKED)
 		interest_settle(A)
-	var/handle = handle_of(A)
-	if(GLOB.construction_held_writes[handle])
-		construction_birth_held(A, handle)
-	var/list/vars_of = GLOB.construction_writes[handle]
-	if(!vars_of)
-		return
-	GLOB.construction_writes -= handle
-	if(QDELETED(A))
-		return
-	for(var/var_name in vars_of)
-		var/bits = plan_reader_bits(var_name, A.type)
-		if(rx_readers(A, var_name, bits))
-			publish_change(A, var_name, bits) // pends the on_change hooks that read it: they fire at the drain as before (census: 31 rely on it)
-			GLOB.construction_writes_published++
+	construction_birth_held(A) // its own writes ("self") and those of the records it holds, each published once
 
 // ---- the hook-firing census of construction writes (debug tracing; -params bench_construction_census=1 with silent_construction off) ----
 
