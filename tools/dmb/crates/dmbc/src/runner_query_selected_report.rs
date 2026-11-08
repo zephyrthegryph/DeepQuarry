@@ -288,6 +288,7 @@ struct ReportStage<'a> {
     selected: &'a [&'a str],
     failed: SectionFailures,
     authored_doc_ui: bool,
+    ordinary_fold_sys: bool,
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
@@ -409,7 +410,7 @@ impl ReportStage<'_> {
                     (Fold::Api, Data::Api(_)) |
                     (Fold::Fields, Data::Fields(_)) |
                     (Fold::Appearance, Data::Appearance(_)));
-                if self.selected != Roster::WithWorkspaceFoldPolicies.names()
+                if (self.selected != Roster::WithWorkspaceFoldPolicies.names() && !self.ordinary_fold_sys)
                     || !compatible || !std::ptr::eq(meta, policy.metadata())
                     || !matches!(meta.policy, Policy::Hard)
                 {
@@ -581,7 +582,7 @@ impl ReportStage<'_> {
                     "system_boundary" => dq_analyze::captured_system_boundary_pages::metadata(),
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued Sys source policy")),
                 };
-                if self.selected != Roster::WithSysSourcePolicies.names()
+                if (self.selected != Roster::WithSysSourcePolicies.names() && !self.ordinary_fold_sys)
                     || !std::ptr::eq(meta, expected) || !matches!(meta.policy, Policy::Hard)
                     || sites.len() != source_text.len()
                 {
@@ -832,7 +833,7 @@ impl super::super::RawWorkspaceSnapshot {
         let mut usage = UsageJoinData::new(&selection, frame);
         let mut stage = ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            authored_doc_ui: false, judgment: JudgmentV2::Raw, library_baseline: None,
+            authored_doc_ui: false, ordinary_fold_sys: false, judgment: JudgmentV2::Raw, library_baseline: None,
         };
         for &name in selected {
             let policy_started = std::time::Instant::now();
@@ -906,7 +907,7 @@ impl SourceSnapshot {
     ) -> io::Result<(bool, Verified)> {
         self.stage_selected_report_using(prepared, exclusions, retained, root,
             plan.roster().names(), plan.questions(), plan.judgment,
-            plan.needs_library_sites_baseline(), plan.requires_handlers(), handlers, file)
+            plan.needs_library_sites_baseline(), plan.requires_handlers(), handlers, file, false)
     }
 
     /// Private until the exact report cohort has an independently qualified wire identity.
@@ -916,7 +917,7 @@ impl SourceSnapshot {
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
         self.stage_selected_report_using(prepared, exclusions, retained, root,
-            PRIVATE_IMAGE_DIR_ROSTER, &[Q::ImageDir], JudgmentV2::Raw, false, false, None, file)
+            PRIVATE_IMAGE_DIR_ROSTER, &[Q::ImageDir], JudgmentV2::Raw, false, false, None, file, false)
     }
 
     #[cfg(test)]
@@ -931,7 +932,7 @@ impl SourceSnapshot {
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
             PRIVATE_MAP_AND_LAYERING, Q::SELECTED_MAP_AND_LAYERING,
-            JudgmentV2::Raw, false, false, None, file)
+            JudgmentV2::Raw, false, false, None, file, false)
     }
 
     #[cfg(test)]
@@ -948,7 +949,7 @@ impl SourceSnapshot {
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
             PRIVATE_AUTHORED_DOC_UI, Q::PRIVATE_AUTHORED_DOC_UI,
-            JudgmentV2::Raw, false, false, None, file)
+            JudgmentV2::Raw, false, false, None, file, false)
     }
 
     #[cfg(test)]
@@ -971,7 +972,7 @@ impl SourceSnapshot {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "reactive/raw report capture differs"));
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
-            PRIVATE_REACTIVE_RAW_UNION, questions, JudgmentV2::Raw, false, false, None, file)
+            PRIVATE_REACTIVE_RAW_UNION, questions, JudgmentV2::Raw, false, false, None, file, false)
     }
 
     #[cfg(test)]
@@ -979,7 +980,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false, false)
     }
 
     #[cfg(test)]
@@ -987,21 +988,32 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, false)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_extended_authored_with_ordinary_sources(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true)
     }
 
     #[cfg(test)]
     fn stage_private_extended_union(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
-        root: &Path, file: Stage, mixed: bool,
+        root: &Path, file: Stage, mixed: bool, ordinary_fold_sys: bool,
     ) -> io::Result<(bool, Verified)> {
         let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
         let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
         let raw = Roster::AllRawFilePolicies.names();
         let extra = if mixed { PRIVATE_AUTHORED_DOC_UI } else { &[] };
+        let fold = if ordinary_fold_sys { Roster::WithWorkspaceFoldPolicies.names() } else { &[] };
+        let sys = if ordinary_fold_sys { Roster::WithSysSourcePolicies.names() } else { &[] };
+        let qualified = || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).chain(fold).chain(sys);
         let selected = selection.names();
-        if selected.iter().any(|name| !raw.contains(&name.as_str()) && !PRIVATE_REACTIVE_RAW_UNION.contains(&name.as_str()) && !extra.contains(&name.as_str()))
-            || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).any(|&name| !selected.iter().any(|actual| actual == name))
+        if selected.iter().any(|name| !qualified().any(|&actual| name == actual))
+            || qualified().any(|&name| !selected.iter().any(|actual| actual == name))
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "extended reactive/raw report needs its exact registered union"));
         }
@@ -1033,14 +1045,14 @@ impl SourceSnapshot {
             order.push(name.as_str());
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
-            &order, questions, JudgmentV2::Raw, false, false, None, file)
+            &order, questions, JudgmentV2::Raw, false, false, None, file, ordinary_fold_sys)
     }
 
     fn stage_selected_report_using(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, selected: &[&str], questions: &[Q], judgment: JudgmentV2,
         needs_library_sites_baseline: bool, requires_handlers: bool,
-        handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage,
+        handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
     ) -> io::Result<(bool, Verified)> {
         use crate::request::BuildOutcome;
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
@@ -1050,6 +1062,7 @@ impl SourceSnapshot {
         let workspace = self.native_workspace.as_ref().ok_or_else(|| io::Error::other("selected report has no actual workspace"))?;
         if workspace.root() != root || workspace.configuration().1.is_none()
             || !workspace.matches_auxiliary_questions(questions)
+            || ordinary_fold_sys && !workspace.has_extended_authored_doc_ui_capture()
             || handlers.is_some() != requires_handlers
             || pin(semantic_revision) != Some(self.tree.identity()) || pin(source_revision) != Some(self.source_revision)
             || pin(policy_revision) != Some(workspace.policy_revision()) {
@@ -1061,7 +1074,7 @@ impl SourceSnapshot {
         } else { None };
         let stage = RefCell::new(ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            authored_doc_ui: workspace.has_authored_doc_ui_capture(), judgment, library_baseline,
+            authored_doc_ui: workspace.has_authored_doc_ui_capture(), ordinary_fold_sys, judgment, library_baseline,
         });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
@@ -1182,6 +1195,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         selected: &["image_dir_after_build"],
         failed: SectionFailures::new(1, budget)?,
         authored_doc_ui: false,
+        ordinary_fold_sys: false,
         judgment: JudgmentV2::Raw,
         library_baseline: None,
     };

@@ -578,6 +578,10 @@ fn private_62_policies_share_authored_mixed_and_extended_raw_discovery() {
         ("code/engine/probe.dm", "/proc/engine_probe()\n    library_probe()\n"),
         ("code/library/probe.dm", "/proc/library_probe()\n    downstream_probe()\n"),
         ("code/content/probe.dm", "/proc/downstream_probe()\n    return\n"),
+        ("code/ordinary-policies.dm", concat!(
+            "/proc/fold_probe()\n    om_set_var(src,x,1)\n",
+            "/obj/ordinary_probe\n\tvar/cached_charge\n",
+        )),
         ("code/main.dm", "/obj/machine\n    tgui_id = \"Machine\"\n/obj/machine/proc/act_go(mob/user, value)\n    return value\n"),
         ("interface/verb.dm", "/obj/probe/verb/legacy()\n    set category = \"Raw\"\n"),
         ("modular_chomp/.legacy.dm", "/obj/probe/proc/set_broken()\n    return\n"),
@@ -614,6 +618,13 @@ fn private_62_policies_share_authored_mixed_and_extended_raw_discovery() {
         .filter(|name| !raw.contains(&name.as_str()) && !reactive.contains(&name.as_str()) && !mixed.contains(&name.as_str()))
         .map(|name| format!("-{name}")).collect();
     assert_eq!(registry.names().len() - exclusions.len(), 62);
+    let fold = dq_analyze::selected_exclusions_wire::Roster::WithWorkspaceFoldPolicies.names();
+    let sys = dq_analyze::selected_exclusions_wire::Roster::WithSysSourcePolicies.names();
+    let ordinary_exclusions: Vec<_> = registry.names().iter()
+        .filter(|name| exclusions.iter().any(|excluded| excluded.strip_prefix('-') == Some(name.as_str()))
+            && !fold.contains(&name.as_str()) && !sys.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    assert_eq!(registry.names().len() - ordinary_exclusions.len(), 83);
     let cache = crate::test_scratch::dir("private-62-authored-raw-mixed");
     let four_exclusions: Vec<_> = registry.names().iter()
         .filter(|name| !raw.contains(&name.as_str()) && !reactive.contains(&name.as_str()))
@@ -665,4 +676,25 @@ fn private_62_policies_share_authored_mixed_and_extended_raw_discovery() {
     }
     assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
     require_private_reactive_raw_legacy(&root, &exclusions, clean, &report);
+
+    let (clean, ordinary_report) = current(&host, |snapshot| {
+        let stage = || crate::selected_report_spool::Stage::new(&cache).unwrap();
+        assert!(snapshot.stage_private_extended_authored_with_ordinary_sources(
+            &prepared, &exclusions, &budget, &root, stage(),
+        ).is_err(), "62 exclusions cannot authorize the 83-policy roster");
+        let (clean, verified) = snapshot.stage_private_extended_authored_with_ordinary_sources(
+            &prepared, &ordinary_exclusions, &budget, &root, stage(),
+        ).unwrap();
+        let mut output = Vec::new();
+        verified.publish(&mut output).unwrap();
+        (clean, String::from_utf8(output).unwrap())
+    });
+    assert!(!clean);
+    assert!(ordinary_report.contains("code/ordinary-policies.dm:2: [api/vars_helpers]"), "{ordinary_report}");
+    assert!(ordinary_report.contains("code/ordinary-policies.dm:4: [sys/hygiene/cached_var]"), "{ordinary_report}");
+    for marker in ["[map_edits/unknown_var]", "[reads/dynamic_read]", "[ui_actions/ui_unvalidated_param]"] {
+        assert!(ordinary_report.contains(marker), "missing {marker}: {ordinary_report}");
+    }
+    assert_eq!(ordinary_report.matches("allow annotations: 1 unused").count(), 1, "{ordinary_report}");
+    require_private_reactive_raw_legacy(&root, &ordinary_exclusions, clean, &ordinary_report);
 }
