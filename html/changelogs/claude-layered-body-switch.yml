@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - admin: "Added Toggle Layered Human Bodies and Spawn Look Test Crowd debug verbs to compare client cost of human looks."

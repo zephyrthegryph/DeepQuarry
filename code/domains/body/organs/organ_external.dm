@@ -1400,7 +1400,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if(!R || (data.get_species_name() in R.species_cannot_use))
 			R = GLOB.basic_robolimb
 		if(R)
-			force_icon = R.icon
+			set_force_icon(R.icon)
 			brute_mod *= R.robo_brute_mod
 			burn_mod *= R.robo_burn_mod
 			skip_robo_icon = R.no_icon

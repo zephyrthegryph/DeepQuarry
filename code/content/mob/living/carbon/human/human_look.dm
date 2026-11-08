@@ -162,6 +162,8 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/list/key_result = body_icon_key(look)
 	var/icon_key = "[key_result[1]][husk ? 1 : 0][fat ? 1 : 0][hulk ? 1 : 0][skeleton ? 1 : 0]"
 	var/template = species.icon_template ? species.icon_template : 'icons/mob/human.dmi'
+	if(look_layered && can_layer_body(husk, hulk, skeleton))
+		return human_look_icon("layered_body|[template]|[icon_key]", "build_layered_body_look", template)
 	return human_look_icon("body|[template]|[icon_key]", "build_body_look", template, key_result[2], husk, hulk, skeleton)
 
 /mob/living/carbon/human/proc/build_body_look(template, wholeicontransparent, husk, hulk, skeleton)

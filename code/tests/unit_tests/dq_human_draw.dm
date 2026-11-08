@@ -136,3 +136,18 @@
 	TEST_ASSERT(dq_hd_picture(H) != unhurt, "and the drawn human shows it")
 	H.fully_heal()
 	TEST_ASSERT(!H.look_layers()[MOB_DAM_LAYER], "healing takes the overlay off")
+
+/// The layered body is off by default, and when on the body is one blank image carrying the limbs as overlays.
+/datum/unit_test/dq_human_draw_layered_body
+
+/datum/unit_test/dq_human_draw_layered_body/Run()
+	var/mob/living/carbon/human/H = dq_hd_body(list(), "layered")
+	TEST_ASSERT(!GLOB.human_look_layered && !H.look_layered, "layered bodies are off by default")
+	H.set_look_layered(TRUE)
+	var/list/body = H.body_look(new /datum/look)
+	H.set_look_layered(FALSE)
+	var/image/layered = body[2]
+	TEST_ASSERT(length(layered.overlays) >= 5, "the limbs are overlays of the body image")
+	var/list/composed = H.body_look(new /datum/look)
+	var/image/flat = composed[2]
+	TEST_ASSERT_EQUAL(length(flat.overlays), 0, "the composed body is one icon")
