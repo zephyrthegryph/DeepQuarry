@@ -540,6 +540,8 @@
 		"writes_preinit" = GLOB.state_changed_preinit_skipped,
 		"relation_writes_spared" = GLOB.own_field_memo_spared,
 		"relation_writes_full_path" = GLOB.own_field_full_paths,
+		"construction_writes_noted" = GLOB.construction_writes_noted,
+		"construction_writes_published" = GLOB.construction_writes_published,
 		"ctor_plans_built" = ctor_plans_built,
 		"stat_evals" = GLOB.stat_evals,
 		"stat_read_computes" = GLOB.stat_read_computes,

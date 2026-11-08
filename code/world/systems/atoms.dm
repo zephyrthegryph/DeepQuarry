@@ -84,6 +84,10 @@ SYSTEM_DEF(atoms)
 	log_world("Atoms boot: own_validate_boot took [(REALTIMEOFDAY - atoms_phase_start) / 10]s.")
 
 /datum/system/atoms/proc/InitializeAtoms(list/atoms, list/atoms_to_return)
+	// -params bench_construction_census=1: the hook-firing census of construction writes, with construction publishing as before (refresh.dm).
+	if(!GLOB.construction_census && text2num(world.params?["bench_construction_census"]))
+		GLOB.construction_census = TRUE
+		GLOB.silent_construction = FALSE
 	var/list/run = initialize_atoms_begin(atoms_to_return)
 	if(!run)
 		return

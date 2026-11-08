@@ -14,6 +14,7 @@
 	// The type's construction plan (code/engine/declare/ctor_plan.dm): one lookup for the per-type facts every step below asks. Null while it cannot be
 	// built yet, and then each step asks its own table as before.
 	var/plan = ctor_plan_of(A)
+	A.datum_flags |= DF_CONSTRUCTING // under construction until its birth below, after its setup() rows (silent construction, E3)
 	if((plan ? (plan & CTOR_RESOLVER) : GLOB.map_resolvers[the_type]) && map_resolve_instance(A))
 		return TRUE
 
@@ -103,6 +104,7 @@
 		else
 			setup_pending -= A
 	BOOT_PHASE_END(bp_setup, "InitAtom: setup_run" + BOOT_KIND(A), A)
+	construction_birth(A) // silent construction ends: what it wrote is published once, its on_change baselines taken (code/engine/change/refresh.dm)
 
 	// param(keep = FALSE) values are for Initialize() and the type's setup() (a statue's setup reads the mob it copies); they go once both ran
 	// (code/engine/lifeforms/params.dm).

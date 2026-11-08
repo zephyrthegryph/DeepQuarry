@@ -13,7 +13,6 @@ import { setupHotReloading } from 'tgui-dev-server/link/client';
 import { App } from './app';
 import { bus } from './events/listeners';
 import { store } from './events/store';
-import { layoutModeAtom } from './layout/atoms';
 import { fitChatBrowser } from './layout/geometry';
 import { setupPanelFocusHacks } from './panelFocus';
 
@@ -55,8 +54,7 @@ function setupApp() {
   // again after a second while the pane lays out; the server's chat/layout
   // message fits it again whenever the pane moves. Once the browser matches
   // the pane, its 0,0-100,100 anchors track every later resize.
-  const fill = (reason: string) =>
-    fitChatBrowser(store.get(layoutModeAtom), reason);
+  const fill = (reason: string) => fitChatBrowser(reason);
   fill('start');
   setTimeout(() => fill('start-settled'), 1000);
 

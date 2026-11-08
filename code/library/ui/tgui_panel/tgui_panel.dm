@@ -85,6 +85,10 @@ CAPABILITIES(/datum/tgui_panel)
  * Callback for handling incoming tgui messages.
  */
 /datum/tgui_panel/proc/on_message(type, payload, href_list)
+	if(type == "col/msg")
+		// A message from one of the column page's windows (the stat panel, a docked interface): to that window (column_part.dm).
+		column_message(payload)
+		return TRUE
 	if(type == "ready")
 		broken = FALSE
 		var/list/stored_rounds = CONFIG_GET(flag/chatlog_database_backend) ? vchatlog_get_recent_roundids(client().ckey) : null
@@ -111,6 +115,8 @@ CAPABILITIES(/datum/tgui_panel)
 				),
 			),
 		))
+		// A (re)loaded column page holds no windows: its arrangement and every column window go to it again (column_part.dm).
+		column_page_loaded()
 		// The page is up, so the chat pane can move to where the preference wants it without interrupting the load.
 		client()?.chat_layout_sync()
 		client()?.chat_send_input_state()
@@ -118,18 +124,9 @@ CAPABILITIES(/datum/tgui_panel)
 	// The chat input row: speech, typing bubbles and the live preview's rules (code/content/client/chat_speech.dm).
 	if(client()?.chat_speech_message(type, payload, href_list))
 		return TRUE
-	// The chat page pins, floats or resizes the chat pane.
-	if(type == "layout/pin")
-		client()?.chat_pin(payload?["mode"], payload?["via"], islist(payload?["at"]) ? payload["at"] : null, payload?["share"])
-		return TRUE
-	if(type == "layout/preview")
-		client()?.chat_dock_preview(payload?["side"], payload?["share"])
-		return TRUE
+	// The column page's left edge drags the map/column split.
 	if(type == "layout/mapsplit")
 		client()?.map_split_report(payload?["split"])
-		return TRUE
-	if(type == "layout/share")
-		client()?.chat_report_share(payload?["share"])
 		return TRUE
 	if(type == "audio/setAdminMusicVolume")
 		client().admin_music_volume = payload["volume"]

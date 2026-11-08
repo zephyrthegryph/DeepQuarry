@@ -16,14 +16,6 @@ import { useChatScanlines } from './consoleScanlines';
 import { gameAtom } from './game/atoms';
 import { useKeepAlive } from './game/use-keep-alive';
 import { ChatInput } from './input/ChatInput';
-import { layoutModeAtom } from './layout/atoms';
-import {
-  ChatPinHint,
-  ChatResizeHandles,
-  ChatSplitHandles,
-  useChatDrag,
-  useShareReport,
-} from './layout/ChatLayout';
 import { PingIndicator } from './ping/PingIndicator';
 import { useAutoReconnect } from './reconnect';
 import { settingsVisibleAtom } from './settings/atoms';
@@ -39,19 +31,14 @@ export function Panel(props) {
   useAutoReconnect(!!game.connectionLostAt || !!game.roundRestartedAt);
   useChatScanlines();
   useKeepAlive();
-  useShareReport();
-  const floating = useAtomValue(layoutModeAtom) === 'float';
-  const drag = useChatDrag();
 
   return (
-    <Pane
-      canSuspend={false}
-      className={floating ? 'ChatConsole ChatConsole--float' : 'ChatConsole'}
-    >
+    // The chat is a window of the right-hand column (column/Column.tsx): the column frames, moves and sizes it.
+    <Pane canSuspend={false} className="ChatConsole">
       <Stack fill vertical>
         <Stack.Item>
           <Section fitted>
-            <div className="ChatDragRow" onPointerDown={drag.onPointerDown}>
+            <div className="ChatDragRow">
               <ChatTabs>
                 <PingIndicator />
                 <Button
@@ -98,9 +85,6 @@ export function Panel(props) {
           <ChatInput />
         </Stack.Item>
       </Stack>
-      {floating && <ChatPinHint hint={drag.hint} />}
-      {floating && <ChatResizeHandles />}
-      <ChatSplitHandles />
     </Pane>
   );
 }
