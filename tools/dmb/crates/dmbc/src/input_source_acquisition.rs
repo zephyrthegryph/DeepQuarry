@@ -252,12 +252,33 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             return Err(invalid("Original bytes lack a genuine recorded read receipt"));
         };
         let current=if receipt.exact_open{
-            self.validate_exact_byte_loan(receipt)
+            self.exact_byte_loan_epoch(receipt).is_some()
         }else{
             self.validate_recorded_source_receipt(receipt.path(),receipt)
         };
         if !current{return Err(invalid("Original byte lease differs from current issuer/path/input facts"))}
         match recorded_source_original_with_receipt(lease,receipt)?{RecordedSourceOriginal::Utf8(text)=>Ok(text.as_bytes()),RecordedSourceOriginal::Bytes(bytes)=>Ok(bytes.as_slice())}
+    }
+    pub(super) fn original_geometry_byte_loan<'a>(
+        &'a self, lease: &'a dm_preprocess::SourceAcquisitionLease,
+    ) -> io::Result<dm_preprocess::OriginalGeometryByteLoan<'a>> {
+        use dm_preprocess::OriginalGeometryByteLoan as Loan;
+        let Some(receipt) = lease.receipt::<RecordedSourceReceipt>().filter(|r| r.exact_open) else {
+            return self.original_bytes_checked(lease).map(Loan::ordinary);
+        };
+        if self.initial_environment != dm_preprocess::InitialEnvironment::OriginalChecker0290 {
+            return Err(invalid("Original bytes require its actual Original pipeline context"));
+        }
+        let epoch = self.exact_byte_loan_epoch(receipt)
+            .ok_or_else(|| invalid("Original byte lease differs from current issuer/path/input facts"))?;
+        let bytes = match recorded_source_original_with_receipt(lease, receipt)? {
+            RecordedSourceOriginal::Utf8(text) => text.as_bytes(),
+            RecordedSourceOriginal::Bytes(bytes) => bytes.as_slice(),
+        };
+        Ok(match std::num::NonZeroUsize::new(epoch) {
+            Some(epoch) => Loan::for_recorder_epoch(bytes, self.snapshot.published_epoch_flag(), epoch),
+            None => Loan::ordinary(bytes),
+        })
     }
     pub(super) fn refresh_source_acquisition(
         &self,
@@ -322,13 +343,15 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .is_some_and(|receipt|self.validate_recorded_source_receipt(path,receipt))
     }
     /// This is the self-path byte route. Explicit paths and reissues validate fully.
-    fn validate_exact_byte_loan(&self,receipt:&RecordedSourceReceipt)->bool{
-        if !receipt.exact_open||!Arc::ptr_eq(&receipt.issuer,&self.source_issuer){return false}
-        if self.snapshot.accepts_epoch(receipt.checked_epoch.load(Ordering::SeqCst)){return true}
-        let Ok(current)=self.snapshot.lock() else{return false};
-        if !Self::exact_receipt_matches(&current,receipt.path(),receipt){return false}
-        receipt.checked_epoch.store(current.epoch(),Ordering::SeqCst);
-        true
+    fn exact_byte_loan_epoch(&self, receipt: &RecordedSourceReceipt) -> Option<usize> {
+        if !receipt.exact_open || !Arc::ptr_eq(&receipt.issuer, &self.source_issuer) { return None; }
+        let checked = receipt.checked_epoch.load(Ordering::SeqCst);
+        if self.snapshot.accepts_epoch(checked) { return Some(checked); }
+        let current = self.snapshot.lock().ok()?;
+        if !Self::exact_receipt_matches(&current, receipt.path(), receipt) { return None; }
+        let checked = current.epoch();
+        receipt.checked_epoch.store(checked, Ordering::SeqCst);
+        Some(checked)
     }
 
     #[cfg(test)]

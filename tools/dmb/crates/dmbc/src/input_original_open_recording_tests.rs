@@ -115,12 +115,16 @@ fn exact_original_loan_requires_the_current_positive_facts_and_unpoisoned_record
     assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
     assert_eq!(counts.map(Cell::into_inner),[1,1,1,1]);
     assert!(input.exact_loan_is_warm(&lease));
+    let first_geometry = input.original_geometry_byte_loan(&lease).unwrap();
+    assert_eq!(first_geometry.bytes(), bytes);
+    assert!(first_geometry.same_current_epoch());
     let reissued=lease.reissued(());
     assert!(reissued.same_original_acquisition(&lease));
     assert!(input.original_source_bytes(&reissued).is_err(),"original text owner cannot reissue the private receipt");
     let counts=std::array::from_fn(|_|Cell::new(0));
     let Outcome::Acquired(later)=raw(&input,&path,&work,Decision::Read,&counts).unwrap()else{panic!("reopened actual source")};
     assert!(!input.exact_loan_is_warm(&lease),"mutable capture projection retires the prior proof");
+    assert!(!first_geometry.same_current_epoch());
     assert!(!input.exact_loan_is_warm(&later));
     assert_eq!(input.original_source_bytes(&later).unwrap().unwrap(),bytes);
     assert!(input.exact_loan_is_warm(&later));
@@ -133,6 +137,7 @@ fn exact_original_loan_requires_the_current_positive_facts_and_unpoisoned_record
     let Outcome::Acquired(other_lease)=raw(&other,&path,&work,Decision::Read,&counts).unwrap()else{panic!("second actual source")};
     assert_eq!(other.original_source_bytes(&other_lease).unwrap().unwrap(),bytes);
     assert!(other.original_source_bytes(&lease).is_err(),"equal current facts from another recorder grant nothing");
+    assert!(other.original_geometry_byte_loan(&lease).is_err());
 
     let observed=std::mem::take(&mut input.snapshot.lock().unwrap().opened_reads);
     assert!(!input.exact_loan_is_warm(&lease));
@@ -169,11 +174,15 @@ fn exact_original_loan_requires_the_current_positive_facts_and_unpoisoned_record
     assert!(input.original_source_bytes(&lease).is_err());
     input.snapshot.lock().unwrap().original_payloads=removed;
     assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
+    let before_poison = input.original_geometry_byte_loan(&lease).unwrap();
+    assert!(before_poison.same_current_epoch());
     let poisoned=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{
         let _locked=input.snapshot.lock().unwrap();
         panic!("deliberately poison the recorder for a loan control");
     }));
     assert!(poisoned.is_err());
+    assert!(!before_poison.same_current_epoch());
+    assert!(input.original_geometry_byte_loan(&lease).is_err());
     assert!(input.original_source_bytes(&lease).is_err());
 }
 

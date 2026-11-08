@@ -505,7 +505,7 @@ impl CompletedProducers {
     }
 }
 
-const PLAIN_PARAMETER_BANK_SLOTS: usize = 128;
+const PLAIN_PARAMETER_BANK_SLOTS: usize = 1024;
 struct PlainParameterBank {
     entries: Vec<Option<Arc<[dm_ir::Parameter]>>>,
     _credit: dm_syntax::SettingRootLease,
@@ -527,11 +527,12 @@ impl PlainParameterBank {
         if parameters.is_empty() || parameters.len()>8 { return None; }
         let mut hash=0xcbf29ce484222325u64;
         for row in parameters {
-            if row.declared_type.is_some() || row.list_element_type.is_some() || row.flags!=0
-                || row.array.is_some() || row.default.is_some() || row.input_annotation.is_some()
+            if row.array.is_some() || row.default.is_some() || row.input_annotation.is_some()
                 || row.source_expression.is_some()
             { return None; }
-            for value in [row.name.bits(),row.relative_span.start as u64,row.relative_span.end as u64] {
+            for value in [row.name.bits(), row.declared_type.map_or(0, |id| id.bits()),
+                row.list_element_type.map_or(0, |id| id.bits()), u64::from(row.flags),
+                row.relative_span.start as u64, row.relative_span.end as u64] {
                 hash=(hash^value).wrapping_mul(0x100000001b3);
             }
         }
@@ -2197,6 +2198,34 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   assert_eq!(rows.get(3).unwrap().retained_bytes,0);
   drop(actual);
   assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn default_free_typed_formals_share_only_exact_parameter_rows() {
+  let source:SourceText=concat!(
+   "/proc/first(datum/value)\n    return value\n",
+   "/proc/second(datum/value)\n    return value\n",
+   "/proc/different(obj/value)\n    return value\n",
+   "/proc/with_default(datum/value=null)\n    return value\n",
+   "/proc/also_default(datum/value=null)\n    return value\n",
+  ).into();
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+  let a=SettingAdmission::new(&used,1<<24,&||Ok(()));
+  let actual=parse_original_signatures_using(source,&a).unwrap();
+  assert!(actual.signature_failure.is_none()&&actual.signature_unsupported.is_none());
+  let rows=&actual.prepared.rows;
+  let core=|at| {
+   let SlotValue::Payload(payload)=rows.get(at).unwrap().slot.value()else{panic!("actual formal payload")};
+   rows.payload(payload).unwrap()
+  };
+  assert!(core(0).parameters[0].declared_type.is_some());
+  assert!(Arc::ptr_eq(&core(0).parameters,&core(1).parameters));
+  assert_ne!(core(0).parameters[0].declared_type,core(2).parameters[0].declared_type);
+  assert!(!Arc::ptr_eq(&core(0).parameters,&core(2).parameters));
+  assert!(core(3).parameters[0].default.is_some());
+  assert!(!Arc::ptr_eq(&core(3).parameters,&core(4).parameters));
+  drop(actual);
+  assert_eq!(used.load(Ordering::Acquire),root);
  }
  #[test]fn same_primary_signature_observer_moves_actual_products_without_second_formal_parse(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/first(value=1)\n    return value\n/proc/second(other=2)\n    return other\n".into();let before=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());let mut observer=OriginalSignatureObserver::new(&a).unwrap();let primary=dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source,&a,Some(&mut observer)).unwrap();let parsed=super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get());assert_eq!(parsed,before+2);let mut actual=observer.finish_primary(source.clone(),primary,None).unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);assert!(actual.source.same_view(&source));for header in actual.items.dense().iter().map(|item|item.header_span){actual.prepared.take(header,0,&actual.headers).unwrap();}actual.prepared.require_consumed().unwrap();assert_eq!(super::super::SIGNATURE_INTERPRETATIONS.with(|n|n.get()),parsed);drop(actual);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
 }

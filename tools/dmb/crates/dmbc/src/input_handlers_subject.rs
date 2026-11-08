@@ -466,6 +466,10 @@ impl HandlerPreparedCapture{
   drop(capture.inputs.take());
   drop(capture.prepared.frontend.take());
   if cfg!(debug_assertions)&&std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
+   match &rows {
+    Ok(_) => eprintln!("original handler partial structural rows sealed"),
+    Err(error) => eprintln!("original handler partial structural result deferred: {error:?}"),
+   }
    eprintln!("original handler partial detached archive_live={}",archive.as_ref().is_some_and(|archive|archive.strong_count()!=0));
   }
   capture.staged=Some(DetachedStructural{revision,rows:std::sync::Mutex::new(Some(rows))});

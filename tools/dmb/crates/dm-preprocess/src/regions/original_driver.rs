@@ -191,7 +191,7 @@ impl RawSourceDriver{
   let end=self.inputs.decoded_observed_end_using(&observed,a)?;
   Ok((observed.row().point,end))
  }
- pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>)->io::Result<super::original_raw_inputs::OriginalPhysicalRowObservation<'source>>{
+ pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>)->io::Result<super::original_raw_inputs::OriginalPhysicalRowObservation<'source>>{
   self.check(a)?;let result=self.inputs.observe_physical_row_using(origin,lease,provider,prior,a);if result.is_err(){self.failed=true}result
  }
 

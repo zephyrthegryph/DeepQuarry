@@ -372,12 +372,16 @@ impl OriginalPlanOwner{
   })?;
   let rows = if depth == 1 {
    match singleton.ok_or(io::ErrorKind::InvalidData)? {
-    PendingOriginalSingleton::Narrow(frame) if self.singleton_pages.prepare_using(a)? => {
-     // No individual Arc was allocated. Keep the old staged reservation
-     // through the actual source checks, then refund it before publishing.
-     a.shrink(&mut self.credit, TRACE_ARC_HEADER + mem::size_of::<NarrowOriginalMacroFrame>())
-      .map_err(|error| a.take_operational_error().unwrap_or(error))?;
-     self.singleton_pages.append(frame)
+    PendingOriginalSingleton::Narrow(frame) => {
+     if let Some(slot) = self.singleton_pages.prepare_using(&frame, a)? {
+      // No individual Arc was allocated. Keep the old staged reservation
+      // through the actual source checks, then refund it before publishing.
+      a.shrink(&mut self.credit, TRACE_ARC_HEADER + mem::size_of::<NarrowOriginalMacroFrame>())
+       .map_err(|error| a.take_operational_error().unwrap_or(error))?;
+      self.singleton_pages.append(frame, slot)
+     } else {
+      PendingOriginalSingleton::Narrow(frame).finish()
+     }
     }
     pending => pending.finish(),
    }

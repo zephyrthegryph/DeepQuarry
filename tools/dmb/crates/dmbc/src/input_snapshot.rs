@@ -412,6 +412,8 @@ mod recording_snapshot {
             self.inner.into_inner().map_err(|_| ())
         }
 
+        pub(super) fn published_epoch_flag(&self) -> &AtomicUsize { &self.published_epoch }
+
         pub(super) fn accepts_epoch(&self, checked: usize) -> bool {
             checked != 0 && self.published_epoch.load(Ordering::SeqCst) == checked
         }

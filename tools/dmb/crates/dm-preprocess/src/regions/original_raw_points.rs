@@ -43,6 +43,15 @@ impl LineStarts {
         }
     }
 
+    fn settle_using(&mut self, a: &SettingAdmission<'_>) -> io::Result<bool> {
+        const MINIMUM_SAVED_BYTES: usize = 16;
+        match self {
+            Self::Short(starts) => starts.shrink_slack_using(MINIMUM_SAVED_BYTES, a),
+            Self::Compact(starts) => starts.shrink_slack_using(MINIMUM_SAVED_BYTES, a),
+            Self::Wide(starts) => starts.shrink_slack_using(MINIMUM_SAVED_BYTES, a),
+        }
+    }
+
     fn at_or_before(&self, offset: usize) -> Option<(usize, usize)> {
         match self {
             Self::Short(starts) => actual_line_start(starts.as_slice(), offset, usize::from),
@@ -127,6 +136,15 @@ impl OriginalRawPointIndex{
   let (line,start)=self.starts.at_or_before(offset).ok_or(io::ErrorKind::InvalidData)?;
   Ok(OriginalRawPoint{line,column:offset-start+1})
  }
+ /// Called after the raw frame verifies genuine lexer EOF. All existing
+ /// points remain queryable and this path cannot scan or read bytes.
+ pub(super) fn settle_at_physical_end_using(&mut self, a: &SettingAdmission<'_>)->io::Result<()> {
+  // Preserve the generic provider's callback schedule.
+  if a.uses_bounded_physical_scan_checkpoints() {
+   self.starts.settle_using(a)?;
+  }
+  Ok(())
+ }
  pub(super) fn line_start(&self,line:usize)->Option<usize>{self.starts.get(line.checked_sub(1)?)}
 
  /// A repeated query over this exact byte view has no unissued scanning
@@ -170,6 +188,38 @@ impl OriginalRawPointIndex{
 }
 #[cfg(test)]mod tests{
  use super::*;use std::sync::{atomic::{Ordering}};
+ #[test]
+ fn physical_end_compaction_declines_quota_and_keeps_first_checkpoint_error() {
+     let bytes = b"a
+".repeat(17);
+     let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+     let used = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+     let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(())).with_bounded_physical_scan_checkpoints();
+     let mut index = OriginalRawPointIndex::new(&bytes, &a).unwrap();
+     index.at(&bytes, bytes.len(), &a).unwrap();
+     let before = used.load(Ordering::Acquire);
+     let low = SettingAdmission::new(&used, before + 18 * 2 - 1, &|| Ok(()))
+         .with_bounded_physical_scan_checkpoints();
+     index.settle_at_physical_end_using(&low).unwrap();
+     assert!(low.take_operational_error().is_none());
+     assert_eq!(used.load(Ordering::Acquire), before);
+     let stopped = || {
+         if used.load(Ordering::Acquire) > before {
+             Err(io::Error::from_raw_os_error(1450))
+         } else {
+             Ok(())
+         }
+     };
+     let stopping = SettingAdmission::new(&used, 1 << 20, &stopped)
+         .with_bounded_physical_scan_checkpoints();
+     assert_eq!(index.settle_at_physical_end_using(&stopping).unwrap_err().raw_os_error(), Some(1450));
+     assert_eq!(used.load(Ordering::Acquire), before);
+     assert_eq!(index.line_start(18), Some(bytes.len()));
+     index.settle_at_physical_end_using(&a).unwrap();
+     assert_eq!(used.load(Ordering::Acquire), root + 18 * 2);
+     assert_eq!(index.at(&bytes, 3, &a).unwrap(), OriginalRawPoint{line:2,column:2});
+ }
+
  #[test]fn actual_raw_point_roster_preserves_byte_columns_bom_crlf_backward_spans_and_eof_zero_column(){
   let bytes=b"\xef\xbb\xbf\xc3\xa9\r\nx\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut index=OriginalRawPointIndex::new(bytes,&a).unwrap();assert_eq!(index.at(bytes,3,&a).unwrap(),OriginalRawPoint{line:1,column:1});assert_eq!(index.at(bytes,4,&a).unwrap(),OriginalRawPoint{line:1,column:2});assert_eq!(index.at(bytes,7,&a).unwrap(),OriginalRawPoint{line:2,column:1});assert_eq!(index.at(bytes,5,&a).unwrap(),OriginalRawPoint{line:1,column:3});assert_eq!(index.notice(bytes,OriginalLexicalNoticePoint::eof(bytes.len()),&a).unwrap(),OriginalRawPoint{line:3,column:0});drop(index);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }

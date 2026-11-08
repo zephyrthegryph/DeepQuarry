@@ -20,14 +20,17 @@ fn failure(a:&SettingAdmission<'_>,kind:io::ErrorKind,message:&'static str)->io:
 pub(crate) fn empty_exact<T>(capacity:usize,a:&SettingAdmission<'_>)->io::Result<Vec<T>>{
     if capacity==0||std::mem::size_of::<T>()==0{return Ok(Vec::new())}
     let layout=std::alloc::Layout::array::<T>(capacity).map_err(|_|failure(a,io::ErrorKind::OutOfMemory,"macro storage layout overflow"))?;
-    // SAFETY: nonzero valid layout. A null Global allocation is returned as the
-    // first typed operational failure; no allocation is dereferenced on error.
-    let raw=unsafe{std::alloc::alloc(layout)};
-    let Some(raw)=std::ptr::NonNull::new(raw.cast::<T>()) else{return Err(failure(a,io::ErrorKind::OutOfMemory,"macro storage allocation denied"))};
-    // SAFETY: the pointer came from Global with EXACT Layout::array<T>(capacity),
-    // alignment is T's, length zero means no uninitialized T can be read/dropped,
-    // and Vec now uniquely owns/deallocates this allocation. No custom allocator.
-    Ok(unsafe{Vec::from_raw_parts(raw.as_ptr(),0,capacity)})
+    allocate_exact(layout, capacity)
+        .ok_or_else(|| failure(a, io::ErrorKind::OutOfMemory, "macro storage allocation denied"))
+}
+
+// Callers fund this exact nonzero array layout before allocating.
+fn allocate_exact<T>(layout: std::alloc::Layout, capacity: usize) -> Option<Vec<T>> {
+    // SAFETY: layout is the exact nonzero array layout for T and capacity.
+    let ptr = std::ptr::NonNull::new(unsafe { std::alloc::alloc(layout) }.cast::<T>())?;
+    // SAFETY: this uniquely owned Global allocation has T's alignment, no
+    // initialized elements, and exactly capacity slots.
+    Some(unsafe { Vec::from_raw_parts(ptr.as_ptr(), 0, capacity) })
 }
 
 pub(crate) struct MacroRows<T>{ rows:Vec<T>,root:SettingRootLease }
@@ -96,6 +99,30 @@ impl<T> MacroRows<T>{
         self.rows.insert(index,value);
         Ok(())
     }
+    /// Release unused capacity only if the real overlap can be admitted.
+    pub(crate) fn shrink_slack_using(&mut self, minimum_saved: usize, a: &SettingAdmission<'_>) -> io::Result<bool> {
+        let width = std::mem::size_of::<T>();
+        let len = self.rows.len();
+        if len == 0 || width == 0 || (self.rows.capacity() - len) * width < minimum_saved {
+            return Ok(false);
+        }
+        if !a.matches_lease_domain(&self.root) {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
+        let layout = std::alloc::Layout::array::<T>(len).map_err(|_| io::ErrorKind::OutOfMemory)?;
+        let Some(root) = a.try_reserve_optimization(layout.size()).map_err(|error| actual(a, error))? else {
+            return Ok(false);
+        };
+        // Null means a declined optional optimization, with no operational
+        // error recorded. The original allocation and its lease remain live.
+        let Some(mut rows) = allocate_exact(layout, len) else { return Ok(false); };
+        a.checkpoint().map_err(|error| actual(a, error))?;
+        rows.append(&mut self.rows);
+        drop(std::mem::replace(&mut self.rows, rows));
+        self.root = root;
+        Ok(true)
+    }
+
     pub(crate) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.root)}
     pub(crate) fn into_parts(self)->(Vec<T>,SettingRootLease){(self.rows,self.root)}
 }

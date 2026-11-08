@@ -309,6 +309,9 @@ impl HeapCensus {
     }
     fn macro_traces(&mut self, owner: &str, trace: dm_preprocess::regions::MacroTraceView<'_>) {
         if let Some((address, bytes)) = trace.pooled_backing() {
+            if let Some((overflow, overflow_bytes)) = trace.pooled_overflow_backing() {
+                self.buffer(owner, overflow, overflow_bytes, overflow_bytes);
+            }
             if self.buffer(owner, address, bytes, bytes) {
                 trace.visit_pooled_authors(|buffers, definition| {
                     for (address, bytes) in buffers { self.buffer(owner, address, bytes, bytes); }

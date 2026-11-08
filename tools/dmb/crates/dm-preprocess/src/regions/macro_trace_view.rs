@@ -2,7 +2,7 @@
 //! of the same issued frame array, while native traces keep authored chains.
 use super::{DefinitionOrigin, MacroExpansion};
 use dm_syntax::{SettingAdmission, SettingRootLease, Span};
-use std::{cell::UnsafeCell, fmt, io, mem::{self, MaybeUninit}, sync::{Arc, atomic::{AtomicUsize, Ordering}}};
+use std::{cell::UnsafeCell, fmt, io, mem::{self, MaybeUninit}, sync::{Arc, OnceLock, atomic::{AtomicUsize, Ordering}}};
 
 /// Exact name and optional authored definition. An authored epoch and its
 /// projected frames share one owner; bootstrap names have no definition.
@@ -89,6 +89,7 @@ impl NarrowOriginalMacroFrame {
     }
 }
 
+#[derive(PartialEq, Eq)]
 pub(super) struct OriginalMacroFrameView<'a> {
     pub(super) invocation_span: Span,
     pub(super) author: &'a Arc<OriginalMacroAuthor>,
@@ -124,11 +125,30 @@ impl PendingOriginalSingleton {
 }
 
 const SINGLETON_PAGE_ROWS: usize = 64;
+const SINGLETON_PAGE_AUTHORS: usize = 15;
+const SINGLETON_OVERFLOW_AUTHORS: usize = SINGLETON_PAGE_ROWS - SINGLETON_PAGE_AUTHORS;
+type AuthorCell = UnsafeCell<MaybeUninit<Arc<OriginalMacroAuthor>>>;
+
+struct SingletonAuthorOverflow {
+    rows: [AuthorCell; SINGLETON_OVERFLOW_AUTHORS],
+    _credit: SettingRootLease,
+}
+// SAFETY: the only containing page publishes each cell once via its
+// author-prefix Release. No overflow handle is exposed to readers.
+unsafe impl Sync for SingletonAuthorOverflow {}
+impl SingletonAuthorOverflow {
+    const BYTES: usize = mem::size_of::<Self>() + 2 * mem::size_of::<usize>();
+}
+
 
 /// One exact allocation and independently escaping credit. The sole producer
 /// appends through its noncloneable pool; readers only see a published prefix.
 pub(super) struct SingletonTracePage {
-    rows: [UnsafeCell<MaybeUninit<NarrowOriginalMacroFrame>>; SINGLETON_PAGE_ROWS],
+    spans: [UnsafeCell<MaybeUninit<[u32; 2]>>; SINGLETON_PAGE_ROWS],
+    slots: [UnsafeCell<MaybeUninit<u8>>; SINGLETON_PAGE_ROWS],
+    authors: [AuthorCell; SINGLETON_PAGE_AUTHORS],
+    overflow: OnceLock<Arc<SingletonAuthorOverflow>>,
+    authors_issued: AtomicUsize,
     issued: AtomicUsize,
     // Author aliases drop before this page returns its storage credit.
     _credit: SettingRootLease,
@@ -145,11 +165,63 @@ impl SingletonTracePage {
 
     fn issued(&self) -> usize { self.issued.load(Ordering::Acquire) }
 
-    fn row(&self, at: usize) -> &NarrowOriginalMacroFrame {
+    fn author_slot(&self, author: &Arc<OriginalMacroAuthor>) -> Option<usize> {
+        let len = self.authors_issued.load(Ordering::Acquire);
+        (0..len).find(|&at| Arc::ptr_eq(self.author(at), author))
+            .or_else(|| (len < SINGLETON_PAGE_ROWS).then_some(len))
+    }
+
+    fn author(&self, at: usize) -> &Arc<OriginalMacroAuthor> {
+        assert!(at < self.authors_issued.load(Ordering::Acquire));
+        // SAFETY: the exact author prefix is published once and never moved.
+        unsafe { (&*self.author_cell(at).get()).assume_init_ref() }
+    }
+
+    fn author_cell(&self, at: usize) -> &AuthorCell {
+        if at < SINGLETON_PAGE_AUTHORS {
+            &self.authors[at]
+        } else {
+            &self.overflow.get().expect("funded singleton author overflow").rows[at - SINGLETON_PAGE_AUTHORS]
+        }
+    }
+
+    fn prepare_author_overflow(&self, a: &SettingAdmission<'_>) -> io::Result<bool> {
+        let Some(credit) = a.try_reserve_optimization(SingletonAuthorOverflow::BYTES)
+            .map_err(|error| a.take_operational_error().unwrap_or(error))? else { return Ok(false); };
+        let owner = Arc::new(SingletonAuthorOverflow {
+            rows: std::array::from_fn(|_| UnsafeCell::new(MaybeUninit::uninit())),
+            _credit: credit,
+        });
+        assert!(self.overflow.set(owner).is_ok(), "one exclusive singleton producer");
+        Ok(true)
+    }
+
+    fn overflow_backing(&self) -> Option<(usize, usize)> {
+        self.overflow.get().map(|owner| (Arc::as_ptr(owner) as usize, SingletonAuthorOverflow::BYTES))
+    }
+
+    fn row(&self, at: usize) -> OriginalMacroFrameView<'_> {
         assert!(at < self.issued());
-        // SAFETY: this Acquire observed initialization of this exact slot.
-        // The slot remains immutable and the borrow keeps the Arc payload live.
-        unsafe { (&*self.rows[at].get()).assume_init_ref() }
+        // SAFETY: the issued row Release follows both geometry/slot writes
+        // and publication of its immutable author.
+        let ([start, end], slot) = unsafe {
+            (*(&*self.spans[at].get()).assume_init_ref(),
+             *(&*self.slots[at].get()).assume_init_ref())
+        };
+        OriginalMacroFrameView {
+            invocation_span: Span::new(start as usize, end as usize),
+            author: self.author(usize::from(slot)),
+        }
+    }
+
+    fn row_address(&self, at: usize) -> usize {
+        assert!(at < self.issued());
+        self.spans[at].get() as usize
+    }
+
+    fn row_buffers(&self, at: usize) -> [(usize, usize); 2] {
+        [(self.row_address(at), mem::size_of::<[u32; 2]>()),
+         (self.slots[at].get() as usize, mem::size_of::<u8>())]
     }
 }
 impl fmt::Debug for SingletonTracePage {
@@ -159,11 +231,14 @@ impl fmt::Debug for SingletonTracePage {
 }
 impl Drop for SingletonTracePage {
     fn drop(&mut self) {
-        let issued = *self.issued.get_mut();
-        for row in &mut self.rows[..issued] {
-            // SAFETY: the last Arc owns the entire initialized prefix. Each
-            // initialized frame is dropped once before the page's lease.
-            unsafe { row.get_mut().assume_init_drop(); }
+        let issued = *self.authors_issued.get_mut();
+        for at in 0..issued {
+            // SAFETY: the last page owns the entire initialized author prefix,
+            // including the unaliased optional overflow allocation.
+            unsafe { (&mut *self.author_cell(at).get()).assume_init_drop(); }
+        }
+        if let Some(owner) = self.overflow.take() {
+            drop(Arc::into_inner(owner));
         }
     }
 }
@@ -191,39 +266,65 @@ pub(super) struct SingletonTracePool {
     current: Option<SingletonPageOwner>,
     #[cfg(debug_assertions)]
     pages_granted: usize,
+    #[cfg(debug_assertions)]
+    overflows_granted: usize,
 }
 impl SingletonTracePool {
     /// Called after actual definition validation. Pressure declines this
     /// optional page without replacing the established exact singleton route.
-    pub(super) fn prepare_using(&mut self, a: &SettingAdmission<'_>) -> io::Result<bool> {
+    pub(super) fn prepare_using(&mut self, frame: &NarrowOriginalMacroFrame, a: &SettingAdmission<'_>) -> io::Result<Option<usize>> {
         if let Some(page) = &self.current {
             if !a.matches_lease_domain(&page._credit) { return Err(io::ErrorKind::InvalidInput.into()); }
-            if page.issued() < SINGLETON_PAGE_ROWS { return Ok(true); }
+            if page.issued() < SINGLETON_PAGE_ROWS {
+                let slot = page.author_slot(&frame.author).expect("at most one author per issued row");
+                if slot >= SINGLETON_PAGE_AUTHORS && page.overflow.get().is_none() {
+                    if !page.prepare_author_overflow(a)? { return Ok(None); }
+                    #[cfg(debug_assertions)]
+                    { self.overflows_granted += 1; }
+                }
+                return Ok(Some(slot));
+            }
         }
         let Some(credit) = a.try_reserve_optimization(SingletonTracePage::BYTES)
-            .map_err(|error| a.take_operational_error().unwrap_or(error))? else { return Ok(false); };
+            .map_err(|error| a.take_operational_error().unwrap_or(error))? else { return Ok(None); };
         self.current = Some(SingletonPageOwner(Some(Arc::new(SingletonTracePage {
-            rows: std::array::from_fn(|_| UnsafeCell::new(MaybeUninit::uninit())),
+            spans: std::array::from_fn(|_| UnsafeCell::new(MaybeUninit::uninit())),
+            slots: std::array::from_fn(|_| UnsafeCell::new(MaybeUninit::uninit())),
+            authors: std::array::from_fn(|_| UnsafeCell::new(MaybeUninit::uninit())),
+            authors_issued: AtomicUsize::new(0),
+            overflow: OnceLock::new(),
             issued: AtomicUsize::new(0),
             _credit: credit,
         }))));
         #[cfg(debug_assertions)]
         { self.pages_granted += 1; }
-        Ok(true)
+        Ok(Some(0))
     }
 
     #[cfg(debug_assertions)]
     pub(super) fn bytes_granted(&self) -> usize {
         self.pages_granted.saturating_mul(SingletonTracePage::BYTES)
+            .saturating_add(self.overflows_granted.saturating_mul(SingletonAuthorOverflow::BYTES))
     }
 
-    pub(super) fn append(&mut self, frame: NarrowOriginalMacroFrame) -> OriginalMacroTrace {
+    pub(super) fn append(&mut self, frame: NarrowOriginalMacroFrame, slot: usize) -> OriginalMacroTrace {
         let page = self.current.as_ref().expect("prepared singleton page");
         let at = page.issued();
         assert!(at < SINGLETON_PAGE_ROWS);
-        // SAFETY: only this uncloneable &mut producer can initialize the next
-        // cell. Existing readers can borrow only cells below issued.
-        unsafe { (*page.rows[at].get()).write(frame); }
+        let len = page.authors_issued.load(Ordering::Relaxed);
+        assert!(slot <= len && slot < SINGLETON_PAGE_ROWS);
+        if slot == len {
+            // SAFETY: sole producer writes the next unpublished author once.
+            unsafe { (*page.author_cell(slot).get()).write(frame.author); }
+            page.authors_issued.store(len + 1, Ordering::Release);
+        } else {
+            assert!(Arc::ptr_eq(page.author(slot), &frame.author));
+        }
+        // SAFETY: only the sole producer can write the next unpublished row.
+        unsafe {
+            (*page.spans[at].get()).write(frame.invocation_span);
+            (*page.slots[at].get()).write(slot as u8);
+        }
         page.issued.store(at + 1, Ordering::Release);
         OriginalMacroTrace::PooledSingleton { ordinal: at as u16, page: page.clone() }
     }
@@ -251,7 +352,7 @@ impl PartialEq for OriginalMacroTrace {
             (Self::NarrowSingle(a), Self::NarrowSingle(b)) => a == b,
             (Self::PooledSingleton { ordinal, page }, Self::NarrowSingle(row))
             | (Self::NarrowSingle(row), Self::PooledSingleton { ordinal, page }) =>
-                page.row(usize::from(*ordinal)) == row.as_ref(),
+                page.row(usize::from(*ordinal)) == row.view(),
             (Self::PooledSingleton { ordinal: left, page: a }, Self::PooledSingleton { ordinal: right, page: b }) =>
                 a.row(usize::from(*left)) == b.row(usize::from(*right)),
             _ => false,
@@ -279,7 +380,7 @@ impl OriginalMacroTrace {
         match self {
             Self::Single(rows) => Arc::as_ptr(rows) as usize,
             Self::NarrowSingle(rows) => Arc::as_ptr(rows) as usize,
-            Self::PooledSingleton { ordinal, page } => page.row(usize::from(*ordinal)) as *const _ as usize,
+            Self::PooledSingleton { ordinal, page } => page.row_address(usize::from(*ordinal)),
             Self::Shared(rows) => Arc::as_ptr(rows) as usize,
             Self::NarrowShared(rows) => Arc::as_ptr(rows) as usize,
         }
@@ -288,7 +389,8 @@ impl OriginalMacroTrace {
     fn buffers(&self) -> [(usize, usize); 2] {
         match self {
             Self::Single(_) => [(self.owner_address(), mem::size_of::<OriginalMacroFrame>()), (0, 0)],
-            Self::NarrowSingle(_) | Self::PooledSingleton { .. } => [(self.owner_address(), mem::size_of::<NarrowOriginalMacroFrame>()), (0, 0)],
+            Self::NarrowSingle(_) => [(self.owner_address(), mem::size_of::<NarrowOriginalMacroFrame>()), (0, 0)],
+            Self::PooledSingleton { ordinal, page } => page.row_buffers(usize::from(*ordinal)),
             Self::Shared(rows) => [
                 (self.owner_address(), mem::size_of::<Box<[OriginalMacroFrame]>>()),
                 (rows.as_ptr() as usize, mem::size_of_val(rows.as_ref().as_ref())),
@@ -322,7 +424,7 @@ impl OriginalMacroTrace {
         let row: &OriginalMacroFrame = match self {
             Self::Single(row) if at == 0 => row,
             Self::NarrowSingle(row) if at == 0 => return Some(row.view()),
-            Self::PooledSingleton { ordinal, page } if at == 0 => return Some(page.row(usize::from(*ordinal)).view()),
+            Self::PooledSingleton { ordinal, page } if at == 0 => return Some(page.row(usize::from(*ordinal))),
             Self::NarrowShared(rows) => return rows.get(at).map(NarrowOriginalMacroFrame::view),
             Self::Shared(rows) => rows.get(at)?,
             _ => return None,
@@ -334,7 +436,8 @@ impl OriginalMacroTrace {
     pub(super) fn frame_storage_bytes(&self) -> usize {
         match self {
             Self::Single(_) => mem::size_of::<OriginalMacroFrame>(),
-            Self::NarrowSingle(_) | Self::PooledSingleton { .. } => mem::size_of::<NarrowOriginalMacroFrame>(),
+            Self::NarrowSingle(_) => mem::size_of::<NarrowOriginalMacroFrame>(),
+            Self::PooledSingleton { .. } => mem::size_of::<[u32; 2]>() + mem::size_of::<u8>(),
             Self::Shared(rows) => mem::size_of_val(rows.as_ref().as_ref()),
             Self::NarrowShared(rows) => mem::size_of_val(rows.as_ref().as_ref()),
         }
@@ -488,7 +591,7 @@ impl<'a> MacroTraceView<'a> {
         match self.0 {
             Borrowed::Native(rows) => Arc::as_ptr(rows) as usize,
             Borrowed::Original(rows) => rows.owner_address(),
-            Borrowed::Pooled(page,ordinal)=>page.row(usize::from(ordinal)) as *const _ as usize,
+            Borrowed::Pooled(page,ordinal)=>page.row_address(usize::from(ordinal)),
         }
     }
     pub fn same_owner(self, other: Self) -> bool {
@@ -515,7 +618,7 @@ impl<'a> MacroTraceView<'a> {
             }
             Borrowed::Pooled(page,ordinal)=>{
                 if at!=0{return None;}
-                let row=page.row(usize::from(ordinal)).view();
+                let row=page.row(usize::from(ordinal));
                 MacroExpansionView{
                     name:row.author.name(), invocation_span:row.invocation_span,
                     definition:row.author.origin(),replacement_chain:MacroTraceParents(Parents::Original(&[])),
@@ -551,12 +654,19 @@ impl<'a> MacroTraceView<'a> {
         Some((Arc::as_ptr(page.shared()) as usize, SingletonTracePage::BYTES))
     }
 
-    /// Author allocations reachable through all initialized pooled rows,
-    /// including sibling rows retained only by a detached trace.
+    /// Separately paid author-slot allocation if this page crossed the
+    /// inline author count. The containing page remains its sole owner.
+    pub fn pooled_overflow_backing(self) -> Option<(usize, usize)> {
+        let Borrowed::Pooled(page,_) = self.0 else { return None; };
+        page.overflow_backing()
+    }
+
+    /// Exact unique author allocations on the published page, including
+    /// sibling authors retained only by a detached trace.
     pub fn visit_pooled_authors(self, mut visit: impl FnMut([(usize, usize); 2], Option<&'a DefinitionOrigin>)) {
         let Borrowed::Pooled(page,_) = self.0 else { return; };
-        for at in 0..page.issued() {
-            let author = &page.row(at).author;
+        for at in 0..page.authors_issued.load(Ordering::Acquire) {
+            let author = page.author(at);
             visit(author.buffers(), author.origin());
         }
     }
@@ -569,7 +679,7 @@ impl<'a> MacroTraceView<'a> {
                 (rows.as_ptr() as usize, mem::size_of_val(rows.as_ref().as_ref())),
             ],
             Borrowed::Original(rows) => rows.buffers(),
-            Borrowed::Pooled(..)=>[(self.owner_address(),mem::size_of::<NarrowOriginalMacroFrame>()),(0,0)],
+            Borrowed::Pooled(page,ordinal)=>page.row_buffers(usize::from(ordinal)),
         }
     }
 }
@@ -598,35 +708,115 @@ mod tests {
         };
         let before = used.load(Ordering::Acquire);
         let denied = SettingAdmission::new(&used, before + SingletonTracePage::BYTES - 1, &|| Ok(()));
-        assert!(!pool.prepare_using(&denied).unwrap());
+        assert_eq!(pool.prepare_using(&make(0), &denied).unwrap(), None);
         let fault = || Err(io::Error::from_raw_os_error(1450));
         let stopped = SettingAdmission::new(&used, 1 << 20, &fault);
-        assert_eq!(pool.prepare_using(&stopped).unwrap_err().raw_os_error(), Some(1450));
+        assert_eq!(pool.prepare_using(&make(0), &stopped).unwrap_err().raw_os_error(), Some(1450));
         assert_eq!(used.load(Ordering::Acquire), before);
-        assert!(pool.prepare_using(&a).unwrap());
-        let first = pool.append(make(0));
+        let frame = make(0);
+        let slot = pool.prepare_using(&frame, &a).unwrap().unwrap();
+        let first = pool.append(frame, slot);
         let escaped = MacroTraceView::original(&first).to_owned();
         let address = escaped.view().owner_address();
         let page = escaped.view().pooled_backing().unwrap();
         for at in 1..SINGLETON_PAGE_ROWS {
-            assert!(pool.prepare_using(&a).unwrap());
-            let next = pool.append(make(at as u32));
+            let frame = make(at as u32);
+            let slot = pool.prepare_using(&frame, &a).unwrap().unwrap();
+            let next = pool.append(frame, slot);
             let next = MacroTraceView::original(&next);
             assert_eq!(next.pooled_backing(), Some(page));
             assert_ne!(next.owner_address(), address);
             assert!(!next.same_owner(escaped.view()));
         }
-        assert!(pool.prepare_using(&a).unwrap());
-        let next = pool.append(make(SINGLETON_PAGE_ROWS as u32));
+        let frame = make(SINGLETON_PAGE_ROWS as u32);
+        let slot = pool.prepare_using(&frame, &a).unwrap().unwrap();
+        let next = pool.append(frame, slot);
         assert_ne!(MacroTraceView::original(&next).pooled_backing(), Some(page));
         assert_eq!(escaped.view().owner_address(), address);
         assert_eq!(escaped.view().get(0).unwrap().invocation_span, Span::new(0, 1));
         let mut authors = 0;
         escaped.view().visit_pooled_authors(|_, _| authors += 1);
-        assert_eq!(authors, SINGLETON_PAGE_ROWS);
+        assert_eq!(authors, 1);
         drop((pool, first, next));
         assert_eq!(used.load(Ordering::Acquire), before + SingletonTracePage::BYTES);
         drop((escaped, author));
+        assert_eq!(used.load(Ordering::Acquire), fixed);
+    }
+
+    #[test]
+    fn pooled_authors_match_identity_and_saturate_with_exact_dedicated_fallback() {
+        let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut pool = SingletonTracePool::default();
+        let mut first = None;
+        let mut first_author = None;
+        for at in 0..SINGLETON_PAGE_AUTHORS {
+            // Equal names still have distinct issued Arc identities.
+            let author = OriginalMacroAuthor::new_using("SAME", None, &a).unwrap();
+            let frame = NarrowOriginalMacroFrame { invocation_span: [2, 7], author };
+            let slot = pool.prepare_using(&frame, &a).unwrap().unwrap();
+            assert_eq!(slot, at);
+            if at == 0 { first_author = Some(Arc::clone(&frame.author)); }
+            let trace = pool.append(frame, slot);
+            if at == 0 { first = Some(trace); }
+        }
+        let wide = NarrowOriginalMacroFrame {
+            invocation_span: [2, 7],
+            author: OriginalMacroAuthor::new_using("SAME", None, &a).unwrap(),
+        };
+        let before = used.load(Ordering::Acquire);
+        let denied = SettingAdmission::new(&used, before + SingletonAuthorOverflow::BYTES - 1, &|| Ok(()));
+        assert_eq!(pool.prepare_using(&wide, &denied).unwrap(), None);
+        assert_eq!(used.load(Ordering::Acquire), before);
+        let slot = pool.prepare_using(&wide, &a).unwrap().unwrap();
+        assert_eq!(slot, SINGLETON_PAGE_AUTHORS);
+        assert_eq!(used.load(Ordering::Acquire), before + SingletonAuthorOverflow::BYTES);
+        let overflow_row = pool.append(NarrowOriginalMacroFrame {
+            invocation_span: wide.invocation_span,
+            author: Arc::clone(&wide.author),
+        }, slot);
+        let trace = MacroTraceView::original(&overflow_row);
+        assert_eq!(trace.pooled_overflow_backing().unwrap().1, SingletonAuthorOverflow::BYTES);
+        let mut authors = 0;
+        trace.visit_pooled_authors(|_, _| authors += 1);
+        assert_eq!(authors, SINGLETON_PAGE_AUTHORS + 1);
+        let fallback_credit = a.reserve(mem::size_of::<NarrowOriginalMacroFrame>() + 2 * mem::size_of::<usize>()).unwrap();
+        let dedicated = PendingOriginalSingleton::Narrow(wide).finish();
+        let first = first.unwrap();
+        assert_eq!(first, dedicated, "published semantics match exact fallback");
+        assert!(!first.same_owner(&dedicated));
+        assert!(!Arc::ptr_eq(first.frame(0).unwrap().author, dedicated.frame(0).unwrap().author));
+        let reused = NarrowOriginalMacroFrame { invocation_span: [9, 13], author: first_author.take().unwrap() };
+        let slot = pool.prepare_using(&reused, &a).unwrap().unwrap();
+        assert_eq!(slot, 0, "full author table still accepts its existing epoch");
+        let reused = pool.append(reused, slot);
+        assert!(Arc::ptr_eq(first.frame(0).unwrap().author, reused.frame(0).unwrap().author));
+        assert_eq!(reused.frame(0).unwrap().invocation_span, Span::new(9, 13));
+        assert!(!first.same_owner(&reused));
+        assert_ne!(first.owner_address(), reused.owner_address());
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(SingletonTracePage::BYTES, 760, "304B less than a prior 1064B page");
+        // A long distinct-author tail continues to fill and then roll over
+        // the page. No further optional allocation is needed until rollover.
+        for at in SINGLETON_PAGE_AUTHORS + 2..SINGLETON_PAGE_ROWS {
+            let frame = NarrowOriginalMacroFrame {
+                invocation_span: [at as u32, at as u32 + 1],
+                author: OriginalMacroAuthor::new_using("SAME", None, &a).unwrap(),
+            };
+            let slot = pool.prepare_using(&frame, &a).unwrap().unwrap();
+            assert_eq!(slot, at - 1);
+            let row = pool.append(frame, slot);
+            assert_eq!(MacroTraceView::original(&row).pooled_backing(), trace.pooled_backing());
+        }
+        let frame = NarrowOriginalMacroFrame {
+            invocation_span: [64, 65],
+            author: OriginalMacroAuthor::new_using("SAME", None, &a).unwrap(),
+        };
+        let slot = pool.prepare_using(&frame, &a).unwrap().unwrap();
+        let next = pool.append(frame, slot);
+        assert_ne!(MacroTraceView::original(&next).pooled_backing(), trace.pooled_backing());
+        drop((pool, first, dedicated, reused, overflow_row, next, fallback_credit));
         assert_eq!(used.load(Ordering::Acquire), fixed);
     }
 

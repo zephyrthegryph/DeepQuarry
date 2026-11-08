@@ -22,13 +22,14 @@ struct SourceGeometry{occurrence:usize,geometry:super::original_raw_geometry::Or
 /// Arbitrary-byte raw quote delimiters need not have a decoded token END.
 #[derive(Clone,Copy)]
 pub(super) struct OriginalPhysicalRow{pub(super) raw:Span,pub(super) decoded:Span,pub(super) point:super::OriginalByteCursor,pub(super) actual_eof:bool}
-/// Short-lived actual lender observation. No retained source owner or
-/// authorization to skip a later current-source loan.
+/// Short-lived actual lender observation. Only a still-current explicit
+/// provider epoch can replace this emission's duplicate byte lend.
 pub(super) struct OriginalPhysicalRowObservation<'source>{
  origin:Origin,
  geometry_at:usize,
  lease:&'source SourceAcquisitionLease,
- bytes:&'source [u8],
+ provider:&'source dyn SourceProvider,
+ loan:crate::OriginalGeometryByteLoan<'source>,
  row:OriginalPhysicalRow,
 }
 impl OriginalPhysicalRowObservation<'_>{
@@ -85,7 +86,7 @@ impl OriginalRawInputs{
  pub(super) fn physical_row_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRow>{
   self.observe_physical_row_using(origin,lease,provider,None,a).map(OriginalPhysicalRowObservation::into_row)
  }
- pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
+ pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
   #[cfg(feature="original-fill-sample")]
   let _sample=super::original_fill_sample::scope(super::original_fill_sample::Bucket::Coordinate);
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}poll(a)?;
@@ -115,20 +116,26 @@ impl OriginalRawInputs{
     first
    }
   };
-  let geometry=&mut self.geometries.get_mut(at).expect("located source geometry");let raw=original_fill_bucket!(Provider,provider.original_source_bytes(lease))?.ok_or(io::ErrorKind::NotConnected)?;
+  let geometry=&mut self.geometries.get_mut(at).expect("located source geometry");
+  let loan=original_fill_bucket!(Provider,match prior{
+   Some(first) if std::ptr::eq(first.provider,provider)&&first.lease.same_binding(lease)
+      &&first.loan.same_current_epoch()=>Some(crate::OriginalGeometryByteLoan::ordinary(first.loan.bytes())),
+   Some(_)=>provider.original_source_bytes(lease)?.map(crate::OriginalGeometryByteLoan::ordinary),
+   None=>provider.original_geometry_byte_loan(lease)?,
+  }).ok_or(io::ErrorKind::NotConnected)?;
+  let raw=loan.bytes();
   let offset=origin.physical.start;let eof_token=!origin.invocation&&origin.physical.start==origin.physical.end&&offset==raw.len()&&geometry.actual_eof;
   if let Some(prior)=prior.filter(|prior|prior.origin==origin&&prior.lease.same_binding(lease)
-   &&std::ptr::eq(prior.bytes,raw)&&prior.row.actual_eof==eof_token
+   &&std::ptr::eq(prior.loan.bytes(),raw)&&prior.row.actual_eof==eof_token
    &&geometry.geometry.matches_context(lease,a)
    &&geometry.points.contains_issued_row(raw.len(),offset,origin.line,prior.row.raw)){
-   // The second lender call succeeded at its original boundary. Keep the
-   // line-end checkpoint and all three decoded-point checkpoints. A provider
-   // refusal or cancellation at any of those boundaries must still win.
+   // The second byte lend succeeded or proved the same recorder epoch.
+   // Keep the line-end and all three decoded-point checkpoints in order.
    poll(a)?;
    poll(a)?;
    poll(a)?;
    poll(a)?;
-   return Ok(OriginalPhysicalRowObservation{origin,geometry_at:at,lease,bytes:raw,row:prior.row})
+   return Ok(OriginalPhysicalRowObservation{origin,geometry_at:at,lease,provider,loan,row:prior.row})
   }
   // A real final-newline token is issued one column after the tracker EOF.
   // Error notices retain their separate EOF tracker point (column before it).
@@ -152,7 +159,7 @@ impl OriginalRawInputs{
   let decoded_point=geometry.geometry.decoded_point_using(lease,offset,a)?;
   self.last_decoded_row=Some(DecodedRowBoundary{geometry_at:at,raw:raw_span,decoded});
   let row=OriginalPhysicalRow{raw:raw_span,decoded,point:super::OriginalByteCursor{line:point.line,byte_column:point.column,source_offset:decoded_point},actual_eof:eof_token};
-  Ok(OriginalPhysicalRowObservation{origin,geometry_at:at,lease,bytes:raw,row})
+  Ok(OriginalPhysicalRowObservation{origin,geometry_at:at,lease,provider,loan,row})
  }
  pub(super) fn frame_precedes_expansion(&self,depth:usize)->bool{self.frames.as_slice().last().is_some_and(|open|depth<=open.expansion_floor)}
  pub(super) fn take_stack_change(&mut self)->bool{std::mem::take(&mut self.stack_changed)}
@@ -174,7 +181,11 @@ impl OriginalRawInputs{
     original_token_factory::project_using(event,bytes,Geometry::Physical{origin,frame:identity},a,&mut|point,notice|{let location=points.borrow_mut().notice(bytes,point,a)?;sink.borrow_mut().numeric(identity,occurrence,location,point,notice,a)})
    })?;
    match token{Some(Some(token))=>{self.last_input=Some(token.origin);return Ok(RawStep::Token(token))},Some(None)=>continue,None=>{
-    frame.finish_actual_end(provider,a)?;self.geometries.get_mut(*geometry_at).expect("opened source geometry").actual_eof=true;self.frames.pop();self.stack_changed=true;return Ok(RawStep::NeedInput);
+    frame.finish_actual_end(provider,a)?;
+    let geometry=self.geometries.get_mut(*geometry_at).expect("opened source geometry");
+    geometry.points.settle_at_physical_end_using(a)?;
+    geometry.actual_eof=true;
+    self.frames.pop();self.stack_changed=true;return Ok(RawStep::NeedInput);
     // Actual file End is the only pop path. A paused/fatal macro demand never
     // calls this method again and therefore never retires an unfinished source.
    }}
@@ -206,6 +217,48 @@ mod row_tests {
             }
             Ok(Some(&self.bytes))
         }
+    }
+
+    #[test]
+    fn physical_eof_compacts_exact_starts_and_keeps_historical_macro_points() {
+        let bytes = b"word
+".repeat(17);
+        let file = File {
+            lease: SourceAcquisitionLease::from_raw_original_bytes(bytes.clone(), ()),
+            bytes,
+            failure: Cell::new(None),
+        };
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()))
+            .with_bounded_physical_scan_checkpoints();
+        let mut inputs = OriginalRawInputs::new(&a).unwrap();
+        inputs.push_opened(&file, file.lease.clone(), 7, 0, &a).unwrap();
+        let RawStep::Token(first) = inputs.next_using(&file, &a, &mut NoNotices).unwrap()
+            else { panic!("actual first physical token") };
+        loop {
+            let before = used.load(Ordering::Acquire);
+            match inputs.next_using(&file, &a, &mut NoNotices).unwrap() {
+                RawStep::NeedInput => {
+                    assert!(used.load(Ordering::Acquire) < before);
+                    break;
+                }
+                RawStep::Token(_) => (),
+                RawStep::End => panic!("file must retire through the actual EOF boundary"),
+            }
+        }
+        let geometry = inputs.geometries.get(0).unwrap();
+        assert!(geometry.actual_eof);
+        assert_eq!(geometry.points.line_start(18), Some(file.bytes.len()));
+
+        let mut invocation = first.origin;
+        invocation.invocation = true;
+        let row = inputs.physical_row_using(invocation, &file.lease, &file, &a).unwrap();
+        assert_eq!(row.raw, Span::new(0, 5));
+        assert_eq!(row.point.line, 1);
+        assert_eq!(row.point.byte_column, 1);
+        drop((first, inputs));
+        assert_eq!(used.load(Ordering::Acquire), root);
     }
 
     #[test]
@@ -286,6 +339,69 @@ mod row_tests {
         assert_eq!(polls.get(),5,"the last decoded-point checkpoint still fails");
         drop((actual,inputs));
         assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+    }
+
+    #[test]
+    fn issued_geometry_epoch_skips_only_the_duplicate_lend_and_keeps_all_polls() {
+        struct EpochFile<'a> {
+            inner: &'a File,
+            epoch: &'a std::sync::atomic::AtomicUsize,
+            calls: Cell<usize>,
+        }
+        impl SourceProvider for EpochFile<'_> {
+            fn read(&self, _: &Path) -> Result<String, String> { panic!("no reopen") }
+            fn original_source_bytes<'a>(&'a self, lease: &'a SourceAcquisitionLease) -> io::Result<Option<&'a [u8]>> {
+                self.calls.set(self.calls.get() + 1);
+                self.inner.original_source_bytes(lease)
+            }
+            fn original_geometry_byte_loan<'a>(&'a self, lease: &'a SourceAcquisitionLease) -> io::Result<Option<crate::OriginalGeometryByteLoan<'a>>> {
+                let expected = std::num::NonZeroUsize::new(self.epoch.load(Ordering::SeqCst)).unwrap();
+                Ok(self.original_source_bytes(lease)?.map(|bytes| {
+                    crate::OriginalGeometryByteLoan::for_recorder_epoch(bytes, self.epoch, expected)
+                }))
+            }
+        }
+        let bytes = b"actual\n";
+        let file = File { bytes: bytes.to_vec(), lease: SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(), ()), failure: Cell::new(None) };
+        let epoch = std::sync::atomic::AtomicUsize::new(1);
+        let provider = EpochFile { inner: &file, epoch: &epoch, calls: Cell::new(0) };
+        let foreign = EpochFile { inner: &file, epoch: &epoch, calls: Cell::new(0) };
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let polls = Cell::new(0);
+        let fail_at = Cell::new(None);
+        let checkpoint = || {
+            polls.set(polls.get()+1);
+            if fail_at.get()==Some(polls.get()) { Err(io::Error::from_raw_os_error(1451)) } else { Ok(()) }
+        };
+        let a = SettingAdmission::new(&used, 1 << 20, &checkpoint);
+        let mut inputs = OriginalRawInputs::new(&a).unwrap();
+        inputs.push_opened(&provider, file.lease.clone(), 0, 0, &a).unwrap();
+        let RawStep::Token(actual)=inputs.next_using(&provider,&a,&mut NoNotices).unwrap()
+            else { panic!("actual source token"); };
+        let first=inputs.observe_physical_row_using(actual.origin,&file.lease,&provider,None,&a).unwrap();
+        provider.calls.set(0);
+        polls.set(0);
+        let same=inputs.observe_physical_row_using(actual.origin,&file.lease,&provider,Some(&first),&a).unwrap();
+        assert_eq!(same.row.decoded, first.row.decoded);
+        assert_eq!(provider.calls.get(), 0);
+        assert_eq!(polls.get(), 5);
+        file.failure.set(Some(1450));
+        let error=inputs.observe_physical_row_using(actual.origin,&file.lease,&foreign,Some(&first),&a).err().unwrap();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(foreign.calls.get(), 1);
+        epoch.store(2, Ordering::SeqCst);
+        let error=inputs.observe_physical_row_using(actual.origin,&file.lease,&provider,Some(&first),&a).err().unwrap();
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(provider.calls.get(), 1);
+        file.failure.set(None);
+        let fresh=inputs.observe_physical_row_using(actual.origin,&file.lease,&provider,None,&a).unwrap();
+        provider.calls.set(0);
+        polls.set(0);
+        fail_at.set(Some(5));
+        let error=inputs.observe_physical_row_using(actual.origin,&file.lease,&provider,Some(&fresh),&a).err().unwrap();
+        assert_eq!(error.raw_os_error(), Some(1451));
+        assert_eq!(provider.calls.get(), 0);
+        assert_eq!(polls.get(), 5);
     }
 
     struct NoNotices;

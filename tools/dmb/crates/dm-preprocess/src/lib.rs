@@ -163,6 +163,25 @@ pub use initial_environment::InitialEnvironment;
 /// size/admission/read/decode. Suppression is not absence or source EOF.
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalRawOpenDecision{Read,Suppress}
 pub enum OriginalRawReadOutcome{Absent,Suppressed,SourceOpenFailed(std::io::Error),Acquired(SourceAcquisitionLease)}
+/// Stack-only geometry byte loan. Its optional fast proof belongs to the
+/// provider's actual recorder and never grants a decoded or EOF authority.
+pub struct OriginalGeometryByteLoan<'a> {
+    bytes: &'a [u8],
+    epoch: Option<(&'a std::sync::atomic::AtomicUsize, std::num::NonZeroUsize)>,
+}
+impl<'a> OriginalGeometryByteLoan<'a> {
+    pub fn ordinary(bytes: &'a [u8]) -> Self { Self { bytes, epoch: None } }
+    /// The issuer has just authenticated this exact immutable byte owner
+    /// against the supplied nonzero recorder epoch.
+    pub fn for_recorder_epoch(
+        bytes: &'a [u8], current: &'a std::sync::atomic::AtomicUsize, expected: std::num::NonZeroUsize,
+    ) -> Self { Self { bytes, epoch: Some((current, expected)) } }
+    pub fn bytes(&self) -> &'a [u8] { self.bytes }
+    pub fn same_current_epoch(&self) -> bool {
+        self.epoch.is_some_and(|(flag, expected)| flag.load(std::sync::atomic::Ordering::SeqCst) == expected.get())
+    }
+}
+
 pub trait SourceProvider {
     /// Optional borrowed attempt observer. This descriptor issues no absence
     /// witness; only a genuine opaque root-failure loan plus recorder facts can.
@@ -206,6 +225,14 @@ pub trait SourceProvider {
     /// Lend raw bytes from that SAME current acquisition. No reconstruction,
     /// filesystem reopen, parser or PreparedSource is permitted at this seam.
     fn original_source_bytes<'a>(&'a self,_lease:&'a SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{Ok(None)}
+
+    /// First of two synchronous geometry lends. Generic providers opt out and
+    /// the consumer must still invoke their ordinary second lend.
+    fn original_geometry_byte_loan<'a>(
+        &'a self, lease: &'a SourceAcquisitionLease,
+    ) -> std::io::Result<Option<OriginalGeometryByteLoan<'a>>> {
+        self.original_source_bytes(lease).map(|bytes| bytes.map(OriginalGeometryByteLoan::ordinary))
+    }
 
     /// Optional primary read with original-byte provenance. Unknown providers
     /// retain existing compiler behavior; they grant no semantic parity proof.

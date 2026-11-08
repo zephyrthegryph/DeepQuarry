@@ -2473,7 +2473,7 @@ impl OriginalRawOrigins{
  pub(super) fn append_actual_using(&mut self,actual:&Token<'_>,token:Span,output_cover:Span,output_line:usize,region:usize,path:Arc<PathBuf>,trace:OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
   self.append_geometry_using(actual,token,None,output_cover,output_line,region,&path,&trace,lease,provider,inputs,None,a,work)
  }
- fn append_geometry_using(&mut self,actual:&Token<'_>,token:Span,kind:Option<dm_syntax::TokenKind>,output_cover:Span,output_line:usize,region:usize,path:&Arc<PathBuf>,trace:&OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
+ fn append_geometry_using<'source>(&mut self,actual:&Token<'_>,token:Span,kind:Option<dm_syntax::TokenKind>,output_cover:Span,output_line:usize,region:usize,path:&Arc<PathBuf>,trace:&OriginalMacroTrace,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,inputs:&mut RawSourceDriver,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   if self.delivered_end.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"delivered origin rows are already finalized"))}
   if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
@@ -2562,7 +2562,7 @@ impl OriginalRawOrigins{
  /// Actual token/interval/line belong to ONE prepared-output record. Pointer
  /// comparison authenticates those two private callback arguments only; source
  /// geometry is independently checked by the SAME raw frame/lease below.
- pub(super) fn append_produced_using(&mut self,actual:&Token<'static>,produced:super::original_prepared_output::OriginalProducedSpan<'_>,region:usize,path:&Arc<PathBuf>,trace:&OriginalMacroTrace,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,inputs:&mut RawSourceDriver,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
+ pub(super) fn append_produced_using<'source>(&mut self,actual:&Token<'static>,produced:super::original_prepared_output::OriginalProducedSpan<'_>,region:usize,path:&Arc<PathBuf>,trace:&OriginalMacroTrace,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,inputs:&mut RawSourceDriver,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
   let owner=self.output.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"origin owner lacks its actual output cursor"))?;
   if !owner.same(produced.owner())||!produced.owner().admitted_by(a)||!std::ptr::eq(actual,produced.actual()?){return Err(io::Error::new(io::ErrorKind::InvalidInput,"origin arguments differ from the SAME prepared token"))}
@@ -3395,10 +3395,11 @@ impl OriginalRawOrigins{
     let mut exact=Vec::new();
     for index in 0..STORED_TRACE_PAGE_ROWS {
         let trace=if index==1||index==67{fallback.clone()}else{
-            assert!(pool.prepare_using(&a).unwrap());
-            pool.append(NarrowOriginalMacroFrame::checked(OriginalMacroFrame{
+            let frame = NarrowOriginalMacroFrame::checked(OriginalMacroFrame{
                 invocation_span:Span::new(index,index+1),author:Arc::clone(&author),
-            }).unwrap())
+            }).unwrap();
+            let slot = pool.prepare_using(&frame, &a).unwrap().unwrap();
+            pool.append(frame, slot)
         };
         exact.push(MacroTraceView::original(&trace).to_owned());
         pages.push(trace,&a,&mut funding).unwrap();

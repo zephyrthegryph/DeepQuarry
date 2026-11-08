@@ -115,10 +115,67 @@ fn original_checkpoint(a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<(
     a.checkpoint()
         .map_err(|proxy| a.take_operational_error().unwrap_or(proxy))
 }
+enum InitializerCoordinateSpans {
+    Narrow(Vec<[u32; 2]>),
+    Wide(Vec<Span>),
+}
+
+impl InitializerCoordinateSpans {
+    fn len(&self) -> usize {
+        match self {
+            Self::Narrow(rows) => rows.len(),
+            Self::Wide(rows) => rows.len(),
+        }
+    }
+
+    fn get(&self, index: usize) -> Option<Span> {
+        match self {
+            Self::Narrow(rows) => rows.get(index).map(|&[start, end]| Span::new(start as usize, end as usize)),
+            Self::Wide(rows) => rows.get(index).copied(),
+        }
+    }
+
+    fn find_start(&self, start: usize) -> Option<usize> {
+        match self {
+            Self::Narrow(rows) => rows.binary_search_by_key(&u32::try_from(start).ok()?, |row| row[0]),
+            Self::Wide(rows) => rows.binary_search_by_key(&start, |row| row.start),
+        }.ok()
+    }
+
+    fn sort_and_check(&mut self) -> bool {
+        match self {
+            Self::Narrow(rows) => {
+                rows.sort_unstable_by_key(|row| row[0]);
+                rows.windows(2).all(|pair| pair[0][1] <= pair[1][0])
+            }
+            Self::Wide(rows) => {
+                rows.sort_unstable_by_key(|row| row.start);
+                rows.windows(2).all(|pair| pair[0].end <= pair[1].start)
+            }
+        }
+    }
+
+    fn storage(&self) -> (usize, usize, usize) {
+        fn layout<T>(rows: &Vec<T>) -> (usize, usize, usize) {
+            let bytes = std::mem::size_of::<T>();
+            (rows.as_ptr() as usize, rows.len() * bytes, rows.capacity() * bytes)
+        }
+        match self {
+            Self::Narrow(rows) => layout(rows),
+            Self::Wide(rows) => layout(rows),
+        }
+    }
+
+    #[cfg(test)]
+    fn iter(&self) -> impl Iterator<Item = Span> + '_ {
+        (0..self.len()).map(|index| self.get(index).expect("issued coordinate"))
+    }
+}
+
 struct OriginalInitializerCoordinates {
     // Actual source coordinates only, never variable/type/namespace semantics.
     // Physical buffer release precedes quota credit.
-    spans: Vec<Span>,
+    spans: InitializerCoordinateSpans,
     buffer_credit: Option<dm_syntax::SettingRootLease>,
     lease: dm_syntax::SettingRootLease,
 }
@@ -130,9 +187,16 @@ impl std::fmt::Debug for OriginalInitializerCoordinates {
     }
 }
 impl OriginalInitializerCoordinates {
-    fn new(a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<Self> {
+    fn new(source_len: usize, a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<Self> {
+        // The primary walk checks every relative span against this source.
+        // Choose wide storage up front when needed, with no conversion peak.
+        let spans = if u32::try_from(source_len).is_ok() {
+            InitializerCoordinateSpans::Narrow(Vec::new())
+        } else {
+            InitializerCoordinateSpans::Wide(Vec::new())
+        };
         Ok(Self {
-            spans: Vec::new(),
+            spans,
             buffer_credit: None,
             lease: a.reserve(
                 std::mem::size_of::<Self>()
@@ -149,15 +213,25 @@ impl OriginalInitializerCoordinates {
                 "initializer coordinate storage uses another admission",
             ));
         }
-        if self.spans.len() == self.spans.capacity() {
-            // The exact-layout allocator pays the new Vec before allocation.
-            // It drops the old Vec before returning its separate buffer credit.
-            super::original_primary_signatures::grow_funded_rows(
-                &mut self.spans, &mut self.buffer_credit, a,
-            )?;
+        fn push_row<T>(
+            rows: &mut Vec<T>, row: T, credit: &mut Option<dm_syntax::SettingRootLease>,
+            a: &dm_syntax::SettingAdmission<'_>,
+        ) -> std::io::Result<()> {
+            if rows.len() == rows.capacity() {
+                // Fund the exact old/new allocation overlap before appending.
+                super::original_primary_signatures::grow_funded_rows(rows, credit, a)?;
+            }
+            rows.push(row);
+            Ok(())
         }
-        self.spans.push(span);
-        Ok(())
+        match &mut self.spans {
+            InitializerCoordinateSpans::Narrow(rows) => {
+                let start = u32::try_from(span.start).map_err(|_| std::io::ErrorKind::InvalidData)?;
+                let end = u32::try_from(span.end).map_err(|_| std::io::ErrorKind::InvalidData)?;
+                push_row(rows, [start, end], &mut self.buffer_credit, a)
+            }
+            InitializerCoordinateSpans::Wide(rows) => push_row(rows, span, &mut self.buffer_credit, a),
+        }
     }
 }
 fn spans(
@@ -363,7 +437,7 @@ impl OriginalProcedureHeaders {
         let mut events_known=true;let mut first_outer_block=None;events(items,offset,&mut events_known,&mut first_outer_block,admission)?;
         let mut headers = Vec::new();
         let mut coordinates = admission
-            .map(OriginalInitializerCoordinates::new)
+            .map(|a| OriginalInitializerCoordinates::new(source.len(), a))
             .transpose()?;
         spans(
             items,
@@ -380,8 +454,7 @@ impl OriginalProcedureHeaders {
             return Err("original procedure header ranges overlap".into());
         }
         if let Some(coordinates) = coordinates.as_mut() {
-            coordinates.spans.sort_unstable_by_key(|s| s.start);
-            if coordinates.spans.windows(2).any(|p| p[0].end > p[1].start) {
+            if !coordinates.spans.sort_and_check() {
                 return Err("original declaration header coordinates overlap".into());
             }
         }
@@ -455,9 +528,9 @@ impl OriginalProcedureHeaders {
         );
         let ordinal = row
             .spans
-            .binary_search_by_key(&relative.start, |span| span.start)
-            .map_err(|_| "original initializer header coordinate unavailable")?;
-        if row.spans[ordinal] != relative {
+            .find_start(relative.start)
+            .ok_or("original initializer header coordinate unavailable")?;
+        if row.spans.get(ordinal) != Some(relative) {
             return Err("original initializer header coordinate differs".into());
         }
         Ok((ordinal, row.spans.len()))
@@ -645,9 +718,9 @@ impl OriginalProcedureHeaders {
         let row=self.initializer_coordinates.as_ref().ok_or("actual Original initializer coordinates are unissued")?;
         let ordinal = row
             .spans
-            .binary_search_by_key(&header.start, |s| s.start)
-            .map_err(|_| "original initializer coordinate unavailable")?;
-        if row.spans[ordinal] != header {
+            .find_start(header.start)
+            .ok_or("original initializer coordinate unavailable")?;
+        if row.spans.get(ordinal) != Some(header) {
             return Err("original initializer coordinate extent differs".into());
         }
         Ok((ordinal, row.spans.len()))
@@ -794,8 +867,15 @@ impl OriginalProcedureHeaders {
       let Some(roots)=self.demanded_defaults.get()else{return Ok(())};
       if self.parameter_signatures.get().is_some(){return Err(std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual parameter metadata was already published"))}
       let bytes=self.headers.len().checked_mul(std::mem::size_of::<dm_syntax::SharedParameterSignature>()).ok_or(std::io::ErrorKind::OutOfMemory)?;
+      #[cfg(debug_assertions)]
+      let trace=std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some();
       let credit=a.reserve(bytes)?;let mut rows=Vec::new();rows.try_reserve_exact(self.headers.len()).map_err(|actual|std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual))?;
       for &header in &self.headers{
+       #[cfg(debug_assertions)]
+       if trace && rows.len() % 16384 == 0 {
+        eprintln!("ORIGINAL_PARAMETER_HEADERS completed={} total={} syntax_bytes={}",
+         rows.len(),self.headers.len(),a.retained_bytes_for_trace());
+       }
        original_checkpoint(a)?;let width=header.end.checked_sub(header.start).ok_or(std::io::ErrorKind::InvalidData)?;
        let header_tokens = || {
         let tape = self.tokens.window();
@@ -831,7 +911,11 @@ impl OriginalProcedureHeaders {
        let tokens = match inspected { Some(tokens) => tokens, None => header_tokens()? };
        for _ in (0..tokens.len()).step_by(64){original_checkpoint(a)?;}
        let mut loan=roots.loan(header,self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));
-       let mut signature=tokens.with_dense_using(a,|dense|Ok(dm_syntax::parameter_signature_original_with_default_roots(&self.source,dense,header,0,&mut Some(&mut loan))))?;
+       let mut signature=tokens.with_dense_using(a,|dense|Ok(dm_syntax::parameter_signature_original_with_default_roots(&self.source,dense,header,0,&mut Some(&mut loan))))
+        .inspect_err(|_error| {
+         #[cfg(debug_assertions)]
+         if trace { eprintln!("ORIGINAL_PARAMETER_HEADER_FAILURE completed={} header={header:?} tokens={} {_error:?}",rows.len(),tokens.len()); }
+        })?;
        original_checkpoint(a)?;signature.admit_optional_expressions(allowance);
        if signature.retained_bytes()>allowance{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"actual header metadata exceeded its original allowance"))}
        rows.push(dm_syntax::SharedParameterSignature::retained_using(signature,lease,a)?);
@@ -900,11 +984,8 @@ impl OriginalProcedureHeaders {
         }
         self.initializer_roots.visit_storage(&mut visit, |_| {});
         if let Some(row) = &self.initializer_coordinates {
-            visit(
-                row.spans.as_ptr() as usize,
-                row.spans.len() * std::mem::size_of::<Span>(),
-                row.spans.capacity() * std::mem::size_of::<Span>(),
-            );
+            let (address, len, capacity) = row.spans.storage();
+            visit(address, len, capacity);
             row.lease.visit_counter_storage(|p, n| visit(p, n, n));
             if let Some(buffer_credit) = &row.buffer_credit {
                 buffer_credit.visit_counter_storage(|p, n| visit(p, n, n));
@@ -1559,7 +1640,7 @@ mod initializer_coordinate_tests {
                 .any(|s| TEXT[s.range()].contains("var/local")),
             "procedure children are not declaration coordinates"
         );
-        for (i, span) in coordinates.spans.iter().copied().enumerate() {
+        for (i, span) in coordinates.spans.iter().enumerate() {
             assert_eq!(
                 owner.initializer_coordinate(span, 0, &a).ok(),
                 Some((i, coordinates.spans.len()))
@@ -1568,7 +1649,7 @@ mod initializer_coordinate_tests {
         let foreign = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let other = dm_syntax::SettingAdmission::new(&foreign, 1024 * 1024, &checkpoint);
         assert!(
-            matches!(owner.initializer_coordinate(coordinates.spans[0],0,&other),Err(OriginalHeaderFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::InvalidInput)
+            matches!(owner.initializer_coordinate(coordinates.spans.get(0).unwrap(),0,&other),Err(OriginalHeaderFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::InvalidInput)
         );
         assert!(counter.load(Ordering::Acquire) > dm_syntax::SettingChargeCounter::root_allocation_bytes());
         drop(owner);
@@ -1582,6 +1663,40 @@ mod initializer_coordinate_tests {
         );
     }
     #[test]
+    fn initializer_coordinate_narrow_boundary_and_wide_fallback_keep_exact_ordinals() {
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a = dm_syntax::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let last_narrow = u32::MAX as usize;
+        let mut narrow = OriginalInitializerCoordinates::new(last_narrow, &a).unwrap();
+        let near_end = Span::new(last_narrow - 1, last_narrow);
+        let first = Span::new(0, 2);
+        narrow.push(near_end, &a).unwrap();
+        narrow.push(first, &a).unwrap();
+        assert!(narrow.spans.sort_and_check());
+        assert_eq!(narrow.spans.find_start(near_end.start), Some(1));
+        assert_eq!(narrow.spans.get(1), Some(near_end));
+        assert_eq!(narrow.spans.storage().1, 16);
+        if let Some(first_wide) = last_narrow.checked_add(1) {
+            let overflow = Span::new(last_narrow, first_wide);
+            let before = used.load(Ordering::Acquire);
+            assert_eq!(narrow.push(overflow, &a).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
+            assert_eq!(used.load(Ordering::Acquire), before);
+            let mut wide = OriginalInitializerCoordinates::new(first_wide, &a).unwrap();
+            wide.push(overflow, &a).unwrap();
+            wide.push(first, &a).unwrap();
+            assert!(wide.spans.sort_and_check());
+            assert_eq!(wide.spans.find_start(overflow.start), Some(1));
+            assert_eq!(wide.spans.get(1), Some(overflow));
+            assert_eq!(wide.spans.storage().1, 2 * std::mem::size_of::<Span>());
+            wide.push(Span::new(1, 3), &a).unwrap();
+            assert!(!wide.spans.sort_and_check());
+        }
+        drop(narrow);
+        assert_eq!(used.load(Ordering::Acquire), root);
+    }
+
+    #[test]
     fn initializer_coordinate_growth_funds_overlap_and_settles_exact_buffer() {
         use std::mem::size_of;
         let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
@@ -1591,21 +1706,22 @@ mod initializer_coordinate_tests {
             Ok(())
         };
         let a = dm_syntax::SettingAdmission::new(&used, 1 << 20, &poll);
-        let mut coordinates = OriginalInitializerCoordinates::new(&a).unwrap();
+        let mut coordinates = OriginalInitializerCoordinates::new(1 << 20, &a).unwrap();
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
         let fixed = coordinates.lease.bytes();
         assert!(coordinates.buffer_credit.is_none());
         for index in 0..1025 {
-            let old = coordinates.spans.capacity();
+            let old = coordinates.spans.storage().2 / size_of::<[u32; 2]>();
             peak.store(0, Ordering::Release);
             coordinates.push(Span::new(index, index + 1), &a).unwrap();
-            let new = coordinates.spans.capacity();
-            assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), new * size_of::<Span>());
-            assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (fixed + new * size_of::<Span>()));
+            let new = coordinates.spans.storage().2 / size_of::<[u32; 2]>();
+            assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), new * size_of::<[u32; 2]>());
+            assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (fixed + new * size_of::<[u32; 2]>()));
             if old != new {
-                assert_eq!(peak.load(Ordering::Acquire), fixed + (old + new) * size_of::<Span>());
+                assert_eq!(peak.load(Ordering::Acquire), root + fixed + (old + new) * size_of::<[u32; 2]>());
             }
         }
-        assert!(coordinates.spans.iter().copied().enumerate().all(|(index, span)| span == Span::new(index, index + 1)));
+        assert!(coordinates.spans.iter().enumerate().all(|(index, span)| span == Span::new(index, index + 1)));
         drop(coordinates);
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
@@ -1615,20 +1731,20 @@ mod initializer_coordinate_tests {
         use std::mem::size_of;
         let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = dm_syntax::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
-        let mut coordinates = OriginalInitializerCoordinates::new(&a).unwrap();
+        let mut coordinates = OriginalInitializerCoordinates::new(1 << 20, &a).unwrap();
         coordinates.push(Span::new(0, 1), &a).unwrap();
-        let old = coordinates.spans.capacity();
+        let old = coordinates.spans.storage().2 / size_of::<[u32; 2]>();
         for index in 1..old {
             coordinates.push(Span::new(index, index + 1), &a).unwrap();
         }
         let before = used.load(Ordering::Acquire);
-        let pointer = coordinates.spans.as_ptr();
+        let pointer = coordinates.spans.storage().0;
         let next = Span::new(old, old + 1);
 
-        let limit = before + old * 2 * size_of::<Span>() - 1;
+        let limit = before + old * 2 * size_of::<[u32; 2]>() - 1;
         let low = dm_syntax::SettingAdmission::new(&used, limit, &|| Ok(()));
         assert_eq!(coordinates.push(next, &low).unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
-        assert_eq!(coordinates.spans.as_ptr(), pointer);
+        assert_eq!(coordinates.spans.storage().0, pointer);
         assert_eq!(coordinates.spans.len(), old);
         assert_eq!(used.load(Ordering::Acquire), before);
 
@@ -1641,13 +1757,13 @@ mod initializer_coordinate_tests {
         };
         let stopped = dm_syntax::SettingAdmission::new(&used, 1 << 20, &fail_after_new_credit);
         assert_eq!(coordinates.push(next, &stopped).unwrap_err().raw_os_error(), Some(1450));
-        assert_eq!(coordinates.spans.as_ptr(), pointer);
+        assert_eq!(coordinates.spans.storage().0, pointer);
         assert_eq!(coordinates.spans.len(), old);
-        assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), old * size_of::<Span>());
+        assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(), old * size_of::<[u32; 2]>());
         assert_eq!(used.load(Ordering::Acquire), before);
 
         coordinates.push(next, &a).unwrap();
-        assert_eq!(coordinates.spans.last(), Some(&next));
+        assert_eq!(coordinates.spans.get(coordinates.spans.len() - 1), Some(next));
         drop(coordinates);
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
