@@ -130,6 +130,27 @@ const SINGLETON_PAGE_AUTHORS: usize = 15;
 const SINGLETON_OVERFLOW_AUTHORS: usize = SINGLETON_PAGE_ROWS - SINGLETON_PAGE_AUTHORS;
 type AuthorCell = UnsafeCell<MaybeUninit<Arc<OriginalMacroAuthor>>>;
 
+#[derive(Clone, Copy)]
+#[repr(transparent)]
+struct PooledTraceSpan([u8; 6]);
+
+impl PooledTraceSpan {
+    fn checked([start, end]: [u32; 2]) -> Option<Self> {
+        let width = u16::try_from(end.checked_sub(start)?).ok()?;
+        let [a, b, c, d] = start.to_le_bytes();
+        let [e, f] = width.to_le_bytes();
+        Some(Self([a, b, c, d, e, f]))
+    }
+
+    fn span(self) -> Span {
+        let [a, b, c, d, e, f] = self.0;
+        let start = u32::from_le_bytes([a, b, c, d]);
+        let width = u16::from_le_bytes([e, f]);
+        // The only constructor already proved the native u32 endpoint.
+        Span::new(start as usize, (start + u32::from(width)) as usize)
+    }
+}
+
 struct SingletonAuthorOverflow {
     rows: [AuthorCell; SINGLETON_OVERFLOW_AUTHORS],
     _credit: SettingRootLease,
@@ -145,7 +166,7 @@ impl SingletonAuthorOverflow {
 /// One exact allocation and independently escaping credit. The sole producer
 /// appends through its noncloneable pool; readers only see a published prefix.
 pub(super) struct SingletonTracePage {
-    spans: [UnsafeCell<MaybeUninit<[u32; 2]>>; SINGLETON_PAGE_ROWS],
+    spans: [UnsafeCell<MaybeUninit<PooledTraceSpan>>; SINGLETON_PAGE_ROWS],
     slots: [UnsafeCell<MaybeUninit<u8>>; SINGLETON_PAGE_ROWS],
     authors: [AuthorCell; SINGLETON_PAGE_AUTHORS],
     overflow: OnceLock<Arc<SingletonAuthorOverflow>>,
@@ -205,12 +226,12 @@ impl SingletonTracePage {
         assert!(at < self.issued());
         // SAFETY: the issued row Release follows both geometry/slot writes
         // and publication of its immutable author.
-        let ([start, end], slot) = unsafe {
+        let (span, slot) = unsafe {
             (*(&*self.spans[at].get()).assume_init_ref(),
              *(&*self.slots[at].get()).assume_init_ref())
         };
         OriginalMacroFrameView {
-            invocation_span: Span::new(start as usize, end as usize),
+            invocation_span: span.span(),
             author: self.author(usize::from(slot)),
         }
     }
@@ -221,7 +242,7 @@ impl SingletonTracePage {
     }
 
     fn row_buffers(&self, at: usize) -> [(usize, usize); 2] {
-        [(self.row_address(at), mem::size_of::<[u32; 2]>()),
+        [(self.row_address(at), mem::size_of::<PooledTraceSpan>()),
          (self.slots[at].get() as usize, mem::size_of::<u8>())]
     }
 }
@@ -276,6 +297,9 @@ impl SingletonTracePool {
     pub(super) fn prepare_using(&mut self, frame: &NarrowOriginalMacroFrame, a: &SettingAdmission<'_>) -> io::Result<Option<usize>> {
         if let Some(page) = &self.current {
             if !a.matches_lease_domain(&page._credit) { return Err(io::ErrorKind::InvalidInput.into()); }
+        }
+        if PooledTraceSpan::checked(frame.invocation_span).is_none() { return Ok(None); }
+        if let Some(page) = &self.current {
             if page.issued() < SINGLETON_PAGE_ROWS {
                 let slot = page.author_slot(&frame.author).expect("at most one author per issued row");
                 if slot >= SINGLETON_PAGE_AUTHORS && page.overflow.get().is_none() {
@@ -313,6 +337,9 @@ impl SingletonTracePool {
         if let Some(page) = &self.current {
             if !a.matches_lease_domain(&page._credit) { return Err(io::ErrorKind::InvalidInput.into()); }
         }
+        if frames.iter().any(|frame| PooledTraceSpan::checked(frame.invocation_span).is_none()) {
+            return Ok(None);
+        }
         if self.current.as_ref().is_none_or(|page| page.issued() + frames.len() > SINGLETON_PAGE_ROWS)
             && !self.new_page_using(a)? {
             return Ok(None);
@@ -349,6 +376,7 @@ impl SingletonTracePool {
         let mut author_len = page.authors_issued.load(Ordering::Relaxed);
         for (at, frame) in frames.enumerate() {
             let slot = usize::from(slots[at]);
+            let span = PooledTraceSpan::checked(frame.invocation_span).expect("prepared pooled span");
             if slot == author_len {
                 // SAFETY: only this producer writes the next unpublished author.
                 unsafe { (*page.author_cell(slot).get()).write(frame.author); }
@@ -359,7 +387,7 @@ impl SingletonTracePool {
             // SAFETY: no public range may include these rows until the single
             // release store after every frame and author has been written.
             unsafe {
-                (*page.spans[start + at].get()).write(frame.invocation_span);
+                (*page.spans[start + at].get()).write(span);
                 (*page.slots[start + at].get()).write(slot as u8);
             }
         }
@@ -377,6 +405,7 @@ impl SingletonTracePool {
     pub(super) fn append(&mut self, frame: NarrowOriginalMacroFrame, slot: usize) -> OriginalMacroTrace {
         let page = self.current.as_ref().expect("prepared singleton page");
         let at = page.issued();
+        let span = PooledTraceSpan::checked(frame.invocation_span).expect("prepared pooled span");
         assert!(at < SINGLETON_PAGE_ROWS);
         let len = page.authors_issued.load(Ordering::Relaxed);
         assert!(slot <= len && slot < SINGLETON_PAGE_ROWS);
@@ -389,7 +418,7 @@ impl SingletonTracePool {
         }
         // SAFETY: only the sole producer can write the next unpublished row.
         unsafe {
-            (*page.spans[at].get()).write(frame.invocation_span);
+            (*page.spans[at].get()).write(span);
             (*page.slots[at].get()).write(slot as u8);
         }
         page.issued.store(at + 1, Ordering::Release);
@@ -514,7 +543,7 @@ impl OriginalMacroTrace {
         match self {
             Self::Single(_) => mem::size_of::<OriginalMacroFrame>(),
             Self::NarrowSingle(_) => mem::size_of::<NarrowOriginalMacroFrame>(),
-            Self::PooledSingleton { .. } | Self::PooledRange { .. } => self.len() * (mem::size_of::<[u32; 2]>() + mem::size_of::<u8>()),
+            Self::PooledSingleton { .. } | Self::PooledRange { .. } => self.len() * (mem::size_of::<PooledTraceSpan>() + mem::size_of::<u8>()),
             Self::Shared(rows) => mem::size_of_val(rows.as_ref().as_ref()),
             Self::NarrowShared(rows) => mem::size_of_val(rows.as_ref().as_ref()),
         }
@@ -782,6 +811,45 @@ impl fmt::Debug for MacroTraceView<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pooled_spans_keep_native_endpoints_and_decline_the_whole_overflow_range() {
+        assert_eq!(mem::size_of::<PooledTraceSpan>(), 6);
+        let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let author = OriginalMacroAuthor::new_using("SPAN", None, &a).unwrap();
+        let make = |start, end| NarrowOriginalMacroFrame {
+            invocation_span: [start, end], author: Arc::clone(&author),
+        };
+        let mut pool = SingletonTracePool::default();
+        let max = u32::MAX;
+        let width = u32::from(u16::MAX);
+        let before = used.load(Ordering::Acquire);
+        assert!(pool.prepare_using(&make(max - width - 1, max), &a).unwrap().is_none());
+        assert!(pool.prepare_range_using(&[make(max, max), make(2, 1)], &a).unwrap().is_none());
+        assert!(pool.current.is_none());
+        assert_eq!(used.load(Ordering::Acquire), before);
+
+        let frames = [make(max, max), make(max - width, max)];
+        let slots = pool.prepare_range_using(&frames, &a).unwrap().unwrap();
+        let trace = pool.append_range(frames.into_iter(), slots);
+        let view = MacroTraceView::original(&trace);
+        assert_eq!(view.get(0).unwrap().invocation_span, Span::new(max as usize, max as usize));
+        assert_eq!(view.get(1).unwrap().invocation_span, Span::new((max - width) as usize, max as usize));
+        assert_eq!(view.buffers()[0].1, 6);
+        let before = used.load(Ordering::Acquire);
+        assert!(pool.prepare_range_using(&[make(0, 1), make(0, width + 1)], &a).unwrap().is_none());
+        assert_eq!(pool.current.as_ref().unwrap().issued(), 2);
+        assert_eq!(used.load(Ordering::Acquire), before);
+
+        let fallback_credit = a.reserve(mem::size_of::<NarrowOriginalMacroFrame>() + 2 * mem::size_of::<usize>()).unwrap();
+        let fallback = PendingOriginalSingleton::Narrow(make(max - width - 1, max)).finish();
+        assert_eq!(fallback.frame(0).unwrap().invocation_span, Span::new((max - width - 1) as usize, max as usize));
+        drop(fallback);
+        drop((fallback_credit, trace, pool, author));
+        assert_eq!(used.load(Ordering::Acquire), fixed);
+    }
 
     #[test]
     fn pooled_ranges_keep_disjoint_identity_and_decline_without_partial_rows() {

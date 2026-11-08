@@ -1254,9 +1254,55 @@ impl OriginalSignatureSpellings {
     }
 }
 
+const PLAIN_PROCEDURE_METADATA_SLOTS: usize = 1024;
+
+struct PlainProcedureMetadataBank {
+    entries: Box<[Option<Arc<dm_ir::ProcedureMetadata>>; PLAIN_PROCEDURE_METADATA_SLOTS]>,
+    _credit: dm_syntax::SettingRootLease,
+}
+
+impl PlainProcedureMetadataBank {
+    fn try_new(a: &SettingAdmission<'_>) -> std::io::Result<Option<Self>> {
+        let bytes = PLAIN_PROCEDURE_METADATA_SLOTS
+            * std::mem::size_of::<Option<Arc<dm_ir::ProcedureMetadata>>>();
+        let Some(credit) = a.try_reserve_optimization(bytes)
+            .map_err(|error| a.take_operational_error().unwrap_or(error))?
+        else {
+            return Ok(None);
+        };
+        let entries = Box::new(std::array::from_fn(|_| None));
+        Ok(Some(Self { entries, _credit: credit }))
+    }
+
+    fn slot(signature: &dm_ir::ProcedureSignature) -> Option<usize> {
+        let rows = &signature.parameters;
+        if signature.return_annotation.is_some() || rows.is_empty() || rows.len() > 8
+            || rows.iter().any(|row| row.tail_allocation().is_some())
+        {
+            return None;
+        }
+        let address = rows.as_ptr() as usize;
+        // This is a slot hint only. A live Arc in the bank is the exact key.
+        let hint = (address >> 4) ^ (address >> 14) ^ (usize::from(signature.variadic) << 4);
+        Some(hint % PLAIN_PROCEDURE_METADATA_SLOTS)
+    }
+
+    fn find(&self, slot: usize, signature: &dm_ir::ProcedureSignature)
+        -> Option<&Arc<dm_ir::ProcedureMetadata>>
+    {
+        self.entries[slot].as_ref().filter(|actual| {
+            actual.signature.variadic == signature.variadic
+                && Arc::ptr_eq(&actual.signature.parameters, &signature.parameters)
+        })
+    }
+}
+
 /// Unique once-consumed metadata results, bound to the exact native header owner.
 /// Coordinate/source equality cannot substitute another header owner.
-pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],trivial_suffixes:[Option<TrivialCanonicalSuffix>;2],adapter_storage:Option<dm_syntax::SettingRootLease>}
+pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,plain_metadata:Option<PlainProcedureMetadataBank>,plain_metadata_attempted:bool,
+ #[cfg(debug_assertions)]
+ plain_metadata_hits:usize,
+ trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],trivial_suffixes:[Option<TrivialCanonicalSuffix>;2],adapter_storage:Option<dm_syntax::SettingRootLease>}
 impl PreparedOriginalSignatures{
  pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<(dm_ir::CanonicalBytes, u128)>{
   let slot=usize::from(procedure.signature.variadic);
@@ -1286,11 +1332,17 @@ impl PreparedOriginalSignatures{
   let trivial = (empty && signature.return_annotation.is_none()
    && self.rows.empty_parameters.as_ref().is_some_and(|owner|Arc::ptr_eq(owner,&signature.parameters)))
    .then_some(usize::from(signature.variadic));
-  if let Some(owner)=trivial.and_then(|slot|self.trivial_metadata[slot].as_ref()){
+  let plain_slot = empty.then(|| PlainProcedureMetadataBank::slot(&signature)).flatten();
+  let pooled_plain = plain_slot.and_then(|slot|self.plain_metadata.as_ref()?.find(slot,&signature));
+  if let Some(owner)=trivial.and_then(|slot|self.trivial_metadata[slot].as_ref()).or(pooled_plain){
    checkpoint(a)?;
-   if self.adapter_storage.as_ref().is_none_or(|credit|!a.matches_lease_domain(credit)){
+   if self.adapter_storage.as_ref().is_none_or(|credit|!a.matches_lease_domain(credit))
+    || (pooled_plain.is_some() && self.plain_metadata.as_ref().is_none_or(|bank|!a.matches_lease_domain(&bank._credit)))
+   {
     return Err(std::io::Error::new(ErrorKind::InvalidInput,"setting storage belongs to a foreign body budget"));
    }
+   #[cfg(debug_assertions)]
+   if pooled_plain.is_some() { self.plain_metadata_hits += 1; }
    return Ok(Arc::clone(owner));
   }
   let settings_bytes=if empty && self.empty_settings.is_some(){0}else{
@@ -1304,6 +1356,17 @@ impl PreparedOriginalSignatures{
   }else{settings.into_shared()};
   let owner=Arc::new(dm_ir::ProcedureMetadata{signature,settings});
   if let Some(slot)=trivial{self.trivial_metadata[slot]=Some(Arc::clone(&owner));}
+  if let Some(slot)=plain_slot {
+   // A miss pays the existing required owner before attempting the optional
+   // lookup table. An unavailable table never alters the issued metadata.
+   if !self.plain_metadata_attempted {
+    self.plain_metadata=PlainProcedureMetadataBank::try_new(a)?;
+    self.plain_metadata_attempted=true;
+   }
+   if let Some(bank)=&mut self.plain_metadata {
+    bank.entries[slot]=Some(Arc::clone(&owner));
+   }
+  }
   Ok(owner)
  }
  /// Alias census can coalesce only these exact producer-owned handles.
@@ -1337,6 +1400,10 @@ impl PreparedOriginalSignatures{
    id
   }))
  }
+ #[cfg(debug_assertions)]
+ pub(crate) fn plain_metadata_hits_for_trace(&self) -> usize {
+  self.plain_metadata_hits
+ }
  pub(crate) fn take_adapter_storage(&mut self)->Option<dm_syntax::SettingRootLease>{self.adapter_storage.take()}
  pub(crate) fn actual_headers(&self)->&OriginalProcedureHeaders{&self.headers}
  pub(crate) fn share_actual_headers(&self)->Arc<OriginalProcedureHeaders>{Arc::clone(&self.headers)}
@@ -1358,6 +1425,7 @@ impl PreparedOriginalSignatures{
  /// allocation itself has no aliases and can be dropped before graph use.
  pub(crate) fn release_consumed_rows(&mut self) {
   debug_assert!(self.require_consumed().is_ok());
+  drop(self.plain_metadata.take());
   self.trivial_metadata=[None,None];
   self.trivial_suffixes=[None,None];
   self.empty_settings=None;
@@ -2063,7 +2131,10 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
     if changed { Some(Arc::new(early.credit)) } else { None }
  });
  let prepared=PreparedOriginalSignatures{headers:Arc::clone(&headers),rows:self.rows,spellings,
-   failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,empty_settings:None,trivial_metadata:[None,None],trivial_suffixes:[None,None],adapter_storage:None};
+   failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,empty_settings:None,plain_metadata:None,plain_metadata_attempted:false,
+   #[cfg(debug_assertions)]
+   plain_metadata_hits:0,
+   trivial_metadata:[None,None],trivial_suffixes:[None,None],adapter_storage:None};
  Ok(OriginalSignatureInput{items,diagnostics,comma_fatal,unavailable,observer_stop,signature_failure:self.failure,signature_unsupported:self.unsupported,source,headers,symbols:self.symbols,prepared,primary_lease})
  }
 }
@@ -2206,6 +2277,77 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   assert!(actual.prepared.trivial_suffixes.iter().all(Option::is_some));
   drop((plain,variadic,plain_again,actual));
   assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn plain_procedure_metadata_reuses_only_the_same_admitted_parameter_arc() {
+  let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let counter=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+  let admission=SettingAdmission::new(&counter,1<<24,&||Ok(()));
+  let mut actual=parse_original_signatures_using("/proc/probe(value)\n    return value\n".into(),&admission).unwrap();
+  let (parsed,_)=actual.prepared.take(actual.items.dense()[0].header_span,0,&actual.headers).unwrap();
+  let signature=parsed.signature;
+  let first=actual.prepared.procedure_metadata(signature.clone(),Default::default(),&admission).unwrap();
+  let before=counter.load(Ordering::Acquire);
+  let same=actual.prepared.procedure_metadata(signature.clone(),Default::default(),&admission).unwrap();
+  assert!(Arc::ptr_eq(&first,&same));
+  assert_eq!(counter.load(Ordering::Acquire),before);
+
+  let foreign=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+  let foreign_admission=SettingAdmission::new(&foreign,1<<24,&||Ok(()));
+  assert_eq!(actual.prepared.procedure_metadata(signature.clone(),Default::default(),&foreign_admission).unwrap_err().kind(),std::io::ErrorKind::InvalidInput);
+  assert_eq!(foreign.load(Ordering::Acquire),fixed);
+  let stopped=SettingAdmission::new(&counter,1<<24,&||Err(std::io::Error::from_raw_os_error(1450)));
+  assert_eq!(actual.prepared.procedure_metadata(signature.clone(),Default::default(),&stopped).unwrap_err().raw_os_error(),Some(1450));
+  assert_eq!(counter.load(Ordering::Acquire),before);
+
+  let mut copy=signature.clone();
+  copy.parameters=Arc::from(signature.parameters.as_ref());
+  let other=actual.prepared.procedure_metadata(copy,Default::default(),&admission).unwrap();
+  assert_eq!(first,other);
+  assert!(!Arc::ptr_eq(&first,&other));
+  let mut annotated=signature.clone();
+  annotated.return_annotation=Some(dm_ir::SymbolicExpression{tokens:Arc::from([])});
+  let annotated=actual.prepared.procedure_metadata(annotated,Default::default(),&admission).unwrap();
+  assert!(annotated.signature.return_annotation.is_some());
+  assert!(!Arc::ptr_eq(&first,&annotated));
+
+  let settings=super::super::adapter_rows::AdapterRows::compatibility(vec![
+   dm_ir::ProcedureSettingNode::Setting(dm_ir::ProcedureSetting{
+    name:dm_ir::SymbolId::of("name"),
+    operation:dm_ir::SettingOperation::Assign,
+    value:dm_ir::SymbolicExpression{tokens:Arc::from([])},
+   }),
+  ]);
+  let with_settings=actual.prepared.procedure_metadata(signature.clone(),settings,&admission).unwrap();
+  assert_eq!(with_settings.settings.len(),1);
+  assert!(!Arc::ptr_eq(&first,&with_settings));
+
+  let mut variadic=signature;
+  variadic.variadic=true;
+  let different=actual.prepared.procedure_metadata(variadic,Default::default(),&admission).unwrap();
+  assert!(different.signature.variadic);
+  assert!(!Arc::ptr_eq(&first,&different));
+  drop((first,same,other,annotated,with_settings,different,actual));
+  assert_eq!(counter.load(Ordering::Acquire),fixed);
+ }
+ #[test]
+ fn denied_optional_plain_metadata_bank_leaves_the_required_procedure_available() {
+  let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let counter=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+  let a=SettingAdmission::new(&counter,1<<24,&||Ok(()));
+  let mut actual=parse_original_signatures_using("/proc/probe(value)\n    return value\n".into(),&a).unwrap();
+  let (parsed,_)=actual.prepared.take(actual.items.dense()[0].header_span,0,&actual.headers).unwrap();
+  let required=arc_payload::<dm_ir::ProcedureMetadata>(1).unwrap()
+   +arc_payload::<dm_ir::ProcedureSettingNode>(0).unwrap();
+  let limit=counter.load(Ordering::Acquire)+required;
+  let tight=SettingAdmission::new(&counter,limit,&||Ok(()));
+  let metadata=actual.prepared.procedure_metadata(parsed.signature,Default::default(),&tight).unwrap();
+  assert_eq!(metadata.signature.parameters.len(),1);
+  assert!(actual.prepared.plain_metadata_attempted);
+  assert!(actual.prepared.plain_metadata.is_none());
+  assert_eq!(counter.load(Ordering::Acquire),limit);
+  drop((metadata,actual));
+  assert_eq!(counter.load(Ordering::Acquire),fixed);
  }
  #[test]
  fn empty_and_reused_plain_formals_charge_only_their_actual_shared_allocations() {

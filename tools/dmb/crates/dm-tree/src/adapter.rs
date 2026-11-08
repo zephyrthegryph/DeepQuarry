@@ -805,9 +805,10 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                 #[cfg(debug_assertions)]
                 if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
                     eprintln!(
-                        "ORIGINAL_ADAPTER_ALLOCATION_FAILURE span={:?} declarations={} compact_spellings={}",
+                        "ORIGINAL_ADAPTER_ALLOCATION_FAILURE span={:?} declarations={} compact_spellings={} pooled_metadata_hits={}",
                         item.raw.header_span(), context.result.skeletons.len(),
                         context.symbols.compact_spelling_len(),
+                        context.prepared_signatures.as_deref().map_or(0, |actual| actual.plain_metadata_hits_for_trace()),
                     );
                 }
                 return Err(actual);

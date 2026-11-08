@@ -420,6 +420,40 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
   }
  }
  #[test]
+ fn actual_pooled_plain_procedures_preserve_distinct_members_and_detached_metadata_credit() {
+    let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let counter=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
+    let native=OrderedOriginalDeclarations::parse(
+        "/proc/first(value)\n    return value\n/proc/second(value)\n    return value\n".into(),&a).unwrap()
+        .adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+    let skeletons=native.current[0].skeletons();
+    let mut rows=skeletons.iter().filter_map(|row|match row {
+        crate::Skeleton::Member{metadata,..}=>Some(metadata),
+        _=>None,
+    });
+    let first=rows.next().unwrap();
+    let second=rows.next().unwrap();
+    assert!(!Arc::ptr_eq(first,second));
+    assert_ne!(first.canonical,second.canonical);
+    let first=Arc::clone(first.procedure.as_ref().unwrap());
+    let second=Arc::clone(second.procedure.as_ref().unwrap());
+    assert!(Arc::ptr_eq(&first,&second));
+    drop(rows);
+    drop(skeletons);
+    let mut census=OriginalSignatureAliasCensus::default();
+    census.retain(Arc::clone(&native.primary_leases[0].aliases),&a).unwrap();
+    drop(native);
+    drop(first);
+    census.prune(&a).unwrap();
+    assert_eq!(census.live_groups(),1);
+    assert!(counter.load(Ordering::Acquire)>fixed);
+    drop(second);
+    census.prune(&a).unwrap();
+    assert_eq!(census.live_groups(),0);
+    assert_eq!(counter.load(Ordering::Acquire),fixed);
+ }
+ #[test]
  fn actual_shared_empty_procedure_backings_release_their_group_after_the_last_detached_alias() {
     let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
