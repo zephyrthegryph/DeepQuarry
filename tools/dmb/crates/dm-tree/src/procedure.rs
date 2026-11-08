@@ -311,17 +311,16 @@ fn parameter_tail_using(view:HeaderView<'_>,start:usize,symbols:&mut SymbolTable
             )
         })
         .transpose()?;
-    Ok(Parameter {
-        name: intern(symbols, view.text().get(head.name.range()).ok_or("prepared formal name is outside the actual current header")?)?,
-        declared_type:head.declared_type,
-        list_element_type:head.list_element_type,
-        flags:head.flags,
-        array:head.array,
+    let name = intern(symbols, view.text().get(head.name.range()).ok_or("prepared formal name is outside the actual current header")?)?;
+    Ok(Parameter::new(
+        name, head.declared_type, head.list_element_type, head.flags,
+        Span::new(start, start + text.len()),
+    ).with_tail(dm_ir::ParameterTail {
+        array: head.array,
         default,
         input_annotation,
         source_expression,
-        relative_span: Span::new(start, start + text.len()),
-    })
+    }))
 }
 pub(crate) struct HeaderTypeDeclaration {
     pub(crate) path: SymbolId,
@@ -757,15 +756,15 @@ mod tests {
         .unwrap();
         assert_eq!(first.canonical_bytes(), equivalent.canonical_bytes());
         assert_eq!(
-            first.parameters[0].declared_type,
+            first.parameters[0].declared_type(),
             Some(SymbolId::of("/list"))
         );
         assert_eq!(
-            first.parameters[0].list_element_type,
+            first.parameters[0].list_element_type(),
             Some(SymbolId::of("/datum/item"))
         );
         assert!(first.parameters[0].array.is_none());
-        assert_eq!(first.parameters[1].list_element_type, None);
+        assert_eq!(first.parameters[1].list_element_type(), None);
         let other =
             parse_signature("list/datum/other/values, list/plain", "", &mut symbols).unwrap();
         assert_ne!(first.canonical_bytes(), other.canonical_bytes());
@@ -781,7 +780,7 @@ mod tests {
         .unwrap();
         let parameter = &signature.parameters[0];
         assert_eq!(parameter.flags, 2 | 4);
-        assert_eq!(parameter.declared_type, Some(SymbolId::of("/list")));
+        assert_eq!(parameter.declared_type(), Some(SymbolId::of("/list")));
         let array = parameter.array.as_ref().unwrap();
         assert_eq!(array.element_type, Some(SymbolId::of("/datum/item")));
         assert_eq!(array.dimensions.len(), 2);
@@ -791,7 +790,7 @@ mod tests {
         assert!(parameter.input_annotation.is_some());
         assert!(parameter.source_expression.is_some());
         assert_eq!(signature.parameters[1].flags, 1);
-        assert_eq!(signature.parameters[1].declared_type, None);
+        assert_eq!(signature.parameters[1].declared_type(), None);
         let plain = parse_signature("value", "", &mut symbols).unwrap();
         let temporary = parse_signature("tmp/value", "", &mut symbols).unwrap();
         let unsized_array = parse_signature("value[]", "", &mut symbols).unwrap();
@@ -829,7 +828,7 @@ mod tests {
         assert_eq!(relative.parameters.len(), 1);
         assert_eq!(relative.parameters[0].name, SymbolId::of("target"));
         assert_eq!(
-            relative.parameters[0].declared_type,
+            relative.parameters[0].declared_type(),
             Some(SymbolId::of("/datum/marker_target"))
         );
         let absolute =
@@ -895,7 +894,7 @@ mod tests {
         let signature = parse_signature("obj/instance/", "", &mut symbols).unwrap();
         assert_eq!(signature.parameters[0].name, SymbolId::of("instance"));
         assert_eq!(
-            signature.parameters[0].declared_type,
+            signature.parameters[0].declared_type(),
             Some(SymbolId::of("/obj"))
         );
         assert!(signature.parameters[0].array.is_none());
@@ -934,7 +933,7 @@ mod tests {
         .unwrap();
         assert_eq!(signature.parameters.len(), 1);
         assert_eq!(
-            signature.parameters[0].declared_type,
+            signature.parameters[0].declared_type(),
             Some(SymbolId::of("/list"))
         );
         assert!(signature.variadic);
@@ -1026,7 +1025,7 @@ mod tests {
         let first = &signature.parameters[0];
         assert_eq!(first.name, SymbolId::of("values"));
         assert_eq!(first.flags, 4);
-        assert_eq!(first.declared_type, Some(SymbolId::of("/list")));
+        assert_eq!(first.declared_type(), Some(SymbolId::of("/list")));
         let array = first.array.as_ref().unwrap();
         assert_eq!(array.element_type, Some(SymbolId::of("/datum/item")));
         assert_eq!(
@@ -1258,12 +1257,12 @@ fn frozen_complete_native_formals(arguments_view:HeaderView<'_>,symbols:&mut Sym
  fn original(arguments:&str)->ParsedSignature{let lex=LexedHeader::new(arguments);let formals=parse_original_formal_parameters_views(lex.view(),&mut SymbolTable::default()).unwrap();finish_signature_views(formals,LexedHeader::new("").view(),&mut SymbolTable::default()).unwrap()}
  #[test]fn actual_original_absolute_formals_are_parameters_while_compiler_absolute_forms_stay_declarations(){
   for(args,name,kind)in[("/datum/a/value","value",Some(SymbolId::of("/datum/a"))),("/foo","foo",None)]{
-   let actual=original(args);assert!(actual.declarations.is_empty());assert_eq!(actual.signature.parameters.len(),1);assert_eq!(actual.signature.parameters[0].name,SymbolId::of(name));assert_eq!(actual.signature.parameters[0].declared_type,kind);
+   let actual=original(args);assert!(actual.declarations.is_empty());assert_eq!(actual.signature.parameters.len(),1);assert_eq!(actual.signature.parameters[0].name,SymbolId::of(name));assert_eq!(actual.signature.parameters[0].declared_type(),kind);
    let native=parse_signature_declarations(args,"",&mut SymbolTable::default()).unwrap();assert!(native.signature.parameters.is_empty());assert_eq!(native.declarations.len(),1);
   }
  }
  #[test]fn actual_original_spaced_var_prefix_and_global_alias_match_real_original_flags_without_native_reclassification(){
-  let actual=original("var / static / datum / a / x");let parameter=&actual.signature.parameters[0];assert_eq!(parameter.name,SymbolId::of("x"));assert_eq!(parameter.declared_type,Some(SymbolId::of("/datum/a")));assert_eq!(parameter.flags,1);assert_eq!(original("global/x").signature.parameters[0].flags,1);assert_eq!(parse_signature_declarations("global/x","",&mut SymbolTable::default()).unwrap().signature.parameters[0].flags,8);
+  let actual=original("var / static / datum / a / x");let parameter=&actual.signature.parameters[0];assert_eq!(parameter.name,SymbolId::of("x"));assert_eq!(parameter.declared_type(),Some(SymbolId::of("/datum/a")));assert_eq!(parameter.flags,1);assert_eq!(original("global/x").signature.parameters[0].flags,1);assert_eq!(parse_signature_declarations("global/x","",&mut SymbolTable::default()).unwrap().signature.parameters[0].flags,8);
  }
 }
 
@@ -1284,8 +1283,8 @@ fn frozen_complete_native_formals(arguments_view:HeaderView<'_>,symbols:&mut Sym
  fn one(text:&str,original:bool)->dm_ir::Parameter{let lex=LexedHeader::new(text);let mut symbols=SymbolTable::default();let formals=if original{parse_original_formal_parameters_views(lex.view(),&mut symbols)}else{parse_formal_parameters_views(lex.view(),&mut symbols)}.unwrap();formals.parameters.into_iter().next().unwrap()}
  #[test]fn actual_original_flag_prefix_matches_original_var_type_builder_without_native_flag_changes(){
   for(text,flags)in[("const/tmp/x",4|8),("final/SpacemanDMM_private/SpacemanDMM_protected/x",16|32|64),("SpacemanDMM_final/x",16),("global/x",1)]{assert_eq!(one(text,true).flags,flags,"{text}");}
-  let actual=one("datum/static/global/const/tmp/x",true);assert_eq!(actual.flags,0);assert_eq!(actual.declared_type,Some(SymbolId::of("/datum/static/global/const/tmp")));
-  let native=one("datum/static/global/const/tmp/x",false);assert_eq!(native.flags,1|8|2|4);assert_eq!(native.declared_type,Some(SymbolId::of("/datum")));assert_eq!(one("const/tmp/x",false).flags,2|4);
+  let actual=one("datum/static/global/const/tmp/x",true);assert_eq!(actual.flags,0);assert_eq!(actual.declared_type(),Some(SymbolId::of("/datum/static/global/const/tmp")));
+  let native=one("datum/static/global/const/tmp/x",false);assert_eq!(native.flags,1|8|2|4);assert_eq!(native.declared_type(),Some(SymbolId::of("/datum")));assert_eq!(one("const/tmp/x",false).flags,2|4);
  }
 }
 

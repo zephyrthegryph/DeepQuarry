@@ -792,7 +792,16 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                 }
             }
             Ok(None) => {}
-            Err(WalkFailure::Operational(actual))=>return Err(actual),
+            Err(WalkFailure::Operational(actual)) => {
+                #[cfg(debug_assertions)]
+                if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+                    eprintln!(
+                        "ORIGINAL_ADAPTER_ALLOCATION_FAILURE span={:?} declarations={}",
+                        item.raw.header_span(), context.result.skeletons.len(),
+                    );
+                }
+                return Err(actual);
+            }
             Err(WalkFailure::Source(message)) => context.errors.push(AdapterError {
                     original_fatal: original_parameter_fatal,
                 kind: if source_argument_span.is_some() {

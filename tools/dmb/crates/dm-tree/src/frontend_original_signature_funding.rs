@@ -46,6 +46,7 @@ typed_aliases!(
  Metadata(metadata,dm_ir::ProcedureMetadata),
  Settings(settings,[dm_ir::ProcedureSettingNode]),
  Parameters(parameters,[dm_ir::Parameter]),
+ ParameterTail(parameter_tails,dm_ir::ParameterTail),
  Array(arrays,dm_ir::ArrayDeclaration),
  Dimensions(dimensions,[Option<dm_ir::SymbolicExpression>]),
  Tokens(tokens,[dm_ir::ExpressionToken]),
@@ -171,6 +172,7 @@ fn visit_aliases(facts:&crate::AdaptedDeclarations,prepared:&PreparedOriginalSig
    f(Alias::Tokens(&setting.value.tokens))?;
   }
   for parameter in procedure.signature.parameters.iter(){
+   if let Some(tail)=parameter.tail_allocation(){f(Alias::ParameterTail(tail))?;}
    for expression in [&parameter.default,&parameter.input_annotation,&parameter.source_expression].into_iter().flatten(){f(Alias::Tokens(&expression.tokens))?}
    if let Some(array)=&parameter.array{f(Alias::Array(array))?;f(Alias::Dimensions(&array.dimensions))?;for expression in array.dimensions.iter().flatten(){f(Alias::Tokens(&expression.tokens))?}}
   }

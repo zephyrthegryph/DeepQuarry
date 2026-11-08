@@ -153,7 +153,7 @@ fn signatures_preserve_effective_reference_defaults_not_comment_hints() {
         assert!(proc.signature.return_annotation.is_none());
         assert!(!proc.signature.variadic);
         for parameter in proc.signature.parameters.iter() {
-            assert!(parameter.declared_type.is_none());
+            assert!(parameter.declared_type().is_none());
             assert!(parameter.default.is_none());
             assert!(parameter.input_annotation.is_none());
         }

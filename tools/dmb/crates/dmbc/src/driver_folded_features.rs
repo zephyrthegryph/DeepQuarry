@@ -54,7 +54,7 @@ impl DriverEvaluator<'_> {
                         .text(parameter.name)
                         .ok_or("folded reference parameter spelling unavailable")?;
                     bindings.parameters.push(name.into());
-                    if let Some(path) = parameter.declared_type {
+                    if let Some(path) = parameter.declared_type() {
                         bindings.parameter_types.insert(
                             name.into(),
                             self.symbols

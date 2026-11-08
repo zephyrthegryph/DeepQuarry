@@ -283,8 +283,8 @@ fn procedure(value: &ProcedureMetadata) -> Procedure {
             .iter()
             .map(|arg| Argument {
                 name: arg.name,
-                declared: arg.declared_type,
-                element: arg.list_element_type,
+                declared: arg.declared_type(),
+                element: arg.list_element_type(),
                 flags: arg.flags,
                 array: arg.array.as_deref().map(array),
                 default: arg.default.as_ref().map(expression),
@@ -304,20 +304,18 @@ fn proc(value: Procedure, symbols: Names) -> Option<Arc<ProcedureMetadata>> {
             if arg.span[0] > arg.span[1] {
                 return None;
             }
-            Some(Parameter {
-                name: arg.name,
-                declared_type: symbol(arg.declared, symbols)?,
-                list_element_type: symbol(arg.element, symbols)?,
-                flags: arg.flags,
-                array: arg
-                    .array
-                    .map(|value| arr(value, symbols))
-                    .transpose_option()?,
+            Some(Parameter::new(
+                arg.name,
+                symbol(arg.declared, symbols)?,
+                symbol(arg.element, symbols)?,
+                arg.flags,
+                SyntaxSpan::new(arg.span[0], arg.span[1]),
+            ).with_tail(crate::ParameterTail {
+                array: arg.array.map(|value| arr(value, symbols)).transpose_option()?,
                 default: opt_expr(arg.default, symbols)?,
                 input_annotation: opt_expr(arg.annotation, symbols)?,
                 source_expression: opt_expr(arg.source, symbols)?,
-                relative_span: SyntaxSpan::new(arg.span[0], arg.span[1]),
-            })
+            }))
         })
         .collect::<Option<Vec<_>>>()?;
     Some(Arc::new(ProcedureMetadata {

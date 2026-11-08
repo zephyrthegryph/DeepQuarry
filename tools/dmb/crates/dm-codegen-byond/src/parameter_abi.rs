@@ -18,10 +18,10 @@ pub fn formal_shape(parameter: &Parameter) -> Result<FormalShape, AbiError> {
     }
     match &parameter.array {
         None => Ok(FormalShape::Scalar {
-            declared_type: parameter.declared_type,
+            declared_type: parameter.declared_type(),
         }),
         Some(array) if array.dimensions.len() == 1 && array.dimensions[0].is_none() => {
-            if parameter.declared_type != Some(SymbolId::of("/list")) {
+            if parameter.declared_type() != Some(SymbolId::of("/list")) {
                 return Err(AbiError::unsupported(
                     "unsized parameter array lacks certified list declared type",
                 ));
@@ -42,20 +42,16 @@ mod tests {
     use std::sync::Arc;
     #[test]
     fn unsized_formal_retains_element_type_without_allocating_or_erasing_modifiers() {
-        let mut parameter = Parameter {
-            name: SymbolId::of("values"),
-            declared_type: Some(SymbolId::of("/list")),
-            list_element_type: None,
-            flags: 0,
+        let mut parameter = Parameter::new(
+            SymbolId::of("values"), Some(SymbolId::of("/list")), None, 0,
+            dm_syntax::Span::new(0, 8),
+        ).with_tail(dm_ir::ParameterTail {
             array: Some(Arc::new(ArrayDeclaration {
                 dimensions: Arc::from([None]),
                 element_type: Some(SymbolId::of("/obj")),
             })),
-            default: None,
-            input_annotation: None,
-            source_expression: None,
-            relative_span: dm_syntax::Span::new(0, 8),
-        };
+            ..Default::default()
+        });
         assert_eq!(
             formal_shape(&parameter).unwrap(),
             FormalShape::UnsizedList {
@@ -66,8 +62,8 @@ mod tests {
         assert!(formal_shape(&parameter).is_ok());
         parameter.flags = 1;
         assert!(formal_shape(&parameter).is_err());
-        parameter.flags = 0;
-        parameter.declared_type = None;
+        let parameter = Parameter::new(parameter.name, None, None, 0, parameter.relative_span)
+            .with_tail(dm_ir::ParameterTail { array: parameter.array.clone(), ..Default::default() });
         assert!(formal_shape(&parameter).is_err());
     }
 }

@@ -31,7 +31,7 @@ pub use canonical_encoding::{CanonicalByteSink, CanonicalWork};
 mod declarations;
 pub use declarations::{
     ArrayDeclaration, DeclarationFieldMeaning, DeclarationMeaning, DeclaredTypeKnowledge, ExpressionToken, OpaqueFieldBase,
-    Parameter, ProcedureMetadata, ProcedureSetting, ProcedureSettingNode, ProcedureSignature,
+    Parameter, ParameterTail, ProcedureMetadata, ProcedureSetting, ProcedureSettingNode, ProcedureSignature,
     SemanticValue, SettingOperation, SymbolicExpression,
 };
 mod initializer;

@@ -665,6 +665,9 @@ impl HeapCensus {
         };
         self.slice(signature_owner, &metadata.signature.parameters, true);
         for parameter in metadata.signature.parameters.iter() {
+            if let Some(tail) = parameter.tail_allocation() {
+                self.arc_object(signature_owner, tail);
+            }
             for expression in [
                 &parameter.default,
                 &parameter.input_annotation,

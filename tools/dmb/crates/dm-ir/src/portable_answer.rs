@@ -327,17 +327,12 @@ mod tests {
             3,
             Some(Arc::new(crate::ProcedureMetadata {
                 signature: crate::ProcedureSignature {
-                    parameters: Arc::from([crate::Parameter {
-                        name: SymbolId::of("amount"),
-                        declared_type: None,
-                        list_element_type: None,
-                        flags: 0,
-                        array: None,
+                    parameters: Arc::from([crate::Parameter::new(
+                        SymbolId::of("amount"), None, None, 0, dm_syntax::Span::new(0, 6),
+                    ).with_tail(crate::ParameterTail {
                         default: Some(expression("null")),
-                        input_annotation: None,
-                        source_expression: None,
-                        relative_span: dm_syntax::Span::new(0, 6),
-                    }]),
+                        ..Default::default()
+                    })]),
                     variadic: false,
                     return_annotation: Some(expression("num")),
                 },

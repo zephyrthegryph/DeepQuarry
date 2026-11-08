@@ -36,8 +36,8 @@ pub(super) fn member_row(tree: &SemanticTree, id: dm_tree::MemberId) -> Result<V
     let procedure = metadata.procedure.as_ref().map(|procedure| {
             let parameters = procedure.signature.parameters.iter().map(|parameter| Ok(json!({
                 "name":spelling(symbols,parameter.name)?,
-                "declared_type":parameter.declared_type.map(|id| spelling(symbols,id)).transpose()?,
-                "list_element_type":parameter.list_element_type.map(|id| spelling(symbols,id)).transpose()?,
+                "declared_type":parameter.declared_type().map(|id| spelling(symbols,id)).transpose()?,
+                "list_element_type":parameter.list_element_type().map(|id| spelling(symbols,id)).transpose()?,
                 "list_element_type_status":"known",
                 "flags":parameter.flags,
                 "array":parameter.array.as_ref().map(|array| Ok::<_, ExportError>(json!({

@@ -253,17 +253,7 @@ fn import() -> Result<CheckerBuiltinCatalog, CheckerBuiltinError> {
             let parameters = row
                 .parameters
                 .iter()
-                .map(|p| Parameter {
-                    name: SymbolId::of(p.name),
-                    declared_type: None,
-                    list_element_type: None,
-                    flags: 0,
-                    array: None,
-                    default: None,
-                    input_annotation: None,
-                    source_expression: None,
-                    relative_span: dm_syntax::Span::new(0, 0),
-                })
+                .map(|p| Parameter::new(SymbolId::of(p.name), None, None, 0, dm_syntax::Span::new(0, 0)))
                 .collect::<Vec<_>>();
             metadata.procedure = Some(Arc::new(ProcedureMetadata {
                 signature: ProcedureSignature {

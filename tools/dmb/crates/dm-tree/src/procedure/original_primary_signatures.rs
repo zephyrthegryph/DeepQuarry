@@ -13,7 +13,7 @@ use std::sync::Arc;
 const ACTIVE_HEADER_FIXED: usize = 1024;
 
 fn header_work_bytes(tokens:usize,text:usize)->std::io::Result<usize>{
-  let token_unit=std::mem::size_of::<dm_ir::Parameter>().checked_add(std::mem::size_of::<super::HeaderTypeDeclaration>()).and_then(|n|n.checked_add(2*std::mem::size_of::<super::OriginalFormalNotice>())).and_then(|n|n.checked_add(std::mem::size_of::<dm_syntax::ParameterClauseSpans>())).and_then(|n|n.checked_add(std::mem::size_of::<dm_ir::ExpressionToken>())).and_then(|n|n.checked_add(std::mem::size_of::<dm_syntax::SpanToken>())).and_then(|n|n.checked_add(std::mem::size_of::<String>()+16*std::mem::size_of::<usize>())).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
+  let token_unit=std::mem::size_of::<dm_ir::Parameter>().checked_add(dm_ir::ParameterTail::arc_allocation_bytes()).and_then(|n|n.checked_add(std::mem::size_of::<super::HeaderTypeDeclaration>())).and_then(|n|n.checked_add(2*std::mem::size_of::<super::OriginalFormalNotice>())).and_then(|n|n.checked_add(std::mem::size_of::<dm_syntax::ParameterClauseSpans>())).and_then(|n|n.checked_add(std::mem::size_of::<dm_ir::ExpressionToken>())).and_then(|n|n.checked_add(std::mem::size_of::<dm_syntax::SpanToken>())).and_then(|n|n.checked_add(std::mem::size_of::<String>()+16*std::mem::size_of::<usize>())).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
   let bytes=tokens.checked_mul(token_unit).and_then(|n|n.checked_mul(4)).and_then(|n|Some(text).and_then(|text|text.checked_mul(4)).and_then(|text|n.checked_add(text))).and_then(|n|n.checked_add(ACTIVE_HEADER_FIXED)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
  Ok(bytes)
 }
@@ -45,6 +45,9 @@ fn retained_signature_bytes(signature: &CompletedSignatureCore, tail: Option<&Co
         add(arc_payload::<dm_ir::Parameter>(signature.parameters.len()))?;
     }
     for parameter in signature.parameters.iter() {
+        if parameter.tail_allocation().is_some() {
+            add(Some(dm_ir::ParameterTail::arc_allocation_bytes()))?;
+        }
         for expression in [&parameter.default, &parameter.input_annotation, &parameter.source_expression].into_iter().flatten() {
             add(arc_payload::<dm_ir::ExpressionToken>(expression.tokens.len()))?;
         }
@@ -322,7 +325,7 @@ impl CompletedPayloadShapeCensus {
             }
             census.unique_parameter_arcs += 1;
             let plain = parameters.iter().filter(|row| {
-                row.declared_type.is_none() && row.list_element_type.is_none() && row.flags == 0
+                row.declared_type().is_none() && row.list_element_type().is_none() && row.flags == 0
                     && row.array.is_none() && row.default.is_none() && row.input_annotation.is_none()
                     && row.source_expression.is_none() && u16::try_from(row.relative_span.start).is_ok()
                     && u16::try_from(row.relative_span.end).is_ok()
@@ -530,8 +533,8 @@ impl PlainParameterBank {
             if row.array.is_some() || row.default.is_some() || row.input_annotation.is_some()
                 || row.source_expression.is_some()
             { return None; }
-            for value in [row.name.bits(), row.declared_type.map_or(0, |id| id.bits()),
-                row.list_element_type.map_or(0, |id| id.bits()), u64::from(row.flags),
+            for value in [row.name.bits(), row.declared_type().map_or(0, |id| id.bits()),
+                row.list_element_type().map_or(0, |id| id.bits()), u64::from(row.flags),
                 row.relative_span.start as u64, row.relative_span.end as u64] {
                 hash=(hash^value).wrapping_mul(0x100000001b3);
             }
@@ -2243,9 +2246,9 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
    let SlotValue::Payload(payload)=rows.get(at).unwrap().slot.value()else{panic!("actual formal payload")};
    rows.payload(payload).unwrap()
   };
-  assert!(core(0).parameters[0].declared_type.is_some());
+  assert!(core(0).parameters[0].declared_type().is_some());
   assert!(Arc::ptr_eq(&core(0).parameters,&core(1).parameters));
-  assert_ne!(core(0).parameters[0].declared_type,core(2).parameters[0].declared_type);
+  assert_ne!(core(0).parameters[0].declared_type(),core(2).parameters[0].declared_type());
   assert!(!Arc::ptr_eq(&core(0).parameters,&core(2).parameters));
   assert!(core(3).parameters[0].default.is_some());
   assert!(!Arc::ptr_eq(&core(3).parameters,&core(4).parameters));

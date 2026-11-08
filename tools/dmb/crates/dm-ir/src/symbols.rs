@@ -13,6 +13,8 @@ use std::sync::Arc;
 pub struct SymbolId(u64);
 
 impl SymbolId {
+    pub(crate) const ZERO: Self = Self(0);
+
     pub fn of(text: &str) -> Self {
         Self::of_bytes(text.as_bytes())
     }

@@ -91,20 +91,116 @@ impl SymbolicExpression {
         xxhash_rust::xxh3::xxh3_128(&self.canonical_bytes())
     }
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Parameter {
-    pub name: SymbolId,
-    pub declared_type: Option<SymbolId>,
-    /// Authored list/T element hint, distinct from the runtime /list container.
-    pub list_element_type: Option<SymbolId>,
-    /// Declaration modifiers, using the shared variable declaration flag masks.
-    pub flags: u32,
+/// Optional authored expression and array data. Plain parameters share the
+/// empty static view and retain no tail allocation.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ParameterTail {
     pub array: Option<Arc<ArrayDeclaration>>,
     pub default: Option<SymbolicExpression>,
     pub input_annotation: Option<SymbolicExpression>,
     pub source_expression: Option<SymbolicExpression>,
+}
+static EMPTY_PARAMETER_TAIL: ParameterTail = ParameterTail {
+    array: None,
+    default: None,
+    input_annotation: None,
+    source_expression: None,
+};
+
+impl ParameterTail {
+    /// Includes the physical Arc control, excluding separately shared children.
+    pub const fn arc_allocation_bytes() -> usize {
+        let control = 2 * std::mem::size_of::<usize>();
+        let align = std::mem::align_of::<Self>();
+        control.div_ceil(align) * align + std::mem::size_of::<Self>()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Parameter {
+    pub name: SymbolId,
+    // Absent IDs are normalized to zero; presence is independent
+    // from all possible 64-bit symbol IDs, including zero.
+    type_ids: [SymbolId; 2],
+    /// Declaration modifiers, using the shared variable declaration flag masks.
+    pub flags: u32,
+    type_presence: u8,
     /// Location in this signature's argument text for the occurrence mapper.
     pub relative_span: Span,
+    tail: Option<Arc<ParameterTail>>,
+}
+
+impl Parameter {
+    pub fn new(
+        name: SymbolId, declared_type: Option<SymbolId>, list_element_type: Option<SymbolId>,
+        flags: u32, relative_span: Span,
+    ) -> Self {
+        Self {
+            name, flags, relative_span, tail: None,
+            type_ids: [declared_type.unwrap_or(SymbolId::ZERO), list_element_type.unwrap_or(SymbolId::ZERO)],
+            type_presence: u8::from(declared_type.is_some()) | (u8::from(list_element_type.is_some()) << 1),
+        }
+    }
+
+    pub fn declared_type(&self) -> Option<SymbolId> {
+        (self.type_presence & 1 != 0).then_some(self.type_ids[0])
+    }
+
+    /// Authored list/T element hint, distinct from the runtime /list container.
+    pub fn list_element_type(&self) -> Option<SymbolId> {
+        (self.type_presence & 2 != 0).then_some(self.type_ids[1])
+    }
+
+    pub fn with_tail(mut self, tail: ParameterTail) -> Self {
+        self.tail = (tail != EMPTY_PARAMETER_TAIL).then(|| Arc::new(tail));
+        self
+    }
+
+    /// Borrow only the actual physical tail, for allocation accounting and
+    /// detached-resource observation.
+    pub fn tail_allocation(&self) -> Option<&Arc<ParameterTail>> {
+        self.tail.as_ref()
+    }
+}
+
+impl std::ops::Deref for Parameter {
+    type Target = ParameterTail;
+    fn deref(&self) -> &Self::Target {
+        self.tail.as_deref().unwrap_or(&EMPTY_PARAMETER_TAIL)
+    }
+}
+
+#[cfg(test)]
+mod parameter_storage_tests {
+    use super::*;
+
+    #[test]
+    fn compact_parameter_keeps_zero_type_ids_wide_spans_and_the_exact_tail_alias() {
+        let zero: SymbolId = serde_json::from_str("0").unwrap();
+        let span = Span::new(usize::MAX - 2, usize::MAX - 1);
+        let name = SymbolId::of("name");
+        let empty = Parameter::new(name, None, None, u32::MAX, span);
+        let typed = Parameter::new(name, Some(zero), Some(zero), u32::MAX, span);
+        assert_ne!(empty, typed);
+        assert_eq!(typed.declared_type(), Some(zero));
+        assert_eq!(typed.list_element_type(), Some(zero));
+        assert_eq!(typed.relative_span, span);
+        assert_eq!(typed.flags, u32::MAX);
+        assert!(typed.tail_allocation().is_none());
+        assert_eq!(typed.clone().with_tail(ParameterTail::default()), typed);
+        let value = typed.with_tail(ParameterTail {
+            default: Some(SymbolicExpression { tokens: Arc::from([]) }),
+            ..Default::default()
+        });
+        let alias = value.clone();
+        assert_eq!(value, alias);
+        assert!(Arc::ptr_eq(value.tail_allocation().unwrap(), alias.tail_allocation().unwrap()));
+        #[cfg(target_pointer_width = "64")]
+        {
+            assert_eq!(std::mem::size_of::<Parameter>(), 56);
+            assert_eq!(ParameterTail::arc_allocation_bytes(), 72);
+        }
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProcedureSignature {

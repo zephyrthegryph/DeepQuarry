@@ -528,7 +528,7 @@ fn prepare_verified_procedure_with_spelling(
                 // argument table restricts its input to the authored element
                 // family. Keep that metadata separate from lexical lookup.
                 if declared_type == Some(dm_ir::SymbolId::of("/list")) {
-                    param.list_element_type.or(declared_type)
+                    param.list_element_type().or(declared_type)
                 } else {
                     declared_type
                 }
@@ -546,7 +546,7 @@ fn prepare_verified_procedure_with_spelling(
             inputs.readonly_parameters.insert(index as u32);
         }
         let declared = param
-            .declared_type
+            .declared_type()
             .map(|id| {
                 symbols
                     .text(id)

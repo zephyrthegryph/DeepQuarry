@@ -120,17 +120,18 @@ fn null_category_and_world_source_use_pinned_metadata_policy() {
 fn typed_parameter_and_symbolic_source_helper_keep_argument_frame() {
     let mut symbols = SymbolTable::default();
     let mut metadata = metadata(&[], &mut symbols);
-    metadata.signature.parameters = vec![Parameter {
-        name: symbols.intern("count").unwrap(),
-        declared_type: None,
-        list_element_type: None,
-        flags: 0,
-        array: None,
+    metadata.signature.parameters = vec![Parameter::new(
+        symbols.intern("count").unwrap(),
+        None,
+        None,
+        0,
+        Span::new(0, 1),
+    ).with_tail(dm_ir::ParameterTail {
         default: Some(expression("1", &mut symbols)),
         input_annotation: Some(expression("num | null", &mut symbols)),
         source_expression: Some(expression("list(count)", &mut symbols)),
-        relative_span: Span::new(0, 1),
-    }]
+        ..Default::default()
+    })]
     .into();
     let result = prepare_procedure(
         &metadata,
@@ -159,17 +160,13 @@ fn typed_list_formals_keep_lexical_list_and_authored_element_input_flags() {
     metadata.signature.parameters = ["/atom", "/atom/movable", "/obj", "/mob", "/datum/item"]
         .into_iter()
         .enumerate()
-        .map(|(index, element)| Parameter {
-            name: symbols.intern(&format!("values{index}")).unwrap(),
-            declared_type: Some(list),
-            list_element_type: Some(symbols.intern(element).unwrap()),
-            flags: 0,
-            array: None,
-            default: None,
-            input_annotation: None,
-            source_expression: None,
-            relative_span: Span::new(0, 1),
-        })
+        .map(|(index, element)| Parameter::new(
+            symbols.intern(&format!("values{index}")).unwrap(),
+            Some(list),
+            Some(symbols.intern(element).unwrap()),
+            0,
+            Span::new(0, 1),
+        ))
         .collect::<Vec<_>>()
         .into();
     let prepared = prepare_procedure(
@@ -211,20 +208,19 @@ fn typed_unsized_formals_keep_list_lexical_type_and_element_restrictions() {
     metadata.signature.parameters = ["/obj", "/mob", "/datum/item"]
         .into_iter()
         .enumerate()
-        .map(|(index, element)| Parameter {
-            name: symbols.intern(&format!("values{index}")).unwrap(),
-            declared_type: Some(list),
-            list_element_type: None,
-            flags: 0,
+        .map(|(index, element)| Parameter::new(
+            symbols.intern(&format!("values{index}")).unwrap(),
+            Some(list),
+            None,
+            0,
+            Span::new(0, 1),
+        ).with_tail(dm_ir::ParameterTail {
             array: Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
                 dimensions: [None].into(),
                 element_type: Some(symbols.intern(element).unwrap()),
             })),
-            default: None,
-            input_annotation: None,
-            source_expression: None,
-            relative_span: Span::new(0, 1),
-        })
+            ..Default::default()
+        }))
         .collect::<Vec<_>>()
         .into();
     let result = prepare_procedure(
@@ -286,17 +282,16 @@ fn dynamic_radius_uses_helper_and_const_callee_formals_keep_lexical_facts() {
     assert_eq!(source_mode("view(7)", true).unwrap(), Some((1, 7)));
     let mut symbols = SymbolTable::default();
     let mut metadata = metadata(&[], &mut symbols);
-    metadata.signature.parameters = vec![Parameter {
-        name: symbols.intern("caller").unwrap(),
-        declared_type: Some(symbols.intern("/callee").unwrap()),
-        list_element_type: None,
-        flags: 2,
-        array: None,
-        default: None,
-        input_annotation: None,
+    metadata.signature.parameters = vec![Parameter::new(
+        symbols.intern("caller").unwrap(),
+        Some(symbols.intern("/callee").unwrap()),
+        None,
+        2,
+        Span::new(0, 1),
+    ).with_tail(dm_ir::ParameterTail {
         source_expression: Some(expression("oview(src)", &mut symbols)),
-        relative_span: Span::new(0, 1),
-    }]
+        ..Default::default()
+    })]
     .into();
     let result = prepare_procedure(
         &metadata,
@@ -370,19 +365,12 @@ fn nested_setting_is_not_silently_lost_by_incomplete_metadata() {
 fn parameter_modifiers_and_arrays_are_never_silently_erased() {
     let mut symbols = SymbolTable::default();
     let mut metadata = metadata(&[], &mut symbols);
-    let parameter = Parameter {
-        name: symbols.intern("value").unwrap(),
-        declared_type: Some(symbols.intern("/datum").unwrap()),
-        list_element_type: None,
-        // Const (bit 2) is supported and checked by the lexical binding
-        // tests. Static (bit 1) still has no certified formal policy.
-        flags: 1,
-        array: None,
-        default: None,
-        input_annotation: None,
-        source_expression: None,
-        relative_span: Span::new(0, 1),
-    };
+    // Static (bit 1) still has no certified formal policy. Const (bit 2)
+    // is supported by the lexical binding checks.
+    let parameter = Parameter::new(
+        symbols.intern("value").unwrap(), Some(symbols.intern("/datum").unwrap()),
+        None, 1, Span::new(0, 1),
+    );
     metadata.signature.parameters = vec![parameter.clone()].into();
     let error = prepare_procedure(
         &metadata,
@@ -397,10 +385,14 @@ fn parameter_modifiers_and_arrays_are_never_silently_erased() {
     assert!(error.message.contains("modifiers"));
     let mut parameter = parameter;
     parameter.flags = 0;
-    parameter.array = Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
-        dimensions: vec![None].into(),
-        element_type: parameter.declared_type,
-    }));
+    let declared_type = parameter.declared_type();
+    let parameter = parameter.with_tail(dm_ir::ParameterTail {
+        array: Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
+            dimensions: vec![None].into(),
+            element_type: declared_type,
+        })),
+        ..Default::default()
+    });
     metadata.signature.parameters = vec![parameter].into();
     let error = prepare_procedure(
         &metadata,
@@ -418,20 +410,19 @@ fn parameter_modifiers_and_arrays_are_never_silently_erased() {
 fn unsized_untyped_list_formal_does_not_allocate_a_default() {
     let mut symbols = SymbolTable::default();
     let mut metadata = metadata(&[], &mut symbols);
-    metadata.signature.parameters = vec![Parameter {
-        name: symbols.intern("values").unwrap(),
-        declared_type: Some(symbols.intern("/list").unwrap()),
-        list_element_type: None,
-        flags: 0,
+    metadata.signature.parameters = vec![Parameter::new(
+        symbols.intern("values").unwrap(),
+        Some(symbols.intern("/list").unwrap()),
+        None,
+        0,
+        Span::new(0, 8),
+    ).with_tail(dm_ir::ParameterTail {
         array: Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
             dimensions: vec![None].into(),
             element_type: None,
         })),
-        default: None,
-        input_annotation: None,
-        source_expression: None,
-        relative_span: Span::new(0, 8),
-    }]
+        ..Default::default()
+    })]
     .into();
     let prepared = prepare_procedure(
         &metadata,
@@ -518,17 +509,18 @@ fn original_formal_tokens_match_compatibility_policy_without_formal_relex() {
     ] {
         let mut symbols = SymbolTable::default();
         let mut data = metadata(&[], &mut symbols);
-        data.signature.parameters = vec![Parameter {
-            name: symbols.intern("arg").unwrap(),
-            declared_type: None,
-            list_element_type: None,
-            flags: 0,
-            array: None,
+        data.signature.parameters = vec![Parameter::new(
+            symbols.intern("arg").unwrap(),
+            None,
+            None,
+            0,
+            Span::new(0, 1),
+        ).with_tail(dm_ir::ParameterTail {
             default: Some(expression(default, &mut symbols)),
             input_annotation: Some(expression(annotation, &mut symbols)),
             source_expression: Some(expression(source, &mut symbols)),
-            relative_span: Span::new(0, 1),
-        }]
+            ..Default::default()
+        })]
         .into();
         FORMAL_RELEX_CALLS.with(|count| count.set(0));
         let old = prepare_verified_procedure(

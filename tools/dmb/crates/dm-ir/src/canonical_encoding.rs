@@ -161,9 +161,9 @@ impl<'a,const INLINE: usize> Encoder<'a,'_,INLINE> {
                 if field<6{self.push(Task::Parameter(value,field+1))?}
                 match field{
                     0=>{self.symbol(value.name)?;self.bytes(&value.flags.to_le_bytes())?;self.byte(u8::from(value.array.is_some()))?;if let Some(v)=&value.array{self.frame(Root::Array(v))?}},
-                    1=>{self.byte(u8::from(value.declared_type.is_some()))?;self.bytes(&value.declared_type.map(SymbolId::bits).unwrap_or(0).to_le_bytes())?},
+                    1=>{self.byte(u8::from(value.declared_type().is_some()))?;self.bytes(&value.declared_type().map(SymbolId::bits).unwrap_or(0).to_le_bytes())?},
                     2=>self.optional_expression(value.default.as_ref())?,
-                    3=>{self.byte(u8::from(value.list_element_type.is_some()))?;self.bytes(&value.list_element_type.map(SymbolId::bits).unwrap_or(0).to_le_bytes())?},
+                    3=>{self.byte(u8::from(value.list_element_type().is_some()))?;self.bytes(&value.list_element_type().map(SymbolId::bits).unwrap_or(0).to_le_bytes())?},
                     4=>self.optional_expression(value.input_annotation.as_ref())?,
                     5=>self.optional_expression(value.source_expression.as_ref())?,
                     6=>{},_=>unreachable!(),

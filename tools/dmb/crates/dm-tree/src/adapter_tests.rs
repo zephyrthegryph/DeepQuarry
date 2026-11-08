@@ -373,7 +373,7 @@ fn optional_separator_before_procedure_arguments_preserves_owner_and_name() {
         assert_eq!(*kind, MemberKind::Proc);
         let parameter = &metadata.procedure.as_ref().unwrap().signature.parameters[0];
         assert_eq!(parameter.name, SymbolId::of("signal"));
-        assert_eq!(parameter.declared_type, Some(SymbolId::of("/datum/signal")));
+        assert_eq!(parameter.declared_type(), Some(SymbolId::of("/datum/signal")));
     }
 }
 #[test]
@@ -486,7 +486,7 @@ fn typed_list_declarations_expose_the_runtime_container_type() {
             .unwrap()
             .signature
             .parameters[0]
-            .declared_type,
+            .declared_type(),
         Some(SymbolId::of("/list"))
     );
 }

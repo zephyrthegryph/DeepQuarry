@@ -21,7 +21,7 @@ fn expression()->SymbolicExpression{
 fn declaration()->DeclarationMeaning{
  let expression=expression();let array=Arc::new(ArrayDeclaration{dimensions:Arc::from([None,Some(expression.clone())]),element_type:Some(SymbolId::of("/datum/value"))});
  let procedure=Arc::new(ProcedureMetadata{
-  signature:ProcedureSignature{variadic:true,parameters:Arc::from([Parameter{name:SymbolId::of("value"),declared_type:Some(SymbolId::of("/list")),list_element_type:Some(SymbolId::of("/datum/value")),flags:0x1234,array:Some(array.clone()),default:Some(expression.clone()),input_annotation:Some(expression.clone()),source_expression:Some(expression.clone()),relative_span:dm_syntax::Span::new(100,200)}]),return_annotation:Some(expression.clone())},
+  signature:ProcedureSignature{variadic:true,parameters:Arc::from([Parameter::new(SymbolId::of("value"),Some(SymbolId::of("/list")),Some(SymbolId::of("/datum/value")),0x1234,dm_syntax::Span::new(100,200)).with_tail(crate::ParameterTail{array:Some(array.clone()),default:Some(expression.clone()),input_annotation:Some(expression.clone()),source_expression:Some(expression.clone())})]),return_annotation:Some(expression.clone())},
   settings:Arc::from([ProcedureSettingNode::Conditional{condition:expression.clone(),then_branch:Arc::from([ProcedureSettingNode::Setting(ProcedureSetting{name:SymbolId::of("setting"),operation:SettingOperation::In,value:expression.clone()})]),else_branch:Arc::from([ProcedureSettingNode::UnsupportedContext{canonical_header:expression.clone(),children:Arc::from([ProcedureSettingNode::Setting(ProcedureSetting{name:SymbolId::of("other"),operation:SettingOperation::Assign,value:expression.clone()})])}])}]),
  });
  DeclarationMeaning::new(Some(SymbolId::of("alias")),0x87654321,Some(procedure),"α authored header".as_bytes().into()).with_field_tail(DeclarationFieldMeaning{inherited_opaque:Some(OpaqueFieldBase{owner:SymbolId::of("/base"),name:SymbolId::of("opaque"),declared_type:DeclaredTypeKnowledge::Known(SymbolId::of("/datum"))}),declared_type:Some(SymbolId::of("/datum/value")),list_element_type:Some(SymbolId::of("/datum/element")),array:Some(array),initializer:Some(expression.clone()),declared_initializer:Some(expression),resolved_constant:Some(SemanticValue::List(Arc::from([(Some(SemanticValue::Text(Arc::from("key".as_bytes()))),SemanticValue::List(Arc::from([(None,SemanticValue::NumberBits(0x80000000)),(Some(SemanticValue::Type(SymbolId::of("/datum"))),SemanticValue::Resource(SymbolId::of("file.dmi")))]))),(None,SemanticValue::Null)])))})
@@ -181,19 +181,19 @@ impl FrozenOldBytes for ProcedureSignature{fn old_bytes(&self)->Vec<u8>{
                 bytes.extend_from_slice(&(encoded.len() as u64).to_le_bytes());
                 bytes.extend_from_slice(&encoded);
             }
-            bytes.push(u8::from(parameter.declared_type.is_some()));
+            bytes.push(u8::from(parameter.declared_type().is_some()));
             bytes.extend_from_slice(
                 &parameter
-                    .declared_type
+                    .declared_type()
                     .map(SymbolId::bits)
                     .unwrap_or(0)
                     .to_le_bytes(),
             );
             append_expression(&mut bytes, parameter.default.as_ref());
-            bytes.push(u8::from(parameter.list_element_type.is_some()));
+            bytes.push(u8::from(parameter.list_element_type().is_some()));
             bytes.extend_from_slice(
                 &parameter
-                    .list_element_type
+                    .list_element_type()
                     .map(SymbolId::bits)
                     .unwrap_or(0)
                     .to_le_bytes(),
