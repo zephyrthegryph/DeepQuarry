@@ -239,6 +239,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	//	new lighting behaviour with obj lights
 		look.state("") // a blank state: state(null) would leave the map sprite ("unknown", the editor colours) showing in game
 	look.overlay(look_cached_image("spoiler_obfuscation", 'icons/misc/static.dmi', null, null, PLANE_MESONS), when = flag_check(AREA_NO_SPOILERS))
+	// Client lighting: an area outside dynamic lighting stays bright over the lighting plane's black base (client_lighting_compare.dm).
+	look.overlay(client_glow_area_white(src))
 
 
 /// An area's channel state flipped (its APC, or the area itself): the things watching the area's power re-check it.

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { waitFor } from '@testing-library/react';
 import { gameDataAtom } from 'tgui/events/store';
-import { CHAT_PENDING, ColumnHost, decodeRaw } from './host';
+import { CHAT_PENDING, ColumnHost } from './host';
 
 const byond = (globalThis as any).Byond;
 const original = byond.sendMessage;
@@ -16,9 +16,8 @@ afterEach(() => {
   byond.sendMessage = original;
 });
 
-/** A server message as the column page receives it for window `wid` (TGUI_CREATE_MESSAGE's format, url-encoded). */
-const raw = (type: string, payload: unknown) =>
-  encodeURIComponent(JSON.stringify({ type, payload }));
+/** A server message as the column page receives it for a window (col/msg's {type, payload}). */
+const msg = (type: string, payload: unknown) => ({ type, payload });
 
 const forWindow = (wid: string) =>
   sent.filter((m) => m.type === 'col/msg' && m.payload.wid === wid);
@@ -39,7 +38,7 @@ describe('the column page', () => {
     });
     host.receive('col/msg', {
       wid: 'col-1',
-      raw: raw('update', {
+      ...msg('update', {
         config: { interface: { name: 'Pda' }, title: 'PDA' },
         data: { owner: 'Nick' },
       }),
@@ -62,7 +61,7 @@ describe('the column page', () => {
   it('answers a window ping and drops a closed window', () => {
     const host = new ColumnHost();
     host.receive('col/open', { wid: 'col-2', kind: 'tgui' });
-    host.receive('col/msg', { wid: 'col-2', raw: raw('ping', { n: 1 }) });
+    host.receive('col/msg', { wid: 'col-2', ...msg('ping', { n: 1 }) });
     expect(forWindow('col-2').at(-1)?.payload).toEqual({
       wid: 'col-2',
       type: 'ping/reply',
@@ -73,7 +72,7 @@ describe('the column page', () => {
     expect(host.backends.has('col-2')).toBe(false);
     // A late message for it reaches nothing.
     expect(() =>
-      host.receive('col/msg', { wid: 'col-2', raw: raw('update', {}) }),
+      host.receive('col/msg', { wid: 'col-2', ...msg('update', {}) }),
     ).not.toThrow();
   });
 
@@ -82,7 +81,7 @@ describe('the column page', () => {
     host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
     host.receive('col/msg', {
       wid: 'col-1',
-      raw: raw('update', {
+      ...msg('update', {
         config: { interface: { name: 'StatPanel' }, title: 'Status' },
       }),
     });
@@ -99,7 +98,7 @@ describe('the column page', () => {
       .listeners.add((type, payload) => got.push([type, payload]));
     host.receive('col/msg', {
       wid: 'col-1',
-      raw: raw('update_verbs', { n: 1 }),
+      ...msg('update_verbs', { n: 1 }),
     });
     expect(got).toEqual([['update_verbs', { n: 1 }]]);
   });
@@ -139,20 +138,26 @@ describe('the column page', () => {
     expect(views(behind).at(-1)).toBe(false);
   });
 
-  it('decodes only well-formed window messages', () => {
-    expect(decodeRaw(raw('update', { a: 1 }))).toEqual({
-      type: 'update',
-      payload: { a: 1 },
-    });
-    expect(decodeRaw('%7Bbroken')).toBeNull();
-    expect(decodeRaw(5)).toBeNull();
+  it('drops a window message that is not an envelope', () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-4', kind: 'tgui' });
+    const got: unknown[] = [];
+    host.backends.get('col-4')!.listeners.add((type) => got.push(type));
+    for (const junk of [
+      { wid: 'col-4' },
+      { wid: 'col-4', type: 5 },
+      { wid: 'col-4', raw: '%7B' },
+    ]) {
+      expect(() => host.receive('col/msg', junk)).not.toThrow();
+    }
+    expect(got).toEqual([]);
   });
 });
 
 describe('the chat at login', () => {
   const chatUpdate = (wid: string) => ({
     wid,
-    raw: raw('update', {
+    ...msg('update', {
       config: { interface: { name: 'Chat' }, title: 'Chat' },
       data: { draft: '', session: 's1' },
     }),
@@ -163,7 +168,7 @@ describe('the chat at login', () => {
     host.receive('col/open', { wid: 'col-stat', kind: 'tgui' });
     host.receive('col/msg', {
       wid: 'col-stat',
-      raw: raw('update', {
+      ...msg('update', {
         config: { interface: { name: 'StatPanel' }, title: 'Status' },
       }),
     });
@@ -215,10 +220,10 @@ describe('a column window message', () => {
       type: 'update_stat',
       payload: { ping_str: 'Ping: 42ms' },
     });
-    // A raw native string (an asset mapping) still works.
+    // Asset mappings come the same way (tgui_window.dm send_encoded()).
     host.receive('col/msg', {
       wid: 'col-9',
-      raw: raw('asset/mappings', { a: 1 }),
+      ...msg('asset/mappings', { a: 1 }),
     });
     expect(got).toEqual([
       ['update_stat', { ping_str: 'Ping: 42ms' }],

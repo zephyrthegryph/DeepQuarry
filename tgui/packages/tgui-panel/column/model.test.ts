@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  COLUMN_GAP,
+  COLUMN_HEAD,
+  COLUMN_PAD,
   DOCK_HEIGHT_MIN,
   DOCK_SAVE_MAX,
   type DockState,
   dockReduce,
   emptyDock,
+  FILL_MIN,
+  FIT_MIN,
+  fitHeights,
   hiddenIds,
   parseSaved,
   serializeSaved,
@@ -251,5 +257,44 @@ describe('one layout model: list, stacks and drops', () => {
     s = dockReduce(s, { type: 'close', id: 'c' });
     s = dockReduce(s, { type: 'open', window: { ...win('c'), at: 0 } });
     expect(s.groups[0].windows).toEqual(['c']);
+  });
+});
+
+describe('fitting the entries to the column', () => {
+  const group = (id: string, height: number, collapsed = false) => ({
+    id,
+    windows: [id],
+    active: id,
+    collapsed,
+    height,
+  });
+
+  it('keeps the saved heights while they fit, and gets them back on a taller column', () => {
+    const groups = [group('a', 300), group('b', 200), group('chat', 260)];
+    expect(fitHeights(groups, 2, 4000)).toEqual([300, 200, 260]);
+  });
+
+  it('cuts the entries in proportion on a short column, so the chat keeps its room', () => {
+    const groups = [group('a', 300), group('b', 300), group('chat', 260)];
+    const [a, b] = fitHeights(groups, 2, 600);
+    expect(a).toBe(b);
+    // The column's padding, two gaps, the chat's header and its least room, and the two entries: all within 600.
+    expect(
+      a + b + COLUMN_PAD + 2 * COLUMN_GAP + COLUMN_HEAD + FILL_MIN,
+    ).toBeLessThanOrEqual(600);
+    expect(groups[0].height).toBe(300);
+  });
+
+  it('never cuts an entry under its least: 25 entries on a minimal column scroll instead', () => {
+    const groups = Array.from({ length: 25 }, (_, i) => group(`g${i}`, 260));
+    const heights = fitHeights(groups, 24, 200);
+    for (const h of heights.slice(0, 24)) expect(h).toBe(FIT_MIN);
+  });
+
+  it('leaves collapsed entries alone', () => {
+    const groups = [group('a', 500, true), group('b', 900), group('chat', 260)];
+    const heights = fitHeights(groups, 2, 500);
+    expect(heights[0]).toBe(500);
+    expect(heights[1]).toBeLessThan(900);
   });
 });
