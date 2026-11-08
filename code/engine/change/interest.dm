@@ -247,9 +247,8 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		GLOB.interest_covers_raised++
 		return TRUE
 	var/client/C = handle_get(owner)
-	if(!istype(C) || !C.mob)
+	if(!istype(C) || !C.mob || !C.mob.view_cover_set(TRUE))
 		return FALSE
-	C.mob.overlay_fullscreen("interest_cover", /atom/movable/screen/fullscreen/blind)
 	GLOB.interest_covers_raised++
 	return TRUE
 
@@ -260,7 +259,12 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	GLOB.interest_covered -= owner
 	var/client/C = handle_get(owner)
 	if(istype(C) && C.mob)
-		C.mob.clear_fullscreen("interest_cover", 2)
+		C.mob.view_cover_set(FALSE)
+
+/// Covers (`covered`) or uncovers this mob's view of the map while what it is about to see is drawn. TRUE when it could. The engine's default has no
+/// cover to show; the HUD implements it (code/content/hud/fullscreen.dm).
+/mob/proc/view_cover_set(covered)
+	return FALSE
 
 /// Arms the drain for the next tick while any queue holds something.
 /proc/interest_drain_soon()
