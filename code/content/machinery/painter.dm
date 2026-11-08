@@ -131,7 +131,8 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		.["item_name"] = inserted.name
 		// The shared portrait cache renders it off the tick (null until it lands; item_sprite_landed pushes the window then).
 		.["item_sprite"] = portrait_request(inserted, SOUTH, src, PROC_REF(item_sprite_landed))?.b64
-		.["item_preview"] = icon2base64(build_preview(user))
+		var/icon/preview = build_preview(user)
+		.["item_preview"] = preview ? icon2base64(preview) : null
 	else
 		.["item_name"] = null
 		.["item_sprite"] = null
@@ -272,22 +273,22 @@ CAPABILITIES(/obj/machinery/gear_painter)
 					text2num(color_matrix_last[12]),
 				)
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
+					return flat_picture(inserted)
 
 			if(COLORMATE_TINT)
 				if(!check_valid_color(activecolor, user))
-					return get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
+					return flat_picture(inserted)
 
 			if(COLORMATE_HSV)
 				cm = color_matrix_hsv(build_hue, build_sat, build_val)
 				set_color_matrix_last(cm)
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
+					return flat_picture(inserted)
 
 		var/cur_color = inserted.color
 		inserted.color = null
 		inserted.color = (active_mode == COLORMATE_TINT ? activecolor : cm)
-		var/icon/preview = get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
+		var/icon/preview = flat_picture(inserted)
 		inserted.color = cur_color
 		set_temp("")
 
@@ -318,5 +319,9 @@ CAPABILITIES(/obj/machinery/gear_painter)
 MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
 
 /// The inserted item's picture landed: the open window shows it.
+/// The flat picture of `A` as it looks now (its trial colour on), from the shared portrait cache: null until it lands (item_sprite_landed).
+/obj/machinery/gear_painter/proc/flat_picture(atom/A)
+	return portrait_request(A, SOUTH, src, PROC_REF(item_sprite_landed))?.picture
+
 /obj/machinery/gear_painter/proc/item_sprite_landed(datum/portrait/P)
 	SStgui.update_uis(src)

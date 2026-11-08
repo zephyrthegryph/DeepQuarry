@@ -96,7 +96,8 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 	data["message"] = message
 	data["title"] = title
 	data["item_name"] = target().name
-	data["item_sprite"] = icon2base64(get_flat_icon(target(),dir=SOUTH,no_anim=TRUE))
+	var/icon/sprite = flat_picture(target())
+	data["item_sprite"] = sprite ? icon2base64(sprite) : null
 	data["matrix_only"] = matrix_only
 	return data
 
@@ -129,7 +130,8 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 		"cg" = color_matrix_last[11],
 		"cb" = color_matrix_last[12],
 	)
-	data["item_preview"] = icon2base64(build_preview(user))
+	var/icon/preview = build_preview(user)
+	data["item_preview"] = preview ? icon2base64(preview) : null
 	if(temp)
 		data["temp"] = temp
 	if(timeout)
@@ -262,6 +264,15 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 	return TRUE
 
 /// Produces the preview image of the item, used in the UI, the way the color is not stacking is a sin.
+/// The flat picture of `A` as it looks now: null while it is drawn (the window shows no picture until picture_landed). The content side draws
+/// it through the shared portrait cache; this default flattens it now.
+/datum/tgui_input_colormatrix/proc/flat_picture(atom/A)
+	return get_flat_icon(A, dir = SOUTH, no_anim = TRUE)
+
+/// A picture flat_picture() asked for landed: the window draws again (its static data holds the item's own picture).
+/datum/tgui_input_colormatrix/proc/picture_landed(picture)
+	update_static_data_for_all_viewers()
+
 /datum/tgui_input_colormatrix/proc/build_preview(mob/user)
 	if(target()) //sanity
 		var/list/cm
@@ -282,22 +293,22 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 					text2num(color_matrix_last[12]),
 				)
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
+					return flat_picture(target())
 
 			if(COLORMATE_TINT)
 				if(!check_valid_color(activecolor, user))
-					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
+					return flat_picture(target())
 
 			if(COLORMATE_HSV)
 				cm = color_matrix_hsv(build_hue, build_sat, build_val)
 				set_color_matrix_last(cm)
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
+					return flat_picture(target())
 
 		var/cur_color = target().color
 		target().color = null
 		target().color = (active_mode == COLORMATE_TINT ? activecolor : cm)
-		var/icon/preview = get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
+		var/icon/preview = flat_picture(target())
 		target().color = cur_color
 		set_temp("")
 

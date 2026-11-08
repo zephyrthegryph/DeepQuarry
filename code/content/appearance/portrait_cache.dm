@@ -166,3 +166,10 @@ CAPABILITIES(/datum/portrait)
 
 #undef PORTRAIT_CACHE_MAX
 #undef PORTRAIT_RENDER_TIMEOUT
+
+// ---- Consumers declared in the library ----
+
+/// The colour matrix tool's item pictures come from the shared portrait cache (its trial colour on): null until they land, then the window
+/// draws again (picture_landed).
+/datum/tgui_input_colormatrix/flat_picture(atom/A)
+	return portrait_request(A, SOUTH, src, PROC_REF(picture_landed))?.picture
