@@ -2379,7 +2379,6 @@
 #include "code\world\systems\ticker_roundend_api.dm"
 #include "code\world\systems\ticker_roundstats_api.dm"
 #include "code\world\tgs\includes.dm"
-#include "code\zz_probe\dock_probe.dm"
 #include "code\content\core\atom\transform.dm"
 #include "code\host\datum\is_abstract.dm"
 #include "code\content\core\image\transform.dm"
