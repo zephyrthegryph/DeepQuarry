@@ -669,7 +669,7 @@ impl WorkspaceCapture {
                     let mut metadata=0usize;
                     lease.visit_storage(|storage|match storage{
                         dm_preprocess::source_acquisition::AcquisitionStorage::Object{address,bytes}=>{if seen.insert(address){metadata=metadata.saturating_add(bytes+2*std::mem::size_of::<usize>());}},
-                        dm_preprocess::source_acquisition::AcquisitionStorage::Receipt{address,bytes,value}=>{if seen.insert(address){metadata=metadata.saturating_add(bytes+2*std::mem::size_of::<usize>());if let Some((path,fact_path,issuer))=crate::input_snapshot::recorded_source_receipt_storage(value){metadata=metadata.saturating_add(path.capacity()).saturating_add(fact_path.capacity());if seen.insert(Arc::as_ptr(issuer)as usize){metadata=metadata.saturating_add(2*std::mem::size_of::<usize>());}}}},
+                        dm_preprocess::source_acquisition::AcquisitionStorage::Receipt{address,bytes,value}=>{if seen.insert(address){metadata=metadata.saturating_add(bytes+2*std::mem::size_of::<usize>());if let Some((path,fact_path,issuer))=crate::input_snapshot::recorded_source_receipt_storage(value){metadata=metadata.saturating_add(path.capacity()).saturating_add(if std::ptr::eq(path,fact_path){0}else{fact_path.capacity()});if seen.insert(Arc::as_ptr(issuer)as usize){metadata=metadata.saturating_add(2*std::mem::size_of::<usize>());}}}},
                         dm_preprocess::source_acquisition::AcquisitionStorage::Source(_)=>{}
                     });add(metadata)?;
                 }

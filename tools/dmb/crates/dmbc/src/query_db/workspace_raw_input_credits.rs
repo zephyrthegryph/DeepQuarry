@@ -8,7 +8,7 @@ impl Observation{
  fn has_tracked_bytes(&self)->bool{!matches!(self,Self::Text(..)|Self::Derived(_)|Self::Handlers(_))}
  fn live(&self)->bool{match self{Self::Acquisition(w)=>w.is_alive(),Self::Text(w,_)|Self::SealedText(w,_)=>w.upgrade().is_some(),Self::Arena(w)=>w.strong_count()!=0,Self::ReadGroup(w)=>w.strong_count()!=0,Self::Original(w)=>w.strong_count()!=0,Self::Bytes(w)=>w.strong_count()!=0,Self::Capture(w,_)=>w.strong_count()!=0,Self::Derived(w)=>w.strong_count()!=0,Self::Handlers(w)=>w.strong_count()!=0,Self::RecorderMetadata(w,_)=>w.strong_count()!=0}}
  fn bytes(&self)->io::Result<Option<usize>>{let add=|a:usize,b:usize|a.checked_add(b).ok_or_else(oom);match self{
- Self::Acquisition(w)=>{let mut n=0usize;let mut failed=false;let live=w.visit_live_storage(|storage|{use dm_preprocess::source_acquisition::AcquisitionStorage as S;let add=match storage{S::Object{bytes,..}=>bytes.checked_add(2*std::mem::size_of::<usize>()),S::Receipt{bytes,value,..}=>{let base=bytes.checked_add(2*std::mem::size_of::<usize>());if let Some((path,fact,_))=crate::input_snapshot::recorded_source_receipt_storage(value){base.and_then(|n|n.checked_add(path.capacity())).and_then(|n|n.checked_add(fact.capacity()))}else{None}},S::Source(_)=>None};match add{Some(bytes)=>n=bytes,None=>failed=true}});if failed{Err(oom())}else{Ok(live.then_some(n))}},
+ Self::Acquisition(w)=>{let mut n=0usize;let mut failed=false;let live=w.visit_live_storage(|storage|{use dm_preprocess::source_acquisition::AcquisitionStorage as S;let add=match storage{S::Object{bytes,..}=>bytes.checked_add(2*std::mem::size_of::<usize>()),S::Receipt{bytes,value,..}=>{let base=bytes.checked_add(2*std::mem::size_of::<usize>());if let Some((path,fact,_))=crate::input_snapshot::recorded_source_receipt_storage(value){base.and_then(|n|n.checked_add(path.capacity())).and_then(|n|n.checked_add(if std::ptr::eq(path,fact){0}else{fact.capacity()}))}else{None}},S::Source(_)=>None};match add{Some(bytes)=>n=bytes,None=>failed=true}});if failed{Err(oom())}else{Ok(live.then_some(n))}},
  Self::Arena(w)=>w.upgrade()
      .map(super::source_arena::AllocationHandle::new)
      .map(|owner|owner.arc().retained_bytes()).transpose(),
@@ -448,6 +448,17 @@ impl QueryDb{
   let OriginalRawReadOutcome::Acquired(lease)=dm_preprocess::source_arena_credit::read_original_source_open_using(
    &inputs,&path,1024,&db,&mut||Ok(OriginalRawOpenDecision::Read),
   ).unwrap() else{panic!("actual exact read")};
+  let mut checked_receipt = false;
+  lease.visit_storage(|storage| {
+   if let dm_preprocess::source_acquisition::AcquisitionStorage::Receipt{value,..} = storage {
+    let (receipt_path, fact_path, _) =
+     crate::input_snapshot::recorded_source_receipt_storage(value).unwrap();
+    assert!(std::ptr::eq(receipt_path, fact_path), "exact receipt and fact borrow one actual path owner");
+    assert_eq!(receipt_path, &dm_preprocess::regions::canonical_path(&path));
+    checked_receipt = true;
+   }
+  });
+  assert!(checked_receipt);
   let text=lease.source_text();
   assert_eq!(funded_parts(text,Some(&Arc::downgrade(&db.raw_policy.admission))),(true,true));
   assert_eq!(funded_parts(text,Some(&Arc::downgrade(&foreign.raw_policy.admission))),(false,false));
