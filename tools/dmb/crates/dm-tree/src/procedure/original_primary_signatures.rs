@@ -393,12 +393,7 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<Option<T>, PAGE_LEN> {
     fn take_retiring_page(&mut self, ordinal: usize) -> Option<T> {
         let page = self.pages.get_mut(ordinal / PAGE_LEN)?;
         let value = page.rows.get_mut(ordinal % PAGE_LEN)?.take()?;
-        page.consumed += 1;
-        if page.consumed == page.rows.len() {
-            debug_assert!(page.rows.iter().all(Option::is_none));
-            drop(std::mem::take(&mut page.rows));
-            drop(page.credit.take());
-        }
+        page.note_consumed();
         Some(value)
     }
 }
@@ -557,7 +552,7 @@ impl CompletedSignatureRows {
         })
     }
     fn find(&self, header_start: usize) -> Option<usize> {
-        self.rows.find(header_start, |ordinal, row| self.geometry(ordinal, row).header.start)
+        self.rows.find_fenced(header_start, |ordinal, row| self.geometry(ordinal, row).header.start)
     }
 
     #[cfg(any(debug_assertions, test))]
@@ -629,11 +624,11 @@ impl CompletedSignatureRows {
             PackedHeader::WIDE
         });
         self.producers.record(ordinal, row.producer);
-        self.rows.push_reserved(Row {
+        self.rows.push_reserved_keyed(Row {
             producer: (), geometry, slot: row.slot,
             #[cfg(test)]
             retained_bytes: row.retained_bytes,
-        });
+        }, row.geometry.header.start);
         Ok(())
     }
 
@@ -657,7 +652,7 @@ impl CompletedSignatureRows {
         self.payloads.ensure_slot(a)?;
         if tail.is_some() { self.payload_tails.ensure_slot(a)?; }
         if let Some(tail) = tail {
-            self.payload_tails.push_reserved(SparseSignatureTail { ordinal, tail });
+            self.payload_tails.push_reserved_keyed(SparseSignatureTail { ordinal, tail }, ordinal);
         }
         self.payloads.push_reserved(Some(core));
         Ok(slot)
@@ -668,7 +663,7 @@ impl CompletedSignatureRows {
     }
 
     fn tail_index(&self, ordinal: usize) -> Option<usize> {
-        self.payload_tails.find(ordinal, |_, row| row.ordinal)
+        self.payload_tails.find_fenced(ordinal, |_, row| row.ordinal)
     }
 
     fn payload_tail(&self, ordinal: usize) -> Option<&CompletedSignatureTail> {
@@ -718,12 +713,15 @@ impl CompletedSignatureRows {
                 let core = self.payloads.take_retiring_page(ordinal)
                     .ok_or("actual prepared signature payload is absent")?;
                 let tail = tail_index.map_or_else(CompletedSignatureTail::default, |index| {
-                    std::mem::take(&mut self.payload_tails.get_mut(index).expect("located signature tail").tail)
+                    let tail=std::mem::take(&mut self.payload_tails.get_mut(index).expect("located signature tail").tail);
+                    self.payload_tails.note_consumed(index);
+                    tail
                 });
                 core.into_parsed(tail)
             },
         };
         row.slot = SignatureSlot::TAKEN;
+        self.rows.note_consumed(ordinal);
         Ok((taken, geometry.argument_offset))
     }
 
@@ -767,6 +765,18 @@ struct FundedRowPage<T> {
     rows: Vec<T>,
     credit: Option<dm_syntax::SettingRootLease>,
     consumed: usize,
+    // Last actual key in a searchable page. It survives retiring rows.
+    last_key: usize,
+}
+impl<T> FundedRowPage<T> {
+    fn note_consumed(&mut self) {
+        debug_assert!(self.consumed < self.rows.len());
+        self.consumed += 1;
+        if self.consumed == self.rows.len() {
+            drop(std::mem::take(&mut self.rows));
+            drop(self.credit.take());
+        }
+    }
 }
 
 struct FundedRowPages<T, const PAGE_LEN: usize> {
@@ -818,9 +828,32 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         None
     }
 
+    /// The first page whose original last key reaches the requested key is
+    /// the only possible owner. A tombstone has no live row to authenticate,
+    /// even if the requested key was originally on that page.
+    fn find_fenced(&self, key: usize, key_of: impl Fn(usize, &T) -> usize) -> Option<usize> {
+        let index=self.pages.partition_point(|page|page.last_key<key);
+        let page=self.pages.get(index)?;
+        let base=index*PAGE_LEN;
+        let(mut left,mut right)=(0,page.rows.len());
+        while left<right{
+            let mid=left+(right-left)/2;
+            match key_of(base+mid,&page.rows[mid]).cmp(&key){
+                std::cmp::Ordering::Less=>left=mid+1,
+                std::cmp::Ordering::Greater=>right=mid,
+                std::cmp::Ordering::Equal=>return Some(base+mid),
+            }
+        }
+        None
+    }
+
+    fn note_consumed(&mut self,ordinal:usize){
+        self.pages[ordinal/PAGE_LEN].note_consumed();
+    }
+
     #[cfg(any(debug_assertions, test))]
     fn capacity(&self) -> usize {
-        self.pages.len() * PAGE_LEN
+        self.pages.iter().map(|page|page.rows.capacity()).sum()
     }
 
     fn push(&mut self, row: T, a: &SettingAdmission<'_>) -> std::io::Result<()> {
@@ -836,7 +869,7 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         }
         if self.pages.last().is_none_or(|page| page.rows.len() == PAGE_LEN) {
             let (rows, credit) = allocate_funded_rows(PAGE_LEN, a)?;
-            let page = FundedRowPage { rows, credit: Some(credit), consumed: 0 };
+            let page = FundedRowPage { rows, credit: Some(credit), consumed: 0, last_key: 0 };
             grow_funded_rows(&mut self.pages, &mut self.directory, a)?;
             self.pages.push(page);
         }
@@ -848,6 +881,15 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         assert!(page.rows.len() < page.rows.capacity());
         page.rows.push(row);
         self.len += 1;
+    }
+
+    fn push_reserved_keyed(&mut self,row:T,key:usize){
+        if self.len!=0{
+            let previous=(self.len-1)/PAGE_LEN;
+            debug_assert!(self.pages[previous].last_key<key);
+        }
+        self.pages.last_mut().expect("admitted keyed signature page").last_key=key;
+        self.push_reserved(row);
     }
 
     fn try_consume<E>(self, mut visit: impl FnMut(T) -> Result<(), E>) -> Result<(), E> {
@@ -1058,7 +1100,7 @@ impl OriginalSignatureSpellings {
 
 /// Unique once-consumed metadata results, bound to the exact native header owner.
 /// Coordinate/source equality cannot substitute another header owner.
-pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,adapter_storage:Option<dm_syntax::SettingRootLease>}
+pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],adapter_storage:Option<dm_syntax::SettingRootLease>}
 impl PreparedOriginalSignatures{
  pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<Arc<[u8]>>{
   append_procedure_canonical(header,procedure,&mut self.adapter_storage,a)
@@ -1081,10 +1123,37 @@ impl PreparedOriginalSignatures{
    let(layout,_)=Layout::new::<[AtomicUsize;2]>().extend(payload).map_err(|_|ErrorKind::OutOfMemory)?;
    Ok(layout.pad_to_align().size())
   }
-  let settings_layout=Layout::array::<dm_ir::ProcedureSettingNode>(settings.len()).map_err(|_|ErrorKind::OutOfMemory)?;
-  let bytes=arc_bytes(Layout::new::<dm_ir::ProcedureMetadata>())?.checked_add(arc_bytes(settings_layout)?).ok_or(ErrorKind::OutOfMemory)?;
+  let empty = settings.is_empty();
+  let trivial = (empty && signature.return_annotation.is_none()
+   && self.rows.empty_parameters.as_ref().is_some_and(|owner|Arc::ptr_eq(owner,&signature.parameters)))
+   .then_some(usize::from(signature.variadic));
+  if let Some(owner)=trivial.and_then(|slot|self.trivial_metadata[slot].as_ref()){
+   checkpoint(a)?;
+   if self.adapter_storage.as_ref().is_none_or(|credit|!a.matches_lease_domain(credit)){
+    return Err(std::io::Error::new(ErrorKind::InvalidInput,"setting storage belongs to a foreign body budget"));
+   }
+   return Ok(Arc::clone(owner));
+  }
+  let settings_bytes=if empty && self.empty_settings.is_some(){0}else{
+   let layout=Layout::array::<dm_ir::ProcedureSettingNode>(settings.len()).map_err(|_|ErrorKind::OutOfMemory)?;
+   arc_bytes(layout)?
+  };
+  let bytes=arc_bytes(Layout::new::<dm_ir::ProcedureMetadata>())?.checked_add(settings_bytes).ok_or(ErrorKind::OutOfMemory)?;
   self.admit_adapter_storage(bytes,a)?;
-  Ok(Arc::new(dm_ir::ProcedureMetadata{signature,settings:settings.into_shared()}))
+  let settings=if empty{
+   Arc::clone(self.empty_settings.get_or_insert_with(||settings.into_shared()))
+  }else{settings.into_shared()};
+  let owner=Arc::new(dm_ir::ProcedureMetadata{signature,settings});
+  if let Some(slot)=trivial{self.trivial_metadata[slot]=Some(Arc::clone(&owner));}
+  Ok(owner)
+ }
+ /// Alias census can coalesce only these exact producer-owned handles.
+ pub(crate) fn shared_procedure_aliases(&self,procedure:&Arc<dm_ir::ProcedureMetadata>)->(Option<usize>,bool,bool){
+  (
+   self.trivial_metadata.iter().position(|owner|owner.as_ref().is_some_and(|owner|Arc::ptr_eq(owner,procedure))),
+   self.empty_settings.as_ref().is_some_and(|owner|Arc::ptr_eq(owner,&procedure.settings)),
+   self.rows.empty_parameters.as_ref().is_some_and(|owner|Arc::ptr_eq(owner,&procedure.signature.parameters)),
+  )
  }
  pub(crate) fn member_metadata(
   &mut self,metadata:dm_ir::DeclarationMeaning,a:&SettingAdmission<'_>,
@@ -1131,6 +1200,8 @@ impl PreparedOriginalSignatures{
  /// allocation itself has no aliases and can be dropped before graph use.
  pub(crate) fn release_consumed_rows(&mut self) {
   debug_assert!(self.require_consumed().is_ok());
+  self.trivial_metadata=[None,None];
+  self.empty_settings=None;
   drop(std::mem::replace(&mut self.rows,CompletedSignatureRows::new()));
  }
 
@@ -1622,6 +1693,42 @@ mod signature_row_storage_tests {
     }
 
     #[test]
+    fn sparse_tail_pages_retire_across_out_of_order_authored_headers() {
+        use std::fmt::Write as _;
+        let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
+        let mut text=String::new();
+        for n in 0..65{
+            writeln!(text,"/proc/plain_{n}(value)\n    return value").unwrap();
+            writeln!(text,"/proc/typed_{n}(value) as /datum/result\n    return value").unwrap();
+        }
+        let mut input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();
+        assert!(input.signature_failure.is_none());
+        let tail_bytes=32*std::mem::size_of::<SparseSignatureTail>();
+        let mut held=None;
+        // Take an interior tail page while both surrounding ranges are live.
+        for n in (32..64).rev().chain(0..32).chain(64..65){
+            let before=used.load(Ordering::Acquire);
+            let span=input.items.dense()[n*2+1].header_span;
+            let (signature,_)=input.prepared.take(span,0,&input.headers).unwrap();
+            assert!(signature.signature.return_annotation.is_some());
+            if n==32{held=Some(signature);}
+            assert_eq!(used.load(Ordering::Acquire),before-if matches!(n,32|31|64){tail_bytes}else{0});
+            assert!(input.prepared.take(span,0,&input.headers).is_err());
+        }
+        for n in (0..65).rev(){
+            let span=input.items.dense()[n*2].header_span;
+            let (signature,_)=input.prepared.take(span,0,&input.headers).unwrap();
+            assert!(signature.signature.return_annotation.is_none());
+        }
+        input.prepared.require_consumed().unwrap();
+        assert!(held.as_ref().unwrap().signature.return_annotation.is_some());
+        drop((held,input));
+        assert_eq!(used.load(Ordering::Acquire),fixed);
+    }
+
+    #[test]
     fn completed_signature_pages_keep_source_order_and_exact_one_shot_lookup() {
         use std::fmt::Write as _;
         let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
@@ -1643,7 +1750,7 @@ mod signature_row_storage_tests {
         assert!(actual.prepared.take(header, 0, &foreign.headers).is_err());
         assert!(actual.prepared.take(Span::new(header.start, header.end + 1), 0, &actual.headers).is_err());
         assert_eq!(actual.prepared.remaining(), count);
-        let page_bytes=COMPLETED_SIGNATURE_PAGE_LEN*std::mem::size_of::<Option<CompletedSignatureCore>>();
+        let page_bytes=COMPLETED_SIGNATURE_PAGE_LEN*(std::mem::size_of::<Option<CompletedSignatureCore>>()+std::mem::size_of::<Row>());
         let mut held_signature=None;
         for ordinal in (0..count).rev() {
             let before=used.load(Ordering::Acquire);
@@ -1787,7 +1894,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
     if changed { Some(Arc::new(early.credit)) } else { None }
  });
  let prepared=PreparedOriginalSignatures{headers:Arc::clone(&headers),rows:self.rows,spellings,
-   failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,adapter_storage:None};
+   failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,empty_settings:None,trivial_metadata:[None,None],adapter_storage:None};
  Ok(OriginalSignatureInput{items,diagnostics,comma_fatal,unavailable,observer_stop,signature_failure:self.failure,signature_unsupported:self.unsupported,source,headers,symbols:self.symbols,prepared,primary_lease})
  }
 }
@@ -1866,6 +1973,33 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   assert!(rows.get(2).unwrap().retained_bytes>rows.get(0).unwrap().retained_bytes,"arrays, defaults and input tokens remain funded");
   drop(actual);
   assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn shared_procedure_metadata_preserves_variadic_mode_and_exact_credit() {
+  let source:SourceText="/proc/first()\n    return\n/proc/second(...)\n    return\n/proc/third()\n    return\n".into();
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let admission=SettingAdmission::new(&counter,1<<24,&||Ok(()));
+  let mut actual=parse_original_signatures_using(source,&admission).unwrap();
+  let root=counter.load(Ordering::Acquire);
+  let mut rows=(0..3).map(|ordinal|{
+   let header=actual.items.dense()[ordinal].header_span;
+   let (signature,_)=actual.prepared.take(header,0,&actual.headers).unwrap();
+   actual.prepared.procedure_metadata(signature.signature,Default::default(),&admission).unwrap()
+  });
+  let plain=rows.next().unwrap();
+  let variadic=rows.next().unwrap();
+  let plain_again=rows.next().unwrap();
+  drop(rows);
+  assert!(Arc::ptr_eq(&plain,&plain_again));
+  assert!(!Arc::ptr_eq(&plain,&variadic));
+  assert!(Arc::ptr_eq(&plain.settings,&variadic.settings));
+  assert!(!plain.signature.variadic && variadic.signature.variadic);
+  let metadata_bytes=arc_payload::<dm_ir::ProcedureMetadata>(1).unwrap();
+  let settings_bytes=arc_payload::<dm_ir::ProcedureSettingNode>(0).unwrap();
+  assert_eq!(actual.prepared.adapter_storage.as_ref().unwrap().bytes(),2*metadata_bytes+settings_bytes);
+  assert!(counter.load(Ordering::Acquire)<=root+2*metadata_bytes+settings_bytes);
+  drop((plain,variadic,plain_again,actual));
+  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn empty_and_reused_plain_formals_charge_only_their_actual_shared_allocations() {

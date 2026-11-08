@@ -387,23 +387,36 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
   }
  }
  #[test]
- fn actual_shared_empty_parameter_backing_releases_its_group_after_the_last_detached_alias() {
+ fn actual_shared_empty_procedure_backings_release_their_group_after_the_last_detached_alias() {
     let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
     let a=dm_syntax::SettingAdmission::new(&used,32<<20,&||Ok(()));
     let native=OrderedOriginalDeclarations::parse(
-        "/proc/first()\n    return\n/proc/second()\n    return\n".into(),&a).unwrap()
+        "/proc/first()\n    return\n/proc/second()\n    return\n/proc/third(value)\n    return value\n".into(),&a).unwrap()
         .adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
     let skeletons=native.current[0].skeletons();
     let mut rows=skeletons.iter().filter_map(|row|match row{
-        crate::Skeleton::Member{metadata,..}=>metadata.procedure.as_ref().map(|p|Arc::clone(&p.signature.parameters)),
+        crate::Skeleton::Member{metadata,..}=>metadata.procedure.clone(),
         _=>None,
     });
     let first=rows.next().unwrap();
     let second=rows.next().unwrap();
+    let third=rows.next().unwrap();
     assert!(rows.next().is_none());
     drop(rows);
     drop(skeletons);
     assert!(Arc::ptr_eq(&first,&second));
+    assert!(!Arc::ptr_eq(&first,&third));
+    assert!(Arc::ptr_eq(&first.settings,&third.settings));
+    assert!(!Arc::ptr_eq(&first.signature.parameters,&third.signature.parameters));
+    let settings=Arc::clone(&third.settings);
+    let first_parameters=Arc::clone(&first.signature.parameters);
+    let second_parameters=Arc::clone(&second.signature.parameters);
+    drop((first,second,third));
+    let first=first_parameters;
+    let second=second_parameters;
+    drop(settings);
+    let group=&native.primary_leases[0].aliases;
+    assert!(format!("{group:?}").contains("weak_observations: 11"));
     let mut census=OriginalSignatureAliasCensus::default();
     census.retain(Arc::clone(&native.primary_leases[0].aliases),&a).unwrap();
     drop(native);

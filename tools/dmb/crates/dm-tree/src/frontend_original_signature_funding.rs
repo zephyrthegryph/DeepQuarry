@@ -3,7 +3,7 @@
 use super::*;
 use std::sync::Weak;
 use std::io;
-use crate::procedure::original_primary_signatures::allocate_funded_rows;
+use crate::procedure::original_primary_signatures::{allocate_funded_rows,PreparedOriginalSignatures};
 enum Alias{
  Canonical(Weak<[u8]>),Member(Weak<dm_ir::DeclarationMeaning>),Metadata(Weak<dm_ir::ProcedureMetadata>),Settings(Weak<[dm_ir::ProcedureSettingNode]>),Parameters(Weak<[dm_ir::Parameter]>),
  Array(Weak<dm_ir::ArrayDeclaration>),Dimensions(Weak<[Option<dm_ir::SymbolicExpression>]>),
@@ -27,13 +27,13 @@ impl OriginalSignatureAliasGroup{
   let mut lease_count=0usize;
   // Both traversals borrow the same immutable facts and signature products.
   // The first counts actual Arc fields without constructing transient Weaks.
-  visit_aliases(facts,&mut |_|{checkpoint(a)?;alias_count=alias_count.checked_add(1).ok_or_else(oom)?;Ok(())})?;
+  visit_aliases(facts,prepared,a,&mut |_|{checkpoint(a)?;alias_count=alias_count.checked_add(1).ok_or_else(oom)?;Ok(())})?;
   prepared.visit_signature_reservations(|_|lease_count=lease_count.saturating_add(1));
   if lease_count==usize::MAX{return Err(oom())}
   let mut coordination=a.reserve(group_bytes()?).map_err(|error|a.take_operational_error().unwrap_or(error))?;
   let mut aliases=exact_rows(alias_count,&mut coordination,a)?;
   let mut reservations=exact_rows(lease_count,&mut coordination,a)?;
-  visit_aliases(facts,&mut|make|{
+  visit_aliases(facts,prepared,a,&mut|make|{
    checkpoint(a)?;
    if aliases.len()==aliases.capacity(){return Err(oom())}
    aliases.push(make());
@@ -105,11 +105,22 @@ fn reserve_one<T>(rows:&mut Vec<T>,coordination:&mut dm_syntax::SettingRootLease
  if old_bytes!=0{a.shrink(coordination,old_bytes).map_err(|error|a.take_operational_error().unwrap_or(error))?;}
  Ok(())
 }
-fn visit_aliases(facts:&crate::AdaptedDeclarations,f:&mut impl FnMut(&dyn Fn()->Alias)->io::Result<()>)->io::Result<()>{
+fn visit_aliases(facts:&crate::AdaptedDeclarations,prepared:&PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>,f:&mut impl FnMut(&dyn Fn()->Alias)->io::Result<()>)->io::Result<()>{
+ let mut seen=[false;4];
  for skeleton in &facts.skeletons{let crate::Skeleton::Member{metadata,..}=skeleton else{continue};let Some(procedure)=&metadata.procedure else{continue};
   f(&||Alias::Member(Arc::downgrade(metadata)))?;
   f(&||Alias::Canonical(Arc::downgrade(&metadata.canonical)))?;
-  f(&||Alias::Metadata(Arc::downgrade(procedure)))?;f(&||Alias::Settings(Arc::downgrade(&procedure.settings)))?;f(&||Alias::Parameters(Arc::downgrade(&procedure.signature.parameters)))?;
+  let (metadata_slot,settings_shared,parameters_shared)=prepared.shared_procedure_aliases(procedure);
+  for (slot,make) in [
+   (metadata_slot,&(||Alias::Metadata(Arc::downgrade(procedure))) as &dyn Fn()->Alias),
+   (settings_shared.then_some(2),&||Alias::Settings(Arc::downgrade(&procedure.settings))),
+   (parameters_shared.then_some(3),&||Alias::Parameters(Arc::downgrade(&procedure.signature.parameters))),
+  ]{
+   if slot.is_some_and(|slot|std::mem::replace(&mut seen[slot],true)){
+    // Preserve the original cancellation/error check for every observed field.
+    checkpoint(a)?;
+   }else{f(make)?;}
+  }
   for setting in procedure.settings.iter(){
    let dm_ir::ProcedureSettingNode::Setting(setting)=setting else{return Err(io::Error::new(io::ErrorKind::InvalidData,"original prepared settings are not flat"))};
    f(&||Alias::Tokens(Arc::downgrade(&setting.value.tokens)))?;
