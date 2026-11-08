@@ -751,7 +751,7 @@ fn current_original_compact_whole_ordered_report_matches_real_absolute_wire() {
   let body_before=db.db().stats(Kind(17)).computed;
   let parsed_before=db.db().stats(Kind(4)).computed;
   let mut actual=Vec::new();
-  let clean=snapshot.write_compact_original_ordered_checker_for_test(
+  let clean=snapshot.write_compact_original_ordered_checker_using(
    &input,&env,None,&snapshot.tree,&cache,1,&mut actual,
   ).unwrap();
   assert_eq!(db.db().stats(Kind(17)).computed,body_before);
@@ -768,7 +768,7 @@ fn current_original_compact_whole_ordered_report_matches_real_absolute_wire() {
   assert_eq!(actual,expected);
   assert_eq!(clean,expected_clean);
   let mut denied=Vec::new();
-  assert!(snapshot.write_compact_original_ordered_checker_for_test(
+  assert!(snapshot.write_compact_original_ordered_checker_using(
    &input,&root.join("deepquarry.dme"),None,&snapshot.tree,&cache,1,&mut denied,
   ).is_err());
   assert!(denied.is_empty());
@@ -840,7 +840,7 @@ fn current_original_compact_whole_ordered_scales_past_per_body_node_cap() {
         let report_started = Instant::now();
         eprintln!("compact scale: starting ordered report with {BODIES} archived bodies");
         let mut wire = Vec::new();
-        let clean = snapshot.write_compact_original_ordered_checker_for_test(
+        let clean = snapshot.write_compact_original_ordered_checker_using(
             &input, &environment, None, &snapshot.tree, &cache, ARCHIVED_CHUNK_WIDTH, &mut wire,
         ).unwrap_or_else(|error| {
             assert!(wire.is_empty(), "failed scale run published a partial report");

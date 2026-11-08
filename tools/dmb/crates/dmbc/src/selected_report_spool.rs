@@ -119,7 +119,6 @@ impl Verified {
     pub(crate) fn hash(&self) -> u128 { self.0.hash }
     /// Append one previously verified, producer-owned JSON array as part of
     /// the enclosing private ordered report. This never decodes row semantics.
-    #[cfg(test)]
     pub(crate) fn append_array_rows(mut self, output: &mut impl Write, first: &mut bool) -> io::Result<()> {
         let inner = self.0.length.checked_sub(2).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "short staged array"))?;
         let mut opening = [0u8;1];

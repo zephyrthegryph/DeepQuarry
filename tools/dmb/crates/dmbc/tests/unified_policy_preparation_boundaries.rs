@@ -1768,14 +1768,16 @@ fn public_compound_selected_compiles_and_verifies_both_reports_in_one_request() 
     let exclusions: Vec<_> = selection.names().iter().filter(|name| !roster.names().contains(&name.as_str()))
         .map(|name| format!("-{name}")).collect();
     let request_path = transport.join("compound.json");
-    let run = |output_name: &str| {
-        let json = serde_json::json!({"selected": {"build": build, "exclusions": exclusions}, "output_name": output_name});
+    let run_with_route = |output_name: &str, compact: bool| {
+        let mut json = serde_json::json!({"selected": {"build": build, "exclusions": exclusions}, "output_name": output_name});
+        if compact { json["checker_execution"] = serde_json::json!("compact"); }
         std::fs::write(&request_path, serde_json::to_vec(&json).unwrap()).unwrap();
         daemon.run(
             &[OsStr::new("compile-checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")],
             Duration::from_secs(90),
         ).unwrap()
     };
+    let run = |output_name: &str| run_with_route(output_name, false);
     let escaped = run("compound-../outside");
     assert_eq!(escaped.status.code(), Some(2));
     assert!(escaped.stdout.is_empty());
@@ -1839,6 +1841,39 @@ fn public_compound_selected_compiles_and_verifies_both_reports_in_one_request() 
         cache.join("compound-native-recovered/artifacts/deepquarry.dmb-pair.json"),
     ).unwrap()).unwrap();
     assert_eq!(retry_marker, independent);
+
+    // A separate body corpus that both Original evaluators currently admit.
+    let compact_source = concat!(
+        "/datum/receiver\n",
+        "/proc/check_field(datum/receiver/argument)\n",
+        "#ifdef SPACEMAN_DMM\n    return argument.field\n",
+        "#else\n    return 1687\n#endif\n",
+    );
+    put(&root, "code/common.dm", compact_source);
+    let absolute = run("compound-absolute-control");
+    let compact = run_with_route("compound-compact-control", true);
+    let report = |result: &std::process::Output| {
+        assert_eq!(result.status.code(), Some(1), "{}", String::from_utf8_lossy(&result.stderr));
+        let newline = result.stdout.iter().position(|&byte| byte == b'\n').unwrap();
+        let terminal: Terminal = serde_json::from_slice(&result.stdout[..newline]).unwrap();
+        let (checker, analyze) = result.stdout[newline+1..].split_at(terminal.selected.checker.length as usize);
+        assert_eq!(terminal.selected.checker, seal(checker));
+        assert_eq!(terminal.selected.report, seal(analyze));
+        (terminal.native_pair, checker.to_vec(), analyze.to_vec())
+    };
+    let (compact_pair, checker, analyze) = report(&compact);
+    assert!(String::from_utf8_lossy(&checker).contains("undefined field"));
+    assert_eq!((compact_pair, checker, analyze), report(&absolute));
+
+    // This real authored shape has no current grammar witness. Its private
+    // report must not fall through to the default evaluator or native compile.
+    put(&root, "code/common.dm", compact_source.replace("return argument.field", "return (1 +)"));
+    let refused = run_with_route("compound-compact-unsupported", true);
+    assert_eq!(refused.status.code(), Some(2), "{}", String::from_utf8_lossy(&refused.stderr));
+    assert!(refused.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&refused.stderr).contains("genuine original per-body grammar outcome"));
+    assert!(!cache.join("compound-compact-unsupported/artifacts/deepquarry.dmb-pair.json").exists());
+
 }
 
 

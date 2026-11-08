@@ -331,10 +331,12 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, body_charge: Arc<dm_
 }
 
 impl QueryDb {
+    #[cfg(test)]
     pub(crate) fn compact_original_chunk_body_key_for_test(input: &EffectInput, ordinal: usize) -> Key {
         body_syntax::code_key(&input.archive().syntax_inputs().unwrap()[ordinal]).unwrap()
     }
 
+    #[cfg(test)]
     pub(crate) fn compact_original_chunk_proof_for_test(
         &self,
         input: &Arc<EffectInput>,
@@ -346,6 +348,7 @@ impl QueryDb {
         Ok((key, model, result.data.lookups.iter().map(|row| (row.query, row.disposition == Disposition::Missing)).collect()))
     }
 
+    #[cfg(test)]
     pub(crate) fn stage_compact_original_chunk_for_test(
         &self,
         input: &Arc<EffectInput>,
@@ -373,6 +376,7 @@ impl QueryDb {
         phases.body.publish(body)
     }
 
+    #[cfg(test)]
     pub(crate) fn stage_archived_original_body_windows_for_test(
         &self,
         input: &Arc<EffectInput>,
@@ -388,7 +392,7 @@ impl QueryDb {
         phases.body.publish(body)
     }
 
-    pub(crate) fn with_archived_compact_report_for_test(
+    pub(crate) fn with_archived_compact_report(
         &self,
         input: &Arc<EffectInput>,
         scope: &crate::runner_host::query_snapshot::PurityScope<'_>,

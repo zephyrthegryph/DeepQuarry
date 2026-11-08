@@ -44,7 +44,7 @@ enum RequestCommand {
     SelectedExclusions(super::selected_report_wire::Roster),
     SelectedExclusionsV2(super::selected_report_wire::Roster, dq_analyze::selected_exclusions_wire::JudgmentV2),
     CombinedSelectedReports,
-    CompileSelectedReports(super::selected_report_wire::Roster),
+    CompileSelectedReports(super::selected_report_wire::Roster, bool),
     NamedImageDir,
     GenerationCheck,
     GenerationWrite,
@@ -1112,7 +1112,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 Err(error) => return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),
             };
             handle_build(stream, shared, discovery, version, compiler, request.selected.build, None,
-                Some(ReportDispatch::CompileSelected { roster, exclusions: request.selected.exclusions, output_name: request.output_name }))
+                Some(ReportDispatch::CompileSelected { roster, exclusions: request.selected.exclusions, output_name: request.output_name, compact_checker: request.checker_execution.is_some() }))
         }
         selected @ (Request::SelectedExclusions(_) | Request::SelectedExclusionsV2(_) | Request::CombinedSelectedReports(_)) => {
             use super::selected_exclusions::Mode;
@@ -1138,7 +1138,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
 enum ReportDispatch {
     Existing(super::analyze::AttemptKind, super::analyze::AnalyzeRequest),
     SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, mode: super::selected_exclusions::Mode },
-    CompileSelected { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, output_name: String },
+    CompileSelected { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, output_name: String, compact_checker: bool },
     NamedImageDir,
 }
 
@@ -1257,12 +1257,12 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Derived, _) => RequestCommand::DerivedReport,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Handlers, _) => RequestCommand::HandlersReport,
                     ReportDispatch::NamedImageDir => RequestCommand::NamedImageDir,
-                    ReportDispatch::CompileSelected { roster, .. } => {
+                    ReportDispatch::CompileSelected { roster, compact_checker, .. } => {
                         let (native, _) = compound.as_ref().expect("admitted compound destination");
                         let native_key = RequestKey::of(native, &path, &[], &[]);
                         key.destination = native_key.destination;
                         key.output_store = native_key.output_store;
-                        RequestCommand::CompileSelectedReports(*roster)
+                        RequestCommand::CompileSelectedReports(*roster, *compact_checker)
                     }
                     ReportDispatch::SelectedExclusions { roster, mode, .. } => match mode {
                         super::selected_exclusions::Mode::Ordinary => RequestCommand::SelectedExclusions(*roster),
@@ -1384,10 +1384,10 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                                 })?;
                                 Ok(super::generation::Executed::NamedImageDir)
                             }
-                            ReportDispatch::CompileSelected { roster, exclusions, .. } => {
+                            ReportDispatch::CompileSelected { roster, exclusions, compact_checker, .. } => {
                                 let (native, destination) = compound.ok_or_else(|| io::Error::other("compound destination absent"))?;
                                 let output_guards = destination.claim()?;
-                                host.with_compiled_selected_reports_using(request, native, &exclusions, |staged| {
+                                host.with_compiled_selected_reports_using(request, native, &exclusions, compact_checker, |staged| {
                                     Ok(super::generation::Executed::CompiledSelected(staged, roster, destination, output_guards))
                                 })
                             }

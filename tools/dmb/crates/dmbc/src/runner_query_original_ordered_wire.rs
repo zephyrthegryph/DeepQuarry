@@ -142,13 +142,11 @@ fn write_row(
     }
 }
 
-#[cfg(test)]
 struct OrderedArray {
     stage: crate::selected_report_spool::Stage,
     first: bool,
     clean: bool,
 }
-#[cfg(test)]
 impl OrderedArray {
     fn new(cache:&Path)->io::Result<Self>{
         use std::io::Write as _;
@@ -236,8 +234,24 @@ impl SourceSnapshot {
     })).map_err(io::Error::from)
     }
 
-    #[cfg(test)]
-    pub(super) fn write_compact_original_ordered_checker_for_test(
+    /// Compound-only opt-in. The caller has already admitted the same shared
+    /// Original capture, optional Checker configuration and external cache.
+    pub(in crate::runner_host) fn write_compact_original_ordered_checker(
+        &self, environment:&Path, tree:&dm_tree::SemanticTree, cache:&Path,
+        output:&mut impl io::Write,
+    )->io::Result<bool>{
+        let absolute = self.original_checker_request_input(tree)?;
+        let input = EffectInput::original_checker_source_with_current_bodies(
+            std::sync::Arc::clone(absolute.input().archive()), absolute.input().profile(),
+            self.diagnostic_declarations.as_ref().ok_or_else(||io::Error::other("compact Checker declaration receipt absent"))?,
+            self.native_raw_queries.as_deref().ok_or_else(||io::Error::other("compact Checker query owner absent"))?,
+        ).map_err(io::Error::other)?;
+        self.write_compact_original_ordered_checker_using(
+            &input,environment,None,tree,cache,dm_analysis::checker_order::ARCHIVED_CHUNK_WIDTH,output,
+        )
+    }
+
+    pub(super) fn write_compact_original_ordered_checker_using(
         &self,
         input:&std::sync::Arc<EffectInput>,
         environment:&Path,
@@ -273,7 +287,7 @@ impl SourceSnapshot {
                 Ok(())
             })?;
             let tail = RefCell::new(OrderedArray::new(cache)?);
-            let (prelude, body, body_clean) = db.with_archived_compact_report_for_test(
+            let (prelude, body, body_clean) = db.with_archived_compact_report(
                 input, scope, width, cache, write_body_diagnostic_row,
                 |findings| {
                     use dm_analysis::checks_keyword_overrides::DEFAULT_SEVERITY;

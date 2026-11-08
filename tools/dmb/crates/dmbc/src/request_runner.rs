@@ -929,7 +929,8 @@ fn run_build_attempt(
                     };
                     input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
                     if let Some((frame,proof))=checker_ready{
-                        preparation_output.emit_combined_checker(|stage|frame.write(proof,&project,stage))?;
+                        let compact_cache=preparation_output.compact_checker_cache();
+                        preparation_output.emit_combined_checker(|stage|frame.write(proof,&project,compact_cache,stage))?;
                     }
                     semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
                     query_attempt.admit_workspace_policy(admission)?;
@@ -1976,7 +1977,7 @@ pub fn prepare_with_host_to(request:BuildRequest,host:&mut crate::runner_host::B
 pub(crate) fn prepare_selected_report(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
-    joined: Option<&mut Option<JoinedSelectedInputs>>, library_sites: bool,
+    joined: Option<&mut Option<JoinedSelectedInputs>>, library_sites: bool, compact_cache:Option<&Path>,
 )->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
     if request.command != BuildCommand::PrepareQuery {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
@@ -1987,6 +1988,7 @@ pub(crate) fn prepare_selected_report(
     };
     if let Some(joined) = joined { output.retain_joined_inputs(joined); }
     if library_sites { output.require_library_sites_baseline()?; }
+    if let Some(cache)=compact_cache{output.use_compact_checker(cache)?;}
     let preparation=run_build_with_host_and_derived_sink(request,host,None,&mut output);
     let diagnostics=output.take_error().map_or(Ok(()),Err);
     Ok((PreparationDiagnosticResult{preparation,diagnostics}, output.take_checker_frame()))

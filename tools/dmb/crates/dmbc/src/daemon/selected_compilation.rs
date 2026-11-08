@@ -13,6 +13,14 @@ const MAX_PAIR_MARKER: u64 = 1024;
 pub(super) struct Request {
     pub(super) selected: SelectedRequest,
     pub(super) output_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) checker_execution: Option<CheckerExecution>,
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(super) enum CheckerExecution {
+    Compact,
 }
 
 pub(super) struct Destination {

@@ -10,7 +10,7 @@ pub(crate) struct PreparedCheckerTranscript {
 }
 
 enum Destination<'a>{Writer(&'a mut dyn Write),ReportStage(&'a mut crate::selected_report_spool::Stage)}
-pub(crate) struct PreparationDiagnosticOutput<'a>{destination:Destination<'a>,checker:Option<&'a mut crate::selected_report_spool::Stage>,checker_frame:Option<PreparedCheckerTranscript>,joined:Option<&'a mut Option<super::runner_freshness::JoinedSelectedInputs>>,first:Option<io::Error>,capture:bool,library_sites:bool}
+pub(crate) struct PreparationDiagnosticOutput<'a>{destination:Destination<'a>,checker:Option<&'a mut crate::selected_report_spool::Stage>,checker_frame:Option<PreparedCheckerTranscript>,compact_checker_cache:Option<&'a std::path::Path>,joined:Option<&'a mut Option<super::runner_freshness::JoinedSelectedInputs>>,first:Option<io::Error>,capture:bool,library_sites:bool}
 struct Guarded<'a>{writer:&'a mut dyn Write,first:Option<io::Error>}
 impl Write for Guarded<'_>{
  fn write(&mut self,b:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::ErrorKind::Other.into())}match self.writer.write(b){Ok(n)=>Ok(n),Err(actual)=>{self.first=Some(actual);Err(io::ErrorKind::Other.into())}}}
@@ -40,17 +40,25 @@ mod selected_attempt_controls {
     }
 }
 impl<'a> PreparationDiagnosticOutput<'a>{
- pub(crate) fn immediate(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,joined:None,first:None,capture:false,library_sites:false}}
- pub(crate) fn captured(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,joined:None,first:None,capture:true,library_sites:false}}
- pub(crate) fn selected_report(stage:&'a mut crate::selected_report_spool::Stage)->Self{Self{destination:Destination::ReportStage(stage),checker:None,checker_frame:None,joined:None,first:None,capture:true,library_sites:false}}
+ pub(crate) fn immediate(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:false,library_sites:false}}
+ pub(crate) fn captured(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false}}
+ pub(crate) fn selected_report(stage:&'a mut crate::selected_report_spool::Stage)->Self{Self{destination:Destination::ReportStage(stage),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false}}
  pub(crate) fn selected_combined(stage:&'a mut crate::selected_report_spool::Stage,checker:&'a mut crate::selected_report_spool::Stage)->Self{
-  Self{destination:Destination::ReportStage(stage),checker:Some(checker),checker_frame:None,joined:None,first:None,capture:true,library_sites:false}
+  Self{destination:Destination::ReportStage(stage),checker:Some(checker),checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false}
  }
  pub(super) fn require_library_sites_baseline(&mut self) -> io::Result<()> {
   if !self.is_selected_report() || self.needs_combined_checker() {
    return Err(io::Error::new(io::ErrorKind::InvalidInput,"library Sites requires its private Analyze-only selected preparation"));
   }
   self.library_sites = true;
+  Ok(())
+ }
+ pub(super) fn compact_checker_cache(&self)->Option<&'a std::path::Path>{self.compact_checker_cache}
+ pub(super) fn use_compact_checker(&mut self, cache:&'a std::path::Path)->io::Result<()>{
+  if !self.needs_combined_checker() || !self.wants_joined_inputs(){
+   return Err(io::Error::new(io::ErrorKind::InvalidInput,"compact Checker requires combined joined preparation"));
+  }
+  self.compact_checker_cache=Some(cache);
   Ok(())
  }
  pub(super) fn needs_library_sites_baseline(&self) -> bool { self.library_sites }

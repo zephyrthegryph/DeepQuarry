@@ -763,7 +763,6 @@ fn compute_body_in_query(
 
 pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegistry,body_charge:Arc<dm_syntax::SettingChargeCounter>) {
     current_variables::register(db,Arc::clone(&ledger));
-    #[cfg(test)]
     compact_chunk::register(db, Arc::clone(&ledger), Arc::clone(&body_charge));
     pages::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     global_graph::register(db,Arc::clone(&ledger),Arc::clone(&registry));
@@ -1395,7 +1394,6 @@ pub(super) mod pages;
 
 #[path="purity_current_variables.rs"]pub(super) mod current_variables;
 
-#[cfg(test)]
 #[path="purity_compact_chunk.rs"]mod compact_chunk;
 
 

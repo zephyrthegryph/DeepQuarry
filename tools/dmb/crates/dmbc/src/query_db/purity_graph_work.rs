@@ -19,7 +19,7 @@ impl Drop for GraphLease{
 }
 pub(super) struct GraphWork{ledger:Arc<Mutex<Ledger>>,key:Key,bytes:usize,issuance:Option<std::num::NonZeroU64>,#[cfg(test)]report_peak:usize,#[cfg(test)]report_total:usize,#[cfg(test)]report_retired:usize}
 impl GraphWork{
- #[cfg(test)]pub(super) fn charged_bytes_for_chunk(&self)->usize{self.bytes}
+ pub(super) fn charged_bytes_for_chunk(&self)->usize{self.bytes}
  #[cfg(test)]pub(super) fn report_scope_counts(&self)->(usize,usize,usize){(self.report_peak,self.report_total,self.report_retired)}
  pub(super) fn new(ledger:Arc<Mutex<Ledger>>,key:Key)->Self{static NEXT:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(1);Self::new_using_counter(ledger,key,&NEXT)}
  fn new_using_counter(ledger:Arc<Mutex<Ledger>>,key:Key,counter:&std::sync::atomic::AtomicU64)->Self{Self{ledger,key,bytes:0,issuance:next_work_issuance(counter),#[cfg(test)]report_peak:0,#[cfg(test)]report_total:0,#[cfg(test)]report_retired:0}}

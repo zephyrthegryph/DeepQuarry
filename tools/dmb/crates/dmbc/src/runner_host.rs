@@ -1746,7 +1746,7 @@ impl BuildHost {
             dm_preprocess::source_arena_credit::SourceArenaCredit,
         ) -> std::io::Result<T>,
     ) -> Result<T, Box<dyn std::error::Error>> {
-        self.stage_selected_original_reports_using(request, exclusions, mode, false, |roster, prepared, clean, diagnostics, checker, report, credit, _| {
+        self.stage_selected_original_reports_using(request, exclusions, mode, false, false, |roster, prepared, clean, diagnostics, checker, report, credit, _| {
             finish(roster, prepared, clean, diagnostics, checker, report, credit)
         })
     }
@@ -1763,14 +1763,14 @@ impl BuildHost {
         checker: &mut impl std::io::Write,
         analyze: &mut impl std::io::Write,
     ) -> Result<(crate::request::BuildOutcome, bool), Box<dyn std::error::Error>> {
-        self.with_compiled_selected_reports_using(prepare, compile, exclusions, |staged| {
+        self.with_compiled_selected_reports_using(prepare, compile, exclusions, false, |staged| {
             staged.publish(diagnostics, checker, analyze)
         })
     }
 
     pub(crate) fn with_compiled_selected_reports_using<T>(
         &mut self, prepare: crate::request::BuildRequest, compile: crate::request::BuildRequest,
-        exclusions: &[String],
+        exclusions: &[String], compact_checker: bool,
         finish: impl FnOnce(crate::daemon::selected_report_wire::CompiledSelectedReports) -> std::io::Result<T>,
     ) -> Result<T, Box<dyn std::error::Error>> {
         use crate::daemon::{control, prepare_deadline};
@@ -1805,7 +1805,7 @@ impl BuildHost {
         };
         let (joined, roster, frame, clean, notices, checked, report, credit) =
             self.stage_selected_original_reports_using(
-                prepare, exclusions, SelectedReportMode::Combined, true,
+                prepare, exclusions, SelectedReportMode::Combined, true, compact_checker,
                 |roster, prepared, clean, notices, checked, report, credit, joined| {
                     let joined = joined.ok_or_else(|| io::Error::other("combined input closure absent"))?;
                     let checked = checked.ok_or_else(|| io::Error::other("combined Checker output absent"))?;
@@ -1824,7 +1824,7 @@ impl BuildHost {
     }
 
     pub(crate) fn stage_selected_original_reports_using<T>(
-        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String], mode: SelectedReportMode, retain_joined: bool,
+        &mut self, mut request: crate::request::BuildRequest, exclusions: &[String], mode: SelectedReportMode, retain_joined: bool, compact_checker: bool,
         finish: impl FnOnce(
             crate::daemon::selected_report_wire::Roster, &crate::request::BuildOutcome, bool,
             Option<crate::selected_report_spool::Verified>, Option<(dq_analyze::selected_exclusions_wire::Frame, crate::selected_report_spool::Verified)>, crate::selected_report_spool::Verified,
@@ -1836,6 +1836,9 @@ impl BuildHost {
         use std::io;
         if retain_joined && mode != SelectedReportMode::Combined {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined input retention requires selected Checker and Analyze").into());
+        }
+        if compact_checker && !retain_joined {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "compact Checker requires qualified compound input retention").into());
         }
         if !self.retains_artifacts() {
             return Err(original_exclusions_invalid().into());
@@ -1880,7 +1883,7 @@ impl BuildHost {
         let mut joined = None;
         let (prepared, checker_frame) = crate::request_runner::prepare_selected_report(
             request, self, &mut diagnostic_stage, checker_stage.as_mut(), retain_joined.then_some(&mut joined),
-            plan.needs_library_sites_baseline(),
+            plan.needs_library_sites_baseline(), compact_checker.then_some(physical_cache.as_path()),
         )?;
         let prepared_outcome = prepared.preparation?;
         prepared.diagnostics?;
@@ -1983,7 +1986,7 @@ mod joined_selected_publication_control {
         let _deadline = control::bind_with_deadline(control::Cancellation::default(),
             std::time::Instant::now() + std::time::Duration::from_secs(60));
         let (checker, analyze) = host.stage_selected_original_reports_using(
-            prepare, &exclusions, SelectedReportMode::Combined, false,
+            prepare, &exclusions, SelectedReportMode::Combined, false, false,
             |roster, _, clean, _, checker, analyze, _, _| {
                 assert_eq!(roster, Roster::WithUntyped);
                 assert!(!clean);
@@ -2085,7 +2088,7 @@ mod joined_selected_publication_control {
             let _deadline = control::bind_with_deadline(control::Cancellation::default(),
                 std::time::Instant::now() + std::time::Duration::from_secs(60));
             let joined = host.stage_selected_original_reports_using(
-                prepare.clone(), &exclusions, SelectedReportMode::Combined, true,
+                prepare.clone(), &exclusions, SelectedReportMode::Combined, true, false,
                 |_, _, clean, _, checker, analyze, _, joined| {
                     assert!(!clean);
                     assert!(checker.is_some());
