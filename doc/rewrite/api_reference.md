@@ -549,10 +549,10 @@ Notes: an `instead()` with no `then` takes nothing. `adjusts_with(PROC_REF)` is 
 
 #### `on_notice(/datum/notice/x, then(...))` and `observe(source, trigger, listener, parts...)`
 Need: react after an event, on the type (`on_notice`) or on one source (`observe`).
-Defined: `on_notice` at `code/engine/actions/hooks.dm:96`, `observe` at `code/engine/actions/hooks.dm:159`
+Defined: `on_notice` at `code/engine/actions/hooks.dm:105`, `observe` at `code/engine/actions/hooks.dm:168`, `observe_notices` at `code/engine/actions/hooks.dm:212`
 Example: `on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))`, `code/content/artifice/telecube.dm:221`
 Replaces / bans: `om_hook`.
-Notes: `on_op("key", ...)` is sugar for an op-done notice.
+Notes: `on_op("key", ...)` is sugar for an op-done notice. `observe_notices(source, listener, list(/datum/notice/a = then(...), ...))` follows several notices of one source through one grant (one activation, ended by `unobserve()` of any of them): for a listener that always takes and drops the same notices together, such as a light following its holder (`code/content/lighting/overlay_lighting.dm`).
 
 #### `PUBLISH(E, token, args)`
 Need: publish a past-tense fact that cannot be refused.
