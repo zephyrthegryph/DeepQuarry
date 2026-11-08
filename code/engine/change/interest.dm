@@ -587,6 +587,7 @@ GLOBAL_REAL(init_open, /alist)
 	if(eye != M || (M && !isturf(M.loc)) || C.interest_anchor_handles)
 		interest_anchor_sync(C, eye, M)
 	interest_view_set(handle_of(C), at_eye, at_mob, interest_view_half(C.view))
+	C.interest_eye_moved(at_eye)
 
 /// Observer `token` sees from `at_eye` and from `at_mob` (either may be null) with a view of half-width `half`: its hold follows. Returns TRUE when the
 /// hold changed. Nothing happens while the chunk rectangles of its view window are the ones it holds already.
@@ -606,11 +607,20 @@ GLOBAL_REAL(init_open, /alist)
 	interest_hold_set(token, keys, visible, at_eye || at_mob)
 	return TRUE
 
+/// Virtual: the client's eye was placed (it may not have moved): content that follows the eye hooks here (client_glow_holder.dm).
+/client/proc/interest_eye_moved(turf/at_eye)
+	return
+
+/// Virtual: the client stopped observing (it left).
+/client/proc/interest_eye_left()
+	return
+
 /// The client left: it holds nothing.
 /proc/interest_eye_remove(client/C)
 	if(!C)
 		return
 	interest_anchor_sync(C, null, null)
+	C.interest_eye_left()
 	var/token = handle_of(C)
 	GLOB.interest_sigs -= token
 	if(token && GLOB.interest_holds[token])
