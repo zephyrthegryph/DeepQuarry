@@ -89,10 +89,7 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 	// A starting set no transformation can take (every rule needs a reagent or catalyst it lacks) settles to nothing: each add skips its settle.
 	var/list/template = starting_template(holder, max_volume)
 	if(template)
-		if(length(template)) // an empty declaration starts empty: nothing was added, so nothing is told of a change
-			holder.reagents.fill_from_template(template)
-			if(tint)
-				holder.set_color(holder.reagents.get_color())
+		fill_starting(holder, template)
 		return
 	var/list/ids = declared_ids(holder)
 	var/inert = !isnull(ids) && reagents_set_inert(holder.reagents.xform_regime(), ids)
@@ -136,8 +133,8 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 		total += amount
 		declared = TRUE
 		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id), inert)
-	if(tint && declared)
-		holder.set_color(holder.reagents.get_color())
+	if(declared)
+		tint_holder(holder)
 	if(total > max_volume)
 		WARNING("[holder]([holder.type]) declares more reagents ([total]) than its volume ([max_volume])")
 
@@ -178,6 +175,18 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 	template_regime = regime
 	template_cache = built
 	return built || null
+
+/// A holder filled from its declaration's template in one pass; an empty declaration starts empty (nothing added, nothing told of a change).
+/datum/capability/lib/reagents/proc/fill_starting(atom/holder, list/template)
+	if(!length(template))
+		return
+	holder.reagents.fill_from_template(template)
+	tint_holder(holder)
+
+/// tint = TRUE: the holder takes the colour of what it was filled with.
+/datum/capability/lib/reagents/proc/tint_holder(atom/holder)
+	if(tint)
+		holder.set_color(holder.reagents.get_color())
 
 /// The ids this declaration puts in `holder`, or null when it takes a computed contents_from list.
 /datum/capability/lib/reagents/proc/declared_ids(atom/holder)

@@ -29,9 +29,10 @@ CAPABILITIES(/obj/machinery/power/terminal)
 		master().disconnect_terminal(src)
 	..()
 
-/obj/machinery/power/terminal/hide(i)
-	hide_under_floor(src, i)
-	set_icon_state(i ? "term-f" : "term")
+/// The look: faded ("term-f") while it is out of sight under the tiles, which a T-ray scanner shows.
+/obj/machinery/power/terminal/draw(datum/look/look)
+	..()
+	look.state(invisibility ? "term-f" : "term")
 
 /obj/machinery/power/terminal/hides_under_flooring()
 	return 1

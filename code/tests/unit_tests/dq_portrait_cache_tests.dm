@@ -18,11 +18,14 @@
 	var/datum/portrait/P = portrait_request(H, SOUTH, src, PROC_REF(portrait_landed))
 	var/request_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
 	if(!P)
+		// Asking again while it renders (a window pushed twice) still calls the asker back once.
+		portrait_request(H, SOUTH, src, PROC_REF(portrait_landed))
 		for(var/i in 1 to 40)
 			test_time(0.25 SECONDS)
 			if(landed)
 				break
 		TEST_ASSERT(landed, "the portrait landed and the asker was called back")
+		TEST_ASSERT_EQUAL(landed, 1, "an asker that asked twice is called back once")
 		P = landed_portrait
 	TEST_ASSERT(P?.picture, "the portrait is ready")
 	if(!P?.picture)

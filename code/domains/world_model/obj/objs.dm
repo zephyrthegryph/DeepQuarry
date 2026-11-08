@@ -137,8 +137,11 @@
 		return null
 
 
+/// The turf's tiles came or went (levelupdate()), or a wall or its builder hides it: a thing that hides under flooring goes out of sight under intact
+/// tiles (hide_under_floor()); anything else stays as it is. A type overrides this only for state of its own beyond its invisibility.
 /obj/proc/hide(h)
-	return
+	if(hides_under_flooring())
+		hide_under_floor(src, h)
 
 /obj/proc/hides_under_flooring()
 	return 0

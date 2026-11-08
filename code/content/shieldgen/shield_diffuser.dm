@@ -20,11 +20,6 @@
 	var/turf/T = get_turf(src)
 	hide(!T.is_plating())
 
-//If underfloor, hide the cable^H^H diffuser
-/obj/machinery/shield_diffuser/hide(i)
-	if(istype(loc, /turf))
-		hide_under_floor(src, i)
-
 /obj/machinery/shield_diffuser/hides_under_flooring()
 	return 1
 

@@ -4,10 +4,6 @@
 // lights with the same reach share one appearance. A mask is rebuilt only when its light is redrawn (it moved or changed) or
 // when opacity changes inside its reach (a door, a wall built), found through a per-chunk index of glowing lights.
 
-#define CLIENT_GLOW_CHUNK 8
-#define CLIENT_GLOW_MAX_RANGE 6
-/// Blur on a shadow mask, in pixels.
-#define CLIENT_GLOW_MASK_BLUR 3
 
 /// Cumulative mask rebuilds and reach-triggered redraws (benchmarks, the door test).
 GLOBAL_VAR_INIT(client_glow_mask_builds, 0)

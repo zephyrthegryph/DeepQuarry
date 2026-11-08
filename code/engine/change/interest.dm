@@ -425,12 +425,12 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	return 1
 
 /// An atom that owes a draw (parked, or queued behind the lane) and can be seen now: it draws on the spot, with everything it owed. The queue entry it
-/// leaves is a stale duplicate the drain skips. Returns 1 when it ran.
-/proc/interest_draw_now(atom/A)
+/// leaves is a stale duplicate the drain skips. Returns 1 when it ran. `force` draws it though nobody could perceive it (a T-ray scan showing it).
+/proc/interest_draw_now(atom/A, force = FALSE)
 	var/pending = A.refresh_queued
 	if(!pending || QDELETED(A) || !interest_ready(A))
 		return 0
-	if(!draw_perceivable(A))
+	if(!force && !draw_perceivable(A))
 		GLOB.interest_unperceivable_skipped++
 		return 0 // it keeps owing its draw: the reveal (interest_turf_revealed(), a move out of its container, its invisibility dropping) marks it
 	var/parked = pending & DEP_PARKED
