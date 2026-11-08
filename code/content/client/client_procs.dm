@@ -1000,6 +1000,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	switch(type)
 		if("Update-Verbs")
 			init_verbs()
+			SSstatpanels.mc_health_forget(src) // a reloaded page holds no MC Health sections
 			ability_sheet_send(src) // the button pictures, once per panel (code/content/abilities/ability_icons.dm)
 			mob?.abilities_changed() // the panel is ready to show the Abilities tab
 		if("Remove-Tabs")
