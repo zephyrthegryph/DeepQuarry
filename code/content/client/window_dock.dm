@@ -94,7 +94,7 @@ CAPABILITIES(/datum/window_dock)
 		if("WM-Float")
 			var/datum/tgui/ui = docked_ui(payload?["id"])
 			if(ui)
-				undock(ui)
+				undock(ui, dock_point_text(payload?["at"]))
 		if("WM-Close")
 			var/datum/tgui/ui = docked_ui(payload?["id"])
 			ui?.close()
@@ -146,7 +146,7 @@ CAPABILITIES(/datum/window_dock)
 	return TRUE
 
 /// Floats a docked `ui`: its chrome comes back and its page places itself where it last floated.
-/datum/window_dock/proc/undock(datum/tgui/ui)
+/datum/window_dock/proc/undock(datum/tgui/ui, at)
 	if(!ui.docked)
 		return FALSE
 	ui.docked = FALSE
@@ -155,8 +155,10 @@ CAPABILITIES(/datum/window_dock)
 	ui.apply_dock_chrome()
 	ui.dock_hide(FALSE)
 	owner()?.stat_panel?.send_message("wm/close", list("id" = ui.window()?.id))
-	log_tgui(owner(), "Window dock: [ui.interface] floated.", window = ui.window())
+	log_tgui(owner(), "Window dock: [ui.interface] floated[at ? " under the pointer at [at]" : ""].", window = ui.window())
+	ui.float_at = at
 	ui.send_full_update()
+	ui.float_at = null
 	return TRUE
 
 /// A docked UI's page is up: the panel frames it.
@@ -164,6 +166,7 @@ CAPABILITIES(/datum/window_dock)
 	if(!ui.docked)
 		return
 	owner()?.stat_panel?.send_message("wm/open", ui.dock_entry())
+	ui.dock_at = null
 
 /// A docked UI closed: the panel drops it and the pooled window gets its chrome back for its next owner.
 /datum/window_dock/proc/window_closed(datum/tgui/ui)
@@ -188,11 +191,13 @@ CAPABILITIES(/datum/window_dock)
 /datum/tgui/dock_on_close()
 	window_dock_of(user?.client)?.window_closed(src)
 
-/datum/tgui/dock_message(type)
+/datum/tgui/dock_message(type, list/payload)
 	var/datum/window_dock/dock = window_dock_of(user?.client)
 	switch(type)
 		if("wm/dock")
-			dock?.dock(src)
+			dock_at = dock_point_text(payload?["at"])
+			if(!dock?.dock(src))
+				dock_at = null
 		if("wm/ready")
 			dock?.window_ready(src)
 

@@ -21,6 +21,13 @@ GLOBAL_LIST_INIT(window_dock_modal_interfaces, list(
 	var/view_hidden = FALSE
 	/// Data was owed while hidden: one full update when shown.
 	var/view_stale = FALSE
+	/// Floated by a drag out of the panel: the screen point ("x,y", physical pixels) the window opens under, for the one full update that floats it.
+	var/float_at
+	/// Docked by a drop on the panel: the screen point ("x,y") it was dropped at, which the panel turns into a list place; sent once with wm/open.
+	var/dock_at
+
+SCHEMA(/datum/tgui, float_at, schema_text())
+SCHEMA(/datum/tgui, dock_at, schema_text())
 
 /// Whether this UI may dock: a pooled window, not a modal prompt, not a child of another UI.
 /datum/tgui/proc/dockable()
@@ -28,7 +35,10 @@ GLOBAL_LIST_INIT(window_dock_modal_interfaces, list(
 
 /// What the stat panel needs to frame this docked UI.
 /datum/tgui/proc/dock_entry()
-	return list("id" = window()?.id, "interface" = interface, "title" = "[title]")
+	. = list("id" = window()?.id, "interface" = interface, "title" = "[title]")
+	var/list/at = dock_point(dock_at)
+	if(at)
+		.["at"] = at
 
 /// Shows or hides this docked UI's data: hidden, pushes stop; shown again, a stale UI gets one full update.
 /datum/tgui/proc/dock_hide(hidden)
@@ -48,6 +58,25 @@ GLOBAL_LIST_INIT(window_dock_modal_interfaces, list(
 /datum/tgui/proc/dock_on_close()
 	return
 
-/// Hook: a dock message from this UI's page (`wm/dock`, `wm/ready`).
-/datum/tgui/proc/dock_message(type)
+/// A screen point "x,y" as the panel reads it (`list(x, y)` keyed), or null for anything else.
+/proc/dock_point(text)
+	if(!istext(text))
+		return null
+	var/list/parts = splittext(text, ",")
+	if(length(parts) != 2)
+		return null
+	var/x = text2num(parts[1])
+	var/y = text2num(parts[2])
+	if(!isnum(x) || !isnum(y))
+		return null
+	return list("x" = round(x), "y" = round(y))
+
+/// A screen point from a page payload (`{x, y}`) as "x,y" text, or null.
+/proc/dock_point_text(list/point)
+	if(!islist(point) || !isnum(point["x"]) || !isnum(point["y"]))
+		return null
+	return "[round(point["x"])],[round(point["y"])]"
+
+/// Hook: a dock message from this UI's page (`wm/dock` with an optional drop point `at`, `wm/ready`).
+/datum/tgui/proc/dock_message(type, list/payload)
 	return

@@ -421,6 +421,7 @@
 			"geometry_preapplied" = window()?.geometry_preapplied ? TRUE : FALSE,
 			"preapplied_geometry" = window()?.preapplied_geometry,
 			"docked" = docked ? TRUE : FALSE,
+			"float_at" = float_at,
 			"dockable" = dockable() ? TRUE : FALSE,
 		),
 		"client" = list(
@@ -594,7 +595,7 @@
 			initialized = TRUE
 			cancel_after(src, "ping")
 		if("wm/dock", "wm/ready")
-			dock_message(type)
+			dock_message(type, payload)
 		if("ping/reply")
 			initialized = TRUE
 			cancel_after(src, "ping")

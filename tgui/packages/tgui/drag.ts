@@ -426,8 +426,9 @@ async function dockIfOverPanel(pointer: [number, number]): Promise<void> {
   } catch {
     return;
   }
-  logger.log('dropped over the stat panel: docking');
-  Byond.sendMessage('wm/dock');
+  logger.log('dropped over the stat panel: docking', pointer);
+  // The drop point: the panel puts the window in its list where it was dropped.
+  Byond.sendMessage('wm/dock', { at: { x: pointer[0], y: pointer[1] } });
 }
 
 // Move the window while dragging
