@@ -239,6 +239,10 @@ CAPABILITIES(/datum/window_dock)
 		if("wm/dropped")
 			// A native window's titlebar drag ended at screen point `pointer`: maybe over the column.
 			dock?.dropped(src, payload?["pointer"])
+		if("wm/view")
+			// The column page: this docked window's entry is collapsed or behind another tab (no data pushes), or shown again (one update).
+			if(docked)
+				dock_hide(!!payload?["hidden"])
 		if("wm/log")
 			log_tgui(user, "Window dock (page): [copytext(json_encode(payload), 1, 2000)]", context = "window_dock", window = window())
 

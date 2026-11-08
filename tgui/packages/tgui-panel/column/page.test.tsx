@@ -1,52 +1,10 @@
 // The right-hand column's page as the client loads it (happy-dom): the chat renders in its window, the stat panel's views stack, a
 // docked interface renders from its own messages, drops are judged in the page, and nothing logs an error.
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  mock,
-} from 'bun:test';
+import './requireContext.testing';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test';
 import { act, cleanup, render, waitFor } from '@testing-library/react';
-import { Provider, useAtomValue } from 'jotai';
-import { useBackend } from 'tgui/backend';
-import { type EmbeddedBackend, EmbeddedContext } from 'tgui/embedded';
-import { configAtom } from 'tgui/events/store';
+import { Provider } from 'jotai';
 import { store } from '../events/store';
-
-// routes.tsx finds interface modules with webpack's require.context, which only exists in the bundle; its lookup is the same one native
-// windows use. Here only that lookup is stood in for (the PDA by name); the embedding itself (own store, context, wrapper) is the real one.
-mock.module('tgui/routes', () => ({
-  RoutingErrorWindow: () => null,
-  EmbeddedInterface(props: { backend: EmbeddedBackend }) {
-    return (
-      <Provider store={props.backend.store}>
-        <EmbeddedContext.Provider value={props.backend}>
-          <div className="EmbeddedInterface">
-            <Routed />
-          </div>
-        </EmbeddedContext.Provider>
-      </Provider>
-    );
-  },
-}));
-
-/** A stand-in interface (the real PDA finds its screens with require.context too): it reads its own window's data through useBackend. */
-function ProbeInterface() {
-  const { data, act } = useBackend<{ owner: string }>();
-  return (
-    <button type="button" onClick={() => act('select', { app: 'notes' })}>
-      PDA of {data.owner}
-    </button>
-  );
-}
-
-function Routed() {
-  const name = useAtomValue(configAtom)?.interface?.name;
-  return name === 'Pda' ? <ProbeInterface /> : null;
-}
 
 const { Column } = await import('./Column');
 const { columnHost } = await import('./host');
@@ -138,19 +96,41 @@ describe('the column page', () => {
         wid: 'col-7',
         raw: raw('update', {
           config: { interface: { name: 'Pda' }, title: 'PDA', status: 2 },
-          data: { owner: 'Nick Price' },
+          data: {
+            owner: 'Nick Price',
+            ownjob: 'Site Manager',
+            idInserted: 1,
+            idLink: 'Nick Price, Site Manager',
+            useRetro: 0,
+            touch_silent: 0,
+            cartridge_name: '',
+            stationTime: '14:07',
+            app: {
+              name: 'Main Menu',
+              icon: 'home',
+              template: 'pda_main_menu',
+              has_back: 0,
+              is_home: 1,
+            },
+            categories: [],
+            apps: {},
+            pai: 0,
+            notifying: {},
+          },
         }),
       });
     });
     await waitFor(() =>
       expect(page.container.querySelector('.EmbeddedInterface')).toBeTruthy(),
     );
-    expect(page.container.textContent).toContain('PDA of Nick Price');
+    // The real PDA, drawn from its own data (its header shows the owner).
+    await waitFor(
+      () => expect(page.container.textContent).toContain('Nick Price'),
+      { timeout: 5000 },
+    );
     // Its act goes out on its own window id.
     act(() => {
-      (
-        page.container.querySelector('.EmbeddedInterface button') as HTMLElement
-      ).click();
+      columnHost.backends.get('col-7')?.send('act/select', { app: 'notes' });
     });
     expect(sent.at(-1)).toEqual({
       type: 'col/msg',
@@ -172,18 +152,53 @@ describe('a native window dropped on the column', () => {
   const answered = () =>
     sent.filter((m) => m.type === 'col/msg' && m.payload.type === 'WM-Drop');
 
-  it('docks at the list index the drop point falls at, judged in the page', async () => {
-    columnHost.receive('col/drop-check', {
-      wid: 'tgui-window-3',
-      x: 1500,
-      y: 500,
+  it('docks at the exact list index the drop point falls at, judged in the page', async () => {
+    const page = renderPage();
+    act(() =>
+      columnHost.receive('col/open', { wid: 'statbrowser', kind: 'stat' }),
+    );
+    // Whatever an earlier test docked is closed: the column holds the stat stack and the chat.
+    act(() => {
+      for (const wid of [...columnHost.backends.keys()]) {
+        columnHost.receive('col/close', { wid });
+      }
     });
-    await waitFor(() => expect(answered()).toHaveLength(1));
-    expect(answered()[0].payload).toMatchObject({
-      wid: 'statbrowser',
-      payload: { wid: 'tgui-window-3' },
-    });
-    expect(typeof answered()[0].payload.payload.index).toBe('number');
+    // The column fills the page (its screen rect: x 1400-2000, y 0-1000 at ratio 1): the stat stack 0-400, the chat 403-1000.
+    const entries = Array.from(
+      page.container.querySelectorAll<HTMLElement>('[data-column-group]'),
+    );
+    expect(entries).toHaveLength(2);
+    const place = (node: HTMLElement, top: number, height: number) => {
+      node.getBoundingClientRect = () =>
+        ({
+          top,
+          height,
+          bottom: top + height,
+          left: 0,
+          right: 600,
+          width: 600,
+          x: 0,
+          y: top,
+        }) as DOMRect;
+    };
+    place(entries[0], 0, 400);
+    place(entries[1], 403, 597);
+    const dropAt = async (y: number) => {
+      sent = [];
+      columnHost.receive('col/drop-check', {
+        wid: 'tgui-window-3',
+        x: 1500,
+        y,
+      });
+      await waitFor(() => expect(answered()).toHaveLength(1));
+      return answered()[0].payload.payload;
+    };
+    // Above the stat stack's middle: first in the list.
+    expect(await dropAt(100)).toEqual({ wid: 'tgui-window-3', index: 0 });
+    // Below the stack's middle, above the chat's: between them.
+    expect(await dropAt(300)).toEqual({ wid: 'tgui-window-3', index: 1 });
+    // Below the chat's middle: last.
+    expect(await dropAt(900)).toEqual({ wid: 'tgui-window-3', index: 2 });
   });
 
   it('does nothing for a drop over the map', async () => {
