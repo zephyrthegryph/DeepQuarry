@@ -45,7 +45,15 @@
 			if(QDELETED(A))
 				return TRUE
 		if(plan & CTOR_SETUP_EARLY)
-			setup_early(A)
+			// setup_early()'s rows, read here: the head of the type's Initialize() (code/engine/lifeforms/setup.dm).
+			var/datum/lifeform_plan/early_plan = lifeform_plans[A.type]
+			for(var/handler in early_plan.setup_rows_early)
+				try
+					call(A, handler)()
+				catch(var/exception/early_error)
+					dq_report_caught(early_error, "setup([handler], early = TRUE) on [A.type]")
+				if(QDELETED(A))
+					break
 			if(QDELETED(A))
 				return TRUE
 	else
@@ -93,8 +101,9 @@
 	// setup() and name_prefix() (code/engine/lifeforms/setup.dm): the type's own setup, once its Initialize() chain has returned.
 	BOOT_PHASE_BEGIN(bp_setup)
 	if((plan & CTOR_SETUP_ONLY) && result == INITIALIZE_HINT_NORMAL && !QDELETED(A))
-		// The plan says the type's only engine init is its setup rows (ctor_plan.dm): no setup_pending note was made, they run here.
-		if(setup_run(A, FALSE, length(arguments) ? arguments[1] : FALSE) == INITIALIZE_HINT_QDEL)
+		// The plan says the type's only engine init is its setup rows (ctor_plan.dm): no setup_pending note was made, they run here, as setup_run_hooks()
+		// runs them. No init frame is opened: the atom is under construction (DF_CONSTRUCTING), which holds its draws the same way until its birth.
+		if(ctor_setup_rows(A, length(arguments) ? arguments[1] : FALSE) == INITIALIZE_HINT_QDEL)
 			result = INITIALIZE_HINT_QDEL
 	else if(length(setup_pending) && setup_pending[A])
 		if(result == INITIALIZE_HINT_NORMAL)
@@ -150,7 +159,7 @@
 			// Type-table fast path (atom_type_table.dm): turfs have no on_materialize() of their
 			// own (tools/ci/init_lint.py keeps it so), so a turf whose type needs no registries,
 			// rules or the scheduler is live once flagged. Most of the ~390 k map turfs take this path.
-			if(isturf(A) && !A.rx?.containment_ledger && !ctor_materialize_work(A, plan))
+			if(isturf(A) && !A.rx?.containment_ledger && !((plan & CTOR_MATERIALIZE_KNOWN) ? (plan & CTOR_MATERIALIZE_WORK) : ctor_materialize_work(A, plan)))
 				A.flags |= ATOM_MATERIALIZED
 			else
 				BOOT_PHASE_BEGIN(bp_mat)
@@ -159,7 +168,11 @@
 		var/atom/location = A.loc
 		if(location)
 			/// Emits that the new atom `src`, has been created at `loc`
-			PUBLISH(location, atom_after_successful_initialized_on, created = A, mapload = arguments[1])
+			// Nothing of the location's type hears it and the location has no listener of its own (notice_wanted()'s fast path, read here): not published.
+			var/datum/rx_state/location_rx = location.rx
+			var/list/location_unheard = GLOB.notice_unheard[location.type]
+			if(!(location_unheard?[/datum/notice/atom_after_successful_initialized_on] && (!location_rx || (!location_rx.notice_types && (!location_rx.hooks || !notice_hooks_live_hear(location_rx, /datum/notice/atom_after_successful_initialized_on))))))
+				PUBLISH(location, atom_after_successful_initialized_on, created = A, mapload = arguments[1])
 			RANGE_WATCH(location, RANGE_INITIALIZED, A, arguments[1])
 			// Created straight into a holder with a ledger: nothing is noted here. The ledger is made on first use and its sync() adopts whatever
 			// arrived without a move (code/engine/refs/containment/ledger.dm), so a holder whose ledger is never asked for costs nothing at init.
@@ -209,3 +222,28 @@
 		bits |= CTOR_MATERIALIZE_WORK
 	ctor_plans[A.type] = bits
 	return bits & CTOR_MATERIALIZE_WORK
+
+/// The setup() rows of a CTOR_SETUP_ONLY type, as setup_run_hooks() runs them (in order; a mapload = TRUE row's INITIALIZE_HINT_QDEL stops them and is
+/// returned; a name_prefix row prefixes the name), without the setup_pending note and the init frame (the atom is under construction).
+/proc/ctor_setup_rows(atom/A, mapload)
+	var/datum/lifeform_plan/P = lifeform_plans[A.type]
+	for(var/list/row as anything in P.setup_rows_plain)
+		var/handler = row[1]
+		if(handler)
+			if(row[3])
+				var/hint = call(A, handler)(mapload)
+				if(hint == INITIALIZE_HINT_QDEL)
+					log_world("setup([handler]) on [A.type] returned INITIALIZE_HINT_QDEL (mapload=[mapload ? 1 : 0]): the instance is discarded")
+					return INITIALIZE_HINT_QDEL
+				if(!isnull(hint) && hint != INITIALIZE_HINT_NORMAL)
+					stack_trace("setup([handler]) on [A.type] returned init hint [hint]; only INITIALIZE_HINT_NORMAL and INITIALIZE_HINT_QDEL are supported there")
+			else
+				call(A, handler)()
+		else if(!isnull(row[2]))
+			var/prefix = row[2]
+			if(istext(prefix) && hascall(A, prefix))
+				prefix = call(A, prefix)()
+			A.name = "[prefix] [A.name]"
+		if(QDELETED(A))
+			return INITIALIZE_HINT_NORMAL
+	return INITIALIZE_HINT_NORMAL
