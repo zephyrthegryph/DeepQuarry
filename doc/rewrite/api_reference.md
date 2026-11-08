@@ -593,7 +593,7 @@ Notes: a new requirement is a native `/datum/entry/part/req` in `code/library/re
 
 #### `all_of(...)`, `any_of(...)`, `not(cond, because =)`
 Need: compose conditions and requirements into a tree.
-Defined: `all_of` at `code/engine/parts/cond.dm:677`, `any_of` at `code/engine/parts/cond.dm:704`, `not` at `code/engine/parts/cond.dm:595`
+Defined: `all_of` at `code/engine/parts/cond.dm:813`, `any_of` at `code/engine/parts/cond.dm:704`, `not` at `code/engine/parts/cond.dm:595`
 Example: `every(PROC_REF(magnet_delay), then(PROC_REF(magnet_move_step)), when = all_of(nameof(path_moving), not(nameof(path_stopped))))`, `code/content/admin/magnetic_console_panel.dm:18`
 Replaces / bans: `cond_not`, `cond_all`, `cond_any`, `none_of`.
 Notes: take a var name, a stat id, a `PROC_REF` or a requirement.

@@ -1154,7 +1154,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 /proc/op_menu_decide_in(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/act/op/A)
 	if(length(P.conds))
 		GLOB.op_count_whens++
-	for(var/cond in P.conds)
+	for(var/cond in op_conds_cheapest_first(P))
 		if(!op_cond(A, cond))
 			return list("when", FALSE, FALSE, null, null)
 	if(op_path_reason(R, P, side, holder))
