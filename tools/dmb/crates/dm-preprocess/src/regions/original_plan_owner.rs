@@ -147,8 +147,8 @@ impl OriginalPlanOwner{
   let plan_vector_capacity=capacity(&plan.occurrences).saturating_add(capacity(&plan.regions))
    .saturating_add(capacity(&plan.items)).saturating_add(capacity(&plan.file_dirs));
   let empty_region_arc_grants=self.empty_region.as_ref().map_or(0,|_|EmptyOriginalRegion::BYTES);
-  let [trace_page_rows, trace_pages, trace_overflow_pages, trace_rows, trace_authors, trace_page_bytes, trace_overflow_bytes] = self.singleton_pages.reservations();
-  eprintln!("ORIGINAL_TRACE_POOL_RESERVATIONS trace_page_rows={trace_page_rows} trace_pages={trace_pages} trace_overflow_pages={trace_overflow_pages} trace_rows={trace_rows} trace_authors={trace_authors} trace_page_bytes={trace_page_bytes} trace_overflow_bytes={trace_overflow_bytes}");
+  let [trace_page_rows, trace_pages, trace_overflow_pages, trace_rows, trace_authors, trace_page_bytes, trace_overflow_bytes, trace_overflow_chunks, trace_overflow_authors] = self.singleton_pages.reservations();
+  eprintln!("ORIGINAL_TRACE_POOL_RESERVATIONS trace_page_rows={trace_page_rows} trace_pages={trace_pages} trace_overflow_pages={trace_overflow_pages} trace_rows={trace_rows} trace_authors={trace_authors} trace_page_bytes={trace_page_bytes} trace_overflow_bytes={trace_overflow_bytes} trace_overflow_chunks={trace_overflow_chunks} trace_overflow_authors={trace_overflow_authors}");
   eprintln!("ORIGINAL_PLAN_RESERVATIONS opened_paths={} dependency_paths={} path_index_row_capacity={} occurrence_path_payload_capacity={occurrence_path_payload_capacity} semantic_path_bytes={semantic_path_bytes} plan_vector_capacity={plan_vector_capacity} empty_region_arc_grants={empty_region_arc_grants} singleton_page_grants={} projection={projection:?}",self.paths.sources().iter().count(),self.paths.dependencies().count(),self.paths.row_capacity_bytes(),self.singleton_pages.bytes_granted());
  }
  pub(super) fn plan(&self)->&DirectivePlan{&self.plan}
