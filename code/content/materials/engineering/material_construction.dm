@@ -165,9 +165,11 @@
 	set_material_total(material_id ? total : 0)
 	material_overrides_set(src, null)
 
+/// The roles that name an object's primary material, in the order they are looked at (primary_construction_material()).
+GLOBAL_LIST_INIT(primary_construction_roles, list(MATERIAL_ROLE_WORKING, MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_EMITTER, MATERIAL_ROLE_FABRIC, MATERIAL_ROLE_BODY, MATERIAL_ROLE_JACKET))
+
 /obj/proc/primary_construction_material() as /datum/material
-	var/static/list/primary_roles = list(MATERIAL_ROLE_WORKING, MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_EMITTER, MATERIAL_ROLE_FABRIC, MATERIAL_ROLE_BODY, MATERIAL_ROLE_JACKET)
-	for(var/role in primary_roles)
+	for(var/role in GLOB.primary_construction_roles)
 		var/datum/material/material = material_for_role(role)
 		if(material)
 			return material
