@@ -464,11 +464,17 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 /datum/system/air/proc/setup_atmos_machinery()
 	var/started = REALTIMEOFDAY
 	var/count = 0
+	// Node links, port datums and the pipelines' members are relation writes to the same few holders over and over: their publishing waits for
+	// one commit at the end (rel_write_batch_begin(), code/engine/refs/table.dm), so each (holder, var) publishes once.
+	rel_write_batch_begin()
 	for (var/obj/machinery/atmospherics/AM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		AM.atmos_init()
 		count++
 	log_world("AIR_INIT: atmos_init (node matching) for [count] machine(s) took [(REALTIMEOFDAY - started) / 10]s")
 	setup_rust_pipenets()
+	started = REALTIMEOFDAY
+	rel_write_batch_commit()
+	log_world("AIR_INIT: the batched relation writes published in [(REALTIMEOFDAY - started) / 10]s")
 
 // setup_pipenets removed — see Initialize() comment.
 

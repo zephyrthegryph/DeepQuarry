@@ -18,7 +18,7 @@
 	TEST_ASSERT_EQUAL(card.age, actor.bio.age, "real human identification supplies the owner's age")
 	TEST_ASSERT_EQUAL(card.dna_hash, actor.dna.unique_enzymes, "real identification copies the owner's DNA hash")
 	TEST_ASSERT_EQUAL(card.fingerprint_hash, md5(actor.dna.GetUniIdentity()), "real identification records the owner's fingerprint hash")
-	TEST_ASSERT(card.front && findtext(card.front, "data:image/png;base64,"), "real identification generates a nonempty PNG photo")
+	TEST_ASSERT(card.id_photo() && findtext(card.id_photo(), "data:image/png;base64,"), "real identification gives a nonempty PNG photo when it is shown")
 	var/photo = card.front
 	var/card_name = card.name
 	km_synthetic_click(bystander, card)
@@ -32,7 +32,7 @@
 	test_time(1 SECONDS)
 	TEST_ASSERT_EQUAL(other_card.registered_user(), bystander, "an independent real native click registers its own initiating human")
 	TEST_ASSERT_EQUAL(other_card.registered_name, bystander.real_name, "independent native registration copies the actual clicker's identity")
-	TEST_ASSERT(other_card.front && findtext(other_card.front, "data:image/png;base64,"), "independent native registration generates the actual owner photo")
+	TEST_ASSERT(other_card.id_photo() && findtext(other_card.id_photo(), "data:image/png;base64,"), "independent native registration generates the actual owner photo")
 	TEST_ASSERT_EQUAL(card.registered_user(), actor, "the independent card preserves the original card registration")
 	TEST_ASSERT_EQUAL(card.front, photo, "the independent card preserves the original card photo")
 	test_driver_end()

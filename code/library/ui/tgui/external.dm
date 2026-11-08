@@ -249,6 +249,10 @@ ACTION(ui_act, mob/usr_, action, FIXED, notice = /datum/notice/ui_act)
 	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 	if(href_list["window_id"] == SKIN_STAT_BROWSER)
 		return TRUE
+	// The stat panel lives in the column page now (column_part.dm): its messages come wrapped as col/msg for its window id.
+	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
+	if(href_list["type"] == "col/msg" && findtext(href_list["payload"], "\"wid\":\"[SKIN_STAT_BROWSER]\""))
+		return TRUE
 	// Chunked messages will exceed the limit
 	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 	if(href_list["tgui"] && href_list["type"] == "payloadChunk")

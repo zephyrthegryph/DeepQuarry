@@ -4,10 +4,8 @@
 import { describe, expect, it } from 'bun:test';
 import { act, cleanup, render } from '@testing-library/react';
 import { Profiler, type ProfilerOnRenderCallback } from 'react';
-import { App } from './App';
+import { StatWindow } from './App';
 import { StatStore } from './store';
-
-const displayStore = { subscribe: () => () => {}, get: () => 'default' };
 
 function verbs(n: number) {
   const out: string[][] = [];
@@ -107,7 +105,10 @@ function run(page: 'Health' | 'Status', seconds: number): Run {
   };
   const view = render(
     <Profiler id="panel" onRender={onRender}>
-      <App store={store} displayStore={displayStore} />
+      <StatWindow
+        store={store}
+        view={page === 'Health' ? 'Server' : 'Status'}
+      />
     </Profiler>,
   );
   act(() =>

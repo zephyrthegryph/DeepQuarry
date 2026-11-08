@@ -2,8 +2,7 @@
 @use '~tgui-core/styles';
 @use '~tgui/styles/console';
 
-@include meta.load-css('~tgui/styles/reset.scss');
-@include meta.load-css('~tgui/styles/dq/index.scss');
+// The column page (tgui-panel/styles/main.scss) loads the reset and the DQ layer; this sheet is scoped to .stat-root.
 
 // tgui-panel/settings/palette.ts; palette.test.ts holds these to it.
 .dark:root {
@@ -20,21 +19,12 @@
 }
 
 
-html,
-body {
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  background-color: var(--stat-base);
-  color: var(--stat-text);
-  scrollbar-color: var(--color-scrollbar-thumb, #373737) var(--stat-section);
-}
-
-body {
+.stat-root {
   font-size: 12px;
+  color: var(--stat-text);
 }
 
-a {
+.stat-root a {
   color: var(--stat-link);
   text-decoration: none;
 
@@ -43,12 +33,12 @@ a {
   }
 }
 
-img {
+.stat-root img {
   image-rendering: pixelated;
   vertical-align: middle;
 }
 
-h3 {
+.stat-root h3 {
   margin: 0.75em 0 0.35em;
   font-size: 1em;
 }
@@ -56,8 +46,15 @@ h3 {
 .stat-root {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
 }
+
+// In a column window: its search over its content.
+.stat-toolbar {
+  display: flex;
+  padding: 3px 3px 0;
+}
+
 
 .stat-search {
   flex: 0 1 13em;
@@ -416,30 +413,14 @@ h3 {
   @include console.console-component-vars;
 }
 
-html,
-body {
-  background-color: console.$console-background;
-  color: console.$console-text;
-  scrollbar-width: thin;
-  scrollbar-color: console.$console-border console.$console-panel;
-}
 
 .stat-root {
   background-color: console.$console-panel;
   font-family: console.$console-font;
   font-weight: 700;
 
-  // The frame over the edge and the scanlines (styles/console.scss).
-  @include console.console-frame;
+  // The column frames its windows (tgui-panel/column): no page frame of its own.
 
-  // One gap between the panels: the chat's frame is the line on the side it shares with this page (dockHost markChatSide).
-  html[data-chat-side='bottom'] &::before {
-    border-bottom-width: 0;
-  }
-
-  html[data-chat-side='top'] &::before {
-    border-top-width: 0;
-  }
 
   a {
     color: console.$console-accent;

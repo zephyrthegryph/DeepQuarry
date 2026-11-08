@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+import { EmbeddedContext } from './embedded';
 import { sendAct } from './events/act';
 import { backendStateAtom, sharedAtom, store } from './events/store';
 import type { BackendState } from './events/types';
@@ -19,10 +21,15 @@ import type { BackendState } from './events/types';
 export function useBackend<
   TData extends Record<string, unknown>,
 >(): BackendState<TData> {
-  const state = store.get(backendStateAtom);
+  // Embedded in the right-hand column's page: this window's own store and channel (embedded.ts).
+  const embedded = useContext(EmbeddedContext);
+  const state = (embedded?.store ?? store).get(backendStateAtom);
 
   return {
-    act: sendAct,
+    act: embedded
+      ? (action: string, payload: Record<string, unknown> = {}) =>
+          embedded.send(`act/${action}`, payload)
+      : sendAct,
     ...state,
     data: state.data as TData,
   };
@@ -50,13 +57,14 @@ export const useLocalState = <TState>(
   key: string,
   initialState: TState,
 ): StateWithSetter<TState> => {
-  const sharedStates = store.get(sharedAtom);
+  const owner = useContext(EmbeddedContext)?.store ?? store;
+  const sharedStates = owner.get(sharedAtom);
   const sharedState = key in sharedStates ? sharedStates[key] : initialState;
 
   return [
     sharedState,
     (nextState) => {
-      store.set(sharedAtom, (prev) => ({
+      owner.set(sharedAtom, (prev) => ({
         ...prev,
         [key]: nextState,
       }));
@@ -81,14 +89,14 @@ export const useSharedState = <TState>(
   key: string,
   initialState: TState,
 ): StateWithSetter<TState> => {
-  const sharedStates = store.get(sharedAtom);
+  const embedded = useContext(EmbeddedContext);
+  const sharedStates = (embedded?.store ?? store).get(sharedAtom);
   const sharedState = key in sharedStates ? sharedStates[key] : initialState;
 
   return [
     sharedState,
     (nextState) => {
-      Byond.sendMessage({
-        type: 'setSharedState',
+      const message = {
         key,
         value:
           JSON.stringify(
@@ -96,7 +104,12 @@ export const useSharedState = <TState>(
               ? nextState(sharedState)
               : nextState,
           ) || '',
-      });
+      };
+      if (embedded) {
+        embedded.send('setSharedState', message);
+      } else {
+        Byond.sendMessage({ type: 'setSharedState', ...message });
+      }
     },
   ];
 };
