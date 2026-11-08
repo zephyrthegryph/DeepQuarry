@@ -22,7 +22,8 @@ impl FrontendDirectivePlan{
  pub fn diagnostics(&self)->&Vec<dm_preprocess::Diagnostic>{match self{Self::Ordinary(plan)=>&plan.diagnostics,Self::OriginalDiagnostic(plan)=>plan.diagnostics()}}
  pub fn warnings(&self)->&Vec<dm_preprocess::Diagnostic>{match self{Self::Ordinary(plan)=>&plan.warnings,Self::OriginalDiagnostic(plan)=>plan.warnings()}}
  pub fn diagnostic_ordinals(&self)->&Vec<usize>{match self{Self::Ordinary(plan)=>&plan.diagnostic_ordinals,Self::OriginalDiagnostic(plan)=>plan.diagnostic_ordinals()}}
- pub fn final_macro(&self,name:&str)->Option<&dm_preprocess::Macro>{match self{Self::Ordinary(plan)=>plan.final_macros.get(name),Self::OriginalDiagnostic(plan)=>plan.final_macro(name)}}
+ pub fn final_macro(&self,name:&str)->std::io::Result<Option<&dm_preprocess::Macro>>{match self{Self::Ordinary(plan)=>Ok(plan.final_macros.get(name)),Self::OriginalDiagnostic(plan)=>plan.final_macro(name)}}
+ pub fn defines_debug(&self)->bool{match self{Self::Ordinary(plan)=>plan.final_macros.contains_key("DEBUG"),Self::OriginalDiagnostic(plan)=>plan.defines_debug()}}
  pub fn file_dirs(&self)->&Vec<PathBuf>{match self{Self::Ordinary(plan)=>&plan.file_dirs,Self::OriginalDiagnostic(plan)=>plan.file_dirs()}}
  pub fn project_dir(&self)->&PathBuf{match self{Self::Ordinary(plan)=>&plan.project_dir,Self::OriginalDiagnostic(plan)=>plan.project_dir()}}
  pub fn defines(&self)->&BTreeMap<String,String>{match self{Self::Ordinary(plan)=>&plan.defines,Self::OriginalDiagnostic(plan)=>plan.defines()}}

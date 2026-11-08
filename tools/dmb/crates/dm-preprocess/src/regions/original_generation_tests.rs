@@ -107,6 +107,73 @@ fn original_diagnostic_history_preserves_macro_origins_but_cannot_issue_generati
     assert_eq!(work.live.load(Ordering::Acquire), 0);
 }
 
+#[test]
+fn compact_compound_final_macros_keep_actual_debug_and_reject_general_access() {
+    struct Host(Arc<dm_syntax::SettingChargeCounter>);
+    impl super::super::OriginalBatchSyntaxHost for Host {
+        fn with_producer_admission(&self, run: &mut dyn FnMut(&SettingAdmission<'_>) -> io::Result<()>) -> io::Result<()> {
+            run(&SettingAdmission::new(&self.0, 64 << 20, &|| Ok(())))
+        }
+    }
+    let root = "E:/controller/compact-final-macros.dme";
+    let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a = SettingAdmission::new(&syntax, 64 << 20, &|| Ok(()));
+    let work = Work { live: Arc::new(AtomicUsize::new(0)) };
+    let host = Host(syntax.clone());
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    for (debug, source) in [
+        (true, "#define DEBUG 1
+#define VALUE 9
+/datum/example
+    var/value = VALUE
+"),
+        (false, "#define DEBUG 1
+#undef DEBUG
+#define VALUE 9
+/datum/example
+    var/value = VALUE
+"),
+    ] {
+        let provider = Memory::new(&[(root,source)]);
+        let batch = OriginalBatchExecution::new(&provider,&host,&executor);
+        let run = |compact| {
+            if compact {
+                GenerationDirectivePlan::prepare_original_compound_diagnostic_stream_using(
+                    Path::new(root),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&batch,&mut Consumer)
+            } else {
+                GenerationDirectivePlan::prepare_original_diagnostic_stream_using(
+                    Path::new(root),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,Some(&batch),&mut Consumer)
+            }.unwrap()
+        };
+        assert_eq!(run(true).into_generation_parts().err().unwrap().kind(),io::ErrorKind::InvalidInput);
+        assert_eq!(syntax.load(Ordering::Acquire),fixed);
+        let full = run(false);
+        let full_credit = syntax.load(Ordering::Acquire);
+        let compact = run(true);
+        assert!(syntax.load(Ordering::Acquire)-full_credit < full_credit);
+        assert!(full.token_projection.as_ref().unwrap().eof && compact.token_projection.as_ref().unwrap().eof);
+        let (full_marks,full_live,full_authored)=full.retention.history.diagnostic_marks();
+        let (compact_marks,compact_live,compact_authored)=compact.retention.history.diagnostic_marks();
+        assert_eq!((compact_live,compact_authored),(full_live,full_authored));
+        assert!(compact_marks.map(|(name,_,_)|name).eq(full_marks.map(|(name,_,_)|name)));
+        let (full_plan,full_expanded,full_primary,full_literals)=full.into_diagnostic_parts_using(&a).unwrap();
+        let (plan,expanded,primary,literals)=compact.into_diagnostic_parts_using(&a).unwrap();
+        assert_eq!(plan.defines_debug(),debug);
+        assert_eq!(plan.defines_debug(),full_plan.defines_debug());
+        assert!(full_plan.final_macro("VALUE").unwrap().is_some());
+        assert_eq!(plan.final_macro("VALUE").unwrap_err().kind(),io::ErrorKind::Unsupported);
+        assert_eq!(plan.final_macro("DEBUG").unwrap_err().kind(),io::ErrorKind::Unsupported);
+        assert_eq!(plan.final_macros().err().unwrap().kind(),io::ErrorKind::Unsupported);
+        assert_eq!(expanded.text.as_str(),full_expanded.text.as_str());
+        assert!(expanded.origins.iter().map(|row|row.macro_expansions)
+            .eq(full_expanded.origins.iter().map(|row|row.macro_expansions)));
+        drop((plan,expanded,primary,literals,full_plan,full_expanded,full_primary,full_literals));
+        assert_eq!(syntax.load(Ordering::Acquire),fixed);
+        assert_eq!(work.live.load(Ordering::Acquire),0);
+    }
+}
+
 struct Consumer;impl OriginalDeclarationHeaderObserver for Consumer{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}}
 impl OriginalPrimaryStreamConsumer for Consumer{fn callable(&mut self,_:OriginalPrimaryLiveHeader,_:&mut dyn super::super::OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{panic!("this raw traversal fixture has no callable declaration")}}
 fn omissions()->GenerationOmissions{GenerationOmissions::probe([], &mut |_|panic!("empty explicit output roster"),&mut |_|Ok(())).unwrap()}
@@ -283,7 +350,7 @@ fn actual_nested_macro_resumes_the_same_projected_outer_origin() {
 
 #[test]fn actual_raw_controller_keeps_indented_procedure_body_inside_real_braces(){struct Body;impl OriginalDeclarationHeaderObserver for Body{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}}impl OriginalPrimaryStreamConsumer for Body{fn callable(&mut self,_:OriginalPrimaryLiveHeader,source:&mut dyn super::super::OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{for expected in ["var","/","static","/","A","=","1",")"]{let actual=source.next_header_token()?.ok_or(io::ErrorKind::UnexpectedEof)?;assert_eq!(actual.text,expected);}Ok(OriginalHeaderFlow::Continue)}}let provider=Memory::new(&[("E:/controller/body.dme","/proc/p(var/static/A=1)\n    return A\n")]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/body.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Body).unwrap();let checked=product.token_projection.as_ref().unwrap();assert!(checked.eof);assert_eq!(checked.rows,product.expanded().tokens.shared().unwrap().window().len());let text=product.expanded().text.as_str();assert!(text.contains("{\nreturn A;\n}\n"),"actual produced body must retain indentation: {text:?}");drop(product);assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(work.live.load(Ordering::Acquire),0);}
 
-#[test]fn actual_nested_define_in_condition_dispatches_on_same_raw_cursor_and_preserves_enclosing_completion(){let provider=Memory::new(&[("E:/controller/nested-condition.dme","#if #define VALUE 1\nVALUE\n/datum/yes\n#endif\n/datum/after\n")]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/nested-condition.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).unwrap();let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();assert!(!expanded.text.as_str().contains("yes"));assert!(expanded.text.as_str().contains("after"));let notices=plan.original_notices().iter().collect::<Vec<_>>();assert_eq!(notices.len(),1);assert_eq!(notices[0].message,"got '\n', expected one of: operator, literal, variable, proc call");assert!(matches!(notices[0].place,super::super::OriginalNoticePlace::Actual{line:1,column:5,..}));drop(notices);assert_eq!(plan.conditional_ranges().count(),1);assert!(plan.final_macro("VALUE").is_some());drop((plan,expanded,primary,binding));assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(work.live.load(Ordering::Acquire),0);}
+#[test]fn actual_nested_define_in_condition_dispatches_on_same_raw_cursor_and_preserves_enclosing_completion(){let provider=Memory::new(&[("E:/controller/nested-condition.dme","#if #define VALUE 1\nVALUE\n/datum/yes\n#endif\n/datum/after\n")]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/nested-condition.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).unwrap();let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();assert!(!expanded.text.as_str().contains("yes"));assert!(expanded.text.as_str().contains("after"));let notices=plan.original_notices().iter().collect::<Vec<_>>();assert_eq!(notices.len(),1);assert_eq!(notices[0].message,"got '\n', expected one of: operator, literal, variable, proc call");assert!(matches!(notices[0].place,super::super::OriginalNoticePlace::Actual{line:1,column:5,..}));drop(notices);assert_eq!(plan.conditional_ranges().count(),1);assert!(plan.final_macro("VALUE").unwrap().is_some());drop((plan,expanded,primary,binding));assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(work.live.load(Ordering::Acquire),0);}
 #[test]fn nested_directive_stack_resource_refusal_is_operational_and_never_source_false_recovery(){let provider=Memory::new(&[("E:/controller/nested-resource.dme","#if #define VALUE 1\nVALUE\n/datum/yes\n#endif\n")]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::with_stack_allowance(&syntax,64<<20,32*1024,&||Ok(()));let error=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/nested-resource.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).err().expect("actual root plus outer control consume two frames; nested control exceeds them");assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(work.live.load(Ordering::Acquire),0);}
 
 #[test]fn actual_condition_consumes_first_expression_and_retires_unused_queue_without_false_syntax_error(){let provider=Memory::new(&[("E:/controller/prefix-condition.dme","#if 1 2\n/datum/yes\n#endif\n/datum/after\n")]);let work=Work{live:Arc::new(AtomicUsize::new(0))};let syntax=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&syntax,64<<20,&||Ok(()));let product=GenerationDirectivePlan::prepare_original_checker_stream_using(Path::new("E:/controller/prefix-condition.dme"),&provider,&BTreeMap::new(),omissions(),1<<20,&work,&a,&mut Consumer).unwrap();let(plan,expanded,primary,binding)=product.into_diagnostic_parts_using(&a).unwrap();assert!(plan.original_notices().is_empty());assert!(expanded.text.as_str().contains("yes"));assert!(!expanded.text.as_str().contains('2'));drop((plan,expanded,primary,binding));assert_eq!(syntax.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(work.live.load(Ordering::Acquire),0);}

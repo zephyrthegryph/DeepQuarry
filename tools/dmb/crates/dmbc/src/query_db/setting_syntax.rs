@@ -83,6 +83,13 @@ impl SettingExpressionQueries for QueryDb {
         })
     }
 
+    fn with_original_header_admission(
+        &self,
+        operation: &mut dyn FnMut(&dm_syntax::SettingAdmission<'_>) -> Result<(), BodySyntaxFailure>,
+    ) -> Result<(), BodySyntaxFailure> {
+        self.with_setting_admission(operation)
+    }
+
     fn with_original_batch_producer_admission(
         &self,
         operation: &mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>,

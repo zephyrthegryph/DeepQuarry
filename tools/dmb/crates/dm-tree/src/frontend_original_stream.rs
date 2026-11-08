@@ -70,10 +70,27 @@ pub(crate) fn prepare_original_stream_using(
  source_work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,
  a:&dm_syntax::SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,
 )->io::Result<StreamedOriginalDeclarations>{
+ prepare_original_stream_with_lazy_body_parameters_using(
+  project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,false,
+ )
+}
+
+pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
+ project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,
+ omissions:GenerationOmissions,max_raw_bytes:usize,
+ source_work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+ a:&dm_syntax::SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,
+ lazy_parameters:bool,
+)->io::Result<StreamedOriginalDeclarations>{
  let mut observer=actual(a,||crate::procedure::original_primary_signatures::OriginalSignatureObserver::new(a))?;
- let product=actual(a,||GenerationDirectivePlan::prepare_original_diagnostic_stream_using(
-     project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,&mut observer,
- )).inspect_err(|_error|{
+ let product=actual(a,||if lazy_parameters{
+   let batch=batch.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"compact compound diagnostics require actual batch execution"))?;
+   GenerationDirectivePlan::prepare_original_compound_diagnostic_stream_using(
+     project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,&mut observer)
+ }else{
+   GenerationDirectivePlan::prepare_original_diagnostic_stream_using(
+     project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,&mut observer)
+ }).inspect_err(|_error|{
   #[cfg(debug_assertions)]
   observer.trace_failed_stream_retention("raw_product");
   #[cfg(test)]
@@ -91,7 +108,7 @@ pub(crate) fn prepare_original_stream_using(
    dm_preprocess::regions::OriginalStreamPrimary::Committed(primary)=>eprintln!("actual Original produced arena: {:?}; primary items: {:#?}",expanded.text.as_str(),primary.items(&expanded.text)?.iter().collect::<Vec<_>>()),
   }
  }
- let input=actual(a,||observer.finish_primary(expanded.text.clone(),primary,Some(&binding)).map_err(header_failure)).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=actual_header_finish {_error:?}")})?;
+ let input=actual(a,||observer.finish_primary_with_lazy_parameter_mode(expanded.text.clone(),primary,Some(&binding),lazy_parameters).map_err(header_failure)).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=actual_header_finish {_error:?}")})?;
  // Clauses, typed values and default roots have moved into the genuine header
  // owner; dropping the neutral binding now cannot detach those borrowed facts.
  let primary=super::original_declaration_input::OrderedOriginalDeclarations::from_actual_signature_input(input,a).inspect_err(|_error|{#[cfg(test)]eprintln!("ORIGINAL_STREAM_STAGE=current_signature_input {_error:?}")})?;
@@ -161,6 +178,48 @@ pub(crate) fn prepare_original_stream_using(
    drop(streamed);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_live.load(Ordering::Acquire),0);
   }
  }
+ #[test]
+ fn actual_lazy_body_realizes_only_its_parameter_owner_and_preserves_first_io() {
+  let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let counter = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+  let live = Arc::new(AtomicUsize::new(0));
+  let work = Work { live: live.clone(), fail: false };
+  let a = dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
+  let source = Source::new("/proc/typed(obj/value = null)
+    return value
+/proc/unused()
+    return
+");
+  let executor = dm_exec::BuildExecutor::new(1).unwrap();
+  let host = StreamHost { counter: counter.clone() };
+  let adapter = TreeOriginalBatchHost(&host);
+  let batch = OriginalBatchExecution::new(&source,&adapter,&executor);
+  let streamed = prepare_original_stream_with_lazy_body_parameters_using(
+    Path::new("actual-lazy-parameters.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,Some(&batch),true,
+  ).unwrap();
+  let input = &streamed.primary().inputs()[0];
+  let headers = input.headers();
+  let body = input.items().unwrap().iter().find(|item|item.header().contains("/typed(")).unwrap().span();
+  let before = counter.load(Ordering::Acquire);
+  assert!(headers.parameter_signature(body).is_err());
+  let stopped = dm_syntax::SettingAdmission::new(&counter,32<<20,&||Err(io::Error::from_raw_os_error(1450)));
+  assert_eq!(headers.parse_body_admitted(body,0,&stopped).err().unwrap().raw_os_error(),Some(1450));
+  assert_eq!(counter.load(Ordering::Acquire),before);
+  let denied = dm_syntax::SettingAdmission::new(&counter,before,&||Ok(()));
+  assert_eq!(headers.parse_body_admitted(body,0,&denied).err().unwrap().kind(),io::ErrorKind::OutOfMemory);
+  assert_eq!(counter.load(Ordering::Acquire),before);
+  let issued = headers.parse_body_admitted(body,0,&a).unwrap().unwrap();
+  assert_eq!(issued.parameters.entries().unwrap()[0].type_path(input.source()).unwrap().as_deref(),Some("/obj"));
+  let alias = issued.parameters.entries().unwrap()[0].expressions().unwrap().unwrap().default_root().unwrap();
+  headers.visit_default_roots(|actual|assert!(alias.same_root(actual)));
+  assert!(headers.parameter_signature(body).is_err(),"demand never installs a per-header cache");
+  drop(issued);
+  assert_eq!(counter.load(Ordering::Acquire),before);
+  drop(streamed);
+  assert_eq!(counter.load(Ordering::Acquire),root);
+  assert_eq!(live.load(Ordering::Acquire),0);
+ }
+
  #[test]
  fn actual_plain_empty_checker_metadata_uses_the_issued_header_and_body_owner() {
   use crate::procedure::header_input::PLAIN_EMPTY_PARAMETER_SIGNATURES;

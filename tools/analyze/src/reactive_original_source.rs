@@ -52,6 +52,25 @@ impl<'a> ReadSource<'a>{
     /// The SAME active query context must observe each actual body demand.
     /// This stack callback confers no source owner and cannot replace syntax.
     pub(crate) fn with_body_borrower(mut self,borrower:&'a dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>)->Self{self.body_borrower=Some(borrower);self}
+    pub(crate) fn with_header_parameters<T>(
+        &self, ordinal:usize,
+        consume: impl for<'loan> FnOnce(dm_tree::frontend::SourceParameterView<'loan>)
+            -> Result<T,crate::reactive_reads_native::Failure>,
+    )->Result<T,crate::reactive_reads_native::Failure>{
+        use crate::reactive_reads_native::Failure;
+        use dm_tree::frontend::BodySyntaxFailure;
+        self.inputs.archive().with_header_parameters_using(ordinal,&||self.checkpoint(),|view|{
+            // Route actual callback I/O through the existing host's typed
+            // first-error channel, never through a later completion poll.
+            match consume(view){
+                Err(Failure::Operational(actual))=>Err(BodySyntaxFailure::Operational(actual)),
+                pending=>Ok(pending),
+            }
+        }).map_err(|error|match error{
+            BodySyntaxFailure::Operational(actual)=>Failure::Operational(actual),
+            BodySyntaxFailure::Syntax(error)=>Failure::Unsupported(error.message),
+        })?
+    }
     pub(crate) fn parse_body(&self,ordinal:usize)->Result<dm_tree::frontend::ArchivedBody<'a>,dm_tree::frontend::BodySyntaxFailure>{
         use dm_tree::frontend::BodySyntaxFailure;
         self.require().map_err(|error|BodySyntaxFailure::Operational(std::io::Error::new(if self.budget.denied(){std::io::ErrorKind::OutOfMemory}else{std::io::ErrorKind::InvalidData},error)))?;

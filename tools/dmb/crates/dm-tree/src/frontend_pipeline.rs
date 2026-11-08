@@ -243,9 +243,9 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
     build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,semantic_state,require_primary_headers,diagnostic,&super::declaration_demand::Compatibility)
 }
 fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:super::declaration_demand::Demand>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,mut semantic_state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,diagnostic:Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,demand:&D)->Result<ColdFrontend,D::Failure>{
-    build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,defines,config,memo,executor,semantic_state,require_primary_headers,diagnostic,demand,None,crate::diagnostic_declarations::DeclarationRole::Ordinary,None)
+    build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,defines,config,memo,executor,semantic_state,require_primary_headers,diagnostic,demand,None,crate::diagnostic_declarations::DeclarationRole::Ordinary,None,false)
 }
-fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvider,D:super::declaration_demand::Demand>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,mut semantic_state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,diagnostic:Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,demand:&D,original:Option<&mut Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>>,role:crate::diagnostic_declarations::DeclarationRole,prior_callables:Option<&crate::owner_callable::RetainedCallableOwners>)->Result<ColdFrontend,D::Failure>{
+fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvider,D:super::declaration_demand::Demand>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,mut semantic_state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,diagnostic:Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,demand:&D,original:Option<&mut Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>>,role:crate::diagnostic_declarations::DeclarationRole,prior_callables:Option<&crate::owner_callable::RetainedCallableOwners>,lazy_body_parameters:bool)->Result<ColdFrontend,D::Failure>{
     demand.run(|permit|permit.checkpoint())?;
     let original_role=original.is_some();
     let original_mode=diagnostic.is_some()&&provider.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290&&crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_some()&&demand.run(|permit|Ok(permit.original_primary_admitted()))?;
@@ -281,11 +281,11 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
     // defines: every unchanged include subtree of its plan is adopted, not interpreted again.
     // SAME predecessor/engine/model cache, authenticated by its actual primary
     // outcome. Ordinary complete recipes cannot fabricate Original outcomes.
-    let previous = if original_mode{semantic_state.as_ref().and_then(|state|state.previous_original_frontend(project,defines,original_role))}else{semantic_state
+    let previous = if original_mode{semantic_state.as_ref().and_then(|state|state.previous_original_frontend(project,defines,original_role,lazy_body_parameters))}else{semantic_state
         .as_ref()
         .and_then(|state| state.previous_frontend(project,defines,provider.initial_environment(),diagnostic.is_some()))};
     let (plan,plan_reuse,expanded,mut prepared_original)=if original_mode{
-        let(plan,expanded,prepared)=demand.run(|permit|permit.original_stream_declarations(project,provider,defines,executor,config.engine,previous.as_ref().map(|row|row.syntax.as_ref()),original_role))?;
+        let(plan,expanded,prepared)=demand.run(|permit|permit.original_stream_declarations(project,provider,defines,executor,config.engine,previous.as_ref().map(|row|row.syntax.as_ref()),original_role,lazy_body_parameters))?;
         timings.directive_planning=stage_start.elapsed();
         observe(config,FrontendStage::DirectivePlanning,ProgressKind::Completed,timings.directive_planning,plan.regions().len(),plan.regions().len());
         crate::change_set::record_outcome(format!("frontend actual Original stream: directive/token/formal/native primary consumed once; {} source regions; {:.3}s",plan.regions().len(),timings.directive_planning.as_secs_f64()));
@@ -1245,9 +1245,30 @@ pub fn build_for_original_analysis_with_callable_anchors_checked<P:SourceProvide
     state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,
     prior_strict:Option<&RetainedSemanticTree>,
 )->Result<DiagnosticFrontend,FrontendBuildFailure>{
+    build_for_original_analysis_with_parameter_mode(project,provider,defines,config,memo,executor,state,host,prior_strict,false)
+}
+
+/// Narrow admitted entry for joined Checker+Analyze+compiler reports.
+/// The caller must select the already-qualified private compact Checker route.
+#[doc(hidden)]
+pub fn build_for_original_compound_with_callable_anchors_checked<P:SourceProvider>(
+    project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,
+    memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,
+    state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,
+    prior_strict:Option<&RetainedSemanticTree>,
+)->Result<DiagnosticFrontend,FrontendBuildFailure>{
+    build_for_original_analysis_with_parameter_mode(project,provider,defines,config,memo,executor,state,host,prior_strict,true)
+}
+
+fn build_for_original_analysis_with_parameter_mode<P:SourceProvider>(
+    project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,
+    memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,
+    state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,
+    prior_strict:Option<&RetainedSemanticTree>,lazy_body_parameters:bool,
+)->Result<DiagnosticFrontend,FrontendBuildFailure>{
  use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{host,type_loan:None};let mut receipt=None;let mut primary=None;
  let result=(||{
-  let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,defines,config,memo,executor,state,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::Ordinary,prior_strict.map(RetainedSemanticTree::authored_callable_owners))?;
+  let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,defines,config,memo,executor,state,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::Ordinary,prior_strict.map(RetainedSemanticTree::authored_callable_owners),lazy_body_parameters)?;
   let diagnostic=DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("original analysis builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;
   diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("original analysis builder lacks its actual primary preparation owner")])?).map_err(FrontendBuildFailure::from)
  })();demand.finish(result)
@@ -1265,7 +1286,7 @@ pub fn build_for_original_image_dir_checked<P:SourceProvider>(
     let mut primary=None;
     let result=(||{
         let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(
-            project,provider,defines,config,None,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::ImageDir,None)?;
+            project,provider,defines,config,None,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::ImageDir,None,false)?;
         let diagnostic=DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("ImageDir declaration receipt absent")])?)?;
         let diagnostic=diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("ImageDir primary receipt absent")])?)?;
         super::diagnostic_preparation::OriginalImageDirFrontend::issue(diagnostic).map_err(FrontendBuildFailure::from)
@@ -1279,7 +1300,7 @@ pub fn build_for_original_image_dir_checked<P:SourceProvider>(
 pub fn build_for_original_handlers_structural_checked<P:SourceProvider>(project:&Path,provider:&P,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
  use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{host,type_loan:None};let mut receipt=None;let mut primary=None;let defines=BTreeMap::new();
  let result=(||{
-  let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,&defines,config,memo,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::HandlersStructural,None)?;
+  let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,&defines,config,memo,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::HandlersStructural,None,false)?;
   let diagnostic=DiagnosticFrontend::bind_handlers_structural(frontend,receipt.ok_or_else(||vec![internal("handlers structural builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;
   diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("handlers structural builder lacks its actual primary preparation owner")])?).map_err(FrontendBuildFailure::from)
  })();demand.finish(result)

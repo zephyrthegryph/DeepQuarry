@@ -2005,17 +2005,19 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
         ["code", "doc/rewrite", "interface", "maps", "modular_chomp", "tgui"]
             .map(|name| root.join(name)).to_vec();
     let request_path = transport.join("full-compound.json");
-    let run = |name: &str, exclusions: &[&str]| {
+    let run_mode = |name: &str, exclusions: &[&str], compact: bool| {
         let mut request = serde_json::json!({
             "selected": {"build": build, "exclusions": exclusions},
             "output_name": name, "analyze_registry": "full",
         });
         if ci { request["analyze_judgment"] = serde_json::json!("ci"); }
+        if compact { request["checker_execution"] = serde_json::json!("compact"); }
         if cbt { request["strict_profile"] = serde_json::json!("cbt"); }
         put(&transport, "full-compound.json", serde_json::to_vec(&request).unwrap());
         daemon.run(&[OsStr::new("compile-checker-analyze-selected"), request_path.as_os_str(),
             OsStr::new("--report-batch")], Duration::from_secs(90)).unwrap()
     };
+    let run = |name, exclusions| run_mode(name, exclusions, !ci);
     let bad = run("compound-full-excluded", &["-sem/handlers"]);
     assert_eq!(bad.status.code(), Some(2));
     assert!(bad.stdout.is_empty());
@@ -2111,6 +2113,16 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
 
     let (first, first_checker, first_analyze) =
         inspect("compound-full-cold", run("compound-full-cold", &[]), "before_edit");
+    if !ci {
+        let absolute = run_mode("compound-full-absolute", &[], false);
+        assert_eq!(absolute.status.code(), Some(1), "{}", String::from_utf8_lossy(&absolute.stderr));
+        let end = absolute.stdout.iter().position(|&byte| byte == b'\n').unwrap();
+        let terminal: Terminal = serde_json::from_slice(&absolute.stdout[..end]).unwrap();
+        let (checker, analyze) = absolute.stdout[end + 1..].split_at(terminal.selected.checker.length as usize);
+        assert_eq!(checker, first_checker, "exact diagnostic contents, positions and order");
+        assert_eq!(analyze, first_analyze);
+        assert_eq!(terminal.native_pair, first.native_pair);
+    }
     if ci {
         let section = |text: &[u8], name: &str| {
             let text = std::str::from_utf8(text).unwrap();

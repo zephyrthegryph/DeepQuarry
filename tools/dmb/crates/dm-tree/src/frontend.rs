@@ -397,6 +397,20 @@ impl ColdFrontend {
       let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
       body_archive::checked_source_parameters_projected(&self.snapshot.tree,issued,header,parameters,&self.issued_arena,Some(projection),&||checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())
     }
+    pub fn with_header_parameters_admitted<T>(
+      &self, occurrence:&BodyOccurrence, a:&dm_syntax::SettingAdmission<'_>,
+      consume:impl for<'loan> FnOnce(SourceParameterView<'loan>)->Result<T,BodySyntaxFailure>,
+    )->Result<T,BodySyntaxFailure>{
+      a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      self.compact_body(occurrence)?;
+      let issued=&self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
+      let code=self.body_code(issued)?;
+      self.issued_syntax.with_original_header_parameters_admitted(issued.expanded_span,code.identity(),a,|parameters,projection|{
+       let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
+       let view=body_archive::checked_source_parameters_projected(&self.snapshot.tree,issued,header,parameters,&self.issued_arena,Some(projection),&||a.checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())?;
+       consume(view)
+      })
+    }
     pub fn parse_body<'a>(
         &'a self,
         occurrence: &BodyOccurrence,
@@ -958,6 +972,7 @@ pub use pipeline::{
     build_with_executor_and_semantic_state_with_original_types,
     build_for_checker_diagnostics_with_state_checked,
     build_for_original_analysis_with_callable_anchors_checked,
+    build_for_original_compound_with_callable_anchors_checked,
     build_for_original_analysis_with_state_checked,
     build_for_original_image_dir_checked,
     build_for_original_handlers_structural_checked,

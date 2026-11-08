@@ -8,15 +8,20 @@ fn oom(s:&ReadSource<'_>)->Failure{s.budget().deny();Failure::Operational(io::Er
 fn charge(s:&ReadSource<'_>,bytes:Option<usize>)->Result<(),Failure>{s.checkpoint()?;s.budget().charge(bytes.ok_or_else(||oom(s))?).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))}
 fn own(s:&ReadSource<'_>,text:&str)->Result<String,Failure>{kc::own(&mut Operation{budget:s.budget(),poll:&||s.checkpoint()},text)}
 fn room<T>(s:&ReadSource<'_>,rows:&mut Vec<T>)->Result<(),Failure>{kc::row(&mut Operation{budget:s.budget(),poll:&||s.checkpoint()},rows)}
-fn header_error(e:dm_tree::frontend::BodySyntaxFailure)->Failure{match e{dm_tree::frontend::BodySyntaxFailure::Operational(e)=>Failure::Operational(e),dm_tree::frontend::BodySyntaxFailure::Syntax(e)=>Failure::Unsupported(e.message)}}
-fn headers<'a>(s:&'a ReadSource<'_>,ordinal:usize)->Result<dm_tree::frontend::SourceParameterView<'a>,Failure>{let view=s.inputs().archive().header_parameters_using(ordinal,&||s.checkpoint()).map_err(header_error)?;let occurrence=s.inputs().archive().occurrences().get(ordinal).ok_or("silicon header occurrence absent")?;view.require_for(s.tree(),occurrence)?;Ok(view)}
+fn with_headers<T>(s:&ReadSource<'_>,ordinal:usize,consume:impl for<'loan> FnOnce(dm_tree::frontend::SourceParameterView<'loan>)->Result<T,Failure>)->Result<T,Failure>{
+ s.with_header_parameters(ordinal,|view|{
+  let occurrence=s.inputs().archive().occurrences().get(ordinal).ok_or("silicon header occurrence absent")?;
+  view.require_for(s.tree(),occurrence)?;
+  consume(view)
+ })
+}
 fn is_handler(s:&ReadSource<'_>,ordinal:usize,owner:&str,name:&str)->Result<bool,Failure>{
- let view=headers(s,ordinal)?;let mut rows=view.entries()?.iter();let mut failure=None;
+ with_headers(s,ordinal,|view|{let mut rows=view.entries()?.iter();let mut failure=None;
  let kinds=std::iter::from_fn(||{if failure.is_some(){return None}let parameter=rows.next()?;let result=(||{s.checkpoint()?;Ok::<_,Failure>(if !parameter.array_brackets().is_empty(){judge::HandlerParameter::Other}else{judge::handler_parameter(view.type_component(parameter,0)?,view.type_component(parameter,1)?,view.type_component(parameter,2)?)})})();match result{Ok(kind)=>Some(kind),Err(error)=>{failure=Some(error);None}}});
- let actual=judge::is_handler_kinds(owner,name,kinds);if let Some(error)=failure{return Err(error)}Ok(actual)
+ let actual=judge::is_handler_kinds(owner,name,kinds);if let Some(error)=failure{return Err(error)}Ok(actual)})
 }
 struct Parameter{name:String,path:Option<String>}
-fn parameters(s:&ReadSource<'_>,ordinal:usize)->Result<Vec<Parameter>,Failure>{let view=headers(s,ordinal)?;let span=view.header_span()?;charge(s,span.end.checked_sub(span.start).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(2048)))?;let mut out=Vec::new();for p in view.entries()?{s.checkpoint()?;room(s,&mut out)?;out.push(Parameter{name:own(s,view.name(p)?)?,path:view.type_path(p)?});}Ok(out)}
+fn parameters(s:&ReadSource<'_>,ordinal:usize)->Result<Vec<Parameter>,Failure>{with_headers(s,ordinal,|view|{let span=view.header_span()?;charge(s,span.end.checked_sub(span.start).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(2048)))?;let mut out=Vec::new();for p in view.entries()?{s.checkpoint()?;room(s,&mut out)?;out.push(Parameter{name:own(s,view.name(p)?)?,path:view.type_path(p)?});}Ok(out)})}
 fn bare(mut e:&Expr)->Option<&str>{while let ExprKind::Group(inner)=&e.kind{e=inner;}e.bare_name()}
 fn types(s:&ReadSource<'_>,body:&dyn Body,params:&[Parameter])->Result<BTreeMap<String,String>,Failure>{let mut map=BTreeMap::new();for p in params{if let Some(path)=p.path.as_ref().filter(|p|!p.is_empty()){charge(s,p.name.len().checked_add(path.len()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(1024)))?;map.insert(own(s,&p.name)?,own(s,path)?);}}let locals=body.source_locals()?;charge(s,Some(locals.scope_admission()?))?;for local in locals.entries()?{s.checkpoint()?;if !matches!(local.source_kind,dm_syntax::LocalSourceKind::Statement|dm_syntax::LocalSourceKind::CommaContinuation){continue}if let Some(path)=locals.type_path(local)?.filter(|path|!path.is_empty()){let name=locals.name(local)?;charge(s,name.len().checked_add(path.len()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(1024)))?;map.insert(own(s,name)?,path);}}Ok(map)}
 #[derive(Eq,PartialEq,Hash)]struct Edge{owner:String,name:String,actors:Vec<usize>,acts:Vec<usize>}

@@ -1,5 +1,6 @@
 //! Immutable relative declaration syntax and checked current offset bindings.
 //! Exact source-key admission remains the responsibility of the owning store.
+use super::{internal, BodySyntaxFailure};
 use dm_syntax::{Item, ItemKind, OriginalCommittedItems, OriginalItems, Span};
 #[cfg(test)]
 #[path = "../../../shared/test_scratch.rs"]
@@ -107,6 +108,13 @@ pub(crate) struct CurrentBodyRecipe<'a> {
 }
 impl CurrentBodyRecipe<'_> {
     pub(crate) fn source_window(&self)->Result<Span,&'static str>{let source=self.headers.ok_or("actual original header owner unissued")?;let end=self.offset.checked_add(source.abi_source_len()).ok_or("current original source window overflows")?;Ok(Span::new(self.offset,end))}
+    pub(crate) fn parse_original_admitted(&self,a:&dm_syntax::SettingAdmission<'_>)
+        ->std::io::Result<Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>> {
+        match self.headers {
+            Some(headers) => headers.parse_body_admitted(self.relative.span,self.offset,a),
+            None => Ok(self.parse_original()),
+        }
+    }
     pub(crate) fn parse_original(&self)->Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>{self.headers.ok_or_else(||dm_syntax::Diagnostic{span:self.span(),kind:dm_syntax::DiagnosticKind::Unsupported,message:"original declaration token input is unissued".into()})?.parse_body(self.relative.span,self.offset)}
 
     pub(crate) fn code_identity(&self) -> Arc<BodyCodeIdentity> {
@@ -733,6 +741,13 @@ impl DeclarationSyntax {
         let recipe=self.original_body_recipe(span,code).map_err(|error|error.message)?;let headers=recipe.headers.ok_or("actual original formal header owner unavailable")?;let offset=recipe.offset;let rows=headers.formal_notices_for(recipe.relative.span).map_err(str::to_owned)?;
         Ok(rows.map(move|notice|{let text=headers.formal_notice_text(notice).map_err(str::to_owned)?;let current=notice.checked_shift(offset).map_err(|error|error.to_string())?;Ok((current,text))}))
     }
+    pub(super) fn requires_admitted_original_header_parameters(
+      &self,span:Span,code:&Arc<BodyCodeIdentity>,
+    )->Result<bool,BodySyntaxFailure>{
+      let recipe=self.original_body_recipe(span,code).map_err(|error|internal(&error.message))?;
+      let headers=recipe.headers.ok_or_else(||internal("actual parameter header owner is unissued"))?;
+      Ok(headers.lazy_body_parameters())
+    }
     pub(super) fn original_header_parameters<'a>(&'a self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<(&'a dm_syntax::SharedParameterSignature,dm_syntax::SyntaxProjection),dm_syntax::Diagnostic>{
       let recipe=self.original_body_recipe(span,code)?;
       let fail=|message:&str|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()};
@@ -741,6 +756,18 @@ impl DeclarationSyntax {
       let original=Span::new(0,headers.abi_source_len());let current=recipe.source_window().map_err(fail)?;
       let projection=dm_syntax::SyntaxProjection::new(original,current).map_err(|_|fail("actual parameter source projection differs"))?;
       Ok((parameters,projection))
+    }
+    pub(super) fn with_original_header_parameters_admitted<T>(
+      &self, span: Span, code: &Arc<BodyCodeIdentity>, a: &dm_syntax::SettingAdmission<'_>,
+      consume: impl FnOnce(&dm_syntax::ParameterSignature,dm_syntax::SyntaxProjection)->Result<T,BodySyntaxFailure>,
+    )->Result<T,BodySyntaxFailure>{
+      let recipe=self.original_body_recipe(span,code).map_err(|error|internal(&error.message))?;
+      let headers=recipe.headers.ok_or_else(||internal("actual parameter header owner is unissued"))?;
+      let parameters=headers.parameter_signature_admitted(recipe.relative.span,a).map_err(BodySyntaxFailure::Operational)?;
+      let original=Span::new(0,headers.abi_source_len());
+      let current=recipe.source_window().map_err(internal)?;
+      let projection=dm_syntax::SyntaxProjection::new(original,current).map_err(|_|internal("actual parameter source projection differs"))?;
+      consume(&parameters,projection)
     }
     pub(crate) fn original_callable_opening(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<usize,String>{
         let recipe=self.original_body_recipe(span,code).map_err(|e|e.message)?;

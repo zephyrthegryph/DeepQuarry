@@ -1126,6 +1126,18 @@ impl FundedCanonicalHeader {
     }
 }
 
+struct FundedCanonicalOutput<'a, 'op> {
+    header: &'a mut FundedCanonicalHeader,
+    admission: &'a SettingAdmission<'op>,
+}
+impl dm_ir::CanonicalByteSink for FundedCanonicalOutput<'_, '_> {
+    fn append(&mut self, bytes: &[u8], work: &mut dyn dm_ir::CanonicalWork) -> std::io::Result<()> {
+        work.poll()?;
+        self.header.write(bytes, self.admission)
+    }
+    fn written(&mut self) -> &mut [u8] { self.header.bytes.as_mut_slice() }
+}
+
 // The actual encoder output, with no alternate format or dynamic allocation.
 struct TrivialCanonicalSuffix {
     bytes: [u8; 96],
@@ -1160,10 +1172,13 @@ fn append_procedure_canonical(
         header.write(encoded.bytes(), a)?;
     } else {
         let mut work = ProcedureCanonicalWork { admission: a, scratch: reserve(0)? };
-        let encoded = procedure.canonical_bytes_using(&mut work)?;
-        header.write(&encoded, a)?;
-        if cache.is_some() { pending_suffix = TrivialCanonicalSuffix::capture(&encoded); }
-        drop(encoded);
+        let suffix_start = header.bytes.len();
+        procedure.append_canonical_using(
+            &mut FundedCanonicalOutput { header: &mut header, admission: a }, &mut work,
+        )?;
+        if cache.is_some() {
+            pending_suffix = TrivialCanonicalSuffix::capture(&header.bytes[suffix_start..]);
+        }
         drop(work);
     }
 
@@ -1945,7 +1960,10 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  /// Consume the actual stream-issued primary product exactly once. The source
  /// and neutral literal binding are authenticated together; no parse/expand or
  /// alternate SymbolTable is introduced at this handoff.
- pub(crate) fn finish_primary(mut self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
+ pub(crate) fn finish_primary(self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
+  self.finish_primary_with_lazy_parameter_mode(source,primary,literal_source,false)
+ }
+ pub(crate) fn finish_primary_with_lazy_parameter_mode(mut self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
  use dm_preprocess::regions::OriginalStreamPrimary;
  let primary=primary.into();
  // Every retained reference has moved to an actual completed core. The
@@ -2008,6 +2026,9 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  headers.install_original_formal_notices(self.notices.take().expect("actual formal event ledger"),self.notices_complete,a).map_err(OriginalHeaderFailure::Operational)?;
  // In a bound stream each successful row's actual live producer was checked
  // against this exact primary before the token/source handoff above.
+ if lazy_parameters {
+  headers.enable_lazy_parameter_signatures(a).map_err(OriginalHeaderFailure::Operational)?;
+ } else {
  headers.install_parameter_signatures(a, |header| {
     literal_source?;
     let index = self.rows.find(header.start)?;
@@ -2018,6 +2039,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
     if flags.variadic || !flags.notices_complete || !flags.clauses_complete { return None; }
     header.start.checked_add(geometry.argument_offset)
  }).map_err(OriginalHeaderFailure::Operational)?;
+ }
  drop(self.input_storage);
  checkpoint(a)?;
  let spellings=OriginalSignatureSpellings::capture(&self.symbols,a).map_err(OriginalHeaderFailure::Operational)?;

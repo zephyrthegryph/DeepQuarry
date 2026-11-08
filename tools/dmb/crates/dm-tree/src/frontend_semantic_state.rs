@@ -110,10 +110,12 @@ impl RetainedSemanticTree {
     }
     /// One predecessor cache/owner. A complete original recipe can lend both
     /// diagnostic roles; a primary prefix can only be lent to Analyze.
-    pub(super) fn previous_original_frontend(&self,project:&std::path::Path,defines:&std::collections::BTreeMap<String,String>,allow_prefix:bool)->Option<RememberedFrontend>{
+    pub(super) fn previous_original_frontend(&self,project:&std::path::Path,defines:&std::collections::BTreeMap<String,String>,allow_prefix:bool,lazy_body_parameters:bool)->Option<RememberedFrontend>{
       let(path,remembered,revision)=self.previous.as_ref()?;if path!=project||remembered!=defines{return None}
       if matches!(revision,RememberedFrontend::Analysis(owner)if owner.preparation_purpose().is_structural()){return None}
-      let original=revision.original_primary()?;if original.frontier().is_some()&&!allow_prefix{return None}Some(revision.clone())
+      let original=revision.original_primary()?;
+      if original.lazy_body_parameters()!=lazy_body_parameters||original.frontier().is_some()&&!allow_prefix{return None}
+      Some(revision.clone())
     }
     /// Stage source-neutral declaration claims for this request, independently
     /// of the current semantic/query tree. Dropping the guard aborts claims.

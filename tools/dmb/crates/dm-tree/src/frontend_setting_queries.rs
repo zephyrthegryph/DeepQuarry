@@ -148,6 +148,15 @@ pub trait SettingExpressionQueries: std::fmt::Debug + Send + Sync {
         )))
     }
 
+    /// Short header-only work on the existing syntax counter. Native hosts
+    /// can lend it without re-pruning the declaration alias registry.
+    fn with_original_header_admission(
+        &self,
+        operation: &mut dyn FnMut(&dm_syntax::SettingAdmission<'_>) -> Result<(), BodySyntaxFailure>,
+    ) -> Result<(), BodySyntaxFailure> {
+        self.with_declaration_admission(operation)
+    }
+
     /// Synchronous producer scope on the existing declaration host.
     /// Providers without a dedicated worker permit use their ordinary path.
     fn with_original_batch_producer_admission(

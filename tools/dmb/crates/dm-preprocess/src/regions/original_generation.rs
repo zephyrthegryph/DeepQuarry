@@ -1,6 +1,6 @@
 //! Actual raw traversal -> SAME primary -> restricted diagnostic/generation
 //! handoff. No ordinary planner, expanded-string reparse or compiler promotion.
-use super::{OriginalDemandDelivery,OriginalPrimaryStreamConsumer,OriginalBatchExecution,DirectivePlan,ExpandedRegions,GenerationDirectivePlan,GenerationOmissions,OriginalDiagnosticPlan,original_literal_source::OriginalLiteralSourceBinding,original_primary_controller::{OriginalLogicalProducer,OriginalPreparedTokenSource,OriginalPrimaryOutput,consume_prepared_primary_using},original_batch_primary::{OriginalBatchRunner,consume_batch_primary_using},original_source_controller::{State,NoticeSink,Host,Control},original_driver::RawSourceDriver,environment::OriginalFinalMacros,original_diagnostic_plan::OriginalPlanRetention};
+use super::{OriginalDemandDelivery,OriginalPrimaryStreamConsumer,OriginalBatchExecution,DirectivePlan,ExpandedRegions,GenerationDirectivePlan,GenerationOmissions,OriginalDiagnosticPlan,original_literal_source::OriginalLiteralSourceBinding,original_primary_controller::{OriginalLogicalProducer,OriginalPreparedTokenSource,OriginalPrimaryOutput,consume_prepared_primary_using},original_batch_primary::{OriginalBatchRunner,consume_batch_primary_using},original_source_controller::{State,NoticeSink,Host,Control},original_driver::RawSourceDriver,original_diagnostic_plan::{DiagnosticFinalMacros,OriginalPlanRetention}};
 use crate::{SourceProvider,InitialEnvironment,SourceText,source_arena_credit::{SourceArenaWork,read_original_source_open_using},macro_expansion::{OriginalMacroText as Text,original_format_using}};
 use dm_syntax::{SettingAdmission,SharedSpanTokens};
 use super::{OriginalStreamPrimary,original_define_history::HistoryPurpose};
@@ -34,8 +34,8 @@ pub trait OriginalRootOpenObserver:Sync{
  /// cannot replace the exact original SourceOpenFailed ioError.
  fn actual_root_open_failed_using(&self,failed:OriginalRootOpenFailureLoan<'_,'_>);
 }
-struct Metadata{state:State,final_macros:OriginalFinalMacros}
-struct Recipe<'a>{project:&'a Path,provider:&'a dyn SourceProvider,defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>,loan_batch_geometry:bool,history:HistoryPurpose}
+struct Metadata{state:State,final_macros:DiagnosticFinalMacros}
+struct Recipe<'a>{project:&'a Path,provider:&'a dyn SourceProvider,defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>,loan_batch_geometry:bool,history:HistoryPurpose,compact_final_macros:bool}
 impl Recipe<'_>{
  fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Metadata>{
   poll(a)?;if self.provider.initial_environment()!=InitialEnvironment::OriginalChecker0290{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual Original source environment required"))}
@@ -100,15 +100,19 @@ impl Recipe<'_>{
   })?;
   drop((control,host,notices));
   {let mut state=shared.borrow_mut();driver.capture_final_define_history_using(&mut state.history,a).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=producer_history {error:?}");}})?;}
-  let final_macros=driver.into_final_environment_using(a).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=producer_final_macros {error:?}");}})?;
+  let final_macros=(if self.compact_final_macros{
+   driver.into_final_debug_presence_using(a)
+  }else{
+   driver.into_final_environment_using(a).map(DiagnosticFinalMacros::Full)
+  }).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=producer_final_macros {error:?}");}})?;
   let state=Rc::try_unwrap(shared).map_err(|_|io::Error::new(io::ErrorKind::InvalidData,"actual producer retained a live traversal loan at metadata finalization"))?.into_inner();
   Ok(Metadata{state,final_macros})
  }
 }
 /// A Sync descriptor borrows only the authentic execution.provider loan. Every
 /// mutable driver/notice/host/control is constructed locally inside its admission.
-struct BatchRecipe<'a>{project:&'a Path,provider:&'a(dyn SourceProvider+Sync),defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>,loan_batch_geometry:bool,history:HistoryPurpose}
-impl OriginalBatchRunner for BatchRecipe<'_>{type Metadata=Metadata;fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Metadata>{Recipe{project:self.project,provider:self.provider,defines:self.defines,omissions:self.omissions,max_raw_bytes:self.max_raw_bytes,work:self.work,root_observer:self.root_observer,loan_batch_geometry:self.loan_batch_geometry,history:self.history}.with_source(a,run)}}
+struct BatchRecipe<'a>{project:&'a Path,provider:&'a(dyn SourceProvider+Sync),defines:&'a BTreeMap<String,String>,omissions:&'a GenerationOmissions,max_raw_bytes:usize,work:&'a dyn SourceArenaWork,root_observer:Option<&'a dyn OriginalRootOpenObserver>,loan_batch_geometry:bool,history:HistoryPurpose,compact_final_macros:bool}
+impl OriginalBatchRunner for BatchRecipe<'_>{type Metadata=Metadata;fn with_source(&self,a:&SettingAdmission<'_>,run:&mut dyn FnMut(&mut dyn OriginalPreparedTokenSource)->io::Result<()>)->io::Result<Metadata>{Recipe{project:self.project,provider:self.provider,defines:self.defines,omissions:self.omissions,max_raw_bytes:self.max_raw_bytes,work:self.work,root_observer:self.root_observer,loan_batch_geometry:self.loan_batch_geometry,history:self.history,compact_final_macros:self.compact_final_macros}.with_source(a,run)}}
 #[cfg(any(test, debug_assertions))]
 #[derive(Debug)]
 struct ProjectionMismatch {
@@ -178,16 +182,16 @@ fn finalize(delivery:OriginalDemandDelivery,mut metadata:Metadata,output:Origina
 }
 impl GenerationDirectivePlan{
  pub fn prepare_original_stream_using(project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,max_raw_bytes:usize,source_work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,consumer:&mut dyn OriginalPrimaryStreamConsumer)->io::Result<OriginalGenerationProduct>{
-  Self::prepare_original_stream_root_observer_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,consumer,None,HistoryPurpose::Full)
+  Self::prepare_original_stream_root_observer_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,consumer,None,HistoryPurpose::Full,false)
  }
  pub fn prepare_original_stream_observing_root_using(project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,max_raw_bytes:usize,source_work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,consumer:&mut dyn OriginalPrimaryStreamConsumer,observer:&dyn OriginalRootOpenObserver)->io::Result<OriginalGenerationProduct>{
-  Self::prepare_original_stream_root_observer_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,consumer,Some(observer),HistoryPurpose::Full)
+  Self::prepare_original_stream_root_observer_using(project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,consumer,Some(observer),HistoryPurpose::Full,false)
  }
- fn prepare_original_stream_root_observer_using(project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,max_raw_bytes:usize,source_work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,consumer:&mut dyn OriginalPrimaryStreamConsumer,root_observer:Option<&dyn OriginalRootOpenObserver>,history:HistoryPurpose)->io::Result<OriginalGenerationProduct>{
+ fn prepare_original_stream_root_observer_using(project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,max_raw_bytes:usize,source_work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,consumer:&mut dyn OriginalPrimaryStreamConsumer,root_observer:Option<&dyn OriginalRootOpenObserver>,history:HistoryPurpose,compact_final_macros:bool)->io::Result<OriginalGenerationProduct>{
   poll(a)?;let execution=batch.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"Original Analyze requires its actual bounded batch execution loan"))?;
   let actual:&dyn SourceProvider=execution.provider();if !std::ptr::addr_eq(provider,actual){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual Original batch execution belongs to another provider"))}
   let root_observer=root_observer.or_else(||provider.original_root_open_observer());
-  let recipe=BatchRecipe{project,provider:execution.provider(),defines,omissions:&omissions,max_raw_bytes,work:source_work,root_observer,loan_batch_geometry:consumer.retains_committed_items(),history};let(output,metadata)=consume_batch_primary_using(execution,source_work,a,consumer,&recipe).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=batch_primary {error:?}");}})?;finalize(OriginalDemandDelivery::AnalyzeBatch8192x64,metadata,output,omissions,a,source_work)
+  let recipe=BatchRecipe{project,provider:execution.provider(),defines,omissions:&omissions,max_raw_bytes,work:source_work,root_observer,loan_batch_geometry:consumer.retains_committed_items(),history,compact_final_macros};let(output,metadata)=consume_batch_primary_using(execution,source_work,a,consumer,&recipe).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=batch_primary {error:?}");}})?;finalize(OriginalDemandDelivery::AnalyzeBatch8192x64,metadata,output,omissions,a,source_work)
  }
  /// Restricted diagnostic traversal borrows the same actual lazy/batch
  /// producers but keeps no full historical macro replacement/doc products.
@@ -200,10 +204,21 @@ impl GenerationDirectivePlan{
  )->io::Result<OriginalGenerationProduct>{
     match batch {
         Some(batch)=>Self::prepare_original_stream_root_observer_using(
-            project,provider,defines,omissions,max_raw_bytes,source_work,a,Some(batch),consumer,None,HistoryPurpose::Diagnostic),
+            project,provider,defines,omissions,max_raw_bytes,source_work,a,Some(batch),consumer,None,HistoryPurpose::Diagnostic,false),
         None=>Self::prepare_original_checker_stream_root_observer_using(
             project,provider,defines,omissions,max_raw_bytes,source_work,a,consumer,None,HistoryPurpose::Diagnostic),
     }
+ }
+ /// Closed joined Checker/Analyze role. No final macro inventory is
+ /// issued, and the independent diagnostic define history remains required.
+ pub fn prepare_original_compound_diagnostic_stream_using(
+    project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,
+    omissions:GenerationOmissions,max_raw_bytes:usize,source_work:&dyn SourceArenaWork,
+    a:&SettingAdmission<'_>,batch:&OriginalBatchExecution<'_>,
+    consumer:&mut dyn OriginalPrimaryStreamConsumer,
+ )->io::Result<OriginalGenerationProduct>{
+    Self::prepare_original_stream_root_observer_using(
+      project,provider,defines,omissions,max_raw_bytes,source_work,a,Some(batch),consumer,None,HistoryPurpose::Diagnostic,true)
  }
  /// Direct checker profile is explicitly named; it cannot masquerade as Analyze
  /// by wrapping a lazy stream or manufacturing a successful batch/EOF receipt.
@@ -215,7 +230,7 @@ impl GenerationDirectivePlan{
  }
  fn prepare_original_checker_stream_root_observer_using(project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,omissions:GenerationOmissions,max_raw_bytes:usize,source_work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,consumer:&mut dyn OriginalPrimaryStreamConsumer,root_observer:Option<&dyn OriginalRootOpenObserver>,history:HistoryPurpose)->io::Result<OriginalGenerationProduct>{
   let root_observer=root_observer.or_else(||provider.original_root_open_observer());
-  let recipe=Recipe{project,provider,defines,omissions:&omissions,max_raw_bytes,work:source_work,root_observer,loan_batch_geometry:false,history};let mut output=None;let metadata=recipe.with_source(a,&mut|source|{if output.is_some(){return Err(io::ErrorKind::InvalidData.into())}output=Some(consume_prepared_primary_using(source,source_work,a,consumer)?);Ok(())})?;finalize(OriginalDemandDelivery::CheckerLazy0290,metadata,output.ok_or(io::ErrorKind::InvalidData)?,omissions,a,source_work)
+  let recipe=Recipe{project,provider,defines,omissions:&omissions,max_raw_bytes,work:source_work,root_observer,loan_batch_geometry:false,history,compact_final_macros:false};let mut output=None;let metadata=recipe.with_source(a,&mut|source|{if output.is_some(){return Err(io::ErrorKind::InvalidData.into())}output=Some(consume_prepared_primary_using(source,source_work,a,consumer)?);Ok(())})?;finalize(OriginalDemandDelivery::CheckerLazy0290,metadata,output.ok_or(io::ErrorKind::InvalidData)?,omissions,a,source_work)
  }
 }
 

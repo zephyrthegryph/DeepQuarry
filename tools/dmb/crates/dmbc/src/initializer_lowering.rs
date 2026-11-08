@@ -354,7 +354,7 @@ fn lower_plan_source<R: Resolver>(
     let symbols = plan.symbols.as_ref();
     let measurement =
         crate::stage_measurements::Scope::new(observer, InitializerStage::Classification);
-    let debug_defined = frontend.plan.final_macro("DEBUG").is_some();
+    let debug_defined = frontend.plan.defines_debug();
     let classification=if let Some(startup)=original{let captured=match(parallel.map(|(factory,_)|factory).or_else(||evaluator.parallel_evaluator()),reuse){(Some(factory),Some(reuse))=>initializer_policy::classify_original_startup_with_reuse(frontend,startup,evaluator,debug_defined,factory,reuse),_=>initializer_policy::classify_original_startup(frontend,startup,evaluator,debug_defined)};match captured{Ok(value)=>Ok(value),Err(initializer_policy::InitializerClassificationFailure::Semantic(source))=>Err(source),Err(initializer_policy::InitializerClassificationFailure::Operational(actual))=>return Err(InitializerLoweringError::Operational(actual))}}else{match (parallel, reuse) {
         (Some((context, executor)), Some(reuse)) => {
             initializer_policy::classify_with_reuse_on_executor(

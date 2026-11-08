@@ -655,7 +655,13 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     ).map_err(WalkFailure::Operational)?);
                     let semantic_header = context.demand.procedure_canonical(
                         lexical_header, procedure.as_ref().unwrap(), context.prepared_signatures.as_deref_mut(),
-                    ).map_err(WalkFailure::Operational)?;
+                    ).inspect_err(|_| {
+                        #[cfg(debug_assertions)]
+                        if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+                            eprintln!("ORIGINAL_ADAPTER_CANONICAL_FAILURE span={:?} declarations={}",
+                                item.raw.header_span(), context.result.skeletons.len());
+                        }
+                    }).map_err(WalkFailure::Operational)?;
 
                     if context.headers.is_some() {
                         let owner = procedure.as_ref().ok_or("original proc metadata owner is missing")?;

@@ -76,8 +76,8 @@ fn actual_origin_mapping_alias_holds_parent_past_native_db_drop() {
    let dm_tree::frontend::FrontendDirectivePlan::OriginalDiagnostic(plan) = view.original_plan() else {
     panic!("expected the actual Original diagnostic plan");
    };
-   assert_eq!(plan.final_macros().len(),104);assert_eq!(types.iter().filter(|(path,_)|path.starts_with("/datum/context_")).count(),108);
-   let result=serde_json::json!({"schema":"analysis-default-context-observations-v1","default_macro_count":plan.final_macros().len(),"types":types,"tokens":observations::tokens(view.expanded_text())});println!("NATIVE_ANALYSIS_DEFAULT_CONTEXT={result}");
+   assert_eq!(plan.final_macros().unwrap().len(),104);assert_eq!(types.iter().filter(|(path,_)|path.starts_with("/datum/context_")).count(),108);
+   let result=serde_json::json!({"schema":"analysis-default-context-observations-v1","default_macro_count":plan.final_macros().unwrap().len(),"types":types,"tokens":observations::tokens(view.expanded_text())});println!("NATIVE_ANALYSIS_DEFAULT_CONTEXT={result}");
   }).unwrap().unwrap();
  });
 }

@@ -27,6 +27,7 @@ pub(crate) struct OriginalProcedureHeaders {
     initializer_facts: OnceLock<OriginalInitializerFactsAdmission>,
     demanded_defaults:OnceLock<OriginalDefaultRoots>,
     parameter_signatures:OnceLock<HeaderParameterSignatures>,
+    lazy_parameter_signatures:OnceLock<()>,
     formal_notices:OnceLock<(super::original_formal_notices::FormalNotices,bool)>,
     original_literal_source:OnceLock<HeaderLiteralSourceHold>,
     // Last: actual token/header payload drops before its SAME resource credit.
@@ -201,7 +202,8 @@ impl OriginalInitializerCoordinates {
             lease: a.reserve(
                 std::mem::size_of::<Self>()
                     + std::mem::size_of::<OnceLock<OriginalInitializerFactsAdmission>>()
-                    + std::mem::size_of::<OnceLock<OriginalPrimaryResourceHold>>(),
+                    + std::mem::size_of::<OnceLock<OriginalPrimaryResourceHold>>()
+                    + std::mem::size_of::<OnceLock<()>>(),
             )?,
         })
     }
@@ -479,7 +481,7 @@ impl OriginalProcedureHeaders {
             initializer_coordinates: coordinates,
             initializer_roots: Default::default(),
             initializer_facts: OnceLock::new(),
-            demanded_defaults:OnceLock::new(),parameter_signatures:OnceLock::new(),formal_notices:OnceLock::new(),
+            demanded_defaults:OnceLock::new(),parameter_signatures:OnceLock::new(),lazy_parameter_signatures:OnceLock::new(),formal_notices:OnceLock::new(),
             original_literal_source:OnceLock::new(),
             original_primary_resource:OnceLock::new(),
         }))
@@ -725,6 +727,7 @@ impl OriginalProcedureHeaders {
         }
         Ok((ordinal, row.spans.len()))
     }
+    pub(crate) fn lazy_body_parameters(&self)->bool{self.lazy_parameter_signatures.get().is_some()}
     pub(crate) fn checker_body_profile(&self)->bool{self.checker_diagnostic_settings}
     pub(crate) fn initializer_slots(&self) -> &dm_syntax::SettingExpressionSlots {
         &self.initializer_roots
@@ -865,7 +868,7 @@ impl OriginalProcedureHeaders {
       original_checkpoint(a)?;
       if !self.checker_diagnostic_settings{return Ok(())}
       let Some(roots)=self.demanded_defaults.get()else{return Ok(())};
-      if self.parameter_signatures.get().is_some(){return Err(std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual parameter metadata was already published"))}
+      if self.parameter_signatures.get().is_some() || self.lazy_parameter_signatures.get().is_some(){return Err(std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual parameter metadata was already published"))}
       let bytes=self.headers.len().checked_mul(std::mem::size_of::<dm_syntax::SharedParameterSignature>()).ok_or(std::io::ErrorKind::OutOfMemory)?;
       #[cfg(debug_assertions)]
       let trace=std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some();
@@ -876,6 +879,15 @@ impl OriginalProcedureHeaders {
         eprintln!("ORIGINAL_PARAMETER_HEADERS completed={} total={} syntax_bytes={}",
          rows.len(),self.headers.len(),a.retained_bytes_for_trace());
        }
+       rows.push(self.realize_parameter_signature(rows.len(), header, roots, a, || empty_formals(header))?);
+      }
+      original_checkpoint(a)?;
+      self.parameter_signatures.set(HeaderParameterSignatures{rows,_credit:credit}).map_err(|_|std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual parameter metadata was already published"))
+    }
+    fn realize_parameter_signature(
+        &self, _ordinal: usize, header: Span, roots: &OriginalDefaultRoots, a: &dm_syntax::SettingAdmission<'_>,
+        empty_argument_start: impl FnOnce() -> Option<usize>,
+    ) -> std::io::Result<dm_syntax::SharedParameterSignature> {
        original_checkpoint(a)?;let width=header.end.checked_sub(header.start).ok_or(std::io::ErrorKind::InvalidData)?;
        let header_tokens = || {
         let tape = self.tokens.window();
@@ -884,7 +896,7 @@ impl OriginalProcedureHeaders {
         tape.range(first, end).ok_or_else(|| std::io::Error::from(std::io::ErrorKind::InvalidData))
        };
        let mut inspected = None;
-       if let Some(argument_start) = empty_formals(header) {
+       if let Some(argument_start) = empty_argument_start() {
         let tokens = header_tokens()?;
         if let Some(signature) = dm_syntax::parameter_signature_original_plain_empty(
             &self.source, tokens, header, argument_start,
@@ -896,10 +908,10 @@ impl OriginalProcedureHeaders {
          let lease = a.reserve(retained)?;
          for _ in (0..tokens.len()).step_by(64) { original_checkpoint(a)?; }
          original_checkpoint(a)?;
-         rows.push(dm_syntax::SharedParameterSignature::retained_using(signature, lease, a)?);
+         let shared=dm_syntax::SharedParameterSignature::retained_using(signature, lease, a)?;
          #[cfg(test)]
          PLAIN_EMPTY_PARAMETER_SIGNATURES.with(|count| count.set(count.get() + 1));
-         continue;
+         return Ok(shared);
         }
         inspected = Some(tokens);
        }
@@ -914,14 +926,66 @@ impl OriginalProcedureHeaders {
        let mut signature=tokens.with_dense_using(a,|dense|Ok(dm_syntax::parameter_signature_original_with_default_roots(&self.source,dense,header,0,&mut Some(&mut loan))))
         .inspect_err(|_error| {
          #[cfg(debug_assertions)]
-         if trace { eprintln!("ORIGINAL_PARAMETER_HEADER_FAILURE completed={} header={header:?} tokens={} {_error:?}",rows.len(),tokens.len()); }
+         if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+          eprintln!("ORIGINAL_PARAMETER_HEADER_FAILURE completed={_ordinal} header={header:?} tokens={} {_error:?}",tokens.len());
+         }
         })?;
        original_checkpoint(a)?;signature.admit_optional_expressions(allowance);
        if signature.retained_bytes()>allowance{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"actual header metadata exceeded its original allowance"))}
-       rows.push(dm_syntax::SharedParameterSignature::retained_using(signature,lease,a)?);
-      }
-      original_checkpoint(a)?;
-      self.parameter_signatures.set(HeaderParameterSignatures{rows,_credit:credit}).map_err(|_|std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual parameter metadata was already published"))
+       dm_syntax::SharedParameterSignature::retained_using(signature,lease,a)
+    }
+
+    pub(super) fn enable_lazy_parameter_signatures(&self, a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<()> {
+        original_checkpoint(a)?;
+        if !self.checker_diagnostic_settings || self.parameter_signatures.get().is_some()
+            || !self.demanded_defaults.get().is_some_and(|roots| roots.matches(self, a)) {
+            return Err(std::io::ErrorKind::InvalidInput.into());
+        }
+        self.lazy_parameter_signatures.set(()).map_err(|_| std::io::ErrorKind::AlreadyExists.into())
+    }
+
+    pub(crate) fn parameter_signature_admitted(
+        &self, body: Span, a: &dm_syntax::SettingAdmission<'_>,
+    ) -> std::io::Result<dm_syntax::SharedParameterSignature> {
+        original_checkpoint(a)?;
+        if self.lazy_parameter_signatures.get().is_none() {
+            let signature = self.parameter_signature(body).map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            if !signature.is_admitted_by(a) { return Err(std::io::ErrorKind::InvalidInput.into()); }
+            return Ok(signature.clone());
+        }
+        let roots = self.demanded_defaults.get().filter(|roots| roots.matches(self, a))
+            .ok_or(std::io::ErrorKind::InvalidInput)?;
+        let index = self.headers.binary_search_by_key(&body.start, |header| header.start)
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData, "actual original header is absent"))?;
+        self.realize_parameter_signature(index, self.headers[index], roots, a, || None)
+    }
+
+    pub(crate) fn parse_body_admitted(
+        &self, span: Span, offset: usize, a: &dm_syntax::SettingAdmission<'_>,
+    ) -> std::io::Result<Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic>> {
+        if self.lazy_parameter_signatures.get().is_none() || offset != 0 {
+            return Ok(self.parse_body(span, offset));
+        }
+        let signature = self.parameter_signature_admitted(span, a)?;
+        Ok(self.parse_body_shared(span, offset, signature))
+    }
+
+    fn parse_body_shared(
+        &self, span: Span, offset: usize, signature: dm_syntax::SharedParameterSignature,
+    ) -> Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic> {
+        let fail = |message: String| dm_syntax::Diagnostic { span, kind: dm_syntax::DiagnosticKind::Unsupported, message };
+        if offset != 0 {
+            return Err(fail("shared parameter metadata requires its canonical original source window".into()));
+        }
+        let facts = self.original_literal_facts().map_err(|error| fail(error.to_string()))?;
+        if self.source.get(span.range()).is_none() {
+            return Err(fail("original procedure token range is outside source".into()));
+        }
+        let tokens = self.tokens.window();
+        let first = tokens.partition_point(|token| token.span.end <= span.start);
+        let last = tokens.partition_point(|token| token.span.start < span.end);
+        let tokens = tokens.range(first, last).ok_or_else(|| fail("original procedure token range differs".into()))?;
+        dm_syntax::parse_original_proc_with_shared_parameters_from_window(&self.source, span, tokens, offset, signature, facts)
     }
     pub(crate) fn parameter_signature(&self,body:Span)->Result<&dm_syntax::SharedParameterSignature,&'static str>{
       let index=self.headers.binary_search_by_key(&body.start,|header|header.start).map_err(|_|"actual original header is absent")?;
@@ -944,13 +1008,14 @@ impl OriginalProcedureHeaders {
             let last = tokens.partition_point(|token| token.span.start < span.end);
             tokens.range(first, last).ok_or_else(|| failure("original procedure token range differs"))
         };
-        if self.parameter_signatures.get().is_some(){
-          if offset!=0{return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"shared parameter metadata requires its canonical original source window".into()})}
-          let signature=self.parameter_signature(span).map_err(|message|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()})?;
-          // The existing header binding reauthenticates its exact SourceText
-          // view before lending sealed TU-coordinate interpolation facts.
-          let facts=self.original_literal_facts().map_err(|error|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:error.to_string()})?;
-          return dm_syntax::parse_original_proc_with_shared_parameters_from_window(&self.source,span,local_tokens()?,offset,signature.clone(),facts)
+        if self.parameter_signatures.get().is_some() {
+            if offset!=0{return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"shared parameter metadata requires its canonical original source window".into()})}
+            let signature=self.parameter_signature(span).map_err(|message|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()})?;
+            return self.parse_body_shared(span, offset, signature.clone());
+        }
+        if self.lazy_parameter_signatures.get().is_some() {
+            return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,
+                message:"current original parameter metadata needs admitted BODY demand".into()});
         }
         let dense_tokens = || local_tokens()?.as_dense_slice().ok_or_else(||dm_syntax::Diagnostic {
             span, kind: dm_syntax::DiagnosticKind::Unsupported,

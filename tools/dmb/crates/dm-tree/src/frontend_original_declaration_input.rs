@@ -277,6 +277,9 @@ pub(crate) struct OriginalPrimaryRetention{
 }
 impl std::fmt::Debug for OriginalPrimaryRetention{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalPrimaryRetention").field("source_bytes",&self.source.len()).field("actual_primary_roots",&self.primary_leases.len()).field("partial",&self.frontier.is_some()).finish_non_exhaustive()}}
 impl OriginalPrimaryRetention{
+ pub(super) fn lazy_body_parameters(&self)->bool{
+  self.primary_leases.iter().any(|roots|roots._signatures.actual_headers().lazy_body_parameters())
+ }
  pub(super) fn frontier(&self)->Option<(usize,OriginalPrimaryFatal)>{self.frontier}
  pub(super) fn input_fatal_message(&self,offset:usize,reason:crate::OriginalInputParameterFatal)->io::Result<&str>{for roots in &self.primary_leases{if roots.offset==offset{if let Some(message)=roots._signatures.input_failure_message(reason){return Ok(message)}}}Err(io::Error::new(io::ErrorKind::InvalidData,"actual input fatal message owner is absent"))}
  pub(super) fn source(&self)->&dm_preprocess::SourceText{&self.source}

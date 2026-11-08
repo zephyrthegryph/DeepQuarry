@@ -802,14 +802,59 @@ impl BodyArchive {
         &self.tree
     }
     /// Issued body roster in compiler source order, without copying metadata.
+    /// Existing eager signatures are still borrowed. On a scoped-lazy
+    /// archive, realize only the chosen header with this same host's permit;
+    /// neither the metadata nor this local borrow becomes another cache.
+    pub fn with_header_parameters_using<T>(
+        &self, ordinal: usize, checkpoint: &dyn Fn() -> std::io::Result<()>,
+        consume: impl for<'loan> FnOnce(SourceParameterView<'loan>) -> Result<T,BodySyntaxFailure>,
+    ) -> Result<T,BodySyntaxFailure> {
+      checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      let occurrence=self.bodies.get(ordinal).ok_or_else(||internal("header-only original body ordinal is unavailable"))?;
+      let code=self.body_codes.get(ordinal).ok_or_else(||internal("header-only original code owner is unavailable"))?;
+      if !self.syntax.requires_admitted_original_header_parameters(occurrence.expanded_span,&code.identity)? {
+       return consume(self.header_parameters_after_checkpoint(ordinal,checkpoint)?);
+      }
+      let host=self.setting_queries.as_ref().and_then(std::sync::Weak::upgrade)
+       .ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"current original header-only demand has no live syntax host")))?;
+      let mut consume=Some(consume);
+      let mut result=None;
+      host.with_original_header_admission(&mut |a|{
+       let consume=consume.take().ok_or_else(||internal("current original header admission callback repeated"))?;
+       result=Some(self.with_header_parameters_admitted(ordinal,a,|view|{
+        checkpoint().map_err(BodySyntaxFailure::Operational)?;
+        consume(view)
+       })?);
+       Ok(())
+      })?;
+      result.ok_or_else(||internal("current original header admission callback omitted").into())
+    }
     /// Inspect original formals without parsing any statement BODY.
     pub fn header_parameters_using(&self,ordinal:usize,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<SourceParameterView<'_>,BodySyntaxFailure>{
       checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      self.header_parameters_after_checkpoint(ordinal,checkpoint)
+    }
+    fn header_parameters_after_checkpoint(&self,ordinal:usize,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<SourceParameterView<'_>,BodySyntaxFailure>{
       let occurrence=self.bodies.get(ordinal).ok_or_else(||internal("header-only original body ordinal is unavailable"))?;
       let code=self.body_codes.get(ordinal).ok_or_else(||internal("header-only original code owner is unavailable"))?;
       let(parameters,projection)=self.syntax.original_header_parameters(occurrence.expanded_span,&code.identity).map_err(|error|internal(&error.message))?;
       let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
       checked_source_parameters_projected(&self.tree,occurrence,header,parameters,&self.source,Some(projection),&||checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())
+    }
+    /// Exact header-only demand on the current native admission. The view
+    /// cannot escape the one realized metadata owner or request BODY syntax.
+    pub fn with_header_parameters_admitted<T>(
+        &self, ordinal: usize, a: &dm_syntax::SettingAdmission<'_>,
+        consume: impl for<'loan> FnOnce(SourceParameterView<'loan>) -> Result<T,BodySyntaxFailure>,
+    ) -> Result<T, BodySyntaxFailure> {
+      a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      let occurrence=self.bodies.get(ordinal).ok_or_else(||internal("header-only original body ordinal is unavailable"))?;
+      let code=self.body_codes.get(ordinal).ok_or_else(||internal("header-only original code owner is unavailable"))?;
+      self.syntax.with_original_header_parameters_admitted(occurrence.expanded_span,&code.identity,a,|parameters,projection|{
+       let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
+       let view=checked_source_parameters_projected(&self.tree,occurrence,header,parameters,&self.source,Some(projection),&||a.checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())?;
+       consume(view)
+      })
     }
     pub fn occurrences(&self) -> &[BodyOccurrence] {
         &self.bodies

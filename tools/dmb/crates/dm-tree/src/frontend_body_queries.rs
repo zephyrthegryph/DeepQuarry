@@ -97,7 +97,7 @@ impl BodySyntaxInput {
         &self,
         admission: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<BodySyntax, BodySyntaxFailure> {
-        let result = self.parse_using(|item| {
+        let result = self.parse_using_observed(Some((admission, BodySyntaxFailure::Operational)), |item| {
             body_archive::parse_statements_with_body_literal_admission(
                 item,
                 &self.source,
@@ -107,7 +107,7 @@ impl BodySyntaxInput {
                 admission,
                 |_| false,
             )
-        });
+        }, &mut |_|{});
         if matches!(&result, Err(BodySyntaxFailure::Operational(_))) {
             return match admission.take_operational_error() {
                 Some(actual) => Err(BodySyntaxFailure::Operational(actual)),
@@ -125,14 +125,17 @@ impl BodySyntaxInput {
         &self,
         parse_statements: impl FnOnce(&mut Item) -> Result<Arc<StatementBody>, E>,
     ) -> Result<BodySyntax, E> {
-        self.parse_using_observed(parse_statements,&mut |_|{})
+        self.parse_using_observed(None,parse_statements,&mut |_|{})
     }
-    fn parse_using_observed<E:From<Diagnostic>>(&self,parse_statements:impl FnOnce(&mut Item)->Result<Arc<StatementBody>,E>,observe:&mut dyn FnMut(&dm_syntax::Diagnostic))->Result<BodySyntax,E>{
+    fn parse_using_observed<E:From<Diagnostic>>(&self,admission:Option<(&dm_syntax::SettingAdmission<'_>,fn(std::io::Error)->E)>,parse_statements:impl FnOnce(&mut Item)->Result<Arc<StatementBody>,E>,observe:&mut dyn FnMut(&dm_syntax::Diagnostic))->Result<BodySyntax,E>{
         let code=self.original_code.as_ref().ok_or_else(||internal("original body code input is unissued"))?;
         let recipe=self.syntax.original_body_recipe(self.span,code).map_err(|error|{observe(&error);Diagnostic{kind:syntax_kind(error.kind),stage:DiagnosticStage::Syntax,location:self.mapping.output(error.span.start).or_else(||Some(self.location.clone())),message:error.message}})?;
         let original_window=recipe.source_window().map_err(internal)?;
-        let mut issued = recipe.parse_original()
-            .map_err(|error| {observe(&error);Diagnostic {
+        let issued = match admission {
+            Some((a, operational)) => recipe.parse_original_admitted(a).map_err(operational)?,
+            None => recipe.parse_original(),
+        };
+        let mut issued = issued.map_err(|error| {observe(&error);Diagnostic {
                 kind: syntax_kind(error.kind),
                 stage: DiagnosticStage::Syntax,
                 location: self
@@ -700,7 +703,7 @@ impl BodySyntaxInput{
  pub fn original_code_owner(&self)->Option<&Arc<BodyCodeIdentity>>{self.original_code.as_ref()}
  pub fn parse_original_product_with_setting_admission(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalBodySyntaxProduct,BodySyntaxFailure>{
   a.checkpoint().map_err(BodySyntaxFailure::Operational)?;let mut original_error=None;
-  let parsed=self.parse_using_observed(|item|body_archive::parse_statements_with_body_literal_admission(item,&self.source,&self.syntax,self.span,self.original_code.as_ref(),a,|_|false),&mut|error|{original_error=Some(error.clone());});
+  let parsed=self.parse_using_observed(Some((a,BodySyntaxFailure::Operational)),|item|body_archive::parse_statements_with_body_literal_admission(item,&self.source,&self.syntax,self.span,self.original_code.as_ref(),a,|_|false),&mut|error|{original_error=Some(error.clone());});
   if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}
   if matches!(&parsed,Err(BodySyntaxFailure::Operational(_))){return parsed.map(|_|unreachable!())}
   a.checkpoint().map_err(BodySyntaxFailure::Operational)?;

@@ -831,7 +831,14 @@ fn run_build_attempt(
             // preparation; never infer Sync through erased generic providers.
             let original_provider=inputs_capture.original_batch_view(query_db.as_deref().map(|db|db as &(dyn dm_preprocess::SourceChanges+Sync)));
             let preparation=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){
-                dm_tree::frontend::build_for_original_analysis_with_callable_anchors_checked(&project,&original_provider,&defines,
+                let prepare=if preparation_output.compact_checker_cache().is_some()
+                    && preparation_output.needs_combined_checker()
+                    && preparation_output.wants_joined_inputs() {
+                    dm_tree::frontend::build_for_original_compound_with_callable_anchors_checked
+                } else {
+                    dm_tree::frontend::build_for_original_analysis_with_callable_anchors_checked
+                };
+                prepare(&project,&original_provider,&defines,
                     dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
                     frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host,strict_callable_prior)
             }else{dm_tree::frontend::build_for_checker_diagnostics_with_state_checked(&project,&provider,&defines,

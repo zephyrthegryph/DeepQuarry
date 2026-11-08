@@ -12,9 +12,11 @@ pub(crate) fn collect(source:&ReadSource<'_>,mut emit:impl FnMut(&str,u32,String
    let mut output=Output::default();let inputs=source.inputs();let mut work=Work{source,peak:0};let mut control=Operation{budget:source.budget(),poll:&||source.checkpoint()};
    for ty in source.tree().types(){control.checkpoint()?;let owner=source.tree().symbols().text(ty.path).ok_or("output own-type spelling absent")?;
     dm_analysis::setter_publication_native::visit_own_values_using(inputs,owner,name,&mut work,&mut|ordinal,_,_|{
-     control.checkpoint()?;let header=inputs.archive().header_parameters_using(ordinal,&||source.checkpoint()).map_err(|error|match error{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>Failure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>Failure::Unsupported(error.message)})?;
-     let entries=header.entries()?;let mut names=Vec::new();for parameter in entries{control.checkpoint()?;kc::row(&mut control,&mut names)?;names.push(header.name(parameter)?);}
-     let(relative,line)=source.callable_header_site(ordinal)?;output.push_using(owner,&relative,line,names,&mut control)
+     control.checkpoint()?;
+     source.with_header_parameters(ordinal,|header|{
+      let entries=header.entries()?;let mut names=Vec::new();for parameter in entries{control.checkpoint()?;kc::row(&mut control,&mut names)?;names.push(header.name(parameter)?);}
+      let(relative,line)=source.callable_header_site(ordinal)?;output.push_using(owner,&relative,line,names,&mut control)
+     })
     })?;
    }
    output.finish_using(name,&mut|owner,control|Source::parent_type(source,owner)?.map(|parent|kc::own(control,parent)).transpose(),&mut|relative,line,message,_|{root.charge(message.capacity())?;emit(relative,line,message)},&mut control)

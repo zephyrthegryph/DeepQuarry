@@ -5,7 +5,32 @@ use crate::{SourceAcquisitionLease,Macro,Diagnostic};use dm_syntax::{SettingAdmi
 use std::{io,sync::Arc,path::PathBuf,collections::BTreeMap};
 /// Physical rows precede every matching retained resource counter.
 pub(super) struct OriginalScriptInclude{pub(super) path:super::original_file_path::OriginalFilePath,pub(super) at:crate::macro_expansion::OriginalMacroOrigin}
-pub(super) struct OriginalPlanRetention{pub(super) paths:super::original_plan_paths::OriginalPlanPaths,pub(super) scripts:crate::macro_expansion::OriginalMacroRows<OriginalScriptInclude>,pub(super) notices:OriginalRichNotices,pub(super) history:OriginalDefineHistory,pub(super) conditionals:super::original_conditional_history::OriginalConditionalHistory,pub(super) metadata:SharedSettingRetention,pub(super) final_macros:super::environment::OriginalFinalMacros}
+// This is representation of the actually observed final environment, not
+// an EOF/source/model witness. The compact profile exposes only the one
+// named fact its joined workflow may need.
+pub(super) enum DiagnosticFinalMacros {
+ Full(super::environment::OriginalFinalMacros),
+ DebugPresence { present:bool, domain:SettingRootLease },
+}
+impl DiagnosticFinalMacros {
+ fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{match self{
+  Self::Full(rows)=>rows.is_admitted_by(a),
+  Self::DebugPresence{domain,..}=>a.matches_lease_domain(domain),
+ }}
+ fn full(&self)->io::Result<&super::environment::OriginalFinalMacros>{match self{
+  Self::Full(rows)=>Ok(rows),
+  Self::DebugPresence{..}=>Err(io::Error::new(io::ErrorKind::Unsupported,"compact Original diagnostic did not retain general final macro bindings")),
+ }}
+ fn defines_debug(&self)->bool{match self{
+  Self::Full(rows)=>rows.get("DEBUG").is_some(),
+  Self::DebugPresence{present,..}=>*present,
+ }}
+ fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){match self{
+  Self::Full(rows)=>rows.visit_storage(visit),
+  Self::DebugPresence{domain,..}=>domain.visit_counter_storage(|p,n|visit(p,n,n)),
+ }}
+}
+pub(super) struct OriginalPlanRetention{pub(super) paths:super::original_plan_paths::OriginalPlanPaths,pub(super) scripts:crate::macro_expansion::OriginalMacroRows<OriginalScriptInclude>,pub(super) notices:OriginalRichNotices,pub(super) history:OriginalDefineHistory,pub(super) conditionals:super::original_conditional_history::OriginalConditionalHistory,pub(super) metadata:SharedSettingRetention,pub(super) final_macros:DiagnosticFinalMacros}
 struct Inner{plan:DirectivePlan,retention:OriginalPlanRetention,control:SettingRootLease}
 pub struct OriginalDiagnosticPlan(Option<Arc<Inner>>);
 impl Clone for OriginalDiagnosticPlan{fn clone(&self)->Self{Self(Some(Arc::clone(self.0.as_ref().expect("actual diagnostic owner"))))}}
@@ -37,8 +62,9 @@ impl OriginalDiagnosticPlan{
  pub fn source_texts(&self)->super::SourceTexts<'_>{self.inner().retention.paths.sources()}
  pub fn source_line_starts(&self)->&BTreeMap<PathBuf,Arc<[usize]>>{&self.inner().plan.source_line_starts}
  pub fn project_dir(&self)->&PathBuf{&self.inner().plan.project_dir}
- pub fn final_macro(&self,name:&str)->Option<&Macro>{self.inner().retention.final_macros.get(name)}
- pub fn final_macros(&self)->impl ExactSizeIterator<Item=(&str,&Macro)>{self.inner().retention.final_macros.iter()}
+ pub fn final_macro(&self,name:&str)->io::Result<Option<&Macro>>{Ok(self.inner().retention.final_macros.full()?.get(name))}
+ pub fn final_macros(&self)->io::Result<impl ExactSizeIterator<Item=(&str,&Macro)>>{Ok(self.inner().retention.final_macros.full()?.iter())}
+ pub fn defines_debug(&self)->bool{self.inner().retention.final_macros.defines_debug()}
  pub fn dependencies(&self)->impl Iterator<Item=&PathBuf>{self.inner().retention.paths.dependencies()}
  pub fn defines(&self)->&BTreeMap<String,String>{&self.inner().plan.defines}
  pub fn diagnostics(&self)->&Vec<Diagnostic>{&self.inner().plan.diagnostics}
@@ -66,7 +92,7 @@ impl OriginalDiagnosticPlan{
 
 #[cfg(test)]mod tests{
  use super::*;use std::sync::atomic::{Ordering};
- fn retention(a:&SettingAdmission<'_>)->OriginalPlanRetention{let mut history=OriginalDefineHistory::new(a).unwrap();history.capture_current_using(&super::super::environment::MacroEnvironment::default(),a).unwrap();OriginalPlanRetention{paths:super::super::original_plan_paths::OriginalPlanPaths::new(a).unwrap(),scripts:crate::macro_expansion::OriginalMacroRows::new(a).unwrap(),notices:OriginalRichNotices::new(a).unwrap(),history,conditionals:super::super::original_conditional_history::OriginalConditionalHistory::new(a).unwrap(),metadata:SharedSettingRetention::new(a.reserve(1024).unwrap()),final_macros:super::super::environment::OriginalFinalMacros::empty(a).unwrap()}}
+ fn retention(a:&SettingAdmission<'_>)->OriginalPlanRetention{let mut history=OriginalDefineHistory::new(a).unwrap();history.capture_current_using(&super::super::environment::MacroEnvironment::default(),a).unwrap();OriginalPlanRetention{paths:super::super::original_plan_paths::OriginalPlanPaths::new(a).unwrap(),scripts:crate::macro_expansion::OriginalMacroRows::new(a).unwrap(),notices:OriginalRichNotices::new(a).unwrap(),history,conditionals:super::super::original_conditional_history::OriginalConditionalHistory::new(a).unwrap(),metadata:SharedSettingRetention::new(a.reserve(1024).unwrap()),final_macros:DiagnosticFinalMacros::Full(super::super::environment::OriginalFinalMacros::empty(a).unwrap())}}
  fn empty()->GenerationOmissions{GenerationOmissions::probe(std::iter::empty(),&mut |_|panic!("no path is probed"),&mut |_|Ok(())).unwrap()}
  #[test]fn metadata_only_clone_shares_restricted_owner_and_keeps_actual_credit_until_last_alias(){
   // This constructor test grants no source, primary, parser or model role.

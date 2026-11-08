@@ -210,6 +210,13 @@ impl RawSourceDriver{
  pub(super) fn trace_macro_reservations(&self) -> (usize, usize, usize) {
   self.environment.trace_reservations()
  }
+ pub(super) fn into_final_debug_presence_using(mut self,a:&SettingAdmission<'_>)->io::Result<super::original_diagnostic_plan::DiagnosticFinalMacros>{
+  self.check(a)?;
+  let present=crate::MacroLookup::get_key_value(&self.environment.read(),"DEBUG").is_some();
+  drop(self);
+  let domain=a.reserve(0).map_err(|error|a.take_operational_error().unwrap_or(error))?;
+  Ok(super::original_diagnostic_plan::DiagnosticFinalMacros::DebugPresence{present,domain})
+ }
  pub(super) fn into_final_environment_using(mut self,a:&SettingAdmission<'_>)->io::Result<super::environment::OriginalFinalMacros>{
   self.check(a)?;
   let Self { environment, inputs, pump, queue, conditionals, held, indent, delivery, env_file, credit, .. } = self;
