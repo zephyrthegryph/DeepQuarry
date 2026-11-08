@@ -1,0 +1,18 @@
+// The docked windows' chain of native splits (code/library/ui/window_dock/dock_column.dm).
+/datum/unit_test/dq_dock_column_chain
+/datum/unit_test/dq_dock_column_chain/Run()
+	TEST_ASSERT_EQUAL(dock_column_slot(0), "statwindow", "nothing docked: the stat panel keeps its own place")
+	TEST_ASSERT_EQUAL(dock_column_slot(2), "dock_link_1", "docked windows: the chain takes it")
+	TEST_ASSERT_EQUAL(length(dock_column_winsets(list("statwindow"), list(1))), 0, "the stat panel alone needs no split")
+	var/list/two = dock_column_winsets(list("tgui-window-1", "statwindow"), list(40, 60))
+	TEST_ASSERT_EQUAL(two["dock_link_1.split"]?["left"], "tgui-window-1", "the docked window above")
+	TEST_ASSERT_EQUAL(two["dock_link_1.split"]?["right"], "statwindow", "the stat panel below")
+	TEST_ASSERT_EQUAL(two["dock_link_1.split"]?["splitter"], 40, "at its share")
+	var/list/three = dock_column_winsets(list("tgui-window-1", "tgui-window-2", "statwindow"), list(25, 25, 50))
+	TEST_ASSERT_EQUAL(length(three), 2, "three panes take two splits")
+	TEST_ASSERT_EQUAL(three["dock_link_1.split"]?["right"], "dock_link_2", "the rest hangs in the next link")
+	TEST_ASSERT_EQUAL(three["dock_link_1.split"]?["splitter"], 25, "a quarter of the column")
+	TEST_ASSERT_EQUAL(three["dock_link_2.split"]?["left"], "tgui-window-2", "the second docked window")
+	TEST_ASSERT_EQUAL(three["dock_link_2.split"]?["splitter"], 33, "25 of the 75 left")
+	var/list/collapsed = dock_column_winsets(list("tgui-window-1", "statwindow"), list(0, 50))
+	TEST_ASSERT(collapsed["dock_link_1.split"]?["splitter"] >= 1, "a collapsed pane keeps its header")

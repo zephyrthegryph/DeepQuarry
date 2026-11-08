@@ -413,21 +413,34 @@ async function dockIfOverPanel(pointer: [number, number]): Promise<void> {
   if (!store.get(configAtom)?.window?.dockable) {
     return;
   }
+  let pos: any;
+  let size: any;
   try {
     const got = await Byond.winget('statwindow', ['screen-pos', 'size']);
-    const pos = got?.['screen-pos'];
-    const size = got?.size;
-    if (
-      typeof pos?.x !== 'number' ||
-      typeof size?.x !== 'number' ||
-      pointer[0] < pos.x ||
-      pointer[1] < pos.y ||
-      pointer[0] >= pos.x + size.x ||
-      pointer[1] >= pos.y + size.y
-    ) {
-      return;
-    }
-  } catch {
+    pos = got?.['screen-pos'];
+    size = got?.size;
+  } catch (error) {
+    Byond.sendMessage('wm/log', {
+      drop: 'winget-failed',
+      error: String(error),
+    });
+    return;
+  }
+  const over =
+    typeof pos?.x === 'number' &&
+    typeof size?.x === 'number' &&
+    pointer[0] >= pos.x &&
+    pointer[1] >= pos.y &&
+    pointer[0] < pos.x + size.x &&
+    pointer[1] < pos.y + size.y;
+  // The server log says why a drop did or did not dock (hard to see from outside).
+  Byond.sendMessage('wm/log', {
+    drop: over ? 'dock' : 'outside',
+    pointer,
+    pos,
+    size,
+  });
+  if (!over) {
     return;
   }
   logger.log('dropped over the stat panel: docking', pointer);

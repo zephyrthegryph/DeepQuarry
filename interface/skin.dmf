@@ -256,6 +256,31 @@ window "prefs_markings_subwindow"
 		background-color = none
 		saved-params = ""
 
+// Cloned per docked window (code/content/client/window_dock.dm): a link of the docked windows' chain of native splits in the
+// stat panel's place in the right-hand column. Its split holds one docked window above and the next link (or the stat panel) below.
+window "dock_link_template"
+	elem "dock_link_template"
+		type = MAIN
+		background-color = #202020
+		pos = 0,0
+		size = 320x480
+		anchor1 = -1,-1
+		anchor2 = -1,-1
+		saved-params = ""
+		is-pane = true
+		can-resize = false
+	elem "split"
+		type = CHILD
+		background-color = #202020
+		pos = 0,0
+		size = 320x480
+		anchor1 = 0,0
+		anchor2 = 100,100
+		saved-params = ""
+		show-splitter = true
+		is-vert = false
+		splitter = 50
+
 window "rpane"
 	elem "rpane"
 		type = MAIN

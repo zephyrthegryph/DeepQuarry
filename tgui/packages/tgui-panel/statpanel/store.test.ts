@@ -213,3 +213,13 @@ describe('MC Health updates', () => {
     expect((store.state.mcMetrics as any).rust).toBeUndefined();
   });
 });
+
+describe('stat panel store, fail-safe', () => {
+  it('a message it cannot read is dropped, and the next one still lands', () => {
+    const { store } = setup();
+    // A malformed abilities payload (no lists) once threw out of receive().
+    expect(() => store.receive('update_abilities', {})).not.toThrow();
+    store.receive('init_verbs', { verblist });
+    expect(store.state.verbs.length).toBe(verblist.length);
+  });
+});
