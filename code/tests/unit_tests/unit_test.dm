@@ -293,7 +293,8 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 		if(OT.turf_air() && !unit_test_block_restore_session_air(OT))
 			OT.turf_air().copy_from(dq_unit_test_block_default_air())
 			OT.air_update_turf(TRUE, FALSE)
-		heat_set_solid(OT, T20C)
+		if(!unit_test_block_restore_session_solid(OT))
+			heat_set_solid(OT, T20C)
 	else if(istype(T, /turf/simulated/wall))
 		// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
 		// et al) and never got to restore them because it errored out early.
@@ -318,6 +319,28 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 	if(!i)
 		return FALSE
 	unit_test_air_put_back(T, snapshot["readings"], (i - 1) * GAS_READ_STRIDE)
+	return TRUE
+
+/// Puts a block floor's solid temperature back to what the heat guard's session baseline holds for it, as the air reset does for its gas: the
+/// floors of a room settle with its air (the test room's sit near 287 K), and resetting them to T20C made every test that let time pass report the
+/// difference as a leak. FALSE when the guard does not watch the turf (T20C is used then).
+/proc/unit_test_block_restore_session_solid(turf/open/T)
+	var/datum/unit_test_guard/guard = GLOB.unit_test_guard
+	var/list/snapshot = guard?.solids
+	if(!snapshot)
+		return FALSE
+	var/list/index = snapshot["index"]
+	if(!index)
+		index = list()
+		var/list/turfs = snapshot["turfs"]
+		for(var/i in 1 to length(turfs))
+			index[turfs[i]] = i
+		snapshot["index"] = index
+	var/i = index[T]
+	var/list/kelvin = snapshot["k"]
+	if(!i || kelvin[i] < 0)
+		return FALSE
+	heat_set_solid(T, kelvin[i])
 	return TRUE
 
 /// The default air mix a block's open turfs start with -- standard station air.
