@@ -22,6 +22,7 @@
 	probe("strings", param("strings", 1000000), stall_ms, 0)
 	probe("lists", param("lists", 400000), stall_ms, 0)
 	probe("slots", param("slots", 600000), stall_ms, length(handle_gens))
+	drain_probe(param("drain", 3000))
 	probe("contract_context", param("events", 8000), stall_ms, 0)
 	probe("contract_events", param("events", 8000), stall_ms, 0)
 	probe("plain_events", param("events", 8000), stall_ms, 0)
@@ -63,3 +64,24 @@
 	metric("[kind]_wall_s", (REALTIMEOFDAY - started_rt) / 10, "s", "none")
 	detail("[kind]_stalls", stalls)
 	keep.Cut()
+
+/// The real contract drain without a blast: `count` objects each take one damage report in one batch, which drains as a job.
+/datum/benchmark/alloc_stall/proc/drain_probe(count)
+	if(count <= 0)
+		return
+	var/turf/T = locate(world.maxx / 2, world.maxy / 2, 1)
+	var/list/objs = list()
+	for(var/i in 1 to count)
+		objs += new /obj/structure/girder(T)
+		if(!(i % 500))
+			stoplag()
+	var/start = REALTIMEOFDAY
+	SScontracts.begin_contract_batch()
+	for(var/obj/structure/girder/G as anything in objs)
+		SScontracts.queue_damage_report(G, 40)
+	SScontracts.end_contract_batch()
+	while(SScontracts.is_contract_batching() && REALTIMEOFDAY < start + 120 SECONDS)
+		stoplag()
+	metric("drain_wall_s", (REALTIMEOFDAY - start) / 10, "s", "none")
+	for(var/obj/structure/girder/G as anything in objs)
+		qdel(G)
