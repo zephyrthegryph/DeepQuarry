@@ -4084,7 +4084,6 @@
 #include "code\library\ui\asset_cache\assets\spritesheets\pipes.dm"
 #include "code\library\ui\asset_cache\assets\spritesheets\robot_icons.dm"
 #include "code\library\ui\asset_cache\assets\spritesheets\stacks.dm"
-#include "code\library\ui\asset_cache\assets\spritesheets\vending.dm"
 #include "code\library\ui\asset_cache\iconforge\batched_spritesheet.dm"
 #include "code\library\ui\asset_cache\iconforge\universal_icon.dm"
 #include "code\library\ui\asset_cache\transports\asset_transport.dm"
