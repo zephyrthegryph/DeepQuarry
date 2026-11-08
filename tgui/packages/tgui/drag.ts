@@ -9,6 +9,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { vecAdd, vecMultiply, vecScale, vecSubtract } from 'tgui-core/vector';
 import { configAtom, store } from './events/store';
 import { createLogger } from './logging';
+import { snapToScreen } from './snap';
 
 export type Point = [number, number];
 type GeometryPayload = Partial<{
@@ -427,10 +428,14 @@ function dragMoveHandler(event: MouseEvent): void {
   }
   event.preventDefault();
   setWindowPositionBatched(
-    vecSubtract(
-      [event.screenX * pixelRatio, event.screenY * pixelRatio],
-      dragPointOffset,
-    ) as Point,
+    snapToScreen(
+      vecSubtract(
+        [event.screenX * pixelRatio, event.screenY * pixelRatio],
+        dragPointOffset,
+      ) as Point,
+      getWindowSize(),
+      [window.screen.width * pixelRatio, window.screen.height * pixelRatio],
+    ),
   );
 }
 

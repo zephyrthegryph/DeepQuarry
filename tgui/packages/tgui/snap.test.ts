@@ -1,0 +1,27 @@
+import { describe, expect, it } from 'bun:test';
+import { SNAP_DISTANCE, snapToScreen } from './snap';
+
+const size: [number, number] = [500, 600];
+const screen: [number, number] = [2560, 1440];
+
+describe('snapToScreen', () => {
+  it('leaves a window away from every edge where it is', () => {
+    expect(snapToScreen([900, 400], size, screen)).toEqual([900, 400]);
+  });
+
+  it('sticks to one edge on one axis only', () => {
+    expect(snapToScreen([10, 400], size, screen)).toEqual([0, 400]);
+    expect(snapToScreen([900, 830], size, screen)).toEqual([900, 840]);
+  });
+
+  it('sticks to both edges of a corner, from either side', () => {
+    expect(snapToScreen([-12, -5], size, screen)).toEqual([0, 0]);
+    expect(snapToScreen([2070, 850], size, screen)).toEqual([2060, 840]);
+  });
+
+  it('stops at the snap distance', () => {
+    expect(snapToScreen([SNAP_DISTANCE + 1, 400], size, screen)[0]).toBe(
+      SNAP_DISTANCE + 1,
+    );
+  });
+});
