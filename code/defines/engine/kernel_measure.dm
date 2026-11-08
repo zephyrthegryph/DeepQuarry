@@ -20,6 +20,10 @@
 #define KM_MAX_SYSTEMS 192
 /// Ticks the flight recorder keeps (60 s at 20 fps).
 #define KM_RING_LEN 1200
+/// A gap this long (real ms) between two ends of tick is a freeze, whatever ran in it.
+#define KM_STALL_MS 1000
+/// How many freezes the meter keeps for the Server page.
+#define KM_STALL_KEEP 10
 /// Systems named in a tick record and its overrun log line.
 #define KM_TOP_N 8
 /// A charge smaller than this counts as this much, so a system that ran at all is marked active for the tick.

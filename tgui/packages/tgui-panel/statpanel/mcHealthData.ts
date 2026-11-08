@@ -44,6 +44,16 @@ export type Histogram = {
   buckets: number[];
 };
 
+export type Stall = {
+  gap_ms: number;
+  usage: number;
+  pre: number;
+  input_ms: number;
+  top: string | null;
+  top_ms: number;
+  at: string;
+};
+
 export type McHealthData = {
   tick_budget_ms: number;
   target_tps: number;
@@ -55,6 +65,8 @@ export type McHealthData = {
   window_5m: PerfWindow;
   ticks: RecentTick[];
   outliers: Outlier[];
+  /** Freezes: real time the server was held between two ticks, oldest first. */
+  stalls?: Stall[];
   kernel: {
     systems: KernelSystem[];
     byond_reserve?: number;

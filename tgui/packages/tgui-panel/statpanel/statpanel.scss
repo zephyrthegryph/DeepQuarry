@@ -48,6 +48,12 @@
   height: 100%;
 }
 
+// A freeze on the Server page.
+.mc-stall {
+  color: var(--color-bad, #d33);
+  padding: 2px 0;
+}
+
 // The view tabs and, at their right, the search.
 .stat-tabrow {
   display: flex;
