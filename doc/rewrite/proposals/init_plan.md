@@ -141,3 +141,11 @@ Reaching about 100 s takes everything above, including the lobby fill or an equa
 - **T7, T10, the per-type table cache and the other subsystems:** the boot agent.
 - **E6:** Codex's change-graph and `.dmt` lane.
 - **Item use and menus:** the compiled op-system agent, in `code/engine/parts`.
+
+## Note: the look verdicts (2026-11-08)
+
+The boot settle needed one sampled draw per type to learn whether its default look is empty and whether its first draw is only a picture. The verdicts
+are now cached across boots (`data/look_verdicts.json`, keyed by the compiled world; `look_verdicts_load()`/`look_verdicts_save()` in
+`code/engine/change/look_stamp.dm`, proved by `dq_look_verdict_cache_agrees`), so only the first boot after a recompile samples. **Option 1, verdicts
+derived from the declarations at build time by the analyzer (which draws write light, opacity, density or verbs), is a Codex follow-up**; it would let
+the first boot skip sampling too.
