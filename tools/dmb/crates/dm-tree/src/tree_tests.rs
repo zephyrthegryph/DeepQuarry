@@ -73,10 +73,7 @@ fn cycles_and_duplicate_declarations_are_errors() {
 
 #[test]
 fn authored_metadata_shares_between_skeleton_and_tree_until_effective_mutation() {
-    let metadata = MemberMetadata {
-        canonical: b"authored signature".as_slice().into(),
-        ..MemberMetadata::default()
-    };
+    let metadata = MemberMetadata::new(None, 0, None, b"authored signature".as_slice().into());
     let metadata = Arc::new(metadata);
     let skeleton = Skeleton::Member {
         owner: SymbolId::of("/obj/base"),

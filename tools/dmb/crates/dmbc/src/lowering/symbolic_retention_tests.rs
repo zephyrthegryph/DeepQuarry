@@ -18,19 +18,7 @@ impl Resolver for Host {
 struct Policy;
 #[test]
 fn replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection() {
-    let data = Arc::new(dm_ir::DeclarationMeaning {
-        inherited_opaque: None,
-        declared_type: None,
-        list_element_type: None,
-        display_name: None,
-        flags: 0,
-        procedure: None,
-        array: None,
-        initializer: None,
-        declared_initializer: None,
-        resolved_constant: None,
-        canonical: Default::default(),
-    });
+    let data = Arc::new(dm_ir::DeclarationMeaning::default());
     let previous = ResolvedMeaning::Member {
         owner: dm_ir::SymbolId::of("/probe"),
         name: dm_ir::SymbolId::of("value"),

@@ -105,21 +105,10 @@ fn populated() -> MemberMetadata {
         }]
         .into(),
     };
-    MemberMetadata {
-        inherited_opaque: Some(dm_ir::OpaqueFieldBase {
-            owner: SymbolId::of("/datum"),
-            name: SymbolId::of("value"),
-            declared_type: dm_ir::DeclaredTypeKnowledge::KnownUntyped,
-        }),
-        declared_type: Some(SymbolId::of("/datum")),
-        list_element_type: Some(SymbolId::of("/obj")),
-        display_name: Some(SymbolId::of("Display")),
-        flags: u32::MAX,
-        array: Some(Arc::new(dm_ir::ArrayDeclaration {
-            dimensions: vec![None, Some(expression.clone())].into(),
-            element_type: Some(SymbolId::of("/obj")),
-        })),
-        procedure: Some(Arc::new(ProcedureMetadata {
+    MemberMetadata::new(
+        Some(SymbolId::of("Display")),
+        u32::MAX,
+        Some(Arc::new(ProcedureMetadata {
             signature: ProcedureSignature {
                 parameters: Arc::from([]),
                 variadic: true,
@@ -132,42 +121,54 @@ fn populated() -> MemberMetadata {
             })]
             .into(),
         })),
+        b"exact\0canonical".as_slice().into(),
+    ).with_field_tail(dm_ir::DeclarationFieldMeaning {
+        inherited_opaque: Some(dm_ir::OpaqueFieldBase {
+            owner: SymbolId::of("/datum"),
+            name: SymbolId::of("value"),
+            declared_type: dm_ir::DeclaredTypeKnowledge::KnownUntyped,
+        }),
+        declared_type: Some(SymbolId::of("/datum")),
+        list_element_type: Some(SymbolId::of("/obj")),
+        array: Some(Arc::new(dm_ir::ArrayDeclaration {
+            dimensions: vec![None, Some(expression.clone())].into(),
+            element_type: Some(SymbolId::of("/obj")),
+        })),
         declared_initializer: Some(expression.clone()),
         initializer: Some(expression),
         resolved_constant: Some(SemanticValue::NumberBits((-1.25_f32).to_bits())),
-        canonical: b"exact\0canonical".as_slice().into(),
-    }
+    })
 }
 #[test]
 fn streaming_metadata_matches_independent_legacy_for_every_optional_combination() {
     for mask in 0..512 {
         let mut metadata = populated();
         if mask & 1 == 0 {
-            metadata.inherited_opaque = None;
+            metadata.field_tail_mut().inherited_opaque = None;
         }
         if mask & 2 == 0 {
-            metadata.declared_type = None;
+            metadata.field_tail_mut().declared_type = None;
         }
         if mask & 4 == 0 {
-            metadata.list_element_type = None;
+            metadata.field_tail_mut().list_element_type = None;
         }
         if mask & 8 == 0 {
             metadata.display_name = None;
         }
         if mask & 16 == 0 {
-            metadata.array = None;
+            metadata.field_tail_mut().array = None;
         }
         if mask & 32 == 0 {
             metadata.procedure = None;
         }
         if mask & 64 == 0 {
-            metadata.declared_initializer = None;
+            metadata.field_tail_mut().declared_initializer = None;
         }
         if mask & 128 == 0 {
-            metadata.initializer = None;
+            metadata.field_tail_mut().initializer = None;
         }
         if mask & 256 == 0 {
-            metadata.resolved_constant = None;
+            metadata.field_tail_mut().resolved_constant = None;
         }
         assert_eq!(
             metadata_fingerprint(&metadata),

@@ -24,7 +24,7 @@ fn declaration()->DeclarationMeaning{
   signature:ProcedureSignature{variadic:true,parameters:Arc::from([Parameter{name:SymbolId::of("value"),declared_type:Some(SymbolId::of("/list")),list_element_type:Some(SymbolId::of("/datum/value")),flags:0x1234,array:Some(array.clone()),default:Some(expression.clone()),input_annotation:Some(expression.clone()),source_expression:Some(expression.clone()),relative_span:dm_syntax::Span::new(100,200)}]),return_annotation:Some(expression.clone())},
   settings:Arc::from([ProcedureSettingNode::Conditional{condition:expression.clone(),then_branch:Arc::from([ProcedureSettingNode::Setting(ProcedureSetting{name:SymbolId::of("setting"),operation:SettingOperation::In,value:expression.clone()})]),else_branch:Arc::from([ProcedureSettingNode::UnsupportedContext{canonical_header:expression.clone(),children:Arc::from([ProcedureSettingNode::Setting(ProcedureSetting{name:SymbolId::of("other"),operation:SettingOperation::Assign,value:expression.clone()})])}])}]),
  });
- DeclarationMeaning{inherited_opaque:Some(OpaqueFieldBase{owner:SymbolId::of("/base"),name:SymbolId::of("opaque"),declared_type:DeclaredTypeKnowledge::Known(SymbolId::of("/datum"))}),declared_type:Some(SymbolId::of("/datum/value")),list_element_type:Some(SymbolId::of("/datum/element")),display_name:Some(SymbolId::of("alias")),flags:0x87654321,procedure:Some(procedure),array:Some(array),initializer:Some(expression.clone()),declared_initializer:Some(expression),resolved_constant:Some(SemanticValue::List(Arc::from([(Some(SemanticValue::Text(Arc::from("key".as_bytes()))),SemanticValue::List(Arc::from([(None,SemanticValue::NumberBits(0x80000000)),(Some(SemanticValue::Type(SymbolId::of("/datum"))),SemanticValue::Resource(SymbolId::of("file.dmi")))]))),(None,SemanticValue::Null)]))),canonical:"α authored header".as_bytes().into()}
+ DeclarationMeaning::new(Some(SymbolId::of("alias")),0x87654321,Some(procedure),"α authored header".as_bytes().into()).with_field_tail(DeclarationFieldMeaning{inherited_opaque:Some(OpaqueFieldBase{owner:SymbolId::of("/base"),name:SymbolId::of("opaque"),declared_type:DeclaredTypeKnowledge::Known(SymbolId::of("/datum"))}),declared_type:Some(SymbolId::of("/datum/value")),list_element_type:Some(SymbolId::of("/datum/element")),array:Some(array),initializer:Some(expression.clone()),declared_initializer:Some(expression),resolved_constant:Some(SemanticValue::List(Arc::from([(Some(SemanticValue::Text(Arc::from("key".as_bytes()))),SemanticValue::List(Arc::from([(None,SemanticValue::NumberBits(0x80000000)),(Some(SemanticValue::Type(SymbolId::of("/datum"))),SemanticValue::Resource(SymbolId::of("file.dmi")))]))),(None,SemanticValue::Null)])))})
 }
 #[test]fn admitted_native_canonical_encoder_matches_frozen_original_full_declarations_and_answers(){
  let data=Arc::new(declaration());let identity=ProcedureIdentity{owner:SymbolId::of("/datum"),name:SymbolId::of("probe"),verb:true,occurrence:7};
@@ -127,6 +127,39 @@ fn procedure_canonical_append_reuses_prefix_inline_and_releases_actual_spill() {
   assert_eq!(actual.raw_os_error(),Some(1450));
   assert_eq!(&output.0[..prefix.len()],prefix);
  }
+}
+
+#[test]
+fn declaration_field_tail_preserves_empty_reads_and_logical_wire_bytes() {
+    let procedure = declaration().procedure.unwrap();
+    let a = DeclarationMeaning::new(None, 0, Some(procedure), b"header".as_slice().into());
+    let b = a.clone();
+    assert!(a.field_tail_allocation().is_none());
+    assert!(b.field_tail_allocation().is_none());
+    assert!(std::ptr::eq(&*a, &*b), "empty reads borrow one static field view");
+    assert_eq!(a.canonical_bytes(), a.old_bytes());
+    assert!(a.field_tail_allocation().is_none(), "encoding does not allocate a field tail");
+
+    let mut explicit_empty = a.clone();
+    explicit_empty.field_tail_mut();
+    assert!(explicit_empty.field_tail_allocation().is_some());
+    assert_eq!(a, explicit_empty);
+    assert_eq!(a.canonical_bytes(), explicit_empty.canonical_bytes());
+    let wire = crate::portable_meaning::PortableMeaning::capture(&a, true).unwrap();
+    let same_wire = crate::portable_meaning::PortableMeaning::capture(&explicit_empty, true).unwrap();
+    assert_eq!(serde_json::to_vec(&wire).unwrap(), serde_json::to_vec(&same_wire).unwrap());
+    let restored = wire.restore(crate::portable_meaning::Names::unchecked()).unwrap();
+    assert_eq!(restored, a);
+    assert!(restored.field_tail_allocation().is_none());
+
+    let fields = DeclarationFieldMeaning {
+        resolved_constant: Some(SemanticValue::NumberBits(1)),
+        ..Default::default()
+    };
+    assert_eq!(fields.allocation_bytes(), std::mem::size_of::<DeclarationFieldMeaning>());
+    let field = DeclarationMeaning::default().with_field_tail(fields);
+    assert_eq!(field.canonical_bytes(), field.old_bytes());
+    assert!(field.field_tail_allocation().is_some());
 }
 
 impl FrozenOldBytes for SymbolicExpression{fn old_bytes(&self)->Vec<u8>{

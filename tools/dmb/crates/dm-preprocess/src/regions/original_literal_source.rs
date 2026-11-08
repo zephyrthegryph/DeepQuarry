@@ -22,10 +22,17 @@ impl OriginalLiteralSourceBinding{
  /// Only finalization of the SAME actual driver invokes this after moving the
  /// original fact owner and the one sealed output arena. No external Vec/data
  /// constructor is exposed, and a numeric window is not source authorization.
- pub(in crate::regions) fn issue_actual(source:&SourceText,facts:OriginalPrimaryLiteralFacts,output:&super::original_prepared_output::OriginalOutputIdentity,a:&SettingAdmission<'_>)->io::Result<Self>{
+ pub(in crate::regions) fn issue_actual(source:&SourceText,mut facts:OriginalPrimaryLiteralFacts,output:&super::original_prepared_output::OriginalOutputIdentity,actual_eof:bool,a:&SettingAdmission<'_>)->io::Result<Self>{
   poll(a)?;if !facts.is_admitted_by(a)||facts.consumed_extent()!=Some(source.as_str().len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual source/fact frontier or resource owner differs"))}
   if facts.projection_owner().is_some_and(|owner|!output.matches_projection_data(owner)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"projected spelling belongs to another actual output"))}
   facts.checked_data_window(Span::new(0,source.as_str().len()))?;
+  if actual_eof {
+   let _released = facts.settle_delivered_body_singletons(source.as_str(),a)?;
+   #[cfg(debug_assertions)]
+   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+    eprintln!("ORIGINAL_DELIVERED_SINGLETON_RECONCILIATION released_bytes={_released}");
+   }
+  }
   let credit=a.reserve(std::mem::size_of::<Binding>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;
   Ok(Self(Some(Arc::new(Binding{source:source.downgrade(),facts,credit}))))
  }

@@ -771,6 +771,93 @@ impl LiteralPage {
         Ok(Some((count, released, old_bytes, compact.credit.bytes())))
     }
 
+    /// Retry only singleton owners whose producer-side aliases may have died.
+    /// Existing projected codes keep their indices. The same page may already
+    /// contain packed projections, but we do not retry packed withdrawals here.
+    fn settle_delivered_singletons(&mut self, source: &str, a: &crate::SettingAdmission<'_>) -> io::Result<usize> {
+        let LiteralPageData::Compact(compact) = &self.data else { return Ok(0) };
+        if self.len() != LITERAL_PAGE_LEN || self.body.iter().all(|word| *word == 0) {
+            return Ok(0);
+        }
+        let poll = || a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error));
+        poll()?;
+        if !a.matches_lease_domain(&compact.credit) { return Err(io::ErrorKind::InvalidInput.into()); }
+
+        let mut references = [0u16; LITERAL_PAGE_LEN];
+        for code in compact.codes.iter() {
+            if code >> 8 < PROJECTED_COMPACT_ORDINAL {
+                references[(code & 255) as usize] += 1;
+            }
+        }
+        let mut selected = [None; LITERAL_PAGE_LEN];
+        let mut count = 0;
+        let mut gross = 0usize;
+        for (index, code) in compact.codes.iter().enumerate() {
+            if index % 32 == 0 { poll()?; }
+            let bank = (code & 255) as usize;
+            let ordinal = code >> 8;
+            if ordinal >= PROJECTED_COMPACT_ORDINAL || references[bank] != 1
+                || self.body[index / 64] & (1 << (index % 64)) == 0
+            {
+                continue;
+            }
+            let data = compact.owners[bank].at(ordinal as usize);
+            let Some((descriptor, bytes)) = data.projection_candidate() else { continue };
+            let span = self.span_at(index).ok_or(io::ErrorKind::InvalidData)?;
+            if Some(data.raw()?) != source.get(span.range()) {
+                return Err(io::ErrorKind::InvalidData.into());
+            }
+            selected[index] = Some(descriptor);
+            count += 1;
+            gross += bytes;
+        }
+        if count == 0 { return Ok(0); }
+
+        let old = compact.projections.as_deref();
+        let control = Layout::new::<Vec<ProjectedLiteral>>();
+        let prior = old.map_or(0, |rows| rows.capacity() * mem::size_of::<ProjectedLiteral>());
+        let old_len = old.map_or(0, Vec::len);
+        let size = old_len + count;
+        if size > LITERAL_PAGE_LEN { return Err(io::ErrorKind::InvalidData.into()); }
+        let layout = Layout::array::<ProjectedLiteral>(size).map_err(|_| io::ErrorKind::OutOfMemory)?;
+        let needed = layout.size() + if old.is_none() { control.size() } else { 0 };
+        if needed.saturating_sub(prior) >= gross { return Ok(0); }
+        let Some(mut credit) = a.try_reserve_optimization(needed)
+            .map_err(|error| a.take_operational_error().unwrap_or(error))? else { return Ok(0) };
+        let mut descriptors = alloc_funded_literal_rows(size, layout)?;
+        if let Some(old) = old { descriptors.extend_from_slice(old); }
+        descriptors.extend(selected.iter().flatten().copied());
+        debug_assert_eq!(descriptors.len(), size);
+
+        let LiteralPageData::Compact(compact) = &mut self.data else { unreachable!() };
+        if compact.projections.is_some() {
+            a.absorb(&mut compact.credit, &mut credit)?;
+            let old = mem::replace(compact.projections.as_deref_mut().unwrap(), descriptors);
+            drop(old);
+            compact.credit.release_retired_bytes(prior)?;
+        } else {
+            let pointer = NonNull::new(unsafe { alloc(control) }.cast::<Vec<ProjectedLiteral>>())
+                .ok_or(io::ErrorKind::OutOfMemory)?;
+            // SAFETY: the exact funded Global Box layout was allocated once.
+            let boxed = unsafe {
+                pointer.as_ptr().write(descriptors);
+                Box::from_raw(pointer.as_ptr())
+            };
+            a.absorb(&mut compact.credit, &mut credit)?;
+            compact.projections = Some(boxed);
+        }
+        let mut released = 0;
+        for (next, (index, _)) in selected.iter().enumerate().filter(|(_, row)| row.is_some()).enumerate() {
+            let code = compact.codes.at(index);
+            let bank = (code & 255) as usize;
+            let ordinal = (code >> 8) as usize;
+            released += compact.owners[bank].retire_projected_single_using(ordinal, a)?;
+            compact.codes.project(index, old_len + next);
+        }
+        debug_assert_eq!(released, gross);
+        Ok(released + prior - needed)
+    }
+
     /// Release only exact expanded RAW spelling, leaving cooked bytes and
     /// original owner/ordinal in the same compact bank code. The packed
     /// row's funded metadata already has the one-bit source marker.
@@ -1488,6 +1575,23 @@ impl OriginalPrimaryLiteralFacts{
 
  pub(super) fn seal_actual_frontier(&mut self,extent:usize,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if !self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}let owner=Arc::get_mut(self.0.as_mut().ok_or(io::ErrorKind::InvalidInput)?).ok_or(io::ErrorKind::InvalidInput)?;if owner.extent.is_some()||owner.last_fact_end>extent{return Err(io::ErrorKind::InvalidInput.into())}if let Some(last)=owner.rows.chunks.last_mut().and_then(|chunk|chunk.pages.last_mut()){last.settle_spans_using(a)?;}owner.extent=Some(extent);Ok(())
+ }
+ /// DATA-only storage settlement. The producer must match this roster's
+ /// projection owner to its actual output before lending the sealed source.
+ #[doc(hidden)]
+ pub fn settle_delivered_body_singletons(&mut self, source: &str, a: &crate::SettingAdmission<'_>) -> io::Result<usize> {
+  a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+  if self.consumed_extent()!=Some(source.len()) || !self.is_admitted_by(a) {
+   return Err(io::ErrorKind::InvalidInput.into());
+  }
+  let Some(owner) = self.0.as_mut().and_then(Arc::get_mut) else { return Ok(0) };
+  if owner.projection.is_none() { return Ok(0); }
+  let mut released = 0usize;
+  for page in owner.rows.chunks.iter_mut().flat_map(|chunk| &mut chunk.pages) {
+   released = released.checked_add(page.settle_delivered_singletons(source, a)?)
+    .ok_or(io::ErrorKind::InvalidData)?;
+  }
+  Ok(released)
  }
  pub fn is_admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.payload().rows.directory_credit)&&a.matches_lease_domain(&self.payload().colon_credit)&&a.matches_lease_domain(&self.payload().fixed_credit)}
  pub fn consumed_extent(&self)->Option<usize>{self.payload().extent}
@@ -2304,6 +2408,74 @@ mod literal_page_controls {
     assert!(page.get(1).unwrap().1.same_owner(filler.as_view()));
     assert!(matches!(page.data, LiteralPageData::Compact(_)));
     drop((page, filler, output));
+    assert_eq!(used.load(Ordering::Acquire), fixed);
+ }
+
+ #[test]
+ fn delivered_body_singletons_keep_existing_descriptor_identity_and_funded_survivors() {
+    struct Output;
+    impl crate::OriginalLiteralOutputOwner for Output {
+        fn as_any(&self) -> &dyn std::any::Any { self }
+        fn release(self: Arc<Self>) { drop(Arc::into_inner(self)); }
+        fn visit_storage(&self, _: &mut dyn FnMut(usize, usize, usize)) {}
+    }
+    let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+    let used = crate::SettingChargeCounter::try_new(fixed).unwrap();
+    let a = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+    let output = crate::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output));
+    let mut page = LiteralPage::new(0, &a).unwrap();
+    let mut source = String::new();
+    let mut alias = None;
+    let mut deferred_payload = 0;
+    for (index, raw) in ["123456", "654321"].into_iter().enumerate() {
+        let start = source.len();
+        source.push_str(raw);
+        source.push('\n');
+        let before = used.load(Ordering::Acquire);
+        let data = crate::OriginalLiteralData::from_value_using(
+            raw.to_owned(), crate::OriginalTokenValue::Int(raw.parse().unwrap()), &a,
+        ).unwrap();
+        if index == 1 {
+            deferred_payload = used.load(Ordering::Acquire) - before;
+            alias = Some(data.clone());
+        }
+        page.push((Span::new(start, start + raw.len()), data), &a).unwrap();
+    }
+    let filler = crate::OriginalLiteralData::from_value_using(
+        "0".to_owned(), crate::OriginalTokenValue::Int(0), &a,
+    ).unwrap();
+    for _ in 2..LITERAL_PAGE_LEN {
+        let start = source.len();
+        source.push_str("0\n");
+        page.push((Span::new(start, start + 1), filler.clone()), &a).unwrap();
+    }
+    page.body[0] = 3;
+    assert_eq!(page.settle_compact_body_projection(&source, &a).unwrap().unwrap().0, 1);
+    assert_eq!(page.settle_delivered_singletons(&source, &a).unwrap(), 0, "live alias blocks reuse");
+    let loan = ProjectionLoan { source: &source, origin: 0 };
+    let first = page.get_data(0, 0, Some(loan), Some(&output)).unwrap().1.detach_using(&a).unwrap();
+    drop(alias);
+    let before = used.load(Ordering::Acquire);
+    let foreign_counter = crate::SettingChargeCounter::try_new(fixed).unwrap();
+    let foreign = crate::SettingAdmission::new(&foreign_counter, 8 << 20, &|| Ok(()));
+    assert_eq!(page.settle_delivered_singletons(&source, &foreign).unwrap_err().kind(), io::ErrorKind::InvalidInput);
+    let denied = crate::SettingAdmission::new(&used, before, &|| Ok(()));
+    assert_eq!(page.settle_delivered_singletons(&source, &denied).unwrap(), 0);
+    let failing = crate::SettingAdmission::new(&used, 8 << 20, &|| Err(io::Error::from_raw_os_error(1450)));
+    assert_eq!(page.settle_delivered_singletons(&source, &failing).unwrap_err().raw_os_error(), Some(1450));
+    assert_eq!(used.load(Ordering::Acquire), before);
+
+    let saved = deferred_payload - mem::size_of::<ProjectedLiteral>();
+    assert_eq!(page.settle_delivered_singletons(&source, &a).unwrap(), saved);
+    assert_eq!(used.load(Ordering::Acquire), before - saved);
+    assert!(page.get_data(0, 0, Some(loan), Some(&output)).unwrap().1.same_owner(&first));
+    let second = page.get_data(1, 0, Some(loan), Some(&output)).unwrap().1;
+    assert!(matches!(second.value().unwrap(), crate::OriginalTokenValue::Int(654321)));
+    assert_eq!(second.raw().unwrap(), "654321");
+    assert!(!second.same_owner(&first));
+    assert!(page.get(2).unwrap().1.same_owner(filler.as_view()));
+    assert_eq!(page.settle_delivered_singletons(&source, &a).unwrap(), 0);
+    drop((page, first, filler, output));
     assert_eq!(used.load(Ordering::Acquire), fixed);
  }
 

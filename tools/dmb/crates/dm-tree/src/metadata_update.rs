@@ -305,8 +305,8 @@ fn default_edits<'a, 'b>(
         let value_bits = literal(&after.declared_initializer, symbols)?;
         let strip = |metadata: &crate::MemberMetadata| {
             let mut metadata = metadata.clone();
-            metadata.initializer = None;
-            metadata.declared_initializer = None;
+            metadata.field_tail_mut().initializer = None;
+            metadata.field_tail_mut().declared_initializer = None;
             metadata.canonical = Default::default();
             metadata
         };
@@ -382,8 +382,8 @@ fn apply_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&Semant
                 return false;
             }
             let mut metadata = member.metadata.as_ref().clone();
-            metadata.declared_type = declared_type;
-            metadata.inherited_opaque = Some(opaque.clone());
+            metadata.field_tail_mut().declared_type = declared_type;
+            metadata.field_tail_mut().inherited_opaque = Some(opaque.clone());
             members.set_metadata(index, Arc::new(metadata));
             return false;
         }
@@ -391,13 +391,13 @@ fn apply_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&Semant
             // The authored initializer/constant remains this source override.
             // Only genuine formal declaration properties come from the catalog.
             let mut metadata=member.metadata.as_ref().clone();
-            metadata.declared_type=base.declared_type;
-            metadata.list_element_type=base.list_element_type;
+            metadata.field_tail_mut().declared_type=base.declared_type;
+            metadata.field_tail_mut().list_element_type=base.list_element_type;
             metadata.display_name=base.display_name;
             metadata.flags=base.flags;
-            metadata.array=base.array.clone();
-            metadata.declared_initializer=base.declared_initializer.clone();
-            metadata.inherited_opaque=None;
+            metadata.field_tail_mut().array=base.array.clone();
+            metadata.field_tail_mut().declared_initializer=base.declared_initializer.clone();
+            metadata.field_tail_mut().inherited_opaque=None;
             members.set_metadata(index,Arc::new(metadata));
             return true;
         }
@@ -428,12 +428,12 @@ pub(crate) fn resolve_metadata<M: crate::member_binding::MemberWrite + ?Sized>(
                     continue;
                 }
                 let mut metadata = current.as_ref().clone();
-                metadata.inherited_opaque = inherited.inherited_opaque.clone();
-                metadata.declared_type = inherited.declared_type;
-                metadata.list_element_type = inherited.list_element_type;
+                metadata.field_tail_mut().inherited_opaque = inherited.inherited_opaque.clone();
+                metadata.field_tail_mut().declared_type = inherited.declared_type;
+                metadata.field_tail_mut().list_element_type = inherited.list_element_type;
                 metadata.flags = inherited.flags;
-                metadata.array = inherited.array.clone();
-                metadata.declared_initializer = inherited.declared_initializer.clone();
+                metadata.field_tail_mut().array = inherited.array.clone();
+                metadata.field_tail_mut().declared_initializer = inherited.declared_initializer.clone();
                 members.set_metadata(i, Arc::new(metadata));
             }
         }

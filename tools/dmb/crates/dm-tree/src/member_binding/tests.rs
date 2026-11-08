@@ -81,10 +81,7 @@ fn admitted_namespace_is_one_shared_owner_and_sparse_metadata_is_exact() {
     let (declarations, _) = KeyedDeclarations::capture(None, &original).unwrap();
     let projection = CurrentProjection::new(&declarations, original.len()).unwrap();
     let mut rows = inputs(&original, &projection);
-    let metadata = Arc::new(MemberMetadata {
-        flags: 2,
-        ..MemberMetadata::default()
-    });
+    let metadata = Arc::new(MemberMetadata::new(None, 2, None, Default::default()));
     let normal: Arc<[_]> = projection
         .keys
         .iter()
@@ -106,10 +103,9 @@ fn admitted_namespace_is_one_shared_owner_and_sparse_metadata_is_exact() {
     assert_eq!(Arc::strong_count(&metadata), before);
     assert!(rows.deltas.is_empty());
     assert!(Arc::ptr_eq(rows.member(0).metadata, &metadata));
-    let changed = Arc::new(MemberMetadata {
-        flags: 6,
-        ..metadata.as_ref().clone()
-    });
+    let mut changed = metadata.as_ref().clone();
+    changed.flags = 6;
+    let changed = Arc::new(changed);
     rows.set_metadata(1, Arc::clone(&changed));
     assert_eq!(rows.deltas.len(), 1);
     assert!(Arc::ptr_eq(rows.member(0).metadata, &metadata));

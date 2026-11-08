@@ -24,7 +24,7 @@ fn capture_data(
         return Some((Box::new(PortableMeaning::capture(data, false)?), None));
     };
     let mut plain = data.clone();
-    plain.inherited_opaque = None;
+    plain.field_tail_mut().inherited_opaque = None;
     let (knowledge, known) = match base.declared_type {
         DeclaredTypeKnowledge::Known(symbol) => (0, Some(symbol)),
         DeclaredTypeKnowledge::KnownUntyped => (1, None),
@@ -46,7 +46,7 @@ fn restore_data(
 ) -> Option<Arc<DeclarationMeaning>> {
     let mut meaning = data.clone().restore(Names::unchecked())?;
     if let Some(base) = opaque {
-        meaning.inherited_opaque = Some(OpaqueFieldBase {
+        meaning.field_tail_mut().inherited_opaque = Some(OpaqueFieldBase {
             owner: base.owner,
             name: base.name,
             declared_type: match (base.knowledge, base.known) {
@@ -322,10 +322,10 @@ mod tests {
         }
     }
     fn meaning() -> crate::DeclarationMeaning {
-        crate::DeclarationMeaning {
-            declared_type: Some(SymbolId::of("/obj")),
-            flags: 3,
-            procedure: Some(Arc::new(crate::ProcedureMetadata {
+        crate::DeclarationMeaning::new(
+            None,
+            3,
+            Some(Arc::new(crate::ProcedureMetadata {
                 signature: crate::ProcedureSignature {
                     parameters: Arc::from([crate::Parameter {
                         name: SymbolId::of("amount"),
@@ -349,10 +349,12 @@ mod tests {
                     },
                 )]),
             })),
+            (&b"recipe"[..]).into(),
+        ).with_field_tail(crate::DeclarationFieldMeaning {
+            declared_type: Some(SymbolId::of("/obj")),
             initializer: Some(expression("1")),
-            canonical: (&b"recipe"[..]).into(),
             ..Default::default()
-        }
+        })
     }
     #[test]
     fn declaration_chains_round_trip_through_the_wire_with_identical_canonical_bytes() {
@@ -388,14 +390,14 @@ mod tests {
             owner: SymbolId::of("/obj"),
             name: SymbolId::of("x"),
             fingerprint: 1.into(),
-            data: Arc::new(crate::DeclarationMeaning {
+            data: Arc::new(crate::DeclarationMeaning::default().with_field_tail(crate::DeclarationFieldMeaning {
                 inherited_opaque: Some(crate::OpaqueFieldBase {
                     owner: SymbolId::of("/atom"),
                     name: SymbolId::of("x"),
                     declared_type: crate::DeclaredTypeKnowledge::Known(SymbolId::of("/obj")),
                 }),
                 ..Default::default()
-            }),
+            })),
         };
         let wire = PortableResolvedAnswer::capture_declared(&opaque).unwrap();
         assert_eq!(wire.restore(), Some(opaque.clone()));

@@ -715,6 +715,10 @@ impl HeapCensus {
     fn declaration(&mut self, declaration: &dm_ir::DeclarationMeaning) {
         let owner = "semantic_metadata";
         self.slice("semantic_metadata.canonical", declaration.canonical.storage_arc(), true);
+        if let Some(fields) = declaration.field_tail_allocation() {
+            let bytes = std::mem::size_of_val(fields);
+            self.buffer("semantic_metadata.field_tail", fields as *const _ as usize, bytes, bytes);
+        }
         for expression in [&declaration.initializer, &declaration.declared_initializer]
             .into_iter()
             .flatten()

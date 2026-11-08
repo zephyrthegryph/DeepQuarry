@@ -407,7 +407,7 @@ impl Resolver for ScalarSnapshot {
             return ResolvedMeaning::Unsupported(query);
         };
         let mut data = member.metadata.as_ref().clone();
-        data.resolved_constant = Some(value.clone());
+        data.field_tail_mut().resolved_constant = Some(value.clone());
         let mut bytes = b"dm-scalar-member-v1\0".to_vec();
         bytes.extend_from_slice(&member.content.to_le_bytes());
         bytes.extend_from_slice(&crate::metadata_fingerprint(&data).to_le_bytes());

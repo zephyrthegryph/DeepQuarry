@@ -125,7 +125,7 @@ pub struct OriginalPrimaryDemand<'a,'observer,'budget>{
  frames:Option<NativeOriginalPrimaryFrames<'a,'budget>>,
  layout:Option<NativeDemandLayoutCursor<'a,'budget>>,
  tokens:PrimaryTokenTape,diagnostics:Vec<Diagnostic>,lexical:Vec<Diagnostic>,literal_facts:OriginalPrimaryLiteralFacts,literal_facts_issued:bool,
- frontier:usize,ended:bool,failed:bool,
+ frontier:usize,last_token_end:usize,ended:bool,failed:bool,
  live_callable_prefix:Option<LiveCallablePrefix>,
  #[cfg(debug_assertions)]
  body_literal_candidates: Option<BodyLiteralCandidates>,
@@ -187,7 +187,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  }
  fn new_with_mode(a:&'a crate::SettingAdmission<'budget>,observer:Option<&'observer mut dyn OriginalDeclarationHeaderObserver>,committed:bool)->io::Result<Self>{
   let original=OriginalParseState{storage:original_storage::Storage::new(a)?,fatal:Default::default(),unavailable:Default::default(),operational:Default::default(),observer:observer.map(std::cell::RefCell::new),observer_stop:Default::default(),first_outer_block:Default::default()};
-  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new_with_mode(a,committed)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PrimaryTokenTape::Packed(PackedTokenBlocks::new(a)?),diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,ended:false,failed:false,live_callable_prefix:None,
+  Ok(Self{frames:Some(NativeOriginalPrimaryFrames::new_with_mode(a,committed)?),layout:Some(NativeDemandLayoutCursor::new(a)?),tokens:PrimaryTokenTape::Packed(PackedTokenBlocks::new(a)?),diagnostics:Vec::new(),lexical:Vec::new(),literal_facts:OriginalPrimaryLiteralFacts::new(a)?,literal_facts_issued:true,frontier:0,last_token_end:0,ended:false,failed:false,live_callable_prefix:None,
    #[cfg(debug_assertions)]
    body_literal_candidates: std::env::var_os("DMB_ORIGINAL_TRACE_BODY_LITERAL_CANDIDATES").map(|_| BodyLiteralCandidates::default()),
    original})
@@ -283,7 +283,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  /// without running layout, requesting another token or pretending EOF.
  /// This remains control DATA; Tree requires the real private fatal receipt.
  pub fn observer_stop_live_header_at(&mut self,header:&OriginalPrimaryLiveHeader,actual_source:&str)->io::Result<()>{
-  let result=(||{self.validate_live_header(header)?;if actual_source.len()<self.frontier||self.tokens.window().last().is_some_and(|token|token.span.end>actual_source.len()){return Err(io::ErrorKind::InvalidInput.into())}self.frontier=actual_source.len();self.original.observer_stop.set(Some(Span::new(header.start(),self.frontier)));Ok(())})();if result.is_err(){self.failed=true}result
+  let result=(||{self.validate_live_header(header)?;if actual_source.len()<self.frontier||self.last_token_end>actual_source.len(){return Err(io::ErrorKind::InvalidInput.into())}self.frontier=actual_source.len();self.original.observer_stop.set(Some(Span::new(header.start(),self.frontier)));Ok(())})();if result.is_err(){self.failed=true}result
  }
  fn failure(&self)->io::Error{self.original.operational.borrow_mut().take().or_else(||self.original.storage.take_failure()).unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual primary demand has no issued continuation"))}
  // Token issuance is the native cursor owner's responsibility. This private
@@ -302,8 +302,11 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  }
  fn token_inner(&mut self,token:SpanToken)->io::Result<()>{
   if self.ended||self.original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary token demanded after stop"))}
-  if self.tokens.window().last().is_some_and(|prior|prior.span.end>token.span.start){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary tokens are not a forward cursor"))}
-  self.tokens.push(token,self.original.storage.a)
+  if self.last_token_end>token.span.start{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary tokens are not a forward cursor"))}
+  let end=token.span.end;
+  self.tokens.push(token,self.original.storage.a)?;
+  self.last_token_end=end;
+  Ok(())
  }
  pub fn lexical(&mut self,span:Span,kind:DiagnosticKind,message:&str)->io::Result<()>{if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed primary owner cannot resume"))}let status=self.lexical_inner(span,kind,message);if status.is_err(){self.failed=true}status}
  fn lexical_inner(&mut self,span:Span,kind:DiagnosticKind,message:&str)->io::Result<()>{
@@ -322,7 +325,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  fn advance_inner(&mut self,source:&str,actual_eof:bool,mut observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<bool>{
   if self.ended||source.len()<self.frontier{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary frontier regressed or was sealed"))}
   if self.original.stopped(){return Ok(false)}
-  if self.tokens.window().last().is_some_and(|token|token.span.end>source.len()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual native token exceeds current arena frontier"))}
+  if self.last_token_end>source.len(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual native token exceeds current arena frontier"))}
   let tokens = self.tokens.window();
   let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,tokens,&self.original,actual_eof,Some(self.literal_facts.rows()))?;
   for line in batch.iter(){
@@ -434,6 +437,31 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   foreign.observe(Span::new(0,source.len()),true,&" ".repeat(source.len()),rows);
   assert_eq!(foreign.body_rows,4);
   assert_eq!(foreign.projectable_rows,0,"equal geometry alone cannot project spelling");
+  drop(primary);
+  assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn actual_primary_end_tracks_only_successfully_adopted_tokens() {
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let fail=std::cell::Cell::new(false);
+  let poll=||if fail.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())};
+  let a=crate::SettingAdmission::new(&counter,4<<20,&poll);
+  let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();
+  assert!(primary.advance("",false).unwrap());
+  assert_eq!(primary.last_token_end,0);
+  let source="/datum/a";
+  let first=lex_spans(source).tokens[0];
+  primary.token(first).unwrap();
+  assert_eq!(primary.last_token_end,first.span.end);
+
+  fail.set(true);
+  let next=SpanToken{kind:TokenKind::Ident,span:Span::new(first.span.end,source.len())};
+  assert_eq!(primary.token(next).unwrap_err().raw_os_error(),Some(1450));
+  assert_eq!(primary.last_token_end,first.span.end);
+  assert_eq!(primary.tokens.window().last(),Some(first));
+  assert_eq!(primary.advance(source,false).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  fail.set(false);
   drop(primary);
   assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }

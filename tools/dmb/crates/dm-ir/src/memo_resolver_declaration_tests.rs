@@ -14,19 +14,7 @@ pub(super) fn declaration() -> ResolvedMeaning {
         },
         definition: ProcedureDefinition::Declare,
         previous: None,
-        data: Arc::new(DeclarationMeaning {
-            inherited_opaque: None,
-            declared_type: None,
-            list_element_type: None,
-            display_name: None,
-            flags: 0,
-            procedure: None,
-            array: None,
-            initializer: None,
-            declared_initializer: None,
-            resolved_constant: None,
-            canonical: (&b"exact declaration recipe"[..]).into(),
-        }),
+        data: Arc::new(DeclarationMeaning::new(None, 0, None, (&b"exact declaration recipe"[..]).into())),
     }
 }
 struct Host {

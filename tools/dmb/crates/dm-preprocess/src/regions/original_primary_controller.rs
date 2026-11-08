@@ -55,7 +55,7 @@ impl OriginalPrimaryOutput{
       OriginalStreamPrimary::Dense(primary) => primary.take_original_literal_fact_owner_using(a)?,
       OriginalStreamPrimary::Committed(primary) => primary.take_original_literal_fact_owner_using(a)?,
   }.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual logical primary has no issued neutral literal roster"))?;
-  let binding=super::original_literal_source::OriginalLiteralSourceBinding::issue_actual(&self.source,facts,self.delivery.owner(),a)?;
+  let binding=super::original_literal_source::OriginalLiteralSourceBinding::issue_actual(&self.source,facts,self.delivery.owner(),self.consumed_eof,a)?;
   let (primary, tokens) = match self.primary {
       OriginalStreamPrimary::Dense(primary) => {
           let (primary, tokens) = primary.into_shared_tokens_using(a)?;

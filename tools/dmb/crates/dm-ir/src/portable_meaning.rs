@@ -360,7 +360,7 @@ fn metadata(value: &DeclarationMeaning, evidence: bool) -> Option<PortableMeanin
     })
 }
 fn meta(value: PortableMeaning, symbols: Names) -> Option<DeclarationMeaning> {
-    let result = DeclarationMeaning {
+    let fields = crate::DeclarationFieldMeaning {
         inherited_opaque: None,
         resolved_constant: value
             .constant
@@ -378,20 +378,22 @@ fn meta(value: PortableMeaning, symbols: Names) -> Option<DeclarationMeaning> {
             .transpose_option()?,
         declared_type: symbol(value.declared, symbols)?,
         list_element_type: symbol(value.element, symbols)?,
-        display_name: symbol(value.display, symbols)?,
-        flags: value.flags,
         array: value
             .array
             .map(|value| arr(value, symbols))
             .transpose_option()?,
-        procedure: value
+        initializer: opt_expr(value.initializer, symbols)?,
+        declared_initializer: opt_expr(value.formal_initializer, symbols)?,
+    };
+    let result = DeclarationMeaning::new(
+        symbol(value.display, symbols)?,
+        value.flags,
+        value
             .procedure
             .map(|value| proc(value, symbols))
             .transpose_option()?,
-        initializer: opt_expr(value.initializer, symbols)?,
-        declared_initializer: opt_expr(value.formal_initializer, symbols)?,
-        canonical: value.canonical.into(),
-    };
+        value.canonical.into(),
+    ).with_field_tail(fields);
     (value.evidence.is_empty() || result.canonical_bytes() == value.evidence).then_some(result)
 }
 impl PortableMeaning {

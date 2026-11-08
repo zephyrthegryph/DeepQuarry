@@ -275,11 +275,13 @@ fn captured_resource_literal_and_static_alias_keep_symbolic_path() {
                         owner: SymbolId::of("/"),
                         name,
                         fingerprint: 3.into(),
-                        data: std::sync::Arc::new(dm_ir::DeclarationMeaning {
-                            flags: 2,
-                            initializer: self.constant.clone(),
-                            ..Default::default()
-                        }),
+                        data: std::sync::Arc::new(
+                            dm_ir::DeclarationMeaning::new(None, 2, None, Default::default())
+                                .with_field_tail(dm_ir::DeclarationFieldMeaning {
+                                    initializer: self.constant.clone(),
+                                    ..Default::default()
+                                }),
+                        ),
                     }
                 }
                 ResolveQuery::ResourceIn {

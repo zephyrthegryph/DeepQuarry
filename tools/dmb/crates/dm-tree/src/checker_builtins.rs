@@ -168,21 +168,6 @@ fn default_value(value: RawDefault) -> SemanticValue {
         RawDefault::Type(value) => SemanticValue::Type(SymbolId::of(value)),
     }
 }
-fn blank() -> DeclarationMeaning {
-    DeclarationMeaning {
-        inherited_opaque: None,
-        declared_type: None,
-        list_element_type: None,
-        display_name: None,
-        flags: 0,
-        procedure: None,
-        array: None,
-        initializer: None,
-        declared_initializer: None,
-        resolved_constant: None,
-        canonical: Default::default(),
-    }
-}
 fn builtin_ancestor<'a>(
     parents: &BTreeMap<SymbolId, Option<SymbolId>>,
     members: &BTreeMap<(SymbolId, SymbolId, MemberKind), usize>,
@@ -241,7 +226,7 @@ fn import() -> Result<CheckerBuiltinCatalog, CheckerBuiltinError> {
                 .as_ref()
                 .clone()
         } else {
-            blank()
+            DeclarationMeaning::default()
         };
         if kind == MemberKind::Var {
             if row.form != 2 {
@@ -251,8 +236,9 @@ fn import() -> Result<CheckerBuiltinCatalog, CheckerBuiltinError> {
                 if !path.is_empty() {
                     let path = format!("/{path}");
                     let projection = dm_syntax::project_declaration_type(&path);
-                    metadata.declared_type = Some(SymbolId::of(projection.runtime_path));
-                    metadata.list_element_type = projection
+                    let fields = metadata.field_tail_mut();
+                    fields.declared_type = Some(SymbolId::of(projection.runtime_path));
+                    fields.list_element_type = projection
                         .list_element_path
                         .map(|p| SymbolId::of(&format!("/{p}")));
                 }
@@ -260,7 +246,9 @@ fn import() -> Result<CheckerBuiltinCatalog, CheckerBuiltinError> {
                     .flags
                     .ok_or(CheckerBuiltinError::Shape("field flags presence"))?;
             }
-            metadata.resolved_constant = row.default.map(default_value);
+            if row.default.is_some() || metadata.resolved_constant.is_some() {
+                metadata.field_tail_mut().resolved_constant = row.default.map(default_value);
+            }
         } else {
             let parameters = row
                 .parameters

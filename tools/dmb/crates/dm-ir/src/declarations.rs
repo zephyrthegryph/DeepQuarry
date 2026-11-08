@@ -292,27 +292,76 @@ impl OpaqueFieldBase {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct DeclarationMeaning {
+/// Fields used by variable values and declarations. A procedure meaning
+/// normally has none of these facts and retains no field allocation.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct DeclarationFieldMeaning {
     /// Authored overrides preserve their exact initializer, but flags, array
     /// shape and formal default are unknown when this inherited base is opaque.
-    /// Consumers must not interpret syntax-only zero/None as inherited values.
     pub inherited_opaque: Option<OpaqueFieldBase>,
     pub declared_type: Option<SymbolId>,
     /// Formal authored list/T hint. Inherited opaque metadata leaves it unknown.
     pub list_element_type: Option<SymbolId>,
-    pub display_name: Option<SymbolId>,
-    /// Variable masks for fields; PROC_FLAG_FINAL for procedure/verb declarations.
-    pub flags: u32,
-    pub procedure: Option<Arc<ProcedureMetadata>>,
     pub array: Option<Arc<ArrayDeclaration>>,
     pub initializer: Option<SymbolicExpression>,
     /// Formal field declaration default, retained apart from class overrides.
     pub declared_initializer: Option<SymbolicExpression>,
     pub resolved_constant: Option<SemanticValue>,
+}
+
+static EMPTY_FIELD_MEANING: DeclarationFieldMeaning = DeclarationFieldMeaning {
+    inherited_opaque: None,
+    declared_type: None,
+    list_element_type: None,
+    array: None,
+    initializer: None,
+    declared_initializer: None,
+    resolved_constant: None,
+};
+
+impl DeclarationFieldMeaning {
+    /// Exact additional allocation made by with_field_tail.
+    pub fn allocation_bytes(&self) -> usize {
+        if self == &EMPTY_FIELD_MEANING { 0 } else { std::mem::size_of::<Self>() }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct DeclarationMeaning {
+    pub display_name: Option<SymbolId>,
+    /// Variable masks for fields; PROC_FLAG_FINAL for procedure/verb declarations.
+    pub flags: u32,
+    pub procedure: Option<Arc<ProcedureMetadata>>,
     pub canonical: crate::CanonicalBytes,
+    fields: Option<Box<DeclarationFieldMeaning>>,
 }
 impl DeclarationMeaning {
+    pub fn new(
+        display_name: Option<SymbolId>,
+        flags: u32,
+        procedure: Option<Arc<ProcedureMetadata>>,
+        canonical: crate::CanonicalBytes,
+    ) -> Self {
+        Self { display_name, flags, procedure, canonical, fields: None }
+    }
+
+    /// Install the actual value tail, allocating exactly allocation_bytes().
+    pub fn with_field_tail(mut self, fields: DeclarationFieldMeaning) -> Self {
+        self.fields = (fields.allocation_bytes() != 0).then(|| Box::new(fields));
+        self
+    }
+
+    /// The physical allocation, absent for ordinary procedures and empty data.
+    pub fn field_tail_allocation(&self) -> Option<&DeclarationFieldMeaning> {
+        self.fields.as_deref()
+    }
+
+    /// Explicit mutation may allocate a tail. A metered writer must admit
+    /// size_of::<DeclarationFieldMeaning>() first if the tail is absent.
+    pub fn field_tail_mut(&mut self) -> &mut DeclarationFieldMeaning {
+        self.fields.get_or_insert_with(|| Box::new(DeclarationFieldMeaning::default()))
+    }
+
     pub fn canonical_bytes(&self) -> Vec<u8> {
         self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
             .expect("unmetered native canonical allocation failed")
@@ -322,20 +371,18 @@ impl DeclarationMeaning {
         crate::canonical_encoding::encode(crate::canonical_encoding::Root::Declaration(self), work)
     }
 }
-impl Default for DeclarationMeaning {
-    fn default() -> Self {
-        Self {
-            inherited_opaque: None,
-            declared_type: None,
-            list_element_type: None,
-            display_name: None,
-            flags: 0,
-            procedure: None,
-            array: None,
-            initializer: None,
-            declared_initializer: None,
-            resolved_constant: None,
-            canonical: crate::CanonicalBytes::default(),
-        }
+impl std::ops::Deref for DeclarationMeaning {
+    type Target = DeclarationFieldMeaning;
+    fn deref(&self) -> &Self::Target {
+        self.field_tail_allocation().unwrap_or(&EMPTY_FIELD_MEANING)
     }
 }
+
+impl PartialEq for DeclarationMeaning {
+    fn eq(&self, other: &Self) -> bool {
+        self.display_name == other.display_name && self.flags == other.flags
+            && self.procedure == other.procedure && self.canonical == other.canonical
+            && **self == **other
+    }
+}
+impl Eq for DeclarationMeaning {}

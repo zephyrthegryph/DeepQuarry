@@ -486,26 +486,24 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     };
                     let array =
                         crate::procedure::parse_array(declaration, element_type, context.symbols)?;
-                    let metadata = MemberMetadata {
+                    let fields = dm_ir::DeclarationFieldMeaning {
                         inherited_opaque: None,
                         declared_type,
                         list_element_type,
-                        display_name: None,
-                        flags,
-                        procedure: None,
                         array,
                         declared_initializer: symbolic_initializer.clone(),
                         initializer: symbolic_initializer,
                         resolved_constant,
-                        canonical: canonical(header)?.into(),
                     };
+                    let metadata = MemberMetadata::new(None, flags, None, canonical(header)?.into());
                     let content = metadata.canonical.xxh3_128();
                     Ok(Some(Skeleton::Member {
                         owner: context.symbol(&owner)?,
                         name: context.symbol(raw_name)?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Declare,
-                        metadata: Arc::new(metadata),
+                        // The field tail stays with the variable metadata owner.
+                        metadata: Arc::new(metadata.with_field_tail(fields)),
                         content,
                     }))
                 }
@@ -678,19 +676,7 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         }
                     }
 
-                    let metadata = MemberMetadata {
-                        inherited_opaque: None,
-                        declared_type: None,
-                        list_element_type: None,
-                        display_name,
-                        flags: procedure_flags,
-                        procedure,
-                        array: None,
-                        initializer: None,
-                        declared_initializer: None,
-                        resolved_constant: None,
-                        canonical: semantic_header,
-                    };
+                    let metadata = MemberMetadata::new(display_name, procedure_flags, procedure, semantic_header);
                     let kind = if item.kind == ItemKind::Verb {
                         MemberKind::Verb
                     } else {
@@ -729,19 +715,18 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     if name.is_empty() || name.contains('[') {
                         return Err(format!("unsupported field assignment: {header}").into());
                     }
-                    let metadata = MemberMetadata {
-                        inherited_opaque: None,
+                    let fields = dm_ir::DeclarationFieldMeaning {
                         initializer: Some(context.demand.assignment(item.raw.header_span(),header,index,context.headers,context.symbols)?),
-                        canonical: canonical(&header[index + 1..])?.into(),
-                        ..MemberMetadata::default()
+                        ..Default::default()
                     };
+                    let metadata = MemberMetadata::new(None, 0, None, canonical(&header[index + 1..])?.into());
                     let content = metadata.canonical.xxh3_128();
                     Ok(Some(Skeleton::Member {
                         owner: context.symbol(&assignment_owner)?,
                         name: context.symbol(name)?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Override,
-                        metadata: Arc::new(metadata),
+                        metadata: Arc::new(metadata.with_field_tail(fields)),
                         content,
                     }))
                 }

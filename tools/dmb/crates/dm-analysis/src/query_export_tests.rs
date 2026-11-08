@@ -103,7 +103,7 @@ fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
     use std::sync::Arc;
     let owner = SymbolId::of("/datum/example");
     let name = SymbolId::of("field");
-    let mut data = DeclarationMeaning {
+    let mut data = DeclarationMeaning::default().with_field_tail(dm_ir::DeclarationFieldMeaning {
         inherited_opaque: Some(OpaqueFieldBase {
             owner,
             name,
@@ -111,7 +111,7 @@ fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
         }),
         list_element_type: Some(SymbolId::of("/datum/placeholder")),
         ..Default::default()
-    };
+    });
     let opaque = answer(
         &SymbolTable::default(),
         &ResolvedMeaning::Member {
@@ -128,7 +128,7 @@ fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
     assert_eq!(opaque["declared_type_status"], "unsupported");
     assert!(opaque["list_element_type"].is_null());
     assert_eq!(opaque["list_element_type_status"], "unknown");
-    data.inherited_opaque = None;
+    data.field_tail_mut().inherited_opaque = None;
     let authored = answer(
         &SymbolTable::default(),
         &ResolvedMeaning::Member {

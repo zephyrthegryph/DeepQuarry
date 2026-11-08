@@ -30,7 +30,7 @@ mod canonical_encoding;
 pub use canonical_encoding::{CanonicalByteSink, CanonicalWork};
 mod declarations;
 pub use declarations::{
-    ArrayDeclaration, DeclarationMeaning, DeclaredTypeKnowledge, ExpressionToken, OpaqueFieldBase,
+    ArrayDeclaration, DeclarationFieldMeaning, DeclarationMeaning, DeclaredTypeKnowledge, ExpressionToken, OpaqueFieldBase,
     Parameter, ProcedureMetadata, ProcedureSetting, ProcedureSettingNode, ProcedureSignature,
     SemanticValue, SettingOperation, SymbolicExpression,
 };
