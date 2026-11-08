@@ -16,7 +16,7 @@ pub(crate) struct HandlerStructuralSubject{
  root:PathBuf,canonical_root:PathBuf,captured:Option<CapturedHandlerRoot>,discovery:Arc<DiscoveryReceipt>,recipe:Recipe,requires_full:bool,selected_full:bool,
  configuration:PathBuf,configuration_bytes:Option<dm_resources::SharedBytes>,config:Arc<dq_analyze::captured_raw_file::Config>,
  selection_facts:InputSnapshot,issuer:Arc<()>,recorder:Arc<()>,
- bound:std::sync::OnceLock<Arc<dm_tree::frontend::SourceExportMapping>>,
+ bound:std::sync::OnceLock<std::sync::Weak<dm_tree::frontend::SourceExportMapping>>,
  _configuration_owner: Option<Arc<super::DerivedPreflight>>,
  // Last: source/recipe allocations are gone before their producer funding.
  budget:Arc<Budget>,
@@ -37,7 +37,7 @@ impl HandlerStructuralSubject{
 
  pub(crate) fn require_configuration(&self,path:&Path,bytes:Option<&[u8]>)->io::Result<()>{if path!=self.configuration||bytes!=self.configuration_bytes.as_ref().map(|b|b.as_slice()){return Err(fail("handlers actual interpreted configuration differs from selected raw preflight"))}Ok(())}
  pub(crate) fn input_retained_charge(&self)->io::Result<usize>{self.budget.require().map_err(|m|quota(&self.budget,&m))?;Ok(self.budget.used())}
- pub(crate) fn census(self:&Arc<Self>,c:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.handlers_preflight";if !c.arc_object(owner,self){return}c.path(owner,&self.root);c.path(owner,&self.canonical_root);c.path(owner,&self.configuration);c.arc_object(owner,&self.config);c.arc_object(owner,&self.issuer);c.arc_object(owner,&self.recorder);self.discovery.census(c);c.workspace_policy_facts(&self.selection_facts);if let Some(bytes)=&self.configuration_bytes{if c.shared_bytes_owner(owner, bytes){c.vec_payload(owner,bytes.shared_owner().bytes());}}if let Some(mapping)=self.bound.get(){c.source_export_mapping(mapping);}if let Some(root)=&self.captured{c.path(owner,&root.project);c.path(owner,&root.namespace);}c.unknown(owner,"private Recipe and Config collection nodes and source Budget parent chain lack allocator geometry; admission totals are not heap bytes");}
+ pub(crate) fn census(self:&Arc<Self>,c:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.handlers_preflight";if !c.arc_object(owner,self){return}c.path(owner,&self.root);c.path(owner,&self.canonical_root);c.path(owner,&self.configuration);c.arc_object(owner,&self.config);c.arc_object(owner,&self.issuer);c.arc_object(owner,&self.recorder);self.discovery.census(c);c.workspace_policy_facts(&self.selection_facts);if let Some(bytes)=&self.configuration_bytes{if c.shared_bytes_owner(owner, bytes){c.vec_payload(owner,bytes.shared_owner().bytes());}}if let Some(mapping)=self.bound.get().and_then(std::sync::Weak::upgrade){c.source_export_mapping(&mapping);}if let Some(root)=&self.captured{c.path(owner,&root.project);c.path(owner,&root.namespace);}c.unknown(owner,"private Recipe and Config collection nodes and source Budget parent chain lack allocator geometry; admission totals are not heap bytes");}
  fn require_operation<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{crate::daemon::control::checkpoint()?;self.budget.require().map_err(|_|quota(&self.budget,"handlers current operation budget denied"))?;if !Arc::ptr_eq(&self.recorder,&inputs.source_issuer){return Err(fail("handlers partial subject belongs to another actual input recorder"))}Ok(())}
  pub(crate) fn require_recording<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{
   self.require_operation(inputs)?;self.discovery.validate_recording(inputs)?;
@@ -55,8 +55,8 @@ impl HandlerStructuralSubject{
   let receipt=lease.receipt::<HeaderReceipt>().ok_or_else(||fail("handlers root lacks its private captured recipe receipt"))?;
   if entry!=root.project||path!=root.project||receipt.path!=root.project||!Arc::ptr_eq(&receipt.issuer,&self.issuer)||!lease.same_binding(root.header.lease()){return Err(fail("handlers root/path/acquisition belongs to another partial recipe"))}
   for(index,(path,acquired))in view.mapping().source_acquisitions().enumerate(){crate::daemon::control::checkpoint()?;if index==root_occurrence{continue}let physical=acquired.ok_or_else(||fail("handlers included source has no actual acquisition"))?;if physical.same_binding(lease){return Err(fail("handlers partial child cannot use private synthetic root acquisition"))}inputs.mapped_recorded_source_fact(view.mapping(),index,path)?;}
-  if self.bound.get().is_some_and(|old|!Arc::ptr_eq(old,view.mapping())){return Err(fail("handlers partial subject is already bound to another actual native graph"))}
-  let _=self.bound.set(Arc::clone(view.mapping()));Ok(())
+  if self.bound.get().is_some_and(|old|!std::sync::Weak::ptr_eq(old,&Arc::downgrade(view.mapping()))){return Err(fail("handlers partial subject is already bound to another actual native graph"))}
+  let _=self.bound.set(Arc::downgrade(view.mapping()));Ok(())
  }
 }
 /// A borrowed purpose wrapper over the SAME actual recorder. Only the generated
@@ -421,10 +421,54 @@ pub(crate) struct HandlerPreparedCapture{
  prepared:PreparedHandlersStructural,
  inputs:Option<dm_analysis::policy_inputs::HandlersStructuralInputs>,
  facts:InputSnapshot,queries:crate::query_db::NativeQueryOwnerIdentity,issuance:u64,
+ staged:Option<DetachedStructural>,
  // Metadata/recipe payload drops before its actual producer funding.
  budget:Arc<Budget>,
 }
+struct DetachedStructural{
+ revision:Option<u128>,
+ rows:std::sync::Mutex<Option<Result<crate::query_db::StagedHandlerStructuralRows,Failure>>>,
+}
 impl HandlerPreparedCapture{
+ pub(crate) fn require_staging_recording<P:SnapshotProvider>(&self,recording:&RecordingInputs<P>,queries:&crate::query_db::QueryDb)->io::Result<()>{
+  self.require_bound()?;
+  if self.has_staged_rows()||!self.prepared.subject.is_selected_full()||!self.uses_queries(queries){
+   return Err(fail("handler stage requires actual live selected partial inputs"));
+  }
+  self.prepared.subject.require_recording(recording)?;
+  let current=recording.snapshot.lock().map_err(|_|fail("handler staging recorder poisoned"))?;
+  if !self.is_recorded_in(&current){return Err(fail("handler staging recorder lost actual partial facts"))}
+  Ok(())
+ }
+ pub(crate) fn partial_revision(&self)->io::Result<Option<u128>>{
+  if let Some(staged)=&self.staged{return Ok(staged.revision)}
+  self.prepared.frontend.as_ref().map(|_|self.structural_inputs().map(|inputs|inputs.source_revision())).transpose()
+ }
+ pub(crate) fn has_staged_rows(&self)->bool{self.staged.is_some()}
+ pub(crate) fn take_staged_rows(&self)->Result<Option<crate::query_db::StagedHandlerStructuralRows>,Failure>{
+  let Some(staged)=&self.staged else{return Ok(None)};
+  let mut rows=staged.rows.lock().map_err(|_|fail("handler staged result mutex poisoned"))?;
+  rows.take().ok_or_else(||Failure::from(fail("handler staged result already consumed")))?.map(Some)
+ }
+ pub(crate) fn detach_staged(
+  capture:Arc<Self>,rows:Result<crate::query_db::StagedHandlerStructuralRows,Failure>,
+ )->io::Result<Arc<Self>>{
+  capture.require_bound()?;
+  if capture.has_staged_rows()||!capture.prepared.subject.is_selected_full(){return Err(fail("only a live selected partial owner can detach"))}
+  let mut capture=Arc::try_unwrap(capture).map_err(|_|fail("handler staged producer still has a live owning alias"))?;
+  let revision=capture.partial_revision()?;
+  // The replacement Arc is funded separately: the old query Weak may
+  // still retain its control block. No archive owner crosses the handoff.
+  let archive=capture.inputs.as_ref().map(|inputs|Arc::downgrade(inputs.archive()));
+  drop(capture.inputs.take());
+  drop(capture.prepared.frontend.take());
+  if cfg!(debug_assertions)&&std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
+   eprintln!("original handler partial detached archive_live={}",archive.as_ref().is_some_and(|archive|archive.strong_count()!=0));
+  }
+  capture.staged=Some(DetachedStructural{revision,rows:std::sync::Mutex::new(Some(rows))});
+  capture.budget.charge(std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>()).map_err(|m|quota(&capture.budget,&m))?;
+  Ok(Arc::new(capture))
+ }
  pub(crate) fn prepared(&self)->&PreparedHandlersStructural{&self.prepared}
  pub(crate) fn structural_inputs(&self)->io::Result<&dm_analysis::policy_inputs::HandlersStructuralInputs>{self.inputs.as_ref().ok_or_else(||fail("no structural model exists for genuinely empty candidate selection"))}
  pub(crate) fn uses_queries(&self,queries:&crate::query_db::QueryDb)->bool{self.queries.matches(queries)}
@@ -442,9 +486,16 @@ impl HandlerPreparedCapture{
  }
  pub(crate) fn require_bound(&self)->io::Result<()>{
   crate::daemon::control::checkpoint()?;self.budget.require().map_err(|m|quota(&self.budget,&m))?;
+  if let Some(staged)=&self.staged{
+   if !self.prepared.subject.is_selected_full()||self.prepared.frontend.is_some()||self.inputs.is_some()
+    ||staged.revision.is_none()!=self.prepared.subject.recipe.candidates.is_empty(){
+    return Err(fail("handler detached disposition differs from actual partial preparation"));
+   }
+   return Ok(())
+  }
   match(&self.prepared.frontend,&self.inputs){
    (None,None)if self.prepared.subject.recipe.candidates.is_empty()=>Ok(()),
-   (Some(frontend),Some(inputs))=>{let source=frontend.handlers_structural_source().map_err(|m|fail(&m))?;if !inputs.matches(&source)||!self.prepared.subject.bound.get().is_some_and(|mapping|Arc::ptr_eq(mapping,inputs.mapping())){return Err(fail("handlers capture current partial purpose/source binding differs"))}Ok(())},
+   (Some(frontend),Some(inputs))=>{let source=frontend.handlers_structural_source().map_err(|m|fail(&m))?;if !inputs.matches(&source)||!self.prepared.subject.bound.get().and_then(std::sync::Weak::upgrade).is_some_and(|mapping|Arc::ptr_eq(&mapping,inputs.mapping())){return Err(fail("handlers capture current partial purpose/source binding differs"))}Ok(())},
    _=>Err(fail("handlers capture model/selection availability differs")),
   }
  }
@@ -460,7 +511,7 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
    for(path,listing)in &current.folders{kc::reserve(&mut c,||path.capacity().checked_mul(4)?.checked_add(256))?;if let FolderListing::Present(names)=listing{kc::reserve(&mut c,||names.len().checked_mul(std::mem::size_of::<String>()*4)?.checked_add(128))?;for name in names{kc::reserve(&mut c,||name.len().checked_mul(4)?.checked_add(64))?;}}}
    for path in &current.generated_outputs{kc::reserve(&mut c,||path.capacity().checked_mul(4)?.checked_add(256))?;}current.clone()};
   static NEXT:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(1);let issuance=NEXT.fetch_add(1,std::sync::atomic::Ordering::Relaxed);if issuance==u64::MAX{return Err(fail("handlers capture issuance exhausted"))}
-  let result=Arc::new(HandlerPreparedCapture{prepared,inputs,facts,queries:queries.native_query_owner_identity(),issuance,budget:Arc::clone(budget)});result.require_bound()?;Ok(result)
+  let result=Arc::new(HandlerPreparedCapture{prepared,inputs,facts,staged:None,queries:queries.native_query_owner_identity(),issuance,budget:Arc::clone(budget)});result.require_bound()?;Ok(result)
  }
 }
 

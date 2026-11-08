@@ -3,13 +3,23 @@
 use super::*;
 use std::sync::Arc;
 use crate::input_snapshot::HandlerPreparedCapture;
-enum Disposition{Current,FailedFull(crate::input_snapshot::OriginalRootOpenFailure)}
+enum Disposition{Current,PreparationOnly,FailedFull(crate::input_snapshot::OriginalRootOpenFailure)}
 pub(crate) struct HandlerPolicyAdmission{capture:Arc<HandlerPreparedCapture>,disposition:Disposition}
 impl HandlerPolicyAdmission{pub(crate) fn is_current(&self)->bool{matches!(&self.disposition,Disposition::Current)}
- pub(crate) fn failed_root(&self)->Option<&crate::input_snapshot::OriginalRootOpenFailure>{match &self.disposition{Disposition::Current=>None,Disposition::FailedFull(failed)=>Some(failed)}}
+ pub(crate) fn failed_root(&self)->Option<&crate::input_snapshot::OriginalRootOpenFailure>{match &self.disposition{Disposition::Current|Disposition::PreparationOnly=>None,Disposition::FailedFull(failed)=>Some(failed)}}
 pub(crate) fn capture(&self)->&Arc<HandlerPreparedCapture>{&self.capture}
  pub(crate) fn into_shared(self)->std::io::Result<Arc<Self>>{self.capture.require_bound()?;self.capture.budget().charge(std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>()).map_err(|m|std::io::Error::new(std::io::ErrorKind::OutOfMemory,m))?;Ok(Arc::new(self))}
 }
+impl HandlerPolicyAdmission{
+ pub(crate) fn is_structural_staging(&self)->bool{matches!(&self.disposition,Disposition::PreparationOnly)}
+}
+pub(crate) fn admit_handlers_structural_staging<P:SnapshotProvider>(
+ recording:&crate::input_snapshot::RecordingInputs<P>,capture:Arc<HandlerPreparedCapture>,queries:&crate::query_db::QueryDb,
+)->std::io::Result<Arc<HandlerPolicyAdmission>>{
+ capture.require_staging_recording(recording,queries)?;
+ HandlerPolicyAdmission{capture,disposition:Disposition::PreparationOnly}.into_shared()
+}
+
 pub(crate) fn admit_handlers_captured_using<P:SnapshotProvider>(
  recording:&crate::input_snapshot::RecordingInputs<P>,retained:Option<&InputSnapshot>,
  provider:&crate::frozen_inputs::Inputs,generated_outputs:&std::collections::BTreeSet<std::path::PathBuf>,

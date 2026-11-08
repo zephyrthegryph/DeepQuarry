@@ -29,6 +29,7 @@ mod no_weak_arc_owner;
 mod purity;
 pub(crate) use purity::current_variables::CurrentSelectedDiagnostic;
 mod raw_policy;
+pub(crate) use raw_policy::reactive_handlers::handler_structural_staging::StagedRows as StagedHandlerStructuralRows;
 pub use raw_policy::GeneratorName;
 pub(crate) use raw_policy::GeneratorArtifact;
 mod source_allocation;

@@ -16,7 +16,7 @@ impl HandlerWorkspaceSnapshot{
   capture.require_bound()?;
   // The key is a private current-owner query namespace, not evidence of source
   // equality or EOF. A real source revision stays separately optional below.
-  let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"handler-private-partial-current-query-owner-v1");hash.update(&capture.issuance().to_le_bytes());match capture.prepared().frontend(){Some(_)=>{hash.update(&[1]);hash.update(&capture.structural_inputs()?.source_revision().to_le_bytes());},None=>{hash.update(&[0]);}}
+  let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"handler-private-partial-current-query-owner-v1");hash.update(&capture.issuance().to_le_bytes());match capture.partial_revision()?{Some(revision)=>{hash.update(&[1]);hash.update(&revision.to_le_bytes());},None=>{hash.update(&[0]);}}
   let revision=hash.digest128();Ok(Self{capture,proof,queries,revision,full_subject:None,full_revision:None,joined_selected})
  }
  pub(crate) fn requires_full(&self)->bool{self.capture.prepared().subject().requires_full_model()}
@@ -36,7 +36,7 @@ impl HandlerWorkspaceSnapshot{
  }
  pub(crate) fn require_current(&self)->io::Result<()>{crate::daemon::control::checkpoint()?;if !self.proof.is_current()||!Arc::ptr_eq(&self.capture,self.proof.capture())||!self.capture.uses_queries(&self.queries){return Err(invalid("handler current host/query/admission owner changed"))}self.capture.require_bound()}
  pub(crate) fn revision(&self)->u128{self.revision}
- pub(crate) fn source_revision(&self)->io::Result<Option<u128>>{self.require_current()?;match self.capture.prepared().frontend(){Some(_)=>Ok(Some(self.capture.structural_inputs()?.source_revision())),None=>Ok(None)}}
+ pub(crate) fn source_revision(&self)->io::Result<Option<u128>>{self.require_current()?;self.capture.partial_revision()}
  pub(crate) fn capture(&self)->&Arc<HandlerPreparedCapture>{&self.capture}
  pub(crate) fn admission(&self)->&Arc<HandlerPolicyAdmission>{&self.proof}
  pub(crate) fn queries(&self)->&Arc<QueryDb>{&self.queries}

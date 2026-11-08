@@ -352,6 +352,25 @@ fn run_build_attempt(
     if joined_derived.is_some() { dm_profile::detail_mark("request.joined_derived", total); }
     // Genuine partial source is prepared before any independent full Subject.
     let mut handlers_capture=if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>handlers_prepare::prepare(&inputs_capture,intent,host,workers,joined_derived.as_ref())?,None=>None}}else{None};
+    if joined_derived.is_some()&&preparation_output.needs_combined_checker()&&preparation_output.wants_joined_inputs(){
+        let capture=handlers_capture.take().ok_or("full registry partial handler source absent")?;
+        let cache=cache_root.as_deref().ok_or("full registry handler row stage requires its admitted cache root")?;
+        let queries=Arc::clone(host.query_db());
+        // Notices go only to the private attempt spool and stay before full
+        // notices; full preparation errors still win before publication.
+        if let Some(frontend)=capture.prepared().frontend(){
+            let partial=frontend.handlers_structural_source().map_err(io::Error::other)?;
+            if let Some(notices)=partial.view().original_preprocess_notices(){
+                preparation_output.emit(|mut output|dmbc::diagnostics::write_original_preprocess_notices(&mut output,&notices))?;
+            }
+        }
+        let proof=runner_freshness::admit_handlers_structural_staging(&inputs_capture,Arc::clone(&capture),queries.as_ref())?;
+        let staged=queries.stage_handler_structural_rows(&capture,&proof,cache);
+        drop(proof);
+        // Preserve the original report-stage position of a structural policy
+        // failure. No pending row/error is published before the full barrier.
+        handlers_capture=Some(crate::input_snapshot::HandlerPreparedCapture::detach_staged(capture,staged)?);
+    }
     if joined_derived.is_some() { dm_profile::detail_mark("request.joined_handlers", total); }
     if handlers_capture.as_ref().is_some_and(|capture|
         !capture.prepared().subject().requires_full_model() && !capture.prepared().subject().is_selected_full()
@@ -972,7 +991,7 @@ fn run_build_attempt(
                     query_attempt.admit_diagnostic_policy(admission)?;
                 }
                 if let Some(capture)=handlers_capture.take(){
-                    let partial_source_revision=match capture.prepared().frontend(){Some(_)=>Some(format!("{:032x}",capture.structural_inputs()?.source_revision())),None=>None};
+                    let partial_source_revision=capture.partial_revision()?.map(|revision|format!("{revision:032x}"));
                     let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),source_policy_queries.as_ref())?.1.into_shared()?;
                     let selected=capture.prepared().subject().is_selected_full();
                     let query=query_attempt.admit_handlers_source(intent,capture,proof,Arc::clone(&source_policy_queries))?;

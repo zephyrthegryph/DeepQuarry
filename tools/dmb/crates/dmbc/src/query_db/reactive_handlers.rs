@@ -2,6 +2,8 @@
 //! No full semantic guard, second model store or raw/body parser is introduced.
 use super::*;
 use dq_analyze::{captured_generator_budget::Budget,captured_reactive_reads::Failure};
+#[path="handler_structural_staging.rs"]
+pub(crate) mod handler_structural_staging;
 #[derive(serde::Serialize)]pub(crate) struct StructuralFinding{pub rule:&'static str,pub relative:String,pub line:u32,pub message:String}
 #[derive(serde::Serialize)]pub(crate) struct StructuralData{issuance:u64,rows:Vec<StructuralFinding>}
 impl StructuralData{pub(crate) fn rows(&self)->&[StructuralFinding]{&self.rows}fn charge(&self)->Option<usize>{let fixed=std::mem::size_of::<Result<Self,String>>().checked_add(2*std::mem::size_of::<usize>())?.checked_add(self.rows.capacity().checked_mul(std::mem::size_of::<StructuralFinding>())?)?;self.rows.iter().try_fold(fixed,|n,row|n.checked_add(row.relative.capacity())?.checked_add(row.message.capacity()))}}
@@ -29,11 +31,23 @@ impl QueryDb{
   let source=self.raw_source_input_charge_locked()?;let input=self.workspace_input_base_headroom_locked(source)?;let available=input.min(RESULT_BUDGET.saturating_sub(self.raw_policy.charge.load(Ordering::Acquire)));let mut phase=Phase{budget:Budget::new(available).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?,done:false};
   let pending=self.with_handlers_structural_budget_locked(capture,proof,&phase.budget,consume);if pending.is_ok(){phase.done=true;}pending
  }
+ /// Seal only the existing authenticated Kind12 result. No ALLOW lookup,
+ /// full-scope authority or partial archive handle crosses this boundary.
+ pub(crate) fn stage_handler_structural_rows(
+  self:&Arc<Self>,capture:&Arc<crate::input_snapshot::HandlerPreparedCapture>,
+  proof:&Arc<crate::request_runner::runner_freshness::HandlerPolicyAdmission>,cache:&std::path::Path,
+ )->Result<handler_structural_staging::StagedRows,Failure>{
+  if !proof.is_structural_staging()||capture.has_staged_rows(){return Err("handler stage requires its actual live partial owner and staging-only admission".into())}
+  let revision=capture.prepared().frontend().map(|_|capture.structural_inputs().map(|inputs|inputs.source_revision())).transpose()?;
+  self.with_handlers_structural(capture,proof,|data,_|
+   handler_structural_staging::StagedRows::write(cache,self.native_query_owner_identity(),capture.issuance(),revision,data)
+  )
+ }
  /// Internal sibling of the full reader: caller already holds the raw-family
  /// gate and lends its SAME unscoped endpoint Budget. No nested operation
  /// counter, extra headroom domain, or relock is created for this child.
  pub(super) fn with_handlers_structural_budget_locked<R>(self:&Arc<Self>,capture:&Arc<crate::input_snapshot::HandlerPreparedCapture>,proof:&Arc<crate::request_runner::runner_freshness::HandlerPolicyAdmission>,b:&Arc<Budget>,consume:impl FnOnce(&StructuralData,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
-  checkpoint(b)?;capture.require_bound()?;if !Arc::ptr_eq(capture,proof.capture())||!capture.uses_queries(self){return Err("handler result current capture/admission/query owner differs".into())}
+  checkpoint(b)?;capture.require_bound()?;if capture.has_staged_rows(){return Err("detached handler rows cannot answer live Kind12".into())}if !Arc::ptr_eq(capture,proof.capture())||!capture.uses_queries(self){return Err("handler result current capture/admission/query owner differs".into())}
   let key=super::reactive_read_policy::metadata_key(&("original-handlers-partial-structural-v1",capture.issuance()))?;reserve(b,Some(std::mem::size_of::<Params>()+2*std::mem::size_of::<usize>()+128))?;self.raw_policy.admission.admit_handlers(Arc::downgrade(capture),key,std::mem::size_of::<Params>()+128).map_err(super::reactive_read_policy::graph_failure)?;
   let guard=self.raw_policy.admission.bind_handlers_operation(b,capture,proof,self)?;let value=self.db.get::<Result<StructuralData,String>>(key,Arc::new(Params{key,issuance:capture.issuance()})).map_err(super::reactive_read_policy::graph_failure)?;capture.require_bound()?;
   let data=match value.as_ref(){Ok(data)=>data,Err(message)=>{reserve(b,message.len().checked_add(64))?;let mut copy=String::new();copy.try_reserve_exact(message.len()).map_err(|_|Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;copy.push_str(message);return Err(Failure::Unsupported(copy))}};if data.issuance!=capture.issuance(){return Err("handler result cached current owner differs".into())}checkpoint(b)?;let answer=consume(data,b)?;checkpoint(b)?;drop(guard);Ok(answer)

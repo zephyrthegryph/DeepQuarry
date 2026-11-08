@@ -26,9 +26,16 @@ impl QueryDb{
   let mut funding=Funding{budget:Budget::scoped_temporaries(budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?,done:false};
   let poll=||crate::daemon::control::checkpoint();let mut builder=Builder::new(&funding.budget,&poll)?;let subject=capture.prepared().subject();
   let selected=full.and_then(|(_,_,child,reader,plan)|plan.map(|plan|reader.handler_report_files(child.policy(),plan))).transpose()?;
-  self.with_handlers_structural_budget_locked(capture,proof,budget,|data,_|{
-   for row in data.rows(){let mapping=capture.structural_inputs()?.mapping();builder.push(row.rule,&row.relative,row.line,&row.message,&mut|relative,visit|with_handler_report_file(subject,mapping,budget,selected.as_ref(),relative,visit)).map_err(actual)?;}Ok(())
-  })?;
+  if let Some(staged)=capture.take_staged_rows()?{
+   let files=selected.as_ref().ok_or("detached handler structural rows require full selected ALLOW files")?;
+   staged.replay(self,capture.issuance(),capture.partial_revision()?,budget,|rule,relative,line,message|{
+    builder.push(rule,relative,line,message,&mut|relative,visit|files.with_file(relative,visit)).map_err(actual)
+   })?;
+  }else{
+   self.with_handlers_structural_budget_locked(capture,proof,budget,|data,_|{
+    for row in data.rows(){let mapping=capture.structural_inputs()?.mapping();builder.push(row.rule,&row.relative,row.line,&row.message,&mut|relative,visit|with_handler_report_file(subject,mapping,budget,selected.as_ref(),relative,visit)).map_err(actual)?;}Ok(())
+   })?;
+  }
   if let Some((workspace,guard,full_capture,reader,selected_tree))=full.filter(|_|subject.requires_full_model()){
    self.with_handler_declarations_reader_locked(workspace,guard,full_capture,reader,selected_tree.is_some(),|data,_|{
     for row in data.sites(){builder.push(&row.rule,&row.rel,row.line,&row.msg,&mut|relative,visit|with_handler_report_file(subject,full_capture.policy().mapping(),budget,selected.as_ref(),relative,visit)).map_err(actual)?;}Ok(())
