@@ -163,11 +163,11 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	if(next_settle && REALTIMEOFDAY >= next_settle)
 		settle_due()
 
-/// The overrun line's tail: the top KM_TOP_N callbacks behind sched_core and the top redrawn types / reactions behind appearance_drain this tick.
+/// The overrun line's tail: the top KM_ATTR_TOP_N callbacks behind sched_core and the top redrawn types / reactions behind appearance_drain this tick.
 /datum/km_attr/proc/tick_text()
 	var/list/parts = list()
 	for(var/sys in list(KM_SYS_SCHED_CORE, KM_SYS_APPEARANCE))
-		var/list/top = select_top(KM_TOP_N, KA_BY_TICK, sys)
+		var/list/top = select_top(KM_ATTR_TOP_N, KA_BY_TICK, sys)
 		if(!length(top))
 			continue
 		var/list/names = list()

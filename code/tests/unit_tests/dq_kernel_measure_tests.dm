@@ -165,7 +165,7 @@
 	TEST_ASSERT_EQUAL(M.total_overruns, 1, "usage over 100 is an overrun")
 	TEST_ASSERT_EQUAL(M.streak, 1, "the streak starts")
 	var/list/top = M.last_overrun_top
-	TEST_ASSERT_EQUAL(length(top), KM_TOP_N, "the top three are recorded")
+	TEST_ASSERT_EQUAL(length(top), 3, "the overrun line names the top three")
 	TEST_ASSERT_EQUAL(top[1]["key"], "km_test_a", "the biggest system first")
 	TEST_ASSERT_EQUAL(top[2]["key"], "km_test_b", "then the next: its two charges added up")
 	TEST_ASSERT_EQUAL(top[3]["key"], "km_test_c", "then the third; the fourth is left out")
@@ -186,7 +186,7 @@
 	TEST_ASSERT_EQUAL(entry[4], 24, "the maptick")
 	TEST_ASSERT(abs(entry[5] - 0.4) < 0.001, "the input cost")
 	var/list/keys = entry[7]
-	TEST_ASSERT_EQUAL(jointext(keys, ","), "km_test_a,km_test_b,km_test_c", "and the top systems in order")
+	TEST_ASSERT_EQUAL(jointext(keys, ","), "km_test_a,km_test_b,km_test_c,km_test_d", "and the systems in order, up to KM_TOP_N")
 
 	// A second overrun: the streak grows, and the systems' overrun shares follow the ms they spent on overruns.
 	M.charge(b, 30)
