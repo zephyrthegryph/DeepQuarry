@@ -12,7 +12,20 @@ const VARIADIC_TRAILER: u8 = 16;
 static PROCEDURE_TAG: &[u8] = b"dm-procedure-metadata-v2\0";
 static SIGNATURE_TAG: &[u8] = b"dm-procedure-signature-v2\0";
 
-const FLAGS: u8 = PREFIXED | TRAILER | VARIADIC_TRAILER;
+const LENGTH_SHIFT: u8 = 5;
+const LENGTH_MASK: u8 = 3 << LENGTH_SHIFT;
+const FLAGS: u8 = PREFIXED | TRAILER | VARIADIC_TRAILER | LENGTH_MASK;
+
+fn length_code(len: usize) -> u8 {
+    if u8::try_from(len).is_ok() { 0 }
+    else if u16::try_from(len).is_ok() { 1 }
+    else if u32::try_from(len).is_ok() { 2 }
+    else { 3 }
+}
+
+fn length_width(code: u8) -> usize {
+    1 << code
+}
 
 // Metadata tag, framed signature, and empty settings. The canonical encoder
 // remains the byte authority, independently exercised by the test below.
@@ -27,7 +40,6 @@ fn trailer_bytes(flags: u8) -> &'static [u8] {
 
 /// Exact shared lexical token framing prefix.
 pub static CANONICAL_HEADER_PREFIX: &[u8] = b"dm-declaration-tokens-v1\0";
-const PACKED_HEADER: usize = 2 + size_of::<u64>();
 static ZEROES: [u8; u8::MAX as usize] = [0; u8::MAX as usize];
 
 /// Logical canonical bytes. The physical Arc is private because it may contain
@@ -95,9 +107,10 @@ impl CanonicalBytes {
         // The two Arc counters and allocation alignment are common to every
         // layout. Don't pay decode work if the padded allocation is equal.
         let allocation = |n: usize| n.checked_next_multiple_of(std::mem::align_of::<usize>()).unwrap_or(usize::MAX);
-        if bytes.len() > PACKED_HEADER {
-            let mut packed_len = PACKED_HEADER;
-            let mut bitmap_len = PACKED_HEADER + bytes.len().div_ceil(GROUP);
+        let packed_header = 2 + length_width(length_code(bytes.len()));
+        if bytes.len() > packed_header {
+            let mut packed_len = packed_header;
+            let mut bitmap_len = packed_header + bytes.len().div_ceil(GROUP);
             for run in Runs::new(bytes, procedure_tags) {
                 match run {
                     Run::Literal(bytes) => {
@@ -140,8 +153,14 @@ impl CanonicalBytes {
         prefix_len + body_len + trailer_bytes(flags).len()
     }
 
+    fn packed_header(&self) -> usize {
+        2 + length_width((self.0[1] & LENGTH_MASK) >> LENGTH_SHIFT)
+    }
+
     fn packed_len(&self) -> usize {
-        let bytes = self.0[2..PACKED_HEADER].try_into().expect("issued packed length");
+        let width = self.packed_header() - 2;
+        let mut bytes = [0; size_of::<u64>()];
+        bytes[..width].copy_from_slice(&self.0[2..2 + width]);
         usize::try_from(u64::from_le_bytes(bytes)).expect("issued native canonical length")
     }
 
@@ -196,9 +215,9 @@ impl CanonicalBytes {
             [ESCAPE, flags, rest @ ..] => {
                 let body = match *flags & !FLAGS {
                     RAW => BodyChunks::Raw(rest),
-                    PACKED => BodyChunks::Packed(&self.0[PACKED_HEADER..]),
+                    PACKED => BodyChunks::Packed(&self.0[self.packed_header()..]),
                     BITMAP => BodyChunks::Bitmap {
-                        raw: &self.0[PACKED_HEADER..], left: self.packed_len(), mask: 0, group_left: 0,
+                        raw: &self.0[self.packed_header()..], left: self.packed_len(), mask: 0, group_left: 0,
                     },
                     _ => unreachable!("issued canonical storage tag"),
                 };
@@ -234,10 +253,12 @@ impl CanonicalBytesPlan<'_> {
             Layout::Bitmap => BITMAP,
             Layout::Plain => unreachable!("plain storage handled above"),
         };
-        let flags = encoding | self.trailer | if self.prefix { PREFIXED } else { 0 };
+        let length = if encoding == RAW { 0 } else { length_code(self.bytes.len()) };
+        let flags = encoding | self.trailer | (length << LENGTH_SHIFT)
+            | if self.prefix { PREFIXED } else { 0 };
         write(&mut output, &[ESCAPE, flags]);
         if encoding != RAW {
-            write(&mut output, &(self.bytes.len() as u64).to_le_bytes());
+            write(&mut output, &(self.bytes.len() as u64).to_le_bytes()[..length_width(length)]);
         }
         match self.layout {
             Layout::Escaped => write(&mut output, self.bytes),
@@ -494,6 +515,23 @@ mod tests {
     }
 
     #[test]
+    fn packed_length_cells_preserve_exact_boundary_bytes() {
+        for (count, width) in [(255, 1), (256, 2), (65535, 2), (65536, 4)] {
+            let raw = vec![0; count];
+            let plan = CanonicalBytes::plan(&raw);
+            let size = plan.storage_len();
+            let value = plan.seal();
+            assert_eq!(value.packed_header(), 2 + width);
+            assert_eq!(value.storage_arc().len(), size);
+            assert_eq!(value.len(), count);
+            assert_eq!(value.to_vec(), raw);
+            assert_eq!(value.xxh3_128(), xxhash_rust::xxh3::xxh3_128(&raw));
+        }
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(length_width(length_code(u32::MAX as usize + 1)), 8);
+    }
+
+    #[test]
     fn prefix_and_bitmap_choose_only_smaller_storage_and_preserve_the_exact_stream() {
         let prefix_only = CanonicalBytes::plan(CANONICAL_HEADER_PREFIX).seal();
         assert_eq!(prefix_only.storage_arc().as_ref(), &[ESCAPE, PREFIXED | RAW]);
@@ -503,7 +541,7 @@ mod tests {
         bytes.extend((0..251).map(|at| if at % 2 == 0 { 7 } else { 0 }));
         let packed = CanonicalBytes::plan(&bytes).seal();
         assert_eq!(packed.storage_arc()[1], PREFIXED | BITMAP);
-        assert_eq!(packed.storage_arc().len(), PACKED_HEADER + 32 + 126);
+        assert_eq!(packed.storage_arc().len(), 3 + 32 + 126);
         let mut chunks = packed.chunks();
         assert!(std::ptr::eq(chunks.next().unwrap(), CANONICAL_HEADER_PREFIX));
         assert_eq!(packed.len(), bytes.len());
@@ -514,7 +552,7 @@ mod tests {
         let mut bytes = CANONICAL_HEADER_PREFIX.to_vec();
         bytes.extend_from_slice(&[0; 1000]);
         let runs = CanonicalBytes::plan(&bytes).seal();
-        assert_eq!(runs.storage_arc()[1], PREFIXED | PACKED);
+        assert_eq!(runs.storage_arc()[1], PREFIXED | PACKED | (1 << LENGTH_SHIFT));
         assert_eq!(runs.to_vec(), bytes);
 
         let almost = b"dm-declaration-tokens-v1X";

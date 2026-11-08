@@ -1222,11 +1222,55 @@ impl TrivialCanonicalSuffix {
     fn bytes(&self) -> &[u8] { &self.bytes[..self.len] }
 }
 
+const PROCEDURE_CANONICAL_SLOTS: usize = 256;
+
+/// An adapter-local accelerator. Every Arc is an alias of an already funded
+/// canonical allocation. This bank owns only its exact boxed directory.
+struct ProcedureCanonicalBank {
+    entries: Box<[Option<(u128, dm_ir::CanonicalBytes)>; PROCEDURE_CANONICAL_SLOTS]>,
+    credit: dm_syntax::SettingRootLease,
+    hits: usize,
+    reused_allocation_bytes: usize,
+}
+
+impl ProcedureCanonicalBank {
+    fn try_new(a: &SettingAdmission<'_>) -> std::io::Result<Option<Self>> {
+        let bytes = std::mem::size_of::<[Option<(u128, dm_ir::CanonicalBytes)>; PROCEDURE_CANONICAL_SLOTS]>();
+        let Some(credit) = a.try_reserve_optimization(bytes)
+            .map_err(|error| a.take_operational_error().unwrap_or(error))?
+        else { return Ok(None) };
+        Ok(Some(Self {
+            entries: Box::new(std::array::from_fn(|_| None)), credit,
+            hits: 0, reused_allocation_bytes: 0,
+        }))
+    }
+
+    fn slot(content: u128) -> usize {
+        ((content ^ (content >> 64)) as usize) % PROCEDURE_CANONICAL_SLOTS
+    }
+
+    fn exact(&self, content: u128, raw: &[u8]) -> Option<&dm_ir::CanonicalBytes> {
+        let (key, candidate) = self.entries[Self::slot(content)].as_ref()?;
+        if *key != content || candidate.len() != raw.len() { return None; }
+        let mut tail = raw;
+        candidate.try_for_each_chunk(|chunk| {
+            tail = tail.strip_prefix(chunk).ok_or(())?;
+            Ok::<_, ()>(())
+        }).ok()?;
+        tail.is_empty().then_some(candidate)
+    }
+
+    fn remember(&mut self, content: u128, canonical: &dm_ir::CanonicalBytes) {
+        self.entries[Self::slot(content)] = Some((content, canonical.clone()));
+    }
+}
+
 fn append_procedure_canonical(
     mut header: FundedCanonicalHeader<'_>,
     procedure: &dm_ir::ProcedureMetadata,
     held: &mut Option<dm_syntax::SettingRootLease>,
     cache: Option<&mut Option<TrivialCanonicalSuffix>>,
+    mut bank: Option<&mut ProcedureCanonicalBank>,
     a: &SettingAdmission<'_>,
 ) -> std::io::Result<(dm_ir::CanonicalBytes, u128)> {
     use std::io::{Error, ErrorKind};
@@ -1252,6 +1296,22 @@ fn append_procedure_canonical(
     }
 
     let content = xxhash_rust::xxh3::xxh3_128(header.bytes());
+    if let Some(bank) = bank.as_mut() {
+        if let Some(candidate) = bank.exact(content, header.bytes()).cloned() {
+            // Preserve the old pre-allocation and adoption checkpoints,
+            // including actual limit/domain validation, with a zero grant.
+            let mut transfer = reserve(0)?;
+            drop(header);
+            let owner = held.as_mut().filter(|owner| a.matches_lease_domain(&bank.credit)
+                && a.matches_lease_domain(owner)).ok_or(ErrorKind::InvalidInput)?;
+            a.absorb(owner, &mut transfer)?;
+            bank.hits += 1;
+            bank.reused_allocation_bytes += arc_payload::<u8>(candidate.storage_arc().len())
+                .expect("existing canonical allocation has an issued layout");
+            if let (Some(cache), Some(suffix)) = (cache, pending_suffix) { *cache = Some(suffix); }
+            return Ok((candidate, content));
+        }
+    }
     let plan = dm_ir::CanonicalBytes::plan_procedure(header.bytes(), suffix_start);
     let mut retained = reserve(arc_payload::<u8>(plan.storage_len()).ok_or(ErrorKind::OutOfMemory)?)?;
     let result = plan.seal();
@@ -1358,13 +1418,34 @@ impl PlainProcedureMetadataBank {
 pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,plain_metadata:Option<PlainProcedureMetadataBank>,plain_metadata_attempted:bool,
  #[cfg(debug_assertions)]
  plain_metadata_hits:usize,
- trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],trivial_suffixes:[Option<TrivialCanonicalSuffix>;2],adapter_storage:Option<dm_syntax::SettingRootLease>}
+ trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],trivial_suffixes:[Option<TrivialCanonicalSuffix>;2],
+ canonical_bank:Option<ProcedureCanonicalBank>,canonical_bank_attempted:bool,adapter_storage:Option<dm_syntax::SettingRootLease>}
 impl PreparedOriginalSignatures{
  pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader<'_>,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<(dm_ir::CanonicalBytes, u128)>{
   let slot=usize::from(procedure.signature.variadic);
   let cache=self.trivial_metadata[slot].as_deref().is_some_and(|owner|std::ptr::eq(owner,procedure))
    .then(||&mut self.trivial_suffixes[slot]);
-  append_procedure_canonical(header,procedure,&mut self.adapter_storage,cache,a)
+  let (canonical, content) = append_procedure_canonical(
+   header,procedure,&mut self.adapter_storage,cache,self.canonical_bank.as_mut(),a,
+  )?;
+  if !self.canonical_bank_attempted {
+   self.canonical_bank = ProcedureCanonicalBank::try_new(a)?;
+   self.canonical_bank_attempted = true;
+  }
+  if let Some(bank) = &mut self.canonical_bank {
+   bank.remember(content, &canonical);
+  }
+  Ok((canonical, content))
+ }
+ pub(crate) fn drop_canonical_bank(&mut self) {
+  if let Some(bank) = self.canonical_bank.take() {
+   #[cfg(debug_assertions)]
+   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+    eprintln!("ORIGINAL_PROCEDURE_CANONICAL_BANK hits={} allocation_bytes_reused={} directory_bytes={}",
+     bank.hits, bank.reused_allocation_bytes, bank.credit.bytes());
+   }
+   drop(bank);
+  }
  }
  pub(crate) fn admit_adapter_storage(&mut self,bytes:usize,a:&SettingAdmission<'_>)->std::io::Result<()>{
   if let Some(lease)=&mut self.adapter_storage{
@@ -2190,7 +2271,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
    failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,empty_settings:None,plain_metadata:None,plain_metadata_attempted:false,
    #[cfg(debug_assertions)]
    plain_metadata_hits:0,
-   trivial_metadata:[None,None],trivial_suffixes:[None,None],adapter_storage:None};
+   trivial_metadata:[None,None],trivial_suffixes:[None,None],canonical_bank:None,canonical_bank_attempted:false,adapter_storage:None};
  Ok(OriginalSignatureInput{items,diagnostics,comma_fatal,unavailable,observer_stop,signature_failure:self.failure,signature_unsupported:self.unsupported,source,headers,symbols:self.symbols,prepared,primary_lease})
  }
 }
@@ -2796,6 +2877,60 @@ mod procedure_canonical_allocation_tests {
     }
 
     #[test]
+    fn funded_canonical_bank_reuses_only_exact_bytes_in_its_native_domain() {
+        let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
+        let scratch = CanonicalHeaderScratch::default();
+        let procedure = dm_ir::ProcedureMetadata {
+            signature: dm_ir::ProcedureSignature {
+                parameters: Arc::from([]), variadic: false, return_annotation: None,
+            },
+            settings: Arc::from([]),
+        };
+        let mut held = None;
+        let mut bank = ProcedureCanonicalBank::try_new(&a).unwrap().unwrap();
+        let header = |admission| FundedCanonicalHeader::encode("/proc/probe()", admission, &scratch).unwrap().unwrap();
+        let (first, content) = append_procedure_canonical(
+            header(&a), &procedure, &mut held, None, Some(&mut bank), &a,
+        ).unwrap();
+        bank.remember(content, &first);
+        assert!(bank.exact(content, &first.to_vec()).is_some());
+        let mut changed = first.to_vec();
+        changed[1] ^= 1;
+        assert!(bank.exact(content, &changed).is_none(), "forced same hash, different bytes");
+        let before = used.load(Ordering::Acquire);
+        let (second, same_content) = append_procedure_canonical(
+            header(&a), &procedure, &mut held, None, Some(&mut bank), &a,
+        ).unwrap();
+        assert_eq!(same_content, content);
+        assert!(Arc::ptr_eq(first.storage_arc(), second.storage_arc()));
+        assert_eq!(bank.hits, 1);
+        assert_eq!(used.load(Ordering::Acquire), before);
+
+        let foreign = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+        let foreign_a = SettingAdmission::new(&foreign, 32 << 20, &|| Ok(()));
+        let foreign_scratch = CanonicalHeaderScratch::default();
+        let foreign_header = FundedCanonicalHeader::encode("/proc/probe()", &foreign_a, &foreign_scratch).unwrap().unwrap();
+        assert_eq!(append_procedure_canonical(
+            foreign_header, &procedure, &mut held, None, Some(&mut bank), &foreign_a,
+        ).unwrap_err().kind(), std::io::ErrorKind::InvalidInput);
+        assert_eq!(foreign.load(Ordering::Acquire), fixed);
+        let failed = SettingAdmission::new(&used, 32 << 20, &|| Err(std::io::Error::from_raw_os_error(1450)));
+        assert_eq!(append_procedure_canonical(
+            header(&a), &procedure, &mut held, None, Some(&mut bank), &failed,
+        ).unwrap_err().raw_os_error(), Some(1450));
+        assert_eq!(used.load(Ordering::Acquire), before);
+        let directory = bank.credit.bytes();
+        drop(bank);
+        assert_eq!(used.load(Ordering::Acquire), before - directory);
+        drop((first, second, held));
+        assert_eq!(used.load(Ordering::Acquire), fixed);
+        let denied = SettingAdmission::new(&used, fixed, &|| Ok(()));
+        assert!(ProcedureCanonicalBank::try_new(&denied).unwrap().is_none());
+    }
+
+    #[test]
     fn canonical_spill_preserves_bytes_backpatches_and_refunds_its_actual_buffer() {
         let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
         let used = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
@@ -2814,7 +2949,7 @@ mod procedure_canonical_allocation_tests {
         assert!(header.overflow.len() > CANONICAL_HEADER_INLINE);
         assert_eq!(used.load(Ordering::Acquire), fixed + header.overflow.capacity());
         let mut held = None;
-        let (canonical, digest) = append_procedure_canonical(header, &procedure, &mut held, None, &a).unwrap();
+        let (canonical, digest) = append_procedure_canonical(header, &procedure, &mut held, None, None, &a).unwrap();
         assert_eq!(canonical.to_vec(), expected);
         assert_eq!(digest, canonical.xxh3_128());
         assert_eq!(used.load(Ordering::Acquire), fixed + held.as_ref().unwrap().bytes());
@@ -2879,7 +3014,7 @@ mod procedure_canonical_allocation_tests {
         let scratch = CanonicalHeaderScratch::default();
         let mut held = None;
         let header = FundedCanonicalHeader::encode(text, &a, &scratch).unwrap().unwrap();
-        let (first, fingerprint) = append_procedure_canonical(header, &proc, &mut held, None, &a).unwrap();
+        let (first, fingerprint) = append_procedure_canonical(header, &proc, &mut held, None, None, &a).unwrap();
         assert_eq!(first.to_vec(), expected);
         assert_eq!(first.xxh3_128(), fingerprint);
         let retained = held.as_ref().unwrap().bytes();
@@ -2897,18 +3032,18 @@ mod procedure_canonical_allocation_tests {
         };
         let failed = SettingAdmission::new(&used, 32 << 20, &error);
         let header = FundedCanonicalHeader::encode(text, &a, &scratch).unwrap().unwrap();
-        assert_eq!(append_procedure_canonical(header, &proc, &mut held, None, &failed)
+        assert_eq!(append_procedure_canonical(header, &proc, &mut held, None, None, &failed)
             .unwrap_err().raw_os_error(), Some(1450));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
         assert_eq!(held.as_ref().unwrap().bytes(), retained);
 
         let too_small = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained), &|| Ok(()));
         let header = FundedCanonicalHeader::encode(text, &too_small, &scratch).unwrap().unwrap();
-        assert_eq!(append_procedure_canonical(header, &proc, &mut held, None, &too_small)
+        assert_eq!(append_procedure_canonical(header, &proc, &mut held, None, None, &too_small)
             .unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
         let header = FundedCanonicalHeader::encode(text, &a, &scratch).unwrap().unwrap();
-        let (second, second_fingerprint) = append_procedure_canonical(header, &proc, &mut held, None, &a).unwrap();
+        let (second, second_fingerprint) = append_procedure_canonical(header, &proc, &mut held, None, None, &a).unwrap();
         assert_eq!(second_fingerprint, fingerprint);
         assert_eq!(second, first);
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained * 2));

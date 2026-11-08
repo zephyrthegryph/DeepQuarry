@@ -810,6 +810,9 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         context.prepared_signatures.as_deref().map_or(0, |actual| actual.plain_metadata_hits_for_trace()),
                     );
                 }
+                if let Some(prepared) = context.prepared_signatures.as_deref_mut() {
+                    prepared.drop_canonical_bank();
+                }
                 return Err(actual);
             }
             Err(WalkFailure::Source(message)) => context.errors.push(AdapterError {
