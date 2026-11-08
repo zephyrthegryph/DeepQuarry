@@ -220,12 +220,23 @@ function NativeWindow(props: Props) {
           logger.log('floated from the dock under the pointer', under);
         }
         profileStartup('geometry_finished', config.interface?.name);
-        if (float) floatTrace('reveal-start', { at: float, under, geometry });
+        // Every floating reveal is traced, not only a pull-out: a saved floating window at login comes this way too.
+        const traced = !config.window?.docked;
+        if (traced) {
+          floatTrace('reveal-start', {
+            iface: config.interface?.name,
+            at: float,
+            under,
+            geometry,
+            screen: [window.screen.width, window.screen.height],
+            dpr: window.devicePixelRatio,
+          });
+        }
         const revealed = await revealWindow(
           config.window?.generation,
           geometry,
         );
-        if (float) {
+        if (traced) {
           floatTrace('reveal-done', { revealed });
           void floatTraceNative();
         }
@@ -419,7 +430,11 @@ Window.Content = WindowContent;
  */
 /** One step of a float's reveal, in the server's tgui log: a float that never shows is diagnosed from these. */
 function floatTrace(step: string, detail: Record<string, unknown>): void {
-  Byond.sendMessage('wm/log', { float: step, window: Byond.windowId, ...detail });
+  Byond.sendMessage('wm/log', {
+    float: step,
+    window: Byond.windowId,
+    ...detail,
+  });
 }
 
 /** What the client says the floated window is once the reveal has finished. */
