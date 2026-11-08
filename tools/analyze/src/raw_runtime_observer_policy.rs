@@ -1,6 +1,7 @@
 //! SAME lexical runtime observe(...) marker scan, with optional allocation/work control.
 use crate::{raw_marker_policy::{matching_paren,split_args},key_policy_control as kc};
 pub const RUNTIME_OBSERVE:&str="RUNTIME_OBSERVE";
+pub(crate) const RUNTIME_OBSERVE_SPELLING:&str="observe";
 #[derive(Debug,PartialEq,Eq)]pub struct Projection{pub line:u32,pub args:Vec<String>,pub body:String,pub body_offset:usize}
 pub fn visit<C:kc::Control>(text:&str,starts:&[u32],control:&mut C,emit:&mut impl FnMut(&mut C,Projection)->Result<(),C::Error>)->Result<(),C::Error>{
     let bytes = text.as_bytes();
@@ -31,7 +32,7 @@ pub fn visit<C:kc::Control>(text:&str,starts:&[u32],control:&mut C,emit:&mut imp
         while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') {
             control.checkpoint()?;i += 1;
         }
-        if &text[start..i] != "observe"
+        if &text[start..i] != RUNTIME_OBSERVE_SPELLING
             || (start > 0
                 && (bytes[start - 1].is_ascii_alphanumeric()
                     || matches!(bytes[start - 1], b'_' | b'.' | b'/' | b':')))

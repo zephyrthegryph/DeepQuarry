@@ -6,6 +6,27 @@ use std::{collections::HashMap,io,sync::Arc};
 struct Native<'a>{budget:&'a Budget,poll:&'a dyn Fn()->io::Result<()>}
 fn oom(budget:&Budget,message:impl Into<String>)->Failure{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message.into()))}
 impl Control for Native<'_>{type Error=Failure;const CHECKED:bool=true;fn checkpoint(&mut self)->Result<(),Failure>{self.budget.require().map_err(|_|oom(self.budget,"partial recipe budget denied"))?;(self.poll)()?;self.budget.require().map_err(|_|oom(self.budget,"partial recipe budget denied"))}fn reserve(&mut self,n:usize)->Result<(),Failure>{self.budget.charge(n).map_err(|_|oom(self.budget,"partial recipe allocation denied"))}fn overflow(&mut self)->Failure{oom(self.budget,"partial recipe allocation overflow")}fn allocation_failed(&mut self)->Failure{oom(self.budget,"partial recipe allocator refused")}}
+/// Comment masking only changes existing non-LF bytes to ASCII spaces.
+/// It cannot create marker names or delimiters, join separated bytes, or move
+/// a callable header to column zero. A positive screen still needs the scanner.
+fn may_have_handler_markers(raw:&str,poll:&dyn Fn()->io::Result<()>)->io::Result<bool>{
+ let mut tested_entry_calls=false;
+ for line in raw.split('\n'){
+  poll()?;
+  // Runtime observe allows whitespace including LF before its opening paren.
+  if line.contains(crate::raw_runtime_observer_policy::RUNTIME_OBSERVE_SPELLING){return Ok(true)}
+  if line.starts_with("/datum/capability/")&&line.contains("/entries()"){return Ok(true)}
+  if !tested_entry_calls&&line.starts_with("/proc/"){
+   tested_entry_calls=true;
+   if crate::raw_entry_proc_policy::ENTRY_CALLS.iter().any(|call|raw.contains(*call)){return Ok(true)}
+  }
+  if let Some((before_last_paren,_))=line.rsplit_once('('){
+   if crate::sem_handlers_partial_recipe::DECLARATION_MARKERS.iter().any(|name|before_last_paren.contains(*name)){return Ok(true)}
+  }
+ }
+ poll()?;
+ Ok(false)
+}
 /// Unsealed policy DATA only; concrete recorded input owner still supplies all
 /// currentness, purpose and preparation-availability authority.
 pub struct SelectionPlan{pub recipe:Recipe,pub requires_full:bool}
@@ -32,7 +53,9 @@ pub fn select_scoped_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,
    selection.push_facts(relative,fingerprint,Some(facts),&mut control)?;
   }else{
    selection.push_selected(relative,fingerprint,Some(views.code()?.text.as_str()),&mut control)?;
-  }visit(relative,views)
+  }
+  if !may_have_handler_markers(original,poll)?{marker_funding.require()?;return Ok(true)}
+  visit(relative,views)
  }),order,&marker_funding,crate::sem_handlers_partial_recipe::DECLARATION_MARKERS,true,true,true,poll)?;
  let declared=demand_from_rows(&rows,budget,poll)?;
  let mut generated=Vec::new();for marker in &rows.markers{control.checkpoint()?;if marker.name!="ACTION"||marker.args.iter().any(|arg|arg=="FIXED"){continue}let Some(name)=marker.args.first()else{continue};kc::row(&mut control,&mut generated)?;kc::reserve(&mut control,||name.len().checked_add(64))?;let name=name.replace('/',"_");generated.push(kc::format(&mut control,format_args!("act_{name}"))?);}
@@ -114,6 +137,30 @@ fn demand_from_rows(rows:&crate::captured_marker_rows::Rows<'_>,budget:&Arc<Budg
   assert_eq!(actual.requires_full,expected.requires_full);
   assert!(actual.recipe.has_output_base);
   assert_eq!(actual.recipe.candidates.len(),2);
+ }
+ #[test]
+ fn marker_negative_screen_preserves_original_masking_and_multiline_forms(){
+  use crate::captured_marker_rows::collect_file_admitted;
+  let cases=[
+   ("/datum/probe\n    var/value = 1\n",false),
+   ("/proc/empty()\n    return list(1)\n",false),
+   ("/* outside */ ACTION/* nested /* gap */ */(pulse)\n",true),
+   ("CAPABILITIES_PART(/obj/probe, extension)\n    op(\"key\")\n",true),
+   ("/proc/entries()\n    return list(\n        interface(\"x\"))\n",true),
+   ("/datum/capability/probe/proc/entries()\n    return list(1)\n",true),
+   ("observe\n (src, /datum/notice/x, src, then(PROC_REF(p)))\n",true),
+   ("\"observe\": // conservative false positive\n",true),
+   ("é /* 測試 */\n/datum/probe\n",false),
+  ];
+  for (text,possible) in cases{
+   let actual=may_have_handler_markers(text,&||Ok(())).unwrap();
+   assert_eq!(actual,possible,"{text:?}");
+   let masked=crate::raw_marker_policy::strip_comments_keep_strings(text);
+   let budget=Budget::new(8*1024*1024).unwrap();let mut rows=Vec::new();let mut count=0;
+   collect_file_admitted("code/probe.dm",&masked,&budget,crate::sem_handlers_partial_recipe::DECLARATION_MARKERS,true,true,true,&mut rows,&mut count,&mut||Ok::<_,String>(())).unwrap();
+   assert!(actual||rows.is_empty(),"negative screen lost original rows for {text:?}");
+   if possible&&!text.starts_with('"'){assert!(!rows.is_empty(),"fixture must exercise a real original marker: {text:?}");}
+  }
  }
  #[test]fn stopped_and_operational_pages_never_become_available_empty_tu(){let pages=fixture();pages.stop.set(true);assert!(matches!(select_from_pages(&pages,&HashMap::new(),&[],&Budget::new(8*1024*1024).unwrap(),&||Ok(())),Err(Failure::Unsupported(_))));pages.stop.set(false);pages.fail.set(true);assert!(matches!(select_from_pages(&pages,&HashMap::new(),&[],&Budget::new(8*1024*1024).unwrap(),&||Ok(())),Err(Failure::Operational(e))if e.raw_os_error()==Some(1450)));pages.fail.set(false);assert!(!select_from_pages(&pages,&HashMap::new(),&[],&Budget::new(8*1024*1024).unwrap(),&||Ok(())).unwrap().candidates.is_empty());}
 }
