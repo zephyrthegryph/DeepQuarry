@@ -598,6 +598,7 @@
 #include "code\content\client\preferences_tgui.dm"
 #include "code\content\client\server_maint_service.dm"
 #include "code\content\client\spam_prevention.dm"
+#include "code\content\client\stat_panel_window.dm"
 #include "code\content\client\preference_setup\loadout\loadout_accessories.dm"
 #include "code\content\client\preference_setup\loadout\loadout_head.dm"
 #include "code\content\client\prefs_helpers\biological_gender.dm"

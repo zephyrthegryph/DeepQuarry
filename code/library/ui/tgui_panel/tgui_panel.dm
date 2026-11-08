@@ -85,6 +85,10 @@ CAPABILITIES(/datum/tgui_panel)
  * Callback for handling incoming tgui messages.
  */
 /datum/tgui_panel/proc/on_message(type, payload, href_list)
+	if(type == "col/page")
+		// The column page's own messages (window_dock.dm).
+		column_page_message(payload)
+		return TRUE
 	if(type == "col/msg")
 		// A message from one of the column page's windows (the stat panel, a docked interface): to that window (column_part.dm).
 		column_message(payload)

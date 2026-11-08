@@ -222,4 +222,10 @@ native windows of interfaces floating over the map.
 - **Off-screen windows get no data.** The page reports each docked interface's visibility (`wm/view {hidden}`: its entry collapsed, or
   a background tab of a stack); the server's `dock_hide()` gate stops its pushes and sends one fresh update when it is shown again.
 
-Not done: the chat and the stat panel cannot leave the column (they have no native window to go to).
+- **The stat panel is a tgui window.** `/datum/stat_panel_ui` (`code/content/client/stat_panel_window.dm`) opens the `StatPanel` interface
+  per client: docked by default (`window_dock_default_docked`), floated and docked like any other window. Its protocol is unchanged:
+  `client.stat_panel` is whichever window the UI is in, and the page's messages come back through `ui_raw_message()`; the interface
+  hosts the stat panel's store through the generic window channel (`useWindowMessages`/`useWindowSend` in `tgui/backend.ts`). The
+  column page's own messages (layout saves, drop answers, logs) go as `col/page` to the window dock.
+
+Not done: the chat cannot leave the column (it has no native window to go to).
