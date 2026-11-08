@@ -34,7 +34,7 @@ export type Outlier = {
 };
 
 /** One recent tick: usage (% of the budget), its top system keys and their ms. */
-export type RecentTick = [number, string[], number[]];
+export type RecentTick = [number, string[], number[], number?, number?];
 
 export type Histogram = {
   count: number;
@@ -308,9 +308,23 @@ export function tickParts(tick: RecentTick, budgetMs: number): TickPart[] {
     name,
     ms: tick[2][i] || 0,
   }));
-  const rest = (tick[0] / 100) * budgetMs - parts.reduce((n, p) => n + p.ms, 0);
+  const total = (tick[0] / 100) * budgetMs;
+  const before = ((tick[3] || 0) / 100) * budgetMs;
+  if (before >= 0.05)
+    parts.push({ name: 'Before the kernel (verbs, input, BYOND)', ms: before });
+  const rest = total - parts.reduce((n, p) => n + p.ms, 0);
   if (rest >= 0.05)
-    parts.push({ name: 'Everything else', ms: rest, unknown: true });
+    parts.push({
+      // Only a sliver may hide behind a vague name: real time nothing was charged with says so.
+      name:
+        rest <= Math.max(1, total * 0.1)
+          ? 'Everything else'
+          : 'Not attributed (kernel loop)',
+      ms: rest,
+      unknown: true,
+    });
+  const map = ((tick[4] || 0) / 100) * budgetMs;
+  if (map >= 0.05) parts.push({ name: 'Map send (BYOND)', ms: map });
   return parts.sort(byMs);
 }
 

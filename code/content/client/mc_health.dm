@@ -99,7 +99,7 @@ GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution_top", "c
 			return list("rust" = mc_health_rust())
 	return list()
 
-/// The last MC_HEALTH_TICKS ticks of the flight recorder: list(usage, list(top keys), list(top ms)) each, oldest first. Reads only those entries of
+/// The last MC_HEALTH_TICKS ticks of the flight recorder: list(usage, list(top keys), list(top ms), pre-kernel usage, map send usage) each, oldest first. Reads only those entries of
 /// the ring (recorded_entries() copies all of it).
 /proc/mc_health_recent_ticks()
 	var/datum/tick_meter/meter = km_meter()
@@ -116,7 +116,7 @@ GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution_top", "c
 				continue
 			keys += registry.keys[idx]
 			mss += round(meter.fr_top_ms[base + k], 0.01)
-		. += list(list(round(meter.fr_usage[at], 0.1), keys, mss))
+		. += list(list(round(meter.fr_usage[at], 0.1), keys, mss, round(meter.fr_pre[at], 0.1), round(meter.fr_maptick[at], 0.1)))
 
 /// The hosted systems with periodic work: their cost per fire and that cost as a share of one tick ("usage", % of the tick budget).
 /proc/mc_health_subsystems()

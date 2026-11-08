@@ -57,6 +57,11 @@ SYSTEM_DEF(lighting)
 	if(!init_tick_checks)
 		KERNEL_SPLIT_TICK
 
+	var/step_start = TICK_USAGE
+	var/start_sources = length(sources_queue)
+	var/start_corners = length(corners_queue)
+	var/start_objects = length(objects_queue)
+	var/start_sunlight = length(sunlight_queue_active)
 	var/list/queue = sources_queue
 	var/i = 0
 
@@ -152,6 +157,10 @@ SYSTEM_DEF(lighting)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
+
+	// A step over a whole tick: what it had to do and what it left, to tell one huge element from a budget that did not bind.
+	if(!init_tick_checks && TICK_USAGE_TO_MS(step_start) > world.tick_lag * 100)
+		log_debug("light_step took [TICK_USAGE_TO_MS(step_start)]ms (limit [Kernel.current_ticklimit]%); start: sources [start_sources], corners [start_corners], objects [start_objects], sunlight [start_sunlight]; left: sources [length(sources_queue)], corners [length(corners_queue)], objects [length(objects_queue)], sunlight [length(sunlight_queue_active)]")
 
 /datum/system/lighting/proc/update_sunlight(datum/planet_sunlight_handler/pshandler)
 	if(istype(pshandler))

@@ -21,7 +21,7 @@
 /// Ticks the flight recorder keeps (60 s at 20 fps).
 #define KM_RING_LEN 1200
 /// Systems named in a tick record and its overrun log line.
-#define KM_TOP_N 3
+#define KM_TOP_N 8
 /// A charge smaller than this counts as this much, so a system that ran at all is marked active for the tick.
 #define KM_MIN_CHARGE_MS 0.0001
 /// The running-total accumulators flush this many ms into their high part (BYOND numbers are single precision:

@@ -53,7 +53,7 @@ describe('what used the tick', () => {
   it('shows the time the top systems of a recent tick do not explain', () => {
     const parts = tickParts([100, ['air'], [5]], 25);
     expect(parts[0]).toEqual({
-      name: 'Everything else',
+      name: 'Not attributed (kernel loop)',
       ms: 20,
       unknown: true,
     });
