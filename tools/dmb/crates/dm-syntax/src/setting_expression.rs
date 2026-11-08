@@ -46,6 +46,7 @@ pub struct SettingAdmission<'op> {
     stopped: std::cell::Cell<Option<std::io::ErrorKind>>,
     stack_used: std::cell::Cell<usize>,
     stack_allowance: usize,
+    bounded_static_lookup_checkpoints: bool,
 }
 impl<'op> SettingAdmission<'op> {
     /// Debug trace only. The counter can include other live owners on this
@@ -82,8 +83,22 @@ impl<'op> SettingAdmission<'op> {
             stopped: std::cell::Cell::new(None),
             stack_used: std::cell::Cell::new(0),
             stack_allowance,
+            bounded_static_lookup_checkpoints: false,
         }
     }
+    /// Use one cancellation/deadline check for an immutable static-table
+    /// lookup. Only hosts whose callback observes cancellation/deadline
+    /// and has no per-call work or ordinal-dependent faults may opt in.
+    /// Never changes source, parser, allocation or publication checkpoints.
+    pub fn with_bounded_static_lookup_checkpoints(mut self) -> Self {
+        self.bounded_static_lookup_checkpoints = true;
+        self
+    }
+
+    pub(crate) fn uses_bounded_static_lookup_checkpoints(&self) -> bool {
+        self.bounded_static_lookup_checkpoints
+    }
+
     /// One evaluator recursion frame on the SAME operation stack/counter.
     /// This is a resource capability only; it grants no source or scalar meaning.
     pub fn evaluation_frame(&self) -> std::io::Result<SettingEvaluationFrame<'_, 'op>> {

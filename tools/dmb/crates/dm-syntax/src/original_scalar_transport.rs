@@ -86,16 +86,34 @@ const ORIGINAL_PUNCTUATION:&[PunctuationRow]=&[
 ];
 const ORIGINAL_LEXICAL_PUNCTUATION_LEN:usize=ORIGINAL_PUNCTUATION.len()-1;
 
+// The first byte only chooses the existing contiguous candidate range. The
+// lexer still owns all following-byte reads and maximal-munch decisions.
+const ORIGINAL_PUNCTUATION_FIRST: [[u8; 2]; 256] = {
+ let len = ORIGINAL_LEXICAL_PUNCTUATION_LEN;
+ assert!(len <= u8::MAX as usize);
+ let mut ranges = [[len as u8; 2]; 256];
+ let mut at = 0;
+ while at < len {
+  let first = ORIGINAL_PUNCTUATION[at].spelling.as_bytes()[0] as usize;
+  let start = at;
+  at += 1;
+  while at < len && ORIGINAL_PUNCTUATION[at].spelling.as_bytes()[0] as usize == first {
+   at += 1;
+  }
+  assert!(ranges[first][0] == len as u8, "Original punctuation prefix must be contiguous");
+  ranges[first] = [start as u8, at as u8];
+ }
+ ranges
+};
+
 /// In-memory storage index for the exact spelling of an already issued
 /// punctuation value. No source read, token classification or grant.
 pub fn original_punctuation_storage_index(spelling: &str) -> Option<u8> {
-    let ordinal = if spelling == "in" {
-        ORIGINAL_LEXICAL_PUNCTUATION_LEN
-    } else {
-        ORIGINAL_PUNCTUATION[..ORIGINAL_LEXICAL_PUNCTUATION_LEN]
-            .binary_search_by(|row| row.spelling.cmp(spelling)).ok()?
-    };
-    u8::try_from(ordinal).ok()
+    if spelling == "in" {
+        return u8::try_from(ORIGINAL_LEXICAL_PUNCTUATION_LEN).ok();
+    }
+    let [first, end] = ORIGINAL_PUNCTUATION_FIRST[usize::from(*spelling.as_bytes().first()?)];
+    (first..end).find(|&index| ORIGINAL_PUNCTUATION[usize::from(index)].spelling == spelling)
 }
 
 /// Exact inverse over the same static punctuation roster. Storage indices
@@ -121,7 +139,7 @@ fn original_punctuation_storage_round_trips_the_entire_canonical_roster() {
 /// Exact derived-Debug variant name from the SAME canonical punctuation row.
 /// No token recognition or source/provenance grant; close is actual lexer DATA.
 pub fn original_punctuation_debug_name(spelling:&str,closed:bool)->Option<&'static str>{
- let row=ORIGINAL_PUNCTUATION.iter().find(|row|row.spelling==spelling)?;
+ let row=&ORIGINAL_PUNCTUATION[usize::from(original_punctuation_storage_index(spelling)?)];
  if closed{row.closed}else{Some(row.debug)}
 }
 /// Read-only candidate DATA over the SAME table, not another scanner. Actual
@@ -129,7 +147,14 @@ pub fn original_punctuation_debug_name(spelling:&str,closed:bool)->Option<&'stat
 /// this helper never reads input, advances a cursor, allocates, or issues facts.
 #[derive(Clone,Copy,Debug)]pub(crate) struct OriginalPunctuationCandidates{first:usize,end:usize}
 impl OriginalPunctuationCandidates{
- pub(crate) fn for_first_using(byte:u8,a:&SettingAdmission<'_>)->io::Result<Self>{Self{first:0,end:ORIGINAL_LEXICAL_PUNCTUATION_LEN}.narrowed_using(&[byte],a)}
+ pub(crate) fn for_first_using(byte:u8,a:&SettingAdmission<'_>)->io::Result<Self>{
+  if !a.uses_bounded_static_lookup_checkpoints(){
+   return Self{first:0,end:ORIGINAL_LEXICAL_PUNCTUATION_LEN}.narrowed_using(&[byte],a)
+  }
+  a.checkpoint().map_err(|e|actual(a,e))?;
+  let [first,end]=ORIGINAL_PUNCTUATION_FIRST[usize::from(byte)];
+  Ok(Self{first:usize::from(first),end:usize::from(end)})
+ }
  pub(crate) fn len(self)->usize{self.end-self.first}
  pub(crate) fn is_empty(self)->bool{self.first==self.end}
  /// Pinned read_punct tests the FIRST candidate for exact equality before it
@@ -139,6 +164,47 @@ impl OriginalPunctuationCandidates{
   a.checkpoint().map_err(|e|actual(a,e))?;let mut first=None;let mut end=self.first;
   for index in self.first..self.end{a.checkpoint().map_err(|e|actual(a,e))?;if ORIGINAL_PUNCTUATION[index].spelling.as_bytes().starts_with(prefix){first.get_or_insert(index);end=index+1;}else if first.is_some(){break}}
   Ok(first.map_or(Self{first:self.end,end:self.end},|first|Self{first,end}))
+ }
+}
+
+#[cfg(test)]
+#[test]
+fn original_punctuation_first_byte_index_matches_old_ranges_and_checks_first_error() {
+ let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+ let a=SettingAdmission::new(&counter,1<<20,&||Ok(()));
+ let bounded=SettingAdmission::new(&counter,1<<20,&||Ok(())).with_bounded_static_lookup_checkpoints();
+ let all=OriginalPunctuationCandidates{first:0,end:ORIGINAL_LEXICAL_PUNCTUATION_LEN};
+ for byte in u8::MIN..=u8::MAX {
+  let old=all.narrowed_using(&[byte],&a).unwrap();
+  let current=OriginalPunctuationCandidates::for_first_using(byte,&bounded).unwrap();
+  assert_eq!((current.first,current.end),(old.first,old.end),"first byte {byte}");
+  assert_eq!(current.exact(&[byte]),old.exact(&[byte]));
+ }
+ let fail=||Err(io::Error::from_raw_os_error(1450));
+ let a=SettingAdmission::new(&counter,1<<20,&fail).with_bounded_static_lookup_checkpoints();
+ assert_eq!(OriginalPunctuationCandidates::for_first_using(b'(', &a).unwrap_err().raw_os_error(),Some(1450));
+}
+
+#[cfg(test)]
+#[test]
+fn original_generic_punctuation_keeps_every_legacy_callback_failure() {
+ let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+ let count=std::cell::Cell::new(0);
+ let stop=std::cell::Cell::new(None);
+ let poll=||{
+  count.set(count.get()+1);
+  if stop.get()==Some(count.get()){return Err(io::Error::from_raw_os_error(1450))}
+  Ok(())
+ };
+ let a=SettingAdmission::new(&counter,1<<20,&poll);
+ OriginalPunctuationCandidates::for_first_using(b'=',&a).unwrap();
+ let observed=count.get();
+ assert!(observed>20);
+ for failure in 1..=observed{
+  count.set(0);stop.set(Some(failure));
+  let a=SettingAdmission::new(&counter,1<<20,&poll);
+  assert_eq!(OriginalPunctuationCandidates::for_first_using(b'=',&a).unwrap_err().raw_os_error(),Some(1450));
+  assert_eq!(count.get(),failure);
  }
 }
 

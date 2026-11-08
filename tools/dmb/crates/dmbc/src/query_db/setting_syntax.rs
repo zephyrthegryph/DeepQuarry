@@ -9,12 +9,13 @@ pub(super) fn with_setting_admission<T>(
     with_admission_stack(charged,dm_exec::COMPILER_STACK_BYTES/16,operation)
 }
 fn with_admission_stack<T>(charged:&Arc<dm_syntax::SettingChargeCounter>,stack_allowance:usize,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
-    with_admission_checkpoint(charged,stack_allowance,&setting_checkpoint,operation)
+    with_admission_checkpoint(charged,stack_allowance,&setting_checkpoint,false,operation)
 }
 fn with_admission_checkpoint<T>(
     charged:&Arc<dm_syntax::SettingChargeCounter>,
     stack_allowance:usize,
     checkpoint:&dyn Fn()->std::io::Result<()>,
+    bounded_static_lookup_checkpoints:bool,
     operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>,
 )->Result<T,BodySyntaxFailure>{
     // Explicit worker-work allowance; not syntax meaning or a qualified
@@ -25,6 +26,11 @@ fn with_admission_checkpoint<T>(
         stack_allowance,
         checkpoint,
     );
+    let admission = if bounded_static_lookup_checkpoints {
+        admission.with_bounded_static_lookup_checkpoints()
+    } else {
+        admission
+    };
     let result = operation(&admission);
     // A prior actual operational failure wins over any later checkpoint.
     // The input may already have extracted that first actual IO for its
@@ -93,7 +99,7 @@ impl SettingExpressionQueries for QueryDb {
                 context.checkpoint()
             };
             scope.with_primary_allowance(|allowance| {
-                with_admission_checkpoint(&self.body_charge,allowance,&checkpoint,|admission| {
+                with_admission_checkpoint(&self.body_charge,allowance,&checkpoint,cfg!(not(test)),|admission| {
                     self.original_signature_aliases.lock().map_err(|_|BodySyntaxFailure::Operational(std::io::Error::other("original signature resource census poisoned")))?.prune(admission).map_err(BodySyntaxFailure::Operational)?;
                     admission.checkpoint().map_err(BodySyntaxFailure::Operational)?;
                     operation(admission)
