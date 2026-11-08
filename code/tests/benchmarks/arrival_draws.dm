@@ -29,6 +29,13 @@
 	for(var/n in 1 to viewers)
 		var/turf/T = spots[n]
 		var/owed_before = GLOB.interest_drawn_now
+		// Everything in view owes a draw, as the boot's park leaves a station nobody has looked at: a mark of an unobserved lazy atom parks it.
+		var/parked_before = GLOB.refresh_deferred
+		for(var/turf/seen in range(world.view, T))
+			refresh_mark(seen, DEP_ALL)
+			for(var/atom/movable/thing in seen)
+				refresh_mark(thing, DEP_ALL)
+		count_metric("arrival[n]_parked", GLOB.refresh_deferred - parked_before, "draws", "none")
 		stoplag()
 		var/stamp = TICK_USAGE_REAL
 		interest_view_set("bench-arrival-[n]", T, null, world.view)
