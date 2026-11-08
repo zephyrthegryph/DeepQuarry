@@ -633,3 +633,24 @@ GLOBAL_LIST_EMPTY(reagents_empty_list)
 	own_move(R, src, nameof(reagent_list))
 	if(!reagent_by_id[R.id])
 		set_reagent_by_id_at(R.id, R)
+
+/// Fills an empty holder with a starting template (reagents(): an ordered id -> amount list, no data, a set no transformation takes, fitting the
+/// volume): the result add_reagent() gives for each in turn, with the total, colour and change notice worked out once instead of after every add.
+/datum/reagents/proc/fill_from_template(list/template)
+	var/list/defs = SSchemistry.ready().chemical_reagents
+	own_reagent_lists()
+	for(var/id in template)
+		var/datum/reagent/D = defs[id]
+		if(!D)
+			stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist.")
+			continue
+		var/datum/reagent/R = new D.type()
+		rel_add(src, nameof(reagent_list), R)
+		if(!reagent_by_id[id])
+			set_reagent_by_id_at(id, R)
+		rel_set(R, nameof(R.holder), src)
+		R.set_volume(template[id])
+		R.initialize_data(null)
+	update_total()
+	if(my_atom)
+		my_atom.on_reagent_change()

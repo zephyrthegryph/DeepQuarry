@@ -28,6 +28,8 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 	/obj/item/stack/cable_coil,
 	/obj/item/cell/emergency_light,
 	/obj/item/reagent_containers/pill/inaprovaline,
+	/obj/item/reagent_containers/food/drinks/cans/cola,
+	/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake,
 ))
 
 /datum/benchmark/mapload_init
