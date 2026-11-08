@@ -102,10 +102,39 @@ PROC_SUMMARY(/proc/op_cond_eval) // vars[] / call() dispatcher: the walk cannot 
 		return condition_id_holds(A.holder, cond)
 	if(istext(cond))
 		var/datum/holder = A.holder
-		if(holder && (cond in holder.vars))
+		if(holder && op_type_has_var(holder, cond))
 			return !!holder.vars[cond]
 		return !!op_call(A, cond)
 	return !!cond
+
+/// type -> var name -> TRUE: the vars an instance of the type has (every instance of a type has the same names).
+GLOBAL_LIST_EMPTY(op_type_var_names)
+
+/// Has `holder` a var called `name`? Asked of its type once (`name in vars` walks the whole var list: hundreds on a mob, for every condition).
+/proc/op_type_has_var(datum/holder, name)
+	var/list/names = GLOB.op_type_var_names[holder.type]
+	if(isnull(names))
+		names = list()
+		for(var/var_name in holder.vars)
+			names[var_name] = TRUE
+		GLOB.op_type_var_names[holder.type] = names
+	return names[name]
+
+/// The order a row's when() conditions are tested in: cheapest first (a var or a stat before a proc, a requirement or a tree). They are pure and
+/// all must hold, so the order changes only the cost. Worked out once per plan.
+/proc/op_conds_cheapest_first(datum/op_plan/P)
+	if(isnull(P.conds_ordered))
+		var/list/by_cost = list(list(), list(), list())
+		for(var/cond in P.conds)
+			var/cost = 3
+			if(isnum(cond) || (istext(cond) && copytext(cond, 1, 5) != "cap:"))
+				cost = 1
+			else if(istext(cond))
+				cost = 2
+			var/list/bucket = by_cost[min(cost, 3)]
+			bucket += list(cond)
+		P.conds_ordered = by_cost[1] + by_cost[2] + by_cost[3]
+	return P.conds_ordered
 
 /// Runs a handler: a proc name on the holder (PROC_REF), or "cap:name" on the capability datum (A.cap). `extra` arguments follow the context.
 /proc/op_call(datum/act/op/A, handler, ...)
