@@ -95,3 +95,10 @@ This saves us from having to call add_fingerprint() any time something is put in
 		for(var/datum/category_group/underwear/UWC in read_once(GLOB.global_underwear.categories))
 			set_hide_underwear_at(UWC.name, TRUE)
 		underwear_edited()
+
+/// A human's hand works only while its hand part is attached, not a stump, and usable (not dead or mutated).
+/mob/living/carbon/human/hand_works(left)
+	if(!..())
+		return FALSE
+	var/obj/item/organ/external/E = organs_by_name[left ? BP_L_HAND : BP_R_HAND]
+	return E && !E.is_stump() && E.is_usable()
