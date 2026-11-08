@@ -258,6 +258,23 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 /// stat_compute() for the rules a row list adds nothing to (ALL, ANY, SUM, PRODUCT, MAX, MIN, MASK_OR) on a stat none of whose rows exist: no row
 /// list, no combine call. The constant comes first and the contributions follow in order, as in the general path, so the value is the same.
 /proc/stat_compute_fast(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec)
+	// The contributions gated by a holder proc share one evaluation context (as stat_relation_changed()'s run does): a context per gate was
+	// a take and a release per condition (a machine's power stat asks three).
+	var/datum/act/op/ctx = null
+	for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+		if(C.gate_kinds && (CG_PROC in C.gate_kinds))
+			ctx = pooled_op_context(E)
+			break
+	if(!ctx)
+		return stat_compute_fast_with(E, def, I, rec, null)
+	try
+		. = stat_compute_fast_with(E, def, I, rec, ctx)
+	catch(var/exception/fault)
+		ctx.release()
+		throw fault
+	ctx.release()
+
+/proc/stat_compute_fast_with(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec, datum/act/op/ctx)
 	var/rule = def.rule
 	var/has_const = FALSE
 	var/constant = null
@@ -272,26 +289,26 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 			if(has_const && !constant)
 				return FALSE
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C) && !stat_contrib_value(E, def, C))
+				if(stat_contrib_active(E, C, ctx) && !stat_contrib_value(E, def, C))
 					return FALSE
 			return TRUE
 		if(STAT_RULE_ANY)
 			if(has_const && constant)
 				return TRUE
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C) && stat_contrib_value(E, def, C))
+				if(stat_contrib_active(E, C, ctx) && stat_contrib_value(E, def, C))
 					return TRUE
 			return FALSE
 		if(STAT_RULE_PRODUCT)
 			. = has_const ? constant : 1
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C))
+				if(stat_contrib_active(E, C, ctx))
 					. *= stat_contrib_value(E, def, C)
 		if(STAT_RULE_MASK_OR)
 			var/any_member = has_const
 			. = has_const ? constant : 0
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C))
+				if(stat_contrib_active(E, C, ctx))
 					. |= stat_contrib_value(E, def, C)
 					any_member = TRUE
 			if(!any_member)
@@ -300,7 +317,7 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 			. = has_const ? constant : null
 			var/is_max = (rule == STAT_RULE_MAX)
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(!stat_contrib_active(E, C))
+				if(!stat_contrib_active(E, C, ctx))
 					continue
 				var/v = stat_contrib_value(E, def, C)
 				if(isnull(.) || (is_max ? (v > .) : (v < .)))
@@ -310,7 +327,7 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 		else
 			. = has_const ? constant : 0
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C))
+				if(stat_contrib_active(E, C, ctx))
 					. += stat_contrib_value(E, def, C)
 
 /// A boolean stat's contribution as TRUE or FALSE; any other value as it is.
