@@ -1,4 +1,3 @@
-ADMIN_VERB_VISIBILITY(set_server_fps, ADMIN_VERB_VISIBLITY_FLAG_MAPPING_DEBUG)
 ADMIN_VERB(set_server_fps, R_DEBUG, "Set Server FPS", "Sets game speed in frames-per-second. Can potentially break the game", ADMIN_CATEGORY_DEBUG_DANGEROUS)
 	// Only an actual answered request issued by this verb can supply replay answers.
 	var/list/fps_answers = list()
