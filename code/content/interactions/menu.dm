@@ -289,13 +289,12 @@ CAPABILITIES(/datum/interaction_menu)
 /// shape -> the sorted verb names (interaction_menu_verb_names()).
 GLOBAL_LIST_EMPTY(interaction_menu_verb_shapes)
 
-/// The sorted names of `target`'s pickable context verbs (not hidden, named, not a "." command). Most instances carry their type's verbs: the
-/// list is kept per (type, verb count, first and last verb) and checked against the instance's own first and last verb, so a target granted or
-/// stripped a verb (its count or its ends move) builds its own. A copy is returned.
+/// The sorted names of `target`'s pickable context verbs (not hidden, named, not a "." command), kept per (type, the exact verb set): a target
+/// granted or stripped any verb has another key. Joining the verbs is one pass; filtering and sorting them is what the key saves. A copy is returned.
 /proc/interaction_menu_verb_names(atom/target)
 	var/list/by_shape = GLOB.interaction_menu_verb_shapes
-	var/count = length(target.verbs)
-	var/shape = "[target.type]|[count]|[count ? "[target.verbs[1]]|[target.verbs[count]]" : ""]"
+	// The whole verb set, in order, is the key: two targets share a list only when they carry the same verbs.
+	var/shape = "[target.type]|[jointext(target.verbs, ",")]"
 	var/list/names = by_shape[shape]
 	if(isnull(names))
 		names = list()

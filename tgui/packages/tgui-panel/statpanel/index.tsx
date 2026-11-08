@@ -7,7 +7,7 @@ import './statpanel.scss';
 import { loadMappings, loadStyleSheet } from 'common/assets';
 import { createRoot } from 'react-dom/client';
 import { App, PanelBoundary } from './App';
-import { dockHost } from './dockHost';
+import { watchChatSide } from './chatSide';
 import { applyDockPreview } from './dockPreview';
 import { StatStore } from './store';
 
@@ -85,9 +85,6 @@ Byond.subscribe((type: string, payload: any) => {
     applyDockPreview(payload);
     return;
   }
-  if (dockHost.receive(type, payload)) {
-    return;
-  }
   store.receive(type, payload);
 });
 
@@ -97,16 +94,24 @@ function showFallback() {
 }
 
 function mount() {
-  createRoot(document.getElementById('react-root')!).render(
-    <PanelBoundary onError={showFallback}>
-      <App store={store} displayStore={displayStore} />
-    </PanelBoundary>,
-  );
+  try {
+    createRoot(document.getElementById('react-root')!).render(
+      <PanelBoundary onError={showFallback}>
+        <App store={store} displayStore={displayStore} />
+      </PanelBoundary>,
+    );
+  } catch (error) {
+    console.error('stat panel: first render failed', error);
+    showFallback();
+  }
+  // Whatever the render did: the window is shown and the server is asked for the panel's data.
   win.__statpanelMounted = true;
   Byond.winset(Byond.windowId, { 'is-visible': true });
   Byond.sendMessage('Set-Tab', { tab: 'Status' });
   Byond.sendMessage('Update-Verbs');
-  dockHost.ready();
+  watchChatSide();
+  // A reloaded panel: the server re-seats the docked windows' pane chain.
+  Byond.sendMessage('WM-Ready');
   // The server can miss the first request while the client is still logging in.
   setTimeout(() => {
     if (!store.state.verbs.length) Byond.sendMessage('Update-Verbs');

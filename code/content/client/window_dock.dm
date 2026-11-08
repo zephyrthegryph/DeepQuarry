@@ -61,17 +61,6 @@ CAPABILITIES(/datum/window_dock)
 		if(ui?.docked && !ui.closing)
 			. += ui
 
-/// The docked UI in window `window_id` of this client, or null (the panel's ids are never trusted further than this).
-/datum/window_dock/proc/docked_ui(window_id)
-	var/client/player = owner()
-	if(!istext(window_id) || !player?.session)
-		return null
-	var/datum/tgui_window/window = player.session.tgui_windows[window_id]
-	var/datum/tgui/ui = window?.locked_by()
-	if(!ui?.docked || ui.closing || ui.user?.client != player)
-		return null
-	return ui
-
 /// Whether the saved layout docks `interface` when it opens.
 /datum/window_dock/proc/wants(interface)
 	if(isnull(wants_cache))
@@ -96,18 +85,6 @@ CAPABILITIES(/datum/window_dock)
 	switch(type)
 		if("WM-Ready")
 			send_init()
-		if("WM-View")
-			set_hidden(islist(payload) ? payload["hidden"] : null)
-		if("WM-Float")
-			var/datum/tgui/ui = docked_ui(payload?["id"])
-			if(ui)
-				undock(ui, dock_point_text(payload?["at"]))
-		if("WM-Close")
-			var/datum/tgui/ui = docked_ui(payload?["id"])
-			ui?.close()
-		if("WM-Save")
-			// The server keeps the layout now (remember()); an older panel's snapshot would drop what it never saw.
-			return
 		if("WM-Log")
 			// The panel's own account of a placement: what it sent and what the client reads back (hard to see any other way).
 			log_tgui(owner(), "Window dock (panel): [copytext(json_encode(payload), 1, 2000)]", context = "window_dock")
@@ -119,16 +96,7 @@ CAPABILITIES(/datum/window_dock)
 	if(LAZYLEN(column_ids))
 		relayout()
 
-/// The panel reports which docked windows are off screen: they stop getting data until shown again.
-/datum/window_dock/proc/set_hidden(list/hidden)
-	var/list/hidden_set = list()
-	for(var/window_id in hidden)
-		if(istext(window_id))
-			hidden_set[window_id] = TRUE
-	for(var/datum/tgui/ui as anything in docked_uis())
-		ui.dock_hide(!!hidden_set[ui.window()?.id])
-
-/// Keeps the layout the panel saved.
+/// Keeps the saved layout (remember() writes it).
 /datum/window_dock/proc/save(text)
 	var/client/player = owner()
 	if(!istext(text) || length(text) > WINDOW_DOCK_LAYOUT_MAX || !player?.prefs)
@@ -246,7 +214,6 @@ CAPABILITIES(/datum/window_dock)
 	if(window_id && !(window_id in column_ids))
 		LAZYADD(column_ids, window_id)
 	relayout()
-	ui.dock_at = null
 
 /// A docked UI closed: the panel drops it and the pooled window gets its chrome back for its next owner.
 /datum/window_dock/proc/window_closed(datum/tgui/ui)
@@ -278,9 +245,7 @@ CAPABILITIES(/datum/window_dock)
 	var/datum/window_dock/dock = window_dock_of(user?.client)
 	switch(type)
 		if("wm/dock")
-			dock_at = dock_point_text(payload?["at"])
-			if(!dock?.dock(src))
-				dock_at = null
+			dock?.dock(src)
 		if("wm/ready")
 			dock?.window_ready(src)
 		if("wm/float")
