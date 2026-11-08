@@ -21,7 +21,7 @@
 	level = 1
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold4w)
-	setup(PROC_REF(prepare_pipe_renderer))
+	setup(PROC_REF(prepare_pipe_renderer), early = TRUE) // the renderer's icon is set before the chain reads the sprite
 	ref_one(nameof(node3))
 	ref_one(nameof(node4))
 

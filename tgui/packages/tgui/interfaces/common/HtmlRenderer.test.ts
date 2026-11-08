@@ -4,6 +4,7 @@ import {
   isSafeHtmlImageSrc,
   safeHtmlColor,
   safeHtmlFontFace,
+  safeHtmlStyle,
 } from './HtmlRenderer';
 
 describe('HtmlRenderer sanitizers', () => {
@@ -25,5 +26,27 @@ describe('HtmlRenderer sanitizers', () => {
     expect(safeHtmlColor('red; background:url(x)')).toBeUndefined();
     expect(safeHtmlFontFace('Segoe Script')).toBe('Segoe Script');
     expect(safeHtmlFontFace('x);background:url(x)')).toBeUndefined();
+  });
+
+  it('keeps only listed style properties with checked values', () => {
+    expect(safeHtmlStyle('background:#f4c7c3')).toEqual({
+      backgroundColor: '#f4c7c3',
+    });
+    expect(
+      safeHtmlStyle('background:#111;color:#ddd;font-family:monospace'),
+    ).toEqual({
+      backgroundColor: '#111',
+      color: '#ddd',
+      fontFamily: 'monospace',
+    });
+    expect(safeHtmlStyle('font-size:10px;line-height:10px')).toEqual({
+      fontSize: '10px',
+      lineHeight: '10px',
+    });
+    expect(safeHtmlStyle('background:url(x)')).toBeUndefined();
+    expect(safeHtmlStyle('position:fixed;top:0')).toBeUndefined();
+    expect(safeHtmlStyle('color:red;width:expression(alert(1))')).toEqual({
+      color: 'red',
+    });
   });
 });

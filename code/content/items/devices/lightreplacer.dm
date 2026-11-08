@@ -206,7 +206,7 @@ MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 					to_chat(U, span_notice("\The [src] has fabricated a new bulb from the broken bulbs it has stored. It now has [uses] uses."))
 					play_sfx(src, SFX_MACHINES_DING)
 				target.set_status(LIGHT_EMPTY)
-				rel_clear(target, nameof(target.installed_light)) //Remove the light! (its glass went into the shards)
+				target.discard_bulb() //Remove the light! (its glass went into the shards)
 				target.refresh_light()
 
 			var/obj/item/light/L2 = new target.light_type()

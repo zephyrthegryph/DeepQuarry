@@ -213,7 +213,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return null
 
 	if(!CONFIG_GET(flag/guests_allowed) && IsGuestKey(key))
-		alert(src,"This server doesn't allow guest accounts to play. Please go to https://www.byond.com/ and register for a key.","Guest") // ALLOW(scheduler): the client is deleted next, so the message must block until it's read
+		// world/IsBanned() already refuses guests with this reason; this is the fallback (an admin guest key, OVERRIDE_BAN_SYSTEM).
+		// The chat panel is not loaded yet in New(), so the line goes straight to the skin's output, then the client goes.
+		src << "This server doesn't allow guest accounts to play. Please go to https://www.byond.com/ and register for a key."
 		del(src) // ALLOW(scheduler): client: disconnects the client
 		return
 
