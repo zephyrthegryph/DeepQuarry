@@ -27,7 +27,7 @@ fn with_admission_checkpoint<T>(
         checkpoint,
     );
     let admission = if bounded_static_lookup_checkpoints {
-        admission.with_bounded_static_lookup_checkpoints()
+        admission.with_bounded_static_lookup_checkpoints().with_bounded_physical_scan_checkpoints()
     } else {
         admission
     };

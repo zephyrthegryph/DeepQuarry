@@ -59,6 +59,7 @@ pub struct SettingAdmission<'op> {
     stack_used: std::cell::Cell<usize>,
     stack_allowance: usize,
     bounded_static_lookup_checkpoints: bool,
+    bounded_physical_scan_checkpoints: bool,
 }
 impl<'op> SettingAdmission<'op> {
     /// Debug trace only. The counter can include other live owners on this
@@ -96,6 +97,7 @@ impl<'op> SettingAdmission<'op> {
             stack_used: std::cell::Cell::new(0),
             stack_allowance,
             bounded_static_lookup_checkpoints: false,
+            bounded_physical_scan_checkpoints: false,
         }
     }
     /// Use one cancellation/deadline check for an immutable static-table
@@ -107,8 +109,20 @@ impl<'op> SettingAdmission<'op> {
         self
     }
 
-    pub fn uses_bounded_static_lookup_checkpoints(&self) -> bool {
+    pub(crate) fn uses_bounded_static_lookup_checkpoints(&self) -> bool {
         self.bounded_static_lookup_checkpoints
+    }
+
+    /// Permit short, fixed-width reads of an already-issued immutable byte
+    /// slice between cancellation/deadline polls. Callers with work or fault
+    /// injection at individual checkpoints keep their original cadence.
+    pub fn with_bounded_physical_scan_checkpoints(mut self) -> Self {
+        self.bounded_physical_scan_checkpoints = true;
+        self
+    }
+
+    pub fn uses_bounded_physical_scan_checkpoints(&self) -> bool {
+        self.bounded_physical_scan_checkpoints
     }
 
     /// One evaluator recursion frame on the SAME operation stack/counter.

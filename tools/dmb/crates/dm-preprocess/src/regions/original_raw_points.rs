@@ -112,7 +112,7 @@ impl OriginalRawPointIndex{
  /// this SAME line roster without rescanning or a separate source store.
  pub(super) fn at(&mut self,bytes:&[u8],offset:usize,a:&SettingAdmission<'_>)->io::Result<OriginalRawPoint>{
   if offset<self.bom||offset>bytes.len()||self.indexed>bytes.len(){return Err(io::ErrorKind::InvalidInput.into())}
-  let width = if a.uses_bounded_static_lookup_checkpoints() { MAX_PHYSICAL_SCAN } else { 1 };
+  let width = if a.uses_bounded_physical_scan_checkpoints() { MAX_PHYSICAL_SCAN } else { 1 };
   while self.indexed < offset {
    a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
    let end = offset.min(self.indexed.saturating_add(width));
@@ -151,7 +151,7 @@ impl OriginalRawPointIndex{
    return Ok(self.scanned_line_end)
   }
   let mut end=self.indexed;
-  let width = if a.uses_bounded_static_lookup_checkpoints() { MAX_PHYSICAL_SCAN } else { 1 };
+  let width = if a.uses_bounded_physical_scan_checkpoints() { MAX_PHYSICAL_SCAN } else { 1 };
   while end<bytes.len(){
    poll()?;
    let next = bytes.len().min(end.saturating_add(width));
@@ -181,7 +181,7 @@ impl OriginalRawPointIndex{
      bytes.extend_from_slice(b"\r\n\xc3\xa9\nlast");
      let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
      let ordinary = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
-     let bounded = SettingAdmission::new(&used, 1 << 20, &|| Ok(())).with_bounded_static_lookup_checkpoints();
+     let bounded = SettingAdmission::new(&used, 1 << 20, &|| Ok(())).with_bounded_physical_scan_checkpoints();
      let mut expected = OriginalRawPointIndex::new(&bytes, &ordinary).unwrap();
      let mut actual = OriginalRawPointIndex::new(&bytes, &bounded).unwrap();
      for offset in [3, 4, MAX_PHYSICAL_SCAN + 7, bytes.len(), 3] {
