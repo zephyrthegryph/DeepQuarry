@@ -4,7 +4,7 @@
 //! before allocation and moves its SAME root to final product/Mapping owners.
 use super::{DirectivePlan,IncludeOccurrence,IncludeRegion,OrderedItem,MacroEffect,ExpansionSegment};
 use crate::{SourceAcquisitionLease,InitialEnvironment,macro_expansion::{OriginalMacroRows as Rows, empty_exact as exact_rows}};
-use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace, OriginalMacroAuthor, NarrowOriginalMacroFrame, PendingOriginalSingleton, SingletonTracePool}};
+use super::{original_output_trace::OriginalTraceProjectionKey, original_plan_paths::OriginalPlanPaths, macro_trace_view::{OriginalMacroFrame, OriginalMacroTrace, OriginalMacroAuthor, NarrowOriginalMacroFrame, PendingOriginalSingleton, SingletonTracePool, POOLED_TRACE_MAX_DEPTH}};
 use dm_syntax::{SettingAdmission,SettingRootLease,SharedSettingRetention,Span};
 use std::{io,mem,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
@@ -94,6 +94,7 @@ struct TraceProjectionReservations {
  name_hits:usize,
  total_plan_grants:usize,
  pooled_singletons:usize,
+ pooled_ranges:usize,
 }
 pub(super) struct OriginalPlanOwner{
  plan:DirectivePlan,paths:OriginalPlanPaths,current_region:Option<usize>,failed:bool,
@@ -371,6 +372,7 @@ impl OriginalPlanOwner{
    }
    Ok(())
   })?;
+  let mut pooled_key = None;
   let rows = if depth == 1 {
    match singleton.ok_or(io::ErrorKind::InvalidData)? {
     PendingOriginalSingleton::Narrow(frame) => {
@@ -390,10 +392,23 @@ impl OriginalPlanOwner{
    if narrow_rows.len() != depth { return Err(io::ErrorKind::InvalidData.into()); }
    narrow_rows.reverse();
    debug_assert_eq!(narrow_rows.capacity(), narrow_rows.len());
-   let row_pointer = narrow_rows.as_ptr();
-   let boxed = narrow_rows.into_boxed_slice();
-   debug_assert_eq!(boxed.as_ptr(), row_pointer);
-   OriginalMacroTrace::NarrowShared(Arc::new(boxed))
+   if let Some(slots) = self.singleton_pages.prepare_range_using(&narrow_rows, a)? {
+    // No pooled rows are observable until the last fallible operation has
+    // succeeded. Drop the temporary Vec before releasing its allowance.
+    let mut staged: [Option<NarrowOriginalMacroFrame>; POOLED_TRACE_MAX_DEPTH] =
+     std::array::from_fn(|_| None);
+    for (slot, frame) in staged.iter_mut().zip(narrow_rows) { *slot = Some(frame); }
+    a.shrink(&mut self.credit, TRACE_BOX_WRAPPER + scaled(depth, mem::size_of::<NarrowOriginalMacroFrame>())?)
+     .map_err(|error| a.take_operational_error().unwrap_or(error))?;
+    pooled_key = Some(actual.projection_key_using(a)?);
+    let frames = staged.into_iter().take(depth).map(|row| row.expect("prepared pooled frame"));
+    self.singleton_pages.append_range(frames, slots)
+   } else {
+    let row_pointer = narrow_rows.as_ptr();
+    let boxed = narrow_rows.into_boxed_slice();
+    debug_assert_eq!(boxed.as_ptr(), row_pointer);
+    OriginalMacroTrace::NarrowShared(Arc::new(boxed))
+   }
   } else {
    if rows.len() != depth { return Err(io::ErrorKind::InvalidData.into()); }
    rows.reverse();
@@ -405,12 +420,17 @@ impl OriginalPlanOwner{
    OriginalMacroTrace::Shared(Arc::new(boxed))
   };
   #[cfg(debug_assertions)]
-  let (row_count,row_bytes,wide_singleton,pooled)=(rows.len(),rows.frame_storage_bytes(),matches!(&rows,OriginalMacroTrace::Single(_)),matches!(&rows,OriginalMacroTrace::PooledSingleton{..}));
-  self.last_trace = Some(LastTraceProjection { key: actual.projection_key_using(a)?, rows });
+  let (row_count,row_bytes,wide_singleton,pooled,pooled_range)=(rows.len(),rows.frame_storage_bytes(),matches!(&rows,OriginalMacroTrace::Single(_)),matches!(&rows,OriginalMacroTrace::PooledSingleton{..}),matches!(&rows,OriginalMacroTrace::PooledRange{..}));
+  let key = match pooled_key {
+   Some(key) => key,
+   None => actual.projection_key_using(a)?,
+  };
+  self.last_trace = Some(LastTraceProjection { key, rows });
   #[cfg(debug_assertions)]
   if let Some(trace)=&mut self.trace_projection {
    trace.projections=trace.projections.saturating_add(1);
    trace.pooled_singletons+=usize::from(pooled);
+   trace.pooled_ranges+=usize::from(pooled_range);
    trace.singleton_projections=trace.singleton_projections.saturating_add(usize::from(depth==1));
    trace.rows=trace.rows.saturating_add(row_count);
    trace.wide_singleton_projections=trace.wide_singleton_projections.saturating_add(usize::from(wide_singleton));
@@ -531,9 +551,19 @@ mod trace_storage_tests {
                 assert!(std::ptr::eq(alias, rows.frame(ordinal).unwrap().author.name()));
             }
         }
-        assert!(matches!(rows, OriginalMacroTrace::NarrowShared(_)));
-        let expected = TRACE_BOX_WRAPPER + names.len() * mem::size_of::<NarrowOriginalMacroFrame>();
-        assert_eq!(plan.credit.bytes() - before, expected);
+        assert!(matches!(rows, OriginalMacroTrace::PooledRange { .. }));
+        let view = super::super::MacroTraceView::original(&rows);
+        assert!(view.pooled_backing().is_some());
+        assert!(view.same_owner(view.to_owned().view()));
+        assert_eq!(plan.credit.bytes(), before, "staged narrow allocation was refunded");
+
+        let mut deep = actual.clone();
+        for depth in names.len() + 1..=POOLED_TRACE_MAX_DEPTH + 1 {
+            deep = deep.pushed_using("DEEP", origin, depth, None, &a).unwrap();
+        }
+        let deep_rows = plan.trace_using(&deep, &mut driver, &NoSource, &a).unwrap();
+        assert!(matches!(deep_rows, OriginalMacroTrace::NarrowShared(_)));
+        assert_eq!(deep_rows.len(), POOLED_TRACE_MAX_DEPTH + 1);
         #[cfg(target_pointer_width = "64")]
         {
             let wide_origin = OriginalMacroOrigin {
@@ -554,9 +584,11 @@ mod trace_storage_tests {
         let previous = plan.credit.bytes();
         let next = plan.trace_using(&other, &mut driver, &NoSource, &a).unwrap();
         assert!(super::super::MacroTraceView::original(&next).get(0).unwrap().replacement_chain.is_empty());
-        assert_eq!(plan.credit.bytes() - previous,
-            TRACE_ARC_HEADER + super::super::MacroTraceView::original(&next).buffers()[0].1);
-        drop((rows, next, other, actual, driver, plan));
+        let next_view = super::super::MacroTraceView::original(&next);
+        assert_eq!(plan.credit.bytes(), previous);
+        assert_eq!(next_view.pooled_backing(), view.pooled_backing());
+        assert!(!next_view.same_owner(view));
+        drop((rows, next, other, deep_rows, deep, actual, driver, plan));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 

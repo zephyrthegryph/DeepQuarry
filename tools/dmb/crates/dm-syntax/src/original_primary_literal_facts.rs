@@ -607,7 +607,7 @@ impl LiteralPage {
     ) -> io::Result<Option<(usize, usize, usize, usize)>> {
         #[cfg(debug_assertions)]
         if let Some(attempt) = _attempt.as_deref_mut() { attempt.compact_pages += 1; }
-        if self.body.iter().all(|word| *word == 0) {
+        if !delivered && self.body.iter().all(|word| *word == 0) {
             return Ok(None);
         }
         if delivered {
@@ -670,18 +670,23 @@ impl LiteralPage {
                 group.duplicates |= group.references & bit != 0;
                 group.references |= bit;
             }
-            if self.body[index / 64] & (1 << (index % 64)) == 0 { continue; }
+            let body = self.body[index / 64] & (1 << (index % 64)) != 0;
+            if !body && (!delivered || group.bank_references != 1) { continue; }
             let data = compact.owners[bank].at(ordinal as usize);
             if let Some((descriptor, bytes)) = data.projection_candidate() {
                 let span = self.span_at(index).ok_or(io::ErrorKind::InvalidData)?;
-                if data.raw()? != source.get(span.range()).ok_or(io::ErrorKind::InvalidData)? {
-                    return Err(io::ErrorKind::InvalidData.into());
+                if source.get(span.range()) != Some(data.raw()?) {
+                    if body { return Err(io::ErrorKind::InvalidData.into()); }
+                    continue;
                 }
                 candidates[index] = Some(descriptor);
                 group.singleton = Some(index as u8);
                 group.owner_bytes = bytes;
                 continue;
             }
+            // At EOF non-body rows can retire only a sole singleton owner.
+            // Packed banks and any escaped aliases keep their existing identity.
+            if !body { continue; }
             #[cfg(debug_assertions)]
             if let Some(attempt) = _attempt.as_deref_mut() {
                 if let Some(bytes) = data.trace_shared_singleton_projection() {
@@ -823,8 +828,8 @@ impl LiteralPage {
         Ok(Some((count, released, old_bytes, compact.credit.bytes())))
     }
 
-    /// Retry unique compact banks after their producer-side aliases have died.
-    /// Already projected descriptors retain their indices.
+    /// Retry body banks after producer-side aliases have died, and settle
+    /// exact unique non-body singletons. Existing descriptor indices stay fixed.
     fn settle_delivered_compact(&mut self, source: &str, a: &crate::SettingAdmission<'_>) -> io::Result<usize> {
         let Some((_, released, old, new)) = self.settle_compact_projection(source, a, None, true)? else {
             return Ok(0);
@@ -2462,7 +2467,7 @@ mod literal_page_controls {
  }
 
  #[test]
- fn delivered_body_singletons_keep_existing_descriptor_identity_and_funded_survivors() {
+ fn delivered_non_body_singletons_keep_existing_descriptor_identity_and_funded_survivors() {
     struct Output;
     impl crate::OriginalLiteralOutputOwner for Output {
         fn as_any(&self) -> &dyn std::any::Any { self }
@@ -2499,7 +2504,7 @@ mod literal_page_controls {
         source.push_str("0\n");
         page.push((Span::new(start, start + 1), filler.clone()), &a).unwrap();
     }
-    page.body[0] = 3;
+    page.body[0] = 1;
     assert_eq!(page.settle_compact_body_projection(&source, &a).unwrap().unwrap().0, 1);
     assert_eq!(page.settle_delivered_compact(&source, &a).unwrap(), 0, "live alias blocks reuse");
     let loan = ProjectionLoan { source: &source, origin: 0 };
@@ -2514,6 +2519,12 @@ mod literal_page_controls {
     let failing = crate::SettingAdmission::new(&used, 8 << 20, &|| Err(io::Error::from_raw_os_error(1450)));
     assert_eq!(page.settle_delivered_compact(&source, &failing).unwrap_err().raw_os_error(), Some(1450));
     assert_eq!(used.load(Ordering::Acquire), before);
+
+    let mut mismatched = source.clone();
+    mismatched.replace_range(7..13, "111111");
+    assert_eq!(page.settle_delivered_compact(&mismatched, &a).unwrap(), 0);
+    assert_eq!(used.load(Ordering::Acquire), before);
+    assert_eq!(page.get(1).unwrap().1.raw().unwrap(), "654321");
 
     let saved = deferred_payload - mem::size_of::<ProjectedLiteral>();
     assert_eq!(page.settle_delivered_compact(&source, &a).unwrap(), saved);
