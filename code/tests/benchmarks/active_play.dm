@@ -235,6 +235,43 @@
 	GLOB.op_resolver_legacy = FALSE
 	metric("ap_melee_legacy_us_per_hit", legacy_hits ? legacy_hit_ms * 1000 / legacy_hits : 0, "us")
 
+	// Clicks of play, end to end through op_resolve_click() (what the inbox runs for a player's click): an examine (shift-click), the held toolbox
+	// used on a crewmate in help stance, the toolbox on the floor, and an empty-handed help click on the crewmate.
+	var/list/click_ms = list("examine" = 0, "item_on_mob" = 0, "item_on_floor" = 0, "hand_on_mob" = 0)
+	var/click_rounds = 0
+	begin_window()
+	for(var/n in 1 to param("click_rounds", 5))
+		for(var/i in 1 to length(crew) step 2)
+			var/mob/living/carbon/human/A = crew[i]
+			var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+			var/obj/item/T = A.get_active_hand()
+			if(!T || A == B)
+				continue
+			A.set_use_stance(I_HELP)
+			STATE_SET(A, cooldowns, next_click, 0)
+			var/stamp = TICK_USAGE_REAL
+			op_resolve_click(A, B, T, GESTURE_SHIFT, ORIGIN_CLICK, TRUE, TRUE)
+			var/t1 = TICK_USAGE_REAL
+			STATE_SET(A, cooldowns, next_click, 0)
+			op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+			var/t2 = TICK_USAGE_REAL
+			STATE_SET(A, cooldowns, next_click, 0)
+			op_resolve_click(A, get_turf(A), T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+			var/t3 = TICK_USAGE_REAL
+			STATE_SET(A, cooldowns, next_click, 0)
+			op_resolve_click(B, A, null, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+			var/t4 = TICK_USAGE_REAL
+			click_ms["examine"] += TICK_DELTA_TO_MS(t1 - stamp)
+			click_ms["item_on_mob"] += TICK_DELTA_TO_MS(t2 - t1)
+			click_ms["item_on_floor"] += TICK_DELTA_TO_MS(t3 - t2)
+			click_ms["hand_on_mob"] += TICK_DELTA_TO_MS(t4 - t3)
+			click_rounds++
+			A.set_use_stance(I_HURT)
+		stoplag()
+	end_window("ap_clicks")
+	for(var/kind in click_ms)
+		metric("ap_click_[kind]_us", click_rounds ? click_ms[kind] * 1000 / click_rounds : 0, "us")
+
 	// Menu read: the right-click menu of a crewmate (what the interaction menu's window data computes), with the menu cache cold (a state
 	// change of the target since the last read) and warm (read again at once).
 	var/menu_reads = 0
