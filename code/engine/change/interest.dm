@@ -230,7 +230,8 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	if(covered)
 		covered += owed
 		log_world("INTEREST: [length(keys)] chunk(s) visible behind [owner]'s cover, [length(owed)] owed draw(s) queued nearest first")
-		interest_arrival_drain()
+		// The cover hides the rest: the tick the view jumps in draws only the nearest few, the following ticks draw the rest as they have room.
+		interest_arrival_drain(INTEREST_ARRIVAL_MIN_STEP)
 		return
 	var/drawn = 0
 	for(var/handle in owed)
@@ -310,7 +311,8 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 
 /// One pass over the queues: every covered observer's owed draws first (its screen is black until they are done), then the prefetch, as the tick allows.
 /// A covered observer whose queue empties is uncovered. The pass re-arms itself for the next tick only while something is left. Returns how many it drew.
-/proc/interest_arrival_drain()
+/// `cap`: the most it draws this pass (0: the tick's budget decides).
+/proc/interest_arrival_drain(cap = 0)
 	. = 0
 	var/budget_hit = FALSE
 	for(var/owner in GLOB.interest_covered)
@@ -323,7 +325,7 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 				var/drawn = interest_draw_now(A)
 				. += drawn
 				GLOB.interest_cover_drawn += drawn
-			if(interest_arrival_pass_full(.))
+			if(interest_arrival_pass_full(., cap))
 				budget_hit = TRUE
 				break
 		Q.Cut(1, i + 1)
@@ -341,14 +343,16 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 				var/drawn = interest_draw_now(A)
 				. += drawn
 				GLOB.interest_prefetch_drawn += drawn
-			if(interest_arrival_pass_full(.))
+			if(interest_arrival_pass_full(., cap))
 				break
 		P.Cut(1, j + 1)
 	if(length(GLOB.interest_covered) || length(GLOB.interest_prefetched))
 		interest_drain_soon()
 
 /// Has a drain pass that ran `drawn` draws used its share of the tick?
-/proc/interest_arrival_pass_full(drawn)
+/proc/interest_arrival_pass_full(drawn, cap = 0)
+	if(cap && drawn >= cap)
+		return TRUE
 	if(GLOB.interest_arrival_step_max)
 		return drawn >= GLOB.interest_arrival_step_max
 	return drawn >= INTEREST_ARRIVAL_MIN_STEP && KERNEL_OVER_BUDGET

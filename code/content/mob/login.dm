@@ -107,13 +107,15 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	login_ms["ao, status, keybindings"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
 	login_step = TICK_USAGE_REAL
 
-	if(!client.tooltips)
-		rel_set(client, nameof(client.tooltips), new /datum/tooltip(client))
 
 	var/turf/T = get_turf(src)
 	if(isturf(T))
 		update_client_z(T.z)
+	login_ms["client z"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 	SSproximity.eye_update(client)
+	login_ms["proximity eye"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_step = TICK_USAGE_REAL
 
 	if(dq_get_cloaked(src) && dq_get_cloaked_selfimage(src))
 		client_images_add(client, dq_get_cloaked_selfimage(src))
@@ -121,12 +123,16 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 	if(client)
 		for(var/datum/action/A as anything in persistent_client.player_actions)
 			A.Grant(src)
+		login_ms["player actions"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+		login_step = TICK_USAGE_REAL
 		sync_op_abilities()
 		abilities_changed()
+		login_ms["abilities"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+		login_step = TICK_USAGE_REAL
 
 		for(var/datum/callback/CB as anything in persistent_client.post_login_callbacks)
 			CB.Invoke()
-	login_ms["tooltips, z, proximity, actions, abilities, callbacks"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
+	login_ms["post-login callbacks"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - login_step)
 	login_step = TICK_USAGE_REAL
 
 	log_mob_tag(src, "TAG: [tag] NEW OWNER: [key_name(src)]")

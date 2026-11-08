@@ -184,8 +184,11 @@ CAPABILITIES(/datum/tooltip)
 //Theme is a CSS class in Tooltip.tsx, by default this wrapper chooses a CSS class based on the user's UI_style (Midnight, Plasmafire, Retro, etc)
 //Includes sanity checks
 /proc/openToolTip(mob/user = null, atom/movable/tip_src = null, params = null, title = "", content = "", theme = "")
-	if(!istype(user) || !user.client?.tooltips)
+	if(!istype(user) || !user.client)
 		return
+	// Made on the first tooltip, not at login: the window it opens is nothing the first frame needs (JOIN_TIMING_LOGIN).
+	if(!user.client.tooltips)
+		rel_set(user.client, nameof(user.client.tooltips), new /datum/tooltip(user.client))
 	var/ui_style = GLOB.all_tooltip_styles[1]
 	if(!theme && ui_style)
 		theme = lowertext(ui_style)
