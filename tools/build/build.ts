@@ -3714,13 +3714,23 @@ const tguiBundleComplete = (): boolean => {
   return true;
 };
 
+const TGUI_OUTPUTS = [
+  'tgui/public/tgui.bundle.css',
+  'tgui/public/tgui.bundle.js',
+  'tgui/public/tgui-panel.bundle.css',
+  'tgui/public/tgui-panel.bundle.js',
+  'tgui/public/tgui-chunk-manifest.json',
+  'tgui/public/tgui-window-manifest.json',
+];
+const TGUI_BUILD_KEY = 'tgui/public/.dq-build-key';
+// The bundle's sources: the config, the manifests and everything under tgui/packages except node_modules (the generated interface
+// types are ignored files there and are keyed by stat).
+const tguiSourceKey = () =>
+  gitTreeKey(process.cwd(), 'tgui-build', ['tgui/rspack.config.ts', 'tgui/package.json', 'tgui/bun.lock', 'tgui/packages', ':(exclude,glob)**/node_modules/**']);
 export const TguiTarget = new Juke.Target({
   dependsOn: [BunTarget, BiomeInstallTarget],
-  inputs: [
-    'tgui/rspack.config.ts',
-    'tgui/**/package.json',
-    'tgui/packages/**/*.+(js|cjs|ts|tsx|jsx|scss|svg)',
-  ],
+  // No Juke `inputs`: an mtime glob over tgui/packages rebuilt after every `git switch` (new mtimes, same content) and walked the tree
+  // synchronously. onlyWhen compares a content key of the sources (lib/tree_key.ts) with the one the last complete build recorded.
   outputs: [
     'tgui/public/tgui.bundle.css',
     'tgui/public/tgui.bundle.js',
@@ -3739,7 +3749,7 @@ export const TguiTarget = new Juke.Target({
   // the manifest references is missing/empty), drop the tracked entry bundles so the
   // mtime check treats the outputs as missing and forces a fresh rebuild — otherwise
   // a half-written bundle is skipped indefinitely and serves broken UI.
-  onlyWhen: () => {
+  onlyWhen: async () => {
     if (!tguiBundleComplete()) {
       for (const f of TGUI_ENTRY_BUNDLES) {
         try {
@@ -3748,6 +3758,14 @@ export const TguiTarget = new Juke.Target({
           /* already gone */
         }
       }
+      return true;
+    }
+    if (TGUI_OUTPUTS.some((f) => !fs.existsSync(f))) return true;
+    const key = await tguiSourceKey();
+    try {
+      if (key && fs.readFileSync(TGUI_BUILD_KEY, 'utf-8').trim() === key) return false;
+    } catch {
+      // no key yet: build once and record it
     }
     return true;
   },
@@ -3763,6 +3781,8 @@ export const TguiTarget = new Juke.Target({
           + 'tgui/public/*.{bundle,chunk}.* and rebuild.',
       );
     }
+    const key = await tguiSourceKey();
+    if (key) fs.writeFileSync(TGUI_BUILD_KEY, key);
   },
 });
 
