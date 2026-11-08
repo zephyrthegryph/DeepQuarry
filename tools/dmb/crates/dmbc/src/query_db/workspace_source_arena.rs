@@ -366,6 +366,21 @@ impl QueryDb{
  }
 }
 impl QueryDb {
+ /// Compute an accounting subtotal while the same source family is held.
+ /// The callback is a storage walk only. No provider or query reentrancy.
+ pub(crate) fn with_funded_origin_policy_pages<T>(&self, walk: impl FnOnce(&mut dyn FnMut(&dyn std::any::Any) -> bool) -> io::Result<T>) -> io::Result<T> {
+  self.checkpoint()?;
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
+  let ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
+  let expected=self.body_charge.shared_reservation();
+  walk(&mut |owner| {
+   let Some(credit)=dm_preprocess::regions::physical_original_token_page_credit(owner) else{return false;};
+   let Ok(actual)=allocation(self,credit) else{return false;};
+   actual.origin_parent.as_ref().zip(expected).is_some_and(|(actual,expected)|Arc::ptr_eq(actual,expected))
+       && ledger.has_source_arena(actual)
+  })
+ }
+
  fn reserve_source_arena(&self,bytes:usize,origin:bool)->io::Result<SourceArenaCredit>{
   self.checkpoint()?;let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
   let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());

@@ -32,6 +32,7 @@ pub(crate) struct CapturedPolicyInputs {
     semantic_sources: Arc<crate::input_snapshot::SemanticSourceEvidence>,
     source_aliases: BTreeMap<PathBuf, Arc<crate::input_snapshot::AcquiredSourceAlias>>,
     policy: PolicyInputs,
+    joined_header_charge: Option<Arc<Vec<usize>>>,
     facts: InputSnapshot,
     missing: Vec<PathBuf>,
     explicit_search_folders: Vec<PathBuf>,
@@ -47,6 +48,75 @@ pub(crate) struct CapturedPolicyInputs {
 /// storage payload charge deduplicates immutable owners by identity, never by
 /// equal bytes. Metadata remains a conservative admission estimate.
 pub(crate) const MAX_POLICY_CAPTURE_CHARGE: usize = 64 * 1024 * 1024;
+/// Exact immutable-header subtotal, issued for the joined archive only.
+pub(crate) struct JoinedHeaderCharge {
+    archive: Arc<dm_tree::frontend::BodyArchive>,
+    loans: Arc<Vec<usize>>,
+}
+impl JoinedHeaderCharge {
+    pub(crate) fn capture(
+        frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+        queries: &crate::query_db::QueryDb,
+    ) -> io::Result<Self> {
+        use dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete;
+        let archive = frontend.archive();
+        if frontend.preparation_purpose() != OriginalSharedComplete || !archive.uses_body_queries(queries) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined header charge requires the exact complete Original archive and QueryDb"));
+        }
+        #[cfg(debug_assertions)]
+        let trace = std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some();
+        #[cfg(debug_assertions)]
+        let (mut excluded, mut excluded_result) = (owner_charge::Owners::default(), Ok(()));
+        let mut loans = queries.with_funded_origin_policy_pages(|funded| {
+            let mut loans = Vec::new();
+            let mut visited = 0usize;
+            archive.try_visit_original_header_token_backing_owners(|owner| {
+                if visited % 64 == 0 {
+                    crate::daemon::control::checkpoint()?;
+                }
+                visited += 1;
+                if funded(owner) {
+                    loans.try_reserve(1).map_err(io::Error::other)?;
+                    loans.push(origin_loan_address(owner));
+                    #[cfg(debug_assertions)]
+                    if trace {
+                        dm_preprocess::regions::visit_physical_original_token_page_storage(owner, &mut |address, _, capacity| {
+                            if excluded_result.is_ok() {
+                                excluded_result = excluded.original_header_storage(address, capacity);
+                            }
+                        });
+                    }
+                }
+                Ok(())
+            })?;
+            crate::daemon::control::checkpoint()?;
+            Ok(loans)
+        })?;
+        loans.sort_unstable();
+        loans.dedup();
+        #[cfg(debug_assertions)]
+        if trace {
+            let excluded = excluded_result.and_then(|_| excluded.totals().charge());
+            eprintln!("ORIGINAL_POLICY_HEADER_BACKINGS excluded_source_ledger={excluded:?} loans={}", loans.len());
+        }
+        let loans = Arc::new(loans);
+        Ok(Self { archive: Arc::clone(archive), loans })
+    }
+
+    fn require(&self, policy: &PolicyInputs) -> io::Result<Arc<Vec<usize>>> {
+        if !Arc::ptr_eq(&self.archive, policy.archive()) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined header charge belongs to another archive"));
+        }
+        Ok(Arc::clone(&self.loans))
+    }
+}
+
+/// Allocation identity for the exact Box retained by this immutable archive,
+/// not a stable key and never exchanged between archive instances.
+fn origin_loan_address(owner: &dyn std::any::Any) -> usize {
+    std::ptr::from_ref(owner).cast::<()>() as usize
+}
+
 impl CapturedPolicyInputs {
     pub(crate) fn original_analysis_subject(&self)->Option<&Arc<crate::input_snapshot::OriginalAnalysisSubject>>{self.analysis_subject.as_ref()}
     pub(crate) fn untyped_manifest(
@@ -431,18 +501,24 @@ impl CapturedPolicyInputs {
     }
     fn budget_charge_base(&self) -> usize {
         let mut owners = owner_charge::Owners::default();
-        let mut charge = 4096usize.saturating_add(self.analysis_subject.as_ref().map_or(0,|subject|subject.charge()));
-        let mut header_charge = Ok(());
-        self.policy
-            .archive()
-            .visit_original_header_storage(|address, _, capacity| {
-                if header_charge.is_ok() {
-                    header_charge = owners.original_header_storage(address, capacity);
+        let subject = self.analysis_subject.as_ref().map_or(0, |subject| subject.charge());
+        let mut header_owners = owner_charge::Owners::default();
+        let mut header_result = Ok(());
+        self.policy.archive().visit_original_header_storage_with_backing_filter(
+            |address, _, capacity| {
+                if header_result.is_ok() {
+                    header_result = header_owners.original_header_storage(address, capacity);
                 }
-            });
-        if header_charge.is_err() {
-            return usize::MAX;
-        }
+            },
+            &mut |owner| self.joined_header_charge.as_ref()
+                .is_some_and(|loans| loans.binary_search(&origin_loan_address(owner)).is_ok()),
+        );
+        let header = header_result.and_then(|_| header_owners.totals().charge()).unwrap_or(usize::MAX);
+        let roster = self.joined_header_charge.as_ref().map_or(0, |loans| {
+            loans.capacity().saturating_mul(std::mem::size_of::<usize>())
+                .saturating_add(std::mem::size_of::<Vec<usize>>() + 2 * std::mem::size_of::<usize>())
+        });
+        let mut charge = 4096usize.saturating_add(subject).saturating_add(header).saturating_add(roster);
         charge = charge.saturating_add(
             self.explicit_search_folders
                 .capacity()
@@ -476,6 +552,8 @@ impl CapturedPolicyInputs {
                 }
             }
         }
+        let _capture_local = charge.saturating_sub(subject).saturating_sub(header);
+        let before_facts = charge;
         self.facts
             .visit_recorded_storage(|files, folders, negative, generated| {
                 for file in files.values() {
@@ -503,6 +581,8 @@ impl CapturedPolicyInputs {
                         .saturating_add(path.as_os_str().as_encoded_bytes().len());
                 }
             });
+        let _facts = charge.saturating_sub(before_facts);
+        let before_aliases = charge;
         for path in &self.missing {
             charge = charge
                 .saturating_add(32)
@@ -514,9 +594,17 @@ impl CapturedPolicyInputs {
                 .saturating_add(path.capacity())
                 .saturating_add(alias.metadata_charge());
         }
-        charge = charge.saturating_add(self.semantic_sources.budget_charge());
-        charge = charge.saturating_add(self.facts.policy_directory_accounting_retained_charge());
-        charge.saturating_add(owners.totals().charge().unwrap_or(usize::MAX))
+        let _aliases = charge.saturating_sub(before_aliases);
+        let evidence = self.semantic_sources.budget_charge();
+        let directories = self.facts.policy_directory_accounting_retained_charge();
+        let owned = owners.totals();
+        let total = charge.saturating_add(evidence).saturating_add(directories)
+            .saturating_add(owned.charge().unwrap_or(usize::MAX));
+        #[cfg(debug_assertions)]
+        if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+            eprintln!("ORIGINAL_POLICY_CAPTURE_STORAGE total={total} header={header} backing_roster={roster} capture_local={_capture_local} facts={_facts} aliases={_aliases} evidence={evidence} directories={directories} subject={subject} owned={owned:?}");
+        }
+        total
     }
 }
 
@@ -538,7 +626,7 @@ pub(crate) fn capture<P: SnapshotProvider>(
         inputs,
         requested,
         search_folders,
-        CompiledViews::AllRaw,
+        CompiledViews::AllRaw, None,
     )
 }
 pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
@@ -546,6 +634,15 @@ pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
     inputs: &RecordingInputs<P>,
     requested: &[RequestedPolicyFile],
     search_folders: &[PathBuf],
+) -> io::Result<CapturedPolicyInputs> {
+    capture_diagnostic_with_joined_headers(frontend, inputs, requested, search_folders, None)
+}
+pub(crate) fn capture_diagnostic_with_joined_headers<P: SnapshotProvider>(
+    frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+    inputs: &RecordingInputs<P>,
+    requested: &[RequestedPolicyFile],
+    search_folders: &[PathBuf],
+    joined: Option<&JoinedHeaderCharge>,
 ) -> io::Result<CapturedPolicyInputs> {
     if frontend.preparation_purpose().is_structural(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers structural source cannot occupy the checker policy capture"))}
     if !frontend.receipt().authenticates(frontend.tree())
@@ -558,7 +655,7 @@ pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
         inputs,
         requested,
         search_folders,
-        CompiledViews::AllRaw,
+        CompiledViews::AllRaw, joined,
     )
 }
 /// Configuration-only child for the genuine workspace generator endpoint.
@@ -568,13 +665,14 @@ pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
 pub(crate) fn capture_workspace_generator<P: SnapshotProvider>(
     frontend: &ColdFrontend, inputs: &RecordingInputs<P>, configuration: &Path,
 ) -> io::Result<CapturedPolicyInputs> {
-    capture_workspace_child(CaptureSource::Compiled(frontend),inputs,configuration)
+    capture_workspace_child(CaptureSource::Compiled(frontend),inputs,configuration,None)
 }
 /// A separately selected semantic child over the genuine diagnostic source owner.
 /// This does not grant a workspace role; the snapshot issuer joins actual intent,
 /// current workspace capture, archive, and configuration before exposing it.
-pub(crate) fn capture_analysis_semantic<P:SnapshotProvider>(
+pub(crate) fn capture_analysis_semantic_with_joined_headers<P:SnapshotProvider>(
     frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,configuration:&Path,
+    joined:Option<&JoinedHeaderCharge>,
 )->io::Result<CapturedPolicyInputs>{
  if frontend.preparation_purpose().is_structural(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers partial source cannot occupy a full workspace semantic/generation child"))}
     if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 || !frontend.receipt().authenticates(frontend.tree()) {return Err(io::Error::new(io::ErrorKind::InvalidInput,"analysis semantic child requires its genuine original owner"))}
@@ -582,7 +680,7 @@ pub(crate) fn capture_analysis_semantic<P:SnapshotProvider>(
     // private binding instead of falling back to a path-spelling approximation.
     let subject=inputs.original_analysis_subject();
     if let Some(subject)=subject{subject.require_bound_mapping(frontend.mapping())?;}
-    let mut capture=capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration)?;
+    let mut capture=capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration,joined)?;
     if let Some(subject)=subject{capture.analysis_subject=Some(Arc::clone(subject));admit_capture_charge(capture.budget_charge())?;}
     Ok(capture)
 }
@@ -594,9 +692,9 @@ pub(crate) fn capture_analysis_generator<P:SnapshotProvider>(frontend:&dm_tree::
  if !frontend.receipt().is_clean(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original generation requires clean actual source declarations"))}
  if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!frontend.original_plan().defines().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation analysis child lacks actual default context"))}
  let subject=inputs.original_analysis_subject().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation requires actual full Analyze subject"))?;subject.require_bound_mapping(frontend.mapping())?;
- let mut capture=capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration)?;capture.analysis_subject=Some(Arc::clone(subject));admit_capture_charge(capture.budget_charge())?;Ok(capture)
+ let mut capture=capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration,None)?;capture.analysis_subject=Some(Arc::clone(subject));admit_capture_charge(capture.budget_charge())?;Ok(capture)
 }
-fn capture_workspace_child<P:SnapshotProvider>(source:CaptureSource<'_,'_>,inputs:&RecordingInputs<P>,configuration:&Path)->io::Result<CapturedPolicyInputs>{
+fn capture_workspace_child<P:SnapshotProvider>(source:CaptureSource<'_,'_>,inputs:&RecordingInputs<P>,configuration:&Path,joined:Option<&JoinedHeaderCharge>)->io::Result<CapturedPolicyInputs>{
     let intent = crate::policy_request::PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![crate::policy_request::PolicyInputFile {
@@ -607,7 +705,7 @@ fn capture_workspace_child<P:SnapshotProvider>(source:CaptureSource<'_,'_>,input
         search_folders: Vec::new(),
     }.admit()?;
     capture_source(source, inputs,
-        &intent.capture_files(), &[], CompiledViews::GeneratorManifest)?
+        &intent.capture_files(), &[], CompiledViews::GeneratorManifest, joined)?
         .bind_request(&intent)
 }
 #[derive(Clone, Copy)]
@@ -656,6 +754,7 @@ fn capture_source<P: SnapshotProvider>(
     requested: &[RequestedPolicyFile],
     search_folders: &[PathBuf],
     compiled_views: CompiledViews,
+    joined: Option<&JoinedHeaderCharge>,
 ) -> io::Result<CapturedPolicyInputs> {
     let original = match &frontend {
         CaptureSource::Diagnostic(view) if view.original_plan().is_original_diagnostic() => Some(*view),
@@ -878,6 +977,7 @@ fn capture_source<P: SnapshotProvider>(
     let captured = CapturedPolicyInputs {
         analysis_subject:None,
         semantic_sources: frontend.evidence(inputs)?,
+        joined_header_charge: joined.map(|proof| proof.require(&policy)).transpose()?,
         source_aliases,
         policy,
         facts,

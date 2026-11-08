@@ -1108,7 +1108,10 @@ impl OriginalProcedureHeaders {
     pub(crate) fn same_source(&self, source: &SourceText) -> bool {
         self.source.same_view(source)
     }
-    pub(crate) fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+    pub(crate) fn visit_storage(&self, visit: impl FnMut(usize, usize, usize)) {
+        self.visit_storage_with_backing_filter(visit, &mut |_| false);
+    }
+    pub(crate) fn visit_storage_with_backing_filter(&self, mut visit: impl FnMut(usize, usize, usize), skip:&mut dyn FnMut(&dyn std::any::Any)->bool) {
         if let Some(HeaderLiteralSourceHold(Some(facts)))=self.original_literal_source.get(){facts.visit_storage(&mut visit);}
         if let Some(roots)=self.demanded_defaults.get(){roots.visit_storage(&mut visit);}
         if let Some((notices,_))=self.formal_notices.get(){notices.visit_storage(&mut visit);}
@@ -1138,7 +1141,7 @@ impl OriginalProcedureHeaders {
             std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>(),
             std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>(),
         );
-        self.tokens.visit_storage(&mut visit);
+        self.tokens.visit_storage_with_backing_filter(&mut visit, skip);
         for (p, n, c, size) in [
             (
                 self.headers.as_ptr() as usize,

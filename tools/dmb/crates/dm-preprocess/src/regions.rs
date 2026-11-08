@@ -447,6 +447,11 @@ mod original_trace_frames;
 mod original_conditional_pump;
 mod original_condition_tokens;
 mod origin_raw_rows;
+#[doc(hidden)]
+pub use origin_raw_rows::physical_original_token_page_credit;
+#[cfg(debug_assertions)]
+#[doc(hidden)]
+pub use origin_raw_rows::visit_physical_original_token_page_storage;
 
 mod original_output_trace;
 

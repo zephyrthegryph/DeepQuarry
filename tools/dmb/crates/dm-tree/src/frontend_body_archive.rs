@@ -1040,12 +1040,32 @@ impl BodyArchive {
     }
     /// Borrow only the newly retained original header input metadata. Current
     /// archive/source/tree authority and source bytes remain their existing owners.
-    pub fn visit_original_header_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+    pub fn visit_original_header_storage(&self, visit: impl FnMut(usize, usize, usize)) {
+        self.visit_original_header_storage_with_backing_filter(visit, &mut |_| false);
+    }
+
+    /// Policy accounting only. Full heap/storage visitors use the ordinary walk.
+    #[doc(hidden)]
+    pub fn visit_original_header_storage_with_backing_filter(&self, mut visit: impl FnMut(usize, usize, usize), skip:&mut dyn FnMut(&dyn std::any::Any)->bool) {
         for chunk in self.syntax.chunks().iter() {
             chunk
                 .shared_relative()
-                .visit_original_header_storage(&mut visit);
+                .visit_original_header_storage_with_backing_filter(&mut visit, skip);
         }
+    }
+    /// Resource-only walk of token loan owners, excluding every other header
+    /// allocation. The archive retains each owner throughout this callback.
+    #[doc(hidden)]
+    pub fn try_visit_original_header_token_backing_owners(
+        &self,
+        mut visit: impl FnMut(&dyn std::any::Any) -> std::io::Result<()>,
+    ) -> std::io::Result<()> {
+        for chunk in self.syntax.chunks().iter() {
+            if let Some(tokens) = chunk.shared_relative().original_shared_span_tokens() {
+                tokens.try_visit_backing_owners(&mut visit)?;
+            }
+        }
+        Ok(())
     }
     pub fn binding_storage(&self) -> (&Arc<CallableRoster>, &Arc<HashMap<OccurrenceId, usize>>) {
         (&self.callables, &self.body_indices)

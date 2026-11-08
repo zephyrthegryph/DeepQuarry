@@ -2013,6 +2013,20 @@ impl PhysicalOriginPageOwner {
     }
 }
 
+/// A resource-only view of the exact private producer page in a token loan.
+#[doc(hidden)]
+pub fn physical_original_token_page_credit(owner: &dyn std::any::Any) -> Option<&SourceArenaCredit> {
+    Some(&owner.downcast_ref::<PhysicalOriginPageOwner>()?.get().credit)
+}
+
+#[cfg(debug_assertions)]
+#[doc(hidden)]
+pub fn visit_physical_original_token_page_storage(owner: &dyn std::any::Any, visit: &mut dyn FnMut(usize, usize, usize)) {
+    if let Some(owner) = owner.downcast_ref::<PhysicalOriginPageOwner>() {
+        dm_syntax::OriginalTokenPageData::visit_storage(owner, visit);
+    }
+}
+
 impl dm_syntax::OriginalTokenPageData for PhysicalOriginPageOwner {
     fn get(&self, ordinal: usize) -> Option<dm_syntax::SpanToken> {
         self.get().projected_token(ordinal)

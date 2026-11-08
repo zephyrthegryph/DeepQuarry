@@ -8,7 +8,7 @@ pub const ORIGINAL_TOKEN_PAGE_ROWS: usize = 4096;
 /// Read-only DATA. Implementations must keep the same geometry/owner for
 /// every advertised row. The real producer authenticates its own source,
 /// delivery, epoch and owner before providing a loan to the primary.
-pub trait OriginalTokenPageData: Send + Sync {
+pub trait OriginalTokenPageData: Send + Sync + std::any::Any {
     fn get(&self, ordinal: usize) -> Option<SpanToken>;
     fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize, usize));
 }
@@ -23,10 +23,10 @@ impl OriginalTokenPageLoan {
         Ok(Self { owner: Box::new(owner), credit })
     }
 
-    fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize, usize)) {
+    fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize, usize), skip: &mut dyn FnMut(&dyn std::any::Any) -> bool) {
         let bytes = mem::size_of_val(self.owner.as_ref());
         if bytes != 0 { visit(self.owner.as_ref() as *const _ as *const () as usize, bytes, bytes); }
-        self.owner.visit_storage(visit);
+        if !skip(self.owner.as_ref()) { self.owner.visit_storage(visit); }
     }
 }
 
@@ -131,12 +131,22 @@ impl LoanedTokenPages {
         Ok(())
     }
 
-    pub(crate) fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize, usize)) {
+    pub(crate) fn try_visit_backing_owners(
+        &self,
+        visit: &mut dyn FnMut(&dyn std::any::Any) -> io::Result<()>,
+    ) -> io::Result<()> {
+        for page in &self.pages {
+            visit(page.owner.as_ref())?;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize, usize), skip: &mut dyn FnMut(&dyn std::any::Any) -> bool) {
         let width = mem::size_of::<OriginalTokenPageLoan>();
         if self.pages.capacity() != 0 {
             visit(self.pages.as_ptr() as usize, self.pages.len() * width, self.pages.capacity() * width);
         }
-        for page in &self.pages { page.visit_storage(visit); }
+        for page in &self.pages { page.visit_storage(visit, skip); }
         if let Some(tail) = &self.tail { tail.visit_storage(visit); }
     }
 

@@ -919,3 +919,57 @@ fn untyped_manifest_mutated_private_negative_map_cannot_override_positive_fact()
     c.missing.push(path);
     assert!(c.untyped_manifest(&root).is_err());
 }
+
+
+#[test]
+fn joined_header_charge_excludes_only_actual_current_native_origin_loan_pages() {
+    use dm_tree::frontend::{
+        BodySyntaxQueries, FrontendConfig, SettingExpressionQueries,
+        build_for_original_compound_with_callable_anchors_checked,
+    };
+    let root = crate::test_scratch::dir("joined-origin-page-charge");
+    let project = root.join("project.dme");
+    let text = "/proc/probe()\n".to_owned() + &"    return 1\n".repeat(2500);
+    std::fs::write(&project, text).unwrap();
+    let inputs = RecordingInputs::new(crate::input_snapshot::FileSystemInputs, 0)
+        .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+    let provider = inputs.original_batch_view(None);
+    let queries = Arc::new(crate::query_db::QueryDb::default());
+    let host = Arc::clone(&queries) as Arc<dyn SettingExpressionQueries>;
+    let seed = dm_tree::checker_builtins::original_analysis_seed().unwrap();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let frontend = build_for_original_compound_with_callable_anchors_checked(
+        &project, &provider, &BTreeMap::new(),
+        FrontendConfig { workers: 1, engine: Some(seed.frontend_seed()), observer: None },
+        None, &executor, None, &host, None,
+    ).unwrap().with_body_queries(Arc::clone(&queries) as Arc<dyn BodySyntaxQueries>).unwrap();
+    let view = frontend.source_view().unwrap();
+    let archive = view.archive();
+    let full = |db: &crate::query_db::QueryDb| db.with_funded_origin_policy_pages(|funded| {
+        assert!(!funded(&()), "synthetic owner cannot claim backing exclusion");
+        let mut owners = owner_charge::Owners::default();
+        let mut skipped = 0usize;
+        archive.visit_original_header_storage_with_backing_filter(
+            |address, _, capacity| owners.original_header_storage(address, capacity).unwrap(),
+            &mut |owner| {
+                let excluded = funded(owner);
+                skipped += usize::from(excluded);
+                excluded
+            },
+        );
+        Ok((owners.totals().charge()?, skipped))
+    }).unwrap();
+    let foreign = crate::query_db::QueryDb::default();
+    let (ordinary, foreign_skipped) = full(&foreign);
+    assert_eq!(foreign_skipped, 0, "equal fixture data grants no foreign ledger authority");
+    assert!(JoinedHeaderCharge::capture(&view, &foreign).is_err());
+    let (joined, actual_skipped) = full(&queries);
+    assert!(actual_skipped > 0 && joined > 0 && joined < ordinary);
+    assert_eq!(JoinedHeaderCharge::capture(&view, &queries).unwrap().loans.len(), actual_skipped);
+
+    let mut owners = owner_charge::Owners::default();
+    archive.visit_original_header_storage(|address, _, capacity| {
+        owners.original_header_storage(address, capacity).unwrap();
+    });
+    assert_eq!(owners.totals().charge().unwrap(), ordinary, "full heap visitor remains unchanged");
+}

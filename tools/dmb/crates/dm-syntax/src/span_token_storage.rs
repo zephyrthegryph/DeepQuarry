@@ -266,13 +266,24 @@ impl SharedSpanTokens{
  pub fn admitted_by(&self,a:&SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.0.as_ref().unwrap().credit)}
  /// Allocation identity only, not semantic/source authority. Actual collector
  /// deduplicates across expanded/primary/header aliases at the same addresses.
- pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
+ pub fn visit_storage(&self,visit:impl FnMut(usize,usize,usize)){
+  self.visit_storage_with_backing_filter(visit, &mut |_| false);
+ }
+ /// Resource-only owners of the actual immutable token page loans.
+ #[doc(hidden)]
+ pub fn try_visit_backing_owners(&self, visit: &mut dyn FnMut(&dyn std::any::Any) -> io::Result<()>) -> io::Result<()> {
+  match &self.0.as_ref().expect("live shared token owner").tokens {
+   SharedTokenData::Loaned(pages) => pages.try_visit_backing_owners(visit),
+   _ => Ok(()),
+  }
+ }
+ fn visit_storage_with_backing_filter(&self,mut visit:impl FnMut(usize,usize,usize), skip:&mut dyn FnMut(&dyn std::any::Any)->bool){
   let owner=self.0.as_ref().unwrap();let fixed=std::mem::size_of::<SharedPayload>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(owner)as usize,fixed,fixed);
   match &owner.tokens {
     SharedTokenData::Dense(tokens) if tokens.capacity()!=0 => visit(tokens.as_ptr() as usize,tokens.len()*std::mem::size_of::<SpanToken>(),tokens.capacity()*std::mem::size_of::<SpanToken>()),
     SharedTokenData::Dense(_) => {},
     SharedTokenData::Packed(blocks) => blocks.visit_storage(&mut visit),
-    SharedTokenData::Loaned(pages) => pages.visit_storage(&mut visit),
+    SharedTokenData::Loaned(pages) => pages.visit_storage(&mut visit, skip),
   }
   owner.credit.visit_counter_storage(|p,n|{let n=n+2*std::mem::size_of::<usize>();visit(p,n,n)});
  }
@@ -302,7 +313,13 @@ impl SpanTokenStorage {
     }
  }
  pub fn shared(&self)->Option<&SharedSpanTokens>{match self{Self::Shared(tokens)=>Some(tokens),_=>None}}
- pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){match self{Self::Shared(tokens)=>tokens.visit_storage(visit),Self::Owned(tokens)=>{if tokens.capacity()!=0{visit(tokens.as_ptr()as usize,tokens.len()*std::mem::size_of::<SpanToken>(),tokens.capacity()*std::mem::size_of::<SpanToken>())}}}}
+ pub fn visit_storage(&self,visit:impl FnMut(usize,usize,usize)){
+  self.visit_storage_with_backing_filter(visit, &mut |_| false);
+ }
+ /// The caller must prove external funding for each omitted concrete owner.
+ /// Owned buffers, loan wrappers, directories and tails always reach visit.
+ #[doc(hidden)]
+ pub fn visit_storage_with_backing_filter(&self,mut visit:impl FnMut(usize,usize,usize), skip:&mut dyn FnMut(&dyn std::any::Any)->bool){match self{Self::Shared(tokens)=>tokens.visit_storage_with_backing_filter(visit,skip),Self::Owned(tokens)=>{if tokens.capacity()!=0{visit(tokens.as_ptr()as usize,tokens.len()*std::mem::size_of::<SpanToken>(),tokens.capacity()*std::mem::size_of::<SpanToken>())}}}}
 }
 #[cfg(test)]mod tests{
  use super::*;use std::sync::atomic::{Ordering};

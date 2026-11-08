@@ -923,6 +923,9 @@ fn run_build_attempt(
                     }
                     let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
                     let discovery=if let Some(subject)=&analysis_subject{subject.bind_frontend(&view)?;Arc::clone(subject.discovery())}else{Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?})};
+                    let joined_header_charge = if preparation_output.needs_combined_checker() && preparation_output.wants_joined_inputs() {
+                        Some(crate::runner_host::policy_capture::JoinedHeaderCharge::capture(&view, source_policy_queries.as_ref())?)
+                    } else { None };
                     let capture_checker_policy = || -> Result<_, Box<dyn std::error::Error>> {
                         use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
                         let private_combined = private_authored_doc_ui
@@ -936,7 +939,7 @@ fn run_build_attempt(
                         let checker_intent=PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalChecker0290),
                             files:vec![PolicyInputFile{path:checker_config.path,role:PolicyInputRole::Configuration,required:false}],
                             ..Default::default()}.admit()?;
-                        Ok(Arc::new(crate::runner_host::policy_capture::capture_diagnostic(&view,&inputs_capture,&checker_intent.capture_files(),checker_intent.search_folders())?.bind_request(&checker_intent)?.bind_diagnostic_profile()?))
+                        Ok(Arc::new(crate::runner_host::policy_capture::capture_diagnostic_with_joined_headers(&view,&inputs_capture,&checker_intent.capture_files(),checker_intent.search_folders(),joined_header_charge.as_ref())?.bind_request(&checker_intent)?.bind_diagnostic_profile()?))
                     };
                     // Full CI baseline observations belong to Analyze. Bind the
                     // Checker policy to the actual shared Original source
@@ -971,7 +974,7 @@ fn run_build_attempt(
                         let checker_frame=crate::runner_host::query_snapshot::CombinedCheckerFrame::stage(&view,Arc::clone(&source_policy_queries),Arc::clone(&checker_policy),&captured)?;
                         Some((checker_frame,checker_policy))
                     }else{None};
-                    query_attempt.stage_analysis_workspace(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),workspace,&inputs_capture,intent)?;
+                    query_attempt.stage_analysis_workspace(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),workspace,&inputs_capture,intent,joined_header_charge.as_ref())?;
                     let (admission,checker_ready)=if let Some((frame,policy))=checker{
                         let retain_for = preparation_output.wants_joined_inputs().then_some(project.as_path());
                         let (workspace,checker,joined)=runner_freshness::admit_combined_workspace_captured_using(&inputs_capture,&stamped_provider,generated_paths,Arc::clone(&captured),policy,source_policy_queries.as_ref(),retain_for)?;

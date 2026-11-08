@@ -1388,6 +1388,7 @@ impl QueryAttempt {
         workspace:Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
         request:&crate::policy_request::WorkspacePolicyRequest,inputs:&crate::input_snapshot::RecordingInputs<P>,
         intent:&crate::policy_request::AdmittedPolicyRequest,
+        joined:Option<&crate::runner_host::policy_capture::JoinedHeaderCharge>,
     )->std::io::Result<()>{
         if !self.enabled || frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"analysis workspace needs its actual retained original context"));
@@ -1398,7 +1399,7 @@ impl QueryAttempt {
         if !workspace.matches_source(frontend.mapping(),frontend.source_revision())||!workspace.matches_request(request)||!workspace.is_recorded_in(&inputs.snapshot()?){return Err(std::io::Error::other("analysis workspace capture differs from current actual source/request"))}
         let selected=WorkspaceSemanticSelection::from_admitted(intent,&workspace)?;
         let generators=if intent.workspace_generators().is_empty(){None}else{if selected.is_some(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"generation and semantic child purposes must be issued separately"))}Some(WorkspaceGeneratorSelection::from_admitted(intent,&workspace)?)};
-        let child=if generators.is_some(){Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_generator(frontend,inputs,workspace.configuration().0)?))}else if selected.is_some()||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlers]{Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_semantic(frontend,inputs,workspace.configuration().0)?))}else{None};
+        let child=if generators.is_some(){Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_generator(frontend,inputs,workspace.configuration().0)?))}else if selected.is_some()||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlers]{Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_semantic_with_joined_headers(frontend,inputs,workspace.configuration().0,joined)?))}else{None};
         let evidence=if let Some(child)=&child{Arc::clone(child.semantic_source_evidence())}else{inputs.diagnostic_source_evidence(frontend)?};
         let mut snapshot=SourceSnapshot::capture_diagnostic_sources(frontend,Arc::clone(&queries),child,evidence)?;
         if intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let subject=inputs.original_analysis_subject().ok_or_else(||std::io::Error::other("full Analyze subject issuance absent"))?;subject.bind_frontend(frontend)?;subject.discovery().validate_recording(inputs)?;snapshot.analysis_subject=Some(Arc::clone(subject));}

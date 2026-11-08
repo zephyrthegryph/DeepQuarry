@@ -393,10 +393,16 @@ impl RelativeSyntax {
             headers.visit_setting_roots(&mut visit);
         }
     }
-    pub fn visit_original_header_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+    pub fn visit_original_header_storage(&self, visit: impl FnMut(usize, usize, usize)) {
+        self.visit_original_header_storage_with_backing_filter(visit, &mut |_| false);
+    }
+    pub(super) fn visit_original_header_storage_with_backing_filter(&self, visit: impl FnMut(usize, usize, usize), skip:&mut dyn FnMut(&dyn std::any::Any)->bool) {
         if let Some(headers) = &self.original_headers {
-            headers.visit_storage(&mut visit);
+            headers.visit_storage_with_backing_filter(visit, skip);
         }
+    }
+    pub(super) fn original_shared_span_tokens(&self) -> Option<&dm_syntax::SharedSpanTokens> {
+        self.original_headers.as_ref()?.shared_span_tokens()
     }
     /// Wide arena fallback can have no shared_source; this still exposes the
     /// SAME original recipe source to the existing pointer-deduplicated census.
