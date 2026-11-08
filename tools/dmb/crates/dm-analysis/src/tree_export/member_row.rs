@@ -69,7 +69,7 @@ pub(super) fn member_row(tree: &SemanticTree, id: dm_tree::MemberId) -> Result<V
             "declared_type":metadata.declared_type.map(|id| spelling(symbols,id)).transpose()?,
             "list_element_type":metadata.inherited_opaque.is_none().then_some(metadata.list_element_type).flatten().map(|id| spelling(symbols,id)).transpose()?,
             "list_element_type_status":if metadata.inherited_opaque.is_some() { "unknown" } else { "known" },
-            "display_name":metadata.display_name.map(|id| spelling(symbols,id)).transpose()?,
+            "display_name":metadata.display_name().map(|id| spelling(symbols,id)).transpose()?,
             "inherited_opaque":opaque,
             "flags":metadata.inherited_opaque.is_none().then_some(metadata.flags),
             "flags_status":if metadata.inherited_opaque.is_some() { "unknown" } else { "known" },

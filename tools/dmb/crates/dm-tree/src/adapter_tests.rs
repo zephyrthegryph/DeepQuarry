@@ -509,7 +509,7 @@ fn namespaces_arrays_defaults_and_settings_bridge_to_tree() {
                 .unwrap(),
         )
         .unwrap();
-    assert_eq!(proc.metadata.display_name, Some(SymbolId::of("Reader")));
+    assert_eq!(proc.metadata.display_name(), Some(SymbolId::of("Reader")));
     assert!(proc.metadata.procedure.is_some());
     assert_eq!(
         OccurrenceTable::build(&tree, result.origins)

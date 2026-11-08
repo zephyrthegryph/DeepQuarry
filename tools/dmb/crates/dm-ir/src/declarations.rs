@@ -422,9 +422,10 @@ impl DeclarationFieldMeaning {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct DeclarationMeaning {
-    pub display_name: Option<SymbolId>,
+    display_name: SymbolId,
+    has_display_name: bool,
     /// Variable masks for fields; PROC_FLAG_FINAL for procedure/verb declarations.
     pub flags: u32,
     pub procedure: Option<Arc<ProcedureMetadata>>,
@@ -438,7 +439,23 @@ impl DeclarationMeaning {
         procedure: Option<Arc<ProcedureMetadata>>,
         canonical: crate::CanonicalBytes,
     ) -> Self {
-        Self { display_name, flags, procedure, canonical, fields: None }
+        Self {
+            display_name: display_name.unwrap_or(SymbolId::ZERO),
+            has_display_name: display_name.is_some(),
+            flags,
+            procedure,
+            canonical,
+            fields: None,
+        }
+    }
+
+    pub fn display_name(&self) -> Option<SymbolId> {
+        self.has_display_name.then_some(self.display_name)
+    }
+
+    pub fn set_display_name(&mut self, display_name: Option<SymbolId>) {
+        self.display_name = display_name.unwrap_or(SymbolId::ZERO);
+        self.has_display_name = display_name.is_some();
     }
 
     /// Install the actual value tail, allocating exactly allocation_bytes().
@@ -467,6 +484,12 @@ impl DeclarationMeaning {
         crate::canonical_encoding::encode(crate::canonical_encoding::Root::Declaration(self), work)
     }
 }
+impl Default for DeclarationMeaning {
+    fn default() -> Self {
+        Self::new(None, 0, None, crate::CanonicalBytes::default())
+    }
+}
+
 impl std::ops::Deref for DeclarationMeaning {
     type Target = DeclarationFieldMeaning;
     fn deref(&self) -> &Self::Target {
@@ -476,7 +499,7 @@ impl std::ops::Deref for DeclarationMeaning {
 
 impl PartialEq for DeclarationMeaning {
     fn eq(&self, other: &Self) -> bool {
-        self.display_name == other.display_name && self.flags == other.flags
+        self.display_name() == other.display_name() && self.flags == other.flags
             && self.procedure == other.procedure && self.canonical == other.canonical
             && **self == **other
     }

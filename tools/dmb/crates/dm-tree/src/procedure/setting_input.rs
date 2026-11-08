@@ -230,13 +230,8 @@ impl OriginalProcedureHeaders {
                 }
                 let payload = Layout::array::<dm_ir::ExpressionToken>(count)
                     .map_err(|_| Error::from(ErrorKind::OutOfMemory))?;
-                let vec_bound = payload.size().checked_mul(4).ok_or_else(|| Error::from(ErrorKind::OutOfMemory))?;
-                let scratch = a.reserve(vec_bound).map_err(|proxy| a.take_operational_error().unwrap_or(proxy))?;
-                let mut tokens = Vec::new();
-                tokens.try_reserve_exact(count).map_err(|actual| Error::new(ErrorKind::OutOfMemory, actual))?;
-                if tokens.capacity() > count.saturating_mul(4) {
-                    return Err(Error::from(ErrorKind::OutOfMemory).into());
-                }
+                let (mut tokens, scratch) =
+                    crate::procedure::original_primary_signatures::allocate_funded_rows(count, a)?;
                 for token in value.token_window().iter() {
                     poll()?;
                     if let Some(token) = crate::procedure::expression_token(value, token, symbols)? {
@@ -703,6 +698,32 @@ mod tests {
             input,
         )
     }
+    #[test]
+    fn original_setting_tokens_use_exact_scratch_below_the_old_capacity_envelope() {
+        use std::{alloc::Layout, sync::atomic::{AtomicUsize, Ordering}};
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let counter = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a = SettingAdmission::new(&counter, 8 << 20, &|| Ok(()));
+        let source = "/proc/probe()\n    set name = \"issued\"\n    return 1\n";
+        let site = "set name = \"issued\"";
+        let start = source.find(site).unwrap();
+        let mut original = crate::procedure::original_primary_signatures::parse_original_signatures_using(
+            source.into(), &a,
+        ).unwrap();
+        let live = counter.load(Ordering::Acquire);
+        let token = Layout::new::<dm_ir::ExpressionToken>();
+        let arc = Layout::new::<[AtomicUsize; 2]>().extend(token).unwrap().0.pad_to_align();
+        assert!(token.size() + arc.size() < 4 * token.size());
+        let tight = SettingAdmission::new(&counter, live + token.size() + arc.size(), &|| Ok(()));
+        let setting = original.headers.parse_setting_original_admitted(
+            Span::new(start, start + site.len()), 0, &mut original.symbols, &mut original.prepared, &tight,
+        ).unwrap();
+        assert_eq!(setting.setting.value.tokens.len(), 1);
+        assert_eq!(counter.load(Ordering::Acquire), live + arc.size());
+        drop((setting, original));
+        assert_eq!(counter.load(Ordering::Acquire), root);
+    }
+
     #[test]
     fn checked_settings_roster_funds_actual_storage_and_denial_publishes_nothing() {
         use std::sync::atomic::{AtomicUsize, Ordering};

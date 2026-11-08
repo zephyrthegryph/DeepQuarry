@@ -92,9 +92,9 @@ fn authored_metadata_shares_between_skeleton_and_tree_until_effective_mutation()
         .metadata;
     assert!(Arc::ptr_eq(&metadata, installed));
     let mut effective = Arc::clone(installed);
-    Arc::make_mut(&mut effective).display_name = Some(SymbolId::of("changed effective name"));
+    Arc::make_mut(&mut effective).set_display_name(Some(SymbolId::of("changed effective name")));
     assert!(!Arc::ptr_eq(&metadata, &effective));
-    assert!(metadata.display_name.is_none());
-    assert!(installed.display_name.is_none());
+    assert!(metadata.display_name().is_none());
+    assert!(installed.display_name().is_none());
     assert_eq!(metadata.canonical, effective.canonical);
 }

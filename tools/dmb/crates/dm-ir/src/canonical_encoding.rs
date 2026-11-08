@@ -140,7 +140,7 @@ impl<'a,const INLINE: usize> Encoder<'a,'_,INLINE> {
                 if field<10{self.push(Task::DeclarationField(value,field+1))?}
                 match field{
                     0=>{self.byte(u8::from(value.inherited_opaque.is_some()))?;if let Some(v)=&value.inherited_opaque{self.frame(Root::Opaque(v))?}},
-                    1|2|3=>{let v=match field{1=>value.declared_type,2=>value.list_element_type,_=>value.display_name};self.byte(u8::from(v.is_some()))?;if let Some(v)=v{self.length(8)?;self.symbol(v)?}},
+                    1|2|3=>{let v=match field{1=>value.declared_type,2=>value.list_element_type,_=>value.display_name()};self.byte(u8::from(v.is_some()))?;if let Some(v)=v{self.length(8)?;self.symbol(v)?}},
                     4=>self.bytes(&value.flags.to_le_bytes())?,
                     5=>{self.byte(u8::from(value.procedure.is_some()))?;if let Some(v)=&value.procedure{self.frame(Root::Procedure(v))?}},
                     6=>{self.byte(u8::from(value.array.is_some()))?;if let Some(v)=&value.array{self.frame(Root::Array(v))?}},

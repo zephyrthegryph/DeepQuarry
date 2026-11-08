@@ -56,7 +56,7 @@ fn legacy_metadata(metadata: &MemberMetadata) -> u128 {
     for symbol in [
         metadata.declared_type,
         metadata.list_element_type,
-        metadata.display_name,
+        metadata.display_name(),
     ] {
         bytes.push(u8::from(symbol.is_some()));
         bytes.extend_from_slice(&symbol.map(SymbolId::bits).unwrap_or(0).to_le_bytes());
@@ -153,7 +153,7 @@ fn streaming_metadata_matches_independent_legacy_for_every_optional_combination(
             metadata.field_tail_mut().list_element_type = None;
         }
         if mask & 8 == 0 {
-            metadata.display_name = None;
+            metadata.set_display_name(None);
         }
         if mask & 16 == 0 {
             metadata.field_tail_mut().array = None;

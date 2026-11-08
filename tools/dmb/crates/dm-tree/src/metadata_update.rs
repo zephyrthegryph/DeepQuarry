@@ -393,7 +393,7 @@ fn apply_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&Semant
             let mut metadata=member.metadata.as_ref().clone();
             metadata.field_tail_mut().declared_type=base.declared_type;
             metadata.field_tail_mut().list_element_type=base.list_element_type;
-            metadata.display_name=base.display_name;
+            metadata.set_display_name(base.display_name());
             metadata.flags=base.flags;
             metadata.field_tail_mut().array=base.array.clone();
             metadata.field_tail_mut().declared_initializer=base.declared_initializer.clone();

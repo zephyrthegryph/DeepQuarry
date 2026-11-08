@@ -374,7 +374,7 @@ impl SemanticTree {
             let member = &self.members[id.index()];
             (
                 self.symbols
-                    .text(member.metadata.display_name.unwrap_or(member.name))
+                    .text(member.metadata.display_name().unwrap_or(member.name))
                     .unwrap_or(""),
                 self.symbols.text(member.name).unwrap_or(""),
             )

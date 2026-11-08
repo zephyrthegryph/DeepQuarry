@@ -174,7 +174,7 @@ pub(crate) fn metadata_fingerprint(metadata: &MemberMetadata) -> u128 {
     for symbol in [
         metadata.declared_type,
         metadata.list_element_type,
-        metadata.display_name,
+        metadata.display_name(),
     ] {
         bytes.update(&[u8::from(symbol.is_some())]);
         bytes.update(&symbol.map(SymbolId::bits).unwrap_or(0).to_le_bytes());

@@ -303,7 +303,7 @@ impl FrozenOldBytes for DeclarationMeaning{fn old_bytes(&self)->Vec<u8>{
         for value in [
             self.declared_type,
             self.list_element_type,
-            self.display_name,
+            self.display_name(),
         ] {
             optional(&mut out, value.map(|v| v.bits().to_le_bytes().to_vec()));
         }
@@ -573,3 +573,27 @@ impl FrozenOldBytes for ResolvedMeaning{fn old_bytes(&self)->Vec<u8>{
         }
         out
     }}
+
+#[test]
+fn compact_declaration_display_name_preserves_zero_presence_and_wire_bytes() {
+    use crate::portable_meaning::{Names, PortableMeaning};
+
+    #[cfg(target_pointer_width = "64")]
+    assert_eq!(std::mem::size_of::<DeclarationMeaning>(), 48);
+
+    let mut declaration = DeclarationMeaning::default();
+    let missing = declaration.clone();
+    assert_eq!(declaration.display_name(), None);
+    declaration.set_display_name(Some(SymbolId::ZERO));
+    assert_eq!(declaration.display_name(), Some(SymbolId::ZERO));
+    assert_ne!(declaration, missing);
+    assert_ne!(declaration.canonical_bytes(), missing.canonical_bytes());
+    assert_eq!(declaration.canonical_bytes(), declaration.old_bytes());
+    let wire = PortableMeaning::capture(&declaration, true).unwrap();
+    let restored = wire.restore(Names::unchecked()).unwrap();
+    assert_eq!(restored.display_name(), Some(SymbolId::ZERO));
+    assert_eq!(restored, declaration);
+    declaration.set_display_name(None);
+    assert_eq!(declaration, missing);
+    assert_eq!(declaration.canonical_bytes(), missing.canonical_bytes());
+}

@@ -347,7 +347,7 @@ fn metadata(value: &DeclarationMeaning, evidence: bool) -> Option<PortableMeanin
             .transpose_option()?,
         declared: value.declared_type,
         element: value.list_element_type,
-        display: value.display_name,
+        display: value.display_name(),
         flags: value.flags,
         array: value.array.as_deref().map(array),
         procedure: value.procedure.as_deref().map(procedure),
