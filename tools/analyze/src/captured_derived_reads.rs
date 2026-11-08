@@ -13,7 +13,87 @@ impl DerivedReadData{
  pub fn retained_charge(&self)->Option<usize>{let mut n=std::mem::size_of::<Self>().checked_add(self.sites.capacity().checked_mul(std::mem::size_of::<Site>())?)?.checked_add(self.source_text.capacity().checked_mul(std::mem::size_of::<String>())?)?.checked_add(self.allows.capacity().checked_mul(std::mem::size_of::<AllowUse>())?)?;for s in &self.sites{for w in [&s.rule,&s.rel,&s.msg,&s.key,&s.ident]{n=n.checked_add(w.capacity())?}}for t in &self.source_text{n=n.checked_add(t.capacity())?}for a in &self.allows{for t in [&a.rel,&a.name,&a.code]{n=n.checked_add(t.capacity())?}}for p in self.digests.keys(){n=n.checked_add(2048)?.checked_add(p.capacity())?}Some(n)}
 }
 pub fn metadata()->&'static crate::lint::Meta{&crate::derived_reads_metadata::META}
-#[derive(Default)]pub(crate) struct Index{schema:Schema,entries:BTreeMap<String,Vec<Entry>>,entry_order:Vec<String>,set_calls:BTreeSet<String>}
+type Names=Vec<(String,Vec<String>)>;
+type Entries=Vec<(String,Vec<Entry>)>;
+struct SealedSchema{vars:Names,typed:Names,tracked:Names,relations:Names,published:Vec<(String,String,String)>}
+enum IndexSchema{Building(Schema),Sealed(SealedSchema)}
+enum IndexEntries{Building(BTreeMap<String,Vec<Entry>>),Sealed(Entries)}
+pub(crate) struct Index{schema:IndexSchema,entries:IndexEntries,entry_order:Vec<String>,set_calls:BTreeSet<String>}
+impl Default for Index{
+ fn default()->Self{Self{schema:IndexSchema::Building(Schema::default()),entries:IndexEntries::Building(BTreeMap::new()),entry_order:Vec::new(),set_calls:BTreeSet::new()}}
+}
+fn sorted_rows<'a,T>(rows:&'a[(String,T)],owner:&str)->Option<&'a T>{
+ rows.binary_search_by(|(name,_)|name.as_str().cmp(owner)).ok().map(|n|&rows[n].1)
+}
+#[derive(Clone,Copy)]enum NameTable{Vars,Typed,Tracked,Relations}
+impl Index{
+ fn has(&self,table:NameTable,owner:&str,name:&str)->bool{
+  let mut yes=false;
+  schema::chain(owner,|_,owner|yes|=match &self.schema{
+   IndexSchema::Building(s)=>match table{ NameTable::Vars=>&s.vars,NameTable::Typed=>&s.typed,NameTable::Tracked=>&s.tracked,NameTable::Relations=>&s.relations}.get(owner).is_some_and(|set|set.contains(name)),
+   IndexSchema::Sealed(s)=>sorted_rows(match table{NameTable::Vars=>&s.vars,NameTable::Typed=>&s.typed,NameTable::Tracked=>&s.tracked,NameTable::Relations=>&s.relations},owner).is_some_and(|set|set.binary_search_by(|item|item.as_str().cmp(name)).is_ok()),
+  });
+  yes
+ }
+ fn entries(&self,owner:&str)->Option<&Vec<Entry>>{match &self.entries{IndexEntries::Building(rows)=>rows.get(owner),IndexEntries::Sealed(rows)=>sorted_rows(rows,owner)}}
+ fn published(&self)->&[(String,String,String)]{match &self.schema{IndexSchema::Building(s)=>&s.published,IndexSchema::Sealed(s)=>&s.published}}
+}
+struct Seal<'a>{budget:&'a Budget,poll:&'a dyn Fn()->io::Result<()>,paid:usize}
+impl Seal<'_>{
+ fn rows<T>(&mut self,count:usize)->Result<Vec<T>,Failure>{
+  check(self.budget,self.poll)?;
+  let bytes=count.checked_mul(std::mem::size_of::<T>()).ok_or_else(||oom(self.budget,"sealed Derived row overflow"))?;
+  let paid=self.paid.checked_add(bytes).ok_or_else(||oom(self.budget,"sealed Derived capacity overflow"))?;
+  self.budget.charge(bytes).map_err(|m|oom(self.budget,m))?;
+  let mut rows=Vec::new();
+  rows.try_reserve_exact(count).map_err(|e|oom(self.budget,e.to_string()))?;
+  if rows.capacity()!=count{return Err(oom(self.budget,"sealed Derived actual capacity differs"))}
+  self.paid=paid;
+  Ok(rows)
+ }
+ fn names(&mut self,table:SchemaTable)->Result<Names,Failure>{
+  let mut result=self.rows(table.len())?;
+  for (owner,names) in table{
+   let mut rows=self.rows(names.len())?;
+   for name in names{check(self.budget,self.poll)?;rows.push(name);}
+   result.push((owner,rows));
+  }
+  Ok(result)
+ }
+ fn index(&mut self,index:Index)->Result<(Index,usize),Failure>{
+  let Index{schema,entries,entry_order,set_calls}=index;
+  let IndexSchema::Building(Schema{vars,typed,tracked,relations,published})=schema else{unreachable!("only the cold builder seals")};
+  let IndexEntries::Building(entries)=entries else{unreachable!("only the cold builder seals")};
+  debug_assert!(set_calls.is_empty());
+  let schema=SealedSchema{vars:self.names(vars)?,typed:self.names(typed)?,tracked:self.names(tracked)?,relations:self.names(relations)?,published};
+  let mut result=self.rows(entries.len())?;
+  for row in entries{check(self.budget,self.poll)?;result.push(row);}
+  let backing=sealed_index_backing(&schema,&result,&entry_order).ok_or_else(||oom(self.budget,"sealed Derived retained backing overflow"))?;
+  let moved=backing.checked_sub(self.paid).ok_or_else(||oom(self.budget,"sealed Derived transferred backing mismatch"))?;
+  self.budget.charge(moved).map_err(|m|oom(self.budget,m))?;
+  Ok((Index{schema:IndexSchema::Sealed(schema),entries:IndexEntries::Sealed(result),entry_order,set_calls},backing))
+ }
+}
+fn sealed_index_backing(schema:&SealedSchema,entries:&Entries,entry_order:&Vec<String>)->Option<usize>{
+ let mut bytes=entry_order.capacity().checked_mul(std::mem::size_of::<String>())?;
+ for owner in entry_order{bytes=bytes.checked_add(owner.capacity())?;}
+ for table in [&schema.vars,&schema.typed,&schema.tracked,&schema.relations]{
+  bytes=bytes.checked_add(table.capacity().checked_mul(std::mem::size_of::<(String,Vec<String>)>())?)?;
+  for (owner,names) in table{
+   bytes=bytes.checked_add(owner.capacity())?.checked_add(names.capacity().checked_mul(std::mem::size_of::<String>())?)?;
+   for name in names{bytes=bytes.checked_add(name.capacity())?;}
+  }
+ }
+ bytes=bytes.checked_add(schema.published.capacity().checked_mul(std::mem::size_of::<(String,String,String)>())?)?;
+ for (owner,name,key) in &schema.published{bytes=bytes.checked_add(owner.capacity())?.checked_add(name.capacity())?.checked_add(key.capacity())?;}
+ bytes=bytes.checked_add(entries.capacity().checked_mul(std::mem::size_of::<(String,Vec<Entry>)>())?)?;
+ for (owner,rows) in entries{
+  bytes=bytes.checked_add(owner.capacity())?.checked_add(rows.capacity().checked_mul(std::mem::size_of::<Entry>())?)?;
+  // Entry.local still uses its existing conservative BTreeSet admission.
+  for entry in rows{bytes=bytes.checked_add(entry_backing(entry)?)?;}
+ }
+ Some(bytes)
+}
 fn strip(owner:&str)->&str{owner.strip_prefix('/').unwrap_or(owner)}
 fn merge_one<C:Control>(into:&mut SchemaTable,mut owner:String,names:BTreeSet<String>,c:&mut C,transfer:bool)->Result<(),C::Error>{
  if owner.starts_with('/'){owner.remove(0);}
@@ -40,18 +120,17 @@ fn merge<C:Control>(into:&mut Schema,from:Schema,c:&mut C,transfer:bool)->Result
   kc::row(c,&mut into.published)?;into.published.push(row);
  }Ok(())
 }
-fn has(table:&SchemaTable,owner:&str,name:&str)->bool{let mut yes=false;schema::chain(owner,|_,a|yes|=table.get(a).is_some_and(|v|v.contains(name)));yes}
-fn visit_entries(index:&Index,owner:&str,mut visit:impl FnMut(&Entry)){schema::chain(owner,|_,a|{if let Some(entries)=index.entries.get(a){for e in entries{visit(e)}}})}
-struct Known<'a>{index:&'a Index,owner:&'a str}impl Membership for Known<'_>{type Error=Failure;fn contains(&self,name:&str)->Result<bool,Failure>{Ok(has(&self.index.schema.vars,self.owner,name))}}
+fn visit_entries(index:&Index,owner:&str,mut visit:impl FnMut(&Entry)){schema::chain(owner,|_,a|{if let Some(entries)=index.entries(a){for e in entries{visit(e)}}})}
+struct Known<'a>{index:&'a Index,owner:&'a str}impl Membership for Known<'_>{type Error=Failure;fn contains(&self,name:&str)->Result<bool,Failure>{Ok(self.index.has(NameTable::Vars,self.owner,name))}}
 struct Judge<'a>{index:&'a Index,writes:&'a dyn WriteKnowledge,file:&'a SourceFile,data:&'a RefCell<DerivedReadData>,budget:&'a Budget,poll:&'a dyn Fn()->io::Result<()>}
 impl Facts for Judge<'_>{
  type Error=Failure;type Known<'a>=Known<'a> where Self:'a;
  fn known<'a>(&'a self,owner:&'a str)->Result<Known<'a>,Failure>{check(self.budget,self.poll)?;Ok(Known{index:self.index,owner})}
- fn has(&self,t:Table,owner:&str,name:&str)->Result<bool,Failure>{check(self.budget,self.poll)?;Ok(match t{Table::Tracked=>has(&self.index.schema.tracked,owner,name),Table::Relation=>has(&self.index.schema.relations,owner,name),Table::Object=>has(&self.index.schema.typed,owner,name),Table::Derived=>{let mut yes=false;visit_entries(self.index,owner,|e|yes|=e.kind=="derive"&&e.name.as_deref().is_some_and(|v|!v.is_empty()&&v==name));yes}})}
- fn exact(&self,owner:&str)->Result<bool,Failure>{let mut yes=false;schema::chain(owner,|_,a|yes|=self.index.entries.get(a).is_some_and(|es|!es.is_empty()));Ok(yes)}
+ fn has(&self,t:Table,owner:&str,name:&str)->Result<bool,Failure>{check(self.budget,self.poll)?;Ok(match t{Table::Tracked=>self.index.has(NameTable::Tracked,owner,name),Table::Relation=>self.index.has(NameTable::Relations,owner,name),Table::Object=>self.index.has(NameTable::Typed,owner,name),Table::Derived=>{let mut yes=false;visit_entries(self.index,owner,|e|yes|=e.kind=="derive"&&e.name.as_deref().is_some_and(|v|!v.is_empty()&&v==name));yes}})}
+ fn exact(&self,owner:&str)->Result<bool,Failure>{let mut yes=false;schema::chain(owner,|_,a|yes|=self.index.entries(a).is_some_and(|es|!es.is_empty()));Ok(yes)}
  fn declared_value(&self,owner:&str,value:&str)->Result<bool,Failure>{self.has(Table::Derived,owner,value)}
  fn declared_read(&self,owner:&str,kind:&str,value:Option<&str>,name:&str)->Result<bool,Failure>{let mut yes=false;visit_entries(self.index,owner,|e|yes|=e.kind==kind&&value.is_none_or(|v|e.name.as_deref()==Some(v))&&e.local.contains(name));Ok(yes)}
- fn published(&self,owner:&str,name:&str)->Result<bool,Failure>{let mut yes=false;schema::chain(owner,|_,a|{let mut last=None;for(t,v,k)in &self.index.schema.published{if strip(t)==a&&v==name{last=Some(k.as_str())}}yes|=last.is_some_and(|k|!k.is_empty());});Ok(yes)}
+ fn published(&self,owner:&str,name:&str)->Result<bool,Failure>{let mut yes=false;schema::chain(owner,|_,a|{let mut last=None;for(t,v,k)in self.index.published(){if strip(t)==a&&v==name{last=Some(k.as_str())}}yes|=last.is_some_and(|k|!k.is_empty());});Ok(yes)}
  fn never_written(&self,owner:&str,name:&str)->Result<bool,Failure>{self.writes.never_written(self.index,owner,name)}
  fn allowed(&self,rel:&str,line:usize)->Result<bool,Failure>{if rel!=self.file.rel{return Err("derived ALLOW loan differs from current raw procedure file".into())}let mut c=Operation{budget:self.budget,poll:self.poll};let Some(kept)=crate::allow::kept_using(self.file,line,"derived_reads",&mut c)?else{return Ok(false)};let code=kept.code.unwrap_or_default();let mut data=self.data.borrow_mut();if !data.allows.iter().any(|a|a.rel==rel&&a.line as usize==kept.line&&a.name=="derived_reads"&&a.code==code){kc::row(&mut c,&mut data.allows)?;self.budget.charge(code.capacity()).map_err(|m|oom(self.budget,m))?;data.allows.push(AllowUse{rel:kc::own(&mut c,rel)?,line:u32::try_from(kept.line).map_err(|_|oom(self.budget,"derived ALLOW line overflow"))?,name:kc::own(&mut c,"derived_reads")?,code});}if !data.digests.contains_key(rel){kc::reserve(&mut c,||Some(2048))?;data.digests.insert(kc::own(&mut c,rel)?,crate::captured_raw_file::source_allow_digest(self.file));}Ok(true)}
 }
@@ -112,20 +191,21 @@ fn entry_backing(entry:&Entry)->Option<usize>{
 }
 
 fn index_file(index:&mut Index,file:&SourceFile,scratch:&mut impl Control<Error=Failure>,retained:&mut Operation<'_>,transfer:bool)->Result<(),Failure>{
+ let IndexEntries::Building(entries)=&mut index.entries else{unreachable!("cannot insert into sealed Derived entries")};
  let mut own=if file.rel==reaction::GENERATED_REL{Schema::default()}else{schema::file(file.code(),scratch)?};
  procedures(file,scratch,|header,proc,scratch|{
   schema::relations(&mut own,Procedure{owner:proc.owner,name:proc.name,relative:proc.relative,args:proc.args,lines:proc.lines},scratch)?;
   if proc.name=="derived"&&proc.owner!="/"{
    let owner=proc.owner;
    let key=strip(owner);
-   if !index.entries.contains_key(key){
+   if !entries.contains_key(key){
     kc::reserve(retained,||Some(2048))?;
-    index.entries.insert(kc::own(retained,key)?,Vec::new());
+    entries.insert(kc::own(retained,key)?,Vec::new());
     kc::row(retained,&mut index.entry_order)?;
     index.entry_order.push(kc::own(retained,owner)?);
    }
    let rows=crate::derived_entry_policy::entries(proc,header,scratch)?;
-   let target=index.entries.get_mut(key).unwrap();
+   let target=entries.get_mut(key).unwrap();
    for entry in rows{
     if transfer{kc::reserve(retained,||entry_backing(&entry))?;}
     kc::row(retained,target)?;
@@ -133,7 +213,8 @@ fn index_file(index:&mut Index,file:&SourceFile,scratch:&mut impl Control<Error=
    }
   }Ok(())
  })?;
- merge(&mut index.schema,own,retained,transfer)
+ let IndexSchema::Building(schema)=&mut index.schema else{unreachable!("cannot insert into sealed Derived schema")};
+ merge(schema,own,retained,transfer)
 }
 
 pub(crate) fn prepare(source:&ReadSource<'_>,poll:&dyn Fn()->io::Result<()>)->Result<Index,Failure>{
@@ -143,20 +224,15 @@ pub(crate) fn prepare(source:&ReadSource<'_>,poll:&dyn Fn()->io::Result<()>)->Re
 /// Body-free selected raw DATA, not a source/model/preparation witness. There
 /// is no public constructor, Clone, caller-hash binding or unchecked consume.
 /// The index drops before its actual original operation's resource owner.
-pub struct UnsealedDerivedIndexData{index:Index,funding:Arc<Budget>}
+pub struct UnsealedDerivedIndexData{index:Index,backing:usize,funding:Arc<Budget>}
 impl UnsealedDerivedIndexData{
  /// DATA-only consumption. The actual host must first bind its private raw
  /// recorder/current scope; this helper never issues a source/result witness.
- pub(crate) fn collect_held(self,source:&ReadSource<'_>,all_source:&ReadSource<'_>,globals:&GlobalResult,test_types:&BTreeSet<String>,poll:&dyn Fn()->io::Result<()>)->Result<DerivedReadData,Failure>{let Self{index,funding}=self;let pending=collect(source,all_source,index,globals,test_types,poll);drop(funding);pending}
+ pub(crate) fn collect_held(self,source:&ReadSource<'_>,all_source:&ReadSource<'_>,globals:&GlobalResult,test_types:&BTreeSet<String>,poll:&dyn Fn()->io::Result<()>)->Result<DerivedReadData,Failure>{let Self{index,funding,..}=self;let pending=collect(source,all_source,index,globals,test_types,poll);drop(funding);pending}
 
  /// Conservative live backing bound only; not RSS or source authority.
  pub fn retained_charge(&self)->Option<usize>{
-  let i=&self.index;let mut n=std::mem::size_of::<Self>().checked_add(std::mem::size_of::<Budget>())?.checked_add(2*std::mem::size_of::<usize>())?;
-  for table in [&i.schema.vars,&i.schema.typed,&i.schema.tracked,&i.schema.relations]{n=n.checked_add(table.len().checked_add(1)?.checked_mul(2048)?)?;for(owner,names)in table{n=n.checked_add(owner.capacity())?.checked_add(names.len().checked_add(1)?.checked_mul(512)?)?;for name in names{n=n.checked_add(name.capacity())?}}}
-  n=n.checked_add(i.schema.published.capacity().checked_mul(std::mem::size_of::<(String,String,String)>())?)?;for(a,b,c)in &i.schema.published{n=n.checked_add(a.capacity())?.checked_add(b.capacity())?.checked_add(c.capacity())?}
-  n=n.checked_add(i.entries.len().checked_add(1)?.checked_mul(2048)?)?.checked_add(i.entry_order.capacity().checked_mul(std::mem::size_of::<String>())?)?;for owner in &i.entry_order{n=n.checked_add(owner.capacity())?}
-  for(owner,entries)in &i.entries{n=n.checked_add(owner.capacity())?.checked_add(entries.capacity().checked_mul(std::mem::size_of::<Entry>())?)?;for e in entries{n=n.checked_add(e.rel.capacity())?.checked_add(e.name.as_ref().map_or(0,String::capacity))?.checked_add(e.local.len().checked_add(1)?.checked_mul(512)?)?.checked_add(e.remote.capacity().checked_mul(std::mem::size_of::<(Option<String>,String)>())?)?.checked_add(e.hops.capacity().checked_mul(std::mem::size_of::<String>())?)?;for v in &e.local{n=n.checked_add(v.capacity())?}for(t,v)in &e.remote{n=n.checked_add(t.as_ref().map_or(0,String::capacity))?.checked_add(v.capacity())?}for h in &e.hops{n=n.checked_add(h.capacity())?}}}
-  n=n.checked_add(i.set_calls.len().checked_add(1)?.checked_mul(512)?)?;for c in &i.set_calls{n=n.checked_add(c.capacity())?}Some(n)
+  self.backing.checked_add(std::mem::size_of::<Self>()+std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>())
  }
 }
 /// Per-file matcher high water. Slot zero covers mutually exclusive schema,
@@ -227,7 +303,16 @@ fn prepare_selected_pages_observed(
   if !all{return Err("derived preflight stopped before actual selected raw EOF".into())}
   check(&funding,poll)?;Ok(index)
  })();
- let pending=finish(pending,&funding,poll);match pending{Ok(index)=>{let data=UnsealedDerivedIndexData{index,funding};phase.complete=true;drop(phase);Ok(data)},Err(actual)=>{drop(phase);drop(funding);Err(actual)}}
+ let index=finish(pending,&funding,poll)?;
+ let sealed_funding=Budget::scoped_temporaries(budget).map_err(|m|oom(budget,m))?;
+ let mut seal=Seal{budget:&sealed_funding,poll,paid:0};
+ let (index,backing)=seal.index(index)?;
+ check(&sealed_funding,poll)?;
+ // Old BTree nodes are now gone and moved payload has independent funding.
+ phase.complete=true;
+ drop(phase);
+ drop(funding);
+ Ok(UnsealedDerivedIndexData{index,backing,funding:sealed_funding})
 }
 pub(crate) fn collect(source:&ReadSource<'_>,all_source:&ReadSource<'_>,mut index:Index,globals:&GlobalResult,test_types:&BTreeSet<String>,poll:&dyn Fn()->io::Result<()>)->Result<DerivedReadData,Failure>{
  let b=source.budget();check(b,poll)?;if !globals.matches(source.inputs())||!globals.matches(all_source.inputs()){return Err("derived Globals belong to another original source".into())}
@@ -241,7 +326,7 @@ fn collect_pages(source:&dyn DerivedPages,all_source:&dyn DerivedPages,lexical:&
  if writes.collects_set_calls(){files(all_source,|file|{for call in crate::auto_setter_calls_policy::collect_file(&mut c,&file.rel,file.text(),||file.code().text.as_str())?{if !index.set_calls.contains(&call){kc::reserve(&mut c,||Some(512))?;index.set_calls.insert(call);}}Ok(true)})?;}
  let data=RefCell::new(DerivedReadData::default());let mut findings=Vec::new();
  for exact in [false,true]{files(source,|file|{let facts=Judge{index:&index,writes,file,data:&data,budget:b,poll};procedures(file,&mut c,|header,proc,c|{let mut output=|finding|{kc::row(&mut Operation{budget:b,poll},&mut findings)?;findings.push(finding);Ok(())};if exact{judge::exact(&facts,proc,header,c,&mut output)}else{judge::reactive(&facts,proc,true,c,&mut output)}})?;Ok(true)})?;}
- for owner in &index.entry_order{for e in &index.entries[strip(owner)]{find_file(source,&e.rel,|file|{let facts=Judge{index:&index,writes,file,data:&data,budget:b,poll};judge::entry(&facts,owner,e,&mut c,&mut|finding|{kc::row(&mut Operation{budget:b,poll},&mut findings)?;findings.push(finding);Ok(())})})?;}}
+ for owner in &index.entry_order{for e in index.entries(strip(owner)).ok_or("derived entry-order owner absent from its index")?{find_file(source,&e.rel,|file|{let facts=Judge{index:&index,writes,file,data:&data,budget:b,poll};judge::entry(&facts,owner,e,&mut c,&mut|finding|{kc::row(&mut Operation{budget:b,poll},&mut findings)?;findings.push(finding);Ok(())})})?;}}
  for r in crate::reactive_reaction_native::reaction_reads_raw(lexical)?{let OwnedProcedureKey::Raw{relative,header}=r.procedure else{return Err("native derived reaction lacks authentic raw coordinates".into())};find_file(source,&relative,|file|{let line=file.code().line(header);let Some(h)=reaction::header_admitted(line,|groups|kc::reserve(&mut c,||groups.checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64)))?else{return Err("derived reaction original header absent".into())};let proc=Procedure{owner:&r.owner,name:h.name,relative:&relative,args:h.args,lines:Lines::IndentedCode{view:file.code(),first:header.checked_add(1).ok_or_else(||oom(b,"derived reaction header overflow"))?}};let facts=Judge{index:&index,writes,file,data:&data,budget:b,poll};judge::reaction(&facts,proc,r.kind,&r.reads,&mut c,&mut|finding|{kc::row(&mut Operation{budget:b,poll},&mut findings)?;findings.push(finding);Ok(())})})?;}
  kc::sort_data(&mut findings,&mut|a,b|{c.checkpoint()?;Ok::<_,Failure>(judge::compare(a,b))})?;let mut data=data.into_inner();for f in findings{find_file(source,&f.rel,|file|{let line=u32::try_from(f.line).map_err(|_|oom(b,"derived finding line overflow"))?;kc::row(&mut c,&mut data.sites)?;data.sites.push(Site{rule:kc::own(&mut c,f.rule)?,rel:kc::own(&mut c,&f.rel)?,line,msg:String::new(),key:String::new(),ident:String::new()});kc::row(&mut c,&mut data.source_text)?;kc::reserve(&mut c,||file.raw().line(f.line).len().checked_mul(4)?.checked_add(128))?;data.source_text.push(crate::util::normalize_ws(file.raw().line(f.line)));Ok(())})?;}
  let want=crate::reactive_derived_generator_native::generate_raw(lexical,test_types)?;data.stale=true;files(all_source,|file|{if file.rel==reaction::GENERATED_REL{data.stale=file.text()!=want}Ok(true)})?;check(b,poll)?;Ok(data)
@@ -258,7 +343,7 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
  struct Pages{file:crate::captured_raw_file::File,fail:Cell<bool>,stop:Cell<bool>,passes:Cell<usize>}
  impl crate::reactive_raw_policy_pages::RawPolicyPages for Pages{fn for_each(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{if self.fail.get(){return Err(Failure::Operational(io::Error::from_raw_os_error(1450)))}self.passes.set(self.passes.get()+1);let all=self.file.with_policy_views(visit)?;Ok(all&&!self.stop.get())}}
  fn pages()->Pages{let root=std::env::current_dir().unwrap().join("derived-treefree-preflight");let text="/datum/probe\n    var/value\n/datum/probe/derived()\n    return list(drawn_from(nameof(value)))\n";Pages{file:crate::captured_raw_file::File::capture(&root,&root.join("code/probe.dm"),text.into()).unwrap(),fail:Cell::new(false),stop:Cell::new(false),passes:Cell::new(0)}}
- #[test]fn treefree_preflight_uses_same_identifier_index_without_semantic_source_and_keeps_credit_live(){let pages=pages();let budget=Budget::new(8*1024*1024).unwrap();let before=budget.used();let data=prepare_selected_pages(&pages,&budget,&||Ok(())).unwrap();assert_eq!(pages.passes.get(),1);assert!(data.index.schema.vars["datum/probe"].contains("value"));assert_eq!(data.index.entry_order,["/datum/probe"]);assert_eq!(data.index.entries["datum/probe"][0].kind,"drawn");assert!(data.index.set_calls.is_empty(),"setter names belong after actual semantic preparation");assert!(data.retained_charge().unwrap()>std::mem::size_of::<UnsealedDerivedIndexData>());assert!(budget.used()>before);let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();let held=budget.used();let payload=data.funding.used().checked_sub(fixed).unwrap();assert!(payload>0);drop(data);assert_eq!(budget.used(),held-payload);assert_eq!(budget.used(),before+2*fixed,"existing Budget contract conservatively retains both child Arc/control grants");}
+ #[test]fn treefree_preflight_uses_same_identifier_index_without_semantic_source_and_keeps_credit_live(){let pages=pages();let budget=Budget::new(8*1024*1024).unwrap();let before=budget.used();let data=prepare_selected_pages(&pages,&budget,&||Ok(())).unwrap();assert_eq!(pages.passes.get(),1);assert!(data.index.has(NameTable::Vars,"datum/probe","value"));assert_eq!(data.index.entry_order,["/datum/probe"]);assert_eq!(data.index.entries("datum/probe").unwrap()[0].kind,"drawn");assert!(data.index.set_calls.is_empty(),"setter names belong after actual semantic preparation");assert!(data.retained_charge().unwrap()>std::mem::size_of::<UnsealedDerivedIndexData>());assert!(budget.used()>before);let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();let held=budget.used();let payload=data.funding.used().checked_sub(fixed).unwrap();assert!(payload>0);drop(data);assert_eq!(budget.used(),held-payload);assert_eq!(budget.used(),before+3*fixed,"builder, sealed index and fallback retain only child Arc/control grants");}
  #[test]
  fn many_actual_file_scopes_reuse_scratch_without_refunding_retained_schema(){
   struct Repeated<'a>{root:&'a std::path::Path,budget:&'a Arc<Budget>,text:dm_preprocess::SourceText}
@@ -276,8 +361,8 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
   let budget=Budget::new(1024*1024).unwrap();
   let source=Repeated{root:&root,budget:&budget,text:text.into()};
   let data=prepare_selected_pages(&source,&budget,&||Ok(())).unwrap();
-  assert!(data.index.schema.vars["datum/probe"].contains("value"));
-  let rows=&data.index.entries["datum/probe"];
+  assert!(data.index.has(NameTable::Vars,"datum/probe","value"));
+  let rows=&data.index.entries("datum/probe").unwrap();
   assert_eq!(rows.len(),64);
   assert_eq!(rows[0].rel,"code/file_0.dm");
   assert_eq!(rows[63].rel,"code/file_63.dm");
@@ -285,7 +370,7 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
   assert!(data.funding.used()>=rows.iter().map(|entry|entry_backing(entry).unwrap()).sum::<usize>());
   let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
   drop(data);
-  assert_eq!(budget.used(),66*fixed,"one root, one retained child and exactly one file child per page leave only fixed grants");
+  assert_eq!(budget.used(),67*fixed,"root, builder, sealed index and file children leave only fixed grants");
  }
  #[test]
  fn one_large_file_reuses_sequential_and_nested_matcher_slots(){
@@ -301,8 +386,8 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
   source.push_str("/datum/probe/derived()\n    return list(derive(nameof(output), nameof(value), rel_each(nameof(items), nameof(/obj/item::value))))\n");
   let budget=Budget::new(2*1024*1024).unwrap();
   let data=prepare_selected_pages(&Single{root:&root,budget:&budget,text:source.into()},&budget,&||Ok(())).unwrap();
-  assert_eq!(data.index.schema.tracked["datum/probe"].iter().map(String::as_str).collect::<Vec<_>>(),["value"]);
-  let rows=&data.index.entries["datum/probe"];
+  assert!(data.index.has(NameTable::Tracked,"datum/probe","value"));
+  let rows=&data.index.entries("datum/probe").unwrap();
   assert_eq!(rows.len(),1);
   let row=&rows[0];
   assert_eq!(row.line,12_002);
@@ -310,6 +395,34 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
   assert!(row.local.contains("value"));
   assert!(row.local.contains("items"));
   assert_eq!(row.remote,[(Some("/obj/item".into()),"value".into())]);
+ }
+ #[test]
+ fn sealed_derived_lookup_keeps_sorted_members_and_authored_entry_order(){
+  let root=std::env::current_dir().unwrap().join("derived-sealed-order");
+  let text=concat!(
+   "/datum/z\n    var/last\n    var/first\n    /datum/z/derived()\n        return list(drawn_from(nameof(last)), ui_from(nameof(first)))\n",
+   "/datum/a\n    var/other\n    /datum/a/derived()\n        return list(drawn_from(nameof(other)))\n",
+   "PUBLISHED_BY(/datum/z, first, key_a)\nPUBLISHED_BY(/datum/z, first, key_b)\n");
+  let pages=Pages{file:crate::captured_raw_file::File::capture(&root,&root.join("code/probe.dm"),text.into()).unwrap(),fail:false.into(),stop:false.into(),passes:0.into()};
+  let budget=Budget::new(8*1024*1024).unwrap();
+  let data=prepare_selected_pages(&pages,&budget,&||Ok(())).unwrap();
+  let IndexSchema::Sealed(schema)=&data.index.schema else{panic!("cold index must seal")};
+  let IndexEntries::Sealed(entries)=&data.index.entries else{panic!("cold entry index must seal")};
+  for table in [&schema.vars,&schema.typed,&schema.tracked,&schema.relations]{
+   assert_eq!(table.len(),table.capacity());
+   assert!(table.windows(2).all(|w|w[0].0<w[1].0));
+   for (_,names) in table{assert_eq!(names.len(),names.capacity());assert!(names.windows(2).all(|w|w[0]<w[1]));}
+  }
+  assert_eq!(entries.len(),entries.capacity());
+  assert_eq!(entries.iter().map(|(owner,_)|owner.as_str()).collect::<Vec<_>>(),["datum/a","datum/z"]);
+  assert_eq!(data.index.entry_order,["/datum/z","/datum/a"]);
+  assert_eq!(data.index.entries("datum/z").unwrap().iter().map(|row|row.kind).collect::<Vec<_>>(),["drawn","ui"]);
+  assert!(data.index.has(NameTable::Vars,"datum/z/child","first"));
+  assert!(!data.index.has(NameTable::Vars,"datum/z/child","other"));
+  assert_eq!(data.index.published().last().map(|row|row.2.as_str()),Some("key_b"));
+  assert_eq!(data.backing,sealed_index_backing(schema,entries,&data.index.entry_order).unwrap());
+  let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
+  assert_eq!(budget.used(),4*fixed+data.backing,"all successful builder grants have been retired");
  }
  #[test]fn treefree_preflight_refuses_actual_io_early_stop_and_quota_then_recovers(){let pages=pages();let budget=Budget::new(8*1024*1024).unwrap();pages.fail.set(true);assert!(matches!(prepare_selected_pages(&pages,&budget,&||Ok(())),Err(Failure::Operational(ref error))if error.raw_os_error()==Some(1450)));assert_eq!(pages.passes.get(),0);pages.fail.set(false);pages.stop.set(true);assert!(matches!(prepare_selected_pages(&pages,&budget,&||Ok(())),Err(Failure::Unsupported(_))));pages.stop.set(false);let tiny=Budget::new(256).unwrap();assert!(matches!(prepare_selected_pages(&pages,&tiny,&||Ok(())),Err(Failure::Operational(ref error))if error.kind()==io::ErrorKind::OutOfMemory));let fresh=Budget::new(8*1024*1024).unwrap();let data=prepare_selected_pages(&pages,&fresh,&||Ok(())).unwrap();assert_eq!(data.index.entry_order.len(),1);}
 }
@@ -320,7 +433,7 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
 /// and selected/all-CODE EOF, and must never cache this as a current source.
 pub fn derived_reads_data_without_semantic_from_preflight_pages(preflight:UnsealedDerivedIndexData,selected_pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,test_types:&BTreeSet<String>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<DerivedReadData,Failure>{
  check(budget,poll)?;let phase=Budget::scoped_temporaries(budget).map_err(|m|oom(budget,m))?;let mut held=Some(preflight);
- let pending=(||{let selected=RawPages{pages:selected_pages,budget:&phase,poll};let all=RawPages{pages,budget:&phase,poll};let UnsealedDerivedIndexData{index,funding}=held.take().expect("single actual raw index");let pending=collect_pages(&selected,&all,&selected,index,&NoSemanticWrites,test_types,poll);drop(funding);pending})();
+ let pending=(||{let selected=RawPages{pages:selected_pages,budget:&phase,poll};let all=RawPages{pages,budget:&phase,poll};let UnsealedDerivedIndexData{index,funding,..}=held.take().expect("single actual raw index");let pending=collect_pages(&selected,&all,&selected,index,&NoSemanticWrites,test_types,poll);drop(funding);pending})();
  let pending=finish(pending,&phase,poll);let pending=match pending{Ok(data)=>{let n=data.retained_charge().ok_or_else(||oom(budget,"raw-only Derived retention overflow"))?;match budget.charge(n){Ok(())=>Ok(data),Err(m)=>{drop(data);Err(oom(budget,m))}}},Err(e)=>Err(e)};
  drop(held);if pending.is_err(){phase.keep_failed_scratch()}drop(phase);finish(pending,budget,poll)
 }
