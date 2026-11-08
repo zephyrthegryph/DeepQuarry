@@ -623,7 +623,6 @@ CAPABILITIES(/area)
 	on_change(STAT_DEMAND_ENVIRON, ANY, then(PROC_REF(demand_changed)))
 	ref_many(nameof(valid_spawn_turfs))
 	ref_one(nameof(media_source))
-	ref_many(nameof(all_doors), /obj/machinery/door/firedoor)
 	owns_many(nameof(air_vent_info), /datum/air_device_status)
 	owns_many(nameof(air_scrub_info), /datum/air_device_status)
 

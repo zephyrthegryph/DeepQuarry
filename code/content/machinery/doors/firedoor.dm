@@ -66,33 +66,23 @@
 			return FALSE
 	return TRUE
 
+/// The areas it guards: its own and each cardinal neighbour's, one relation written from both ends (areas_added here, the area's all_doors there). The
+/// map's areas exist before any atom initializes, so the door joins them as it is made.
 /obj/machinery/door/firedoor/proc/join_area_door_lists()
 	var/area/A = get_area(src)
 	ASSERT(istype(A))
 
-	rel_add(A, nameof(A.all_doors), src)
+	rel_add(src, nameof(areas_added), A)
 
 	for(var/direction in GLOB.cardinal)
 		A = get_area(get_step(src,direction))
-		if(istype(A) && !(src in A.all_doors))
-			rel_add(A, nameof(A.all_doors), src)
-
-/// The areas it guards, as the relation its alarm question reads through (made after init, once the neighbours are all there).
-/obj/machinery/door/firedoor/proc/guard_areas(datum/act/timer/A)
-	var/area/here = get_area(src)
-	if(!istype(here))
-		return
-	rel_add(src, nameof(areas_added), here)
-	for(var/direction in GLOB.cardinal)
-		var/area/neighbour = get_area(get_step(src, direction))
-		if(istype(neighbour) && !(neighbour in areas_added))
-			rel_add(src, nameof(areas_added), neighbour)
+		if(istype(A) && !(A in areas_added))
+			rel_add(src, nameof(areas_added), A)
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()
 	. = ..()
-	for(var/area/A in areas_added)
-		rel_remove(A, nameof(A.all_doors), src)
+	rel_clear(src, nameof(areas_added))
 
 /obj/machinery/door/firedoor/get_material()
 	return get_material_by_name(MAT_STEEL)
@@ -162,8 +152,10 @@ MSG_DEF_SELF(firedoor/busy_prying, "Someone's busy prying at it!")
 CAPABILITIES(/obj/machinery/door/firedoor)
 	keeps_if(PROC_REF(no_duplicate_firedoor))
 	setup(PROC_REF(join_area_door_lists))
-	ref_many(nameof(areas_added), /area)
-	after_init(0, then(PROC_REF(guard_areas)))
+	links(/obj/machinery/door/firedoor::areas_added, /area::all_doors, a_many = TRUE, b_many = TRUE)
+	// The shared blocker (a copy of the sprite that follows the look, look_resync_emissive_blocker()) instead of the door's unique blocker atom: one
+	// fewer atom per firedoor; a shutter's open and shut sprites are what it blocks, its opening flick is not mirrored.
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	configure(uses_power(channel = ENVIRON, idle = 5))
 	// One temperature sensing per dependency mixture while the door sleeps shut: Rust compares the reading and DM hears only a move across the hot or cold limit.
 	sensed(id = "temperature_0", reading = CH_GAS_TEMPERATURE, limits_from = PROC_REF(temperature_limits), changed = PROC_REF(band_heard), air = nameof(dependency_air_0))
