@@ -929,7 +929,12 @@ fn joined_header_charge_excludes_only_actual_current_native_origin_loan_pages() 
     };
     let root = crate::test_scratch::dir("joined-origin-page-charge");
     let project = root.join("project.dme");
-    let text = "/proc/probe()\n".to_owned() + &"    return 1\n".repeat(2500);
+    std::fs::write(root.join("multiple.dm"), "#pragma multiple\n/datum/INSTANCE_NAME\n    var/value = 1\n").unwrap();
+    let text = concat!(
+        "#define INSTANCE_NAME first_original_occurrence\n#include \"multiple.dm\"\n#undef INSTANCE_NAME\n",
+        "#define INSTANCE_NAME second_original_occurrence\n#include \"multiple.dm\"\n#undef INSTANCE_NAME\n",
+        "/proc/probe()\n",
+    ).to_owned() + &"    return 1\n".repeat(2500);
     std::fs::write(&project, text).unwrap();
     let inputs = RecordingInputs::new(crate::input_snapshot::FileSystemInputs, 0)
         .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
@@ -944,6 +949,13 @@ fn joined_header_charge_excludes_only_actual_current_native_origin_loan_pages() 
         None, &executor, None, &host, None,
     ).unwrap().with_body_queries(Arc::clone(&queries) as Arc<dyn BodySyntaxQueries>).unwrap();
     let view = frontend.source_view().unwrap();
+    let acquisitions: Vec<_> = view.mapping().source_acquisitions()
+        .filter(|(path, _)| path.ends_with("multiple.dm"))
+        .map(|(_, lease)| lease.expect("actual repeated text acquisition"))
+        .collect();
+    assert_eq!(acquisitions.len(), 2);
+    assert!(!acquisitions[0].source_text().same_view(acquisitions[1].source_text()));
+    inputs.diagnostic_source_evidence(&view).unwrap().check(view.mapping()).unwrap();
     let archive = view.archive();
     let full = |db: &crate::query_db::QueryDb| db.with_funded_origin_policy_pages(|funded| {
         assert!(!funded(&()), "synthetic owner cannot claim backing exclusion");

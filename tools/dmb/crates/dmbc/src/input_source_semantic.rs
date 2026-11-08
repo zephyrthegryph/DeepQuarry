@@ -220,19 +220,26 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         includes: impl Iterator<Item = (usize, &'a Arc<PathBuf>)>,
     ) -> io::Result<Arc<SemanticSourceEvidence>> {
         // Lookup only: this is the compiler's existing source roster, not a model.
-        let sources: BTreeMap<_, _> = files
+        let mut sources: BTreeMap<_, _> = files
             .iter()
             .filter(|file| file.captured)
-            .map(|file| (file.path.as_path(), &file.text))
+            .map(|file| (file.path.as_path(), (&file.text, false)))
             .collect();
+        let original = mapping.initial_environment() == dm_preprocess::InitialEnvironment::OriginalChecker0290;
         let mut entries = Vec::new();
         for (occurrence, path) in includes {
-            let source = sources.get(path.as_path());
             let acquisition = mapping
                 .source_acquisition(occurrence)
                 .filter(|value| {
-                    (self.mapped_recorded_source_fact(mapping,occurrence,path.as_ref()).is_ok()||self.validate_analysis_subject_lease(path.as_ref(),value))
-                        && source.is_some_and(|source| value.source_text().same_view(source))
+                    if !(self.mapped_recorded_source_fact(mapping,occurrence,path.as_ref()).is_ok()
+                        || self.validate_analysis_subject_lease(path.as_ref(),value)) {
+                        return false;
+                    }
+                    sources.get_mut(path.as_path()).is_some_and(|(source, matched)| {
+                        let same = value.source_text().same_view(source);
+                        *matched |= same;
+                        original || same
+                    })
                 })
                 .cloned();
             entries.push(Entry {
@@ -240,6 +247,18 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                 path: Arc::clone(path),
                 acquisition,
             });
+        }
+        if original {
+            // The file roster keeps one decoded view per path. An Original
+            // multiple include can have its own exact open/encoding receipt
+            // for each occurrence. Require the roster's real view to match
+            // at least one of those receipts and authenticate every other
+            // occurrence independently above.
+            for entry in &mut entries {
+                if !sources.get(entry.path.as_path()).is_some_and(|(_, matched)| *matched) {
+                    entry.acquisition = None;
+                }
+            }
         }
         let compatibility = SemanticSourceEvidence::evaluate_compatibility(mapping, &entries)
             .map_err(|error| error.to_string());
