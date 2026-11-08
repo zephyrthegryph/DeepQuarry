@@ -332,6 +332,14 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 	var/datum/activation/granted_by = entry[FAST_ACTIVATION]
 	var/at = R.fast_row_providers[k]
 	var/datum/prov/V = at ? R.providers[at] : null
+	if(R.menu_scratch)
+		// The walk's one context, refilled per row (op_fast_walk()); each condition is answered once per holder and target in the walk.
+		var/datum/act/op/shared = R.menu_scratch[1]
+		op_act_set(shared, P, entry[FAST_BINDING], op_fast_holder(R, side), side, granted_by, granted_by ? granted_by.def : P.owner_def, V, R.actor, R.target, R.held, R.origin, R.authority)
+		for(var/cond in op_conds_cheapest_first(P))
+			if(!op_menu_cond(R, shared, cond))
+				return FALSE
+		return TRUE
 	var/datum/act/op/A = op_act_fill(P, entry[FAST_BINDING], op_fast_holder(R, side), side, granted_by, granted_by ? granted_by.def : P.owner_def, V, R.actor, R.target, R.held, R.origin, R.authority)
 	var/ok = TRUE
 	try
@@ -345,9 +353,32 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 	A.release()
 	return ok
 
+/// Runs `proc_name` (op_fast_winner_walk or op_fast_next_walk) with one op context for every row's when() test, released after: a click that walks
+/// a body's surgery steps fills one context, not one per step. The conditions' answers are kept for the walk only.
+/proc/op_fast_walk(datum/op_resolution/R, proc_name, datum/op_cand/after = null)
+	if(R.menu_scratch)
+		return call(proc_name)(R, after)
+	R.menu_scratch = list(take(/datum/act/op))
+	try
+		. = call(proc_name)(R, after)
+	catch(var/exception/fault)
+		op_fast_walk_end(R)
+		throw fault
+	op_fast_walk_end(R)
+
+/proc/op_fast_walk_end(datum/op_resolution/R)
+	var/datum/act/op/shared = R.menu_scratch[1]
+	R.menu_scratch = null
+	R.menu_cond_answers = null
+	shared.release()
+
 /// The winner among R's compiled survivors (op_resolution_winner() over the flat rows, made as it goes): a record of the one that wins. The same
 /// rule: the first whose when() holds and whose path is open, a blocked one set aside for a later one that answers the same input.
 /proc/op_fast_winner(datum/op_resolution/R)
+	RETURN_TYPE(/datum/op_cand)
+	return op_fast_walk(R, GLOBAL_PROC_REF(op_fast_winner_walk))
+
+/proc/op_fast_winner_walk(datum/op_resolution/R, datum/op_cand/unused)
 	RETURN_TYPE(/datum/op_cand)
 	var/set_aside = 0
 	var/k = 0
@@ -371,6 +402,10 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 
 /// The compiled survivor after `after` whose when() conditions hold, as a record, or null.
 /proc/op_fast_next(datum/op_resolution/R, datum/op_cand/after)
+	RETURN_TYPE(/datum/op_cand)
+	return op_fast_walk(R, GLOBAL_PROC_REF(op_fast_next_walk), after)
+
+/proc/op_fast_next_walk(datum/op_resolution/R, datum/op_cand/after)
 	RETURN_TYPE(/datum/op_cand)
 	var/k = after.fast_index
 	while(TRUE)
