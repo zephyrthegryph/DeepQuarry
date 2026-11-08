@@ -38,3 +38,60 @@
 	log_test("CLIENT LIGHTING: switch on + light pass [on_ms] ms ([glows] glows, 0 lighting objects); switch off + light pass [off_ms] ms ([lit_objects] lighting objects)")
 	TEST_ASSERT_NULL(S.glow, "client lighting off: the glow is gone")
 	TEST_ASSERT_NOTNULL(T.lighting_object, "client lighting off: the lit floor has its lighting object again")
+
+/// The glow's mask stops at a wall: an opaque blocker east of the light keeps the floor behind it dark, and the mask is
+/// rebuilt when the blocker comes and goes (a door closing and opening), and when the light moves.
+/datum/unit_test/dq_client_lighting_shadows
+
+/datum/unit_test/dq_client_lighting_shadows/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/east1 = locate(T.x + 1, T.y, T.z)
+	var/turf/east2 = locate(T.x + 2, T.y, T.z)
+	var/turf/north1 = locate(T.x, T.y + 1, T.z)
+	TEST_ASSERT(east1 && east2 && north1 && !east1.directional_opacity && !east2.directional_opacity && !north1.directional_opacity, "the test floor has clear turfs east and north")
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/datum/light_source/S = L.light
+	TEST_ASSERT_NOTNULL(S?.glow_mask, "the glow has a shadow mask")
+	TEST_ASSERT_NOTNULL(S.glow.get_filter("client_shadow"), "the glow is cut by an alpha filter")
+	TEST_ASSERT_NOTNULL(S.glow_mask.get_filter("client_shadow_soft"), "the mask is blurred before it cuts the glow")
+	TEST_ASSERT(findtext(S.glow_mask.render_target, "*") == 1, "the mask is a hidden render target")
+	TEST_ASSERT(S.glow_reach["2,0"], "the open floor two tiles east is lit")
+	var/builds = GLOB.client_glow_mask_builds
+	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT(GLOB.client_glow_mask_builds > builds, "closing the blocker rebuilt the mask")
+	TEST_ASSERT(S.glow_reach["1,0"], "the blocker's face is lit")
+	TEST_ASSERT(!S.glow_reach["2,0"], "the floor behind the blocker is in shadow")
+	builds = GLOB.client_glow_mask_builds
+	qdel(B)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT(GLOB.client_glow_mask_builds > builds, "opening it rebuilt the mask")
+	TEST_ASSERT(S.glow_reach["2,0"], "the floor behind is lit again")
+	builds = GLOB.client_glow_mask_builds
+	L.forceMove(north1)
+	SSlighting.light_step(0, TRUE)
+	S = L.light
+	TEST_ASSERT_EQUAL(S?.glow?.loc, north1, "the glow followed the moved light")
+	TEST_ASSERT(GLOB.client_glow_mask_builds > builds, "the moved light rebuilt its mask")
+	log_test("CLIENT SHADOWS: [GLOB.client_glow_mask_builds] mask builds, [GLOB.client_glow_reconsiders] opacity-triggered redraws")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_NULL(S?.glow_mask, "client lighting off: the mask is gone")
+
+/// The lighting step drops a deleted light source left in its queue instead of spinning on it (a caller once re-queued
+/// spent sources, and light_step() stepped back over the same entry forever).
+/datum/unit_test/dq_light_step_drops_deleted_sources
+
+/datum/unit_test/dq_light_step_drops_deleted_sources/Run()
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, run_loc_floor_bottom_left)
+	SSlighting.light_step(0, TRUE)
+	var/datum/light_source/S = L.light
+	TEST_ASSERT_NOTNULL(S, "the fixture has a light source")
+	qdel(S)
+	TEST_ASSERT(QDELETED(S), "the source is deleted")
+	SSlighting.queue_source(S)
+	SSlighting.queue_source(S)
+	SSlighting.light_step(0, TRUE) // must return
+	TEST_ASSERT(!(S in SSlighting.sources_queue), "the deleted source left the queue")

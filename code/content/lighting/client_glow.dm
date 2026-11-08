@@ -55,10 +55,12 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	G.set_alpha(clamp(round(255 * min(light_power, 1)), 0, 255))
 	if(G.loc != source_turf)
 		G.abstract_move(source_turf)
+	client_glow_mask_apply(CEILING(range, 1), G.icon, offset) // the shadow mask (client_shadow.dm)
 	applied = TRUE
 
 /// This light stops glowing (it went off, moved into nullspace or left client lighting).
 /datum/light_source/proc/client_glow_clear()
+	client_glow_mask_clear()
 	if(glow)
 		var/obj/effect/overlay/client_glow/G = glow
 		rel_clear(src, nameof(glow))
@@ -82,6 +84,10 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 			if(T.has_dynamic_lighting())
 				T.set_luminosity(1, TRUE) // BYOND shows every turf; the lighting plane does the darkness
 	for(var/datum/light_source/L)
+		// A spent source not yet destroyed must not be queued again: light_step() steps back over a deleted queue entry,
+		// so a requeued one would spin it forever.
+		if(QDELETED(L))
+			continue
 		if(on)
 			L.remove_lum()
 		else

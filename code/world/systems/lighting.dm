@@ -63,6 +63,13 @@ SYSTEM_DEF(lighting)
 		i += 1
 
 		var/datum/light_source/L = queue[i]
+		// A deleted (or marked-for-deletion) source still in the queue is dropped here: stepping back over it while it
+		// stays in place would spin this loop forever.
+		if(QDELETED(L))
+			if(queue[i] == L)
+				queue.Cut(i, i + 1)
+			i -= 1
+			continue
 		// Which sources keep being re-queued (the churn metrics; world Topic "lightcensus").
 		CHURN_COUNT(lights, L.source_atom ? L.source_atom.type : /datum/light_source)
 		L.update_corners()
@@ -70,7 +77,11 @@ SYSTEM_DEF(lighting)
 		if(!QDELETED(L))
 			L.needs_update = LIGHTING_NO_UPDATE
 		else
-			i -= 1 // update_corners() has removed L from the list, move back so we don't overflow or skip the next element
+			// update_corners() deleted L: on_destroy() normally took it out of the list; drop it here if it did not, then
+			// step back so the next element is not skipped.
+			if(i <= length(queue) && queue[i] == L)
+				queue.Cut(i, i + 1)
+			i -= 1
 
 		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
 		if(!init_tick_checks && KERNEL_OVER_BUDGET)
