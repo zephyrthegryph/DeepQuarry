@@ -183,27 +183,3 @@ already tgui. Two stay out on purpose:
 - the in-game admin viewer: it navigates a browser to an external web app (cross-origin, its own auth), which a tgui page cannot
   host; "Admin Viewer (Browser)" opens the same thing in the player's own browser.
 The modal prompts (section 8) stay separate by design.
-
-## 11. Docked windows are native panes (2026-11-08; supersedes the overlay of sections 2, 4, 6 and 10)
-
-A docked window was its own floating window that the stat panel kept moving over an empty box in its page. When that placement
-failed (the PDA on the test server) the entry showed with nothing in it, and every drag, scroll and resize was a race between the
-panel's page and native windows. The overlay is gone: a docked window is now what the chat is, a BYOND pane laid out by the client.
-
-- **The column.** The right-hand split (`rpane.rpanewindow`) keeps the chat's layout (`floating_chat.dm`). Where it seated the stat
-  panel it now seats `dock_column_slot()`: the stat panel itself while nothing is docked, else link pane 1. A link pane is a clone of
-  `dock_link_template` (a pane holding one child split); split n holds docked window n above and link n + 1 (or, for the last, the
-  stat panel) below. `dock_column_winsets()` (`code/library/ui/window_dock/dock_column.dm`) turns the ordered column and its shares
-  into those winsets; `/datum/window_dock/proc/relayout()` applies them in one winset: it empties the slot and every link first (a
-  pane lives in one place at a time), makes each docked window a pane (`is-pane=true`, no titlebar, visible), fills the chain and
-  seats it. Every relayout logs its winset (`href-tgui`, context `window_dock`).
-- **The window.** A docked window keeps its page, its `/datum/tgui` and its routing; it draws its own title bar with a Float button
-  (`wm/float`), as the chat draws its own tab row. Its page shows itself when it reveals (`reveal.ts`) and says `wm/ready`, which
-  seats the pane.
-- **The server keeps the layout.** `remember()` writes `dock` per interface into the `window_layout` preference on every dock and
-  float; a window of a docked interface opens docked.
-- **The stat panel frames nothing.** `DockArea.tsx`, `dockHost.ts` and `windowDock.ts` are deleted; the panel only says `WM-Ready`
-  when it (re)loads, which re-seats the chain, and keeps the one-gap frame rule (`chatSide.ts`).
-
-Next: floating windows as a pane in a small host window (as `chat_float` hosts the chat), so floating and docked share one path;
-then stacks (tabs), collapse to the title bar and drag-to-reorder in the chain.

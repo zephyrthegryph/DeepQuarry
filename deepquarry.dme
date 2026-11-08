@@ -6570,7 +6570,6 @@
 #include "code\library\ui\tgui_panel\speech.dm"
 #include "code\library\ui\tgui_panel\telemetry.dm"
 #include "code\library\ui\tgui_panel\tgui_panel.dm"
-#include "code\library\ui\window_dock\dock_column.dm"
 #include "code\library\ui\window_dock\window_dock.dm"
 #include "code\content\client\window_dock.dm"
 #include "code\content\tickets\mentor_pm.dm"
