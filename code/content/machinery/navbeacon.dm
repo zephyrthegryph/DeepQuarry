@@ -23,11 +23,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 /obj/machinery/navbeacon/hides_under_flooring()
 	return 1
 
-// called when turf state changes
-// hide the object if turf is intact
-/obj/machinery/navbeacon/hide(intact)
-	hide_under_floor(src, intact)
-
 // update the icon_state
 /// The look (the draw sweep: from its template).
 /obj/machinery/navbeacon/draw(datum/look/look)
