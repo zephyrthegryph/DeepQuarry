@@ -41,15 +41,8 @@
 	// actor of their own account.
 	return account || actor?.mind?.initial_account()
 
-GLOBAL_VAR_INIT(__probe_new_start, 0)
 /datum/contract_event/New(_event_type, atom/source, mob/living/actor, mob/living/subject, list/context, _occurrence_id)
-	if(GLOB.__probe_new_start && TICK_DELTA_TO_MS(TICK_USAGE_REAL - GLOB.__probe_new_start) > 20)
-		log_runtime("PUBLISH_STALL before New body [TICK_DELTA_TO_MS(TICK_USAGE_REAL - GLOB.__probe_new_start)] ms")
-	GLOB.__probe_new_start = 0
-	var/__n0 = TICK_USAGE_REAL
 	. = ..()
-	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __n0) > 20)
-		log_runtime("PUBLISH_STALL in datum/New parent [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __n0)] ms")
 	event_type = _event_type
 	STAMP(src, occurred_at, CLOCK_WORLD)
 	occurrence_id = _occurrence_id

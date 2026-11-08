@@ -88,17 +88,13 @@
 	__pl = TICK_USAGE_REAL
 	if(report.location_ref)
 		asset_label += " ([report.x], [report.y], [report.z])"
-	var/__fid = "infrastructure-damage:[handle_text(key)]"
-	var/__oid = "infrastructure-damage:[handle_text(key)]:[revision]"
-	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 6a strings [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms")
-	__pl = TICK_USAGE_REAL
-	var/list/__ctx = list(
+	var/datum/contract_event/event = new(CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, null, null, null, list(
 		"department" = DEPARTMENT_ENGINEERING,
 		"atom_id" = key,
 		"asset_name" = report.name,
 		"asset_label" = asset_label,
 		"atom_type" = report.source_type,
-		"fact_id" = __fid,
+		"fact_id" = "infrastructure-damage:[handle_text(key)]",
 		"fact_revision" = revision,
 		"fact_active" = current_damage > 0,
 		"metrics" = list(
@@ -107,11 +103,7 @@
 			"maximum_integrity" = report.max_integrity,
 		),
 		"detail" = "[report.name] sustained [round(report.total_amount, 0.1)] integrity damage in [report.area_name].",
-	)
-	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 6b list [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms")
-	__pl = TICK_USAGE_REAL
-	GLOB.__probe_new_start = TICK_USAGE_REAL
-	var/datum/contract_event/event = new(CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, null, null, null, __ctx, __oid)
+	), "infrastructure-damage:[handle_text(key)]:[revision]")
 	if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl) > 20) log_runtime("PUBLISH_STALL seg 6 [TICK_DELTA_TO_MS(TICK_USAGE_REAL - __pl)] ms revisions=[length(infrastructure_fact_revisions)]")
 	__pl = TICK_USAGE_REAL
 	event.source_ref = key
