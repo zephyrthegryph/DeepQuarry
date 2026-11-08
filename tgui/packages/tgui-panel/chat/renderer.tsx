@@ -4,6 +4,7 @@
  * @license MIT
  */
 
+import { reportUiError } from 'tgui/errors';
 import { createRoot } from 'react-dom/client';
 import { createLogger } from 'tgui/logging';
 import { Tooltip } from 'tgui-core/components';
@@ -597,6 +598,12 @@ class ChatRenderer {
             : message.html;
         } else {
           logger.error('Error: message is missing text payload', message);
+          reportUiError({
+            kind: 'chat-message',
+            name: 'Chat',
+            error: 'message is missing text payload',
+            outcome: 'continued',
+          });
         }
         // Get all nodes in this message that want to be rendered like jsx
         const nodes = node.querySelectorAll('[data-component]');

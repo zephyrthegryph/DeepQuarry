@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "Every tgui window, floating or docked, reloads itself once after a crash and shows the error if it fails again within a second."
+  - code_imp: "All tgui failures report to the server log under the tgui_error context."

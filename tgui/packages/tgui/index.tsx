@@ -32,6 +32,7 @@ import { setupHotReloading } from 'tgui-dev-server/link/client';
 import { App } from './App';
 import { setDebugHotKeys } from './debug/use-debug';
 import { setupDrag } from './drag';
+import { guardedDispatch, installErrorReporting } from './errors';
 import { bus } from './events/listeners';
 import { setupHotKeys } from './hotkeys';
 import { DevelopmentProfiler } from './profiling/DevelopmentProfiler';
@@ -68,7 +69,10 @@ function setupApp() {
   });
   captureExternalLinks();
 
-  Byond.subscribe((type, payload) => bus.dispatch({ type, payload }));
+  installErrorReporting('tgui window');
+  Byond.subscribe((type, payload) =>
+    guardedDispatch(type, () => bus.dispatch({ type, payload })),
+  );
 
   // Keep the profiler wrapper in the guaranteed main bundle. Its observers and
   // overlay remain dormant unless the server marks this as a local development

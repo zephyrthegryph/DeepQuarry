@@ -603,6 +603,8 @@
 			cancel_after(src, "ping")
 		if("wm/dock", "wm/float", "wm/dropped", "wm/view", "wm/log")
 			dock_message(type, payload)
+		if("wm/error")
+			log_tgui_client_error(user, payload, window())
 		if("ping/reply")
 			initialized = TRUE
 			cancel_after(src, "ping")

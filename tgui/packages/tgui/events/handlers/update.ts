@@ -1,3 +1,4 @@
+import { reportUiError } from '../../errors';
 import { perf } from 'common/perf';
 import { installChunkPublicPath } from '../../chunkPublicPath';
 import { prepareWindowGeometry, setupDrag } from '../../drag';
@@ -155,6 +156,12 @@ export function update(payload: UpdatePayload): void {
         }
         preparation.then(finishResume, (error) => {
           logger.error(`failed to prepare interface ${interfaceName}`, error);
+          reportUiError({
+            kind: 'prepare',
+            name: interfaceName ?? 'unknown',
+            error,
+            outcome: 'continued',
+          });
           finishResume();
         });
       } else {

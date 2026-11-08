@@ -1,5 +1,5 @@
+import { ReloadBoundary } from 'tgui/ReloadBoundary';
 import {
-  Component,
   type MouseEvent,
   type ReactNode,
   useState,
@@ -204,53 +204,6 @@ export function StatSearch(props: {
       onEscape={() => setQuery('')}
     />
   );
-}
-
-/**
- * One view (or the card) failing to draw shows a short error in its place; the tab row, the search and the other views keep working,
- * and the panel never falls back to blank. Reset by a new `resetKey` (another view, another card).
- */
-class ViewBoundary extends Component<
-  { resetKey: string; children: ReactNode },
-  { error: string | null; key: string }
-> {
-  state = { error: null as string | null, key: this.props.resetKey };
-
-  static getDerivedStateFromError(error: unknown) {
-    return { error: error instanceof Error ? error.message : String(error) };
-  }
-
-  static getDerivedStateFromProps(
-    props: { resetKey: string },
-    state: { error: string | null; key: string },
-  ) {
-    return props.resetKey === state.key
-      ? null
-      : { error: null, key: props.resetKey };
-  }
-
-  componentDidCatch(error: unknown) {
-    // The panel's console is the only place this shows; the message names the section for a bug report.
-    console.error(`stat panel: ${this.props.resetKey} failed to draw`, error);
-    Byond.sendMessage('col/page', {
-      type: 'WM-Log',
-      payload: {
-        event: 'stat-view-failed',
-        name: this.props.resetKey,
-        error: String((error as Error)?.stack || error),
-      },
-    });
-  }
-
-  render() {
-    if (this.state.error === null) return this.props.children;
-    return (
-      <div className="stat-empty">
-        This part of the panel failed to draw ({this.state.error}). Other tabs
-        still work; Fix UI reloads it.
-      </div>
-    );
-  }
 }
 
 /** The card a server push opens over the current view: examine, inspect, a turf's contents, the panel debug page. */
@@ -532,41 +485,27 @@ export function StatWindow(props: {
             <div className="stat-empty">Nothing matches.</div>
           )
         ) : (
-          <ViewBoundary resetKey={`${state.view}/${state.serverPage}`}>
+          <ReloadBoundary
+            name={state.view}
+            resetKey={`${state.view}/${state.serverPage}`}
+          >
             <ViewContent state={state} store={store} />
-          </ViewBoundary>
+          </ReloadBoundary>
         )}
         {overlay && !query.trim() && (
           <OverlayCard
             title={state.currentTab}
             onClose={() => store.closeCard()}
           >
-            <ViewBoundary resetKey={`card/${state.currentTab}`}>
+            <ReloadBoundary
+              name={state.currentTab}
+              resetKey={`card/${state.currentTab}`}
+            >
               {overlay}
-            </ViewBoundary>
+            </ReloadBoundary>
           </OverlayCard>
         )}
       </div>
     </div>
   );
-}
-
-/** A render error leaves the reload link rather than a blank panel. */
-export class PanelBoundary extends Component<
-  { children: ReactNode; onError: () => void },
-  { failed: boolean }
-> {
-  state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  componentDidCatch() {
-    this.props.onError();
-  }
-
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
 }

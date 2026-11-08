@@ -11,6 +11,12 @@ import { setupGlobalEvents } from 'tgui-core/events';
 import { captureExternalLinks } from 'tgui-core/links';
 import { setupHotReloading } from 'tgui-dev-server/link/client';
 import { App } from './app';
+import {
+  guardedDispatch,
+  installErrorReporting,
+  setErrorChannel,
+} from 'tgui/errors';
+import { sendPage } from './column/host';
 import { bus } from './events/listeners';
 import { store } from './events/store';
 import { fitChatBrowser } from './layout/geometry';
@@ -39,10 +45,16 @@ function setupApp() {
   setupPanelFocusHacks();
   captureExternalLinks();
 
+  // This page has no tgui datum: its reports go through the column's own channel.
+  setErrorChannel((report) => sendPage('WM-Error', report));
+  installErrorReporting('column page');
+
   render(<App />);
 
   // Dispatch incoming messages as store actions
-  Byond.subscribe((type, payload) => bus.dispatch({ type, payload }));
+  Byond.subscribe((type, payload) =>
+    guardedDispatch(type, () => bus.dispatch({ type, payload })),
+  );
 
   // Unhide the panel
   Byond.winset('outputwindow.legacy_output_selector', {

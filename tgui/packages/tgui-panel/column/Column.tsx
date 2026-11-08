@@ -14,9 +14,8 @@
  * - the grip under an expanded entry resizes it; the last expanded entry
  *   fills what is left.
  */
+import { ReloadBoundary } from 'tgui/ReloadBoundary';
 import {
-  Component,
-  type ErrorInfo,
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useEffect,
@@ -304,41 +303,6 @@ function startResize(
   target.addEventListener('pointercancel', end);
 }
 
-/** One window's content failing to draw shows a short error in its place; the rest of the column keeps working. */
-class WindowBoundary extends Component<
-  { name: string; children: ReactNode },
-  { error: boolean }
-> {
-  state = { error: false };
-
-  static getDerivedStateFromError() {
-    return { error: true };
-  }
-
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error(`column window "${this.props.name}" failed`, error, info);
-    // The server's log is the only record a player's failure leaves.
-    sendPage('WM-Log', {
-      event: 'window-failed',
-      name: this.props.name,
-      error: String(error?.stack || error),
-      component: info?.componentStack?.slice(0, 1200),
-    });
-  }
-
-  render() {
-    if (this.state.error) {
-      return (
-        <div className="column-window__error">
-          {this.props.name} failed to draw.{' '}
-          <Button onClick={() => this.setState({ error: false })}>Retry</Button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 /** What one window shows. */
 function WindowBody(props: { host: ColumnHost; win: DockWindow }) {
   const { host, win } = props;
@@ -355,7 +319,7 @@ function WindowBody(props: { host: ColumnHost; win: DockWindow }) {
     content = backend ? <EmbeddedInterface backend={backend} /> : null;
   }
   return (
-    <WindowBoundary name={win.title || win.iface}>{content}</WindowBoundary>
+    <ReloadBoundary name={win.title || win.iface}>{content}</ReloadBoundary>
   );
 }
 
