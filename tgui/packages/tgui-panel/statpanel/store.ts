@@ -6,7 +6,6 @@
 
 import { type AbilitiesData, hasAbilities } from './abilities';
 import type { InspectData } from './inspect';
-import type { McHealthData } from './mcHealthData';
 import {
   ADMIN_VIEWS,
   dataTabOf,
@@ -16,6 +15,7 @@ import {
   placeOf,
   type ServerPage,
 } from './layout';
+import type { McHealthData } from './mcHealthData';
 
 export type Host = {
   sendMessage: (type: string, payload?: object) => void;
