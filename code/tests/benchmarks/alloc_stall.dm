@@ -22,6 +22,9 @@
 	probe("strings", param("strings", 1000000), stall_ms, 0)
 	probe("lists", param("lists", 400000), stall_ms, 0)
 	probe("slots", param("slots", 600000), stall_ms, length(handle_gens))
+	probe("num16_kept", param("facts", 20000), stall_ms, 0)
+	probe("num8_kept", param("facts", 20000), stall_ms, 0)
+	probe("num16_churn_low", param("facts", 20000), stall_ms, 0)
 	probe("fact_strings", param("facts", 20000), stall_ms, 0)
 	probe("fact_strings_churn", param("facts", 20000), stall_ms, 0)
 	probe("string_churn", param("churn", 300000), stall_ms, 0)
@@ -46,6 +49,13 @@
 				keep[i] = "alloc-stall-[i]-[world.time]"
 			if("lists")
 				keep[i] = list(i)
+			if("num16_kept")
+				keep[i] = num2text(2048576 + i * 7919, 16)
+			if("num8_kept")
+				keep[i] = num2text(3048576 + i * 7919, 8)
+			if("num16_churn_low")
+				var/t = num2text(1048576 + i * 7919 + 3, 16)
+				t = null
 			if("fact_strings")
 				var/h = 1048576 + i * 7919
 				keep[i] = list("infrastructure-damage:[handle_text(h)]", "infrastructure-damage:[handle_text(h)]:1")
