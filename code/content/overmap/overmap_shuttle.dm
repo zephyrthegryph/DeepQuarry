@@ -179,10 +179,6 @@
 	play_sfx(src, opened ? SFX_EFFECTS_LOCKER_OPEN : SFX_EFFECTS_LOCKER_CLOSE)
 	return OP_OK
 
-// Walls hide stuff inside them, but we want to be visible.
-/obj/structure/fuel_port/hide()
-	return
-
 MSG_DEF_SELF(fuel_port/secured, "The door is secured tightly. You'll need a crowbar to open it.")
 MSG_DEF_SELF(fuel_port/closed, "The fuel port door is still closed!")
 

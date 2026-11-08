@@ -1413,6 +1413,7 @@
 #include "code\content\library\hardcode_library\reference\welcome_pamphlet.dm"
 #include "code\content\library\hardcode_library\religious\ported_books.dm"
 #include "code\content\lighting\client_glow.dm"
+#include "code\content\lighting\client_light_level.dm"
 #include "code\content\lighting\client_shadow.dm"
 #include "code\content\lore_codex\codex.dm"
 #include "code\content\lore_codex\robutts.dm"

@@ -46,53 +46,32 @@
 			return FALSE
 	return TRUE
 
-/// An instance initialised through the plan ends in the state the discovery path leaves: representative map types, both ways.
+/// An instance initialised through the plan ends in the state the discovery path left (recorded in dq_init_plan_golden.dm before that path was
+/// deleted): representative map types.
 /datum/unit_test/dq_init_plan_parity
 
 /datum/unit_test/dq_init_plan_parity/Run()
-	var/list/types = list(
-		/obj/machinery/door/firedoor,
-		/obj/machinery/light,
-		/obj/machinery/atmospherics/pipe/simple/hidden,
-		/obj/structure/grille,
-		/obj/structure/table/standard,
-		/obj/item/tool/wrench,
-		/obj/machinery/vending/coffee,
-		/obj/structure/extinguisher_cabinet,
-	)
+	var/list/types = dq_init_plan_types()
 	var/turf/at = run_loc_floor_bottom_left
 	for(var/type in types)
 		if(!ispath(type))
 			continue
-		var/list/with_plan = init_plan_snapshot(type, at, FALSE)
-		var/list/without = init_plan_snapshot(type, at, TRUE)
+		var/list/with_plan = init_plan_snapshot(type, at)
+		var/list/recorded = dq_init_plan_golden()[type]
+		TEST_ASSERT_NOTNULL(recorded, "[type] has a recorded state (dq_init_plan_golden.dm)")
 		var/list/diffs = list()
-		for(var/key in with_plan | without)
-			if(with_plan[key] != without[key])
-				diffs += "[key]: plan [with_plan[key]] / discovery [without[key]]"
-		TEST_ASSERT(!length(diffs), "[type] differs between the plan and the discovery path: [jointext(diffs, "; ")]")
+		// The recording went through JSON: a path came back as its text and a name's text macros as their characters, so values compare as text, and
+		// a name compares without its leading text-macro character (\proper, \improper).
+		for(var/key in with_plan | recorded)
+			if(dq_golden_text(with_plan[key]) != dq_golden_text(recorded[key]))
+				diffs += "[key]: plan [with_plan[key]] / recorded [recorded[key]]"
+		TEST_ASSERT(!length(diffs), "[type] differs from the state the discovery path left (recorded): [jointext(diffs, "; ")]")
 
 /// The engine-visible state of a fresh `type` made with the plan on or off: primitive vars, and the engine records it was given.
-/proc/init_plan_snapshot(type, turf/at, off)
+/proc/init_plan_snapshot(type, turf/at)
 	var/list/had = at.contents.Copy()
-	var/was = GLOB.init_plan_off
-	var/was_ctor = ctor_plan_off
-	var/was_silent = GLOB.silent_construction
-	GLOB.silent_construction = !off // with the plans on, construction is silent; off, every write publishes as before
-	GLOB.init_plan_off = off
-	ctor_plan_off = off // the construction plan (ctor_plan.dm) goes with it: on, both plans; off, every table asked as before them
-	var/atom/A
-	rand_seed(4242) // both ways draw the same rolls (a light fixture's broken_chance)
-	try
-		A = new type(at)
-	catch(var/exception/e)
-		GLOB.init_plan_off = was
-		ctor_plan_off = was_ctor
-		GLOB.silent_construction = was_silent
-		throw e
-	GLOB.init_plan_off = was
-	ctor_plan_off = was_ctor
-	GLOB.silent_construction = was_silent
+	rand_seed(4242) // the same rolls as the recording (a light fixture's broken_chance)
+	var/atom/A = new type(at)
 	. = list()
 	var/static/list/skip = list("x", "y", "z", "loc", "vars", "type", "parent_type", "tag", "contents", "gc_destroyed", "serial", "weak_reference", "datum_id", "rx", "refresh_queued", "refresh_bits", "handle_slot", "own_holder_ref")
 	for(var/V in A.vars)
@@ -119,3 +98,28 @@
 	for(var/atom/movable/left in at.contents - had)
 		log_world("dq_init_plan_parity: [type] left [left.type] on its tile; removed")
 		qdel(left)
+
+/// The representative map types the init parity covers.
+/proc/dq_init_plan_types()
+	return list(
+		/obj/machinery/door/firedoor,
+		/obj/machinery/light,
+		/obj/machinery/atmospherics/pipe/simple/hidden,
+		/obj/structure/grille,
+		/obj/structure/table/standard,
+		/obj/item/tool/wrench,
+		/obj/machinery/vending/coffee,
+		/obj/structure/extinguisher_cabinet,
+	)
+
+/// A snapshot value as comparable text: what JSON keeps of it (a path's text; a text without the text-macro characters BYOND writes in names).
+/proc/dq_golden_text(value)
+	if(isnull(value))
+		return ""
+	var/text = "[value]"
+	var/list/kept = list()
+	for(var/i in 1 to length(text))
+		var/code = text2ascii(text, i)
+		if(code >= 32 && code < 127)
+			kept += ascii2text(code)
+	return jointext(kept, "")

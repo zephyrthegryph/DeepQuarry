@@ -97,6 +97,7 @@ CAPABILITIES(/obj/item/t_scanner)
 	if(scanned_token && (scanned_token in GLOB.overlay_cache))
 		. = GLOB.overlay_cache[scanned_token]
 	else
+		interest_draw_now(scanned, force = TRUE) // a hidden thing owes its first draw (nobody could see it); the scan shows it, so it draws first
 		var/image/I = image(loc = scanned, icon = scanned.icon, icon_state = scanned.icon_state, layer = HUD_LAYER)
 
 		//Pipes are special

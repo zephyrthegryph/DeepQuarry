@@ -154,3 +154,11 @@ do { \
 
 /// A light fixture draws 2 W per luminosity * range (refresh_light(); the fixtures declare it per type, lighting_fixture_glow.dm).
 #define LIGHTING_POWER_FACTOR 2
+
+// Client lighting (code/content/lighting/client_*.dm).
+/// Side of the chunks glowing lights are indexed by, in turfs.
+#define CLIENT_GLOW_CHUNK 8
+/// The longest reach a glow is drawn and indexed for, in turfs.
+#define CLIENT_GLOW_MAX_RANGE 6
+/// Blur on a shadow mask, in pixels.
+#define CLIENT_GLOW_MASK_BLUR 3

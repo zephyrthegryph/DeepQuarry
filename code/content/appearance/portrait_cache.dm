@@ -92,8 +92,7 @@ CAPABILITIES(/datum/portrait)
 	var/list/started = dq_preview_start_job(flat[1], "portrait")
 	P.job_id = started[1]
 	P.sheet_name = started[2]
-	if(asker && callback)
-		LAZYADD(P.waiters, list(list(handle_of(asker), callback)))
+	P.add_waiter(asker, callback)
 	P.appearances = list(A.appearance)
 	LAZYSET(cache.by_appearance, appearance_key, key)
 	COOLDOWN_START(P, timeout_at, PORTRAIT_RENDER_TIMEOUT)
@@ -116,9 +115,18 @@ CAPABILITIES(/datum/portrait)
 	if(P.b64)
 		cache.hits++
 		return P
-	if(asker && callback)
-		LAZYADD(P.waiters, list(list(handle_of(asker), callback)))
+	P.add_waiter(asker, callback)
 	return null
+
+/// `asker` is called back with this portrait when it lands: once, however many times it asked.
+/datum/portrait/proc/add_waiter(datum/asker, callback)
+	if(!asker || !callback)
+		return
+	var/handle = handle_of(asker)
+	for(var/list/waiter as anything in waiters)
+		if(waiter[1] == handle && waiter[2] == callback)
+			return
+	LAZYADD(waiters, list(list(handle, callback)))
 
 /// Drops the appearance shortcuts to the picture `key` (it left the cache).
 /proc/portrait_forget_appearances(datum/portrait_cache/cache, key)

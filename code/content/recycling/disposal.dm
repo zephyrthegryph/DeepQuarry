@@ -53,11 +53,6 @@
 	var/turf/T = get_turf(src)
 	hide(!T.is_plating() && !istype(T,/turf/space))	// space never hides pipes
 
-// hide called by levelupdate if turf intact status changes
-// change visibility status and force update of icon
-/obj/structure/disposalpipe/hide(intact)
-	hide_under_floor(src, intact)	// hide if floor is intact
-
 // update actual icon_state depending on visibility
 // if invisible, append "f" to icon_state to show faded version
 // this will be revealed if a T-scanner is used

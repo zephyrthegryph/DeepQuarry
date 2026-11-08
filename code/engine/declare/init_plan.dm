@@ -4,7 +4,8 @@
 // here and an instance replays the flat steps. A plan is built only once the declaration globals exist (before that the lookups it
 // folds answer "nothing yet" without caching, and so does the plan: the old path runs).
 //
-// GLOB.init_plan_off (a debug toggle) runs the old discovery path; dq_init_plan_parity proves both leave an instance in the same state.
+// Before the declaration globals exist no plan is built and engine_holder_init() discovers the steps itself (the atoms of global init). The
+// debug toggle that forced that path is gone (E7): dq_init_plan_parity compares the plan path against a recorded state of the old one.
 
 /// The engine's init work for one type, in order. Immutable once built.
 /datum/init_plan
@@ -25,8 +26,6 @@
 	/// Number of steps the plan runs per instance (the trace's measure).
 	var/steps = 0
 
-/// TRUE runs the old per-instance discovery path in engine_holder_init()/engine_holder_preinit() (parity tests, debugging).
-GLOBAL_VAR_INIT(init_plan_off, FALSE)
 /// Plans compiled, and the steps they hold in total (the INIT PLAN trace line).
 GLOBAL_VAR_INIT(init_plan_types, 0)
 GLOBAL_VAR_INIT(init_plan_steps, 0)

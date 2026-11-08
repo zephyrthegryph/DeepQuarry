@@ -129,7 +129,8 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		.["temp"] = temp
 	if(inserted)
 		.["item_name"] = inserted.name
-		.["item_sprite"] = icon2base64(get_flat_icon(inserted,dir=SOUTH,no_anim=TRUE))
+		// The shared portrait cache renders it off the tick (null until it lands; item_sprite_landed pushes the window then).
+		.["item_sprite"] = portrait_request(inserted, SOUTH, src, PROC_REF(item_sprite_landed))?.b64
 		.["item_preview"] = icon2base64(build_preview(user))
 	else
 		.["item_name"] = null
@@ -315,3 +316,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		return TRUE
 
 MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
+
+/// The inserted item's picture landed: the open window shows it.
+/obj/machinery/gear_painter/proc/item_sprite_landed(datum/portrait/P)
+	SStgui.update_uis(src)
