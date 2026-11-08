@@ -237,8 +237,19 @@ export function Tabs(props: Props) {
               <CoreTabs.Tab
                 key={tab.id}
                 selected={tab.selected}
-                // tgui-core types no data-* props; Box passes them through to the element.
-                {...({ 'data-dq-tab': tab.id } as object)}
+                // tgui-core's Tab types neither data-* nor pointer props; Box passes both through to the element.
+                {...({
+                  'data-dq-tab': tab.id,
+                  ...(movable && {
+                    onPointerDown: (event: React.PointerEvent) =>
+                      begin(event, tab.id),
+                    onPointerMove: move,
+                    onPointerUp: (event: React.PointerEvent) =>
+                      finish(event, true),
+                    onPointerCancel: (event: React.PointerEvent) =>
+                      finish(event, false),
+                  }),
+                } as object)}
                 className={classes([
                   movable && 'DqTabs__tab--movable',
                   dragged && 'DqTabs__tab--dragged',
@@ -253,22 +264,6 @@ export function Tabs(props: Props) {
                   }
                   onSelect(tab.id);
                 }}
-                onPointerDown={
-                  movable
-                    ? (event: React.PointerEvent) => begin(event, tab.id)
-                    : undefined
-                }
-                onPointerMove={movable ? move : undefined}
-                onPointerUp={
-                  movable
-                    ? (event: React.PointerEvent) => finish(event, true)
-                    : undefined
-                }
-                onPointerCancel={
-                  movable
-                    ? (event: React.PointerEvent) => finish(event, false)
-                    : undefined
-                }
               >
                 {tab.title ? (
                   <span title={tab.title}>{tab.label}</span>
