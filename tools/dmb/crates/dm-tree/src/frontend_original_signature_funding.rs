@@ -4,46 +4,90 @@ use super::*;
 use std::sync::Weak;
 use std::io;
 use crate::procedure::original_primary_signatures::{allocate_funded_rows,PreparedOriginalSignatures};
-enum Alias{
- Canonical(Weak<[u8]>),Member(Weak<dm_ir::DeclarationMeaning>),Metadata(Weak<dm_ir::ProcedureMetadata>),Settings(Weak<[dm_ir::ProcedureSettingNode]>),Parameters(Weak<[dm_ir::Parameter]>),
- Array(Weak<dm_ir::ArrayDeclaration>),Dimensions(Weak<[Option<dm_ir::SymbolicExpression>]>),
- Tokens(Weak<[dm_ir::ExpressionToken]>),WideItems(Weak<[dm_syntax::Item]>),
+// A borrowed enum is used only while traversing the actual immutable graph.
+// Stored observations remain typed, with no per-row discriminant or erased pointer.
+macro_rules! typed_aliases {
+ ($($variant:ident($field:ident, $target:ty)),+ $(,)?) => {
+  enum Alias<'a> { $($variant(&'a Arc<$target>)),+ }
+  #[derive(Default, Eq, PartialEq)]
+  struct AliasCounts { $($field:usize),+ }
+  impl AliasCounts {
+   fn note(&mut self, alias: Alias<'_>) -> io::Result<()> {
+    let count=match alias { $(Alias::$variant(_)=>&mut self.$field),+ };
+    *count=count.checked_add(1).ok_or_else(oom)?;
+    Ok(())
+   }
+  }
+  struct TypedAliases { $($field:Vec<Weak<$target>>),+ }
+  impl TypedAliases {
+   fn allocate(count:&AliasCounts, owner:&mut dm_syntax::SettingRootLease, a:&dm_syntax::SettingAdmission<'_>)->io::Result<Self>{
+    Ok(Self{$($field:exact_rows(count.$field,owner,a)?),+})
+   }
+   fn push(&mut self, alias: Alias<'_>) -> io::Result<()> {
+    match alias { $(Alias::$variant(actual)=>{
+     let rows=&mut self.$field;
+     if rows.len()==rows.capacity(){return Err(oom())}
+     rows.push(Arc::downgrade(actual));
+    }),+ }
+    Ok(())
+   }
+   fn counts(&self)->AliasCounts{AliasCounts{$($field:self.$field.len()),+}}
+   fn len(&self)->usize{0$(+self.$field.len())+}
+   fn live(&self)->bool{false$(||self.$field.iter().any(|row|row.strong_count()!=0))+}
+   fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
+    $(visit_vec(&self.$field,&mut visit);)+
+   }
+  }
+ };
 }
-impl Alias{fn live(&self)->bool{match self{Self::Canonical(x)=>x.strong_count()!=0,Self::Member(x)=>x.strong_count()!=0,Self::Metadata(x)=>x.strong_count()!=0,Self::Settings(x)=>x.strong_count()!=0,Self::Parameters(x)=>x.strong_count()!=0,Self::Array(x)=>x.strong_count()!=0,Self::Dimensions(x)=>x.strong_count()!=0,Self::Tokens(x)=>x.strong_count()!=0,Self::WideItems(x)=>x.strong_count()!=0}}}
+typed_aliases!(
+ Member(members,dm_ir::DeclarationMeaning),
+ Canonical(canonical,[u8]),
+ Metadata(metadata,dm_ir::ProcedureMetadata),
+ Settings(settings,[dm_ir::ProcedureSettingNode]),
+ Parameters(parameters,[dm_ir::Parameter]),
+ Array(arrays,dm_ir::ArrayDeclaration),
+ Dimensions(dimensions,[Option<dm_ir::SymbolicExpression>]),
+ Tokens(tokens,[dm_ir::ExpressionToken]),
+ WideItems(wide_items,[dm_syntax::Item]),
+);
+fn visit_vec<T>(rows:&Vec<T>,visit:&mut impl FnMut(usize,usize,usize)){
+ if rows.capacity()!=0{
+  visit(rows.as_ptr() as usize,rows.capacity()*std::mem::size_of::<T>(),std::mem::align_of::<T>());
+ }
+}
 /// Public for the existing native resource owner only. Private fields cannot
 /// carry source/semantic admission, recreate a graph, or retain an IR payload.
 pub struct OriginalSignatureAliasGroup{
- aliases:Vec<Alias>,spellings:crate::procedure::original_primary_signatures::OriginalSignatureSpellings,reservations:Vec<Arc<dm_syntax::SettingRootLease>>,
+ aliases:TypedAliases,spellings:crate::procedure::original_primary_signatures::OriginalSignatureSpellings,reservations:Vec<Arc<dm_syntax::SettingRootLease>>,
  _adapter:Option<dm_syntax::SettingRootLease>,
  _coordination:dm_syntax::SettingRootLease,
 }
 impl std::fmt::Debug for OriginalSignatureAliasGroup{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalSignatureAliasGroup").field("weak_observations",&self.aliases.len()).field("signature_reservations",&self.reservations.len()).finish_non_exhaustive()}}
 impl OriginalSignatureAliasGroup{
- fn live(&self)->bool{self.aliases.iter().any(Alias::live)||self.spellings.live()}
+ fn live(&self)->bool{self.aliases.live()||self.spellings.live()}
  fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||!self.spellings.admitted_by(a)||self.reservations.iter().any(|row|!a.matches_lease_domain(row))||self._adapter.as_ref().is_some_and(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
  pub(super) fn capture(facts:&crate::AdaptedDeclarations,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>)->io::Result<Arc<Self>>{
   prepared.require_consumed().map_err(|reason|io::Error::new(io::ErrorKind::InvalidData,reason))?;
-  let mut alias_count=0usize;
+  let mut alias_count=AliasCounts::default();
   let mut lease_count=0usize;
   // Both traversals borrow the same immutable facts and signature products.
   // The first counts actual Arc fields without constructing transient Weaks.
-  visit_aliases(facts,prepared,a,&mut |_|{checkpoint(a)?;alias_count=alias_count.checked_add(1).ok_or_else(oom)?;Ok(())})?;
+  visit_aliases(facts,prepared,a,&mut |actual|{checkpoint(a)?;alias_count.note(actual)})?;
   prepared.visit_signature_reservations(|_|lease_count=lease_count.saturating_add(1));
   if lease_count==usize::MAX{return Err(oom())}
   let mut coordination=a.reserve(group_bytes()?).map_err(|error|a.take_operational_error().unwrap_or(error))?;
-  let mut aliases=exact_rows(alias_count,&mut coordination,a)?;
+  let mut aliases=TypedAliases::allocate(&alias_count,&mut coordination,a)?;
   let mut reservations=exact_rows(lease_count,&mut coordination,a)?;
-  visit_aliases(facts,prepared,a,&mut|make|{
+  visit_aliases(facts,prepared,a,&mut|actual|{
    checkpoint(a)?;
-   if aliases.len()==aliases.capacity(){return Err(oom())}
-   aliases.push(make());
-   Ok(())
+   aliases.push(actual)
   })?;
   let mut surplus=false;
   prepared.visit_signature_reservations(|row|{
    if reservations.len()==reservations.capacity(){surplus=true;}else{reservations.push(Arc::clone(row));}
   });
-  if aliases.len()!=alias_count||reservations.len()!=lease_count||surplus{
+  if aliases.counts()!=alias_count||reservations.len()!=lease_count||surplus{
    return Err(io::Error::new(io::ErrorKind::InvalidData,"actual signature alias roster changed during capture"));
   }
   checkpoint(a)?;
@@ -56,23 +100,24 @@ impl OriginalSignatureAliasGroup{
   checkpoint(a)?;
   self.require_domain(a)?;
   if !a.matches_lease_domain(parser){return Err(io::Error::new(io::ErrorKind::InvalidInput,"wide primary allocation uses another parser reservation"))}
-  reserve_one(&mut self.aliases,&mut self._coordination,a)?;
+  reserve_one(&mut self.aliases.wide_items,&mut self._coordination,a)?;
   reserve_one(&mut self.reservations,&mut self._coordination,a)?;
-  self.aliases.push(Alias::WideItems(Arc::downgrade(items)));
+  self.aliases.push(Alias::WideItems(items))?;
   self.reservations.push(Arc::clone(parser));
   checkpoint(a)
  }
  #[cfg(test)]
  pub(super) fn coordination_storage_for_test(&self)->(usize,usize){
-  (self._coordination.bytes(),group_bytes().unwrap()
-   + self.aliases.capacity()*std::mem::size_of::<Alias>()
-   + self.reservations.capacity()*std::mem::size_of::<Arc<dm_syntax::SettingRootLease>>())
+  let mut physical=group_bytes().unwrap();
+  self.aliases.visit_storage(|_,bytes,_|physical+=bytes);
+  visit_vec(&self.reservations,&mut|_,bytes,_|physical+=bytes);
+  (self._coordination.bytes(),physical)
  }
  pub(super) fn visit_storage(&self,mut f:impl FnMut(usize,usize,usize)){
   self.spellings.visit_storage(&mut f);
   f(self as*const Self as usize,group_bytes().expect("valid Arc group layout"),std::mem::align_of::<Self>());for lease in &self.reservations{f(Arc::as_ptr(lease)as usize,std::mem::size_of::<dm_syntax::SettingRootLease>()+2*std::mem::size_of::<usize>(),std::mem::align_of::<dm_syntax::SettingRootLease>())}
-  if self.aliases.capacity()!=0{f(self.aliases.as_ptr()as usize,self.aliases.capacity()*std::mem::size_of::<Alias>(),std::mem::align_of::<Alias>())}
-  if self.reservations.capacity()!=0{f(self.reservations.as_ptr()as usize,self.reservations.capacity()*std::mem::size_of::<Arc<dm_syntax::SettingRootLease>>(),std::mem::align_of::<Arc<dm_syntax::SettingRootLease>>())}
+  self.aliases.visit_storage(&mut f);
+  visit_vec(&self.reservations,&mut f);
  }
 }
 fn oom()->io::Error{io::Error::from(io::ErrorKind::OutOfMemory)}
@@ -105,31 +150,31 @@ fn reserve_one<T>(rows:&mut Vec<T>,coordination:&mut dm_syntax::SettingRootLease
  if old_bytes!=0{a.shrink(coordination,old_bytes).map_err(|error|a.take_operational_error().unwrap_or(error))?;}
  Ok(())
 }
-fn visit_aliases(facts:&crate::AdaptedDeclarations,prepared:&PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>,f:&mut impl FnMut(&dyn Fn()->Alias)->io::Result<()>)->io::Result<()>{
+fn visit_aliases(facts:&crate::AdaptedDeclarations,prepared:&PreparedOriginalSignatures,a:&dm_syntax::SettingAdmission<'_>,f:&mut impl FnMut(Alias<'_>)->io::Result<()>)->io::Result<()>{
  let mut seen=[false;4];
  for skeleton in &facts.skeletons{let crate::Skeleton::Member{metadata,..}=skeleton else{continue};let Some(procedure)=&metadata.procedure else{continue};
-  f(&||Alias::Member(Arc::downgrade(metadata)))?;
-  f(&||Alias::Canonical(Arc::downgrade(&metadata.canonical)))?;
+  f(Alias::Member(metadata))?;
+  f(Alias::Canonical(&metadata.canonical))?;
   let (metadata_slot,settings_shared,parameters_shared)=prepared.shared_procedure_aliases(procedure);
-  for (slot,make) in [
-   (metadata_slot,&(||Alias::Metadata(Arc::downgrade(procedure))) as &dyn Fn()->Alias),
-   (settings_shared.then_some(2),&||Alias::Settings(Arc::downgrade(&procedure.settings))),
-   (parameters_shared.then_some(3),&||Alias::Parameters(Arc::downgrade(&procedure.signature.parameters))),
+  for (slot,actual) in [
+   (metadata_slot,Alias::Metadata(procedure)),
+   (settings_shared.then_some(2),Alias::Settings(&procedure.settings)),
+   (parameters_shared.then_some(3),Alias::Parameters(&procedure.signature.parameters)),
   ]{
    if slot.is_some_and(|slot|std::mem::replace(&mut seen[slot],true)){
     // Preserve the original cancellation/error check for every observed field.
     checkpoint(a)?;
-   }else{f(make)?;}
+   }else{f(actual)?;}
   }
   for setting in procedure.settings.iter(){
    let dm_ir::ProcedureSettingNode::Setting(setting)=setting else{return Err(io::Error::new(io::ErrorKind::InvalidData,"original prepared settings are not flat"))};
-   f(&||Alias::Tokens(Arc::downgrade(&setting.value.tokens)))?;
+   f(Alias::Tokens(&setting.value.tokens))?;
   }
   for parameter in procedure.signature.parameters.iter(){
-   for expression in [&parameter.default,&parameter.input_annotation,&parameter.source_expression].into_iter().flatten(){f(&||Alias::Tokens(Arc::downgrade(&expression.tokens)))?}
-   if let Some(array)=&parameter.array{f(&||Alias::Array(Arc::downgrade(array)))?;f(&||Alias::Dimensions(Arc::downgrade(&array.dimensions)))?;for expression in array.dimensions.iter().flatten(){f(&||Alias::Tokens(Arc::downgrade(&expression.tokens)))?}}
+   for expression in [&parameter.default,&parameter.input_annotation,&parameter.source_expression].into_iter().flatten(){f(Alias::Tokens(&expression.tokens))?}
+   if let Some(array)=&parameter.array{f(Alias::Array(array))?;f(Alias::Dimensions(&array.dimensions))?;for expression in array.dimensions.iter().flatten(){f(Alias::Tokens(&expression.tokens))?}}
   }
-  if let Some(expression)=&procedure.signature.return_annotation{f(&||Alias::Tokens(Arc::downgrade(&expression.tokens)))?}
+  if let Some(expression)=&procedure.signature.return_annotation{f(Alias::Tokens(&expression.tokens))?}
  }
  Ok(())
 }
@@ -166,12 +211,16 @@ mod exact_capacity_controls {
  fn exact_alias_coordination_denial_preserves_the_already_funded_slots(){
   let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
   let fixed=group_bytes().unwrap();
-  let rows=std::alloc::Layout::array::<Alias>(3).unwrap().size();
+  let rows=std::mem::size_of::<Weak<dm_ir::DeclarationMeaning>>()
+   + 2*std::mem::size_of::<Weak<[u8]>>();
   let lease_row=std::mem::size_of::<Arc<dm_syntax::SettingRootLease>>();
   let admission=dm_syntax::SettingAdmission::new(&counter,dm_syntax::SettingChargeCounter::root_allocation_bytes() + (fixed+rows+lease_row-1),&||Ok(()));
   let mut owner=admission.reserve(fixed).unwrap();
-  let aliases=exact_rows::<Alias>(3,&mut owner,&admission).unwrap();
-  assert_eq!(aliases.capacity(),3);
+  let counts=AliasCounts{members:1,canonical:2,..AliasCounts::default()};
+  let aliases=TypedAliases::allocate(&counts,&mut owner,&admission).unwrap();
+  assert_eq!(aliases.members.capacity(),1);
+  assert_eq!(aliases.canonical.capacity(),2);
+  assert_eq!(aliases.tokens.capacity(),0);
   assert_eq!(owner.bytes(),fixed+rows);
   let error=exact_rows::<Arc<dm_syntax::SettingRootLease>>(1,&mut owner,&admission).err().unwrap();
   assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
