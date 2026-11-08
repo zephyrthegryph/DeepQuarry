@@ -289,8 +289,7 @@ bash tools/dq_worktree.sh pool                               # who holds what
   files, `data/logs`, `data/runs`, root `*.log`). `status` tags every lease `active`, `idle Nm` or `STUCK: ... DIRTY|clean, UNPUSHED|nothing unpushed`,
   and `WAITING for machine slot: test_world 12m` when the worktree is queued for a `dm_compile`/`test_world` slot while holding its pool slot.
   `bash tools/dq_lane_pool.sh stuck [--quiet]` lists stuck leases and exits 1 when there are any (poll it); each also gets a notice file
-  `E:/dq-cache/lane-pool/notices/pool-N.stuck`. A dirty tree or unpushed commits are only reported, never wiped. A stuck lease that is clean with
-  every commit in origin/master or origin/<branch> is reclaimed by the next lease after the reclaim limit. Why the old reclaim missed a dead
+  `E:/dq-cache/lane-pool/notices/pool-N.stuck`. The next lease or waiter reclaims a stuck lease: uncommitted work is committed to the lane's own branch (local), the slot is released and the branch kept; only a tree mid-merge or mid-rebase stays. Why the old reclaim missed a dead
   dirty lane (init/sweep-5, 15 h): it skipped every dirty tree and reclaimed only a merged, committed lane.
 - **Cancel.** `bash tools/dq_lane_pool.sh cancel <branch>` removes that branch's queue ticket; the waiting `lease --wait` exits 4 ("cancelled"). Nothing is killed.
 - Self-test: `bash tools/ci/test_lane_pool.sh`.
