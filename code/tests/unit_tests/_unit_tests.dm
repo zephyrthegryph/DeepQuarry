@@ -205,6 +205,7 @@
 #include "dq_atmos_tests.dm"
 #include "dq_bumped_notice_tests.dm"
 #include "dq_move_crossed_tests.dm"
+#include "dq_join_outfit_drawn_tests.dm"
 #include "dq_air_guard_tests.dm"
 #include "dq_thermostat_init_tests.dm"
 #include "dq_after_init_tests.dm"
