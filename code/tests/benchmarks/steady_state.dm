@@ -15,16 +15,26 @@
 		if(F.z <= 3 && !F.density && F.turf_air()?.return_pressure() > 80)
 			floors += F
 		CHECK_TICK
+	var/list/mob/living/carbon/human/crew = list()
 	for(var/i in 1 to param("humans", 20))
 		if(!length(floors))
 			break
 		var/mob/living/carbon/human/H = new(pick(floors))
 		H.mind_initialize()
+		crew += H
 	wait_seconds(30) // the spawn's own settling is not the steady state
 	mark("steady_before")
 	var/list/work_before = work_counts()
 	begin_window()
-	wait_seconds(param("minutes", 10) * 60)
+	// The crew have no clients, so Life puts them to sleep as SSD; a round's players are awake. awake=1 (default) wakes them every 2 s, so the
+	// window is the cost of conscious crew (awake=0: the old window of sleepers).
+	var/window_s = param("minutes", 10) * 60
+	if(param("awake", 1))
+		for(var/elapsed in 0 to window_s - 1 step 2)
+			active_play_wake(crew)
+			wait_seconds(2)
+	else
+		wait_seconds(window_s)
 	end_window("steady")
 	work_metrics("steady", work_before)
 	mark("steady_after")

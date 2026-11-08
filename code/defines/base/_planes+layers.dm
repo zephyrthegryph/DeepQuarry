@@ -152,6 +152,8 @@ What is the naming convention for planes or layers?
 
 #define PLANE_GHOSTS			10 //Spooooooooky ghooooooosts
 #define PLANE_AI_EYE			11 //The AI eye lives here
+#define PLANE_CLIENT_GLOW		12 //Client glows in lighting compare mode: a hidden render target, relayed onto PLANE_LIGHTING for clients on the client view (client_lighting_compare.dm)
+	#define CLIENT_GLOW_RENDER_TARGET "*CLIENT_GLOW_PLANE"
 
 // "Character HUDs", aka HUDs, but not the game's UI. Things like medhuds. I know Planes say they must be intergers, but it's lies.
 #define PLANE_CH_STATUS			15 //Status icon
