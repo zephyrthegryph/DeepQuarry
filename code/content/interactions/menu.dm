@@ -294,13 +294,12 @@ GLOBAL_LIST_EMPTY(interaction_menu_verb_shapes)
 /// stripped a verb (its count or its ends move) builds its own. A copy is returned.
 /proc/interaction_menu_verb_names(atom/target)
 	var/list/by_shape = GLOB.interaction_menu_verb_shapes
-	var/list/verbs = target.verbs
-	var/count = length(verbs)
-	var/shape = "[target.type]|[count]|[count ? "[verbs[1]]|[verbs[count]]" : ""]"
+	var/count = length(target.verbs)
+	var/shape = "[target.type]|[count]|[count ? "[target.verbs[1]]|[target.verbs[count]]" : ""]"
 	var/list/names = by_shape[shape]
 	if(isnull(names))
 		names = list()
-		for(var/procpath/target_verb as anything in verbs)
+		for(var/procpath/target_verb as anything in target.verbs)
 			if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
 				continue
 			names += target_verb.name
