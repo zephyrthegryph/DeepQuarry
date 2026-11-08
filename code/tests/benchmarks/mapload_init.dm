@@ -44,6 +44,10 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 	var/x = round(world.maxx / 2)
 	var/y = round(world.maxy / 2)
 	var/list/table = list()
+	// Work the boot left loose (after_init entries armed outside a load frame: a circuit bag filling its circuits) runs at the next load's finish:
+	// run it now, so the first type measured does not pay for it and the calls ratchet counts the measured types only.
+	SSatoms.InitializeAtoms(list())
+	refresh_flush()
 	if(profiling)
 		world.Profile(PROFILE_CLEAR)
 	var/total_atoms = 0
