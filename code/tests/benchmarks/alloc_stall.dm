@@ -22,6 +22,9 @@
 	probe("strings", param("strings", 1000000), stall_ms, 0)
 	probe("lists", param("lists", 400000), stall_ms, 0)
 	probe("slots", param("slots", 600000), stall_ms, length(handle_gens))
+	probe("string_churn", param("churn", 300000), stall_ms, 0)
+	probe("datum_churn", param("churn", 300000), stall_ms, 0)
+	probe("list_churn", param("churn", 300000), stall_ms, 0)
 	drain_probe(param("drain", 3000))
 	probe("contract_context", param("events", 8000), stall_ms, 0)
 	probe("contract_events", param("events", 8000), stall_ms, 0)
@@ -41,6 +44,15 @@
 				keep[i] = "alloc-stall-[i]-[world.time]"
 			if("lists")
 				keep[i] = list(i)
+			if("string_churn")
+				var/churned = "churn-[i]-[world.time]"
+				churned = null
+			if("datum_churn")
+				var/datum/alloc_stall_probe/C = new
+				C = null
+			if("list_churn")
+				var/list/L = list(i)
+				L = null
 			if("slots")
 				var/datum/alloc_stall_probe/P = new
 				slot_of(P)
