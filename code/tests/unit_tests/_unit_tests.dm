@@ -592,6 +592,7 @@
 #include "dq_core_tests.dm"
 #include "dq_tgui_client_tests.dm"
 #include "dq_nonblocking_ui_tests.dm"
+#include "dq_tgui_runtime_cost_tests.dm"
 #include "dq_window_open_cost_tests.dm"
 #include "dq_mc_health_tests.dm"
 #include "dq_spritesheet_loader_tests.dm"
