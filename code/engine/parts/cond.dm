@@ -124,16 +124,21 @@ GLOBAL_LIST_EMPTY(op_type_var_names)
 /// all must hold, so the order changes only the cost. Worked out once per plan.
 /proc/op_conds_cheapest_first(datum/op_plan/P)
 	if(isnull(P.conds_ordered))
-		var/list/by_cost = list(list(), list(), list())
+		var/list/cheap = null
+		var/list/calls = null
+		var/list/rest = null
 		for(var/cond in P.conds)
-			var/cost = 3
 			if(isnum(cond) || (istext(cond) && copytext(cond, 1, 5) != "cap:"))
-				cost = 1
+				LAZYADD(cheap, list(cond))
 			else if(istext(cond))
-				cost = 2
-			var/list/bucket = by_cost[min(cost, 3)]
-			bucket += list(cond)
-		P.conds_ordered = by_cost[1] + by_cost[2] + by_cost[3]
+				LAZYADD(calls, list(cond))
+			else
+				LAZYADD(rest, list(cond))
+		var/list/ordered = list()
+		ordered += cheap
+		ordered += calls
+		ordered += rest
+		P.conds_ordered = ordered
 	return P.conds_ordered
 
 /// Runs a handler: a proc name on the holder (PROC_REF), or "cap:name" on the capability datum (A.cap). `extra` arguments follow the context.
