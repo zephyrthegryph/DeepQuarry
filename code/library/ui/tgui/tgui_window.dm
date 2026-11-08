@@ -347,6 +347,7 @@
 		log_tgui(client(), "TGUI transition: stage=server-acquire-hide-sending generation=[generation + 1] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
 		#endif
 		if(native_shell)
+			log_tgui(client(), "Native alpha=0 sent: acquire, generation [generation + 1].", window = src)
 			winset(client(), id, "alpha=0")
 		winshow(client(), id, FALSE)
 		var/list/resolved_geometry = LAZYACCESS(client().tgui_resolved_geometries, ui?.interface)
@@ -437,6 +438,7 @@
 			log_tgui(client(), "TGUI transition: stage=server-release-hide-sending generation=[generation] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
 			#endif
 			if(native_shell)
+				log_tgui(client(), "Native alpha=0 sent: release, generation [generation].", window = src)
 				winset(client(), id, "alpha=0")
 			winshow(client(), id, FALSE)
 			#ifdef TGUI_DEV_DIAGNOSTICS

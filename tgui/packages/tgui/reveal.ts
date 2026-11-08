@@ -284,6 +284,16 @@ async function monitorRevealedGeometry(
 }
 
 /** Reveal only the current acquisition of a non-suspended pooled shell. */
+/** Every alpha this page sets on its native window, in the server's tgui log. */
+export function traceAlpha(alpha: number, source: string): void {
+  Byond.sendMessage('wm/log', {
+    float: 'alpha-write',
+    window: Byond.windowId,
+    alpha,
+    source,
+  });
+}
+
 export async function revealWindow(
   generation?: number,
   geometry?: ResolvedWindowGeometry,
@@ -315,6 +325,7 @@ export async function revealWindow(
     // Let DreamSeeker perform the native hidden->shown transition while the
     // OS window is fully transparent. Some clients center or paint a window
     // during winshow even when geometry was assigned while it was hidden.
+    traceAlpha(0, 'reveal-show');
     Byond.winset(Byond.windowId, { alpha: 0, 'is-visible': true });
     profileTransition('transparent-native-show-sent');
   }
@@ -378,6 +389,7 @@ export async function revealWindow(
     requested_size: nativeGeometry.size,
     requested_pos: nativeGeometry.pos,
   });
+  if (nativeShell) traceAlpha(255, 'reveal-opaque');
   Byond.winset(
     Byond.windowId,
     nativeShell ? { alpha: 255 } : { 'is-visible': true },

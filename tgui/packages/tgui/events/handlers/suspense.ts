@@ -2,7 +2,7 @@ import { focusMap } from '../../focus';
 import { logger } from '../../logging';
 import { profileTransition } from '../../profiling/transitions';
 import { suspendRenderer } from '../../renderer';
-import { resetReveal } from '../../reveal';
+import { resetReveal, traceAlpha } from '../../reveal';
 import {
   configAtom,
   resetStore,
@@ -40,6 +40,7 @@ export function suspend(): void {
     // Leave reusable native shells transparent as well as hidden. On their
     // next use DreamSeeker can run its first-show placement while alpha is 0,
     // before final geometry is confirmed and the shell becomes opaque.
+    traceAlpha(0, 'suspend');
     Byond.winset(Byond.windowId, { alpha: 0 });
   }
   Byond.winset(Byond.windowId, { 'is-visible': false });

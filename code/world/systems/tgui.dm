@@ -390,6 +390,7 @@ CAPABILITIES(/datum/system/tgui)
 	var/datum/tgui_window/current = client?.tgui_window_of(window_id)
 	if(current?.locked)
 		return
+	log_tgui(client, "Native alpha=0 sent: stale window [window_id].")
 	winset(client, window_id, "alpha=0")
 	winshow(client, window_id, FALSE)
 

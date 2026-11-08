@@ -36,7 +36,7 @@ import { suspendStart } from '../events/handlers/suspense';
 import { createLogger } from '../logging';
 import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
-import { claimReveal, revealWindow } from '../reveal';
+import { claimReveal, revealWindow, traceAlpha } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
 import { useConsoleScanlines } from './consoleTheme';
 import { fitOverflow, measureNaturalBottom } from './fitWindow';
@@ -159,6 +159,7 @@ function NativeWindow(props: Props) {
     claimReveal();
     profileTransition('layout-hide-start');
     if (config?.window?.native_shell) {
+      traceAlpha(0, 'layout-hide');
       Byond.winset(Byond.windowId, { alpha: 0 });
     }
     Byond.winset(Byond.windowId, {
@@ -437,19 +438,24 @@ function floatTrace(step: string, detail: Record<string, unknown>): void {
   });
 }
 
-/** What the client says the floated window is once the reveal has finished. */
+/** What the client says the window is after the reveal, sampled so a later change shows (trace only: nothing acts on it). */
 async function floatTraceNative(): Promise<void> {
-  try {
-    const state = await Byond.winget(Byond.windowId, [
-      'is-visible',
-      'alpha',
-      'pos',
-      'size',
-      'is-minimized',
-    ]);
-    floatTrace('native-after-reveal', { state });
-  } catch (error) {
-    floatTrace('native-query-failed', { error: String(error) });
+  let elapsed = 0;
+  for (const at of [0, 50, 500, 2000]) {
+    await new Promise((resolve) => setTimeout(resolve, at - elapsed));
+    elapsed = at;
+    try {
+      const state = await Byond.winget(Byond.windowId, [
+        'is-visible',
+        'alpha',
+        'pos',
+        'size',
+        'is-minimized',
+      ]);
+      floatTrace('native-after-reveal', { after_ms: at, state });
+    } catch (error) {
+      floatTrace('native-query-failed', { error: String(error) });
+    }
   }
 }
 
