@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Joining while the server is still starting no longer leaves parts of your screen undrawn (a grey game window): only objects on the map wait for their first draw during boot, never your HUD."

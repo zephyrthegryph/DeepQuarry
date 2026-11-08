@@ -303,9 +303,15 @@ GLOBAL_VAR_INIT(boot_created_settled, FALSE)
 GLOBAL_VAR_INIT(boot_created_held, 0)
 GLOBAL_VAR_INIT(boot_created_dropped, 0)
 
-/// caps_init(), for a fresh `A` not yet queued: TRUE when it is held in its type's bucket instead of queued (a map load, a type with no verdict, its
-/// sample already queued). FALSE queues it as before; the first such instance of a type is recorded as the sample.
+/// caps_init(), for a fresh `A` not yet queued: TRUE when it is held in its type's bucket instead of queued (made by the boot map load, a type with no
+/// verdict, its sample already queued). FALSE queues it as before; the first such instance of a type is recorded as the sample.
+/// Only an atom on the map (a turf, or anything with a turf under it) waits: a client's HUD (its plane masters and fullscreen overlays, which live
+/// in nullspace) made while the server boots, for a player who connects early, is drawn at once. A held or parked screen object is never viewed
+/// the way a turf's contents are, so it stayed undrawn and the player kept a grey screen. (`mapload` cannot tell them apart: INITIALIZE_IMMEDIATE
+/// types, the HUD's among them, always initialize as a map load.)
 /proc/boot_created_hold(atom/A)
+	if(isnull(get_turf(A)))
+		return FALSE
 	look_verdicts_load() // the verdicts a previous boot of this world learned: a known type is neither held nor sampled
 	if(GLOB.boot_created_settled || !materialization_host().frame_running() || ismob(A) || A.periodic_cadence || A.periodic_interval)
 		return FALSE
