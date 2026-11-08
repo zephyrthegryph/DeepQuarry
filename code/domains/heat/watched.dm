@@ -40,7 +40,7 @@ READS_AS(/proc/watched, WATCHED_KEY)
 			if(!istype(T))
 				CRASH("watched(): WATCH_LUM reads a turf, not [A.type]")
 			value = T.get_lumcount()
-			if(!T.lighting_object)
+			if(!T.lighting_ensure_object())
 				return watched_band(value, levels, strict) // no dynamic lighting: its lum is fixed
 		if(WATCH_CHARGE)
 			var/obj/machinery/power/smes/S = A
@@ -110,7 +110,7 @@ SYSTEM_DEF(watched)
 /// Lum bands are DM's own (the lighting engine): the lighting object of `T` remembers each band a reader asked for and the band it last
 /// published, and lighting_object/update() reports the turf here when its corners changed.
 /datum/system/watched/proc/lum_arm(turf/T, list/levels)
-	var/datum/lighting_object/O = T.lighting_object
+	var/datum/lighting_object/O = T.lighting_ensure_object()
 	if(!O)
 		return
 	LAZYINITLIST(O.lum_watch)

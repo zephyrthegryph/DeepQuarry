@@ -1311,6 +1311,7 @@
 #include "../benchmarks/pipe_devices.dm"
 #include "../benchmarks/boot_profile.dm"
 #include "../benchmarks/shared_cache.dm"
+#include "../benchmarks/lighting_rebuild.dm"
 #include "../benchmarks/life_sweep.dm"
 #include "../benchmarks/life_sweep_adapter.dm"
 #include "../benchmarks/life_sequence.dm"
