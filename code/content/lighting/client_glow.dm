@@ -16,7 +16,9 @@ GLOBAL_VAR_INIT(client_glow_bounds, FALSE)
 	icon = 'icons/effects/light_overlays/light_32.dmi'
 	icon_state = "light"
 	plane = PLANE_LIGHTING
-	layer = BACKGROUND_LAYER + 22 // above the lighting plane's black backdrop (BACKGROUND_LAYER + 21)
+	// An ordinary layer, as the DM lighting's turf underlays use: the black base is a screen object on BACKGROUND_LAYER, and a map
+	// object on BACKGROUND_LAYER does not reliably draw over a screen one.
+	layer = CLIENT_GLOW_LAYER
 	blend_mode = BLEND_ADD
 	appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT

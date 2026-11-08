@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting glows draw above the black base, and ghosts no longer render glows they cannot see."

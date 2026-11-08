@@ -34,7 +34,11 @@ GLOBAL_VAR_INIT(client_glow_holder_recomputes, 0)
 	/// The safe box and the reach box, inclusive turf coordinates: list(x0, y0, x1, y1).
 	var/list/safe
 	var/list/reach
-	/// light source glow_holder_key -> list(glow image, mask image, hide image). Lazy.
+	/// TRUE: a ghost still seeing darkness: its held copies carry no shadow mask (it sees through walls, so masks buy it nothing).
+	var/unmasked = FALSE
+	/// TRUE: this viewer does not see darkness (a ghost with darkness off, darkvision): lights draw nothing for it, so each is only hidden.
+	var/unlit = FALSE
+	/// light source glow_holder_key -> list(glow image, mask image, hide image), or list(hide image) while unlit. Lazy.
 	var/list/held
 
 /client
@@ -115,9 +119,17 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		return
 	var/cx = round((eye.x - 1) / CLIENT_GLOW_CHUNK)
 	var/cy = round((eye.y - 1) / CLIENT_GLOW_CHUNK)
-	var/new_sig = "[eye.z]:[cx]:[cy]:[hx]:[hy]"
+	var/mob/viewer = client?.mob
+	var/mob/observer/dead/ghost = istype(viewer, /mob/observer/dead) ? viewer : null
+	var/now_unlit = viewer ? (!viewer.seedarkness || (ghost && !ghost.lighting_alpha)) : FALSE
+	var/now_unmasked = !!ghost && !now_unlit
+	var/new_sig = "[eye.z]:[cx]:[cy]:[hx]:[hy]:[now_unlit]:[now_unmasked]"
 	if(new_sig == sig)
 		return
+	if(now_unlit != unlit || now_unmasked != unmasked)
+		drop_all() // the entries have the other shape
+		unlit = now_unlit
+		unmasked = now_unmasked
 	sig = new_sig
 	z = eye.z
 	GLOB.client_glow_holder_recomputes++
@@ -149,7 +161,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	for(var/h in LAZYCOPY(held))
 		if(!keep[h])
 			drop_handle(h)
-	log_world("client glow holder: [client?.ckey] entered chunk [new_sig], holding [LAZYLEN(held)] glow(s), [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
+	log_world("client glow holder: [client?.ckey] entered chunk [new_sig], holding [LAZYLEN(held)] glow(s)[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
 
 /// Shows, updates or drops this viewer's copy of light `L`. Returns TRUE while it is held.
 /datum/client_glow_holder/proc/consider(datum/light_source/L)
@@ -160,6 +172,8 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(!S || S.z != z)
 		drop(L)
 		return FALSE
+	if(unlit)
+		return consider_unlit(L, S)
 	if(S.x >= safe[1] && S.x <= safe[3] && S.y >= safe[2] && S.y <= safe[4])
 		drop(L) // always on screen from this chunk: the normal glow shows
 		return FALSE
@@ -189,7 +203,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		glow_image.blend_mode = BLEND_ADD
 		glow_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 		glow_image.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		if(!GLOB.client_glow_masks_off)
+		if(!GLOB.client_glow_masks_off && !unmasked)
 			glow_image.filters = filter(type = "alpha", render_source = mask_name)
 		var/image/hide_image = image(null) // overrides the real glow for this viewer: never drawn twice
 		hide_image.override = TRUE
@@ -220,7 +234,27 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	glow_image.pixel_y = py
 	mask_image.pixel_x = px
 	mask_image.pixel_y = py
-	mask_image.overlays = CACHED_FAST(client_glow_masks, L.glow_mask_key)
+	if(!unmasked) // nothing names an unmasked viewer's mask image, so it stays empty and undrawn
+		mask_image.overlays = CACHED_FAST(client_glow_masks, L.glow_mask_key)
+	return TRUE
+
+/// A viewer that sees no darkness: every light its view can reach is hidden from it with a plain override image, so its client
+/// never draws the glows and their filtered masks (a ghost sees through walls, so otherwise all of them, for no visible light).
+/datum/client_glow_holder/proc/consider_unlit(datum/light_source/L, turf/S)
+	var/r = CEILING(L.light_range, 1)
+	if(S.x + r < reach[1] || S.x - r > reach[3] || S.y + r < reach[2] || S.y - r > reach[4])
+		drop(L)
+		return FALSE
+	var/h = L.glow_holder_key()
+	if(LAZYACCESS(held, h))
+		return TRUE
+	var/image/hide_image = image(null)
+	hide_image.override = TRUE
+	image_anchor(hide_image, L.glow)
+	var/list/entry = list(hide_image)
+	LAZYSET(held, h, entry)
+	client_images_add(client, entry)
+	GLOB.client_glow_holder_made++
 	return TRUE
 
 /// The safe-box turf nearest `S` along the line from the safe box's middle to it.

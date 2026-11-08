@@ -40,7 +40,7 @@ GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
 	icon_state = "flash"
 	screen_loc = "WEST,SOUTH to EAST,NORTH"
 	plane = PLANE_LIGHTING
-	layer = BACKGROUND_LAYER + 21 // under the white tiles and the glows (BACKGROUND_LAYER + 22)
+	layer = BACKGROUND_LAYER + 21 // under the white tiles and the glows (CLIENT_GLOW_WHITE_LAYER, CLIENT_GLOW_LAYER)
 	color = "#000"
 	blend_mode = BLEND_OVERLAY
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
@@ -130,7 +130,7 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 
 /// The white tile on `plane`: one shared appearance per plane, so a turf's underlay costs no appearance of its own.
 /proc/client_glow_white_build(plane_text)
-	var/mutable_appearance/white = mutable_appearance(LIGHTING_ICON, "transparent", BACKGROUND_LAYER + 21.5, text2num(plane_text), 255, RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM)
+	var/mutable_appearance/white = mutable_appearance(LIGHTING_ICON, "transparent", CLIENT_GLOW_WHITE_LAYER, text2num(plane_text), 255, RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM)
 	return white
 
 DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_build), SC_NEVER)

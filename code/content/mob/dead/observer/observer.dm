@@ -924,6 +924,8 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	hud_used?.plane_holder?.set_desired_alpha(VIS_LIGHTING, lighting_alpha)
 	hud_used?.plane_holder?.set_vis(VIS_LIGHTING, lighting_alpha)
 	hud_used?.plane_holder?.set_vis(VIS_GHOSTS, ghostvision)
+	if(client)
+		client_glow_holder_eye(client, get_turf(client.eye || src)) // darkness off hides the glows, on brings them back
 
 /mob/observer/dead/MayRespawn(feedback = FALSE)
 	if(!client)

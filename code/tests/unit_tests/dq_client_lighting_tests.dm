@@ -405,9 +405,9 @@
 	var/atom/movable/screen/client_glow_base/B = GLOB.client_glow_base
 	TEST_ASSERT_EQUAL(B.plane, PLANE_LIGHTING, "the base is on the lighting plane")
 	TEST_ASSERT_EQUAL(B.color, "#000000", "the base is black")
-	TEST_ASSERT(B.layer < (BACKGROUND_LAYER + 22), "the base is under the glows")
+	TEST_ASSERT_EQUAL((CLIENT_GLOW_LAYER < BACKGROUND_LAYER && CLIENT_GLOW_LAYER > 0), TRUE, "the glows are on an ordinary layer, drawn over the screen base")
 	var/mutable_appearance/white = CACHED_FAST(client_glow_white_tiles, "[PLANE_LIGHTING]")
-	TEST_ASSERT(white.layer > B.layer && white.layer < (BACKGROUND_LAYER + 22), "a white tile sits between the base and the glows")
+	TEST_ASSERT(white.layer < BACKGROUND_LAYER && white.layer < CLIENT_GLOW_LAYER, "a white tile sits between the base and the glows")
 	TEST_ASSERT(!(white in run_loc_floor_bottom_left.underlays), "a dynamic floor has no white tile")
 	if(fixed)
 		var/area/FA = fixed.loc

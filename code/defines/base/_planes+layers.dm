@@ -136,6 +136,9 @@ What is the naming convention for planes or layers?
 #define PLANE_PLANETLIGHTING	4 //Lighting on planets
 
 #define PLANE_LIGHTING			5 //Where the lighting (and darkness) lives
+/// Client lighting on PLANE_LIGHTING: a white tile, and above it the glows. Ordinary layers, above the black screen base.
+#define CLIENT_GLOW_WHITE_LAYER 5
+#define CLIENT_GLOW_LAYER 6
 	#define LIGHTING_RENDER_TARGET	"LIGHT_PLANE"
 
 #define PLANE_O_LIGHTING_VISUAL	6 //For masking the lighting plane
