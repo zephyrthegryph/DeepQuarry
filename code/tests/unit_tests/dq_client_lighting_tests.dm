@@ -76,7 +76,7 @@
 	TEST_ASSERT(S.glow_mask.appearance_flags & KEEP_TOGETHER, "the mask draws as one group")
 	TEST_ASSERT_NULL(S.glow_mask.color, "no colour on the group: it would erase the tiles")
 	TEST_ASSERT_NULL(S.glow_mask.icon, "the mask itself draws nothing opaque")
-	TEST_ASSERT_EQUAL(length(S.glow_mask.overlays), length(S.glow_reach) + 1, "the transparent sizer and one tile per reached turf")
+	TEST_ASSERT_EQUAL(length(S.glow_mask.overlays), length(S.glow_reach) + 3, "the transparent sizer, the two frame corners and one tile per reached turf")
 	TEST_ASSERT(S.glow_reach["2,0"], "the open floor two tiles east is lit")
 	var/builds = GLOB.client_glow_mask_builds
 	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
@@ -206,14 +206,14 @@
 	var/datum/light_source/S = F.light
 	var/turf/LT = get_turf(F)
 	TEST_ASSERT_NOTNULL(S?.glow, "the fixture glows")
-	TEST_ASSERT(LT.x < H.safe[1] || LT.x > H.safe[3], "the light stands off the safe box")
 	var/list/entry = H.entry_of(S)
 	TEST_ASSERT_NOTNULL(entry, "the viewer holds the off-screen light's glow")
 	var/image/glow_image = entry[1]
 	var/image/mask_image = entry[2]
 	var/image/hide_image = entry[3]
-	var/turf/A = glow_image.loc
-	TEST_ASSERT(isturf(A) && A.x >= H.safe[1] && A.x <= H.safe[3] && A.y >= H.safe[2] && A.y <= H.safe[4], "the glow image's anchor is seen from anywhere in the eye's chunk")
+	var/obj/effect/overlay/client_glow_anchor/A = glow_image.loc
+	TEST_ASSERT_EQUAL(A, H.anchor, "the glow image stands on the viewer's anchor")
+	TEST_ASSERT(client_glow_test_eye(LT) in H.anchor.locs, "the anchor covers the eye's turf, which the viewer always sees")
 	TEST_ASSERT_EQUAL(A.x + (glow_image.pixel_x - S.glow.pixel_x) / WORLD_ICON_SIZE, LT.x, "its x offset puts it on the light")
 	TEST_ASSERT_EQUAL(A.y + (glow_image.pixel_y - S.glow.pixel_y) / WORLD_ICON_SIZE, LT.y, "its y offset puts it on the light")
 	TEST_ASSERT_EQUAL(glow_image.blend_mode, BLEND_ADD, "the copy adds like the glow")
@@ -228,7 +228,7 @@
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
 
-/// No double drawing: once the eye's chunk puts the light in its safe box, the copy goes and the normal glow shows.
+/// A light on screen is held too: its own turf may be behind a wall from the eye while its light reaches turfs the viewer sees.
 /datum/unit_test/dq_client_glow_holder_in_view
 
 /datum/unit_test/dq_client_glow_holder_in_view/Run()
@@ -239,9 +239,13 @@
 	var/datum/light_source/S = F.light
 	TEST_ASSERT_NOTNULL(H.entry_of(S), "held while off screen")
 	H.view_at(get_turf(F), 7, 7)
-	TEST_ASSERT_NULL(H.entry_of(S), "the light's turf is always on screen: the copy is dropped")
-	TEST_ASSERT_EQUAL(length(H.images()), 0, "no image is left over it")
-	TEST_ASSERT_NOTNULL(S.glow, "the normal glow shows")
+	var/list/entry = H.entry_of(S)
+	TEST_ASSERT_NOTNULL(entry, "still held with the eye on the light")
+	var/image/glow_image = entry[1]
+	var/turf/LT = get_turf(F)
+	TEST_ASSERT_EQUAL(glow_image.loc, H.anchor, "on the moved anchor")
+	TEST_ASSERT(LT in H.anchor.locs, "the anchor followed the eye's chunk")
+	TEST_ASSERT_EQUAL(H.anchor.x + (glow_image.pixel_x - S.glow.pixel_x) / WORLD_ICON_SIZE, LT.x, "the copy's offset still puts it on the light")
 	spent(H)
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
@@ -258,7 +262,7 @@
 	var/turf/LT = get_turf(F)
 	var/turf/east1 = locate(LT.x + 1, LT.y, LT.z)
 	var/image/mask_image = H.entry_of(S)[2]
-	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach) + 1, "the transparent sizer and one mask tile per reached turf")
+	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach) + 3, "the transparent sizer, the two frame corners and one mask tile per reached turf")
 	TEST_ASSERT(S.glow_reach["2,0"], "the floor two east is lit before the blocker")
 	var/before = length(mask_image.overlays)
 	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
@@ -267,7 +271,7 @@
 	TEST_ASSERT_NOTNULL(mask_image, "still held")
 	TEST_ASSERT(!S.glow_reach["2,0"], "the floor behind the blocker is in shadow")
 	TEST_ASSERT(length(mask_image.overlays) < before, "the copy's mask lost the shadowed tiles ([length(mask_image.overlays)] < [before])")
-	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach) + 1, "the copy's mask matches the reach")
+	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach) + 3, "the copy's mask matches the reach")
 	qdel(B)
 	SSlighting.light_step(0, TRUE)
 	spent(H)

@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting: lights behind corners still light what you can see, and shadows line up with their glows."

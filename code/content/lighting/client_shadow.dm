@@ -56,6 +56,15 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_shadow)
 	var/mutable_appearance/sizer = mutable_appearance(client_glow_icon(margin * 2 + WORLD_ICON_SIZE), "light")
 	sizer.color = list(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
 	. = list(sizer)
+	// Two more zeroed tiles at opposite corners of the widest reach. A reach runs a tile past the sprite on some sides, and BYOND
+	// centres an alpha filter's mask on the glow: without a symmetric frame a reach blocked on one side shifts the whole mask.
+	var/frame = CEILING(margin / WORLD_ICON_SIZE + 1, 1)
+	for(var/corner in list(-frame, frame))
+		var/mutable_appearance/frame_tile = mutable_appearance(LIGHTING_ICON, "transparent")
+		frame_tile.color = sizer.color
+		frame_tile.pixel_x = corner * WORLD_ICON_SIZE + margin
+		frame_tile.pixel_y = corner * WORLD_ICON_SIZE + margin
+		. += frame_tile
 	for(var/i = 1, i < length(offsets), i += 2)
 		var/mutable_appearance/tile = mutable_appearance(LIGHTING_ICON, "transparent")
 		tile.appearance_flags = RESET_COLOR | RESET_ALPHA
