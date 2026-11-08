@@ -1097,7 +1097,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		return cached_rows.Copy()
 	GLOB.op_menu_builds++
 	// A Menu shows no near miss: the candidates the menu origin refuses are never made.
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null, near_misses = FALSE)
+	var/datum/op_resolution/R = op_menu_resolution(actor, target, held)
 	var/list/sampled_rows = list() // the rows whose decision sampled state (read_once()): asked again on a later read, not the whole menu
 	var/list/rows = list()
 	var/list/hidden = list() // the rows left out, with the requirement that hid each (the admin "Show hidden" view)
@@ -1226,6 +1226,85 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			continue
 		label_rows[label] = row
 		rows += list(row)
+
+/// The ordered candidates of a Menu read, as compiled rows (plan, binding, side, grant, provider): what pass 1 decides depends only on who acts
+/// on what holding what, where they are and what they hold, their providers, grants and stance, so it is kept per that shape and a Menu rebuilt
+/// for a change of state skips op_resolve(). The rows hold handles, never entities; one whose entities are gone is made again.
+GLOBAL_LIST_EMPTY(op_menu_pass1_rows)
+#define OP_MENU_PASS1_MAX 512
+
+/proc/op_menu_resolution(mob/actor, atom/target, obj/held)
+	RETURN_TYPE(/datum/op_resolution)
+	var/authority = actor_authority(actor)
+	var/datum/rx_state/actor_state = actor ? rx_of(actor) : null
+	var/datum/rx_state/target_state = target ? rx_of(target) : null
+	var/datum/rx_state/held_state = held ? rx_of(held) : null
+	var/shape = "[actor ? SHARED_CACHE_UID(actor) : "-"]|[target ? SHARED_CACHE_UID(target) : "-"]|[held ? SHARED_CACHE_UID(held) : "-"]|[actor_state?.place_gen]|[target_state?.place_gen]|[held_state?.act_gen]|[actor_state?.provider_gen]|[actor_state?.capability_generation]|[target_state?.capability_generation]|[held_state?.capability_generation]|[actor?.op_input_stance()]|[authority]"
+	var/list/kept = GLOB.op_menu_pass1_rows[shape]
+	if(kept)
+		var/datum/op_resolution/again = op_menu_resolution_from(kept, actor, target, held, authority)
+		if(again)
+			return again
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, authority, null, null, near_misses = FALSE)
+	if(length(GLOB.op_menu_pass1_rows) >= OP_MENU_PASS1_MAX)
+		GLOB.op_menu_pass1_rows.Cut()
+	var/list/ordered_rows = list()
+	for(var/datum/op_cand/C as anything in R.ordered)
+		ordered_rows += list(op_menu_pass1_row(C))
+	var/list/hint_rows = list()
+	for(var/datum/op_cand/C as anything in R.all)
+		if(C.dropped_by == GATE_MATCH && C.binding.bind_kind == BIND_TOOL && C.side == CAND_TARGET)
+			hint_rows += list(op_menu_pass1_row(C))
+	GLOB.op_menu_pass1_rows[shape] = list(ordered_rows, hint_rows)
+	return R
+
+/proc/op_menu_pass1_row(datum/op_cand/C)
+	return list(C.oplan, C.binding, C.side, C.activation ? handle_of(C.activation) : null, C.provider?.entry, C.provider ? handle_of(C.provider.source) : null, C.rank, C.seq)
+
+/// A Menu resolution made again from kept rows, or null when an entity a row names is gone.
+/proc/op_menu_resolution_from(list/kept, mob/actor, atom/target, obj/held, authority)
+	RETURN_TYPE(/datum/op_resolution)
+	var/datum/op_resolution/R = op_resolution_new(actor, target, held, ORIGIN_MENU, authority, null)
+	R.near_misses = FALSE
+	var/list/made = list()
+	for(var/list/row as anything in kept[1])
+		var/datum/op_cand/C = op_menu_pass1_cand(R, row)
+		if(!C)
+			return null
+		made += C
+	R.ordered = made
+	var/list/hints = list()
+	for(var/list/row as anything in kept[2])
+		var/datum/op_cand/C = op_menu_pass1_cand(R, row)
+		if(!C)
+			return null
+		C.dropped_by = GATE_MATCH
+		hints += C
+	R.all = hints
+	return R
+
+/proc/op_menu_pass1_cand(datum/op_resolution/R, list/row)
+	RETURN_TYPE(/datum/op_cand)
+	var/datum/activation/granted_by = null
+	if(row[4])
+		granted_by = handle_get(row[4])
+		if(!granted_by || granted_by.dead || !granted_by.runs)
+			return null
+	var/datum/op_cand/C = op_cand_make(row[1], row[2], op_fast_holder(R, row[3]), row[3], granted_by, row[8])
+	C.rank = row[7]
+	if(row[5])
+		var/datum/source = handle_get(row[6])
+		if(!source)
+			return null
+		if(isnull(R.providers))
+			R.providers = providers_for(R.actor, R.held)
+		for(var/datum/prov/V as anything in R.providers)
+			if(V.entry == row[5] && V.source == source)
+				op_cand_set_provider(C, V)
+				break
+		if(!C.provider)
+			return null
+	return C
 
 /// What a cached menu keeps of a row whose decision sampled state: enough to ask it again (the plan, binding and capability are compiled, shared
 /// parts; the entities are handles, never held; the provider is found again among the actor's by its entry and its source), and the answer.
