@@ -965,6 +965,9 @@ GLOBAL_VAR_INIT(login_seq, 0)
 /client/proc/init_verbs()
 	if(IsAdminAdvancedProcCall())
 		return
+	// Admin rights attach during client/New, before the panel opens; the page asks for the list with Update-Verbs once it is up.
+	if(!stat_panel)
+		return
 	var/list/verblist = list()
 	panel_tabs.Cut()
 	// An admin's panel holds only the admin verbs they pinned, all under one tab; the rest are in the Admin Verbs browser.

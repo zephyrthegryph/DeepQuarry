@@ -361,6 +361,19 @@ class RouteErrorBoundary extends Component<
       error,
       info,
     );
+    // The server's log is the only record a player's failure leaves. This
+    // boundary sits inside the column's, so the column's own report never fires.
+    const report = {
+      event: 'interface-failed',
+      name: this.props.name,
+      error: String(error?.stack || error),
+      component: info?.componentStack?.slice(0, 1200),
+    };
+    if (this.context) {
+      Byond.sendMessage('col/page', { type: 'WM-Log', payload: report });
+    } else {
+      Byond.sendMessage('wm/log', report);
+    }
   }
 
   render() {
