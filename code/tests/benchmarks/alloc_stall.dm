@@ -56,11 +56,20 @@
 				keep[i] = list(R3, "[REF(R3)]:click")
 			if("window_prefix")
 				// a timer-style key held while pending: about 1000 live at once, the oldest dropped
-				keep[i] = "seq:[i + 7000000]:rewake"
+				keep[i] = "seq:[num2text(i + 7000000, 8)]:rewake"
 				if(i > 1000)
 					keep[i - 1000] = null
 			if("window_suffix")
-				keep[i] = "[i + 8000000]:seq:rewake"
+				keep[i] = "[num2text(i + 8000000, 8)]:seq:rewake"
+				if(i > 1000)
+					keep[i - 1000] = null
+			if("same_string")
+				// the same text every time (BYOND prints 7000001 as "7e+06"): no new string at all
+				keep[i] = "seq:[7000000 + i]:rewake"
+				if(i > 1000)
+					keep[i - 1000] = null
+			if("small_window_prefix")
+				keep[i] = "seq:[i]:rewake"
 				if(i > 1000)
 					keep[i - 1000] = null
 			if("fact_suffix")
