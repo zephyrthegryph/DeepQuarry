@@ -831,7 +831,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 		rec.ct_targets = list()
 	rec.ct_targets[ct_key] = SLOT(target)
 	BOOT_PHASE_BEGIN(bp_set)
-	stat_row_set(target, def, E, value, ct.priority, ct.row_key)
+	stat_row_set(target, def, E, value, ct.priority, ct.row_key, fresh = !held_before)
 	BOOT_PHASE_END(bp_set, "stat_ct_update: row_set [def.name]", E)
 
 /// A factors() entry of E: the table it names, at its scale and stacks now, held on `target` as rows of E (part = the entry's), or released while its
@@ -973,10 +973,12 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		. += 1
 
 /// Places (or updates) an untimed keyed row without the hold() checks: the contribution engine's own writes. Settles the stat inline.
-/proc/stat_row_set(datum/target, datum/stat_def/def, source, value, priority, key)
+/// `fresh`: the caller knows `source` holds no row of this stat and key on `target` (a contribution that never held one there): the row is added without
+/// the find, which scans every row of the stat the target holds (an area holds one per machine, so a map load's power joins were quadratic per area).
+/proc/stat_row_set(datum/target, datum/stat_def/def, source, value, priority, key, fresh = FALSE)
 	var/datum/stat_record/rec = stat_record_of(target)
 	BOOT_PHASE_BEGIN(bp_find)
-	var/list/row = stat_hold_find(rec, def.id, source, key)
+	var/list/row = fresh ? null : stat_hold_find(rec, def.id, source, key)
 	BOOT_PHASE_END(bp_find, "stat_row_set: hold_find [def.name]", target)
 	if(row)
 		if(stat_values_equal(row[H_VALUE], value) && row[H_PRIORITY] == priority)

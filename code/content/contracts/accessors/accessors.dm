@@ -167,6 +167,7 @@ SYSTEM_ACCESSOR(garbage, garbage_items, nameof(items))
 SYSTEM_ACCESSOR(garbage, garbage_queues, nameof(queues))
 SYSTEM_ACCESSOR(atoms, atoms_atom_initialized, nameof(atom_initialized))
 SYSTEM_ACCESSOR(atoms, atoms_initialize_depth, nameof(initialize_depth))
+SYSTEM_ACCESSOR(atoms, atoms_booting, nameof(booting))
 SYSTEM_ACCESSOR(media_tracks, media_tracks_all_tracks, nameof(all_tracks))
 SYSTEM_ACCESSOR(media_tracks, media_tracks_casino_tracks, nameof(casino_tracks))
 

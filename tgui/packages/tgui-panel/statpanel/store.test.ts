@@ -3,7 +3,7 @@ import {
   StatStore,
   searchVerbs,
   verbCommand,
-  verbsOfTab,
+  verbGroupsOf,
   visibleTabs,
 } from './store';
 
@@ -37,17 +37,16 @@ describe('stat panel store', () => {
     ]);
   });
 
-  it('groups subcategories and sorts by name', () => {
+  it('groups verbs by view and group, in layout order, by name', () => {
     const { store } = setup();
     store.receive('init_verbs', { verblist });
-    expect(verbsOfTab(store.state, 'Admin').map((g) => g.group)).toEqual([
-      null,
-      'Game',
+    expect(verbGroupsOf(store.state, 'Staff').map((g) => g.group)).toEqual([
+      'Players',
+      'Your admin session',
     ]);
-    expect(verbsOfTab(store.state, 'IC')[0].verbs.map((v) => v[1])).toEqual([
-      'Emote',
-      'Say',
-    ]);
+    expect(
+      verbGroupsOf(store.state, 'Actions')[0].verbs.map((v) => v[1]),
+    ).toEqual(['Emote', 'Say']);
   });
 
   it('a tab that empties goes away and the view returns to Status', () => {
