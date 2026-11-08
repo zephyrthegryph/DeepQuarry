@@ -1327,6 +1327,7 @@
 #include "../benchmarks/join_cost.dm"
 #include "../benchmarks/radio_broadcast.dm"
 #include "../benchmarks/active_play.dm"
+#include "../benchmarks/arrival_draws.dm"
 #include "../benchmarks/mob_make_cost.dm"
 #include "../benchmarks/mapload_init.dm"
 #include "../benchmarks/soak.dm"

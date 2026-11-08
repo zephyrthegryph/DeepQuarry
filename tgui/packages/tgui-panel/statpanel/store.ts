@@ -6,7 +6,6 @@
 
 import { type AbilitiesData, hasAbilities } from './abilities';
 import type { InspectData } from './inspect';
-import type { McHealthData } from './mcHealthData';
 import {
   ADMIN_VIEWS,
   dataTabOf,
@@ -16,6 +15,7 @@ import {
   placeOf,
   type ServerPage,
 } from './layout';
+import type { McHealthData } from './mcHealthData';
 
 export type Host = {
   sendMessage: (type: string, payload?: object) => void;
@@ -320,13 +320,17 @@ export class StatStore {
         this.changed({ statusParts });
         break;
       }
-      case 'update_mc':
+      case 'update_mc': {
+        // The server sends only the sections that changed ("partial"); the header's fields sit at the top level of the panel's data.
+        const sections = payload.mc_metrics || {};
+        const base = payload.partial && state.mcMetrics ? state.mcMetrics : {};
         this.changed({
           mcLocation: payload.coord_entry || '',
-          mcMetrics: payload.mc_metrics,
+          mcMetrics: { ...base, ...sections, ...(sections.header || {}) },
           permanentTabs: this.withTab(tabs, 'MC'),
         });
         break;
+      }
       case 'update_spells':
         this.changed({ spells: payload.actions || [] });
         break;
