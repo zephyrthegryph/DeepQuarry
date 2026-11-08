@@ -278,6 +278,24 @@
 		first_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 		first_reads++
 	metric("ap_menu_first_us", first_reads ? first_ms * 1000 / first_reads : 0, "us")
+	// How many first reads a pass-1 cache per class (types, grants by key, stance, relation) would answer: the pairs whose class an earlier
+	// pair already had. A judge for that idea; nothing reads these classes.
+	var/list/classes = list()
+	var/class_hits = 0
+	var/class_pairs = 0
+	for(var/i in 1 to length(crew) step 2)
+		var/mob/living/carbon/human/A = crew[i]
+		var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+		if(A == B)
+			continue
+		var/class_key = active_play_menu_class(A, B, A.get_active_hand())
+		if(classes[class_key])
+			class_hits++
+		classes[class_key] = TRUE
+		class_pairs++
+	count_metric("ap_menu_class_hits", class_hits, "pairs", "none")
+	count_metric("ap_menu_class_pairs", class_pairs, "pairs", "none")
+	count_metric("ap_menu_classes", length(classes), "classes", "none")
 	// After an unrelated change of the crewmate (its act generation moves, none of the keys the menu read): is the menu still cached?
 	var/unrelated_builds = 0
 	var/unrelated_reads = 0
@@ -415,3 +433,20 @@
 	var/list/now = active_play_op_counts()
 	for(var/name in now)
 		count_metric("[prefix]_op_[name]_per", per ? (now[name] - before[name]) / per : 0, name)
+
+/// The class a pass-1 cache per class would key a pair on: the three types, their running grants by definition key, the stance and the
+/// relation (carried, the distance up to 7 tiles or far, on a turf or in what kind of container).
+/proc/active_play_menu_class(mob/actor, atom/target, obj/held)
+	var/relation = "far"
+	var/turf/here = get_turf(actor)
+	var/turf/there = get_turf(target)
+	if(here && there && here.z == there.z && get_dist(here, there) <= 7)
+		relation = "[get_dist(here, there)]|[isturf(target.loc) ? "turf" : "[target.loc?.type]"]"
+	return "[actor.type]|[target.type]|[held?.type]|[relation]|[actor.op_input_stance()]|[active_play_grant_keys(actor)]|[active_play_grant_keys(target)]|[active_play_grant_keys(held)]"
+
+/proc/active_play_grant_keys(datum/D)
+	var/list/keys = list()
+	for(var/datum/activation/A as anything in D?.rx?.activations)
+		if(!A.dead && A.runs)
+			keys += "[A.def.key]"
+	return jointext(keys, ",")
