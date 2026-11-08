@@ -61,6 +61,11 @@
 /datum/proc/ui_opened(mob/user, datum/tgui/ui)
 	return
 
+/// A message from the window's page that is not a tgui one (not act/, ready, ping, ...): a window with a protocol of its own (the stat
+/// panel's Set-Tab, Update-Verbs, ...) handles it here. TRUE when handled.
+/datum/proc/ui_raw_message(mob/user, type, list/payload)
+	return FALSE
+
 // ---------------------------------------------------------------- open
 
 /// The generated tgui_interact(): open, reuse and bind the declared window.

@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { EmbeddedContext } from './embedded';
 import { sendAct } from './events/act';
 import { backendStateAtom, sharedAtom, store } from './events/store';
@@ -113,3 +113,45 @@ export const useSharedState = <TState>(
     },
   ];
 };
+
+/**
+ * Every message the server sends this window, for an interface with a
+ * protocol of its own (the stat panel: update_verbs, update_stat, ...), in
+ * its own native window or embedded in the right-hand column alike.
+ */
+export function useWindowMessages(
+  handler: (type: string, payload: any) => void,
+): void {
+  const embedded = useContext(EmbeddedContext);
+  const latest = useRef(handler);
+  latest.current = handler;
+  useEffect(() => {
+    let live = true;
+    const listener = (type: string, payload: unknown) => {
+      if (live) latest.current(type, payload);
+    };
+    if (embedded) {
+      embedded.listeners.add(listener);
+      return () => {
+        live = false;
+        embedded.listeners.delete(listener);
+      };
+    }
+    // A native window's listeners cannot be removed: this one goes quiet instead.
+    Byond.subscribe(listener);
+    return () => {
+      live = false;
+    };
+  }, [embedded]);
+}
+
+/** Sends a message of this window's own protocol (not an act), native or embedded alike. */
+export function useWindowSend(): (
+  type: string,
+  payload?: Record<string, unknown>,
+) => void {
+  const embedded = useContext(EmbeddedContext);
+  return embedded
+    ? embedded.send
+    : (type, payload = {}) => Byond.sendMessage(type, payload);
+}

@@ -159,7 +159,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	return TRUE
 
 /client/proc/topic_reload_statbrowser(mob/user)
-	stat_panel.reinitialize()
+	stat_panel_open(src)
 	return TRUE
 
 /client/proc/topic_asset_cache_preload_data(mob/user, preload_data)
@@ -237,9 +237,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		chatlog_token = vchatlog_generate_token(ckey, GLOB.round_id)
 
 	winset(src, null, list("browser-options" = "find,refresh"))
-	// Instantiate stat panel: a window inside the right-hand column's page (column_part.dm), not a browser of its own.
-	rel_set(src, nameof(stat_panel), new /datum/tgui_window/column_part(src, SKIN_STAT_BROWSER, COLUMN_PART_STAT))
-	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
 	rel_set(src, nameof(tgui_shocker), new /datum/tgui_shock(src, SKIN_TGUI_SHOCK))
@@ -310,13 +307,14 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(prefs)
 		prefs.selecting_slots = FALSE
 
-	// Initialize stat panel: it opens as a window in the right-hand column's page (column_part.dm); the page reports it ready.
-	stat_panel.initialize()
 	after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
 	acquire_dpi()
 
 	tgui_panel.initialize()
+
+	// The stat panel: a tgui window like any other (stat_panel_window.dm), docked in the right-hand column unless the player floated it.
+	stat_panel_open(src)
 
 	tgui_shocker.initialize()
 
@@ -1009,9 +1007,6 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			// A button in the Inspect tab (code/content/examine/inspect_panel.dm).
 			if(islist(payload) && istext(payload["act"]))
 				inspect_panel?.act(payload["act"], payload)
-		if("WM-Log", "WM-Drop", "WM-Save")
-			// The window dock's frame in the stat panel (code/library/ui/window_dock/window_dock.dm).
-			window_dock_of(src).panel_message(type, payload)
 		if("Abilities-Act")
 			// A button or a drag in the Abilities tab (code/content/abilities/ability_panel.dm).
 			if(islist(payload) && istext(payload["act"]))

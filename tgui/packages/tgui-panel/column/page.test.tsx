@@ -1,4 +1,4 @@
-// The right-hand column's page as the client loads it (happy-dom): the chat renders in its window, the stat panel's views stack, a
+// The right-hand column's page as the client loads it (happy-dom): the chat renders in its window, the stat panel docks above it, a
 // docked interface renders from its own messages, drops are judged in the page, and nothing logs an error.
 import './requireContext.testing';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test';
@@ -56,6 +56,24 @@ afterEach(() => {
 const raw = (type: string, payload: unknown) =>
   encodeURIComponent(JSON.stringify({ type, payload }));
 
+/** The server opens the stat panel as a docked tgui window (stat_panel_window.dm): a column window whose first update names it. */
+function openStatPanel() {
+  if (columnHost.backends.has('col-stat')) return;
+  columnHost.receive('col/open', { wid: 'col-stat', kind: 'tgui' });
+  columnHost.receive('col/msg', {
+    wid: 'col-stat',
+    raw: raw('update', {
+      config: {
+        interface: { name: 'StatPanel' },
+        title: 'Status',
+        status: 2,
+        user: { name: 'Nick Price', observer: 0 },
+      },
+      data: {},
+    }),
+  });
+}
+
 function renderPage() {
   return render(
     <Provider store={store}>
@@ -65,7 +83,7 @@ function renderPage() {
 }
 
 describe('the column page', () => {
-  it('renders the chat in its window, the stat views as one stack above it, and a docked PDA from its own messages', async () => {
+  it('renders the chat in its window, the stat panel docked above it, and a docked PDA from its own messages', async () => {
     errors = [];
     const page = renderPage();
     // The chat: its tab row and its input, inside a column window (tgui layouts are mocked in tests, so its Pane is a plain box).
@@ -75,18 +93,31 @@ describe('the column page', () => {
     expect(
       page.container.querySelector('.column-window [data-chat-input]'),
     ).toBeTruthy();
+    act(() => openStatPanel());
+    // Its own protocol: the verbs it is sent reach its store through its window.
     act(() => {
-      columnHost.receive('col/open', { wid: 'statbrowser', kind: 'stat' });
       columnHost.receive('col/msg', {
-        wid: 'statbrowser',
+        wid: 'col-stat',
         raw: raw('init_verbs', { verblist: [['IC', 'Say', 'say']] }),
       });
     });
     const groups = () =>
       Array.from(page.container.querySelectorAll('[data-column-group]'));
     expect(groups()).toHaveLength(2);
-    // The stat views stack first, as tabs; the chat fills the rest below.
+    // The stat panel (the real StatPanel interface) docks first; the chat fills the rest below.
+    // Its header is titled from its first update; its body is the real interface, loaded on demand (as its chunk would be).
     expect(groups()[0].textContent).toContain('Status');
+    await waitFor(
+      () =>
+        expect(
+          groups()[0].querySelector('.EmbeddedInterface .stat-root'),
+        ).toBeTruthy(),
+      { timeout: 5000 },
+    );
+    // Its views are its own tab row, as in a native window.
+    expect(groups()[0].querySelector('.stat-views')?.textContent).toContain(
+      'Status',
+    );
     expect(groups()[1].querySelector('.ChatTabs')).toBeTruthy();
     expect(groups()[1].className).toContain('column-group--fill');
     // A docked PDA: opened by the server, named and drawn from its own update.
@@ -139,7 +170,7 @@ describe('the column page', () => {
     expect(
       sent.filter((m) => m.payload?.wid === 'col-7').map((m) => m.payload.type),
     ).toContain('ready');
-    // Its float and close buttons are on its header; the chat and the stat panel have none (they have no native window to go to).
+    // Its float and close buttons are on its header (the chat has none: it has no native window to go to yet).
     const pda = groups().find((g) => g.textContent?.includes('PDA'))!;
     expect(pda.querySelectorAll('.Button').length).toBeGreaterThanOrEqual(3);
     expect(errors).toEqual([]);
@@ -150,20 +181,20 @@ describe('the column page', () => {
 
 describe('a native window dropped on the column', () => {
   const answered = () =>
-    sent.filter((m) => m.type === 'col/msg' && m.payload.type === 'WM-Drop');
+    sent.filter((m) => m.type === 'col/page' && m.payload.type === 'WM-Drop');
 
   it('docks at the exact list index the drop point falls at, judged in the page', async () => {
     const page = renderPage();
-    act(() =>
-      columnHost.receive('col/open', { wid: 'statbrowser', kind: 'stat' }),
-    );
-    // Whatever an earlier test docked is closed: the column holds the stat stack and the chat.
+    act(() => openStatPanel());
+    // Whatever an earlier test docked is closed but the stat panel: the column holds it and the chat.
     act(() => {
-      for (const wid of [...columnHost.backends.keys()]) {
+      for (const wid of [...columnHost.backends.keys()].filter(
+        (w) => w !== 'col-stat',
+      )) {
         columnHost.receive('col/close', { wid });
       }
     });
-    // The column fills the page (its screen rect: x 1400-2000, y 0-1000 at ratio 1): the stat stack 0-400, the chat 403-1000.
+    // The column fills the page (its screen rect: x 1400-2000, y 0-1000 at ratio 1): the stat panel 0-400, the chat 403-1000.
     const entries = Array.from(
       page.container.querySelectorAll<HTMLElement>('[data-column-group]'),
     );
@@ -193,9 +224,9 @@ describe('a native window dropped on the column', () => {
       await waitFor(() => expect(answered()).toHaveLength(1));
       return answered()[0].payload.payload;
     };
-    // Above the stat stack's middle: first in the list.
+    // Above the stat panel's middle: first in the list.
     expect(await dropAt(100)).toEqual({ wid: 'tgui-window-3', index: 0 });
-    // Below the stack's middle, above the chat's: between them.
+    // Below the stat panel's middle, above the chat's: between them.
     expect(await dropAt(300)).toEqual({ wid: 'tgui-window-3', index: 1 });
     // Below the chat's middle: last.
     expect(await dropAt(900)).toEqual({ wid: 'tgui-window-3', index: 2 });

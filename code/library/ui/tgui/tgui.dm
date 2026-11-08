@@ -636,6 +636,10 @@
 				return
 
 			LAZYREMOVE(open_byondui_elements, byond_ui_id)
+		else
+			// A window with a protocol of its own (the stat panel): its host handles what tgui does not.
+			if(type && src_object()?.ui_raw_message(user, type, payload))
+				return TRUE
 
 /// Wrapper for behavior to potentially wait until the next tick if the server is overloaded
 /datum/tgui/proc/on_act_message(act_type, payload, state)
