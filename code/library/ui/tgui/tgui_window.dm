@@ -78,6 +78,8 @@
 	if(owner?.session)
 		rel_add(owner.session, nameof(owner.session.tgui_windows), src, id)
 	src.pooled = pooled
+	// Known now, not from the open's probes: a cold window's first payload is built before they answer, and a page told it has no native shell never raises its alpha.
+	native_shell = !!pooled
 	if(pooled)
 		src.pool_index = TGUI_WINDOW_INDEX(id)
 

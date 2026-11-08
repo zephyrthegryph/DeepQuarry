@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "A chat window saved as floating is visible at login instead of opening fully transparent."
