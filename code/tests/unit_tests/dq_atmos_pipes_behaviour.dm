@@ -961,3 +961,58 @@
 	S.ChangeTurf(original)
 	TEST_ASSERT(!P.in_space, "a floor rebuilt under it, it stops")
 	qdel(P)
+
+/// The pipe commit links a region's pipes to their pipeline with rel_set_many(): the pipeline's members and every pipe's parent come out as the
+/// per-pipe rel_set() leaves them (same members, same order, each pipe once, the old line emptied), and a valve shut and opened again (a split, then
+/// a merge into the region kept in place) leaves every pipe in exactly one line that lists it.
+/datum/unit_test/dq_atmos_m/pipes/pipe_commit_links_like_one_at_a_time
+/datum/unit_test/dq_atmos_m/pipes/pipe_commit_links_like_one_at_a_time/run_gate()
+	var/list/pipes = list()
+	for(var/i in 1 to 4)
+		pipes += allocate(/obj/machinery/atmospherics/pipe/simple/visible, tile(i, 5))
+	var/datum/pipeline/one_at_a_time = new
+	for(var/obj/machinery/atmospherics/pipe/P as anything in pipes)
+		rel_set(P, nameof(P.parent), one_at_a_time)
+	var/list/expected = one_at_a_time.members.Copy()
+	var/datum/pipeline/at_once = new
+	TEST_ASSERT_EQUAL(rel_set_many(pipes, nameof(/obj/machinery/atmospherics/pipe::parent), at_once), length(pipes), "every pipe names the new line")
+	TEST_ASSERT_EQUAL(jointext(at_once.members, ","), jointext(expected, ","), "the same members in the same order")
+	TEST_ASSERT_EQUAL(length(one_at_a_time.members), 0, "the old line is emptied as one-at-a-time moves empty it")
+	for(var/obj/machinery/atmospherics/pipe/P as anything in pipes)
+		TEST_ASSERT(P.parent == at_once, "[P] names the new line")
+		rel_clear(P, nameof(P.parent))
+	qdel(one_at_a_time)
+	qdel(at_once)
+	for(var/obj/machinery/atmospherics/pipe/P as anything in pipes)
+		qdel(P)
+	// The commit path: a line split by a shut valve and merged back when it opens.
+	var/list/types = list(/obj/machinery/atmospherics/pipe/cap/visible, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/simple/visible, \
+		/obj/machinery/atmospherics/valve, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/cap/visible)
+	var/list/made = list()
+	for(var/i in 1 to length(types))
+		var/obj/machinery/atmospherics/M = allocate(types[i], tile(i - 1, 3))
+		M.set_dir(i == length(types) ? WEST : EAST)
+		M.init_dir()
+		M.set_grid_power(TRUE)
+		M.set_broken_condition(FALSE)
+		made += M
+	for(var/obj/machinery/atmospherics/M as anything in made)
+		M.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(made)
+	LAZYADD(ap_lines, made)
+	am_settle()
+	var/obj/machinery/atmospherics/valve/V = made[4]
+	for(var/step in list("shut", "open"))
+		if(step == "shut")
+			V.close()
+		else
+			V.open()
+		am_settle()
+		for(var/obj/machinery/atmospherics/pipe/P in made)
+			TEST_ASSERT_NOTNULL(P.parent, "after the valve was [step], [P] is in a line")
+			var/count = 0
+			for(var/obj/machinery/atmospherics/pipe/member as anything in P.parent.members)
+				if(member == P)
+					count++
+			TEST_ASSERT_EQUAL(count, 1, "after the valve was [step], [P]'s line lists it once")
+	take_down_lines()
