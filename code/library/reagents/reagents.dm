@@ -41,6 +41,11 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 
 /datum/capability/lib/reagents
 	holder_hooks = HOLDER_HOOK_PREINIT
+	/// starting_template()'s answer for `template_regime`: the shared id -> amount list, FALSE when this declaration can't have one, null unasked.
+	var/tmp/template_cache
+	var/tmp/template_regime
+	/// The template's units: a holder smaller than this is filled add by add (each add clamps to the space left).
+	var/tmp/template_total = 0
 
 /// configure(reagents(...)): `add` merges into the inherited adds (amounts sum), `starts` replaces the contents and drops inherited adds.
 /datum/capability/lib/reagents/reconfigure_ctor(list/ctor, list/changes)
@@ -82,6 +87,13 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 	var/holder_type = (istext(src.holder) && (src.holder in holder.vars)) ? holder.vars[src.holder] : src.holder // nameof(var): the holder's own type var
 	holder.create_reagents(max_volume, ispath(holder_type, /datum/reagents) ? holder_type : /datum/reagents)
 	// A starting set no transformation can take (every rule needs a reagent or catalyst it lacks) settles to nothing: each add skips its settle.
+	var/list/template = starting_template(holder, max_volume)
+	if(template)
+		if(length(template)) // an empty declaration starts empty: nothing was added, so nothing is told of a change
+			holder.reagents.fill_from_template(template)
+			if(tint)
+				holder.set_color(holder.reagents.get_color())
+		return
 	var/list/ids = declared_ids(holder)
 	var/inert = !isnull(ids) && reagents_set_inert(holder.reagents.xform_regime(), ids)
 	var/total = 0
@@ -128,6 +140,44 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 		holder.set_color(holder.reagents.get_color())
 	if(total > max_volume)
 		WARNING("[holder]([holder.type]) declares more reagents ([total]) than its volume ([max_volume])")
+
+/// The starting reagents as one ordered id -> amount list when they are the same for every holder of this declaration (numbers only: no var or
+/// proc amounts, no data, no starts_from or contents_from), fit this holder's volume and settle to nothing; else null and the holder is filled
+/// add by add. Worked out once per declaration and regime, and shared: fill_from_template() only reads it.
+/datum/capability/lib/reagents/proc/starting_template(atom/holder, max_volume)
+	if(starts_from || contents_from || data)
+		return null
+	var/regime = holder.reagents.xform_regime()
+	if(template_regime != regime || isnull(template_cache))
+		build_template(regime)
+	// One reagent is no cheaper in one pass (making the reagent datum is the cost; bench tmp A/B: 424 us add vs 527 us filled): it goes add by add.
+	if(!template_cache || length(template_cache) == 1 || template_total > max_volume)
+		return null
+	return template_cache
+
+/datum/capability/lib/reagents/proc/build_template(regime)
+	var/list/built = list()
+	var/total = 0
+	for(var/list/part in list(starts, add, last))
+		for(var/id in part)
+			var/amount = part[id]
+			if(isnull(amount))
+				amount = 1
+			if(!isnum(amount) || (id in built))
+				return remember_template(regime, FALSE)
+			if(amount <= 0)
+				continue
+			built[id] = amount
+			total += amount
+	if(!reagents_set_inert(regime, built))
+		return remember_template(regime, FALSE)
+	template_total = total
+	return remember_template(regime, built)
+
+/datum/capability/lib/reagents/proc/remember_template(regime, list/built)
+	template_regime = regime
+	template_cache = built
+	return built || null
 
 /// The ids this declaration puts in `holder`, or null when it takes a computed contents_from list.
 /datum/capability/lib/reagents/proc/declared_ids(atom/holder)

@@ -1213,8 +1213,12 @@ GLOBAL_VAR_INIT(construction_writes_published, 0)
 /proc/construction_birth(atom/A)
 	if(!(A.datum_flags & DF_CONSTRUCT_NOTED))
 		A.datum_flags &= ~DF_CONSTRUCTING
+		if(A.refresh_queued & DEP_PARKED)
+			interest_settle(A) // a draw it owed while under construction, in a chunk someone sees now, happens now (as an init frame's end does)
 		return
 	A.datum_flags &= ~(DF_CONSTRUCTING | DF_CONSTRUCT_NOTED)
+	if(A.refresh_queued & DEP_PARKED)
+		interest_settle(A)
 	var/handle = handle_of(A)
 	var/list/vars_of = GLOB.construction_writes[handle]
 	if(!vars_of)

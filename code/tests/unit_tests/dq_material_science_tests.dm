@@ -959,3 +959,27 @@
 	qdel(heater_batch)
 	qdel(pump_batch)
 	qdel(memory_batch)
+
+/// A damaging hit admits the object's material service after the hit's break and destroy crossings: an object the hit left standing gets
+/// its service as before, and one the hit destroyed gets none (a blast used to build a service for every object it was about to delete).
+/datum/unit_test/dq_material_damage_admits_survivors_only
+
+/datum/unit_test/dq_material_damage_admits_survivors_only/Run()
+	var/obj/item/cell/survivor = new(run_loc_floor_bottom_left)
+	TEST_ASSERT(!material_service_of(survivor), "a fresh cell already had a material service")
+	survivor.take_damage(survivor.max_integrity * 0.6, BRUTE, sound_effect = FALSE)
+	TEST_ASSERT(!QDELETED(survivor), "a 60% hit destroyed the cell")
+	TEST_ASSERT(material_service_of(survivor), "a hit that left the cell standing at 40% integrity did not admit its material service")
+	var/services_before = 0
+	for(var/datum/material_service/S)
+		services_before++
+	var/obj/item/cell/doomed = new(run_loc_floor_bottom_left)
+	doomed.take_damage(doomed.max_integrity * 2, BRUTE, sound_effect = FALSE)
+	var/services_after = 0
+	for(var/datum/material_service/S)
+		if(!QDELETED(S))
+			services_after++
+	TEST_ASSERT(QDELETED(doomed) || doomed.get_integrity() <= 0, "a hit of twice the cell's integrity left it intact")
+	if(QDELETED(doomed))
+		TEST_ASSERT(services_after <= services_before, "the hit that destroyed the cell admitted a material service for it ([services_before] -> [services_after])")
+	qdel(survivor)
