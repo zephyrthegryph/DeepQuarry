@@ -83,7 +83,8 @@
   margin-bottom: 0.25em;
 }
 
-.verb-grid {
+// .stat-root: the column page also loads tgui-core scoped under .EmbeddedInterface, after this sheet, at equal specificity.
+.stat-root .verb-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10em, 1fr));
   gap: var(--space-s);
@@ -152,7 +153,8 @@
   }
 }
 
-.menu-row {
+// .stat-root: the column page also loads tgui-core scoped under .EmbeddedInterface, after this sheet, at equal specificity.
+.stat-root .menu-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.2em;
@@ -949,7 +951,8 @@
   background-color: console.$console-danger;
 }
 
-.stat-quick {
+// .stat-root: the column page also loads tgui-core scoped under .EmbeddedInterface, after this sheet, at equal specificity.
+.stat-root .stat-quick {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-s);
@@ -1025,7 +1028,8 @@
 }
 
 // Search results: one per row, with where the item lives.
-.stat-results {
+// .stat-root: the column page also loads tgui-core scoped under .EmbeddedInterface, after this sheet, at equal specificity.
+.stat-root .stat-results {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(12em, 1fr));
   gap: var(--space-s);
