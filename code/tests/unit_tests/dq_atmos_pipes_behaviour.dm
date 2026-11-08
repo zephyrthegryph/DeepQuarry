@@ -903,3 +903,44 @@
 		am_settle()
 	TEST_ASSERT(middle.icon_temperature > 500, "hot, it glows ([middle.icon_temperature] K)")
 	take_down_lines()
+
+/// The shutoff valve's leak search steps a pipeline at a time: a leak several pipes away, past an open manual valve, still shuts it; past a shut
+/// manual valve it does not (the leak is in another network, and the search stops at a closed valve).
+/datum/unit_test/dq_atmos_m/pipes/shutoff_valve_far_leak
+/datum/unit_test/dq_atmos_m/pipes/shutoff_valve_far_leak/run_gate()
+	var/list/types = list(/obj/machinery/atmospherics/pipe/cap/visible, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/simple/visible, \
+		/obj/machinery/atmospherics/valve, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/simple/visible, \
+		/obj/machinery/atmospherics/valve/shutoff, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/cap/visible)
+	var/list/made = list()
+	for(var/i in 1 to length(types))
+		var/obj/machinery/atmospherics/M = allocate(types[i], tile(i - 1, 3))
+		M.set_dir(i == length(types) ? WEST : EAST)
+		M.init_dir()
+		M.set_grid_power(TRUE)
+		M.set_broken_condition(FALSE)
+		made += M
+	for(var/obj/machinery/atmospherics/M as anything in made)
+		M.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(made)
+	LAZYADD(ap_lines, made)
+	am_settle()
+	var/obj/machinery/atmospherics/pipe/far = made[2]
+	var/obj/machinery/atmospherics/valve/manual = made[4]
+	var/obj/machinery/atmospherics/valve/shutoff/S = made[7]
+	TEST_ASSERT(S.open, "the shutoff valve starts open")
+	if(manual.open)
+		manual.close()
+	am_settle()
+	far.set_damaged_leak(TRUE)
+	far.handle_leaking()
+	am_settle()
+	TEST_ASSERT(S.open, "a leak past a shut manual valve does not shut it")
+	manual.open()
+	am_settle()
+	S.check_leaks()
+	am_settle()
+	TEST_ASSERT(!S.open, "a leak past an open manual valve, four pipes away, shuts it")
+	far.set_damaged_leak(FALSE)
+	far.handle_leaking()
+	am_settle()
+	take_down_lines()

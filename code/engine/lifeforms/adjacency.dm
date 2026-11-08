@@ -239,13 +239,24 @@ GLOBAL_LIST(adjacency_pending)
 					adjacency_recompute(other, OC)
 
 /// A load batch closed (BATCH_WORK_ADJACENCY): each member it queued recomputes once.
+/// Each member joins its neighbours as one construction step (silent construction, refresh.dm): what its joins write (its connections, the
+/// icon_state and dir its look settles on) is published once when the step ends, only where a reader follows it, and its draw is queued once.
 /proc/adjacency_flush_batch(list/queued)
 	for(var/atom/member as anything in queued)
 		if(QDELETED(member) || !member.adj_handle)
 			continue
+		var/reopened = GLOB.silent_construction && !(member.datum_flags & DF_CONSTRUCTING)
+		if(reopened)
+			member.datum_flags |= DF_CONSTRUCTING
 		var/datum/lifeform_plan/P = lifeform_plan_of(member)
 		for(var/datum/centry/C as anything in P.adjacencies)
 			adjacency_recompute(member, C)
+		if(reopened)
+			GLOB.adjacency_joins_constructed++
+			construction_birth(member)
+
+/// Load-batch members whose joins ran as a construction step (adjacency_flush_batch()).
+GLOBAL_VAR_INIT(adjacency_joins_constructed, 0)
 
 /// The BYOND directions a junction mask names: each face it holds, and each corner (NORTHEAST..SOUTHWEST) for the corner bits.
 /proc/adjacency_mask_dirs(mask)

@@ -40,7 +40,7 @@ READS_AS(/proc/watched, WATCHED_KEY)
 			if(!istype(T))
 				CRASH("watched(): WATCH_LUM reads a turf, not [A.type]")
 			value = T.get_lumcount()
-			if(!T.lighting_ensure_object())
+			if(!T.has_dynamic_lighting() || (!GLOB.client_lighting && !T.lighting_ensure_object()))
 				return watched_band(value, levels, strict) // no dynamic lighting: its lum is fixed
 		if(WATCH_CHARGE)
 			var/obj/machinery/power/smes/S = A
@@ -59,7 +59,8 @@ READS_AS(/proc/watched, WATCHED_KEY)
 /proc/watched_armed(atom/A, source, list/levels)
 	if(source == WATCH_LUM)
 		var/turf/T = A
-		return !!T.lighting_object?.lum_watch?[jointext(levels, ",")]
+		var/list/rows = SSwatched.lum_rows(T)
+		return !!rows?[jointext(levels, ",")]
 	for(var/datum/sense_sub/heat/watched/W as anything in A.heat_subs)
 		if(W.levels ~= levels)
 			return TRUE
@@ -72,6 +73,8 @@ SYSTEM_DEF(watched)
 	VAR_PRIVATE/list/pending = list()
 	/// Turf handles whose lighting changed since the last pass (lum_changed()), each once.
 	VAR_PRIVATE/list/lum_pending = list()
+	/// Client lighting: turf handle -> "levels" -> list(levels, band last published), the rows a lighting object holds otherwise.
+	VAR_PRIVATE/list/client_lum_watch = list()
 
 /datum/system/watched/reactions()
 	. = ..()
@@ -109,12 +112,34 @@ SYSTEM_DEF(watched)
 
 /// Lum bands are DM's own (the lighting engine): the lighting object of `T` remembers each band a reader asked for and the band it last
 /// published, and lighting_object/update() reports the turf here when its corners changed.
+/// Under client lighting there is no lighting object: the rows live here, keyed by the turf's handle, and a glow's shadow mask
+/// rebuild reports the turfs it covered and covers (client_shadow.dm).
 /datum/system/watched/proc/lum_arm(turf/T, list/levels)
-	var/datum/lighting_object/O = T.lighting_ensure_object()
-	if(!O)
-		return
-	LAZYINITLIST(O.lum_watch)
-	O.lum_watch[jointext(levels, ",")] = list(levels, watched_band(T.get_lumcount(), levels))
+	var/list/rows
+	if(GLOB.client_lighting)
+		var/handle = handle_of(T)
+		rows = client_lum_watch[handle]
+		if(!rows)
+			rows = client_lum_watch[handle] = list()
+	else
+		var/datum/lighting_object/O = T.lighting_ensure_object()
+		if(!O)
+			return
+		LAZYINITLIST(O.lum_watch)
+		rows = O.lum_watch
+	rows[jointext(levels, ",")] = list(levels, watched_band(T.get_lumcount(), levels))
+
+/// The lum band rows watched on `T` (its lighting object's, or the client-lighting table's), or null.
+/datum/system/watched/proc/lum_rows(turf/T)
+	return T.lighting_object?.lum_watch || client_lum_watch[handle_of(T)]
+
+/// TRUE when any turf's lum is watched under client lighting (a mask rebuild skips the per-turf checks otherwise).
+/datum/system/watched/proc/client_lum_watching()
+	return length(client_lum_watch) > 0
+
+/// TRUE when a reader watches `T`'s lum under client lighting (the shadow masks report such turfs).
+/datum/system/watched/proc/client_lum_watched(turf/T)
+	return !!client_lum_watch[handle_of(T)]
 
 /// `T`'s lighting changed this tick: checked once at the next pass (coalesced per turf).
 /datum/system/watched/proc/lum_changed(turf/T)
@@ -130,13 +155,13 @@ SYSTEM_DEF(watched)
 	lum_pending = list()
 	for(var/handle in turfs)
 		var/turf/T = handle_get(handle)
-		var/datum/lighting_object/O = T?.lighting_object
-		if(!O?.lum_watch)
+		var/list/rows = T && lum_rows(T)
+		if(!rows)
 			continue
 		var/lum = T.get_lumcount()
 		var/changed = FALSE
-		for(var/key in O.lum_watch)
-			var/list/row = O.lum_watch[key]
+		for(var/key in rows)
+			var/list/row = rows[key]
 			var/band = watched_band(lum, row[1])
 			if(band != row[2])
 				row[2] = band

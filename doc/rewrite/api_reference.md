@@ -208,7 +208,7 @@ Notes: `hold_until` (`code/engine/stats/store.dm:112`) and `hold_override` (`cod
 #### `hold_table(E, source, table, scale =, stacks =, part =)`
 Need: place a source's whole table of stat values at once.
 Defined: `code/engine/stats/tables.dm:66`
-Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:837`.
+Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:854`.
 Replaces / bans: `BF_*`, `factor(`.
 Notes: normally reached through `factors()` rather than called.
 
@@ -1006,7 +1006,7 @@ Notes: register a new file in `code/tests/unit_tests/_unit_tests.dm` by hand. `T
 
 #### `allocate(type, ...)`, `set_global`, `set_var`, `set_config`, `defer_cleanup`
 Need: create objects and change shared state in a test with teardown that runs even on failure.
-Defined: `allocate` at `code/tests/unit_tests/unit_test.dm:969`, `set_global` at `code/tests/unit_tests/unit_test.dm:683`, `defer_cleanup` at `code/tests/unit_tests/unit_test.dm:698`
+Defined: `allocate` at `code/tests/unit_tests/unit_test.dm:1016`, `set_global` at `code/tests/unit_tests/unit_test.dm:730`, `defer_cleanup` at `code/tests/unit_tests/unit_test.dm:745`
 Example: `defer_cleanup(src, PROC_REF(restore_tile), x, y, z, original_type)`, `code/tests/unit_tests/dq_a7_initialization_tests.dm:81`
 Replaces / bans: raw global writes in tests (the state guard logs `STATE LEAK`).
 Notes: put objects on the test's own block, not at a fixed coordinate.

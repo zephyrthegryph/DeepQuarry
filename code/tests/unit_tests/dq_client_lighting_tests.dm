@@ -22,6 +22,19 @@
 	TEST_ASSERT_EQUAL(S.glow.loc, get_turf(L), "the glow sits on the light's turf")
 	TEST_ASSERT(S.glow.alpha > 0, "the glow is visible (alpha [S.glow.alpha])")
 	TEST_ASSERT_EQUAL(S.glow.blend_mode, BLEND_ADD, "the glow adds onto the lighting plane")
+	var/turf/edge = locate(T.x + CEILING(S.light_range, 1), T.y, T.z)
+	if(edge && GLOB.client_glow_bounds)
+		TEST_ASSERT(edge in S.glow.locs, "the glow's bounds reach the turf at the edge of its range, so a client seeing only that turf gets it")
+	var/live_glows = 0
+	var/holders = 0
+	for(var/obj/effect/overlay/client_glow/G in world)
+		if(!QDELETED(G))
+			live_glows++
+	for(var/datum/light_source/LS)
+		if(!QDELETED(LS) && LS.glow)
+			holders++
+	TEST_ASSERT_EQUAL(live_glows, holders, "one live glow per glowing light (no duplicates)")
+	log_test("CLIENT GLOW COUNT: [glows] glows in the world loop, [live_glows] live, [holders] lights holding one")
 	var/objects = 0
 	for(var/turf/U as anything in block(locate(1, 1, T.z), locate(world.maxx, world.maxy, T.z)))
 		if(U.lighting_object)
@@ -130,5 +143,33 @@
 		TEST_ASSERT(abs(now - old_levels[i]) <= 0.2, "light level at +[P.x - T.x] differs too much: corner engine [old_levels[i]], client [now]")
 	log_test("CLIENT LIGHT LEVEL: [jointext(report, "; ")]")
 	TEST_ASSERT(probes[1].get_lumcount() > 0.3, "the fixture's own floor is lit under client lighting")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// A lum band watched on a floor under client lighting moves when a light comes on beside it and when it goes again (the
+/// shadow mask rebuild reports the watched turfs it covers).
+/datum/unit_test/dq_client_lighting_lum_watch
+
+/datum/unit_test/dq_client_lighting_lum_watch/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	var/turf/T = run_loc_floor_bottom_left
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/list/levels = list(0.6)
+	var/dark_band = watched(T, WATCH_LUM, levels)
+	SSwatched.arm_pending(0)
+	TEST_ASSERT(watched_armed(T, WATCH_LUM, levels), "the read armed a lum band under client lighting")
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	SSwatched.arm_pending(0)
+	var/list/rows = SSwatched.lum_rows(T)
+	var/list/row = rows[jointext(levels, ",")]
+	TEST_ASSERT(T.get_lumcount() > 0.6, "the fixture lights its floor ([T.get_lumcount()])")
+	TEST_ASSERT(row[2] != dark_band, "the band moved when the light came on (band [row[2]], dark [dark_band])")
+	qdel(L)
+	SSlighting.light_step(0, TRUE)
+	SSwatched.arm_pending(0)
+	row = SSwatched.lum_rows(T)[jointext(levels, ",")]
+	TEST_ASSERT_EQUAL(row[2], watched_band(T.get_lumcount(), levels), "the band follows the level once the light is gone")
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)

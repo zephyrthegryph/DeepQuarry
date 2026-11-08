@@ -269,7 +269,7 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 	if(isnull(R.providers))
 		R.providers = providers_for(R.actor, R.held)
 	GLOB.op_count_reach++
-	var/reached = reach_gate(R.actor, aim, R.held, P, B, R.authority, R.providers)
+	var/reached = reach_gate(R.actor, aim, R.held, P, B, R.authority, R.providers, R.reach_fit_memo ||= list())
 	if(istype(reached, /datum/prov))
 		return reached
 	return reached ? FALSE : TRUE

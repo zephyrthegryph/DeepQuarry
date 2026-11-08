@@ -93,8 +93,21 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 			draw_hop_published(E, var_name)
 		construction_note(E, var_name)
 		return
+	// What an atom under construction holds (its rx state, its reagents, its misc state, a vending product): nothing outside it can read the record
+	// before the atom is born, so the write is noted on the atom and published once at its birth (construction_birth()), as the atom's own are.
+	if(!isatom(E) && GLOB.silent_construction && (E.own_holder_ref || istype(E, /datum/rx_state)) && !E.change_listen && !E.rx?.observed)
+		var/atom/builder = construction_owner(E)
+		if(builder)
+			if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
+				stat_inputs_changed(E, var_name)
+			if(var_name && draw_hop_reads_var(var_name))
+				draw_hop_published(E, var_name)
+			construction_note_held(builder, E, var_name)
+			return
 	if(GLOB.construction_census && var_name && isatom(E) && (E.datum_flags & DF_CONSTRUCTING))
 		construction_census_write(E, var_name)
+	if(GLOB.published_write_census && var_name)
+		GLOB.published_write_rows["[E.type].[var_name]"]++ // the writes the startup counter (plan_reader_probes) counts, by type and var
 	op_changed(E) // a cached menu or reach read of the op engine is stale now
 	if(var_name)
 		var/datum/rx_state/menu_state = E.rx
@@ -1207,6 +1220,65 @@ GLOBAL_VAR_INIT(construction_writes_published, 0)
 		GLOB.construction_writes[handle] = vars_of
 	vars_of[var_name] = TRUE
 
+/// The atom under construction that holds E (through its owner chain, or the datum an rx state belongs to), or null.
+/proc/construction_owner(datum/E)
+	var/datum/D = E
+	for(var/depth in 1 to 4)
+		var/up
+		if(istype(D, /datum/rx_state))
+			var/datum/rx_state/S = D
+			up = S.rx_holder_slot
+		else
+			up = D.own_holder_ref
+		if(!up)
+			return null
+		D = slot_datum(up)
+		if(!D)
+			return null
+		if(isatom(D))
+			var/atom/A = D
+			return (A.datum_flags & DF_CONSTRUCTING) ? A : null
+	return null
+
+/// atom handle -> held datum handle -> var names written under the atom's construction (construction_birth() publishes them).
+GLOBAL_ALIST_EMPTY(construction_held_writes)
+
+/// Notes var_name of E, a record atom A holds, for A's birth.
+/proc/construction_note_held(atom/A, datum/E, var_name)
+	GLOB.construction_writes_noted++
+	if(!var_name || !plan_reader_bits(var_name, E.type))
+		return
+	A.datum_flags |= DF_CONSTRUCT_NOTED
+	var/handle = handle_of(A)
+	var/alist/held = GLOB.construction_held_writes[handle]
+	if(!held)
+		held = alist()
+		GLOB.construction_held_writes[handle] = held
+	var/list/vars_of = held[handle_of(E)]
+	if(!vars_of)
+		vars_of = list()
+		held[handle_of(E)] = vars_of
+	vars_of[var_name] = TRUE
+
+/// Publishes once each var of a record A holds that was written under A's construction and that a reader follows.
+/proc/construction_birth_held(atom/A, handle)
+	var/alist/held = GLOB.construction_held_writes[handle]
+	if(!held)
+		return
+	GLOB.construction_held_writes -= handle
+	if(QDELETED(A))
+		return
+	for(var/held_handle, vars_of in held)
+		var/datum/E = handle_get(held_handle)
+		if(!E || QDELETED(E))
+			continue
+		var/list/names = vars_of
+		for(var/var_name in names)
+			var/bits = plan_reader_bits(var_name, E.type)
+			if(rx_readers(E, var_name, bits))
+				publish_change(E, var_name, bits)
+				GLOB.construction_writes_published++
+
 /// InitAtom(), after the setup() rows: the atom is born. Each var it wrote under construction that a reader follows is published once (reactions,
 /// lifecycle forms, operations waiting on it, and the on_change hooks that read it, against the baseline taken at init: the hook census found 31
 /// (type, hook) pairs whose content relies on firing for what setup wrote (an alarm's election, a meter's needle, lights, SMES levels, grass edges).
@@ -1220,6 +1292,8 @@ GLOBAL_VAR_INIT(construction_writes_published, 0)
 	if(A.refresh_queued & DEP_PARKED)
 		interest_settle(A)
 	var/handle = handle_of(A)
+	if(GLOB.construction_held_writes[handle])
+		construction_birth_held(A, handle)
 	var/list/vars_of = GLOB.construction_writes[handle]
 	if(!vars_of)
 		return
@@ -1268,3 +1342,20 @@ GLOBAL_LIST_EMPTY(construction_census_fires)
 	var/list/sorted = sortTim(rows.Copy(), GLOBAL_PROC_REF(cmp_numeric_dsc), TRUE)
 	for(var/row in sorted)
 		log_world("CONSTRUCTION CENSUS: [sorted[row]]x [row]")
+
+/// TRUE counts every published write (a write past the pre-init and construction branches) by "type.var" (debug tracing; -params
+/// bench_published_census=1 turns it on for the map load).
+GLOBAL_VAR_INIT(published_write_census, FALSE)
+GLOBAL_LIST_EMPTY(published_write_rows)
+
+/proc/published_write_census_report()
+	var/list/sorted = sortTim(GLOB.published_write_rows.Copy(), GLOBAL_PROC_REF(cmp_numeric_dsc), TRUE)
+	var/total = 0
+	for(var/row in sorted)
+		total += sorted[row]
+	log_world("PUBLISHED WRITE CENSUS: [length(sorted)] type.var row(s), [total] write(s), probes [GLOB.plan_reader_probes]")
+	var/shown = 0
+	for(var/row in sorted)
+		log_world("PUBLISHED WRITE CENSUS: [sorted[row]]x [row]")
+		if(++shown >= 60)
+			break

@@ -391,6 +391,10 @@ RESPAWN_MESSAGE If you're respawning as the same character or job hopping (chang
 ## Strength of ambient star light. Set to 0 or less to turn off. A value of 1 is unlikely to have a noticeable effect in most lightning systems.
 STARLIGHT 0
 
+## Client-rendered lighting: each light is a glow sprite the client blends, cut by a soft shadow mask, instead of the DM
+## corner lighting. Admins can switch it live in a round (Toggle Client Lighting). Comment out for the DM lighting.
+CLIENT_LIGHTING
+
 ## Defines which races are allowed to join as ERT, in singular form. If unset, defaults to only human. Casing matters, separate using ;
 ## Example races include: Human, Tajara, Skrell, Unathi
 ## FIXME: Unused config. Only uncomment if changed in code.

@@ -49,6 +49,8 @@
 	var/list/at_most_last
 	/// on_change(at_most =): reaction sig -> the keys held until its window ends.
 	var/list/at_most_held
+	/// The slot of the datum this state belongs to (weak: slot_datum() resolves it; no reference cycle with the holder).
+	var/rx_holder_slot = 0
 
 /datum
 	/// The reaction layer's per-datum state, or null (see /datum/rx_state).
@@ -60,6 +62,7 @@
 	if(!D.rx)
 		// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 		D.rx = new
+		D.rx.rx_holder_slot = SLOT(D) // weak: the state names its datum by slot (construction_owner(), silent construction of what an atom holds)
 	return D.rx
 
 /// The relation key a ledger kind publishes on its holder (and "<key>_of" on the partner it names).
@@ -81,8 +84,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 			return TRUE
 	if(E.rx?.observed?[key])
 		return TRUE
-	if(E.rx?.worn_watched)
-		return TRUE // a human's draw shows E worn or held (look.watch_worn()): it composes whatever E shows, so every write of E reaches it
+	if(E.rx?.worn_watched && key != HOP_TURF && key != HOP_AREA)
+		return TRUE // a human's draw shows E worn or held (look.watch_worn()): it composes whatever E shows, so every write of E reaches it; not
+		// where E is (the turf and area hops are no part of what it shows: its own reads of them are its type's, above)
 	if((bits & PLAN_READ_LIFEFORM) && lifeform_watching(E, key))
 		return TRUE // a lifecycle form follows the var: a registry key, a radio frequency, a derives() input (code/engine/lifeforms/forms.dm)
 	if(bits & PLAN_READ_HOOK)
@@ -114,6 +118,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		S.observed -= key
 	if(!length(S.observed))
 		S.observed = null
+	hop_readers_changed(key)
 
 /**
  * `key` of `E` changed. Delivers to the type's on_change / on_cross reactions and to observe()rs of the key

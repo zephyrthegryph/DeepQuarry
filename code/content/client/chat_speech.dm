@@ -49,7 +49,7 @@
 /client/proc/send_chat_language_rules()
 	if(!mob || !tgui_panel?.is_ready())
 		return
-	tgui_panel.window.send_message("chat/languageRules", list(
+	chat_window()?.send_message("chat/languageRules", list(
 		"rules" = mob.say_language_rules(),
 		"preview" = TRUE,
 	))
@@ -113,7 +113,7 @@ GLOBAL_LIST_INIT(chat_lobby_channels, list(OOC_CHANNEL))
 	if(!tgui_panel?.is_ready())
 		return
 	var/list/channels = chat_available_channels()
-	tgui_panel.window.send_message("chat/channels", list("channels" = channels))
+	chat_window()?.send_message("chat/channels", list("channels" = channels))
 	log_tgui(src, "Chat input channels sent: [jointext(channels, ",")].", context = "chat_float")
 	chat_send_radio_options()
 

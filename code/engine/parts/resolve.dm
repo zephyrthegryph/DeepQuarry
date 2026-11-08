@@ -72,6 +72,8 @@
 	var/near_misses = TRUE
 	/// providers_for(actor, held), read once by the first candidate that needs a provider: pass 1 runs no effects, so every candidate sees the same set.
 	var/list/providers
+	/// reach_gate_fitting()'s answers for R.providers, by need, authority and policy (reset with the providers)
+	var/list/reach_fit_memo
 
 /// The resolver's work, counted for benches and tests (code/tests/benchmarks/active_play.dm): candidate records made, reach gates asked, candidates whose
 /// when() conditions were tested, requirement checks (run.dm) and full resolutions.
@@ -646,7 +648,7 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 		if(isnull(R.providers))
 			R.providers = providers_for(R.actor, R.held)
 		GLOB.op_count_reach++
-		var/reached = reach_gate(R.actor, aim, R.held, P, B, R.authority, R.providers)
+		var/reached = reach_gate(R.actor, aim, R.held, P, B, R.authority, R.providers, R.reach_fit_memo ||= list())
 		if(istype(reached, /datum/prov))
 			op_cand_set_provider(C, reached)
 		else if(reached)
