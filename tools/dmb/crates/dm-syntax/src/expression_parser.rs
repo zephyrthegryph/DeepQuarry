@@ -1657,11 +1657,33 @@ fn original_simple_assignment(expr: &Expr, tokens: &[Token]) -> bool {
     }
 }
 
+fn original_simple_string_index(expr:&Expr,tokens:&[Token],original_profile:bool)->bool{
+    let [receiver,open,key,close]=tokens else{return false};
+    let ExprKind::Index{object,index}=&expr.kind else{return false};
+    if !matches!(&object.kind,ExprKind::Ident(name) if original_ascii_identifier(name))
+        || !simple_term(object,receiver)
+        || open.kind!=TokenKind::Punctuation || open.text!="["
+        || close.kind!=TokenKind::Punctuation || close.text!="]"
+        || key.kind!=TokenKind::String || index.span!=key.span
+        || expr.span!=Span::new(receiver.span.start,close.span.end)
+    {return false}
+    let ExprKind::Literal(literal)=&index.kind else{return false};
+    let Some(key)=key.text.strip_prefix('"').and_then(|key|key.strip_suffix('"')) else{return false};
+    if !original_ascii_identifier(key){return false}
+    // The demanded Original parser must supply the actual typed String.
+    // The compatibility parser admits only the same unescaped lexical shape.
+    match literal.original_value(){
+        Some(crate::OriginalTokenValue::String(actual))=>actual==key,
+        None=>!original_profile,
+        _=>false,
+    }
+}
+
 fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->Option<OriginalSimpleExpression>{
  let complete=match tokens{
   [only]=>simple_term(expr,only),
   [left,op,right]=>match &expr.kind{ExprKind::Binary{op:actual,lhs,rhs}=>simple_arithmetic(actual)&&op.text.as_str()==actual.as_str()&&simple_term(lhs,left)&&simple_term(rhs,right),ExprKind::Member{object,selector,via_colon:false}=>left.kind==TokenKind::Ident&&op.text=="."&&right.kind==TokenKind::Ident&&selector.as_str()==right.text.as_str()&&original_ascii_identifier(selector)&&matches!(&object.kind,ExprKind::Ident(name)if original_ascii_identifier(name))&&simple_term(object,left),ExprKind::Call{..}=>original_zero_call(expr,tokens,original_profile),_=>false},
-  [name,open,arg,close]=>matches!(&expr.kind,ExprKind::Call{callee,args}if name.kind==TokenKind::Ident&&name.text=="list"&&simple_term(callee,name)&&open.text=="("&&close.text==")"&&matches!(args.as_slice(),[item]if simple_term(item,arg))),
+  [name,open,arg,close]=>original_simple_string_index(expr,tokens,original_profile)||matches!(&expr.kind,ExprKind::Call{callee,args}if name.kind==TokenKind::Ident&&name.text=="list"&&simple_term(callee,name)&&open.text=="("&&close.text==")"&&matches!(args.as_slice(),[item]if simple_term(item,arg))),
   [_,_,_,dot,selector]=>matches!(&expr.kind,ExprKind::Member{object,selector:name,via_colon:false}if dot.text=="."&&selector.kind==TokenKind::Ident&&name==&selector.text&&original_ascii_identifier(name)&&original_zero_call(object,&tokens[..3],original_profile)),
   _=>false,
  };

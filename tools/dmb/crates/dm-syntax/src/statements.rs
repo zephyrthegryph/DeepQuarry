@@ -1448,6 +1448,22 @@ impl OriginalBodyGrammarOutcome{
  #[test]fn actual_original_available_body_provenance_is_closed_over_empty_void_simple_and_member_return(){
   for text in["","    return\n","    return 1\n","    return argument\n","    return argument + 1\n","    return argument.field\n","    return list(argument)\n"]{let body=outcome(text);assert!(body.diagnostics.is_empty(),"{text}: {:?}",body.diagnostics);assert_eq!(body.original_grammar.unwrap().kind(),OriginalBodyGrammarKind::Available,"{text}");}
  }
+ #[test]fn original_string_index_witness_requires_consumed_simple_receiver_key_and_delimiters(){
+  let body=outcome("    return vars[\"probe\"]\n");
+  let proof=body.original_grammar.unwrap();
+  assert_eq!(proof.kind(),OriginalBodyGrammarKind::Available);
+  let StatementKind::Return(Some(expr))=&body.statements[0].kind else{panic!("actual index return")};
+  assert!(matches!(&expr.kind,ExprKind::Index{..}));
+  assert_eq!(proof.expression_span(),Some(expr.span));
+  for text in [
+   "    return vars[\"probe\"\n",
+   "    return vars?[\"probe\"]\n",
+   "    return vars[\"probe key\"]\n",
+   "    return vars[\"[probe]\"]\n",
+   "    return vars[\"probe\"][\"next\"]\n",
+   "    return vars[probe]\n",
+  ]{assert!(outcome(text).original_grammar.is_none(),"unissued {text}");}
+ }
  #[test]fn actual_original_missing_operand_receipt_comes_from_pratt_consumption_branch(){
   for text in["    return 1 +\n","    return argument *\n","    return\targument +\n","    return   argument +\n"]{let body=outcome(text);let proof=body.original_grammar.unwrap();assert_eq!(proof.kind(),OriginalBodyGrammarKind::SkippedMissingSimpleOperand);assert!(proof.operator_span().is_some());assert!(!body.diagnostics.is_empty());assert!(matches!(&body.statements[0].kind,StatementKind::Unsupported));assert_eq!(proof.statement_span(),Some(body.statements[0].header_span));}
  }
