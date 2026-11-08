@@ -37,7 +37,9 @@
 					icon_states_string = "[json_encode(an_icon_state)]([REF(an_icon_state)])"
 				else
 					icon_states_string += ", [json_encode(an_icon_state)]([REF(an_icon_state)])"
-			stack_trace("[item] does not have a valid icon state, icon=[icon_file], icon_state=[json_encode(icon_state)]([REF(icon_state)]), icon_states=[icon_states_string]")
+			// Logged, not thrown: the sheet is built inside the asset loading service's generate step (deferred since the boot move), where a runtime
+			// aborts the generation half way and leaves the service waiting for it for ever (deferred assets never settle). The product shows a blank.
+			log_world("vending spritesheet: [item] does not have a valid icon state, icon=[icon_file], icon_state=[json_encode(icon_state)]([REF(icon_state)]), icon_states=[icon_states_string]; using a blank")
 			I = uni_icon('icons/turf/floors.dmi', "", SOUTH)
 
 		var/imgid = replacetext(replacetext("[product_ref]", "/obj/item/", ""), "/", "-")

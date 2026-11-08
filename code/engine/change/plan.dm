@@ -197,12 +197,13 @@ DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_
 
 DECLARE_SHARED_CACHE(change_plan_presented, GLOBAL_PROC_REF(plan_presented_build), SC_NEVER)
 
-/// TRUE when a write of `var_name` on E needs no redraw (look and verbs, DEP_DRAW): E is an atom (not a mob: species and traits grant verbs no
-/// plan sees) with no activations, and neither its type's generated plans (its draw, its verb outputs) nor its look layers and capability draws
+/// TRUE when a write of `var_name` on E needs no redraw (look and verbs, DEP_DRAW): E is an atom with no activations, and neither its type's generated plans (its draw, its verb outputs) nor its look layers and capability draws
 /// read the var. Asked by state_changed() for a type that
 /// declares no dependencies (one that does is narrowed by its derived table already).
 /proc/plan_spares_draw(datum/E, var_name)
-	if(!isatom(E) || ismob(E))
+	// Mobs too: a mob's verbs from its species and traits come with the write that changes them (species, a grant()), and its granted_verbs() and
+	// hidden_verbs() reads are in the generated verb rows like any atom's, so a var neither its draw nor its verb outputs read redraws nothing.
+	if(!isatom(E))
 		return FALSE
 	// A lookup read (lookup_reads.dm) publishes under its own pseudo-key: it is no var, so no plan names it, and it exists only because an
 	// output of the holder reads the looked-up field (the generated drawn_from / ui_from rows), so its publication always redraws.
