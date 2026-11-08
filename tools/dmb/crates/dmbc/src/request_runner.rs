@@ -2014,6 +2014,18 @@ pub(crate) fn prepare_private_authored_with_checker(
     }
 }
 
+pub(crate) fn prepare_compound_full_registry(
+    request:BuildRequest, host:&mut crate::runner_host::BuildHost,
+    stage:&mut crate::selected_report_spool::Stage, checker:&mut crate::selected_report_spool::Stage,
+    joined:&mut Option<JoinedSelectedInputs>, compact_cache:Option<&Path>,
+)->io::Result<(PreparationDiagnosticResult,Option<PreparedCheckerTranscript>)>{
+    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    if request.policy_inputs.as_ref().is_none_or(|intent|intent.workspace_auxiliary!=Q::PRIVATE_FULL_REGISTRY){
+        return Err(io::Error::new(io::ErrorKind::InvalidInput,"compound full registry requires its exact internal authored intent"));
+    }
+    prepare_selected_report_using(request,host,stage,Some(checker),Some(joined),false,compact_cache,true)
+}
+
 fn prepare_selected_report_using(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,

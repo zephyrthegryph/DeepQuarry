@@ -44,7 +44,7 @@ enum RequestCommand {
     SelectedExclusions(super::selected_report_wire::Roster),
     SelectedExclusionsV2(super::selected_report_wire::Roster, dq_analyze::selected_exclusions_wire::JudgmentV2),
     CombinedSelectedReports,
-    CompileSelectedReports(super::selected_report_wire::Roster, bool),
+    CompileSelectedReports(super::selected_report_wire::CompoundRoster, bool),
     NamedImageDir,
     GenerationCheck,
     GenerationWrite,
@@ -1107,7 +1107,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::NamedImageDir))
         },
         Request::CompileSelectedReports(request) => {
-            let roster = match request.selected.qualify(super::selected_exclusions::Mode::Combined) {
+            let roster = match request.qualify() {
                 Ok(roster) => roster,
                 Err(error) => return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),
             };
@@ -1138,7 +1138,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
 enum ReportDispatch {
     Existing(super::analyze::AttemptKind, super::analyze::AnalyzeRequest),
     SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, mode: super::selected_exclusions::Mode },
-    CompileSelected { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, output_name: String, compact_checker: bool },
+    CompileSelected { roster: super::selected_report_wire::CompoundRoster, exclusions: Vec<String>, output_name: String, compact_checker: bool },
     NamedImageDir,
 }
 
@@ -1208,8 +1208,8 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::cancelled("daemon request deadline expired during exclusions preflight")));
                 }
             }
-            let compound = if let Some(ReportDispatch::CompileSelected { output_name, .. }) = &report {
-                let destination = match super::selected_compilation::Destination::admit(&request, output_name) {
+            let compound = if let Some(ReportDispatch::CompileSelected { output_name, roster, .. }) = &report {
+                let destination = match super::selected_compilation::Destination::admit(&request, output_name, *roster) {
                     Ok(destination) => destination,
                     Err(error) => return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),
                 };
@@ -1387,7 +1387,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                             ReportDispatch::CompileSelected { roster, exclusions, compact_checker, .. } => {
                                 let (native, destination) = compound.ok_or_else(|| io::Error::other("compound destination absent"))?;
                                 let output_guards = destination.claim()?;
-                                host.with_compiled_selected_reports_using(request, native, &exclusions, compact_checker, |staged| {
+                                host.with_compiled_selected_reports_using(request, native, &exclusions, roster, compact_checker, |staged| {
                                     Ok(super::generation::Executed::CompiledSelected(staged, roster, destination, output_guards))
                                 })
                             }

@@ -30,14 +30,12 @@ pub(super) const PRIVATE_AUTHORED_DOC_UI: &[&str] = &[
 
 /// Exact CODE+MAPS union of the existing reactive, raw declaration, raw runtime,
 /// cooldown and engine-internal report sections. No new source role.
-#[cfg(test)]
 pub(super) const PRIVATE_REACTIVE_RAW_UNION: &[&str] = &[
     "allow_annotations", "cap_bits", "cooldown", "declaration_block", "duplicate_input_key",
     "engine_internal", "interactions", "latent", "notice_publisher", "pollers", "pool",
     "read_back", "report_in_catch", "scheduler", "sem/reads", "setter_publishes", "untracked_inputs",
 ];
 
-#[cfg(test)]
 pub(super) const PRIVATE_ORDINARY_SEMANTIC_AND_FIXED: &[&str] = &[
     "base_vars", "deadline_polling", "decl", "init", "lifeforms", "op_order", "ownership",
     "player_link", "rel_write_undeclared", "requirement_bool", "sem/keys", "sys/dx_reactive",
@@ -1063,8 +1061,7 @@ impl SourceSnapshot {
             true, true, true, Some(checker), true, true, grep, Some(handlers), false)
     }
 
-    #[cfg(test)]
-    pub(super) fn stage_private_full_registry(
+    pub(in crate::runner_host) fn stage_private_full_registry(
         &self, prepared: &crate::request::BuildOutcome, retained: &Arc<Budget>,
         root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
         handlers: &super::super::HandlerWorkspaceSnapshot,
@@ -1073,7 +1070,6 @@ impl SourceSnapshot {
             true, true, true, Some(checker), true, true, true, Some(handlers), true)
     }
 
-    #[cfg(test)]
     fn stage_private_extended_union(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage, mixed: bool, ordinary_fold_sys: bool, ordinary_semantics: bool,

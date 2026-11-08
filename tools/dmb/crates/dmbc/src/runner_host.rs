@@ -1558,8 +1558,8 @@ fn original_exclusions_invalid() -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::InvalidInput, "selected report requires the exact authored Original workspace request")
 }
 
-fn original_exclusions_shape(request: &crate::request::BuildRequest, roster: crate::daemon::selected_report_wire::Roster)
-    -> std::io::Result<(&crate::policy_request::WorkspacePolicyRequest, &std::path::Path)>
+fn original_exclusions_shape<'a>(request: &'a crate::request::BuildRequest, roots: &[&str])
+    -> std::io::Result<(&'a crate::policy_request::WorkspacePolicyRequest, &'a std::path::Path)>
 {
     use crate::{policy_request::AnalysisContext, request::BuildCommand};
     if request.command != BuildCommand::PrepareQuery || !request.exact_inputs
@@ -1574,7 +1574,7 @@ fn original_exclusions_shape(request: &crate::request::BuildRequest, roster: cra
     if wanted.analysis_context != Some(AnalysisContext::OriginalAnalyze0290) || !wanted.workspace_auxiliary.is_empty()
         || !wanted.workspace_generators.is_empty() || !wanted.files.is_empty() || !wanted.search_folders.is_empty()
         || !workspace.root.is_absolute() || !workspace.configuration.is_absolute()
-        || workspace.recursive_roots.len() != roster.workspace_roots().len() || workspace.recursive_roots.iter().any(|path| !path.is_absolute()) {
+        || workspace.recursive_roots.len() != roots.len() || workspace.recursive_roots.iter().any(|path| !path.is_absolute()) {
         return Err(original_exclusions_invalid());
     }
     let cache = request.cache_root.as_deref().filter(|path| path.is_absolute()).ok_or_else(original_exclusions_invalid)?;
@@ -1589,10 +1589,26 @@ impl BuildHost {
     )
         -> std::io::Result<(std::path::PathBuf, std::path::PathBuf)>
     {
-        let (_, cache) = original_exclusions_shape(request, roster)?;
+        Self::original_report_paths_using(request, roster.workspace_roots())
+    }
+
+    pub(crate) fn compound_report_paths(
+        request: &crate::request::BuildRequest, roster: crate::daemon::selected_report_wire::CompoundRoster,
+    ) -> std::io::Result<(std::path::PathBuf,std::path::PathBuf)> {
+        use crate::{daemon::selected_report_wire::CompoundRoster, policy_request::WorkspaceAuxiliaryQuestion as Q};
+        match roster {
+            CompoundRoster::Selected(roster) => Self::original_exclusions_paths(request, roster),
+            CompoundRoster::FullRegistry => Self::original_report_paths_using(request,
+                Q::authored_doc_ui_roots(Q::PRIVATE_FULL_REGISTRY).ok_or_else(original_exclusions_invalid)?),
+        }
+    }
+
+    fn original_report_paths_using(request: &crate::request::BuildRequest, roots: &[&str])
+        -> std::io::Result<(std::path::PathBuf,std::path::PathBuf)> {
+        let (_, cache) = original_exclusions_shape(request, roots)?;
         let intent = request.policy_inputs.as_ref().ok_or_else(original_exclusions_invalid)?.clone().admit()?;
         let workspace = intent.workspace().ok_or_else(original_exclusions_invalid)?;
-        if workspace.recursive_roots.iter().zip(roster.workspace_roots()).any(|(actual, expected)| *actual != workspace.root.join(expected))
+        if workspace.recursive_roots.iter().zip(roots).any(|(actual, expected)| *actual != workspace.root.join(expected))
             || workspace.configuration != workspace.root.join("tools/ci/lint_scopes.toml")
             || dm_preprocess::regions::canonical_path(&request.project) != workspace.root.join("deepquarry.dme") {
             return Err(original_exclusions_invalid());
@@ -1673,7 +1689,7 @@ impl BuildHost {
             Roster::WithUiActions => crate::policy_request::WorkspaceAuxiliaryQuestion::UiActionsFullAllow,
             _ => return Err(original_exclusions_invalid().into()),
         };
-        let (workspace, cache) = original_exclusions_shape(&request, plan.roster())?;
+        let (workspace, cache) = original_exclusions_shape(&request, plan.roster().workspace_roots())?;
         let _deadline = if control::WorkerContext::capture().is_none() {
             prepare_deadline::capture(request.command, request.timeout_seconds, std::time::Instant::now())?
                 .map(|deadline| control::bind_with_deadline(control::Cancellation::default(), deadline))
@@ -1763,19 +1779,25 @@ impl BuildHost {
         checker: &mut impl std::io::Write,
         analyze: &mut impl std::io::Write,
     ) -> Result<(crate::request::BuildOutcome, bool), Box<dyn std::error::Error>> {
-        self.with_compiled_selected_reports_using(prepare, compile, exclusions, false, |staged| {
+        let roster = Self::qualify_original_exclusions(exclusions, SelectedReportMode::Combined)?;
+        self.with_compiled_selected_reports_using(prepare, compile, exclusions,
+            crate::daemon::selected_report_wire::CompoundRoster::Selected(roster), false, |staged| {
             staged.publish(diagnostics, checker, analyze)
         })
     }
 
     pub(crate) fn with_compiled_selected_reports_using<T>(
         &mut self, prepare: crate::request::BuildRequest, compile: crate::request::BuildRequest,
-        exclusions: &[String], compact_checker: bool,
+        exclusions: &[String], roster: crate::daemon::selected_report_wire::CompoundRoster, compact_checker: bool,
         finish: impl FnOnce(crate::daemon::selected_report_wire::CompiledSelectedReports) -> std::io::Result<T>,
     ) -> Result<T, Box<dyn std::error::Error>> {
         use crate::daemon::{control, prepare_deadline};
         use std::io;
-        original_exclusions_shape(&prepare, crate::daemon::selected_report_wire::Roster::Base)?;
+        use crate::daemon::selected_report_wire::{CompoundRoster, Frame};
+        Self::compound_report_paths(&prepare,roster)?;
+        if roster==CompoundRoster::FullRegistry&&!exclusions.is_empty(){
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,"full compound registry cannot exclude policies").into());
+        }
         crate::request_runner::validate_joined_compile_request(&compile, self)?;
         if !compile.project.is_absolute()
             || dm_preprocess::regions::canonical_path(&compile.project)
@@ -1803,17 +1825,20 @@ impl BuildHost {
             }
             None
         };
-        let (joined, roster, frame, clean, notices, checked, report, credit) =
-            self.stage_selected_original_reports_using(
+        let (joined, frame, clean, notices, checked, report, credit) = match roster {
+            CompoundRoster::Selected(expected) => self.stage_selected_original_reports_using(
                 prepare, exclusions, SelectedReportMode::Combined, true, compact_checker,
-                |roster, prepared, clean, notices, checked, report, credit, joined| {
+                |actual, prepared, clean, notices, checked, report, credit, joined| {
+                    if actual!=expected{return Err(io::Error::other("compound selected roster changed"));}
                     let joined = joined.ok_or_else(|| io::Error::other("combined input closure absent"))?;
                     let checked = checked.ok_or_else(|| io::Error::other("combined Checker output absent"))?;
-                    let frame = crate::daemon::selected_report_wire::Frame::from_prepared(prepared)?;
+                    let frame = Frame::from_prepared(prepared)?;
                     frame.require_checker_frame(checked.0)?;
-                    Ok((joined, roster, frame, clean, notices, checked, report, credit))
+                    Ok((joined, frame, clean, notices, checked, report, credit))
                 },
-            )?;
+            )?,
+            CompoundRoster::FullRegistry=>self.stage_compound_full_registry(prepare, compact_checker)?,
+        };
         let compiled = crate::request_runner::compile_with_joined_selected_inputs(compile, self, &joined)?;
         if !matches!(compiled, crate::request::BuildOutcome::Published { .. }) {
             return Err(io::Error::other("exact native compilation did not publish a pair").into());
@@ -1821,6 +1846,60 @@ impl BuildHost {
         Ok(finish(crate::daemon::selected_report_wire::CompiledSelectedReports {
             compiled, roster, frame, clean, diagnostics: notices, checker: checked, report, _credit: credit,
         })?)
+    }
+
+    fn stage_compound_full_registry(
+        &mut self, mut request:crate::request::BuildRequest, compact_checker:bool,
+    )->Result<(
+        crate::request_runner::JoinedSelectedInputs,
+        crate::daemon::selected_report_wire::Frame, bool,
+        Option<crate::selected_report_spool::Verified>,
+        (dq_analyze::selected_exclusions_wire::Frame,crate::selected_report_spool::Verified),
+        crate::selected_report_spool::Verified, dm_preprocess::source_arena_credit::SourceArenaCredit,
+    ),Box<dyn std::error::Error>>{
+        use crate::{daemon::selected_report_wire::{CompoundRoster,Frame},policy_request::WorkspaceAuxiliaryQuestion as Q,
+            selected_report_spool::Stage};
+        use dq_analyze::{captured_generator_budget::Budget, selected_exclusions_wire::MAX_STREAM};
+        use std::io;
+        if !self.retains_artifacts(){return Err(original_exclusions_invalid().into())}
+        let(root,cache)=Self::compound_report_paths(&request,CompoundRoster::FullRegistry)?;
+        let paths=Q::authored_doc_ui_roots(Q::PRIVATE_FULL_REGISTRY).ok_or_else(original_exclusions_invalid)?;
+        let metadata=root.as_os_str().len().checked_mul(paths.len()+4)
+            .and_then(|n|n.checked_add(cache.as_os_str().len()))
+            .and_then(|n|n.checked_add(request.project.as_os_str().len()))
+            .and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(64*1024))
+            .ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
+        let credit=self.source_arena_work().reserve(SELECTED_REPORT_RETAINED.checked_add(metadata)
+            .ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?)?;
+        let retained=Budget::new(SELECTED_REPORT_RETAINED).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+        request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary=Q::PRIVATE_FULL_REGISTRY.to_vec();
+        let mut diagnostics=Stage::new(&cache)?;
+        let mut checker=Stage::new(&cache)?;
+        let report=Stage::new(&cache)?;
+        let mut joined=None;
+        let(result,transcript)=crate::request_runner::prepare_compound_full_registry(
+            request,self,&mut diagnostics,&mut checker,&mut joined,compact_checker.then_some(cache.as_path()),
+        )?;
+        let prepared=result.preparation?;
+        result.diagnostics?;
+        let transcript=transcript.ok_or_else(||io::Error::other("full registry Checker transcript absent"))?;
+        let frame=Frame::from_prepared(&prepared)?;
+        frame.require_checker_frame(transcript.frame)?;
+        let(clean,report)={
+            let state=self.query_state.try_lock().map_err(|_|io::Error::new(io::ErrorKind::WouldBlock,"full registry query state is already borrowed"))?;
+            let snapshot=state.snapshot.as_ref().ok_or_else(||io::Error::other("full registry current source absent"))?;
+            let handlers=state.handlers_snapshot.as_ref().ok_or_else(||io::Error::other("full registry handler source absent"))?;
+            snapshot.stage_private_full_registry(&prepared,&retained,&root,report,&transcript,handlers)?
+        };
+        let diagnostics=if diagnostics.length()!=0{Some(query_snapshot::checked_selected_report_stage(diagnostics)?)}else{None};
+        let checker=query_snapshot::checked_selected_report_stage(checker)?;
+        let aggregate=checker.length().checked_add(report.length())
+            .and_then(|n|n.checked_add(diagnostics.as_ref().map_or(0,|d|d.length())));
+        if aggregate.is_none_or(|bytes|bytes>MAX_STREAM){
+            return Err(io::Error::new(io::ErrorKind::OutOfMemory,"full registry compound reports exceed the aggregate stream bound").into());
+        }
+        let joined=joined.ok_or_else(||io::Error::other("full registry joined input closure absent"))?;
+        Ok((joined,frame,clean&&transcript.clean,diagnostics,(transcript.frame,checker),report,credit))
     }
 
     pub(crate) fn stage_selected_original_reports_using<T>(
@@ -1844,7 +1923,7 @@ impl BuildHost {
             return Err(original_exclusions_invalid().into());
         }
         let plan = Self::plan_original_exclusions(exclusions, mode)?;
-        let (requested_workspace, cache) = original_exclusions_shape(&request, plan.roster())?;
+        let (requested_workspace, cache) = original_exclusions_shape(&request, plan.roster().workspace_roots())?;
         // Preparation inherits this deadline. Keep the binding through the
         // producer joins and final validation instead of restarting its clock.
         use crate::daemon::{control, prepare_deadline};

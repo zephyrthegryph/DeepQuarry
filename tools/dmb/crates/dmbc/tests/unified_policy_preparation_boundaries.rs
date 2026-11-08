@@ -1878,6 +1878,172 @@ fn public_compound_selected_compiles_and_verifies_both_reports_in_one_request() 
 
 
 #[test]
+#[ignore = "private dmbc transport and mandatory independent legacy Analyze oracle"]
+fn public_full_registry_compound_matches_legacy_report_and_exact_native_pair_across_edit() {
+    use dmbc::publish::OutputPair;
+    use dq_analyze::selected_exclusions_wire::{Frame, Hex128, Seal};
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct RegistryReports {
+        schema: String,
+        frame: Frame,
+        checker_policy_revision: Hex128,
+        clean: bool,
+        diagnostics: Option<Seal>,
+        checker: Seal,
+        report: Seal,
+    }
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Terminal { schema: String, native_pair: OutputPair, selected: RegistryReports }
+
+    let legacy = std::path::PathBuf::from(std::env::var_os("DQ_PRIVATE_REACTIVE_RAW_LEGACY_ANALYZE")
+        .expect("full compound parity requires an independent legacy Analyze"));
+    assert!(legacy.is_absolute() && legacy.is_file());
+    let root = test_scratch::dir("full-registry-compound-project");
+    let cache = test_scratch::dir("full-registry-compound-output");
+    let transport = test_scratch::dir("full-registry-compound-transport");
+    let daemon = LibraryTransport {
+        root: &transport,
+        namespace: format!("full-compound-{}-{}", std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
+    };
+    for (path, source) in [
+        ("deepquarry.dme", concat!(
+            "#include \"code/__defines/context.dm\"\n",
+            "#include \"code/control.dm\"\n",
+            "#include \"code/handler.dm\"\n",
+            "#include \"code/engine/present/protocols.dm\"\n",
+            "#include \"interface/visible.dm\"\n",
+            "#ifdef SPACEMAN_DMM\n#include \"code/derived.dm\"\n",
+            "#include \"code/_generated/reads.dm\"\n#endif\n",
+        )),
+        ("code/__defines/context.dm", "/datum/act\n/datum/act/eval\n"),
+        ("code/handler.dm", "/proc/leak(datum/act/A)\n    return list(A)\n"),
+        ("code/engine/present/protocols.dm", "/datum/look\n/atom/proc/draw(datum/look/look)\n    return\n"),
+        ("interface/visible.dm", "/datum/full_registry_interface\n"),
+        ("modular_chomp/visible.dm", "/datum/full_registry_modular\n"),
+        ("maps/stale.dm", "/proc/stale()\n    return // ALLOW(scheduler): full registry fixture leaves an annotation unused\n"),
+        ("tgui/standalone.jsx", "CheckGrep observes this filename rather than its content\n"),
+        ("tgui/packages/tgui/interfaces/Probe.tsx", "export const probe = 1;\n"),
+        ("code/_generated/reads.dm", "// deliberately stale actual file\n"),
+        ("code/derived.dm", concat!(
+            "#define TRACKED(T,V)\n#define PUBLISHED_BY(T,V,K)\n",
+            "/datum/foreign\n    var/far\n",
+            "/obj/derived_probe\n    var/value\n    var/missing\n    var/mutable\n    var/link\n",
+            "/obj/derived_probe/derived()\n",
+            "    return list(drawn_from(nameof(value), rel(nameof(link), nameof(/datum/foreign::far))))\n",
+            "/obj/derived_probe/draw()\n    return missing\n",
+            "/obj/derived_probe/on_state_changed()\n    return\n",
+            "/obj/derived_probe/ui_data()\n    return list(mutable, value)\n",
+            "/obj/derived_probe/mutate()\n    mutable = 7\n",
+        )),
+        (dq_analyze::ui_actions_policy::DISPATCHER, "malformed dispatcher\n"),
+        ("SpacemanDMM.toml", ""),
+    ] { put(&root, path, source); }
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+
+    let write_control = |field: &str, native: &str| {
+        put(&root, "code/control.dm", format!(
+            "/datum/receiver\n/proc/check_field(datum/receiver/argument)\n#ifdef SPACEMAN_DMM\n    return argument.{field}\n#else\n{native}\n#endif\n"
+        ));
+        put(&root, "doc/rewrite/control.md", format!("\x60\x60\x60dm\nmissing_doc_{field}()\n\x60\x60\x60\n"));
+    };
+    write_control("before_edit", "    return 1687");
+
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(cache.clone());
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear(); // Only the compound host may issue the private registry profile.
+    intent.workspace.as_mut().unwrap().recursive_roots =
+        ["code", "doc/rewrite", "interface", "maps", "modular_chomp", "tgui"]
+            .map(|name| root.join(name)).to_vec();
+    let request_path = transport.join("full-compound.json");
+    let run = |name: &str, exclusions: &[&str]| {
+        put(&transport, "full-compound.json", serde_json::to_vec(&serde_json::json!({
+            "selected": {"build": build, "exclusions": exclusions},
+            "output_name": name, "analyze_registry": "full",
+        })).unwrap());
+        daemon.run(&[OsStr::new("compile-checker-analyze-selected"), request_path.as_os_str(),
+            OsStr::new("--report-batch")], Duration::from_secs(90)).unwrap()
+    };
+    let bad = run("compound-full-excluded", &["-sem/handlers"]);
+    assert_eq!(bad.status.code(), Some(2));
+    assert!(bad.stdout.is_empty());
+    assert!(!cache.join("compound-full-excluded").exists());
+
+    let seal = |bytes: &[u8]| Seal { length: bytes.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(bytes)) };
+    let inspect = |name: &str, result: std::process::Output, field: &str| {
+        assert_eq!(result.status.code(), Some(1), "{}", String::from_utf8_lossy(&result.stderr));
+        let line = result.stdout.iter().position(|&byte| byte == b'\n').unwrap();
+        let terminal: Terminal = serde_json::from_slice(&result.stdout[..line]).unwrap();
+        assert_eq!(terminal.schema, "native-compiled-full-registry-v1");
+        assert_eq!(terminal.selected.schema, "native-checker-analyze-full-registry-v1");
+        assert!(!terminal.selected.clean);
+        assert_ne!(terminal.selected.checker_policy_revision, terminal.selected.frame.policy_revision);
+        if let Some(diagnostics) = terminal.selected.diagnostics {
+            assert_eq!(diagnostics, seal(&result.stderr));
+        }
+        let (checker, analyze) = result.stdout[line+1..].split_at(terminal.selected.checker.length as usize);
+        assert_eq!(terminal.selected.checker, seal(checker));
+        assert_eq!(terminal.selected.report, seal(analyze));
+        assert!(String::from_utf8_lossy(checker).contains(field));
+        let analyze_text = String::from_utf8_lossy(analyze);
+        for marker in ["[handlers/context_escape]", "[derived_reads/", "standalone.jsx", "allow annotations: 1 unused", field] {
+            assert!(analyze_text.contains(marker), "missing {marker}: {analyze_text}");
+        }
+        let expected = daemon.run_program(&legacy, &[
+            OsStr::new("check"), OsStr::new("--raw"), OsStr::new("--no-cache"),
+            OsStr::new("--no-selftest"), OsStr::new("--unused"), OsStr::new("--root"), root.as_os_str(),
+        ], Duration::from_secs(60)).unwrap();
+        assert_eq!(expected.status.code(), Some(1), "{}", String::from_utf8_lossy(&expected.stderr));
+        assert_eq!(analyze, expected.stdout);
+
+        let native_store = cache.join(format!("{name}-separate-store"));
+        let native_out = cache.join(format!("{name}-separate-artifacts"));
+        let project = root.join("deepquarry.dme");
+        let separate = daemon.run(&[
+            OsStr::new("compile"), project.as_os_str(), OsStr::new("--no-cache"),
+            OsStr::new("--exact-inputs"), OsStr::new("--workers"), OsStr::new("1"),
+            OsStr::new("--request-timeout-seconds"), OsStr::new("60"),
+            OsStr::new("--artifact-directory"), native_out.as_os_str(),
+            OsStr::new("--output-store"), native_store.as_os_str(),
+        ], Duration::from_secs(90)).unwrap();
+        assert!(separate.status.success(), "{}", String::from_utf8_lossy(&separate.stderr));
+        let marker = |directory: &std::path::Path| -> OutputPair {
+            serde_json::from_slice(&std::fs::read(directory.join("deepquarry.dmb-pair.json")).unwrap()).unwrap()
+        };
+        let installed = cache.join(name).join("artifacts");
+        assert_eq!(marker(&installed), terminal.native_pair);
+        assert_eq!(marker(&native_out), terminal.native_pair);
+        for name in ["deepquarry.dmb", "deepquarry.rsc"] {
+            assert_eq!(std::fs::read(installed.join(name)).unwrap(), std::fs::read(native_out.join(name)).unwrap());
+        }
+        (terminal, checker.to_vec(), analyze.to_vec())
+    };
+
+    let (first, first_checker, first_analyze) =
+        inspect("compound-full-cold", run("compound-full-cold", &[]), "before_edit");
+    write_control("after_edit", "    return 1729");
+    let (edited, edited_checker, edited_analyze) =
+        inspect("compound-full-edit", run("compound-full-edit", &[]), "after_edit");
+    assert_ne!(first.selected.frame.source_revision, edited.selected.frame.source_revision);
+    assert_ne!(first.native_pair, edited.native_pair);
+    assert_ne!(first_checker, edited_checker);
+    assert_ne!(first_analyze, edited_analyze);
+
+    write_control("after_edit", "#include \"absent-strict-only.dm\"\n    return 1729");
+    let refused = run("compound-full-strict-refusal", &[]);
+    assert_eq!(refused.status.code(), Some(2), "{}", String::from_utf8_lossy(&refused.stderr));
+    assert!(refused.stdout.is_empty());
+    assert!(!cache.join("compound-full-strict-refusal/artifacts/deepquarry.dmb-pair.json").exists());
+    assert!(!root.join("deepquarry.dmb").exists());
+}
+
+
+#[test]
 #[ignore = "private dmbc transport plus the independent legacy Engine oracle"]
 fn public_selected_v2_library_sites_match_legacy_fingerprints_and_ceilings() {
     use dq_analyze::{

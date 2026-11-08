@@ -15,12 +15,31 @@ pub(super) struct Request {
     pub(super) output_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) checker_execution: Option<CheckerExecution>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    analyze_registry: Option<RegistryExecution>,
 }
 
 #[derive(Clone, Copy, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub(super) enum CheckerExecution {
     Compact,
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum RegistryExecution { Full }
+
+impl Request {
+    pub(super) fn qualify(&self) -> io::Result<wire::CompoundRoster> {
+        if self.analyze_registry.is_some() {
+            if !self.selected.exclusions.is_empty() || self.selected.build.timeout_seconds.is_none() {
+                return Err(invalid("full compound registry requires no exclusions and an explicit deadline"));
+            }
+            Ok(wire::CompoundRoster::FullRegistry)
+        } else {
+            self.selected.qualify(Mode::Combined).map(wire::CompoundRoster::Selected)
+        }
+    }
 }
 
 pub(super) struct Destination {
@@ -32,7 +51,7 @@ pub(super) struct Destination {
 fn invalid(message: &'static str) -> io::Error { io::Error::new(io::ErrorKind::InvalidInput, message) }
 
 impl Destination {
-    pub(super) fn admit(prepare: &BuildRequest, output_name: &str) -> io::Result<Self> {
+    pub(super) fn admit(prepare: &BuildRequest, output_name: &str, roster: wire::CompoundRoster) -> io::Result<Self> {
         let suffix = output_name.strip_prefix("compound-").unwrap_or("");
         if suffix.is_empty() || suffix.len() > 48 || !suffix.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-') {
             return Err(invalid("compound output requires a fresh compound- name under the external cache"));
@@ -40,7 +59,7 @@ impl Destination {
         if !prepare.no_cache || prepare.warnings != crate::diagnostics::WarningPolicy::default() {
             return Err(invalid("compound request requires explicit no-cache and default warning settings"));
         }
-        let (workspace, cache) = BuildHost::original_exclusions_paths(prepare, wire::Roster::Base)?;
+        let (workspace, cache) = BuildHost::compound_report_paths(prepare, roster)?;
         let workspace = fs::canonicalize(workspace)?;
         if workspace.starts_with(&cache) {
             return Err(invalid("compound cache must be disjoint from the workspace"));
@@ -131,9 +150,9 @@ pub fn run_file(path: &Path) -> Result<bool, Box<dyn Error>> {
     if bytes.len() as u64 > MAX_REQUEST { return Err(invalid("compound request exceeds its control bound").into()); }
     let request: Request = serde_json::from_slice(&bytes)?;
     drop(bytes);
-    let roster = request.selected.qualify(Mode::Combined)?;
+    let roster = request.qualify()?;
     super::build_admission::validate(&request.selected.build)?;
-    let destination = Destination::admit(&request.selected.build, &request.output_name)?;
+    let destination = Destination::admit(&request.selected.build, &request.output_name, roster)?;
     let mut stream = super::connect_generation()?;
     transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
     protocol::send(&mut stream, &protocol::Request::CompileSelectedReports(request))?;
