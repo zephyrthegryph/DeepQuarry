@@ -154,6 +154,14 @@ pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTok
    }
   }
  })?;
+ #[cfg(debug_assertions)]
+ if std::env::var_os("DMB_ORIGINAL_TRACE_FUNDING_OWNERS").is_some(){
+  eprintln!(
+   "ORIGINAL_LIVE_PRIMARY_OWNERS counter={} literals={:?} tokens={:?} items={:?}",
+   a.retained_bytes_for_trace(), primary.trace_literal_retention(),
+   primary.trace_token_retention(), primary.trace_item_retention(receiver.output.source()),
+  );
+ }
  // A real physical EOF inside a failed formal still leaves primary at its
  // authored Stop frontier, without the ordinary declaration EOF assembly.
  let consumed_eof=receiver.source.reached_eof()&&!stopped_after_formals;

@@ -376,6 +376,16 @@ impl OriginalSignatureObserver<'_, '_> {
         trace
     }
 
+    pub(crate) fn trace_live_stream_retention(&self) {
+        if std::env::var_os("DMB_ORIGINAL_TRACE_FUNDING_OWNERS").is_none() {
+            return;
+        }
+        eprintln!(
+            "ORIGINAL_LIVE_SIGNATURE_OWNERS counter={} observer={:?}",
+            self.a.retained_bytes_for_trace(), self.retention_for_trace(),
+        );
+    }
+
     /// Only called on failure. Unwound producer, recursion and temporary
     /// owners are excluded; the admission error already carries its own
     /// allocation-time sample. Do not replace that error or open another query.

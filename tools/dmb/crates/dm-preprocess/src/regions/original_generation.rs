@@ -86,6 +86,12 @@ impl Recipe<'_>{
     eprintln!("ORIGINAL_DEFINITION_GEOMETRY attempts={attempts} exact_hits={hits}");
    }
   }
+  #[cfg(debug_assertions)]
+  if std::env::var_os("DMB_ORIGINAL_TRACE_FUNDING_OWNERS").is_some() {
+   let state = shared.borrow();
+   let (occurrences, regions, retained) = state.plan.trace_reservations();
+   eprintln!("ORIGINAL_LIVE_DIRECTIVE_OWNER occurrences={occurrences} regions={regions} retained={retained}");
+  }
   result.inspect_err(|_error| {
    #[cfg(debug_assertions)]
    if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {

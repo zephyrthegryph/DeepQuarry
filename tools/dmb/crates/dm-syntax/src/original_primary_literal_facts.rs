@@ -122,6 +122,27 @@ impl CompactLiteralCodes {
         (0..len).map(|index|self.at(index))
     }
 
+    /// Reindex only physical bank references. Wide and projected codes carry
+    /// independent side-table ordinals in the same low byte.
+    fn remap_banks(&mut self, banks: &[u8; LITERAL_PAGE_LEN]) {
+        match self {
+            Self::Wide(codes) => {
+                for code in codes {
+                    if *code >> 8 < PROJECTED_COMPACT_ORDINAL {
+                        *code = (*code & !255) | u32::from(banks[(*code & 255) as usize]);
+                    }
+                }
+            }
+            Self::Narrow { cells, .. } => {
+                for cell in cells {
+                    if u32::from(*cell >> 8) < SHORT_CODE_PROJECTED {
+                        *cell = (*cell & !255) | u16::from(banks[(*cell & 255) as usize]);
+                    }
+                }
+            }
+        }
+    }
+
     fn project(&mut self, index: usize, descriptor: usize) {
         let descriptor = u32::from(u8::try_from(descriptor).expect("bounded literal descriptor column"));
         match self {
@@ -809,6 +830,52 @@ impl LiteralPage {
             return Ok(0);
         };
         Ok(released + old - new)
+    }
+
+    /// A final compact page may have retired owners but still carry their
+    /// slots. Shrink the bank without changing either kind of literal identity.
+    fn compact_delivered_owner_bank(
+        &mut self, a: &crate::SettingAdmission<'_>,
+    ) -> io::Result<Option<(usize, usize)>> {
+        let LiteralPageData::Compact(compact) = &mut self.data else { return Ok(None) };
+        if compact.projections.is_none() { return Ok(None); }
+        a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        if !a.matches_lease_domain(&compact.credit) { return Err(io::ErrorKind::InvalidInput.into()); }
+        let mut live = [false; LITERAL_PAGE_LEN];
+        for code in compact.codes.iter() {
+            if code >> 8 < PROJECTED_COMPACT_ORDINAL {
+                let bank = (code & 255) as usize;
+                if bank >= compact.owners.len() { return Err(io::ErrorKind::InvalidData.into()); }
+                live[bank] = true;
+            }
+        }
+        let mut banks = [0u8; LITERAL_PAGE_LEN];
+        let mut count = 0;
+        for (old, &is_live) in live[..compact.owners.len()].iter().enumerate() {
+            if is_live {
+                banks[old] = u8::try_from(count).expect("bounded bank ordinal");
+                count += 1;
+            }
+        }
+        if count == compact.owners.capacity() { return Ok(None); }
+        let previous = compact.owners.capacity() * mem::size_of::<OriginalLiteralOwner>();
+        let layout = Layout::array::<OriginalLiteralOwner>(count).map_err(|_| io::ErrorKind::OutOfMemory)?;
+        let mut next = if count == 0 {
+            Vec::new()
+        } else {
+            let Some(mut credit) = a.try_reserve_optimization(layout.size())
+                .map_err(|error| a.take_operational_error().unwrap_or(error))? else { return Ok(None) };
+            let next = alloc_funded_literal_rows(count, layout)?;
+            a.absorb(&mut compact.credit, &mut credit)?;
+            next
+        };
+        for (old, owner) in compact.owners.drain(..).enumerate() {
+            if live[old] { next.push(owner); }
+        }
+        compact.codes.remap_banks(&banks);
+        drop(mem::replace(&mut compact.owners, next));
+        compact.credit.release_retired_bytes(previous)?;
+        Ok(Some((previous, layout.size())))
     }
 
     /// Release only exact expanded RAW spelling, leaving cooked bytes and
@@ -1540,11 +1607,23 @@ impl OriginalPrimaryLiteralFacts{
   let Some(owner) = self.0.as_mut().and_then(Arc::get_mut) else { return Ok(0) };
   if owner.projection.is_none() { return Ok(0); }
   let mut released = 0usize;
+  let (mut bank_pages, mut bank_before, mut bank_after) = (0usize, 0usize, 0usize);
   for page in owner.rows.chunks.iter_mut().flat_map(|chunk| &mut chunk.pages) {
    released = released.checked_add(page.settle_delivered_compact(source, a)?)
     .ok_or(io::ErrorKind::InvalidData)?;
+   if let Some((before, after)) = page.compact_delivered_owner_bank(a)? {
+    bank_pages += 1;
+    bank_before += before;
+    bank_after += after;
+   }
   }
-  Ok(released)
+  #[cfg(debug_assertions)]
+  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+   eprintln!("ORIGINAL_DELIVERED_LITERAL_BANKS pages={bank_pages} physical_before={bank_before} physical_after={bank_after}");
+  }
+  #[cfg(not(debug_assertions))]
+  let _ = bank_pages;
+  released.checked_add(bank_before - bank_after).ok_or_else(|| io::ErrorKind::InvalidData.into())
  }
  pub fn is_admitted_by(&self,a:&crate::SettingAdmission<'_>)->bool{a.matches_lease_domain(&self.payload().rows.directory_credit)&&a.matches_lease_domain(&self.payload().colon_credit)&&a.matches_lease_domain(&self.payload().fixed_credit)}
  pub fn consumed_extent(&self)->Option<usize>{self.payload().extent}
@@ -2365,6 +2444,24 @@ mod literal_page_controls {
  }
 
  #[test]
+ fn settled_bank_remap_leaves_both_side_ordinals_unchanged() {
+    let mut remap = [0; LITERAL_PAGE_LEN];
+    remap[11] = 4;
+    let before = [(19 << 8) | 11, (PROJECTED_COMPACT_ORDINAL << 8) | 11,
+                  (WIDE_LITERAL_ORDINAL << 8) | 11];
+    let mut wide = CompactLiteralCodes::Wide(before.to_vec());
+    let mut narrow = CompactLiteralCodes::Narrow {
+        cells: before.iter().map(|&code| CompactLiteralCodes::encode(code, 0)).collect(),
+        bases: [0; 2],
+    };
+    wide.remap_banks(&remap);
+    narrow.remap_banks(&remap);
+    let expected = [(19 << 8) | 4, before[1], before[2]];
+    assert!(wide.iter().eq(expected));
+    assert!(narrow.iter().eq(expected));
+ }
+
+ #[test]
  fn delivered_body_singletons_keep_existing_descriptor_identity_and_funded_survivors() {
     struct Output;
     impl crate::OriginalLiteralOutputOwner for Output {
@@ -2426,9 +2523,23 @@ mod literal_page_controls {
     assert!(matches!(second.value().unwrap(), crate::OriginalTokenValue::Int(654321)));
     assert_eq!(second.raw().unwrap(), "654321");
     assert!(!second.same_owner(&first));
+    let second = second.detach_using(&a).unwrap();
     assert!(page.get(2).unwrap().1.same_owner(filler.as_view()));
     assert_eq!(page.settle_delivered_compact(&source, &a).unwrap(), 0);
-    drop((page, first, filler, output));
+
+    let before = used.load(Ordering::Acquire);
+    let denied = crate::SettingAdmission::new(&used, before, &|| Ok(()));
+    assert_eq!(page.compact_delivered_owner_bank(&denied).unwrap(), None);
+    assert_eq!(used.load(Ordering::Acquire), before);
+    let (old, new) = page.compact_delivered_owner_bank(&a).unwrap().unwrap();
+    let bytes = mem::size_of::<OriginalLiteralOwner>();
+    assert_eq!((old, new), (3 * bytes, bytes));
+    assert_eq!(used.load(Ordering::Acquire), before - (old - new));
+    assert!(page.get_data(0, 0, Some(loan), Some(&output)).unwrap().1.same_owner(&first));
+    assert!(page.get_data(1, 0, Some(loan), Some(&output)).unwrap().1.same_owner(&second));
+    assert!(page.get(2).unwrap().1.same_owner(filler.as_view()));
+    assert_eq!(page.compact_delivered_owner_bank(&a).unwrap(), None);
+    drop((page, first, second, filler, output));
     assert_eq!(used.load(Ordering::Acquire), fixed);
  }
 

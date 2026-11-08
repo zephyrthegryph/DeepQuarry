@@ -96,6 +96,8 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
   #[cfg(test)]
   eprintln!("ORIGINAL_STREAM_STAGE=raw_product {_error:?}");
  })?;
+ #[cfg(debug_assertions)]
+ observer.trace_live_stream_retention();
  let geometry=if lazy_parameters{product.header_token_geometry()}else{None};
  let(plan,expanded,primary,binding)=actual(a,||product.into_diagnostic_parts_using(a)).inspect_err(|_error|{
   #[cfg(debug_assertions)]
