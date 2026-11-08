@@ -83,6 +83,9 @@ impl DiagnosticFrontend {
           (true,Some(true))=>DiagnosticPreparationPurpose::OriginalHandlersStructuralPrefix,
           (true,None)=>return Err(vec![internal("structural purpose lacks its actual original primary owner")]),
         };
+        if structural != (receipt.role == crate::diagnostic_declarations::DeclarationRole::HandlersStructural) {
+            return Err(vec![internal("diagnostic declaration role does not match preparation purpose")]);
+        }
         if structural{receipt.retained_records=None;}
         if !receipt.authenticates(&inner.snapshot.tree) {
             return Err(vec![internal(
@@ -180,7 +183,7 @@ impl OriginalImageDirFrontend {
         let view=inner.source_view().map_err(|message|vec![internal(&message)])?;
         view.require_original_analysis_seed().map_err(|message|vec![internal(&message)])?;
         if view.original_analysis_completeness()!=Some(OriginalAnalysisCompleteness::Complete)
-            || !view.receipt().image_dir_mixed_callables
+            || view.receipt().role != crate::diagnostic_declarations::DeclarationRole::ImageDir
             || view.receipt().errors().iter().any(|error|!matches!(error,
                 crate::TreeError::Duplicate{kind:crate::MemberKind::Proc|crate::MemberKind::Verb,..}
                 |crate::TreeError::InheritedDuplicate{kind:crate::MemberKind::Proc|crate::MemberKind::Verb,..}))
@@ -269,7 +272,7 @@ impl DiagnosticSourceView<'_> {
         self.require_original_analysis_seed()?;
         if self.preparation_purpose() != DiagnosticPreparationPurpose::OriginalSharedComplete
             || !self.original_plan().is_original_diagnostic()
-            || self.receipt().image_dir_mixed_callables
+            || self.receipt().role != crate::diagnostic_declarations::DeclarationRole::Ordinary
             || !self.receipt().is_clean()
         {
             return Err("shared ImageDir requires its own clean complete Original archive".into());
@@ -508,6 +511,51 @@ pub const ORIGINAL_ANALYZE_PREPARATION_VERSION:u32=1;
   fn original_source_bytes<'a>(&'a self,lease:&'a dm_preprocess::SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{if !lease.same_binding(self.root.lease()){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"foreign test subject lease"))}Ok(Some(self.root.prepared().original().as_bytes()))}
   fn acquired_source(&self,_:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(Some(self.root.clone()))}
   fn source_acquisition(&self,_:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.root.prepared().original().same_view(text).then(||self.root.clone())}
+ }
+ #[test]
+ fn handlers_preserve_orphan_override_values_without_issuing_a_formal() {
+     use dm_ir::SymbolId;
+     let text = concat!(
+         "/datum/probe\n    flags = 1\n",
+         "/datum/probe/formal\n    var/flags\n",
+         "/proc/test(datum/act/A)\n    return list(A)\n",
+     );
+     let provider = Source { root: dm_preprocess::AcquiredSource::synthetic_utf8(
+         dm_preprocess::SourceText::from(text.to_owned()), (),
+     ) };
+     let path = Path::new("synth.dme");
+     let seed = crate::checker_builtins::original_analysis_seed().unwrap();
+     let executor = dm_exec::BuildExecutor::new(1).unwrap();
+     let host = crate::frontend::declaration_checked_tests::original_test_host();
+     let config = FrontendConfig { workers: 1, engine: Some(seed.frontend_seed()), observer: None };
+     let partial = super::super::build_for_original_handlers_structural_checked(
+         path, &provider, config, None, &executor, &host,
+     ).unwrap();
+     let structural = partial.handlers_structural_source().unwrap();
+     let view = structural.view();
+     let tree = view.tree();
+     let flags = SymbolId::of("flags");
+     let owner = SymbolId::of("/datum/probe");
+     let member = tree.resolve(tree.lookup_type(owner).unwrap(), flags, crate::MemberKind::Var).unwrap();
+     assert_eq!(tree.member(member).unwrap().definition, crate::DefinitionMode::Override);
+     assert!(tree.member(member).unwrap().metadata.initializer.is_some());
+     assert_eq!(tree.source_formal_variable_member(owner, flags).unwrap(), None);
+     assert!(tree.source_formal_variable_member(SymbolId::of("/datum/probe/formal"), flags).unwrap().is_some());
+     assert!(view.receipt().errors().is_empty(), "an inherited value-only row is no formal declaration");
+     assert!(partial.try_into_compilable().is_err());
+
+     let strict_source = super::original_builtin_variables_tests::source(
+         text, dm_preprocess::InitialEnvironment::Native5161687,
+     );
+     let result = super::super::build_with_executor_and_semantic_state_for_policy_checked(
+         path, &strict_source, &Default::default(),
+         FrontendConfig { workers: 1, engine: None, observer: None },
+         None, &executor, None, false, &host,
+     );
+     let Err(FrontendBuildFailure::Diagnostics(errors)) = result else {
+         panic!("Strict must still reject the missing variable base");
+     };
+     assert!(errors.iter().any(|error| error.message == "flags: undefined var"));
  }
  #[test]fn identical_native_graph_never_promotes_partial_purpose_to_full_or_checker(){
   let provider=Source{root:dm_preprocess::AcquiredSource::synthetic_utf8(dm_preprocess::SourceText::from("/datum/probe\n/proc/test(datum/act/A)\n    return\n".to_owned()),())};let path=Path::new("synth.dme");let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=crate::frontend::declaration_checked_tests::original_test_host();

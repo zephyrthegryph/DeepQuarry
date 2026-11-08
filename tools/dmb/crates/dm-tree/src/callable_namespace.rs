@@ -62,7 +62,7 @@ fn collect_view_mode(skeletons:crate::skeleton_roster::SkeletonView<'_>,intrinsi
                 &mut callable_formals,
             ) {
                 match diagnostics.as_deref_mut() {
-                    Some(receipt) if previous == Some(*kind) || receipt.image_dir_mixed_callables =>
+                    Some(receipt) if previous == Some(*kind) || receipt.role == crate::diagnostic_declarations::DeclarationRole::ImageDir =>
                         receipt.accept_callable_duplicate(duplicate)?,
                     _ => return Err(duplicate),
                 }

@@ -56,6 +56,8 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
     mut diagnostics: Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>,
 ) -> Result<(), TreeError> {
     let original_variables=diagnostics.as_deref().and_then(|receipt|receipt.original_variables);
+    let handlers_structural = diagnostics.as_deref().is_some_and(|receipt|
+        receipt.role == crate::diagnostic_declarations::DeclarationRole::HandlersStructural);
     for i in indices {
         if let Err(error) = callable_namespace::validate_explicit(
             tree, members.member(i), modes[i], root, callable_kinds,
@@ -63,7 +65,7 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
             // Only the single Original ImageDir preparation preserves this
             // authored cross-kind child. Other resolver/compile roles refuse.
             match diagnostics.as_deref_mut() {
-                Some(receipt) if receipt.image_dir_mixed_callables => receipt.accept_callable_duplicate(error)?,
+                Some(receipt) if receipt.role == crate::diagnostic_declarations::DeclarationRole::ImageDir => receipt.accept_callable_duplicate(error)?,
                 _ => return Err(error),
             }
         }
@@ -84,6 +86,7 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
             if modes[i] == DefinitionMode::Declare {
                 if let Some(previous) = previous {
                     let mut previous_owner = members.member(previous.index()).owner;
+                    let mut has_inherited_formal = false;
                     // Assignments in an intermediate parent do not redeclare the
                     // variable. Locate the actual formal declaration through the
                     // same current owner/member chains, including forward owners.
@@ -91,6 +94,14 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
                     while let Some(owner) = declaration_owner {
                         if tree.types[owner.index()].path == root {
                             break;
+                        }
+                        // A real builtin declaration still counts even when an
+                        // intervening source row is a value-only assignment.
+                        if handlers_structural && node.kind == MemberKind::Var
+                            && original_variables.is_some_and(|variables|
+                                variables.variable(tree, tree.types[owner.index()].path, node.name).is_some())
+                        {
+                            has_inherited_formal = true;
                         }
                         let mut selected = tree.direct.get(&(owner, node.name, node.kind)).copied();
                         let mut found = false;
@@ -101,6 +112,7 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
                             }
                             if modes[id.index()] == DefinitionMode::Declare {
                                 previous_owner = owner;
+                                has_inherited_formal = true;
                                 found = true;
                                 break;
                             }
@@ -117,10 +129,12 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
                         name: node.name,
                         kind: node.kind,
                     };
-                    if let Some(receipt) = diagnostics.as_deref_mut() {
-                        receipt.accept(error)?;
-                    } else {
-                        return Err(error);
+                    if !handlers_structural || node.kind != MemberKind::Var || has_inherited_formal {
+                        if let Some(receipt) = diagnostics.as_deref_mut() {
+                            receipt.accept(error)?;
+                        } else {
+                            return Err(error);
+                        }
                     }
                 }
             }
@@ -131,6 +145,9 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
                 && previous.is_none()
                 && node.metadata.inherited_opaque.is_none()
                 && !original_base
+                // The pinned partial ObjectTree inserts the value with no
+                // VarDeclaration when the selected TU omits the base field.
+                && !(handlers_structural && node.kind == MemberKind::Var)
             {
                 let mut ancestry = Vec::new();
                 let mut cursor = Some(node.owner);

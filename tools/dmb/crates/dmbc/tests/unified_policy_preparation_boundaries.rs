@@ -1932,12 +1932,18 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
             "#include \"code/__fixture_decl_macros.dm\"\n",
             "#include \"code/control.dm\"\n",
             "#include \"code/handler.dm\"\n",
+            "#include \"code/content/handler_bitfield_base.dm\"\n",
             "#include \"code/engine/present/protocols.dm\"\n",
             "#include \"interface/visible.dm\"\n",
             "#ifdef SPACEMAN_DMM\n#include \"code/derived.dm\"\n",
             "#include \"code/_generated/reads.dm\"\n#endif\n",
         )),
-        ("code/__defines/context.dm", "/datum/act\n/datum/act/eval\n"),
+        ("code/__defines/context.dm", concat!(
+            "/datum/act\n/datum/act/eval\n",
+            "#define HANDLER_FLAG_ROW /datum/handler_bitfield/probe { flags = 1; }\n",
+            "HANDLER_FLAG_ROW\n",
+        )),
+        ("code/content/handler_bitfield_base.dm", "/datum/handler_bitfield\n    var/flags\n"),
         ("code/__fixture_decl_macros.dm", "#define PRIVATE_FIELD var\n"),
         // The full project expands PRIVATE_FIELD. The deliberately smaller
         // Handler recipe instead sees an ordinary relative type path.

@@ -9,9 +9,15 @@ pub struct DiagnosticDeclarations {
 /// Bounded Original checker-only source outcomes. No source coordinate survives
 /// a warm reissue: reports borrow the current primary cursor again.
 pub(crate) type OriginalSealedParents = [Option<(dm_ir::SymbolId, dm_ir::SymbolId)>; 4];
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum DeclarationRole {
+    Ordinary,
+    ImageDir,
+    HandlersStructural,
+}
 pub struct DiagnosticDeclarationReceipt {
     pub(crate) original_sealed_parents: OriginalSealedParents,
-    pub(crate) image_dir_mixed_callables: bool,
+    pub(crate) role: DeclarationRole,
     pub(crate) retained_records: Option<Arc<crate::frontend::DiagnosticRetainedRecords>>,
     errors: Vec<TreeError>,
     // Shared original error owner only; flattened so warm reissues never form a chain.
@@ -76,7 +82,7 @@ impl DiagnosticDeclarationReceipt {
         Self {
             errors: Vec::new(),
             original_sealed_parents: [None; 4],
-            image_dir_mixed_callables: false,
+            role: DeclarationRole::Ordinary,
             reused_errors:None,
             original_variables:None,
             settings_compilable: true,
