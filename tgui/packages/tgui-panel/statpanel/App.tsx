@@ -2,6 +2,7 @@ import {
   Component,
   type MouseEvent,
   type ReactNode,
+  useEffect,
   useMemo,
   useState,
   useSyncExternalStore,
@@ -13,16 +14,24 @@ import { MapSplitHandle } from '../layout/ChatLayout';
 import { AbilitiesTab } from './AbilitiesTab';
 import { DockArea } from './DockArea';
 import { InspectTab } from './InspectTab';
-import { McTab } from './McTab';
+import {
+  CLOSED_BY_DEFAULT,
+  DANGER_GROUPS,
+  type PanelView,
+  type ServerPage,
+} from './layout';
+import { McHealthPanel } from './McHealth';
 import { MenuPage } from './MenuPage';
+import { MENU_SECTIONS, QUICK_ITEMS, run } from './menu';
 import {
   type State,
   type StatStore,
-  searchVerbs,
+  searchAll,
   type Verb,
   verbCommand,
+  verbGroupsOf,
   verbsOfTab,
-  visibleTabs,
+  viewsOf,
 } from './store';
 
 /** Commands that may take focus run after our own focus handling. */
@@ -197,12 +206,111 @@ function Debug({ state, store }: { state: State; store: StatStore }) {
   );
 }
 
-function Content({ state, store }: { state: State; store: StatStore }) {
+/** The card a server push opens over the current view: examine, inspect, a turf's contents, the panel debug page. */
+function overlayOf(state: State, store: StatStore): ReactNode {
   const tab = state.currentTab;
-  const token = state.hrefToken;
-  if (tab === 'Status') {
-    return (
-      <>
+  if (tab === 'Inspect') return <InspectTab data={state.inspect} />;
+  if (tab === 'Examine') return <Examine lines={state.examine} />;
+  if (tab === 'Debug Stat Panel') return <Debug state={state} store={store} />;
+  if (state.turfName && tab === state.turfName) {
+    return <TurfList contents={state.turfContents} />;
+  }
+  return null;
+}
+
+function OverlayCard(props: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="stat-card">
+      <div className="stat-card__head">
+        <span className="stat-card__title">{props.title}</span>
+        <button
+          type="button"
+          className="stat-card__close"
+          title="Close"
+          onClick={props.onClose}
+        >
+          ×
+        </button>
+      </div>
+      <div className="stat-card__body">{props.children}</div>
+    </div>
+  );
+}
+
+const GROUP_STATE_KEY = 'statpanel-groups';
+
+function loadGroupState(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(GROUP_STATE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+/** A collapsible group; whether it is open is remembered per group name. */
+function Group(props: { name: string; count?: number; children: ReactNode }) {
+  const { name } = props;
+  const [open, setOpen] = useState(() => {
+    const saved = loadGroupState()[name];
+    return saved === undefined ? !CLOSED_BY_DEFAULT.has(name) : saved;
+  });
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    try {
+      localStorage.setItem(
+        GROUP_STATE_KEY,
+        JSON.stringify({ ...loadGroupState(), [name]: next }),
+      );
+    } catch {
+      // Storage refused (private mode): the group still toggles.
+    }
+  };
+  return (
+    <div
+      className={`stat-group${DANGER_GROUPS.has(name) ? ' stat-group--danger' : ''}${open ? '' : ' stat-group--closed'}`}
+    >
+      <button type="button" className="stat-group__head" onClick={toggle}>
+        <span className="stat-group__chev">{open ? '▾' : '▸'}</span>
+        <span className="stat-group__name">{name}</span>
+        {props.count !== undefined && (
+          <span className="stat-group__count">{props.count}</span>
+        )}
+      </button>
+      {open && <div className="stat-group__body">{props.children}</div>}
+    </div>
+  );
+}
+
+function VerbGroups({ state, view }: { state: State; view: PanelView }) {
+  return (
+    <>
+      {verbGroupsOf(state, view).map(({ group, verbs }) => (
+        <Group key={group} name={group} count={verbs.length}>
+          <VerbGrid verbs={verbs} />
+        </Group>
+      ))}
+    </>
+  );
+}
+
+function ticketHref(token: string | null) {
+  return (row: string[]) =>
+    row[2]
+      ? `byond://?_src_=holder;admin_token=${token};ahelp=${row[2]};ahelp_action=ticket;statpanel_item_click=left;action=ticket`
+      : row[3]
+        ? `byond://?src=${row[3]};statpanel_item_click=left`
+        : null;
+}
+
+function StatusView({ state }: { state: State }) {
+  return (
+    <>
+      <div className="stat-status">
         {state.statusParts.map((part, index) =>
           part.trim() ? (
             <div className="status-line" key={index}>
@@ -212,61 +320,121 @@ function Content({ state, store }: { state: State; store: StatStore }) {
             <br key={index} />
           ),
         )}
-      </>
-    );
+      </div>
+      <div className="stat-quick">
+        {QUICK_ITEMS.map((item) => (
+          <Button key={item.command} onClick={() => run(item.command)}>
+            {item.label}
+          </Button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ActionsView({ state }: { state: State }) {
+  const spellTabs = [...new Set(state.spells.map((spell) => spell[0]))];
+  return (
+    <>
+      {state.abilities && (
+        <Group name="Abilities">
+          <AbilitiesTab data={state.abilities} receivedAt={state.abilitiesAt} />
+        </Group>
+      )}
+      <VerbGroups state={state} view="Actions" />
+      {spellTabs.map((tab) => (
+        <Group key={tab} name={tab}>
+          <LinkTable
+            rows={state.spells
+              .filter((spell) => spell[0] === tab)
+              .map((spell) => spell.slice(1))}
+            href={(row) =>
+              row[2] ? `byond://?src=${row[2]};statpanel_item_click=left` : null
+            }
+          />
+        </Group>
+      ))}
+      {Object.keys(state.misc).map((tab) => (
+        <Group key={tab} name={tab}>
+          <Misc rows={state.misc[tab]} />
+        </Group>
+      ))}
+    </>
+  );
+}
+
+function StaffView({ state }: { state: State }) {
+  return (
+    <>
+      <Group name="Tickets" count={state.tickets.length}>
+        {state.tickets.length ? (
+          <LinkTable rows={state.tickets} href={ticketHref(state.hrefToken)} />
+        ) : (
+          <div className="stat-empty">No open tickets.</div>
+        )}
+      </Group>
+      <VerbGroups state={state} view="Staff" />
+    </>
+  );
+}
+
+function ServerView({ state, store }: { state: State; store: StatStore }) {
+  const pages: ServerPage[] = state.permanentTabs.includes('SDQL2')
+    ? ['Health', 'Tools', 'Queries']
+    : ['Health', 'Tools'];
+  const page = pages.includes(state.serverPage) ? state.serverPage : 'Health';
+  return (
+    <>
+      <div className="stat-subnav">
+        {pages.map((p) => (
+          <button
+            type="button"
+            key={p}
+            className={p === page ? 'stat-subnav--on' : undefined}
+            onClick={() => store.setView('Server', p)}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+      {page === 'Health' && (
+        <McHealthPanel
+          data={state.mcMetrics}
+          token={state.hrefToken}
+          location={state.mcLocation}
+        />
+      )}
+      {page === 'Tools' && <VerbGroups state={state} view="Server" />}
+      {page === 'Queries' && (
+        <LinkTable
+          rows={state.sdql2}
+          href={(row) =>
+            row[2] ? `byond://?src=${row[2]};statpanel_item_click=left` : null
+          }
+        />
+      )}
+    </>
+  );
+}
+
+function ViewContent({ state, store }: { state: State; store: StatStore }) {
+  switch (state.view) {
+    case 'Actions':
+      return <ActionsView state={state} />;
+    case 'Game':
+      return (
+        <>
+          <MenuPage />
+          <VerbGroups state={state} view="Game" />
+        </>
+      );
+    case 'Staff':
+      return <StaffView state={state} />;
+    case 'Server':
+      return <ServerView state={state} store={store} />;
+    default:
+      return <StatusView state={state} />;
   }
-  if (tab === 'MC') {
-    return (
-      <McTab parts={state.mcParts} metrics={state.mcMetrics} token={token} />
-    );
-  }
-  if (tab === 'Tickets') {
-    return (
-      <LinkTable
-        rows={state.tickets}
-        href={(row) =>
-          row[2]
-            ? `byond://?_src_=holder;admin_token=${token};ahelp=${row[2]};ahelp_action=ticket;statpanel_item_click=left;action=ticket`
-            : row[3]
-              ? `byond://?src=${row[3]};statpanel_item_click=left`
-              : null
-        }
-      />
-    );
-  }
-  if (tab === 'SDQL2') {
-    return (
-      <LinkTable
-        rows={state.sdql2}
-        href={(row) =>
-          row[2] ? `byond://?src=${row[2]};statpanel_item_click=left` : null
-        }
-      />
-    );
-  }
-  if (tab === 'Abilities') {
-    return (
-      <AbilitiesTab data={state.abilities} receivedAt={state.abilitiesAt} />
-    );
-  }
-  if (tab === 'Inspect') return <InspectTab data={state.inspect} />;
-  if (tab === 'Examine') return <Examine lines={state.examine} />;
-  if (tab === 'Debug Stat Panel') return <Debug state={state} store={store} />;
-  if (tab === state.turfName) return <TurfList contents={state.turfContents} />;
-  if (state.misc[tab]) return <Misc rows={state.misc[tab]} />;
-  if (state.spells.some((spell) => spell[0] === tab)) {
-    return (
-      <LinkTable
-        rows={state.spells
-          .filter((spell) => spell[0] === tab)
-          .map((spell) => spell.slice(1))}
-        href={(row) =>
-          row[2] ? `byond://?src=${row[2]};statpanel_item_click=left` : null
-        }
-      />
-    );
-  }
-  return <VerbTab state={state} tab={tab} />;
 }
 
 export function App(props: {
@@ -284,64 +452,97 @@ export function App(props: {
   );
   useChatScanlines();
   const [query, setQuery] = useState('');
-  const [menuOpen, setMenuOpen] = useState(false);
   const { state } = store;
-  const found = searchVerbs(state, query);
-  // The tab bar walks and sorts every verb: rebuilt only when what it reads changed, not on every status line.
-  const tabs = useMemo(
-    () => visibleTabs(state),
-    [state.verbs, state.spells, state.permanentTabs, state.splitAdminTabs],
+  const found = searchAll(state, query, MENU_SECTIONS);
+  // "/" anywhere in the panel puts the cursor in the search box.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== '/' || document.activeElement?.tagName === 'INPUT')
+        return;
+      const box =
+        document.querySelector<HTMLInputElement>('.stat-search input');
+      if (!box) return;
+      event.preventDefault();
+      box.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+  // The view bar reads the verbs and tabs only: rebuilt when those change, not on every status line.
+  const views = useMemo(
+    () => viewsOf(state),
+    [state.verbs, state.permanentTabs],
   );
+  const overlay = overlayOf(state, store);
   return (
     <div className="stat-root">
       <MapSplitHandle />
       <DockArea />
       <Tabs
         layout={tabsLayout(tabsStyle)}
-        tabs={[
-          ...tabs.map((tab) => ({
-            id: tab,
-            label: tab,
-            selected: !menuOpen && tab === state.currentTab,
-          })),
-          { id: MENU_TAB, label: 'Menu', selected: menuOpen },
-        ]}
-        onSelect={(tab) => {
-          if (tab === MENU_TAB) {
-            setMenuOpen(!menuOpen);
-            return;
-          }
+        className="stat-views"
+        tabs={views.map((view) => ({
+          id: view,
+          label:
+            view === 'Staff' && state.tickets.length ? (
+              <>
+                Staff <span className="stat-badge">{state.tickets.length}</span>
+              </>
+            ) : (
+              view
+            ),
+          selected: view === state.view,
+        }))}
+        onSelect={(view) => {
           setQuery('');
-          setMenuOpen(false);
-          store.setTab(tab);
+          store.setView(view as PanelView);
         }}
       >
         <Input
           className="stat-search"
-          placeholder="Search verbs..."
+          placeholder="Search (/)"
           value={query}
           onChange={setQuery}
+          onEnter={() => {
+            if (found.length) run(found[0].command);
+            setQuery('');
+          }}
+          onEscape={() => setQuery('')}
         />
       </Tabs>
       <div className="stat-content">
-        {menuOpen ? (
-          <MenuPage />
-        ) : query.trim() ? (
+        {query.trim() ? (
           found.length ? (
-            <VerbGrid verbs={found} />
+            <div className="stat-results">
+              {found.slice(0, 60).map((item) => (
+                <Button
+                  key={`${item.path}/${item.label}`}
+                  fluid
+                  onClick={() => run(item.command)}
+                >
+                  {item.label}
+                  <span className="stat-results__path">{item.path}</span>
+                </Button>
+              ))}
+            </div>
           ) : (
-            <div className="stat-empty">No verb matches.</div>
+            <div className="stat-empty">Nothing matches.</div>
           )
         ) : (
-          <Content state={state} store={store} />
+          <ViewContent state={state} store={store} />
+        )}
+        {overlay && !query.trim() && (
+          <OverlayCard
+            title={state.currentTab}
+            onClose={() => store.closeCard()}
+          >
+            {overlay}
+          </OverlayCard>
         )}
       </div>
     </div>
   );
 }
-
-/** The Menu pseudo-tab's id; no verb tab can be named with the leading NUL. */
-const MENU_TAB = '\u0000menu';
 
 /** The display setting's tab style, as the shared tab row's layout. */
 function tabsLayout(style: string): TabsLayout {

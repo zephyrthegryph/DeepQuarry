@@ -58,6 +58,7 @@
 		/obj/structure/table/standard,
 		/obj/item/tool/wrench,
 		/obj/machinery/vending/coffee,
+		/obj/structure/extinguisher_cabinet,
 	)
 	var/turf/at = run_loc_floor_bottom_left
 	for(var/type in types)
@@ -75,17 +76,21 @@
 /proc/init_plan_snapshot(type, turf/at, off)
 	var/list/had = at.contents.Copy()
 	var/was = GLOB.init_plan_off
+	var/was_ctor = ctor_plan_off
 	GLOB.init_plan_off = off
+	ctor_plan_off = off // the construction plan (ctor_plan.dm) goes with it: on, both plans; off, every table asked as before them
 	var/atom/A
 	rand_seed(4242) // both ways draw the same rolls (a light fixture's broken_chance)
 	try
 		A = new type(at)
 	catch(var/exception/e)
 		GLOB.init_plan_off = was
+		ctor_plan_off = was_ctor
 		throw e
 	GLOB.init_plan_off = was
+	ctor_plan_off = was_ctor
 	. = list()
-	var/static/list/skip = list("x", "y", "z", "loc", "vars", "type", "parent_type", "tag", "contents", "gc_destroyed", "serial", "weak_reference", "datum_id", "rx", "refresh_queued", "refresh_bits")
+	var/static/list/skip = list("x", "y", "z", "loc", "vars", "type", "parent_type", "tag", "contents", "gc_destroyed", "serial", "weak_reference", "datum_id", "rx", "refresh_queued", "refresh_bits", "handle_slot", "own_holder_ref")
 	for(var/V in A.vars)
 		if(V in skip)
 			continue

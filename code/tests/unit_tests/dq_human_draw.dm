@@ -90,7 +90,7 @@
 	refresh_flush()
 	return md5(icon2base64(getFlatIcon(H, SOUTH)))
 
-/// A tail is drawn under the uniform from the south and over it from the north.
+/// A tail is drawn under the uniform from the south and over it from the north, with no redraw when the human turns.
 /datum/unit_test/dq_human_draw_tail_layers_against_uniform
 
 /datum/unit_test/dq_human_draw_tail_layers_against_uniform/Run()
@@ -98,17 +98,31 @@
 	dq_hd_set(H, "tail_style", GLOB.tail_styles_list[/datum/sprite_accessory/tail/squirrel])
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 	H.set_dir(SOUTH)
-	var/list/south = H.look_layers()
-	TEST_ASSERT(south[TAIL_LOWER_LAYER], "facing south the tail is on the lower layer")
-	TEST_ASSERT(!south[TAIL_UPPER_LAYER], "and not on the upper one")
+	refresh_flush()
+	// The tail is on both layers, each copy drawn only in its own facings: BYOND shows the frame for the dir, so a turn redraws nothing.
+	var/list/layers = H.look_layers()
+	var/image/lower = layers[TAIL_LOWER_LAYER]
+	var/image/upper = layers[TAIL_UPPER_LAYER]
+	TEST_ASSERT(lower && upper, "the tail is drawn on the lower and the upper layer")
 	TEST_ASSERT(TAIL_LOWER_LAYER < UNIFORM_LAYER, "the lower tail layer sits under the uniform")
-	var/south_picture = dq_hd_picture(H)
-	H.set_dir(NORTH)
-	var/list/north = H.look_layers()
-	TEST_ASSERT(north[TAIL_UPPER_LAYER], "facing north the tail is on the upper layer")
-	TEST_ASSERT(!north[TAIL_LOWER_LAYER], "and not on the lower one")
 	TEST_ASSERT(TAIL_UPPER_LAYER > UNIFORM_LAYER, "the upper tail layer sits over the uniform")
-	TEST_ASSERT(dq_hd_picture(H) != south_picture, "the facing changes the drawn human")
+	TEST_ASSERT(dq_hd_blank_facing(lower, NORTH), "the lower copy shows nothing facing north")
+	TEST_ASSERT(!dq_hd_blank_facing(lower, SOUTH), "the lower copy shows the tail facing south")
+	TEST_ASSERT(dq_hd_blank_facing(upper, SOUTH), "the upper copy shows nothing facing south")
+	TEST_ASSERT(!dq_hd_blank_facing(upper, NORTH), "the upper copy shows the tail facing north")
+	var/south_key = H.rx?.look_key
+	H.set_dir(NORTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(H.rx?.look_key, south_key, "turning round leaves the look as it is (no redraw)")
+
+/// TRUE when the image's icon has no visible pixel facing `facing`.
+/datum/unit_test/proc/dq_hd_blank_facing(image/I, facing)
+	var/icon/frame = icon(I.icon, I.icon_state, facing)
+	for(var/x in 1 to frame.Width())
+		for(var/y in 1 to frame.Height())
+			if(frame.GetPixel(x, y))
+				return FALSE
+	return TRUE
 
 /// An injury draws its overlay and healing it takes the overlay off.
 /datum/unit_test/dq_human_draw_damage_overlay_follows_injury

@@ -53,3 +53,22 @@
 	state.set_capability_generation(state.capability_generation + 1)
 	TEST_ASSERT_NULL(state.op_dispatch_memo, "a moved capability generation drops the merged rows")
 	TEST_ASSERT_NULL(state.op_provider_memo, "a moved capability generation drops the providers")
+
+/// A crewmate's menu is served from the cache on the next read (its rows that sample state are asked again on their own), and a change of what
+/// the actor carries inside it (an implant) is seen at once.
+/datum/unit_test/dq_op_menu_cached_past_sampled_rows
+
+/datum/unit_test/dq_op_menu_cached_past_sampled_rows/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/A = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/B = allocate(/mob/living/carbon/human, T)
+	set_global(nameof(GLOB.op_menu_builds), GLOB.op_menu_builds)
+	var/list/first = op_menu(A, B, null)
+	var/builds = GLOB.op_menu_builds
+	var/list/second = op_menu(A, B, null)
+	TEST_ASSERT_EQUAL(GLOB.op_menu_builds, builds, "the second read of a crewmate's menu is a cache hit")
+	TEST_ASSERT_EQUAL(json_encode(second), json_encode(first), "and lists the same rows")
+	var/obj/item/implant/reagent_generator/imp = allocate(/obj/item/implant/reagent_generator, T)
+	TEST_ASSERT(imp.handle_implant(A), "the actor takes an implant")
+	op_menu(A, B, null)
+	TEST_ASSERT(GLOB.op_menu_builds > builds, "an implant in the actor makes the menu read again")

@@ -36,30 +36,70 @@
 /// The names of the layers that are part of `holder`'s look now, in order, each once.
 /proc/look_layers_of(datum/holder)
 	RETURN_TYPE(/list)
-	. = list()
 	if(!holder || QDELETED(holder))
-		return
-	for(var/datum/present_row/R as anything in present_rows(holder, ENTRY_LOOK_LAYER))
-		var/source = R.entry.args["layer"]
-		if(isnull(source))
-			continue // a look_glow() row: look_glow_of()
-		var/datum/act/op/A = present_context(holder, R, null)
-		if(present_row_holds(holder, R, A))
-			var/list/names = list()
-			examine_row_text(A, source, names) // a layer name is text, or a handler's answer (CAP_PROC / PROC_REF) in the same forms an examine line takes
-			for(var/layer_name in names)
-				. |= layer_name
-		A.release()
+		return list()
+	return look_layer_rows_read(holder)[1]
+
+/// One walk of the holder's look_layer() rows (its table's, then each running granted definition's): list(layer names in order, each once; the glow
+/// of the last look_glow() row that holds, or null). A draw reads both from one walk, with no row record made per entry; each row is evaluated in a
+/// context of its own, as look_layers_of() and look_glow_of() do.
+/proc/look_layer_rows_read(datum/holder)
+	RETURN_TYPE(/list)
+	var/list/names = list()
+	var/list/glow = null
+	var/datum/type_table/T = table_of(holder)
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_LOOK_LAYER))
+		glow = look_layer_row_read(holder, C.item, C.owner ? T.caps[C.owner] : null, null, C.whens, names, glow)
+	for(var/datum/activation/act as anything in holder.rx?.activations)
+		if(act.dead || !act.runs || T.caps[act.def.key])
+			continue
+		for(var/datum/centry/C as anything in activation_plan(act.def))
+			var/datum/entry/E = C.item
+			if(istype(E) && E.kind == ENTRY_LOOK_LAYER)
+				glow = look_layer_row_read(holder, E, act.def, act, C.whens, names, glow)
+	return list(names, glow)
+
+/// Reads one look_layer() row into `names` and returns the glow so far (this row's when it holds and gives one).
+/proc/look_layer_row_read(datum/holder, datum/entry/E, datum/capability/def, datum/activation/act, list/whens, list/names, list/glow)
+	var/source = E.args["layer"]
+	var/row_glow = E.args["glow"]
+	if(isnull(source) && isnull(row_glow))
+		return glow
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder // ALLOW(ownership): a pooled transient: reset on release
+	A.cap = def
+	A.activation = act // ALLOW(ownership): a pooled transient: reset on release
+	A.target = holder
+	var/holds = TRUE
+	for(var/datum/entry/W as anything in whens)
+		if(!op_cond(A, W.args["cond"]))
+			holds = FALSE
+			break
+	if(holds)
+		holds = op_cond(A, E.args["when"])
+	if(holds)
+		if(!isnull(source))
+			var/list/row_names = list()
+			examine_row_text(A, source, row_names) // a layer name is text, or a handler's answer (CAP_PROC / PROC_REF) in the same forms an examine line takes
+			for(var/layer_name in row_names)
+				names |= layer_name
+		if(!isnull(row_glow))
+			if(istext(row_glow))
+				row_glow = op_call(A, row_glow)
+			if(islist(row_glow))
+				glow = row_glow
+	A.release()
+	return glow
 
 /// Draws every active layer into `look` (called from /atom/proc/draw after the legacy capabilities draw theirs).
 /proc/look_layers_draw(atom/holder, datum/look/look)
 	if(!look_table_has_layers(table_of(holder)) && !length(holder.rx?.activations))
 		return
-	for(var/layer_name in look_layers_of(holder))
+	var/list/read = look_layer_rows_read(holder)
+	for(var/layer_name in read[1])
 		look.part(layer_name)
-	var/list/glow = look_glow_of(holder)
-	if(glow)
-		look.glow(glow)
+	if(read[2])
+		look.glow(read[2])
 
 /// The GLOW(range, power, color) the holder's look_glow() rows give now (the last row that holds wins), or null when none holds.
 /proc/look_glow_of(datum/holder)
