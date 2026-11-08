@@ -514,6 +514,7 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
    // the old folder Vec<String> and generated-path maps deep-copy separately.
    for(path,listing)in &current.folders{kc::reserve(&mut c,||path.capacity().checked_mul(4)?.checked_add(256))?;if let FolderListing::Present(names)=listing{kc::reserve(&mut c,||names.len().checked_mul(std::mem::size_of::<String>()*4)?.checked_add(128))?;for name in names{kc::reserve(&mut c,||name.len().checked_mul(4)?.checked_add(64))?;}}}
    for path in &current.generated_outputs{kc::reserve(&mut c,||path.capacity().checked_mul(4)?.checked_add(256))?;}current.clone()};
+  dm_profile::request_mark("handlers.partial_closure_captured");
   static NEXT:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(1);let issuance=NEXT.fetch_add(1,std::sync::atomic::Ordering::Relaxed);if issuance==u64::MAX{return Err(fail("handlers capture issuance exhausted"))}
   let result=Arc::new(HandlerPreparedCapture{prepared,inputs,facts,staged:None,queries:queries.native_query_owner_identity(),issuance,budget:Arc::clone(budget)});result.require_bound()?;Ok(result)
  }

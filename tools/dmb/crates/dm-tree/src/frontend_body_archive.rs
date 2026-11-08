@@ -828,6 +828,23 @@ impl BodyArchive {
             .first()?;
         self.mapping.location_of(ordinal)
     }
+    /// A bound callable body already carries a mapped location for its exact
+    /// declaration. Presence does not need the first matching expanded token.
+    pub fn has_member_location(&self, member: crate::MemberId) -> bool {
+        if let Some(body) = self.callables.ordinal(member).and_then(|index| self.bodies.get(index)) {
+            let first = self.declarations.for_target(crate::Target::Member(member)).first();
+            if body.member == member && first == Some(&body.declaration)
+                && self.declarations.get(body.declaration).is_some_and(|occurrence| {
+                    let provenance = &occurrence.provenance;
+                    provenance.include_occurrence as usize == body.source.include_occurrence
+                        && provenance.span.file == body.source.span.file
+                        && provenance.span.start == body.source.span.start
+                }) {
+                return true;
+            }
+        }
+        self.member_location(member).is_some()
+    }
     pub fn body_index(&self, declaration: OccurrenceId) -> Option<usize> {
         self.body_indices.get(&declaration).copied()
     }

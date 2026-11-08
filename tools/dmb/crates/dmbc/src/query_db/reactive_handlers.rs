@@ -13,6 +13,7 @@ fn checkpoint(b:&Budget)->Result<(),Failure>{crate::daemon::control::checkpoint(
 fn reserve(b:&Budget,n:Option<usize>)->Result<(),Failure>{let n=n.ok_or_else(||{b.deny();Failure::Operational(io::ErrorKind::OutOfMemory.into())})?;b.charge(n).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))}
 pub(super) fn compute(ctx:&mut dm_query::Ctx<'_>,p:&Params,charge:&AtomicUsize,admission:&Admission)->Result<Outcome,QueryError>{
  admission.abort.before_outcome(p.key)?;let loan=admission.current_handlers_operation(p.issuance).map_err(|error|QueryError::operational(p.key,error))?;let b=&loan.budget;let mut rows:Vec<StructuralFinding>=Vec::new();
+ dm_profile::request_mark("handlers.structural_rows_start");
  let produced=super::super::handlers_source_adapter::collect_structural_in(&loan.queries,ctx,&loan.capture,&loan.proof,b,|rule,relative,line,message|{
   checkpoint(b)?;if rows.len()==rows.capacity(){let capacity=rows.capacity().checked_mul(2).map(|n|n.max(4)).ok_or_else(||{b.deny();Failure::Operational(io::ErrorKind::OutOfMemory.into())})?;reserve(b,capacity.checked_mul(std::mem::size_of::<StructuralFinding>()*4).and_then(|n|n.checked_add(128)))?;rows.try_reserve_exact(capacity-rows.len()).map_err(|_|Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;if rows.capacity()>capacity.checked_mul(4).ok_or_else(||{b.deny();Failure::Operational(io::ErrorKind::OutOfMemory.into())})?{b.deny();return Err(Failure::Operational(io::ErrorKind::OutOfMemory.into()))}}
   reserve(b,relative.len().checked_add(64))?;let mut copied=String::new();copied.try_reserve_exact(relative.len()).map_err(|_|Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;copied.push_str(relative);
@@ -20,6 +21,7 @@ pub(super) fn compute(ctx:&mut dm_query::Ctx<'_>,p:&Params,charge:&AtomicUsize,a
   // belongs to this result, so admit its actual capacity before publication.
   reserve(b,Some(message.capacity()))?;rows.push(StructuralFinding{rule,relative:copied,line,message});Ok(())
  });
+ dm_profile::request_mark("handlers.structural_rows_done");
  let value:Result<StructuralData,String>=match produced{Ok(())=>Ok(StructuralData{issuance:p.issuance,rows}),Err(Failure::Operational(error))=>return Err(QueryError::operational(p.key,error)),Err(Failure::Unsupported(message))=>Err(message)};
  let(bytes,hash)=match &value{Ok(data)=>(data.charge().ok_or_else(||QueryError::operational(p.key,io::Error::from(io::ErrorKind::OutOfMemory)))?,super::reactive_read_policy::metadata_key(data).map_err(|e|QueryError::operational(p.key,e))?.id),Err(message)=>(result_error_charge::<StructuralData>(message),error_hash(message))};
  retain_derived(charge,bytes,admission,p.key)?;admission.abort.before_outcome(p.key)?;checkpoint(b).map_err(|f|QueryError::operational(p.key,actual(f)))?;Ok(Outcome::new(value,hash,bytes))
