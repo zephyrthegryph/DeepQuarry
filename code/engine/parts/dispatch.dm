@@ -336,8 +336,9 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 		// The walk's one context, refilled per row (op_fast_walk()); each condition is answered once per holder and target in the walk.
 		var/datum/act/op/shared = R.menu_scratch[1]
 		op_act_set(shared, P, entry[FAST_BINDING], op_fast_holder(R, side), side, granted_by, granted_by ? granted_by.def : P.owner_def, V, R.actor, R.target, R.held, R.origin, R.authority)
+		var/row_key = op_menu_cond_row_key(R, shared)
 		for(var/cond in op_conds_cheapest_first(P))
-			if(!op_menu_cond(R, shared, cond))
+			if(!op_menu_cond(R, shared, cond, row_key))
 				return FALSE
 		return TRUE
 	var/datum/act/op/A = op_act_fill(P, entry[FAST_BINDING], op_fast_holder(R, side), side, granted_by, granted_by ? granted_by.def : P.owner_def, V, R.actor, R.target, R.held, R.origin, R.authority)
@@ -370,6 +371,7 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 	var/datum/act/op/shared = R.menu_scratch[1]
 	R.menu_scratch = null
 	R.menu_cond_answers = null
+	R.menu_cond_ids = null
 	shared.release()
 
 /// The winner among R's compiled survivors (op_resolution_winner() over the flat rows, made as it goes): a record of the one that wins. The same
