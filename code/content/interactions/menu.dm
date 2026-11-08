@@ -135,11 +135,7 @@ CAPABILITIES(/datum/interaction_menu)
 	// one is refused out of reach, ui_act_verb()), and not on the user's own
 	// body, whose verbs are the verb panel's and the keys' (a self menu of every mob verb is noise next to its ops).
 	if(interaction_menu_can_reach(user, target) && !interaction_menu_is_self(user, target))
-		for(var/procpath/target_verb as anything in target.verbs)
-			if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
-				continue
-			verb_names += target_verb.name
-	sortTim(verb_names, GLOBAL_PROC_REF(cmp_text_asc))
+		verb_names = interaction_menu_verb_names(target)
 	var/list/admin_view = null
 	if(user.client && check_rights_for(user.client, R_DEBUG | R_ADMIN))
 		// The "Show hidden" view for staff: each row left out, with the requirement that left it out.
@@ -289,3 +285,27 @@ CAPABILITIES(/datum/interaction_menu)
 	return owner
 
 #undef INTERACTION_MENU_CONTROL
+
+/// shape -> the sorted verb names (interaction_menu_verb_names()).
+GLOBAL_LIST_EMPTY(interaction_menu_verb_shapes)
+
+/// The sorted names of `target`'s pickable context verbs (not hidden, named, not a "." command). Most instances carry their type's verbs: the
+/// list is kept per (type, verb count, first and last verb) and checked against the instance's own first and last verb, so a target granted or
+/// stripped a verb (its count or its ends move) builds its own. A copy is returned.
+/proc/interaction_menu_verb_names(atom/target)
+	var/list/by_shape = GLOB.interaction_menu_verb_shapes
+	var/list/verbs = target.verbs
+	var/count = length(verbs)
+	var/shape = "[target.type]|[count]|[count ? "[verbs[1]]|[verbs[count]]" : ""]"
+	var/list/names = by_shape[shape]
+	if(isnull(names))
+		names = list()
+		for(var/procpath/target_verb as anything in verbs)
+			if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
+				continue
+			names += target_verb.name
+		sortTim(names, GLOBAL_PROC_REF(cmp_text_asc))
+		if(length(by_shape) > 512)
+			by_shape.Cut()
+		by_shape[shape] = names
+	return names.Copy()
