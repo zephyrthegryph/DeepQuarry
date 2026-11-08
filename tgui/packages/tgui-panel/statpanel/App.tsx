@@ -8,7 +8,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { Tabs, type TabsLayout } from 'tgui/dq';
-import { Button, Input, Section } from 'tgui-core/components';
+import { Button, Input } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { AbilitiesTab } from './AbilitiesTab';
@@ -30,7 +30,6 @@ import {
   type Verb,
   verbCommand,
   verbGroupsOf,
-  verbsOfTab,
   viewsOf,
 } from './store';
 
@@ -63,22 +62,6 @@ function VerbGrid({ verbs }: { verbs: Verb[] }) {
         </div>
       ))}
     </div>
-  );
-}
-
-function VerbTab({ state, tab }: { state: State; tab: string }) {
-  return (
-    <>
-      {verbsOfTab(state, tab).map(({ group, verbs }) =>
-        group ? (
-          <Section key={group} title={group}>
-            <VerbGrid verbs={verbs} />
-          </Section>
-        ) : (
-          <VerbGrid key="" verbs={verbs} />
-        ),
-      )}
-    </>
   );
 }
 
