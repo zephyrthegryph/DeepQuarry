@@ -616,6 +616,26 @@ pub(crate) fn discover_authored_doc_ui<P: SnapshotProvider>(
     discover_productive_doc_domains(inputs, contract, configuration, roots, selection).map(|(receipt, _)| receipt)
 }
 
+pub(crate) fn discover_full_registry_from_derived<P: SnapshotProvider>(
+    inputs: &RecordingInputs<P>, contract: DiscoveryContract, configuration: &Path,
+    config: &Arc<dq_analyze::captured_raw_file::Config>,
+    budget: &Arc<dq_analyze::captured_generator_budget::Budget>,
+    lender: &mut dyn crate::input_snapshot::RecordedPolicySourceLender,
+) -> io::Result<DiscoveryReceipt> {
+    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    let roots = Q::authored_doc_ui_roots(Q::PRIVATE_FULL_REGISTRY)
+        .ok_or_else(|| io::Error::other("full registry discovery role absent"))?;
+    if !contract.root.is_absolute() || contract.recursive_roots.len() != roots.len()
+        || contract.recursive_roots.iter().zip(roots).any(|(path, root)|
+            path.strip_prefix(&contract.root).ok() != Some(Path::new(root))) {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "full registry requires its exact joined discovery roots"));
+    }
+    let path = canonical_path(configuration);
+    let observation = inputs.recorded_policy_file_observation(&path)?;
+    discover_selected_lent(inputs, contract, DiscoverySelection::AuthoredCheckGrepV1,
+        Some(DocConfiguration { path, observation, value: Arc::clone(config) }), Some((budget, lender)))
+}
+
 fn discover_productive_doc_domains<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,configuration:&Path,expected:&[&str],selection:DiscoverySelection)->io::Result<(DiscoveryReceipt,Option<dm_resources::SharedBytes>)>{
  let root=&contract.root;if !root.is_absolute()||contract.recursive_roots.len()!=expected.len()||expected.iter().any(|name|!contract.recursive_roots.contains(&root.join(name))){return Err(io::Error::new(io::ErrorKind::InvalidInput,"productive Doc requires its exact source roots"))}
  let path=canonical_path(configuration);if !path.is_absolute(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual Doc configuration must be absolute"))}

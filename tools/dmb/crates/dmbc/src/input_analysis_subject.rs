@@ -68,9 +68,19 @@ impl OriginalAnalysisSubject{
  }
 }
 impl<P:SnapshotProvider> RecordingInputs<P>{
- pub(crate) fn issue_original_analysis_subject(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest)->io::Result<Arc<OriginalAnalysisSubject>>{self.issue_original_analysis_subject_with_engine(intent,None)}
- pub(crate) fn issue_original_analysis_subject_engine(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,preflight:crate::runner_host::workspace_discovery::EnginePreflight)->io::Result<Arc<OriginalAnalysisSubject>>{if intent.workspace_auxiliary()!=[preflight.question()]||intent.workspace().is_none_or(|workspace|workspace.root!=preflight.discovery().contract().root||workspace.recursive_roots!=preflight.discovery().contract().recursive_roots||workspace.configuration!=preflight.configuration().0){return Err(invalid("engine preflight cannot grant another actual subject namespace/purpose"))}preflight.require(self)?;if preflight.is_empty(){return Err(invalid("empty engine selection must finish before manifest/model acquisition"))}self.issue_original_analysis_subject_with_engine(intent,Some(Arc::new(preflight)))}
- fn issue_original_analysis_subject_with_engine(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,engine_preflight:Option<Arc<crate::runner_host::workspace_discovery::EnginePreflight>>)->io::Result<Arc<OriginalAnalysisSubject>>{
+ pub(crate) fn issue_original_analysis_subject(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest)->io::Result<Arc<OriginalAnalysisSubject>>{self.issue_original_analysis_subject_with_engine(intent,None,None)}
+ pub(crate) fn issue_original_analysis_subject_engine(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,preflight:crate::runner_host::workspace_discovery::EnginePreflight)->io::Result<Arc<OriginalAnalysisSubject>>{if intent.workspace_auxiliary()!=[preflight.question()]||intent.workspace().is_none_or(|workspace|workspace.root!=preflight.discovery().contract().root||workspace.recursive_roots!=preflight.discovery().contract().recursive_roots||workspace.configuration!=preflight.configuration().0){return Err(invalid("engine preflight cannot grant another actual subject namespace/purpose"))}preflight.require(self)?;if preflight.is_empty(){return Err(invalid("empty engine selection must finish before manifest/model acquisition"))}self.issue_original_analysis_subject_with_engine(intent,Some(Arc::new(preflight)),None)}
+ pub(super) fn issue_original_analysis_subject_full_registry(
+  &mut self, intent: &crate::policy_request::AdmittedPolicyRequest, preflight: &super::DerivedPreflight,
+ )->io::Result<Arc<OriginalAnalysisSubject>> {
+  preflight.require_recording(self)?;
+  if intent.workspace_auxiliary() != crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_FULL_REGISTRY
+   || !preflight.is_joined_registry() {
+   return Err(invalid("full registry subject requires its exact Derived discovery"));
+  }
+  self.issue_original_analysis_subject_with_engine(intent,None,Some(preflight.discovery()))
+ }
+ fn issue_original_analysis_subject_with_engine(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,engine_preflight:Option<Arc<crate::runner_host::workspace_discovery::EnginePreflight>>,derived_discovery:Option<&Arc<DiscoveryReceipt>>)->io::Result<Arc<OriginalAnalysisSubject>>{
   use crate::policy_request::AnalysisContext;
   if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(invalid("full Analyze subject requires its actual admitted purpose"))}
   if self.analysis_subject.is_some(){return Err(invalid("Analyze subject already issued"))}
@@ -80,7 +90,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let docs=intent.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets);if docs&&grep{return Err(io::Error::new(io::ErrorKind::InvalidInput,"doc snippets and CheckGrep source roles cannot be mixed"))}
   let joined_map_edits=crate::policy_request::WorkspaceAuxiliaryQuestion::admits_map_edits_capture(intent.workspace_auxiliary())
    && workspace.recursive_roots.as_slice()==[workspace.root.join("code"),workspace.root.join("maps")];
-  let discovery=if let Some(engine)=&engine_preflight{engine.require(self)?;Arc::clone(engine.discovery())}else{Arc::new(if crate::policy_request::WorkspaceAuxiliaryQuestion::authored_doc_ui_roots(intent.workspace_auxiliary()).is_some(){
+  let discovery=if let Some(discovery)=derived_discovery{Arc::clone(discovery)}else if let Some(engine)=&engine_preflight{engine.require(self)?;Arc::clone(engine.discovery())}else{Arc::new(if crate::policy_request::WorkspaceAuxiliaryQuestion::authored_doc_ui_roots(intent.workspace_auxiliary()).is_some(){
    crate::runner_host::workspace_discovery::discover_authored_doc_ui(self,contract,&workspace.configuration,intent.workspace_auxiliary())?
   }else if docs{crate::runner_host::workspace_discovery::discover_doc_snippets(self,contract)?}else if grep{crate::runner_host::workspace_discovery::discover_check_grep(self,contract)?}else if joined_map_edits{crate::runner_host::workspace_discovery::discover_joined_map_edits(self,contract)?}else{crate::runner_host::workspace_discovery::discover(self,contract)?})};
   discovery.validate_recording(self)?;let mut charge=match &engine_preflight{Some(engine)=>engine.charge(),None=>discovery.retained_charge()?};

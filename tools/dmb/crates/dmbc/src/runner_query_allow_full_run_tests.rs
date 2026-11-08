@@ -811,35 +811,40 @@ fn private_97_policies_share_authored_mixed_semantic_and_fixed_discovery() {
 
 #[test]
 fn private_101_policies_share_the_actual_staged_checker_body_domain() {
-    exercise_private_combined_report(false, false, false, false);
+    exercise_private_combined_report(false, false, false, false, false);
 }
 
 #[test]
 fn private_102_policies_share_clean_original_image_dir() {
-    exercise_private_combined_report(true, false, false, false);
+    exercise_private_combined_report(true, false, false, false, false);
 }
 
 #[test]
 fn private_103_policies_preserve_silicon_actor_in_a_hidden_loaded_interface_file() {
-    exercise_private_combined_report(true, true, false, false);
+    exercise_private_combined_report(true, true, false, false, false);
 }
 
 #[test]
 fn private_104_policies_share_exact_check_grep_inputs_with_map_and_ui() {
-    exercise_private_combined_report(true, true, true, false);
+    exercise_private_combined_report(true, true, true, false, false);
 }
 
 #[test]
 fn private_104_policies_join_actual_demanded_handlers_and_hidden_loaded_allow() {
-    exercise_private_combined_report(true, true, false, true);
+    exercise_private_combined_report(true, true, false, true, false);
 }
 
 #[test]
 fn private_105_policies_join_check_grep_and_real_handler_demand() {
-    exercise_private_combined_report(true, true, true, true);
+    exercise_private_combined_report(true, true, true, true, false);
 }
 
-fn exercise_private_combined_report(image_dir: bool, actors: bool, grep: bool, handlers: bool) {
+#[test]
+fn private_106_policies_share_the_actual_derived_pre_model_discovery() {
+    exercise_private_combined_report(true, true, true, true, true);
+}
+
+fn exercise_private_combined_report(image_dir: bool, actors: bool, grep: bool, handlers: bool, derived: bool) {
     let (mut host, mut request, root) = fixture(concat!(
         "#define CAPABILITIES(...)\n",
         "#define PROC_REF(P) #P\n",
@@ -939,10 +944,29 @@ fn exercise_private_combined_report(image_dir: bool, actors: bool, grep: bool, h
             std::fs::write(root.join(relative), content).unwrap();
         }
     }
+    if derived {
+        for (path, text) in [
+            ("code/derived_full.dm", super::super::derived_reads_host_controls::SEED
+                .replace("/obj/probe", "/obj/derived_full")
+                .replace("/mob/probe", "/mob/derived_full")
+                .replace("/datum/foreign", "/datum/derived_foreign")
+                .replace("#define TRACKED(T,V)\n", "")
+                .replace("#define TRACKED(T,V)\r\n", "")),
+            ("code/_generated/reads.dm", "// deliberately stale actual file\n".into()),
+        ] {
+            let target = root.join(path);
+            std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+            std::fs::write(target, text).unwrap();
+        }
+        use std::io::Write;
+        let mut manifest = std::fs::OpenOptions::new().append(true).open(root.join("deepquarry.dme")).unwrap();
+        manifest.write_all(b"#include \"code/derived_full.dm\"\n#include \"code/_generated/reads.dm\"\n").unwrap();
+    }
     std::fs::write(root.join("tools/ci/lint_scopes.toml"), report_config::with_overlay("")).unwrap();
     let intent = request.policy_inputs.as_mut().unwrap();
     intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
-    intent.workspace_auxiliary = if handlers && grep { Q::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS }
+    intent.workspace_auxiliary = if derived { Q::PRIVATE_FULL_REGISTRY }
+        else if handlers && grep { Q::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS }
         else if handlers { Q::PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS }
         else if grep { Q::PRIVATE_EXTENDED_AUTHORED_WITH_GREP }
         else if actors { Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS }
@@ -981,10 +1005,10 @@ fn exercise_private_combined_report(image_dir: bool, actors: bool, grep: bool, h
         .cloned().collect();
     assert_eq!(registry.names().len() - joined_exclusions.len(), 97);
     let bodies = ["stored_refs", "tracked", "tracked_tests", "untyped"];
-    let image_selected = |name: &str| (image_dir && name == "image_dir_after_build") || (actors && name == "silicon_entry") || (grep && name == "check_grep") || (handlers && name == "sem/handlers");
+    let image_selected = |name: &str| (image_dir && name == "image_dir_after_build") || (actors && name == "silicon_entry") || (grep && name == "check_grep") || (handlers && name == "sem/handlers") || (derived && name == "derived_reads");
     let checker_exclusions: Vec<_> = joined_exclusions.iter()
         .filter(|name| !bodies.contains(&name.strip_prefix('-').unwrap()) && !image_selected(name.strip_prefix('-').unwrap())).cloned().collect();
-    assert_eq!(registry.names().len() - checker_exclusions.len(), 101 + usize::from(image_dir) + usize::from(actors) + usize::from(grep) + usize::from(handlers));
+    assert_eq!(registry.names().len() - checker_exclusions.len(), 101 + usize::from(image_dir) + usize::from(actors) + usize::from(grep) + usize::from(handlers) + usize::from(derived));
 
     let stage = || crate::selected_report_spool::Stage::new(&cache).unwrap();
     let prepare = |host: &mut crate::runner_host::BuildHost, mut diagnostics, mut checker| {
@@ -1018,7 +1042,14 @@ fn exercise_private_combined_report(image_dir: bool, actors: bool, grep: bool, h
         let run = |snapshot: &SourceSnapshot, prepared, exclusions: &[String], budget, root: &std::path::Path, file, checker| {
             if handlers {
                 let handler = state.handlers_snapshot.as_ref().expect("actual current handler child");
-                snapshot.stage_private_extended_authored_with_handlers(prepared, exclusions, budget, root, file, checker, grep, handler)
+                if derived {
+                    if !exclusions.is_empty() {
+                        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "full fixture requires every registered policy"));
+                    }
+                    snapshot.stage_private_full_registry(prepared, budget, root, file, checker, handler)
+                } else {
+                    snapshot.stage_private_extended_authored_with_handlers(prepared, exclusions, budget, root, file, checker, grep, handler)
+                }
             } else {
                 let producer = if grep { SourceSnapshot::stage_private_extended_authored_with_check_grep }
                     else if actors { SourceSnapshot::stage_private_extended_authored_with_actors }
@@ -1059,8 +1090,9 @@ fn exercise_private_combined_report(image_dir: bool, actors: bool, grep: bool, h
         assert!(!report.contains("interface/.handler_output.dm:1: [handlers/output_signature]"), "{report}");
         assert!(!report.contains("interface/.handler_output.dm:1: ALLOW(handlers) is unused"), "{report}");
     }
+    assert_eq!(report.contains("[derived_reads/"), derived, "{report}");
     require_private_reactive_raw_legacy(&root, &checker_exclusions, clean, &report);
-    if handlers && grep {
+    if handlers && grep && !derived {
         // The joined report independently needs a complete Original workspace.
         // Remove handler declaration demand while retaining the genuine partial
         // candidate, and ensure the handler producer stays structural-only.

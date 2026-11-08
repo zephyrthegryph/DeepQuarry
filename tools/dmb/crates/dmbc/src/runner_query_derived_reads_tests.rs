@@ -1,7 +1,7 @@
 //! Real cold host/QueryDb controls. These require the conditional request route.
 use super::*;
 use crate::{policy_request::{AnalysisContext,PolicyInputRequest,WorkspacePolicyRequest,WorkspaceAuxiliaryQuestion as Q},request::{BuildOutcome,BuildRequest,Command}};
-const SEED:&str=r#"#define TRACKED(T,V)
+pub(super) const SEED:&str=r#"#define TRACKED(T,V)
 #define PUBLISHED_BY(T,V,K)
 /datum/foreign
     var/far

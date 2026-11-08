@@ -69,6 +69,7 @@ pub(crate) struct WorkspaceCapture {
     policy_revision: u128,
     issuance: u64,
     discovery: Arc<DiscoveryReceipt>,
+    shared_derived: Option<Arc<crate::input_snapshot::DerivedPreflight>>,
     files: Box<[File]>,
     configuration: PathBuf,
     config: Option<SharedBytes>,
@@ -627,6 +628,7 @@ impl WorkspaceCapture {
             .checked_add(std::mem::size_of_val(self.files.as_ref()))
             .ok_or_else(|| io::Error::other("workspace metadata overflow"))?;
         let mut seen = std::collections::BTreeSet::new();
+        if let Some(owner)=&self.shared_derived{owner.account_shared_capture_aliases(&mut seen)?;}
         let mut add = |bytes: usize| -> io::Result<()> {
             count = count
                 .checked_add(bytes)
@@ -698,7 +700,7 @@ impl WorkspaceCapture {
         }
         // Shared directory arrays are charged by actual retained ownership, with
         // PathBuf capacities and conservative map-node allowance exposed below.
-        add(self.discovery.retained_charge_with(&mut seen)?)?;
+        if self.shared_derived.is_none(){add(self.discovery.retained_charge_with(&mut seen)?)?;}
         add(self.facts.policy_closure_charge_with(&mut seen)?)?;
         Ok(count)
     }
@@ -949,7 +951,17 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             "workspace configuration cannot also be a DM source",
         ));
     }
-    let config = inputs.read_policy_candidate(configuration, remaining)?;
+    let shared_derived = if questions == Q::PRIVATE_FULL_REGISTRY {
+        let subject = inputs.original_analysis_subject().ok_or_else(|| io::Error::other("full registry Derived subject absent"))?;
+        let owner = subject.derived_preflight_owner()?;
+        if !owner.is_joined_registry() || !Arc::ptr_eq(owner.discovery(), &discovery) {
+            return Err(io::Error::other("full registry Derived discovery differs from capture"));
+        }
+        owner.require_recording(inputs)?;
+        Some(Arc::clone(owner))
+    } else { None };
+    let config = if let Some(owner)=&shared_derived{owner.configuration_bytes().cloned()}
+        else{inputs.read_policy_candidate(configuration, remaining)?};
     let mut auxiliary=Vec::new();let mut deadline=None;let mut check_grep=None;let mut check_grep_paths:Option<[Option<PathBuf>;6]>=None;let mut keys_manifest=None;let mut keys_manifest_path=None;let mut base_vars_configuration=None;let mut base_vars_configuration_path=None;
     if !questions.is_empty(){
      used=used.checked_add(config.as_ref().map_or(0,SharedBytes::capacity)).and_then(|n|n.checked_add(4*questions.len()*std::mem::size_of::<crate::policy_request::WorkspaceAuxiliaryQuestion>())).and_then(|n|n.checked_add(128)).filter(|n|*n<=EXTRA_BUDGET).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"auxiliary metadata overflow"))?;
@@ -1135,6 +1147,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         policy_revision,
         issuance,
         discovery,
+        shared_derived,
         files: files.into_boxed_slice(),
         configuration: canonical_path(configuration),
         config,
@@ -1526,7 +1539,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
  let ui_dispatcher=prepared_ui.map(|prepared|UiDispatcherCapture{index:ui_dispatcher_index,prepared});
  let config_width=workspace.configuration.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(1024)).ok_or(io::ErrorKind::OutOfMemory)?;used=used.checked_add(config_width).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;let configuration=canonical_path(&workspace.configuration);if discovery.files().contains(&configuration){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw configuration cannot also be selected source"))}let config=match &engine{Some(proof)=>{if configuration!=proof.preflight().configuration().0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine configuration path differs"))}proof.preflight().configuration_bytes().cloned()},None=>match doc_config{Some(bytes)=>bytes,None=>inputs.read_policy_candidate(&configuration,EXTRA_BUDGET-used)?}};used=used.checked_add(config.as_ref().map_or(0,SharedBytes::capacity)).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;selected.push(configuration.clone());
  let selected=selected.into_iter().collect::<std::collections::BTreeSet<_>>();let facts=inputs.policy_workspace_closure(&selected,discovery.directory_paths())?;let revision=crate::policy_request::workspace_revision(0,&facts,&workspace.root,&workspace.recursive_roots,&configuration)?;let owner=Arc::new(RawSourceIdentity{revision,queries:Arc::downgrade(queries),purpose});let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"original-source-only-not-semantic-v1");hash.update(purpose.name().as_bytes());hash.update(&revision.to_le_bytes());let policy_revision=hash.digest128();
- let capture=Arc::new(WorkspaceCapture{source:Weak::new(),raw_source:Some(Arc::downgrade(&owner)),engine_no_model:engine,ui_dispatcher,source_revision:revision,policy_revision,issuance:next_issuance()?,discovery,files:files.into_boxed_slice(),configuration,config,auxiliary:vec![purpose.question()],deadline:None,library_baseline:None,check_grep:None,keys_manifest:op_order_manifest,base_vars_configuration:None,map_edits:None,facts});
+ let capture=Arc::new(WorkspaceCapture{source:Weak::new(),raw_source:Some(Arc::downgrade(&owner)),engine_no_model:engine,ui_dispatcher,source_revision:revision,policy_revision,issuance:next_issuance()?,discovery,shared_derived:None,files:files.into_boxed_slice(),configuration,config,auxiliary:vec![purpose.question()],deadline:None,library_baseline:None,check_grep:None,keys_manifest:op_order_manifest,base_vars_configuration:None,map_edits:None,facts});
  if used>EXTRA_BUDGET||capture.retained_charge()?>EXTRA_BUDGET{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"raw Doc retained source exceeds existing capture allowance"))}capture.discovery.validate_recording(inputs)?;let metadata=capture.retained_charge()?;budget.charge(metadata).map_err(quota)?;credits.retain_capture_metadata(&capture,metadata)?;drop(metadata_peak);dm_profile::detail_mark("raw_capture.settled", capture_started);Ok((capture,owner))
 }
 

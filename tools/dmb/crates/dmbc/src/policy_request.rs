@@ -132,6 +132,15 @@ impl WorkspaceAuxiliaryQuestion {
         Self::LibraryLayeringFullAllow, Self::SemHandlersFullAllow, Self::MapEdits, Self::ImageDir, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
     ];
 
+    pub(crate) const PRIVATE_FULL_REGISTRY: &'static [Self] = &[
+        Self::DeadlinePollingAllowlist, Self::CheckGrep, Self::Keys, Self::SemReads, Self::UntrackedInputs,
+        Self::Tracked, Self::TrackedTests, Self::Decl, Self::Init, Self::BaseVars,
+        Self::RequirementBool, Self::PlayerLink, Self::UntypedMember, Self::WeakRawRead,
+        Self::RelWriteUndeclared, Self::Untyped, Self::StoredRefs, Self::Ownership,
+        Self::SetterPublishes, Self::OpOrder, Self::SysReactive, Self::Lifeforms, Self::DerivedReads, Self::SiliconEntry,
+        Self::LibraryLayeringFullAllow, Self::SemHandlersFullAllow, Self::MapEdits, Self::ImageDir, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
+    ];
+
     pub(crate) const PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS: &'static [Self] = &[
         Self::DeadlinePollingAllowlist, Self::Keys, Self::SemReads, Self::UntrackedInputs,
         Self::Tracked, Self::TrackedTests, Self::Decl, Self::Init, Self::BaseVars,
@@ -145,21 +154,25 @@ impl WorkspaceAuxiliaryQuestion {
         questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS
+            || questions == Self::PRIVATE_FULL_REGISTRY
     }
 
     pub(crate) fn admits_selected_handlers(questions: &[Self]) -> bool {
         questions == [Self::SemHandlersFullAllow]
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS
+            || questions == Self::PRIVATE_FULL_REGISTRY
     }
 
     pub(crate) fn is_private_grep_domain(questions: &[Self]) -> bool {
         questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS
+            || questions == Self::PRIVATE_FULL_REGISTRY
     }
     pub(crate) fn is_private_handlers_domain(questions: &[Self]) -> bool {
         questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS
+            || questions == Self::PRIVATE_FULL_REGISTRY
     }
 
 

@@ -343,6 +343,11 @@ fn run_build_attempt(
     // before issuing any manifest/frontend subject, using the same recorder
     // and the QueryDb input-family resource ledger. This is not a raw-only
     // completion; the existing full semantic pipeline still follows below.
+    let joined_derived = match policy_inputs.as_ref() {
+        Some(intent) if intent.workspace_auxiliary() == crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_FULL_REGISTRY =>
+            Some(Arc::clone(host.query_db()).prepare_derived_preflight(&inputs_capture,intent)?),
+        _ => None,
+    };
     // Genuine partial source is prepared before any independent full Subject.
     let mut handlers_capture=if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>handlers_prepare::prepare(&inputs_capture,intent,host,workers)?,None=>None}}else{None};
     if handlers_capture.as_ref().is_some_and(|capture|
@@ -355,7 +360,7 @@ fn run_build_attempt(
         let query=query_attempt.admit_handlers_source(intent,capture,proof,queries)?;query_attempt.finish_handlers_source();
         return Ok(BuildOutcome::HandlersQueryPrepared{query_revision:format!("{query:032x}"),partial_source_revision,full_source_revision:None,retained:retains_query_owners});
     }
-    let derived_preflight=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]){
+    let derived_preflight=if joined_derived.is_some(){joined_derived}else if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]){
         Some(Arc::clone(host.query_db()).prepare_derived_preflight(&inputs_capture,policy_inputs.as_ref().expect("exact admitted Derived intent"))?)
     }else{None};
     let analysis_subject=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let intent=policy_inputs.as_ref().ok_or("Analyze subject intent absent")?;Some(if let Some(preflight)=derived_preflight{inputs_capture.issue_original_analysis_subject_derived(intent,preflight)?}else{match engine_preflight.take(){Some(selection)=>inputs_capture.issue_original_analysis_subject_engine(intent,selection)?,None=>inputs_capture.issue_original_analysis_subject(intent)?}})}else{None};
