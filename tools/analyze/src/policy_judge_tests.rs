@@ -194,3 +194,60 @@ fn delivered_source_custom_and_post_protocols_remain_explicit_and_distinct(){
         assert_eq!(actual,expected);
     }
 }
+
+struct CapturedBaselineWork;
+impl crate::policy_finish::admitted::Work for CapturedBaselineWork {
+    fn checkpoint(&self) -> std::io::Result<()> { Ok(()) }
+    fn reserve(&self, _: usize) -> std::io::Result<()> { Ok(()) }
+    fn overflow(&self) -> std::io::Error { std::io::ErrorKind::OutOfMemory.into() }
+}
+
+#[test]
+fn captured_ci_baselines_match_independent_original_without_live_reads() {
+    let oracle = test_scratch::dir("captured-ci-oracle");
+    let unrelated = test_scratch::dir("captured-ci-unrelated");
+    let tree = Tree::from_files(vec![SourceFile::from_text(
+        "code/item.dm", "src.set_power(5)\nset_power(7)\n",
+    )]);
+    let mut sink = Sink::new();
+    sink.site_in("init_lines", "code/item.dm", 1);
+    sink.site_in("init_lines", "code/item.dm", 2);
+    let mut run = Run { sites: sink.sites, notes: vec!["authored note".into()] };
+    run.sites[0].key = "admitted".into();
+    run.sites[1].key = "new".into();
+    let scope = LintScope::default();
+    for (policy, fixtures) in [
+        (Policy::Sites { baseline: "policy.txt", header: &[], banned: &[] }, [
+            "init_lines\tcode/item.dm\tpower = 5\r\ninit_lines\tcode/item.dm\tset_power(7)\rinit_lines\tcode/gone.dm\tx = 1\n",
+            "init_lines\tcode/item.dm\tpower = 5\n",
+        ]),
+        (Policy::Ceilings { baseline: "policy.txt", header: &[] }, [
+            "admitted 0\radmitted 1 # last duplicate wins\r\nnew 1\nstale 2\n",
+            "admitted 1\nnew 0\nstale 2\n",
+        ]),
+    ] {
+        let mut probe = Probe::new(policy);
+        probe.meta.rules = &[RuleMeta { name: "init_lines", hint: "use the native form" }];
+        let cx = Cx { tree: &tree, meta: probe.meta(), scope: &scope };
+        for (ordinal, text) in fixtures.into_iter().enumerate() {
+            std::fs::write(oracle.join("policy.txt"), text).unwrap();
+            std::fs::write(unrelated.join("policy.txt"), "different current bytes").unwrap();
+            let expected = original_policy::judge(&probe, &cx, &run, &oracle, &None, false);
+            assert_eq!(expected.0, ordinal == 1, "positive control must genuinely pass");
+            let actual = crate::policy_finish::admitted::judge_captured_baseline(
+                probe.meta(), &scope, &tree, &run, &unrelated, Some(text.as_bytes()),
+                &CapturedBaselineWork, |_, out| { out.push_str("post\n"); false },
+            ).unwrap();
+            assert_eq!(actual, expected);
+        }
+        std::fs::write(oracle.join("policy.txt"), [0xff]).unwrap();
+        let expected = original_policy::judge(&probe, &cx, &run, &oracle, &None, false);
+        for absent in [None, Some(&[0xff][..])] {
+            let actual = crate::policy_finish::admitted::judge_captured_baseline(
+                probe.meta(), &scope, &tree, &run, &unrelated, absent,
+                &CapturedBaselineWork, |_, out| { out.push_str("post\n"); false },
+            ).unwrap();
+            assert_eq!(actual, expected);
+        }
+    }
+}

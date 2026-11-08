@@ -10,7 +10,7 @@ pub(crate) struct PreparedCheckerTranscript {
 }
 
 enum Destination<'a>{Writer(&'a mut dyn Write),ReportStage(&'a mut crate::selected_report_spool::Stage)}
-pub(crate) struct PreparationDiagnosticOutput<'a>{destination:Destination<'a>,checker:Option<&'a mut crate::selected_report_spool::Stage>,checker_frame:Option<PreparedCheckerTranscript>,compact_checker_cache:Option<&'a std::path::Path>,joined:Option<&'a mut Option<super::runner_freshness::JoinedSelectedInputs>>,first:Option<io::Error>,capture:bool,library_sites:bool}
+pub(crate) struct PreparationDiagnosticOutput<'a>{destination:Destination<'a>,checker:Option<&'a mut crate::selected_report_spool::Stage>,checker_frame:Option<PreparedCheckerTranscript>,compact_checker_cache:Option<&'a std::path::Path>,joined:Option<&'a mut Option<super::runner_freshness::JoinedSelectedInputs>>,first:Option<io::Error>,capture:bool,library_sites:bool,full_ci:bool}
 struct Guarded<'a>{writer:&'a mut dyn Write,first:Option<io::Error>}
 impl Write for Guarded<'_>{
  fn write(&mut self,b:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::ErrorKind::Other.into())}match self.writer.write(b){Ok(n)=>Ok(n),Err(actual)=>{self.first=Some(actual);Err(io::ErrorKind::Other.into())}}}
@@ -40,11 +40,11 @@ mod selected_attempt_controls {
     }
 }
 impl<'a> PreparationDiagnosticOutput<'a>{
- pub(crate) fn immediate(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:false,library_sites:false}}
- pub(crate) fn captured(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false}}
- pub(crate) fn selected_report(stage:&'a mut crate::selected_report_spool::Stage)->Self{Self{destination:Destination::ReportStage(stage),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false}}
+ pub(crate) fn immediate(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:false,library_sites:false,full_ci:false}}
+ pub(crate) fn captured(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false,full_ci:false}}
+ pub(crate) fn selected_report(stage:&'a mut crate::selected_report_spool::Stage)->Self{Self{destination:Destination::ReportStage(stage),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false,full_ci:false}}
  pub(crate) fn selected_combined(stage:&'a mut crate::selected_report_spool::Stage,checker:&'a mut crate::selected_report_spool::Stage)->Self{
-  Self{destination:Destination::ReportStage(stage),checker:Some(checker),checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false}
+  Self{destination:Destination::ReportStage(stage),checker:Some(checker),checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false,full_ci:false}
  }
  pub(super) fn require_library_sites_baseline(&mut self) -> io::Result<()> {
   if !self.is_selected_report() || self.needs_combined_checker() {
@@ -61,6 +61,14 @@ impl<'a> PreparationDiagnosticOutput<'a>{
   self.compact_checker_cache=Some(cache);
   Ok(())
  }
+ pub(super) fn require_full_ci_baselines(&mut self) -> io::Result<()> {
+  if !self.needs_combined_checker() || !self.wants_joined_inputs() || self.library_sites {
+   return Err(io::Error::new(io::ErrorKind::InvalidInput, "full CI requires combined joined preparation"));
+  }
+  self.full_ci = true;
+  Ok(())
+ }
+ pub(super) fn needs_full_ci_baselines(&self) -> bool { self.full_ci }
  pub(super) fn needs_library_sites_baseline(&self) -> bool { self.library_sites }
 
  pub(super) fn retain_joined_inputs(&mut self, slot: &'a mut Option<super::runner_freshness::JoinedSelectedInputs>) {

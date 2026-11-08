@@ -96,11 +96,19 @@ impl CompiledSelectedReports {
                 checker_policy_revision: checker_frame.policy_revision, clean,
                 diagnostics: diagnostics_seal, checker: checker_seal, report: report_seal,
             })),
-            CompoundRoster::FullRegistry => (CompoundSchema::FullRegistryV1, CompoundReports::FullRegistry(FullRegistryReports {
-                schema: FullRegistrySchema::V1, frame: frame.0,
-                checker_policy_revision: checker_frame.policy_revision, clean,
-                diagnostics: diagnostics_seal, checker: checker_seal, report: report_seal,
-            })),
+            CompoundRoster::FullRegistry | CompoundRoster::FullRegistryCi | CompoundRoster::FullRegistryCiCbt => {
+                let (schema, report_schema) = match roster {
+                    CompoundRoster::FullRegistry => (CompoundSchema::FullRegistryV1, FullRegistrySchema::V1),
+                    CompoundRoster::FullRegistryCi => (CompoundSchema::FullRegistryCiV1, FullRegistrySchema::CiV1),
+                    CompoundRoster::FullRegistryCiCbt => (CompoundSchema::FullRegistryCiCbtV1, FullRegistrySchema::CiCbtV1),
+                    CompoundRoster::Selected(_) => unreachable!("full registry terminal selection"),
+                };
+                (schema, CompoundReports::FullRegistry(FullRegistryReports {
+                    schema: report_schema, frame: frame.0,
+                    checker_policy_revision: checker_frame.policy_revision, clean,
+                    diagnostics: diagnostics_seal, checker: checker_seal, report: report_seal,
+                }))
+            }
         };
         let terminal = CompoundTerminal { schema, native_pair: pair, selected };
         terminal.require(roster).map_err(SendFailure::BeforePublication)?;
@@ -115,10 +123,26 @@ enum CompoundSchema {
     V1,
     #[serde(rename = "native-compiled-full-registry-v1")]
     FullRegistryV1,
+    #[serde(rename = "native-compiled-full-registry-ci-v1")]
+    FullRegistryCiV1,
+    #[serde(rename = "native-compiled-full-registry-ci-cbt-v1")]
+    FullRegistryCiCbtV1,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
-pub(crate) enum CompoundRoster { Selected(Roster), FullRegistry }
+pub(crate) enum CompoundRoster { Selected(Roster), FullRegistry, FullRegistryCi, FullRegistryCiCbt }
+
+impl CompoundRoster {
+    pub(crate) fn strict_profile(self) -> crate::request::CompoundStrictProfile {
+        match self {
+            Self::FullRegistryCiCbt => crate::request::CompoundStrictProfile::Cbt,
+            _ => crate::request::CompoundStrictProfile::Default,
+        }
+    }
+
+    pub(crate) fn is_full(self) -> bool { !matches!(self, Self::Selected(_)) }
+    pub(crate) fn is_ci(self) -> bool { matches!(self, Self::FullRegistryCi | Self::FullRegistryCiCbt) }
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -128,6 +152,10 @@ enum CompoundReports { Selected(CombinedTerminal), FullRegistry(FullRegistryRepo
 enum FullRegistrySchema {
     #[serde(rename = "native-checker-analyze-full-registry-v1")]
     V1,
+    #[serde(rename = "native-checker-analyze-full-registry-ci-v1")]
+    CiV1,
+    #[serde(rename = "native-checker-analyze-full-registry-ci-cbt-v1")]
+    CiCbtV1,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -161,15 +189,12 @@ impl CompoundTerminal {
         match (&self.selected, self.schema, expected) {
             (CompoundReports::Selected(terminal), CompoundSchema::V1, CompoundRoster::Selected(roster))
                 if terminal.roster == roster => terminal.require()?,
-            (CompoundReports::FullRegistry(terminal), CompoundSchema::FullRegistryV1, CompoundRoster::FullRegistry) => {
-                if [Some(terminal.checker),Some(terminal.report),terminal.diagnostics].into_iter().flatten()
-                    .any(|seal| !(1..=MAX_STREAM).contains(&seal.length)) {
-                    return Err(invalid("full registry terminal declares an empty or oversized stream"));
-                }
-                let total=terminal.checker.length.checked_add(terminal.report.length)
-                    .and_then(|n|n.checked_add(terminal.diagnostics.map_or(0,|seal|seal.length)));
-                if total.is_none_or(|n|n>MAX_STREAM){return Err(invalid("full registry reports exceed the aggregate stream bound"))}
-            }
+            (CompoundReports::FullRegistry(terminal), CompoundSchema::FullRegistryV1, CompoundRoster::FullRegistry)
+                if terminal.schema == FullRegistrySchema::V1 => validate_full_registry_streams(terminal)?,
+            (CompoundReports::FullRegistry(terminal), CompoundSchema::FullRegistryCiV1, CompoundRoster::FullRegistryCi)
+                if terminal.schema == FullRegistrySchema::CiV1 => validate_full_registry_streams(terminal)?,
+            (CompoundReports::FullRegistry(terminal), CompoundSchema::FullRegistryCiCbtV1, CompoundRoster::FullRegistryCiCbt)
+                if terminal.schema == FullRegistrySchema::CiCbtV1 => validate_full_registry_streams(terminal)?,
             _ => return Err(invalid("compound terminal names a foreign report selection")),
         }
         if self.native_pair.version != 1 || self.native_pair.dmb_bytes == 0 {
@@ -177,6 +202,17 @@ impl CompoundTerminal {
         }
         Ok(())
     }
+}
+
+fn validate_full_registry_streams(terminal: &FullRegistryReports) -> io::Result<()> {
+    if [Some(terminal.checker),Some(terminal.report),terminal.diagnostics].into_iter().flatten()
+        .any(|seal| !(1..=MAX_STREAM).contains(&seal.length)) {
+        return Err(invalid("full registry terminal declares an empty or oversized stream"));
+    }
+    let total=terminal.checker.length.checked_add(terminal.report.length)
+        .and_then(|n|n.checked_add(terminal.diagnostics.map_or(0,|seal|seal.length)));
+    if total.is_none_or(|n|n>MAX_STREAM){return Err(invalid("full registry reports exceed the aggregate stream bound"))}
+    Ok(())
 }
 
 /// Only an actual retained raw-query outcome can issue a source-only frame.

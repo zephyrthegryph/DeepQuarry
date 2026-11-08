@@ -371,10 +371,22 @@ fn full_registry_compound_terminal_is_distinct_and_checks_native_installation() 
     exercise_compound_terminal(CompoundRoster::FullRegistry);
 }
 
+#[test]
+fn full_registry_ci_terminal_refuses_raw_judgment_and_checks_native_installation() {
+    exercise_compound_terminal(CompoundRoster::FullRegistryCi);
+}
+
+#[test]
+fn full_registry_ci_cbt_terminal_refuses_default_strict_context() {
+    exercise_compound_terminal(CompoundRoster::FullRegistryCiCbt);
+}
+
 fn exercise_compound_terminal(roster: CompoundRoster) {
     let other = match roster {
         CompoundRoster::Selected(_) => CompoundRoster::FullRegistry,
-        CompoundRoster::FullRegistry => CompoundRoster::Selected(Roster::WithSemanticReads),
+        CompoundRoster::FullRegistry => CompoundRoster::FullRegistryCi,
+        CompoundRoster::FullRegistryCi => CompoundRoster::FullRegistryCiCbt,
+        CompoundRoster::FullRegistryCiCbt => CompoundRoster::FullRegistryCi,
     };
     let cache = crate::test_scratch::dir("compound-selected-wire");
     let store = crate::publish::PairStore::open(cache.join("native-store")).unwrap();
@@ -421,7 +433,12 @@ fn exercise_compound_terminal(roster: CompoundRoster) {
             (report.frame, report.checker_policy_revision)
         }
         CompoundReports::FullRegistry(report) => {
-            assert_eq!(terminal.schema, CompoundSchema::FullRegistryV1);
+            let expected = match roster {
+                CompoundRoster::FullRegistryCi => (CompoundSchema::FullRegistryCiV1, FullRegistrySchema::CiV1),
+                CompoundRoster::FullRegistryCiCbt => (CompoundSchema::FullRegistryCiCbtV1, FullRegistrySchema::CiCbtV1),
+                _ => (CompoundSchema::FullRegistryV1, FullRegistrySchema::V1),
+            };
+            assert_eq!((terminal.schema, report.schema), expected);
             (report.frame, report.checker_policy_revision)
         }
     };

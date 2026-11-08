@@ -24,6 +24,31 @@ pub enum BuildCommand {
     Compile,
 }
 
+/// Closed authored define settings for the Strict half of a compound request.
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
+pub(crate) enum CompoundStrictProfile {
+    #[default]
+    Default,
+    Cbt,
+}
+
+impl CompoundStrictProfile {
+    pub(crate) fn defines(self) -> BTreeMap<String, String> {
+        match self {
+            Self::Default => BTreeMap::new(),
+            // Same as ordinary dmbc's command-line -DCBT.
+            Self::Cbt => BTreeMap::from([("CBT".to_owned(), "1".to_owned())]),
+        }
+    }
+
+    pub(crate) fn matches(self, defines: &BTreeMap<String, String>) -> bool {
+        match self {
+            Self::Default => defines.is_empty(),
+            Self::Cbt => defines.len() == 1 && defines.get("CBT").is_some_and(|value| value == "1"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BuildRequest {
     pub command: BuildCommand,

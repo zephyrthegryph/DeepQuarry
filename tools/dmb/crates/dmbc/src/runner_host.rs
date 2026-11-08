@@ -1598,7 +1598,7 @@ impl BuildHost {
         use crate::{daemon::selected_report_wire::CompoundRoster, policy_request::WorkspaceAuxiliaryQuestion as Q};
         match roster {
             CompoundRoster::Selected(roster) => Self::original_exclusions_paths(request, roster),
-            CompoundRoster::FullRegistry => Self::original_report_paths_using(request,
+            CompoundRoster::FullRegistry | CompoundRoster::FullRegistryCi | CompoundRoster::FullRegistryCiCbt => Self::original_report_paths_using(request,
                 Q::authored_doc_ui_roots(Q::PRIVATE_FULL_REGISTRY).ok_or_else(original_exclusions_invalid)?),
         }
     }
@@ -1795,19 +1795,20 @@ impl BuildHost {
         use std::io;
         use crate::daemon::selected_report_wire::{CompoundRoster, Frame};
         Self::compound_report_paths(&prepare,roster)?;
-        if roster==CompoundRoster::FullRegistry&&!exclusions.is_empty(){
+        if roster.is_full() && !exclusions.is_empty(){
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"full compound registry cannot exclude policies").into());
         }
         crate::request_runner::validate_joined_compile_request(&compile, self)?;
         if !compile.project.is_absolute()
             || dm_preprocess::regions::canonical_path(&compile.project)
                 != dm_preprocess::regions::canonical_path(&prepare.project)
-            || !compile.defines.is_empty()
+            || !prepare.defines.is_empty()
+            || !roster.strict_profile().matches(&compile.defines)
             || compile.engine_template.is_some()
             || compile.bootstrap_catalog
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput,
-                "compound phases require the same project and default source settings").into());
+                "compound phases require the same project and default source settings or the issued CBT Strict profile").into());
         }
         if prepare.timeout_seconds.is_none() || prepare.timeout_seconds != compile.timeout_seconds {
             return Err(io::Error::new(io::ErrorKind::InvalidInput,
@@ -1837,8 +1838,10 @@ impl BuildHost {
                     Ok((joined, frame, clean, notices, checked, report, credit))
                 },
             )?,
-            CompoundRoster::FullRegistry=>self.stage_compound_full_registry(prepare, compact_checker)?,
+            CompoundRoster::FullRegistry | CompoundRoster::FullRegistryCi | CompoundRoster::FullRegistryCiCbt =>
+                self.stage_compound_full_registry(prepare, compact_checker, roster.is_ci())?,
         };
+        let joined = joined.for_strict_profile(roster.strict_profile());
         let compiled = crate::request_runner::compile_with_joined_selected_inputs(compile, self, &joined)?;
         if !matches!(compiled, crate::request::BuildOutcome::Published { .. }) {
             return Err(io::Error::other("exact native compilation did not publish a pair").into());
@@ -1849,7 +1852,7 @@ impl BuildHost {
     }
 
     fn stage_compound_full_registry(
-        &mut self, mut request:crate::request::BuildRequest, compact_checker:bool,
+        &mut self, mut request:crate::request::BuildRequest, compact_checker:bool, full_ci:bool,
     )->Result<(
         crate::request_runner::JoinedSelectedInputs,
         crate::daemon::selected_report_wire::Frame, bool,
@@ -1878,7 +1881,7 @@ impl BuildHost {
         let report=Stage::new(&cache)?;
         let mut joined=None;
         let(result,transcript)=crate::request_runner::prepare_compound_full_registry(
-            request,self,&mut diagnostics,&mut checker,&mut joined,compact_checker.then_some(cache.as_path()),
+            request,self,&mut diagnostics,&mut checker,&mut joined,compact_checker.then_some(cache.as_path()),full_ci,
         )?;
         let prepared=result.preparation?;
         result.diagnostics?;
@@ -1889,7 +1892,11 @@ impl BuildHost {
             let state=self.query_state.try_lock().map_err(|_|io::Error::new(io::ErrorKind::WouldBlock,"full registry query state is already borrowed"))?;
             let snapshot=state.snapshot.as_ref().ok_or_else(||io::Error::other("full registry current source absent"))?;
             let handlers=state.handlers_snapshot.as_ref().ok_or_else(||io::Error::other("full registry handler source absent"))?;
-            snapshot.stage_private_full_registry(&prepared,&retained,&root,report,&transcript,handlers)?
+            if full_ci {
+                snapshot.stage_private_full_registry_ci(&prepared,&retained,&root,report,&transcript,handlers)?
+            } else {
+                snapshot.stage_private_full_registry(&prepared,&retained,&root,report,&transcript,handlers)?
+            }
         };
         let diagnostics=if diagnostics.length()!=0{Some(query_snapshot::checked_selected_report_stage(diagnostics)?)}else{None};
         let checker=query_snapshot::checked_selected_report_stage(checker)?;

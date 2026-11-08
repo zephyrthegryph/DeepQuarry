@@ -551,10 +551,24 @@ pub(crate) fn admit_workspace_captured_using<P: SnapshotProvider>(
 /// Actual selected input facts, never native semantic/publication authority.
 pub(crate) struct JoinedSelectedInputs {
     project: std::path::PathBuf,
+    strict_profile: crate::request::CompoundStrictProfile,
     inputs: InputSnapshot,
     _credit: dm_preprocess::source_arena_credit::SourceArenaCredit,
 }
 impl JoinedSelectedInputs {
+    pub(crate) fn for_strict_profile(mut self, profile: crate::request::CompoundStrictProfile) -> Self {
+        self.strict_profile = profile;
+        self
+    }
+
+    pub(super) fn require_strict_profile(&self, defines: &std::collections::BTreeMap<String, String>) -> std::io::Result<()> {
+        if !self.strict_profile.matches(defines) {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,
+                "native defines do not match the joined compound Strict profile"));
+        }
+        Ok(())
+    }
+
     pub(super) fn require_current(
         &self, project: &std::path::Path, native: &InputSnapshot,
     ) -> Result<(), Box<dyn Error>> {
@@ -614,7 +628,7 @@ pub(crate) fn admit_combined_workspace_captured_using<P: SnapshotProvider>(
     if !workspace.is_recorded_in(&inputs) || !checker.is_recorded_in(&inputs) {
         return Err(std::io::Error::other("one admitted input closure must contain both Original consumer captures").into());
     }
-    let joined = pending.map(|(project, credit)| JoinedSelectedInputs { project, inputs, _credit: credit });
+    let joined = pending.map(|(project, credit)| JoinedSelectedInputs { project, strict_profile: crate::request::CompoundStrictProfile::Default, inputs, _credit: credit });
     Ok((WorkspacePolicyAdmission { capture: workspace, generation_inputs: None },
         DiagnosticPolicyAdmission { capture: checker }, joined))
 }

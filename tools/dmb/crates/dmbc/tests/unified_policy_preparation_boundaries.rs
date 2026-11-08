@@ -1880,6 +1880,22 @@ fn public_compound_selected_compiles_and_verifies_both_reports_in_one_request() 
 #[test]
 #[ignore = "private dmbc transport and mandatory independent legacy Analyze oracle"]
 fn public_full_registry_compound_matches_legacy_report_and_exact_native_pair_across_edit() {
+    exercise_public_full_registry_compound(false, false);
+}
+
+#[test]
+#[ignore = "private dmbc transport and mandatory independent legacy Analyze oracle"]
+fn public_full_registry_ci_compound_matches_legacy_judgment_and_baseline_edits() {
+    exercise_public_full_registry_compound(true, false);
+}
+
+#[test]
+#[ignore = "private dmbc transport and mandatory independent legacy Analyze oracle"]
+fn public_full_registry_ci_cbt_compound_keeps_original_defines_empty() {
+    exercise_public_full_registry_compound(true, true);
+}
+
+fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
     use dmbc::publish::OutputPair;
     use dq_analyze::selected_exclusions_wire::{Frame, Hex128, Seal};
     use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
@@ -1907,7 +1923,7 @@ fn public_full_registry_compound_matches_legacy_report_and_exact_native_pair_acr
     let transport = test_scratch::dir("full-registry-compound-transport");
     let daemon = LibraryTransport {
         root: &transport,
-        namespace: format!("full-compound-{}-{}", std::process::id(),
+        namespace: format!("full-compound-{ci}-{cbt}-{}-{}", std::process::id(),
             SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
     };
     for (path, source) in [
@@ -1944,10 +1960,28 @@ fn public_full_registry_compound_matches_legacy_report_and_exact_native_pair_acr
         ("SpacemanDMM.toml", ""),
     ] { put(&root, path, source); }
     put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    let baseline = "tools/ci/library_layering_baseline.txt";
+    if ci {
+        put(&root, "code/library/current.dm", "/proc/local()\n    downstream()\n");
+        put(&root, "code/content/definition.dm", "/proc/downstream()\n    return\n");
+        let dme = std::fs::read_to_string(root.join("deepquarry.dme")).unwrap();
+        put(&root, "deepquarry.dme", format!(
+            "{dme}#include \"code/library/current.dm\"\n#include \"code/content/definition.dm\"\n"
+        ));
+        put(&root, baseline, "external_dependency\tcode/library/current.dm\tdownstream()\r\n");
+        put(&root, "code/deadline.dm", "/obj/machine/process()\n\tif(world.time > expires)\n\t\treturn\n");
+    }
 
     let write_control = |field: &str, native: &str| {
+        let original = format!(
+            "#ifdef SPACEMAN_DMM\n    return argument.{field}\n#else\n{native}\n#endif\n"
+        );
+        let body = if cbt {
+            let cbt_body = native.replace("1687", "2687").replace("1729", "2729");
+            format!("#ifdef CBT\n{cbt_body}\n#else\n{original}#endif\n")
+        } else { original };
         put(&root, "code/control.dm", format!(
-            "/datum/receiver\n/proc/check_field(datum/receiver/argument)\n#ifdef SPACEMAN_DMM\n    return argument.{field}\n#else\n{native}\n#endif\n"
+            "/datum/receiver\n/proc/check_field(datum/receiver/argument)\n{body}"
         ));
         put(&root, "doc/rewrite/control.md", format!("\x60\x60\x60dm\nmissing_doc_{field}()\n\x60\x60\x60\n"));
     };
@@ -1962,10 +1996,13 @@ fn public_full_registry_compound_matches_legacy_report_and_exact_native_pair_acr
             .map(|name| root.join(name)).to_vec();
     let request_path = transport.join("full-compound.json");
     let run = |name: &str, exclusions: &[&str]| {
-        put(&transport, "full-compound.json", serde_json::to_vec(&serde_json::json!({
+        let mut request = serde_json::json!({
             "selected": {"build": build, "exclusions": exclusions},
             "output_name": name, "analyze_registry": "full",
-        })).unwrap());
+        });
+        if ci { request["analyze_judgment"] = serde_json::json!("ci"); }
+        if cbt { request["strict_profile"] = serde_json::json!("cbt"); }
+        put(&transport, "full-compound.json", serde_json::to_vec(&request).unwrap());
         daemon.run(&[OsStr::new("compile-checker-analyze-selected"), request_path.as_os_str(),
             OsStr::new("--report-batch")], Duration::from_secs(90)).unwrap()
     };
@@ -1973,14 +2010,40 @@ fn public_full_registry_compound_matches_legacy_report_and_exact_native_pair_acr
     assert_eq!(bad.status.code(), Some(2));
     assert!(bad.stdout.is_empty());
     assert!(!cache.join("compound-full-excluded").exists());
+    if cbt {
+        for (name, ci_mode, original_defines) in [
+            ("compound-cbt-raw-forbidden", false, serde_json::json!({})),
+            ("compound-cbt-original-forbidden", true, serde_json::json!({"CBT":"1"})),
+        ] {
+            let mut request = serde_json::json!({
+                "selected": {"build": build, "exclusions": []},
+                "output_name": name, "analyze_registry": "full", "strict_profile":"cbt",
+            });
+            if ci_mode { request["analyze_judgment"] = serde_json::json!("ci"); }
+            request["selected"]["build"]["defines"] = original_defines;
+            put(&transport, "full-compound.json", serde_json::to_vec(&request).unwrap());
+            let refused = daemon.run(&[OsStr::new("compile-checker-analyze-selected"), request_path.as_os_str(),
+                OsStr::new("--report-batch")], Duration::from_secs(90)).unwrap();
+            assert_eq!(refused.status.code(), Some(2));
+            assert!(refused.stdout.is_empty());
+            assert!(!cache.join(name).exists());
+        }
+    }
 
     let seal = |bytes: &[u8]| Seal { length: bytes.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(bytes)) };
     let inspect = |name: &str, result: std::process::Output, field: &str| {
         assert_eq!(result.status.code(), Some(1), "{}", String::from_utf8_lossy(&result.stderr));
         let line = result.stdout.iter().position(|&byte| byte == b'\n').unwrap();
         let terminal: Terminal = serde_json::from_slice(&result.stdout[..line]).unwrap();
-        assert_eq!(terminal.schema, "native-compiled-full-registry-v1");
-        assert_eq!(terminal.selected.schema, "native-checker-analyze-full-registry-v1");
+        let (schema, report_schema) = if cbt {
+            ("native-compiled-full-registry-ci-cbt-v1", "native-checker-analyze-full-registry-ci-cbt-v1")
+        } else if ci {
+            ("native-compiled-full-registry-ci-v1", "native-checker-analyze-full-registry-ci-v1")
+        } else {
+            ("native-compiled-full-registry-v1", "native-checker-analyze-full-registry-v1")
+        };
+        assert_eq!(terminal.schema, schema);
+        assert_eq!(terminal.selected.schema, report_schema);
         assert!(!terminal.selected.clean);
         assert_ne!(terminal.selected.checker_policy_revision, terminal.selected.frame.policy_revision);
         if let Some(diagnostics) = terminal.selected.diagnostics {
@@ -1995,7 +2058,7 @@ fn public_full_registry_compound_matches_legacy_report_and_exact_native_pair_acr
             assert!(analyze_text.contains(marker), "missing {marker}: {analyze_text}");
         }
         let expected = daemon.run_program(&legacy, &[
-            OsStr::new("check"), OsStr::new("--raw"), OsStr::new("--no-cache"),
+            OsStr::new("check"), OsStr::new(if ci { "--ci" } else { "--raw" }), OsStr::new("--no-cache"),
             OsStr::new("--no-selftest"), OsStr::new("--unused"), OsStr::new("--root"), root.as_os_str(),
         ], Duration::from_secs(60)).unwrap();
         assert_eq!(expected.status.code(), Some(1), "{}", String::from_utf8_lossy(&expected.stderr));
@@ -2004,20 +2067,32 @@ fn public_full_registry_compound_matches_legacy_report_and_exact_native_pair_acr
         let native_store = cache.join(format!("{name}-separate-store"));
         let native_out = cache.join(format!("{name}-separate-artifacts"));
         let project = root.join("deepquarry.dme");
-        let separate = daemon.run(&[
-            OsStr::new("compile"), project.as_os_str(), OsStr::new("--no-cache"),
-            OsStr::new("--exact-inputs"), OsStr::new("--workers"), OsStr::new("1"),
-            OsStr::new("--request-timeout-seconds"), OsStr::new("60"),
-            OsStr::new("--artifact-directory"), native_out.as_os_str(),
-            OsStr::new("--output-store"), native_store.as_os_str(),
-        ], Duration::from_secs(90)).unwrap();
-        assert!(separate.status.success(), "{}", String::from_utf8_lossy(&separate.stderr));
+        let independent = |artifact_dir: &std::path::Path, store: &std::path::Path, cbt: bool| {
+            let mut args = vec![
+                OsStr::new("compile"), project.as_os_str(), OsStr::new("--no-cache"),
+                OsStr::new("--exact-inputs"), OsStr::new("--workers"), OsStr::new("1"),
+                OsStr::new("--request-timeout-seconds"), OsStr::new("60"),
+                OsStr::new("--artifact-directory"), artifact_dir.as_os_str(),
+                OsStr::new("--output-store"), store.as_os_str(),
+            ];
+            if cbt { args.push(OsStr::new("-DCBT")); }
+            let separate = daemon.run(&args, Duration::from_secs(90)).unwrap();
+            assert!(separate.status.success(), "{}", String::from_utf8_lossy(&separate.stderr));
+        };
+        independent(&native_out, &native_store, cbt);
         let marker = |directory: &std::path::Path| -> OutputPair {
             serde_json::from_slice(&std::fs::read(directory.join("deepquarry.dmb-pair.json")).unwrap()).unwrap()
         };
         let installed = cache.join(name).join("artifacts");
         assert_eq!(marker(&installed), terminal.native_pair);
         assert_eq!(marker(&native_out), terminal.native_pair);
+        if cbt && name == "compound-full-cold" {
+            let alternate = cache.join("alternate-default-artifacts");
+            independent(&alternate, &cache.join("alternate-default-store"), false);
+            assert_ne!(std::fs::read(alternate.join("deepquarry.dmb")).unwrap(),
+                std::fs::read(installed.join("deepquarry.dmb")).unwrap(),
+                "the fixture must genuinely select different Strict syntax under CBT");
+        }
         for name in ["deepquarry.dmb", "deepquarry.rsc"] {
             assert_eq!(std::fs::read(installed.join(name)).unwrap(), std::fs::read(native_out.join(name)).unwrap());
         }
@@ -2026,6 +2101,25 @@ fn public_full_registry_compound_matches_legacy_report_and_exact_native_pair_acr
 
     let (first, first_checker, first_analyze) =
         inspect("compound-full-cold", run("compound-full-cold", &[]), "before_edit");
+    if ci {
+        let section = |text: &[u8], name: &str| {
+            let text = std::str::from_utf8(text).unwrap();
+            let marker = format!("::group::{name}\n");
+            text.split_once(&marker).unwrap().1.split_once("::endgroup::\n").unwrap().0.to_owned()
+        };
+        assert!(section(&first_analyze, "check_grep").contains("standalone.jsx"));
+        assert!(section(&first_analyze, "deadline_polling").contains("code/deadline.dm"));
+        assert!(!section(&first_analyze, "library_layering").contains("code/library/current.dm:2:"));
+        put(&root, baseline, "external_dependency\tcode/library/current.dm\tother_call()\r\n");
+        let (changed, checker, analyze) =
+            inspect("compound-full-baseline-edit", run("compound-full-baseline-edit", &[]), "before_edit");
+        assert_eq!(first.selected.frame.source_revision, changed.selected.frame.source_revision);
+        assert_ne!(first.selected.frame.policy_revision, changed.selected.frame.policy_revision);
+        assert_eq!(first.native_pair, changed.native_pair);
+        assert_eq!(first.selected.checker_policy_revision, changed.selected.checker_policy_revision);
+        assert_eq!(first_checker, checker);
+        assert!(section(&analyze, "library_layering").contains("code/library/current.dm:2:"));
+    }
     write_control("after_edit", "    return 1729");
     let (edited, edited_checker, edited_analyze) =
         inspect("compound-full-edit", run("compound-full-edit", &[]), "after_edit");

@@ -74,10 +74,48 @@ pub fn judge_captured_sites(
         }
     }
     let report = crate::policy_judge::judge_report_using(meta, scope, &source, run, root, &None, false,
-        |_, _, _| false, |_, _| false, Some(crate::policy_judge::Sites::Projected(projected)));
+        |_, _, _| false, |_, _| false, Some(crate::policy_judge::Sites::Projected(projected)), None);
     work.checkpoint()?;
     Ok(report)
 }
+/// Judgment over one actual baseline loan. The issuer is responsible for path,
+/// observation and freshness authority; this adapter opens no file.
+pub fn judge_captured_baseline<S: baseline::SiteText + ?Sized>(
+    meta: &crate::lint::Meta, scope: &LintScope, source: &S, run: &Run, root: &Path,
+    bytes: Option<&[u8]>, work: &dyn Work,
+    post: impl FnMut(&Run, &mut String) -> bool,
+) -> io::Result<(bool, String)> {
+    work.checkpoint()?;
+    let text = bytes.and_then(|bytes| std::str::from_utf8(bytes).ok()).unwrap_or_default();
+    let mut lines = 1usize;
+    for chunk in text.as_bytes().chunks(8192) {
+        work.checkpoint()?;
+        lines = add(work, lines, chunk.iter().filter(|b| matches!(**b, b'\r' | b'\n')).count())?;
+    }
+    // Retain parsed keys and account for the legacy Sites allowance clones.
+    work.reserve(add(work, mul(work, text.len(), 32)?, mul(work, lines, 4096)?)?)?;
+    let report = match meta.policy {
+        Policy::Sites { .. } => {
+            let baseline = baseline::parse_sites_text(text.to_owned());
+            crate::policy_judge::judge_report_using(
+                meta, scope, source, run, root, &None, false, |_, _, _| false, post,
+                Some(crate::policy_judge::Sites::Complete(&baseline)), None,
+            )
+        }
+        Policy::Ceilings { .. } => {
+            let baseline = baseline::parse_ceilings_text(text);
+            crate::policy_judge::judge_report_using(
+                meta, scope, source, run, root, &None, false, |_, _, _| false, post,
+                None, Some(&baseline),
+            )
+        }
+        _ => return Err(io::Error::new(io::ErrorKind::InvalidInput,
+            "captured baseline judgment requires Sites or Ceilings metadata")),
+    };
+    work.checkpoint()?;
+    Ok(report)
+}
+
 pub struct Text{pub clean:bool,pub text:String,pub allow_usage:BTreeSet<(String,String,u32)>}
 /// Use the SAME policy judge and SAME baseline parser. Source-owned entries
 /// stay borrowed. The few legacy Run/ALLOW and formatter scratch copies are

@@ -1216,7 +1216,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 if preparation_deadline.is_some_and(|deadline| Instant::now() >= deadline) {
                     return protocol::send(&mut stream, &Reply::Rejected(crate::request_failure::RequestFailure::cancelled("daemon request deadline expired during compound preflight")));
                 }
-                Some((destination.compile(&request), destination))
+                Some((destination.compile(&request, *roster), destination))
             } else { None };
             let named_image_dir=matches!(&report,Some(ReportDispatch::NamedImageDir));
             let path=if named_image_dir {

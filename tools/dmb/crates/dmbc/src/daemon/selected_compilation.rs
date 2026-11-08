@@ -17,6 +17,10 @@ pub(super) struct Request {
     pub(super) checker_execution: Option<CheckerExecution>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     analyze_registry: Option<RegistryExecution>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    analyze_judgment: Option<RegistryJudgment>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    strict_profile: Option<StrictProfile>,
 }
 
 #[derive(Clone, Copy, Deserialize, Serialize)]
@@ -29,14 +33,35 @@ pub(super) enum CheckerExecution {
 #[serde(rename_all = "snake_case")]
 enum RegistryExecution { Full }
 
+#[derive(Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum RegistryJudgment { Ci }
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum StrictProfile { Cbt }
+
 impl Request {
     pub(super) fn qualify(&self) -> io::Result<wire::CompoundRoster> {
+        if !self.selected.build.defines.is_empty() {
+            return Err(invalid("compound Original authored defines must be empty"));
+        }
+        if self.strict_profile.is_some() && !(self.analyze_registry.is_some() && self.analyze_judgment.is_some()) {
+            return Err(invalid("CBT Strict profile requires the full compound CI registry"));
+        }
         if self.analyze_registry.is_some() {
             if !self.selected.exclusions.is_empty() || self.selected.build.timeout_seconds.is_none() {
                 return Err(invalid("full compound registry requires no exclusions and an explicit deadline"));
             }
-            Ok(wire::CompoundRoster::FullRegistry)
+            Ok(match (self.analyze_judgment, self.strict_profile) {
+                (Some(RegistryJudgment::Ci), Some(StrictProfile::Cbt)) => wire::CompoundRoster::FullRegistryCiCbt,
+                (Some(RegistryJudgment::Ci), None) => wire::CompoundRoster::FullRegistryCi,
+                (None, _) => wire::CompoundRoster::FullRegistry,
+            })
         } else {
+            if self.analyze_judgment.is_some() {
+                return Err(invalid("CI judgment requires the full compound registry"));
+            }
             self.selected.qualify(Mode::Combined).map(wire::CompoundRoster::Selected)
         }
     }
@@ -73,10 +98,11 @@ impl Destination {
         Ok(Self { cache, store: root.join("store"), artifacts: root.join("artifacts"), root })
     }
 
-    pub(super) fn compile(&self, prepare: &BuildRequest) -> BuildRequest {
+    pub(super) fn compile(&self, prepare: &BuildRequest, roster: wire::CompoundRoster) -> BuildRequest {
         let mut native = prepare.clone();
         native.command = BuildCommand::Compile;
         native.policy_inputs = None;
+        native.defines = roster.strict_profile().defines();
         native.output_store = Some(self.store.clone());
         native.artifact_directory = Some(self.artifacts.clone());
         native

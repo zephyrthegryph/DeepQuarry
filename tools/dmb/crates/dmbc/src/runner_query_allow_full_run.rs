@@ -80,6 +80,35 @@ fn copy_validation(data:&ValidationData,c:&mut impl Control<Error=Failure>)->Res
  for(site,text)in data.sites.iter().zip(&data.source_text){c.checkpoint()?;let width=[site.rule.len(),site.rel.len(),site.msg.len(),site.key.len(),site.ident.len(),text.len()].into_iter().try_fold(0usize,|n,x|n.checked_add(x)).ok_or_else(||c.overflow())?;kc::reserve(c,||width.checked_mul(4)?.checked_add(1024))?;kc::row(c,&mut out.sites)?;kc::row(c,&mut out.source_text)?;out.sites.push(site.clone());out.source_text.push(text.clone());}c.checkpoint()?;Ok(out)
 }
 impl SourceSnapshot{
+ pub(in crate::runner_host) fn registered_full_baselines(
+  control: &mut Operation<'_>,
+ ) -> Result<Vec<&'static str>, Failure> {
+  use dq_analyze::lint::Policy;
+  let selection = full_unused::registered_full_selection(&[], control)?;
+  let mut paths = Vec::new();
+  for name in selection.names() {
+   control.checkpoint()?;
+   let producer = Producer::from_name(name).ok_or("unissued full CI policy metadata")?;
+   let path = match producer.metadata().policy {
+    Policy::Sites { baseline, .. } | Policy::Ceilings { baseline, .. } => baseline,
+    Policy::Hard | Policy::Custom => continue,
+   };
+   let Some(name) = path.strip_prefix("tools/ci/") else {
+    return Err("registered baseline is outside tools/ci".into());
+   };
+   if !name.ends_with(".txt") || name.is_empty()
+    || !name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'.'))
+   {
+    return Err("registered baseline has an invalid filename".into());
+   }
+   if !paths.contains(&path) {
+    kc::row(control, &mut paths)?;
+    paths.push(path);
+   }
+  }
+  Ok(paths)
+ }
+
  /// Execute original full/exclusions-only selection through its real producers.
  /// A missing producer or child role refuses before any completed-union output.
  pub(crate) fn with_native_allow_full_run<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{

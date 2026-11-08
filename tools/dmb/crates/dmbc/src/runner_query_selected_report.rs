@@ -302,16 +302,22 @@ struct ReportStage<'a> {
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
+    // Borrow the issued workspace and its live read guard through the stage.
+    full_ci_baseline: Option<&'a dyn Fn(&Meta) -> io::Result<Option<&'a [u8]>>>,
 }
 impl ReportStage<'_> {
+    fn is_raw(&self) -> bool {
+        self.judgment.is_raw() && self.full_ci_baseline.is_none()
+    }
+
     fn observe(&mut self, root: &Path, meta: &Meta, rows: ReportRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
         if let ReportRows::Union(UnionRows::CheckGrep(data)) = &rows {
             if (self.selected != Roster::WithCheckGrep.names() && !self.private_check_grep)
                 || self.selected.get(self.finished).copied() != Some(meta.name)
                 || !std::ptr::eq(meta, dq_analyze::lints::check_grep::native::metadata())
-                || !self.judgment.is_raw() || !matches!(meta.policy, Policy::Custom)
+                || (!self.is_raw() && self.full_ci_baseline.is_none()) || !matches!(meta.policy, Policy::Custom)
             {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "check_grep requires its exact completed raw report"));
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "check_grep requires its exact completed custom report"));
             }
             let checkpoint = || -> io::Result<()> {
                 crate::daemon::control::checkpoint()?;
@@ -321,10 +327,12 @@ impl ReportStage<'_> {
             // the actual Check observations, and owns its admitted report
             // bytes. The generic judge prefixes notes before that hook.
             checkpoint()?;
+            if !self.is_raw() { writeln!(self.file, "::group::{}", meta.name)?; }
             for note in &data.run.notes {
                 writeln!(self.file, "{note}")?;
             }
             self.file.write_all(data.report.as_bytes())?;
+            if !self.is_raw() { writeln!(self.file, "::endgroup::")?; }
             checkpoint()?;
             self.failed.record(self.finished, data.failed)?;
             self.finished += 1;
@@ -332,11 +340,12 @@ impl ReportStage<'_> {
         }
         let deadline = matches!(&rows, ReportRows::Union(UnionRows::Deadline(..)))
             && (self.selected == Roster::WithDeadlinePolling.names() || self.ordinary_semantic_and_fixed)
-            && self.judgment.is_raw() && matches!(meta.policy, Policy::Custom)
+            && (self.is_raw() || self.full_ci_baseline.is_some()) && matches!(meta.policy, Policy::Custom)
             && dq_analyze::captured_raw_policy::metadata("deadline_polling")
                 .is_some_and(|expected| std::ptr::eq(meta, expected));
         if self.selected.get(self.finished).copied() != Some(meta.name)
-            || (!deadline && !matches!(meta.policy, Policy::Hard | Policy::Sites { .. })) {
+            || (!deadline && !matches!(meta.policy, Policy::Hard | Policy::Sites { .. })
+                && !(self.full_ci_baseline.is_some() && matches!(meta.policy, Policy::Ceilings { .. }))) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report section order or judge differs"));
         }
         let mut scratch = SectionScratch { budget: Budget::scoped_temporaries(child)
@@ -372,7 +381,7 @@ impl ReportStage<'_> {
             UnionRows::Deadline(files, path, bytes) => {
                 use dq_analyze::lints::deadline_polling::{prepare_observed_report, ReportAllowlist};
                 if !deadline {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Deadline requires its exact raw observed judge"));
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Deadline requires its exact observed judge"));
                 }
                 let observation = match bytes.map(std::str::from_utf8) {
                     None => ReportAllowlist::ProvenMissing,
@@ -708,16 +717,21 @@ impl ReportStage<'_> {
         }).map_err(operational)?;
 
         let source_text = Text { sites: &projection.run.sites, lines: &projection.text };
-        let raw = self.judgment.is_raw();
-        let (failed, text) = if raw || matches!(meta.policy, Policy::Hard) {
+        let raw = self.is_raw();
+        let post = |run: &Run, text: &mut String| {
+            if let Some(blocks) = doc_summary {
+                return dq_analyze::doc_snippets_policy::finish_summary(meta, root, &source_text, blocks, run, text, raw);
+            }
+            if let Some(message) = post_judge { text.push_str(message); true } else { false }
+        };
+        let (failed, text) = if raw || deadline || matches!(meta.policy, Policy::Hard) {
             policy_judge::judge_report(meta, scope, &source_text, &projection.run, root, &None, raw,
                 |run, text, _| deadline_judge.take().is_some_and(|(parsed, shown)| parsed.finish(run, &shown, text)),
-                |run, text| {
-                    if let Some(blocks) = doc_summary {
-                        return dq_analyze::doc_snippets_policy::finish_summary(meta, root, &source_text, blocks, run, text, raw);
-                    }
-                    if let Some(message) = post_judge { text.push_str(message); true } else { false }
-                })
+                post)
+        } else if let Some(baseline) = self.full_ci_baseline {
+            dq_analyze::policy_finish::admitted::judge_captured_baseline(
+                meta, scope, &source_text, &projection.run, root, baseline(meta)?, &SitesWork(&scratch.budget), post,
+            )?
         } else if self.judgment == JudgmentV2::CiLibrarySites && library_sites(meta) {
             let baseline = self.library_baseline.ok_or_else(|| io::Error::new(
                 io::ErrorKind::InvalidData, "staged library layering requires captured fixed baseline evidence",
@@ -845,7 +859,7 @@ impl super::super::RawWorkspaceSnapshot {
         let mut usage = UsageJoinData::new(&selection, frame);
         let mut stage = ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, private_image_dir: false, private_check_grep: false, private_derived_reads: false, judgment: JudgmentV2::Raw, library_baseline: None,
+            authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, private_image_dir: false, private_check_grep: false, private_derived_reads: false, judgment: JudgmentV2::Raw, library_baseline: None, full_ci_baseline: None,
         };
         for &name in selected {
             let policy_started = std::time::Instant::now();
@@ -1070,11 +1084,30 @@ impl SourceSnapshot {
             true, true, true, Some(checker), true, true, true, Some(handlers), true)
     }
 
+    pub(in crate::runner_host) fn stage_private_full_registry_ci(
+        &self, prepared: &crate::request::BuildOutcome, retained: &Arc<Budget>,
+        root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
+        handlers: &super::super::HandlerWorkspaceSnapshot,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union_using(prepared, &[], retained, root, file,
+            true, true, true, Some(checker), true, true, true, Some(handlers), true, true)
+    }
+
     fn stage_private_extended_union(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage, mixed: bool, ordinary_fold_sys: bool, ordinary_semantics: bool,
         checker: Option<&crate::request_runner::PreparedCheckerTranscript>, image_dir: bool, actors: bool, grep: bool,
         handlers: Option<&super::super::HandlerWorkspaceSnapshot>, derived: bool,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union_using(prepared, exclusions, retained, root, file,
+            mixed, ordinary_fold_sys, ordinary_semantics, checker, image_dir, actors, grep, handlers, derived, false)
+    }
+
+    fn stage_private_extended_union_using(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage, mixed: bool, ordinary_fold_sys: bool, ordinary_semantics: bool,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>, image_dir: bool, actors: bool, grep: bool,
+        handlers: Option<&super::super::HandlerWorkspaceSnapshot>, derived: bool, full_ci: bool,
     ) -> io::Result<(bool, Verified)> {
         let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
         let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
@@ -1131,8 +1164,8 @@ impl SourceSnapshot {
             kc::row(&mut control, &mut order).map_err(operational)?;
             order.push(name.as_str());
         }
-        self.stage_selected_report_using(prepared, exclusions, retained, root,
-            &order, questions, JudgmentV2::Raw, false, handlers.is_some(), handlers, file, ordinary_fold_sys, checker)
+        self.stage_selected_report_judging(prepared, exclusions, retained, root,
+            &order, questions, JudgmentV2::Raw, false, handlers.is_some(), handlers, file, ordinary_fold_sys, checker, full_ci)
     }
 
     fn stage_selected_report_using(
@@ -1141,6 +1174,17 @@ impl SourceSnapshot {
         needs_library_sites_baseline: bool, requires_handlers: bool,
         handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
         checker: Option<&crate::request_runner::PreparedCheckerTranscript>,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_selected_report_judging(prepared, exclusions, retained, root, selected, questions,
+            judgment, needs_library_sites_baseline, requires_handlers, handlers, file, ordinary_fold_sys, checker, false)
+    }
+
+    fn stage_selected_report_judging(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, selected: &[&str], questions: &[Q], judgment: JudgmentV2,
+        needs_library_sites_baseline: bool, requires_handlers: bool,
+        handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>, full_ci: bool,
     ) -> io::Result<(bool, Verified)> {
         use crate::request::BuildOutcome;
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
@@ -1170,6 +1214,20 @@ impl SourceSnapshot {
             let guard = self.workspace_native_read()?;
             Some(workspace.library_sites_baseline(&guard)?)
         } else { None };
+        let ci_guard = if full_ci {
+            if questions != Q::PRIVATE_FULL_REGISTRY || !exclusions.is_empty()
+                || judgment != JudgmentV2::Raw || needs_library_sites_baseline
+            {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "full CI requires its complete private registry"));
+            }
+            let guard = self.workspace_native_read()?;
+            workspace.full_ci_baseline(&guard, dq_analyze::engine_layering_policy::Layer::Library.metadata())?;
+            Some(guard)
+        } else { None };
+        let ci_baseline = |meta: &Meta| {
+            let guard = ci_guard.as_ref().ok_or_else(|| io::Error::other("full CI read guard absent"))?;
+            workspace.full_ci_baseline(guard, meta)
+        };
         let stage = RefCell::new(ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
             authored_doc_ui: workspace.has_authored_doc_ui_capture(), ordinary_fold_sys,
@@ -1180,7 +1238,7 @@ impl SourceSnapshot {
                 || Q::is_private_grep_domain(questions),
             private_check_grep: Q::is_private_grep_domain(questions),
             private_derived_reads: questions == Q::PRIVATE_FULL_REGISTRY,
-            judgment, library_baseline,
+            judgment, library_baseline, full_ci_baseline: full_ci.then_some(&ci_baseline),
         });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, private_checker_body, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
@@ -1308,7 +1366,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         private_check_grep: false,
         private_derived_reads: false,
         judgment: JudgmentV2::Raw,
-        library_baseline: None,
+        library_baseline: None, full_ci_baseline: None,
     };
     stage.observe(root, meta, ReportRows::ImageDir(&data), scope, budget)?;
     if stage.finished != 1 {

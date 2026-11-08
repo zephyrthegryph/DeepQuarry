@@ -363,9 +363,13 @@ fn check_sites_with_allowance<'a, S: SiteText + ?Sized>(
 
 /// `read_baseline`: `{name: ceiling}` from `name count` lines.
 pub fn read_ceilings(path: &Path) -> BTreeMap<String, i64> {
+    let Ok(text) = std::fs::read_to_string(path) else { return BTreeMap::new() };
+    parse_ceilings_text(&text)
+}
+
+pub(crate) fn parse_ceilings_text(text: &str) -> BTreeMap<String, i64> {
     let mut base = BTreeMap::new();
-    let Ok(text) = std::fs::read_to_string(path) else { return base };
-    for line in crate::util::universal_newlines(text).split('\n') {
+    for line in text.split(['\r', '\n']) {
         let line = line.split('#').next().unwrap_or("");
         let line = line.trim();
         if line.is_empty() {
@@ -406,6 +410,12 @@ pub fn key_counts(sites: &[Site]) -> BTreeMap<String, i64> {
 /// sites of each failing key, then one summary line (`system_boundary_lint.main`).
 pub fn check_ceilings(label: &str, sites: &[Site], rules: &[&str], path: &Path, out: &mut String) -> bool {
     let base = read_ceilings(path);
+    check_ceilings_with_base(label, sites, rules, &base, out)
+}
+
+pub(crate) fn check_ceilings_with_base(
+    label: &str, sites: &[Site], rules: &[&str], base: &BTreeMap<String, i64>, out: &mut String,
+) -> bool {
     let counts = key_counts(sites);
     let mut failed = false;
     for (key, count) in &counts {

@@ -737,7 +737,7 @@ impl RawInputCredits<'_>{
  /// Synchronous loan only: the same held ledger/budget, never another counter.
  /// Other credit operations resume after this borrow ends. No SourceArenaWork
  /// call in this closure may be replaced by ordinary QueryDb's locking lender.
- pub(super) fn with_held_source_work<R>(&mut self,db:&QueryDb,consume:impl FnOnce(&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<R>)->io::Result<R>{super::source_arena::with_held_source_work(db,self.ledger,self.budget,consume)}
+ pub(crate) fn with_held_source_work<R>(&mut self,db:&QueryDb,consume:impl FnOnce(&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<R>)->io::Result<R>{super::source_arena::with_held_source_work(db,self.ledger,self.budget,consume)}
 }
 
 #[cfg(test)]

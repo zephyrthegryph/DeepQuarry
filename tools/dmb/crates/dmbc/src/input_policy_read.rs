@@ -35,11 +35,23 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         &self, root: &Path, path: &Path, limit: usize,
         work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
     ) -> io::Result<FixedLibraryBaseline> {
-        use FixedLibraryBaseline as Seen;
         if !root.is_absolute()
             || path.strip_prefix(root).ok() != Some(Path::new(crate::runner_host::workspace_capture::LIBRARY_SITES_BASELINE))
         {
             return Err(invalid("fixed library baseline path differs from its selected root"));
+        }
+        self.read_registered_baseline(path, limit, work)
+    }
+
+    /// Called only by the fixed or registered baseline issuance paths. The
+    /// caller must fund retained bytes and validate membership before reading.
+    pub(crate) fn read_registered_baseline(
+        &self, path: &Path, limit: usize,
+        work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+    ) -> io::Result<FixedLibraryBaseline> {
+        use FixedLibraryBaseline as Seen;
+        if !path.is_absolute() {
+            return Err(invalid("baseline observation requires an absolute path"));
         }
         work.checkpoint()?;
         #[cfg(not(windows))]

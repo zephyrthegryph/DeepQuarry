@@ -130,6 +130,7 @@ pub(crate) fn compile_with_joined_selected_inputs(
     request: BuildRequest, host: &mut crate::runner_host::BuildHost, joined: &JoinedSelectedInputs,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     validate_joined_compile_request(&request, host)?;
+    joined.require_strict_profile(&request.defines)?;
     let mut writer = crate::daemon::stderr_writer();
     let mut output = PreparationDiagnosticOutput::immediate(&mut writer);
     run_build_with_selected_publication(request,host,None,None,&mut output,None,Some(joined),false)
@@ -896,7 +897,33 @@ fn run_build_attempt(
                     }
                     let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
                     let discovery=if let Some(subject)=&analysis_subject{subject.bind_frontend(&view)?;Arc::clone(subject.discovery())}else{Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?})};
-                    let captured=if crate::policy_request::WorkspaceAuxiliaryQuestion::admits_map_edits_capture(intent.workspace_auxiliary()){
+                    let capture_checker_policy = || -> Result<_, Box<dyn std::error::Error>> {
+                        use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
+                        let private_combined = private_authored_doc_ui
+                            && Q::is_private_authored_checker(intent.workspace_auxiliary());
+                        if (!private_combined && !Q::admits_combined_reports(intent.workspace_auxiliary())) ||
+                           analysis_subject.as_ref().is_none_or(|subject|subject.synthetic()) ||
+                           view.preparation_purpose()!=dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete {
+                            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"combined report requires the fixed authored complete Original source and qualified semantic roster").into());
+                        }
+                        let checker_config=dm_analysis::check_configuration::select(&project,None);
+                        let checker_intent=PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalChecker0290),
+                            files:vec![PolicyInputFile{path:checker_config.path,role:PolicyInputRole::Configuration,required:false}],
+                            ..Default::default()}.admit()?;
+                        Ok(Arc::new(crate::runner_host::policy_capture::capture_diagnostic(&view,&inputs_capture,&checker_intent.capture_files(),checker_intent.search_folders())?.bind_request(&checker_intent)?.bind_diagnostic_profile()?))
+                    };
+                    // Full CI baseline observations belong to Analyze. Bind the
+                    // Checker policy to the actual shared Original source
+                    // before those reads enter the common recorder. Both
+                    // captures still enter the same final freshness closure.
+                    let early_checker = if preparation_output.needs_full_ci_baselines() {
+                        Some(capture_checker_policy()?)
+                    } else { None };
+                    let captured=if preparation_output.needs_full_ci_baselines(){
+                        crate::runner_host::workspace_capture::capture_analysis_full_ci(
+                            &view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref(),
+                        )?
+                    }else if crate::policy_request::WorkspaceAuxiliaryQuestion::admits_map_edits_capture(intent.workspace_auxiliary()){
                         crate::runner_host::workspace_capture::capture_analysis_map_edits(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref())?
                     }else if preparation_output.needs_library_sites_baseline(){
                         if analysis_context != Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)
@@ -911,19 +938,10 @@ fn run_build_attempt(
                         crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?
                     };
                     let checker=if preparation_output.needs_combined_checker(){
-                        use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
-                        let private_combined = private_authored_doc_ui
-                            && Q::is_private_authored_checker(intent.workspace_auxiliary());
-                        if (!private_combined && !Q::admits_combined_reports(intent.workspace_auxiliary())) ||
-                           analysis_subject.as_ref().is_none_or(|subject|subject.synthetic()) ||
-                           view.preparation_purpose()!=dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete {
-                            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"combined report requires the fixed authored complete Original source and qualified semantic roster").into());
-                        }
-                        let checker_config=dm_analysis::check_configuration::select(&project,None);
-                        let checker_intent=PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalChecker0290),
-                            files:vec![PolicyInputFile{path:checker_config.path,role:PolicyInputRole::Configuration,required:false}],
-                            ..Default::default()}.admit()?;
-                        let checker_policy=Arc::new(crate::runner_host::policy_capture::capture_diagnostic(&view,&inputs_capture,&checker_intent.capture_files(),checker_intent.search_folders())?.bind_request(&checker_intent)?.bind_diagnostic_profile()?);
+                        let checker_policy = match early_checker {
+                            Some(policy) => policy,
+                            None => capture_checker_policy()?,
+                        };
                         let checker_frame=crate::runner_host::query_snapshot::CombinedCheckerFrame::stage(&view,Arc::clone(&source_policy_queries),Arc::clone(&checker_policy),&captured)?;
                         Some((checker_frame,checker_policy))
                     }else{None};
@@ -1990,7 +2008,7 @@ pub(crate) fn prepare_selected_report(
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
     joined: Option<&mut Option<JoinedSelectedInputs>>, library_sites: bool, compact_cache:Option<&Path>,
 )->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
-    prepare_selected_report_using(request, host, stage, checker, joined, library_sites, compact_cache, false)
+    prepare_selected_report_using(request, host, stage, checker, joined, library_sites, compact_cache, false, false)
 }
 
 #[cfg(test)]
@@ -2005,7 +2023,7 @@ pub(crate) fn prepare_private_authored_with_checker(
     {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "private combined report requires its exact live authored intent").into());
     }
-    let (result, checker) = prepare_selected_report_using(request, host, stage, Some(checker), None, false, None, true)?;
+    let (result, checker) = prepare_selected_report_using(request, host, stage, Some(checker), None, false, None, true, false)?;
     match checker {
         Some(checker) => Ok((result, checker)),
         None => {
@@ -2019,20 +2037,20 @@ pub(crate) fn prepare_private_authored_with_checker(
 pub(crate) fn prepare_compound_full_registry(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:&mut crate::selected_report_spool::Stage,
-    joined:&mut Option<JoinedSelectedInputs>, compact_cache:Option<&Path>,
+    joined:&mut Option<JoinedSelectedInputs>, compact_cache:Option<&Path>, full_ci:bool,
 )->io::Result<(PreparationDiagnosticResult,Option<PreparedCheckerTranscript>)>{
     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
     if request.policy_inputs.as_ref().is_none_or(|intent|intent.workspace_auxiliary!=Q::PRIVATE_FULL_REGISTRY){
         return Err(io::Error::new(io::ErrorKind::InvalidInput,"compound full registry requires its exact internal authored intent"));
     }
-    prepare_selected_report_using(request,host,stage,Some(checker),Some(joined),false,compact_cache,true)
+    prepare_selected_report_using(request,host,stage,Some(checker),Some(joined),false,compact_cache,true,full_ci)
 }
 
 fn prepare_selected_report_using(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
     joined: Option<&mut Option<JoinedSelectedInputs>>, library_sites: bool, compact_cache:Option<&Path>,
-    private_authored_doc_ui: bool,
+    private_authored_doc_ui: bool, full_ci: bool,
 )->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
     if request.command != BuildCommand::PrepareQuery {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
@@ -2043,6 +2061,7 @@ fn prepare_selected_report_using(
     };
     if let Some(joined) = joined { output.retain_joined_inputs(joined); }
     if library_sites { output.require_library_sites_baseline()?; }
+    if full_ci { output.require_full_ci_baselines()?; }
     if let Some(cache)=compact_cache{output.use_compact_checker(cache)?;}
     let preparation=run_build_with_selected_publication(request,host,None,None,&mut output,None,None,private_authored_doc_ui);
     let diagnostics=output.take_error().map_or(Ok(()),Err);

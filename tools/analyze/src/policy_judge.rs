@@ -32,7 +32,7 @@ pub fn judge_report<S:baseline::SiteText+?Sized>(
     mut custom:impl FnMut(&Run,&mut String,bool)->bool,
     mut post:impl FnMut(&Run,&mut String)->bool,
 )->(bool,String){
-    judge_report_using(meta,scope,source,run,root,changed,raw,custom,post,None)
+    judge_report_using(meta,scope,source,run,root,changed,raw,custom,post,None,None)
 }
 pub(crate) fn judge_report_prepared<S:baseline::SiteText+?Sized>(
     meta:&crate::lint::Meta,scope:&crate::scopes::LintScope,source:&S,
@@ -41,7 +41,7 @@ pub(crate) fn judge_report_prepared<S:baseline::SiteText+?Sized>(
     post:impl FnMut(&Run,&mut String)->bool,
  prepared:Option<&std::collections::BTreeMap<String,baseline::Counter>>
 )->(bool,String){
-    judge_report_using(meta,scope,source,run,root,changed,raw,custom,post,prepared.map(Sites::Complete))
+    judge_report_using(meta,scope,source,run,root,changed,raw,custom,post,prepared.map(Sites::Complete),None)
 }
 
 pub(crate) enum Sites<'a> {
@@ -55,6 +55,7 @@ pub(crate) fn judge_report_using<S:baseline::SiteText+?Sized>(
     mut custom:impl FnMut(&Run,&mut String,bool)->bool,
     mut post:impl FnMut(&Run,&mut String)->bool,
     prepared:Option<Sites<'_>>,
+    prepared_ceilings:Option<&std::collections::BTreeMap<String,i64>>,
 )->(bool,String){
     let mut text = String::new();
     for n in &run.notes {
@@ -160,7 +161,10 @@ pub(crate) fn judge_report_using<S:baseline::SiteText+?Sized>(
                     root.join(baseline)
                 };
                 let rules: Vec<&str> = meta.rules.iter().map(|r| r.name).collect();
-                baseline::check_ceilings(meta.label, &run.sites, &rules, &path, &mut text)
+                match prepared_ceilings {
+                    Some(base) => baseline::check_ceilings_with_base(meta.label, &run.sites, &rules, base, &mut text),
+                    None => baseline::check_ceilings(meta.label, &run.sites, &rules, &path, &mut text),
+                }
             }
             Policy::Hard => {
                 let mut failed = false;
