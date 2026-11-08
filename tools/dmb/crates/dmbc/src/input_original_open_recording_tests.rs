@@ -61,42 +61,33 @@ fn exact_open_memo_reuses_alternating_live_receipts_and_invalidates_every_slot()
         ["open","before_read","before_decode","acquired"].map(|event|(ordinal,event))
     }).collect();
     assert_eq!(*events.borrow(),expected);
-    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[None;4]);
-
+    assert!(leases.iter().all(|lease|!input.exact_loan_is_warm(lease)));
     let loan=|ordinal:usize|{
         assert_eq!(input.original_source_bytes(&leases[ordinal]).unwrap().unwrap(),texts[ordinal].as_bytes());
-        input.snapshot.lock().unwrap().cached_exact_loan().unwrap()
+        assert!(input.exact_loan_is_warm(&leases[ordinal]));
     };
-    let a=loan(0);
-    let b=loan(1);
-    assert_ne!(a,b);
-    assert_eq!(loan(0),a);
-    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[Some(a),Some(b),None,None]);
-    assert_eq!(loan(1),b);
-    let c=loan(2);
-    let d=loan(3);
-    let e=loan(4);
-    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[Some(e),Some(d),Some(c),Some(b)]);
-    assert_eq!(loan(1),b,"an older live definition remains admitted after other path loans");
-    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[Some(b),Some(e),Some(d),Some(c)]);
+    for ordinal in [0,1,0,1,2,3,4,1] { loan(ordinal); }
+    assert!(leases.iter().all(|lease|input.exact_loan_is_warm(lease)),
+        "actual alternating exact receipts remain independently current");
 
     let other=inputs(FileSystemInputs);
     let counts=std::array::from_fn(|_|Cell::new(0));
     let Outcome::Acquired(foreign)=raw(&other,&paths[0],&work,Decision::Read,&counts).unwrap()else{panic!("genuine foreign read")};
     assert_eq!(other.original_source_bytes(&foreign).unwrap().unwrap(),texts[0].as_bytes());
-    assert_eq!(other.snapshot.lock().unwrap().cached_exact_loan(),Some(a),"private serials can coincide across issuers");
+    assert!(other.exact_loan_is_warm(&foreign));
+    assert!(!input.exact_loan_is_warm(&foreign));
     assert!(other.original_source_bytes(&leases[0]).is_err());
     assert!(input.original_source_bytes(&foreign).is_err());
     assert!(input.original_source_bytes(&leases[1].reissued(())).is_err());
 
     let removed=std::mem::take(&mut input.snapshot.lock().unwrap().original_payloads);
-    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[None;4]);
+    assert!(leases.iter().all(|lease|!input.exact_loan_is_warm(lease)));
     for lease in &leases {
         assert!(input.original_source_bytes(lease).is_err());
     }
     input.snapshot.lock().unwrap().original_payloads=removed;
-    assert_eq!(loan(0),a);
-    assert_eq!(loan(1),b);
+    loan(0);
+    loan(1);
 
     let error=input.original_raw_source_open_admitted(
         &paths[0],1<<20,&work,
@@ -106,7 +97,7 @@ fn exact_open_memo_reuses_alternating_live_receipts_and_invalidates_every_slot()
         &mut|_|panic!("first actual open callback error must prevent acquisition"),
     ).err().unwrap();
     assert_eq!(error.raw_os_error(),Some(1450));
-    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loans(),[None;4]);
+    assert!(leases.iter().all(|lease|!input.exact_loan_is_warm(lease)));
     drop((foreign,other,leases,input));
     assert_eq!(work.live.load(Ordering::Acquire),0);
 }
@@ -123,17 +114,19 @@ fn exact_original_loan_requires_the_current_positive_facts_and_unpoisoned_record
     let Outcome::Acquired(lease)=raw(&input,&path,&work,Decision::Read,&counts).unwrap()else{panic!("actual source")};
     assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
     assert_eq!(counts.map(Cell::into_inner),[1,1,1,1]);
-    let first_serial=input.snapshot.lock().unwrap().cached_exact_loan().expect("warm exact proof");
+    assert!(input.exact_loan_is_warm(&lease));
     let reissued=lease.reissued(());
     assert!(reissued.same_original_acquisition(&lease));
-    assert!(input.original_source_bytes(&reissued).is_err(),"original text owner cannot reissue the private serial");
+    assert!(input.original_source_bytes(&reissued).is_err(),"original text owner cannot reissue the private receipt");
     let counts=std::array::from_fn(|_|Cell::new(0));
     let Outcome::Acquired(later)=raw(&input,&path,&work,Decision::Read,&counts).unwrap()else{panic!("reopened actual source")};
-    assert!(input.snapshot.lock().unwrap().cached_exact_loan().is_none(),"mutable capture projection retires the prior proof");
+    assert!(!input.exact_loan_is_warm(&lease),"mutable capture projection retires the prior proof");
+    assert!(!input.exact_loan_is_warm(&later));
     assert_eq!(input.original_source_bytes(&later).unwrap().unwrap(),bytes);
-    assert_ne!(input.snapshot.lock().unwrap().cached_exact_loan(),Some(first_serial),"equal facts do not reuse a serial");
+    assert!(input.exact_loan_is_warm(&later));
+    assert!(!input.exact_loan_is_warm(&lease),"equal facts must still revalidate the earlier receipt");
     assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
-    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loan(),Some(first_serial),"the bounded memo can refill from live facts");
+    assert!(input.exact_loan_is_warm(&lease));
 
     let other=inputs(FileSystemInputs);
     let counts=std::array::from_fn(|_|Cell::new(0));
@@ -142,17 +135,40 @@ fn exact_original_loan_requires_the_current_positive_facts_and_unpoisoned_record
     assert!(other.original_source_bytes(&lease).is_err(),"equal current facts from another recorder grant nothing");
 
     let observed=std::mem::take(&mut input.snapshot.lock().unwrap().opened_reads);
-    assert!(input.snapshot.lock().unwrap().cached_exact_loan().is_none());
+    assert!(!input.exact_loan_is_warm(&lease));
     assert!(input.original_source_bytes(&lease).is_err(),"current opened-reader proof is required");
     input.snapshot.lock().unwrap().opened_reads=observed;
     assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
-    assert_eq!(input.snapshot.lock().unwrap().cached_exact_loan(),Some(first_serial));
+    assert!(input.exact_loan_is_warm(&lease));
     let payload=std::mem::take(&mut input.snapshot.lock().unwrap().original_payloads);
-    assert!(input.snapshot.lock().unwrap().cached_exact_loan().is_none());
+    assert!(!input.exact_loan_is_warm(&lease));
     assert!(input.original_source_bytes(&lease).is_err(),"current exact payload is required");
     input.snapshot.lock().unwrap().original_payloads=payload;
     assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
 
+    let removed={
+        let holds=std::sync::Barrier::new(2);
+        let release=std::sync::Barrier::new(2);
+        // Scope the barrier borrows with the same actual recorder guard.
+        std::thread::scope(|inner|{
+            let writer=inner.spawn(||{
+                let mut guard=input.snapshot.lock().unwrap();
+                let removed=std::mem::take(&mut guard.original_payloads);
+                holds.wait();
+                release.wait();
+                removed
+            });
+            holds.wait();
+            let revoked=!input.exact_loan_is_warm(&lease);
+            release.wait();
+            let removed=writer.join().unwrap();
+            assert!(revoked);
+            removed
+        })
+    };
+    assert!(input.original_source_bytes(&lease).is_err());
+    input.snapshot.lock().unwrap().original_payloads=removed;
+    assert_eq!(input.original_source_bytes(&lease).unwrap().unwrap(),bytes);
     let poisoned=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{
         let _locked=input.snapshot.lock().unwrap();
         panic!("deliberately poison the recorder for a loan control");

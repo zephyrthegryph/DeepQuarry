@@ -1,11 +1,12 @@
 //! Primary-read acquisition leases, separately owned from interned lexical text.
 use super::*;
 use dm_preprocess::{AcquiredSource, SourcePreparationDemand, SourceText};
-use std::{num::NonZeroUsize,sync::Arc};
+use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
 struct RecordedSourceReceipt {
     exact_open:bool,
-    // This private, non-Clone receipt gets a serial only at exact-open construction.
-    exact_loan_serial:Option<NonZeroUsize>,
+    // Only this private exact-open receipt can remember successful validation.
+    // This is never serialized or transferred to a reissued receipt.
+    checked_epoch:AtomicUsize,
     original_bytes: Option<dm_resources::SharedBytes>,
     issuer: Arc<()>,
     legacy_path: Option<PathBuf>,
@@ -49,7 +50,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         }
         let mut receipt = RecordedSourceReceipt {
             exact_open:false,
-            exact_loan_serial:None,
+            checked_epoch:AtomicUsize::new(0),
             original_bytes: None,
             issuer: Arc::clone(&self.source_issuer),
             legacy_path: Some(path.clone()),
@@ -100,7 +101,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         }
         let mut receipt = RecordedSourceReceipt {
             exact_open:false,
-            exact_loan_serial:None,
+            checked_epoch:AtomicUsize::new(0),
             original_bytes: None,
             issuer: Arc::clone(&self.source_issuer),
             legacy_path: Some(path.clone()),
@@ -124,7 +125,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     pub(super) fn finish_raw_source_read(&self,path:&Path,bytes:Vec<u8>,prior:Option<&dm_preprocess::SourceAcquisitionLease>,before_decode:impl FnOnce(usize,bool,bool)->io::Result<()>)->io::Result<dm_preprocess::SourceAcquisitionLease>{
         let old=if let Some(prior)=prior{let receipt=prior.receipt::<RecordedSourceReceipt>().ok_or_else(||invalid("raw prior has no genuine recorded acquisition"))?;if receipt.path()!=&canonical_path(path){return Err(invalid("raw prior belongs to a different actual path"))}let raw=recorded_source_original(prior)?;let same=match raw{RecordedSourceOriginal::Utf8(text)=>text.as_bytes()==bytes.as_slice(),RecordedSourceOriginal::Bytes(raw)=>raw.as_slice()==bytes.as_slice()};same.then_some((prior,receipt))}else{None};
         before_decode(bytes.capacity(),bytes.starts_with(b"\xef\xbb\xbf")||std::str::from_utf8(&bytes).is_err(),old.is_none())?;
-        let acquired=if let Some((prior,receipt))=old{let path=canonical_path(path);let fact=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?.files.get(&path).cloned().ok_or_else(||invalid("raw reissue lacks actual bounded read"))?;prior.reissued(RecordedSourceReceipt{exact_open:false,exact_loan_serial:None,original_bytes:receipt.original_bytes.clone(),issuer:Arc::clone(&self.source_issuer),legacy_path:Some(path),fact})}else{self.acquire_raw_recorded_source(path,bytes)?};
+        let acquired=if let Some((prior,receipt))=old{let path=canonical_path(path);let fact=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?.files.get(&path).cloned().ok_or_else(||invalid("raw reissue lacks actual bounded read"))?;prior.reissued(RecordedSourceReceipt{exact_open:false,checked_epoch:AtomicUsize::new(0),original_bytes:receipt.original_bytes.clone(),issuer:Arc::clone(&self.source_issuer),legacy_path:Some(path),fact})}else{self.acquire_raw_recorded_source(path,bytes)?};
         if !self.validate_recorded_source_lease(path,&acquired){return Err(invalid("actual raw read acquisition issuer/path/facts differ"))}Ok(acquired)}
     /// Admitted physical raw route only. The old checked/capture path above
     /// stays unchanged. No prepared source/parser/model is manufactured here.
@@ -149,7 +150,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             // Genuine UTF8 classification above; consuming Vec does not allocate.
             String::from_utf8(bytes.take().unwrap()).map_err(|_|invalid("validated UTF8 changed"))?
         };
-        let mut receipt=RecordedSourceReceipt{exact_open:false,exact_loan_serial:None,original_bytes:None,issuer:Arc::clone(&self.source_issuer),legacy_path:Some(path),fact};
+        let mut receipt=RecordedSourceReceipt{exact_open:false,checked_epoch:AtomicUsize::new(0),original_bytes:None,issuer:Arc::clone(&self.source_issuer),legacy_path:Some(path),fact};
         let source=if exceptional{
             let original=dm_resources::SharedBytes::from(bytes.take().unwrap());receipt.original_bytes=Some(original.clone());
             let source=dm_preprocess::SourceAcquisitionLease::from_raw_original_decoded(decoded,encoding,receipt);
@@ -171,11 +172,8 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     /// This authenticates current byte input only, not logical/token EOF.
     pub(super) fn finish_exact_original_read_admitted(&self,path:&Path,bytes:Vec<u8>,before_decode:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->io::Result<()>,fund_text:Option<&dm_preprocess::source_arena_credit::OriginalReadTextFunding<'_>>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->io::Result<()>)->io::Result<dm_preprocess::SourceAcquisitionLease>{
         let actual_path=path;
-        let (digest,exact_loan_serial)={
-            let mut current=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?;
-            let digest=current.original_payloads.get(actual_path).ok_or_else(||invalid("source acquisition lacks exact actual Original payload"))?;
-            (digest,current.issue_exact_loan_serial())
-        };
+        let digest=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?
+            .original_payloads.get(actual_path).ok_or_else(||invalid("source acquisition lacks exact actual Original payload"))?;
         if digest.content!=xxhash_rust::xxh3::xxh3_128(&bytes){return Err(invalid("source acquisition contradicts actual read"))}
         let encoding=if std::str::from_utf8(&bytes).is_err(){dm_preprocess::SourceEncoding::IncompatibleOriginal}else if bytes.starts_with(b"\xef\xbb\xbf"){dm_preprocess::SourceEncoding::Utf8Bom}else{dm_preprocess::SourceEncoding::Utf8};
         let exceptional=encoding!=dm_preprocess::SourceEncoding::Utf8;
@@ -195,7 +193,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             String::from_utf8(bytes.take().unwrap()).map_err(|_|invalid("validated UTF8 changed"))?
         };
         let path=actual_path.to_path_buf();if path.capacity()>path_bound{return Err(io::ErrorKind::OutOfMemory.into())}let fact=FileInput{path,stamp:digest.stamp,content:digest.content};
-        let mut receipt=RecordedSourceReceipt{exact_open:true,exact_loan_serial,original_bytes:None,issuer:Arc::clone(&self.source_issuer),legacy_path:None,fact};
+        let mut receipt=RecordedSourceReceipt{exact_open:true,checked_epoch:AtomicUsize::new(0),original_bytes:None,issuer:Arc::clone(&self.source_issuer),legacy_path:None,fact};
         let source=if exceptional{
             let funding = fund_text.map(|fund| fund.split_exceptional_bytes(
                 capacity, dm_resources::SharedBytes::owner_allocation_bytes(),
@@ -253,8 +251,8 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             }
             return Err(invalid("Original bytes lack a genuine recorded read receipt"));
         };
-        let current=if let Some(serial)=receipt.exact_loan_serial{
-            self.validate_exact_byte_loan(receipt,serial)
+        let current=if receipt.exact_open{
+            self.validate_exact_byte_loan(receipt)
         }else{
             self.validate_recorded_source_receipt(receipt.path(),receipt)
         };
@@ -296,7 +294,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         }
         let current = old.reissued(RecordedSourceReceipt {
             exact_open:false,
-            exact_loan_serial:None,
+            checked_epoch:AtomicUsize::new(0),
             original_bytes: previous.original_bytes.clone(),
             issuer: Arc::clone(&self.source_issuer),
             legacy_path: Some(path.clone()),
@@ -323,15 +321,21 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         acquired.receipt::<RecordedSourceReceipt>()
             .is_some_and(|receipt|self.validate_recorded_source_receipt(path,receipt))
     }
-    /// Each serial identifies one immutable exact receipt in this issuer.
     /// This is the self-path byte route. Explicit paths and reissues validate fully.
-    fn validate_exact_byte_loan(&self,receipt:&RecordedSourceReceipt,serial:NonZeroUsize)->bool{
+    fn validate_exact_byte_loan(&self,receipt:&RecordedSourceReceipt)->bool{
         if !receipt.exact_open||!Arc::ptr_eq(&receipt.issuer,&self.source_issuer){return false}
-        let Ok(mut current)=self.snapshot.lock() else{return false};
-        if current.reuse_exact_loan(serial){return true}
+        if self.snapshot.accepts_epoch(receipt.checked_epoch.load(Ordering::SeqCst)){return true}
+        let Ok(current)=self.snapshot.lock() else{return false};
         if !Self::exact_receipt_matches(&current,receipt.path(),receipt){return false}
-        current.remember_exact_loan(serial);
+        receipt.checked_epoch.store(current.epoch(),Ordering::SeqCst);
         true
+    }
+
+    #[cfg(test)]
+    pub(super) fn exact_loan_is_warm(&self,lease:&dm_preprocess::SourceAcquisitionLease)->bool{
+        lease.receipt::<RecordedSourceReceipt>().is_some_and(|receipt|
+            receipt.exact_open&&Arc::ptr_eq(&receipt.issuer,&self.source_issuer)
+                &&self.snapshot.accepts_epoch(receipt.checked_epoch.load(Ordering::SeqCst)))
     }
     fn validate_recorded_source_receipt(&self,path:&Path,receipt:&RecordedSourceReceipt)->bool{
         if receipt.exact_open{return self.validate_recorded_source_receipt_canonical(path,receipt)}

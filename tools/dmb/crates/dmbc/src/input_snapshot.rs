@@ -373,78 +373,90 @@ type OriginalOpenFacts=ImmutablePathFacts<OriginalReadOpenStatus>;
 pub(crate) use image_dir_report::{NamedImageDirCapture,NamedImageDirNoticeMode};
 pub(crate) use original_open_recording::OriginalPayloadDigest;
 type OriginalPayloadFacts=ImmutablePathFacts<OriginalPayloadDigest>;
-// Keep the memo inside the original recorder lock. Only the immutable snapshot
-// leaves this wrapper. Every mutable projection first discards the memo.
+// Publish only positive validation against the recorder's current exact facts.
 mod recording_snapshot {
     use super::InputSnapshot;
-    use std::{num::NonZeroUsize, ops::{Deref, DerefMut}};
+    use std::{ops::{Deref, DerefMut}, sync::{Mutex, MutexGuard, atomic::{AtomicUsize, Ordering}}};
+
+    pub(super) struct RecorderSnapshotCell {
+        inner: Mutex<RecordingSnapshot>,
+        published_epoch: AtomicUsize,
+    }
 
     pub(super) struct RecordingSnapshot {
         facts: InputSnapshot,
-        next_exact_loan: Option<NonZeroUsize>,
-        // Inline positive proofs for a few current exact receipts. A macro
-        // commonly alternates between its invocation and definition file.
-        // No source, path, snapshot owner or receipt is retained here.
-        exact_loans: [Option<NonZeroUsize>; 4],
+        epoch: usize,
     }
 
     impl RecordingSnapshot {
-        pub(super) fn new(facts: InputSnapshot) -> Self {
-            Self { facts, next_exact_loan: NonZeroUsize::new(1), exact_loans: [None; 4] }
-        }
-
         pub(super) fn into_facts(self) -> InputSnapshot { self.facts }
-
-        pub(super) fn issue_exact_loan_serial(&mut self) -> Option<NonZeroUsize> {
-            let serial = self.next_exact_loan?;
-            // Exhaustion disables this optimization. It is never a source
-            // error and an old serial is never issued again.
-            self.next_exact_loan = serial.get().checked_add(1).and_then(NonZeroUsize::new);
-            Some(serial)
-        }
-
-        pub(super) fn reuse_exact_loan(&mut self, serial: NonZeroUsize) -> bool {
-            let serial = Some(serial);
-            if self.exact_loans[0] == serial {
-                return true;
-            }
-            if self.exact_loans[1] == serial {
-                self.exact_loans.swap(0, 1);
-            } else if self.exact_loans[2] == serial {
-                self.exact_loans[..3].rotate_right(1);
-            } else if self.exact_loans[3] == serial {
-                self.exact_loans.rotate_right(1);
-            } else {
-                return false;
-            }
-            true
-        }
-
-        pub(super) fn remember_exact_loan(&mut self, serial: NonZeroUsize) {
-            self.exact_loans.rotate_right(1);
-            self.exact_loans[0] = Some(serial);
-        }
-
-        #[cfg(test)]
-        pub(super) fn cached_exact_loan(&self) -> Option<NonZeroUsize> { self.exact_loans[0] }
-
-        #[cfg(test)]
-        pub(super) fn cached_exact_loans(&self) -> [Option<NonZeroUsize>; 4] { self.exact_loans }
     }
 
-    impl Deref for RecordingSnapshot {
+    impl RecorderSnapshotCell {
+        pub(super) fn new(facts: InputSnapshot) -> Self {
+            Self {
+                inner: Mutex::new(RecordingSnapshot { facts, epoch: 1 }),
+                published_epoch: AtomicUsize::new(1),
+            }
+        }
+
+        pub(super) fn lock(&self) -> Result<RecorderSnapshotGuard<'_>, ()> {
+            let inner = self.inner.lock().map_err(|_| ())?;
+            // The guard cannot access any facts until fast validation is
+            // revoked. This covers unwinding even through read-only guards.
+            self.published_epoch.store(0, Ordering::SeqCst);
+            Ok(RecorderSnapshotGuard { inner, published_epoch: &self.published_epoch, changed: false })
+        }
+
+        pub(super) fn into_inner(self) -> Result<RecordingSnapshot, ()> {
+            self.inner.into_inner().map_err(|_| ())
+        }
+
+        pub(super) fn accepts_epoch(&self, checked: usize) -> bool {
+            checked != 0 && self.published_epoch.load(Ordering::SeqCst) == checked
+        }
+    }
+
+    pub(super) struct RecorderSnapshotGuard<'a> {
+        inner: MutexGuard<'a, RecordingSnapshot>,
+        published_epoch: &'a AtomicUsize,
+        changed: bool,
+    }
+
+    impl RecorderSnapshotGuard<'_> {
+        pub(super) fn epoch(&self) -> usize { self.inner.epoch }
+    }
+
+    impl Deref for RecorderSnapshotGuard<'_> {
         type Target = InputSnapshot;
-        fn deref(&self) -> &Self::Target { &self.facts }
+        fn deref(&self) -> &Self::Target { &self.inner.facts }
     }
 
-    impl DerefMut for RecordingSnapshot {
+    impl DerefMut for RecorderSnapshotGuard<'_> {
         fn deref_mut(&mut self) -> &mut Self::Target {
-            self.exact_loans = [None; 4];
-            &mut self.facts
+            if !self.changed {
+                self.changed = true;
+                // Saturation disables positive validation forever, so an
+                // older receipt cannot match a reused epoch.
+                if self.inner.epoch != 0 {
+                    self.inner.epoch = self.inner.epoch.checked_add(1).unwrap_or(0);
+                }
+            }
+            &mut self.inner.facts
+        }
+    }
+
+    impl Drop for RecorderSnapshotGuard<'_> {
+        fn drop(&mut self) {
+            // Publish while the actual mutex is held. If it becomes poisoned,
+            // leave the fast route revoked and let its next real lock refuse.
+            if !std::thread::panicking() {
+                self.published_epoch.store(self.inner.epoch, Ordering::SeqCst);
+            }
         }
     }
 }
-use recording_snapshot::RecordingSnapshot;
+use recording_snapshot::RecorderSnapshotCell;
 
 pub struct RecordingInputs<P = FileSystemInputs> {
     original_path_bank: Mutex<Option<dm_preprocess::source_arena_credit::SourceArenaControlCredit>>,
@@ -457,7 +469,7 @@ pub struct RecordingInputs<P = FileSystemInputs> {
     provider: P,
     /// Watcher position at creation: every fact recorded later was observed after it.
     created: Option<crate::fs_watch::WatchToken>,
-    snapshot: Mutex<RecordingSnapshot>,
+    snapshot: RecorderSnapshotCell,
     exact_reuse: bool,
     prepared: Option<std::sync::Arc<PreparedInputArtifacts>>,
     prepared_keys: Mutex<Vec<std::sync::Arc<[u8]>>>,
@@ -479,7 +491,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             source_acquisitions: Mutex::new(BTreeMap::new()),
             created,
             provider,
-            snapshot: Mutex::new(RecordingSnapshot::new(snapshot)),
+            snapshot: RecorderSnapshotCell::new(snapshot),
             exact_reuse: false,
             prepared: None,
             prepared_keys: Mutex::new(Vec::new()),
