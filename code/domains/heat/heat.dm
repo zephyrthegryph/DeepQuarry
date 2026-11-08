@@ -208,6 +208,10 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 /turf/space/heat_cell_kind()
 	return HEAT_CELL_SPACE
 
+/// Whether the turf's solid is space (HEAT_CELL_SPACE): type data the Rust core reads at round start (vg_hook_register_world_turfs()).
+/turf/var/heat_space_cell = FALSE
+/turf/space/heat_space_cell = TRUE
+
 /// Whether this turf's solid couples to air on it.
 /turf/proc/heat_has_air()
 	return FALSE

@@ -307,7 +307,15 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 /// sample already queued). FALSE queues it as before; the first such instance of a type is recorded as the sample.
 /proc/boot_created_hold(atom/A)
 	look_verdicts_load() // the verdicts a previous boot of this world learned: a known type is neither held nor sampled
-	if(GLOB.boot_created_settled || !materialization_host().frame_running() || !isnull(GLOB.type_look_stamp[A.type]) || ismob(A) || A.periodic_cadence || A.periodic_interval)
+	if(GLOB.boot_created_settled || !materialization_host().frame_running() || ismob(A) || A.periodic_cadence || A.periodic_interval)
+		return FALSE
+	if(!isnull(GLOB.type_look_stamp[A.type]))
+		// A known verdict (a previous boot of this world): a lazy type's fresh atom is parked at once when the boot leaves first draws to the clients,
+		// as the park would make of it, without a queue entry; any other is queued as before.
+		if(GLOB.type_look_lazy[A.type] && look_lazy_ok(A) && boot_drain_deferred())
+			A.refresh_queued = DEP_PARKED
+			GLOB.refresh_parked++
+			return TRUE
 		return FALSE
 	if(!GLOB.boot_created_sampled[A.type])
 		GLOB.boot_created_sampled[A.type] = TRUE
@@ -383,10 +391,16 @@ GLOBAL_VAR_INIT(look_verdicts_loaded, 0)
 	done = TRUE
 	if(!fexists(LOOK_VERDICTS_FILE))
 		return
-	var/list/data = json_decode(file2text(LOOK_VERDICTS_FILE))
-	if(!islist(data) || data["key"] != look_verdicts_key())
+	if(!look_verdicts_apply(json_decode(file2text(LOOK_VERDICTS_FILE))))
 		log_world("LOOK VERDICTS: the cache was written by another world; sampling at boot")
 		return
+	log_world("LOOK VERDICTS: [GLOB.look_verdicts_loaded] type verdict(s) read from the cache")
+
+/// Puts the verdicts of a cache document into the verdict tables when the document was written by this world (its key). FALSE, reading nothing,
+/// for a document of another world: its verdicts would draw this world's atoms wrong.
+/proc/look_verdicts_apply(list/data)
+	if(!islist(data) || data["key"] != look_verdicts_key())
+		return FALSE
 	var/list/stamp = data["stamp"]
 	var/list/lazy = data["lazy"]
 	for(var/name in stamp)
@@ -398,7 +412,7 @@ GLOBAL_VAR_INIT(look_verdicts_loaded, 0)
 		var/path = text2path(name)
 		if(path && isnull(GLOB.type_look_lazy[path]))
 			GLOB.type_look_lazy[path] = !!lazy[name]
-	log_world("LOOK VERDICTS: [GLOB.look_verdicts_loaded] type verdict(s) read from the cache")
+	return TRUE
 
 /// Writes every verdict known now (the boot settle has sampled what was new), for the next boot of this world.
 /proc/look_verdicts_save()

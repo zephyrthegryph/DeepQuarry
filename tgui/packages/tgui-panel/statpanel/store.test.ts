@@ -194,3 +194,32 @@ describe('stat panel store', () => {
     expect(visibleTabs(store.state)).toContain('Abilities');
   });
 });
+
+describe('MC Health updates', () => {
+  it('merge the sections a partial update carries into the panel data', () => {
+    const store = new StatStore({ sendMessage: () => {} });
+    store.receive('update_mc', {
+      mc_metrics: { header: { current_usage: 20 }, rust: { a: 1 } },
+      partial: false,
+    });
+    store.receive('update_mc', {
+      mc_metrics: { header: { current_usage: 30 } },
+      partial: true,
+    });
+    const data = store.state.mcMetrics as any;
+    expect(data.current_usage).toBe(30);
+    expect(data.rust).toEqual({ a: 1 });
+    store.receive('update_mc', { mc_metrics: { header: {} }, partial: false });
+    expect((store.state.mcMetrics as any).rust).toBeUndefined();
+  });
+});
+
+describe('stat panel store, fail-safe', () => {
+  it('a message it cannot read is dropped, and the next one still lands', () => {
+    const { store } = setup();
+    // A malformed abilities payload (no lists) once threw out of receive().
+    expect(() => store.receive('update_abilities', {})).not.toThrow();
+    store.receive('init_verbs', { verblist });
+    expect(store.state.verbs.length).toBe(verblist.length);
+  });
+});

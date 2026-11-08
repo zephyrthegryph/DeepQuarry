@@ -164,10 +164,51 @@ pub fn refresh_sampled() {
     });
 }
 
+/// The part of [`refresh_sampled`] the MC Health panel shows: the allocator, jobs, the FFI totals, the frame pool and each law's and field's awake
+/// and stepped counts. Not the scheduler lanes, the per-task times, the per-store memory walk or the fields' detailed step gauges, which a
+/// once-a-second read paid for and the panel never showed.
+pub fn refresh_panel() {
+    let metrics = registry();
+    metrics.record_alloc_tags(crate::allocator::tag_counters());
+    let (current, peak) = crate::allocator::diagnostics();
+    #[allow(clippy::cast_precision_loss)]
+    {
+        metrics.gauge("alloc.heap.current_bytes").set(current as f64);
+        metrics.gauge("alloc.heap.peak_bytes").set(peak as f64);
+        metrics.gauge("jobs.pending").set(crate::jobs::registry().pending() as f64);
+    }
+    let (mut calls_total, mut errors_total) = (0_u64, 0_u64);
+    for (_, calls, errors) in auxcallback::panic_guard::snapshot() {
+        calls_total += calls;
+        errors_total += errors;
+    }
+    metrics.counter("ffi.calls_total").set(calls_total);
+    metrics.counter("ffi.errors_total").set(errors_total);
+    let _ = crate::world::with_world(|w| {
+        let sim = w.sim().metrics();
+        #[allow(clippy::cast_precision_loss)]
+        for (name, v) in [
+            ("sim.frames_dispatched", sim.frames_dispatched as f64),
+            ("sim.frames_completed", sim.frames_completed as f64),
+            ("sim.light_frames", sim.light_frames as f64),
+            ("sim.dispatches_skipped", sim.dispatches_skipped as f64),
+            ("sim.last_frame_us", sim.last_frame.as_micros() as f64),
+            ("sim.max_frame_us", sim.max_frame.as_micros() as f64),
+        ] {
+            metrics.gauge(name).set(v);
+        }
+        for s in w.law_stats() {
+            metrics.gauge(&format!("world.awake.{}", s.name)).set(f64::from(s.awake));
+            metrics.gauge(&format!("world.stepped.{}", s.name)).set(f64::from(s.stepped));
+        }
+        Ok(())
+    });
+}
+
 /// The metrics whose names start with any of `prefixes` (comma-separated), after refreshing the sampled gauges: what the MC Health panel reads
 /// about once a second while it is open, whether or not the server metrics source takes its own snapshots.
 pub fn panel_json(prefixes: &str) -> String {
-    refresh_sampled();
+    refresh_panel();
     let mut out = String::from("{");
     for prefix in prefixes.split(',').map(str::trim).filter(|p| !p.is_empty()) {
         let family = registry().to_json_prefixed(prefix);

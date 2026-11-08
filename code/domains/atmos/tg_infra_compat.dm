@@ -225,16 +225,21 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 // (openspace) tile — i.e. the UPPER turf of the vertical pair must be the hole.
 // (istype instead of the isopenspace() macro: this compat file parses before
 // is_helpers.dm in the .dme, so the macro isn't defined yet here.)
+/// Whether this turf is a hole air falls through (openspace): its floor, its DOWN face, lets air pass. Type data, read by
+/// the Rust atmos core when it registers the map's turfs (vg_hook_register_world_turfs()), so DM asks nothing per turf.
+/turf/var/air_z_open = FALSE
+/turf/simulated/open/air_z_open = TRUE
+
 /turf/proc/zAirIn(direction, turf/source)
 	// Air rises UP into src from below only if src itself is a hole (no floor).
 	if(direction & UP)
-		return istype(src, /turf/simulated/open)
+		return air_z_open
 	return TRUE
 
 /turf/proc/zAirOut(direction, turf/source)
 	// Air falls DOWN out of src's bottom only if src itself is a hole (no floor).
 	if(direction & DOWN)
-		return istype(src, /turf/simulated/open)
+		return air_z_open
 	return TRUE
 
 /turf/proc/return_analyzable_air()

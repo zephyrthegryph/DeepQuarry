@@ -15,53 +15,104 @@
 /// second while the panel is open; it does not wait for the server metrics source, which may be off).
 GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_total", "ffi.errors_total", "jobs.pending", "alloc.", "process.", "world.awake.", "world.stepped."))
 
-/// The whole payload of the panel.
+/// How long the slow sections (the native walk, the attribution table, the longer windows, the collector, the counts) are kept before they are
+/// built again. The fast ones (the header, the 5 s window, the recent ticks) are built on every send (about once a second).
+#define MC_HEALTH_SLOW_EVERY (5 SECONDS)
+
+/// The whole payload of the panel, by section. A section that did not change since a client last got it is the same list object, so the sender
+/// (statpanel_service.dm) skips it without encoding it.
 /proc/mc_health_data()
+	return mc_health_fast() + mc_health_slow()
+
+/// The sections built on every send: cheap, and changing every tick.
+/proc/mc_health_fast()
 	var/list/history = Kernel.perf_tick_usage
-	var/list/kernel_data = km_panel_data()
-	var/list/systems = kernel_data["systems"]
-	var/list/shown_systems = systems.Copy(1, min(length(systems), 8) + 1) // the panel's top 8 expand
 	return list(
-		"tick_budget_ms" = world.tick_lag * 100,
-		"target_tps" = world.fps,
-		"current_usage" = history.len ? history[history.len] : 0,
-		"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
-		"tidi" = time_track_time_dilation_current(),
-		"tidi_fast" = time_track_time_dilation_avg_fast(),
-		"tidi_medium" = time_track_time_dilation_avg(),
-		"tidi_slow" = time_track_time_dilation_avg_slow(),
-		"window_5s" = Kernel.performance_window(5),
-		"window_30s" = Kernel.performance_window(30),
-		"window_5m" = Kernel.performance_window(300),
-		"ticks" = mc_health_recent_ticks(),
-		"outliers" = Kernel.perf_outliers.Copy(),
-		"subsystems" = mc_health_subsystems(),
-		"kernel" = kernel_data,
-		"attribution" = mc_health_attribution(shown_systems),
-		"gc" = mc_health_gc(),
-		"entities" = mc_health_entities(),
-		"churn" = mc_health_churn(),
-		"rust" = mc_health_rust(),
-		"runtime" = list(
-			"cpu" = world.cpu,
-			"clients" = length(GLOB.clients),
-			"tick_drift" = Kernel.tickdrift,
-			"kernel_ticks" = kernel().ticks,
-			"kernel_last_tick_ms" = kernel().last_tick_ms,
+		"header" = list(
+			"tick_budget_ms" = world.tick_lag * 100,
+			"target_tps" = world.fps,
+			"current_usage" = history.len ? history[history.len] : 0,
+			"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
+			"tidi" = time_track_time_dilation_current(),
 		),
+		"window_5s" = Kernel.performance_window(5),
+		"ticks" = mc_health_recent_ticks(),
 	)
 
-/// The last MC_HEALTH_TICKS ticks of the flight recorder: list(usage, list(top keys), list(top ms)) each, oldest first.
+/// The slow sections, in the groups that are rebuilt together. After the first send, at most one group is rebuilt per send (the stalest one past
+/// MC_HEALTH_SLOW_EVERY), so their cost is spread over the seconds instead of landing in one.
+GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution", "counts", "rust"))
+
+/// The sections kept for MC_HEALTH_SLOW_EVERY: the same list objects until their group is built again.
+/proc/mc_health_slow()
+	var/datum/system/statpanels/S = SSstatpanels
+	var/now = TIME_NOW(CLOCK_WORLD)
+	if(!S.mc_slow)
+		S.mc_slow = list()
+		S.mc_slow_built_at = list()
+	// A group never built is built at once (the panel's first send is whole); after that, the stalest due group only.
+	var/list/due = list()
+	var/stalest
+	for(var/group in GLOB.mc_health_slow_groups)
+		var/at = S.mc_slow_built_at[group]
+		if(isnull(at))
+			due += group
+		else if(now - at >= MC_HEALTH_SLOW_EVERY && (!stalest || at < S.mc_slow_built_at[stalest]))
+			stalest = group
+	if(!length(due) && stalest)
+		due += stalest
+	for(var/group in due)
+		S.mc_slow_built_at[group] = now
+		var/list/built = mc_health_slow_group(group)
+		for(var/section in built)
+			S.mc_slow[section] = built[section]
+	return S.mc_slow
+
+/// The sections of one slow group, built now.
+/proc/mc_health_slow_group(group)
+	switch(group)
+		if("ticks_long")
+			return list(
+				"window_30s" = Kernel.performance_window(30),
+				"window_5m" = Kernel.performance_window(300),
+				"outliers" = Kernel.perf_outliers.Copy(),
+				"subsystems" = mc_health_subsystems(),
+				"kernel" = km_panel_data(),
+				"runtime" = list(
+					"cpu" = world.cpu,
+					"clients" = length(GLOB.clients),
+					"tick_drift" = Kernel.tickdrift,
+					"kernel_ticks" = kernel().ticks,
+					"kernel_last_tick_ms" = kernel().last_tick_ms,
+				),
+			)
+		if("attribution")
+			var/list/systems = km_panel_data(8)["systems"] // the panel's top 8 expand
+			return list("attribution" = mc_health_attribution(systems))
+		if("counts")
+			return list("gc" = mc_health_gc(), "entities" = mc_health_entities(), "churn" = mc_health_churn())
+		if("rust")
+			return list("rust" = mc_health_rust())
+	return list()
+
+/// The last MC_HEALTH_TICKS ticks of the flight recorder: list(usage, list(top keys), list(top ms)) each, oldest first. Reads only those entries of
+/// the ring (recorded_entries() copies all of it).
 /proc/mc_health_recent_ticks()
-	var/list/entries = km_meter().recorded_entries()
-	var/first = max(1, length(entries) - MC_HEALTH_TICKS + 1)
+	var/datum/tick_meter/meter = km_meter()
+	var/datum/km_systems/registry = km_systems()
 	. = list()
-	for(var/i in first to length(entries))
-		var/list/entry = entries[i]
+	for(var/n in max(1, meter.ring_count - MC_HEALTH_TICKS + 1) to meter.ring_count)
+		var/at = meter.ring_index(n)
+		var/list/keys = list()
 		var/list/mss = list()
-		for(var/ms in entry[8])
-			mss += round(ms, 0.01)
-		. += list(list(round(entry[3], 0.1), entry[7], mss))
+		var/base = (at - 1) * KM_TOP_N
+		for(var/k in 1 to KM_TOP_N)
+			var/idx = meter.fr_top_sys[base + k]
+			if(!idx)
+				continue
+			keys += registry.keys[idx]
+			mss += round(meter.fr_top_ms[base + k], 0.01)
+		. += list(list(round(meter.fr_usage[at], 0.1), keys, mss))
 
 /// The hosted systems with periodic work: their cost per fire and that cost as a share of one tick ("usage", % of the tick budget).
 /proc/mc_health_subsystems()
@@ -159,16 +210,19 @@ GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_tota
 	var/datum/km_systems/registry = km_systems()
 	if(!attr)
 		return
+	var/list/wanted = list()
 	for(var/list/S as anything in systems)
 		var/sys = registry.index_by_key?[S["key"]]
-		if(!sys)
-			continue
+		if(sys)
+			wanted["[sys]"] = S["key"]
+	var/list/best = attr.select_top_by_system(per_system, wanted)
+	for(var/sys_key in best)
 		var/list/rows = list()
-		for(var/list/row as anything in attr.select_top(per_system, KA_BY_TOTAL, sys))
+		for(var/list/row as anything in best[sys_key])
 			var/list/data = attr.row_data(row)
 			rows += list(list(data["source"], data["kind"], data["count"], data["total_ms"], data["max_ms"]))
 		if(length(rows))
-			.[S["key"]] = rows
+			.[wanted[sys_key]] = rows
 
 // ---- the Advanced section's links: View Variables of a controller named by the link, not by a ref (the server resolves the name) ----
 
@@ -194,6 +248,7 @@ CAPABILITIES_PART(/datum/admins, mc_health)
 		return
 	owner()?.debug_variables(target)
 
+#undef MC_HEALTH_SLOW_EVERY
 #undef MC_HEALTH_CENSUS_EVERY
 #undef MC_HEALTH_TICKS
 #undef MC_HEALTH_CHURN_TOP

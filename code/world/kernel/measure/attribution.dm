@@ -193,6 +193,27 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 			consider(row, by, sys, kind_mask, n, best, best_value)
 	return best
 
+/// The heaviest `n` rows (all ms) of each system in `wanted` ("[system index]" -> TRUE), in one walk of the table: list("[system index]" -> list(rows)),
+/// best first. What the MC Health panel expands its system rows into; select_top() per system walked the table once per system.
+/datum/km_attr/proc/select_top_by_system(n, list/wanted)
+	var/list/best = list()
+	var/list/best_value = list()
+	for(var/key in wanted)
+		best[key] = list()
+		best_value[key] = list()
+	for(var/a in rows)
+		var/list/by_a = rows[a]
+		for(var/b in by_a)
+			var/list/row = by_a[b]
+			var/key = "[row[KA_SYS]]"
+			if(wanted[key])
+				consider(row, KA_BY_TOTAL, row[KA_SYS], 0, n, best[key], best_value[key])
+	for(var/list/row as anything in overflow)
+		var/key = "[row[KA_SYS]]"
+		if(wanted[key])
+			consider(row, KA_BY_TOTAL, row[KA_SYS], 0, n, best[key], best_value[key])
+	return best
+
 /datum/km_attr/proc/consider(list/row, by, sys, kind_mask, n, list/best, list/best_value)
 	if(sys && row[KA_SYS] != sys)
 		return

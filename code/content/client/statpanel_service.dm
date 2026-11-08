@@ -8,6 +8,11 @@ SYSTEM_DEF(statpanels)
 	var/list/currentrun = list()
 	var/list/global_data
 	var/list/mc_metrics
+	/// ckey -> (section -> the section's list as last sent to that client): what each admin's MC Health panel already holds.
+	var/list/mc_sent_by_client = list()
+	/// The MC Health panel's slow sections (mc_health_slow()), and when each group of them was built (group -> world time).
+	var/list/mc_slow
+	var/list/mc_slow_built_at
 	var/mc_metrics_generated_at = 0
 	mc_metrics_generated_at = -INFINITY
 
@@ -161,10 +166,29 @@ SYSTEM_DEF(statpanels)
 	if(!mc_metrics || ELAPSED(src, mc_metrics_generated_at, CLOCK_WORLD) >= 1 SECONDS)
 		mc_metrics = mc_health_data()
 		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
+	// Only the sections this client has not got: a slow section (mc_health_slow()) is the same list object until it is built again, so an
+	// unchanged one is skipped without encoding it. A client that opens the panel or reloads its page gets everything (mc_health_forget()).
+	var/key = target.ckey
+	var/list/sent = mc_sent_by_client[key]
+	if(!sent)
+		sent = list()
+		mc_sent_by_client[key] = sent
+	var/list/changed = list()
+	for(var/section in mc_metrics)
+		var/value = mc_metrics[section]
+		if(sent[section] != value)
+			changed[section] = value
+			sent[section] = value
 	target.stat_panel.send_message("update_mc", list(
-		"mc_metrics" = mc_metrics,
+		"mc_metrics" = changed,
+		"partial" = length(changed) != length(mc_metrics),
 		"coord_entry" = COORD(eye_turf),
 	))
+
+/// The client's panel holds none of the MC Health sections any more (it was opened again or its page reloaded): the next send is whole.
+/datum/system/statpanels/proc/mc_health_forget(client/target)
+	if(target)
+		mc_sent_by_client -= target.ckey
 
 /datum/system/statpanels/proc/set_tickets_tab(client/target)
 	var/list/tickets = list()
