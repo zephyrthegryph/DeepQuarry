@@ -201,3 +201,28 @@ describe('the chat at login', () => {
     expect(host.state.windows[CHAT_PENDING]).toBeUndefined();
   });
 });
+
+describe('a column window message', () => {
+  it('arrives as one envelope {wid, type, payload}, decoded once with the page message', () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-9', kind: 'tgui' });
+    const got: unknown[] = [];
+    host.backends
+      .get('col-9')!
+      .listeners.add((type, payload) => got.push([type, payload]));
+    host.receive('col/msg', {
+      wid: 'col-9',
+      type: 'update_stat',
+      payload: { ping_str: 'Ping: 42ms' },
+    });
+    // A raw native string (an asset mapping) still works.
+    host.receive('col/msg', {
+      wid: 'col-9',
+      raw: raw('asset/mappings', { a: 1 }),
+    });
+    expect(got).toEqual([
+      ['update_stat', { ping_str: 'Ping: 42ms' }],
+      ['asset/mappings', { a: 1 }],
+    ]);
+  });
+});
