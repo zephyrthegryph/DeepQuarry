@@ -161,8 +161,9 @@ floating, it is reparented into its own window (`chat_float_host`).
   interface and reuses pooled windows), and remove each cause above:
   - windows are **never hidden for a drag**: they ride along with their entry. The live drag moves entries with a CSS transform,
     `getBoundingClientRect()` includes it, and the panel re-places every frame. Drop targets are headers, which windows never cover;
-  - **one batched `winset` per frame** for all the windows that moved (`Byond.winset(null, {"id.pos": ..., "id.size": ...})`),
-    so they all move in the same native call, and only the ones whose rect changed;
+  - **only the windows whose rect changed** are sent, each as its own `Byond.winset(id, params)`, all in the same frame. A bulk
+    `Byond.winset({"id.pos": ...})` (an object as the first argument sends no `id`) was tried on 2026-11-08 and BYOND applied
+    none of it: no docked window was ever shown (`dockHost.test.ts` holds every placement to a named window);
   - the origin is measured **on events** (load, resize, dock change, the start of a drag), with only a slow fallback poll. A docked
     window moves only when its box does;
   - dock and undock **keep the window** (pooled, never destroyed), and a float goes straight to the pointer in the same reveal.
@@ -171,7 +172,7 @@ Also part of the one system: floating windows (tgui and the chat) may sit on any
 -32000 park, or no size) is brought back (`lostRect`, `chat_float_lost`). The right column has one 3px gap between pages: the
 stat panel leaves out its frame edge on the chat's side (`html[data-chat-side]`).
 
-What stays: one `winset` per frame while something moves, and a docked window's page re-renders only when its own data changes.
+What stays: one `winset` per moved window per frame while something moves, and a docked window's page re-renders only when its own data changes.
 
 ### 10.5 Windows that still open their own way
 

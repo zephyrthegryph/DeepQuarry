@@ -51,6 +51,11 @@
   // Readable message text, like the mock: a plain sans face at 12px, normal
   // weight, 1.5 line height (the chrome above is the bold monospace). A size
   // from the player's settings is an inline style and wins over this.
+  // The chat's scroll container stops 2px short of the window's right border, so the scrollbar does not touch it.
+  #chat-pane {
+    right: 2px;
+  }
+
   .Chat {
     padding: 8px;
     font-family: Verdana, Geneva, sans-serif;
