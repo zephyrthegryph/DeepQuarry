@@ -9,7 +9,7 @@ import {
   parseSaved,
   serializeSaved,
   shownIds,
-} from './windowDock';
+} from './model';
 
 const win = (id: string, iface = id.toUpperCase()) => ({
   id,

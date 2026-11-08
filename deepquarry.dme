@@ -6505,6 +6505,7 @@
 #include "code\library\ui\tgchat\chat_service.dm"
 #include "code\library\ui\tgchat\message.dm"
 #include "code\library\ui\tgchat\to_chat.dm"
+#include "code\library\ui\tgui\column_part.dm"
 #include "code\content\tgs_commands\chat_commands.dm"
 #include "code\library\ui\tgui\states.dm"
 #include "code\library\ui\tgui\ui_status.dm"

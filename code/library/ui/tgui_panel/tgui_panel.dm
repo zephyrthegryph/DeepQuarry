@@ -85,6 +85,10 @@ CAPABILITIES(/datum/tgui_panel)
  * Callback for handling incoming tgui messages.
  */
 /datum/tgui_panel/proc/on_message(type, payload, href_list)
+	if(type == "col/msg")
+		// A message from one of the column page's windows (the stat panel, a docked interface): to that window (column_part.dm).
+		column_route(client(), payload)
+		return TRUE
 	if(type == "ready")
 		broken = FALSE
 		var/list/stored_rounds = CONFIG_GET(flag/chatlog_database_backend) ? vchatlog_get_recent_roundids(client().ckey) : null
@@ -111,6 +115,13 @@ CAPABILITIES(/datum/tgui_panel)
 				),
 			),
 		))
+		// A (re)loaded column page holds no windows: its saved arrangement first, then every column part opens in it again (its UI gets a full
+		// update on `ready`).
+		window.send_message("col/init", list("saved" = client()?.prefs?.read_preference(/datum/preference/text/window_layout) || ""))
+		for(var/window_id in client()?.session?.tgui_windows)
+			var/datum/tgui_window/column_part/part = client().session.tgui_windows[window_id]
+			if(istype(part) && part.status != TGUI_WINDOW_CLOSED)
+				part.reinitialize()
 		// The page is up, so the chat pane can move to where the preference wants it without interrupting the load.
 		client()?.chat_layout_sync()
 		client()?.chat_send_input_state()

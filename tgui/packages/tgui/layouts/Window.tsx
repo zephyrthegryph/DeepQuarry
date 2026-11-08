@@ -8,6 +8,7 @@ import {
   type ComponentProps,
   type PropsWithChildren,
   type ReactNode,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -30,6 +31,7 @@ import {
   setWindowPosition,
   storeWindowGeometry,
 } from '../drag';
+import { EmbeddedContext } from '../embedded';
 import { suspendStart } from '../events/handlers/suspense';
 import { createLogger } from '../logging';
 import { profileStartup } from '../profiling/hooks';
@@ -81,7 +83,48 @@ type Props = Partial<{
 }> &
   PropsWithChildren;
 
+/**
+ * A tgui window. In its own native window it is the full frame (title bar,
+ * geometry, reveal, resize); embedded in the right-hand column's page
+ * (EmbeddedInterface) it is only its content, and the column's window manager
+ * draws the frame, as it does for the chat and the stat panel.
+ */
 export function Window(props: Props) {
+  return useContext(EmbeddedContext) ? (
+    <EmbeddedWindow {...props} />
+  ) : (
+    <NativeWindow {...props} />
+  );
+}
+
+function EmbeddedWindow(props: Props) {
+  const { theme, children } = props;
+  const { config } = useBackend();
+  // No useConsoleScanlines: it sets a page-wide variable, and the column page keeps its own.
+  const showDimmer =
+    config.user &&
+    (config.user.observer
+      ? config.status < UI_DISABLED
+      : config.status < UI_INTERACTIVE);
+  const readOnly = !!config.user?.observer && config.status < UI_INTERACTIVE;
+  return (
+    <Layout
+      className={classes([
+        'Window',
+        'Window--embedded',
+        readOnly && 'Window--readonly',
+      ])}
+      theme={theme}
+    >
+      <div className="Window__rest">
+        {children}
+        {showDimmer && <div className="Window__dimmer" />}
+      </div>
+    </Layout>
+  );
+}
+
+function NativeWindow(props: Props) {
   const {
     canClose = true,
     theme,

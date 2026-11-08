@@ -118,7 +118,8 @@
 	if(status < STATUS_UPDATE)
 		return FALSE
 	if(!window())
-		rel_set(src, nameof(window), SStgui.request_pooled_window(user))
+		// A docked interface opens in the right-hand column's page (column_part.dm), anything else in a pooled native window.
+		rel_set(src, nameof(window), dock_window() || SStgui.request_pooled_window(user))
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	startup_profile["pool_acquired_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
@@ -594,7 +595,7 @@
 				send_full_update()
 			initialized = TRUE
 			cancel_after(src, "ping")
-		if("wm/dock", "wm/ready", "wm/log")
+		if("wm/dock", "wm/float", "wm/dropped", "wm/log")
 			dock_message(type, payload)
 		if("ping/reply")
 			initialized = TRUE

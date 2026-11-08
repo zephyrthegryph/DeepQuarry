@@ -276,10 +276,10 @@ window "rpane"
 		anchor1 = 0,0
 		anchor2 = 100,100
 		saved-params = ""	// not saved: the chat share is a preference (chat_layout_sync), and a share saved for the other end would flip
-		splitter = 60	// the stat panel above, the chat below with the default 40% share
-		show-splitter = false	// the chat page draws live handles on its own edge (tgui-panel/layout); BYOND's bar only applies on release
-		left = "statwindow"
-		right = "outputwindow"
+		splitter = 100	// the chat's pane is the whole column: the column page holds the stat panel, the chat and docked windows (tgui-panel/column)
+		show-splitter = false
+		left = "outputwindow"
+		right = ""
 		is-vert = false
 	elem "mediapanel"
 		type = BROWSER

@@ -3625,8 +3625,6 @@ const TGUI_ENTRY_BUNDLES = [
   'tgui/public/tgui.bundle.css',
   'tgui/public/tgui-panel.bundle.js',
   'tgui/public/tgui-panel.bundle.css',
-  'tgui/public/tgui-statpanel.bundle.js',
-  'tgui/public/tgui-statpanel.bundle.css',
 ];
 const TGUI_CHUNK_MANIFEST = 'tgui/public/tgui-chunk-manifest.json';
 const TGUI_WINDOW_MANIFEST = 'tgui/public/tgui-window-manifest.json';
@@ -3691,8 +3689,6 @@ export const TguiTarget = new Juke.Target({
     'tgui/public/tgui.bundle.js',
     'tgui/public/tgui-panel.bundle.css',
     'tgui/public/tgui-panel.bundle.js',
-    'tgui/public/tgui-statpanel.bundle.css',
-    'tgui/public/tgui-statpanel.bundle.js',
     // Code-split interface chunks are emitted alongside the entry bundles; the
     // manifest maps interface name -> chunk file (consumed by SStgui). Tracking the
     // manifest as an output makes Juke rebuild if it's missing (e.g. a public/ wipe)

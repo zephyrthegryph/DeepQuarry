@@ -126,6 +126,8 @@
 	TEST_ASSERT_EQUAL(seen[2], 35, "the splitter is the chat share at the top")
 	seen = chat_layout_observe("left=[SKIN_STAT_PANE];right=;splitter=100")
 	TEST_ASSERT_EQUAL(seen[1], CHAT_MODE_FLOAT, "the stat panel alone in the split means the chat floats")
+	seen = chat_layout_observe("left=[SKIN_OUTPUT_PANE];right=;splitter=100")
+	TEST_ASSERT_EQUAL(seen[1], CHAT_MODE_COLUMN, "the chat's pane alone in the split is the column page, already in place")
 	seen = chat_layout_observe(null)
 	TEST_ASSERT_EQUAL(seen[1], CHAT_MODE_BOTTOM, "an unreadable report is the skin's own layout")
 	TEST_ASSERT_EQUAL(seen[2], CHAT_SHARE_DEFAULT, "with the default share")

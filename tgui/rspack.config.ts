@@ -163,7 +163,6 @@ export default defineConfig({
   entry: {
     tgui: './packages/tgui',
     'tgui-panel': './packages/tgui-panel',
-    'tgui-statpanel': './packages/tgui-panel/statpanel',
   },
   mode: 'production',
   module: {

@@ -113,7 +113,7 @@ export async function mainBounds(): Promise<Bounds | null> {
 }
 
 /** The right-hand column (stat panel and chat) in screen pixels, or null when it cannot be told. */
-async function measureColumn(main: Bounds | null): Promise<Rect | null> {
+export async function measureColumn(main: Bounds | null): Promise<Rect | null> {
   if (!main) {
     return null;
   }

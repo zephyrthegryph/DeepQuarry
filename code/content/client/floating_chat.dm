@@ -11,6 +11,8 @@
 #define CHAT_MODE_BOTTOM "bottom"
 #define CHAT_MODE_TOP "top"
 #define CHAT_MODE_FLOAT "float"
+/// The chat's pane is the whole right-hand column: the column page (tgui-panel/column) holds the chat and every other window.
+#define CHAT_MODE_COLUMN "column"
 /// Before the first sync of a connection: where the client's skin really has the chat pane is not known yet (a reconnect after a
 /// round restart keeps the client's skin as the player left it, while this server-side state starts over).
 #define CHAT_MODE_UNKNOWN "unknown"
@@ -186,6 +188,8 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 	var/left = read["left"]
 	var/right = read["right"]
 	var/splitter = text2num(read["splitter"])
+	if(left == SKIN_OUTPUT_PANE && !right)
+		return list(CHAT_MODE_COLUMN, 100)
 	if(right == SKIN_OUTPUT_PANE)
 		return list(CHAT_MODE_BOTTOM, isnum(splitter) ? chat_share_for_splitter(CHAT_MODE_BOTTOM, splitter) : CHAT_SHARE_DEFAULT)
 	if(left == SKIN_OUTPUT_PANE)
@@ -230,21 +234,22 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 	var/mob/new_player/lobby_mob = mob
 	if(istype(lobby_mob) && lobby_mob.lobby_window)
 		winset(src, SKIN_LOBBY_BROWSER, "is-disabled=false;is-visible=true")
-	var/mode = chat_mode_for(prefs.read_preference(/datum/preference/toggle/chat_floating), prefs.read_preference(/datum/preference/choiced/chat_dock_side))
-	var/share = chat_share_clamped(prefs.read_preference(/datum/preference/numeric/chat_share))
-	switch(chat_layout_change(mode, share, chat_layout_mode, chat_layout_share))
-		if(CHAT_CHANGE_LAYOUT)
-			var/params = chat_layout_params(mode, share, chat_layout_mode)
-			winset(src, null, params)
-			log_tgui(src, "Chat layout: [chat_layout_mode] -> [mode], share [share]. winset: [params]", context = "chat_float")
-			chat_layout_mode = mode
-			chat_layout_share = share
-			if(mode == CHAT_MODE_FLOAT)
-				dx_winget(src, src, SKIN_CHAT_FLOAT_WINDOW, "pos;size", PROC_REF(chat_float_measured))
-		if(CHAT_CHANGE_SPLITTER)
-			winset(src, SKIN_RPANE_SPLIT, "splitter=[chat_splitter_for(mode, share)]")
-			log_tgui(src, "Chat share: [chat_layout_share] -> [share].", context = "chat_float")
-			chat_layout_share = share
+	// The column is one page (doc/rewrite/proposals/window_system.md section 12): the chat's pane holds the whole right-hand column, and the
+	// stat panel, the chat and docked windows are windows inside it. The pane is put there once per connection (a re-parent reloads it).
+	if(chat_layout_mode != CHAT_MODE_COLUMN)
+		var/list/steps = list()
+		if(chat_layout_mode == CHAT_MODE_FLOAT)
+			steps += "[SKIN_CHAT_FLOAT_WINDOW].is-visible=false"
+			steps += "[SKIN_CHAT_FLOAT_HOST].left="
+		steps += "[SKIN_RPANE_SPLIT].left="
+		steps += "[SKIN_RPANE_SPLIT].right="
+		steps += "[SKIN_RPANE_SPLIT].left=[SKIN_OUTPUT_PANE]"
+		steps += "[SKIN_RPANE_SPLIT].splitter=100"
+		var/params = jointext(steps, ";")
+		winset(src, null, params)
+		log_tgui(src, "Chat layout: [chat_layout_mode] -> the whole column. winset: [params]", context = "chat_float")
+		chat_layout_mode = CHAT_MODE_COLUMN
+		chat_layout_share = 100
 	tgui_panel?.window?.send_message("chat/layout", list("mode" = chat_layout_mode, "share" = chat_layout_share))
 
 /// dx_winget() callback: the chat pane's real place is known, so the first sync can move it only if the preferences ask for another.

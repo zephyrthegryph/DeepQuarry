@@ -37,10 +37,12 @@ describe('chat tabs', () => {
 
   it('share the stat panel tab row', () => {
     expect(read('chat/ChatTabs.tsx')).toContain("from 'tgui/dq'");
-    expect(read('statpanel/App.tsx')).toContain("from 'tgui/dq'");
+    // The stat panel's views are the column's stacked tabs: the same DQ tab strip (column/Column.tsx).
+    expect(read('column/Column.tsx')).toContain("from 'tgui/dq'");
     // No second tab row of their own (tgui-core's Tabs.Tab used directly).
     for (const path of [
       'chat/ChatTabs.tsx',
+      'column/Column.tsx',
       'statpanel/App.tsx',
       'statpanel/InspectTab.tsx',
       'statpanel/McHealth.tsx',
