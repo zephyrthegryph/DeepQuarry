@@ -806,18 +806,14 @@ body {
   border-bottom: 1px solid var(--stat-line);
 }
 
-// Entries slide aside live while one is dragged (the DQ tab strip's motion, along y).
+// Entries slide aside live while one is dragged (the DQ tab strip's motion, along y). No transition: the docked windows are
+// placed from the entries' rects each frame, and an eased slide would leave them a frame behind.
 .dock-group {
   position: relative;
   border-top: 1px solid var(--stat-line);
 
-  .dock-area--dragging & {
-    transition: transform 120ms ease;
-  }
-
   &--dragged {
     z-index: 3;
-    transition: none !important;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     cursor: grabbing;
   }
