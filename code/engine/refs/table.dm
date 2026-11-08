@@ -408,76 +408,89 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /// This is the one path a relation write marks what reads it: a list view written in place (a member added or removed) and a single ref come here alike, so a reader
 /// is marked once per write and a var nothing reads marks nothing (a bookkeeping list stays free to be written from anywhere).
 /proc/own_field_changed(datum/holder, var_name)
-	// The fast path (perf/own-field-memo): a var that no static reader of the holder's type follows (own_field_static_work(), memoized per
-	// type) and that no live index names (derived reads and hop keys grow at run time, so they are asked every time) on a holder with no
-	// dynamic reader (an observer, a worn watch, an activation's hook all live on holder.rx) has nothing to publish: the full path would run
-	// every check below and do nothing.
-	if(holder && !GLOB.own_field_memo_off && !GLOB?.derived_read_vars?[var_name] && !GLOB?.change_hop_keys?[var_name])
-		var/datum/rx_state/S = holder.rx
-		if((!S || (!S.observed && !S.worn_watched && !S.hooks)) && !own_field_static_work(holder, var_name))
-			GLOB.own_field_memo_spared++
-			return
+	if(!holder)
+		if(GLOB?.derived_read_vars?[var_name])
+			derived_var_touched(holder, var_name)
+		return
+	// What the holder's type has for this var is one memo (own_field_static_work(): which of the parts below has work, OFW_* bits, per (type, var));
+	// what grows at run time (derived reads, hop keys, the stat hops and systems that read the var, the holder's own observers, worn watch and
+	// activation hooks on holder.rx) is asked every time. A part with neither is not entered; a write with neither for every part costs the memo.
+	var/bits = GLOB.own_field_memo_off ? OFW_ALL : own_field_static_work(holder, var_name)
+	var/derived = GLOB?.derived_read_vars?[var_name]
+	var/hop_key = GLOB?.change_hop_keys?[var_name]
+	var/datum/rx_state/S = holder.rx
+	var/dynamic = S && (S.observed || S.worn_watched || S.hooks)
+	var/stat_key = GLOB?.stat_input_keys?[var_name]
+	var/stat_global = stat_key && (GLOB.stat_hop_index?[var_name] || GLOB.stat_sys_vars?[var_name])
+	if(!bits && !derived && !hop_key && !dynamic && !stat_global)
+		GLOB.own_field_memo_spared++
+		return
 	BOOT_PHASE_COUNT("ofc full path: [var_name]")
 	BOOT_PHASE_BEGIN(bp_all)
 	// A type that declares reading this var (or hopping over it) re-derives what reads it (derived.dm).
-	if(GLOB?.derived_read_vars?[var_name])
+	if(derived)
 		BOOT_PHASE_BEGIN(bp_derived)
 		derived_var_touched(holder, var_name)
 		BOOT_PHASE_END(bp_derived, "ofc derived_var_touched: [var_name]", holder)
-	// A relation var some stat reads through, or contributes to a stat across: the stat layer follows it.
-	if(holder && GLOB?.stat_input_keys?[var_name])
-		BOOT_PHASE_BEGIN(bp_rel)
-		stat_relation_changed(holder, var_name)
-		BOOT_PHASE_END(bp_rel, "ofc stat_relation_changed: [var_name]", holder)
-		BOOT_PHASE_BEGIN(bp_inputs)
-		stat_inputs_changed(holder, var_name)
-		BOOT_PHASE_END(bp_inputs, "ofc stat_inputs_changed: [var_name]", holder)
-	// A relation write publishes each end it touches (both ends of a paired view call this).
-	BOOT_PHASE_BEGIN(bp_readers)
-	var/has_readers = holder && READERS(holder, var_name)
-	BOOT_PHASE_END(bp_readers, "ofc READERS: [var_name]", holder)
-	if(has_readers)
-		BOOT_PHASE_BEGIN(bp_publish)
-		publish_change(holder, var_name)
-		BOOT_PHASE_END(bp_publish, "ofc publish_change: [var_name]", holder)
-		// A type with no derived() table has nothing to route a read to (derived_var_touched found none): the old rule holds, a change
-		// that something reads re-derives everything. Its draw()'s reads are generated (generated_reads()), so READERS knows them.
-		if(!QDELING(holder) && !derived_is_exact(holder))
-			BOOT_PHASE_BEGIN(bp_state)
-			state_changed(holder)
-			BOOT_PHASE_END(bp_state, "ofc state_changed(all): [var_name]", holder)
+	// A relation var some stat reads through, or contributes to a stat across: the stat layer follows it. stat_relation_changed() acts only on a
+	// contribution or hop of the holder's type that the var carries (OFW_STAT_REL); stat_inputs_changed() on a stat of the type that takes it as an
+	// input (OFW_STAT_IN) or a reader elsewhere reaching the holder through it (the hop index, a system).
+	if(stat_key)
+		if(bits & OFW_STAT_REL)
+			BOOT_PHASE_BEGIN(bp_rel)
+			stat_relation_changed(holder, var_name)
+			BOOT_PHASE_END(bp_rel, "ofc stat_relation_changed: [var_name]", holder)
+		if((bits & OFW_STAT_IN) || stat_global)
+			BOOT_PHASE_BEGIN(bp_inputs)
+			stat_inputs_changed(holder, var_name)
+			BOOT_PHASE_END(bp_inputs, "ofc stat_inputs_changed: [var_name]", holder)
+	// A relation write publishes each end it touches (both ends of a paired view call this). READERS() finds a static reader of the type (OFW_READ),
+	// a dynamic one on holder.rx or a hop key; with none of them it answers FALSE, so it is not asked.
+	if((bits & OFW_READ) || dynamic || hop_key)
+		BOOT_PHASE_BEGIN(bp_readers)
+		var/has_readers = READERS(holder, var_name)
+		BOOT_PHASE_END(bp_readers, "ofc READERS: [var_name]", holder)
+		if(has_readers)
+			BOOT_PHASE_BEGIN(bp_publish)
+			publish_change(holder, var_name)
+			BOOT_PHASE_END(bp_publish, "ofc publish_change: [var_name]", holder)
+			// A type with no derived() table has nothing to route a read to (derived_var_touched found none): the old rule holds, a change
+			// that something reads re-derives everything. Its draw()'s reads are generated (generated_reads()), so READERS knows them.
+			if(!QDELING(holder) && !derived_is_exact(holder))
+				BOOT_PHASE_BEGIN(bp_state)
+				state_changed(holder)
+				BOOT_PHASE_END(bp_state, "ofc state_changed(all): [var_name]", holder)
 	// A draw one container, turf or area hop away reads it: it redraws (refs/hops.dm).
-	if(holder && draw_hop_reads_var(var_name))
+	if((bits & OFW_HOP) && draw_hop_reads_var(var_name))
 		BOOT_PHASE_BEGIN(bp_hop)
 		draw_hop_published(holder, var_name)
 		BOOT_PHASE_END(bp_hop, "ofc draw_hop_published: [var_name]", holder)
-	var/datum/definition_registry/R = GLOB?.definition_store
-	if(!R || !holder)
-		BOOT_PHASE_END(bp_all, "ofc full path total: [var_name]", holder)
-		return
-	var/list/fields = R.fields_by_type[holder.type] || R.fields_of(holder.type)
-	var/channel = fields[var_name]
-	if(channel)
-		BOOT_PHASE_BEGIN(bp_chan)
-		state_changed(holder, channel)
-		BOOT_PHASE_END(bp_chan, "ofc state_changed(channel): [var_name]", holder)
+	if(bits & OFW_CHANNEL)
+		var/datum/definition_registry/R = GLOB?.definition_store
+		if(R)
+			var/list/fields = R.fields_by_type[holder.type] || R.fields_of(holder.type)
+			var/channel = fields[var_name]
+			if(channel)
+				BOOT_PHASE_BEGIN(bp_chan)
+				state_changed(holder, channel)
+				BOOT_PHASE_END(bp_chan, "ofc state_changed(channel): [var_name]", holder)
 	BOOT_PHASE_END(bp_all, "ofc full path total: [var_name]", holder)
 
-/// TRUE runs own_field_changed()'s full path for every write (the parity test, debugging).
+/// TRUE enters every part of own_field_changed() for every write (OFW_ALL: the parity test, debugging).
 GLOBAL_VAR_INIT(own_field_memo_off, FALSE)
-/// Writes own_field_changed() answered from the memo without running its checks (the boot bench reads it).
+/// Writes own_field_changed() answered from the memo without entering any part (the boot bench reads it).
 GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 
-/// type -> var name -> TRUE/FALSE: whether a static reader of the type follows the var. A static, not a GLOB list: relation writes run while
-/// the globals are still being made.
+/// type -> var name -> OFW_* bits: which parts of own_field_changed() a static reader of the type gives work. A static, not a GLOB list: relation
+/// writes run while the globals are still being made.
 /proc/own_field_memo()
 	RETURN_TYPE(/list)
 	var/static/list/memo = list() // ALLOW(sys_static_getter): relation writes run while the globals are being made; the memo is a per-type fact table
 	return memo
 
-/// TRUE when something that never changes for holder's type reads var_name: a stat input, a draw one hop away, an field channel, a reaction
-/// of the type, a lifecycle form or a type-level on_change. Memoized per (type, var) once every table it folds is built; before that it is
-/// asked fresh every time (an unbuilt table answers "nothing yet" without caching).
+/// The OFW_* bits of what never changes for holder's type and var_name: a stat of the type that takes it as an input, a contribution or hop of the
+/// type it carries, a draw one hop away, a field channel, a reaction of the type, a lifecycle form or a type-level on_change. Memoized per
+/// (type, var) once every table it folds is built; before that every part is entered (OFW_ALL), as before the memo.
 /proc/own_field_static_work(datum/holder, var_name)
 	var/list/memo = own_field_memo()
 	var/list/by_var = memo[holder.type]
@@ -485,41 +498,55 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 		var/known = by_var[var_name]
 		if(!isnull(known))
 			return known
+	if(!GLOB?.draw_hop_vars_built || !islist(GLOB.rx_tables) || !islist(GLOB.change_index_by_type) || !GLOB.definition_store || !islist(GLOB.stat_type_index) || table_of(holder) == table_empty())
+		return OFW_ALL
 	. = own_field_static_readers(holder, var_name)
-	if(!GLOB?.draw_hop_vars_built || !islist(GLOB.rx_tables) || !islist(GLOB.change_index_by_type) || !GLOB.definition_store || table_of(holder) == table_empty())
-		return
 	if(!by_var)
 		by_var = list()
 		memo[holder.type] = by_var
 	by_var[var_name] = .
 
-/// own_field_static_work()'s answer, unmemoized: the static half of every check own_field_changed() runs.
+/// own_field_static_work()'s answer, unmemoized: the OFW_* bits of the static half of every part own_field_changed() enters. The dynamic half (the
+/// stat layer's hop index and system reads, derived reads, hop keys, holder.rx) is asked by own_field_changed() itself.
 /proc/own_field_static_readers(datum/holder, var_name)
-	if(stat_type_reads_key(holder, var_name))
-		return TRUE
+	. = 0
+	if(GLOB?.stat_input_keys?[var_name])
+		var/datum/stat_type_info/I = stat_type_of(holder)
+		if(!I)
+			if(!islist(GLOB?.stat_type_index) || table_of(holder) == table_empty())
+				. |= OFW_STAT_REL | OFW_STAT_IN // the stat tables are not built yet: the stat layer is asked, as before the memo
+		else
+			if(I.inputs[var_name])
+				. |= OFW_STAT_IN
+			if(I.hop_rels && (var_name in I.hop_rels))
+				. |= OFW_STAT_REL
+			else
+				for(var/datum/stat_contrib/ct as anything in I.ct_entries)
+					if(ct.rel == var_name)
+						. |= OFW_STAT_REL
+						break
 	if(draw_hop_reads_var(var_name))
-		return TRUE
+		. |= OFW_HOP
 	var/datum/definition_registry/R = GLOB?.definition_store
 	if(R && (R.fields_by_type[holder.type] || R.fields_of(holder.type))[var_name])
-		return TRUE
+		. |= OFW_CHANNEL
 	var/bits = plan_reader_bits(var_name, holder.type)
 	if(bits & PLAN_READ_REACT)
 		var/datum/rx_table/T = GLOB.rx_tables?[holder.type]
 		if(isnull(T))
 			T = rx_table_build(holder)
 		if(T && T.read_keys[var_name])
-			return TRUE
+			return . | OFW_READ
 	if((bits & PLAN_READ_LIFEFORM) && lifeform_watching(holder, var_name))
-		return TRUE
+		return . | OFW_READ
 	if((bits & PLAN_READ_HOOK) && islist(GLOB?.change_index_by_type))
 		var/index = GLOB.change_index_by_type[holder.type]
 		if(isnull(index))
 			index = change_index_of(holder)
 		if(index && index[var_name])
-			return TRUE
-	return FALSE
+			return . | OFW_READ
 
-/// The bare name of a proc path (/obj/foo/proc/bar -> "bar").
+// The bare name of a proc path (/obj/foo/proc/bar -> "bar").
 /proc/own_proc_name(proc_path)
 	var/text = "[proc_path]"
 	var/slash = findlasttext(text, "/")

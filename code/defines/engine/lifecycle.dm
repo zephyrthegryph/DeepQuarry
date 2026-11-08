@@ -90,3 +90,7 @@ GLOBAL_VAR_INIT(lifecycle_keep_expected, FALSE)
 #endif
 /// PATH refuses every qdel(), forced or not.
 #define LIFECYCLE_KEEP_ALWAYS(PATH) ##PATH/lifecycle_keep(force) { return TRUE; }
+
+/// datum_flags bit (bits 0 to 3 are code/defines/base/flags.dm's): the atom's own init frame past Initialize() is open (its setup() hooks, or a map-loaded
+/// atom's after_init() entries waiting for the load frame): init_open_begin()/init_open_end(), code/engine/change/interest.dm.
+#define DF_INIT_OPEN (1<<4)
