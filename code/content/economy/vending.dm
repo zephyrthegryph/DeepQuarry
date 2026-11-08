@@ -195,15 +195,66 @@ CAPABILITIES(/obj/machinery/vending)
 	if(length(slogan_list))
 		COOLDOWN_START(src, slogan_cooldown, slogan_delay + rand(0, slogan_delay))
 
-/// The vending sheet's products (the library's asset asks, code/library/ui/asset_cache/assets/spritesheets/vending.dm): every
-/// type any vendor type stocks, read from the catalog (VENDING_CATALOG_FILE holds every vendor type's stock), so no vendor
-/// is made for a sheet.
-/datum/asset/spritesheet_batched/vending/product_types()
+/// Every product type any vendor type stocks, read from the catalog (VENDING_CATALOG_FILE holds every vendor type's stock), so no vendor is made
+/// to list them: type -> TRUE.
+/proc/vending_catalog_product_types()
 	. = list()
 	for(var/vendor_type in subtypesof(/obj/machinery/vending))
 		for(var/section in list("products", "contraband", "premium"))
 			for(var/entry in vending_catalog_section(vendor_type, section))
 				.[entry] = TRUE
+
+// ---- Product pictures: each product's own small asset (the vendor window lists them; the sheet of every vendor's stock is gone) ----
+
+/// The picture of a vendor product (a path, or a VARIANT() reference: the picture is the parent's): list(icon file, state, colour to multiply
+/// or null, whether the state exists), or null for a reference that is no atom. A state that does not exist is logged; the picture is a blank.
+/proc/vending_product_icon_spec(product_ref)
+	var/atom/item = saved_type_path(product_ref)
+	if(!ispath(item, /atom))
+		return null
+	var/icon_file = initial(item.icon)
+	var/icon_state = initial(item.icon_state)
+	// I really don't like the fact that I have to do this, but what the hell else *can* I do to make all of these
+	// random special items work?
+	if(ispath(item, /obj/item/reagent_containers/food/drinks/glass2) && !ispath(item, /obj/item/reagent_containers/food/drinks/glass2/fitnessflask))
+		var/obj/item/reagent_containers/food/drinks/glass2/G = item
+		icon_state = initial(G.base_icon)
+	if(ispath(item, /obj/item/reagent_containers/hypospray/autoinjector))
+		icon_state += "0"
+	if(ispath(item, /obj/item/melee/shock_maul))
+		icon_state += "0"
+	var/c = initial(item.color)
+	var/list/states = icon_states_fast(icon_file)
+	var/valid = (icon_state in states)
+	if(!valid)
+		// Logged, not thrown: the picture is built inside a window's data output, where a runtime would cost the whole window its data.
+		log_world("vending product picture: [item] does not have a valid icon state, icon=[icon_file], icon_state=[json_encode(icon_state)]; using a blank")
+	return list(icon_file, icon_state, (!isnull(c) && c != "#FFFFFF") ? c : null, valid)
+
+/// The product's picture as an asset of its own (cut, coloured, hashed and registered once for the life of the world): its asset name. What the
+/// vendor window shows, so opening a vendor sends a few small pictures and not the whole sheet of every vendor's stock.
+DECLARE_SHARED_CACHE(vending_product_asset, GLOBAL_PROC_REF(build_vending_product_asset), SC_NEVER)
+
+/proc/build_vending_product_asset(product_ref)
+	var/list/spec = vending_product_icon_spec(product_ref)
+	var/icon/picture = (spec && spec[4]) ? icon(spec[1], spec[2], SOUTH, 1) : icon('icons/turf/floors.dmi', "", SOUTH, 1)
+	if(spec?[3])
+		picture.Blend(spec[3], ICON_MULTIPLY)
+	// An uncoloured state of a compiled-in file hashes its rsc copy directly; a coloured one needs the slower copy-to-file hash.
+	var/icon_path = (spec && spec[4] && !spec[3]) ? get_icon_dmi_path(spec[1]) : null
+	var/list/name_and_ref = generate_and_hash_rsc_file(picture, icon_path)
+	var/key = "vendprod.[name_and_ref[3]].png"
+	if(!SSassets.cached_asset(key))
+		SSassets.register_asset(key, name_and_ref[1], name_and_ref[2], icon_path)
+	return key
+
+/// The address of the product's picture for `viewer`, the picture sent to that client (once: the transport remembers what it sent).
+/proc/vending_product_image_url(product_ref, client/viewer)
+	if(!viewer)
+		return null
+	var/key = CACHED_KEY(vending_product_asset, "[product_ref]", product_ref)
+	SSassets.send_assets(viewer, key)
+	return SSassets.get_asset_url(key)
 
 #define VENDING_CATALOG_FILE "strings/vending/catalog.json"
 

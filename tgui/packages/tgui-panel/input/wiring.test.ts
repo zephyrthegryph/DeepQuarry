@@ -37,7 +37,8 @@ describe('chat input wiring', () => {
     expect(read('input/ChatInput.tsx')).toContain('nextChannel');
     expect(read('input/ChatInput.tsx')).not.toContain('INPUT_CHANNELS.map');
     expect(read('events/listeners.ts')).toContain("'chat/layout'");
-    expect(read('Panel.tsx')).toContain('useChatDrag');
+    // The chat is a window of the column: the column's window manager moves it (column/Column.tsx).
+    expect(read('column/Column.tsx')).toContain('<Panel />');
     expect(read('styles/main.scss')).toContain('ChatLayout.scss');
   });
 

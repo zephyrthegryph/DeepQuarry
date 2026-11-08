@@ -406,46 +406,18 @@ function dragEndHandler(event): void {
 }
 
 /**
- * A floating window dropped with the pointer over the stat panel docks there
- * (doc/rewrite/proposals/window_system.md); the server answers with docked.
+ * A floating window's titlebar drag ended: the server asks the right-hand
+ * column's page whether the point is over it (it knows its own place and
+ * where in its window list the point falls), and docks the window there
+ * (doc/rewrite/proposals/window_system.md section 12).
  */
-async function dockIfOverPanel(pointer: [number, number]): Promise<void> {
+function dockIfOverPanel(pointer: [number, number]): void {
   if (!store.get(configAtom)?.window?.dockable) {
     return;
   }
-  let pos: any;
-  let size: any;
-  try {
-    const got = await Byond.winget('statwindow', ['screen-pos', 'size']);
-    pos = got?.['screen-pos'];
-    size = got?.size;
-  } catch (error) {
-    Byond.sendMessage('wm/log', {
-      drop: 'winget-failed',
-      error: String(error),
-    });
-    return;
-  }
-  const over =
-    typeof pos?.x === 'number' &&
-    typeof size?.x === 'number' &&
-    pointer[0] >= pos.x &&
-    pointer[1] >= pos.y &&
-    pointer[0] < pos.x + size.x &&
-    pointer[1] < pos.y + size.y;
-  // The server log says why a drop did or did not dock (hard to see from outside).
-  Byond.sendMessage('wm/log', {
-    drop: over ? 'dock' : 'outside',
-    pointer,
-    pos,
-    size,
+  Byond.sendMessage('wm/dropped', {
+    pointer: { x: Math.round(pointer[0]), y: Math.round(pointer[1]) },
   });
-  if (!over) {
-    return;
-  }
-  logger.log('dropped over the stat panel: docking', pointer);
-  // The drop point: the panel puts the window in its list where it was dropped.
-  Byond.sendMessage('wm/dock', { at: { x: pointer[0], y: pointer[1] } });
 }
 
 // Move the window while dragging

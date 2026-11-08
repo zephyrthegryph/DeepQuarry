@@ -237,8 +237,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		chatlog_token = vchatlog_generate_token(ckey, GLOB.round_id)
 
 	winset(src, null, list("browser-options" = "find,refresh"))
-	// Instantiate stat panel
-	rel_set(src, nameof(stat_panel), new /datum/tgui_window(src, SKIN_STAT_BROWSER))
+	// Instantiate stat panel: a window inside the right-hand column's page (column_part.dm), not a browser of its own.
+	rel_set(src, nameof(stat_panel), new /datum/tgui_window/column_part(src, SKIN_STAT_BROWSER, COLUMN_PART_STAT))
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
@@ -310,14 +310,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(prefs)
 		prefs.selecting_slots = FALSE
 
-	// Initialize stat panel
-	// The React page (tgui/packages/tgui-panel/statpanel). If its bundle never mounts, the inline
-	// script shows this reload link instead of leaving the pane blank.
-	stat_panel.initialize(
-		assets = list(get_asset_datum(/datum/asset/simple/tgui_statpanel)),
-		inline_html = "<div id='statpanel-fallback' style='display:none;padding:1em;color:#B3CCE6;background:#202020;font:12px Verdana,sans-serif'>The stat panel did not load. <a style='color:#6699FF' href='byond://?src=[REF(src)];reload_statbrowser=1'>Reload it</a>, or reconnect if that does not help.</div>",
-		inline_js = "setTimeout(function(){if(window.__statpanelMounted)return;document.getElementById('statpanel-fallback').style.display='block';Byond.winset(Byond.windowId,{'is-visible':true});},10000);",
-	)
+	// Initialize stat panel: it opens as a window in the right-hand column's page (column_part.dm); the page reports it ready.
+	stat_panel.initialize()
 	after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
 	acquire_dpi()
@@ -1015,7 +1009,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			// A button in the Inspect tab (code/content/examine/inspect_panel.dm).
 			if(islist(payload) && istext(payload["act"]))
 				inspect_panel?.act(payload["act"], payload)
-		if("WM-Ready", "WM-View", "WM-Float", "WM-Close", "WM-Save", "WM-Log")
+		if("WM-Log", "WM-Drop", "WM-Save")
 			// The window dock's frame in the stat panel (code/library/ui/window_dock/window_dock.dm).
 			window_dock_of(src).panel_message(type, payload)
 		if("Abilities-Act")
