@@ -233,10 +233,45 @@ CAPABILITIES(/obj/machinery/vending)
 
 /// The product's picture as an asset of its own (cut, coloured, hashed and registered once for the life of the world): its asset name. What the
 /// vendor window shows, so opening a vendor sends a few small pictures and not the whole sheet of every vendor's stock.
+/// Where iconforge writes the recoloured product pictures (one file per file, state and colour, kept for the world).
+#define DQ_VENDPROD_DIR "data/vendprod/"
+
 DECLARE_SHARED_CACHE(vending_product_asset, GLOBAL_PROC_REF(build_vending_product_asset), SC_NEVER)
 
 /proc/build_vending_product_asset(product_ref)
 	var/list/spec = vending_product_icon_spec(product_ref)
+	// A coloured picture is cut and recoloured by rust-g iconforge into a PNG (no /icon Blend, no copy-to-file hash); the rest is the plain state.
+	var/forged = spec?[3] && spec[4] ? vending_product_forge(spec) : null
+	if(forged)
+		return forged
+	return vending_product_asset_byond(spec)
+
+/// The coloured product picture through iconforge: its asset name, or null when iconforge cannot read the file (the BYOND path draws it then).
+/proc/vending_product_forge(list/spec)
+	var/dmi_path = get_icon_dmi_path(spec[1])
+	dmi_path = dmi_path && resolve_icon_dmi_path(dmi_path) // a repacked DMI lives under icons/gen/
+	if(!dmi_path || !rustg_file_exists(dmi_path)) // not on disk: only BYOND has it
+		return null
+	var/static/dir_made = FALSE
+	if(!dir_made)
+		rustg_file_write("", "[DQ_VENDPROD_DIR].keep")
+		dir_made = TRUE
+	var/out_path = "[DQ_VENDPROD_DIR][md5("[dmi_path]|[spec[2]]|[spec[3]]")].png"
+	if(!rustg_file_exists(out_path))
+		var/list/sprite = list("icon_file" = dmi_path, "icon_state" = spec[2], "dir" = SOUTH, "frame" = 1,
+			"transform" = list(list("type" = RUSTG_ICONFORGE_BLEND_COLOR, "color" = spec[3], "blend_mode" = ICON_MULTIPLY)))
+		var/list/result = rustg_iconforge_generate_headless(out_path, json_encode(list("picture" = sprite)), TRUE)
+		if(length(result?["error"]) || !rustg_file_exists(out_path))
+			log_world("vending product picture: iconforge could not draw [dmi_path] [spec[2]] ([json_encode(result)]); drawn by BYOND")
+			return null
+	var/hash = rustg_hash_file(RUSTG_HASH_MD5, out_path)
+	var/key = "vendprod.[hash].png"
+	if(!SSassets.cached_asset(key))
+		SSassets.register_asset(key, fcopy_rsc(file(out_path)), hash)
+	return key
+
+/// The product picture drawn with BYOND /icon procs (the path before iconforge; kept for what iconforge cannot read, and for the bench).
+/proc/vending_product_asset_byond(list/spec)
 	var/icon/picture = (spec && spec[4]) ? icon(spec[1], spec[2], SOUTH, 1) : icon('icons/turf/floors.dmi', "", SOUTH, 1)
 	if(spec?[3])
 		picture.Blend(spec[3], ICON_MULTIPLY)
