@@ -29,7 +29,7 @@ impl<'a,'p> CurrentArchivedBody<'a,'p>{
  /// SAME local ledger and scope-geometry algorithm, over authenticated current
  /// source coordinates and model. No source scan or second local symbol table.
  pub fn source_locals(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<super::body_archive::SourceLocalView<'_>,BodySyntaxFailure>{
-  current_checkpoint(a)?;super::body_archive::checked_source_locals_projected(self.tree(),self.occurrence,self.current.canonical_statement_storage(),&self.archive.source,Some(self.current.projection()),&||current_checkpoint(a),&|actual|BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,actual)))
+  current_checkpoint(a)?;super::body_archive::checked_source_locals_projected(self.tree(),self.occurrence,self.current.canonical_statement_storage(),&self.archive.source,Some(self.current.projection()),self.archive.source_mapping().initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290,&||current_checkpoint(a),&|actual|BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,actual)))
  }
  /// Use an already-bound primary body with the same admission finish as
  /// a newly borrowed canonical body. The prefix still validates its identity.

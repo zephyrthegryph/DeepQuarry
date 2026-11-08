@@ -141,6 +141,15 @@ pub(crate) fn archived_scope<'a, R: Resolver + ?Sized>(
     .with_archive(body.archive_owner())
 }
 
+/// The body proof checks literal syntax readiness before policy traversal.
+pub(crate) fn require_policy_literal_shape(text: &dm_syntax::LiteralText, original: bool) -> Result<(), Unsupported> {
+    let parts = if original { text.syntax_parts() } else { text.parts() };
+    if let Some(parts) = parts.map_err(|error| Unsupported(error.into()))? {
+        parts.lexical.map_err(|error| Unsupported(format!("{error:?}")))?;
+    }
+    Ok(())
+}
+
 /// Validate the existing ORIGINAL ledger. No normalized declaration spelling
 /// can stand in for these facts. Unsupported grammar remains an atomic refusal.
 pub(crate) fn require_local_source_projection(
@@ -191,7 +200,9 @@ pub(crate) fn scope_from_parameters_using<'a,R:Resolver+?Sized,W:crate::policy_b
             .map_err(Unsupported)?;
         if W::CHECKED {work.temporary(source.scope_admission().map_err(Unsupported)?)?;}else{require_local_source_projection(source)?;}
     }
-    if !syntax.syntax_complete() {
+    // An issued local view already checked this exact tree, occurrence and
+    // syntax owner. Keep the runtime fallback for callers without that proof.
+    if local_source.is_none() && !syntax.syntax_complete() {
         return Err(Unsupported(
             "body has unsupported or malformed native syntax".into(),
         ).into());

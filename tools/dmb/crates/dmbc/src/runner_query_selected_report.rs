@@ -37,6 +37,13 @@ pub(super) const PRIVATE_REACTIVE_RAW_UNION: &[&str] = &[
     "read_back", "report_in_catch", "scheduler", "sem/reads", "setter_publishes", "untracked_inputs",
 ];
 
+#[cfg(test)]
+pub(super) const PRIVATE_ORDINARY_SEMANTIC_AND_FIXED: &[&str] = &[
+    "base_vars", "deadline_polling", "decl", "init", "lifeforms", "op_order", "ownership",
+    "player_link", "rel_write_undeclared", "requirement_bool", "sem/keys", "sys/dx_reactive",
+    "untyped_member", "weak_raw_read",
+];
+
 pub(super) const PRIVATE_MAP_AND_LAYERING: &[&str] = &[
     "allow_annotations", "engine_layering", "library_layering", "map_edits",
     "notice_publisher", "report_in_catch", "scheduler",
@@ -289,6 +296,7 @@ struct ReportStage<'a> {
     failed: SectionFailures,
     authored_doc_ui: bool,
     ordinary_fold_sys: bool,
+    ordinary_semantic_and_fixed: bool,
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
@@ -321,7 +329,7 @@ impl ReportStage<'_> {
             return Ok(());
         }
         let deadline = matches!(&rows, ReportRows::Union(UnionRows::Deadline(..)))
-            && self.selected == Roster::WithDeadlinePolling.names()
+            && (self.selected == Roster::WithDeadlinePolling.names() || self.ordinary_semantic_and_fixed)
             && self.judgment.is_raw() && matches!(meta.policy, Policy::Custom)
             && dq_analyze::captured_raw_policy::metadata("deadline_polling")
                 .is_some_and(|expected| std::ptr::eq(meta, expected));
@@ -488,7 +496,7 @@ impl ReportStage<'_> {
                 }
             }
             UnionRows::Keys(data) => {
-                if self.selected != Roster::WithKeys.names()
+                if (self.selected != Roster::WithKeys.names() && !self.ordinary_semantic_and_fixed)
                     || !std::ptr::eq(meta, dq_analyze::keys_policy::metadata())
                     || !matches!(meta.policy, Policy::Hard)
                 {
@@ -521,7 +529,9 @@ impl ReportStage<'_> {
                 };
                 let joined_engine = (self.selected == PRIVATE_MAP_AND_LAYERING || self.authored_doc_ui)
                     && question == Q::EngineLayeringFullAllow;
-                if (!joined_engine && !rosters.iter().any(|roster| self.selected == roster.names()))
+                let joined_semantic = self.ordinary_semantic_and_fixed && matches!(question,
+                    Q::Lifeforms | Q::PlayerLink | Q::UntypedMember | Q::WeakRawRead | Q::RelWriteUndeclared);
+                if (!joined_engine && !joined_semantic && !rosters.iter().any(|roster| self.selected == roster.names()))
                     || !std::ptr::eq(meta, expected)
                     || !matches!(meta.policy, Policy::Hard) || !meta.allow.is_empty()
                     || !allows.is_empty() {
@@ -543,7 +553,7 @@ impl ReportStage<'_> {
                     Q::BaseVars => dq_analyze::captured_base_vars_pages::metadata(),
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued selected declaration report role")),
                 };
-                if self.selected != Roster::WithDeclarationPolicies.names()
+                if (self.selected != Roster::WithDeclarationPolicies.names() && !self.ordinary_semantic_and_fixed)
                     || !std::ptr::eq(meta, expected)
                     || !matches!(meta.policy, Policy::Hard)
                     || sites.len() != source_text.len()
@@ -593,7 +603,7 @@ impl ReportStage<'_> {
                 }
             }
             UnionRows::RequirementBool(data) => {
-                if self.selected != Roster::WithRequirementBool.names()
+                if (self.selected != Roster::WithRequirementBool.names() && !self.ordinary_semantic_and_fixed)
                     || !std::ptr::eq(meta, data.metadata())
                     || !std::ptr::eq(meta, dq_analyze::captured_requirement_bool_pages::metadata())
                     || !matches!(meta.policy, Policy::Hard) || !meta.allow.is_empty()
@@ -609,7 +619,7 @@ impl ReportStage<'_> {
                 projection.notes(data.notes(), &mut control)?;
             }
             UnionRows::SysReactive(data) => {
-                if self.selected != Roster::WithSysReactive.names()
+                if (self.selected != Roster::WithSysReactive.names() && !self.ordinary_semantic_and_fixed)
                     || !std::ptr::eq(meta, dq_analyze::sys_reactive_policy::metadata())
                     || !matches!(meta.policy, Policy::Hard)
                     || data.sites().len() != data.source_text().len()
@@ -833,7 +843,7 @@ impl super::super::RawWorkspaceSnapshot {
         let mut usage = UsageJoinData::new(&selection, frame);
         let mut stage = ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            authored_doc_ui: false, ordinary_fold_sys: false, judgment: JudgmentV2::Raw, library_baseline: None,
+            authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, judgment: JudgmentV2::Raw, library_baseline: None,
         };
         for &name in selected {
             let policy_started = std::time::Instant::now();
@@ -980,7 +990,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false, false, false)
     }
 
     #[cfg(test)]
@@ -988,7 +998,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, false, false)
     }
 
     #[cfg(test)]
@@ -996,13 +1006,21 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, false)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_extended_authored_with_ordinary_semantics(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true)
     }
 
     #[cfg(test)]
     fn stage_private_extended_union(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
-        root: &Path, file: Stage, mixed: bool, ordinary_fold_sys: bool,
+        root: &Path, file: Stage, mixed: bool, ordinary_fold_sys: bool, ordinary_semantics: bool,
     ) -> io::Result<(bool, Verified)> {
         let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
         let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
@@ -1010,7 +1028,8 @@ impl SourceSnapshot {
         let extra = if mixed { PRIVATE_AUTHORED_DOC_UI } else { &[] };
         let fold = if ordinary_fold_sys { Roster::WithWorkspaceFoldPolicies.names() } else { &[] };
         let sys = if ordinary_fold_sys { Roster::WithSysSourcePolicies.names() } else { &[] };
-        let qualified = || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).chain(fold).chain(sys);
+        let semantic = if ordinary_semantics { PRIVATE_ORDINARY_SEMANTIC_AND_FIXED } else { &[] };
+        let qualified = || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).chain(fold).chain(sys).chain(semantic);
         let selected = selection.names();
         if selected.iter().any(|name| !qualified().any(|&actual| name == actual))
             || qualified().any(|&name| !selected.iter().any(|actual| actual == name))
@@ -1027,7 +1046,8 @@ impl SourceSnapshot {
         subject.require_bound_mapping(child.policy().mapping())?;
         let guard = self.workspace_native_read()?;
         workspace.require_scope(&guard)?;
-        let questions = if mixed { Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI } else { Q::SELECTED_REACTIVE };
+        let questions = if ordinary_semantics { Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC }
+            else if mixed { Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI } else { Q::SELECTED_REACTIVE };
         let has_domains = if mixed {
             workspace.has_extended_authored_doc_ui_capture()
         } else {
@@ -1074,7 +1094,9 @@ impl SourceSnapshot {
         } else { None };
         let stage = RefCell::new(ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            authored_doc_ui: workspace.has_authored_doc_ui_capture(), ordinary_fold_sys, judgment, library_baseline,
+            authored_doc_ui: workspace.has_authored_doc_ui_capture(), ordinary_fold_sys,
+            ordinary_semantic_and_fixed: ordinary_fold_sys && questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC,
+            judgment, library_baseline,
         });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
@@ -1196,6 +1218,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         failed: SectionFailures::new(1, budget)?,
         authored_doc_ui: false,
         ordinary_fold_sys: false,
+        ordinary_semantic_and_fixed: false,
         judgment: JudgmentV2::Raw,
         library_baseline: None,
     };

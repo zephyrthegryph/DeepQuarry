@@ -587,7 +587,7 @@ pub(crate) fn discover_authored_doc_ui<P: SnapshotProvider>(
     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
     let roots = Q::authored_doc_ui_roots(questions)
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "authored mixed discovery requires its exact private question roster"))?;
-    let selection = if questions == Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI {
+    let selection = if Q::is_extended_authored_doc_ui(questions) {
         DiscoverySelection::AuthoredDocUiExtendedV1
     } else {
         DiscoverySelection::AuthoredDocUiJoinedV1

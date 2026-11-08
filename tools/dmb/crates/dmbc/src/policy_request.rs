@@ -79,6 +79,19 @@ impl WorkspaceAuxiliaryQuestion {
         Self::SemReads, Self::UntrackedInputs, Self::SetterPublishes,
         Self::LibraryLayeringFullAllow, Self::MapEdits, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
     ];
+    pub(crate) const PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC: &'static [Self] = &[
+        Self::DeadlinePollingAllowlist, Self::Keys, Self::SemReads, Self::UntrackedInputs,
+        Self::Decl, Self::Init, Self::BaseVars, Self::RequirementBool, Self::PlayerLink,
+        Self::UntypedMember, Self::WeakRawRead, Self::RelWriteUndeclared, Self::Ownership,
+        Self::SetterPublishes, Self::OpOrder, Self::SysReactive, Self::Lifeforms,
+        Self::LibraryLayeringFullAllow, Self::MapEdits, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
+    ];
+
+    pub(crate) fn is_extended_authored_doc_ui(questions: &[Self]) -> bool {
+        questions == Self::PRIVATE_EXTENDED_AUTHORED_DOC_UI
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC
+    }
+
     pub(crate) const AUTHORED_DOC_UI_ROOTS: &'static [&'static str] =
         &["code", "doc/rewrite", "maps", "tgui/packages/tgui/interfaces"];
     pub(crate) const EXTENDED_AUTHORED_DOC_UI_ROOTS: &'static [&'static str] =
@@ -87,7 +100,7 @@ impl WorkspaceAuxiliaryQuestion {
     pub(crate) fn authored_doc_ui_roots(questions: &[Self]) -> Option<&'static [&'static str]> {
         if questions == Self::PRIVATE_AUTHORED_DOC_UI {
             Some(Self::AUTHORED_DOC_UI_ROOTS)
-        } else if questions == Self::PRIVATE_EXTENDED_AUTHORED_DOC_UI {
+        } else if Self::is_extended_authored_doc_ui(questions) {
             Some(Self::EXTENDED_AUTHORED_DOC_UI_ROOTS)
         } else {
             None

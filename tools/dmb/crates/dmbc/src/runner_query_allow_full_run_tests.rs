@@ -698,3 +698,113 @@ fn private_62_policies_share_authored_mixed_and_extended_raw_discovery() {
     assert_eq!(ordinary_report.matches("allow annotations: 1 unused").count(), 1, "{ordinary_report}");
     require_private_reactive_raw_legacy(&root, &ordinary_exclusions, clean, &ordinary_report);
 }
+
+#[test]
+fn private_97_policies_share_authored_mixed_semantic_and_fixed_discovery() {
+    let (mut host, mut request, root) = fixture(concat!(
+        "#define CAPABILITIES(...)\n",
+        "#define PROC_REF(P) #P\n",
+        "/datum/act\n/datum/act/eval\n/obj/probe\n",
+        "    var/known\n",
+        "/obj/probe/proc/dynamic(datum/act/eval/A)\n",
+        "    return vars[\"probe\"]\n",
+        "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+        "/obj/unread\n/proc/ctor_probe(loc)\n    new /obj/unread(loc, 2)\n",
+    ));
+    let dispatcher = dq_analyze::ui_actions_policy::DISPATCHER;
+    for (relative, content) in [
+        ("deepquarry.dme", concat!(
+            "#include \"code/probe.dm\"\n",
+            "#include \"code/engine/probe.dm\"\n",
+            "#include \"code/library/probe.dm\"\n",
+            "#include \"code/content/probe.dm\"\n",
+        )),
+        ("code/engine/probe.dm", "/proc/engine_probe()\n    library_probe()\n"),
+        ("code/library/probe.dm", "/proc/library_probe()\n    downstream_probe()\n"),
+        ("code/content/probe.dm", "/proc/downstream_probe()\n    return\n"),
+        ("code/ordinary-policies.dm", concat!(
+            "/proc/fold_probe()\n    om_set_var(src,x,1)\n",
+            "/obj/ordinary_probe\n\tvar/cached_charge\n",
+        )),
+        ("code/main.dm", "/obj/machine\n    tgui_id = \"Machine\"\n/obj/machine/proc/act_go(mob/user, value)\n    return value\n"),
+        ("interface/verb.dm", "/obj/probe/verb/legacy()\n    set category = \"Raw\"\n"),
+        ("modular_chomp/.legacy.dm", "/obj/probe/proc/set_broken()\n    return\n"),
+        ("maps/edit.dmm", "/obj/probe{known = 1; lost = 2}\n"),
+        ("maps/stale.dm", "/proc/stale()\n    return // ALLOW(scheduler): exact mixed capture unused annotation\n"),
+        ("doc/rewrite/live.md", "\x60\x60\x60dm\nmissing_doc()\n\x60\x60\x60\n"),
+        ("tgui/packages/tgui/interfaces/Machine.tsx", "act('bogus', {});"),
+        ("code/deadline.dm", "/obj/deadline_probe/process()\n\tif(world.time > expires)\n\t\treturn\n"),
+        (dispatcher, ui_fixture::DISPATCHER),
+    ] {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+    std::fs::write(root.join("tools/ci/lint_scopes.toml"), report_config::with_overlay("")).unwrap();
+    let intent = request.policy_inputs.as_mut().unwrap();
+    intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
+    intent.workspace_auxiliary = Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC.to_vec();
+    intent.workspace.as_mut().unwrap().recursive_roots =
+        Q::EXTENDED_AUTHORED_DOC_UI_ROOTS.iter().map(|name| root.join(name)).collect();
+    assert!(intent.clone().admit().is_err());
+    assert!(!Q::admits_combined_reports(Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC));
+    let mut incomplete = request.clone();
+    incomplete.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots
+        .retain(|path| !path.ends_with("interface"));
+    assert!(crate::request_runner::prepare_private_authored_doc_ui(incomplete, &mut host).is_err());
+
+    let budget = Budget::new(8 << 20).unwrap();
+    let mut control = Operation { budget: &budget, poll: &|| Ok(()) };
+    let registry = full_unused::registered_full_selection(&[], &mut control).unwrap();
+    let raw = dq_analyze::selected_exclusions_wire::Roster::AllRawFilePolicies.names();
+    let reactive = super::selected_report::PRIVATE_REACTIVE_RAW_UNION;
+    let mixed = super::selected_report::PRIVATE_AUTHORED_DOC_UI;
+    let exclusions: Vec<_> = registry.names().iter()
+        .filter(|name| !raw.contains(&name.as_str()) && !reactive.contains(&name.as_str()) && !mixed.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    assert_eq!(registry.names().len() - exclusions.len(), 62);
+    let fold = dq_analyze::selected_exclusions_wire::Roster::WithWorkspaceFoldPolicies.names();
+    let sys = dq_analyze::selected_exclusions_wire::Roster::WithSysSourcePolicies.names();
+    let ordinary_exclusions: Vec<_> = registry.names().iter()
+        .filter(|name| exclusions.iter().any(|excluded| excluded.strip_prefix('-') == Some(name.as_str()))
+            && !fold.contains(&name.as_str()) && !sys.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    assert_eq!(registry.names().len() - ordinary_exclusions.len(), 83);
+    let cache = crate::test_scratch::dir("private-97-authored-ordinary-semantic");
+    let joined = super::selected_report::PRIVATE_ORDINARY_SEMANTIC_AND_FIXED;
+    let joined_exclusions: Vec<_> = ordinary_exclusions.iter()
+        .filter(|name| !joined.contains(&name.strip_prefix('-').unwrap()))
+        .cloned().collect();
+    assert_eq!(registry.names().len() - joined_exclusions.len(), 97);
+    let prepared = crate::request_runner::prepare_private_authored_doc_ui(request, &mut host).unwrap();
+    let (clean, report) = current(&host, |snapshot| {
+        let archive = snapshot.body_archive.as_ref().unwrap();
+        let ordinal = archive.occurrences().iter().position(|body| {
+            archive.callables().identity_for_member(body.member)
+                .is_some_and(|identity| identity.name == dm_ir::SymbolId::of("dynamic"))
+        }).unwrap();
+        let body = archive.parse_checked(ordinal).unwrap();
+        assert!(!body.statement_body().syntax_complete(), "Original static string does not certify runtime decoding");
+        assert!(body.statement_body().original_literal_syntax_complete());
+        assert!(body.source_locals().unwrap().entries().unwrap().is_empty());
+        let stage = || crate::selected_report_spool::Stage::new(&cache).unwrap();
+        assert!(snapshot.stage_private_extended_authored_with_ordinary_semantics(
+            &prepared, &ordinary_exclusions, &budget, &root, stage(),
+        ).is_err(), "83 exclusions cannot authorize the 97-policy report");
+        assert!(snapshot.stage_private_extended_authored_with_ordinary_sources(
+            &prepared, &ordinary_exclusions, &budget, &root, stage(),
+        ).is_err(), "97 auxiliary questions do not authorize the 83-policy capture");
+        let (clean, verified) = snapshot.stage_private_extended_authored_with_ordinary_semantics(
+            &prepared, &joined_exclusions, &budget, &root, stage(),
+        ).unwrap();
+        let mut output = Vec::new();
+        verified.publish(&mut output).unwrap();
+        (clean, String::from_utf8(output).unwrap())
+    });
+    assert!(!clean);
+    for marker in ["[lifeforms/ctor_dead_arg]", "[api/vars_helpers]", "[reads/dynamic_read]", "[map_edits/unknown_var]", "code/deadline.dm:2:"] {
+        assert!(report.contains(marker), "missing {marker}: {report}");
+    }
+    assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
+    require_private_reactive_raw_legacy(&root, &joined_exclusions, clean, &report);
+}

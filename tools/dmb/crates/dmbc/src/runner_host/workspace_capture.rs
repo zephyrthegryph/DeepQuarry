@@ -120,7 +120,7 @@ impl WorkspaceCapture {
 
     pub(crate) fn has_extended_authored_doc_ui_capture(&self) -> bool {
         use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
-        self.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI) && self.has_authored_doc_ui_capture()
+        Q::is_extended_authored_doc_ui(self.auxiliary()) && self.has_authored_doc_ui_capture()
     }
 
     pub(crate) fn for_each_map_edit_file(
@@ -157,7 +157,8 @@ impl WorkspaceCapture {
      use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
      self.require_scope(scope)?;
      let questions=self.auxiliary.as_slice();
-     if questions!=[Q::OpOrder]&&questions!=Q::SELECTED_ORDER_AND_OWNERSHIP{
+     if questions != [Q::OpOrder] && questions != Q::SELECTED_ORDER_AND_OWNERSHIP
+          && !(questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC && self.has_extended_authored_doc_ui_capture()) {
       return Err("actual op_order fixed manifest purpose absent".into());
      }
      self.with_order_manifest(scope,visit)
@@ -788,7 +789,13 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     if questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::MapEdits) != map_work.is_some() {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits requires its actual capture producer"));
     }
-    if questions.len()>12||questions.windows(2).any(|pair|pair[0]>=pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual canonical auxiliary questions required"))}
+    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    // The larger private roster is closed. Keep the generic bound and require
+    // the same strict ordering for every capture.
+    if (questions.len() > 12 && questions != Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC)
+        || questions.windows(2).any(|pair| pair[0] >= pair[1]) {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "actual canonical auxiliary questions required"));
+    }
     if questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)&&questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline){return Err(io::Error::new(io::ErrorKind::InvalidInput,"CheckGrep check and baseline purposes are mutually exclusive"))}
     discovery.validate_recording(inputs)?;
     if let Some(subject)=inputs.original_analysis_subject(){subject.validate_mapping(frontend.mapping)?;if !subject.same_discovery(&discovery){return Err(io::Error::other("Analyze subject and workspace discovery differ"))}}
@@ -840,7 +847,6 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         ));
     }
     let aliases = alias_index::AliasIndex::new(known.keys().copied(), alias_reserve)?;
-    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
     let mut ui = if questions.contains(&Q::DocUiFullAllow) {
         // The funded MapEdits caller holds an ordinary capture window covering
         // all EXTRA_BUDGET bytes. The dispatcher uses only the remainder of that
@@ -856,7 +862,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         if !discovery.covers_doc_snippets(&mut admit)?
             || !discovery.covers_ui_actions(&mut admit)?
             || !discovery.covers_dm_roots(dq_analyze::tree::CODE_MAPS_DM.roots, false, &mut admit)?
-            || questions == Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI
+            || Q::is_extended_authored_doc_ui(questions)
                 && !discovery.covers_dm_roots(&[("interface", "dm"), ("modular_chomp", "dm")], true, &mut admit)?
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "authored UI joined domains were not completely observed"));

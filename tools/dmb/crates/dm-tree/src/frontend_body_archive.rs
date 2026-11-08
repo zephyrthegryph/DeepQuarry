@@ -172,10 +172,12 @@ impl<'a> SourceLocalView<'a> {
     }
 }
 pub(super) fn checked_source_locals<'a>(tree:&'a SemanticTree,occurrence:&'a BodyOccurrence,syntax:&'a StatementBody,source:&'a str)->Result<SourceLocalView<'a>,String>{
- checked_source_locals_projected(tree,occurrence,syntax,source,None,&||Ok(()),&|error|error)
+ checked_source_locals_projected(tree,occurrence,syntax,source,None,false,&||Ok(()),&|error|error)
 }
-pub(super) fn checked_source_locals_projected<'a,E>(tree:&'a SemanticTree,occurrence:&'a BodyOccurrence,syntax:&'a StatementBody,source:&'a str,projection:Option<dm_syntax::SyntaxProjection>,checkpoint:&dyn Fn()->Result<(),E>,error:&dyn Fn(String)->E)->Result<SourceLocalView<'a>,E>{
- checkpoint()?;if !syntax.syntax_complete(){return Err(error("local source body has unissued syntax".into()))}
+pub(super) fn checked_source_locals_projected<'a,E>(tree:&'a SemanticTree,occurrence:&'a BodyOccurrence,syntax:&'a StatementBody,source:&'a str,projection:Option<dm_syntax::SyntaxProjection>,original_literals:bool,checkpoint:&dyn Fn()->Result<(),E>,error:&dyn Fn(String)->E)->Result<SourceLocalView<'a>,E>{
+ checkpoint()?;
+ let complete=if original_literals{syntax.original_literal_syntax_complete()}else{syntax.syntax_complete()};
+ if !complete{return Err(error("local source body has unissued syntax".into()))}
  let mut view=SourceLocalView{tree,occurrence,syntax,source,projection,scope_charge:0};view.scope_charge=view.compute_scope_admission_using(checkpoint,error)?;checkpoint()?;Ok(view)
 }
 
@@ -509,11 +511,17 @@ impl ArchivedBody<'_> {
     pub fn original_body_tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,String>{let index=*self.archive.body_indices.get(&self.occurrence.declaration).ok_or("original body token declaration absent")?;if !self.archive.bodies.get(index).is_some_and(|row|std::ptr::eq(row,self.occurrence)){return Err("original body token occurrence differs".into())}let code=self.archive.body_codes.get(index).ok_or("original body token code absent")?;self.archive.syntax.original_body_tokens(self.occurrence.expanded_span,&code.identity)}
 
     pub fn source_locals(&self) -> Result<SourceLocalView<'_>, String> {
-        checked_source_locals(
+        // Local declaration geometry uses the issued Original syntax. Runtime
+        // text decoding is a separate contract and remains unchanged.
+        checked_source_locals_projected(
             self.tree(),
             self.occurrence(),
             self.statement_body(),
             self.archive_owner().expanded_source(),
+            None,
+            self.archive_owner().source_mapping().initial_environment() == dm_preprocess::InitialEnvironment::OriginalChecker0290,
+            &|| Ok(()),
+            &|error| error,
         )
     }
 
