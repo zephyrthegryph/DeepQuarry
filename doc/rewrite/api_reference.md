@@ -466,7 +466,7 @@ Notes: the destroy transaction (`code/library/lifecycle/transaction.dm:25`) runs
 #### `/datum/notice/borrow_ended` (the borrower hears its target was deleted)
 Need: react when a datum you borrow through a relation is deleted, before you are cleared or deleted with it.
 Defined: `code/engine/change/lifecycle_notices.dm:14`
-Example: `on_notice(/datum/notice/borrow_ended, then(PROC_REF(borrow_ended)))`, `code/engine/parts/run.dm:502` (the waiting op runs its `on_interrupt()`, K8).
+Example: `on_notice(/datum/notice/borrow_ended, then(PROC_REF(borrow_ended)))`, `code/engine/parts/run.dm:514` (the waiting op runs its `on_interrupt()`, K8).
 Replaces / bans: nothing; `on_unlink = PROC_REF(x)` on the relation still runs for every unlink, this one is only the target's deletion.
 Notes: published from relation teardown (phase 4 of the target's destroy transaction) after the borrower's var was cleared; the payload is the borrower's var name (`relation`) and the deleted target's type (`other_type`), never the target. A handler must not touch the target.
 

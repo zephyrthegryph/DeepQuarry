@@ -37,6 +37,18 @@
 	/// TRUE once an effect answered OP_PASS: the op commits and the click goes on to the next candidate.
 	var/passed = FALSE
 
+/// The op key of a context. Conditions and requirements read it off the act they are handed (A.key: a surgery step finds its step by it); nothing
+/// subscribes to an act's key, since a wait or a reaction watches entities, never a pooled context. So the change is published only to an act
+/// someone registered on (one with reactive state): a Menu read refills one context per row, and a publish per row was a fifth of a row's cost.
+/datum/act/op/proc/set_key(value)
+	if(key == value)
+		return FALSE
+	key = value
+	if(rx)
+		tracked_changed(src, nameof(key))
+	return TRUE
+SETTER(/datum/act/op, key)
+
 /// A handler reads the value of a captured field here, never off the live holder (resume policies: CAPTURE the snapshot, LATEST the live value).
 /datum/act/op/proc/captured(name)
 	return LAZYACCESS(captured_values, name)
