@@ -56,7 +56,7 @@ fn captured_static_vars_keeps_slot_but_omits_global_declaration() {
             wire_flags: 1,
             value: DefaultValue::InitializerExpression {
                 token: 0,
-                canonical: Arc::from([]),
+                canonical: Default::default(),
             },
             source_ordinal: ordinal,
         });

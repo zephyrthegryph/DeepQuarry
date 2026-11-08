@@ -511,7 +511,7 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
     let native=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap()
         .adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
     let canonical=native.current[0].skeletons().iter().find_map(|row|match row{
-        crate::Skeleton::Member{metadata,..}if metadata.procedure.is_some()=>Some(Arc::clone(&metadata.canonical)),
+        crate::Skeleton::Member{metadata,..}if metadata.procedure.is_some()=>Some(metadata.canonical.clone()),
         _=>None,
     }).unwrap();
     let ordinary=crate::adapter::from_ast(&dm_syntax::parse(text),
@@ -526,7 +526,7 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
     drop(native);
     census.prune(&a).unwrap();
     assert_eq!(census.live_groups(),1);
-    assert!(used.load(Ordering::Acquire)>=dm_syntax::SettingChargeCounter::root_allocation_bytes() + (canonical.len()));
+    assert!(used.load(Ordering::Acquire)>=dm_syntax::SettingChargeCounter::root_allocation_bytes() + canonical.storage_arc().len());
     drop(canonical);
     census.prune(&a).unwrap();
     assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());

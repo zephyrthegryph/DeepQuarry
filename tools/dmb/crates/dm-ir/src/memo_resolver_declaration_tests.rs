@@ -25,7 +25,7 @@ pub(super) fn declaration() -> ResolvedMeaning {
             initializer: None,
             declared_initializer: None,
             resolved_constant: None,
-            canonical: Arc::from(&b"exact declaration recipe"[..]),
+            canonical: (&b"exact declaration recipe"[..]).into(),
         }),
     }
 }

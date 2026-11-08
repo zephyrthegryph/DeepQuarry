@@ -714,7 +714,7 @@ impl HeapCensus {
     }
     fn declaration(&mut self, declaration: &dm_ir::DeclarationMeaning) {
         let owner = "semantic_metadata";
-        self.slice("semantic_metadata.canonical", &declaration.canonical, true);
+        self.slice("semantic_metadata.canonical", declaration.canonical.storage_arc(), true);
         for expression in [&declaration.initializer, &declaration.declared_initializer]
             .into_iter()
             .flatten()

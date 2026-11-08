@@ -227,7 +227,7 @@ pub(super) fn decode(
                     symbols.text(owner)?;
                     symbols.text(name)?;
                     let meaning = meaning.restore(PortableNames::table(&symbols))?;
-                    if xxhash_rust::xxh3::xxh3_128(&meaning.canonical) != content {
+                    if meaning.canonical.xxh3_128() != content {
                         return None;
                     }
                     Skeleton::Member {

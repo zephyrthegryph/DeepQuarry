@@ -92,7 +92,7 @@ fn legacy_metadata(metadata: &MemberMetadata) -> u128 {
         bytes.extend_from_slice(&data);
     }
     bytes.extend_from_slice(&metadata.flags.to_le_bytes());
-    bytes.extend_from_slice(&metadata.canonical);
+    bytes.extend_from_slice(&metadata.canonical.to_vec());
     xxhash_rust::xxh3::xxh3_128(&bytes)
 }
 
@@ -135,7 +135,7 @@ fn populated() -> MemberMetadata {
         declared_initializer: Some(expression.clone()),
         initializer: Some(expression),
         resolved_constant: Some(SemanticValue::NumberBits((-1.25_f32).to_bits())),
-        canonical: Arc::from(&b"exact\0canonical"[..]),
+        canonical: b"exact\0canonical".as_slice().into(),
     }
 }
 #[test]
@@ -181,7 +181,7 @@ fn streaming_metadata_matches_independent_legacy_for_every_optional_combination(
     changed.flags ^= 1;
     assert_ne!(original, metadata_fingerprint(&changed));
     changed = metadata.clone();
-    changed.canonical = Arc::from(&b"changed"[..]);
+    changed.canonical = b"changed".as_slice().into();
     assert_ne!(original, metadata_fingerprint(&changed));
 }
 #[test]

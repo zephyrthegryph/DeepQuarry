@@ -197,7 +197,7 @@ fn finalize_preserves_runtime_override_token_instead_of_parent_scalar() {
             shared: false,
             value: crate::initializer_policy::DefaultValue::InitializerExpression {
                 token: 123,
-                canonical: Arc::from([]),
+                canonical: Default::default(),
             },
         })]),
         chains: Arc::from([]),

@@ -497,9 +497,9 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         declared_initializer: symbolic_initializer.clone(),
                         initializer: symbolic_initializer,
                         resolved_constant,
-                        canonical: canonical(header)?,
+                        canonical: canonical(header)?.into(),
                     };
-                    let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
+                    let content = metadata.canonical.xxh3_128();
                     Ok(Some(Skeleton::Member {
                         owner: context.symbol(&owner)?,
                         name: context.symbol(raw_name)?,
@@ -696,7 +696,7 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     } else {
                         MemberKind::Proc
                     };
-                    let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
+                    let content = metadata.canonical.xxh3_128();
                     Ok(Some(Skeleton::Member {
                         owner: owner_id,
                         name: name_id,
@@ -732,10 +732,10 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     let metadata = MemberMetadata {
                         inherited_opaque: None,
                         initializer: Some(context.demand.assignment(item.raw.header_span(),header,index,context.headers,context.symbols)?),
-                        canonical: canonical(&header[index + 1..])?,
+                        canonical: canonical(&header[index + 1..])?.into(),
                         ..MemberMetadata::default()
                     };
-                    let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
+                    let content = metadata.canonical.xxh3_128();
                     Ok(Some(Skeleton::Member {
                         owner: context.symbol(&assignment_owner)?,
                         name: context.symbol(name)?,

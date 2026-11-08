@@ -154,7 +154,7 @@ fn visit_aliases(facts:&crate::AdaptedDeclarations,prepared:&PreparedOriginalSig
  let mut seen=[false;4];
  for skeleton in &facts.skeletons{let crate::Skeleton::Member{metadata,..}=skeleton else{continue};let Some(procedure)=&metadata.procedure else{continue};
   f(Alias::Member(metadata))?;
-  f(Alias::Canonical(&metadata.canonical))?;
+  f(Alias::Canonical(metadata.canonical.storage_arc()))?;
   let (metadata_slot,settings_shared,parameters_shared)=prepared.shared_procedure_aliases(procedure);
   for (slot,actual) in [
    (metadata_slot,Alias::Metadata(procedure)),

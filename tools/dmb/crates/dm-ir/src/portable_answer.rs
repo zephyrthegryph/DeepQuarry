@@ -350,7 +350,7 @@ mod tests {
                 )]),
             })),
             initializer: Some(expression("1")),
-            canonical: Arc::from(&b"recipe"[..]),
+            canonical: (&b"recipe"[..]).into(),
             ..Default::default()
         }
     }

@@ -29,7 +29,7 @@ fn replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection() {
         initializer: None,
         declared_initializer: None,
         resolved_constant: None,
-        canonical: Arc::from([]),
+        canonical: Default::default(),
     });
     let previous = ResolvedMeaning::Member {
         owner: dm_ir::SymbolId::of("/probe"),

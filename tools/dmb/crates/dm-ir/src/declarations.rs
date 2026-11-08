@@ -310,7 +310,7 @@ pub struct DeclarationMeaning {
     /// Formal field declaration default, retained apart from class overrides.
     pub declared_initializer: Option<SymbolicExpression>,
     pub resolved_constant: Option<SemanticValue>,
-    pub canonical: Arc<[u8]>,
+    pub canonical: crate::CanonicalBytes,
 }
 impl DeclarationMeaning {
     pub fn canonical_bytes(&self) -> Vec<u8> {
@@ -335,7 +335,7 @@ impl Default for DeclarationMeaning {
             initializer: None,
             declared_initializer: None,
             resolved_constant: None,
-            canonical: Arc::from([]),
+            canonical: crate::CanonicalBytes::default(),
         }
     }
 }

@@ -1159,7 +1159,7 @@ fn append_procedure_canonical(
     held: &mut Option<dm_syntax::SettingRootLease>,
     cache: Option<&mut Option<TrivialCanonicalSuffix>>,
     a: &SettingAdmission<'_>,
-) -> std::io::Result<Arc<[u8]>> {
+) -> std::io::Result<dm_ir::CanonicalBytes> {
     use std::io::{Error, ErrorKind};
     checkpoint(a)?;
     if header.storage.as_ref().is_none_or(|lease| !a.matches_lease_domain(lease)) {
@@ -1182,8 +1182,9 @@ fn append_procedure_canonical(
         drop(work);
     }
 
-    let mut retained = reserve(arc_payload::<u8>(header.bytes.len()).ok_or(ErrorKind::OutOfMemory)?)?;
-    let result: Arc<[u8]> = std::mem::take(&mut header.bytes).into();
+    let plan = dm_ir::CanonicalBytes::plan(&header.bytes);
+    let mut retained = reserve(arc_payload::<u8>(plan.storage_len()).ok_or(ErrorKind::OutOfMemory)?)?;
+    let result = plan.seal();
     drop(header);
     if let Some(owner) = held {
         a.absorb(owner, &mut retained)?;
@@ -1243,7 +1244,7 @@ impl OriginalSignatureSpellings {
 /// Coordinate/source equality cannot substitute another header owner.
 pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],trivial_suffixes:[Option<TrivialCanonicalSuffix>;2],adapter_storage:Option<dm_syntax::SettingRootLease>}
 impl PreparedOriginalSignatures{
- pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<Arc<[u8]>>{
+ pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<dm_ir::CanonicalBytes>{
   let slot=usize::from(procedure.signature.variadic);
   let cache=self.trivial_metadata[slot].as_deref().is_some_and(|owner|std::ptr::eq(owner,procedure))
    .then(||&mut self.trivial_suffixes[slot]);
@@ -2185,7 +2186,7 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
    let canonical=actual.prepared.append_procedure_canonical(header,owner,&admission).unwrap();
    let mut expected=crate::adapter::canonical(text).unwrap().to_vec();
    expected.extend(owner.canonical_bytes());
-   assert_eq!(&*canonical,expected.as_slice());
+   assert_eq!(canonical.to_vec(),expected);
   }
   assert!(actual.prepared.trivial_suffixes.iter().all(Option::is_some));
   drop((plain,variadic,plain_again,actual));
@@ -2615,10 +2616,10 @@ mod procedure_canonical_allocation_tests {
         let mut held = None;
         let header = FundedCanonicalHeader::encode(text, &a).unwrap().unwrap();
         let first = append_procedure_canonical(header, &proc, &mut held, None, &a).unwrap();
-        assert_eq!(first.as_ref(), expected.as_slice());
+        assert_eq!(first.to_vec(), expected);
         let retained = held.as_ref().unwrap().bytes();
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (retained));
-        assert_eq!(retained, (2 * std::mem::size_of::<AtomicUsize>() + expected.len())
+        assert_eq!(retained, (2 * std::mem::size_of::<AtomicUsize>() + first.storage_arc().len())
             .next_multiple_of(std::mem::align_of::<AtomicUsize>()));
 
         let polls = Cell::new(0);

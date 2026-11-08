@@ -307,7 +307,7 @@ fn default_edits<'a, 'b>(
             let mut metadata = metadata.clone();
             metadata.initializer = None;
             metadata.declared_initializer = None;
-            metadata.canonical = Arc::from([]);
+            metadata.canonical = Default::default();
             metadata
         };
         if strip(before) != strip(after) {

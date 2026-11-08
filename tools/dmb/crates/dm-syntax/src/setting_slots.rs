@@ -3,6 +3,58 @@
 //! every call. Native callers supply their SAME existing body-budget admission.
 use crate::{SettingAdmission, SettingExpression, SettingRootLease, SettingSyntaxFailure};
 use std::{io, mem::size_of, sync::Mutex};
+
+const ROOT_PAGE_LEN: usize = 256;
+const ROOT_WORD_BITS: usize = u64::BITS as usize;
+
+/// The mask addresses original ordinals. Only published roots have a row.
+#[derive(Default)]
+struct RootPage {
+    mask: [u64; ROOT_PAGE_LEN / ROOT_WORD_BITS],
+    roots: Vec<SettingExpression>,
+    credit: Option<SettingRootLease>,
+}
+
+impl RootPage {
+    fn position(&self, local: usize) -> (usize, bool) {
+        let word = local / ROOT_WORD_BITS;
+        let bit = 1u64 << (local % ROOT_WORD_BITS);
+        let before = self.mask[..word].iter().map(|word| word.count_ones()).sum::<u32>();
+        let rank = before + (self.mask[word] & (bit - 1)).count_ones();
+        (rank as usize, self.mask[word] & bit != 0)
+    }
+
+    fn get(&self, local: usize) -> Option<&SettingExpression> {
+        let (index, occupied) = self.position(local);
+        occupied.then(|| &self.roots[index])
+    }
+
+    fn insert(
+        &mut self, local: usize, root: &SettingExpression, a: &SettingAdmission<'_>,
+    ) -> Result<(), SettingSyntaxFailure> {
+        let (index, occupied) = self.position(local);
+        debug_assert!(!occupied);
+        let replacement = if self.roots.len() == self.roots.capacity() {
+            let capacity = (self.roots.capacity() * 2).max(1);
+            debug_assert!(capacity <= ROOT_PAGE_LEN);
+            Some(funded_rows(capacity, 0, a)?)
+        } else {
+            None
+        };
+        // Nothing has moved and no mask bit is visible until the last fallible
+        // check. A failed replacement drops its allocation before its credit.
+        a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
+        if let Some((mut rows, credit)) = replacement {
+            rows.append(&mut self.roots);
+            drop(std::mem::replace(&mut self.roots, rows));
+            self.credit = Some(credit);
+        }
+        self.roots.insert(index, root.clone());
+        self.mask[local / ROOT_WORD_BITS] |= 1u64 << (local % ROOT_WORD_BITS);
+        Ok(())
+    }
+}
+
 #[derive(Default)]
 pub struct SettingExpressionSlots {
     state: Mutex<Option<Storage>>,
@@ -17,7 +69,8 @@ struct DimensionStorage{
     metadata:SettingRootLease,
 }
 struct Storage {
-    roots: Vec<Option<SettingExpression>>,
+    count: usize,
+    roots: Vec<RootPage>,
     dimensions:Option<DimensionStorage>,
     // Last: actual Vec allocation and original root aliases die before credit.
     metadata: SettingRootLease,
@@ -36,6 +89,26 @@ fn denied(
     a.record_operational_error(io::Error::new(kind, message));
     SettingSyntaxFailure::Operational(kind.into())
 }
+
+fn funded_rows<T>(
+    capacity: usize, fixed: usize, a: &SettingAdmission<'_>,
+) -> Result<(Vec<T>, SettingRootLease), SettingSyntaxFailure> {
+    let overflow = || denied(a, io::ErrorKind::OutOfMemory, "setting slot capacity overflow");
+    let layout = std::alloc::Layout::array::<T>(capacity).map_err(|_| overflow())?;
+    let bytes = layout.size().checked_add(fixed).ok_or_else(overflow)?;
+    let credit = a.reserve(bytes).map_err(SettingSyntaxFailure::Operational)?;
+    if layout.size() == 0 {
+        return Ok((Vec::new(), credit));
+    }
+    // SAFETY: the exact nonzero Global array layout is already funded.
+    let pointer = std::ptr::NonNull::new(unsafe { std::alloc::alloc(layout) }.cast::<T>())
+        .ok_or_else(|| denied(a, io::ErrorKind::OutOfMemory, "setting slot allocation refused"))?;
+    // SAFETY: no elements are initialized yet. The unique Vec will free the
+    // same layout when it drops, before the associated lease.
+    let rows = unsafe { Vec::from_raw_parts(pointer.as_ptr(), 0, capacity) };
+    Ok((rows, credit))
+}
+
 /// Same conservative4x requested-capacity envelope BEFORE allocation. Exposed
 /// excess refuses before publication; no post-allocation charge is its proof.
 fn dimension_rows<T>(count:usize,fixed:usize,a:&SettingAdmission<'_>)->Result<(Vec<T>,SettingRootLease),SettingSyntaxFailure>{
@@ -57,51 +130,15 @@ impl SettingExpressionSlots {
             )
         })?;
         if guard.is_none() {
-            // Reserve BEFORE Vec allocation; admit any exposed allocator excess
-            // before it can survive this call. No source/profile cap is changed.
-            let bytes = count
-                .checked_mul(size_of::<Option<SettingExpression>>())
-                .and_then(|n| n.checked_add(size_of::<Storage>()))
-                .ok_or_else(|| {
-                    denied(
-                        a,
-                        io::ErrorKind::OutOfMemory,
-                        "setting slot capacity overflow",
-                    )
-                })?;
-            let mut metadata = a
-                .reserve(bytes)
-                .map_err(SettingSyntaxFailure::Operational)?;
-            let mut roots = Vec::new();
-            roots.try_reserve_exact(count).map_err(|_| {
-                denied(
-                    a,
-                    io::ErrorKind::OutOfMemory,
-                    "setting slot allocation refused",
-                )
-            })?;
-            let actual = roots
-                .capacity()
-                .checked_mul(size_of::<Option<SettingExpression>>())
-                .and_then(|n| n.checked_add(size_of::<Storage>()))
-                .ok_or_else(|| {
-                    denied(
-                        a,
-                        io::ErrorKind::OutOfMemory,
-                        "setting slot exposed capacity overflow",
-                    )
-                })?;
-            if actual > bytes {
-                a.grow(&mut metadata, actual - bytes)
-                    .map_err(SettingSyntaxFailure::Operational)?;
-            }
-            roots.resize_with(count, || None);
-            *guard = Some(Storage { roots, dimensions:None, metadata });
+            let pages = count.div_ceil(ROOT_PAGE_LEN);
+            let (mut roots, metadata) = funded_rows(pages, size_of::<Storage>(), a)?;
+            roots.resize_with(pages, RootPage::default);
+            *guard = Some(Storage { count, roots, dimensions:None, metadata });
         }
         let storage = guard.as_mut().expect("initialized original slots");
         // Check actual counter identity BEFORE reading a warm root. A prepared
         // original owner cannot migrate silently to another budget/provider Db.
-        if storage.roots.len() != count || !a.matches_lease_domain(&storage.metadata) {
+        if storage.count != count || !a.matches_lease_domain(&storage.metadata) {
             return Err(denied(
                 a,
                 io::ErrorKind::InvalidInput,
@@ -159,7 +196,9 @@ impl SettingExpressionSlots {
         }
         let mut guard=self.lock_storage(count,a)?;
         let storage=guard.as_mut().expect("initialized original slots");
-        if let Some(root) = &storage.roots[ordinal] {
+        let page = &mut storage.roots[ordinal / ROOT_PAGE_LEN];
+        let local = ordinal % ROOT_PAGE_LEN;
+        if let Some(root) = page.get(local) {
             if !root.is_retained_in(a) || root.current_offset() != 0 {
                 return Err(denied(
                     a,
@@ -178,8 +217,7 @@ impl SettingExpressionSlots {
                 "unissued storage cannot populate native setting slot",
             ));
         }
-        a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
-        storage.roots[ordinal] = Some(root.clone());
+        page.insert(local, &root, a)?;
         Ok(root)
     }
     /// Storage identity only. The enclosing ORIGINAL source receipt must bind
@@ -191,8 +229,8 @@ impl SettingExpressionSlots {
             .and_then(|guard| {
                 guard
                     .as_ref()
-                    .and_then(|s| s.roots.get(ordinal))
-                    .and_then(Option::as_ref)
+                    .filter(|storage| ordinal < storage.count)
+                    .and_then(|storage| storage.roots[ordinal / ROOT_PAGE_LEN].get(ordinal % ROOT_PAGE_LEN))
                     .map(|original| original.same_root(root))
             })
             .unwrap_or(false)
@@ -212,8 +250,8 @@ impl SettingExpressionSlots {
                     .visit_counter_storage(|p, n| allocation(p, n, n));
                 allocation(
                     storage.roots.as_ptr() as usize,
-                    storage.roots.len() * size_of::<Option<SettingExpression>>(),
-                    storage.roots.capacity() * size_of::<Option<SettingExpression>>(),
+                    storage.roots.len() * size_of::<RootPage>(),
+                    storage.roots.capacity() * size_of::<RootPage>(),
                 );
                 if let Some(dimensions)=&storage.dimensions{
                     dimensions.metadata.visit_counter_storage(|p,n|allocation(p,n,n));
@@ -224,8 +262,18 @@ impl SettingExpressionSlots {
                         for (_,value) in group.roots.iter().flatten(){root(value);}
                     }
                 }
-                for value in storage.roots.iter().flatten() {
-                    root(value);
+                for page in &storage.roots {
+                    if let Some(credit) = &page.credit {
+                        credit.visit_counter_storage(|p, n| allocation(p, n, n));
+                        allocation(
+                            page.roots.as_ptr() as usize,
+                            page.roots.len() * size_of::<SettingExpression>(),
+                            page.roots.capacity() * size_of::<SettingExpression>(),
+                        );
+                    }
+                    for value in &page.roots {
+                        root(value);
+                    }
                 }
             }
         }
@@ -243,6 +291,87 @@ mod tests {
         assert!(input.diagnostics.is_empty());
         crate::prepare_setting_expression(text, &input.tokens, crate::Span::new(0, text.len()), a)
     }
+
+    #[test]
+    fn sparse_initializer_slots_fund_only_occupied_pages_and_keep_high_ordinals() {
+        let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+        let counter = crate::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&counter, 256 * 1024, &|| Ok(()));
+        let slots = SettingExpressionSlots::default();
+        let count: usize = 400_001;
+        let ordinals = [count - 1, ROOT_PAGE_LEN, ROOT_PAGE_LEN - 1, 64, 63, 0];
+        let value = prepare(&a, "1").unwrap();
+        let base = counter.load(Ordering::Acquire);
+        for ordinal in ordinals {
+            let root = slots.obtain(ordinal, count, &a, || Ok(value.clone())).unwrap();
+            assert!(root.same_root(&value));
+            assert!(slots.contains_original(ordinal, &value));
+        }
+        let directories = count.div_ceil(ROOT_PAGE_LEN) * size_of::<RootPage>();
+        let leaf_capacity = (4 + 1 + 1) * size_of::<SettingExpression>();
+        assert_eq!(counter.load(Ordering::Acquire) - base,
+            size_of::<Storage>() + directories + leaf_capacity);
+        let mut visited = 0;
+        slots.visit_storage(|_, _, _| {}, |root| {
+            assert!(root.same_root(&value));
+            visited += 1;
+        });
+        assert_eq!(visited, ordinals.len());
+        assert!(!slots.contains_original(65, &value));
+        assert!(!slots.contains_original(count, &value));
+        for ordinal in ordinals {
+            assert!(slots.obtain(ordinal, count, &a, || panic!("warm root was already issued"))
+                .unwrap().same_root(&value));
+        }
+        let wrong_count = SettingAdmission::new(&counter, 256 * 1024, &|| Ok(()));
+        assert!(matches!(slots.obtain(0, count + 1, &wrong_count, || panic!("foreign ordinal domain")),
+            Err(SettingSyntaxFailure::Operational(ref e)) if e.kind() == io::ErrorKind::InvalidInput));
+        drop(slots);
+        assert_eq!(counter.load(Ordering::Acquire), base);
+        drop(value);
+        assert_eq!(counter.load(Ordering::Acquire), fixed);
+    }
+
+    #[test]
+    fn sparse_initializer_growth_refusal_and_late_stop_leave_the_old_page_exact() {
+        let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+        let counter = crate::SettingChargeCounter::try_new(fixed).unwrap();
+        let a = SettingAdmission::new(&counter, 8 * 1024 * 1024, &|| Ok(()));
+        let slots = SettingExpressionSlots::default();
+        let first = prepare(&a, "1").unwrap();
+        let second = prepare(&a, "2").unwrap();
+        let count = 1024;
+        let later = count - 1;
+        let earlier = later - 1;
+        slots.obtain(later, count, &a, || Ok(first.clone())).unwrap();
+        let before = counter.load(Ordering::Acquire);
+        let limited = SettingAdmission::new(&counter,
+            before + 2 * size_of::<SettingExpression>() - 1, &|| Ok(()));
+        assert!(matches!(slots.obtain(earlier, count, &limited, || Ok(second.clone())),
+            Err(SettingSyntaxFailure::Operational(ref e)) if e.kind() == io::ErrorKind::OutOfMemory));
+        assert_eq!(counter.load(Ordering::Acquire), before);
+        assert!(slots.contains_original(later, &first));
+        assert!(!slots.contains_original(earlier, &second));
+
+        let stop_after_overlap = || {
+            if counter.load(Ordering::Acquire) > before {
+                Err(io::Error::from_raw_os_error(1450))
+            } else {
+                Ok(())
+            }
+        };
+        let stopped = SettingAdmission::new(&counter, 8 * 1024 * 1024, &stop_after_overlap);
+        assert!(slots.obtain(earlier, count, &stopped, || Ok(second.clone())).is_err());
+        assert_eq!(stopped.take_operational_error().unwrap().raw_os_error(), Some(1450));
+        assert_eq!(counter.load(Ordering::Acquire), before);
+        assert!(slots.contains_original(later, &first));
+        assert!(!slots.contains_original(earlier, &second));
+        assert!(slots.obtain(earlier, count, &a, || Ok(second.clone())).unwrap().same_root(&second));
+        assert!(slots.contains_original(later, &first));
+        drop((slots, first, second));
+        assert_eq!(counter.load(Ordering::Acquire), fixed);
+    }
+
     #[test]
     fn warm_original_setting_slot_projects_offsets_without_second_parse_or_ast_shift() {
         let counter = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();

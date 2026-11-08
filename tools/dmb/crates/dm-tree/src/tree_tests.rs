@@ -74,7 +74,7 @@ fn cycles_and_duplicate_declarations_are_errors() {
 #[test]
 fn authored_metadata_shares_between_skeleton_and_tree_until_effective_mutation() {
     let metadata = MemberMetadata {
-        canonical: Arc::from(&b"authored signature"[..]),
+        canonical: b"authored signature".as_slice().into(),
         ..MemberMetadata::default()
     };
     let metadata = Arc::new(metadata);

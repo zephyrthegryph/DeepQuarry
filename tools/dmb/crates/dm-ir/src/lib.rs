@@ -24,6 +24,8 @@ pub use string_roster::{StringPayload, StringRoster, StringRosterError};
 /// Native proc/verb declaration modifier in the existing DeclarationMeaning.flags slot.
 /// Other member kinds retain their existing contextual flag masks.
 pub const PROC_FLAG_FINAL:u32=1<<16;
+mod canonical_bytes;
+pub use canonical_bytes::{CanonicalBytes, CanonicalBytesPlan};
 mod canonical_encoding;
 pub use canonical_encoding::{CanonicalByteSink, CanonicalWork};
 mod declarations;

@@ -210,7 +210,10 @@ pub(crate) fn metadata_fingerprint(metadata: &MemberMetadata) -> u128 {
         bytes.update(&data);
     }
     bytes.update(&metadata.flags.to_le_bytes());
-    bytes.update(&metadata.canonical);
+    let Ok(()) = metadata.canonical.try_for_each_chunk(|chunk| {
+        bytes.update(chunk);
+        Ok::<_, std::convert::Infallible>(())
+    });
     bytes.digest128()
 }
 

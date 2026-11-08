@@ -24,7 +24,7 @@ fn declaration()->DeclarationMeaning{
   signature:ProcedureSignature{variadic:true,parameters:Arc::from([Parameter{name:SymbolId::of("value"),declared_type:Some(SymbolId::of("/list")),list_element_type:Some(SymbolId::of("/datum/value")),flags:0x1234,array:Some(array.clone()),default:Some(expression.clone()),input_annotation:Some(expression.clone()),source_expression:Some(expression.clone()),relative_span:dm_syntax::Span::new(100,200)}]),return_annotation:Some(expression.clone())},
   settings:Arc::from([ProcedureSettingNode::Conditional{condition:expression.clone(),then_branch:Arc::from([ProcedureSettingNode::Setting(ProcedureSetting{name:SymbolId::of("setting"),operation:SettingOperation::In,value:expression.clone()})]),else_branch:Arc::from([ProcedureSettingNode::UnsupportedContext{canonical_header:expression.clone(),children:Arc::from([ProcedureSettingNode::Setting(ProcedureSetting{name:SymbolId::of("other"),operation:SettingOperation::Assign,value:expression.clone()})])}])}]),
  });
- DeclarationMeaning{inherited_opaque:Some(OpaqueFieldBase{owner:SymbolId::of("/base"),name:SymbolId::of("opaque"),declared_type:DeclaredTypeKnowledge::Known(SymbolId::of("/datum"))}),declared_type:Some(SymbolId::of("/datum/value")),list_element_type:Some(SymbolId::of("/datum/element")),display_name:Some(SymbolId::of("alias")),flags:0x87654321,procedure:Some(procedure),array:Some(array),initializer:Some(expression.clone()),declared_initializer:Some(expression),resolved_constant:Some(SemanticValue::List(Arc::from([(Some(SemanticValue::Text(Arc::from("key".as_bytes()))),SemanticValue::List(Arc::from([(None,SemanticValue::NumberBits(0x80000000)),(Some(SemanticValue::Type(SymbolId::of("/datum"))),SemanticValue::Resource(SymbolId::of("file.dmi")))]))),(None,SemanticValue::Null)]))),canonical:Arc::from("α authored header".as_bytes())}
+ DeclarationMeaning{inherited_opaque:Some(OpaqueFieldBase{owner:SymbolId::of("/base"),name:SymbolId::of("opaque"),declared_type:DeclaredTypeKnowledge::Known(SymbolId::of("/datum"))}),declared_type:Some(SymbolId::of("/datum/value")),list_element_type:Some(SymbolId::of("/datum/element")),display_name:Some(SymbolId::of("alias")),flags:0x87654321,procedure:Some(procedure),array:Some(array),initializer:Some(expression.clone()),declared_initializer:Some(expression),resolved_constant:Some(SemanticValue::List(Arc::from([(Some(SemanticValue::Text(Arc::from("key".as_bytes()))),SemanticValue::List(Arc::from([(None,SemanticValue::NumberBits(0x80000000)),(Some(SemanticValue::Type(SymbolId::of("/datum"))),SemanticValue::Resource(SymbolId::of("file.dmi")))]))),(None,SemanticValue::Null)]))),canonical:"α authored header".as_bytes().into()}
 }
 #[test]fn admitted_native_canonical_encoder_matches_frozen_original_full_declarations_and_answers(){
  let data=Arc::new(declaration());let identity=ProcedureIdentity{owner:SymbolId::of("/datum"),name:SymbolId::of("probe"),verb:true,occurrence:7};
@@ -294,7 +294,7 @@ impl FrozenOldBytes for DeclarationMeaning{fn old_bytes(&self)->Vec<u8>{
             &mut out,
             self.resolved_constant.as_ref().map(|v| v.old_bytes()),
         );
-        part(&mut out, &self.canonical);
+        part(&mut out, &self.canonical.to_vec());
         out
     }}
 fn append_expression(bytes: &mut Vec<u8>, value: Option<&SymbolicExpression>) {

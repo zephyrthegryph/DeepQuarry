@@ -180,7 +180,7 @@ fn blank() -> DeclarationMeaning {
         initializer: None,
         declared_initializer: None,
         resolved_constant: None,
-        canonical: Arc::from([]),
+        canonical: Default::default(),
     }
 }
 fn builtin_ancestor<'a>(

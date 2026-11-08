@@ -147,7 +147,7 @@ impl<'a,const INLINE: usize> Encoder<'a,'_,INLINE> {
                     7=>self.optional_expression(value.initializer.as_ref())?,
                     8=>self.optional_expression(value.declared_initializer.as_ref())?,
                     9=>{self.byte(u8::from(value.resolved_constant.is_some()))?;if let Some(v)=&value.resolved_constant{self.frame(Root::Semantic(v))?}},
-                    10=>{self.length(value.canonical.len())?;self.bytes(&value.canonical)?},
+                    10=>{self.length(value.canonical.len())?;value.canonical.try_for_each_chunk(|chunk|self.bytes(chunk))?},
                     _=>unreachable!(),
                 }
             },
