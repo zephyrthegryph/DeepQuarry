@@ -14,9 +14,9 @@ impl dq_analyze::sem_handlers_structural_native::Source for Source<'_,'_>{
  fn require(&self)->Result<(),Failure>{self.capture.require_bound()?;if !self.capture.uses_queries(self.queries)||!self.inputs.archive().uses_body_queries(self.queries){return Err(actual("handlers current source/query owner differs"))}self.budget.require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))}
  fn checkpoint(&self)->io::Result<()>{crate::daemon::control::checkpoint()}
  fn budget(&self)->&Arc<Budget>{self.budget}
- fn definition_relative(&self,ordinal:usize)->Result<String,Failure>{
+ fn definition_relative(&self,ordinal:usize,scratch:&Budget)->Result<String,Failure>{
   dq_analyze::sem_handlers_structural_native::Source::require(self)?;crate::daemon::control::checkpoint()?;
-  let occurrence=self.inputs.archive().occurrences().get(ordinal).ok_or("handler source value ordinal absent")?;let point=self.inputs.archive().callable_header_policy_line(occurrence.member)?;let root=self.capture.root();let size=point.path.as_os_str().len().checked_add(root.as_os_str().len()).and_then(|n|n.checked_mul(128)).and_then(|n|n.checked_add(4096)).ok_or_else(||{self.budget.deny();Failure::Operational(io::ErrorKind::OutOfMemory.into())})?;self.budget.charge(size).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+  let occurrence=self.inputs.archive().occurrences().get(ordinal).ok_or("handler source value ordinal absent")?;let point=self.inputs.archive().callable_header_policy_line(occurrence.member)?;let root=self.capture.root();let size=point.path.as_os_str().len().checked_add(root.as_os_str().len()).and_then(|n|n.checked_mul(128)).and_then(|n|n.checked_add(4096)).ok_or_else(||{scratch.deny();Failure::Operational(io::ErrorKind::OutOfMemory.into())})?;scratch.charge(size).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
   let relative=dm_preprocess::regions::relative_filesystem_path(&point.path,root);Ok(match relative{Some(relative)=>dq_analyze::util::rel_slash(&relative,std::path::Path::new("")),None=>dq_analyze::util::rel_slash(&point.path,root)})
  }
  fn candidate(&self,relative:&str)->Result<bool,Failure>{dq_analyze::sem_handlers_structural_native::Source::require(self)?;Ok(self.capture.candidate(relative))}
