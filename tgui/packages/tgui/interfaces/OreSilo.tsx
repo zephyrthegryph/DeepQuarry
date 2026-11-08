@@ -3,6 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
   Box,
+  DmIcon,
   Icon,
   LabeledList,
   NoticeBox,
@@ -15,12 +16,12 @@ import {
 import { classes } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
-import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
 import type { Material } from './Fabrication/Types';
 
 type Machine = {
   name: string;
   icon: string;
+  icon_state: string;
   onHold: boolean;
   location: string;
 };
@@ -148,11 +149,22 @@ const MachineDisplay = (props: MachineProps) => {
 
   return (
     <Box className="FabricatorRecipe">
-      <TechWebRecipeIcon
-        icon={machine.icon}
-        name={machineName}
-        canPrint={machine.onHold}
-      />
+      <Box
+        className={classes([
+          'FabricatorRecipe__Title',
+          machine.onHold && 'FabricatorRecipe__Title--disabled',
+        ])}
+      >
+        <Box className="FabricatorRecipe__Icon">
+          <DmIcon
+            icon={machine.icon}
+            icon_state={machine.icon_state}
+            width="32px"
+            height="32px"
+          />
+        </Box>
+        <Box className="FabricatorRecipe__Label">{machineName}</Box>
+      </Box>
       <Tooltip
         content={
           machine.onHold
