@@ -34,8 +34,7 @@
 	var/datum/op_cand/mine = op_resolution_winner(compiled)
 	var/datum/op_cand/theirs = op_resolution_winner(full)
 	TEST_ASSERT_EQUAL(mine ? op_cand_keys(list(mine)) : "none", theirs ? op_cand_keys(list(theirs)) : "none", "[what]: the winner and its side")
-	while(op_fast_more(compiled))
-		pass()
+	op_fast_materialize(compiled)
 	TEST_ASSERT_EQUAL(op_cand_keys(compiled.ordered), op_cand_keys(full.ordered), "[what]: the order of the survivors")
 
 /// A holder's merged rows and providers are dropped when its capability generation moves (a grant attached, ended or restacked).

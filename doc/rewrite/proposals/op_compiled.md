@@ -1,6 +1,6 @@
 # Compiled op dispatch
 
-Status: slices 1 and 2 in `code/engine/parts/resolve.dm`, `provider.dm`, `dispatch.dm`; slices 3 and 4 open (below).
+Status: slices 1 and 2 landed (d77b8f3893); slices 3 and 4 in `dispatch.dm`, `resolve.dm`, `provider.dm`, `run.dm` (below).
 Design it serves: `final_api.html` section 8 "Resolution", "Resolution cost"; section 9.
 
 ## The question
@@ -95,12 +95,17 @@ condition grammar, the pooled act, the two-pass split itself, and Require/Do/End
    menu, click-order, keybind and ability tests green; `active_play` item toggle and melee down.
 2. Compiled click: shape-gated, pre-ordered side tables, best-first walk, refusal on demand, parity in tests. Gate: as 1, plus
    `dq_op_compiled_*`; melee resolution from 52 candidate records to the few that reach their group.
-3. Zero allocation per click: the walk keeps flat state in a pooled resolution (no `/datum/op_cand` per row; the winner's record is pooled
-   with it), the reach gate's lists become scratch, and `op_begin()` does not re-test the `when()` the walk just tested. Gate: `datum/New`
+3. No allocation per candidate: the walk keeps its survivors flat (row, side, provider index) and makes a `/datum/op_cand` only for the
+   winner (and each step of a decline or `passes()` chain); `when()` runs on an act filled from the row (`op_act_fill()`); the reach gate
+   builds no lists (`reach_better_provider()`); the intents are shared constants; `op_begin()` does not re-test the `when()` the walk just
+   tested. What a click still allocates is constant: the resolution and its few lists, the winner's record, the `op_result`. Gate: `datum/New`
    per click in a `--profile` run at most one (the `op_result`).
-4. Menu cache per (actor, target, held), validated by the reads its rows recorded (`op_menu_record_reads()`, the lookup read scope) and
-   the provider generation, not by the act generation that every human state change bumps; `settle_for_reads` once per menu, not per row.
-   Gate: `ap_menu_warm_us` near zero, `ap_menu_cold_us` down, `dq_read_once_menu_*`, `dx_menu_order*`, `dq_ops_menu_*` green.
+4. Menu: no candidate made only for a near miss (`op_resolve(near_misses = FALSE)`: the origin-refused rows, most of a human's ~290),
+   one act per row for `when()` and Require (`op_menu_decide()`), `settle_for_reads` once per entity per read. Still open: a human's
+   menu is never cached, because one row (`vr_logout_granted`, `vr_procs.dm`) reads `verbs` through `read_once()`. Re-asking only such
+   sampled rows was tried and is wrong today: other rows' requirements read state no act generation covers (an implant put into the
+   actor: `dq_verb_menu_ops_reagent_implants`), and the uncacheable menu was hiding that. The cache needs per-key dependencies (the
+   (entity, key) reads `op_watch_reads()` already lists) before rows can be reused. Gate: `ap_menu_warm_us` near zero, `ap_menu_cold_us` down, `dq_read_once_menu_*`, `dx_menu_order*`, `dq_ops_menu_*` green.
 
 ## What the Rust side could own
 

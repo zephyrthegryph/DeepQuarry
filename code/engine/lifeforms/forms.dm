@@ -205,15 +205,32 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 				if(istext(read))
 					. += read
 
-/// ENGINE_HOOK_* bits the forms of a compiled table ask of the lifecycle (table_hook_flags()).
+/// ENGINE_HOOK_* bits the forms of a compiled table ask of the lifecycle (table_hook_flags()). PREINIT and INIT are per phase: PREINIT only for a
+/// form lifeform_preinit() runs (the kinds of lifeform_plan_finish()'s P.pre), INIT only for one lifeform_init() runs (P.init), so an atom whose type
+/// declares only setup(early = TRUE), an input or a tooltip never enters engine_holder_preinit()/engine_holder_init() for nothing (507 k preinit
+/// entries at a full-map boot, about 100 k with work). The bits are a superset of the plan's (a subtype's re-declared entry may replace a parent's),
+/// never a subset. LIFEFORMS and DESTROY stay on for any form: phase 0 (InitAtom()), the change watch and the ending announcement read them.
 /proc/lifeform_hook_flags(datum/type_table/T)
 	. = 0
+	var/list/kinds = lifeform_kinds()
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
 		if(!istype(E))
 			continue
-		if(lifeform_kinds()[E.kind] || E.kind == ENTRY_TOOLTIP)
-			return ENGINE_HOOK_LIFEFORMS | ENGINE_HOOK_PREINIT | ENGINE_HOOK_INIT | ENGINE_HOOK_DESTROY
+		var/kind = E.kind
+		if(!kinds[kind] && kind != ENTRY_TOOLTIP)
+			continue
+		. |= ENGINE_HOOK_LIFEFORMS | ENGINE_HOOK_DESTROY
+		switch(kind)
+			if(ENTRY_ROLLS, ENTRY_PRESET, ENTRY_PER_TYPE, ENTRY_VARIANTS, ENTRY_BUILT_FROM)
+				. |= ENGINE_HOOK_PREINIT
+			if(ENTRY_PARAM)
+				. |= ENGINE_HOOK_PREINIT | ENGINE_HOOK_INIT // checked and defaulted at preinit; apply = setters and keep = FALSE drops run at init
+			if(ENTRY_SETUP)
+				if(!E.args?["early"])
+					. |= ENGINE_HOOK_INIT // setup(early = TRUE) runs in phase 0 (setup_early()), the others are noted by lifeform_init()
+			if(ENTRY_KEEPS_IF, ENTRY_CONTAINS, ENTRY_KNOWS, ENTRY_STARTS_AS, ENTRY_DERIVES, ENTRY_REGISTRY, ENTRY_RADIO_LISTEN, ENTRY_ADJACENCY, ENTRY_LIVES_WHILE)
+				. |= ENGINE_HOOK_INIT
 
 // ---- the lifecycle dispatch (engine_holder_preinit/init/destroy, code/engine/declare/scopes.dm) ----
 

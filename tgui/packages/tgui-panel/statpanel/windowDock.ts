@@ -6,7 +6,13 @@
  * always says where each interface was last seen (persisted per player).
  */
 
-export type DockWindow = { id: string; iface: string; title: string };
+export type DockWindow = {
+  id: string;
+  iface: string;
+  title: string;
+  /** Where in the list a window dropped on the panel goes (its drop point), over the saved place. */
+  at?: number;
+};
 
 export type DockGroup = {
   id: string;
@@ -51,6 +57,8 @@ export type DockAction =
   | { type: 'moveGroup'; group: string; index: number }
   | { type: 'moveWindow'; id: string; group: string; index: number }
   | { type: 'splitWindow'; id: string; index: number }
+  | { type: 'orderTabs'; group: string; order: string[] }
+  | { type: 'joinGroup'; group: string; into: string }
   | { type: 'load'; saved: Record<string, Placement> };
 
 export function emptyDock(): DockState {
@@ -131,11 +139,20 @@ function open(state: DockState, window: DockWindow): DockState {
     // Already docked: a new interface in the same pooled window keeps its place.
     return {
       ...state,
-      windows: { ...state.windows, [window.id]: window },
+      windows: {
+        ...state.windows,
+        [window.id]: {
+          id: window.id,
+          iface: window.iface,
+          title: window.title,
+        },
+      },
     };
   }
-  const windows = { ...state.windows, [window.id]: window };
-  const place = state.saved[window.iface];
+  const { at: dropAt, ...entry } = window;
+  const windows = { ...state.windows, [window.id]: entry };
+  const dropped = typeof dropAt === 'number' && Number.isFinite(dropAt);
+  const place = dropped ? undefined : state.saved[window.iface];
   const groups = state.groups.slice();
   const joined = place ? groups.findIndex((g) => g.id === place.group) : -1;
   if (joined >= 0) {
@@ -159,7 +176,16 @@ function open(state: DockState, window: DockWindow): DockState {
     collapsed: Boolean(place?.collapsed),
     height: clampHeight(place?.height ?? DOCK_HEIGHT_DEFAULT),
   };
-  const at = place ? clampIndex(place.order, groups.length) : groups.length;
+  const saved = state.saved[window.iface];
+  if (dropped) {
+    group.collapsed = false;
+    group.height = clampHeight(saved?.height ?? DOCK_HEIGHT_DEFAULT);
+  }
+  const at = dropped
+    ? clampIndex(dropAt!, groups.length)
+    : place
+      ? clampIndex(place.order, groups.length)
+      : groups.length;
   groups.splice(at, 0, group);
   return { ...state, windows, groups, nextGroup };
 }
@@ -294,6 +320,41 @@ function reduce(state: DockState, action: DockAction): DockState {
         height: source.height,
       });
       return { ...state, groups, nextGroup };
+    }
+    case 'orderTabs': {
+      const group = state.groups.find((g) => g.id === action.group);
+      if (
+        !group ||
+        action.order.length !== group.windows.length ||
+        !group.windows.every((id) => action.order.includes(id))
+      ) {
+        return state;
+      }
+      return mapGroup(state, group.id, (g) => ({
+        ...g,
+        windows: action.order.slice(),
+      }));
+    }
+    case 'joinGroup': {
+      // A whole entry dropped on another's header: its windows become that stack's last tabs.
+      const source = state.groups.find((g) => g.id === action.group);
+      const target = state.groups.find((g) => g.id === action.into);
+      if (!source || !target || source === target) {
+        return state;
+      }
+      const groups = state.groups
+        .filter((g) => g !== source)
+        .map((g) =>
+          g === target
+            ? {
+                ...g,
+                windows: [...g.windows, ...source.windows],
+                active: source.active,
+                collapsed: false,
+              }
+            : g,
+        );
+      return { ...state, groups };
     }
     case 'load':
       return { ...state, saved: { ...action.saved, ...state.saved } };

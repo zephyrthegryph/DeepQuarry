@@ -1,0 +1,7 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Docked windows: tabs in a stacked entry can be clicked and dragged again (pressing a tab no longer grabbed the whole header)."
+  - qol: "Docked windows move like the chat tabs: drag an entry's header and the others slide aside live; drop it on another header to stack, or drag it out of the panel to float it under the pointer."
+  - qol: "Pull a tab off a stacked entry to make it its own entry, stack it elsewhere, or float it."
+  - qol: "A floating window dropped on the side panel docks where you dropped it, not at the end."

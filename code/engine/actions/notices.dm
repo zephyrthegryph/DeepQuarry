@@ -60,15 +60,48 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 	if(isnull(for_table))
 		for_table = list()
 		GLOB.notice_plans[T] = for_table
-	var/list/known = for_table["[notice_type]"]
+	var/list/known = for_table[notice_type] // keyed by the notice's type path itself: no text is built per publish
 	if(!isnull(known))
 		return known
 	var/list/hooks = list()
 	for(var/datum/hook/H as anything in hook_table_of(T))
 		if(H.kind == HOOK_NOTICE && ispath(notice_type, H.target))
 			hooks += H
-	for_table["[notice_type]"] = hooks
+	for_table[notice_type] = hooks
 	return hooks
+
+/// type -> notice type -> TRUE/FALSE: notice_type_unheard()'s memo.
+GLOBAL_LIST_EMPTY(notice_unheard)
+
+/// TRUE when nothing of E's type can hear `notice_type`: no static hook of its table (notice_hooks_static()) and no legacy on_notice() reaction of its
+/// rx table. Per (type, notice type), memoized once both tables exist. The dynamic listeners (activation hooks, observed notice types) live on E.rx and
+/// are asked by notice_wanted() itself.
+/proc/notice_type_unheard(datum/E, notice_type)
+	var/list/memo = GLOB?.notice_unheard
+	if(!memo || !islist(GLOB.notice_plans) || !islist(GLOB.rx_tables))
+		return FALSE // the tables are still being built: ask the full path, cache nothing
+	var/list/by_type = memo[E.type]
+	if(by_type)
+		var/known = by_type[notice_type]
+		if(!isnull(known))
+			return known
+	var/datum/type_table/T = table_of(E)
+	if(T == table_empty())
+		return FALSE
+	. = !length(notice_hooks_static(T, notice_type))
+	if(.)
+		var/datum/rx_table/RT = GLOB.rx_tables[E.type]
+		if(isnull(RT))
+			RT = rx_table_build(E)
+		if(RT && length(RT.notices))
+			for(var/datum/reaction/R as anything in RT.notices)
+				if(ispath(notice_type, R.key))
+					. = FALSE
+					break
+	if(!by_type)
+		by_type = list()
+		memo[E.type] = by_type
+	by_type[notice_type] = .
 
 /// TRUE when `E` is fully gone as far as notices go: deleted, and past being merely mid-deletion. An entity inside its own destroy transaction (qdel() has
 /// started: its qdeleting notice, the contents it spills, the links it drops) still publishes, and its observers still hear it, until the transaction ends.
@@ -84,6 +117,13 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 /// TRUE when something on E listens for `notice_type` for `outcome` (the committed outcome by default): a type-level or activation hook, or a
 /// legacy on_notice() reaction (committed only).
 /proc/notice_wanted(datum/E, notice_type, outcome = ACT_COMMITTED)
+	// Nothing of E's type hears it and E has no listener of its own (activation hooks and observed notice types live on E.rx): no table walk. Most publishes
+	// are of this kind, the "created" notice every atom sends its location at init among them (504 k at a full-map boot, heard by nothing).
+	if(!E)
+		return FALSE
+	var/datum/rx_state/S = E.rx
+	if((!S || (!S.hooks && !S.notice_types)) && notice_type_unheard(E, notice_type))
+		return FALSE
 	return notice_wanted_native(E, notice_type, outcome)
 
 /// notice_wanted()'s body.

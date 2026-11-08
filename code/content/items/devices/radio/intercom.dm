@@ -28,7 +28,6 @@
 CAPABILITIES(/obj/item/radio/intercom)
 	configure(movable_motion(blocks_emissive = NONE))
 	setup(PROC_REF(start_listening_to_area))
-	setup(PROC_REF(update_broadcast_tiles))
 	configure(light_glow(color = "#00ff00", power = 0.25))
 	owns_one(nameof(circuit), starts = nameof(circuit))
 	// the AI's gestures over its link: ctrl switches the microphone, alt the AI's private channel

@@ -199,3 +199,57 @@ describe('window dock layout', () => {
     expect(Object.values(parseSaved(text)).every((p) => p.dock)).toBe(true);
   });
 });
+
+describe('one layout model: list, stacks and drops', () => {
+  it('re-orders a stack’s tabs as the strip commits them', () => {
+    let s = openAll('a', 'b', 'c');
+    const into = s.groups[0].id;
+    s = dockReduce(s, { type: 'joinGroup', group: s.groups[1].id, into });
+    s = dockReduce(s, { type: 'joinGroup', group: s.groups[1].id, into });
+    expect(s.groups[0].windows).toEqual(['a', 'b', 'c']);
+    s = dockReduce(s, {
+      type: 'orderTabs',
+      group: into,
+      order: ['c', 'a', 'b'],
+    });
+    expect(s.groups[0].windows).toEqual(['c', 'a', 'b']);
+    expect(s.saved.C.tab).toBe(0);
+    const same = dockReduce(s, {
+      type: 'orderTabs',
+      group: into,
+      order: ['a'],
+    });
+    expect(same).toBe(s);
+  });
+
+  it('stacks a whole entry onto another and shows the dropped one', () => {
+    let s = openAll('a', 'b');
+    s = dockReduce(s, {
+      type: 'collapse',
+      group: s.groups[0].id,
+      collapsed: true,
+    });
+    s = dockReduce(s, {
+      type: 'joinGroup',
+      group: s.groups[1].id,
+      into: s.groups[0].id,
+    });
+    expect(s.groups).toHaveLength(1);
+    expect(s.groups[0].active).toBe('b');
+    expect(s.groups[0].collapsed).toBe(false);
+  });
+
+  it('puts a window dropped on the panel where it was dropped', () => {
+    let s = openAll('a', 'b');
+    s = dockReduce(s, { type: 'open', window: { ...win('c'), at: 1 } });
+    expect(s.groups.map((g) => g.windows[0])).toEqual(['a', 'c', 'b']);
+    expect(s.windows.c).toEqual(win('c'));
+  });
+
+  it('a drop point wins over the saved place', () => {
+    let s = openAll('a', 'b', 'c');
+    s = dockReduce(s, { type: 'close', id: 'c' });
+    s = dockReduce(s, { type: 'open', window: { ...win('c'), at: 0 } });
+    expect(s.groups[0].windows).toEqual(['c']);
+  });
+});

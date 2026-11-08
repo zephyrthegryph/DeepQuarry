@@ -128,7 +128,7 @@ GLOBAL_ALIST_EMPTY(op_click_resolved)
 				var/why = op_resolution_refusal(R)
 				op_gate_feedback(actor, why)
 		return null
-	var/datum/op_result/result = op_begin(winner, R, null, FALSE)
+	var/datum/op_result/result = op_begin(winner, R, null, FALSE, TRUE)
 	// OP_DECLINE: the handler said "not handled": the next candidate whose conditions hold gets the click, then the next, until one takes it. Nothing
 	// was committed, told or published by the ones that declined; when every one declines a player's click is as if none had answered (null) and a driver-built click returns the last declined result.
 	var/datum/op_cand/tried = winner
@@ -142,7 +142,7 @@ GLOBAL_ALIST_EMPTY(op_click_resolved)
 			return defer_legacy ? null : result
 		winner = next
 		tried = next
-		result = op_begin(next, R, null, FALSE)
+		result = op_begin(next, R, null, FALSE, TRUE)
 	return op_passes_chain(winner, result, R, defer_legacy)
 
 /// passes(): an op that ends committed and passes does not use the input up. The next candidate whose conditions hold runs, then the next, until one
@@ -158,7 +158,7 @@ GLOBAL_ALIST_EMPTY(op_click_resolved)
 		var/datum/op_cand/next = op_resolution_next(R, last)
 		if(!next)
 			return defer_legacy ? null : result
-		result = op_begin(next, R, null, FALSE)
+		result = op_begin(next, R, null, FALSE, TRUE)
 		last = next
 	return result
 

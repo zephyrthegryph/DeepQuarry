@@ -163,6 +163,9 @@ function setWindowSizeBatched(vec: Point): void {
   scheduleWinset();
 }
 
+/** The largest side a recalled window keeps (physical px), whatever monitor it was sized on. */
+const MAX_WINDOW_SIDE = 8000;
+
 // Get screen position
 function getScreenPosition(): Point {
   return [0 - screenOffset[0], 0 - screenOffset[1]];
@@ -291,10 +294,11 @@ export async function recallWindowGeometry(
   // Resolve window size without mutating the native window yet. Size,
   // position, and visibility are committed together by revealWindow().
   if (size) {
-    // Constraint size to not exceed available screen area
+    // Only a sanity cap: the window may have been sized on a larger second
+    // monitor, and window.screen is just the monitor this page is on.
     size = [
-      Math.min(areaAvailable[0], size[0]),
-      Math.min(areaAvailable[1], size[1]),
+      Math.min(MAX_WINDOW_SIDE, size[0]),
+      Math.min(MAX_WINDOW_SIDE, size[1]),
     ];
     resolved.size = size;
   }
@@ -426,8 +430,9 @@ async function dockIfOverPanel(pointer: [number, number]): Promise<void> {
   } catch {
     return;
   }
-  logger.log('dropped over the stat panel: docking');
-  Byond.sendMessage('wm/dock');
+  logger.log('dropped over the stat panel: docking', pointer);
+  // The drop point: the panel puts the window in its list where it was dropped.
+  Byond.sendMessage('wm/dock', { at: { x: pointer[0], y: pointer[1] } });
 }
 
 // Move the window while dragging

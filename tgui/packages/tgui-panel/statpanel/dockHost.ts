@@ -20,7 +20,8 @@ import {
 } from './windowDock';
 
 const SAVE_DELAY_MS = 1000;
-const ORIGIN_POLL_MS = 1000;
+/** A slow fallback only: the origin is measured on load, resize, dock changes and drag starts (window_system.md 10.4). */
+const ORIGIN_POLL_MS = 5000;
 
 const isPoint = (value: unknown): value is Point =>
   !!value &&
@@ -35,6 +36,22 @@ const asEntry = (value: any): DockWindow | null =>
         title: String(value.title ?? value.interface ?? ''),
       }
     : null;
+
+/**
+ * The list index a window dropped on the panel goes to: `y` is the drop's y
+ * in the panel page (CSS px), against the entries' middles. Undefined when the
+ * drop gave no point (a dock button, a reload).
+ */
+function dropIndexAt(y: number): number {
+  const entries = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-dock-group]'),
+  );
+  const index = entries.findIndex((node) => {
+    const rect = node.getBoundingClientRect();
+    return y < rect.top + rect.height / 2;
+  });
+  return index < 0 ? entries.length : index;
+}
 
 /** Where the stat panel page's top left is on the screen, in physical pixels. */
 async function pageOrigin(): Promise<Point | null> {
@@ -69,6 +86,24 @@ async function pageOrigin(): Promise<Point | null> {
   }
 }
 
+/**
+ * Tells the page which side of it the chat is on (`html[data-chat-side]`), so
+ * the panel leaves out its own frame edge there: the chat's frame is the one
+ * line between them, the same 3px gap as every other edge, not two frames.
+ */
+async function markChatSide(): Promise<void> {
+  try {
+    const got = await Byond.winget('rpane.rpanewindow', 'left');
+    const side = got === 'outputwindow' ? 'top' : 'bottom';
+    if (document.documentElement.dataset.chatSide !== side) {
+      document.documentElement.dataset.chatSide = side;
+      console.log('statpanel: chat side', side);
+    }
+  } catch {
+    // An older client: both frames stay.
+  }
+}
+
 export class DockHost {
   state: DockState = emptyDock();
   private version = 0;
@@ -85,7 +120,11 @@ export class DockHost {
   private frame = 0;
 
   constructor() {
-    window.addEventListener('resize', () => this.refreshOrigin());
+    window.addEventListener('resize', () => {
+      this.refreshOrigin();
+      markChatSide();
+    });
+    markChatSide();
     setInterval(() => {
       if (this.state.groups.length) {
         this.refreshOrigin();
@@ -129,6 +168,10 @@ export class DockHost {
       case 'wm/open': {
         const entry = asEntry(payload);
         if (entry) {
+          const at = this.pageY(payload?.at);
+          if (at !== null) {
+            entry.at = dropIndexAt(at);
+          }
           this.placed.delete(entry.id);
           this.dispatch({ type: 'open', window: entry });
           this.refreshOrigin();
@@ -151,10 +194,47 @@ export class DockHost {
     Byond.sendMessage('WM-Ready');
   }
 
-  float(id: string) {
+  /** Floats window `id`; with `at` (screen pixels) it opens under that point, as a popped-out chat does. */
+  float(id: string, at?: Point | null) {
     this.placed.delete(id);
     this.dispatch({ type: 'float', id });
-    Byond.sendMessage('WM-Float', { id });
+    Byond.sendMessage('WM-Float', at ? { id, at } : { id });
+  }
+
+  /** Floats every window of a group: the shown one under `at`, the others where they last floated. */
+  floatGroup(group: string, at: Point | null) {
+    const found = this.state.groups.find((g) => g.id === group);
+    if (!found) {
+      return;
+    }
+    for (const id of found.windows) {
+      this.float(id, id === found.active ? at : null);
+    }
+  }
+
+  /** A point of this page (CSS px) on the screen (physical px), or null before the page's place is known. */
+  screenPoint(x: number, y: number): Point | null {
+    if (!this.origin) {
+      return null;
+    }
+    const ratio = window.devicePixelRatio || 1;
+    return {
+      x: Math.round(this.origin.x + x * ratio),
+      y: Math.round(this.origin.y + y * ratio),
+    };
+  }
+
+  /** A screen point's (physical px, `{x, y}`) y in this page (CSS px), or null. */
+  private pageY(at: unknown): number | null {
+    if (!this.origin || !isPoint(at)) {
+      return null;
+    }
+    return (at.y - this.origin.y) / (window.devicePixelRatio || 1);
+  }
+
+  /** The dock area's node (the list drags measure it). */
+  get areaNode(): HTMLElement | null {
+    return this.area;
   }
 
   close(id: string) {
@@ -177,6 +257,9 @@ export class DockHost {
 
   setDragging(dragging: boolean) {
     this.dragging = dragging;
+    if (dragging) {
+      this.refreshOrigin();
+    }
     this.version++;
     for (const listener of this.listeners) listener();
     this.schedule();
@@ -222,9 +305,13 @@ export class DockHost {
   };
 
   private place() {
-    const shown = this.dragging ? [] : shownIds(this.state);
+    // Windows are never hidden for a drag: they ride along with their entry (its live transform is in the rect).
+    const shown = shownIds(this.state);
     const ratio = window.devicePixelRatio || 1;
     const clip = this.area?.getBoundingClientRect();
+    // Every window that moved goes in one bulk winset ("id.prop" keys), so they move together in one native call.
+    const batch: Record<string, string | number | boolean> = {};
+    let moved = 0;
     for (const id of Object.keys(this.state.windows)) {
       const body = this.bodies.get(id);
       let params: Record<string, string | number | boolean> | null = null;
@@ -250,7 +337,15 @@ export class DockHost {
         continue;
       }
       this.placed.set(id, next);
-      Byond.winset(id, params ?? { 'is-visible': false });
+      for (const [key, value] of Object.entries(
+        params ?? { 'is-visible': false },
+      )) {
+        batch[`${id}.${key}`] = value;
+      }
+      moved++;
+    }
+    if (moved) {
+      Byond.winset(batch);
     }
   }
 }

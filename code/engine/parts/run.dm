@@ -221,7 +221,8 @@
 // ---- starting an op ----
 
 /// The act and result of a candidate that won: Require, then Wait or Do. Returns the op's /datum/op_result (null outcome while it waits).
-/proc/op_begin(datum/op_cand/C, datum/op_resolution/R, list/arg_values = null, trace = FALSE)
+/// `conds_checked`: the caller tested C's when() conditions just now with nothing run since (a click's winner, the next of a decline chain).
+/proc/op_begin(datum/op_cand/C, datum/op_resolution/R, list/arg_values = null, trace = FALSE, conds_checked = FALSE)
 	RETURN_TYPE(/datum/op_result)
 	var/mob/actor = R.actor
 	var/datum/op_result/result = new
@@ -266,9 +267,10 @@
 		A.args = arg_values
 		A.ordered_args = op_ordered_args(C.oplan, C.binding, arg_values)
 	// Match is re-checked here too (a perform_op by key meets it for the first time): a failed when() refuses by key.
-	for(var/cond in C.oplan.conds)
-		if(!op_cond(A, cond))
-			return op_end(A, ACT_REFUSED, /datum/msg/op/not_available)
+	if(!conds_checked)
+		for(var/cond in C.oplan.conds)
+			if(!op_cond(A, cond))
+				return op_end(A, ACT_REFUSED, /datum/msg/op/not_available)
 	var/why = op_require_reason(A, C.oplan, C.binding)
 	if(why)
 		return op_end(A, ACT_REFUSED, why)
@@ -306,12 +308,26 @@
 	// Lazy caches the requirements read are refreshed here, outside the purity guard, so a requirement never writes one.
 	// Settling refreshes caches before anything is read; it is not an admission read, so an enclosing menu read neither records nor is marked
 	// uncacheable by what it touches (a mob's body settle sampled read_once() and made every human's menu rebuild on each read).
+	// Inside a menu read the entities are settled once for the whole read, not once per row: nothing a requirement does writes, so what the
+	// first row's settle brought up to date stays so for the rest (frame slot 6: the entities settled in this read).
 	var/list/menu_frame = GLOB.op_menu_read_frame
 	GLOB.op_menu_read_frame = null
 	try
-		A.holder?.settle_for_reads()
-		A.actor?.settle_for_reads()
-		A.target?.settle_for_reads()
+		if(menu_frame)
+			if(length(menu_frame) < 6)
+				menu_frame.len = 6
+			var/list/settled = menu_frame[6]
+			if(!settled)
+				settled = list()
+				menu_frame[6] = settled
+			for(var/datum/entity as anything in list(A.holder, A.actor, A.target))
+				if(entity && !settled[entity])
+					settled[entity] = TRUE
+					entity.settle_for_reads()
+		else
+			A.holder?.settle_for_reads()
+			A.actor?.settle_for_reads()
+			A.target?.settle_for_reads()
 	catch(var/exception/settle_fault)
 		GLOB.op_menu_read_frame = menu_frame
 		throw settle_fault
