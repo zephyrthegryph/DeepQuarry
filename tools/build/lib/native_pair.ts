@@ -1,5 +1,6 @@
 /** Native generation results and independently owned writable hosted outputs. */
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import type { CompilerProvenance } from './compiler_provenance';
 import { parseNativePublicationProof, type NativePublicationProof } from './native_publication_proof';
@@ -69,9 +70,18 @@ export function assertDirectoryChain(directory: string): void {
     current = parent;
   }
 }
+export function nativeRequestRoot(configured: string | undefined, platform: NodeJS.Platform, home: string): string {
+  if (platform === 'win32') {
+    const root = path.win32.resolve(configured ?? 'E:/dq-cache/dmb-build-integration');
+    if (!/^e:[\\/]/i.test(root)) throw new Error('Native integration scratch must be on E:.');
+    return root;
+  }
+  const root = configured ?? path.posix.join(home, '.cache', 'dq', 'dmb-build-integration');
+  if (!path.posix.isAbsolute(root)) throw new Error('Native integration scratch must use an absolute cache path.');
+  return path.posix.normalize(root);
+}
 export function createNativeRequestDirectory(prefix: string): string {
-  const root = path.resolve(process.env.DQ_NATIVE_RUN_ROOT ?? 'E:/dq-cache/dmb-build-integration');
-  if (!/^e:[\\/]/i.test(root)) throw new Error('Native integration scratch must be on E:.');
+  const root = nativeRequestRoot(process.env.DQ_NATIVE_RUN_ROOT, process.platform, os.homedir());
   fs.mkdirSync(root, { recursive: true });
   assertDirectoryChain(root);
   return fs.mkdtempSync(path.join(root, `${prefix}-`));

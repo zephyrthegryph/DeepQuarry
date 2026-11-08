@@ -1,6 +1,15 @@
 import { expect, test } from 'bun:test';
 import path from 'node:path';
 import { fullCiCompoundRequest, requireFullCiReceipt } from './native_compound_ci';
+import { nativeRequestRoot } from './native_pair';
+
+test('compound request scratch follows the cache policy on Windows and Linux', () => {
+  expect(nativeRequestRoot(undefined, 'win32', 'C:\\Users\\ci')).toBe('E:\\dq-cache\\dmb-build-integration');
+  expect(() => nativeRequestRoot('C:\\scratch', 'win32', 'C:\\Users\\ci')).toThrow('must be on E:');
+  expect(nativeRequestRoot(undefined, 'linux', '/home/ci')).toBe('/home/ci/.cache/dq/dmb-build-integration');
+  expect(nativeRequestRoot('/var/cache/dq', 'linux', '/home/ci')).toBe('/var/cache/dq');
+  expect(() => nativeRequestRoot('local', 'linux', '/home/ci')).toThrow('absolute cache path');
+});
 
 test('full CI request leaves Original defines empty and selects the closed CBT profile', () => {
   const root = path.resolve('fixture-project');
