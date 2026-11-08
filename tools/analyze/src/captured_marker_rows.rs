@@ -94,8 +94,36 @@ pub(crate) fn collect_file_funded<E>(relative:&str,marker:&str,budget:&Budget,te
     collect_file_using(relative,marker,budget,names,include_entries,include_capabilities,include_runtime,rows,count,None,Some(temporary),checkpoint)
 }
 
+fn scratch_peak<E>(budget:&Budget,peak:&mut usize,bytes:usize)->Result<(),E>where E:From<String>{
+    if bytes>*peak{budget.charge(bytes-*peak)?;*peak=bytes;}
+    Ok(())
+}
+
+fn projection_scratch<E>(budget:&Budget,peak:&mut usize,width:usize,body:usize,entry:bool)->Result<(),E>where E:From<String>+for<'e>From<&'e str>{
+    let bytes=crate::key_policy_control::split_bound(width)
+        .and_then(|split|split.checked_add(body))
+        // Entry projection prepends the head to a separate Vec while consuming
+        // the split Vec. Prepay that possible overlap as an independent owner.
+        .and_then(|n|n.checked_add(if entry{width.checked_add(4)?.checked_mul(2*std::mem::size_of::<String>())?}else{0}))
+        .ok_or_else(||{budget.deny();"marker projection scratch overflow"})?;
+    scratch_peak(budget,peak,bytes)
+}
+
+fn retain_projection<E>(budget:&Budget,relative:&str,name:&str,body:&String,args:&Vec<String>,part:Option<&String>)->Result<(),E>where E:From<String>+for<'e>From<&'e str>{
+    let bytes=args.iter().try_fold(
+        body.capacity().checked_add(part.map_or(0,String::capacity))
+            .and_then(|n|n.checked_add(args.capacity().checked_mul(std::mem::size_of::<String>())?))
+            .and_then(|n|n.checked_add(relative.len())?.checked_add(name.len())?.checked_add(512))
+            .ok_or_else(||{budget.deny();"retained marker projection overflow"})?,
+        |bytes,arg|bytes.checked_add(arg.capacity()),
+    ).ok_or_else(||{budget.deny();"retained marker argument capacity overflow"})?;
+    budget.charge(bytes)?;
+    Ok(())
+}
+
 fn collect_file_using<E>(relative:&str,marker:&str,budget:&Budget,names:&[&str],include_entries:bool,include_capabilities:bool,include_runtime:bool,rows:&mut Vec<OwnedMarker>,count:&mut usize,ceiling:Option<usize>,temporary:Option<&Budget>,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<(),E> where E:From<String>+for<'error>From<&'error str>{
         let line_budget=temporary.unwrap_or(budget);let initial_rows=rows.len();
+        let mut head_peak=0;let mut projection_peak=0;
         let line_count = marker.bytes().filter(|b| *b == b'\n').count();
         line_budget.charge(
             line_count
@@ -129,22 +157,22 @@ fn collect_file_using<E>(relative:&str,marker:&str,budget:&Budget,names:&[&str],
             checkpoint()?;
             budget.require()?;
             if include_entries||include_capabilities {
-                line_budget.charge(
-                    text.len()
-                        .checked_add(128)
-                        .and_then(|n| n.checked_mul(8))
-                        .ok_or_else(|| {
-                            line_budget.deny();
-                            "entry head bound overflow"
-                        })?,
-                )?;
+                let head_bound=text.len().checked_add(128).and_then(|n|n.checked_mul(8)).ok_or_else(||{
+                    line_budget.deny();"entry head bound overflow"
+                })?;
+                if temporary.is_some(){
+                    // Existing heads can overlap the next parse and replacement.
+                    // Twice the max observed two-head envelope covers that overlap.
+                    scratch_peak::<E>(line_budget,&mut head_peak,head_bound.checked_mul(2).ok_or_else(||{
+                        line_budget.deny();"entry head peak overflow"
+                    })?)?;
+                }else{line_budget.charge(head_bound)?;}
                 let t = text.trim_start();
                 if !text.is_empty() && !text.starts_with(char::is_whitespace) {
                     if include_entries{head.begin(text, u32::try_from(line + 1).map_err(|_| "entry line")?);}
                     if include_capabilities{capability.begin_capability(text,u32::try_from(line+1).map_err(|_|"capability entry line")?);}
                 } else if !t.is_empty() && !t.starts_with('#') {
                     if let Some((name, head_line)) = head.take() {
-                        let head_name_capacity=name.capacity();
                         if let Some(m) = crate::raw_entry_proc_policy::project_first_return_admitted(
                             marker,
                             &line_starts,
@@ -155,14 +183,13 @@ fn collect_file_using<E>(relative:&str,marker:&str,budget:&Budget,names:&[&str],
                             head_line,
                             |width| -> Result<(), E> {
                                 checkpoint()?;
-                                budget.split_args(width)?;
-                                budget.charge(width.checked_mul(8)
-                                    .and_then(|n|n.checked_add(relative.len()+1024))
-                                    .ok_or("entry projection overflow")?)?;
+                                let body=width.checked_mul(8).and_then(|n|n.checked_add(relative.len()+1024)).ok_or("entry projection overflow")?;
+                                if temporary.is_some(){projection_scratch::<E>(line_budget,&mut projection_peak,width,body,true)?;}
+                                else{budget.split_args(width)?;budget.charge(body)?;}
                                 Ok(())
                             },
                         )? {
-                            if temporary.is_some(){budget.charge(head_name_capacity)?;}
+                            if temporary.is_some(){retain_projection::<E>(budget,relative,crate::raw_entry_proc_policy::ENTRY_PROC,&m.body,&m.args,None)?;}
                             *count=count.checked_add(1).ok_or("marker count overflow")?;
                             if ceiling.is_some_and(|limit|*count>limit) {
                                 return Err(
@@ -185,9 +212,10 @@ fn collect_file_using<E>(relative:&str,marker:&str,budget:&Budget,names:&[&str],
                         }
                     }
                     if let Some((owner,head_line))=capability.take(){
-                        let owner_capacity=owner.capacity();
-                        if let Some(m)=crate::raw_entry_proc_policy::project_capability_return_admitted(marker,&line_starts,line,text,t,owner,head_line,|width|->Result<(),E>{checkpoint()?;budget.split_args(width)?;budget.charge(width.checked_mul(8).and_then(|n|n.checked_add(relative.len())).and_then(|n|n.checked_add(1024)).ok_or_else(||{budget.deny();"capability entry projection overflow"})?)?;Ok(())})?{
-                            if temporary.is_some(){budget.charge(owner_capacity)?;}
+                        if let Some(m)=crate::raw_entry_proc_policy::project_capability_return_admitted(marker,&line_starts,line,text,t,owner,head_line,|width|->Result<(),E>{checkpoint()?;let body=width.checked_mul(8).and_then(|n|n.checked_add(relative.len())).and_then(|n|n.checked_add(1024)).ok_or_else(||{budget.deny();"capability entry projection overflow"})?;
+                            if temporary.is_some(){projection_scratch::<E>(line_budget,&mut projection_peak,width,body,true)?;}
+                            else{budget.split_args(width)?;budget.charge(body)?;}Ok(())})?{
+                            if temporary.is_some(){retain_projection::<E>(budget,relative,"CAP_ENTRIES",&m.body,&m.args,None)?;}
                             *count=count.checked_add(1).ok_or("marker count overflow")?;if ceiling.is_some_and(|limit|*count>limit){return Err("capability entry marker count exceeds captured scope".into())}
                             if !marker_row_using::<E>(budget,rows,ceiling.is_none())?{return Err("capability entry row allocation denied".into())}
                             rows.push(OwnedMarker{name:"CAP_ENTRIES".to_owned(),part:None,rel:relative.to_owned(),line:m.line,body:m.body,args:m.args,body_offset:m.body_offset,line_starts:line_starts.clone()});
@@ -217,16 +245,11 @@ fn collect_file_using<E>(relative:&str,marker:&str,budget:&Budget,names:&[&str],
                 })?;
                 // Original block_body owns one width-sized Vec/String, split_args owns its
                 // documented3N slots+4L temporary. Admit both before either construction.
-                budget.charge(
-                    width
-                        .checked_mul(4)
-                        .and_then(|n| n.checked_add(256))
-                        .ok_or_else(|| {
-                            budget.deny();
-                            "declare block temporary overflow"
-                        })?,
-                )?;
-                budget.split_args(width)?;
+                let body_bound=width.checked_mul(4).and_then(|n|n.checked_add(256)).ok_or_else(||{
+                    line_budget.deny();"declare block temporary overflow"
+                })?;
+                if temporary.is_some(){projection_scratch::<E>(line_budget,&mut projection_peak,width,body_bound,false)?;}
+                else{budget.charge(body_bound)?;budget.split_args(width)?;}
                 let mut body = match block_end {
                     Some(end) => crate::raw_marker_policy::block_body(
                         marker,
@@ -243,16 +266,12 @@ fn collect_file_using<E>(relative:&str,marker:&str,budget:&Budget,names:&[&str],
                 } else {
                     (m.name, None)
                 };
-                budget.charge(
-                    width
-                        .checked_add(relative.len())
-                        .and_then(|n| n.checked_add(m.name.len()))
-                        .and_then(|n| n.checked_add(512))
-                        .ok_or_else(|| {
-                            budget.deny();
-                            "declare marker row overflow"
-                        })?,
-                )?;
+                if temporary.is_some(){
+                    retain_projection::<E>(budget,relative,name,&body,&args,part.as_ref())?;
+                }else{
+                    budget.charge(width.checked_add(relative.len()).and_then(|n|n.checked_add(m.name.len()))
+                        .and_then(|n|n.checked_add(512)).ok_or_else(||{budget.deny();"declare marker row overflow"})?)?;
+                }
                 if ceiling.is_none(){marker_row_using::<E>(budget,rows,true)?;}else{
                 if rows.len() == rows.capacity() {
                     let cap = rows.len().max(4).checked_mul(2).ok_or_else(|| {
@@ -290,18 +309,26 @@ fn collect_file_using<E>(relative:&str,marker:&str,budget:&Budget,names:&[&str],
         }
 
         if include_runtime{
-            struct RuntimeControl<'b,E,F>{budget:&'b Budget,poll:&'b mut F,_error:std::marker::PhantomData<E>}
+            struct RuntimeControl<'b,E,F>{budget:&'b Budget,temporary:Option<&'b Budget>,peaks:[usize;2],poll:&'b mut F,_error:std::marker::PhantomData<E>}
             impl<E,F> crate::key_policy_control::Control for RuntimeControl<'_,E,F> where E:From<String>+for<'e>From<&'e str>,F:FnMut()->Result<(),E>{
                 type Error=E;const CHECKED:bool=true;
                 fn checkpoint(&mut self)->Result<(),E>{(self.poll)()?;self.budget.require().map_err(E::from)}
                 fn reserve(&mut self,n:usize)->Result<(),E>{self.budget.charge(n).map_err(E::from)}
+                fn temporary(&mut self,slot:usize,n:usize)->Result<(),E>{
+                    let Some(budget)=self.temporary else{return self.reserve(n)};
+                    let Some(peak)=self.peaks.get_mut(slot)else{return Err(self.overflow())};
+                    scratch_peak(budget,peak,n)
+                }
                 fn overflow(&mut self)->E{self.budget.deny();"runtime observer allocation overflow".into()}
                 fn allocation_failed(&mut self)->E{self.budget.deny();"runtime observer allocation refused".into()}
             }
-            let mut control=RuntimeControl{budget,poll:checkpoint,_error:std::marker::PhantomData};
+            let mut control=RuntimeControl{budget,temporary,peaks:[0;2],poll:checkpoint,_error:std::marker::PhantomData};
             crate::raw_runtime_observer_policy::visit(marker,&line_starts,&mut control,&mut|control,p|{
                 *count=count.checked_add(1).ok_or("marker count overflow")?;if ceiling.is_some_and(|limit|*count>limit){return Err("runtime observer marker count exceeds captured scope".into())}
-                crate::key_policy_control::reserve(control,||relative.len().checked_add(512))?;
+                if temporary.is_some(){
+                    crate::key_policy_control::Control::checkpoint(control)?;
+                    retain_projection::<E>(budget,relative,crate::raw_runtime_observer_policy::RUNTIME_OBSERVE,&p.body,&p.args,None)?;
+                }else{crate::key_policy_control::reserve(control,||relative.len().checked_add(512))?;}
                 if !marker_row_using::<E>(budget,rows,ceiling.is_none())?{return Err("runtime observer row allocation denied".into())}
                 rows.push(OwnedMarker{name:crate::raw_runtime_observer_policy::RUNTIME_OBSERVE.to_owned(),part:None,rel:relative.to_owned(),line:p.line,args:p.args,body:p.body,body_offset:p.body_offset,line_starts:line_starts.clone()});Ok(())
             })?;
@@ -358,6 +385,34 @@ mod part_tests {
         assert!(!rows[1].body.contains("feature_name"));
         assert!(rows[1].args[1].contains("then(PROC_REF(refresh))"));
         assert!(!rows[1].body.contains("a comment"));
+    }
+
+    #[test]
+    fn funded_marker_projection_keeps_rows_and_refunds_sequential_scratch() {
+        let root = std::env::current_dir().unwrap();
+        let path = root.join("code/marker-scratch.dm");
+        let source = concat!("CAPABILITIES_PART(/datum/probe, feature)\n",
+            "    op(\"probe\", then(PROC_REF(update)))\n",
+            "/proc/entry()\n    return list(interface(\"Window\"))\n",
+            "/datum/capability/probe/entries()\n    return list(1)\n",
+            "observe(one,two,three)\nobserve(one,two,three,four)\n").repeat(300);
+        let original = dm_preprocess::SourceText::from(source);
+        let budget = Budget::new(5*1024*1024).unwrap();
+        let mut rows=Vec::new();let mut count=0;
+        crate::captured_raw_file::with_original_policy_file(&root,&path,original.clone(),0,&budget,&mut|relative,views|{
+            collect_file_funded(relative,views.marker()?,&budget,views.allocation_budget(&budget),&["CAPABILITIES"],true,true,true,&mut rows,&mut count,&mut||Ok::<_,crate::captured_reactive_reads::Failure>(()))?;
+            Ok(true)
+        }).unwrap();
+        let oracle=Budget::new(64*1024*1024).unwrap();
+        let mut expected=Vec::new();let mut expected_count=0;
+        collect_file_admitted("code/marker-scratch.dm",original.as_str(),&oracle,&["CAPABILITIES"],true,true,true,&mut expected,&mut expected_count,&mut||Ok::<_,String>(())).unwrap();
+        assert_eq!(count,1200);
+        assert_eq!(count,expected_count);
+        for (row,expected) in rows.iter().zip(&expected) {
+            assert_eq!((&row.name,&row.part,&row.rel,row.line,&row.body,&row.args,row.body_offset,&row.line_starts),
+                (&expected.name,&expected.part,&expected.rel,expected.line,&expected.body,&expected.args,expected.body_offset,&expected.line_starts));
+        }
+        assert!(budget.used()>=rows.iter().map(|row|row.body.capacity()+row.args.capacity()*std::mem::size_of::<String>()+row.args.iter().map(String::capacity).sum::<usize>()).sum::<usize>());
     }
 
     #[cfg(feature = "legacy-sem")]

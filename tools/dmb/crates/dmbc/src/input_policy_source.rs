@@ -42,10 +42,20 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   crate::daemon::control::checkpoint()?;budget.require().map_err(|m|quota(budget,m))?;
   // Real recorder path/fact/search-folder nodes are acquired by the same read;
   // the operation funds that ownership before those copies can be published.
-  pay(budget,path.as_os_str().len().checked_mul(32).and_then(|n|n.checked_add(8192)))?;
+  let metadata=path.as_os_str().len().checked_mul(32).and_then(|n|n.checked_add(8192));
+  let known={
+   let current=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?;
+   path.parent().is_some_and(|parent|current.folders.contains_key(parent))&&current.files.contains_key(path)
+  };
+  if !known{pay(budget,metadata)?;}
   let prepare=|scratch:&Budget|{
+   // Receipt construction and validation still use transient path/fact copies.
+   if known{pay(scratch,metadata)?;}
    crate::daemon::control::checkpoint()?;scratch.require().map_err(|m|quota(scratch,m))?;
-   lender.prepare_source()?;let limit=budget.remaining();let bytes=self.read_policy_vec_admitted(path,limit,&mut|bytes|scratch.charge(bytes).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m)))?.ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::NotFound,"selected raw preflight file disappeared before its actual read")))?;
+   lender.prepare_source()?;let limit=budget.remaining();
+   let mut admit=|bytes|scratch.charge(bytes).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m));
+   let bytes=if known{self.reread_policy_payload_admitted(path,limit,&mut admit)}else{self.read_policy_vec_admitted(path,limit,&mut admit)}?
+    .ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::NotFound,"selected raw preflight file disappeared before its actual read")))?;
    let lease=self.finish_raw_source_read_admitted(path,bytes,&mut|plan|{
     let needed=plan.constructor_bytes().checked_add(plan.decoded_bytes()).ok_or(io::ErrorKind::OutOfMemory)?;scratch.charge(needed).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
     Ok(())
@@ -68,4 +78,24 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
  use super::*;
  #[test]fn preflight_raw_loan_retains_real_bom_crlf_and_never_prepares_native_source(){let root=crate::test_scratch::dir("preflight-recorded-raw-view");std::fs::create_dir_all(root.join("code")).unwrap();let path=root.join("code/a.dm");std::fs::write(&path,b"\xef\xbb\xbf/obj/probe\r\n").unwrap();let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);let budget=Budget::new(8*1024*1024).unwrap();let mut called=0;inputs.with_recorded_policy_file(&root,&path,&budget,&mut|relative,views|{called+=1;assert_eq!(relative,"code/a.dm");assert_eq!(views.raw()?,"\u{feff}/obj/probe\n");Ok(true)}).unwrap();assert_eq!(called,1);assert!(inputs.source_acquisitions.lock().unwrap().is_empty(),"raw preflight must not construct ordinary native PreparedSource");assert!(inputs.recorded_file_fact(&path).is_ok());}
  #[test]fn preflight_raw_loan_preserves_first_callback_io_after_cancel_and_next_fresh_scope(){let root=crate::test_scratch::dir("preflight-recorded-raw-io");std::fs::create_dir_all(root.join("code")).unwrap();let path=root.join("code/a.dm");std::fs::write(&path,"/obj/probe\n").unwrap();let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(60));let budget=Budget::new(8*1024*1024).unwrap();let actual=inputs.with_recorded_policy_file(&root,&path,&budget,&mut|_,_|{token.cancel();Err(Failure::Operational(io::Error::from_raw_os_error(1450)))});assert!(matches!(actual,Err(Failure::Operational(ref actual))if actual.raw_os_error()==Some(1450)));drop(binding);let fresh=Budget::new(8*1024*1024).unwrap();assert!(inputs.with_recorded_policy_file(&root,&path,&fresh,&mut|_,_|Ok(true)).unwrap());let tiny=Budget::new(256).unwrap();let mut entered=false;assert!(matches!(inputs.with_recorded_policy_file(&root,&path,&tiny,&mut|_,_|{entered=true;Ok(true)}),Err(Failure::Operational(ref actual))if actual.kind()==io::ErrorKind::OutOfMemory));assert!(!entered);}
+ #[test]
+ fn repeated_real_policy_read_refunds_metadata_without_bypassing_current_bytes(){
+  let root=crate::test_scratch::dir("preflight-recorded-raw-repeat");
+  std::fs::create_dir_all(root.join("code")).unwrap();
+  let path=canonical_path(&root.join("code/a.dm"));
+  std::fs::write(&path,"/obj/probe\n").unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let budget=Budget::new(8*1024*1024).unwrap();
+  assert!(inputs.with_recorded_policy_file(&root,&path,&budget,&mut|_,_|Ok(true)).unwrap());
+  let after_first=budget.used();
+  let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
+  for _ in 0..8{
+   assert!(inputs.with_recorded_policy_file(&root,&path,&budget,&mut|_,views|{assert_eq!(views.raw()?,"/obj/probe\n");Ok(true)}).unwrap());
+  }
+  assert_eq!(budget.used(),after_first+8*(fixed+3*256));
+  std::fs::write(&path,"/obj/fresh\n").unwrap();
+  let fresh=Budget::new(8*1024*1024).unwrap();
+  assert!(matches!(inputs.with_recorded_policy_file(&root,&path,&fresh,&mut|_,_|panic!("a changed source must be refused before lending bytes")),Err(Failure::Operational(error))if error.to_string().contains("input changed during repeated capture")));
+ }
+
 }

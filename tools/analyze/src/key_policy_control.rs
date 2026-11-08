@@ -45,8 +45,12 @@ pub fn row<C:Control,T>(c:&mut C,rows:&mut Vec<T>)->Result<(),C::Error>{
     reserve(c,||cap.checked_mul(std::mem::size_of::<T>())?.checked_add(64))?;
     rows.try_reserve_exact(cap-rows.len()).map_err(|_|c.allocation_failed())
 }
+pub(crate) fn split_bound(width:usize)->Option<usize>{
+    width.checked_add(1)?.checked_mul(3*std::mem::size_of::<String>())?
+        .checked_add(width.checked_mul(4)?)?.checked_add(256)
+}
 pub fn split<C:Control>(c:&mut C,width:usize)->Result<(),C::Error>{
-    reserve(c,||width.checked_add(1)?.checked_mul(3*std::mem::size_of::<String>())?.checked_add(width.checked_mul(4)?)?.checked_add(256))
+    reserve(c,||split_bound(width))
 }
 pub fn format<C:Control>(c:&mut C,args:fmt::Arguments<'_>)->Result<String,C::Error>{
     if !C::CHECKED{return Ok(fmt::format(args))}

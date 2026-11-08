@@ -29,6 +29,17 @@ impl DerivedPreflight{
  pub(crate) fn discovery(&self)->&Arc<DiscoveryReceipt>{&self.discovery}
  pub(crate) fn is_joined_registry(&self)->bool{self.joined_registry}
  pub(crate) fn configuration_bytes(&self)->Option<&dm_resources::SharedBytes>{self.configuration_bytes.as_ref()}
+ pub(super) fn lend_handler_configuration<P: SnapshotProvider>(
+  &self, inputs: &RecordingInputs<P>, queries: &crate::query_db::QueryDb,
+  path: &Path, current: Option<&[u8]>,
+ ) -> io::Result<(Option<dm_resources::SharedBytes>, Arc<Config>)> {
+  if !self.joined_registry || !self.queries.matches(queries) {
+   return Err(invalid("handler configuration requires the joined Derived query owner"));
+  }
+  self.require_recording(inputs)?;
+  self.require_configuration(path, current)?;
+  Ok((self.configuration_bytes.clone(), Arc::clone(&self.config)))
+ }
  pub(crate) fn account_shared_capture_aliases(&self, seen: &mut BTreeSet<usize>) -> io::Result<()> {
   self.discovery.retained_charge_with(seen)?;
   self.facts.policy_closure_charge_with(seen)?;
@@ -219,7 +230,7 @@ fn actual_joined_derived_schema_and_discovery_precede_manifest_bytes() {
  assert!(queries.prepare_derived_preflight(&inputs,&intent).is_err());
  assert!(inputs.snapshot.lock().unwrap().policy_directories.is_empty());
  assert!(inputs.recorded_file_fact(&manifest).is_err());
- std::fs::write(config, "").unwrap();
+ std::fs::write(&config, "").unwrap();
  let mut inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
  let preflight=queries.prepare_derived_preflight(&inputs,&intent).unwrap();
  assert!(preflight.is_joined_registry());
@@ -228,6 +239,11 @@ fn actual_joined_derived_schema_and_discovery_precede_manifest_bytes() {
  assert!(inputs.recorded_file_fact(&code).is_ok());
  assert!(inputs.recorded_file_fact(&manifest).is_err());
  assert!(inputs.source_acquisitions.lock().unwrap().is_empty());
+ let config = canonical_path(&config);
+ let current = inputs.read_policy_vec_admitted(&config, 4096, &mut |_| Ok(())).unwrap();
+ let (_, shared) = preflight.lend_handler_configuration(&inputs,&queries,&config,current.as_deref()).unwrap();
+ assert!(Arc::ptr_eq(&shared,&preflight.config));
+ assert!(preflight.lend_handler_configuration(&inputs,&queries,&config,Some(b"different")).is_err());
  let subject=inputs.issue_original_analysis_subject_derived(&intent,Arc::clone(&preflight)).unwrap();
  assert!(Arc::ptr_eq(subject.discovery(),preflight.discovery()));
  assert!(Arc::ptr_eq(subject.derived_preflight_owner().unwrap(),&preflight));

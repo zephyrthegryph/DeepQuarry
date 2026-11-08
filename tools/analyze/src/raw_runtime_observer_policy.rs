@@ -49,7 +49,7 @@ pub fn visit<C:kc::Control>(text:&str,starts:&[u32],control:&mut C,emit:&mut imp
         let Some(close) = matching_paren(text, open) else {
             continue;
         };
-        let width=close-open-1;kc::split(control,width)?;kc::reserve(control,||width.checked_add(64))?;
+        let width=close-open-1;kc::temporary(control,0,||kc::split_bound(width))?;kc::temporary(control,1,||width.checked_add(64))?;
         let body = text[open + 1..close].to_string();
         let args = split_args(&body);
         if args.len() < 4 {

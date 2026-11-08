@@ -196,7 +196,11 @@ fn hook_ranges<C:kc::Control>(body: &str,c:&mut C) -> Result<Vec<(usize, usize, 
 /// Every handler a declaration marker names.
 pub fn discover(markers:&[Marker<'_>])->Vec<HandlerRef>{match discover_admitted(markers,&mut kc::Compatibility){Ok(v)=>v,Err(e)=>match e{}}}
 pub fn discover_in(markers:&[Marker<'_>],names:&[&str])->Vec<HandlerRef>{match discover_in_admitted(markers,names,&mut kc::Compatibility){Ok(v)=>v,Err(e)=>match e{}}}
-pub fn discover_admitted<C:kc::Control>(markers:&[Marker<'_>],c:&mut C)->Result<Vec<HandlerRef>,C::Error>{let mut out=Vec::new();for m in markers{c.checkpoint()?;if matches!(m.name,"CAPABILITIES"|"CAPABILITY_DEF"|"CAPABILITY_TYPE"|"STAT"|crate::raw_entry_proc_policy::ENTRY_PROC|RUNTIME_OBSERVE){marker_handlers(m,&mut out,c)?;}}c.checkpoint()?;Ok(out)}
+pub(crate) fn is_handler_marker(name: &str) -> bool {
+    matches!(name, "CAPABILITIES" | "CAPABILITY_DEF" | "CAPABILITY_TYPE" | "STAT" |
+        crate::raw_entry_proc_policy::ENTRY_PROC | RUNTIME_OBSERVE)
+}
+pub fn discover_admitted<C:kc::Control>(markers:&[Marker<'_>],c:&mut C)->Result<Vec<HandlerRef>,C::Error>{let mut out=Vec::new();for m in markers{c.checkpoint()?;if is_handler_marker(m.name){marker_handlers(m,&mut out,c)?;}}c.checkpoint()?;Ok(out)}
 pub fn discover_in_admitted<C:kc::Control>(markers:&[Marker<'_>],names:&[&str],c:&mut C)->Result<Vec<HandlerRef>,C::Error>{let mut out=Vec::new();for m in markers{c.checkpoint()?;if names.contains(&m.name){marker_handlers(m,&mut out,c)?;}}c.checkpoint()?;Ok(out)}
 fn arg_owned<C:kc::Control>(arg:Option<&String>,c:&mut C)->Result<String,C::Error>{match arg{Some(s)=>kc::own(c,s),None=>Ok(String::new())}}
 

@@ -642,14 +642,14 @@ impl QueryDb{
  /// The returned owner is not a model/full-source grant. Native preparation
  /// runs only after this lock is released and uses the existing source host.
  pub(crate) fn prepare_handlers_preflight<P:crate::input_snapshot::SnapshotProvider>(self:&Arc<Self>,inputs:&crate::input_snapshot::RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest)->io::Result<Arc<crate::input_snapshot::HandlerStructuralSubject>>{
-  self.prepare_handlers_preflight_using(inputs,intent,None)
+  self.prepare_handlers_preflight_using(inputs,intent,None,None)
  }
  /// Called only by the private exact selected-report preparation, using its
  /// already-admitted full selected namespace and exact internal role.
- pub(crate) fn prepare_selected_handlers_preflight<P:crate::input_snapshot::SnapshotProvider>(self:&Arc<Self>,inputs:&crate::input_snapshot::RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest,plan:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData)->io::Result<Arc<crate::input_snapshot::HandlerStructuralSubject>>{
-  self.prepare_handlers_preflight_using(inputs,intent,Some(plan))
+ pub(crate) fn prepare_selected_handlers_preflight<P:crate::input_snapshot::SnapshotProvider>(self:&Arc<Self>,inputs:&crate::input_snapshot::RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest,plan:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,derived:Option<&Arc<crate::input_snapshot::DerivedPreflight>>)->io::Result<Arc<crate::input_snapshot::HandlerStructuralSubject>>{
+  self.prepare_handlers_preflight_using(inputs,intent,Some(plan),derived)
  }
- fn prepare_handlers_preflight_using<P:crate::input_snapshot::SnapshotProvider>(self:&Arc<Self>,inputs:&crate::input_snapshot::RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest,selected:Option<&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData>)->io::Result<Arc<crate::input_snapshot::HandlerStructuralSubject>>{
+ fn prepare_handlers_preflight_using<P:crate::input_snapshot::SnapshotProvider>(self:&Arc<Self>,inputs:&crate::input_snapshot::RecordingInputs<P>,intent:&crate::policy_request::AdmittedPolicyRequest,selected:Option<&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData>,derived:Option<&Arc<crate::input_snapshot::DerivedPreflight>>)->io::Result<Arc<crate::input_snapshot::HandlerStructuralSubject>>{
   crate::daemon::control::checkpoint()?;
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
   let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());ledger.bind_source_arena(&self.raw_policy.admission)?;
@@ -658,7 +658,7 @@ impl QueryDb{
   let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};
   // No cleanup work replaces a preparation error. acquired() has already
   // settled any exceptional source payload retained by the real recorder.
-  let subject=Arc::new(inputs.issue_handlers_structural_subject_using(intent,selected,&budget,&mut credits,self)?);
+  let subject=Arc::new(inputs.issue_handlers_structural_subject_using(intent,selected,&budget,&mut credits,self,derived)?);
   let bytes=subject.input_retained_charge()?;let key=(252,Arc::as_ptr(&subject)as usize);
   if credits.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handlers preflight resource identity collision"))}
   credits.ledger.replace_row(key,Row{owner:Observation::Handlers(Arc::downgrade(&subject)),bytes});

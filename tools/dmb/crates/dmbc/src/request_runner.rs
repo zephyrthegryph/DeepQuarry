@@ -350,7 +350,7 @@ fn run_build_attempt(
     };
     if joined_derived.is_some() { dm_profile::detail_mark("request.joined_derived", total); }
     // Genuine partial source is prepared before any independent full Subject.
-    let mut handlers_capture=if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>handlers_prepare::prepare(&inputs_capture,intent,host,workers)?,None=>None}}else{None};
+    let mut handlers_capture=if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>handlers_prepare::prepare(&inputs_capture,intent,host,workers,joined_derived.as_ref())?,None=>None}}else{None};
     if joined_derived.is_some() { dm_profile::detail_mark("request.joined_handlers", total); }
     if handlers_capture.as_ref().is_some_and(|capture|
         !capture.prepared().subject().requires_full_model() && !capture.prepared().subject().is_selected_full()

@@ -203,6 +203,17 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
     /// Sibling input producers with a captured exact typed parent listing
     /// can use the same payload kernel without acquiring a second listing.
     pub(super) fn read_policy_payload_admitted(&self, path: &Path, limit: usize, before_allocate: &mut dyn FnMut(usize) -> io::Result<()>) -> io::Result<Option<Vec<u8>>> {
+        self.read_policy_payload_mode(path, limit, before_allocate, false)
+    }
+
+    /// A preflight reread may use the recorded ordinary parent and file
+    /// metadata already paid by this recorder. The actual provider read and
+    /// digest validation still run. This entry point cannot create new rows.
+    pub(super) fn reread_policy_payload_admitted(&self, path: &Path, limit: usize, before_allocate: &mut dyn FnMut(usize) -> io::Result<()>) -> io::Result<Option<Vec<u8>>> {
+        self.read_policy_payload_mode(path, limit, before_allocate, true)
+    }
+
+    fn read_policy_payload_mode(&self, path: &Path, limit: usize, before_allocate: &mut dyn FnMut(usize) -> io::Result<()>, known: bool) -> io::Result<Option<Vec<u8>>> {
         let mut admission_error = None;
         let result = self.provider.read_policy_bounded_admitted(path, limit, &mut |size| {
             if admission_error.is_some() { return Err(io::ErrorKind::Other.into()); }
@@ -217,6 +228,29 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             }
         });
         if let Some(error) = admission_error { return Err(error); }
+        if known {
+            let check = |stamp: Option<(&Stamp,u128)>| -> io::Result<()> {
+                let current=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?;
+                let parent=path.parent().ok_or_else(||invalid("policy path has no parent"))?;
+                let fact=current.files.get(path).filter(|_|current.folders.contains_key(parent))
+                    .ok_or_else(||invalid("previously recorded policy file or folder disappeared"))?;
+                let Some((stamp,hash))=stamp else{return Err(invalid("present input became negative during capture"))};
+                if current.path_presence.get(path)==Some(false){return Err(invalid("missing metadata path became a captured file"))}
+                if current.negative_files.contains(path){return Err(invalid("negative input became present during capture"))}
+                if &fact.stamp!=stamp||fact.content!=hash{return Err(invalid("input changed during repeated capture"))}
+                Ok(())
+            };
+            return match result {
+                Ok(Some(read))=>{
+                    let(stamp,bytes,hash)=read.into_parts();
+                    if stamp.size!=bytes.len() as u64||bytes.capacity()>limit{return Err(invalid("bounded provider exceeded admitted size/capacity"))}
+                    check(Some((&stamp,hash)))?;Ok(Some(bytes))
+                }
+                Ok(None)=>Err(invalid("provider cannot prove bounded original read")),
+                Err(error) if error.kind()==io::ErrorKind::NotFound=>{check(None)?;Ok(None)}
+                Err(actual)=>Err(actual),
+            }
+        }
         self.record_policy_read_result(path, limit, result)
     }
     fn record_policy_read_result(&self, path: &Path, limit: usize, result: io::Result<Option<CapturedInputRead>>) -> io::Result<Option<Vec<u8>>> {
