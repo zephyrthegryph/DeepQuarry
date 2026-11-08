@@ -1,5 +1,4 @@
 use super::*;
-use std::sync::atomic::AtomicUsize;
 use dm_tree::frontend::{
     BodySyntax, BodySyntaxInput, BodySyntaxQueries, OriginalInitializerExpression,
     OriginalInitializerExpressionInput, OriginalSignatureAliasCensus, OriginalSignatureAliasGroup,
@@ -11,10 +10,18 @@ mod original_host;
 #[path = "../fixtures/original_policy_source.rs"]
 mod policy_source;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct BodyHost {
-    counter: Arc<AtomicUsize>,
+    counter: Arc<dm_syntax::SettingChargeCounter>,
     fail_body: std::sync::atomic::AtomicBool,
+}
+impl Default for BodyHost {
+    fn default() -> Self {
+        Self {
+            counter: dm_syntax::SettingChargeCounter::try_new(16 << 20).unwrap(),
+            fail_body: Default::default(),
+        }
+    }
 }
 impl BodySyntaxQueries for BodyHost {
     fn syntax(&self,input:&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,dm_tree::frontend::Diagnostic>{

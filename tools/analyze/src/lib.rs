@@ -4,6 +4,10 @@
 //! implementation ([`allow`]), one baseline implementation ([`baseline`]), one on-disk cache
 //! ([`cache`]); every lint is a [`lint::Lint`] in `src/lints/`.
 
+// Shared fixtures use this name when loaded by either crate.
+#[cfg(test)]
+extern crate self as dq_analyze;
+
 pub use dq_analyze_client::{cli_arguments, native_cli_client, native_policy_roster, selected_exclusions_wire};
 pub mod allow;
 #[cfg(feature = "legacy-sem")]

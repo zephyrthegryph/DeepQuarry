@@ -5,7 +5,18 @@ use crate::captured_reactive_reads::Failure;
 #[path="../../dmb/shared/test_scratch.rs"]mod test_scratch;
 #[path="../../dmb/crates/dm-analysis/examples/support/reference_hierarchy.rs"]mod profile;
 #[path="../examples/support/deps_original/reaction_producer.rs"]mod original;
-#[derive(Debug,Default)]struct Queries{counter:Arc<AtomicUsize>,bodies:AtomicUsize,compatibility:AtomicUsize,fail:AtomicBool}
+#[derive(Debug)]
+struct Queries{counter:Arc<dm_syntax::SettingChargeCounter>,bodies:AtomicUsize,compatibility:AtomicUsize,fail:AtomicBool}
+impl Default for Queries {
+    fn default() -> Self {
+        Self {
+            counter: dm_syntax::SettingChargeCounter::try_new(64 * 1024 * 1024).unwrap(),
+            bodies: AtomicUsize::default(),
+            compatibility: AtomicUsize::default(),
+            fail: AtomicBool::default(),
+        }
+    }
+}
 impl Queries{fn admitted<T>(&self,run:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&self.counter,64*1024*1024,&poll);let result=run(&a);if matches!(&result,Err(BodySyntaxFailure::Operational(_))){return result}if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}result}}
 impl SettingExpressionQueries for Queries{
  fn with_declaration_admission(&self,operation:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{self.admitted(|a|operation(a))}
