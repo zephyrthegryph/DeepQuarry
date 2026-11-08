@@ -1,5 +1,4 @@
 @use 'sass:meta';
-@use '~tgui-core/styles';
 @use '~tgui/styles/console';
 
 // The column page (tgui-panel/styles/main.scss) loads the reset and the DQ layer; this sheet is scoped to .stat-root.

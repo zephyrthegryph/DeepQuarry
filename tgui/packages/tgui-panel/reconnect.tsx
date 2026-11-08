@@ -83,6 +83,7 @@ export function ReconnectStatus(props: { restarting: boolean }) {
         </Button>
       ) : null}
       <Button
+        className="Ping__action--primary"
         compact
         tooltip="Reconnect now"
         tooltipPosition="bottom"
@@ -94,6 +95,7 @@ export function ReconnectStatus(props: { restarting: boolean }) {
       </Button>
       {url ? (
         <Button
+          className="Ping__action--quiet"
           compact
           icon="power-off"
           tooltip="Relaunch game"

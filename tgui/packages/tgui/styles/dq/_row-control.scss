@@ -1,0 +1,22 @@
+// A library Button as one fixed-height control of a row: its text or icon centred, whatever its content.
+// tgui-core sizes a button by line-height, so a text button and an icon-only button differ; a row of controls must not.
+@mixin button($height) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: $height;
+  margin: 0;
+  line-height: 1;
+
+  .Button__content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+  }
+
+  .Button--icon {
+    line-height: 1;
+  }
+}

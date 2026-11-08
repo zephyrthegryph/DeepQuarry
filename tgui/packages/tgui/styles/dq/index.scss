@@ -4,6 +4,7 @@
 
 @use 'sass:meta';
 
+@include meta.load-css('./button-baseline.scss');
 @include meta.load-css('./tabs.scss');
 @include meta.load-css('./titlebar.scss');
 @include meta.load-css('./list-row.scss');
