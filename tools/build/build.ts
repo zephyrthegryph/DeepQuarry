@@ -25,7 +25,8 @@ import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
 import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, slotRoleSize, withSlot } from './lib/machine_slots';
 import { measuredDurations, neverRan, packShards, parseRunLog, readDurations, recordDurations, type SalvagedRun, suiteStalenessParams } from './lib/suite_runner';
-import { dmeValidationKey, seedFromMainCheckout } from './lib/seed';
+import { seedFromMainCheckout } from './lib/seed';
+import { gitTreeKey, readKeyRecord, runCaptured, writeKeyRecord } from './lib/tree_key';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BALANCE_RESULTS_FILE,
@@ -290,7 +291,7 @@ const VALIDATE_DME_RECORD = 'data/validate-dme.json';
 export const ValidateDmeTarget = new Juke.Target({
   // Generates code/engine/_generated first (GenTarget, defined below: hence the function form).
   dependsOn: () => [GenTarget],
-  inputs: ['code/**/*.dm', `${DME_NAME}.dme`],
+  // No Juke `inputs`: without outputs Juke globbed and stat-ed all of code/**/*.dm (synchronously) only to always run the target.
   executes: async () => {
     // A .dm file is "compiled" if it is reachable from the .dme through the
     // transitive #include graph — NOT just if it appears literally in the .dme.
@@ -336,26 +337,14 @@ export const ValidateDmeTarget = new Juke.Target({
     };
 
     const dmeText = fs.readFileSync(`${DME_NAME}.dme`, 'utf-8');
-    const dmFiles = Juke.glob('code/**/*.dm');
-    const statOf = (f: string): string => {
-      try {
-        const st = fs.statSync(f);
-        return `${st.size}:${st.mtimeMs}`;
-      } catch {
-        return 'missing';
-      }
-    };
-    const dmeKey = dmeValidationKey(dmeText, dmFiles, statOf);
-    if (!process.env.DQ_FULL_CHECKS && !process.env.CI) {
-      try {
-        if (JSON.parse(fs.readFileSync(VALIDATE_DME_RECORD, 'utf-8')).key === dmeKey) {
-          Juke.logger.info(`validate-dme: up to date (hash ${dmeKey.slice(0, 12)}, ${dmFiles.length} files); skipped`);
-          return;
-        }
-      } catch {
-        // no record yet
-      }
+    // Keyed by git (lib/tree_key.ts: the index already holds every file's stat), not by walking and stat-ing the 8k files here.
+    const t0 = Date.now();
+    const dmeKey = (await gitTreeKey(process.cwd(), 'validate-dme', ['code', `${DME_NAME}.dme`])) ?? `nokey-${Date.now()}`;
+    if (!process.env.DQ_FULL_CHECKS && !process.env.CI && readKeyRecord(VALIDATE_DME_RECORD) === dmeKey) {
+      Juke.logger.info(`validate-dme: up to date (key ${dmeKey.slice(0, 12)}, ${Date.now() - t0} ms); skipped`);
+      return;
     }
+    const dmFiles = Juke.glob('code/**/*.dm');
 
     seed(dmeText, '.');
     while (queue.length > 0) {
@@ -949,15 +938,35 @@ export const AnalyzeBuildTarget = new Juke.Target({
 // target that compiles or lints DM writes it first, so adding, moving or deleting a file never needs a hand edit of the manifest.
 // The file stays committed (DreamMaker, DreamChecker and CI read it); `gen_dme.py --check` (tools/ci/check_ratchets.sh) fails when the
 // committed one is stale. DQ_DME_GEN=0 leaves the manifest alone (tools/ci/dme_order_equiv.sh compiles a reference order with it).
+const DME_GEN_RECORD = 'data/dme-gen.json';
+// What gen_dme.py and gen_mapping_dme.py read and write: the scanned trees (code, interface, maps), their own sources and specs, and
+// the manifests themselves (so a hand edit or a switch that changes them runs the generators again).
+const DME_GEN_PATHS = [
+  'code', 'interface', 'maps', `${DME_NAME}.dme`, `${DME_NAME}.mapping.dme`, 'tools/build/gen_dme.py', 'tools/build/gen_mapping_dme.py',
+  'tools/build/dme_spec.txt', 'tools/build/dme_moves.txt', 'tools/ci/check_variants.py', 'tools/ci/variant_census.py',
+];
 export const DmeTarget = new Juke.Target({
   executes: async () => {
     if (process.env.DQ_DME_GEN === '0') {
       Juke.logger.warn(`dme: DQ_DME_GEN=0, not regenerating ${DME_NAME}.dme`);
       return;
     }
+    // The two generators read every scanned .dm file (9-90 s on a loaded machine). Skipped when nothing they read or write changed
+    // since they last passed here (lib/tree_key.ts); DQ_FULL_CHECKS / CI always run them. They run as child processes awaited
+    // asynchronously: spawnSync here blocked Bun's event loop, so every target beside it (icon-repack's "95-151 s" for a 1.7 s
+    // repack, the bindings check) could not finish until both generators had.
+    const useCache = !process.env.DQ_FULL_CHECKS && !process.env.CI;
+    const t0 = Date.now();
+    if (useCache) {
+      const key = await gitTreeKey(process.cwd(), 'dme-gen', DME_GEN_PATHS, [], false);
+      if (key && readKeyRecord(DME_GEN_RECORD) === key) {
+        Juke.logger.info(`dme: inputs unchanged since the last generation (key ${key.slice(0, 12)}, ${Date.now() - t0} ms); skipped`);
+        return;
+      }
+    }
     const python = process.platform === 'win32' ? 'python' : 'python3';
-    const result = spawnSync(python, ['tools/build/gen_dme.py'], { encoding: 'utf-8' });
-    const out = `${result.stdout || ''}${result.stderr || ''}`.trim();
+    const result = await runCaptured(python, ['tools/build/gen_dme.py']);
+    const out = result.out.trim();
     if (result.error || result.status !== 0) {
       if (out) console.log(out);
       Juke.logger.error(`dme: tools/build/gen_dme.py failed${result.error ? ` (${result.error.message})` : ''}; fix tools/build/dme_spec.txt`);
@@ -965,19 +974,25 @@ export const DmeTarget = new Juke.Target({
     }
     if (out) Juke.logger.info(out);
     // deepquarry.mapping.dme is deepquarry.dme plus the variant stubs: regenerate it with the manifest so the two never drift.
-    const mapping = spawnSync(python, ['tools/build/gen_mapping_dme.py'], { encoding: 'utf-8' });
-    const mapOut = `${mapping.stdout || ''}${mapping.stderr || ''}`.trim();
+    const mapping = await runCaptured(python, ['tools/build/gen_mapping_dme.py']);
+    const mapOut = mapping.out.trim();
     if (mapping.error || mapping.status !== 0) {
       if (mapOut) console.log(mapOut);
       Juke.logger.error(`dme: tools/build/gen_mapping_dme.py failed${mapping.error ? ` (${mapping.error.message})` : ''}`);
       throw new Juke.ExitCode(1);
     }
     if (mapOut) Juke.logger.info(mapOut);
+    if (useCache) {
+      const after = await gitTreeKey(process.cwd(), 'dme-gen', DME_GEN_PATHS, [], false);
+      if (after) writeKeyRecord(DME_GEN_RECORD, after);
+    }
+    Juke.logger.info(`dme: generated in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   },
 });
 
 // `analyze gen` reads the gitignored `_bindings.dm` (the reads generator follows calls into the vg_* binds: without it
 // `rust_push(nameof(vg_entity))` is missing from three generated reads), so it runs after the bindings are current, never beside them.
+const GEN_RECORD = 'data/analyze-gen.json';
 export const GenTarget = new Juke.Target({
   dependsOn: [AnalyzeBuildTarget, DmeTarget, VerdigrisBindingsCheckTarget],
   executes: async () => {
@@ -994,8 +1009,21 @@ export const GenTarget = new Juke.Target({
       throw new Juke.ExitCode(1);
     }
     const started = Date.now();
-    const result = spawnSync(ANALYZE_BIN, ['gen'], { encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 });
-    const lines = `${result.stdout || ''}${result.stderr || ''}`.split(/\r?\n/).filter((l) => l && !l.startsWith('fresh '));
+    // Skipped when nothing `analyze gen` reads or writes changed since it last passed here (lib/tree_key.ts): the DM trees (the
+    // generated output and _bindings.dm are ignored files there, keyed by stat), the manifest, the lint scopes, the analyzer's
+    // sources and binary, and the TypeScript it writes. DQ_FULL_CHECKS / CI always run it.
+    const useCache = !process.env.DQ_FULL_CHECKS && !process.env.CI;
+    const genPaths = ['code', 'interface', 'maps', `${DME_NAME}.dme`, 'tools/ci/lint_scopes.toml', 'tools/analyze/src', 'tools/analyze/Cargo.toml', 'tgui/packages/tgui/interfaces/generated'];
+    if (useCache) {
+      const key = await gitTreeKey(process.cwd(), 'analyze-gen', genPaths, [ANALYZE_BIN]);
+      if (key && readKeyRecord(GEN_RECORD) === key) {
+        Juke.logger.info(`gen: inputs unchanged since the last run (key ${key.slice(0, 12)}, ${Date.now() - started} ms); skipped`);
+        return;
+      }
+    }
+    // Awaited, not spawnSync: a synchronous spawn blocked Bun's event loop for the whole run, stalling every target beside it.
+    const result = await runCaptured(ANALYZE_BIN, ['gen']);
+    const lines = result.out.split(/\r?\n/).filter((l) => l && !l.startsWith('fresh '));
     const written = lines.filter((l) => l.startsWith('wrote '));
     const other = lines.filter((l) => !l.startsWith('wrote '));
     if (result.error || result.status !== 0) {
@@ -1004,6 +1032,10 @@ export const GenTarget = new Juke.Target({
       throw new Juke.ExitCode(1);
     }
     for (const line of other) console.log(line);
+    if (useCache) {
+      const after = await gitTreeKey(process.cwd(), 'analyze-gen', genPaths, [ANALYZE_BIN]);
+      if (after) writeKeyRecord(GEN_RECORD, after);
+    }
     Juke.logger.info(`gen: ${written.length} generated file(s) rewritten in ${((Date.now() - started) / 1000).toFixed(1)} s`);
   },
 });
@@ -3550,35 +3582,40 @@ export const AutowikiTarget = new Juke.Target({
   },
 });
 
+// The tgui install is skipped when the lockfile and the authored package.json files are what the last successful install saw: a
+// content key (lib/tree_key.ts) kept in tgui/node_modules/.dq-install-key. The old gate compared mtimes, and `git switch` (every
+// pool lease and every post-push check) rewrites package.json and bun.lock with a new mtime, so nearly every build re-ran a full
+// `bun install` (about 77 s of linking on this machine) for an unchanged lockfile. The Juke `inputs` glob went too: with no outputs it
+// never skipped anything and only walked tgui/ synchronously.
+const BUN_INSTALL_KEY = 'tgui/node_modules/.dq-install-key';
+// The workspace packages' manifests by pathspec glob (never node_modules).
+const bunInstallKey = () =>
+  gitTreeKey(process.cwd(), 'tgui-install', ['tgui/bun.lock', 'tgui/package.json', ':(glob)tgui/packages/*/package.json']);
 export const BunTarget = new Juke.Target({
   parameters: [CiParameter],
-  inputs: ['tgui/**/package.json'],
-  // skip `bun install` when tgui/node_modules is newer
-  // than every package.json + bun.lock under tgui/. Without this Juke
-  // re-runs `bun install --frozen-lockfile` on every build (~5s) even
-  // when nothing has changed; the install itself then no-ops in ~70ms
-  // but the spawn overhead is real. Same onlyWhen pattern as
-  // BiomeInstallTarget below.
-  onlyWhen: () => {
+  onlyWhen: async () => {
     if (!fs.existsSync('tgui/node_modules')) return true;
+    const key = await bunInstallKey();
+    if (!key) return true;
     try {
-      const nmMt = fs.statSync('tgui/node_modules').mtimeMs;
-      if (fs.statSync('tgui/bun.lock').mtimeMs > nmMt) return true;
-      // tgui/**/package.json matches inside tgui/node_modules/ too,
-      // where Bun's per-install file writes always look "newer" than
-      // the parent directory. Filter those out so we only watch
-      // authored workspace package.json files.
-      for (const pkg of Juke.glob('tgui/**/package.json')) {
-        if (pkg.includes('node_modules')) continue;
-        if (fs.statSync(pkg).mtimeMs > nmMt) return true;
-      }
-      return false;
+      return fs.readFileSync(BUN_INSTALL_KEY, 'utf-8').trim() !== key;
     } catch {
-      return true; // bail conservatively if any stat fails
+      // No key yet (an install from before the key): the old mtime gate decides once, and a fresh install records the key.
+      try {
+        if (fs.statSync('tgui/bun.lock').mtimeMs <= fs.statSync('tgui/node_modules').mtimeMs) {
+          fs.writeFileSync(BUN_INSTALL_KEY, key);
+          return false;
+        }
+      } catch {
+        // fall through to an install
+      }
+      return true;
     }
   },
-  executes: () => {
-    return bun('install', '--frozen-lockfile', '--ignore-scripts');
+  executes: async () => {
+    await bun('install', '--frozen-lockfile', '--ignore-scripts');
+    const key = await bunInstallKey();
+    if (key) fs.writeFileSync(BUN_INSTALL_KEY, key);
   },
 });
 
