@@ -20,7 +20,7 @@ pub(crate) struct DiscoveryContract {
 /// The selector actually executed by the only recursive receipt issuer.
 /// No caller flag, include glob or exclusion list can construct this value.
 #[derive(Clone,Copy)]
-enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1, AuthoredDocUiJoinedV1}
+enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1, AuthoredDocUiJoinedV1, AuthoredDocUiExtendedV1}
 /// Obligations of the one physical traversal selected by the private issuer.
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 struct DiscoveryFacets {
@@ -46,15 +46,19 @@ impl DiscoverySelection{
  fn facets(self) -> DiscoveryFacets {
      use DiscoverySelection::*;
      DiscoveryFacets {
-         map_root_no_follow: matches!(self, MapEditsJoinedDmNoLinksV1 | AuthoredDocUiJoinedV1),
-         productive_docs: matches!(self, DocSnippetsDemandV2 | DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1),
-         docs_share_complete_dm: matches!(self, DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1),
-         visible_ui: matches!(self, UiActionsVisibleRootsV1 | UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1),
-         ui_shares_complete_dm: matches!(self, UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1),
+         map_root_no_follow: matches!(self, MapEditsJoinedDmNoLinksV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
+         productive_docs: matches!(self, DocSnippetsDemandV2 | DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
+         docs_share_complete_dm: matches!(self, DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
+         visible_ui: matches!(self, UiActionsVisibleRootsV1 | UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
+         ui_shares_complete_dm: matches!(self, UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
      }
  }
 
  fn includes_file(self,path:&Path,root:&Path)->bool{match self{
+  Self::AuthoredDocUiExtendedV1=>Self::AuthoredDocUiJoinedV1.includes_file(path,root)
+   ||path.strip_prefix(root).is_ok_and(|relative|
+      (relative.starts_with("interface")||relative.starts_with("modular_chomp"))
+      &&relative.extension().is_some_and(|ext|ext=="dm")),
   Self::DocUiJoinedAllowV1|Self::AuthoredDocUiJoinedV1=>Self::UiActionsJoinedAllowV1.includes_file(path,root)
    ||path.strip_prefix(root).is_ok_and(|relative|
     dq_analyze::doc_snippets_policy::is_doc_path(&relative.to_string_lossy().replace('\\',"/"))),
@@ -112,16 +116,18 @@ impl DiscoveryReceipt {
         if matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1){return Ok(false)}
         if matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2){return Ok(false)}
         if matches!(self.selection,DiscoverySelection::OwnershipCodeDmV2)&&roots!=[("code","dm")]{return Ok(false)}
-        if matches!(self.selection,DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1)
+        if matches!(self.selection,DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1)
             && roots.iter().any(|(root,ext)| *ext!="dm"
-                || !(Path::new(root).starts_with("code")||Path::new(root).starts_with("maps"))) {
+                || !(Path::new(root).starts_with("code")||Path::new(root).starts_with("maps")
+                    || matches!(self.selection,DiscoverySelection::AuthoredDocUiExtendedV1)
+                        && (Path::new(root).starts_with("interface")||Path::new(root).starts_with("modular_chomp")))) {
             return Ok(false)
         }
         self.covers_selected_roots(roots,missing_is_empty,false,admit)
     }
     /// A mixed MD receipt can certify only the actual doc purpose, never CODE authority.
     pub(crate) fn covers_doc_snippets(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
-        if !matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1){return Ok(false)}
+        if !matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1){return Ok(false)}
         if self.selection.facets().productive_docs{
           let config=self.doc_configuration.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"productive Doc discovery has no actual configuration owner"))?;
           for relative in ["code/","doc/rewrite/"]{crate::daemon::control::checkpoint()?;admit(1024)?;if config.excludes_subtree(relative){continue}if !self.facts.policy_directories().contains_key(&self.contract.root.join(relative.trim_end_matches('/'))){return Ok(false)}}return Ok(true)
@@ -137,7 +143,7 @@ impl DiscoveryReceipt {
     fn covers_selected_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,doc:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
         for &(directory,extension) in roots{
             crate::daemon::control::checkpoint()?;
-            if extension!="dm"&&!(doc&&directory=="doc/rewrite"&&extension=="md")&&!(matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1)&&directory=="tgui/packages/tgui/interfaces"&&matches!(extension,"tsx"|"ts"|"jsx"|"js")){return Ok(false)}
+            if extension!="dm"&&!(doc&&directory=="doc/rewrite"&&extension=="md")&&!(matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1)&&directory=="tgui/packages/tgui/interfaces"&&matches!(extension,"tsx"|"ts"|"jsx"|"js")){return Ok(false)}
             if matches!(self.selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1)&&!["code","maps","tgui/packages/tgui/interfaces"].iter().any(|root|Path::new(directory).starts_with(root)){return Ok(false)}
             if !self.contract.recursive_roots.iter().any(|root|root.strip_prefix(&self.contract.root).is_ok_and(|relative|Path::new(directory).starts_with(relative))){return Ok(false)}
             admit(self.contract.root.as_os_str().len().checked_add(directory.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(512)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"code discovery proof path overflow"))?)?;
@@ -171,6 +177,19 @@ impl DiscoveryReceipt {
     pub(crate) fn has_authored_doc_ui_facets(&self) -> bool {
         let facets = self.selection.facets();
         facets.map_root_no_follow && facets.docs_share_complete_dm && facets.ui_shares_complete_dm
+    }
+
+    pub(crate) fn matches_authored_doc_ui_profile(&self, roots: &[&str]) -> bool {
+        use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+        let selected = match self.selection {
+            DiscoverySelection::AuthoredDocUiJoinedV1 => Q::AUTHORED_DOC_UI_ROOTS,
+            DiscoverySelection::AuthoredDocUiExtendedV1 => Q::EXTENDED_AUTHORED_DOC_UI_ROOTS,
+            _ => return false,
+        };
+        roots == selected && self.has_authored_doc_ui_facets()
+            && self.contract.recursive_roots.len() == roots.len()
+            && self.contract.recursive_roots.iter().zip(roots).all(|(actual, expected)|
+                actual.strip_prefix(&self.contract.root).ok() == Some(Path::new(expected)))
     }
 
     pub(crate) fn productive_ui_configuration(&self,path:&Path)->io::Result<Option<&dq_analyze::captured_raw_file::Config>>{
@@ -563,11 +582,17 @@ pub(crate) fn discover_doc_ui_joined<P:SnapshotProvider>(inputs:&RecordingInputs
 
 pub(crate) fn discover_authored_doc_ui<P: SnapshotProvider>(
     inputs: &RecordingInputs<P>, contract: DiscoveryContract, configuration: &Path,
+    questions: &[crate::policy_request::WorkspaceAuxiliaryQuestion],
 ) -> io::Result<DiscoveryReceipt> {
-    discover_productive_doc_domains(
-        inputs, contract, configuration, &["code", "doc/rewrite", "maps", "tgui/packages/tgui/interfaces"],
-        DiscoverySelection::AuthoredDocUiJoinedV1,
-    ).map(|(receipt, _)| receipt)
+    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    let roots = Q::authored_doc_ui_roots(questions)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "authored mixed discovery requires its exact private question roster"))?;
+    let selection = if questions == Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI {
+        DiscoverySelection::AuthoredDocUiExtendedV1
+    } else {
+        DiscoverySelection::AuthoredDocUiJoinedV1
+    };
+    discover_productive_doc_domains(inputs, contract, configuration, roots, selection).map(|(receipt, _)| receipt)
 }
 
 fn discover_productive_doc_domains<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,configuration:&Path,expected:&[&str],selection:DiscoverySelection)->io::Result<(DiscoveryReceipt,Option<dm_resources::SharedBytes>)>{

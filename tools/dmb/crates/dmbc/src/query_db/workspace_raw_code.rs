@@ -872,8 +872,11 @@ impl WorkspaceCodeReader<'_,'_>{
   if plan.roots()!=["code","maps"]{return Err("report differs from its qualified selected tree".into())}
   // Reactive reports still borrow only the same hidden CODE/MAPS domain.
   // Additional raw roots can coexist only on their exact authenticated capture.
-  if !exact_roots && !(allow_reactive_superset && self.capture.covers_extended_reactive_raw_domains(&mut |bytes|
-   self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?){
+  let admitted = exact_roots || (allow_reactive_superset
+   && (self.capture.has_extended_authored_doc_ui_capture()
+       || self.capture.covers_extended_reactive_raw_domains(&mut |bytes|
+        self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?));
+  if !admitted {
    return Err("report differs from its qualified selected tree".into());
   }
   if !self.capture.covers_allow_unused(plan,&mut|bytes|self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?{

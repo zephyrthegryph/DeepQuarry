@@ -69,7 +69,7 @@ pub(super) fn compute(ctx:&mut dm_query::Ctx<'_>,p:&Params,charge:&AtomicUsize,a
   let pages=Pages{reader,inputs:loan.capture.policy(),witness:RefCell::new(None)};
   let selected_setter_plan = if p.selected_setter_tree || p.semantic==Some(SemanticPolicyName::SelectedSetterPublishes) {
    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
-   if !Q::admits_selected_setter(loan.workspace.auxiliary()) ||
+   if (!Q::admits_selected_setter(loan.workspace.auxiliary()) && !loan.workspace.has_extended_authored_doc_ui_capture()) ||
       (p.selected_setter_tree && (!matches!(&p.request,Request::Dependencies) || p.semantic.is_some() || p.generator.is_some() || p.policy)){
     return Err("selected setter source differs from actual Original role".into());
    }
@@ -90,7 +90,7 @@ pub(super) fn compute(ctx:&mut dm_query::Ctx<'_>,p:&Params,charge:&AtomicUsize,a
   if let Some(name)=p.semantic{
    let selected_plan = if matches!(name, SemanticPolicyName::SelectedReads | SemanticPolicyName::SelectedUntrackedInputs) {
     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
-    if !Q::admits_selected_reads(loan.workspace.auxiliary()) {
+    if (!Q::admits_selected_reads(loan.workspace.auxiliary()) && !loan.workspace.has_extended_authored_doc_ui_capture()) {
      return Err("selected semantic reads differ from actual selected preparation".into());
     }
     let mut work = dq_analyze::captured_allow_annotations::Operation { budget:reader.budget(), poll:&poll };
@@ -269,7 +269,7 @@ impl QueryDb{
  /// current source. Standalone report pages do not invoke this contract.
  pub(crate) fn with_selected_workspace_semantic_read_report<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,question:crate::policy_request::WorkspaceAuxiliaryQuestion,consume:impl FnOnce(&dq_analyze::captured_sem_reads::SemanticPolicyData,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
   use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
-  if !matches!(question,Q::SemReads|Q::UntrackedInputs)||!Q::admits_selected_reads(workspace.auxiliary()){
+  if !matches!(question,Q::SemReads|Q::UntrackedInputs)||(!Q::admits_selected_reads(workspace.auxiliary()) && !workspace.has_extended_authored_doc_ui_capture()){
    return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected semantic read report requires an actual selected reads role"));
   }
   workspace.require_scope(guard)?;
@@ -280,7 +280,7 @@ impl QueryDb{
  }
  pub(crate) fn with_selected_workspace_setter_report<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,consume:impl FnOnce(&dq_analyze::captured_sem_reads::SemanticPolicyData,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
   use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
-  if !Q::admits_selected_setter(workspace.auxiliary()){
+  if (!Q::admits_selected_setter(workspace.auxiliary()) && !workspace.has_extended_authored_doc_ui_capture()){
    return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected setter report requires its actual role"));
   }
   workspace.require_scope(guard)?;

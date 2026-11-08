@@ -287,6 +287,7 @@ struct ReportStage<'a> {
     finished: usize,
     selected: &'a [&'a str],
     failed: SectionFailures,
+    authored_doc_ui: bool,
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
@@ -433,14 +434,14 @@ impl ReportStage<'_> {
             }
             UnionRows::Tree(tree) => {
                 if meta.name == "ui_actions"
-                    && ((self.selected != Roster::WithUiActions.names() && self.selected != PRIVATE_DOC_UI && self.selected != PRIVATE_AUTHORED_DOC_UI)
+                    && ((self.selected != Roster::WithUiActions.names() && self.selected != PRIVATE_DOC_UI && !self.authored_doc_ui)
                         || !std::ptr::eq(meta, dq_analyze::ui_actions_policy::metadata())
                         || !self.judgment.is_raw())
                 {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "UI Actions requires its exact source-only profile"));
                 }
                 if meta.name == "doc_snippets" {
-                    if (self.selected != Roster::WithDocSnippets.names() && self.selected != PRIVATE_DOC_UI && self.selected != PRIVATE_AUTHORED_DOC_UI)
+                    if (self.selected != Roster::WithDocSnippets.names() && self.selected != PRIVATE_DOC_UI && !self.authored_doc_ui)
                         || !std::ptr::eq(meta, dq_analyze::doc_snippets_policy::metadata())
                         || !self.judgment.is_raw()
                     {
@@ -475,7 +476,7 @@ impl ReportStage<'_> {
                 }
             }
             UnionRows::MapEdits(sites) => {
-                if (self.selected != Roster::WithMapEdits.names() && self.selected != PRIVATE_MAP_AND_LAYERING && self.selected != PRIVATE_AUTHORED_DOC_UI)
+                if (self.selected != Roster::WithMapEdits.names() && self.selected != PRIVATE_MAP_AND_LAYERING && !self.authored_doc_ui)
                     || !std::ptr::eq(meta, &dq_analyze::map_edits_policy::META)
                     || !matches!(meta.policy, Policy::Hard)
                 {
@@ -517,7 +518,7 @@ impl ReportStage<'_> {
                     Q::RelWriteUndeclared => (&[Roster::WithReferencePolicies], dq_analyze::rel_write_policy::metadata()),
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unissued message-only selected report role")),
                 };
-                let joined_engine = (self.selected == PRIVATE_MAP_AND_LAYERING || self.selected == PRIVATE_AUTHORED_DOC_UI)
+                let joined_engine = (self.selected == PRIVATE_MAP_AND_LAYERING || self.authored_doc_ui)
                     && question == Q::EngineLayeringFullAllow;
                 if (!joined_engine && !rosters.iter().any(|roster| self.selected == roster.names()))
                     || !std::ptr::eq(meta, expected)
@@ -634,7 +635,7 @@ impl ReportStage<'_> {
                 let text = data.source_text().ok_or_else(|| io::Error::new(
                     io::ErrorKind::InvalidData, "selected library layering source evidence is absent"))?;
                 if (self.selected != Roster::WithLibraryLayering.names()
-                    && self.selected != PRIVATE_MAP_AND_LAYERING && self.selected != PRIVATE_AUTHORED_DOC_UI)
+                    && self.selected != PRIVATE_MAP_AND_LAYERING && !self.authored_doc_ui)
                     || meta.name != "library_layering" || !std::ptr::eq(meta, data.metadata())
                     || !matches!(meta.policy, Policy::Sites { .. }) || data.sites().len() != text.len() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData, "selected library layering findings differ from their actual Sites shape"));
@@ -831,7 +832,7 @@ impl super::super::RawWorkspaceSnapshot {
         let mut usage = UsageJoinData::new(&selection, frame);
         let mut stage = ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            judgment: JudgmentV2::Raw, library_baseline: None,
+            authored_doc_ui: false, judgment: JudgmentV2::Raw, library_baseline: None,
         };
         for &name in selected {
             let policy_started = std::time::Instant::now();
@@ -978,12 +979,29 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_extended_authored_doc_ui(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true)
+    }
+
+    #[cfg(test)]
+    fn stage_private_extended_union(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage, mixed: bool,
+    ) -> io::Result<(bool, Verified)> {
         let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
         let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
         let raw = Roster::AllRawFilePolicies.names();
+        let extra = if mixed { PRIVATE_AUTHORED_DOC_UI } else { &[] };
         let selected = selection.names();
-        if selected.iter().any(|name| !raw.contains(&name.as_str()) && !PRIVATE_REACTIVE_RAW_UNION.contains(&name.as_str()))
-            || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).any(|&name| !selected.iter().any(|actual| actual == name))
+        if selected.iter().any(|name| !raw.contains(&name.as_str()) && !PRIVATE_REACTIVE_RAW_UNION.contains(&name.as_str()) && !extra.contains(&name.as_str()))
+            || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).any(|&name| !selected.iter().any(|actual| actual == name))
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "extended reactive/raw report needs its exact registered union"));
         }
@@ -997,9 +1015,15 @@ impl SourceSnapshot {
         subject.require_bound_mapping(child.policy().mapping())?;
         let guard = self.workspace_native_read()?;
         workspace.require_scope(&guard)?;
-        if workspace.root() != root || !workspace.covers_extended_reactive_raw_domains(&mut |bytes| {
-            retained.charge(bytes).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))
-        })? {
+        let questions = if mixed { Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI } else { Q::SELECTED_REACTIVE };
+        let has_domains = if mixed {
+            workspace.has_extended_authored_doc_ui_capture()
+        } else {
+            workspace.covers_extended_reactive_raw_domains(&mut |bytes| {
+                retained.charge(bytes).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))
+            })?
+        };
+        if workspace.root() != root || !has_domains {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "extended reactive/raw report lacks its observed source roots"));
         }
 
@@ -1009,7 +1033,7 @@ impl SourceSnapshot {
             order.push(name.as_str());
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
-            &order, Q::SELECTED_REACTIVE, JudgmentV2::Raw, false, false, None, file)
+            &order, questions, JudgmentV2::Raw, false, false, None, file)
     }
 
     fn stage_selected_report_using(
@@ -1037,7 +1061,7 @@ impl SourceSnapshot {
         } else { None };
         let stage = RefCell::new(ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            judgment, library_baseline,
+            authored_doc_ui: workspace.has_authored_doc_ui_capture(), judgment, library_baseline,
         });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, Some(&mut |meta, rows, scope, budget| {
             stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
@@ -1157,6 +1181,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         finished: 0,
         selected: &["image_dir_after_build"],
         failed: SectionFailures::new(1, budget)?,
+        authored_doc_ui: false,
         judgment: JudgmentV2::Raw,
         library_baseline: None,
     };

@@ -80,8 +80,8 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let docs=intent.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets);if docs&&grep{return Err(io::Error::new(io::ErrorKind::InvalidInput,"doc snippets and CheckGrep source roles cannot be mixed"))}
   let joined_map_edits=crate::policy_request::WorkspaceAuxiliaryQuestion::admits_map_edits_capture(intent.workspace_auxiliary())
    && workspace.recursive_roots.as_slice()==[workspace.root.join("code"),workspace.root.join("maps")];
-  let discovery=if let Some(engine)=&engine_preflight{engine.require(self)?;Arc::clone(engine.discovery())}else{Arc::new(if intent.workspace_auxiliary()==crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_AUTHORED_DOC_UI{
-   crate::runner_host::workspace_discovery::discover_authored_doc_ui(self,contract,&workspace.configuration)?
+  let discovery=if let Some(engine)=&engine_preflight{engine.require(self)?;Arc::clone(engine.discovery())}else{Arc::new(if crate::policy_request::WorkspaceAuxiliaryQuestion::authored_doc_ui_roots(intent.workspace_auxiliary()).is_some(){
+   crate::runner_host::workspace_discovery::discover_authored_doc_ui(self,contract,&workspace.configuration,intent.workspace_auxiliary())?
   }else if docs{crate::runner_host::workspace_discovery::discover_doc_snippets(self,contract)?}else if grep{crate::runner_host::workspace_discovery::discover_check_grep(self,contract)?}else if joined_map_edits{crate::runner_host::workspace_discovery::discover_joined_map_edits(self,contract)?}else{crate::runner_host::workspace_discovery::discover(self,contract)?})};
   discovery.validate_recording(self)?;let mut charge=match &engine_preflight{Some(engine)=>engine.charge(),None=>discovery.retained_charge()?};
   let mut admit=|bytes:usize|->io::Result<()>{charge=charge.checked_add(bytes).ok_or_else(oom)?;if charge>LIMIT{return Err(oom())}Ok(())};

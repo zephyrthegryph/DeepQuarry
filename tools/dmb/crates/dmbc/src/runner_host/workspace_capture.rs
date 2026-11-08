@@ -112,10 +112,15 @@ impl WorkspaceCapture {
         use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
 
         self.raw_source.is_none()
-            && self.discovery.has_authored_doc_ui_facets()
-            && self.matches_auxiliary_questions(Q::PRIVATE_AUTHORED_DOC_UI)
+            && Q::authored_doc_ui_roots(&self.auxiliary)
+                .is_some_and(|roots| self.discovery.matches_authored_doc_ui_profile(roots))
             && self.ui_dispatcher.is_some()
             && self.map_edits.is_some()
+    }
+
+    pub(crate) fn has_extended_authored_doc_ui_capture(&self) -> bool {
+        use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+        self.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI) && self.has_authored_doc_ui_capture()
     }
 
     pub(crate) fn for_each_map_edit_file(
@@ -745,12 +750,7 @@ pub(crate) fn capture_analysis_map_edits<P: SnapshotProvider>(
         || !((questions == [Q::MapEdits] && discovery.contract().recursive_roots.as_slice() == [discovery.contract().root.join("code")])
             || discovery.contract().recursive_roots.as_slice()
                 == [discovery.contract().root.join("code"), discovery.contract().root.join("maps")]
-            || (questions == Q::PRIVATE_AUTHORED_DOC_UI
-                && discovery.has_authored_doc_ui_facets()
-                && discovery.contract().recursive_roots.as_slice() == [
-                    discovery.contract().root.join("code"), discovery.contract().root.join("doc/rewrite"),
-                    discovery.contract().root.join("maps"), discovery.contract().root.join("tgui/packages/tgui/interfaces"),
-                ]))
+            || Q::authored_doc_ui_roots(questions).is_some_and(|roots| discovery.matches_authored_doc_ui_profile(roots)))
     {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits requires its fixed authored model and CODE discovery"));
     }
@@ -845,7 +845,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         // The funded MapEdits caller holds an ordinary capture window covering
         // all EXTRA_BUDGET bytes. The dispatcher uses only the remainder of that
         // window, and its surviving owner is settled once with the capture.
-        if map_work.is_none() || !discovery.has_authored_doc_ui_facets() {
+        if map_work.is_none() || !Q::authored_doc_ui_roots(questions).is_some_and(|roots| discovery.matches_authored_doc_ui_profile(roots)) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "authored UI requires its actual joined discovery and capture funding"));
         }
         let root = &discovery.contract().root;
@@ -856,6 +856,8 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         if !discovery.covers_doc_snippets(&mut admit)?
             || !discovery.covers_ui_actions(&mut admit)?
             || !discovery.covers_dm_roots(dq_analyze::tree::CODE_MAPS_DM.roots, false, &mut admit)?
+            || questions == Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI
+                && !discovery.covers_dm_roots(&[("interface", "dm"), ("modular_chomp", "dm")], true, &mut admit)?
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "authored UI joined domains were not completely observed"));
         }

@@ -75,8 +75,27 @@ impl WorkspaceAuxiliaryQuestion {
     pub(crate) const PRIVATE_AUTHORED_DOC_UI: &'static [Self] =
         &[Self::LibraryLayeringFullAllow, Self::MapEdits, Self::EngineLayeringFullAllow, Self::DocUiFullAllow];
 
+    pub(crate) const PRIVATE_EXTENDED_AUTHORED_DOC_UI: &'static [Self] = &[
+        Self::SemReads, Self::UntrackedInputs, Self::SetterPublishes,
+        Self::LibraryLayeringFullAllow, Self::MapEdits, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
+    ];
+    pub(crate) const AUTHORED_DOC_UI_ROOTS: &'static [&'static str] =
+        &["code", "doc/rewrite", "maps", "tgui/packages/tgui/interfaces"];
+    pub(crate) const EXTENDED_AUTHORED_DOC_UI_ROOTS: &'static [&'static str] =
+        &["code", "doc/rewrite", "interface", "maps", "modular_chomp", "tgui/packages/tgui/interfaces"];
+
+    pub(crate) fn authored_doc_ui_roots(questions: &[Self]) -> Option<&'static [&'static str]> {
+        if questions == Self::PRIVATE_AUTHORED_DOC_UI {
+            Some(Self::AUTHORED_DOC_UI_ROOTS)
+        } else if questions == Self::PRIVATE_EXTENDED_AUTHORED_DOC_UI {
+            Some(Self::EXTENDED_AUTHORED_DOC_UI_ROOTS)
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn admits_map_edits_capture(questions: &[Self]) -> bool {
-        questions == [Self::MapEdits] || questions == Self::SELECTED_MAP_AND_LAYERING || questions == Self::PRIVATE_AUTHORED_DOC_UI
+        questions == [Self::MapEdits] || questions == Self::SELECTED_MAP_AND_LAYERING || Self::authored_doc_ui_roots(questions).is_some()
     }
 
     pub(crate) const SELECTED_READS: &'static [Self] = &[Self::SemReads, Self::UntrackedInputs];
@@ -180,14 +199,14 @@ impl PolicyInputRequest {
         if !self.workspace_auxiliary.is_empty() && self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions require actual workspace intent"))}
         if self.workspace_auxiliary.len()>WorkspaceAuxiliaryQuestion::ALL.len(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions exceed fixed registered set"))}
         let mut workspace_auxiliary=self.workspace_auxiliary;workspace_auxiliary.sort_unstable();if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::CheckGrep)&&workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::CheckGrepBaseline){return Err(io::Error::new(io::ErrorKind::InvalidInput,"CheckGrep check and baseline purposes are mutually exclusive"))}if workspace_auxiliary.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate auxiliary question"))}
-        let mixed = workspace_auxiliary == WorkspaceAuxiliaryQuestion::PRIVATE_AUTHORED_DOC_UI;
+        let mixed_roots = WorkspaceAuxiliaryQuestion::authored_doc_ui_roots(&workspace_auxiliary);
+        let mixed = mixed_roots.is_some();
         if mixed != private_authored_doc_ui
-            || mixed && self.workspace.as_ref().is_none_or(|w| {
-                w.recursive_roots.as_slice() != [
-                    w.root.join("code"), w.root.join("doc/rewrite"), w.root.join("maps"),
-                    w.root.join("tgui/packages/tgui/interfaces"),
-                ]
-            })
+            || mixed_roots.is_some_and(|roots| self.workspace.as_ref().is_none_or(|w| {
+                w.recursive_roots.len() != roots.len()
+                    || w.recursive_roots.iter().zip(roots).any(|(actual, expected)|
+                        actual.strip_prefix(&w.root).ok() != Some(Path::new(expected)))
+            }))
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "private authored Docs/UI requires its exact mixed roster and roots"));
         }

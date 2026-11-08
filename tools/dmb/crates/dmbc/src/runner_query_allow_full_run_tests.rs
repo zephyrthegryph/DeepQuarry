@@ -555,3 +555,114 @@ fn require_private_reactive_raw_legacy(root: &std::path::Path, exclusions: &[Str
         assert_eq!(report, std::str::from_utf8(&expected.stdout).unwrap());
     }
 }
+
+#[test]
+fn private_62_policies_share_authored_mixed_and_extended_raw_discovery() {
+    let (mut host, mut request, root) = fixture(concat!(
+        "#define CAPABILITIES(...)\n",
+        "#define PROC_REF(P) #P\n",
+        "/datum/act\n/datum/act/eval\n/obj/probe\n",
+        "    var/known\n",
+        "/obj/probe/proc/dynamic(datum/act/eval/A)\n",
+        "    return vars[\"probe\"]\n",
+        "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
+    ));
+    let dispatcher = dq_analyze::ui_actions_policy::DISPATCHER;
+    for (relative, content) in [
+        ("deepquarry.dme", concat!(
+            "#include \"code/probe.dm\"\n",
+            "#include \"code/engine/probe.dm\"\n",
+            "#include \"code/library/probe.dm\"\n",
+            "#include \"code/content/probe.dm\"\n",
+        )),
+        ("code/engine/probe.dm", "/proc/engine_probe()\n    library_probe()\n"),
+        ("code/library/probe.dm", "/proc/library_probe()\n    downstream_probe()\n"),
+        ("code/content/probe.dm", "/proc/downstream_probe()\n    return\n"),
+        ("code/main.dm", "/obj/machine\n    tgui_id = \"Machine\"\n/obj/machine/proc/act_go(mob/user, value)\n    return value\n"),
+        ("interface/verb.dm", "/obj/probe/verb/legacy()\n    set category = \"Raw\"\n"),
+        ("modular_chomp/.legacy.dm", "/obj/probe/proc/set_broken()\n    return\n"),
+        ("maps/edit.dmm", "/obj/probe{known = 1; lost = 2}\n"),
+        ("maps/stale.dm", "/proc/stale()\n    return // ALLOW(scheduler): exact mixed capture unused annotation\n"),
+        ("doc/rewrite/live.md", "\x60\x60\x60dm\nmissing_doc()\n\x60\x60\x60\n"),
+        ("tgui/packages/tgui/interfaces/Machine.tsx", "act('bogus', {});"),
+        (dispatcher, ui_fixture::DISPATCHER),
+    ] {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+    std::fs::write(root.join("tools/ci/lint_scopes.toml"), report_config::with_overlay("")).unwrap();
+    let intent = request.policy_inputs.as_mut().unwrap();
+    intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
+    intent.workspace_auxiliary = Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI.to_vec();
+    intent.workspace.as_mut().unwrap().recursive_roots =
+        Q::EXTENDED_AUTHORED_DOC_UI_ROOTS.iter().map(|name| root.join(name)).collect();
+    assert!(intent.clone().admit().is_err());
+    assert!(!Q::admits_combined_reports(Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI));
+    let mut incomplete = request.clone();
+    incomplete.policy_inputs.as_mut().unwrap().workspace.as_mut().unwrap().recursive_roots
+        .retain(|path| !path.ends_with("interface"));
+    assert!(crate::request_runner::prepare_private_authored_doc_ui(incomplete, &mut host).is_err());
+
+    let budget = Budget::new(8 << 20).unwrap();
+    let mut control = Operation { budget: &budget, poll: &|| Ok(()) };
+    let registry = full_unused::registered_full_selection(&[], &mut control).unwrap();
+    let raw = dq_analyze::selected_exclusions_wire::Roster::AllRawFilePolicies.names();
+    let reactive = super::selected_report::PRIVATE_REACTIVE_RAW_UNION;
+    let mixed = super::selected_report::PRIVATE_AUTHORED_DOC_UI;
+    let exclusions: Vec<_> = registry.names().iter()
+        .filter(|name| !raw.contains(&name.as_str()) && !reactive.contains(&name.as_str()) && !mixed.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    assert_eq!(registry.names().len() - exclusions.len(), 62);
+    let cache = crate::test_scratch::dir("private-62-authored-raw-mixed");
+    let four_exclusions: Vec<_> = registry.names().iter()
+        .filter(|name| !raw.contains(&name.as_str()) && !reactive.contains(&name.as_str()))
+        .map(|name| format!("-{name}")).collect();
+    let mut four = request.clone();
+    let intent = four.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary = Q::SELECTED_REACTIVE.to_vec();
+    intent.workspace.as_mut().unwrap().recursive_roots = dq_analyze::selected_exclusions_wire::Roster::AllRawFilePolicies
+        .workspace_roots().iter().map(|name| root.join(name)).collect();
+    let four_prepared = crate::request_runner::run_build_with_host(four, &mut host).unwrap();
+    current(&host, |snapshot| {
+        let capture = snapshot.native_workspace.as_ref().unwrap();
+        assert!(capture.covers_extended_reactive_raw_domains(&mut |_| Ok(())).unwrap());
+        assert!(!capture.has_extended_authored_doc_ui_capture());
+        let error = snapshot.stage_private_extended_authored_doc_ui(
+            &four_prepared, &exclusions, &budget, &root, crate::selected_report_spool::Stage::new(&cache).unwrap(),
+        ).err().expect("the four-root capture does not issue the six-root report");
+        assert!(error.to_string().contains("observed source roots"), "{error}");
+    });
+    let prepared = crate::request_runner::prepare_private_authored_doc_ui(request, &mut host).unwrap();
+    let (clean, report) = current(&host, |snapshot| {
+        let capture = snapshot.native_workspace.as_ref().unwrap();
+        assert!(capture.has_extended_authored_doc_ui_capture());
+        assert!(!capture.covers_extended_reactive_raw_domains(&mut |_| Ok(())).unwrap());
+        let error = snapshot.stage_private_extended_reactive_raw_union(
+            &prepared, &four_exclusions, &budget, &root, crate::selected_report_spool::Stage::new(&cache).unwrap(),
+        ).err().expect("the six-root capture cannot masquerade as the four-root role");
+        assert!(error.to_string().contains("observed source roots"), "{error}");
+        assert!(capture.prepared_ui_dispatcher().unwrap().needs_sources());
+        let (clean, verified) = snapshot.stage_private_extended_authored_doc_ui(
+            &prepared, &exclusions, &budget, &root, crate::selected_report_spool::Stage::new(&cache).unwrap(),
+        ).unwrap();
+        let mut output = Vec::new();
+        verified.publish(&mut output).unwrap();
+        (clean, String::from_utf8(output).unwrap())
+    });
+    assert!(!clean);
+    for marker in [
+        "[doc_snippets/doc_unknown_name]",
+        "[engine_layering/external_dependency]",
+        "[library_layering/external_dependency]",
+        "[map_edits/unknown_var]",
+        "code/main.dm:4: [ui_actions/ui_unvalidated_param]",
+        "interface/verb.dm:2: [verb_category/raw_category]",
+        "modular_chomp/.legacy.dm:1: [breakpoint/set_broken]",
+        "[reads/dynamic_read]",
+    ] {
+        assert!(report.contains(marker), "missing {marker}: {report}");
+    }
+    assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
+    require_private_reactive_raw_legacy(&root, &exclusions, clean, &report);
+}
