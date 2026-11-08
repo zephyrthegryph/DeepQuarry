@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { waitFor } from '@testing-library/react';
 import { gameDataAtom } from 'tgui/events/store';
-import { ColumnHost, decodeRaw } from './host';
+import { CHAT_PENDING, ColumnHost, decodeRaw } from './host';
 
 const byond = (globalThis as any).Byond;
 const original = byond.sendMessage;
@@ -145,5 +146,58 @@ describe('the column page', () => {
     });
     expect(decodeRaw('%7Bbroken')).toBeNull();
     expect(decodeRaw(5)).toBeNull();
+  });
+});
+
+describe('the chat at login', () => {
+  const chatUpdate = (wid: string) => ({
+    wid,
+    raw: raw('update', {
+      config: { interface: { name: 'Chat' }, title: 'Chat' },
+      data: { draft: '', session: 's1' },
+    }),
+  });
+
+  it('stands in for the chat from the first moment, and the Chat window takes its place', async () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-stat', kind: 'tgui' });
+    host.receive('col/msg', {
+      wid: 'col-stat',
+      raw: raw('update', {
+        config: { interface: { name: 'StatPanel' }, title: 'Status' },
+      }),
+    });
+    host.receive('col/init', { saved: '' });
+    // The page's own chat, docked where the Chat window will be, before the server's window arrives.
+    expect(host.state.windows[CHAT_PENDING]).toMatchObject({
+      iface: 'Chat',
+      kind: 'pending',
+    });
+    expect(host.state.groups.map((g) => g.windows)).toEqual([
+      ['col-stat'],
+      [CHAT_PENDING],
+    ]);
+    host.receive('col/open', { wid: 'col-chat', kind: 'tgui' });
+    host.receive('col/msg', chatUpdate('col-chat'));
+    await waitFor(() =>
+      expect(host.state.windows[CHAT_PENDING]).toBeUndefined(),
+    );
+    // In the stand-in's place, not wherever its window first landed.
+    expect(host.state.groups.map((g) => g.windows)).toEqual([
+      ['col-stat'],
+      ['col-chat'],
+    ]);
+    expect(host.state.windows['col-chat']).toMatchObject({
+      iface: 'Chat',
+      kind: 'tgui',
+    });
+  });
+
+  it('has no stand-in for a chat the player floated', () => {
+    const host = new ColumnHost();
+    host.receive('col/init', {
+      saved: JSON.stringify({ Chat: { dock: false, group: 'g1' } }),
+    });
+    expect(host.state.windows[CHAT_PENDING]).toBeUndefined();
   });
 });

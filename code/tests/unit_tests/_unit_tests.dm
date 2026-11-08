@@ -602,6 +602,7 @@
 #include "dq_nonblocking_ui_tests.dm"
 #include "dq_portrait_cache_tests.dm"
 #include "dq_portrait_parity_tests.dm"
+#include "dq_column_send_cost_tests.dm"
 #include "dq_tgui_runtime_cost_tests.dm"
 #include "dq_window_open_cost_tests.dm"
 #include "dq_mc_health_tests.dm"

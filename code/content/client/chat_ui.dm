@@ -9,14 +9,18 @@
 	var/client/owner
 	/// What the input row held last (chat/draft): a new window starts with it.
 	var/draft = ""
+	/// This connection's id: the stored chat log's mark names it, and a mark from another connection says nothing about this history
+	/// (tgui-panel/chat/log.ts).
+	var/session
 
 /datum/chat_ui/New(client/owner)
 	rel_set(src, nameof(owner), owner)
+	session = "[world.realtime]-[rand(1, 999999)]"
 
 CAPABILITIES(/datum/chat_ui)
 	ref_one(nameof(owner))
 	interface("Chat", title = "Chat", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
-	ui_shape(draft = schema_text())
+	ui_shape(draft = schema_text(), session = schema_text())
 
 /// The client using the chat.
 /datum/chat_ui/proc/owner() as /client
@@ -26,7 +30,7 @@ CAPABILITIES(/datum/chat_ui)
 	return !!owner() && user?.client == owner()
 
 /datum/chat_ui/ui_data(datum/act/eval/A)
-	return list("draft" = draft)
+	return list("draft" = draft, "session" = session)
 
 /// Its window is where the chat goes while it floats; docked, the column page has it (chat_window()).
 /datum/chat_ui/ui_opened(mob/user, datum/tgui/ui)
