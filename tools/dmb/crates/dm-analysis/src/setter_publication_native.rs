@@ -48,7 +48,21 @@ pub(crate) fn visit_archive_own_values_using<W:WorkspaceWork>(archive:&dm_tree::
  if !tree.checker_source_type_presence(profile,owner).map_err(|_|"setter own group type presence is unissued")?{return Ok(false)}
  let controlled=std::cell::RefCell::new(work);let group=crate::checker_original_group::Group::issue_using(tree,profile,SymbolId::of(owner),SymbolId::of(name),&mut||controlled.borrow_mut().checkpoint())?;group.observe_using(tree,&mut||controlled.borrow_mut().checkpoint())?;let mut any=false;
  group.visit_source_values_using(&mut||controlled.borrow_mut().checkpoint(),&mut|identity,verb|{
-  any=true;let mut work=controlled.borrow_mut();let mut found=None;for(ordinal,occurrence)in archive.occurrences().iter().enumerate(){work.checkpoint()?;if archive.callables().identity_for_member(occurrence.member)==Some(identity){if found.is_some(){return Err("setter source value has repeated actual body occurrence".into())}found=Some(ordinal);}}
-  let ordinal=found.ok_or("setter source value has no issued original body availability outcome")?;emit(ordinal,verb,&mut **work)
+  any=true;
+  let mut work=controlled.borrow_mut();
+  // The callable roster was issued from these very BodyOccurrences and
+  // rejects duplicate ProcedureIdentity and MemberId at issuance. Group
+  // emitted an actual chain member, so resolve through that same chain.
+  let callables=archive.callables();
+  let ordinal=callables.ordinal_for_identity_using(identity,&mut||work.checkpoint())?
+   .ok_or("setter source value has no issued original body availability outcome")?;
+  let occurrence=archive.occurrences().get(ordinal)
+   .ok_or("setter source value has no issued original body availability outcome")?;
+  if callables.identity_for_member(occurrence.member)!=Some(identity)
+   || archive.body_index(occurrence.declaration)!=Some(ordinal){
+   return Err("setter source value differs from the actual body occurrence".into());
+  }
+  work.checkpoint()?;
+  emit(ordinal,verb,&mut **work)
  })?;controlled.borrow_mut().checkpoint()?;Ok(any)
 }
