@@ -113,6 +113,7 @@ Rules that hold under both old and new forms:
   (`owns_one`/`owns_many`/`slot`), capability setup is `on_holder_init(A)`, an Initialize() tail that needs `mapload` or returns `INITIALIZE_HINT_QDEL` is `setup(PROC_REF(x), mapload = TRUE)` (`x(mapload)` returns the hint), an Initialize() head (code that ran before `..()`) is `setup(PROC_REF(x), early = TRUE)`, work after the map load or a timer from init is
   `after_init(delay, then(PROC_REF(x)))` in `CAPABILITIES`. `LateInitialize()` and `INITIALIZE_HINT_LATELOAD` are gone.
 - Tracking is automatic: don't declare `TRACKED(...)` (hard-banned outside the generated file). Write a var that reactive code reads through its generated `set_v(...)`; the `tracked` lint (hard error) rejects a raw write and `analyze fix --apply` rewrites it. A setter with side effects is a hand-written `set_v()` plus `SETTER(T, v)`. Construction (`Initialize()`/`New()` writing the instance's own var) is not a change and stays raw.
+- A loop that builds hundreds of text keys or more must not make them `"<constant prefix>[number]"`: BYOND stalls the tick 0.6-1.3 s every ~490-980 such keys (`doc/rewrite/byond_string_stall.md`). Use a numeric or alist key, or lead with `handle_text(n)`, and time-slice the loop with a `job()`.
 - `length()` of an `alist` is O(n) in BYOND (a performance note, not a correctness one): cache it in a hot loop or keep a count.
 - Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists
   (`LAZYADD`/`LAZYLEN`), not `var/list/foo = list()` (`code/defines/host/_lists.dm`).

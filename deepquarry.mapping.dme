@@ -1416,6 +1416,7 @@
 #include "code\content\lighting\client_glow.dm"
 #include "code\content\lighting\client_glow_holder.dm"
 #include "code\content\lighting\client_light_level.dm"
+#include "code\content\lighting\client_lighting_compare.dm"
 #include "code\content\lighting\client_shadow.dm"
 #include "code\content\lore_codex\codex.dm"
 #include "code\content\lore_codex\robutts.dm"

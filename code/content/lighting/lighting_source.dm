@@ -256,7 +256,8 @@ CAPABILITIES(/datum/light_source)
 	// Client lighting: the light is one glow sprite; no corner is touched (client_glow.dm).
 	if(GLOB.client_lighting)
 		client_glow_apply()
-		return
+		if(!GLOB.client_lighting_compare) // compare mode runs the corners too (client_lighting_compare.dm)
+			return
 
 	var/list/datum/lighting_corner/corners = list()
 
