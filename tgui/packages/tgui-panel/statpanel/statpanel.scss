@@ -372,6 +372,16 @@ h3 {
   }
 }
 
+.mch-row--expandable {
+  cursor: pointer;
+}
+
+.mch-row--behind td {
+  padding-left: var(--space-ml);
+  color: var(--stat-muted);
+  font-size: 0.9em;
+}
+
 .mch-subhead {
   margin-top: var(--space-m);
   color: var(--stat-muted);

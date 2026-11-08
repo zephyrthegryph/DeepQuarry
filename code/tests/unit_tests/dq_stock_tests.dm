@@ -190,3 +190,25 @@ CAPABILITIES(/datum/unit_test/dq_stock_sheets)
 	rel_add(src, nameof(made), S)
 	TEST_ASSERT(S && S.get_amount() == 25, "vended one stack of 25")
 	TEST_ASSERT_EQUAL(R.get_amount(), 15, "15 left")
+
+/// The vending sheet's product types come from the catalog without building a vendor: a catalog vendor's products and the
+/// prison nutriment vendor's tray (its stock moved from code into the catalog) are both there.
+/datum/unit_test/dq_vending_sheet_product_types
+
+/datum/unit_test/dq_vending_sheet_product_types/Run()
+	var/datum/asset/spritesheet_batched/vending/sheet = get_asset_datum(/datum/asset/spritesheet_batched/vending)
+	var/list/types = sheet.product_types()
+	TEST_ASSERT(/obj/item/tray in types, "the prison nutriment vendor's tray is on the sheet")
+	var/list/catalog_products = vending_catalog_section(/obj/machinery/vending/coffee, "products")
+	TEST_ASSERT(length(catalog_products), "the coffee vendor has catalog products")
+	for(var/product in catalog_products)
+		TEST_ASSERT(product in types, "catalog product [product] is on the sheet")
+
+/// A large sheet builds its entries a step at a time, and the research designs sheet lists its designs from content.
+/datum/unit_test/dq_sheet_entries_build_in_steps
+
+/datum/unit_test/dq_sheet_entries_build_in_steps/Run()
+	var/datum/asset/spritesheet_batched/research_designs/sheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
+	TEST_ASSERT(length(sheet.entry_sources()), "the research designs sheet lists its designs")
+	sheet.build_entries(budgeted = FALSE)
+	TEST_ASSERT(sheet.entries_created && length(sheet.entries), "the designs sheet has its entries once built")

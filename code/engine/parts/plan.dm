@@ -109,6 +109,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 	var/tier = OP_PRIORITY_NORMAL
 	/// Build problems found while compiling this plan (also reported through table_error()).
 	var/list/problems
+	/// What a Menu read can know of the op without its state (op_menu_never_lists()): null until asked, 0 nothing, 1 never a Menu line,
+	/// 2 a line only on the actor's own holder. Derived from the immutable parts, once.
+	var/menu_static
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 /// The compiled ops of a type table, by key and in order.
