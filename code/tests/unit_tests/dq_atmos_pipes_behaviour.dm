@@ -944,3 +944,20 @@
 	far.handle_leaking()
 	am_settle()
 	take_down_lines()
+
+/// A heat-exchanging pipe knows whether it lies on space from its place when it is made, and its turf tells it when the turf is replaced in play:
+/// breached to space it radiates, a floor rebuilt under it stops it. No port rebind is needed for either.
+/datum/unit_test/dq_atmos_m/pipes/he_pipe_follows_its_turf
+/datum/unit_test/dq_atmos_m/pipes/he_pipe_follows_its_turf/run_gate()
+	var/turf/T = tile(1, 3)
+	var/original = T.type
+	var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/P = allocate(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, T)
+	TEST_ASSERT(!P.in_space, "made on a floor, it does not radiate")
+	var/turf/space/S = T.ChangeTurf(/turf/space)
+	TEST_ASSERT(P.in_space, "its floor breached to space, it radiates")
+	var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/made_on_space = allocate(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, S)
+	TEST_ASSERT(made_on_space.in_space, "made on space, it radiates from the start")
+	qdel(made_on_space)
+	S.ChangeTurf(original)
+	TEST_ASSERT(!P.in_space, "a floor rebuilt under it, it stops")
+	qdel(P)

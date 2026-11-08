@@ -208,7 +208,7 @@ Notes: `hold_until` (`code/engine/stats/store.dm:112`) and `hold_override` (`cod
 #### `hold_table(E, source, table, scale =, stacks =, part =)`
 Need: place a source's whole table of stat values at once.
 Defined: `code/engine/stats/tables.dm:66`
-Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:854`.
+Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:888`.
 Replaces / bans: `BF_*`, `factor(`.
 Notes: normally reached through `factors()` rather than called.
 
@@ -425,7 +425,7 @@ Need: the one write verb set for declared relations; each dispatches on the decl
 Defined: `code/engine/declare/relations.dm:360`, `rel_add` at `code/engine/declare/relations.dm:390`
 Example: `rel_set(src, nameof(focused_obj), req_thing)`, `code/content/admin/access_viewer.dm:81`
 Replaces / bans: `own_set` accessors.
-Notes: a raw write to a declared relation var skips the reverse index and the teardown.
+Notes: a raw write to a declared relation var skips the reverse index and the teardown. Many holders onto one target (a pipeline taking its pipes) is `rel_set_many(holders, var_name, target)` (`code/engine/refs/views.dm:314`): what one `rel_set()` per holder leaves, with the partner list's membership read once, one append and one announcement of the partner var.
 
 #### `slot_of(D)`, `handle_of(D)` and `handle_get(h)`: slots and numeric handles
 Need: name a datum by a whole number (a table key) or hold a weak handle to it in a var, list, timer or payload.
@@ -549,10 +549,10 @@ Notes: an `instead()` with no `then` takes nothing. `adjusts_with(PROC_REF)` is 
 
 #### `on_notice(/datum/notice/x, then(...))` and `observe(source, trigger, listener, parts...)`
 Need: react after an event, on the type (`on_notice`) or on one source (`observe`).
-Defined: `on_notice` at `code/engine/actions/hooks.dm:96`, `observe` at `code/engine/actions/hooks.dm:159`
+Defined: `on_notice` at `code/engine/actions/hooks.dm:105`, `observe` at `code/engine/actions/hooks.dm:168`, `observe_notices` at `code/engine/actions/hooks.dm:212`
 Example: `on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))`, `code/content/artifice/telecube.dm:221`
 Replaces / bans: `om_hook`.
-Notes: `on_op("key", ...)` is sugar for an op-done notice.
+Notes: `on_op("key", ...)` is sugar for an op-done notice. `observe_notices(source, listener, list(/datum/notice/a = then(...), ...))` follows several notices of one source through one grant (one activation, ended by `unobserve()` of any of them): for a listener that always takes and drops the same notices together, such as a light following its holder (`code/content/lighting/overlay_lighting.dm`).
 
 #### `PUBLISH(E, token, args)`
 Need: publish a past-tense fact that cannot be refused.

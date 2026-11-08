@@ -48,6 +48,12 @@ CAPABILITIES(/turf/open)
 /// template, and the datum is made when something first reads the air (turf_air()).
 /turf/open/proc/open_air_start(mapload)
 	PRIVATE_PROC(TRUE)
+	// A turf made in play (ChangeTurf: a breach, a floor built over space) tells the heat-exchanging pipes standing on it whether they now lie on
+	// space; a map-loaded pipe takes it from its place when it is made (its in_space preset).
+	if(!mapload)
+		var/now_space = istype(src, /turf/space)
+		FOR_CONTENTS(var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/pipe, src)
+			pipe.set_in_space(now_space)
 	// The space of a level made while the round runs is already in the arena: the level registered whole when it was made
 	// (/world/proc/increment_max_z(), SSair.register_level_turfs()), so its map-loaded vacuum makes no call of its own.
 	if(mapload && immutable_atmos && GLOB.air_bulk_levels["[z]"])
