@@ -77,20 +77,38 @@ GLOBAL_PROTECT(dq_species_preview_cache_warm_init)
 
 /proc/dq_warm_species_preview_cache()
 	. = list()
+	var/list/slow = list()
 	for(var/species_name in GLOB.playable_species)
 		var/datum/species/S = GLOB.all_species[species_name]
 		if(!S || species_name == SPECIES_CUSTOM)
 			continue
-		// A species with a "preview" state is filed now; one without is rendered by the portrait cache the first time the picker asks
-		// (the cache is not up this early in init).
+		// A species with a "preview" state is filed now. One without needs a mannequin built (a few hundred ms, the body's icons): those are
+		// built one at a time in the background once the world runs (dq_species_preview_warm_next), so nobody's picker pays for one.
 		if(icon_exists(S.icobase, "preview"))
 			dq_species_preview_b64(S)
+		else
+			slow += species_name
+	if(length(slow))
+		after(null, 10 SECONDS, GLOBAL_PROC_REF(dq_species_preview_warm_next), clock = CLOCK_WORLD, with = list(slow))
 	// Synthetic Robot / pAI entries share the same cache so the picker can
 	// render them through the same <img data:...> path as real species.
 	var/icon/r = icon('icons/mob/robot/default.dmi', "default", dir = SOUTH, frame = 1, moving = FALSE)
 	GLOB.dq_species_preview_cache["__robot__"] = icon2base64(r)
 	var/icon/p = icon('icons/mob/pai.dmi', "pai-repairbot", dir = SOUTH, frame = 1, moving = FALSE)
 	GLOB.dq_species_preview_cache["__pai__"] = icon2base64(p)
+
+/// Builds the thumbnail of the next species in `remaining` (one mannequin per step, two seconds apart), then the next.
+/proc/dq_species_preview_warm_next(list/remaining)
+	while(length(remaining))
+		var/species_name = remaining[1]
+		remaining.Cut(1, 2)
+		var/datum/species/S = GLOB.all_species[species_name]
+		if(!S || GLOB.dq_species_preview_cache[species_name])
+			continue
+		dq_species_preview_b64(S)
+		break
+	if(length(remaining))
+		after(null, 2 SECONDS, GLOBAL_PROC_REF(dq_species_preview_warm_next), clock = CLOCK_WORLD, with = list(remaining))
 
 /// Species thumbnails rendering in the portrait cache: species name -> when it was asked for (a render that never landed is asked again).
 GLOBAL_LIST_EMPTY(dq_species_preview_waits)
