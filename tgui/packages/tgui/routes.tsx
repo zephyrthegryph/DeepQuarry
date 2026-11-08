@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { useAtomValue } from 'jotai';
+import { Provider, useAtomValue } from 'jotai';
 import {
   Component,
   type ComponentType,
@@ -14,6 +14,11 @@ import {
   Suspense,
   useEffect,
 } from 'react';
+import {
+  type EmbeddedBackend,
+  EmbeddedContext,
+  setActiveEmbedded,
+} from './embedded';
 import { backendStateAtom, configAtom, store } from './events/store';
 import { registerInterfacePreparer } from './interfacePreparation';
 import { LoadingScreen } from './interfaces/common/LoadingScreen';
@@ -332,6 +337,10 @@ class RouteErrorBoundary extends Component<
     this.state = { hasError: false };
   }
 
+  // Embedded in a page of several (EmbeddedInterface): no native window to reveal.
+  static contextType = EmbeddedContext;
+  declare context: EmbeddedBackend | null;
+
   static getDerivedStateFromError(): RouteBoundaryState {
     return { hasError: true };
   }
@@ -355,6 +364,9 @@ class RouteErrorBoundary extends Component<
   }
 
   render() {
+    if (this.state.hasError && this.context) {
+      return <RoutingErrorWindow type="unknown" name={this.props.name} />;
+    }
     if (this.state.hasError) {
       // Reveal the error window — the failed content never mounted to reveal itself.
       return (
@@ -430,4 +442,42 @@ export function RoutedComponent() {
   );
 
   return content;
+}
+
+/**
+ * One interface embedded in a page that hosts several (the right-hand
+ * column, doc/rewrite/proposals/window_system.md section 12): its own store
+ * and channel, its own error boundary (a crash shows the error window in this
+ * window only), and no native window to reveal.
+ */
+export function EmbeddedInterface(props: { backend: EmbeddedBackend }) {
+  const { backend } = props;
+  return (
+    <Provider store={backend.store}>
+      <EmbeddedContext.Provider value={backend}>
+        <div
+          className="EmbeddedInterface"
+          onPointerDownCapture={() => setActiveEmbedded(backend)}
+        >
+          <EmbeddedRoute />
+        </div>
+      </EmbeddedContext.Provider>
+    </Provider>
+  );
+}
+
+function EmbeddedRoute() {
+  const { config } = useAtomValue(backendStateAtom);
+  const name = config?.interface?.name;
+  if (!name) {
+    return null;
+  }
+  const Component = getRoutedComponent(name);
+  return (
+    <RouteErrorBoundary name={name}>
+      <Suspense fallback={null}>
+        <Component />
+      </Suspense>
+    </RouteErrorBoundary>
+  );
 }

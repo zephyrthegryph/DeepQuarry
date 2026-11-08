@@ -2,17 +2,11 @@ import {
   Component,
   type MouseEvent,
   type ReactNode,
-  useEffect,
-  useMemo,
   useState,
   useSyncExternalStore,
 } from 'react';
-import { Tabs, type TabsLayout } from 'tgui/dq';
 import { Button, Input } from 'tgui-core/components';
-import { useChatScanlines } from '../consoleScanlines';
-import { MapSplitHandle } from '../layout/ChatLayout';
 import { AbilitiesTab } from './AbilitiesTab';
-import { DockArea } from './DockArea';
 import { InspectTab } from './InspectTab';
 import {
   CLOSED_BY_DEFAULT,
@@ -30,7 +24,6 @@ import {
   type Verb,
   verbCommand,
   verbGroupsOf,
-  viewsOf,
 } from './store';
 
 /** Commands that may take focus run after our own focus handling. */
@@ -459,67 +452,32 @@ function ViewContent({ state, store }: { state: State; store: StatStore }) {
   }
 }
 
-export function App(props: {
-  store: StatStore;
-  displayStore: {
-    subscribe: (listener: () => void) => () => void;
-    get: () => string;
-  };
-}) {
-  const { store, displayStore } = props;
+/**
+ * One stat panel view as a window of the right-hand column's page
+ * (doc/rewrite/proposals/window_system.md section 12). The views are the
+ * column's stacked tabs: activating one sets the panel's view (the server
+ * sends the data of the current one), so a view shown alongside another,
+ * split out of the stack, offers to switch to it.
+ */
+export function StatWindow(props: { store: StatStore; view: PanelView }) {
+  const { store, view } = props;
   useSyncExternalStore(store.subscribe, store.getVersion);
-  const tabsStyle = useSyncExternalStore(
-    displayStore.subscribe,
-    displayStore.get,
-  );
-  useChatScanlines();
   const [query, setQuery] = useState('');
   const { state } = store;
   const found = searchAll(state, query, MENU_SECTIONS);
-  // "/" anywhere in the panel puts the cursor in the search box.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== '/' || document.activeElement?.tagName === 'INPUT')
-        return;
-      const box =
-        document.querySelector<HTMLInputElement>('.stat-search input');
-      if (!box) return;
-      event.preventDefault();
-      box.focus();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, []);
-  // The view bar reads the verbs and tabs only: rebuilt when those change, not on every status line.
-  const views = useMemo(
-    () => viewsOf(state),
-    [state.verbs, state.permanentTabs],
-  );
   const overlay = overlayOf(state, store);
+  if (state.view !== view) {
+    return (
+      <div className="stat-root stat-root--embedded">
+        <div className="stat-content">
+          <Button onClick={() => store.setView(view)}>Show {view}</Button>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="stat-root">
-      <MapSplitHandle />
-      <DockArea />
-      <Tabs
-        layout={tabsLayout(tabsStyle)}
-        className="stat-views"
-        tabs={views.map((view) => ({
-          id: view,
-          label:
-            view === 'Staff' && state.tickets.length ? (
-              <>
-                Staff <span className="stat-badge">{state.tickets.length}</span>
-              </>
-            ) : (
-              view
-            ),
-          selected: view === state.view,
-        }))}
-        onSelect={(view) => {
-          setQuery('');
-          store.setView(view as PanelView);
-        }}
-      >
+    <div className="stat-root stat-root--embedded">
+      <div className="stat-toolbar">
         <Input
           className="stat-search"
           placeholder="Search (/)"
@@ -531,7 +489,7 @@ export function App(props: {
           }}
           onEscape={() => setQuery('')}
         />
-      </Tabs>
+      </div>
       <div className="stat-content">
         {query.trim() ? (
           found.length ? (
@@ -568,11 +526,6 @@ export function App(props: {
       </div>
     </div>
   );
-}
-
-/** The display setting's tab style, as the shared tab row's layout. */
-function tabsLayout(style: string): TabsLayout {
-  return style === 'scrollable' || style === 'classic' ? style : 'wrap';
 }
 
 /** A render error leaves the reload link rather than a blank panel. */

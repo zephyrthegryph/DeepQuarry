@@ -1,15 +1,20 @@
 /**
- * The window dock's layout (doc/rewrite/proposals/window_system.md section 4):
- * the docked tgui windows in the stat panel, as an ordered list of groups. A
+ * The right-hand column's layout (doc/rewrite/proposals/window_system.md
+ * section 12): every window in the column page (the chat, the stat panel's
+ * views, docked tgui interfaces) as an ordered list of groups. A
  * group of one window is a list entry; of more, a tabbed stack. Pure: every
  * action returns a new state, and `saved` is re-snapshotted each time so it
  * always says where each interface was last seen (persisted per player).
  */
 
+/** What a column window shows: the chat, a stat panel view, or a docked tgui interface. */
+export type WindowKind = 'chat' | 'stat' | 'tgui';
+
 export type DockWindow = {
   id: string;
   iface: string;
   title: string;
+  kind?: WindowKind;
   /** Where in the list a window dropped on the panel goes (its drop point), over the saved place. */
   at?: number;
 };
